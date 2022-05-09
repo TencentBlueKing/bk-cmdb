@@ -234,6 +234,12 @@
         loading: true
       }
     },
+    provide() {
+      return {
+        getModuleName: this.getModuleName,
+        getModulePath: this.getModulePath
+      }
+    },
     computed: {
       ...mapGetters('objectBiz', ['bizId', 'currentBusiness']),
       ...mapGetters('businessHost', [
@@ -459,7 +465,7 @@
       },
       setHostAttrsAutoApply(data) {
         const conflictInfo = (data || []).map(item => item.host_apply_plan)
-        const conflictList = conflictInfo.filter(item => item.conflicts.length || item.update_fields.length)
+        const conflictList = conflictInfo.filter(item => item.conflicts?.length || item.update_fields?.length)
         const tab = this.tabList.find(tab => tab.id === 'hostAttrsAutoApply')
         tab.props.info = Object.freeze(conflictList)
       },
@@ -676,7 +682,7 @@
               params.options.service_instance_options = createComponent.getServiceInstanceOptions()
             }
             if (hostAttrsComponent) {
-              params.options.host_apply_conflict_resolvers = hostAttrsComponent.getHostApplyConflictResolvers()
+              params.options.host_apply_trans_rule = hostAttrsComponent.getHostApplyConflictResolvers()
             }
           }
 
@@ -691,7 +697,7 @@
           if (!result) {
             const failList = []
             const successList = []
-            data.forEach((item) => {
+            data?.forEach((item) => {
               if (item.code !== 0) {
                 failList.push(item)
               } else {

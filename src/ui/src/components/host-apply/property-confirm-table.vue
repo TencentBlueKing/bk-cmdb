@@ -3,44 +3,37 @@
     <bk-table
       :data="table.list"
       :pagination="table.pagination"
-      :max-height="maxHeight || ($APP.height - 220)"
+      :max-height="maxHeight || ($APP.height - 220 - 119)"
       @page-change="handlePageChange"
-      @page-limit-change="handleSizeChange"
-    >
-      <bk-table-column :label="$t('内网IP')">
+      @page-limit-change="handleSizeChange">
+      <bk-table-column :label="$t('内网IP')" min-width="120">
         <template slot-scope="{ row }">
           <bk-button theme="primary" text @click="handleShowDetails(row)">
             {{row.expect_host.bk_host_innerip}}
           </bk-button>
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('主机名称')" prop="expect_host.bk_host_name">
+      <bk-table-column :label="$t('主机名称')" min-width="160" prop="expect_host.bk_host_name">
         <template slot-scope="{ row }">{{row.expect_host.bk_host_name || '--'}}</template>
       </bk-table-column>
       <bk-table-column
-        :label="$t('修改值')"
-        width="530"
+        :label="$t('当前值')"
+        min-width="500"
         class-name="table-cell-change-value"
         show-overflow-tooltip
-        :render-header="(h, data) => renderTableHeader(h, data, $t('红色为属性冲突值'), { placement: 'right' })">
+        :render-header="(h, data) => renderTableHeader(h, data, $t('主机属性当前值'), { placement: 'right' })">
         <template slot-scope="{ row }">
-          <div class="cell-change-value"><vnodes :vnode="getChangeValue(row)"></vnodes></div>
+          <div class="cell-change-value"><vnodes :vnode="getCurrentValue(row)"></vnodes></div>
         </template>
       </bk-table-column>
       <bk-table-column
-        v-if="showOperation"
-        :label="$t('操作')"
-        :render-header="renderIcon ? (h, data) => renderTableHeader(h, data, $t('表格冲突处理提示'), { width: 275 }) : null">
+        :label="$t('目标值')"
+        min-width="500"
+        class-name="table-cell-change-value"
+        show-overflow-tooltip
+        :render-header="(h, data) => renderTableHeader(h, data, $t('属性自动应用配置值'), { placement: 'right' })">
         <template slot-scope="{ row }">
-          <bk-button
-            v-if="row.conflicts.length > 0"
-            theme="primary"
-            text
-            @click="handleShowConflict(row)"
-          >
-            {{$t(row.unresolved_conflict_count > 0 ? '手动修改' : '已修改')}}
-          </bk-button>
-          <span v-else>--</span>
+          <div class="cell-change-value"><vnodes :vnode="getTargetValue(row)"></vnodes></div>
         </template>
       </bk-table-column>
       <cmdb-table-empty slot="empty">
@@ -55,21 +48,11 @@
       @hidden="handleSliderCancel">
       <template slot="content">
         <cmdb-details
-          v-if="slider.content === 'detail'"
           :show-options="false"
           :inst="details.inst"
           :properties="details.properties"
           :property-groups="details.propertyGroups">
         </cmdb-details>
-        <conflict-resolve
-          v-else-if="slider.content === 'conflict'"
-          ref="conflictResolve"
-          :data-row="currentRow"
-          :data-cache="conflictResolveCache"
-          @cancel="handleSliderCancel"
-          @save="handleConflictSave"
-        >
-        </conflict-resolve>
       </template>
     </bk-sideslider>
   </div>
@@ -77,10 +60,8 @@
 
 <script>
   import { mapGetters, mapState } from 'vuex'
-  import conflictResolve from './conflict-resolve.vue'
   export default {
     components: {
-      conflictResolve,
       vnodes: {
         functional: true,
         render: (h, ctx) => ctx.props.vnode
@@ -97,14 +78,6 @@
       maxHeight: {
         type: [Number, String],
         default: 0
-      },
-      renderIcon: {
-        type: Boolean,
-        default: false
-      },
-      showOperation: {
-        type: Boolean,
-        default: true
       }
     },
     data() {
@@ -127,11 +100,8 @@
         slider: {
           width: 514,
           isShow: false,
-          content: '',
           title: ''
-        },
-        currentRow: {},
-        conflictResolveResult: {}
+        }
       }
     },
     computed: {
@@ -140,11 +110,7 @@
       ]),
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('hostApply', ['configPropertyList']),
-      ...mapState('hostApply', ['propertyList']),
-      conflictResolveCache() {
-        const key = this.currentRow.bk_host_id
-        return this.conflictResolveResult[key] || []
-      }
+      ...mapState('hostApply', ['propertyList'])
     },
     watch: {
       list() {
@@ -164,7 +130,8 @@
           const data = await this.$store.dispatch('hostApply/getProperties', {
             params: { bk_biz_id: this.bizId },
             config: {
-              requestId: 'getHostPropertyList'
+              requestId: 'getHostPropertyList',
+              fromCache: true
             }
           })
 
@@ -177,31 +144,36 @@
         const { start, limit } = this.$tools.getPageParams(this.table.pagination)
         this.table.list = this.list.slice(start, start + limit)
       },
-      getChangeValue(row) {
-        const { conflicts, update_fields: updateFields, unresolved_conflict_count: conflictCount } = row
-
+      getCurrentValue(row) {
+        const { conflicts } = row
         const resultConflicts = conflicts.map((item) => {
-          /* eslint-disable max-len */
           const property = this.configPropertyList.find(propertyItem => propertyItem.id === item.bk_attribute_id) || {}
-          let content = <span>{property.bk_property_name}：<cmdb-property-value value={item.bk_property_value} property={property} /></span>
-          const conflictExist = conflicts.find(conflictItem => conflictItem.bk_attribute_id === item.bk_attribute_id && conflictItem.unresolved_conflict_exist)
-          if (conflictExist) {
-            content = <span class="conflict-item">{content}</span>
-          }
-          return content
+          return (
+            <span>
+              {property.bk_property_name}：<cmdb-property-value value={item.bk_property_value} property={property} />
+            </span>
+          )
         })
+        return (
+          <div>
+            { resultConflicts.reduce((acc, x) => (acc === null ? [x] : [acc, '；', x]), null) }
+          </div>
+        )
+      },
+      getTargetValue(row) {
+        const { update_fields: updateFields } = row
         const resultUpdates = updateFields.map((item) => {
           const property = this.configPropertyList.find(propertyItem => propertyItem.id === item.bk_attribute_id) || {}
-          return <span>{property.bk_property_name}：<cmdb-property-value value={item.bk_property_value} property={property} /></span>
+          return (
+            <span>
+              {property.bk_property_name}：<cmdb-property-value value={item.bk_property_value} property={property} />
+            </span>
+          )
         })
-        const conflictSeparator = <span class={`conflict-separator${!conflictCount ? ' resolved' : ''}`}>；</span>
-
         return (
-            <div>
-                { resultConflicts.reduce((acc, x) => (acc === null ? [x] : [acc, conflictSeparator, x]), null) }
-                { (resultConflicts.length && resultUpdates.length) ? conflictSeparator : '' }
-                { resultUpdates.reduce((acc, x) => (acc === null ? [x] : [acc, '；', x]), null) }
-            </div>
+          <div>
+            { resultUpdates.reduce((acc, x) => (acc === null ? [x] : [acc, '；', x]), null) }
+          </div>
         )
       },
       getPropertyGroups() {
@@ -230,9 +202,7 @@
         this.setTableList()
       },
       async handleShowDetails(row) {
-        this.currentRow = row
         this.slider.title = `${this.$t('属性详情')}【${row.expect_host.bk_host_innerip}】`
-        this.slider.content = 'detail'
         const properties = this.propertyList
         // 云区域数据
         row.cloud_area.bk_inst_name = row.cloud_area.bk_cloud_name
@@ -280,30 +250,7 @@
           return { ...row.expect_host }
         }
       },
-      handleShowConflict(row) {
-        this.currentRow = row
-        this.slider.title = `${this.$t('手动修改')}【${row.expect_host.bk_host_innerip}】`
-        this.slider.content = 'conflict'
-        this.slider.isShow = true
-      },
-      handleConflictSave(data) {
-        // 将处理结果保存
-        this.conflictResolveResult[this.currentRow.bk_host_id] = data
-
-        // 标记冲突状态并更新属性值
-        this.currentRow.conflicts.forEach((item) => {
-          item.unresolved_conflict_exist = false
-          /* eslint-disable-next-line  no-underscore-dangle */
-          item.bk_property_value = data.find(property => property.id === item.bk_attribute_id).__extra__.value
-        })
-        this.currentRow.unresolved_conflict_count = 0
-      },
       handleSliderCancel() {
-        if (this.slider.content === 'conflict') {
-          if (this.$refs.conflictResolve) {
-            this.$refs.conflictResolve.restoreConflictPropertyList()
-          }
-        }
         this.slider.isShow = false
       }
     }
@@ -318,22 +265,14 @@
     }
 </style>
 <style lang="scss">
-    .table-cell-change-value {
-        .cell {
-            -webkit-line-clamp: unset !important;
-            display: block !important;
-            .conflict-item,
-            .conflict-separator {
-                color: #ea3536;
+  .table-cell-change-value {
+    .cell {
+      -webkit-line-clamp: unset !important;
+      display: block !important;
 
-                &.resolved {
-                    color: inherit;
-                }
-            }
-
-            .icon-cc-tips {
-                margin-top: -2px;
-            }
-        }
+      .icon-cc-tips {
+        margin-top: -2px;
+      }
+    }
     }
 </style>

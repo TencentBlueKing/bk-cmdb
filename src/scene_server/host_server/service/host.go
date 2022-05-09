@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 	"strconv"
 	"strings"
+	"sync"
 
 	"configcenter/src/ac"
 	"configcenter/src/ac/extensions"
@@ -650,6 +651,143 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+func (s *Service) getHostBizMapAndHostInfoMap(kit *rest.Kit, hostIDs []int64) (map[int64]int64,
+	map[int64]mapstr.MapStr, error) {
+
+	hostCond := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: hostIDs,
+		},
+	}
+	hosts, err := s.Logic.GetHostInfoByConds(kit, hostCond)
+	if err != nil {
+		blog.Errorf("get hosts failed, condition: %#v, err: %v, rid: %s", hostCond, err, kit.Rid)
+		return nil, nil, err
+	}
+
+	hostMap := make(map[int64]mapstr.MapStr)
+	for _, host := range hosts {
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			blog.Errorf("parse host id failed, host: %#v, err: %v, rid: %s", host, err, kit.Rid)
+			return nil, nil, err
+		}
+		hostMap[hostID] = host
+	}
+
+	input := meta.HostModuleRelationRequest{
+		HostIDArr: hostIDs,
+		Fields:    []string{common.BKAppIDField, common.BKHostIDField},
+	}
+	hostRelations, rawErr := s.Logic.GetHostRelations(kit, input)
+	if rawErr != nil {
+		blog.Errorf("get host relations failed, hostIDs: %+v, err: %v, rid: %s", hostIDs, err, kit.Rid)
+		return nil, nil, err
+	}
+
+	hostBizMap := make(map[int64]int64)
+	for _, relation := range hostRelations {
+		hostBizMap[relation.HostID] = relation.AppID
+	}
+
+	return hostBizMap, hostMap, nil
+}
+
+// updateHostPropertyBatch concurrent update of host's property fields.
+func (s *Service) updateHostPropertyBatch(kit *rest.Kit, hostIDArr []int64,
+	parameter *meta.UpdateHostPropertyBatchParameter) error {
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
+		hostBizMap, hostMap, err := s.getHostBizMapAndHostInfoMap(kit, hostIDArr)
+		if err != nil {
+			return err
+		}
+
+		auditContexts := make([]meta.AuditLog, 0)
+		audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
+
+		var (
+			wg       sync.WaitGroup
+			firstErr error
+		)
+		pipeline := make(chan bool, 5)
+
+		for _, update := range parameter.Update {
+			if firstErr != nil {
+				break
+			}
+
+			pipeline <- true
+			wg.Add(1)
+
+			genAuditParam := auditlog.NewGenerateAuditCommonParameter(kit, meta.AuditUpdate)
+
+			go func(update meta.UpdateHostProperty) {
+				defer func() {
+					wg.Done()
+					<-pipeline
+				}()
+
+				cond := mapstr.New()
+				cond.Set(common.BKHostIDField, update.HostID)
+				data, err := mapstr.NewFromInterface(update.Properties)
+				if err != nil {
+					blog.Errorf("convert properties: %v to mapStr failed, err: %v, rid: %s", update.Properties,
+						err, kit.Rid)
+					firstErr = err
+					return
+				}
+
+				// can't update host's cloud area using this api
+				data.Remove(common.BKCloudIDField)
+				data.Remove(common.BKHostIDField)
+
+				// generate audit log.
+				genAuditParam.WithUpdateFields(data)
+				hostInfo := []mapstr.MapStr{hostMap[update.HostID]}
+
+				auditLog, err := audit.GenerateAuditLog(genAuditParam, hostBizMap[update.HostID], hostInfo)
+				if err != nil {
+					blog.Errorf("write audit log failed, hostID: %d, err: %v, rid: %s", update.HostID, err, kit.Rid)
+					firstErr = err
+					return
+				}
+
+				opt := &meta.UpdateOption{
+					Condition: cond,
+					Data:      data,
+				}
+				// to update data.
+				_, err = s.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header,
+					common.BKInnerObjIDHost, opt)
+				if err != nil {
+					blog.Errorf("update host property failed, input: %+v, opt: %+v, err: %v, rid: %s", data, opt, err,
+						kit.Rid)
+					firstErr = err
+					return
+				}
+				// add audit log.
+				auditContexts = append(auditContexts, auditLog...)
+			}(update)
+		}
+
+		wg.Wait()
+		if firstErr != nil {
+			return firstErr
+		}
+
+		// save audit log.
+		if err := audit.SaveAuditLog(kit, auditContexts...); err != nil {
+			blog.Errorf("add hosts %+v audit failed, err: %v, rid: %s", hostIDArr, err, kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	return txnErr
+}
+
+// UpdateHostPropertyBatch batch update host properties.
 func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 
 	parameter := new(meta.UpdateHostPropertyBatchParameter)
@@ -659,126 +797,40 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 	}
 
 	if len(parameter.Update) > common.BKMaxPageSize {
-		blog.Errorf("UpdateHostPropertyBatch failed, data len %d exceed max pageSize %d, rid:%s",
+		blog.Errorf("update host property batch failed, data len %d exceed max pageSize %d, rid: %s",
 			len(parameter.Update), common.BKMaxPageSize, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "update", common.BKMaxPageSize))
 		return
 	}
 
-	// check authorization
-	hostIDArr := make([]int64, 0)
+	hostIDs := make([]int64, 0)
 	for _, update := range parameter.Update {
-		hostIDArr = append(hostIDArr, update.HostID)
+		hostIDs = append(hostIDs, update.HostID)
 	}
-	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update,
-		hostIDArr...); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDArr, err, ctx.Kit.Rid)
+
+	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, hostIDs...); err != nil {
 		if err != nil && err != ac.NoAuthorizeError {
-			blog.ErrorJSON("check host authorization failed, hosts: %s, err: %s, rid: %s", hostIDArr, err.Error(),
-				ctx.Kit.Rid)
+			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDs, err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 			return
 		}
-		perm, err := s.AuthManager.GenHostBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, hostIDArr)
+		perm, err := s.AuthManager.GenHostBatchNoPermissionResp(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, hostIDs)
 		if err != nil && err != ac.NoAuthorizeError {
-			blog.ErrorJSON("check host authorization get permission failed, hosts: %s, err: %s, rid: %s", hostIDArr,
-				err.Error(), ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
-			return
-		}
-		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
-
-		return
-	}
-
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		hostCond := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDArr}}
-		hosts, err := s.Logic.GetHostInfoByConds(ctx.Kit, hostCond)
-		if err != nil {
-			blog.Errorf("get hosts failed, err: %v, condition: %#v, rid: %s", err, hostCond, ctx.Kit.Rid)
-			return err
-		}
-
-		hostMap := make(map[int64]mapstr.MapStr)
-		for _, host := range hosts {
-			hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
-			if err != nil {
-				blog.Errorf("parse host id failed, err: %v, host: %#v, rid: %s", err, host, ctx.Kit.Rid)
-				return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
-			}
-			hostMap[hostID] = host
-		}
-
-		hostRelations, rawErr := s.Logic.GetHostRelations(ctx.Kit, meta.HostModuleRelationRequest{HostIDArr: hostIDArr,
-			Fields: []string{common.BKAppIDField, common.BKHostIDField}})
-		if rawErr != nil {
-			blog.Errorf("get host relations failed, err: %v, hostIDs: %+v, rid: %s", err, hostIDArr, ctx.Kit.Rid)
-			return rawErr
-		}
-
-		hostBizMap := make(map[int64]int64)
-		for _, relation := range hostRelations {
-			hostBizMap[relation.HostID] = relation.AppID
-		}
-
-		auditContexts := make([]meta.AuditLog, 0)
-		audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
-
-		for _, update := range parameter.Update {
-			cond := mapstr.New()
-			cond.Set(common.BKHostIDField, update.HostID)
-			data, err := mapstr.NewFromInterface(update.Properties)
-			if err != nil {
-				blog.Errorf("update host property batch, but convert properties[%v] to mapstr failed, err: %v, "+
-					"rid: %s", update.Properties, err, ctx.Kit.Rid)
-				return err
-			}
-
-			// can't update host's cloud area using this api
-			data.Remove(common.BKCloudIDField)
-			data.Remove(common.BKHostIDField)
-			opt := &meta.UpdateOption{
-				Condition: cond,
-				Data:      data,
-			}
-
-			// generate audit log.
-			genAuditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(data)
-			auditLog, err := audit.GenerateAuditLog(genAuditParam, hostBizMap[update.HostID],
-				[]mapstr.MapStr{hostMap[update.HostID]})
-			if err != nil {
-				blog.Errorf("generate audit log failed, hostID: %d, err: %v, rid: %s", update.HostID, err, ctx.Kit.Rid)
-				return err
-			}
-
-			// to update data.
-			_, err = s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
-				common.BKInnerObjIDHost, opt)
-			if err != nil {
-				blog.Errorf("UpdateHostPropertyBatch UpdateInstance http do error, err: %v,input:%+v,param:%+v, "+
-					"rid:%s", err, data, opt, ctx.Kit.Rid)
-				return err
-			}
-
-			// add audit log.
-			auditContexts = append(auditContexts, auditLog...)
-		}
-
-		// save audit log.
-		if err := audit.SaveAuditLog(ctx.Kit, auditContexts...); err != nil {
-			blog.Errorf("update host property batch, but add host[%v] audit failed, err: %v, rid: %s", hostIDArr,
+			blog.Errorf("check host authorization get permission failed, hosts: %+v, err: %v, rid: %s", hostIDs,
 				err, ctx.Kit.Rid)
-			return err
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+			return
 		}
-
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
+		blog.Errorf("hosts no authorized, hosts: %+v, rid: %s", hostIDs, ctx.Kit.Rid)
+		ctx.RespEntityWithError(perm, ac.NoAuthorizeError)
 		return
 	}
+
+	if err := s.updateHostPropertyBatch(ctx.Kit, hostIDs, parameter); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	ctx.RespEntity(nil)
 }
 

@@ -14,7 +14,9 @@ package collections
 
 import "configcenter/src/common"
 
-// 2021年03月12日 这里的数据不能删除，在deprecatedIndexName存在的索引名字，没有在表中索引存在，就表示这个字段需要被删除
+// 2021年03月12日 这里的数据不能删除，在deprecatedIndexName存在的索引名字，没有数据库表中索引存在，就表示这个字段需要被删除
+// 例如 index/collections/cc_DynamicGroup中的deprecatedDynamicGroupIndexes中的index存在id_1和id_1_bk_biz_id_1 而下面map中存在
+// 的是id_1，id_1_bk_biz_id_1和 bk_biz_id_1_name_1，所以就会将索引 bk_biz_id_1_name_1删除。
 var deprecatedIndexName = map[string][]string{
 	common.BKTableNameDynamicGroup: {
 		"id_1",
@@ -62,12 +64,14 @@ var deprecatedIndexName = map[string][]string{
 		"bk_set_name_1",
 		"bk_set_id_1_bk_biz_id_1",
 		"idx_unique_setID",
+		"bk_set_id_1",
 	},
 	common.BKTableNameObjAttDes: {
 		"bk_obj_id_1",
 		"bk_supplier_account_1",
 		"idx_unique_objID_propertyID_bizID",
 		"idx_unique_Id",
+		"id_1",
 	},
 	common.BKTableNameSetServiceTemplateRelation: {
 		"idx_unque_setTemplateID_serviceTemplateID",
@@ -97,6 +101,7 @@ var deprecatedIndexName = map[string][]string{
 		"bk_idx_set_template_id_service_template_id",
 		"bk_idx_set_template_id",
 		"bk_idx_service_template_id",
+		"bk_module_id_1",
 	},
 	common.BKTableNameChartConfig: {
 		"config_id",
@@ -131,6 +136,7 @@ var deprecatedIndexName = map[string][]string{
 		"bk_biz_id_1_bk_host_id_1",
 		"idx_unique_id",
 		"bk_idx_host_id",
+		"idx_id",
 	},
 	common.BKTableNameProcessInstanceRelation: {
 		"idx_bkServiceInstanceID",
@@ -147,6 +153,7 @@ var deprecatedIndexName = map[string][]string{
 		"idx_unique_id",
 		"bk_idx_service_template_idd_bk_process_name",
 		"bk_idx_service_template_id_bk_process_name",
+		"idx_id",
 	},
 	common.BKTableNameCloudAccount: {
 		"bk_account_id",
@@ -169,6 +176,7 @@ var deprecatedIndexName = map[string][]string{
 		"idx_bkBizID",
 		"idx_unique_id",
 		"bk_idx_bk_biz_id_name",
+		"idx_id",
 	},
 	common.BKTableNameAPITask: {
 		"idx_taskID",
@@ -209,6 +217,7 @@ var deprecatedIndexName = map[string][]string{
 		"bk_biz_id_1_bk_supplier_account_1",
 		"default_1_bk_supplier_account_1",
 		"idx_unique_bizID",
+		"bk_biz_id_1",
 	},
 	common.BKTableNameServiceCategory: {
 		"idx_unique_id",

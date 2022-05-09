@@ -152,6 +152,19 @@
 
         this.initializing = true
 
+        const currentBizSetTopo = await this.loadTopologyData(this.bizSetId, BUILTIN_MODELS.BUSINESS_SET, this.bizSetId)
+
+        let currentBizNode = null
+
+        // 检测业务是否存在，如果查询条件中的业务不存在则清除查询条件刷新当前页面
+        if (this.bizId) {
+          currentBizNode = currentBizSetTopo.find(item => item.bk_inst_id === this.bizId)
+          if (!currentBizNode) {
+            this.clearQueryReload()
+            return
+          }
+        }
+
         if (topoPath) {
           let parentData = null
 
@@ -163,7 +176,13 @@
 
             if (this.isLeaf(modelId)) break
 
-            const [, data] = await to(this.loadTopologyData(this.bizSetId, modelId, instanceId))
+            const [err, data] = await to(this.loadTopologyData(this.bizSetId, modelId, instanceId))
+
+            // 获取数据失败则清除条件刷新页面，非法id或者数据被删除
+            if (err) {
+              this.clearQueryReload()
+              return
+            }
 
             if (!topoTreeData) {
               topoTreeData = data
@@ -182,39 +201,34 @@
           }
         }
 
-        this.loadTopologyData(this.bizSetId, BUILTIN_MODELS.BUSINESS_SET, this.bizSetId)
-          .then((data) => {
-            const root = [
-              {
-                bk_obj_id: BUILTIN_MODELS.BUSINESS_SET,
-                bk_obj_name: '',
-                bk_inst_id: this.bizSetId,
-                bk_inst_name: this.bizSetName,
-                host_count: 0,
-                service_instance_count: 0,
-                child: data,
-              },
-            ]
+        // 初始化根节点
+        const root = [
+          {
+            bk_obj_id: BUILTIN_MODELS.BUSINESS_SET,
+            bk_obj_name: '',
+            bk_inst_id: this.bizSetId,
+            bk_inst_name: this.bizSetName,
+            host_count: 0,
+            service_instance_count: 0,
+            child: currentBizSetTopo,
+          },
+        ]
 
-            const currentBizNode = data.find(item => item.bk_inst_id === this.bizId)
+        if (topoTreeData && currentBizNode) {
+          currentBizNode.child = topoTreeData
+        }
 
-            if (topoTreeData && currentBizNode) {
-              currentBizNode.child = topoTreeData
-            }
+        this.$refs.tree.setData(root)
 
-            this.$refs.tree.setData(root)
+        const bizNodes = this.$refs.tree.nodes[0].children
+        const [firstBizNode] = bizNodes
 
-            const bizNodes = this.$refs.tree.nodes[0].children
-            const [firstBizNode] = bizNodes
+        const expanedNodes = currentBizNode ? expandedIds.map(id => this.$refs.tree.getNodeById(id)) : []
 
-            const expanedNodes = currentBizNode ? expandedIds.map(id => this.$refs.tree.getNodeById(id)) : []
+        this.loadNodeCount([...bizNodes, ...expanedNodes])
+        this.setDefaultExpandedNode(this.getNodeFromQuery() || firstBizNode)
 
-            this.loadNodeCount([...bizNodes, ...expanedNodes])
-            this.setDefaultExpandedNode(this.getNodeFromQuery() || firstBizNode)
-          })
-          .finally(() => {
-            this.initializing = false
-          })
+        this.initializing = false
       },
       /**
        * 设置默认展开节点
@@ -350,6 +364,9 @@
 
         return nodeClass
       },
+      getBizSetRootNode() {
+        return this.$refs?.tree.getNodeById(`${BUILTIN_MODELS.BUSINESS_SET}-${this.bizSetId}`)
+      },
       /**
        * 处理节点选择事件
        */
@@ -420,7 +437,7 @@
       async loadNodeCount(targetNodes, force = false) {
         let nodes = null
 
-        const doneStatuses = !['pending', 'finished']
+        const doneStatuses = ['pending', 'finished']
 
         if (force) {
           nodes = targetNodes.filter(({ data }) => !doneStatuses.includes(data.status)
@@ -429,7 +446,10 @@
           nodes = targetNodes.filter(({ data }) => data.bk_obj_id !== BUILTIN_MODELS.BUSINESS_SET)
         }
 
-        if (!nodes.length) return
+        if (!nodes.length) {
+          this.setNodesStatus([this.getBizSetRootNode()], 'finished')
+          return
+        }
 
         this.setNodesStatus(nodes, 'pending')
 
@@ -459,6 +479,10 @@
        * 计算业务集下实例总数
        */
       countBizSetSum() {
+        if (!this.$refs?.tree) {
+          return
+        }
+
         const bizSetSum = this.$refs.tree?.nodes
           .filter(node => node.data.bk_obj_id === BUILTIN_MODELS.BUSINESS)
           .reduce((acc, node) => {
@@ -466,13 +490,11 @@
             return acc + count
           }, 0)
 
-        if (!bizSetSum) return
-
-        const rootNode = this.$refs.tree.getNodeById(`${BUILTIN_MODELS.BUSINESS_SET}-${this.bizSetId}`)
+        const rootNode = this.getBizSetRootNode()
 
         rootNode.data[this.countType] = bizSetSum
 
-        rootNode.data.status = 'finished'
+        this.setNodesStatus([rootNode], 'finished')
       },
       /**
        * 设置所有节点的加载状态
@@ -481,7 +503,9 @@
        */
       setNodesStatus(nodes, status) {
         nodes.forEach((node) => {
-          this.$set(node.data, 'status', status)
+          if (node?.data) {
+            this.$set(node.data, 'status', status)
+          }
         })
       },
       /**
@@ -560,6 +584,13 @@
       handleResize() {
         this.$refs.tree.resize()
       },
+      clearQueryReload() {
+        this.$routerActions.redirect({
+          ...this.$route,
+          query: {},
+          reload: true
+        })
+      }
     },
   }
 </script>

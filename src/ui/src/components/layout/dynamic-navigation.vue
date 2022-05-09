@@ -173,7 +173,7 @@
     },
     methods: {
       setDefaultExpand() {
-        const expandedId = this.$route.meta.menu.parent
+        const expandedId = this.$route.meta?.menu?.parent
         if (expandedId) {
           this.$set(this.state, expandedId, { expanded: true })
         } else if (this.relativeActiveName) {
@@ -390,11 +390,11 @@ $color: #63656E;
         }
         &.is-relative-active.is-link,
         &.active.is-link {
-            background-color: #3a84ff;
+            background-color: #E1ECFF;
             .menu-icon,
             .menu-name,
             .icon-close {
-                color: #fff;
+                color: $primaryColor;
             }
         }
         .menu-info {
@@ -455,8 +455,8 @@ $color: #63656E;
         }
         &.is-relative-active,
         &.active {
-            color: #fff;
-            background-color: #3a84ff;
+            color: $primaryColor;
+            background-color: #E1ECFF;
             &::before {
                 background-color: #fff;
             }

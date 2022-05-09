@@ -57,7 +57,7 @@
   "该操作将会把所有的校验规则内容重置为最后一次保存的状态，请谨慎操作！": "This will reset all the content of the verification rule to the state of last saved.",
 
   "添加模块": "+ New",
-  "确认修改": "Modification Confirm?",
+  "确认修改": "Confirm",
   "确认新增": "Add Confirm",
   "新增成功": "Module has been created",
   "确认删除模块？": "Are you sure to delete it ?",

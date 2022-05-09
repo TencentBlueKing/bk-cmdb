@@ -58,7 +58,8 @@ type ListServiceTemplateInput struct {
 	// search service templates by name
 	Search string `json:"search"`
 	// used with search, means whether search service templates with exact name or not
-	IsExact bool `json:"is_exact"`
+	IsExact            bool    `json:"is_exact"`
+	ServiceTemplateIDs []int64 `json:"service_template_ids"`
 }
 
 type DeleteServiceTemplatesInput struct {
@@ -302,6 +303,13 @@ func (o *UpdateServiceInstanceOption) Validate() (rawError cErr.RawErrorInfo) {
 	if len(o.Data) == 0 {
 		return cErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{"data"},
+		}
+	}
+
+	if len(o.Data) > common.BKMaxUpdateOrCreatePageSize {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -873,9 +881,13 @@ func (p ProtocolType) String() string {
 	}
 }
 
-func (p ProtocolType) Validate() error {
+// Validate validate ProtocolType
+func (p *ProtocolType) Validate() error {
+	if p == nil || len(*p) == 0 {
+		return errors.New("protocol is not set or is empty")
+	}
 	validValues := []ProtocolType{ProtocolTypeTCP, ProtocolTypeUDP}
-	if util.InArray(p, validValues) == false {
+	if util.InArray(*p, validValues) == false {
 		return fmt.Errorf("invalid protocol type, value: %s, available values: %+v", p, validValues)
 	}
 	return nil
@@ -1001,11 +1013,12 @@ type ServiceTemplate struct {
 	// now, the class must have two labels.
 	ServiceCategoryID int64 `field:"service_category_id" json:"service_category_id" bson:"service_category_id"`
 
-	Creator         string    `field:"creator" json:"creator" bson:"creator"`
-	Modifier        string    `field:"modifier" json:"modifier" bson:"modifier"`
-	CreateTime      time.Time `field:"create_time" json:"create_time" bson:"create_time"`
-	LastTime        time.Time `field:"last_time" json:"last_time" bson:"last_time"`
-	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Creator          string    `field:"creator" json:"creator" bson:"creator"`
+	Modifier         string    `field:"modifier" json:"modifier" bson:"modifier"`
+	CreateTime       time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime         time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	SupplierAccount  string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	HostApplyEnabled bool      `field:"host_apply_enabled" json:"host_apply_enabled" bson:"host_apply_enabled"`
 }
 
 func (st *ServiceTemplate) Validate(errProxy cErr.DefaultCCErrorIf) (field string, err error) {
@@ -1795,16 +1808,20 @@ type PropertyPort struct {
 	AsDefaultValue *bool   `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
-func (ti *PropertyPort) Validate() error {
-	if ti.Value == nil || len(*ti.Value) == 0 {
+// PropertyPortValue port value
+type PropertyPortValue string
+
+// Validate validate the PropertyPortValue
+func (ti *PropertyPortValue) Validate() error {
+	if ti == nil || len(*ti) == 0 {
 		return errors.New("port is not set or is empty")
 	}
 
-	if matched := ProcessPortFormat.MatchString(*ti.Value); matched == false {
+	if matched := ProcessPortFormat.MatchString(string(*ti)); matched == false {
 		return fmt.Errorf("port format invalid")
 	}
 	var tmpPortArr []propertyPortItem
-	strPortItemArr := strings.Split(*ti.Value, ",")
+	strPortItemArr := strings.Split(string(*ti), ",")
 	for _, strPortItem := range strPortItemArr {
 		portArr := strings.Split(strPortItem, "-")
 		var start, end int64
@@ -1860,17 +1877,6 @@ func (ti *PropertyBindIP) Validate() error {
 type PropertyProtocol struct {
 	Value          *ProtocolType `field:"value" json:"value" bson:"value"`
 	AsDefaultValue *bool         `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
-}
-
-func (ti *PropertyProtocol) Validate() error {
-	if ti.Value == nil || len(*ti.Value) == 0 {
-		return errors.New("protocol is not set or is empty")
-	}
-
-	if err := ti.Value.Validate(); err != nil {
-		return err
-	}
-	return nil
 }
 
 // ServiceInstance is a service, which created when a host binding with a service template.
@@ -1981,4 +1987,10 @@ type SrvInstNameParams struct {
 	ServiceInstanceID int64                  `json:"service_instance_id"`
 	Host              map[string]interface{} `json:"host"`
 	Process           *Process               `json:"process"`
+}
+
+// SrvTemplate service template struct
+type SrvTemplate struct {
+	ID   int64  `json:"id" bson:"id" mapstructure:"id"`
+	Name string `json:"name" bson:"name" mapstructure:"name"`
 }

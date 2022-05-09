@@ -730,10 +730,18 @@ func GetAuditTypesByCategory(category string) []AuditType {
 	return []AuditType{}
 }
 
-func GetAuditDict() []resourceTypeInfo {
-	return auditDict
+// GetAuditDict get audit dict according to language type
+func GetAuditDict(languageType common.LanguageType) []resourceTypeInfo {
+	switch languageType {
+	case common.Chinese:
+		return auditDict
+	case common.English:
+		return auditEnDict
+	}
+	return nil
 }
 
+// 注意：记得在auditEnDict中添加对应的英文
 var auditDict = []resourceTypeInfo{
 	{
 		ID:   ModuleRes,
@@ -913,6 +921,7 @@ var auditDict = []resourceTypeInfo{
 	},
 }
 
+// 注意：记得在actionInfoEnMap中添加对应的英文
 var actionInfoMap = map[ActionType]actionTypeInfo{
 	AuditCreate:             {ID: AuditCreate, Name: "新增"},
 	AuditUpdate:             {ID: AuditUpdate, Name: "修改"},
@@ -957,4 +966,196 @@ func (input *AuditDetailQueryInput) Validate() errors.RawErrorInfo {
 	}
 
 	return errors.RawErrorInfo{}
+}
+
+var auditEnDict = []resourceTypeInfo{
+	{
+		ID:   ModuleRes,
+		Name: "Module",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   SetRes,
+		Name: "Set",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   MainlineInstanceRes,
+		Name: "Node",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ServiceInstanceRes,
+		Name: "Service Instance",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   HostRes,
+		Name: "Host",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+			actionInfoEnMap[AuditAssignHost],
+			actionInfoEnMap[AuditUnassignHost],
+			actionInfoEnMap[AuditTransferHostModule],
+		},
+	},
+	{
+		ID:   BusinessRes,
+		Name: "Business",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditArchive],
+			actionInfoEnMap[AuditRecover],
+		},
+	},
+	{
+		ID:   BizSetRes,
+		Name: "Business Set",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   CloudAreaRes,
+		Name: "Cloud Area",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelInstanceRes,
+		Name: "Model Instance",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   InstanceAssociationRes,
+		Name: "Instance Association",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ResourceDirectoryRes,
+		Name: "Resource Directory",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelGroupRes,
+		Name: "Model Group",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+			actionInfoEnMap[AuditPause],
+			actionInfoEnMap[AuditResume],
+		},
+	},
+	{
+		ID:   ModelRes,
+		Name: "Model",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelAttributeRes,
+		Name: "Model Attribute",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ModelAttributeGroupRes,
+		Name: "Model Attribute Group",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   CloudAccountRes,
+		Name: "Cloud Account",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   CloudSyncTaskRes,
+		Name: "Cloud Synchronous Task",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   DynamicGroupRes,
+		Name: "Dynamic Group",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   PlatFormSettingRes,
+		Name: "Platform Management",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+}
+
+var actionInfoEnMap = map[ActionType]actionTypeInfo{
+	AuditCreate:             {ID: AuditCreate, Name: "Create"},
+	AuditUpdate:             {ID: AuditUpdate, Name: "Update"},
+	AuditDelete:             {ID: AuditDelete, Name: "Delete"},
+	AuditAssignHost:         {ID: AuditAssignHost, Name: "Assign to business"},
+	AuditUnassignHost:       {ID: AuditUnassignHost, Name: "Return to the resource pool"},
+	AuditTransferHostModule: {ID: AuditTransferHostModule, Name: "Transfer module"},
+	AuditArchive:            {ID: AuditArchive, Name: "Archive"},
+	AuditRecover:            {ID: AuditRecover, Name: "Recover"},
+	AuditPause:              {ID: AuditPause, Name: "Pause"},
+	AuditResume:             {ID: AuditResume, Name: "Resume"},
 }

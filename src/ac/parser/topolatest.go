@@ -1735,11 +1735,13 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 }
 
 const (
-	createObjectLatestPattern       = "/api/v3/create/object"
-	createObjectBatchLatestPattern  = "/api/v3/createmany/object"
-	findObjectsLatestPattern        = "/api/v3/find/object"
-	findObjectBatchLatestPattern    = "/api/v3/findmany/object"
-	findObjectTopologyLatestPattern = "/api/v3/find/objecttopology"
+	createObjectLatestPattern            = "/api/v3/create/object"
+	createManyObjectLatestPattern        = "/api/v3/createmany/object/by_import"
+	createObjectBatchLatestPattern       = "/api/v3/createmany/object"
+	findObjectsLatestPattern             = "/api/v3/find/object"
+	findObjectBatchLatestPattern         = "/api/v3/findmany/object"
+	findObjectWithTotalInfoLatestPattern = "/api/v3/findmany/object/total/info"
+	findObjectTopologyLatestPattern      = "/api/v3/find/objecttopology"
 )
 
 var (
@@ -1790,6 +1792,26 @@ func (ps *parseStream) objectLatest() *parseStream {
 					Action: meta.Create,
 				},
 				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: classification.ID}},
+			},
+		}
+		return ps
+	}
+
+	// create many common object by yaml import.
+	if ps.hitPattern(createManyObjectLatestPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.Model,
+					Action: meta.Create,
+				},
 			},
 		}
 		return ps
@@ -1910,6 +1932,19 @@ func (ps *parseStream) objectLatest() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.Model,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(findObjectWithTotalInfoLatestPattern, http.MethodPost) {
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.Model,
 					Action: meta.FindMany,

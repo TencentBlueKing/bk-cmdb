@@ -21,19 +21,11 @@
             {{$t('导入')}}
           </bk-button>
         </cmdb-auth>
-        <cmdb-auth class="fl mr10"
-          :auth="[
-            { type: $OPERATION.R_INST, relation: [model.id] }
-          ]"
-        >
-          <template #default="{ disabled }">
-            <bk-button class="models-button" theme="default"
-              :disabled="!table.checked.length || disabled"
-              @click="handleExport">
-              {{$t('导出')}}
-            </bk-button>
-          </template>
-        </cmdb-auth>
+        <bk-button class="models-button" theme="default"
+          :disabled="!table.checked.length"
+          @click="handleExport">
+          {{$t('导出')}}
+        </bk-button>
         <cmdb-auth class="fl mr10" :auth="batchUpdateAuth">
           <template #default="{ disabled }">
             <bk-button class="models-button"

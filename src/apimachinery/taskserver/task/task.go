@@ -23,7 +23,7 @@ import (
 
 // Create 新加任务，taskType: 任务标识，留给业务方做识别任务，instID: 任务的执行源实例id，data: 每一项任务需要的参数
 func (t *task) Create(ctx context.Context, header http.Header, taskType string, instID int64, data []interface{}) (
-	metadata.APITaskDetail, error) {
+	metadata.APITaskDetail, errors.CCErrorCoder) {
 
 	resp := new(metadata.CreateTaskResponse)
 	subPath := "/task/create"

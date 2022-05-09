@@ -92,17 +92,14 @@ func (lgc *Logics) fetchAssociationData(ctx context.Context, header http.Header,
 		cond.Field(common.BKAsstObjIDField).NotEq(objID)
 	}
 	input.Condition = cond.ToMapStr()
-	if modelBizID > 0 {
-		input.Condition.Set(common.BKAppIDField, modelBizID)
-	}
 	bkObjRst, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(ctx, header, input)
 	if err != nil {
-		blog.ErrorJSON("fetchAssociationData fetch %s association  error:%s, input;%+v, rid: %s", objID, err.Error(), input, rid)
+		blog.Errorf("fetch %s association data failed, input: %+v, err: %v, rid: %s", objID, input, err, rid)
 		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !bkObjRst.Result {
-		blog.ErrorJSON("fetchAssociationData fetch %s association  error code:%s, error msg:%s, input;%+v, rid:%s", objID, bkObjRst.Code, bkObjRst.ErrMsg, input, rid)
-		return nil, ccErr.New(bkObjRst.Code, bkObjRst.ErrMsg)
+	if ccErr := bkObjRst.CCError(); ccErr != nil {
+		blog.Errorf("fetch %s association data failed, input: %+v, err: %v, rid: %s", objID, input, ccErr, rid)
+		return nil, ccErr
 	}
 
 	//实例作为关联关系目标模型
@@ -116,12 +113,12 @@ func (lgc *Logics) fetchAssociationData(ctx context.Context, header http.Header,
 	input.Condition = cond.ToMapStr()
 	bkAsstObjRst, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(ctx, header, input)
 	if err != nil {
-		blog.ErrorJSON("fetchAssociationData fetch %s association  error:%s, input;%+v, rid: %s", objID, err.Error(), input, rid)
+		blog.Errorf("fetch %s association data failed, input: %+v, err: %v, rid: %s", objID, input, err, rid)
 		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !bkAsstObjRst.Result {
-		blog.ErrorJSON("fetchAssociationData fetch %s association  error code:%s, error msg:%s, input;%+v, rid:%s", objID, bkAsstObjRst.Code, bkAsstObjRst.ErrMsg, input, rid)
-		return nil, ccErr.New(bkAsstObjRst.Code, bkAsstObjRst.ErrMsg)
+	if ccErr := bkObjRst.CCError(); ccErr != nil {
+		blog.Errorf("fetch %s association data failed, input: %+v, err: %v, rid: %s", objID, input, ccErr, rid)
+		return nil, ccErr
 	}
 	result := append(bkObjRst.Data[:], bkAsstObjRst.Data...)
 

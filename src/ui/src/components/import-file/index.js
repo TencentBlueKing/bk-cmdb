@@ -57,6 +57,8 @@ const beforeClose = () => {
     bkInfoBox({
       title: i18n.t('确认关闭'),
       subTitle: i18n.t('数据导入终止提示'),
+      okText: i18n.t('确定'),
+      cancelText: i18n.t('取消'),
       confirmFn: () => resolve(true),
       cancelFn: () => resolve(false)
     })

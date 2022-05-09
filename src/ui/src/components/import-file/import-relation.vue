@@ -6,7 +6,7 @@
         <i :class="['model-icon', getModelIcon(currentModelId)]"></i>
         <span class="model-name">{{getModelName(currentModelId)}}</span>
         <span class="model-desc">{{`(${$t('模型本身')})`}}</span>
-        <div class="unique-flag">
+        <div class="unique-flag" v-if="modelUniqueChecks.length">
           <label class="unique-flag-label">{{$t('唯一校验标识')}}：</label>
           <bk-select class="unique-selector"
             v-model="objectUniqueId"
@@ -117,7 +117,7 @@
       const selectedRelations = ref({})
       const initSelectedUniqueCheck = () => {
         const [modelUniqueCheck] = modelUniqueChecks.value
-        objectUniqueId.value = modelUniqueCheck.id
+        objectUniqueId.value = modelUniqueCheck?.id
       }
       const clearSelectedUniqueCheck = (clearSelf = true) => {
         setupContext.refs.table.clearSelection() // 这种方式在Vue3.0中不可使用

@@ -1,200 +1,170 @@
 <template>
-  <div class="host-apply" v-bkloading="{ isLoading: $loading(['getHostPropertyList', 'getTopologyData']) }">
+  <div class="host-apply">
     <div class="main-wrapper">
       <cmdb-resize-layout
         ref="resizeLayout"
-        class="tree-layout fl"
+        :class="['tree-layout fl', { 'is-collapse': layout.topologyCollapse }]"
         direction="right"
         :handler-offset="3"
-        :width="sidebarWidth"
+        :width="layout.sidebarWidth"
         :min="310"
-        :max="480">
-        <sidebar ref="sidebar" @module-selected="handleSelectModule" @action-change="handleActionChange"></sidebar>
+        :max="480"
+        :disabled="layout.topologyCollapse">
+
+        <sidebar ref="sidebar"
+          @module-selected="handleSelectModule"
+          @mode-changed="handleChangeMode"
+          @action-change="handleActionChange">
+        </sidebar>
+
+        <i class="topology-collapse-icon bk-icon icon-angle-left"
+          @click="layout.topologyCollapse = !layout.topologyCollapse">
+        </i>
       </cmdb-resize-layout>
-      <div class="main-content" v-bkloading="{ isLoading: $loading(['getHostApplyRules']) }">
-        <template v-if="moduleId">
-          <div class="config-panel" v-show="!batchAction">
-            <div class="config-head">
-              <h2 class="config-title">
-                <span class="module-name" v-bk-overflow-tips>{{currentModule.bk_inst_name}}</span>
-                <small class="last-edit-time" v-if="hasRule">( {{$t('上次编辑时间')}}{{ruleLastEditTime}} )</small>
-              </h2>
-            </div>
-            <div class="config-body">
-              <template v-if="applyEnabled">
-                <div class="view-field">
-                  <div class="view-bd">
-                    <div class="field-list">
-                      <div class="field-list-table">
-                        <property-config-table
-                          ref="propertyConfigTable"
-                          :readonly="true"
-                          :checked-property-id-list.sync="checkedPropertyIdList"
-                          :rule-list="initRuleList"
-                        >
-                        </property-config-table>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="view-ft">
-                    <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
-                      <bk-button
-                        slot-scope="{ disabled }"
-                        theme="primary"
-                        :disabled="disabled"
-                        @click="handleEdit"
-                      >
-                        {{$t('编辑')}}
-                      </bk-button>
-                    </cmdb-auth>
-                    <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
-                      <bk-button
-                        slot-scope="{ disabled }"
-                        :disabled="!hasConflict || disabled"
-                        @click="handleViewConflict"
-                      >
-                        <span v-bk-tooltips="{ content: $t('无失效需处理') }" v-if="!hasConflict">
-                          {{$t('失效主机')}}<em class="conflict-num">{{conflictNum}}</em>
-                        </span>
-                        <span v-else>
-                          {{$t('失效主机')}}<em class="conflict-num">{{conflictNum}}</em>
-                        </span>
-                      </bk-button>
-                    </cmdb-auth>
-                    <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
-                      <bk-button
-                        slot-scope="{ disabled }"
-                        :disabled="disabled"
-                        @click="handleCloseApply"
-                      >
-                        {{$t('关闭自动应用')}}
-                      </bk-button>
-                    </cmdb-auth>
-                  </div>
-                </div>
-              </template>
-              <template v-else>
-                <div class="empty" v-if="!hasRule">
-                  <div class="desc">
-                    <i class="bk-cc-icon icon-cc-tips"></i>
-                    <span>{{$t('当前模块未启用自动应用策略')}}</span>
-                  </div>
-                  <div class="action">
-                    <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
-                      <bk-button
-                        outline
-                        theme="primary"
-                        slot-scope="{ disabled }"
-                        :disabled="disabled"
-                        @click="handleEdit">
-                        {{$t('立即启用')}}
-                      </bk-button>
-                    </cmdb-auth>
-                  </div>
-                </div>
-                <div class="view-field" v-else>
-                  <div class="view-bd">
-                    <div class="field-list">
-                      <div class="field-list-table disabled">
-                        <property-config-table
-                          ref="propertyConfigTable"
-                          :readonly="true"
-                          :checked-property-id-list.sync="checkedPropertyIdList"
-                          :rule-list="initRuleList"
-                        >
-                        </property-config-table>
-                      </div>
-                      <div class="closed-mask">
-                        <div class="empty">
-                          <div class="desc">
-                            <i class="bk-cc-icon icon-cc-tips"></i>
-                            <span>{{$t('该模块已关闭属性自动应用')}}</span>
-                          </div>
-                          <div class="action">
-                            <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
-                              <bk-button
-                                outline
-                                theme="primary"
-                                slot-scope="{ disabled }"
-                                :disabled="disabled"
-                                @click="handleEdit"
-                              >
-                                {{$t('重新启用')}}
-                              </bk-button>
-                            </cmdb-auth>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </template>
-            </div>
-          </div>
-        </template>
-        <div class="empty" v-else>
-          <div class="desc">
-            <i class="bk-cc-icon icon-cc-tips"></i>
-            <span>{{$t('主机属性自动应用暂无业务模块')}}</span>
-          </div>
-          <div class="action">
-            <bk-button
-              outline
-              theme="primary"
-              @click="$routerActions.redirect({ name: hostAndServiceRouteName })"
-            >
-              {{$t('跳转创建')}}
-            </bk-button>
-          </div>
-        </div>
+      <div class="main-content" v-bkloading="{ isLoading: $loading([requestIds.rules, requestIds.properties]) }">
+        <config-details
+          ref="details"
+          v-show="!batchAction"
+          :id="targetId"
+          :biz-id="bizId"
+          :rule-list="initRuleList"
+          :has-rule="hasRule"
+          :current-node="currentNode"
+          :conflict-num="conflictNum"
+          :checked-property-id-list="checkedPropertyIdList"
+          @edit="handleEdit"
+          @view-conflict="handleViewConflict"
+          @close="handleCloseApply"
+          @delete-rule="handleDeleteRule">
+        </config-details>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+  /* eslint-disable no-underscore-dangle */
   import { mapGetters } from 'vuex'
   import sidebar from './children/sidebar.vue'
   import Bus from '@/utils/bus'
-  import propertyConfigTable from './children/property-config-table'
   import {
-    MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_BUSINESS_HOST_APPLY_EDIT,
     MENU_BUSINESS_HOST_APPLY_CONFLICT
   } from '@/dictionary/menu-symbol'
+  import { CONFIG_MODE } from '@/services/service-template/index.js'
+  import configDetails from './children/details.vue'
+
   export default {
     components: {
       sidebar,
-      propertyConfigTable
+      configDetails
     },
     data() {
       return {
-        currentModule: {},
+        currentNode: {},
         initRuleList: [],
         checkedPropertyIdList: [],
         conflictNum: 0,
         clearRules: false,
         hasRule: false,
-        batchAction: false,
-        hostAndServiceRouteName: MENU_BUSINESS_HOST_AND_SERVICE,
-        sidebarWidth: undefined,
+        layout: {
+          topologyCollapse: false,
+          sidebarWidth: undefined
+        },
+        requestIds: {
+          rules: Symbol('rules'),
+          properties: Symbol('properties'),
+          conflictCount: Symbol('conflictCount'),
+          setEnableStatus: Symbol('setEnableStatus'),
+          del: Symbol('del')
+        },
+        keepAliveQueryIds: {
+          [CONFIG_MODE.MODULE]: undefined,
+          [CONFIG_MODE.TEMPLATE]: undefined,
+        },
+        batchAction: '',
+        targetId: null
       }
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      applyEnabled() {
-        return this.currentModule.host_apply_enabled
+      mode() {
+        return this.$route.params.mode
       },
-      moduleId() {
-        return this.currentModule.bk_inst_id
+      isModuleMode() {
+        return this.mode === CONFIG_MODE.MODULE
       },
-      ruleLastEditTime() {
-        const lastTimeList = this.initRuleList.map(rule => new Date(rule.last_time).getTime())
-        const latestTime = Math.max(...lastTimeList)
-        return this.$tools.formatTime(latestTime, 'YYYY-MM-DD HH:mm:ss')
+      requestConfigs() {
+        return {
+          [this.requestIds.rules]: {
+            [CONFIG_MODE.MODULE]: {
+              action: 'hostApply/getRules',
+              payload: {
+                bizId: this.bizId,
+                params: {
+                  bk_module_ids: [this.targetId]
+                }
+              }
+            },
+            [CONFIG_MODE.TEMPLATE]: {
+              action: 'hostApply/getTemplateRules',
+              payload: {
+                params: {
+                  bk_biz_id: this.bizId,
+                  service_template_ids: [this.targetId]
+                }
+              }
+            }
+          },
+          [this.requestIds.conflictCount]: {
+            [CONFIG_MODE.MODULE]: {
+              action: 'hostApply/getConflictCount',
+              payload: {
+                params: {
+                  bk_biz_id: this.bizId,
+                  id: this.targetId
+                }
+              }
+            },
+            [CONFIG_MODE.TEMPLATE]: {
+              action: 'hostApply/getTemplateConflictCount',
+              payload: {
+                params: {
+                  bk_biz_id: this.bizId,
+                  id: this.targetId
+                }
+              }
+            }
+          },
+          [this.requestIds.setEnableStatus]: {
+            [CONFIG_MODE.MODULE]: {
+              action: 'hostApply/setEnableStatus'
+            },
+            [CONFIG_MODE.TEMPLATE]: {
+              action: 'hostApply/setTemplateEnableStatus'
+            }
+          },
+          [this.requestIds.del]: {
+            [CONFIG_MODE.MODULE]: {
+              action: 'hostApply/deleteRules'
+            },
+            [CONFIG_MODE.TEMPLATE]: {
+              action: 'hostApply/deleteTemplateRules'
+            }
+          }
+        }
       },
-      hasConflict() {
-        return this.conflictNum > 0
+      targetIdsKey() {
+        const targetIdsKeys = {
+          [CONFIG_MODE.MODULE]: 'bk_module_ids',
+          [CONFIG_MODE.TEMPLATE]: 'service_template_ids'
+        }
+        return targetIdsKeys[this.mode]
+      }
+    },
+    watch: {
+      currentNode() {
+        this.getData()
       }
     },
     created() {
@@ -205,62 +175,44 @@
       Bus.$on('topologyTree/expandChange', (lastNodeLevel) => {
         const { offsetWidth } = $resizeLayoutEl
         const visibleWidth = (lastNodeLevel + 2) * 30 + 100
-        console.log(visibleWidth)
         if (offsetWidth < visibleWidth) {
-          this.sidebarWidth = visibleWidth
+          this.layout.sidebarWidth = visibleWidth
         }
       })
     },
     methods: {
       async getData() {
+        // 重置配置表格数据
+        if (this.$refs.details) {
+          this.$refs.details.reset()
+        }
+
+        // 业务拓扑模式且模板配置了自动应用，则不需要请求数据
+        if (this.isModuleMode && this.currentNode.service_template_host_apply_enabled) {
+          return
+        }
+
         try {
           const ruleData = await this.getRules()
-
-          // 重置配置表格数据
-          if (this.$refs.propertyConfigTable) {
-            this.$refs.propertyConfigTable.reset()
-          }
 
           this.initRuleList = ruleData.info || []
           this.hasRule = ruleData.count > 0
           this.checkedPropertyIdList = this.initRuleList.map(item => item.bk_attribute_id)
 
-          if (this.hasRule && this.applyEnabled) {
-            const previewData = await this.getApplyPreview()
-            this.conflictNum = previewData.unresolved_conflict_count
+          if (this.currentNode.host_apply_enabled) {
+            const { count } = await this.getConflictCount()
+            this.conflictNum = count
           }
         } catch (e) {
           console.log(e)
         }
-      },
-      getRules() {
-        return this.$store.dispatch('hostApply/getRules', {
-          bizId: this.bizId,
-          params: {
-            bk_module_ids: [this.moduleId]
-          },
-          config: {
-            requestId: 'getHostApplyRules'
-          }
-        })
-      },
-      getApplyPreview() {
-        return this.$store.dispatch('hostApply/getApplyPreview', {
-          bizId: this.bizId,
-          params: {
-            bk_module_ids: [this.moduleId]
-          },
-          config: {
-            requestId: 'getHostApplyPreview'
-          }
-        })
       },
       async getHostPropertyList() {
         try {
           const properties = await this.$store.dispatch('hostApply/getProperties', {
             params: { bk_biz_id: this.bizId },
             config: {
-              requestId: 'getHostPropertyList',
+              requestId: this.requestIds.properties,
               fromCache: true
             }
           })
@@ -268,6 +220,19 @@
         } catch (e) {
           console.error(e)
         }
+      },
+      getRules() {
+        const requestConfig = this.requestConfigs[this.requestIds.rules][this.mode]
+        return this.$store.dispatch(requestConfig.action, {
+          config: {
+            requestId: this.requestIds.rules
+          },
+          ...requestConfig.payload
+        })
+      },
+      getConflictCount() {
+        const requestConfig = this.requestConfigs[this.requestIds.conflictCount][this.mode]
+        return this.$store.dispatch(requestConfig.action, requestConfig.payload)
       },
       emptyRules() {
         this.checkedPropertyIdList = []
@@ -292,12 +257,13 @@
             }, this.$t('保留当前自动应用策略'))
           ]),
           confirmFn: async () => {
+            const requestConfig = this.requestConfigs[this.requestIds.setEnableStatus][this.mode]
             try {
-              await this.$store.dispatch('hostApply/setEnableStatus', {
+              await this.$store.dispatch(requestConfig.action, {
                 bizId: this.bizId,
-                moduleId: this.moduleId,
                 params: {
-                  host_apply_enabled: false,
+                  ids: [this.targetId],
+                  enabled: false,
                   clear_rules: this.clearRules
                 }
               })
@@ -306,7 +272,12 @@
               if (this.clearRules) {
                 this.emptyRules()
               }
-              this.$refs.sidebar.setApplyClosed(this.moduleId, this.clearRules)
+              this.$refs.sidebar.setApplyClosed(this.targetId, { isClose: true, isClear: this.clearRules })
+
+              // 更新当前节点开启状态
+              this.currentNode.host_apply_enabled = false
+
+              Bus.$emit('host-apply-closed', this.mode, this.targetId, this.clearRules)
             } catch (e) {
               console.log(e)
             }
@@ -317,7 +288,7 @@
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY_CONFLICT,
           query: {
-            mid: this.moduleId
+            id: this.targetId
           },
           history: true
         })
@@ -325,146 +296,154 @@
       handleEdit() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY_EDIT,
+          params: {
+            mode: this.mode
+          },
           query: {
-            mid: this.moduleId
+            id: this.targetId
           },
           history: true
         })
       },
       handleSelectModule(data) {
-        this.currentModule = data
-        this.getData()
+        this.currentNode = { ...data }
+
+        const modeConfig = {
+          [CONFIG_MODE.MODULE]: {
+            targetId: data.bk_inst_id
+          },
+          [CONFIG_MODE.TEMPLATE]: {
+            targetId: data.id
+          }
+        }
+
+        this.targetId = modeConfig[this.mode].targetId
+
+        // 同步参数到路由中
+        this.$router.push({
+          query: { id: this.targetId }
+        })
+
+        // 按模式记录当前id，用于切换时还原
+        this.keepAliveQueryIds[this.mode] = this.targetId
+      },
+      handleChangeMode(mode) {
+        this.$router.push({
+          params: {
+            mode
+          },
+          query: {
+            id: this.keepAliveQueryIds[mode] ?? undefined
+          }
+        })
       },
       handleActionChange(action) {
         this.batchAction = action
+      },
+      handleDeleteRule(property) {
+        const deleteRule = async () => {
+          const requestConfig = this.requestConfigs[this.requestIds.del][this.mode]
+          try {
+            await this.$store.dispatch(requestConfig.action, {
+              bizId: this.bizId,
+              params: {
+                data: {
+                  host_apply_rule_ids: [property.__extra__.ruleId],
+                  [this.targetIdsKey]: [this.targetId]
+                }
+              }
+            })
+
+            this.$success(this.$t('删除成功'))
+
+            // 从当前列表中移除
+            const checkedIndex = this.checkedPropertyIdList.findIndex(id => id === property.id)
+            this.checkedPropertyIdList.splice(checkedIndex, 1)
+            const closed = this.checkedPropertyIdList.length === 0
+
+            // 更新配置树状态
+            this.$refs.sidebar.setApplyClosed(this.targetId, { isClose: closed, isClear: closed })
+
+            // 更新当前节点开启状态
+            this.currentNode.host_apply_enabled = !closed
+
+            // 全部删除后重新获取一次数据
+            if (closed) {
+              this.getData()
+            }
+          } catch (error) {
+            console.log(error)
+          }
+        }
+
+        if (this.checkedPropertyIdList.length > 1) {
+          deleteRule()
+          return
+        }
+
+        this.$bkInfo({
+          title: this.$t('确认删除自动应用字段？'),
+          subTitle: this.$t('自动应用字段全部删除后将关闭自动应用'),
+          confirmFn: deleteRule
+        })
       }
     }
   }
 </script>
 
 <style lang="scss" scoped>
-    .main-wrapper {
-        height: 100%;
+  .main-wrapper {
+    height: 100%;
+  }
+
+  .tree-layout {
+    width: 310px;
+    height: 100%;
+    border-right: 1px solid $cmdbLayoutBorderColor;
+    z-index: 9999;
+
+    &.is-collapse {
+      width: 0 !important;
+      border-right: none;
+      .topology-collapse-icon:before {
+        display: inline-block;
+        transform: rotate(180deg);
+      }
+
+      .host-apply-sidebar {
+        display: none;
+      }
     }
+    .topology-collapse-icon {
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      width: 16px;
+      height: 100px;
+      line-height: 100px;
+      background: $cmdbLayoutBorderColor;
+      border-radius: 0px 12px 12px 0px;
+      transform: translateY(-50%);
+      text-align: center;
+      font-size: 20px;
+      color: #fff;
+      cursor: pointer;
+      text-indent: -2px;
+      &:hover {
+        background: #699DF4;
+      }
+    }
+  }
+
+  .main-content {
+    @include scrollbar-y;
+    height: 100%;
+    padding: 0 20px;
+  }
+
+  [bk-language="en"] {
     .tree-layout {
-        width: 310px;
-        height: 100%;
-        border-right: 1px solid $cmdbLayoutBorderColor;
+      width: 370px;
     }
-    .main-content {
-        @include scrollbar-y;
-        height: 100%;
-        padding: 0 20px;
-
-        .empty {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 80%;
-
-            .desc {
-                font-size: 14px;
-                color: #63656e;
-
-                .icon-cc-tips {
-                    margin-top: -2px;
-                }
-            }
-            .action {
-                margin-top: 18px;
-            }
-        }
-    }
-
-    .config-panel {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-
-        .config-head,
-        .config-foot {
-            flex: none;
-        }
-        .config-body {
-            flex: auto;
-        }
-
-        .config-title {
-            display: flex;
-            align-items: center;
-            font-size: 14px;
-            color: #313238;
-            font-weight: 700;
-            margin-top: 20px;
-
-            .module-name {
-                @include ellipsis;
-            }
-
-            .last-edit-time {
-                flex: none;
-                font-size: 12px;
-                font-weight: 400;
-                color: #979ba5;
-                margin-left: .2em;
-            }
-        }
-
-        .view-field {
-            .field-list {
-                position: relative;
-
-                .field-list-table {
-                    &.disabled {
-                        opacity: 0.2;
-                    }
-                }
-                .closed-mask {
-                    position: absolute;
-                    width: 100%;
-                    height: 100%;
-                    min-height: 210px;
-                    left: 0;
-                    top: 0;
-                }
-            }
-            .view-bd,
-            .view-ft {
-                margin: 20px 0;
-                .bk-button {
-                    margin-right: 4px;
-                    min-width: 86px;
-                }
-            }
-        }
-
-        .conflict-num {
-            font-size: 12px;
-            color: #fff;
-            background: #c4c6cc;
-            border-radius: 8px;
-            font-style: normal;
-            padding: 0px 4px;
-            font-family: arial;
-            margin-left: 4px;
-        }
-    }
-
-    .close-apply-confirm-modal {
-        .content {
-            font-size: 14px;
-        }
-        .tips {
-            margin: 12px 0;
-        }
-    }
-</style>
-<style lang="scss">
-    .close-apply-confirm-modal {
-        .bk-dialog-sub-header {
-            padding-left: 32px !important;
-            padding-right: 32px !important;
-        }
-    }
+  }
 </style>

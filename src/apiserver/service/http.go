@@ -23,6 +23,8 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/thirdparty/monitor"
+	"configcenter/src/thirdparty/monitor/meta"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -80,6 +82,18 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 		}
 
 		blog.Errorf("*failed do request[%s url: %s] , err: %v, rid: %s", req.Request.Method, url, err, rid)
+
+		// send alarm when http request timeout, to monitor api server request
+		if strings.Contains(err.Error(), "timeout awaiting response headers") {
+			monitor.Collect(&meta.Alarm{
+				RequestID: rid,
+				Type:      meta.HttpFatalError,
+				Detail: fmt.Sprintf("request timeout, err: %v, %s, %s, cost: %d ms", err, req.Request.Method, url,
+					time.Since(start)/time.Millisecond),
+				Dimension: map[string]string{"error_type": "request timeout"},
+				Module:    common.GetIdentification(),
+			})
+		}
 
 		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
 			Msg:     fmt.Errorf("proxy request failed, %s", err.Error()),

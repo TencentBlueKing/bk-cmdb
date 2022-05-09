@@ -13,12 +13,14 @@
 package opentelemetry
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"time"
 
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/ssl"
 )
 
 var (
@@ -32,6 +34,8 @@ type OpenTelemetryConfig struct {
 	endpoint string
 	// 日志平台openTelemetry跟踪链功能的上报data_id
 	bkDataID int64
+
+	tlsConf *tls.Config
 }
 
 // InitOpenTelemetryConfig init openTelemetry config
@@ -69,5 +73,48 @@ func InitOpenTelemetryConfig() error {
 	if err != nil {
 		return fmt.Errorf("config openTelemetry.bkDataID err: %v", err)
 	}
+
+	if !cc.IsExist("openTelemetry.tls.caFile") || !cc.IsExist("openTelemetry.tls.certFile") ||
+		!cc.IsExist("openTelemetry.tls.keyFile") {
+
+		return nil
+	}
+
+	caFile, err := cc.String("openTelemetry.tls.caFile")
+	if err != nil {
+		return fmt.Errorf("get openTelemetry.tls.caFile error: %v", err)
+	}
+
+	certFile, err := cc.String("openTelemetry.tls.certFile")
+	if err != nil {
+		return fmt.Errorf("get openTelemetry.tls.certFile error: %v", err)
+	}
+
+	keyFile, err := cc.String("openTelemetry.tls.keyFile")
+	if err != nil {
+		return fmt.Errorf("get openTelemetry.tls.keyFile error: %v", err)
+	}
+
+	insecureSkipVerify, err := cc.Bool("openTelemetry.tls.insecureSkipVerify")
+	if err != nil {
+		return fmt.Errorf("get openTelemetry.tls.insecureSkipVerify error: %v", err)
+	}
+
+	var password string
+	if cc.IsExist("openTelemetry.tls.password") {
+		password, err = cc.String("openTelemetry.tls.password")
+		if err != nil {
+			return fmt.Errorf("get openTelemetry.tls.password error: %v", err)
+		}
+	}
+
+	tls, err := ssl.ClientTLSConfVerity(caFile, certFile, keyFile, password)
+	if err != nil {
+		return err
+	}
+	tls.InsecureSkipVerify = insecureSkipVerify
+
+	openTelemetryCfg.tlsConf = tls
+
 	return nil
 }

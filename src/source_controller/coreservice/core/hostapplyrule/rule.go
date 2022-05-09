@@ -29,6 +29,13 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+type ruleType string
+
+const (
+	module          ruleType = "module"
+	serviceTemplate ruleType = "serviceTemplate"
+)
+
 type hostApplyRule struct {
 	dependence HostApplyDependence
 }
@@ -44,18 +51,47 @@ func New(dependence HostApplyDependence) core.HostApplyRuleOperation {
 	return rule
 }
 
-func (p *hostApplyRule) validateModuleID(kit *rest.Kit, bizID int64, moduleID int64) errors.CCErrorCoder {
-	filter := map[string]interface{}{
-		common.BKAppIDField:    bizID,
-		common.BKModuleIDField: moduleID,
+func (p *hostApplyRule) validateID(kit *rest.Kit, bizID int64, moduleID int64,
+	serviceTemplateID int64) errors.CCErrorCoder {
+
+	if moduleID != 0 && serviceTemplateID != 0 {
+		blog.Errorf("bk_module_id and service_template_id can not exist together, rid: %s", kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_id and service_template_id")
 	}
-	count, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).Count(kit.Ctx)
+
+	if moduleID == 0 && serviceTemplateID == 0 {
+		blog.Errorf("bk_module_id or service_template_id no exist, rid: %s", kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_module_id and service_template_id")
+	}
+
+	if moduleID != 0 {
+		modFilter := map[string]interface{}{
+			common.BKAppIDField:    bizID,
+			common.BKModuleIDField: moduleID,
+		}
+		moduleCount, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(modFilter).Count(kit.Ctx)
+		if err != nil {
+			blog.Errorf("valid module id fail, db select failed, filter: %v, err: %v, rid: %s", modFilter, err, kit.Rid)
+			return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		}
+		if moduleCount == 0 {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+		}
+		return nil
+	}
+
+	tempFilter := map[string]interface{}{
+		common.BKAppIDField: bizID,
+		common.BKFieldID:    serviceTemplateID,
+	}
+	templateCount, err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(tempFilter).Count(kit.Ctx)
 	if err != nil {
-		blog.Errorf("ValidateModuleID failed, validate module id failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+		blog.Errorf("valid template id error, db select failed, filter: %v, err: %v, rid: %s", tempFilter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-	if count == 0 {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+
+	if templateCount == 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 	}
 	return nil
 }
@@ -107,25 +143,26 @@ func (p *hostApplyRule) getHostAttribute(kit *rest.Kit, bizID int64, hostAttribu
 func (p *hostApplyRule) CreateHostApplyRule(kit *rest.Kit, bizID int64, option metadata.CreateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder) {
 	now := time.Now()
 	rule := metadata.HostApplyRule{
-		ID:              0,
-		BizID:           bizID,
-		AttributeID:     option.AttributeID,
-		ModuleID:        option.ModuleID,
-		PropertyValue:   option.PropertyValue,
-		Creator:         kit.User,
-		Modifier:        kit.User,
-		CreateTime:      now,
-		LastTime:        now,
-		SupplierAccount: kit.SupplierAccount,
+		ID:                0,
+		BizID:             bizID,
+		AttributeID:       option.AttributeID,
+		ModuleID:          option.ModuleID,
+		ServiceTemplateID: option.ServiceTemplateID,
+		PropertyValue:     option.PropertyValue,
+		Creator:           kit.User,
+		Modifier:          kit.User,
+		CreateTime:        now,
+		LastTime:          now,
+		SupplierAccount:   kit.SupplierAccount,
 	}
 	if key, err := rule.Validate(); err != nil {
 		blog.Errorf("CreateHostApplyRule failed, parameter invalid, key: %s, err: %+v, rid: %s", key, err, kit.Rid)
 		return rule, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 
-	// validate bk_module_id
-	if err := p.validateModuleID(kit, bizID, rule.ModuleID); err != nil {
-		blog.Errorf("CreateHostApplyRule failed, validate bk_module_id failed, bizID: %d, moduleID: %d, err: %s, rid: %s", bizID, err.Error(), kit.Rid)
+	// validate relation id
+	if err := p.validateID(kit, bizID, rule.ModuleID, rule.ServiceTemplateID); err != nil {
+		blog.Errorf("validate relation id failed, bizID: %d, err: %s, rid: %s", bizID, err, kit.Rid)
 		return rule, err
 	}
 
@@ -203,24 +240,35 @@ func (p *hostApplyRule) UpdateHostApplyRule(kit *rest.Kit, bizID int64, ruleID i
 }
 
 // DeleteHostApplyRule delete host apply rule by condition, bizID maybe 0
-func (p *hostApplyRule) DeleteHostApplyRule(kit *rest.Kit, bizID int64, ruleIDs ...int64) errors.CCErrorCoder {
-	if len(ruleIDs) == 0 {
+func (p *hostApplyRule) DeleteHostApplyRule(kit *rest.Kit, bizID int64,
+	option metadata.DeleteHostApplyRuleOption) errors.CCErrorCoder {
+	if len(option.RuleIDs) == 0 {
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "host_apply_rule_ids")
 	}
 	filter := map[string]interface{}{
 		common.BKOwnerIDField: kit.SupplierAccount,
 		common.BKFieldID: map[string]interface{}{
-			common.BKDBIN: ruleIDs,
+			common.BKDBIN: option.RuleIDs,
 		},
 	}
 	if bizID != 0 {
 		filter[common.BKAppIDField] = bizID
 	}
+	if len(option.ModuleIDs) > 0 {
+		filter[common.BKModuleIDField] = map[string]interface{}{
+			common.BKDBIN: option.ModuleIDs,
+		}
+	}
+
+	if len(option.ServiceTemplateIDs) > 0 {
+		filter[common.BKServiceTemplateIDField] = map[string]interface{}{
+			common.BKDBIN: option.ServiceTemplateIDs,
+		}
+	}
 	if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Delete(kit.Ctx, filter); err != nil {
 		blog.Errorf("DeleteHostApplyRule failed, db remove failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
 	}
-
 	return nil
 }
 
@@ -264,7 +312,8 @@ func (p *hostApplyRule) GetHostApplyRuleByAttributeID(kit *rest.Kit, bizID, modu
 // ListHostApplyRule by condition, bizID maybe 0
 func (p *hostApplyRule) ListHostApplyRule(kit *rest.Kit, bizID int64, option metadata.ListHostApplyRuleOption) (metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder) {
 	result := metadata.MultipleHostApplyRuleResult{}
-	if option.Page.Limit > common.BKMaxPageSize && option.Page.Limit != common.BKNoLimit {
+
+	if option.Page.IsIllegal() {
 		return result, kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded)
 	}
 
@@ -274,11 +323,17 @@ func (p *hostApplyRule) ListHostApplyRule(kit *rest.Kit, bizID int64, option met
 	if bizID != 0 {
 		filter[common.BKAppIDField] = bizID
 	}
-	if option.ModuleIDs != nil {
+	if len(option.ModuleIDs) != 0 {
 		filter[common.BKModuleIDField] = map[string]interface{}{
 			common.BKDBIN: option.ModuleIDs,
 		}
 	}
+	if len(option.ServiceTemplateIDs) != 0 {
+		filter[common.BKServiceTemplateIDField] = map[string]interface{}{
+			common.BKDBIN: option.ServiceTemplateIDs,
+		}
+	}
+
 	if len(option.AttributeIDs) != 0 {
 		filter[common.BKAttributeIDField] = map[string]interface{}{
 			common.BKDBIN: option.AttributeIDs,
@@ -313,130 +368,184 @@ func (p *hostApplyRule) ListHostApplyRule(kit *rest.Kit, bizID int64, option met
 }
 
 // SearchRuleRelatedModules 用于过滤主机应用规则相关的模块
-/*
-支持场景：
-_ 支持通过模块名过滤
-_ 支持通过模块上设置的主机应用配置字段名过滤
-_ 支持通过模块上设置的主机应用配置字段值过滤，字段值需要支持数值型和枚举字段的过滤，枚举类型翻译成对应的name域再过滤
-*/
-func (p *hostApplyRule) SearchRuleRelatedModules(kit *rest.Kit, bizID int64, option metadata.SearchRuleRelatedModulesOption) ([]metadata.Module, errors.CCErrorCoder) {
-	rid := kit.Rid
+func (p *hostApplyRule) SearchRuleRelatedModules(kit *rest.Kit, bizID int64,
+	option metadata.SearchRuleRelatedModulesOption) ([]metadata.Module, errors.CCErrorCoder) {
 
-	// list modules
+	// 1.获取与查询条件中的属性关联的rule和attribute
+	rules, attributeMap, ccErr := getRuleAndAttribute(kit, bizID, option.QueryFilter, module)
+	if ccErr != nil {
+		return nil, ccErr
+	}
+
+	// 如果没有rule匹配或者是小于attribute的数量，那么说明没有module是满足查询条件的
+	if len(rules) == 0 || len(rules) < len(attributeMap) {
+		return nil, nil
+	}
+
+	// 2. 将模块与rule进行关联
+	moduleToRules, moduleIDs := getRuleRelationIDs(rules, module)
+
 	moduleFilter := map[string]interface{}{
 		common.BKAppIDField:      bizID,
 		common.BkSupplierAccount: kit.SupplierAccount,
+		common.BKModuleIDField: map[string]interface{}{
+			common.BKDBIN: moduleIDs,
+		},
 	}
 	modules := make([]metadata.Module, 0)
-	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules); err != nil {
-		blog.ErrorJSON("SearchRuleRelatedModules failed, find modules failed, filter: %s, err: %s, rid: %s", moduleFilter, err.Error(), rid)
+	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules)
+	if err != nil {
+		blog.Errorf("find modules failed, filter: %s, err: %v, rid: %s", moduleFilter, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-	moduleMap := make(map[int64]metadata.Module)
+
+	// 3.根据匹配的规则过滤出模块
+	resultModules := make([]metadata.Module, 0)
 	for _, module := range modules {
-		moduleMap[module.ModuleID] = module
+		rules, exist := moduleToRules[module.ModuleID]
+		if !exist {
+			continue
+		}
+
+		if match(kit.Ctx, rules, attributeMap, option.QueryFilter) {
+			resultModules = append(resultModules, module)
+		}
 	}
 
-	// list rules
+	return resultModules, nil
+}
+
+func getRuleAndAttribute(kit *rest.Kit, bizID int64, filter *querybuilder.QueryFilter, rType ruleType) (
+	[]metadata.HostApplyRule, map[int64]metadata.Attribute, errors.CCErrorCoder) {
+
+	attributeIDs, ccErr := getAttributeIDs(kit, filter)
+	if ccErr != nil {
+		return nil, nil, ccErr
+	}
+
+	if len(attributeIDs) == 0 {
+		return nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "query_filter")
+	}
+
 	ruleFilter := map[string]interface{}{
 		common.BKAppIDField:      bizID,
 		common.BkSupplierAccount: kit.SupplierAccount,
-	}
-	rules := make([]metadata.HostApplyRule, 0)
-	if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(ruleFilter).All(kit.Ctx, &rules); err != nil {
-		blog.ErrorJSON("SearchRuleRelatedModules failed, find rules failed, filter: %s, err: %s, rid: %s", ruleFilter, err.Error(), rid)
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		common.BKAttributeIDField: map[string]interface{}{
+			common.BKDBIN: attributeIDs,
+		},
 	}
 
-	// list attributes
-	attributeIDs := make([]int64, 0)
-	for _, item := range rules {
-		attributeIDs = append(attributeIDs, item.AttributeID)
+	switch rType {
+	case module:
+		ruleFilter[common.BKModuleIDField] = map[string]interface{}{
+			common.BKDBGT: 0,
+		}
+	case serviceTemplate:
+		ruleFilter[common.BKServiceTemplateIDField] = map[string]interface{}{
+			common.BKDBGT: 0,
+		}
 	}
+
+	var err error
+	rules := make([]metadata.HostApplyRule, 0)
+	err = mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(ruleFilter).All(kit.Ctx, &rules)
+	if err != nil {
+		blog.Errorf("find rules failed, filter: %+v, err: %v, rid: %s", ruleFilter, err, kit.Rid)
+		return nil, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
 	attributeFilter := map[string]interface{}{
 		common.BKFieldID: map[string]interface{}{
 			common.BKDBIN: attributeIDs,
 		},
 	}
 	attributes := make([]metadata.Attribute, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(attributeFilter).All(kit.Ctx, &attributes); err != nil {
-		blog.ErrorJSON("SearchRuleRelatedModules failed, find attributes failed, filter: %s, err: %s, rid: %s", attributeFilter, err.Error(), rid)
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(attributeFilter).All(kit.Ctx, &attributes)
+	if err != nil {
+		blog.Errorf("find attributes failed, filter: %+v, err: %v, rid: %s", attributeFilter, err, kit.Rid)
+		return nil, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	// attribute map
 	attributeMap := make(map[int64]metadata.Attribute)
 	for _, attribute := range attributes {
 		attributeMap[attribute.ID] = attribute
 	}
 
-	resultModuleMap := make(map[int64]bool)
-	resultModules := make([]metadata.Module, 0)
-	for _, module := range modules {
-		if matchModule(kit.Ctx, module, option) {
-			resultModuleMap[module.ModuleID] = true
-			resultModules = append(resultModules, module)
-			continue
-		}
+	return rules, attributeMap, nil
+}
+
+func getAttributeIDs(kit *rest.Kit, filter *querybuilder.QueryFilter) ([]int64, errors.CCErrorCoder) {
+	fields := filter.GetField()
+	if fields == nil || len(fields) == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "query_filter")
 	}
+
+	attributeIDs := make([]int64, len(fields))
+	for index, val := range fields {
+		attributeID, err := strconv.ParseInt(val, 10, 64)
+		if err != nil {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "query_filter")
+		}
+		attributeIDs[index] = attributeID
+	}
+
+	return attributeIDs, nil
+}
+
+func getRuleRelationIDs(rules []metadata.HostApplyRule, rType ruleType) (map[int64]map[string]metadata.HostApplyRule,
+	[]int64) {
+
+	idToRules := make(map[int64]map[string]metadata.HostApplyRule)
+	ids := make([]int64, 0)
 
 	for _, rule := range rules {
-		attribute, exist := attributeMap[rule.AttributeID]
+		var id int64
+		switch rType {
+		case module:
+			if rule.ServiceTemplateID != 0 {
+				continue
+			}
+			id = rule.ModuleID
+		case serviceTemplate:
+			if rule.ModuleID != 0 {
+				continue
+			}
+			id = rule.ServiceTemplateID
+		}
+
+		ruleMap, exist := idToRules[id]
 		if !exist {
-			continue
+			ids = append(ids, id)
+			ruleMap = make(map[string]metadata.HostApplyRule)
 		}
-		if matchRule(kit.Ctx, rule, attribute, option) {
-			module, exist := moduleMap[rule.ModuleID]
-			if !exist {
-				continue
-			}
-			// avoid repeat
-			if _, exist := resultModuleMap[module.ModuleID]; exist {
-				continue
-			}
-			resultModules = append(resultModules, module)
-		}
+
+		ruleMap[strconv.FormatInt(rule.AttributeID, 10)] = rule
+		idToRules[id] = ruleMap
 	}
-	return resultModules, nil
+
+	return idToRules, ids
 }
 
-func matchModule(ctx context.Context, module metadata.Module, option metadata.SearchRuleRelatedModulesOption) bool {
-	if option.QueryFilter == nil {
-		return true
-	}
-	return option.QueryFilter.Match(func(r querybuilder.AtomRule) bool {
-		if r.Field != metadata.TopoNodeKeyword {
-			return false
-		}
-		strValue, ok := r.Value.(string)
-		if !ok {
-			return false
-		}
-		if r.Operator == querybuilder.OperatorContains {
-			if util.CaseInsensitiveContains(module.ModuleName, strValue) {
-				return true
-			}
-		}
-		return false
-	})
-}
+func match(ctx context.Context, rules map[string]metadata.HostApplyRule, attributeMap map[int64]metadata.Attribute,
+	filter *querybuilder.QueryFilter) bool {
 
-func matchRule(ctx context.Context, rule metadata.HostApplyRule, attribute metadata.Attribute, option metadata.SearchRuleRelatedModulesOption) bool {
 	rid := util.ExtractRequestIDFromContext(ctx)
-
-	prettyValue, err := attribute.PrettyValue(ctx, rule.PropertyValue)
-	if err != nil {
-		blog.Errorf("matchRule failed, PrettyValue failed, err: %s, rid: %s", err.Error(), rid)
-		return false
-	}
-
-	return option.QueryFilter.Match(func(r querybuilder.AtomRule) bool {
-		if r.Field != strconv.FormatInt(attribute.ID, 10) {
+	return filter.Match(func(r querybuilder.AtomRule) bool {
+		rule, exist := rules[r.Field]
+		if !exist {
 			return false
 		}
+
 		if r.Operator == querybuilder.OperatorExist {
 			return true
 		}
+
+		prettyValue, err := attributeMap[rule.AttributeID].PrettyValue(ctx, rule.PropertyValue)
+		if err != nil {
+			blog.Errorf("match rule failed, PrettyValue failed, err: %v, rid: %s", err, rid)
+			return false
+		}
+
 		strValue, ok := r.Value.(string)
 		if !ok {
 			return false
@@ -461,10 +570,11 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, opt
 			Index: index,
 		}
 		ruleFilter := map[string]interface{}{
-			common.BKAppIDField:       bizID,
-			common.BkSupplierAccount:  kit.SupplierAccount,
-			common.BKAttributeIDField: item.AttributeID,
-			common.BKModuleIDField:    item.ModuleID,
+			common.BKAppIDField:             bizID,
+			common.BkSupplierAccount:        kit.SupplierAccount,
+			common.BKAttributeIDField:       item.AttributeID,
+			common.BKModuleIDField:          item.ModuleID,
+			common.BKServiceTemplateIDField: item.ServiceTemplateID,
 		}
 		count, err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(ruleFilter).Count(kit.Ctx)
 		if err != nil {
@@ -521,16 +631,17 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, opt
 			continue
 		}
 		rule := metadata.HostApplyRule{
-			ID:              int64(newRuleID),
-			BizID:           bizID,
-			ModuleID:        item.ModuleID,
-			AttributeID:     item.AttributeID,
-			PropertyValue:   item.PropertyValue,
-			Creator:         kit.User,
-			Modifier:        kit.User,
-			CreateTime:      now,
-			LastTime:        now,
-			SupplierAccount: kit.SupplierAccount,
+			ID:                int64(newRuleID),
+			BizID:             bizID,
+			ModuleID:          item.ModuleID,
+			ServiceTemplateID: item.ServiceTemplateID,
+			AttributeID:       item.AttributeID,
+			PropertyValue:     item.PropertyValue,
+			Creator:           kit.User,
+			Modifier:          kit.User,
+			CreateTime:        now,
+			LastTime:          now,
+			SupplierAccount:   kit.SupplierAccount,
 		}
 		if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Insert(kit.Ctx, rule); err != nil {
 			blog.ErrorJSON("BatchUpdateHostApplyRule failed, insert rule failed, doc: %s, err: %s, rid: %s", rule, err.Error(), rid)
@@ -554,4 +665,52 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, opt
 	}
 
 	return batchResult, nil
+}
+
+// SearchRuleRelatedServiceTemplates 用于过滤主机应用规则相关的服务模版
+func (p *hostApplyRule) SearchRuleRelatedServiceTemplates(kit *rest.Kit,
+	option metadata.RuleRelatedServiceTemplateOption) ([]metadata.SrvTemplate, errors.CCErrorCoder) {
+
+	// 1.获取与查询条件中的属性关联的rule和attribute
+	rules, attributeMap, ccErr := getRuleAndAttribute(kit, option.ApplicationID, option.QueryFilter, serviceTemplate)
+	if ccErr != nil {
+		return nil, ccErr
+	}
+
+	// 如果没有rule匹配或者是小于attribute的数量，那么说明没有service template是满足查询条件的
+	if len(rules) == 0 || len(rules) < len(attributeMap) {
+		return nil, nil
+	}
+
+	// 2. 将模版与rule进行关联
+	srvTemplateToRules, srvTemplateIDs := getRuleRelationIDs(rules, serviceTemplate)
+
+	srvTemplateFilter := map[string]interface{}{
+		common.BKAppIDField:      option.ApplicationID,
+		common.BkSupplierAccount: kit.SupplierAccount,
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBIN: srvTemplateIDs,
+		},
+	}
+	srvTemplates := make([]metadata.SrvTemplate, 0)
+	err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(srvTemplateFilter).All(kit.Ctx, &srvTemplates)
+	if err != nil {
+		blog.Errorf("find service templates failed, filter: %+v, err: %v, rid: %s", srvTemplateFilter, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	// 3.根据匹配的规则过滤出模版
+	resultSrvTemplates := make([]metadata.SrvTemplate, 0)
+	for _, srvTemplate := range srvTemplates {
+		rules, exist := srvTemplateToRules[srvTemplate.ID]
+		if !exist {
+			continue
+		}
+
+		if match(kit.Ctx, rules, attributeMap, option.QueryFilter) {
+			resultSrvTemplates = append(resultSrvTemplates, srvTemplate)
+		}
+	}
+
+	return resultSrvTemplates, nil
 }

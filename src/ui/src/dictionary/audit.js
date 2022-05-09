@@ -29,7 +29,7 @@ export const types = {
     process: t('进程')
   },
   host: {
-    host: '主机'
+    host: t('主机')
   },
   model: {
     model: t('模型'),

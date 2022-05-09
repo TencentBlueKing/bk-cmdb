@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
@@ -113,6 +114,15 @@ func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, re
 		ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
 		ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
 		ctx = context.WithValue(ctx, common.ContextRequestOwnerField, owner)
+
+		// time out after 2 minutes, in case long request does not terminate, skip ui requests like import
+		if header.Get(common.BKHTTPRequestFromWeb) != "true" {
+			var cancel context.CancelFunc
+			// task server has some task with 2 minutes' timeout, so we set the timeout of all servers to 2 minute
+			ctx, cancel = context.WithTimeout(ctx, time.Minute*2)
+			defer cancel()
+		}
+
 		if txnID := header.Get(common.TransactionIdHeader); len(txnID) != 0 {
 			// we got a request with transaction info, which is only useful for coreservice.
 			ctx = context.WithValue(ctx, common.TransactionIdHeader, txnID)

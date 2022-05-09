@@ -146,10 +146,12 @@ func (pbi *ProcPropertyBindInfo) Validate() (string, error) {
 		if err := property.Std.IP.Validate(); err != nil {
 			return fmt.Sprintf("%s[%d].%s", common.BKProcBindInfo, idx, common.BKIP), err
 		}
-		if err := property.Std.Port.Validate(); err != nil {
+		port := (*PropertyPortValue)(property.Std.Port.Value)
+
+		if err := port.Validate(); err != nil {
 			return fmt.Sprintf("%s[%d].%s", common.BKProcBindInfo, idx, common.BKPort), err
 		}
-		if err := property.Std.Protocol.Validate(); err != nil {
+		if err := property.Std.Protocol.Value.Validate(); err != nil {
 			return fmt.Sprintf("%s[%d].%s", common.BKProcBindInfo, idx, common.BKProtocol), err
 		}
 		if err := property.Std.Enable.Validate(); err != nil {
@@ -604,10 +606,12 @@ func (pbi *ProcPropertyBindInfoValue) Validate() (string, error) {
 	if err := pbi.Std.IP.Validate(); err != nil {
 		return common.BKIP, err
 	}
-	if err := pbi.Std.Port.Validate(); err != nil {
+
+	port := (*PropertyPortValue)(pbi.Std.Port.Value)
+	if err := port.Validate(); err != nil {
 		return common.BKPort, err
 	}
-	if err := pbi.Std.Protocol.Validate(); err != nil {
+	if err := pbi.Std.Protocol.Value.Validate(); err != nil {
 		return common.BKProtocol, err
 	}
 	if err := pbi.Std.Enable.Validate(); err != nil {

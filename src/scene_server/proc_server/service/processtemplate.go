@@ -36,6 +36,11 @@ func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 		return
 	}
 
+	if len(input.Processes) > common.BKMaxUpdateOrCreatePageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
 	// authorize
 	if err := ps.AuthManager.AuthorizeByServiceTemplateID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update, input.ServiceTemplateID); err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommCheckAuthorizeFailed, "authorize by service template id failed, id: %d, err: %+v", input.ServiceTemplateID, err)
@@ -53,8 +58,7 @@ func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 
 			temp, err := ps.CoreAPI.CoreService().Process().CreateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, t)
 			if err != nil {
-				blog.Errorf("create process template failed, template: +%v", *t)
-
+				blog.Errorf("create process template failed, template: %+v", *t)
 				return err
 			}
 
@@ -74,6 +78,15 @@ func (ps *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 	input := new(metadata.DeleteProcessTemplateBatchInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(input.ProcessTemplates) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "process_templates"))
+		return
+	}
+	if len(input.ProcessTemplates) > common.BKMaxDeletePageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
 	}
 

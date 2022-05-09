@@ -302,7 +302,7 @@
           return
         }
         this.$bkInfo({
-          title: this.$t('确认确定删除目录'),
+          title: this.$t('确认删除目录'),
           subTitle: this.$t('即将删除目录', { name: dir.bk_module_name }),
           extCls: 'bk-dialog-sub-header-center',
           confirmFn: async () => {

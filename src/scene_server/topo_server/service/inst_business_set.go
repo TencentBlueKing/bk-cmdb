@@ -28,6 +28,13 @@ import (
 	"configcenter/src/common/util"
 )
 
+type action string
+
+const (
+	updateAction action = "update"
+	deleteAction action = "delete"
+)
+
 // validateScopeFields validate if scope fields are all enum/organization type
 func (s *Service) validateScopeFields(kit *rest.Kit, fieldInfo *metadata.BizSetScopeParamsInfo) error {
 	// biz id field is allowed to use in biz set scope, exclude it in validation
@@ -237,6 +244,12 @@ func (s *Service) UpdateBizSet(ctx *rest.Contexts) {
 		updateData[common.BKBizSetScopeField] = opt.Data.Scope
 	}
 
+	if err := s.doAboutBuiltInBusinessSet(ctx.Kit, opt.BizSetIDs, opt.Data.Scope, updateAction); err != nil {
+		blog.Errorf("do about built-in business set error, opt: %v, err: %v, rid: %s", opt, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
 	// update biz set instances
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Logics.InstOperation().UpdateInst(ctx.Kit, bizSetFilter, updateData, common.BKInnerObjIDBizSet)
@@ -272,6 +285,12 @@ func (s *Service) DeleteBizSet(ctx *rest.Contexts) {
 		return
 	}
 
+	if err := s.doAboutBuiltInBusinessSet(ctx.Kit, opt.BizSetIDs, nil, deleteAction); err != nil {
+		blog.Errorf("do about built-in business set error, opt: %v, err: %v, rid: %s", opt, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
 	// delete bizSet instances and related resources
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Logics.InstOperation().DeleteInstByInstID(ctx.Kit, common.BKInnerObjIDBizSet, opt.BizSetIDs, false)
@@ -288,6 +307,43 @@ func (s *Service) DeleteBizSet(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
+}
+
+func (s *Service) doAboutBuiltInBusinessSet(kit *rest.Kit, bizSetIDs []int64, scope *metadata.BizSetScope,
+	ac action) error {
+
+	condition := &metadata.Condition{
+		Condition: mapstr.MapStr{
+			common.BKBizSetIDField: mapstr.MapStr{common.BKDBIN: bizSetIDs},
+			common.BKDefaultField:  common.DefaultResBusinessSetFlag,
+		},
+	}
+
+	resp, err := s.Engine.CoreAPI.CoreService().Instance().CountInstances(kit.Ctx, kit.Header,
+		common.BKInnerObjIDBizSet, condition)
+	if err != nil {
+		blog.Errorf("count business set failed, cond: %v, err: %v, rid: %s", condition, err, kit.Rid)
+		return err
+	}
+
+	switch ac {
+	case deleteAction:
+		// check if the built-in business set is included, if deleted, it will affect the use of other platforms.
+		if resp.Count > 0 {
+			blog.Errorf("can not delete built-in business set, ids: %v, rid: %s", bizSetIDs, kit.Rid)
+			return kit.CCError.CCError(common.CCErrorTopoForbiddenDeleteBuiltInBusinessSet)
+		}
+
+	case updateAction:
+		// check if update the built-in business set scope, if it changes, it will affect the use of other platforms.
+		if resp.Count > 0 && scope != nil {
+			blog.Errorf("can not update built-in business set scope, ids: %v, scope: %v, rid: %s", bizSetIDs, scope,
+				kit.Rid)
+			return kit.CCError.CCError(common.CCErrorTopoForbiddenUpdateBuiltInBusinessSetScope)
+		}
+	}
+
+	return nil
 }
 
 // PreviewBusinessSet  此预览接口用于创建业务集过程中的预览，支持进行条件匹配
@@ -717,7 +773,7 @@ func (s *Service) SearchBusinessSet(ctx *rest.Contexts) {
 
 	res, err := s.Logics.InstOperation().FindInst(ctx.Kit, common.BKInnerObjIDBizSet, query)
 	if err != nil {
-		blog.Errorf("failed to find the biz set, query: %s, err: %v, rid: %s", query, err, ctx.Kit.Rid)
+		blog.Errorf("failed to find the biz set, query: %+v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -966,4 +1022,31 @@ func (s *Service) CountBizSetTopoHostAndSrvInst(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(result)
+}
+
+// ListAllBusinessSetSimplify list all businesses set  with return only id and name.
+// Note: This function is a special function provided to the front-end alone. It is used for users to apply for
+// permissions when they perceive that they do not have permission. This function is not authenticated and cannot
+// be used in other scenarios.
+func (s *Service) ListAllBusinessSetSimplify(ctx *rest.Contexts) {
+
+	// get the full business set id and name.
+	page := metadata.BasePage{
+		Limit: common.BKNoLimit,
+	}
+
+	query := &metadata.QueryCondition{
+		Fields: []string{common.BKBizSetIDField, common.BKBizSetNameField},
+		Page:   page,
+	}
+
+	res, err := s.Logics.InstOperation().FindInst(ctx.Kit, common.BKInnerObjIDBizSet, query)
+	if err != nil {
+		blog.Errorf("failed to find the biz set, query: %+v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(res)
+	return
 }

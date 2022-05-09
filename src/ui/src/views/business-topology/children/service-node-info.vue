@@ -434,7 +434,7 @@
       async handleDelete() {
         const count = await this.getSelectedNodeHostCount()
         if (count) {
-          this.$error(this.$t('目标包含主机, 不允许删除'))
+          this.$error(this.$t('目标包含主机，不允许删除'))
           return
         }
         this.$bkInfo({

@@ -91,7 +91,8 @@ func (s *Service) initFindhost(web *restful.WebService) {
 		Handler: s.GetHostRelationsWithMainlineTopoInstance})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/service_template",
 		Handler: s.ListServiceTemplateIDsByHost})
-
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/total_mainline_topo/biz/{bk_biz_id}",
+		Handler: s.ListHostTotalMainlineTopo})
 	utility.AddToRestfulWebService(web)
 
 }
@@ -135,13 +136,46 @@ func (s *Service) initHostapplyrule(web *restful.WebService) {
 	// 主机属性自动应用
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/host_apply_rule/bk_biz_id/{bk_biz_id}", Handler: s.CreateHostApplyRule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}", Handler: s.UpdateHostApplyRule})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/host_apply_rule/bk_biz_id/{bk_biz_id}", Handler: s.DeleteHostApplyRule})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path:    "/host/deletemany/module/host_apply_rule/bk_biz_id/{bk_biz_id}",
+		Handler: s.DeleteHostApplyRule})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}/", Handler: s.GetHostApplyRule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}", Handler: s.ListHostApplyRule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/host_apply_rule/bk_biz_id/{bk_biz_id}/batch_create_or_update", Handler: s.BatchCreateOrUpdateHostApplyRule})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/host_apply_plan/bk_biz_id/{bk_biz_id}/preview", Handler: s.GenerateApplyPlan})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/updatemany/host_apply_plan/bk_biz_id/{bk_biz_id}/run", Handler: s.RunHostApplyRule})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/createmany/module/host_apply_plan/preview",
+		Handler: s.GenerateModuleApplyPlan})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}/host_related_rules", Handler: s.ListHostRelatedApplyRule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/find/service_template/host_apply_status",
+		Handler: s.GetTemplateHostApplyStatus})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/findmany/service_template/host_apply_rule",
+		Handler: s.GetServiceTemplateHostApplyRule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/host/createmany/service_template/host_apply_plan/preview", Handler: s.GenerateTemplateApplyPlan})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/host/findmany/module/host_apply_plan/invalid_host_count", Handler: s.GetModuleInvalidHostCount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/host/findmany/service_template/host_apply_plan/invalid_host_count",
+		Handler: s.GetServiceTemplateInvalidHostCount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/host/findmany/service_template/host_apply_rule_count",
+		Handler: s.GetServiceTemplateHostApplyRuleCount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/host/findmany/module/get_module_final_rules", Handler: s.GetModuleFinalRules})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/host/updatemany/module/host_apply_plan/run",
+		Handler: s.UpdateModuleHostApplyRule})
+
+	// task Execute asynchronous template host auto-apply tasks.
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/updatemany/module/host_apply_plan/task",
+		Handler: s.ExecModuleHostApplyRule})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/host/findmany/module/host_apply_plan/status",
+		Handler: s.GetHostApplyTaskStatus})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -216,7 +250,9 @@ func (s *Service) initTransfer(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/", Handler: s.TransferHostWithAutoClearServiceInstance})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/preview/", Handler: s.TransferHostWithAutoClearServiceInstancePreview})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/preview/",
+		Handler: s.TransferHostWithAutoClearServiceInstancePreview})
 
 	utility.AddToRestfulWebService(web)
 }

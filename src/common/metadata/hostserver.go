@@ -88,6 +88,10 @@ type HostsModuleRelation struct {
 	IsIncrement   bool    `json:"is_increment"`
 	// DisableAutoCreateSvcInst disable auto create service instance when transfer to a module with process in template
 	DisableAutoCreateSvcInst bool `json:"disable_auto_create"`
+
+	// DisableTransferHostAutoApply when this flag is true, it means that the user specifies not to automatically apply
+	// the host in the host transfer scenario.
+	DisableTransferHostAutoApply bool
 }
 
 type HostModuleConfig struct {
@@ -821,8 +825,14 @@ type TransferHostWithAutoClearServiceInstanceOption struct {
 }
 
 type TransferOptions struct {
-	ServiceInstanceOptions     ServiceInstanceOptions      `json:"service_instance_options"`
+	ServiceInstanceOptions ServiceInstanceOptions `json:"service_instance_options"`
+
+	// HostApplyConflictResolvers update the attribute value of the host with the host as the dimension.
 	HostApplyConflictResolvers []HostApplyConflictResolver `json:"host_apply_conflict_resolvers"`
+
+	// HostApplyTransPropertyRule update attributes with the dimension of the rule, which is used to update the host
+	// attribute value in the host transfer scenario。
+	HostApplyTransPropertyRule HostApplyTransRules `json:"host_apply_trans_rule"`
 }
 
 type HostTransferPlan struct {
@@ -867,10 +877,11 @@ type UpdateHostCloudAreaFieldOption struct {
 
 // UpdateHostPropertyBatchParameter batch update host property parameter
 type UpdateHostPropertyBatchParameter struct {
-	Update []updateHostProperty `json:"update"`
+	Update []UpdateHostProperty `json:"update"`
 }
 
-type updateHostProperty struct {
+// UpdateHostProperty host property parameter
+type UpdateHostProperty struct {
 	HostID     int64                  `json:"bk_host_id"`
 	Properties map[string]interface{} `json:"properties"`
 }
@@ -878,6 +889,92 @@ type updateHostProperty struct {
 // HostIDArray hostID array struct
 type HostIDArray struct {
 	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids" mapstructure:"bk_host_ids"`
+}
+
+type customTopoFilter struct {
+	ObjectID string                    `json:"bk_obj_id"`
+	Filter   *querybuilder.QueryFilter `json:"filter"`
+}
+
+// FindHostTotalTopo find host total topo parameter
+type FindHostTotalTopo struct {
+	MainlinePropertyFilter []customTopoFilter        `json:"mainline_property_filters"`
+	SetPropertyFilter      *querybuilder.QueryFilter `json:"set_property_filter"`
+	ModulePropertyFilter   *querybuilder.QueryFilter `json:"module_property_filter"`
+	HostPropertyFilter     *querybuilder.QueryFilter `json:"host_property_filter"`
+	Fields                 []string                  `json:"fields"`
+	Page                   BasePage                  `json:"page"`
+}
+
+// Validate validate FindHostTotalTopo params whether correct
+func (f *FindHostTotalTopo) Validate(errProxy errors.DefaultCCErrorIf) errors.CCErrorCoder {
+
+	if f.Page.Limit <= 0 {
+		return errProxy.CCErrorf(common.CCErrCommParamsNeedSet, "page.limit")
+	}
+	if f.Page.Limit > common.BKMaxInstanceLimit {
+		return errProxy.CCErrorf(common.CCErrCommXXExceedLimit, "page.limit", common.BKMaxInstanceLimit)
+	}
+
+	opt := &querybuilder.RuleOption{NeedSameSliceElementType: true}
+	for _, objFilter := range f.MainlinePropertyFilter {
+
+		if objFilter.Filter == nil || len(objFilter.ObjectID) == 0 {
+			blog.Errorf("get object filter failed, filter is empty or object ID didn't provide")
+			return errProxy.CCErrorf(common.CCErrCommParamsInvalid, "mainline_property_filters")
+		}
+
+		if key, err := objFilter.Filter.Validate(opt); err != nil {
+			return errProxy.CCErrorf(common.CCErrCommParamsInvalid, fmt.Sprintf("%s of %s", key, objFilter.ObjectID))
+		}
+
+		if objFilter.Filter.GetDeep() > querybuilder.MaxDeep {
+			return errProxy.CCErrorf(common.CCErrCommXXExceedLimit,
+				fmt.Sprintf("filter.rule of %s", objFilter.ObjectID), querybuilder.MaxDeep)
+		}
+	}
+
+	if f.SetPropertyFilter != nil {
+		if key, err := f.SetPropertyFilter.Validate(opt); err != nil {
+			blog.Errorf("valid set property filter failed, err: %v", err)
+			return errProxy.CCErrorf(common.CCErrCommParamsInvalid, fmt.Sprintf("set_property_filter.%s", key))
+		}
+		if f.SetPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			return errProxy.CCErrorf(common.CCErrCommXXExceedLimit, "set_property_filter.rules",
+				querybuilder.MaxDeep)
+		}
+	}
+
+	if f.ModulePropertyFilter != nil {
+		if key, err := f.ModulePropertyFilter.Validate(opt); err != nil {
+			blog.Errorf("valid module property filter failed, err: %v", err)
+			return errProxy.CCErrorf(common.CCErrCommParamsInvalid, fmt.Sprintf("module_property_filter.%s", key))
+		}
+		if f.ModulePropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			return errProxy.CCErrorf(common.CCErrCommXXExceedLimit, "module_property_filter.rules",
+				querybuilder.MaxDeep)
+		}
+	}
+
+	if f.HostPropertyFilter != nil {
+		if key, err := f.HostPropertyFilter.Validate(opt); err != nil {
+			return errProxy.CCErrorf(common.CCErrCommParamsInvalid, fmt.Sprintf("%s of %s", key,
+				common.BKInnerObjIDHost))
+		}
+
+		if f.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			return errProxy.CCErrorf(common.CCErrCommXXExceedLimit, fmt.Sprintf("filter.rule of %s",
+				common.BKInnerObjIDHost), querybuilder.MaxDeep)
+		}
+	}
+
+	return nil
+}
+
+// HostMainlineTopoResult result of host mainline topo
+type HostMainlineTopoResult struct {
+	Count int                  `json:"count"`
+	Info  []HostDetailWithTopo `json:"info"`
 }
 
 // Validate validate hostIDs length
