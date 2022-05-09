@@ -60,9 +60,9 @@ const (
 	// needInternalDebug is flag for internal debug.
 	needInternalDebug = false
 
-	// defaulMonitorDelayQueueBatchNum by default, the maximum number of members fetched from the delayed queue at
+	// defaultHostSnapDelayQueueBatchNum by default, the maximum number of members fetched from the delayed queue at
 	// one time.
-	defaulMonitorDelayQueueBatchNum = 200
+	defaultHostSnapDelayQueueBatchNum = 200
 )
 
 // SimplePorter is simple porter handles message from collectors.
@@ -263,11 +263,12 @@ func (p *SimplePorter) getMonitorMsgFromDelayQueue() {
 
 	for {
 		// 1、get 200 message data from the delay queue by default each time for compensation processing.
-		msgs, err := p.redisCli.ZRangeWithScores(context.Background(), common.RedisMonitorMsgDelayQueue, 0,
-			defaulMonitorDelayQueueBatchNum).Result()
+		msgs, err := p.redisCli.ZRangeWithScores(context.Background(), common.RedisHostSnapMsgDelayQueue, 0,
+			defaultHostSnapDelayQueueBatchNum).Result()
 		if err != nil {
 			blog.Errorf("get members failed in delay queue, err: %v", err)
-			time.Sleep(10 * time.Second)
+			time.Sleep(2 * time.Second)
+			continue
 		}
 
 		var wg sync.WaitGroup
@@ -284,7 +285,7 @@ func (p *SimplePorter) getMonitorMsgFromDelayQueue() {
 				}()
 				// if the timestamp of the data is 10 minutes ago, drop it directly。
 				if msg.Score < float64(time.Now().Add(-time.Minute*10).Unix()) {
-					err := p.redisCli.ZRem(context.Background(), common.RedisMonitorMsgDelayQueue, msg).Err()
+					err := p.redisCli.ZRem(context.Background(), common.RedisHostSnapMsgDelayQueue, msg).Err()
 					if err != nil {
 						blog.Errorf("remove member failed, msg: %v,err: %v", msg, err)
 						return
@@ -296,14 +297,14 @@ func (p *SimplePorter) getMonitorMsgFromDelayQueue() {
 				if !ok {
 					blog.Errorf("convert data msg: %v, failed, type: %v", msg, reflect.TypeOf(msg))
 					// if the type of element taken from the queue is wrong, delete it directly from the queue
-					err := p.redisCli.ZRem(context.Background(), common.RedisMonitorMsgDelayQueue, msg).Err()
+					err := p.redisCli.ZRem(context.Background(), common.RedisHostSnapMsgDelayQueue, msg).Err()
 					if err != nil {
 						blog.Errorf("remove delay queue member failed, msg: %v, err: %v", msg, err)
 					}
 					return
 				}
 				// process legitimate messages in the delay queue
-				p.handleCollectorMsg(&val, metadata.MonitorDataSourcesDelayQueue)
+				p.handleCollectorMsg(&val, metadata.HostSnapDataSourcesDelayQueue)
 			}(msg)
 		}
 
@@ -318,7 +319,7 @@ func (p *SimplePorter) analyzeLoop() {
 	blog.Infof("SimplePorter[%s]| start a new analyze loop now!", p.name)
 
 	for msg := range p.msgChan {
-		p.handleCollectorMsg(msg, metadata.MonitorDataSourcesChannel)
+		p.handleCollectorMsg(msg, metadata.HostSnapDataSourcesChannel)
 	}
 }
 

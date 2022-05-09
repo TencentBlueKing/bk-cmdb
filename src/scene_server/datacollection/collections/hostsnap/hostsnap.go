@@ -56,7 +56,9 @@ const (
 )
 
 var (
-	//todo: 这里有一个问题，目前在动态IP场景下是会将上报的ip地址都放到innerIP中
+	// todo: 这里有一个问题，目前在动态IP场景下是会将上报的ip地址都放到innerIP中，后续可能涉及到调整
+	// Note:Among them, ipv4 and ipv6 addresses involve updating in dynamic scenarios, but are not allowed to be updated
+	// in static ip scenarios, and require special processing
 	compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_disk", "bk_mem", "bk_os_type", "bk_os_name",
 		"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit",
 		common.BKHostInnerIPField, common.BKHostInnerIPv6Field}
@@ -152,7 +154,7 @@ func (h *HostSnap) putDataIntoDelayQueue(rid, msg string) error {
 
 	// There is a question here, is the member's setting agentID or msg:
 	// 1. If msg is set as a member, there are two problems:
-	// a. What if a new msg corresponding to the same antigenID comes up at this time? Because the queue is old at this
+	// a. What if a new msg corresponding to the same agentID comes up at this time? Because the queue is old at this
 	// time, the timestamp will be judged later in the processing. no problem.
 	// b. If another msg comes up at this time, and the corresponding host is not found in the database for this msg, it
 	// will still be added to the delay queue at this time. At this time, the timestamp will be compared when it is
@@ -172,7 +174,7 @@ func (h *HostSnap) putDataIntoDelayQueue(rid, msg string) error {
 		Member: msg,
 	}
 
-	if err := h.redisCli.ZAdd(context.Background(), common.RedisMonitorMsgDelayQueue, body).Err(); err != nil {
+	if err := h.redisCli.ZAdd(context.Background(), common.RedisHostSnapMsgDelayQueue, body).Err(); err != nil {
 		return err
 	}
 
@@ -222,7 +224,7 @@ func checkMsgInfoValid(rid, agentID, host string, elements []gjson.Result) error
 	// there must be an addressing field, the default is static.
 	if !elements[3].Exists() {
 		blog.Errorf("snapshot analyze, but host addressing not exist, host: %s, rid: %s", host, rid)
-		return errors.New("host id not exist")
+		return errors.New("host addressing not exist")
 	}
 
 	// If the data is obtained through ip+cloudID, it means that there is no agentID in the data reported at this time,
@@ -249,7 +251,7 @@ func checkMsgInfoValid(rid, agentID, host string, elements []gjson.Result) error
 	return nil
 }
 
-func (h *HostSnap) getHostInfoFromDB(header http.Header, rid, agentID, msg, sourceType string, ips []string,
+func (h *HostSnap) getHostDetail(header http.Header, rid, agentID, msg, sourceType string, ips []string,
 	cloudID int64) (host string, err error) {
 
 	if agentID != "" {
@@ -260,10 +262,10 @@ func (h *HostSnap) getHostInfoFromDB(header http.Header, rid, agentID, msg, sour
 			}
 			return "", errors.New("no host founded")
 		}
-		if sourceType == metadata.MonitorDataSourcesDelayQueue {
+		if sourceType == metadata.HostSnapDataSourcesDelayQueue {
 			// If the data is obtained from the delay queue, then it means that the host information that could not be
 			// found before can be found now, and the data needs to be deleted from the delay queue.
-			err := h.redisCli.ZRem(context.Background(), common.RedisMonitorMsgDelayQueue, msg).Err()
+			err := h.redisCli.ZRem(context.Background(), common.RedisHostSnapMsgDelayQueue, msg).Err()
 			if err != nil {
 				blog.Errorf("remove member failed, msg: %v, err: %v, rid: %s", msg, err, rid)
 				return "", nil
@@ -294,7 +296,7 @@ func (h *HostSnap) Analyze(msg *string, sourceType string) (bool, error) {
 		return false, err
 	}
 
-	host, err := h.getHostInfoFromDB(header, rid, agentID, *msg, sourceType, ipv4, cloudID)
+	host, err := h.getHostDetail(header, rid, agentID, *msg, sourceType, ipv4, cloudID)
 	if err != nil {
 		blog.Errorf("get host detail failed, agentID: %s, ips: %v, err: %v, rid: %s", agentID, ipv4, err, rid)
 		return false, err
@@ -389,7 +391,7 @@ type updateHostOption struct {
 
 func (h *HostSnap) updateHostWithColletorMsg(header http.Header, rid string, hostOption updateHostOption) error {
 
-	txnErr := h.CoreAPI.CoreService().Txn().AutoRunTxn(context.Background(), header, func() error {
+	txnErr := h.CoreAPI.CoreService().Txn().AutoRunTxn(h.ctx, header, func() error {
 		// get audit interface of host.
 		audit := auditlog.NewHostAudit(h.CoreAPI.CoreService())
 		kit := &rest.Kit{
@@ -559,23 +561,23 @@ func getHostInfoFromMsgV10(val *gjson.Result, innerIP, outerIP string) *hostDisc
 	hostMsg.version = val.Get("data.system.platVer").String()
 
 	switch strings.ToLower(hostMsg.ostype) {
-	case common.HostOSTypeLinuxName:
+	case common.HostOSTypeName[common.HostOSTypeEnumLinux]:
 		hostMsg.version = strings.Replace(hostMsg.version, ".x86_64", "", 1)
 		hostMsg.version = strings.Replace(hostMsg.version, ".i386", "", 1)
 		hostMsg.osname = fmt.Sprintf("%s %s", hostMsg.ostype, hostMsg.platform)
 		hostMsg.ostype = common.HostOSTypeEnumLinux
-	case common.HostOSTypeWindowsName:
+	case common.HostOSTypeName[common.HostOSTypeEnumWindows]:
 		hostMsg.version = strings.Replace(hostMsg.version, "Microsoft ", "", 1)
 		hostMsg.platform = strings.Replace(hostMsg.platform, "Microsoft ", "", 1)
 		hostMsg.osname = fmt.Sprintf("%s", hostMsg.platform)
 		hostMsg.ostype = common.HostOSTypeEnumWindows
-	case common.HostOSTypeAIXName:
+	case common.HostOSTypeName[common.HostOSTypeEnumAIX]:
 		hostMsg.osname = hostMsg.platform
 		hostMsg.ostype = common.HostOSTypeEnumAIX
-	case common.HostOSTypeUNIXName:
+	case common.HostOSTypeName[common.HostOSTypeEnumUNIX]:
 		hostMsg.osname = hostMsg.platform
 		hostMsg.ostype = common.HostOSTypeEnumUNIX
-	case common.HostOSTypeSolarisName:
+	case common.HostOSTypeName[common.HostOSTypeEnumSolaris]:
 		hostMsg.osname = hostMsg.platform
 		hostMsg.ostype = common.HostOSTypeEnumSolaris
 	default:
@@ -645,23 +647,23 @@ func getOsInfoFromMsg(val *gjson.Result, innerIP, outerIP string) *hostDiscoverM
 	hostMsg.version = val.Get("data.system.info.platformVersion").String()
 
 	switch strings.ToLower(hostMsg.ostype) {
-	case common.HostOSTypeLinuxName:
+	case common.HostOSTypeName[common.HostOSTypeEnumLinux]:
 		hostMsg.version = strings.Replace(hostMsg.version, ".x86_64", "", 1)
 		hostMsg.version = strings.Replace(hostMsg.version, ".i386", "", 1)
 		hostMsg.osname = fmt.Sprintf("%s %s", hostMsg.ostype, hostMsg.platform)
 		hostMsg.ostype = common.HostOSTypeEnumLinux
-	case common.HostOSTypeWindowsName:
+	case common.HostOSTypeName[common.HostOSTypeEnumWindows]:
 		hostMsg.version = strings.Replace(hostMsg.version, "Microsoft ", "", 1)
 		hostMsg.platform = strings.Replace(hostMsg.platform, "Microsoft ", "", 1)
 		hostMsg.osname = fmt.Sprintf("%s", hostMsg.platform)
 		hostMsg.ostype = common.HostOSTypeEnumWindows
-	case common.HostOSTypeAIXName:
+	case common.HostOSTypeName[common.HostOSTypeEnumAIX]:
 		hostMsg.osname = hostMsg.platform
 		hostMsg.ostype = common.HostOSTypeEnumAIX
-	case common.HostOSTypeUNIXName:
+	case common.HostOSTypeName[common.HostOSTypeEnumUNIX]:
 		hostMsg.osname = hostMsg.platform
 		hostMsg.ostype = common.HostOSTypeEnumUNIX
-	case common.HostOSTypeSolarisName:
+	case common.HostOSTypeName[common.HostOSTypeEnumSolaris]:
 		hostMsg.osname = hostMsg.platform
 		hostMsg.ostype = common.HostOSTypeEnumSolaris
 	default:
@@ -991,7 +993,7 @@ func getIPsFromMsg(val *gjson.Result) ([]string, []string) {
 	ipv6Map := make(map[string]struct{})
 
 	rootIP := val.Get("ip").String()
-	if !strings.HasPrefix(rootIP, metadata.IPv4LoopBackIp) && rootIP != metadata.IPv6LoopBackIp &&
+	if !strings.HasPrefix(rootIP, metadata.IPv4LoopBackIpPrefix) && rootIP != metadata.IPv6LoopBackIp &&
 		net.ParseIP(rootIP) != nil {
 		if strings.Contains(rootIP, ":") {
 			ipv6Map[rootIP] = struct{}{}
@@ -1004,7 +1006,7 @@ func getIPsFromMsg(val *gjson.Result) ([]string, []string) {
 	for _, addrs := range interfaces {
 		for _, addr := range addrs.Array() {
 			ip := strings.Split(addr.String(), "/")[0]
-			if strings.HasPrefix(ip, metadata.IPv4LoopBackIp) || ip == metadata.IPv6LoopBackIp {
+			if strings.HasPrefix(ip, metadata.IPv4LoopBackIpPrefix) || ip == metadata.IPv6LoopBackIp {
 				continue
 			}
 

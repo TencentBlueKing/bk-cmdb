@@ -13,10 +13,10 @@
 package metadata
 
 const (
-	// MonitorDataSourcesDelayQueue monitoring and reporting data comes from the delay queue.
-	MonitorDataSourcesDelayQueue = "delayQueue"
-	// MonitorDataSourcesChannel the source of monitoring and reporting data is channels such as redis or kafka.
-	MonitorDataSourcesChannel = "channel"
+	// HostSnapDataSourcesDelayQueue host snap data comes from the delay queue.
+	HostSnapDataSourcesDelayQueue = "delay_queue"
+	// HostSnapDataSourcesChannel the source of host snap data is channels such as redis or kafka.
+	HostSnapDataSourcesChannel = "channel"
 )
 
 type AddDeviceResult struct {

@@ -982,9 +982,9 @@ const (
 	EventCacheEventIDKey = BKCacheKeyV3Prefix + "event:inst_id"
 	RedisSnapKeyPrefix   = BKCacheKeyV3Prefix + "snapshot:"
 
-	// RedisMonitorMsgDelayQueue the monitor reports data, and queries the name of the key placed in the delay queue in
+	// RedisHostSnapMsgDelayQueue the monitor reports data, and queries the name of the key placed in the delay queue in
 	// the case of host failure.
-	RedisMonitorMsgDelayQueue = BKCacheKeyV3Prefix + "monitor_msg:delay_queue"
+	RedisHostSnapMsgDelayQueue = BKCacheKeyV3Prefix + "host_snap:delay_queue"
 )
 
 // api cache keys
@@ -1071,13 +1071,15 @@ const (
 	HostOSTypeEnumSolaris = "5"
 )
 
-const (
-	HostOSTypeLinuxName   = "linux"
-	HostOSTypeWindowsName = "windows"
-	HostOSTypeAIXName     = "aix"
-	HostOSTypeUNIXName    = "unix"
-	HostOSTypeSolarisName = "solaris"
-)
+// HostOSTypeName Host system enum and name association
+var HostOSTypeName = map[string]string{
+	HostOSTypeEnumLinux:   "linux",
+	HostOSTypeEnumWindows: "windows",
+	HostOSTypeEnumAIX:     "aix",
+	HostOSTypeEnumUNIX:    "unix",
+	HostOSTypeEnumSolaris: "solaris",
+}
+
 const (
 	MaxProcessPrio = 10000
 	MinProcessPrio = -100

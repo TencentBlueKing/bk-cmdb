@@ -65,6 +65,7 @@ func (h hostKeyGenerator) IPCloudIDKey(ip string, cloudID int64) string {
 func (h hostKeyGenerator) AgentIDKey(agentID string) string {
 	return h.namespace + ":agent_id:" + agentID
 }
+
 func (h hostKeyGenerator) ListDoneKey() string {
 	return h.namespace + ":listdone"
 }

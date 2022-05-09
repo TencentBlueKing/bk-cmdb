@@ -28,7 +28,7 @@ import (
 // NOTE: this script is fragile, the key depends on the way that host key
 // been generated.
 // So, when you change the key pattern, then you need to change this script.
-const getHostWithIpScript = `
+const getHostWithKeyScript = `
 local host_id = redis.pcall('get', KEYS[1]); 
 
 if (host_id == false) then 
@@ -46,14 +46,14 @@ end;
 return detail
 `
 
-const hostCloudIdRelationNotExitError = "host relation not exist"
+const hostRelationNotExitError = "host relation not exist"
 const hostDetailNotExitError = "host detail not exist"
 
 func (c *Client) getHostDetailWithAgentID(rid string, agentID string) (*string, error) {
 	keys := hostKey.AgentIDKey(agentID)
 
-	result, err := redis.Client().Eval(context.Background(), getHostWithIpScript, []string{keys},
-		hostCloudIdRelationNotExitError, hostDetailNotExitError).Result()
+	result, err := redis.Client().Eval(context.Background(), getHostWithKeyScript, []string{keys},
+		hostRelationNotExitError, hostDetailNotExitError).Result()
 	if err != nil {
 		return nil, fmt.Errorf("run getHostWithIpScript in redis failed, err: %v", err)
 	}
@@ -63,7 +63,7 @@ func (c *Client) getHostDetailWithAgentID(rid string, agentID string) (*string, 
 	}
 
 	switch resp {
-	case hostCloudIdRelationNotExitError:
+	case hostRelationNotExitError:
 		blog.V(5).Infof("run getHostWithIpScript in redis, but not find key: %s, rid: %s", keys, rid)
 	case hostDetailNotExitError:
 		blog.V(5).Infof("not find host detail in redis key pattern: %s, rid: %s", hostKey.HostDetailKey(-1), rid)
@@ -91,11 +91,11 @@ func (c *Client) getHostDetailWithAgentID(rid string, agentID string) (*string, 
 	return &detailStr, nil
 }
 
-func (c *Client) getHostDetailWithIP(rid string, innerIP string, cloudID int64, agentID string) (*string, error) {
+func (c *Client) getHostDetailWithIP(rid string, innerIP string, cloudID int64) (*string, error) {
 	detailStr := ""
 	keys := hostKey.IPCloudIDKey(innerIP, cloudID)
-	result, err := redis.Client().Eval(context.Background(), getHostWithIpScript, []string{keys}, hostCloudIdRelationNotExitError,
-		hostDetailNotExitError).Result()
+	result, err := redis.Client().Eval(context.Background(), getHostWithKeyScript, []string{keys},
+		hostRelationNotExitError, hostDetailNotExitError).Result()
 
 	if err != nil {
 		return nil, fmt.Errorf("run getHostWithIpScript in redis failed, err: %v", err)
@@ -107,7 +107,7 @@ func (c *Client) getHostDetailWithIP(rid string, innerIP string, cloudID int64, 
 	}
 
 	switch resp {
-	case hostCloudIdRelationNotExitError:
+	case hostRelationNotExitError:
 		// host inner ip and cloud id relation not exist
 		blog.V(5).Infof("run getHostWithIpScript in redis, but not find key: %s, rid: %s", keys, rid)
 	case hostDetailNotExitError:
@@ -129,7 +129,6 @@ func (c *Client) getHostDetailWithIP(rid string, innerIP string, cloudID int64, 
 		hostID:      hostID,
 		cloudID:     cloudID,
 		ip:          innerIP,
-		agentID:     agentID,
 		addressType: common.BKAddressingStatic,
 		detail:      string(detail),
 	}

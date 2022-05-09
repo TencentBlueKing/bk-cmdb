@@ -145,8 +145,7 @@ func (c *Client) ListHostWithHostIDs(ctx context.Context, opt *metadata.ListWith
 	return list, nil
 }
 
-// GetHostWithAgentID is to get host with the ip and cloud id it belongs.
-// the ip must be a unique one, can not be a ip string with multiple ip separated with comma.
+// GetHostWithAgentID is to get host with the agent id.
 func (c *Client) GetHostWithAgentID(ctx context.Context, opt *metadata.SearchHostOption) (string, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if opt.AgentID == "" {
@@ -173,7 +172,7 @@ func (c *Client) GetHostWithInnerIP(ctx context.Context, opt *metadata.SearchHos
 		return "", errors.New("invalid ip address with multiple ip")
 	}
 
-	detail, err := c.getHostDetailWithIP(rid, opt.InnerIP, opt.CloudID, opt.AgentID)
+	detail, err := c.getHostDetailWithIP(rid, opt.InnerIP, opt.CloudID)
 	if err != nil {
 		blog.Errorf("get host with inner ip: %s failed, err：%v, rid: %s", opt.InnerIP, err, rid)
 		return "", err

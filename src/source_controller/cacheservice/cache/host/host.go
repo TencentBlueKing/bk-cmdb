@@ -100,7 +100,6 @@ func (h *hostCache) onUpsert(e *types.Event) {
 	// event refresh cache does not need to generate rid.
 	rid := ""
 	// get host details from db again to avoid dirty data.
-	//ips, cloudID, agentID, detail, addressType, err := getHostDetailsFromMongoWithHostID(hostID)
 	host, err := getHostDetailsFromMongoWithHostID(rid, hostID)
 	if err != nil {
 		blog.Errorf("received host %d upsert event, but get detail from mongodb failed, err: %v", hostID, err)
@@ -244,7 +243,6 @@ func getHostDetailsFromMongoWithHostID(rid string, hostID int64) (*hostBase, err
 		return nil, err
 	}
 
-	//var ok bool
 	ips, ok := host[common.BKHostInnerIPField].(string)
 	if !ok {
 		blog.Errorf("get host: %d data from mongodb for cache, but got invalid ip, host: %v,rid: %s", hostID, host, rid)
@@ -253,22 +251,22 @@ func getHostDetailsFromMongoWithHostID(rid string, hostID int64) (*hostBase, err
 
 	agentID := ""
 	if host[common.BKAgentIDField] != nil {
-		if id, ok := host[common.BKAgentIDField].(string); ok {
-			agentID = id
-		} else {
+		id, ok := host[common.BKAgentIDField].(string)
+		if !ok {
 			blog.Errorf("get host: %d data from mongodb for cache, but got invalid agentID, host: %v, rid: %s",
 				hostID, host, rid)
 			return nil, fmt.Errorf("invalid host: %d innerip", hostID)
 		}
+		agentID = id
 	}
 
 	addressType := common.BKAddressingStatic
 	if host[common.BKAddressingField] != nil {
-		if field, ok := host[common.BKAddressingField].(string); !ok {
+		field, ok := host[common.BKAddressingField].(string)
+		if !ok {
 			return nil, errors.New("bk_addressing type error")
-		} else {
-			addressType = field
 		}
+		addressType = field
 	}
 	js, _ := json.Marshal(host)
 

@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// SearchHostWithInnerIP Note: only for data collection api
+// SearchHostWithInnerIP Note: only for data collection api !!!.
 func (b *baseCache) SearchHostWithInnerIP(ctx context.Context, h http.Header, opt *metadata.SearchHostOption) (
 	jsonString string, err error) {
 
@@ -44,7 +44,7 @@ func (b *baseCache) SearchHostWithInnerIP(ctx context.Context, h http.Header, op
 	return resp.Data, nil
 }
 
-// SearchHostWithAgentID find host information by agentID.
+// SearchHostWithAgentID Note: find host information by agentID only for data collection api !!!.
 func (b *baseCache) SearchHostWithAgentID(ctx context.Context, h http.Header, opt *metadata.SearchHostOption) (
 	jsonString string, err error) {
 
