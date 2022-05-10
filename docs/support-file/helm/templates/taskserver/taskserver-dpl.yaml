@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: taskserver
-        image: {{ .Values.image.registry }}/{{ .Values.taskserver.image.repository }}:{{ .Values.taskserver.image.tag }}
+        image: {{ .Values.image.registry }}/{{ .Values.taskserver.image.repository }}:v{{ default .Chart.AppVersion .Values.taskserver.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         workingDir: {{ .Values.taskserver.workDir }}
         command:

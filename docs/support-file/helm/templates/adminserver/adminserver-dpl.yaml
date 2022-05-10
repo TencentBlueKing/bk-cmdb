@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: adminserver
-        image: {{ .Values.image.registry }}/{{ .Values.adminserver.image.repository }}:{{ .Values.adminserver.image.tag }}
+        image: {{ .Values.image.registry }}/{{ .Values.adminserver.image.repository }}:v{{ default .Chart.AppVersion .Values.adminserver.image.tag }}
         workingDir: {{ .Values.adminserver.workDir }}/
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command: ["./cmdb_adminserver"]

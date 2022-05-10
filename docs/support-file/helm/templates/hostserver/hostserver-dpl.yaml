@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: hostserver
-        image: {{ .Values.image.registry }}/{{ .Values.hostserver.image.repository }}:{{ .Values.hostserver.image.tag }}
+        image: {{ .Values.image.registry }}/{{ .Values.hostserver.image.repository }}:v{{ default .Chart.AppVersion .Values.hostserver.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         workingDir: {{ .Values.hostserver.workDir }}
         command: ["./cmdb_hostserver"]

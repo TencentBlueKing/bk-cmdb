@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: operationserver
-        image: {{ .Values.image.registry }}/{{ .Values.operationserver.image.repository }}:{{ .Values.operationserver.image.tag }}
+        image: {{ .Values.image.registry }}/{{ .Values.operationserver.image.repository }}:v{{ default .Chart.AppVersion .Values.operationserver.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         workingDir: {{ .Values.operationserver.workDir }}
         command: ["./cmdb_operationserver"]

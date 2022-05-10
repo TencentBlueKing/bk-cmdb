@@ -39,7 +39,7 @@ adminserver:
   ##
   image:
     repository: blueking/cmdb_adminserver
-    tag: v3.10.15
+    tag:
   ## @param adminserver.replicas Number of administrator replicas to deploy
   ##
   replicas: 1
@@ -109,7 +109,7 @@ apiserver:
   ##
   image:
     repository: blueking/cmdb_apiserver
-    tag: v3.10.15
+    tag:
   ## @param apiserver.replicas Number of apiserver replicas to deploy
   ##
   replicas: 1
@@ -170,7 +170,7 @@ authserver:
   ##
   image:
     repository: blueking/cmdb_authserver
-    tag: v3.10.15
+    tag:
   ## @param authserver.replicas Number of authserver replicas to deploy
   ##
   replicas: 1
@@ -274,7 +274,7 @@ cacheservice:
   ##
   image:
     repository: blueking/cmdb_cacheservice
-    tag: v3.10.15
+    tag:
   ## @param cacheservice.replicas Number of cacheservice replicas to deploy
   ##
   replicas: 1
@@ -335,7 +335,7 @@ cloudserver:
   ##
   image:
     repository: blueking/cmdb_cloudserver
-    tag: v3.10.15
+    tag:
   ## @param cloudserver.replicas Number of cloudserver replicas to deploy
   ##
   replicas: 1
@@ -398,7 +398,7 @@ coreservice:
   ##
   image:
     repository: blueking/cmdb_coreservice
-    tag: v3.10.15
+    tag:
   ## @param coreservice.replicas Number of coreservice replicas to deploy
   ##
   replicas: 1
@@ -459,7 +459,7 @@ datacollection:
   ##
   image:
     repository: blueking/cmdb_datacollection
-    tag: v3.10.15
+    tag:
   ## @param datacollection.replicas Number of datacollection replicas to deploy
   ##
   replicas: 1
@@ -520,7 +520,7 @@ eventserver:
   ##
   image:
     repository: blueking/cmdb_eventserver
-    tag: v3.10.15
+    tag:
   ## @param eventserver.replicas Number of eventserver replicas to deploy
   ##
   replicas: 1
@@ -581,7 +581,7 @@ hostserver:
   ##
   image:
     repository: blueking/cmdb_hostserver
-    tag: v3.10.15
+    tag:
   ## @param hostserver.replicas Number of hostserver replicas to deploy
   ##
   replicas: 1
@@ -642,7 +642,7 @@ operationserver:
   ##
   image:
     repository: blueking/cmdb_operationserver
-    tag: v3.10.15
+    tag:
   ## @param operationserver.replicas Number of operationserver replicas to deploy
   ##
   replicas: 1
@@ -703,7 +703,7 @@ procserver:
   ##
   image:
     repository: blueking/cmdb_procserver
-    tag: v3.10.15
+    tag:
   ## @param procserver.replicas Number of procserver replicas to deploy
   ##
   replicas: 1
@@ -764,7 +764,7 @@ synchronizeserver:
   ##
   image:
     repository: blueking/cmdb_synchronizeserver
-    tag: v3.10.15
+    tag:
   ## @param synchronizeserver.replicas Number of synchronizeserver replicas to deploy
   ##
   replicas: 1
@@ -825,7 +825,7 @@ taskserver:
   ##
   image:
     repository: blueking/cmdb_taskserver
-    tag: v3.10.15
+    tag:
   ## @param taskserver.replicas Number of taskserver replicas to deploy
   ##
   replicas: 1
@@ -886,7 +886,7 @@ toposerver:
   ##
   image:
     repository: blueking/cmdb_toposerver
-    tag: v3.10.15
+    tag:
   ## @param toposerver.replicas Number of toposerver replicas to deploy
   ##
   replicas: 1
@@ -948,7 +948,7 @@ webserver:
   ##
   image:
     repository: blueking/cmdb_webserver
-    tag: v3.10.15
+    tag:
   ## @param webserver.replicas Number of webserver replicas to deploy
   ##
   replicas: 1
@@ -1058,7 +1058,7 @@ migrate:
   ##
   image:
     repository: blueking/cmdb_migrate
-    tag: v3.10.15
+    tag:
   ## @param migrate.migrateDataId Enable register dataid to GSE
   ##
   migrateDataId: false

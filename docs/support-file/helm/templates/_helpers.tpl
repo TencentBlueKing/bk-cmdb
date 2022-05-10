@@ -242,7 +242,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{- define "cmdb.basicImagesAddress" -}}
-    {{ .Values.image.registry }}/{{ .Values.migrate.image.repository }}:{{ .Values.migrate.image.tag }}
+    {{ .Values.image.registry }}/{{ .Values.migrate.image.repository }}:v{{ default .Chart.AppVersion .Values.migrate.image.tag }}
 {{- end -}}
 
 {{- define "cmdb.webserver.bkLoginUrl" -}}

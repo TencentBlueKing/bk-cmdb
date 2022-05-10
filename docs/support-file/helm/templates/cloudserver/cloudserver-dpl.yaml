@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: cloudserver
-        image: {{ .Values.image.registry }}/{{ .Values.cloudserver.image.repository }}:{{ .Values.cloudserver.image.tag }}
+        image: {{ .Values.image.registry }}/{{ .Values.cloudserver.image.repository }}:v{{ default .Chart.AppVersion .Values.cloudserver.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         workingDir: {{ .Values.cloudserver.workDir }}
         command:

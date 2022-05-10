@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: cacheservice
-        image: {{ .Values.image.registry }}/{{ .Values.cacheservice.image.repository }}:{{ .Values.cacheservice.image.tag }}
+        image: {{ .Values.image.registry }}/{{ .Values.cacheservice.image.repository }}:v{{ default .Chart.AppVersion .Values.cacheservice.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         workingDir: {{ .Values.cacheservice.workDir }}
         command:

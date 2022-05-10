@@ -32,7 +32,7 @@ spec:
       dnsPolicy: {{ .Values.webserver.dnsPolicy }}
       containers:
       - name: webserver
-        image: {{ .Values.image.registry }}/{{ .Values.webserver.image.repository }}:{{ .Values.webserver.image.tag }}
+        image: {{ .Values.image.registry }}/{{ .Values.webserver.image.repository }}:v{{ default .Chart.AppVersion .Values.webserver.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         workingDir: {{ .Values.webserver.workDir}}
         command:
