@@ -37,7 +37,8 @@ func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 	}
 
 	if len(input.Processes) > common.BKMaxUpdateOrCreatePageSize {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "create process template",
+			common.BKMaxUpdateOrCreatePageSize))
 		return
 	}
 
@@ -86,7 +87,8 @@ func (ps *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 		return
 	}
 	if len(input.ProcessTemplates) > common.BKMaxDeletePageSize {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "delete process template",
+			common.BKMaxDeletePageSize))
 		return
 	}
 

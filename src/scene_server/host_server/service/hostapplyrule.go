@@ -194,6 +194,11 @@ func (s *Service) ListHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
+	if len(option.ServiceTemplateIDs) > common.BKMaxLimitSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
 	if err := checkIDs(option.ModuleIDs); err != nil {
 		blog.Errorf("get module host apply rule failed, parameter bk_module_ids invalid, err: %v, rid: %s", err, rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_module_ids"))
@@ -1208,6 +1213,11 @@ func (s *Service) GetServiceTemplateHostApplyRule(ctx *rest.Contexts) {
 	if option.ApplicationID == 0 {
 		blog.Errorf("get service template rule failed, bk_biz_id shouldn't empty, rid: %s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id"))
+		return
+	}
+
+	if len(option.ServiceTemplateIDs) > common.BKMaxLimitSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
 	}
 
