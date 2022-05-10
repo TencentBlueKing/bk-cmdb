@@ -1,10 +1,10 @@
 <template>
   <span v-if="isLimited"></span>
-  <bk-popover class="process-form-tips" v-else>
+  <bk-popover class="process-form-tips" ext-cls="process-lock-popover" v-else>
     <i class="icon-cc-lock-fill"></i>
     <template slot="content">
       <i18n path="进程表单锁定提示">
-        <bk-link theme="primary" @click="handleRedirect" place="link">{{$t('跳转服务模板')}}</bk-link>
+        <bk-link theme="primary" @click="handleRedirect" place="link" class="goto-link">{{$t('跳转服务模板')}}</bk-link>
       </i18n>
     </template>
   </bk-popover>
@@ -81,5 +81,16 @@
             align-items: center;
             justify-content: center;
         }
+
+
     }
+</style>
+<style lang="scss">
+  .process-lock-popover {
+    .goto-link {
+      .bk-link-text {
+        font-size: 12px;
+      }
+    }
+  }
 </style>

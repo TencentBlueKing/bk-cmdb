@@ -28,7 +28,7 @@
         v-bk-tooltips="{
           placement: 'top',
           interactive: false,
-          content: isLocked(rowProps) ? $t('取消锁定') : $t('进程模板锁定提示语'),
+          content: isLocked(rowProps) ? $t('进程模板取消锁定提示语') : $t('进程模板锁定提示语'),
           delay: [100, 0]
         }"
         tabindex="-1"
@@ -55,6 +55,9 @@
         type: Array,
         required: true
       }
+    },
+    inject: {
+      type: { default: '' } // from ./process-form
     },
     computed: {
       localValue: {
@@ -156,13 +159,17 @@
           const templateRowValue = {}
           // 获取新value中每行对应的老数据的index，用于正确的获取checkbox勾选状态
           const index = isAddOrDelete ? this.localValue.indexOf(row) : rowIndex
+
+          // 创建模式并且是新添加的行，使其默认锁定
+          const defaultLocked = this.type === 'create' && rowIndex === values.length - 1
+
           Object.keys(row).forEach((key) => {
             if (['process_id', 'row_id'].includes(key)) {
               templateRowValue[key] = row[key]
             } else {
               templateRowValue[key] = {
                 value: row[key],
-                as_default_value: !!(this.lockStates[index] || {})[key]
+                as_default_value: !!(this.lockStates[index] || {})[key] || defaultLocked
               }
             }
           })
