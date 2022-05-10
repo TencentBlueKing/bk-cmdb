@@ -23,7 +23,7 @@ const findAll = async (params, config) => {
     const size = 1000
     const results = []
 
-    const page = index => ({ start: (index - 1) * size, limit: size })
+    const page = index => ({ ...(params.page || {}), start: (index - 1) * size, limit: size })
 
     const req = index => http.post('findmany/proc/service_template', {
       ...params,
@@ -60,7 +60,8 @@ const findAllByIds = async (ids, params, config) => {
 
     const req = segment => http.post('findmany/proc/service_template', {
       ...params,
-      service_template_ids: segment
+      service_template_ids: segment,
+      page: { start: 0, limit: 999999999 } // NoLimit
     }, config)
 
     const reqs = []

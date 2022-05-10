@@ -139,7 +139,7 @@
           condition: newCondition,
           selectedBusiness: newSelectedBusiness
         })
-      }, { deep: true })
+      }, { immediate: true, deep: true })
 
       // 添加条件
       const handleAdd = () => {

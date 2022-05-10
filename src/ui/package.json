@@ -42,6 +42,7 @@
     "moment": "2.22.2",
     "plotly.js": "1.51.3",
     "qs": "^6.9.4",
+    "readable-stream": "^3.6.0",
     "sortablejs": "1.8.4",
     "unzip-js": "^1.0.0",
     "utf8-byte-length": "^1.0.4",

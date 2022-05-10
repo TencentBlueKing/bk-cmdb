@@ -834,7 +834,7 @@
             info: group,
             properties: []
           })
-          this.groupCollapseState[group.bk_group_id] = group.is_collapse
+          this.$set(this.groupCollapseState, group.bk_group_id, group.is_collapse)
           this.groupDialog.isShow = false
           this.$success(this.$t('创建成功'))
         } catch (err) {
