@@ -456,6 +456,10 @@
 
       const isBuiltin = inst => inst?.default === 1
 
+      if (query.value.create) {
+        handleCreate()
+      }
+
       return  {
         properties,
         propertyGroups,

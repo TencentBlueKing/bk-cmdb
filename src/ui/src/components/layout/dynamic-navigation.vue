@@ -9,7 +9,6 @@
         <transition name="fade">
           <cmdb-business-mix-selector class="business-selector" v-test-id.dynamic
             v-show="unfold"
-            show-apply-permission
             :value="currentBusinessViewPayload.selectedId"
             :popover-options="{
               appendTo: () => this.$el

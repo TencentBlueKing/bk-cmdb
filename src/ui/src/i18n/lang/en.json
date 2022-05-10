@@ -24,6 +24,10 @@
     "列表": "Lists",
     "该查询条件对应的业务不存在": "No Eligible Business",
     "收藏成功": "Collection Success",
+    "取消收藏成功": "Cancel collection Success",
+    "收藏失败": "Collection Fail",
+    "取消收藏失败": "Cancel Collection Fail",
+    "限制收藏个数提示": "Collect up to {max}",
     "确定删除收藏条件": "Confirm to delete collection {name} ?",
     "管理员": "Admin",
     "普通用户": "User",
@@ -1610,6 +1614,8 @@
     "无匹配人员": "no match",
     "已启用": "On",
     "未启用": "Off",
+    "新建业务": "New business",
+    "新建业务集": "New Business Set",
     "内置业务集不可删除": "Built-in business set cannot be deleted",
     "内置业务集不可编辑": "Built-in business set are not editable"
 }

@@ -100,3 +100,6 @@ export const MENU_RESOURCE_CLOUD_RESOURCE = 'menu_resource_cloud_resource'
 // 业务集资源实例
 export const MENU_RESOURCE_BUSINESS_SET = 'menu_resource_business_set'
 export const MENU_RESOURCE_BUSINESS_SET_DETAILS = 'menu_resource_set_business_details'
+
+// 业务(集)选择器中收藏key
+export const BUSINESS_SELECTOR_COLLECTION = 'business_selector_collection'
