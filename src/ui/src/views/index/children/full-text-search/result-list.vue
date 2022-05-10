@@ -15,7 +15,7 @@
     <template v-if="!fetching && list.length">
       <div class="data-list">
         <component v-for="(item, index) in list" :key="index"
-          :is="`item-${item.type}`"
+          :is="`item-${item.comp || item.type}`"
           :property-map="propertyMap"
           :data="item" />
       </div>
@@ -42,6 +42,7 @@
   import { computed, defineComponent, reactive, ref, watch } from '@vue/composition-api'
   import NoSearchResults from '@/views/status/no-search-results.vue'
   import ItemBiz from './item-biz.vue'
+  import ItemBizSet from './item-bizset.vue'
   import ItemModel from './item-model.vue'
   import ItemInstance from './item-instance.vue'
   import ItemHost from './item-host.vue'
@@ -55,6 +56,8 @@
   export default defineComponent({
     components: {
       NoSearchResults,
+      [ItemBiz.name]: ItemBiz,
+      [ItemBizSet.name]: ItemBizSet,
       [ItemBiz.name]: ItemBiz,
       [ItemModel.name]: ItemModel,
       [ItemInstance.name]: ItemInstance,

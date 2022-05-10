@@ -14,14 +14,17 @@ import { computed } from '@vue/composition-api'
 import {
   MENU_RESOURCE_INSTANCE_DETAILS,
   MENU_RESOURCE_BUSINESS_DETAILS,
+  MENU_RESOURCE_BUSINESS_SET_DETAILS,
   MENU_RESOURCE_HOST_DETAILS,
   MENU_RESOURCE_BUSINESS_HISTORY,
   MENU_MODEL_DETAILS,
   MENU_BUSINESS_HOST_AND_SERVICE
 } from '@/dictionary/menu-symbol'
+import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_MODEL_ROUTEPARAMS_KEYS } from '@/dictionary/model-constants'
 import { getPropertyText } from '@/utils/tools'
 
 export default function useItem(list, root) {
+  console.log(list)
   const getModelById = root.$store.getters['objectModelClassify/getModelById']
   const getModelName = (source) => {
     const model = getModelById(source.bk_obj_id) || {}
@@ -33,26 +36,32 @@ export default function useItem(list, root) {
     list.value.forEach((item) => {
       const { key, kind, source } = item
       const newItem = { ...item }
-      if (kind === 'instance' && key === 'host') {
+      if (kind === 'instance' && key === BUILTIN_MODELS.HOST) {
         newItem.type = key
         newItem.title = Array.isArray(source.bk_host_innerip) ? source.bk_host_innerip.join(',') : source.bk_host_innerip
         newItem.typeName = root.$t('主机')
         newItem.linkTo = handleGoResourceHost
-      } else if (kind === 'instance' && key === 'biz') {
+      } else if (kind === 'instance' && key === BUILTIN_MODELS.BUSINESS) {
         newItem.type = key
         newItem.title = source.bk_biz_name
         newItem.typeName = root.$t('业务')
         newItem.linkTo = handleGoBusiness
-      } else if (kind === 'instance' && key === 'set') {
+      } else if (kind === 'instance' && key === BUILTIN_MODELS.BUSINESS_SET) {
+        newItem.type = key
+        newItem.title = source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME]
+        newItem.typeName = root.$t('业务集')
+        newItem.comp = 'bizset'
+        newItem.linkTo = handleGoBusinessSet
+      } else if (kind === 'instance' && key === BUILTIN_MODELS.SET) {
         newItem.type = key
         newItem.title = source.bk_set_name
         newItem.typeName = root.$t('集群')
         newItem.linkTo = source => handleGoTopo('set', source)
-      } else if (kind === 'instance' && key === 'module') {
+      } else if (kind === 'instance' && BUILTIN_MODELS.MODULE) {
         newItem.type = key
         newItem.title = source.bk_module_name
         newItem.typeName = root.$t('模块')
-        newItem.linkTo = source => handleGoTopo('module', source)
+        newItem.linkTo = source => handleGoTopo(BUILTIN_MODELS.MODULE, source)
       } else if (kind === 'instance') {
         newItem.type = kind
         newItem.title = source.bk_inst_name
@@ -132,6 +141,22 @@ export default function useItem(list, root) {
         params: { bizName: source.bk_biz_name },
         history: true
       }
+    }
+
+    if (newTab) {
+      root.$routerActions.open(to)
+      return
+    }
+
+    root.$routerActions.redirect(to)
+  }
+  const handleGoBusinessSet = (source, newTab = true) => {
+    const paramKey = BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.BUSINESS_SET]
+    const paramVal = source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]
+    const to = {
+      name: MENU_RESOURCE_BUSINESS_SET_DETAILS,
+      params: { [paramKey]: paramVal },
+      history: true
     }
 
     if (newTab) {
