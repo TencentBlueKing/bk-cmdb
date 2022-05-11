@@ -24,7 +24,6 @@ import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_MODEL_ROUTEPARAMS_
 import { getPropertyText } from '@/utils/tools'
 
 export default function useItem(list, root) {
-  console.log(list)
   const getModelById = root.$store.getters['objectModelClassify/getModelById']
   const getModelName = (source) => {
     const model = getModelById(source.bk_obj_id) || {}
