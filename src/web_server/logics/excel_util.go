@@ -390,12 +390,12 @@ func productExcelHeader(ctx context.Context, fields map[string]Property, filter 
 		BizTopoMap: bizTopoMap,
 	}
 
-	handleFields(handleFieldParam)
+	handleFields(handleFieldParam, nil)
 }
 
 // productHostExcelHeader Excel文件头部，
 func productHostExcelHeader(ctx context.Context, fields map[string]Property, filter []string, xlsxFile *xlsx.File,
-	sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf, objName []string) {
+	sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf, objName, cloudAreaName []string) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	styleCell := getHeaderCellGeneralStyle()
@@ -443,10 +443,10 @@ func productHostExcelHeader(ctx context.Context, fields map[string]Property, fil
 		ColStyle:   colStyle,
 		BizTopoMap: bizTopoMap,
 	}
-	handleFields(handleFieldParam)
+	handleFields(handleFieldParam, cloudAreaName)
 }
 
-func handleFields(handleFieldParam HandleFieldParam) {
+func handleFields(handleFieldParam HandleFieldParam, cloudArea []string) {
 	for _, field := range handleFieldParam.Fields {
 		index := field.ExcelColIndex
 		handleFieldParam.Sheet.Col(index).Width = 18
@@ -477,64 +477,85 @@ func handleFields(handleFieldParam HandleFieldParam) {
 		cellEnName.Value = field.ID
 		cellEnName.SetStyle(handleFieldParam.StyleCell)
 
-		switch field.PropertyType {
-		case common.FieldTypeInt:
-			handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeNumeric)
-		case common.FieldTypeFloat:
-			handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeNumeric)
-		case common.FieldTypeEnum:
-			optionArr, ok := field.Option.([]interface{})
+		handleFieldPropertyType(field, handleFieldParam, index, isRequire, cloudArea)
+	}
+}
 
-			if ok {
+func handleFieldPropertyType(field Property, handleFieldParam HandleFieldParam, index int, isRequire string,
+	cloudArea []string) {
 
+	switch field.PropertyType {
+	case common.FieldTypeInt:
+		handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeNumeric)
+	case common.FieldTypeFloat:
+		handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeNumeric)
+	case common.FieldTypeEnum:
+		optionArr, ok := field.Option.([]interface{})
+
+		if ok {
+
+			enumSheet, err := handleFieldParam.File.AddSheet(field.Name)
+			if err != nil {
+				blog.Errorf("add enum sheet failed, err: %s, rid: %s", err, handleFieldParam.Rid)
+			}
+
+			for _, enum := range getEnumNames(optionArr) {
+				enumSheet.AddRow().AddCell().SetString(enum)
+			}
+			dd := xlsx.NewXlsxCellDataValidation(true, true, true)
+			if err := dd.SetInFileList(field.Name, 0, 0, 0, len(optionArr)-1); err != nil {
+				blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, handleFieldParam.Rid)
+			}
+			handleFieldParam.Sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
+
+		}
+		handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeString)
+
+	case common.FieldTypeBool:
+		dd := xlsx.NewXlsxCellDataValidation(true, true, true)
+		if err := dd.SetDropList([]string{fieldTypeBoolTrue, fieldTypeBoolFalse}); err != nil {
+			blog.Errorf("set drop list failed, err: %v, rid: %s", err, handleFieldParam.Rid)
+		}
+		handleFieldParam.Sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
+		handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeString)
+
+	default:
+		if _, ok := handleFieldParam.BizTopoMap[field.Name]; ok {
+			cellName := handleFieldParam.Sheet.Cell(0, index)
+			cellName.Value = field.Name + isRequire
+			cellName.SetStyle(handleFieldParam.CellStyle)
+			setExcelCellIgnored(handleFieldParam.Sheet, handleFieldParam.CellStyle, 1, index)
+			setExcelCellIgnored(handleFieldParam.Sheet, handleFieldParam.CellStyle, 2, index)
+
+			// 给业务拓扑和业务列剩下的空格设置颜色
+			for i := 3; i < 1003; i++ {
+				cellName := handleFieldParam.Sheet.Cell(i, index)
+				cellName.SetStyle(handleFieldParam.ColStyle)
+			}
+			handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeString)
+		}
+
+		if field.ID == common.BKCloudIDField {
+			if len(cloudArea) != 0 {
 				enumSheet, err := handleFieldParam.File.AddSheet(field.Name)
 				if err != nil {
 					blog.Errorf("add enum sheet failed, err: %s, rid: %s", err, handleFieldParam.Rid)
 				}
 
-				for _, enum := range getEnumNames(optionArr) {
+				for _, enum := range cloudArea {
 					enumSheet.AddRow().AddCell().SetString(enum)
 				}
 				dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-				if err := dd.SetInFileList(field.Name, 0, 0, 0, len(optionArr)-1); err != nil {
+				if err := dd.SetInFileList(field.Name, 0, 0, 0, len(cloudArea)-1); err != nil {
 					blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, handleFieldParam.Rid)
 				}
-				handleFieldParam.Sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
-
+				handleFieldParam.Sheet.Col(index).SetDataValidationWithStart(dd,
+					common.HostAddMethodExcelIndexOffset)
 			}
-			handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeString)
-
-		case common.FieldTypeBool:
-			dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-			if err := dd.SetDropList([]string{fieldTypeBoolTrue, fieldTypeBoolFalse}); err != nil {
-				blog.Errorf("set drop list failed, err: %v, rid: %s", err, handleFieldParam.Rid)
-			}
-			handleFieldParam.Sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
-			handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeString)
-
-		default:
-			if _, ok := handleFieldParam.BizTopoMap[field.Name]; ok {
-				cellName := handleFieldParam.Sheet.Cell(0, index)
-				cellName.Value = field.Name + isRequire
-				cellName.SetStyle(handleFieldParam.CellStyle)
-				setExcelCellIgnored(handleFieldParam.Sheet, handleFieldParam.CellStyle, 1, index)
-				setExcelCellIgnored(handleFieldParam.Sheet, handleFieldParam.CellStyle, 2, index)
-
-				// 给业务拓扑和业务列剩下的空格设置颜色
-				for i := 3; i < 1003; i++ {
-					cellName := handleFieldParam.Sheet.Cell(i, index)
-					cellName.SetStyle(handleFieldParam.ColStyle)
-				}
-				handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeString)
-			}
-
-			if field.ID == common.BKCloudIDField {
-				setExcelCellIgnored(handleFieldParam.Sheet, handleFieldParam.StyleCell, 1, index)
-				setExcelCellIgnored(handleFieldParam.Sheet, handleFieldParam.StyleCell, 2, index)
-			}
-
-			handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeString)
+			setExcelCellIgnored(handleFieldParam.Sheet, handleFieldParam.StyleCell, 1, index)
 		}
+
+		handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeString)
 	}
 }
 

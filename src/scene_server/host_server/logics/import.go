@@ -212,7 +212,16 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 		}
 
 		// the bk_cloud_id is directly connected area
-		host[common.BKCloudIDField] = common.BKDefaultDirSubArea
+		if _, exist := host[common.BKCloudIDField]; !exist {
+			host[common.BKCloudIDField] = common.BKDefaultDirSubArea
+		}
+
+		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
+		if err != nil {
+			errMsg = append(errMsg, ccLang.Languagef("import_host_cloudID_not_exist", index,
+				innerIP, strconv.FormatInt(cloudID, 10)))
+			continue
+		}
 
 		// remove unchangeable fields
 		delete(host, common.BKHostIDField)
@@ -220,11 +229,12 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 		// use new transaction, need a new header
 		kit.Header = kit.NewHeader()
 		lgc.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
-			intHostID, err := instance.addHostInstance(common.BKDefaultDirSubArea, index, appID, []int64{moduleID}, toInternalModule, host)
+			intHostID, err := instance.addHostInstance(cloudID, index, appID, []int64{moduleID}, toInternalModule, host)
 			if err != nil {
-				blog.Errorf("addHostInstance failed, err: %v, index:%d, bizID: %d, moduleID:%d, toInternalModule:%t, host:%v, rid: %s",
-					err, index, appID, moduleID, toInternalModule, host, kit.Rid)
-				errMsg = append(errMsg, fmt.Errorf(ccLang.Languagef("host_import_add_fail", index, innerIP, err.Error())).Error())
+				blog.Errorf("add host instance failed, err: %v, index: %d, bizID: %d, moduleID: %d, "+
+					"toInternalModule: %t, host: %v, rid: %s", err, index, appID, moduleID, toInternalModule, host,
+					kit.Rid)
+				errMsg = append(errMsg, ccLang.Languagef("host_import_add_fail", index, innerIP, err.Error()))
 				return err
 			}
 			host[common.BKHostIDField] = intHostID

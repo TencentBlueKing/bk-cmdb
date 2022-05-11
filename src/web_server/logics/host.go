@@ -131,8 +131,8 @@ func (lgc *Logics) GetHostData(appID int64, hostIDArr []int64, hostFields []stri
 // return inst array data, errmsg collection, error
 func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
 	modelBizID int64) (map[int]map[string]interface{}, []string, error) {
-	ctx := util.NewContextFromHTTPHeader(header)
 
+	ctx := util.NewContextFromHTTPHeader(header)
 	if len(f.Sheets) == 0 {
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
@@ -155,8 +155,38 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 		return nil, nil, err
 	}
 
-	return GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, 0, defLang,
-		departmentMap)
+	_, cloudMap, err := lgc.getCloudArea(ctx, header)
+	if err != nil {
+		blog.Errorf("get cloud area id name map failed, err: %v, rid: %s", err, util.GetHTTPCCRequestID(header))
+		return nil, nil, err
+	}
+
+	hostsInfo, errMsg, err := GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel},
+		true, 0, defLang, departmentMap)
+	if err != nil {
+		blog.Errorf("get host excel data failed, err: %v, rid: %s", err, util.GetHTTPCCRequestID(header))
+		return nil, errMsg, err
+	}
+
+	for index := range hostsInfo {
+		if _, ok := hostsInfo[index][common.BKCloudIDField]; !ok {
+			hostsInfo[index][common.BKCloudIDField] = cloudMap[common.DefaultCloudName]
+			continue
+		}
+
+		cloudStr := util.GetStrByInterface(hostsInfo[index][common.BKCloudIDField])
+		if _, ok := cloudMap[cloudStr]; !ok {
+			blog.Errorf("check cloud area data failed, cloud area name %s of line %d doesn't exist, rid: %s", cloudStr,
+				index, util.GetHTTPCCRequestID(header))
+			errMsg = append(errMsg, defLang.Languagef("import_host_cloudID_not_exist", index,
+				hostsInfo[index][common.BKHostInnerIPField], cloudStr))
+			return nil, errMsg, nil
+		}
+
+		hostsInfo[index][common.BKCloudIDField] = cloudMap[cloudStr]
+	}
+
+	return hostsInfo, errMsg, nil
 }
 
 // ImportHosts import host info
@@ -775,4 +805,53 @@ func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Heade
 	}
 
 	return hostMap, nil
+}
+
+// getCloudArea search total cloud area id and name
+// return an array of cloud name and a name-id map
+func (lgc *Logics) getCloudArea(ctx context.Context, header http.Header) ([]string, map[string]int64, error) {
+
+	rid := util.GetHTTPCCRequestID(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+
+	input := &metadata.QueryCondition{
+		Fields:         []string{common.BKCloudIDField, common.BKCloudNameField},
+		DisableCounter: true,
+	}
+	rsp, err := lgc.Engine.CoreAPI.ApiServer().ReadInstance(ctx, header, common.BKInnerObjIDPlat, input)
+	if err != nil {
+		blog.Errorf("search cloud area failed, err: %v, rid: %s", err, rid)
+		return nil, nil, err
+	}
+
+	if ccErr := rsp.CCError(); ccErr != nil {
+		blog.Errorf("search cloud area failed, err: %v, rid: %s", ccErr, rid)
+		return nil, nil, err
+	}
+
+	if len(rsp.Data.Info) == 0 {
+		blog.Errorf("search cloud area failed, return empty, rid: %s", rid)
+		return nil, nil, defErr.CCError(common.CCErrTopoCloudNotFound)
+	}
+
+	cloudAreaArr := make([]string, 0)
+	cloudAreaMap := make(map[string]int64)
+	for _, item := range rsp.Data.Info {
+		areaName, err := item.String(common.BKCloudNameField)
+		if err != nil {
+			blog.Errorf("search cloud area failed, err: %v, rid: %s", err, rid)
+			return nil, nil, err
+		}
+		cloudAreaArr = append(cloudAreaArr, areaName)
+
+		areaID, err := item.Int64(common.BKCloudIDField)
+		if err != nil {
+			blog.Errorf("search cloud area failed, err: %v, rid: %s", err, rid)
+			return nil, nil, err
+		}
+		// cloud area name is unique
+		cloudAreaMap[areaName] = areaID
+	}
+
+	return cloudAreaArr, cloudAreaMap, nil
 }
