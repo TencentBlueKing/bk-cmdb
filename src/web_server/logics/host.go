@@ -814,39 +814,51 @@ func (lgc *Logics) getCloudArea(ctx context.Context, header http.Header) ([]stri
 	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
-	input := &metadata.QueryCondition{
-		Fields:         []string{common.BKCloudIDField, common.BKCloudNameField},
-		DisableCounter: true,
-	}
-	rsp, err := lgc.Engine.CoreAPI.ApiServer().ReadInstance(ctx, header, common.BKInnerObjIDPlat, input)
-	if err != nil {
-		blog.Errorf("search cloud area failed, err: %v, rid: %s", err, rid)
-		return nil, nil, err
+	cloudArea := make([]mapstr.MapStr, 0)
+	start := 0
+	for {
+		input := &metadata.QueryCondition{
+			Fields:         []string{common.BKCloudIDField, common.BKCloudNameField},
+			Page:           metadata.BasePage{Start: start, Limit: common.BKMaxPageSize},
+			DisableCounter: true,
+		}
+		rsp, err := lgc.Engine.CoreAPI.ApiServer().ReadInstance(ctx, header, common.BKInnerObjIDPlat, input)
+		if err != nil {
+			blog.Errorf("search cloud area failed, err: %v, rid: %s", err, rid)
+			return nil, nil, err
+		}
+
+		if ccErr := rsp.CCError(); ccErr != nil {
+			blog.Errorf("search cloud area failed, err: %v, rid: %s", ccErr, rid)
+			return nil, nil, err
+		}
+
+		cloudArea = append(cloudArea, rsp.Data.Info...)
+		if len(rsp.Data.Info) < common.BKMaxPageSize {
+			break
+		}
+
+		start += common.BKMaxPageSize
 	}
 
-	if ccErr := rsp.CCError(); ccErr != nil {
-		blog.Errorf("search cloud area failed, err: %v, rid: %s", ccErr, rid)
-		return nil, nil, err
-	}
-
-	if len(rsp.Data.Info) == 0 {
+	if len(cloudArea) == 0 {
 		blog.Errorf("search cloud area failed, return empty, rid: %s", rid)
 		return nil, nil, defErr.CCError(common.CCErrTopoCloudNotFound)
 	}
 
 	cloudAreaArr := make([]string, 0)
 	cloudAreaMap := make(map[string]int64)
-	for _, item := range rsp.Data.Info {
+	for _, item := range cloudArea {
 		areaName, err := item.String(common.BKCloudNameField)
 		if err != nil {
-			blog.Errorf("search cloud area failed, err: %v, rid: %s", err, rid)
+			blog.Errorf("get type of string cloud name failed, err: %v, rid: %s", err, rid)
 			return nil, nil, err
 		}
 		cloudAreaArr = append(cloudAreaArr, areaName)
 
 		areaID, err := item.Int64(common.BKCloudIDField)
 		if err != nil {
-			blog.Errorf("search cloud area failed, err: %v, rid: %s", err, rid)
+			blog.Errorf("get type of int64 cloud id failed, err: %v, rid: %s", err, rid)
 			return nil, nil, err
 		}
 		// cloud area name is unique

@@ -219,7 +219,7 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
 		if err != nil {
 			errMsg = append(errMsg, ccLang.Languagef("import_host_cloudID_not_exist", index,
-				innerIP, strconv.FormatInt(cloudID, 10)))
+				innerIP, util.GetStrByInterface(host[common.BKCloudIDField])))
 			continue
 		}
 
