@@ -1725,6 +1725,10 @@ serviceMonitor:
   ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#endpoint
   ##
   interval: "15s"
+  ## @param serviceMonitor.metricRelabelings ServiceMonitor metricRelabelings
+  ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#relabelconfig
+  ##
+  metricRelabelings: [ ]
 
 ## @section Blueking log collecting parameters
 ##
