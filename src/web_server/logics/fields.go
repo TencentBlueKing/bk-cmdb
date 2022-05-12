@@ -45,38 +45,36 @@ type Property struct {
 
 // HandleFieldParam 处理Excel表格字段入参
 type HandleFieldParam struct {
-	Fields     map[string]Property
-	Rid        string
-	StyleCell  *xlsx.Style
-	Sheet      *xlsx.Sheet
-	File       *xlsx.File
-	Filter     []string
-	DefLang    lang.DefaultCCLanguageIf
-	CellStyle  *xlsx.Style
-	ColStyle   *xlsx.Style
-	BizTopoMap map[string]int
+	Rid       string
+	StyleCell *xlsx.Style
+	Sheet     *xlsx.Sheet
+	File      *xlsx.File
+	Filter    []string
+	DefLang   lang.DefaultCCLanguageIf
+	CellStyle *xlsx.Style
+	ColStyle  *xlsx.Style
 }
 
 // HandleHostDataParam 处理主机数据生成excel表格数据入参
 type HandleHostDataParam struct {
-	HostData             []mapstr.MapStr
-	ExtFieldsTopoID      string
-	ExtFieldsBizID       string
-	ExtFieldsModuleID    string
-	ExtFieldsSetID       string
-	CcErr                errors.DefaultCCErrorIf
-	ExtFieldKey          []string
-	UsernameMap          map[string]string
-	PropertyList         []string
-	Organization         []metadata.DepartmentItem
-	OrgPropertyList      []string
-	CcLang               lang.DefaultCCLanguageIf
-	Sheet                *xlsx.Sheet
-	File                 *xlsx.File
-	Rid                  string
-	ObjID                string
-	ObjIDs               []string
-	Fields               map[string]Property
+	HostData          []mapstr.MapStr
+	ExtFieldsTopoID   string
+	ExtFieldsBizID    string
+	ExtFieldsModuleID string
+	ExtFieldsSetID    string
+	CcErr             errors.DefaultCCErrorIf
+	ExtFieldKey       []string
+	UsernameMap       map[string]string
+	PropertyList      []string
+	Organization      []metadata.DepartmentItem
+	OrgPropertyList   []string
+	CcLang            lang.DefaultCCLanguageIf
+	Sheet             *xlsx.Sheet
+	File              *xlsx.File
+	Rid               string
+	ObjID             string
+	ObjIDs            []string
+	Fields            map[string]Property
 }
 
 // HandleHostParam 处理主机数据入参
