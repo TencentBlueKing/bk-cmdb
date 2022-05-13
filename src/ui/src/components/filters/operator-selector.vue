@@ -72,7 +72,7 @@
           longchar: [IN, NIN, LIKE],
           objuser: [IN, NIN],
           organization: [IN, NIN],
-          singlechar: [IN, NIN],
+          singlechar: [IN, NIN, LIKE],
           time: [GTE, LTE],
           timezone: [IN, NIN],
           foreignkey: [IN, NIN],
@@ -92,18 +92,7 @@
           [LIKE]: this.$t('模糊')
         }
 
-        const {
-          bk_obj_id: modelId,
-          bk_property_id: propertyId,
-          bk_property_type: propertyType
-        } = this.property
-        const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
-        const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
-
-        // 集群、模块名称使用输入联想的tag-input，不需要模糊搜索
-        if (!(isSetName || isModuleName)) {
-          typeMap.singlechar.push(LIKE)
-        }
+        const { bk_property_type: propertyType } = this.property
 
         return typeMap[propertyType].map(operator => ({
           id: operator,
