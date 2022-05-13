@@ -66,16 +66,6 @@
       </bk-table-column>
       <bk-table-column :label="$t('操作')" width="180">
         <template slot-scope="{ row }">
-          <!-- 与查询详情编辑有重合暂去掉 -->
-          <!-- <cmdb-auth :auth="{ type: $OPERATION.U_SET_TEMPLATE, relation: [bizId, row.id] }">
-                        <bk-button slot-scope="{ disabled }"
-                            text
-                            :disabled="disabled"
-                            @click="handleEdit(row)"
-                        >
-                            {{$t('编辑')}}
-                        </bk-button>
-                    </cmdb-auth> -->
           <span class="text-primary"
             style="color: #dcdee5 !important; cursor: not-allowed;"
             v-if="row.set_instance_count"
