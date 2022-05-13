@@ -356,7 +356,7 @@ func (m *instanceManager) getUpdateIPHostProcTempInfo(kit *rest.Kit, hostIDs []i
 
 	// get hosts related process and template relations
 	procRelations := make([]metadata.ProcessInstanceRelation, 0)
-	procRelationFilter := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
+	procRelationFilter := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDs}}
 
 	err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(procRelationFilter).Fields(
 		common.BKHostIDField, common.BKProcessIDField, common.BKProcessTemplateIDField).All(kit.Ctx, &procRelations)
@@ -366,7 +366,7 @@ func (m *instanceManager) getUpdateIPHostProcTempInfo(kit *rest.Kit, hostIDs []i
 	}
 
 	if len(procRelations) == 0 {
-		return nil, nil, nil
+		return make(map[int64][]int64), make([]metadata.ProcessTemplate, 0), nil
 	}
 
 	procTemplateIDs := make([]int64, len(procRelations))

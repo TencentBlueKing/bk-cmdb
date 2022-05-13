@@ -905,7 +905,8 @@ func (p *ProtocolType) Validate() error {
 		return errors.New("protocol is not set or is empty")
 	}
 
-	if err := process.ValidateProcessBindProtocolHook(); err != nil {
+	// validate if process bind protocol value is valid, the value is not empty
+	if err := process.ValidateProcessBindProtocolHook(string(*p)); err != nil {
 		return err
 	}
 
@@ -1908,7 +1909,8 @@ func (ti *PropertyBindIP) Validate() error {
 		return process.ValidateProcessBindIPEmptyHook()
 	}
 
-	if err := process.ValidateProcessBindIPHook(); err != nil {
+	// validate if process bind ip value is valid, the value is not empty
+	if err := process.ValidateProcessBindIPHook(string(*ti.Value)); err != nil {
 		return err
 	}
 
