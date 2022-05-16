@@ -170,7 +170,9 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 
 	for index := range hostsInfo {
 		if _, ok := hostsInfo[index][common.BKCloudIDField]; !ok {
-			hostsInfo[index][common.BKCloudIDField] = cloudMap[common.DefaultCloudName]
+			blog.Errorf("check cloud area data failed, cloud area doesn't provide, rid: %s",
+				util.GetHTTPCCRequestID(header))
+			errMsg = append(errMsg, defLang.Languagef("import_host_not_provide_cloudID", index))
 			continue
 		}
 

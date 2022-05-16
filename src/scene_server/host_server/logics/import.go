@@ -185,11 +185,14 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 	return hostIDs, successMsg, updateErrMsg, errMsg, nil
 }
 
-func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ownerID string, hostInfos map[int64]map[string]interface{}) (
-	hostIDs []int64, successMsg, errMsg []string, err error) {
+// AddHostByExcel add host by import excel
+func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ownerID string,
+	hostInfos map[int64]map[string]interface{}) (hostIDs []int64, successMsg, errMsg []string, err error) {
+
 	_, toInternalModule, err := lgc.GetModuleIDAndIsInternal(kit, appID, moduleID)
 	if err != nil {
-		blog.Errorf("AddHostByExcel failed, GetModuleIDAndIsInternal err:%s, appID:%d, moduleID:%d", err, appID, moduleID)
+		blog.Errorf("AddHostByExcel failed, GetModuleIDAndIsInternal err:%s, appID:%d, moduleID:%d", err, appID,
+			moduleID)
 		return nil, nil, nil, err
 	}
 
@@ -213,7 +216,8 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 
 		// the bk_cloud_id is directly connected area
 		if _, exist := host[common.BKCloudIDField]; !exist {
-			host[common.BKCloudIDField] = common.BKDefaultDirSubArea
+			errMsg = append(errMsg, ccLang.Languagef("import_host_not_provide_cloudID", index))
+			continue
 		}
 
 		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
