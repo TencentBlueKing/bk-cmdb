@@ -15,7 +15,7 @@
     <div class="instance-main">
       <div class="options clearfix">
         <div class="fl">
-          <cmdb-auth :auth="auth">
+          <cmdb-auth :auth="syncAuth">
             <template #default="{ disabled }">
               <bk-button theme="primary"
                 :disabled="!table.selection.length || disabled"
@@ -48,7 +48,7 @@
           :full-data="table.data"
           ref="batchSelectionColumn"
           row-key="bk_module_id"
-          :selectable="row => !isInstanceDisabled(row.status)"
+          :selectable="row => !isSyncDisabled(row.status)"
           @selection-change="handleSelectionChange">
         </BatchSelectionColumn>
         <bk-table-column :label="$t('模块名称')" prop="bk_module_name" show-overflow-tooltip></bk-table-column>
@@ -61,16 +61,30 @@
         </bk-table-column>
         <bk-table-column :label="$t('操作')">
           <template slot-scope="{ row }">
-            <cmdb-auth :auth="auth">
+            <cmdb-auth :auth="syncAuth">
               <template #default="{ disabled }">
-                <bk-button
-                  text
-                  :disabled="isInstanceDisabled(row.status) || disabled"
+                <bk-button text
+                  :disabled="isSyncDisabled(row.status) || disabled"
                   @click="handleSync(row)">
                   {{$t('去同步')}}
                 </bk-button>
               </template>
-            </cmdb-auth></template>
+            </cmdb-auth>
+            <cmdb-auth class="ml10"
+              :auth="delAuth"
+              v-bk-tooltips="{
+                content: row.hostCount ? $t('目标包含主机，不允许删除') : $t('由集群模板创建的模块无法删除'),
+                disabled: !isDelDisabled(row)
+              }">
+              <template #default="{ disabled }">
+                <bk-button text
+                  :disabled="isDelDisabled(row) || disabled"
+                  @click="handleDel(row)">
+                  {{$t('删除')}}
+                </bk-button>
+              </template>
+            </cmdb-auth>
+          </template>
         </bk-table-column>
         <cmdb-table-empty slot="empty" :stuff="table.stuff">
           <div>
@@ -98,6 +112,8 @@
   import BatchSelectionColumn from '@/components/batch-selection-column'
   import to from 'await-to-js'
   import cloneDeep from 'lodash/cloneDeep'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+
   export default {
     name: 'templateInstance',
     components: {
@@ -147,10 +163,16 @@
       serviceTemplateId() {
         return this.$route.params.templateId
       },
-      auth() {
+      syncAuth() {
         return {
           type: this.$OPERATION.U_SERVICE_TEMPLATE,
           relation: [this.bizId, Number(this.serviceTemplateId)]
+        }
+      },
+      delAuth() {
+        return {
+          type: this.$OPERATION.D_TOPO,
+          relation: [this.bizId]
         }
       }
     },
@@ -193,10 +215,17 @@
             throw Error(`加载 topo path 失败 ${loadTopoPathErr}`)
           }
 
+          const moduleHostCount = await this.getModuleHostCount(data.info)
+          if (!moduleHostCount) {
+            throw Error('获取实例主机数失败')
+          }
+
           data.info.forEach((module) => {
-            const topo = topoPath.nodes.find(topo => topo.topo_node.bk_inst_id === module.bk_module_id)
+            const { bk_module_id: moduleId } = module
+            const topo = topoPath.nodes.find(topo => topo.topo_node.bk_inst_id === moduleId)
             module.topoPath = topo.topo_path.map(path => path.bk_inst_name).reverse()
               .join(' / ')
+            module.hostCount = moduleHostCount.find(item => item.bk_inst_id === moduleId)?.host_count
           })
         }
         this.table.data = data.info
@@ -219,6 +248,20 @@
           bizId: this.bizId,
           serviceTemplateId: this.serviceTemplateId,
         })
+      },
+      async getModuleHostCount(modules) {
+        const moduleIds = modules.map(module => module.bk_module_id)
+        try {
+          const result = await this.$store.dispatch('objectMainLineModule/getTopoStatistics', {
+            bizId: this.bizId,
+            params: {
+              condition: moduleIds.map(id => ({ bk_obj_id: BUILTIN_MODELS.MODULE, bk_inst_id: id }))
+            }
+          })
+          return result
+        } catch (err) {
+          console.error(err)
+        }
       },
       renderVisibleList() {
         const { limit, current } = this.table.pagination
@@ -258,8 +301,11 @@
       /**
        * 实例是否置灰
        */
-      isInstanceDisabled(status) {
+      isSyncDisabled(status) {
         return this.isSyncing(status) || status === 'finished'
+      },
+      isDelDisabled(row) {
+        return Boolean(row.hostCount) || Boolean(row.set_template_id)
       },
       /**
        * 加载实例拓扑路径
@@ -293,6 +339,26 @@
             modules: this.table.selection.map(row => row.bk_module_id).join(',')
           },
           history: true
+        })
+      },
+      handleDel(row) {
+        this.$bkInfo({
+          title: `${this.$t('确定删除')} ${row.bk_module_name}?`,
+          confirmLoading: true,
+          confirmFn: async () => {
+            try {
+              await this.$store.dispatch('objectModule/deleteModule', {
+                bizId: this.bizId,
+                setId: row.bk_set_id,
+                moduleId: row.bk_module_id
+              })
+              this.$success(this.$t('删除成功'))
+
+              this.loadIntegrationInstances()
+            } catch (e) {
+              console.error(e)
+            }
+          }
         })
       },
       filterData() {
