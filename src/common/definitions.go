@@ -277,6 +277,12 @@ const (
 	// BKHostOuterIPField the host outerip field
 	BKHostOuterIPField = "bk_host_outerip"
 
+	// BKAddressingStatic the host addressing is static
+	BKAddressingStatic = "0"
+
+	// BKAddressingDynamic the host addressing is dynamic
+	BKAddressingDynamic = "1"
+
 	// BKCloudInstIDField the cloud instance id field
 	BKCloudInstIDField = "bk_cloud_inst_id"
 
@@ -984,6 +990,10 @@ const (
 const (
 	EventCacheEventIDKey = BKCacheKeyV3Prefix + "event:inst_id"
 	RedisSnapKeyPrefix   = BKCacheKeyV3Prefix + "snapshot:"
+
+	// RedisHostSnapMsgDelayQueue the monitor reports data, and queries the name of the key placed in the delay queue in
+	// the case of host failure.
+	RedisHostSnapMsgDelayQueue = BKCacheKeyV3Prefix + "host_snap:delay_queue"
 )
 const (
 	// RedisSentinelMode redis mode is sentinel
@@ -1077,6 +1087,15 @@ const (
 	HostOSTypeEnumUNIX    = "4"
 	HostOSTypeEnumSolaris = "5"
 )
+
+// HostOSTypeName Host system enum and name association
+var HostOSTypeName = map[string]string{
+	HostOSTypeEnumLinux:   "linux",
+	HostOSTypeEnumWindows: "windows",
+	HostOSTypeEnumAIX:     "aix",
+	HostOSTypeEnumUNIX:    "unix",
+	HostOSTypeEnumSolaris: "solaris",
+}
 
 const (
 	MaxProcessPrio = 10000

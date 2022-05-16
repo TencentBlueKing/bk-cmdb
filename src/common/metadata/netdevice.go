@@ -197,3 +197,9 @@ const (
 	ReporctMethodAccept = "accept"
 	ReporctMethodIgnore = "ignore"
 )
+const (
+	// IPv4LoopBackIpPrefix ipv4 loopback address
+	IPv4LoopBackIpPrefix = "127.0.0.1"
+	// IPv6LoopBackIp ipv6 loopback address
+	IPv6LoopBackIp = "::1"
+)

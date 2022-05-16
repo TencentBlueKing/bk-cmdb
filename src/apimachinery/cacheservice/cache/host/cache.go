@@ -21,7 +21,10 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (b *baseCache) SearchHostWithInnerIP(ctx context.Context, h http.Header, opt *metadata.SearchHostWithInnerIPOption) (jsonString string, err error) {
+// SearchHostWithInnerIPForStatic Note: This function is only used to query the host through ip+cloud in the static IP
+// scenario of the host snapshot !!!
+func (b *baseCache) SearchHostWithInnerIPForStatic(ctx context.Context, h http.Header, opt *metadata.SearchHostOption) (
+	jsonString string, err error) {
 
 	resp, err := b.client.Post().
 		WithContext(ctx).
@@ -33,6 +36,29 @@ func (b *baseCache) SearchHostWithInnerIP(ctx context.Context, h http.Header, op
 
 	if err != nil {
 		return "", errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !resp.Result {
+		return "", errors.New(resp.Code, resp.ErrMsg)
+	}
+
+	return resp.Data, nil
+}
+
+// SearchHostWithAgentID Note: find host information by agentID only for data collection api !!!.
+func (b *baseCache) SearchHostWithAgentID(ctx context.Context, h http.Header, opt *metadata.SearchHostOption) (
+	jsonString string, err error) {
+
+	resp, err := b.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/find/cache/host/with_agent_id").
+		WithHeaders(h).
+		Do().
+		IntoJsonString()
+
+	if err != nil {
+		return "", err
 	}
 
 	if !resp.Result {

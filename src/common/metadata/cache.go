@@ -14,9 +14,11 @@ package metadata
 
 import "configcenter/src/common/watch"
 
-type SearchHostWithInnerIPOption struct {
+// SearchHostOption 查找host details请求参数
+type SearchHostOption struct {
 	InnerIP string `json:"bk_host_innerip"`
 	CloudID int64  `json:"bk_cloud_id"`
+	AgentID string `json:"bk_agent_id"`
 	// only return these fields in hosts.
 	Fields []string `json:"fields"`
 }
