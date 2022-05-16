@@ -2092,7 +2092,7 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 			moduleUpdateOption)
 		if e != nil {
 			blog.Errorf("update module failed, option: %#v, err: %v, rid: %s", moduleUpdateOption, e, kit.Rid)
-			return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return e
 		}
 	}
 

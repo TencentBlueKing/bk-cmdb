@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
+	"configcenter/src/thirdparty/hooks/process"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
 
@@ -356,6 +357,8 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 			common.BKHostNameField,
 			common.BKHostInnerIPField,
 			common.BKHostOuterIPField,
+			common.BKHostInnerIPv6Field,
+			common.BKHostOuterIPv6Field,
 		},
 		Page: metadata.BasePage{
 			Start: 0,
@@ -393,10 +396,12 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 		return
 	}
 	type Host struct {
-		HostID   int64  `json:"bk_host_id" bson:"bk_host_id"`           // 主机ID(host_id)								数字
-		HostName string `json:"bk_host_name" bson:"bk_host_name"`       // 主机名称
-		InnerIP  string `json:"bk_host_innerip" bson:"bk_host_innerip"` // 内网IP
-		OuterIP  string `json:"bk_host_outerip" bson:"bk_host_outerip"` // 外网IP
+		HostID    int64  `json:"bk_host_id"`
+		HostName  string `json:"bk_host_name"`
+		InnerIP   string `json:"bk_host_innerip"`
+		InnerIPv6 string `json:"bk_host_innerip_v6"`
+		OuterIP   string `json:"bk_host_outerip"`
+		OuterIPv6 string `json:"bk_host_outerip_v6"`
 	}
 	host := Host{}
 	raw := resp.Data.Info[0]
@@ -423,6 +428,19 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 	if len(host.OuterIP) > 0 {
 		ipOptions = append(ipOptions, host.OuterIP)
 	}
+
+	// add process ipv6 options if needed
+	if process.NeedIPv6OptionsHook() {
+		ipOptions = append(ipOptions, "::1")
+		ipOptions = append(ipOptions, "::")
+		if len(host.InnerIPv6) > 0 {
+			ipOptions = append(ipOptions, host.InnerIPv6)
+		}
+		if len(host.OuterIPv6) > 0 {
+			ipOptions = append(ipOptions, host.OuterIPv6)
+		}
+	}
+
 	result := metadata.ResponseDataMapStr{
 		BaseResp: metadata.BaseResp{
 			Result: true,

@@ -14,7 +14,6 @@ package service
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -29,7 +28,6 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	processhook "configcenter/src/thirdparty/hooks/process"
 )
 
 func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
@@ -510,17 +508,6 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 		for _, field := range clearFields {
 			processData[field] = nil
 		}
-
-		processInfo := new(metadata.Process)
-		if err := mapstr.DecodeFromMapStr(&processInfo, processData); err != nil {
-			blog.ErrorJSON("parse update process data failed, data: %s, err: %v, rid: %s", processData, err, rid)
-			return nil, ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
-		}
-
-		if err := ps.validateProcessInstance(ctx.Kit, processInfo); err != nil {
-			blog.ErrorJSON("validate update process failed, err: %s, data: %s, rid: %s", err, processInfo, rid)
-			return nil, err
-		}
 		processDataMap[process.ProcessID] = processData
 	}
 
@@ -616,47 +603,6 @@ func (ps *ProcServer) getModule(kit *rest.Kit, moduleID int64) (*metadata.Module
 	}
 
 	return &moduleRes.Data.Info[0], nil
-}
-
-var (
-	ipRegex = `^((1?\d{1,2}|2[0-4]\d|25[0-5])[.]){3}(1?\d{1,2}|2[0-4]\d|25[0-5])$`
-)
-
-func (ps *ProcServer) validateProcessInstance(kit *rest.Kit, process *metadata.Process) errors.CCErrorCoder {
-	if process.ProcessName != nil && (len(*process.ProcessName) == 0 ||
-		len(*process.ProcessName) > common.NameFieldMaxLength) {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessNameField)
-	}
-	if process.FuncName != nil && (len(*process.FuncName) == 0 ||
-		len(*process.ProcessName) > common.NameFieldMaxLength) {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFuncName)
-	}
-
-	// validate that process bind info must have ip and port and protocol
-	for _, bindInfo := range process.BindInfo {
-		if bindInfo.Std.IP == nil || len(*bindInfo.Std.IP) == 0 {
-			if err := processhook.ValidateProcessBindIPEmptyHook(); err != nil {
-				return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKIP)
-			}
-		} else {
-			matched, err := regexp.MatchString(ipRegex, *bindInfo.Std.IP)
-			if err != nil || !matched {
-				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcBindInfo+"."+common.BKIP)
-			}
-		}
-
-		port := (*metadata.PropertyPortValue)(bindInfo.Std.Port)
-		if err := port.Validate(); err != nil {
-			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKPort)
-		}
-
-		protocol := (*metadata.ProtocolType)(bindInfo.Std.Protocol)
-		if err := protocol.Validate(); err != nil {
-			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKProtocol)
-		}
-	}
-
-	return nil
 }
 
 func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
