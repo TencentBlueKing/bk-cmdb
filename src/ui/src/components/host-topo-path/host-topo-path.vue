@@ -22,7 +22,6 @@
       <template v-if="!isResourcePool">
         <i class="path-single-link icon-cc-share"
           v-if="isSingle"
-          v-bk-tooltips="$t('跳转业务拓扑')"
           @click="handleLinkToTopology(modules[0])">
         </i>
         <span v-else
@@ -44,7 +43,6 @@
         :key="moduleId">
         <span class="path-tooltip-text" :title="getModulePath(moduleId)">{{getModulePath(moduleId)}}</span>
         <i class="path-tooltip-link icon-cc-share"
-          :title="$t('跳转业务拓扑')"
           @click="handleLinkToTopology(moduleId)">
         </i>
       </div>
