@@ -173,6 +173,25 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 			}
 			return []int64{bizSetID}, nil
 		},
+	}, {
+		Name:        "updatemanyServiceTemplateHostApplyEnableStatus",
+		Description: "更新服务模板主机自动应用状态",
+		// NOCC:tosa/linelength(忽略长度)
+		Regex:          regexp.MustCompile(`^/api/v3/updatemany/proc/service_template/host_apply_enable_status/bk_biz_id/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Update,
+	},
+	{
+		Name:           "searchRuleRelatedServiceTemplates",
+		Description:    "根据配置字段搜索服务模板",
+		Pattern:        "/api/v3/find/proc/service_template/host_apply_rule_related",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.FindMany,
 	},
 }
 

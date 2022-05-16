@@ -97,7 +97,31 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 				CCErrorf(common.CCErrCoreServiceUniqueIndexPropertyType, attr.PropertyID)
 		}
 		dbIndex.Keys[attr.PropertyID] = 1
+
+		// NOTICE: 主机agentID唯一校验需要兼容主机无agentID（即agentID为空字符串）的场景
+		// 因为没有绑定agent的主机默认都有一个空字符串的agentID字段，此时agentID实际上并没有重复
+		if objID == common.BKInnerObjIDHost && attr.PropertyID == common.BKAgentIDField {
+			dbIndex.PartialFilterExpression[attr.PropertyID] = map[string]interface{}{
+				common.BKDBType: dbType,
+				common.BKDBGT:   "",
+			}
+		}
+
 		dbIndex.PartialFilterExpression[attr.PropertyID] = map[string]interface{}{common.BKDBType: dbType}
+	}
+
+	// NOTICE: 主机内网IP+云区域唯一校验需要满足寻址方式为静态的条件，因为动态场景IP可变，更新不及时等情况可能出现重复，不能作为唯一标识
+	if objID == common.BKInnerObjIDHost && len(dbIndex.Keys) == 2 {
+		if _, exists := dbIndex.Keys[common.BKCloudIDField]; !exists {
+			return dbIndex, nil
+		}
+
+		_, ipv4Exists := dbIndex.Keys[common.BKHostInnerIPField]
+		_, ipv6Exists := dbIndex.Keys[common.BKHostInnerIPv6Field]
+
+		if ipv4Exists || ipv6Exists {
+			dbIndex.PartialFilterExpression[common.BKAddressingField] = "0"
+		}
 	}
 
 	return dbIndex, nil

@@ -1,0 +1,459 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+$exportActionBarHeight: 50px; // 导出操作栏高度
+$topTipsHeight: 30px; // 顶部提示栏高度
+$topTipsMarginBottom: 10px; // 顶部提示栏下边距
+$modelOptionsHeight: 32px; // 模型选项栏高度
+// 模型管理固定定位头部高度
+$modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMarginBottom + 35px;
+
+.model-management {
+  background-color: #fafbfd;
+
+  &-header {
+    padding: 15px 24px 20px;
+    height: $modelManagementHeaderHeight;
+    font-size: 0;
+    background-color: #fafbfd;
+
+    @at-root .is-tips-hidden & {
+      height: $modelManagementHeaderHeight - $topTipsHeight - $topTipsMarginBottom;
+    }
+
+    .cmdb-tips {
+      margin-bottom: $topTipsMarginBottom;
+    }
+
+    .bk-button {
+      margin-right: 10px;
+    }
+  }
+
+  &-body {
+    height: calc(100% - $modelManagementHeaderHeight);
+    overflow: auto;
+
+    @at-root .is-model-selectable & {
+      height: calc(100% - $modelManagementHeaderHeight - $exportActionBarHeight);
+    }
+
+    @at-root .is-tips-hidden & {
+      height: calc(100% - ($modelManagementHeaderHeight - $topTipsHeight - $topTipsMarginBottom));
+    }
+
+    @at-root .is-tips-hidden.is-model-selectable &{
+      $height: $modelManagementHeaderHeight - $topTipsHeight - $topTipsMarginBottom + $exportActionBarHeight;
+      height: calc(100% - $height);
+    }
+  }
+}
+
+.export-action-bar {
+  display: flex;
+  align-items: center;
+  height: $exportActionBarHeight;
+  box-sizing: border-box;
+  background: #fff;
+  border-top: 1px solid #e2e2e2;
+  font-size: 14px;
+
+  .full-selection {
+    margin-left: 24px;
+  }
+
+  .selected-count {
+    margin-left: auto;
+    margin-right: 33px;
+
+    > em {
+      font-weight: 600;
+      font-style: normal;
+    }
+  }
+
+  .next-step-button {
+    margin-right: 24px;
+    width: 120px;
+  }
+
+  .cancel-button {
+    width: 86px;
+    margin-right: 10px;
+  }
+}
+
+.model-export-label {
+  display: none;
+  font-size: 14px;
+  font-weight: 600;
+
+  @at-root .is-model-selectable & {
+    display: block;
+  }
+}
+
+.model-management-options {
+  display: flex;
+  height: $modelOptionsHeight;
+}
+
+.model-operation-options {
+  @at-root .is-model-selectable & {
+    display: none;
+  }
+}
+
+.model-type-options {
+  margin-left: auto;
+  font-size: 0;
+
+  @at-root .is-model-selectable & {
+    display: none;
+  }
+
+  .model-type-button {
+    position: relative;
+    margin: 0;
+    font-size: 12px;
+    height: 32px;
+    line-height: 30px;
+    &.enable {
+      border-radius: 2px 0 0 2px;
+      border-right-color: #3a84ff;
+      z-index: 2;
+    }
+    &.disabled {
+      border-radius: 0 2px 2px 0;
+      margin-left: -1px;
+      z-index: 1;
+    }
+    &:hover {
+      border-color: #3a84ff;
+      z-index: 2;
+    }
+    &.is-active {
+      border-color: #3a84ff;
+      color: #3a84ff;
+      z-index: 2;
+    }
+    & + .model-type-button {
+      border-radius: 0 2px 2px 0;
+      margin-left: -1px;
+    }
+  }
+}
+
+.model-search-options {
+  margin-left: 10px;
+
+  @at-root .is-model-selectable & {
+    margin-left: auto;
+  }
+
+  .model-search-input {
+    width: 240px;
+  }
+}
+
+// 模型分组
+.group-list {
+  padding: 0 24px 25px;
+}
+
+.group-item {
+  & + & {
+    margin-top: 20px;
+  }
+
+  .exception-text {
+    font-size: 14px;
+    text-align: center;
+    color: #63656e;
+  }
+}
+
+.group-header {
+  display: flex;
+  color: #313238;
+  font-size: 14px;
+
+  .full-selection-checkbox {
+    display: none;
+    margin-left: auto;
+
+    @at-root .is-model-selectable & {
+      display: block;
+    }
+  }
+}
+
+// 模型
+.model-list {
+  $modelItemWidth: 256px;
+  $modelItemRadius: 2px;
+  $modelItemHeight: 60px;
+  
+  .model-item {
+    float: left;
+    display: flex;
+    margin-right: 12px;
+    margin-top: 10px;
+    width: $modelItemWidth;
+    height: $modelItemHeight;
+    background-color: #fff;
+    border-radius: $modelItemRadius;
+    box-shadow: 0px 2px 4px 0px rgba(25, 25, 41, 0.05);
+    cursor: pointer;
+
+    &:hover {
+      transition: all 200ms ease;
+      box-shadow: 0px 2px 4px 0px rgba(25, 25, 41, 0.05),
+        0px 2px 4px 0px rgba(0, 0, 0, 0.1);
+
+      .model-instance-count {
+        display: flex;
+      }
+    }
+
+    @at-root .is-dragging &:hover {
+      box-shadow: 0px 2px 4px 0px rgba(25, 25, 41, 0.05);
+    }
+
+    &.is-builtin {
+      .model-icon {
+        background-color: #f5f7fa;
+        transition: background-color 200ms ease;
+
+        .icon {
+          color: #798aad;
+        }
+      }
+
+      &:hover .model-icon{
+        background-color: #fff;
+      }
+    }
+
+    &.is-paused {
+      opacity: 0.4;
+    }
+
+    &-ghost {
+      background-color: #f5f7fa;
+      border: 1px dashed $cmdbLayoutBorderColor;
+
+      &:hover {
+        border-color: $cmdbLayoutBorderColor;
+        box-shadow: none;
+      }
+
+      > * {
+        display: none !important;
+      }
+    }
+
+    &-drag {
+      background-color: #f0f1f5;
+    }
+
+    .model-info {
+      flex: 0 1 auto;
+      width: $modelItemWidth - $modelItemHeight;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      border-radius: $modelItemRadius 0 0 $modelItemRadius;
+
+      &:hover {
+        background-color: #eff5ff;
+        .drag-icon {
+          visibility: visible;
+        }
+      }
+
+      @at-root .is-dragging &:hover {
+        background-color: inherit;
+      }
+
+      @at-root .is-model-selectable & {
+        width: 100%;
+      }
+
+      &.no-instance-count {
+        border-radius: $modelItemRadius;
+        width: 100%;
+      }
+
+      .drag-icon {
+        flex-shrink: 0;
+        visibility: hidden;
+        margin-left: 5px;
+        @include dragIcon;
+
+        @at-root .is-model-selectable & {
+          visibility: hidden;
+        }
+      }
+    }
+
+    .model-icon {
+      flex: 0 0 40px;
+      width: 40px;
+      height: 40px;
+      margin-left: 5px;
+      line-height: 40px;
+      text-align: center;
+      border-radius: 50%;
+      background-color: #e1ecff;
+
+      .icon {
+        color: #3a84ff;
+        font-size: 16px;
+        vertical-align: 1px;
+      }
+    }
+
+    .model-details {
+      margin-left: 11px;
+      overflow: hidden;
+    }
+
+    .model-name {
+      line-height: 19px;
+      font-size: 14px;
+      @include ellipsis;
+    }
+
+    .model-id {
+      line-height: 16px;
+      font-size: 12px;
+      color: #bfc7d2;
+      @include ellipsis;
+    }
+
+    .model-instance-count {
+      display: none;
+      flex: 0 0 $modelItemHeight;
+      width: $modelItemHeight;
+      height: $modelItemHeight;
+      align-items: center;
+      justify-content: center;
+      margin-left: auto;
+      border-radius: 0 $modelItemRadius $modelItemRadius 0;
+      color: #3a84ff;
+
+      &:hover {
+        background-color: #eff5ff;
+      }
+
+      @at-root .is-dragging &:hover {
+        background-color: inherit;
+      }
+
+      @at-root .is-model-selectable & {
+        display: none;
+      }
+    }
+
+    .model-checkbox {
+      flex: 0 0 auto;
+      display: none;
+      margin: auto;
+      margin-right: 10px;
+
+      @at-root .is-model-selectable & {
+        display: block;
+      }
+    }
+  }
+}
+
+// 自定义弹窗
+.dialog {
+  .dialog-content {
+    padding: 20px 15px 20px 28px;
+  }
+  .title {
+    font-size: 20px;
+    color: #333948;
+    line-height: 1;
+    padding-bottom: 14px;
+  }
+  .label-item,
+  label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 0;
+    &:last-child {
+      margin: 0;
+    }
+    .color-danger {
+      display: inline-block;
+      font-size: 14px;
+      width: 15px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .icon-info-circle {
+      font-size: 18px;
+      color: $cmdbBorderColor;
+    }
+    .label-title {
+      font-size: 14px;
+      line-height: 36px;
+      vertical-align: middle;
+      @include ellipsis;
+    }
+    .cmdb-form-item {
+      display: inline-block;
+      margin-right: 10px;
+      width: 519px;
+      vertical-align: middle;
+    }
+  }
+  .footer {
+    font-size: 0;
+    text-align: right;
+    .bk-primary {
+      margin-right: 10px;
+    }
+  }
+}
+
+// 创建成功后弹窗内容
+.success-content {
+  text-align: center;
+  padding-bottom: 46px;
+  p {
+    color: #444444;
+    font-size: 24px;
+    padding: 10px 0 20px;
+  }
+  .icon-check-1 {
+    width: 58px;
+    height: 58px;
+    line-height: 58px;
+    font-size: 50px;
+    font-weight: bold;
+    color: #fff;
+    border-radius: 50%;
+    background-color: #2dcb56;
+    text-align: center;
+  }
+  .btn-box {
+    font-size: 0;
+    .bk-button {
+      margin: 0 5px;
+    }
+  }
+}

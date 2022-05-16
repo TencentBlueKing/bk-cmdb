@@ -120,6 +120,10 @@ func (s *Service) initBizSet(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path: "/count/topoinst/host_service_inst/biz_set/{bk_biz_set_id}", Handler: s.CountBizSetTopoHostAndSrvInst})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodGet,
+		Path:    "/findmany/biz_set/simplify",
+		Handler: s.ListAllBusinessSetSimplify})
+
 	utility.AddToRestfulWebService(web)
 }
 
@@ -146,7 +150,7 @@ func (s *Service) initModule(web *restful.WebService) {
 		Path:    "/module/bk_biz_id/{bk_biz_id}/service_template_id/{service_template_id}",
 		Handler: s.ListModulesByServiceTemplateID})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut,
-		Path:    "/module/host_apply_enable_status/bk_biz_id/{bk_biz_id}/bk_module_id/{bk_module_id}",
+		Path:    "/module/host_apply_enable_status/bk_biz_id/{bk_biz_id}",
 		Handler: s.UpdateModuleHostApplyEnableStatus})
 
 	utility.AddToRestfulWebService(web)

@@ -632,7 +632,7 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v, input: %+v, param: %+v, rid: %s",
 				err, data, opt, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return err
 		}
 
 		// save audit log.
@@ -694,10 +694,15 @@ func (s *Service) getHostBizMapAndHostInfoMap(kit *rest.Kit, hostIDs []int64) (m
 }
 
 // updateHostPropertyBatch concurrent update of host's property fields.
-func (s *Service) updateHostPropertyBatch(kit *rest.Kit, hostIDArr []int64, hostMap map[int64]mapstr.MapStr,
-	hostBizMap map[int64]int64, parameter *meta.UpdateHostPropertyBatchParameter) error {
+func (s *Service) updateHostPropertyBatch(kit *rest.Kit, hostIDArr []int64,
+	parameter *meta.UpdateHostPropertyBatchParameter) error {
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
+		hostBizMap, hostMap, err := s.getHostBizMapAndHostInfoMap(kit, hostIDArr)
+		if err != nil {
+			return err
+		}
+
 		auditContexts := make([]meta.AuditLog, 0)
 		audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
 
@@ -821,13 +826,7 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	hostBizMap, hostMap, err := s.getHostBizMapAndHostInfoMap(ctx.Kit, hostIDs)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if err := s.updateHostPropertyBatch(ctx.Kit, hostIDs, hostMap, hostBizMap, parameter); err != nil {
+	if err := s.updateHostPropertyBatch(ctx.Kit, hostIDs, parameter); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}

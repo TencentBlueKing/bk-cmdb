@@ -118,6 +118,7 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchInstAsstEvent:                  "实例关联事件监听",
 	WatchBizSetEvent:                    "业务集事件监听",
 	GlobalSettings:                      "全局设置",
+	ManageHostAgentID:                   "主机AgentID管理",
 }
 
 // GenerateActions generate all the actions registered to IAM.
@@ -604,6 +605,14 @@ func genResourcePoolHostActions() []ResourceAction {
 		RelatedResourceTypes: transferToDirectoryRelatedResource,
 		RelatedActions:       nil,
 		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:      ManageHostAgentID,
+		Name:    ActionIDNameMap[ManageHostAgentID],
+		NameEn:  "Manage Host AgentID",
+		Type:    Edit,
+		Version: 1,
 	})
 
 	return actions

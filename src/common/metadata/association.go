@@ -69,6 +69,11 @@ type UpdateAssociationTypeRequest struct {
 	Direction string `field:"direction" json:"direction" bson:"direction"`
 }
 
+// UpdateManyAssociationTypeRequest params of update many association type
+type UpdateManyAssociationTypeRequest struct {
+	Data map[int64]UpdateAssociationTypeRequest `json:"data"`
+}
+
 type UpdateAssociationTypeResult struct {
 	BaseResp `json:",inline"`
 	Data     string `json:"data"`
@@ -383,6 +388,11 @@ func (cli *AssociationKind) Parse(data mapstr.MapStr) (*AssociationKind, error) 
 	}
 
 	return cli, err
+}
+
+// ToMapStr to mapstr
+func (cli *AssociationKind) ToMapStr() mapstr.MapStr {
+	return mapstr.SetValueToMapStrByTags(cli)
 }
 
 type AssociationOnDeleteAction string
@@ -721,4 +731,35 @@ type FindAssociationByObjectAssociationIDRequest struct {
 type FindAssociationByObjectAssociationIDResponse struct {
 	BaseResp
 	Data []Association `json:"data"`
+}
+
+// AssociationKindYaml yaml's field about association kind
+type AssociationKindYaml struct {
+	YamlHeader `json:",inline" yaml:",inline"`
+	AsstKind   []AssociationKind `json:"asst_kind" yaml:"asst_kind"`
+}
+
+// Validate validate total yaml of association
+func (asst *AssociationKindYaml) Validate() errors.RawErrorInfo {
+	if err := asst.YamlHeader.Validate(); err.ErrCode != 0 {
+		return err
+	}
+
+	for _, item := range asst.AsstKind {
+		if len(item.AssociationKindID) == 0 {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrWebVerifyYamlFail,
+				Args:    []interface{}{common.AssociationKindIDField + " not found"},
+			}
+		}
+
+		if item.AssociationKindID == common.AssociationKindMainline {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrWebVerifyYamlFail,
+				Args:    []interface{}{common.AssociationKindMainline + " forbidden operations"},
+			}
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }

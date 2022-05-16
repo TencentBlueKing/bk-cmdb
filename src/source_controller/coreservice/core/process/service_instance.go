@@ -119,8 +119,10 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 	// get host data for instance name and bind IP
 	host := metadata.HostMapStr{}
 	filter := map[string]interface{}{common.BKHostIDField: instance.HostID}
-	if err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField,
-		common.BKHostOuterIPField).One(kit.Ctx, &host); err != nil {
+	fields := []string{common.BKHostInnerIPField, common.BKHostOuterIPField, common.BKHostInnerIPv6Field,
+		common.BKHostOuterIPv6Field}
+	err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Fields(fields...).One(kit.Ctx, &host)
+	if err != nil {
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -166,8 +168,8 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 				continue
 			}
 
-			if err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField,
-				common.BKHostOuterIPField).One(kit.Ctx, &host); err != nil {
+			err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Fields(fields...).One(kit.Ctx, &host)
+			if err != nil {
 				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 			}
 			break
@@ -383,8 +385,8 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 	if option.BusinessID <= 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
-	if option.Page.Limit > common.BKMaxPageSize {
-		return nil, kit.CCError.CCError(common.CCErrCommOverLimit)
+	if option.Page.IsIllegal() {
+		return nil, kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded)
 	}
 
 	// set query params

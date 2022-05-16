@@ -37,9 +37,6 @@ import (
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
-	// init esb client
-	esb.InitEsbClient(nil)
-
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -177,7 +174,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		if auth.EnableAuthorize() {
 			blog.Info("enable auth center access.")
 
-			iamCli, err = iamcli.NewIAM(nil, process.Config.IAM, engine.Metric().Registry())
+			iamCli, err = iamcli.NewIAM(process.Config.IAM, engine.Metric().Registry())
 			if err != nil {
 				return fmt.Errorf("new iam client failed: %v", err)
 			}
@@ -186,13 +183,16 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			blog.Infof("disable auth center access.")
 		}
 
-		if esbConfig, err := esb.ParseEsbConfig(""); err == nil {
+		if esbConfig, err := esb.ParseEsbConfig(); err == nil {
 			esb.UpdateEsbConfig(*esbConfig)
 		}
 
 		process.Service.Logics = logics.NewLogics(engine)
 		break
 	}
+
+	// init esb client
+	esb.InitEsbClient(nil)
 
 	if err := service.BackgroundTask(*process.Config); err != nil {
 		return err

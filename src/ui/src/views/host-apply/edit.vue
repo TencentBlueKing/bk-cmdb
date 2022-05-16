@@ -1,10 +1,22 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
-  <div class="apply-edit" v-bkloading="{ isLoading: $loading(['getHostApplyTopopath']) }">
+  <div class="apply-edit">
     <component
       :is="currentView"
-      :module-ids="moduleIds"
-      :action="action"
-    >
+      :mode="mode"
+      :ids="targetIds"
+      :action="action">
     </component>
   </div>
 </template>
@@ -12,32 +24,43 @@
 <script>
   import { mapGetters } from 'vuex'
   import has from 'has'
-  import multiModuleConfig from './children/multi-module-config'
-  import singleModuleConfig from './children/single-module-config'
-  import {
-    MENU_BUSINESS_HOST_APPLY_CONFIRM
-  } from '@/dictionary/menu-symbol'
+  import multiConfig from './children/multi-config'
+  import singleConfig from './children/single-config'
+  import { MENU_BUSINESS_HOST_APPLY_CONFIRM  } from '@/dictionary/menu-symbol'
+  import serviceTemplateService, { CONFIG_MODE } from '@/services/service-template/index.js'
+
   export default {
     components: {
-      multiModuleConfig,
-      singleModuleConfig
+      multiConfig,
+      singleConfig
     },
     data() {
       return {
         currentView: '',
-        moduleMap: {}
+        moduleMap: {},
+        templateMap: new Map()
+      }
+    },
+    provide() {
+      return {
+        getModuleName: this.getModuleName,
+        getModulePath: this.getModulePath,
+        getTemplateName: this.getTemplateName
       }
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      moduleIds() {
-        const { mid } = this.$route.query
-        let moduleIds = []
-        if (mid) {
-          moduleIds = String(mid).split(',')
+      mode() {
+        return this.$route.params.mode
+      },
+      targetIds() {
+        const { id } = this.$route.query
+        let targetIds = []
+        if (id) {
+          targetIds = String(id).split(',')
             .map(id => Number(id))
         }
-        return moduleIds
+        return targetIds
       },
       isBatch() {
         return has(this.$route.query, 'batch')
@@ -50,14 +73,24 @@
         if (this.isBatch) {
           title = this.$t(this.action === 'batch-del' ? '批量删除' : '批量编辑')
         } else {
-          title = `${this.$t('编辑')} ${this.getModuleName(this.moduleIds[0])}`
+          const getName = {
+            [CONFIG_MODE.MODULE]: this.getModuleName,
+            [CONFIG_MODE.TEMPLATE]: this.getTemplateName
+          }
+          title = `${this.$t('编辑')} ${getName[this.mode](this.targetIds[0])}`
         }
         return title
       }
     },
-    created() {
-      this.initData()
-      this.currentView = this.isBatch ? multiModuleConfig.name : singleModuleConfig.name
+    async created() {
+      if (this.mode === CONFIG_MODE.MODULE) {
+        await this.initTopoData()
+      } else if (this.mode === CONFIG_MODE.TEMPLATE) {
+        await this.initTemplateData()
+      }
+
+      this.setBreadcrumbs()
+      this.currentView = this.isBatch ? multiConfig.name : singleConfig.name
     },
     beforeRouteLeave(to, from, next) {
       if (to.name !== MENU_BUSINESS_HOST_APPLY_CONFIRM) {
@@ -66,7 +99,7 @@
       next()
     },
     methods: {
-      async initData() {
+      async initTopoData() {
         try {
           const topopath = await this.getTopopath()
           const moduleMap = {}
@@ -74,8 +107,16 @@
             moduleMap[node.topo_node.bk_inst_id] = node.topo_path
           })
           this.moduleMap = Object.freeze(moduleMap)
-
-          this.setBreadcrumbs()
+        } catch (e) {
+          console.log(e)
+        }
+      },
+      async initTemplateData() {
+        try {
+          const templateMap = new Map()
+          const list = await serviceTemplateService.findAllByIds(this.targetIds, { bk_biz_id: this.bizId })
+          list.forEach(item => templateMap.set(item.id, item))
+          this.templateMap = templateMap
         } catch (e) {
           console.log(e)
         }
@@ -87,10 +128,7 @@
         return this.$store.dispatch('hostApply/getTopopath', {
           bizId: this.bizId,
           params: {
-            topo_nodes: this.moduleIds.map(id => ({ bk_obj_id: 'module', bk_inst_id: id }))
-          },
-          config: {
-            requestId: 'getHostApplyTopopath'
+            topo_nodes: this.targetIds.map(id => ({ bk_obj_id: 'module', bk_inst_id: id }))
           }
         })
       },
@@ -104,13 +142,16 @@
         const topoInfo = this.moduleMap[id] || []
         const target = topoInfo.find(target => target.bk_obj_id === 'module' && target.bk_inst_id === id) || {}
         return target.bk_inst_name
+      },
+      getTemplateName(id) {
+        return this.templateMap.get(id)?.name
       }
     }
   }
 </script>
 
 <style lang="scss" scoped>
-    .apply-edit {
-        padding: 0 20px;
-    }
+  .apply-edit {
+    padding: 0;
+  }
 </style>

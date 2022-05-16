@@ -13,12 +13,15 @@
 package util
 
 import (
+	"crypto/tls"
 	"fmt"
 	"time"
 
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/flowctrl"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/ssl"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -67,7 +70,8 @@ type TLSClientConfig struct {
 	Password string
 }
 
-func NewTLSClientConfigFromConfig(prefix string, config map[string]string) (TLSClientConfig, error) {
+// NewTLSClientConfigFromConfig new config about tls client config
+func NewTLSClientConfigFromConfig(prefix string) (TLSClientConfig, error) {
 	tlsConfig := TLSClientConfig{}
 
 	skipVerifyKey := fmt.Sprintf("%s.insecureSkipVerify", prefix)
@@ -99,4 +103,32 @@ func NewTLSClientConfigFromConfig(prefix string, config map[string]string) (TLSC
 	}
 
 	return tlsConfig, nil
+}
+
+// ExtraClientConfig extra http client configuration
+type ExtraClientConfig struct {
+	// ResponseHeaderTimeout the amount of time to wait for a server's response headers
+	ResponseHeaderTimeout time.Duration
+}
+
+// GetClientTLSConfig get client tls config
+func GetClientTLSConfig(prefix string) (*tls.Config, error) {
+	tlsConf := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
+	config, err := NewTLSClientConfigFromConfig(prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(config.CAFile) != 0 && len(config.CertFile) != 0 && len(config.KeyFile) != 0 {
+		tlsConf, err = ssl.ClientTLSConfVerity(config.CAFile, config.CertFile, config.KeyFile, config.Password)
+		if err != nil {
+			return nil, err
+		}
+		tlsConf.InsecureSkipVerify = config.InsecureSkipVerify
+	}
+
+	return tlsConf, nil
 }

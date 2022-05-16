@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
 )
@@ -75,6 +76,9 @@ type HostServerClientInterface interface {
 	SearchCloudArea(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.SearchResp, err error)
 	DeleteCloudArea(ctx context.Context, h http.Header, cloudID int64) (resp *metadata.Response, err error)
 	FindCloudAreaHostCount(ctx context.Context, header http.Header, option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error)
+
+	BindAgent(ctx context.Context, h http.Header, params *metadata.BindAgentParam) errors.CCErrorCoder
+	UnbindAgent(ctx context.Context, h http.Header, params *metadata.UnbindAgentParam) errors.CCErrorCoder
 }
 
 func NewHostServerClientInterface(c *util.Capability, version string) HostServerClientInterface {

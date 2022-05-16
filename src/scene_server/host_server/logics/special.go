@@ -104,7 +104,7 @@ func (s *special) BkSystemInstall(ctx context.Context, appName string,
 		if httpDoErr != nil {
 			blog.ErrorJSON("BkSystemInstall update host instance http do error.  err:%s, input:%s, "+
 				"update parameter:%s, rid:%s", httpDoErr, input, updateInput, s.kit.Rid)
-			return s.kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return httpDoErr
 		}
 	}
 

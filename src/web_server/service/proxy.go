@@ -14,11 +14,14 @@ package service
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"time"
 
+	apiutil "configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
@@ -61,7 +64,30 @@ func (s *Service) ProxyRequest(c *gin.Context) {
 		return
 	}
 
+	tlsConf, err := apiutil.GetClientTLSConfig("webServer.site.paas.tls")
+	if err != nil {
+		c.Writer.Write([]byte(err.Error()))
+		blog.Errorf("get webServer.site.paas.tls config error, err: %v", err)
+		return
+	}
+
 	proxy := httputil.NewSingleHostReverseProxy(url)
+	if tlsConf != nil {
+		proxy.Transport = &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			ForceAttemptHTTP2:     true,
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			TLSClientConfig:       tlsConf,
+		}
+	}
+
 	reqMethod, err := getRequestMethod(method)
 	if err != nil {
 		blog.Errorf("get true request method failed, err: %v, rid: %s", err, rid)

@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import http from '@/api'
 import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
 import { enableCount, onePageParams } from '../utils.js'
@@ -18,7 +30,7 @@ const find = async (params, config) => {
   }
 }
 
-const findById = async (id, config) => {
+const findById = async (id, config = {}) => {
   try {
     const { info: [instance = null] } = await http.post('findmany/biz_set', enableCount({
       bk_biz_set_filter: {
@@ -38,6 +50,8 @@ const findById = async (id, config) => {
     return null
   }
 }
+
+const findOne = async (params, config = {}) => findById(params[MODEL_ID_KEY], config)
 
 const getAuthorized = async (config) => {
   try {
@@ -88,12 +102,16 @@ const deleteById = (id, config) => http.post('deletemany/biz_set', {
   bk_biz_set_ids: [id]
 }, config)
 
+const getAll = config => http.get('findmany/biz_set/simplify', config)
+
 export default {
   find,
   findById,
+  findOne,
   create,
   update,
   deleteById,
+  getAll,
   previewOfBeforeCreate,
   previewOfAfterCreate,
   getAuthorized,

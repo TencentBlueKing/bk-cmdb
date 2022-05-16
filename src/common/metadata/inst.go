@@ -73,6 +73,7 @@ type BizSetInst struct {
 	LastTime         Time        `json:"last_time" bson:"last_time"`
 	SupplierAccount  string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	Scope            BizSetScope `json:"bk_scope" bson:"bk_scope"`
+	Default          int64       `json:"default" bson:"default"`
 }
 
 type CloudInst struct {

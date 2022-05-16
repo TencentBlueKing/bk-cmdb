@@ -41,6 +41,10 @@ func (s *coreService) initProcess(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/service_template/detail/bk_biz_id/{bk_biz_id}", Handler: s.ListServiceTemplateDetail})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/process/service_template", Handler: s.ListServiceTemplates})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/process/service_template/{service_template_id}", Handler: s.UpdateServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path:    "/update/batch/process/service_templates",
+		Handler: s.UpdateBatchServiceTemplates})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/process/service_template/{service_template_id}", Handler: s.DeleteServiceTemplate})
 
 	// service instance

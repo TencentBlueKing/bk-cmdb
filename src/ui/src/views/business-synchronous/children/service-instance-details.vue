@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div class="instance-details-wrapper" v-bkloading="{ isLoading: $loading() }">
     <bk-table
@@ -5,7 +17,7 @@
       :max-height="$APP.height - 120">
       <bk-table-column prop="property_name" :label="$t('属性名称')" show-overflow-tooltip></bk-table-column>
 
-      <bk-table-column prop="property_value" :label="$t('变更前')" show-overflow-tooltip>
+      <bk-table-column prop="property_value" :label="$t('变更前')">
         <template slot-scope="{ row }">
           <process-bind-info-value
             v-if="row.property_id === 'bind_info'"
@@ -15,6 +27,10 @@
 
           <cmdb-property-value
             v-else
+            v-bk-tooltips="{
+              content: getPropertyValue(row, 'before'),
+              duration: 500
+            }"
             :value="getPropertyValue(row, 'before')"
             :property="properties.find(property => property.bk_property_id === row.property_id)">
           </cmdb-property-value>
