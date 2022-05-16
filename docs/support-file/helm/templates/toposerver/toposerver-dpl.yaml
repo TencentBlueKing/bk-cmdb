@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: toposerver
-        image: {{ .Values.image.registry }}/{{ .Values.toposerver.image.repository }}:{{ .Values.toposerver.image.tag }}
+        image: {{ .Values.image.registry }}/{{ .Values.toposerver.image.repository }}:v{{ default .Chart.AppVersion .Values.toposerver.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         workingDir: {{ .Values.toposerver.workDir }}
         command:

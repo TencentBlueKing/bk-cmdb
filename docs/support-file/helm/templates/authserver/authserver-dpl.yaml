@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: authserver
-        image: {{ .Values.image.registry }}/{{ .Values.authserver.image.repository }}:{{ .Values.authserver.image.tag }}
+        image: {{ .Values.image.registry }}/{{ .Values.authserver.image.repository }}:v{{ default .Chart.AppVersion .Values.authserver.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         workingDir: {{ .Values.authserver.workDir }}
         command:

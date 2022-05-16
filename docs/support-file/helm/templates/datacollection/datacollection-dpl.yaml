@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: datacollection
-        image: {{ .Values.image.registry }}/{{ .Values.datacollection.image.repository }}:{{ .Values.datacollection.image.tag }}
+        image: {{ .Values.image.registry }}/{{ .Values.datacollection.image.repository }}:v{{ default .Chart.AppVersion .Values.datacollection.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         workingDir: {{ .Values.datacollection.workDir }}
         command:

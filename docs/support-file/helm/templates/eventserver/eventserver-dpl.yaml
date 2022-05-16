@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: eventserver
-        image: {{ .Values.image.registry }}/{{ .Values.eventserver.image.repository }}:{{ .Values.eventserver.image.tag }}
+        image: {{ .Values.image.registry }}/{{ .Values.eventserver.image.repository }}:v{{ default .Chart.AppVersion .Values.eventserver.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         workingDir: {{ .Values.eventserver.workDir }}
         command:
@@ -75,11 +75,19 @@ spec:
         ports:
         - containerPort: {{ .Values.eventserver.port }}
 
-      {{- if .Values.eventserver.configDir }}
         volumeMounts:
+          - name: cert
+            mountPath: {{ .Values.certPath }}
+        {{- if .Values.eventserver.configDir }}
           - name: configures
             mountPath: {{ .Values.eventserver.configDir }}
+        {{- end }}
+
       volumes:
+        - name: cert
+          configMap:
+            name: {{ template "bk-cmdb.fullname" . }}-certs
+      {{- if .Values.eventserver.configDir }}
         - name: configures
           configMap:
             name: {{ .Release.Name }}-eventserver-configures

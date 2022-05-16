@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: coreservice
-        image: {{ .Values.image.registry }}/{{ .Values.coreservice.image.repository }}:{{ .Values.coreservice.image.tag }}
+        image: {{ .Values.image.registry }}/{{ .Values.coreservice.image.repository }}:v{{ default .Chart.AppVersion .Values.coreservice.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         workingDir: {{ .Values.coreservice.workDir }}
         command: ["./cmdb_coreservice"]

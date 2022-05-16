@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: apiserver
-        image: {{ .Values.image.registry }}/{{ .Values.apiserver.image.repository }}:{{ .Values.apiserver.image.tag }}
+        image: {{ .Values.image.registry }}/{{ .Values.apiserver.image.repository }}:v{{ default .Chart.AppVersion .Values.apiserver.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         workingDir: {{ .Values.apiserver.workDir }}
         command:

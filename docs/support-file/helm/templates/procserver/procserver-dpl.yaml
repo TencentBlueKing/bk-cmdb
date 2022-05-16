@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: procserver
-        image: {{ .Values.image.registry }}/{{ .Values.procserver.image.repository }}:{{ .Values.procserver.image.tag }}
+        image: {{ .Values.image.registry }}/{{ .Values.procserver.image.repository }}:v{{ default .Chart.AppVersion .Values.procserver.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         workingDir: {{ .Values.procserver.workDir }}
         command:

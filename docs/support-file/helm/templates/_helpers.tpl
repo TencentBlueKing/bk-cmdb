@@ -182,7 +182,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 
 {{- define "cmdb.mongodb.addr" -}}
   {{- if eq .Values.mongodb.enabled true -}}
-    {{ .Release.Name }}-mongodb-0.{{ .Release.Name }}-{{- .Values.mongodb.host -}}
+    {{ .Release.Name }}-mongodb-0.{{ .Release.Name }}-{{- .Values.mongodb.host -}}:{{- printf "%s" "27017" -}}
   {{- else -}}
     {{- .Values.mongodb.externalMongodb.host -}}
   {{- end -}}
@@ -204,17 +204,9 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
   {{- end -}}
 {{- end -}}
 
-{{- define "cmdb.mongodb.port" -}}
-  {{- if eq .Values.mongodb.enabled true -}}
-    {{- printf "%s" "27017" -}}
-  {{- else -}}
-    {{- .Values.mongodb.externalMongodb.port -}}
-  {{- end -}}
-{{- end -}}
-
 {{- define "cmdb.mongodb.watch.addr" -}}
   {{- if eq .Values.mongodb.enabled true -}}
-    {{ .Release.Name }}-mongodb-0.{{ .Release.Name }}-{{- .Values.mongodb.host -}}
+    {{ .Release.Name }}-mongodb-0.{{ .Release.Name }}-{{- .Values.mongodb.host -}}:{{- printf "%s" "27017" -}}
   {{- else -}}
     {{- .Values.mongodb.watch.host -}}
   {{- end -}}
@@ -236,16 +228,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
   {{- end -}}
 {{- end -}}
 
-{{- define "cmdb.mongodb.watch.port" -}}
-  {{- if eq .Values.mongodb.enabled true -}}
-    {{- printf "%s" "27017" -}}
-  {{- else -}}
-    {{- .Values.mongodb.watch.port -}}
-  {{- end -}}
-{{- end -}}
-
 {{- define "cmdb.mongodb.mongo-url" -}}
-    mongodb://{{ include "cmdb.mongodb.usr" . }}:{{ include "cmdb.mongodb.pwd" . }}@{{- template "cmdb.mongodb.addr" . -}}:{{ include "cmdb.mongodb.port" . }}/cmdb
+    mongodb://{{ include "cmdb.mongodb.usr" . }}:{{ include "cmdb.mongodb.pwd" . }}@{{- template "cmdb.mongodb.addr" . -}}/cmdb
 {{- end -}}
 
 {{- define "cmdb.elasticsearch.urlAndPort" -}}
@@ -258,7 +242,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{- define "cmdb.basicImagesAddress" -}}
-    {{ .Values.image.registry }}/{{ .Values.migrate.image.repository }}:{{ .Values.migrate.image.tag }}
+    {{ .Values.image.registry }}/{{ .Values.migrate.image.repository }}:v{{ default .Chart.AppVersion .Values.migrate.image.tag }}
 {{- end -}}
 
 {{- define "cmdb.webserver.bkLoginUrl" -}}
