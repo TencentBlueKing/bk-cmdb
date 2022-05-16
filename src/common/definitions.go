@@ -277,9 +277,6 @@ const (
 	// BKHostOuterIPField the host outerip field
 	BKHostOuterIPField = "bk_host_outerip"
 
-	// BKAddressingField the host addressing field
-	BKAddressingField = "bk_addressing"
-
 	// BKAddressingStatic the host addressing is static
 	BKAddressingStatic = "0"
 
