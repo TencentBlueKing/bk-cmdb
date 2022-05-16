@@ -235,13 +235,6 @@ func checkMsgInfoValid(rid, agentID, host string, elements []gjson.Result) error
 		return errors.New("the agentID field is inconsistent with the data")
 	}
 
-	// if agentID is empty, then address must not be a dynamic address.
-	if agentID == "" && elements[3].Exists() && elements[3].String() == common.BKAddressingDynamic {
-		blog.Errorf("snapshot analyze, agnent id is null, the address field must not be a dynamic address, host: %s, "+
-			"rid: %s", host, rid)
-		return errors.New("dynamic_addressing error")
-	}
-
 	// if agentID is not empty, the bk_addressing field must be present.
 	if agentID != "" && !elements[3].Exists() {
 		blog.Errorf("snapshot analyze, bk_addressing is null, host: %s, agentID: %s rid: %s", host, agentID, rid)
@@ -260,6 +253,7 @@ func (h *HostSnap) getHostDetail(header http.Header, rid, agentID, msg, sourceTy
 			if err := h.putDataIntoDelayQueue(rid, msg); err != nil {
 				blog.Errorf("put msg to delay queue failed, agentID: %, err: %v, rid: %s", agentID, err, rid)
 			}
+			blog.Errorf("get host detail with agentID: %v failed, err: %v, rid: %s", agentID, err, rid)
 			return "", errors.New("no host founded")
 		}
 		if sourceType == metadata.HostSnapDataSourcesDelayQueue {
@@ -281,6 +275,19 @@ func (h *HostSnap) getHostDetail(header http.Header, rid, agentID, msg, sourceTy
 	}
 	return host, nil
 }
+
+// 1. Parse out the fields such as agentID, ip, cloudID, etc. from the reported message. The ipv4 field is a required
+// field.
+// 2. If the agentID is not empty, you need to use the agentID as the key to query the host. If the agentID is empty or
+// there is no agentID field, you need to query the information in the static IP scenario through ip+cloudID. It should
+// be noted here that if both gse agent and cmdb support dynamic IP scenarios, then bkmonitorBeat At this time, the old
+// version will cause an update error in the dynamic ip scenario. It is necessary to ensure that bkMonitorBeat also
+// needs to support agentID.
+// 3. If the host information is not found in cmdb at this time, put this information in the delay queue, and the delay
+// queue will re-report the query failure message every 10s. The information in the delay queue is kept for a maximum
+// of ten minutes, and the messages before ten minutes are directly discarded.
+// 4. After the obtained message, it will be judged whether an updated message has been updated to cmdb. If the
+// timestamp of this message is earlier than the data in cmdb, it will be discarded directly.
 
 // Analyze analyze host snap
 func (h *HostSnap) Analyze(msg *string, sourceType string) (bool, error) {
@@ -965,7 +972,7 @@ func (h *HostSnap) getHostByVal(header http.Header, rid string, cloudID int64, i
 			Fields:  reqireFields,
 		}
 
-		host, err := h.Engine.CoreAPI.CacheService().Cache().Host().SearchHostWithInnerIP(context.Background(),
+		host, err := h.Engine.CoreAPI.CacheService().Cache().Host().SearchHostWithInnerIPForStatic(context.Background(),
 			header, opt)
 		if err != nil {
 			blog.Errorf("get host info with ip: %s, cloud id: %d failed, err: %v, rid: %s", ip, cloudID, err, rid)
@@ -993,7 +1000,7 @@ func getIPsFromMsg(val *gjson.Result) ([]string, []string) {
 	ipv6Map := make(map[string]struct{})
 
 	rootIP := val.Get("ip").String()
-	if !strings.HasPrefix(rootIP, metadata.IPv4LoopBackIpPrefix) && rootIP != metadata.IPv6LoopBackIp &&
+	if rootIP != metadata.IPv4LoopBackIpPrefix && rootIP != metadata.IPv6LoopBackIp &&
 		net.ParseIP(rootIP) != nil {
 		if strings.Contains(rootIP, ":") {
 			ipv6Map[rootIP] = struct{}{}
@@ -1006,7 +1013,7 @@ func getIPsFromMsg(val *gjson.Result) ([]string, []string) {
 	for _, addrs := range interfaces {
 		for _, addr := range addrs.Array() {
 			ip := strings.Split(addr.String(), "/")[0]
-			if strings.HasPrefix(ip, metadata.IPv4LoopBackIpPrefix) || ip == metadata.IPv6LoopBackIp {
+			if ip == metadata.IPv4LoopBackIpPrefix || ip == metadata.IPv6LoopBackIp {
 				continue
 			}
 

@@ -21,7 +21,7 @@ import (
 )
 
 type Interface interface {
-	SearchHostWithInnerIP(ctx context.Context, h http.Header, opt *metadata.SearchHostOption) (
+	SearchHostWithInnerIPForStatic(ctx context.Context, h http.Header, opt *metadata.SearchHostOption) (
 		jsonString string, err error)
 	SearchHostWithAgentID(ctx context.Context, h http.Header, opt *metadata.SearchHostOption) (
 		jsonString string, err error)

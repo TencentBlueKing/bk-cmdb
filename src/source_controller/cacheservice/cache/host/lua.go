@@ -74,7 +74,7 @@ func (c *Client) getHostDetailWithAgentID(rid string, agentID string) (*string, 
 	}
 
 	// now, we need to refresh the cache.
-	hostID, detail, err := getHostDetailsFromMongoWithAgentID(rid, agentID)
+	hostID, addressType, detail, err := getHostDetailsFromMongoWithAgentID(rid, agentID)
 	if err != nil {
 		return nil, fmt.Errorf("get host detail with agentID :%s failed, err: %v, rid: %s", agentID, err, rid)
 	}
@@ -82,7 +82,7 @@ func (c *Client) getHostDetailWithAgentID(rid string, agentID string) (*string, 
 	host := &hostBase{
 		hostID:      hostID,
 		agentID:     agentID,
-		addressType: common.BKAddressingStatic,
+		addressType: addressType,
 		detail:      string(detail),
 	}
 	// refreshing the cache through agentID does not need to care about addressType, just assign static value directly.

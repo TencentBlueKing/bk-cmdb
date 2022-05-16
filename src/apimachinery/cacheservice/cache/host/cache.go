@@ -21,8 +21,9 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// SearchHostWithInnerIP Note: only for data collection api !!!.
-func (b *baseCache) SearchHostWithInnerIP(ctx context.Context, h http.Header, opt *metadata.SearchHostOption) (
+// SearchHostWithInnerIPForStatic Note: This function is only used to query the host through ip+cloud in the static IP
+// scenario of the host snapshot !!!
+func (b *baseCache) SearchHostWithInnerIPForStatic(ctx context.Context, h http.Header, opt *metadata.SearchHostOption) (
 	jsonString string, err error) {
 
 	resp, err := b.client.Post().

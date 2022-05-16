@@ -374,21 +374,28 @@ func getHostDetailsFromMongoWithIP(innerIP string, cloudID int64) (int64, []byte
 	return id, js, nil
 }
 
-func getHostDetailsFromMongoWithAgentID(rid string, agentID string) (hostID int64, detail []byte, err error) {
+func getHostDetailsFromMongoWithAgentID(rid string, agentID string) (int64, string, []byte, error) {
 	filter := mapstr.MapStr{
 		common.BKAgentIDField: agentID,
 	}
 	host := make(metadata.HostMapStr)
-	err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).One(context.Background(), &host)
+	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).One(context.Background(), &host)
 	if err != nil {
 		blog.Errorf("get host data from mongodb with agentID: %s failed, err: %v, rid: %v", agentID, err, rid)
-		return 0, nil, err
+		return 0, "", nil, err
 	}
 	id, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 	if err != nil {
-		return 0, nil, fmt.Errorf("get host data from mongodb with agentID: %s failed, host: %+v, err: %v, rid: %s",
+		return 0, "", nil, fmt.Errorf("get host data from mongodb with agentID: %s failed, host: %+v, err: %v, rid: %s",
 			agentID, host, err, rid)
 	}
+
+	addressType := common.BKAddressingStatic
+	if host[common.BKAddressingField] != nil {
+		if field, ok := host[common.BKAddressingField].(string); ok {
+			addressType = field
+		}
+	}
 	js, _ := json.Marshal(host)
-	return id, js, nil
+	return id, addressType, js, nil
 }
