@@ -37,7 +37,18 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 		return
 	}
 
-	var processIDs []int64
+	if len(input.Processes) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsIsInvalid, "not set processes"))
+		blog.Infof("no process to create, return")
+		return
+	}
+	if len(input.Processes) > common.BKMaxUpdateOrCreatePageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "create process instances",
+			common.BKMaxUpdateOrCreatePageSize))
+		return
+	}
+
+	processIDs := make([]int64, 0)
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		processIDs, err = ps.createProcessInstances(ctx, input)
@@ -254,6 +265,11 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 		return
 	}
 
+	if len(input.Raw) > common.BKMaxUpdateOrCreatePageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "update process instances",
+			common.BKMaxUpdateOrCreatePageSize))
+		return
+	}
 	// generate audit log before processes are updated
 	auditLogs, err := ps.generateUpdateProcessAudit(ctx.Kit, input)
 	if err != nil {
@@ -598,6 +614,12 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 
 	if len(input.ProcessInstanceIDs) == 0 {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcessIDField))
+		return
+	}
+
+	if len(input.ProcessInstanceIDs) > common.BKMaxDeletePageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "delete process instance",
+			common.BKMaxDeletePageSize))
 		return
 	}
 

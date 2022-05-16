@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -240,6 +241,39 @@ func (s *coreService) UpdateServiceTemplate(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(result)
+}
+
+// UpdateBatchServiceTemplates batch update service template data based on specified conditions.
+func (s *coreService) UpdateBatchServiceTemplates(ctx *rest.Contexts) {
+
+	kit := ctx.Kit
+	option := new(metadata.UpdateOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if len(option.Data) == 0 {
+		blog.Errorf("update batch service template failed, path parameter data empty, rid: %s", kit.Rid)
+		ctx.RespAutoError(kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "data"))
+		return
+	}
+	// there must be a business ID in the condition.
+	if !util.IsNumeric(option.Condition[common.BKAppIDField]) {
+		blog.Errorf("batch update service template failed, %s is empty, rid: %s", common.BKAppIDField, kit.Rid)
+		ctx.RespAutoError(kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKAppIDField))
+		return
+	}
+
+	// do update
+	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Update(kit.Ctx, option.Condition,
+		option.Data); nil != err {
+		blog.Errorf("batch update service template failed, table: %s, filter: %+v, data: %+v, err: %+v, rid: %s",
+			common.BKTableNameServiceTemplate, option.Condition, option.Data, err, kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
 }
 
 func (s *coreService) DeleteServiceTemplate(ctx *rest.Contexts) {

@@ -46,18 +46,29 @@ func (asst *association) CreateAssociationType(ctx context.Context, h http.Heade
 	return &resp.Data, nil
 }
 
-func (asst *association) CreateManyAssociation(ctx context.Context, h http.Header, input *metadata.CreateManyAssociationKind) (resp *metadata.CreatedManyOptionResult, err error) {
-	resp = new(metadata.CreatedManyOptionResult)
+func (asst *association) CreateManyAssociation(ctx context.Context, h http.Header,
+	input *metadata.CreateManyAssociationKind) (*metadata.CreateManyDataResult, error) {
+
+	resp := new(metadata.CreatedManyOptionResult)
 	subPath := "/createmany/associationkind"
 
-	err = asst.client.Post().
+	err := asst.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 func (asst *association) SetAssociation(ctx context.Context, h http.Header, input *metadata.SetAssociationKind) (resp *metadata.SetOptionResult, err error) {

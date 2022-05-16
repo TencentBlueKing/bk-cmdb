@@ -172,7 +172,8 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(ctx context.Context, header htt
 	return ret.Data, nil
 }
 
-func (p *hostApplyRule) GenerateApplyPlan(ctx context.Context, header http.Header, bizID int64, option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder) {
+func (p *hostApplyRule) GenerateApplyPlan(ctx context.Context, header http.Header, bizID int64,
+	option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp
 		Data metadata.HostApplyPlanResult `json:"data"`
@@ -247,4 +248,28 @@ func (p *hostApplyRule) RunHostApplyOnHosts(ctx context.Context, header http.Hea
 		return ret.Data, ret.CCError()
 	}
 	return ret.Data, nil
+}
+
+// SearchRuleRelatedServiceTemplates search rule related service templates
+func (p *hostApplyRule) SearchRuleRelatedServiceTemplates(ctx context.Context, header http.Header,
+	option *metadata.RuleRelatedServiceTemplateOption) ([]metadata.SrvTemplate, errors.CCErrorCoder) {
+
+	resp := new(metadata.ServiceTemplatesResponse)
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef("/findmany/service_templates/host_apply_rule_related").
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return resp.Data, errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.Data, resp.CCError()
+	}
+
+	return resp.Data, nil
 }

@@ -335,7 +335,7 @@ type SearchBriefBizTopoResult struct {
 // BizSetScope defines the scope of biz in biz set, can be all biz or specific biz that matches the filter
 type BizSetScope struct {
 	MatchAll bool                      `json:"match_all" bson:"match_all"`
-	Filter   *querybuilder.QueryFilter `json:"filter" bson:"filter"`
+	Filter   *querybuilder.QueryFilter `json:"filter" bson:"filter,omitempty"`
 }
 
 // BizSetScopeField specific conditions of business scope.

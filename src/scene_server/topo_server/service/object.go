@@ -335,3 +335,81 @@ func (s *Service) createObjectTableByObjectID(ctx *rest.Contexts, objectID strin
 	}
 	return nil
 }
+
+// CreateManyObject batch create object with it's attr and asst
+func (s *Service) CreateManyObject(ctx *rest.Contexts) {
+	data := new(metadata.ImportObjects)
+	if err := ctx.DecodeInto(data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	for _, item := range data.Objects {
+		// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
+		// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
+		// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
+		// Collection minimum is Timestamp(1616747878, 5)
+		if err := s.createObjectTable(ctx, mapstr.MapStr{common.BKObjIDField: item.ObjectID}); err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+	}
+
+	var rsp []metadata.Object
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		var err error
+		rsp, err = s.Logics.ObjectOperation().CreateObjectByImport(ctx.Kit, data.Objects)
+		if err != nil {
+			return err
+		}
+
+		if auth.EnableAuthorize() {
+			iamInstances := make([]metadata.IamInstanceWithCreator, 0)
+			for _, obj := range rsp {
+				iamInstances = append(iamInstances, metadata.IamInstanceWithCreator{
+					Type:    string(iam.SysModel),
+					ID:      strconv.FormatInt(obj.ID, 10),
+					Name:    obj.ObjectName,
+					Creator: ctx.Kit.User,
+				})
+			}
+			err := s.AuthManager.CreateObjectOnIAM(ctx.Kit.Ctx, ctx.Kit.Header, rsp, iamInstances)
+			if err != nil {
+				blog.Errorf("create object on iam failed, objects: %v, iam instances: %v, err: %v, rid: %s",
+					rsp, iamInstances, err, ctx.Kit.Rid)
+				return err
+			}
+		}
+
+		if len(data.Asst) != 0 {
+			if err = s.Logics.AssociationOperation().CreateOrUpdateAssociationType(ctx.Kit, data.Asst); err != nil {
+				blog.Errorf("create or update association kind failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(rsp)
+}
+
+// SearchObjectWithTotalInfo search object with it's attribute and association
+func (s *Service) SearchObjectWithTotalInfo(ctx *rest.Contexts) {
+	data := new(metadata.BatchExportObject)
+	if err := ctx.DecodeInto(data); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	resp, err := s.Logics.ObjectOperation().SearchObjectsWithTotalInfo(ctx.Kit, data.ObjectID, data.ExcludedAsstID)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(resp)
+}

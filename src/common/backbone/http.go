@@ -14,10 +14,7 @@ package backbone
 
 import (
 	"context"
-	"crypto/x509"
-	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -68,7 +65,7 @@ func ListenAndServe(c Server, svcDisc ServiceRegisterInterface, cancel context.C
 		}
 	}()
 
-	if len(c.TLS.CertFile) == 0 && len(c.TLS.KeyFile) == 0 {
+	if !isTLS(c.TLS) {
 		blog.Infof("start insecure server on %s:%d", c.ListenAddr, c.ListenPort)
 		go func() {
 			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -78,28 +75,18 @@ func ListenAndServe(c Server, svcDisc ServiceRegisterInterface, cancel context.C
 		return nil
 	}
 
-	ca, err := ioutil.ReadFile(c.TLS.CAFile)
-	if nil != err {
-		return fmt.Errorf("read server tls file failed. err:%v", err)
-	}
-
-	if false == x509.NewCertPool().AppendCertsFromPEM(ca) {
-		return errors.New("append cert from pem failed")
-	}
-
-	tlsC, err := ssl.ServerTslConfVerityClient(c.TLS.CAFile,
+	tlsC, err := ssl.ServerTLSVerifyClient(c.TLS.CAFile,
 		c.TLS.CertFile,
 		c.TLS.KeyFile,
 		c.TLS.Password)
 	if err != nil {
 		return fmt.Errorf("generate tls config failed. err: %v", err)
 	}
-	tlsC.BuildNameToCertificate()
 
 	server.TLSConfig = tlsC
 	blog.Infof("start secure server on %s:%d", c.ListenAddr, c.ListenPort)
 	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := server.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
 			blog.Fatalf("listen and serve failed, err: %v", err)
 		}
 	}()

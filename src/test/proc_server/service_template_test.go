@@ -73,6 +73,10 @@ var _ = Describe("service template test", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
 				"service_category_id": categoryId,
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 50,
+				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -140,6 +144,10 @@ var _ = Describe("service template test", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
 				"service_category_id": categoryId,
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 50,
+				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -303,6 +311,10 @@ var _ = Describe("service template test", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
 				"service_category_id": categoryId,
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 50,
+				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -624,6 +636,10 @@ var _ = Describe("service template test", func() {
 		It("search service instance by set template id", func() {
 			input := map[string]interface{}{
 				"set_template_id": 1,
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 50,
+				},
 			}
 			rsp, err := serviceClient.SearchServiceInstanceBySetTemplate(context.Background(), strconv.FormatInt(bizId, 10), header, input)
 			util.RegisterResponse(rsp)
@@ -815,6 +831,10 @@ var _ = Describe("service template test", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
 				"service_category_id": 2,
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 50,
+				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -894,6 +914,10 @@ var _ = Describe("service template test", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
 				"service_category_id": 2,
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 50,
+				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -908,6 +932,10 @@ var _ = Describe("service template test", func() {
 				common.BKAppIDField: bizId,
 				"service_instance_ids": []int64{
 					serviceId,
+				},
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 50,
 				},
 			}
 			rsp, err := serviceClient.DeleteServiceInstance(context.Background(), header, input)
