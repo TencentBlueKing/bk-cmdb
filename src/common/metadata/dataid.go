@@ -76,6 +76,7 @@ type GseConfigStreamToRedis struct {
 	StorageAddresses []GseConfigStorageAddress `json:"storage_address"`
 	Password         string                    `json:"passwd,omitempty"`
 	MasterName       string                    `json:"master_name,omitempty"`
+	Mode             string                    `json:"mode,omitempty"`
 }
 
 type GseConfigStreamToPulsar struct {

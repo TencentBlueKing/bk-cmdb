@@ -1,24 +1,38 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { reactive, isRef, watch, toRefs } from '@vue/composition-api'
 import hostSearchService from '@/service/host/search'
 import businessSearchService from '@/service/business/search'
 import instanceSearchService from '@/service/instance/search'
-import { reactive, isRef, watch, toRefs } from '@vue/composition-api'
+import businessSetService from '@/service/business-set/index.js'
+import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
 
 const getService = ({ bk_obj_id: objId }) => {
   const modelServiceMapping = {
-    host: hostSearchService,
-    biz: businessSearchService,
+    [BUILTIN_MODELS.HOST]: hostSearchService,
+    [BUILTIN_MODELS.BUSINESS]: businessSearchService,
+    [BUILTIN_MODELS.BUSINESS_SET]: businessSetService
   }
   return modelServiceMapping[objId] || instanceSearchService
 }
 
 const getServiceOptions = (options) => {
-  if (options.bk_obj_id === 'host') {
-    return { ...options, bk_host_id: options.bk_inst_id }
+  const idMapping = {
+    [BUILTIN_MODELS.HOST]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.HOST].ID],
+    [BUILTIN_MODELS.BUSINESS]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].ID],
+    [BUILTIN_MODELS.BUSINESS_SET]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]
   }
-  if (options.bk_obj_id === 'biz') {
-    return { ...options, bk_biz_id: options.bk_inst_id }
-  }
-  return options
+  return { ...options, [idMapping[options.bk_obj_id] || 'bk_inst_id']: options.bk_inst_id }
 }
 /**
  * options.bk_obj_id 模型id

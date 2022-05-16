@@ -1,9 +1,21 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div class="template-instance-layout">
     <div class="instance-main">
       <div class="options clearfix">
         <div class="fl">
-          <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [bizId] }">
+          <cmdb-auth :auth="syncAuth">
             <bk-button slot-scope="{ disabled }" v-test-id.businessSetTemplate="'batchSync'"
               theme="primary"
               :disabled="disabled || !checkedList.length"
@@ -66,7 +78,7 @@
         </bk-table-column>
         <bk-table-column :label="$t('操作')" width="180">
           <template slot-scope="{ row }">
-            <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [bizId] }">
+            <cmdb-auth :auth="syncAuth">
               <template slot-scope="{ disabled }">
                 <bk-button v-if="row.status === 'failure'"
                   text
@@ -76,9 +88,23 @@
                 </bk-button>
                 <bk-button v-else
                   text
-                  :disabled="disabled || isSyncing(row.status) || row.status === 'finished'"
+                  :disabled="disabled || isSyncDisabled(row.status)"
                   @click="handleSync(row)">
                   {{$t('去同步')}}
+                </bk-button>
+              </template>
+            </cmdb-auth>
+            <cmdb-auth class="ml10"
+              :auth="delAuth"
+              v-bk-tooltips="{
+                content: $t('目标包含主机，不允许删除'),
+                disabled: !isDelDisabled(row)
+              }">
+              <template #default="{ disabled }">
+                <bk-button text
+                  :disabled="isDelDisabled(row) || disabled"
+                  @click="handleDel(row)">
+                  {{$t('删除')}}
                 </bk-button>
               </template>
             </cmdb-auth>
@@ -224,6 +250,18 @@
         }
         this.filterName && (params.search = this.filterName)
         return params
+      },
+      syncAuth() {
+        return {
+          type: this.$OPERATION.U_TOPO,
+          relation: [this.bizId]
+        }
+      },
+      delAuth() {
+        return {
+          type: this.$OPERATION.D_TOPO,
+          relation: [this.bizId]
+        }
       }
     },
     watch: {
@@ -365,10 +403,16 @@
         this.handleFilter(1, true)
       },
       handleSelectable(row) {
-        return !this.isSyncing(row.status) && row.status !== 'finished'
+        return !this.isSyncDisabled(row.status)
       },
       isSyncing(status) {
         return ['new', 'waiting', 'executing'].includes(status)
+      },
+      isSyncDisabled(status) {
+        return this.isSyncing(status) || status === 'finished'
+      },
+      isDelDisabled(row) {
+        return Boolean(row.host_count)
       },
       handleBatchSync() {
         this.$store.commit('setFeatures/setSyncIdMap', {
@@ -413,6 +457,26 @@
         } catch (e) {
           console.error(e)
         }
+      },
+      handleDel(row) {
+        this.$bkInfo({
+          title: `${this.$t('确定删除')} ${row.bk_set_name}?`,
+          confirmLoading: true,
+          confirmFn: async () => {
+            try {
+              await this.$store.dispatch('objectSet/deleteSet', {
+                bizId: this.bizId,
+                setId: row.bk_set_id
+              })
+
+              this.$success(this.$t('删除成功'))
+
+              this.handleFilter()
+            } catch (e) {
+              console.error(e)
+            }
+          }
+        })
       },
       routeToHistory() {
         this.$routerActions.redirect({

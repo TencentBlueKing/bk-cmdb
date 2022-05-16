@@ -22,19 +22,28 @@ import (
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 )
 
-func NewClient(c *TLSClientConfig) (*http.Client, error) {
+// NewClient create a new http client
+func NewClient(c *TLSClientConfig, conf ...ExtraClientConfig) (*http.Client, error) {
 	tlsConf := new(tls.Config)
-	if nil != c {
-		tlsConf.InsecureSkipVerify = c.InsecureSkipVerify
-		if len(c.CAFile) != 0 && len(c.CertFile) != 0 && len(c.KeyFile) != 0 {
-			var err error
-			tlsConf, err = ssl.ClientTLSConfVerity(c.CAFile, c.CertFile, c.KeyFile, c.Password)
-			if err != nil {
-				return nil, err
-			}
+	if c != nil && len(c.CAFile) != 0 && len(c.CertFile) != 0 && len(c.KeyFile) != 0 {
+		var err error
+		tlsConf, err = ssl.ClientTLSConfVerity(c.CAFile, c.CertFile, c.KeyFile, c.Password)
+		if err != nil {
+			return nil, err
 		}
 	}
 
+	if c != nil {
+		tlsConf.InsecureSkipVerify = c.InsecureSkipVerify
+	}
+
+	// set api request timeout to 25s, so that we can stop the long request like searching all hosts
+	responseHeaderTimeout := 25 * time.Second
+	if len(conf) > 0 {
+		if timeout := conf[0].ResponseHeaderTimeout; timeout != 0 {
+			responseHeaderTimeout = timeout
+		}
+	}
 	transport := &http.Transport{
 		Proxy:               http.ProxyFromEnvironment,
 		TLSHandshakeTimeout: 5 * time.Second,
@@ -44,7 +53,7 @@ func NewClient(c *TLSClientConfig) (*http.Client, error) {
 			KeepAlive: 30 * time.Second,
 		}).Dial,
 		MaxIdleConnsPerHost:   100,
-		ResponseHeaderTimeout: 10 * time.Minute,
+		ResponseHeaderTimeout: responseHeaderTimeout,
 	}
 
 	client := &http.Client{

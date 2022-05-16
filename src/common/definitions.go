@@ -38,6 +38,15 @@ const (
 	// max limit of a page
 	BKMaxPageSize = 1000
 
+	// BKMaxLimitSize max limit of a page.
+	BKMaxLimitSize = 500
+
+	// BKMaxUpdateOrCreatePageSize maximum number of updates.
+	BKMaxUpdateOrCreatePageSize = 100
+
+	// BKMaxDeletePageSize max limit of a delete page
+	BKMaxDeletePageSize = 500
+
 	// max limit of instance count
 	BKMaxInstanceLimit = 500
 
@@ -659,8 +668,8 @@ const (
 	// BKAgentIDField the agent id field, used by agent to identify a host
 	BKAgentIDField = "bk_agent_id"
 
-	// BKAddressingField the host addressing mode field, data collection will collect & change inner ip if it's dynamic
-	BKAddressingField = "addressing"
+	// BKAddressingField the addressing field, defines the host addressing type
+	BKAddressingField = "bk_addressing"
 )
 
 const (
@@ -976,6 +985,12 @@ const (
 	EventCacheEventIDKey = BKCacheKeyV3Prefix + "event:inst_id"
 	RedisSnapKeyPrefix   = BKCacheKeyV3Prefix + "snapshot:"
 )
+const (
+	// RedisSentinelMode redis mode is sentinel
+	RedisSentinelMode = "sentinel"
+	// RedisSingleMode redis mode is single
+	RedisSingleMode = "single"
+)
 
 // api cache keys
 const (
@@ -1005,6 +1020,8 @@ const (
 	BKHTTPSecretsEnv     = "BK-Secrets-Env"
 	// BKHTTPReadReference  query db use secondary node
 	BKHTTPReadReference = "Cc_Read_Preference"
+	// BKHTTPRequestFromWeb represents if request is from web server
+	BKHTTPRequestFromWeb = "Cc_Request_From_Web"
 )
 
 type ReadPreferenceMode string
@@ -1290,6 +1307,11 @@ const (
 	SyncSetTaskFlag    = "set_template_sync"
 	SyncModuleTaskFlag = "service_template_sync"
 
+	// SyncModuleHostApplyTaskFlag module dimension host auto-apply async task flag.
+	SyncModuleHostApplyTaskFlag = "module_host_apply_sync"
+	// SyncServiceTemplateHostApplyTaskFlag  service template dimension host auto-apply async task flag.
+	SyncServiceTemplateHostApplyTaskFlag = "service_template_host_apply_sync"
+
 	BKHostState = "bk_state"
 )
 
@@ -1347,4 +1369,9 @@ const (
 const (
 	CCLogicUniqueIdxNamePrefix = "bkcc_unique_"
 	CCLogicIndexNamePrefix     = "bkcc_idx_"
+)
+
+const (
+	// DefaultResBusinessSetFlag the default resource business set flag
+	DefaultResBusinessSetFlag = 1
 )

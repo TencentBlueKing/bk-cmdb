@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div class="process-bind-info-value">
     <bk-popover v-bind="popoverOptoins" :disabled="popoverList.length < 2">
@@ -17,6 +29,8 @@
 
 <script>
   import TableValue from '@/components/ui/other/table-value'
+  import { PROCESS_BIND_IP_ALL_MAP } from '@/dictionary/process-bind-ip.js'
+
   export default {
     components: {
       TableValue
@@ -52,12 +66,7 @@
     },
     methods: {
       ipText(value) {
-        const map = {
-          1: '127.0.0.1',
-          2: '0.0.0.0',
-          3: this.$t('第一内网IP'),
-          4: this.$t('第一外网IP')
-        }
+        const map = PROCESS_BIND_IP_ALL_MAP
         return map[value] || value || '--'
       },
       setPopoverList() {
@@ -78,11 +87,11 @@
         const total = list.length
         const showCount = total > 1
         return (
-                    <div class={`bind-info-value${showCount ? ' show-count' : ''}`}>
-                        <span>{newList.join(', ')}</span>
-                        {showCount ? <span class="count">{total}</span> : ''}
-                    </div>
-                )
+          <div class={`bind-info-value${showCount ? ' show-count' : ''}`}>
+            <span>{newList.join(', ')}</span>
+            {showCount ? <span class="count">{total}</span> : ''}
+          </div>
+        )
       }
     }
   }
