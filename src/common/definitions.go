@@ -667,6 +667,9 @@ const (
 
 	// BKAgentIDField the agent id field, used by agent to identify a host
 	BKAgentIDField = "bk_agent_id"
+
+	// BKAddressingField the addressing field, defines the host addressing type
+	BKAddressingField = "bk_addressing"
 )
 
 const (
