@@ -72,8 +72,7 @@ const findAllByIds = async (ids, params, config) => {
 
     const req = segment => http.post('findmany/proc/service_template', {
       ...params,
-      service_template_ids: segment,
-      page: { start: 0, limit: 999999999 } // NoLimit
+      service_template_ids: segment
     }, config)
 
     const reqs = []

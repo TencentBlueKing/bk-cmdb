@@ -40,7 +40,7 @@
         v-bk-tooltips="{
           placement: 'top',
           interactive: false,
-          content: isLocked(rowProps) ? $t('进程模板取消锁定提示语') : $t('进程模板锁定提示语'),
+          content: $t('进程模板加解锁提示语'),
           delay: [100, 0]
         }"
         tabindex="-1"
