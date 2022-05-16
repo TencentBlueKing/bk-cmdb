@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <bk-sideslider
     :width="760"
@@ -61,7 +73,9 @@
         if (!this.details) {
           return null
         }
-        const withCompare = [
+
+        // 用表格来展示审计详情的审计目标，除开这里的其他都用 JSON 来展示。
+        const tableViewTargets = [
           BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.HOST],
           BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS],
           BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS_SET],
@@ -71,13 +85,32 @@
           'model_instance',
           'cloud_area'
         ]
-        return withCompare.includes(this.details.resource_type) ? DetailsTable.name : DetailsJson.name
+
+        let isTableViewTarget = tableViewTargets.includes(this.details.resource_type)
+
+        // 模型实例删除后可能有模型也同时被删除的情况，因模型实例的审计详情依赖模型数据，所以需要判断模型是否存在，模型不存在则无法用表格展示对比数据。
+        if (this.details.resource_type === 'model_instance') {
+          isTableViewTarget = this.isModelExisted()
+        }
+
+        return isTableViewTarget ? DetailsTable.name : DetailsJson.name
       }
     },
     async created() {
-      this.getDetails()
+      try {
+        this.pending = true
+        await this.getDetails()
+      } catch (error) {
+        console.log(error)
+      } finally {
+        this.pending = false
+      }
     },
     methods: {
+      isModelExisted() {
+        const modelId = this.details?.operation_detail?.bk_obj_id
+        return Boolean(this.$store.getters['objectModelClassify/getModelById'](modelId))
+      },
       show() {
         this.isShow = true
       },
@@ -86,8 +119,6 @@
       },
       async getDetails() {
         try {
-          this.pending = true
-
           if (this.aduitTarget === 'instance') {
             this.details = await this.$store.dispatch('audit/getInstDetails', {
               params: {
@@ -110,8 +141,6 @@
         } catch (error) {
           console.error(error)
           this.details = null
-        } finally {
-          this.pending = false
         }
       }
     }

@@ -324,10 +324,11 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Find:   Skip,
 	},
 	meta.HostApply: {
-		meta.Create: EditBusinessHostApply,
-		meta.Update: EditBusinessHostApply,
-		meta.Delete: EditBusinessHostApply,
-		meta.Find:   Skip,
+		meta.Create:           EditBusinessHostApply,
+		meta.Update:           EditBusinessHostApply,
+		meta.Delete:           EditBusinessHostApply,
+		meta.Find:             Skip,
+		meta.DefaultHostApply: ViewBusinessResource,
 	},
 	meta.ResourcePoolDirectory: {
 		meta.Delete:                DeleteResourcePoolDirectory,

@@ -82,7 +82,6 @@ func (assoc *association) SearchInstanceAssociations(kit *rest.Kit, objID string
 	if err != nil {
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
 	}
-	cond[common.BKObjIDField] = objID
 
 	conditions := &metadata.InstAsstQueryCondition{
 		ObjID: objID,

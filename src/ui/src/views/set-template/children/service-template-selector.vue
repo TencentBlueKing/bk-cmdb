@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <section>
     <div class="top" v-if="allTemplates.length">
@@ -75,6 +87,8 @@
 <script>
   import { MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
   import { mapGetters } from 'vuex'
+  import serviceTemplateService from '@/services/service-template/index.js'
+
   export default {
     name: 'serviceTemplateSelector',
     props: {
@@ -138,17 +152,10 @@
     methods: {
       async getTemplates() {
         try {
-          const { info: templates } = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
-            params: {
-              bk_biz_id: this.bizId,
-              page: {
-                sort: 'name'
-              }
-            },
-            config: {
-              requestId: 'getServiceTemplate'
-            }
+          const templates = await serviceTemplateService.findAll({ bk_biz_id: this.bizId, page: { sort: 'name' } }, {
+            requestId: 'getServiceTemplate'
           })
+
           this.templates = templates.sort((A, B) => {
             const weightA = this.selected.includes(A.id) ? 1 : 0
             const weightB = this.selected.includes(B.id) ? 1 : 0

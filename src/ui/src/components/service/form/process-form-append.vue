@@ -1,10 +1,22 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <span v-if="isLimited"></span>
-  <bk-popover class="process-form-tips" v-else>
+  <bk-popover class="process-form-tips" ext-cls="process-lock-popover" v-else>
     <i class="icon-cc-lock-fill"></i>
     <template slot="content">
       <i18n path="进程表单锁定提示">
-        <bk-link theme="primary" @click="handleRedirect" place="link">{{$t('跳转服务模板')}}</bk-link>
+        <bk-link theme="primary" @click="handleRedirect" place="link" class="goto-link">{{$t('跳转服务模板')}}</bk-link>
       </i18n>
     </template>
   </bk-popover>
@@ -81,5 +93,16 @@
             align-items: center;
             justify-content: center;
         }
+
+
     }
+</style>
+<style lang="scss">
+  .process-lock-popover {
+    .goto-link {
+      .bk-link-text {
+        font-size: 12px;
+      }
+    }
+  }
 </style>

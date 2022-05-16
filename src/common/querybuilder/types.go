@@ -29,6 +29,7 @@ type Rule interface {
 	Match(matcher Matcher) bool
 	// MatchAny if any of the rules matches the matcher, return true
 	MatchAny(matcher Matcher) bool
+	GetField() []string
 }
 
 // *************** define condition ************************
@@ -343,6 +344,11 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 	return filter, "", nil
 }
 
+// GetField get rule field
+func (r AtomRule) GetField() []string {
+	return []string{r.Field}
+}
+
 // *************** define query ************************
 type CombinedRule struct {
 	Condition Condition `json:"condition"`
@@ -481,4 +487,21 @@ func (r CombinedRule) MatchAny(matcher Matcher) bool {
 		}
 	}
 	return false
+}
+
+// GetField get rule field
+func (r CombinedRule) GetField() []string {
+	if len(r.Rules) == 0 {
+		return nil
+	}
+
+	result := make([]string, 0)
+	for _, rule := range r.Rules {
+		fields := rule.GetField()
+		if len(fields) != 0 {
+			result = append(result, fields...)
+		}
+	}
+
+	return result
 }

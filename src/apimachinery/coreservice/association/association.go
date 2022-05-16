@@ -31,7 +31,7 @@ type AssociationClientInterface interface {
 		*metadata.CreateOneDataResult, error)
 
 	CreateManyAssociation(ctx context.Context, h http.Header, input *metadata.CreateManyAssociationKind) (
-		resp *metadata.CreatedManyOptionResult, err error)
+		*metadata.CreateManyDataResult, error)
 	SetAssociation(ctx context.Context, h http.Header, input *metadata.SetAssociationKind) (
 		resp *metadata.SetOptionResult, err error)
 	SetManyAssociation(ctx context.Context, h http.Header, input *metadata.SetManyAssociationKind) (

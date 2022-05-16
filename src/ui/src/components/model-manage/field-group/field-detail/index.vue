@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <cmdb-sticky-layout class="model-slider-content">
     <div class="slider-main" ref="sliderMain">
@@ -35,6 +47,26 @@
         </div>
         <i class="icon-cc-exclamation-tips" v-if="isSystemCreate" tabindex="-1" v-bk-tooltips="$t('国际化配置翻译，不可修改')"></i>
       </label>
+      <div class="form-label">
+        <span class="label-text">
+          {{$t('字段分组')}}
+          <span class="color-danger">*</span>
+        </span>
+        <div class="cmdb-form-item">
+          <bk-select
+            class="bk-select-full-width"
+            searchable
+            :clearable="false"
+            v-model="fieldInfo.bk_property_group"
+            :disabled="isEditField">
+            <bk-option v-for="(option, index) in groups"
+              :key="index"
+              :id="option.bk_group_id"
+              :name="option.bk_group_name">
+            </bk-option>
+          </bk-select>
+        </div>
+      </div>
       <div class="form-label">
         <span class="label-text">
           {{$t('字段类型')}}
@@ -141,7 +173,12 @@
         type: Object
       },
       group: {
-        type: Object
+        type: Object,
+        default: () => ({})
+      },
+      groups: {
+        type: Array,
+        default: () => []
       },
       isReadOnly: {
         type: Boolean,
@@ -203,6 +240,7 @@
         fieldInfo: {
           bk_property_name: '',
           bk_property_id: '',
+          bk_property_group: this.group.bk_group_id,
           unit: '',
           placeholder: '',
           bk_property_type: 'singlechar',
@@ -330,13 +368,15 @@
             fieldId = this.fieldInfo.bk_property_id
             this.$http.cancel(`post_searchObjectAttribute_${this.activeModel.bk_obj_id}`)
             this.$http.cancelCache('getHostPropertyList')
+            this.$success(this.$t('修改成功'))
           })
         } else {
           const groupId = this.isGlobalView ? 'default' : 'bizdefault'
+          const selectedGroup = this.groups.find(group => group.bk_group_id === this.fieldInfo.bk_property_group)
           const otherParams = {
             creator: this.userName,
-            bk_property_group: this.group.bk_group_id || groupId,
-            bk_obj_id: this.group.bk_obj_id,
+            bk_property_group: this.fieldInfo.bk_property_group || this.group.bk_group_id || groupId,
+            bk_obj_id: selectedGroup?.bk_obj_id || this.group.bk_obj_id,
             bk_supplier_account: this.supplierAccount
           }
           const action = this.customObjId ? 'createBizObjectAttribute' : 'createObjectAttribute'
@@ -356,6 +396,7 @@
           }).then(() => {
             this.$http.cancel(`post_searchObjectAttribute_${this.activeModel.bk_obj_id}`)
             this.$http.cancelCache('getHostPropertyList')
+            this.$success(this.$t('创建成功'))
           })
         }
         this.$emit('save', fieldId)

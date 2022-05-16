@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div class="node-create-layout">
     <h2 class="node-create-title">{{$t('新建模块')}}</h2>
@@ -104,7 +116,9 @@
 
 <script>
   import has from 'has'
+  import serviceTemplateService from '@/services/service-template/index.js'
   import { MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
+
   export default {
     props: {
       parentNode: {
@@ -187,17 +201,10 @@
           this.templateList = this.serviceTemplateMap[this.business]
         } else {
           try {
-            const { info: templates } = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
-              params: {
-                bk_biz_id: this.business,
-                page: {
-                  sort: '-last_time'
-                }
-              },
-              config: {
-                requestId: this.request.serviceTemplate
-              }
+            const templates = await serviceTemplateService.findAll({ bk_biz_id: this.business, page: { sort: '-last_time' } }, {
+              requestId: this.request.serviceTemplate
             })
+
             this.templateList = templates
             this.$store.commit('businessHost/setServiceTemplate', {
               id: this.business,
