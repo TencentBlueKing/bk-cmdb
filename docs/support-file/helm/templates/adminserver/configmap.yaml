@@ -62,6 +62,19 @@ data:
         paasDomainUrl: {{ include "cmdb.webserver.paas_domain_url" . }}
         #帮助文档地址
         helpDocUrl: {{ .Values.common.webServer.site.helpDocUrl }}
+        paas:
+          # pass的tls相关配置
+          tls:
+            # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+            insecureSkipVerify: {{ .Values.common.paas.tls.insecureSkipVerify }}
+            # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+            certFile: {{ .Values.common.paas.tls.certFile }}
+            # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+            keyFile: {{ .Values.common.paas.tls.keyFile }}
+            # CA证书的路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+            caFile: {{ .Values.common.paas.tls.caFile }}
+            # 用于解密根据RFC1423加密的证书密钥的PEM块
+            password: {{ .Values.common.paas.tls.password }}
       app:
         authAppCode: {{ .Values.common.webServer.app.authAppCode }}
         authUrl: {{ .Values.common.webServer.app.authUrl }}
@@ -71,15 +84,6 @@ data:
       login:
         # 使用的登录系统， skip-login 免登陆模式， blueking 默认登录模式， 使用蓝鲸登录, oa 使用公司oa进行登陆
         version: {{ .Values.common.webServer.login.version }}
-      esb:
-        addr: {{ .Values.bkComponentApiUrl }}
-        appCode: {{ .Values.common.esb.appCode }}
-        appSecret: {{ .Values.common.esb.appSecret }}
-        insecureSkipVerify: true
-        certFile:
-        keyFile:
-        caFile:
-        password:
     # operation_server专属配置
     operationServer:
       timer:
@@ -99,15 +103,19 @@ data:
       appSecret: {{ .Values.common.auth.appSecret }}
       #开发商ID
       supplierID: {{ .Values.common.authServer.supplierID }}
-      esb:
-        addr: {{ .Values.bkComponentApiUrl }}
-        appCode: {{ .Values.common.esb.appCode }}
-        appSecret: {{ .Values.common.esb.appSecret }}
-        insecureSkipVerify: true
-        certFile:
-        keyFile:
-        caFile:
-        password:
+      authCenter:
+        # 权限中心tls配置
+        tls:
+          # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+          insecureSkipVerify: {{ .Values.common.auth.tls.insecureSkipVerify }}
+          # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+          certFile: {{ .Values.common.auth.tls.certFile }}
+          # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+          keyFile: {{ .Values.common.auth.tls.keyFile }}
+          # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+          caFile: {{ .Values.common.auth.tls.caFile }}
+          # 用于解密根据RFC1423加密的证书密钥的PEM块
+          password: {{ .Values.common.auth.tls.password }}
     #cloudServer专属配置
     cloudServer:
       # 加密服务使用
@@ -186,6 +194,18 @@ data:
       endpoint: {{ .Values.common.openTelemetry.endpoint }}
       # 日志平台openTelemetry跟踪链功能的上报data_id
       bkDataID: {{ .Values.common.openTelemetry.bkDataID }}
+      # 连接日志平台tls配置
+      tls:
+        # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+        insecureSkipVerify: {{ .Values.common.openTelemetry.tls.insecureSkipVerify }}
+        # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+        certFile: {{ .Values.common.openTelemetry.tls.certFile }}
+        # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+        keyFile: {{ .Values.common.openTelemetry.tls.keyFile }}
+        # CA证书的路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+        caFile: {{ .Values.common.openTelemetry.tls.caFile }}
+        # 用于解密根据RFC1423加密的证书密钥的PEM块
+        password: {{ .Values.common.openTelemetry.tls.password }}
 
     # eventServer相关配置
     eventServer:
@@ -261,6 +281,19 @@ data:
         # 安全协议SASL_PLAINTEXT，SASL机制SCRAM-SHA-512的账号、密码信息
         user: {{ .Values.common.kafka.user }}
         password: {{ .Values.common.kafka.password }}
+
+    # cmdb服务tls配置
+    tls:
+      # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+      insecureSkipVerify: {{ .Values.common.tls.insecureSkipVerify }}
+      # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+      certFile: {{ .Values.common.tls.certFile }}
+      # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+      keyFile: {{ .Values.common.tls.keyFile }}
+      # CA证书的路径，用于验证对方证书,,如:/data/cmdb/cert/ca.crt
+      caFile: {{ .Values.common.tls.caFile }}
+      # 用于解密根据RFC1423加密的证书密钥的PEM块
+      password: {{ .Values.common.tls.password }}
 
   extra.yaml: |-
     

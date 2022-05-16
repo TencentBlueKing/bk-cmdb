@@ -1098,6 +1098,20 @@ common:
   auth:
     appCode: bk_cmdb
     appSecret:
+    ## bk-cmdb common config auth center parameters
+    ## @param common.auth.tls.insecureSkipVerify paas insecureSkipVerify config
+    ## @param common.auth.tls.certFile paas certFile
+    ## @param common.auth.tls.keyFile paas keyFile
+    ## @param common.auth.tls.caFile paas caFile
+    ## @param common.auth.tls.password paas password
+    ##
+    tls:
+      insecureSkipVerify:
+      certFile:
+      keyFile:
+      caFile:
+      password:
+
   ## bk-cmdb common config esb parameters
   ## @param common.esb.appCode bk-cmdb app code used in esb
   ## @param common.esb.appSecret bk-cmdb app secret used in esb
@@ -1105,6 +1119,22 @@ common:
   esb:
     appCode: bk_cmdb
     appSecret:
+
+  ## bk-cmdb common config paas parameters
+  ## @param common.paas.tls.insecureSkipVerify paas insecureSkipVerify config
+  ## @param common.paas.tls.certFile paas certFile
+  ## @param common.paas.tls.keyFile paas keyFile
+  ## @param common.paas.tls.caFile paas caFile
+  ## @param common.paas.tls.password paas password
+  ##
+  paas:
+    tls:
+      insecureSkipVerify:
+      certFile:
+      keyFile:
+      caFile:
+      password:
+
   ## bk-cmdb common config elasticsearch parameters
   ## @param common.es.fullTextSearch Enable full text search
   ## @param common.es.utl elasticsearch url
@@ -1274,6 +1304,18 @@ common:
     ## 日志平台openTelemetry跟踪链功能的上报data_id
     ##
     bkDataID:
+    ## @param common.openTelemetry.tls.insecureSkipVerify openTelemetry insecureSkipVerify config
+    ## @param common.openTelemetry.tls.certFile openTelemetry certFile
+    ## @param common.openTelemetry.tls.keyFile openTelemetry keyFile
+    ## @param common.openTelemetry.tls.caFile openTelemetry caFile
+    ## @param common.openTelemetry.tls.password openTelemetry password
+    ##
+    tls:
+      insecureSkipVerify:
+      certFile:
+      keyFile:
+      caFile:
+      password:
 
   ## eventServer common config parameters
   ##
@@ -1389,6 +1431,19 @@ common:
     ## 安全协议SASL_PLAINTEXT，SASL机制SCRAM-SHA-512的账号、密码信息
     ##
     user:
+    password:
+  ## @param common.tls.insecureSkipVerify cmdb insecureSkipVerify config
+  ## @param common.tls.certFile cmdb certFile
+  ## @param common.tls.keyFile cmdb keyFile
+  ## @param common.tls.caFile cmdb caFile
+  ## @param common.tls.password cmdb password
+  ## cmdb证书相关信息
+  ##
+  tls:
+    insecureSkipVerify:
+    certFile:
+    keyFile:
+    caFile:
     password:
 
 ## @section zookeeper parameters
