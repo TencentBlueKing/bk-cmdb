@@ -219,6 +219,22 @@ func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue inter
 			return true, nil
 		}
 
+	case common.FieldTypeTime:
+		expectVal, ok := expectValue.(primitive.DateTime)
+		if !ok {
+			return false, errors.New(common.CCErrCommUnexpectedFieldType, "expect value type error")
+		}
+		expectTimeVal := expectVal.Time()
+
+		propertyTimeValue, err := metadata.ParseTime(propertyValue)
+		if err != nil {
+			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
+		}
+
+		if cmp.Equal(expectTimeVal, propertyTimeValue) {
+			return true, nil
+		}
+
 	default:
 		if cmp.Equal(expectValue, propertyValue) {
 			return true, nil
