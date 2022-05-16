@@ -282,6 +282,7 @@ const (
 	DeleteResourcePoolHost              ActionID = "delete_resource_pool_host"
 	ResourcePoolHostTransferToBusiness  ActionID = "assign_host_to_biz"
 	ResourcePoolHostTransferToDirectory ActionID = "host_transfer_in_resource_pool"
+	ManageHostAgentID                   ActionID = "manage_host_agent_id"
 
 	CreateResourcePoolDirectory ActionID = "create_resource_pool_directory"
 	EditResourcePoolDirectory   ActionID = "edit_resource_pool_directory"

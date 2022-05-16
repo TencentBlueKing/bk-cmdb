@@ -118,6 +118,7 @@ const (
 	AddHostToResourcePool          Action = "addHostToResourcePool"
 	MoveBizHostFromModuleToResPool Action = "moveHostFromModuleToResPool"
 	MoveHostToAnotherBizModule     Action = "moveHostToAnotherBizModule"
+	ManageHostAgentID              Action = "manageHostAgentID"
 
 	// system base
 	ModelTopologyView      Action = "modelTopologyView"

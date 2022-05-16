@@ -21,6 +21,7 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initTransfer(web)
 	s.initDynamicGroup(web)
 	s.initUsercustom(web)
+	s.initAgent(web)
 
 }
 
@@ -323,4 +324,17 @@ func (s *Service) initUsercustom(web *restful.WebService) {
 
 	utility.AddToRestfulWebService(web)
 
+}
+
+func (s *Service) initAgent(web *restful.WebService) {
+
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/bind/agent", Handler: s.BindAgent})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/unbind/agent", Handler: s.UnbindAgent})
+
+	utility.AddToRestfulWebService(web)
 }

@@ -1567,3 +1567,195 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 		Expect(hostID).To(Equal(result.Success[0].HostID))
 	})
 })
+
+var _ = Describe("bind & unbind host agent test", func() {
+	var hostID, hostID1 int64
+	agentID, agentID1 := "11111", "22222"
+
+	hostParam := &params.HostCommonSearch{
+		Page: params.PageInfo{Sort: common.BKHostIDField},
+	}
+
+	It("bind host agent", func() {
+		By("add hosts using api")
+		hostInput := map[string]interface{}{
+			"host_info": map[string]interface{}{
+				"0": map[string]interface{}{
+					"bk_host_innerip": "127.0.0.10",
+				},
+				"1": map[string]interface{}{
+					"bk_host_innerip": "127.0.0.11",
+				},
+			},
+		}
+		hostRsp, err := hostServerClient.AddHost(context.Background(), header, hostInput)
+		util.RegisterResponseWithRid(hostRsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
+
+		By("get host ids")
+		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, &params.HostCommonSearch{
+			Page: params.PageInfo{Sort: common.BKHostIDField},
+		})
+		util.RegisterResponseWithRid(searchRsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count >= 2).To(Equal(true))
+		host := searchRsp.Data.Info[0]["host"].(map[string]interface{})
+		hostID, err = commonutil.GetInt64ByInterface(host[common.BKHostIDField])
+		Expect(err).NotTo(HaveOccurred())
+		host1 := searchRsp.Data.Info[1]["host"].(map[string]interface{})
+		hostID1, err = commonutil.GetInt64ByInterface(host1[common.BKHostIDField])
+		Expect(err).NotTo(HaveOccurred())
+
+		By("bind agent to host")
+		err = hostServerClient.BindAgent(context.Background(), header, &metadata.BindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  hostID,
+				AgentID: agentID,
+			}, {
+				HostID:  hostID1,
+				AgentID: agentID1,
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("check if agent id is bound to host")
+		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, hostParam)
+		util.RegisterResponseWithRid(searchRsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count >= 2).To(Equal(true))
+		host = searchRsp.Data.Info[0]["host"].(map[string]interface{})
+		Expect(commonutil.GetStrByInterface(host[common.BKAgentIDField])).To(Equal(agentID))
+		host = searchRsp.Data.Info[1]["host"].(map[string]interface{})
+		Expect(commonutil.GetStrByInterface(host[common.BKAgentIDField])).To(Equal(agentID1))
+
+		By("bind agent to host again")
+		err = hostServerClient.BindAgent(context.Background(), header, &metadata.BindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  hostID,
+				AgentID: agentID,
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("update host agents")
+		agentID, agentID1 = "33333", "444444"
+		err = hostServerClient.BindAgent(context.Background(), header, &metadata.BindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  hostID,
+				AgentID: agentID,
+			}, {
+				HostID:  hostID1,
+				AgentID: agentID1,
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("check if agent id is updated to host")
+		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, hostParam)
+		util.RegisterResponseWithRid(searchRsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count >= 2).To(Equal(true))
+		host = searchRsp.Data.Info[0]["host"].(map[string]interface{})
+		Expect(commonutil.GetStrByInterface(host[common.BKAgentIDField])).To(Equal(agentID))
+		host = searchRsp.Data.Info[1]["host"].(map[string]interface{})
+		Expect(commonutil.GetStrByInterface(host[common.BKAgentIDField])).To(Equal(agentID1))
+
+		By("bind empty agent id to host")
+		err = hostServerClient.BindAgent(context.Background(), header, &metadata.BindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  hostID,
+				AgentID: "",
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).To(HaveOccurred())
+
+		By("bind agent id to not exist host")
+		err = hostServerClient.BindAgent(context.Background(), header, &metadata.BindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  111111,
+				AgentID: agentID,
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).To(HaveOccurred())
+
+		By("bind duplicate agent id to host")
+		err = hostServerClient.BindAgent(context.Background(), header, &metadata.BindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  hostID,
+				AgentID: agentID1,
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("unbind host agent", func() {
+		By("unbind host agent with mismatch agent")
+		err := hostServerClient.UnbindAgent(context.Background(), header, &metadata.UnbindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  hostID,
+				AgentID: "333333",
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).To(HaveOccurred())
+
+		By("unbind agent id with not exist host")
+		err = hostServerClient.UnbindAgent(context.Background(), header, &metadata.UnbindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  111111,
+				AgentID: agentID,
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).To(HaveOccurred())
+
+		By("check if agent id is still bound to host")
+		searchRsp, rawErr := hostServerClient.SearchHost(context.Background(), header, hostParam)
+		util.RegisterResponseWithRid(searchRsp, header)
+		Expect(rawErr).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count >= 1).To(Equal(true))
+		host := searchRsp.Data.Info[0]["host"].(map[string]interface{})
+		Expect(commonutil.GetStrByInterface(host[common.BKAgentIDField])).To(Equal(agentID))
+
+		By("unbind host agent")
+		param := &metadata.UnbindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  hostID,
+				AgentID: agentID,
+			}, {
+				HostID:  hostID1,
+				AgentID: agentID1,
+			}},
+		}
+		err = hostServerClient.UnbindAgent(context.Background(), header, param)
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("check if agent id is not bound to host")
+		searchRsp, rawErr = hostServerClient.SearchHost(context.Background(), header, hostParam)
+		util.RegisterResponseWithRid(searchRsp, header)
+		Expect(rawErr).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count >= 2).To(Equal(true))
+		host = searchRsp.Data.Info[0]["host"].(map[string]interface{})
+		Expect(commonutil.GetStrByInterface(host[common.BKAgentIDField])).To(Equal(""))
+		host = searchRsp.Data.Info[1]["host"].(map[string]interface{})
+		Expect(commonutil.GetStrByInterface(host[common.BKAgentIDField])).To(Equal(""))
+
+		By("unbind host agent again")
+		err = hostServerClient.UnbindAgent(context.Background(), header, param)
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).NotTo(HaveOccurred())
+	})
+})

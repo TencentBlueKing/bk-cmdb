@@ -16,6 +16,7 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
 )
@@ -631,4 +632,52 @@ func (hs *hostServer) FindCloudAreaHostCount(ctx context.Context, header http.He
 		Do().
 		Into(resp)
 	return
+}
+
+// BindAgent bind agent to host
+func (hs *hostServer) BindAgent(ctx context.Context, h http.Header,
+	params *metadata.BindAgentParam) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/host/bind/agent"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+	return nil
+}
+
+// UnbindAgent unbind agent to host
+func (hs *hostServer) UnbindAgent(ctx context.Context, h http.Header,
+	params *metadata.UnbindAgentParam) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/host/unbind/agent"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+	return nil
 }
