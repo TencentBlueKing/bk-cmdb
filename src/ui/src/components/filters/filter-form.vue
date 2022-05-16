@@ -267,9 +267,12 @@
 
         const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
         const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
-        if (isSetName || isModuleName) {
+
+        // 在业务视图并且非模糊查询的情况，模块与集群名称使用专属的输入联想组件，否则使用与propertyType匹配的相应组件
+        if ((isSetName || isModuleName) && this.condition[property.id].operator !== '$regex') {
           return `cmdb-search-${modelId}`
         }
+
         return normal
       },
       getBindProps(property) {
