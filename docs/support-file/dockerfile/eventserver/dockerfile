@@ -1,0 +1,9 @@
+FROM ccr.ccs.tencentyun.com/bk.io/centos7-cmdb:base
+ENV container docker
+COPY cmdb_eventserver /data/cmdb/cmdb_eventserver
+RUN mkdir /data/cmdb/cmdb_eventserver/logs
+RUN chmod +x /data/cmdb/cmdb_eventserver/cmdb_eventserver
+#time zone setting
+ENV TimeZone=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TimeZone /etc/localtime && echo $TimeZone > /etc/timezone
+
