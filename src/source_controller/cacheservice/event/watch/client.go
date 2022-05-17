@@ -56,12 +56,6 @@ func (c *Client) getLatestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNode,
 		},
 	}
 
-	// filters out the previous version where sub resource is string type // TODO remove this
-	if key.Collection() == common.BKTableNameBaseInst ||
-		key.Collection() == common.BKTableNameMainlineInstance {
-		filter[common.BKSubResourceField] = map[string]interface{}{common.BKDBType: "array"}
-	}
-
 	node := new(watch.ChainNode)
 	err := c.watchDB.Table(key.ChainCollection()).Find(filter).Sort(common.BKFieldID+":-1").One(kit.Ctx, node)
 	if err != nil {
@@ -80,12 +74,6 @@ func (c *Client) getEarliestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNod
 		common.BKClusterTimeField: map[string]interface{}{
 			common.BKDBGTE: metadata.Time{Time: time.Now().Add(-time.Duration(key.TTLSeconds()) * time.Second).UTC()},
 		},
-	}
-
-	// filters out the previous version where sub resource is string type // TODO remove this
-	if key.Collection() == common.BKTableNameBaseInst ||
-		key.Collection() == common.BKTableNameMainlineInstance {
-		filter[common.BKSubResourceField] = map[string]interface{}{common.BKDBType: "array"}
 	}
 
 	node := new(watch.ChainNode)
@@ -317,12 +305,6 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, opts *searchFollo
 		},
 	}
 
-	// filters out the previous version where sub resource is string type // TODO remove this
-	if opts.key.Collection() == common.BKTableNameBaseInst ||
-		opts.key.Collection() == common.BKTableNameMainlineInstance {
-		filter[common.BKSubResourceField] = map[string]interface{}{common.BKDBType: "array"}
-	}
-
 	node := new(watch.ChainNode)
 	err := c.watchDB.Table(opts.key.ChainCollection()).Find(filter).Fields(common.BKFieldID).One(kit.Ctx, node)
 	if err != nil {
@@ -393,11 +375,7 @@ func (c *Client) searchFollowingEventChainNodesByID(kit *rest.Kit, opt *searchFo
 	}
 
 	if len(opt.subResource) > 0 {
-		filter[common.BKSubResourceField] = map[string]interface{}{
-			common.BKDBEQ: opt.subResource,
-			// filters out the previous version where sub resource is string type // TODO remove this
-			common.BKDBType: "array",
-		}
+		filter[common.BKSubResourceField] = opt.subResource
 	}
 
 	nodes := make([]*watch.ChainNode, 0)

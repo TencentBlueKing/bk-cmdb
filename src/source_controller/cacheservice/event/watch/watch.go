@@ -130,12 +130,6 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 		},
 	}
 
-	// filters out the previous version where sub resource is string type // TODO remove this
-	if key.Collection() == common.BKTableNameBaseInst ||
-		key.Collection() == common.BKTableNameMainlineInstance {
-		filter[common.BKSubResourceField] = map[string]interface{}{common.BKDBType: "array"}
-	}
-
 	node := new(watch.ChainNode)
 	err = c.watchDB.Table(key.ChainCollection()).Find(filter).Sort(common.BKFieldID).One(kit.Ctx, node)
 	if err != nil {
