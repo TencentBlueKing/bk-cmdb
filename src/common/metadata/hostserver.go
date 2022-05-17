@@ -1034,6 +1034,13 @@ func (b *BindAgentParam) Validate() errors.RawErrorInfo {
 		}
 	}
 
+	if len(b.List) > common.BKMaxWriteOpLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"list", common.BKMaxWriteOpLimit},
+		}
+	}
+
 	for _, param := range b.List {
 		if rawErr := param.Validate(); rawErr.ErrCode != 0 {
 			return rawErr
@@ -1054,6 +1061,13 @@ func (b *UnbindAgentParam) Validate() (rawError errors.RawErrorInfo) {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"list"},
+		}
+	}
+
+	if len(b.List) > common.BKMaxWriteOpLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"list", common.BKMaxWriteOpLimit},
 		}
 	}
 
