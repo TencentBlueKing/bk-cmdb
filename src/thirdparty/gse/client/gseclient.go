@@ -25,84 +25,94 @@ import (
 )
 
 type GseApiServerClient struct {
-	clients []*apiserver.CacheAPIClient
-	index   int
+	endpoints []string
+	tlsConf   *util.TLSClientConfig
+	index     int
 	sync.Mutex
 }
 
 // NewGseApiServerClient new gse api server client
 func NewGseApiServerClient(endpoints []string, conf *util.TLSClientConfig) (*GseApiServerClient, error) {
-	var clients []*apiserver.CacheAPIClient
-	for _, endpoint := range endpoints {
-		client, err := createGseApiServerClient(endpoint, conf)
-		if err != nil {
-			return nil, err
-		}
-		clients = append(clients, client)
-	}
 	return &GseApiServerClient{
-		clients: clients,
+		endpoints: endpoints,
+		tlsConf:   conf,
 	}, nil
 }
 
 // GetAgentStatus get agent status
 func (g *GseApiServerClient) GetAgentStatus(ctx context.Context,
 	requestInfo *apiserver.AgentStatusRequest) (*apiserver.AgentStatusResponse, error) {
-	g.Lock()
-	defer g.Unlock()
-	return g.getClient().GetAgentStatus(ctx, requestInfo)
+	client, err := g.getClient()
+	if err != nil {
+		return nil, err
+	}
+	return client.GetAgentStatus(ctx, requestInfo)
 }
 
-func (g *GseApiServerClient) getClient() *apiserver.CacheAPIClient {
+func (g *GseApiServerClient) getClient() (*apiserver.CacheAPIClient, error) {
+	g.Lock()
+	defer g.Unlock()
 	g.index++
-	if g.index >= len(g.clients) {
+	if g.index >= len(g.endpoints) {
 		g.index = 0
 	}
-	return g.clients[g.index]
+
+	client, err := createGseApiServerClient(g.endpoints[g.index], g.tlsConf)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }
 
 type GseTaskServerClient struct {
-	clients []*taskserver.DoSomeCmdClient
-	index   int
+	endpoints []string
+	tlsConf   *util.TLSClientConfig
+	index     int
 	sync.Mutex
 }
 
 // NewGseTaskServerClient new gse task server client
 func NewGseTaskServerClient(endpoints []string, conf *util.TLSClientConfig) (*GseTaskServerClient, error) {
-	var clients []*taskserver.DoSomeCmdClient
-	for _, endpoint := range endpoints {
-		client, err := createGseTaskServerClient(endpoint, conf)
-		if err != nil {
-			return nil, err
-		}
-		clients = append(clients, client)
-	}
 	return &GseTaskServerClient{
-		clients: clients,
+		endpoints: endpoints,
+		tlsConf:   conf,
 	}, nil
 }
 
 // PushFileV2 push host identifier to gse agent
 func (g *GseTaskServerClient) PushFileV2(ctx context.Context,
 	fileList []*taskserver.API_FileInfoV2) (*taskserver.API_CommRsp, error) {
-	g.Lock()
-	defer g.Unlock()
-	return g.getClient().PushFileV2(ctx, fileList)
+	client, err := g.getClient()
+	if err != nil {
+		return nil, err
+	}
+	return client.PushFileV2(ctx, fileList)
 }
 
 // GetPushFileRst get push file task result
 func (g *GseTaskServerClient) GetPushFileRst(ctx context.Context, seqno string) (*taskserver.API_MapRsp, error) {
-	g.Lock()
-	defer g.Unlock()
-	return g.getClient().GetPushFileRst(ctx, seqno)
+	client, err := g.getClient()
+	if err != nil {
+		return nil, err
+	}
+	return client.GetPushFileRst(ctx, seqno)
 }
 
-func (g *GseTaskServerClient) getClient() *taskserver.DoSomeCmdClient {
+func (g *GseTaskServerClient) getClient() (*taskserver.DoSomeCmdClient, error) {
+	g.Lock()
+	defer g.Unlock()
 	g.index++
-	if g.index >= len(g.clients) {
+	if g.index >= len(g.endpoints) {
 		g.index = 0
 	}
-	return g.clients[g.index]
+
+	client, err := createGseTaskServerClient(g.endpoints[g.index], g.tlsConf)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }
 
 // createGseApiServerClient create thrift client for gse apiServer
