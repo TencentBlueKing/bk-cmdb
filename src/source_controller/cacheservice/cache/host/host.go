@@ -204,7 +204,9 @@ func refreshHostDetailCache(rid string, host *hostBase) {
 	ttl := hostKey.WithRandomExpireSeconds()
 	if host.agentID != "" {
 		pipeline.Set(hostKey.AgentIDKey(host.agentID), host.hostID, ttl)
-	} else {
+	}
+
+	if host.addressType == common.BKAddressingStatic {
 		for _, ip := range strings.Split(host.ip, ",") {
 			pipeline.Set(hostKey.IPCloudIDKey(ip, host.cloudID), host.hostID, ttl)
 		}

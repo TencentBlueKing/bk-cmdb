@@ -23,7 +23,7 @@ import (
 
 // SearchHostWithInnerIPForStatic Note: This function is only used to query the host through ip+cloud in the static IP
 // scenario of the host snapshot !!!
-func (b *baseCache) SearchHostWithInnerIPForStatic(ctx context.Context, h http.Header, opt *metadata.SearchHostOption) (
+func (b *baseCache) SearchHostWithInnerIPForStatic(ctx context.Context, h http.Header, opt *metadata.SearchHostWithIP) (
 	jsonString string, err error) {
 
 	resp, err := b.client.Post().
@@ -46,7 +46,7 @@ func (b *baseCache) SearchHostWithInnerIPForStatic(ctx context.Context, h http.H
 }
 
 // SearchHostWithAgentID Note: find host information by agentID only for data collection api !!!.
-func (b *baseCache) SearchHostWithAgentID(ctx context.Context, h http.Header, opt *metadata.SearchHostOption) (
+func (b *baseCache) SearchHostWithAgentID(ctx context.Context, h http.Header, opt *metadata.SearchHostWithAgentID) (
 	jsonString string, err error) {
 
 	resp, err := b.client.Post().

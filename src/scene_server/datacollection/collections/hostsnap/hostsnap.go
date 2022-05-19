@@ -945,7 +945,7 @@ func parseV10Setter(val *gjson.Result, innerIP, outerIP string, ipv4, ipv6 []str
 
 func (h *HostSnap) getHostByAgentID(header http.Header, rid, agentID string) (string, error) {
 
-	opt := &metadata.SearchHostOption{
+	opt := &metadata.SearchHostWithAgentID{
 		AgentID: agentID,
 		Fields:  reqireFields,
 	}
@@ -966,7 +966,7 @@ func (h *HostSnap) getHostByVal(header http.Header, rid string, cloudID int64, i
 			continue
 		}
 
-		opt := &metadata.SearchHostOption{
+		opt := &metadata.SearchHostWithIP{
 			InnerIP: ip,
 			CloudID: cloudID,
 			Fields:  reqireFields,
