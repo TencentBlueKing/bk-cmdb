@@ -15,10 +15,10 @@ package parser
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
 )
 
 type InstanceIDGetter func(request *RequestContext, re *regexp.Regexp) ([]int64, error)
@@ -115,7 +115,7 @@ func BizIDFromURLGetter(request *RequestContext, config AuthConfig) (bizID int64
 	}
 
 	bizIDStr := request.Elements[config.BizIndex]
-	bizID, err = util.GetInt64ByInterface(bizIDStr)
+	bizID, err = strconv.ParseInt(bizIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("get business id from request path failed, name: %s, BizIndex:%d, uri:%s, err: %v, rid: %s", config.Name, config.BizIndex, request.URI, err, request.Rid)
 		return 0, err

@@ -1826,12 +1826,12 @@ func (ti *PropertyPortValue) Validate() error {
 		portArr := strings.Split(strPortItem, "-")
 		var start, end int64
 		var err error
-		start, err = util.GetInt64ByInterface(portArr[0])
+		start, err = strconv.ParseInt(portArr[0], 10, 64)
 		if err != nil {
 			return fmt.Errorf("parse start port to int failed, err: %v", err)
 		}
 		if len(portArr) > 1 {
-			end, err = util.GetInt64ByInterface(portArr[1])
+			end, err = strconv.ParseInt(portArr[1], 10, 64)
 			if err != nil {
 				return fmt.Errorf("parse end port to int failed, err: %v", err)
 			}

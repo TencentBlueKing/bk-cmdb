@@ -13,6 +13,8 @@
 package extensions
 
 import (
+	"strconv"
+
 	"configcenter/src/ac"
 	"configcenter/src/ac/iam"
 	"configcenter/src/apimachinery"
@@ -103,6 +105,11 @@ func ParseBizIDFromMetadata(metaValue map[string]interface{}) (int64, error) {
 	if !exist {
 		// 自定义层级的metadata.label中没有 bk_biz_id 字段
 		return 0, nil
+	}
+
+	// if metadata biz id is of string type, convert it to int64, otherwise, convert the integer type of it to int64
+	if bizIDStr, ok := bizID.(string); ok {
+		return strconv.ParseInt(bizIDStr, 10, 64)
 	}
 
 	return util.GetInt64ByInterface(bizID)

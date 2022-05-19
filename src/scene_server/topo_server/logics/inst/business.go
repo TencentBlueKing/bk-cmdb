@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"configcenter/src/ac/extensions"
@@ -232,7 +233,7 @@ func (b *business) GenerateAchieveBusinessName(kit *rest.Kit, bizName string) (a
 		if !numRegex.MatchString(numPart) {
 			continue
 		}
-		num, err := util.GetInt64ByInterface(numPart)
+		num, err := strconv.ParseInt(numPart, 10, 64)
 		if err != nil {
 			blog.Errorf("GetInt64ByInterface failed, numPart: %s, err: %v, rid: %s", numPart, err, kit.Rid)
 			return "", err
