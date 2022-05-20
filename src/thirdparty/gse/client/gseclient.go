@@ -46,10 +46,10 @@ func (g *GseApiServerClient) GetAgentStatus(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	return client.GetAgentStatus(ctx, requestInfo)
+	return client.getAgentStatus(ctx, requestInfo)
 }
 
-func (g *GseApiServerClient) getClient() (*apiserver.CacheAPIClient, error) {
+func (g *GseApiServerClient) getClient() (*apiClient, error) {
 	g.Lock()
 	defer g.Unlock()
 	g.index++
@@ -87,7 +87,7 @@ func (g *GseTaskServerClient) PushFileV2(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	return client.PushFileV2(ctx, fileList)
+	return client.pushFileV2(ctx, fileList)
 }
 
 // GetPushFileRst get push file task result
@@ -96,10 +96,10 @@ func (g *GseTaskServerClient) GetPushFileRst(ctx context.Context, seqno string) 
 	if err != nil {
 		return nil, err
 	}
-	return client.GetPushFileRst(ctx, seqno)
+	return client.getPushFileRst(ctx, seqno)
 }
 
-func (g *GseTaskServerClient) getClient() (*taskserver.DoSomeCmdClient, error) {
+func (g *GseTaskServerClient) getClient() (*taskClient, error) {
 	g.Lock()
 	defer g.Unlock()
 	g.index++
@@ -116,7 +116,7 @@ func (g *GseTaskServerClient) getClient() (*taskserver.DoSomeCmdClient, error) {
 }
 
 // createGseApiServerClient create thrift client for gse apiServer
-func createGseApiServerClient(endpoint string, conf *util.TLSClientConfig) (*apiserver.CacheAPIClient, error) {
+func createGseApiServerClient(endpoint string, conf *util.TLSClientConfig) (*apiClient, error) {
 	var trans thrift.TTransport
 	cfg, err := ssl.ClientTLSConfVerity(conf.CAFile, conf.CertFile, conf.KeyFile, conf.Password)
 	if err != nil {
@@ -139,11 +139,11 @@ func createGseApiServerClient(endpoint string, conf *util.TLSClientConfig) (*api
 	if err = trans.Open(); err != nil {
 		return nil, err
 	}
-	return client, nil
+	return &apiClient{client: client, trans: trans}, nil
 }
 
 // createGseTaskServerClient create thrift client for gse taskServer
-func createGseTaskServerClient(endpoint string, conf *util.TLSClientConfig) (*taskserver.DoSomeCmdClient, error) {
+func createGseTaskServerClient(endpoint string, conf *util.TLSClientConfig) (*taskClient, error) {
 	cfg, err := ssl.ClientTLSConfVerity(conf.CAFile, conf.CertFile, conf.KeyFile, conf.Password)
 	if err != nil {
 		return nil, err
@@ -164,5 +164,32 @@ func createGseTaskServerClient(endpoint string, conf *util.TLSClientConfig) (*ta
 	if err = trans.Open(); err != nil {
 		return nil, err
 	}
-	return client, nil
+	return &taskClient{client: client, trans: trans}, nil
+}
+
+type apiClient struct {
+	client *apiserver.CacheAPIClient
+	trans  thrift.TTransport
+}
+
+func (a *apiClient) getAgentStatus(ctx context.Context,
+	requestInfo *apiserver.AgentStatusRequest) (*apiserver.AgentStatusResponse, error) {
+	defer a.trans.Close()
+	return a.client.GetAgentStatus(ctx, requestInfo)
+}
+
+type taskClient struct {
+	client *taskserver.DoSomeCmdClient
+	trans  thrift.TTransport
+}
+
+func (t *taskClient) pushFileV2(ctx context.Context, fileList []*taskserver.API_FileInfoV2) (*taskserver.API_CommRsp,
+	error) {
+	defer t.trans.Close()
+	return t.client.PushFileV2(ctx, fileList)
+}
+
+func (t *taskClient) getPushFileRst(ctx context.Context, seqno string) (*taskserver.API_MapRsp, error) {
+	defer t.trans.Close()
+	return t.client.GetPushFileRst(ctx, seqno)
 }
