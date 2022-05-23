@@ -29,7 +29,7 @@ import (
 // SearchHostWithInnerIPInCache This function is only used to query the host through ip+cloud in the static IP scenario
 // of the host snapshot !!!
 func (s *cacheService) SearchHostWithInnerIPInCache(ctx *rest.Contexts) {
-	opt := new(metadata.SearchHostOption)
+	opt := new(metadata.SearchHostWithIP)
 	if err := ctx.DecodeInto(&opt); nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -45,7 +45,7 @@ func (s *cacheService) SearchHostWithInnerIPInCache(ctx *rest.Contexts) {
 // SearchHostWithAgentIDInCache This function is only used to query host information based on agentID in the host
 // snapshot scenario !!!
 func (s *cacheService) SearchHostWithAgentIDInCache(ctx *rest.Contexts) {
-	opt := new(metadata.SearchHostOption)
+	opt := new(metadata.SearchHostWithAgentID)
 	if err := ctx.DecodeInto(&opt); nil != err {
 		ctx.RespAutoError(err)
 		return
