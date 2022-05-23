@@ -56,7 +56,7 @@ export default function useItem(list, root) {
         newItem.title = source.bk_set_name
         newItem.typeName = root.$t('集群')
         newItem.linkTo = source => handleGoTopo('set', source)
-      } else if (kind === 'instance' && BUILTIN_MODELS.MODULE) {
+      } else if (kind === 'instance' && key === BUILTIN_MODELS.MODULE) {
         newItem.type = key
         newItem.title = source.bk_module_name
         newItem.typeName = root.$t('模块')

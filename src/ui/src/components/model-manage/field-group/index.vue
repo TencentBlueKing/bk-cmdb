@@ -1144,6 +1144,9 @@ $modelHighlightColor: #3c96ff;
 }
 
 .field-list {
+  $ghostBorderColor: #dcdee5;
+  $ghostBackgroundColor:#f5f7fa;
+
   margin-top: 7px;
   font-size: 14px;
   position: relative;
@@ -1201,8 +1204,6 @@ $modelHighlightColor: #3c96ff;
       }
     }
     &-ghost {
-      $ghostBorderColor: #dcdee5;
-      $ghostBackgroundColor:#f5f7fa;
       background-color: $ghostBackgroundColor !important;
       border: 1px dashed $ghostBorderColor;
 

@@ -56,7 +56,7 @@
       defaultFrom() {
         const menu = this.$route.meta.menu || {}
         if (menu.relative) {
-          return { name: menu.relative }
+          return { name: Array.isArray(menu.relative) ? menu.relative[0] : menu.relative }
         }
         return null
       },
@@ -95,6 +95,7 @@
     },
     methods: {
       async handleClick() {
+        debugger
         this.$routerActions.redirect({ ...this.from, back: true })
       },
       enableCustomize({ title, backward }) {
