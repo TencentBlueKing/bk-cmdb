@@ -95,7 +95,6 @@
     },
     methods: {
       async handleClick() {
-        debugger
         this.$routerActions.redirect({ ...this.from, back: true })
       },
       enableCustomize({ title, backward }) {
