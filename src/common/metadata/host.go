@@ -153,13 +153,15 @@ func (s *StringArrayToString) UnmarshalBSONValue(typo bsontype.Type, raw []byte)
 	return err
 }
 
-var specialFields = []string{common.BKHostInnerIPField, common.BKHostOuterIPField, common.BKOperatorField,
+// HostSpecialFields Special fields in the host attribute, in order to fuzzy query the following fields are stored in
+// the database as an array.
+var HostSpecialFields = []string{common.BKHostInnerIPField, common.BKHostOuterIPField, common.BKOperatorField,
 	common.BKBakOperatorField, common.BKHostInnerIPv6Field, common.BKHostOuterIPv6Field}
 
 // convert host ip and operator fields value from string to array
 // NOTICE: if host special value is empty, convert it to null to trespass the unique check, **do not change this logic**
 func ConvertHostSpecialStringToArray(host map[string]interface{}) map[string]interface{} {
-	for _, field := range specialFields {
+	for _, field := range HostSpecialFields {
 		value, ok := host[field]
 		if !ok {
 			continue
