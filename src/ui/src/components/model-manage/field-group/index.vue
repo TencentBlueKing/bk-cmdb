@@ -20,13 +20,13 @@
     v-bkloading="{ isLoading: $loading(), extCls: 'field-loading' }"
   >
     <div class="field-options">
-      <cmdb-auth :auth="authResources">
+      <cmdb-auth :auth="authResources" @update-auth="handleReceiveAuth">
         <template #default="{ disabled }">
           <bk-button theme="primary" :disabled="disabled"
             @click="handleAddField(displayGroupedProperties[0])">{{$t('新建字段')}}</bk-button>
         </template>
       </cmdb-auth>
-      <cmdb-auth :auth="authResources">
+      <cmdb-auth :auth="authResources" @update-auth="handleReceiveAuth">
         <template #default="{ disabled }">
           <bk-button :disabled="disabled" @click="handleAddGroup">{{$t('新建分组')}}</bk-button>
         </template>
@@ -73,7 +73,7 @@
           <div class="group-header" slot="title">
             <collapse-group-title
               :drag-icon="updateAuth"
-              :dropdown-menu="isEditable(group)"
+              :dropdown-menu="isEditable(group.info)"
               :collapse="groupCollapseState[group.info.bk_group_id]"
               :title="`${group.info.bk_group_name} ( ${group.properties.length} )`"
               @click.native="toggleGroup(group)"
@@ -146,6 +146,7 @@
                   <cmdb-auth
                     class="mr10"
                     :auth="authResources"
+                    @update-auth="handleReceiveAuth"
                     @click.native.stop
                   >
                     <bk-button
@@ -160,6 +161,7 @@
                   </cmdb-auth>
                   <cmdb-auth
                     class="mr10"
+                    @update-auth="handleReceiveAuth"
                     :auth="authResources"
                     @click.native.stop
                     v-if="!property.ispre"
@@ -179,7 +181,7 @@
                 </template>
               </li>
               <li class="field-add fl" v-if="isEditable(group.info)">
-                <cmdb-auth :auth="authResources" tag="div">
+                <cmdb-auth @update-auth="handleReceiveAuth" :auth="authResources" tag="div">
                   <bk-button
                     slot-scope="{ disabled }"
                     class="field-add-btn"
@@ -197,7 +199,7 @@
           </bk-transition>
         </div>
         <div class="add-group">
-          <cmdb-auth :auth="authResources">
+          <cmdb-auth @update-auth="handleReceiveAuth" :auth="authResources">
             <bk-button slot-scope="{ disabled }"
               class="add-group-trigger"
               :text="true"
