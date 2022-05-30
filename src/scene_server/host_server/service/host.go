@@ -335,7 +335,7 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 
 	retData := make(map[string]interface{})
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		_, success, updateErrRow, errRow, err := s.Logic.AddHost(ctx.Kit, appID, []int64{moduleID},
+		hostIDs, success, updateErrRow, errRow, err := s.Logic.AddHost(ctx.Kit, appID, []int64{moduleID},
 			ctx.Kit.SupplierAccount, hostList.HostInfo, hostList.InputType)
 		if err != nil {
 			blog.Errorf("add host failed, success: %v, update: %v, err: %v, %v,input:%+v,rid:%s",
@@ -345,6 +345,7 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 			return ctx.Kit.CCError.CCError(common.CCErrHostCreateFail)
 		}
 		retData["success"] = success
+		retData["bk_host_ids"] = hostIDs
 		return nil
 	})
 
