@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
+	"configcenter/src/thirdparty/hooks"
 )
 
 type action string
@@ -80,11 +81,22 @@ func (s *Service) validateScopeFields(kit *rest.Kit, fieldInfo *metadata.BizSetS
 	// strictly check whether each field type is enum or organization.
 	for _, info := range res.Info {
 		if _, ok := fieldMap[info.PropertyID]; !ok {
-			blog.Errorf("propertyID key not exist, fieldMap: %v, propertyID: %v", fieldMap, info.PropertyID, kit.Rid)
+			blog.Errorf("propertyID key not exist, fieldMap: %v, propertyID: %v, rid: %s",
+				fieldMap, info.PropertyID, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid)
 		}
 
 		propertyID := fieldMap[info.PropertyID]
+		skip, err := hooks.ValidBizSetPropertyHook(kit, fieldInfo, info, propertyID)
+		if err != nil {
+			blog.Errorf("%s is invalid, operator: %v, err: %v, rid: %s", info.PropertyID, fieldInfo.Operator, err,
+				kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error())
+		}
+		if skip {
+			continue
+		}
+
 		if fieldInfo.Operator == querybuilder.OperatorIn {
 			if err := propertyTypeInValidate(info.PropertyType, propertyID); err != nil {
 				blog.Errorf("operator is in, wrong field type, err: %v, rid: %s", err, kit.Rid)
