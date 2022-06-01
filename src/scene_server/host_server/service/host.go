@@ -21,9 +21,11 @@ import (
 
 	"configcenter/src/ac"
 	"configcenter/src/ac/extensions"
+	acmeta "configcenter/src/ac/meta"
 	authmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -1465,4 +1467,56 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 		"success": successMsg,
 	}
 	ctx.RespEntity(retData)
+}
+
+// AddHostToBusiness add host to business idle module
+func (s *Service) AddHostToBusiness(ctx *rest.Contexts) {
+	input := new(meta.HostListParam)
+	if err := ctx.DecodeInto(&input); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := input.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	if auth.EnableAuthorize() {
+		if err := s.AuthManager.AuthorizeByBusinessID(ctx.Kit.Ctx, ctx.Kit.Header, acmeta.ViewBusinessResource,
+			input.ApplicationID); err != nil {
+			blog.Errorf("authorize businesses failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+		}
+	}
+
+	// get target biz's idle module ID
+	cond := hutil.NewOperation().WithAppID(input.ApplicationID).MapStr()
+	cond.Set(common.BKDefaultField, common.DefaultResModuleFlag)
+	moduleID, _, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, cond)
+	if err != nil {
+		blog.Errorf("get idle module failed, input: %v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	var hostIDs []int64
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		hostIDs, err = s.Logic.AddHosts(ctx.Kit, input.ApplicationID, moduleID, input.HostList)
+		if err != nil {
+			blog.Errorf("add host failed, input: %v, err: %v, rid:%s", input.HostList, err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCError(common.CCErrHostCreateFail)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(&meta.HostIDsResp{
+		HostIDs: hostIDs,
+	})
 }

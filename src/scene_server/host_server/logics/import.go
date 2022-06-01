@@ -589,3 +589,91 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 
 	return hostMap, hostIDMap, nil
 }
+
+// AddHosts add host to business module
+func (lgc *Logics) AddHosts(kit *rest.Kit, appID int64, moduleID int64,
+	hostInfos []map[string]interface{}) ([]int64, error) {
+
+	if moduleID == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+	}
+
+	if appID == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	hostIDs := make([]int64, 0)
+	logContents := make([]metadata.AuditLog, 0)
+	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
+	for _, host := range hostInfos {
+		// check host attribute
+		innerIP, isOk := host[common.BKHostInnerIPField].(string)
+		if isOk == false || innerIP == "" {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostInnerIPField)
+		}
+
+		cloudID, ok := host[common.BKCloudIDField]
+		if ok == false {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		}
+		cloudIDVal, err := util.GetInt64ByInterface(cloudID)
+		if err != nil || cloudIDVal < 0 {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		}
+		host[common.BKCloudIDField] = cloudIDVal
+
+		address, ok := host[common.BKAddressingField].(string)
+		if ok == false || (address != common.BKAddressingDynamic && address != common.BKAddressingStatic) {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAddressingField)
+		}
+
+		// create host instance
+		input := &metadata.CreateModelInstance{
+			Data: host,
+		}
+		result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost,
+			input)
+		if err != nil {
+			blog.Errorf("create host instance failed, input:%v, err:%v, rid:%s", input, err, kit.Rid)
+			return nil, err
+		}
+
+		hostID := int64(result.Created.ID)
+		host[common.BKHostIDField] = hostID
+
+		opt := &metadata.TransferHostToInnerModule{
+			ApplicationID: appID,
+			ModuleID:      moduleID,
+			HostID:        []int64{hostID},
+		}
+
+		_, err = lgc.CoreAPI.CoreService().Host().TransferToInnerModule(kit.Ctx, kit.Header, opt)
+		if err != nil {
+			blog.Errorf("add host relation error, input:%v, err:%v, rid:%s", opt, err, kit.Rid)
+			return nil, err
+		}
+
+		// to generate audit log.
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, appID, []mapstr.MapStr{host})
+		if err != nil {
+			blog.Errorf("generate host audit log failed after create host, hostID: %d, bizID: %d, err: %v, rid: %s",
+				hostID, appID, err, kit.Rid)
+			return nil, err
+		}
+
+		hostIDs = append(hostIDs, hostID)
+		// add audit log.
+		logContents = append(logContents, auditLog...)
+	}
+
+	// to save audit log.
+	if len(logContents) > 0 {
+		if err := audit.SaveAuditLog(kit, logContents...); err != nil {
+			blog.Errorf("add host success, but save audit log failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, fmt.Errorf("add host success, but save audit log failed, err: %v", err)
+		}
+	}
+
+	return hostIDs, nil
+}

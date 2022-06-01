@@ -1079,3 +1079,40 @@ func (b *UnbindAgentParam) Validate() (rawError errors.RawErrorInfo) {
 
 	return errors.RawErrorInfo{}
 }
+
+// HostListParam host list param
+type HostListParam struct {
+	ApplicationID int64                    `json:"bk_biz_id"`
+	HostList      []map[string]interface{} `json:"bk_host_list"`
+}
+
+// Validate validate HostListParam
+func (h *HostListParam) Validate() (rawError errors.RawErrorInfo) {
+	if len(h.HostList) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_host_list"},
+		}
+	}
+
+	if len(h.HostList) > common.BKMaxWriteOpLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"bk_host_list", common.BKMaxWriteOpLimit},
+		}
+	}
+
+	if h.ApplicationID == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_biz_id"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// the response about add host to business interface
+type HostIDsResp struct {
+	HostIDs []int64 `json:"bk_host_ids"`
+}
