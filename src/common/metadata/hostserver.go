@@ -1082,12 +1082,12 @@ func (b *UnbindAgentParam) Validate() (rawError errors.RawErrorInfo) {
 
 // HostListParam host list param
 type HostListParam struct {
-	ApplicationID int64                    `json:"bk_biz_id"`
-	HostList      []map[string]interface{} `json:"bk_host_list"`
+	ApplicationID int64           `json:"bk_biz_id"`
+	HostList      []mapstr.MapStr `json:"bk_host_list"`
 }
 
 // Validate validate HostListParam
-func (h *HostListParam) Validate() (rawError errors.RawErrorInfo) {
+func (h *HostListParam) Validate() errors.RawErrorInfo {
 	if len(h.HostList) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
