@@ -76,15 +76,26 @@ spec:
         ports:
         - containerPort: {{ .Values.webserver.port }}
 
-      {{- if .Values.webserver.configDir }}
         volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.webserver.configDir }}
           - name: configures
             mountPath: {{ .Values.webserver.configDir }}
+          {{- end }}
       volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.webserver.configDir }}
         - name: configures
           configMap:
             name: {{ .Release.Name }}-webserver-configures
-      {{- end }}
+        {{- end }}
 
       {{- with .Values.webserver.nodeSelector }}
       nodeSelector:
