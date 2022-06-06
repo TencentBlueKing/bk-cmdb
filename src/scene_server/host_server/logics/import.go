@@ -591,8 +591,7 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 }
 
 // AddHosts add host to business module
-func (lgc *Logics) AddHosts(kit *rest.Kit, appID int64, moduleID int64,
-	hostInfos []mapstr.MapStr) ([]int64, error) {
+func (lgc *Logics) AddHosts(kit *rest.Kit, appID int64, moduleID int64, hostInfos []mapstr.MapStr) ([]int64, error) {
 
 	if moduleID == 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
@@ -618,7 +617,7 @@ func (lgc *Logics) AddHosts(kit *rest.Kit, appID int64, moduleID int64,
 		hostInfos[index][common.BKCloudIDField] = cloudIDVal
 
 		address, ok := host[common.BKAddressingField].(string)
-		if ok == false || (address != common.BKAddressingDynamic && address != common.BKAddressingStatic) {
+		if !ok || (address != common.BKAddressingDynamic && address != common.BKAddressingStatic) {
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAddressingField)
 		}
 	}
@@ -659,7 +658,7 @@ func (lgc *Logics) AddHosts(kit *rest.Kit, appID int64, moduleID int64,
 	}
 	_, err = lgc.CoreAPI.CoreService().Host().TransferToInnerModule(kit.Ctx, kit.Header, opt)
 	if err != nil {
-		blog.Errorf("add host relation error, input: %v, err: %v, rid: %s", opt, err, kit.Rid)
+		blog.Errorf("add host relation failed, input: %v, err: %v, rid: %s", opt, err, kit.Rid)
 		return nil, err
 	}
 

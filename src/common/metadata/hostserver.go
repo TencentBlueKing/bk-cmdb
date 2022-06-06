@@ -1112,7 +1112,7 @@ func (h *HostListParam) Validate() errors.RawErrorInfo {
 	return errors.RawErrorInfo{}
 }
 
-// the response about add host to business interface
+// HostIDsResp the response about add host to business interface
 type HostIDsResp struct {
 	HostIDs []int64 `json:"bk_host_ids"`
 }

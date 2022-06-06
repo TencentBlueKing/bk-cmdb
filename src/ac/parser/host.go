@@ -330,7 +330,7 @@ const (
 	addHostsToHostPoolPattern             = "/api/v3/hosts/add"
 	addHostsByExcelPattern                = "/api/v3/hosts/excel/add"
 	addHostsToResourcePoolPattern         = "/api/v3/hosts/add/resource"
-	addHostsToBusinessPattern             = "/api/v3/hosts/add/business"
+	addHostsToBusinessIdlePattern         = "/api/v3/hosts/add/business_idle"
 	moveHostToBusinessModulePattern       = "/api/v3/hosts/modules"
 	moveResPoolHostToBizIdleModulePattern = "/api/v3/hosts/modules/resource/idle"
 	moveHostsToBizFaultModulePattern      = "/api/v3/hosts/modules/fault"
@@ -924,7 +924,7 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
-	if ps.hitPattern(addHostsToBusinessPattern, http.MethodPost) {
+	if ps.hitPattern(addHostsToBusinessIdlePattern, http.MethodPost) {
 		bizID, err := ps.parseBusinessID()
 		if err != nil {
 			ps.err = err

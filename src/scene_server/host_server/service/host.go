@@ -1467,8 +1467,8 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	ctx.RespEntity(retData)
 }
 
-// AddHostToBusiness add host to business idle module
-func (s *Service) AddHostToBusiness(ctx *rest.Contexts) {
+// AddHostToBusinessIdle add host to business idle module
+func (s *Service) AddHostToBusinessIdle(ctx *rest.Contexts) {
 	input := new(meta.HostListParam)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
