@@ -49,8 +49,14 @@ func addDefaultBusinessSet(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 
 	result := make([]metadata.BizSetInst, 0)
 	filter := map[string]interface{}{
-		common.BKBizSetIDField:   bizSetID,
-		common.BKBizSetNameField: bizSetName,
+		common.BKDBOR: []map[string]interface{}{
+			{
+				common.BKBizSetIDField: bizSetID,
+			},
+			{
+				common.BKBizSetNameField: bizSetName,
+			},
+		},
 	}
 
 	err := db.Table(common.BKTableNameBaseBizSet).Find(filter).All(ctx, &result)
@@ -62,7 +68,8 @@ func addDefaultBusinessSet(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	if len(result) >= 2 {
 		blog.Errorf("business set id %s and name %s already exists, the number of business set that meet the "+
 			"condition is greater than 2, val: %v", bizSetID, bizSetName, result)
-		return fmt.Errorf("failed to add default business set: %v", defaultBusinessSet)
+		return fmt.Errorf("failed to add default business set, business set id: %d or name: %s already exists, the "+
+			"number of business set that meet the condition is greater than 2", bizSetID, bizSetName)
 	}
 
 	if len(result) == 1 {
@@ -85,7 +92,8 @@ func addDefaultBusinessSet(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 
 		blog.Errorf("business set id %s or name %s already exists, user needs to deal with duplicates first to "+
 			"successfully upgrade", bizSetID, bizSetName)
-		return fmt.Errorf("failed to add default business set: %v", defaultBusinessSet)
+		return fmt.Errorf("failed to add default business set, business set id: %d or name: %s already exists, user "+
+			"needs to deal with duplicates first to successfully upgrade", bizSetID, bizSetName)
 	}
 
 	if err := db.Table(common.BKTableNameBaseBizSet).Insert(ctx, defaultBusinessSet); err != nil {

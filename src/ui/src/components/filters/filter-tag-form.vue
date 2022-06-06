@@ -101,17 +101,22 @@
           bk_property_type: propertyType
         } = this.property
         const normal = `cmdb-search-${propertyType}`
-        if (modelId === 'biz' && propertyId === 'bk_biz_name' && FilterStore.condition[this.property.id].operator !== '$regex') {
+
+        if (modelId === 'biz' && propertyId === 'bk_biz_name' && this.operator !== '$regex') {
           return `cmdb-search-${modelId}`
         }
+
         if (!FilterStore.bizId) {
           return normal
         }
+
         const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
         const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
-        if (isSetName || isModuleName) {
+
+        if ((isSetName || isModuleName) && this.operator !== '$regex') {
           return `cmdb-search-${modelId}`
         }
+
         return normal
       },
       getBindProps() {

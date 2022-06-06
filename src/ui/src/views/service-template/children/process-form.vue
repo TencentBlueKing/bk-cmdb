@@ -59,7 +59,7 @@
                       v-bk-tooltips="{
                         placement: 'top',
                         interactive: false,
-                        content: isLocked(property) ? $t('取消锁定') : $t('进程模板锁定提示语'),
+                        content: $t('进程模板加解锁提示语'),
                         delay: [100, 0]
                       }"
                       tabindex="-1"
@@ -148,6 +148,11 @@
         default: data => data
       }
     },
+    provide() {
+      return {
+        type: this.type
+      }
+    },
     data() {
       return {
         values: {
@@ -155,7 +160,7 @@
         },
         refrenceValues: {},
         invisibleNameProperties: ['bind_info'],
-        defaultLocked: ['bk_func_name', 'bk_process_name', 'bind_info']
+        mustLocked: ['bk_func_name', 'bk_process_name', 'bind_info']
       }
     },
     computed: {
@@ -188,7 +193,7 @@
         return this.values[property.bk_property_id].as_default_value
       },
       allowLock(property) {
-        return !this.defaultLocked.includes(property.bk_property_id)
+        return !this.mustLocked.includes(property.bk_property_id)
       },
       toggleLockState(property) {
         this.values[property.bk_property_id].as_default_value = !this.isLocked(property)
@@ -234,7 +239,8 @@
         Object.keys(formValues).forEach((key) => {
           if (!has(this.inst, key)) {
             restValues[key] = {
-              as_default_value: this.defaultLocked.includes(key),
+              // 除必须锁定不能修改字段外，创建模式也默认为锁定
+              as_default_value: this.mustLocked.includes(key) || this.type === 'create',
               value: formValues[key]
             }
           }

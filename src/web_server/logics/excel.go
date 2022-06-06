@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -143,7 +142,13 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 	// len(objNames)+5=tip + biztopo + biz + set + moudle + customLen, the former indexes is used by these columns
 	addSystemField(fields, common.BKInnerObjIDHost, ccLang, len(objNames)+5)
 
-	productHostExcelHeader(ctx, fields, filter, xlsxFile, sheet, ccLang, objNames)
+	cloudAreaArr, _, err := lgc.getCloudArea(ctx, header)
+	if err != nil {
+		blog.Errorf("build host excel data failed, err: %v, rid: %s", err, rid)
+		return err
+	}
+
+	productHostExcelHeader(ctx, fields, filter, xlsxFile, sheet, ccLang, objNames, cloudAreaArr)
 
 	handleHostDataParam := &HandleHostDataParam{
 		HostData:          data,
@@ -212,8 +217,7 @@ func (lgc *Logics) buildHostExcelData(handleHostDataParam *HandleHostDataParam) 
 				return nil, handleHostDataParam.CcErr.CCError(common.CCErrCommReplyDataFormatError)
 			}
 
-			cloudArea := fmt.Sprintf("%v[%v]", cloudAreaArr[0][common.BKInstNameField],
-				cloudAreaArr[0][common.BKInstIDField])
+			cloudArea := cloudAreaArr[0][common.BKInstNameField]
 			rowMap.Set(common.BKCloudIDField, cloudArea)
 		}
 
@@ -449,10 +453,6 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 
 	rid := util.GetHTTPCCRequestID(header)
 	filterFields := getFilterFields(objID)
-	// host excel template doesn't need export field bk_cloud_id
-	if objID == common.BKInnerObjIDHost {
-		filterFields = append(filterFields, common.BKCloudIDField)
-	}
 
 	fields, err := lgc.GetObjFieldIDs(objID, filterFields, nil, header, modelBizID,
 		common.HostAddMethodExcelDefaultIndex)
@@ -482,7 +482,16 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 	productExcelAssociationHeader(ctx, asstSheet, defLang, 0, asstList)
 
 	blog.V(5).Infof("BuildExcelTemplate fields count:%d, rid: %s", fields, rid)
-	productExcelHeader(ctx, fields, filterFields, file, sheet, defLang)
+	if objID == common.BKInnerObjIDHost {
+		cloudAreaName, _, err := lgc.getCloudArea(ctx, header)
+		if err != nil {
+			blog.Errorf("build %s excel template failed, err: %v,  rid: %s", objID, err, rid)
+			return err
+		}
+		productHostExcelHeader(ctx, fields, filterFields, file, sheet, defLang, nil, cloudAreaName)
+	} else {
+		productExcelHeader(ctx, fields, filterFields, file, sheet, defLang)
+	}
 	ProductExcelCommentSheet(ctx, file, defLang)
 
 	if err = file.Save(filename); nil != err {

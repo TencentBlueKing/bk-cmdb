@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal"
 )
 
@@ -48,4 +49,10 @@ func ValidHostTransferHook(kit *rest.Kit, db dal.DB, crossBizTransfer bool, srcB
 	destBizID int64) errors.CCErrorCoder {
 
 	return nil
+}
+
+// ValidBizSetPropertyHook is a hook to check if a specific property id is valid or not
+func ValidBizSetPropertyHook(kit *rest.Kit, fieldInfo *metadata.BizSetScopeParamsInfo, info metadata.Attribute,
+	propertyID interface{}) (bool, error) {
+	return false, nil
 }

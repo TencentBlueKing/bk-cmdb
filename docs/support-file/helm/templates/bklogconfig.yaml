@@ -1,0 +1,34 @@
+{{- if .Values.bkLogConfig.file.enabled }}
+apiVersion: bk.tencent.com/v1alpha1
+kind: BkLogConfig
+metadata:
+  name: bk-cmdb-file-log-config
+spec:
+  dataId: {{ .Values.bkLogConfig.file.dataId }}
+  extMeta:
+    logSourceType: "file"
+  logConfigType: container_log_config
+  namespace: {{ .Release.Namespace }}
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/name: bk-cmdb
+  encoding: 'utf-8'
+  path:
+    - /data/cmdb/cmdb_*/logs/*
+{{- end }}
+{{- if .Values.bkLogConfig.std.enabled }}
+---
+apiVersion: bk.tencent.com/v1alpha1
+kind: BkLogConfig
+metadata:
+  name: bk-cmdb-std-log-config
+spec:
+  dataId: {{ .Values.bkLogConfig.std.dataId }}
+  extMeta:
+    logSourceType: "std"
+  logConfigType: std_log_config
+  namespace: {{ .Release.Namespace }}
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/name: bk-cmdb
+{{- end }}

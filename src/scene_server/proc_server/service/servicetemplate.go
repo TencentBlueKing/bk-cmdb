@@ -82,7 +82,7 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 
 func (ps *ProcServer) GetServiceTemplate(ctx *rest.Contexts) {
 	templateIDStr := ctx.Request.PathParameter(common.BKServiceTemplateIDField)
-	templateID, err := util.GetInt64ByInterface(templateIDStr)
+	templateID, err := strconv.ParseInt(templateIDStr, 10, 64)
 	if err != nil {
 		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "create service template failed, err: %v", common.BKServiceTemplateIDField, err)
 		return
@@ -99,7 +99,7 @@ func (ps *ProcServer) GetServiceTemplate(ctx *rest.Contexts) {
 // GetServiceTemplateDetail return more info than GetServiceTemplate
 func (ps *ProcServer) GetServiceTemplateDetail(ctx *rest.Contexts) {
 	templateIDStr := ctx.Request.PathParameter(common.BKServiceTemplateIDField)
-	templateID, err := util.GetInt64ByInterface(templateIDStr)
+	templateID, err := strconv.ParseInt(templateIDStr, 10, 64)
 	if err != nil {
 		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "create service template failed, err: %v", common.BKServiceTemplateIDField, err)
 		return
@@ -607,7 +607,8 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 	}
 
 	if input.Page.IsIllegal() {
-		ctx.RespErrorCodeOnly(common.CCErrCommPageLimitIsExceeded, "list service template, but page limit:%d is over limited.", input.Page.Limit)
+		ctx.RespErrorCodeOnly(common.CCErrCommPageLimitIsExceeded, "list service template, but page limit:%d is over "+
+			"limited.", input.Page.Limit)
 		return
 	}
 

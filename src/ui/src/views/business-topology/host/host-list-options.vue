@@ -396,7 +396,7 @@
         setImportState({
           title: this.$t('更新主机属性'),
           bk_obj_id: 'host',
-          fileTips: `${this.$t('导入文件大小提示')},${this.$t('主机导入文件提示')}`,
+          fileTips: this.$t('导入文件大小提示'),
           submit: (options) => {
             const params = {
               bk_biz_id: this.bizId,

@@ -219,6 +219,22 @@ func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue inter
 			return true, nil
 		}
 
+	case common.FieldTypeTime:
+		expectVal, ok := expectValue.(primitive.DateTime)
+		if !ok {
+			return false, errors.New(common.CCErrCommUnexpectedFieldType, "expect value type error")
+		}
+		expectTimeVal := expectVal.Time()
+
+		propertyTimeValue, err := metadata.ParseTime(propertyValue)
+		if err != nil {
+			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
+		}
+
+		if cmp.Equal(expectTimeVal, propertyTimeValue) {
+			return true, nil
+		}
+
 	default:
 		if cmp.Equal(expectValue, propertyValue) {
 			return true, nil
@@ -237,7 +253,7 @@ func preCheckRules(targetRules []metadata.HostApplyRule, attributeID int64, attr
 		blog.Infof("attribute id field not exist, attributeID: %s, rid: %s", attributeID, rid)
 		return metadata.Attribute{}, false
 	}
-	if metadata.CheckAllowHostApplyOnField(attribute.PropertyID) == false {
+	if !metadata.CheckAllowHostApplyOnField(&attribute) {
 		return metadata.Attribute{}, false
 	}
 	return attribute, true

@@ -89,8 +89,6 @@ func GetInt64ByInterface(a interface{}) (int64, error) {
 	case float32:
 		tmpID := a.(float32)
 		id = int64(tmpID)
-	case string:
-		id, err = strconv.ParseInt(a.(string), 10, 64)
 	default:
 		err = errors.New("not numeric")
 

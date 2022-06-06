@@ -341,7 +341,7 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 
 	hostAttributes := make([]metadata.HostObjAttDes, 0)
 	for _, item := range result.Info {
-		hostApplyEnabled := metadata.CheckAllowHostApplyOnField(item.PropertyID)
+		hostApplyEnabled := metadata.CheckAllowHostApplyOnField(&item)
 		hostAttribute := metadata.HostObjAttDes{
 			ObjAttDes: metadata.ObjAttDes{
 				Attribute: item,
