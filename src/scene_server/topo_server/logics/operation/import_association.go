@@ -823,7 +823,7 @@ func convStrToCCType(val string, attr metadata.Attribute) (interface{}, error) {
 		}
 		return getEnumIDByName(val, option), nil
 	case common.FieldTypeInt:
-		return util.GetInt64ByInterface(val)
+		return strconv.ParseInt(val, 10, 64)
 	case common.FieldTypeFloat:
 		return util.GetFloat64ByInterface(val)
 

@@ -1,0 +1,41 @@
+{{- if .Values.migrate.migrateDataId }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "bk-cmdb.fullname" . }}-migratedataid
+  labels:
+    app: {{ template "bk-cmdb.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+  annotations:
+    "helm.sh/hook": post-install, post-upgrade
+    "helm.sh/hook-weight": "-4"
+    "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation
+spec:
+  template:
+    spec:
+      containers:
+      - name: cmdb-migratedataid
+        image: {{ template "cmdb.basicImagesAddress" . }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - sh
+        - "-c"
+        - |
+          /bin/bash <<'EOF'
+          res=$(curl -s -X POST \
+          -H 'Content-Type:application/json' \
+          -H 'BK_USER:migrate' \
+          -H 'HTTP_BLUEKING_SUPPLIER_ID:0' \
+          "http://{{ template "bk-cmdb.adminserver" . }}:80/migrate/v3/migrate/dataid"
+          )
+          echo "$res"
+          if ! [[ $(echo "$res" | jq -r .result) = "true" ]]; then
+            echo "migrate data id to gse failed."
+            exit 1
+          fi
+          EOF
+      restartPolicy: OnFailure
+  backoffLimit: 20
+{{- end }}

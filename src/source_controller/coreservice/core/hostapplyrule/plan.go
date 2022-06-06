@@ -253,7 +253,7 @@ func preCheckRules(targetRules []metadata.HostApplyRule, attributeID int64, attr
 		blog.Infof("attribute id field not exist, attributeID: %s, rid: %s", attributeID, rid)
 		return metadata.Attribute{}, false
 	}
-	if metadata.CheckAllowHostApplyOnField(attribute.PropertyID) == false {
+	if !metadata.CheckAllowHostApplyOnField(&attribute) {
 		return metadata.Attribute{}, false
 	}
 	return attribute, true

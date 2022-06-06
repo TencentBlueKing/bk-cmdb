@@ -1,0 +1,43 @@
+{{- if .Values.iam.auth.enabled }}
+{{- $ingressHost := .Values.authserver.ingress.host -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "bk-cmdb.fullname" . }}-auth-modelregister
+  labels:
+    app: {{ template "bk-cmdb.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+  annotations:
+    "helm.sh/hook": post-install, post-upgrade
+    "helm.sh/hook-weight": "-4"
+    "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation
+spec:
+  template:
+    spec:
+      containers:
+      - name: cmdb-auth-modelregister
+        image: {{ template "cmdb.basicImagesAddress" . }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - sh
+        - "-c"
+        - |
+          /bin/bash <<'EOF'
+          res=$(curl -s -X POST \
+          -H 'Content-Type:application/json' \
+          -H 'BK_USER:migrate' \
+          -H 'HTTP_BLUEKING_SUPPLIER_ID:0' \
+          --data '{"host": "http://{{  $ingressHost }}"}' \
+          "http://{{ template "bk-cmdb.adminserver" . }}/migrate/v3/authcenter/init"
+          )
+          echo "$res"
+          if ! [[ $(echo "$res" | jq -r .result) = "true" ]]; then
+            echo "auth center migration failed."
+            exit 1
+          fi
+          EOF
+      restartPolicy: OnFailure
+  backoffLimit: 20
+{{- end }}

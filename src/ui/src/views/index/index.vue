@@ -122,7 +122,7 @@
 
 <style lang="scss" scoped>
   .index-layout {
-    padding: 0 0 65px;
+    padding: 0 0 52px;
     background-color: #F5F6FA;
     position: relative;
     z-index: 1;

@@ -67,7 +67,7 @@ func BizIDFromMetadata(meta Metadata) (int64, error) {
 	if false == exist {
 		return 0, nil
 	}
-	businessID, err = util.GetInt64ByInterface(bizID)
+	businessID, err = strconv.ParseInt(bizID, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("convert business id failed, err: %+v", err)
 	}
@@ -84,7 +84,7 @@ func PublicAndBizCondition(meta Metadata) mapstr.MapStr {
 
 	bizIDStr := util.GetStrByInterface(bizID)
 	if len(bizIDStr) > 0 {
-		businessID, err = util.GetInt64ByInterface(bizID)
+		businessID, err = strconv.ParseInt(bizIDStr, 10, 64)
 		if err != nil {
 			blog.Errorf("PublicAndBizCondition parse business id failed, generate public condition only, bizID: %+v, err: %+v", bizID, err)
 			businessID = 0
@@ -163,7 +163,7 @@ func ParseBizIDFromData(rawData mapstr.MapStr) (int64, error) {
 	if !existed {
 		return 0, nil
 	}
-	bizID, err := util.GetInt64ByInterface(rawBizID)
+	bizID, err := strconv.ParseInt(rawBizID, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("invalid biz id value, parse int failed, id: %+v, err: %+v", rawBizID, err)
 	}

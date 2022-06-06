@@ -1,0 +1,17 @@
+{{- if .Values.authserver.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ template "bk-cmdb.authserver" . }}"
+  labels:
+{{ include "common.labels.standard" . | indent 4 }}
+spec:
+  type: {{ .Values.authserver.service.type }}
+  ports:
+  {{- with .Values.authserver.service.ports }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+{{ include "common.labels.matchLabels" . | indent 4 }}
+    component: authserver
+{{- end }}

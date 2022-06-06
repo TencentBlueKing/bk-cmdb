@@ -659,7 +659,7 @@
           title: this.$t('导入主机'),
           bk_obj_id: 'host',
           template: `${window.API_HOST}importtemplate/host`,
-          fileTips: `${this.$t('导入文件大小提示')},${this.$t('主机导入文件提示')}`,
+          fileTips: this.$t('导入文件大小提示'),
           submit: (options) => {
             const params = {
               op: options.step
@@ -683,7 +683,7 @@
         setImportState({
           title: this.$t('导入编辑'),
           bk_obj_id: 'host',
-          fileTips: `${this.$t('导入文件大小提示')},${this.$t('主机导入文件提示')}`,
+          fileTips: this.$t('导入文件大小提示'),
           submit: (options) => {
             const params = {
               op: options.step
