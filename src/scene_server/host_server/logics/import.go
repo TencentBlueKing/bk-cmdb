@@ -589,3 +589,94 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 
 	return hostMap, hostIDMap, nil
 }
+
+// AddHosts add host to business module
+func (lgc *Logics) AddHosts(kit *rest.Kit, appID int64, moduleID int64, hostInfos []mapstr.MapStr) ([]int64, error) {
+
+	if moduleID == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+	}
+	if appID == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+	// check host attribute
+	for index, host := range hostInfos {
+		innerIP, isOk := host[common.BKHostInnerIPField].(string)
+		if !isOk || innerIP == "" {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostInnerIPField)
+		}
+
+		cloudID, ok := host[common.BKCloudIDField]
+		if !ok {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		}
+		cloudIDVal, err := util.GetInt64ByInterface(cloudID)
+		if err != nil || cloudIDVal < 0 {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		}
+		hostInfos[index][common.BKCloudIDField] = cloudIDVal
+
+		address, ok := host[common.BKAddressingField].(string)
+		if !ok || (address != common.BKAddressingDynamic && address != common.BKAddressingStatic) {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAddressingField)
+		}
+	}
+
+	// create host instance
+	input := &metadata.CreateManyModelInstance{
+		Datas: hostInfos,
+	}
+	result, err := lgc.CoreAPI.CoreService().Instance().CreateManyInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost,
+		input)
+	if err != nil {
+		blog.Errorf("create host instance failed, input: %v, err: %v, rid: %s", input, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(result.Repeated) > 0 {
+		blog.Errorf("host data repeated, input: %v, result: %v, rid: %s", hostInfos, result, kit.Rid)
+		errMsg := util.GetStrByInterface(result.Repeated[0].Data["err_msg"])
+		return nil, ccErr.NewCCError(common.CCErrCommDuplicateItem, errMsg)
+	}
+
+	if len(result.Exceptions) > 0 {
+		blog.Errorf("create host failed, input: %v, result: %v, rid: %s", hostInfos, result, kit.Rid)
+		return nil, kit.CCError.CCErrorf(int(result.Exceptions[0].Code), result.Exceptions[0].Message)
+	}
+
+	hostIDs := make([]int64, 0)
+	for index, item := range result.Created {
+		hostInfos[index][common.BKHostIDField] = int64(item.ID)
+		hostIDs = append(hostIDs, int64(item.ID))
+	}
+
+	// create host module relation
+	opt := &metadata.TransferHostToInnerModule{
+		ApplicationID: appID,
+		ModuleID:      moduleID,
+		HostID:        hostIDs,
+	}
+	_, err = lgc.CoreAPI.CoreService().Host().TransferToInnerModule(kit.Ctx, kit.Header, opt)
+	if err != nil {
+		blog.Errorf("add host relation failed, input: %v, err: %v, rid: %s", opt, err, kit.Rid)
+		return nil, err
+	}
+
+	// to generate audit log
+	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, logErr := audit.GenerateAuditLog(generateAuditParameter, appID, hostInfos)
+	if logErr != nil {
+		blog.Errorf("generate host audit log failed after create host, input: %v, bizID: %d, err: %v, rid: %s",
+			hostInfos, appID, err, kit.Rid)
+		return nil, logErr
+	}
+
+	// to save audit log.
+	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
+		blog.Errorf("add host success, but save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, fmt.Errorf("add host success, but save audit log failed, err: %v", err)
+	}
+
+	return hostIDs, nil
+}

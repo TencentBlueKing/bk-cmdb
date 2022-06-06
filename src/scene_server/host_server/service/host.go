@@ -1466,3 +1466,49 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(retData)
 }
+
+// AddHostToBusinessIdle add host to business idle module
+func (s *Service) AddHostToBusinessIdle(ctx *rest.Contexts) {
+	input := new(meta.HostListParam)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := input.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// get target biz's idle module ID
+	cond := mapstr.MapStr{
+		common.BKAppIDField:   input.ApplicationID,
+		common.BKDefaultField: common.DefaultResModuleFlag,
+	}
+	moduleID, _, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, cond)
+	if err != nil {
+		blog.Errorf("get idle module failed, input: %v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	var hostIDs []int64
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		hostIDs, err = s.Logic.AddHosts(ctx.Kit, input.ApplicationID, moduleID, input.HostList)
+		if err != nil {
+			blog.Errorf("add host failed, input: %v, err: %v, rid:%s", input.HostList, err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(&meta.HostIDsResp{
+		HostIDs: hostIDs,
+	})
+}

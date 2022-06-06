@@ -330,6 +330,7 @@ const (
 	addHostsToHostPoolPattern             = "/api/v3/hosts/add"
 	addHostsByExcelPattern                = "/api/v3/hosts/excel/add"
 	addHostsToResourcePoolPattern         = "/api/v3/hosts/add/resource"
+	addHostsToBusinessIdlePattern         = "/api/v3/hosts/add/business_idle"
 	moveHostToBusinessModulePattern       = "/api/v3/hosts/modules"
 	moveResPoolHostToBizIdleModulePattern = "/api/v3/hosts/modules/resource/idle"
 	moveHostsToBizFaultModulePattern      = "/api/v3/hosts/modules/fault"
@@ -920,6 +921,25 @@ func (ps *parseStream) host() *parseStream {
 				},
 			},
 		}
+		return ps
+	}
+
+	if ps.hitPattern(addHostsToBusinessIdlePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.Update,
+				},
+			},
+		}
+
 		return ps
 	}
 
