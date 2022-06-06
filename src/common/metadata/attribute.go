@@ -1208,11 +1208,19 @@ var HostApplyFieldMap = map[string]bool{
 	common.BKCloudInstIDField:     false,
 	common.BKCloudHostStatusField: false,
 	common.BKCloudVendor:          false,
+	common.BKHostInnerIPv6Field:   false,
+	common.BKHostOuterIPv6Field:   false,
+	common.BKAgentIDField:         false,
+	"bk_cpu_architecture":         false,
 }
 
 // CheckAllowHostApplyOnField 检查字段是否能用于主机属性自动应用
-func CheckAllowHostApplyOnField(field string) bool {
-	if allow, exist := HostApplyFieldMap[field]; exist == true {
+func CheckAllowHostApplyOnField(field *Attribute) bool {
+	if !field.IsEditable {
+		return false
+	}
+
+	if allow, exist := HostApplyFieldMap[field.PropertyID]; exist == true {
 		return allow
 	}
 	return true

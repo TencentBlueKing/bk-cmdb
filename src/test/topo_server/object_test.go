@@ -23,7 +23,7 @@ var _ = Describe("object test", func() {
 	var childInstId string
 	var setId string
 	var serviceTemplateId string
-	var childInstIdInt, bizIdInt int64
+	var childInstIdInt, bizIdInt, setIDInt int64
 	objectClient := topoServerClient.Object()
 	instClient := topoServerClient.Instance()
 
@@ -1165,6 +1165,8 @@ var _ = Describe("object test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bizIdRes).To(Equal(bizIdInt))
 			setId = commonutil.GetStrByInterface(rsp.Data["bk_set_id"])
+			setIDInt, err = commonutil.GetInt64ByInterface(rsp.Data["bk_set_id"])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It(fmt.Sprintf("create set bk_biz_id=%s and bk_parent_id=%s", bizId, childInstId), func() {
@@ -1365,6 +1367,19 @@ var _ = Describe("object test", func() {
 			Expect(commonutil.GetStrByInterface(rsp.Data[0]["bk_set_id"])).To(Equal(setId))
 			Expect(commonutil.GetStrByInterface(rsp.Data[0]["bk_set_name"])).To(Equal("new_test"))
 		})
+
+		It("get toponode host and serviceinst count", func() {
+			cond1 := metadata.CountOptions{ObjID: "set", InstID: setIDInt}
+			conds := make([]metadata.CountOptions, 0)
+			conds = append(conds, cond1)
+			input := &metadata.HostAndSerInstCountOption{
+				Condition: conds,
+			}
+			rsp, err := instClient.GetTopoNodeHostAndServiceInstCount(context.Background(), header, bizIdInt, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
 	})
 
 	Describe("module test", func() {
@@ -1373,7 +1388,7 @@ var _ = Describe("object test", func() {
 		It(fmt.Sprintf("create module bk_biz_id=%s and bk_set_id=%s", bizId, setId), func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "cc_module",
-				"bk_parent_id":        setId,
+				"bk_parent_id":        setIDInt,
 				"service_category_id": 2,
 				"service_template_id": 0,
 			}
@@ -1390,7 +1405,7 @@ var _ = Describe("object test", func() {
 		It(fmt.Sprintf("create module bk_biz_id=%s and bk_set_id=%s", bizId, setId), func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "test_module",
-				"bk_parent_id":        setId,
+				"bk_parent_id":        setIDInt,
 				"service_category_id": 2,
 				"service_template_id": 0,
 			}
@@ -1407,7 +1422,7 @@ var _ = Describe("object test", func() {
 		It("create module same bk_module_name", func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "test_module",
-				"bk_parent_id":        setId,
+				"bk_parent_id":        setIDInt,
 				"service_category_id": 2,
 				"service_template_id": 0,
 			}
@@ -1420,7 +1435,7 @@ var _ = Describe("object test", func() {
 		It("create module invalid bk_biz_id", func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "test_module1",
-				"bk_parent_id":        setId,
+				"bk_parent_id":        setIDInt,
 				"service_category_id": 2,
 				"service_template_id": 0,
 			}
@@ -1433,7 +1448,7 @@ var _ = Describe("object test", func() {
 		It("create module invalid bk_set_id", func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "test_module2",
-				"bk_parent_id":        setId,
+				"bk_parent_id":        setIDInt,
 				"service_category_id": 2,
 				"service_template_id": 0,
 			}
@@ -1446,7 +1461,7 @@ var _ = Describe("object test", func() {
 		It("create module unmatch bk_biz_id and bk_set_id", func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "test_module3",
-				"bk_parent_id":        setId,
+				"bk_parent_id":        setIDInt,
 				"service_category_id": 2,
 				"service_template_id": 0,
 			}
