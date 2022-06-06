@@ -174,7 +174,7 @@ func (lgc *Logics) getRawInstAsst(kit *rest.Kit, objID string, ids []string, que
 					for idx, key := range ids {
 						if key == strconv.FormatInt(itemInstID, 10) {
 							inst.ID = ids[idx]
-							inst.ObjectID, _ = util.GetInt64ByInterface(ids[idx])
+							inst.ObjectID, _ = strconv.ParseInt(ids[idx], 10, 64)
 							ids = delarry(ids, idx)
 							allInst = append(allInst, inst)
 							goto next
