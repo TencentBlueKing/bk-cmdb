@@ -429,6 +429,7 @@ func (h *HostIdentifier) buildPushFile(hostIdentifier, hostIP string, cloudID in
 	fileInfo.MFile.MPath = conf.FilePath
 	fileInfo.MFile.MOwner = conf.FileOwner
 	fileInfo.MFile.MRight = conf.FilePrivilege
+	fileInfo.MFile.MBackupName = conf.FileName + ".bak"
 
 	return fileInfo
 }
