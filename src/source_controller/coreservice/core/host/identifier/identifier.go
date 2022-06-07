@@ -84,6 +84,8 @@ var identityHostFields = []string{
 	common.BKHostInnerIPField,
 	common.BKOSTypeField,
 	common.BkSupplierAccount,
+	common.BKAddressingField,
+	common.BKAgentIDField,
 }
 
 // FindHost query host info

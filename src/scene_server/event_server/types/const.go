@@ -19,3 +19,10 @@ const (
 	// MetricsNamespacePrefix is prefix of metrics namespace.
 	MetricsNamespacePrefix = "cmdb_eventserver"
 )
+
+type ApiVersion string
+
+const (
+	V1 ApiVersion = "v1"
+	V2 ApiVersion = "v2"
+)
