@@ -606,6 +606,7 @@ func getHostInfoFromMsgV10(val *gjson.Result, innerIP, outerIP string) *hostDisc
 		outerIPMap[ip] = index
 	}
 
+	hostMsg.outerMACArr, hostMsg.innerMACArr = make([]string, len(outerIPArr)), make([]string, len(innerIPArr))
 	for _, inter := range val.Get("data.net.interface").Array() {
 		for _, addr := range inter.Get("addrs").Array() {
 			splitAddr := strings.Split(addr.String(), "/")
@@ -690,7 +691,7 @@ func getOsInfoFromMsg(val *gjson.Result, innerIP, outerIP string) *hostDiscoverM
 	for index, ip := range outerIPArr {
 		outerIPMap[ip] = index
 	}
-
+	hostMsg.outerMACArr, hostMsg.innerMACArr = make([]string, len(outerIPArr)), make([]string, len(innerIPArr))
 	for _, inter := range val.Get("data.net.interface").Array() {
 		for _, addr := range inter.Get("addrs.#.addr").Array() {
 			splitAddr := strings.Split(addr.String(), "/")
