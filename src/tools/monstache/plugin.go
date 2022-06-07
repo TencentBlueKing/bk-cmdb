@@ -753,7 +753,7 @@ func indexingObjectInstance(input *monstachemap.MapperPluginInput, output *monst
 	if !ok {
 		return errors.New("missing document metadata id")
 	}
-	idEs := fmt.Sprintf("%s:%s", documentID, commonObject)
+	idEs := fmt.Sprintf("%s:%s", documentID.Hex(), commonObject)
 	output.ID = idEs
 
 	output.Document = document
