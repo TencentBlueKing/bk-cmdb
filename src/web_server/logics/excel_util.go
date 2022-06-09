@@ -450,7 +450,7 @@ func handleHostField(field Property, handleFieldParam *HandleFieldParam, cloudAr
 	if field.IsRequire {
 		isRequire = handleFieldParam.DefLang.Language("web_excel_header_required")
 	}
-	 // 主机部分特殊逻辑 针对云区域与topo进行处理
+	// 主机部分特殊逻辑 针对云区域与topo进行处理
 	if field.ID == common.BKCloudIDField {
 		// 设置属性的id
 		handleFieldParam.Sheet.Cell(2, field.ExcelColIndex).Value = field.ID
@@ -461,6 +461,7 @@ func handleHostField(field Property, handleFieldParam *HandleFieldParam, cloudAr
 		setExcelCellIgnored(handleFieldParam.Sheet, handleFieldParam.StyleCell, 1, field.ExcelColIndex)
 		handleFieldParam.Sheet.Cell(2, field.ExcelColIndex).SetStyle(handleFieldParam.StyleCell)
 
+		blog.V(5).Info("cloud area: %v, rid: %s", cloudAreaName, handleFieldParam.Rid)
 		// 设置云区域的下拉选项
 		if len(cloudAreaName) != 0 {
 			enumSheet, err := handleFieldParam.File.AddSheet(field.Name)

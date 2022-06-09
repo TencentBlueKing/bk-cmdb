@@ -864,5 +864,7 @@ func (lgc *Logics) getCloudArea(ctx context.Context, header http.Header) ([]stri
 		cloudAreaMap[areaName] = areaID
 	}
 
+	blog.V(5).Info("get cloud area: %v, rid: %s", cloudAreaArr, rid)
+
 	return cloudAreaArr, cloudAreaMap, nil
 }
