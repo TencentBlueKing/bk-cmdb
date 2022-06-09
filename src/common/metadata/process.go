@@ -2033,3 +2033,8 @@ type SrvTemplate struct {
 	ID   int64  `json:"id" bson:"id" mapstructure:"id"`
 	Name string `json:"name" bson:"name" mapstructure:"name"`
 }
+
+// ServTempAttrData service template attributes data
+type ServTempAttrData struct {
+	Attributes []SvcTempAttr `json:"attributes"`
+}

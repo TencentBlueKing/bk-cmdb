@@ -654,3 +654,9 @@ type CreateModelTable struct {
 	ObjectIDs  []string `json:"bk_object_ids"`
 	IsMainLine bool     `json:"is_main_line"`
 }
+
+// ServiceTemplateAttributeResult service template attribute result
+type ServiceTemplateAttributeResult struct {
+	BaseResp `json:",inline"`
+	Data     *ServTempAttrData `json:"data"`
+}

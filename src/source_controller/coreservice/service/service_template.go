@@ -299,3 +299,67 @@ func (s *coreService) DeleteServiceTemplate(ctx *rest.Contexts) {
 
 	ctx.RespEntity(nil)
 }
+
+// UpdateServiceTemplateAttribute update service template attribute
+func (s *coreService) UpdateServiceTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.UpdateServTempAttrOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	if err := s.core.ProcessOperation().UpdateServTempAttr(ctx.Kit, option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+// DeleteServiceTemplateAttribute delete service template attribute
+func (s *coreService) DeleteServiceTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.DeleteServTempAttrOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	if err := s.core.ProcessOperation().DeleteServiceTemplateAttribute(ctx.Kit, option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+// ListServiceTemplateAttribute list service template attribute
+func (s *coreService) ListServiceTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.ListServTempAttrOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	data, err := s.core.ProcessOperation().ListServiceTemplateAttribute(ctx.Kit, option)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(data)
+}
