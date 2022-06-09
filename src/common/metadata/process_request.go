@@ -24,6 +24,12 @@ type CreateServiceTemplateOption struct {
 	HostApplyEnabled  bool   `field:"host_apply_enabled" json:"host_apply_enabled" bson:"host_apply_enabled"`
 }
 
+// SvcTempAttr simplified service template attribute
+type SvcTempAttr struct {
+	AttributeID   int64       `json:"bk_attribute_id"`
+	PropertyValue interface{} `json:"bk_property_value"`
+}
+
 type UpdateServiceTemplateOption struct {
 	BizID             int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	ID                int64  `field:"id" json:"id,omitempty" bson:"id"`
