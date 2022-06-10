@@ -120,7 +120,7 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 		Handler: ps.UpdateServiceTemplateAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_template/attribute",
 		Handler: ps.DeleteServiceTemplateAttribute})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/proc/service_template/attribute",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_template/attribute",
 		Handler: ps.ListServiceTemplateAttribute})
 
 	// process template

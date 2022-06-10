@@ -2036,5 +2036,5 @@ type SrvTemplate struct {
 
 // ServTempAttrData service template attributes data
 type ServTempAttrData struct {
-	Attributes []SvcTempAttr `json:"attributes"`
+	Attributes []ServiceTemplateAttr `json:"attributes"`
 }

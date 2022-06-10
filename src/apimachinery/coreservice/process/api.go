@@ -941,7 +941,7 @@ func (p *process) ListServiceTemplateAttribute(ctx context.Context, h http.Heade
 	option *metadata.ListServTempAttrOption) (*metadata.ServTempAttrData, errors.CCErrorCoder) {
 
 	ret := new(metadata.ServiceTemplateAttributeResult)
-	subPath := "/find/service_template/attribute"
+	subPath := "/findmany/service_template/attribute"
 
 	err := p.client.Post().
 		WithContext(ctx).

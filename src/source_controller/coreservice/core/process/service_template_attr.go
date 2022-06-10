@@ -215,14 +215,7 @@ func (p *processOperation) ListServiceTemplateAttribute(kit *rest.Kit, option *m
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
-	attributes := make([]metadata.SvcTempAttr, 0)
-	for _, attr := range templateAttrs {
-		attributes = append(attributes, metadata.SvcTempAttr{
-			AttributeID:   attr.AttributeID,
-			PropertyValue: attr.PropertyValue,
-		})
-	}
 	return &metadata.ServTempAttrData{
-		Attributes: attributes,
+		Attributes: templateAttrs,
 	}, nil
 }

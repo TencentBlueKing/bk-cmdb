@@ -81,7 +81,7 @@ func (s *coreService) initProcess(web *restful.WebService) {
 		Handler: s.UpdateServiceTemplateAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/service_template/attribute",
 		Handler: s.DeleteServiceTemplateAttribute})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/service_template/attribute",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/service_template/attribute",
 		Handler: s.ListServiceTemplateAttribute})
 
 	utility.AddToRestfulWebService(web)

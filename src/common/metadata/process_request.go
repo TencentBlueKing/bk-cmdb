@@ -112,7 +112,7 @@ func (s *DeleteServTempAttrOption) Validate() errors.RawErrorInfo {
 	}
 
 	if s.ID == 0 {
-		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"id"}}
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKFieldID}}
 	}
 
 	if len(s.AttributeIDs) == 0 {

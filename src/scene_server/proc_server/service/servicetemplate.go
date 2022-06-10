@@ -887,9 +887,17 @@ func (ps *ProcServer) DeleteServiceTemplateAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := ps.Engine.CoreAPI.CoreService().Process().DeleteServiceTemplateAttribute(ctx.Kit.Ctx, ctx.Kit.Header,
-		option); err != nil {
-		ctx.RespAutoError(err)
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err := ps.Engine.CoreAPI.CoreService().Process().DeleteServiceTemplateAttribute(ctx.Kit.Ctx, ctx.Kit.Header,
+			option); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
 		return
 	}
 
