@@ -40,8 +40,8 @@ type ApiGWSrv struct {
 func NewApiGW(config *apigwutil.ApiGWConfig, reg prometheus.Registerer) (*ApiGWSrv, error) {
 
 	apiMachineryConfig := &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     1000,
+		QPS:       2000,
+		Burst:     2000,
 		TLSConfig: config.TLSConfig,
 	}
 

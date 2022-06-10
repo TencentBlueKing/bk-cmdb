@@ -20,9 +20,12 @@ const (
 	MetricsNamespacePrefix = "cmdb_eventserver"
 )
 
+// ApiVersion gse api version
 type ApiVersion string
 
 const (
+	// V1 use gse1.0 thrift api
 	V1 ApiVersion = "v1"
+	// V2 use gse2.0 apiGW api
 	V2 ApiVersion = "v2"
 )

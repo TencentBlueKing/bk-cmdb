@@ -19,15 +19,18 @@ package gse
 
 import "configcenter/src/thirdparty/apigw/apigwutil"
 
+// ListAgentStateRequest use to list gse agent status request
 type ListAgentStateRequest struct {
 	AgentIDList []string `json:"agent_id_list"`
 }
 
+// ListAgentStateResp use to list gse agent status response
 type ListAgentStateResp struct {
 	apigwutil.ApiGWBaseResponse
 	Data []ListAgentStateData `json:"data"`
 }
 
+// ListAgentStateData the data in list agent state response
 type ListAgentStateData struct {
 	BKAgentID  string `json:"bk_agent_id"`
 	BKCloudID  int64  `json:"bk_cloud_id"`
@@ -36,12 +39,14 @@ type ListAgentStateData struct {
 	StatusCode int    `json:"status_code"`
 }
 
+// AsyncPushFileRequest use to push file to host request
 type AsyncPushFileRequest struct {
 	TimeoutSeconds int64   `json:"timeout_seconds"`
 	AutoMkdir      bool    `json:"auto_mkdir"`
 	Tasks          []*Task `json:"tasks"`
 }
 
+// Task the task about push file
 type Task struct {
 	FileName    string   `json:"file_name"`
 	StoreDir    string   `json:"store_dir"`
@@ -51,39 +56,47 @@ type Task struct {
 	AgentIDList []string `json:"agent_id_list"`
 }
 
+// AsyncPushFileResp use to push file to host response
 type AsyncPushFileResp struct {
 	apigwutil.ApiGWBaseResponse
 	Data AsyncPushFileData `json:"data"`
 }
 
+// AsyncPushFileData the data in push file response
 type AsyncPushFileData struct {
 	Result AsyncPushFileResult `json:"result"`
 }
 
+// AsyncPushFileResult the push file result
 type AsyncPushFileResult struct {
 	TaskID string `json:"task_id"`
 }
 
+// GetTransferFileResultRequest the request about get push file result
 type GetTransferFileResultRequest struct {
 	TaskID      string   `json:"task_id"`
 	AgentIDList []string `json:"agent_id_list"`
 }
 
+// GetTransferFileResultResp the response about get push file result
 type GetTransferFileResultResp struct {
 	apigwutil.ApiGWBaseResponse
 	Data GetTransferFileResultData `json:"data"`
 }
 
+// GetTransferFileResultData the data in the response about get push file result
 type GetTransferFileResultData struct {
 	Result []GetTransferFileResult `json:"result"`
 }
 
+// GetTransferFileResult the result in the response about get push file data
 type GetTransferFileResult struct {
 	ErrorCode int64                        `json:"error_code"`
 	ErrorMsg  string                       `json:"error_msg"`
 	Content   GetTransferFileResultContent `json:"content"`
 }
 
+// GetTransferFileResultContent the content about each host push file result
 type GetTransferFileResultContent struct {
 	Protover       int64   `json:"protover"`
 	Mode           int64   `json:"mode"`
