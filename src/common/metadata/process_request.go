@@ -29,6 +29,15 @@ type CreateServiceTemplateOption struct {
 	HostApplyEnabled  bool   `field:"host_apply_enabled" json:"host_apply_enabled" bson:"host_apply_enabled"`
 }
 
+// CreateSvcTempAllInfoOption create service template all info option
+type CreateSvcTempAllInfoOption struct {
+	BizID             int64           `json:"bk_biz_id"`
+	Name              string          `json:"name"`
+	ServiceCategoryID int64           `json:"service_category_id"`
+	Attributes        []SvcTempAttr   `json:"attributes"`
+	Processes         []ProcessDetail `json:"processes"`
+}
+
 // SvcTempAttr simplified service template attribute
 type SvcTempAttr struct {
 	AttributeID   int64       `json:"bk_attribute_id"`
@@ -48,6 +57,34 @@ func (s *SvcTempAttr) Validate() errors.RawErrorInfo {
 	}
 
 	return errors.RawErrorInfo{}
+}
+
+// CreateSvcTempAttrsOption create service template attributes option
+type CreateSvcTempAttrsOption struct {
+	BizID             int64         `json:"bk_biz_id"`
+	ServiceTemplateID int64         `json:"service_template_id"`
+	Attributes        []SvcTempAttr `json:"attributes"`
+}
+
+// UpdateSvcTempAllInfoOption update service template all info option
+type UpdateSvcTempAllInfoOption struct {
+	SvcTempAllInfo `json:",inline"`
+}
+
+// GetSvcTempAllInfoOption get service template all info option
+type GetSvcTempAllInfoOption struct {
+	ID    int64 `json:"id"`
+	BizID int64 `json:"bk_biz_id"`
+}
+
+// SvcTempAllInfo service template all info
+type SvcTempAllInfo struct {
+	ID                int64                 `json:"id"`
+	BizID             int64                 `json:"bk_biz_id"`
+	Name              string                `json:"name"`
+	ServiceCategoryID int64                 `json:"service_category_id"`
+	Attributes        []ServiceTemplateAttr `json:"attributes"`
+	Processes         []ProcessTemplate     `json:"processes"`
 }
 
 type UpdateServiceTemplateOption struct {

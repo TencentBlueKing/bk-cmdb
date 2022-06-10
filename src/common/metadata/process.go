@@ -775,9 +775,9 @@ type RemoveTemplateBindingOnModuleOption struct {
 }
 
 type UpdateProcessTemplateInput struct {
-	BizID             int64                  `json:"bk_biz_id"`
-	ProcessTemplateID int64                  `json:"process_template_id"`
-	Property          map[string]interface{} `json:"process_property"`
+	BizID             int64            `json:"bk_biz_id"`
+	ProcessTemplateID int64            `json:"process_template_id"`
+	Property          *ProcessProperty `json:"process_property"`
 }
 
 type SocketBindType string
