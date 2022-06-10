@@ -13,6 +13,8 @@
 package settemplate
 
 import (
+	"sync"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -20,12 +22,11 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 type SetTemplate interface {
 	DiffSetTplWithInst(kit *rest.Kit, bizID int64, setTemplateID int64,
-		option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder)
+		option metadata.DiffSetTplWithInstOption) (metadata.SetDiff, errors.CCErrorCoder)
 	SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateID int64,
 		option metadata.SyncSetTplToInstOption) errors.CCErrorCoder
 	GetLatestSyncTaskDetail(kit *rest.Kit, taskCond metadata.ListAPITaskDetail) (
@@ -48,146 +49,166 @@ type setTemplate struct {
 	client apimachinery.ClientSetInterface
 }
 
-func (st *setTemplate) DiffSetTplWithInst(kit *rest.Kit, bizID int64, setTemplateID int64,
-	option metadata.DiffSetTplWithInstOption) ([]metadata.SetDiff, errors.CCErrorCoder) {
+func (st *setTemplate) getSetResult(kit *rest.Kit, bizID, setTemplateID, setID int64) (*metadata.ResponseSetInstance,
+	errors.CCErrorCoder) {
+	filter := &metadata.QueryCondition{
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKSetTemplateIDField: setTemplateID,
+			common.BKSetIDField:         setID,
+		}),
+	}
 
-	serviceTemplates, err := st.client.CoreService().SetTemplate().
-		ListSetTplRelatedSvcTpl(kit.Ctx, kit.Header, bizID, setTemplateID)
-	if err != nil {
-		blog.Errorf("DiffSetTemplateWithInstances failed, ListSetTplRelatedSvcTpl failed, bizID: %d, "+
-			"setTemplateID: %d, err: %s, rid: %s", bizID, setTemplateID, err.Error(), kit.Rid)
+	set := new(metadata.ResponseSetInstance)
+	if err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
+		filter, set); err != nil {
+		blog.Errorf("get set failed, bizID: %d, setTemplateID: %d, setID: %d, err: %d, rid: %s", bizID, setTemplateID,
+			setID, err, kit.Rid)
 		return nil, err
+	}
+	if err := set.CCError(); err != nil {
+		blog.Errorf("get set http reply failed, bizID: %d, setTemplateID: %d, setID: %d, filter: %+v, reply: %v, "+
+			"rid: %s", bizID, setTemplateID, setID, filter, set, kit.Rid)
+		return nil, err
+	}
+
+	if len(set.Data.Info) != 1 {
+		blog.Errorf("DiffSetTemplateWithInstances failed, some setID invalid, input IDs: %+v, valid IDs: %+v, rid: %s",
+			setID, set.Data.Info, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetIDField)
+	}
+	return set, nil
+}
+
+func (st *setTemplate) getModuleResult(kit *rest.Kit, bizID, setTemplateID, setID int64) ([]metadata.ModuleInst,
+	errors.CCErrorCoder) {
+
+	filter := &metadata.QueryCondition{
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKSetTemplateIDField: setTemplateID,
+			common.BKParentIDField:      setID,
+		}),
+	}
+
+	modules := new(metadata.ResponseModuleInstance)
+	if err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		filter, modules); err != nil {
+		blog.ErrorJSON("DiffSetTemplateWithInstances failed, list modules failed, bizID: %s, setTemplateID: %s,"+
+			" setIDs: %s, err: %s, rid: %s", bizID, setTemplateID, setID, err, kit.Rid)
+		return nil, err
+	}
+	if err := modules.CCError(); err != nil {
+		blog.Errorf("list module http reply failed, bizID: %d, setTemplateID: %d, setID: %d, filter: %+v, reply: %+v,"+
+			" rid: %s", bizID, setTemplateID, setID, filter, modules, kit.Rid)
+		return nil, err
+	}
+
+	if len(modules.Data.Info) == 0 {
+		blog.Errorf("list module http reply failed, bizID: %d, setTemplateID: %d, setID: %d, filter: %+v, reply: %+v,"+
+			" rid: %s", bizID, setTemplateID, setID, filter, modules, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+	}
+	return modules.Data.Info, nil
+}
+
+func (st *setTemplate) DiffSetTplWithInst(kit *rest.Kit, bizID int64, setTemplateID int64,
+	option metadata.DiffSetTplWithInstOption) (metadata.SetDiff, errors.CCErrorCoder) {
+
+	serviceTemplates, err := st.client.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(kit.Ctx, kit.Header, bizID,
+		setTemplateID)
+	if err != nil {
+		blog.Errorf("list service templates failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID,
+			setTemplateID, err, kit.Rid)
+		return metadata.SetDiff{}, err
 	}
 	serviceTemplateMap := make(map[int64]metadata.ServiceTemplate)
 	for _, svcTpl := range serviceTemplates {
 		serviceTemplateMap[svcTpl.ID] = svcTpl
 	}
 
-	setIDs := util.IntArrayUnique(option.SetIDs)
-	setFilter := &metadata.QueryCondition{
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-		Condition: mapstr.MapStr(map[string]interface{}{
-			common.BKSetTemplateIDField: setTemplateID,
-			common.BKSetIDField: map[string]interface{}{
-				common.BKDBIN: setIDs,
-			},
-		}),
-	}
-	coresvcInst := st.client.CoreService().Instance()
-
-	setInstResult := metadata.ResponseSetInstance{}
-	if err := coresvcInst.
-		ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet, setFilter, &setInstResult); err != nil {
-		blog.ErrorJSON("DiffSetTemplateWithInstances failed, list sets http do failed, bizID: %s, "+
-			"setTemplateID: %s, setIDs: %s, err: %s, rid: %s",
-			bizID, setTemplateID, option.SetIDs, err.Error(), kit.Rid)
-		return nil, err
-	}
-	if err := setInstResult.CCError(); err != nil {
-		blog.ErrorJSON("DiffSetTemplateWithInstances failed, list sets http reply failed, bizID: %s, "+
-			"setTemplateID: %s, setIDs: %s, filter: %s, reply: %s, rid: %s", bizID,
-			setTemplateID, option.SetIDs, setFilter, setInstResult, kit.Rid)
-		return nil, err
+	set, err := st.getSetResult(kit, bizID, setTemplateID, option.SetID)
+	if err != nil {
+		return metadata.SetDiff{}, err
 	}
 
-	if len(setInstResult.Data.Info) != len(setIDs) {
-		blog.Errorf("DiffSetTemplateWithInstances failed, some setID invalid, input IDs: %+v, valid IDs: %+v, rid: %s",
-			setIDs, setInstResult.Data.Info, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_set_ids")
-	}
-	setMap := make(map[int64]metadata.SetInst)
-	for _, set := range setInstResult.Data.Info {
-		if set.SetID == 0 {
-			blog.Errorf("DiffSetTemplateWithInstances failed, decode set instance result setID=0, data: %+v, rid: %s",
-				set, kit.Rid)
-			return nil, kit.CCError.CCError(common.CCErrCommJSONMarshalFailed)
-		}
-		setMap[set.SetID] = set
-	}
-
-	moduleFilter := &metadata.QueryCondition{
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-		Condition: mapstr.MapStr(map[string]interface{}{
-			common.BKSetTemplateIDField: setTemplateID,
-			common.BKParentIDField: map[string]interface{}{
-				common.BKDBIN: option.SetIDs,
-			},
-		}),
-	}
-	modulesInstResult := metadata.ResponseModuleInstance{}
-	if err := coresvcInst.ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
-		moduleFilter, &modulesInstResult); err != nil {
-		blog.ErrorJSON("DiffSetTemplateWithInstances failed, list modules failed, bizID: %s, setTemplateID: %s,"+
-			" setIDs: %s, err: %s, rid: %s", bizID, setTemplateID, option.SetIDs, err, kit.Rid)
-		return nil, err
-	}
-	if err := modulesInstResult.CCError(); err != nil {
-		blog.ErrorJSON("DiffSetTemplateWithInstances failed, list module http reply failed, bizID: %s, "+
-			"setTemplateID: %s, setIDs: %s, filter: %s, reply: %s, rid: %s", bizID,
-			setTemplateID, option.SetIDs, moduleFilter, modulesInstResult, kit.Rid)
-		return nil, err
-	}
-
-	setModules := make(map[int64][]metadata.ModuleInst)
-	// init before modules loop so that set with no modules could be initial correctly
-	for _, setID := range option.SetIDs {
-		setModules[setID] = make([]metadata.ModuleInst, 0)
-	}
-	for _, module := range modulesInstResult.Data.Info {
-		if _, exist := setModules[module.ParentID]; !exist {
-			setModules[module.ParentID] = make([]metadata.ModuleInst, 0)
-		}
-		setModules[module.ParentID] = append(setModules[module.ParentID], module)
+	modules, err := st.getModuleResult(kit, bizID, setTemplateID, option.SetID)
+	if err != nil {
+		return metadata.SetDiff{}, err
 	}
 
 	topoTree, ccErr := st.client.CoreService().Mainline().SearchMainlineInstanceTopo(kit.Ctx, kit.Header, bizID, false)
 	if ccErr != nil {
 		blog.Errorf("ListSetTplRelatedSetsWeb failed, bizID: %d, err: %s, rid: %s", bizID, ccErr.Error(), kit.Rid)
-		return nil, ccErr
+		return metadata.SetDiff{}, ccErr
 	}
 	// diff
-	setDiffs := make([]metadata.SetDiff, 0)
-	for setID, modules := range setModules {
-		moduleDiff := DiffServiceTemplateWithModules(serviceTemplates, modules)
-		setDiff := metadata.SetDiff{
-			ModuleDiffs: moduleDiff,
-			SetID:       setID,
-		}
-		if set, ok := setMap[setID]; ok {
-			setDiff.SetDetail = set
-		}
-
-		// add topo path info
-		setPath := topoTree.TraversalFindNode(common.BKInnerObjIDSet, setID)
-		topoPath := make([]metadata.TopoInstanceNodeSimplify, 0)
-		for _, pathNode := range setPath {
-			nodeSimplify := metadata.TopoInstanceNodeSimplify{
-				ObjectID:     pathNode.ObjectID,
-				InstanceID:   pathNode.InstanceID,
-				InstanceName: pathNode.InstanceName,
-			}
-			topoPath = append(topoPath, nodeSimplify)
-		}
-		setDiff.TopoPath = topoPath
-		setDiff.UpdateNeedSyncField()
-		setDiffs = append(setDiffs, setDiff)
+	moduleDiff := DiffServiceTemplateWithModules(serviceTemplates, modules)
+	setDiff := metadata.SetDiff{
+		ModuleDiffs: moduleDiff,
+		SetID:       option.SetID,
 	}
-	return setDiffs, nil
+	setDiff.SetDetail = set.Data.Info[0]
+
+	// add topo path info
+	setPath := topoTree.TraversalFindNode(common.BKInnerObjIDSet, option.SetID)
+	topoPath := make([]metadata.TopoInstanceNodeSimplify, 0)
+	for _, pathNode := range setPath {
+		nodeSimplify := metadata.TopoInstanceNodeSimplify{
+			ObjectID:     pathNode.ObjectID,
+			InstanceID:   pathNode.InstanceID,
+			InstanceName: pathNode.InstanceName,
+		}
+		topoPath = append(topoPath, nodeSimplify)
+	}
+	setDiff.TopoPath = topoPath
+	setDiff.UpdateNeedSyncField()
+	return setDiff, nil
 }
 
 func (st *setTemplate) SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateID int64,
 	option metadata.SyncSetTplToInstOption) errors.CCErrorCoder {
 
-	diffOption := metadata.DiffSetTplWithInstOption{
-		SetIDs: option.SetIDs,
+	var (
+		wg       sync.WaitGroup
+		firstErr errors.CCErrorCoder
+	)
+
+	pipeline := make(chan bool, 10)
+	setDiffs := make([]metadata.SetDiff, 0)
+
+	for _, setID := range option.SetIDs {
+		pipeline <- true
+		wg.Add(1)
+
+		go func(bizID, setTemplateID, setID int64) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+			option := metadata.DiffSetTplWithInstOption{
+				SetID: setID,
+			}
+			setDiff, err := st.DiffSetTplWithInst(kit, bizID, setTemplateID, option)
+			if err != nil {
+				blog.Errorf("diff set template with instance failed, bizID: %d, set template ID: %d, setID: %d, "+
+					"err: %v, rid: %s", bizID, setTemplateID, setID, err, kit.Rid)
+				if firstErr == nil {
+					firstErr = err
+				}
+				return
+			}
+			setDiffs = append(setDiffs, setDiff)
+
+		}(bizID, setTemplateID, setID)
 	}
-	setDiffs, err := st.DiffSetTplWithInst(kit, bizID, setTemplateID, diffOption)
-	if err != nil {
-		return err
+	wg.Wait()
+	if firstErr != nil {
+		return firstErr
 	}
 
 	for _, setDiff := range setDiffs {

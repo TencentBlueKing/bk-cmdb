@@ -885,3 +885,78 @@ func (p *process) ReconstructServiceInstanceName(ctx context.Context, h http.Hea
 
 	return nil
 }
+
+// UpdateServiceTemplateAttribute update service template attribute
+func (p *process) UpdateServiceTemplateAttribute(ctx context.Context, h http.Header,
+	option *metadata.UpdateServTempAttrOption) errors.CCErrorCoder {
+
+	ret := new(metadata.BaseResp)
+	subPath := "/update/service_template/attribute"
+
+	err := p.client.Put().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.CCError()
+	}
+
+	return nil
+}
+
+// DeleteServiceTemplateAttribute delete service template attribute
+func (p *process) DeleteServiceTemplateAttribute(ctx context.Context, h http.Header,
+	option *metadata.DeleteServTempAttrOption) errors.CCErrorCoder {
+
+	ret := new(metadata.BaseResp)
+	subPath := "/delete/service_template/attribute"
+
+	err := p.client.Delete().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.CCError()
+	}
+
+	return nil
+}
+
+// ListServiceTemplateAttribute list service Template Attribute
+func (p *process) ListServiceTemplateAttribute(ctx context.Context, h http.Header,
+	option *metadata.ListServTempAttrOption) (*metadata.ServTempAttrData, errors.CCErrorCoder) {
+
+	ret := new(metadata.ServiceTemplateAttributeResult)
+	subPath := "/findmany/service_template/attribute"
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+
+	return ret.Data, nil
+}

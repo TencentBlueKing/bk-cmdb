@@ -537,8 +537,11 @@ func (s *Service) DiffSetTplWithInst(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
-	setDiffs, err := s.Logics.SetTemplateOperation().DiffSetTplWithInst(ctx.Kit, bizID, setTemplateID, option)
+	if option.SetID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetIDField))
+		return
+	}
+	setDiff, err := s.Logics.SetTemplateOperation().DiffSetTplWithInst(ctx.Kit, bizID, setTemplateID, option)
 	if err != nil {
 		blog.Errorf("DiffSetTplWithInst failed, operation failed, bizID: %d, setTemplateID: %d, option: %+v, err: %s,"+
 			" rid: %s", bizID, setTemplateID, option, err.Error(), ctx.Kit.Rid)
@@ -547,17 +550,15 @@ func (s *Service) DiffSetTplWithInst(ctx *rest.Contexts) {
 	}
 
 	moduleIDs := make([]int64, 0)
-	for _, setDiff := range setDiffs {
-		for _, moduleDiff := range setDiff.ModuleDiffs {
-			if moduleDiff.ModuleID == 0 {
-				continue
-			}
-			moduleIDs = append(moduleIDs, moduleDiff.ModuleID)
+	for _, moduleDiff := range setDiff.ModuleDiffs {
+		if moduleDiff.ModuleID == 0 {
+			continue
 		}
+		moduleIDs = append(moduleIDs, moduleDiff.ModuleID)
 	}
 
 	result := metadata.SetTplDiffResult{
-		Difference:      setDiffs,
+		Difference:      setDiff,
 		ModuleHostCount: make(map[int64]int64),
 	}
 

@@ -844,3 +844,85 @@ func (ps *ProcServer) SearchRuleRelatedServiceTemplates(ctx *rest.Contexts) {
 
 	ctx.RespEntity(templates)
 }
+
+// UpdateServiceTemplateAttribute update service template attribute
+func (ps *ProcServer) UpdateServiceTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.UpdateServTempAttrOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err := ps.Engine.CoreAPI.CoreService().Process().UpdateServiceTemplateAttribute(ctx.Kit.Ctx, ctx.Kit.Header,
+			option); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+// DeleteServiceTemplateAttribute delete service template attribute
+func (ps *ProcServer) DeleteServiceTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.DeleteServTempAttrOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err := ps.Engine.CoreAPI.CoreService().Process().DeleteServiceTemplateAttribute(ctx.Kit.Ctx, ctx.Kit.Header,
+			option); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+// ListServiceTemplateAttribute list service template attribute
+func (ps *ProcServer) ListServiceTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.ListServTempAttrOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	data, err := ps.Engine.CoreAPI.CoreService().Process().ListServiceTemplateAttribute(ctx.Kit.Ctx, ctx.Kit.Header,
+		option)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(data)
+}

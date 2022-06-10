@@ -152,21 +152,33 @@ type GetServiceInstanceBySetTemplateInput struct {
 
 // ServiceTemplateDiffOption obtain the process template difference information under the service template.
 type ServiceTemplateDiffOption struct {
-	BizID             int64   `json:"bk_biz_id"`
-	ServiceTemplateId int64   `json:"service_template_id"`
-	ModuleIDs         []int64 `json:"bk_module_ids"`
+	BizID             int64 `json:"bk_biz_id"`
+	ServiceTemplateId int64 `json:"service_template_id"`
+	ModuleID          int64 `json:"bk_module_id"`
 }
 
 // ServiceTemplateOptionValidate judge the validity of parameters.
-func (option *ServiceTemplateDiffOption) ServiceTemplateOptionValidate() error {
+func (option *ServiceTemplateDiffOption) ServiceTemplateOptionValidate() cErr.RawErrorInfo {
 
 	if option.BizID == 0 {
-		return fmt.Errorf("the biz id must be set")
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
 	}
-	if len(option.ModuleIDs) == 0 {
-		return fmt.Errorf("the module id must be set")
+	if option.ModuleID == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKModuleIDField},
+		}
 	}
-	return nil
+	if option.ServiceTemplateId == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKServiceTemplateIDField},
+		}
+	}
+	return cErr.RawErrorInfo{}
 }
 
 // ListDiffServiceInstancesOption list service instances request.
@@ -259,12 +271,21 @@ type ProcessGeneralInfo struct {
 	Id int64 `json:"id"`
 }
 
+// AttributeFields 同一属性ID下模板和实例的值
+type AttributeFields struct {
+	ID                    int64       `json:"id"`
+	TemplatePropertyValue interface{} `json:"template_value"`
+	InstancePropertyValue interface{} `json:"inst_value"`
+}
+
 // ServiceTemplateGeneralDiff changes under service template.
 type ServiceTemplateGeneralDiff struct {
-	Changed          []ProcessGeneralInfo `json:"changed"`
-	Added            []ProcessGeneralInfo `json:"added"`
-	Removed          []ProcessGeneralInfo `json:"removed"`
-	ChangedAttribute bool                 `json:"changed_attribute"`
+	Changed    []ProcessGeneralInfo `json:"changed"`
+	Added      []ProcessGeneralInfo `json:"added"`
+	Removed    []ProcessGeneralInfo `json:"removed"`
+	Attributes []AttributeFields    `json:"attributes"`
+	// ServiceCategoryId the service category ID of the module instance
+	ServiceCategoryId int64 `json:"service_category_id"`
 }
 
 type UpdateServiceInstanceOption struct {
@@ -561,13 +582,6 @@ func (s *SyncServiceInstanceByTemplateOption) Validate() (rawError cErr.RawError
 	}
 
 	return cErr.RawErrorInfo{}
-}
-
-// SyncOneModuleBySvcTempOption sync all service instances in one module by service template option
-type SyncOneModuleBySvcTempOption struct {
-	BizID             int64 `json:"bk_biz_id"`
-	ModuleID          int64 `json:"bk_module_id"`
-	ServiceTemplateID int64 `json:"service_template_id"`
 }
 
 // 用于同步单个模块的服务实例
@@ -2032,4 +2046,9 @@ type SrvInstNameParams struct {
 type SrvTemplate struct {
 	ID   int64  `json:"id" bson:"id" mapstructure:"id"`
 	Name string `json:"name" bson:"name" mapstructure:"name"`
+}
+
+// ServTempAttrData service template attributes data
+type ServTempAttrData struct {
+	Attributes []ServiceTemplateAttr `json:"attributes"`
 }

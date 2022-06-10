@@ -57,7 +57,6 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 			blog.Errorf("get service temp failed, err: %v, id: %d, rid: %s", ccErr, moduleDiff.ServiceTemplateID, rid)
 			return ccErr
 		}
-
 		data := map[string]interface{}{
 			common.BKModuleNameField:        moduleDiff.ServiceTemplateName,
 			common.BKServiceCategoryIDField: serviceTemplate.ServiceCategoryID,
@@ -92,5 +91,15 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 		blog.ErrorJSON("module sync task diff type(%s) is invalid, rid: %s", moduleDiff.DiffType, rid)
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "diff_type")
 	}
+	// 这里需要增加对集群字段的同步
+	return nil
+}
+
+// syncSetAttributes
+func (bw BackendWorker) syncSetAttributes(kit *rest.Kit, bizID, setTemplateID, setID int64) error {
+	// 1、获取集群模板中的属性id以及对应的属性值 property_value
+
+	// 2、从cc_ObjAttDes 中通过上面的属性id获取对应的 bk_property_id
+	// 3、直接更新set对应的这些 bk_property_id 的值为 property_value
 	return nil
 }

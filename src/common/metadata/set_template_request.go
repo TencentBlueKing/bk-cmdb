@@ -95,7 +95,7 @@ type ListSetByTemplateOption struct {
 }
 
 type DiffSetTplWithInstOption struct {
-	SetIDs []int64 `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
+	SetID int64 `field:"bk_set_id" json:"bk_set_id" bson:"bk_set_id" mapstructure:"bk_set_id"`
 }
 
 type SyncSetTplToInstOption struct {
@@ -133,7 +133,7 @@ func (sd *SetDiff) UpdateNeedSyncField() {
 }
 
 type SetTplDiffResult struct {
-	Difference      []SetDiff       `json:"difference"`
+	Difference      SetDiff         `json:"difference"`
 	ModuleHostCount map[int64]int64 `json:"module_host_count"`
 }
 
