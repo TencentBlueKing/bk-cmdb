@@ -317,6 +317,11 @@ type ProcessOperation interface {
 
 	GetBusinessDefaultSetModuleInfo(kit *rest.Kit, bizID int64) (metadata.BusinessDefaultSetModuleInfo,
 		errors.CCErrorCoder)
+
+	UpdateServTempAttr(kit *rest.Kit, option *metadata.UpdateServTempAttrOption) errors.CCErrorCoder
+	DeleteServiceTemplateAttribute(kit *rest.Kit, option *metadata.DeleteServTempAttrOption) errors.CCErrorCoder
+	ListServiceTemplateAttribute(kit *rest.Kit, option *metadata.ListServTempAttrOption) (*metadata.ServTempAttrData,
+		errors.CCErrorCoder)
 }
 
 type LabelOperation interface {

@@ -101,6 +101,13 @@ type ProcessInterface interface {
 	ConstructServiceInstanceName(ctx context.Context, h http.Header,
 		params *metadata.SrvInstNameParams) errors.CCErrorCoder
 	ReconstructServiceInstanceName(ctx context.Context, h http.Header, instanceID int64) errors.CCErrorCoder
+
+	UpdateServiceTemplateAttribute(ctx context.Context, h http.Header,
+		option *metadata.UpdateServTempAttrOption) errors.CCErrorCoder
+	DeleteServiceTemplateAttribute(ctx context.Context, h http.Header,
+		option *metadata.DeleteServTempAttrOption) errors.CCErrorCoder
+	ListServiceTemplateAttribute(ctx context.Context, h http.Header, option *metadata.ListServTempAttrOption) (
+		*metadata.ServTempAttrData, errors.CCErrorCoder)
 }
 
 func NewProcessInterfaceClient(client rest.ClientInterface) ProcessInterface {
