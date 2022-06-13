@@ -165,7 +165,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		BizIDGetter:    BizIDFromURLGetter,
 		BizIndex:       7,
 		ResourceType:   meta.HostApply,
-		ResourceAction: meta.Update,
+		ResourceAction: meta.Delete,
 	}, {
 		Name:           "updateServiceTemplateHostApplyRule",
 		Description:    "编辑服务模板场景下主机自动应用规则",
