@@ -109,80 +109,6 @@ const (
 	awsCredentialStrategyChained
 )
 
-const (
-	indexVersionBizSet         = "20210710"
-	indexVersionBiz            = "20210710"
-	indexVersionSet            = "20210710"
-	indexVersionModule         = "20210710"
-	indexVersionHost           = "20210710"
-	indexVersionModel          = "20210710"
-	indexVersionObjectInstance = "20210710"
-)
-
-const (
-	// BKInnerObjIDBizSet the inner object
-	BKInnerObjIDBizSet = "bk_biz_set_obj"
-
-	// BKInnerObjIDApp the inner object
-	BKInnerObjIDApp = "biz"
-
-	// BKInnerObjIDSet the inner object
-	BKInnerObjIDSet = "set"
-
-	// BKInnerObjIDModule the inner object
-	BKInnerObjIDModule = "module"
-
-	// BKInnerObjIDHost the inner object
-	BKInnerObjIDHost = "host"
-
-	// BKInnerObjIDObject the inner object
-	BKInnerObjIDObject = "object"
-)
-
-const (
-	// IndexNamePrefix prefix of index name.
-	IndexNamePrefix = "bk_cmdb."
-	// IndexNameBizSet name of model business set instance es index.
-	IndexNameBizSet = IndexNamePrefix + BKInnerObjIDBizSet
-
-	// IndexNameBiz name of model business application instance es index.
-	IndexNameBiz = IndexNamePrefix + BKInnerObjIDApp
-
-	// IndexNameSet name of model set instance es index.
-	IndexNameSet = IndexNamePrefix + BKInnerObjIDSet
-
-	// IndexNameModule name of model module instance es index.
-	IndexNameModule = IndexNamePrefix + BKInnerObjIDModule
-
-	// IndexNameHost name of model host instance es index.
-	IndexNameHost = IndexNamePrefix + BKInnerObjIDHost
-
-	// IndexNameModel name of model es index.
-	IndexNameModel = IndexNamePrefix + "model"
-
-	// IndexNameObjectInstance name of common object instance es index.
-	IndexNameObjectInstance = IndexNamePrefix + "object_instance"
-)
-
-const (
-	// BKTableNameObjDes the table name of the object
-	BKTableNameObjDes = "cc_ObjDes"
-
-	// BKTableNameObjAttDes the table name of the object attribute
-	BKTableNameObjAttDes = "cc_ObjAttDes"
-
-	BKTableNameBaseApp    = "cc_ApplicationBase"
-	BKTableNameBaseBizSet = "cc_BizSetBase"
-
-	BKTableNameBaseHost   = "cc_HostBase"
-	BKTableNameBaseModule = "cc_ModuleBase"
-	BKTableNameBaseSet    = "cc_SetBase"
-)
-
-const (
-	commonObject = "common"
-)
-
 type deleteStrategy int
 
 const (
@@ -3980,31 +3906,6 @@ func (ic *indexClient) doDelete(op *gtm.Op) {
 		errorLog.Println("Unable to delete document due to empty _id value")
 		return
 	}
-
-	switch op.GetCollection() {
-	case BKTableNameBaseBizSet:
-		objectID = fmt.Sprintf("%s:%s", objectID, BKInnerObjIDBizSet)
-		indexType.Index = fmt.Sprintf("%s_%s", IndexNameBizSet, indexVersionBizSet)
-	case BKTableNameBaseApp:
-		objectID = fmt.Sprintf("%s:%s", objectID, BKInnerObjIDApp)
-		indexType.Index = fmt.Sprintf("%s_%s", IndexNameBiz, indexVersionBiz)
-	case BKTableNameBaseSet:
-		objectID = fmt.Sprintf("%s:%s", objectID, BKInnerObjIDSet)
-		indexType.Index = fmt.Sprintf("%s_%s", IndexNameSet, indexVersionSet)
-	case BKTableNameBaseModule:
-		objectID = fmt.Sprintf("%s:%s", objectID, BKInnerObjIDModule)
-		indexType.Index = fmt.Sprintf("%s_%s", IndexNameModule, indexVersionModule)
-	case BKTableNameBaseHost:
-		objectID = fmt.Sprintf("%s:%s", objectID, BKInnerObjIDHost)
-		indexType.Index = fmt.Sprintf("%s_%s", IndexNameHost, indexVersionHost)
-	case BKTableNameObjDes, BKTableNameObjAttDes:
-		objectID = fmt.Sprintf("%s:%s", objectID, BKInnerObjIDObject)
-		indexType.Index = fmt.Sprintf("%s_%s", IndexNameModel, indexVersionModel)
-	default:
-		objectID = fmt.Sprintf("%s:%s", objectID, commonObject)
-		indexType.Index = fmt.Sprintf("%s_%s", IndexNameObjectInstance, indexVersionObjectInstance)
-	}
-	
 	req.Id(objectID)
 	if ic.config.IndexAsUpdate == false {
 		req.Version(tsVersion(op.Timestamp))
