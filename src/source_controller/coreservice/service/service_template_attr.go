@@ -26,7 +26,7 @@ import (
 // CreateServiceTemplateAttrs create service template attributes
 func (s *coreService) CreateServiceTemplateAttrs(ctx *rest.Contexts) {
 	opt := new(metadata.CreateSvcTempAttrsOption)
-	if err := ctx.DecodeInto(&opt); err != nil {
+	if err := ctx.DecodeInto(opt); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}

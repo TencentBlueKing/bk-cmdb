@@ -56,7 +56,7 @@ type ProcessInterface interface {
 		*metadata.ProcessTemplate, errors.CCErrorCoder)
 	GetProcessTemplate(ctx context.Context, h http.Header, templateID int64) (*metadata.ProcessTemplate,
 		errors.CCErrorCoder)
-	UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, property *metadata.ProcessProperty) (
+	UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, property map[string]interface{}) (
 		*metadata.ProcessTemplate, errors.CCErrorCoder)
 	ListProcessTemplates(ctx context.Context, h http.Header, option *metadata.ListProcessTemplatesOption) (
 		*metadata.MultipleProcessTemplate, errors.CCErrorCoder)

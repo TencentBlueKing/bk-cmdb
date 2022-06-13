@@ -59,19 +59,28 @@ func (p *processOperation) validateServiceTemplate(kit *rest.Kit, bizID int64,
 func (p *processOperation) validateServiceTemplateAttrs(kit *rest.Kit, bizID int64, serviceTemplateID int64,
 	attrs []metadata.SvcTempAttr) errors.CCErrorCoder {
 
+	if len(attrs) == 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "attributes")
+	}
+
 	// validate service template
 	if err := p.validateServiceTemplate(kit, bizID, serviceTemplateID); err != nil {
 		return err
 	}
 
-	if len(attrs) == 0 {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "attributes")
-	}
-
 	// get module attributes that are editable, excludes name and category fields specified in template
 	attrIDs := make([]int64, 0)
-	for _, item := range attrs {
-		attrIDs = append(attrIDs, item.AttributeID)
+	attrUniqueMap := make(map[int64]struct{})
+	for _, attr := range attrs {
+		if rawErr := attr.Validate(); rawErr.ErrCode != 0 {
+			return rawErr.ToCCError(kit.CCError)
+		}
+		if _, exists := attrUniqueMap[attr.AttributeID]; exists {
+			blog.Errorf("service template attribute %d is duplicated, rid: %s", attr.AttributeID, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAttributeIDField)
+		}
+		attrUniqueMap[attr.AttributeID] = struct{}{}
+		attrIDs = append(attrIDs, attr.AttributeID)
 	}
 
 	filter := map[string]interface{}{

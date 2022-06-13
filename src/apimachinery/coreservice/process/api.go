@@ -396,7 +396,7 @@ func (p *process) GetProcessTemplate(ctx context.Context, h http.Header, templat
 }
 
 func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64,
-	property *metadata.ProcessProperty) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
+	property map[string]interface{}) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
 
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := "/update/process/process_template/%d"

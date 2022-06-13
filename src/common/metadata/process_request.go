@@ -68,7 +68,12 @@ type CreateSvcTempAttrsOption struct {
 
 // UpdateSvcTempAllInfoOption update service template all info option
 type UpdateSvcTempAllInfoOption struct {
-	SvcTempAllInfo `json:",inline"`
+	ID                int64             `json:"id"`
+	BizID             int64             `json:"bk_biz_id"`
+	Name              string            `json:"name"`
+	ServiceCategoryID int64             `json:"service_category_id"`
+	Attributes        []SvcTempAttr     `json:"attributes"`
+	Processes         []ProcessTemplate `json:"processes"`
 }
 
 // GetSvcTempAllInfoOption get service template all info option

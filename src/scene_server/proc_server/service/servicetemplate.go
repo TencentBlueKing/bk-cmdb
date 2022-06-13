@@ -100,23 +100,25 @@ func (ps *ProcServer) CreateServiceTemplateAllInfo(ctx *rest.Contexts) {
 
 		tpl, err := ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template)
 		if err != nil {
-			blog.Errorf("create service template(%+v) failed, err: %v", template, err)
+			blog.Errorf("create service template(%+v) failed, err: %v, rid: %s", template, err, ctx.Kit.Rid)
 			return err
 		}
 
 		templateID = tpl.ID
 
 		// create service template attributes
-		attrOpt := &metadata.CreateSvcTempAttrsOption{
-			BizID:             option.BizID,
-			ServiceTemplateID: templateID,
-			Attributes:        option.Attributes,
-		}
+		if len(option.Attributes) > 0 {
+			attrOpt := &metadata.CreateSvcTempAttrsOption{
+				BizID:             option.BizID,
+				ServiceTemplateID: templateID,
+				Attributes:        option.Attributes,
+			}
 
-		_, err = ps.CoreAPI.CoreService().Process().CreateServiceTemplateAttrs(ctx.Kit.Ctx, ctx.Kit.Header, attrOpt)
-		if err != nil {
-			blog.Errorf("create service template attrs(%+v) failed, err: %v, rid: %s", attrOpt, err, ctx.Kit.Rid)
-			return err
+			_, err = ps.CoreAPI.CoreService().Process().CreateServiceTemplateAttrs(ctx.Kit.Ctx, ctx.Kit.Header, attrOpt)
+			if err != nil {
+				blog.Errorf("create service template attrs(%+v) failed, err: %v, rid: %s", attrOpt, err, ctx.Kit.Rid)
+				return err
+			}
 		}
 
 		// create process templates
@@ -789,7 +791,7 @@ func (ps *ProcServer) UpdateServiceTemplateAllInfo(ctx *rest.Contexts) {
 		}
 
 		// update process templates
-		err = ps.updateSvcTempAllProcTemps(ctx.Kit, allInfo.Processes, option.Processes)
+		err = ps.updateSvcTempAllProcTemps(ctx.Kit, allInfo.ID, allInfo.BizID, allInfo.Processes, option.Processes)
 		if err != nil {
 			return err
 		}
@@ -804,8 +806,8 @@ func (ps *ProcServer) UpdateServiceTemplateAllInfo(ctx *rest.Contexts) {
 }
 
 // updateSvcTempAllAttrs update service template attributes, add new attributes and delete redundant attributes
-func (ps *ProcServer) updateSvcTempAllAttrs(kit *rest.Kit, id, bizID int64, prevAttrs,
-	updateAttrs []metadata.ServiceTemplateAttr) errors.CCErrorCoder {
+func (ps *ProcServer) updateSvcTempAllAttrs(kit *rest.Kit, id, bizID int64, prevAttrs []metadata.ServiceTemplateAttr,
+	updateAttrs []metadata.SvcTempAttr) errors.CCErrorCoder {
 
 	attrMap := make(map[int64]interface{})
 	for _, attribute := range prevAttrs {
@@ -886,7 +888,7 @@ func (ps *ProcServer) updateSvcTempAllAttrs(kit *rest.Kit, id, bizID int64, prev
 }
 
 // updateSvcTempAllProcTemps update service template procTemps, add new procTemps and delete redundant procTemps
-func (ps *ProcServer) updateSvcTempAllProcTemps(kit *rest.Kit, prevProcTemps,
+func (ps *ProcServer) updateSvcTempAllProcTemps(kit *rest.Kit, id, bizID int64, prevProcTemps,
 	updateProcTemps []metadata.ProcessTemplate) errors.CCErrorCoder {
 
 	procTempMap := make(map[int64]*metadata.ProcessProperty)
@@ -899,6 +901,8 @@ func (ps *ProcServer) updateSvcTempAllProcTemps(kit *rest.Kit, prevProcTemps,
 	for _, procTemp := range updateProcTemps {
 		value, exists := procTempMap[procTemp.ID]
 		if !exists {
+			procTemp.BizID = bizID
+			procTemp.ServiceTemplateID = id
 			addedProcTemps = append(addedProcTemps, procTemp)
 			continue
 		}
@@ -920,8 +924,13 @@ func (ps *ProcServer) updateSvcTempAllProcTemps(kit *rest.Kit, prevProcTemps,
 
 	// update service template procTemps
 	for _, procTemp := range updatedProcTemps {
-		_, err := ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(kit.Ctx, kit.Header, procTemp.ID,
-			procTemp.Property)
+		property, rawErr := mapstr.Struct2Map(procTemp.Property)
+		if rawErr != nil {
+			blog.Errorf("convert proc temp property(%+v) failed, err: %v, rid: %s", procTemp.Property, rawErr, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommJSONMarshalFailed)
+		}
+
+		_, err := ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(kit.Ctx, kit.Header, procTemp.ID, property)
 		if err != nil {
 			blog.Errorf("update process template(%+v) failed, err: %v, rid: %s", procTemp, err, kit.Rid)
 			return err
