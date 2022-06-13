@@ -513,7 +513,7 @@ func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit
 		}
 		objectID := util.GetStrByInterface(source[metadata.IndexPropertyBKObjID])
 		dataKind := util.GetStrByInterface(source[metadata.IndexPropertyDataKind])
-		metaID, err := getInt64ByInterface(source[metadata.IndexPropertyID])
+		metaID, err := strconv.ParseInt(source[metadata.IndexPropertyID].(string), 10, 64)
 		if err != nil {
 			blog.Errorf(" query meta data fail,objectID[%s],err=[%v] rid: %s", objectID, err, ctx.Kit.Rid)
 			continue
@@ -596,8 +596,8 @@ func (s *Service) fullTextSearchForInstance(ctx *rest.Contexts, instMetadataCond
 	// query metadata instance.
 	input := &metadata.CommonSearchFilter{}
 	var (
-		wg sync.WaitGroup
-		rwLock sync.RWMutex
+		wg       sync.WaitGroup
+		rwLock   sync.RWMutex
 		firstErr error
 	)
 	pipeline := make(chan bool, 10)
@@ -856,45 +856,4 @@ func (sr *SearchResult) dealHighlight(source map[string]interface{}, highlight e
 	}
 	sr.Highlight = highlight
 	return
-}
-
-func getInt64ByInterface(a interface{}) (int64, error) {
-	var id int64 = 0
-	var err error
-	switch a.(type) {
-	case int:
-		id = int64(a.(int))
-	case int8:
-		return int64(a.(int8)), nil
-	case int16:
-		return int64(a.(int16)), nil
-	case int32:
-		id = int64(a.(int32))
-	case int64:
-		id = int64(a.(int64))
-	case uint:
-		id = int64(a.(uint))
-	case uint8:
-		return int64(a.(uint8)), nil
-	case uint16:
-		return int64(a.(uint16)), nil
-	case uint32:
-		id = int64(a.(uint32))
-	case uint64:
-		id = int64(a.(uint64))
-	case json.Number:
-		id, err = a.(json.Number).Int64()
-	case float64:
-		tmpID := a.(float64)
-		id = int64(tmpID)
-	case float32:
-		tmpID := a.(float32)
-		id = int64(tmpID)
-	case string:
-		id, err = strconv.ParseInt(a.(string), 10, 64)
-	default:
-		err = errors.New("not numeric")
-
-	}
-	return id, err
 }
