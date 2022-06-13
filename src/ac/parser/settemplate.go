@@ -219,6 +219,30 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		ResourceType:     meta.ModelSet,
 		ResourceAction:   meta.FindMany,
 		InstanceIDGetter: nil,
+	}, {
+		Name:           "updateSetTemplateAttribute",
+		Description:    "更新集群模板配置字段",
+		Pattern:        "/api/v3/update/topo/set_template/attribute",
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.SetTemplate,
+		ResourceAction: meta.Update,
+	}, {
+		Name:           "deleteSetTemplateAttribute",
+		Description:    "删除集群模板配置字段",
+		Pattern:        "/api/v3/delete/topo/set_template/attribute",
+		HTTPMethod:     http.MethodDelete,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.SetTemplate,
+		ResourceAction: meta.Delete,
+	}, {
+		Name:           "listSetTemplateAttribute",
+		Description:    "查询集群模板配置字段",
+		Pattern:        "/api/v3/findmany/topo/set_template/attribute",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.SetTemplate,
+		ResourceAction: meta.FindMany,
 	},
 }
 

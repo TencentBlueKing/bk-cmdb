@@ -192,6 +192,30 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.FindMany,
+	}, {
+		Name:           "updateServiceTemplateAttribute",
+		Description:    "更新服务模板配置字段",
+		Pattern:        "/api/v3/update/proc/service_template/attribute",
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Update,
+	}, {
+		Name:           "deleteServiceTemplateAttribute",
+		Description:    "删除服务模板配置字段",
+		Pattern:        "/api/v3/delete/proc/service_template/attribute",
+		HTTPMethod:     http.MethodDelete,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Delete,
+	}, {
+		Name:           "listServiceTemplateAttribute",
+		Description:    "查询服务模板配置字段",
+		Pattern:        "/api/v3/findmany/proc/service_template/attribute",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.FindMany,
 	},
 }
 

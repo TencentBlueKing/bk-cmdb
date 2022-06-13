@@ -660,3 +660,9 @@ type ServiceTemplateAttributeResult struct {
 	BaseResp `json:",inline"`
 	Data     *ServTempAttrData `json:"data"`
 }
+
+// SetTemplateAttributeResult set template attribute result
+type SetTemplateAttributeResult struct {
+	BaseResp `json:",inline"`
+	Data     *SetTempAttrData `json:"data"`
+}

@@ -230,3 +230,78 @@ func (p *setTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.H
 
 	return ret.Data, nil
 }
+
+// UpdateSetTemplateAttribute update set template attribute
+func (p *setTemplate) UpdateSetTemplateAttribute(ctx context.Context, h http.Header,
+	option *metadata.UpdateSetTempAttrOption) errors.CCErrorCoder {
+
+	ret := new(metadata.BaseResp)
+	subPath := "/update/set_template/attribute"
+
+	err := p.client.Put().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.CCError()
+	}
+
+	return nil
+}
+
+// DeleteSetTemplateAttribute delete set template attribute
+func (p *setTemplate) DeleteSetTemplateAttribute(ctx context.Context, h http.Header,
+	option *metadata.DeleteSetTempAttrOption) errors.CCErrorCoder {
+
+	ret := new(metadata.BaseResp)
+	subPath := "/delete/set_template/attribute"
+
+	err := p.client.Delete().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.CCError()
+	}
+
+	return nil
+}
+
+// ListSetTemplateAttribute list set Template Attribute
+func (p *setTemplate) ListSetTemplateAttribute(ctx context.Context, h http.Header,
+	option *metadata.ListSetTempAttrOption) (*metadata.SetTempAttrData, errors.CCErrorCoder) {
+
+	ret := new(metadata.SetTemplateAttributeResult)
+	subPath := "/findmany/set_template/attribute"
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+
+	return ret.Data, nil
+}

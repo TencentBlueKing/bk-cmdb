@@ -88,3 +88,8 @@ func (s *SetTemplateAttr) Validate() errors.RawErrorInfo {
 
 	return errors.RawErrorInfo{}
 }
+
+// SetTempAttrData set template attributes data
+type SetTempAttrData struct {
+	Attributes []SetTemplateAttr `json:"attributes"`
+}

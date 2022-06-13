@@ -276,3 +276,96 @@ type SetTemplateUpdateToDateStatus struct {
 type BatchCheckSetInstUpdateToDateStatusOption struct {
 	SetTemplateIDs []int64 `field:"set_template_ids" json:"set_template_ids" bson:"set_template_ids" mapstructure:"set_template_ids"`
 }
+
+// SetTempAttr simplified set template attribute
+type SetTempAttr struct {
+	AttributeID   int64       `json:"bk_attribute_id"`
+	PropertyValue interface{} `json:"bk_property_value"`
+}
+
+// Validate SetTempAttr
+func (s *SetTempAttr) Validate() ccErr.RawErrorInfo {
+	if s.AttributeID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{
+			common.BKAttributeIDField}}
+	}
+
+	if s.PropertyValue == nil {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{
+			common.BKPropertyValueField}}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// UpdateSetTempAttrOption update set template attributes option
+type UpdateSetTempAttrOption struct {
+	BizID      int64         `json:"bk_biz_id"`
+	ID         int64         `json:"id"`
+	Attributes []SetTempAttr `json:"attributes"`
+}
+
+// Validate UpdateSetTempAttrOption
+func (s *UpdateSetTempAttrOption) Validate() ccErr.RawErrorInfo {
+	if s.BizID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKAppIDField}}
+	}
+
+	if s.ID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKFieldID}}
+	}
+
+	if len(s.Attributes) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"attributes"}}
+	}
+
+	for _, attribute := range s.Attributes {
+		if rawErr := attribute.Validate(); rawErr.ErrCode != 0 {
+			return rawErr
+		}
+	}
+	return ccErr.RawErrorInfo{}
+}
+
+// DeleteSetTempAttrOption delete set template attributes option
+type DeleteSetTempAttrOption struct {
+	BizID        int64   `json:"bk_biz_id"`
+	ID           int64   `json:"id"`
+	AttributeIDs []int64 `json:"bk_attribute_ids"`
+}
+
+// Validate DeleteSetTempAttrOption
+func (s *DeleteSetTempAttrOption) Validate() ccErr.RawErrorInfo {
+	if s.BizID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKAppIDField}}
+	}
+
+	if s.ID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKFieldID}}
+	}
+
+	if len(s.AttributeIDs) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"bk_attribute_ids"}}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// ListSetTempAttrOption list set template attributes option
+type ListSetTempAttrOption struct {
+	BizID int64 `json:"bk_biz_id"`
+	ID    int64 `json:"id"`
+}
+
+// Validate ListSetTempAttrOption
+func (s *ListSetTempAttrOption) Validate() ccErr.RawErrorInfo {
+	if s.BizID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKAppIDField}}
+	}
+
+	if s.ID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKFieldID}}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
