@@ -294,13 +294,29 @@ func (s *Service) upsertServiceInstance(kit *rest.Kit, bizID int64,
 				wg.Done()
 			}()
 
-			_, ccErr := s.CoreAPI.ProcServer().Service().CreateServiceInstance(kit.Ctx, kit.Header, svrInstOpt)
-			if ccErr != nil {
-				if firstErr == nil {
-					firstErr = ccErr
+			instances := svrInstOpt.Instances
+
+			total := len(instances)
+			for start := 0; start < total; start += common.BKMaxUpdateOrCreatePageSize {
+				// 这里需要进行分批处理，一次处理100个
+				var tmpInstances []metadata.CreateServiceInstanceDetail
+				if total-start >= common.BKMaxUpdateOrCreatePageSize {
+					tmpInstances = instances[start : start+common.BKMaxUpdateOrCreatePageSize]
+				} else {
+					tmpInstances = instances[start:total]
 				}
-				blog.Errorf("create service instance failed, err: %v, option: %#v, rid: %s", ccErr, svrInstOpt, kit.Rid)
-				return
+
+				svrInstOpt.Instances = tmpInstances
+
+				_, ccErr := s.CoreAPI.ProcServer().Service().CreateServiceInstance(kit.Ctx, kit.Header, svrInstOpt)
+				if ccErr != nil {
+					if firstErr == nil {
+						firstErr = ccErr
+					}
+					blog.Errorf("create service instances failed, option: %#v, err: %v, rid: %s", ccErr, svrInstOpt,
+						kit.Rid)
+					return
+				}
 			}
 		}(svrInstOpt)
 	}
