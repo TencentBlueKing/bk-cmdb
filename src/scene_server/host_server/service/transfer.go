@@ -294,20 +294,19 @@ func (s *Service) upsertServiceInstance(kit *rest.Kit, bizID int64,
 				wg.Done()
 			}()
 
-			start := 0
-			flag := false
-			instances, tmpInstances := svrInstOpt.Instances, svrInstOpt.Instances
+			instances := svrInstOpt.Instances
 
-			for {
+			total := len(instances)
+			for start := 0; start < total; start += common.BKMaxUpdateOrCreatePageSize {
 				// 这里需要进行分批处理，一次处理100个
-				if len(tmpInstances) > common.BKMaxUpdateOrCreatePageSize {
-					svrInstOpt.Instances = tmpInstances[0:common.BKMaxUpdateOrCreatePageSize]
-					start = start + common.BKMaxUpdateOrCreatePageSize
-					tmpInstances = instances[start:]
+				var tmpInstances []metadata.CreateServiceInstanceDetail
+				if total-start >= common.BKMaxUpdateOrCreatePageSize {
+					tmpInstances = instances[start : start+common.BKMaxUpdateOrCreatePageSize]
 				} else {
-					svrInstOpt.Instances = instances[start:]
-					flag = true
+					tmpInstances = instances[start:total]
 				}
+
+				svrInstOpt.Instances = tmpInstances
 
 				_, ccErr := s.CoreAPI.ProcServer().Service().CreateServiceInstance(kit.Ctx, kit.Header, svrInstOpt)
 				if ccErr != nil {
