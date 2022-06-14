@@ -1622,3 +1622,159 @@ func (s *Service) UpdateImportHosts(req *restful.Request, resp *restful.Response
 	}
 	_ = resp.WriteEntity(meta.NewSuccessResp(retData))
 }
+
+// CountHostCPU 查询业务下的主机CPU数量的特殊接口，给成本管理使用
+func (s *Service) CountHostCPU(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+
+	opt := new(meta.CountHostCPUReq)
+	if err := json.NewDecoder(req.Request.Body).Decode(opt); err != nil {
+		blog.Errorf("decode body failed, err: %v, rid:%s", err, srvData.rid)
+		resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		resp.WriteError(http.StatusOK, &meta.RespError{Msg: rawErr.ToCCError(srvData.ccErr)})
+		return
+	}
+
+	// get specified biz host cpu count
+	if opt.BizID != 0 {
+		cnt, err := s.countBizHostCPU(srvData, opt.BizID)
+		if err != nil {
+			resp.WriteError(http.StatusOK, &meta.RespError{Msg: err})
+			return
+		}
+
+		resp.WriteEntity(meta.NewSuccessResp([]meta.BizHostCpuCount{cnt}))
+		return
+	}
+
+	// get paged biz ids(including resource pool & not archived biz) sort by id, then get host cpu count of each biz
+	bizReq := &meta.QueryCondition{
+		Condition: mapstr.MapStr{common.BKDataStatusField: mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled}},
+		Page:      meta.BasePage{Start: opt.Page.Start, Limit: opt.Page.Limit, Sort: common.BKAppIDField},
+		Fields:    []string{common.BKAppIDField},
+	}
+
+	bizRes, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDApp,
+		bizReq)
+	if err != nil {
+		blog.Errorf("get biz ids http request failed, input: %+v, err: %v, rid: %s", bizReq, err, srvData.rid)
+		resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)})
+		return
+	}
+
+	if err := bizRes.CCError(); err != nil {
+		blog.Errorf("get biz ids failed, input: %+v, err: %v, rid: %s", bizReq, err, srvData.rid)
+		resp.WriteError(http.StatusOK, &meta.RespError{Msg: err})
+		return
+	}
+
+	result := make([]meta.BizHostCpuCount, len(bizRes.Data.Info))
+	for idx, biz := range bizRes.Data.Info {
+		bizID, err := biz.Int64(common.BKAppIDField)
+		if err != nil {
+			blog.Errorf("parse biz id failed, biz: %+v, err: %v, rid: %s", biz, err, srvData.rid)
+			resp.WriteError(http.StatusOK, &meta.RespError{Msg: srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid,
+				common.BKAppIDField)})
+			return
+		}
+
+		cnt, err := s.countBizHostCPU(srvData, bizID)
+		if err != nil {
+			resp.WriteError(http.StatusOK, &meta.RespError{Msg: err})
+			return
+		}
+		result[idx] = cnt
+	}
+
+	resp.WriteEntity(meta.NewSuccessResp(result))
+}
+
+// countBizHostCPU count host cpu num in one biz
+func (s *Service) countBizHostCPU(srvData *srvComm, bizID int64) (meta.BizHostCpuCount, error) {
+	cnt := meta.BizHostCpuCount{BizID: bizID}
+
+	pageSize := 500
+	relReq := &meta.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		Page:          meta.BasePage{Start: 0, Limit: pageSize, Sort: common.BKHostIDField},
+		Fields:        []string{common.BKHostIDField},
+	}
+
+	// get host ids in biz and count cpu num, process 1000 relations at a time
+	var prevHostID int64
+	for ; ; relReq.Page.Start += pageSize {
+		relRes, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(srvData.ctx, srvData.header, relReq)
+		if err != nil {
+			blog.Errorf("get biz host ids http failed, req: %+v, err: %v, rid: %s", relReq, err, srvData.rid)
+			return meta.BizHostCpuCount{}, srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if err := relRes.CCError(); err != nil {
+			blog.Errorf("get biz host ids failed, req: %+v, err: %v, rid: %s", relReq, err, srvData.rid)
+			return meta.BizHostCpuCount{}, err
+		}
+
+		if len(relRes.Data.Info) == 0 {
+			break
+		}
+
+		hostIDs := make([]int64, 0)
+		for _, rel := range relRes.Data.Info {
+			// since relations is sorted by host id, we use the previous host id to distinct the ids
+			if rel.HostID == prevHostID {
+				continue
+			}
+			hostIDs = append(hostIDs, rel.HostID)
+			prevHostID = rel.HostID
+		}
+
+		if len(hostIDs) == 0 {
+			continue
+		}
+
+		// get host cpu num, count total host num and cpu num and host with no cpu field num
+		hostReq := &meta.QueryInput{
+			Condition: mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDs}},
+			Fields:    "bk_cpu",
+		}
+
+		hostRes, err := s.CoreAPI.CoreService().Host().GetHosts(srvData.ctx, srvData.header, hostReq)
+		if err != nil {
+			blog.Errorf("get hosts http failed, req: %+v, err: %v, rid: %s", hostReq, err, srvData.rid)
+			return meta.BizHostCpuCount{}, srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if err := hostRes.CCError(); err != nil {
+			blog.Errorf("get hosts failed, req: %+v, err: %v, rid: %s", hostReq, err, srvData.rid)
+			return meta.BizHostCpuCount{}, err
+		}
+
+		for _, host := range hostRes.Data.Info {
+			cnt.HostCount++
+			cpuCnt, exists := host["bk_cpu"]
+			if !exists || cpuCnt == nil {
+				cnt.NoCpuHostCount++
+				continue
+			}
+
+			cpuCount, err := util.GetInt64ByInterface(cpuCnt)
+			if err != nil {
+				blog.Errorf("parse host cpu count(%+v) failed, err: %v, rid: %s", cpuCnt, err, srvData.rid)
+				return meta.BizHostCpuCount{}, srvData.ccErr.CCErrorf(common.CCErrCommParamsInvalid, "bk_cpu")
+			}
+
+			if cpuCnt == 0 {
+				cnt.NoCpuHostCount++
+				continue
+			}
+
+			cnt.CpuCount += cpuCount
+		}
+
+	}
+
+	return cnt, nil
+}
