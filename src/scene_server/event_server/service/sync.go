@@ -13,6 +13,7 @@
 package service
 
 import (
+	"encoding/json"
 	"strconv"
 	"time"
 
@@ -27,6 +28,8 @@ import (
 
 	"github.com/tidwall/gjson"
 )
+
+const hostIdentifierTaskKeyPrefix = "host_identifier:task:"
 
 // SyncHostIdentifier sync host identifier, add hostInfo message to redis fail host list
 func (s *Service) SyncHostIdentifier(ctx *rest.Contexts) {
@@ -184,4 +187,143 @@ func (s *Service) getHostInfo(kit *rest.Kit, hostIDs []int64) (*metadata.ListHos
 		return nil, kit.CCError.CCError(common.CCErrHostGetFail)
 	}
 	return hosts, nil
+}
+
+// PushHostIdentifier push host identifier to host
+func (s *Service) PushHostIdentifier(ctx *rest.Contexts) {
+	if s.SyncData == nil {
+		blog.Errorf("push host identifier disabled, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrEventSyncHostIdentifierDisabled))
+		return
+	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	hostIDArray := new(metadata.HostIDArray)
+	if err := ctx.DecodeInto(&hostIDArray); err != nil {
+		blog.Errorf("decode request body err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := hostIDArray.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	if auth.EnableAuthorize() {
+		if err := s.haveAuthority(ctx.Kit, hostIDArray.HostIDs); err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+	}
+
+	hosts, err := s.getHostInfo(ctx.Kit, hostIDArray.HostIDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	task, err := s.SyncData.BatchSyncHostIdentifier(hosts.Info, ctx.Kit.Header, ctx.Kit.Rid)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	key := hostIdentifierTaskKeyPrefix + task.TaskID
+	if err := s.cache.Set(ctx.Kit.Ctx, key, task, time.Minute*30).Err(); err != nil {
+		blog.Errorf("set key: %s to redis err: %v, rid: %s", key, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(&metadata.SyncIdentifierResult{
+		TaskID: task.TaskID,
+	})
+}
+
+// GetHostIdentifierPushResult get host identifier push result
+func (s *Service) GetHostIdentifierPushResult(ctx *rest.Contexts) {
+	if s.SyncData == nil {
+		blog.Errorf("get host identifier push result disabled, rid: %s", ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrEventSyncHostIdentifierDisabled))
+		return
+	}
+
+	option := new(metadata.GetTaskResultOption)
+	if err := ctx.DecodeInto(&option); err != nil {
+		blog.Errorf("decode request body err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	rawErr := option.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	key := hostIdentifierTaskKeyPrefix + option.TaskID
+	taskStr, err := s.cache.Get(ctx.Kit.Ctx, key).Result()
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	task := new(hostidentifier.Task)
+	if err := json.Unmarshal([]byte(taskStr), task); err != nil {
+		blog.Errorf("Unmarshal task error, task: %s, err: %v, rid: %s", taskStr, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	resultMap, err := s.SyncData.GetTaskExecutionResultMap(task)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	hostIDs := make([]int64, 0)
+	for _, host := range task.HostInfos {
+		hostIDs = append(hostIDs, host.HostID)
+	}
+
+	if auth.EnableAuthorize() {
+		if err := s.haveAuthority(ctx.Kit, hostIDs); err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+	}
+
+	failIDs := make([]int64, 0)
+	successIDs := make([]int64, 0)
+	pendingIDs := make([]int64, 0)
+
+	for _, hostInfo := range task.HostInfos {
+		key := hostidentifier.HostKey(strconv.FormatInt(hostInfo.CloudID, 10), hostInfo.HostInnerIP)
+		result, exist := resultMap[key]
+		if !exist {
+			pendingIDs = append(pendingIDs, hostInfo.HostID)
+			continue
+		}
+
+		code := gjson.Get(result, "error_code").Int()
+		if code == common.CCSuccess {
+			successIDs = append(successIDs, hostInfo.HostID)
+			continue
+		}
+
+		if code == hostidentifier.Handling {
+			pendingIDs = append(pendingIDs, hostInfo.HostID)
+			continue
+		}
+
+		failIDs = append(failIDs, hostInfo.HostID)
+	}
+
+	ctx.RespEntity(metadata.HostIdentifierTaskResult{
+		SuccessList: successIDs,
+		FailedList:  failIDs,
+		PendingList: pendingIDs,
+	})
 }
