@@ -513,7 +513,7 @@ func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit
 		}
 		objectID := util.GetStrByInterface(source[metadata.IndexPropertyBKObjID])
 		dataKind := util.GetStrByInterface(source[metadata.IndexPropertyDataKind])
-		metaID, err := strconv.ParseInt(source[metadata.IndexPropertyID].(string), 10, 64)
+		metaID, err := strconv.ParseInt(util.GetStrByInterface(source[metadata.IndexPropertyID]), 10, 64)
 		if err != nil {
 			blog.Errorf(" query meta data fail,objectID[%s],err=[%v] rid: %s", objectID, err, ctx.Kit.Rid)
 			continue
