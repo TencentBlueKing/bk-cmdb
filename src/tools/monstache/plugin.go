@@ -905,6 +905,9 @@ func Map(input *monstachemap.MapperPluginInput) (*monstachemap.MapperPluginOutpu
 	return output, nil
 }
 
+// Process function, when you implement a Process function, the function will be called after monstache processes each
+// event. This function has full access to the MongoDB and Elasticsearch clients (
+// including the Elasticsearch bulk processor) in the input and allows you to handle complex event processing scenarios
 func Process(input *monstachemap.ProcessPluginInput) error {
 	req := elastic.NewBulkDeleteRequest()
 	metaId := input.Document[mongoMetaId]
