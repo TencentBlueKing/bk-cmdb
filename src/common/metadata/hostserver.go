@@ -994,3 +994,46 @@ func (h *HostIDArray) Validate() (rawError errors.RawErrorInfo) {
 	}
 	return errors.RawErrorInfo{}
 }
+
+// CountHostCPUReq count host cpu num request
+type CountHostCPUReq struct {
+	BizID int64     `json:"bk_biz_id,omitempty"`
+	Page  *BasePage `json:"page,omitempty"`
+}
+
+// Validate CountHostCPUReq
+func (c *CountHostCPUReq) Validate() errors.RawErrorInfo {
+	if c.BizID == 0 && c.Page == nil {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"bk_biz_id or page"}}
+	}
+
+	if c.BizID != 0 && c.Page != nil {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{"bk_biz_id and page"}}
+	}
+
+	if c.BizID < 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{"bk_biz_id"}}
+	}
+
+	if c.BizID > 0 {
+		return errors.RawErrorInfo{}
+	}
+
+	if c.Page.Limit == 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"page.limit"}}
+	}
+
+	if c.Page.Limit > 10 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommPageLimitIsExceeded, Args: []interface{}{"page.limit", 10}}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// BizHostCpuCount host cpu count in biz
+type BizHostCpuCount struct {
+	BizID          int64 `json:"bk_biz_id"`
+	HostCount      int64 `json:"host_count"`
+	CpuCount       int64 `json:"cpu_count"`
+	NoCpuHostCount int64 `json:"no_cpu_host_count"`
+}
