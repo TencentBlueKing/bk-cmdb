@@ -123,6 +123,12 @@ func (s *Service) ImportObject(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
+	if err != nil {
+		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
+			"").Error(), nil)
+		c.String(http.StatusOK, string(msg))
+		return
+	}
 
 	logics.ConvAttrOption(attrItems)
 
