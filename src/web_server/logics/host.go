@@ -819,24 +819,21 @@ func (lgc *Logics) getCloudArea(ctx context.Context, header http.Header) ([]stri
 	cloudArea := make([]mapstr.MapStr, 0)
 	start := 0
 	for {
-		input := &metadata.QueryCondition{
-			Fields:         []string{common.BKCloudIDField, common.BKCloudNameField},
-			Page:           metadata.BasePage{Start: start, Limit: common.BKMaxPageSize},
-			DisableCounter: true,
+		input := metadata.CloudAreaSearchParam{
+			SearchCloudOption: metadata.SearchCloudOption{
+				Fields: []string{common.BKCloudIDField, common.BKCloudNameField},
+				Page:   metadata.BasePage{Start: start, Limit: common.BKMaxPageSize},
+			},
+			SyncTaskIDs: false,
 		}
-		rsp, err := lgc.Engine.CoreAPI.ApiServer().ReadInstance(ctx, header, common.BKInnerObjIDPlat, input)
+		rsp, err := lgc.Engine.CoreAPI.ApiServer().SearchCloudArea(ctx, header, input)
 		if err != nil {
 			blog.Errorf("search cloud area failed, err: %v, rid: %s", err, rid)
 			return nil, nil, err
 		}
 
-		if ccErr := rsp.CCError(); ccErr != nil {
-			blog.Errorf("search cloud area failed, err: %v, rid: %s", ccErr, rid)
-			return nil, nil, err
-		}
-
-		cloudArea = append(cloudArea, rsp.Data.Info...)
-		if len(rsp.Data.Info) < common.BKMaxPageSize {
+		cloudArea = append(cloudArea, rsp.Info...)
+		if len(rsp.Info) < common.BKMaxPageSize {
 			break
 		}
 
