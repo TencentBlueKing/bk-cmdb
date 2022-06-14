@@ -20,8 +20,11 @@ import (
 //
 // It is recommended to use an authentication key with 32 or 64 bytes. The encryption key,
 // if set, must be either 16, 24, or 32 bytes to select AES-128, AES-192, or AES-256 modes.
-func NewRedisStoreWithSentinel(address []string, size int, masterName, network, password string, keyPairs ...[]byte) (RedisStore, error) {
-	store, err := redistore.NewRedisStoreWithSentinel(address, size, masterName, network, password, keyPairs...)
+func NewRedisStoreWithSentinel(address []string, size int, masterName, network, password string, sentinelPwd string, 
+	keyPairs ...[]byte) (RedisStore, error) {
+	
+	store, err := redistore.NewRedisStoreWithSentinel(address, size, masterName, network, password, sentinelPwd, 
+		keyPairs...)
 	if err != nil {
 		return nil, err
 	}
