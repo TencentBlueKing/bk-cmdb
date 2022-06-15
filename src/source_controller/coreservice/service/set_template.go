@@ -226,6 +226,36 @@ func (s *coreService) ListSetTplRelatedSvcTpl(ctx *rest.Contexts) {
 	ctx.RespEntity(serviceTemplates)
 }
 
+// CreateSetTemplateAttribute create set template attributes
+func (s *coreService) CreateSetTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.CreateSetTempAttrsOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	ids, err := s.core.SetTemplateOperation().CreateSetTempAttr(ctx.Kit, option)
+	if err != nil {
+		blog.Errorf("create set template attributes(%+v) failed, err: %v, rid: %s", option, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result := metadata.RspIDs{
+		IDs: make([]int64, len(ids)),
+	}
+
+	for idx, id := range ids {
+		result.IDs[idx] = int64(id)
+	}
+	ctx.RespEntity(result)
+}
+
 // UpdateSetTemplateAttribute update set template attribute
 func (s *coreService) UpdateSetTemplateAttribute(ctx *rest.Contexts) {
 	option := new(metadata.UpdateSetTempAttrOption)

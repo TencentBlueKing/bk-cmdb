@@ -27,9 +27,15 @@ func (s *Service) initSetTemplate(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/topo/set_template/bk_biz_id/{bk_biz_id}/", Handler: s.CreateSetTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/topo/set_template/all_info",
+		Handler: s.CreateSetTemplateAllInfo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/", Handler: s.UpdateSetTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/topo/set_template/all_info",
+		Handler: s.UpdateSetTemplateAllInfo})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/topo/set_template/bk_biz_id/{bk_biz_id}/", Handler: s.DeleteSetTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/", Handler: s.GetSetTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/set_template/all_info",
+		Handler: s.GetSetTemplateAllInfo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/topo/set_template/bk_biz_id/{bk_biz_id}/", Handler: s.ListSetTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/topo/set_template/bk_biz_id/{bk_biz_id}/web/", Handler: s.ListSetTemplateWeb})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/service_templates", Handler: s.ListSetTplRelatedSvcTpl})

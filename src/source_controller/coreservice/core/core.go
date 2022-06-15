@@ -344,6 +344,7 @@ type SetTemplateOperation interface {
 	ListSetServiceTemplateRelations(kit *rest.Kit, bizID int64, setTemplateID int64) (
 		[]metadata.SetServiceTemplateRelation, errors.CCErrorCoder)
 	ListSetTplRelatedSvcTpl(kit *rest.Kit, bizID, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder)
+	CreateSetTempAttr(kit *rest.Kit, option *metadata.CreateSetTempAttrsOption) ([]uint64, errors.CCErrorCoder)
 	UpdateSetTempAttr(kit *rest.Kit, option *metadata.UpdateSetTempAttrOption) errors.CCErrorCoder
 	DeleteSetTemplateAttribute(kit *rest.Kit, option *metadata.DeleteSetTempAttrOption) errors.CCErrorCoder
 	ListSetTemplateAttribute(kit *rest.Kit, option *metadata.ListSetTempAttrOption) (*metadata.SetTempAttrData,

@@ -18,6 +18,8 @@
 package settemplate
 
 import (
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -138,6 +140,46 @@ func (p *setTemplateOperation) validateSetTemplateAttrExist(kit *rest.Kit, bizID
 	}
 
 	return nil
+}
+
+// CreateSetTempAttr create set template attribute
+func (p *setTemplateOperation) CreateSetTempAttr(kit *rest.Kit, option *metadata.CreateSetTempAttrsOption) (
+	[]uint64, errors.CCErrorCoder) {
+
+	if err := p.validateSetTemplateAttrs(kit, option.BizID, option.ID, option.Attributes); err != nil {
+		return nil, err
+	}
+
+	ids, err := mongodb.Client().NextSequences(kit.Ctx, common.BKTableNameSetTemplateAttr, len(option.Attributes))
+	if err != nil {
+		blog.Errorf("get set template attribute ids failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	now := time.Now()
+
+	setTempAttrs := make([]metadata.SetTemplateAttr, len(option.Attributes))
+	for idx, attr := range option.Attributes {
+		setTempAttrs[idx] = metadata.SetTemplateAttr{
+			ID:              int64(ids[idx]),
+			BizID:           option.BizID,
+			SetTemplateID:   option.ID,
+			AttributeID:     attr.AttributeID,
+			PropertyValue:   attr.PropertyValue,
+			Creator:         kit.User,
+			Modifier:        kit.User,
+			CreateTime:      now,
+			LastTime:        now,
+			SupplierAccount: kit.SupplierAccount,
+		}
+	}
+
+	if err := mongodb.Client().Table(common.BKTableNameSetTemplateAttr).Insert(kit.Ctx, setTempAttrs); err != nil {
+		blog.Errorf("create set template attributes(%+v) failed, err: %v, rid: %s", setTempAttrs, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
+	}
+
+	return ids, nil
 }
 
 // UpdateSetTempAttr update set template attribute

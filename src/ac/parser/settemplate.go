@@ -35,6 +35,14 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		ResourceType:   meta.SetTemplate,
 		ResourceAction: meta.Create,
 	}, {
+		Name:           "CreateSetTemplateAllInfo",
+		Description:    "创建集群模板（全量信息）",
+		Pattern:        "/api/v3/create/topo/set_template/all_info",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.SetTemplate,
+		ResourceAction: meta.Create,
+	}, {
 		Name:           "UpdateSetTemplateRegex",
 		Description:    "更新集群模板",
 		Regex:          regexp.MustCompile(`^/api/v3/update/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/?$`),
@@ -53,6 +61,26 @@ var SetTemplateAuthConfigs = []AuthConfig{
 				return nil, fmt.Errorf("UpdateSetTemplateRegex regex parse match to int failed, err: %+v", err)
 			}
 			return []int64{id}, nil
+		},
+	}, {
+		Name:           "UpdateSetTemplateAllInfo",
+		Description:    "更新集群模板（全量信息）",
+		Pattern:        "/api/v3/update/topo/set_template/all_info",
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.SetTemplate,
+		ResourceAction: meta.Update,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid set template id")
+			}
+			return []int64{templateID}, nil
 		},
 	}, {
 		Name:           "DeleteSetTemplateRegex",
@@ -95,6 +123,26 @@ var SetTemplateAuthConfigs = []AuthConfig{
 				return nil, fmt.Errorf("getSetTemplate regex parse match to int failed, err: %+v", err)
 			}
 			return []int64{id}, nil
+		},
+	}, {
+		Name:           "GetSetTemplateAllInfo",
+		Description:    "获取集群模板（全量信息）",
+		Pattern:        "/api/v3/find/topo/set_template/all_info",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.SetTemplate,
+		ResourceAction: meta.Find,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid set template id")
+			}
+			return []int64{templateID}, nil
 		},
 	}, {
 		Name:           "ListSetTemplateRegex",
