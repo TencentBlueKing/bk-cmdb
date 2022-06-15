@@ -24,6 +24,8 @@
 
 <script>
   import Tippy from 'bk-magic-vue/lib/utils/tippy'
+  import { MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
+
   export default {
     props: {
       serviceTemplateId: Number,
@@ -64,7 +66,7 @@
       },
       handleRedirect() {
         this.$routerActions.redirect({
-          name: 'operationalTemplate',
+          name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
           params: {
             bizId: this.bizId,
             templateId: this.serviceTemplateId

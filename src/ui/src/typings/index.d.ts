@@ -10,20 +10,10 @@
  * limitations under the License.
  */
 
-import Vue from 'vue'
-import VueRouter, { Route } from 'vue-router'
-
-declare module '*.vue' {
-  export default Vue
-}
-
-declare module 'vue/types/vue' {
-  interface Vue {
-    $router: VueRouter
-    $route: Route
-    $OPERATION: any
-    $validate: any
-    errors: any
-    $loading: (id: string | symbol | string[] | symbol[]) => boolean
-  }
+interface IProperty {
+  id: number,
+  bk_property_id: number,
+  bk_property_name: string,
+  bk_isapi: boolean,
+  bk_property_group: string
 }

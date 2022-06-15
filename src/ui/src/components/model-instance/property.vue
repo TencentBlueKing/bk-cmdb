@@ -279,7 +279,7 @@
         }
     }
     .property-list {
-        width: 1000px;
+        width: 1208px;
         margin: 25px 0 0 0;
         color: #63656e;
         display: flex;
@@ -300,11 +300,12 @@
             }
             .property-name {
                 position: relative;
-                width: 160px;
+                width: 260px;
                 line-height: 32px;
                 padding: 0 16px 0 36px;
                 font-size: 14px;
                 color: #63656E;
+                text-align: right;
                 @include ellipsis;
                 &:after {
                     position: absolute;

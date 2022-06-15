@@ -12,6 +12,7 @@
 
 <template>
   <bk-select v-if="hasChildren"
+    ref="selector"
     v-model="selected"
     :placeholder="placeholder"
     :searchable="searchable"
@@ -20,7 +21,9 @@
     :loading="loading"
     :font-size="fontSize"
     :popover-options="popoverOptions"
-    :readonly="readonly">
+    :readonly="readonly"
+    @change="handleChange"
+    @toggle="handleToggle">
     <bk-option-group v-for="(group, index) in list"
       :key="index"
       :name="group[displayKey]">
@@ -33,6 +36,7 @@
     </bk-option-group>
   </bk-select>
   <bk-select v-else
+    ref="selector"
     v-model="selected"
     :placeholder="placeholder"
     :searchable="searchable"
@@ -41,7 +45,9 @@
     :loading="loading"
     :font-size="fontSize"
     :popover-options="popoverOptions"
-    :readonly="readonly">
+    :readonly="readonly"
+    @change="handleChange"
+    @toggle="handleToggle">
     <bk-option
       v-for="option in list"
       :key="option[settingKey]"
@@ -148,6 +154,15 @@
           }
         }
         this.selected = value
+      },
+      handleChange(newValue, oldValue) {
+        this.$emit('change', newValue, oldValue)
+      },
+      handleToggle(isShow,) {
+        this.$emit('toggle', isShow)
+      },
+      focus() {
+        this.$refs.selector.show()
       }
     }
   }

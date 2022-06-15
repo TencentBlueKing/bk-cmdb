@@ -14,11 +14,7 @@
   <div class="collapse-layout">
     <div>
       <div class="collapse-trigger" @click="toggle">
-        <span class="collapse-arrow bk-icon icon-angle-down"
-          :class="{
-            'is-collapsed': hidden
-          }">
-        </span>
+        <span :class="['collapse-arrow', 'bk-icon', arrowIconClass, { 'is-collapsed': hidden }]"></span>
         <span class="collapse-text">
           <slot name="title">{{label}}</slot>
         </span>
@@ -47,11 +43,24 @@
       collapse: Boolean,
       label: {
         type: String
+      },
+      arrowType: {
+        type: String,
+        default: 'outlined', // filled
       }
     },
     data() {
       return {
         hidden: this.collapse
+      }
+    },
+    computed: {
+      arrowIconClass() {
+        const classMap = {
+          outlined: 'icon-angle-down',
+          filled: 'icon-down-shape'
+        }
+        return `${classMap[this.arrowType]} ${this.arrowType}`
       }
     },
     watch: {
@@ -115,6 +124,12 @@
                 transition: transform .2s ease-in-out;
                 &.is-collapsed {
                     transform: rotate(-90deg);
+                }
+
+                &.filled {
+                  font-size: 12px;
+                  color: #63656E;
+                  margin: -2px 4px 0 0;
                 }
             }
             .collapse-text {
