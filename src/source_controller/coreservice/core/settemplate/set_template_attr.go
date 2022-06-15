@@ -73,14 +73,16 @@ func (p *setTemplateOperation) validateSetTemplateAttrs(kit *rest.Kit, bizID int
 	}
 
 	filter := map[string]interface{}{
-		common.BKFieldID:    map[string]interface{}{common.BKDBIN: attrIDs},
-		common.BKObjIDField: common.BKInnerObjIDSet,
+		common.BKFieldID:                  map[string]interface{}{common.BKDBIN: attrIDs},
+		common.BKObjIDField:               common.BKInnerObjIDSet,
+		common.BKPropertyIDField:          map[string]interface{}{common.BKDBNIN: []string{common.BKSetNameField}},
+		metadata.AttributeFieldIsEditable: true,
 	}
 	util.AddModelBizIDCondition(filter, bizID)
 
 	attributes := make([]metadata.Attribute, 0)
 	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(filter).All(kit.Ctx, &attributes); err != nil {
-		blog.Errorf("get module attribute failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
+		blog.Errorf("get set attribute failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -111,6 +113,10 @@ func (p *setTemplateOperation) validateSetTemplateAttrs(kit *rest.Kit, bizID int
 // validateSetTemplateAttrExist validate set template attribute exist
 func (p *setTemplateOperation) validateSetTemplateAttrExist(kit *rest.Kit, bizID int64, setTemplateID int64,
 	attrIDs []int64) errors.CCErrorCoder {
+
+	if len(attrIDs) == 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "attributes")
+	}
 
 	filter := map[string]interface{}{
 		common.BKAppIDField:         bizID,
@@ -162,7 +168,7 @@ func (p *setTemplateOperation) UpdateSetTempAttr(kit *rest.Kit,
 		updateData := map[string]interface{}{common.BKPropertyValueField: attribute.PropertyValue}
 		err := mongodb.Client().Table(common.BKTableNameSetTemplateAttr).Update(kit.Ctx, attrFilter, updateData)
 		if err != nil {
-			blog.Errorf("update set template attribute failed, filter: %s, err: %v, rid: %s", attrFilter, err,
+			blog.Errorf("update set template attribute failed, filter: %v, err: %v, rid: %s", attrFilter, err,
 				kit.Rid)
 			return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 		}

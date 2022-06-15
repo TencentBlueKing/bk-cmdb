@@ -21,6 +21,7 @@ import (
 	"strconv"
 
 	"configcenter/src/ac/meta"
+	"configcenter/src/common"
 )
 
 var SetTemplateAuthConfigs = []AuthConfig{
@@ -227,6 +228,18 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.SetTemplate,
 		ResourceAction: meta.Update,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid set template id")
+			}
+			return []int64{templateID}, nil
+		},
 	}, {
 		Name:           "deleteSetTemplateAttribute",
 		Description:    "删除集群模板配置字段",
@@ -234,7 +247,19 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		HTTPMethod:     http.MethodDelete,
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.SetTemplate,
-		ResourceAction: meta.Delete,
+		ResourceAction: meta.Update,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid set template id")
+			}
+			return []int64{templateID}, nil
+		},
 	}, {
 		Name:           "listSetTemplateAttribute",
 		Description:    "查询集群模板配置字段",
@@ -243,6 +268,18 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.SetTemplate,
 		ResourceAction: meta.FindMany,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid set template id")
+			}
+			return []int64{templateID}, nil
+		},
 	},
 }
 
