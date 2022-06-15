@@ -428,8 +428,8 @@ eventServer:
   hostIdentifier:
     # 是否开始下发主机身份功能, 有两个值，true和false，当处于true时，开启下发主机身份功能，false时，关闭该功能
     startUp: false
-    # 可选值为v1或v2, v1表示采用的是使用thrift方式连接gse，需要配置gse.apiServer和gse.taskServer配置
-    # v2表示使用的是apigw接口与gse交互，此接口在gse2.0提供，需要配置gse.apiGW配置
+    # 可选值为v1或v2, v1表示采用的是使用thrift方式连接gse，需要配置gse.apiServer和gse.taskServer
+    # v2表示使用的是apigw接口与gse交互，此接口在gse2.0提供，需要配置gse.apiGW
     version: v1
     # 每隔多少个小时进行一次全量主机身份批量的同步操作，整数值，单位为小时，注：刚启动服务时，会等一个周期后再进行全量同步操作
     batchSyncIntervalHours: 6

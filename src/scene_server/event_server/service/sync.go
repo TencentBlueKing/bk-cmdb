@@ -77,6 +77,7 @@ func (s *Service) SyncHostIdentifier(ctx *rest.Contexts) {
 		retry = false
 		resultMap, err := s.SyncData.GetTaskExecutionResultMap(task, ctx.Kit.Header, ctx.Kit.Rid)
 		if err != nil {
+			blog.Errorf("get task result error, taskID: %s, err: %v, rid: %s", task.TaskID, err, ctx.Kit.Rid)
 			ctx.RespEntityWithError(result, err)
 			return
 		}

@@ -210,6 +210,7 @@ func (es *EventServer) initConfigs() error {
 	case eventtype.V2:
 		config, err := apigwutil.ParseApiGWConfig("gse.apiGW")
 		if err != nil {
+			blog.Errorf("get gse api gateway config error, err: %v", err)
 			return err
 		}
 		es.config.GseApiGWConfig = config

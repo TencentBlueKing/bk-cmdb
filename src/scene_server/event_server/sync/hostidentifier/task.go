@@ -326,8 +326,7 @@ func (h *HostIdentifier) getV1OnStatusAgentFromHostInfo(hosts []*HostInfo, statu
 			continue
 		}
 
-		blog.Infof("host %v agent status is on, ip: %s, rid: %s", hostInfo, hostIP, rid)
-
+		h.metric.agentStatusTotal.WithLabelValues("on").Inc()
 		hostIDs = append(hostIDs, hostInfo.HostID)
 		hostMap[hostInfo.HostID] = hostIP
 		hostInfo.HostInnerIP = hostIP
