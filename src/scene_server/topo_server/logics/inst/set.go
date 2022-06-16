@@ -13,6 +13,8 @@
 package inst
 
 import (
+	"bytes"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -279,6 +281,36 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, bizID, setID int64) e
 		common.BKSetIDField: setID,
 	}
 
+	// get the need update set
+	findCond := &metadata.QueryCondition{
+		Fields:         []string{common.BKSetTemplateIDField},
+		Condition:      innerCond,
+		DisableCounter: true,
+	}
+
+	setInstance := new(metadata.ResponseSetInstance)
+	if err := s.clientSet.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
+		findCond, setInstance); err != nil {
+		blog.Errorf("get set failed, findCond: %#v, err: %v, rid: %s", findCond, err, kit.Rid)
+		return err
+	}
+
+	if err := setInstance.CCError(); err != nil {
+		return err
+	}
+	if len(setInstance.Data.Info) > 1 {
+		return kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject)
+	}
+	if len(setInstance.Data.Info) == 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommNotFound)
+	}
+
+	// validate update set data
+	if err := s.validateUpdateSetData(kit, bizID, data, setInstance.Data.Info[0]); err != nil {
+		blog.Errorf("valid update set data(%+v) failed, err: %v, rid: %s", data, err, kit.Rid)
+		return err
+	}
+
 	data.Remove(common.MetadataField)
 	data.Remove(common.BKAppIDField)
 	data.Remove(common.BKSetIDField)
@@ -294,6 +326,67 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, bizID, setID int64) e
 			return kit.CCError.CCError(common.CCErrorSetNameDuplicated)
 		}
 		return err
+	}
+
+	return nil
+}
+
+// validateUpdateSetData validate update set data
+func (s *set) validateUpdateSetData(kit *rest.Kit, bizID int64, data mapstr.MapStr, set metadata.SetInst) error {
+	if set.SetTemplateID == common.SetTemplateIDNotSet {
+		return nil
+	}
+
+	// get set template attributes
+	tempAttrOpt := &metadata.ListSetTempAttrOption{
+		BizID: bizID,
+		ID:    set.SetTemplateID,
+	}
+
+	tempAttrs, err := s.clientSet.CoreService().SetTemplate().ListSetTemplateAttribute(kit.Ctx, kit.Header, tempAttrOpt)
+	if err != nil {
+		blog.Errorf("get set template attributes failed, opt: %+v, err: %v, rid: %s", tempAttrOpt, err, kit.Rid)
+		return err
+	}
+
+	if len(tempAttrs.Attributes) == 0 {
+		return nil
+	}
+
+	// check if update set data contains set template attributes, these attributes are forbidden to update
+	attrIDs := make([]int64, len(tempAttrs.Attributes))
+	for idx, tempAttr := range tempAttrs.Attributes {
+		attrIDs[idx] = tempAttr.AttributeID
+	}
+
+	propertyIDs := make([]string, 0)
+	for key := range data {
+		propertyIDs = append(propertyIDs, key)
+	}
+
+	attrOpt := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKFieldID:         mapstr.MapStr{common.BKDBIN: attrIDs},
+			common.BKPropertyIDField: mapstr.MapStr{common.BKDBIN: propertyIDs},
+		},
+		Fields: []string{common.BKPropertyIDField},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+	}
+
+	attrs, e := s.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, common.BKInnerObjIDSet, attrOpt)
+	if e != nil {
+		blog.Errorf("get set template update attributes failed, opt: %+v, err: %v, rid: %s", attrOpt, err, kit.Rid)
+		return e
+	}
+
+	if len(attrs.Info) > 0 {
+		fields := bytes.Buffer{}
+		for _, attr := range attrs.Info {
+			fields.WriteString(attr.PropertyID)
+			fields.WriteByte(',')
+		}
+		forbiddenFields := fields.String()
+		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, forbiddenFields[:len(forbiddenFields)-1])
 	}
 
 	return nil
