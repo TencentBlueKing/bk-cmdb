@@ -13,6 +13,8 @@
 package inst
 
 import (
+	"bytes"
+
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -397,7 +399,7 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 		return kit.CCError.CCErrorf(common.CCErrCommNotFound)
 	}
 
-	if err := validUpdateModuleData(kit, data, moduleInstance.Data.Info[0]); err != nil {
+	if err := m.validUpdateModuleData(kit, bizID, data, moduleInstance.Data.Info[0]); err != nil {
 		blog.Errorf("valid input data by module instance failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -417,7 +419,9 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 	return nil
 }
 
-func validUpdateModuleData(kit *rest.Kit, data mapstr.MapStr, module metadata.ModuleInst) error {
+func (m *module) validUpdateModuleData(kit *rest.Kit, bizID int64, data mapstr.MapStr,
+	module metadata.ModuleInst) error {
+
 	// 检查并提示禁止修改集群模板ID字段
 	if val, ok := data[common.BKSetTemplateIDField]; ok {
 		setTemplateID, err := util.GetInt64ByInterface(val)
@@ -468,6 +472,71 @@ func validUpdateModuleData(kit *rest.Kit, data mapstr.MapStr, module metadata.Mo
 				return kit.CCError.CCError(common.CCErrorTopoUpdateModuleFromTplNameForbidden)
 			}
 		}
+
+		// 检查并提示禁止修改服务模板配置的属性字段
+		if err := m.validUpdateModuleDataWithTemplateAttr(kit, bizID, data, module); err != nil {
+			blog.Errorf("valid update module data(%+v) with template attr failed, err: %v, rid: %s", data, err, kit.Rid)
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+func (m *module) validUpdateModuleDataWithTemplateAttr(kit *rest.Kit, bizID int64, data mapstr.MapStr,
+	module metadata.ModuleInst) error {
+
+	// get service template attributes
+	tempAttrOpt := &metadata.ListServTempAttrOption{
+		BizID: bizID,
+		ID:    module.ServiceTemplateID,
+	}
+
+	tempAttrs, err := m.clientSet.CoreService().Process().ListServiceTemplateAttribute(kit.Ctx, kit.Header, tempAttrOpt)
+	if err != nil {
+		blog.Errorf("get service template attributes failed, opt: %+v, err: %v, rid: %s", tempAttrOpt, err, kit.Rid)
+		return err
+	}
+
+	if len(tempAttrs.Attributes) == 0 {
+		return nil
+	}
+
+	// check if update module data contains service template attributes, these attributes are forbidden to update
+	attrIDs := make([]int64, len(tempAttrs.Attributes))
+	for idx, tempAttr := range tempAttrs.Attributes {
+		attrIDs[idx] = tempAttr.AttributeID
+	}
+
+	propertyIDs := make([]string, 0)
+	for key := range data {
+		propertyIDs = append(propertyIDs, key)
+	}
+
+	attrOpt := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKFieldID:         mapstr.MapStr{common.BKDBIN: attrIDs},
+			common.BKPropertyIDField: mapstr.MapStr{common.BKDBIN: propertyIDs},
+		},
+		Fields: []string{common.BKFieldID, common.BKPropertyIDField},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+	}
+
+	attrs, e := m.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, common.BKInnerObjIDModule, attrOpt)
+	if e != nil {
+		blog.Errorf("get module attributes failed, opt: %+v, err: %v, rid: %s", attrOpt, err, kit.Rid)
+		return e
+	}
+
+	if len(attrs.Info) > 0 {
+		fields := bytes.Buffer{}
+		for _, attr := range attrs.Info {
+			fields.WriteString(attr.PropertyID)
+			fields.WriteByte(',')
+		}
+		forbiddenFields := fields.String()
+		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, forbiddenFields[:len(forbiddenFields)-1])
 	}
 
 	return nil
