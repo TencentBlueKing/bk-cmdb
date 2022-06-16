@@ -126,6 +126,12 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (mapstr.
 	data.Set(common.BKSetTemplateIDField, setTemplate.ID)
 	data.Remove(common.MetadataField)
 
+	// if set template has attributes, initialize set using these attributes
+	data, err = s.initSetWithSetTemplate(kit, bizID, setTemplate.ID, data)
+	if err != nil {
+		return nil, err
+	}
+
 	setInstance, err := s.inst.CreateInst(kit, common.BKInnerObjIDSet, data)
 	if err != nil {
 		blog.Errorf("create set instance failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
@@ -177,6 +183,66 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (mapstr.
 	}
 
 	return setInstance, nil
+}
+
+// initSetWithSetTemplate initialize set using the set template attributes
+func (s *set) initSetWithSetTemplate(kit *rest.Kit, bizID, setTempID int64, set mapstr.MapStr) (mapstr.MapStr, error) {
+	if setTempID == common.SetTemplateIDNotSet {
+		return set, nil
+	}
+
+	// get set template attributes
+	tempAttrOpt := &metadata.ListSetTempAttrOption{
+		BizID: bizID,
+		ID:    setTempID,
+	}
+
+	tempAttrs, err := s.clientSet.CoreService().SetTemplate().ListSetTemplateAttribute(kit.Ctx, kit.Header, tempAttrOpt)
+	if err != nil {
+		blog.Errorf("get set template attributes failed, opt: %+v, err: %v, rid: %s", tempAttrOpt, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(tempAttrs.Attributes) == 0 {
+		return set, nil
+	}
+
+	// get corresponding set attributes
+	attrIDs := make([]int64, len(tempAttrs.Attributes))
+	for idx, tempAttr := range tempAttrs.Attributes {
+		attrIDs[idx] = tempAttr.AttributeID
+	}
+
+	attrOpt := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKFieldID: mapstr.MapStr{common.BKDBIN: attrIDs},
+		},
+		Fields: []string{common.BKFieldID, common.BKPropertyIDField},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+	}
+
+	attrs, e := s.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, common.BKInnerObjIDSet, attrOpt)
+	if e != nil {
+		blog.Errorf("get set attributes failed, opt: %+v, err: %v, rid: %s", attrOpt, err, kit.Rid)
+		return nil, e
+	}
+
+	// use set template attributes to initialize set data
+	attrIDMap := make(map[int64]string)
+	for _, attr := range attrs.Info {
+		attrIDMap[attr.ID] = attr.PropertyID
+	}
+
+	for _, tempAttr := range tempAttrs.Attributes {
+		propertyID, exists := attrIDMap[tempAttr.AttributeID]
+		if !exists {
+			blog.Errorf("set template %d attribute %d is not exist, rid: %s", setTempID, tempAttr.AttributeID, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+		}
+		set[propertyID] = tempAttr.PropertyValue
+	}
+
+	return set, nil
 }
 
 // DeleteSet delete set
