@@ -299,7 +299,14 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition) (cnt
 	}
 
 	if err := m.cleanAttributeFieldInInstances(kit.Ctx, kit.SupplierAccount, resultAttrs); err != nil {
-		blog.ErrorJSON("delete object attributes with cond: %s, but delete these attribute in instance failed, err: %v, rid:%s", condMap, err, kit.Rid)
+		blog.Errorf("delete object attributes with cond: %v, but delete these attribute in instance failed, "+
+			"err: %v, rid: %s", condMap, err, kit.Rid)
+		return 0, err
+	}
+
+	if err := m.cleanAttrTemplateRelation(kit.Ctx, kit.SupplierAccount, resultAttrs); err != nil {
+		blog.Errorf("delete the relation between attributes and templates failed, attr: %v, err: %v, rid: %s",
+			resultAttrs, err, kit.Rid)
 		return 0, err
 	}
 
@@ -484,6 +491,35 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 	// step 3: clean host apply fields
 	if err := m.cleanHostApplyField(ctx, ownerID, hostApplyFields); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (m *modelAttribute) cleanAttrTemplateRelation(ctx context.Context, ownerID string,
+	attrs []metadata.Attribute) error {
+
+	attrMap := make(map[string][]int64)
+	for _, attr := range attrs {
+		attrMap[attr.ObjectID] = append(attrMap[attr.ObjectID], attr.ID)
+	}
+
+	for objID, attrIDs := range attrMap {
+		cond := mapstr.MapStr{
+			common.BKAttributeIDField: mapstr.MapStr{common.BKDBIN: attrIDs},
+		}
+		cond = util.SetQueryOwner(cond, ownerID)
+		switch objID {
+		case common.BKInnerObjIDSet:
+			if err := mongodb.Client().Table(common.BKTableNameSetTemplateAttr).Delete(ctx, cond); err != nil {
+				return err
+			}
+
+		case common.BKInnerObjIDModule:
+			if err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Delete(ctx, cond); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
