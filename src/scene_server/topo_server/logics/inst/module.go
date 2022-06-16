@@ -224,6 +224,12 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 	}
 	data.Remove(common.MetadataField)
 
+	// if service template has attributes, initialize module using these attributes
+	data, err = m.initModuleWithSvcTemp(kit, bizID, serviceTemplateID, data)
+	if err != nil {
+		return nil, err
+	}
+
 	inst, createErr := m.inst.CreateInst(kit, common.BKInnerObjIDModule, data)
 	if createErr != nil {
 		blog.Errorf("create module failed, err: %v, rid: %s", createErr, kit.Rid)
@@ -277,6 +283,68 @@ func (m *module) checkServiceTemplateParam(kit *rest.Kit, serviceCategoryID, ser
 		}
 	}
 	return serviceCategoryID, nil
+}
+
+// initModuleWithSvcTemp initialize module using the service template attributes
+func (m *module) initModuleWithSvcTemp(kit *rest.Kit, bizID, svcTempID int64, module mapstr.MapStr) (mapstr.MapStr,
+	error) {
+
+	if svcTempID == common.ServiceTemplateIDNotSet {
+		return module, nil
+	}
+
+	// get service template attributes
+	tempAttrOpt := &metadata.ListServTempAttrOption{
+		BizID: bizID,
+		ID:    svcTempID,
+	}
+
+	tempAttrs, err := m.clientSet.CoreService().Process().ListServiceTemplateAttribute(kit.Ctx, kit.Header, tempAttrOpt)
+	if err != nil {
+		blog.Errorf("get service template attributes failed, opt: %+v, err: %v, rid: %s", tempAttrOpt, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(tempAttrs.Attributes) == 0 {
+		return module, nil
+	}
+
+	// get corresponding module attributes
+	attrIDs := make([]int64, len(tempAttrs.Attributes))
+	for idx, tempAttr := range tempAttrs.Attributes {
+		attrIDs[idx] = tempAttr.AttributeID
+	}
+
+	attrOpt := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKFieldID: mapstr.MapStr{common.BKDBIN: attrIDs},
+		},
+		Fields: []string{common.BKFieldID, common.BKPropertyIDField},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+	}
+
+	attrs, e := m.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, common.BKInnerObjIDModule, attrOpt)
+	if e != nil {
+		blog.Errorf("get module attributes failed, opt: %+v, err: %v, rid: %s", attrOpt, err, kit.Rid)
+		return nil, e
+	}
+
+	// use service template attributes to initialize module data
+	attrIDMap := make(map[int64]string)
+	for _, attr := range attrs.Info {
+		attrIDMap[attr.ID] = attr.PropertyID
+	}
+
+	for _, tempAttr := range tempAttrs.Attributes {
+		propertyID, exists := attrIDMap[tempAttr.AttributeID]
+		if !exists {
+			blog.Errorf("service template %d attr %d is not exist, rid: %s", svcTempID, tempAttr.AttributeID, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+		}
+		module[propertyID] = tempAttr.PropertyValue
+	}
+
+	return module, nil
 }
 
 // DeleteModule delete module
