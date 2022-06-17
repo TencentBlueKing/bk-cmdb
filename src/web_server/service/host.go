@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"configcenter/src/common"
@@ -635,15 +636,53 @@ func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Proper
 	for _, property := range fields {
 		hostFields = append(hostFields, property.ID)
 	}
+	var (
+		wg          sync.WaitGroup
+		rwLock      sync.RWMutex
+		pipelineErr error
+	)
+	pipeline := make(chan bool, 10)
+	hostInfo := make([]mapstr.MapStr, 0)
+	start := 0
+	hostCount := input.ExportCond.Page.Limit
+	for {
+		pipeline <- true
+		wg.Add(1)
+		go func() {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+			rwLock.Lock()
+			input.ExportCond.Page.Limit = common.BKMaxExportLimit
+			input.ExportCond.Page.Start = start
+			rwLock.Unlock()
+			hostData, err := s.Logics.GetHostData(appID, input.HostIDArr, hostFields, input.ExportCond, header, defLang)
+			if err != nil {
+				blog.Errorf("get host info failed, err: %v, rid: %s", err, rid)
+				pipelineErr = err
+				return
+			}
 
-	hostInfo, err := s.Logics.GetHostData(appID, input.HostIDArr, hostFields, input.ExportCond, header, defLang)
-	if err != nil {
-		blog.Errorf("get hosts failed, host id: %v, err: %v, rid: %s", input.HostIDArr, err, rid)
-		return nil, err
+			rwLock.Lock()
+			hostInfo = append(hostInfo, hostData...)
+			rwLock.Unlock()
+		}()
+
+		start += common.BKMaxExportLimit
+		if start >= hostCount {
+			break
+		}
 	}
+	wg.Wait()
+
+	if pipelineErr != nil {
+		return nil, pipelineErr
+	}
+
 	if len(hostInfo) == 0 {
 		blog.Errorf("not find host, host id: %v, cond: %#v, rid: %s", input.HostIDArr, input.ExportCond, rid)
-		return nil, err
+		return nil, nil
 	}
 
 	if err := s.handleModule(hostInfo, rid); err != nil {
