@@ -225,3 +225,67 @@ func (s *coreService) ListSetTplRelatedSvcTpl(ctx *rest.Contexts) {
 	}
 	ctx.RespEntity(serviceTemplates)
 }
+
+// UpdateSetTemplateAttribute update set template attribute
+func (s *coreService) UpdateSetTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.UpdateSetTempAttrOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	if err := s.core.SetTemplateOperation().UpdateSetTempAttr(ctx.Kit, option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+// DeleteSetTemplateAttribute delete set template attribute
+func (s *coreService) DeleteSetTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.DeleteSetTempAttrOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	if err := s.core.SetTemplateOperation().DeleteSetTemplateAttribute(ctx.Kit, option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+// ListSetTemplateAttribute list set template attribute
+func (s *coreService) ListSetTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.ListSetTempAttrOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	data, err := s.core.SetTemplateOperation().ListSetTemplateAttribute(ctx.Kit, option)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(data)
+}

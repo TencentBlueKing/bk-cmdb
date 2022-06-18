@@ -192,6 +192,66 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.FindMany,
+	}, {
+		Name:           "updateServiceTemplateAttribute",
+		Description:    "更新服务模板配置字段",
+		Pattern:        "/api/v3/update/proc/service_template/attribute",
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Update,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid service template id")
+			}
+			return []int64{templateID}, nil
+		},
+	}, {
+		Name:           "deleteServiceTemplateAttribute",
+		Description:    "删除服务模板配置字段",
+		Pattern:        "/api/v3/delete/proc/service_template/attribute",
+		HTTPMethod:     http.MethodDelete,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Update,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid service template id")
+			}
+			return []int64{templateID}, nil
+		},
+	}, {
+		Name:           "listServiceTemplateAttribute",
+		Description:    "查询服务模板配置字段",
+		Pattern:        "/api/v3/findmany/proc/service_template/attribute",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.FindMany,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid service template id")
+			}
+			return []int64{templateID}, nil
+		},
 	},
 }
 

@@ -1791,9 +1791,8 @@ func (ps *ProcServer) getModuleAttrIDAndPropertyID(kit *rest.Kit, attrIDs []int6
 	res, err := ps.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, common.BKInnerObjIDModule, option)
 	if err != nil {
 		blog.Errorf("read model attribute failed, err: %v, option: %#v, rid: %s", err, option, kit.Rid)
-		return nil, nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		return nil, nil, kit.CCError.CCError(common.CCErrTopoObjectAttributeSelectFailed)
 	}
-
 	propertyIDs := make([]string, 0)
 	for _, attrs := range res.Info {
 		propertyIDs = append(propertyIDs, attrs.PropertyID)
@@ -1807,24 +1806,24 @@ func (ps *ProcServer) getModuleAttrIDAndPropertyID(kit *rest.Kit, attrIDs []int6
 func (ps *ProcServer) getAttributesResult(kit *rest.Kit, option *metadata.ServiceTemplateDiffOption,
 	module mapstr.MapStr) ([]metadata.AttributeFields, ccErr.CCErrorCoder) {
 
+	attrValues := make([]metadata.AttributeFields, 0)
 	// 1、获取指定服务模板的属性ID及属性值
 	attrIDs, srvTemplateAttrValueMap, cErr := ps.getSrvTemplateAttrIdAndPropertyValue(kit, option.BizID,
 		option.ServiceTemplateId)
 	if cErr != nil {
-		return []metadata.AttributeFields{}, cErr
+		return attrValues, cErr
 	}
-
 	if len(attrIDs) == 0 {
-		return []metadata.AttributeFields{}, nil
+		return attrValues, nil
 	}
 	// 2、获取模块 attrID 与 propertyID的映射关系
 	propertyIDs, attrIdPropertyIdMap, cErr := ps.getModuleAttrIDAndPropertyID(kit, attrIDs)
 	if cErr != nil {
-		return []metadata.AttributeFields{}, cErr
+		return attrValues, cErr
 	}
 
 	if len(propertyIDs) == 0 {
-		return []metadata.AttributeFields{}, cErr
+		return attrValues, nil
 	}
 
 	// 3、根据propertyID 获取对应模块实例的值
@@ -1836,7 +1835,6 @@ func (ps *ProcServer) getAttributesResult(kit *rest.Kit, option *metadata.Servic
 	}
 
 	// 4、整理数据
-	attrValues := make([]metadata.AttributeFields, 0)
 	for id, attr := range srvTemplateAttrValueMap {
 		attrValues = append(attrValues, metadata.AttributeFields{
 			ID:                    id,

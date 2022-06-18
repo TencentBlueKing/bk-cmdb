@@ -59,6 +59,7 @@ func (st *setTemplate) getSetResult(kit *rest.Kit, bizID, setTemplateID, setID i
 			common.BKSetTemplateIDField: setTemplateID,
 			common.BKSetIDField:         setID,
 		}),
+		DisableCounter: true,
 	}
 
 	set := new(metadata.ResponseSetInstance)
@@ -75,8 +76,7 @@ func (st *setTemplate) getSetResult(kit *rest.Kit, bizID, setTemplateID, setID i
 	}
 
 	if len(set.Data.Info) != 1 {
-		blog.Errorf("DiffSetTemplateWithInstances failed, some setID invalid, input IDs: %+v, valid IDs: %+v, rid: %s",
-			setID, set.Data.Info, kit.Rid)
+		blog.Errorf("get set failed, setID: %d, rid: %s", setID, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetIDField)
 	}
 	return set, nil
@@ -93,13 +93,14 @@ func (st *setTemplate) getModuleResult(kit *rest.Kit, bizID, setTemplateID, setI
 			common.BKSetTemplateIDField: setTemplateID,
 			common.BKParentIDField:      setID,
 		}),
+		DisableCounter: true,
 	}
 
 	modules := new(metadata.ResponseModuleInstance)
 	if err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
 		filter, modules); err != nil {
-		blog.ErrorJSON("DiffSetTemplateWithInstances failed, list modules failed, bizID: %s, setTemplateID: %s,"+
-			" setIDs: %s, err: %s, rid: %s", bizID, setTemplateID, setID, err, kit.Rid)
+		blog.Errorf("list modules failed, bizID: %d, setTemplateID: %d, setID: %d, err: %v, rid: %s",
+			bizID, setTemplateID, setID, err, kit.Rid)
 		return nil, err
 	}
 	if err := modules.CCError(); err != nil {
@@ -143,7 +144,7 @@ func (st *setTemplate) DiffSetTplWithInst(kit *rest.Kit, bizID int64, setTemplat
 
 	topoTree, ccErr := st.client.CoreService().Mainline().SearchMainlineInstanceTopo(kit.Ctx, kit.Header, bizID, false)
 	if ccErr != nil {
-		blog.Errorf("ListSetTplRelatedSetsWeb failed, bizID: %d, err: %s, rid: %s", bizID, ccErr.Error(), kit.Rid)
+		blog.Errorf("ListSetTplRelatedSetsWeb failed, bizID: %d, err: %v, rid: %s", bizID, ccErr, kit.Rid)
 		return metadata.SetDiff{}, ccErr
 	}
 	// diff
