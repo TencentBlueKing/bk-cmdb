@@ -95,7 +95,10 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 		}
 		ret[index] = strName
 	}
-	if len(sheet.Rows[headerRow-1].Cells) < 2 && true == isCheckHeader {
+
+	// valid excel three row is instance property fields
+	// indicating that the third line of the excel template was deleted
+	if len(sheet.Rows[headerRow-1].Cells) < 2 && isCheckHeader {
 		blog.Errorf("err: %v, no found fields %s, rid: %s", defLang.Language("web_import_field_not_found"),
 			strings.Join(errCells, ","), rid)
 		return ret, errors.New(defLang.Language("web_import_field_not_found"))
