@@ -169,14 +169,11 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 	}
 
 	for index := range hostsInfo {
-		if _, ok := hostsInfo[index][common.BKCloudIDField]; !ok {
-			blog.Errorf("check cloud area data failed, cloud area doesn't provide, rid: %s",
-				util.GetHTTPCCRequestID(header))
-			errMsg = append(errMsg, defLang.Languagef("import_host_not_provide_cloudID", index))
-			continue
+		cloudStr := common.DefaultCloudName
+		if _, ok := hostsInfo[index][common.BKCloudIDField]; ok {
+			cloudStr = util.GetStrByInterface(hostsInfo[index][common.BKCloudIDField])
 		}
 
-		cloudStr := util.GetStrByInterface(hostsInfo[index][common.BKCloudIDField])
 		if _, ok := cloudMap[cloudStr]; !ok {
 			blog.Errorf("check cloud area data failed, cloud area name %s of line %d doesn't exist, rid: %s", cloudStr,
 				index, util.GetHTTPCCRequestID(header))
@@ -491,7 +488,9 @@ func returnByErrCode(defErr ccErrrors.DefaultCCErrorIf, errCode int, data mapstr
 }
 
 // CheckHostsAdded check the hosts to be added
-func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}) (errMsg []string, err error) {
+func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}) (
+	errMsg []string, err error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 
@@ -508,7 +507,7 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 		}
 
 		innerIP, ok := host[common.BKHostInnerIPField].(string)
-		if ok == false || "" == innerIP {
+		if !ok || innerIP == "" {
 			errMsg = append(errMsg, ccLang.Languagef("host_import_innerip_empty", index))
 			continue
 		}
@@ -518,10 +517,17 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 			continue
 		}
 
+		cloud, ok := host[common.BKCloudIDField]
+		if !ok {
+			errMsg = append(errMsg, ccLang.Languagef("import_host_not_provide_cloudID", index))
+			continue
+		}
+
 		// check if the host exist in db
-		key := generateHostCloudKey(innerIP, common.BKDefaultDirSubArea)
+		key := generateHostCloudKey(innerIP, cloud)
 		if _, exist := existentHosts[key]; exist {
-			errMsg = append(errMsg, ccLang.Languagef("import_host_exist_error", index, common.BKDefaultDirSubArea, innerIP))
+			errMsg = append(errMsg, ccLang.Languagef("import_host_exist_error", index, common.BKDefaultDirSubArea,
+				innerIP))
 			continue
 		}
 	}
