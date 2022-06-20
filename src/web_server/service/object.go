@@ -128,13 +128,16 @@ func (s *Service) getImportInsts(c *gin.Context, f *xlsx.File, objID string, req
 	language := webCommon.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 
 	attrItems, errMsg, err := s.Logics.GetImportInsts(c, f, objID, req, 3, false, defLang, modelBizID)
 	if err != nil {
+		blog.Errorf("get inst data from import excel failed, err: %v, rid: %s", err, rid)
 		return nil, getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
 			"").Error(), nil)
 	}
 	if len(errMsg) != 0 {
+		blog.Errorf("get excel row data failed, errMsg: %+v, rid: %s", errMsg, rid)
 		return nil, getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
 			strings.Join(errMsg, ",")).Error(), common.KvMap{"err": errMsg})
 	}
