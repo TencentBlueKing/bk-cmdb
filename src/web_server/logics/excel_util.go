@@ -67,7 +67,8 @@ func getCustomFields(filterFields []string, customFieldsStr string) []string {
 }
 
 // checkExcelHeader check whether invalid fields exists in header and return headers
-func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, isCheckHeader bool, defLang lang.DefaultCCLanguageIf) (map[int]string, error) {
+func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, isCheckHeader bool,
+	defLang lang.DefaultCCLanguageIf) (map[int]string, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// rowLen := len(sheet.Rows[headerRow-1].Cells)
@@ -94,13 +95,15 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 		}
 		ret[index] = strName
 	}
-	// valid excel three row is instance property fields,
-	// excel three row  values  exceeding 1/2 does not appear in the field array,
+
+	// valid excel three row is instance property fields
 	// indicating that the third line of the excel template was deleted
-	if len(errCells) > len(sheet.Rows[headerRow-1].Cells)/2 && true == isCheckHeader {
-		blog.Errorf("err:%s, no found fields %s, rid:%s", defLang.Language("web_import_field_not_found"), strings.Join(errCells, ","), rid)
+	if len(sheet.Rows[headerRow-1].Cells) < 2 && isCheckHeader {
+		blog.Errorf("not found fields %s, err: %v, rid: %s", strings.Join(errCells, ","),
+			defLang.Language("web_import_field_not_found"), rid)
 		return ret, errors.New(defLang.Language("web_import_field_not_found"))
 	}
+
 	return ret, nil
 
 }
