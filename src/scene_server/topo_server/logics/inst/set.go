@@ -14,6 +14,7 @@ package inst
 
 import (
 	"bytes"
+	"reflect"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -281,32 +282,34 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, bizID, setID int64) e
 		common.BKSetIDField: setID,
 	}
 
+	fields := []string{common.BKSetTemplateIDField}
+	for field := range data {
+		fields = append(fields, field)
+	}
+
 	// get the need update set
 	findCond := &metadata.QueryCondition{
-		Fields:         []string{common.BKSetTemplateIDField},
+		Fields:         fields,
 		Condition:      innerCond,
 		DisableCounter: true,
 	}
 
-	setInstance := new(metadata.ResponseSetInstance)
-	if err := s.clientSet.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
-		findCond, setInstance); err != nil {
+	setInstance, err := s.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
+		findCond)
+	if err != nil {
 		blog.Errorf("get set failed, findCond: %#v, err: %v, rid: %s", findCond, err, kit.Rid)
 		return err
 	}
 
-	if err := setInstance.CCError(); err != nil {
-		return err
-	}
-	if len(setInstance.Data.Info) > 1 {
+	if len(setInstance.Info) > 1 {
 		return kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject)
 	}
-	if len(setInstance.Data.Info) == 0 {
+	if len(setInstance.Info) == 0 {
 		return kit.CCError.CCErrorf(common.CCErrCommNotFound)
 	}
 
 	// validate update set data
-	if err := s.validateUpdateSetData(kit, bizID, data, setInstance.Data.Info[0]); err != nil {
+	if err := s.validateUpdateSetData(kit, bizID, data, setInstance.Info[0]); err != nil {
 		blog.Errorf("valid update set data(%+v) failed, err: %v, rid: %s", data, err, kit.Rid)
 		return err
 	}
@@ -316,7 +319,7 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, bizID, setID int64) e
 	data.Remove(common.BKSetIDField)
 	data.Remove(common.BKSetTemplateIDField)
 
-	err := s.inst.UpdateInst(kit, innerCond, data, common.BKInnerObjIDSet)
+	err = s.inst.UpdateInst(kit, innerCond, data, common.BKInnerObjIDSet)
 	if err != nil {
 		blog.Errorf("update set instance failed, data: %#v, innerCond:%#v, err: %v, rid: %s", data, innerCond, err,
 			kit.Rid)
@@ -332,15 +335,21 @@ func (s *set) UpdateSet(kit *rest.Kit, data mapstr.MapStr, bizID, setID int64) e
 }
 
 // validateUpdateSetData validate update set data
-func (s *set) validateUpdateSetData(kit *rest.Kit, bizID int64, data mapstr.MapStr, set metadata.SetInst) error {
-	if set.SetTemplateID == common.SetTemplateIDNotSet {
+func (s *set) validateUpdateSetData(kit *rest.Kit, bizID int64, data, setData mapstr.MapStr) error {
+	setTemplateID, err := util.GetInt64ByInterface(setData[common.BKSetTemplateIDField])
+	if err != nil {
+		blog.Errorf("get original set(%+v) set template id failed, err: %v, rid: %s", setData, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+	}
+
+	if setTemplateID == common.SetTemplateIDNotSet {
 		return nil
 	}
 
 	// get set template attributes
 	tempAttrOpt := &metadata.ListSetTempAttrOption{
 		BizID: bizID,
-		ID:    set.SetTemplateID,
+		ID:    setTemplateID,
 	}
 
 	tempAttrs, err := s.clientSet.CoreService().SetTemplate().ListSetTemplateAttribute(kit.Ctx, kit.Header, tempAttrOpt)
@@ -369,8 +378,9 @@ func (s *set) validateUpdateSetData(kit *rest.Kit, bizID int64, data mapstr.MapS
 			common.BKFieldID:         mapstr.MapStr{common.BKDBIN: attrIDs},
 			common.BKPropertyIDField: mapstr.MapStr{common.BKDBIN: propertyIDs},
 		},
-		Fields: []string{common.BKPropertyIDField},
-		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:         []string{common.BKPropertyIDField},
+		Page:           metadata.BasePage{Limit: common.BKNoLimit},
+		DisableCounter: true,
 	}
 
 	attrs, e := s.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, common.BKInnerObjIDSet, attrOpt)
@@ -379,12 +389,16 @@ func (s *set) validateUpdateSetData(kit *rest.Kit, bizID int64, data mapstr.MapS
 		return e
 	}
 
-	if len(attrs.Info) > 0 {
-		fields := bytes.Buffer{}
-		for _, attr := range attrs.Info {
-			fields.WriteString(attr.PropertyID)
-			fields.WriteByte(',')
+	fields := bytes.Buffer{}
+	for _, attr := range attrs.Info {
+		if reflect.DeepEqual(data[attr.PropertyID], setData[attr.PropertyID]) {
+			continue
 		}
+		fields.WriteString(attr.PropertyID)
+		fields.WriteByte(',')
+	}
+
+	if fields.Len() > 0 {
 		forbiddenFields := fields.String()
 		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, forbiddenFields[:len(forbiddenFields)-1])
 	}
