@@ -766,7 +766,7 @@ func (s *Service) UpdateGlobalSetOrModuleConfig(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-// UpdateIdlePoolSettingConfig update platform_setting
+// DeleteUserModulesSettingConfig delete user modules platform_setting
 func (s *Service) DeleteUserModulesSettingConfig(ctx *rest.Contexts) {
 
 	option := new(metadata.BuiltInModuleDeleteOption)
