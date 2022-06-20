@@ -96,10 +96,11 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 		ret[index] = strName
 	}
 	if len(sheet.Rows[headerRow-1].Cells) < 2 && true == isCheckHeader {
-		blog.Errorf("err:%s, no found fields %s, rid:%s", defLang.Language("web_import_field_not_found"),
+		blog.Errorf("err: %v, no found fields %s, rid: %s", defLang.Language("web_import_field_not_found"),
 			strings.Join(errCells, ","), rid)
 		return ret, errors.New(defLang.Language("web_import_field_not_found"))
 	}
+
 	return ret, nil
 
 }
