@@ -59,78 +59,55 @@ func (s *Service) ImportObject(c *gin.Context) {
 	ctx := util.NewContextFromGinContext(c)
 
 	language := webCommon.GetLanguageByHTTPRequest(c)
-	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
 	file, err := c.FormFile("file")
 	if err != nil {
 		msg := getReturnStr(common.CCErrWebFileNoFound, defErr.Error(common.CCErrWebFileNoFound).Error(), nil)
-		c.String(http.StatusOK, string(msg))
+		c.String(http.StatusOK, msg)
 		return
 	}
 	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
 	if err != nil {
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed,
 			defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
-		c.String(http.StatusOK, string(msg))
+		c.String(http.StatusOK, msg)
 		return
 	}
 
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/import/"
 	if _, err = os.Stat(dir); err != nil {
-		blog.Warnf("os.Stat failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
+		blog.Warnf("os.Stat failed, filename: %s, err: %v, rid: %s", dir, err, rid)
 		if err := os.MkdirAll(dir, os.ModeDir|os.ModePerm); err != nil {
-			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
+			blog.Errorf("os.MkdirAll failed, filename: %s, err: %v, rid: %s", dir, err, rid)
 		}
 	}
 	filePath := fmt.Sprintf("%s/importinsts-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
 	if err = c.SaveUploadedFile(file, filePath); err != nil {
 		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail,
 			err.Error()).Error(), nil)
-		c.String(http.StatusOK, string(msg))
+		c.String(http.StatusOK, msg)
 		return
 	}
 	defer func() {
 		if err := os.Remove(filePath); err != nil {
-			blog.Errorf("os.Remove failed, filename: %s, err: %+v, rid: %s", filePath, err, rid)
+			blog.Errorf("os.Remove failed, filename: %s, err: %v, rid: %s", filePath, err, rid)
 		}
 	}()
 	f, err := xlsx.OpenFile(filePath)
 	if err != nil {
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail,
 			err.Error()).Error(), nil)
-		c.String(http.StatusOK, string(msg))
+		c.String(http.StatusOK, msg)
 		return
 	}
 
-	attrItems, errMsg, err := s.Logics.GetImportInsts(ctx, f, objID, c.Request, 3, false, defLang, modelBizID)
-	if len(attrItems) == 0 {
-		var msg string
-		if err != nil {
-			msg = getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
-				err.Error()).Error(), nil)
-		} else {
-			msg = getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
-				"").Error(), nil)
-		}
-		c.String(http.StatusOK, string(msg))
+	attrItems, errMsg := s.getImportInsts(c, f, objID, c.Request, modelBizID)
+	if errMsg != "" {
+		c.String(http.StatusOK, errMsg)
 		return
 	}
-	if len(errMsg) != 0 {
-		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
-			strings.Join(errMsg, ",")).Error(), common.KvMap{"err": errMsg})
-		c.String(http.StatusOK, string(msg))
-		return
-	}
-	if err != nil {
-		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
-			"").Error(), nil)
-		c.String(http.StatusOK, string(msg))
-		return
-	}
-
-	logics.ConvAttrOption(attrItems)
 
 	params := map[string]interface{}{objID: map[string]interface{}{"attr": attrItems}}
 
@@ -138,10 +115,38 @@ func (s *Service) ImportObject(c *gin.Context) {
 	if err != nil {
 		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed,
 			"").Error(), nil)
-		c.String(http.StatusOK, string(msg))
+		c.String(http.StatusOK, msg)
 		return
 	}
 	c.JSON(http.StatusOK, result)
+}
+
+// getImportInsts get import insts
+func (s *Service) getImportInsts(c *gin.Context, f *xlsx.File, objID string, req *http.Request,
+	modelBizID int64) (map[int]map[string]interface{}, string){
+
+	language := webCommon.GetLanguageByHTTPRequest(c)
+	defLang := s.Language.CreateDefaultCCLanguageIf(language)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
+
+	attrItems, errMsg, err := s.Logics.GetImportInsts(c, f, objID, req, 3, false, defLang, modelBizID)
+	if err != nil {
+		return nil, getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
+			"").Error(), nil)
+	}
+	if len(errMsg) != 0 {
+		return nil, getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
+			strings.Join(errMsg, ",")).Error(), common.KvMap{"err": errMsg})
+	}
+	if len(attrItems) == 0 {
+		return nil, getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
+			"").Error(), nil)
+	}
+
+	logics.ConvAttrOption(attrItems)
+
+	return attrItems, ""
+
 }
 
 func setExcelSubTitle(row *xlsx.Row) *xlsx.Row {

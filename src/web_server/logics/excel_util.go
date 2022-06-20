@@ -67,7 +67,8 @@ func getCustomFields(filterFields []string, customFieldsStr string) []string {
 }
 
 // checkExcelHeader check whether invalid fields exists in header and return headers
-func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, isCheckHeader bool, defLang lang.DefaultCCLanguageIf) (map[int]string, error) {
+func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, isCheckHeader bool,
+	defLang lang.DefaultCCLanguageIf) (map[int]string, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// rowLen := len(sheet.Rows[headerRow-1].Cells)
@@ -94,11 +95,33 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 		}
 		ret[index] = strName
 	}
+
+	indexNameMap := make(map[string]struct{}, 0)
+	// 校验字段唯一标识是否重复
+	for k, v := range ret {
+		if k == 0 {
+			continue
+		}
+		if _, ok := indexNameMap[v]; !ok {
+			indexNameMap[v] = struct{}{}
+		} else {
+			return nil, fmt.Errorf("导入的Excel数据，%s字段唯一标识重复", v)
+		}
+	}
+
+	// 校验模型字段唯一标识和Excel表头字段唯一标识是否一致，如果不一致，提示无法导入，请修改为正确的唯一标识
+	for unique := range indexNameMap {
+		if _, ok := fields[unique]; !ok {
+			return nil, fmt.Errorf("导入的Excel数据，%s字段唯一标识不存在", unique)
+		}
+	}
+
 	// valid excel three row is instance property fields,
 	// excel three row  values  exceeding 1/2 does not appear in the field array,
 	// indicating that the third line of the excel template was deleted
 	if len(errCells) > len(sheet.Rows[headerRow-1].Cells)/2 && true == isCheckHeader {
-		blog.Errorf("err:%s, no found fields %s, rid:%s", defLang.Language("web_import_field_not_found"), strings.Join(errCells, ","), rid)
+		blog.Errorf("err:%s, no found fields %s, rid:%s", defLang.Language("web_import_field_not_found"),
+			strings.Join(errCells, ","), rid)
 		return ret, errors.New(defLang.Language("web_import_field_not_found"))
 	}
 	return ret, nil
