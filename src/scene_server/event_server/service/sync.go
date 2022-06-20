@@ -13,7 +13,8 @@
 package service
 
 import (
-	"encoding/json"
+	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -24,12 +25,11 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/sync/hostidentifier"
 
 	"github.com/tidwall/gjson"
 )
-
-const hostIdentifierTaskKeyPrefix = "host_identifier:task:"
 
 // SyncHostIdentifier sync host identifier, add hostInfo message to redis fail host list
 func (s *Service) SyncHostIdentifier(ctx *rest.Contexts) {
@@ -200,7 +200,7 @@ func (s *Service) PushHostIdentifier(ctx *rest.Contexts) {
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
 	hostIDArray := new(metadata.HostIDArray)
-	if err := ctx.DecodeInto(&hostIDArray); err != nil {
+	if err := ctx.DecodeInto(hostIDArray); err != nil {
 		blog.Errorf("decode request body err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -213,7 +213,7 @@ func (s *Service) PushHostIdentifier(ctx *rest.Contexts) {
 	}
 
 	if auth.EnableAuthorize() {
-		if err := s.haveAuthority(ctx.Kit, hostIDArray.HostIDs); err != nil {
+		if err := s.authByHostIDs(ctx.Kit, hostIDArray.HostIDs); err != nil {
 			ctx.RespAutoError(err)
 			return
 		}
@@ -231,99 +231,90 @@ func (s *Service) PushHostIdentifier(ctx *rest.Contexts) {
 		return
 	}
 
-	key := hostIdentifierTaskKeyPrefix + task.TaskID
-	if err := s.cache.Set(ctx.Kit.Ctx, key, task, time.Minute*30).Err(); err != nil {
-		blog.Errorf("set key: %s to redis err: %v, rid: %s", key, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	ctx.RespEntity(&metadata.SyncIdentifierResult{
 		TaskID: task.TaskID,
 	})
 }
 
-// GetHostIdentifierPushResult get host identifier push result
-func (s *Service) GetHostIdentifierPushResult(ctx *rest.Contexts) {
-	if s.SyncData == nil {
-		blog.Errorf("get host identifier push result disabled, rid: %s", ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrEventSyncHostIdentifierDisabled))
-		return
+func (s *Service) authByHostIDs(kit *rest.Kit, hostIDs []int64) error {
+	cond := &metadata.HostModuleRelationRequest{
+		HostIDArr: hostIDs,
+		Fields:    []string{common.BKAppIDField, common.BKHostIDField},
 	}
-
-	option := new(metadata.GetTaskResultOption)
-	if err := ctx.DecodeInto(&option); err != nil {
-		blog.Errorf("decode request body err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	rawErr := option.Validate()
-	if rawErr.ErrCode != 0 {
-		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
-		return
-	}
-
-	key := hostIdentifierTaskKeyPrefix + option.TaskID
-	taskStr, err := s.cache.Get(ctx.Kit.Ctx, key).Result()
+	result, err := s.engine.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, cond)
 	if err != nil {
-		ctx.RespAutoError(err)
-		return
+		blog.Errorf("http do error, input: %v, err: %v, rid: %s", cond, err, kit.Rid)
+		return err
 	}
 
-	task := new(hostidentifier.Task)
-	if err := json.Unmarshal([]byte(taskStr), task); err != nil {
-		blog.Errorf("Unmarshal task error, task: %s, err: %v, rid: %s", taskStr, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	resultMap, err := s.SyncData.GetTaskExecutionResultMap(task)
+	resourcePoolBusinessID, err := s.getResourcePoolBusinessID(kit)
 	if err != nil {
-		ctx.RespAutoError(err)
-		return
+		blog.Errorf("get resource pool business id failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
 
-	hostIDs := make([]int64, 0)
-	for _, host := range task.HostInfos {
-		hostIDs = append(hostIDs, host.HostID)
-	}
-
-	if auth.EnableAuthorize() {
-		if err := s.haveAuthority(ctx.Kit, hostIDs); err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
-	}
-
-	failIDs := make([]int64, 0)
-	successIDs := make([]int64, 0)
-	pendingIDs := make([]int64, 0)
-
-	for _, hostInfo := range task.HostInfos {
-		key := hostidentifier.HostKey(strconv.FormatInt(hostInfo.CloudID, 10), hostInfo.HostInnerIP)
-		result, exist := resultMap[key]
-		if !exist {
-			pendingIDs = append(pendingIDs, hostInfo.HostID)
+	businessIDs := make([]int64, 0)
+	resourcePoolHostIDs := make([]int64, 0)
+	for _, host := range result.Info {
+		if host.AppID == resourcePoolBusinessID {
+			resourcePoolHostIDs = append(resourcePoolHostIDs, host.HostID)
 			continue
 		}
 
-		code := gjson.Get(result, "error_code").Int()
-		if code == common.CCSuccess {
-			successIDs = append(successIDs, hostInfo.HostID)
-			continue
-		}
-
-		if code == hostidentifier.Handling {
-			pendingIDs = append(pendingIDs, hostInfo.HostID)
-			continue
-		}
-
-		failIDs = append(failIDs, hostInfo.HostID)
+		businessIDs = append(businessIDs, host.AppID)
 	}
 
-	ctx.RespEntity(metadata.HostIdentifierTaskResult{
-		SuccessList: successIDs,
-		FailedList:  failIDs,
-		PendingList: pendingIDs,
-	})
+	if len(businessIDs) != 0 {
+		err = s.AuthManager.AuthorizeByBusinessID(kit.Ctx, kit.Header, meta.ViewBusinessResource, businessIDs...)
+		if err != nil {
+			blog.Errorf("authorize businesses failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+	}
+
+	if len(resourcePoolHostIDs) != 0 {
+		err = s.AuthManager.AuthorizeByHostsIDs(kit.Ctx, kit.Header, meta.Update, resourcePoolHostIDs...)
+		if err != nil {
+			blog.Errorf("authorize host ids failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) getResourcePoolBusinessID(kit *rest.Kit) (int64, error) {
+	query := &metadata.QueryCondition{
+		Fields: []string{common.BKAppIDField, common.BkSupplierAccount},
+		Condition: map[string]interface{}{
+			"default": 1,
+		},
+	}
+
+	result, err := s.engine.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp,
+		query)
+	if err != nil {
+		blog.Errorf("get biz by query failed, err: %v, rid: %s", err, kit.Rid)
+		return 0, err
+	}
+
+	supplier := util.GetOwnerID(kit.Header)
+	for _, biz := range result.Info {
+		if supplier != biz[common.BkSupplierAccount].(string) {
+			continue
+		}
+
+		if !biz.Exists(common.BKAppIDField) {
+			// this can not be happen normally.
+			return 0, errors.New("can not find resource pool business id")
+		}
+
+		bizID, err := biz.Int64(common.BKAppIDField)
+		if err != nil {
+			return 0, fmt.Errorf("get resource pool biz id failed, err: %v", err)
+		}
+		return bizID, nil
+	}
+
+	return 0, errors.New("can not find resource pool business id")
 }
