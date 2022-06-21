@@ -1266,6 +1266,10 @@ common:
     ## 采集数据后能够缓存的队列长度，设置范围为1～1000, 默认为100
     ##
     queueSize: 100
+    ## @param common.monitor.pluginPath Monitor plugin path
+    ## 设置需要挂载到pod里的路径地址，以此能够访问到gsecmdlinePath和domainSocketPath指定路径的二进制
+    ##
+    pluginPath:
     ## @param common.monitor.gsecmdlinePath Monitor plugin gsecmdbline path
     ## 采集数据用的gsecmdline命令绝对路径，默认版本需要大于等于2.0.2 ，默认路径：/usr/local/gse/plugins/bin/gsecmdline
     ##

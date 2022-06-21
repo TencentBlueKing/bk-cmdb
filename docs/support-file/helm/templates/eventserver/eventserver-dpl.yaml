@@ -76,6 +76,10 @@ spec:
         - containerPort: {{ .Values.eventserver.port }}
 
         volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
           - name: cert
             mountPath: {{ .Values.certPath }}
         {{- if .Values.eventserver.configDir }}
@@ -84,6 +88,11 @@ spec:
         {{- end }}
 
       volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
         - name: cert
           configMap:
             name: {{ template "bk-cmdb.fullname" . }}-certs
