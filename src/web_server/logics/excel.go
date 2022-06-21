@@ -414,6 +414,7 @@ func GetExcelData(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Prop
 	if err != nil {
 		return nil, nil, err
 	}
+
 	hosts := make(map[int]map[string]interface{})
 	index := headerRow
 	if firstRow != 0 {
