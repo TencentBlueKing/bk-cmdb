@@ -17,36 +17,14 @@
 
 package metadata
 
-import (
-	"configcenter/src/common"
-	"configcenter/src/common/errors"
-)
-
 // SyncIdentifierResult sync host identifier result
 type SyncIdentifierResult struct {
-	TaskID string `json:"task_id"`
+	TaskID    string          `json:"task_id"`
+	HostInfos []HostBriefInfo `json:"host_infos"`
 }
 
-// HostIdentifierTaskResult sync host identifier task result
-type HostIdentifierTaskResult struct {
-	SuccessList []int64 `json:"success_list"`
-	FailedList  []int64 `json:"failed_list"`
-	PendingList []int64 `json:"pending_list"`
-}
-
-// GetTaskResultOption get sync host identifier task result option
-type GetTaskResultOption struct {
-	TaskID string `json:"task_id"`
-}
-
-// Validate validate GetTaskResultOption
-func (h *GetTaskResultOption) Validate() (rawError errors.RawErrorInfo) {
-	if h.TaskID == "" {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"task_id"},
-		}
-	}
-
-	return errors.RawErrorInfo{}
+// HostBriefInfo get sync host identifier task result option
+type HostBriefInfo struct {
+	HostID         int64  `json:"bk_host_id"`
+	Identification string `json:"identification"`
 }

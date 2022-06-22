@@ -231,8 +231,19 @@ func (s *Service) PushHostIdentifier(ctx *rest.Contexts) {
 		return
 	}
 
+	hostInfos := make([]metadata.HostBriefInfo, 0)
+	for _, host := range task.HostInfos {
+		key := hostidentifier.HostKey(strconv.FormatInt(host.CloudID, 10), host.HostInnerIP)
+		info := metadata.HostBriefInfo{
+			HostID:         host.HostID,
+			Identification: key,
+		}
+		hostInfos = append(hostInfos, info)
+	}
+
 	ctx.RespEntity(&metadata.SyncIdentifierResult{
-		TaskID: task.TaskID,
+		TaskID:    task.TaskID,
+		HostInfos: hostInfos,
 	})
 }
 
