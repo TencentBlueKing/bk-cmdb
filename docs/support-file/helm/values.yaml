@@ -1718,7 +1718,7 @@ monstache:
   ##
   image:
     repository: blueking/cmdb_monstache
-    tag: v1.0.0
+    tag: v2.0.0
   ## @param monstache.replicas Number of monstache replicas to deploy
   ##
   replicas: 1
