@@ -3,14 +3,14 @@
   import router from '@/router/index.js'
   import store from '@/store'
   import RouterQuery from '@/router/query'
-  import { getValue } from '@/utils/tools'
-  import ServiceTemplateConfig from './children/template-config.vue'
-  import ServiceTemplateInstance from './children/template-instance.vue'
+  import SetTemplateConfig from './children/template-config.vue'
+  import SetTemplateInstance from './children/template-instance.vue'
+  import { getTemplateSyncStatus } from './children/use-template-data.js'
 
   export default defineComponent({
     components: {
-      ServiceTemplateConfig,
-      ServiceTemplateInstance
+      SetTemplateConfig,
+      SetTemplateInstance
     },
     setup() {
       const $tab = ref(null)
@@ -25,17 +25,7 @@
 
       const checkSyncStatus = async () => {
         try {
-          const { service_templates: syncStatusList = [] } = await store.dispatch('serviceTemplate/getServiceTemplateSyncStatus', {
-            bizId: bizId.value,
-            params: {
-              is_partial: true,
-              service_template_ids: [templateId.value]
-            },
-            config: {
-              cancelPrevious: true
-            }
-          })
-          const needSync = getValue(syncStatusList, '0.need_sync')
+          const needSync = await getTemplateSyncStatus(bizId.value, templateId.value)
           const tabHeader = $tab.value.$el.querySelector('.bk-tab-label-item.is-last')
           if (needSync) {
             tabHeader.classList.add('has-tips')
@@ -83,14 +73,14 @@
       type="unborder-card"
       ref="$tab"
       :active.sync="active">
-      <bk-tab-panel :label="$t('服务模板配置')" name="config">
-        <service-template-config
+      <bk-tab-panel :label="$t('集群模板配置')" name="config">
+        <set-template-config
           @sync-change="handleSyncStatusChange"
           @active-change="handleActiveChange">
-        </service-template-config>
+        </set-template-config>
       </bk-tab-panel>
-      <bk-tab-panel :label="$t('服务模板实例')" name="instance">
-        <service-template-instance :active="active === 'instance'"></service-template-instance>
+      <bk-tab-panel :label="$t('集群模板实例')" render-directive="if" name="instance">
+        <set-template-instance :template-id="templateId"></set-template-instance>
       </bk-tab-panel>
     </bk-tab>
   </div>
@@ -106,6 +96,7 @@
       }
       .bk-tab-section {
         padding: 0;
+        height: calc(100% - 50px);
       }
     }
     ::v-deep .bk-tab-label-item.has-tips:before {

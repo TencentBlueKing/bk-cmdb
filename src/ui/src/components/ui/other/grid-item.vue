@@ -43,7 +43,7 @@
 
 <template>
   <div :class="['cmdb-grid-item', { required }, direction, mode]"
-    :style="{ '--label-width': `${labelContainerWidth}`, '--flex-direction': direction, '--gap': itemGap }">
+    :style="{ '--label-width': `${labelContainerWidth}`, '--flex-direction': direction, '--item-gap': itemGap }">
     <div class="item-label">
       <slot name="label">
         <div class="label-text" v-bk-overflow-tips>{{label}}</div>
@@ -80,7 +80,7 @@
       align-items: center;
       flex-direction: var(--flex-direction, row);
       .item-label {
-        margin-right: calc(var(--itemGap, 8px) / 2);
+        margin-right: calc(var(--item-gap, 8px) / 2);
         .label-text {
           flex: 1;
           text-align: right;
@@ -92,7 +92,7 @@
       }
 
       .item-content {
-        margin-left: calc(var(--itemGap, 8px) / 2);
+        margin-left: calc(var(--item-gap, 8px) / 2);
       }
     }
 
@@ -100,37 +100,37 @@
       flex-direction: var(--flex-direction, column);
 
       &:not(.row) .item-label {
-        margin-bottom: calc(var(--itemGap, 8px) / 2);
+        margin-bottom: calc(var(--item-gap, 8px) / 2);
       }
 
       &:not(.row) .item-content {
-        margin-top: calc(var(--itemGap, 8px) / 2);
+        margin-top: calc(var(--item-gap, 8px) / 2);
       }
 
       &.row {
         align-items: center;
 
         .item-label {
-          margin-right: calc(var(--itemGap, 8px) / 2);
+          margin-right: calc(var(--item-gap, 8px) / 2);
           .label-text {
             flex: 1;
             text-align: right;
           }
         }
         .item-content {
-          margin-left: calc(var(--itemGap, 8px) / 2);
+          margin-left: calc(var(--item-gap, 8px) / 2);
         }
       }
+    }
 
-      &.required {
-          .label-text {
-            &::after {
-              content: "*";
-              color: #ff5656;
-              padding: 0 2px;
-            }
-          }
+    &.required {
+      .label-text {
+        &::after {
+          content: "*";
+          color: #ff5656;
+          padding: 0 2px;
         }
       }
+    }
   }
 </style>

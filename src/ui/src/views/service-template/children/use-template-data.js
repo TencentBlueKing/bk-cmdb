@@ -41,7 +41,7 @@ export default async (bizId, templateId, isFetchTemplate) => {
   const templateState = {
     basic: {},
     configProperties: [],
-    propertyConfigMap: {},
+    propertyConfig: {},
     processList: []
   }
 
@@ -87,8 +87,8 @@ export default async (bizId, templateId, isFetchTemplate) => {
       // 已配置属性列表
       templateState.configProperties.push(property)
 
-      // 属性配置值map
-      templateState.propertyConfigMap[property.bk_property_id] = item.bk_property_value
+      // 属性配置值键值对
+      templateState.propertyConfig[property.id] = item.bk_property_value
     })
   }
 

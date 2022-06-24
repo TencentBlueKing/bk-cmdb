@@ -57,9 +57,9 @@
         type: Boolean,
         default: false
       },
-      required: {
+      mustRequired: {
         type: Boolean,
-        default: false
+        default: null
       },
       events: {
         type: Object,
@@ -80,7 +80,9 @@
     methods: {
       getValidateRules(property) {
         const rules = this.$tools.getValidateRules(property)
-        rules.required = this.required
+        if (this.mustRequired !== null) {
+          rules.required = this.mustRequired
+        }
         return rules
       },
       getPlaceholder(property) {

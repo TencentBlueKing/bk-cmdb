@@ -126,7 +126,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
-  import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+  import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_SET_TEMPLATE_SYNC_HISTORY } from '@/dictionary/menu-symbol'
   import InstanceStatusColumn from '@/views/service-template/children/instance-status-column.vue'
   import { Polling } from '@/utils/polling'
   /**
@@ -480,7 +480,7 @@
       },
       routeToHistory() {
         this.$routerActions.redirect({
-          name: 'syncHistory',
+          name: MENU_BUSINESS_SET_TEMPLATE_SYNC_HISTORY,
           params: {
             templateId: this.templateId
           },
@@ -501,6 +501,7 @@
 
 <style lang="scss" scoped>
     .template-instance-layout {
+        padding: 0 20px;
         height: 100%;
     }
     .instance-empty {

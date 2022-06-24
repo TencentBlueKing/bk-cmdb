@@ -89,8 +89,15 @@
       serviceTemplateSelector,
       serviceTemplateInfo
     },
-    /* eslint-disable-next-line */
-    props: ['mode', 'templateId'],
+    props: {
+      mode: {
+        type: String,
+        required: true
+      },
+      templateId: {
+        type: Number
+      }
+    },
     data() {
       return {
         templateName: this.$t('模板集群名称'),
@@ -273,13 +280,14 @@
     $iconDisabledColor: #D8D8D8;
     .template-tree {
         padding: 10px 0 10px 20px;
-        border: 1px solid #C4C6CC;
-        background-color: #fff;
+        border: 1px dashed #C4C6CC;
+        background-color: #FAFBFD;
         max-height: calc(100vh - 330px);
+        max-width: 960px;
         @include scrollbar-y;
         &:not(.view) {
             .node-child:hover {
-                background-color: rgba(240,241,245, .6);
+                background-color: rgba(240, 241, 245, .6);
                 .child-name {
                     color: $highlightColor;
                 }

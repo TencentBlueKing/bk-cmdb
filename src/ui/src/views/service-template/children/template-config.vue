@@ -88,7 +88,7 @@
           processProperties,
           processPropertyGroup,
           basic,
-          propertyConfigMap,
+          propertyConfig,
           processList,
           primaryCategories,
           secCategories
@@ -108,7 +108,7 @@
 
         state.basic = basic
         state.basic.primaryCategoryCopy = basic.primaryCategory
-        state.propertyConfig = propertyConfigMap
+        state.propertyConfig = propertyConfig
         state.processList = processList
 
         store.commit('setTitle', `${t('模板详情')}【${state.basic.templateName}】`)
@@ -312,7 +312,11 @@
         const link = createElement('bk-link', {
           slot: 'link',
           props: { theme: 'primary' },
-          on: { click: handleToSyncInstance }
+          on: {
+            click() {
+              emit('active-change', 'instance')
+            }
+          }
         }, t('同步功能'))
 
         const message = createElement('i18n', {
@@ -325,9 +329,6 @@
 
         $success(message)
         emit('sync-change')
-      }
-      const handleToSyncInstance = () => {
-        emit('active-change', 'instance')
       }
 
       const saveProcessAfter = () => {
@@ -352,7 +353,7 @@
           }
           await serviceTemplateService.updateProperty(data)
 
-          state.propertyConfig[property.bk_property_id] = value
+          state.propertyConfig[property.id] = value
 
           showSyncInstanceTips('成功更新模板，您可以通过XXX')
         } finally {
@@ -369,7 +370,7 @@
         }
         await serviceTemplateService.deleteProperty(data)
 
-        del(state.propertyConfig, property.bk_property_id)
+        del(state.propertyConfig, property.id)
 
         showSyncInstanceTips('成功更新模板，您可以通过XXX')
       }
@@ -484,12 +485,15 @@
           name: MENU_BUSINESS_SERVICE_TEMPLATE_EDIT,
           params: {
             templateId: templateId.value
-          }
+          },
+          history: true
         })
       }
 
       return {
         ...toRefs(state),
+        bizId,
+        templateId,
         auth,
         loading,
         editState,
@@ -524,174 +528,197 @@
 </script>
 
 <template>
-  <div class="template-config" v-bkloading="{ isLoading: loading }">
-    <div class="form-group">
-      <cmdb-collapse :label="$t('基础信息')" arrow-type="filled">
-        <grid-layout mode="detail" :min-width="460" :max-width="560" class="form-content">
-          <grid-item
-            :label="$t('模板名称')"
-            :label-width="160"
-            required
-            :class="['cmdb-form-item', { 'is-error': errors.has('templateName') }]">
-            <div class="editable-content">
-              <div
-                :class="['basic-value', { 'is-loading': loadingState.includes(basicProperties.templateName) }]"
-                v-if="basicProperties.templateName !== editState.property">
-                {{basic.templateName}}
-              </div>
-              <template v-if="!loadingState.includes(basicProperties.templateName)">
-                <cmdb-auth
-                  v-show="basicProperties.templateName !== editState.property"
-                  tag="i"
-                  class="icon-cc-edit-shape property-edit-button"
-                  :auth="auth"
-                  @click="setEditState(basicProperties.templateName)">
-                </cmdb-auth>
-                <div class="property-form" v-if="basicProperties.templateName === editState.property">
-                  <bk-input type="text"
-                    ref="$templateName"
-                    name="templateName"
-                    :placeholder="$t('模板名称将作为实例化后的模块名')"
-                    v-model.trim="editState.value"
-                    :data-vv-name="'templateName'"
-                    v-validate="'required|businessTopoInstNames|length:256'"
-                    @enter="handleSaveName"
-                    @blur="handleSaveName">
-                  </bk-input>
-                  <p class="form-error">{{errors.first('templateName')}}</p>
+  <cmdb-sticky-layout class="details-sticky-layout">
+    <div class="template-config" v-bkloading="{ isLoading: loading }">
+      <div class="form-group">
+        <cmdb-collapse :label="$t('基础信息')" arrow-type="filled">
+          <grid-layout mode="detail" :min-width="360" :max-width="560" class="form-content">
+            <grid-item
+              :label="$t('模板名称')"
+              :label-width="160"
+              :class="['cmdb-form-item', { 'is-error': errors.has('templateName') }]">
+              <div class="editable-content">
+                <div
+                  :class="['basic-value', { 'is-loading': loadingState.includes(basicProperties.templateName) }]"
+                  v-if="basicProperties.templateName !== editState.property">
+                  {{basic.templateName}}
                 </div>
-              </template>
-            </div>
-          </grid-item>
-          <grid-item
-            label="服务分类"
-            direction="row"
-            :label-width="160"
-            required>
-            <div class="editable-content">
-              <div
-                :class="['basic-value', { 'is-loading': loadingState.includes(basicProperties.categorty) }]"
-                v-if="basicProperties.categorty !== editState.property">
-                {{serviceCategory}}
+                <template v-if="!loadingState.includes(basicProperties.templateName)">
+                  <cmdb-auth
+                    v-show="basicProperties.templateName !== editState.property"
+                    tag="i"
+                    class="icon-cc-edit-shape property-edit-button"
+                    :auth="auth"
+                    @click="setEditState(basicProperties.templateName)">
+                  </cmdb-auth>
+                  <div class="property-form" v-if="basicProperties.templateName === editState.property">
+                    <bk-input type="text"
+                      ref="$templateName"
+                      name="templateName"
+                      :placeholder="$t('模板名称将作为实例化后的模块名')"
+                      v-model.trim="editState.value"
+                      :data-vv-name="'templateName'"
+                      v-validate="'required|businessTopoInstNames|length:256'"
+                      @enter="handleSaveName"
+                      @blur="handleSaveName">
+                    </bk-input>
+                    <p class="form-error">{{errors.first('templateName')}}</p>
+                  </div>
+                </template>
               </div>
-              <template v-if="!loadingState.includes(basicProperties.categorty)">
-                <cmdb-auth
-                  v-show="basicProperties.categorty !== editState.property"
-                  tag="i"
-                  class="icon-cc-edit-shape property-edit-button"
-                  :auth="auth"
-                  @click="setEditState(basicProperties.categorty)">
-                </cmdb-auth>
-                <div class="category-container"
-                  v-if="basicProperties.categorty === editState.property"
-                  v-click-outside="{
-                    handler: handleCategoryClickOutside,
-                    middleware: categoryClickOutsideMiddleware
-                  }">
-                  <div :class="['category-item', 'cmdb-form-item', { 'is-error': errors.has('primaryCategory') }]">
-                    <cmdb-selector
-                      display-key="displayName"
-                      :placeholder="$t('请选择一级分类')"
-                      :searchable="true"
-                      :auto-select="false"
-                      :list="primaryCategories"
-                      :popover-options="{
-                        boundary: 'window'
-                      }"
-                      name="primaryCategory"
-                      v-validate="'required'"
-                      v-model="basic.primaryCategory"
-                      @change="handleChangePrimaryCategory">
-                      <template #default="{ name, id }">
-                        <div class="bk-option-content-default" :title="`${name}（#${id}）`">
-                          <div class="bk-option-name medium-font">
-                            {{name}}<span class="category-id">（#{{id}}）</span>
-                          </div>
-                        </div>
-                      </template>
-                    </cmdb-selector>
-                    <p class="form-error">{{errors.first('primaryCategory')}}</p>
-                  </div>
-                  <div class="category-item" :class="['cmdb-form-item', { 'is-error': errors.has('secCategory') }]">
-                    <cmdb-selector
-                      ref="$secCategory"
-                      display-key="displayName"
-                      :placeholder="$t('请选择二级分类')"
-                      :searchable="true"
-                      :auto-select="false"
-                      :list="currentSecCategories"
-                      name="secCategory"
-                      v-validate="'required'"
-                      v-model="editState.value"
-                      @change="handleChangeSecCategory">
-                      <template #default="{ name, id }">
-                        <div class="bk-option-content-default" :title="`${name}（#${id}）`">
-                          <div class="bk-option-name medium-font">
-                            {{name}}<span class="category-id">（#{{id}}）</span>
-                          </div>
-                        </div>
-                      </template>
-                    </cmdb-selector>
-                    <p class="form-error">{{errors.first('secCategory')}}</p>
-                  </div>
+            </grid-item>
+            <grid-item
+              label="服务分类"
+              direction="row"
+              :label-width="160">
+              <div class="editable-content">
+                <div
+                  :class="['basic-value', { 'is-loading': loadingState.includes(basicProperties.categorty) }]"
+                  v-if="basicProperties.categorty !== editState.property">
+                  {{serviceCategory}}
                 </div>
-              </template>
+                <template v-if="!loadingState.includes(basicProperties.categorty)">
+                  <cmdb-auth
+                    v-show="basicProperties.categorty !== editState.property"
+                    tag="i"
+                    class="icon-cc-edit-shape property-edit-button"
+                    :auth="auth"
+                    @click="setEditState(basicProperties.categorty)">
+                  </cmdb-auth>
+                  <div class="category-container"
+                    v-if="basicProperties.categorty === editState.property"
+                    v-click-outside="{
+                      handler: handleCategoryClickOutside,
+                      middleware: categoryClickOutsideMiddleware
+                    }">
+                    <div :class="['category-item', 'cmdb-form-item', { 'is-error': errors.has('primaryCategory') }]">
+                      <cmdb-selector
+                        display-key="displayName"
+                        :placeholder="$t('请选择一级分类')"
+                        :searchable="true"
+                        :auto-select="false"
+                        :list="primaryCategories"
+                        :popover-options="{
+                          boundary: 'window'
+                        }"
+                        name="primaryCategory"
+                        v-validate="'required'"
+                        v-model="basic.primaryCategory"
+                        @change="handleChangePrimaryCategory">
+                        <template #default="{ name, id }">
+                          <div class="bk-option-content-default" :title="`${name}（#${id}）`">
+                            <div class="bk-option-name medium-font">
+                              {{name}}<span class="category-id">（#{{id}}）</span>
+                            </div>
+                          </div>
+                        </template>
+                      </cmdb-selector>
+                      <p class="form-error">{{errors.first('primaryCategory')}}</p>
+                    </div>
+                    <div class="category-item" :class="['cmdb-form-item', { 'is-error': errors.has('secCategory') }]">
+                      <cmdb-selector
+                        ref="$secCategory"
+                        display-key="displayName"
+                        :placeholder="$t('请选择二级分类')"
+                        :searchable="true"
+                        :auto-select="false"
+                        :list="currentSecCategories"
+                        name="secCategory"
+                        v-validate="'required'"
+                        v-model="editState.value"
+                        @change="handleChangeSecCategory">
+                        <template #default="{ name, id }">
+                          <div class="bk-option-content-default" :title="`${name}（#${id}）`">
+                            <div class="bk-option-name medium-font">
+                              {{name}}<span class="category-id">（#{{id}}）</span>
+                            </div>
+                          </div>
+                        </template>
+                      </cmdb-selector>
+                      <p class="form-error">{{errors.first('secCategory')}}</p>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </grid-item>
+          </grid-layout>
+        </cmdb-collapse>
+      </div>
+      <div class="form-group">
+        <cmdb-collapse label="属性设置" arrow-type="filled">
+          <div class="form-content">
+            <property-config-details v-if="hasPropertyConfig"
+              :instance="propertyConfig"
+              :properties="moduleProperties"
+              :auth="auth"
+              :loading-state="propertyConfigLoadingState"
+              @save="handleSavePropertyConfig"
+              @del="handleDelPropertyConfig">
+            </property-config-details>
+            <div class="property-config-empty" v-else-if="!loading">
+              <i class="icon icon-cc-tips"></i>
+              <cmdb-auth :auth="auth">
+                <template #default="{ disabled }">
+                  <i18n path="当前模板未配置提示">
+                    <template #link>
+                      <bk-link
+                        theme="primary"
+                        :disabled="disabled"
+                        class="link"
+                        @click="handleGoToEdit">
+                        {{$t('立即配置')}}
+                      </bk-link>
+                    </template>
+                  </i18n>
+                </template>
+              </cmdb-auth>
             </div>
-          </grid-item>
-        </grid-layout>
-      </cmdb-collapse>
-    </div>
-    <div class="form-group">
-      <cmdb-collapse label="属性设置" arrow-type="filled">
-        <div class="form-content">
-          <property-config-details v-if="hasPropertyConfig"
-            :instance="propertyConfig"
-            :properties="moduleProperties"
-            :auth="auth"
-            :loading-state="propertyConfigLoadingState"
-            @save="handleSavePropertyConfig"
-            @del="handleDelPropertyConfig">
-          </property-config-details>
-          <div class="property-config-empty" v-else-if="!loading">
-            <i class="icon icon-cc-tips"></i>
-            <i18n path="当前模板未配置提示">
-              <template #link>
-                <bk-link theme="primary" class="link" @click="handleGoToEdit">{{$t('立即配置')}}</bk-link>
-              </template>
-            </i18n>
           </div>
-        </div>
-      </cmdb-collapse>
-    </div>
-    <div class="form-group">
-      <cmdb-collapse label="服务进程" arrow-type="filled">
-        <div class="form-content">
-          <div class="process-create-container">
-            <cmdb-auth :auth="auth">
-              <bk-button slot-scope="{ disabled }" v-test-id="'createProcess'"
-                class="create-btn"
-                theme="default"
-                :disabled="disabled"
-                @click="handleCreateProcess">
-                <i class="bk-icon icon-plus"></i>
-                <span>{{$t('新建进程')}}</span>
-              </bk-button>
-            </cmdb-auth>
-            <span class="create-tips">{{$t('新建进程提示')}}</span>
+        </cmdb-collapse>
+      </div>
+      <div class="form-group">
+        <cmdb-collapse label="服务进程" arrow-type="filled">
+          <div class="form-content">
+            <div class="process-create-container">
+              <cmdb-auth :auth="auth">
+                <bk-button slot-scope="{ disabled }" v-test-id="'createProcess'"
+                  class="create-btn"
+                  theme="default"
+                  :disabled="disabled"
+                  @click="handleCreateProcess">
+                  <i class="bk-icon icon-plus"></i>
+                  <span>{{$t('新建进程')}}</span>
+                </bk-button>
+              </cmdb-auth>
+              <span class="create-tips">{{$t('新建进程提示')}}</span>
+            </div>
+            <process-table
+              v-if="processList.length"
+              :loading="$loading([templateDetailRequestId, requestIds.processList])"
+              :properties="processProperties"
+              :auth="auth"
+              :show-operation="true"
+              @on-edit="handleUpdateProcess"
+              @on-delete="handleDeleteProcess"
+              :list="processList">
+            </process-table>
           </div>
-          <process-table
-            v-if="processList.length"
-            :loading="$loading([templateDetailRequestId, requestIds.processList])"
-            :properties="processProperties"
-            :auth="auth"
-            :show-operation="true"
-            @on-edit="handleUpdateProcess"
-            @on-delete="handleDeleteProcess"
-            :list="processList">
-          </process-table>
-        </div>
-      </cmdb-collapse>
+        </cmdb-collapse>
+      </div>
     </div>
+    <template #footer="{ sticky }">
+      <div :class="['layout-footer', { 'is-sticky': sticky }]">
+        <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_TEMPLATE, relation: [bizId, templateId] }">
+          <bk-button
+            theme="primary"
+            slot-scope="{ disabled }"
+            :disabled="disabled"
+            @click="handleGoToEdit">
+            {{$t('编辑')}}
+          </bk-button>
+        </cmdb-auth>
+      </div>
+    </template>
 
     <bk-sideslider
       v-transfer-dom
@@ -716,123 +743,154 @@
         </process-form>
       </template>
     </bk-sideslider>
-  </div>
+  </cmdb-sticky-layout>
 </template>
 
 <style lang="scss" scoped>
-  .template-config {
-    padding: 15px 20px 0 20px;
+.template-config {
+  padding: 15px 20px 0 20px;
 
-    .form-group {
-      background: #fff;
-      box-shadow: 0 2px 4px 0 rgba(25, 25, 41, 0.05);
-      border-radius: 2px;
-      padding: 16px 24px;
+  .form-group {
+    background: #fff;
+    box-shadow: 0 2px 4px 0 rgba(25, 25, 41, 0.05);
+    border-radius: 2px;
+    padding: 16px 24px;
 
-      & + .form-group {
-        margin-top: 16px;
+    & + .form-group {
+      margin-top: 16px;
+    }
+  }
+
+  .form-content {
+    padding: 24px 90px 12px 90px;
+
+    .property-form {
+      width: 100%;
+    }
+  }
+
+  .editable-content {
+    display: flex;
+    align-items: center;
+
+    &:hover {
+      .property-edit-button {
+        display: block;
       }
     }
 
-    .form-content {
-      padding: 24px 90px 12px 90px;
-    }
-
-    .editable-content {
-      display: flex;
-      align-items: center;
+    .property-edit-button {
+      display: none;
+      font-size: 16px;
+      margin-left: 8px;
+      cursor: pointer;
 
       &:hover {
-        .property-edit-button {
-          display: block;
-        }
+        color: $primaryColor;
+      }
+    }
+  }
+
+  .basic-value {
+    font-size: 12px;
+
+    &.is-loading {
+      font-size: 0;
+      &:before {
+        content: "";
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin: 2px 0;
+        background-image: url("@/assets/images/icon/loading.svg");
+      }
+    }
+  }
+
+  .category-container {
+    display: flex;
+    width: 100%;
+    .category-item {
+      flex: 1;
+
+      .bk-select {
+        width: 100%;
       }
 
-      .property-edit-button {
-        display: none;
-        font-size: 16px;
+      & + .category-item {
         margin-left: 8px;
-        cursor: pointer;
-
-        &:hover {
-          color: $primaryColor;
-        }
       }
     }
+  }
 
-    .basic-value {
-      font-size: 12px;
+  .process-create-container {
+    display: flex;
+    align-items: center;
+    padding-bottom: 14px;
 
-      &.is-loading {
-        font-size: 0;
-        &:before {
-          content: "";
-          display: inline-block;
-          width: 16px;
-          height: 16px;
-          margin: 2px 0;
-          background-image: url("@/assets/images/icon/loading.svg");
-        }
-      }
-    }
-
-    .category-container {
-      display: flex;
-      width: 100%;
-      .category-item {
-        flex: 1;
-
-        .bk-select {
-          width: 100%;
-        }
-
-        & + .category-item {
-          margin-left: 8px;
-        }
-      }
-    }
-
-    .process-create-container {
-      display: flex;
-      align-items: center;
-      padding-bottom: 14px;
-
-      .create-tips {
-        color: #63656E;
-        font-size: 12px;
-        padding-left: 8px;
-      }
-    }
-
-    .property-config-tips {
+    .create-tips {
       color: #63656E;
       font-size: 12px;
       padding-left: 8px;
     }
+  }
 
-    .property-config-empty {
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      .icon {
-        font-size: 14px;
-        margin-right: 4px;
-      }
-      .link {
-        line-height: normal;
-        vertical-align: unset;
-        ::v-deep .bk-link-text {
-          font-size: 12px;
-        }
+  .property-config-tips {
+    color: #63656E;
+    font-size: 12px;
+    padding-left: 8px;
+  }
+
+  .property-config-empty {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    .icon {
+      font-size: 14px;
+      margin-right: 4px;
+    }
+    .link {
+      line-height: normal;
+      vertical-align: unset;
+      ::v-deep .bk-link-text {
+        font-size: 12px;
       }
     }
-
   }
-  .process-success-message {
-    .bk-link {
-      vertical-align: baseline;
+
+}
+.process-success-message {
+  .bk-link {
+    vertical-align: baseline;
+  }
+}
+
+.details-sticky-layout {
+  height: 100%;
+  overflow-y: auto;
+
+  .layout-footer {
+    display: flex;
+    align-items: center;
+    height: 52px;
+    padding: 0 20px;
+    margin-top: 8px;
+    .bk-button {
+      min-width: 86px;
+
+      & + .bk-button {
+        margin-left: 8px;
+      }
+    }
+    .auth-box + .bk-button {
+      margin-left: 8px;
+    }
+    &.is-sticky {
+      background-color: #fff;
+      border-top: 1px solid $borderColor;
     }
   }
+}
 </style>
 <style lang="scss">
   .confirm-edit-service-template-name-infobox {

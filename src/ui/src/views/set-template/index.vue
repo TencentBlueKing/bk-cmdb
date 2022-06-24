@@ -95,7 +95,13 @@
 
 <script>
   import { mapGetters } from 'vuex'
-  import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
+  import {
+    MENU_BUSINESS_HOST_AND_SERVICE,
+    MENU_BUSINESS_SERVICE_TEMPLATE,
+    MENU_BUSINESS_SET_TEMPLATE_CREATE,
+    MENU_BUSINESS_SET_TEMPLATE_DETAILS
+  } from '@/dictionary/menu-symbol'
+
   export default {
     data() {
       return {
@@ -170,23 +176,7 @@
       },
       handleCreate() {
         this.$routerActions.redirect({
-          name: 'setTemplateConfig',
-          params: {
-            mode: 'create'
-          },
-          history: true
-        })
-      },
-      handleEdit(row) {
-        this.$routerActions.redirect({
-          name: 'setTemplateConfig',
-          params: {
-            mode: 'view',
-            templateId: row.id
-          },
-          query: {
-            edit: 1
-          },
+          name: MENU_BUSINESS_SET_TEMPLATE_CREATE,
           history: true
         })
       },
@@ -230,9 +220,8 @@
           return false
         }
         this.$routerActions.redirect({
-          name: 'setTemplateConfig',
+          name: MENU_BUSINESS_SET_TEMPLATE_DETAILS,
           params: {
-            mode: 'view',
             templateId: row.id
           },
           history: true

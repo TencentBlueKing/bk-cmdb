@@ -99,7 +99,7 @@
           secCategories,
           basic,
           configProperties,
-          propertyConfigMap,
+          propertyConfig,
           processList
         } = await useTemplateData(bizId.value, templateId.value, isEdit.value)
 
@@ -129,7 +129,7 @@
           store.commit('serviceProcess/setLocalProcessTemplate', formatProcessSubmitData(processList))
 
           // 属性设置
-          state.propertyConfig = propertyConfigMap
+          state.propertyConfig = propertyConfig
           state.configProperties = configProperties
 
           if (!props.isClone) {
@@ -297,7 +297,7 @@
   <div class="management-form">
     <div class="form-group">
       <cmdb-collapse :label="$t('基础信息')" arrow-type="filled">
-        <grid-layout mode="form" :min-width="460" :max-width="560" class="form-content">
+        <grid-layout mode="form" :min-width="360" :max-width="560" class="form-content">
           <grid-item
             :label="$t('模板名称')"
             direction="row"

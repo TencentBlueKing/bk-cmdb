@@ -35,7 +35,7 @@
 </template>
 
 <script>
-  import { MENU_BUSINESS_SET_TOPOLOGY } from '@/dictionary/menu-symbol'
+  import { MENU_BUSINESS_SET_TOPOLOGY, MENU_BUSINESS_SET_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
   export default {
     name: 'set-template-info',
     props: {
@@ -118,15 +118,9 @@
           this.$error(error.message)
         }
         this.$routerActions.redirect({
-          name: 'setTemplateConfig',
+          name: MENU_BUSINESS_SET_TEMPLATE_DETAILS,
           params: {
-            mode: 'view',
-            templateId: this.instance.set_template_id,
-            moduleId: this.selectedNode.data.bk_inst_id
-          },
-          query: {
-            node: this.selectedNode.id,
-            tab: 'nodeInfo'
+            templateId: this.instance.set_template_id
           },
           history: true
         })

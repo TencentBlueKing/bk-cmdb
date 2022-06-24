@@ -16,6 +16,7 @@
     :value="value"
     :disabled="disabled"
     @blur="handleInput"
+    @enter="handleEnter"
     @change="handleChange">
     <template slot="append" v-if="unit">
       <div class="unit" :title="unit">{{unit}}</div>
@@ -77,6 +78,9 @@
       },
       handleChange() {
         this.$emit('on-change', this.localValue)
+      },
+      handleEnter() {
+        this.$emit('enter', this.localValue)
       },
       focus() {
         this.$el.querySelector('input').focus()

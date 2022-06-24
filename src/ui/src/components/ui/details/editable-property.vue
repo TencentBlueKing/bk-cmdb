@@ -31,7 +31,11 @@
         type: Object,
         default: () => ({})
       },
-      actionActive: Boolean
+      actionActive: Boolean,
+      mustRequired: {
+        type: Boolean,
+        default: null
+      }
     },
     setup(props, { emit }) {
       const $propertyFormElement = ref(null)
@@ -54,7 +58,7 @@
 
         let eventName = 'change'
 
-        if (['singlechar', 'longchar'].includes(type)) {
+        if (['singlechar', 'int', 'float'].includes(type)) {
           eventName = 'enter'
         }
 
@@ -133,6 +137,7 @@
           v-click-outside="{
             handler: handleClickOutSide
           }"
+          :must-required="mustRequired"
           :property="property"
           :events="confirmEvents"
           v-model="editState.value">
@@ -150,7 +155,7 @@
     &:hover,
     &.action-active {
       .property-actions {
-        display: block;
+        visibility: visible;
       }
     }
 
@@ -172,7 +177,10 @@
     }
 
     .property-actions {
-      display: none;
+      display: flex;
+      align-items: center;
+      visibility: hidden; // 避免位移
+      margin-left: 12px;
     }
 
     .property-form {
@@ -182,7 +190,10 @@
     .property-edit-button {
       cursor: pointer;
       font-size: 16px;
-      margin-left: 8px;
+
+      & + .property-edit-button {
+        margin-left: 4px;
+      }
 
       &:hover {
         color: $primaryColor;

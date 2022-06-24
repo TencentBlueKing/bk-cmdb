@@ -59,7 +59,7 @@
       const configList = computed(() => {
         const propertyIds = Object.keys(props.instance)
         return propertyIds.map(id => ({
-          property: props.properties.find((item: IProperty) => item.bk_property_id === id),
+          property: props.properties.find((item: IProperty) => item.id === Number(id)),
           value: props.instance[id]
         }))
       })
@@ -82,12 +82,18 @@
         emit('del', property)
       }
 
+      const isRequired = (property) => {
+        const excludeType = ['bool']
+        return !excludeType.includes(property.bk_property_type)
+      }
+
       return {
         configList,
         editState,
         isLoading,
         handleConfirmEdit,
-        handleConfirmDel
+        handleConfirmDel,
+        isRequired
       }
     }
   })
@@ -96,7 +102,7 @@
 <template>
   <div class="property-config-details">
     <grid-layout :min-width="360" :gap="20" class="form-content">
-      <grid-item class="form-item" required
+      <grid-item class="form-item"
         v-for="({ property, value }) in configList"
         :key="property.id"
         :label="property.bk_property_name"
@@ -105,17 +111,23 @@
           :property="property"
           :auth="auth"
           :value="value"
+          :must-required="isRequired(property)"
           :loading="isLoading(property)"
           :edit-state.sync="editState"
           @confirm="handleConfirmEdit">
           <template #more-action>
-            <bk-popconfirm
-              trigger="click"
-              :title="$t('确认删除该字段设置？')"
-              :content="$t('确认删除模板字段提示')"
-              @confirm="handleConfirmDel(property)">
-              <bk-icon type="delete" class="property-del-button" />
-            </bk-popconfirm>
+            <cmdb-auth :auth="auth" class="del-auth">
+              <template #default="{ disabled }">
+                <bk-popconfirm v-if="!disabled"
+                  trigger="click"
+                  :title="$t('确认删除该字段设置？')"
+                  :content="$t('确认删除模板字段提示')"
+                  @confirm="handleConfirmDel(property)">
+                  <bk-icon type="delete" class="property-del-button"></bk-icon>
+                </bk-popconfirm>
+                <bk-icon v-else type="delete" class="property-del-button"></bk-icon>
+              </template>
+            </cmdb-auth>
           </template>
         </editable-property>
       </grid-item>
@@ -126,11 +138,14 @@
 <style lang="scss" scoped>
   .property-del-button {
     cursor: pointer;
-    font-size: 16px;
-    margin-left: 4px;
+    font-size: 16px !important;
+    margin-left: 8px;
 
     &:hover {
       color: $primaryColor;
     }
+  }
+  .del-auth {
+    font-size: 0; // 迫使对齐
   }
 </style>

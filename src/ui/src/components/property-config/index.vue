@@ -87,9 +87,8 @@
 
       // 使用传递进来的config初始化配置，统一使用属性id作为key
       watch(() => props.config, (config) => {
-        for (const [key, value] of Object.entries(config)) {
-          const property = props.properties.find(item => item.bk_property_id === key)
-          propertyConfig.value[property.id] = value
+        for (const [id, value] of Object.entries(config)) {
+          propertyConfig.value[id] = value
         }
       })
 
@@ -183,7 +182,7 @@
               :label-width="120">
               <property-form-element
                 ref="$propertyFormElement"
-                :required="isRequired(property)"
+                :must-required="isRequired(property)"
                 :property="property"
                 v-model="propertyConfig[property.id]"
                 @change="handleChange">

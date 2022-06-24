@@ -1,12 +1,15 @@
 <script lang="ts">
   import { computed, defineComponent, ref } from '@vue/composition-api'
-  import router from '@/router/index.js'
   import { t } from '@/i18n'
-  import { $bkInfo, $success } from '@/magicbox/index.js'
+  import { $bkInfo } from '@/magicbox/index.js'
   import routerActions from '@/router/actions'
   import ManagementForm from './children/management-form.vue'
   import store from '@/store'
-  import serviceTemplateService from '@/services/service-template'
+  import setTemplateService from '@/services/set-template'
+  import {
+    MENU_BUSINESS_HOST_AND_SERVICE,
+    MENU_BUSINESS_SET_TEMPLATE
+  } from '@/dictionary/menu-symbol'
 
   export default defineComponent({
     components: {
@@ -17,24 +20,32 @@
 
       const bizId = computed(() => store.getters['objectBiz/bizId'])
 
-      const templateId = computed(() => parseInt(router.app.$route.params.templateId, 10))
-
       const loading = ref(true)
       const submitDisabled = ref(false)
 
       const requestIds = {
-        update: Symbol('update')
+        create: Symbol('create')
       }
 
-      const updateTemplate = async (formData) => {
-        const data = {
-          id: templateId.value,
-          bk_biz_id: bizId.value,
-          ...formData
-        }
-        await serviceTemplateService.update(data, { requestId: requestIds.update })
+      const createTemplate = async (formData) => {
+        const data = { bk_biz_id: bizId.value, ...formData }
 
-        $success(t('保存成功'))
+        await setTemplateService.create(data, { requestId: requestIds.create })
+
+        $bkInfo({
+          type: 'success',
+          width: 480,
+          title: t('创建成功'),
+          subTitle: t('创建集群模板成功提示'),
+          okText: t('创建集群'),
+          cancelText: t('返回列表'),
+          confirmFn: () => {
+            routerActions.redirect({ name: MENU_BUSINESS_HOST_AND_SERVICE })
+          },
+          cancelFn: () => {
+            routerActions.redirect({ name: MENU_BUSINESS_SET_TEMPLATE })
+          }
+        })
       }
 
       const handleSubmit = async () => {
@@ -44,24 +55,11 @@
         }
 
         const formData = managementForm.value.getData()
-
-        if (!formData.processes.length) {
-          $bkInfo({
-            title: t('确认提交'),
-            subTitle: t('服务模板创建没进程提示'),
-            extCls: 'bk-dialog-sub-header-center',
-            confirmFn: () => {
-              updateTemplate(formData)
-            }
-          })
-          return
-        }
-
-        updateTemplate(formData)
+        createTemplate(formData)
       }
 
       const handleCancel = () => {
-        routerActions.back()
+        routerActions.redirect({ name: MENU_BUSINESS_SET_TEMPLATE })
       }
 
       const handleDataLoaded = () => {
@@ -70,39 +68,37 @@
 
       return {
         bizId,
-        templateId,
-        managementForm,
         loading,
+        managementForm,
         submitDisabled,
         requestIds,
         handleSubmit,
-        handleCancel,
-        handleDataLoaded
+        handleDataLoaded,
+        handleCancel
       }
     }
   })
 </script>
 
 <template>
-  <cmdb-sticky-layout class="edit-layout" v-bkloading="{ isLoading: loading }">
+  <cmdb-sticky-layout class="create-layout" v-bkloading="{ isLoading: loading }">
     <div class="layout-main">
       <management-form
         ref="managementForm"
-        :data-id="templateId"
         :submit-disabled.sync="submitDisabled"
         @data-loaded="handleDataLoaded">
       </management-form>
     </div>
     <template #footer="{ sticky }">
       <div :class="['layout-footer', { 'is-sticky': sticky }]">
-        <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_TEMPLATE, relation: [bizId, templateId] }">
+        <cmdb-auth :auth="{ type: $OPERATION.C_SET_TEMPLATE, relation: [bizId] }">
           <bk-button
             theme="primary"
             slot-scope="{ disabled }"
             :disabled="disabled || submitDisabled"
-            :loading="$loading(requestIds.update)"
+            :loading="$loading(requestIds.create)"
             @click="handleSubmit">
-            {{$t('保存')}}
+            {{$t('提交')}}
           </bk-button>
         </cmdb-auth>
         <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
@@ -112,7 +108,7 @@
 </template>
 
 <style lang="scss" scoped>
-.edit-layout {
+.create-layout {
   .layout-main {
     padding: 15px 20px 0 20px;
   }

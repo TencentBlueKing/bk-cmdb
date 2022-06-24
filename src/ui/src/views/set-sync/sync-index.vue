@@ -91,7 +91,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
-  import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+  import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_SET_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
   import setInstance from './set-instance'
   export default {
     components: {
@@ -212,10 +212,9 @@
           })
           this.$success(this.$t('提交同步成功'))
           this.$routerActions.redirect({
-            name: 'setTemplateConfig',
+            name: MENU_BUSINESS_SET_TEMPLATE_DETAILS,
             params: {
-              templateId: this.setTemplateId,
-              mode: 'view'
+              templateId: this.setTemplateId
             },
             query: {
               tab: 'instance'
@@ -248,10 +247,9 @@
           })
         } else {
           this.$routerActions.redirect({
-            name: 'setTemplateConfig',
+            name: MENU_BUSINESS_SET_TEMPLATE_DETAILS,
             params: {
-              templateId: this.setTemplateId,
-              mode: 'view'
+              templateId: this.setTemplateId
             },
             query: {
               tab: 'instance'
