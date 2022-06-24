@@ -367,6 +367,12 @@ func (p *processOperation) DeleteServiceTemplate(kit *rest.Kit, serviceTemplateI
 		return err
 	}
 
+	delAttrFilter := map[string]int64{common.BKServiceTemplateIDField: template.ID}
+	if err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Delete(kit.Ctx, delAttrFilter); err != nil {
+		blog.Errorf("delete service template attr failed, filter: %+v, err: %v, rid: %s", delAttrFilter, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
+	}
+
 	deleteFilter := map[string]int64{common.BKFieldID: template.ID}
 	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Delete(kit.Ctx, deleteFilter); nil != err {
 		blog.Errorf("DeleteServiceTemplate failed, mongodb failed, table: %s, deleteFilter: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, deleteFilter, err, kit.Rid)

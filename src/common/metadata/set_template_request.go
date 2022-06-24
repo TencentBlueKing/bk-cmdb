@@ -26,6 +26,35 @@ type CreateSetTemplateOption struct {
 	ServiceTemplateIDs []int64 `field:"service_template_ids" json:"service_template_ids" bson:"service_template_ids" mapstructure:"service_template_ids"`
 }
 
+// CreateSetTempAllInfoOption create set template all info option
+type CreateSetTempAllInfoOption struct {
+	BizID              int64         `json:"bk_biz_id"`
+	Name               string        `json:"name"`
+	ServiceTemplateIDs []int64       `json:"service_template_ids"`
+	Attributes         []SetTempAttr `json:"attributes"`
+}
+
+// Validate CreateSetTempAllInfoOption
+func (c *CreateSetTempAllInfoOption) Validate() ccErr.RawErrorInfo {
+	if c.BizID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKAppIDField}}
+	}
+
+	if c.BizID < 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{common.BKAppIDField}}
+	}
+
+	if len(c.Name) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKFieldName}}
+	}
+
+	if len(c.ServiceTemplateIDs) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"service_template_ids"}}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
 type UpdateSetTemplateOption struct {
 	Name               string  `field:"name" json:"name" bson:"name"`
 	ServiceTemplateIDs []int64 `field:"service_template_ids" json:"service_template_ids" bson:"service_template_ids"`
@@ -44,6 +73,92 @@ func (option UpdateSetTemplateOption) Validate(errProxy ccErr.DefaultCCErrorIf) 
 		}
 	}
 	return "", nil
+}
+
+// UpdateSetTempAllInfoOption update set template all info option
+type UpdateSetTempAllInfoOption struct {
+	ID                 int64         `json:"id"`
+	BizID              int64         `json:"bk_biz_id"`
+	Name               string        `json:"name"`
+	ServiceTemplateIDs []int64       `json:"service_template_ids"`
+	Attributes         []SetTempAttr `json:"attributes"`
+}
+
+// Validate UpdateSetTempAllInfoOption
+func (u *UpdateSetTempAllInfoOption) Validate() ccErr.RawErrorInfo {
+	if u.ID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKFieldID}}
+	}
+
+	if u.ID < 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{common.BKFieldID}}
+	}
+
+	if u.BizID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKAppIDField}}
+	}
+
+	if u.BizID < 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{common.BKAppIDField}}
+	}
+
+	if len(u.Name) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKFieldName}}
+	}
+
+	if len(u.ServiceTemplateIDs) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"service_template_ids"}}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// GetSetTempAllInfoOption get set template all info option
+type GetSetTempAllInfoOption struct {
+	ID    int64 `json:"id"`
+	BizID int64 `json:"bk_biz_id"`
+}
+
+// Validate GetSetTempAllInfoOption
+func (c *GetSetTempAllInfoOption) Validate() ccErr.RawErrorInfo {
+	if c.ID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKFieldID},
+		}
+	}
+
+	if c.ID < 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKFieldID},
+		}
+	}
+
+	if c.BizID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
+	if c.BizID < 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// SetTempAllInfo set template all info
+type SetTempAllInfo struct {
+	ID                 int64             `json:"id"`
+	BizID              int64             `json:"bk_biz_id"`
+	Name               string            `json:"name"`
+	ServiceTemplateIDs []int64           `json:"service_template_ids"`
+	Attributes         []SetTemplateAttr `json:"attributes"`
 }
 
 type SetTemplateResult struct {
@@ -290,11 +405,53 @@ func (s *SetTempAttr) Validate() ccErr.RawErrorInfo {
 			common.BKAttributeIDField}}
 	}
 
+	if s.AttributeID < 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{
+			common.BKAttributeIDField}}
+	}
+
 	if s.PropertyValue == nil {
 		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{
 			common.BKPropertyValueField}}
 	}
 
+	return ccErr.RawErrorInfo{}
+}
+
+// CreateSetTempAttrsOption create set template attributes option
+type CreateSetTempAttrsOption struct {
+	BizID      int64         `json:"bk_biz_id"`
+	ID         int64         `json:"id"`
+	Attributes []SetTempAttr `json:"attributes"`
+}
+
+// Validate CreateSetTempAttrsOption
+func (c *CreateSetTempAttrsOption) Validate() ccErr.RawErrorInfo {
+	if c.BizID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKAppIDField}}
+	}
+
+	if c.BizID < 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{common.BKAppIDField}}
+	}
+
+	if c.ID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKFieldID}}
+	}
+
+	if c.ID < 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{common.BKFieldID}}
+	}
+
+	if len(c.Attributes) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"attributes"}}
+	}
+
+	for _, attribute := range c.Attributes {
+		if rawErr := attribute.Validate(); rawErr.ErrCode != 0 {
+			return rawErr
+		}
+	}
 	return ccErr.RawErrorInfo{}
 }
 
