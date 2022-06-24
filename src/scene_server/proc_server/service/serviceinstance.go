@@ -2024,9 +2024,30 @@ func (ps *ProcServer) syncSrvInstToAdd(kit *rest.Kit, option metadata.ServiceTem
 	return nil
 }
 
-func (ps *ProcServer) syncProcessAndSrvInstToRemove(kit *rest.Kit, removedProcIDs, removedSvrInstIDs []int64,
-	bizID int64, procInstMap map[int64]*metadata.Process, relations *metadata.MultipleProcessInstanceRelation,
-	srvInstMap map[int64]metadata.ServiceInstance) ccErr.CCErrorCoder {
+func (ps *ProcServer) syncProcessAndSrvInstToRemove(kit *rest.Kit, svcTempID int64, serviceInst *srvInstanceInfo,
+	bizID int64, procRelation *processInfo, relations *metadata.MultipleProcessInstanceRelation) ccErr.CCErrorCoder {
+
+	removedProcIDs, removedSvrInstIDs := make([]int64, 0), make([]int64, 0)
+
+	for serviceInstanceID, processes := range serviceInst.serviceInstance2ProcessMap {
+		if len(procRelation.procTemps.Info) == 0 {
+			removedSvrInstIDs = append(removedSvrInstIDs, serviceInstanceID)
+			for _, process := range processes {
+				removedProcIDs = append(removedProcIDs, process.ProcessID)
+			}
+		}
+
+		for _, process := range processes {
+			processTemplateID := procRelation.processInstanceWithTemplateMap[process.ProcessID]
+			template, exist := procRelation.processTemplateMap[processTemplateID]
+			if !exist || template.ServiceTemplateID != svcTempID {
+				// this process template has already removed form the service template,
+				// which means this process instance need to be removed from this service instance
+				removedProcIDs = append(removedProcIDs, process.ProcessID)
+				continue
+			}
+		}
+	}
 
 	audit := auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
 
@@ -2036,7 +2057,7 @@ func (ps *ProcServer) syncProcessAndSrvInstToRemove(kit *rest.Kit, removedProcID
 		genAuditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
 		removedProcesses := make([]mapstr.MapStr, len(removedProcIDs))
 		for index, procID := range removedProcIDs {
-			removedProcesses[index] = mapstr.SetValueToMapStrByTags(procInstMap[procID])
+			removedProcesses[index] = mapstr.SetValueToMapStrByTags(procRelation.procInstMap[procID])
 		}
 		if err := audit.WithProc(genAuditParam, removedProcesses, relations.Info); err != nil {
 			return err
@@ -2063,7 +2084,7 @@ func (ps *ProcServer) syncProcessAndSrvInstToRemove(kit *rest.Kit, removedProcID
 		// generate audit logs for removed service instances
 		removedSvcInsts := make([]metadata.ServiceInstance, len(removedSvrInstIDs))
 		for index, svcInstID := range removedSvrInstIDs {
-			removedSvcInsts[index] = srvInstMap[svcInstID]
+			removedSvcInsts[index] = serviceInst.srvInstMap[svcInstID]
 		}
 		audit.WithServiceInstance(removedSvcInsts)
 
@@ -2325,17 +2346,17 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 		return nil
 	}
 
-	updatedSvcInstMap, removedProcIDs, removedSvrInstIDs, err := ps.updateProcessInstance(kit,
-		syncOption.ServiceTemplateID, serviceInstanceInfo, processRelationInfo)
-	if err != nil {
-		blog.Errorf("update process instance failed, option: %+v, err: %v, rid: %s", syncOption, cErr, kit.Rid)
+	if err := ps.syncProcessAndSrvInstToRemove(kit, syncOption.ServiceTemplateID, serviceInstanceInfo, syncOption.BizID,
+		processRelationInfo, relations); err != nil {
+		blog.Errorf("sync remove process from service instance failed, option: %+v, err: %v, rid: %s", syncOption,
+			cErr, kit.Rid)
 		return err
 	}
 
-	if err := ps.syncProcessAndSrvInstToRemove(kit, removedProcIDs, removedSvrInstIDs, syncOption.BizID,
-		processRelationInfo.procInstMap, relations, serviceInstanceInfo.srvInstMap); err != nil {
-		blog.Errorf("sync remove process from service instance failed, option: %+v, err: %v, rid: %s", syncOption,
-			cErr, kit.Rid)
+	updatedSvcInstMap, err := ps.updateProcessInstance(kit, syncOption.ServiceTemplateID, serviceInstanceInfo,
+		processRelationInfo)
+	if err != nil {
+		blog.Errorf("update process instance failed, option: %+v, err: %v, rid: %s", syncOption, cErr, kit.Rid)
 		return err
 	}
 
@@ -2371,10 +2392,10 @@ func (ps *ProcServer) saveProcessLog(kit *rest.Kit, procRelation *processInfo, p
 }
 
 func (ps *ProcServer) updateProcessInstance(kit *rest.Kit, serviceTemplateId int64, serviceInst *srvInstanceInfo,
-	procRelation *processInfo) (map[int64]metadata.ServiceInstance, []int64, []int64, ccErr.CCErrorCoder) {
+	procRelation *processInfo) (map[int64]metadata.ServiceInstance, ccErr.CCErrorCoder) {
 
 	updatedSvcInstMap := make(map[int64]metadata.ServiceInstance)
-	removedProcIDs, removedSvrInstIDs, pipeline := make([]int64, 0), make([]int64, 0), make(chan bool, 10)
+	pipeline := make(chan bool, 10)
 
 	var mapLock sync.Mutex
 	var wg sync.WaitGroup
@@ -2382,10 +2403,6 @@ func (ps *ProcServer) updateProcessInstance(kit *rest.Kit, serviceTemplateId int
 
 	for serviceInstanceID, processes := range serviceInst.serviceInstance2ProcessMap {
 		if len(procRelation.procTemps.Info) == 0 {
-			removedSvrInstIDs = append(removedSvrInstIDs, serviceInstanceID)
-			for _, process := range processes {
-				removedProcIDs = append(removedProcIDs, process.ProcessID)
-			}
 			continue
 		}
 
@@ -2393,10 +2410,6 @@ func (ps *ProcServer) updateProcessInstance(kit *rest.Kit, serviceTemplateId int
 			processTemplateID := procRelation.processInstanceWithTemplateMap[process.ProcessID]
 			template, exist := procRelation.processTemplateMap[processTemplateID]
 			if !exist || template.ServiceTemplateID != serviceTemplateId {
-				// this process template has already removed form the service template,
-				// which means this process instance need to be removed from this service instance
-				removedProcIDs = append(removedProcIDs, process.ProcessID)
-
 				if _, exists := updatedSvcInstMap[serviceInstanceID]; !exists {
 					updatedSvcInstMap[serviceInstanceID] = serviceInst.srvInstMap[serviceInstanceID]
 				}
@@ -2453,20 +2466,9 @@ func (ps *ProcServer) updateProcessInstance(kit *rest.Kit, serviceTemplateId int
 
 	wg.Wait()
 	if firstErr != nil {
-		return nil, nil, nil, firstErr
+		return nil, firstErr
 	}
-	return updatedSvcInstMap, removedProcIDs, removedSvrInstIDs, nil
-}
-
-func ifChangedOrNot(rid string, template *metadata.ProcessTemplate, process *metadata.Process,
-	host map[string]interface{}) (mapstr.MapStr, bool, error) {
-	proc, changed, err := template.ExtractChangeInfo(process, host)
-	if err != nil {
-		blog.Errorf("extract process %+v change info failed, err: %v, rid: %s", process, err, rid)
-		return nil, false, err
-	}
-
-	return proc, changed, err
+	return updatedSvcInstMap, nil
 }
 
 func (ps *ProcServer) createProcessForServiceInstance(kit *rest.Kit, updateSvcInst map[int64]metadata.ServiceInstance,

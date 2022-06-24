@@ -1003,6 +1003,11 @@ func (s *Service) SyncSetTplToInst(ctx *rest.Contexts) {
 		return
 	}
 
+	if len(option.SetIDs) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "bk_set_ids"))
+		return
+	}
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		if err := s.Logics.SetTemplateOperation().SyncSetTplToInst(ctx.Kit, bizID, setTemplateID, option); err != nil {
 			blog.Errorf("SyncSetTplToInst failed, operation failed, bizID: %d, setTemplateID: %d, "+

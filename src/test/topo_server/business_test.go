@@ -249,7 +249,7 @@ var _ = Describe("business test", func() {
 	It(fmt.Sprintf("batch update business properties by condition bk_biz_id in [%s]", bizId2), func() {
 		bizID, err := strconv.ParseInt(bizId2, 10, 64)
 		Expect(err).Should(BeNil())
-		input := metadata.UpdateBizPropertyBatchParameter {
+		input := metadata.UpdateBizPropertyBatchParameter{
 			Properties: map[string]interface{}{
 				"operator": "test",
 			},
@@ -267,7 +267,7 @@ var _ = Describe("business test", func() {
 	})
 
 	It(fmt.Sprintf("batch update business properties by condition bk_biz_id in []"), func() {
-		input := metadata.UpdateBizPropertyBatchParameter {
+		input := metadata.UpdateBizPropertyBatchParameter{
 			Properties: map[string]interface{}{
 				"operator": "test",
 			},
@@ -285,24 +285,22 @@ var _ = Describe("business test", func() {
 	})
 
 	It(fmt.Sprintf("update business enable status bk_biz_id = %s", bizId2), func() {
-		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusDisabled, bizId2, header)
-		util.RegisterResponse(rsp)
+		err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusDisabled, bizIdInt,
+			header)
+		util.RegisterResponseWithRid(err, header)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
 	})
 
 	It("update nonexist business enable status diable", func() {
-		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusDisabled, "1000", header)
-		util.RegisterResponse(rsp)
-		Expect(err).Should(BeNil())
-		Expect(rsp.Result).To(Equal(false))
+		err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusDisabled, 1000, header)
+		util.RegisterResponseWithRid(err, header)
+		Expect(err).ShouldNot(BeNil())
 	})
 
 	It("update nonexist business enable status enable", func() {
-		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusEnable, "1000", header)
-		util.RegisterResponse(rsp)
-		Expect(err).Should(BeNil())
-		Expect(rsp.Result).To(Equal(false))
+		err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusEnable, 1000, header)
+		util.RegisterResponseWithRid(err, header)
+		Expect(err).ShouldNot(BeNil())
 	})
 
 	It("search business", func() {
@@ -346,10 +344,9 @@ var _ = Describe("business test", func() {
 	})
 
 	It(fmt.Sprintf("update business enable status bk_biz_id = %s enable", bizId2), func() {
-		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusEnable, bizId2, header)
-		util.RegisterResponse(rsp)
+		err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusEnable, bizIdInt, header)
+		util.RegisterResponseWithRid(err, header)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
 	})
 
 	It("search business using bk_biz_id", func() {
@@ -409,7 +406,7 @@ var _ = Describe("business test", func() {
 	It(fmt.Sprintf("delete unarchived business bk_biz_id = %s", bizId2), func() {
 		bizID, err := strconv.ParseInt(bizId2, 10, 64)
 		Expect(err).Should(BeNil())
-		input := metadata.DeleteBizParam {
+		input := metadata.DeleteBizParam{
 			BizID: []int64{bizID},
 		}
 
@@ -420,17 +417,16 @@ var _ = Describe("business test", func() {
 	})
 
 	It(fmt.Sprintf("update business disabled status bk_biz_id = %s", bizId2), func() {
-		rsp, err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusDisabled,
-			bizId2, header)
-		util.RegisterResponse(rsp)
+		err := apiServerClient.UpdateBizDataStatus(context.Background(), "0", common.DataStatusDisabled,
+			bizIdInt, header)
+		util.RegisterResponseWithRid(err, header)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
 	})
 
 	It(fmt.Sprintf("delete archived business bk_biz_id = %s", bizId2), func() {
 		bizID, err := strconv.ParseInt(bizId2, 10, 64)
 		Expect(err).Should(BeNil())
-		input := metadata.DeleteBizParam {
+		input := metadata.DeleteBizParam{
 			BizID: []int64{bizID},
 		}
 
@@ -441,7 +437,7 @@ var _ = Describe("business test", func() {
 	})
 
 	It(fmt.Sprintf("delete default business bk_biz_id = 1"), func() {
-		input := metadata.DeleteBizParam {
+		input := metadata.DeleteBizParam{
 			BizID: []int64{1},
 		}
 
@@ -452,7 +448,7 @@ var _ = Describe("business test", func() {
 	})
 
 	It(fmt.Sprintf("delete business in []"), func() {
-		input := metadata.DeleteBizParam {
+		input := metadata.DeleteBizParam{
 			BizID: make([]int64, 0),
 		}
 

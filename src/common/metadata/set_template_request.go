@@ -162,6 +162,12 @@ type SetTempAllInfo struct {
 	Attributes         []SetTemplateAttr `json:"attributes"`
 }
 
+// SetTempAllInfoResult set template all info result
+type SetTempAllInfoResult struct {
+	BaseResp
+	Data SetTempAllInfo `json:"data"`
+}
+
 type SetTemplateResult struct {
 	BaseResp
 	Data SetTemplate `field:"data" json:"data" bson:"data"`

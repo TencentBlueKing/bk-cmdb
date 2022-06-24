@@ -43,6 +43,32 @@ func (st *SetTemplate) CreateSetTemplate(ctx context.Context, header http.Header
 	return ret, nil
 }
 
+// CreateSetTemplateAllInfo create set template all info
+func (st *SetTemplate) CreateSetTemplateAllInfo(ctx context.Context, header http.Header,
+	option *metadata.CreateSetTempAllInfoOption) (int64, errors.CCErrorCoder) {
+
+	ret := new(metadata.CreateResult)
+	subPath := "/create/topo/set_template/all_info"
+
+	err := st.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("CreateSetTemplate failed, http request failed, err: %+v", err)
+		return 0, errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return 0, ret.CCError()
+	}
+
+	return ret.Data.ID, nil
+}
+
 func (st *SetTemplate) UpdateSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.UpdateSetTemplateOption) (*metadata.SetTemplateResult, errors.CCErrorCoder) {
 	ret := new(metadata.SetTemplateResult)
 	subPath := "/update/topo/set_template/%d/bk_biz_id/%d/"
@@ -64,6 +90,31 @@ func (st *SetTemplate) UpdateSetTemplate(ctx context.Context, header http.Header
 	}
 
 	return ret, nil
+}
+
+// UpdateSetTemplateAllInfo update set template all info
+func (st *SetTemplate) UpdateSetTemplateAllInfo(ctx context.Context, header http.Header,
+	option *metadata.UpdateSetTempAllInfoOption) errors.CCErrorCoder {
+
+	ret := new(metadata.BaseResp)
+	subPath := "/update/topo/set_template/all_info"
+
+	err := st.client.Put().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.CCError()
+	}
+
+	return nil
 }
 
 func (st *SetTemplate) DeleteSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.DeleteSetTemplateOption) errors.CCErrorCoder {
@@ -112,6 +163,32 @@ func (st *SetTemplate) GetSetTemplate(ctx context.Context, header http.Header, b
 	}
 
 	return ret, nil
+}
+
+// GetSetTemplateAllInfo get set template all info
+func (st *SetTemplate) GetSetTemplateAllInfo(ctx context.Context, header http.Header,
+	option *metadata.GetSetTempAllInfoOption) (*metadata.SetTempAllInfo, errors.CCErrorCoder) {
+
+	ret := new(metadata.SetTempAllInfoResult)
+	subPath := "/find/topo/set_template/all_info"
+
+	err := st.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+
+	return &ret.Data, nil
 }
 
 func (st *SetTemplate) ListSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateOption) (*metadata.MultipleSetTemplateResult, errors.CCErrorCoder) {
@@ -237,4 +314,104 @@ func (st *SetTemplate) DiffSetTplWithInst(ctx context.Context, header http.Heade
 	}
 
 	return &ret.Data, nil
+}
+
+// SyncSetTplToInst sync set template to instance
+func (st *SetTemplate) SyncSetTplToInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64,
+	option *metadata.SyncSetTplToInstOption) errors.CCErrorCoder {
+
+	ret := new(metadata.BaseResp)
+	subPath := "/updatemany/topo/set_template/%d/bk_biz_id/%d/sync_to_instances"
+
+	err := st.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath, setTemplateID, bizID).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.CCError()
+	}
+
+	return nil
+}
+
+// UpdateSetTemplateAttr update set template attribute
+func (st *SetTemplate) UpdateSetTemplateAttr(ctx context.Context, header http.Header,
+	option *metadata.UpdateSetTempAttrOption) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/update/topo/set_template/attribute"
+
+	err := st.client.Put().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteSetTemplateAttr delete set template attribute
+func (st *SetTemplate) DeleteSetTemplateAttr(ctx context.Context, header http.Header,
+	option *metadata.DeleteSetTempAttrOption) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/delete/topo/set_template/attribute"
+
+	err := st.client.Delete().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ListSetTemplateAttr list set template attribute
+func (st *SetTemplate) ListSetTemplateAttr(ctx context.Context, header http.Header,
+	option *metadata.ListSetTempAttrOption) (*metadata.SetTempAttrData, errors.CCErrorCoder) {
+
+	resp := new(metadata.SetTemplateAttributeResult)
+	subPath := "/findmany/topo/set_template/attribute"
+
+	err := st.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
 }

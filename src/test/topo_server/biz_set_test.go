@@ -96,11 +96,10 @@ var _ = Describe("business set test", func() {
 			common.BKAppIDField:    bizID1,
 			common.BKParentIDField: mainlineInstID,
 		}
-		setResp, err := instClient.CreateSet(ctx, strconv.FormatInt(bizID1, 10), header, set)
+		setResp, err := instClient.CreateSet(ctx, bizID1, header, set)
 		util.RegisterResponseWithRid(setResp, header)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(setResp.Result).To(Equal(true))
-		setID, err := commonutil.GetInt64ByInterface(setResp.Data[common.BKSetIDField])
+		setID, err := commonutil.GetInt64ByInterface(setResp[common.BKSetIDField])
 		Expect(err).NotTo(HaveOccurred())
 
 		module := map[string]interface{}{
@@ -108,11 +107,9 @@ var _ = Describe("business set test", func() {
 			common.BKAppIDField:      bizID1,
 			common.BKParentIDField:   setID,
 		}
-		moduleResp, err := instClient.CreateModule(ctx, strconv.FormatInt(bizID1, 10), strconv.FormatInt(setID, 10),
-			header, module)
+		moduleResp, err := instClient.CreateModule(ctx, bizID1, setID, header, module)
 		util.RegisterResponseWithRid(moduleResp, header)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(moduleResp.Result).To(Equal(true))
 
 		createBizSetOpt := metadata.CreateBizSetRequest{
 			BizSetAttr: map[string]interface{}{

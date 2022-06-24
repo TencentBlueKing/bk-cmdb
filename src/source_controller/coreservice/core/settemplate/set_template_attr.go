@@ -41,14 +41,15 @@ func (p *setTemplateOperation) validateSetTemplate(kit *rest.Kit, bizID int64,
 		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKSetTemplateIDField)
 	}
 
-	setTempFilter := mapstr.MapStr{common.BKAppIDField: bizID, common.BKFieldID: setTemplateID}
-	setTempCnt, err := mongodb.Client().Table(common.BKTableNameSetTemplate).Find(setTempFilter).Count(kit.Ctx)
+	filter := mapstr.MapStr{common.BKAppIDField: bizID, common.BKFieldID: setTemplateID}
+	cnt, err := mongodb.Client().Table(common.BKTableNameSetTemplate).Find(filter).Count(kit.Ctx)
 	if err != nil {
-		blog.Errorf("count set template failed, cond: %+v, err: %v, rid: %s", setTempFilter, err, kit.Rid)
+		blog.Errorf("count set template failed, cond: %+v, err: %v, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
-	if setTempCnt == 0 {
+	if cnt == 0 {
+		blog.Errorf("set template is invalid, cond: %+v, cnt: %d, err: %v, rid: %s", filter, cnt, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
 	}
 
@@ -135,7 +136,7 @@ func (p *setTemplateOperation) validateSetTemplateAttrExist(kit *rest.Kit, bizID
 	}
 
 	if count != uint64(len(attrIDs)) {
-		blog.Errorf("can not find all set template attributes, rid: %s", kit.Rid)
+		blog.Errorf("can't find all set template attributes, filter: %+v, count: %d, rid: %s", filter, count, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "attributes")
 	}
 
