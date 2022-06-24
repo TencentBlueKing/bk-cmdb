@@ -304,6 +304,7 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition) (cnt
 		return 0, err
 	}
 
+	// delete template attribute when delete model attribute
 	if err := m.cleanAttrTemplateRelation(kit.Ctx, kit.SupplierAccount, resultAttrs); err != nil {
 		blog.Errorf("delete the relation between attributes and templates failed, attr: %v, err: %v, rid: %s",
 			resultAttrs, err, kit.Rid)
@@ -498,6 +499,10 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 
 func (m *modelAttribute) cleanAttrTemplateRelation(ctx context.Context, ownerID string,
 	attrs []metadata.Attribute) error {
+
+	if len(attrs) == 0 {
+		return nil
+	}
 
 	attrMap := make(map[string][]int64)
 	for _, attr := range attrs {
