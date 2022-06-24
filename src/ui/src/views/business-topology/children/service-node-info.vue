@@ -78,6 +78,34 @@
           :instance="instance"
           @change="handleServiceCategoryChange">
         </form-service-category>
+
+        <!-- 配置字段不允许修改，提示跳转到模板 -->
+        <template v-for="config in propertyConfigList" #[config.property.bk_property_id]>
+          <bk-popover
+            class="config-form-tips"
+            ext-cls="config-uneditable-popover"
+            :key="config.property.bk_property_id">
+            <component
+              :is="`cmdb-form-${config.property.bk_property_type}`"
+              :class="['form-element-item', config.property.bk_property_type]"
+              :unit="config.property.unit"
+              :options="config.property.option || []"
+              :placeholder="getPlaceholder(config.property)"
+              :auto-check="false"
+              :disabled="true"
+              v-model.trim="config.instance_value">
+            </component>
+            <template slot="content">
+              <i18n path="模板定义不可修改提示">
+                <template #link>
+                  <bk-link theme="primary" @click="handleRedirect" class="goto-link">
+                    {{$t(withTemplate ? '跳转服务模板' : '跳转集群模板')}}
+                  </bk-link>
+                </template>
+              </i18n>
+            </template>
+          </bk-popover>
+        </template>
       </cmdb-form>
     </template>
   </div>
@@ -86,9 +114,14 @@
 <script>
   import has from 'has'
   import debounce from 'lodash.debounce'
+  import Utils from '@/components/filters/utils'
   import NodeExtraInfo from './node-extra-info'
   import FormServiceCategory from './form-service-category'
   import instanceService from '@/service/instance/instance'
+  import serviceTemplateService from '@/services/service-template'
+  import setTemplateService from '@/services/set-template'
+  import { MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS, MENU_BUSINESS_SET_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
+
   export default {
     components: {
       NodeExtraInfo,
@@ -112,6 +145,7 @@
           serviceCategory: '',
           setTemplateName: this.$t('无')
         },
+        propertyConfigList: [],
         refresh: null,
         permission: null
       }
@@ -183,6 +217,15 @@
       editable() {
         const editable = this.$store.state.businessHost.blueKingEditable
         return this.isBlueking ? this.isBlueking && editable : true
+      },
+      templateId() {
+        if (this.withTemplate) {
+          return this.instance.service_template_id
+        }
+        if (this.withSetTemplate) {
+          return this.instance.set_template_id
+        }
+        return null
       }
     },
     watch: {
@@ -239,6 +282,10 @@
       async getNodeDetails() {
         this.type = 'details'
         await this.getInstance()
+
+        // 获取节点的模板属性配置
+        this.getPropertyConfig()
+
         this.disabledProperties = this.selectedNode.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
       },
       async getProperties() {
@@ -341,6 +388,29 @@
         })
         return instance
       },
+      async getPropertyConfig() {
+        if (!this.withTemplate && !this.withSetTemplate) {
+          return
+        }
+
+        const templateService = this.isModuleNode ? serviceTemplateService : setTemplateService
+
+        const { attributes } = await templateService.findProperty({
+          id: this.templateId,
+          bk_biz_id: this.business
+        })
+
+        // 在配置数据中注入属性对象和实例对应的字段值
+        const values = this.$tools.getInstFormValues(this.properties, this.instance, false)
+        this.propertyConfigList = attributes.map((item) => {
+          const property = this.properties.find(prop => prop.id === item.bk_attribute_id) || {}
+          return {
+            property,
+            instance_value: values[property.bk_property_id],
+            ...item
+          }
+        })
+      },
       insertNodeIdProperty(properties) {
         if (properties.find(property => property.bk_property_id === this.nodePrimaryPropertyId)) {
           return
@@ -378,6 +448,19 @@
         return instanceService.findOne({
           bk_obj_id: this.modelId,
           bk_inst_id: this.selectedNode.data.bk_inst_id
+        })
+      },
+      getPlaceholder(property) {
+        return Utils.getPlaceholder(property)
+      },
+      handleRedirect() {
+        this.$routerActions.redirect({
+          name: this.withTemplate ? MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS : MENU_BUSINESS_SET_TEMPLATE_DETAILS,
+          params: {
+            bizId: this.business,
+            templateId: this.templateId
+          },
+          history: true
         })
       },
       handleEdit() {
@@ -592,7 +675,7 @@
                 max-width: 554px !important;
             }
             .form-options {
-                padding: 10px 0 0 36px;
+                padding: 10px 0 10px 56px;
             }
         }
     }
@@ -600,7 +683,25 @@
         min-width: 76px;
         margin-right: 4px;
     }
-    .btn-delete{
+    .btn-delete {
         min-width: 76px;
     }
+
+    .config-form-tips {
+      display: block;
+      width: 100%;
+      ::v-deep .bk-tooltip-ref {
+        display: block;
+      }
+    }
+</style>
+<style lang="scss">
+  .config-uneditable-popover {
+    .goto-link {
+      vertical-align: unset;
+      .bk-link-text {
+        font-size: 12px;
+      }
+    }
+  }
 </style>

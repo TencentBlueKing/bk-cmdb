@@ -1622,6 +1622,8 @@
     "确认删除该字段设置？": "Sure to delete this field setting?",
     "确认删除模板字段提示": "After deletion, the template will no longer contain this field, and the inventory implementation needs to take effect synchronously",
     "编辑模板": "Edit template",
-    "当前模板未配置提示": "当前模板未配置, {link}",
-    "立即配置": "立即配置"
+    "当前模板未配置提示": "The current template is not configured, {link}",
+    "立即配置": "configure now",
+    "模板定义不可修改提示": "Uneditable，defined in template, {link}",
+    "跳转集群模板": "view in template"
 }

@@ -27,10 +27,14 @@ const updateProperty = (data, config) => http.put('update/topo/set_template/attr
 // 删除属性配置
 const deleteProperty = (data, config = {}) => http.delete('delete/topo/set_template/attribute', { ...config, data })
 
+// 查询属性配置
+const findProperty = (data, config) => http.post('findmany/topo/set_template/attribute', data, config)
+
 export default {
   create,
   update,
   getFullOne,
   updateProperty,
-  deleteProperty
+  deleteProperty,
+  findProperty
 }

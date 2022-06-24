@@ -109,6 +109,9 @@ const updateProperty = (data, config) => http.put('update/proc/service_template/
 // 删除属性配置
 const deleteProperty = (data, config = {}) => http.delete('delete/proc/service_template/attribute', { ...config, data })
 
+// 查询属性配置
+const findProperty = (data, config) => http.post('findmany/proc/service_template/attribute', data, config)
+
 export const CONFIG_MODE = {
   MODULE: 'module',
   TEMPLATE: 'template'
@@ -122,5 +125,6 @@ export default {
   update,
   getFullOne,
   updateProperty,
-  deleteProperty
+  deleteProperty,
+  findProperty
 }
