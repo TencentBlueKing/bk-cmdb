@@ -395,7 +395,9 @@ func (p *process) GetProcessTemplate(ctx context.Context, h http.Header, templat
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, property map[string]interface{}) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
+func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64,
+	property map[string]interface{}) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
+
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := "/update/process/process_template/%d"
 
@@ -408,7 +410,6 @@ func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, temp
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("UpdateProcessTemplate failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
 	if ret.CCError() != nil {
@@ -884,6 +885,31 @@ func (p *process) ReconstructServiceInstanceName(ctx context.Context, h http.Hea
 	}
 
 	return nil
+}
+
+// CreateServiceTemplateAttrs create service template attributes, returns the attribute ids
+func (p *process) CreateServiceTemplateAttrs(ctx context.Context, h http.Header,
+	option *metadata.CreateSvcTempAttrsOption) ([]int64, errors.CCErrorCoder) {
+
+	resp := new(metadata.CreateBatchResult)
+	subPath := "/createmany/process/service_template_attribute"
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return nil, resp.CCError()
+	}
+
+	return resp.Data.IDs, nil
 }
 
 // UpdateServiceTemplateAttribute update service template attribute

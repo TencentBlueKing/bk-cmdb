@@ -18,6 +18,8 @@
 package process
 
 import (
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -57,24 +59,36 @@ func (p *processOperation) validateServiceTemplate(kit *rest.Kit, bizID int64,
 func (p *processOperation) validateServiceTemplateAttrs(kit *rest.Kit, bizID int64, serviceTemplateID int64,
 	attrs []metadata.SvcTempAttr) errors.CCErrorCoder {
 
+	if len(attrs) == 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "attributes")
+	}
+
 	// validate service template
 	if err := p.validateServiceTemplate(kit, bizID, serviceTemplateID); err != nil {
 		return err
 	}
 
-	if len(attrs) == 0 {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "attributes")
-	}
-
-	// get module attributes
+	// get module attributes that are editable, excludes name and category fields specified in template
 	attrIDs := make([]int64, 0)
-	for _, item := range attrs {
-		attrIDs = append(attrIDs, item.AttributeID)
+	attrUniqueMap := make(map[int64]struct{})
+	for _, attr := range attrs {
+		if rawErr := attr.Validate(); rawErr.ErrCode != 0 {
+			return rawErr.ToCCError(kit.CCError)
+		}
+		if _, exists := attrUniqueMap[attr.AttributeID]; exists {
+			blog.Errorf("service template attribute %d is duplicated, rid: %s", attr.AttributeID, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAttributeIDField)
+		}
+		attrUniqueMap[attr.AttributeID] = struct{}{}
+		attrIDs = append(attrIDs, attr.AttributeID)
 	}
 
 	filter := map[string]interface{}{
 		common.BKFieldID:    map[string]interface{}{common.BKDBIN: attrIDs},
 		common.BKObjIDField: common.BKInnerObjIDModule,
+		common.BKPropertyIDField: map[string]interface{}{common.BKDBNIN: []string{common.BKModuleNameField,
+			common.BKServiceCategoryIDField}},
+		metadata.AttributeFieldIsEditable: true,
 	}
 	util.AddModelBizIDCondition(filter, bizID)
 
@@ -132,6 +146,46 @@ func (p *processOperation) validateServiceTemplateAttrExist(kit *rest.Kit, bizID
 	}
 
 	return nil
+}
+
+// CreateServiceTemplateAttrs create service template attributes
+func (p *processOperation) CreateServiceTemplateAttrs(kit *rest.Kit, opt *metadata.CreateSvcTempAttrsOption) ([]uint64,
+	errors.CCErrorCoder) {
+
+	if err := p.validateServiceTemplateAttrs(kit, opt.BizID, opt.ServiceTemplateID, opt.Attributes); err != nil {
+		return nil, err
+	}
+
+	ids, err := mongodb.Client().NextSequences(kit.Ctx, common.BKTableNameServiceTemplateAttr, len(opt.Attributes))
+	if err != nil {
+		blog.Errorf("get service template attribute ids failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	now := time.Now()
+
+	svcTempAttrs := make([]metadata.ServiceTemplateAttr, len(opt.Attributes))
+	for idx, attr := range opt.Attributes {
+		svcTempAttrs[idx] = metadata.ServiceTemplateAttr{
+			ID:                int64(ids[idx]),
+			BizID:             opt.BizID,
+			ServiceTemplateID: opt.ServiceTemplateID,
+			AttributeID:       attr.AttributeID,
+			PropertyValue:     attr.PropertyValue,
+			Creator:           kit.User,
+			Modifier:          kit.User,
+			CreateTime:        now,
+			LastTime:          now,
+			SupplierAccount:   kit.SupplierAccount,
+		}
+	}
+
+	if err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Insert(kit.Ctx, svcTempAttrs); err != nil {
+		blog.Errorf("create service template attributes(%+v) failed, err: %v, rid: %s", svcTempAttrs, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
+	}
+
+	return ids, nil
 }
 
 // UpdateServTempAttr update service template attribute
