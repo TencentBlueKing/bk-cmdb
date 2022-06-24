@@ -68,7 +68,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if err := s.iam.RegisterSystem(s.ctx, param.Host, models); err != nil {
+	if err := s.iam.Register(s.ctx, param.Host, models, rid); err != nil {
 		blog.Errorf("init iam failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
 			Msg: defErr.CCErrorf(common.CCErrCommInitAuthCenterFailed, err.Error()),
