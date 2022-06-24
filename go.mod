@@ -10,7 +10,7 @@ require (
 	github.com/apache/thrift v0.12.0
 	github.com/aws/aws-sdk-go v1.44.14
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
-	github.com/chalice-1831/zip v0.0.0-20220322091300-0c572680005b
+	github.com/alexmullins/zip v0.0.0-20180717182244-4affb64b04d0
 	github.com/coccyx/timeparser v0.0.0-20161029180942-5644122b3667
 	github.com/emicklei/go-restful/v3 v3.7.4
 	github.com/fsnotify/fsnotify v1.5.4
