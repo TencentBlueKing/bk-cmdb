@@ -643,12 +643,12 @@ func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Proper
 	)
 	pipeline := make(chan bool, 10)
 	hostInfo := make([]mapstr.MapStr, 0)
-	start := 0
-	hostCount := input.ExportCond.Page.Limit
+	start := input.ExportCond.Page.Start
+	hostCount := input.ExportCond.Page.Limit + input.ExportCond.Page.Start
 	for {
 		pipeline <- true
 		wg.Add(1)
-		go func() {
+		go func(start int) {
 			defer func() {
 				wg.Done()
 				<-pipeline
@@ -657,6 +657,7 @@ func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Proper
 			input.ExportCond.Page.Limit = common.BKMaxExportLimit
 			input.ExportCond.Page.Start = start
 			rwLock.Unlock()
+
 			hostData, err := s.Logics.GetHostData(appID, input.HostIDArr, hostFields, input.ExportCond, header, defLang)
 			if err != nil {
 				blog.Errorf("get host info failed, err: %v, rid: %s", err, rid)
@@ -667,7 +668,7 @@ func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Proper
 			rwLock.Lock()
 			hostInfo = append(hostInfo, hostData...)
 			rwLock.Unlock()
-		}()
+		}(start)
 
 		start += common.BKMaxExportLimit
 		if start >= hostCount {
