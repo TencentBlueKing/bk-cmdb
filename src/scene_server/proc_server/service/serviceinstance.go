@@ -13,9 +13,7 @@
 package service
 
 import (
-	"context"
 	"errors"
-	"net/http"
 	"reflect"
 	"strconv"
 	"sync"
@@ -864,12 +862,12 @@ func (ps *ProcServer) DiffServiceTemplateGeneral(ctx *rest.Contexts) {
 
 	cErrRaw := option.ServiceTemplateOptionValidate()
 	if cErrRaw.ErrCode != 0 {
-		blog.Errorf("parameters is invalid, option: %+v, err is %v, rid: %s", *option, cErrRaw, rid)
+		blog.Errorf("parameters is invalid, option: %+v, err: %v, rid: %s", option, cErrRaw, rid)
 		ctx.RespAutoError(cErrRaw.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
-	processTemplates, cErr := ps.getProcessTemplate(ctx.Kit, option.BizID, option.ServiceTemplateId)
+	processTemplates, cErr := ps.getProcessTemplate(ctx.Kit, option.BizID, option.ServiceTemplateID)
 	if cErr != nil {
 		blog.Errorf("get process templates failed, option: %v, err %v, rid: %s", option, cErr, rid)
 		err := ctx.Kit.CCError.CCErrorf(common.CCErrProcGetProcessTemplatesFailed, cErr.Error())
@@ -884,7 +882,7 @@ func (ps *ProcServer) DiffServiceTemplateGeneral(ctx *rest.Contexts) {
 	}
 
 	// module detail
-	modules, err := ps.getModuleMapStr(ctx.Kit, option.BizID, option.ServiceTemplateId, []int64{option.ModuleID},
+	modules, err := ps.getModuleMapStr(ctx.Kit, option.BizID, option.ServiceTemplateID, []int64{option.ModuleID},
 		[]string{})
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrGetModule, err.Error()))
@@ -893,12 +891,59 @@ func (ps *ProcServer) DiffServiceTemplateGeneral(ctx *rest.Contexts) {
 
 	result, cErr := ps.serviceTemplateGeneralDiff(ctx, option, modules[0], pTemplateMap)
 	if cErr != nil {
-		blog.Errorf("calc service template diff failed, option: %+v, err: %v, rid: %s", *option, cErr, rid)
+		blog.Errorf("calc service template diff failed, option: %+v, err: %v, rid: %s", option, cErr, rid)
 		ctx.RespAutoError(cErr)
 		return
 	}
+	uniqueResult := uniqueGeneralResult(result)
 
-	ctx.RespEntity(result)
+	ctx.RespEntity(uniqueResult)
+}
+
+func uniqueGeneralResult(origin *metadata.ServiceTemplateGeneralDiff) *metadata.ServiceTemplateGeneralDiff {
+
+	if origin == nil {
+		return &metadata.ServiceTemplateGeneralDiff{}
+	}
+
+	addMap := make(map[int64]metadata.ProcessGeneralInfo)
+	changedMap := make(map[int64]metadata.ProcessGeneralInfo)
+	removedMap := make(map[string]metadata.ProcessGeneralInfo)
+
+	for _, add := range origin.Added {
+		if _, exist := addMap[add.Id]; !exist {
+			addMap[add.Id] = add
+		}
+	}
+
+	for _, changed := range origin.Changed {
+		if _, exist := changedMap[changed.Id]; !exist {
+			changedMap[changed.Id] = changed
+		}
+	}
+
+	for _, removed := range origin.Removed {
+		if _, exist := removedMap[removed.Name]; !exist {
+			removedMap[removed.Name] = removed
+		}
+	}
+
+	result := new(metadata.ServiceTemplateGeneralDiff)
+
+	for _, add := range addMap {
+		result.Added = append(result.Added, add)
+	}
+
+	for _, changed := range changedMap {
+		result.Changed = append(result.Changed, changed)
+	}
+
+	for _, removed := range removedMap {
+		result.Removed = append(result.Removed, removed)
+	}
+
+	result.Attributes = origin.Attributes
+	return result
 }
 
 // getHostInfo 根据bizId和moduleId获取hostMap
@@ -953,8 +998,8 @@ func initModuleDiffRes() (*metadata.ServiceTemplateGeneralDiff, map[int64]struct
 	return moduleDifference, added, changed
 }
 
-func (ps *ProcServer) getProcIDDetailAndRelations(ctx *rest.Contexts, bizId int64,
-	serviceInstances []int64) (map[int64][]metadata.ProcessInstanceRelation, map[int64]*metadata.Process, ccErr.CCErrorCoder) {
+func (ps *ProcServer) getProcIDDetailAndRelations(ctx *rest.Contexts, bizId int64, serviceInstances []int64) (
+	map[int64][]metadata.ProcessInstanceRelation, map[int64]*metadata.Process, ccErr.CCErrorCoder) {
 
 	relations, err := ps.getRelations(ctx, bizId, serviceInstances)
 	if err != nil {
@@ -1312,10 +1357,6 @@ func (ps *ProcServer) getListDiffServiceInstanceNum(ctx *rest.Contexts, opt *met
 			return nil, err
 		}
 
-		if opt.ServiceCategory {
-			return listServiceCategoryInstances(sInsts.Count, sInsts.Info), nil
-		}
-
 		op := &hostAndServiceInstsOpt{BizID: opt.BizID, ModuleID: opt.ModuleID, ProcTemplateId: opt.ProcessTemplateId}
 
 		sInstMap, relations, hMap, hostIDs, pTs, pTMap, hostInst, e := ps.getHostAndServiceInsts(ctx, op, module,
@@ -1428,7 +1469,7 @@ func (ps *ProcServer) getServiceInstances(ctx *rest.Contexts, option *metadata.S
 	for {
 		option := &metadata.ListServiceInstanceOption{
 			BusinessID:        option.BizID,
-			ServiceTemplateID: option.ServiceTemplateId,
+			ServiceTemplateID: option.ServiceTemplateID,
 			Fields:            fields,
 			ModuleIDs:         []int64{option.ModuleID},
 			Page: metadata.BasePage{
@@ -1441,7 +1482,7 @@ func (ps *ProcServer) getServiceInstances(ctx *rest.Contexts, option *metadata.S
 		serviceInstancesTemp, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 			option)
 		if err != nil {
-			blog.Errorf("list service instances failed, option: %+v, err: %v, rid: %s", *option, err, ctx.Kit.Rid)
+			blog.Errorf("list service instances failed, option: %+v, err: %v, rid: %s", option, err, ctx.Kit.Rid)
 			return nil, err
 		}
 		tempLen := len(serviceInstancesTemp.Info)
@@ -1458,23 +1499,6 @@ func (ps *ProcServer) getServiceInstances(ctx *rest.Contexts, option *metadata.S
 	return serviceInstances, nil
 }
 
-// diffServiceCategoryResult 获取服务分类的差异结果
-func (ps *ProcServer) diffServiceCategoryResult(ctx *rest.Contexts, module *metadata.ModuleInst) (
-	*metadata.ServiceInstanceDetailResult, ccErr.CCErrorCoder) {
-
-	diffDetails := new(metadata.ServiceInstanceDetailResult)
-
-	moduleAttr, err := ps.CalculateModuleAttributeDifference(ctx.Kit.Ctx, ctx.Kit.Header, *module)
-	if err != nil {
-		blog.Errorf("calc module attr diff failed, module: %s, err: %v, rid: %s", module, err, ctx.Kit.Rid)
-		return nil, err
-	}
-
-	diffDetails.ModuleAttribute = moduleAttr
-	diffDetails.Type = metadata.ServiceOthers
-	return diffDetails, nil
-}
-
 // serviceInstanceDetailDiff 针对单个的serviceID获取相信的变化信息
 func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, op *metadata.ServiceInstanceDetailReq) (
 	*metadata.ServiceInstanceDetailResult, ccErr.CCErrorCoder) {
@@ -1484,15 +1508,6 @@ func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, op *metadata
 	module, err := ps.getModuleInfo(ctx, op.ModuleID)
 	if err != nil {
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
-	}
-
-	// 此处直接返回的是服务分类内容
-	if op.ServiceCategory {
-		result, err := ps.diffServiceCategoryResult(ctx, module)
-		if err != nil {
-			return nil, err
-		}
-		return result, nil
 	}
 
 	opt := &hostAndServiceInstsOpt{BizID: op.BizID, ProcTemplateId: op.ProcessTemplateId, ModuleID: op.ModuleID}
@@ -1572,29 +1587,6 @@ func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, op *metadata
 	return diffDetails, nil
 }
 
-// 服务分类改变场景下，模块下面的每个实例必然会随之变动,所以只要取前500个即可.
-func listServiceCategoryInstances(count uint64, sInts []metadata.ServiceInstance) *metadata.ListServiceInstancesResult {
-
-	result := new(metadata.ListServiceInstancesResult)
-
-	if count > metadata.ServiceInstancesMaxNum {
-		result.TotalCount = metadata.ServiceInstancesTotalCount
-	} else {
-		result.TotalCount = strconv.FormatUint(count, 10)
-	}
-
-	for index, v := range sInts {
-		if index >= metadata.ServiceInstancesMaxNum {
-			break
-		}
-		result.ServiceInsts = append(result.ServiceInsts, metadata.ServiceInstancesInfo{
-			Id:   v.ID,
-			Name: v.Name,
-		})
-	}
-	return result
-}
-
 func (ps *ProcServer) getModuleInfo(ctx *rest.Contexts, moduleId int64) (*metadata.ModuleInst, ccErr.CCErrorCoder) {
 
 	module, err := ps.getModule(ctx.Kit, moduleId)
@@ -1672,11 +1664,6 @@ func (ps *ProcServer) serviceTemplateGeneralDiff(ctx *rest.Contexts, option *met
 	module mapstr.MapStr, pTemplateMap map[int64]*metadata.ProcessTemplate) (*metadata.ServiceTemplateGeneralDiff,
 	ccErr.CCErrorCoder) {
 
-	serviceCategoryID, err := util.GetInt64ByInterface(module[common.BKServiceCategoryIDField])
-	if err != nil {
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
-	}
-
 	// 获取所有的服务实例
 	serviceInstances, cErr := ps.getServiceInstances(ctx, option, []string{common.BKFieldID, common.BKHostIDField})
 	if cErr != nil {
@@ -1703,11 +1690,10 @@ func (ps *ProcServer) serviceTemplateGeneralDiff(ctx *rest.Contexts, option *met
 	}
 
 	moduleDiff := &metadata.ServiceTemplateGeneralDiff{
-		Changed:           diff.Changed,
-		Added:             diff.Added,
-		Removed:           diff.Removed,
-		ServiceCategoryId: serviceCategoryID,
-		Attributes:        attrs,
+		Changed:    diff.Changed,
+		Added:      diff.Added,
+		Removed:    diff.Removed,
+		Attributes: attrs,
 	}
 
 	return moduleDiff, nil
@@ -1802,14 +1788,14 @@ func (ps *ProcServer) getModuleAttrIDAndPropertyID(kit *rest.Kit, attrIDs []int6
 	return propertyIDs, attrIdPropertyMap, nil
 }
 
-// getAttributesResult 获取同一属性ID的模板和模块的属性值，并且按照约定的协议进行组合
+// getAttributesResult 获取同一属性ID的模板和模块的属性值
 func (ps *ProcServer) getAttributesResult(kit *rest.Kit, option *metadata.ServiceTemplateDiffOption,
 	module mapstr.MapStr) ([]metadata.AttributeFields, ccErr.CCErrorCoder) {
 
 	attrValues := make([]metadata.AttributeFields, 0)
 	// 1、获取指定服务模板的属性ID及属性值
 	attrIDs, srvTemplateAttrValueMap, cErr := ps.getSrvTemplateAttrIdAndPropertyValue(kit, option.BizID,
-		option.ServiceTemplateId)
+		option.ServiceTemplateID)
 	if cErr != nil {
 		return attrValues, cErr
 	}
@@ -1845,64 +1831,6 @@ func (ps *ProcServer) getAttributesResult(kit *rest.Kit, option *metadata.Servic
 	return attrValues, nil
 }
 
-func (ps *ProcServer) CalculateModuleAttributeDifference(ctx context.Context, header http.Header,
-	module metadata.ModuleInst) ([]metadata.ModuleChangedAttribute, ccErr.CCErrorCoder) {
-	rid := util.ExtractRequestIDFromContext(ctx)
-
-	changedAttributes := make([]metadata.ModuleChangedAttribute, 0)
-	if module.ServiceTemplateID == common.ServiceTemplateIDNotSet {
-		return changedAttributes, nil
-	}
-	serviceTpl, err := ps.CoreAPI.CoreService().Process().GetServiceTemplate(ctx, header, module.ServiceTemplateID)
-	if err != nil {
-		return nil, err
-	}
-
-	// just for better performance
-	if module.ServiceCategoryID == serviceTpl.ServiceCategoryID && module.ModuleName == serviceTpl.Name {
-		return changedAttributes, nil
-	}
-
-	// find process object's attribute
-	filter := &metadata.QueryCondition{
-		Condition: mapstr.MapStr(map[string]interface{}{
-			common.BKObjIDField: common.BKInnerObjIDModule,
-		}),
-	}
-	attrResult, e := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx, header, common.BKInnerObjIDProc, filter)
-	if e != nil {
-		blog.Errorf("read module attributes failed, filter: %+v, err: %+v, rid: %s", rid)
-		return nil, ccErr.New(common.CCErrCommDBSelectFailed, "db select failed")
-	}
-	attributeMap := make(map[string]metadata.Attribute)
-	for _, attr := range attrResult.Info {
-		attributeMap[attr.PropertyID] = attr
-	}
-	if module.ServiceCategoryID != serviceTpl.ServiceCategoryID {
-		field := common.BKServiceCategoryIDField
-		changedAttribute := metadata.ModuleChangedAttribute{
-			ID:                    attributeMap[field].ID,
-			PropertyID:            field,
-			PropertyName:          attributeMap[field].PropertyName,
-			PropertyValue:         module.ServiceCategoryID,
-			TemplatePropertyValue: serviceTpl.ServiceCategoryID,
-		}
-		changedAttributes = append(changedAttributes, changedAttribute)
-	}
-	if module.ModuleName != serviceTpl.Name {
-		field := common.BKModuleNameField
-		changedAttribute := metadata.ModuleChangedAttribute{
-			ID:                    attributeMap[field].ID,
-			PropertyID:            field,
-			PropertyName:          attributeMap[field].PropertyName,
-			PropertyValue:         module.ModuleName,
-			TemplatePropertyValue: serviceTpl.Name,
-		}
-		changedAttributes = append(changedAttributes, changedAttribute)
-	}
-	return changedAttributes, nil
-}
-
 // SyncServiceInstanceByTemplate sync the service instance with it's bounded service template.
 // It keeps the processes exactly same with the process template in the service template,
 // which means the number of process is same, and the process instance's info is also exactly same.
@@ -1923,7 +1851,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 
 	syncOneModuleOpt := metadata.ServiceTemplateDiffOption{
 		BizID:             syncOpt.BizID,
-		ServiceTemplateId: syncOpt.ServiceTemplateID,
+		ServiceTemplateID: syncOpt.ServiceTemplateID,
 	}
 	tasks := make([]metadata.CreateTaskRequest, 0)
 	for _, moduleID := range syncOpt.ModuleIDs {
@@ -1981,10 +1909,8 @@ type moduleSimpleInfo struct {
 	moduleID          int64
 	moduleName        string
 	serviceTemplateID int64
-	serviceCategoryID int64
 }
 
-// convertMapStrToModuleFields 根据获取到的module信息做一次校验和转化方便后续使用
 func convertMapStrToModuleFields(moduleMapStr mapstr.MapStr) (*moduleSimpleInfo, error) {
 
 	moduleID, err := util.GetInt64ByInterface(moduleMapStr[common.BKModuleIDField])
@@ -1997,55 +1923,35 @@ func convertMapStrToModuleFields(moduleMapStr mapstr.MapStr) (*moduleSimpleInfo,
 		return nil, err
 	}
 
-	serviceCategoryID, err := util.GetInt64ByInterface(moduleMapStr[common.BKServiceCategoryIDField])
-	if err != nil {
-		return nil, err
-	}
-
 	moduleName := util.GetStrByInterface(moduleMapStr[common.BKModuleNameField])
 
 	module := &moduleSimpleInfo{
 		moduleID:          moduleID,
 		serviceTemplateID: serviceTemplateID,
-		serviceCategoryID: serviceCategoryID,
 		moduleName:        moduleName,
 	}
 	return module, nil
 }
 
-// updateAttributes 这里更新采用的是先对比不同再更新，因为采用模板方式进行模块属性的更新不会是一个高频操作，大概率此处是不需要更新的， 所以
-// 先查找属性值不同的然后针对不同值进行更新
-func (ps *ProcServer) updateModuleAttributesWithServiceTemplate(kit *rest.Kit, serviceTemplateID int64,
-	module *moduleSimpleInfo, srvTemplateAttrValueMap map[int64]interface{}, attrIdPropertyMap map[int64]string,
+func (ps *ProcServer) updateModuleAttributesWithServiceTemplate(kit *rest.Kit, module *moduleSimpleInfo,
+	srvTemplateAttrValueMap map[int64]interface{}, attrIdPropertyMap map[int64]string,
 	moduleMap mapstr.MapStr) ccErr.CCErrorCoder {
 
-	srvTemplate, cErr := ps.CoreAPI.CoreService().Process().GetServiceTemplate(kit.Ctx, kit.Header, serviceTemplateID)
-	if cErr != nil {
-		blog.Errorf("get service template(%d) failed, err: %v, rid: %s", serviceTemplateID, cErr, kit.Rid)
-		return cErr
+	if len(attrIdPropertyMap) == 0 || len(srvTemplateAttrValueMap) == 0 {
+		return nil
 	}
 
 	data := make(map[string]interface{})
-
-	// 更新服务分类
-	if srvTemplate.ServiceCategoryID != module.serviceCategoryID {
-		data[common.BKServiceCategoryIDField] = srvTemplate.ServiceCategoryID
-	}
-
-	// 这里模板可能没有配置属性
-	if len(attrIdPropertyMap) >= 0 {
-		for srvTemplateAttrID, value := range srvTemplateAttrValueMap {
-			for moduleAttrID, propertyID := range attrIdPropertyMap {
-				if srvTemplateAttrID == moduleAttrID {
-					if !reflect.DeepEqual(value, moduleMap[propertyID]) {
-						data[propertyID] = value
-					}
+	for srvTemplateAttrID, value := range srvTemplateAttrValueMap {
+		for moduleAttrID, propertyID := range attrIdPropertyMap {
+			if srvTemplateAttrID == moduleAttrID {
+				if !reflect.DeepEqual(value, moduleMap[propertyID]) {
+					data[propertyID] = value
 				}
 			}
 		}
 	}
 
-	// 如果没有属性可以更新直接返回
 	if len(data) == 0 {
 		return nil
 	}
@@ -2198,7 +2104,7 @@ func (ps *ProcServer) updateModuleAttributes(kit *rest.Kit, option metadata.Serv
 
 	// 1、获取服务模板的属性id与对应的property_value
 	attrIDs, srvTemplateAttrValueMap, cErr := ps.getSrvTemplateAttrIdAndPropertyValue(kit, option.BizID,
-		option.ServiceTemplateId)
+		option.ServiceTemplateID)
 	if cErr != nil {
 		return nil, cErr
 	}
@@ -2217,7 +2123,7 @@ func (ps *ProcServer) updateModuleAttributes(kit *rest.Kit, option metadata.Serv
 		fields = append(fields, propertyIDs...)
 	}
 
-	moduleMap, err := ps.getModuleMapStr(kit, option.BizID, option.ServiceTemplateId, []int64{option.ModuleID}, fields)
+	moduleMap, err := ps.getModuleMapStr(kit, option.BizID, option.ServiceTemplateID, []int64{option.ModuleID}, fields)
 	if err != nil {
 		blog.Errorf("get module failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, "get none modules")
@@ -2231,8 +2137,8 @@ func (ps *ProcServer) updateModuleAttributes(kit *rest.Kit, option metadata.Serv
 	}
 
 	// 5、update module service category and name field
-	if err := ps.updateModuleAttributesWithServiceTemplate(kit, option.ServiceTemplateId, module,
-		srvTemplateAttrValueMap, attrIdPropertyMap, moduleMap[0]); err != nil {
+	if err := ps.updateModuleAttributesWithServiceTemplate(kit, module, srvTemplateAttrValueMap, attrIdPropertyMap,
+		moduleMap[0]); err != nil {
 		return nil, err
 	}
 
@@ -2266,7 +2172,7 @@ func (ps *ProcServer) getServiceInstanceInfo(kit *rest.Kit, option metadata.Serv
 	svcInstOpt := &metadata.ListServiceInstanceOption{
 		BusinessID:        option.BizID,
 		ModuleIDs:         []int64{option.ModuleID},
-		ServiceTemplateID: option.ServiceTemplateId,
+		ServiceTemplateID: option.ServiceTemplateID,
 		Page:              metadata.BasePage{Limit: common.BKNoLimit},
 	}
 
@@ -2331,7 +2237,7 @@ func (ps *ProcServer) getProcessInfo(kit *rest.Kit, option metadata.ServiceTempl
 	// find all the process template under the service template
 	procTempOpt := &metadata.ListProcessTemplatesOption{
 		BusinessID:         option.BizID,
-		ServiceTemplateIDs: []int64{option.ServiceTemplateId},
+		ServiceTemplateIDs: []int64{option.ServiceTemplateID},
 	}
 	procTemps, cErr := ps.CoreAPI.CoreService().Process().ListProcessTemplates(kit.Ctx, kit.Header, procTempOpt)
 	if cErr != nil {
@@ -2427,7 +2333,7 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 	}
 
 	updatedSvcInstMap, removedProcIDs, removedSvrInstIDs, err := ps.updateProcessInstance(kit,
-		syncOption.ServiceTemplateId, serviceInstanceInfo, processRelationInfo)
+		syncOption.ServiceTemplateID, serviceInstanceInfo, processRelationInfo)
 	if err != nil {
 		blog.Errorf("update process instance failed, option: %+v, err: %v, rid: %s", syncOption, cErr, kit.Rid)
 		return err
@@ -2559,9 +2465,10 @@ func (ps *ProcServer) createProcessForServiceInstance(kit *rest.Kit, updateSvcIn
 
 	processDatas := make([]map[string]interface{}, 0)
 	procRelations := make([]*metadata.ProcessInstanceRelation, 0)
+
 	for processTemplateID, processTemplate := range processRelation.processTemplateMap {
 		for svcID, templates := range srvInst.serviceInstanceWithTemplateMap {
-			if processTemplate.ServiceTemplateID != op.ServiceTemplateId {
+			if processTemplate.ServiceTemplateID != op.ServiceTemplateID {
 				continue
 			}
 			if _, exist := templates[processTemplateID]; exist {
@@ -2573,12 +2480,11 @@ func (ps *ProcServer) createProcessForServiceInstance(kit *rest.Kit, updateSvcIn
 			if err != nil {
 				return err
 			}
-			processDatas = procData
-			procRelations = procs
+			processDatas = append(processDatas, procData)
+			procRelations = append(procRelations, procs)
 		}
 	}
 	audit := auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
-
 	if len(processDatas) > 0 {
 		// create process instances in batch
 		processIDs, err := ps.Logic.CreateProcessInstances(kit, processDatas)
@@ -2646,7 +2552,7 @@ func (ps *ProcServer) createProcessForServiceInstance(kit *rest.Kit, updateSvcIn
 }
 
 func getProcessDataAndRelation(kit *rest.Kit, svcID, bizID, processTemplateID int64, srvInst *srvInstanceInfo,
-	processTemplate *metadata.ProcessTemplate) ([]map[string]interface{}, []*metadata.ProcessInstanceRelation,
+	processTemplate *metadata.ProcessTemplate) (map[string]interface{}, *metadata.ProcessInstanceRelation,
 	ccErr.CCErrorCoder) {
 	// we can not find this process template in all this service instance,
 	// which means that a new process template need to be added to this service instance
@@ -2658,17 +2564,12 @@ func getProcessDataAndRelation(kit *rest.Kit, svcID, bizID, processTemplateID in
 		return nil, nil, ccErr.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
-	processDatas := make([]map[string]interface{}, 0)
-	procRelations := make([]*metadata.ProcessInstanceRelation, 0)
-
-	processDatas = append(processDatas, newProcess.Map())
-	procRelations = append(procRelations, &metadata.ProcessInstanceRelation{
+	return newProcess.Map(), &metadata.ProcessInstanceRelation{
 		BizID:             bizID,
 		ServiceInstanceID: svcID,
 		ProcessTemplateID: processTemplateID,
 		HostID:            srvInst.serviceInstance2HostMap[svcID],
-	})
-	return processDatas, procRelations, nil
+	}, nil
 }
 
 // FindServiceTemplateSyncStatus find service template sync status

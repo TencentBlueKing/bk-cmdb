@@ -801,6 +801,94 @@ func (s *Service) ListSetTplRelatedSetsWeb(ctx *rest.Contexts) {
 	ctx.RespEntity(setInstanceResult)
 }
 
+// SetWithHostFlag 获取集群中要删除的服务模板实例化的模块是否有主机
+func (s *Service) SetWithHostFlag(ctx *rest.Contexts) {
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+	setTemplateIDStr := ctx.Request.PathParameter(common.BKSetTemplateIDField)
+	setTemplateID, err := strconv.ParseInt(setTemplateIDStr, 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField))
+		return
+	}
+
+	op := metadata.SetWithHostFlagOption{}
+	if err := ctx.DecodeInto(&op); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// 这里需要判断SetIDs的合法性
+	if rawErr := op.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	setModules, err := s.Logics.SetTemplateOperation().SetWithDeleteModulesRelation(ctx.Kit, bizID, setTemplateID, op)
+	if err != nil {
+		blog.Errorf("get modules failed, bizID: %d, setTemplateID: %d, option: %+v, err: %v, rid: %s", bizID,
+			setTemplateID, op, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	moduleIDs := make([]int64, 0)
+	for _, modules := range setModules {
+		moduleIDs = append(moduleIDs, modules...)
+	}
+
+	result := make([]metadata.SetWithHostFlagResult, 0)
+	for _, setID := range op.SetIDs {
+		result = append(result, metadata.SetWithHostFlagResult{
+			ID:      setID,
+			HasHost: false,
+		})
+	}
+	if len(moduleIDs) == 0 {
+		blog.Warnf("no modules founded, bizID: %d, setTemplateID: %d, option: %+v, rid: %s", bizID, setTemplateID,
+			op, ctx.Kit.Rid)
+		ctx.RespEntity(result)
+		return
+	}
+
+	relationOption := &metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		ModuleIDArr:   moduleIDs,
+		Page:          metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:        []string{common.BKSetIDField, common.BKModuleIDField},
+	}
+
+	relationResult, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx,
+		ctx.Kit.Header, relationOption)
+	if err != nil {
+		blog.Errorf("get host module relation failed, option: %+v, err: %v, rid: %s", relationOption, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	setMap := make(map[int64]struct{})
+	for _, set := range relationResult.Info {
+		setMap[set.SetID] = struct{}{}
+	}
+
+	for _, setID := range op.SetIDs {
+		if _, ok := setMap[setID]; ok {
+			result = append(result, metadata.SetWithHostFlagResult{
+				ID:      setID,
+				HasHost: true})
+			continue
+		}
+		result = append(result, metadata.SetWithHostFlagResult{
+			ID:      setID,
+			HasHost: false})
+	}
+	ctx.RespEntity(result)
+}
+
 // DiffSetTplWithInst search different between set template and set inst
 func (s *Service) DiffSetTplWithInst(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)

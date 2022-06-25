@@ -153,7 +153,7 @@ type GetServiceInstanceBySetTemplateInput struct {
 // ServiceTemplateDiffOption obtain the process template difference information under the service template.
 type ServiceTemplateDiffOption struct {
 	BizID             int64 `json:"bk_biz_id"`
-	ServiceTemplateId int64 `json:"service_template_id"`
+	ServiceTemplateID int64 `json:"service_template_id"`
 	ModuleID          int64 `json:"bk_module_id"`
 }
 
@@ -172,12 +172,7 @@ func (option *ServiceTemplateDiffOption) ServiceTemplateOptionValidate() cErr.Ra
 			Args:    []interface{}{common.BKModuleIDField},
 		}
 	}
-	if option.ServiceTemplateId == 0 {
-		return cErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{common.BKServiceTemplateIDField},
-		}
-	}
+
 	return cErr.RawErrorInfo{}
 }
 
@@ -190,9 +185,6 @@ type ListDiffServiceInstancesOption struct {
 
 	// ProcessTemplateName 当模板被删除场景下id为0，此时需要通过name找具体请求的模板
 	ProcTemplateName string `json:"process_template_name,omitempty"`
-
-	// ServiceCategory 此请求是获取服务分类场景的实例列表
-	ServiceCategory bool `json:"service_category,omitempty"`
 }
 
 // ServiceInstancesInfo 返回的服务实例信息只需要Id和Name
@@ -227,9 +219,6 @@ type ServiceInstanceDetailReq struct {
 	// ProcessTemplateName 进程模板名字，删除场景下进程模板id是0，需要用name进行区分
 	ProcessTemplateName string `json:"process_template_name,omitempty"`
 	ServiceInstanceId   int64  `json:"service_instance_id"`
-
-	// ServiceCategory 此请求是获取服务分类场景的实例列表
-	ServiceCategory bool `json:"service_category,omitempty"`
 }
 
 // ServiceInstanceDetailResult Details of service instance information.
@@ -284,8 +273,6 @@ type ServiceTemplateGeneralDiff struct {
 	Added      []ProcessGeneralInfo `json:"added"`
 	Removed    []ProcessGeneralInfo `json:"removed"`
 	Attributes []AttributeFields    `json:"attributes"`
-	// ServiceCategoryId the service category ID of the module instance
-	ServiceCategoryId int64 `json:"service_category_id"`
 }
 
 type UpdateServiceInstanceOption struct {

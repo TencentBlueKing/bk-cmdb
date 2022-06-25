@@ -126,7 +126,7 @@ func (ps *ProcServer) CreateServiceTemplateAllInfo(ctx *rest.Contexts) {
 			t := &metadata.ProcessTemplate{
 				BizID:             option.BizID,
 				ServiceTemplateID: templateID,
-				Property:          process.Spec,
+				Property:          process.Property,
 			}
 
 			_, err := ps.CoreAPI.CoreService().Process().CreateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, t)

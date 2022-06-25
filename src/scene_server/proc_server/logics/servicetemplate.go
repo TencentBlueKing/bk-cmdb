@@ -13,48 +13,67 @@
 package logics
 
 import (
+	"reflect"
 	"sync"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
+
+func (lgc *Logic) getModuleMapStr(kit *rest.Kit, cond map[string]interface{}) ([]mapstr.MapStr, errors.CCErrorCoder) {
+
+	option := &metadata.QueryCondition{
+		Condition:      cond,
+		DisableCounter: true,
+	}
+
+	modules, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
+		common.BKInnerObjIDModule, option)
+	if err != nil {
+		blog.Errorf("get modules failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrGetModule)
+	}
+
+	return modules.Info, nil
+}
 
 func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleCond map[string]interface{}, isPartial bool) (
 	[]metadata.SvcTempSyncStatus, []metadata.ModuleSyncStatus, errors.CCErrorCoder) {
 
 	moduleFilter := &metadata.QueryCondition{
-		Condition: moduleCond,
-		Fields: []string{common.BKModuleIDField, common.BKServiceTemplateIDField, common.BKModuleNameField,
-			common.BKServiceCategoryIDField},
+		Condition:      moduleCond,
+		Fields:         []string{common.BKModuleIDField, common.BKServiceTemplateIDField, common.BKModuleNameField},
+		DisableCounter: true,
 	}
 
-	moduleRes := new(metadata.ResponseModuleInstance)
-	err := lgc.CoreAPI.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header,
-		common.BKInnerObjIDModule, moduleFilter, moduleRes)
+	// module detail
+	modules, err := lgc.getModuleMapStr(kit, moduleCond)
 	if err != nil {
-		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", moduleFilter, err, kit.Rid)
-		return nil, nil, err
-	}
-
-	if err := moduleRes.CCError(); err != nil {
 		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", moduleFilter, err, kit.Rid)
 		return nil, nil, err
 	}
 
 	moduleSyncStatuses := make([]metadata.ModuleSyncStatus, 0)
 	svcTempSyncStatuses := make([]metadata.SvcTempSyncStatus, 0)
-	if len(moduleRes.Data.Info) == 0 {
+
+	if len(modules) == 0 {
 		return svcTempSyncStatuses, moduleSyncStatuses, nil
 	}
 
-	svcTempModuleMap := make(map[int64][]*metadata.ModuleInst)
-	for index, module := range moduleRes.Data.Info {
-		if module.ServiceTemplateID != common.ServiceTemplateIDNotSet {
-			svcTempModuleMap[module.ServiceTemplateID] = append(svcTempModuleMap[module.ServiceTemplateID],
-				&moduleRes.Data.Info[index])
+	svcTempModuleMap := make(map[int64][]mapstr.MapStr)
+	for index, module := range modules {
+		serviceTemplateID, err := util.GetInt64ByInterface(module[common.BKServiceTemplateIDField])
+		if err != nil {
+			blog.Errorf("get serviceTemplateID failed, module: %+v, err: %v, rid: %s", module, err, kit.Rid)
+			return nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKServiceTemplateIDField)
+		}
+		if serviceTemplateID != common.ServiceTemplateIDNotSet {
+			svcTempModuleMap[serviceTemplateID] = append(svcTempModuleMap[serviceTemplateID], modules[index])
 		}
 	}
 
@@ -77,7 +96,7 @@ func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleCond ma
 
 	templates, err := lgc.CoreAPI.CoreService().Process().ListServiceTemplates(kit.Ctx, kit.Header, &svcTempOpt)
 	if err != nil {
-		blog.ErrorJSON("list service templates failed, err: %s, input: %s, rid: %s", err, svcTempOpt, kit.Rid)
+		blog.Errorf("list service templates failed, input: %+v, err: %v, rid: %s", svcTempOpt, err, kit.Rid)
 		return nil, nil, err
 	}
 
@@ -86,8 +105,8 @@ func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleCond ma
 
 		needSync, statuses, err := lgc.getSvcTempSyncStatus(kit, &svcTemp, modules, isPartial)
 		if err != nil {
-			blog.ErrorJSON("get service template sync status failed, err: %s, template: %s, modules: %s, rid: %s",
-				err, svcTemp, modules, kit.Rid)
+			blog.Errorf("get service template sync status failed, template: %+v, modules: %+v, err: %v, rid: %s",
+				svcTemp, modules, err, kit.Rid)
 			return nil, nil, err
 		}
 
@@ -104,14 +123,26 @@ func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleCond ma
 	return svcTempSyncStatuses, moduleSyncStatuses, nil
 }
 
-func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceTemplate, modules []*metadata.ModuleInst,
+func getModuleNameAndID(kit *rest.Kit, module mapstr.MapStr) (string, int64, errors.CCErrorCoder) {
+
+	moduleName := util.GetStrByInterface(module[common.BKModuleNameField])
+
+	moduleID, err := util.GetInt64ByInterface(module[common.BKModuleIDField])
+	if err != nil {
+		blog.Errorf("get moduleID failed, module: %#v, err: %v, rid: %s", module, err, kit.Rid)
+		return "", 0, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed, common.BKModuleIDField)
+	}
+	return moduleName, moduleID, nil
+}
+
+func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceTemplate, modules []mapstr.MapStr,
 	isPartial bool) (bool, []metadata.ModuleSyncStatus, errors.CCErrorCoder) {
 
 	statuses := make([]metadata.ModuleSyncStatus, 0)
 	var wg sync.WaitGroup
 	var firstErr errors.CCErrorCoder
-	pipeline := make(chan bool, 10)
-	isFinish, needSync, isProcTempMapSet := false, false, false
+
+	isFinish, needSync, isProcTempMapSet, pipeline := false, false, false, make(chan bool, 10)
 	procTempMap := make(map[int64]*metadata.ProcessTemplate)
 
 	for _, module := range modules {
@@ -119,13 +150,17 @@ func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceT
 			break
 		}
 
-		// check if module info has difference with service template
-		if module.ModuleName != svcTemp.Name || module.ServiceCategoryID != svcTemp.ServiceCategoryID {
+		moduleName, moduleID, err := getModuleNameAndID(kit, module)
+		if err != nil {
+			return false, nil, err
+		}
+
+		if moduleName != svcTemp.Name {
 			if isPartial {
 				return true, statuses, nil
 			}
 
-			statuses = append(statuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: true})
+			statuses = append(statuses, metadata.ModuleSyncStatus{ModuleID: moduleID, NeedSync: true})
 			needSync = true
 			continue
 		}
@@ -133,9 +168,7 @@ func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceT
 		// get process templates to compare with the processes of the module
 		if !isProcTempMapSet {
 			procTempOpt := &metadata.ListProcessTemplatesOption{
-				BusinessID:         svcTemp.BizID,
-				ServiceTemplateIDs: []int64{svcTemp.ID},
-			}
+				BusinessID: svcTemp.BizID, ServiceTemplateIDs: []int64{svcTemp.ID}}
 
 			procTemps, err := lgc.CoreAPI.CoreService().Process().ListProcessTemplates(kit.Ctx, kit.Header, procTempOpt)
 			if err != nil {
@@ -152,18 +185,15 @@ func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceT
 		pipeline <- true
 		wg.Add(1)
 
-		module.BizID = svcTemp.BizID
-		module.ServiceTemplateID = svcTemp.ID
-
-		go func(module *metadata.ModuleInst) {
+		go func(module mapstr.MapStr, bizID, serviceTemplateID, moduleID int64) {
 			defer func() {
 				wg.Done()
 				<-pipeline
 			}()
 
-			moduleNeedSync, err := lgc.getModuleProcessSyncStatus(kit, module, procTempMap)
+			attrNeedSync, err := lgc.getModuleAttrSyncStatus(kit, bizID, serviceTemplateID, module)
 			if err != nil {
-				blog.ErrorJSON("get module(%s) process sync status failed, err: %s, rid: %s", module, err, kit.Rid)
+				blog.Errorf("get module(%+v) attrs sync status failed, err: %v, rid: %s", module, err, kit.Rid)
 				if firstErr == nil {
 					firstErr = err
 				}
@@ -171,20 +201,29 @@ func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceT
 				return
 			}
 
-			if moduleNeedSync {
+			moduleNeedSync, err := lgc.getModuleProcessSyncStatus(kit, bizID, serviceTemplateID, moduleID, procTempMap)
+			if err != nil {
+				blog.Errorf("get module(%+v) process sync status failed, err: %v, rid: %s", module, err, kit.Rid)
+				if firstErr == nil {
+					firstErr = err
+				}
+				isFinish = true
+				return
+			}
+
+			if moduleNeedSync || attrNeedSync {
 				if isPartial {
-					isFinish = true
-					needSync = true
+					isFinish, needSync = true, true
 					return
 				}
 
-				statuses = append(statuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: true})
+				statuses = append(statuses, metadata.ModuleSyncStatus{ModuleID: moduleID, NeedSync: true})
 				needSync = true
 				return
 			}
 
-			statuses = append(statuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: false})
-		}(module)
+			statuses = append(statuses, metadata.ModuleSyncStatus{ModuleID: moduleID, NeedSync: false})
+		}(module, svcTemp.BizID, svcTemp.ID, moduleID)
 	}
 
 	wg.Wait()
@@ -194,60 +233,145 @@ func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceT
 	return needSync, statuses, nil
 }
 
-func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.ModuleInst,
-	procTempMap map[int64]*metadata.ProcessTemplate) (bool, errors.CCErrorCoder) {
+// getSrvTemplateAttrIdAndValue 获取服务模板的属性id以及对应的属性值
+func (lgc *Logic) getSrvTemplateAttrIdAndPropertyValue(kit *rest.Kit, bizID, serviceTemplateID int64) ([]int64,
+	map[int64]interface{}, errors.CCErrorCoder) {
 
+	option := &metadata.ListServTempAttrOption{
+		BizID:  bizID,
+		ID:     serviceTemplateID,
+		Fields: []string{common.BKAttributeIDField, common.BKPropertyValueField},
+	}
+
+	data, cErr := lgc.Engine.CoreAPI.CoreService().Process().ListServiceTemplateAttribute(kit.Ctx, kit.Header, option)
+	if cErr != nil {
+		blog.Errorf("list service template attributes failed, bizID: %d, service template id: %d, err: %v, rid: %s",
+			bizID, serviceTemplateID, cErr, kit.Rid)
+		return nil, nil, cErr
+	}
+
+	attrIDs := make([]int64, 0)
+	srvTemplateAttrValueMap := make(map[int64]interface{})
+
+	for _, attr := range data.Attributes {
+		attrIDs = append(attrIDs, attr.AttributeID)
+		srvTemplateAttrValueMap[attr.AttributeID] = attr.PropertyValue
+	}
+
+	return attrIDs, srvTemplateAttrValueMap, nil
+}
+
+// getModuleAttrIDAndPropertyID 根据模块属性ID获取对应的propertyID列表以及属性ID与propertyID的对应关系
+func (lgc *Logic) getModuleAttrIDAndPropertyID(kit *rest.Kit, attrIDs []int64) ([]string, map[int64]string,
+	errors.CCErrorCoder) {
+
+	attrIdPropertyMap := make(map[int64]string)
+	if len(attrIDs) == 0 {
+		return []string{}, attrIdPropertyMap, nil
+	}
+
+	option := &metadata.QueryCondition{
+		Fields: []string{common.BKFieldID, common.BKPropertyIDField},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: map[string]interface{}{
+			common.BKFieldID: map[string]interface{}{
+				common.BKDBIN: attrIDs,
+			},
+		},
+		DisableCounter: true,
+	}
+
+	res, err := lgc.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, common.BKInnerObjIDModule, option)
+	if err != nil {
+		blog.Errorf("read model attribute failed, err: %v, option: %#v, rid: %s", err, option, kit.Rid)
+		return nil, nil, kit.CCError.CCError(common.CCErrTopoObjectAttributeSelectFailed)
+	}
+	propertyIDs := make([]string, 0)
+	for _, attrs := range res.Info {
+		propertyIDs = append(propertyIDs, attrs.PropertyID)
+		attrIdPropertyMap[attrs.ID] = attrs.PropertyID
+	}
+
+	return propertyIDs, attrIdPropertyMap, nil
+}
+
+// getModuleAttrSyncStatus 获取模块与服务模板之间属性是否有差异
+func (lgc *Logic) getModuleAttrSyncStatus(kit *rest.Kit, bizID, serviceTemplateID int64,
+	module mapstr.MapStr) (bool, errors.CCErrorCoder) {
+
+	// 1、获取服务模板的属性ID与对应的 property_value
+	attrIDs, srvTemplateAttrValueMap, cErr := lgc.getSrvTemplateAttrIdAndPropertyValue(kit, bizID, serviceTemplateID)
+	if cErr != nil {
+		return false, cErr
+	}
+
+	// 如果服务模板没有属性设定就不需要同步
+	if len(attrIDs) == 0 {
+		return false, nil
+	}
+
+	// 2、获取模块 attrID 与 propertyID的映射关系
+	propertyIDs, attrIdPropertyIdMap, cErr := lgc.getModuleAttrIDAndPropertyID(kit, attrIDs)
+	if cErr != nil {
+		return false, cErr
+	}
+
+	if len(propertyIDs) == 0 {
+		return false, nil
+	}
+
+	// 3、根据propertyID 获取对应模块实例的值
+	modulePropertyValue := make(map[string]interface{})
+	for _, propertyID := range propertyIDs {
+		if _, ok := module[propertyID]; ok {
+			modulePropertyValue[propertyID] = module[propertyID]
+		}
+	}
+
+	// 4、对比是否有不同
+	for id, attr := range srvTemplateAttrValueMap {
+		if !reflect.DeepEqual(attr, modulePropertyValue[attrIdPropertyIdMap[id]]) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (lgc *Logic) getServiceInstancesAndHostIdCount(kit *rest.Kit, bizID, serviceTemplateID, moduleID int64) (
+	*metadata.MultipleServiceInstance, []int64, errors.CCErrorCoder) {
 	// get service instances by module
 	svcInstOpt := &metadata.ListServiceInstanceOption{
-		BusinessID:        module.BizID,
-		ServiceTemplateID: module.ServiceTemplateID,
-		ModuleIDs:         []int64{module.ModuleID},
+		BusinessID:        bizID,
+		ServiceTemplateID: serviceTemplateID,
+		ModuleIDs:         []int64{moduleID},
 		Page:              metadata.BasePage{Limit: common.BKNoLimit},
 	}
 	serviceInstances, err := lgc.CoreAPI.CoreService().Process().ListServiceInstance(kit.Ctx, kit.Header, svcInstOpt)
 	if err != nil {
 		blog.ErrorJSON("list service instance failed, option: %s, err: %s, rid: %s", svcInstOpt, err, kit.Rid)
-		return false, err
+		return nil, nil, err
 	}
 
 	// get host ids by module
 	hostIDFilter := []map[string]interface{}{{
-		common.BKModuleIDField: module.ModuleID,
-		common.BKAppIDField:    module.BizID,
+		common.BKModuleIDField: moduleID,
+		common.BKAppIDField:    bizID,
 	}}
 	hostIDCount, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 		common.BKTableNameModuleHostConfig, hostIDFilter)
 	if err != nil {
 		blog.Errorf("get host id count failed, err: %v, option: %#v, rid: %s", err, hostIDFilter, kit.Rid)
-		return false, err
+		return nil, nil, err
 	}
+	return serviceInstances, hostIDCount, nil
+}
 
-	// need to sync when the module has process templates and hosts but has no service instances
-	if len(serviceInstances.Info) == 0 {
-		if hostIDCount[0] == 0 || len(procTempMap) == 0 {
-			return false, nil
-		}
-		return true, nil
-	}
-
-	if len(procTempMap) == 0 {
-		return true, nil
-	}
-
-	if int64(len(serviceInstances.Info)) != hostIDCount[0] {
-		return true, nil
-	}
-
-	serviceInstanceIDs := make([]int64, 0)
-	hostIDs := make([]int64, 0)
-	for _, serviceInstance := range serviceInstances.Info {
-		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
-		hostIDs = append(hostIDs, serviceInstance.HostID)
-	}
+func (lgc *Logic) getProcessInstanceRelation(kit *rest.Kit, bizID int64, serviceInstanceIDs []int64) (
+	*metadata.MultipleProcessInstanceRelation, errors.CCErrorCoder) {
 
 	// get process instance relations by service instances
 	procRelOpt := metadata.ListProcessInstanceRelationOption{
-		BusinessID:         module.BizID,
+		BusinessID:         bizID,
 		ServiceInstanceIDs: serviceInstanceIDs,
 		Page:               metadata.BasePage{Limit: common.BKNoLimit},
 	}
@@ -255,12 +379,14 @@ func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.Mod
 	relations, err := lgc.CoreAPI.CoreService().Process().ListProcessInstanceRelation(kit.Ctx, kit.Header, &procRelOpt)
 	if err != nil {
 		blog.ErrorJSON("list process instance relation failed, option: %s, err: %s, rid: %s", procRelOpt, err, kit.Rid)
-		return false, err
+		return nil, err
 	}
+	return relations, nil
+}
 
-	if len(relations.Info) == 0 {
-		return len(procTempMap) != 0, err
-	}
+func (lgc *Logic) getServiceRelationMapAndProcessDetails(kit *rest.Kit,
+	relations *metadata.MultipleProcessInstanceRelation) (map[int64][]metadata.ProcessInstanceRelation,
+	map[int64]*metadata.Process, errors.CCErrorCoder) {
 
 	// find all the process instance detail by ids
 	procIDs := make([]int64, 0)
@@ -277,12 +403,59 @@ func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.Mod
 	processDetails, err := lgc.ListProcessInstanceWithIDs(kit, procIDs)
 	if err != nil {
 		blog.Errorf("list process instance with IDs failed, err: %v, procIDs: %+v, rid: %s", err, procIDs, kit.Rid)
-		return false, err
+		return nil, nil, err
 	}
 
 	procID2Detail := make(map[int64]*metadata.Process)
 	for idx, p := range processDetails {
 		procID2Detail[p.ProcessID] = &processDetails[idx]
+	}
+	return serviceRelationMap, procID2Detail, nil
+}
+
+func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, bizID, serviceTemplateID, moduleID int64,
+	procTempMap map[int64]*metadata.ProcessTemplate) (bool, errors.CCErrorCoder) {
+
+	if len(procTempMap) == 0 {
+		return true, nil
+	}
+
+	serviceInstances, hostIDCount, err := lgc.getServiceInstancesAndHostIdCount(kit, bizID, serviceTemplateID, moduleID)
+	if err != nil {
+		return false, err
+	}
+
+	// need to sync when the module has process templates and hosts but has no service instances
+	if len(serviceInstances.Info) == 0 {
+		if hostIDCount[0] == 0 || len(procTempMap) == 0 {
+			return false, nil
+		}
+		return true, nil
+	}
+
+	if int64(len(serviceInstances.Info)) != hostIDCount[0] {
+		return true, nil
+	}
+
+	serviceInstanceIDs := make([]int64, 0)
+	hostIDs := make([]int64, 0)
+	for _, serviceInstance := range serviceInstances.Info {
+		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
+		hostIDs = append(hostIDs, serviceInstance.HostID)
+	}
+
+	relations, err := lgc.getProcessInstanceRelation(kit, bizID, serviceInstanceIDs)
+	if err != nil {
+		return false, err
+	}
+
+	if len(relations.Info) == 0 {
+		return len(procTempMap) != 0, err
+	}
+
+	serviceRelationMap, procID2Detail, err := lgc.getServiceRelationMapAndProcessDetails(kit, relations)
+	if err != nil {
+		return false, err
 	}
 
 	// get host map for process bind info compare use
@@ -291,6 +464,7 @@ func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.Mod
 		blog.Errorf("get host map failed, err: %v, ids: %+v, rid: %s", err, hostIDs, kit.Rid)
 		return false, err
 	}
+
 	for _, serviceInst := range serviceInstances.Info {
 		relations := serviceRelationMap[serviceInst.ID]
 		processTemplateReferenced := make(map[int64]struct{})
