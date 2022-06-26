@@ -5,17 +5,17 @@ go 1.16
 require (
 	github.com/FZambia/sentinel v1.1.0
 	github.com/Shopify/sarama v1.33.0
+	github.com/alexmullins/zip v0.0.0-20180717182244-4affb64b04d0
 	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a // indirect
 	github.com/alicebob/miniredis v2.5.0+incompatible
 	github.com/apache/thrift v0.12.0
 	github.com/aws/aws-sdk-go v1.44.14
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
-	github.com/alexmullins/zip v0.0.0-20180717182244-4affb64b04d0
 	github.com/coccyx/timeparser v0.0.0-20161029180942-5644122b3667
 	github.com/emicklei/go-restful/v3 v3.7.4
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/ghodss/yaml v1.0.0
-	github.com/gin-contrib/sessions v0.0.5
+	github.com/gin-contrib/sessions v0.0.4
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-redis/redis/v7 v7.4.1
 	github.com/go-zookeeper/zk v1.0.2
@@ -46,11 +46,8 @@ require (
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc v1.0.398
 	github.com/tidwall/gjson v1.14.1
 	github.com/xdg-go/scram v1.1.1
-	github.com/xdg/scram v1.0.5 // indirect
-	github.com/xdg/stringprep v1.0.3 // indirect
-	github.com/yeka/zip v0.0.0-20180914125537-d046722c6feb // indirect
 	github.com/yuin/gopher-lua v0.0.0-20220504180219-658193537a64 // indirect
-	go.mongodb.org/mongo-driver v1.9.1
+	go.mongodb.org/mongo-driver v1.5.0-beta1
 	go.opentelemetry.io/contrib/instrumentation/github.com/emicklei/go-restful/otelrestful v0.32.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.32.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.32.0
@@ -63,5 +60,3 @@ require (
 	k8s.io/client-go v0.24.2
 	stathat.com/c/consistent v1.0.0
 )
-
-replace go.mongodb.org/mongo-driver v1.9.1 => github.com/ZQHcode/mongo-driver v1.1.0

@@ -31,7 +31,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
-	"github.com/chalice-1831/zip"
+	"github.com/alexmullins/zip"
 	yl "github.com/ghodss/yaml"
 )
 
