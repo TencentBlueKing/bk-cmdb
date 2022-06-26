@@ -24,7 +24,7 @@
     props: {
       objId: {
         type: String,
-        requried: true
+        required: true
       }
     },
     setup(props) {

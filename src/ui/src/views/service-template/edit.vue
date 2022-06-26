@@ -7,6 +7,7 @@
   import ManagementForm from './children/management-form.vue'
   import store from '@/store'
   import serviceTemplateService from '@/services/service-template'
+  import { MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
 
   export default defineComponent({
     components: {
@@ -35,6 +36,13 @@
         await serviceTemplateService.update(data, { requestId: requestIds.update })
 
         $success(t('保存成功'))
+
+        routerActions.redirect({
+          name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
+          params: {
+            templateId: templateId.value
+          }
+        })
       }
 
       const handleSubmit = async () => {

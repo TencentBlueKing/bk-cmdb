@@ -300,8 +300,6 @@
 
           state.basic.secCategory = categoryId
           state.basic.primaryCategoryCopy = state.basic.primaryCategory
-
-          showSyncInstanceTips('成功更新模板，您可以通过XXX')
         } finally {
           loadingState.value = loadingState.value.filter(item => item !== basicProperties.categorty)
         }

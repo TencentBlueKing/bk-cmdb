@@ -1625,5 +1625,7 @@
     "当前模板未配置提示": "The current template is not configured, {link}",
     "立即配置": "configure now",
     "模板定义不可修改提示": "Uneditable，defined in template, {link}",
-    "跳转集群模板": "view in template"
+    "跳转集群模板": "view in template",
+    "属性变更": "Property change",
+    "进程信息变更": "Process change"
 }
