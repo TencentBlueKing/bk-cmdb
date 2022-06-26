@@ -13,7 +13,7 @@
 <template>
   <cmdb-sticky-layout
     class="service-template-sync-layout"
-    v-bkloading="{ isLoading: $loading(Object.values(requestIds)) }">
+    v-bkloading="{ isLoading: $loading([requestIds.properties, requestIds.topopath]) }">
     <template #header="{ sticky }">
       <cmdb-tips :class="['layout-header', { 'is-sticky': sticky }]">{{$t('同步模板功能提示')}}</cmdb-tips>
     </template>
@@ -67,6 +67,7 @@
           <module-instance
             v-bkloading="{ isLoading: moduleGroup[moduleId].loading }"
             class="module-instance-item"
+            collapse-size="small"
             :module-id="Number(moduleId)"
             :template-id="templateId"
             :topo-path="moduleGroup[moduleId].topoPath"
@@ -82,7 +83,7 @@
       <div :class="['layout-footer', { 'is-sticky': sticky }]">
         <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
           <template #default="{ disabled }">
-            <bk-button class="mr10" theme="primary"
+            <bk-button theme="primary"
               :disabled="disabled"
               :loading="confirming"
               @click="confirmAndSync">

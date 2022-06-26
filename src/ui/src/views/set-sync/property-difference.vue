@@ -26,14 +26,6 @@
       PropertyConfigDiffTable
     },
     props: {
-      moduleId: {
-        type: Number,
-        required: true
-      },
-      templateId: {
-        type: Number,
-        required: true
-      },
       propertyDiff: {
         type: Array as PropType<IPropertyDiff[]>,
         default: () => ([]),

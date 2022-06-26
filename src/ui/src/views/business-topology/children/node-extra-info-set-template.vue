@@ -145,13 +145,13 @@
             bizId: this.bizId,
             setTemplateId: this.instance.set_template_id,
             params: {
-              bk_set_ids: [this.instance.bk_set_id]
+              bk_set_id: this.instance.bk_set_id
             },
             config: {
               requestId: 'diffTemplateAndInstances'
             }
           })
-          const diff = data.difference ? (data.difference[0] || {}).module_diffs : []
+          const diff = data.difference ? (data.difference || {}).module_diffs : []
           const len = diff.filter(_module => _module.diff_type !== 'unchanged').length
           return !!len
         } catch (e) {

@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="collapse-layout">
+  <div :class="['collapse-layout', size]">
     <div class="collapse-trigger" @click="toggle">
       <span :class="['collapse-arrow', 'bk-icon', arrowIconClass, { 'is-collapsed': hidden }]"></span>
       <span class="collapse-text">
@@ -45,6 +45,9 @@
       arrowType: {
         type: String,
         default: 'outlined', // filled
+      },
+      size: {
+        type: String
       }
     },
     data() {
@@ -127,6 +130,17 @@
             }
             .collapse-text {
                 font-size: 14px;
+            }
+        }
+
+        &.small {
+            .collapse-arrow {
+                &.filled {
+                  margin-top: -1px;
+                }
+            }
+            .collapse-text {
+                font-size: 12px;
             }
         }
     }

@@ -1627,5 +1627,10 @@
     "模板定义不可修改提示": "Uneditable，defined in template, {link}",
     "跳转集群模板": "view in template",
     "属性变更": "Property change",
-    "进程信息变更": "Process change"
+    "进程信息变更": "Process change",
+    "属性同步前": "before synchronization",
+    "属性同步后": "after synchronization",
+    "拓扑结构变更": "Topology change",
+    "拓扑同步前": "before synchronization",
+    "拓扑同步后": "after synchronization"
 }
