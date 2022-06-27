@@ -51,7 +51,7 @@
       </div>
       <bk-table class="instance-table" v-test-id.businessSetTemplate="'instanceTable'"
         ref="instanceTable"
-        v-bkloading="{ isLoading: $loading('getSetInstanceData') }"
+        v-bkloading="{ isLoading: $loading(['getSetInstanceData', 'getSetInstancesWithTopo']) }"
         :data="displayList"
         :pagination="pagination"
         :max-height="$APP.height - 249"

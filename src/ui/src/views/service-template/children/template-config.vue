@@ -422,8 +422,8 @@
       const handleDeleteProcess = (template) => {
         $bkInfo({
           title: t('确认删除模板进程'),
-          confirmFn: () => {
-            store.dispatch('processTemplate/deleteProcessTemplate', {
+          confirmFn: async () => {
+            await store.dispatch('processTemplate/deleteProcessTemplate', {
               params: {
                 data: {
                   bk_biz_id: bizId.value,
@@ -434,7 +434,8 @@
 
             getProcessList()
             showSyncInstanceTips()
-          }
+          },
+          confirmLoading: true
         })
       }
 
