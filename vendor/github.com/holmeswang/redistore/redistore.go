@@ -216,18 +216,20 @@ func NewRediStoreWithPool(pool *redis.Pool, keyPairs ...[]byte) (*RediStore, err
 }
 
 // NewRedisStoreWithSentinel instantiates a RediStore with FZambia sentinel
-func NewRedisStoreWithSentinel(address []string, size int, masterName, network, password string, keyPairs ...[]byte) (*RediStore, error) {
+func NewRedisStoreWithSentinel(address []string, size int, masterName, network, password string, sentinelPwd string, 
+	keyPairs ...[]byte) (*RediStore, error) {
 
 	sntnl := &sentinel.Sentinel{
 		Addrs:      address,
 		MasterName: masterName,
 		Dial: func(addr string) (redis.Conn, error) {
 			timeout := time.Second
-			c, err := redis.DialTimeout(network, addr, timeout, timeout, timeout)
-			if nil != err {
-				return nil, err
-			}
-			return c, nil
+			return redis.Dial(network, addr,
+				redis.DialConnectTimeout(timeout),
+				redis.DialReadTimeout(timeout),
+				redis.DialWriteTimeout(timeout),
+				redis.DialPassword(sentinelPwd),
+				)
 		},
 	}
 

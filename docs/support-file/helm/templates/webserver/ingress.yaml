@@ -1,7 +1,7 @@
 {{- if .Values.webserver.ingress.enabled -}}
 {{- $serviceName := include "bk-cmdb.webserver" . -}}
 {{- $servicePort := .Values.webserver.service.externalPort -}}
-apiVersion: extensions/v1beta1
+apiVersion: {{ include "common.capabilities.ingress.apiVersion" . }}
 kind: Ingress
 metadata:
   name: {{ template "bk-cmdb.webserver" . }}
@@ -16,10 +16,11 @@ spec:
     - host: {{ .Values.webserver.ingress.host }}
       http:
         paths:
-          - path: /
-            backend:
-              serviceName: {{ $serviceName }}
-              servicePort: {{ $servicePort }}
+        - backend: {{ include "common.ingress.backend" (dict "serviceName" $serviceName "servicePort" $servicePort "context" $) | nindent 12 }}
+          path: /
+          {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
+          pathType: ImplementationSpecific
+          {{- end }}
   {{- if .Values.webserver.ingress.tls }}
   tls:
 {{ toYaml .Values.webserver.ingress.tls | indent 4 }}

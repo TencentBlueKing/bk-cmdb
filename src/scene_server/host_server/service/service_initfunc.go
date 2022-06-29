@@ -124,6 +124,8 @@ func (s *Service) initHost(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/idle/set", Handler: s.MoveSetHost2IdleModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/property/clone", Handler: s.CloneHostProperty})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/update", Handler: s.UpdateImportHosts})
+	// 查询业务下的主机CPU数量的特殊接口，给成本管理使用
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/count/cpu", Handler: s.CountHostCPU})
 
 	utility.AddToRestfulWebService(web)
 

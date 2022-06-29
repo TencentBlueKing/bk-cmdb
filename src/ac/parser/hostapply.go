@@ -72,7 +72,7 @@ var HostApplyAuthConfigs = []AuthConfig{
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.HostApply,
-		ResourceAction: meta.DefaultHostApply,
+		ResourceAction: meta.SkipAction,
 	}, {
 		Name:           "BatchUpdateOrCreateHostApplyRuleRegex",
 		Description:    "批量创建/更新主机属性自动应用规则",
