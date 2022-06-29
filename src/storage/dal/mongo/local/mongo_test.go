@@ -26,6 +26,7 @@ import (
 	"configcenter/src/storage/dal/types"
 
 	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
 )
 
@@ -136,16 +137,16 @@ func TestIndex(t *testing.T) {
 	createIndexes := map[string]types.Index{
 		"test_one": types.Index{
 			Name: "test_one",
-			Keys: map[string]int32{"a": 1, "b": 1},
+			Keys: bson.D{{"a", int32(1)}, {"b", int32(1)}},
 		},
 		"test_backgroud": types.Index{
 			Name:       "test_backgroud",
-			Keys:       map[string]int32{"aa": 1, "bb": -1},
+			Keys:       bson.D{{"aa", int32(1)}, {"bb", int32(-1)}},
 			Background: true,
 		},
 		"test_unique": types.Index{
 			Name:   "test_unique",
-			Keys:   map[string]int32{"aa": 1, "bb": 1},
+			Keys:   bson.D{{"aa", int32(1)}, {"bb", int32(1)}},
 			Unique: true,
 		},
 	}

@@ -24,6 +24,8 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func createAssociationTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -51,8 +53,9 @@ func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgra
 	}
 
 	createIdxArr := []types.Index{
-		{Name: "idx_id", Keys: map[string]int32{"id": -1}, Background: true, Unique: true},
-		{Name: "idx_objID_asstObjID_asstID", Keys: map[string]int32{"bk_obj_id": -1, "bk_asst_obj_id": -1, "bk_asst_id": -1}},
+		{Name: "idx_id", Keys: bson.D{{"id", int32(-1)}}, Background: true, Unique: true},
+		{Name: "idx_objID_asstObjID_asstID", Keys: bson.D{{"bk_obj_id", int32(-1)}, {"bk_asst_obj_id", int32(-1)},
+			{"bk_asst_id", int32(-1)}}},
 	}
 	for _, idx := range createIdxArr {
 		exist := false

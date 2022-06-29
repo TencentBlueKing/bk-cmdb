@@ -47,7 +47,7 @@ require (
 	github.com/tidwall/gjson v1.14.1
 	github.com/xdg-go/scram v1.1.1
 	github.com/yuin/gopher-lua v0.0.0-20220504180219-658193537a64 // indirect
-	go.mongodb.org/mongo-driver v1.5.0-beta1
+	go.mongodb.org/mongo-driver v1.9.1
 	go.opentelemetry.io/contrib/instrumentation/github.com/emicklei/go-restful/otelrestful v0.32.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.32.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.32.0

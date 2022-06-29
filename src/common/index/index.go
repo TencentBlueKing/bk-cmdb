@@ -20,6 +20,9 @@ import (
 	"configcenter/src/common/index/collections"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func InstanceIndexes() []types.Index {
@@ -63,7 +66,7 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 		Background:              true,
 		Unique:                  true,
 		Name:                    GetUniqueIndexNameByID(id),
-		Keys:                    make(map[string]int32, 0),
+		Keys:                    make(bson.D, 0),
 		PartialFilterExpression: make(map[string]interface{}),
 	}
 	propertiesIDMap := make(map[int64]metadata.Attribute, len(properties))
@@ -96,7 +99,11 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 			return dbIndex, errors.GetGlobalCCError().CreateDefaultCCErrorIf(string(common.English)).
 				CCErrorf(common.CCErrCoreServiceUniqueIndexPropertyType, attr.PropertyID)
 		}
-		dbIndex.Keys[attr.PropertyID] = 1
+
+		dbIndex.Keys = append(dbIndex.Keys, primitive.E{
+			Key:   attr.PropertyID,
+			Value: int32(1),
+		})
 		dbIndex.PartialFilterExpression[attr.PropertyID] = map[string]interface{}{common.BKDBType: dbType}
 	}
 

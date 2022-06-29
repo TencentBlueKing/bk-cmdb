@@ -20,6 +20,8 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -49,24 +51,24 @@ func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *upgrade
 		}
 		indexArr := []types.Index{
 			{
-				Keys:       map[string]int32{"task_id": 1},
+				Keys:       bson.D{{"task_id", int32(1)}},
 				Name:       "idx_taskID",
 				Unique:     taskIDUnique,
 				Background: true,
 			},
 			{
-				Keys:       map[string]int32{"bk_set_id": 1},
+				Keys:       bson.D{{"bk_set_id", int32(1)}},
 				Name:       "idx_setID",
 				Unique:     setIDUnique,
 				Background: true,
 			},
 			{
-				Keys:       map[string]int32{"last_time": 1, "create_time": 1},
+				Keys:       bson.D{{"last_time", int32(1)}, {"create_time", int32(1)}},
 				Name:       "idx_createLastTime",
 				Background: true,
 			},
 			{
-				Keys:       map[string]int32{"status": 1},
+				Keys:       bson.D{{"status", int32(1)}},
 				Name:       "idx_status",
 				Unique:     false,
 				Background: true,
