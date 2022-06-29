@@ -72,15 +72,26 @@ spec:
         ports:
         - containerPort: {{ .Values.taskserver.port }}
 
-      {{- if .Values.taskserver.configDir }}
         volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.taskserver.configDir }}
           - name: configures
             mountPath: {{ .Values.taskserver.configDir }}
+          {{- end }}
       volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.taskserver.configDir }}
         - name: configures
           configMap:
             name: {{ .Release.Name }}-taskserver-configures
-      {{- end }}
+        {{- end }}
 
       {{- with .Values.taskserver.nodeSelector }}
       nodeSelector:

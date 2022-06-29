@@ -84,7 +84,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	} else {
 		// MasterName 不为空，表示使用哨兵模式的redis。MasterName 是Master标记
 		address := strings.Split(webSvr.Config.Redis.Address, ";")
-		service.Session, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, webSvr.Config.Redis.MasterName, "tcp", webSvr.Config.Redis.Password, []byte("secret"))
+		service.Session, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, webSvr.Config.Redis.MasterName,
+			"tcp", webSvr.Config.Redis.Password, webSvr.Config.Redis.SentinelPassword, []byte("secret"))
 		if redisErr != nil {
 			return fmt.Errorf("failed to create new redis store, error info is %v", redisErr)
 		}

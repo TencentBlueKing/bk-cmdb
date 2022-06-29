@@ -74,15 +74,26 @@ spec:
         ports:
         - containerPort: {{ .Values.procserver.port }}
 
-      {{- if .Values.procserver.configDir }}
         volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.procserver.configDir }}
           - name: configures
             mountPath: {{ .Values.procserver.configDir }}
+          {{- end }}
       volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.procserver.configDir }}
         - name: configures
           configMap:
             name: {{ .Release.Name }}-procserver-configures
-      {{- end }}
+        {{- end }}
 
       {{- with .Values.procserver.nodeSelector }}
       nodeSelector:

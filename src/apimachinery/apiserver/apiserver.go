@@ -86,6 +86,9 @@ type ApiServerClientInterface interface {
 	SearchObjectWithTotalInfo(ctx context.Context, h http.Header, params *metadata.BatchExportObject) (
 		*metadata.TotalObjectInfo, error)
 	CreateManyObject(ctx context.Context, h http.Header, params metadata.ImportObjects) ([]metadata.Object, error)
+
+	SearchCloudArea(ctx context.Context, h http.Header, params metadata.CloudAreaSearchParam) (
+		*metadata.SearchDataResult, error)
 }
 
 func NewApiServerClientInterface(c *util.Capability, version string) ApiServerClientInterface {

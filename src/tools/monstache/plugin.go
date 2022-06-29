@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/util"
 
 	"github.com/BurntSushi/toml"
+	"github.com/olivere/elastic/v7"
 	"github.com/rwynn/monstache/monstachemap"
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
@@ -753,7 +754,7 @@ func indexingObjectInstance(input *monstachemap.MapperPluginInput, output *monst
 	if !ok {
 		return errors.New("missing document metadata id")
 	}
-	idEs := fmt.Sprintf("%s:%s", documentID, commonObject)
+	idEs := fmt.Sprintf("%s:%s", documentID.Hex(), commonObject)
 	output.ID = idEs
 
 	output.Document = document
@@ -902,4 +903,50 @@ func Map(input *monstachemap.MapperPluginInput) (*monstachemap.MapperPluginOutpu
 	}
 
 	return output, nil
+}
+
+// Process function, when you implement a Process function, the function will be called after monstache processes each
+// event. This function has full access to the MongoDB and Elasticsearch clients (
+// including the Elasticsearch bulk processor) in the input and allows you to handle complex event processing scenarios
+func Process(input *monstachemap.ProcessPluginInput) error {
+	req := elastic.NewBulkDeleteRequest()
+	metaId := input.Document[mongoMetaId]
+	documentID, ok := metaId.(primitive.ObjectID)
+	if !ok {
+		return errors.New("missing document metadata id")
+	}
+
+	var index, objectID string
+	objectID = documentID.Hex()
+	if input.Operation == "d" {
+		switch input.Collection {
+		case common.BKTableNameBaseBizSet:
+			objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDBizSet)
+			index = fmt.Sprintf("%s_%s", meta.IndexNameBizSet, indexVersionBizSet)
+		case common.BKTableNameBaseApp:
+			objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDApp)
+			index = fmt.Sprintf("%s_%s", meta.IndexNameBiz, indexVersionBiz)
+		case common.BKTableNameBaseSet:
+			objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDSet)
+			index = fmt.Sprintf("%s_%s", meta.IndexNameSet, indexVersionSet)
+		case common.BKTableNameBaseModule:
+			objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDModule)
+			index = fmt.Sprintf("%s_%s", meta.IndexNameModule, indexVersionModule)
+		case common.BKTableNameBaseHost:
+			objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDHost)
+			index = fmt.Sprintf("%s_%s", meta.IndexNameHost, indexVersionHost)
+		case common.BKTableNameObjDes, common.BKTableNameObjAttDes:
+			objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDObject)
+			index = fmt.Sprintf("%s_%s", meta.IndexNameModel, indexVersionModel)
+		default:
+			objectID = fmt.Sprintf("%s:%s", objectID, commonObject)
+			index = fmt.Sprintf("%s_%s", meta.IndexNameObjectInstance, indexVersionObjectInstance)
+		}
+
+		req.Id(objectID)
+		req.Index(index)
+		input.ElasticBulkProcessor.Add(req)
+	}
+
+	return nil
 }
