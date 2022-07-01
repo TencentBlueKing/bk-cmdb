@@ -102,7 +102,10 @@
         </service-template-config>
       </bk-tab-panel>
       <bk-tab-panel :label="$t('服务模板实例')" name="instance">
-        <service-template-instance :active="active === 'instance'"></service-template-instance>
+        <service-template-instance
+          :active="active === 'instance'"
+          @sync-change="handleSyncStatusChange">
+        </service-template-instance>
       </bk-tab-panel>
     </bk-tab>
   </div>

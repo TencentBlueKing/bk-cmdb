@@ -13,6 +13,7 @@
 <template>
   <bk-input
     v-model="localValue"
+    v-bind="$attrs"
     :placeholder="placeholder || $t('请输入长字符')"
     :disabled="disabled"
     :type="'textarea'"

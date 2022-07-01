@@ -30,11 +30,15 @@ const deleteProperty = (data, config = {}) => http.delete('delete/topo/set_templ
 // 查询属性配置
 const findProperty = (data, config) => http.post('findmany/topo/set_template/attribute', data, config)
 
+// 获取模板与实例对比中被移除的模块是否存在主机
+const getRemovedModuleStatus = (bizId, templateId, data, config) => http.post(`findmany/topo/set_template/${templateId}/bk_biz_id/${bizId}/host_with_instances`, data, config)
+
 export default {
   create,
   update,
   getFullOne,
   updateProperty,
   deleteProperty,
-  findProperty
+  findProperty,
+  getRemovedModuleStatus
 }

@@ -112,6 +112,15 @@
       <bk-table-column prop="operation" :label="$t('操作')" fixed="right">
         <template slot-scope="{ row }">
           <cmdb-loading :loading="$loading(request.count)">
+            <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_TEMPLATE, relation: [bizId, row.id] }">
+              <bk-button slot-scope="{ disabled }"
+                theme="primary"
+                :disabled="disabled"
+                :text="true"
+                @click.stop="handleEdit(row.id)">
+                {{$t('编辑')}}
+              </bk-button>
+            </cmdb-auth>
             <cmdb-auth class="mr10" :auth="{ type: $OPERATION.C_SERVICE_TEMPLATE, relation: [bizId] }">
               <bk-button slot-scope="{ disabled }"
                 theme="primary"
@@ -156,7 +165,8 @@
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_BUSINESS_SERVICE_TEMPLATE_CREATE,
-    MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS
+    MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
+    MENU_BUSINESS_SERVICE_TEMPLATE_EDIT
   } from '@/dictionary/menu-symbol'
   import CmdbLoading from '@/components/loading/loading'
   export default {
@@ -367,6 +377,15 @@
       handleCreate() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_SERVICE_TEMPLATE_CREATE,
+          history: true
+        })
+      },
+      handleEdit(templateId) {
+        this.$routerActions.redirect({
+          name: MENU_BUSINESS_SERVICE_TEMPLATE_EDIT,
+          params: {
+            templateId
+          },
           history: true
         })
       },

@@ -92,7 +92,10 @@
         </set-template-config>
       </bk-tab-panel>
       <bk-tab-panel :label="$t('集群模板实例')" render-directive="if" name="instance">
-        <set-template-instance :template-id="templateId"></set-template-instance>
+        <set-template-instance
+          :template-id="templateId"
+          @sync-change="handleSyncStatusChange">
+        </set-template-instance>
       </bk-tab-panel>
     </bk-tab>
   </div>

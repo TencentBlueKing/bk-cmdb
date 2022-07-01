@@ -295,6 +295,8 @@
                     <bk-input type="text"
                       ref="$templateName"
                       name="templateName"
+                      size="small"
+                      font-size="normal"
                       v-model.trim="editState.value"
                       :data-vv-name="'templateName'"
                       v-validate="'required|singlechar|length:256'"
@@ -311,13 +313,15 @@
         </cmdb-collapse>
       </div>
       <div class="form-group">
-        <cmdb-collapse label="属性设置" arrow-type="filled">
+        <cmdb-collapse :label="$t('属性设置')" arrow-type="filled">
           <div class="form-content">
             <property-config-details v-if="hasPropertyConfig"
               :instance="propertyConfig"
               :properties="setProperties"
               :auth="auth"
               :loading-state="propertyConfigLoadingState"
+              :max-columns="2"
+              form-element-size="small"
               @save="handleSavePropertyConfig"
               @del="handleDelPropertyConfig">
             </property-config-details>
@@ -343,7 +347,7 @@
         </cmdb-collapse>
       </div>
       <div class="form-group">
-        <cmdb-collapse label="集群拓扑" arrow-type="filled">
+        <cmdb-collapse :label="$t('集群拓扑')" arrow-type="filled">
           <div class="form-content">
             <template-tree
               :mode="'view'"

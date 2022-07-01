@@ -11,6 +11,7 @@
  */
 
 import store from '@/store'
+import cloneDeep from 'lodash/cloneDeep'
 import propertyService from '@/service/property/property.js'
 import propertyGroupService from '@/service/property/group.js'
 import serviceTemplateService from '@/services/service-template'
@@ -42,7 +43,8 @@ export default async (bizId, templateId, isFetchTemplate) => {
     basic: {},
     configProperties: [],
     propertyConfig: {},
-    processList: []
+    processList: [],
+    formDataCopy: {} // 需要纳入表单填写检测的数据拷贝
   }
 
   const [
@@ -89,6 +91,14 @@ export default async (bizId, templateId, isFetchTemplate) => {
 
       // 属性配置值键值对
       templateState.propertyConfig[property.id] = item.bk_property_value
+    })
+
+    templateState.formDataCopy = cloneDeep({
+      templateName: templateState.basic.templateName,
+      primaryCategory: templateState.basic.primaryCategory,
+      secCategory: templateState.basic.secCategory,
+      propertyConfig: templateState.propertyConfig,
+      processList: templateState.processList
     })
   }
 

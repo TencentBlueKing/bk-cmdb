@@ -23,6 +23,8 @@
       :placeholder="getPlaceholder(property)"
       :auto-check="autoCheck"
       :disabled="disabled"
+      :size="size"
+      :font-size="fontSize"
       v-bind="$tools.getValidateEvents(property)"
       v-validate="getValidateRules(property)"
       v-on="events"
@@ -64,7 +66,9 @@
       events: {
         type: Object,
         default: () => ({})
-      }
+      },
+      size: String,
+      fontSize: String
     },
     computed: {
       localValue: {

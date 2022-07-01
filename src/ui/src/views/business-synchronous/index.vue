@@ -271,7 +271,7 @@
             bk_biz_id: this.bizId
           }
         }).then(() => {
-          this.$success(this.$t('同步成功'))
+          this.$success(this.$t('提交同步成功'))
           this.goBackModule()
         })
           .finally(() => {
@@ -296,6 +296,9 @@
 
 <style lang="scss" scoped>
 .service-template-sync-layout {
+  .layout-header {
+    margin: 20px 24px 0 24px;
+  }
   .layout-top {
     display: flex;
     margin: 24px;
@@ -348,7 +351,7 @@
 
   .module-instance-group {
     .module-instance-item {
-      margin: 16px;
+      margin: 24px 16px 0 16px;
     }
   }
 
@@ -356,7 +359,7 @@
     display: flex;
     align-items: center;
     height: 52px;
-    padding: 0 20px;
+    padding: 0 24px;
     margin-top: 8px;
     .bk-button {
       min-width: 86px;

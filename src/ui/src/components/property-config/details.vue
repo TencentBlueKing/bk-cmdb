@@ -48,7 +48,9 @@
       loadingState: {
         type: Array,
         default: () => ([])
-      }
+      },
+      formElementSize: String,
+      maxColumns: Number
     },
     setup(props, { emit }) {
       const editState = ref({
@@ -63,6 +65,7 @@
           value: props.instance[id]
         }))
       })
+
 
       const isLoading = property => props.loadingState.includes(property)
 
@@ -101,7 +104,13 @@
 
 <template>
   <div class="property-config-details">
-    <grid-layout :min-width="360" :gap="20" class="form-content">
+    <grid-layout
+      class="form-content"
+      :min-width="360"
+      :max-width="560"
+      :min-height="28"
+      :gap="0"
+      :max-columns="maxColumns">
       <grid-item class="form-item"
         v-for="({ property, value }) in configList"
         :key="property.id"
@@ -111,6 +120,7 @@
           :property="property"
           :auth="auth"
           :value="value"
+          :form-element-size="formElementSize"
           :must-required="isRequired(property)"
           :loading="isLoading(property)"
           :edit-state.sync="editState"

@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { defineComponent, ref, toRef, toRefs, PropType, watch } from '@vue/composition-api'
+  import { computed, defineComponent, ref, toRef, toRefs, PropType, watch } from '@vue/composition-api'
   import { formatValue } from '@/utils/tools.js'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
@@ -57,7 +57,9 @@
       exclude: {
         type: Array as PropType<string[]>,
         default: () => ([])
-      }
+      },
+      formElementSize: String,
+      maxColumns: Number
     },
     setup(props, { emit }) {
       const $propertyFormElement = ref(null)
@@ -65,6 +67,8 @@
       const { sortedGroups, groupedProperties } = useProperty(toRefs(props))
 
       const propertyModalShow = ref(false)
+
+      const formElementFontSize = computed(() => (props.formElementSize === 'small' ? 'normal' : 'medium'))
 
       // 当前选中的属性列表
       const selectedList = ref([])
@@ -133,15 +137,35 @@
         propertyConfig,
         $propertyFormElement,
         isRequired,
+        formElementFontSize,
         handleSelectField,
         handleRemoveField,
         handleChange
       }
     },
     methods: {
-      async validate() {
+      async validateAll() {
         // 获得每一个表单元素的校验方法
-        const validates = (this.$refs.$propertyFormElement || []).map(formElement => formElement.$validator.validate())
+        const validates = (this.$refs.$propertyFormElement || [])
+          .map(formElement => formElement.$validator.validateAll())
+
+        if (validates.length) {
+          const results = await Promise.all(validates)
+          return results.every(valid => valid)
+        }
+
+        return true
+      },
+      async validate() {
+        const $propertyFormElements = this.$refs.$propertyFormElement || []
+        const validates = []
+        $propertyFormElements.forEach(async (formElement) => {
+          const [[key, val]] = Object.entries(formElement.fields)
+          // 只检测dirty字段
+          if (val.dirty) {
+            validates.push(formElement.$validator.validate(key))
+          }
+        })
 
         if (validates.length) {
           const results = await Promise.all(validates)
@@ -174,7 +198,12 @@
           :label="group.bk_group_name"
           arrow-type="filled"
           :key="groupIndex">
-          <grid-layout mode="form" :min-width="360" :gap="20" class="form-content">
+          <grid-layout mode="form"
+            class="form-content"
+            :min-width="360"
+            :max-width="560"
+            :gap="24"
+            :max-columns="maxColumns">
             <grid-item class="form-item" required
               v-for="property in configGroupedProperties[groupIndex]"
               :key="property.id"
@@ -184,6 +213,8 @@
                 ref="$propertyFormElement"
                 :must-required="isRequired(property)"
                 :property="property"
+                :size="formElementSize"
+                :font-size="formElementFontSize"
                 v-model="propertyConfig[property.id]"
                 @change="handleChange">
               </property-form-element>

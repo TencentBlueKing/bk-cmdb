@@ -100,9 +100,14 @@
   }
 
   .process-container {
-    margin-top: 16px;
     .process-difference {
       margin-top: 12px;
+    }
+  }
+
+  .property-container {
+    & + .process-container {
+      margin-top: 32px;
     }
   }
 }

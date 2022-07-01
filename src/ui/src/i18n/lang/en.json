@@ -1632,5 +1632,9 @@
     "属性同步后": "after synchronization",
     "拓扑结构变更": "Topology change",
     "拓扑同步前": "before synchronization",
-    "拓扑同步后": "after synchronization"
+    "拓扑同步后": "after synchronization",
+    "修改服务分类成功提示": "Successfully modified! No need to synchronize after service category updated",
+    "实例正在同步，无法操作": "Instance is syncing and cannot be operated",
+    "属性设置": "Property settings",
+    "模板里定义的字段，在实例中将不可修改": "Property defined in the template will not be modifiable in the instance"
 }

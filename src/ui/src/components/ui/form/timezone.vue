@@ -13,6 +13,7 @@
 <template>
   <bk-select class="form-timezone-selector"
     searchable
+    v-bind="$attrs"
     v-model="selected"
     :clearable="false"
     :disabled="disabled"

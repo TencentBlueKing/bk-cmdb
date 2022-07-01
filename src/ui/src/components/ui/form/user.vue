@@ -154,6 +154,24 @@
                 padding-right: 20px;
             }
         }
+
+        &[size="small"] {
+          height: 26px !important;
+
+          /deep/ .user-selector-container {
+              height: 26px !important;
+
+              &.placeholder:after {
+                line-height: 24px;
+              }
+
+              .user-selector-input {
+                margin-top: 2px;
+                height: 20px;
+                line-height: 20px;
+              }
+          }
+        }
     }
     .fast-select {
         position: absolute;

@@ -43,26 +43,38 @@
     <div class="layout-main">
       <div class="set-instance-container" v-if="isSingleSync">
         <set-instance class="instance-item"
-          v-bkloading="{ isLoading: setGroup[setIds[0]].loading }"
-          :property-diff="setGroup[setIds[0]].propertyDiff"
-          :module-diff="setGroup[setIds[0]].moduleDiff"
-          :module-host-count="moduleHostCount">
+          v-bkloading="{ isLoading: singleSet.loading }"
+          :property-diff="singleSet.propertyDiff"
+          :module-diff="singleSet.moduleDiff"
+          :module-host-count="singleSet.moduleHostCount">
         </set-instance>
       </div>
       <div class="set-instance-group" v-else>
         <cmdb-collapse class="set-instance-container"
-          v-for="setId in setIds"
-          :label="setGroup[setId].topoPath"
-          :collapse="setGroup[setId].collapse"
+          v-for="diff in diffList"
+          :label="setGroup[diff.setId].topoPath"
+          :collapse="setGroup[diff.setId].collapse"
           arrow-type="filled"
-          :key="setId"
-          @collapse-change="handleSetCollapseChange(setId, $event)">
+          :key="diff.setId"
+          @collapse-change="handleSetCollapseChange(diff.setId, $event)">
+          <template #title>
+            <div class="collapse-title">
+              <span class="topopath">{{setGroup[diff.setId].topoPath}}</span>
+              <span class="deny-sync-tips" v-if="diff.denySync">
+                <i class="bk-icon icon-exclamation"></i>{{$t('不可同步')}}
+              </span>
+              <i class="bk-icon icon-close"
+                v-bk-tooltips="$t('本次不同步')"
+                @click.stop="handleRemove(diff)">
+              </i>
+            </div>
+          </template>
           <set-instance class="set-instance-item"
-            v-bkloading="{ isLoading: setGroup[setId].loading }"
+            v-bkloading="{ isLoading: setGroup[diff.setId].loading }"
             collapse-size="small"
-            :property-diff="setGroup[setId].propertyDiff"
-            :module-diff="setGroup[setId].moduleDiff"
-            :module-host-count="moduleHostCount">
+            :property-diff="setGroup[diff.setId].propertyDiff"
+            :module-diff="setGroup[diff.setId].moduleDiff"
+            :module-host-count="setGroup[diff.setId].moduleHostCount">
           </set-instance>
         </cmdb-collapse>
       </div>
@@ -70,12 +82,14 @@
 
     <template #footer="{ sticky }">
       <div :class="['layout-footer', { 'is-sticky': sticky }]">
-        <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [bizId] }">
+        <cmdb-auth
+          :auth="{ type: $OPERATION.U_TOPO, relation: [bizId] }"
+          v-bk-tooltips="{ content: $t(isSingleSync ? '不可同步' : '请先删除不可同步的实例'), disabled: !denySync }">
           <template slot-scope="{ disabled }">
             <bk-button
               theme="primary"
               :loading="$loading(requestIds.syncTemplateToInstances)"
-              :disabled="disabled"
+              :disabled="disabled || denySync"
               @click="handleConfirmSync">
               {{$t('确认同步')}}
             </bk-button>
@@ -91,6 +105,8 @@
   import { mapGetters } from 'vuex'
   import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_SET_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
   import setInstance from './set-instance'
+  import setTemplateService from '@/services/set-template'
+
   export default {
     components: {
       setInstance
@@ -113,7 +129,8 @@
           topoPath: '', // 拓扑路径
           collapse: true, // 是否展开
           loaded: false, // 是否加载过
-          loading: false // 是否加载中
+          loading: false, // 是否加载中
+          moduleHostCount: {} // 集群下模块实例的主机数
         }
       })
 
@@ -121,10 +138,7 @@
         setIds,
         setProperties: [],
         setGroup,
-        expandAll: false,
         diffList: [],
-        templateName: '',
-        moduleHostCount: {},
         requestIds: {
           topopath: Symbol(),
           properties: Symbol(),
@@ -138,15 +152,22 @@
         return this.$route.params.setTemplateId
       },
       isSingleSync() {
-        return this.setIds?.length === 1
+        return this.diffList?.length === 1
+      },
+      singleSet() {
+        const setId = this.diffList?.[0]?.setId
+        return this.setGroup[setId] || {}
+      },
+      denySync() {
+        return this.diffList.some(item => item.denySync)
       }
     },
     async created() {
       await this.getSetProperties()
       await this.getTopoPath()
-      this.getSetTemplateInfo()
+      await this.getRemovedModuleHostStatus()
       // 默认展开第1个
-      this.getDiffData(this.setIds[0])
+      this.getDiffData(this.diffList?.[0]?.setId)
     },
     methods: {
       getSetProperties() {
@@ -182,16 +203,15 @@
           })
         })
       },
-      async getSetTemplateInfo() {
-        try {
-          const info = await this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {
-            bizId: this.bizId,
-            setTemplateId: this.setTemplateId
-          })
-          this.templateName = info.name
-        } catch (e) {
-          console.error(e)
-        }
+      async getRemovedModuleHostStatus() {
+        const results = await setTemplateService.getRemovedModuleStatus(this.bizId, this.setTemplateId, {
+          bk_set_ids: this.setIds
+        })
+
+        this.diffList = results.map(item => ({
+          setId: item.id,
+          denySync: item.has_host // 移除的模块中存在主机不允许同步
+        })).sort((setA, setB) => setB.denySync - setA.denySync)
       },
       async getDiffData(setId) {
         const currentSet = this.setGroup[setId]
@@ -207,11 +227,11 @@
             }
           })
 
-          this.moduleHostCount = data.module_host_count || {}
+          currentSet.moduleHostCount = data.module_host_count || {}
 
           const { attributes, ...moduleDiff  } = data.difference || {}
 
-          // 属性变更，注入原始属性对象
+          // 属性变更数据，注入原始属性对象
           if (attributes) {
             currentSet.propertyDiff = attributes.map((attr) => {
               const property = this.setProperties.find(prop => prop.id === attr.id)
@@ -223,9 +243,6 @@
           }
 
           currentSet.moduleDiff = moduleDiff
-        } catch (e) {
-          console.error(e)
-          this.moduleHostCount = {}
         } finally {
           currentSet.loading = false
           currentSet.loaded = true
@@ -237,7 +254,7 @@
             bizId: this.bizId,
             setTemplateId: this.setTemplateId,
             params: {
-              bk_set_ids: this.setIds
+              bk_set_ids: this.diffList.map(item => item.setId)
             },
             config: {
               requestId: this.requestIds.syncTemplateToInstances
@@ -257,15 +274,16 @@
           console.error(e)
         }
       },
-      handleExpandAll(expand) {
-        this.$refs.setInstance.forEach((instance) => {
-          instance.localExpand = expand
-        })
-      },
       handleSetCollapseChange(setId, collapse) {
         // 打开并且未加载过或者不在加载中状态
         if (!collapse && !this.setGroup[setId].loaded && !this.setGroup[setId].loading) {
           this.getDiffData(setId)
+        }
+      },
+      handleRemove(diff) {
+        const index = this.diffList.indexOf(diff)
+        if (index !== -1) {
+          this.diffList.splice(index, 1)
         }
       },
       handleGoback() {
@@ -343,11 +361,46 @@
     & + .set-instance-container {
       margin-top: 16px;
     }
+
+    .collapse-title {
+      display: flex;
+
+      .deny-sync-tips {
+        display: flex;
+        align-items: center;
+        font-size: 12px;
+        color: #FF5656;
+        margin-left: 12px;
+        margin-top: -2px;
+
+        .bk-icon {
+          width: 14px;
+          height: 14px;
+          line-height: 14px;
+          text-align: center;
+          color: #FFFFFF;
+          background-color: #FF5656;
+          border-radius: 50%;
+          margin-right: 4px;
+        }
+      }
+
+      .icon-close {
+        color: #979BA5;
+        font-size: 20px;
+        margin-left: auto; // 靠右
+        cursor: pointer;
+
+        &:hover {
+          color: $primaryColor;
+        }
+      }
+    }
   }
 
   .set-instance-group {
     .set-instance-item {
-      margin: 16px;
+      margin: 24px 16px 0 16px;
     }
   }
 
@@ -355,7 +408,7 @@
     display: flex;
     align-items: center;
     height: 52px;
-    padding: 0 20px;
+    padding: 0 24px;
     margin-top: 8px;
     .bk-button {
       min-width: 86px;

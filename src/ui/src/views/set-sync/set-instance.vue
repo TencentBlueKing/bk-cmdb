@@ -83,9 +83,14 @@
   }
 
   .module-container {
-    margin-top: 16px;
     .module-difference {
       margin-top: 12px;
+    }
+  }
+
+  .property-container {
+    & + .module-container {
+      margin-top: 32px;
     }
   }
 }

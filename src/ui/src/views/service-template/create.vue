@@ -55,7 +55,7 @@
       }
 
       const handleSubmit = async () => {
-        const valid = await managementForm.value.validate()
+        const valid = await managementForm.value.validateAll()
         if (!valid) {
           return
         }

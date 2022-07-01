@@ -47,7 +47,7 @@
                   <i18n path="存在主机不可同步提示" tag="p">
                     <template #btn>
                       <span class="view-btn"
-                        @click="handleViewModule(_module.bk_module_id)">
+                        @click="handleViewModule(node.bk_module_id)">
                         {{$t('跳转查看')}}
                       </span>
                     </template>
@@ -107,7 +107,8 @@
           name: MENU_BUSINESS_HOST_AND_SERVICE,
           query: {
             node: `module-${moduleId}`
-          }
+          },
+          history: true
         })
       }
     }
@@ -170,6 +171,7 @@
     margin-left: 9px;
     .node-child {
       display: flex;
+      align-items: center;
       padding: 0 10px 0 50px;
       position: relative;
 
@@ -194,10 +196,10 @@
 
       .tips {
         display: flex;
+        flex: none;
         align-items: center;
         font-size: 12px;
         color: #FF5656;
-        margin: 4px 0 0 6px;
         .bk-icon {
           width: 16px;
           height: 16px;

@@ -300,6 +300,8 @@
 
           state.basic.secCategory = categoryId
           state.basic.primaryCategoryCopy = state.basic.primaryCategory
+
+          $success(t('修改服务分类成功提示'))
         } finally {
           loadingState.value = loadingState.value.filter(item => item !== basicProperties.categorty)
         }
@@ -531,7 +533,7 @@
     <div class="template-config" v-bkloading="{ isLoading: loading }">
       <div class="form-group">
         <cmdb-collapse :label="$t('基础信息')" arrow-type="filled">
-          <grid-layout mode="detail" :min-width="360" :max-width="560" class="form-content">
+          <grid-layout mode="detail" :min-width="360" :max-width="560" :gap="0" class="form-content">
             <grid-item
               :label="$t('模板名称')"
               :label-width="160"
@@ -554,6 +556,8 @@
                     <bk-input type="text"
                       ref="$templateName"
                       name="templateName"
+                      size="small"
+                      font-size="normal"
                       :placeholder="$t('模板名称将作为实例化后的模块名')"
                       v-model.trim="editState.value"
                       :data-vv-name="'templateName'"
@@ -593,6 +597,8 @@
                     <div :class="['category-item', 'cmdb-form-item', { 'is-error': errors.has('primaryCategory') }]">
                       <cmdb-selector
                         display-key="displayName"
+                        size="small"
+                        font-size="normal"
                         :placeholder="$t('请选择一级分类')"
                         :searchable="true"
                         :auto-select="false"
@@ -606,7 +612,7 @@
                         @change="handleChangePrimaryCategory">
                         <template #default="{ name, id }">
                           <div class="bk-option-content-default" :title="`${name}（#${id}）`">
-                            <div class="bk-option-name medium-font">
+                            <div class="bk-option-name">
                               {{name}}<span class="category-id">（#{{id}}）</span>
                             </div>
                           </div>
@@ -618,6 +624,8 @@
                       <cmdb-selector
                         ref="$secCategory"
                         display-key="displayName"
+                        size="small"
+                        font-size="normal"
                         :placeholder="$t('请选择二级分类')"
                         :searchable="true"
                         :auto-select="false"
@@ -628,7 +636,7 @@
                         @change="handleChangeSecCategory">
                         <template #default="{ name, id }">
                           <div class="bk-option-content-default" :title="`${name}（#${id}）`">
-                            <div class="bk-option-name medium-font">
+                            <div class="bk-option-name">
                               {{name}}<span class="category-id">（#{{id}}）</span>
                             </div>
                           </div>
@@ -644,13 +652,15 @@
         </cmdb-collapse>
       </div>
       <div class="form-group">
-        <cmdb-collapse label="属性设置" arrow-type="filled">
+        <cmdb-collapse :label="$t('属性设置')" arrow-type="filled">
           <div class="form-content">
             <property-config-details v-if="hasPropertyConfig"
               :instance="propertyConfig"
               :properties="moduleProperties"
               :auth="auth"
               :loading-state="propertyConfigLoadingState"
+              :max-columns="2"
+              form-element-size="small"
               @save="handleSavePropertyConfig"
               @del="handleDelPropertyConfig">
             </property-config-details>
@@ -676,7 +686,7 @@
         </cmdb-collapse>
       </div>
       <div class="form-group">
-        <cmdb-collapse label="服务进程" arrow-type="filled">
+        <cmdb-collapse :label="$t('服务进程')" arrow-type="filled">
           <div class="form-content">
             <div class="process-create-container">
               <cmdb-auth :auth="auth">

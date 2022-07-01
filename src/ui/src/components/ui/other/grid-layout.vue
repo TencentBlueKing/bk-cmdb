@@ -31,6 +31,7 @@
       minHeight: {
         type: [Number, String]
       },
+      maxColumns: Number
     },
     provide() {
       return {
@@ -62,7 +63,8 @@
       '--gap': gridGap,
       '--min-width': colMinWidth,
       '--max-width': colMaxWidth,
-      '--min-height': rowMinHeight
+      '--min-height': rowMinHeight,
+      '--max-columns': maxColumns
     }">
     <slot></slot>
   </div>
@@ -71,6 +73,8 @@
 <style lang="scss" scoped>
   .cmdb-grid-layout {
     display: grid;
+    // 列数*最大宽度+间距+最大宽度的一半用于最大限度兼容
+    max-width: calc(var(--max-columns) * var(--max-width) + var(--gap, 24px) + (var(--max-width) / 2));
     gap: var(--gap, 24px);
     grid-template-columns: repeat(auto-fill, minmax(var(--min-width, 200px), var(--max-width, 1fr)));
     grid-auto-rows: minmax(var(--min-height, 32px), auto);

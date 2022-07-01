@@ -66,6 +66,14 @@
       </bk-table-column>
       <bk-table-column :label="$t('操作')" width="180">
         <template slot-scope="{ row }">
+          <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SET_TEMPLATE, relation: [bizId, row.id] }">
+            <bk-button slot-scope="{ disabled }"
+              text
+              :disabled="disabled"
+              @click="handleEdit(row)">
+              {{$t('编辑')}}
+            </bk-button>
+          </cmdb-auth>
           <span class="text-primary"
             style="color: #dcdee5 !important; cursor: not-allowed;"
             v-if="row.set_instance_count"
@@ -76,8 +84,7 @@
             <bk-button slot-scope="{ disabled }" v-test-id="'delTemplate'"
               text
               :disabled="disabled"
-              @click="handleDelete(row)"
-            >
+              @click="handleDelete(row)">
               {{$t('删除')}}
             </bk-button>
           </cmdb-auth>
@@ -99,7 +106,8 @@
     MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_BUSINESS_SERVICE_TEMPLATE,
     MENU_BUSINESS_SET_TEMPLATE_CREATE,
-    MENU_BUSINESS_SET_TEMPLATE_DETAILS
+    MENU_BUSINESS_SET_TEMPLATE_DETAILS,
+    MENU_BUSINESS_SET_TEMPLATE_EDIT
   } from '@/dictionary/menu-symbol'
 
   export default {
@@ -214,6 +222,15 @@
       },
       handleSelectable(row) {
         return !row.set_instance_count
+      },
+      handleEdit(row) {
+        this.$routerActions.redirect({
+          name: MENU_BUSINESS_SET_TEMPLATE_EDIT,
+          params: {
+            templateId: row.id
+          },
+          history: true
+        })
       },
       handleRowClick(row, event, column) {
         if (!column.property) {

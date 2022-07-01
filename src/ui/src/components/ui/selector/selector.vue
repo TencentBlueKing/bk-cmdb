@@ -22,6 +22,7 @@
     :font-size="fontSize"
     :popover-options="popoverOptions"
     :readonly="readonly"
+    :size="size"
     @change="handleChange"
     @toggle="handleToggle">
     <bk-option-group v-for="(group, index) in list"
@@ -46,6 +47,7 @@
     :font-size="fontSize"
     :popover-options="popoverOptions"
     :readonly="readonly"
+    :size="size"
     @change="handleChange"
     @toggle="handleToggle">
     <bk-option
@@ -117,7 +119,8 @@
         type: Object,
         default: () => ({})
       },
-      readonly: Boolean
+      readonly: Boolean,
+      size: String
     },
     data() {
       return {

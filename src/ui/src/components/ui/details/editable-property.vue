@@ -47,7 +47,8 @@
       mustRequired: {
         type: Boolean,
         default: null
-      }
+      },
+      formElementSize: String
     },
     setup(props, { emit }) {
       const $propertyFormElement = ref(null)
@@ -55,6 +56,8 @@
       const isEditable = computed(() => props.property.editable && !props.property.bk_isapi)
 
       const isEditing = computed(() => props.property === props.editState.property)
+
+      const formElementFontSize = computed(() => (props.formElementSize === 'small' ? 'normal' : 'medium'))
 
       const setEditState = (property: IProperty) => {
         const value = (props.value === null || props.value === undefined) ? '' : props.value
@@ -105,7 +108,8 @@
         setEditState,
         handleClickOutSide,
         $propertyFormElement,
-        confirmEvents
+        confirmEvents,
+        formElementFontSize
       }
     }
   })
@@ -151,6 +155,8 @@
           }"
           :must-required="mustRequired"
           :property="property"
+          :size="formElementSize"
+          :font-size="formElementFontSize"
           :events="confirmEvents"
           v-model="editState.value">
         </property-form-element>

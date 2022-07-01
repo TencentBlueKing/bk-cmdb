@@ -11,7 +11,8 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, onBeforeUnmount, reactive, ref, toRefs, watchEffect } from '@vue/composition-api'
+  import { computed, defineComponent, onBeforeUnmount, reactive, ref, toRefs, watch, watchEffect } from '@vue/composition-api'
+  import isEqual from 'lodash/isEqual'
   import store from '@/store'
   import { t } from '@/i18n'
   import { formatValue } from '@/utils/tools'
@@ -74,9 +75,7 @@
         secCategories: [],
         currentSecCategories: [],
         configProperties: [],
-        propertyConfig: {},
         isLocalProcessEdit: true, // 此组件均使用本地编辑模式，数据最后统一提交
-        processList: localProcessTemplate.value,
         processSlider: {
           show: false,
           title: '',
@@ -88,11 +87,16 @@
         }
       })
 
-      const formData = reactive({
+      // 用于接收初始化时的表单数据
+      let formDataCopy = null
+
+      const formData = ref({
         id: null,
         templateName: '',
         primaryCategory: '',
-        secCategory: ''
+        secCategory: '',
+        propertyConfig: {},
+        processList: localProcessTemplate.value,
       })
 
       const requestIds = {
@@ -112,8 +116,11 @@
           basic,
           configProperties,
           propertyConfig,
-          processList
+          processList,
+          formDataCopy: formDataCopyRaw
         } = await useTemplateData(bizId.value, templateId.value, isEdit.value)
+
+        formDataCopy = formDataCopyRaw
 
         emit('data-loaded')
 
@@ -129,19 +136,19 @@
         // 编辑态数据初始化
         if (isEdit.value) {
           // 基础信息
-          formData.id = basic.id
-          formData.templateName = basic.templateName
-          formData.primaryCategory = basic.primaryCategory
-          formData.secCategory = basic.secCategory
+          formData.value.id = basic.id
+          formData.value.templateName = basic.templateName
+          formData.value.primaryCategory = basic.primaryCategory
+          formData.value.secCategory = basic.secCategory
           state.currentSecCategories = state.secCategories
             .filter(category => category.bk_parent_id === basic.primaryCategory)
 
           // 进程列表
-          state.processList = processList
+          formData.value.processList = processList
           store.commit('serviceProcess/setLocalProcessTemplate', formatProcessSubmitData(processList))
 
           // 属性设置
-          state.propertyConfig = propertyConfig
+          formData.value.propertyConfig = propertyConfig
           state.configProperties = configProperties
 
           if (!props.isClone) {
@@ -150,10 +157,24 @@
         }
       })
 
+      const isFormDataChanged = computed(() => {
+        const formDataLatest = {
+          templateName: formData.value.templateName,
+          primaryCategory: formData.value.primaryCategory,
+          secCategory: formData.value.secCategory,
+          propertyConfig: $propertyConfig.value?.getData(),
+          processList: formData.value.processList
+        }
+        return !isEqual(formDataCopy, formDataLatest)
+      })
+
+      // 动态监测表单值是否变化，设置提交按钮的状态
+      watch(isFormDataChanged, changed => emit('update:submitDisabled', !changed))
+
       const handleSelectPrimaryCategory = (id: number) => {
         state.currentSecCategories = state.secCategories.filter(classification => classification.bk_parent_id === id)
         if (!state.currentSecCategories?.length) {
-          formData.secCategory = ''
+          formData.value.secCategory = ''
         }
       }
 
@@ -181,7 +202,7 @@
           title: t('确认删除模板进程'),
           confirmFn: () => {
             store.commit('serviceProcess/deleteLocalProcessTemplate', { process: template, index })
-            state.processList = localProcessTemplate.value
+            formData.value.processList = localProcessTemplate.value
           }
         })
       }
@@ -236,12 +257,13 @@
 
       return {
         ...toRefs(state),
+        formData,
         $processForm,
         $propertyConfig,
         requestIds,
         auth,
-        formData,
         excludeModuleProperties,
+        isFormDataChanged,
         formatProcessSubmitData,
         handleSelectPrimaryCategory,
         handleCreateProcess,
@@ -263,7 +285,7 @@
           })
         }
 
-        const processes = this.processList.map((process) => {
+        const processes = this.formData.processList.map((process) => {
           delete process.sign_id
           const data = {
             property: this.formatProcessSubmitData(process)
@@ -282,24 +304,42 @@
           attributes
         }
       },
-      async validate() {
+      async validateAll() {
         // 基础信息校验
-        const basicValid = await this.$validator.validate()
+        const basicValid = await this.$validator.validateAll()
 
         // 属性设置校验
-        const configValid = this.$refs.$propertyConfig.validate()
+        const configValid = await this.$refs.$propertyConfig.validateAll()
 
         const result = basicValid && configValid
 
         return result
       },
+      async validate() {
+        const basicResults = []
+        for (const [key, val] of Object.entries(this.fields)) {
+          if (val.dirty) {
+            basicResults.push(await this.$validator.validate(key))
+          }
+        }
+
+        const basicValid = basicResults.every(valid => valid)
+        const configValid = this.$refs.$propertyConfig.validate()
+
+        return basicValid && configValid
+      },
+      async changeHandler() {
+        this.$nextTick(async () => {
+          const valid = await this.validate()
+          const { isFormDataChanged } = this
+          this.$emit('update:submitDisabled', !valid || !isFormDataChanged)
+        })
+      },
       async handlePropertyConfigChange() {
-        const valid = await this.validate()
-        this.$emit('update:submitDisabled', !valid)
+        this.changeHandler()
       },
       async handleBasicChange() {
-        const valid = await this.validate()
-        this.$emit('update:submitDisabled', !valid)
+        this.changeHandler()
       }
     }
   })
@@ -309,7 +349,7 @@
   <div class="management-form">
     <div class="form-group">
       <cmdb-collapse :label="$t('基础信息')" arrow-type="filled">
-        <grid-layout mode="form" :min-width="360" :max-width="560" class="form-content">
+        <grid-layout mode="form" :min-width="360" :max-width="560" :gap="24" class="form-content">
           <grid-item
             :label="$t('模板名称')"
             direction="row"
@@ -318,6 +358,8 @@
             :class="['cmdb-form-item', { 'is-error': errors.has('templateName') }]">
             <bk-input type="text"
               name="templateName"
+              size="small"
+              font-size="normal"
               :placeholder="$t('模板名称将作为实例化后的模块名')"
               v-model.trim="formData.templateName"
               :data-vv-name="'templateName'"
@@ -327,17 +369,19 @@
             <p class="form-error">{{errors.first('templateName')}}</p>
           </grid-item>
           <grid-item
-            label="服务分类"
+            :label="$t('服务分类')"
             direction="row"
             :label-width="120"
             required>
             <div class="category-container">
               <div class="category-item" :class="['cmdb-form-item', { 'is-error': errors.has('primaryCategory') }]">
                 <cmdb-selector
+                  size="small"
+                  font-size="normal"
                   display-key="displayName"
                   :placeholder="$t('请选择一级分类')"
                   :searchable="true"
-                  :auto-select="false"
+                  :auto-select="true"
                   :list="primaryCategories"
                   :popover-options="{
                     boundary: 'window'
@@ -349,7 +393,7 @@
                   @change="handleBasicChange">
                   <template #default="{ name, id }">
                     <div class="bk-option-content-default" :title="`${name}（#${id}）`">
-                      <div class="bk-option-name medium-font">
+                      <div class="bk-option-name">
                         {{name}}<span class="category-id">（#{{id}}）</span>
                       </div>
                     </div>
@@ -359,6 +403,8 @@
               </div>
               <div class="category-item" :class="['cmdb-form-item', { 'is-error': errors.has('secCategory') }]">
                 <cmdb-selector
+                  size="small"
+                  font-size="normal"
                   display-key="displayName"
                   :placeholder="$t('请选择二级分类')"
                   :searchable="true"
@@ -370,7 +416,7 @@
                   @change="handleBasicChange">
                   <template #default="{ name, id }">
                     <div class="bk-option-content-default" :title="`${name}（#${id}）`">
-                      <div class="bk-option-name medium-font">
+                      <div class="bk-option-name">
                         {{name}}<span class="category-id">（#{{id}}）</span>
                       </div>
                     </div>
@@ -384,25 +430,27 @@
       </cmdb-collapse>
     </div>
     <div class="form-group">
-      <cmdb-collapse label="属性设置" arrow-type="filled">
+      <cmdb-collapse :label="$t('属性设置')" arrow-type="filled">
         <div class="form-content">
           <property-config
             ref="$propertyConfig"
             :properties="moduleProperties"
             :property-groups="modulePropertyGroup"
-            :config="propertyConfig"
+            :config="formData.propertyConfig"
             :selected="configProperties"
             :exclude="excludeModuleProperties"
+            :max-columns="2"
+            form-element-size="small"
             @change="handlePropertyConfigChange">
             <template #tips>
-              <div class="property-config-tips">模板里定义的字段，在实例中将不可修改</div>
+              <div class="property-config-tips">{{$t('模板里定义的字段，在实例中将不可修改')}}</div>
             </template>
           </property-config>
         </div>
       </cmdb-collapse>
     </div>
     <div class="form-group">
-      <cmdb-collapse label="服务进程" arrow-type="filled">
+      <cmdb-collapse :label="$t('服务进程')" arrow-type="filled">
         <div class="form-content">
           <div class="process-create-container">
             <cmdb-auth :auth="auth">
@@ -418,14 +466,14 @@
             <span class="create-tips">{{$t('新建进程提示')}}</span>
           </div>
           <process-table
-            v-if="processList.length"
+            v-if="formData.processList.length"
             :loading="$loading(requestIds.processList)"
             :properties="processProperties"
             :auth="auth"
             :show-operation="true"
             @on-edit="handleUpdateProcess"
             @on-delete="handleDeleteProcess"
-            :list="processList">
+            :list="formData.processList">
           </process-table>
         </div>
       </cmdb-collapse>

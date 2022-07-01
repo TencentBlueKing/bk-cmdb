@@ -282,9 +282,7 @@
         padding: 10px 0 10px 20px;
         border: 1px dashed #C4C6CC;
         background-color: #FAFBFD;
-        max-height: calc(100vh - 330px);
         max-width: 960px;
-        @include scrollbar-y;
         &:not(.view) {
             .node-child:hover {
                 background-color: rgba(240, 241, 245, .6);
@@ -295,9 +293,6 @@
                     display: block;
                 }
             }
-        }
-        &.create {
-            max-height: calc(100vh - 260px);
         }
     }
     .node-icon {

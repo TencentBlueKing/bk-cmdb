@@ -78,7 +78,11 @@
         </bk-table-column>
         <bk-table-column :label="$t('操作')" width="180">
           <template slot-scope="{ row }">
-            <cmdb-auth :auth="syncAuth">
+            <cmdb-auth :auth="syncAuth"
+              v-bk-tooltips="{
+                content: $t('实例正在同步，无法操作'),
+                disabled: !isSyncing(row.status)
+              }">
               <template slot-scope="{ disabled }">
                 <bk-button v-if="row.status === 'failure'"
                   text
@@ -288,9 +292,9 @@
           .join(' / ') || '--'
       },
       formatStatusData(data) {
-        return data.map(i => ({
-          ...i,
-          bk_set_id: i.bk_inst_id
+        return data.map(item => ({
+          ...item,
+          bk_set_id: item.bk_inst_id
         }))
       },
       async getData() {
@@ -319,6 +323,8 @@
             })
           })
         }
+
+        this.$emit('sync-change')
       },
       getSetInstancesWithStatus(requestId, otherParams, config) {
         return this.$store.dispatch('setTemplate/getSetInstancesWithStatus', {

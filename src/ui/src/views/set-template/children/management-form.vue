@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, reactive, ref, toRefs, watchEffect } from '@vue/composition-api'
+  import { computed, defineComponent, reactive, ref, toRefs, watch, watchEffect } from '@vue/composition-api'
   import isEqual from 'lodash/isEqual'
   import store from '@/store'
   import { t } from '@/i18n'
@@ -112,7 +112,7 @@
       })
 
       const getPropertyConfigData = () => {
-        const propertyConfigData = $propertyConfig.value.getData()
+        const propertyConfigData = $propertyConfig.value?.getData()
 
         const attributes = []
         for (const [key, value] of Object.entries(propertyConfigData)) {
@@ -128,10 +128,13 @@
       const isFormDataChanged = computed(() => {
         const formDataLatest = {
           templateName: formData.value.templateName,
-          propertyConfig: $propertyConfig.value.getData()
+          propertyConfig: $propertyConfig.value?.getData()
         }
         return !isEqual(formDataCopy, formDataLatest) || isServiceTemplateChanged.value
       })
+
+      // 动态监测表单值是否变化，设置提交按钮的状态
+      watch(isFormDataChanged, changed => emit('update:submitDisabled', !changed))
 
       return {
         ...toRefs(state),
@@ -153,27 +156,40 @@
           attributes: this.getPropertyConfigData()
         }
       },
-      async validate() {
+      async validateAll() {
         // 基础信息校验
         const basicValid = await this.$validator.validateAll()
 
         // 属性设置校验
-        const configValid = this.$refs.$propertyConfig.validate()
+        const configValid = await this.$refs.$propertyConfig.validateAll()
 
         const result = basicValid && configValid
 
         return result
       },
+      async validate() {
+        const basicResults = []
+        for (const [key, val] of Object.entries(this.fields)) {
+          if (val.dirty) {
+            basicResults.push(await this.$validator.validate(key))
+          }
+        }
+
+        const basicValid = basicResults.every(valid => valid)
+        const configValid = await this.$refs.$propertyConfig.validate()
+
+        return basicValid && configValid
+      },
       async changeHandler() {
-        const valid = await this.validate()
-        const { isFormDataChanged } = this
-        this.$emit('update:submitDisabled', !valid || !isFormDataChanged)
+        this.$nextTick(async () => {
+          const valid = await this.validate()
+          const { isFormDataChanged } = this
+          this.$emit('update:submitDisabled', !valid || !isFormDataChanged)
+        })
       },
       handleServiceTemplateSelected(services) {
         this.formData.serviceTemplates = services
-        this.$nextTick(() => {
-          this.changeHandler()
-        })
+        this.changeHandler()
       },
       handleServiceTemplateChange(value) {
         this.isServiceTemplateChanged = value
@@ -202,6 +218,8 @@
             :class="['cmdb-form-item', { 'is-error': errors.has('templateName') }]">
             <bk-input type="text"
               name="templateName"
+              size="small"
+              font-size="normal"
               v-model.trim="formData.templateName"
               v-validate="'required|singlechar|length:256'"
               :placeholder="$t('请输入xx', { name: $t('模板名称') })"
@@ -214,7 +232,7 @@
       </cmdb-collapse>
     </div>
     <div class="form-group">
-      <cmdb-collapse label="属性设置" arrow-type="filled">
+      <cmdb-collapse :label="$t('属性设置')" arrow-type="filled">
         <div class="form-content">
           <property-config
             ref="$propertyConfig"
@@ -223,16 +241,18 @@
             :config="formData.propertyConfig"
             :selected="configProperties"
             :exclude="excludeModuleProperties"
+            :max-columns="2"
+            form-element-size="small"
             @change="handlePropertyConfigChange">
             <template #tips>
-              <div class="property-config-tips">模板里定义的字段，在实例中将不可修改</div>
+              <div class="property-config-tips">{{$t('模板里定义的字段，在实例中将不可修改')}}</div>
             </template>
           </property-config>
         </div>
       </cmdb-collapse>
     </div>
     <div class="form-group">
-      <cmdb-collapse label="集群拓扑" arrow-type="filled">
+      <cmdb-collapse :label="$t('集群拓扑')" arrow-type="filled">
         <div class="form-content">
           <div :class="['cmdb-form-item', { 'is-error': errors.has('serviceTemplates') }]">
             <template-tree

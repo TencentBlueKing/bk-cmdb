@@ -108,7 +108,7 @@
 <style lang="scss">
     .collapse-layout {
         .collapse-trigger {
-            display: inline-flex;
+            display: flex;
             color: #333948;
             font-weight: bold;
             align-items: center;
@@ -129,6 +129,7 @@
                 }
             }
             .collapse-text {
+                flex: 1;
                 font-size: 14px;
             }
         }
