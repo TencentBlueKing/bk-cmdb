@@ -14,6 +14,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/zkclient"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/test/run"
@@ -29,7 +30,7 @@ var reportDir string
 var db *local.Mongo
 
 type TestConfig struct {
-	ZkAddr         string
+	Zk             *zkclient.ZkConfig
 	Concurrent     int
 	SustainSeconds float64
 	TotalRequest   int64
@@ -46,7 +47,9 @@ type RedisConfig struct {
 }
 
 func init() {
-	flag.StringVar(&tConfig.ZkAddr, "zk-addr", "127.0.0.1:2181", "zk discovery addresses, comma separated.")
+	flag.StringVar(&tConfig.Zk.Address, "zk-addr", "127.0.0.1:2181", "zk discovery addresses, comma separated.")
+	flag.StringVar(&tConfig.Zk.User, "zk-usr", "", "user of zookeeper server")
+	flag.StringVar(&tConfig.Zk.Password, "zk-pwd", "", "password of zookeeper server")
 	flag.IntVar(&tConfig.Concurrent, "concurrent", 100, "concurrent request during the load test.")
 	flag.Float64Var(&tConfig.SustainSeconds, "sustain-seconds", 10, "the load test sustain time in seconds ")
 	flag.Int64Var(&tConfig.TotalRequest, "total-request", 0, "the load test total request,it has higher priority than SustainSeconds")
@@ -67,7 +70,7 @@ func init() {
 	fmt.Println("before suit")
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
-	client := zk.NewZkClient(tConfig.ZkAddr, 40*time.Second)
+	client := zk.NewZkClient(tConfig.Zk, 40*time.Second)
 	var err error
 	mongoConfig := local.MongoConf{
 		MaxOpenConns: mongo.DefaultMaxOpenConns,

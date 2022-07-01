@@ -21,21 +21,32 @@ import (
 // CCAPIConfig define configuration of ccapi server
 type CCAPIConfig struct {
 	AddrPort    string
-	RegDiscover string
+	RegDiscover RegDiscoverConfig
 	RegisterIP  string
 	ExConfig    string
 	Qps         int64
 	Burst       int64
 }
 
+// RegDiscoverConfig defines configuration of register discover
+type RegDiscoverConfig struct {
+	Address  string
+	User     string
+	Password string
+}
+
 // NewCCAPIConfig create ccapi config object
 func NewCCAPIConfig() *CCAPIConfig {
 	return &CCAPIConfig{
-		AddrPort:    "127.0.0.1:8081",
-		RegDiscover: "",
-		RegisterIP:  "",
-		Qps:         1000,
-		Burst:       2000,
+		AddrPort: "127.0.0.1:8081",
+		RegDiscover: RegDiscoverConfig{
+			Address:  "",
+			User:     "",
+			Password: "",
+		},
+		RegisterIP: "",
+		Qps:        1000,
+		Burst:      2000,
 	}
 }
 

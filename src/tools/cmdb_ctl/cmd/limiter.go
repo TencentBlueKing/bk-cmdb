@@ -146,7 +146,7 @@ func runSetRule(c *limiterConf) error {
 		return err
 	}
 
-	zk, err := config.NewZkService(config.Conf.ZkAddr)
+	zk, err := config.NewZkService(config.Conf.Zk)
 	if err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ func runGetRules(c *limiterConf) error {
 	if c.rulenames == "" {
 		return fmt.Errorf("rulenames must be set")
 	}
-	zk, err := config.NewZkService(config.Conf.ZkAddr)
+	zk, err := config.NewZkService(config.Conf.Zk)
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func runDelRules(c *limiterConf) error {
 	if c.rulenames == "" {
 		return fmt.Errorf("rulenames must be set")
 	}
-	zk, err := config.NewZkService(config.Conf.ZkAddr)
+	zk, err := config.NewZkService(config.Conf.Zk)
 	if err != nil {
 		return err
 	}
@@ -228,7 +228,7 @@ func runDelRules(c *limiterConf) error {
 }
 
 func runListRules(c *limiterConf) error {
-	zk, err := config.NewZkService(config.Conf.ZkAddr)
+	zk, err := config.NewZkService(config.Conf.Zk)
 	if err != nil {
 		return err
 	}

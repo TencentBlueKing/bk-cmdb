@@ -14,11 +14,13 @@ package cmd
 
 import (
 	"bytes"
-	"configcenter/src/tools/cmdb_ctl/app/config"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+
+	"configcenter/src/common/zkclient"
+	"configcenter/src/tools/cmdb_ctl/app/config"
 
 	"github.com/spf13/cobra"
 )
@@ -97,11 +99,11 @@ type zkService struct {
 	path    string
 }
 
-func newZkService(zkaddr string, path string) (*zkService, error) {
+func newZkService(zk *zkclient.ZkConfig, path string) (*zkService, error) {
 	if path == "" {
 		return nil, errors.New("zk-path must be set")
 	}
-	service, err := config.NewZkService(zkaddr)
+	service, err := config.NewZkService(zk)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +114,7 @@ func newZkService(zkaddr string, path string) (*zkService, error) {
 }
 
 func runZkLsCmd(c *zkConf) error {
-	srv, err := newZkService(config.Conf.ZkAddr, c.path)
+	srv, err := newZkService(config.Conf.Zk, c.path)
 	if err != nil {
 		return err
 	}
@@ -127,7 +129,7 @@ func runZkLsCmd(c *zkConf) error {
 }
 
 func runZkGetCmd(c *zkConf) error {
-	srv, err := newZkService(config.Conf.ZkAddr, c.path)
+	srv, err := newZkService(config.Conf.Zk, c.path)
 	if err != nil {
 		return err
 	}
@@ -146,7 +148,7 @@ func runZkGetCmd(c *zkConf) error {
 }
 
 func runZkDelCmd(c *zkConf) error {
-	srv, err := newZkService(config.Conf.ZkAddr, c.path)
+	srv, err := newZkService(config.Conf.Zk, c.path)
 	if err != nil {
 		return err
 	}
@@ -154,7 +156,7 @@ func runZkDelCmd(c *zkConf) error {
 }
 
 func runZkSetCmd(c *zkConf, value string) error {
-	srv, err := newZkService(config.Conf.ZkAddr, c.path)
+	srv, err := newZkService(config.Conf.Zk, c.path)
 	if err != nil {
 		return err
 	}

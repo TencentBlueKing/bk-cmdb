@@ -32,24 +32,27 @@ var (
 	ErrConnectionClosed = zk.ErrConnectionClosed
 )
 
-const (
-	AUTH_USER = "cc"
-	AUTH_PWD  = "3.0#bkcc"
-)
-
+// ZkLock zookeeper lock
 type ZkLock struct {
-	zkHost []string
-	zkConn *zk.Conn
-	zkAcl  []zk.ACL
-	zkLock *zk.Lock
+	zkHost     []string
+	zkUser     string
+	zkPassword string
+	zkConn     *zk.Conn
+	zkAcl      []zk.ACL
+	zkLock     *zk.Lock
 }
 
-func NewZkLock(host []string) *ZkLock {
+// NewZkLock new zookeeper lock
+func NewZkLock(conf *ZkConfig) *ZkLock {
+	zkAddresses := strings.Split(conf.Address, ",")
+
 	zlock := ZkLock{
-		zkHost: host[:],
-		zkConn: nil,
-		zkLock: nil,
-		zkAcl:  zk.DigestACL(zk.PermAll, AUTH_USER, AUTH_PWD),
+		zkHost:     zkAddresses,
+		zkUser:     conf.User,
+		zkPassword: conf.Password,
+		zkConn:     nil,
+		zkLock:     nil,
+		zkAcl:      zk.DigestACL(zk.PermAll, conf.User, conf.Password),
 	}
 	return &zlock
 }
@@ -58,6 +61,7 @@ func (zlock *ZkLock) Lock(path string) error {
 	return zlock.LockEx(path, time.Second*5)
 }
 
+// LockEx attempts to acquire the zookeeper path lock
 func (zlock *ZkLock) LockEx(path string, sessionTimeOut time.Duration) error {
 	if zlock.zkConn == nil {
 		conn, _, connErr := zk.Connect(zlock.zkHost, sessionTimeOut)
@@ -66,7 +70,7 @@ func (zlock *ZkLock) LockEx(path string, sessionTimeOut time.Duration) error {
 		}
 
 		//auth
-		auth := AUTH_USER + ":" + AUTH_PWD
+		auth := zlock.zkUser + ":" + zlock.zkPassword
 		if err := conn.AddAuth("digest", []byte(auth)); err != nil {
 			conn.Close()
 			return err
@@ -102,6 +106,8 @@ func (zlock *ZkLock) UnLock() error {
 
 type ZkClient struct {
 	ZkHost       []string
+	ZkUser       string
+	ZkPassword   string
 	ZkConn       *zk.Conn
 	zkAcl        []zk.ACL
 	zkConnClosed bool
@@ -109,11 +115,23 @@ type ZkClient struct {
 	closeLock sync.Mutex
 }
 
-func NewZkClient(host []string) *ZkClient {
+// ZkConfig zookeeper config
+type ZkConfig struct {
+	Address  string
+	User     string
+	Password string
+}
+
+// NewZkClient new zookeeper client
+func NewZkClient(conf *ZkConfig) *ZkClient {
+	zkAddresses := strings.Split(conf.Address, ",")
+
 	c := ZkClient{
-		ZkHost: host[:],
-		ZkConn: nil,
-		zkAcl:  zk.DigestACL(zk.PermAll, AUTH_USER, AUTH_PWD),
+		ZkHost:     zkAddresses,
+		ZkUser:     conf.User,
+		ZkPassword: conf.Password,
+		ZkConn:     nil,
+		zkAcl:      zk.DigestACL(zk.PermAll, conf.User, conf.Password),
 	}
 
 	return &c
@@ -123,6 +141,7 @@ func (z *ZkClient) Connect() error {
 	return z.ConnectEx(time.Second * 60)
 }
 
+// ConnectEx connect zookeeper server
 func (z *ZkClient) ConnectEx(sessionTimeOut time.Duration) error {
 	z.Lock()
 	defer z.Unlock()
@@ -140,7 +159,7 @@ func (z *ZkClient) ConnectEx(sessionTimeOut time.Duration) error {
 	}
 
 	// AddAuth
-	auth := AUTH_USER + ":" + AUTH_PWD
+	auth := z.ZkUser + ":" + z.ZkPassword
 	if err := c.AddAuth("digest", []byte(auth)); err != nil {
 		c.Close()
 		return err
@@ -178,8 +197,9 @@ func (z *ZkClient) Get(path string) (string, error) {
 	return string(data), err
 }
 
+// AddAuth adds auth to the zk connection
 func (z *ZkClient) AddAuth() error {
-	auth := AUTH_USER + ":" + AUTH_PWD
+	auth := z.ZkUser + ":" + z.ZkPassword
 	return z.ZkConn.AddAuth("digest", []byte(auth))
 }
 

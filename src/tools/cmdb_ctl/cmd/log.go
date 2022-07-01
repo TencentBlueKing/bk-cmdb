@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"configcenter/src/common/types"
+	"configcenter/src/common/zkclient"
 	"configcenter/src/tools/cmdb_ctl/app/config"
 
 	"github.com/spf13/cobra"
@@ -62,11 +63,11 @@ type logService struct {
 	addrport []string
 }
 
-func newLogService(zkaddr string, addrport string) (*logService, error) {
+func newLogService(zk *zkclient.ZkConfig, addrport string) (*logService, error) {
 	if addrport == "" {
 		return nil, errors.New("addrport must set via flag or environment variable")
 	}
-	service, err := config.NewZkService(zkaddr)
+	service, err := config.NewZkService(zk)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +85,7 @@ func runLog(c *logConf) error {
 		return fmt.Errorf("can't set log level to v and default at the same time")
 	}
 
-	srv, err := newLogService(config.Conf.ZkAddr, c.addrPort)
+	srv, err := newLogService(config.Conf.Zk, c.addrPort)
 	if err != nil {
 		return err
 	}

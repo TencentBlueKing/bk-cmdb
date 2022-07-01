@@ -15,7 +15,6 @@ package config
 import (
 	"errors"
 	"os"
-	"strings"
 	"time"
 
 	"configcenter/src/common/zkclient"
@@ -29,8 +28,9 @@ import (
 
 var Conf *Config
 
+// Config tools config
 type Config struct {
-	ZkAddr      string
+	Zk          *zkclient.ZkConfig
 	MongoURI    string
 	MongoRsName string
 	RedisConf   redis.Config
@@ -38,8 +38,12 @@ type Config struct {
 
 // AddFlags add flags
 func (c *Config) AddFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&c.ZkAddr, "zk-addr", os.Getenv("ZK_ADDR"), "the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR")
-	// TODO add zkuser and zkpwd
+	cmd.PersistentFlags().StringVar(&c.Zk.Address, "zk-addr", os.Getenv("ZK_ADDR"),
+		"the ip address and port of zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR")
+	cmd.PersistentFlags().StringVar(&c.Zk.User, "zk-usr", os.Getenv("ZK_USR"),
+		"user of zookeeper server, corresponding environment variable is ZK_USR")
+	cmd.PersistentFlags().StringVar(&c.Zk.Password, "zk-pwd", os.Getenv("ZK_PWD"),
+		"password of zookeeper server, corresponding environment variable is ZK_PWD")
 	cmd.PersistentFlags().StringVar(&c.MongoURI, "mongo-uri", os.Getenv("MONGO_URI"), "the mongodb URI, eg. mongodb://127.0.0.1:27017/cmdb, corresponding environment variable is MONGO_URI")
 	cmd.PersistentFlags().StringVar(&c.MongoRsName, "mongo-rs-name", "rs0", "mongodb replica set name")
 	cmd.PersistentFlags().StringVar(&c.RedisConf.Address, "redis-addr", "127.0.0.1:6379", "assign redis server address default is 127.0.0.1:6379")
@@ -55,12 +59,20 @@ type Service struct {
 	DbProxy dal.RDB
 }
 
-func NewZkService(zkAddr string) (*Service, error) {
-	if zkAddr == "" {
+// NewZkService new zk service
+func NewZkService(zk *zkclient.ZkConfig) (*Service, error) {
+	if zk.Address == "" {
 		return nil, errors.New("zk-addr must set via flag or environment variable")
 	}
+	if zk.User == "" {
+		return nil, errors.New("zk-usr must set via flag or environment variable")
+	}
+	if zk.Password == "" {
+		return nil, errors.New("zk-pwd must set via flag or environment variable")
+	}
+
 	service := &Service{
-		ZkCli: zkclient.NewZkClient(strings.Split(zkAddr, ",")),
+		ZkCli: zkclient.NewZkClient(zk),
 	}
 	if err := service.ZkCli.Connect(); err != nil {
 		return nil, err

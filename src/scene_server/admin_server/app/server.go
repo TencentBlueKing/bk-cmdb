@@ -52,6 +52,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	process.Config.Language.Res, _ = cc.String("language.res")
 	process.Config.Configures.Dir, _ = cc.String("confs.dir")
 	process.Config.Register.Address, _ = cc.String("registerServer.addrs")
+	process.Config.Register.User, _ = cc.String("registerServer.usr")
+	process.Config.Register.Password, _ = cc.String("registerServer.pwd")
 	snapDataID, _ := cc.Int("hostsnap.dataID")
 	process.Config.SnapDataID = int64(snapDataID)
 	process.Config.SyncIAMPeriodMinutes, _ = cc.Int("adminServer.syncIAMPeriodMinutes")
@@ -116,7 +118,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: process.onMigrateConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		Regdiscv:     process.Config.Register.Address,
+		Regdiscv:     process.Config.Register,
 		SrvInfo:      svrInfo,
 	}
 	engine, err := backbone.NewBackbone(ctx, input)

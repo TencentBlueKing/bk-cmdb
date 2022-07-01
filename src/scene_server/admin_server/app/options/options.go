@@ -51,7 +51,7 @@ type Config struct {
 	Errors         ErrorConfig
 	Language       LanguageConfig
 	Configures     ConfConfig
-	Register       RegisterConfig
+	Register       config.RegDiscoverConfig
 	Redis          redis.Config
 	SnapRedis      redis.Config
 	SnapKafka      kafka.Config
@@ -73,10 +73,6 @@ type ErrorConfig struct {
 
 type ConfConfig struct {
 	Dir string
-}
-
-type RegisterConfig struct {
-	Address string
 }
 
 type ShardingTableConfig struct {

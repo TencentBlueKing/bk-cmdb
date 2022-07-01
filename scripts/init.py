@@ -20,7 +20,7 @@ def mkdir_p(path):
         else: raise
 
 def generate_config_file(
-        rd_server_v, db_name_v, redis_ip_v, redis_port_v,
+        rd_server_v, rd_server_usr_v, rd_server_pwd_v, db_name_v, redis_ip_v, redis_port_v,
         redis_pass_v, sentinel_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, rs_name, user_info,
         cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v,es_shard_num_v,es_replica_num_v, auth_address, auth_app_code,
         auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level, register_ip,
@@ -48,6 +48,8 @@ def generate_config_file(
         agent_url=paas_url_v,
         configures_dir=output,
         rd_server=rd_server_v,
+        rd_server_usr=rd_server_usr_v,
+        rd_server_pwd=rd_server_pwd_v,
         auth_address=auth_address,
         auth_app_code=auth_app_code,
         auth_app_secret=auth_app_secret,
@@ -521,10 +523,6 @@ tls:
 
     # migrate.yaml
     migrate_file_template_str = '''
-#configServer:
-#  addrs: 127.0.0.1:2181
-#  usr: cc
-#  pwd: cc
 #registerServer:
 #  addrs: 127.0.0.1:2181
 #  usr: cc
@@ -558,16 +556,11 @@ tls:
 #  appCode: bk_cmdb
 #  appSecret: 123456
 
-# 配置中心
-configServer:
-  addrs: $rd_server
-  usr:
-  pwd:
 # 注册中心
 registerServer:
   addrs: $rd_server
-  usr:
-  pwd:
+  usr: $rd_server_usr
+  pwd: $rd_server_pwd
 # 指定configures的路径，通过这个路径找到其他的配置文件
 confs:
   dir: $configures_dir
@@ -587,7 +580,7 @@ monstache:
     with open(output + "migrate.yaml", 'w') as tmp_file:
         tmp_file.write(result)
 
-def update_start_script(rd_server, server_ports, enable_auth, log_level, register_ip, enable_cryptor):
+def update_start_script(rd_server, rd_server_usr, rd_server_pwd, server_ports, enable_auth, log_level, register_ip, enable_cryptor):
     list_dirs = os.walk(os.getcwd()+"/")
     for root, dirs, _ in list_dirs:
         for d in dirs:
@@ -612,7 +605,8 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level, registe
                     filedata = filedata.replace('rd_server_placeholder', "configures/migrate.yaml")
                     filedata = filedata.replace('regdiscv', "config")
                 else:
-                    filedata = filedata.replace('rd_server_placeholder', rd_server)
+                    rd_server_placeholder = rd_server + ' --regdiscv-usr=' + rd_server_usr + ' --regdiscv-pwd=' + rd_server_pwd + ' '
+                    filedata = filedata.replace('rd_server_placeholder', rd_server_placeholder)
 
                 extend_flag = ''
                 if d in ['cmdb_apiserver', 'cmdb_hostserver', 'cmdb_datacollection', 'cmdb_procserver',
@@ -635,6 +629,8 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level, registe
 def main(argv):
     db_name = 'cmdb'
     rd_server = ''
+    rd_server_usr = ''
+    rd_server_pwd = ''
     redis_ip = ''
     redis_port = 6379
     redis_pass = ''
@@ -690,7 +686,7 @@ def main(argv):
         "cmdb_cacheservice": 50010
     }
     arr = [
-        "help", "discovery=", "database=", "redis_ip=", "redis_port=",
+        "help", "discovery=", "discovery_usr=", "discovery_pwd=", "database=", "redis_ip=", "redis_port=",
         "redis_pass=", "sentinel_pass=", "mongo_ip=", "mongo_port=", "rs_name=",
         "mongo_user=", "mongo_pass=", "blueking_cmdb_url=", "user_info=",
         "blueking_paas_url=", "listen_port=", "es_url=", "es_user=", "es_pass=", "es_shard_num=","es_replica_num=","auth_address=",
@@ -701,6 +697,8 @@ def main(argv):
     usage = '''
     usage:
       --discovery          <discovery>            the ZooKeeper server address, eg:127.0.0.1:2181
+      --discovery_usr      <discovery>            the ZooKeeper server user
+      --discovery_pwd      <discovery>            the ZooKeeper server password
       --database           <database>             the database name, default cmdb
       --redis_ip           <redis_ip>             the redis ip, eg:127.0.0.1
       --redis_port         <redis_port>           the redis port, default:6379
@@ -738,6 +736,8 @@ def main(argv):
     demo:
     python init.py  \\
       --discovery          127.0.0.1:2181 \\
+      --discovery_usr      cc \\
+      --discovery_pwd      cc \\
       --database           cmdb \\
       --redis_ip           127.0.0.1 \\
       --redis_port         6379 \\
@@ -787,6 +787,12 @@ def main(argv):
         elif opt in ("-d", "--discovery"):
             rd_server = arg
             print('rd_server:', rd_server)
+        elif opt in ("--discovery_usr"):
+            rd_server_usr = arg
+            print('rd_server_usr:', rd_server_usr)
+        elif opt in ("--discovery_pwd"):
+            rd_server_pwd = arg
+            print('rd_server_pwd:', rd_server_pwd)
         elif opt in ("-D", "--database"):
             db_name = arg
             print('database:', db_name)
@@ -896,6 +902,12 @@ def main(argv):
     if 0 == len(rd_server):
         print('please input the ZooKeeper address, eg:127.0.0.1:2181')
         sys.exit()
+    if 0 == len(rd_server_usr):
+        print('please input the ZooKeeper user')
+        sys.exit()
+    if 0 == len(rd_server_pwd):
+        print('please input the ZooKeeper password')
+        sys.exit()
     if 0 == len(db_name):
         print('please input the database name, eg:cmdb')
         sys.exit()
@@ -971,6 +983,8 @@ def main(argv):
 
     generate_config_file(
         rd_server_v=rd_server,
+        rd_server_usr_v=rd_server_usr,
+        rd_server_pwd_v=rd_server_pwd,
         db_name_v=db_name,
         redis_ip_v=redis_ip,
         redis_port_v=redis_port,
@@ -1000,7 +1014,7 @@ def main(argv):
         secrets_env_v = secrets_env,
         **auth
     )
-    update_start_script(rd_server, server_ports, auth['auth_enabled'], log_level, register_ip, enable_cryptor)
+    update_start_script(rd_server, rd_server_usr, rd_server_pwd, server_ports, auth['auth_enabled'], log_level, register_ip, enable_cryptor)
     print('initial configurations success, configs could be found at cmdb_adminserver/configures')
     print('initial monstache config success, configs could be found at monstache/etc')
 

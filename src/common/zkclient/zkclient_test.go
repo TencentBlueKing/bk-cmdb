@@ -21,7 +21,11 @@ import (
 
 func TestDataValue(t *testing.T) {
 	fmt.Println("TEST Data Value")
-	zkClient := NewZkClient([]string{"127.0.0.1:2181"})
+	zkClient := NewZkClient(&ZkConfig{
+		Address:  "127.0.0.1:2181",
+		User:     "cc",
+		Password: "cc",
+	})
 
 	defer zkClient.Close()
 
@@ -58,7 +62,11 @@ func TestDataValue(t *testing.T) {
 
 func TestZkLock(t *testing.T) {
 	fmt.Println("TEST zk lock")
-	zkLock1 := NewZkLock([]string{"127.0.0.1:2181"})
+	zkLock1 := NewZkLock(&ZkConfig{
+		Address:  "127.0.0.1:2181",
+		User:     "cc",
+		Password: "cc",
+	})
 
 	if err := zkLock1.Lock("/lock"); err != nil {
 		fmt.Printf("lock1 fail lock. err:%s \n", err.Error())
@@ -73,7 +81,11 @@ func TestZkLock(t *testing.T) {
 func Test_WatchChildren(t *testing.T) {
 	t.Log("----- start test WatchChildren -----")
 
-	zkClient := NewZkClient([]string{"127.0.0.1:2181"})
+	zkClient := NewZkClient(&ZkConfig{
+		Address:  "127.0.0.1:2181",
+		User:     "cc",
+		Password: "cc",
+	})
 
 	err := zkClient.Connect()
 	if err != nil {

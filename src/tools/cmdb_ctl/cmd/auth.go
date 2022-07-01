@@ -97,16 +97,16 @@ func newAuthService(c *authConf) (*authService, error) {
 		return nil, errors.New("resource must be set via resource flag or resource file specified by rsc-file flag")
 	}
 
-	client := zk.NewZkClient(config.Conf.ZkAddr, 40*time.Second)
+	client := zk.NewZkClient(config.Conf.Zk, 40*time.Second)
 	if err := client.Start(); err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.ZkAddr, err)
+		return nil, fmt.Errorf("connect regdiscv [%+v] failed: %v", config.Conf.Zk, err)
 	}
 	if err := client.Ping(); err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.ZkAddr, err)
+		return nil, fmt.Errorf("connect regdiscv [%+v] failed: %v", config.Conf.Zk, err)
 	}
 	serviceDiscovery, err := discovery.NewServiceDiscovery(client)
 	if err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.ZkAddr, err)
+		return nil, fmt.Errorf("connect regdiscv [%+v] failed: %v", config.Conf.Zk, err)
 	}
 	apiMachineryConfig := &util.APIMachineryConfig{
 		QPS:       1000,

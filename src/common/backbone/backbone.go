@@ -27,10 +27,12 @@ import (
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	crd "configcenter/src/common/confregdiscover"
+	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metrics"
 	"configcenter/src/common/types"
+	"configcenter/src/common/zkclient"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
@@ -49,26 +51,32 @@ type BackboneParameter struct {
 	ConfigUpdate cc.ProcHandlerFunc
 	ExtraUpdate  cc.ProcHandlerFunc
 
-	// service component addr
-	Regdiscv string
+	// register discover config
+	Regdiscv config.RegDiscoverConfig
 	// config path
 	ConfigPath string
 	// http server parameter
 	SrvInfo *types.ServerInfo
 }
 
-func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*zk.ZkClient, error) {
+func newSvcManagerClient(ctx context.Context, svcManager config.RegDiscoverConfig) (*zk.ZkClient, error) {
+	zkConf := &zkclient.ZkConfig{
+		Address:  svcManager.Address,
+		User:     svcManager.User,
+		Password: svcManager.Password,
+	}
+
 	var err error
 	for retry := 0; retry < maxRetry; retry++ {
-		client := zk.NewZkClient(svcManagerAddr, 40*time.Second)
+		client := zk.NewZkClient(zkConf, 40*time.Second)
 		if err = client.Start(); err != nil {
-			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
+			blog.Errorf("connect regdiscv [%+v] failed: %v", svcManager, err)
 			time.Sleep(time.Second * 2)
 			continue
 		}
 
 		if err = client.Ping(); err != nil {
-			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
+			blog.Errorf("connect regdiscv [%+v] failed: %v", svcManager, err)
 			time.Sleep(time.Second * 2)
 			continue
 		}
@@ -108,8 +116,14 @@ func newApiMachinery(disc discovery.DiscoveryInterface,
 }
 
 func validateParameter(input *BackboneParameter) error {
-	if input.Regdiscv == "" {
-		return fmt.Errorf("regdiscv can not be emtpy")
+	if input.Regdiscv.Address == "" {
+		return fmt.Errorf("regdiscv addresss can not be emtpy")
+	}
+	if input.Regdiscv.User == "" {
+		return fmt.Errorf("regdiscv user can not be emtpy")
+	}
+	if input.Regdiscv.Password == "" {
+		return fmt.Errorf("regdiscv password can not be emtpy")
 	}
 	if input.SrvInfo.IP == "" {
 		return fmt.Errorf("addrport ip can not be emtpy")
@@ -140,11 +154,11 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	common.SetServerInfo(input.SrvInfo)
 	client, err := newSvcManagerClient(ctx, input.Regdiscv)
 	if err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
+		return nil, fmt.Errorf("connect regdiscv [%+v] failed: %v", input.Regdiscv, err)
 	}
 	serviceDiscovery, err := discovery.NewServiceDiscovery(client)
 	if err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
+		return nil, fmt.Errorf("connect regdiscv [%+v] failed: %v", input.Regdiscv, err)
 	}
 	disc, err := NewServiceRegister(client)
 	if err != nil {
