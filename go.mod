@@ -3,6 +3,7 @@ module configcenter
 go 1.16
 
 require (
+	github.com/BurntSushi/toml v0.3.1
 	github.com/FZambia/sentinel v1.1.0
 	github.com/Shopify/sarama v1.33.0
 	github.com/alexmullins/zip v0.0.0-20180717182244-4affb64b04d0
@@ -37,6 +38,7 @@ require (
 	github.com/rentiansheng/xlsx v1.0.3-r1
 	github.com/robfig/cron v1.2.0
 	github.com/rs/xid v1.4.0
+	github.com/rwynn/monstache v4.12.3+incompatible
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.11.0
@@ -60,3 +62,5 @@ require (
 	k8s.io/client-go v0.24.2
 	stathat.com/c/consistent v1.0.0
 )
+
+replace github.com/rwynn/monstache v4.12.3+incompatible => github.com/ZQHcode/monstache v1.0.0

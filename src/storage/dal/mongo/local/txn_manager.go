@@ -106,6 +106,7 @@ func (t *TxnManager) RemoveSessionKey(sessionID string) error {
 	return t.cache.Del(context.Background(), key).Err()
 }
 
+// ReloadSession is used to reset a created session's session id
 func (t *TxnManager) ReloadSession(sess mongo.Session, info *SessionInfo) (mongo.Session, error) {
 	err := CmdbReloadSession(sess, info)
 	if err != nil {

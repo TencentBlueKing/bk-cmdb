@@ -32,6 +32,7 @@ type RedisStore interface {
 	sessions.Store
 }
 
+// NewRedisStore create redis store
 // size: maximum number of idle connections.
 // network: tcp or udp
 // address: host:port

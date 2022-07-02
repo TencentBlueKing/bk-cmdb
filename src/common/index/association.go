@@ -54,10 +54,10 @@ var (
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkInstID_bkAsstInstID_bkObjAsstID",
-			Keys: map[string]int32{
-				common.BKInstIDField:             1,
-				common.BKAsstInstIDField:         1,
-				common.AssociationObjAsstIDField: 1,
+			Keys: bson.D{
+				{common.BKInstIDField, int32(1)},
+				{common.BKAsstInstIDField, int32(1)},
+				{common.AssociationObjAsstIDField, int32(1)},
 			},
 			Unique:     true,
 			Background: true,
