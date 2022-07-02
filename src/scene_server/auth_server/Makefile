@@ -1,3 +1,5 @@
 TARGET_NAME?=cmdb_authserver
 TARGET_PORT?=60014
-include $(firstword $(subst :, ,${GOPATH}))/src/configcenter/scripts/Makefile
+PROJECT_PATH=$(shell cd ../../../;  pwd)
+
+include ../../../scripts/Makefile
