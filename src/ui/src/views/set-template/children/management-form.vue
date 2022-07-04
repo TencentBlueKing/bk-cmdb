@@ -212,13 +212,11 @@
         <grid-layout mode="form" :min-width="360" :max-width="560" class="form-content">
           <grid-item
             :label="$t('模板名称')"
-            direction="row"
             :label-width="120"
             required
             :class="['cmdb-form-item', { 'is-error': errors.has('templateName') }]">
             <bk-input type="text"
               name="templateName"
-              size="small"
               font-size="normal"
               v-model.trim="formData.templateName"
               v-validate="'required|singlechar|length:256'"
@@ -242,7 +240,7 @@
             :selected="configProperties"
             :exclude="excludeModuleProperties"
             :max-columns="2"
-            form-element-size="small"
+            form-element-font-size="normal"
             @change="handlePropertyConfigChange">
             <template #tips>
               <div class="property-config-tips">{{$t('模板里定义的字段，在实例中将不可修改')}}</div>

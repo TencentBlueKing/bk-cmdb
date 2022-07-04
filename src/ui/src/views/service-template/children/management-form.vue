@@ -349,16 +349,14 @@
   <div class="management-form">
     <div class="form-group">
       <cmdb-collapse :label="$t('基础信息')" arrow-type="filled">
-        <grid-layout mode="form" :min-width="360" :max-width="560" :gap="24" class="form-content">
+        <grid-layout mode="form" :min-width="360" :max-width="560" :max-columns="2" :gap="24" class="form-content">
           <grid-item
             :label="$t('模板名称')"
-            direction="row"
             :label-width="120"
             required
             :class="['cmdb-form-item', { 'is-error': errors.has('templateName') }]">
             <bk-input type="text"
               name="templateName"
-              size="small"
               font-size="normal"
               :placeholder="$t('模板名称将作为实例化后的模块名')"
               v-model.trim="formData.templateName"
@@ -370,13 +368,11 @@
           </grid-item>
           <grid-item
             :label="$t('服务分类')"
-            direction="row"
             :label-width="120"
             required>
             <div class="category-container">
               <div class="category-item" :class="['cmdb-form-item', { 'is-error': errors.has('primaryCategory') }]">
                 <cmdb-selector
-                  size="small"
                   font-size="normal"
                   display-key="displayName"
                   :placeholder="$t('请选择一级分类')"
@@ -403,7 +399,6 @@
               </div>
               <div class="category-item" :class="['cmdb-form-item', { 'is-error': errors.has('secCategory') }]">
                 <cmdb-selector
-                  size="small"
                   font-size="normal"
                   display-key="displayName"
                   :placeholder="$t('请选择二级分类')"
@@ -440,7 +435,7 @@
             :selected="configProperties"
             :exclude="excludeModuleProperties"
             :max-columns="2"
-            form-element-size="small"
+            form-element-font-size="normal"
             @change="handlePropertyConfigChange">
             <template #tips>
               <div class="property-config-tips">{{$t('模板里定义的字段，在实例中将不可修改')}}</div>

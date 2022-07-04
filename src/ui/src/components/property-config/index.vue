@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, ref, toRef, toRefs, PropType, watch } from '@vue/composition-api'
+  import { defineComponent, ref, toRef, toRefs, PropType, watch } from '@vue/composition-api'
   import { formatValue } from '@/utils/tools.js'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
@@ -59,6 +59,7 @@
         default: () => ([])
       },
       formElementSize: String,
+      formElementFontSize: String,
       maxColumns: Number
     },
     setup(props, { emit }) {
@@ -67,8 +68,6 @@
       const { sortedGroups, groupedProperties } = useProperty(toRefs(props))
 
       const propertyModalShow = ref(false)
-
-      const formElementFontSize = computed(() => (props.formElementSize === 'small' ? 'normal' : 'medium'))
 
       // 当前选中的属性列表
       const selectedList = ref([])
@@ -137,7 +136,6 @@
         propertyConfig,
         $propertyFormElement,
         isRequired,
-        formElementFontSize,
         handleSelectField,
         handleRemoveField,
         handleChange

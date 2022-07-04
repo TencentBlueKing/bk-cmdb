@@ -25,7 +25,7 @@
       :disabled="disabled"
       :size="size"
       :font-size="fontSize"
-      v-bind="$tools.getValidateEvents(property)"
+      v-bind="getMoreProps(property)"
       v-validate="getValidateRules(property)"
       v-on="events"
       v-model.trim="localValue">
@@ -91,6 +91,14 @@
       },
       getPlaceholder(property) {
         return Utils.getPlaceholder(property)
+      },
+      getMoreProps(property) {
+        const validateEvents = this.$tools.getValidateEvents(property)
+        const otherProps = {}
+        if (['int', 'float'].includes(property.bk_property_type)) {
+          otherProps.inputType = 'number'
+        }
+        return { ...validateEvents, ...otherProps }
       }
     }
   }

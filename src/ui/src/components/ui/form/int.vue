@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <bk-input class="cmdb-form-int" type="text" ref="input"
+  <bk-input class="cmdb-form-int" :type="inputType" ref="input"
     :placeholder="placeholder || $t('请输入数字')"
     :maxlength="maxlength"
     :disabled="disabled"
@@ -55,6 +55,10 @@
       autoCheck: {
         type: Boolean,
         default: true
+      },
+      inputType: {
+        type: String,
+        default: 'text'
       }
     },
     computed: {

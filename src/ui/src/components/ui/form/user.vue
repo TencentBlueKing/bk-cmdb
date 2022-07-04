@@ -170,6 +170,11 @@
                 height: 20px;
                 line-height: 20px;
               }
+
+              .user-selector-selected {
+                margin: 2px 0 2px 6px;
+                line-height: 20px;
+              }
           }
         }
     }

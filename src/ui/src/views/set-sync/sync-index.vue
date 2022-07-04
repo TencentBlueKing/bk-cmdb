@@ -166,6 +166,11 @@
       await this.getSetProperties()
       await this.getTopoPath()
       await this.getRemovedModuleHostStatus()
+
+      if (this.diffList?.length > 1) {
+        this.$store.commit('setTitle', this.$t('批量同步集群模板'))
+      }
+
       // 默认展开第1个
       this.getDiffData(this.diffList?.[0]?.setId)
     },

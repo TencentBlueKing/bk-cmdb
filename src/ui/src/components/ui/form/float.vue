@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <bk-input class="cmdb-form-float" type="text" ref="input"
+  <bk-input class="cmdb-form-float" :type="inputType" ref="input"
     :placeholder="placeholder || $t('请输入浮点数')"
     :value="value"
     :disabled="disabled"
@@ -50,6 +50,10 @@
       autoCheck: {
         type: Boolean,
         default: true
+      },
+      inputType: {
+        type: String,
+        default: 'text'
       }
     },
     computed: {
