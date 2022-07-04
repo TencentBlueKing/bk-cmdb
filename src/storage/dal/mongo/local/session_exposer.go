@@ -20,6 +20,7 @@ package local
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
@@ -37,7 +38,7 @@ type SessionInfo struct {
 func CmdbReloadSession(sess mongo.Session, info *SessionInfo) error {
 	xsess, ok := sess.(mongo.XSession)
 	if !ok {
-		panic("the session is not type XSession")
+		return errors.New("the session is not type XSession")
 	}
 	clientSession := xsess.ClientSession()
 
@@ -68,14 +69,16 @@ func CmdbReloadSession(sess mongo.Session, info *SessionInfo) error {
 
 // CmdbPrepareCommitOrAbort set state to InProgress, so that we can commit with other
 // operation directly. otherwise mongodriver will do a false commit
-func CmdbPrepareCommitOrAbort(sess mongo.Session) {
+func CmdbPrepareCommitOrAbort(sess mongo.Session) error {
 	xsess, ok := sess.(mongo.XSession)
 	if !ok {
-		panic("the session is not type XSession")
+		return errors.New("the session is not type XSession")
 	}
 	clientSession := xsess.ClientSession()
 
 	clientSession.TransactionState = session.InProgress
+
+	return nil
 }
 
 // CmdbContextWithSession set the session into context if context includes session info
