@@ -291,7 +291,7 @@
         return [...row.topo_path].reverse().map(path => path.bk_inst_name)
           .join(' / ') || '--'
       },
-      formatStatusData(data) {
+      formatStatusData(data = []) {
         return data.map(item => ({
           ...item,
           bk_set_id: item.bk_inst_id
@@ -299,8 +299,8 @@
       },
       async getData() {
         const data = await this.getSetInstancesWithStatus('getSetInstanceData')
-        this.pagination.count = data.count
-        this.list = this.formatStatusData(data.info) || []
+        this.pagination.count = data?.count
+        this.list = this.formatStatusData(data?.info) || []
       },
       async updateStatusData() {
         const data = await this.getSetInstancesWithStatus('updateStatusData', {

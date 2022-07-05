@@ -1029,6 +1029,45 @@ func (st *ServiceTemplate) Validate(errProxy cErr.DefaultCCErrorIf) (field strin
 	return "", nil
 }
 
+// ServiceTemplateAttr service template attributes, used to generate module, should not include non-editable fields
+type ServiceTemplateAttr struct {
+	ID int64 `json:"id" bson:"id"`
+
+	BizID             int64       `json:"bk_biz_id" bson:"bk_biz_id"`
+	ServiceTemplateID int64       `json:"service_template_id" bson:"service_template_id"`
+	AttributeID       int64       `json:"bk_attribute_id" bson:"bk_attribute_id"`
+	PropertyValue     interface{} `json:"bk_property_value" bson:"bk_property_value"`
+
+	Creator         string    `json:"creator" bson:"creator"`
+	Modifier        string    `json:"modifier" bson:"modifier"`
+	CreateTime      time.Time `json:"create_time" bson:"create_time"`
+	LastTime        time.Time `json:"last_time" bson:"last_time"`
+	SupplierAccount string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
+
+// Validate ServiceTemplateAttr
+func (s *ServiceTemplateAttr) Validate() cErr.RawErrorInfo {
+	if s.BizID == 0 {
+		return cErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKAppIDField}}
+	}
+
+	if s.ServiceTemplateID == 0 {
+		return cErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{
+			common.BKServiceTemplateIDField}}
+	}
+
+	if s.AttributeID == 0 {
+		return cErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKAttributeIDField}}
+	}
+
+	if s.PropertyValue == nil {
+		return cErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{
+			common.BKPropertyTypeField}}
+	}
+
+	return cErr.RawErrorInfo{}
+}
+
 // this works for the process instance which is used for a template.
 type ProcessTemplate struct {
 	ID          int64  `field:"id" json:"id" bson:"id"`
@@ -1826,12 +1865,12 @@ func (ti *PropertyPortValue) Validate() error {
 		portArr := strings.Split(strPortItem, "-")
 		var start, end int64
 		var err error
-		start, err = util.GetInt64ByInterface(portArr[0])
+		start, err = strconv.ParseInt(portArr[0], 10, 64)
 		if err != nil {
 			return fmt.Errorf("parse start port to int failed, err: %v", err)
 		}
 		if len(portArr) > 1 {
-			end, err = util.GetInt64ByInterface(portArr[1])
+			end, err = strconv.ParseInt(portArr[1], 10, 64)
 			if err != nil {
 				return fmt.Errorf("parse end port to int failed, err: %v", err)
 			}
@@ -1993,4 +2032,9 @@ type SrvInstNameParams struct {
 type SrvTemplate struct {
 	ID   int64  `json:"id" bson:"id" mapstructure:"id"`
 	Name string `json:"name" bson:"name" mapstructure:"name"`
+}
+
+// ServTempAttrData service template attributes data
+type ServTempAttrData struct {
+	Attributes []ServiceTemplateAttr `json:"attributes"`
 }

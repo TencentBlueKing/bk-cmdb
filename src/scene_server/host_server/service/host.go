@@ -252,7 +252,7 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 func (s *Service) GetHostInstanceProperties(ctx *rest.Contexts) {
 
 	hostID := ctx.Request.PathParameter("bk_host_id")
-	hostIDInt64, err := util.GetInt64ByInterface(hostID)
+	hostIDInt64, err := strconv.ParseInt(hostID, 10, 64)
 	if err != nil {
 		blog.Errorf("convert hostID to int64, err: %v,host:%s,rid:%s", err, hostID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKHostIDField))

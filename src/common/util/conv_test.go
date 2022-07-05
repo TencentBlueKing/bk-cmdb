@@ -135,7 +135,7 @@ func TestGetInt64ByInterface(t *testing.T) {
 			args: args{
 				a: "1",
 			},
-			want: 1,
+			wantErr: true,
 		},
 		{
 			args: args{
