@@ -189,7 +189,8 @@ func (s *Service) getHostInfo(kit *rest.Kit, hostIDs []int64) (*metadata.ListHos
 	return hosts, nil
 }
 
-// PushHostIdentifier push host identifier to host
+// PushHostIdentifier push host identifier message to host, returns the gse taskID that can go to gse to query the
+// result of the task
 func (s *Service) PushHostIdentifier(ctx *rest.Contexts) {
 	if s.SyncData == nil {
 		blog.Errorf("push host identifier disabled, rid: %s", ctx.Kit.Rid)
@@ -214,7 +215,8 @@ func (s *Service) PushHostIdentifier(ctx *rest.Contexts) {
 
 	if auth.EnableAuthorize() {
 		if err := s.authByHostIDs(ctx.Kit, hostIDArray.HostIDs); err != nil {
-			ctx.RespAutoError(err)
+			blog.Errorf("auth by host ids failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthNotHavePermission))
 			return
 		}
 	}
@@ -298,7 +300,7 @@ func (s *Service) getResourcePoolBusinessID(kit *rest.Kit) (int64, error) {
 	query := &metadata.QueryCondition{
 		Fields: []string{common.BKAppIDField, common.BkSupplierAccount},
 		Condition: map[string]interface{}{
-			"default": 1,
+			common.BKDefaultField: common.DefaultAppFlag,
 		},
 	}
 
@@ -309,9 +311,8 @@ func (s *Service) getResourcePoolBusinessID(kit *rest.Kit) (int64, error) {
 		return 0, err
 	}
 
-	supplier := util.GetOwnerID(kit.Header)
 	for _, biz := range result.Info {
-		if supplier != biz[common.BkSupplierAccount].(string) {
+		if kit.SupplierAccount != util.GetStrByInterface(biz[common.BkSupplierAccount]) {
 			continue
 		}
 
