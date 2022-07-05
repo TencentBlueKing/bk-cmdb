@@ -33,10 +33,10 @@ var commHostApplyRuleIndexes = []types.Index{
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "bizID_ModuleID_serviceTemplateID_attrID",
 		Keys: bson.D{
-			{common.BKAppIDField, int32(1)},
-			{common.BKModuleIDField, int32(1)},
-			{common.BKServiceTemplateIDField, int32(1)},
-			{common.BKAttributeIDField, int32(1)},
+			{common.BKAppIDField, 1},
+			{common.BKModuleIDField, 1},
+			{common.BKServiceTemplateIDField, 1},
+			{common.BKAttributeIDField, 1},
 		},
 		Unique:     true,
 		Background: true,
@@ -44,34 +44,34 @@ var commHostApplyRuleIndexes = []types.Index{
 	{
 		Name: common.CCLogicIndexNamePrefix + "host_property_under_service_template",
 		Keys: bson.D{
-			{common.BKServiceTemplateIDField, int32(1)},
-			{common.BKAttributeIDField, int32(1)},
+			{common.BKServiceTemplateIDField, 1},
+			{common.BKAttributeIDField, 1},
 		},
 		Background: true,
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "bizID_serviceTemplateID_attrID",
 		Keys: bson.D{
-			{common.BKAppIDField, int32(1)},
-			{common.BKServiceTemplateIDField, int32(1)},
-			{common.BKAttributeIDField, int32(1)},
+			{common.BKAppIDField, 1},
+			{common.BKServiceTemplateIDField, 1},
+			{common.BKAttributeIDField, 1},
 		},
 		Background: true,
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "bizID_moduleID_attrID",
 		Keys: bson.D{
-			{common.BKAppIDField, int32(1)},
-			{common.BKModuleIDField, int32(1)},
-			{common.BKAttributeIDField, int32(1)},
+			{common.BKAppIDField, 1},
+			{common.BKModuleIDField, 1},
+			{common.BKAttributeIDField, 1},
 		},
 		Background: true,
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "moduleID_attrID",
 		Keys: bson.D{
-			{common.BKModuleIDField, int32(1)},
-			{common.BKAttributeIDField, int32(1)},
+			{common.BKModuleIDField, 1},
+			{common.BKAttributeIDField, 1},
 		},
 		Background: true,
 	},
@@ -82,14 +82,14 @@ var deprecatedHostApplyRuleIndexes = []types.Index{
 	{
 		Name: "bk_biz_id",
 		Keys: bson.D{{
-			"bk_biz_id", int32(1)},
+			"bk_biz_id", 1},
 		},
 		Background: false,
 	},
 	{
 		Name: "id",
 		Keys: bson.D{{
-			"id", int32(1)},
+			"id", 1},
 		},
 		Unique:     true,
 		Background: false,
@@ -97,7 +97,7 @@ var deprecatedHostApplyRuleIndexes = []types.Index{
 	{
 		Name: "bk_module_id",
 		Keys: bson.D{{
-			"bk_module_id", int32(1)},
+			"bk_module_id", 1},
 		},
 		Background: false,
 	},

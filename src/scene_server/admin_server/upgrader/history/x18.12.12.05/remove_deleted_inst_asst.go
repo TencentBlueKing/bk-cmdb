@@ -286,10 +286,10 @@ func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgra
 	}
 
 	createIdxArr := []types.Index{
-		{Name: "idx_objID_asstObjID_asstID", Keys: bson.D{{"bk_obj_id", int32(-1)}, {"bk_asst_obj_id", int32(-1)},
-			{"bk_asst_id", int32(-1)}}},
-		{Name: "idx_asstID_id", Keys: bson.D{{common.AssociationObjAsstIDField, int32(-1)},
-			{common.BKFieldID, int32(-1)}}, Background: true, Unique: false},
+		{Name: "idx_objID_asstObjID_asstID", Keys: bson.D{{"bk_obj_id", -1}, {"bk_asst_obj_id", -1},
+			{"bk_asst_id", -1}}},
+		{Name: "idx_asstID_id", Keys: bson.D{{common.AssociationObjAsstIDField, -1},
+			{common.BKFieldID, -1}}, Background: true, Unique: false},
 	}
 	for _, idx := range createIdxArr {
 		exist := false

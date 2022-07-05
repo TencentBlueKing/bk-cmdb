@@ -27,14 +27,14 @@ import (
 )
 
 var oidCollIndex = types.Index{
-	Keys:       bson.D{{"oid", int32(1)}, {"coll", int32(1)}},
+	Keys:       bson.D{{"oid", 1}, {"coll", 1}},
 	Unique:     true,
 	Background: true,
 	Name:       "idx_oid_coll",
 }
 
 var collIndex = types.Index{
-	Keys:       bson.D{{"coll", int32(1)}},
+	Keys:       bson.D{{"coll", 1}},
 	Unique:     false,
 	Background: true,
 	Name:       "idx_coll",

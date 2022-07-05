@@ -36,22 +36,22 @@ var deprecatedServiceTemplateIndexes = []types.Index{
 	{
 		Name: "id_1_bk_biz_id_1",
 		Keys: bson.D{
-			{"id", int32(1)},
-			{"bk_biz_id", int32(1)},
+			{"id", 1},
+			{"bk_biz_id", 1},
 		},
 		Background: true, //1,
 	},
 	{
 		Name: "idx_bkBizID",
 		Keys: bson.D{{
-			"bk_biz_id", int32(1)},
+			"bk_biz_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_unique_id",
 		Keys: bson.D{{
-			"id", int32(1)},
+			"id", 1},
 		},
 		Unique:     true,
 		Background: true,
@@ -59,8 +59,8 @@ var deprecatedServiceTemplateIndexes = []types.Index{
 	{
 		Name: "bk_idx_bk_biz_id_name",
 		Keys: bson.D{
-			{"bk_biz_id", int32(1)},
-			{"name", int32(1)},
+			{"bk_biz_id", 1},
+			{"name", 1},
 		},
 		Unique:     true,
 		Background: true,

@@ -26,7 +26,7 @@ import (
 
 func addOsTypeIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	index := types.Index{
-		Keys:       bson.D{{"bk_os_type", int32(1)}},
+		Keys:       bson.D{{"bk_os_type", 1}},
 		Name:       "bk_os_type_1",
 		Unique:     false,
 		Background: true,

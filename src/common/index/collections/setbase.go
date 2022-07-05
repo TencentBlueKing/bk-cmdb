@@ -36,43 +36,43 @@ var deprecatedSetBaseIndexes = []types.Index{
 	{
 		Name: "bk_parent_id_1",
 		Keys: bson.D{{
-			"bk_parent_id", int32(1)},
+			"bk_parent_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_biz_id_1",
 		Keys: bson.D{{
-			"bk_biz_id", int32(1)},
+			"bk_biz_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_supplier_account_1",
 		Keys: bson.D{{
-			"bk_supplier_account", int32(1)},
+			"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_set_name_1",
 		Keys: bson.D{{
-			"bk_set_name", int32(1)},
+			"bk_set_name", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_set_id_1_bk_biz_id_1",
 		Keys: bson.D{
-			{"bk_set_id", int32(1)},
-			{"bk_biz_id", int32(1)},
+			{"bk_set_id", 1},
+			{"bk_biz_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_unique_setID",
 		Keys: bson.D{{
-			"bk_set_id", int32(1)},
+			"bk_set_id", 1},
 		},
 		Unique:     true,
 		Background: true,
@@ -80,8 +80,8 @@ var deprecatedSetBaseIndexes = []types.Index{
 	{
 		Name: "idx_unique_parentID_setName",
 		Keys: bson.D{
-			{common.BKParentIDField, int32(1)},
-			{common.BKSetNameField, int32(1)},
+			{common.BKParentIDField, 1},
+			{common.BKSetNameField, 1},
 		},
 		Unique:     true,
 		Background: true,

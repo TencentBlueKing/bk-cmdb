@@ -33,7 +33,7 @@ var commPlatBaseIndexes = []types.Index{
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "bkCloudName",
 		Keys: bson.D{{
-			common.BKCloudNameField, int32(1)},
+			common.BKCloudNameField, 1},
 		},
 		Unique:     true,
 		Background: true,
@@ -48,14 +48,14 @@ var deprecatedPlatBaseIndexes = []types.Index{
 	{
 		Name: "bk_supplier_account_1",
 		Keys: bson.D{{
-			"bk_supplier_account", int32(1)},
+			"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "vpcID",
 		Keys: bson.D{{
-			"bk_vpc_id", int32(1)},
+			"bk_vpc_id", 1},
 		},
 		Background: true,
 	},

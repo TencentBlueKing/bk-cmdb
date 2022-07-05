@@ -455,7 +455,7 @@ func toDBUniqueIdx(idx objectUnique, attrIDMap map[int64]Attribute) (types.Index
 		}
 		dbIdx.Keys = append(dbIdx.Keys, primitive.E{
 			Key:   attr.PropertyID,
-			Value: int32(1),
+			Value: 1,
 		})
 		dbIdx.PartialFilterExpression[attr.PropertyID] = map[string]interface{}{common.BKDBType: dbType}
 	}
@@ -546,15 +546,15 @@ var associationDefaultIndexes = []types.Index{
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkObjId_bkInstID",
 		Keys: bson.D{
-			{"bk_obj_id", int32(1)},
-			{"bk_inst_id", int32(1)},
+			{"bk_obj_id", 1},
+			{"bk_inst_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "id",
 		Keys: bson.D{
-			{"id", int32(1)},
+			{"id", 1},
 		},
 		Unique:     true,
 		Background: true,
@@ -562,16 +562,16 @@ var associationDefaultIndexes = []types.Index{
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkInstId_bkObjId",
 		Keys: bson.D{
-			{"bk_inst_id", int32(1)},
-			{"bk_obj_id", int32(1)},
+			{"bk_inst_id", 1},
+			{"bk_obj_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkAsstObjId_bkAsstInstId",
 		Keys: bson.D{
-			{"bk_asst_obj_id", int32(1)},
-			{"bk_asst_inst_id", int32(1)},
+			{"bk_asst_obj_id", 1},
+			{"bk_asst_inst_id", 1},
 		},
 		Background: true,
 	},
@@ -581,21 +581,21 @@ var instanceDefaultIndexes = []types.Index{
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkObjId",
 		Keys: bson.D{
-			{"bk_obj_id", int32(1)},
+			{"bk_obj_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkSupplierAccount",
 		Keys: bson.D{
-			{"bk_supplier_account", int32(1)},
+			{"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkInstId",
 		Keys: bson.D{
-			{"bk_inst_id", int32(1)},
+			{"bk_inst_id", 1},
 		},
 		Background: true,
 		// 新加 2021年03月11日
@@ -604,7 +604,7 @@ var instanceDefaultIndexes = []types.Index{
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkInstName",
 		Keys: bson.D{
-			{"bk_inst_name", int32(1)},
+			{"bk_inst_name", 1},
 		},
 		Background: false,
 	},

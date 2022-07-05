@@ -36,43 +36,43 @@ var deprecatedProcessInstanceRelationIndexes = []types.Index{
 	{
 		Name: "idx_bkServiceInstanceID",
 		Keys: bson.D{{
-			"service_instance_id", int32(1)},
+			"service_instance_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_bkProcessTemplateID",
 		Keys: bson.D{{
-			"process_template_id", int32(1)},
+			"process_template_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_bkBizID",
 		Keys: bson.D{{
-			"bk_biz_id", int32(1)},
+			"bk_biz_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_bkProcessID",
 		Keys: bson.D{{
-			"bk_process_id", int32(1)},
+			"bk_process_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_bkHostID",
 		Keys: bson.D{{
-			"bk_host_id", int32(1)},
+			"bk_host_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_unique_serviceInstID_ProcID",
 		Keys: bson.D{
-			{"service_instance_id", int32(1)},
-			{"bk_process_id", int32(1)},
+			{"service_instance_id", 1},
+			{"bk_process_id", 1},
 		},
 		Unique:     true,
 		Background: true,
@@ -80,8 +80,8 @@ var deprecatedProcessInstanceRelationIndexes = []types.Index{
 	{
 		Name: "idx_unique_procID_hostID",
 		Keys: bson.D{
-			{"bk_process_id", int32(1)},
-			{"bk_host_id", int32(1)},
+			{"bk_process_id", 1},
+			{"bk_host_id", 1},
 		},
 		Unique:     true,
 		Background: true,

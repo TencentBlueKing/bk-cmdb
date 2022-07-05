@@ -36,7 +36,7 @@ var deprecatedCloudAccountIndexes = []types.Index{
 	{
 		Name: "bk_account_id",
 		Keys: bson.D{{
-			"bk_account_id", int32(1)},
+			"bk_account_id", 1},
 		},
 		Background: true,
 	},

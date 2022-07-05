@@ -27,7 +27,7 @@ import (
 func addCloudIDIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	index := types.Index{
-		Keys:       bson.D{{"bk_cloud_id", int32(1)}},
+		Keys:       bson.D{{"bk_cloud_id", 1}},
 		Name:       "bk_cloud_id_1",
 		Unique:     false,
 		Background: true,

@@ -28,7 +28,7 @@ import (
 func addPlatIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameBasePlat
 	index := types.Index{
-		Keys:       bson.D{{"bk_vpc_id", int32(1)}},
+		Keys:       bson.D{{"bk_vpc_id", 1}},
 		Name:       "vpcID",
 		Unique:     false,
 		Background: true,

@@ -35,7 +35,7 @@ var deprecatedAsstDesIndexes = []types.Index{
 	{
 		Name: "idx_unique_id",
 		Keys: bson.D{{
-			"id", int32(1)},
+			"id", 1},
 		},
 		Unique:     true,
 		Background: true,
@@ -43,14 +43,14 @@ var deprecatedAsstDesIndexes = []types.Index{
 	{
 		Name: "idx_supplierId",
 		Keys: bson.D{{
-			"bk_supplier_account", int32(1)},
+			"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_asstId",
 		Keys: bson.D{{
-			"bk_asst_id", int32(1)},
+			"bk_asst_id", 1},
 		},
 		Background: true,
 	},

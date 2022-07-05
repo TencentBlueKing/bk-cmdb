@@ -36,15 +36,15 @@ var deprecatedDelArchiveIndexes = []types.Index{
 	{
 		Name: "oid_1",
 		Keys: bson.D{{
-			"oid", int32(1)},
+			"oid", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_oid_coll",
 		Keys: bson.D{
-			{"oid", int32(1)},
-			{"coll", int32(1)},
+			{"oid", 1},
+			{"coll", 1},
 		},
 		Unique:     true,
 		Background: true,
@@ -52,7 +52,7 @@ var deprecatedDelArchiveIndexes = []types.Index{
 	{
 		Name: "idx_coll",
 		Keys: bson.D{{
-			"coll", int32(1)},
+			"coll", 1},
 		},
 		Background: true,
 	},

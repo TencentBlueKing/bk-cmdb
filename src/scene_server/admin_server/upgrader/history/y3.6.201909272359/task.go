@@ -42,23 +42,23 @@ func taskMigrate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	indexArr := []types.Index{
 		types.Index{
-			Keys:       bson.D{{"task_id", int32(1)}},
+			Keys:       bson.D{{"task_id", 1}},
 			Name:       "idx_taskID",
 			Unique:     true,
 			Background: true,
 		},
 		types.Index{
-			Keys:       bson.D{{"name", int32(1)}, {"status", int32(1)}, {"create_time", int32(1)}},
+			Keys:       bson.D{{"name", 1}, {"status", 1}, {"create_time", 1}},
 			Name:       "idx_name_status_createTime",
 			Background: true,
 		},
 		types.Index{
-			Keys:       bson.D{{"status", int32(1)}, {"last_time", int32(1)}},
+			Keys:       bson.D{{"status", 1}, {"last_time", 1}},
 			Name:       "idx_status_lastTime",
 			Background: true,
 		},
 		types.Index{
-			Keys:       bson.D{{"name", int32(1)}, {"flag", int32(1)}, {"create_time", int32(1)}},
+			Keys:       bson.D{{"name", 1}, {"flag", 1}, {"create_time", 1}},
 			Name:       "idx_name_flag_createTime",
 			Background: true,
 		},

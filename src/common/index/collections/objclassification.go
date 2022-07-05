@@ -33,7 +33,7 @@ var commObjClassificationIndexes = []types.Index{
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "bkClassificationID",
 		Keys: bson.D{{
-			common.BKClassificationIDField, int32(1)},
+			common.BKClassificationIDField, 1},
 		},
 		Unique: true,
 		PartialFilterExpression: map[string]interface{}{
@@ -43,7 +43,7 @@ var commObjClassificationIndexes = []types.Index{
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "bkClassificationName",
 		Keys: bson.D{{
-			common.BKClassificationNameField, int32(1)},
+			common.BKClassificationNameField, 1},
 		},
 		Unique: true,
 		PartialFilterExpression: map[string]interface{}{
@@ -57,7 +57,7 @@ var deprecatedObjClassificationIndexes = []types.Index{
 	{
 		Name: "idx_unique_id",
 		Keys: bson.D{{
-			"id", int32(1)},
+			"id", 1},
 		},
 		Unique:     true,
 		Background: true,

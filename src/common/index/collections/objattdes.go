@@ -36,23 +36,23 @@ var deprecatedObjAttDesIndexes = []types.Index{
 	{
 		Name: "bk_obj_id_1",
 		Keys: bson.D{{
-			"bk_obj_id", int32(1)},
+			"bk_obj_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_supplier_account_1",
 		Keys: bson.D{{
-			"bk_supplier_account", int32(1)},
+			"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_unique_objID_propertyID_bizID",
 		Keys: bson.D{
-			{"bk_property_id", int32(1)},
-			{"bk_biz_id", int32(1)},
-			{"bk_obj_id", int32(1)},
+			{"bk_property_id", 1},
+			{"bk_biz_id", 1},
+			{"bk_obj_id", 1},
 		},
 		Unique:     true,
 		Background: true,
@@ -60,7 +60,7 @@ var deprecatedObjAttDesIndexes = []types.Index{
 	{
 		Name: "idx_unique_Id",
 		Keys: bson.D{{
-			"id", int32(1)},
+			"id", 1},
 		},
 		Unique:     true,
 		Background: true,

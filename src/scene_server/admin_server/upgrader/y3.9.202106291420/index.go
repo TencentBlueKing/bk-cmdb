@@ -30,13 +30,13 @@ func addIndexex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err err
 		"cc_ServiceInstance": {
 			Name:       "bkcc_idx_bkBizID_ID",
 			Background: true,
-			Keys:       bson.D{{"bk_biz_id", int32(1)}, {"id", int32(1)}},
+			Keys:       bson.D{{"bk_biz_id", 1}, {"id", 1}},
 		},
 
 		"cc_ModuleHostConfig": {
 			Name:       "bkcc_idx_bkBizID_bkHostID",
 			Background: true,
-			Keys:       bson.D{{"bk_biz_id", int32(1)}, {"bk_host_id", int32(1)}},
+			Keys:       bson.D{{"bk_biz_id", 1}, {"bk_host_id", 1}},
 		},
 	}
 

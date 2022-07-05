@@ -36,14 +36,14 @@ var deprecatedObjectUniqueIndexes = []types.Index{
 	{
 		Name: "bk_obj_id",
 		Keys: bson.D{{
-			"bk_obj_id", int32(1)},
+			"bk_obj_id", 1},
 		},
 		Background: false,
 	},
 	{
 		Name: "idx_unique_id",
 		Keys: bson.D{{
-			"id", int32(1)},
+			"id", 1},
 		},
 		Unique:     true,
 		Background: true,

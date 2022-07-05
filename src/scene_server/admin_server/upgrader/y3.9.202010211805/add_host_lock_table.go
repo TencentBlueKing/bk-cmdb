@@ -43,7 +43,7 @@ func addHostLockTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 func addIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	index := types.Index{
-		Keys:       bson.D{{"bk_host_id", int32(1)}},
+		Keys:       bson.D{{"bk_host_id", 1}},
 		Name:       "bk_host_id_1",
 		Unique:     false,
 		Background: true,

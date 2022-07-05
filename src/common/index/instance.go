@@ -28,38 +28,38 @@ var (
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkObjId",
 			Keys: bson.D{
-				{"bk_obj_id", int32(1)},
+				{"bk_obj_id", 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkSupplierAccount_bkObjID",
 			Keys: bson.D{
-				{"bk_supplier_account", int32(1)},
-				{"bk_obj_id", int32(1)},
+				{"bk_supplier_account", 1},
+				{"bk_obj_id", 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkInstId_bkSupplierAccount",
 			Keys: bson.D{
-				{"bk_inst_id", int32(1)},
-				{"bk_supplier_account", int32(1)},
+				{"bk_inst_id", 1},
+				{"bk_supplier_account", 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkInstName_bkSupplierAccount",
 			Keys: bson.D{
-				{"bk_inst_name", int32(1)},
-				{"bk_supplier_account", int32(1)},
+				{"bk_inst_name", 1},
+				{"bk_supplier_account", 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkInstId",
 			Keys: bson.D{
-				{"bk_inst_id", int32(1)},
+				{"bk_inst_id", 1},
 			},
 			Background: true,
 			// 新加 2021年03月11日
@@ -75,8 +75,8 @@ func MainLineInstanceUniqueIndex() []types.Index {
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkParentID_bkInstName",
 			Keys: bson.D{
-				{"bk_parent_id", int32(1)},
-				{"bk_inst_name", int32(1)},
+				{"bk_parent_id", 1},
+				{"bk_inst_name", 1},
 			},
 			Background: false,
 			Unique:     true,
@@ -95,7 +95,7 @@ func InstanceUniqueIndex() []types.Index {
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkInstName",
 			Keys: bson.D{
-				{"bk_inst_name", int32(1)},
+				{"bk_inst_name", 1},
 			},
 			Background: false,
 			Unique:     true,

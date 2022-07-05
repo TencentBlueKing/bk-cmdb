@@ -31,7 +31,7 @@ var commInstanceObjectBaseMappingIndexes = []types.Index{
 	{
 		Name: common.CCLogicIndexNamePrefix + "InstID",
 		Keys: bson.D{{
-			common.BKInstIDField, int32(1)},
+			common.BKInstIDField, 1},
 		},
 		Background: true,
 	},

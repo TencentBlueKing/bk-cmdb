@@ -31,7 +31,7 @@ const (
 )
 
 var (
-	sortFlag      = int32(1)
+	sortFlag      = 1
 	idUniqueIndex = types.Index{
 		Keys:       bson.D{{common.BKFieldID, sortFlag}},
 		Unique:     true,

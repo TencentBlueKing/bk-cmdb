@@ -45,13 +45,13 @@ func createTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err er
 
 var tables = map[string][]types.Index{
 	common.BKTableNameNetcollectDevice: []types.Index{
-		{Keys: bson.D{{"device_id", int32(1)}}, Background: true},
-		{Keys: bson.D{{"device_name", int32(1)}}, Background: true},
-		{Keys: bson.D{{"bk_supplier_account", int32(1)}}, Background: true},
+		{Keys: bson.D{{"device_id", 1}}, Background: true},
+		{Keys: bson.D{{"device_name", 1}}, Background: true},
+		{Keys: bson.D{{"bk_supplier_account", 1}}, Background: true},
 	},
 
 	common.BKTableNameNetcollectProperty: []types.Index{
-		{Keys: bson.D{{"netcollect_property_id", int32(1)}}, Background: true},
-		{Keys: bson.D{{"bk_supplier_account", int32(1)}}, Background: true},
+		{Keys: bson.D{{"netcollect_property_id", 1}}, Background: true},
+		{Keys: bson.D{{"bk_supplier_account", 1}}, Background: true},
 	},
 }

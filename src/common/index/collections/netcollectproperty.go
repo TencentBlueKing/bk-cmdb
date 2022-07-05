@@ -36,14 +36,14 @@ var deprecatedNetcollectPropertyIndexes = []types.Index{
 	{
 		Name: "netcollect_property_id_1",
 		Keys: bson.D{{
-			"netcollect_property_id", int32(1)},
+			"netcollect_property_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_supplier_account_1",
 		Keys: bson.D{{
-			"bk_supplier_account", int32(1)},
+			"bk_supplier_account", 1},
 		},
 		Background: true,
 	},

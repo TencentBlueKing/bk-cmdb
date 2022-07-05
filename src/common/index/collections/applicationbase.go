@@ -35,30 +35,30 @@ var deprecatedApplicationBaseIndexes = []types.Index{
 	{
 		Name: "default_1",
 		Keys: bson.D{{
-			"default", int32(1)},
+			"default", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_biz_id_1_bk_supplier_account_1",
 		Keys: bson.D{
-			{"bk_biz_id", int32(1)},
-			{"bk_supplier_account", int32(1)},
+			{"bk_biz_id", 1},
+			{"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "default_1_bk_supplier_account_1",
 		Keys: bson.D{
-			{"default", int32(1)},
-			{"bk_supplier_account", int32(1)},
+			{"default", 1},
+			{"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_unique_bizID",
 		Keys: bson.D{
-			{"bk_biz_id", int32(1)},
+			{"bk_biz_id", 1},
 		},
 		Unique:     true,
 		Background: true,

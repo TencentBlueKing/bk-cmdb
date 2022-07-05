@@ -36,7 +36,7 @@ var deprecatedCloudSyncTaskIndexes = []types.Index{
 	{
 		Name: "bk_task_id",
 		Keys: bson.D{{
-			"bk_task_id", int32(1)},
+			"bk_task_id", 1},
 		},
 		Unique:     true,
 		Background: true,

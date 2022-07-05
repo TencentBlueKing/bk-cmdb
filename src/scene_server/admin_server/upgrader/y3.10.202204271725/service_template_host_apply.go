@@ -50,10 +50,10 @@ func addHostApplyRuleTableColumn(ctx context.Context, db dal.RDB, conf *upgrader
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bizID_ModuleID_serviceTemplateID_attrID",
 			Keys: bson.D{
-				{common.BKAppIDField, int32(1)},
-				{common.BKModuleIDField, int32(1)},
-				{common.BKServiceTemplateIDField, int32(1)},
-				{common.BKAttributeIDField, int32(1)},
+				{common.BKAppIDField, 1},
+				{common.BKModuleIDField, 1},
+				{common.BKServiceTemplateIDField, 1},
+				{common.BKAttributeIDField, 1},
 			},
 			Unique:     true,
 			Background: true,
@@ -61,34 +61,34 @@ func addHostApplyRuleTableColumn(ctx context.Context, db dal.RDB, conf *upgrader
 		{
 			Name: common.CCLogicIndexNamePrefix + "host_property_under_service_template",
 			Keys: bson.D{
-				{common.BKServiceTemplateIDField, int32(1)},
-				{common.BKAttributeIDField, int32(1)},
+				{common.BKServiceTemplateIDField, 1},
+				{common.BKAttributeIDField, 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "bizID_serviceTemplateID_attrID",
 			Keys: bson.D{
-				{common.BKAppIDField, int32(1)},
-				{common.BKServiceTemplateIDField, int32(1)},
-				{common.BKAttributeIDField, int32(1)},
+				{common.BKAppIDField, 1},
+				{common.BKServiceTemplateIDField, 1},
+				{common.BKAttributeIDField, 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "bizID_moduleID_attrID",
 			Keys: bson.D{
-				{common.BKAppIDField, int32(1)},
-				{common.BKModuleIDField, int32(1)},
-				{common.BKAttributeIDField, int32(1)},
+				{common.BKAppIDField, 1},
+				{common.BKModuleIDField, 1},
+				{common.BKAttributeIDField, 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "moduleID_attrID",
 			Keys: bson.D{
-				{common.BKModuleIDField, int32(1)},
-				{common.BKAttributeIDField, int32(1)},
+				{common.BKModuleIDField, 1},
+				{common.BKAttributeIDField, 1},
 			},
 			Background: true,
 		},

@@ -36,7 +36,7 @@ var deprecatedCloudSyncHistoryIndexes = []types.Index{
 	{
 		Name: "bk_history_id",
 		Keys: bson.D{{
-			"bk_history_id", int32(1)},
+			"bk_history_id", 1},
 		},
 		Background: true,
 	},

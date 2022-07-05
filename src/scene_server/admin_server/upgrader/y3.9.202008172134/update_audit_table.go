@@ -27,16 +27,16 @@ import (
 // reconcileAuditTableIndexes update indexes for common audit log query params
 func reconcileAuditTableIndexes(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	indexes := []types.Index{
-		{Name: "index_id", Keys: bson.D{{common.BKFieldID, int32(1)}}, Background: true},
-		{Name: "index_operationTime", Keys: bson.D{{common.BKOperationTimeField, int32(1)}}, Background: true},
-		{Name: "index_user", Keys: bson.D{{common.BKUser, int32(1)}}, Background: true},
-		{Name: "index_resourceName", Keys: bson.D{{common.BKResourceNameField, int32(1)}}, Background: true},
+		{Name: "index_id", Keys: bson.D{{common.BKFieldID, 1}}, Background: true},
+		{Name: "index_operationTime", Keys: bson.D{{common.BKOperationTimeField, 1}}, Background: true},
+		{Name: "index_user", Keys: bson.D{{common.BKUser, 1}}, Background: true},
+		{Name: "index_resourceName", Keys: bson.D{{common.BKResourceNameField, 1}}, Background: true},
 		{Name: "index_operationTime_auditType_resourceType_action", Keys: bson.D{
-			{common.BKOperationTimeField, int32(1)},
-			{common.BKAuditTypeField, int32(1)},
-			{common.BKResourceTypeField, int32(1)},
-			{common.BKOperationDetailField + "." + common.BKObjIDField, int32(1)},
-			{common.BKActionField, int32(1)},
+			{common.BKOperationTimeField, 1},
+			{common.BKAuditTypeField, 1},
+			{common.BKResourceTypeField, 1},
+			{common.BKOperationDetailField + "." + common.BKObjIDField, 1},
+			{common.BKActionField, 1},
 		}, Background: true},
 	}
 

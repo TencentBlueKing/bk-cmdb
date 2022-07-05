@@ -36,7 +36,7 @@ var deprecatedAPITaskIndexes = []types.Index{
 	{
 		Name: "idx_taskID",
 		Keys: bson.D{{
-			"task_id", int32(1)},
+			"task_id", 1},
 		},
 		Unique:     true,
 		Background: true,
@@ -44,26 +44,26 @@ var deprecatedAPITaskIndexes = []types.Index{
 	{
 		Name: "idx_name_status_createTime",
 		Keys: bson.D{
-			{"create_time", int32(1)},
-			{"name", int32(1)},
-			{"status", int32(1)},
+			{"create_time", 1},
+			{"name", 1},
+			{"status", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_status_lastTime",
 		Keys: bson.D{
-			{"status", int32(1)},
-			{"last_time", int32(1)},
+			{"status", 1},
+			{"last_time", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_name_flag_createTime",
 		Keys: bson.D{
-			{"name", int32(1)},
-			{"flag", int32(1)},
-			{"create_time", int32(1)},
+			{"name", 1},
+			{"flag", 1},
+			{"create_time", 1},
 		},
 		Background: true,
 	},

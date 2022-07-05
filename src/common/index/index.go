@@ -102,7 +102,7 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 
 		dbIndex.Keys = append(dbIndex.Keys, primitive.E{
 			Key:   attr.PropertyID,
-			Value: int32(1),
+			Value: 1,
 		})
 		dbIndex.PartialFilterExpression[attr.PropertyID] = map[string]interface{}{common.BKDBType: dbType}
 	}
