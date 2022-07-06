@@ -11,11 +11,13 @@
 -->
 
 <template>
-  <bk-input type="text" ref="input"
+  <bk-input class="cmdb-form-float" :type="inputType" ref="input"
     :placeholder="placeholder || $t('请输入浮点数')"
     :value="value"
     :disabled="disabled"
+    v-bind="$attrs"
     @blur="handleInput"
+    @enter="handleEnter"
     @change="handleChange">
     <template slot="append" v-if="unit">
       <div class="unit" :title="unit">{{unit}}</div>
@@ -48,6 +50,10 @@
       autoCheck: {
         type: Boolean,
         default: true
+      },
+      inputType: {
+        type: String,
+        default: 'text'
       }
     },
     computed: {
@@ -78,6 +84,9 @@
       handleChange() {
         this.$emit('on-change', this.localValue)
       },
+      handleEnter() {
+        this.$emit('enter', this.localValue)
+      },
       focus() {
         this.$el.querySelector('input').focus()
       }
@@ -86,14 +95,23 @@
 </script>
 
 <style lang="scss" scoped>
+.cmdb-form-float {
+  .unit {
+    max-width: 120px;
+    font-size: 12px;
+    @include ellipsis;
+    padding: 0 10px;
+    height: 30px;
+    line-height: 30px;
+    background: #f2f4f8;
+    color: #63656e;
+  }
+
+  &[size="small"] {
     .unit {
-        max-width: 120px;
-        font-size: 12px;
-        @include ellipsis;
-        padding: 0 10px;
-        height: 30px;
-        line-height: 30px;
-        background: #f2f4f8;
-        color: #63656e;
+      height: 24px;
+      line-height: 24px;
     }
+  }
+}
 </style>

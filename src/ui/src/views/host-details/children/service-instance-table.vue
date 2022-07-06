@@ -160,6 +160,7 @@
 <script>
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
+    MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS
   } from '@/dictionary/menu-symbol'
   import { processTableHeader } from '@/dictionary/table-header'
   import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
@@ -469,7 +470,7 @@
       },
       redirectToTemplate() {
         this.$routerActions.redirect({
-          name: 'operationalTemplate',
+          name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
           params: {
             bizId: this.bizId,
             templateId: this.instance.service_template_id

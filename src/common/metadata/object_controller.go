@@ -21,10 +21,15 @@ type RspID struct {
 	ID int64 `json:"id"`
 }
 
-// CreateResult create result
-type CreateResult struct {
+// RspIDs response id array
+type RspIDs struct {
+	IDs []int64 `json:"ids"`
+}
+
+// CreateBatchResult create batch result
+type CreateBatchResult struct {
 	BaseResp `json:",inline"`
-	Data     []Association `json:"data"`
+	Data     RspIDs `json:"data"`
 }
 
 // UpdateResult update result

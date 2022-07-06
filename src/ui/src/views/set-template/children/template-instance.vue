@@ -51,7 +51,7 @@
       </div>
       <bk-table class="instance-table" v-test-id.businessSetTemplate="'instanceTable'"
         ref="instanceTable"
-        v-bkloading="{ isLoading: $loading('getSetInstanceData') }"
+        v-bkloading="{ isLoading: $loading(['getSetInstanceData', 'getSetInstancesWithTopo']) }"
         :data="displayList"
         :pagination="pagination"
         :max-height="$APP.height - 249"
@@ -78,7 +78,11 @@
         </bk-table-column>
         <bk-table-column :label="$t('操作')" width="180">
           <template slot-scope="{ row }">
-            <cmdb-auth :auth="syncAuth">
+            <cmdb-auth :auth="syncAuth"
+              v-bk-tooltips="{
+                content: $t('实例正在同步，无法操作'),
+                disabled: !isSyncing(row.status)
+              }">
               <template slot-scope="{ disabled }">
                 <bk-button v-if="row.status === 'failure'"
                   text
@@ -126,7 +130,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
-  import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+  import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_SET_TEMPLATE_SYNC_HISTORY } from '@/dictionary/menu-symbol'
   import InstanceStatusColumn from '@/views/service-template/children/instance-status-column.vue'
   import { Polling } from '@/utils/polling'
   /**
@@ -287,16 +291,16 @@
         return [...row.topo_path].reverse().map(path => path.bk_inst_name)
           .join(' / ') || '--'
       },
-      formatStatusData(data) {
-        return data.map(i => ({
-          ...i,
-          bk_set_id: i.bk_inst_id
+      formatStatusData(data = []) {
+        return data.map(item => ({
+          ...item,
+          bk_set_id: item.bk_inst_id
         }))
       },
       async getData() {
         const data = await this.getSetInstancesWithStatus('getSetInstanceData')
-        this.pagination.count = data.count
-        this.list = this.formatStatusData(data.info) || []
+        this.pagination.count = data?.count
+        this.list = this.formatStatusData(data?.info) || []
       },
       async updateStatusData() {
         const data = await this.getSetInstancesWithStatus('updateStatusData', {
@@ -319,6 +323,8 @@
             })
           })
         }
+
+        this.$emit('sync-change')
       },
       getSetInstancesWithStatus(requestId, otherParams, config) {
         return this.$store.dispatch('setTemplate/getSetInstancesWithStatus', {
@@ -480,7 +486,7 @@
       },
       routeToHistory() {
         this.$routerActions.redirect({
-          name: 'syncHistory',
+          name: MENU_BUSINESS_SET_TEMPLATE_SYNC_HISTORY,
           params: {
             templateId: this.templateId
           },
@@ -501,6 +507,7 @@
 
 <style lang="scss" scoped>
     .template-instance-layout {
+        padding: 0 20px;
         height: 100%;
     }
     .instance-empty {

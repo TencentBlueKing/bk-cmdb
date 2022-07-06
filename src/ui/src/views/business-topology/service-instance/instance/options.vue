@@ -112,6 +112,8 @@
   import { mapGetters } from 'vuex'
   import { Validator } from 'vee-validate'
   import { MULTIPLE_IP_REGEXP } from '@/dictionary/regexp.js'
+  import { MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
+
   export default {
     components: {
       ViewSwitcher
@@ -416,14 +418,9 @@
       },
       handleGoServiceTemplate() {
         this.$routerActions.redirect({
-          name: 'operationalTemplate',
+          name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
           params: {
-            templateId: this.selectedNode.data.service_template_id,
-            moduleId: this.selectedNode.data.bk_inst_id
-          },
-          query: {
-            node: this.selectedNode.id,
-            tab: 'nodeInfo'
+            templateId: this.selectedNode.data.service_template_id
           },
           history: true
         })

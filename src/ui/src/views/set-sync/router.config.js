@@ -11,7 +11,7 @@
  */
 
 import Meta from '@/router/meta'
-import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+import { MENU_BUSINESS, MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
 export default [{
   name: 'setSync',
   path: 'set/sync/:setTemplateId',
@@ -19,7 +19,8 @@ export default [{
   meta: new Meta({
     owner: MENU_BUSINESS,
     menu: {
-      i18n: '同步集群模板'
+      i18n: '同步集群模板',
+      relative: MENU_BUSINESS_SET_TEMPLATE
     }
   })
 }]

@@ -40,7 +40,7 @@ module.exports = {
 
   resolve: {
     modules: [resolveBase('src'), 'node_modules'],
-    extensions: ['.js', '.vue', '.json'],
+    extensions: ['.js', '.vue', '.json', '.tsx', '.ts'],
     alias: {
       vue$: 'vue/dist/vue.esm.js',
       '@': resolveBase('src')

@@ -35,6 +35,14 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.Create,
 	}, {
+		Name:           "createServiceTemplateAllInfo",
+		Description:    "创建服务模板（全量信息）",
+		Pattern:        "/api/v3/create/proc/service_template/all_info",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Create,
+	}, {
 		Name:           "updateServiceTemplate",
 		Description:    "更新服务模板",
 		Pattern:        "/api/v3/update/proc/service_template",
@@ -50,6 +58,26 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 			templateID := val.Int()
 			if templateID <= 0 {
 				return nil, errors.New("invalid service template")
+			}
+			return []int64{templateID}, nil
+		},
+	}, {
+		Name:           "updateServiceTemplateAllInfo",
+		Description:    "更新服务模板（全量信息）",
+		Pattern:        "/api/v3/update/proc/service_template/all_info",
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Update,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid service template id")
 			}
 			return []int64{templateID}, nil
 		},
@@ -98,6 +126,26 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 			}
 			blog.Errorf("unexpected error: this code shouldn't be reached, rid: %s", request.Rid)
 			return nil, errors.New("unexpected error: this code shouldn't be reached")
+		},
+	}, {
+		Name:           "getServiceTemplateAllInfo",
+		Description:    "获取服务模板详情（全量信息）",
+		Pattern:        "/api/v3/find/proc/service_template/all_info",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Find,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid service template id")
+			}
+			return []int64{templateID}, nil
 		},
 	}, {
 		Name:           "listServiceTemplatePattern",
@@ -192,6 +240,66 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.FindMany,
+	}, {
+		Name:           "updateServiceTemplateAttribute",
+		Description:    "更新服务模板配置字段",
+		Pattern:        "/api/v3/update/proc/service_template/attribute",
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Update,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid service template id")
+			}
+			return []int64{templateID}, nil
+		},
+	}, {
+		Name:           "deleteServiceTemplateAttribute",
+		Description:    "删除服务模板配置字段",
+		Pattern:        "/api/v3/delete/proc/service_template/attribute",
+		HTTPMethod:     http.MethodDelete,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Update,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid service template id")
+			}
+			return []int64{templateID}, nil
+		},
+	}, {
+		Name:           "listServiceTemplateAttribute",
+		Description:    "查询服务模板配置字段",
+		Pattern:        "/api/v3/findmany/proc/service_template/attribute",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.FindMany,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid service template id")
+			}
+			return []int64{templateID}, nil
+		},
 	},
 }
 

@@ -14,6 +14,7 @@ package metadata
 import (
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/util"
 )
@@ -46,4 +47,49 @@ type SetServiceTemplateRelation struct {
 	SetTemplateID     int64  `field:"set_template_id" json:"set_template_id" bson:"set_template_id"`
 	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
 	SupplierAccount   string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
+
+// SetTemplateAttr set template attributes, used to generate set, should not include non-editable fields
+type SetTemplateAttr struct {
+	ID int64 `json:"id" bson:"id"`
+
+	BizID         int64       `json:"bk_biz_id" bson:"bk_biz_id"`
+	SetTemplateID int64       `json:"set_template_id" bson:"set_template_id"`
+	AttributeID   int64       `json:"bk_attribute_id" bson:"bk_attribute_id"`
+	PropertyValue interface{} `json:"bk_property_value" bson:"bk_property_value"`
+
+	Creator         string    `json:"creator" bson:"creator"`
+	Modifier        string    `json:"modifier" bson:"modifier"`
+	CreateTime      time.Time `json:"create_time" bson:"create_time"`
+	LastTime        time.Time `json:"last_time" bson:"last_time"`
+	SupplierAccount string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
+
+// Validate SetTemplateAttr
+func (s *SetTemplateAttr) Validate() errors.RawErrorInfo {
+	if s.BizID == 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKAppIDField}}
+	}
+
+	if s.SetTemplateID == 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{
+			common.BKServiceTemplateIDField}}
+	}
+
+	if s.AttributeID == 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{
+			common.BKAttributeIDField}}
+	}
+
+	if s.PropertyValue == nil {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{
+			common.BKPropertyTypeField}}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// SetTempAttrData set template attributes data
+type SetTempAttrData struct {
+	Attributes []SetTemplateAttr `json:"attributes"`
 }

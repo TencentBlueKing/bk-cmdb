@@ -183,7 +183,7 @@ func (p *setTemplate) ListSetServiceTemplateRelations(ctx context.Context, heade
 		metadata.BaseResp
 		Data []metadata.SetServiceTemplateRelation `json:"data"`
 	}{}
-	subPath := "/findmany/topo/set_template/%d/bk_biz_id/%d/service_templates"
+	subPath := "/findmany/topo/set_template/%d/bk_biz_id/%d/service_templates_relations"
 
 	err := p.client.Get().
 		WithContext(ctx).
@@ -226,6 +226,106 @@ func (p *setTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.H
 
 	if ccErr := ret.CCError(); ccErr != nil {
 		return nil, ccErr
+	}
+
+	return ret.Data, nil
+}
+
+// CreateSetTemplateAttribute create set template attribute
+func (p *setTemplate) CreateSetTemplateAttribute(ctx context.Context, h http.Header,
+	option *metadata.CreateSetTempAttrsOption) ([]int64, errors.CCErrorCoder) {
+
+	ret := new(metadata.CreateBatchResult)
+	subPath := "/create/set_template/attribute"
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+
+	return ret.Data.IDs, nil
+}
+
+// UpdateSetTemplateAttribute update set template attribute
+func (p *setTemplate) UpdateSetTemplateAttribute(ctx context.Context, h http.Header,
+	option *metadata.UpdateSetTempAttrOption) errors.CCErrorCoder {
+
+	ret := new(metadata.BaseResp)
+	subPath := "/update/set_template/attribute"
+
+	err := p.client.Put().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.CCError()
+	}
+
+	return nil
+}
+
+// DeleteSetTemplateAttribute delete set template attribute
+func (p *setTemplate) DeleteSetTemplateAttribute(ctx context.Context, h http.Header,
+	option *metadata.DeleteSetTempAttrOption) errors.CCErrorCoder {
+
+	ret := new(metadata.BaseResp)
+	subPath := "/delete/set_template/attribute"
+
+	err := p.client.Delete().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.CCError()
+	}
+
+	return nil
+}
+
+// ListSetTemplateAttribute list set Template Attribute
+func (p *setTemplate) ListSetTemplateAttribute(ctx context.Context, h http.Header,
+	option *metadata.ListSetTempAttrOption) (*metadata.SetTempAttrData, errors.CCErrorCoder) {
+
+	ret := new(metadata.SetTemplateAttributeResult)
+	subPath := "/findmany/set_template/attribute"
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
 	}
 
 	return ret.Data, nil

@@ -61,7 +61,12 @@
         </bk-table-column>
         <bk-table-column :label="$t('操作')">
           <template slot-scope="{ row }">
-            <cmdb-auth :auth="syncAuth">
+            <cmdb-auth
+              :auth="syncAuth"
+              v-bk-tooltips="{
+                content: $t('实例正在同步，无法操作'),
+                disabled: !isSyncing(row.status)
+              }">
               <template #default="{ disabled }">
                 <bk-button text
                   :disabled="isSyncDisabled(row.status) || disabled"
@@ -287,6 +292,8 @@
             }
           })
           this.table.data.sort(a => (a.status === 'need_sync' ? -1 : 0))
+
+          this.$emit('sync-change')
         })
           .catch((err) => {
             console.log(err)

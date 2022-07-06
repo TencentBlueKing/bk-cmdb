@@ -39,6 +39,8 @@
 <script>
   import { mapGetters } from 'vuex'
   import createProcessMixin from './create-process-mixin'
+  import { MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
+
   export default {
     name: 'list-cell-count',
     mixins: [createProcessMixin],
@@ -51,11 +53,10 @@
     methods: {
       redirectToTemplate() {
         this.$routerActions.redirect({
-          name: 'operationalTemplate',
+          name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
           params: {
             bizId: this.bizId,
-            templateId: this.row.service_template_id,
-            moduleId: this.row.bk_module_id
+            templateId: this.row.service_template_id
           },
           history: true
         })

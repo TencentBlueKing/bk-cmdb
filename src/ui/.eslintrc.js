@@ -21,9 +21,11 @@ module.exports = {
     'plugin:vue/recommended'
   ],
   parserOptions: {
-    parser: '@babel/eslint-parser',
+    parser: '@typescript-eslint/parser',
     ecmaVersion: 2018,
     sourceType: 'module',
+    tsconfigRootDir: __dirname,
+    extraFileExtensions: ['.vue'],
     ecmaFeatures: {
       jsx: true,
       modules: true
@@ -447,13 +449,27 @@ module.exports = {
 
     'vue/this-in-template': 'off',
 
-    'vue/no-lone-template': 'off',
+    'vue/no-lone-template': 'off'
   },
   overrides: [
     {
       files: ['*.vue'],
       rules: {
         indent: 'off'
+      }
+    },
+    {
+      files: ['*.ts', '*.tsx'],
+      parser: '@typescript-eslint/parser',
+      extends: ['eslint-config-tencent/ts'],
+      plugins: ['@typescript-eslint'],
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+      rules: {
+        '@typescript-eslint/semi': ['error', 'never']
       }
     }
   ]

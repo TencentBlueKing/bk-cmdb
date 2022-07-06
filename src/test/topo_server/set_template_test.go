@@ -307,12 +307,11 @@ var _ = Describe("create normal set template test", func() {
 		By("diff set template with set")
 		func() {
 			option := metadata.DiffSetTplWithInstOption{
-				SetIDs: []int64{setID},
+				SetID: setID,
 			}
 			setTplDiffResult, err := topoServerClient.SetTemplate().DiffSetTplWithInst(ctx, header, bizID, setTemplateID, option)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(setTplDiffResult.Difference).To(HaveLen(1))
-			setDiff := setTplDiffResult.Difference[0]
+			setDiff := setTplDiffResult.Difference
 			Expect(setDiff.SetID).To(Equal(setID))
 			Expect(setDiff.ModuleDiffs).To(HaveLen(3))
 			m := MatchFields(IgnoreMissing|IgnoreExtras, Fields{
