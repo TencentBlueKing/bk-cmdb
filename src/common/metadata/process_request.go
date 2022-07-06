@@ -31,11 +31,11 @@ type CreateServiceTemplateOption struct {
 
 // CreateSvcTempAllInfoOption create service template all info option
 type CreateSvcTempAllInfoOption struct {
-	BizID             int64           `json:"bk_biz_id"`
-	Name              string          `json:"name"`
-	ServiceCategoryID int64           `json:"service_category_id"`
-	Attributes        []SvcTempAttr   `json:"attributes"`
-	Processes         []ProcessDetail `json:"processes"`
+	BizID             int64             `json:"bk_biz_id"`
+	Name              string            `json:"name"`
+	ServiceCategoryID int64             `json:"service_category_id"`
+	Attributes        []SvcTempAttr     `json:"attributes"`
+	Processes         []ProcessTemplate `json:"processes"`
 }
 
 // SvcTempAttr simplified service template attribute
