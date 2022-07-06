@@ -112,8 +112,10 @@
       },
       getRules(rowProps, property) {
         const rules = this.$tools.getValidateRules(property)
-        // 与模板配置保持一致，统一为必填
         rules.required = true
+        if (property.bk_property_id === 'ip') {
+          rules.required = false
+        }
         return rules
       },
       getComponentType(property) {
