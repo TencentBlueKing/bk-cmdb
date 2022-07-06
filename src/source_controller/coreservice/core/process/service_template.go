@@ -232,6 +232,7 @@ func ifUpdateModuleName(kit *rest.Kit, template *metadata.ServiceTemplate, needC
 // UpdateServiceTemplate not support update name field yet, so don't need validate name unique before update
 func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64,
 	input metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
+
 	template, err := p.GetServiceTemplate(kit, templateID)
 	if err != nil {
 		return nil, err

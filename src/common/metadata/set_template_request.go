@@ -214,7 +214,7 @@ type DiffSetTplWithInstOption struct {
 	SetID int64 `field:"bk_set_id" json:"bk_set_id" bson:"bk_set_id" mapstructure:"bk_set_id"`
 }
 
-// SetWithHostFlagOption 根据集群ID 查看集群下是否有主机
+// SetWithHostFlagOption 根据集群ID查看集群下是否有主机
 type SetWithHostFlagOption struct {
 	SetIDs []int64 `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
 }
@@ -321,6 +321,18 @@ type ListSetTemplateSyncStatusOption struct {
 	EndTime       *time.Time      `field:"end_time" json:"end_time,omitempty" bson:"end_time" mapstructure:"end_time"`
 	Status        []APITaskStatus `field:"status" json:"status" bson:"status" mapstructure:"status"`
 	Page          BasePage        `field:"page" json:"page" bson:"page" mapstructure:"page"`
+}
+
+// Validate  validate ListSetTemplateSyncStatusOption
+func (option ListSetTemplateSyncStatusOption) Validate(errProxy ccErr.DefaultCCErrorIf) ccErr.CCErrorCoder {
+	if option.BizID == 0 {
+		return errProxy.CCErrorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
+	}
+
+	if option.SetTemplateID == 0 {
+		return errProxy.CCErrorf(common.CCErrCommParamsNeedSet, common.BKServiceTemplateIDField)
+	}
+	return nil
 }
 
 // ToSetCond parse option to query set condition

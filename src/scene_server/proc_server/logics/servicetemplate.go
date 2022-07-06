@@ -36,23 +36,18 @@ func (lgc *Logic) getModuleMapStr(kit *rest.Kit, cond map[string]interface{}) ([
 		common.BKInnerObjIDModule, option)
 	if err != nil {
 		blog.Errorf("get modules failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrGetModule)
+		return nil, kit.CCError.CCErrorf(common.CCErrHostGetModuleFail, err.Error())
 	}
 
 	return modules.Info, nil
 }
 
-func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleCond map[string]interface{}, isPartial bool) (
-	[]metadata.SvcTempSyncStatus, []metadata.ModuleSyncStatus, errors.CCErrorCoder) {
-
-	moduleFilter := &metadata.QueryCondition{
-		Condition:      moduleCond,
-		Fields:         []string{common.BKModuleIDField, common.BKServiceTemplateIDField, common.BKModuleNameField},
-		DisableCounter: true,
-	}
+// GetSvcTempSyncStatus 获取服务模板的同步状态
+func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleFilter map[string]interface{},
+	isPartial bool) ([]metadata.SvcTempSyncStatus, []metadata.ModuleSyncStatus, errors.CCErrorCoder) {
 
 	// module detail
-	modules, err := lgc.getModuleMapStr(kit, moduleCond)
+	modules, err := lgc.getModuleMapStr(kit, moduleFilter)
 	if err != nil {
 		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", moduleFilter, err, kit.Rid)
 		return nil, nil, err
@@ -135,24 +130,43 @@ func getModuleNameAndID(kit *rest.Kit, module mapstr.MapStr) (string, int64, err
 	return moduleName, moduleID, nil
 }
 
+func (lgc *Logic) getSvcTemplateAttrsInfo(kit *rest.Kit, svcTemp *metadata.ServiceTemplate) ([]string,
+	map[int64]interface{}, map[int64]string, errors.CCErrorCoder) {
+	attrIDs, srvTempAttrValueMap, cErr := lgc.getSrvTemplateAttrIdAndPropertyValue(kit, svcTemp.BizID, svcTemp.ID)
+	if cErr != nil {
+		return []string{}, nil, nil, cErr
+	}
+
+	propertyIDs, attrIdPropertyIdMap, cErr := lgc.getModuleAttrIDAndPropertyID(kit, attrIDs)
+	if cErr != nil {
+		return []string{}, nil, nil, cErr
+	}
+	return propertyIDs, srvTempAttrValueMap, attrIdPropertyIdMap, nil
+}
+
 func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceTemplate, modules []mapstr.MapStr,
 	isPartial bool) (bool, []metadata.ModuleSyncStatus, errors.CCErrorCoder) {
 
-	statuses := make([]metadata.ModuleSyncStatus, 0)
 	var wg sync.WaitGroup
 	var firstErr errors.CCErrorCoder
 
 	isFinish, needSync, isProcTempMapSet, pipeline := false, false, false, make(chan bool, 10)
-	procTempMap := make(map[int64]*metadata.ProcessTemplate)
+	procTempMap, statuses := make(map[int64]*metadata.ProcessTemplate), make([]metadata.ModuleSyncStatus, 0)
 
+	propertyIDs, srvTempAttrValueMap, attrIdPropertyIdMap, cErr := lgc.getSvcTemplateAttrsInfo(kit, svcTemp)
+	if cErr != nil {
+		return false, nil, cErr
+	}
 	for _, module := range modules {
 		if isFinish {
 			break
 		}
 
-		moduleName, moduleID, err := getModuleNameAndID(kit, module)
+		moduleName := util.GetStrByInterface(module[common.BKModuleNameField])
+		moduleID, err := util.GetInt64ByInterface(module[common.BKModuleIDField])
 		if err != nil {
-			return false, nil, err
+			blog.Errorf("get moduleID failed, module: %#v, err: %v, rid: %s", module, err, kit.Rid)
+			return false, nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed, common.BKModuleIDField)
 		}
 
 		if moduleName != svcTemp.Name {
@@ -191,15 +205,7 @@ func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceT
 				<-pipeline
 			}()
 
-			attrNeedSync, err := lgc.getModuleAttrSyncStatus(kit, bizID, serviceTemplateID, module)
-			if err != nil {
-				blog.Errorf("get module(%+v) attrs sync status failed, err: %v, rid: %s", module, err, kit.Rid)
-				if firstErr == nil {
-					firstErr = err
-				}
-				isFinish = true
-				return
-			}
+			attrNeedSync := lgc.getModuleAttrNeedSync(module, propertyIDs, attrIdPropertyIdMap, srvTempAttrValueMap)
 
 			moduleNeedSync, err := lgc.getModuleProcessSyncStatus(kit, bizID, serviceTemplateID, moduleID, procTempMap)
 			if err != nil {
@@ -295,46 +301,20 @@ func (lgc *Logic) getModuleAttrIDAndPropertyID(kit *rest.Kit, attrIDs []int64) (
 	return propertyIDs, attrIdPropertyMap, nil
 }
 
-// getModuleAttrSyncStatus 获取模块与服务模板之间属性是否有差异
-func (lgc *Logic) getModuleAttrSyncStatus(kit *rest.Kit, bizID, serviceTemplateID int64,
-	module mapstr.MapStr) (bool, errors.CCErrorCoder) {
-
-	// 1、获取服务模板的属性ID与对应的 property_value
-	attrIDs, srvTemplateAttrValueMap, cErr := lgc.getSrvTemplateAttrIdAndPropertyValue(kit, bizID, serviceTemplateID)
-	if cErr != nil {
-		return false, cErr
-	}
-
-	// 如果服务模板没有属性设定就不需要同步
-	if len(attrIDs) == 0 {
-		return false, nil
-	}
-
-	// 2、获取模块 attrID 与 propertyID的映射关系
-	propertyIDs, attrIdPropertyIdMap, cErr := lgc.getModuleAttrIDAndPropertyID(kit, attrIDs)
-	if cErr != nil {
-		return false, cErr
-	}
+// getModuleAttrNeedSync 获取模块与服务模板之间属性是否有差异
+func (lgc *Logic) getModuleAttrNeedSync(module mapstr.MapStr, propertyIDs []string,
+	attrIdPropertyIdMap map[int64]string, srvTemplateAttrValueMap map[int64]interface{}) bool {
 
 	if len(propertyIDs) == 0 {
-		return false, nil
+		return false
 	}
-
-	// 3、根据propertyID 获取对应模块实例的值
-	modulePropertyValue := make(map[string]interface{})
-	for _, propertyID := range propertyIDs {
-		if _, ok := module[propertyID]; ok {
-			modulePropertyValue[propertyID] = module[propertyID]
-		}
-	}
-
-	// 4、对比是否有不同
+	// 对比是否有不同
 	for id, attr := range srvTemplateAttrValueMap {
-		if !reflect.DeepEqual(attr, modulePropertyValue[attrIdPropertyIdMap[id]]) {
-			return true, nil
+		if !reflect.DeepEqual(attr, module[attrIdPropertyIdMap[id]]) {
+			return true
 		}
 	}
-	return false, nil
+	return false
 }
 
 func (lgc *Logic) getServiceInstancesAndHostIdCount(kit *rest.Kit, bizID, serviceTemplateID, moduleID int64) (

@@ -132,15 +132,13 @@ func (bw BackendWorker) getSetTemplateAttrIdAndPropertyValue(kit *rest.Kit, bizI
 	return attrIDs, setTemplateAttrValueMap, nil
 }
 
-func (bw *BackendWorker) getSetMapStr(kit *rest.Kit, bizID, setTemplateId int64, setIDs []int64,
+func (bw *BackendWorker) getSetMapStr(kit *rest.Kit, bizID, setTemplateId int64, setID int64,
 	fields []string) ([]mapstr.MapStr, errors.CCErrorCoder) {
 
 	option := &metadata.QueryCondition{
 		Fields: fields,
 		Condition: map[string]interface{}{
-			common.BKSetIDField: map[string]interface{}{
-				common.BKDBIN: setIDs,
-			},
+			common.BKSetIDField:         setID,
 			common.BKSetTemplateIDField: setTemplateId,
 			common.BKAppIDField:         bizID,
 		},
@@ -207,12 +205,8 @@ func (bw BackendWorker) updateSetAttributesWithSetTemplate(kit *rest.Kit, setID 
 
 	// 这里模板可能没有配置属性
 	for setTemplateAttrID, value := range setTemplateAttrValueMap {
-		for setAttrID, propertyID := range attrIdPropertyMap {
-			if setTemplateAttrID == setAttrID {
-				if !reflect.DeepEqual(value, setMap[propertyID]) {
-					data[propertyID] = value
-				}
-			}
+		if !reflect.DeepEqual(value, setMap[attrIdPropertyMap[setTemplateAttrID]]) {
+			data[attrIdPropertyMap[setTemplateAttrID]] = value
 		}
 	}
 
@@ -249,7 +243,7 @@ func (bw BackendWorker) syncSetAttributes(kit *rest.Kit, bizID, setTemplateID, s
 		return cErr
 	}
 
-	setMap, cErr := bw.getSetMapStr(kit, bizID, setTemplateID, []int64{setID}, propertyIDs)
+	setMap, cErr := bw.getSetMapStr(kit, bizID, setTemplateID, setID, propertyIDs)
 	if cErr != nil {
 		return cErr
 	}

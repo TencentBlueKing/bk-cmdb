@@ -882,8 +882,7 @@ func (ps *ProcServer) DiffServiceTemplateGeneral(ctx *rest.Contexts) {
 	}
 
 	// module detail
-	modules, err := ps.getModuleMapStr(ctx.Kit, option.BizID, option.ServiceTemplateID, []int64{option.ModuleID},
-		[]string{})
+	modules, err := ps.getModuleMapStr(ctx.Kit, option.BizID, option.ServiceTemplateID, option.ModuleID, []string{})
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrGetModule, err.Error()))
 		return
@@ -1699,15 +1698,13 @@ func (ps *ProcServer) serviceTemplateGeneralDiff(ctx *rest.Contexts, option *met
 	return moduleDiff, nil
 }
 
-func (ps *ProcServer) getModuleMapStr(kit *rest.Kit, bizID, serviceTemplateId int64, moduleIDs []int64,
+func (ps *ProcServer) getModuleMapStr(kit *rest.Kit, bizID, serviceTemplateId int64, moduleID int64,
 	fields []string) ([]mapstr.MapStr, error) {
 
 	option := &metadata.QueryCondition{
 		Fields: fields,
 		Condition: map[string]interface{}{
-			common.BKModuleIDField: map[string]interface{}{
-				common.BKDBIN: moduleIDs,
-			},
+			common.BKModuleIDField:          moduleID,
 			common.BKServiceTemplateIDField: serviceTemplateId,
 			common.BKAppIDField:             bizID,
 		},
@@ -1943,12 +1940,8 @@ func (ps *ProcServer) updateModuleAttributesWithServiceTemplate(kit *rest.Kit, m
 
 	data := make(map[string]interface{})
 	for srvTemplateAttrID, value := range srvTemplateAttrValueMap {
-		for moduleAttrID, propertyID := range attrIdPropertyMap {
-			if srvTemplateAttrID == moduleAttrID {
-				if !reflect.DeepEqual(value, moduleMap[propertyID]) {
-					data[propertyID] = value
-				}
-			}
+		if !reflect.DeepEqual(value, moduleMap[attrIdPropertyMap[srvTemplateAttrID]]) {
+			data[attrIdPropertyMap[srvTemplateAttrID]] = value
 		}
 	}
 
@@ -2032,7 +2025,7 @@ func (ps *ProcServer) syncSrvInstToAdd(kit *rest.Kit, option metadata.ServiceTem
 }
 
 func (ps *ProcServer) syncProcessAndSrvInstToRemove(kit *rest.Kit, removedProcIDs, removedSvrInstIDs []int64,
-	bizID int64, procInsteMap map[int64]*metadata.Process, relations *metadata.MultipleProcessInstanceRelation,
+	bizID int64, procInstMap map[int64]*metadata.Process, relations *metadata.MultipleProcessInstanceRelation,
 	srvInstMap map[int64]metadata.ServiceInstance) ccErr.CCErrorCoder {
 
 	audit := auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
@@ -2043,7 +2036,7 @@ func (ps *ProcServer) syncProcessAndSrvInstToRemove(kit *rest.Kit, removedProcID
 		genAuditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
 		removedProcesses := make([]mapstr.MapStr, len(removedProcIDs))
 		for index, procID := range removedProcIDs {
-			removedProcesses[index] = mapstr.SetValueToMapStrByTags(procInsteMap[procID])
+			removedProcesses[index] = mapstr.SetValueToMapStrByTags(procInstMap[procID])
 		}
 		if err := audit.WithProc(genAuditParam, removedProcesses, relations.Info); err != nil {
 			return err
@@ -2123,7 +2116,7 @@ func (ps *ProcServer) updateModuleAttributes(kit *rest.Kit, option metadata.Serv
 		fields = append(fields, propertyIDs...)
 	}
 
-	moduleMap, err := ps.getModuleMapStr(kit, option.BizID, option.ServiceTemplateID, []int64{option.ModuleID}, fields)
+	moduleMap, err := ps.getModuleMapStr(kit, option.BizID, option.ServiceTemplateID, option.ModuleID, fields)
 	if err != nil {
 		blog.Errorf("get module failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, "get none modules")
@@ -2356,11 +2349,31 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 	return nil
 }
 
+func (ps *ProcServer) saveProcessLog(kit *rest.Kit, procRelation *processInfo, process *metadata.Process,
+	proc mapstr.MapStr) ccErr.CCErrorCoder {
+
+	auditLogs, audit := make([]metadata.AuditLog, 0), auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
+
+	genAudit := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(proc)
+	if err := audit.WithProc(genAudit, []mapstr.MapStr{mapstr.SetValueToMapStrByTags(process)},
+		[]metadata.ProcessInstanceRelation{procRelation.procRelationMap[process.ProcessID]}); err != nil {
+
+		return err
+	}
+	logs := audit.GenerateAuditLog(genAudit)
+	auditLogs = append(auditLogs, logs...)
+	if len(auditLogs) > 0 {
+		if err := audit.SaveAuditLog(kit, auditLogs...); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (ps *ProcServer) updateProcessInstance(kit *rest.Kit, serviceTemplateId int64, serviceInst *srvInstanceInfo,
 	procRelation *processInfo) (map[int64]metadata.ServiceInstance, []int64, []int64, ccErr.CCErrorCoder) {
 
 	updatedSvcInstMap := make(map[int64]metadata.ServiceInstance)
-
 	removedProcIDs, removedSvrInstIDs, pipeline := make([]int64, 0), make([]int64, 0), make(chan bool, 10)
 
 	var mapLock sync.Mutex
@@ -2380,6 +2393,8 @@ func (ps *ProcServer) updateProcessInstance(kit *rest.Kit, serviceTemplateId int
 			processTemplateID := procRelation.processInstanceWithTemplateMap[process.ProcessID]
 			template, exist := procRelation.processTemplateMap[processTemplateID]
 			if !exist || template.ServiceTemplateID != serviceTemplateId {
+				// this process template has already removed form the service template,
+				// which means this process instance need to be removed from this service instance
 				removedProcIDs = append(removedProcIDs, process.ProcessID)
 
 				if _, exists := updatedSvcInstMap[serviceInstanceID]; !exists {
@@ -2396,10 +2411,15 @@ func (ps *ProcServer) updateProcessInstance(kit *rest.Kit, serviceTemplateId int
 					<-pipeline
 				}()
 
-				proc, changed, err := ifChangedOrNot(kit.Rid, template, process, host)
-				if err != nil && firstErr == nil {
-					firstErr = ccErr.New(common.CCErrCommParamsInvalid, err.Error())
+				proc, changed, err := template.ExtractChangeInfo(process, host)
+				if err != nil {
+					blog.Errorf("extract process %+v change info failed, err: %v, rid: %s", process, err, kit.Rid)
+					if firstErr == nil {
+						firstErr = ccErr.New(common.CCErrCommParamsInvalid, err.Error())
+						return
+					}
 				}
+
 				if !changed {
 					return
 				}
@@ -2418,24 +2438,14 @@ func (ps *ProcServer) updateProcessInstance(kit *rest.Kit, serviceTemplateId int
 					}
 					return
 				}
-				auditLogs, audit := make([]metadata.AuditLog, 0), auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
 
-				genAudit := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(proc)
-				if err := audit.WithProc(genAudit, []mapstr.MapStr{mapstr.SetValueToMapStrByTags(process)},
-					[]metadata.ProcessInstanceRelation{procRelation.procRelationMap[process.ProcessID]}); err != nil {
+				if err := ps.saveProcessLog(kit, procRelation, process, proc); err != nil {
+					blog.Errorf("save process log failed , processID: %d, process: %+v, err: %v, rid: %s",
+						process.ProcessID, proc, err, kit.Rid)
 					if firstErr == nil {
 						firstErr = err
 					}
 					return
-				}
-				logs := audit.GenerateAuditLog(genAudit)
-				auditLogs = append(auditLogs, logs...)
-				if len(auditLogs) > 0 {
-					if err := audit.SaveAuditLog(kit, auditLogs...); err != nil {
-						if firstErr == nil {
-							firstErr = err
-						}
-					}
 				}
 			}(process, serviceInst.hostMap[serviceInst.serviceInstance2HostMap[serviceInstanceID]])
 		}
@@ -2453,7 +2463,6 @@ func ifChangedOrNot(rid string, template *metadata.ProcessTemplate, process *met
 	proc, changed, err := template.ExtractChangeInfo(process, host)
 	if err != nil {
 		blog.Errorf("extract process %+v change info failed, err: %v, rid: %s", process, err, rid)
-
 		return nil, false, err
 	}
 
@@ -2468,9 +2477,6 @@ func (ps *ProcServer) createProcessForServiceInstance(kit *rest.Kit, updateSvcIn
 
 	for processTemplateID, processTemplate := range processRelation.processTemplateMap {
 		for svcID, templates := range srvInst.serviceInstanceWithTemplateMap {
-			if processTemplate.ServiceTemplateID != op.ServiceTemplateID {
-				continue
-			}
 			if _, exist := templates[processTemplateID]; exist {
 				continue
 			}

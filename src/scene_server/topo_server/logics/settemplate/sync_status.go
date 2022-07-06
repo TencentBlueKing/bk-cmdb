@@ -64,8 +64,9 @@ func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int6
 // isSyncRequired Note: If the parameter isInterrupt is true, it will return if a state to be synchronized is found.
 // At this time, the rest of the cluster state will be set to synchronized by default. If you need to return all pending
 //synchronization status state setId, you need to set this parameter to false.
-func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID int64, setIDs []int64,
-	setMap map[int64]mapstr.MapStr, isInterrupt bool) (map[int64]bool, errors.CCErrorCoder) {
+func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID, setTemplateID int64, setIDs []int64,
+	setMap map[int64]mapstr.MapStr, isInterrupt bool, attrIdPropertyIdMap map[int64]string,
+	setTemplateAttrValueMap map[int64]interface{}) (map[int64]bool, errors.CCErrorCoder) {
 
 	if len(setIDs) == 0 {
 		blog.Errorf("array of set_id is empty, rid: %s", kit.Rid)
@@ -93,22 +94,6 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 		Condition: mapstr.MapStr(map[string]interface{}{
 			common.BKSetTemplateIDField: setTemplateID,
 			common.BKSetIDField:         map[string]interface{}{common.BKDBIN: setIDs}}),
-	}
-
-	// 获取指定集群模板的属性ID及属性值
-	attrIDs, setTemplateAttrValueMap, cErr := st.getSetTemplateAttrIdAndPropertyValue(kit, bizID, setTemplateID)
-	if cErr != nil {
-		return nil, cErr
-	}
-
-	// 获取集群 attrID 与 propertyID的映射关系
-	propertyIDs, attrIdPropertyIdMap, cErr := st.getSetAttrIDAndPropertyID(kit, attrIDs)
-	if cErr != nil {
-		return nil, cErr
-	}
-
-	if len(propertyIDs) == 0 {
-		return nil, nil
 	}
 
 	modulesInstResult := new(metadata.ResponseModuleInstance)
@@ -156,12 +141,8 @@ func diffModuleServiceTplAndAttrs(serviceTplCnt, moduleCnt int64, serviceTemplat
 
 	// 对比集群模板与集群属性值是否有差异
 	for setTemplateAttrID, value := range setTemplateAttrValueMap {
-		for setAttrID, propertyID := range attrIdPropertyIdMap {
-			if setTemplateAttrID == setAttrID {
-				if !reflect.DeepEqual(value, setMap[propertyID]) {
-					return true
-				}
-			}
+		if !reflect.DeepEqual(value, setMap[attrIdPropertyIdMap[setTemplateAttrID]]) {
+			return true
 		}
 	}
 	/*
@@ -245,20 +226,37 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata
 	*metadata.ListAPITaskSyncStatusResult, errors.CCErrorCoder) {
 
 	// validate option
-	_, err := option.ToSetCond(kit.CCError)
+	err := option.Validate(kit.CCError)
 	if err != nil {
 		blog.Errorf("parse set condition failed, err: %v, cond: %#v, rid: %s", err, option, kit.Rid)
 		return nil, err
 	}
 
-	sets, err := st.getSetMapStr(kit, option.BizID, option.SetTemplateID, option.SetIDs, option.Page, []string{})
+	// 获取指定集群模板的属性ID及属性值
+	attrIDs, setTemplateAttrValueMap, cErr := st.getSetTemplateAttrIdAndPropertyValue(kit, option.BizID,
+		option.SetTemplateID)
+	if cErr != nil {
+		return nil, cErr
+	}
+
+	// 获取集群 attrID 与 propertyID的映射关系
+	propertyIDs, attrIdPropertyIdMap, cErr := st.getSetAttrIDAndPropertyID(kit, attrIDs)
+	if cErr != nil {
+		return nil, cErr
+	}
+	if len(propertyIDs) == 0 {
+		return &metadata.ListAPITaskSyncStatusResult{Count: 0, Info: make([]metadata.APITaskSyncStatus, 0)}, nil
+	}
+	fields := []string{common.BKSetIDField}
+	fields = append(fields, propertyIDs...)
+	sets, err := st.getSetMapStr(kit, option.BizID, option.SetTemplateID, option.SetIDs, option.Page, fields)
 	if err != nil {
 		blog.Errorf("list set failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
 		return nil, err
 	}
 
 	if len(sets) == 0 {
-		return nil, nil
+		return &metadata.ListAPITaskSyncStatusResult{Count: 0, Info: make([]metadata.APITaskSyncStatus, 0)}, nil
 	}
 
 	setIDs := make([]int64, 0)
@@ -294,15 +292,16 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata
 	}
 
 	// compare sets with set templates to get their sync status
-	statusMap, err := st.isSyncRequired(kit, option.BizID, option.SetTemplateID, setIDs, setMap, false)
+	statusMap, err := st.isSyncRequired(kit, option.BizID, option.SetTemplateID, setIDs, setMap, false,
+		attrIdPropertyIdMap, setTemplateAttrValueMap)
 	if err != nil {
 		blog.Errorf("check if set need sync failed, err: %v, set ids: %+v, rid: %s", err, setIDs, kit.Rid)
-		return nil, err
+		return &metadata.ListAPITaskSyncStatusResult{}, err
 	}
 
 	reformatStatuses, err := st.rearrangeSetTempSyncStatus(kit, option, taskStatusRes, statusMap)
 	if err != nil {
-		return nil, err
+		return &metadata.ListAPITaskSyncStatusResult{}, err
 	}
 
 	return &metadata.ListAPITaskSyncStatusResult{Count: int64(len(sets)), Info: reformatStatuses}, nil

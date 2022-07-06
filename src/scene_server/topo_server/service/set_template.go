@@ -842,13 +842,14 @@ func (s *Service) SetWithHostFlag(ctx *rest.Contexts) {
 	}
 
 	result := make([]metadata.SetWithHostFlagResult, 0)
-	for _, setID := range op.SetIDs {
-		result = append(result, metadata.SetWithHostFlagResult{
-			ID:      setID,
-			HasHost: false,
-		})
-	}
+
 	if len(moduleIDs) == 0 {
+		for _, setID := range op.SetIDs {
+			result = append(result, metadata.SetWithHostFlagResult{
+				ID:      setID,
+				HasHost: false,
+			})
+		}
 		blog.Warnf("no modules founded, bizID: %d, setTemplateID: %d, option: %+v, rid: %s", bizID, setTemplateID,
 			op, ctx.Kit.Rid)
 		ctx.RespEntity(result)
@@ -910,11 +911,23 @@ func (s *Service) DiffSetTplWithInst(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	if option.SetID == 0 {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetIDField))
 		return
 	}
-	setDiff, err := s.Logics.SetTemplateOperation().DiffSetTplWithInst(ctx.Kit, bizID, setTemplateID, option)
+
+	serviceTemplates, err := s.Engine.CoreAPI.CoreService().SetTemplate().ListSetTplRelatedSvcTpl(ctx.Kit.Ctx,
+		ctx.Kit.Header, bizID, setTemplateID)
+	if err != nil {
+		blog.Errorf("list service templates failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID,
+			setTemplateID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	setDiff, err := s.Logics.SetTemplateOperation().DiffSetTplWithInst(ctx.Kit, bizID, setTemplateID, option,
+		serviceTemplates)
 	if err != nil {
 		blog.Errorf("DiffSetTplWithInst failed, operation failed, bizID: %d, setTemplateID: %d, option: %+v, err: %s,"+
 			" rid: %s", bizID, setTemplateID, option, err.Error(), ctx.Kit.Rid)
