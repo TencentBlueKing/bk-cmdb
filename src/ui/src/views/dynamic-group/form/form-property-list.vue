@@ -148,7 +148,7 @@
           this.condition[property.id].value = []
         } else if (operator === '$regex') {
           const currentValue = this.condition[property.id].value
-          this.condition[property.id].value = Array.isArray(currentValue) ? currentValue[0] : currentValue
+          this.condition[property.id].value = Array.isArray(currentValue) ? (currentValue[0] || '') : currentValue
         } else {
           const defaultValue = this.getDefaultData(property).value
           const currentValue = this.condition[property.id].value
@@ -167,9 +167,11 @@
         } = property
         const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
         const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
-        if (isSetName || isModuleName) {
+
+        if ((isSetName || isModuleName) && this.condition[property.id].operator !== '$regex') {
           return `cmdb-search-${modelId}`
         }
+
         return `cmdb-search-${propertyType}`
       },
       getBindProps(property) {
