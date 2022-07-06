@@ -166,8 +166,9 @@ func (s *DeleteServTempAttrOption) Validate() errors.RawErrorInfo {
 
 // ListServTempAttrOption list service template attributes option
 type ListServTempAttrOption struct {
-	BizID int64 `json:"bk_biz_id"`
-	ID    int64 `json:"id"`
+	BizID  int64    `json:"bk_biz_id"`
+	ID     int64    `json:"id"`
+	Fields []string `json:"fields"`
 }
 
 // Validate ListServTempAttrOption

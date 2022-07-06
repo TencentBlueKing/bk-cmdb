@@ -257,7 +257,8 @@ func (p *setTemplateOperation) ListSetTemplateAttribute(kit *rest.Kit, option *m
 	}
 
 	templateAttrs := make([]metadata.SetTemplateAttr, 0)
-	err := mongodb.Client().Table(common.BKTableNameSetTemplateAttr).Find(filter).All(kit.Ctx, &templateAttrs)
+	err := mongodb.Client().Table(common.BKTableNameSetTemplateAttr).Find(filter).Fields(option.Fields...).
+		All(kit.Ctx, &templateAttrs)
 	if err != nil {
 		blog.Errorf("find set template attribute failed, filter: %v, err: %v, rid: %s", filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)

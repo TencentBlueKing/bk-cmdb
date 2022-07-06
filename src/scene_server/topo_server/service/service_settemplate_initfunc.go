@@ -49,6 +49,10 @@ func (s *Service) initSetTemplate(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/set_template_status", Handler: s.CheckSetInstUpdateToDateStatus})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/topo/set_template/bk_biz_id/{bk_biz_id}/set_template_status", Handler: s.BatchCheckSetInstUpdateToDateStatus})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/host_with_instances",
+		Handler: s.SetWithHostFlag})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/topo/set_template/attribute",
 		Handler: s.UpdateSetTemplateAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/topo/set_template/attribute",

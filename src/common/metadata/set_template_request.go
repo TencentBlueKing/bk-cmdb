@@ -14,6 +14,7 @@ package metadata
 import (
 	"errors"
 	"fmt"
+	"reflect"
 
 	"configcenter/src/common"
 	ccErr "configcenter/src/common/errors"
@@ -210,7 +211,36 @@ type ListSetByTemplateOption struct {
 }
 
 type DiffSetTplWithInstOption struct {
+	SetID int64 `field:"bk_set_id" json:"bk_set_id" bson:"bk_set_id" mapstructure:"bk_set_id"`
+}
+
+// SetWithHostFlagOption 根据集群ID查看集群下是否有主机
+type SetWithHostFlagOption struct {
 	SetIDs []int64 `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
+}
+
+// Validate validate the SetWithHostFlagOption
+func (option *SetWithHostFlagOption) Validate() ccErr.RawErrorInfo {
+	if len(option.SetIDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_set_ids"}}
+	}
+
+	if util.InArray(0, option.SetIDs) {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"bk_set_ids"},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// SetWithHostFlagResult 每个集群下是否有主机
+type SetWithHostFlagResult struct {
+	ID      int64 `json:"id"`
+	HasHost bool  `json:"has_host"`
 }
 
 type SyncSetTplToInstOption struct {
@@ -233,6 +263,7 @@ type SetDiff struct {
 	ModuleDiffs []SetModuleDiff            `json:"module_diffs"`
 	SetID       int64                      `json:"bk_set_id"`
 	SetDetail   SetInst                    `json:"set_detail"`
+	Attributes  []AttributeFields          `json:"attributes"`
 	TopoPath    []TopoInstanceNodeSimplify `json:"topo_path"`
 	NeedSync    bool                       `json:"need_sync"`
 }
@@ -245,10 +276,19 @@ func (sd *SetDiff) UpdateNeedSyncField() {
 			break
 		}
 	}
+	if sd.NeedSync {
+		return
+	}
+	for _, attr := range sd.Attributes {
+		if !reflect.DeepEqual(attr.TemplatePropertyValue, attr.InstancePropertyValue) {
+			sd.NeedSync = true
+			break
+		}
+	}
 }
 
 type SetTplDiffResult struct {
-	Difference      []SetDiff       `json:"difference"`
+	Difference      SetDiff         `json:"difference"`
 	ModuleHostCount map[int64]int64 `json:"module_host_count"`
 }
 
@@ -281,6 +321,18 @@ type ListSetTemplateSyncStatusOption struct {
 	EndTime       *time.Time      `field:"end_time" json:"end_time,omitempty" bson:"end_time" mapstructure:"end_time"`
 	Status        []APITaskStatus `field:"status" json:"status" bson:"status" mapstructure:"status"`
 	Page          BasePage        `field:"page" json:"page" bson:"page" mapstructure:"page"`
+}
+
+// Validate  validate ListSetTemplateSyncStatusOption
+func (option ListSetTemplateSyncStatusOption) Validate(errProxy ccErr.DefaultCCErrorIf) ccErr.CCErrorCoder {
+	if option.BizID == 0 {
+		return errProxy.CCErrorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
+	}
+
+	if option.SetTemplateID == 0 {
+		return errProxy.CCErrorf(common.CCErrCommParamsNeedSet, common.BKServiceTemplateIDField)
+	}
+	return nil
 }
 
 // ToSetCond parse option to query set condition
@@ -510,8 +562,9 @@ func (s *DeleteSetTempAttrOption) Validate() ccErr.RawErrorInfo {
 
 // ListSetTempAttrOption list set template attributes option
 type ListSetTempAttrOption struct {
-	BizID int64 `json:"bk_biz_id"`
-	ID    int64 `json:"id"`
+	BizID  int64    `json:"bk_biz_id"`
+	ID     int64    `json:"id"`
+	Fields []string `json:"fields"`
 }
 
 // Validate ListSetTempAttrOption

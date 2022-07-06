@@ -199,6 +199,16 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ModelSet,
 		ResourceAction: meta.FindMany,
 	}, {
+		Name:        "GetHostUnderTheCluster",
+		Description: "获取指定集群下是否有主机",
+		// NOCC:tosa/linelength(忽略长度)
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/host_with_instances/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
+		ResourceType:   meta.ModelSet,
+		ResourceAction: meta.FindMany,
+	}, {
 		Name:           "SyncSetTplToInstRegex",
 		Description:    "用集群模板同步集群",
 		Regex:          regexp.MustCompile(`^/api/v3/updatemany/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/sync_to_instances/?$`),

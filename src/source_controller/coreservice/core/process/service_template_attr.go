@@ -263,7 +263,8 @@ func (p *processOperation) ListServiceTemplateAttribute(kit *rest.Kit, option *m
 	}
 
 	templateAttrs := make([]metadata.ServiceTemplateAttr, 0)
-	err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Find(filter).All(kit.Ctx, &templateAttrs)
+	err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Find(filter).Fields(option.Fields...).
+		All(kit.Ctx, &templateAttrs)
 	if err != nil {
 		blog.Errorf("find service template attribute failed, filter: %v, err: %v, rid: %s", filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
