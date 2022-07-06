@@ -33,6 +33,8 @@ var needCareHostFields = []string{
 	common.BKCloudIDField,
 	common.BKHostIDField,
 	common.BkSupplierAccount,
+	common.BKAgentIDField,
+	common.BKAddressingField,
 }
 
 // host events arrange policy:
