@@ -148,7 +148,7 @@
         const topologyModels = await this.getTopologyModels()
         const properties = await this.getProperties(topologyModels)
         this.$store.commit('businessHost/setTopologyModels', topologyModels)
-        this.$store.commit('businessHost/setPropertyMap', Object.freeze(properties))
+        this.$store.commit('businessHost/setPropertyMap', properties)
         this.$store.commit('businessHost/resolveCommonRequest')
       } catch (e) {
         console.error(e)
@@ -235,6 +235,9 @@
                 .bk-tab-header {
                     padding: 0;
                     margin: 0 20px;
+                }
+                .bk-tab-section {
+                  height: calc(100% - 50px);
                 }
             }
         }

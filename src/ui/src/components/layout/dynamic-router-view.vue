@@ -103,7 +103,7 @@
     .main-breadcrumbs {
         overflow: hidden;
         position: relative;
-        background-color: #fafbfd;
+        background-color: #fff;
         z-index: 100;
     }
     .main-layout {

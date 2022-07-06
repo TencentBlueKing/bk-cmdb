@@ -21,6 +21,8 @@
     :placeholder="$t('请选择业务')"
     :disabled="disabled"
     :popover-options="popoverOptions"
+    font-size="normal"
+    ext-popover-cls="cmdb-business-mix-selector-dropdown-content"
     @toggle="handleSelectToggle">
     <bk-option v-for="option in sortedList"
       :key="option.id"
@@ -98,8 +100,8 @@
         normalizationList: [],
         sortedList: [],
         requestIds: {
-          biz: Symbol(),
-          bizset: Symbol(),
+          biz: Symbol('biz'),
+          bizset: Symbol('bizset'),
           collection: Symbol()
         }
       }
@@ -129,11 +131,11 @@
         const [{ info: bizList = [] }, { info: bizsetList = [] }] = await Promise.all([
           this.$http.get('biz/simplify', {
             requestId: this.requestIds.biz,
-            fromCache: true
+            fromCache: false
           }),
           businessSetService.getAll({
             requestId: this.requestIds.bizset,
-            fromCache: true
+            fromCache: false
           })
         ])
 
@@ -276,7 +278,7 @@
 <style lang="scss" scoped>
   .option-item-content {
     color: #63656E;
-    font-size: 14px;
+    font-size: 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -303,6 +305,11 @@
       &.icon-star-shape {
         color: #FFB400;
       }
+
+      &.icon-cc-business-set {
+        color: #979ba5;
+        font-size: 14px;
+      }
     }
 
     .item-id {
@@ -319,24 +326,27 @@
   }
 
   .business-extension {
-    width: calc(100% + 32px);
-    margin-left: -16px;
-
+    display: flex;
+    width: 100%;
+    background-color: #FAFBFD;
     .extension-link {
-      display: block;
-      line-height: 38px;
-      background-color: #FAFBFD;
-      padding: 0 9px;
-      font-size: 13px;
+      display: flex;
+      flex: 1;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      font-size: 12px;
       color: #63656E;
       cursor: pointer;
+
       &:hover {
         opacity: .85;
       }
+
       .bk-icon {
-        font-size: 18px;
+        font-size: 16px;
         color: #979BA5;
-        vertical-align: text-top;
+        margin-right: 4px;
       }
 
       &.disabled {
@@ -345,6 +355,25 @@
           color: $textDisabledColor;
         }
       }
+
+      & + .extension-link {
+        &::before {
+          position: absolute;
+          content: "";
+          left: 0;
+          top: 10px;
+          height: 12px;
+          width: 1px;
+          background: #c4c6cc;
+        }
+      }
+    }
+  }
+</style>
+<style lang="scss">
+  .cmdb-business-mix-selector-dropdown-content {
+    .bk-select-extension {
+      padding: 0;
     }
   }
 </style>

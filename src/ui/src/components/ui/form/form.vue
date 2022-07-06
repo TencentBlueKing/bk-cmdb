@@ -355,10 +355,10 @@
     .form-options {
         width: 100%;
         padding: 10px 32px;
-        background-color: #fff;
         font-size: 0;
         &.sticky {
             border-top: 1px solid $cmdbBorderColor;
+            background-color: #fff;
         }
         .button-save {
             min-width: 76px;

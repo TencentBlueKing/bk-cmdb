@@ -27,7 +27,7 @@ const prodEnv = require('../config/prod.env')
 
 const getCommonPlugins = config => ([
   new ESLintPlugin({
-    extensions: ['js', 'vue'],
+    extensions: ['js', 'vue', 'ts', 'tsx'],
     files: ['src'],
     failOnWarning: true,
     formatter: require('eslint-friendly-formatter')

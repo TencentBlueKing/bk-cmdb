@@ -14,40 +14,72 @@ import Meta from '@/router/meta'
 import {
   MENU_BUSINESS,
   MENU_BUSINESS_SERVICE,
-  MENU_BUSINESS_SET_TEMPLATE
+  MENU_BUSINESS_SET_TEMPLATE,
+  MENU_BUSINESS_SET_TEMPLATE_CREATE,
+  MENU_BUSINESS_SET_TEMPLATE_DETAILS,
+  MENU_BUSINESS_SET_TEMPLATE_EDIT,
+  MENU_BUSINESS_SET_TEMPLATE_SYNC_HISTORY
 } from '@/dictionary/menu-symbol'
 
-export default [{
-  name: MENU_BUSINESS_SET_TEMPLATE,
-  path: 'set/template',
-  component: () => import('./index.vue'),
-  meta: new Meta({
-    owner: MENU_BUSINESS,
-    menu: {
-      i18n: '集群模板',
-      parent: MENU_BUSINESS_SERVICE
-    }
-  })
-}, {
-  name: 'setTemplateConfig',
-  path: 'set/template/:mode/:templateId?',
-  component: () => import('./template.vue'),
-  meta: new Meta({
-    owner: MENU_BUSINESS,
-    menu: {
-      i18n: '集群模板',
-      relative: MENU_BUSINESS_SET_TEMPLATE
-    }
-  })
-}, {
-  name: 'syncHistory',
-  path: 'set/instance/history/:templateId?',
-  component: () => import('./sync-history.vue'),
-  meta: new Meta({
-    owner: MENU_BUSINESS,
-    menu: {
-      i18n: '同步历史',
-      relative: MENU_BUSINESS_SET_TEMPLATE
-    }
-  })
-}]
+export default [
+  {
+    name: MENU_BUSINESS_SET_TEMPLATE,
+    path: 'set/template',
+    component: () => import('./index.vue'),
+    meta: new Meta({
+      owner: MENU_BUSINESS,
+      menu: {
+        i18n: '集群模板',
+        parent: MENU_BUSINESS_SERVICE
+      }
+    })
+  },
+  {
+    name: MENU_BUSINESS_SET_TEMPLATE_CREATE,
+    path: 'set/template/create',
+    component: () => import('./create.vue'),
+    meta: new Meta({
+      owner: MENU_BUSINESS,
+      menu: {
+        i18n: '新建模板',
+        relative: MENU_BUSINESS_SET_TEMPLATE
+      }
+    })
+  },
+  {
+    name: MENU_BUSINESS_SET_TEMPLATE_DETAILS,
+    path: 'set/template/details/:templateId',
+    component: () => import('./details.vue'),
+    meta: new Meta({
+      owner: MENU_BUSINESS,
+      menu: {
+        i18n: '模板详情',
+        relative: MENU_BUSINESS_SET_TEMPLATE
+      }
+    })
+  },
+  {
+    name: MENU_BUSINESS_SET_TEMPLATE_EDIT,
+    path: 'set/template/edit/:templateId',
+    component: () => import('./edit.vue'),
+    meta: new Meta({
+      owner: MENU_BUSINESS,
+      menu: {
+        i18n: '新建模板',
+        relative: MENU_BUSINESS_SET_TEMPLATE
+      }
+    })
+  },
+  {
+    name: MENU_BUSINESS_SET_TEMPLATE_SYNC_HISTORY,
+    path: 'set/instance/history/:templateId?',
+    component: () => import('./sync-history.vue'),
+    meta: new Meta({
+      owner: MENU_BUSINESS,
+      menu: {
+        i18n: '同步历史',
+        relative: MENU_BUSINESS_SET_TEMPLATE
+      }
+    })
+  }
+]

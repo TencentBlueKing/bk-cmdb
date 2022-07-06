@@ -37,9 +37,9 @@ const actions = {
     return $http.post(`findmany/topo/service_template_sync_status/bk_biz_id/${params.bk_biz_id}`, params, config)
   },
   /**
-   * 获取已修改的进程模板列表
+   * 获取服务模板diff信息
    */
-  getAllProcessTplDiffs({ commit, state, dispatch, rootGetters }, { params, config }) {
+  getTplDiffs({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('/find/proc/service_template/general_difference', params, config)
   },
   /**

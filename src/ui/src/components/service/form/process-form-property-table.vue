@@ -53,6 +53,8 @@
 <script>
   import ProcessFormPropertyIp from './process-form-property-ip'
   import ProcessFormAppend from './process-form-append'
+  import { MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
+
   export default {
     components: {
       ProcessFormPropertyIp,
@@ -135,7 +137,7 @@
       },
       handleRedirect() {
         this.$routerActions.redirect({
-          name: 'operationalTemplate',
+          name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
           params: {
             bizId: this.form.bizId,
             templateId: this.form.serviceTemplateId
