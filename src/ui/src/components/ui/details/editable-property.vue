@@ -81,6 +81,10 @@
           eventName = 'on-selected'
         }
 
+        if (['objuser'].includes(type)) {
+          eventName = 'blur'
+        }
+
         return { [eventName]: confirmEdit }
       })
 
@@ -180,6 +184,12 @@
     .property-value {
       font-size: 12px;
       color: #313238;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      word-break: break-all;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
 
       &.is-loading {
         font-size: 0;

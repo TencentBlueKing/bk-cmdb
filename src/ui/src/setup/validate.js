@@ -25,7 +25,12 @@ import { PARAMETER_TYPES } from '@/dictionary/parameter-types'
  */
 const buildInVaidationRules = {
   length: {
-    validate: (value, [length]) => stringLength(value) <= length
+    validate: (value, [length]) => {
+      if (Array.isArray(value)) {
+        return value?.length <= length
+      }
+      return stringLength(value) <= length
+    }
   },
   repeat: {
     validate: (value, otherValue) => otherValue.findIndex(item => item === value) === -1
