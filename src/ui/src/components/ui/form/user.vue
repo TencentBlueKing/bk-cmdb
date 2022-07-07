@@ -158,7 +158,7 @@
         &[size="small"] {
           height: 26px !important;
 
-          /deep/ .user-selector-container {
+          /deep/ .user-selector-container:not(.focus) {
               height: 26px !important;
 
               &.placeholder:after {
@@ -171,7 +171,8 @@
                 line-height: 20px;
               }
 
-              .user-selector-selected {
+              .user-selector-selected,
+              .user-selector-overflow-tag {
                 margin: 2px 0 2px 6px;
                 line-height: 20px;
               }

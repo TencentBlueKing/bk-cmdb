@@ -67,7 +67,7 @@
 
       const { sortedGroups, groupedProperties } = useProperty(toRefs(props))
 
-      const propertyModalShow = ref(false)
+      const propertyModalVisible = ref(false)
 
       // 当前选中的属性列表
       const selectedList = ref([])
@@ -105,7 +105,7 @@
       })
 
       const handleSelectField = () => {
-        propertyModalShow.value = true
+        propertyModalVisible.value = true
       }
 
       const handleRemoveField = (property) => {
@@ -130,7 +130,7 @@
         selectedList,
         sortedGroups,
         groupedProperties,
-        propertyModalShow,
+        propertyModalVisible,
         configPropertyGroups,
         configGroupedProperties,
         propertyConfig,
@@ -225,7 +225,7 @@
       </div>
     </slot>
     <property-modal
-      :visible.sync="propertyModalShow"
+      :visible.sync="propertyModalVisible"
       :selected-list.sync="selectedList"
       :sorted-groups="sortedGroups"
       :grouped-properties="groupedProperties">

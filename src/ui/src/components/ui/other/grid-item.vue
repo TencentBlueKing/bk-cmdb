@@ -54,7 +54,7 @@
 </script>
 
 <template>
-  <div :class="['cmdb-grid-item', { required }, direction, mode]"
+  <div :class="['cmdb-grid-item', { required }, direction, mode, $i18n.locale]"
     :style="{ '--label-width': `${labelContainerWidth}`, '--flex-direction': direction, '--item-gap': itemGap }">
     <div class="item-label">
       <slot name="label">
@@ -105,6 +105,14 @@
 
       .item-content {
         margin-left: calc(var(--item-gap, 8px) / 2);
+      }
+
+      &.en {
+        .item-label {
+          &::after {
+            content: ":";
+          }
+        }
       }
     }
 

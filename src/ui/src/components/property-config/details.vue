@@ -109,7 +109,7 @@
       :min-width="360"
       :max-width="560"
       :min-height="28"
-      :gap="0"
+      :gap="12"
       :max-columns="maxColumns">
       <grid-item class="form-item"
         v-for="({ property, value }) in configList"
