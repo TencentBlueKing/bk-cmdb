@@ -118,12 +118,12 @@ func (p *processOperation) validateServiceTemplateAttrs(kit *rest.Kit, bizID int
 			return ccErr
 		}
 
-		// transfer string of time to time val
+		// transfer to time value, because the field of the module instance is a time type, it needs to be the same.
 		if attribute.PropertyType != common.FieldTypeTime {
 			continue
 		}
 
-		val, err := util.TransferStrToTime(attr.PropertyValue)
+		val, err := util.ConvToTime(attr.PropertyValue)
 		if err != nil {
 			blog.Errorf("can not transfer property value to time type, attr: %+v, val: %v, rid: %s", attr,
 				attr.PropertyValue, kit.Rid)
