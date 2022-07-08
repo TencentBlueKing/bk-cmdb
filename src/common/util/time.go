@@ -193,3 +193,23 @@ func FormatPeriod(period string) (string, error) {
 
 	return strconv.Itoa(num) + period[len(period)-1:], nil
 }
+
+// TransferStrToTime transfer string of time to time val
+func TransferStrToTime(transVal interface{}) (interface{}, error) {
+	_, ok := transVal.(time.Time)
+	if ok {
+		return transVal, nil
+	}
+
+	valStr, ok := transVal.(string)
+	if ok == false {
+		return nil, fmt.Errorf("can not transfer value to string type, val: %v", transVal)
+	}
+
+	timeType, isTime := IsTime(valStr)
+	if !isTime {
+		return nil, fmt.Errorf("it is not a string of time type, val: %v", transVal)
+	}
+
+	return Str2Time(valStr, timeType), nil
+}
