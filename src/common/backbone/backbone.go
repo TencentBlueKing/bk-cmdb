@@ -33,6 +33,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/thirdparty/monitor"
 
 	"github.com/rs/xid"
@@ -95,18 +96,29 @@ func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discove
 	return bonC, nil
 }
 
+func newApiMachinery(disc discovery.DiscoveryInterface,
+	config *util.APIMachineryConfig) (apimachinery.ClientSetInterface, error) {
+
+	machinery, err := apimachinery.NewApiMachinery(config, disc)
+	if err != nil {
+		return nil, fmt.Errorf("new api machinery failed, err: %v", err)
+	}
+
+	return machinery, nil
+}
+
 func validateParameter(input *BackboneParameter) error {
 	if input.Regdiscv == "" {
-		return fmt.Errorf("regdiscv can not be emtpy")
+		return fmt.Errorf("regdiscv can not be empty")
 	}
 	if input.SrvInfo.IP == "" {
-		return fmt.Errorf("addrport ip can not be emtpy")
+		return fmt.Errorf("addrport ip can not be empty")
 	}
 	if input.SrvInfo.Port <= 0 || input.SrvInfo.Port > 65535 {
 		return fmt.Errorf("addrport port must be 1-65535")
 	}
 	if input.ConfigUpdate == nil && input.ExtraUpdate == nil {
-		return fmt.Errorf("service config change funcation can not be emtpy")
+		return fmt.Errorf("service config change funcation can not be empty")
 	}
 	// to prevent other components which doesn't set it from failing
 	if input.SrvInfo.RegisterIP == "" {
@@ -139,27 +151,20 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, fmt.Errorf("new service discover failed, err:%v", err)
 	}
 
-	apiMachineryConfig := &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-	c, err := newConfig(ctx, input.SrvInfo, serviceDiscovery, apiMachineryConfig)
-	if err != nil {
-		return nil, err
-	}
-	engine, err := New(c, disc)
+	regPath := getRegisterPath(input.SrvInfo.IP)
+
+	engine, err := New(regPath, disc)
 	if err != nil {
 		return nil, fmt.Errorf("new engine failed, err: %v", err)
 	}
 	engine.client = client
-	engine.apiMachineryConfig = apiMachineryConfig
 	engine.discovery = serviceDiscovery
 	engine.ServiceManageInterface = serviceDiscovery
 	engine.srvInfo = input.SrvInfo
 	engine.metric = metricService
 
 	handler := &cc.CCHandler{
+		// 扩展这个函数， 新加传递错误
 		OnProcessUpdate:  input.ConfigUpdate,
 		OnExtraUpdate:    input.ExtraUpdate,
 		OnLanguageUpdate: engine.onLanguageUpdate,
@@ -193,15 +198,50 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, fmt.Errorf("init monitor failed, err: %v", err)
 	}
 
+	if err := opentelemetry.InitOpenTelemetryConfig(); err != nil {
+		return nil, fmt.Errorf("init openTelemetry config failed, err: %v", err)
+	}
+
+	if err := opentelemetry.InitTracer(ctx); err != nil {
+		return nil, fmt.Errorf("init tracer failed, err: %v", err)
+	}
+
+	tlsConf, err := getTLSConf()
+	if err != nil {
+		blog.Errorf("get tls config error, err: %v", err)
+		return nil, err
+	}
+	engine.apiMachineryConfig = &util.APIMachineryConfig{
+		QPS:       1000,
+		Burst:     2000,
+		TLSConfig: tlsConf,
+	}
+
+	machinery, err := newApiMachinery(serviceDiscovery, engine.apiMachineryConfig)
+	if err != nil {
+		return nil, err
+	}
+	engine.CoreAPI = machinery
+
 	return engine, nil
 }
 
 func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, HTTPHandler http.Handler, pprofEnabled bool) error {
+	tlsConf, err := getTLSConf()
+	if err != nil {
+		blog.Errorf("get tls config error, err: %v", err)
+		return err
+	}
+
+	if isTLS(tlsConf) {
+		e.srvInfo.Scheme = "https"
+	}
+
 	e.server = Server{
 		ListenAddr:   e.srvInfo.IP,
 		ListenPort:   e.srvInfo.Port,
 		Handler:      e.Metric().HTTPMiddleware(HTTPHandler),
-		TLS:          TLSConfig{},
+		TLS:          tlsConf,
 		PProfEnabled: pprofEnabled,
 	}
 
@@ -216,10 +256,10 @@ func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, HTTP
 	return e.SvcDisc.Register(e.RegisterPath, *e.srvInfo)
 }
 
-func New(c *Config, disc ServiceRegisterInterface) (*Engine, error) {
+// New new engine
+func New(regPath string, disc ServiceRegisterInterface) (*Engine, error) {
 	return &Engine{
-		RegisterPath: c.RegisterPath,
-		CoreAPI:      c.CoreAPI,
+		RegisterPath: regPath,
 		SvcDisc:      disc,
 		Language:     language.NewFromCtx(language.EmptyLanguageSetting),
 		CCErr:        errors.NewFromCtx(errors.EmptyErrorsSetting),
@@ -329,4 +369,25 @@ func (e *Engine) WithMongo(prefixes ...string) (mongo.Config, error) {
 	}
 
 	return cc.Mongo(prefix)
+}
+
+func getRegisterPath(ip string) string {
+	return fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, common.GetIdentification(), ip)
+}
+
+// GetSrvInfo get service info
+func (e *Engine) GetSrvInfo() *types.ServerInfo {
+	return e.srvInfo
+}
+
+func getTLSConf() (*util.TLSClientConfig, error) {
+	config, err := util.NewTLSClientConfigFromConfig("tls")
+	return &config, err
+}
+
+func isTLS(config *util.TLSClientConfig) bool {
+	if config == nil || len(config.CertFile) == 0 || len(config.KeyFile) == 0 {
+		return false
+	}
+	return true
 }

@@ -99,24 +99,6 @@ func GenerateResourceCreatorActions() ResourceCreatorActions {
 				SubResourceTypes: nil,
 			},
 			{
-				ResourceID: SysEventPushing,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditEventPushing,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteEventPushing,
-						IsRequired: false,
-					},
-					{
-						ID:         FindEventPushing,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
-			},
-			{
 				ResourceID: SysModelGroup,
 				Actions: []CreatorRelatedAction{
 					{

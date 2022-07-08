@@ -15,6 +15,7 @@ import timezone from './timezone'
 import serviceTemplate from './service-template'
 import module from './module'
 import set from './set'
+import biz from './biz'
 
 export default {
   install(Vue) {
@@ -35,7 +36,8 @@ export default {
       timezone,
       serviceTemplate,
       module,
-      set
+      set,
+      biz
     ]
     components.forEach((component) => {
       Vue.component(component.name, component)

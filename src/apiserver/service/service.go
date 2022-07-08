@@ -20,10 +20,13 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metrics"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/storage/dal/redis"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Service service methods
@@ -46,8 +49,11 @@ type service struct {
 	authorizer ac.AuthorizeInterface
 	cache      redis.Client
 	limiter    *Limiter
+	// noPermissionRequestTotal is the total number of request without permission
+	noPermissionRequestTotal *prometheus.CounterVec
 }
 
+// SetConfig set config
 func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface,
 	clientSet apimachinery.ClientSetInterface, cache redis.Client, limiter *Limiter) {
 	s.engine = engine
@@ -59,6 +65,7 @@ func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, disc
 	s.authorizer = iam.NewAuthorizer(clientSet)
 }
 
+// WebServices
 func (s *service) WebServices() []*restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.engine.CCErr
@@ -66,12 +73,21 @@ func (s *service) WebServices() []*restful.WebService {
 
 	ws := &restful.WebService{}
 	ws.Path(rootPath)
+	ws.Filter(s.JwtFilter())
 	ws.Filter(s.engine.Metric().RestfulMiddleWare)
 	ws.Filter(rdapi.AllGlobalFilter(getErrFun))
 	ws.Filter(rdapi.RequestLogFilter())
 	ws.Filter(s.LimiterFilter())
 	ws.Produces(restful.MIME_JSON)
 	if auth.EnableAuthorize() {
+		s.noPermissionRequestTotal = prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "cmdb_no_permission_request_total",
+				Help: "total number of request without permission.",
+			},
+			[]string{metrics.LabelHandler, metrics.LabelAppCode},
+		)
+		s.engine.Metric().Registry().MustRegister(s.noPermissionRequestTotal)
 		ws.Filter(s.authFilter(getErrFun))
 	}
 	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))
@@ -84,6 +100,12 @@ func (s *service) WebServices() []*restful.WebService {
 
 	allWebServices := make([]*restful.WebService, 0)
 	allWebServices = append(allWebServices, ws)
-	allWebServices = append(allWebServices, s.RootWebService())
+
+	// common api
+	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	commonAPI.Route(commonAPI.GET("/healthz").To(s.Healthz))
+	commonAPI.Route(commonAPI.GET("/version").To(restfulservice.Version))
+	allWebServices = append(allWebServices, commonAPI)
+
 	return allWebServices
 }

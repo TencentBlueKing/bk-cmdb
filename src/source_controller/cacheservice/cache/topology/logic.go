@@ -37,7 +37,7 @@ func (t *Topology) genBusinessTopology(ctx context.Context, biz int64) (*BizBrie
 		return nil, err
 	}
 
-	idle, common, err := t.getBusinessTopology(ctx, biz)
+	idle, common, err := t.getBusinessTopology(ctx, biz, detail.OwnerID)
 	if err != nil {
 		blog.Errorf("get biz topology nodes from db failed, err: %v, rid: %v", err, rid)
 		return nil, err
@@ -52,7 +52,7 @@ func (t *Topology) genBusinessTopology(ctx context.Context, biz int64) (*BizBrie
 
 // getBusinessTopology construct a business's fully Topology data, separated with inner set and
 // other common nodes
-func (t *Topology) getBusinessTopology(ctx context.Context, biz int64) ([]*Node, []*Node, error) {
+func (t *Topology) getBusinessTopology(ctx context.Context, biz int64, supplierAccount string) ([]*Node, []*Node, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
 
 	// read from secondary in mongodb cluster.
@@ -85,7 +85,7 @@ func (t *Topology) getBusinessTopology(ctx context.Context, biz int64) ([]*Node,
 			break
 		}
 
-		customNodes, err := t.genCustomNodes(ctx, biz, level, previousNodes)
+		customNodes, err := t.genCustomNodes(ctx, biz, level, supplierAccount, previousNodes)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -108,14 +108,14 @@ func (t *Topology) getBusinessTopology(ctx context.Context, biz int64) ([]*Node,
 }
 
 // genCustomNodes generate custom object's instance node with it's parent map
-func (t *Topology) genCustomNodes(ctx context.Context, biz int64, object string, previousNodes map[int64][]*Node) (
+func (t *Topology) genCustomNodes(ctx context.Context, biz int64, object, supplierAccount string, previousNodes map[int64][]*Node) (
 	map[int64][]*Node, error) {
 
 	if previousNodes == nil {
 		previousNodes = make(map[int64][]*Node)
 	}
 
-	customList, err := t.listCustomInstance(ctx, biz, object)
+	customList, err := t.listCustomInstance(ctx, biz, object, supplierAccount)
 	if err != nil {
 		return nil, err
 	}
@@ -146,14 +146,15 @@ func (t *Topology) genCustomNodes(ctx context.Context, biz int64, object string,
 }
 
 // listCustomInstance list a biz's custom object's all instances
-func (t *Topology) listCustomInstance(ctx context.Context, biz int64, object string) ([]*customBase, error) {
+func (t *Topology) listCustomInstance(ctx context.Context, biz int64, object, supplierAccount string) ([]*customBase, error) {
 	filter := mapstr.MapStr{common.BKAppIDField: biz, "bk_obj_id": object}
 	all := make([]*customBase, 0)
 	start := uint64(0)
 	for {
 		oneStep := make([]*customBase, 0)
-		err := t.db.Table(common.BKTableNameBaseInst).Find(filter).Fields(customBaseFields...).Start(start).
-			Limit(step).Sort(common.BKInstIDField).All(ctx, &oneStep)
+		err := t.db.Table(common.GetObjectInstTableName(object, supplierAccount)).Find(filter).
+			Fields(customBaseFields...).Sort(common.BKInstIDField).Start(start).
+			Limit(step).All(ctx, &oneStep)
 		if err != nil {
 			blog.Errorf("get biz: %d custom object: %s instance list failed, err: %v", biz, object, err)
 			return nil, err

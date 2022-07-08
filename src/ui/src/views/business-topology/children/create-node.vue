@@ -27,6 +27,7 @@
           :options="property.option || []"
           :placeholder="$t('请输入xx', { name: property.bk_property_name })"
           v-validate="getValidateRules(property)"
+          v-bind="$tools.getValidateEvents(property)"
           v-model.trim="values[property['bk_property_id']]">
         </component>
         <div v-else>
@@ -36,6 +37,7 @@
             :options="property.option || []"
             :placeholder="$t('请输入xx', { name: property.bk_property_name })"
             v-validate="getValidateRules(property)"
+            v-bind="$tools.getValidateEvents(property)"
             v-model.trim="values[property['bk_property_id']]">
           </bk-input>
         </div>
@@ -43,7 +45,7 @@
       </div>
     </div>
     <div class="node-create-options">
-      <bk-button theme="primary"
+      <bk-button theme="primary" v-test-id="'createNodeSave'"
         :disabled="$loading() || errors.any()"
         @click="handleSave">
         {{$t('提交')}}
@@ -102,7 +104,7 @@
         const rules = this.$tools.getValidateRules(property)
         if (property.bk_property_id === 'bk_inst_name') {
           rules.businessTopoInstNames = true
-          rules.length = 32
+          rules.length = 256
           rules.singlechar = false
         }
         return rules

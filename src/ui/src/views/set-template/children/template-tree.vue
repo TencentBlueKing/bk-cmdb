@@ -1,5 +1,5 @@
 <template>
-  <div :class="['template-tree', mode]">
+  <div :class="['template-tree', mode]" v-bkloading="{ isLoading: $loading(request.topo) }">
     <div class="node-root clearfix">
       <i class="folder-icon bk-icon icon-down-shape fl"></i>
       <i class="node-icon fl">{{setName[0]}}</i>
@@ -78,7 +78,7 @@
       serviceTemplateInfo
     },
     /* eslint-disable-next-line */
-        props: ['mode', 'templateId'],
+    props: ['mode', 'templateId'],
     data() {
       return {
         templateName: this.$t('模板集群名称'),
@@ -94,7 +94,10 @@
         },
         servicesHost: [],
         selectedServiceCount: 0,
-        serviceTemplateCount: 0
+        serviceTemplateCount: 0,
+        request: {
+          topo: Symbol('topo')
+        }
       }
     },
     computed: {
@@ -153,7 +156,8 @@
         try {
           const data = await this.$store.dispatch('setTemplate/getSetTemplateServicesStatistics', {
             bizId: this.$store.getters['objectBiz/bizId'],
-            setTemplateId: this.templateId
+            setTemplateId: this.templateId,
+            config: { requestId: this.request.topo }
           })
           this.services = data.map(item => item.service_template)
           this.servicesHost = data.map(item => ({

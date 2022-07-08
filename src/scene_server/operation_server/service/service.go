@@ -33,9 +33,12 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
+	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/operation_server/app/options"
 	"configcenter/src/scene_server/operation_server/logics"
-	"github.com/emicklei/go-restful"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
 type srvComm struct {
@@ -89,11 +92,16 @@ func (o *OperationServer) WebService() *restful.Container {
 
 	o.newOperationService(api)
 	container := restful.NewContainer()
+
+	opentelemetry.AddOtlpFilter(container)
+
 	container.Add(api)
 
-	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
-	healthzAPI.Route(healthzAPI.GET("/healthz").To(o.Healthz))
-	container.Add(healthzAPI)
+	// common api
+	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	commonAPI.Route(commonAPI.GET("/healthz").To(o.Healthz))
+	commonAPI.Route(commonAPI.GET("/version").To(restfulservice.Version))
+	container.Add(commonAPI)
 
 	return container
 }
@@ -170,12 +178,14 @@ func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessCo
 	}
 }
 
+// ParseTimerConfigFromKV parse timer from kv
 func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[string]string) (string, error) {
 	// 若是timer没配置，或者解析失败，给一个默认的定时时间
 	defaultSpec := "30 0 * * *"
-	specStr, err := cc.String(prefix+".spec")
+	specStr, err := cc.String(prefix + ".spec")
 	if err != nil {
-		blog.Errorf("parse timer config failed, missing 'spec' configuration for timer, set timer-spec default value: 00:30")
+		blog.Errorf("parse timer config failed, missing 'spec' configuration for timer, " +
+			"set timer-spec default value: 00:30")
 		return defaultSpec, nil
 	}
 	spec, err := parseTimerConfig(specStr)

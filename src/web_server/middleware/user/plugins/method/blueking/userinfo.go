@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	apiutil "configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -77,8 +78,16 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	loginURL := checkUrl + bkToken
 	httpCli := httpclient.NewHttpClient()
 	httpCli.SetTimeOut(30 * time.Second)
-	if err := httpCli.SetTlsNoVerity(); err != nil {
-		blog.Warnf("httpCli.SetTlsNoVerity failed, err: %+v, rid: %s", err, rid)
+
+	tlsConf, err := apiutil.NewTLSClientConfigFromConfig("webServer.site.paas.tls")
+	if err != nil {
+		blog.Errorf("get tls config error, err: %v, rid: %s", err, rid)
+		return nil, false
+	}
+
+	if err := m.setTLSConf(&tlsConf, httpCli, rid); err != nil {
+		blog.Errorf("set tls config error, err: %v, rid: %s", err, rid)
+		return nil, false
 	}
 
 	loginResultByteArr, err := httpCli.GET(loginURL, nil, nil)
@@ -151,10 +160,9 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 	return loginURL
 }
 
-func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
+func (m *user) GetUserList(c *gin.Context, params map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	query := c.Request.URL.Query()
-	params := make(map[string]string)
 	for key, values := range query {
 		params[key] = strings.Join(values, ";")
 	}
@@ -185,4 +193,19 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	}
 
 	return users, nil
+}
+
+func (m *user) setTLSConf(tlsConf *apiutil.TLSClientConfig, httpCli *httpclient.HttpClient, rid string) error {
+	if tlsConf != nil && len(tlsConf.CAFile) != 0 && len(tlsConf.CertFile) != 0 && len(tlsConf.KeyFile) != 0 {
+		if err := httpCli.SetTLSVerify(tlsConf); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if err := httpCli.SetTlsNoVerity(); err != nil {
+		blog.Warnf("httpCli.SetTlsNoVerity failed, err: %+v, rid: %s", err, rid)
+	}
+
+	return nil
 }

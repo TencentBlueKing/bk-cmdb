@@ -298,7 +298,7 @@ func (r *Request) Do() *Result {
 			}
 
 			if r.ctx != nil {
-				req.WithContext(r.ctx)
+				req = req.WithContext(r.ctx)
 			}
 
 			req.Header = commonUtil.CloneHeader(r.headers)

@@ -37,6 +37,7 @@ type Commands interface {
 	HKeys(ctx context.Context, key string) StringSliceResult
 	HMGet(ctx context.Context, key string, fields ...string) SliceResult
 	HScan(ctx context.Context, key string, cursor uint64, match string, count int64) ScanResult
+	Scan(ctx context.Context, cursor uint64, match string, count int64) ScanResult
 	HSet(ctx context.Context, key string, values ...interface{}) IntResult
 	Incr(ctx context.Context, key string) IntResult
 	Keys(ctx context.Context, pattern string) StringSliceResult
@@ -57,7 +58,12 @@ type Commands interface {
 	SAdd(ctx context.Context, key string, members ...interface{}) IntResult
 	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) StatusResult
 	SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) BoolResult
+	MSetNX(ctx context.Context, values ...interface{}) BoolResult
 	SMembers(ctx context.Context, key string) StringSliceResult
 	SRem(ctx context.Context, key string, members ...interface{}) IntResult
 	TTL(ctx context.Context, key string) DurationResult
+	TxPipeline(ctx context.Context) Pipeliner
+	Discard(ctx context.Context, pipe Pipeliner) error
+	BLPop(ctx context.Context, timeout time.Duration, keys ...string) StringSliceResult
+	ZRemRangeByRank(key string, start, stop int64) IntResult
 }

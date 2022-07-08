@@ -57,7 +57,7 @@ var DBWriteStr string
 func initData() {
 	tConfig = test.GetTestConfig()
 	redisCfg := redisdal.Config{
-		Address:  tConfig.RedisCfg.RedisAdress + ":" + tConfig.RedisCfg.RedisPort,
+		Address:  tConfig.RedisCfg.RedisAddress + ":" + tConfig.RedisCfg.RedisPort,
 		Password: tConfig.RedisCfg.RedisPasswd,
 		Database: "0",
 		//MasterName: redisMasterName,

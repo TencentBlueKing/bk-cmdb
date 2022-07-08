@@ -321,7 +321,8 @@ func (s *Service) GetDynamicGroup(ctx *rest.Contexts) {
 	// do query action now.
 	result, err := s.CoreAPI.CoreService().Host().GetDynamicGroup(ctx.Kit.Ctx, bizID, targetID, ctx.Kit.Header)
 	if err != nil {
-		blog.Errorf("get dynamic group failed, err: %+v, biz: %s, ID: %s, rid: %s", err, bizID, targetID, ctx.Kit.Rid)
+		blog.Errorf("get dynamic group failed, err: %+v, biz: %s, ID: %s, rid: %s",
+			err, bizID, targetID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
@@ -331,6 +332,7 @@ func (s *Service) GetDynamicGroup(ctx *rest.Contexts) {
 		ctx.RespAutoError(result.CCError())
 		return
 	}
+	changeTimeToMatchLocalZone(result.Data.Info.Condition)
 	ctx.RespEntity(result.Data)
 }
 
@@ -343,7 +345,8 @@ func (s *Service) SearchDynamicGroup(ctx *rest.Contexts) {
 
 	bizIDInt64, err := strconv.ParseInt(bizID, 10, 64)
 	if err != nil {
-		blog.Errorf("search dynamic groups failed, invalid bizID from path, bizID: %s, rid: %s", bizID, ctx.Kit.Rid)
+		blog.Errorf("search dynamic groups failed, invalid bizID from path, bizID: %s, rid: %s",
+			bizID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
 		return
 	}
@@ -355,12 +358,14 @@ func (s *Service) SearchDynamicGroup(ctx *rest.Contexts) {
 		return
 	}
 	if input.Page.Start < 0 {
-		blog.Errorf("search dynamic groups failed, invalid page start param, input: %+v, rid: %s", input, ctx.Kit.Rid)
+		blog.Errorf("search dynamic groups failed, invalid page start param, input: %+v, rid: %s",
+			input, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "start"))
 		return
 	}
 	if input.Page.IsIllegal() {
-		blog.Errorf("search dynamic groups failed, invalid page limit param, input: %+v, rid: %s", input, ctx.Kit.Rid)
+		blog.Errorf("search dynamic groups failed, invalid page limit param, input: %+v, rid: %s",
+			input, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "limit"))
 		return
 	}
@@ -386,7 +391,8 @@ func (s *Service) SearchDynamicGroup(ctx *rest.Contexts) {
 	// do search action now.
 	result, err := s.CoreAPI.CoreService().Host().SearchDynamicGroup(ctx.Kit.Ctx, ctx.Kit.Header, input)
 	if err != nil {
-		blog.Errorf("search dynamic groups failed, err: %+v, biz: %s, input: %+v, rid: %s", err, bizID, input, ctx.Kit.Rid)
+		blog.Errorf("search dynamic groups failed, err: %+v, biz: %s, input: %+v, rid: %s",
+			err, bizID, input, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
@@ -395,6 +401,9 @@ func (s *Service) SearchDynamicGroup(ctx *rest.Contexts) {
 			result.Code, result.ErrMsg, bizID, input, ctx.Kit.Rid)
 		ctx.RespAutoError(result.CCError())
 		return
+	}
+	for _, dynamicGroup := range result.Data.Info {
+		changeTimeToMatchLocalZone(dynamicGroup.Info.Condition)
 	}
 	ctx.RespEntity(result.Data)
 }
@@ -524,4 +533,21 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 	blog.Errorf("execute dynamic group failed, unknown group object type[%s], bizID: %s, ID: %s, rid: %s",
 		targetDynamicGroup.ObjID, bizID, targetID, ctx.Kit.Rid)
 	ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCSystemUnknownError))
+}
+
+// change the time in UTC format to the time in the local time zone
+func changeTimeToMatchLocalZone(conditions []meta.DynamicGroupInfoCondition) {
+	for _, condition := range conditions {
+		if condition.TimeCondition == nil || condition.TimeCondition.Rules == nil {
+			continue
+		}
+		for _, rule := range condition.TimeCondition.Rules {
+			if rule.Start != nil {
+				rule.Start.Time = rule.Start.Local()
+			}
+			if rule.End != nil {
+				rule.End.Time = rule.End.Local()
+			}
+		}
+	}
 }

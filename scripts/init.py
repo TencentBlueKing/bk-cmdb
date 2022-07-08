@@ -3,7 +3,7 @@
 
 import sys
 import getopt
-import os
+import os, errno
 import shutil
 from string import Template
 
@@ -11,11 +11,18 @@ from string import Template
 class FileTemplate(Template):
     delimiter = '$'
 
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5 (except OSError, exc: for Python <2.5)
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise
 
 def generate_config_file(
         rd_server_v, db_name_v, redis_ip_v, redis_port_v,
         redis_pass_v, sentinel_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, rs_name, user_info,
-        cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v, auth_address, auth_app_code,
+        cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v,es_shard_num_v,es_replica_num_v, auth_address, auth_app_code,
         auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level, register_ip,
         enable_cryptor_v, secret_key_url_v, secrets_addrs_v, secrets_token_v, secrets_project_v, secrets_env_v
 ):
@@ -35,6 +42,8 @@ def generate_config_file(
         es_url=es_url_v,
         es_user=es_user_v,
         es_pass=es_pass_v,
+        es_shard_num=es_shard_num_v,
+        es_replica_num=es_replica_num_v,
         ui_root="../web",
         agent_url=paas_url_v,
         configures_dir=output,
@@ -159,6 +168,50 @@ watch:
     with open(output + "mongodb.yaml", 'w') as tmp_file:
         tmp_file.write(result)
 
+    outputMonstache = os.getcwd() + "/monstache/etc/"
+    if not os.path.exists(outputMonstache):
+        mkdir_p(outputMonstache)
+    # monstache.so config.toml
+    monstachesoconfig_file_template_str = '''
+# mongodb settings
+mongo-url = "mongodb://$mongo_user:$mongo_pass@$mongo_host:$mongo_port/$db"
+
+# elasticsearch settings
+elasticsearch-urls = ["$es_url"]
+elasticsearch-user = "$es_user"
+elasticsearch-password = "$es_pass"
+gzip = true
+
+# metadata collections.
+change-stream-namespaces = [""]
+direct-read-namespaces = [""]
+direct-read-dynamic-include-regex = "cmdb.cc_ApplicationBase$$|cc_SetBase$$|cc_ModuleBase$$|cmdb.cc_HostBase$$|cmdb.cc_ObjDes$$|cc_ObjAttDes$$|cmdb.cc_ObjectBase_(.*)_pub_"
+namespace-regex = "cmdb.cc_ApplicationBase$$|cc_SetBase$$|cc_ModuleBase$$|cmdb.cc_HostBase$$|cmdb.cc_ObjDes$$|cc_ObjAttDes$$|cmdb.cc_ObjectBase_(.*)_pub_"
+
+# plugin
+mapper-plugin-path = "etc/monstache-plugin.so"
+
+# resume mode
+resume = true
+    '''
+    template = FileTemplate(monstachesoconfig_file_template_str)
+    result = template.substitute(**context)
+    with open(outputMonstache + "config.toml", 'w') as tmp_file:
+        tmp_file.write(result)
+
+    # monstache.so extra.toml.toml
+    monstachesoextra_file_template_str = '''
+# elasticsearch settings
+
+# the param must be assigned
+elasticsearch-shard-num = "$es_shard_num"
+elasticsearch-replica-num = "$es_replica_num"
+    '''
+    template = FileTemplate(monstachesoextra_file_template_str)
+    result = template.substitute(**context)
+    with open(outputMonstache + "extra.toml", 'w') as tmp_file:
+        tmp_file.write(result)
+
     # common.yaml
     common_file_template_str = '''
 #topoServer:
@@ -215,6 +268,10 @@ es:
   usr: $es_user
   #密码
   pwd: $es_pass
+# adminServer专属配置
+adminServer:
+  #同步IAM动态模型的周期,单位为分钟，最小为1分钟,默认为5分钟
+  syncIAMPeriodMinutes: 5
 # web_server专属配置
 webServer:
   api:
@@ -243,6 +300,19 @@ webServer:
     htmlRoot: $ui_root
     #帮助文档地址
     helpDocUrl: https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品简介/Overview.md
+    paas:
+      # pass的tls相关配置
+      tls:
+        # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+        insecureSkipVerify:
+        # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+        certFile:
+        # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+        keyFile:
+        # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+        caFile:
+        # 用于解密根据RFC1423加密的证书密钥的PEM块
+        password:
   app:
     agentAppUrl: ${agent_url}/console/?app=bk_agent_setup
     #权限模式，web页面使用，可选值: internal, iam
@@ -250,6 +320,7 @@ webServer:
   login:
     #登录模式
     version: $loginVersion
+
 # operation_server专属配置
 operationServer:
   timer:
@@ -257,6 +328,7 @@ operationServer:
     spec: 00:30  # 00:00 - 23:59
   # 禁用运营统计数据统计功能，默认false
   disableOperationStatistic: false
+
 #auth_server专属配置
 authServer:
   #蓝鲸权限中心地址,可配置多个,用,(逗号)分割
@@ -265,6 +337,20 @@ authServer:
   appCode: $auth_app_code
   #cmdb项目在蓝鲸权限中心的应用密钥
   appSecret: $auth_app_secret
+  authCenter:
+     # 权限中心tls配置
+     tls:
+       # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+       insecureSkipVerify:
+       # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+       certFile:
+       # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+       keyFile:
+       # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+       caFile:
+       # 用于解密根据RFC1423加密的证书密钥的PEM块
+       password:
+
 #cloudServer专属配置
 cloudServer:
   # 加密服务使用
@@ -279,9 +365,12 @@ cloudServer:
   syncTask:
     # 同步周期,最小为5分钟
     syncPeriodMinutes: 5
+
 #datacollection专属配置
 datacollection:
   hostsnap:
+    # 主机静态数据采集模式，将数据导入kafka或者redis，可选值是 kafka、redis，默认值为redis（仅用于新插件bkmonitorbeat）
+    reportMode: redis
     # 当主机快照数据属性,如cpu,bk_cpu_mhz,bk_disk,bk_mem这些数值型数据变动的范围大于该配置的值时，进行db数据的更新，默认值为10%，最小值为5%，以百分比为单位
     changeRangePercent: 10
     # 用于设置主机快照key在redis中的过期时间，该时间会有上下50%的波动，当key存在时，同一id的主机数据不会更新，默认值为10分钟，最小值为5分钟，以分钟为单位
@@ -290,6 +379,7 @@ datacollection:
     rateLimiter:
       qps: 40
       burst: 100
+
 # 监控配置， monitor配置项必须存在
 monitor:
     # 监控插件名称，有noop，blueking， 不填时默认为noop
@@ -300,12 +390,117 @@ monitor:
     dataID: 0
     # 采集数据后能够缓存的队列长度，设置范围为1～1000, 默认为100
     queueSize: 100
+    # 采集数据用的gsecmdline命令绝对路径，默认版本需要大于等于2.0.2 ，默认路径：/usr/local/gse/plugins/bin/gsecmdline
+    gsecmdlinePath: 
+    # 对应的domainsocket绝对路径，默认路径：/usr/local/gse/agent/data/ipc.state.report
+    domainSocketPath: 
     # 用于对数据上报进行频率控制和限流
     # qps的设置范围为1～50，默认值为10
     # burst的设置范围为1～100，默认值为20
     rateLimiter:
       qps: 10
       burst: 20
+
+# 日志平台openTelemetry跟踪链接入相关配置
+openTelemetry:
+  # 表示是否开启日志平台openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
+  enable: false
+  # 日志平台openTelemetry跟踪链功能的自定义上报服务地址
+  endpoint:
+  # 日志平台openTelemetry跟踪链功能的上报data_id
+  bkDataID:
+  # 服务tls配置
+  tls:
+    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+    insecureSkipVerify:
+    # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+    certFile:
+    # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+    keyFile:
+    # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+    caFile:
+    # 用于解密根据RFC1423加密的证书密钥的PEM块
+    password:
+
+# eventServer相关配置
+eventServer:
+  # 下发主机身份相关配置
+  hostIdentifier:
+    # 是否开始下发主机身份功能, 有两个值，true和false，当处于true时，开启下发主机身份功能，false时，关闭该功能
+    startUp: false
+    # 每隔多少个小时进行一次全量主机身份批量的同步操作，整数值，单位为小时，注：刚启动服务时，会等一个周期后再进行全量同步操作
+    batchSyncIntervalHours: 6
+    # 用于设置推送主机身份请求gse的taskServer能力，起到限流的作用。qps的默认值为200, 代表每秒最多推送的主机数量，burst的默认值为200
+    rateLimiter:
+      qps: 200
+      burst: 200
+    # 下发主机身份文件名
+    fileName: "hostid"
+    # 当下发主机为linux操作系统时，相关配置
+    linux:
+      # 下发主机身份文件路径
+      filePath: "/var/lib/gse/host"
+      # 下发主机身份文件所有者
+      fileOwner: "root"
+      # 下发主机身份文件权限值
+      filePrivilege: 644
+    # 当下发主机为windows操作系统时，相关配置
+    windows:
+      # 下发主机身份文件路径
+      filePath: "c:/gse/data/host"
+      # 下发主机身份文件所有者
+      fileOwner: "root"
+      # 下发主机身份文件权限值
+      filePrivilege: 644
+
+# 直接调用gse服务相关配置
+gse:
+  # 调用gse的apiServer服务时相关配置
+  apiServer:
+    # 此配置为数组类型，可配置连接gse的apiServer的多个host:port格式的值，去建立连接
+    endpoints:
+      # 证书相关信息
+    insecureSkipVerify: true
+    certFile:
+    keyFile:
+    caFile:
+    password:
+  # 调用gse的taskServer服务时相关配置
+  taskServer:
+    # 此配置为数组类型，可配置连接gse的taskServer的多个host:port格式的值，去建立连接
+    endpoints:
+    # 证书相关信息
+    insecureSkipVerify: true
+    certFile:
+    keyFile:
+    caFile:
+    password:
+
+# 当主机静态数据采集模式为kafka时，datacollection处理插件bkmonitorbeat采集上来的主机静态数据，选择kafka作为数据导入组件时的相关配置
+# 此配置与migrate.yaml文件中的reportMode相关联
+kafka:
+  snap:
+    brokers:
+    # groupID为固定值，请勿随便修改，修改后会导致重复消费过去的数据
+    groupID: bk_cmdb_snapshot_group
+    # partition数量固定为1，保证消息的顺序性
+    partition: 1
+    # 安全协议SASL_PLAINTEXT，SASL机制SCRAM-SHA-512的账号、密码信息
+    user:
+    password:
+
+# cmdb服务tls配置
+tls:
+  # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+  insecureSkipVerify:
+  # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+  certFile:
+  # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+  keyFile:
+  # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+  caFile:
+  # 用于解密根据RFC1423加密的证书密钥的PEM块
+  password:
     '''
 
     template = FileTemplate(common_file_template_str)
@@ -356,6 +551,8 @@ monitor:
 #  res: /data/cmdb/cmdb_adminserver/conf/errors
 #language:
 #  res: /data/cmdb/cmdb_adminserver/conf/language
+#monstache:
+#  dir: /data/cmdb/monstache/etc
 #auth:
 #  address: 127.0.0.1
 #  appCode: bk_cmdb
@@ -380,6 +577,9 @@ errors:
 # 指定language的路径
 language:
   res: conf/language
+# 指定monstache相关配置文件
+monstache:
+  res: monstache/etc
     '''
 
     template = FileTemplate(migrate_file_template_str)
@@ -415,7 +615,9 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level, registe
                     filedata = filedata.replace('rd_server_placeholder', rd_server)
 
                 extend_flag = ''
-                if d in ['cmdb_apiserver', 'cmdb_hostserver', 'cmdb_datacollection', 'cmdb_procserver', 'cmdb_toposerver', 'cmdb_eventserver', 'cmdb_operationserver', 'cmdb_cloudserver', 'cmdb_authserver']:
+                if d in ['cmdb_apiserver', 'cmdb_hostserver', 'cmdb_datacollection', 'cmdb_procserver',
+                         'cmdb_toposerver', 'cmdb_eventserver', 'cmdb_operationserver', 'cmdb_cloudserver',
+                         'cmdb_authserver','cmdb_adminserver']:
                     extend_flag += ' --enable-auth=%s ' % enable_auth
                 if d in ['cmdb_cloudserver']:
                      extend_flag += ' --enable_cryptor=%s ' % enable_cryptor
@@ -457,6 +659,8 @@ def main(argv):
     es_url = 'http://127.0.0.1:9200'
     es_user = ''
     es_pass = ''
+    es_shard_num = 1
+    es_replica_num = 1
     log_level = '3'
     register_ip = ''
     rs_name = 'rs0'
@@ -489,7 +693,7 @@ def main(argv):
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
         "redis_pass=", "sentinel_pass=", "mongo_ip=", "mongo_port=", "rs_name=",
         "mongo_user=", "mongo_pass=", "blueking_cmdb_url=", "user_info=",
-        "blueking_paas_url=", "listen_port=", "es_url=", "es_user=", "es_pass=", "auth_address=",
+        "blueking_paas_url=", "listen_port=", "es_url=", "es_user=", "es_pass=", "es_shard_num=","es_replica_num=","auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",
         "auth_scheme=", "auth_sync_workers=", "auth_sync_interval_minutes=", "full_text_search=", "log_level=", "register_ip=",
         "enable_cryptor=", "secret_key_url=", "secrets_addrs=", "secrets_token=", "secrets_project=", "secrets_env="
@@ -519,6 +723,8 @@ def main(argv):
       --es_url             <es_url>               the es listen url, see in es dir config/elasticsearch.yml, (network.host, http.port), default: http://127.0.0.1:9200
       --es_user            <es_user>              the es user name
       --es_pass            <es_pass>              the es password
+      --es_shard_num       <es_shard_num>         the es sharding num
+      --es_replica_num     <es_replica_num>       the es es_replica_num
       --log_level          <log_level>            log level to start cmdb process, default: 3
       --register_ip        <register_ip>          the ip address registered on zookeeper, it can be domain
       --user_info          <user_info>            the system user info, user and password are combined by semicolon, multiple users are separated by comma. eg: user1:password1,user2:password2
@@ -556,6 +762,8 @@ def main(argv):
       --es_url             http://127.0.0.1:9200 \\
       --es_user            cc \\
       --es_pass            cc \\
+      --es_shard_num       1 \\
+      --es_replica_num     1 \\
       --log_level          3 \\
       --register_ip        cmdb.domain.com \\
       --user_info          user1:password1,user2:password2
@@ -651,6 +859,12 @@ def main(argv):
         elif opt in ("--es_pass",):
             es_pass = arg
             print('es_pass:', es_pass)
+        elif opt in ("--es_shard_num",):
+            es_shard_num = arg
+            print('es_shard_num:', es_shard_num)
+        elif opt in ("--es_replica_num",):
+            es_replica_num = arg
+            print('es_replica_num:', es_replica_num)
         elif opt in("-v","--log_level",):
             log_level = arg
             print('log_level:', log_level)
@@ -773,6 +987,8 @@ def main(argv):
         es_url_v=es_url,
         es_user_v=es_user,
         es_pass_v=es_pass,
+        es_shard_num_v=es_shard_num,
+        es_replica_num_v=es_replica_num,
         log_level=log_level,
         register_ip=register_ip,
         user_info=user_info,
@@ -786,6 +1002,7 @@ def main(argv):
     )
     update_start_script(rd_server, server_ports, auth['auth_enabled'], log_level, register_ip, enable_cryptor)
     print('initial configurations success, configs could be found at cmdb_adminserver/configures')
+    print('initial monstache config success, configs could be found at monstache/etc')
 
 
 if __name__ == "__main__":

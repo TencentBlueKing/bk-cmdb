@@ -1,11 +1,11 @@
 <template>
   <bk-dropdown-menu trigger="click" :disabled="disabled" font-size="medium">
-    <bk-button class="clipboard-trigger" theme="default" slot="dropdown-trigger"
+    <bk-button class="clipboard-trigger" theme="default" slot="dropdown-trigger" v-test-id="'copy'"
       :disabled="disabled">
       {{$t('复制')}}
       <i class="bk-icon icon-angle-down"></i>
     </bk-button>
-    <ul class="clipboard-list" slot="dropdown-content">
+    <ul class="clipboard-list" slot="dropdown-content" v-test-id="'copy'">
       <li v-for="(item, index) in list"
         class="clipboard-item"
         :key="index"
@@ -59,7 +59,8 @@
         width: 100%;
         font-size: 14px;
         line-height: 32px;
-        max-height: 160px;
+        // 漏出半个 item，引导用户下拉
+        max-height: calc(160px + (32px / 2));
         @include scrollbar-y;
         &::-webkit-scrollbar{
             width: 3px;

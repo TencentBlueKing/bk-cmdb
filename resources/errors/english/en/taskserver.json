@@ -6,6 +6,7 @@
     "1117005": "Task lock failed",
     "1117006": "Task unlock failed",
     "1117007": "list tasks failed",
+    "1117008": "The same task [%v] is being executed, please try again after the current task is executed",
     
     "": ""
 }

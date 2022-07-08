@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	ccErr "configcenter/src/common/errors"
+	"configcenter/src/common/time"
 	"configcenter/src/common/util"
 )
 
@@ -119,8 +120,6 @@ type SetDiff struct {
 	SetDetail   SetInst                    `json:"set_detail"`
 	TopoPath    []TopoInstanceNodeSimplify `json:"topo_path"`
 	NeedSync    bool                       `json:"need_sync"`
-
-	SetTemplateVersion int64 `json:"set_template_version"`
 }
 
 func (sd *SetDiff) UpdateNeedSyncField() {
@@ -142,8 +141,6 @@ type SyncModuleTask struct {
 	Set         SetInst                    `json:"set"`
 	SetTopoPath []TopoInstanceNodeSimplify `json:"set_topo_path"`
 	ModuleDiff  SetModuleDiff              `json:"module_diff"`
-
-	SetTemplateVersion int64 `json:"set_template_version"`
 }
 
 var (
@@ -159,73 +156,121 @@ type DeleteSetTemplateSyncStatusOption struct {
 }
 
 type ListSetTemplateSyncStatusOption struct {
-	BizID         int64      `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
-	SetIDs        []int64    `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
-	TaskIDs       []string   `field:"task_ids" json:"task_ids" bson:"task_ids" mapstructure:"task_ids"`
-	SearchKey     string     `field:"search" json:"search" bson:"search" mapstructure:"search"`
-	SetTemplateID int64      `field:"set_template_id" json:"set_template_id" bson:"set_template_id" mapstructure:"set_template_id"`
-	Creator       string     `field:"creator" json:"creator,omitempty" bson:"creator" mapstructure:"creator"`
-	StartTime     *Time      `field:"start_time" json:"start_time,omitempty" bson:"create_time" mapstructure:"start_time"`
-	EndTime       *Time      `field:"end_time" json:"end_time,omitempty" bson:"end_time" mapstructure:"end_time"`
-	Status        SyncStatus `field:"status" json:"status" bson:"status" mapstructure:"status"`
-	Page          BasePage   `field:"page" json:"page" bson:"page" mapstructure:"page"`
+	BizID         int64           `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
+	SetIDs        []int64         `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`
+	TaskIDs       []string        `field:"task_ids" json:"task_ids" bson:"task_ids" mapstructure:"task_ids"`
+	SearchKey     string          `field:"search" json:"search" bson:"search" mapstructure:"search"`
+	SetTemplateID int64           `field:"set_template_id" json:"set_template_id" bson:"set_template_id" mapstructure:"set_template_id"`
+	Creator       string          `field:"creator" json:"creator,omitempty" bson:"creator" mapstructure:"creator"`
+	StartTime     *time.Time      `field:"start_time" json:"start_time,omitempty" bson:"create_time" mapstructure:"start_time"`
+	EndTime       *time.Time      `field:"end_time" json:"end_time,omitempty" bson:"end_time" mapstructure:"end_time"`
+	Status        []APITaskStatus `field:"status" json:"status" bson:"status" mapstructure:"status"`
+	Page          BasePage        `field:"page" json:"page" bson:"page" mapstructure:"page"`
 }
 
-func (option ListSetTemplateSyncStatusOption) ToFilter() map[string]interface{} {
-	filter := map[string]interface{}{
-		common.BKAppIDField:         option.BizID,
-		common.BKSetTemplateIDField: option.SetTemplateID,
+// ToSetCond parse option to query set condition
+func (option ListSetTemplateSyncStatusOption) ToSetCond(errProxy ccErr.DefaultCCErrorIf) (map[string]interface{},
+	ccErr.CCErrorCoder) {
+
+	if option.BizID == 0 {
+		return nil, errProxy.CCErrorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
 	}
+
+	if option.SetTemplateID == 0 {
+		return nil, errProxy.CCErrorf(common.CCErrCommParamsNeedSet, common.BKServiceTemplateIDField)
+	}
+
+	filter := map[string]interface{}{
+		common.BKSetTemplateIDField: option.SetTemplateID,
+		common.BKAppIDField:         option.BizID,
+	}
+
 	if option.SetIDs != nil {
 		filter[common.BKSetIDField] = map[string]interface{}{
 			common.BKDBIN: option.SetIDs,
 		}
 	}
-	if option.TaskIDs != nil {
-		filter[common.BKTaskIDField] = map[string]interface{}{
+
+	if len(option.SearchKey) != 0 {
+		filter[common.BKSetNameField] = map[string]interface{}{
+			common.BKDBLIKE:    fmt.Sprintf(".*%s.*", option.SearchKey),
+			common.BKDBOPTIONS: "i",
+		}
+	}
+
+	return filter, nil
+}
+
+// ToStatusCond parse option to query sync status condition
+func (option ListSetTemplateSyncStatusOption) ToStatusCond(errProxy ccErr.DefaultCCErrorIf) (*QueryCondition,
+	ccErr.CCErrorCoder) {
+
+	if len(option.SetIDs) == 0 {
+		return nil, errProxy.CCErrorf(common.CCErrCommParamsNeedSet, common.BKSetIDField)
+	}
+
+	condition := &QueryCondition{
+		Page: option.Page,
+		Fields: []string{common.BKInstIDField, common.CreateTimeField, common.LastTimeField, common.CreatorField,
+			common.BKStatusField},
+		Condition: map[string]interface{}{
+			common.BKInstIDField: map[string]interface{}{
+				common.BKDBIN: option.SetIDs,
+			},
+			common.BKTaskTypeField: common.SyncSetTaskFlag,
+		},
+	}
+
+	if len(option.TaskIDs) != 0 {
+		condition.Condition[common.BKTaskIDField] = map[string]interface{}{
 			common.BKDBIN: option.TaskIDs,
 		}
 	}
-	if len(option.Status) != 0 {
-		filter[common.BKStatusField] = option.Status
-	}
-	if len(option.Creator) != 0 {
-		filter[common.CreatorField] = option.Creator
-	}
-	if option.StartTime != nil {
-		filter[common.CreateTimeField] = map[string]interface{}{
-			common.BKDBGTE: option.StartTime,
-		}
-	}
-	if option.EndTime != nil {
-		filter[common.LastTimeField] = map[string]interface{}{
-			common.BKDBLTE: option.EndTime,
-		}
-	}
-	if len(option.SearchKey) != 0 {
-		filter[common.BKSetNameField] = map[string]interface{}{
-			common.BKDBLIKE: fmt.Sprintf(".*%s.*", option.SearchKey),
-		}
-	}
-	return filter
-}
 
-type MultipleSetTemplateSyncStatus struct {
-	Count int64                   `json:"count"`
-	Info  []SetTemplateSyncStatus `field:"info" json:"info" bson:"info" mapstructure:"info"`
+	if len(option.Status) != 0 {
+		condition.Condition[common.BKStatusField] = map[string]interface{}{
+			common.BKDBIN: option.Status,
+		}
+	}
+
+	if len(option.Creator) != 0 {
+		condition.Condition[common.CreatorField] = option.Creator
+	}
+
+	timeConditionItem := make([]TimeConditionItem, 0)
+	if option.StartTime != nil {
+		timeConditionItem = append(timeConditionItem, TimeConditionItem{
+			Field: common.CreateTimeField,
+			Start: option.StartTime,
+		})
+	}
+
+	if option.EndTime != nil {
+		timeConditionItem = append(timeConditionItem, TimeConditionItem{
+			Field: common.LastTimeField,
+			End:   option.EndTime,
+		})
+	}
+
+	if len(timeConditionItem) > 0 {
+		condition.TimeCondition = &TimeCondition{
+			Operator: "and",
+			Rules:    timeConditionItem,
+		}
+	}
+
+	return condition, nil
 }
 
 type SetUpdateToDateStatus struct {
-	SetID              int64 `json:"bk_set_id"`
-	SetTemplateVersion int64 `json:"set_template_version"`
-	NeedSync           bool  `json:"need_sync"`
+	SetID    int64 `json:"bk_set_id"`
+	NeedSync bool  `json:"need_sync"`
 }
 
 type SetTemplateUpdateToDateStatus struct {
-	Sets               []SetUpdateToDateStatus `json:"sets"`
-	SetTemplateVersion int64                   `json:"set_template_version"`
-	SetTemplateID      int64                   `json:"set_template_id"`
-	NeedSync           bool                    `json:"need_sync"`
+	Sets          []SetUpdateToDateStatus `json:"sets"`
+	SetTemplateID int64                   `json:"set_template_id"`
+	NeedSync      bool                    `json:"need_sync"`
 }
 
 type BatchCheckSetInstUpdateToDateStatusOption struct {

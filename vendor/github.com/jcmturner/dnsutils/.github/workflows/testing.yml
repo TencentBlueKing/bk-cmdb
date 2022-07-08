@@ -1,0 +1,83 @@
+name: v1
+on:
+  push:
+    paths-ignore:
+      - 'v[0-9]+/**'
+  pull_request:
+    paths-ignore:
+      - 'v[0-9]+/**'
+
+jobs:
+  build:
+    name: Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: [ '1.11.x', '1.12.x', '1.13.x' ]
+    env:
+      TEST_KDC_ADDR: 127.0.0.1
+      TEST_HTTP_URL: http://cname.test.gokrb5
+      TEST_HTTP_ADDR: 127.0.0.1
+      DNS_IP: 127.0.88.53
+      DNSUTILS_OVERRIDE_NS: 127.0.88.53:53
+    steps:
+      - name: Set up Go ${{ matrix.go }}
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Test well formatted with gofmt
+        run: |
+          # Remove major version sub directories
+          find . -maxdepth 1 -type d -regex '\./v[0-9]+' | xargs -i rm -rf {}
+          GO_FILES=$(find . -iname '*.go' -type f | grep -v /vendor/)
+          test -z $(gofmt -s -d -l -e $GO_FILES | tee /dev/fd/2 | xargs | sed 's/\s//g')
+        id: gofmt
+
+      - name: Copy into GOPATH
+        run: |
+          # Default GOPATH=${HOME}/go
+          mkdir -p ${HOME}/go/src/github.com/${GITHUB_REPOSITORY}
+          cp -r $GITHUB_WORKSPACE/*  /home/runner/go/src/github.com/${GITHUB_REPOSITORY}
+        id: copyToGOPATH
+
+      - name: Get dependencies
+        run: |
+          cd ${HOME}/go/src/github.com/${GITHUB_REPOSITORY}
+          go get -v -t -d ./...
+        id: goGet
+
+      - name: Go vet
+        run: |
+          cd ${HOME}/go/src/github.com/${GITHUB_REPOSITORY}
+          go vet $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
+        id: govet
+
+      - name: Start integration test dependencies
+        run: |
+          sudo docker run -d -h ns.test.gokrb5 -v /etc/localtime:/etc/localtime:ro -e "TEST_KDC_ADDR=${TEST_KDC_ADDR}" -e "TEST_HTTP_ADDR=${TEST_HTTP_ADDR}" -p ${DNSUTILS_OVERRIDE_NS}:53 -p ${DNSUTILS_OVERRIDE_NS}:53/udp --name dns jcmturner/gokrb5:dns
+          sudo sed -i 's/nameserver .*/nameserver '${DNS_IP}'/g' /etc/resolv.conf
+          dig _kerberos._udp.TEST.GOKRB5
+        id: intgTestDeps
+
+      - name: Unit tests
+        run: |
+          cd ${HOME}/go/src/github.com/${GITHUB_REPOSITORY}
+          go test -race $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
+        env:
+          INTEGRATION: 1
+        id: unitTests
+
+      - name: Unit tests (32bit)
+        run: |
+          cd ${HOME}/go/src/github.com/${GITHUB_REPOSITORY}
+          go test $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
+        env:
+          GOARCH: 386
+          INTEGRATION: 1
+        id: unitTest32

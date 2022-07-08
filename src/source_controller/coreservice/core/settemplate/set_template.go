@@ -75,7 +75,6 @@ func (p *setTemplateOperation) CreateSetTemplate(kit *rest.Kit, bizID int64, opt
 		ID:              0,
 		Name:            option.Name,
 		BizID:           bizID,
-		Version:         0,
 		Creator:         kit.User,
 		Modifier:        kit.User,
 		CreateTime:      now,
@@ -258,9 +257,6 @@ func (p *setTemplateOperation) UpdateSetTemplate(kit *rest.Kit, setTemplateID in
 				return setTemplate, kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
 			}
 		}
-		if len(addRelations) > 0 || len(removeIDs) > 0 {
-			setTemplate.Version += 1
-		}
 	}
 
 	setTemplate.LastTime = time.Now()
@@ -341,7 +337,8 @@ func (p *setTemplateOperation) GetSetTemplate(kit *rest.Kit, bizID int64, setTem
 
 func (p *setTemplateOperation) ListSetTemplate(kit *rest.Kit, bizID int64, option metadata.ListSetTemplateOption) (metadata.MultipleSetTemplateResult, errors.CCErrorCoder) {
 	result := metadata.MultipleSetTemplateResult{}
-	if option.Page.Limit > common.BKMaxPageSize && option.Page.Limit != common.BKNoLimit {
+
+	if option.Page.IsIllegal() {
 		return result, kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded)
 	}
 

@@ -1,12 +1,12 @@
 <template>
   <section class="tree-layout" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
-    <bk-input class="tree-search"
+    <bk-input class="tree-search" v-test-id
       clearable
       right-icon="bk-icon icon-search"
       :placeholder="$t('请输入关键词')"
-      v-model="filter">
+      v-model.trim="filter">
     </bk-input>
-    <bk-big-tree ref="tree" class="topology-tree"
+    <bk-big-tree ref="tree" class="topology-tree" v-test-id
       selectable
       display-matched-node-descendants
       :height="$APP.height - 160"
@@ -16,7 +16,8 @@
         nameKey: 'bk_inst_name',
         childrenKey: 'child'
       }"
-      @select-change="handleSelectChange">
+      @select-change="handleSelectChange"
+      @expand-change="handleExpandChange">
       <div :class="['node-info clearfix', { 'is-selected': node.selected }]" slot-scope="{ node, data }">
         <i class="internal-node-icon fl"
           v-if="data.default !== 0"
@@ -45,7 +46,7 @@
               }">
               {{$t('新建')}}
             </i>
-            <bk-button v-else class="node-button"
+            <bk-button v-else class="node-button" v-test-id="'createNode'"
               theme="primary"
               :disabled="disabled"
               @click.stop="showCreateDialog(node)">
@@ -53,9 +54,10 @@
             </bk-button>
           </template>
         </cmdb-auth>
-        <span :class="['node-count fr', { 'is-selected': node.selected }]">
+        <cmdb-loading :class="['node-count fr', { 'is-selected': node.selected }]"
+          :loading="['pending', undefined].includes(data.status)">
           {{getNodeCount(data)}}
-        </span>
+        </cmdb-loading>
         <span class="node-name" :title="node.name">{{node.name}}</span>
       </div>
     </bk-big-tree>
@@ -103,12 +105,17 @@
   import RouterQuery from '@/router/query'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import FilterStore from '@/components/filters/store'
-  import has from 'has'
+  import CmdbLoading from '@/components/loading/loading'
+  import { sortTopoTree } from '@/utils/tools'
+  import {
+    MENU_BUSINESS_HOST_AND_SERVICE
+  } from '@/dictionary/menu-symbol'
   export default {
     components: {
       CreateNode,
       CreateSet,
-      CreateModule
+      CreateModule,
+      CmdbLoading
     },
     props: {
       active: {
@@ -145,20 +152,24 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      ...mapGetters('businessHost', ['topologyModels', 'propertyMap'])
+      ...mapGetters('businessHost', ['topologyModels', 'propertyMap']),
+      ...mapGetters('businessHost', ['selectedNode'])
     },
     watch: {
       filter(value) {
         this.handleFilter()
         RouterQuery.set('keyword', value)
       },
-      active(value) {
-        const map = {
-          hostList: 'host_count',
-          serviceInstance: 'service_instance_count'
-        }
-        if (Object.keys(map).includes(value)) {
-          this.nodeCountType = map[value]
+      active: {
+        immediate: true,
+        handler(value) {
+          const map = {
+            hostList: 'host_count',
+            serviceInstance: 'service_instance_count'
+          }
+          if (Object.keys(map).includes(value)) {
+            this.nodeCountType = map[value]
+          }
         }
       },
       isBlueKing(flag) {
@@ -171,6 +182,7 @@
     },
     created() {
       Bus.$on('refresh-count', this.refreshCount)
+      Bus.$on('refresh-count-by-node', this.refreshCountByNode)
       this.initTopology()
     },
     mounted() {
@@ -179,6 +191,7 @@
     beforeDestroy() {
       this.destroyWatcher()
       Bus.$off('refresh-count', this.refreshCount)
+      Bus.$off('refresh-count-by-node', this.refreshCountByNode)
       clearInterval(this.timer)
       removeResizeListener(this.$el, this.handleResize)
     },
@@ -189,22 +202,20 @@
             this.getInstanceTopology(),
             this.getInternalTopology()
           ])
+          sortTopoTree(topology, 'bk_inst_name', 'child')
+          sortTopoTree(internal.module, 'bk_module_name')
           const root = topology[0] || {}
           const children = root.child || []
           const idlePool = {
             bk_obj_id: 'set',
             bk_inst_id: internal.bk_set_id,
             bk_inst_name: internal.bk_set_name,
-            host_count: internal.host_count,
-            service_instance_count: internal.service_instance_count,
             default: internal.default,
             is_idle_set: true,
-            child: this.$tools.sort((internal.module || []), 'default').map(module => ({
+            child: internal.module.map(module => ({
               bk_obj_id: 'module',
               bk_inst_id: module.bk_module_id,
               bk_inst_name: module.bk_module_name,
-              host_count: module.host_count,
-              service_instance_count: module.service_instance_count,
               default: module.default
             }))
           }
@@ -223,6 +234,7 @@
         })
         this.handleFilter = debounce(() => {
           this.$refs.tree.filter(this.filter)
+          this.filter && this.setNodeCount(this.$refs.tree.visibleNodes)
         }, 300)
       },
       destroyWatcher() {
@@ -230,11 +242,16 @@
         this.filterUnwatch && this.filterUnwatch()
       },
       setDefaultState() {
+        // 非业务拓扑主页面不触发设置节点选中等，防止查询条件非预期的被清除
+        if (this.$route.name !== MENU_BUSINESS_HOST_AND_SERVICE) {
+          return
+        }
         const defaultNode = this.getDefaultNode()
         if (defaultNode) {
           const { tree } = this.$refs
           tree.setExpanded(defaultNode.id)
           tree.setSelected(defaultNode.id, { emitEvent: true })
+          this.handleDefaultExpand(defaultNode)
           // 仅对第一次设置时调整滚动位置
           !this.initialized && this.$nextTick(() => {
             this.initialized = true
@@ -291,13 +308,6 @@
         }
         return clazz
       },
-      getNodeCount(data) {
-        const count = data[this.nodeCountType]
-        if (typeof count === 'number') {
-          return count
-        }
-        return 0
-      },
       handleSelectChange(node) {
         this.$store.commit('businessHost/setSelectedNode', node)
         Bus.$emit('toggle-host-filter', false)
@@ -308,6 +318,56 @@
         }
         RouterQuery.set(query)
         this.initialized && FilterStore.setActiveCollection(null)
+      },
+      handleDefaultExpand(node) {
+        const nodes = []
+        let parentNode = node
+        while (parentNode) {
+          nodes.push(...parentNode.children)
+          if (!parentNode.parent) {
+            nodes.push(parentNode)
+          }
+          parentNode = parentNode.parent
+        }
+        this.setNodeCount(nodes)
+      },
+      handleExpandChange(node) {
+        if (!node.expanded) return
+        this.setNodeCount([node, ...node.children])
+      },
+      async setNodeCount(targetNodes, force = false) {
+        const nodes = force
+          ? targetNodes
+          : targetNodes.filter(({ data }) => !['pending', 'finished'].includes(data.status))
+        if (!nodes.length) return
+        nodes.forEach(({ data }) => this.$set(data, 'status', 'pending'))
+        try {
+          const result = await this.$store.dispatch('objectMainLineModule/getTopoStatistics', {
+            bizId: this.bizId,
+            params: {
+              condition: nodes.map(({ data }) => ({ bk_obj_id: data.bk_obj_id, bk_inst_id: data.bk_inst_id }))
+            }
+          })
+          nodes.forEach(({ data }) => {
+            // eslint-disable-next-line
+            const count = result.find(count => count.bk_obj_id === data.bk_obj_id && count.bk_inst_id === data.bk_inst_id)
+            this.$set(data, 'status', 'finished')
+            this.$set(data, 'host_count', count.host_count)
+            this.$set(data, 'service_instance_count', count.service_instance_count)
+          })
+        } catch (error) {
+          console.error(error)
+          nodes.forEach((node) => {
+            this.$set(node.data, 'status', 'error')
+          })
+        }
+      },
+      getNodeCount(data) {
+        const count = data[this.nodeCountType]
+        if (typeof count === 'number') {
+          return count
+        }
+        return 0
       },
       showCreate(node, data) {
         const isModule = data.bk_obj_id === 'module'
@@ -364,11 +424,10 @@
         this.createInfo.parentNode = node
         this.createInfo.show = true
         this.createInfo.visible = true
-        if (has(this.propertyMap, nextModelId)) {
-          this.createInfo.properties = this.propertyMap[nextModelId]
-        } else {
+        let properties = this.propertyMap[nextModelId]
+        if (!properties) {
           const action = 'objectModelProperty/searchObjectAttribute'
-          const properties = await this.$store.dispatch(action, {
+          properties = await this.$store.dispatch(action, {
             params: {
               bk_biz_id: this.bizId,
               bk_obj_id: nextModelId,
@@ -384,8 +443,9 @@
               properties
             })
           }
-          this.createInfo.properties = properties
         }
+        const primaryKey = { set: 'bk_set_id', module: 'bk_module_id' }[nextModelId] || 'bk_inst_id'
+        this.createInfo.properties = properties.filter(property => property.bk_property_id !== primaryKey)
       },
       handleAfterCancelCreateNode() {
         this.createInfo.visible = false
@@ -419,6 +479,7 @@
             host_count: 0,
             service_instance_count: 0,
             service_template_id: value.service_template_id,
+            status: 'finished',
             ...data
           }
           this.$refs.tree.addNode(nodeData, parentNode.id, parentNode.data.bk_obj_id === 'biz' ? 1 : 0)
@@ -451,7 +512,8 @@
                 service_template_id: value.service_template_id,
                 bk_inst_id: set.data.bk_set_id,
                 bk_inst_name: set.data.bk_set_name,
-                set_template_id: value.set_template_id
+                set_template_id: value.set_template_id,
+                status: 'finished'
               }
               this.$refs.tree.addNode(nodeData, parentNode.id, insertBasic + index)
               if (value.set_template_id) {
@@ -488,7 +550,8 @@
             service_instance_count: 0,
             service_template_id: _module.service_template_id,
             bk_inst_id: _module.bk_module_id,
-            bk_inst_name: _module.bk_module_name
+            bk_inst_name: _module.bk_module_name,
+            status: 'finished'
           }
           this.$refs.tree.addNode(nodeData, parentNodeId, 0)
         })
@@ -533,26 +596,34 @@
       isTemplate(node) {
         return node.data.service_template_id || node.data.set_template_id
       },
-      refreshCount({ type, hosts, target }) {
-        hosts.forEach((data) => {
-          data.module.forEach((module) => {
-            if (!target || target.data.bk_inst_id !== module.bk_module_id) {
-              const node = this.$refs.tree.getNodeById(`module-${module.bk_module_id}`)
-              const nodes = node ? [node, ...node.parents] : []
-              nodes.forEach((exist) => {
-                exist.data[type] = exist.data[type] - 1
-              })
-            }
+      async refreshCount({ hosts, target }) {
+        const nodes = []
+        if (target) {
+          const node = this.$refs.tree.getNodeById(`${target.data.bk_obj_id}-${target.data.bk_inst_id}`)
+          node && nodes.push(node, ...node.parents)
+        }
+        hosts.forEach(({ module: modules }) => {
+          modules.forEach((module) => {
+            const node = this.$refs.tree.getNodeById(`module-${module.bk_module_id}`)
+            node && nodes.push(node, ...node.parents)
           })
         })
-        if (target) {
-          const targetNode = this.$refs.tree.getNodeById(`module-${target.data.bk_inst_id}`)
-          if (targetNode) {
-            [targetNode, ...targetNode.parents].forEach((exist) => {
-              exist.data[type] = exist.data[type] + hosts.length
-            })
-          }
+        const nodeSet = new Set()
+        const uniqueNodes = nodes.filter((node) => {
+          if (nodeSet.has(node)) return false
+          nodeSet.add(node)
+          return true
+        })
+        this.setNodeCount(uniqueNodes, true)
+      },
+      refreshCountByNode(node) {
+        const currentNode = node || this.selectedNode
+        const nodes = []
+        const treeNode = this.$refs.tree.getNodeById(currentNode.id)
+        if (treeNode) {
+          nodes.push(treeNode, ...treeNode.parents)
         }
+        this.setNodeCount(nodes, true)
       },
       handleResize() {
         this.$refs.tree.resize()
@@ -613,6 +684,9 @@
             &.is-selected {
                 background-color: #a2c5fd;
                 color: #fff;
+            }
+            &.loading {
+              background-color: transparent;
             }
         }
         .internal-node-icon{

@@ -145,6 +145,53 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 		BizIndex:       7,
 		ResourceType:   meta.ProcessServiceTemplate,
 		ResourceAction: meta.FindMany,
+	}, {
+		Name:           "GetServiceTemplateSyncStatus",
+		Description:    "查询服务模版的同步状态",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/service_template/sync_status/biz/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.FindMany,
+	}, {
+		// get service template sync status by biz set regex, authorize by biz set access permission, **only for ui**
+		Name:           "GetServiceTemplateSyncStatusByBizSetRegexp",
+		Description:    "查询业务集中服务模版的同步状态",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/biz_set/[0-9]+/biz/[0-9]+/service_template/sync_status/?$`),
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.BizSet,
+		ResourceAction: meta.AccessBizSet,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			if len(request.Elements) != 10 {
+				return nil, fmt.Errorf("get invalid url elements length %d", len(request.Elements))
+			}
+
+			bizSetID, err := strconv.ParseInt(request.Elements[5], 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[5], err)
+			}
+			return []int64{bizSetID}, nil
+		},
+	}, {
+		Name:        "updatemanyServiceTemplateHostApplyEnableStatus",
+		Description: "更新服务模板主机自动应用状态",
+		// NOCC:tosa/linelength(忽略长度)
+		Regex:          regexp.MustCompile(`^/api/v3/updatemany/proc/service_template/host_apply_enable_status/bk_biz_id/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Update,
+	},
+	{
+		Name:           "searchRuleRelatedServiceTemplates",
+		Description:    "根据配置字段搜索服务模板",
+		Pattern:        "/api/v3/find/proc/service_template/host_apply_rule_related",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.FindMany,
 	},
 }
 

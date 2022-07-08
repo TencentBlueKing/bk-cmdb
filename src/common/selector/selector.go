@@ -24,6 +24,18 @@ type LabelAddOption struct {
 	Labels      Labels  `json:"labels"`
 }
 
+// LabelUpdateOption update instanceIDs labels.
+type LabelUpdateOption struct {
+	InstanceIDs []int64 `json:"instance_ids"`
+	Labels      Labels  `json:"labels"`
+}
+
+// LabelUpdateRequest update instanceIDs labels request.
+type LabelUpdateRequest struct {
+	Option    *LabelUpdateOption `json:"option"`
+	TableName string             `json:"table_name"`
+}
+
 type LabelAddRequest struct {
 	Option    LabelAddOption `json:"option"`
 	TableName string         `json:"table_name"`
@@ -37,6 +49,24 @@ type LabelRemoveOption struct {
 type LabelRemoveRequest struct {
 	Option    LabelRemoveOption `json:"option"`
 	TableName string            `json:"table_name"`
+}
+
+// SvcInstLabelAddOption add labels to service instance option, need biz id for authorization
+type SvcInstLabelAddOption struct {
+	BizID int64 ` json:"bk_biz_id"`
+	LabelAddOption
+}
+
+// SvcInstLabelUpdateOption update service instance labels option, need biz id for authorization
+type SvcInstLabelUpdateOption struct {
+	BizID int64 ` json:"bk_biz_id"`
+	LabelUpdateOption
+}
+
+// SvcInstLabelRemoveOption remove service instance labels option, need biz id for authorization
+type SvcInstLabelRemoveOption struct {
+	BizID int64 ` json:"bk_biz_id"`
+	LabelRemoveOption
 }
 
 type Operator string

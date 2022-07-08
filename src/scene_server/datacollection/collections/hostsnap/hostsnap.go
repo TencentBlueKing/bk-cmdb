@@ -31,6 +31,8 @@ import (
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/json"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
@@ -48,6 +50,8 @@ const (
 	defaultRateLimiterQPS = 40
 	// defaultRateLimiterBurst is the default value of rateLimiter burst
 	defaultRateLimiterBurst = 100
+	// redisConsumptionCheckPrefix redis consumption check prefix
+	redisConsumptionCheckPrefix = "consumptionCheck:"
 )
 
 var (
@@ -71,7 +75,9 @@ type HostSnap struct {
 	window    *Window
 }
 
-func NewHostSnap(ctx context.Context, redisCli redis.Client, db dal.RDB, engine *backbone.Engine, authManager *extensions.AuthManager) *HostSnap {
+// NewHostSnap new hostsnap
+func NewHostSnap(ctx context.Context, redisCli redis.Client, db dal.RDB, engine *backbone.Engine,
+	authManager *extensions.AuthManager) *HostSnap {
 	qps, burst := getRateLimiterConfig()
 	h := &HostSnap{
 		redisCli:    redisCli,
@@ -89,12 +95,14 @@ func NewHostSnap(ctx context.Context, redisCli redis.Client, db dal.RDB, engine 
 func getRateLimiterConfig() (int, int) {
 	qps, err := cc.Int("datacollection.hostsnap.rateLimiter.qps")
 	if err != nil {
-		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.qps settings, set the default value: %s", defaultRateLimiterQPS)
+		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.qps settings, "+
+			"set the default value: %d", defaultRateLimiterQPS)
 		qps = defaultRateLimiterQPS
 	}
 	burst, err := cc.Int("datacollection.hostsnap.rateLimiter.burst")
 	if err != nil {
-		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.burst setting,set the default value: %s", defaultRateLimiterBurst)
+		blog.Errorf("can't find the value of datacollection.hostsnap.rateLimiter.burst setting, "+
+			"set the default value: %d", defaultRateLimiterBurst)
 		burst = defaultRateLimiterBurst
 	}
 	return qps, burst
@@ -136,9 +144,10 @@ func getLimitConfig(config string, defaultValue, minValue int) int {
 	return limit
 }
 
-func (h *HostSnap) Analyze(msg *string) error {
+// Analyze analyze host snap
+func (h *HostSnap) Analyze(msg *string) (bool, error) {
 	if msg == nil {
-		return fmt.Errorf("message nil")
+		return false, fmt.Errorf("message nil")
 	}
 
 	var data string
@@ -157,58 +166,67 @@ func (h *HostSnap) Analyze(msg *string) error {
 	host, err := h.getHostByVal(header, cloudID, ips, &val)
 	if err != nil {
 		blog.Errorf("get host detail with ips: %v failed, err: %v, rid: %s", ips, err, rid)
-		return err
+		return false, err
 	}
 	elements := gjson.GetMany(host, common.BKHostIDField, common.BKHostInnerIPField, common.BKHostOuterIPField)
 	// check host id field
 	if !elements[0].Exists() {
 		blog.Errorf("snapshot analyze, but host id not exist, host: %s, ips: %v, rid: %s", host, ips, rid)
-		return errors.New("host id not exist")
+		return false, errors.New("host id not exist")
 	}
 	hostID := elements[0].Int()
 	if hostID == 0 {
 		blog.Errorf("snapshot analyze, but host id is 0, host: %s, ips: %v, rid: %s", host, ips, rid)
-		return errors.New("host id can not be 0")
+		return false, errors.New("host id can not be 0")
 	}
 
 	// check inner ip
 	if !elements[1].Exists() {
 		blog.Errorf("snapshot analyze, but host inner ip not exist, host: %s, ips: %v, rid: %s", host, ips, rid)
-		return errors.New("host inner ip not exist")
+		return false, errors.New("host inner ip not exist")
 	}
 
 	innerIP := elements[1].String()
 	outerIP := elements[2].String()
 
 	// save host snapshot in redis
-
 	if !val.Get("data.apiVer").Exists() {
 		h.saveHostsnap(header, &val, hostID)
 	}
 
-	// window restriction on request
-	if !h.window.canPassWindow() {
+	// window restriction on request when no apiVer information reported
+	if !val.Get("data.apiVer").Exists() && !h.window.canPassWindow() {
 		if blog.V(4) {
-			blog.Infof("not within the time window that can pass, skip host snapshot data update, host id: %d, ip: %s, cloud id: %d, rid: %s",
-				hostID, innerIP, cloudID, rid)
+			blog.Infof("not within the time window that can pass, skip host snapshot data update, "+
+				"host id: %d, ip: %s, cloud id: %d, rid: %s", hostID, innerIP, cloudID, rid)
 		}
-		return nil
+		return false, nil
 	}
+
+	if h.skipMsg(val, innerIP, rid, hostID, cloudID) {
+		return false, nil
+	}
+
 	setter, raw := parseSetter(&val, innerIP, outerIP)
 	// no need to update
 	if !needToUpdate(raw, host) {
-		return nil
+		return false, nil
 	}
 
-	// limit the number of requests
-	if !h.rateLimit.TryAccept() {
-		blog.Warnf("skip host snapshot data update due to request limit, host id: %d, ip: %s, cloud id: %d, rid: %s",
-			hostID, innerIP, cloudID, rid)
-		return nil
+	// limit request from the old collection plug-in
+	if !val.Get("data.apiVer").Exists() && !h.rateLimit.TryAccept() {
+		blog.Warnf("skip host snapshot data update due to request limit, host id: %d, ip: %s, cloud id: %d, "+
+			"rid: %s", hostID, innerIP, cloudID, rid)
+		return false, nil
 	}
 
-	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s to %s, rid: %s",
-		hostID, innerIP, cloudID, host, raw, rid)
+	// limit the request from the new collection plug-in
+	if val.Get("data.apiVer").Exists() {
+		h.rateLimit.Accept()
+	}
+
+	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s "+
+		"to %s, rid: %s", hostID, innerIP, cloudID, host, raw, rid)
 
 	// get audit interface of host.
 	audit := auditlog.NewHostAudit(h.CoreAPI.CoreService())
@@ -222,12 +240,20 @@ func (h *HostSnap) Analyze(msg *string) error {
 	}
 
 	// generate audit log for update host.
+	hostData := make(mapstr.MapStr)
+	err = json.Unmarshal([]byte(host), &hostData)
+	if err != nil {
+		blog.Errorf("unmarshal host %s failed, err: %v", host, err)
+		return false, err
+	}
+
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).
 		WithOperateFrom(metadata.FromDataCollection).WithUpdateFields(setter)
-	auditLog, err := audit.GenerateAuditLogByHostIDGetBizID(generateAuditParameter, hostID, innerIP, nil)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, 0, []mapstr.MapStr{hostData})
 	if err != nil {
-		blog.Errorf("generate host snap audit log failed before update host, host: %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
-		return err
+		blog.Errorf("generate host snap audit log failed before update host, host: %d/%s, err: %v, rid: %s",
+			hostID, innerIP, err, rid)
+		return true, err
 	}
 
 	// notice: needToUpdate 需要顺序，只能在更新数据库之前，删除需要忽略更新的字段
@@ -243,31 +269,68 @@ func (h *HostSnap) Analyze(msg *string) error {
 		CanEditAll: true,
 	}
 
-	res, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, header, common.BKInnerObjIDHost, opt)
+	_, err = h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, header, common.BKInnerObjIDHost, opt)
 	if err != nil {
-		blog.Errorf("snapshot changed, update host %d/%s snapshot failed, err: %v, rid: %s", hostID, innerIP, err, rid)
-		return err
+		blog.Errorf("snapshot changed, update host %d/%s snapshot failed, err: %v, rid: %s",
+			hostID, innerIP, err, rid)
+		return true, err
 	}
-	if !res.Result {
-		blog.Errorf("snapshot changed, update host %d/%s snapshot failed, err: %s, rid: %s", hostID, innerIP, res.ErrMsg, rid)
-		return fmt.Errorf("update snapshot failed, err: %s", res.ErrMsg)
-	}
-
 	// save audit log.
-	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
-		blog.Errorf("save host snap audit log failed after update host, host %d/%s, err: %v, rid: %s", hostID, innerIP, err, rid)
-		return err
+	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
+		blog.Errorf("save host snap audit log failed after update host, host %d/%s, err: %v, rid: %s", hostID,
+			innerIP, err, rid)
+		return true, err
 	}
-
 	blog.V(5).Infof("snapshot for host changed, update success, host id: %d, ip: %s, cloud id: %d, rid: %s",
 		hostID, innerIP, cloudID, rid)
 
-	return nil
+	return false, nil
+}
+
+// skipMsg verify the timestamp to determine whether the host sequence is correct, if it is old message, skip.
+func (h *HostSnap) skipMsg(val gjson.Result, innerIP, rid string, hostID, cloudID int64) bool {
+	if !val.Get("data.apiVer").Exists() {
+		return false
+	}
+
+	key := redisConsumptionCheckPrefix + innerIP + ":" + strconv.FormatInt(cloudID, 10)
+	timestamp, err := h.redisCli.Get(context.Background(), key).Result()
+	if err != nil && !redis.IsNilErr(err) {
+		blog.Errorf("get key: %s from redis err: %v, rid: %s", key, err, rid)
+		return false
+	}
+
+	var oldTimestamp int64
+	if timestamp != "" {
+		oldTimestamp, err = strconv.ParseInt(timestamp, 10, 64)
+		if err != nil {
+			blog.Errorf("parseInt timestamp %s error, key: %s to redis err: %v, rid: %s",
+				timestamp, key, err, rid)
+			return false
+		}
+	}
+
+	newTimestamp := val.Get("data.timestamp").Int()
+	if err == nil && oldTimestamp != 0 && oldTimestamp > newTimestamp {
+		blog.Warnf("skip host snapshot data update due to it is old data, host id: %d, ip: %s, "+
+			"cloud id: %d, timestamp: %d, rid: %s", hostID, innerIP, cloudID, newTimestamp, rid)
+		return true
+	}
+
+	randTime := util.RandInt64WithRange(int64(5), int64(10))
+	err = h.redisCli.Set(context.Background(), key, newTimestamp, time.Minute*time.Duration(randTime)).Err()
+	if err != nil {
+		blog.Errorf("set key: %s to redis err: %v, rid: %s", key, err, rid)
+		return false
+	}
+
+	return false
 }
 
 func needToUpdate(src, toCompare string) bool {
 	// get data fluctuation limit
-	changeRangePercent := getLimitConfig("datacollection.hostsnap.changeRangePercent", defaultChangeRangePercent, minChangeRangePercent)
+	changeRangePercent := getLimitConfig("datacollection.hostsnap.changeRangePercent",
+		defaultChangeRangePercent, minChangeRangePercent)
 	srcElements := gjson.GetMany(src, compareFields...)
 	compareElements := gjson.GetMany(toCompare, compareFields...)
 	for idx, field := range compareFields {
@@ -330,6 +393,13 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	case "aix":
 		osname = platform
 		ostype = common.HostOSTypeEnumAIX
+	case "unix":
+		// to do
+		osname = platform
+		ostype = common.HostOSTypeEnumUNIX
+	case "solaris":
+		osname = platform
+		ostype = common.HostOSTypeEnumSolaris
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
@@ -515,6 +585,13 @@ func parseV10Setter(val *gjson.Result, innerIP, outerIP string) (map[string]inte
 	case "aix":
 		osname = platform
 		ostype = common.HostOSTypeEnumAIX
+	case "unix":
+		//  to do
+		osname = platform
+		ostype = common.HostOSTypeEnumUNIX
+	case "solaris":
+		osname = platform
+		ostype = common.HostOSTypeEnumSolaris
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
@@ -691,9 +768,11 @@ func (h *HostSnap) getHostByVal(header http.Header, cloudID int64, ips []string,
 			Fields:  reqireFields,
 		}
 
-		host, err := h.Engine.CoreAPI.CacheService().Cache().Host().SearchHostWithInnerIP(context.Background(), header, opt)
+		host, err := h.Engine.CoreAPI.CacheService().Cache().Host().SearchHostWithInnerIP(context.Background(),
+			header, opt)
 		if err != nil {
-			blog.Errorf("get host info with ip: %s, cloud id: %d failed, err: %v, rid: %s", ip, cloudID, err, rid)
+			blog.Errorf("get host info with ip: %s, cloud id: %d failed, err: %v, rid: %s", ip, cloudID,
+				err, rid)
 			if ccErr, ok := err.(ccErr.CCErrorCoder); ok {
 				if ccErr.GetCode() == common.CCErrCommDBSelectFailed {
 					h.filter.Set(ip, cloudID)
@@ -780,4 +859,73 @@ func newHeaderWithRid() (http.Header, string) {
 	return header, rid
 }
 
-const MockMessage = "{\"localTime\": \"2017-09-19 16:57:00\", \"data\": \"{\\\"ip\\\":\\\"192.168.1.7\\\",\\\"bizid\\\":0,\\\"cloudid\\\":0,\\\"data\\\":{\\\"timezone\\\":8,\\\"datetime\\\":\\\"2017-09-19 16:57:07\\\",\\\"utctime\\\":\\\"2017-09-19 08:57:07\\\",\\\"country\\\":\\\"Asia\\\",\\\"city\\\":\\\"Shanghai\\\",\\\"cpu\\\":{\\\"cpuinfo\\\":[{\\\"cpu\\\":0,\\\"vendorID\\\":\\\"GenuineIntel\\\",\\\"family\\\":\\\"6\\\",\\\"model\\\":\\\"63\\\",\\\"stepping\\\":2,\\\"physicalID\\\":\\\"0\\\",\\\"coreID\\\":\\\"0\\\",\\\"cores\\\":1,\\\"modelName\\\":\\\"Intel(R) Xeon(R) CPU E5-26xx v3\\\",\\\"mhz\\\":2294.01,\\\"cacheSize\\\":4096,\\\"flags\\\":[\\\"fpu\\\",\\\"vme\\\",\\\"de\\\",\\\"pse\\\",\\\"tsc\\\",\\\"msr\\\",\\\"pae\\\",\\\"mce\\\",\\\"cx8\\\",\\\"apic\\\",\\\"sep\\\",\\\"mtrr\\\",\\\"pge\\\",\\\"mca\\\",\\\"cmov\\\",\\\"pat\\\",\\\"pse36\\\",\\\"clflush\\\",\\\"mmx\\\",\\\"fxsr\\\",\\\"sse\\\",\\\"sse2\\\",\\\"ss\\\",\\\"ht\\\",\\\"syscall\\\",\\\"nx\\\",\\\"lm\\\",\\\"constant_tsc\\\",\\\"up\\\",\\\"rep_good\\\",\\\"unfair_spinlock\\\",\\\"pni\\\",\\\"pclmulqdq\\\",\\\"ssse3\\\",\\\"fma\\\",\\\"cx16\\\",\\\"pcid\\\",\\\"sse4_1\\\",\\\"sse4_2\\\",\\\"x2apic\\\",\\\"movbe\\\",\\\"popcnt\\\",\\\"tsc_deadline_timer\\\",\\\"aes\\\",\\\"xsave\\\",\\\"avx\\\",\\\"f16c\\\",\\\"rdrand\\\",\\\"hypervisor\\\",\\\"lahf_lm\\\",\\\"abm\\\",\\\"xsaveopt\\\",\\\"bmi1\\\",\\\"avx2\\\",\\\"bmi2\\\"],\\\"microcode\\\":\\\"1\\\"}],\\\"per_usage\\\":[3.0232169701043103],\\\"total_usage\\\":3.0232169701043103,\\\"per_stat\\\":[{\\\"cpu\\\":\\\"cpu0\\\",\\\"user\\\":5206.09,\\\"system\\\":6107.04,\\\"idle\\\":337100.84,\\\"nice\\\":6.68,\\\"iowait\\\":528.24,\\\"irq\\\":0.02,\\\"softirq\\\":13.48,\\\"steal\\\":0,\\\"guest\\\":0,\\\"guestNice\\\":0,\\\"stolen\\\":0}],\\\"total_stat\\\":{\\\"cpu\\\":\\\"cpu-total\\\",\\\"user\\\":5206.09,\\\"system\\\":6107.04,\\\"idle\\\":337100.84,\\\"nice\\\":6.68,\\\"iowait\\\":528.24,\\\"irq\\\":0.02,\\\"softirq\\\":13.48,\\\"steal\\\":0,\\\"guest\\\":0,\\\"guestNice\\\":0,\\\"stolen\\\":0}},\\\"env\\\":{\\\"crontab\\\":[{\\\"user\\\":\\\"root\\\",\\\"content\\\":\\\"#secu-tcs-agent monitor, install at Fri Sep 15 16:12:02 CST 2017\\\\n* * * * * /usr/local/sa/agent/secu-tcs-agent-mon-safe.sh /usr/local/sa/agent \\\\u003e /dev/null 2\\\\u003e\\\\u00261\\\\n*/1 * * * * /usr/local/qcloud/stargate/admin/start.sh \\\\u003e /dev/null 2\\\\u003e\\\\u00261 \\\\u0026\\\\n*/20 * * * * /usr/sbin/ntpdate ntpupdate.tencentyun.com \\\\u003e/dev/null \\\\u0026\\\\n*/1 * * * * cd /usr/local/gse/gseagent; ./cron_agent.sh 1\\\\u003e/dev/null 2\\\\u003e\\\\u00261\\\\n\\\"}],\\\"host\\\":\\\"127.0.0.1  localhost  localhost.localdomain  VM_0_31_centos\\\\n::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\\\\n\\\",\\\"route\\\":\\\"Kernel IP routing table\\\\nDestination     Gateway         Genmask         Flags Metric Ref    Use Iface\\\\n10.0.0.0        0.0.0.0         255.255.255.0   U     0      0        0 eth0\\\\n169.254.0.0     0.0.0.0         255.255.0.0     U     1002   0        0 eth0\\\\n0.0.0.0         10.0.0.1        0.0.0.0         UG    0      0        0 eth0\\\\n\\\"},\\\"disk\\\":{\\\"diskstat\\\":{\\\"vda1\\\":{\\\"major\\\":252,\\\"minor\\\":1,\\\"readCount\\\":24347,\\\"mergedReadCount\\\":570,\\\"writeCount\\\":696357,\\\"mergedWriteCount\\\":4684783,\\\"readBytes\\\":783955968,\\\"writeBytes\\\":22041231360,\\\"readSectors\\\":1531164,\\\"writeSectors\\\":43049280,\\\"readTime\\\":80626,\\\"writeTime\\\":12704736,\\\"iopsInProgress\\\":0,\\\"ioTime\\\":822057,\\\"weightedIoTime\\\":12785026,\\\"name\\\":\\\"vda1\\\",\\\"serialNumber\\\":\\\"\\\",\\\"speedIORead\\\":0,\\\"speedByteRead\\\":0,\\\"speedIOWrite\\\":2.9,\\\"speedByteWrite\\\":171144.53333333333,\\\"util\\\":0.0025666666666666667,\\\"avgrq_sz\\\":115.26436781609195,\\\"avgqu_sz\\\":0.06568333333333334,\\\"await\\\":22.649425287356323,\\\"svctm\\\":0.8850574712643678}},\\\"partition\\\":[{\\\"device\\\":\\\"/dev/vda1\\\",\\\"mountpoint\\\":\\\"/\\\",\\\"fstype\\\":\\\"ext3\\\",\\\"opts\\\":\\\"rw,noatime,acl,user_xattr\\\"}],\\\"usage\\\":[{\\\"path\\\":\\\"/\\\",\\\"fstype\\\":\\\"ext2/ext3\\\",\\\"total\\\":52843638784,\\\"free\\\":47807447040,\\\"used\\\":2351915008,\\\"usedPercent\\\":4.4507060113962345,\\\"inodesTotal\\\":3276800,\\\"inodesUsed\\\":29554,\\\"inodesFree\\\":3247246,\\\"inodesUsedPercent\\\":0.9019165039062501}]},\\\"load\\\":{\\\"load_avg\\\":{\\\"load1\\\":0,\\\"load5\\\":0,\\\"load15\\\":0}},\\\"mem\\\":{\\\"meminfo\\\":{\\\"total\\\":1044832256,\\\"available\\\":805912576,\\\"used\\\":238919680,\\\"usedPercent\\\":22.866797864249705,\\\"free\\\":92041216,\\\"active\\\":521183232,\\\"inactive\\\":352964608,\\\"wired\\\":0,\\\"buffers\\\":110895104,\\\"cached\\\":602976256,\\\"writeback\\\":0,\\\"dirty\\\":151552,\\\"writebacktmp\\\":0},\\\"vmstat\\\":{\\\"total\\\":0,\\\"used\\\":0,\\\"free\\\":0,\\\"usedPercent\\\":0,\\\"sin\\\":0,\\\"sout\\\":0}},\\\"net\\\":{\\\"interface\\\":[{\\\"mtu\\\":65536,\\\"name\\\":\\\"lo\\\",\\\"hardwareaddr\\\":\\\"28:31:52:1d:c6:0a\\\",\\\"flags\\\":[\\\"up\\\",\\\"loopback\\\"],\\\"addrs\\\":[{\\\"addr\\\":\\\"127.0.0.1/8\\\"}]},{\\\"mtu\\\":1500,\\\"name\\\":\\\"eth0\\\",\\\"hardwareaddr\\\":\\\"52:54:00:19:2e:e8\\\",\\\"flags\\\":[\\\"up\\\",\\\"broadcast\\\",\\\"multicast\\\"],\\\"addrs\\\":[{\\\"addr\\\":\\\"127.0.0.1/24\\\"}]}],\\\"dev\\\":[{\\\"name\\\":\\\"lo\\\",\\\"speedSent\\\":0,\\\"speedRecv\\\":0,\\\"speedPacketsSent\\\":0,\\\"speedPacketsRecv\\\":0,\\\"bytesSent\\\":604,\\\"bytesRecv\\\":604,\\\"packetsSent\\\":2,\\\"packetsRecv\\\":2,\\\"errin\\\":0,\\\"errout\\\":0,\\\"dropin\\\":0,\\\"dropout\\\":0,\\\"fifoin\\\":0,\\\"fifoout\\\":0},{\\\"name\\\":\\\"eth0\\\",\\\"speedSent\\\":574,\\\"speedRecv\\\":214,\\\"speedPacketsSent\\\":3,\\\"speedPacketsRecv\\\":2,\\\"bytesSent\\\":161709123,\\\"bytesRecv\\\":285910298,\\\"packetsSent\\\":1116625,\\\"packetsRecv\\\":1167796,\\\"errin\\\":0,\\\"errout\\\":0,\\\"dropin\\\":0,\\\"dropout\\\":0,\\\"fifoin\\\":0,\\\"fifoout\\\":0}],\\\"netstat\\\":{\\\"established\\\":2,\\\"syncSent\\\":1,\\\"synRecv\\\":0,\\\"finWait1\\\":0,\\\"finWait2\\\":0,\\\"timeWait\\\":0,\\\"close\\\":0,\\\"closeWait\\\":0,\\\"lastAck\\\":0,\\\"listen\\\":2,\\\"closing\\\":0},\\\"protocolstat\\\":[{\\\"protocol\\\":\\\"udp\\\",\\\"stats\\\":{\\\"inDatagrams\\\":176253,\\\"inErrors\\\":0,\\\"noPorts\\\":1,\\\"outDatagrams\\\":199569,\\\"rcvbufErrors\\\":0,\\\"sndbufErrors\\\":0}}]},\\\"system\\\":{\\\"info\\\":{\\\"hostname\\\":\\\"VM_0_31_centos\\\",\\\"uptime\\\":348315,\\\"bootTime\\\":1505463112,\\\"procs\\\":142,\\\"os\\\":\\\"linux\\\",\\\"platform\\\":\\\"centos\\\",\\\"platformFamily\\\":\\\"rhel\\\",\\\"platformVersion\\\":\\\"6.2\\\",\\\"kernelVersion\\\":\\\"2.6.32-504.30.3.el6.x86_64\\\",\\\"virtualizationSystem\\\":\\\"\\\",\\\"virtualizationRole\\\":\\\"\\\",\\\"hostid\\\":\\\"96D0F4CA-2157-40E6-BF22-6A7CD9B6EB8C\\\",\\\"systemtype\\\":\\\"64-bit\\\"}}}}\", \"timestamp\": 1505811427, \"dtEventTime\": \"2017-09-19 16:57:07\", \"dtEventTimeStamp\": 1505811427000}"
+const MockMessage = "{\"localTime\": \"2017-09-19 16:57:00\", \"data\": \"{\\\"ip\\\":\\\"192.168.1.7\\\"," +
+	"\\\"bizid\\\":0,\\\"cloudid\\\":0,\\\"data\\\":{\\\"timezone\\\":8,\\\"datetime\\\":\\\"2017-09-19 16:57:07\\\"," +
+	"\\\"utctime\\\":\\\"2017-09-19 08:57:07\\\",\\\"country\\\":\\\"Asia\\\",\\\"city\\\":\\\"Shanghai\\\"," +
+	"\\\"cpu\\\":{\\\"cpuinfo\\\":[{\\\"cpu\\\":0,\\\"vendorID\\\":\\\"GenuineIntel\\\",\\\"family\\\":\\\"6\\\"," +
+	"\\\"model\\\":\\\"63\\\",\\\"stepping\\\":2,\\\"physicalID\\\":\\\"0\\\",\\\"coreID\\\":\\\"0\\\"," +
+	"\\\"cores\\\":1,\\\"modelName\\\":\\\"Intel(R) Xeon(R) CPU E5-26xx v3\\\",\\\"mhz\\\":2294.01," +
+	"\\\"cacheSize\\\":4096,\\\"flags\\\":[\\\"fpu\\\",\\\"vme\\\",\\\"de\\\",\\\"pse\\\",\\\"tsc\\\"," +
+	"\\\"msr\\\",\\\"pae\\\",\\\"mce\\\",\\\"cx8\\\",\\\"apic\\\",\\\"sep\\\",\\\"mtrr\\\",\\\"pge\\\"," +
+	"\\\"mca\\\",\\\"cmov\\\",\\\"pat\\\",\\\"pse36\\\",\\\"clflush\\\",\\\"mmx\\\",\\\"fxsr\\\"," +
+	"\\\"sse\\\",\\\"sse2\\\",\\\"ss\\\",\\\"ht\\\",\\\"syscall\\\",\\\"nx\\\",\\\"lm\\\",\\\"constant_tsc\\\"," +
+	"\\\"up\\\",\\\"rep_good\\\",\\\"unfair_spinlock\\\",\\\"pni\\\",\\\"pclmulqdq\\\",\\\"ssse3\\\",\\\"fma\\\"," +
+	"\\\"cx16\\\",\\\"pcid\\\",\\\"sse4_1\\\",\\\"sse4_2\\\",\\\"x2apic\\\",\\\"movbe\\\",\\\"popcnt\\\"," +
+	"\\\"tsc_deadline_timer\\\",\\\"aes\\\",\\\"xsave\\\",\\\"avx\\\",\\\"f16c\\\",\\\"rdrand\\\",\\\"hypervisor\\\"," +
+	"\\\"lahf_lm\\\",\\\"abm\\\",\\\"xsaveopt\\\",\\\"bmi1\\\",\\\"avx2\\\",\\\"bmi2\\\"],\\\"microcode\\\":" +
+	"\\\"1\\\"}],\\\"per_usage\\\":[3.0232169701043103],\\\"total_usage\\\":3.0232169701043103,\\\"per_stat\\\"" +
+	":[{\\\"cpu\\\":\\\"cpu0\\\",\\\"user\\\":5206.09,\\\"system\\\":6107.04,\\\"idle\\\":337100.84,\\\"nice\\\"" +
+	":6.68,\\\"iowait\\\":528.24,\\\"irq\\\":0.02,\\\"softirq\\\":13.48,\\\"steal\\\":0,\\\"guest\\\":0," +
+	"\\\"guestNice\\\":0,\\\"stolen\\\":0}],\\\"total_stat\\\":{\\\"cpu\\\":\\\"cpu-total\\\",\\\"user\\\"" +
+	":5206.09,\\\"system\\\":6107.04,\\\"idle\\\":337100.84,\\\"nice\\\":6.68,\\\"iowait\\\":528.24,\\\"irq\\\"" +
+	":0.02,\\\"softirq\\\":13.48,\\\"steal\\\":0,\\\"guest\\\":0,\\\"guestNice\\\":0,\\\"stolen\\\":0}}," +
+	"\\\"env\\\":{\\\"crontab\\\":[{\\\"user\\\":\\\"root\\\",\\\"content\\\":\\\"#secu-tcs-agent monitor, " +
+	"install at Fri Sep 15 16:12:02 CST 2017\\\\n* * * * * /usr/local/sa/agent/secu-tcs-agent-mon-safe.sh " +
+	"/usr/local/sa/agent \\\\u003e /dev/null 2\\\\u003e\\\\u00261\\\\n*/1 * * * * /usr/local/qcloud/stargate" +
+	"/admin/start.sh \\\\u003e /dev/null 2\\\\u003e\\\\u00261 \\\\u0026\\\\n*/20 * * * * /usr/sbin/ntpdate " +
+	"ntpupdate.tencentyun.com \\\\u003e/dev/null \\\\u0026\\\\n*/1 * * * * cd /usr/local/gse/gseagent; " +
+	"./cron_agent.sh 1\\\\u003e/dev/null 2\\\\u003e\\\\u00261\\\\n\\\"}],\\\"host\\\":\\\"127.0.0.1  localhost" +
+	"  localhost.localdomain  VM_0_31_centos\\\\n::1         localhost localhost.localdomain localhost6 " +
+	"localhost6.localdomain6\\\\n\\\",\\\"route\\\":\\\"Kernel IP routing table\\\\nDestination     " +
+	"Gateway         Genmask         Flags Metric Ref    Use Iface\\\\n10.0.0.0        0.0.0.0     " +
+	"    255.255.255.0   U     0      0        0 eth0\\\\n169.254.0.0     0.0.0.0         255.255.0.0  " +
+	"   U     1002   0        0 eth0\\\\n0.0.0.0         10.0.0.1        0.0.0.0         UG    0      0    " +
+	"    0 eth0\\\\n\\\"},\\\"disk\\\":{\\\"diskstat\\\":{\\\"vda1\\\":{\\\"major\\\":252,\\\"minor\\\"" +
+	":1,\\\"readCount\\\":24347,\\\"mergedReadCount\\\":570,\\\"writeCount\\\":696357,\\\"mergedWriteCount\\\"" +
+	":4684783,\\\"readBytes\\\":783955968,\\\"writeBytes\\\":22041231360,\\\"readSectors\\\":1531164,\\\"" +
+	"writeSectors\\\":43049280,\\\"readTime\\\":80626,\\\"writeTime\\\":12704736,\\\"iopsInProgress\\\":0," +
+	"\\\"ioTime\\\":822057,\\\"weightedIoTime\\\":12785026,\\\"name\\\":\\\"vda1\\\",\\\"serialNumber\\\"" +
+	":\\\"\\\",\\\"speedIORead\\\":0,\\\"speedByteRead\\\":0,\\\"speedIOWrite\\\":2.9,\\\"speedByteWrite\\\"" +
+	":171144.53333333333,\\\"util\\\":0.0025666666666666667,\\\"avgrq_sz\\\":115.26436781609195,\\\"avgqu_sz\\\"" +
+	":0.06568333333333334,\\\"await\\\":22.649425287356323,\\\"svctm\\\":0.8850574712643678}},\\\"" +
+	"partition\\\":[{\\\"device\\\":\\\"/dev/vda1\\\",\\\"mountpoint\\\":\\\"/\\\",\\\"fstype\\\":\\\"ext3\\\"," +
+	"\\\"opts\\\":\\\"rw,noatime,acl,user_xattr\\\"}],\\\"usage\\\":[{\\\"path\\\":\\\"/\\\",\\\"fstype\\\":" +
+	"\\\"ext2/ext3\\\",\\\"total\\\":52843638784,\\\"free\\\":47807447040,\\\"used\\\":2351915008," +
+	"\\\"usedPercent\\\":4.4507060113962345,\\\"inodesTotal\\\":3276800,\\\"inodesUsed\\\":29554,\\\"inodesFree" +
+	"\\\":3247246,\\\"inodesUsedPercent\\\":0.9019165039062501}]},\\\"load\\\":{\\\"load_avg\\\":{\\\"load1\\\"" +
+	":0,\\\"load5\\\":0,\\\"load15\\\":0}},\\\"mem\\\":{\\\"meminfo\\\":{\\\"total\\\":1044832256,\\\"available" +
+	"\\\":805912576,\\\"used\\\":238919680,\\\"usedPercent\\\":22.866797864249705,\\\"free\\\":92041216," +
+	"\\\"active\\\":521183232,\\\"inactive\\\":352964608,\\\"wired\\\":0,\\\"buffers\\\":110895104,\\\"cached" +
+	"\\\":602976256,\\\"writeback\\\":0,\\\"dirty\\\":151552,\\\"writebacktmp\\\":0},\\\"vmstat\\\":" +
+	"{\\\"total\\\":0,\\\"used\\\":0,\\\"free\\\":0,\\\"usedPercent\\\":0,\\\"sin\\\":0,\\\"sout\\\":0}}," +
+	"\\\"net\\\":{\\\"interface\\\":[{\\\"mtu\\\":65536,\\\"name\\\":\\\"lo\\\",\\\"hardwareaddr\\\":\\\"" +
+	"28:31:52:1d:c6:0a\\\",\\\"flags\\\":[\\\"up\\\",\\\"loopback\\\"],\\\"addrs\\\":[{\\\"addr\\\":\\\"" +
+	"127.0.0.1/8\\\"}]},{\\\"mtu\\\":1500,\\\"name\\\":\\\"eth0\\\",\\\"hardwareaddr\\\":\\\"52:54:00:19:" +
+	"2e:e8\\\",\\\"flags\\\":[\\\"up\\\",\\\"broadcast\\\",\\\"multicast\\\"],\\\"addrs\\\":[{\\\"addr\\\":\\" +
+	"\"127.0.0.1/24\\\"}]}],\\\"dev\\\":[{\\\"name\\\":\\\"lo\\\",\\\"speedSent\\\":0,\\\"speedRecv\\\":0,\\\"" +
+	"speedPacketsSent\\\":0,\\\"speedPacketsRecv\\\":0,\\\"bytesSent\\\":604,\\\"bytesRecv\\\":604,\\\"packet" +
+	"sSent\\\":2,\\\"packetsRecv\\\":2,\\\"errin\\\":0,\\\"errout\\\":0,\\\"dropin\\\":0,\\\"dropout\\\":0,\\\"" +
+	"fifoin\\\":0,\\\"fifoout\\\":0},{\\\"name\\\":\\\"eth0\\\",\\\"speedSent\\\":574,\\\"speedRecv\\\":214,\\" +
+	"\"speedPacketsSent\\\":3,\\\"speedPacketsRecv\\\":2,\\\"bytesSent\\\":161709123,\\\"bytesRecv\\\":285910" +
+	"298,\\\"packetsSent\\\":1116625,\\\"packetsRecv\\\":1167796,\\\"errin\\\":0,\\\"errout\\\":0,\\\"dropin\\" +
+	"\":0,\\\"dropout\\\":0,\\\"fifoin\\\":0,\\\"fifoout\\\":0}],\\\"netstat\\\":{\\\"established\\\":2,\\\"syn" +
+	"cSent\\\":1,\\\"synRecv\\\":0,\\\"finWait1\\\":0,\\\"finWait2\\\":0,\\\"timeWait\\\":0,\\\"close\\\":0,\\\"" +
+	"closeWait\\\":0,\\\"lastAck\\\":0,\\\"listen\\\":2,\\\"closing\\\":0},\\\"protocolstat\\\":[{\\\"protocol\\\"" +
+	":\\\"udp\\\",\\\"stats\\\":{\\\"inDatagrams\\\":176253,\\\"inErrors\\\":0,\\\"noPorts\\\":1,\\\"outDatagrams" +
+	"\\\":199569,\\\"rcvbufErrors\\\":0,\\\"sndbufErrors\\\":0}}]},\\\"system\\\":{\\\"info\\\":{\\\"hostname\\\"" +
+	":\\\"VM_0_31_centos\\\",\\\"uptime\\\":348315,\\\"bootTime\\\":1505463112,\\\"procs\\\":142,\\\"os\\\":\\" +
+	"\"linux\\\",\\\"platform\\\":\\\"centos\\\",\\\"platformFamily\\\":\\\"rhel\\\",\\\"platformVersion\\\":" +
+	"\\\"6.2\\\",\\\"kernelVersion\\\":\\\"2.6.32-504.30.3.el6.x86_64\\\",\\\"virtualizationSystem\\\":\\\"\\\"" +
+	",\\\"virtualizationRole\\\":\\\"\\\",\\\"hostid\\\":\\\"96D0F4CA-2157-40E6-BF22-6A7CD9B6EB8C\\\",\\\"syst" +
+	"emtype\\\":\\\"64-bit\\\"}}}}\", \"timestamp\": 1505811427, \"dtEventTime\": \"2017-09-19 16:57:07\", \"" +
+	"dtEventTimeStamp\": 1505811427000}"

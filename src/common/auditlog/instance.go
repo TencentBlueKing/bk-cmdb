@@ -122,8 +122,10 @@ func (i *instanceAuditLog) generateAuditLog(parameter *generateAuditCommonParame
 }
 
 func (i *instanceAuditLog) isMainline(kit *rest.Kit, objID string) (bool, error) {
-	cond := &metadata.QueryCondition{Condition:
-	map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline},
+	cond := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.AssociationKindIDField: common.AssociationKindMainline,
+		},
 	}
 
 	asst, err := i.clientSet.Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
@@ -132,12 +134,7 @@ func (i *instanceAuditLog) isMainline(kit *rest.Kit, objID string) (bool, error)
 		return false, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
-	if !asst.Result {
-		blog.Errorf("failed to find mainline association, err code: %d , err msg: %s, rid: %s", err, asst.Code, asst.ErrMsg, kit.Rid)
-		return false, asst.CCError()
-	}
-
-	for _, mainline := range asst.Data.Info {
+	for _, mainline := range asst.Info {
 		if mainline.AsstObjID == objID {
 			return true, nil
 		}

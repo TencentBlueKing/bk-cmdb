@@ -19,7 +19,7 @@
               :key="item.bk_biz_id"
               :id="item.bk_biz_id"
               :name="`[${item.bk_biz_id}] ${item.bk_biz_name}`"
-              :auth="{ type: $OPERATION.HOST_TRANSFER_ACROSS_BIZ, relation: [[[bizId], [item.bk_biz_id]]] }">
+              :auth="{ type: authType, relation: item.relation }">
             </cmdb-auth-option>
           </bk-select>
           <template v-if="targetBizId">
@@ -30,7 +30,7 @@
                 nameKey: 'bk_inst_name',
                 childrenKey: 'child'
               }"
-              :height="278"
+              :height="450"
               :node-height="36"
               :show-checkbox="isShowCheckbox"
               @node-click="handleNodeClick"
@@ -74,6 +74,9 @@
   import { mapGetters } from 'vuex'
   import { AuthRequestId, afterVerify } from '@/components/ui/auth/auth-queue.js'
   import ModuleCheckedList from './module-checked-list.vue'
+  import { sortTopoTree } from '@/utils/tools'
+  import { ONE_TO_ONE, MULTI_TO_ONE } from '@/dictionary/host-transfer-type.js'
+
   export default {
     name: 'cmdb-across-business-module-selector',
     components: {
@@ -88,9 +91,20 @@
         type: String,
         default: ''
       },
+      /**
+       * 选择的机器所在业务，支持单个业务和多个业务。
+       */
       business: {
-        type: Object,
+        type: [Object, Array],
         required: true
+      },
+      /**
+       * 跨业务转移类型，支持两种类型
+       */
+      type: {
+        type: String,
+        required: true,
+        validator: type => [ONE_TO_ONE, MULTI_TO_ONE].includes(type)
       }
     },
     data() {
@@ -113,40 +127,86 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['getModelById']),
-      bizId() {
-        return this.business.bk_biz_id
+      bizIds() {
+        if (this.business?.bk_biz_id) {
+          return [this.business.bk_biz_id]
+        }
+        return this.business
       },
       targetBiz() {
         return this.businessList.find(biz => biz.bk_biz_id === this.targetBizId)
       },
       hasTitle() {
         return this.title && this.title.length
-      }
+      },
+      authType() {
+        const { HOST_TRANSFER_ACROSS_BIZ, IDLE_HOST_TRANSFER_ACROSS_BIZ } = this.$OPERATION
+        if (this.type === ONE_TO_ONE) {
+          return HOST_TRANSFER_ACROSS_BIZ
+        }
+        if (this.type === MULTI_TO_ONE) {
+          return IDLE_HOST_TRANSFER_ACROSS_BIZ
+        }
+        return ''
+      },
     },
     async created() {
       this.getFullAmountBusiness()
     },
     methods: {
+      generateRelation(businesses) {
+        businesses.forEach((item) => {
+          let relation = null
+
+          if (this.type === ONE_TO_ONE) {
+            relation = [[[this.bizIds[0]], [item.bk_biz_id]]]
+          }
+
+          if (this.type === MULTI_TO_ONE) {
+            relation = []
+            this.bizIds.forEach((bizId) => {
+              relation.push([[bizId], [item.bk_biz_id]])
+            })
+          }
+
+          if (!relation?.length) {
+            throw Error('relation is required')
+          }
+
+          item.relation = relation
+        })
+      },
       async getFullAmountBusiness() {
         try {
           const data = await this.$http.get('biz/simplify?sort=bk_biz_id', { requestId: this.request.list })
           const availableBusiness = (data.info || []).filter(business => business.bk_biz_id !== this.bizId)
+          this.generateRelation(availableBusiness)
           this.businessList = Object.freeze(availableBusiness)
         } catch (e) {
           console.error(e)
           this.businessList = []
         } finally {
           setTimeout(() => {
-            afterVerify(() => {
+            afterVerify((authData) => {
               this.loading = false
+              this.sortBusinessByAuth(authData)
             })
           }, 0)
         }
+      },
+      sortBusinessByAuth(authData) {
+        if (!authData) {
+          return false
+        }
+        const list = this.businessList?.map((item, index) => ({ ...item, is_pass: authData[index]?.is_pass }))
+        list.sort((itemA, itemB) => itemB?.is_pass - itemA?.is_pass)
+        this.businessList = list
       },
       async getModules() {
         try {
           this.checked = []
           const internalTop = await this.getInternalModules()
+          sortTopoTree(internalTop, 'bk_inst_name', 'child')
           this.$refs.tree.setData(internalTop)
         } catch (e) {
           this.$refs.tree.setData([])
@@ -171,7 +231,7 @@
             bk_obj_id: 'set',
             bk_obj_name: this.getModelById('set').bk_obj_name,
             default: 0,
-            child: this.$tools.sort((data.module || []), 'default').map(module => ({
+            child: data.module.map(module => ({
               bk_inst_id: module.bk_module_id,
               bk_inst_name: module.bk_module_name,
               bk_obj_id: 'module',
@@ -200,7 +260,8 @@
         const removeChecked = []
         checked.forEach((id) => {
           const node = this.$refs.tree.getNodeById(id)
-          if (node.data.default === currentNode.data.default) {
+          // 用户自定义空闲模块的 default 是一样的，所以增加 bk_inst_id 是否一致的判断
+          if (node.data.default === currentNode.data.default && node.data.bk_inst_id === currentNode.data.bk_inst_id) {
             currentChecked.push(id)
           } else {
             removeChecked.push(id)

@@ -13,7 +13,8 @@
         <component class="content-value"
           size="small"
           font-size="small"
-          v-validate="$tools.getValidateRules(column)"
+          v-bind="$tools.getValidateEvents(column)"
+          v-validate="getRules(rowProps, column)"
           :disabled="isLocked(rowProps)"
           :data-vv-name="column.bk_property_id"
           :data-vv-as="column.bk_property_name"
@@ -97,6 +98,12 @@
         const rowState = this.lockStates[index]
         return rowState ? rowState[column.property] : false
       },
+      getRules(rowProps, property) {
+        const rules = this.$tools.getValidateRules(property)
+        // 与模板配置保持一致，统一为必填
+        rules.required = true
+        return rules
+      },
       getComponentType(property) {
         if (property.bk_property_id === 'ip') {
           return 'process-form-property-ip'
@@ -138,6 +145,7 @@
             justify-content: flex-start;
             .content-value:not(.bk-switcher) {
                 flex: 1;
+                width: calc(100% - 24px);
             }
             .content-value.bk-switcher ~ .content-lock {
                 background-color: transparent;

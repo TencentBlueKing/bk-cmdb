@@ -17,26 +17,24 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/model"
 )
 
 // CreateObjectGroup create a new object group
-
 func (s *Service) CreateObjectGroup(ctx *rest.Contexts) {
-	dataWithModelBizID := MapStrWithModelBizID{}
-	if err := ctx.DecodeInto(&dataWithModelBizID); err != nil {
+	data := new(metadata.Group)
+	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	var rsp model.GroupInterface
+	var rsp *metadata.Group
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		rsp, err = s.Core.GroupOperation().CreateObjectGroup(ctx.Kit, dataWithModelBizID.Data, dataWithModelBizID.ModelBizID)
-		if nil != err {
+		rsp, err = s.Logics.GroupOperation().CreateObjectGroup(ctx.Kit, data)
+		if err != nil {
 			return err
 		}
 		return nil
@@ -52,32 +50,32 @@ func (s *Service) CreateObjectGroup(ctx *rest.Contexts) {
 
 // UpdateObjectGroup update the object group information
 func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
-	cond := &metadata.UpdateGroupCondition{}
+	cond := new(metadata.UpdateGroupCondition)
 	err := ctx.DecodeInto(cond)
-	if nil != err {
+	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Core.GroupOperation().UpdateObjectGroup(ctx.Kit, cond)
-		if nil != err {
+		err := s.Logics.GroupOperation().UpdateObjectGroup(ctx.Kit, cond)
+		if err != nil {
 			return err
 		}
 
 		// query attribute groups with given condition, so that update them to iam after updated
-		searchCondition := condition.CreateCondition()
+		searchCondition := mapstr.MapStr{}
 		if cond.Condition.ID != 0 {
-			searchCondition.Field(common.BKFieldID).Eq(cond.Condition.ID)
+			searchCondition.Set(common.BKFieldID, cond.Condition.ID)
 		}
-		result, err := s.Core.GroupOperation().FindObjectGroup(ctx.Kit, searchCondition, cond.ModelBizID)
+		result, err := s.Logics.GroupOperation().FindObjectGroup(ctx.Kit, searchCondition, cond.ModelBizID)
 		if err != nil {
 			blog.Errorf("search attribute group by condition failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 		attributeGroups := make([]metadata.Group, 0)
 		for _, item := range result {
-			attributeGroups = append(attributeGroups, item.Group())
+			attributeGroups = append(attributeGroups, item)
 		}
 		return nil
 	})
@@ -89,17 +87,49 @@ func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// ExchangeObjectGroupIndex only for frond-end to change object attrbute's group index
+func (s *Service) ExchangeObjectGroupIndex(ctx *rest.Contexts) {
+
+	query := new(metadata.ExchangeGroupIndex)
+	if err := ctx.DecodeInto(query); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(query.Condition.ID) != 2 {
+		blog.Errorf("id of group must be two, now is %d, rid: %s", len(query.Condition.ID), ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKFieldID))
+		return
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err := s.Logics.GroupOperation().ExchangeObjectGroupIndex(ctx.Kit, query.Condition.ID); err != nil {
+			blog.Errorf("change object group index failed,err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
 // DeleteObjectGroup delete the object group
 func (s *Service) DeleteObjectGroup(ctx *rest.Contexts) {
 	gid, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
-	if nil != err {
+	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Core.GroupOperation().DeleteObjectGroup(ctx.Kit, gid)
-		if nil != err {
+		err := s.Logics.GroupOperation().DeleteObjectGroup(ctx.Kit, gid)
+		if err != nil {
 			return err
 		}
 		return nil
@@ -130,8 +160,8 @@ func (s *Service) UpdateObjectAttributeGroupProperty(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Core.GroupOperation().UpdateObjectAttributeGroup(ctx.Kit, objectAtt, requestBody.ModelBizID)
-		if nil != err {
+		err := s.Logics.GroupOperation().UpdateObjectAttributeGroup(ctx.Kit, objectAtt, requestBody.ModelBizID)
+		if err != nil {
 			return err
 		}
 		return nil
@@ -145,11 +175,12 @@ func (s *Service) UpdateObjectAttributeGroupProperty(ctx *rest.Contexts) {
 }
 
 // DeleteObjectAttributeGroup delete the object attribute belongs to group information
-
 func (s *Service) DeleteObjectAttributeGroup(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Core.GroupOperation().DeleteObjectAttributeGroup(ctx.Kit, ctx.Request.PathParameter("bk_object_id"), ctx.Request.PathParameter("property_id"), ctx.Request.PathParameter("group_id"))
-		if nil != err {
+		err := s.Logics.GroupOperation().DeleteObjectAttributeGroup(ctx.Kit,
+			ctx.Request.PathParameter("bk_object_id"), ctx.Request.PathParameter("property_id"),
+			ctx.Request.PathParameter("group_id"))
+		if err != nil {
 			return err
 		}
 		return nil
@@ -164,15 +195,16 @@ func (s *Service) DeleteObjectAttributeGroup(ctx *rest.Contexts) {
 
 // SearchGroupByObject search the groups by the object
 func (s *Service) SearchGroupByObject(ctx *rest.Contexts) {
-	cond := condition.CreateCondition()
+	cond := mapstr.MapStr{}
 
 	modelType := new(ModelType)
 	if err := ctx.DecodeInto(modelType); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	resp, err := s.Core.GroupOperation().FindGroupByObject(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), cond, modelType.BizID)
-	if nil != err {
+	resp, err := s.Logics.GroupOperation().FindGroupByObject(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"),
+		cond, modelType.BizID)
+	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}

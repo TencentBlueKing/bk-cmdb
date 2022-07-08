@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
+	"configcenter/src/common/selector"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/test/util"
 
@@ -71,6 +73,10 @@ var _ = Describe("service template test", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
 				"service_category_id": categoryId,
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 50,
+				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -138,6 +144,10 @@ var _ = Describe("service template test", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
 				"service_category_id": categoryId,
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 50,
+				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -301,6 +311,10 @@ var _ = Describe("service template test", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
 				"service_category_id": categoryId,
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 50,
+				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -312,16 +326,33 @@ var _ = Describe("service template test", func() {
 	})
 
 	Describe("service instance test", func() {
-		It("create service instance with template", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField: bizId,
-				"bk_module_id":      moduleId,
-				"instances": []map[string]interface{}{
+		It("create service instance with service template that has no process template", func() {
+			By(fmt.Sprintf("transfer host %d & %d to the module %d", hostId1, hostId2, moduleId))
+			transInput := map[string]interface{}{
+				"bk_biz_id": bizId,
+				"bk_host_id": []int64{
+					hostId1,
+					hostId2,
+				},
+				"bk_module_id": []int64{
+					moduleId,
+				},
+				"is_increment": true,
+			}
+			rsp, rawErr := hostServerClient.TransferHostModule(context.Background(), header, transInput)
+			util.RegisterResponse(rsp)
+			Expect(rawErr).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+
+			input := &metadata.CreateServiceInstanceInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Instances: []metadata.CreateServiceInstanceDetail{
 					{
-						"bk_host_id": hostId1,
-						"processes": []map[string]interface{}{
+						HostID: hostId1,
+						Processes: []metadata.ProcessInstanceDetail{
 							{
-								"process_info": map[string]interface{}{
+								ProcessData: map[string]interface{}{
 									"bk_func_name":    "p1",
 									"bk_process_name": "p1",
 								},
@@ -330,73 +361,9 @@ var _ = Describe("service template test", func() {
 					},
 				},
 			}
-			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			serviceId, err = commonutil.GetInt64ByInterface(rsp.Data.([]interface{})[0])
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("search service instance", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp)
-			Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d", serviceId)))
-			resMap["service_instance"] = j
-		})
-
-		It("clone service instance to source host", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField: bizId,
-				"bk_module_id":      moduleId,
-				"instances": []map[string]interface{}{
-					{
-						"bk_host_id": hostId1,
-						"processes": []map[string]interface{}{
-							{
-								"process_info": map[string]interface{}{
-									"bk_func_name":    "p1",
-									"bk_process_name": "p1",
-								},
-							},
-						},
-					},
-				},
-			}
-			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
-		})
-
-		It("search service instance", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp)
-			Expect(j).To(Equal(resMap["service_instance"]))
-		})
-
-		It("search service instance by set template id", func() {
-			input := map[string]interface{}{
-				"set_template_id": 1,
-			}
-			rsp, err := serviceClient.SearchServiceInstanceBySetTemplate(context.Background(), strconv.FormatInt(bizId, 10), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
+			serviceIds, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(serviceIds)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 
@@ -570,18 +537,80 @@ var _ = Describe("service template test", func() {
 			Expect(j).To(Equal(resMap["process_template"]))
 		})
 
-		It("clone service instance to other host", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField: bizId,
-				"bk_module_id":      moduleId,
-				"instances": []map[string]interface{}{
+		It("create service instance with template", func() {
+			By(fmt.Sprintf("transfer host %d & %d to the module %d", hostId1, hostId2, moduleId))
+			transInput := map[string]interface{}{
+				"bk_biz_id": bizId,
+				"bk_host_id": []int64{
+					hostId1,
+					hostId2,
+				},
+				"bk_module_id": []int64{
+					moduleId,
+				},
+				"is_increment":        true,
+				"disable_auto_create": true,
+			}
+			rsp, rawErr := hostServerClient.TransferHostModule(context.Background(), header, transInput)
+			util.RegisterResponse(rsp)
+			Expect(rawErr).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+
+			input := &metadata.CreateServiceInstanceInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Instances: []metadata.CreateServiceInstanceDetail{
 					{
-						"bk_host_id": hostId2,
-						"processes": []map[string]interface{}{
+						HostID: hostId1,
+						Processes: []metadata.ProcessInstanceDetail{
 							{
-								"process_info": map[string]interface{}{
-									"bk_func_name":    "p2",
-									"bk_process_name": "p3",
+								ProcessData: map[string]interface{}{
+									"bk_func_name":    "p1",
+									"bk_process_name": "p1",
+								},
+							},
+						},
+					},
+				},
+			}
+			serviceIds, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(serviceIds)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(serviceIds)).NotTo(Equal(0))
+			serviceId = serviceIds[0]
+		})
+
+		It("search service instance", func() {
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+			}
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
+			Expect(err).NotTo(HaveOccurred())
+			exists := false
+			for _, svcInst := range data.Info {
+				if svcInst.ID == serviceId {
+					exists = true
+					break
+				}
+			}
+			Expect(exists).To(Equal(true))
+			resMap["service_instance"] = data
+		})
+
+		It("clone service instance to source host", func() {
+			input := &metadata.CreateServiceInstanceInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Instances: []metadata.CreateServiceInstanceDetail{
+					{
+						HostID: hostId1,
+						Processes: []metadata.ProcessInstanceDetail{
+							{
+								ProcessData: map[string]interface{}{
+									"bk_func_name":    "p1",
+									"bk_process_name": "p1",
 								},
 							},
 						},
@@ -590,39 +619,88 @@ var _ = Describe("service template test", func() {
 			}
 			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
 			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			serviceId1, err = commonutil.GetInt64ByInterface(rsp.Data.([]interface{})[0])
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("search service instance", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(data).To(Equal(resMap["service_instance"]))
+		})
+
+		It("search service instance by set template id", func() {
+			input := map[string]interface{}{
+				"set_template_id": 1,
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 50,
+				},
+			}
+			rsp, err := serviceClient.SearchServiceInstanceBySetTemplate(context.Background(), strconv.FormatInt(bizId, 10), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp)
-			Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d", serviceId)))
-			Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d", serviceId1)))
-			resMap["service_instance"] = j
+		})
+
+		It("clone service instance to another host", func() {
+			input := &metadata.CreateServiceInstanceInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Instances: []metadata.CreateServiceInstanceDetail{
+					{
+						HostID: hostId2,
+						Processes: []metadata.ProcessInstanceDetail{
+							{
+								ProcessData: map[string]interface{}{
+									"bk_func_name":    "p2",
+									"bk_process_name": "p3",
+								},
+							},
+						},
+					},
+				},
+			}
+			serviceIds, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(serviceIds)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(serviceIds)).NotTo(Equal(0))
+			serviceId1 = serviceIds[0]
+		})
+
+		It("search service instance", func() {
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+			}
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
+			Expect(err).NotTo(HaveOccurred())
+			svcExists, svc2Exists := false, false
+			for _, svcInst := range data.Info {
+				if svcInst.ID == serviceId {
+					svcExists = true
+				}
+				if svcInst.ID == serviceId1 {
+					svc2Exists = true
+				}
+			}
+			Expect(svcExists && svc2Exists).To(Equal(true))
+			resMap["service_instance"] = data
 		})
 
 		It("search process instance", func() {
-			input := map[string]interface{}{
-				"service_instance_id": serviceId1,
-				common.BKAppIDField:   bizId,
+			input := &metadata.ListProcessInstancesOption{
+				BizID:             bizId,
+				ServiceInstanceID: serviceId1,
 			}
-			rsp, err := processClient.SearchProcessInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := processClient.SearchProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			data := make([]metadata.ProcessInstance, 0)
-			json.Unmarshal(j, &data)
 			Expect(len(data)).To(Equal(1))
 			Expect(data[0].Property["bk_process_name"]).To(Equal("p1"))
 			Expect(data[0].Property["bk_func_name"]).To(Equal("p1"))
@@ -651,7 +729,7 @@ var _ = Describe("service template test", func() {
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
 
-		It("udpate process instance", func() {
+		It("update process instance", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField: bizId,
 				"processes": []map[string]interface{}{
@@ -670,17 +748,13 @@ var _ = Describe("service template test", func() {
 		})
 
 		It("search process instance", func() {
-			input := map[string]interface{}{
-				"service_instance_id": serviceId1,
-				common.BKAppIDField:   bizId,
+			input := &metadata.ListProcessInstancesOption{
+				BizID:             bizId,
+				ServiceInstanceID: serviceId1,
 			}
-			rsp, err := processClient.SearchProcessInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := processClient.SearchProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			data := make([]metadata.ProcessInstance, 0)
-			json.Unmarshal(j, &data)
 			Expect(len(data)).To(Equal(1))
 			Expect(data[0].Property["bk_process_name"]).To(Equal("p1"))
 			Expect(data[0].Property["bk_func_name"]).To(Equal("p1"))
@@ -713,7 +787,7 @@ var _ = Describe("service template test", func() {
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp)
 			Expect(j).To(ContainSubstring("\"bk_func_name\":{\"as_default_value\":true,\"value\":\"p1\"}"))
-			Expect(j).To(ContainSubstring("\"bk_process_name\":{\"as_default_value\":true,\"value\":\"p1\"}"))
+			Expect(j).To(ContainSubstring("\"bk_process_name\":{\"as_default_value\":true,\"value\":\"123\"}"))
 			Expect(j).To(ContainSubstring("\"bk_start_param_regex\":{\"as_default_value\":true,\"value\":\"123456\"}"))
 		})
 
@@ -728,7 +802,7 @@ var _ = Describe("service template test", func() {
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp)
 			Expect(j).To(ContainSubstring("\"bk_func_name\":{\"as_default_value\":true,\"value\":\"p1\"}"))
-			Expect(j).To(ContainSubstring("\"bk_process_name\":{\"as_default_value\":true,\"value\":\"p1\"}"))
+			Expect(j).To(ContainSubstring("\"bk_process_name\":{\"as_default_value\":true,\"value\":\"123\"}"))
 			Expect(j).To(ContainSubstring("\"bk_start_param_regex\":{\"as_default_value\":true,\"value\":\"123456\"}"))
 			resMap["process_template"] = j
 		})
@@ -757,6 +831,10 @@ var _ = Describe("service template test", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
 				"service_category_id": 2,
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 50,
+				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -836,6 +914,10 @@ var _ = Describe("service template test", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
 				"service_category_id": 2,
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 50,
+				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -845,39 +927,21 @@ var _ = Describe("service template test", func() {
 			Expect(j).To(Equal(resMap["service_template"]))
 		})
 
-		It("compare service instance and template after add and change process template", func() {
+		It("remove service instance with template with process", func() {
 			input := map[string]interface{}{
-				common.BKAppIDField:   bizId,
-				"bk_module_ids":       []int64{moduleId},
-				"service_template_id": serviceTemplateId,
+				common.BKAppIDField: bizId,
+				"service_instance_ids": []int64{
+					serviceId,
+				},
+				"page": map[string]interface{}{
+					"start": 0,
+					"limit": 50,
+				},
 			}
-			rsp, err := serviceClient.DiffServiceInstanceWithTemplate(context.Background(), header, input)
+			rsp, err := serviceClient.DeleteServiceInstance(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			responseData := make([]metadata.ModuleDiffWithTemplateDetail, 0)
-			err = json.Unmarshal(j, &responseData)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(responseData).To(HaveLen(1))
-			data := responseData[0]
-			Expect(len(data.Removed)).To(Equal(0))
-			Expect(len(data.Unchanged)).To(Equal(0))
-			Expect(len(data.Added)).To(Equal(1))
-			Expect(len(data.Changed)).To(Equal(1))
-			Expect(data.Added[0].ProcessTemplateID).To(Equal(processTemplateId))
-			Expect(data.Added[0].ServiceInstanceCount).To(Equal(1))
-			Expect(data.Added[0].ServiceInstances[0].ServiceInstance.ID).To(Equal(serviceId))
-			Expect(len(data.Changed)).To(Equal(1))
-			Expect(data.Changed[0].ProcessTemplateID).To(Equal(processTemplateId))
-			Expect(data.Changed[0].ServiceInstanceCount).To(Equal(1))
-			Expect(data.Changed[0].ServiceInstances[0].ServiceInstance.ID).To(Equal(serviceId1))
-			Expect(len(data.Changed[0].ServiceInstances[0].ChangedAttributes)).To(Equal(1))
-			Expect(data.Changed[0].ServiceInstances[0].ChangedAttributes[0].PropertyID).To(Equal("bk_start_param_regex"))
-			Expect(data.Changed[0].ServiceInstances[0].ChangedAttributes[0].PropertyValue).To(Equal("1234"))
-			j, err = json.Marshal(data.Changed[0].ServiceInstances[0].ChangedAttributes[0].TemplatePropertyValue)
-			Expect(j).To(ContainSubstring("\"as_default_value\":true"))
-			Expect(j).To(ContainSubstring("\"value\":\"123456\""))
 		})
 
 		It("sync service instance and template after add and change process template", func() {
@@ -890,6 +954,9 @@ var _ = Describe("service template test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
+
+			// wait for some time to get the async task done
+			time.Sleep(time.Second * 20)
 		})
 
 		It("search module", func() {
@@ -909,20 +976,28 @@ var _ = Describe("service template test", func() {
 			Expect(j).To(ContainSubstring("\"service_category_id\":2"))
 		})
 
-		It("search process instance", func() {
-			input := map[string]interface{}{
-				"service_instance_id": serviceId,
-				common.BKAppIDField:   bizId,
+		It("search service instance", func() {
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				HostIDs:  []int64{hostId1},
 			}
-			rsp, err := processClient.SearchProcessInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			data := []metadata.ProcessInstance{}
-			json.Unmarshal(j, &data)
+			serviceId = data.Info[0].ID
+		})
+
+		It("search process instance", func() {
+			input := &metadata.ListProcessInstancesOption{
+				BizID:             bizId,
+				ServiceInstanceID: serviceId,
+			}
+			data, err := processClient.SearchProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(len(data)).To(Equal(1))
-			Expect(data[0].Property["bk_process_name"]).To(Equal("p1"))
+			Expect(data[0].Property["bk_process_name"]).To(Equal("123"))
 			Expect(data[0].Property["bk_func_name"]).To(Equal("p1"))
 			Expect(data[0].Property["bk_start_param_regex"]).To(Equal("123456"))
 			Expect(data[0].Relation.HostID).To(Equal(hostId1))
@@ -947,32 +1022,24 @@ var _ = Describe("service template test", func() {
 		})
 
 		It("delete process instance", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField: bizId,
-				"process_instance_ids": []int64{
-					processId,
-				},
+			input := &metadata.DeleteProcessInstanceInServiceInstanceInput{
+				BizID:              bizId,
+				ProcessInstanceIDs: []int64{processId},
 			}
-			rsp, err := processClient.DeleteProcessInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			err := processClient.DeleteProcessInstance(context.Background(), header, input)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("search process instance", func() {
-			input := map[string]interface{}{
-				"service_instance_id": serviceId1,
-				common.BKAppIDField:   bizId,
+			input := &metadata.ListProcessInstancesOption{
+				BizID:             bizId,
+				ServiceInstanceID: serviceId1,
 			}
-			rsp, err := processClient.SearchProcessInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := processClient.SearchProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			data := []metadata.ProcessInstance{}
-			json.Unmarshal(j, &data)
 			Expect(len(data)).To(Equal(1))
-			Expect(data[0].Property["bk_process_name"]).To(Equal("p1"))
+			Expect(data[0].Property["bk_process_name"]).To(Equal("123"))
 			Expect(data[0].Property["bk_func_name"]).To(Equal("p1"))
 			Expect(data[0].Property["bk_start_param_regex"]).To(Equal("123456"))
 		})
@@ -989,6 +1056,7 @@ var _ = Describe("service template test", func() {
 					serviceId,
 					serviceId1,
 				},
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceAddLabels(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1005,6 +1073,7 @@ var _ = Describe("service template test", func() {
 				"instance_ids": []int64{
 					serviceId1,
 				},
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceAddLabels(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1013,26 +1082,22 @@ var _ = Describe("service template test", func() {
 		})
 
 		It("search service instance", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			resMap["service_instance"] = j
-			data := new(metadata.MultipleServiceInstance)
-			json.Unmarshal(j, &data)
+			resMap["service_instance"] = data
 			Expect(data.Count).To(Equal(uint64(2)))
-			Expect(len(data.Info[0].Labels)).To(Equal(2))
+			Expect(len(data.Info[0].Labels)).To(Equal(3))
 			Expect(data.Info[0].Labels["key1"]).To(Equal("value1"))
-			Expect(data.Info[0].Labels["key2"]).To(Equal("value2"))
-			Expect(len(data.Info[1].Labels)).To(Equal(3))
+			Expect(data.Info[0].Labels["key2"]).To(Equal("value"))
+			Expect(data.Info[0].Labels["key3"]).To(Equal("value3"))
+			Expect(len(data.Info[1].Labels)).To(Equal(2))
 			Expect(data.Info[1].Labels["key1"]).To(Equal("value1"))
-			Expect(data.Info[1].Labels["key2"]).To(Equal("value"))
-			Expect(data.Info[1].Labels["key3"]).To(Equal("value3"))
+			Expect(data.Info[1].Labels["key2"]).To(Equal("value2"))
 		})
 
 		It("service instance add labels with empty key values", func() {
@@ -1046,6 +1111,7 @@ var _ = Describe("service template test", func() {
 					serviceId,
 					serviceId1,
 				},
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceAddLabels(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1063,6 +1129,7 @@ var _ = Describe("service template test", func() {
 					10000,
 					serviceId1,
 				},
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceAddLabels(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1089,420 +1156,364 @@ var _ = Describe("service template test", func() {
 		})
 
 		It("search service instance", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			Expect(resMap["service_instance"]).To(Equal(j))
+			Expect(resMap["service_instance"]).To(Equal(data))
 		})
 
 		It("search service instance without key", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
-					{
-						"key":      "key3",
-						"operator": "!",
-					},
-				},
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
+					selector.Selector{
+						Key:      "key3",
+						Operator: "!",
+					}},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			data := new(metadata.MultipleServiceInstance)
-			json.Unmarshal(j, &data)
 			Expect(data.Count).To(Equal(uint64(1)))
 			Expect(data.Info[0].ID).To(Equal(serviceId))
 		})
 
 		It("search service instance without key with values", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
-					{
-						"key":      "key3",
-						"operator": "!",
-						"values": []string{
-							"123",
-						},
-					},
-				},
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
+					selector.Selector{
+						Key:      "key3",
+						Operator: "!",
+						Values:   []string{"123"},
+					}},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("search service instance exists key", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
-					{
-						"key":      "key3",
-						"operator": "exists",
-					},
-				},
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
+					selector.Selector{
+						Key:      "key3",
+						Operator: "exists",
+					}},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			data := new(metadata.MultipleServiceInstance)
-			json.Unmarshal(j, &data)
 			Expect(data.Count).To(Equal(uint64(1)))
 			Expect(data.Info[0].ID).To(Equal(serviceId1))
 		})
 
 		It("search service instance exists key with values", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
-					{
-						"key":      "key3",
-						"operator": "exists",
-						"values": []string{
-							"123",
-						},
-					},
-				},
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
+					selector.Selector{
+						Key:      "key3",
+						Operator: "exists",
+						Values:   []string{"123"},
+					}},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("search service instance with equal key value", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
-					{
-						"key":      "key1",
-						"operator": "=",
-						"values": []string{
-							"value1",
-						},
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
+					selector.Selector{
+						Key:      "key1",
+						Operator: "=",
+						Values:   []string{"value1"},
 					},
-					{
-						"key":      "key2",
-						"operator": "=",
-						"values": []string{
-							"value2",
-						},
+					selector.Selector{
+						Key:      "key2",
+						Operator: "=",
+						Values:   []string{"value2"},
 					},
 				},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			data := new(metadata.MultipleServiceInstance)
-			json.Unmarshal(j, &data)
 			Expect(data.Count).To(Equal(uint64(1)))
 			Expect(data.Info[0].ID).To(Equal(serviceId))
 		})
 
 		It("search service instance with equal key zero value", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
-					{
-						"key":      "key1",
-						"operator": "=",
-					},
-				},
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
+					selector.Selector{
+						Key:      "key1",
+						Operator: "=",
+					}},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("search service instance with equal key many values", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
-					{
-						"key":      "key1",
-						"operator": "=",
-						"values": []string{
-							"value1",
-							"value2",
-						},
-					},
-				},
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
+					selector.Selector{
+						Key:      "key1",
+						Operator: "=",
+						Values:   []string{"value1", "value2"},
+					}},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("search service instance with not equal key value", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
 					{
-						"key":      "key1",
-						"operator": "!=",
-						"values": []string{
+						Key:      "key1",
+						Operator: "!=",
+						Values: []string{
 							"value2",
 						},
 					},
 					{
-						"key":      "key2",
-						"operator": "!=",
-						"values": []string{
+						Key:      "key2",
+						Operator: "!=",
+						Values: []string{
 							"value",
 						},
 					},
 				},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			data := new(metadata.MultipleServiceInstance)
-			json.Unmarshal(j, &data)
 			Expect(data.Count).To(Equal(uint64(1)))
 			Expect(data.Info[0].ID).To(Equal(serviceId))
 		})
 
 		It("search service instance with not equal key zero value", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
 					{
-						"key":      "key1",
-						"operator": "!=",
+						Key:      "key1",
+						Operator: "!=",
 					},
 				},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("search service instance with not equal key many values", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
 					{
-						"key":      "key1",
-						"operator": "!=",
-						"values": []string{
+						Key:      "key1",
+						Operator: "!=",
+						Values: []string{
 							"value1",
 							"value2",
 						},
 					},
 				},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("search service instance with value in values", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
 					{
-						"key":      "key1",
-						"operator": "in",
-						"values": []string{
+						Key:      "key1",
+						Operator: "in",
+						Values: []string{
 							"value1",
 						},
 					},
 					{
-						"key":      "key2",
-						"operator": "in",
-						"values": []string{
+						Key:      "key2",
+						Operator: "in",
+						Values: []string{
 							"value",
 							"value2",
 						},
 					},
 				},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			data := new(metadata.MultipleServiceInstance)
-			json.Unmarshal(j, &data)
 			Expect(data.Count).To(Equal(uint64(2)))
-			Expect(data.Info[0].ID).To(Equal(serviceId))
-			Expect(data.Info[1].ID).To(Equal(serviceId1))
+			Expect(data.Info[0].ID).To(Equal(serviceId1))
+			Expect(data.Info[1].ID).To(Equal(serviceId))
 		})
 
 		It("search service instance with value in zero values", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
 					{
-						"key":      "key1",
-						"operator": "in",
+						Key:      "key1",
+						Operator: "in",
 					},
 				},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("search service instance with value not in values", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
 					{
-						"key":      "key3",
-						"operator": "notin",
-						"values": []string{
+						Key:      "key3",
+						Operator: "notin",
+						Values: []string{
 							"value",
 						},
 					},
 					{
-						"key":      "key1",
-						"operator": "notin",
-						"values": []string{
+						Key:      "key1",
+						Operator: "notin",
+						Values: []string{
 							"value",
 							"value2",
 						},
 					},
 				},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			data := new(metadata.MultipleServiceInstance)
-			json.Unmarshal(j, &data)
 			Expect(data.Count).To(Equal(uint64(2)))
-			Expect(data.Info[0].ID).To(Equal(serviceId))
-			Expect(data.Info[1].ID).To(Equal(serviceId1))
+			Expect(data.Info[0].ID).To(Equal(serviceId1))
+			Expect(data.Info[1].ID).To(Equal(serviceId))
 		})
 
 		It("search service instance with value not in zero values", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
 					{
-						"key":      "key1",
-						"operator": "notin",
+						Key:      "key1",
+						Operator: "notin",
 					},
 				},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("search service instance with invalid operator", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
-					{
-						"key":      "key1",
-						"operator": "123",
-					},
-				},
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
+					selector.Selector{
+						Key:      "key1",
+						Operator: "123",
+					}},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("search service instance with empty key", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
 					{
-						"key":      "",
-						"operator": "exists",
+						Key:      "",
+						Operator: "exists",
 					},
 				},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("search service instance with no matching data", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
-				"selectors": []map[string]interface{}{
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
+				Selectors: selector.Selectors{
 					{
-						"key":      "key1",
-						"operator": "!",
+						Key:      "key1",
+						Operator: "!",
 					},
 					{
-						"key":      "key3",
-						"operator": "exists",
+						Key:      "key3",
+						Operator: "exists",
 					},
 					{
-						"key":      "key3",
-						"operator": "notin",
-						"values": []string{
+						Key:      "key3",
+						Operator: "notin",
+						Values: []string{
 							"value",
 						},
 					},
 					{
-						"key":      "key2",
-						"operator": "!=",
-						"values": []string{
+						Key:      "key2",
+						Operator: "!=",
+						Values: []string{
 							"value3",
 						},
 					},
 					{
-						"key":      "key2",
-						"operator": "=",
-						"values": []string{
+						Key:      "key2",
+						Operator: "=",
+						Values: []string{
 							"value2",
 						},
 					},
 				},
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			Expect(j).To(ContainSubstring("\"count\":0"))
+			Expect(int(data.Count)).To(Equal(0))
 		})
 
 		It("service instance remove labels", func() {
@@ -1516,6 +1527,7 @@ var _ = Describe("service template test", func() {
 					serviceId,
 					serviceId1,
 				},
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceRemoveLabels(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1533,6 +1545,7 @@ var _ = Describe("service template test", func() {
 					100000,
 					serviceId1,
 				},
+				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceRemoveLabels(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -1541,22 +1554,18 @@ var _ = Describe("service template test", func() {
 		})
 
 		It("search service instance", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			data := new(metadata.MultipleServiceInstance)
-			json.Unmarshal(j, &data)
 			Expect(data.Count).To(Equal(uint64(2)))
 			Expect(len(data.Info[0].Labels)).To(Equal(1))
-			Expect(data.Info[0].Labels["key2"]).To(Equal("value2"))
+			Expect(data.Info[0].Labels["key2"]).To(Equal("value"))
 			Expect(len(data.Info[1].Labels)).To(Equal(1))
-			Expect(data.Info[1].Labels["key2"]).To(Equal("value"))
+			Expect(data.Info[1].Labels["key2"]).To(Equal("value2"))
 		})
 	})
 
@@ -1587,32 +1596,6 @@ var _ = Describe("service template test", func() {
 			Expect(j).To(ContainSubstring("\"count\":0"))
 		})
 
-		It("compare service instance and template after add and change process template", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField:   bizId,
-				"bk_module_ids":       []int64{moduleId},
-				"service_template_id": serviceTemplateId,
-			}
-			rsp, err := serviceClient.DiffServiceInstanceWithTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			responseData := make([]metadata.ModuleDiffWithTemplateDetail, 0)
-			err = json.Unmarshal(j, &responseData)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(responseData).To(HaveLen(1))
-			data := responseData[0]
-			Expect(len(data.Removed)).To(Equal(1))
-			Expect(len(data.Unchanged)).To(Equal(0))
-			Expect(len(data.Added)).To(Equal(0))
-			Expect(len(data.Changed)).To(Equal(0))
-			Expect(data.Removed[0].ServiceInstanceCount).To(Equal(2))
-			Expect(data.Removed[0].ServiceInstances[0].ServiceInstance.ID).To(Or(Equal(serviceId), Equal(serviceId1)))
-			Expect(data.Removed[0].ServiceInstances[1].ServiceInstance.ID).To(Or(Equal(serviceId), Equal(serviceId1)))
-			Expect(data.Removed[0].ServiceInstances[1].ServiceInstance.ID).NotTo(Equal(data.Removed[0].ServiceInstances[0].ServiceInstance.ID))
-		})
-
 		It("remove service instance with template with process", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField: bizId,
@@ -1627,22 +1610,18 @@ var _ = Describe("service template test", func() {
 		})
 
 		It("search service instance", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			data := new(metadata.MultipleServiceInstance)
-			json.Unmarshal(j, &data)
 			Expect(data.Count).To(Equal(uint64(1)))
 			Expect(data.Info[0].ID).To(Equal(serviceId))
 		})
 
-		It("sync service instance and template after add and change process template", func() {
+		It("sync service instance and template after remove process template", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
 				"bk_module_ids":       []int64{moduleId},
@@ -1652,20 +1631,19 @@ var _ = Describe("service template test", func() {
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
+
+			// wait for some time to get the async task done
+			time.Sleep(time.Second * 20)
 		})
 
 		It("search process instance", func() {
-			input := map[string]interface{}{
-				"service_instance_id": serviceId,
-				common.BKAppIDField:   bizId,
+			input := &metadata.ListProcessInstancesOption{
+				BizID:             bizId,
+				ServiceInstanceID: serviceId,
 			}
-			rsp, err := processClient.SearchProcessInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := processClient.SearchProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			data := []metadata.ProcessInstance{}
-			json.Unmarshal(j, &data)
 			Expect(len(data)).To(Equal(0))
 		})
 
@@ -1684,31 +1662,14 @@ var _ = Describe("service template test", func() {
 			Expect(j).To(ContainSubstring("\"service_category_id\":2"))
 		})
 
-		It("remove service instance with template without process", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField: bizId,
-				"service_instance_ids": []int64{
-					serviceId,
-				},
-			}
-			rsp, err := serviceClient.DeleteServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-		})
-
 		It("search service instance", func() {
-			input := map[string]interface{}{
-				"bk_module_id":      moduleId,
-				common.BKAppIDField: bizId,
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleId,
 			}
-			rsp, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp.Data)
-			data := new(metadata.MultipleServiceInstance)
-			json.Unmarshal(j, &data)
 			Expect(data.Count).To(Equal(uint64(0)))
 		})
 

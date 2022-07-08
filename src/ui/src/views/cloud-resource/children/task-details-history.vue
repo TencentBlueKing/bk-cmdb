@@ -3,7 +3,8 @@
     <div class="history-options">
       <bk-date-picker class="options-date"
         type="datetimerange"
-        :placeholder="$t('请选择xx', { name: '时间范围' })"
+        transfer
+        :placeholder="$t('请选择xx', { name: $t('时间范围') })"
         v-model="timeRange"
         @change="getHistory">
       </bk-date-picker>

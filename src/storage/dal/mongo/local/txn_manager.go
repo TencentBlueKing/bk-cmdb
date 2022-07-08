@@ -19,9 +19,11 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/redis"
 
@@ -31,6 +33,7 @@ import (
 
 const (
 	transactionNumberRedisKeyNamespace = common.BKCacheKeyV3Prefix + "transaction:number:"
+	transactionErrorRedisKeyNamespace  = common.BKCacheKeyV3Prefix + "transaction:error:"
 )
 
 type sessionKey string
@@ -38,6 +41,20 @@ type sessionKey string
 func (s sessionKey) genKey() string {
 	return transactionNumberRedisKeyNamespace + string(s)
 }
+
+func (s sessionKey) genErrKey() string {
+	return transactionErrorRedisKeyNamespace + string(s)
+}
+
+// TxnErrorType the error type of the transaction, some error type needs to do special operations like retry
+type TxnErrorType string
+
+const (
+	// UnknownType unknown error type, means the errors that has no specific type, do not have special logic
+	UnknownType TxnErrorType = "1"
+	// WriteConflictType mongodb write conflict error type, means the transaction conflicts with others, needs to retry
+	WriteConflictType TxnErrorType = "2"
+)
 
 // a transaction manager
 type TxnManager struct {
@@ -67,14 +84,13 @@ func (t *TxnManager) GenTxnNumber(sessionID string, ttl time.Duration) (int64, e
 
 	pip := t.cache.Pipeline()
 	defer pip.Close()
-
+	if ttl == 0 {
+		ttl = common.TransactionDefaultTimeout
+	}
 	// we increase by step 1, so that we can calculate how many transaction has already
 	// be executed in a same session.
 	pip.SetNX(key, 0, ttl).Result()
 	incrBy := pip.IncrBy(key, 1)
-	if ttl == 0 {
-		ttl = common.TransactionDefaultTimeout
-	}
 	_, err := pip.Exec()
 	if err != nil {
 		return 0, err
@@ -229,12 +245,42 @@ func (t *TxnManager) AutoRunWithTxn(ctx context.Context, cli *mongo.Client, cmd 
 		// release the session connection.
 		// Attention: do not use session.EndSession() to do this, it will abort the transaction.
 		// mongo.CmdbReleaseSession(ctx, session)
+		t.setTxnError(sessionKey(cap.SessionID), err)
 		return err
 	}
 	// release the session connection.
 	// Attention: do not use session.EndSession() to do this, it will abort the transaction.
 	// mongo.CmdbReleaseSession(ctx, session)
 	return nil
+}
+
+// setTxnError set mongo raw error type to redis, it may be used in scene server to retry this transaction
+func (t *TxnManager) setTxnError(sessionID sessionKey, txnErr error) {
+	switch {
+	case strings.Contains(txnErr.Error(), "WriteConflict"):
+		key := sessionID.genErrKey()
+		err := t.cache.SetNX(context.Background(), key, string(WriteConflictType), time.Minute*5).Err()
+		if err != nil {
+			blog.Errorf("set txn error(%v) failed, err: %v, session id: %s", txnErr, err, sessionID)
+		}
+	default:
+	}
+}
+
+// GetTxnError get mongo raw error type in redis, the error may be used in scene server to retry this transaction
+func (t *TxnManager) GetTxnError(sessionID sessionKey) TxnErrorType {
+	key := sessionID.genErrKey()
+	errorType, err := t.cache.Get(context.Background(), key).Result()
+	if err != nil {
+		blog.Errorf("get txn error failed, err: %v, session id: %s", err, sessionID)
+		return UnknownType
+	}
+
+	if len(errorType) == 0 {
+		return UnknownType
+	}
+
+	return TxnErrorType(errorType)
 }
 
 func GenSessionID() (string, error) {

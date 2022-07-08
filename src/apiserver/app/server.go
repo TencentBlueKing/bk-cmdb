@@ -24,8 +24,9 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 // Run main loop function
@@ -33,11 +34,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
-	}
-
-	client, err := util.NewClient(&util.TLSClientConfig{})
-	if err != nil {
-		return fmt.Errorf("new proxy client failed, err: %v", err)
 	}
 
 	svc := service.NewService()
@@ -71,10 +67,24 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
+	config, err := util.NewTLSClientConfigFromConfig("apiServer.tls")
+	if err != nil {
+		blog.Errorf("get apiServer.tls config error, err: %v", err)
+		return err
+	}
+
+	client, err := util.NewClient(&config)
+	if err != nil {
+		return fmt.Errorf("new proxy client failed, err: %v", err)
+	}
+
 	svc.SetConfig(engine, client, engine.Discovery(), engine.CoreAPI, cache, limiter)
 
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})
+
+	opentelemetry.AddOtlpFilter(ctnr)
+
 	for _, item := range svc.WebServices() {
 		ctnr.Add(item)
 	}
@@ -102,4 +112,3 @@ func (h *APIServer) onApiServerConfigUpdate(previous, current cc.ProcessConfig) 
 }
 
 const waitForSeconds = 180
-

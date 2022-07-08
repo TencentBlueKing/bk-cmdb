@@ -23,7 +23,6 @@
   import theHeader from '@/components/layout/header'
   import thePermissionModal from '@/components/modal/permission'
   import theLoginModal from '@blueking/paas-login'
-  // import { execMainScrollListener, execMainResizeListener } from '@/utils/main-scroller'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import { MENU_INDEX } from '@/dictionary/menu-symbol'
   import { mapGetters } from 'vuex'
@@ -39,11 +38,10 @@
       return {
         showBrowserTips,
         loginSuccessUrl: `${window.location.origin}/static/login_success.html`
-        // execMainScrollListener
       }
     },
     computed: {
-      ...mapGetters(['site', 'globalLoading', 'mainFullScreen']),
+      ...mapGetters(['globalLoading', 'mainFullScreen']),
       ...mapGetters('userCustom', ['usercustom', 'firstEntryKey', 'classifyNavigationKey']),
       isIndex() {
         return this.$route.name === MENU_INDEX
@@ -56,7 +54,10 @@
         return (topRoute && topRoute.meta.view) || 'default'
       },
       loginUrl() {
-        const siteLoginUrl = this.site.login || ''
+        if (process.env.NODE_ENV === 'development') {
+          return ''
+        }
+        const siteLoginUrl = this.$Site.login || ''
         const [loginBaseUrl] = siteLoginUrl.split('?')
         if (loginBaseUrl) {
           return `${loginBaseUrl}plain`
@@ -64,23 +65,15 @@
         return ''
       }
     },
-    watch: {
-      site(site) {
-        let language = (this.$i18n.locale || 'cn').toLocaleLowerCase()
-        if (['zh-cn', 'zh_cn', 'zh', 'cn'].includes(language)) {
-          language = 'cn'
-        }
-        document.title = site.title.i18n[language] || site.title.value
-      }
-    },
     mounted() {
-      // addResizeListener(this.$refs.mainScroller, execMainResizeListener)
       addResizeListener(this.$el, this.calculateAppHeight)
       window.permissionModal = this.$refs.permissionModal
       window.loginModal = this.$refs.loginModal
+
+      // 在body标签添加语言标识属性，用于插入到body下的内容进行国际化处理
+      document.body.setAttribute('lang', this.$i18n.locale)
     },
     beforeDestroy() {
-      // removeResizeListener(this.$refs.mainScroller, execMainResizeListener)
       removeResizeListener(this.$el, this.calculateAppHeight)
     },
     methods: {
@@ -131,11 +124,7 @@
     .no-breadcrumb {
         /deep/ {
             .main-layout {
-                margin-top: 0
-            }
-            .main-views {
-                height: 100%;
-                margin-top: 0;
+               height: 100%;
             }
         }
     }

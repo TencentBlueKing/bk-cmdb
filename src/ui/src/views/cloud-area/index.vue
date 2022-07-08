@@ -46,8 +46,8 @@
             v-if="row === rowInEdit"
             :id="`input-${row.bk_cloud_id}`"
             :value="row.bk_cloud_name"
-            @enter="handleUpdateName(row, ...arguments)"
-            @blur="handleUpdateName(row, ...arguments)">
+            @enter="debounceUpdateName(row, ...arguments)"
+            @blur="debounceUpdateName(row, ...arguments)">
           </bk-input>
         </template>
       </bk-table-column>
@@ -112,6 +112,7 @@
   import CmdbVendor from '@/components/ui/other/vendor'
   import Loading from '@/components/loading/loading.vue'
   import throttle from 'lodash.throttle'
+  import debounce from 'lodash.debounce'
   import { MENU_RESOURCE_CLOUD_RESOURCE } from '@/dictionary/menu-symbol'
   import TaskRegionSelector from '@/views/cloud-resource/children/task-region-selector'
   export default {
@@ -131,6 +132,7 @@
           count: []
         },
         scheduleSearch: throttle(this.handlePageChange, 800, { leading: false, trailing: true }),
+        debounceUpdateName: debounce(this.handleUpdateName, 100, { leading: true, trailing: false }),
         rowInEdit: null
       }
     },
@@ -316,7 +318,7 @@
             app_url: urlSuffix
           }), '*')
         } else {
-          const agentAppUrl = window.CMDB_CONFIG.site.agent
+          const agentAppUrl = this.$Site.agent
           if (agentAppUrl) {
             window.open(agentAppUrl + urlSuffix)
           } else {

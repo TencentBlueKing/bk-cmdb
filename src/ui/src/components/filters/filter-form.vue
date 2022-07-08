@@ -51,7 +51,7 @@
           <div class="item-content-wrapper">
             <operator-selector class="item-operator"
               v-if="!withoutOperator.includes(property.bk_property_type)"
-              :type="property.bk_property_type"
+              :property="property"
               v-model="condition[property.id].operator"
               @change="handleOperatorChange(property, ...arguments)">
             </operator-selector>
@@ -242,9 +242,17 @@
           bk_property_type: propertyType
         } = property
         const normal = `cmdb-search-${propertyType}`
+
+        // 业务名在包含与非包含操作符时使用输入联想组件
+        if (modelId === 'biz' && propertyId === 'bk_biz_name' && this.condition[property.id].operator !== '$regex') {
+          return `cmdb-search-${modelId}`
+        }
+
+        // 资源-主机下无业务
         if (!FilterStore.bizId) {
           return normal
         }
+
         const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
         const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
         if (isSetName || isModuleName) {
@@ -318,6 +326,7 @@
         // tag-input组件在blur时写入数据有200ms的延迟，此处等待更长时间，避免无法写入
         this.searchTimer && clearTimeout(this.searchTimer)
         this.searchTimer = setTimeout(() => {
+          FilterStore.resetPage(true)
           FilterStore.updateSelected(this.selected) // 此处会额外触发一次watch
           FilterStore.setCondition({
             condition: this.$tools.clone(this.condition),

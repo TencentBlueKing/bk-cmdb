@@ -13,7 +13,6 @@
 package blueking
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -41,10 +40,6 @@ func NewBKmonitor() (*bkMonitor, error) {
 
 // Report is a interface implement for bkMonitor
 func (m *bkMonitor) Report(c meta.Content) error {
-	if config.MonitorCfg.DataID == 0 {
-		blog.ErrorJSON("Report failed, config monitor.dataID is not set, detail: %s", c)
-		return errors.New("report failed, config monitor.dataID is not set")
-	}
 
 	alarm, ok := c.(*meta.Alarm)
 	if !ok {
@@ -78,7 +73,6 @@ func (m *bkMonitor) convertToReportMsg(alarm *meta.Alarm) (string, error) {
 		Dimension:   alarm.Dimension,
 		TimeStampMs: time.Now().UnixNano() / 1e6,
 	}
-
 	if one.Dimension == nil {
 		one.Dimension = make(map[string]string)
 	}

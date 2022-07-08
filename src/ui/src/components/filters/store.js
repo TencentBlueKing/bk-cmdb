@@ -34,11 +34,15 @@ const FilterStore = new Vue({
       header: [],
       collections: [],
       activeCollection: null,
+      needResetPage: false,
       throttleSearch: throttle(this.dispatchSearch, 100, { leading: false })
     }
   },
   computed: {
     bizId() {
+      if (typeof this.config.bk_biz_id === 'function') {
+        return this.config.bk_biz_id()
+      }
       return this.config.bk_biz_id || void 0
     },
     userBehaviorKey() {
@@ -67,7 +71,8 @@ const FilterStore = new Vue({
       const key = this.config.header && this.config.header.custom
       const moduleNameProperty = Utils.findPropertyByPropertyId('bk_module_name', this.properties, 'module')
       const setNameProperty = Utils.findPropertyByPropertyId('bk_set_name', this.properties, 'set')
-      return getStorageHeader('usercustom', key, [...this.modelPropertyMap.host, moduleNameProperty, setNameProperty])
+      const bizNameProperty = Utils.findPropertyByPropertyId('bk_biz_name', this.properties, 'biz')
+      return getStorageHeader('usercustom', key, [...this.modelPropertyMap.host, moduleNameProperty, setNameProperty, bizNameProperty])
     },
     presetHeader() {
       const hostProperties = this.getModelProperties('host')
@@ -99,11 +104,18 @@ const FilterStore = new Vue({
       })
       return map
     },
+    /**
+     * 判断是否存在已生效的筛选条件
+     * @returns {Boolean}
+     */
     hasCondition() {
-      return Object.keys(this.condition).some((id) => {
-        const { value } = this.condition[id]
-        return !!String(value).trim().length
+      const existedSelectedCondition = this.selected?.some((property) => {
+        const { value } = this.condition[property.id]
+        return value !== null && value !== undefined && !!value.toString().length
       })
+      const existedIP = Utils.splitIP(this.IP.text)?.length > 0
+
+      return existedSelectedCondition || existedIP
     }
   },
   watch: {
@@ -157,9 +169,6 @@ const FilterStore = new Vue({
         outer: outer.toString() === 'true'
       }
     },
-    setupHeader() {
-      (this.selected.length && this.hasCondition) ? this.setHeader(this.selected) : this.setHeader(this.defaultHeader)
-    },
     initCondition() {
       const newConditon = {}
       this.selected.forEach((property) => {
@@ -174,7 +183,6 @@ const FilterStore = new Vue({
     setCondition(data = {}) {
       this.condition = data.condition || this.condition
       this.IP = data.IP || this.IP
-      this.setHeader(this.selected)
       this.throttleSearch()
     },
     updateCondition(property, operator, value) {
@@ -238,8 +246,10 @@ const FilterStore = new Vue({
       this.throttleSearch()
     },
     dispatchSearch() {
+      this.setHeader()
       this.setQuery()
       this.searchHandler(this.condition)
+      this.resetPage(false)
     },
     setQuery() {
       const query = {}
@@ -249,14 +259,24 @@ const FilterStore = new Vue({
           query[`${id}.${operator.replace('$', '')}`] = Array.isArray(value) ? value.join(',') : value
         }
       })
-      RouterQuery.set({
+
+      const allQuery = {
         filter: QS.stringify(query, { encode: false }),
         ip: QS.stringify(this.IP.text.trim().length ? this.IP : {}, { encode: false }),
         _t: Date.now()
-      })
+      }
+
+      // 在触发搜索的场景中会设置needResetPage为true，同时需要满足当前业务存在分页的场景
+      if (this.needResetPage && RouterQuery.get('page')) {
+        allQuery.page = 1
+      }
+
+      RouterQuery.set(allQuery)
     },
-    setHeader(newHeader) {
-      const header = newHeader.length ? newHeader : this.defaultHeader
+    setHeader() {
+      const suffixPropertyId = Object.keys(this.condition).filter(id => String(this.condition[id].value).trim().length)
+      const suffixProperties = this.properties.filter(property => suffixPropertyId.includes(String(property.id)))
+      const header = [...this.defaultHeader, ...suffixProperties]
       const presetId = ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
       // eslint-disable-next-line max-len
       const presetProperty = presetId.map(propertyId => this.properties.find(property => property.bk_property_id === propertyId))
@@ -312,7 +332,11 @@ const FilterStore = new Vue({
           exact: this.IP.exact ? 1 : 0,
           flag: flag.join('|')
         },
-        condition: Utils.transformCondition(this.condition, this.selected, this.header)
+        condition: Utils.transformCondition(
+          this.condition,
+          this.selected,
+          this.header.filter(property => !property?.isInject)
+        ),
       }
       if (transformedIP.condition) {
         const { condition } = params.condition.find(condition => condition.bk_obj_id === 'host')
@@ -368,7 +392,8 @@ const FilterStore = new Vue({
           bk_property_index: Infinity,
           bk_property_name: i18n.t('业务拓扑'),
           bk_property_type: 'topology',
-          required: true
+          required: true,
+          isInject: true // 表示属性为前端注入，仅在视图中使用，不需要传递给后台。
         })
         this.properties = [...properties, hostIdProperty, serviceTemplateProperty, topologyProperty]
       }
@@ -430,6 +455,9 @@ const FilterStore = new Vue({
         [this.userBehaviorKey]: properties.map(property => [property.bk_property_id, property.bk_obj_id])
       })
       return Promise.resolve()
+    },
+    resetPage(status = true) {
+      this.needResetPage = status
     }
   }
 })
@@ -454,11 +482,9 @@ export async function setupFilterStore(config = {}) {
   FilterStore.setupIPQuery()
   FilterStore.setupPropertyQuery()
   FilterStore.setupNormalProperty()
-  FilterStore.setupHeader()
+  FilterStore.setHeader()
   FilterStore.throttleSearch()
   return FilterStore
 }
-
-window.FilterStore = FilterStore
 
 export default FilterStore

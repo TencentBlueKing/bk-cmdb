@@ -22,7 +22,6 @@ module.exports = () => ({
       test: /\.vue$/,
       loader: 'vue-loader',
     },
-
     {
       test: /\.js$/,
       use: [
@@ -41,7 +40,7 @@ module.exports = () => ({
     },
 
     {
-      test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
+      test: /\.(png|jpe?g|gif|svg|webp)(\?.*)?$/,
       type: 'asset',
       generator: {
         filename: 'img/[name].[hash:7].[ext]'

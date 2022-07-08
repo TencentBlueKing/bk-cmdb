@@ -5,7 +5,17 @@ export const MENU_RESOURCE = 'menu_resource'
 export const MENU_MODEL = 'menu_model'
 export const MENU_ANALYSIS = 'menu_analysis'
 export const MENU_ADMIN = 'menu_admin'
+export const MENU_PLATFORM_MANAGEMENT = 'menu_platform_management'
+export const MENU_BUSINESS_SET = 'menu_business_set'
 
+/**
+ * 业务集消费视图
+ */
+export const MENU_BUSINESS_SET_TOPOLOGY = 'menu_business_set_topology'
+
+/**
+ * 业务
+ */
 export const MENU_BUSINESS_HOST = 'menu_business_host'
 export const MENU_BUSINESS_HOST_MANAGEMENT = 'menu_business_host_management'
 export const MENU_BUSINESS_SERVICE = 'menu_business_service'
@@ -20,6 +30,7 @@ export const MENU_BUSINESS_SET_TEMPLATE = 'menu_business_set_template'
 export const MENU_BUSINESS_HOST_APPLY = 'menu_business_host_apply'
 export const MENU_BUSINESS_HOST_APPLY_EDIT = 'menu_business_host_apply_edit'
 export const MENU_BUSINESS_HOST_APPLY_CONFIRM = 'menu_business_host_apply_confirm'
+export const MENU_BUSINESS_HOST_APPLY_RUN = 'menu_business_host_apply_run'
 export const MENU_BUSINESS_HOST_APPLY_CONFLICT = 'menu_business_host_apply_conflict'
 export const MENU_BUSINESS_HOST_APPLY_FAILED = 'menu_business_host_apply_failed'
 
@@ -27,6 +38,9 @@ export const MENU_BUSINESS_SERVICE_CATEGORY = 'menu_business_service_category'
 export const MENU_BUSINESS_CUSTOM_QUERY = 'menu_business_custom_query'
 export const MENU_BUSINESS_CUSTOM_FIELDS = 'menu_business_custom_fields'
 
+/**
+ * 资源
+ */
 export const MENU_RESOURCE_EVENTPUSH = 'menu_resource_eventpush'
 export const MENU_RESOURCE_MANAGEMENT = 'menu_resource_management'
 export const MENU_RESOURCE_BUSINESS = 'menu_resource_business'
@@ -36,25 +50,39 @@ export const MENU_RESOURCE_HOST = 'menu_resource_host'
 export const MENU_RESOURCE_INSTANCE = 'menu_resource_instance'
 export const MENU_RESOURCE_INSTANCE_DETAILS = 'menu_resource_instance_details'
 
+/**
+ * 模型
+ */
 export const MENU_MODEL_MANAGEMENT = 'menu_model_management'
 export const MENU_MODEL_TOPOLOGY = 'menu_model_topology'
 export const MENU_MODEL_TOPOLOGY_NEW = 'menu_model_topology_new'
 export const MENU_MODEL_BUSINESS_TOPOLOGY = 'menu_model_business_topology'
 export const MENU_MODEL_ASSOCIATION = 'menu_model_association'
+export const MENU_MODEL_DETAILS = 'menu_model_details'
 
+/**
+ * 运营分析
+ */
 export const MENU_ANALYSIS_AUDIT = 'menu_analysis_audit'
 export const MENU_ANALYSIS_OPERATION = 'menu_analysis_operation'
 export const MENU_ANALYSIS_STATISTICS = 'menu_analysis_statistics'
+
+/**
+ * 平台管理
+ */
+export const MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG = 'menu_platform_management_global_config'
 
 // 判断收藏的目录id
 export const MENU_RESOURCE_COLLECTION = 'menu_resource_collection'
 export const MENU_RESOURCE_HOST_COLLECTION = 'menu_resource_host_collection'
 export const MENU_RESOURCE_BUSINESS_COLLECTION = 'menu_resource_business_collection'
+export const MENU_RESOURCE_BUSINESS_SET_COLLECTION = 'menu_resource_business_set_collection'
 
 // 不同模式下不同资源的主机详情的id
 export const MENU_RESOURCE_HOST_DETAILS = 'menu_resource_host_details'
 export const MENU_RESOURCE_BUSINESS_HOST_DETAILS = 'menu_resource_business_host_details'
 export const MENU_BUSINESS_HOST_DETAILS = 'menu_business_host_details'
+export const MENU_BUSINESS_SET_HOST_DETAILS = 'menu_business_set_host_details'
 
 // 转移主机
 export const MENU_BUSINESS_TRANSFER_HOST = 'menu_business_transfer_host'
@@ -68,3 +96,7 @@ export const MENU_RESOURCE_CLOUD_AREA = 'menu_resource_cloud_area'
 export const MENU_RESOURCE_CLOUD_ACCOUNT = 'menu_resource_cloud_account'
 // 云资源发现
 export const MENU_RESOURCE_CLOUD_RESOURCE = 'menu_resource_cloud_resource'
+
+// 业务集资源实例
+export const MENU_RESOURCE_BUSINESS_SET = 'menu_resource_business_set'
+export const MENU_RESOURCE_BUSINESS_SET_DETAILS = 'menu_resource_set_business_details'

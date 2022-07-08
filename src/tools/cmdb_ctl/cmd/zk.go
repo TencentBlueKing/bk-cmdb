@@ -138,7 +138,8 @@ func runZkGetCmd(c *zkConf) error {
 	var pretty bytes.Buffer
 	err = json.Indent(&pretty, []byte(data), "", "\t")
 	if err != nil {
-		return err
+		fmt.Fprintln(os.Stdout, data)
+		return nil
 	}
 	fmt.Fprintln(os.Stdout, pretty.String())
 	return nil

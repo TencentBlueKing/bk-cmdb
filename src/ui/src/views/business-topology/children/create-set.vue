@@ -47,7 +47,7 @@
       </div>
     </div>
     <div class="node-create-options">
-      <bk-button theme="primary" class="mr10"
+      <bk-button theme="primary" class="mr10" v-test-id="'createSetSave'"
         :disabled="$loading() || errors.any()"
         @click="handleCreateSet">
         {{$t('提交')}}
@@ -124,7 +124,7 @@
           try {
             const data = await this.$store.dispatch('setTemplate/getSetTemplates', {
               bizId: this.business,
-              params: {},
+              params: { page: { sort: '-last_time' } },
               config: {
                 requestId: this.request.setTemplate
               }

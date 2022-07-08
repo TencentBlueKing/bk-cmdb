@@ -203,7 +203,10 @@ func (p *setTemplate) ListSetServiceTemplateRelations(ctx context.Context, heade
 	return ret.Data, nil
 }
 
-func (p *setTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder) {
+// ListSetTplRelatedSvcTpl search related about set template and service template
+func (p *setTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.Header, bizID int64,
+	setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder) {
+
 	ret := struct {
 		metadata.BaseResp
 		Data []metadata.ServiceTemplate `json:"data"`
@@ -218,140 +221,12 @@ func (p *setTemplate) ListSetTplRelatedSvcTpl(ctx context.Context, header http.H
 		Into(&ret)
 
 	if err != nil {
-		blog.Errorf("ListSetTplRelatedSvcTpl failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.CCError() != nil {
-		return nil, ret.CCError()
+
+	if ccErr := ret.CCError(); ccErr != nil {
+		return nil, ccErr
 	}
 
 	return ret.Data, nil
-}
-
-func (p *setTemplate) UpdateSetTemplateSyncStatus(ctx context.Context, header http.Header, setID int64, syncStatus metadata.SetTemplateSyncStatus) errors.CCErrorCoder {
-	ret := struct {
-		metadata.BaseResp
-	}{}
-	subPath := "/update/topo/set_template_sync_status/bk_set_id/%d"
-
-	err := p.client.Put().
-		WithContext(ctx).
-		Body(syncStatus).
-		SubResourcef(subPath, setID).
-		WithHeaders(header).
-		Do().
-		Into(&ret)
-
-	if err != nil {
-		blog.Errorf("UpdateSetTemplateSyncStatus failed, http request failed, err: %+v", err)
-		return errors.CCHttpError
-	}
-	if ret.CCError() != nil {
-		return ret.CCError()
-	}
-
-	return nil
-}
-
-func (p *setTemplate) DeleteSetTemplateSyncStatus(ctx context.Context, header http.Header, bizID int64, setIDs []int64) errors.CCErrorCoder {
-	ret := struct {
-		metadata.BaseResp
-	}{}
-	subPath := "/deletemany/topo/set_template_sync_status/bk_biz_id/%d"
-
-	option := metadata.DeleteSetTemplateSyncStatusOption{
-		SetIDs: setIDs,
-		BizID:  bizID,
-	}
-	err := p.client.Delete().
-		WithContext(ctx).
-		Body(option).
-		SubResourcef(subPath, bizID).
-		WithHeaders(header).
-		Do().
-		Into(&ret)
-
-	if err != nil {
-		blog.Errorf("DeleteSetTemplateSyncStatus failed, http request failed, err: %+v", err)
-		return errors.CCHttpError
-	}
-	if ret.CCError() != nil {
-		return ret.CCError()
-	}
-
-	return nil
-}
-
-func (p *setTemplate) ListSetTemplateSyncStatus(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
-	ret := struct {
-		metadata.BaseResp
-		Data metadata.MultipleSetTemplateSyncStatus
-	}{}
-	subPath := "/findmany/topo/set_template_sync_status/bk_biz_id/%d"
-
-	err := p.client.Post().
-		WithContext(ctx).
-		Body(option).
-		SubResourcef(subPath, bizID).
-		WithHeaders(header).
-		Do().
-		Into(&ret)
-
-	if err != nil {
-		blog.Errorf("ListSetTemplateSyncStatus failed, http request failed, err: %+v", err)
-		return ret.Data, errors.CCHttpError
-	}
-	if ret.CCError() != nil {
-		return ret.Data, ret.CCError()
-	}
-
-	return ret.Data, nil
-}
-
-func (p *setTemplate) ListSetTemplateSyncHistory(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateSyncStatusOption) (metadata.MultipleSetTemplateSyncStatus, errors.CCErrorCoder) {
-	ret := struct {
-		metadata.BaseResp
-		Data metadata.MultipleSetTemplateSyncStatus
-	}{}
-	subPath := "/findmany/topo/set_template_sync_history/bk_biz_id/%d"
-
-	err := p.client.Post().
-		WithContext(ctx).
-		Body(option).
-		SubResourcef(subPath, bizID).
-		WithHeaders(header).
-		Do().
-		Into(&ret)
-
-	if err != nil {
-		blog.Errorf("ListSetTemplateSyncHistory failed, http request failed, err: %+v", err)
-		return ret.Data, errors.CCHttpError
-	}
-	if ret.CCError() != nil {
-		return ret.Data, ret.CCError()
-	}
-
-	return ret.Data, nil
-}
-
-func (p *setTemplate) ModifySetTemplateSyncStatus(ctx context.Context, header http.Header, setID int64, syncStatus metadata.SyncStatus) errors.CCErrorCoder {
-	ret := struct {
-		metadata.BaseResp
-	}{}
-	subPath := "/update/topo/set_template_sync_status/bk_set_id/%d/status/%s"
-
-	err := p.client.Put().
-		WithContext(ctx).
-		Body(nil).
-		SubResourcef(subPath, setID, syncStatus).
-		WithHeaders(header).
-		Do().
-		Into(&ret)
-
-	if err != nil {
-		blog.Errorf("UpdateSetTemplateSyncStatus failed, http request failed, err: %+v", err)
-		return errors.CCHttpError
-	}
-
-	return ret.CCError()
 }

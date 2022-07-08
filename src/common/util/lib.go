@@ -23,7 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/xid"
 )
@@ -88,7 +88,12 @@ func ExtractOwnerFromContext(ctx context.Context) string {
 }
 
 func NewContextFromGinContext(c *gin.Context) context.Context {
-	return NewContextFromHTTPHeader(c.Request.Header)
+	header := c.Request.Header
+	ctx := c.Request.Context()
+	ctx = context.WithValue(ctx, common.ContextRequestIDField, GetHTTPCCRequestID(header))
+	ctx = context.WithValue(ctx, common.ContextRequestUserField, GetUser(header))
+	ctx = context.WithValue(ctx, common.ContextRequestOwnerField, GetOwnerID(header))
+	return ctx
 }
 
 func NewContextFromHTTPHeader(header http.Header) context.Context {
@@ -100,6 +105,35 @@ func NewContextFromHTTPHeader(header http.Header) context.Context {
 	ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
 	ctx = context.WithValue(ctx, common.ContextRequestOwnerField, owner)
 	return ctx
+}
+
+func NewHeaderFromContext(ctx context.Context) http.Header {
+	rid := ctx.Value(common.ContextRequestIDField)
+	ridValue, ok := rid.(string)
+	if !ok {
+		ridValue = GenerateRID()
+	}
+
+	user := ctx.Value(common.ContextRequestUserField)
+	userValue, ok := user.(string)
+	if !ok {
+		ridValue = "admin"
+	}
+
+	owner := ctx.Value(common.ContextRequestOwnerField)
+	ownerValue, ok := owner.(string)
+	if !ok {
+		ownerValue = common.BKDefaultOwnerID
+	}
+
+	header := make(http.Header)
+	header.Set(common.BKHTTPCCRequestID, ridValue)
+	header.Set(common.BKHTTPHeaderUser, userValue)
+	header.Set(common.BKHTTPOwnerID, ownerValue)
+
+	header.Add("Content-Type", "application/json")
+
+	return header
 }
 
 func BuildHeader(user string, supplierAccount string) http.Header {

@@ -29,14 +29,14 @@
           v-model="assign.curSelected"
           @selected="handleAssignHosts">
           <bk-option id="-1" :name="$t('分配到')" hidden></bk-option>
-          <bk-option id="toBusiness" :name="$t('业务空闲机')"></bk-option>
+          <bk-option id="toBusiness" :name="$t('业务空闲机', { idleSet: $store.state.globalConfig.config.set })"></bk-option>
           <bk-option id="toDirs" :name="$t('主机池其他目录')"></bk-option>
         </bk-select>
       </span>
       <cmdb-transfer-menu class="mr10" v-if="scope !== 1" />
       <cmdb-button-group
         class="mr10"
-        trigger-text="编辑"
+        :trigger-text="$t('编辑')"
         :buttons="editButtonGroup"
         :expand="false">
       </cmdb-button-group>
@@ -67,72 +67,6 @@
 
     <bk-sideslider
       v-transfer-dom
-      :is-show.sync="importInst.show"
-      :width="800"
-      :title="importInst.title">
-      <bk-tab :active.sync="importInst.active" type="unborder-card" slot="content"
-        v-if="importInst.show && importInst.type === 'new'">
-        <bk-tab-panel name="import" :label="$t('新增导入')">
-          <cmdb-import v-if="importInst.show && importInst.active === 'import'"
-            :template-url="importInst.templateUrl"
-            :import-url="importInst.importUrl"
-            :import-payload="importInst.payload"
-            :global-error="false"
-            :before-upload="handleBeforeUpload"
-            @error="handleImportError"
-            @success="handleImportSuccess"
-            @partialSuccess="handleImportSuccess">
-            <bk-form class="import-prepend" slot="prepend">
-              <bk-form-item :label="$t('主机池目录')" required>
-                <bk-select v-model="importInst.directory" searchable style="display: block;">
-                  <cmdb-auth-option v-for="directory in directoryList"
-                    :key="directory.bk_module_id"
-                    :id="directory.bk_module_id"
-                    :name="directory.bk_module_name"
-                    :auth="{ type: $OPERATION.C_RESOURCE_HOST, relation: [directory.bk_module_id] }">
-                  </cmdb-auth-option>
-                </bk-select>
-                <p class="form-item-tips" v-show="importInst.showTips && !importInst.directory">{{$t('请先选择主机池目录')}}</p>
-              </bk-form-item>
-            </bk-form>
-            <span slot="download-desc" style="display: inline-block;vertical-align: top;">
-              {{$t('说明：内网IP为必填列')}}
-            </span>
-            <div slot="uploadErrorMessage" class="upload-error-message" v-if="importInstError">{{importInstError}}</div>
-          </cmdb-import>
-        </bk-tab-panel>
-        <bk-tab-panel name="agent" :label="$t('Agent导入')">
-          <div class="automatic-import">
-            <img src="../../../assets/images/agent-import-guide.png">
-            <p class="agent-install-tips1">{{$t("agent安装说明")}}</p>
-            <p class="agent-install-tips2">{{$t("跳转节点管理，支持远程 / 手动安装")}}</p>
-            <bk-button class="agent-install-button" theme="primary" @click="openAgentApp">{{$t('跳转安装')}}</bk-button>
-          </div>
-        </bk-tab-panel>
-      </bk-tab>
-      <div slot="content" class="edit-import-panel" v-if="importInst.type === 'edit'">
-        <bk-alert class="alert" type="warning" :title="$t('请上传导出的主机表格文件')"></bk-alert>
-        <cmdb-import :template-url="importInst.templateUrl"
-          :import-url="importInst.importUrl"
-          :import-payload="importInst.payload"
-          :templdate-available="importInst.templdateAvailable"
-          :global-error="false"
-          @error="handleImportError"
-          @success="handleImportSuccess"
-          @partialSuccess="handleImportSuccess">
-          <span slot="successTips" slot-scope="{ success }">
-            {{$t('更新成功N个主机数据', { N: success.length })}}
-          </span>
-          <span slot="errorTips" slot-scope="{ error }">
-            {{$t('更新失败N个主机数据', { N: error.length })}}
-          </span>
-          <div slot="uploadErrorMessage" class="upload-error-message" v-if="importInstError">{{importInstError}}</div>
-        </cmdb-import>
-      </div>
-    </bk-sideslider>
-
-    <bk-sideslider
-      v-transfer-dom
       :is-show.sync="slider.show"
       :title="slider.title"
       :width="800"
@@ -142,7 +76,6 @@
           ref="multipleForm"
           :properties="properties.host"
           :property-groups="propertyGroups"
-          :object-unique="objectUnique"
           :save-auth="saveAuth"
           @on-submit="handleMultipleSave"
           @on-cancel="handleSliderBeforeClose">
@@ -208,6 +141,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
+  import { afterVerify } from '@/components/ui/auth/auth-queue.js'
   import cmdbImport from '@/components/import/import'
   import cmdbButtonGroup from '@/components/ui/other/button-group'
   import Bus from '@/utils/bus.js'
@@ -217,9 +151,8 @@
   import FilterForm from '@/components/filters/filter-form.js'
   import FilterFastSearch from '@/components/filters/filter-fast-search'
   import FilterStore from '@/components/filters/store'
-  import exportFields from '@/components/export-fields/export-fields.js'
   import FilterUtils from '@/components/filters/utils'
-  import batchExport from '@/components/batch-export/index.js'
+  import hostImportService from '@/service/host/import'
   export default {
     components: {
       cmdbImport,
@@ -230,27 +163,12 @@
     data() {
       return {
         scope: '',
-        importInst: {
-          title: '',
-          show: false,
-          active: 'import',
-          templateUrl: `${window.API_HOST}importtemplate/host`,
-          importUrl: '',
-          templdateAvailable: true,
-          directory: '',
-          payload: {},
-          error: null,
-          showTips: false
-        },
         businessList: [],
-        objectUnique: [],
         slider: {
           show: false,
           title: '',
           component: null,
-          request: {
-            objectUnique: Symbol('objectUnique')
-          }
+          request: {}
         },
         assign: {
           show: false,
@@ -258,7 +176,7 @@
           curSelected: '-1',
           placeholder: this.$t('请选择xx', { name: this.$t('业务') }),
           label: this.$t('业务列表'),
-          title: this.$t('分配到业务空闲机'),
+          title: this.$t('分配到业务空闲机', { idleSet: this.$store.state.globalConfig.config.set }),
           requestId: Symbol('assignHosts')
         },
         assignOptions: [],
@@ -279,6 +197,9 @@
       },
       table() {
         return this.$parent.table
+      },
+      tableHeaderPropertyIdList() {
+        return this.$parent.tableHeader.map(item => item.bk_property_id)
       },
       isAllResourceHost() {
         return this.table.selection.every(({ biz }) => {
@@ -386,6 +307,13 @@
       'importInst.active'() {
         this.importInst.error = null
         this.importInst.showTips = false
+      },
+      '$route.query'(query, prev) {
+        // 高级筛选自动打开面板，首次进入时无_t参数
+        // eslint-disable-next-line no-underscore-dangle
+        if (!prev._t && query.adv) {
+          FilterForm.show()
+        }
       }
     },
     async created() {
@@ -412,6 +340,11 @@
         } finally {
           HostStore.setBusinessList(this.businessList)
         }
+      },
+      sortBusinessByAuth(authData) {
+        const list = this.businessList.map((item, index) => ({ ...item, is_pass: authData[index]?.is_pass }))
+        list.sort((itemA, itemB) => itemB?.is_pass - itemA?.is_pass)
+        this.businessList = list
       },
       openAgentApp() {
         const { agent } = window.Site
@@ -449,7 +382,16 @@
         if (id === 'toBusiness') {
           this.assign.placeholder = this.$t('请选择xx', { name: this.$t('业务') })
           this.assign.label = this.$t('业务列表')
-          this.assign.title = this.$t('分配到业务空闲机')
+          this.assign.title = this.$t('分配到业务空闲机', { idleSet: this.$store.state.globalConfig.config.set })
+
+          // 必要的setTimeout，因依赖dialog显示并且auth完成后
+          setTimeout(() => {
+            afterVerify((authData) => {
+              this.sortBusinessByAuth(authData)
+              // 使用排序后的业务列表更新列表选项
+              this.setAssignOptions(directoryId)
+            })
+          }, 0)
         } else {
           this.assign.placeholder = this.$t('请选择xx', { name: this.$t('目录') })
           this.assign.label = this.$t('目录列表')
@@ -464,7 +406,7 @@
           this.assignOptions = this.businessList.map(item => ({
             id: item.bk_biz_id,
             name: `[${item.bk_biz_id}] ${item.bk_biz_name}`,
-            disabled: true,
+            disabled: !item?.is_pass ?? true,
             auth: {
               type: this.$OPERATION.TRANSFER_HOST_TO_BIZ,
               relation: [[[directoryId], [item.bk_biz_id]]]
@@ -540,7 +482,7 @@
       handleCopy(property) {
         const copyText = this.table.selection.map((data) => {
           const modelId = property.bk_obj_id
-          const [modelData] = Array.isArray(data[modelId]) ? data[modelId] : [data[modelId]]
+          const modelData = data[modelId]
           if (property.id === this.IPWithCloudSymbol) {
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
@@ -548,10 +490,14 @@
           }
           if (property.bk_property_type === 'topology') {
             // eslint-disable-next-line no-underscore-dangle
-            return data.__bk_host_topology__.join(',').replace(/\s\/\s/g, '')
+            return data.__bk_host_topology__.join(',')
           }
-          const value = modelData[property.bk_property_id]
-          return this.$tools.getPropertyCopyValue(value, property)
+          const propertyId = property.bk_property_id
+          if (Array.isArray(modelData)) {
+            const value = modelData.map(item => this.$tools.getPropertyCopyValue(item[propertyId], property))
+            return value.join(',')
+          }
+          return this.$tools.getPropertyCopyValue(modelData[propertyId], property)
         })
         this.$copyText(copyText.join('\n')).then(() => {
           this.$success(this.$t('复制成功'))
@@ -562,13 +508,6 @@
       async handleMultipleEdit() {
         this.slider.title = this.$t('主机属性')
         this.slider.show = true
-        this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
-          objId: 'host',
-          params: {},
-          config: {
-            requestId: this.slider.request.objectUnique
-          }
-        })
         setTimeout(() => {
           this.slider.component = 'cmdb-form-multiple'
         }, 200)
@@ -630,62 +569,67 @@
         this.slider.component = null
       },
       async exportField() {
-        exportFields.show({
+        const useExport = await import('@/components/export-file')
+        useExport.default({
           title: this.$t('导出选中'),
-          properties: FilterStore.getModelProperties('host'),
-          propertyGroups: FilterStore.propertyGroups,
-          handler: this.exportHanlder
-        })
-      },
-      async exportHanlder(properties) {
-        const formData = new FormData()
-        formData.append('bk_biz_id', -1)
-        formData.append('bk_host_id', this.table.selection.map(({ host }) => host.bk_host_id).join(','))
-        formData.append('export_custom_fields', properties.map(property => property.bk_property_id))
-        try {
-          this.$store.commit('setGlobalLoading', true)
-          await this.$http.download({
-            url: `${window.API_HOST}hosts/export`,
-            method: 'post',
-            data: formData
-          })
-        } catch (error) {
-          console.error(error)
-        } finally {
-          this.$store.commit('setGlobalLoading', false)
-        }
-      },
-      async batchExportField() {
-        exportFields.show({
-          title: this.$t('导出全部'),
-          properties: FilterStore.getModelProperties('host'),
-          propertyGroups: FilterStore.propertyGroups,
-          handler: this.batchExportHandler
-        })
-      },
-      batchExportHandler(properties) {
-        batchExport({
-          name: 'host',
-          count: this.table.pagination.count,
-          options: (page) => {
-            const condition = this.$parent.getParams()
-            const formData = new FormData()
-            formData.append('bk_biz_id', -1)
-            formData.append('export_custom_fields', properties.map(property => property.bk_property_id))
-            formData.append('export_condition', JSON.stringify({
-              ...condition,
-              page: {
-                ...page,
-                sort: 'bk_host_id'
-              }
-            }))
-            return {
+          bk_obj_id: 'host',
+          presetFields: ['bk_cloud_id', 'bk_host_innerip'],
+          defaultSelectedFields: this.tableHeaderPropertyIdList,
+          count: this.table.selection.length,
+          submit: (state, task) => {
+            const { fields, exportRelation  } = state
+            const params = {
+              export_custom_fields: fields.value.map(property => property.bk_property_id),
+              bk_host_ids: this.table.selection.map(({ host }) => host.bk_host_id)
+            }
+            if (exportRelation.value) {
+              params.object_unique_id = state.object_unique_id.value
+              params.association_condition = state.relations.value
+            }
+            return this.$http.download({
               url: `${window.API_HOST}hosts/export`,
               method: 'post',
-              data: formData
-            }
+              name: task.current.value.name,
+              data: params
+            })
           }
-        })
+        }).show()
+      },
+      async batchExportField() {
+        const useExport = await import('@/components/export-file')
+        useExport.default({
+          title: this.$t('导出全部'),
+          bk_biz_id: this.bizId,
+          bk_obj_id: 'host',
+          presetFields: ['bk_cloud_id', 'bk_host_innerip'],
+          defaultSelectedFields: this.tableHeaderPropertyIdList,
+          count: this.table.pagination.count,
+          submit: (state, task) => {
+            const { fields, exportRelation  } = state
+            const exportCondition = this.$parent.getParams()
+            const params = {
+              export_custom_fields: fields.value.map(property => property.bk_property_id),
+              bk_biz_id: this.bizId,
+              export_condition: {
+                ...exportCondition,
+                page: {
+                  ...task.current.value.page,
+                  sort: 'bk_host_id'
+                }
+              }
+            }
+            if (exportRelation.value) {
+              params.object_unique_id = state.object_unique_id.value
+              params.association_condition = state.relations.value
+            }
+            return this.$http.download({
+              url: `${window.API_HOST}hosts/export`,
+              method: 'post',
+              name: task.current.value.name,
+              data: params
+            })
+          }
+        }).show()
       },
       routeToHistory() {
         this.$routerActions.redirect({
@@ -696,38 +640,51 @@
       handleSetFilters() {
         FilterForm.show()
       },
-      handleNewImportInst() {
-        this.importInst.type = 'new'
-        this.importInst.show = true
-        this.importInst.title = this.$t('导入主机')
-        this.importInst.importUrl = `${window.API_HOST}hosts/import`
-        this.importInst.templdateAvailable = true
+      async handleNewImportInst() {
+        const useImport = await import('@/components/import-file')
+        const [, { show: showImport, setState: setImportState }] = useImport.default()
+        setImportState({
+          title: this.$t('导入主机'),
+          bk_obj_id: 'host',
+          template: `${window.API_HOST}importtemplate/host`,
+          fileTips: `${this.$t('导入文件大小提示')},${this.$t('主机导入文件提示')}`,
+          submit: (options) => {
+            const params = {
+              op: options.step
+            }
+            if (options.importRelation) {
+              params.object_unique_id = options.object_unique_id
+              params.association_condition = options.relations
+            }
+            return hostImportService.create({ file: options.file, params, config: options.config })
+          },
+          success: () => {
+            RouterQuery.set({ _t: Date.now() })
+            Bus.$emit('refresh-dir-count')
+          }
+        })
+        showImport()
       },
-      handleEditImportInst() {
-        this.importInst.type = 'edit'
-        this.importInst.show = true
-        this.importInst.title = this.$t('导入编辑')
-        this.importInst.importUrl = `${window.API_HOST}hosts/update`
-        this.importInst.templdateAvailable = false
-        this.importInst.payload = {
-          // 资源池约定为0
-          bk_biz_id: 0
-        }
-      },
-      handleImportSuccess() {
-        this.$parent.getHostList(true)
-        Bus.$emit('refresh-dir-count')
-        this.importInst.error = null
-      },
-      handleImportError(error) {
-        this.importInst.error = error
-      },
-      handleBeforeUpload() {
-        this.importInst.showTips = false
-        if (!this.importInst.directory) {
-          this.importInst.showTips = true
-          return false
-        }
+      async handleEditImportInst() {
+        const useImport = await import('@/components/import-file')
+        const [, { show: showImport, setState: setImportState }] = useImport.default()
+        setImportState({
+          title: this.$t('导入编辑'),
+          bk_obj_id: 'host',
+          fileTips: `${this.$t('导入文件大小提示')},${this.$t('主机导入文件提示')}`,
+          submit: (options) => {
+            const params = {
+              op: options.step
+            }
+            if (options.importRelation) {
+              params.object_unique_id = options.object_unique_id
+              params.association_condition = options.relations
+            }
+            return hostImportService.update({ file: options.file, params, config: options.config })
+          },
+          success: () => RouterQuery.set({ _t: Date.now() })
+        })
+        showImport()
       }
     }
   }

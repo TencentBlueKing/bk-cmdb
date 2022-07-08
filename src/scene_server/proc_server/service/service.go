@@ -26,19 +26,17 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
+	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
-	"configcenter/src/thirdparty/esbserver"
-	"configcenter/src/thirdparty/esbserver/esbutil"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 type ProcServer struct {
 	*backbone.Engine
-	EsbConfigChn       chan esbutil.EsbConfig
 	Config             *options.Config
-	EsbSrv             esbserver.EsbClientInterface
 	procHostInstConfig logics.ProcHostInstConfig
 	ConfigMap          map[string]string
 	AuthManager        *extensions.AuthManager
@@ -60,11 +58,16 @@ func (ps *ProcServer) WebService() *restful.Container {
 
 	ps.newProcessService(api)
 	container := restful.NewContainer()
+
+	opentelemetry.AddOtlpFilter(container)
+
 	container.Add(api)
 
-	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
-	healthzAPI.Route(healthzAPI.GET("/healthz").To(ps.Healthz))
-	container.Add(healthzAPI)
+	// common api
+	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	commonAPI.Route(commonAPI.GET("/healthz").To(ps.Healthz))
+	commonAPI.Route(commonAPI.GET("/version").To(restfulservice.Version))
+	container.Add(commonAPI)
 
 	return container
 }
@@ -85,12 +88,34 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	// service template
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_template", Handler: ps.CreateServiceTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_template", Handler: ps.UpdateServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path:    "/updatemany/proc/service_template/host_apply_enable_status/biz/{bk_biz_id}",
+		Handler: ps.UpdateServiceTemplateHostApplyEnableStatus})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path:    "/deletemany/proc/service_template/host_apply_rule/biz/{bk_biz_id}",
+		Handler: ps.DeleteHostApplyRule})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/findmany/proc/service_template/host_apply_plan/status",
+		Handler: ps.GetHostApplyTaskStatus})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/updatemany/proc/service_template/host_apply_plan/run",
+		Handler: ps.UpdateServiceTemplateHostApplyRule})
+
+	// task Execute asynchronous service template host automation application tasks.
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/updatemany/service_template/host_apply_plan/task",
+		Handler: ps.ExecServiceTemplateHostApplyRule})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_template/{service_template_id}", Handler: ps.GetServiceTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_template/{service_template_id}/detail", Handler: ps.GetServiceTemplateDetail})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_template", Handler: ps.ListServiceTemplates})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_template", Handler: ps.DeleteServiceTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_template/count_info/biz/{bk_biz_id}", Handler: ps.FindServiceTemplateCountInfo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_template/sync_status/biz/{bk_biz_id}", Handler: ps.GetServiceTemplateSyncStatus})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/proc/service_template/host_apply_rule_related",
+		Handler: ps.SearchRuleRelatedServiceTemplates})
 
 	// process template
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/proc_template", Handler: ps.CreateProcessTemplateBatch})
@@ -101,7 +126,8 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 
 	// service instance
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance", Handler: ps.CreateServiceInstances})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance/preview", Handler: ps.CreateServiceInstancesPreview})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/host/with_no_service_instance",
+		Handler: ps.SearchHostWithNoServiceInstance})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance", Handler: ps.SearchServiceInstancesInModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/web/service_instance", Handler: ps.SearchServiceInstancesInModuleWeb})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service/set_template/list_service_instance/biz/{bk_biz_id}", Handler: ps.SearchServiceInstancesBySetTemplate})
@@ -110,11 +136,30 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/details", Handler: ps.ListServiceInstancesDetails})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/proc/service_instance/biz/{bk_biz_id}", Handler: ps.UpdateServiceInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/service_instance", Handler: ps.DeleteServiceInstance})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/deletemany/proc/service_instance/preview", Handler: ps.DeleteServiceInstancePreview})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/proc/service_instance/difference", Handler: ps.DiffServiceInstanceWithTemplate})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/proc/service_template/general_difference",
+		Handler: ps.DiffServiceTemplateGeneral})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/proc/difference/service_instances",
+		Handler: ps.ListDiffServiceInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/proc/service_instance/difference_detail",
+		Handler: ps.DiffServiceInstanceDetail})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_instance/sync", Handler: ps.SyncServiceInstanceByTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/findmany/proc/service_template_sync_status/bk_biz_id/{bk_biz_id}",
+		Handler: ps.FindServiceTemplateSyncStatus})
+
+	// deprecated,  only for old api
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/service_instance/labels", Handler: ps.ServiceInstanceAddLabels})
+
+	// deprecated,  only for old api
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/service_instance/labels", Handler: ps.ServiceInstanceRemoveLabels})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/updatemany/proc/service_instance/labels",
+		Handler: ps.ServiceInstanceUpdateLabels})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/labels/aggregation", Handler: ps.ServiceInstanceLabelsAggregation})
 
 	// process instance
@@ -130,6 +175,57 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 
 	// module
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/template_binding_on_module", Handler: ps.RemoveTemplateBindingOnModule})
+
+	// task
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/service_instance/task",
+		Handler: ps.DoSyncServiceInstanceTask})
+
+	// search process related resources by biz set, with the same logic of corresponding biz interface, **only for ui**
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}/service_template/sync_status",
+		Handler: ps.GetServiceTemplateSyncStatus,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/biz_set/{bk_biz_set_id}/proc_template",
+		Handler: ps.ListProcessTemplate,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/web/biz_set/{bk_biz_set_id}/service_instance",
+		Handler: ps.SearchServiceInstancesInModuleWeb,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/biz_set/{bk_biz_set_id}/service_instance/labels/aggregation",
+		Handler: ps.ServiceInstanceLabelsAggregation,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/biz_set/{bk_biz_set_id}/process_instance/name_ids",
+		Handler: ps.ListProcessInstancesNameIDsInModule,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/biz_set/{bk_biz_set_id}/process_instance",
+		Handler: ps.ListProcessInstances,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/biz_set/{bk_biz_set_id}/process_instance/detail/by_ids",
+		Handler: ps.ListProcessInstancesDetailsByIDs,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/find/proc/biz_set/{bk_biz_set_id}/proc_template/id/{processTemplateID}",
+		Handler: ps.GetProcessTemplate,
+	})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/findmany/proc/web/biz_set/{bk_biz_set_id}/service_instance/with_host",
+		Handler: ps.ListServiceInstancesWithHostWeb,
+	})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -180,15 +276,6 @@ func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 }
 
 func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig) {
-	esbAddr, addrErr := cfnc.String("procServer.esb.addr")
-	esbAppCode, appCodeErr := cfnc.String("procServer.esb.appCode")
-	esbAppSecret, appSecretErr := cfnc.String("procServer.esb.appSecret")
-	if addrErr == nil && appCodeErr == nil && appSecretErr == nil {
-		go func() {
-			ps.EsbConfigChn <- esbutil.EsbConfig{Addrs: esbAddr, AppCode: esbAppCode, AppSecret: esbAppSecret}
-		}()
-	}
-
 	ps.Config = &options.Config{}
 
 	hostInstPrefix := "procServer.host-instance"

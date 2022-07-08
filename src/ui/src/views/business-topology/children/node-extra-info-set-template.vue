@@ -8,7 +8,7 @@
           <span class="text link">{{template.name}}</span>
           <i class="icon-cc-share"></i>
         </div>
-        <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [bizId] }">
+        <cmdb-auth v-if="!isBizSet" :auth="{ type: $OPERATION.U_TOPO, relation: [bizId] }">
           <bk-button slot-scope="{ disabled }"
             :class="['sync-set-btn', 'ml5', { 'has-change': hasChange }]"
             :disabled="!hasChange || disabled"
@@ -23,7 +23,7 @@
 </template>
 
 <script>
-  import { mapGetters } from 'vuex'
+  import { MENU_BUSINESS_SET_TOPOLOGY } from '@/dictionary/menu-symbol'
   export default {
     name: 'set-template-info',
     props: {
@@ -39,7 +39,16 @@
       }
     },
     computed: {
-      ...mapGetters('objectBiz', ['bizId'])
+      isBizSet() {
+        return this.$route.name === MENU_BUSINESS_SET_TOPOLOGY
+      },
+      bizId() {
+        const { objectBiz, bizSet } = this.$store.state
+        return this.isBizSet ? bizSet.bizId : objectBiz.bizId
+      },
+      selectedNode() {
+        return this.$store.state.businessHost.selectedNode
+      }
     },
     watch: {
       instance: {

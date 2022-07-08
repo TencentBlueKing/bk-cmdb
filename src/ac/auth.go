@@ -18,6 +18,7 @@ import (
 	"errors"
 	"net/http"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/types"
@@ -26,7 +27,22 @@ import (
 var NoAuthorizeError = errors.New("no authorize")
 
 type AuthInterface interface {
-	RegisterSystem(ctx context.Context, host string) error
+	// RegisterSystem register CMDB system to IAM
+	RegisterSystem(ctx context.Context, host string, objects []metadata.Object) error
+	// SyncIAMSysInstances sync system instances between CMDB and IAM
+	SyncIAMSysInstances(ctx context.Context, objects []metadata.Object) error
+	// DeleteCMDBResource delete unnecessary CMDB resource from IAM
+	DeleteCMDBResource(ctx context.Context, param *iam.DeleteCMDBResourceParam, objects []metadata.Object) error
+}
+
+// Viewer is a interface to operate iam view
+type Viewer interface {
+	// CreateView create iam view for objects
+	CreateView(ctx context.Context, header http.Header, objects []metadata.Object) error
+	// DeleteView delete iam view for objects
+	DeleteView(ctx context.Context, header http.Header, objects []metadata.Object) error
+	// UpdateView update iam view for objects
+	UpdateView(ctx context.Context, header http.Header, objects []metadata.Object) error
 }
 
 type AuthorizeInterface interface {
@@ -36,12 +52,12 @@ type AuthorizeInterface interface {
 	AuthorizeAnyBatch(ctx context.Context, h http.Header, user meta.UserInfo, resources ...meta.ResourceAttribute) (
 		[]types.Decision, error)
 
-	ListAuthorizedResources(ctx context.Context, h http.Header, input meta.ListAuthorizedResourcesParam) ([]string, error)
+	ListAuthorizedResources(ctx context.Context, h http.Header, input meta.ListAuthorizedResourcesParam) (
+		*types.AuthorizeList, error)
 	GetNoAuthSkipUrl(ctx context.Context, h http.Header, input *metadata.IamPermission) (string, error)
 	GetPermissionToApply(ctx context.Context, h http.Header, input []meta.ResourceAttribute) (*metadata.IamPermission, error)
 	RegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstanceWithCreator) (
 		[]metadata.IamCreatorActionPolicy, error)
-
 	BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstancesWithCreator) (
 		[]metadata.IamCreatorActionPolicy, error)
 }

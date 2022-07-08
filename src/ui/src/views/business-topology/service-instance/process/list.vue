@@ -1,5 +1,5 @@
 <template>
-  <bk-table class="process-table" ref="processTable"
+  <bk-table class="process-table" ref="processTable" v-test-id.businessHostAndService="'processList'"
     v-bkloading="{ isLoading: $loading(request.getProcessList) }"
     row-class-name="process-table-row"
     :data="list"
@@ -13,6 +13,7 @@
       <div slot-scope="{ row }" v-bkloading="{ isLoading: row.pending }">
         <expand-list
           :process="row"
+          :list-request="instanceListRequest"
           @resolved="handleExpandResolved(row, ...arguments)">
         </expand-list>
       </div>
@@ -105,8 +106,15 @@
           Bus.$emit('process-list-change')
         }
       },
+      instanceListRequest(reqParams, reqConfig) {
+        return this.$store.dispatch('serviceInstance/getProcessListById', {
+          params: reqParams,
+          config: reqConfig,
+        }).then(({ info }) => info)
+      },
       handlePageChange(page) {
         RouterQuery.set({
+          node: this.selectedNode.id,
           page,
           _t: Date.now()
         })

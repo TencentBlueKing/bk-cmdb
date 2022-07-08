@@ -27,7 +27,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/common/zkclient"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 type Limiter struct {

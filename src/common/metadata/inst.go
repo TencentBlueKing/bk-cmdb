@@ -13,12 +13,9 @@
 package metadata
 
 import (
-	"encoding/json"
-	"sort"
-
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/util"
+	"configcenter/src/common/mapstr"
 )
 
 // SetInst contains partial fields of a real set
@@ -35,13 +32,12 @@ type SetInst struct {
 	CreateTime      Time   `field:"create_time" json:"create_time,omitempty" bson:"create_time" mapstructure:"create_time"`
 	LastTime        Time   `field:"last_time" json:"last_time,omitempty" bson:"last_time" mapstructure:"last_time"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
-
-	SetTemplateVersion int64 `bson:"set_template_version" json:"set_template_version" mapstructure:"set_template_version"`
 }
 
 // ModuleInst contains partial fields of a real module
 type ModuleInst struct {
 	BizID             int64  `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id" mapstructure:"bk_biz_id"`
+	SetID             int64  `bson:"bk_set_id" json:"bk_set_id" field:"bk_set_id" mapstructure:"bk_set_id"`
 	ModuleID          int64  `bson:"bk_module_id" json:"bk_module_id" field:"bk_module_id" mapstructure:"bk_module_id"`
 	ModuleName        string `bson:"bk_module_name" json:"bk_module_name" field:"bk_module_name" mapstructure:"bk_module_name"`
 	SupplierAccount   string `bson:"bk_supplier_account" json:"bk_supplier_account" field:"bk_supplier_account" mapstructure:"bk_supplier_account"`
@@ -51,6 +47,9 @@ type ModuleInst struct {
 	SetTemplateID     int64  `bson:"set_template_id" json:"set_template_id" field:"set_template_id" mapstructure:"set_template_id"`
 	Default           int64  `bson:"default" json:"default" field:"default" mapstructure:"default"`
 	HostApplyEnabled  bool   `bson:"host_apply_enabled" json:"host_apply_enabled" field:"host_apply_enabled" mapstructure:"host_apply_enabled"`
+	Creator           string `bson:"creator" json:"creator" field:"creator" mapstructure:"creator"`
+	CreateTime        Time   `bson:"create_time" json:"create_time"`
+	LastTime          Time   `bson:"last_time" json:"last_time"`
 }
 
 type BizInst struct {
@@ -62,6 +61,19 @@ type BizInst struct {
 type BizBasicInfo struct {
 	BizID   int64  `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id" mapstructure:"bk_biz_id"`
 	BizName string `bson:"bk_biz_name" json:"bk_biz_name" field:"bk_biz_name" mapstructure:"bk_biz_name"`
+}
+
+// BizSetInst biz set structure with pre-defined properties
+type BizSetInst struct {
+	BizSetID         int64       `json:"bk_biz_set_id" bson:"bk_biz_set_id"`
+	BizSetName       string      `json:"bk_biz_set_name" bson:"bk_biz_set_name"`
+	Description      string      `json:"description" bson:"description"`
+	BizSetMaintainer string      `json:"biz_set_maintainer" bson:"biz_set_maintainer"`
+	CreateTime       Time        `json:"create_time" bson:"create_time"`
+	LastTime         Time        `json:"last_time" bson:"last_time"`
+	SupplierAccount  string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Scope            BizSetScope `json:"bk_scope" bson:"bk_scope"`
+	Default          int64       `json:"default" bson:"default"`
 }
 
 type CloudInst struct {
@@ -80,25 +92,13 @@ type ProcessInst struct {
 }
 
 type HostIdentifier struct {
-	HostID          int64                       `json:"bk_host_id" bson:"bk_host_id"`           // 主机ID(host_id)								数字
-	HostName        string                      `json:"bk_host_name" bson:"bk_host_name"`       // 主机名称
-	SupplierAccount string                      `json:"bk_supplier_account"`                    // 开发商帐号（bk_supplier_account）	数字
-	CloudID         int64                       `json:"bk_cloud_id" bson:"bk_cloud_id"`         // 所属云区域id(bk_cloud_id)				数字
-	CloudName       string                      `json:"bk_cloud_name" bson:"bk_cloud_name"`     // 所属云区域名称(bk_cloud_name)		字符串（最大长度25）
-	InnerIP         StringArrayToString         `json:"bk_host_innerip" bson:"bk_host_innerip"` // 内网IP
-	OuterIP         StringArrayToString         `json:"bk_host_outerip" bson:"bk_host_outerip"` // 外网IP
-	OSType          string                      `json:"bk_os_type" bson:"bk_os_type"`           // 操作系统类型
-	OSName          string                      `json:"bk_os_name" bson:"bk_os_name"`           // 操作系统名称
-	Memory          int64                       `json:"bk_mem" bson:"bk_mem"`                   // 内存容量
-	CPU             int64                       `json:"bk_cpu" bson:"bk_cpu"`                   // CPU逻辑核心数
-	Disk            int64                       `json:"bk_disk" bson:"bk_disk"`                 // 磁盘容量
+	HostID          int64                       `json:"bk_host_id" bson:"bk_host_id"`
+	CloudID         int64                       `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	InnerIP         StringArrayToString         `json:"bk_host_innerip" bson:"bk_host_innerip"`
+	OSType          string                      `json:"bk_os_type" bson:"bk_os_type"`
+	SupplierAccount string                      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	HostIdentModule map[string]*HostIdentModule `json:"associations" bson:"associations"`
 	Process         []HostIdentProcess          `json:"process" bson:"process"`
-}
-
-func (identifier *HostIdentifier) MarshalBinary() (data []byte, err error) {
-	sort.Sort(HostIdentProcessSorter(identifier.Process))
-	return json.Marshal(identifier)
 }
 
 type HostIdentProcess struct {
@@ -109,36 +109,21 @@ type HostIdentProcess struct {
 	// deprecated  后续的版本会被废弃掉
 	Port string `json:"port" bson:"port"` // 端口, 单个端口："8080", 多个连续端口："8080-8089", 多个不连续端口："8080-8089,8199"
 	// deprecated  后续的版本会被废弃掉
-	Protocol        string  `json:"protocol" bson:"protocol"`                         // 协议, 枚举: [{ID: "1", Name: "TCP"}, {ID: "2", Name: "UDP"}],
-	FuncName        string  `json:"bk_func_name" bson:"bk_func_name"`                 // 功能名称
-	StartParamRegex string  `json:"bk_start_param_regex" bson:"bk_start_param_regex"` // 启动参数匹配规则
-	BindModules     []int64 `json:"bind_modules" bson:"bind_modules"`                 // 进程绑定的模块ID，数字数组
+	Protocol        string `json:"protocol" bson:"protocol"`                         // 协议, 枚举: [{ID: "1", Name: "TCP"}, {ID: "2", Name: "UDP"}],
+	FuncName        string `json:"bk_func_name" bson:"bk_func_name"`                 // 功能名称
+	StartParamRegex string `json:"bk_start_param_regex" bson:"bk_start_param_regex"` // 启动参数匹配规则
 	// deprecated  后续的版本会被废弃掉
 	PortEnable bool `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
 	// BindInfo 进程绑定信息
 	BindInfo []ProcBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info"`
 }
 
-type HostIdentProcessSorter []HostIdentProcess
-
-func (p HostIdentProcessSorter) Len() int      { return len(p) }
-func (p HostIdentProcessSorter) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
-func (p HostIdentProcessSorter) Less(i, j int) bool {
-	sort.Sort(util.Int64Slice(p[i].BindModules))
-	return p[i].ProcessID < p[j].ProcessID
-}
-
 // HostIdentModule HostIdentifier module define
 type HostIdentModule struct {
-	BizID      int64  `json:"bk_biz_id"`         // 业务ID
-	BizName    string `json:"bk_biz_name"`       // 业务名称
-	SetID      int64  `json:"bk_set_id"`         // 所属集群(bk_set_id)：						数字
-	SetName    string `json:"bk_set_name"`       // 所属集群名称(bk_set_name)：			字符串（最大长度25）
-	ModuleID   int64  `json:"bk_module_id"`      // 所属模块(bk_module_id)：				数字
-	ModuleName string `json:"bk_module_name"`    // 所属模块(bk_module_name)：			字符串（最大长度25）
-	SetStatus  string `json:"bk_service_status"` // 集群服务状态（bk_set_status）			数字
-	SetEnv     string `json:"bk_set_env"`        // 环境类型（bk_set_type）					数字
-	Layer      *Layer `json:"layer"`             // 自定义层级
+	BizID    int64  `json:"bk_biz_id"`    // 业务ID
+	SetID    int64  `json:"bk_set_id"`    // 所属集群(bk_set_id)
+	ModuleID int64  `json:"bk_module_id"` // 所属模块(bk_module_id)
+	Layer    *Layer `json:"layer"`        // 自定义层级
 }
 
 type Layer struct {
@@ -189,6 +174,29 @@ type SearchInstsNamesOption struct {
 	Name  string `json:"name"`
 }
 
+// UpdateBizPropertyBatchParameter batch update business properties parameter
+/* e.g.:
+{
+    "properties":{
+      "bk_biz_developer":"developer",
+      "bk_biz_maintainer": "maintainer",
+      "bk_biz_name":"biz_test",
+      "bk_biz_productor": "productor",
+      "bk_biz_tester":"tester",
+      "operator": "operator"
+    },
+    "condition": {
+        "bk_biz_id": {"$in": [3,4]}"
+    }
+}
+*/
+type UpdateBizPropertyBatchParameter struct {
+	// Properties is business property keys and values to be updated
+	Properties map[string]interface{} `json:"properties"`
+	// Condition is business property update condition
+	Condition map[string]interface{} `json:"condition"`
+}
+
 var ObjsForSearchName = map[string]bool{
 	common.BKInnerObjIDSet:    true,
 	common.BKInnerObjIDModule: true,
@@ -218,4 +226,76 @@ func (o *SearchInstsNamesOption) Validate() (rawError errors.RawErrorInfo) {
 	}
 
 	return errors.RawErrorInfo{}
+}
+
+//CreateManyCommInst parameters for creating multiple instances
+type CreateManyCommInst struct {
+	ObjID   string          `json:"bk_obj_id"`
+	Details []mapstr.MapStr `json:"details"`
+}
+
+//CreateManyCommInstResult result of creating multiple instances
+type CreateManyCommInstResult struct {
+	BaseResp `json:",inline"`
+	Data     CreateManyCommInstResultDetail `json:"data"`
+}
+
+//CreateManyCommInstResultDetail details of CreateManyInstancesResult
+type CreateManyCommInstResultDetail struct {
+	SuccessCreated map[int64]int64  `json:"success_created"`
+	Error          map[int64]string `json:"error_msg"`
+}
+
+func NewManyCommInstResultDetail() *CreateManyCommInstResultDetail {
+	return &CreateManyCommInstResultDetail{
+		SuccessCreated: make(map[int64]int64, 0),
+		Error:          make(map[int64]string, 0),
+	}
+}
+
+// InstBatchInfo info struct of batch create or update inst
+type InstBatchInfo struct {
+	// BatchInfo batch info
+	// map[rownumber]map[property_id][date]
+	BatchInfo map[int64]mapstr.MapStr `json:"BatchInfo"`
+	InputType string                  `json:"input_type"`
+}
+
+// GetInstID get inst id by objid
+func GetInstID(objID string, data mapstr.MapStr) (int64, error) {
+	return data.Int64(GetInstIDFieldByObjID(objID))
+}
+
+// GetInstName get inst name by objid
+func GetInstName(objID string, data mapstr.MapStr) (string, error) {
+	return data.String(GetInstNameFieldName(objID))
+}
+
+// GetBizID get biz id by inst data
+func GetBizID(data mapstr.MapStr) (int64, error) {
+	return data.Int64(common.BKAppIDField)
+}
+
+// GetParentID get parent id by inst data
+func GetParentID(data mapstr.MapStr) (int64, error) {
+	return data.Int64(common.BKParentIDField)
+}
+
+type opcondition struct {
+	InstID []int64 `json:"inst_ids"`
+}
+
+type deleteCondition struct {
+	opcondition `json:",inline"`
+}
+
+type updateCondition struct {
+	InstID   int64                  `json:"inst_id"`
+	InstInfo map[string]interface{} `json:"datas"`
+}
+
+// OpCondition the condition operation
+type OpCondition struct {
+	Delete deleteCondition   `json:"delete"`
+	Update []updateCondition `json:"update"`
 }

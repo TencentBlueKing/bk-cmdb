@@ -1,6 +1,6 @@
 {
     "1113001": "there are some fields under the group",
-    "1113002":"hostID [%#v] does not belong of  businessID [%d]", 
+    "1113002": "hostID [%#v] does not belong of  businessID [%d]",
     "1113003": "hostID [%#v] does not exist",
     "1113004": "ModuleID [%#v] has not belong to  businessID [%d]",
     "1113005": "translate host to multiple module not contain inner module",
@@ -30,11 +30,16 @@
     "1113030": "has instance under the model",
     "1113031": "the model is related to other models",
     "1113032": "only leaf node available",
-    "1113033": "search too many data",
     "1113033": "the resource pool directory does not exist",
     "1113034": "the following hosts are not under any resource pool directory: %d",
+    "1113035": "The unique index does not support the field type. Field name: %s",
+    "1113036": "Failed to create unique index",
+    "1113037": "Failed to search db unique index",
+    "1113038": "Too much search data",
     "1113050": "same unique check rule has existed",
-
-    
+    "1113051": "a unique check rule for \"%s field\" exists, please make a supplement on the basis of this rule",
+    "1113052": "the selected field combination duplicates with existing rules, please do not create redundant rules",
+    "1113053": "association constraint mismatch",
+    "1113039": "Failed to create unique index, value [%s] duplicated",
     "":""
 }

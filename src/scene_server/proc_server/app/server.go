@@ -18,15 +18,15 @@ import (
 	"time"
 
 	"configcenter/src/ac/extensions"
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/scene_server/proc_server/service"
-	"configcenter/src/thirdparty/esbserver"
-	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
@@ -38,7 +38,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	procSvr := new(service.ProcServer)
-	procSvr.EsbConfigChn = make(chan esbutil.EsbConfig)
 
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: procSvr.OnProcessConfigUpdate,
@@ -68,13 +67,24 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	procSvr.Config.Mongo = &mongo
 
-	esbSrv, err := esbserver.NewEsb(engine.ApiMachineryConfig(), procSvr.EsbConfigChn, nil, engine.Metric().Registry())
+	procSvr.Config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
 	if err != nil {
-		return fmt.Errorf("create esb api  object failed. err: %v", err)
+		blog.Warnf("parse auth center config failed: %v", err)
 	}
-	procSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI)
+
+	iamCli := new(iam.IAM)
+	if auth.EnableAuthorize() {
+		blog.Info("enable auth center access")
+		iamCli, err = iam.NewIAM(procSvr.Config.Auth, engine.Metric().Registry())
+		if err != nil {
+			return fmt.Errorf("new iam client failed: %v", err)
+		}
+	} else {
+		blog.Infof("disable auth center access")
+	}
+
+	procSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
 	procSvr.Engine = engine
-	procSvr.EsbSrv = esbSrv
 	procSvr.Logic = &logics.Logic{
 		Engine: procSvr.Engine,
 	}

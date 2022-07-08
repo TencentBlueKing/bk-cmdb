@@ -21,13 +21,12 @@ import (
 )
 
 type ObjectUnique struct {
-	ID        uint64      `json:"id" bson:"id"`
-	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
-	MustCheck bool        `json:"must_check" bson:"must_check"`
-	Keys      []UniqueKey `json:"keys" bson:"keys"`
-	Ispre     bool        `json:"ispre" bson:"ispre"`
-	OwnerID   string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	LastTime  Time        `json:"last_time" bson:"last_time"`
+	ID       uint64      `json:"id" bson:"id"`
+	ObjID    string      `json:"bk_obj_id" bson:"bk_obj_id"`
+	Keys     []UniqueKey `json:"keys" bson:"keys"`
+	Ispre    bool        `json:"ispre" bson:"ispre"`
+	OwnerID  string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	LastTime Time        `json:"last_time" bson:"last_time"`
 }
 
 // Parse load the data from mapstr attribute into ObjectUnique instance
@@ -61,9 +60,8 @@ const (
 )
 
 type CreateUniqueRequest struct {
-	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
-	MustCheck bool        `json:"must_check" bson:"must_check"`
-	Keys      []UniqueKey `json:"keys" bson:"keys"`
+	ObjID string      `json:"bk_obj_id" bson:"bk_obj_id"`
+	Keys  []UniqueKey `json:"keys" bson:"keys"`
 }
 
 type CreateUniqueResult struct {
@@ -72,9 +70,8 @@ type CreateUniqueResult struct {
 }
 
 type UpdateUniqueRequest struct {
-	MustCheck bool        `json:"must_check" bson:"must_check"`
-	Keys      []UniqueKey `json:"keys" bson:"keys"`
-	LastTime  Time        `json:"last_time" bson:"last_time"`
+	Keys     []UniqueKey `json:"keys" bson:"keys"`
+	LastTime Time        `json:"last_time" bson:"last_time"`
 }
 
 type UpdateUniqueResult struct {

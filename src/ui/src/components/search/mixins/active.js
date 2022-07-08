@@ -17,7 +17,12 @@ export default {
     hackEnterEvent() {
       if (this.active) {
         window.addEventListener('keyup', this.handleEnter, true)
+        this.$el.style.position = 'relative'
+        // eslint-disable-next-line no-underscore-dangle
+        this.$el.style.zIndex = window.__bk_zIndex_manager.nextZIndex()
       } else {
+        this.$el.style.position = ''
+        this.$el.style.zIndex = ''
         window.removeEventListener('keyup', this.handleEnter, true)
       }
     },

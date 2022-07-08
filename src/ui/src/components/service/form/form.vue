@@ -10,6 +10,7 @@
         :properties="properties"
         :property-groups="propertyGroups"
         :inst="instance"
+        :show-options="showOptions"
         :show-delete="false"
         :edit-auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
         :invisible-name-properties="invisibleNameProperties"
@@ -43,13 +44,17 @@
 </template>
 
 <script>
-  import { mapGetters } from 'vuex'
+  import { mapGetters, mapState } from 'vuex'
   import {
     processPropertyRequestId,
     processPropertyGroupsRequestId
   } from './symbol'
   import RenderAppend from './process-form-append-render'
   import ProcessFormPropertyTable from './process-form-property-table'
+  import { MENU_BUSINESS_SET_TOPOLOGY } from '@/dictionary/menu-symbol'
+  import { ProcessTemplateService } from '@/service/business-set/process-template.js'
+  import router from '@/router'
+
   export default {
     components: {
       ProcessFormPropertyTable
@@ -69,6 +74,13 @@
       invisibleProperties: {
         type: Array,
         default: () => ([])
+      },
+      /**
+       * 是否展示操作按钮
+       */
+      showOptions: {
+        type: Boolean,
+        default: true
       }
     },
     provide() {
@@ -92,7 +104,11 @@
       }
     },
     computed: {
+      ...mapState('bizSet', ['bizSetId']),
       ...mapGetters(['supplierAccount']),
+      isBizSet() {
+        return router.currentRoute.name === MENU_BUSINESS_SET_TOPOLOGY
+      },
       bindInfoProperty() {
         return this.properties.find(property => property.bk_property_id === 'bind_info') || {}
       },
@@ -199,14 +215,29 @@
       },
       async getProcessTemplate() {
         try {
-          this.processTemplate = await this.$store.dispatch('processTemplate/getProcessTemplate', {
-            params: {
+          const reqParams = {
+            processTemplateId: this.processTemplateId
+          }
+          const reqConfig = {
+            cancelPrevious: true
+          }
+
+          let processTemplate = null
+
+          if (this.isBizSet) {
+            processTemplate = await ProcessTemplateService.findOne({
+              bizSetId: this.bizSetId,
               processTemplateId: this.processTemplateId
-            },
-            config: {
-              cancelPrevious: true
-            }
-          })
+            }, reqConfig)
+          } else {
+            processTemplate = await this.$store.dispatch('processTemplate/getProcessTemplate', {
+              params: reqParams,
+              config: reqConfig
+            })
+          }
+
+          this.processTemplate = processTemplate
+
           const { property } = this.processTemplate
           const bindedProperties = []
           Object.keys(property).forEach((key) => {

@@ -13,6 +13,8 @@
 package service
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -28,25 +30,29 @@ func (s *coreService) IsInstAsstExist(kit *rest.Kit, objID string, instID uint64
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID}, &mongo.Eq{Key: common.BKInstIDField, Val: instID})
-	queryCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
-	objInsts, err := s.core.AssociationOperation().SearchInstanceAssociation(kit, queryCond)
-	if nil != err {
-		blog.Errorf("search instance association error %v, rid: %s", err, kit.Rid)
+	countCond := &metadata.Condition{Condition: cond.ToMapStr()}
+	objInstsRst, err := s.core.AssociationOperation().CountInstanceAssociations(kit, objID, countCond)
+	if err != nil {
+		blog.Errorf("search instance association err: %v, rid: %s", err, kit.Rid)
 		return false, err
 	}
-	cond = mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: common.BKAsstObjIDField, Val: objID}, &mongo.Eq{Key: common.BKAsstInstIDField, Val: instID})
-	queryCond = metadata.QueryCondition{Condition: cond.ToMapStr()}
-	objAsstInsts, err := s.core.AssociationOperation().SearchInstanceAssociation(kit, queryCond)
-	if nil != err {
-		blog.Errorf("search instance to association error %v, rid: %s", err, kit.Rid)
-		return false, err
-	}
-	if 0 < objInsts.Count || 0 < objAsstInsts.Count {
+	if objInstsRst.Count > 0 {
 		return true, nil
 	}
-	return false, nil
 
+	cond = mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: common.BKAsstObjIDField, Val: objID}, &mongo.Eq{Key: common.BKAsstInstIDField, Val: instID})
+	countCond = &metadata.Condition{Condition: cond.ToMapStr()}
+	objAsstInstsRst, err := s.core.AssociationOperation().CountInstanceAssociations(kit, objID, countCond)
+	if err != nil {
+		blog.Errorf("search instance to association err: %v, rid: %s", err, kit.Rid)
+		return false, err
+	}
+	if objAsstInstsRst.Count > 0 {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 // DeleteInstAsst used to delete inst asst
@@ -54,7 +60,7 @@ func (s *coreService) DeleteInstAsst(kit *rest.Kit, objID string, instID uint64)
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID}, &mongo.Eq{Key: common.BKInstIDField, Val: instID})
 	deleteCond := metadata.DeleteOption{Condition: cond.ToMapStr()}
-	_, err := s.core.AssociationOperation().DeleteInstanceAssociation(kit, deleteCond)
+	_, err := s.core.AssociationOperation().DeleteInstanceAssociation(kit, objID, deleteCond)
 	if nil != err {
 		blog.Errorf("delete instance association error %v, rid: %s", err, kit.Rid)
 		return err
@@ -62,7 +68,7 @@ func (s *coreService) DeleteInstAsst(kit *rest.Kit, objID string, instID uint64)
 	cond = mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKAsstObjIDField, Val: objID}, &mongo.Eq{Key: common.BKAsstInstIDField, Val: instID})
 	deleteCond = metadata.DeleteOption{Condition: cond.ToMapStr()}
-	_, err = s.core.AssociationOperation().DeleteInstanceAssociation(kit, deleteCond)
+	_, err = s.core.AssociationOperation().DeleteInstanceAssociation(kit, objID, deleteCond)
 	if nil != err {
 		blog.Errorf("delete instance to association error %v, rid: %s", err, kit.Rid)
 		return err
@@ -71,7 +77,9 @@ func (s *coreService) DeleteInstAsst(kit *rest.Kit, objID string, instID uint64)
 }
 
 // SelectObjectAttWithParams select object att with params
-func (s *coreService) SelectObjectAttWithParams(kit *rest.Kit, objID string, bizID int64) (attributeArr []metadata.Attribute, err error) {
+func (s *coreService) SelectObjectAttWithParams(kit *rest.Kit, objID string, bizIDs []int64) (
+	attributeArr []metadata.Attribute, err error) {
+
 	attributeArr = make([]metadata.Attribute, 0)
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
@@ -80,12 +88,56 @@ func (s *coreService) SelectObjectAttWithParams(kit *rest.Kit, objID string, biz
 	}
 
 	bizCond := make(mapstr.MapStr)
-	util.AddModelBizIDCondition(bizCond, bizID)
+	if len(bizIDs) > 1 {
+		if err := util.AddModelWithMultipleBizIDCondition(bizCond, bizIDs); err != nil {
+			return nil, err
+		}
+
+	} else if len(bizIDs) == 1 {
+		util.AddModelBizIDCondition(bizCond, bizIDs[0])
+
+	} else {
+		blog.Errorf("bizIDs params must be set, rid: %s", kit.Rid)
+		return nil, fmt.Errorf("biz ids params must be set")
+
+	}
 
 	queryCond.Condition.Merge(bizCond)
 	result, err := s.core.ModelOperation().SearchModelAttributes(kit, objID, queryCond)
 	if err != nil {
 		blog.Errorf("select object att with params error %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+	return result.Info, nil
+}
+
+// SelectObjectAttributes select object attributes
+func (s *coreService) SelectObjectAttributes(kit *rest.Kit, objID string, bizIDs []int64) ([]metadata.Attribute,
+	error) {
+
+	// query global attributes in model, all instances has these attributes and needs to be validated
+	orCond := []map[string]interface{}{
+		{common.BKAppIDField: 0},
+		{common.BKAppIDField: mapstr.MapStr{common.BKDBExists: false}},
+	}
+
+	// if the biz ids are defined, query the biz attributes together with global attributes for validation
+	if len(bizIDs) > 0 {
+		orCond = append(orCond, map[string]interface{}{
+			common.BKAppIDField: map[string]interface{}{common.BKDBIN: bizIDs}},
+		)
+	}
+
+	queryCond := metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKObjIDField: objID,
+			common.BKDBOR:       orCond,
+		},
+	}
+
+	result, err := s.core.ModelOperation().SearchModelAttributes(kit, objID, queryCond)
+	if err != nil {
+		blog.Errorf("select object(%s) attributes failed, err: %v, rid: %s", objID, err, kit.Rid)
 		return nil, err
 	}
 	return result.Info, nil

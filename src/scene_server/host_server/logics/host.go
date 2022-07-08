@@ -43,12 +43,8 @@ func (lgc *Logics) GetHostAttributes(kit *rest.Kit, bizMetaOpt mapstr.MapStr) ([
 		blog.Errorf("GetHostAttributes http do error, err:%s, input:%+v, rid:%s", err.Error(), query, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("GetHostAttributes http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, query, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
-	return result.Data.Info, nil
+	return result.Info, nil
 }
 
 func (lgc *Logics) GetHostInstanceDetails(kit *rest.Kit, hostID int64) (map[string]interface{}, string, errors.CCError) {
@@ -77,23 +73,21 @@ func (lgc *Logics) GetHostInstanceDetails(kit *rest.Kit, hostID int64) (map[stri
 }
 
 // GetHostRelations get hosts owned set, module info, where hosts must match condition specify by cond.
-func (lgc *Logics) GetHostRelations(kit *rest.Kit, input metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, errors.CCError) {
+func (lgc *Logics) GetHostRelations(kit *rest.Kit, input metadata.HostModuleRelationRequest) ([]metadata.ModuleHost,
+	errors.CCError) {
 
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, &input)
 	if err != nil {
 		blog.Errorf("GetConfigByCond http do error, err:%s, input:%+v, rid:%s", err.Error(), input, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("GetConfigByCond http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, input, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
-	}
 
-	return result.Data.Info, nil
+	return result.Info, nil
 }
 
 // EnterIP 将机器导入到指定模块或者空闲模块， 已经存在机器，不操作
-func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, cloudID int64, host map[string]interface{}, isIncrement bool) errors.CCError {
+func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, cloudID int64, host map[string]interface{},
+	isIncrement bool) errors.CCError {
 
 	isExist, err := lgc.IsPlatExist(kit, mapstr.MapStr{common.BKCloudIDField: cloudID})
 	if nil != err {
@@ -104,10 +98,8 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 	}
 	ipArr := strings.Split(ip, ",")
 	conds := mapstr.MapStr{
-		common.BKHostInnerIPField: map[string]interface{}{
-			common.BKDBIN: ipArr,
-		},
-		common.BKCloudIDField: cloudID,
+		common.BKHostInnerIPField: map[string]interface{}{common.BKDBIN: ipArr},
+		common.BKCloudIDField:     cloudID,
 	}
 	hostList, err := lgc.GetHostInfoByConds(kit, conds)
 	if nil != err {
@@ -120,59 +112,19 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 		host[common.BKHostInnerIPField] = ip
 		host[common.BKCloudIDField] = cloudID
 		host["import_from"] = common.HostAddMethodAgent
-		defaultFields, hasErr := lgc.getHostFields(kit)
-		if nil != hasErr {
-			return hasErr
-		}
-		//补充未填写字段的默认值
-		for _, field := range defaultFields {
-			_, ok := host[field.PropertyID]
-			if !ok {
-				if true == util.IsStrProperty(field.PropertyType) {
-					host[field.PropertyID] = ""
-				} else {
-					host[field.PropertyID] = nil
-				}
-			}
-		}
-
-		result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, &metadata.CreateModelInstance{Data: host})
+		hostID, err = lgc.addHost(kit, appID, host)
 		if err != nil {
-			blog.Errorf("EnterIP http do error, err:%s, input:%+v, rid:%s", err.Error(), host, kit.Rid)
-			return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !result.Result {
-			blog.Errorf("EnterIP http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, host, kit.Rid)
-			return kit.CCError.New(result.Code, result.ErrMsg)
-		}
-
-		// add audit log for create host.
-		audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
-		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, hostID, appID, "", nil)
-		if err != nil {
-			blog.Errorf("generate audit log failed after create host, hostID: %d, appID: %d, err: %v, rid: %s",
-				hostID, appID, err, kit.Rid)
 			return err
 		}
-
-		// save audit log.
-		if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
-			blog.Errorf("save audit log failed after create host, hostID: %d, appID: %d,err: %v, rid: %s", hostID,
-				appID, err, kit.Rid)
-			return err
-		}
-
-		hostID = int64(result.Data.Created.ID)
-	} else if false == isIncrement {
+	} else if !isIncrement {
 		// Not an additional relationship model
 		return nil
 	} else {
-
 		hostID, err = util.GetInt64ByInterface(hostList[0][common.BKHostIDField])
 		if err != nil {
-			blog.Errorf("EnterIP  get hostID error, err:%s,inst:%+v,input:%+v, rid:%s", err.Error(), hostList[0], host, kit.Rid)
-			return kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error()) // "查询主机信息失败"
+			blog.Errorf("get hostID failed, err: %v, inst:%+v, input:%+v, rid:%s", err, hostList[0], host, kit.Rid)
+			return kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost,
+				common.BKHostIDField, "int", err.Error()) // "查询主机信息失败"
 		}
 
 		bl, hasErr := lgc.IsHostExistInApp(kit, appID, hostID)
@@ -181,7 +133,7 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 
 		}
 		if false == bl {
-			blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s", appID, hostID, kit.Rid)
+			blog.Errorf("Host(%d) does not belong to the application(%d), rid:%s", hostID, appID, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrHostNotINAPPFail, hostID)
 		}
 
@@ -200,15 +152,9 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 	}
 	hmResult, ccErr := lgc.CoreAPI.CoreService().Host().TransferToNormalModule(kit.Ctx, kit.Header, params)
 	if ccErr != nil {
-		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, err:%s, rid:%s", appID, hostID, ccErr.Error(), kit.Rid)
-		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !hmResult.Result {
-		blog.Errorf("transfer host to normal module failed, error params:{appID:%d, hostID:%d}, result:%#v, rid:%s", appID, hostID, hmResult, kit.Rid)
-		if len(hmResult.Data) > 0 {
-			return kit.CCError.New(int(hmResult.Data[0].Code), hmResult.Data[0].Message)
-		}
-		return kit.CCError.New(hmResult.Code, hmResult.ErrMsg)
+		blog.Errorf("transfer host to normal module failed, err: %v, params: %#v, result: %#v, rid:%s", ccErr, params,
+			hmResult, kit.Rid)
+		return ccErr
 	}
 
 	if err := hmAudit.SaveAudit(kit); err != nil {
@@ -217,7 +163,55 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 	return nil
 }
 
-func (lgc *Logics) GetHostInfoByConds(kit *rest.Kit, cond map[string]interface{}) ([]mapstr.MapStr, errors.CCErrorCoder) {
+func (lgc *Logics) addHost(kit *rest.Kit, appID int64, host map[string]interface{}) (int64, errors.CCError) {
+	defaultFields, hasErr := lgc.getHostFields(kit)
+	if nil != hasErr {
+		return 0, hasErr
+	}
+	//补充未填写字段的默认值
+	for _, field := range defaultFields {
+		_, ok := host[field.PropertyID]
+		if !ok {
+			if true == util.IsStrProperty(field.PropertyType) {
+				host[field.PropertyID] = ""
+			} else {
+				host[field.PropertyID] = nil
+			}
+		}
+	}
+
+	result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost,
+		&metadata.CreateModelInstance{Data: host})
+	if err != nil {
+		blog.Errorf("create host failed, err: %v, input: %#v, rid: %s", err, host, kit.Rid)
+		return 0, err
+	}
+	hostID := int64(result.Created.ID)
+
+	// add audit log for create host.
+	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	host[common.BKHostIDField] = hostID
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, appID, []mapstr.MapStr{host})
+	if err != nil {
+		blog.Errorf("generate audit log failed after create host, hostID: %d, appID: %d, err: %v, rid: %s",
+			hostID, appID, err, kit.Rid)
+		return 0, err
+	}
+
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
+		blog.Errorf("save audit log failed after create host, hostID: %d, appID: %d,err: %v, rid: %s", hostID,
+			appID, err, kit.Rid)
+		return 0, err
+	}
+
+	return hostID, nil
+}
+
+// GetHostInfoByConds search host info by condition
+func (lgc *Logics) GetHostInfoByConds(kit *rest.Kit, cond map[string]interface{}) ([]mapstr.MapStr,
+	errors.CCErrorCoder) {
 	query := &metadata.QueryInput{
 		Condition: cond,
 		Start:     0,
@@ -230,12 +224,8 @@ func (lgc *Logics) GetHostInfoByConds(kit *rest.Kit, cond map[string]interface{}
 		blog.Errorf("GetHostInfoByConds GetHosts http do error, err:%s, input:%+v,rid:%s", err.Error(), query, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if err := result.CCError(); err != nil {
-		blog.Errorf("GetHostInfoByConds GetHosts http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, kit.Rid)
-		return nil, err
-	}
 
-	return result.Data.Info, nil
+	return result.Info, nil
 }
 
 // SearchHostInfo search host info by QueryCondition
@@ -253,12 +243,8 @@ func (lgc *Logics) SearchHostInfo(kit *rest.Kit, cond metadata.QueryCondition) (
 		blog.Errorf("GetHostInfoByConds GetHosts http do error, err:%s, input:%+v,rid:%s", err.Error(), query, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if err := result.CCError(); err != nil {
-		blog.Errorf("GetHostInfoByConds GetHosts http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, kit.Rid)
-		return nil, err
-	}
 
-	return result.Data.Info, nil
+	return result.Info, nil
 }
 
 // HostSearch search host by multiple condition
@@ -275,16 +261,13 @@ func (lgc *Logics) GetHostIDByCond(kit *rest.Kit, cond metadata.HostModuleRelati
 	cond.Fields = []string{common.BKHostIDField}
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, &cond)
 	if err != nil {
-		blog.Errorf("GetHostIDByCond GetModulesHostConfig http do error, err:%s, input:%+v,rid:%s", err.Error(), cond, kit.Rid)
+		blog.Errorf("GetHostIDByCond GetModulesHostConfig http do error, err:%s, input:%+v,rid:%s", err.Error(),
+			cond, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !result.Result {
-		blog.Errorf("GetHostIDByCond GetModulesHostConfig http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, cond, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
 	hostIDs := make([]int64, 0)
-	for _, val := range result.Data.Info {
+	for _, val := range result.Info {
 		hostIDs = append(hostIDs, val.HostID)
 	}
 
@@ -292,7 +275,8 @@ func (lgc *Logics) GetHostIDByCond(kit *rest.Kit, cond metadata.HostModuleRelati
 }
 
 // GetAllHostIDByCond 专用结构， page start 和limit 无效， 获取条件所有满足条件的主机
-func (lgc *Logics) GetAllHostIDByCond(kit *rest.Kit, cond metadata.HostModuleRelationRequest) ([]int64, errors.CCError) {
+func (lgc *Logics) GetAllHostIDByCond(kit *rest.Kit, cond metadata.HostModuleRelationRequest) ([]int64,
+	errors.CCError) {
 	hostIDs := make([]int64, 0)
 	cond.Page.Limit = 2000
 	start := 0
@@ -302,21 +286,18 @@ func (lgc *Logics) GetAllHostIDByCond(kit *rest.Kit, cond metadata.HostModuleRel
 		cond.Page.Start = start
 		result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, &cond)
 		if err != nil {
-			blog.Errorf("GetHostIDByCond GetModulesHostConfig http do error, err:%s, input:%+v,rid:%s", err.Error(), cond, kit.Rid)
+			blog.Errorf("GetHostIDByCond GetModulesHostConfig http do error, err:%s, input:%+v,rid:%s", err.Error(),
+				cond, kit.Rid)
 			return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
-		if !result.Result {
-			blog.Errorf("GetHostIDByCond GetModulesHostConfig http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, cond, kit.Rid)
-			return nil, kit.CCError.New(result.Code, result.ErrMsg)
-		}
 
-		for _, val := range result.Data.Info {
+		for _, val := range result.Info {
 			hostIDs = append(hostIDs, val.HostID)
 		}
 		// 当总数大于现在的总数，使用当前返回值的总是为新的总数值
-		if cnt < int(result.Data.Count) {
+		if cnt < int(result.Count) {
 			// 获取条件的数据总数
-			cnt = int(result.Data.Count)
+			cnt = int(result.Count)
 		}
 		start += cond.Page.Limit
 		if start >= cnt {
@@ -329,8 +310,8 @@ func (lgc *Logics) GetAllHostIDByCond(kit *rest.Kit, cond metadata.HostModuleRel
 
 // GetHostModuleRelation  query host and module relation,
 // condition key use appID, moduleID,setID,HostID
-func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond *metadata.HostModuleRelationRequest) (*metadata.
-	HostConfigData, errors.CCErrorCoder) {
+func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond *metadata.HostModuleRelationRequest) (
+	*metadata.HostConfigData, errors.CCErrorCoder) {
 
 	if cond.Empty() {
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPBodyEmpty)
@@ -357,17 +338,14 @@ func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond *metadata.HostModul
 		blog.Errorf("GetHostModuleRelation http do error, err:%s, input:%+v, rid:%s", err.Error(), cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if retErr := result.CCError(); retErr != nil {
-		blog.Errorf("GetHostModuleRelation http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, cond, kit.Rid)
-		return nil, retErr
-	}
 
-	return &result.Data, nil
+	return result, nil
 }
 
 // TransferHostAcrossBusiness  Transfer host across business, can only transfer between resource set modules
 // delete old business  host and module relation
-func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID int64, hostID []int64, moduleID int64) errors.CCError {
+func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID int64, hostID []int64,
+	moduleID int64) errors.CCError {
 	// get both biz's resource set's modules
 	query := &metadata.QueryCondition{
 		Fields: []string{common.BKModuleIDField, common.BKAppIDField},
@@ -377,30 +355,26 @@ func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID 
 		},
 	}
 
-	moduleRes, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule, query)
+	moduleRes, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		query)
 	if err != nil {
 		blog.Errorf("transfer host across business, get modules failed, err: %s, rid: %s", err.Error(), kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if err := moduleRes.CCError(); err != nil {
-		blog.Errorf("transfer host across business, get modules failed, err: %s, rid: %s", err.Error(), kit.Rid)
-		return err
-	}
-
 	// valid if dest module is dest biz's resource set's module, get src biz module ids
 	moduleIDArr := make([]int64, 0)
 	isDestModuleValid := false
-	for _, module := range moduleRes.Data.Info {
+	for _, module := range moduleRes.Info {
 		modID, err := module.Int64(common.BKModuleIDField)
 		if err != nil {
-			blog.ErrorJSON("transfer host across business, get module(%s) id failed, err: %s, rid: %s", module, err.Error(), kit.Rid)
+			blog.ErrorJSON("get module(%s) id failed, err: %s, rid: %s", module, err.Error(), kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 		}
 
 		bizID, err := module.Int64(common.BKAppIDField)
 		if err != nil {
-			blog.ErrorJSON("transfer host across business, get module(%s) biz id failed, err: %s, rid: %s", module, err.Error(), kit.Rid)
+			blog.ErrorJSON("get module(%s) biz id failed, err: %s, rid: %s", module, err.Error(), kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 		}
 
@@ -414,63 +388,306 @@ func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID 
 	}
 
 	if !isDestModuleValid {
-		blog.Errorf("transfer host across business, dest module(%d) does not belong to the resource set of the dest biz, rid: %s", moduleID, kit.Rid)
+		blog.Errorf("transfer host across business, "+
+			"dest module(%d) does not belong to the resource set of the dest biz, rid: %s", moduleID, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
 
 	// valid if hosts are in the resource set's modules of the src biz
-	notExistHostIDs, err := lgc.notExistAppModuleHost(kit, srcBizID, moduleIDArr, hostID)
+	notExistHostIDs, err := lgc.notExistAppModuleHost(kit, []int64{srcBizID}, moduleIDArr, hostID)
 	if err != nil {
-		blog.Errorf("TransferHostAcrossBusiness IsHostExistInApp err:%s,input:{appID:%d,hostID:%d},rid:%s", err.Error(), srcBizID, hostID, kit.Rid)
+		blog.Errorf("check if biz has hosts failed, err:%v,input:{appID:%d,hostID:%d},rid:%s", err, srcBizID, hostID,
+			kit.Rid)
 		return err
 	}
 
 	if len(notExistHostIDs) > 0 {
 		notExistHostIP := lgc.convertHostIDToHostIP(kit, notExistHostIDs)
-		blog.Errorf("transfer host across business, has host not belong to idle module , host ids: %+v, rid: %s", notExistHostIDs, kit.Rid)
+		blog.Errorf("has host not belong to idle module , host ids: %+v, rid: %s", notExistHostIDs, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrHostModuleConfigNotMatch, util.PrettyIPStr(notExistHostIP))
 	}
 
 	// do transfer and save audit log
 	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), hostID)
 	if err := audit.WithPrevious(kit); err != nil {
-		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%d,oldbizID:%d,appID:%d, moduleID:%#v,rid:%s", err, hostID, srcBizID, dstAppID, moduleID, kit.Rid)
+		blog.Errorf("get prev module host config failed, err: %v,hostID:%d,oldbizID:%d, appID:%d, moduleID:%#v,"+
+			"rid:%s", err, hostID, srcBizID, dstAppID, moduleID, kit.Rid)
 		return err
 	}
 
-	conf := &metadata.TransferHostsCrossBusinessRequest{SrcApplicationID: srcBizID, HostIDArr: hostID, DstApplicationID: dstAppID, DstModuleIDArr: []int64{moduleID}}
+	conf := &metadata.TransferHostsCrossBusinessRequest{SrcApplicationIDs: []int64{srcBizID}, HostIDArr: hostID,
+		DstApplicationID: dstAppID, DstModuleIDArr: []int64{moduleID}}
 	delRet, doErr := lgc.CoreAPI.CoreService().Host().TransferToAnotherBusiness(kit.Ctx, kit.Header, conf)
 	if doErr != nil {
-		blog.Errorf("TransferHostAcrossBusiness http do error, err:%s, input:%+v, rid:%s", doErr.Error(), conf, kit.Rid)
+		blog.Errorf("transfer hosts cross biz failed, err:%s, input:%+v, rid:%s", doErr.Error(), conf, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if err := delRet.CCError(); err != nil {
-		blog.Errorf("TransferHostAcrossBusiness http response error, err code:%d, err msg:%s, input:%#v, rid:%s", delRet.Code, delRet.ErrMsg, conf, kit.Rid)
+		blog.Errorf("transfer hosts cross biz failed, err code:%d, err msg:%s, input:%#v, rid:%s",
+			delRet.Code, delRet.ErrMsg, conf, kit.Rid)
 		return err
 	}
 
 	if err := audit.SaveAudit(kit); err != nil {
-		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%d,oldbizID:%d,appID:%d, moduleID:%#v,rid:%s", err, hostID, srcBizID, dstAppID, moduleID, kit.Rid)
+		blog.Errorf("get prev module host config failed, err: %v,hostID:%d,oldbizID:%d, appID:%d, moduleID:%#v,"+
+			"rid:%s", err, hostID, srcBizID, dstAppID, moduleID, kit.Rid)
 		return err
 	}
 
 	return nil
 }
 
-// DeleteHostFromBusiness  delete host from business,
-func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr []int64) ([]metadata.ExceptionResult, errors.CCError) {
+// transResourcesValidate 对于请求参数的基本校验
+func transResourcesValidate(kit *rest.Kit, transResources []metadata.TransferResourceParam, dstAppID, moduleID int64) (
+	[]int64, errors.CCError) {
+
+	if len(transResources) == 0 {
+		return []int64{}, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "params must be set")
+	}
+
+	hostIDs := make([]int64, 0)
+	for _, srcResource := range transResources {
+		hostIDs = append(hostIDs, srcResource.HostIDs...)
+	}
+
+	// the maximum number of hosts per transfer is 500.
+	if len(hostIDs) > common.BKMaxInstanceLimit {
+		return []int64{}, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "the maximum limit should be less than 500")
+	}
+
+	if dstAppID == 0 {
+		return []int64{}, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "dst biz must be set")
+	}
+
+	if moduleID == 0 {
+		return []int64{}, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "dst module must be set")
+	}
+	return hostIDs, nil
+}
+
+// transResourcesValidateBizParams 判断所传递的参数中原业务id和目的业务id均应该不属于资源池
+func (lgc *Logics) transResourcesValidateBizParams(kit *rest.Kit, transResources []metadata.TransferResourceParam,
+	dstAppID int64) errors.CCError {
+
+	bizIDs := make([]int64, 0)
+
+	for _, resource := range transResources {
+		bizIDs = append(bizIDs, resource.SrcAppId)
+	}
+	bizIDs = append(bizIDs, dstAppID)
+
+	filter := []map[string]interface{}{{
+		common.BKDefaultField: map[string]interface{}{common.BKDBEQ: common.DefaultAppFlag},
+		common.BKAppIDField: map[string]interface{}{
+			common.BKDBIN: bizIDs,
+		},
+	}}
+
+	counts, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameBaseApp, filter)
+	if err != nil {
+		return err
+	}
+
+	if len(counts) > 1 || (len(counts) == 1 && counts[0] > 0) {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	return nil
+}
+
+// transResourcesValidateDstModuleParams 判断所传的目的moduleID 是否合法.
+// 1、目的模块必须在目的业务中。
+// 2、目的moduleID不允许是普通模块。
+func (lgc *Logics) transResourcesValidateDstModuleParams(kit *rest.Kit, moduleID int64, dstAppID int64) errors.CCError {
+
+	query := &metadata.QueryCondition{
+		Fields: []string{common.BKModuleIDField, common.BKAppIDField},
+		Condition: map[string]interface{}{
+			common.BKAppIDField:    dstAppID,
+			common.BKModuleIDField: moduleID,
+		},
+	}
+
+	moduleRes, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		query)
+	if err != nil {
+		blog.Errorf("get modules failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if len(moduleRes.Info) == 0 {
+		blog.Errorf("no dst module founded, rid: %s", kit.Rid)
+		return err
+	}
+
+	if len(moduleRes.Info) > 1 {
+		blog.Errorf("multi dst module founded, rid: %s", kit.Rid)
+		return err
+	}
+
+	defaultField, err := moduleRes.Info[0].Int64(common.BKDefaultField)
+	if err != nil {
+		blog.Errorf(" get module id failed, module: %s, err: %v, rid: %s", moduleRes.Info[0], err, kit.Rid)
+		return err
+	}
+	if defaultField == 0 {
+		blog.Errorf("module type is error, module: %s, rid: %s", moduleRes.Info[0], kit.Rid)
+		return err
+	}
+	return nil
+}
+
+// transResourcesValidateHostRelations 1、判断所有主机是否在空闲机下面。2、判断主机与业务对应关系是否一致。
+func (lgc *Logics) transResourcesValidateHostRelations(kit *rest.Kit, transResources []metadata.TransferResourceParam,
+	hostIDs []int64) errors.CCError {
+
+	queryCond := metadata.HostModuleRelationRequest{
+		HostIDArr: hostIDs,
+		Fields:    []string{common.BKAppIDField, common.BKHostIDField, common.BKModuleIDField},
+	}
+
+	mhconfig, err := lgc.GetHostRelations(kit, queryCond)
+	if err != nil {
+		blog.Errorf("get host relation error, err: %v, cond: %s, rid: %s", err, queryCond, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	//hostRelationMap 以host为维度进行整理，map[hostID]bizID
+	hostRelationMap := make(map[int64]int64, 0)
+
+	moduleIDs := make([]int64, 0)
+	for _, relation := range mhconfig {
+		// 需要校验的是主机与模块之间的关系是否合法
+		if _, ok := hostRelationMap[relation.HostID]; !ok {
+			hostRelationMap[relation.HostID] = relation.AppID
+		}
+		moduleIDs = append(moduleIDs, relation.ModuleID)
+	}
+
+	// 需要判断所有的原主机所属的模块是否均属于空闲机
+	filter := []map[string]interface{}{{
+		common.BKModuleIDField: map[string]interface{}{
+			common.BKDBIN: moduleIDs,
+		},
+		common.BKDefaultField: map[string]interface{}{
+			common.BKDBNE: common.DefaultResModuleFlag,
+		},
+	}}
+
+	counts, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameBaseModule,
+		filter)
+	if err != nil {
+		blog.Errorf("get modules count failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
+		return err
+	}
+
+	if len(counts) > 1 || (len(counts) == 1 && counts[0] > 0) {
+		blog.Errorf("module count error, filter: %+v, count: %v, err: %v, rid: %s", filter, counts, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	for _, resource := range transResources {
+		for _, hostID := range resource.HostIDs {
+
+			// 此处校验的是主机是否存在于主机关系表中
+			if _, ok := hostRelationMap[hostID]; !ok {
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
+			}
+			// 此处需要校验的是关系表中的bizID和用户传的bizID是否一致
+			if hostRelationMap[hostID] != resource.SrcAppId {
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+			}
+		}
+	}
+	return nil
+}
+
+// TransferResourceHostsAcrossBusiness 支持多个业务下的空闲机模块下的主机转移到另外一个业务的空闲机池下的任意模块.
+func (lgc *Logics) TransferResourceHostsAcrossBusiness(kit *rest.Kit, transResources []metadata.TransferResourceParam,
+	dstAppID int64, moduleID int64) errors.CCError {
+
+	// step 1: 校验基本信息是否正确
+	hostIDs, err := transResourcesValidate(kit, transResources, dstAppID, moduleID)
+	if err != nil {
+		blog.Errorf("params is illegal transResources: %v, dstAppID: %d, moduleID: %d, err: %v ,rid: %s",
+			transResources, dstAppID, moduleID, err, kit.Rid)
+		return err
+	}
+	// step 2: 校验业务信息是否正确
+	if err := lgc.transResourcesValidateBizParams(kit, transResources, dstAppID); err != nil {
+		return err
+	}
+
+	// step 3: 校验主机关系是否正确
+	if err := lgc.transResourcesValidateHostRelations(kit, transResources, hostIDs); err != nil {
+		return err
+	}
+
+	// step 4: 校验目的模块是否正确
+	if err := lgc.transResourcesValidateDstModuleParams(kit, moduleID, dstAppID); err != nil {
+		return err
+	}
+
+	// get both src biz and dest biz.
+	srcBizIDs := make([]int64, 0)
+
+	for _, transResource := range transResources {
+		srcBizIDs = append(srcBizIDs, transResource.SrcAppId)
+	}
+	// do transfer and save audit log.
+	audit := auditlog.NewHostModuleLog(lgc.CoreAPI.CoreService(), hostIDs)
+	if err := audit.WithPrevious(kit); err != nil {
+		blog.Errorf("get prev module host config failed, hostID: %d, src biz IDs: %d, dst biz ID: %d, moduleID: %v, "+
+			"err: %v, rid: %s", hostIDs, srcBizIDs, dstAppID, moduleID, err, kit.Rid)
+		return err
+	}
+
+	conf := &metadata.TransferHostsCrossBusinessRequest{
+		SrcApplicationIDs: srcBizIDs,
+		HostIDArr:         hostIDs,
+		DstApplicationID:  dstAppID,
+		DstModuleIDArr:    []int64{moduleID},
+	}
+
+	delRet, doErr := lgc.CoreAPI.CoreService().Host().TransferToAnotherBusiness(kit.Ctx, kit.Header, conf)
+	if doErr != nil {
+		blog.Errorf("http do error, err: %v, input: %v, rid: %s", doErr, conf, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if err := delRet.CCError(); err != nil {
+		blog.Errorf("http response error, err code: %d, err msg: %s, input: %v, rid: %s", delRet.Code,
+			delRet.ErrMsg, conf, kit.Rid)
+		return err
+	}
+
+	if err := audit.SaveAudit(kit); err != nil {
+		blog.Errorf("save audit log failed, hostID: %d, src biz IDs: %d, appID: %d, moduleID: %v, err: %v, rid: %s",
+			hostIDs, srcBizIDs, dstAppID, moduleID, err, kit.Rid)
+		return err
+	}
+	return nil
+}
+
+// DeleteHostFromBusiness  delete host from business
+func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr []int64) ([]metadata.ExceptionResult,
+	errors.CCError) {
+
+	if len(hostIDArr) == 0 {
+		return nil, nil
+	}
+
 	// ready audit log of delete host.
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
-	logContentMap := make(map[int64]*metadata.AuditLog, 0)
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
-	for _, hostID := range hostIDArr {
-		var err error
-		logContentMap[hostID], err = audit.GenerateAuditLog(generateAuditParameter, hostID, bizID, "", nil)
-		if err != nil {
-			blog.Errorf("generate host audit log failed before delete host, hostID: %d, bizID: %d, err: %v, rid: %s", hostID, bizID, err, kit.Rid)
-			return nil, err
-		}
+	auditCond := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDArr}}
+	logContents, err := audit.GenerateAuditLogByCond(generateAuditParameter, bizID, auditCond)
+	if err != nil {
+		blog.Errorf("generate host audit log failed before delete host, hostIDs: %+v, bizID: %d, err: %v, rid: %s",
+			hostIDArr, bizID, err, kit.Rid)
+		return nil, err
 	}
 
 	// to delete host.
@@ -480,29 +697,20 @@ func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr 
 	}
 	result, err := lgc.CoreAPI.CoreService().Host().DeleteHostFromSystem(kit.Ctx, kit.Header, input)
 	if err != nil {
-		blog.Errorf("TransferHostAcrossBusiness DeleteHost error, err: %v,hostID:%#v,appID:%d,rid:%s", err, hostIDArr, bizID, kit.Rid)
+		blog.Errorf("delete host failed, err: %v, hostID: %#v,appID: %d, rid: %s", err, hostIDArr, bizID, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("TransferHostAcrossBusiness DeleteHost failed, err: %v,hostID:%#v,appID:%d,rid:%s", err, hostIDArr, bizID, kit.Rid)
-		return nil, kit.CCError.New(result.Code, result.ErrMsg)
+	if err := result.CCError(); err != nil {
+		blog.Errorf("delete host failed, err: %v, hostID: %#v,appID: %d, rid: %s", err, hostIDArr, bizID, kit.Rid)
+		return nil, err
 	}
 
 	// to save audit log.
-	logContents := make([]metadata.AuditLog, len(logContentMap))
-	index := 0
-	for _, item := range logContentMap {
-		logContents[index] = *item
-		index++
-	}
-
 	if len(logContents) > 0 {
 		if err := audit.SaveAuditLog(kit, logContents...); err != nil {
-			blog.ErrorJSON("delete host in batch, but add host audit log failed, err: %s, rid: %s",
-				err, kit.Rid)
+			blog.Errorf("save delete host audit log(%#v) failed, err: %v, rid: %s", err, logContents, kit.Rid)
 			return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 		}
-
 	}
 	return nil, nil
 }
@@ -519,16 +727,11 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 	relRsp, relErr := lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, relReq)
 	if relErr != nil {
 		blog.ErrorJSON("get host ids in biz failed, err: %s, req: %s, rid: %s", relErr, relReq, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err := relRsp.CCError(); err != nil {
-		blog.ErrorJSON("get host ids in biz failed, err: %s, req: %s, rid: %s", err, relReq, kit.Rid)
-		return err
+		return relErr
 	}
 
 	isSrcHostInBiz, isDstHostInBiz := false, false
-	for _, hostID := range relRsp.Data.IDArr {
+	for _, hostID := range relRsp {
 		if hostID == srcHostID {
 			isSrcHostInBiz = true
 		}
@@ -538,12 +741,14 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 	}
 
 	if !isSrcHostInBiz {
-		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s", appID, srcHostID, kit.Rid)
+		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s",
+			appID, srcHostID, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrHostNotINAPPFail, srcHostID)
 	}
 
 	if !isDstHostInBiz {
-		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s", appID, dstHostID, kit.Rid)
+		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s",
+			appID, dstHostID, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrHostNotINAPPFail, dstHostID)
 	}
 
@@ -565,7 +770,7 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 	}
 
 	attrIDUniqueMap := make(map[uint64]struct{})
-	for _, unique := range uniqueRsp.Data.Info {
+	for _, unique := range uniqueRsp.Info {
 		for _, key := range unique.Keys {
 			attrIDUniqueMap[key.ID] = struct{}{}
 		}
@@ -615,7 +820,8 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 	// generate audit log
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 	auditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(srcHostInfo)
-	auditLog, auditErr := audit.GenerateAuditLog(auditParam, dstHostID, appID, "", nil)
+	auditCond := map[string]interface{}{common.BKHostIDField: dstHostID}
+	auditLog, auditErr := audit.GenerateAuditLogByCond(auditParam, appID, auditCond)
 	if auditErr != nil {
 		blog.Errorf("generate audit log failed, err: %v, host id: %d, rid: %s", err, dstHostID, kit.Rid)
 		return kit.CCError.CCError(common.CCErrAuditTakeSnapshotFailed)
@@ -627,17 +833,13 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 			common.BKHostIDField: dstHostID,
 		},
 	}
-	result, doErr := lgc.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, input)
+	_, doErr := lgc.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, input)
 	if doErr != nil {
 		blog.ErrorJSON("CloneHostProperty UpdateInstance error. err: %s,condition:%s,rid:%s", doErr, input, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if err := result.CCError(); err != nil {
-		blog.ErrorJSON("CloneHostProperty UpdateInstance  replay error. err: %s,condition:%s,rid:%s", err, input, kit.Rid)
-		return err
-	}
 
-	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
 		blog.Errorf("save audit log failed, err: %v, host id: %d, rid: %s", err, dstHostID, kit.Rid)
 		return kit.CCError.CCError(common.CCErrAuditSaveLogFailed)
 	}
@@ -1295,14 +1497,9 @@ func (lgc *Logics) getTopologyRank(kit *rest.Kit) (map[string]string, map[string
 		return nil, nil, nil, err
 	}
 
-	if !mainline.Result {
-		blog.Errorf("get mainline association failed, err: %s, rid: %s", mainline.ErrMsg, kit.Rid)
-		return nil, nil, nil, errors.New(mainline.Code, mainline.ErrMsg)
-	}
-
 	rankMap := make(map[string]string)
 	reverseRankMap := make(map[string]string)
-	for _, one := range mainline.Data.Info {
+	for _, one := range mainline.Info {
 		// from host to biz
 		// host:module;module:set;set:biz
 		rankMap[one.ObjectID] = one.AsstObjID
@@ -1312,13 +1509,13 @@ func (lgc *Logics) getTopologyRank(kit *rest.Kit) (map[string]string, map[string
 	rank := make([]string, 0)
 	next := "biz"
 	rank = append(rank, next)
-	for _, relation := range mainline.Data.Info {
+	for _, relation := range mainline.Info {
 		if relation.AsstObjID == next {
 			rank = append(rank, relation.ObjectID)
 			next = relation.ObjectID
 			continue
 		} else {
-			for _, rel := range mainline.Data.Info {
+			for _, rel := range mainline.Info {
 				if rel.AsstObjID == next {
 					rank = append(rank, rel.ObjectID)
 					next = rel.ObjectID
@@ -1335,7 +1532,9 @@ func (lgc *Logics) getCustomObjectInstances(kit *rest.Kit, obj string, instIDs [
 	[]mapstr.MapStr, error) {
 
 	opts := &metadata.QueryCondition{
-		Condition:      mapstr.MapStr{common.BKInstIDField: mapstr.MapStr{common.BKDBIN: instIDs}, common.BKObjIDField: obj},
+		Condition: mapstr.MapStr{
+			common.BKInstIDField: mapstr.MapStr{common.BKDBIN: instIDs},
+			common.BKObjIDField:  obj},
 		Fields:         []string{common.BKInstIDField, common.BKInstNameField, common.BKParentIDField},
 		Page:           metadata.BasePage{Limit: common.BKNoLimit},
 		DisableCounter: true,
@@ -1347,11 +1546,283 @@ func (lgc *Logics) getCustomObjectInstances(kit *rest.Kit, obj string, instIDs [
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !instRes.Result {
-		blog.Errorf("get biz custom object instances failed, options: %s, err: %s, rid: %s", opts,
-			instRes.ErrMsg, kit.Rid)
-		return nil, kit.CCError.New(instRes.Code, instRes.ErrMsg)
+	return instRes.Info, nil
+}
+
+// ListServiceTemplateHostIDMap list hostID——serviceTemplateID map
+func (lgc *Logics) ListServiceTemplateHostIDMap(kit *rest.Kit, ids []int64) ([]mapstr.MapStr, error) {
+
+	if len(ids) == 0 {
+		return nil, nil
 	}
 
-	return instRes.Data.Info, nil
+	relationCond := metadata.HostModuleRelationRequest{
+		HostIDArr: ids,
+		Fields:    []string{common.BKModuleIDField, common.BKHostIDField},
+	}
+	relation, err := lgc.GetHostRelations(kit, relationCond)
+	if err != nil {
+		blog.Errorf("search host relation failed, cond: %v, err: %v, rid: %s", relationCond, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(relation) == 0 {
+		blog.Errorf("host relation search result is empty, cond: %v, rid: %s", relationCond, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotExist, ids)
+	}
+
+	moduleIDs := make([]int64, 0)
+	for _, item := range relation {
+		moduleIDs = append(moduleIDs, item.ModuleID)
+	}
+
+	moduleCond := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.BKModuleIDField: mapstr.MapStr{common.BKDBIN: moduleIDs}},
+		Fields:         []string{common.BKModuleIDField, common.BKServiceTemplateIDField},
+		DisableCounter: true,
+	}
+	moduleRsp, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		moduleCond)
+	if err != nil {
+		blog.Errorf("search module failed, cond: %v, err: %v, rid: %s", moduleCond, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(moduleRsp.Info) == 0 {
+		blog.Errorf("module search result is empty, cond: %v, rid: %s", moduleCond, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrHostGetModuleFail, "modules does not exist")
+	}
+
+	moduleSvTmp := make(map[int64]int64)
+	for _, item := range moduleRsp.Info {
+		moduleID, err := item.Int64(common.BKModuleIDField)
+		if err != nil {
+			blog.Errorf("get bk_module_id failed, module: %v, err: %v, rid: %s", item, err, kit.Rid)
+			return nil, err
+		}
+		svTmpID, err := item.Int64(common.BKServiceTemplateIDField)
+		if err != nil {
+			blog.Errorf("get service_template_id failed, module: %v, err: %v, rid: %s", item, err, kit.Rid)
+			return nil, err
+		}
+		moduleSvTmp[moduleID] = svTmpID
+	}
+
+	hostSvTmp := make(map[int64][]int64)
+	for _, item := range relation {
+		if _, exist := hostSvTmp[item.HostID]; !exist {
+			hostSvTmp[item.HostID] = make([]int64, 0)
+		}
+
+		if _, exist := moduleSvTmp[item.ModuleID]; !exist {
+			blog.Errorf("service_template_id of module[%d] where the host[%d] is located is nil, rid: %s",
+				item.ModuleID, item.HostID, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrHostGetModuleFail,
+				fmt.Sprintf("module[%d]'s service_template_id is invalid", item.ModuleID))
+		}
+
+		if moduleSvTmp[item.ModuleID] == 0 {
+			continue
+		}
+		hostSvTmp[item.HostID] = append(hostSvTmp[item.HostID], moduleSvTmp[item.ModuleID])
+	}
+
+	result := make([]mapstr.MapStr, 0)
+	for host, sv := range hostSvTmp {
+		result = append(result, mapstr.MapStr{
+			common.BKHostIDField:            host,
+			common.BKServiceTemplateIDField: util.IntArrayUnique(sv),
+		})
+	}
+
+	return result, nil
+}
+
+// ListHostTotalMainlineTopo search hosts with its' topo under business
+// related issue:https://github.com/Tencent/bk-cmdb/issues/5891
+func (lgc *Logics) ListHostTotalMainlineTopo(kit *rest.Kit, bizID int64, params metadata.FindHostTotalTopo) (
+	[]*metadata.HostDetailWithTopo, error) {
+
+	childMap, err := lgc.searchMainlineRelationMap(kit)
+	if err != nil {
+		blog.Errorf("get mainline association failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	filterIDs, isReturn, err := lgc.buildFilterIDs(kit, bizID, params, childMap)
+	if err != nil {
+		blog.Errorf("build topo level filter failed, params: %v, err: %v, rid: %s", params, err, kit.Rid)
+		return nil, err
+	}
+
+	if isReturn {
+		return []*metadata.HostDetailWithTopo{}, nil
+	}
+
+	topo, err := lgc.getHostMainlineRelation(kit, bizID, params, filterIDs)
+	if err != nil {
+		blog.Errorf("get host topo mainline relation failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	return topo, nil
+}
+
+func (lgc *Logics) buildFilterIDs(kit *rest.Kit, bizID int64, params metadata.FindHostTotalTopo,
+	childMap map[string]string) (map[string][]int64, bool, error) {
+
+	filterIDs := make(map[string][]int64)
+	objectFilter := make(map[string]map[string]interface{})
+
+	for _, objFilter := range params.MainlinePropertyFilter {
+
+		if objFilter.ObjectID == common.BKInnerObjIDSet || objFilter.ObjectID == common.BKInnerObjIDModule {
+			continue
+		}
+
+		mainlineFilter, key, err := objFilter.Filter.ToMgo()
+		if err != nil {
+			blog.Errorf("object[%s] filter %v is invalid, key: %s, err: %s, rid: %s", objFilter.ObjectID,
+				objFilter.Filter, key, err, kit.Rid)
+			return nil, false, err
+		}
+		objectFilter[objFilter.ObjectID] = mainlineFilter
+	}
+
+	if params.SetPropertyFilter != nil {
+		setFilter, key, err := params.SetPropertyFilter.ToMgo()
+		if err != nil {
+			blog.Errorf("set filter %v is invalid, key: %s, err: %s, rid: %s", params.SetPropertyFilter, key, err,
+				kit.Rid)
+			return nil, false, err
+		}
+		objectFilter[common.BKInnerObjIDSet] = setFilter
+	}
+
+	if params.ModulePropertyFilter != nil {
+		moduleFilter, key, err := params.ModulePropertyFilter.ToMgo()
+		if err != nil {
+			blog.Errorf("module filter %v is invalid, key: %s, err: %s, rid: %s", params.ModulePropertyFilter, key, err,
+				kit.Rid)
+			return nil, false, err
+		}
+		objectFilter[common.BKInnerObjIDModule] = moduleFilter
+	}
+
+	if len(objectFilter) == 0 {
+		return filterIDs, false, nil
+	}
+
+	filter := objectFilter[childMap[common.BKInnerObjIDApp]]
+	for object := childMap[common.BKInnerObjIDApp]; object != common.BKInnerObjIDHost; object = childMap[object] {
+
+		if len(filter) == 0 {
+			filter = objectFilter[childMap[object]]
+			continue
+		}
+
+		filter[common.BKAppIDField] = bizID
+
+		insts, err := lgc.getInstIDsByCond(kit, object, filter)
+		if err != nil {
+			blog.Errorf("search object[%s] inst failed, cond: %v, err: %v, rid: %s", object, filter, err, kit.Rid)
+			return nil, false, err
+		}
+
+		if len(insts) == 0 {
+			return nil, true, nil
+		}
+
+		filterIDs[object] = insts
+
+		filter = objectFilter[childMap[object]]
+		if len(filter) == 0 {
+			filter = make(map[string]interface{})
+		}
+		filter[common.BKParentIDField] = mapstr.MapStr{common.BKDBIN: insts}
+	}
+
+	return filterIDs, false, nil
+}
+
+func (lgc *Logics) searchMainlineRelationMap(kit *rest.Kit) (map[string]string, error) {
+
+	// 获取主线模型关联关系
+	cond := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline},
+		Fields:         []string{common.BKObjIDField, common.BKAsstObjIDField},
+		DisableCounter: true,
+	}
+	mainline, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
+	if err != nil {
+		blog.Errorf("get mainline association failed, cond: %v, err: %v, rid: %s", cond, err, kit.Rid)
+		return nil, err
+	}
+
+	objChildMap := make(map[string]string)
+	for _, item := range mainline.Info {
+		objChildMap[item.AsstObjID] = item.ObjectID
+	}
+
+	return objChildMap, nil
+}
+
+func (lgc *Logics) getHostMainlineRelation(kit *rest.Kit, bizID int64, params metadata.FindHostTotalTopo,
+	filterIDs map[string][]int64) ([]*metadata.HostDetailWithTopo, error) {
+
+	// search all hosts
+	option := &metadata.ListHosts{
+		BizID:              bizID,
+		SetIDs:             filterIDs[common.BKInnerObjIDSet],
+		ModuleIDs:          filterIDs[common.BKInnerObjIDModule],
+		HostPropertyFilter: params.HostPropertyFilter,
+		Fields:             append(params.Fields, common.BKHostIDField),
+		Page:               params.Page,
+	}
+	hosts, err := lgc.CoreAPI.CoreService().Host().ListHosts(kit.Ctx, kit.Header, option)
+	if err != nil {
+		blog.Errorf("find host failed, err: %v, input:%#v, rid: %s", err, option, kit.Rid)
+		return nil, err
+	}
+
+	if len(hosts.Info) == 0 {
+		return []*metadata.HostDetailWithTopo{}, nil
+	}
+
+	topo, err := lgc.ArrangeHostDetailAndTopology(kit, false, hosts.Info)
+	if err != nil {
+		blog.Errorf("arrange host detail and topology failed, err: %v, rid: %s", topo, kit.Rid)
+		return nil, err
+	}
+
+	return topo, nil
+}
+
+func (lgc *Logics) getInstIDsByCond(kit *rest.Kit, objID string, cond mapstr.MapStr) ([]int64, error) {
+	idField := metadata.GetInstIDFieldByObjID(objID)
+
+	query := &metadata.QueryCondition{
+		Fields:    []string{idField},
+		Condition: cond,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+
+	instances, err := lgc.SearchInstance(kit, objID, query)
+	if err != nil {
+		return nil, err
+	}
+
+	instIDs := make([]int64, 0)
+	for _, instance := range instances {
+		instID, err := instance.Int64(idField)
+		if err != nil {
+			blog.Errorf("instance %v id is invalid, err: %v, rid: %s", instance, err, kit.Rid)
+			return nil, err
+		}
+		instIDs = append(instIDs, instID)
+	}
+
+	return instIDs, nil
 }

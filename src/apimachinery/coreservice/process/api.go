@@ -44,7 +44,10 @@ func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, cate
 	return &ret.Data, nil
 }
 
-func (p *process) GetServiceCategory(ctx context.Context, h http.Header, categoryID int64) (*metadata.ServiceCategory, errors.CCErrorCoder) {
+// GetServiceCategory search service category
+func (p *process) GetServiceCategory(ctx context.Context, h http.Header, categoryID int64) (*metadata.ServiceCategory,
+	errors.CCErrorCoder) {
+
 	ret := new(metadata.OneServiceCategoryResult)
 	subPath := "/find/process/service_category/%d"
 
@@ -56,16 +59,17 @@ func (p *process) GetServiceCategory(ctx context.Context, h http.Header, categor
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("GetServiceCategory failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.CCError() != nil {
-		return nil, ret.CCError()
+
+	if ccErr := ret.CCError(); ccErr != nil {
+		return nil, ccErr
 	}
 
 	return &ret.Data, nil
 }
 
+// GetDefaultServiceCategory search default service category
 func (p *process) GetDefaultServiceCategory(ctx context.Context, h http.Header) (*metadata.ServiceCategory, errors.CCErrorCoder) {
 	ret := new(metadata.OneServiceCategoryResult)
 	subPath := "/find/process/default_service_category"
@@ -78,11 +82,11 @@ func (p *process) GetDefaultServiceCategory(ctx context.Context, h http.Header) 
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("GetDefaultServiceCategory failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.CCError() != nil {
-		return nil, ret.CCError()
+
+	if ccErr := ret.CCError(); ccErr != nil {
+		return nil, ccErr
 	}
 
 	return &ret.Data, nil
@@ -265,7 +269,6 @@ func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, temp
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("UpdateServiceTemplate failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
 	if ret.CCError() != nil {
@@ -273,6 +276,30 @@ func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, temp
 	}
 
 	return &ret.Data, nil
+}
+
+// UpdateBatchServiceTemplate batch update service template action
+func (p *process) UpdateBatchServiceTemplate(ctx context.Context, h http.Header,
+	option *metadata.UpdateOption) errors.CCErrorCoder {
+	ret := new(metadata.BaseResp)
+	subPath := "/update/batch/process/service_templates"
+
+	err := p.client.Put().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.CCError()
+	}
+
+	return nil
 }
 
 func (p *process) DeleteServiceTemplate(ctx context.Context, h http.Header, templateID int64) errors.CCErrorCoder {
@@ -297,7 +324,10 @@ func (p *process) DeleteServiceTemplate(ctx context.Context, h http.Header, temp
 	return nil
 }
 
-func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, option *metadata.ListServiceTemplateOption) (*metadata.MultipleServiceTemplate, errors.CCErrorCoder) {
+// ListServiceTemplates search service templates
+func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, option *metadata.ListServiceTemplateOption) (
+	*metadata.MultipleServiceTemplate, errors.CCErrorCoder) {
+
 	ret := new(metadata.MultipleServiceTemplateResult)
 	subPath := "/findmany/process/service_template"
 
@@ -310,11 +340,11 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, optio
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("ListServiceTemplates failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.CCError() != nil {
-		return nil, ret.CCError()
+
+	if ccErr := ret.CCError(); ccErr != nil {
+		return nil, ccErr
 	}
 
 	return &ret.Data, nil
@@ -577,7 +607,10 @@ func (p *process) DeleteServiceInstance(ctx context.Context, h http.Header, opti
 	return nil
 }
 
-func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder) {
+// ListServiceInstance search service inst
+func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceOption) (
+	*metadata.MultipleServiceInstance, errors.CCErrorCoder) {
+
 	ret := new(metadata.MultipleServiceInstanceResult)
 	subPath := "/findmany/process/service_instance"
 
@@ -590,11 +623,11 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("ListServiceInstance failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	if ret.CCError() != nil {
-		return nil, ret.CCError()
+
+	if ccErr := ret.CCError(); ccErr != nil {
+		return nil, ccErr
 	}
 
 	return &ret.Data, nil

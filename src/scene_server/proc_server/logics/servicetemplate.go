@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 )
 
@@ -32,22 +31,35 @@ func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleCond ma
 			common.BKServiceCategoryIDField},
 	}
 
-	moduleRes, rawErr := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
-		moduleFilter)
-	if rawErr != nil {
-		blog.ErrorJSON("get modules failed, err: %s, input: %s, rid: %s", rawErr, moduleFilter, kit.Rid)
-		return nil, nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	moduleRes := new(metadata.ResponseModuleInstance)
+	err := lgc.CoreAPI.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header,
+		common.BKInnerObjIDModule, moduleFilter, moduleRes)
+	if err != nil {
+		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", moduleFilter, err, kit.Rid)
+		return nil, nil, err
+	}
+
+	if err := moduleRes.CCError(); err != nil {
+		blog.Errorf("get module failed, filter: %#v, err: %v, rid: %s", moduleFilter, err, kit.Rid)
+		return nil, nil, err
+	}
+
+	moduleSyncStatuses := make([]metadata.ModuleSyncStatus, 0)
+	svcTempSyncStatuses := make([]metadata.SvcTempSyncStatus, 0)
+	if len(moduleRes.Data.Info) == 0 {
+		return svcTempSyncStatuses, moduleSyncStatuses, nil
 	}
 
 	svcTempModuleMap := make(map[int64][]*metadata.ModuleInst)
-	for _, moduleInst := range moduleRes.Data.Info {
-		module := new(metadata.ModuleInst)
-		if err := mapstruct.Decode2Struct(moduleInst, &module); err != nil {
-			blog.Errorf("parse module failed, err: %s, module: %s, rid: %s", err, module, kit.Rid)
-			return nil, nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
+	for index, module := range moduleRes.Data.Info {
+		if module.ServiceTemplateID != common.ServiceTemplateIDNotSet {
+			svcTempModuleMap[module.ServiceTemplateID] = append(svcTempModuleMap[module.ServiceTemplateID],
+				&moduleRes.Data.Info[index])
 		}
+	}
 
-		svcTempModuleMap[module.ServiceTemplateID] = append(svcTempModuleMap[module.ServiceTemplateID], module)
+	if len(svcTempModuleMap) == 0 {
+		return svcTempSyncStatuses, moduleSyncStatuses, nil
 	}
 
 	svcTempIDs := make([]int64, 0)
@@ -69,8 +81,6 @@ func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleCond ma
 		return nil, nil, err
 	}
 
-	moduleSyncStatuses := make([]metadata.ModuleSyncStatus, 0)
-	svcTempSyncStatuses := make([]metadata.SvcTempSyncStatus, 0)
 	for _, svcTemp := range templates.Info {
 		modules := svcTempModuleMap[svcTemp.ID]
 
@@ -97,12 +107,11 @@ func (lgc *Logic) GetSvcTempSyncStatus(kit *rest.Kit, bizID int64, moduleCond ma
 func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceTemplate, modules []*metadata.ModuleInst,
 	isPartial bool) (bool, []metadata.ModuleSyncStatus, errors.CCErrorCoder) {
 
-	moduleStatuses := make([]metadata.ModuleSyncStatus, 0)
+	statuses := make([]metadata.ModuleSyncStatus, 0)
 	var wg sync.WaitGroup
 	var firstErr errors.CCErrorCoder
 	pipeline := make(chan bool, 10)
-	isFinish := false
-	needSync := false
+	isFinish, needSync, isProcTempMapSet := false, false, false
 	procTempMap := make(map[int64]*metadata.ProcessTemplate)
 
 	for _, module := range modules {
@@ -111,28 +120,18 @@ func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceT
 		}
 
 		// check if module info has difference with service template
-		if module.ModuleName != svcTemp.Name {
+		if module.ModuleName != svcTemp.Name || module.ServiceCategoryID != svcTemp.ServiceCategoryID {
 			if isPartial {
-				return true, moduleStatuses, nil
+				return true, statuses, nil
 			}
 
-			moduleStatuses = append(moduleStatuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: true})
-			needSync = true
-			continue
-		}
-
-		if module.ServiceCategoryID != svcTemp.ServiceCategoryID {
-			if isPartial {
-				return true, moduleStatuses, nil
-			}
-
-			moduleStatuses = append(moduleStatuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: true})
+			statuses = append(statuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: true})
 			needSync = true
 			continue
 		}
 
 		// get process templates to compare with the processes of the module
-		if len(procTempMap) == 0 {
+		if !isProcTempMapSet {
 			procTempOpt := &metadata.ListProcessTemplatesOption{
 				BusinessID:         svcTemp.BizID,
 				ServiceTemplateIDs: []int64{svcTemp.ID},
@@ -147,6 +146,7 @@ func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceT
 			for idx, procTemp := range procTemps.Info {
 				procTempMap[procTemp.ID] = &procTemps.Info[idx]
 			}
+			isProcTempMapSet = true
 		}
 
 		pipeline <- true
@@ -178,12 +178,12 @@ func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceT
 					return
 				}
 
-				moduleStatuses = append(moduleStatuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: true})
+				statuses = append(statuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: true})
 				needSync = true
 				return
 			}
 
-			moduleStatuses = append(moduleStatuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: false})
+			statuses = append(statuses, metadata.ModuleSyncStatus{ModuleID: module.ModuleID, NeedSync: false})
 		}(module)
 	}
 
@@ -191,7 +191,7 @@ func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceT
 	if firstErr != nil {
 		return false, nil, firstErr
 	}
-	return needSync, moduleStatuses, nil
+	return needSync, statuses, nil
 }
 
 func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.ModuleInst,
@@ -210,8 +210,32 @@ func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.Mod
 		return false, err
 	}
 
+	// get host ids by module
+	hostIDFilter := []map[string]interface{}{{
+		common.BKModuleIDField: module.ModuleID,
+		common.BKAppIDField:    module.BizID,
+	}}
+	hostIDCount, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameModuleHostConfig, hostIDFilter)
+	if err != nil {
+		blog.Errorf("get host id count failed, err: %v, option: %#v, rid: %s", err, hostIDFilter, kit.Rid)
+		return false, err
+	}
+
+	// need to sync when the module has process templates and hosts but has no service instances
 	if len(serviceInstances.Info) == 0 {
-		return false, nil
+		if hostIDCount[0] == 0 || len(procTempMap) == 0 {
+			return false, nil
+		}
+		return true, nil
+	}
+
+	if len(procTempMap) == 0 {
+		return true, nil
+	}
+
+	if int64(len(serviceInstances.Info)) != hostIDCount[0] {
+		return true, nil
 	}
 
 	serviceInstanceIDs := make([]int64, 0)
@@ -240,21 +264,15 @@ func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.Mod
 
 	// find all the process instance detail by ids
 	procIDs := make([]int64, 0)
-	processTemplateReferenced := make(map[int64]struct{})
 	for _, relation := range relations.Info {
 		procIDs = append(procIDs, relation.ProcessID)
-
-		// record the used process template for checking whether a new process template has been added to service template.
-		processTemplateReferenced[relation.ProcessTemplateID] = struct{}{}
 	}
 
+	serviceRelationMap := make(map[int64][]metadata.ProcessInstanceRelation)
+	for _, r := range relations.Info {
+		serviceRelationMap[r.ServiceInstanceID] = append(serviceRelationMap[r.ServiceInstanceID], r)
+	}
 	// check whether a new process template has been added
-	for templateID := range procTempMap {
-		if _, exist := processTemplateReferenced[templateID]; exist {
-			continue
-		}
-		return true, nil
-	}
 
 	processDetails, err := lgc.ListProcessInstanceWithIDs(kit, procIDs)
 	if err != nil {
@@ -273,31 +291,41 @@ func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, module *metadata.Mod
 		blog.Errorf("get host map failed, err: %v, ids: %+v, rid: %s", err, hostIDs, kit.Rid)
 		return false, err
 	}
+	for _, serviceInst := range serviceInstances.Info {
+		relations := serviceRelationMap[serviceInst.ID]
+		processTemplateReferenced := make(map[int64]struct{})
 
-	// compare the process instance with it's process template one by one
-	for _, relation := range relations.Info {
-		process, ok := procID2Detail[relation.ProcessID]
-		if !ok {
-			blog.ErrorJSON("process doesn't exist, id: %d, rid: %s", err, relation.ProcessID, kit.Rid)
-			return false, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcIDField)
+		// compare the process instance with it's process template one by one
+		for _, relation := range relations {
+			processTemplateReferenced[relation.ProcessTemplateID] = struct{}{}
+			process, ok := procID2Detail[relation.ProcessID]
+			if !ok {
+				blog.Errorf("process doesn't exist, id: %d, rid: %s", relation.ProcessID, kit.Rid)
+				return false, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcIDField)
+			}
+
+			property, exist := procTempMap[relation.ProcessTemplateID]
+			if !exist {
+				return true, nil
+			}
+
+			_, isChanged, diffErr := lgc.DiffWithProcessTemplate(property.Property, process, hostMap[relation.HostID],
+				map[string]metadata.Attribute{}, false)
+			if diffErr != nil {
+				blog.Errorf("diff process %d with template failed, err: %v, rid: %s", relation.ProcessID, diffErr, kit.Rid)
+				return false, errors.New(common.CCErrCommParamsInvalid, diffErr.Error())
+			}
+
+			if isChanged {
+				return true, nil
+			}
 		}
-
-		property, exist := procTempMap[relation.ProcessTemplateID]
-		if !exist {
-			return true, nil
-		}
-
-		_, isChanged, diffErr := lgc.DiffWithProcessTemplate(property.Property, process, hostMap[relation.HostID],
-			map[string]metadata.Attribute{}, false)
-		if diffErr != nil {
-			blog.Errorf("diff process %d with template failed, err: %v, rid: %s", relation.ProcessID, diffErr, kit.Rid)
-			return false, errors.New(common.CCErrCommParamsInvalid, diffErr.Error())
-		}
-
-		if isChanged {
+		for templateID := range procTempMap {
+			if _, exist := processTemplateReferenced[templateID]; exist {
+				continue
+			}
 			return true, nil
 		}
 	}
-
 	return false, nil
 }

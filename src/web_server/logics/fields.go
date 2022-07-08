@@ -19,10 +19,13 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/rentiansheng/xlsx"
 )
 
 // Property object fields
@@ -36,9 +39,61 @@ type Property struct {
 	Group         string
 	ExcelColIndex int
 	NotObjPropery bool //Not an attribute of the object, indicating that the field to be exported is needed for export,
-	IsOnly        bool
 	AsstObjID     string
 	NotExport     bool
+}
+
+// HandleFieldParam 处理Excel表格字段入参
+type HandleFieldParam struct {
+	Fields     map[string]Property
+	Rid        string
+	StyleCell  *xlsx.Style
+	Sheet      *xlsx.Sheet
+	File       *xlsx.File
+	Filter     []string
+	DefLang    lang.DefaultCCLanguageIf
+	CellStyle  *xlsx.Style
+	ColStyle   *xlsx.Style
+	BizTopoMap map[string]int
+}
+
+// HandleHostDataParam 处理主机数据生成excel表格数据入参
+type HandleHostDataParam struct {
+	HostData             []mapstr.MapStr
+	ExtFieldsTopoID      string
+	ExtFieldsBizID       string
+	ExtFieldsModuleID    string
+	ExtFieldsSetID       string
+	CcErr                errors.DefaultCCErrorIf
+	ExtFieldKey          []string
+	UsernameMap          map[string]string
+	PropertyList         []string
+	Organization         []metadata.DepartmentItem
+	OrgPropertyList      []string
+	CcLang               lang.DefaultCCLanguageIf
+	Sheet                *xlsx.Sheet
+	File                 *xlsx.File
+	Rid                  string
+	ObjID                string
+	ObjIDs               []string
+	Fields               map[string]Property
+}
+
+// HandleHostParam 处理主机数据入参
+type HandleHostParam struct {
+	RowIndex     int
+	Data         []mapstr.MapStr
+	CcErr        errors.DefaultCCErrorIf
+	Fields       map[string]Property
+	Rid          string
+	ModelBizID   int64
+	CustomLen    int
+	ObjID        string
+	UsernameMap  map[string]string
+	PropertyList []string
+	ObjName      []string
+	CcLang       lang.DefaultCCLanguageIf
+	Sheet        *xlsx.Sheet
 }
 
 // PropertyGroup property group
@@ -55,8 +110,9 @@ type PropertyPrimaryVal struct {
 }
 
 // GetObjFieldIDs get object fields
-func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header, modelBizID int64) (map[string]Property, error) {
-	fields, err := lgc.getObjFieldIDs(objID, header, modelBizID, customFields)
+func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header,
+	modelBizID int64, index int) (map[string]Property, error) {
+	fields, err := lgc.getObjFieldIDs(objID, header, modelBizID, customFields, index)
 	if nil != err {
 		return nil, fmt.Errorf("get object fields failed, err: %+v", err)
 	}
@@ -107,22 +163,8 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, modelBizID i
 
 }
 
-func (lgc *Logics) getObjectPrimaryFieldByObjID(objID string, header http.Header, modelBizID int64) ([]Property, error) {
-	fields, err := lgc.getObjFieldIDsBySort(objID, common.BKPropertyIDField, header, nil, modelBizID)
-	if nil != err {
-		return nil, err
-	}
-	var ret []Property
-	for _, field := range fields {
-		if true == field.IsOnly {
-			ret = append(ret, field)
-		}
-	}
-	return ret, nil
-
-}
-
-func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID int64, customFields []string) ([]Property, error) {
+func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID int64, customFields []string,
+	index int) ([]Property, error) {
 	rid := util.GetHTTPCCRequestID(header)
 	sort := fmt.Sprintf("%s", common.BKPropertyIndexField)
 
@@ -150,16 +192,10 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID i
 	fields := make([]Property, 0)
 	noUniqueFields := make([]Property, 0)
 	noRequiredFields := make([]Property, 0)
-	index := 1
+
 	// 第一步，选出唯一校验字段；
 	for _, field := range sortedFields {
-		if field.IsOnly == true {
-			field.ExcelColIndex = index
-			index++
-			fields = append(fields, field)
-		} else {
-			noUniqueFields = append(noUniqueFields, field)
-		}
+		noUniqueFields = append(noUniqueFields, field)
 	}
 
 	// 第二步，根据字段分组，对必填字段排序；并选出非必填字段
@@ -217,38 +253,6 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(result.Code, result.ErrMsg)
 	}
 
-	inputParam := metadata.QueryCondition{
-		Page: metadata.BasePage{
-			Start: 0,
-			Limit: common.BKNoLimit,
-		},
-		Condition: mapstr.MapStr(map[string]interface{}{
-			common.BKObjIDField: objID,
-		}),
-	}
-	uniques, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrUnique(context.Background(), header, inputParam)
-	if nil != err {
-		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, err, rid)
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !uniques.Result {
-		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, uniques, rid)
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(uniques.Code, uniques.ErrMsg)
-	}
-
-	keyIDs := map[uint64]bool{}
-	for _, unique := range uniques.Data.Info {
-		if unique.MustCheck {
-			for _, key := range unique.Keys {
-				keyIDs[key.ID] = true
-			}
-			break
-		}
-	}
-	if len(keyIDs) <= 0 {
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrTopoObjectUniqueSearchFailed)
-	}
-
 	ret := []Property{}
 	for _, attr := range result.Data {
 		ret = append(ret, Property{
@@ -260,7 +264,6 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 			Option:        attr.Option,
 			Group:         attr.PropertyGroup,
 			ExcelColIndex: int(attr.PropertyIndex),
-			IsOnly:        keyIDs[uint64(attr.ID)],
 		})
 	}
 	blog.V(5).Infof("getObjFieldIDsBySort ret count:%d, rid: %s", len(ret), rid)
@@ -292,7 +295,7 @@ func getPropertyTypeAliasName(propertyType string, defLang lang.DefaultCCLanguag
 }
 
 // addSystemField add system field, get property not return property fields
-func addSystemField(fields map[string]Property, objID string, defLang lang.DefaultCCLanguageIf) {
+func addSystemField(fields map[string]Property, objID string, defLang lang.DefaultCCLanguageIf, index int) {
 	for key, field := range fields {
 		field.ExcelColIndex = field.ExcelColIndex + 1
 		fields[key] = field
@@ -303,7 +306,7 @@ func addSystemField(fields map[string]Property, objID string, defLang lang.Defau
 		Name:          "",
 		PropertyType:  common.FieldTypeInt,
 		Group:         "defalut",
-		ExcelColIndex: 1, // why set ExcelColIndex=1? because ExcelColIndex=0 used by tip column
+		ExcelColIndex: index,
 	}
 
 	switch objID {

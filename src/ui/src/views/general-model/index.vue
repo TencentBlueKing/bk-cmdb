@@ -12,38 +12,45 @@
         </cmdb-auth>
         <cmdb-auth class="fl mr10"
           :auth="[
-            { type: $OPERATION.C_INST, relation: [model.id] },
-            { type: $OPERATION.U_INST, relation: [model.id] }
+            { type: $OPERATION.C_INST, relation: [model.id] }
           ]">
           <bk-button slot-scope="{ disabled }"
             class="models-button"
             :disabled="disabled"
-            @click="importSlider.show = true">
+            @click="handleImport">
             {{$t('导入')}}
           </bk-button>
         </cmdb-auth>
-        <div class="fl mr10">
-          <bk-button class="models-button" theme="default"
-            :disabled="!table.checked.length"
-            @click="handleExport">
-            {{$t('导出')}}
-          </bk-button>
-        </div>
-        <div class="fl mr10">
-          <bk-button class="models-button"
-            :disabled="!table.checked.length"
-            @click="handleMultipleEdit">
-            {{$t('批量更新')}}
-          </bk-button>
-        </div>
-        <bk-button class="models-button button-delete fl mr10"
-          hover-theme="danger"
+        <bk-button class="models-button" theme="default"
           :disabled="!table.checked.length"
-          @click="handleMultipleDelete">
-          {{$t('删除')}}
+          @click="handleExport">
+          {{$t('导出')}}
         </bk-button>
+        <cmdb-auth class="fl mr10" :auth="batchUpdateAuth">
+          <template #default="{ disabled }">
+            <bk-button class="models-button"
+              :disabled="!table.checked.length || disabled"
+              @click="handleMultipleEdit">
+              {{$t('批量更新')}}
+            </bk-button>
+          </template>
+        </cmdb-auth>
+        <cmdb-auth class="fl mr10" :auth="batchDeleteAuth">
+          <template #default="{ disabled }">
+            <bk-button class="models-button button-delete"
+              hover-theme="danger"
+              :disabled="!table.checked.length || disabled"
+              @click="handleMultipleDelete">
+              {{$t('删除')}}
+            </bk-button>
+          </template>
+        </cmdb-auth>
       </div>
       <div class="options-button fr">
+        <icon-button class="option-filter ml5" icon="icon-cc-funnel"
+          v-bk-tooltips.top="$t('高级筛选')"
+          @click="handleSetFilters">
+        </icon-button>
         <icon-button class="ml5"
           v-bk-tooltips="$t('查看删除历史')"
           icon="icon-cc-history"
@@ -59,30 +66,37 @@
         <cmdb-property-selector class="filter-selector"
           v-model="filter.field"
           :properties="properties"
-          :object-unique="objectUnique"
-          :loading="$loading([request.properties, request.groups, request.unique])">
+          :loading="$loading([request.properties, request.groups])">
         </cmdb-property-selector>
         <component class="filter-value"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
           :class="filterType"
+          :fuzzy="filter.fuzzyQuery"
           v-bind="filterComponentProps"
           v-model="filter.value"
           @change="handleFilterValueChange"
-          @enter="handleFilterValueEnter">
+          @enter="handleFilterValueEnter"
+          @clear="handleFilterValueEnter">
         </component>
         <bk-checkbox class="filter-exact" size="small"
           v-if="allowFuzzyQuery"
-          v-model="filter.fuzzy_query">
+          v-model="filter.fuzzyQuery">
           {{$t('模糊')}}
         </bk-checkbox>
       </div>
     </div>
+    <general-model-filter-tag
+      class="filter-tag"
+      ref="filterTag"
+      :filter-selected="filterSelected"
+      :filter-condition="filterCondition">
+    </general-model-filter-tag>
     <bk-table class="models-table" ref="table"
       v-bkloading="{ isLoading: $loading(request.list) }"
       :data="table.list"
       :pagination="table.pagination"
-      :max-height="$APP.height - 190"
+      :max-height="$APP.height - filterTagHeight - 190"
       @sort-change="handleSortChange"
       @page-limit-change="handleSizeChange"
       @page-change="handlePageChange"
@@ -132,14 +146,13 @@
       :width="800"
       :before-close="handleSliderBeforeClose">
       <template slot="content" v-if="slider.contentShow">
-        <cmdb-form v-if="['update', 'create'].includes(attribute.type)"
+        <cmdb-form v-if="attribute.type === 'create'"
           ref="form"
           :properties="properties"
           :property-groups="propertyGroups"
           :inst="attribute.inst.edit"
           :type="attribute.type"
-          :save-auth="{ type: attribute.type === 'update' ? $OPERATION.U_INST : $OPERATION.C_INST }"
-          :object-unique="objectUnique"
+          :save-auth="{ type: $OPERATION.C_INST, relation: [model.id] }"
           @on-submit="handleSave"
           @on-cancel="handleCancel">
         </cmdb-form>
@@ -148,7 +161,7 @@
           :uneditable-properties="['bk_inst_name']"
           :properties="properties"
           :property-groups="propertyGroups"
-          :object-unique="objectUnique"
+          :save-auth="saveAuth"
           @on-submit="handleMultipleSave"
           @on-cancel="handleMultipleCancel">
         </cmdb-form-multiple>
@@ -165,17 +178,20 @@
         @on-reset="handleResetColumnsConfig">
       </cmdb-columns-config>
     </bk-sideslider>
-    <bk-sideslider
-      v-transfer-dom
-      :is-show.sync="importSlider.show"
-      :width="800"
-      :title="$t('批量导入')">
-      <cmdb-import v-if="importSlider.show" slot="content"
-        :template-url="url.template"
-        :import-url="url.import"
-        @success="handlePageChange(1)"
-        @partialSuccess="handlePageChange(1)">
-      </cmdb-import>
+    <bk-sideslider v-transfer-dom
+      :show-mask="false"
+      :is-show.sync="advancedFilterShow"
+      :width="400"
+      :title="$t('高级筛选')">
+      <general-model-filter-form slot="content"
+        v-if="advancedFilterShow"
+        :obj-id="objId"
+        :filter-selected="filterSelected"
+        :filter-condition="filterCondition"
+        :properties="properties"
+        :property-groups="propertyGroups"
+        @close="advancedFilterShow = false">
+      </general-model-filter-form>
     </bk-sideslider>
     <router-subview></router-subview>
   </div>
@@ -183,22 +199,37 @@
 
 <script>
   import { mapState, mapGetters, mapActions } from 'vuex'
+  import QS from 'qs'
   import cmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
+  import generalModelFilterForm from '@/components/filters/general-model-filter-form.vue'
+  import generalModelFilterTag from '@/components/filters/general-model-filter-tag.vue'
   import cmdbImport from '@/components/import/import'
-  import { MENU_RESOURCE_INSTANCE_DETAILS } from '@/dictionary/menu-symbol'
+  import { MENU_RESOURCE_INSTANCE, MENU_RESOURCE_INSTANCE_DETAILS } from '@/dictionary/menu-symbol'
   import cmdbPropertySelector from '@/components/property-selector'
   import RouterQuery from '@/router/query'
   import Utils from '@/components/filters/utils'
   import throttle from  'lodash.throttle'
+  import instanceImportService from '@/service/instance/import'
+  import instanceService from '@/service/instance/instance'
+  import { resetConditionValue } from '@/components/filters/general-model-filter.js'
+
+  const defaultFastSearch = () => ({
+    field: 'bk_inst_name',
+    value: [],
+    operator: '$in',
+    fuzzyQuery: false
+  })
+
   export default {
     components: {
       cmdbColumnsConfig,
       cmdbImport,
-      cmdbPropertySelector
+      cmdbPropertySelector,
+      generalModelFilterForm,
+      generalModelFilterTag
     },
     data() {
       return {
-        objectUnique: [],
         properties: [],
         propertyGroups: [],
         table: {
@@ -217,12 +248,10 @@
             payload: {}
           }
         },
-        filter: {
-          field: '',
-          value: '',
-          operator: '$eq',
-          fuzzy_query: false
-        },
+        filter: defaultFastSearch(),
+        filterSelected: [],
+        filterCondition: {},
+        advancedFilterShow: false,
         slider: {
           show: false,
           contentShow: false,
@@ -243,15 +272,12 @@
           selected: [],
           disabledColumns: ['bk_inst_id', 'bk_inst_name']
         },
-        importSlider: {
-          show: false
-        },
         request: {
           properties: Symbol('properties'),
           groups: Symbol('groups'),
-          unique: Symbol('unique'),
           list: Symbol('list')
-        }
+        },
+        filterTagHeight: 0
       }
     },
     computed: {
@@ -274,14 +300,6 @@
       },
       globalCustomColumns() {
         return this.globalUsercustom[`${this.objId}_global_custom_table_columns`] || []
-      },
-      url() {
-        const prefix = `${window.API_HOST}insts/owner/${this.supplierAccount}/object/${this.objId}/`
-        return {
-          import: `${prefix}import`,
-          export: `${prefix}export`,
-          template: `${window.API_HOST}importtemplate/${this.objId}`
-        }
       },
       parentLayers() {
         return [{
@@ -307,12 +325,39 @@
       },
       allowFuzzyQuery() {
         return ['singlechar', 'longchar'].includes(this.filterType)
+      },
+      saveAuth() {
+        return this.table.checked.map(instId => ({
+          type: this.$OPERATION.U_INST,
+          relation: [this.model.id, parseInt(instId, 10)]
+        }))
+      },
+      batchDeleteAuth() {
+        return this.table.checked.map(instId => ({
+          type: this.$OPERATION.D_INST,
+          relation: [this.model.id, parseInt(instId, 10)]
+        }))
+      },
+      batchUpdateAuth() {
+        return this.table.checked.map(instId => ({
+          type: this.$OPERATION.U_INST,
+          relation: [this.model.id, parseInt(instId, 10)]
+        }))
       }
     },
     watch: {
+      '$route.query'() {
+        if (this.$route.name !== MENU_RESOURCE_INSTANCE) {
+          return
+        }
+        this.setupFilter()
+        this.setDynamicBreadcrumbs()
+        this.throttleGetTableData()
+        this.updateFilterTagHeight()
+      },
       'filter.field'() {
         // 模糊搜索
-        if (this.allowFuzzyQuery && this.filter.fuzzy_query) {
+        if (this.allowFuzzyQuery && this.filter.fuzzyQuery) {
           this.filter.value = ''
           this.filter.operator = '$regex'
           return
@@ -321,13 +366,15 @@
         this.filter.value = defaultData.value
         this.filter.operator = defaultData.operator
       },
-      'filter.fuzzy_query'(fuzzy) {
+      'filter.fuzzyQuery'(fuzzy) {
         if (!this.allowFuzzyQuery) return
+
         if (fuzzy) {
           this.filter.value = ''
           this.filter.operator = '$regex'
           return
         }
+
         const defaultData = Utils.getDefaultData(this.filterProperty)
         this.filter.value = defaultData.value
         this.filter.operator = defaultData.operator
@@ -344,36 +391,19 @@
         this.setTableHeader()
       },
       objId() {
-        this.setDynamicBreadcrumbs()
-        this.setup()
-        RouterQuery.refresh()
+        // 切换模型需要重新获取当前模型的数据
+        this.fetchData()
       }
     },
     async created() {
       this.throttleGetTableData = throttle(this.getTableData, 300, { leading: false, trailing: true })
+      await this.fetchData()
+      this.setupFilter()
       this.setDynamicBreadcrumbs()
-      await this.setup()
-      this.unwatch = RouterQuery.watch('*', async ({
-        page = 1,
-        limit = this.table.pagination.limit,
-        filter = '',
-        operator = '',
-        fuzzy = false,
-        field = 'bk_inst_name'
-      }) => {
-        this.filter.field = field
-        this.filter.fuzzy_query = fuzzy.toString() === 'true'
-        this.table.pagination.current = parseInt(page, 10)
-        this.table.pagination.limit = parseInt(limit, 10)
-        await this.$nextTick()
-        const defaultData = Utils.getDefaultData(this.filterProperty)
-        this.filter.operator = operator || defaultData.operator
-        this.filter.value = this.formatFilterValue({ value: filter, operator: this.filter.operator }, defaultData.value)
-        this.throttleGetTableData()
-      }, { immediate: true })
+      this.throttleGetTableData()
     },
-    beforeDestroy() {
-      this.unwatch()
+    mounted() {
+      this.updateFilterTagHeight()
     },
     beforeRouteUpdate(to, from, next) {
       this.setDynamicBreadcrumbs()
@@ -384,36 +414,105 @@
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
       ...mapActions('objectCommonInst', [
         'createInst',
-        'searchInst',
         'updateInst',
         'batchUpdateInst',
         'deleteInst',
-        'batchDeleteInst',
-        'searchInstById'
+        'batchDeleteInst'
       ]),
       setDynamicBreadcrumbs() {
         this.$store.commit('setTitle', this.model.bk_obj_name)
       },
-      async setup() {
+      async fetchData() {
         try {
+          // 先重置当前数据
           this.resetData()
-          this.properties = await this.searchObjectAttribute({
-            injectId: this.objId,
-            params: {
-              bk_obj_id: this.objId,
-              bk_supplier_account: this.supplierAccount
-            },
-            config: {
-              requestId: this.request.properties,
+
+          const [groups, properties] = await Promise.all([
+            this.getPropertyGroups(),
+            this.getProperties()
+          ])
+          this.propertyGroups = groups
+          this.properties = properties
+
+          // 确定数据更新后更新表头
+          this.setTableHeader()
+        } catch (e) {
+          console.error(e)
+        }
+      },
+      setupFilter() {
+        const {
+          page = 1,
+          limit = this.table.pagination.limit,
+          field = 'bk_inst_name',
+          operator,
+          filter: value = '',
+          fuzzy = 0,
+          s: searchType = 'fast'
+        } = this.$route.query
+
+        const advQuery = QS.parse(RouterQuery.get('filter_adv'))
+        const fastQuery = { field, operator, value }
+
+        // 设置快速搜索的字段与类型
+        this.filter.field = fastQuery.field
+        this.filter.fuzzyQuery = Boolean(Number(fuzzy))
+
+        // 更新表格分页
+        this.table.pagination.current = parseInt(page, 10)
+        this.table.pagination.limit = parseInt(limit, 10)
+
+        // 每次先将条件项的值重置，避免在清空后或切换模型时产生遗留数据
+        this.filterCondition = resetConditionValue(this.filterCondition, this.filterSelected)
+
+        // 默认以高级搜索的查询query填充条件项与选择项
+        try {
+          Object.keys(advQuery).forEach((key) => {
+            const [id, operator] = key.split('.')
+            const property = Utils.findProperty(id, this.properties)
+            const value = advQuery[key].toString().split(',')
+            if (property && operator && value.length) {
+              this.$set(this.filterCondition, property.id, {
+                operator: `$${operator}`,
+                value: Utils.convertValue(value, `$${operator}`, property)
+              })
+              // eslint-disable-next-line max-len
+              const exist = this.filterSelected.findIndex(item => item.bk_property_id === property.bk_property_id) !== -1
+              if (!exist) {
+                this.filterSelected.push(property)
+              }
             }
           })
-          return Promise.all([
-            this.getPropertyGroups(),
-            this.getObjectUnique(),
-            this.setTableHeader()
-          ])
-        } catch (e) {
-          // ignore
+        } catch (error) {
+          this.$warn(this.$t('解析查询链接出错提示'))
+        }
+
+        // 合并快速搜索栏条件
+        if (searchType === 'fast') {
+          const fastSearchProperty = this.properties.find(property => property.bk_property_id === fastQuery.field)
+          // eslint-disable-next-line max-len
+          const exist = this.filterSelected.findIndex(item => item.bk_property_id === fastSearchProperty.bk_property_id) !== -1
+
+          // 不存在则添加进选择项列表中
+          if (!exist) {
+            this.filterSelected.push(fastSearchProperty)
+          }
+
+          // 更新或初始化条件项
+          const defaultData = Utils.getDefaultData(fastSearchProperty)
+          const conditionValue = {
+            operator: operator || defaultData.operator,
+            value: this.formatFilterValue({ value: fastQuery.value, operator: fastQuery.operator }, defaultData.value)
+          }
+          this.$set(this.filterCondition, fastSearchProperty.id, conditionValue)
+
+          // 给快速搜索框初始化一个正确的值
+          this.filter.value = conditionValue.value
+        }
+
+        // 高级搜索时重置快速搜索的数据值，因高级搜索是快速搜索的超集在快速搜索中不能复原
+        if (searchType === 'adv') {
+          this.resetFastSearch()
         }
       },
       formatFilterValue({ value: currentValue, operator }, defaultValue) {
@@ -424,6 +523,8 @@
         } else if (operator === '$in') {
           // eslint-disable-next-line no-nested-ternary
           value = Array.isArray(value) ? value : !!value ? [value] : []
+        } else if (operator === '$regex') {
+          value = Array.isArray(value) ? (value[0] || '') : value
         } else if (Array.isArray(value)) {
           value = value.filter(value => !!value)
         }
@@ -437,13 +538,14 @@
       handleFilterValueEnter() {
         const query = {
           _t: Date.now(),
+          s: 'fast',
           page: 1,
           field: this.filter.field,
           filter: this.filter.value,
-          operator: this.filter.operator
+          operator: this.filter.operator,
         }
         if (this.allowFuzzyQuery) {
-          query.fuzzy = this.filter.fuzzy_query
+          query.fuzzy = this.filter.fuzzyQuery ? 1 : 0
         }
         RouterQuery.set(query)
       },
@@ -466,25 +568,28 @@
             }
           }
         }
+
+        // 重置筛选项与条件
+        this.filterSelected = []
+        this.filterCondition = {}
+      },
+      getProperties() {
+        return this.searchObjectAttribute({
+          injectId: this.objId,
+          params: {
+            bk_obj_id: this.objId,
+            bk_supplier_account: this.supplierAccount
+          },
+          config: {
+            requestId: this.request.properties,
+          }
+        })
       },
       getPropertyGroups() {
         return this.searchGroup({
           objId: this.objId,
           params: {},
           config: { requestId: this.request.groups }
-        }).then((groups) => {
-          this.propertyGroups = groups
-          return groups
-        })
-      },
-      getObjectUnique() {
-        return this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
-          objId: this.objId,
-          params: {},
-          config: { requestId: this.request.unique }
-        }).then((data) => {
-          this.objectUnique = data
-          return data
         })
       },
       setTableHeader() {
@@ -495,15 +600,48 @@
           resolve(headerProperties)
         }).then((properties) => {
           this.updateTableHeader(properties)
+
+          // 同步更新筛选项与条件
+          this.updateFilter(properties)
+
           this.columnsConfig.selected = properties.map(property => property.bk_property_id)
         })
       },
       updateTableHeader(properties) {
-        this.table.header = properties.map(property => ({
+        // 将搜索项追加到表头
+        const headerIds = properties.map(item => item.bk_property_id)
+        let finalProperties = []
+
+        if (this.filterSelected.length >= properties.length && this.isColumnApply) {
+          // 列表项减少
+          finalProperties = properties
+          this.isColumnApply = false
+        } else {
+          // 列表项增加
+          const newHeaders = this.filterSelected.filter(item => !headerIds.includes(item.bk_property_id))
+          finalProperties = properties.concat(newHeaders)
+        }
+
+        this.table.header = finalProperties.map(property => ({
           id: property.bk_property_id,
           name: this.$tools.getHeaderPropertyName(property),
           property
         }))
+      },
+      updateFilter(properties = []) {
+        const availableProperties = properties.filter(property => property.bk_obj_id === this.objId)
+        availableProperties.forEach((property) => {
+          // eslint-disable-next-line max-len
+          const exist = this.filterSelected.findIndex(item => item.bk_property_id === property.bk_property_id) !== -1
+          if (!exist) {
+            const defaultData = Utils.getDefaultData(property)
+            this.filterSelected.push(property)
+            this.$set(this.filterCondition, property.id, {
+              operator: defaultData.operator,
+              value: defaultData.value
+            })
+          }
+        })
       },
       handleValueClick(item, column) {
         if (column.id !== 'bk_inst_id') {
@@ -539,95 +677,52 @@
         this.table.checked = selection.map(row => row.bk_inst_id)
       },
       getInstList(config = { cancelPrevious: true }) {
-        return this.searchInst({
-          objId: this.objId,
-          params: this.getSearchParams(),
+        return instanceService.find({
+          bk_obj_id: this.objId,
+          params: {
+            ...this.getSearchParams(),
+            ...Utils.transformGeneralModelCondition(this.filterCondition, this.filterSelected) || {}
+          },
           config: Object.assign({ requestId: this.request.list }, config)
         })
       },
-      getTableData() {
-        this.getInstList({ cancelPrevious: true, globalPermission: false }).then((data) => {
-          if (data.count && !data.info.length) {
+      async getTableData() {
+        // 防止切换到子路由产生预期外的请求
+        if (this.$route.name !== MENU_RESOURCE_INSTANCE) {
+          return
+        }
+
+        try {
+          const { count, info } = await this.getInstList({ cancelPrevious: true, globalPermission: false })
+          if (count && !info.length) {
             RouterQuery.set({
               page: this.table.pagination.current - 1,
               _t: Date.now()
             })
           }
-          this.table.list = data.info
-          this.table.pagination.count = data.count
-
-          this.table.stuff.type = this.filter.value.toString().length ? 'search' : 'default'
-
-          return data
-        })
-          .catch(({ permission }) => {
-            if (permission) {
-              this.table.stuff = {
-                type: 'permission',
-                payload: { permission }
-              }
+          this.table.list = info
+          this.table.pagination.count = count
+          this.table.stuff.type = this.$route.query?.s?.length ? 'search' : 'default'
+        } catch (err) {
+          console.error(err)
+          if (err.permission) {
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission: err.permission }
             }
-          })
+          }
+        }
       },
       getSearchParams() {
         const params = {
-          condition: {
-            [this.objId]: []
-          },
-          fields: {},
+          fields: [],
           page: {
             start: this.table.pagination.limit * (this.table.pagination.current - 1),
             limit: this.table.pagination.limit,
             sort: this.table.sort
           }
         }
-        if (!this.filter.value.toString()) {
-          return params
-        }
-        if (this.filterType === 'time') {
-          const [start, end] = this.filter.value
-          params.time_condition = {
-            oper: 'and',
-            rules: [{
-              field: this.filter.field,
-              start,
-              end
-            }]
-          }
-          return params
-        }
-        if (this.filter.operator === '$range') {
-          const [start, end] = this.filter.value
-          params.condition[this.objId].push({
-            field: this.filter.field,
-            operator: '$gte',
-            value: start
-          }, {
-            field: this.filter.field,
-            operator: '$lte',
-            value: end
-          })
-          return params
-        }
-        if (this.filterType === 'objuser') {
-          const multiple = this.filter.value.length > 1
-          params.condition[this.objId].push({
-            field: this.filter.field,
-            operator: multiple ? '$in' : '$regex',
-            value: multiple ? this.filter.value : this.filter.value.toString()
-          })
-          return params
-        }
-        params.condition[this.objId].push({
-          field: this.filter.field,
-          operator: this.filter.operator,
-          value: this.filter.value
-        })
         return params
-      },
-      async handleEdit(item) {
-        this.attribute.inst.edit = item
-        this.attribute.type = 'update'
       },
       handleCreate() {
         this.attribute.type = 'create'
@@ -736,12 +831,14 @@
         })
       },
       handleApplyColumnsConfig(properties) {
+        this.isColumnApply = true
         this.$store.dispatch('userCustom/saveUsercustom', {
           [this.customConfigKey]: properties.map(property => property.bk_property_id)
         })
         this.columnsConfig.show = false
       },
       handleResetColumnsConfig() {
+        this.isColumnApply = true
         this.$store.dispatch('userCustom/saveUsercustom', {
           [this.customConfigKey]: []
         })
@@ -778,18 +875,73 @@
         }
         return true
       },
-      handleExport() {
-        const data = new FormData()
-        data.append('bk_inst_id', this.table.checked.join(','))
-        const customFields = this.usercustom[this.customConfigKey]
-        if (customFields) {
-          data.append('export_custom_fields', customFields)
-        }
-        this.$http.download({
-          url: this.url.export,
-          method: 'post',
-          data
+      async handleImport() {
+        const useImport = await import('@/components/import-file')
+        const [, { show: showImport, setState: setImportState }] = useImport.default()
+        setImportState({
+          title: this.$t('批量导入'),
+          bk_obj_id: this.objId,
+          template: `${window.API_HOST}importtemplate/${this.objId}`,
+          submit: (options) => {
+            const params = {
+              op: options.step
+            }
+            if (options.importRelation) {
+              params.object_unique_id = options.object_unique_id
+              params.association_condition = options.relations
+            }
+            return instanceImportService.update({
+              file: options.file,
+              params,
+              config: options.config,
+              bk_obj_id: this.objId
+            })
+          },
+          success: () => RouterQuery.set({ _t: Date.now() })
         })
+        showImport()
+      },
+      async handleExport() {
+        const useExport = await import('@/components/export-file')
+        useExport.default({
+          title: this.$t('导出选中'),
+          bk_obj_id: this.objId,
+          defaultSelectedFields: this.table.header.map(item => item.id),
+          count: this.table.checked.length,
+          submit: (state, task) => {
+            const { fields, exportRelation  } = state
+            const params = {
+              export_custom_fields: fields.value.map(property => property.bk_property_id),
+              bk_inst_ids: this.table.checked
+            }
+            if (exportRelation.value) {
+              params.object_unique_id = state.object_unique_id.value
+              params.association_condition = state.relations.value
+            }
+            return this.$http.download({
+              url: `${window.API_HOST}insts/object/${this.objId}/export`,
+              method: 'post',
+              name: task.current.value.name,
+              data: params
+            })
+          }
+        }).show()
+      },
+      handleSetFilters() {
+        this.advancedFilterShow = true
+      },
+      updateFilterTagHeight() {
+        setTimeout(() => {
+          const el = this.$refs.filterTag.$el
+          if (el?.getBoundingClientRect) {
+            this.filterTagHeight = el.getBoundingClientRect().height
+          } else {
+            this.filterTagHeight = 0
+          }
+        }, 300)
+      },
+      resetFastSearch() {
+        this.filter = defaultFastSearch()
       }
     }
   }
@@ -843,5 +995,8 @@
     }
     .models-table{
         margin-top: 14px;
+    }
+    .filter-tag ~ .models-table {
+        margin-top: 0;
     }
 </style>

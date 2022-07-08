@@ -18,7 +18,7 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func (s *AuthService) Healthz(req *restful.Request, resp *restful.Response) {

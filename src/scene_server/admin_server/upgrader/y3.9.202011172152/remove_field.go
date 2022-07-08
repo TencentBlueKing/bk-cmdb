@@ -30,7 +30,7 @@ func removeField(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	// get all mainline objects
 	mainlineFilter := map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}
 	associations := make([]metadata.Association, 0)
-	err := db.Table(common.BKTableNameObjAsst).Find(mainlineFilter).All(ctx, &associations)
+	err := db.Table(bkTableNameObjAsst).Find(mainlineFilter).All(ctx, &associations)
 	if nil != err {
 		blog.Errorf("search mainline associations failed, err: %v", err)
 		return err
@@ -47,7 +47,7 @@ func removeField(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 		common.BKObjIDField:      map[string]interface{}{common.BKDBIN: objectIDs},
 		common.BKPropertyIDField: map[string]interface{}{common.BKDBIN: toBeRemovedFields},
 	}
-	if err := db.Table(common.BKTableNameObjAttDes).Delete(ctx, attrFilter); err != nil {
+	if err := db.Table(bkTableNameObjAttDes).Delete(ctx, attrFilter); err != nil {
 		blog.Errorf("remove mainline objects' attributes(%+v) failed, err: %v", toBeRemovedFields, err)
 		return err
 	}
@@ -64,7 +64,7 @@ func removeField(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 		if !common.IsInnerModel(objectID) {
 			instFilter[common.BKObjIDField] = objectID
 		}
-		tableName := common.GetInstTableName(objectID)
+		tableName := GetInstTableName(objectID)
 		instIDField := common.GetInstIDField(objectID)
 
 		for {
@@ -108,3 +108,61 @@ func removeField(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	}
 	return nil
 }
+
+// GetInstTableName returns inst data table name
+func GetInstTableName(objID string) string {
+	switch objID {
+	case bkInnerObjIDApp:
+		return bkTableNameBaseApp
+	case bkInnerObjIDSet:
+		return bkTableNameBaseSet
+	case bkInnerObjIDModule:
+		return bkTableNameBaseModule
+	case bkInnerObjIDHost:
+		return bkTableNameBaseHost
+	case bkInnerObjIDProc:
+		return bkTableNameBaseProcess
+	case bkInnerObjIDPlat:
+		return bkTableNameBasePlat
+	default:
+		return bkTableNameBaseInst
+	}
+}
+
+const (
+	// bkTableNameInstAsst the table name of the inst association
+	bkTableNameInstAsst = "cc_InstAsst"
+
+	bkTableNameBaseApp     = "cc_ApplicationBase"
+	bkTableNameBaseHost    = "cc_HostBase"
+	bkTableNameBaseModule  = "cc_ModuleBase"
+	bkTableNameBaseInst    = "cc_ObjectBase"
+	bkTableNameBasePlat    = "cc_PlatBase"
+	bkTableNameBaseSet     = "cc_SetBase"
+	bkTableNameBaseProcess = "cc_Process"
+	bkTableNameObjAsst     = "cc_ObjAsst"
+	bkTableNameObjAttDes   = "cc_ObjAttDes"
+)
+
+const (
+	// bkInnerObjIDApp the inner object
+	bkInnerObjIDApp = "biz"
+
+	// bkInnerObjIDSet the inner object
+	bkInnerObjIDSet = "set"
+
+	// bkInnerObjIDModule the inner object
+	bkInnerObjIDModule = "module"
+
+	// bkInnerObjIDHost the inner object
+	bkInnerObjIDHost = "host"
+
+	// bkInnerObjIDObject the inner object
+	bkInnerObjIDObject = "object"
+
+	// bkInnerObjIDProc the inner object
+	bkInnerObjIDProc = "process"
+
+	// bkInnerObjIDPlat the inner object
+	bkInnerObjIDPlat = "plat"
+)

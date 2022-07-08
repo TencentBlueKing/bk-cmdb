@@ -121,6 +121,10 @@ func (c *client) HScan(ctx context.Context, key string, cursor uint64, match str
 	return c.cli.HScan(key, cursor, match, count)
 }
 
+func (c *client) Scan(ctx context.Context, cursor uint64, match string, count int64) ScanResult {
+	return c.cli.Scan(cursor, match, count)
+}
+
 func (c *client) HSet(ctx context.Context, key string, values ...interface{}) IntResult {
 	return c.cli.HSet(key, values...)
 }
@@ -201,6 +205,17 @@ func (c *client) SetNX(ctx context.Context, key string, value interface{}, expir
 	return c.cli.SetNX(key, value, expiration)
 }
 
+func (c *client) TxPipeline(ctx context.Context) Pipeliner {
+	return c.cli.TxPipeline()
+}
+
+func (c *client) Discard(ctx context.Context, pipe Pipeliner) error {
+	return pipe.Discard()
+}
+func (c *client) MSetNX(ctx context.Context, values ...interface{}) BoolResult {
+	return c.cli.MSetNX(values...)
+}
+
 func (c *client) SMembers(ctx context.Context, key string) StringSliceResult {
 	return c.cli.SMembers(key)
 }
@@ -211,4 +226,12 @@ func (c *client) SRem(ctx context.Context, key string, members ...interface{}) I
 
 func (c *client) TTL(ctx context.Context, key string) DurationResult {
 	return c.cli.TTL(key)
+}
+
+func (c *client) BLPop(ctx context.Context, timeout time.Duration, keys ...string) StringSliceResult {
+	return c.cli.BLPop(timeout, keys...)
+}
+
+func (c *client) ZRemRangeByRank(key string, start, stop int64) IntResult {
+	return c.cli.ZRemRangeByRank(key, start, stop)
 }

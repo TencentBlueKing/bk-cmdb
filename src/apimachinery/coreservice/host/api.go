@@ -16,40 +16,56 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 // TransferToInnerModule  transfer host to inner module  eg:idle module and fault module
-func (h *host) TransferToInnerModule(ctx context.Context, header http.Header, input *metadata.TransferHostToInnerModule) (resp *metadata.OperaterException, err error) {
-	resp = new(metadata.OperaterException)
+func (h *host) TransferToInnerModule(ctx context.Context, header http.Header,
+	input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.OperaterException)
 	subPath := "/set/module/host/relation/inner/module"
 
-	err = h.client.Post().
+	err := h.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.Data, resp.CCError()
+	}
+	return resp.Data, nil
 }
 
-// TransferHostModule  transfer host to  module
-func (h *host) TransferToNormalModule(ctx context.Context, header http.Header, input *metadata.HostsModuleRelation) (resp *metadata.OperaterException, err error) {
-	resp = new(metadata.OperaterException)
+// TransferToNormalModule  transfer host to normal module
+func (h *host) TransferToNormalModule(ctx context.Context, header http.Header, input *metadata.HostsModuleRelation) (
+	[]metadata.ExceptionResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.OperaterException)
 	subPath := "/set/module/host/relation/module"
 
-	err = h.client.Post().
+	err := h.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.Data, resp.CCError()
+	}
+	return resp.Data, nil
 }
 
 // RemoveFromModule 将主机从模块中移出
@@ -103,33 +119,55 @@ func (h *host) DeleteHostFromSystem(ctx context.Context, header http.Header, inp
 }
 
 // GetHostModuleRelation get host module relation
-func (h *host) GetHostModuleRelation(ctx context.Context, header http.Header, input *metadata.HostModuleRelationRequest) (resp *metadata.HostConfig, err error) {
-	resp = new(metadata.HostConfig)
+func (h *host) GetHostModuleRelation(ctx context.Context, header http.Header,
+	input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error) {
+
+	resp := new(metadata.HostConfig)
 	subPath := "/read/module/host/relation"
 
-	err = h.client.Post().
+	err := h.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 // FindIdentifier  query host identifier
-func (h *host) FindIdentifier(ctx context.Context, header http.Header, input *metadata.SearchHostIdentifierParam) (resp *metadata.SearchHostIdentifierResult, err error) {
-	resp = new(metadata.SearchHostIdentifierResult)
+func (h *host) FindIdentifier(ctx context.Context, header http.Header, input *metadata.SearchHostIdentifierParam) (
+	*metadata.SearchHostIdentifierData, error) {
+
+	resp := new(metadata.SearchHostIdentifierResult)
 	subPath := "/read/host/indentifier"
 
-	err = h.client.Post().
+	err := h.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 func (h *host) GetHostByID(ctx context.Context, header http.Header, hostID int64) (resp *metadata.HostInstanceResult, err error) {
@@ -145,18 +183,29 @@ func (h *host) GetHostByID(ctx context.Context, header http.Header, hostID int64
 	return resp, err
 }
 
-func (h *host) GetHosts(ctx context.Context, header http.Header, opt *metadata.QueryInput) (resp *metadata.GetHostsResult, err error) {
-	resp = new(metadata.GetHostsResult)
+// GetHosts search hosts
+func (h *host) GetHosts(ctx context.Context, header http.Header, opt *metadata.QueryInput) (*metadata.HostInfo, error) {
+
+	resp := new(metadata.GetHostsResult)
 	subPath := "/findmany/hosts/search"
 
-	err = h.client.Post().
+	err := h.client.Post().
 		Body(opt).
 		WithContext(ctx).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return resp, err
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 func (h *host) LockHost(ctx context.Context, header http.Header, input *metadata.HostLockRequest) (resp *metadata.HostLockResponse, err error) {
@@ -437,12 +486,14 @@ func (h *host) GetHostModulesIDs(ctx context.Context, header http.Header, dat *m
 	return
 }
 
-func (h *host) ListHosts(ctx context.Context, header http.Header, option *metadata.ListHosts) (*metadata.ListHostResult, error) {
+// ListHosts get hosts list
+func (h *host) ListHosts(ctx context.Context, header http.Header, option *metadata.ListHosts) (*metadata.ListHostResult,
+	error) {
 	type Result struct {
 		metadata.BaseResp `json:",inline"`
 		Data              *metadata.ListHostResult `json:"data"`
 	}
-	result := Result{}
+	result := new(Result)
 	subPath := "/findmany/hosts/list_hosts"
 
 	err := h.client.Post().
@@ -451,18 +502,21 @@ func (h *host) ListHosts(ctx context.Context, header http.Header, option *metada
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
-		Into(&result)
+		Into(result)
 	if err != nil {
-		return result.Data, err
+		return nil, errors.CCHttpError
 	}
-	if result.Code > 0 || result.Result == false {
-		return result.Data, errors.New(result.Code, result.ErrMsg)
+
+	if err = result.CCError(); err != nil {
+		return nil, err
 	}
+
 	return result.Data, nil
 }
 
-func (h *host) UpdateHostCloudAreaField(ctx context.Context, header http.Header, option metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder {
-	rid := util.GetHTTPCCRequestID(header)
+// UpdateHostCloudAreaField update host's cloud area
+func (h *host) UpdateHostCloudAreaField(ctx context.Context, header http.Header,
+	option metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder {
 
 	result := metadata.BaseResp{}
 	subPath := "/updatemany/hosts/cloudarea_field"
@@ -475,12 +529,13 @@ func (h *host) UpdateHostCloudAreaField(ctx context.Context, header http.Header,
 		Do().
 		Into(&result)
 	if err != nil {
-		blog.Errorf("UpdateHostCloudAreaField failed, http request failed, err: %+v, rid: %s", err, rid)
 		return errors.CCHttpError
 	}
-	if result.Code > 0 || result.Result == false {
-		return errors.New(result.Code, result.ErrMsg)
+
+	if ccErr := result.CCError(); err != nil {
+		return ccErr
 	}
+
 	return nil
 }
 
@@ -498,8 +553,9 @@ func (h *host) FindCloudAreaHostCount(ctx context.Context, header http.Header, o
 	return
 }
 
-func (h *host) TransferHostResourceDirectory(ctx context.Context, header http.Header, option *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
-	rid := util.GetHTTPCCRequestID(header)
+// TransferHostResourceDirectory transfer host resource directory
+func (h *host) TransferHostResourceDirectory(ctx context.Context, header http.Header,
+	option *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
 
 	result := metadata.BaseResp{}
 	subPath := "/host/transfer/resource/directory"
@@ -512,27 +568,35 @@ func (h *host) TransferHostResourceDirectory(ctx context.Context, header http.He
 		Do().
 		Into(&result)
 	if err != nil {
-		blog.Errorf("TransferHostResourceDirectory failed, http request failed, err: %+v, rid: %s", err, rid)
 		return errors.CCHttpError
 	}
-	if result.Code > 0 || result.Result == false {
-		return errors.New(result.Code, result.ErrMsg)
+
+	if ccErr := result.CCError(); err != nil {
+		return ccErr
 	}
 
 	return nil
 }
 
-// GetDistinctHostIDByTopology get distion host id by topology relation
-func (h *host) GetDistinctHostIDByTopology(ctx context.Context, header http.Header, input *metadata.DistinctHostIDByTopoRelationRequest) (resp *metadata.DistinctIDResponse, err error) {
-	resp = new(metadata.DistinctIDResponse)
+// GetDistinctHostIDByTopology get distinct host id by topology relation
+func (h *host) GetDistinctHostIDByTopology(ctx context.Context, header http.Header,
+	input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, errors.CCErrorCoder) {
+
+	resp := new(metadata.DistinctIDResponse)
 	subPath := "/read/distinct/host_id/topology/relation"
 
-	err = h.client.Post().
+	err := h.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+	return resp.Data.IDArr, nil
 }

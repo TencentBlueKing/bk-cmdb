@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -27,6 +28,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/types"
+	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
 
@@ -358,36 +360,85 @@ func Mongo(prefix string) (mongo.Config, error) {
 	if c.Mechanism == "" {
 		c.Mechanism = "SCRAM-SHA-1"
 	}
-	if !parser.isSet(prefix+".maxOpenConns") || parser.getUint64(prefix+".maxOpenConns") > mongo.MaximumMaxOpenConns {
+
+	maxOpenConns := prefix + ".maxOpenConns"
+	if !parser.isSet(maxOpenConns) {
+		blog.Errorf("can not find config %s, set default value: %d", maxOpenConns, mongo.DefaultMaxOpenConns)
 		c.MaxOpenConns = mongo.DefaultMaxOpenConns
 	} else {
-		c.MaxOpenConns = parser.getUint64(prefix + ".maxOpenConns")
+		c.MaxOpenConns = parser.getUint64(maxOpenConns)
 	}
 
-	if !parser.isSet(prefix+".maxIdleConns") || parser.getUint64(prefix+".maxIdleConns") < mongo.MinimumMaxIdleOpenConns {
+	if c.MaxIdleConns > mongo.MaximumMaxOpenConns {
+		blog.Errorf("config %s exceeds maximum value, use maximum value %d", maxOpenConns, mongo.MaximumMaxOpenConns)
+		c.MaxIdleConns = mongo.MaximumMaxOpenConns
+	}
+
+	maxIdleConns := prefix + ".maxIdleConns"
+	if !parser.isSet(maxIdleConns) {
+		blog.Errorf("can not find config %s, set default value: %d", maxIdleConns, mongo.MinimumMaxIdleOpenConns)
 		c.MaxIdleConns = mongo.MinimumMaxIdleOpenConns
 	} else {
-		c.MaxIdleConns = parser.getUint64(prefix + ".maxIdleConns")
+		c.MaxIdleConns = parser.getUint64(maxIdleConns)
+	}
+
+	if c.MaxIdleConns < mongo.MinimumMaxIdleOpenConns {
+		blog.Errorf("config %s less than minimum value, use minimum value %d",
+			maxIdleConns, mongo.MinimumMaxIdleOpenConns)
+		c.MaxIdleConns = mongo.MinimumMaxIdleOpenConns
 	}
 
 	if !parser.isSet(prefix + ".socketTimeoutSeconds") {
-		blog.Errorf("can not find mongo.socketTimeoutSeconds config, use default value: %d", mongo.DefaultSocketTimeout)
+		blog.Errorf("can not find mongo.socketTimeoutSeconds config, use default value: %d",
+			mongo.DefaultSocketTimeout)
 		c.SocketTimeout = mongo.DefaultSocketTimeout
 		return c, nil
 	}
 
 	c.SocketTimeout = parser.getInt(prefix + ".socketTimeoutSeconds")
 	if c.SocketTimeout > mongo.MaximumSocketTimeout {
-		blog.Errorf("mongo.socketTimeoutSeconds config %d exceeds maximum value, use maximum value %d", c.SocketTimeout, mongo.MaximumSocketTimeout)
+		blog.Errorf("mongo.socketTimeoutSeconds config %d exceeds maximum value, use maximum value %d",
+			c.SocketTimeout, mongo.MaximumSocketTimeout)
 		c.SocketTimeout = mongo.MaximumSocketTimeout
 	}
 
 	if c.SocketTimeout < mongo.MinimumSocketTimeout {
-		blog.Errorf("mongo.socketTimeoutSeconds config %d less than minimum value, use minimum value %d", c.SocketTimeout, mongo.MinimumSocketTimeout)
+		blog.Errorf("mongo.socketTimeoutSeconds config %d less than minimum value, use minimum value %d",
+			c.SocketTimeout, mongo.MinimumSocketTimeout)
 		c.SocketTimeout = mongo.MinimumSocketTimeout
 	}
 
 	return c, nil
+}
+
+// Kafka return kafka configuration information according to the prefix.
+func Kafka(prefix string) (kafka.Config, error) {
+	confLock.RLock()
+	defer confLock.RUnlock()
+
+	var parser *viperParser
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		parser = getCommonParser()
+		if parser != nil {
+			break
+		}
+		blog.Warn("the configuration of common is not ready yet")
+		time.Sleep(time.Duration(1) * time.Second)
+	}
+
+	if parser == nil {
+		blog.Errorf("can't find kafka configuration")
+		return kafka.Config{}, err.New("can't find kafka configuration")
+	}
+
+	return kafka.Config{
+		Brokers:   parser.getStringSlice(prefix + ".brokers"),
+		GroupID:   parser.getString(prefix + ".groupID"),
+		Topic:     parser.getString(prefix + ".topic"),
+		Partition: parser.getInt64(prefix + ".partition"),
+		User:      parser.getString(prefix + ".user"),
+		Password:  parser.getString(prefix + ".password"),
+	}, nil
 }
 
 // String return the string value of the configuration information according to the key.
@@ -411,13 +462,51 @@ func Int(key string) (int, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
 	if migrateParser != nil && migrateParser.isSet(key) {
+		if !migrateParser.isConfigIntType(key) {
+			return 0, err.New("config is not int type")
+		}
 		return migrateParser.getInt(key), nil
 	}
+
 	if commonParser != nil && commonParser.isSet(key) {
+		if !commonParser.isConfigIntType(key) {
+			return 0, err.New("config is not int type")
+		}
 		return commonParser.getInt(key), nil
 	}
+
 	if extraParser != nil && extraParser.isSet(key) {
+		if !extraParser.isConfigIntType(key) {
+			return 0, err.New("config is not int type")
+		}
 		return extraParser.getInt(key), nil
+	}
+	return 0, err.New("config not found")
+}
+
+// Int return the int value of the configuration information according to the key.
+func Int64(key string) (int64, error) {
+	confLock.RLock()
+	defer confLock.RUnlock()
+	if migrateParser != nil && migrateParser.isSet(key) {
+		if !migrateParser.isConfigIntType(key) {
+			return 0, err.New("config is not int type")
+		}
+		return migrateParser.getInt64(key), nil
+	}
+
+	if commonParser != nil && commonParser.isSet(key) {
+		if !commonParser.isConfigIntType(key) {
+			return 0, err.New("config is not int type")
+		}
+		return commonParser.getInt64(key), nil
+	}
+
+	if extraParser != nil && extraParser.isSet(key) {
+		if !extraParser.isConfigIntType(key) {
+			return 0, err.New("config is not int type")
+		}
+		return extraParser.getInt64(key), nil
 	}
 	return 0, err.New("config not found")
 }
@@ -427,24 +516,52 @@ func Bool(key string) (bool, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
 	if migrateParser != nil && migrateParser.isSet(key) {
+		if !migrateParser.isConfigBoolType(key) {
+			return false, err.New("config is not bool type")
+		}
 		return migrateParser.getBool(key), nil
 	}
+
 	if commonParser != nil && commonParser.isSet(key) {
+		if !commonParser.isConfigBoolType(key) {
+			return false, err.New("config is not bool type")
+		}
 		return commonParser.getBool(key), nil
 	}
+
 	if extraParser != nil && extraParser.isSet(key) {
+		if !extraParser.isConfigBoolType(key) {
+			return false, err.New("config is not bool type")
+		}
 		return extraParser.getBool(key), nil
 	}
+
 	return false, err.New("config not found")
+}
+
+// StringSlice return the stringSlice value of the configuration information according to the key.
+func StringSlice(key string) ([]string, error) {
+	confLock.RLock()
+	defer confLock.RUnlock()
+	if migrateParser != nil && migrateParser.isSet(key) {
+		return migrateParser.getStringSlice(key), nil
+	}
+	if commonParser != nil && commonParser.isSet(key) {
+		return commonParser.getStringSlice(key), nil
+	}
+	if extraParser != nil && extraParser.isSet(key) {
+		return extraParser.getStringSlice(key), nil
+	}
+	return nil, err.New("config not found")
 }
 
 func IsExist(key string) bool {
 	confLock.RLock()
 	defer confLock.RUnlock()
-	if migrateParser != nil {
-		return migrateParser.isSet(key)
-	}
-	if (commonParser == nil || !commonParser.isSet(key)) && (extraParser == nil || !extraParser.isSet(key)) {
+
+	// 在所有的配置文件中判断
+	if (migrateParser == nil || !migrateParser.isSet(key)) && (commonParser == nil || !commonParser.isSet(key)) &&
+		(extraParser == nil || !extraParser.isSet(key)) {
 		return false
 	}
 	return true
@@ -458,12 +575,8 @@ func getMongodbParser() *viperParser {
 	return mongodbParser
 }
 
-type Parser interface {
-	GetString(string) string
-	GetInt(string) int
-	GetUint64(string) uint64
-	GetBool(string) bool
-	IsSet(path string) bool
+func getCommonParser() *viperParser {
+	return commonParser
 }
 
 type viperParser struct {
@@ -509,6 +622,35 @@ func (vp *viperParser) getBool(path string) bool {
 	return vp.parser.GetBool(path)
 }
 
+func (vp *viperParser) getDuration(path string) time.Duration {
+	return vp.parser.GetDuration(path)
+}
+
 func (vp *viperParser) isSet(path string) bool {
 	return vp.parser.IsSet(path)
+}
+
+func (vp *viperParser) getInt64(path string) int64 {
+	return vp.parser.GetInt64(path)
+}
+
+func (vp *viperParser) getStringSlice(path string) []string {
+	return vp.parser.GetStringSlice(path)
+}
+
+func (vp *viperParser) isConfigIntType(path string) bool {
+	val := vp.parser.GetString(path)
+	_, err := strconv.Atoi(val)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func (vp *viperParser) isConfigBoolType(path string) bool {
+	val := vp.parser.GetString(path)
+	if val != "true" && val != "false" {
+		return false
+	}
+	return true
 }

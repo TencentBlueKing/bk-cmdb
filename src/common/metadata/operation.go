@@ -78,6 +78,16 @@ type StringIDCount struct {
 	Count int64  `json:"count" bson:"count"`
 }
 
+// ObjectIDCount object count statistics information used for
+// group aggregate operation.
+type ObjectIDCount struct {
+	// ObjID object id.
+	ObjID string `bson:"_id" json:"bk_obj_id"`
+
+	// Count targets count.
+	Count int64 `bson:"count" json:"instance_count"`
+}
+
 type UpdateInstCount struct {
 	ID    UpdateID `json:"id" bson:"_id"`
 	Count int64    `json:"count" bson:"count"`
@@ -135,15 +145,6 @@ type CloudMapping struct {
 	CloudName  string `json:"bk_cloud_name" bson:"bk_cloud_name"`
 	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	CloudID    int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
-}
-
-type AttributesOptions []AttributesOption
-
-type AttributesOption struct {
-	ID        string `json:"id" bson:"id"`
-	Name      string `json:"name" bson:"name"`
-	Type      string `json:"type" bson:"type"`
-	IsDefault bool   `json:"is_default" bson:"is_default"`
 }
 
 type ChartClassification struct {

@@ -86,7 +86,7 @@
       unloadHandler(e) {
         if (this.active) {
           /* eslint-disable-next-line */
-                    return (e || window.event).returnValue = this.title
+          return (e || window.event).returnValue = this.title
         }
       },
       async beforeEachHook(to, from, next) {

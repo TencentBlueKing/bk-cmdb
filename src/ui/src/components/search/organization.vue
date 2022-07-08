@@ -2,6 +2,7 @@
   <cmdb-form-organization
     v-model="localValue"
     v-bind="$attrs"
+    @clear="() => $emit('clear')"
     @toggle="handleToggle">
   </cmdb-form-organization>
 </template>
@@ -24,7 +25,7 @@
         },
         set(value) {
           this.$emit('input', value)
-          this.$emit('input', value)
+          this.$emit('change', value)
         }
       }
     }

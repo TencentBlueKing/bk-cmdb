@@ -258,10 +258,10 @@ func (ti *TopoInstance) Key() string {
 
 // TransferHostsCrossBusinessRequest Transfer host across business request parameter
 type TransferHostsCrossBusinessRequest struct {
-	SrcApplicationID int64   `json:"src_bk_biz_id"`
-	DstApplicationID int64   `json:"dst_bk_biz_id"`
-	HostIDArr        []int64 `json:"bk_host_id"`
-	DstModuleIDArr   []int64 `json:"bk_module_ids"`
+	SrcApplicationIDs []int64 `json:"src_bk_biz_id"`
+	DstApplicationID  int64   `json:"dst_bk_biz_id"`
+	HostIDArr         []int64 `json:"bk_host_id"`
+	DstModuleIDArr    []int64 `json:"bk_module_ids"`
 }
 
 // HostModuleRelationRequest gethost module relation request parameter
@@ -395,13 +395,16 @@ type ListServiceInstanceOption struct {
 	SearchKey          *string            `json:"search_key"`
 	ServiceInstanceIDs []int64            `json:"service_instance_ids"`
 	Selectors          selector.Selectors `json:"selectors"`
+	Fields             []string           `json:"fields"`
 	Page               BasePage           `json:"page"`
 }
 
 type ListServiceInstanceDetailOption struct {
-	BusinessID         int64              `json:"bk_biz_id"`
-	ModuleID           int64              `json:"bk_module_id"`
+	BusinessID int64 `json:"bk_biz_id"`
+	ModuleID   int64 `json:"bk_module_id"`
+	// HostID is legacy code, compatible with this field, but not recommended.
 	HostID             int64              `json:"bk_host_id"`
+	HostList           []int64            `json:"bk_host_list"`
 	ServiceInstanceIDs []int64            `json:"service_instance_ids"`
 	Selectors          selector.Selectors `json:"selectors,omitempty"`
 	Page               BasePage           `json:"page,omitempty"`
@@ -467,6 +470,7 @@ type ManyServiceInstanceResult struct {
 	Data     []*ServiceInstance `json:"data"`
 }
 
+// MultipleServiceInstance 增加指定返回field字段的result briefInfo。
 type MultipleServiceInstance struct {
 	Count uint64            `json:"count"`
 	Info  []ServiceInstance `json:"info"`
@@ -621,16 +625,6 @@ type MultipleSyncRegionResult struct {
 	Data     []*Region `json:"data"`
 }
 
-type SubscriptionResult struct {
-	BaseResp `json:",inline"`
-	Data     Subscription `json:"data"`
-}
-
-type MultipleSubscriptionResult struct {
-	BaseResp `json:",inline"`
-	Data     RspSubscriptionSearch `json:"data"`
-}
-
 type DistinctFieldOption struct {
 	TableName string                 `json:"table_name"`
 	Field     string                 `json:"field"`
@@ -653,4 +647,10 @@ func (d *DistinctFieldOption) Validate() (rawError errors.RawErrorInfo) {
 	}
 
 	return errors.RawErrorInfo{}
+}
+
+// CreateModelTable create model table params
+type CreateModelTable struct {
+	ObjectIDs  []string `json:"bk_object_ids"`
+	IsMainLine bool     `json:"is_main_line"`
 }

@@ -30,8 +30,19 @@ func TestAVX2hasAVX(t *testing.T) {
 	}
 }
 
+func TestAVX512HasAVX2AndAVX(t *testing.T) {
+	if runtime.GOARCH == "amd64" {
+		if cpu.X86.HasAVX512 && !cpu.X86.HasAVX {
+			t.Fatal("HasAVX expected true, got false")
+		}
+		if cpu.X86.HasAVX512 && !cpu.X86.HasAVX2 {
+			t.Fatal("HasAVX2 expected true, got false")
+		}
+	}
+}
+
 func TestARM64minimalFeatures(t *testing.T) {
-	if runtime.GOARCH != "arm64" || runtime.GOOS == "darwin" {
+	if runtime.GOARCH != "arm64" || runtime.GOOS == "ios" {
 		return
 	}
 	if !cpu.ARM64.HasASIMD {
@@ -61,22 +72,5 @@ func TestPPC64minimalFeatures(t *testing.T) {
 		if !cpu.PPC64.IsPOWER8 {
 			t.Fatal("IsPOWER8 expected true, got false")
 		}
-	}
-}
-
-func TestS390X(t *testing.T) {
-	if runtime.GOARCH != "s390x" {
-		return
-	}
-	if testing.Verbose() {
-		t.Logf("%+v\n", cpu.S390X)
-	}
-	// z/Architecture is mandatory
-	if !cpu.S390X.HasZARCH {
-		t.Error("HasZARCH expected true, got false")
-	}
-	// vector-enhancements require vector facility to be enabled
-	if cpu.S390X.HasVXE && !cpu.S390X.HasVX {
-		t.Error("HasVX expected true, got false (VXE is true)")
 	}
 }

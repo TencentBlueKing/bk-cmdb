@@ -78,7 +78,7 @@ func (c *Client) tryRefreshHostIDList(rid string) {
 			return
 		}
 
-		if time.Now().Unix()-expireAt > 0 && (time.Now().Unix()-expireAt <= hostKey.HostIDListKeyExpireSeconds()) {
+		if time.Now().Unix()-expireAt <= hostKey.HostIDListKeyExpireSeconds() {
 			// not expired
 			return
 		}
@@ -170,22 +170,22 @@ const (
 func (c *Client) refreshHostIDListCache(rid string) error {
 	ctx := context.Background()
 
-	// get all host id list at first
-	total, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(nil).Count(ctx)
-	if err != nil {
-		blog.Errorf("refresh host id list, but count failed, err: %v, rid: %v", err, rid)
-		return err
-	}
-
 	tempIDListKey := fmt.Sprintf("%s-%s", hostKey.HostIDListTempKey(), rid)
 	blog.Infof("try to refresh host id list with temp key: %s, rid: %s", tempIDListKey, rid)
 
-	for start := 0; start < int(total); start += listStep {
+	cond := make(map[string]interface{})
+	total := 0
+	for {
 		stepID := make([]hostID, 0)
-		if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(nil).Start(uint64(start)).
-			Limit(uint64(listStep)).Fields(common.BKHostIDField).All(ctx, &stepID); err != nil {
+		if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(cond).Sort(common.BKHostIDField).
+			Limit(listStep).Fields(common.BKHostIDField).All(ctx, &stepID); err != nil {
 			blog.Errorf("refresh host id list, but get host id list failed, err: %v, rid: %v", err, rid)
 			return err
+		}
+
+		stepIDLen := len(stepID)
+		if stepIDLen == 0 {
+			break
 		}
 
 		pip := redis.Client().Pipeline()
@@ -209,9 +209,18 @@ func (c *Client) refreshHostIDListCache(rid string) error {
 			blog.Errorf("update host id list failed, err: %v, rid: %v", err, rid)
 			return err
 		}
+
+		total += stepIDLen
+		cond = map[string]interface{}{
+			common.BKHostIDField: map[string]interface{}{common.BKDBGT: stepID[stepIDLen-1].ID},
+		}
 	}
 
 	pipe := redis.Client().Pipeline()
+	tempOldIDListKey := fmt.Sprintf("%s-old", tempIDListKey)
+	// rename id list key to temp old id list key so that we can delete later, avoiding the implicit del in rename
+	// which will block all the following redis operation
+	pipe.Rename(hostKey.HostIDListKey(), tempOldIDListKey)
 	// rename temp key to real key
 	pipe.Rename(tempIDListKey, hostKey.HostIDListKey())
 	// reset id_list key's expire time to a new one.
@@ -226,9 +235,31 @@ func (c *Client) refreshHostIDListCache(rid string) error {
 		return err
 	}
 
+	// remove the old host id list key in background
+	go func() {
+		if err := c.deleteOldHostIDListKey(tempOldIDListKey); err != nil {
+			blog.Errorf("delete old host id list lock key: %s failed, err: %v, rid: %v", tempOldIDListKey, err, rid)
+		}
+	}()
+
 	blog.Infof("fresh host id list key: %s success, count: %d. rid: %v", hostKey.HostIDListKey(), total, rid)
 
 	return nil
+}
+
+func (c *Client) deleteOldHostIDListKey(key string) error {
+	for {
+		cnt, err := redis.Client().ZRemRangeByRank(key, 0, listStep).Result()
+		if err != nil {
+			return err
+		}
+
+		if cnt < listStep {
+			return nil
+		}
+
+		time.Sleep(200 * time.Millisecond)
+	}
 }
 
 func (c *Client) getHostsWithPage(ctx context.Context, opt *metadata.ListHostWithPage) (int64, []string, error) {

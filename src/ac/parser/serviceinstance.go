@@ -44,6 +44,14 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.Create,
 	}, {
+		Name:           "searchHostWithNoServiceInstancePattern",
+		Description:    "获取无服务实例的主机",
+		Pattern:        "/api/v3/findmany/proc/host/with_no_service_instance",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.HostInstance,
+		ResourceAction: meta.FindMany,
+	}, {
 		Name:           "findServiceInstancePattern",
 		Description:    "list 服务实例",
 		Pattern:        "/api/v3/findmany/proc/service_instance",
@@ -59,6 +67,25 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.FindMany,
+	}, {
+		// search service instance by biz set regex, authorize by biz set access permission, **only for ui**
+		Name:           "findServiceInstanceWebByBizSetRegexp",
+		Description:    "UI查询业务集下的服务实例",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/web/biz_set/[0-9]+/service_instance/?$`),
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.BizSet,
+		ResourceAction: meta.AccessBizSet,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			if len(request.Elements) != 8 {
+				return nil, fmt.Errorf("get invalid url elements length %d", len(request.Elements))
+			}
+
+			bizSetID, err := strconv.ParseInt(request.Elements[6], 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[6], err)
+			}
+			return []int64{bizSetID}, nil
+		},
 	},
 	{
 		Name:           "findServiceInstanceDetailsPattern",
@@ -85,12 +112,66 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.FindMany,
 	}, {
+		// search service instance by biz set regex, authorize by biz set access permission, **only for ui**
+		Name:           "uiFindServiceInstanceByHostAndBizSetRegexp",
+		Description:    "根据主机查询业务集下的服务实例-frontend",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/web/biz_set/[0-9]+/service_instance/with_host/?$`),
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.BizSet,
+		ResourceAction: meta.AccessBizSet,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			if len(request.Elements) != 9 {
+				return nil, fmt.Errorf("get invalid url elements length %d", len(request.Elements))
+			}
+
+			bizSetID, err := strconv.ParseInt(request.Elements[6], 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[6], err)
+			}
+			return []int64{bizSetID}, nil
+		},
+	}, {
 		Name:           "updateServiceInstances",
 		Description:    "更新某业务下的服务实例",
 		Regex:          regexp.MustCompile(`^/api/v3/updatemany/proc/service_instance/biz/([0-9]+)/?$`),
 		HTTPMethod:     http.MethodPut,
 		BizIDGetter:    BizIDFromURLGetter,
 		BizIndex:       6,
+		ResourceType:   meta.ProcessServiceInstance,
+		ResourceAction: meta.UpdateMany,
+	}, {
+		Name:        "updateServiceTemplateHostApplyEnableStatus",
+		Description: "更新服务模板主机自动应用状态",
+		// NOCC:tosa/linelength(ignore length)
+		Regex:          regexp.MustCompile(`^/api/v3/updatemany/proc/service_template/host_apply_enable_status/biz/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
+		ResourceType:   meta.ProcessServiceInstance,
+		ResourceAction: meta.UpdateMany,
+	}, {
+		Name:           "findmanyServiceTemplateHostApplyTaskStatus",
+		Description:    "查看服务模板场景下主机自动应用任务状态",
+		Regex:          regexp.MustCompile(`/api/v3/findmany/proc/service_template/host_apply_plan/status`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.Business,
+		ResourceAction: meta.ViewBusinessResource,
+	}, {
+		Name:           "deleteServiceTemplateHostApplyRule",
+		Description:    "删除服务模板场景下主机自动应用规则",
+		Regex:          regexp.MustCompile(`^/api/v3/deletemany/proc/service_template/host_apply_rule/biz/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodDelete,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
+		ResourceType:   meta.ProcessServiceInstance,
+		ResourceAction: meta.Delete,
+	}, {
+		Name:           "updateServiceTemplateHostApplyRule",
+		Description:    "编辑服务模板场景下主机自动应用规则",
+		Regex:          regexp.MustCompile(`^/api/v3/updatemany/proc/service_template/host_apply_plan/run`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.UpdateMany,
 	}, {
@@ -103,8 +184,24 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceAction: meta.Delete,
 	}, {
 		Name:           "diffServiceInstanceWithTemplatePattern",
-		Description:    "对比服务实例与模板",
-		Pattern:        "/api/v3/find/proc/service_instance/difference",
+		Description:    "对比服务实例与模板差异涉及到的进程列表",
+		Pattern:        "/api/v3/find/proc/service_template/general_difference",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceInstance,
+		ResourceAction: meta.Find,
+	}, {
+		Name:           "diffServiceInstanceWithTemplatePattern",
+		Description:    "对比服务实例与模板差异涉及到的服务实例",
+		Pattern:        "/api/v3/find/proc/difference/service_instances",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceInstance,
+		ResourceAction: meta.Find,
+	}, {
+		Name:           "diffServiceInstanceWithTemplatePattern",
+		Description:    "对比服务实例与模板涉及到的服务实例详细信息",
+		Pattern:        "/api/v3/find/proc/service_instance/difference_detail",
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.ProcessServiceInstance,
@@ -117,6 +214,15 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.Update,
+	}, {
+		Name:           "findServiceTemplateSyncStatus",
+		Description:    "获取服务模板同步状态",
+		Regex:          regexp.MustCompile(`/api/v3/findmany/proc/service_template_sync_status/bk_biz_id/([0-9]+)/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       6,
+		ResourceType:   meta.ProcessServiceTemplate,
+		ResourceAction: meta.Find,
 	}, {
 		Name:           "listServiceInstanceWithHostPattern",
 		Description:    "根据主机查询服务实例",
@@ -134,13 +240,33 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.FindMany,
 	}, {
+		// aggregate service instance labels by biz set regex, authorize by biz set access permission, **only for ui**
+		Name:        "aggregationServiceInstanceLabelsByBizSetRegexp",
+		Description: "聚合业务集下的服务实例标签",
+		Regex: regexp.MustCompile(
+			`^/api/v3/findmany/proc/biz_set/[0-9]+/service_instance/labels/aggregation/?$`),
+		HTTPMethod:     http.MethodPost,
+		ResourceType:   meta.BizSet,
+		ResourceAction: meta.AccessBizSet,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			if len(request.Elements) != 9 {
+				return nil, fmt.Errorf("get invalid url elements length %d", len(request.Elements))
+			}
+
+			bizSetID, err := strconv.ParseInt(request.Elements[5], 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[5], err)
+			}
+			return []int64{bizSetID}, nil
+		},
+	}, {
 		Name:           "addServiceInstanceLabelsPattern",
 		Description:    "服务实例添加label",
 		Pattern:        "/api/v3/createmany/proc/service_instance/labels",
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.ProcessServiceInstance,
-		ResourceAction: meta.Find,
+		ResourceAction: meta.Update,
 	}, {
 		Name:           "removeServiceInstanceLabelsPattern",
 		Description:    "服务实例删除label",
@@ -148,7 +274,15 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		HTTPMethod:     http.MethodDelete,
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.ProcessServiceInstance,
-		ResourceAction: meta.Find,
+		ResourceAction: meta.Delete,
+	}, {
+		Name:           "updateServiceInstanceLabelsPattern",
+		Description:    "服务实例更新label",
+		Pattern:        "/api/v3/updatemany/proc/service_instance/labels",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.ProcessServiceInstance,
+		ResourceAction: meta.Update,
 	}, {
 		Name:           "deleteProcessInstanceInServiceInstanceRegexp",
 		Description:    "删除进程实例",

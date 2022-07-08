@@ -16,8 +16,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -26,10 +24,11 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/task_server/app/options"
+	"configcenter/src/scene_server/task_server/logics"
 	tasksvc "configcenter/src/scene_server/task_server/service"
 	"configcenter/src/storage/dal/redis"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
@@ -86,12 +85,22 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("new mongo client failed, err: %s", err.Error())
 	}
 
+	initErr := db.InitTxnManager(cacheDB)
+	if initErr != nil {
+		blog.Errorf("init txn manager failed, err: %v", initErr)
+		return initErr
+	}
+
 	service.Engine = engine
 	service.Config = taskSrv.Config
 	service.CacheDB = cacheDB
 	service.DB = db
 	taskSrv.Core = engine
+	service.Logics = logics.NewLogics(engine.CoreAPI, db)
 	taskSrv.Service = service
+
+	// cron job delete history task
+	go taskSrv.Service.TimerDeleteHistoryTask(ctx)
 
 	if err := backbone.StartServer(ctx, cancel, engine, service.WebService(), true); err != nil {
 		blog.Errorf("start backbone failed, err: %+v", err)
@@ -119,44 +128,6 @@ func (h *TaskServer) WebService() *restful.Container {
 
 func (h *TaskServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	if h.Config == nil {
-		h.Config = &options.Config{}
+		h.Config = new(options.Config)
 	}
-	name, _ := cc.String("taskServer.name")
-	taskNameArr := strings.Split(name, ",")
-
-	for _, name := range taskNameArr {
-		if name == "" {
-			continue
-		}
-		prefix := "taskServer." + name
-
-		strRetry, _ := cc.String(prefix+".retry")
-		var retry int64 = 0
-		var err error
-		if strRetry != "" {
-			retry, err = strconv.ParseInt(strRetry, 10, 64)
-			if err != nil {
-				retry = 0
-				blog.Errorf(" parse task name %s retry %s to int error. err:%s", name, strRetry, err.Error())
-			}
-		}
-
-		f := func() ([]string, error) {
-			addrArray, _ := cc.String(prefix + ".addrs")
-			addrs := strings.Split(addrArray, ",")
-			return addrs, nil
-		}
-		path, _ := cc.String(prefix + ".path")
-		task := tasksvc.TaskInfo{
-			Name:  name,
-			Addr:  f,
-			Path:  path,
-			Retry: retry,
-		}
-		if h.taskQueue == nil {
-			h.taskQueue = make(map[string]tasksvc.TaskInfo, 0)
-		}
-		h.taskQueue[name] = task
-	}
-
 }

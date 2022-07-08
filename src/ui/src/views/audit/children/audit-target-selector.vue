@@ -47,12 +47,13 @@
           ]),
           resource: new Set([
             'business',
+            'biz_set',
             'model_instance',
             'instance_association',
             'resource_directory',
             'cloud_area',
             'cloud_account',
-            'cloud_sync_task'
+            'cloud_sync_task',
           ]),
           other: new Set([
             'model_group',
@@ -62,7 +63,8 @@
             'model_association',
             'model_attribute_group',
             'event',
-            'association_kind'
+            'association_kind',
+            'platform_setting'
           ])
         })
       }

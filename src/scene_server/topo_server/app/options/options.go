@@ -13,6 +13,7 @@
 package options
 
 import (
+	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/redis"
@@ -27,9 +28,11 @@ type ServerOption struct {
 
 type Config struct {
 	BusinessTopoLevelMax int `json:"level.businessTopoMax"`
-	Redis                redis.Config
-	ConfigMap            map[string]string
-	Es                   elasticsearch.EsConfig
+	// Auth is auth config
+	Auth      iam.AuthConfig
+	Redis     redis.Config
+	ConfigMap map[string]string
+	Es        elasticsearch.EsConfig
 }
 
 func NewServerOption() *ServerOption {

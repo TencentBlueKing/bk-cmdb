@@ -1,5 +1,7 @@
 <template>
-  <cmdb-sticky-layout class="create-template-wrapper" v-bkloading="{ isLoading: $loading(Object.values(request)) }">
+  <cmdb-sticky-layout class="create-template-wrapper"
+    v-test-id.businessServiceTemplate="insideMode !== 'edit' ? 'addForm' : 'editForm'"
+    v-bkloading="{ isLoading: $loading(Object.values(request)) }">
     <div class="info-group">
       <h3>{{$t('基本属性')}}</h3>
       <div class="template-info clearfix"
@@ -24,18 +26,19 @@
                   :placeholder="$t('模板名称将作为实例化后的模块名')"
                   :class="{ 'is-edit-name': isEditName }"
                   v-model.trim="formData.templateName"
-                  v-validate="'required|businessTopoInstNames|length:32'">
+                  v-validate="'required|businessTopoInstNames|length:256'">
                 </bk-input>
                 <p class="form-error">{{errors.first('templateName')}}</p>
               </template>
               <template v-if="isEditName">
-                <i class="form-confirm edit-icon bk-icon icon-check-1 fl" @click="handleConfirmSaveName"></i>
-                <i class="form-cancel edit-icon bk-icon icon-close fl" @click="handleCancelEditName"></i>
+                <i class="form-confirm edit-icon bk-icon icon-check-1 fl" @click="handleConfirmSaveName" text
+                  v-test-id.businessServiceTemplate="'confirmSaveName'"></i>
+                <i class="form-cancel edit-icon bk-icon icon-close fl" @click="handleCancelEditName" text></i>
               </template>
               <template v-else-if="!isCreateMode">
                 <span class="template-name" :title="formData.templateName">{{formData.templateName}}</span>
                 <cmdb-auth :auth="auth">
-                  <bk-button slot-scope="{ disabled }" text
+                  <bk-button slot-scope="{ disabled }" text v-test-id="'editName'"
                     theme="primary"
                     :disabled="disabled"
                     @click="handleEditName">
@@ -105,7 +108,8 @@
                 <p class="form-error">{{errors.first('secondaryClassificationId')}}</p>
               </div>
               <template v-if="isEditCategory">
-                <i class="form-confirm edit-icon bk-icon icon-check-1" @click="handleSaveCategory"></i>
+                <i class="form-confirm edit-icon bk-icon icon-check-1" @click="handleSaveCategory"
+                  v-test-id.businessServiceTemplate="'confirmSaveCategory'"></i>
                 <i class="form-cancel edit-icon bk-icon icon-close" @click="handleCancelEditCategory"></i>
               </template>
             </template>
@@ -115,7 +119,7 @@
               {{getServiceCategory()}}
             </span>
             <cmdb-auth :auth="auth">
-              <bk-button slot-scope="{ disabled }" text
+              <bk-button slot-scope="{ disabled }" text v-test-id="'editCategory'"
                 theme="primary"
                 :disabled="disabled"
                 @click="handleEditCategory">
@@ -148,7 +152,7 @@
       <div class="precess-box">
         <div class="process-create" v-if="isFormMode">
           <cmdb-auth :auth="auth">
-            <bk-button slot-scope="{ disabled }"
+            <bk-button slot-scope="{ disabled }" v-test-id="'createProcess'"
               class="create-btn"
               theme="default"
               :disabled="disabled"
@@ -180,7 +184,7 @@
         'is-sticky': sticky
       }">
       <cmdb-auth class="mr5" :auth="auth">
-        <bk-button slot-scope="{ disabled }"
+        <bk-button slot-scope="{ disabled }" v-test-id="'submit'"
           theme="primary"
           :disabled="disabled"
           :loading="submitting"
@@ -188,7 +192,7 @@
           {{getButtonText()}}
         </bk-button>
       </cmdb-auth>
-      <bk-button @click="handleReturn" v-show="isFormMode">{{$t('取消')}}</bk-button>
+      <bk-button @click="handleReturn" v-show="isFormMode" v-test-id="'cancel'">{{$t('取消')}}</bk-button>
     </div>
     <bk-sideslider
       v-transfer-dom
@@ -197,7 +201,7 @@
       :width="800"
       :before-close="handleSliderBeforeClose">
       <template slot="content" v-if="slider.show">
-        <process-form
+        <process-form v-test-id.businessServiceTemplate="'processForm'"
           ref="processForm"
           :auth="auth"
           :properties="properties"
@@ -224,8 +228,8 @@
         <i class="bk-icon icon-check-1"></i>
         <h3 class="title">{{$t('创建成功')}}</h3>
         <i18n path="服务模板创建成功，您可以在XXX" tag="p" class="next-content">
-          <bk-link place="link1" theme="primary" @click="handleToSetTemplate">集群模板</bk-link>
-          <bk-link place="link2" theme="primary" @click="handleToBusinessTopo">业务拓扑</bk-link>
+          <bk-link place="link1" theme="primary" @click="handleToSetTemplate">{{$t('集群模板')}}</bk-link>
+          <bk-link place="link2" theme="primary" @click="handleToBusinessTopo">{{$t('业务拓扑')}}</bk-link>
         </i18n>
         <div class="btns">
           <bk-button class="btn mr10" theme="primary" @click="handleContinueCreating">{{$t('继续创建')}}</bk-button>
@@ -240,12 +244,14 @@
   import processForm from './process-form.vue'
   import processTable from './process'
   import { mapActions, mapGetters, mapMutations } from 'vuex'
+  import to from 'await-to-js'
   import {
     MENU_BUSINESS_SERVICE_TEMPLATE,
     MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_BUSINESS_SET_TEMPLATE
   } from '@/dictionary/menu-symbol'
   import Bus from '@/utils/bus'
+
   export default {
     components: {
       processTable,
@@ -313,6 +319,12 @@
       templateId() {
         return this.$route.params.templateId
       },
+      /**
+       * 被克隆的模板 ID
+       */
+      sourceTemplateId() {
+        return this.$route.params.sourceTemplateId
+      },
       isCreateMode() {
         return this.templateId === undefined
       },
@@ -373,18 +385,24 @@
         'clearLocalProcessTemplate'
       ]),
       async refresh() {
-        try {
-          await this.reload()
-          if (this.setActive) {
-            Bus.$emit('active-change', 'instance')
-            this.$route.params.active = null
-          }
-          if (this.$route.params.isEdit) {
-            this.insideMode = 'edit'
-            this.$route.params.isEdit = null
-          }
-        } catch (e) {
-          console.error(e)
+        const [reloadErr] = await to(this.reload())
+
+        if (reloadErr) {
+          throw Error(reloadErr)
+        }
+
+        if (this.sourceTemplateId) {
+          this.initCloneData()
+        }
+
+        if (this.setActive) {
+          Bus.$emit('active-change', 'instance')
+          this.$route.params.active = null
+        }
+
+        if (this.$route.params.isEdit) {
+          this.insideMode = 'edit'
+          this.$route.params.isEdit = null
         }
       },
       setBreadcrumbs() {
@@ -401,10 +419,12 @@
             this.getPropertyGroups(),
             this.getServiceClassification()
           ]
+
           if (!this.isCreateMode) {
             request.push(this.getSingleServiceTemplate())
             request.push(this.getProcessList())
           }
+
           const [properties, groups, { info: categories }, templateResponse] = await Promise.all(request)
           this.properties = properties
           this.propertyGroups = groups
@@ -415,6 +435,7 @@
           this.allSecondaryList = categoryList.filter(classification => classification.bk_parent_id)
           this.mainList = categoryList.filter(classification => !classification.bk_parent_id)
           this.allSecondaryList = categoryList.filter(classification => classification.bk_parent_id)
+
           if (!this.isCreateMode) {
             const { result, data } = templateResponse
             if (!result) {
@@ -427,21 +448,36 @@
               process_instance_count: data.process_instance_count,
               ...data.template
             }
-            // 表单数据
-            const secondCategoryId = data.template.service_category_id
-            const secondCategory = this.allSecondaryList.find(category => category.id === secondCategoryId) || {}
-            this.formData.templateId = data.template.id
-            this.formData.templateName = data.template.name
-            this.formData.mainClassification = secondCategory.bk_parent_id
-            this.formData.secondaryClassification = secondCategoryId
-            // 备份，用于取消编辑
-            this.formData.originMainClassification = secondCategory.bk_parent_id
-            this.formData.originSecondaryClassification = secondCategoryId
-            this.hasUsed = data.service_instance_count > 0
+            this.renderBaseProps(data)
           }
         } catch (e) {
           console.error(e)
         }
+      },
+      async initCloneData() {
+        this.loadSourceTemplate()
+        const [getProcessErr] = await to(this.getProcessList(this.sourceTemplateId))
+        if (!getProcessErr) {
+          this.$store.commit('serviceProcess/setLocalProcessTemplate', this.formatSubmitData(this.processList))
+        }
+      },
+      loadSourceTemplate() {
+        this.getSingleServiceTemplate(this.sourceTemplateId).then(({ data }) => {
+          this.renderBaseProps(data)
+        })
+      },
+      renderBaseProps(data) {
+        // 表单数据
+        const secondCategoryId = data.template.service_category_id
+        const secondCategory = this.allSecondaryList.find(category => category.id === secondCategoryId) || {}
+        this.formData.templateId = data.template.id
+        this.formData.templateName = data.template.name
+        this.formData.mainClassification = secondCategory.bk_parent_id
+        this.formData.secondaryClassification = secondCategoryId
+        // 备份，用于取消编辑
+        this.formData.originMainClassification = secondCategory.bk_parent_id
+        this.formData.originSecondaryClassification = secondCategoryId
+        this.hasUsed = data.service_instance_count > 0
       },
       getProperties() {
         return this.searchObjectAttribute({
@@ -466,9 +502,9 @@
           }
         })
       },
-      getSingleServiceTemplate() {
+      getSingleServiceTemplate(templateId) {
         return this.findServiceTemplate({
-          id: this.templateId,
+          id: templateId || this.templateId,
           config: {
             requestId: this.request.template,
             globalError: false,
@@ -484,12 +520,12 @@
           }
         })
       },
-      getProcessList() {
+      getProcessList(templateId) {
         this.processLoading = true
-        this.getBatchProcessTemplate({
+        return this.getBatchProcessTemplate({
           params: {
             bk_biz_id: this.bizId,
-            service_template_id: Number(this.templateId)
+            service_template_id: Number(templateId || this.templateId)
           },
           config: {
             requestId: this.request.processList
@@ -498,7 +534,7 @@
           this.processList = data.info.map(template => ({
             process_id: template.id,
             ...template.property
-          }))
+          })).sort((prev, next) => prev.process_id - next.process_id)
         })
           .finally(() => {
             this.processLoading = false
@@ -523,7 +559,7 @@
                 }
               })
             })
-          } else {
+          } else if (typeof data[key] === 'object') {
             data[key].value = this.$tools.formatValue(data[key].value, property)
           }
         })
@@ -566,12 +602,14 @@
         this.showSyncInstanceTips()
       },
       showSyncInstanceTips(text = '成功更新模板进程，您可以通过XXX') {
-        const message = () => (
-                    <i18n path={text} tag="div" class="process-success-message">
-                        <bk-link place="link" theme="primary" onClick={this.handleToSyncInstance}>{this.$t('同步功能')}</bk-link>
-                    </i18n>
-                )
-        this.$success(message())
+        // eslint-disable-next-line no-unused-vars
+        const message = (h => (
+          <i18n path={text} tag="div" class="process-success-message">
+            <bk-link place="link" theme="primary" onClick={this.handleToSyncInstance}>{this.$t('同步功能')}</bk-link>
+          </i18n>
+        ))(this.$createElement)
+        this.$success(message)
+        this.$emit('sync-change')
       },
       handleCreateProcess() {
         this.slider.show = true

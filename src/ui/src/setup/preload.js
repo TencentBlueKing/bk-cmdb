@@ -1,4 +1,7 @@
-import { getAuthorizedBusiness } from '@/router/business-interceptor.js'
+import { getAuthorizedBusiness, getAuthorizedBusinessSet } from '@/router/business-interceptor.js'
+import { verifyAuth } from '@/services/auth.js'
+import store from '@/store'
+
 const preloadConfig = {
   fromCache: false,
   cancelWhenRouteChange: false
@@ -34,25 +37,51 @@ export function getGlobalUsercustom(app) {
   }).catch(() => ({}))
 }
 
-export async function getConfig(app) {
-  return app.$store.dispatch('getConfig', {
+/**
+ * 初始化全局配置
+ * @param {Object} app Vue 应用实例
+ * @returns
+ */
+export async function getGlobalConfig(app) {
+  return app.$store.dispatch('globalConfig/fetchConfig', {
     config: {
       ...preloadConfig,
       fromCache: false,
       globalError: false
     }
-  }).then((data) => {
-    app.$store.commit('setConfig', data)
   })
-    .catch(() => {
-      window.CMDB_CONFIG = {}
-    })
+}
+
+/**
+ * 验证平台管理模块的权限
+ */
+export const verifyPlatformManagementAuth = async () => {
+  const [{ is_pass: isPass }] = await verifyAuth([{
+    action: 'update',
+    resource_type: 'configAdmin'
+  }])
+
+  if (isPass) {
+    store.commit('globalConfig/setAuth', isPass)
+  }
 }
 
 export default async function (app) {
+  if (window.Site.authscheme === 'iam') {
+    verifyPlatformManagementAuth()
+  } else {
+    // 开源版的可能没有 IAM，不需要鉴权
+    store.commit('globalConfig/setAuth', true)
+  }
+
+  // 获取有访问权限的业务
   getAuthorizedBusiness()
+
+  // 获取有访问权限的业务集
+  getAuthorizedBusinessSet()
+
   return Promise.all([
-    getConfig(app),
+    getGlobalConfig(app),
     getClassifications(app),
     getUserCustom(app),
     getGlobalUsercustom(app)

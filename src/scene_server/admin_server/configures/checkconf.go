@@ -92,6 +92,10 @@ func (cc *ConfCenter) checkFile(confFilePath string) error {
 			return err
 		}
 
+		// check openTelemetry config
+		if err := cc.isOpenTelemetryConfigOK(v, file); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -229,6 +233,25 @@ func (cc *ConfCenter) isMonitorConfigOK(v *viper.Viper, fileName string) error {
 		}
 	}
 
+	return nil
+}
+
+func (cc *ConfCenter) isOpenTelemetryConfigOK(v *viper.Viper, fileName string) error {
+	if v.IsSet("openTelemetry.enable") {
+		if err := cc.isConfigNotBoolVal("openTelemetry.enable", fileName, v); err != nil {
+			return err
+		}
+	}
+
+	if !v.GetBool("openTelemetry.enable") {
+		return nil
+	}
+
+	if v.IsSet("openTelemetry.bkDataID") {
+		if err := cc.isConfigNotIntVal("openTelemetry.bkDataID", fileName, v); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

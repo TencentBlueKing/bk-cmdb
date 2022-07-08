@@ -17,7 +17,7 @@ import (
 	"net/http"
 	"strconv"
 
-	restful "github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful/v3"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"

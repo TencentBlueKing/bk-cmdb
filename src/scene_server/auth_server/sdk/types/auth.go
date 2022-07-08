@@ -59,6 +59,16 @@ type Options struct {
 	Metric prometheus.Registerer
 }
 
+// AuthorizeList Defines the list structure of authorized instance ids. If the permission type is unlimited, the
+// "IsAny" field is true and the "IDS" is empty. Otherwise, the "IsAny" field is false and the "ids" is the specific
+// instance ID.
+type AuthorizeList struct {
+	// ids with permission.
+	Ids []string `json:"ids"`
+	// is the permission type unrestricted.
+	IsAny bool `json:"isAny"`
+}
+
 type ResourceType string
 
 // Decision describes the authorize decision, have already been authorized(true) or not(false)
@@ -176,7 +186,7 @@ type ListWithAttributes struct {
 	Operator operator.OperType `json:"op"`
 	// resource instance id list, this list is not required, it also
 	// one of the query filter with Operator.
-	IDList     []string               `json:"ids"`
-	Attributes []*operator.FieldValue `json:"attributes"`
-	Type       ResourceType           `json:"type"`
+	IDList       []string           `json:"ids"`
+	AttrPolicies []*operator.Policy `json:"attr_policies"`
+	Type         ResourceType       `json:"type"`
 }

@@ -14,12 +14,9 @@ package extensions
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
-	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -32,7 +29,9 @@ import (
  * business related auth interface
  */
 
-func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Header, businessIDs ...int64) ([]BusinessSimplify, error) {
+func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Header, businessIDs ...int64) (
+	[]BusinessSimplify, error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
@@ -48,7 +47,7 @@ func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Hea
 	}
 	blog.V(5).Infof("get businesses by id result: %+v", result)
 	instances := make([]BusinessSimplify, 0)
-	for _, cls := range result.Data.Info {
+	for _, cls := range result.Info {
 		instance := BusinessSimplify{}
 		_, err = instance.Parse(cls)
 		if err != nil {
@@ -77,13 +76,33 @@ func (am *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.A
 	return resources
 }
 
-func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Header, action meta.Action, businesses ...BusinessSimplify) error {
+// AuthorizeByBusiness authorize by business
+func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Header, action meta.Action,
+	businesses ...BusinessSimplify) error {
+
 	if !am.Enabled() {
 		return nil
 	}
 
+	resourcePoolBusinessID, err := am.getResourcePoolBusinessID(ctx, header)
+	if err != nil {
+		return err
+	}
+
+	bizArr := make([]BusinessSimplify, 0)
+	if action == meta.ViewBusinessResource {
+		for _, biz := range businesses {
+			if biz.BKAppIDField == resourcePoolBusinessID {
+				continue
+			}
+			bizArr = append(bizArr, biz)
+		}
+	} else {
+		bizArr = businesses
+	}
+
 	// make auth resources
-	resources := am.MakeResourcesByBusiness(header, action, businesses...)
+	resources := am.MakeResourcesByBusiness(header, action, bizArr...)
 
 	return am.batchAuthorize(ctx, header, resources...)
 }
@@ -101,29 +120,21 @@ func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.He
 	return am.AuthorizeByBusiness(ctx, header, action, businesses...)
 }
 
-func (am *AuthManager) GenFindBusinessNoPermissionResp(ctx context.Context, header http.Header, businessID int64) (*metadata.BaseResp, error) {
-	businesses, err := am.collectBusinessByIDs(ctx, header, businessID)
+func (am *AuthManager) GenBizBatchNoPermissionResp(ctx context.Context, header http.Header, action meta.Action,
+	bizIDs []int64) (*metadata.BaseResp, error) {
+	businesses, err := am.collectBusinessByIDs(ctx, header, bizIDs...)
 	if err != nil {
 		return nil, err
 	}
-	if len(businesses) != 1 {
-		return nil, errors.New("get business detail failed")
-	}
-	permission := &metadata.IamPermission{
-		SystemID: iam.SystemIDCMDB,
-		Actions: []metadata.IamAction{{
-			ID: string(iam.FindBusiness),
-			RelatedResourceTypes: []metadata.IamResourceType{{
-				SystemID: iam.SystemIDCMDB,
-				Type:     string(iam.Business),
-				Instances: [][]metadata.IamResourceInstance{{{
-					Type: string(iam.Business),
-					ID:   strconv.FormatInt(businessID, 10),
-				}, {
-					Type: string(iam.Business),
-				}}},
-			}},
-		}},
+
+	// make auth resources
+	resources := am.MakeResourcesByBusiness(header, action, businesses...)
+
+	rid := util.ExtractRequestIDFromContext(ctx)
+	permission, err := am.Authorizer.GetPermissionToApply(ctx, header, resources)
+	if err != nil {
+		blog.Errorf("get permission to apply failed, err: %v, rid: %s", err, rid)
+		return nil, err
 	}
 	resp := metadata.NewNoPermissionResp(permission)
 	return &resp, nil

@@ -1,19 +1,29 @@
 <template>
   <div class="options">
     <div class="left">
-      <cmdb-auth :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
-        <bk-button slot-scope="{ disabled }" theme="primary"
-          :disabled="disabled"
-          @click="handleCreate">
-          {{$t('新增')}}
-        </bk-button>
+      <cmdb-auth tag="div" :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
+        <div slot-scope="{ disabled }"
+          v-bk-tooltips="{
+            content: () => $refs.tipsContent,
+            onShow: () => $refs.tipsContent.style.display = 'block',
+            onHide: () => $refs.tipsContent.style.display = 'none',
+            theme: 'light',
+            allowHtml: true,
+            disabled: hasHost && !isEmptyServiceTemplate
+          }">
+          <bk-button theme="primary" v-test-id="'create'"
+            :disabled="disabled || !hasHost || isEmptyServiceTemplate"
+            @click="handleCreate">
+            {{$t('新增')}}
+          </bk-button>
+        </div>
       </cmdb-auth>
       <bk-dropdown-menu class="ml10" trigger="click" font-size="medium">
-        <bk-button slot="dropdown-trigger">
+        <bk-button slot="dropdown-trigger" v-test-id="'moreAction'">
           {{$t('实例操作')}}
           <i class="bk-icon icon-angle-down"></i>
         </bk-button>
-        <ul class="menu-list" slot="dropdown-content">
+        <ul class="menu-list" slot="dropdown-content" v-test-id="'moreAction'">
           <cmdb-auth tag="li" class="menu-item"
             :auth="{ type: $OPERATION.D_SERVICE_INSTANCE, relation: [bizId] }">
             <span class="menu-option" slot-scope="{ disabled: authDisabled }"
@@ -64,6 +74,22 @@
       </bk-search-select>
       <view-switcher class="ml10" active="instance"></view-switcher>
     </div>
+    <span class="tips-content" ref="tipsContent">
+      <i18n path="当前模块主机为空，请先XXX" tag="p" v-if="!hasHost">
+        <a href="javascript:;"
+          class="action-link" place="action"
+          @click="handleClickAddHost">
+          {{$t('添加主机')}}
+        </a>
+      </i18n>
+      <i18n path="当前模块所属的服务模板内进程信息为空，请先XXX" tag="p" v-else-if="isEmptyServiceTemplate">
+        <a href="javascript:;"
+          class="action-link" place="action"
+          @click="handleGoServiceTemplate">
+          {{$t('前往补充')}}
+        </a>
+      </i18n>
+    </span>
   </div>
 </template>
 
@@ -71,7 +97,6 @@
   import ViewSwitcher from '../common/view-switcher'
   import Bus from '../common/bus'
   import RouterQuery from '@/router/query'
-  import { MENU_BUSINESS_DELETE_SERVICE } from '@/dictionary/menu-symbol'
   import { mapGetters } from 'vuex'
   import { Validator } from 'vee-validate'
   import { MULTIPLE_IP_REGEXP } from '@/dictionary/regexp.js'
@@ -83,6 +108,7 @@
       return {
         selection: [],
         hasDifference: false,
+        hasProcessTemplate: false,
         allExpanded: false,
         historyLabels: {},
         searchValue: [],
@@ -93,9 +119,15 @@
     },
     computed: {
       ...mapGetters('businessHost', ['selectedNode']),
-      ...mapGetters('objectBiz', ['bizId']),
+      bizId() {
+        const { objectBiz, bizSet } = this.$store.state
+        return objectBiz.bizId || bizSet.bizId
+      },
       withTemplate() {
         return this.selectedNode && this.selectedNode.data.service_template_id
+      },
+      hasHost() {
+        return this.selectedNode && this.selectedNode.data?.host_count > 0
       },
       nameFilterIndex() {
         return this.searchValue.findIndex(data => data.id === 'name')
@@ -119,13 +151,19 @@
           return list.slice(1)
         }
         return list.slice(0)
+      },
+      isEmptyServiceTemplate() {
+        return this.withTemplate && !this.hasProcessTemplate
       }
     },
     watch: {
       withTemplate: {
         immediate: true,
         handler(withTemplate) {
-          withTemplate && this.checkDifference()
+          if (withTemplate) {
+            this.checkProcessTemplate()
+            this.checkDifference()
+          }
         }
       },
       searchMenuList() {
@@ -137,6 +175,7 @@
       selectedNode() {
         this.searchValue = []
         RouterQuery.set({
+          node: this.selectedNode.id,
           instanceName: ''
         })
         Bus.$emit('filter-change', this.searchValue)
@@ -148,6 +187,7 @@
       })
       Bus.$on('instance-selection-change', this.handleInstanceSelectionChange)
       Bus.$on('update-labels', this.updateHistoryLabels)
+      Bus.$on('delete-complete', this.checkDifference)
       this.setFilter()
       this.updateHistoryLabels()
     },
@@ -155,6 +195,7 @@
       this.unwatch()
       Bus.$off('instance-selection-change', this.handleInstanceSelectionChange)
       Bus.$off('update-labels', this.updateHistoryLabels)
+      Bus.$off('delete-complete', this.checkDifference)
     },
     methods: {
       async updateHistoryLabels() {
@@ -208,13 +249,28 @@
         if (disabled) {
           return false
         }
-        this.$routerActions.redirect({
-          name: MENU_BUSINESS_DELETE_SERVICE,
-          params: {
-            ids: this.selection.map(row => row.id).join('/'),
-            moduleId: this.selectedNode.data.bk_inst_id
-          },
-          history: true
+        this.$bkInfo({
+          title: this.$t('确定删除N个实例', { count: this.selection.length }),
+          confirmLoading: true,
+          confirmFn: async () => {
+            const serviceInstanceIds = this.selection.map(row => row.id)
+            try {
+              await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
+                config: {
+                  data: {
+                    service_instance_ids: serviceInstanceIds,
+                    bk_biz_id: this.bizId
+                  }
+                }
+              })
+              this.$success(this.$t('删除成功'))
+              Bus.$emit('delete-complete')
+              return true
+            } catch (e) {
+              console.error(e)
+              return false
+            }
+          }
         })
       },
       async handleCopy(disabled) {
@@ -252,6 +308,10 @@
         }
       },
       async checkDifference() {
+        if (!this.withTemplate) {
+          return
+        }
+
         try {
           // eslint-disable-next-line max-len
           const { modules: syncStatus = [] } = await this.$store.dispatch('serviceTemplate/getServiceTemplateSyncStatus', {
@@ -267,6 +327,20 @@
           // eslint-disable-next-line max-len
           const difference = syncStatus.find(difference => difference.bk_module_id === this.selectedNode.data.bk_inst_id)
           this.hasDifference = !!difference && difference.need_sync
+        } catch (error) {
+          console.error(error)
+        }
+      },
+      async checkProcessTemplate() {
+        try {
+          const processData = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
+            params: {
+              page: { start: 0, limit: 1 },
+              bk_biz_id: this.bizId,
+              service_template_id: this.selectedNode.data.service_template_id
+            }
+          })
+          this.hasProcessTemplate = processData.info?.length > 0
         } catch (error) {
           console.error(error)
         }
@@ -319,6 +393,28 @@
           return false
         }
         Bus.$emit('batch-edit-labels')
+      },
+      handleClickAddHost() {
+        RouterQuery.set({
+          tab: 'hostList',
+          _t: Date.now(),
+          page: '',
+          limit: ''
+        })
+      },
+      handleGoServiceTemplate() {
+        this.$routerActions.redirect({
+          name: 'operationalTemplate',
+          params: {
+            templateId: this.selectedNode.data.service_template_id,
+            moduleId: this.selectedNode.data.bk_inst_id
+          },
+          query: {
+            node: this.selectedNode.id,
+            tab: 'nodeInfo'
+          },
+          history: true
+        })
       }
     }
   }
@@ -388,5 +484,13 @@
     }
     .options-search {
         width: 200px;
+    }
+
+    .tips-content {
+      display: none;
+      .action-link {
+        color: $primaryColor;
+        margin-left: 2px;
+      }
     }
 </style>

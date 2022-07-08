@@ -19,7 +19,8 @@ import (
 	"strings"
 
 	"configcenter/src/apiserver/service/match"
-	"github.com/emicklei/go-restful"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
 // URLPath url path filter
@@ -62,14 +63,28 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 	return serverType, err
 }
 
-var topoURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(inst|object|objects|topo|biz|module|set|resource)/.*$", verbs))
-var objectURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/object$", verbs))
+var topoURLRegexp = regexp.MustCompile(fmt.Sprintf(
+	"^/api/v3/(%s)/(inst|object|objects|topo|biz|module|set|resource|biz_set)/.*$", verbs))
+var objectURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(object|biz|biz_set)$", verbs))
 
 // WithTopo parse topo api's url
 func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	topoRoot := "/topo/v3"
 	from, to := rootPath, topoRoot
+
 	switch {
+	case strings.HasPrefix(string(*u), rootPath+"/search/instances"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.HasPrefix(string(*u), rootPath+"/count/instances"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.HasPrefix(string(*u), rootPath+"/search/instance_associations"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.HasPrefix(string(*u), rootPath+"/count/instance_associations"):
+		from, to, isHit = rootPath, topoRoot, true
+
 	case strings.HasPrefix(string(*u), rootPath+"/biz/"):
 		from, to, isHit = rootPath+"/biz", topoRoot+"/app", true
 
@@ -102,7 +117,6 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 
 	case strings.Contains(string(*u), "/classificationobject"):
 		from, to, isHit = rootPath, topoRoot, true
-
 	case strings.Contains(string(*u), "/objectattr"):
 		from, to, isHit = rootPath, topoRoot, true
 	case strings.Contains(string(*u), "/objectunique"):
@@ -167,6 +181,9 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/find/audit"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.HasPrefix(string(*u), rootPath+"/find/inst_audit"):
 		from, to, isHit = rootPath, topoRoot, true
 
 	case topoURLRegexp.MatchString(string(*u)):

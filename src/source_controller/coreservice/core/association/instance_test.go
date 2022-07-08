@@ -169,7 +169,7 @@ func TestAssociationInstance(t *testing.T) {
 	//search association instance
 	searchCond := metadata.QueryCondition{}
 	searchCond.Condition = mapstr.MapStr{common.BKObjIDField: objID}
-	asstSearchResult, err := asstMgr.SearchInstanceAssociation(defaultCtx, searchCond)
+	asstSearchResult, err := asstMgr.SearchInstanceAssociation(defaultCtx, objID, searchCond)
 	require.Nil(t, err)
 	require.NotNil(t, asstSearchResult)
 	require.NotEqual(t, 0, asstSearchResult.Count)
@@ -177,7 +177,7 @@ func TestAssociationInstance(t *testing.T) {
 	//delete association instance
 	deleteCond := metadata.DeleteOption{}
 	deleteCond.Condition = mapstr.MapStr{common.BKObjIDField: objID}
-	deleteResult, err := asstMgr.DeleteInstanceAssociation(defaultCtx, deleteCond)
+	deleteResult, err := asstMgr.DeleteInstanceAssociation(defaultCtx, objID, deleteCond)
 	require.Nil(t, err)
 	require.NotNil(t, deleteResult)
 	require.NotEqual(t, 0, deleteResult.Count)

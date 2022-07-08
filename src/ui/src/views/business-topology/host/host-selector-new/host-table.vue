@@ -4,18 +4,29 @@
       <bk-input
         clearable
         right-icon="icon-search"
+        @change="handleFilter"
         v-model.trim="keyword">
       </bk-input>
     </div>
     <bk-table
       ref="table"
+      row-class-name="clickable-row"
       :data="displayList"
-      :max-height="410"
+      :max-height="tableMaxHeight"
       :outer-border="false"
       :header-border="false"
-      @select="handleSelect"
-      @select-all="handleSelectAll">
-      <bk-table-column type="selection" width="30"></bk-table-column>
+      @row-click="handleRowClick"
+    >
+      <batch-selection-column
+        width="60"
+        :cross-page="false"
+        ref="batchSelectionColumn"
+        :selected-rows="selected"
+        @selection-change="handleSelectionChange"
+        :data="displayList"
+        row-key="host.bk_host_innerip"
+        reserve-selection>
+      </batch-selection-column>
       <bk-table-column :label="$t('内网IP')">
         <template slot-scope="{ row }">
           {{row.host.bk_host_innerip}}
@@ -25,13 +36,27 @@
         <template slot-scope="{ row }">{{row.host.bk_cloud_id | foreignkey}}</template>
       </bk-table-column>
     </bk-table>
+    <bk-pagination
+      v-if="pagination"
+      small
+      :current.sync="innerPagination.current"
+      :count="innerPagination.count"
+      @change="handlePaginationChange"
+      :show-total-count="true"
+      @limit-change="handleLimitChange"
+      :limit-list="[10, 20, 50,100,500]"
+      :limit.sync="innerPagination.limit" />
   </div>
 </template>
 
 <script>
   import debounce from 'lodash.debounce'
   import { foreignkey } from '@/filters/formatter.js'
+  import BatchSelectionColumn from '@/components/batch-selection-column'
   export default {
+    components: {
+      BatchSelectionColumn
+    },
     filters: {
       foreignkey
     },
@@ -43,61 +68,80 @@
       selected: {
         type: Array,
         default: () => ([])
+      },
+      pagination: {
+        type: Object,
+        default: null
       }
     },
     data() {
       return {
         keyword: '',
-        displayList: []
+        displayList: [],
+        innerPagination: {
+          current: 1,
+          limit: 500,
+          count: 0
+        }
       }
+    },
+    computed: {
+      tableMaxHeight() {
+        return this.pagination ? 360 : 400
+      },
     },
     watch: {
       list(list) {
         this.displayList = list
       },
-      displayList() {
-        this.setChecked()
+      'pagination.count': {
+        immediate: true,
+        handler(val) {
+          if (val) {
+            this.innerPagination.count = val
+          }
+        }
       },
-      selected() {
-        this.setChecked()
-      },
-      keyword() {
-        this.handleFilter()
-      }
     },
     created() {
-      this.handleFilter = debounce(this.searchList, 300)
+      this.handleFilter = debounce(this.filterHost, 300)
     },
     methods: {
-      setChecked() {
-        this.$nextTick(() => {
-          const ids = [...new Set(this.selected.map(data => data.host.bk_host_id))]
-          const selected = []
-          this.displayList.forEach((row) => {
-            if (ids.includes(row.host.bk_host_id)) {
-              selected.push(row)
-            }
-            this.$refs.table.toggleRowSelection(row, ids.includes(row.host.bk_host_id))
-          })
-        })
-      },
-      handleSelect(selection) {
-        this.handleSelectionChange(selection)
-      },
-      handleSelectAll(selection) {
-        this.handleSelectionChange(selection)
-      },
       handleSelectionChange(selection) {
         const ids = [...new Set(selection.map(data => data.host.bk_host_id))]
         const removed = this.displayList.filter(item => !ids.includes(item.host.bk_host_id))
+
+        if (selection.length > 500) {
+          this.$bkMessage({
+            message: '批量转移主机数量不能超过 500'
+          })
+          return false
+        }
         this.$emit('select-change', { removed, selected: selection })
       },
-      searchList() {
+      handleRowClick(row) {
+        this.$refs.batchSelectionColumn.toggleRowSelection(row)
+      },
+      filterHost() {
         if (this.keyword) {
           this.displayList = this.list.filter(item => new RegExp(this.keyword, 'i').test(item.host.bk_host_innerip))
         } else {
           this.displayList = this.list
         }
+      },
+      handleLimitChange() {
+        this.innerPagination.current = 1
+        this.handlePaginationChange()
+      },
+      handlePaginationChange() {
+        const val = {
+          start: (this.innerPagination.current - 1) * this.innerPagination.limit,
+          limit: this.innerPagination.limit,
+          count: this.innerPagination.count
+        }
+
+        this.$emit('update:pagination', val)
+        this.$emit('pagination-change', val)
       }
     }
   }
@@ -110,5 +154,14 @@
         .search-bar {
             margin-bottom: 12px;
         }
+    }
+
+    ::v-deep .clickable-row {
+      cursor: pointer;
+    }
+
+    ::v-deep .bk-page .bk-page-total-small{
+      line-height: 40px;
+      margin-top: 0;
     }
 </style>

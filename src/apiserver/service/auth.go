@@ -27,7 +27,7 @@ import (
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
@@ -83,7 +83,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 		}
 	}
 
-	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
+	ctx := context.WithValue(req.Request.Context(), common.ContextRequestIDField, rid)
 
 	if len(needExactAuthAttrs) > 0 {
 		verifyResults, err := s.authorizer.AuthorizeBatch(ctx, pheader, user, needExactAuthAttrs...)
@@ -149,35 +149,43 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return
 	}
+	input := params.SearchParams{}
 	appIDList := make([]int64, 0)
-	for _, resourceID := range authorizedResources {
-		bizID, err := strconv.ParseInt(resourceID, 10, 64)
-		if err != nil {
-			blog.Errorf("parse bizID(%s) failed, err: %v, rid: %s", bizID, err, rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+	// if any Flag is false, we should parse the appIds, else we find all.
+	if !authorizedResources.IsAny {
+		appIDList := make([]int64, 0)
+		for _, resourceID := range authorizedResources.Ids {
+			bizID, err := strconv.ParseInt(resourceID, 10, 64)
+			if err != nil {
+				blog.Errorf("parse bizID(%s) failed, err: %v, rid: %s", bizID, err, rid)
+				resp.WriteError(http.StatusInternalServerError,
+					&metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+				return
+			}
+			appIDList = append(appIDList, bizID)
+		}
+
+		if len(appIDList) == 0 {
+			resp.WriteEntity(metadata.NewSuccessResp(metadata.InstResult{Info: make([]mapstr.MapStr, 0)}))
 			return
 		}
-		appIDList = append(appIDList, bizID)
-	}
 
-	if len(appIDList) == 0 {
-		resp.WriteEntity(metadata.NewSuccessResp(metadata.InstResult{Info: make([]mapstr.MapStr, 0)}))
-		return
-	}
-
-	input := params.SearchParams{
-		Condition: mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{"$in": appIDList}},
+		input = params.SearchParams{
+			Condition: mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{"$in": appIDList}},
+		}
 	}
 
 	result, err := s.engine.CoreAPI.TopoServer().Instance().SearchApp(req.Request.Context(), userInfo.SupplierAccount, req.Request.Header, &input)
 	if err != nil {
-		blog.Errorf("get authorized business list, but get apps[%v] failed, err: %v, rid: %s", appIDList, err, rid)
+		blog.Errorf("get authorized business list, auth anyFlag is: %v, but get apps[%v] failed, err: %v, rid: %s",
+			authorizedResources.IsAny, appIDList, err, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return
 	}
 
 	if !result.Result {
-		blog.Errorf("get authorized business list, but get apps[%v] failed, err: %v, rid: %s", appIDList, result.ErrMsg, rid)
+		blog.Errorf("get authorized business list,auth anyFlag is: %v, but get apps[%v] failed, err: %v, rid: %s",
+			authorizedResources.IsAny, appIDList, result.ErrMsg, rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return
 	}

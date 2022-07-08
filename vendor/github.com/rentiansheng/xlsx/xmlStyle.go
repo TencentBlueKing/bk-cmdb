@@ -121,7 +121,7 @@ func (styles *xlsxStyleSheet) reset() {
 	styles.Fills = xlsxFills{}
 	styles.Borders = xlsxBorders{}
 
-	// Microsoft seems to want an emtpy border to start with
+	// Microsoft seems to want an empty border to start with
 	styles.addBorder(
 		xlsxBorder{
 			Left:   xlsxLine{Style: "none"},

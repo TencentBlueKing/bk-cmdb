@@ -36,6 +36,7 @@
       :editing="getEditState(instance)"
       :topology="$parent.getModulePath(instance.bk_module_id)"
       :templates="getServiceTemplates(instance)"
+      :addible="!instance.service_template"
       :source-processes="getSourceProcesses(instance)"
       :class="{ 'is-first': index === 0 }"
       :instance="instance"
@@ -153,19 +154,55 @@
           const [innerIP] = host.bk_host_innerip.split(',')
           return innerIP || mapping[1]
         }
-        const [outerIP] = host.bk_host_outerip.split(',')
-        return outerIP || mapping[1]
+        // 第一外网IP
+        if (ipValue === '4') {
+          const [outerIP] = host.bk_host_outerip.split(',')
+          return outerIP || mapping[1]
+        }
+        return ''
       },
       getServiceInstanceOptions() {
-        return this.instances.map((instance, index) => {
+        const instanceOptions = {
+          created: [],
+          updated: []
+        }
+
+        this.instances.forEach((instance, index) => {
           const component = this.$refs.serviceInstance.find(component => component.index === index)
-          return {
-            bk_module_id: instance.bk_module_id,
-            bk_host_id: instance.bk_host_id,
-            service_instance_name: instance.name,
-            processes: this.getChangedProcessList(instance, component)
+          const changedProcesses = this.getChangedProcessList(instance, component)
+          const addedProcesses = this.getAddedProcessList(instance, component)
+
+          // 有模板
+          if (instance.service_template) {
+            // 空进程的不能作为添加项
+            if (addedProcesses.length) {
+              instanceOptions.created.push({
+                bk_module_id: instance.bk_module_id,
+                bk_host_id: instance.bk_host_id
+              })
+            }
+
+            // 有修改的项放入到updated
+            if (changedProcesses.length) {
+              instanceOptions.updated.push({
+                bk_module_id: instance.bk_module_id,
+                bk_host_id: instance.bk_host_id,
+                processes: changedProcesses
+              })
+            }
+          } else {
+            // 无模板，在created中放入有添加进程的
+            if (addedProcesses.length) {
+              instanceOptions.created.push({
+                bk_module_id: instance.bk_module_id,
+                bk_host_id: instance.bk_host_id,
+                processes: addedProcesses
+              })
+            }
           }
         })
+
+        return instanceOptions
       },
       /**
        * 解决后端性能问题: 用服务模板生成的实例仅传递有被用户主动触发过编辑的进程信息
@@ -198,6 +235,17 @@
         const state = this.processChangeState[key] || new Set()
         state.add(processIndex)
         this.processChangeState[key] = state
+      },
+      getAddedProcessList(instance, component) {
+        const processes = []
+        component.processList.forEach((process, index) => {
+          const item = { process_info: process }
+          if (instance.service_template) {
+            item.process_template_id = component.templates[index] ? component.templates[index].id : 0
+          }
+          processes.push(item)
+        })
+        return processes
       },
       handleEditName(instance) {
         this.instances.forEach(instance => (instance.editing.name = false))

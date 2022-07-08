@@ -2,9 +2,13 @@ import has from 'has'
 import {
   MENU_INDEX,
   MENU_BUSINESS,
+  MENU_BUSINESS_SET,
   MENU_RESOURCE,
   MENU_MODEL,
   MENU_ANALYSIS,
+  MENU_PLATFORM_MANAGEMENT,
+
+  MENU_BUSINESS_SET_TOPOLOGY,
 
   MENU_BUSINESS_HOST_AND_SERVICE,
   MENU_BUSINESS_CUSTOM_QUERY,
@@ -14,7 +18,6 @@ import {
   MENU_BUSINESS_CUSTOM_FIELDS,
   MENU_BUSINESS_HOST_APPLY,
 
-  MENU_RESOURCE_EVENTPUSH,
   MENU_RESOURCE_MANAGEMENT,
   MENU_RESOURCE_CLOUD_AREA,
   MENU_RESOURCE_CLOUD_ACCOUNT,
@@ -25,14 +28,19 @@ import {
   MENU_MODEL_TOPOLOGY_NEW,
   MENU_MODEL_BUSINESS_TOPOLOGY,
   MENU_MODEL_ASSOCIATION,
+
   MENU_ANALYSIS_AUDIT,
-  MENU_ANALYSIS_OPERATION
+  MENU_ANALYSIS_OPERATION,
+
+  MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG,
 } from './menu-symbol'
 import {
+  businessSetViews,
   businessViews,
   resourceViews,
   modelViews,
-  analysisViews
+  analysisViews,
+  platformManagementViews
 } from '@/views'
 
 const getMenuRoute = (views, symbol) => {
@@ -52,6 +60,16 @@ const getMenuRoute = (views, symbol) => {
 const menus = [{
   id: MENU_INDEX,
   i18n: '首页'
+}, {
+  id: MENU_BUSINESS_SET,
+  i18n: '业务集',
+  visibility: false, // 在一级菜单中不显示
+  menu: [{
+    id: MENU_BUSINESS_SET_TOPOLOGY,
+    i18n: '业务集拓扑',
+    icon: 'icon-cc-host',
+    route: getMenuRoute(businessSetViews, MENU_BUSINESS_SET_TOPOLOGY)
+  }]
 }, {
   id: MENU_BUSINESS,
   i18n: '业务',
@@ -114,11 +132,6 @@ const menus = [{
     i18n: '云资源发现',
     icon: 'icon-cc-cloud-discover',
     route: getMenuRoute(resourceViews, MENU_RESOURCE_CLOUD_RESOURCE, 'resource')
-  }, {
-    id: MENU_RESOURCE_EVENTPUSH,
-    i18n: '事件订阅',
-    icon: 'icon-cc-nav-subscription',
-    route: getMenuRoute(resourceViews, MENU_RESOURCE_EVENTPUSH)
   }]
 }, {
   id: MENU_MODEL,
@@ -162,6 +175,16 @@ const menus = [{
     i18n: '运营统计',
     icon: 'icon-cc-statistics',
     route: getMenuRoute(analysisViews, MENU_ANALYSIS_OPERATION)
+  }]
+}, {
+  id: MENU_PLATFORM_MANAGEMENT,
+  i18n: '平台管理',
+  visibility: componentContext => componentContext.$store.state.globalConfig.auth,
+  menu: [{
+    id: MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG,
+    i18n: '全局配置',
+    icon: 'icon-cc-setting',
+    route: getMenuRoute(platformManagementViews, MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG)
   }]
 }]
 

@@ -13,6 +13,9 @@
 package logics
 
 import (
+	"context"
+	"net/http"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -27,8 +30,8 @@ import (
 
 // GetDepartment get department info from paas
 func (lgc *Logics) GetDepartment(c *gin.Context, config *options.Config) (*metadata.DepartmentData, errors.CCErrorCoder) {
-	// if no esb config, return
-	if !configcenter.IsExist("webServer.esb.addr") {
+	if config.LoginVersion == common.BKOpenSourceLoginPluginVersion ||
+		config.LoginVersion == common.BKSkipLoginPluginVersion {
 		return &metadata.DepartmentData{}, nil
 	}
 
@@ -36,7 +39,7 @@ func (lgc *Logics) GetDepartment(c *gin.Context, config *options.Config) (*metad
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(header))
 	rid := commonutil.GetHTTPCCRequestID(header)
 
-	result, esbErr := esb.EsbClient().User().GetDepartment(c.Request.Context(), c.Request)
+	result, esbErr := esb.EsbClient().User().GetDepartment(c.Request.Context(), c.Request.Header, c.Request.URL)
 	if esbErr != nil {
 		blog.Errorf("get department by esb client failed, http failed, err: %+v, rid: %s", esbErr, rid)
 		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -51,8 +54,8 @@ func (lgc *Logics) GetDepartment(c *gin.Context, config *options.Config) (*metad
 
 // GetDepartmentProfile get department profile from paas
 func (lgc *Logics) GetDepartmentProfile(c *gin.Context, config *options.Config) (*metadata.DepartmentProfileData, errors.CCErrorCoder) {
-	// if no esb config, return
-	if !configcenter.IsExist("webServer.esb.addr") {
+	if config.LoginVersion == common.BKOpenSourceLoginPluginVersion ||
+		config.LoginVersion == common.BKSkipLoginPluginVersion {
 		return &metadata.DepartmentProfileData{}, nil
 	}
 
@@ -70,4 +73,38 @@ func (lgc *Logics) GetDepartmentProfile(c *gin.Context, config *options.Config) 
 		return nil, errors.NewCCError(result.Code, result.Message)
 	}
 	return &result.Data, nil
+}
+
+func (lgc *Logics) getDepartmentMap(ctx context.Context, header http.Header) (map[int64]metadata.DepartmentItem,
+	errors.CCErrorCoder) {
+
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(header))
+	rid := commonutil.GetHTTPCCRequestID(header)
+	dpMap := make(map[int64]metadata.DepartmentItem)
+
+	loginVersion, err := configcenter.String("webServer.login.version")
+	if err != nil {
+		blog.Errorf("get config webServer.login.version failed, err: %v, rid: %s", err, rid)
+		return nil, defErr.CCErrorf(common.CCErrCommConfMissItem, "webServer.login.version")
+	}
+
+	if loginVersion == common.BKOpenSourceLoginPluginVersion || loginVersion == common.BKSkipLoginPluginVersion {
+		return dpMap, nil
+	}
+
+	result, esbErr := esb.EsbClient().User().GetDepartment(ctx, header, nil)
+	if esbErr != nil {
+		blog.Errorf("get department by esb client failed, http failed, err: %+v, rid: %s", esbErr, rid)
+		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("get department by esb client failed, result is false, err: %+v, rid: %s", result, rid)
+		return nil, errors.NewCCError(result.Code, result.Message)
+	}
+
+	for _, item := range result.Data.Results {
+		dpMap[item.ID] = item
+	}
+
+	return dpMap, nil
 }

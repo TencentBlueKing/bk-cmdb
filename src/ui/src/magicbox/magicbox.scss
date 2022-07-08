@@ -36,13 +36,6 @@
     }
 }
 
-.bk-date-picker-transfer {
-    z-index: 2600 !important;
-}
-.bk-date-picker-dropdown {
-    z-index: 2601 !important;
-}
-
 .bk-select-full-width {
     width: 100%;
 }
@@ -68,7 +61,7 @@
 }
 .bk-dialog-no-padding {
     .bk-dialog-body {
-        padding: 0;
+        padding: 0 !important;
     }
 }
 
@@ -204,22 +197,6 @@
     }
 }
 
-.bk-popconfirm-content {
-    .popconfirm-operate {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        button {
-            margin: 0 5px;
-            &.default-operate-button {
-                padding: 0;
-            }
-        }
-        .popconfirm-split {
-            position: static;
-        }
-    }
-}
 .bk-dropdown-menu {
     vertical-align: middle;
 }

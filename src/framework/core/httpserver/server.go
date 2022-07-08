@@ -16,7 +16,7 @@ import (
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/option"
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	"net"
 	"strconv"
 )

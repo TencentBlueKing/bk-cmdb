@@ -17,7 +17,7 @@ import (
 
 	"configcenter/src/common/http/rest"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func (s *coreService) initSetTemplate(web *restful.WebService) {
@@ -33,11 +33,6 @@ func (s *coreService) initSetTemplate(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/topo/set_template/bk_biz_id/{bk_biz_id}/", Handler: s.ListSetTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/topo/set_template/count_instances/bk_biz_id/{bk_biz_id}/", Handler: s.CountSetTplInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/service_templates", Handler: s.ListSetTplRelatedSvcTpl})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/topo/set_template_sync_status/bk_set_id/{bk_set_id}", Handler: s.UpdateSetTemplateSyncStatus})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/topo/set_template_sync_status/bk_biz_id/{bk_biz_id}", Handler: s.ListSetTemplateSyncStatus})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/topo/set_template_sync_history/bk_biz_id/{bk_biz_id}", Handler: s.ListSetTemplateSyncHistory})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/topo/set_template_sync_status/bk_biz_id/{bk_biz_id}", Handler: s.DeleteSetTemplateSyncStatus})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/topo/set_template_sync_status/bk_set_id/{bk_set_id}/status/{status}", Handler: s.ModifySetTemplateSyncStatus})
 
 	utility.AddToRestfulWebService(web)
 }

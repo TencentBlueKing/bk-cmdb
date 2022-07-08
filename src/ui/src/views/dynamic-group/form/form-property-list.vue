@@ -8,7 +8,7 @@
         <div class="form-property-item">
           <form-operator-selector class="item-operator"
             v-if="!withoutOperator.includes(property.bk_property_type)"
-            :type="property.bk_property_type"
+            :property="property"
             v-model="condition[property.id].operator"
             @change="handleOperatorChange(property, ...arguments)">
           </form-operator-selector>
@@ -134,6 +134,9 @@
       handleOperatorChange(property, operator) {
         if (operator === '$range') {
           this.condition[property.id].value = []
+        } else if (operator === '$regex') {
+          const currentValue = this.condition[property.id].value
+          this.condition[property.id].value = Array.isArray(currentValue) ? currentValue[0] : currentValue
         } else {
           const defaultValue = this.getDefaultData(property).value
           const currentValue = this.condition[property.id].value

@@ -30,9 +30,8 @@ type audit struct {
 	clientSet coreservice.CoreServiceClientInterface
 }
 
-func (a *audit) SaveAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) error {
-	_, err := a.clientSet.Audit().SaveAuditLog(kit.Ctx, kit.Header, logs...)
-	return err
+func (a *audit) SaveAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) errors.CCErrorCoder {
+	return a.clientSet.Audit().SaveAuditLog(kit.Ctx, kit.Header, logs...)
 }
 
 func (a *audit) getInstByCond(kit *rest.Kit, objID string, condition map[string]interface{}, fields []string) (
@@ -51,12 +50,7 @@ func (a *audit) getInstByCond(kit *rest.Kit, objID string, condition map[string]
 			return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 		}
 
-		if !rsp.Result {
-			blog.ErrorfDepthf(1, "get host by cond %+v failed, err: %s, rid: %s", condition, rsp.ErrMsg, kit.Rid)
-			return nil, rsp.CCError()
-		}
-
-		return rsp.Data.Info, nil
+		return rsp.Info, nil
 	default:
 		input := &metadata.QueryCondition{Condition: condition}
 		if len(fields) != 0 {
@@ -69,12 +63,7 @@ func (a *audit) getInstByCond(kit *rest.Kit, objID string, condition map[string]
 			return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 		}
 
-		if !rsp.Result {
-			blog.ErrorfDepthf(1, "get host by cond %+v failed, err: %s, rid: %s", condition, rsp.ErrMsg, kit.Rid)
-			return nil, rsp.CCError()
-		}
-
-		return rsp.Data.Info, nil
+		return rsp.Info, nil
 	}
 }
 
@@ -90,15 +79,17 @@ func (a *audit) getInstNameByID(kit *rest.Kit, objID string, instID int64) (stri
 	}
 
 	if len(insts) != 1 {
-		blog.Errorf("failed to getting instance name, instance not one, instID: %d, objID: %d, rid: %s", instID, objID, kit.Rid)
+		blog.Errorf("failed to getting instance name, instance not one, instID: %d, objID: %d, rid: %s",
+			instID, objID, kit.Rid)
 		return "", kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, instIDField)
 	}
 
 	instName, convErr := insts[0].String(instNameField)
 	if convErr != nil {
-		blog.Errorf("getting instance name failed, failed to %s fields convert to string, instID: %d, data: %+v, rid: %s",
-			instNameField, instID, insts[0], kit.Rid)
-		return "", kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, objID, instNameField, "string", convErr.Error())
+		blog.Errorf("getting instance name failed, failed to %s fields convert to string, instID: %d, "+
+			"data: %+v, rid: %s", instNameField, instID, insts[0], kit.Rid)
+		return "", kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, objID, instNameField, "string",
+			convErr.Error())
 	}
 
 	return instName, nil
@@ -113,14 +104,11 @@ func (a *audit) getObjNameByObjID(kit *rest.Kit, objID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if resp.Result != true {
-		return "", kit.CCError.New(resp.Code, resp.ErrMsg)
-	}
-	if len(resp.Data.Info) <= 0 {
+	if len(resp.Info) <= 0 {
 		return "", kit.CCError.CCError(common.CCErrorModelNotFound)
 	}
 
-	return resp.Data.Info[0].Spec.ObjectName, nil
+	return resp.Info[0].ObjectName, nil
 }
 
 // getDefaultAppID get default businessID under designated supplier account.

@@ -6,6 +6,7 @@
         :list="options"
         setting-key="bk_obj_asst_id"
         display-key="_label"
+        searchable
         @on-selected="handleSelectObj">
       </cmdb-selector>
     </div>
@@ -14,7 +15,7 @@
       <div class="filter-group filter-group-property fl">
         <cmdb-relation-property-filter
           :obj-id="currentAsstObj"
-          :exclude-type="['foreignkey']"
+          :exclude-type="['foreignkey', 'time']"
           @on-property-selected="handlePropertySelected"
           @on-operator-selected="handleOperatorSelected"
           @on-value-change="handleValueChange">
@@ -81,6 +82,17 @@
   import bus from '@/utils/bus.js'
   import { mapGetters, mapActions } from 'vuex'
   import authMixin from '../mixin-auth'
+  import instanceService from '@/service/instance/instance'
+  import instanceAssociationService from '@/service/instance/association'
+  import businessSetService from '@/service/business-set/index.js'
+  import queryBuilderOperator from '@/utils/query-builder-operator'
+  import {
+    BUILTIN_MODELS,
+    BUILTIN_MODEL_PROPERTY_KEYS,
+    BUILTIN_MODEL_ROUTEPARAMS_KEYS
+  } from '@/dictionary/model-constants.js'
+  import Utils from '@/components/filters/utils'
+
   export default {
     name: 'cmdb-relation-create',
     components: {
@@ -153,7 +165,8 @@
           biz: 'bk_biz_id',
           plat: 'bk_cloud_id',
           module: 'bk_module_id',
-          set: 'bk_set_id'
+          set: 'bk_set_id',
+          [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID
         }
         if (has(specialObj, this.currentAsstObj)) {
           return specialObj[this.currentAsstObj]
@@ -167,7 +180,9 @@
           bk_cloud_id: 'bk_cloud_name',
           bk_module_id: 'bk_module_name',
           bk_set_id: 'bk_set_name',
-          bk_inst_id: 'bk_inst_name'
+          bk_inst_id: 'bk_inst_name',
+          // eslint-disable-next-line max-len
+          [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME
         }
         return nameKey[this.instanceIdKey]
       },
@@ -178,7 +193,8 @@
           bk_cloud_name: this.$t('云区域'),
           bk_module_name: this.$t('模块名'),
           bk_set_name: this.$t('集群名'),
-          bk_inst_name: this.$t('实例名')
+          bk_inst_name: this.$t('实例名'),
+          [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME]: this.$t('业务集名'),
         }
         if (has(name, this.filter.id)) {
           return this.filter.name
@@ -213,16 +229,21 @@
         return this.currentOption.bk_obj_id === this.objId
       },
       tableDataAuth() {
-        if (this.currentAsstObj === 'biz') {
-          return {
-            type: this.$OPERATION.R_BUSINESS
-          }
+        const authTypes = {
+          [BUILTIN_MODELS.BUSINESS]: this.$OPERATION.R_BUSINESS,
+          [BUILTIN_MODELS.BUSINESS_SET]: this.$OPERATION.R_BUSINESS_SET
+        }
+        if (authTypes[this.currentAsstObj]) {
+          return { type: authTypes[this.currentAsstObj] }
         }
         return null
       },
       authResources() {
-        if (this.$route.params.bizId) {
+        if (this.$route.params[BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.BUSINESS]]) {
           return this.INST_AUTH.U_BUSINESS
+        }
+        if (this.$route.params[BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.BUSINESS_SET]]) {
+          return this.INST_AUTH.U_BUSINESS_SET
         }
         return this.INST_AUTH.U_INST
       }
@@ -243,25 +264,30 @@
     },
     methods: {
       ...mapActions('objectAssociation', [
-        'searchInstAssociation',
         'createInstAssociation',
         'deleteInstAssociation'
       ]),
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
-      ...mapActions('objectCommonInst', ['searchInst']),
       ...mapActions('objectBiz', ['searchBusiness']),
       ...mapActions('hostSearch', ['searchHost']),
       getInstanceAuth(row) {
         const auth = [this.authResources]
         switch (this.currentAsstObj) {
-          case 'biz': {
+          case BUILTIN_MODELS.BUSINESS: {
             auth.push({
               type: this.$OPERATION.U_BUSINESS,
               relation: [row.bk_biz_id]
             })
             break
           }
-          case 'host': {
+          case BUILTIN_MODELS.BUSINESS_SET: {
+            auth.push({
+              type: this.$OPERATION.U_BUSINESS_SET,
+              relation: [row[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]]
+            })
+            break
+          }
+          case BUILTIN_MODELS.HOST: {
             const originalData = this.table.originalList.find(data => data.host.bk_host_id === row.bk_host_id)
             const [biz] = originalData.biz
             if (biz.default === 0) {
@@ -343,6 +369,7 @@
       setAssociationOptions() {
         /* eslint-disable no-underscore-dangle */
         const options = this.associationObject.map((option) => {
+          // 创建模式下只使用源的视角来看，因此仅需要使用关联对象中的模型对象id与当前对象比较
           const isSource = option.bk_obj_id === this.objId
           const type = this.associationTypes.find(type => type.bk_asst_id === option.bk_asst_id)
           const model = this.models.find((model) => {
@@ -374,21 +401,20 @@
         ])
         this.getInstance()
       },
-      getExistInstAssociation() {
+      async getExistInstAssociation() {
         const option = this.currentOption
-        const { isSource } = this
-        return this.searchInstAssociation({
-          params: {
-            condition: {
-              bk_asst_id: option.bk_asst_id,
-              bk_obj_asst_id: option.bk_obj_asst_id,
-              bk_obj_id: isSource ? this.objId : option.bk_obj_id,
-              bk_asst_obj_id: isSource ? option.bk_asst_obj_id : this.objId,
-              [`${isSource ? 'bk_inst_id' : 'bk_asst_inst_id'}`]: this.instId
-            }
+        const condition = {
+          bk_asst_id: option.bk_asst_id,
+          bk_obj_asst_id: option.bk_obj_asst_id,
+          bk_asst_obj_id: this.isSource ? option.bk_asst_obj_id : this.objId,
+          [`${this.isSource ? 'bk_inst_id' : 'bk_asst_inst_id'}`]: this.instId
+        }
+        this.existInstAssociation = await instanceAssociationService.findAll({
+          bk_obj_id: this.isSource ? this.objId : option.bk_obj_id,
+          conditions: {
+            condition: 'AND',
+            rules: Object.keys(condition).map(key => ({ field: key, operator: 'equal', value: condition[key] }))
           }
-        }).then((data) => {
-          this.existInstAssociation = data || []
         })
       },
       isAssociated(inst) {
@@ -442,7 +468,8 @@
           return exist.bk_inst_id === instId
         })
         return this.deleteInstAssociation({
-          id: (instAssociation || {}).id
+          id: (instAssociation || {}).id,
+          objId: this.objId
         })
       },
       beforeUpdate(event, instId, updateType = 'new') {
@@ -484,11 +511,14 @@
         }
         let promise
         switch (objId) {
-          case 'host':
+          case BUILTIN_MODELS.HOST:
             promise = this.getHostInstance(config)
             break
-          case 'biz':
+          case BUILTIN_MODELS.BUSINESS:
             promise = this.getBizInstance(config)
+            break
+          case BUILTIN_MODELS.BUSINESS_SET:
+            promise = this.getBizSetInstance(config)
             break
           default:
             promise = this.getObjInstance(objId, config)
@@ -556,9 +586,39 @@
           config
         })
       },
+      getBizSetInstance(config) {
+        const params = {
+          fields: [],
+          page: this.page
+        }
+
+        const condition = {}
+        if (this.filter.value !== '') {
+          condition[this.filter.id] = {
+            value: this.filter.value,
+            operator: this.filter.operator
+          }
+        }
+
+        // eslint-disable-next-line max-len
+        const { conditions, time_condition: timeCondition } = Utils.transformGeneralModelCondition(condition, this.properties) || {}
+
+        if (timeCondition) {
+          params.time_condition = timeCondition
+        }
+
+        if (conditions) {
+          params.bk_biz_set_filter = {
+            condition: 'AND',
+            rules: conditions.rules
+          }
+        }
+
+        return businessSetService.find(params, config)
+      },
       getObjInstance(objId, config) {
-        return this.searchInst({
-          objId,
+        return instanceService.find({
+          bk_obj_id: objId,
           params: this.getObjParams(),
           config
         })
@@ -566,31 +626,32 @@
       getObjParams() {
         const params = {
           page: this.page,
-          fields: {},
-          condition: {}
+          fields: [],
         }
         const property = this.getProperty(this.filter.id)
         if (this.filter.value !== '' && property) {
-          const objId = this.currentAsstObj
-          params.condition[objId] = [{
-            field: this.filter.id,
-            operator: this.filter.operator,
-            value: this.filter.value
-          }]
+          params.conditions = {
+            condition: 'AND',
+            rules: [{
+              field: this.filter.id,
+              operator: queryBuilderOperator(this.filter.operator),
+              value: this.filter.value
+            }]
+          }
         }
         return params
       },
       setTableList(data, asstObjId) {
-        // const properties = this.properties
+        const dataListKeys = {
+          [BUILTIN_MODELS.BUSINESS_SET]: 'list'
+        }
+        const dataListKey = dataListKeys[asstObjId] || 'info'
         this.table.pagination.count = data.count
-        this.table.originalList = Object.freeze(data.info.slice())
-        if (asstObjId === 'host') {
-          data.info = data.info.map(item => item.host)
+        this.table.originalList = Object.freeze(data[dataListKey].slice())
+        if (asstObjId === BUILTIN_MODELS.HOST) {
+          data[dataListKey] = data[dataListKey].map(item => item.host)
         }
-        if (asstObjId === this.objId) {
-          data.info = data.info.filter(item => item[this.instanceIdKey] !== this.instId)
-        }
-        this.table.list = data.info
+        this.table.list = data[dataListKey]
       },
       getProperty(propertyId) {
         return this.properties.find(({ bk_property_id: bkPropertyId }) => bkPropertyId === propertyId)

@@ -59,7 +59,7 @@
         </label>
         <cmdb-form-singlechar
           v-model="moduleName"
-          v-validate="'required|businessTopoInstNames|length:32'"
+          v-validate="'required|businessTopoInstNames|length:256'"
           data-vv-name="moduleName"
           key="moduleName"
           :placeholder="$t('请输入xx', { name: $t('模块名称') })"
@@ -92,7 +92,7 @@
       </div>
     </div>
     <div class="node-create-options">
-      <bk-button theme="primary"
+      <bk-button theme="primary" v-test-id="'createModuleSave'"
         :disabled="$loading() || errors.any()"
         @click="handleSave">
         {{$t('提交')}}
@@ -191,7 +191,7 @@
               params: {
                 bk_biz_id: this.business,
                 page: {
-                  sort: 'name'
+                  sort: '-last_time'
                 }
               },
               config: {

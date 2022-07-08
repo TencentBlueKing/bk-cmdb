@@ -24,7 +24,7 @@ import (
 	"configcenter/src/source_controller/coreservice/service"
 	"configcenter/src/storage/dal/mongo"
 
-	restful "github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful/v3"
 	"github.com/stretchr/testify/require"
 )
 

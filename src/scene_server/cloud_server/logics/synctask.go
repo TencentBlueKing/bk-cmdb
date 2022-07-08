@@ -13,8 +13,6 @@
 package logics
 
 import (
-	"fmt"
-
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
@@ -23,7 +21,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
+	params "configcenter/src/common/paraparse"
 )
 
 func (lgc *Logics) SearchVpc(kit *rest.Kit, accountID int64, vpcOpt *metadata.SearchVpcOption) (*metadata.VpcHostCntResult, error) {
@@ -65,6 +63,7 @@ func (lgc *Logics) SearchVpc(kit *rest.Kit, accountID int64, vpcOpt *metadata.Se
 	return result, nil
 }
 
+// GetVpcCloudArea get cloud area about vpc by vpcIDs
 func (lgc *Logics) GetVpcCloudArea(kit *rest.Kit, vpcIDs []string) (map[string]int64, error) {
 	query := &metadata.QueryCondition{
 		Fields: []string{common.BKCloudIDField, common.BKVpcID},
@@ -76,26 +75,23 @@ func (lgc *Logics) GetVpcCloudArea(kit *rest.Kit, vpcIDs []string) (map[string]i
 		},
 	}
 
-	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPlat, query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPlat,
+		query)
 	if err != nil {
 		blog.Errorf("GetVpcCloudIDs fail, rid:%s, err:%s, query:%+v", kit.Rid, err.Error(), *query)
 		return nil, err
 	}
-	if !result.Result {
-		blog.Errorf("GetVpcCloudIDs fail, rid:%s, err:%s, query:%+v", kit.Rid, result.ErrMsg, *query)
-		return nil, fmt.Errorf("%s", result.ErrMsg)
-	}
 
 	ret := make(map[string]int64)
-	for _, info := range result.Data.Info {
+	for _, info := range result.Info {
 		cloudID, err := info.Int64(common.BKCloudIDField)
 		if err != nil {
-			blog.Errorf("GetVpcCloudIDs fail, rid:%s, err:%s, info:%+v", kit.Rid, err.Error(), result.Data.Info)
+			blog.Errorf("GetVpcCloudIDs fail, rid:%s, err:%s, info:%+v", kit.Rid, err.Error(), result.Info)
 			return nil, err
 		}
 		vpcID, err := info.String(common.BKVpcID)
 		if err != nil {
-			blog.Errorf("GetVpcCloudIDs fail, rid:%s, err:%s, info:%+v", kit.Rid, err.Error(), result.Data.Info)
+			blog.Errorf("GetVpcCloudIDs fail, rid:%s, err:%s, info:%+v", kit.Rid, err.Error(), result.Info)
 			return nil, err
 		}
 		ret[vpcID] = cloudID
@@ -160,25 +156,38 @@ func (lgc *Logics) SearchSyncTask(kit *rest.Kit, option *metadata.SearchSyncTask
 	}
 
 	if auth.EnableAuthorize() {
-		list, err := lgc.ListAuthorizedResources(kit, meta.CloudResourceTask, meta.Find)
+		list, isAny, err := lgc.ListAuthorizedResources(kit, meta.CloudResourceTask, meta.Find)
 		if err != nil {
 			blog.Errorf("SearchSyncTask failed, rid:%s, option:%+v, ListAuthorizedResources err:%+v", kit.Rid, option, err)
 			return nil, err
 		}
 
-		if option.Condition == nil {
-			option.Condition = make(map[string]interface{})
-		}
+		// if isAny is false,we should add the taskIds conditions,else we don't add this condition
+		if !isAny {
 
-		option.Condition = map[string]interface{}{
-			common.BKDBAND: []map[string]interface{}{
-				option.Condition,
-				{
+			if len(list) == 0 {
+				return &metadata.MultipleCloudSyncTask{}, nil
+			}
+
+			if len(option.Condition) == 0 {
+				option.Condition = make(map[string]interface{})
+				option.Condition = map[string]interface{}{
 					common.BKCloudSyncTaskID: map[string]interface{}{
 						common.BKDBIN: list,
 					},
-				},
-			},
+				}
+			} else {
+				option.Condition = map[string]interface{}{
+					common.BKDBAND: []map[string]interface{}{
+						option.Condition,
+						{
+							common.BKCloudSyncTaskID: map[string]interface{}{
+								common.BKDBIN: list,
+							},
+						},
+					},
+				}
+			}
 		}
 	}
 

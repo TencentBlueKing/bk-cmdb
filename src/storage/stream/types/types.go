@@ -124,6 +124,11 @@ type Options struct {
 	// document
 	Filter map[string]interface{}
 
+	// CollectionFilter helps you filter out which kind of collection's change event you want to receive,
+	// such as the filter : {"$regex":"^cc_ObjectBase"} means you can only receive events from collections
+	// starts with the prefix cc_ObjectBase
+	CollectionFilter interface{}
+
 	// EventStruct is the point data struct that the event decoded into.
 	// Note: must be a point value.
 	EventStruct interface{}
@@ -132,8 +137,9 @@ type Options struct {
 	Collection string
 
 	// StartAfterToken describe where you want to watch the event.
-	// Note: the returned event does'nt contains the token represented,
+	// Note: the returned event doesn't contains the token represented,
 	// and will returns event just after this token.
+	// If StartAfterToken and StartAtTime is set at the same time, then StartAfterToken is used only.
 	StartAfterToken *EventToken
 
 	// Ensures that this watch will provide events that occurred after this timestamp.
@@ -142,6 +148,10 @@ type Options struct {
 	// WatchFatalErrorCallback the function to be called when watch failed with a fatal error
 	// reset the resume token and set the start time for next watch in case it use the mistaken token again
 	WatchFatalErrorCallback func(startAtTime TimeStamp) error `json:"-"`
+
+	// Fields defines which fields will be returned along with the events
+	// this is optional, if not set, all the fields will be returned.
+	Fields []string
 }
 
 var defaultMaxAwaitTime = time.Second
@@ -162,7 +172,7 @@ func (opts *Options) CheckSetDefault() error {
 		opts.MaxAwaitTime = &defaultMaxAwaitTime
 	}
 
-	if len(opts.Collection) == 0 {
+	if len(opts.Collection) == 0 && opts.CollectionFilter == nil {
 		return errors.New("invalid Namespace field, database and collection can not be empty")
 	}
 	return nil
@@ -249,6 +259,7 @@ type Event struct {
 	Document      interface{}
 	DocBytes      []byte
 	OperationType OperType
+	Collection    string
 
 	// The timestamp from the oplog entry associated with the event.
 	ClusterTime TimeStamp
@@ -350,6 +361,16 @@ type LoopOptions struct {
 	WatchOpt     *WatchOptions
 	TokenHandler TokenHandler
 	RetryOptions *RetryOptions
+
+	// StopNotifier is used when user need to stop loop events and release related resources.
+	// It's a optional option. when it's not set(as is nil), then the loop will not exit forever.
+	// Otherwise, user can use it to stop loop events.
+	// When a user want to stop the loop, the only thing that a user need to do is to just
+	// **close** this stop notifier channel.
+	// Attention:
+	// Close this notifier channel is the only way to stop loop correctly.
+	// Do not send data to this channel.
+	StopNotifier <-chan struct{}
 }
 
 type LoopOneOptions struct {
@@ -391,6 +412,11 @@ func (lo *LoopOneOptions) Validate() error {
 			MaxRetryCount: defaultRetryCount,
 			RetryDuration: defaultRetryDuration,
 		}
+	}
+
+	if lo.LoopOptions.StopNotifier == nil {
+		// if not set, then set never stop loop as default
+		lo.LoopOptions.StopNotifier = make(<-chan struct{})
 	}
 
 	return nil
@@ -447,6 +473,11 @@ func (lo *LoopBatchOptions) Validate() error {
 			MaxRetryCount: defaultRetryCount,
 			RetryDuration: defaultRetryDuration,
 		}
+	}
+
+	if lo.LoopOptions.StopNotifier == nil {
+		// if not set, then set never stop loop as default
+		lo.LoopOptions.StopNotifier = make(<-chan struct{})
 	}
 
 	return nil

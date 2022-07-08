@@ -48,7 +48,7 @@ func NewValidator(kit *rest.Kit, dependent OperationDependences, objID string, b
 	valid.dependent = dependent
 	valid.language = language
 
-	result, err := dependent.SelectObjectAttWithParams(kit, objID, bizID)
+	result, err := dependent.SelectObjectAttWithParams(kit, objID, []int64{bizID})
 	if nil != err {
 		return nil, err
 	}
@@ -75,4 +75,69 @@ func NewValidator(kit *rest.Kit, dependent OperationDependences, objID string, b
 	valid.uniqueAttrs = uniqueAttrs
 
 	return valid, nil
+}
+
+// NewValidators init validators, returns mapping of biz id to corresponding validator
+func NewValidators(kit *rest.Kit, dependent OperationDependences, objID string, bizIDs []int64,
+	language language.CCLanguageIf) (map[int64]*validator, error) {
+
+	uniqueAttrs, err := dependent.SearchUnique(kit, objID)
+	if err != nil {
+		return nil, err
+	}
+
+	// process model do not have the unique rules, so we ignore it's attribute's unique check
+	if len(uniqueAttrs) == 0 && objID != common.BKProcessObjectName {
+		blog.Errorf("there's no unique constraint for %s, rid: %s", objID, kit.Rid)
+		uniqueAttrs = make([]metadata.ObjectUnique, 0)
+	}
+
+	attributes, err := dependent.SelectObjectAttributes(kit, objID, bizIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	attrMap := make(map[int64][]metadata.Attribute)
+	for _, attr := range attributes {
+		attrMap[attr.BizID] = append(attrMap[attr.BizID], attr)
+	}
+
+	bizValidatorMap := make(map[int64]*validator)
+	for _, bizID := range bizIDs {
+		if bizValidatorMap[bizID] != nil {
+			continue
+		}
+
+		validator := &validator{
+			properties:    make(map[string]metadata.Attribute),
+			idToProperty:  make(map[int64]metadata.Attribute),
+			propertySlice: make([]metadata.Attribute, 0),
+			require:       make(map[string]bool),
+			requireFields: make([]string, 0),
+			uniqueAttrs:   uniqueAttrs,
+			objID:         objID,
+			errIf:         kit.CCError,
+			dependent:     dependent,
+			language:      language,
+		}
+
+		// the instances in biz has both biz attributes and global attributes that has no biz id
+		attrArr := attrMap[0]
+		if bizID != 0 {
+			attrArr = append(attrArr, attrMap[bizID]...)
+		}
+		for _, attr := range attrArr {
+			validator.properties[attr.PropertyID] = attr
+			validator.idToProperty[attr.ID] = attr
+			validator.propertySlice = append(validator.propertySlice, attr)
+			if attr.IsRequired {
+				validator.require[attr.PropertyID] = true
+				validator.requireFields = append(validator.requireFields, attr.PropertyID)
+			}
+		}
+
+		bizValidatorMap[bizID] = validator
+	}
+
+	return bizValidatorMap, nil
 }

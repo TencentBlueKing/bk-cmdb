@@ -14,6 +14,7 @@ package model
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -53,10 +54,10 @@ func New(dependent OperationDependences, language language.CCLanguageIf) core.Mo
 	return coreMgr
 }
 
+// CreateModel create a new model
 func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error) {
 
 	locker := lock.NewLocker(redis.Client())
-	// fmt.Sprintf("coreservice:create:model:%s", inputParam.Spec.ObjectID)
 	redisKey := lock.GetLockKey(lock.CreateModelFormat, inputParam.Spec.ObjectID)
 
 	locked, err := locker.Lock(redisKey, time.Second*35)
@@ -71,78 +72,89 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	}
 	blog.V(5).Infof("create model redis look info. key:%s, bl:%v, err:%v, rid:%s", redisKey, locked, err, kit.Rid)
 
-	dataResult := &metadata.CreateOneDataResult{}
-
 	// check the model attributes value
 	if 0 == len(inputParam.Spec.ObjectID) {
 		blog.Errorf("request(%s): it is failed to create a new model, because of the modelID (%s) is not set", kit.Rid, inputParam.Spec.ObjectID)
-		return dataResult, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
 	}
 
-	if !SatisfyMongoCollLimit(inputParam.Spec.ObjectID) {
+	// 禁止创建bk或者BK打头的模型，用于后续创建内置模型，避免冲突
+	if err := validIDStartWithBK(kit, inputParam.Spec.ObjectID); err != nil {
+		return nil, err
+	}
+
+	// 因为模型名称会用于生成实例和实例关联的mongodb表名，所以需要校验模型对应的实例表和实例关联表名均不超过mongodb的长度限制
+	if !SatisfyMongoCollLimit(common.GetObjectInstTableName(inputParam.Spec.ObjectID, kit.SupplierAccount)) ||
+		!SatisfyMongoCollLimit(common.GetObjectInstAsstTableName(inputParam.Spec.ObjectID, kit.SupplierAccount)) {
 		blog.Errorf("inputParam.Spec.ObjectID:%s not SatisfyMongoCollLimit", inputParam.Spec.ObjectID)
-		return dataResult, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID)
 	}
 
 	// check the input classification ID
 	isValid, err := m.modelClassification.isValid(kit, inputParam.Spec.ObjCls)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check whether the classificationID(%s) is invalid, error info is %s", kit.Rid, inputParam.Spec.ObjCls, err.Error())
-		return dataResult, err
+		return nil, err
 	}
 
 	if !isValid {
 		blog.Warnf("request(%s): it is failed to create a new model, because of the classificationID (%s) is invalid", kit.Rid, inputParam.Spec.ObjCls)
-		return dataResult, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ClassificationFieldID)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ClassificationFieldID)
 	}
 
 	// check the model if it is exists
 	condCheckModelMap := util.SetModOwner(make(map[string]interface{}), kit.SupplierAccount)
 	condCheckModel, _ := mongo.NewConditionFromMapStr(condCheckModelMap)
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
-
 	_, exists, err := m.isExists(kit, condCheckModel)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check whether the model (%s) is exists, error info is %s ", kit.Rid, inputParam.Spec.ObjectID, err.Error())
-		return dataResult, err
+		return nil, err
 	}
 	if exists {
 		blog.Warnf("request(%s): it is failed to  create a new model , because of the model (%s) is already exists ", kit.Rid, inputParam.Spec.ObjectID)
-		return dataResult, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectID)
+		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectID)
 	}
 
 	// 检查模型名称重复
 	modelNameUniqueFilter := map[string]interface{}{
 		common.BKObjNameField: inputParam.Spec.ObjectName,
 	}
-
 	sameNameCount, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("whether same name model exists, name: %s, err: %s, rid: %s", inputParam.Spec.ObjectName, err.Error(), kit.Rid)
-		return dataResult, err
+		return nil, err
 	}
 	if sameNameCount > 0 {
 		blog.Warnf("create model failed, field `%s` duplicated, rid: %s", inputParam.Spec.ObjectName, kit.Rid)
-		return dataResult, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectName)
+		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectName)
 	}
 
+	// check object instance and instance association table.
+	/* 	if err := m.createObjectShardingTables(kit, inputParam.Spec.ObjectID); err != nil {
+		blog.Errorf("handle object sharding tables failed, object: %s name: %s, err: %s, rid: %s",
+			inputParam.Spec.ObjectID, inputParam.Spec.ObjectName, err.Error(), kit.Rid)
+		return nil, err
+	} */
+
+	// create new model after checking base informations and sharding table operation.
 	inputParam.Spec.OwnerID = kit.SupplierAccount
 	id, err := m.save(kit, &inputParam.Spec)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to save the model (%#v), error info is %s", kit.Rid, inputParam.Spec, err.Error())
-		return dataResult, err
+		return nil, err
 	}
 
+	// create initial phase model attributes.
 	if len(inputParam.Attributes) != 0 {
 		_, err = m.modelAttribute.CreateModelAttributes(kit, inputParam.Spec.ObjectID, metadata.CreateModelAttributes{Attributes: inputParam.Attributes})
 		if nil != err {
 			blog.Errorf("request(%s): it is failed to create some attributes (%#v) for the model (%s), err: %v", kit.Rid, inputParam.Attributes, inputParam.Spec.ObjectID, err)
-			return dataResult, err
+			return nil, err
 		}
 	}
 
-	dataResult.Created.ID = id
-	return dataResult, nil
+	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, nil
 }
 func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*metadata.SetDataResult, error) {
 
@@ -262,10 +274,9 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 		blog.Errorf("request(%s): it is failed to check whether some models (%#v) has some instances, error info is %s", kit.Rid, targetObjIDS, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
-
 	if exists {
 		blog.Warnf("request(%s): it is forbidden to delete the models (%#v), because of they have some instances.", kit.Rid, targetObjIDS)
-		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrTopoObjectHasSomeInstsForbiddenToDelete)
+		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrCoreServiceModelHasInstanceErr)
 	}
 
 	// check if the model is used: secondly to check association
@@ -274,10 +285,9 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 		blog.Errorf("request(%s): it is failed to check whether some models (%#v) has some associations, error info is %s", kit.Rid, targetObjIDS, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
-
 	if exists {
 		blog.Warnf("request(%s): it is forbidden to delete the models (%#v), because of they have some associations.", kit.Rid, targetObjIDS)
-		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrTopoForbiddenToDeleteModelFailed)
+		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrCoreServiceModelHasAssociationErr)
 	}
 
 	// delete model self
@@ -292,18 +302,62 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 
 // CascadeDeleteModel 将会删除模型/模型属性/属性分组/唯一校验
 func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metadata.DeletedCount, error) {
-
+	// NOTE: just single model cascade delete action now.
 	deleteCondMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
 	deleteCond, _ := mongo.NewConditionFromMapStr(deleteCondMap)
 	deleteCond.Element(&mongo.Eq{Key: metadata.ModelFieldID, Val: modelID})
 
-	// read all models by the deletion condition
-	cnt, err := m.cascadeDelete(kit, deleteCond)
-	if nil != err {
-		blog.ErrorJSON("CascadeDeleteModel failed, cascadeDelete failed, condition: %s, err: %s, rid: %s", deleteCond.ToMapStr(), err.Error(), kit.Rid)
-		return &metadata.DeletedCount{}, err
+	// NOTE: the func logics supports cascade delete models in batch mode.
+	// You can change the condition to index many models.
+	models, err := m.search(kit, deleteCond)
+	if err != nil {
+		blog.Errorf("cascade delete model, search target models failed, condition: %s, error: %s, rid: %s",
+			deleteCond.ToMapStr(), err.Error(), kit.Rid)
+		return nil, err
 	}
-	return &metadata.DeletedCount{Count: cnt}, err
+
+	objIDs := make([]string, 0)
+	for _, model := range models {
+		objIDs = append(objIDs, model.ObjectID)
+	}
+	if len(objIDs) == 0 {
+		return &metadata.DeletedCount{}, nil
+	}
+
+	// check object instances.
+	exists, err := m.dependent.HasInstance(kit, objIDs)
+	if err != nil {
+		blog.Errorf("cascade delete model, check object instance failed, objects: %+v, error: %s, rid: %s",
+			objIDs, err.Error(), kit.Rid)
+		return nil, err
+	}
+	if exists {
+		blog.Errorf("cascade delete model failed, there are vestigital object instances, objects: %+v, rid: %s",
+			objIDs, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCoreServiceModelHasInstanceErr)
+	}
+
+	// check model associations.
+	exists, err = m.dependent.HasAssociation(kit, objIDs)
+	if err != nil {
+		blog.Errorf("cascade delete model, check model associations failed, objects: %+v, error: %s, rid: %s",
+			objIDs, err.Error(), kit.Rid)
+		return nil, err
+	}
+	if exists {
+		blog.Errorf("cascade delete model failed, there are vestigital model associations, objects: %+v, rid: %s",
+			objIDs, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCoreServiceModelHasAssociationErr)
+	}
+
+	// cascade delete.
+	cnt, err := m.cascadeDelete(kit, objIDs)
+	if err != nil {
+		blog.Errorf("cascade delete model failed, objects: %+v, err: %s, rid: %s", objIDs, err.Error(), kit.Rid)
+		return nil, err
+	}
+
+	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
 func (m *modelManager) SearchModel(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error) {
@@ -370,4 +424,12 @@ func (m *modelManager) SearchModelWithAttribute(kit *rest.Kit, inputParam metada
 	}
 
 	return dataResult, nil
+}
+
+// validIDStartWithBK validate the id start with bk or BK
+func validIDStartWithBK(kit *rest.Kit, modelID string) error {
+	if strings.HasPrefix(strings.ToLower(modelID), "bk") {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_obj_id value can not start with bk or BK")
+	}
+	return nil
 }

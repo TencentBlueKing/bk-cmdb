@@ -44,8 +44,8 @@ type synchronizeItem struct {
 	baseCondition mapstr.MapStr
 	// all objID
 	objIDMap map[string]bool
-	// modelClassifitionMap sync model classifition
-	modelClassifitionMap map[string]bool
+	// modelclassificationMap sync model classification
+	modelclassificationMap map[string]bool
 	appIDArr             []int64
 	version              int64
 }
@@ -57,7 +57,7 @@ func (lgc *Logics) NewSynchronizeItem(version int64, syncConfig *options.ConfigI
 		config:               syncConfig,
 		baseCondition:        mapstr.New(),
 		objIDMap:             make(map[string]bool, 0),
-		modelClassifitionMap: make(map[string]bool, 0),
+		modelclassificationMap: make(map[string]bool, 0),
 		appIDArr:             make([]int64, 0),
 		version:              version,
 	}
@@ -294,13 +294,13 @@ func (s *synchronizeItem) synchronizeModelTask(ctx context.Context) ([]metadata.
 
 	}
 
-	if len(s.modelClassifitionMap) > 0 {
-		classifitionStrIDArr := getMapStrBoolKey(s.modelClassifitionMap)
+	if len(s.modelclassificationMap) > 0 {
+		classificationStrIDArr := getMapStrBoolKey(s.modelclassificationMap)
 
 		classificationCond := condition.CreateCondition()
-		classificationCond.Field(common.BKClassificationIDField).In(classifitionStrIDArr)
+		classificationCond.Field(common.BKClassificationIDField).In(classificationStrIDArr)
 
-		// classifition special. model sync end. can sync classification
+		// classification special. model sync end. can sync classification
 		dataClassify := common.SynchronizeModelTypeClassification
 		partErrorInfoArr, err := s.synchronizeModel(ctx, model, conditionMapStr, dataClassify)
 		if err != nil {
@@ -375,9 +375,9 @@ func (s *synchronizeItem) sycnhronizePartModel(ctx context.Context, input *metad
 		if err == nil && objID != "" {
 			s.objIDMap[objID] = true
 		}
-		classifitionStrID, err := item.String(common.BKClassificationIDField)
-		if err == nil && classifitionStrID != "" {
-			s.modelClassifitionMap[classifitionStrID] = true
+		classificationStrID, err := item.String(common.BKClassificationIDField)
+		if err == nil && classificationStrID != "" {
+			s.modelclassificationMap[classificationStrID] = true
 		}
 		synchronizeParameter.InfoArray = append(synchronizeParameter.InfoArray, &metadata.SynchronizeItem{ID: id, Info: item})
 	}

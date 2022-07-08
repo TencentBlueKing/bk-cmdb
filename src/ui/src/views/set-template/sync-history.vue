@@ -3,6 +3,7 @@
     <div class="options clearfix">
       <bk-date-picker style="width: 300px;" class="fl"
         type="daterange"
+        transfer
         :placeholder="$t('选择日期范围')"
         @change="hanldeFilterByDate">
       </bk-date-picker>
@@ -95,7 +96,7 @@
         return this.$route.params.templateId
       },
       setsId() {
-        const ids = this.list.map(item => item.bk_set_id)
+        const ids = this.list.map(item => item.bk_inst_id)
         return [...new Set(ids)]
       },
       displayList() {
@@ -105,9 +106,10 @@
             topo_path: [],
             host_count: 0
           }
-          const setInfo = this.listWithTopo.find(set => set.bk_set_id === item.bk_set_id)
+          const setInfo = this.listWithTopo.find(set => set.bk_set_id === item.bk_inst_id)
           if (setInfo) {
             otherParams.topo_path = setInfo.topo_path || []
+            otherParams.bk_set_name = setInfo.bk_set_name || []
             otherParams.host_count = setInfo.host_count || 0
           }
           return {

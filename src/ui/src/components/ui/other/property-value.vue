@@ -12,7 +12,7 @@
     :value="value"
     display-type="info">
   </service-template-value>
-  <compmoent :is="tag" v-bind="attrs" :class="`value-${theme}-theme`" v-else>{{displayValue}}</compmoent>
+  <component :is="tag" v-bind="attrs" v-else>{{displayValue}}</component>
 </template>
 
 <script>
@@ -66,7 +66,8 @@
           return ['default', 'cell'].includes(value)
         }
       },
-      formatCellValue: Function
+      formatCellValue: Function,
+      multiple: Boolean
     },
     data() {
       return {
@@ -75,9 +76,8 @@
     },
     computed: {
       attrs() {
-        const attrs = {}
-        if (this.className) {
-          attrs.class = this.className
+        const attrs = {
+          class: `value-${this.theme}-theme`
         }
         return attrs
       },
@@ -90,6 +90,9 @@
       },
       isServiceTemplate() {
         return this.property.bk_property_type === 'service-template'
+      },
+      isOrg() {
+        return this.property.bk_property_type === 'organization'
       }
     },
     watch: {
@@ -103,6 +106,16 @@
     methods: {
       async setDisplayValue(value) {
         if (this.isUser || this.isTable) return
+        let displayQueue
+        if (this.multiple && Array.isArray(value) && !this.isOrg) {
+          displayQueue = value.map(subValue => this.getDisplayValue(subValue))
+        } else {
+          displayQueue = [this.getDisplayValue(value)]
+        }
+        const result = await Promise.all(displayQueue)
+        this.displayValue = result.join(', ')
+      },
+      async getDisplayValue(value) {
         let displayValue
         const isPropertyObject = Object.prototype.toString.call(this.property) === '[object Object]'
         const type = isPropertyObject ? this.property.bk_property_type : this.property
@@ -113,7 +126,7 @@
           displayValue = this.$options.filters.formatter(value, this.property, this.options)
         }
         // eslint-disable-next-line no-nested-ternary
-        this.displayValue = (this.showUnit && unit && displayValue !== '--')
+        return (this.showUnit && unit && displayValue !== '--')
           ? `${displayValue}${unit}`
           : String(displayValue).length
             ? displayValue
@@ -121,7 +134,7 @@
       },
       async getOrganization(value) {
         let displayValue
-        const cacheKey = (value || []).join('_')
+        const cacheKey = Array.isArray(value) ? value.join('_') : String(value)
         if (ORG_CACHES[cacheKey]) {
           return ORG_CACHES[cacheKey]
         }

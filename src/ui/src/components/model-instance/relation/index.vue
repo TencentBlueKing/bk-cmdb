@@ -18,14 +18,15 @@
             {{$t('新增关联')}}
           </bk-button>
         </span>
+        <bk-button theme="default" class="options-button" v-show="false">{{$t('批量取消')}}</bk-button>
+      </div>
+      <div class="fr">
         <bk-checkbox v-if="hasRelation"
+          v-show="activeView === viewName.list"
           :size="16" class="options-checkbox"
           @change="handleExpandAll">
           <span class="checkbox-label">{{$t('全部展开')}}</span>
         </bk-checkbox>
-        <bk-button theme="default" class="options-button" v-show="false">{{$t('批量取消')}}</bk-button>
-      </div>
-      <div class="fr">
         <bk-button class="options-button options-button-view"
           :theme="activeView === viewName.list ? 'primary' : 'default'"
           @click="handleToggleView(viewName.list)">
@@ -45,12 +46,7 @@
       </div>
     </div>
     <div class="relation-view">
-      <component
-        ref="dynamicComponent"
-        :association-types="associationTypes"
-        :association-object="associationObject"
-        :is="activeView">
-      </component>
+      <component ref="dynamicComponent" :is="activeView" v-bind="componentProps"></component>
     </div>
     <bk-sideslider v-transfer-dom :is-show.sync="showCreate" :width="800" :title="$t('新增关联')">
       <cmdb-relation-create
@@ -69,13 +65,19 @@
   import bus from '@/utils/bus.js'
   import { mapActions } from 'vuex'
   import cmdbRelationList from './list.vue'
-  import cmdbRelationGraphics from './graphics.vue'
+  import cmdbInstanceAssociation from '@/components/instance/association/index'
   import cmdbRelationCreate from './create.vue'
   import authMixin from '../mixin-auth'
+  import {
+    BUILTIN_MODELS,
+    BUILTIN_MODEL_PROPERTY_KEYS,
+    BUILTIN_MODEL_RESOURCE_TYPES
+  } from '@/dictionary/model-constants.js'
+
   export default {
     components: {
       cmdbRelationList,
-      cmdbRelationGraphics,
+      cmdbInstanceAssociation,
       cmdbRelationCreate
     },
     mixins: [authMixin],
@@ -101,17 +103,19 @@
         fullScreen: false,
         viewName: {
           list: cmdbRelationList.name,
-          graphics: cmdbRelationGraphics.name
+          graphics: cmdbInstanceAssociation.name
         },
         activeView: cmdbRelationList.name,
         showCreate: false,
         idKeyMap: {
-          host: 'bk_host_id',
-          biz: 'bk_biz_id'
+          [BUILTIN_MODELS.HOST]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.HOST].ID,
+          [BUILTIN_MODELS.BUSINESS]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].ID,
+          [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID
         },
         nameKeyMap: {
-          host: 'bk_host_innerip',
-          biz: 'bk_biz_name'
+          [BUILTIN_MODELS.HOST]: 'bk_host_innerip',
+          [BUILTIN_MODELS.BUSINESS]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].NAME,
+          [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME
         }
       }
     },
@@ -126,10 +130,20 @@
         }
       },
       authResources() {
-        if (this.resourceType === 'business') {
-          return this.INST_AUTH.U_BUSINESS
+        const authTypes = {
+          [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS]]: this.INST_AUTH.U_BUSINESS,
+          [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS_SET]]: this.INST_AUTH.U_BUSINESS_SET
         }
-        return this.INST_AUTH.U_INST
+        return authTypes[this.resourceType] || this.INST_AUTH.U_INST
+      },
+      componentProps() {
+        if (this.activeView === cmdbInstanceAssociation.name) {
+          return { objId: this.objId, instId: this.formatedInst.bk_inst_id, instName: this.formatedInst.bk_inst_name }
+        }
+        return {
+          associationTypes: this.associationTypes,
+          associationObject: this.associationObject
+        }
       }
     },
     created() {
@@ -155,6 +169,12 @@
           mainLineModels = mainLineModels.filter(model => !['biz', 'host'].includes(model.bk_obj_id))
           dataAsSource = this.getAvailableRelation(dataAsSource, mainLineModels)
           dataAsTarget = this.getAvailableRelation(dataAsTarget, mainLineModels)
+
+          // 新版视图明确展示出模型对象作为源和目标的关联数据，解决自关联的数据展示问题
+          // 自关联的关联对象数据源和目标是一样的，导致后续无法区分出源与目标的关系，因此这里直接打上type标记
+          dataAsSource = dataAsSource.map(item => ({ ...item, type: 'source' }))
+          dataAsTarget = dataAsTarget.map(item => ({ ...item, type: 'target' }))
+
           this.associationObject = [...dataAsSource, ...dataAsTarget]
           if (dataAsSource.length || dataAsTarget.length) {
             this.hasRelation = true
@@ -217,7 +237,7 @@
             }
         }
         .options-checkbox {
-            margin: 0 0 0 25px;
+            margin: 0 15px 0 0;
             line-height: 32px;
             .checkbox-label {
                 padding-left: 4px;

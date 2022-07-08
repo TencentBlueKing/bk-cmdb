@@ -79,8 +79,11 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
     } else if (['organization'].includes(propertyType)) {
       values[propertyId] = inst[propertyId] || null
     } else if (['table'].includes(propertyType)) {
+      // table类型的字段编辑和展示目前仅在进程绑定信息被使用，如后期有扩展在其它场景form-table组件与此处都需要调整
+      // 接口需要过滤掉不允许编辑及内置的字段
+      const tableColumns = property.option?.filter(property => property.editable && !property.bk_isapi)
       // eslint-disable-next-line max-len
-      values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(property.option || [], row, autoSelect))
+      values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(tableColumns || [], row, autoSelect))
     } else {
       values[propertyId] = has(inst, propertyId) ? inst[propertyId] : ''
     }
@@ -249,6 +252,26 @@ export function clone(object) {
   return JSON.parse(JSON.stringify(object))
 }
 
+export function getValidateEvents(property) {
+  const type = property.bk_property_type
+  const isChar = ['singlechar', 'longchar'].includes(type)
+  const hasRegular = !!property.option
+  if (isChar && hasRegular) {
+    return {
+      'data-vv-validate-on': 'blur|change'
+    }
+  }
+  return {}
+}
+
+/**
+ * 根据远程返回的属性生成对应的校验规则
+ * @param {Object} property 字段属性
+ * @param {String} property.bk_property_type 字段类型
+ * @param {String} property.option 额外选项
+ * @param {String} property.isrequired 是否必须
+ * @returns {Array} vee-validate 规则
+ */
 export function getValidateRules(property) {
   const rules = {}
   const {
@@ -268,7 +291,7 @@ export function getValidateRules(property) {
         rules.max_value = option.max
       }
     } else if (['singlechar', 'longchar'].includes(propertyType)) {
-      rules.regex = option
+      rules.remoteString = option
     }
   }
   if (['singlechar', 'longchar'].includes(propertyType)) {
@@ -317,12 +340,12 @@ export function transformHostSearchParams(params) {
 const defaultPaginationConfig = window.innerHeight > 750
   ? { limit: 20, 'limit-list': [20, 50, 100, 500] }
   : { limit: 10, 'limit-list': [10, 50, 100, 500] }
-export function getDefaultPaginationConfig(customConfig = {}) {
+export function getDefaultPaginationConfig(customConfig = {}, useQuery = true) {
   const RouterQuery = require('@/router/query').default
   const config = {
     count: 0,
-    current: parseInt(RouterQuery.get('page', 1), 10),
-    limit: parseInt(RouterQuery.get('limit', defaultPaginationConfig.limit), 10),
+    current: useQuery ? parseInt(RouterQuery.get('page', 1), 10) : 1,
+    limit: useQuery ? parseInt(RouterQuery.get('limit', defaultPaginationConfig.limit), 10) : defaultPaginationConfig.limit,
     'limit-list': customConfig['limit-list'] || defaultPaginationConfig['limit-list']
   }
   return config
@@ -346,6 +369,45 @@ export function localSort(data, compareKey) {
 
 export function sort(data, compareKey) {
   return [...data].sort((A, B) => A[compareKey] - B[compareKey])
+}
+
+/**
+ * 递归对拓扑树进行自然排序
+ * @param {array} topoTree 拓扑
+ * @param {string} compareKey 需要对比的属性的 Key
+ * @param {string} [childrenKey] 后代属性的 Key
+ */
+export function sortTopoTree(topoTree, compareKey, childrenKey) {
+  if (!Array.isArray(topoTree)) {
+    throw Error('topoTree must be type of array')
+  }
+  if (!compareKey) {
+    throw Error('compareKey is required')
+  }
+
+  topoTree.sort((a, b) => {
+    if (has(a, compareKey) && has(b, compareKey)) {
+      const valueA = a[compareKey]
+      const valueB = b[compareKey]
+
+      if (/[a-zA-Z0-9]/.test(valueA) || /[a-zA-Z0-9]/.test(valueB)) {
+        if (valueA > valueB) return 1
+        if (valueA < valueB) return -1
+        return 0
+      }
+
+      return valueA.localeCompare(valueB)
+    }
+    return 0
+  })
+
+  if (childrenKey) {
+    topoTree?.forEach((node) => {
+      if (node[childrenKey]) {
+        sortTopoTree(node[childrenKey], compareKey, childrenKey)
+      }
+    })
+  }
 }
 
 export function getPropertyCopyValue(originalValue, propertyType) {
@@ -395,6 +457,7 @@ export default {
   formatValue,
   formatValues,
   getValidateRules,
+  getValidateEvents,
   getSort,
   getValue,
   transformHostSearchParams,

@@ -51,7 +51,7 @@
         <bk-button slot-scope="{ disabled }"
           class="options-button"
           theme="primary"
-          :disabled="!!repeatedProcesses.length || disabled"
+          :disabled="!!repeatedProcesses.length || disabled || !cloneProcesses.length"
           @click="doClone">
           {{$t('确定')}}
         </bk-button>
@@ -85,7 +85,6 @@
         checked: [],
         cloneProcesses: this.$tools.clone(this.sourceProcesses),
         properties: [],
-        propertyUnique: [],
         hasScrollbar: false,
         formValuesReflect: {},
         processFormType: 'single'
@@ -104,17 +103,12 @@
         })
         return header
       },
-      norepeatProperties() {
-        const unique = this.propertyUnique.find(unique => unique.must_check) || {}
-        const uniqueKeys = unique.keys || []
-        return this.properties.filter(property => uniqueKeys.some(target => target.key_id === property.id))
-      },
       repeatedProcesses() {
         return this.cloneProcesses.filter((cloneProcess) => {
           const key = 'bk_process_id'
           const sourceProcess = this.sourceProcesses.find(process => process[key] === cloneProcess[key])
-          return this.norepeatProperties.length
-            && this.norepeatProperties.every((property) => {
+          return this.properties.length
+            && this.properties.every((property) => {
               const propertyId = property.bk_property_id
               return sourceProcess[propertyId] === cloneProcess[propertyId]
             })
@@ -148,12 +142,7 @@
     },
     async created() {
       try {
-        const [properties, propertyUnique] = await Promise.all([
-          this.getProcessProperties(),
-          this.getProcessPropertyUnique()
-        ])
-        this.properties = properties
-        this.propertyUnique = propertyUnique
+        this.properties = await this.getProcessProperties()
       } catch (e) {
         console.error(e)
       }
@@ -168,17 +157,6 @@
           },
           config: {
             requestId: 'get_service_process_properties',
-            fromCache: true
-          }
-        })
-      },
-      getProcessPropertyUnique() {
-        const action = 'objectUnique/searchObjectUniqueConstraints'
-        return this.$store.dispatch(action, {
-          objId: 'process',
-          params: {},
-          config: {
-            requestId: 'get_service_process_property_unique',
             fromCache: true
           }
         })
@@ -238,7 +216,7 @@
             params: {
               name: this.$parent.module.bk_module_name,
               bk_biz_id: this.bizId,
-              bk_module_id: this.$route.params.moduleId,
+              bk_module_id: Number(this.$route.params.moduleId),
               instances: [
                 {
                   bk_host_id: this.hostId,

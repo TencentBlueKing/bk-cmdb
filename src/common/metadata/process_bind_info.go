@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+	"configcenter/src/thirdparty/hooks/process"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -145,10 +146,12 @@ func (pbi *ProcPropertyBindInfo) Validate() (string, error) {
 		if err := property.Std.IP.Validate(); err != nil {
 			return fmt.Sprintf("%s[%d].%s", common.BKProcBindInfo, idx, common.BKIP), err
 		}
-		if err := property.Std.Port.Validate(); err != nil {
+		port := (*PropertyPortValue)(property.Std.Port.Value)
+
+		if err := port.Validate(); err != nil {
 			return fmt.Sprintf("%s[%d].%s", common.BKProcBindInfo, idx, common.BKPort), err
 		}
-		if err := property.Std.Protocol.Validate(); err != nil {
+		if err := property.Std.Protocol.Value.Validate(); err != nil {
 			return fmt.Sprintf("%s[%d].%s", common.BKProcBindInfo, idx, common.BKProtocol), err
 		}
 		if err := property.Std.Enable.Validate(); err != nil {
@@ -192,9 +195,19 @@ func (pbi *ProcPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process, host map[
 		inputProcBindInfo.Std.TemplateRowID = row.Std.RowID
 
 		if !exists || IsAsDefaultValue(row.Std.IP.AsDefaultValue) {
-			if row.Std.IP.Value != nil || inputProcBindInfo.Std.IP != nil {
-				if row.Std.IP.Value == nil || len(*row.Std.IP.Value) == 0 {
-					return nil, false, false, errors.New("process template bind ip is not set or is empty")
+			if row.Std.IP.Value == nil {
+				if err := process.ValidateProcessBindIPEmptyHook(); err != nil {
+					return nil, false, false, err
+				}
+				if inputProcBindInfo.Std.IP != nil {
+					inputProcBindInfo.Std.IP = nil
+				}
+				changed = true
+			} else {
+				if len(*row.Std.IP.Value) == 0 {
+					if err := process.ValidateProcessBindIPEmptyHook(); err != nil {
+						return nil, false, false, err
+					}
 				}
 
 				ip, err := row.Std.IP.Value.IP(host)
@@ -332,7 +345,9 @@ func (pbi *ProcPropertyBindInfo) changeInstanceBindInfo(bindInfoArr []ProcBindIn
 		// 处理标准字段，对于更新操作，仅更新锁定的字段，对于新增进程模板绑定信息的操作，使用默认值新增进程的绑定信息
 		if !exists || IsAsDefaultValue(row.Std.IP.AsDefaultValue) == true {
 			if row.Std.IP.Value == nil || len(*row.Std.IP.Value) == 0 {
-				return nil, false, errors.New("process template bind ip is not set or is empty")
+				if err := process.ValidateProcessBindIPEmptyHook(); err != nil {
+					return nil, false, err
+				}
 			}
 
 			ip, err := row.Std.IP.Value.IP(host)
@@ -507,7 +522,9 @@ func (pbi ProcPropertyBindInfo) NewProcBindInfo(host map[string]interface{}) ([]
 
 		/*** 处理标准字段 ***/
 		if row.Std.IP.Value == nil || len(*row.Std.IP.Value) == 0 {
-			return nil, errors.New("process bind info ip is not set or is empty")
+			if err := process.ValidateProcessBindIPEmptyHook(); err != nil {
+				return nil, err
+			}
 		}
 		ip, err := row.Std.IP.Value.IP(host)
 		if err != nil {
@@ -589,10 +606,12 @@ func (pbi *ProcPropertyBindInfoValue) Validate() (string, error) {
 	if err := pbi.Std.IP.Validate(); err != nil {
 		return common.BKIP, err
 	}
-	if err := pbi.Std.Port.Validate(); err != nil {
+
+	port := (*PropertyPortValue)(pbi.Std.Port.Value)
+	if err := port.Validate(); err != nil {
 		return common.BKPort, err
 	}
-	if err := pbi.Std.Protocol.Validate(); err != nil {
+	if err := pbi.Std.Protocol.Value.Validate(); err != nil {
 		return common.BKProtocol, err
 	}
 	if err := pbi.Std.Enable.Validate(); err != nil {

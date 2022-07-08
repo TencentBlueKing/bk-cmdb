@@ -114,11 +114,17 @@ type IamInstanceWithCreator struct {
 	Ancestors []IamInstanceAncestor `json:"ancestors,omitempty"`
 }
 
-type IamInstancesWithCreator struct {
+// IamInstances iam instances
+type IamInstances struct {
 	System    string        `json:"system"`
 	Type      string        `json:"type"`
-	Creator   string        `json:"creator"`
 	Instances []IamInstance `json:"instances"`
+}
+
+// IamInstancesWithCreator iam instances with creator
+type IamInstancesWithCreator struct {
+	IamInstances `json:",inline"`
+	Creator      string `json:"creator"`
 }
 
 type IamInstance struct {
@@ -134,10 +140,43 @@ type IamInstanceAncestor struct {
 }
 
 type IamCreatorActionPolicy struct {
-	Action struct {
-		ID string `json:"id"`
-	} `json:"action"`
-	PolicyID int64 `json:"policy_id"`
+	Action   ActionWithID `json:"action"`
+	PolicyID int64        `json:"policy_id"`
+}
+
+// ActionWithID iam creator action with only action id
+type ActionWithID struct {
+	ID string `json:"id"`
+}
+
+// IamBatchOperateInstanceAuthReq batch grant or revoke iam instance auth request
+type IamBatchOperateInstanceAuthReq struct {
+	Asynchronous bool             `json:"asynchronous"`
+	Operate      IamAuthOperation `json:"operate"`
+	System       string           `json:"system"`
+	Actions      []ActionWithID   `json:"actions"`
+	Subject      IamSubject       `json:"subject"`
+	Resources    []IamInstances   `json:"resources"`
+	ExpiredAt    int64            `json:"expired_at"`
+}
+
+type IamAuthOperation string
+
+const (
+	IamGrantOperation  = "grant"
+	IamRevokeOperation = "revoke"
+)
+
+// IamSubject iam subject that can be authorized, right now it represents user or user group
+type IamSubject struct {
+	Type string `json:"type"`
+	Id   string `json:"id"`
+}
+
+// IamBatchOperateInstanceAuthRes batch operate iam instance auth response
+type IamBatchOperateInstanceAuthRes struct {
+	Action   ActionWithID `json:"action"`
+	PolicyID int64        `json:"policy_id"`
 }
 
 // Permission  describes all the authorities that a user
@@ -312,22 +351,39 @@ type SearchAssociationKindResult struct {
 	Info  []AssociationKind `json:"info"`
 }
 
+// QueryModelAssociationResult query model association result definition
+type QueryModelAssociationResult struct {
+	Count uint64        `json:"count"`
+	Info  []Association `json:"info"`
+}
+
+// QueryInstAssociationResult query inst association result definition
+type QueryInstAssociationResult struct {
+	Count uint64     `json:"count"`
+	Info  []InstAsst `json:"info"`
+}
+
 // ReadModelAttrResult  read model attribute api http response return result struct
 type ReadModelAttrResult struct {
 	BaseResp `json:",inline"`
 	Data     QueryModelAttributeDataResult `json:"data"`
 }
 
-// ReadModelClassifitionResult  read model classifition api http response return result struct
-type ReadModelClassifitionResult struct {
+// ReadModelClassificationResult  read model classification api http response return result struct
+type ReadModelClassificationResult struct {
 	BaseResp `json:",inline"`
 	Data     QueryModelClassificationDataResult `json:"data"`
 }
 
-// ReadModelResult  read model classifition api http response return result struct
-type ReadModelResult struct {
+// ReadModelWithAttributeResult  read model with its attributes api http response return result struct
+type ReadModelWithAttributeResult struct {
 	BaseResp `json:",inline"`
 	Data     QueryModelWithAttributeDataResult `json:"data"`
+}
+
+type ReadModelResult struct {
+	BaseResp `json:",inline"`
+	Data     QueryModelDataResult `json:"data"`
 }
 
 type ReadModelAttributeGroupResult struct {
@@ -341,19 +397,13 @@ type ReadModelUniqueResult struct {
 }
 
 type ReadModelAssociationResult struct {
-	BaseResp
-	Data struct {
-		Count uint64        `json:"count"`
-		Info  []Association `json:"info"`
-	}
+	BaseResp `json:",inline"`
+	Data     QueryModelAssociationResult `json:"data"`
 }
 
 type ReadInstAssociationResult struct {
-	BaseResp
-	Data struct {
-		Count uint64     `json:"count"`
-		Info  []InstAsst `json:"info"`
-	}
+	BaseResp `json:",inline"`
+	Data     QueryInstAssociationResult `json:"data"`
 }
 
 // OperaterException  result
@@ -375,4 +425,11 @@ type TransferException struct {
 type TransferExceptionResult struct {
 	BaseResp `json:",inline"`
 	Data     TransferException `json:"data"`
+}
+
+// SyncHostIdentifierResult sync host identifier result struct
+type SyncHostIdentifierResult struct {
+	SuccessList []int64 `json:"success_list"`
+	FailedList  []int64 `json:"failed_list"`
+	TaskID      string  `json:"task_id"`
 }

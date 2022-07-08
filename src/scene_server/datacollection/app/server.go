@@ -21,12 +21,15 @@ import (
 	"time"
 
 	"configcenter/src/ac/extensions"
+	"configcenter/src/ac/iam"
+	apiutil "configcenter/src/apimachinery/util"
 	"configcenter/src/common"
-	enableauth "configcenter/src/common/auth"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/datacollection/app/options"
@@ -36,12 +39,14 @@ import (
 	"configcenter/src/scene_server/datacollection/collections/netcollect"
 	svc "configcenter/src/scene_server/datacollection/service"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/esbserver"
 	"configcenter/src/thirdparty/esbserver/esbutil"
 
+	"github.com/Shopify/sarama"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -85,11 +90,20 @@ type DataCollectionConfig struct {
 	// NetCollectRedis net collection redis configs.
 	NetCollectRedis redis.Config
 
+	// SnapKafka snap kafka configs.
+	SnapKafka kafka.Config
+
 	// ESB blueking ESB configs.
 	Esb esbutil.EsbConfig
 
 	// DefaultAppName default name of this app.
 	DefaultAppName string
+
+	// Auth is auth config
+	Auth iam.AuthConfig
+
+	// SnapReportMode hostsnap report mode
+	SnapReportMode string
 }
 
 // DataCollection is data collection server.
@@ -115,14 +129,17 @@ type DataCollection struct {
 	// redisCli is cc main cache redis client.
 	redisCli redis.Client
 
-	// snapCli is snap redis client.
-	snapCli redis.Client
+	// snapRedisCli is snap redis client.
+	snapRedisCli redis.Client
 
-	// disCli is discover redis client.
-	disCli redis.Client
+	// disRedisCli is discover redis client.
+	disRedisCli redis.Client
 
-	// netCli is net collect redis client.
-	netCli redis.Client
+	// netRedisCli is net collect redis client.
+	netRedisCli redis.Client
+
+	// snapConsumerGroup is snap kafka consumer group client.
+	snapConsumerGroup sarama.ConsumerGroup
 
 	// authManager is auth manager.
 	authManager *extensions.AuthManager
@@ -198,9 +215,9 @@ func (c *DataCollection) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
 
 		blog.V(3).Infof("DataCollection| on host config update event: \n%s", string(curr.ConfigData))
 		// ESB configs.
-		c.config.Esb.Addrs, _ = cc.String("datacollection.esb.addr")
-		c.config.Esb.AppCode, _ = cc.String("datacollection.esb.appCode")
-		c.config.Esb.AppSecret, _ = cc.String("datacollection.esb.appSecret")
+		c.config.Esb.Addrs, _ = cc.String("esb.addr")
+		c.config.Esb.AppCode, _ = cc.String("esb.appCode")
+		c.config.Esb.AppSecret, _ = cc.String("esb.appSecret")
 	}
 }
 
@@ -260,6 +277,20 @@ func (c *DataCollection) initConfigs() error {
 		return fmt.Errorf("init netcollect redis configs, %+v", err)
 	}
 
+	c.config.SnapReportMode, _ = cc.String("datacollection.hostsnap.reportMode")
+	if metadata.GseConfigReportMode(c.config.SnapReportMode) == metadata.GseConfigReportModeKafka {
+		c.config.SnapKafka, _ = cc.Kafka("kafka.snap")
+		if err := c.config.SnapKafka.Check(); err != nil {
+			blog.Errorf("kafka config is error, err: %v", err)
+			return err
+		}
+	}
+
+	c.config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
+	if err != nil {
+		blog.Warnf("parse auth center config failed: %v", err)
+	}
+
 	return nil
 }
 
@@ -275,7 +306,17 @@ func (c *DataCollection) initModules() error {
 	blog.Info("DataCollection| init modules, create mongo client success[%+v]", c.config.MongoDB.GetMongoConf())
 
 	// create blueking ESB client.
-	esb, err := esbserver.NewEsb(c.engine.ApiMachineryConfig(), nil, /* you can update it by a chan here */
+	tlsConfig, err := apiutil.NewTLSClientConfigFromConfig("esb")
+	if err != nil {
+		return err
+	}
+	apiMachineryConfig := &apiutil.APIMachineryConfig{
+		QPS:       1000,
+		Burst:     1000,
+		TLSConfig: &tlsConfig,
+	}
+
+	esb, err := esbserver.NewEsb(apiMachineryConfig, nil, /* you can update it by a chan here */
 		&c.config.Esb, c.engine.Metric().Registry())
 	if err != nil {
 		return fmt.Errorf("create ESB client, %+v", err)
@@ -300,7 +341,7 @@ func (c *DataCollection) initModules() error {
 		if err != nil {
 			return fmt.Errorf("connect to snap redis, %+v", err)
 		}
-		c.snapCli = snapCli
+		c.snapRedisCli = snapCli
 		c.service.SetSnapCli(snapCli)
 		blog.Infof("DataCollection| init modules, connected to snap redis, %+v", c.config.SnapRedis)
 	}
@@ -311,7 +352,7 @@ func (c *DataCollection) initModules() error {
 		if nil != err {
 			return fmt.Errorf("connect to discover redis, %+v", err)
 		}
-		c.disCli = disCli
+		c.disRedisCli = disCli
 		c.service.SetDiscoverCli(disCli)
 		blog.Infof("DataCollection| init modules, connected to discover redis, %+v", c.config.DiscoverRedis)
 	}
@@ -322,15 +363,47 @@ func (c *DataCollection) initModules() error {
 		if nil != err {
 			return fmt.Errorf("connect to netcollect redis, %+v", err)
 		}
-		c.netCli = netCli
+		c.netRedisCli = netCli
 		c.service.SetNetCollectCli(netCli)
 		blog.Infof("DataCollection| init modules, connected to netcollect redis, %+v", c.config.NetCollectRedis)
 	}
 
-	// handle authorize.
-	if enableauth.EnableAuthorize() {
-		c.authManager = extensions.NewAuthManager(c.engine.CoreAPI)
+	// connect to snap kafka.
+	if c.config.SnapReportMode == "kafka" {
+		config := sarama.NewConfig()
+		config.Consumer.Return.Errors = false
+		config.Consumer.Offsets.AutoCommit.Enable = false // 禁用自动提交，改为手动
+		config.Consumer.Offsets.Initial = sarama.OffsetOldest
+		if c.config.SnapKafka.User != "" && c.config.SnapKafka.Password != "" {
+			config.Net.SASL.Enable = true
+			config.Net.SASL.User = c.config.SnapKafka.User
+			config.Net.SASL.Password = c.config.SnapKafka.Password
+			config.Net.SASL.Handshake = true
+			config.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+				return &kafka.XDGSCRAMClient{HashGeneratorFcn: kafka.SHA512}
+			}
+			config.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA512
+		}
+		var err error
+		c.snapConsumerGroup, err = sarama.NewConsumerGroup(c.config.SnapKafka.Brokers, c.config.SnapKafka.GroupID,
+			config)
+		if err != nil {
+			blog.Errorf("create kafka consumer group error, err: %v", err)
+			return err
+		}
 	}
+
+	iamCli := new(iam.IAM)
+	if auth.EnableAuthorize() {
+		blog.Info("enable auth center access")
+		iamCli, err = iam.NewIAM(c.config.Auth, c.engine.Metric().Registry())
+		if err != nil {
+			return fmt.Errorf("new iam client failed: %v", err)
+		}
+	} else {
+		blog.Infof("disable auth center access")
+	}
+	c.authManager = extensions.NewAuthManager(c.engine.CoreAPI, iamCli)
 
 	return nil
 }
@@ -353,7 +426,8 @@ func (c *DataCollection) getDefaultAppID() (string, error) {
 
 	id, err := util.GetInt64ByInterface(results[0][common.BKAppIDField])
 	if err != nil {
-		return "", fmt.Errorf("can't query default appid, unkonw id type, %+v", reflect.TypeOf(results[0][common.BKAppIDField]))
+		return "", fmt.Errorf("can't query default appid, unkonw id type, %+v",
+			reflect.TypeOf(results[0][common.BKAppIDField]))
 	}
 	defaultAppID := strconv.FormatInt(id, 10)
 
@@ -399,38 +473,55 @@ func (c *DataCollection) runCollectPorters() {
 			break
 		}
 
-		blog.Errorf("DataCollection| get default appid failed: %+v, init database first and it would try again in %+v seconds later",
-			err, defaultAppInitWaitDuration)
+		blog.Errorf("DataCollection| get default appid failed: %+v, init database first and it would "+
+			"try again in %+v seconds later", err, defaultAppInitWaitDuration)
 		time.Sleep(defaultAppInitWaitDuration)
 	}
 	blog.Info("DataCollection| get default appid id success[%s]", c.defaultAppID)
 
 	// create and add new porters.
-	if c.snapCli != nil {
+	if metadata.GseConfigReportMode(c.config.SnapReportMode) == metadata.GseConfigReportModeKafka {
 		topic := c.snapMessageTopic(c.defaultAppID)
 		analyzer := hostsnap.NewHostSnap(c.ctx, c.redisCli, c.db, c.engine, c.authManager)
 
-		porter := collections.NewSimplePorter(snapPorterName, c.engine, c.hash, analyzer, c.snapCli, topic, c.registry)
-		c.porterManager.AddPorter(porter)
-		blog.Info("DataCollection| create hostsnap analyzer with target porter[%s] on topic[%s] success", snapPorterName, topic)
+		kafkaPorter := collections.NewKafkaPorter(snapPorterName, c.engine, c.ctx, analyzer, c.snapConsumerGroup,
+			topic, c.registry)
+		c.porterManager.AddPorter(kafkaPorter)
+		blog.Info("DataCollection| create kafka hostsnap analyzer with target porter[%s] on topic[%s] success",
+			snapPorterName, topic)
 	}
 
-	if c.disCli != nil {
+	if c.snapRedisCli != nil {
+		topic := c.snapMessageTopic(c.defaultAppID)
+		analyzer := hostsnap.NewHostSnap(c.ctx, c.redisCli, c.db, c.engine, c.authManager)
+
+		porter := collections.NewSimplePorter(snapPorterName, c.engine, c.hash, analyzer, c.snapRedisCli, topic,
+			c.registry)
+		c.porterManager.AddPorter(porter)
+		blog.Info("DataCollection| create redis hostsnap analyzer with target porter[%s] on topic[%s] success",
+			snapPorterName, topic)
+	}
+
+	if c.disRedisCli != nil {
 		topic := c.discoverMessageTopic(c.defaultAppID)
 		analyzer := middleware.NewDiscover(c.ctx, c.redisCli, c.engine, c.authManager)
 
-		porter := collections.NewSimplePorter(middlewarePorterName, c.engine, c.hash, analyzer, c.disCli, topic, c.registry)
+		porter := collections.NewSimplePorter(middlewarePorterName, c.engine, c.hash, analyzer, c.disRedisCli, topic,
+			c.registry)
 		c.porterManager.AddPorter(porter)
-		blog.Info("DataCollection| create discover analyzer with target porter[%s] on topic[%s] success", middlewarePorterName, topic)
+		blog.Info("DataCollection| create kafka discover analyzer with target porter[%s] on topic[%s] success",
+			middlewarePorterName, topic)
 	}
 
-	if c.netCli != nil {
+	if c.netRedisCli != nil {
 		topic := c.netcollectMessageTopic(c.defaultAppID)
 		analyzer := netcollect.NewNetCollect(c.ctx, c.db, c.authManager)
 
-		porter := collections.NewSimplePorter(netCollectPorterName, c.engine, c.hash, analyzer, c.netCli, topic, c.registry)
+		porter := collections.NewSimplePorter(netCollectPorterName, c.engine, c.hash, analyzer, c.netRedisCli, topic,
+			c.registry)
 		c.porterManager.AddPorter(porter)
-		blog.Info("DataCollection| create netcollect analyzer with target porter[%s] on topic[%s] success", netCollectPorterName, topic)
+		blog.Info("DataCollection| create redis netcollect analyzer with target porter[%s] on topic[%s] success",
+			netCollectPorterName, topic)
 	}
 }
 
@@ -485,7 +576,7 @@ func (c *DataCollection) setSnapshotBizName() error {
 	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 	for i := 1; i <= tryCnt; i++ {
 		time.Sleep(time.Second * 2)
-		res, err := c.engine.CoreAPI.CoreService().System().SearchConfigAdmin(context.Background(), header)
+		res, err := c.engine.CoreAPI.CoreService().System().SearchPlatformSetting(context.Background(), header)
 		if err != nil {
 			blog.Warnf("setSnapshotBizName failed,  try count:%d, SearchConfigAdmin err: %v", i, err)
 			continue
@@ -499,7 +590,8 @@ func (c *DataCollection) setSnapshotBizName() error {
 	}
 
 	if c.snapshotBizName == "" {
-		blog.Errorf("setSnapshotBizName failed, SnapshotBizName is empty, check the coreservice and the value in table cc_System")
+		blog.Errorf("setSnapshotBizName failed, SnapshotBizName is empty, check the coreservice and the value " +
+			"in table cc_System")
 		return fmt.Errorf("setSnapshotBizName failed")
 	}
 

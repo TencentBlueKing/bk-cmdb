@@ -29,7 +29,7 @@ export const types = {
     process: t('进程')
   },
   host: {
-    host: '主机'
+    host: t('主机')
   },
   model: {
     model: t('模型'),
@@ -43,9 +43,6 @@ export const types = {
   },
   association_kind: {
     association_kind: t('关联类型')
-  },
-  event: {
-    event: t('事件订阅')
   },
   cloud_resource: {
     cloud_area: t('云区域'),

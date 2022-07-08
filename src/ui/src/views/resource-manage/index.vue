@@ -1,5 +1,5 @@
 <template>
-  <div class="classify-layout clearfix" v-bkloading="{ isLoading: $loading('getObjectCommonInstanceCount') }">
+  <div class="classify-layout clearfix">
     <div class="classify-filter">
       <bk-input class="filter-input"
         clearable
@@ -16,25 +16,21 @@
           v-for="classify in classifyColumns[col - 1]"
           :key="classify['bk_classification_id']"
           :classify="classify"
-          :collection="collection"
-          :instance-count="instanceCount">
+          :collection="collection">
         </cmdb-classify-panel>
       </div>
     </div>
-    <no-search-results v-show="isEmpty && !globalLoading" :text="$t('搜不到相关资源')" />
+    <no-search-results v-if="isEmpty && !globalLoading" :text="$t('搜不到相关资源')" />
   </div>
 </template>
 
 <script>
   import { mapGetters } from 'vuex'
-  import {
-    MENU_RESOURCE_COLLECTION,
-    MENU_RESOURCE_HOST_COLLECTION,
-    MENU_RESOURCE_BUSINESS_COLLECTION
-  } from '@/dictionary/menu-symbol'
+  import debounce from 'lodash.debounce'
   import noSearchResults from '@/views/status/no-search-results.vue'
   import cmdbClassifyPanel from './children/classify-panel'
-  import debounce from 'lodash.debounce'
+  import useInstanceCount from './children/use-instance-count.js'
+
   export default {
     components: {
       cmdbClassifyPanel,
@@ -44,30 +40,13 @@
       return {
         filter: '',
         debounceFilter: null,
-        matchedModels: null,
-        instanceCount: []
+        matchedModels: null
       }
     },
     computed: {
       ...mapGetters(['globalLoading']),
       ...mapGetters('objectModelClassify', ['classifications', 'models']),
-      ...mapGetters('userCustom', ['usercustom']),
-      collection() {
-        const isHostCollected = this.usercustom[MENU_RESOURCE_HOST_COLLECTION] === undefined
-          ? true
-          : this.usercustom[MENU_RESOURCE_HOST_COLLECTION]
-        const isBusinessCollected = this.usercustom[MENU_RESOURCE_BUSINESS_COLLECTION] === undefined
-          ? true
-          : this.usercustom[MENU_RESOURCE_BUSINESS_COLLECTION]
-        const collection = [...(this.usercustom[MENU_RESOURCE_COLLECTION] || [])]
-        if (isHostCollected) {
-          collection.push('host')
-        }
-        if (isBusinessCollected) {
-          collection.push('biz')
-        }
-        return collection.filter(modelId => this.models.some(model => model.bk_obj_id === modelId))
-      },
+      ...mapGetters('userCustom', { collection: 'resourceCollection' }),
       filteredClassifications() {
         const result = []
         const filterClassify = ['bk_biz_topo']
@@ -88,6 +67,9 @@
           }
         })
         return result
+      },
+      modelIds() {
+        return this.filteredClassifications.map(item => item.bk_objects.map(obj => obj.bk_obj_id))
       },
       classifyColumns() {
         const colHeight = [0, 0, 0, 0]
@@ -111,7 +93,8 @@
     },
     created() {
       this.debounceFilter = debounce(this.filterModel, 300)
-      this.getInstanceCount()
+      const { fetchData: getInstanceCount } = useInstanceCount({ modelIds: this.modelIds }, this)
+      getInstanceCount()
     },
     methods: {
       filterModel() {
@@ -120,20 +103,6 @@
           this.matchedModels = models.map(model => model.bk_obj_id)
         } else {
           this.matchedModels = null
-        }
-      },
-      async getInstanceCount() {
-        try {
-          this.instanceCount = await this.$store.dispatch('objectCommonInst/getInstanceCount', {
-            config: {
-              requestId: 'getObjectCommonInstanceCount',
-              globalError: false
-            }
-          })
-        } catch (e) {
-          console.error(e)
-          this.instanceCount = []
-          this.$route.meta.view = 'error'
         }
       },
       calcWaterfallHeight(classify) {

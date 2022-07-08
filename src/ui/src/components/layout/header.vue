@@ -1,13 +1,13 @@
 <template>
-  <header class="header-layout">
+  <header class="header-layout" v-test-id.global="'header'">
     <div class="logo">
       <router-link class="logo-link" to="/index">
         {{$t('蓝鲸配置平台')}}
       </router-link>
     </div>
-    <nav class="header-nav">
+    <nav class="header-nav" v-test-id.global="'headerNav'">
       <router-link class="header-link"
-        v-for="nav in menu"
+        v-for="nav in visibleMenu"
         :to="getHeaderLink(nav)"
         :key="nav.id"
         :class="{
@@ -59,36 +59,65 @@
 </template>
 
 <script>
+  import has from 'has'
   import menu from '@/dictionary/menu'
-  import { MENU_BUSINESS, MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+  import {
+    MENU_BUSINESS,
+    MENU_BUSINESS_SET,
+    MENU_BUSINESS_SET_TOPOLOGY,
+    MENU_BUSINESS_HOST_AND_SERVICE
+  } from '@/dictionary/menu-symbol'
   import { mapGetters } from 'vuex'
+  import {
+    getBizSetIdFromStorage,
+    getBizSetRecentlyUsed
+  } from '@/utils/business-set-helper.js'
+
   export default {
     data() {
-      return {
-        menu
-      }
+      return {}
     },
     computed: {
-      ...mapGetters(['site', 'userName']),
+      ...mapGetters(['userName']),
       ...mapGetters('objectBiz', ['bizId']),
       helpDocUrl() {
-        return this.site.helpDocUrl || 'http://docs.bk.tencent.com/product_white_paper/cmdb/'
+        return this.$Site.helpDocUrl || 'http://docs.bk.tencent.com/product_white_paper/cmdb/'
+      },
+      visibleMenu() {
+        return menu.filter((menuItem) => {
+          if (!has(menuItem, 'visibility')) {
+            return true
+          }
+
+          if (typeof menuItem.visibility === 'function') {
+            return menuItem.visibility(this)
+          }
+          return menuItem.visibility
+        })
+      },
+      isBusinessView() {
+        const { matched: [topRoute] } = this.$route
+        return topRoute?.name === MENU_BUSINESS_SET || topRoute?.name === MENU_BUSINESS
       }
     },
     methods: {
       isLinkActive(nav) {
-        const { matched } = this.$route
-        if (!matched.length) {
+        const { matched: [topRoute] } = this.$route
+        if (!topRoute) {
           return false
         }
-        return matched[0].name === nav.id
+        return topRoute.name === nav.id
+          || (topRoute.name === MENU_BUSINESS_SET && nav.id === MENU_BUSINESS) // 业务集时高亮业务菜单
       },
       getHeaderLink(nav) {
         const link = { name: nav.id }
-        if (nav.id === MENU_BUSINESS && this.bizId) {
-          link.name = MENU_BUSINESS_HOST_AND_SERVICE
+        if (nav.id === MENU_BUSINESS) {
+          const isBizSetUsed = getBizSetRecentlyUsed()
+          const id = isBizSetUsed ? getBizSetIdFromStorage() : this.bizId
+          const paramName = isBizSetUsed ? 'bizSetId' : 'bizId'
+          link.name = isBizSetUsed ? MENU_BUSINESS_SET_TOPOLOGY : MENU_BUSINESS_HOST_AND_SERVICE
           link.params = {
-            bizId: this.bizId
+            [paramName]: id
           }
         }
         return link

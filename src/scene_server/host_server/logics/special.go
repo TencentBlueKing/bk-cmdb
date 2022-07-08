@@ -52,7 +52,8 @@ func (lgc *Logics) NewSpecial(kit *rest.Kit) SpecialHandle {
 // 描述: 1. 不能将主机转移到空闲机和故障机等内置模块
 // 2. 不会删除主机已经存在的主机模块， 只会新加主机与模块。 3. 不存在的主机会新加， 规则通过内网IP和 cloud id 判断主机是否存在
 // 4. 进程不存在不报错
-func (s *special) BkSystemInstall(ctx context.Context, appName string, input *metadata.BkSystemInstallRequest) errors.CCError {
+func (s *special) BkSystemInstall(ctx context.Context, appName string,
+	input *metadata.BkSystemInstallRequest) errors.CCError {
 
 	if input.HostInfo == nil {
 		input.HostInfo = make(map[string]interface{}, 0)
@@ -75,7 +76,8 @@ func (s *special) BkSystemInstall(ctx context.Context, appName string, input *me
 		// host not found
 		hostID, err = s.bkSystemInstallAddHostInstance(ctx, input)
 		if err != nil {
-			blog.Errorf("BkSystemInstall IsHostExistInApp error. err:%s, parameters:%s, rid:%s", err.Error(), input, s.kit.Rid)
+			blog.Errorf("BkSystemInstall IsHostExistInApp error. err:%s, parameters:%s, rid:%s", err.Error(), input,
+				s.kit.Rid)
 			return err
 		}
 	} else {
@@ -83,11 +85,13 @@ func (s *special) BkSystemInstall(ctx context.Context, appName string, input *me
 		// source host belong app
 		ok, err := s.lgc.IsHostExistInApp(s.kit, appID, hostID)
 		if err != nil {
-			blog.Errorf("BkSystemInstall IsHostExistInApp error. err:%s, params:{appID:%d, hostID:%d}, rid:%s", err.Error(), hostID, s.kit.Rid)
+			blog.Errorf("BkSystemInstall IsHostExistInApp error. err:%s, params:{appID:%d, hostID:%d}, rid:%s",
+				err.Error(), hostID, s.kit.Rid)
 			return err
 		}
 		if !ok {
-			blog.Errorf("BkSystemInstall Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s", appID, hostID, s.kit.Rid)
+			blog.Errorf("BkSystemInstall Host does not belong to the current application; error, params:{appID:%d, "+
+				"hostID:%d}, rid:%s", appID, hostID, s.kit.Rid)
 			return s.kit.CCError.CCErrorf(common.CCErrHostNotINAPP, hostID)
 		}
 
@@ -95,27 +99,27 @@ func (s *special) BkSystemInstall(ctx context.Context, appName string, input *me
 			Data:      input.HostInfo,
 			Condition: mapstr.MapStr{common.BKHostIDField: hostID},
 		}
-		resp, httpDoErr := s.lgc.CoreAPI.CoreService().Instance().UpdateInstance(ctx, s.kit.Header, common.BKInnerObjIDHost, updateInput)
+		_, httpDoErr := s.lgc.CoreAPI.CoreService().Instance().UpdateInstance(ctx, s.kit.Header,
+			common.BKInnerObjIDHost, updateInput)
 		if httpDoErr != nil {
-			blog.ErrorJSON("BkSystemInstall update host instance http do error.  err:%s, input:%s,  update parameter:%s, rid:%s", httpDoErr, input, updateInput, s.kit.Rid)
+			blog.ErrorJSON("BkSystemInstall update host instance http do error.  err:%s, input:%s, "+
+				"update parameter:%s, rid:%s", httpDoErr, input, updateInput, s.kit.Rid)
 			return s.kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if err := resp.CCError(); err != nil {
-			blog.ErrorJSON("BkSystemInstall update host instance http reply error.  err:%s, input:%s,  update parameter:%s, rid:%s", err.Error(), input, updateInput, s.kit.Rid)
-			return err
 		}
 	}
 
 	err = s.bkSystemInstallModule(ctx, appID, hostID, moduleIDArr)
 	if err != nil {
-		blog.ErrorJSON("BkSystemInstallBkSystemInstall bkSystemInstallModule error. err:%s, parameters:%s, rid:%s", err.Error(), input, s.kit.Rid)
+		blog.ErrorJSON("BkSystemInstallBkSystemInstall bkSystemInstallModule error. err:%s, parameters:%s, rid:%s",
+			err.Error(), input, s.kit.Rid)
 		return err
 	}
 
 	// 进程不存在不报错
 	err = s.bkSystemInstallProc(ctx, appID, moduleIDArr, hostID, input.ProcInfo)
 	if err != nil {
-		blog.Errorf("BkSystemInstallBkSystemInstall bkSystemInstallProc error. err:%s, parameters:%s, rid:%s", err.Error(), input, s.kit.Rid)
+		blog.Errorf("BkSystemInstallBkSystemInstall bkSystemInstallProc error. err:%s, parameters:%s, rid:%s",
+			err.Error(), input, s.kit.Rid)
 		return err
 	}
 	return nil
@@ -177,22 +181,20 @@ func (s *special) bkSystemParameterConv(ctx context.Context, appName string, inp
 }
 
 // bksystemInstallAddHostInstance only add host instance. not add host and module relation
-func (s *special) bkSystemInstallAddHostInstance(ctx context.Context, input *metadata.BkSystemInstallRequest) (int64, errors.CCError) {
+func (s *special) bkSystemInstallAddHostInstance(ctx context.Context, input *metadata.BkSystemInstallRequest) (int64,
+	errors.CCError) {
 
 	resp, httpDoErr := s.lgc.CoreAPI.CoreService().Instance().
 		CreateInstance(ctx, s.kit.Header, common.BKInnerObjIDHost, &metadata.CreateModelInstance{
 			Data: input.HostInfo,
 		})
 	if httpDoErr != nil {
-		blog.ErrorJSON("BkSystemInstall create host instance http do error.  err:%s, data:%s, rid:%s", httpDoErr, input.HostInfo, s.kit.Rid)
+		blog.ErrorJSON("BkSystemInstall create host instance http do error.  err:%s, data:%s, rid:%s", httpDoErr,
+			input.HostInfo, s.kit.Rid)
 		return 0, s.kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if err := resp.CCError(); err != nil {
-		blog.ErrorJSON("BkSystemInstall create host instance http reply error.  err:%s, data:%s, rid:%s", err.Error(), input.HostInfo, s.kit.Rid)
-		return 0, err
-	}
 
-	return int64(resp.Data.Created.ID), nil
+	return int64(resp.Created.ID), nil
 
 }
 
@@ -250,8 +252,7 @@ func (s *special) bkSystemGetInstallModuleID(ctx context.Context, appID int64, s
 }
 
 // bksystemInstallAddHostInstance only all host and module relation
-func (s *special) bkSystemInstallModule(ctx context.Context, appID, hostID int64, moduleIDArr []int64) (err errors.CCError) {
-
+func (s *special) bkSystemInstallModule(ctx context.Context, appID, hostID int64, moduleIDArr []int64) errors.CCError {
 	input := &metadata.HostsModuleRelation{
 		ApplicationID: appID,
 		HostID:        []int64{hostID},
@@ -259,22 +260,19 @@ func (s *special) bkSystemInstallModule(ctx context.Context, appID, hostID int64
 		IsIncrement:   true,
 	}
 
-	resp, httpDoErr := s.lgc.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, s.kit.Header, input)
-	if httpDoErr != nil {
-		blog.ErrorJSON("bkSystemInstallModule add host moduel relation  http do error.  err:%s, data:%s, rid:%s", httpDoErr, input, s.kit.Rid)
-		return s.kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if err := resp.CCError(); err != nil {
-		blog.ErrorJSON("bkSystemInstallModule add host moduel relation  http reply error.  err:%s, data:%s, rid:%s", err, input, s.kit.Rid)
+	resp, err := s.lgc.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, s.kit.Header, input)
+	if err != nil {
+		blog.Errorf("transfer host failed, err: %v, resp: %#v, input: %#v, rid:%s", err, resp, input, s.kit.Rid)
 		return err
 	}
 
 	return nil
 }
 
-// bkSystemInstallProc  change host process info. process not found, process does not exist without error. no performance issues are consider,
-func (s *special) bkSystemInstallProc(ctx context.Context, appID int64, moduleIDArr []int64, hostID int64, procInfoMap map[string]map[string]interface{}) errors.CCError {
+// bkSystemInstallProc  change host process info. process not found,
+// process does not exist without error. no performance issues are consider,
+func (s *special) bkSystemInstallProc(ctx context.Context, appID int64, moduleIDArr []int64, hostID int64,
+	procInfoMap map[string]map[string]interface{}) errors.CCError {
 
 	for key := range procInfoMap {
 		delete(procInfoMap[key], common.BKFuncName)
@@ -289,9 +287,11 @@ func (s *special) bkSystemInstallProc(ctx context.Context, appID int64, moduleID
 			ModuleID:   moduleID,
 		}
 
-		srvInstInfo, err := s.lgc.CoreAPI.CoreService().Process().ListServiceInstanceDetail(ctx, s.kit.Header, searchSrvInstRelationCond)
+		srvInstInfo, err := s.lgc.CoreAPI.CoreService().Process().ListServiceInstanceDetail(ctx, s.kit.Header,
+			searchSrvInstRelationCond)
 		if err != nil {
-			blog.ErrorJSON("bkSystemInstallProc ListServiceInstance  http  error.  err:%s, data:%s, rid:%s", err, appID, searchSrvInstRelationCond, s.kit.Rid)
+			blog.ErrorJSON("bkSystemInstallProc ListServiceInstance  http  error.  err:%s, data:%s, rid:%s", err,
+				appID, searchSrvInstRelationCond, s.kit.Rid)
 			return err
 		}
 		var procIDArr []int64
@@ -310,13 +310,12 @@ func (s *special) bkSystemInstallProc(ctx context.Context, appID int64, moduleID
 				Data:      info,
 				Condition: updateCond.ToMapStr(),
 			}
-			resp, httpDoErr := s.lgc.CoreAPI.CoreService().Instance().UpdateInstance(ctx, s.kit.Header, common.BKInnerObjIDProc, procUpdateOpt)
+			_, httpDoErr := s.lgc.CoreAPI.CoreService().Instance().UpdateInstance(ctx, s.kit.Header,
+				common.BKInnerObjIDProc, procUpdateOpt)
 			if httpDoErr != nil {
-				blog.ErrorJSON("bkSystemInstallProc UpdateInstance  http do error.  err:%s, data:%s, rid:%s", httpDoErr, appID, searchSrvInstRelationCond, s.kit.Rid)
+				blog.ErrorJSON("bkSystemInstallProc UpdateInstance  http do error.  err:%s, data:%s, rid:%s",
+					httpDoErr, appID, searchSrvInstRelationCond, s.kit.Rid)
 				return httpDoErr
-			}
-			if err := resp.CCError(); err != nil {
-				blog.ErrorJSON("bkSystemInstallProc UpdateInstance  http reply error. err:%s, update params:%s, rid:%s", err, procUpdateOpt, s.kit.Rid)
 			}
 		}
 

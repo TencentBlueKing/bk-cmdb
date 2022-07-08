@@ -9,7 +9,6 @@ import businessSync from './modules/view/business-sync.js'
 import hosts from './modules/view/hosts.js'
 import setFeatures from './modules/view/set-features.js'
 import auth from './modules/api/auth.js'
-import eventSub from './modules/api/event-sub.js'
 import hostBatch from './modules/api/host-batch.js'
 import hostDelete from './modules/api/host-delete.js'
 import hostFavorites from './modules/api/host-favorites.js'
@@ -64,12 +63,17 @@ import cloudarea from './modules/api/cloudarea'
 import audit from './modules/api/audit.js'
 import dynamicGroup from './modules/api/dynamic-group'
 
+import globalConfig from './modules/global-config.js'
+import bizSet from './modules/biz-set.js'
+
 Vue.use(Vuex)
 
 export default new Vuex.Store({
   ...global,
   modules: {
     index,
+    bizSet,
+    globalConfig,
     hostDetails,
     serviceProcess,
     businessSync,
@@ -77,7 +81,6 @@ export default new Vuex.Store({
     setFeatures,
     auth,
     request,
-    eventSub,
     hostBatch,
     hostDelete,
     hostFavorites,

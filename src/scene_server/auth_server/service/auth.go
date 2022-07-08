@@ -108,13 +108,14 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 		},
 		Resources: resources,
 	}
-	resourceIDs, err := s.authorizer.ListAuthorizedInstances(ctx.Kit.Ctx, ops, types.ResourceType(*iamResourceType))
+	authorizeList, err := s.authorizer.ListAuthorizedInstances(ctx.Kit.Ctx, ops, types.ResourceType(*iamResourceType))
 	if err != nil {
-		blog.ErrorJSON("ListAuthorizedInstances failed, err: %+v, input: %s, ops: %s, input: %s, rid: %s", err, input, ops, input, ctx.Kit.Rid)
+		blog.ErrorJSON("ListAuthorizedInstances failed, err: %+v,  ops: %s, input: %s, rid: %s", err, ops,
+			input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntity(resourceIDs)
+	ctx.RespEntity(authorizeList)
 }
 
 // GetNoAuthSkipUrl returns the redirect url to iam for user to apply for specific authorizations
@@ -157,6 +158,7 @@ func (s *AuthService) GetPermissionToApply(ctx *rest.Contexts) {
 }
 
 // RegisterResourceCreatorAction registers iam resource instance so that creator will be authorized on related actions
+// 创建者权限, 一个资源的创建者可以拥有这个资源的编辑和删除权限
 func (s *AuthService) RegisterResourceCreatorAction(ctx *rest.Contexts) {
 	input := new(metadata.IamInstanceWithCreator)
 	err := ctx.DecodeInto(input)

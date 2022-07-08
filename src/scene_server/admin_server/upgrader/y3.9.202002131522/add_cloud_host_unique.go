@@ -14,6 +14,7 @@ package y3_9_202002131522
 
 import (
 	"context"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
@@ -51,7 +52,7 @@ func addCloudHostUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 	uniqueCond := condition.CreateCondition()
 	uniqueCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
 	uniqueCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
-	existUniques := make([]metadata.ObjectUnique, 0)
+	existUniques := make([]objectUnique, 0)
 	err = db.Table(common.BKTableNameObjUnique).Find(uniqueCond.ToMapStr()).All(ctx, &existUniques)
 	if err != nil {
 		return err
@@ -63,22 +64,22 @@ func addCloudHostUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 	}
 
 	// insert unique
-	unique := metadata.ObjectUnique{
+	unique := objectUnique{
 		ObjID:     common.BKInnerObjIDHost,
 		MustCheck: false,
-		Keys: []metadata.UniqueKey{
+		Keys: []UniqueKey{
 			{
-				Kind: metadata.UniqueKeyKindProperty,
+				Kind: UniqueKeyKindProperty,
 				ID:   instID,
 			},
 			{
-				Kind: metadata.UniqueKeyKindProperty,
+				Kind: UniqueKeyKindProperty,
 				ID:   vendorID,
 			},
 		},
 		Ispre:    false,
 		OwnerID:  conf.OwnerID,
-		LastTime: metadata.Now(),
+		LastTime: Now(),
 	}
 	uid, err := db.NextSequence(ctx, common.BKTableNameObjUnique)
 	if err != nil {
@@ -90,3 +91,28 @@ func addCloudHostUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 	}
 	return nil
 }
+
+type objectUnique struct {
+	ID        uint64      `json:"id" bson:"id"`
+	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
+	MustCheck bool        `json:"must_check" bson:"must_check"`
+	Keys      []UniqueKey `json:"keys" bson:"keys"`
+	Ispre     bool        `json:"ispre" bson:"ispre"`
+	OwnerID   string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	LastTime  time.Time   `json:"last_time" bson:"last_time"`
+}
+
+type Time metadata.Time
+
+func Now() time.Time {
+	return time.Now().UTC()
+}
+
+type UniqueKey struct {
+	Kind string `json:"key_kind" bson:"key_kind"`
+	ID   uint64 `json:"key_id" bson:"key_id"`
+}
+
+const (
+	UniqueKeyKindProperty = "property"
+)

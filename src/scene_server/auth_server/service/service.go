@@ -26,11 +26,14 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/auth_server/logics"
 	sdkauth "configcenter/src/scene_server/auth_server/sdk/auth"
 	"configcenter/src/scene_server/auth_server/sdk/client"
 	"configcenter/src/scene_server/auth_server/types"
-	"github.com/emicklei/go-restful"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
 type AuthService struct {
@@ -156,6 +159,9 @@ func (s *AuthService) WebService() *restful.Container {
 	s.initResourcePull(api)
 
 	container := restful.NewContainer()
+
+	opentelemetry.AddOtlpFilter(container)
+
 	container.Add(api)
 
 	authAPI := new(restful.WebService).Produces(restful.MIME_JSON)
@@ -163,9 +169,11 @@ func (s *AuthService) WebService() *restful.Container {
 	s.initAuth(authAPI)
 	container.Add(authAPI)
 
-	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
-	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
-	container.Add(healthzAPI)
+	// common api
+	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	commonAPI.Route(commonAPI.GET("/healthz").To(s.Healthz))
+	commonAPI.Route(commonAPI.GET("/version").To(restfulservice.Version))
+	container.Add(commonAPI)
 
 	return container
 }

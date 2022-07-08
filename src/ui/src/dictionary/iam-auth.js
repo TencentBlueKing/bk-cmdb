@@ -11,6 +11,7 @@ export const IAM_VIEWS = {
   CUSTOM_QUERY: 'biz_custom_query',
   // 业务列表
   BIZ: 'biz',
+  BIZ_SET: 'business_set',
   // 跨业务转主机选择的主机所属业务的列表
   BIZ_FOR_HOST_TRANS: 'biz_for_host_trans',
   // 主机列表
@@ -21,8 +22,6 @@ export const IAM_VIEWS = {
   RESOURCE_TARGET_POOL_DIRECTORY: 'sys_resource_pool_directory',
   // 关联类型列表
   ASSOCIATION_TYPE: 'sys_association_type',
-  // 事件订阅列表
-  EVENT_PUSHING: 'sys_event_pushing',
   // 服务模板列表
   SERVICE_TEMPLATE: 'biz_process_service_template',
   // 集群模板列表
@@ -42,12 +41,12 @@ export const IAM_VIEWS_NAME = {
   [IAM_VIEWS.INSTANCE_MODEL]: ['实例模型', 'Instance Model'],
   [IAM_VIEWS.CUSTOM_QUERY]: ['动态分组', 'Custom Query'],
   [IAM_VIEWS.BIZ]: ['业务', 'Business'],
+  [IAM_VIEWS.BIZ_SET]: ['业务集', 'Business Set'],
   [IAM_VIEWS.BIZ_FOR_HOST_TRANS]: ['业务', 'Business'],
   [IAM_VIEWS.HOST]: ['主机', 'Host'],
   [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY]: ['主机池目录', 'Resource Pool Directory'],
   [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]: ['主机池目录', 'Resource Pool Directory'],
   [IAM_VIEWS.ASSOCIATION_TYPE]: ['关联类型', 'Association Type'],
-  [IAM_VIEWS.EVENT_PUSHING]: ['事件订阅', 'Event Pushing'],
   [IAM_VIEWS.SERVICE_TEMPLATE]: ['服务模板', 'Service Template'],
   [IAM_VIEWS.SET_TEMPLATE]: ['集群模板', 'Set Template'],
   [IAM_VIEWS.CLOUD_AREA]: ['云区域', 'Cloud Area'],
@@ -55,11 +54,17 @@ export const IAM_VIEWS_NAME = {
   [IAM_VIEWS.CLOUD_RESOURCE_TASK]: ['云资源发现任务', 'Cloud Resource Task']
 }
 
+/**
+ * 序列化鉴权字段
+ * @param {string} cmdbAction 需要鉴权的操作
+ * @param {Object} meta 额外的鉴权信息
+ * @returns 序列化后的鉴权字段
+ */
 function basicTransform(cmdbAction, meta = {}) {
-  const [internalType, internalAction] = cmdbAction.split('.')
+  const [type, action] = cmdbAction.split('.')
   const inejctedMeta = {
-    resource_type: internalType,
-    action: internalAction,
+    resource_type: type,
+    action,
     ...meta
   }
   Object.keys(inejctedMeta).forEach((key) => {
@@ -152,95 +157,102 @@ export const IAM_ACTIONS = {
 
   // 实例
   C_INST: {
-    id: 'create_sys_instance',
+    id: ([modelId]) => `create_comobj_${modelId}`,
+    fixedId: 'create_comobj',
     name: ['实例创建', 'Create Instance'],
-    cmdb_action: 'modelInstance.create',
-    relation: [{
-      view: IAM_VIEWS.INSTANCE_MODEL,
-      instances: [IAM_VIEWS.INSTANCE_MODEL]
-    }],
+    cmdb_action: ([modelId]) => ({ action: 'create', type: `comobj_${modelId}` }),
+    relation: [],
     transform: (cmdbAction, relationIds = []) => {
-      const verifyMeta = basicTransform(cmdbAction, {})
-      if (relationIds.length) {
-        const [modelId] = relationIds
-        verifyMeta.parent_layers = [{
-          resource_type: 'model',
-          resource_id: modelId
-        }]
+      const { action, type } = cmdbAction(relationIds)
+      const [modelId] = relationIds
+      const verifyMeta = {
+        resource_type: type,
+        action,
+        resource_id: modelId
       }
       return verifyMeta
     }
   },
   U_INST: {
-    id: 'edit_sys_instance',
+    id: (relation) => {
+      const [[levelOne]] = relation
+      if (Array.isArray(levelOne)) {
+        return `edit_comobj_${[levelOne[0]]}`
+      }
+      return `edit_comobj_${relation[0]}`
+    },
+    fixedId: 'edit_comobj',
     name: ['实例编辑', 'Update Instance'],
-    cmdb_action: 'modelInstance.update',
+    cmdb_action: ([modelId]) => ({ action: 'update', type: `comobj_${modelId}` }),
     relation: [{
-      view: IAM_VIEWS.INSTANCE,
-      instances: [IAM_VIEWS.INSTANCE_MODEL, IAM_VIEWS.INSTANCE]
+      view: (relation) => {
+        const [[levelOne]] = relation
+        if (Array.isArray(levelOne)) {
+          return `comobj_${[levelOne[0]]}`
+        }
+        return `comobj_${relation[0]}`
+      },
+      instances: (relation) => {
+        const [[levelOne]] = relation
+        if (Array.isArray(levelOne)) {
+          const [modelId, instId] = levelOne
+          return ([{ type: `comobj_${modelId}`, id: String(instId) }])
+        }
+        const [modelId, instId] = relation
+        return ([{ type: `comobj_${modelId}`, id: String(instId) }])
+      }
     }],
     transform: (cmdbAction, relationIds = []) => {
-      const verifyMeta = basicTransform(cmdbAction, {})
-      if (relationIds.length) {
-        const [modelId, instanceId] = relationIds
-        verifyMeta.parent_layers = [{
-          resource_type: 'model',
-          resource_id: modelId
-        }]
-        if (instanceId) {
-          verifyMeta.resource_id = instanceId
-        }
+      const { action, type } = cmdbAction(relationIds)
+      const [, instId] = relationIds
+      const verifyMeta = {
+        resource_type: type,
+        action,
+        resource_id: instId
       }
       return verifyMeta
     }
   },
   D_INST: {
-    id: 'delete_sys_instance',
+    id: (relation) => {
+      const [[levelOne]] = relation
+      if (Array.isArray(levelOne)) {
+        return `delete_comobj_${[levelOne[0]]}`
+      }
+      return `delete_comobj_${relation[0]}`
+    },
+    fixedId: 'delete_comobj',
     name: ['实例删除', 'Delete Instance'],
-    cmdb_action: 'modelInstance.delete',
+    cmdb_action: ([modelId]) => ({ action: 'delete', type: `comobj_${modelId}` }),
     relation: [{
-      view: IAM_VIEWS.INSTANCE,
-      instances: [IAM_VIEWS.INSTANCE_MODEL, IAM_VIEWS.INSTANCE]
+      view: (relation) => {
+        const [[levelOne]] = relation
+        if (Array.isArray(levelOne)) {
+          return `comobj_${[levelOne[0]]}`
+        }
+        return `comobj_${relation[0]}`
+      },
+      instances: (relation) => {
+        const [[levelOne]] = relation
+        if (Array.isArray(levelOne)) {
+          const [modelId, instId] = levelOne
+          return ([{ type: `comobj_${modelId}`, id: String(instId) }])
+        }
+        const [modelId, instId] = relation
+        return ([{ type: `comobj_${modelId}`, id: String(instId) }])
+      }
     }],
     transform: (cmdbAction, relationIds = []) => {
-      const verifyMeta = basicTransform(cmdbAction, {})
-      if (relationIds.length) {
-        const [modelId, instanceId] = relationIds
-        verifyMeta.parent_layers = [{
-          resource_type: 'model',
-          resource_id: modelId
-        }]
-        if (instanceId) {
-          verifyMeta.resource_id = instanceId
-        }
+      const { action, type } = cmdbAction(relationIds)
+      const [, instId] = relationIds
+      const verifyMeta = {
+        resource_type: type,
+        action,
+        resource_id: instId
       }
       return verifyMeta
     }
   },
-  R_INST: {
-    id: 'find_sys_instance',
-    name: ['实例查询', 'Search Instance'],
-    cmdb_action: 'modelInstance.findMany',
-    relation: [{
-      view: IAM_VIEWS.INSTANCE,
-      instances: [IAM_VIEWS.INSTANCE_MODEL, IAM_VIEWS.INSTANCE]
-    }],
-    transform: (cmdbAction, relationIds = []) => {
-      const verifyMeta = basicTransform(cmdbAction, {})
-      if (relationIds.length) {
-        const [modelId, instanceId] = relationIds
-        verifyMeta.parent_layers = [{
-          resource_type: 'model',
-          resource_id: modelId
-        }]
-        if (instanceId) {
-          verifyMeta.resource_id = instanceId
-        }
-      }
-      return verifyMeta
-    }
-  },
-
   // 动态分组
   C_CUSTOM_QUERY: {
     id: 'create_biz_dynamic_query',
@@ -407,7 +419,10 @@ export const IAM_ACTIONS = {
       return verifyMeta
     }
   },
-  // 跨业务转主机
+  /**
+   * 跨业务转移主机
+   * 注：只支持单个业务转移到单个业务
+   */
   HOST_TRANSFER_ACROSS_BIZ: {
     id: 'host_transfer_across_business',
     name: ['主机转移到其他业务', 'Transfer Host To Other Business'],
@@ -430,6 +445,42 @@ export const IAM_ACTIONS = {
         resource_type: 'biz'
       }]
       return verifyMeta
+    }
+  },
+  /**
+   * 跨业务转移空闲机
+   * 注：复用的是跨业务转移的权限，但实际需要的鉴权数据是不一样的，此权限支持多业务转移到单业务。
+   */
+  IDLE_HOST_TRANSFER_ACROSS_BIZ: {
+    id: 'host_transfer_across_business',
+    name: ['主机转移到其他业务', 'Transfer Host To Other Business'],
+    cmdb_action: 'hostInstance.moveHostToAnotherBizModule',
+    relation: [{
+      view: IAM_VIEWS.BIZ_FOR_HOST_TRANS,
+      instances: [IAM_VIEWS.BIZ_FOR_HOST_TRANS]
+    }, {
+      view: IAM_VIEWS.BIZ,
+      instances: [IAM_VIEWS.BIZ]
+    }],
+    transform: (cmdbAction, relationIds) => {
+      const verifyMetas = []
+
+      relationIds.forEach((relationId) => {
+        const [[currentBizId], [targetBizId]] = relationId
+        const verifyMeta = basicTransform(cmdbAction)
+
+        verifyMeta.parent_layers = [{
+          resource_id: currentBizId,
+          resource_type: 'biz'
+        }, {
+          resource_id: targetBizId,
+          resource_type: 'biz'
+        }]
+
+        verifyMetas.push(verifyMeta)
+      })
+
+      return verifyMetas
     }
   },
 
@@ -658,43 +709,42 @@ export const IAM_ACTIONS = {
     })
   },
 
-  // 事件推送
-  C_EVENT: {
-    id: 'create_event_subscription',
-    name: ['事件订阅创建', 'Create Event Subscription'],
-    cmdb_action: 'eventPushing.create'
+  // 业务集
+  C_BUSINESS_SET: {
+    id: 'create_business_set',
+    name: ['业务集创建', 'Create Business Set'],
+    cmdb_action: 'bizSet.create'
   },
-  U_EVENT: {
-    id: 'edit_event_subscription',
-    name: ['事件订阅编辑', 'Update Event Subscription'],
-    cmdb_action: 'eventPushing.update',
+  U_BUSINESS_SET: {
+    id: 'edit_business_set',
+    name: ['业务集编辑', 'Update Business Set'],
+    cmdb_action: 'bizSet.update',
     relation: [{
-      view: IAM_VIEWS.EVENT_PUSHING,
-      instances: [IAM_VIEWS.EVENT_PUSHING]
+      view: IAM_VIEWS.BIZ_SET,
+      instances: [IAM_VIEWS.BIZ_SET]
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
       resource_id: relationIds[0]
     })
   },
-  D_EVENT: {
-    id: 'delete_event_subscription',
-    name: ['事件订阅删除', 'Delete Event Subscription'],
-    cmdb_action: 'eventPushing.delete',
+  R_BUSINESS_SET: {
+    id: 'view_business_set',
+    name: ['业务集查看', 'View Business Set'],
+    cmdb_action: 'bizSet.findMany',
     relation: [{
-      view: IAM_VIEWS.EVENT_PUSHING,
-      instances: [IAM_VIEWS.EVENT_PUSHING]
+      view: IAM_VIEWS.BIZ_SET
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
       resource_id: relationIds[0]
     })
   },
-  R_EVENT: {
-    id: 'find_event_subscription',
-    name: ['事件订阅查询', 'Search Event Subscription'],
-    cmdb_action: 'eventPushing.findMany',
+  D_BUSINESS_SET: {
+    id: 'delete_business_set',
+    name: ['业务集删除', 'Delete Business Set'],
+    cmdb_action: 'bizSet.delete',
     relation: [{
-      view: IAM_VIEWS.EVENT_PUSHING,
-      instances: [IAM_VIEWS.EVENT_PUSHING]
+      view: IAM_VIEWS.BIZ_SET,
+      instances: [IAM_VIEWS.BIZ_SET]
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
       resource_id: relationIds[0]
@@ -1112,6 +1162,19 @@ export const IAM_ACTIONS = {
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
       bk_biz_id: relationIds[0]
+    })
+  },
+  // 业务集资源查看 (用于控制业务导航下业务集选择器的数据)
+  R_BIZ_SET_RESOURCE: {
+    id: 'access_business_set',
+    name: ['业务集访问', 'Access Business Set'],
+    cmdb_action: 'bizSet.accessBizSet',
+    relation: [{
+      view: IAM_VIEWS.BIZ_SET,
+      instances: [IAM_VIEWS.BIZ_SET]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      bk_biz_set_id: relationIds[0]
     })
   }
 }

@@ -31,7 +31,7 @@ import (
 
 	"configcenter/src/common/types"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
 func init() {

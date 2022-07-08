@@ -1346,16 +1346,16 @@ var _ = Describe("batch_update_host test", func() {
 		hostId2, err := commonutil.GetInt64ByInterface(searchRsp.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"])
 		Expect(err).NotTo(HaveOccurred())
 
-		By("update host property batch, bk_host_name is not editable field")
+		By("update host property batch, bk_asset_id is not editable field")
 		updateInput := map[string]interface{}{
 			"update": []map[string]interface{}{
 				{
 					common.BKHostIDField: hostId1,
 					"properties": map[string]interface{}{
-						"bk_host_name": "batch_update1",
-						"operator":     "admin",
-						"bk_comment":   "test",
-						"bk_isp_name":  "1",
+						"bk_asset_id": "batch_update1",
+						"operator":    "admin",
+						"bk_comment":  "test",
+						"bk_isp_name": "1",
 					},
 				},
 				{
@@ -1377,7 +1377,7 @@ var _ = Describe("batch_update_host test", func() {
 		util.RegisterResponse(searchRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
-		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_name"].(string)).To(Equal(""))
+		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_asset_id"].(string)).To(Equal(""))
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["operator"].(string)).To(Equal("admin"))
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_comment"].(string)).To(Equal("test"))
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_isp_name"].(string)).To(Equal("1"))
@@ -1427,8 +1427,7 @@ var _ = Describe("multiple ip host validation test", func() {
 		}
 		addHostResult, err := test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
 		util.RegisterResponse(addHostResult)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(addHostResult.Result).To(Equal(false), addHostResult.ToString())
+		Expect(err).To(HaveOccurred())
 
 		By("add hosts with one same ip using api")
 		input = &metadata.CreateModelInstance{
@@ -1439,8 +1438,7 @@ var _ = Describe("multiple ip host validation test", func() {
 		}
 		addHostResult, err = test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
 		util.RegisterResponse(addHostResult)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(addHostResult.Result).To(Equal(false), addHostResult.ToString())
+		Expect(err).To(HaveOccurred())
 	})
 })
 

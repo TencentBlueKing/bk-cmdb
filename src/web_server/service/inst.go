@@ -14,6 +14,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -22,7 +23,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
@@ -30,6 +31,32 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rentiansheng/xlsx"
 )
+
+type excelExportInstInput struct {
+	// 导出的实例字段
+	CustomFields []string `json:"export_custom_fields"`
+	// 指定需要导出的实例ID, 设置本参数后，
+	InstIDArr []int64 `json:"bk_inst_ids"`
+	// Deprecated 兼容，历史原因
+	AppID int64 `json:"bk_biz_id"`
+
+	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
+	AssociationCond map[string]int64 `json:"association_condition"`
+
+	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
+	// 自关联的时候，规定左边对象使用到的唯一索引
+	ObjectUniqueID int64 `json:"object_unique_id"`
+}
+
+type excelImportInstInput struct {
+	BizID  int64 `json:"bk_biz_id"`
+	OpType int64 `json:"op"`
+	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
+	AssociationCond map[string]int64 `json:"association_condition"`
+	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
+	// 自关联的时候，规定左边对象使用到的唯一索引
+	ObjectUniqueID int64 `json:"object_unique_id"`
+}
 
 // ImportInst import inst
 func (s *Service) ImportInst(c *gin.Context) {
@@ -46,18 +73,26 @@ func (s *Service) ImportInst(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-
-	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
-	if err != nil {
-		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
-		c.String(http.StatusOK, string(msg))
+	params := c.PostForm("params")
+	if params == "" {
+		blog.ErrorJSON("ImportHost failed, not found params value, rid: %s", rid)
+		msg := getReturnStr(common.CCErrCommParamsNeedSet,
+			defErr.CCErrorf(common.CCErrCommParamsNeedSet, "params").Error(), nil)
+		c.String(http.StatusOK, msg)
 		return
+	}
+	inputJSON := &excelImportInstInput{}
+	if err := json.Unmarshal([]byte(params), inputJSON); err != nil {
+		blog.ErrorJSON("ImportHost failed, params unmarshal error, err: %s, rid: %s", err.Error(), rid)
+		msg := getReturnStr(common.CCErrCommParamsValueInvalidError,
+			defErr.CCErrorf(common.CCErrCommParamsValueInvalidError, "params", err.Error()).Error(), nil)
+		c.String(http.StatusOK, msg)
 	}
 
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/import/"
 	_, err = os.Stat(dir)
-	if nil != err {
+	if err != nil {
 		if err != nil {
 			blog.Warnf("os.Stat failed, filename: %s, will retry with os.MkdirAll, err: %+v, rid: %s", dir, err, rid)
 		}
@@ -67,8 +102,9 @@ func (s *Service) ImportInst(c *gin.Context) {
 	}
 	filePath := fmt.Sprintf("%s/importinsts-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
 	err = c.SaveUploadedFile(file, filePath)
-	if nil != err {
-		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail, err.Error()).Error(), nil)
+	if err != nil {
+		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail,
+			err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
@@ -78,15 +114,17 @@ func (s *Service) ImportInst(c *gin.Context) {
 		}
 	}()
 	f, err := xlsx.OpenFile(filePath)
-	if nil != err {
-		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
+	if err != nil {
+		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail,
+			err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
 
-	data, errCode, err := s.Logics.ImportInsts(context.Background(), f, objID, c.Request.Header, defLang, modelBizID)
+	data, errCode, err := s.Logics.ImportInsts(context.Background(), f, objID, c.Request.Header, defLang,
+		inputJSON.BizID, inputJSON.OpType, inputJSON.AssociationCond, inputJSON.ObjectUniqueID)
 
-	if nil != err {
+	if err != nil {
 		msg := getReturnStr(errCode, err.Error(), data)
 		c.String(http.StatusOK, string(msg))
 		return
@@ -97,6 +135,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 
 // ExportInst export inst
 func (s *Service) ExportInst(c *gin.Context) {
+
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
 	webCommon.SetProxyHeader(c)
@@ -105,70 +144,84 @@ func (s *Service) ExportInst(c *gin.Context) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 	pheader := c.Request.Header
 
-	ownerID := c.Param(common.BKOwnerIDField)
-	objID := c.Param(common.BKObjIDField)
-	instIDStr := c.PostForm(common.BKInstIDField)
-	customFieldsStr := c.PostForm(common.ExportCustomFields)
+	input := &excelExportInstInput{}
+	if err := c.BindJSON(input); err != nil {
+		blog.ErrorJSON("Unmarshal input error. input: %s, err: %s, rid: %s", c.Keys, err.Error(), rid)
 
-	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
-	if err != nil {
-		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
-		c.String(http.StatusOK, string(msg))
+		ccErr := defErr.CCError(common.CCErrCommJSONUnmarshalFailed)
+		result := metadata.ResponseDataMapStr{
+			BaseResp: metadata.BaseResp{
+				Result: false,
+				Code:   ccErr.GetCode(),
+				ErrMsg: ccErr.Error(),
+			},
+		}
+		c.JSON(http.StatusOK, result)
 		return
 	}
 
-	kvMap := mapstr.MapStr{}
-	instInfo, err := s.Logics.GetInstData(ownerID, objID, instIDStr, pheader, kvMap)
+	//ownerID := c.Param(common.BKOwnerIDField)
+	objID := c.Param(common.BKObjIDField)
+
+	modelBizID := input.AppID
+
+	instInfo, err := s.Logics.GetInstData(objID, input.InstIDArr, pheader)
 	if err != nil {
-		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
-		fmt.Println("return msg: ", msg)
+		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail,
+			err.Error()).Error(), nil)
+		blog.ErrorJSON("get inst data error. err: %s, inst id: %s, rid: %s", err.Error(), input.InstIDArr, rid)
 		c.String(http.StatusForbidden, msg)
 		return
 	}
 
-	var file *xlsx.File
-
-	file = xlsx.NewFile()
-
-	customFields := logics.GetCustomFields(nil, customFieldsStr)
-	fields, err := s.Logics.GetObjFieldIDs(objID, nil, customFields, pheader, modelBizID)
+	customFields := logics.GetCustomFields(nil, input.CustomFields)
+	fields, err := s.Logics.GetObjFieldIDs(objID, nil, customFields, pheader, modelBizID,
+		common.HostAddMethodExcelDefaultIndex)
 	if err != nil {
-		blog.Errorf("export object instance, but get object:%s attribute field failed, err: %v, rid: %s", objID, err, rid)
-		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
-		_, _ = c.Writer.Write([]byte(reply))
+		blog.Errorf("get object:%s attribute field failed, err: %v, rid: %s", objID, err, rid)
+		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(
+			common.CCErrCommExcelTemplateFailed, objID).Error(), nil)))
 		return
 	}
 
 	usernameMap, propertyList, err := s.getUsernameMapWithPropertyList(c, objID, instInfo)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("ExportInst failed, get username map and property list failed, err: %+v, rid: %s", err, rid)
-		reply := getReturnStr(common.CCErrWebGetUsernameMapFail, defErr.Errorf(common.CCErrWebGetUsernameMapFail, objID).Error(), nil)
-		_, _ = c.Writer.Write([]byte(reply))
+		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetUsernameMapFail, defErr.Errorf(
+			common.CCErrWebGetUsernameMapFail, objID).Error(), nil)))
 	}
 
-	err = s.Logics.BuildExcelFromData(ctx, objID, fields, nil, instInfo, file, pheader, modelBizID, usernameMap, propertyList)
+	org, orgPropertyList, err := s.getDepartment(c, objID)
+	if err != nil {
+		blog.Errorf("get department map and property list failed, err: %+v, rid: %s", err, rid)
+		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetDepartmentMapFail, defErr.Errorf(
+			common.CCErrWebGetDepartmentMapFail, err.Error()).Error(), nil)))
+	}
+
+	file := xlsx.NewFile()
+	err = s.Logics.BuildExcelFromData(ctx, objID, fields, nil, instInfo, file, pheader, modelBizID, usernameMap,
+		propertyList, org, orgPropertyList, input.AssociationCond, input.ObjectUniqueID)
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s, rid: %s", objID, err.Error(), rid)
-		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
-		_, _ = c.Writer.Write([]byte(reply))
+		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(
+			common.CCErrCommExcelTemplateFailed, objID).Error(), nil)))
 		return
 	}
+
 	dirFileName := fmt.Sprintf("%s/export", webCommon.ResourcePath)
-	_, err = os.Stat(dirFileName)
-	if nil != err {
+	if _, err = os.Stat(dirFileName); err != nil {
 		blog.Warnf("os.Stat failed, filename: %s, will retry with os.MkdirAll, err: %+v, rid: %s", dirFileName, err, rid)
 		if err := os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); err != nil {
 			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dirFileName, err, rid)
 		}
 	}
-	fileName := fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano())
-	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
+
+	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano()))
 	logics.ProductExcelCommentSheet(ctx, file, defLang)
-	err = file.Save(dirFileName)
-	if err != nil {
+	if err = file.Save(dirFileName); err != nil {
 		blog.Errorf("ExportInst save file error:%s, rid: %s", err.Error(), rid)
-		reply := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
-		_, _ = c.Writer.Write([]byte(reply))
+		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(
+			common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)))
 		return
 	}
 	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_export_inst_%s.xlsx", objID))

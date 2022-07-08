@@ -18,6 +18,11 @@
     "1111017": "Unknown login version %s",
     "1111018": "Failed to get the EN/CN-username map of instance objuser attribute, error: %s",
     "1111019": "No hosts are imported, Failed to validate host %s",
+    "1111020": "Failed to get the organization map of instance organization attribute, %s",
+    "1111021": "Failed to analysis zip file, %s",
+    "1111022": "Failed to verify file content, %s",
+    "1111023": "Failed to verify password, %s",
+    "1111024": "Failed to create zip, %s",
      
     "": ""	   
 }

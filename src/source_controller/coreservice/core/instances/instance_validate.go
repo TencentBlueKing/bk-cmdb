@@ -84,7 +84,7 @@ func (m *instanceManager) fetchBizIDFromInstance(kit *rest.Kit, objID string, in
 			return 0, err
 		}
 		return bizID, nil
-	case common.BKInnerObjIDPlat:
+	case common.BKInnerObjIDBizSet, common.BKInnerObjIDPlat:
 		return 0, nil
 	default:
 		biz, exist := instanceData[common.BKAppIDField]
@@ -138,7 +138,7 @@ func (m *instanceManager) validBizID(kit *rest.Kit, bizID int64) error {
 func (m *instanceManager) newValidator(kit *rest.Kit, objID string, bizID int64) (*validator, error) {
 	validator, err := NewValidator(kit, m.dependent, objID, bizID, m.language)
 	if nil != err {
-		blog.Errorf("newValidator failed , NewValidator err:%v, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("newValidator failed , NewValidator err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
@@ -230,7 +230,7 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		}
 	}
 
-	return valid.validCreateUnique(kit, instanceData, m)
+	return nil
 }
 
 func (m *instanceManager) validateModuleCreate(kit *rest.Kit, instanceData mapstr.MapStr, valid *validator) error {
@@ -276,7 +276,7 @@ func (m *instanceManager) validateModuleCreate(kit *rest.Kit, instanceData mapst
 }
 
 func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, updateData mapstr.MapStr,
-	instanceData mapstr.MapStr, valid *validator, instID int64, canEditAll bool) error {
+	instanceData mapstr.MapStr, valid *validator, instID int64, canEditAll, isMainline bool) error {
 	if err := m.validCloudID(kit, objID, updateData); err != nil {
 		return err
 	}
@@ -285,16 +285,11 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 		return err
 	}
 
-	isMainline, err := m.isMainlineObject(kit, objID)
-	if err != nil {
-		return err
-	}
-
 	if err := m.validMainlineInstanceData(kit, objID, updateData, isMainline); err != nil {
 		return err
 	}
 
-	err = hooks.ValidateBizBsTopoHook(kit, objID, instanceData, updateData, common.ValidUpdate, m.clientSet)
+	err := hooks.ValidateBizBsTopoHook(kit, objID, instanceData, updateData, common.ValidUpdate, m.clientSet)
 	if err != nil {
 		blog.Errorf("validate biz bk_bs_topo attribute failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -346,7 +341,7 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 		return nil
 	}
 
-	return valid.validUpdateUnique(kit, updateData, instanceData, instID, m)
+	return nil
 }
 
 func (m *instanceManager) isMainlineObject(kit *rest.Kit, objID string) (bool, error) {
@@ -356,16 +351,18 @@ func (m *instanceManager) isMainlineObject(kit *rest.Kit, objID string) (bool, e
 	}
 
 	// if not inner mainline model, then judge whether it is a self defined mainline layer
-	mainlineCond := map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}
-	mainlineAsst := make([]*metadata.Association, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(mainlineCond).All(kit.Ctx, &mainlineAsst); nil != err {
-		blog.ErrorJSON("search mainline asst failed, err: %s, cond: %s, rid: %s", err.Error(), mainlineCond, kit.Rid)
+	mainlineCond := map[string]interface{}{
+		common.AssociationKindIDField: common.AssociationKindMainline,
+		common.BKAsstObjIDField:       objID,
+	}
+	cnt, err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(mainlineCond).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("count mainline association failed, err: %v, cond: %#v, rid: %s", err, mainlineCond, kit.Rid)
 		return false, err
 	}
-	for _, asst := range mainlineAsst {
-		if objID == asst.AsstObjID {
-			return true, nil
-		}
+
+	if cnt > 0 {
+		return true, nil
 	}
 	return false, nil
 }
@@ -441,6 +438,119 @@ func (m *instanceManager) changeStringToTime(valData mapstr.MapStr, properties [
 			continue
 		}
 		return stderr.New("can not convert value from string type to time type")
+	}
+	return nil
+}
+
+// getValidatorsFromInstances get validators from instances, returns the mapping of instance index to its validator
+func (m *instanceManager) getValidatorsFromInstances(kit *rest.Kit, objID string, instanceData []mapstr.MapStr,
+	validTye string) ([]*validator, error) {
+
+	instLen := len(instanceData)
+	if instLen == 0 {
+		return make([]*validator, 0), nil
+	}
+
+	bizIDs := make([]int64, instLen)
+	needSearchBizInstIDs := make([]int64, 0)
+	needSearchBizInstIDIndexMap := make(map[int64]int)
+	for index, instance := range instanceData {
+		switch objID {
+		case common.BKInnerObjIDPlat, common.BKInnerObjIDBizSet:
+			bizIDs[index] = 0
+		case common.BKInnerObjIDHost:
+			if validTye == common.ValidUpdate {
+				hostID, err := util.GetInt64ByInterface(instance[common.BKHostIDField])
+				if err != nil {
+					blog.Errorf("parse host id failed, err: %v, data: %#v, rid: %s", err, instance, kit.Rid)
+					return nil, err
+				}
+				needSearchBizInstIDs = append(needSearchBizInstIDs, hostID)
+				needSearchBizInstIDIndexMap[hostID] = index
+			}
+			fallthrough
+		default:
+			biz, exist := instance[common.BKAppIDField]
+			if !exist {
+				bizIDs[index] = 0
+				break
+			}
+			bizID, err := util.GetInt64ByInterface(biz)
+			if err != nil {
+				blog.Errorf("parse biz id failed, err: %v, obj: %s, data: %#v, rid: %s", err, objID, instance, kit.Rid)
+				return nil, err
+			}
+			bizIDs[index] = bizID
+		}
+	}
+
+	// get biz id for hosts that need to be updated from db
+	if len(needSearchBizInstIDs) > 0 && objID == common.BKInnerObjIDHost {
+		filter := map[string]interface{}{
+			common.BKHostIDField: map[string]interface{}{common.BKDBIN: needSearchBizInstIDs},
+		}
+
+		relations := make([]metadata.ModuleHost, 0)
+		if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(filter).Fields(
+			common.BKAppIDField, common.BKHostIDField).All(kit.Ctx, &relations); err != nil {
+			blog.Errorf("get hosts(%v) related bizID failed, err: %v, rid: %s", needSearchBizInstIDs, err, kit.Rid)
+			return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		}
+
+		for _, relation := range relations {
+			bizIDs[needSearchBizInstIDIndexMap[relation.HostID]] = relation.AppID
+		}
+	}
+
+	if err := m.validBizIDs(kit, bizIDs); err != nil {
+		blog.Errorf("valid biz ids(%+v) failed, err %v, rid: %s", bizIDs, err, kit.Rid)
+		return nil, err
+	}
+
+	bizValidatorMap, err := NewValidators(kit, m.dependent, objID, bizIDs, m.language)
+	if err != nil {
+		blog.Errorf("new validators failed, err: %v, objID: %s, bizIDs: %v, rid: %s", err, objID, bizIDs, kit.Rid)
+		return nil, err
+	}
+
+	instValidators := make([]*validator, instLen)
+	for index, bizID := range bizIDs {
+		instValidators[index] = bizValidatorMap[bizID]
+	}
+	return instValidators, nil
+}
+
+// validBizIDs validate if all the biz id's corresponding biz exists
+func (m *instanceManager) validBizIDs(kit *rest.Kit, bizIDs []int64) error {
+	uniqueBizIDs := make([]int64, 0)
+	bizIDMap := make(map[int64]struct{})
+	for _, bizID := range bizIDs {
+		if bizID == 0 {
+			continue
+		}
+		if _, exists := bizIDMap[bizID]; exists {
+			continue
+		}
+		bizIDMap[bizID] = struct{}{}
+		uniqueBizIDs = append(uniqueBizIDs, bizID)
+	}
+
+	if len(bizIDs) == 0 {
+		return nil
+	}
+
+	cond := map[string]interface{}{
+		common.BKAppIDField: map[string]interface{}{common.BKDBIN: uniqueBizIDs},
+	}
+	cnt, err := m.countInstance(kit, common.BKInnerObjIDApp, cond)
+	if err != nil {
+		blog.Errorf("search biz failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
+		return err
+	}
+
+	if int(cnt) != len(uniqueBizIDs) {
+		blog.Errorf("instance biz ids(%+v) contains invalid biz, rid: %s", uniqueBizIDs, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField)
 	}
 	return nil
 }

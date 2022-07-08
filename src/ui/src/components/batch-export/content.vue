@@ -307,4 +307,21 @@
             color: $dangerColor;
         }
     }
+
+    ::v-deep .bk-popconfirm-content {
+        .popconfirm-operate {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            button {
+                margin: 0 5px;
+                &.default-operate-button {
+                    padding: 0;
+                }
+            }
+            .popconfirm-split {
+                position: static;
+            }
+        }
+    }
 </style>

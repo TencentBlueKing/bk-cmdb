@@ -67,7 +67,7 @@
         moveToIdleHosts: [],
         tabList: [{
           id: 'moveToIdleHost',
-          label: this.$t('转移到空闲机的主机'),
+          label: this.$t('转移到空闲机的主机', { idleModule: this.$store.state.globalConfig.config.idlePool.idle }),
           confirmed: false,
           component: MoveToIdleHost.name,
           props: {
@@ -174,7 +174,7 @@
       setHostAttrsAutoApply(data = {}) {
         const applyList = data.plans || []
         const tab = this.tabList.find(tab => tab.id === 'hostAttrsAutoApply')
-        tab.props.info = applyList.filter(item => item.conflicts.length || item.update_fields.length)
+        tab.props.info = applyList.filter(item => item.conflicts?.length || item.update_fields?.length)
       },
       getHostInfo(hostIds) {
         return this.$store.dispatch('hostSearch/searchHost', {

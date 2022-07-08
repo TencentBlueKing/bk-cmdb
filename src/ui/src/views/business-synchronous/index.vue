@@ -1,49 +1,61 @@
 <template>
-  <section class="batch-wrapper" v-bkloading="{ isLoading: $loading() }">
+  <section class="batch-wrapper" v-bkloading="{ isLoading: processListLoading }">
     <cmdb-tips>{{$t('同步模板功能提示')}}</cmdb-tips>
     <h2 class="title">{{$t('将会同步以下信息')}}：</h2>
     <div class="info-layout cleafix">
+
+      <!-- 进程模板列表 -->
       <ul class="process-list fl">
         <li class="process-item"
           v-for="(process, index) in processList"
           :key="index"
           :class="{
             'show-tips': !process.confirmed,
-            'is-active': activeIndex === index,
+            'is-active': currentDiff.process_template_id === process.process_template_id
+              && process.process_template_name === currentDiff.process_template_name,
             'is-remove': process.type === 'removed'
           }"
-          @click="handleChangeActive(process, index)">
+          @click="loadProcessDiff(process, index)">
           <span class="process-name" :title="process.process_template_name">{{process.process_template_name}}</span>
-          <span class="process-service-count" v-if="process.type !== 'others'">{{getInstanceCount(process)}}</span>
         </li>
       </ul>
+
+      <!-- 变更详情 -->
       <div class="change-details"
-        v-if="current"
-        :key="current.process_template_id">
+        v-bkloading="{ isLoading: currentDiffLoading }"
+        v-if="currentDiff"
+        :key="`${currentDiff.process_template_id}-${currentDiff.process_template_name}`">
         <cmdb-collapse class="details-info">
           <div class="collapse-title" slot="title">
             {{$t('变更内容')}}
-            <span v-if="current.type === 'changed'">（{{changedProperties.length}}）</span>
+            <span v-if="currentDiff.type === 'changed'">({{currentDiff.changedProperties.length}})</span>
           </div>
           <div class="info-content">
+
+            <!-- 进程新增 -->
             <div class="process-info"
-              v-if="current.type === 'added'">
+              v-if="currentDiff.type === 'added'">
               <div class="info-item" style="width: auto;">
                 {{$t('模板中新增进程')}}
-                <span class="info-item-value">{{current.process_template_name}}</span>
+                <span class="info-item-value">{{currentDiff.process_template_name}}</span>
               </div>
             </div>
+
+            <!-- 进程删除 -->
             <div class="process-info"
-              v-if="current.type === 'removed'">
+              v-if="currentDiff.type === 'removed'">
               <div class="info-item" style="width: auto;">
-                <span class="info-item-value" style="font-weight: 700;">{{current.process_template_name}}</span>
+                <span class="info-item-value" style="font-weight: 700;">{{currentDiff.process_template_name}}</span>
                 {{$t('从模板中删除')}}
               </div>
             </div>
-            <div class="process-info clearfix"
-              v-else-if="current.type === 'changed'">
+
+            <!-- 进程变更 -->
+            <div
+              class="process-info clearfix"
+              v-if="currentDiff.type === 'changed'">
               <div :class="['info-item fl', { table: changed.property.bk_property_type === 'table' }]"
-                v-for="(changed, index) in changedProperties"
+                v-for="(changed, index) in currentDiff.changedProperties"
                 :key="index"
                 v-bk-overflow-tips>
                 {{changed.property.bk_property_name}}：
@@ -53,109 +65,130 @@
                     {{$t('移除所有进程监听信息')}}
                   </span>
                   <cmdb-property-value v-else
-                    :value="getChangedValue(changed)"
+                    :value="formatChangedValue(changed)"
                     :property="changed.property">
                   </cmdb-property-value>
                 </span>
               </div>
             </div>
+
+            <!-- 服务分类变更 -->
             <div class="process-info"
-              v-else-if="current.type === 'others'">
+              v-if="currentDiff.type === 'others'">
               <div class="info-item" style="width: auto;">
                 {{$t('服务分类')}}：
-                <span class="info-item-value">{{current.service_category}}</span>
+                <span class="info-item-value">
+                  {{currentDiff.changed_service_category}}
+                </span>
               </div>
             </div>
           </div>
         </cmdb-collapse>
-        <cmdb-collapse class="details-modules"
-          v-for="(module, index) in current.modules"
-          :key="index"
+        <cmdb-collapse
+          class="details-modules"
+          v-for="(path, moduleId) of topoPath"
+          :key="moduleId"
           :collapse="true"
-          @collapse-change.once="handleModulesCollapseChange(...arguments, module)">
+          @collapse-change="handleInstanceCollapseChange(moduleId, $event)">
           <div class="collapse-title" slot="title">
-            {{getModuleTopoPath(module.bk_module_id)}} {{$t('涉及实例')}}
+            {{path}} {{$t('涉及实例')}}
+            <span v-if="currentDiff.modules[moduleId].serviceInstanceCount !== ''">
+              ({{currentDiff.modules[moduleId].serviceInstanceCount}})
+            </span>
           </div>
-          <ul class="instance-list">
+
+          <!-- 实例列表 -->
+          <ul
+            class="instance-list"
+            v-bkloading="{ isLoading: currentDiff.modules[moduleId].instancesLoading }">
             <li class="instance-item"
-              v-for="(instance, instanceIndex) in module.service_instances"
+              v-for="(instance, instanceIndex) in currentDiff.modules[moduleId].serviceInstances"
               :key="instanceIndex"
-              @click="handleViewDiff(instance, module)">
-              <span class="instance-name" v-bk-overflow-tips>{{instance.service_instance.name}}</span>
-              <span class="instance-diff-count"
-                v-if="instance.changed_attributes">
-                ({{instance.changed_attributes.length}})
+              @click="viewInstanceDiff(instance, moduleId)">
+              <span class="instance-name" v-bk-overflow-tips>
+                {{instance.name}}
+                <label
+                  :class="['instance-change-type', instance.type]"
+                  v-if="translateChangedType(instance.type)">
+                  {{translateChangedType(instance.type)}}
+                </label>
               </span>
             </li>
           </ul>
         </cmdb-collapse>
       </div>
     </div>
+
     <div class="batch-options">
       <bk-button class="mr10" theme="primary"
-        :disabled="!allConfirmed"
-        @click="handleConfirm">
+        :loading="confirming"
+        @click="confirmAndSync">
         {{$t('确认并同步')}}
       </bk-button>
-      <bk-button @click="handleGoBackModule">{{$t('取消')}}</bk-button>
+      <bk-button @click="goBackModule">{{$t('取消')}}</bk-button>
     </div>
+
+    <!-- 实例对比详情 -->
     <bk-sideslider
       v-transfer-dom
       :width="676"
-      :is-show.sync="slider.show"
-      :title="slider.title">
-      <template slot="content" v-if="slider.show">
-        <instance-details slot="content"
-          v-if="slider.show"
-          v-bind="slider.props"
+      :is-show.sync="instanceDiffSlider.show"
+      :title="instanceDiffSlider.title">
+      <template slot="content" v-if="instanceDiffSlider.show">
+        <ServiceInstanceDetails
+          slot="content"
+          v-if="instanceDiffSlider.show"
+          v-bind="instanceDiffSlider.props"
           :properties="properties">
-        </instance-details>
+        </ServiceInstanceDetails>
       </template>
     </bk-sideslider>
   </section>
 </template>
 
 <script>
-  import InstanceDetails from './children/details.vue'
+  import ServiceInstanceDetails from './children/service-instance-details.vue'
   import formatter from '@/filters/formatter'
   import { mapGetters } from 'vuex'
+  import isEmpty from 'lodash/isEmpty'
+  import to from 'await-to-js'
+
   export default {
+    name: 'BusinessSynchronous',
     components: {
-      InstanceDetails
+      ServiceInstanceDetails
     },
     data() {
       return {
-        processList: [],
-        properties: [],
-        activeIndex: null,
-        topoPath: {},
-        categories: [],
-        slider: {
+        processListLoading: false,
+        properties: [], // 资源的所有属性，用来翻译
+        topoPath: {}, // 进程模板涉及的实例的拓扑路径
+        processList: [], // 进程模板列表
+        currentDiff: {
+          process_template_id: 0, // 当前进程模板 id
+          process_template_name: '', // 当前进程模板名称
+          process_template: {}, // 当前进程模板内容
+          changedProperties: [], // 当前进程模板实例具体更改细节
+          modules: {} // 当前进程模板下的各个拓扑模块下的实例和变更
+        },
+        currentDiffLoading: false,
+        instancesLoading: false,
+        confirming: false,
+        serviceCategories: [],
+        instanceDiffSlider: {
           show: false,
           title: '',
           props: {
             module: null,
             instance: null,
-            type: ''
+            process: null
           }
-        }
+        },
       }
     },
     computed: {
       ...mapGetters(['supplierAccount']),
       ...mapGetters('objectBiz', ['bizId']),
-      current() {
-        if (this.activeIndex !== null) {
-          return this.processList[this.activeIndex]
-        }
-        return null
-      },
-      changedProperties() {
-        if (this.current && this.current.type === 'changed') {
-          return this.getChangedProperties()
-        }
-        return []
-      },
       templateId() {
         return Number(this.$route.params.template)
       },
@@ -163,251 +196,367 @@
         return String(this.$route.params.modules).split(',')
           .map(id => Number(id))
       },
-      allConfirmed() {
-        return this.processList.every(process => process.confirmed)
-      }
     },
     async created() {
-      try {
-        await this.getProperties()
-        this.getTopoPath()
-        this.getDifference()
-      } catch (e) {
-        console.error(e)
-      }
+      this.initCurrentModules()
+      this.processListLoading = true
+      await to(this.loadProperties())
+      await to(this.loadTopoPath())
+      await to(this.loadProcessList())
+      this.processListLoading = false
     },
     methods: {
-      handleChangeActive(process, index) {
-        this.activeIndex = index
-        process.confirmed = true
+      /**
+       * 初始化当前模块，用于装载各个模块的实例信息
+       */
+      initCurrentModules() {
+        const modules = {}
+
+        this.modules.forEach((m) => {
+          modules[m] = {
+            serviceInstanceCount: '',
+            serviceInstances: []
+          }
+        })
+
+        this.currentDiff.modules = modules
       },
-      async getProperties() {
-        try {
-          this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
-            params: {
-              bk_obj_id: 'process',
-              bk_supplier_account: this.supplierAccount,
-              bk_biz_id: this.bizId
-            }
+      /**
+       * 加载进程属性，便于转换成可读中文
+       */
+      loadProperties() {
+        return this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
+          params: {
+            bk_obj_id: 'process',
+            bk_supplier_account: this.supplierAccount,
+            bk_biz_id: this.bizId
+          }
+        }).then((data) => {
+          this.properties = data
+        })
+          .catch(() => {
+            this.properties = []
           })
-        } catch (e) {
-          console.error(e)
-        }
       },
-      async getTopoPath() {
-        try {
-          const { nodes } = await this.$store.dispatch('objectMainLineModule/getTopoPath', {
-            bizId: this.bizId,
-            params: {
-              topo_nodes: this.modules.map(moduleId => ({ bk_obj_id: 'module', bk_inst_id: moduleId }))
-            }
-          })
+      /**
+       * 加载拓扑路径，用于加载涉及实例
+       */
+      loadTopoPath() {
+        return this.$store.dispatch('objectMainLineModule/getTopoPath', {
+          bizId: this.bizId,
+          params: {
+            topo_nodes: this.modules.map(moduleId => ({ bk_obj_id: 'module', bk_inst_id: moduleId }))
+          }
+        }).then(({ nodes }) => {
           const topoPath = {}
+
           nodes.forEach((node) => {
             topoPath[node.topo_node.bk_inst_id] = node.topo_path.reverse().map(path => path.bk_inst_name)
               .join(' / ')
           })
+
           this.topoPath = topoPath
-        } catch (e) {
-          console.error(e)
-        }
-      },
-      async getDifference() {
-        try {
-          const differences = await this.$store.dispatch('businessSynchronous/searchServiceInstanceDifferences', {
-            params: {
-              bk_module_ids: this.modules,
-              service_template_id: this.templateId,
-              bk_biz_id: this.bizId
-            }
+        })
+          .catch(() => {
+            this.topoPath = []
           })
+      },
+      /**
+       * 加载服务下的全部分类，用来翻译服务分类变更内容
+       */
+      loadServiceCategories() {
+        return this.$store.dispatch('serviceClassification/searchServiceCategory', {
+          params: { bk_biz_id: this.bizId }
+        }).then(({ info }) => {
+          this.serviceCategories = info || []
+        })
+          .catch(() => {
+            this.serviceCategories = []
+          })
+      },
+      /**
+       * 加载进程模板列表
+       */
+      loadProcessList() {
+        return this.$store.dispatch('businessSynchronous/getAllProcessTplDiffs', {
+          params: {
+            bk_module_ids: this.modules,
+            bk_biz_id: this.bizId,
+            service_template_id: this.templateId
+          }
+        }).then((difference) => {
           const processList = []
-          const differenceType = ['changed', 'added', 'removed']
-          let changedCategory = null
-          differences.forEach((difference) => {
-            differenceType.forEach((type) => {
-              difference[type].forEach((info) => {
-                const moduleInfo = { ...info, bk_module_id: difference.bk_module_id }
-                // eslint-disable-next-line max-len
-                const item = processList.find(item => item.type === type && item.process_template_id === info.process_template_id)
-                if (item) {
-                  item.modules.push(moduleInfo)
-                } else {
-                  const newItem = {
-                    type,
-                    process_template_id: info.process_template_id,
-                    process_template_name: info.process_template_name,
-                    modules: [moduleInfo]
-                  }
-                  const length = processList.push(newItem)
-                  newItem.confirmed = length === 1
-                }
-              })
-            })
-            changedCategory = (difference.changed_attributes || []).find(attr => attr.property_id === 'service_category_id')
-          })
-          if (changedCategory) {
-            const categoryInfo = await this.getServiceCategoryDifference(changedCategory)
-            categoryInfo.confirmed = !processList.length
-            processList.push(categoryInfo)
-          }
-          this.processList = processList
-          this.activeIndex = 0
-        } catch (e) {
-          console.error(e)
-        }
-      },
-      async getServiceCategoryDifference(changedCategory) {
-        try {
-          const categoryInfo = {
-            type: 'others',
-            process_template_id: 'service_category_id',
-            process_template_name: this.$t('服务分类变更'),
-            modules: []
-          }
-          const [{ info: categories }, { info: modules }] = await Promise.all([
-            this.getServiceCategory(),
-            this.getServiceModules()
-          ])
-          this.categories = categories
-          const templateCategoryId = changedCategory.template_property_value
-          categoryInfo.service_category = this.getCagetoryPath(templateCategoryId)
-          modules.forEach((module) => {
-            if (module.service_category_id !== templateCategoryId) {
-              categoryInfo.modules.push({
-                bk_module_id: module.bk_module_id,
-                template_service_category: categoryInfo.service_category,
-                current_service_category: this.getCagetoryPath(module.service_category_id),
-                service_instances: []
+          const operationDiffTypes = ['changed', 'added', 'removed']
+
+          // 模板内容变更
+          Object.keys(difference).forEach((type) => {
+            const diffItem = difference[type]
+            if (operationDiffTypes.includes(type) && diffItem) {
+              diffItem.forEach(({ id, name }) => {
+                processList.push(this.genDiffItem({
+                  diffType: type,
+                  processId: id,
+                  processName: name,
+                }))
               })
             }
           })
 
-          return categoryInfo
-        } catch (e) {
-          console.error(e)
+          if (difference.changed_attribute) {
+            processList.push(this.genDiffItem({
+              diffType: 'others'
+            }))
+          }
+
+          const firstProcess = processList[0]
+          firstProcess.confirmed = true
+          if (firstProcess.type === 'others') {
+            this.loadServiceCategory(firstProcess)
+          } else {
+            this.loadProcessDiff(firstProcess)
+          }
+
+          this.processList = processList
+        })
+      },
+      /**
+       * 生成对比项
+       * @param {string} diffType 必须，变更类型
+       * @param {string} processId 非必须，进程模板的变更 ID
+       * @param {string} processName 非必须，进程模板的名称
+       */
+      genDiffItem({
+        diffType,
+        processId,
+        processName
+      }) {
+        // 服务分类因为是修改服务模板的属性，所以视图比较特别
+        const serviceCategoryDiffItem = {
+          type: 'others',
+          process_template_id: 'service_category_id',
+          process_template_name: this.$t('服务分类变更'),
+          modules: [],
+          confirmed: false
+        }
+
+        if (diffType === 'others') {
+          return serviceCategoryDiffItem
+        }
+
+        return {
+          type: diffType,
+          process_template_id: processId,
+          process_template_name: processName,
+          confirmed: false
         }
       },
-      getServiceCategory() {
-        return this.$store.dispatch('serviceClassification/searchServiceCategory', {
-          params: { bk_biz_id: this.bizId }
-        })
+      /**
+       * 加载进程模板变更内容
+       * @param {Object} process 进程信息
+       */
+      async loadProcessDiff(process) {
+        this.initCurrentModules()
+
+        if (process.type === 'others') {
+          return this.loadServiceCategory(process)
+        }
+
+        if (process.type === 'removed') {
+          return this.loadRemovedProcess(process)
+        }
+
+        this.loadChangedProcess(process)
       },
-      getCagetoryPath(id) {
-        const second = this.categories.find(second => second.category.id === id)
-        const first = this.categories.find(first => first.category.id === this.$tools.getValue(second, 'category.bk_parent_id'))
-        const firstName = this.$tools.getValue(first, 'category.name') || '--'
-        const secondName = this.$tools.getValue(second, 'category.name') || '--'
-        return [firstName, secondName].join(' / ')
+      /**
+       * 渲染被删除的进程模板的变更内容
+       */
+      loadRemovedProcess(process) {
+        this.currentDiff.type = process.type
+        this.currentDiff.process_template_name = process.process_template_name
+        this.currentDiff.process_template_id = process.process_template_id
+        process.confirmed = true
       },
-      getServiceModules() {
-        return this.$store.dispatch('serviceTemplate/getServiceTemplateModules', {
-          bizId: this.bizId,
-          serviceTemplateId: this.templateId,
+      /**
+       * 加载进程
+       * @param {Object} process 进程信息
+       */
+      loadChangedProcess(process) {
+        this.currentDiffLoading = true
+        this.$store.dispatch('processTemplate/getProcessTemplate', {
           params: {
-            bk_module_ids: this.modules
+            processTemplateId: process.process_template_id
           }
+        }).then((res) => {
+          this.currentDiff.type = process.type
+          this.currentDiff.process_template_id = process.process_template_id
+          this.currentDiff.process_template_name = process.process_template_name
+          this.currentDiff.changedProperties = this.getChangedProperties(res.property)
+          process.confirmed = true
         })
-      },
-      getChangedProperties() {
-        const changed = []
-        this.current.modules.forEach((module) => {
-          module.service_instances.forEach((instance) => {
-            (instance.changed_attributes || []).forEach((changedProperty) => {
-              const isExist = changed.some(exist => exist.property.bk_property_id === changedProperty.property_id)
-              const property = this.properties.find(property => property.bk_property_id === changedProperty.property_id)
-              if (!isExist && property) {
-                changed.push({
-                  property,
-                  template_property_value: changedProperty.template_property_value
-                })
-              }
-            })
+          .finally(() => {
+            this.currentDiffLoading = false
           })
-        })
-        return changed
       },
-      getChangedValue(changed) {
+      getChangedProperties(property) {
+        const changedProperties = []
+
+        if (property) {
+          Object.keys(property).forEach((key) => {
+            const prop = property[key]
+            const formatedProp = this.properties.find(i => i.bk_property_id === key)
+
+            if (!isEmpty(prop.value)) {
+              changedProperties.push({
+                property: formatedProp,
+                template_property_value: prop.value
+              })
+            }
+          })
+        }
+
+        return changedProperties
+      },
+      /**
+       * 加载服务分类变更
+       * @param {Object} process 进程信息
+       */
+      async loadServiceCategory(process) {
+        this.currentDiffLoading = true
+
+        await to(this.loadServiceCategories())
+        const [, { template }] = await to(this.getServiceTemplateDetail())
+        const newCategoryId = template.service_category_id
+
+        const category = this.getCategoryById(newCategoryId)
+        const parentCategory = this.getCategoryById(category.bk_parent_id)
+
+        this.currentDiff.type = process.type
+        this.currentDiff.process_template_id = process.process_template_id
+        this.currentDiff.process_template_name = process.process_template_name
+        this.currentDiff.changed_service_category = `${parentCategory.name} / ${category?.name || ''}`
+
+        this.currentDiffLoading = false
+        process.confirmed = true
+      },
+      /**
+       * 通过分类 ID 获取 分类对象
+       * @param {Number} categoryId 分类 ID
+       * @return {Object} 分类对象
+       */
+      getCategoryById(categoryId) {
+        return this.serviceCategories.find(item => item.category.id === categoryId)?.category || {}
+      },
+      /**
+       * 获取服务模板详情，用于展示最新的服务模板变更信息
+       */
+      getServiceTemplateDetail() {
+        return this.$store.dispatch('serviceTemplate/findServiceTemplate', {
+          id: this.templateId
+        })
+      },
+      formatChangedValue(changed) {
         const { property } = changed
-        let value = changed.template_property_value
-        value = Object.prototype.toString.call(value) === '[object Object]' ? value.value : value
-        return formatter(value, property)
+        const { template_property_value: value } = changed
+        return formatter(value?.value || value, property)
       },
-      getModuleTopoPath(moduleId) {
-        return this.topoPath[moduleId]
-      },
-      async handleModulesCollapseChange(collapse, module) {
-        // eslint-disable-next-line no-underscore-dangle
-        const loaded = module.service_instances.__loaded__
-        if (this.current.type === 'others' && !loaded) {
-          try {
-            // eslint-disable-next-line no-underscore-dangle
-            module.service_instances.__loaded__ = true
-            const { info: instances } = await this.getModuleServiceInstances(module.bk_module_id)
-            module.service_instances.push(...instances.map(instance => ({
-              changed_attributes: [{
-                property_id: 'service_category_id',
-                property_name: this.$t('服务分类'),
-                property_value: module.current_service_category,
-                template_property_value: module.template_service_category
-              }],
-              service_instance: instance
-            })))
-          } catch (e) {
-            console.error(e)
-            // eslint-disable-next-line no-underscore-dangle
-            module.service_instances.__loaded__ = false
-          }
+      handleInstanceCollapseChange(moduleId, collapse) {
+        if (!collapse) {
+          this.loadInstances(moduleId)
         }
       },
-      getModuleServiceInstances(moduleId) {
-        return this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
-          params: {
-            bk_biz_id: this.bizId,
-            bk_module_id: moduleId,
-            with_name: true
-          }
-        })
+      /**
+       * 加载服务模板涉及的实例
+       */
+      loadInstances(moduleId) {
+        const theModule = this.currentDiff.modules[moduleId]
+        this.$set(theModule, 'instancesLoading', true)
+        this.$store.dispatch('businessSynchronous/getDiffInstances', { params: {
+          ...this.serializeParams(),
+          bk_module_id: Number(moduleId),
+        } })
+          .then(({ service_instances: serviceInstances, total_count: totalCount, type }) => {
+            let instancesDiff = []
+
+            instancesDiff = serviceInstances?.map(instance => ({
+              ...instance,
+              type: type || this.currentDiff.type
+            }))
+            theModule.serviceInstanceCount = totalCount
+            theModule.serviceInstances = instancesDiff || []
+          })
+          .catch(() => {
+            theModule.serviceInstanceCount = ''
+            theModule.serviceInstances = []
+          })
+          .finally(() => {
+            this.$set(theModule, 'instancesLoading', false)
+          })
       },
-      handleViewDiff(instance, module) {
-        this.slider.title = instance.service_instance.name
-        this.slider.props = {
-          module,
-          instance,
-          type: this.current.type
+      serializeParams() {
+        const params = {
+          bk_biz_id: this.bizId,
+          service_template_id: this.templateId,
         }
-        this.slider.show = true
+
+        if (this.currentDiff.type === 'removed') {
+          // 因为删除以后模板 id 会变成 0，所以需要模板名称来加载对应的实例
+          params.process_template_name = this.currentDiff.process_template_name
+          params.process_template_id = this.currentDiff.process_template_id
+        } else if (this.currentDiff.type === 'others') {
+          // 服务分类单独加载
+          params.service_category = true
+        } else {
+          params.process_template_id = this.currentDiff.process_template_id
+        }
+
+        return params
       },
-      handleConfirm() {
+      translateChangedType(type) {
+        const types = new Map()
+        types.set('added', '新增')
+        types.set('removed', '删除')
+        types.set('changed', '变更')
+        types.set('others', '变更')
+
+        return types.get(type)
+      },
+      /**
+       * 查看实例对比
+       * @param {Object} instance 实例对象
+       * @param {String} moduleId 模板 ID
+       */
+      viewInstanceDiff(instance, moduleId) {
+        this.instanceDiffSlider.title = instance.name
+        this.instanceDiffSlider.props = {
+          diffRequestParams: {
+            ...this.serializeParams(),
+            bk_module_id: Number(moduleId),
+            service_instance_id: instance.id
+          },
+          properties: this.properties,
+          getCategoryById: this.getCategoryById
+        }
+        this.instanceDiffSlider.show = true
+      },
+      confirmAndSync() {
+        this.confirming = true
         this.$store.dispatch('businessSynchronous/syncServiceInstanceByTemplate', {
           params: {
             service_template_id: this.templateId,
             bk_module_ids: this.modules,
-            service_instances: this.getServiceInstanceIds(),
             bk_biz_id: this.bizId
           }
         }).then(() => {
           this.$success(this.$t('同步成功'))
-          this.handleGoBackModule()
+          this.goBackModule()
         })
+          .finally(() => {
+            this.confirming = false
+          })
       },
-      handleGoBackModule() {
+      goBackModule() {
         this.$routerActions.back()
       },
-      getServiceInstanceIds() {
-        const ids = []
-        this.processList.forEach((process) => {
-          process.modules.forEach((module) => {
-            module.service_instances.forEach((data) => {
-              ids.push(data.service_instance.id)
-            })
-          })
-        })
-        return [...new Set(ids)]
-      },
-      getInstanceCount(process) {
-        return process.modules.reduce((count, module) => count + module.service_instances.length, 0)
-      }
     }
   }
 </script>
@@ -549,7 +698,6 @@
             margin: 10px 80px 0 0;
             padding: 0 4px;
             height: 22px;
-            border: 1px solid $borderColor;
             background-color: #FAFBFD;
             font-size: 12px;
             cursor: pointer;
@@ -563,14 +711,41 @@
                 }
             }
             .instance-name {
-                padding-right: 20px;
+                padding-right: 28px;
+                position: relative;
                 @include ellipsis;
             }
             .instance-diff-count {
                 color: #C4C6CC;
             }
+            .instance-change-type {
+                position: absolute;
+                cursor: pointer;
+                right: -2px;
+                top: -2px;
+                width: 30px;
+                height: 18px;
+                border-radius: 2px;
+                text-align: center;
+                font-size: 12px;
+                transform: scale(0.833);
+                &.removed {
+                    color: #ea3636;
+                    background: #ffdddd;
+                }
+                &.added {
+                    color: #20a342;
+                    background: #dff9e4;
+                }
+                &.changed,
+                &.others {
+                    color: $primaryColor;
+                    background: #3a84ff29;
+                }
+            }
         }
     }
+
     .batch-options {
         margin-top: 20px;
     }

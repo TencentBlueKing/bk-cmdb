@@ -3,7 +3,7 @@
     <div class="table-title" @click="localExpanded = !localExpanded"
       @mouseenter="handleShowDotMenu"
       @mouseleave="handleHideDotMenu">
-      <bk-checkbox class="title-checkbox"
+      <bk-checkbox v-if="!readonly" class="title-checkbox"
         :size="16"
         v-model="checked"
         @click.native.stop>
@@ -12,7 +12,7 @@
       <i class="title-icon bk-icon icon-right-shape" v-else></i>
       <template v-if="!instance.editing.name">
         <span class="title-label">{{instance.name}}</span>
-        <cmdb-dot-menu class="instance-menu" ref="dotMenu" @click.native.stop>
+        <cmdb-dot-menu v-if="!readonly" class="instance-menu" ref="dotMenu" @click.native.stop>
           <ul class="menu-list"
             @mouseenter="handleShowDotMenu"
             @mouseleave="handleHideDotMenu">
@@ -96,7 +96,7 @@
           </process-bind-info-value>
         </template>
       </bk-table-column>
-      <bk-table-column width="150" :resizable="false" :label="$t('操作')">
+      <bk-table-column v-if="!readonly" width="150" :resizable="false" :label="$t('操作')">
         <template slot-scope="{ row }">
           <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
             <bk-button slot-scope="{ disabled }"
@@ -148,7 +148,6 @@
 <script>
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
-    MENU_BUSINESS_DELETE_SERVICE
   } from '@/dictionary/menu-symbol'
   import { processTableHeader } from '@/dictionary/table-header'
   import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
@@ -156,12 +155,15 @@
   import { mapState } from 'vuex'
   import authMixin from '../mixin-auth'
   import Form from '@/components/service/form/form.js'
+  import { readonlyMixin } from '../mixin-readonly'
+  import { serviceInstanceProcessesProxy } from '../service-proxy'
+
   export default {
     components: {
       ProcessBindInfoValue,
       ServiceInstanceNameEditForm
     },
-    mixins: [authMixin],
+    mixins: [authMixin, readonlyMixin],
     props: {
       instance: {
         type: Object,
@@ -271,21 +273,21 @@
         this.properties = properties
         this.setHeader()
       },
-      async getServiceProcessList() {
-        try {
-          this.list = await this.$store.dispatch('processInstance/getServiceInstanceProcesses', {
-            params: {
-              service_instance_id: this.instance.id,
-              bk_biz_id: this.info.biz[0].bk_biz_id
-            },
-            config: {
-              requestId: this.requestId.processList
-            }
+      getServiceProcessList() {
+        serviceInstanceProcessesProxy(
+          {
+            service_instance_id: this.instance.id,
+            bk_biz_id: this.info.biz[0].bk_biz_id
+          },
+          {
+            requestId: this.requestId.processList
+          }
+        ).then((list) => {
+          this.list = list
+        })
+          .catch(() => {
+            this.list = []
           })
-        } catch (e) {
-          this.list = []
-          console.error(e)
-        }
       },
       setHeader() {
         const header = processTableHeader.map((id) => {
@@ -299,12 +301,27 @@
         this.header = header
       },
       handleDeleteInstance() {
-        this.$routerActions.redirect({
-          name: MENU_BUSINESS_DELETE_SERVICE,
-          params: {
-            ids: this.instance.id
-          },
-          history: true
+        this.$bkInfo({
+          title: this.$t('确定删除该服务实例'),
+          confirmLoading: true,
+          confirmFn: async () => {
+            try {
+              await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
+                config: {
+                  data: {
+                    service_instance_ids: [this.instance.id],
+                    bk_biz_id: this.bizId
+                  }
+                }
+              })
+              this.$success(this.$t('删除成功'))
+              this.$emit('delete-instance')
+              return true
+            } catch (e) {
+              console.error(e)
+              return false
+            }
+          }
         })
       },
       handleEditInstance() {
@@ -390,7 +407,8 @@
           bizId: this.bizId,
           serviceTemplateId: this.instance.service_template_id,
           processTemplateId: row.relation.process_template_id,
-          submitHandler: this.editSubmitHandler
+          submitHandler: this.editSubmitHandler,
+          showOptions: false
         })
       },
       handleEdit(row) {
@@ -452,7 +470,7 @@
         })
       },
       updateInstanceInfo() {
-        // todo 需要后端提供接口查询数据变更后的服务实例信息，用于更新服务实例名
+        this.$emit('update-instance')
       }
     }
   }

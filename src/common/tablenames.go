@@ -12,6 +12,11 @@
 
 package common
 
+import (
+	"fmt"
+	"strings"
+)
+
 // table names
 const (
 	// BKTableNamePropertyGroup the table name of the property group
@@ -35,7 +40,9 @@ const (
 	// BKTableNameInstAsst the table name of the inst association
 	BKTableNameInstAsst = "cc_InstAsst"
 
-	BKTableNameBaseApp     = "cc_ApplicationBase"
+	BKTableNameBaseApp    = "cc_ApplicationBase"
+	BKTableNameBaseBizSet = "cc_BizSetBase"
+
 	BKTableNameBaseHost    = "cc_HostBase"
 	BKTableNameBaseModule  = "cc_ModuleBase"
 	BKTableNameBaseInst    = "cc_ObjectBase"
@@ -49,7 +56,6 @@ const (
 	BKTableNameHistory          = "cc_History"
 	BKTableNameHostFavorite     = "cc_HostFavourite"
 	BKTableNameAuditLog         = "cc_AuditLog"
-	BKTableNameSubscription     = "cc_Subscription"
 	BKTableNameUserAPI          = "cc_UserAPI"
 	BKTableNameDynamicGroup     = "cc_DynamicGroup"
 	BKTableNameUserCustom       = "cc_UserCustom"
@@ -82,8 +88,7 @@ const (
 	BKTableNameSetTemplate                = "cc_SetTemplate"
 	BKTableNameSetServiceTemplateRelation = "cc_SetServiceTemplateRelation"
 	BKTableNameAPITask                    = "cc_APITask"
-	BKTableNameSetTemplateSyncStatus      = "cc_SetTemplateSyncStatus"
-	BKTableNameSetTemplateSyncHistory     = "cc_SetTemplateSyncHistory"
+	BKTableNameAPITaskSyncHistory         = "cc_APITaskSyncHistory"
 
 	// rule for host property auto apply
 	BKTableNameHostApplyRule = "cc_HostApplyRule"
@@ -95,9 +100,13 @@ const (
 
 	// BKTableNameWatchToken the table to store the latest watch token for collections
 	BKTableNameWatchToken = "cc_WatchToken"
+
+	// BKTableNameMainlineInstance is a virtual collection name which represent for mainline instance events
+	BKTableNameMainlineInstance = "cc_MainlineInstance"
 )
 
-// AllTables alltables
+// AllTables is all table names, not include the sharding tables which is created dynamically,
+// such as object instance sharding table 'cc_ObjectBase_{supplierAccount}_pub_{objectID}'.
 var AllTables = []string{
 	BKTableNamePropertyGroup,
 	BKTableNameObjDes,
@@ -116,7 +125,6 @@ var AllTables = []string{
 	BKTableNameHistory,
 	BKTableNameHostFavorite,
 	BKTableNameAuditLog,
-	BKTableNameSubscription,
 	BKTableNameUserAPI,
 	BKTableNameDynamicGroup,
 	BKTableNameUserCustom,
@@ -144,18 +152,69 @@ var AllTables = []string{
 	BKTableNameChartData,
 	BKTableNameHostApplyRule,
 	BKTableNameAPITask,
-	BKTableNameSetTemplateSyncStatus,
-	BKTableNameSetTemplateSyncHistory,
+	BKTableNameAPITaskSyncHistory,
 	BKTableNameCloudSyncTask,
 	BKTableNameCloudAccount,
 	BKTableNameCloudSyncHistory,
 }
 
+// TableSpecifier is table specifier type which describes the metadata
+// access or classification level.
+type TableSpecifier string
+
+const (
+	// TableSpecifierPublic is public specifier for table.
+	TableSpecifierPublic TableSpecifier = "pub"
+)
+
+const (
+	// BKObjectInstShardingTablePrefix is prefix of object instance sharding table.
+	BKObjectInstShardingTablePrefix = BKTableNameBaseInst + "_"
+
+	// BKObjectInstAsstShardingTablePrefix is prefix of object instance association sharding table.
+	BKObjectInstAsstShardingTablePrefix = BKTableNameInstAsst + "_"
+)
+
+// GetObjectInstTableName return the object instance table name in sharding mode base on
+// the object ID. Format: cc_ObjectBase_{supplierAccount}_{Specifier}_{ObjectID}, such as 'cc_ObjectBase_0_pub_switch'.
+func GetObjectInstTableName(objID, supplierAccount string) string {
+	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstShardingTablePrefix, supplierAccount, TableSpecifierPublic, objID)
+}
+
+// GetObjectInstAsstTableName return the object instance association table name in sharding mode base on
+// the object ID. Format: cc_InstAsst_{supplierAccount}_{Specifier}_{ObjectID}, such as 'cc_InstAsst_0_pub_switch'.
+func GetObjectInstAsstTableName(objID, supplierAccount string) string {
+	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstAsstShardingTablePrefix, supplierAccount, TableSpecifierPublic, objID)
+}
+
+// IsObjectShardingTable returns if the target table is an object sharding table, include
+// object instance and association.
+func IsObjectShardingTable(tableName string) bool {
+	if IsObjectInstShardingTable(tableName) {
+		return true
+	}
+	return IsObjectInstAsstShardingTable(tableName)
+}
+
+// IsObjectInstShardingTable returns if the target table is an object instance sharding table.
+func IsObjectInstShardingTable(tableName string) bool {
+	// check object instance table, cc_ObjectBase_{Specifier}_{ObjectID}
+	return strings.HasPrefix(tableName, BKObjectInstShardingTablePrefix)
+}
+
+// IsObjectInstAsstShardingTable returns if the target table is an object instance association sharding table.
+func IsObjectInstAsstShardingTable(tableName string) bool {
+	// check object instance association table, cc_InstAsst_{Specifier}_{ObjectID}
+	return strings.HasPrefix(tableName, BKObjectInstAsstShardingTablePrefix)
+}
+
 // GetInstTableName returns inst data table name
-func GetInstTableName(objID string) string {
+func GetInstTableName(objID, supplierAccount string) string {
 	switch objID {
 	case BKInnerObjIDApp:
 		return BKTableNameBaseApp
+	case BKInnerObjIDBizSet:
+		return BKTableNameBaseBizSet
 	case BKInnerObjIDSet:
 		return BKTableNameBaseSet
 	case BKInnerObjIDModule:
@@ -167,6 +226,6 @@ func GetInstTableName(objID string) string {
 	case BKInnerObjIDPlat:
 		return BKTableNameBasePlat
 	default:
-		return BKTableNameBaseInst
+		return GetObjectInstTableName(objID, supplierAccount)
 	}
 }

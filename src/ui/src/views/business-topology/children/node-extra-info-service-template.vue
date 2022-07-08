@@ -20,7 +20,7 @@
       <span class="name fl">{{$t('主机属性自动应用')}}</span>
       <div class="fl">
         <div class="template-value" @click="linkToAutoApply">
-          <span class="text link">{{autoApplyEnable ? '已启用' : '未启用'}}</span>
+          <span class="text link">{{autoApplyEnable ? $t('已启用') : $t('未启用')}}</span>
           <i class="icon-cc-share link"></i>
         </div>
       </div>
@@ -29,8 +29,7 @@
 </template>
 
 <script>
-  import { mapGetters } from 'vuex'
-  import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+  import { MENU_BUSINESS_HOST_APPLY, MENU_BUSINESS_SET_TOPOLOGY } from '@/dictionary/menu-symbol'
   const serviceCategoryRequestId = Symbol('serviceCategoryRequestId')
   export default {
     name: 'service-template-info',
@@ -47,12 +46,20 @@
       }
     },
     computed: {
-      ...mapGetters('objectBiz', ['bizId']),
+      isBizSet() {
+        return this.$route.name === MENU_BUSINESS_SET_TOPOLOGY
+      },
+      bizId() {
+        const { objectBiz, bizSet } = this.$store.state
+        return this.isBizSet ? bizSet.bizId : objectBiz.bizId
+      },
       selectedNode() {
         return this.$store.state.businessHost.selectedNode
       },
       autoApplyEnable() {
-        return this.selectedNode && this.selectedNode.data.host_apply_enabled
+        // 在不同版本的拓扑数据接口中，node节点中是否存在主机自动应用字段是不一致的
+        // 所以，统一通过instance获取，保证数据获取的正确性
+        return this.instance.host_apply_enabled
       }
     },
     watch: {

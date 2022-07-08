@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/multilingual"
+	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
 
 func (s *coreService) CreateOneModelInstance(ctx *rest.Contexts) {
@@ -34,7 +35,7 @@ func (s *coreService) CreateManyModelInstances(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntityWithError(s.core.InstanceOperation().CreateManyModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	ctx.RespEntityWithError(s.core.InstanceOperation().CreateManyModelInstance(ctx.Kit, ctx.Request.PathParameter(common.BKObjIDField), inputData))
 }
 
 func (s *coreService) UpdateModelInstances(ctx *rest.Contexts) {
@@ -72,8 +73,31 @@ func (s *coreService) SearchModelInstances(ctx *rest.Contexts) {
 		ctx.RespEntityWithError(dataResult, err)
 		return
 	}
+
 	multilingual.TranslateInstanceName(s.Language(ctx.Kit.Header), objectID, dataResult.Info)
+
 	ctx.RespEntity(dataResult)
+}
+
+// CountModelInstances counts target model instances num.
+func (s *coreService) CountModelInstances(ctx *rest.Contexts) {
+	objID := ctx.Request.PathParameter("bk_obj_id")
+
+	// decode input parameter.
+	input := &metadata.Condition{}
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// count target model instances num.
+	result, err := s.core.InstanceOperation().CountModelInstances(ctx.Kit, objID, input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(result)
 }
 
 func (s *coreService) DeleteModelInstances(ctx *rest.Contexts) {
@@ -92,4 +116,13 @@ func (s *coreService) CascadeDeleteModelInstances(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntityWithError(s.core.InstanceOperation().CascadeDeleteModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+}
+
+func (s *coreService) GetInstanceObjectMapping(ctx *rest.Contexts) {
+	inputData := metadata.GetInstanceObjectMappingsOption{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntityWithError(instancemapping.GetInstanceObjectMapping(inputData.IDs))
 }

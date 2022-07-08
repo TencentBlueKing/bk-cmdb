@@ -91,6 +91,7 @@
     "1109002": "take audit log snapshot failed",
     "1109003": "read audit log failed",
     "1109004": "query data is too much, please narrow the operation time range",
+    "1109005": "generate audit log failed",
 
     "1199998": "Unknown or unrecognized error",
     "1199999":"'%s' Internal Server Error",

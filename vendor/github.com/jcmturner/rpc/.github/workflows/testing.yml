@@ -1,0 +1,67 @@
+name: v1
+on:
+  push:
+    paths-ignore:
+      - 'v[0-9]+/**'
+  pull_request:
+    paths-ignore:
+      - 'v[0-9]+/**'
+
+jobs:
+  build:
+    name: Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: [ '1.13.x', '1.14.x', '1.15.x' ]
+    steps:
+      - name: Set up Go ${{ matrix.go }}
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Test well formatted with gofmt
+        run: |
+          # Remove major version sub directories
+          find . -maxdepth 1 -type d -regex '\./v[0-9]+' | xargs -i rm -rf {}
+          GO_FILES=$(find . -iname '*.go' -type f | grep -v /vendor/)
+          test -z $(gofmt -s -d -l -e $GO_FILES | tee /dev/fd/2 | xargs | sed 's/\s//g')
+        id: gofmt
+
+      - name: Copy into GOPATH
+        run: |
+          # Default GOPATH=${HOME}/go
+          mkdir -p ${HOME}/go/src/github.com/${GITHUB_REPOSITORY}
+          cp -r $GITHUB_WORKSPACE/*  /home/runner/go/src/github.com/${GITHUB_REPOSITORY}
+        id: copyToGOPATH
+
+      - name: Get dependencies
+        run: |
+          cd ${HOME}/go/src/github.com/${GITHUB_REPOSITORY}
+          go get -v -t -d ./...
+        id: goGet
+
+      - name: Go vet
+        run: |
+          cd ${HOME}/go/src/github.com/${GITHUB_REPOSITORY}
+          go vet $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
+        id: govet
+
+      - name: Unit tests
+        run: |
+          cd ${HOME}/go/src/github.com/${GITHUB_REPOSITORY}
+          go test -race $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
+        id: unitTests
+
+      - name: Unit tests (32bit)
+        run: |
+          cd ${HOME}/go/src/github.com/${GITHUB_REPOSITORY}
+          go test $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
+        env:
+          GOARCH: 386
+        id: unitTest32

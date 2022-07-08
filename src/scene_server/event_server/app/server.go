@@ -19,20 +19,21 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/ac/iam"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/event_server/app/options"
-	"configcenter/src/scene_server/event_server/distribution"
-	"configcenter/src/scene_server/event_server/identifier"
 	svc "configcenter/src/scene_server/event_server/service"
+	"configcenter/src/scene_server/event_server/sync/hostidentifier"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/storage/reflector"
+	"configcenter/src/thirdparty/gse/client"
 )
 
 const (
@@ -41,6 +42,9 @@ const (
 
 	// defaultDBConnectTimeout is default connect timeout of cc db.
 	defaultDBConnectTimeout = 5 * time.Second
+
+	// defaultGoroutineCount default goroutine count
+	defaultGoroutineCount = 5
 )
 
 // EventServer is event server.
@@ -62,18 +66,6 @@ type EventServer struct {
 
 	// redisCli is cc redis client.
 	redisCli redis.Client
-
-	// subWatcher is subscription watcher.
-	subWatcher reflector.Interface
-
-	// identifierHandler is identifier handler.
-	identifierHandler *identifier.IdentifierHandler
-
-	// eventHandler is event handler that handles all event senders.
-	eventHandler *distribution.EventHandler
-
-	// distributor handles all events distribution.
-	distributor *distribution.Distributor
 }
 
 // NewEventServer creates a new EventServer object.
@@ -162,7 +154,7 @@ func (es *EventServer) initConfigs() error {
 			continue
 		}
 
-		// ready to init new datacollection instance.
+		// ready to init new instance.
 		es.hostConfigUpdateMu.Unlock()
 		break
 	}
@@ -180,6 +172,35 @@ func (es *EventServer) initConfigs() error {
 	es.config.Redis, err = es.engine.WithRedis()
 	if err != nil {
 		return fmt.Errorf("init cc redis configs, %+v", err)
+	}
+
+	es.config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
+	if err != nil {
+		blog.Errorf("parse auth center config failed: %v", err)
+		return err
+	}
+
+	identifierConf, err := hostidentifier.ParseIdentifierConf()
+	if err != nil {
+		blog.Errorf("parse eventServer host identifier config error, err: %v", err)
+		return err
+	}
+	es.config.IdentifierConf = identifierConf
+
+	if !es.config.IdentifierConf.StartUp {
+		return nil
+	}
+
+	es.config.TaskConf, err = client.NewGseConnConfig("gse.taskServer")
+	if err != nil {
+		blog.Errorf("get gse taskServer Config error, err: %v", err)
+		return err
+	}
+
+	es.config.ApiConf, err = client.NewGseConnConfig("gse.apiServer")
+	if err != nil {
+		blog.Errorf("get gse apiServer Config error, err: %v", err)
+		return err
 	}
 
 	return nil
@@ -208,29 +229,17 @@ func (es *EventServer) initModules() error {
 	// initialize auth authorizer
 	es.service.SetAuthorizer(iam.NewAuthorizer(es.engine.CoreAPI))
 
-	// init subscription stream watcher.
-	subWatcher, err := reflector.NewReflector(es.config.MongoDB.GetMongoConf())
-	if err != nil {
-		return fmt.Errorf("init subscription stream watcher, %+v", err)
+	iamCli := new(iam.IAM)
+	if auth.EnableAuthorize() {
+		blog.Info("enable auth center access")
+		iamCli, err = iam.NewIAM(es.config.Auth, es.engine.Metric().Registry())
+		if err != nil {
+			return fmt.Errorf("new iam client failed: %v", err)
+		}
+	} else {
+		blog.Infof("disable auth center access")
 	}
-	es.subWatcher = subWatcher
-	blog.Infof("init modules, init subscription stream watcher success")
-
-	// init identifier handler.
-	identifierHandler := identifier.NewIdentifierHandler(es.ctx, es.redisCli, es.db, es.engine.CoreAPI)
-	es.identifierHandler = identifierHandler
-
-	// init distributer.
-	distributor := distribution.NewDistributer(es.ctx, es.engine, es.db, es.redisCli, es.subWatcher)
-	es.distributor = distributor
-	es.service.SetDistributer(distributor)
-	blog.Infof("init modules, create event distributer success")
-
-	// init event handler.
-	eventHandler := distribution.NewEventHandler(es.ctx, es.engine, es.redisCli)
-	es.eventHandler = eventHandler
-	es.eventHandler.SetDistributer(distributor)
-	blog.Infof("init modules, create event handler success")
+	es.service.AuthManager = extensions.NewAuthManager(es.engine.CoreAPI, iamCli)
 
 	return nil
 }
@@ -249,16 +258,66 @@ func (es *EventServer) Run() error {
 	}
 	blog.Info("init modules success!")
 
-	// run identifier handler.
-	go es.identifierHandler.Run()
-
-	// run main logic comm distributer.
-	if err := es.distributor.Start(es.eventHandler); err != nil {
-		return fmt.Errorf("distributer start failed, %+v", err)
+	if err := es.runSyncData(); err != nil {
+		return err
 	}
-	blog.Info("distributer starting now!")
-
 	return nil
+}
+
+func (es *EventServer) runSyncData() error {
+	if !es.config.IdentifierConf.StartUp {
+		return nil
+	}
+
+	gseTaskClient, err := client.NewGseTaskServerClient(es.config.TaskConf.Endpoints, es.config.TaskConf.TLSConf)
+	if err != nil {
+		blog.Errorf("new gse taskServer error, err: %v", err)
+		return err
+	}
+
+	gseApiClient, err := client.NewGseApiServerClient(es.config.ApiConf.Endpoints, es.config.ApiConf.TLSConf)
+	if err != nil {
+		blog.Errorf("new gse apiServer error, err: %v", err)
+		return err
+	}
+
+	syncData, err := hostidentifier.NewHostIdentifier(es.ctx, es.redisCli, es.engine, es.config.IdentifierConf,
+		gseTaskClient, gseApiClient)
+	if err != nil {
+		blog.Errorf("new host identifier error, err: %v", err)
+		return err
+	}
+
+	es.service.SyncData = syncData
+
+	// watch主机身份变化创建任务调用gse接口推送
+	go syncData.WatchToSyncHostIdentifier()
+
+	// 周期全量同步主机身份
+	go es.CycleSyncIdentifier()
+
+	for i := 0; i < defaultGoroutineCount; i++ {
+		// 查询推送主机身份任务结果并处理失败主机
+		go syncData.GetTaskExecutionStatus()
+		// 协程将失败的主机重新变成新任务
+		go syncData.LaunchTaskForFailedHost()
+	}
+
+	blog.Info("run sync data success!")
+	return nil
+}
+
+// CycleSyncIdentifier cycle sync host identifier
+func (es *EventServer) CycleSyncIdentifier() {
+	for {
+		if !es.engine.Discovery().IsMaster() {
+			blog.V(4).Infof("loop full sync host identifier, but not master, skip.")
+			time.Sleep(time.Minute)
+			continue
+		}
+		time.Sleep(time.Duration(es.config.IdentifierConf.BatchSyncIntervalHours) * time.Hour)
+		es.service.SyncData.FullSyncHostIdentifier()
+	}
 }
 
 // Run setups a new EventServer app with a context and options and runs it as server instance.

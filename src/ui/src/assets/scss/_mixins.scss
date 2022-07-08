@@ -49,3 +49,33 @@
         height: 100%;
     }
 }
+
+/**
+ * 表示区域支持拖拽的拖拽图标，例子可参考模型管理界面模型的拖拽
+ * $width 图标的宽度
+ * $height 图标的高度
+ * $dotColor 图标的颜色
+ * $dotSize 图标的点的大小
+ */
+@mixin dragIcon ($width: 8px, $height: 18px, $dotColor:#979ba5, $dotSize: 3px){
+    width: 8px;
+    height: 18px;
+    cursor: move;
+
+    &::before {
+        content: "";
+        display: block;
+        margin: 0 auto;
+        border-radius: 50%;
+        $col1DotPosition: 4px;
+        $col2DotPosition: 5px;
+        transform: translate(calc(-#{$col2DotPosition}/2), $col1DotPosition);
+        width: $dotSize;
+        height: $dotSize;
+        background-color: $dotColor;
+        box-shadow: 0 $col1DotPosition 0 0 $dotColor,
+        0 $col1DotPosition * 2 0 0 $dotColor, $col2DotPosition 0 0 0 $dotColor,
+        $col2DotPosition $col1DotPosition 0 0 $dotColor,
+        $col2DotPosition $col1DotPosition * 2 0 0 $dotColor;
+    }
+}

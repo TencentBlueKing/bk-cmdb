@@ -327,19 +327,21 @@ func (m *modelAttribute) DeleteModelAttributes(kit *rest.Kit, objID string, inpu
 	return &metadata.DeletedCount{Count: cnt}, err
 }
 
-func (m *modelAttribute) SearchModelAttributes(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
+// SearchModelAttributes search model's attributes
+func (m *modelAttribute) SearchModelAttributes(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (
+	*metadata.QueryModelAttributeDataResult, error) {
 
-	if err := m.model.isValid(kit, objID); nil != err {
-		blog.Errorf("request(%s): it is failed to check if the model(%s) is valid, error info is %s", kit.Rid, objID, err.Error())
+	if err := m.model.isValid(kit, objID); err != nil {
+		blog.Errorf("failed to check if the model(%s) is valid, err: %v, rid: %s", objID, err, kit.Rid)
 		return nil, err
 	}
 
-	inputParam.Condition[common.BKObjIDField] = objID
 	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
+	inputParam.Condition[common.BKObjIDField] = objID
 
 	attrResult, err := m.newSearch(kit, inputParam.Condition)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to search the attributes of the model(%s), error info is %s", kit.Rid, objID, err.Error())
+	if err != nil {
+		blog.Errorf("failed to search the attributes of the model(%s), err: %v, rid: %s", objID, err, kit.Rid)
 		return nil, err
 	}
 

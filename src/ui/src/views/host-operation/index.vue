@@ -69,11 +69,11 @@
               <template v-for="(item, index) in availableTabList">
                 <li class="tab-grep fl" v-if="index" :key="index"></li>
                 <li class="tab-item fl"
-                  :class="{ active: activeTab === item }"
+                  :class="{ active: activeTab === item, 'hide-count': !item.showCount }"
                   :key="item.id"
                   @click="handleTabClick(item)">
                   <span class="tab-label">{{item.label}}</span>
-                  <span :class="['tab-count', { 'unconfirmed': !item.confirmed }]">
+                  <span v-if="item.showCount" :class="['tab-count', { 'unconfirmed': !item.confirmed }]">
                     {{item.props.info.length > 999 ? '999+' : item.props.info.length}}
                   </span>
                 </li>
@@ -179,6 +179,7 @@
           id: 'createServiceInstance',
           label: this.$t('新增服务实例'),
           confirmed: false,
+          showCount: false,
           component: CreateServiceInstance.name,
           props: {
             info: []
@@ -187,14 +188,16 @@
           id: 'deletedServiceInstance',
           label: this.$t('删除服务实例'),
           confirmed: false,
+          showCount: true,
           component: DeletedServiceInstance.name,
           props: {
             info: []
           }
         }, {
           id: 'moveToIdleHost',
-          label: this.$t('移动到空闲机的主机'),
+          label: this.$t('移动到空闲机的主机', { idleModule: this.$store.state.globalConfig.config.idlePool.idle }),
           confirmed: false,
+          showCount: true,
           component: MoveToIdleHost.name,
           props: {
             info: []
@@ -203,6 +206,7 @@
           id: 'hostAttrsAutoApply',
           label: this.$t('属性自动应用'),
           confirmed: false,
+          showCount: true,
           component: HostAttrsAutoApply.name,
           props: {
             info: []
@@ -230,6 +234,12 @@
         loading: true
       }
     },
+    provide() {
+      return {
+        getModuleName: this.getModuleName,
+        getModulePath: this.getModulePath
+      }
+    },
     computed: {
       ...mapGetters('objectBiz', ['bizId', 'currentBusiness']),
       ...mapGetters('businessHost', [
@@ -240,7 +250,9 @@
         const textMap = {
           remove: this.$t('确认移除'),
           idle: this.$t('确认转移'),
-          business: this.$t('确认转移')
+          business: this.$t('确认转移'),
+          increment: this.$t('确认追加'),
+          add: this.$t('确认添加'),
         }
         return this.isRetry ? this.$t('失败重试') : textMap[this.type]
       },
@@ -248,7 +260,9 @@
         const map = {
           remove: ['deletedServiceInstance', 'moveToIdleHost', 'hostAttrsAutoApply'],
           idle: ['deletedServiceInstance', 'hostAttrsAutoApply'],
-          business: ['createServiceInstance', 'deletedServiceInstance', 'hostAttrsAutoApply']
+          business: ['createServiceInstance', 'deletedServiceInstance', 'hostAttrsAutoApply'],
+          increment: ['createServiceInstance', 'hostAttrsAutoApply'],
+          add: ['createServiceInstance', 'hostAttrsAutoApply']
         }
         const available = map[this.type]
         return this.tabList.filter(tab => available.includes(tab.id) && tab.props.info.length > 0)
@@ -341,14 +355,15 @@
 
         const params = {
           bk_host_ids: this.resources,
-          remove_from_node: {
-            bk_inst_id: isTransfer ? this.bizId : Number(query.sourceId),
-            bk_obj_id: isTransfer ? 'biz' : query.sourceModel
-          }
+          // 是否从现有模块移除（清除掉主机现有的所有模块）
+          is_remove_from_all: isTransfer
         }
+
         if (this.type === 'idle') {
           // eslint-disable-next-line prefer-destructuring
           params.default_internal_module = this.targetModules[0]
+        } else if (this.type === 'remove') {
+          params.remove_from_modules = [Number(query.sourceId)]
         } else if (this.targetModules.length) {
           params.add_to_modules = this.targetModules
         }
@@ -356,9 +371,11 @@
       },
       setBreadcrumbs() {
         const titleMap = {
-          idle: this.$t('转移到空闲模块'),
+          idle: this.$t('转移到空闲模块', { idleSet: this.$store.state.globalConfig.config.set }),
           business: this.$t('转移到业务模块'),
-          remove: this.$t('移除主机')
+          remove: this.$t('移除主机'),
+          increment: this.$t('追加主机'),
+          add: this.$t('添加主机')
         }
         this.$store.commit('setTitle', titleMap[this.type])
       },
@@ -448,7 +465,7 @@
       },
       setHostAttrsAutoApply(data) {
         const conflictInfo = (data || []).map(item => item.host_apply_plan)
-        const conflictList = conflictInfo.filter(item => item.conflicts.length || item.update_fields.length)
+        const conflictList = conflictInfo.filter(item => item.conflicts?.length || item.update_fields?.length)
         const tab = this.tabList.find(tab => tab.id === 'hostAttrsAutoApply')
         tab.props.info = Object.freeze(conflictList)
       },
@@ -569,7 +586,7 @@
       handleChangeModule() {
         const props = {
           moduleType: this.type,
-          title: this.type === 'idle' ? this.$t('转移主机到空闲模块') : this.$t('转移主机到业务模块'),
+          title: this.type === 'idle' ? this.$t('转移主机到空闲模块', { idleSet: this.$store.state.globalConfig.config.set }) : this.$t('转移主机到业务模块'),
           defaultChecked: this.targetModules,
           business: this.currentBusiness
         }
@@ -665,21 +682,22 @@
               params.options.service_instance_options = createComponent.getServiceInstanceOptions()
             }
             if (hostAttrsComponent) {
-              params.options.host_apply_conflict_resolvers = hostAttrsComponent.getHostApplyConflictResolvers()
+              params.options.host_apply_trans_rule = hostAttrsComponent.getHostApplyConflictResolvers()
             }
           }
+
           const { result, data } = await this.$http.post(`host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, params, {
             requestId: this.request.confirm,
             globalError: false,
             transformData: false
           })
 
-          const successText = this.type === 'remove' ? '移除成功' : '转移成功'
+          const successText = ({ remove: '移除成功', add: '添加成功' })[this.type] || '转移成功'
           const errorText = this.type === 'remove' ? '主机移除结果' : '主机转移结果'
           if (!result) {
             const failList = []
             const successList = []
-            data.forEach((item) => {
+            data?.forEach((item) => {
               if (item.code !== 0) {
                 failList.push(item)
               } else {
@@ -872,6 +890,11 @@
                 width: 100%;
                 height: 2px;
                 background-color: $primaryColor;
+            }
+            &.hide-count {
+              .tab-label {
+                margin-right: 10px;
+              }
             }
             .tab-label {
                 display: inline-block;

@@ -12,6 +12,8 @@
 
 package iam
 
+import "configcenter/src/common/metadata"
+
 var (
 	businessResource = RelateResourceType{
 		SystemID:    SystemIDCMDB,
@@ -75,16 +77,14 @@ var ActionIDNameMap = map[ActionID]string{
 	ArchiveBusiness:                     "业务归档",
 	FindBusiness:                        "业务查询",
 	ViewBusinessResource:                "业务访问",
+	CreateBizSet:                        "业务集新增",
+	EditBizSet:                          "业务集编辑",
+	DeleteBizSet:                        "业务集删除",
+	ViewBizSet:                          "业务集查看",
+	AccessBizSet:                        "业务集访问",
 	CreateCloudArea:                     "云区域创建",
 	EditCloudArea:                       "云区域编辑",
 	DeleteCloudArea:                     "云区域删除",
-	CreateSysInstance:                   "实例创建",
-	EditSysInstance:                     "实例编辑",
-	DeleteSysInstance:                   "实例删除",
-	CreateEventPushing:                  "事件订阅新建",
-	EditEventPushing:                    "事件订阅编辑",
-	DeleteEventPushing:                  "事件订阅删除",
-	FindEventPushing:                    "事件订阅查询",
 	CreateCloudAccount:                  "云账户新建",
 	EditCloudAccount:                    "云账户编辑",
 	DeleteCloudAccount:                  "云账户删除",
@@ -112,13 +112,22 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchBizEvent:                       "业务事件监听",
 	WatchSetEvent:                       "集群事件监听",
 	WatchModuleEvent:                    "模块数据监听",
-	WatchSetTemplateEvent:               "集群模板数据监听",
 	WatchProcessEvent:                   "进程数据监听",
+	WatchCommonInstanceEvent:            "模型实例事件监听",
+	WatchMainlineInstanceEvent:          "自定义拓扑层级事件监听",
+	WatchInstAsstEvent:                  "实例关联事件监听",
+	WatchBizSetEvent:                    "业务集事件监听",
 	GlobalSettings:                      "全局设置",
 }
 
 // GenerateActions generate all the actions registered to IAM.
-func GenerateActions() []ResourceAction {
+func GenerateActions(objects []metadata.Object) []ResourceAction {
+	resourceActionList := GenerateStaticActions()
+	resourceActionList = append(resourceActionList, genDynamicActions(objects)...)
+	return resourceActionList
+}
+
+func GenerateStaticActions() []ResourceAction {
 	resourceActionList := make([]ResourceAction, 0)
 	// add business resource actions
 	resourceActionList = append(resourceActionList, genBusinessHostActions()...)
@@ -135,9 +144,8 @@ func GenerateActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genResourcePoolHostActions()...)
 	resourceActionList = append(resourceActionList, genResourcePoolDirectoryActions()...)
 	resourceActionList = append(resourceActionList, genBusinessActions()...)
+	resourceActionList = append(resourceActionList, genBizSetActions()...)
 	resourceActionList = append(resourceActionList, genCloudAreaActions()...)
-	resourceActionList = append(resourceActionList, genModelInstanceActions()...)
-	resourceActionList = append(resourceActionList, genEventPushingActions()...)
 	resourceActionList = append(resourceActionList, genCloudAccountActions()...)
 	resourceActionList = append(resourceActionList, genCloudResourceTaskActions()...)
 	resourceActionList = append(resourceActionList, genModelActions()...)
@@ -160,11 +168,13 @@ func genBusinessHostActions() []ResourceAction {
 	}}
 
 	relatedResource := []RelateResourceType{{
-		SystemID:           SystemIDCMDB,
-		ID:                 Host,
-		NameAlias:          "",
-		NameAliasEn:        "",
-		Scope:              nil,
+		SystemID:    SystemIDCMDB,
+		ID:          Host,
+		NameAlias:   "",
+		NameAliasEn: "",
+		Scope:       nil,
+		// 配置权限时可选择实例和配置属性, 后者用于属性鉴权
+		SelectionMode:      modeAll,
 		InstanceSelections: hostSelection,
 	}}
 
@@ -294,7 +304,7 @@ func genBusinessServiceCategoryActions() []ResourceAction {
 		NameEn:               "Create Service Category",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource, EditBusinessServiceCategory, DeleteBusinessServiceCategory},
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -330,7 +340,7 @@ func genBusinessServiceInstanceActions() []ResourceAction {
 		NameEn:               "Create Service Instance",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource, EditBusinessServiceInstance, DeleteBusinessServiceInstance},
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -470,7 +480,7 @@ func genBusinessTopologyActions() []ResourceAction {
 		NameEn:               "Create Business Topo",
 		Type:                 Create,
 		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource, EditBusinessTopology, DeleteBusinessTopology},
+		RelatedActions:       []ActionID{ViewBusinessResource},
 		Version:              1,
 	})
 
@@ -520,11 +530,13 @@ func genResourcePoolHostActions() []ResourceAction {
 	}}
 
 	relatedResource := []RelateResourceType{{
-		SystemID:           SystemIDCMDB,
-		ID:                 Host,
-		NameAlias:          "",
-		NameAliasEn:        "",
-		Scope:              nil,
+		SystemID:    SystemIDCMDB,
+		ID:          Host,
+		NameAlias:   "",
+		NameAliasEn: "",
+		Scope:       nil,
+		// 配置权限时可选择实例和配置属性, 后者用于属性鉴权
+		SelectionMode:      modeAll,
 		InstanceSelections: hostSelection,
 	}}
 
@@ -688,6 +700,70 @@ func genBusinessActions() []ResourceAction {
 	return actions
 }
 
+func genBizSetActions() []ResourceAction {
+	bizSetResource := RelateResourceType{
+		SystemID: SystemIDCMDB,
+		ID:       BizSet,
+		InstanceSelections: []RelatedInstanceSelection{{
+			SystemID: SystemIDCMDB,
+			ID:       BizSetSelection,
+		}},
+	}
+
+	actions := make([]ResourceAction, 0)
+	actions = append(actions, ResourceAction{
+		ID:                   CreateBizSet,
+		Name:                 ActionIDNameMap[CreateBizSet],
+		NameEn:               "Create Business Set",
+		Type:                 Create,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   EditBizSet,
+		Name:                 ActionIDNameMap[EditBizSet],
+		NameEn:               "Edit Business Set",
+		Type:                 Edit,
+		RelatedResourceTypes: []RelateResourceType{bizSetResource},
+		RelatedActions:       []ActionID{ViewBizSet},
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   DeleteBizSet,
+		Name:                 ActionIDNameMap[DeleteBizSet],
+		NameEn:               "Delete Business Set",
+		Type:                 Delete,
+		RelatedResourceTypes: []RelateResourceType{bizSetResource},
+		RelatedActions:       []ActionID{ViewBizSet},
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   ViewBizSet,
+		Name:                 ActionIDNameMap[ViewBizSet],
+		NameEn:               "View Business Set",
+		Type:                 View,
+		RelatedResourceTypes: []RelateResourceType{bizSetResource},
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   AccessBizSet,
+		Name:                 ActionIDNameMap[AccessBizSet],
+		NameEn:               "Access Business Set",
+		Type:                 View,
+		RelatedResourceTypes: []RelateResourceType{bizSetResource},
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	return actions
+}
+
 func genCloudAreaActions() []ResourceAction {
 	selection := []RelatedInstanceSelection{{
 		SystemID: SystemIDCMDB,
@@ -731,140 +807,6 @@ func genCloudAreaActions() []ResourceAction {
 		Name:                 ActionIDNameMap[DeleteCloudArea],
 		NameEn:               "Delete Cloud Area",
 		Type:                 Delete,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	return actions
-}
-
-func genModelInstanceActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       SysInstanceSelection,
-	}}
-
-	relatedResource := []RelateResourceType{
-		{
-			SystemID:           SystemIDCMDB,
-			ID:                 SysInstance,
-			NameAlias:          "",
-			NameAliasEn:        "",
-			Scope:              nil,
-			InstanceSelections: selection,
-		},
-	}
-
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:     CreateSysInstance,
-		Name:   ActionIDNameMap[CreateSysInstance],
-		NameEn: "Create Instance",
-		Type:   Create,
-		RelatedResourceTypes: []RelateResourceType{
-			{
-				SystemID:    SystemIDCMDB,
-				ID:          SysInstanceModel,
-				NameAlias:   "",
-				NameAliasEn: "",
-				Scope:       nil,
-				InstanceSelections: []RelatedInstanceSelection{{
-					SystemID: SystemIDCMDB,
-					ID:       SysInstanceModelSelection,
-				}},
-			},
-		},
-		RelatedActions: nil,
-		Version:        1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   EditSysInstance,
-		Name:                 ActionIDNameMap[EditSysInstance],
-		NameEn:               "Edit Instance",
-		Type:                 Edit,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteSysInstance,
-		Name:                 ActionIDNameMap[DeleteSysInstance],
-		NameEn:               "Delete Instance",
-		Type:                 Delete,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	// actions = append(actions, ResourceAction{
-	// 	ID:                   FindSysInstance,
-	// 	Name:                 ActionIDNameMap[FindSysInstance],
-	// 	NameEn:               "View Instance",
-	// 	Type:                 View,
-	// 	RelatedResourceTypes: relatedResource,
-	// 	RelatedActions:       nil,
-	// 	Version:              1,
-	// })
-
-	return actions
-}
-
-func genEventPushingActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       SysEventPushingSelection,
-	}}
-
-	relatedResource := []RelateResourceType{
-		{
-			SystemID:           SystemIDCMDB,
-			ID:                 SysEventPushing,
-			NameAlias:          "",
-			NameAliasEn:        "",
-			Scope:              nil,
-			InstanceSelections: selection,
-		},
-	}
-
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   CreateEventPushing,
-		Name:                 ActionIDNameMap[CreateEventPushing],
-		NameEn:               "Create Event Subscription",
-		Type:                 Create,
-		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   EditEventPushing,
-		Name:                 ActionIDNameMap[EditEventPushing],
-		NameEn:               "Edit Event Subscription",
-		Type:                 Edit,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{FindEventPushing},
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteEventPushing,
-		Name:                 ActionIDNameMap[DeleteEventPushing],
-		NameEn:               "Delete Event Subscription",
-		Type:                 Delete,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{FindEventPushing},
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   FindEventPushing,
-		Name:                 ActionIDNameMap[FindEventPushing],
-		NameEn:               "View Event Subscription",
-		Type:                 View,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
 		Version:              1,
@@ -1280,16 +1222,6 @@ func genEventWatchActions() []ResourceAction {
 	})
 
 	actions = append(actions, ResourceAction{
-		ID:                   WatchSetTemplateEvent,
-		Name:                 ActionIDNameMap[WatchSetTemplateEvent],
-		NameEn:               "Set Template Event Listen",
-		Type:                 View,
-		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
 		ID:                   WatchProcessEvent,
 		Name:                 ActionIDNameMap[WatchProcessEvent],
 		NameEn:               "Process Event Listen",
@@ -1297,6 +1229,88 @@ func genEventWatchActions() []ResourceAction {
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:      WatchBizSetEvent,
+		Name:    ActionIDNameMap[WatchBizSetEvent],
+		NameEn:  "Business Set Event Listen",
+		Type:    View,
+		Version: 1,
+	})
+
+	modelSelection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       SysModelEventSelection,
+	}}
+
+	modelResource := []RelateResourceType{
+		{
+			SystemID:           SystemIDCMDB,
+			ID:                 SysModelEvent,
+			NameAlias:          "",
+			NameAliasEn:        "",
+			Scope:              nil,
+			InstanceSelections: modelSelection,
+		},
+	}
+
+	actions = append(actions, ResourceAction{
+		ID:                   WatchCommonInstanceEvent,
+		Name:                 ActionIDNameMap[WatchCommonInstanceEvent],
+		NameEn:               "Common Model Instance Event Listen",
+		Type:                 View,
+		RelatedResourceTypes: modelResource,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	mainlineModelSelection := []RelatedInstanceSelection{{
+		SystemID: SystemIDCMDB,
+		ID:       MainlineModelEventSelection,
+	}}
+
+	mainlineModelResource := []RelateResourceType{
+		{
+			SystemID:           SystemIDCMDB,
+			ID:                 MainlineModelEvent,
+			NameAlias:          "",
+			NameAliasEn:        "",
+			Scope:              nil,
+			InstanceSelections: mainlineModelSelection,
+		},
+	}
+
+	actions = append(actions, ResourceAction{
+		ID:                   WatchMainlineInstanceEvent,
+		Name:                 ActionIDNameMap[WatchMainlineInstanceEvent],
+		NameEn:               "Custom Topo Layer Event Listen",
+		Type:                 View,
+		RelatedResourceTypes: mainlineModelResource,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:     WatchInstAsstEvent,
+		Name:   ActionIDNameMap[WatchInstAsstEvent],
+		NameEn: "Instance Association Event Listen",
+		Type:   View,
+		RelatedResourceTypes: []RelateResourceType{
+			{
+				SystemID:    SystemIDCMDB,
+				ID:          InstAsstEvent,
+				NameAlias:   "",
+				NameAliasEn: "",
+				Scope:       nil,
+				InstanceSelections: []RelatedInstanceSelection{{
+					SystemID: SystemIDCMDB,
+					ID:       InstAsstEventSelection,
+				}},
+			},
+		},
+		RelatedActions: nil,
+		Version:        1,
 	})
 	return actions
 }

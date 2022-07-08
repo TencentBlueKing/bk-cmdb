@@ -390,7 +390,7 @@
           bk_obj_id: modelId,
           condition: baseConditionMap[modelId]
         }))
-        Object.keys(timeConditionMap).forEach(modelId => {
+        Object.keys(timeConditionMap).forEach((modelId) => {
           const condition = baseConditions.find(condition => condition.bk_obj_id === modelId)
           if (condition) {
             condition.time_condition = timeConditionMap[modelId]

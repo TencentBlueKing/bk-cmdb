@@ -17,6 +17,7 @@ import (
 	"net/http"
 
 	"configcenter/src/ac"
+	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -25,28 +26,27 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"configcenter/src/scene_server/event_server/distribution"
+	"configcenter/src/common/webservice/restfulservice"
+	"configcenter/src/scene_server/event_server/sync/hostidentifier"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 )
 
-// Service impls main logics as service for datacolection app.
+// Service impls main logics as service.
 type Service struct {
 	ctx    context.Context
 	engine *backbone.Engine
 
-	// db is cc main database.
-	db dal.RDB
+	db          dal.RDB
+	cache       redis.Client
+	authorizer  ac.AuthorizeInterface
+	AuthManager *extensions.AuthManager
 
-	// cache is cc redis client.
-	cache redis.Client
-
-	// distributer is event subscription distributer.
-	distributer *distribution.Distributor
-
-	authorizer ac.AuthorizeInterface
+	// SyncData is sync host identifier operator
+	SyncData *hostidentifier.HostIdentifier
 }
 
 // NewService creates a new Service object.
@@ -68,14 +68,11 @@ func (s *Service) SetAuthorizer(authorizer ac.AuthorizeInterface) {
 	s.authorizer = authorizer
 }
 
-// SetDistributer setups event subscription distributer.
-func (s *Service) SetDistributer(distributer *distribution.Distributor) {
-	s.distributer = distributer
-}
-
 // WebService setups a new restful web service.
 func (s *Service) WebService() *restful.Container {
 	container := restful.NewContainer()
+
+	opentelemetry.AddOtlpFilter(container)
 
 	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
@@ -91,9 +88,11 @@ func (s *Service) WebService() *restful.Container {
 
 	container.Add(api)
 
-	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
-	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
-	container.Add(healthzAPI)
+	// common api
+	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	commonAPI.Route(commonAPI.GET("/healthz").To(s.Healthz))
+	commonAPI.Route(commonAPI.GET("/version").To(restfulservice.Version))
+	container.Add(commonAPI)
 
 	return container
 }
@@ -105,13 +104,8 @@ func (s *Service) initService(web *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/search/{ownerID}/{appID}", Handler: s.ListSubscriptions})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/{ownerID}/{appID}", Handler: s.Subscribe})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/subscribe/{ownerID}/{appID}/{subscribeID}", Handler: s.UnSubscribe})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/subscribe/{ownerID}/{appID}/{subscribeID}", Handler: s.UpdateSubscription})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/ping", Handler: s.Ping})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/subscribe/telnet", Handler: s.Telnet})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/watch/resource/{resource}", Handler: s.WatchEvent})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/host_identifier", Handler: s.SyncHostIdentifier})
 
 	utility.AddToRestfulWebService(web)
 

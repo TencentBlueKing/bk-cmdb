@@ -21,6 +21,7 @@ type CreateServiceTemplateOption struct {
 	BizID             int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	Name              string `field:"name" json:"name,omitempty" bson:"name"`
 	ServiceCategoryID int64  `field:"service_category_id" json:"service_category_id,omitempty" bson:"service_category_id"`
+	HostApplyEnabled  bool   `field:"host_apply_enabled" json:"host_apply_enabled" bson:"host_apply_enabled"`
 }
 
 type UpdateServiceTemplateOption struct {

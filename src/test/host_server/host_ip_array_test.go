@@ -36,13 +36,13 @@ var _ = Describe("host ip array validation test", func() {
 			MaxOpenConns: mongo.DefaultMaxOpenConns,
 			MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
 			URI:          tConf.MongoURI,
-			RsName:       "rs0",
+			RsName:       tConf.MongoRsName,
 		}
 		db, err := local.NewMgo(mongoConfig, time.Minute)
 		Expect(err).To(BeNil())
 
 		redisCfg := redis.Config{
-			Address:  tConf.RedisCfg.RedisAdress,
+			Address:  tConf.RedisCfg.RedisAddress,
 			Password: tConf.RedisCfg.RedisPasswd,
 			Database: "0",
 		}

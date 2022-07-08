@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
 	"configcenter/src/tools/cmdb_ctl/app/config"
+
 	"github.com/spf13/cobra"
 	"github.com/tidwall/gjson"
 )
@@ -35,19 +36,26 @@ func init() {
 }
 
 type watchConf struct {
-	startFrom int64
-	cursor    string
-	resource  string
-	fields    []string
-	filter    string
+	startFrom   int64
+	cursor      string
+	resource    string
+	fields      []string
+	filter      string
+	subresource string
 }
 
 func (w *watchConf) addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&w.cursor, "cursor", "", "the start cursor from where to watch")
-	cmd.PersistentFlags().Int64Var(&w.startFrom, "start-from", 0, "unix time, where to start from, can be negative, which is means start from now-(start-from)")
-	cmd.PersistentFlags().StringVar(&w.resource, "rsc", "host", "the resource to watch, can be host or host_relation")
+	cmd.PersistentFlags().Int64Var(&w.startFrom, "start-from", 0, "unix time, where to start from, can be negative, "+
+		"which is means start from now-(start-from)")
+	cmd.PersistentFlags().StringVar(&w.resource, "rsc", "host", "the resource to watch, can be：host, host_relation, "+
+		"biz, set, module, process, process_instance_relation, object_instance, mainline_instance, inst_asst, "+
+		"host_identifier, biz_set, biz_set_relation")
 	cmd.PersistentFlags().StringSliceVar(&w.fields, "fields", nil, "the resource fields to return")
-	cmd.PersistentFlags().StringVar(&w.filter, "filter", "", "a k:v pair to filter events, k and v is separate with ':' , multiple kv is separated with ';', like k1:v1;k2:v2")
+	cmd.PersistentFlags().StringVar(&w.filter, "filter", "", "a k:v pair to filter events, k and v is separate with "+
+		"':' , multiple kv is separated with ';', like k1:v1;k2:v2")
+	cmd.PersistentFlags().StringVar(&w.subresource, "sub-rsc", "", "the sub resource to watch, can be the object ID "+
+		"of object_instance or mainline_instance resource")
 }
 
 func NewWatchCommand() *cobra.Command {
@@ -71,7 +79,7 @@ func NewWatchCommand() *cobra.Command {
 
 	cmd.AddCommand(&cobra.Command{
 		Use:   "start",
-		Short: "decode a cursor information",
+		Short: "start watching events",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runStartFromWatch(conf)
 		},
@@ -91,8 +99,10 @@ func runDecodeCursor(c *watchConf) error {
 	fmt.Printf("         type: %s\n", cursor.Type)
 	fmt.Printf("          oid: %s\n", cursor.Oid)
 	fmt.Printf("         oper: %s\n", cursor.Oper)
+	fmt.Printf("      uniqKey: %s\n", cursor.UniqKey)
 	fmt.Printf("     unixTime: %d:%d\n", cursor.ClusterTime.Sec, cursor.ClusterTime.Nano)
-	fmt.Printf("  clusterTime: %s\n\n", time.Unix(int64(cursor.ClusterTime.Sec), int64(cursor.ClusterTime.Nano)).Format(time.RFC3339))
+	fmt.Printf("  clusterTime: %s\n\n", time.Unix(int64(cursor.ClusterTime.Sec), int64(cursor.ClusterTime.Nano)).
+		Format(time.RFC3339))
 	return nil
 }
 
@@ -143,11 +153,20 @@ func runStartFromWatch(c *watchConf) error {
 	}
 	fmt.Println(">> watch with filter: ", filter)
 
+	if len(c.subresource) > 0 {
+		switch watch.CursorType(c.resource) {
+		case watch.ObjectBase, watch.MainlineInstance:
+		default:
+			return fmt.Errorf("sub reource can only be set when resource is object_instance or mainline_instance")
+		}
+	}
+
 	opt := watch.WatchEventOptions{
 		Fields:    c.fields,
 		StartFrom: c.startFrom,
 		Cursor:    c.cursor,
 		Resource:  watch.CursorType(c.resource),
+		Filter:    watch.WatchEventFilter{SubResource: c.subresource},
 	}
 
 	optByte, _ := json.Marshal(opt)
@@ -228,6 +247,7 @@ func runStartFromWatch(c *watchConf) error {
 				Fields:   c.fields,
 				Cursor:   event.Data.Events[len(event.Data.Events)-1].Cursor,
 				Resource: watch.CursorType(c.resource),
+				Filter:   watch.WatchEventFilter{SubResource: c.subresource},
 			}
 
 		}

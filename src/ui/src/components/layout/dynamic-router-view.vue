@@ -92,16 +92,12 @@
         overflow: hidden;
         position: relative;
         background-color: #fafbfd;
-        margin-right: 17px;
         z-index: 100;
-        ~ .main-layout {
-            margin-top: -53px;
-        }
     }
     .main-layout {
         position: relative;
         overflow: hidden;
-        height: 100%;
+        height: calc(100% - 53px);
         z-index: 99;
     }
     .main-scroller {
@@ -110,9 +106,7 @@
     }
     .main-views {
         position: relative;
-        height: calc(100% - 52px);
-        border-top: 1px solid $borderColor;
-        margin-top: 52px;
+        height: 100%;
         min-width: 1089px;
     }
 </style>

@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"time"
 
+	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/ssl"
 )
 
@@ -44,7 +45,7 @@ func (client *HttpClient) GetClient() *http.Client {
 }
 
 func (client *HttpClient) SetTlsNoVerity() error {
-	tlsConf := ssl.ClientTslConfNoVerity()
+	tlsConf := ssl.ClientTLSConfNoVerify()
 
 	trans := client.NewTransPort()
 	trans.TLSClientConfig = tlsConf
@@ -67,16 +68,14 @@ func (client *HttpClient) SetTlsVerityServer(caFile string) error {
 	return nil
 }
 
-func (client *HttpClient) SetTlsVerity(caFile, certFile, keyFile, passwd string) error {
-	client.caFile = caFile
-	client.certFile = certFile
-	client.keyFile = keyFile
-
+// SetTLSVerify set tls verify config
+func (client *HttpClient) SetTLSVerify(c *util.TLSClientConfig) error {
 	// load cert
-	tlsConf, err := ssl.ClientTLSConfVerity(caFile, certFile, keyFile, passwd)
+	tlsConf, err := ssl.ClientTLSConfVerity(c.CAFile, c.CertFile, c.KeyFile, c.Password)
 	if err != nil {
 		return err
 	}
+	tlsConf.InsecureSkipVerify = c.InsecureSkipVerify
 
 	client.SetTlsVerityConfig(tlsConf)
 
