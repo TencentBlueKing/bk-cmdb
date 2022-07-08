@@ -23,10 +23,10 @@
         <div class="config-item">
           <div class="item-label">
             <i18n path="已选择N个模块：" v-if="isModuleMode">
-              <span place="count">{{ids.length}}</span>
+              <template #count><span>{{ids.length}}</span></template>
             </i18n>
             <i18n path="已选择N个模板：" v-else-if="isTemplateMode">
-              <span place="count">{{ids.length}}</span>
+              <template #count><span>{{ids.length}}</span></template>
             </i18n>
           </div>
           <div class="item-content">

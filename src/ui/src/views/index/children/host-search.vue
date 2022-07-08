@@ -33,8 +33,8 @@
         </bk-button>
         <div class="picking-popover-content" slot="content">
           <i18n tag="p" path="检测到输入框中包含非标准IP格式字符串，请选择以XXX自动解析">
-            <span place="c1">&lt;{{$t('IP')}}&gt;</span>
-            <span place="c2">&lt;{{$t('固资编号')}}&gt;</span>
+            <template #c1><span>&lt;{{$t('IP')}}&gt;</span></template>
+            <template #c2><span>&lt;{{$t('固资编号')}}&gt;</span></template>
           </i18n>
           <div class="buttons">
             <bk-button theme="primary" size="small" outline v-test-id="'ipSearch'"

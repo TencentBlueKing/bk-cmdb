@@ -53,7 +53,7 @@
     <div class="right-column fl" v-bkloading="{ isLoading: $loading(request.region) }">
       <div class="right-options">
         <i18n class="selection-info" path="已选择">
-          <span class="selection-count" place="number">{{selection.length}}</span>
+          <template #number><span class="selection-count">{{selection.length}}</span></template>
         </i18n>
         <bk-link class="selection-clear" theme="primary" @click="handleClear">{{$t('清空')}}</bk-link>
       </div>

@@ -33,8 +33,8 @@
       <p class="result-title">{{$t('应用成功')}}</p>
       <p class="result-subtitle" v-if="fail.length === 0">{{$t('成功保存策略并应用到当前模块下主机')}}</p>
       <i18n class="result-stat" tag="p" path="应用结果">
-        <span class="result-count" place="success">{{success.length}}</span>
-        <span :class="['result-count', { fail: fail.length > 0 }]" place="fail">{{fail.length}}</span>
+        <template #success><span class="result-count">{{success.length}}</span></template>
+        <template #fail><span :class="['result-count', { fail: fail.length > 0 }]">{{fail.length}}</span></template>
       </i18n>
       <div class="result-options">
         <bk-button class="mr10" theme="primary" @click="handleEvent('return')">{{$t('返回列表')}}</bk-button>

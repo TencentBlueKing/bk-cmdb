@@ -20,7 +20,9 @@
     :title="$t('业务集预览')">
     <div class="content" v-bkloading="{ isLoading: $loading(requestId) }">
       <div class="content-head">
-        <i18n path="共N个业务"><em place="count" class="count">{{total}}</em></i18n>
+        <i18n path="共N个业务">
+          <template #count><em class="count">{{total}}</em></template>
+        </i18n>
         <bk-input class="search-input" clearable
           :value="keyword"
           right-icon="icon-search"

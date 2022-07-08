@@ -33,7 +33,7 @@
         <p class="rules-error" v-if="validateResult">
           <template v-if="validateResult.type === SET_TYPE.superset">
             <i18n path="唯一校验子集提示">
-              <span place="name">
+              <template #name>
                 <span class="rules-error-name"
                   v-for="(rule, index) in validateResult.rules"
                   :key="rule.id"
@@ -41,7 +41,7 @@
                   {{getValidateRuleName(rule)}}
                   <template v-if="index !== (validateResult.rules.length - 1)">、</template>
                 </span>
-              </span>
+              </template>
             </i18n>
           </template>
           <template v-else>{{$t('唯一校验超集提示')}}</template>

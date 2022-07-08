@@ -17,7 +17,9 @@
       <div class="update-options">
         <div class="option-label">
           <i18n path="同时更新失效主机">
-            <span place="invalid" class="has-tips" v-bk-tooltips="$t('属性当前值与目标值不一致的主机')">{{$t('-失效主机')}}</span>
+            <template #invalid>
+              <span class="has-tips" v-bk-tooltips="$t('属性当前值与目标值不一致的主机')">{{$t('-失效主机')}}</span>
+            </template>
           </i18n>
         </div>
         <bk-radio-group class="option-content" v-model="updateOption.changed">
@@ -37,11 +39,11 @@
               <i class="bk-cc-icon icon-cc-tips"></i>
             </span>
             <i18n path="冲突主机N台">
-              <em place="num" class="conflict-num">{{conflictNum}}</em>
+              <template #num><em class="conflict-num">{{conflictNum}}</em></template>
             </i18n>
           </span>
           <i18n path="主机总数N台">
-            <em place="num" class="check-num">{{totalNum}}</em>
+            <template #num><em class="check-num">{{totalNum}}</em></template>
           </i18n>
         </div>
       </div>

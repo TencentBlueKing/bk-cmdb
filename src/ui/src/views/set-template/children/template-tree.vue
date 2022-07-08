@@ -29,7 +29,7 @@
           <bk-popover v-if="serviceExistHost(service.id)">
             <i class="options-delete icon icon-cc-tips-close disabled"></i>
             <i18n path="该模块下有主机不可删除" tag="p" class="service-tips" slot="content">
-              <span place="link" @click="handleGoTopoBusiness(service)">{{$t('跳转查看')}}</span>
+              <template #link><span @click="handleGoTopoBusiness(service)">{{$t('跳转查看')}}</span></template>
             </i18n>
           </bk-popover>
           <i v-else class="options-delete icon icon-cc-tips-close" @click="handleDeleteService(index)"></i>

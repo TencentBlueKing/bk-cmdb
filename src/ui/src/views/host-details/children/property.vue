@@ -38,7 +38,9 @@
               <template v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
                 <span :id="`rule-${property.id}`">
                   <i18n path="已配置属性自动应用提示" v-if="hasRelatedRules(property)">
-                    <bk-button text place="link" @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
+                    <template #link>
+                      <bk-button text @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
+                    </template>
                   </i18n>
                   <span v-else>{{$t('系统限定不可修改')}}</span>
                 </span>
