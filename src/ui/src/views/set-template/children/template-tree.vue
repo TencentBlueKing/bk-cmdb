@@ -47,7 +47,7 @@
       header-position="left"
       :draggable="false"
       :mask-close="false"
-      :width="759"
+      :width="840"
       :title="dialog.title"
       v-model="dialog.visible"
       @after-leave="handleDialogClose">
