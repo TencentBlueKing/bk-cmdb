@@ -20,6 +20,8 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func instanceObjectIDMapping(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
@@ -39,10 +41,8 @@ func instanceObjectIDMapping(ctx context.Context, db dal.RDB, conf *upgrader.Con
 	}
 
 	index := types.Index{
-		Name: common.CCLogicIndexNamePrefix + "InstID",
-		Keys: map[string]int32{
-			common.BKInstIDField: 1,
-		},
+		Name:       common.CCLogicIndexNamePrefix + "InstID",
+		Keys:       bson.D{{common.BKInstIDField, 1}},
 		Background: true,
 		Unique:     true,
 	}

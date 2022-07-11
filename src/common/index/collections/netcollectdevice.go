@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -33,22 +35,22 @@ var commNetcollectDeviceIndexes = []types.Index{}
 var deprecatedNetcollectDeviceIndexes = []types.Index{
 	{
 		Name: "device_id_1",
-		Keys: map[string]int32{
-			"device_id": 1,
+		Keys: bson.D{{
+			"device_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "device_name_1",
-		Keys: map[string]int32{
-			"device_name": 1,
+		Keys: bson.D{{
+			"device_name", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_supplier_account_1",
-		Keys: map[string]int32{
-			"bk_supplier_account": 1,
+		Keys: bson.D{{
+			"bk_supplier_account", 1},
 		},
 		Background: true,
 	},

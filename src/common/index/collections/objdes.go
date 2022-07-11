@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -30,8 +32,8 @@ func init() {
 var commObjDesIndexes = []types.Index{
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "bkObjID",
-		Keys: map[string]int32{
-			common.BKObjIDField: 1,
+		Keys: bson.D{{
+			common.BKObjIDField, 1},
 		},
 		Unique: true,
 		PartialFilterExpression: map[string]interface{}{
@@ -40,8 +42,8 @@ var commObjDesIndexes = []types.Index{
 	},
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "bkObjName",
-		Keys: map[string]int32{
-			common.BKObjNameField: 1,
+		Keys: bson.D{{
+			common.BKObjNameField, 1},
 		},
 		Unique: true,
 		PartialFilterExpression: map[string]interface{}{
@@ -54,22 +56,22 @@ var commObjDesIndexes = []types.Index{
 var deprecatedObjDesIndexes = []types.Index{
 	{
 		Name: "bk_classification_id_1",
-		Keys: map[string]int32{
-			"bk_classification_id": 1,
+		Keys: bson.D{{
+			"bk_classification_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_supplier_account_1",
-		Keys: map[string]int32{
-			"bk_supplier_account": 1,
+		Keys: bson.D{{
+			"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_unique_id",
-		Keys: map[string]int32{
-			"id": 1,
+		Keys: bson.D{{
+			"id", 1},
 		},
 		Unique:     true,
 		Background: true,

@@ -22,8 +22,8 @@ import (
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
 
 func init() {
@@ -80,9 +80,9 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 	}
 
 	if common.LogoutHTTPSchemeHTTPS == input.HTTPScheme {
-		siteURL,err = cc.String("webServer.site.httpsDomainUrl")
+		siteURL, err = cc.String("webServer.site.httpsDomainUrl")
 	} else {
-		siteURL,err = cc.String("webServer.site.domainUrl")
+		siteURL, err = cc.String("webServer.site.domainUrl")
 	}
 	if err != nil {
 		siteURL = ""

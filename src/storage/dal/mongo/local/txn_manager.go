@@ -106,8 +106,9 @@ func (t *TxnManager) RemoveSessionKey(sessionID string) error {
 	return t.cache.Del(context.Background(), key).Err()
 }
 
-func (t *TxnManager) ReloadSession(sess mongo.Session, info *mongo.SessionInfo) (mongo.Session, error) {
-	err := mongo.CmdbReloadSession(sess, info)
+// ReloadSession is used to reset a created session's session id
+func (t *TxnManager) ReloadSession(sess mongo.Session, info *SessionInfo) (mongo.Session, error) {
+	err := CmdbReloadSession(sess, info)
 	if err != nil {
 		return nil, err
 	}
@@ -142,12 +143,12 @@ func (t *TxnManager) PrepareTransaction(cap *metadata.TxnCapable, cli *mongo.Cli
 	}
 
 	// reset the session info with the session id.
-	info := &mongo.SessionInfo{
+	info := &SessionInfo{
 		TxnNubmer: txnNumber,
 		SessionID: cap.SessionID,
 	}
 
-	err = mongo.CmdbReloadSession(sess, info)
+	err = CmdbReloadSession(sess, info)
 	if err != nil {
 		return nil, fmt.Errorf("reload transaction: %s failed, err: %v", cap.SessionID, err)
 	}
@@ -176,7 +177,7 @@ func (t *TxnManager) GetTxnContext(ctx context.Context, cli *mongo.Client) (cont
 	}
 
 	// prepare the session context, it tells the driver to run this within a transaction.
-	sessCtx := mongo.CmdbContextWithSession(ctx, session)
+	sessCtx := CmdbContextWithSession(ctx, session)
 
 	return sessCtx, session, true, nil
 }
@@ -237,7 +238,7 @@ func (t *TxnManager) AutoRunWithTxn(ctx context.Context, cli *mongo.Client, cmd 
 	}
 
 	// prepare the session context, it tells the driver to run this within a transaction.
-	sessCtx := mongo.CmdbContextWithSession(ctx, session)
+	sessCtx := CmdbContextWithSession(ctx, session)
 
 	// run the command and check error
 	err = cmd(sessCtx)

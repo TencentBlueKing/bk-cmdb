@@ -24,6 +24,8 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type attribute struct {
@@ -173,9 +175,9 @@ func addProcUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 	processUniqueIndexes := []types.Index{
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "svcInstID_bkProcName",
-			Keys: map[string]int32{
-				common.BKServiceInstanceIDField: 1,
-				common.BKProcessNameField:       1,
+			Keys: bson.D{
+				{common.BKServiceInstanceIDField, 1},
+				{common.BKProcessNameField, 1},
 			},
 			Unique:     true,
 			Background: true,
@@ -186,10 +188,10 @@ func addProcUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "svcInstID_bkFuncName_bkStartParamRegex",
-			Keys: map[string]int32{
-				common.BKServiceInstanceIDField: 1,
-				common.BKFuncName:               1,
-				common.BKStartParamRegex:        1,
+			Keys: bson.D{
+				{common.BKServiceInstanceIDField, 1},
+				{common.BKFuncName, 1},
+				{common.BKStartParamRegex, 1},
 			},
 			Unique:     true,
 			Background: true,

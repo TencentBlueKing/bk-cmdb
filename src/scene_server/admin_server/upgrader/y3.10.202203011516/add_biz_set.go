@@ -26,6 +26,8 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 var dataRows = map[string]*metadata.Attribute{
@@ -367,27 +369,23 @@ func addBizSetObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) err
 func addBizSetTableIndexes(ctx context.Context, db dal.RDB) error {
 	indexes := []types.Index{
 		{
-			Name: common.CCLogicUniqueIdxNamePrefix + "biz_set_id",
-			Keys: map[string]int32{
-				common.BKBizSetIDField: 1,
-			},
+			Name:       common.CCLogicUniqueIdxNamePrefix + "biz_set_id",
+			Keys:       bson.D{{common.BKBizSetIDField, 1}},
 			Background: true,
 			Unique:     true,
 		},
 		{
-			Name: common.CCLogicUniqueIdxNamePrefix + "biz_set_name",
-			Keys: map[string]int32{
-				common.BKBizSetNameField: 1,
-			},
+			Name:       common.CCLogicUniqueIdxNamePrefix + "biz_set_name",
+			Keys:       bson.D{{common.BKBizSetNameField, 1}},
 			Unique:     true,
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "biz_set_id_biz_set_name_owner_id",
-			Keys: map[string]int32{
-				common.BKBizSetIDField:   1,
-				common.BKBizSetNameField: 1,
-				common.BKOwnerIDField:    1,
+			Keys: bson.D{
+				{common.BKBizSetIDField, 1},
+				{common.BKBizSetNameField, 1},
+				{common.BKOwnerIDField, 1},
 			},
 			Background: true,
 		},

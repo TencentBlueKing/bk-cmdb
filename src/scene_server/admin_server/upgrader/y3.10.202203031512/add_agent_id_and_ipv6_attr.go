@@ -22,6 +22,8 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // addHostAgentIDAndIPv6Attr add host agent id and ipv6 attributes
@@ -218,9 +220,9 @@ func addHostAgentIDAndIPv6Index(ctx context.Context, db dal.RDB, conf *upgrader.
 	agentIDAndIPv6Indexes := []types.Index{
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkHostInnerIPv6_bkCloudID",
-			Keys: map[string]int32{
-				"bk_host_innerip_v6":  1,
-				common.BKCloudIDField: 1,
+			Keys: bson.D{{
+				"bk_host_innerip_v6", 1},
+				{common.BKCloudIDField, 1},
 			},
 			Unique:     true,
 			Background: true,

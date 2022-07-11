@@ -1,8 +1,9 @@
 
 IMAGE?=image_placeholder
 NPM?=npm
+PROJECT_PATH=$(shell cd ../;  pwd)
 
-include $(realpath $(firstword $(subst :, ,${GOPATH}))/src/configcenter/scripts/Makefile)
+include ../scripts/Makefile
 
 .PHONY:default
 default:

@@ -25,8 +25,8 @@ import (
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/middleware/user/plugins"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
 
 type publicUser struct {

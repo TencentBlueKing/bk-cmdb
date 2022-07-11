@@ -31,8 +31,8 @@ import (
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
 
 type Service struct {
@@ -41,7 +41,7 @@ type Service struct {
 	CacheCli redis.Client
 	*logics.Logics
 	Config  *options.Config
-	Session sessions.RedisStore
+	Session redis.RedisStore
 }
 
 func (s *Service) WebService() *gin.Engine {
