@@ -53,7 +53,9 @@
         <div class="empty-content">
           <img class="empty-image" src="../../../assets/images/empty-content.png">
           <i18n class="empty-tips" path="无服务模板提示">
-            <a class="empty-link" href="javascript:void(0)" place="link" @click="handleLinkClick">{{$t('去添加服务模板')}}</a>
+            <template #link>
+              <a class="empty-link" href="javascript:void(0)" @click="handleLinkClick">{{$t('去添加服务模板')}}</a>
+            </template>
           </i18n>
         </div>
       </li>

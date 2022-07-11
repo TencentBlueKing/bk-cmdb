@@ -14,7 +14,9 @@
   <div class="cloud-account-layout">
     <cmdb-tips class="cloud-account-tips" tips-key="cloud-account-tips">
       <i18n path="云账户提示语">
-        <bk-button text size="small" place="resource" style="padding: 0" @click="linkResource">{{$t('云资源')}}</bk-button>
+        <template #resource>
+          <bk-button text size="small" style="padding: 0" @click="linkResource">{{$t('云资源')}}</bk-button>
+        </template>
       </i18n>
     </cmdb-tips>
     <div class="cloud-account-options">

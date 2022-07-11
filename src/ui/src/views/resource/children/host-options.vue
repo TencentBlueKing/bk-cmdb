@@ -107,7 +107,7 @@
       @cancel="closeAssignDialog">
       <div class="assign-content" v-if="assign.show">
         <i18n class="assign-count" tag="div" path="已选择主机">
-          <span place="count">{{table.checked.length}}</span>
+          <template #count><span>{{table.checked.length}}</span></template>
         </i18n>
         <div class="assign-seleted">
           <p>{{assign.label}}</p>

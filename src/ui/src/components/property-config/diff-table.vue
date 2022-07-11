@@ -12,6 +12,7 @@
 
 <script lang="ts">
   import { defineComponent, PropType } from '@vue/composition-api'
+  import isEqual from 'lodash/isEqual'
 
   interface IPropertyDiff {
     id: number,
@@ -30,7 +31,7 @@
     },
     setup() {
       const getDiffType = (diff: IPropertyDiff) => {
-        if (diff.inst_value !== diff.template_value) {
+        if (!isEqual(diff.inst_value,  diff.template_value)) {
           return 'changed'
         }
       }

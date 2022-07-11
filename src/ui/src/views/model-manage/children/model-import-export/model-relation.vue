@@ -14,7 +14,9 @@
   <div class="model-relation">
     <div class="model-relation-header">
       <i18n path="X的关联关系">
-        <span place="model">{{ model.bk_obj_name }}（{{ model.bk_obj_id }}）</span>
+        <template #model>
+          <span>{{ model.bk_obj_name }}（{{ model.bk_obj_id }}）</span>
+        </template>
       </i18n>
     </div>
     <bk-table

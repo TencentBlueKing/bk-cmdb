@@ -15,23 +15,27 @@
   <span class="process-count-tips" v-else-if="row.service_template_id">
     <i class="tips-icon bk-icon icon-exclamation-circle"></i>
     <i18n class="tips-content" path="模板服务实例无进程提示">
-      <cmdb-auth class="tips-link" place="link"
-        :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
-        @click.native.stop
-        @click="redirectToTemplate">
-        {{$t('跳转添加并同步')}}
-      </cmdb-auth>
+      <template #link>
+        <cmdb-auth class="tips-link"
+          :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
+          @click.native.stop
+          @click="redirectToTemplate">
+          {{$t('跳转添加并同步')}}
+        </cmdb-auth>
+      </template>
     </i18n>
   </span>
   <span class="process-count-tips" v-else>
     <i class="tips-icon bk-icon icon-exclamation-circle"></i>
     <i18n class="tips-content" path="普通服务实例无进程提示">
-      <cmdb-auth class="tips-link" place="link"
-        :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
-        @click.native.stop
-        @click="handleAddProcess">
-        {{$t('立即添加')}}
-      </cmdb-auth>
+      <template #link>
+        <cmdb-auth class="tips-link"
+          :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }"
+          @click.native.stop
+          @click="handleAddProcess">
+          {{$t('立即添加')}}
+        </cmdb-auth>
+      </template>
     </i18n>
   </span>
 </template>

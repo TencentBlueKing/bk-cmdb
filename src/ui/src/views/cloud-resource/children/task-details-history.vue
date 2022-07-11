@@ -35,8 +35,8 @@
         </bk-table-column>
         <bk-table-column :label="$t('操作概要')" prop="bk_summary" width="200" show-overflow-tooltip>
           <i18n slot-scope="{ row }" path="新增N台主机，更新M台主机">
-            <span class="summary-count" place="new">{{getCount(row, 'new_add')}}</span>
-            <span class="summary-count" place="update">{{getCount(row, 'update')}}</span>
+            <template #new><span class="summary-count">{{getCount(row, 'new_add')}}</span></template>
+            <template #update><span class="summary-count">{{getCount(row, 'update')}}</span></template>
           </i18n>
         </bk-table-column>
         <bk-table-column :label="$t('状态')" prop="bk_sync_status">

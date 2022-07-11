@@ -17,8 +17,8 @@
     </div>
     <p class="result-main-text" :class="{ [`is-${data.status}`]: data.status }">
       <i18n path="模型导入结果提示">
-        <span class="succeed-item-count" place="modelCount">{{data.modelCount}}</span>
-        <span class="succeed-item-count" place="relationTypeCount">{{data.relationTypeCount}}</span>
+        <template #modelCount><span class="succeed-item-count">{{data.modelCount}}</span></template>
+        <template #relationTypeCount><span class="succeed-item-count">{{data.relationTypeCount}}</span></template>
       </i18n>
     </p>
   </div>

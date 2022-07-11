@@ -30,7 +30,7 @@
       <div class="wrapper-column wrapper-right fl">
         <div class="selected-count">
           <i18n path="已选择N台主机">
-            <span class="count" place="count">{{selected.length}}</span>
+            <template #count><span class="count">{{selected.length}}</span></template>
           </i18n>
         </div>
         <bk-table
