@@ -835,6 +835,25 @@ func (ps *ProcServer) updateSvcTempAllAttrs(kit *rest.Kit, id, bizID int64, prev
 		}
 	}
 
+	// delete service template attributes
+	if len(attrMap) > 0 {
+		deletedAttrIDs := make([]int64, 0)
+		for attrID := range attrMap {
+			deletedAttrIDs = append(deletedAttrIDs, attrID)
+		}
+
+		deleteOpt := &metadata.DeleteServTempAttrOption{
+			BizID:        bizID,
+			ID:           id,
+			AttributeIDs: deletedAttrIDs,
+		}
+		err := ps.CoreAPI.CoreService().Process().DeleteServiceTemplateAttribute(kit.Ctx, kit.Header, deleteOpt)
+		if err != nil {
+			blog.Errorf("delete service template attrs failed, opt: %+v, err: %v, rid: %s", deleteOpt, err, kit.Rid)
+			return err
+		}
+	}
+
 	// add service template attributes
 	if len(addedAttrs) > 0 {
 		addOpt := &metadata.CreateSvcTempAttrsOption{
@@ -861,25 +880,6 @@ func (ps *ProcServer) updateSvcTempAllAttrs(kit *rest.Kit, id, bizID int64, prev
 		err := ps.CoreAPI.CoreService().Process().UpdateServiceTemplateAttribute(kit.Ctx, kit.Header, updateOpt)
 		if err != nil {
 			blog.Errorf("update service template attrs failed, opt: %+v, err: %v, rid: %s", updateOpt, err, kit.Rid)
-			return err
-		}
-	}
-
-	// delete service template attributes
-	if len(attrMap) > 0 {
-		deletedAttrIDs := make([]int64, 0)
-		for attrID := range attrMap {
-			deletedAttrIDs = append(deletedAttrIDs, attrID)
-		}
-
-		deleteOpt := &metadata.DeleteServTempAttrOption{
-			BizID:        bizID,
-			ID:           id,
-			AttributeIDs: deletedAttrIDs,
-		}
-		err := ps.CoreAPI.CoreService().Process().DeleteServiceTemplateAttribute(kit.Ctx, kit.Header, deleteOpt)
-		if err != nil {
-			blog.Errorf("delete service template attrs failed, opt: %+v, err: %v, rid: %s", deleteOpt, err, kit.Rid)
 			return err
 		}
 	}
@@ -913,6 +913,15 @@ func (ps *ProcServer) updateSvcTempAllProcTemps(kit *rest.Kit, id, bizID int64, 
 		}
 	}
 
+	// delete service template procTemps
+	for procTempID := range procTempMap {
+		err := ps.CoreAPI.CoreService().Process().DeleteProcessTemplate(kit.Ctx, kit.Header, procTempID)
+		if err != nil {
+			blog.Errorf("delete process template %d failed, err: %v, rid: %s", procTempID, err, kit.Rid)
+			return err
+		}
+	}
+
 	// add service template procTemps
 	for _, procTemp := range addedProcTemps {
 		_, err := ps.CoreAPI.CoreService().Process().CreateProcessTemplate(kit.Ctx, kit.Header, &procTemp)
@@ -933,15 +942,6 @@ func (ps *ProcServer) updateSvcTempAllProcTemps(kit *rest.Kit, id, bizID int64, 
 		_, err := ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(kit.Ctx, kit.Header, procTemp.ID, property)
 		if err != nil {
 			blog.Errorf("update process template(%+v) failed, err: %v, rid: %s", procTemp, err, kit.Rid)
-			return err
-		}
-	}
-
-	// delete service template procTemps
-	for procTempID := range procTempMap {
-		err := ps.CoreAPI.CoreService().Process().DeleteProcessTemplate(kit.Ctx, kit.Header, procTempID)
-		if err != nil {
-			blog.Errorf("delete process template %d failed, err: %v, rid: %s", procTempID, err, kit.Rid)
 			return err
 		}
 	}

@@ -298,6 +298,11 @@ type DeleteHostRequest struct {
 	HostIDArr     []int64 `json:"bk_host_ids"`
 }
 
+// ListServiceCategoryOption list service category option
+type ListServiceCategoryOption struct {
+	BizID int64 `json:"bk_biz_id"`
+}
+
 type OneServiceCategoryResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceCategory `json:"data"`

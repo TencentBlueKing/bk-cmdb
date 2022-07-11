@@ -21,6 +21,12 @@ type RspID struct {
 	ID int64 `json:"id"`
 }
 
+// CreateResult create result
+type CreateResult struct {
+	BaseResp `json:",inline"`
+	Data     RspID `json:"data"`
+}
+
 // RspIDs response id array
 type RspIDs struct {
 	IDs []int64 `json:"ids"`

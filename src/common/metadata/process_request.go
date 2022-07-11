@@ -82,6 +82,12 @@ type GetSvcTempAllInfoOption struct {
 	BizID int64 `json:"bk_biz_id"`
 }
 
+// GetSvcTempAllInfoResult get service template all info result
+type GetSvcTempAllInfoResult struct {
+	BaseResp `json:",inline"`
+	Data     *SvcTempAllInfo `json:"data"`
+}
+
 // SvcTempAllInfo service template all info
 type SvcTempAllInfo struct {
 	ID                int64                 `json:"id"`

@@ -262,13 +262,18 @@ func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
 		return err
 	}
 
-	taskCond := &metadata.DeleteOption{
-		Condition: setCond,
-	}
-	if err = s.clientSet.TaskServer().Task().DeleteTask(kit.Ctx, kit.Header, taskCond); err != nil {
-		blog.Errorf("failed to delete set sync task message failed, bizID: %d, setIDs: %#v, err: %v, rid: %s",
-			bizID, setIDs, err, kit.Rid)
-		return err
+	if len(setIDs) > 0 {
+		taskCond := &metadata.DeleteOption{
+			Condition: mapstr.MapStr{
+				common.BKInstIDField:   mapstr.MapStr{common.BKDBIN: setIDs},
+				common.BKTaskTypeField: common.SyncSetTaskFlag,
+			},
+		}
+		if err = s.clientSet.TaskServer().Task().DeleteTask(kit.Ctx, kit.Header, taskCond); err != nil {
+			blog.Errorf("failed to delete set sync task message failed, bizID: %d, setIDs: %#v, err: %v, rid: %s",
+				bizID, setIDs, err, kit.Rid)
+			return err
+		}
 	}
 
 	// clear the sets
