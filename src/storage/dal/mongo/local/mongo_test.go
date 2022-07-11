@@ -137,16 +137,16 @@ func TestIndex(t *testing.T) {
 	createIndexes := map[string]types.Index{
 		"test_one": types.Index{
 			Name: "test_one",
-			Keys: bson.D{{"a", int32(1)}, {"b", int32(1)}},
+			Keys: bson.D{{"a", 1}, {"b", 1}},
 		},
 		"test_backgroud": types.Index{
 			Name:       "test_backgroud",
-			Keys:       bson.D{{"aa", int32(1)}, {"bb", int32(-1)}},
+			Keys:       bson.D{{"aa", 1}, {"bb", -1}},
 			Background: true,
 		},
 		"test_unique": types.Index{
 			Name:   "test_unique",
-			Keys:   bson.D{{"aa", int32(1)}, {"bb", int32(1)}},
+			Keys:   bson.D{{"aa", 1}, {"bb", 1}},
 			Unique: true,
 		},
 	}
