@@ -104,7 +104,7 @@ func (p *processOperation) validateServiceTemplateAttrs(kit *rest.Kit, bizID int
 	}
 
 	// validate attribute values
-	for _, attr := range attrs {
+	for index, attr := range attrs {
 		attribute, exists := attrMap[attr.AttributeID]
 		if !exists {
 			blog.Errorf("module attribute %d not exists, rid: %s", attr.AttributeID, kit.Rid)
@@ -117,6 +117,20 @@ func (p *processOperation) validateServiceTemplateAttrs(kit *rest.Kit, bizID int
 			blog.Errorf("validate attribute value failed, attr: %+v, err: %v, rid: %s", attr, ccErr, kit.Rid)
 			return ccErr
 		}
+
+		// transfer to time value, because the field of the module instance is a time type, it needs to be the same.
+		if attribute.PropertyType != common.FieldTypeTime {
+			continue
+		}
+
+		val, err := util.ConvToTime(attr.PropertyValue)
+		if err != nil {
+			blog.Errorf("can not transfer property value to time type, attr: %+v, val: %v, rid: %s", attr,
+				attr.PropertyValue, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "attributes")
+		}
+
+		attrs[index].PropertyValue = val
 	}
 
 	return nil
