@@ -15,6 +15,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -634,6 +635,10 @@ func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Proper
 	hostFields := make([]string, 0)
 	for _, property := range fields {
 		hostFields = append(hostFields, property.ID)
+	}
+
+	if input.ExportCond.Page.Limit <= 0 || input.ExportCond.Page.Limit > common.BKMaxOnceExportLimit {
+		return nil, errors.New(defLang.Languagef("export_page_limit_err", common.BKMaxOnceExportLimit))
 	}
 
 	hostInfo := make([]mapstr.MapStr, 0)
