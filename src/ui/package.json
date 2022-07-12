@@ -41,6 +41,7 @@
     "md5": "2.2.1",
     "moment": "2.22.2",
     "plotly.js": "1.51.3",
+    "postcss-gap-properties": "3.0.3",
     "qs": "^6.9.4",
     "readable-stream": "^3.6.0",
     "sortablejs": "1.8.4",

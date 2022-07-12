@@ -15,6 +15,7 @@
     :placeholder="placeholder || $t('请输入浮点数')"
     :value="value"
     :disabled="disabled"
+    :precision="precision"
     v-bind="$attrs"
     @blur="handleInput"
     @enter="handleEnter"
@@ -54,6 +55,10 @@
       inputType: {
         type: String,
         default: 'text'
+      },
+      precision: {
+        type: Number,
+        default: 5
       }
     },
     computed: {

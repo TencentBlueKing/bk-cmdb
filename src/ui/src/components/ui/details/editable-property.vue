@@ -73,7 +73,7 @@
 
         let eventName = 'change'
 
-        if (['singlechar', 'int', 'float'].includes(type)) {
+        if (['singlechar'].includes(type)) {
           eventName = 'enter'
         }
 
@@ -81,7 +81,7 @@
           eventName = 'on-selected'
         }
 
-        if (['objuser'].includes(type)) {
+        if (['objuser', 'int', 'float'].includes(type)) {
           eventName = 'blur'
         }
 
