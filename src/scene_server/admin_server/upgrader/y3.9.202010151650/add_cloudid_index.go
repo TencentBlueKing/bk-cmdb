@@ -20,12 +20,14 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func addCloudIDIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	index := types.Index{
-		Keys:       map[string]int32{"bk_cloud_id": 1},
+		Keys:       bson.D{{"bk_cloud_id", 1}},
 		Name:       "bk_cloud_id_1",
 		Unique:     false,
 		Background: true,

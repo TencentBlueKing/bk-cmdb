@@ -153,7 +153,7 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 
 	c := cron.New()
 	spec := lgc.timerSpec // 从配置文件读取的时间
-	_, err := c.AddFunc(spec, func() {
+	err := c.AddFunc(spec, func() {
 		disableOperationStatistic, err := cc.Bool("operationServer.disableOperationStatistic")
 		if err != nil {
 			blog.Error("can not find config operationServer.disableOperationStatistic, err: %v", err)

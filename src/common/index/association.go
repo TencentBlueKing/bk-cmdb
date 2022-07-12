@@ -15,6 +15,8 @@ package index
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 /*
@@ -25,41 +27,37 @@ var (
 	associationDefaultIndexes = []types.Index{
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkObjId_bkInstID",
-			Keys: map[string]int32{
-				"bk_obj_id":  1,
-				"bk_inst_id": 1,
+			Keys: bson.D{
+				{"bk_obj_id", 1},
+				{"bk_inst_id", 1},
 			},
 			Background: true,
 		},
 		{
-			Name: common.CCLogicUniqueIdxNamePrefix + "id",
-			Keys: map[string]int32{
-				"id": 1,
-			},
+			Name:       common.CCLogicUniqueIdxNamePrefix + "id",
+			Keys:       bson.D{{"id", 1}},
 			Unique:     true,
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkAsstObjId_bkAsstInstId",
-			Keys: map[string]int32{
-				"bk_asst_obj_id":  1,
-				"bk_asst_inst_id": 1,
+			Keys: bson.D{
+				{"bk_asst_obj_id", 1},
+				{"bk_asst_inst_id", 1},
 			},
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "bkAsstID",
-			Keys: map[string]int32{
-				"bk_asst_id": 1,
-			},
+			Name:       common.CCLogicIndexNamePrefix + "bkAsstID",
+			Keys:       bson.D{{"bk_asst_id", 1}},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkInstID_bkAsstInstID_bkObjAsstID",
-			Keys: map[string]int32{
-				common.BKInstIDField:             1,
-				common.BKAsstInstIDField:         1,
-				common.AssociationObjAsstIDField: 1,
+			Keys: bson.D{
+				{common.BKInstIDField, 1},
+				{common.BKAsstInstIDField, 1},
+				{common.AssociationObjAsstIDField, 1},
 			},
 			Unique:     true,
 			Background: true,

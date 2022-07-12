@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -30,8 +32,8 @@ func init() {
 var commPlatBaseIndexes = []types.Index{
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "bkCloudName",
-		Keys: map[string]int32{
-			common.BKCloudNameField: 1,
+		Keys: bson.D{{
+			common.BKCloudNameField, 1},
 		},
 		Unique:     true,
 		Background: true,
@@ -45,15 +47,15 @@ var commPlatBaseIndexes = []types.Index{
 var deprecatedPlatBaseIndexes = []types.Index{
 	{
 		Name: "bk_supplier_account_1",
-		Keys: map[string]int32{
-			"bk_supplier_account": 1,
+		Keys: bson.D{{
+			"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "vpcID",
-		Keys: map[string]int32{
-			"bk_vpc_id": 1,
+		Keys: bson.D{{
+			"bk_vpc_id", 1},
 		},
 		Background: true,
 	},

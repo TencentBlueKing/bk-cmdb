@@ -23,8 +23,8 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/web_server/middleware/user"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
 
 // LogOutUser log out user

@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -30,7 +32,7 @@ func init() {
 var commModuleHostConfigIndexes = []types.Index{
 	{
 		Name:       "bkcc_idx_bkBizID_bkHostID",
-		Keys:       map[string]int32{"bk_biz_id": 1, "bk_host_id": 1},
+		Keys:       bson.D{{"bk_biz_id", 1}, {"bk_host_id", 1}},
 		Background: true,
 	},
 }
@@ -39,53 +41,53 @@ var commModuleHostConfigIndexes = []types.Index{
 var deprecatedModuleHostConfigIndexes = []types.Index{
 	{
 		Name: "bk_biz_id_1",
-		Keys: map[string]int32{
-			"bk_biz_id": 1,
+		Keys: bson.D{{
+			"bk_biz_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_host_id_1",
-		Keys: map[string]int32{
-			"bk_host_id": 1,
+		Keys: bson.D{{
+			"bk_host_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_module_id_1",
-		Keys: map[string]int32{
-			"bk_module_id": 1,
+		Keys: bson.D{{
+			"bk_module_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_set_id_1",
-		Keys: map[string]int32{
-			"bk_set_id": 1,
+		Keys: bson.D{{
+			"bk_set_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_module_id_1_bk_biz_id_1",
-		Keys: map[string]int32{
-			"bk_module_id": 1,
-			"bk_biz_id":    1,
+		Keys: bson.D{
+			{"bk_module_id", 1},
+			{"bk_biz_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_set_id_1_bk_biz_id_1",
-		Keys: map[string]int32{
-			"bk_set_id": 1,
-			"bk_biz_id": 1,
+		Keys: bson.D{
+			{"bk_set_id", 1},
+			{"bk_biz_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_unique_moduleID_hostID",
-		Keys: map[string]int32{
-			"bk_module_id": 1,
-			"bk_host_id":   1,
+		Keys: bson.D{
+			{"bk_module_id", 1},
+			{"bk_host_id", 1},
 		},
 		Unique:     true,
 		Background: true,
