@@ -101,6 +101,7 @@ const createSideslider = () => {
           is-show={ state.visible }
           width={ 700 }
           title={ state.title }
+          transfer={ true }
           before-close={ beforeClose }
           { ...{ on: { 'update:isShow': close } } }>
           <content-component slot="content"></content-component>
