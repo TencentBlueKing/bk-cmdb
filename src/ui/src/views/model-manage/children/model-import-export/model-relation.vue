@@ -25,7 +25,7 @@
       v-bind="tableAttrs"
       :data="relations"
       class="model-relation-table"
-      row-key="bk_asst_id"
+      row-key="bk_obj_asst_id"
       @select-all="handleSelect"
       @select="handleSelect"
     >
@@ -97,7 +97,7 @@
       const handleSelect = (selectedRelations) => {
         const unselectedRelations = relations.value
           .filter(relation => !selectedRelations
-            .some(selectedRelation => relation.bk_asst_id === selectedRelation.bk_asst_id))
+            .some(selectedRelation => relation.bk_obj_asst_id === selectedRelation.bk_obj_asst_id))
 
         if (unselectedRelations.length > 0) {
           toRef(excludedRelations, modelRef.value.bk_obj_id).value = unselectedRelations
@@ -143,7 +143,7 @@
           nextTick(() => {
             relations.value.forEach((relation) => {
               const isSelected = !modelExcludedRelations
-                ?.some(excludedRelation => excludedRelation.id === relation.id)
+                ?.some(excludedRelation => excludedRelation.bk_obj_asst_id === relation.bk_obj_asst_id)
               tableRef.value.toggleRowSelection(relation, isSelected)
             })
           })
