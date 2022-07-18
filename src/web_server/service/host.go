@@ -643,9 +643,15 @@ func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Proper
 
 	hostInfo := make([]mapstr.MapStr, 0)
 	start := input.ExportCond.Page.Start
+	limit := input.ExportCond.Page.Limit
+	count := 1
 	hostCount := input.ExportCond.Page.Limit + input.ExportCond.Page.Start
 	for {
-		input.ExportCond.Page.Limit = common.BKMaxExportLimit
+		if limit > common.BKMaxExportLimit*count {
+			input.ExportCond.Page.Limit = common.BKMaxExportLimit
+		} else {
+			input.ExportCond.Page.Limit = limit - common.BKMaxExportLimit*(count-1)
+		}
 		input.ExportCond.Page.Start = start
 		hostData, err := s.Logics.GetHostData(appID, input.HostIDArr, hostFields, input.ExportCond, header, defLang)
 		if err != nil {
@@ -655,6 +661,7 @@ func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Proper
 		hostInfo = append(hostInfo, hostData...)
 
 		start += common.BKMaxExportLimit
+		count += 1
 		if start >= hostCount {
 			break
 		}
