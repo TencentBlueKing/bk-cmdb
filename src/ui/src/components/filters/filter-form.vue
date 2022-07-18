@@ -110,7 +110,7 @@
             theme="light"
             trigger="manual"
             :width="280"
-            :z-index="1002"
+            :z-index="99999"
             :tippy-options="{
               interactive: true,
               hideOnClick: false,
