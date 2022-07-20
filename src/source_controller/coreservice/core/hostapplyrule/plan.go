@@ -404,30 +404,97 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 	return plan, nil
 }
 
+func getModuleIDsAndSrvTempIDs(kit *rest.Kit, modules []metadata.ModuleInst) (map[int64]struct{}, []int64,
+	map[int64][]int64, errors.CCErrorCoder) {
+
+	moduleIDs := make([]int64, 0)
+
+	// list of modules that enable the host to automatically apply the configuration
+	haveHostApplyModuleIDs := make([]int64, 0)
+
+	// the corresponding module does not have the service template ids configured by the host application
+	noHostApplySrvTempIDs := make([]int64, 0)
+
+	// correspondence between service template id and module list
+	srvTempModuleIDsMap := make(map[int64][]int64)
+
+	// the list of modules that enable the host apply and the corresponding
+	// service template's list of modules that enable the host apply
+	enableModuleMap := make(map[int64]struct{})
+
+	for _, module := range modules {
+		if module.HostApplyEnabled {
+			haveHostApplyModuleIDs = append(haveHostApplyModuleIDs, module.ModuleID)
+		} else {
+			noHostApplySrvTempIDs = append(noHostApplySrvTempIDs, module.ServiceTemplateID)
+			srvTempModuleIDsMap[module.ServiceTemplateID] = append(srvTempModuleIDsMap[module.ServiceTemplateID],
+				module.ModuleID)
+		}
+	}
+
+	filter := map[string]interface{}{
+		common.BKFieldID:             map[string]interface{}{common.BKDBIN: noHostApplySrvTempIDs},
+		common.HostApplyEnabledField: true,
+	}
+	serviceTemplates := make([]metadata.ServiceTemplate, 0)
+	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(filter).Fields(common.BKFieldID).
+		All(kit.Ctx, &serviceTemplates); err != nil {
+		blog.Errorf("get serviceTemplate failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
+		return enableModuleMap, []int64{}, srvTempModuleIDsMap, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	serviceTemplateIDs := make([]int64, 0)
+
+	for _, serviceTemplate := range serviceTemplates {
+		serviceTemplateIDs = append(serviceTemplateIDs, serviceTemplate.ID)
+	}
+	for _, serviceTemplateID := range serviceTemplateIDs {
+		if _, ok := srvTempModuleIDsMap[serviceTemplateID]; !ok {
+			delete(srvTempModuleIDsMap, serviceTemplateID)
+		}
+	}
+
+	for _, module := range modules {
+		if !module.HostApplyEnabled {
+			if util.InArray(module.ServiceTemplateID, serviceTemplateIDs) {
+				moduleIDs = append(moduleIDs, module.ModuleID)
+			}
+		}
+	}
+	moduleIDs = append(moduleIDs, haveHostApplyModuleIDs...)
+	for _, id := range moduleIDs {
+		enableModuleMap[id] = struct{}{}
+	}
+	return enableModuleMap, haveHostApplyModuleIDs, srvTempModuleIDsMap, nil
+}
+
 // RunHostApplyOnHosts run host apply rule on specified host
 func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relations []metadata.ModuleHost) (
 	metadata.MultipleHostApplyResult, errors.CCErrorCoder) {
 
 	result := metadata.MultipleHostApplyResult{HostResults: make([]metadata.HostApplyResult, 0)}
+
 	moduleIDs := make([]int64, 0)
 	for _, item := range relations {
 		moduleIDs = append(moduleIDs, item.ModuleID)
 	}
+
 	modules := make([]metadata.ModuleInst, 0)
-	moduleFilter := map[string]interface{}{
-		common.BKModuleIDField:       map[string]interface{}{common.BKDBIN: moduleIDs},
-		common.HostApplyEnabledField: true,
-	}
-	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).Fields(common.BKModuleIDField).
+	moduleFilter := map[string]interface{}{common.BKModuleIDField: map[string]interface{}{common.BKDBIN: moduleIDs}}
+
+	fields := []string{common.BKModuleIDField, common.BKServiceTemplateIDField, common.HostApplyEnabledField}
+	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).Fields(fields...).
 		All(kit.Ctx, &modules)
 	if err != nil {
 		blog.Errorf("search modules info failed, filter: %s, err: %v, rid: %s", moduleFilter, err, kit.Rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-	enableModuleMap := make(map[int64]struct{})
-	for _, module := range modules {
-		enableModuleMap[module.ModuleID] = struct{}{}
+
+	enableModuleMap, haveHostApplyIDs, srvTemplateIDMap, cErr := getModuleIDsAndSrvTempIDs(kit, modules)
+	if err != nil {
+		return result, cErr
 	}
+
 	host2Modules := make(map[int64][]int64)
 	for _, relation := range relations {
 		if _, exist := enableModuleMap[relation.ModuleID]; !exist {
@@ -443,26 +510,45 @@ func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relation
 	for hostID, moduleIDs := range host2Modules {
 		hostModules = append(hostModules, metadata.Host2Modules{
 			HostID:    hostID,
-			ModuleIDs: moduleIDs,
-		})
+			ModuleIDs: moduleIDs})
 	}
+
+	serviceTemplateIDs := make([]int64, 0)
+	for serviceTemplateID := range srvTemplateIDMap {
+		serviceTemplateIDs = append(serviceTemplateIDs, serviceTemplateID)
+	}
+
 	listHostApplyRuleOption := metadata.ListHostApplyRuleOption{
-		ModuleIDs: moduleIDs,
-		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+		ModuleIDs:          haveHostApplyIDs,
+		ServiceTemplateIDs: serviceTemplateIDs,
+		Page:               metadata.BasePage{Limit: common.BKNoLimit},
 	}
 	rules, ccErr := p.ListHostApplyRule(kit, bizID, listHostApplyRuleOption)
 	if ccErr != nil {
 		blog.Errorf("list host apply rule failed, opt: %v, err: %v, rid: %s", listHostApplyRuleOption, ccErr, kit.Rid)
 		return result, ccErr
 	}
+
+	finalRules := make([]metadata.HostApplyRule, 0)
+	for _, rule := range rules.Info {
+		if rule.ServiceTemplateID != 0 {
+			for _, moduleID := range srvTemplateIDMap[rule.ServiceTemplateID] {
+				rule.ModuleID = moduleID
+				finalRules = append(finalRules, rule)
+			}
+		} else {
+			finalRules = append(finalRules, rule)
+		}
+	}
+
 	planOption := metadata.HostApplyPlanOption{
-		Rules:       rules.Info,
+		Rules:       finalRules,
 		HostModules: hostModules,
 	}
 
 	planResult, ccErr := p.GenerateApplyPlan(kit, bizID, planOption)
 	if ccErr != nil {
-		blog.ErrorJSON("generate apply plan failed, option: %v, err: %v, rid: %s", planOption, ccErr, kit.Rid)
+		blog.Errorf("generate apply plan failed, option: %v, err: %v, rid: %s", planOption, ccErr, kit.Rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
