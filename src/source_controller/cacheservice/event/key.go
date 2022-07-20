@@ -380,3 +380,7 @@ func (k Key) ShardingCollection(objID, supplierAccount string) string {
 
 	return common.GetObjectInstTableName(objID, supplierAccount)
 }
+
+func (k Key) SupplierAccount(doc []byte) string {
+	return gjson.GetBytes(doc, common.BkSupplierAccount).String()
+}

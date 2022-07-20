@@ -369,12 +369,13 @@ func parseEvent(key event.Key, e *types.Event, oidDetailMap map[oidCollKey][]byt
 	}
 
 	chainNode := &watch.ChainNode{
-		ID:          id,
-		ClusterTime: e.ClusterTime,
-		Oid:         e.Oid,
-		EventType:   watch.ConvertOperateType(e.OperationType),
-		Token:       e.Token.Data,
-		Cursor:      currentCursor,
+		ID:              id,
+		ClusterTime:     e.ClusterTime,
+		Oid:             e.Oid,
+		EventType:       watch.ConvertOperateType(e.OperationType),
+		Token:           e.Token.Data,
+		Cursor:          currentCursor,
+		SupplierAccount: key.SupplierAccount(e.DocBytes),
 	}
 
 	if instID > 0 {

@@ -162,13 +162,14 @@ func parseInstAsstEvent(key event.Key, e *types.Event, oidDetailMap map[oidCollK
 	}
 
 	chainNode := &watch.ChainNode{
-		ID:          id,
-		Oid:         oid,
-		ClusterTime: e.ClusterTime,
-		EventType:   watch.ConvertOperateType(e.OperationType),
-		Token:       e.Token.Data,
-		Cursor:      currentCursor,
-		InstanceID:  instAsstID,
+		ID:              id,
+		Oid:             oid,
+		ClusterTime:     e.ClusterTime,
+		EventType:       watch.ConvertOperateType(e.OperationType),
+		Token:           e.Token.Data,
+		Cursor:          currentCursor,
+		InstanceID:      instAsstID,
+		SupplierAccount: key.SupplierAccount(e.DocBytes),
 	}
 
 	objID := gjson.GetBytes(e.DocBytes, common.BKObjIDField).String()
