@@ -407,16 +407,16 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 func getModuleIDsAndSrvTempIDs(kit *rest.Kit, modules []metadata.ModuleInst) (map[int64]struct{}, []int64,
 	map[int64][]int64, errors.CCErrorCoder) {
 
-	// moduleIDs stored is the corresponding service
-	// template that has enabled host automatic application.
-	// The module itself has enabled host automatic application.
-	moduleIDs := make([]int64, 0)
+	srvTemplateIDs := make([]int64, 0)
+	moduleIDHostApplyEnabledMap := make(map[int64]bool)
 
-	// list of valid host auto-apply module configurations
-	haveHostApplyModuleIDs := make([]int64, 0)
-
-	// correspondence between service template id and module list
-	srvTempModuleIDsMap := make(map[int64][]int64)
+	for _, module := range modules {
+		if module.ServiceTemplateID != 0 {
+			srvTemplateIDs = append(srvTemplateIDs, module.ServiceTemplateID)
+		}
+		moduleIDHostApplyEnabledMap[module.ModuleID] = module.HostApplyEnabled
+	}
+	existSrvTempIDsMap := make(map[int64]struct{})
 
 	// the list of modules that are automatically applied
 	// to the host, including the modules that are automatically
@@ -426,59 +426,43 @@ func getModuleIDsAndSrvTempIDs(kit *rest.Kit, modules []metadata.ModuleInst) (ma
 	// store the correspondence between templates and modules
 	srvTempModulesMap := make(map[int64][]int64)
 
-	srvTemplateIDs := make([]int64, 0)
-
-	moduleIDHostApplyEnabledMap := make(map[int64]bool)
-	for _, module := range modules {
-		srvTempModulesMap[module.ServiceTemplateID] = append(srvTempModulesMap[module.ServiceTemplateID],
-			module.ModuleID)
-		if module.ServiceTemplateID != 0 {
-			srvTemplateIDs = append(srvTemplateIDs, module.ServiceTemplateID)
+	if len(srvTemplateIDs) > 0 {
+		filter := map[string]interface{}{
+			common.BKFieldID:             map[string]interface{}{common.BKDBIN: srvTemplateIDs},
+			common.HostApplyEnabledField: true,
 		}
-		moduleIDHostApplyEnabledMap[module.ModuleID] = module.HostApplyEnabled
-	}
-
-	filter := map[string]interface{}{
-		common.BKFieldID:             map[string]interface{}{common.BKDBIN: srvTemplateIDs},
-		common.HostApplyEnabledField: true,
-	}
-	serviceTemplates := make([]metadata.ServiceTemplate, 0)
-	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(filter).Fields(common.BKFieldID).
-		All(kit.Ctx, &serviceTemplates); err != nil {
-		blog.Errorf("get serviceTemplate failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
-		return enableModuleMap, []int64{}, srvTempModuleIDsMap, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-
-	serviceTemplateIDs := make([]int64, 0)
-
-	for _, serviceTemplate := range serviceTemplates {
-		serviceTemplateIDs = append(serviceTemplateIDs, serviceTemplate.ID)
-	}
-
-	for _, serviceTemplateID := range serviceTemplateIDs {
-		if ids, ok := srvTempModulesMap[serviceTemplateID]; ok {
-			moduleIDs = append(moduleIDs, ids...)
-			srvTempModuleIDsMap[serviceTemplateID] = ids
+		serviceTemplates := make([]metadata.ServiceTemplate, 0)
+		if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(filter).Fields(common.BKFieldID).
+			All(kit.Ctx, &serviceTemplates); err != nil {
+			blog.Errorf("get serviceTemplate failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
+			return enableModuleMap, []int64{}, srvTempModulesMap, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
-		delete(srvTempModulesMap, serviceTemplateID)
+		for _, serviceTemplate := range serviceTemplates {
+			existSrvTempIDsMap[serviceTemplate.ID] = struct{}{}
+
+		}
 	}
+
+	// list of valid host auto-apply module configurations
+	haveHostApplyModuleIDs := make([]int64, 0)
 
 	// srvTempModulesMap: at present, there is a module without a template, or the host
 	// automatic application of the template corresponding to the module is turned off
-	for _, modules := range srvTempModulesMap {
-		for _, moduleID := range modules {
-			if moduleIDHostApplyEnabledMap[moduleID] {
-				haveHostApplyModuleIDs = append(haveHostApplyModuleIDs, moduleID)
-			}
+	for _, module := range modules {
+		if _, ok := existSrvTempIDsMap[module.ServiceTemplateID]; ok {
+			srvTempModulesMap[module.ServiceTemplateID] = append(srvTempModulesMap[module.ServiceTemplateID],
+				module.ModuleID)
+			enableModuleMap[module.ModuleID] = struct{}{}
+
+			continue
+		}
+		if moduleIDHostApplyEnabledMap[module.ModuleID] {
+			enableModuleMap[module.ModuleID] = struct{}{}
+			haveHostApplyModuleIDs = append(haveHostApplyModuleIDs, module.ModuleID)
 		}
 	}
 
-	moduleIDs = append(moduleIDs, haveHostApplyModuleIDs...)
-	for _, id := range moduleIDs {
-		enableModuleMap[id] = struct{}{}
-	}
-
-	return enableModuleMap, haveHostApplyModuleIDs, srvTempModuleIDsMap, nil
+	return enableModuleMap, haveHostApplyModuleIDs, srvTempModulesMap, nil
 }
 
 // getFinalRules If there are multiple target modules to be transferred, the configuration values in the template
@@ -488,34 +472,38 @@ func (p *hostApplyRule) getFinalRules(kit *rest.Kit, bizID int64, haveHostApplyI
 
 	finalRules := make([]metadata.HostApplyRule, 0)
 
-	srvTempRuleOp := metadata.ListHostApplyRuleOption{
-		ServiceTemplateIDs: serviceTemplateIDs,
-		Page:               metadata.BasePage{Limit: common.BKNoLimit},
-	}
-	srvTempRules, ccErr := p.ListHostApplyRule(kit, bizID, srvTempRuleOp)
-	if ccErr != nil {
-		blog.Errorf("list service template host apply rule failed, opt: %v, err: %v, rid: %s", srvTempRuleOp,
-			ccErr, kit.Rid)
-		return finalRules, ccErr
-	}
+	if len(serviceTemplateIDs) > 0 {
+		srvTempRuleOp := metadata.ListHostApplyRuleOption{
+			ServiceTemplateIDs: serviceTemplateIDs,
+			Page:               metadata.BasePage{Limit: common.BKNoLimit},
+		}
+		srvTempRules, ccErr := p.ListHostApplyRule(kit, bizID, srvTempRuleOp)
+		if ccErr != nil {
+			blog.Errorf("list service template host apply rule failed, opt: %v, err: %v, rid: %s", srvTempRuleOp,
+				ccErr, kit.Rid)
+			return finalRules, ccErr
+		}
 
-	for _, rule := range srvTempRules.Info {
-		for _, moduleID := range srvTemplateIDMap[rule.ServiceTemplateID] {
-			rule.ModuleID = moduleID
-			finalRules = append(finalRules, rule)
+		for _, rule := range srvTempRules.Info {
+			for _, moduleID := range srvTemplateIDMap[rule.ServiceTemplateID] {
+				rule.ModuleID = moduleID
+				finalRules = append(finalRules, rule)
+			}
 		}
 	}
 
-	moduleRuleOp := metadata.ListHostApplyRuleOption{
-		ModuleIDs: haveHostApplyIDs,
-		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+	if len(haveHostApplyIDs) > 0 {
+		moduleRuleOp := metadata.ListHostApplyRuleOption{
+			ModuleIDs: haveHostApplyIDs,
+			Page:      metadata.BasePage{Limit: common.BKNoLimit},
+		}
+		moduleRules, ccErr := p.ListHostApplyRule(kit, bizID, moduleRuleOp)
+		if ccErr != nil {
+			blog.Errorf("list module host apply rule failed, opt: %v, err: %v, rid: %s", moduleRuleOp, ccErr, kit.Rid)
+			return finalRules, ccErr
+		}
+		finalRules = append(finalRules, moduleRules.Info...)
 	}
-	moduleRules, ccErr := p.ListHostApplyRule(kit, bizID, moduleRuleOp)
-	if ccErr != nil {
-		blog.Errorf("list module host apply rule failed, opt: %v, err: %v, rid: %s", moduleRuleOp, ccErr, kit.Rid)
-		return finalRules, ccErr
-	}
-	finalRules = append(finalRules, moduleRules.Info...)
 
 	return finalRules, nil
 }
@@ -573,6 +561,10 @@ func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relation
 	finalRules, cErr := p.getFinalRules(kit, bizID, haveHostApplyIDs, serviceTemplateIDs, srvTemplateIDMap)
 	if cErr != nil {
 		return result, cErr
+	}
+
+	if len(finalRules) == 0 {
+		return result, nil
 	}
 
 	planOption := metadata.HostApplyPlanOption{
