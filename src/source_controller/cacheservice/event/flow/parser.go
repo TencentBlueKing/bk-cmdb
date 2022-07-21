@@ -284,6 +284,46 @@ func getDeletedContainerDetail(db dal.DB, podID int64, rid string) ([]interface{
 	return containers, false, nil
 }
 
+// parseKubeWorkloadEvent parse kube workload event, its sub resource is its workload kind
+func parseKubeWorkloadEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oidCollKey][]byte, id uint64,
+	rid string) (*watch.ChainNode, []byte, bool, error) {
+
+	chainNode, details, retry, err := parseEvent(db, key, e, oidDetailMap, id, rid)
+	if err != nil {
+		return nil, nil, retry, err
+	}
+
+	// ignore invalid event
+	if chainNode == nil {
+		return nil, nil, false, nil
+	}
+
+	// get workload sub resource by event collection
+	switch e.Collection {
+	case kubetypes.BKTableNameBaseDeployment:
+		chainNode.SubResource = []string{kubetypes.KubeDeployment}
+	case kubetypes.BKTableNameBaseStatefulSet:
+		chainNode.SubResource = []string{kubetypes.KubeStatefulSet}
+	case kubetypes.BKTableNameBaseDaemonSet:
+		chainNode.SubResource = []string{kubetypes.KubeDaemonSet}
+	case kubetypes.BKTableNameBaseGameStatefulSet:
+		chainNode.SubResource = []string{kubetypes.KubeGameStatefulSet}
+	case kubetypes.BKTableNameBaseGameDeployment:
+		chainNode.SubResource = []string{kubetypes.KubeGameDeployment}
+	case kubetypes.BKTableNameBaseCronJob:
+		chainNode.SubResource = []string{kubetypes.KubeCronJob}
+	case kubetypes.BKTableNameBaseJob:
+		chainNode.SubResource = []string{kubetypes.KubeJob}
+	case kubetypes.BKTableNameBasePodWorkload:
+		chainNode.SubResource = []string{kubetypes.KubePodWorkload}
+	default:
+		blog.Errorf("kube workload event coll %s is invalid, doc: %s, rid: %s", e.Collection, e.DocBytes, rid)
+		return nil, nil, false, nil
+	}
+
+	return chainNode, details, false, nil
+}
+
 // parseEventToNodeAndDetail parse validated event into db chain nodes to store in db and details to store in redis
 func parseEventToNodeAndDetail(key event.Key, e *types.Event, id uint64, rid string) (*watch.ChainNode, []byte, bool,
 	error) {

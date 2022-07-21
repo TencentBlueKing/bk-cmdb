@@ -274,6 +274,19 @@ func (e *Event) runKubeNamespace(ctx context.Context) error {
 	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }
 
+func (e *Event) runKubeWorkload(ctx context.Context) error {
+	opts := flowOptions{
+		key:         event.KubeWorkloadKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
+	}
+
+	return newWorkloadFlow(ctx, opts, getDeleteEventDetails, parseKubeWorkloadEvent)
+}
+
 func (e *Event) runKubePod(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.KubePodKey,

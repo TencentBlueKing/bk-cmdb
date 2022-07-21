@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/stream/types"
 
+	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -389,13 +390,21 @@ func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 		Oper:        e.OperationType,
 	}
 
-	if curType == ObjectBase || curType == MainlineInstance || curType == InstAsst {
+	switch curType {
+	case ObjectBase, MainlineInstance, InstAsst:
 		if instID <= 0 {
 			return "", errors.New("invalid instance id")
 		}
 
 		// add unique key for common object instance.
 		hCursor.UniqKey = strconv.FormatInt(instID, 10)
+	case KubeWorkload:
+		if instID <= 0 {
+			return "", errors.New("invalid kube workload id")
+		}
+
+		// add unique key for kube workload, composed by workload type and id.
+		hCursor.UniqKey = fmt.Sprintf("%s:%d", gjson.GetBytes(e.DocBytes, kubetypes.KindField).String(), instID)
 	}
 
 	hCursorEncode, err := hCursor.Encode()
