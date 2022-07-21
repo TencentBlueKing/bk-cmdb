@@ -642,29 +642,23 @@ func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Proper
 	}
 
 	hostInfo := make([]mapstr.MapStr, 0)
-	start := input.ExportCond.Page.Start
-	limit := input.ExportCond.Page.Limit
-	count := 1
 	hostCount := input.ExportCond.Page.Limit + input.ExportCond.Page.Start
-	for {
-		if limit > common.BKMaxExportLimit*count {
-			input.ExportCond.Page.Limit = common.BKMaxExportLimit
-		} else {
-			input.ExportCond.Page.Limit = limit - common.BKMaxExportLimit*(count-1)
-		}
+	limit := input.ExportCond.Page.Limit
+	for start := input.ExportCond.Page.Start; start < hostCount; start = start + common.BKMaxExportLimit {
 		input.ExportCond.Page.Start = start
+		if limit > common.BKMaxExportLimit {
+			input.ExportCond.Page.Limit = common.BKMaxExportLimit
+			limit = limit - common.BKMaxExportLimit
+		} else {
+			input.ExportCond.Page.Limit = limit
+		}
+
 		hostData, err := s.Logics.GetHostData(appID, input.HostIDArr, hostFields, input.ExportCond, header, defLang)
 		if err != nil {
 			blog.Errorf("get host info failed, err: %v, rid: %s", err, rid)
 			return nil, err
 		}
 		hostInfo = append(hostInfo, hostData...)
-
-		start += common.BKMaxExportLimit
-		count += 1
-		if start >= hostCount {
-			break
-		}
 	}
 
 	if len(hostInfo) == 0 {
