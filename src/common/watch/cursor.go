@@ -116,6 +116,16 @@ func (ct CursorType) ToInt() int {
 		return 14
 	case BizSetRelation:
 		return 15
+	case KubeCluster:
+		return 16
+	case KubeNode:
+		return 17
+	case KubeNamespace:
+		return 18
+	case KubeWorkload:
+		return 19
+	case KubePod:
+		return 20
 	default:
 		return -1
 	}
@@ -151,6 +161,16 @@ func (ct *CursorType) ParseInt(typ int) {
 		*ct = BizSet
 	case 15:
 		*ct = BizSetRelation
+	case 16:
+		*ct = KubeCluster
+	case 17:
+		*ct = KubeNode
+	case 18:
+		*ct = KubeNamespace
+	case 19:
+		*ct = KubeWorkload
+	case 20:
+		*ct = KubePod
 	default:
 		*ct = UnknownType
 	}
@@ -159,12 +179,8 @@ func (ct *CursorType) ParseInt(typ int) {
 // ListCursorTypes returns all support CursorTypes.
 func ListCursorTypes() []CursorType {
 	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase, Process, ProcessInstanceRelation,
-		HostIdentifier, MainlineInstance, InstAsst, BizSet, BizSetRelation}
-}
-
-// ListEventCallbackCursorTypes returns all support CursorTypes for event callback.
-func ListEventCallbackCursorTypes() []CursorType {
-	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase, Process, ProcessInstanceRelation}
+		HostIdentifier, MainlineInstance, InstAsst, BizSet, BizSetRelation, KubeCluster, KubeNode, KubeNamespace,
+		KubeWorkload, KubePod}
 }
 
 // Cursor is a self-defined token which is corresponding to the mongodb's resume token.
@@ -351,6 +367,16 @@ func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 		curType = InstAsst
 	case common.BKTableNameBaseBizSet:
 		curType = BizSet
+	case types.BKTableNameBaseCluster:
+		curType = KubeCluster
+	case types.BKTableNameBaseNode:
+		curType = KubeNode
+	case types.BKTableNameBaseNamespace:
+		curType = KubeNamespace
+	case types.BKTableNameBaseWorkload:
+		curType = KubeWorkload
+	case types.BKTableNameBasePod:
+		curType = KubePod
 	default:
 		blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.ID())
 		return "", fmt.Errorf("unsupported cursor type collection: %s", coll)

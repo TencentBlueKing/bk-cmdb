@@ -306,6 +306,123 @@ func GenBizSetRelationDetail(bizSetID int64, bizIDsStr string) string {
 	return fmt.Sprintf(`{"bk_biz_set_id":%d,"bk_biz_ids":[%s]}`, bizSetID, bizIDsStr)
 }
 
+// kubeFields kube related resource id and name fields, used for validation
+var kubeFields = []string{types.IDField, types.NameField}
+
+// KubeClusterKey kube cluster event watch key
+var KubeClusterKey = Key{
+	namespace:  watchCacheNamespace + types.KubeCluster,
+	collection: types.BKTableNameBaseCluster,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, kubeFields...)
+		for idx := range kubeFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", kubeFields[idx])
+			}
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		return gjson.GetBytes(doc, types.NameField).String()
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, types.IDField).Int()
+	},
+}
+
+// KubeNodeKey kube node event watch key
+var KubeNodeKey = Key{
+	namespace:  watchCacheNamespace + types.KubeNode,
+	collection: types.BKTableNameBaseNode,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, kubeFields...)
+		for idx := range kubeFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", kubeFields[idx])
+			}
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		return gjson.GetBytes(doc, types.NameField).String()
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, types.IDField).Int()
+	},
+}
+
+// KubeNamespaceKey kube namespace event watch key
+var KubeNamespaceKey = Key{
+	namespace:  watchCacheNamespace + types.KubeNamespace,
+	collection: types.BKTableNameBaseNamespace,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, kubeFields...)
+		for idx := range kubeFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", kubeFields[idx])
+			}
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		return gjson.GetBytes(doc, types.NameField).String()
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, types.IDField).Int()
+	},
+}
+
+// KubeWorkloadKey kube workload event watch key
+var KubeWorkloadKey = Key{
+	namespace:  watchCacheNamespace + types.KubeWorkload,
+	collection: types.BKTableNameBaseWorkload,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, kubeFields...)
+		for idx := range kubeFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", kubeFields[idx])
+			}
+		}
+
+		if fields[0].Int() <= 0 {
+			return fmt.Errorf("invalid workload id: %s, should be integer type and > 0", fields[0].Raw)
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		return gjson.GetBytes(doc, types.NameField).String()
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, types.IDField).Int()
+	},
+}
+
+// KubePodKey kube Pod event watch key
+var KubePodKey = Key{
+	namespace:  watchCacheNamespace + types.KubePod,
+	collection: types.BKTableNameBasePod,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, kubeFields...)
+		for idx := range kubeFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", kubeFields[idx])
+			}
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		return gjson.GetBytes(doc, types.NameField).String()
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, types.IDField).Int()
+	},
+}
+
 type Key struct {
 	namespace string
 	// the watching db collection name

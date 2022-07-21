@@ -234,3 +234,42 @@ func (e *Event) runBizSet(ctx context.Context) error {
 
 	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }
+func (e *Event) runKubeCluster(ctx context.Context) error {
+	opts := flowOptions{
+		key:         event.KubeClusterKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
+	}
+
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+}
+
+func (e *Event) runKubeNode(ctx context.Context) error {
+	opts := flowOptions{
+		key:         event.KubeNodeKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
+	}
+
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+}
+
+func (e *Event) runKubeNamespace(ctx context.Context) error {
+	opts := flowOptions{
+		key:         event.KubeNamespaceKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
+	}
+
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+}
+
