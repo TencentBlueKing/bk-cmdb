@@ -72,6 +72,18 @@ const (
 	InstAsst CursorType = "inst_asst"
 	// BizSetRelation a mixed event type containing biz set & biz events, which are converted to their relation events
 	BizSetRelation CursorType = "biz_set_relation"
+
+	// kube related cursor types
+	// KubeCluster cursor type
+	KubeCluster CursorType = "kube_cluster"
+	// KubeNode cursor type
+	KubeNode CursorType = "kube_node"
+	// KubeNamespace cursor type
+	KubeNamespace CursorType = "kube_namespace"
+	// KubeWorkload cursor type, including all workloads(e.g. deployment) with their type specified in sub-resource
+	KubeWorkload CursorType = "kube_workload"
+	// KubePod cursor type, its event detail is pod info with containers in it
+	KubePod CursorType = "kube_pod"
 )
 
 func (ct CursorType) ToInt() int {

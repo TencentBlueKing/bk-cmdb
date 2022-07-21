@@ -404,6 +404,11 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.WatchMainlineInstance: WatchMainlineInstanceEvent,
 		meta.WatchInstAsst:         WatchInstAsstEvent,
 		meta.WatchBizSet:           WatchBizSetEvent,
+		meta.WatchKubeCluster:      WatchKubeClusterEvent,
+		meta.WatchKubeNode:         WatchKubeNodeEvent,
+		meta.WatchKubeNamespace:    WatchKubeNamespaceEvent,
+		meta.WatchKubeWorkload:     WatchKubeWorkloadEvent,
+		meta.WatchKubePod:          WatchKubePodEvent,
 	},
 	meta.UserCustom: {
 		meta.Find:   Skip,
