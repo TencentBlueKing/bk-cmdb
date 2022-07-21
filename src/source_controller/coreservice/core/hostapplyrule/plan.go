@@ -407,33 +407,39 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 func getModuleIDsAndSrvTempIDs(kit *rest.Kit, modules []metadata.ModuleInst) (map[int64]struct{}, []int64,
 	map[int64][]int64, errors.CCErrorCoder) {
 
+	// moduleIDs stored is the corresponding service
+	// template that has enabled host automatic application.
+	// The module itself has enabled host automatic application.
 	moduleIDs := make([]int64, 0)
 
-	// list of modules that enable the host to automatically apply the configuration
+	// list of valid host auto-apply module configurations
 	haveHostApplyModuleIDs := make([]int64, 0)
-
-	// the corresponding module does not have the service template ids configured by the host application
-	noHostApplySrvTempIDs := make([]int64, 0)
 
 	// correspondence between service template id and module list
 	srvTempModuleIDsMap := make(map[int64][]int64)
 
-	// the list of modules that enable the host apply and the corresponding
-	// service template's list of modules that enable the host apply
+	// the list of modules that are automatically applied
+	// to the host, including the modules that are automatically
+	// applied to the corresponding template host.
 	enableModuleMap := make(map[int64]struct{})
 
+	// store the correspondence between templates and modules
+	srvTempModulesMap := make(map[int64][]int64)
+
+	srvTemplateIDs := make([]int64, 0)
+
+	moduleIDHostApplyEnabledMap := make(map[int64]bool)
 	for _, module := range modules {
-		if module.HostApplyEnabled {
-			haveHostApplyModuleIDs = append(haveHostApplyModuleIDs, module.ModuleID)
-		} else {
-			noHostApplySrvTempIDs = append(noHostApplySrvTempIDs, module.ServiceTemplateID)
-			srvTempModuleIDsMap[module.ServiceTemplateID] = append(srvTempModuleIDsMap[module.ServiceTemplateID],
-				module.ModuleID)
+		srvTempModulesMap[module.ServiceTemplateID] = append(srvTempModulesMap[module.ServiceTemplateID],
+			module.ModuleID)
+		if module.ServiceTemplateID != 0 {
+			srvTemplateIDs = append(srvTemplateIDs, module.ServiceTemplateID)
 		}
+		moduleIDHostApplyEnabledMap[module.ModuleID] = module.HostApplyEnabled
 	}
 
 	filter := map[string]interface{}{
-		common.BKFieldID:             map[string]interface{}{common.BKDBIN: noHostApplySrvTempIDs},
+		common.BKFieldID:             map[string]interface{}{common.BKDBIN: srvTemplateIDs},
 		common.HostApplyEnabledField: true,
 	}
 	serviceTemplates := make([]metadata.ServiceTemplate, 0)
@@ -448,24 +454,70 @@ func getModuleIDsAndSrvTempIDs(kit *rest.Kit, modules []metadata.ModuleInst) (ma
 	for _, serviceTemplate := range serviceTemplates {
 		serviceTemplateIDs = append(serviceTemplateIDs, serviceTemplate.ID)
 	}
+
 	for _, serviceTemplateID := range serviceTemplateIDs {
-		if _, ok := srvTempModuleIDsMap[serviceTemplateID]; !ok {
-			delete(srvTempModuleIDsMap, serviceTemplateID)
+		if ids, ok := srvTempModulesMap[serviceTemplateID]; ok {
+			moduleIDs = append(moduleIDs, ids...)
+			srvTempModuleIDsMap[serviceTemplateID] = ids
 		}
+		delete(srvTempModulesMap, serviceTemplateID)
 	}
 
-	for _, module := range modules {
-		if !module.HostApplyEnabled {
-			if util.InArray(module.ServiceTemplateID, serviceTemplateIDs) {
-				moduleIDs = append(moduleIDs, module.ModuleID)
+	// srvTempModulesMap: at present, there is a module without a template, or the host
+	// automatic application of the template corresponding to the module is turned off
+	for _, modules := range srvTempModulesMap {
+		for _, moduleID := range modules {
+			if moduleIDHostApplyEnabledMap[moduleID] {
+				haveHostApplyModuleIDs = append(haveHostApplyModuleIDs, moduleID)
 			}
 		}
 	}
+
 	moduleIDs = append(moduleIDs, haveHostApplyModuleIDs...)
 	for _, id := range moduleIDs {
 		enableModuleMap[id] = struct{}{}
 	}
+
 	return enableModuleMap, haveHostApplyModuleIDs, srvTempModuleIDsMap, nil
+}
+
+// getFinalRules If there are multiple target modules to be transferred, the configuration values in the template
+// will be preferred. If a property exists in multiple templates, the value will be randomly selected
+func (p *hostApplyRule) getFinalRules(kit *rest.Kit, bizID int64, haveHostApplyIDs, serviceTemplateIDs []int64,
+	srvTemplateIDMap map[int64][]int64) ([]metadata.HostApplyRule, errors.CCErrorCoder) {
+
+	finalRules := make([]metadata.HostApplyRule, 0)
+
+	srvTempRuleOp := metadata.ListHostApplyRuleOption{
+		ServiceTemplateIDs: serviceTemplateIDs,
+		Page:               metadata.BasePage{Limit: common.BKNoLimit},
+	}
+	srvTempRules, ccErr := p.ListHostApplyRule(kit, bizID, srvTempRuleOp)
+	if ccErr != nil {
+		blog.Errorf("list service template host apply rule failed, opt: %v, err: %v, rid: %s", srvTempRuleOp,
+			ccErr, kit.Rid)
+		return finalRules, ccErr
+	}
+
+	for _, rule := range srvTempRules.Info {
+		for _, moduleID := range srvTemplateIDMap[rule.ServiceTemplateID] {
+			rule.ModuleID = moduleID
+			finalRules = append(finalRules, rule)
+		}
+	}
+
+	moduleRuleOp := metadata.ListHostApplyRuleOption{
+		ModuleIDs: haveHostApplyIDs,
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+	}
+	moduleRules, ccErr := p.ListHostApplyRule(kit, bizID, moduleRuleOp)
+	if ccErr != nil {
+		blog.Errorf("list module host apply rule failed, opt: %v, err: %v, rid: %s", moduleRuleOp, ccErr, kit.Rid)
+		return finalRules, ccErr
+	}
+	finalRules = append(finalRules, moduleRules.Info...)
+
+	return finalRules, nil
 }
 
 // RunHostApplyOnHosts run host apply rule on specified host
@@ -518,27 +570,9 @@ func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relation
 		serviceTemplateIDs = append(serviceTemplateIDs, serviceTemplateID)
 	}
 
-	listHostApplyRuleOption := metadata.ListHostApplyRuleOption{
-		ModuleIDs:          haveHostApplyIDs,
-		ServiceTemplateIDs: serviceTemplateIDs,
-		Page:               metadata.BasePage{Limit: common.BKNoLimit},
-	}
-	rules, ccErr := p.ListHostApplyRule(kit, bizID, listHostApplyRuleOption)
-	if ccErr != nil {
-		blog.Errorf("list host apply rule failed, opt: %v, err: %v, rid: %s", listHostApplyRuleOption, ccErr, kit.Rid)
-		return result, ccErr
-	}
-
-	finalRules := make([]metadata.HostApplyRule, 0)
-	for _, rule := range rules.Info {
-		if rule.ServiceTemplateID != 0 {
-			for _, moduleID := range srvTemplateIDMap[rule.ServiceTemplateID] {
-				rule.ModuleID = moduleID
-				finalRules = append(finalRules, rule)
-			}
-		} else {
-			finalRules = append(finalRules, rule)
-		}
+	finalRules, cErr := p.getFinalRules(kit, bizID, haveHostApplyIDs, serviceTemplateIDs, srvTemplateIDMap)
+	if cErr != nil {
+		return result, cErr
 	}
 
 	planOption := metadata.HostApplyPlanOption{
