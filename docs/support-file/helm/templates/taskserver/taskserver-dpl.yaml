@@ -1,0 +1,111 @@
+{{- if .Values.taskserver.enabled }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-taskserver"
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    component: taskserver
+spec:
+  replicas: {{ .Values.taskserver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: taskserver
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        component: taskserver
+        values-hash: "{{ toYaml .Values | sha256sum | trunc 63 }}"
+      {{- with .Values.taskserver.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.taskserver.podAnnotations }}
+        {{ toYaml .Values.taskserver.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: taskserver
+        image: {{ .Values.image.registry }}/{{ .Values.taskserver.image.repository }}:v{{ default .Chart.AppVersion .Values.taskserver.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        workingDir: {{ .Values.taskserver.workDir }}
+        command:
+        - ./cmdb_taskserver
+        - --addrport=$(POD_IP):{{ .Values.taskserver.port }}
+        {{- if .Values.taskserver.configDir }}
+        - --config={{ .Values.taskserver.configDir }}
+        {{- end }}
+        - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        {{- if .Values.taskserver.command.logDir }}
+        - --log-dir={{ .Values.taskserver.command.logDir }}
+        {{- end }}
+        - --v={{ .Values.taskserver.command.logLevel }}
+        - --logtostderr={{ .Values.taskserver.command.logToStdErr }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.taskserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.taskserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        {{- if .Values.taskserver.resources }}
+        resources: {{ toYaml .Values.taskserver.resources | nindent 10 }}
+        {{- end }}
+
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        {{- if .Values.taskserver.env }}
+          {{ toYaml .Values.taskserver.env | indent 10 }}
+        {{- end }}
+
+        ports:
+        - containerPort: {{ .Values.taskserver.port }}
+
+        volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.taskserver.configDir }}
+          - name: configures
+            mountPath: {{ .Values.taskserver.configDir }}
+          {{- end }}
+      volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.taskserver.configDir }}
+        - name: configures
+          configMap:
+            name: {{ .Release.Name }}-taskserver-configures
+        {{- end }}
+
+      {{- with .Values.taskserver.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.taskserver.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.taskserver.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+{{- end }}

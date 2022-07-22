@@ -1,100 +1,147 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
-  <cmdb-sticky-layout class="sync-set-layout" ref="instancesInfo"
-    v-bkloading="{ isLoading: $loading(requestIds.diffTemplateAndInstances) }">
-    <template v-if="noInfo">
-      <div class="no-content">
-        <img src="../../assets/images/no-content.png" alt="no-content">
-        <p>{{$t('无集群模板更新信息')}}</p>
-        <bk-button theme="primary" @click="handleGoback">{{$t('返回')}}</bk-button>
-      </div>
-    </template>
-    <template v-else-if="isLatestInfo">
-      <div class="no-content">
-        <img src="../../assets/images/latest-data.png" alt="no-content">
-        <p>{{$t('最新集群模板信息')}}</p>
-        <bk-button theme="primary" @click="handleGoback">{{$t('返回')}}</bk-button>
-      </div>
-    </template>
-    <template v-else-if="diffList.length">
-      <div class="main">
-        <div class="title clearfix">
-          <p class="fl" v-if="isSingleSync">{{$t('请确认单个实例更改信息')}}</p>
-          <i18n path="请确认实例更改信息"
-            tag="p"
-            class="fl"
-            v-else>
-            <span place="count">{{setInstancesId.length}}</span>
-          </i18n>
-          <div class="tips fr">
-            <span class="mr30">
-              <i class="dot"></i>
-              {{$t('新增模块')}}
-            </span>
-            <span class="mr30">
-              <i class="dot delete"></i>
-              {{$t('删除模块')}}
-            </span>
-            <bk-checkbox class="expand-all"
-              v-if="!isSingleSync"
-              v-model="expandAll"
-              @change="handleExpandAll">
-              {{$t('全部展开')}}
-            </bk-checkbox>
-          </div>
-        </div>
-        <div class="instance-list">
-          <set-instance class="instance-item"
-            ref="setInstance"
-            v-for="(instance, index) in diffList"
-            :key="instance.bk_set_id"
-            :instance="instance"
-            :icon-close="diffList.length > 1"
-            :expand="index === 0"
-            :module-host-count="moduleHostCount"
-            @close="handleCloseInstance">
-          </set-instance>
-        </div>
-      </div>
-    </template>
-    <div class="options" slot="footer" slot-scope="{ sticky }"
-      v-if="!noInfo && !isLatestInfo && diffList.length"
-      :class="{ 'is-sticky': sticky }">
-      <cmdb-auth :auth="{ type: $OPERATION.U_TOPO, relation: [bizId] }">
-        <template slot-scope="{ disabled }">
-          <bk-button v-if="canSyncStatus()"
-            class="mr10"
-            theme="primary"
-            :loading="$loading(requestIds.syncTemplateToInstances)"
-            :disabled="disabled"
-            @click="handleConfirmSync">
-            {{$t('确认同步')}}
-          </bk-button>
-          <span class="text-btn mr10" v-else v-bk-tooltips="$t('请先删除不可同步的实例')">{{$t('确认同步')}}</span>
+  <cmdb-sticky-layout class="set-sync-layout"
+    v-bkloading="{ isLoading: $loading([requestIds.properties, requestIds.topopath]) }">
+
+    <div class="layout-top">
+      <p class="title" v-if="isSingleSync">{{$t('请确认单个实例更改信息')}}</p>
+      <i18n path="请确认实例更改信息"
+        tag="p"
+        class="title"
+        v-else>
+        <template #count>
+          <span>{{setIds.length}}</span>
         </template>
-      </cmdb-auth>
-      <bk-button class="mr10" @click="handleGoback">{{$t('取消')}}</bk-button>
+      </i18n>
+      <div class="type-legend">
+        <span class="legend-item">
+          <i class="dot changed"></i>
+          {{$t('变更')}}
+        </span>
+        <span class="legend-item">
+          <i class="dot added"></i>
+          {{$t('新增')}}
+        </span>
+        <span class="legend-item">
+          <i class="dot removed"></i>
+          {{$t('删除')}}
+        </span>
+      </div>
     </div>
+
+    <div class="layout-main">
+      <div class="set-instance-container" v-if="isSingleSync">
+        <set-instance class="instance-item"
+          v-bkloading="{ isLoading: singleSet.loading }"
+          :property-diff="singleSet.propertyDiff"
+          :module-diff="singleSet.moduleDiff"
+          :module-host-count="singleSet.moduleHostCount">
+        </set-instance>
+      </div>
+      <div class="set-instance-group" v-else>
+        <cmdb-collapse class="set-instance-container"
+          v-for="diff in diffList"
+          :label="setGroup[diff.setId].topoPath"
+          :collapse="setGroup[diff.setId].collapse"
+          arrow-type="filled"
+          :key="diff.setId"
+          @collapse-change="handleSetCollapseChange(diff.setId, $event)">
+          <template #title>
+            <div class="collapse-title">
+              <span class="topopath">{{setGroup[diff.setId].topoPath}}</span>
+              <span class="deny-sync-tips" v-if="diff.denySync">
+                <i class="bk-icon icon-exclamation"></i>{{$t('不可同步')}}
+              </span>
+              <i class="bk-icon icon-close"
+                v-bk-tooltips="$t('本次不同步')"
+                @click.stop="handleRemove(diff)">
+              </i>
+            </div>
+          </template>
+          <set-instance class="set-instance-item"
+            v-bkloading="{ isLoading: setGroup[diff.setId].loading }"
+            collapse-size="small"
+            :property-diff="setGroup[diff.setId].propertyDiff"
+            :module-diff="setGroup[diff.setId].moduleDiff"
+            :module-host-count="setGroup[diff.setId].moduleHostCount">
+          </set-instance>
+        </cmdb-collapse>
+      </div>
+    </div>
+
+    <template #footer="{ sticky }">
+      <div :class="['layout-footer', { 'is-sticky': sticky }]">
+        <cmdb-auth
+          :auth="{ type: $OPERATION.U_TOPO, relation: [bizId] }"
+          v-bk-tooltips="{ content: $t(isSingleSync ? '不可同步' : '请先删除不可同步的实例'), disabled: !denySync }">
+          <template slot-scope="{ disabled }">
+            <bk-button
+              theme="primary"
+              :loading="$loading(requestIds.syncTemplateToInstances)"
+              :disabled="disabled || denySync"
+              @click="handleConfirmSync">
+              {{$t('确认同步')}}
+            </bk-button>
+          </template>
+        </cmdb-auth>
+        <bk-button @click="handleGoback">{{$t('取消')}}</bk-button>
+      </div>
+    </template>
   </cmdb-sticky-layout>
 </template>
 
 <script>
   import { mapGetters } from 'vuex'
-  import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+  import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_SET_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
   import setInstance from './set-instance'
+  import setTemplateService from '@/services/set-template'
+
   export default {
     components: {
       setInstance
     },
     data() {
+      const id = `${this.$store.getters['objectBiz/bizId']}_${this.$route.params.setTemplateId}`
+      let { syncIdMap } = this.$store.state.setFeatures
+      const sessionSyncIdMap = sessionStorage.getItem('setSyncIdMap')
+      if (!Object.keys(syncIdMap).length && sessionSyncIdMap) {
+        syncIdMap = JSON.parse(sessionSyncIdMap)
+        this.$store.commit('setFeatures/resetSyncIdMap', syncIdMap)
+      }
+      const setIds = syncIdMap[id] || []
+
+      const setGroup = {}
+      setIds.forEach((id) => {
+        setGroup[id] = {
+          propertyDiff: [], // 属性对比数据
+          moduleDiff: {}, // 拓扑模板实例对比数据
+          topoPath: '', // 拓扑路径
+          collapse: true, // 是否展开
+          loaded: false, // 是否加载过
+          loading: false, // 是否加载中
+          moduleHostCount: {} // 集群下模块实例的主机数
+        }
+      })
+
       return {
-        expandAll: false,
+        setIds,
+        setProperties: [],
+        setGroup,
         diffList: [],
-        noInfo: false,
-        isLatestInfo: false,
-        templateName: '',
-        moduleHostCount: {},
         requestIds: {
-          diffTemplateAndInstances: Symbol(),
+          topopath: Symbol(),
+          properties: Symbol(),
           syncTemplateToInstances: Symbol()
         }
       }
@@ -104,86 +151,106 @@
       setTemplateId() {
         return this.$route.params.setTemplateId
       },
-      setInstancesId() {
-        const id = `${this.bizId}_${this.setTemplateId}`
-        let { syncIdMap } = this.$store.state.setFeatures
-        const sessionSyncIdMap = sessionStorage.getItem('setSyncIdMap')
-        if (!Object.keys(syncIdMap).length && sessionSyncIdMap) {
-          syncIdMap = JSON.parse(sessionSyncIdMap)
-          this.$store.commit('setFeatures/resetSyncIdMap', syncIdMap)
-        }
-        return syncIdMap[id] || []
-      },
       isSingleSync() {
-        return !(this.setInstancesId.length > 1)
+        return this.diffList?.length === 1
+      },
+      singleSet() {
+        const setId = this.diffList?.[0]?.setId
+        return this.setGroup[setId] || {}
+      },
+      denySync() {
+        return this.diffList.some(item => item.denySync)
       }
     },
     async created() {
-      this.getSetTemplateInfo()
-      this.getDiffData()
+      await this.getSetProperties()
+      await this.getTopoPath()
+      await this.getRemovedModuleHostStatus()
+
+      if (this.diffList?.length > 1) {
+        this.$store.commit('setTitle', this.$t('批量同步集群模板'))
+      }
+
+      // 默认展开第1个
+      this.getDiffData(this.diffList?.[0]?.setId)
     },
     methods: {
-      canSyncStatus() {
-        let status = true
-        this.$refs.setInstance.forEach((instance) => {
-          if (!instance.canSyncStatus && status) {
-            status = false
+      getSetProperties() {
+        return this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
+          params: {
+            bk_biz_id: this.bizId,
+            bk_obj_id: 'set',
+            bk_supplier_account: this.$store.getters.supplierAccount,
+          },
+          config: {
+            requestId: this.requestIds.properties,
+            fromCache: true
           }
+        }).then((data) => {
+          this.setProperties = data
         })
-        return status
-      },
-      async getSetTemplateInfo() {
-        try {
-          const info = await this.$store.dispatch('setTemplate/getSingleSetTemplateInfo', {
-            bizId: this.bizId,
-            setTemplateId: this.setTemplateId
+          .catch(() => {
+            this.setProperties = []
           })
-          this.templateName = info.name
-        } catch (e) {
-          console.error(e)
-        }
       },
-      async getDiffData() {
+      getTopoPath() {
+        return this.$store.dispatch('objectMainLineModule/getTopoPath', {
+          bizId: this.bizId,
+          params: {
+            topo_nodes: this.setIds.map(setId => ({ bk_obj_id: 'set', bk_inst_id: setId }))
+          },
+          config: { requestId: this.requestIds.topopath }
+        }).then(({ nodes }) => {
+          nodes.forEach((node) => {
+            const setId = node.topo_node.bk_inst_id
+            this.setGroup[setId].topoPath = node.topo_path.reverse().map(path => path.bk_inst_name)
+              .join(' / ')
+          })
+        })
+      },
+      async getRemovedModuleHostStatus() {
+        const results = await setTemplateService.getRemovedModuleStatus(this.bizId, this.setTemplateId, {
+          bk_set_ids: this.setIds
+        })
+
+        this.diffList = results.map(item => ({
+          setId: item.id,
+          denySync: item.has_host // 移除的模块中存在主机不允许同步
+        })).sort((setA, setB) => setB.denySync - setA.denySync)
+      },
+      async getDiffData(setId) {
+        const currentSet = this.setGroup[setId]
         try {
-          if (!this.setInstancesId.length) {
-            this.diffList = []
-            this.noInfo = true
-            return
-          }
+          currentSet.loading = true
+          currentSet.collapse = false
+
           const data = await this.$store.dispatch('setSync/diffTemplateAndInstances', {
             bizId: this.bizId,
             setTemplateId: this.setTemplateId,
             params: {
-              bk_set_ids: this.setInstancesId
-            },
-            config: {
-              requestId: this.requestIds.diffTemplateAndInstances
+              bk_set_id: setId
             }
           })
-          this.moduleHostCount = data.module_host_count || {}
-          const list = data.difference || []
-          this.diffList = list.sort((prev, next) => {
-            const res = module => (module.diff_type === 'remove' && this.moduleHostCount[module.bk_module_id] > 0)
-            const prevEixstHostList = prev.module_diffs.filter(module => res(module))
-            const nextEixstHostList = next.module_diffs.filter(module => res(module))
-            if ((prevEixstHostList.length && nextEixstHostList.length)
-              || (!prevEixstHostList.length && !nextEixstHostList.length)) {
-              return 0
-            } if (prevEixstHostList.length) {
-              return -1
-            }
-            return 1
-          })
-          const changeList = this.diffList.filter((set) => {
-            const moduleDiffs = set.module_diffs
-            return moduleDiffs && moduleDiffs.filter(module => module.diff_type !== 'unchanged').length
-          })
-          this.isLatestInfo = !changeList.length
-          this.noInfo = false
-        } catch (e) {
-          console.error(e)
-          this.noInfo = true
-          this.moduleHostCount = {}
+
+          currentSet.moduleHostCount = data.module_host_count || {}
+
+          const { attributes, ...moduleDiff  } = data.difference || {}
+
+          // 属性变更数据，注入原始属性对象
+          if (attributes) {
+            currentSet.propertyDiff = attributes.map((attr) => {
+              const property = this.setProperties.find(prop => prop.id === attr.id)
+              return {
+                property,
+                ...attr
+              }
+            })
+          }
+
+          currentSet.moduleDiff = moduleDiff
+        } finally {
+          currentSet.loading = false
+          currentSet.loaded = true
         }
       },
       async handleConfirmSync() {
@@ -192,7 +259,7 @@
             bizId: this.bizId,
             setTemplateId: this.setTemplateId,
             params: {
-              bk_set_ids: this.setInstancesId
+              bk_set_ids: this.diffList.map(item => item.setId)
             },
             config: {
               requestId: this.requestIds.syncTemplateToInstances
@@ -200,10 +267,9 @@
           })
           this.$success(this.$t('提交同步成功'))
           this.$routerActions.redirect({
-            name: 'setTemplateConfig',
+            name: MENU_BUSINESS_SET_TEMPLATE_DETAILS,
             params: {
-              templateId: this.setTemplateId,
-              mode: 'view'
+              templateId: this.setTemplateId
             },
             query: {
               tab: 'instance'
@@ -213,17 +279,17 @@
           console.error(e)
         }
       },
-      handleExpandAll(expand) {
-        this.$refs.setInstance.forEach((instance) => {
-          instance.localExpand = expand
-        })
+      handleSetCollapseChange(setId, collapse) {
+        // 打开并且未加载过或者不在加载中状态
+        if (!collapse && !this.setGroup[setId].loaded && !this.setGroup[setId].loading) {
+          this.getDiffData(setId)
+        }
       },
-      handleCloseInstance(id) {
-        this.$store.commit('setFeatures/deleteInstancesId', {
-          id: `${this.bizId}_${this.setTemplateId}`,
-          deleteId: id
-        })
-        this.diffList = this.diffList.filter(instance => instance.bk_set_id !== id)
+      handleRemove(diff) {
+        const index = this.diffList.indexOf(diff)
+        if (index !== -1) {
+          this.diffList.splice(index, 1)
+        }
       },
       handleGoback() {
         const { moduleId } = this.$route.params
@@ -236,10 +302,9 @@
           })
         } else {
           this.$routerActions.redirect({
-            name: 'setTemplateConfig',
+            name: MENU_BUSINESS_SET_TEMPLATE_DETAILS,
             params: {
-              templateId: this.setTemplateId,
-              mode: 'view'
+              templateId: this.setTemplateId
             },
             query: {
               tab: 'instance'
@@ -252,109 +317,118 @@
 </script>
 
 <style lang="scss" scoped>
-    .sync-set-layout {
-        padding: 15px 0 0 0;
-        @include scrollbar-y;
-    }
-    .no-content {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        font-size: 16px;
-        color: #63656e;
-        text-align: center;
-        transform: translate(-50%, -50%);
-        img {
-            width: 130px;
-        }
-        p {
-            padding: 20px 0 30px;
-        }
-    }
-    .main {
-        padding: 0 20px;
-    }
+.set-sync-layout {
+  .layout-top {
+    display: flex;
+    margin: 24px;
     .title {
-        font-size: 14px;
-        color: #63656E;
+      font-size: 14px;
     }
-    .tips {
+
+    .type-legend {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+
+      .legend-item {
+        margin-right: 30px;
+        .dot {
+          display: inline-block;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background-color: #2DCB56;
+          margin-right: 2px;
+          &.added {
+            background-color: #2DCB56;
+          }
+          &.changed {
+            background-color: #FF9C01;
+          }
+          &.removed {
+            background-color: #FF5656;
+          }
+        }
+      }
+    }
+  }
+
+  .layout-main {
+    margin: 24px;
+  }
+
+  .set-instance-container {
+    background: #fff;
+    box-shadow: 0 2px 4px 0 rgba(25, 25, 41, 0.05);
+    border-radius: 2px;
+    padding: 24px;
+
+    & + .set-instance-container {
+      margin-top: 16px;
+    }
+
+    .collapse-title {
+      display: flex;
+
+      .deny-sync-tips {
         display: flex;
         align-items: center;
         font-size: 12px;
-        .dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: #2DCB56;
-            margin-right: 2px;
-            &.delete {
-                background-color: #C4C6CC;
-            }
-        }
-    }
-    .expand-all {
-        color: #888991;
-        /deep/ .bk-checkbox-text {
-            font-size: 12px;
-        }
-    }
-    .instance-list {
-        padding: 20px 0 0;
-        .instance-item {
-            margin-bottom: 10px;
-        }
-    }
-    .options {
-        display: flex;
-        align-items: center;
-        padding: 10px 20px;
-        border-top: 1px solid transparent;
-        background-color: #fafbfd;
-        &.is-sticky {
-            background-color: #ffffff;
-            border-top-color: #dcdee5;
-            z-index: 100;
-        }
-        > span {
-            color: #979BA5;
-            font-size: 14px;
-        }
-        .text-btn {
-            @include inlineBlock;
-            height: 32px;
-            line-height: 32px;
-            outline: none;
-            padding: 0 15px;
-            text-align: center;
-            font-size: 14px;
-            background-color: #DCDEE5;
-            border-radius: 2px;
-            color: #FFFFFF;
-            min-width: 68px;
-            cursor: not-allowed;
-        }
-    }
-</style>
+        color: #FF5656;
+        margin-left: 12px;
+        margin-top: -2px;
 
-<style lang="scss">
-    .set-confirm-sync {
-        .bk-dialog-content {
-            width: 440px !important;
+        .bk-icon {
+          width: 14px;
+          height: 14px;
+          line-height: 14px;
+          text-align: center;
+          color: #FFFFFF;
+          background-color: #FF5656;
+          border-radius: 50%;
+          margin-right: 4px;
         }
-        .bk-dialog-type-body {
-            padding: 2px 24px 5px !important;
+      }
+
+      .icon-close {
+        color: #979BA5;
+        font-size: 20px;
+        margin-left: auto; // 靠右
+        cursor: pointer;
+
+        &:hover {
+          color: $primaryColor;
         }
-        .bk-dialog-type-sub-header {
-            padding: 3px 40px 24px !important;
-            .header {
-                white-space: unset !important;
-                text-align: left !important;
-            }
-        }
-        .bk-dialog-footer {
-            padding-bottom: 32px !important;
-        }
+      }
     }
+  }
+
+  .set-instance-group {
+    .set-instance-item {
+      margin: 24px 16px 0 16px;
+    }
+  }
+
+  .layout-footer {
+    display: flex;
+    align-items: center;
+    height: 52px;
+    padding: 0 24px;
+    margin-top: 8px;
+    .bk-button {
+      min-width: 86px;
+
+      & + .bk-button {
+        margin-left: 8px;
+      }
+    }
+    .auth-box + .bk-button {
+      margin-left: 8px;
+    }
+    &.is-sticky {
+      background-color: #fff;
+      border-top: 1px solid $borderColor;
+    }
+  }
+}
 </style>

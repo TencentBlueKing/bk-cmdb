@@ -1,8 +1,22 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div class="template-wrapper" ref="templateWrapper">
     <cmdb-tips class="mb10 top-tips" tips-key="serviceTemplateTips">
       <i18n path="服务模板功能提示">
-        <a class="tips-link" href="javascript:void(0)" @click="handleTipsLinkClick" place="link">{{$t('业务拓扑')}}</a>
+        <template #link>
+          <a class="tips-link" href="javascript:void(0)" @click="handleTipsLinkClick">{{$t('业务拓扑')}}</a>
+        </template>
       </i18n>
     </cmdb-tips>
     <div class="template-filter clearfix">
@@ -10,7 +24,7 @@
         <bk-button slot-scope="{ disabled }" v-test-id="'create'"
           theme="primary"
           :disabled="disabled"
-          @click="operationTemplate()">
+          @click="handleCreate">
           {{$t('新建')}}
         </bk-button>
       </cmdb-auth>
@@ -98,6 +112,15 @@
       <bk-table-column prop="operation" :label="$t('操作')" fixed="right">
         <template slot-scope="{ row }">
           <cmdb-loading :loading="$loading(request.count)">
+            <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_TEMPLATE, relation: [bizId, row.id] }">
+              <bk-button slot-scope="{ disabled }"
+                theme="primary"
+                :disabled="disabled"
+                :text="true"
+                @click.stop="handleEdit(row.id)">
+                {{$t('编辑')}}
+              </bk-button>
+            </cmdb-auth>
             <cmdb-auth class="mr10" :auth="{ type: $OPERATION.C_SERVICE_TEMPLATE, relation: [bizId] }">
               <bk-button slot-scope="{ disabled }"
                 theme="primary"
@@ -131,7 +154,7 @@
         slot="empty"
         :stuff="table.stuff"
         :auth="{ type: $OPERATION.C_SERVICE_TEMPLATE, relation: [bizId] }"
-        @create="operationTemplate"
+        @create="handleCreate"
       ></cmdb-table-empty>
     </bk-table>
   </div>
@@ -139,7 +162,12 @@
 
 <script>
   import { mapActions, mapGetters } from 'vuex'
-  import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+  import {
+    MENU_BUSINESS_HOST_AND_SERVICE,
+    MENU_BUSINESS_SERVICE_TEMPLATE_CREATE,
+    MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
+    MENU_BUSINESS_SERVICE_TEMPLATE_EDIT
+  } from '@/dictionary/menu-symbol'
   import CmdbLoading from '@/components/loading/loading'
   export default {
     components: {
@@ -339,19 +367,24 @@
       },
       cloneTemplate(sourceTemplateId) {
         this.$routerActions.redirect({
-          name: 'operationalTemplate',
-          params: {
-            sourceTemplateId
+          name: MENU_BUSINESS_SERVICE_TEMPLATE_CREATE,
+          query: {
+            clone: sourceTemplateId
           },
           history: true
         })
       },
-      operationTemplate(id, type) {
+      handleCreate() {
         this.$routerActions.redirect({
-          name: 'operationalTemplate',
+          name: MENU_BUSINESS_SERVICE_TEMPLATE_CREATE,
+          history: true
+        })
+      },
+      handleEdit(templateId) {
+        this.$routerActions.redirect({
+          name: MENU_BUSINESS_SERVICE_TEMPLATE_EDIT,
           params: {
-            templateId: id,
-            isEdit: type === 'edit'
+            templateId
           },
           history: true
         })
@@ -392,7 +425,13 @@
       },
       handleRowClick(row, event, column) {
         if (column.property === 'operation') return
-        this.operationTemplate(row.id)
+        this.$routerActions.redirect({
+          name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
+          params: {
+            templateId: row.id
+          },
+          history: true
+        })
       },
       handleTipsLinkClick() {
         this.$routerActions.redirect({

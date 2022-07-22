@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div class="confirm-wrapper">
     <top-steps :current="2" />
@@ -5,7 +17,9 @@
       <div class="update-options">
         <div class="option-label">
           <i18n path="同时更新失效主机">
-            <span place="invalid" class="has-tips" v-bk-tooltips="$t('属性当前值与目标值不一致的主机')">{{$t('-失效主机')}}</span>
+            <template #invalid>
+              <span class="has-tips" v-bk-tooltips="$t('属性当前值与目标值不一致的主机')">{{$t('-失效主机')}}</span>
+            </template>
           </i18n>
         </div>
         <bk-radio-group class="option-content" v-model="updateOption.changed">
@@ -25,11 +39,11 @@
               <i class="bk-cc-icon icon-cc-tips"></i>
             </span>
             <i18n path="冲突主机N台">
-              <em place="num" class="conflict-num">{{conflictNum}}</em>
+              <template #num><em class="conflict-num">{{conflictNum}}</em></template>
             </i18n>
           </span>
           <i18n path="主机总数N台">
-            <em place="num" class="check-num">{{totalNum}}</em>
+            <template #num><em class="check-num">{{totalNum}}</em></template>
           </i18n>
         </div>
       </div>

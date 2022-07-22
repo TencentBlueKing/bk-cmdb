@@ -1,0 +1,113 @@
+{{- if .Values.toposerver.enabled }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-toposerver"
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    component: toposerver
+spec:
+  replicas: {{ .Values.toposerver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: toposerver
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        component: toposerver
+        values-hash: "{{ toYaml .Values | sha256sum | trunc 63 }}"
+      {{- with .Values.toposerver.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.toposerver.podAnnotations }}
+        {{ toYaml .Values.toposerver.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: toposerver
+        image: {{ .Values.image.registry }}/{{ .Values.toposerver.image.repository }}:v{{ default .Chart.AppVersion .Values.toposerver.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        workingDir: {{ .Values.toposerver.workDir }}
+        command:
+        - ./cmdb_toposerver
+        - --addrport=$(POD_IP):{{ .Values.toposerver.port }}
+        {{- if .Values.toposerver.configDir }}
+        - --config={{ .Values.toposerver.configDir }}
+        {{- end }}
+        - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        {{- if .Values.toposerver.command.logDir }}
+        - --log-dir={{ .Values.toposerver.command.logDir }}
+        {{- end }}
+        - --v={{ .Values.toposerver.command.logLevel }}
+        - --logtostderr={{ .Values.toposerver.command.logToStdErr }}
+        - "--enable-auth"
+        - {{ .Values.iam.auth.enabled | quote }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.toposerver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.toposerver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        {{- if .Values.toposerver.resources }}
+        resources: {{ toYaml .Values.toposerver.resources | nindent 10 }}
+        {{- end }}
+
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        {{- if .Values.toposerver.env }}
+          {{ toYaml .Values.toposerver.env | indent 10 }}
+        {{- end }}
+
+        ports:
+        - containerPort: {{ .Values.toposerver.port }}
+
+        volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.toposerver.configDir }}
+          - name: configures
+            mountPath: {{ .Values.toposerver.configDir }}
+          {{- end }}
+      volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.toposerver.configDir }}
+        - name: configures
+          configMap:
+            name: {{ .Release.Name }}-toposerver-configures
+        {{- end }}
+
+      {{- with .Values.toposerver.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.toposerver.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.toposerver.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+{{- end }}

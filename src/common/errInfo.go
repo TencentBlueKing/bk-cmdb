@@ -492,6 +492,7 @@ const (
 	CCErrorTopoForbiddenDeleteBuiltInBusinessSet = 1101115
 
 	CCErrorTopoForbiddenUpdateBuiltInBusinessSetScope = 1101116
+	CCErrUpdateModuleAttributesFail                   = 1101117
 
 	// object controller 1102XXX
 

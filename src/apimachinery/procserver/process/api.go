@@ -17,6 +17,7 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
@@ -30,7 +31,8 @@ type ProcessClientInterface interface {
 
 	CreateProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
-	SearchProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	SearchProcessTemplate(ctx context.Context, h http.Header, i *metadata.ListProcessTemplateWithServiceTemplateInput) (
+		*metadata.MultipleProcessTemplate, errors.CCErrorCoder)
 	UpdateProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 
 	ListProcessRelatedInfo(ctx context.Context, h http.Header, bizID int64, data metadata.ListProcessRelatedInfoOption) (resp *metadata.ListProcessRelatedInfoResponse, err error)

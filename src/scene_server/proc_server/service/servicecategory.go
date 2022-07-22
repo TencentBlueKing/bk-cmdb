@@ -50,9 +50,7 @@ func (ps *ProcServer) ListServiceCategory(ctx *rest.Contexts) {
 
 func (ps *ProcServer) listServiceCategory(ctx *rest.Contexts, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder) {
 	rid := ctx.Kit.Rid
-	biz := &struct {
-		BizID int64 `json:"bk_biz_id"`
-	}{}
+	biz := new(metadata.ListServiceCategoryOption)
 	if err := ctx.DecodeInto(biz); err != nil {
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}

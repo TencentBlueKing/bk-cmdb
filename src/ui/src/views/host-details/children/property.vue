@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div class="property">
     <div class="group"
@@ -26,7 +38,9 @@
               <template v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
                 <span :id="`rule-${property.id}`">
                   <i18n path="已配置属性自动应用提示" v-if="hasRelatedRules(property)">
-                    <bk-button text place="link" @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
+                    <template #link>
+                      <bk-button text @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
+                    </template>
                   </i18n>
                   <span v-else>{{$t('系统限定不可修改')}}</span>
                 </span>
@@ -273,7 +287,7 @@
         }
     }
     .property-list {
-        width: 1000px;
+        width: 1208px;
         margin: 25px 0 0 0;
         color: #63656e;
         display: flex;
@@ -294,11 +308,12 @@
             }
             .property-name {
                 position: relative;
-                width: 160px;
+                width: 260px;
                 line-height: 32px;
                 padding: 0 16px 0 36px;
                 font-size: 14px;
                 color: #63656E;
+                text-align: right;
                 @include ellipsis;
                 &:after {
                     position: absolute;

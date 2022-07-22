@@ -313,10 +313,6 @@ func (p *hostApplyRule) GetHostApplyRuleByAttributeID(kit *rest.Kit, bizID, modu
 func (p *hostApplyRule) ListHostApplyRule(kit *rest.Kit, bizID int64, option metadata.ListHostApplyRuleOption) (metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder) {
 	result := metadata.MultipleHostApplyRuleResult{}
 
-	if option.Page.IsIllegal() {
-		return result, kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded)
-	}
-
 	filter := map[string]interface{}{
 		common.BkSupplierAccount: kit.SupplierAccount,
 	}

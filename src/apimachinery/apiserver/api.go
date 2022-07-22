@@ -580,3 +580,28 @@ func (a *apiServer) CreateManyObject(ctx context.Context, h http.Header, params 
 
 	return resp.Data, nil
 }
+
+func (a *apiServer) SearchCloudArea(ctx context.Context, h http.Header, params metadata.CloudAreaSearchParam) (
+	*metadata.SearchDataResult, error) {
+
+	resp := new(metadata.SearchResp)
+	subPath := "/findmany/cloudarea"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return &resp.Data, nil
+}

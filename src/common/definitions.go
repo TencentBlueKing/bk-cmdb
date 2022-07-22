@@ -62,6 +62,9 @@ const (
 	// BKMaxExportRecord the limit to export
 	BKMaxExportLimit = 10000
 
+	// BKMaxOnceExportLimit the limit once to export
+	BKMaxOnceExportLimit = 30000
+
 	// BKInstParentStr the inst parent name
 	BKInstParentStr = "bk_parent_id"
 

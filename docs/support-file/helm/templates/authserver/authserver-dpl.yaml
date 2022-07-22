@@ -1,0 +1,113 @@
+{{- if .Values.authserver.enabled }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-authserver"
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    component: authserver
+spec:
+  replicas: {{ .Values.authserver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: authserver
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        values-hash: "{{ toYaml .Values | sha256sum | trunc 63 }}"
+        component: authserver
+      {{- with .Values.authserver.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.authserver.podAnnotations }}
+        {{ toYaml .Values.authserver.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: authserver
+        image: {{ .Values.image.registry }}/{{ .Values.authserver.image.repository }}:v{{ default .Chart.AppVersion .Values.authserver.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        workingDir: {{ .Values.authserver.workDir }}
+        command:
+        - ./cmdb_authserver
+        - --addrport=$(POD_IP):{{ .Values.authserver.port }}
+        {{- if .Values.authserver.configDir }}
+        - --config={{ .Values.authserver.configDir }}
+        {{- end }}
+        - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        {{- if .Values.authserver.command.logDir }}
+        - --log-dir={{ .Values.authserver.command.logDir }}
+        {{- end }}
+        - --v={{ .Values.authserver.command.logLevel }}
+        - --logtostderr={{ .Values.authserver.command.logToStdErr }}
+        - "--enable-auth"
+        - {{ .Values.iam.auth.enabled | quote }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.authserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.authserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        {{- if .Values.authserver.resources }}
+        resources: {{ toYaml .Values.authserver.resources | nindent 10 }}
+        {{- end }}
+
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        {{- if .Values.authserver.env -}}
+          {{ toYaml .Values.authserver.env | indent 10 }}
+        {{- end }}
+
+        ports:
+        - containerPort: {{ .Values.authserver.port }}
+
+        volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.authserver.configDir }}
+          - name: configures
+            mountPath: {{ .Values.authserver.configDir }}
+          {{- end }}
+      volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.authserver.configDir }}
+        - name: configures
+          configMap:
+            name: {{ .Release.Name }}-authserver-configures
+        {{- end }}
+
+      {{- with .Values.authserver.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.authserver.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.authserver.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+{{- end }}

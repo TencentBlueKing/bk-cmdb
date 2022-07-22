@@ -1,0 +1,113 @@
+{{- if .Values.operationserver.enabled }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-operationserver"
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    component: operationserver
+spec:
+  replicas: {{ .Values.operationserver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: operationserver
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        component: operationserver
+        values-hash: "{{ toYaml .Values | sha256sum | trunc 63 }}"
+      {{- with .Values.operationserver.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.operationserver.podAnnotations }}
+        {{ toYaml .Values.operationserver.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: operationserver
+        image: {{ .Values.image.registry }}/{{ .Values.operationserver.image.repository }}:v{{ default .Chart.AppVersion .Values.operationserver.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        workingDir: {{ .Values.operationserver.workDir }}
+        command: ["./cmdb_operationserver"]
+        args:
+        - --addrport=$(POD_IP):{{ .Values.operationserver.port }}
+        {{- if .Values.operationserver.configDir }}
+        - --config={{ .Values.operationserver.configDir }}
+        {{- end }}
+        - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        {{- if .Values.operationserver.command.logDir }}
+        - --log-dir={{ .Values.operationserver.command.logDir }}
+        {{- end }}
+        - --v={{ .Values.operationserver.command.logLevel }}
+        - --logtostderr={{ .Values.operationserver.command.logToStdErr }}
+        - "--enable-auth"
+        - {{ .Values.iam.auth.enabled | quote }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.operationserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.operationserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        {{- if .Values.operationserver.resources }}
+        resources: {{ toYaml .Values.operationserver.resources | nindent 10 }}
+        {{- end }}
+
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        {{- if .Values.operationserver.env }}
+          {{ toYaml .Values.operationserver.env | indent 10 }}
+        {{- end }}
+
+        ports:
+        - containerPort: {{ .Values.operationserver.port }}
+
+        volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.operationserver.configDir }}
+          - name: configures
+            mountPath: {{ .Values.operationserver.configDir }}
+          {{- end }}
+      volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.operationserver.configDir }}
+        - name: configures
+          configMap:
+            name: {{ .Release.Name }}-operationserver-configures
+        {{- end }}
+
+      {{- with .Values.operationserver.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.operationserver.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.operationserver.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+{{- end }}

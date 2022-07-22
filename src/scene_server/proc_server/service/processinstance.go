@@ -45,7 +45,8 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 		return
 	}
 	if len(input.Processes) > common.BKMaxUpdateOrCreatePageSize {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "create process instances",
+			common.BKMaxUpdateOrCreatePageSize))
 		return
 	}
 
@@ -267,7 +268,8 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 	}
 
 	if len(input.Raw) > common.BKMaxUpdateOrCreatePageSize {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "update process instances",
+			common.BKMaxUpdateOrCreatePageSize))
 		return
 	}
 	// generate audit log before processes are updated
@@ -670,7 +672,8 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 	}
 
 	if len(input.ProcessInstanceIDs) > common.BKMaxDeletePageSize {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "delete process instance",
+			common.BKMaxDeletePageSize))
 		return
 	}
 

@@ -15,6 +15,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -636,14 +637,33 @@ func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Proper
 		hostFields = append(hostFields, property.ID)
 	}
 
-	hostInfo, err := s.Logics.GetHostData(appID, input.HostIDArr, hostFields, input.ExportCond, header, defLang)
-	if err != nil {
-		blog.Errorf("get hosts failed, host id: %v, err: %v, rid: %s", input.HostIDArr, err, rid)
-		return nil, err
+	if input.ExportCond.Page.Limit <= 0 || input.ExportCond.Page.Limit > common.BKMaxOnceExportLimit {
+		return nil, errors.New(defLang.Languagef("export_page_limit_err", common.BKMaxOnceExportLimit))
 	}
+
+	hostInfo := make([]mapstr.MapStr, 0)
+	hostCount := input.ExportCond.Page.Limit + input.ExportCond.Page.Start
+	limit := input.ExportCond.Page.Limit
+	for start := input.ExportCond.Page.Start; start < hostCount; start = start + common.BKMaxExportLimit {
+		input.ExportCond.Page.Start = start
+		if limit > common.BKMaxExportLimit {
+			input.ExportCond.Page.Limit = common.BKMaxExportLimit
+			limit = limit - common.BKMaxExportLimit
+		} else {
+			input.ExportCond.Page.Limit = limit
+		}
+
+		hostData, err := s.Logics.GetHostData(appID, input.HostIDArr, hostFields, input.ExportCond, header, defLang)
+		if err != nil {
+			blog.Errorf("get host info failed, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+		hostInfo = append(hostInfo, hostData...)
+	}
+
 	if len(hostInfo) == 0 {
 		blog.Errorf("not find host, host id: %v, cond: %#v, rid: %s", input.HostIDArr, input.ExportCond, rid)
-		return nil, err
+		return nil, nil
 	}
 
 	if err := s.handleModule(hostInfo, rid); err != nil {

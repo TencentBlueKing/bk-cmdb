@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div class="options">
     <div class="left">
@@ -76,18 +88,22 @@
     </div>
     <span class="tips-content" ref="tipsContent">
       <i18n path="当前模块主机为空，请先XXX" tag="p" v-if="!hasHost">
-        <a href="javascript:;"
-          class="action-link" place="action"
-          @click="handleClickAddHost">
-          {{$t('添加主机')}}
-        </a>
+        <template #action>
+          <a href="javascript:;"
+            class="action-link"
+            @click="handleClickAddHost">
+            {{$t('添加主机')}}
+          </a>
+        </template>
       </i18n>
       <i18n path="当前模块所属的服务模板内进程信息为空，请先XXX" tag="p" v-else-if="isEmptyServiceTemplate">
-        <a href="javascript:;"
-          class="action-link" place="action"
-          @click="handleGoServiceTemplate">
-          {{$t('前往补充')}}
-        </a>
+        <template #action>
+          <a href="javascript:;"
+            class="action-link"
+            @click="handleGoServiceTemplate">
+            {{$t('前往补充')}}
+          </a>
+        </template>
       </i18n>
     </span>
   </div>
@@ -100,6 +116,8 @@
   import { mapGetters } from 'vuex'
   import { Validator } from 'vee-validate'
   import { MULTIPLE_IP_REGEXP } from '@/dictionary/regexp.js'
+  import { MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
+
   export default {
     components: {
       ViewSwitcher
@@ -404,14 +422,9 @@
       },
       handleGoServiceTemplate() {
         this.$routerActions.redirect({
-          name: 'operationalTemplate',
+          name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
           params: {
-            templateId: this.selectedNode.data.service_template_id,
-            moduleId: this.selectedNode.data.bk_inst_id
-          },
-          query: {
-            node: this.selectedNode.id,
-            tab: 'nodeInfo'
+            templateId: this.selectedNode.data.service_template_id
           },
           history: true
         })

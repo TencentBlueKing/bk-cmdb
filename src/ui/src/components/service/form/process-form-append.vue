@@ -1,10 +1,24 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <span v-if="isLimited"></span>
-  <bk-popover class="process-form-tips" v-else>
+  <bk-popover class="process-form-tips" ext-cls="process-lock-popover" v-else>
     <i class="icon-cc-lock-fill"></i>
     <template slot="content">
       <i18n path="进程表单锁定提示">
-        <bk-link theme="primary" @click="handleRedirect" place="link">{{$t('跳转服务模板')}}</bk-link>
+        <template #link>
+          <bk-link theme="primary" @click="handleRedirect" class="goto-link">{{$t('跳转服务模板')}}</bk-link>
+        </template>
       </i18n>
     </template>
   </bk-popover>
@@ -12,6 +26,8 @@
 
 <script>
   import Tippy from 'bk-magic-vue/lib/utils/tippy'
+  import { MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
+
   export default {
     props: {
       serviceTemplateId: Number,
@@ -38,6 +54,7 @@
         const DOM = this.$el.previousElementSibling
         // eslint-disable-next-line new-cap
         Tippy(DOM, {
+          theme: 'dark process-uneditable-tips',
           content: this.$t('系统限定不可修改'),
           arrow: true,
           placement: 'top'
@@ -51,13 +68,12 @@
         })
       },
       handleRedirect() {
-        this.$routerActions.redirect({
-          name: 'operationalTemplate',
+        this.$routerActions.open({
+          name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
           params: {
             bizId: this.bizId,
             templateId: this.serviceTemplateId
-          },
-          history: true
+          }
         })
       }
     }
@@ -75,6 +91,7 @@
         background-color: #fafbfd;
         font-size: 14px;
         overflow: hidden;
+        cursor: pointer;
         /deep/ .bk-tooltip-ref {
             height: 100%;
             display: flex;
@@ -82,4 +99,16 @@
             justify-content: center;
         }
     }
+</style>
+<style lang="scss">
+  .process-lock-popover {
+    .goto-link {
+      .bk-link-text {
+        font-size: 12px;
+      }
+    }
+  }
+  .process-uneditable-tips-theme {
+    font-size: 12px;
+  }
 </style>

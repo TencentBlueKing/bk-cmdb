@@ -294,13 +294,29 @@ func (s *Service) upsertServiceInstance(kit *rest.Kit, bizID int64,
 				wg.Done()
 			}()
 
-			_, ccErr := s.CoreAPI.ProcServer().Service().CreateServiceInstance(kit.Ctx, kit.Header, svrInstOpt)
-			if ccErr != nil {
-				if firstErr == nil {
-					firstErr = ccErr
+			instances := svrInstOpt.Instances
+
+			total := len(instances)
+			for start := 0; start < total; start += common.BKMaxUpdateOrCreatePageSize {
+				// 这里需要进行分批处理，一次处理100个
+				var tmpInstances []metadata.CreateServiceInstanceDetail
+				if total-start >= common.BKMaxUpdateOrCreatePageSize {
+					tmpInstances = instances[start : start+common.BKMaxUpdateOrCreatePageSize]
+				} else {
+					tmpInstances = instances[start:total]
 				}
-				blog.Errorf("create service instance failed, err: %v, option: %#v, rid: %s", ccErr, svrInstOpt, kit.Rid)
-				return
+
+				svrInstOpt.Instances = tmpInstances
+
+				_, ccErr := s.CoreAPI.ProcServer().Service().CreateServiceInstance(kit.Ctx, kit.Header, svrInstOpt)
+				if ccErr != nil {
+					if firstErr == nil {
+						firstErr = ccErr
+					}
+					blog.Errorf("create service instances failed, option: %#v, err: %v, rid: %s", ccErr, svrInstOpt,
+						kit.Rid)
+					return
+				}
 			}
 		}(svrInstOpt)
 	}
@@ -668,8 +684,8 @@ func (s *Service) generateTransferPlans(kit *rest.Kit, bizID int64,
 	return s.generateHostApplyPlans(kit, bizID, transferPlans)
 }
 
-func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64,
-	plans []metadata.HostTransferPlan) ([]metadata.HostTransferPlan, errors.CCErrorCoder) {
+func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64, plans []metadata.HostTransferPlan) (
+	[]metadata.HostTransferPlan, errors.CCErrorCoder) {
 
 	if len(plans) == 0 {
 		return plans, nil
@@ -681,40 +697,10 @@ func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64,
 		finalModuleIDs = append(finalModuleIDs, item.FinalModules...)
 	}
 
-	ruleOpt := metadata.ListHostApplyRuleOption{
-		ModuleIDs: finalModuleIDs,
-		Page:      metadata.BasePage{Limit: common.BKNoLimit},
-	}
-	rules, ccErr := s.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(kit.Ctx, kit.Header, bizID, ruleOpt)
-	if ccErr != nil {
-		blog.Errorf("list apply rule failed, bizID: %s, option: %#v, err: %s, rid: %s", bizID, ruleOpt, ccErr, kit.Rid)
-		return plans, ccErr
-	}
-
-	// get modules that enabled host apply
-	moduleCondition := metadata.QueryCondition{
-		Page:   metadata.BasePage{Limit: common.BKNoLimit},
-		Fields: []string{common.BKModuleIDField},
-		Condition: map[string]interface{}{
-			common.BKModuleIDField:       map[string]interface{}{common.BKDBIN: finalModuleIDs},
-			common.HostApplyEnabledField: true,
-		},
-	}
-	enabledModules, err := s.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
-		common.BKInnerObjIDModule, &moduleCondition)
+	rules, err := s.getRulesPriorityFromTemplate(kit, finalModuleIDs, bizID)
 	if err != nil {
-		blog.ErrorJSON("get apply enabled modules failed, filter: %s, err: %s, rid: %s", moduleCondition, err, kit.Rid)
-		return plans, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-
-	enableModuleMap := make(map[int64]bool)
-	for _, item := range enabledModules.Info {
-		moduleID, err := util.GetInt64ByInterface(item[common.BKModuleIDField])
-		if err != nil {
-			blog.ErrorJSON("parse module from db failed, module: %s, err: %s, rid: %s", item, err, kit.Rid)
-			return plans, kit.CCError.CCError(common.CCErrCommParseDBFailed)
-		}
-		enableModuleMap[moduleID] = true
+		blog.Errorf("get module rule failed, err: %v, rid: %s", err, kit.Rid)
+		return plans, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	// generate host apply plans only generate new module
@@ -725,15 +711,13 @@ func (s *Service) generateHostApplyPlans(kit *rest.Kit, bizID int64,
 			ModuleIDs: make([]int64, 0),
 		}
 		for _, moduleID := range item.ToAddToModules {
-			if _, exist := enableModuleMap[moduleID]; exist {
-				host2Module.ModuleIDs = append(host2Module.ModuleIDs, moduleID)
-			}
+			host2Module.ModuleIDs = append(host2Module.ModuleIDs, moduleID)
 		}
 		hostModules = append(hostModules, host2Module)
 	}
 
 	planOpt := metadata.HostApplyPlanOption{
-		Rules:       rules.Info,
+		Rules:       rules,
 		HostModules: hostModules,
 	}
 

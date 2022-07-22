@@ -1,0 +1,113 @@
+{{- if .Values.procserver.enabled }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-procserver"
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    component: procserver
+spec:
+  replicas: {{ .Values.procserver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: procserver
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        component: procserver
+        values-hash: "{{ toYaml .Values | sha256sum | trunc 63 }}"
+      {{- with .Values.procserver.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.procserver.podAnnotations }}
+        {{ toYaml .Values.procserver.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: procserver
+        image: {{ .Values.image.registry }}/{{ .Values.procserver.image.repository }}:v{{ default .Chart.AppVersion .Values.procserver.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        workingDir: {{ .Values.procserver.workDir }}
+        command:
+        - ./cmdb_procserver
+        - --addrport=$(POD_IP):{{ .Values.procserver.port }}
+        {{- if .Values.procserver.configDir }}
+        - --config={{ .Values.procserver.configDir }}
+        {{- end }}
+        - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        {{- if .Values.procserver.command.logDir }}
+        - --log-dir={{ .Values.procserver.command.logDir }}
+        {{- end }}
+        - --v={{ .Values.procserver.command.logLevel }}
+        - --logtostderr={{ .Values.procserver.command.logToStdErr }}
+        - "--enable-auth"
+        - {{ .Values.iam.auth.enabled | quote }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.procserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.procserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        {{- if .Values.procserver.resources }}
+        resources: {{ toYaml .Values.procserver.resources | nindent 10 }}
+        {{- end }}
+
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        {{- if .Values.procserver.env }}
+          {{ toYaml .Values.procserver.env | indent 10 }}
+        {{- end }}
+
+        ports:
+        - containerPort: {{ .Values.procserver.port }}
+
+        volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.procserver.configDir }}
+          - name: configures
+            mountPath: {{ .Values.procserver.configDir }}
+          {{- end }}
+      volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.procserver.configDir }}
+        - name: configures
+          configMap:
+            name: {{ .Release.Name }}-procserver-configures
+        {{- end }}
+
+      {{- with .Values.procserver.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.procserver.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.procserver.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+{{- end }}

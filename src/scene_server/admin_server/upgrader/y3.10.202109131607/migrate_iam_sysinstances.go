@@ -155,12 +155,16 @@ func migrateModelInstancePermission(ctx context.Context, action iamtype.ActionID
 
 		timestamp = listPoliciesResp.Metadata.Timestamp
 
-		for _, policyRes := range listPoliciesResp.Results {
+		policyIDs := make([]int64, len(listPoliciesResp.Results))
+		for idx, policyRes := range listPoliciesResp.Results {
 			if err := migrateModelInstancePolicy(ctx, action, db, policyRes, objects); err != nil {
 				blog.ErrorJSON("migrate %s policies %s failed, error: %s", action, policyRes, err)
 				return err
 			}
+			policyIDs[idx] = policyRes.ID
 		}
+
+		blog.Infof("successfully migrate policies: %+v", policyIDs)
 
 		if len(listPoliciesResp.Results) < page {
 			return nil

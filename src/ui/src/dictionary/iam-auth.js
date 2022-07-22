@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 export const IAM_VIEWS = {
   // 模型分组
   MODEL_GROUP: 'sys_model_group',
@@ -1151,20 +1163,20 @@ export const IAM_ACTIONS = {
     }
   },
 
-  // 业务资源查看 (用于控制业务导航下业务选择器的数据)
+  // 业务访问 (用于控制业务导航下业务选择器的数据)
   R_BIZ_RESOURCE: {
     id: 'find_business_resource',
-    name: ['业务资源查看', 'View Business Resource'],
+    name: ['业务访问', 'View Business Resource'],
     cmdb_action: 'business.viewBusinessResource',
     relation: [{
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
-      bk_biz_id: relationIds[0]
+      resource_id: relationIds[0]
     })
   },
-  // 业务集资源查看 (用于控制业务导航下业务集选择器的数据)
+  // 业务集访问 (用于控制业务导航下业务集选择器的数据)
   R_BIZ_SET_RESOURCE: {
     id: 'access_business_set',
     name: ['业务集访问', 'Access Business Set'],
@@ -1174,7 +1186,7 @@ export const IAM_ACTIONS = {
       instances: [IAM_VIEWS.BIZ_SET]
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
-      bk_biz_set_id: relationIds[0]
+      resource_id: relationIds[0]
     })
   }
 }

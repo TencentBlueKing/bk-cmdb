@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 .bk-select {
     display: inline-block;
     vertical-align: middle;
@@ -107,9 +119,6 @@
     .bk-big-tree-node:not(.has-link-line) {
         height: 36px;
         line-height: 36px;
-        &.is-leaf {
-            padding-left: calc(var(--level) * 30px + 28px)
-        }
         &.is-selected {
             .node-folder-icon {
                 color: #3a84ff;
@@ -117,11 +126,6 @@
         }
         .node-options {
             padding-left: 10px;
-            .node-folder-icon {
-                width: 24px;
-                height: 36px;
-                line-height: 36px;
-            }
         }
     }
     .bk-big-tree-node.has-link-line.is-leaf {

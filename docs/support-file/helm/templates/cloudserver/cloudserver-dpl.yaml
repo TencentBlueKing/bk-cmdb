@@ -1,0 +1,114 @@
+{{- if .Values.cloudserver.enabled }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-cloudserver"
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    component: cloudserver
+spec:
+  replicas: {{ .Values.cloudserver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: cloudserver
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        component: cloudserver
+        values-hash: "{{ toYaml .Values | sha256sum | trunc 63 }}"
+      {{- with .Values.cloudserver.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.cloudserver.podAnnotations }}
+        {{ toYaml .Values.cloudserver.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: cloudserver
+        image: {{ .Values.image.registry }}/{{ .Values.cloudserver.image.repository }}:v{{ default .Chart.AppVersion .Values.cloudserver.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        workingDir: {{ .Values.cloudserver.workDir }}
+        command:
+        - ./cmdb_cloudserver
+        - --addrport=$(POD_IP):{{ .Values.cloudserver.port }}
+        {{- if .Values.cloudserver.configDir }}
+        - --config={{ .Values.cloudserver.configDir }}
+        {{- end }}
+        - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        - --enable_cryptor={{ .Values.cloudserver.command.enableCryptor }}
+        {{- if .Values.cloudserver.command.logDir }}
+        - --log-dir={{ .Values.cloudserver.command.logDir }}
+        {{- end }}
+        - --v={{ .Values.cloudserver.command.logLevel }}
+        - --logtostderr={{ .Values.cloudserver.command.logToStdErr }}
+        - "--enable-auth"
+        - {{ .Values.iam.auth.enabled | quote }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.cloudserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.cloudserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        {{- if .Values.cloudserver.resources }}
+        resources: {{ toYaml .Values.cloudserver.resources | nindent 10 }}
+        {{- end }}
+
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        {{- if .Values.cloudserver.env -}}
+          {{ toYaml .Values.cloudserver.env | indent 10 }}
+        {{- end }}
+
+        ports:
+        - containerPort: {{ .Values.cloudserver.port }}
+
+        volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.cloudserver.configDir }}
+          - name: configures
+            mountPath: {{ .Values.cloudserver.configDir }}
+          {{- end }}
+      volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.cloudserver.configDir }}
+        - name: configures
+          configMap:
+            name: {{ .Release.Name }}-cloudserver-configures
+        {{- end }}
+
+      {{- with .Values.cloudserver.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.cloudserver.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.cloudserver.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+{{- end }}

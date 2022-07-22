@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div class="options-layout clearfix">
     <div class="options-left fl">
@@ -95,7 +107,7 @@
       @cancel="closeAssignDialog">
       <div class="assign-content" v-if="assign.show">
         <i18n class="assign-count" tag="div" path="已选择主机">
-          <span place="count">{{table.checked.length}}</span>
+          <template #count><span>{{table.checked.length}}</span></template>
         </i18n>
         <div class="assign-seleted">
           <p>{{assign.label}}</p>
@@ -647,7 +659,7 @@
           title: this.$t('导入主机'),
           bk_obj_id: 'host',
           template: `${window.API_HOST}importtemplate/host`,
-          fileTips: `${this.$t('导入文件大小提示')},${this.$t('主机导入文件提示')}`,
+          fileTips: this.$t('导入文件大小提示'),
           submit: (options) => {
             const params = {
               op: options.step
@@ -671,7 +683,7 @@
         setImportState({
           title: this.$t('导入编辑'),
           bk_obj_id: 'host',
-          fileTips: `${this.$t('导入文件大小提示')},${this.$t('主机导入文件提示')}`,
+          fileTips: this.$t('导入文件大小提示'),
           submit: (options) => {
             const params = {
               op: options.step

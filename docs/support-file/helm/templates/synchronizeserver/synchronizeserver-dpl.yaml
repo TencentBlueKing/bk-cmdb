@@ -1,0 +1,113 @@
+{{- if .Values.synchronizeserver.enabled }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-synchronizeserver"
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    component: synchronizeserver
+spec:
+  replicas: {{ .Values.synchronizeserver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: synchronizeserver
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        component: synchronizeserver
+        values-hash: "{{ toYaml .Values | sha256sum | trunc 63 }}"
+      {{- with .Values.synchronizeserver.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.synchronizeserver.podAnnotations }}
+        {{ toYaml .Values.synchronizeserver.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: synchronizeserver
+        image: {{ .Values.image.registry }}/{{ .Values.synchronizeserver.image.repository }}:v{{ default .Chart.AppVersion .Values.synchronizeserver.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        workingDir: {{ .Values.synchronizeserver.workDir }}
+        command:
+        - ./cmdb_synchronizeserver
+        - --addrport=$(POD_IP):{{ .Values.synchronizeserver.port }}
+        {{- if .Values.synchronizeserver.configDir }}
+        - --config={{ .Values.synchronizeserver.configDir }}
+        {{- end }}
+        - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        {{- if .Values.synchronizeserver.command.logDir }}
+        - --log-dir={{ .Values.synchronizeserver.command.logDir }}
+        {{- end }}
+        - --v={{ .Values.synchronizeserver.command.logLevel }}
+        - --logtostderr={{ .Values.synchronizeserver.command.logToStdErr }}
+        - "--enable-auth"
+        - {{ .Values.iam.auth.enabled | quote }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.synchronizeserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.synchronizeserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        {{- if .Values.synchronizeserver.resources }}
+        resources: {{ toYaml .Values.synchronizeserver.resources | nindent 10 }}
+        {{- end }}
+
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        {{- if .Values.synchronizeserver.env }}
+          {{ toYaml .Values.synchronizeserver.env | indent 10 }}
+        {{- end }}
+
+        ports:
+        - containerPort: {{ .Values.synchronizeserver.port }}
+
+        volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.synchronizeserver.configDir }}
+          - name: configures
+            mountPath: {{ .Values.synchronizeserver.configDir }}
+          {{- end }}
+      volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.synchronizeserver.configDir }}
+        - name: configures
+          configMap:
+            name: {{ .Release.Name }}-synchronizeserver-configures
+        {{- end }}
+
+      {{- with .Values.synchronizeserver.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.synchronizeserver.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.synchronizeserver.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+{{- end }}

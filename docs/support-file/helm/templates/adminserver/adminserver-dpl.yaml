@@ -1,0 +1,108 @@
+{{- if .Values.adminserver.enabled }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-adminserver"
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    component: adminserver
+spec:
+  replicas: {{ .Values.adminserver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: adminserver
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        values-hash: "{{ toYaml .Values | sha256sum | trunc 63 }}"
+        component: adminserver
+      {{- with .Values.adminserver.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.adminserver.podAnnotations }}
+        {{ toYaml .Values.adminserver.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: adminserver
+        image: {{ .Values.image.registry }}/{{ .Values.adminserver.image.repository }}:v{{ default .Chart.AppVersion .Values.adminserver.image.tag }}
+        workingDir: {{ .Values.adminserver.workDir }}/
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["./cmdb_adminserver"]
+        args:
+        - --addrport=$(POD_IP):{{ .Values.adminserver.port }}
+        - --config={{ .Values.adminserver.configDir }}/migrate.yaml
+        {{- if .Values.adminserver.command.logDir }}
+        - --log-dir={{ .Values.adminserver.command.logDir }}
+        {{- end }}
+        - --v={{ .Values.adminserver.command.logLevel }}
+        - --logtostderr={{ .Values.adminserver.command.logToStdErr }}
+        - "--enable-auth"
+        - {{ .Values.iam.auth.enabled | quote }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.adminserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.adminserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        {{- if .Values.adminserver.resources }}
+        resources: {{ toYaml .Values.adminserver.resources | nindent 10 }}
+        {{- end }}
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        {{- if .Values.adminserver.env }}
+          {{ toYaml .Values.adminserver.env | indent 10 }}
+        {{- end }}
+        ports:
+        - containerPort: {{ .Values.adminserver.port }}
+        volumeMounts:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          mountPath: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        - name: configures
+          mountPath: {{ .Values.adminserver.configDir }}
+        {{- if .Values.adminserver.volumeMounts }}
+        {{- with .Values.adminserver.volumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- end }}
+      volumes:
+      {{- if .Values.common.monitor.enabled }}
+      - name: plugin-path
+        hostPath:
+          path: {{ .Values.common.monitor.pluginPath }}
+      {{- end }}
+      - name: configures
+        configMap:
+          name: {{ .Release.Name }}-adminserver-configures
+      {{- if .Values.adminserver.volumes }}
+      {{- with .Values.adminserver.volumes }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- end }}
+      {{- with .Values.adminserver.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.adminserver.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.adminserver.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+{{- end }}

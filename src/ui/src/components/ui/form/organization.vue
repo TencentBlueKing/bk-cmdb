@@ -1,11 +1,27 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div class="cmdb-organization-select"
-    :class="{
-      'is-focus': focused,
-      'is-disabled': disabled,
-      'is-readonly': readonly,
-      'is-unselected': unselected
-    }"
+    :class="[
+      'cmdb-organization-select',
+      size,
+      {
+        'is-focus': focused,
+        'is-disabled': disabled,
+        'is-readonly': readonly,
+        'is-unselected': unselected
+      }
+    ]"
     :data-placeholder="placeholder">
     <i class="select-loading" v-if="$loading([searchRequestId]) && searchValue === undefined"></i>
     <i class="select-clear bk-icon icon-close-circle-shape"
@@ -30,7 +46,7 @@
         :title="displayName">
         {{displayName}}
       </div>
-      <div slot="content" :style="{ width: popoverWidth + 'px' }" class="select-dropdown-content">
+      <div slot="content" :style="{ width: popoverWidth + 'px' }" :class="['select-dropdown-content', size]">
         <div class="search-bar">
           <bk-input
             :placeholder="$t('搜索')"
@@ -74,6 +90,7 @@
       readonly: Boolean,
       multiple: Boolean,
       clearable: Boolean,
+      size: String,
       placeholder: {
         type: String,
         default: ''
@@ -436,6 +453,29 @@
         cursor: pointer;
         font-size: 12px;
 
+        &.small {
+          line-height: 26px;
+
+           .select-angle {
+            top: 2px;
+           }
+           .select-clear {
+            top: 6px;
+           }
+           .select-loading {
+            top: 4px;
+           }
+          .select-dropdown {
+            .select-name {
+              height: 26px;
+            }
+          }
+
+          &.is-unselected::before {
+            line-height: 24px;
+          }
+        }
+
         &.is-focus {
             border-color: #3a84ff;
             box-shadow:0px 0px 4px rgba(58, 132, 255, 0.4);
@@ -545,6 +585,19 @@
                     @include ellipsis;
                 }
             }
+        }
+
+        &.small {
+          ::v-deep {
+            .node-content {
+              font-size: 12px;
+            }
+
+            .bk-big-tree .bk-big-tree-node:not(.has-link-line) {
+              height: 32px;
+              line-height: 32px;
+            }
+          }
         }
     }
 

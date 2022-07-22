@@ -1,17 +1,56 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <section>
     <div class="top" v-if="allTemplates.length">
+      <bk-select
+        class="mr10"
+        style="width: 210px"
+        :popover-width="260"
+        :placeholder="$t('所有一级分类')"
+        :allow-clear="true"
+        :searchable="true"
+        v-model="filter.primaryCategory">
+        <bk-option v-for="category in primaryCategoryList"
+          :key="category.id"
+          :id="category.id"
+          :name="category.name">
+        </bk-option>
+      </bk-select>
+      <bk-select
+        class="mr10"
+        style="width: 210px"
+        :popover-width="260"
+        :placeholder="$t('所有二级分类')"
+        :allow-clear="true"
+        :searchable="true"
+        :empty-text="secCategoryEmptyText"
+        v-model="filter.secCategory">
+        <bk-option v-for="category in secCategoryList"
+          :key="category.id"
+          :id="category.id"
+          :name="category.name">
+        </bk-option>
+      </bk-select>
       <bk-input
         class="search"
         type="text"
         :placeholder="$t('请输入模板名称搜索')"
         clearable
         right-icon="bk-icon icon-search"
-        v-model.trim="searchName"
-        @enter="handleFilterTemplates"
-        @clear="handleFilterTemplates">
+        v-model.trim="filter.templateName">
       </bk-input>
-      <span class="select-all fr">
+      <span class="select-all">
         <bk-checkbox :value="isSelectAll" :indeterminate="isHalfSelected" @change="handleSelectAll">全选</bk-checkbox>
       </span>
     </div>
@@ -20,54 +59,58 @@
       :style="{ height: !!templates.length ? '264px' : '306px' }"
       :class="{ 'is-loading': $loading('getServiceTemplate') }">
       <template v-if="templates.length">
-        <template v-for="(template, index) in templates">
-          <li
-            class="template-item fl clearfix"
-            :class="{
-              'is-selected': localSelected.includes(template.id),
-              'is-middle': index % 3 === 1,
-              'disabled': $parent.$parent.serviceExistHost(template.id)
-            }"
-            :key="template.id"
-            @click="handleClick(template, $parent.$parent.serviceExistHost(template.id))"
-            @mouseenter="handleShowDetails(template, $event, $parent.$parent.serviceExistHost(template.id))"
-            @mouseleave="handlehideTips">
-            <i class="select-icon bk-icon icon-check-circle-shape fr"></i>
-            <span class="template-name">{{template.name}}</span>
-          </li>
-        </template>
+        <li v-for="(template, index) in templates"
+          class="template-item fl clearfix"
+          :class="{
+            'is-selected': localSelected.includes(template.id),
+            'is-middle': index % 3 === 1,
+            'disabled': $parent.$parent.serviceExistHost(template.id)
+          }"
+          :key="template.id"
+          @click="handleClick(template, $parent.$parent.serviceExistHost(template.id))"
+          @mouseenter="handleShowDetails(template, $event, $parent.$parent.serviceExistHost(template.id))"
+          @mouseleave="handleHideTips">
+          <i class="select-icon bk-icon icon-check-circle-shape fr"></i>
+          <span class="template-name">{{template.name}}</span>
+        </li>
       </template>
       <li class="template-empty" v-else>
         <div class="empty-content">
           <img class="empty-image" src="../../../assets/images/empty-content.png">
           <i18n class="empty-tips" path="无服务模板提示">
-            <a class="empty-link" href="javascript:void(0)" place="link" @click="handleLinkClick">{{$t('去添加服务模板')}}</a>
+            <template #link>
+              <a class="empty-link" href="javascript:void(0)" @click="handleLinkClick">{{$t('去添加服务模板')}}</a>
+            </template>
           </i18n>
         </div>
       </li>
     </ul>
     <div ref="templateDetails"
       class="template-details"
-      v-bkloading="{ isLoading: $loading(processRequestId) }"
+      v-bkloading="{
+        isLoading: $loading(processRequestId), mode: 'spin', theme: 'primary', size: 'mini'
+      }"
       v-show="tips.show">
-      <div class="disabled-tips" v-show="processInfo.disabled">{{$t('该模块下有主机不可取消')}}</div>
-      <div class="info-item">
-        <span class="label">{{$t('模板名称')}} ：</span>
-        <div class="details">{{curTemplate.name}}</div>
-      </div>
-      <div class="info-item">
-        <span class="label">{{$t('服务分类')}} ：</span>
-        <div class="details">{{processInfo.cagetory}}</div>
-      </div>
-      <div class="info-item">
-        <span class="label">{{$t('服务进程')}} ：</span>
-        <div class="details">
-          <p v-for="(item, index) in processInfo.processes" :key="index">{{item}}</p>
-          <template v-if="!processInfo.processes.length">
-            <p>{{$t('模板没配置进程')}}</p>
-          </template>
+      <template v-if="!$loading(processRequestId)">
+        <div class="disabled-tips" v-show="processInfo.disabled">{{$t('该模块下有主机不可取消')}}</div>
+        <div class="info-item">
+          <span class="label">{{$t('模板名称')}} ：</span>
+          <div class="details">{{curTemplate.name}}</div>
         </div>
-      </div>
+        <div class="info-item">
+          <span class="label">{{$t('服务分类')}} ：</span>
+          <div class="details">{{curTemplate.category}}</div>
+        </div>
+        <div class="info-item">
+          <span class="label">{{$t('服务进程')}} ：</span>
+          <div class="details">
+            <p v-for="(item, index) in processInfo.processes" :key="index">{{item}}</p>
+            <template v-if="!processInfo.processes.length">
+              <p>{{$t('模板没配置进程')}}</p>
+            </template>
+          </div>
+        </div>
+      </template>
     </div>
   </section>
 </template>
@@ -75,6 +118,9 @@
 <script>
   import { MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
   import { mapGetters } from 'vuex'
+  import debounce from 'lodash.debounce'
+  import serviceTemplateService from '@/services/service-template/index.js'
+
   export default {
     name: 'serviceTemplateSelector',
     props: {
@@ -92,7 +138,6 @@
         allTemplates: [],
         templates: [],
         localSelected: [...this.selected],
-        searchName: '',
         templateDetailsData: {},
         processRequestId: Symbol('processDetails'),
         tips: {
@@ -100,11 +145,17 @@
           instance: null
         },
         curTemplate: {},
-        cagetory: [],
+        categoryList: [],
+        primaryCategoryList: [],
+        secCategoryList: [],
         processInfo: {
           disabled: false,
-          cagetory: '',
           processes: []
+        },
+        filter: {
+          primaryCategory: '',
+          secCategory: '',
+          templateName: ''
         }
       }
     },
@@ -118,6 +169,9 @@
       },
       isEditMode() {
         return this.$parent.$parent.mode === 'edit'
+      },
+      secCategoryEmptyText() {
+        return this.filter.primaryCategory ? this.$t('没有二级分类') : this.$t('请选择一级分类')
       }
     },
     watch: {
@@ -129,31 +183,65 @@
       },
       allTemplates(value) {
         this.$emit('template-loaded', value)
+      },
+      'filter.primaryCategory'(id) {
+        // 当前分类下的二级分类
+        this.secCategoryList = this.categoryList.filter(item => item.bk_parent_id === id)
+
+        if (!id) {
+          this.filter.secCategory = ''
+        }
+
+        this.filterTemplate()
+      },
+      'filter.secCategory'() {
+        this.filterTemplate()
+      },
+      'filter.templateName'() {
+        this.filterTemplate()
       }
     },
     async created() {
-      this.getTemplates()
       await this.getServiceCategory()
+      this.getTemplates()
+      this.handleShowDetails = debounce(this.showDetails, 300)
+      this.handleHideTips = debounce(this.hideDetailsTips, 300)
     },
     methods: {
-      async getTemplates() {
+      async getServiceCategory() {
         try {
-          const { info: templates } = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
-            params: {
-              bk_biz_id: this.bizId,
-              page: {
-                sort: 'name'
-              }
-            },
+          const data = await this.$store.dispatch('serviceClassification/searchServiceCategoryWithoutAmout', {
+            params: { bk_biz_id: this.bizId },
             config: {
-              requestId: 'getServiceTemplate'
+              requestId: 'getServiceCategoryWithoutAmount',
+              fromCache: true
             }
           })
-          this.templates = templates.sort((A, B) => {
-            const weightA = this.selected.includes(A.id) ? 1 : 0
-            const weightB = this.selected.includes(B.id) ? 1 : 0
-            return weightB - weightA
+          this.categoryList = data?.info || []
+          this.primaryCategoryList = this.categoryList.filter(category => !category.bk_parent_id)
+        } catch (e) {
+          console.error(e)
+          this.categoryList = []
+        }
+      },
+      async getTemplates() {
+        try {
+          const templates = await serviceTemplateService.findAll({ bk_biz_id: this.bizId, page: { sort: 'name' } }, {
+            requestId: 'getServiceTemplate'
           })
+
+          // 将分类数据写入模板中
+          templates.forEach((template) => {
+            const secCategory = this.categoryList.find(item => item.id === template.service_category_id)
+            const primaryCategory = this.categoryList.find(item => item.id === secCategory.bk_parent_id)
+            template.parent_service_category_id = primaryCategory?.id
+            template.category = `${primaryCategory?.name || '--'} / ${secCategory?.name || '--'}`
+          })
+
+          // 选中的显示在前
+          this.templates = templates.sort((a, b) => this.selected.includes(b.id) - this.selected.includes(a.id))
+
+          // 备份全量模板，用于搜索
           this.allTemplates = this.templates
         } catch (e) {
           console.error(e)
@@ -172,13 +260,83 @@
       getSelectedServices() {
         return this.localSelected.map(id => this.allTemplates.find(template => template.id === id))
       },
+      filterTemplate() {
+        const { primaryCategory, secCategory, templateName } = this.filter
+        let results = []
+
+        if (!primaryCategory && !secCategory && !templateName) {
+          results = this.allTemplates.slice()
+        }
+
+        if (primaryCategory) {
+          results = this.allTemplates.filter(template => template.parent_service_category_id === primaryCategory)
+        }
+        if (secCategory) {
+          const data = primaryCategory ? results : this.allTemplates
+          results = data.filter(template => template.service_category_id === secCategory)
+        }
+        if (templateName) {
+          const data = (primaryCategory || secCategory) ? results : this.allTemplates
+          results = data.filter(template => template.name.indexOf(templateName) > -1)
+        }
+
+        this.templates = results
+      },
+      async showDetails(template = {}, event, disabled) {
+        this.curTemplate = template
+        this.processInfo.disabled = disabled
+
+        this.tips.instance && this.tips.instance.destroy()
+        this.tips.instance = this.$bkPopover(event.target, {
+          content: this.$refs.templateDetails,
+          zIndex: 9999,
+          width: 'auto',
+          trigger: 'manual',
+          boundary: 'window',
+          arrow: true
+        })
+        this.tips.show = true
+        this.$nextTick(() => {
+          this.tips.instance && this.tips.instance.show()
+        })
+
+        const curInfo = this.templateDetailsData[template.id]
+        if (curInfo) {
+          this.setProcessInfo(curInfo)
+          return
+        }
+
+        try {
+          const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
+            params: {
+              bk_biz_id: this.bizId,
+              service_template_id: template.id
+            },
+            config: {
+              requestId: this.processRequestId,
+              cancelPrevious: true
+            }
+          })
+          this.setProcessInfo(data.info)
+          this.templateDetailsData[template.id] = data.info
+        } catch (e) {
+          console.error(e)
+        }
+      },
+      setProcessInfo(data = []) {
+        this.processInfo.processes = data.map((process) => {
+          const port = this.$tools.getValue(process, 'property.port.value') || ''
+          return `${process.bk_process_name}${port ? `:${port}` : ''}`
+        })
+      },
+      hideDetailsTips() {
+        this.tips.instance && this.tips.instance.destroy()
+        this.tips.instance = null
+      },
       handleLinkClick() {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_SERVICE_TEMPLATE
         })
-      },
-      handleFilterTemplates() {
-        this.templates = this.allTemplates.filter(template => template.name.indexOf(this.searchName) > -1)
       },
       handleSelectAll(checked) {
         const { serviceExistHost } = this.$parent.$parent
@@ -192,74 +350,6 @@
             this.localSelected = []
           }
         }
-      },
-      async handleShowDetails(template = {}, event, disabled) {
-        this.curTemplate = template
-        this.processInfo.disabled = disabled
-        const curInfo = this.templateDetailsData[template.id]
-        if (curInfo) {
-          this.setProcessInfo(curInfo, event)
-          return
-        }
-        try {
-          const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
-            params: {
-              bk_biz_id: this.bizId,
-              service_template_id: template.id
-            },
-            config: {
-              requestId: this.processRequestId,
-              cancelPrevious: true
-            }
-          })
-          this.setProcessInfo(data.info, event)
-          this.templateDetailsData[template.id] = data.info
-        } catch (e) {
-          console.error(e)
-        }
-      },
-      setProcessInfo(data = [], event) {
-        this.processInfo.processes = data.map((process) => {
-          const port = this.$tools.getValue(process, 'property.port.value') || ''
-          return `${process.bk_process_name}${port ? `:${port}` : ''}`
-        })
-        const subCagetory = this.cagetory.find(item => item.id === this.curTemplate.service_category_id) || {}
-        const cagetory = this.cagetory.find(item => item.id === subCagetory.bk_parent_id) || {}
-        this.processInfo.cagetory = subCagetory && cagetory
-          ? `${cagetory.name} / ${subCagetory.name}`
-          : '-- / --'
-        this.tips.instance && this.tips.instance.destroy()
-        this.tips.instance = this.$bkPopover(event.target, {
-          content: this.$refs.templateDetails,
-          delay: 300,
-          zIndex: 9999,
-          width: 'auto',
-          trigger: 'manual',
-          boundary: 'window',
-          arrow: true
-        })
-        this.tips.show = true
-        this.$nextTick(() => {
-          this.tips.instance && this.tips.instance.show()
-        })
-      },
-      handlehideTips() {
-        this.tips.instance && this.tips.instance.destroy()
-        this.tips.instance = null
-      },
-      async getServiceCategory() {
-        try {
-          const data = await this.$store.dispatch('serviceClassification/searchServiceCategoryWithoutAmout', {
-            params: { bk_biz_id: this.bizId },
-            config: {
-              requestId: 'getServiceCategoryWithoutAmount'
-            }
-          })
-          this.cagetory = data.info
-        } catch (e) {
-          console.error(e)
-          this.cagetory = []
-        }
       }
     }
   }
@@ -267,23 +357,14 @@
 
 <style lang="scss" scoped>
     .top {
-        margin-bottom: 10px;
+        display: flex;
+        margin-bottom: 24px;
         .search {
-            @include inlineBlock;
-            width: 240px;
-        }
-        .to-template {
-            @include inlineBlock;
-            color: #3A84FF;
-            margin-left: 10px;
-            cursor: pointer;
-            .icon-cc-share {
-                margin-top: -2px;
-            }
+            width: 210px;
         }
         .select-all {
-            @include inlineBlock;
             line-height: 32px;
+            margin-left: auto;
         }
     }
     .template-list {
@@ -293,7 +374,7 @@
             min-height: 144px;
         }
         .template-item {
-            width: calc((100% - 20px) / 3);
+            width: calc((100% - 30px) / 3);
             height: 32px;
             margin: 0 0 16px 0;
             padding: 0 6px 0 10px;
@@ -371,6 +452,8 @@
     }
     .template-details {
         line-height: 20px;
+        min-width: 160px;
+        min-height: 60px;
         .disabled-tips {
             border-bottom: 1px solid #FFFFFF;
             padding: 0 0 6px;
@@ -387,6 +470,11 @@
         }
         .details {
             font-size: 12px;
+        }
+
+        ::v-deep .bk-loading {
+            // 在全局被修改了，这里再特殊修改
+            background: rgba(0, 0, 0, 0) !important;
         }
     }
 </style>

@@ -1,10 +1,22 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <section class="across-confirm">
     <h1 class="title">{{$t('转移主机到其他业务')}}</h1>
     <i18n tag="p" path="确认跨业务转移忽略主机数量" class="content">
-      <span class="count" place="count">{{count}}</span>
-      <span class="invalid" place="invalid">{{invalidList.length}}</span>
-      <span place="idleModule">{{$store.state.globalConfig.config.idlePool.idle}}</span>
+      <template #count><span class="count">{{count}}</span></template>
+      <template #invalid><span class="invalid">{{invalidList.length}}</span></template>
+      <template #idleModule><span>{{$store.state.globalConfig.config.idlePool.idle}}</span></template>
     </i18n>
     <invalid-list :title="$t('以下主机不能移除')" :list="invalidList"></invalid-list>
     <div class="footer">

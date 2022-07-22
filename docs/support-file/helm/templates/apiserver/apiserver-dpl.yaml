@@ -1,0 +1,112 @@
+{{- if .Values.apiserver.enabled }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-apiserver"
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    component: apiserver
+spec:
+  replicas: {{ .Values.apiserver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: apiserver
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        values-hash: "{{ toYaml .Values | sha256sum | trunc 63 }}"
+        component: apiserver
+      {{- with .Values.apiserver.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.apiserver.podAnnotations }}
+        {{ toYaml .Values.apiserver.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: apiserver
+        image: {{ .Values.image.registry }}/{{ .Values.apiserver.image.repository }}:v{{ default .Chart.AppVersion .Values.apiserver.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        workingDir: {{ .Values.apiserver.workDir }}
+        command:
+        - ./cmdb_apiserver
+        - --addrport=$(POD_IP):{{ .Values.apiserver.port }}
+        {{- if .Values.apiserver.configDir }}
+        - --config={{ .Values.apiserver.configDir }}
+        {{- end }}
+        - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        {{- if .Values.apiserver.command.logDir }}
+        - --log-dir={{ .Values.apiserver.command.logDir }}
+        {{- end }}
+        - --v={{ .Values.apiserver.command.logLevel }}
+        - --logtostderr={{ .Values.apiserver.command.logToStdErr }}
+        - "--enable-auth"
+        - {{ .Values.iam.auth.enabled | quote }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.apiserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.apiserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        {{- if .Values.apiserver.resources }}
+        resources: {{ toYaml .Values.apiserver.resources | nindent 10 }}
+        {{- end }}
+
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        {{- if .Values.apiserver.env -}}
+          {{ toYaml .Values.apiserver.env | indent 10 }}
+        {{- end }}
+
+        ports:
+        - containerPort: {{ .Values.apiserver.port }}
+
+        volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.apiserver.configDir }}
+          - name: configures
+            mountPath: {{ .Values.apiserver.configDir }}
+          {{- end }}
+      volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.apiserver.configDir }}
+        - name: configures
+          configMap:
+            name: {{ .Release.Name }}-apiserver-configures
+        {{- end }}
+
+      {{- with .Values.apiserver.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.apiserver.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.apiserver.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+{{- end }}

@@ -1,0 +1,115 @@
+{{- if .Values.webserver.enabled }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-webserver"
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    component: webserver
+spec:
+  replicas: {{ .Values.webserver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: webserver
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        component: webserver
+        values-hash: {{ toYaml .Values | sha256sum | trunc 63 }}
+      {{- with .Values.webserver.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.webserver.podAnnotations }}
+        {{ toYaml .Values.webserver.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      {{- if .Values.webserver.hostNetwork }}
+      hostNetwork: true
+      {{- end }}
+      dnsPolicy: {{ .Values.webserver.dnsPolicy }}
+      containers:
+      - name: webserver
+        image: {{ .Values.image.registry }}/{{ .Values.webserver.image.repository }}:v{{ default .Chart.AppVersion .Values.webserver.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        workingDir: {{ .Values.webserver.workDir}}
+        command:
+        - ./cmdb_webserver
+        - --addrport=$(POD_IP):{{ .Values.webserver.port }}
+        {{- if .Values.webserver.configDir }}
+        - --config={{ .Values.webserver.configDir }}
+        {{- end }}
+        - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        {{- if .Values.webserver.command.logDir }}
+        - --log-dir={{ .Values.webserver.command.logDir }}
+        {{- end }}
+        - --v={{ .Values.webserver.command.logLevel }}
+        - --logtostderr={{ .Values.webserver.command.logToStdErr }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.webserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.webserver.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        {{- if .Values.webserver.resources }}
+        resources: {{ toYaml .Values.webserver.resources | nindent 10 }}
+        {{- end }}
+
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        {{- if .Values.webserver.env }}
+          {{ toYaml .Values.webserver.env | indent 10 }}
+        {{- end }}
+
+        ports:
+        - containerPort: {{ .Values.webserver.port }}
+
+        volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.webserver.configDir }}
+          - name: configures
+            mountPath: {{ .Values.webserver.configDir }}
+          {{- end }}
+      volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.webserver.configDir }}
+        - name: configures
+          configMap:
+            name: {{ .Release.Name }}-webserver-configures
+        {{- end }}
+
+      {{- with .Values.webserver.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.webserver.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.webserver.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+{{- end }}

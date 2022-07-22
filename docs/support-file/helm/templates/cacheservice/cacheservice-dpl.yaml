@@ -1,0 +1,111 @@
+{{- if .Values.cacheservice.enabled }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-cacheservice"
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    component: cacheservice
+spec:
+  replicas: {{ .Values.cacheservice.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: cacheservice
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        component: cacheservice
+        values-hash: "{{ toYaml .Values | sha256sum | trunc 63 }}"
+      {{- with .Values.cacheservice.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.cacheservice.podAnnotations }}
+        {{ toYaml .Values.cacheservice.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: cacheservice
+        image: {{ .Values.image.registry }}/{{ .Values.cacheservice.image.repository }}:v{{ default .Chart.AppVersion .Values.cacheservice.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        workingDir: {{ .Values.cacheservice.workDir }}
+        command:
+        - ./cmdb_cacheservice
+        - --addrport=$(POD_IP):{{ .Values.cacheservice.port }}
+        {{- if .Values.cacheservice.configDir }}
+        - --config={{ .Values.cacheservice.configDir }}
+        {{- end }}
+        - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        {{- if .Values.cacheservice.command.logDir }}
+        - --log-dir={{ .Values.cacheservice.command.logDir }}
+        {{- end }}
+        - --v={{ .Values.cacheservice.command.logLevel }}
+        - --logtostderr={{ .Values.cacheservice.command.logToStdErr }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.cacheservice.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.cacheservice.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        {{- if .Values.cacheservice.resources }}
+        resources: {{ toYaml .Values.cacheservice.resources | nindent 10 }}
+        {{- end }}
+
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        {{- if .Values.cacheservice.env -}}
+          {{ toYaml .Values.cacheservice.env | indent 10 }}
+        {{- end }}
+
+        ports:
+        - containerPort: {{ .Values.cacheservice.port }}
+
+        volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.cacheservice.configDir }}
+          - name: configures
+            mountPath: {{ .Values.cacheservice.configDir }}
+          {{- end }}
+      volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.cacheservice.configDir }}
+        - name: configures
+          configMap:
+            name: {{ .Release.Name }}-cacheservice-configures
+        {{- end }}
+
+      {{- with .Values.cacheservice.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.cacheservice.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.cacheservice.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+{{- end }}

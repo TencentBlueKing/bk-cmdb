@@ -31,7 +31,7 @@ func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 	req := ctx.Request
 	defErr := ctx.Kit.CCError
 
-	bizID, err := util.GetInt64ByInterface(req.PathParameter("bk_biz_id"))
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if err != nil {
 		blog.Error("url parameter bk_biz_id not integer, bizID: %s, rid: %s", req.PathParameter("bk_biz_id"), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
@@ -153,7 +153,7 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID, err := util.GetInt64ByInterface(ctx.Request.PathParameter("bk_biz_id"))
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if err != nil {
 		ccErr := defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 		ctx.RespAutoError(ccErr)
@@ -286,7 +286,7 @@ func (s *Service) FindHostsBySetTemplates(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID, err := util.GetInt64ByInterface(ctx.Request.PathParameter("bk_biz_id"))
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if err != nil {
 		ccErr := defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 		ctx.RespAutoError(ccErr)
@@ -505,7 +505,7 @@ func (s *Service) ListBizHosts(ctx *rest.Contexts) {
 		ctx.RespAutoError(ccErr)
 		return
 	}
-	bizID, err := util.GetInt64ByInterface(req.PathParameter("appid"))
+	bizID, err := strconv.ParseInt(req.PathParameter("appid"), 10, 64)
 	if err != nil {
 		ccErr := defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 		ctx.RespAutoError(ccErr)
@@ -650,7 +650,7 @@ func (s *Service) ListHostsWithNoBiz(ctx *rest.Contexts) {
 
 // ListBizHostsTopo list hosts under business specified by path parameter with their topology information
 func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
-	bizID, err := util.GetInt64ByInterface(ctx.Request.PathParameter(common.BKAppIDField))
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
@@ -936,7 +936,7 @@ func (s *Service) CountTopoNodeHosts(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID, err := util.GetInt64ByInterface(ctx.Request.PathParameter(common.BKAppIDField))
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
 		ctx.RespAutoError(defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
@@ -1040,7 +1040,7 @@ func (s *Service) ListServiceTemplateIDsByHost(ctx *rest.Contexts) {
 // ListHostTotalMainlineTopo list host total mainline topo tree
 func (s *Service) ListHostTotalMainlineTopo(ctx *rest.Contexts) {
 
-	bizID, err := util.GetInt64ByInterface(ctx.Request.PathParameter(common.BKAppIDField))
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return

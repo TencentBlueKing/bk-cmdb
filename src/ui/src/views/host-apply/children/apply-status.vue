@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <cmdb-dialog v-model="visible" :width="490" @close="handleEvent('return')">
     <div class="status status-loading" v-if="loading">
@@ -21,8 +33,8 @@
       <p class="result-title">{{$t('应用成功')}}</p>
       <p class="result-subtitle" v-if="fail.length === 0">{{$t('成功保存策略并应用到当前模块下主机')}}</p>
       <i18n class="result-stat" tag="p" path="应用结果">
-        <span class="result-count" place="success">{{success.length}}</span>
-        <span :class="['result-count', { fail: fail.length > 0 }]" place="fail">{{fail.length}}</span>
+        <template #success><span class="result-count">{{success.length}}</span></template>
+        <template #fail><span :class="['result-count', { fail: fail.length > 0 }]">{{fail.length}}</span></template>
       </i18n>
       <div class="result-options">
         <bk-button class="mr10" theme="primary" @click="handleEvent('return')">{{$t('返回列表')}}</bk-button>

@@ -10,9 +10,8 @@ gzip = true
 # metadata collections.
 change-stream-namespaces = [""]
 direct-read-namespaces = [""]
-direct-read-dynamic-include-regex = "cmdb.cc_ApplicationBase$|cc_SetBase$|cc_ModuleBase$|cmdb.cc_HostBase$|cmdb.cc_ObjDes$|cc_ObjAttDes$|cmdb.cc_ObjectBase_(.*)_pub_"
-namespace-regex = "cmdb.cc_ApplicationBase$|cc_SetBase$|cc_ModuleBase$|cmdb.cc_HostBase$|cmdb.cc_ObjDes$|cc_ObjAttDes$|cmdb.cc_ObjectBase_(.*)_pub_"
-
+direct-read-dynamic-include-regex = "cmdb.cc_ApplicationBase$|cc_BizSetBase$|cc_SetBase$|cc_ModuleBase$|cmdb.cc_HostBase$|cmdb.cc_ObjDes$|cc_ObjAttDes$|cmdb.cc_ObjectBase_(.*)_pub_"
+namespace-regex = "cmdb.cc_ApplicationBase$|cc_BizSetBase$|cc_SetBase$|cc_ModuleBase$|cmdb.cc_HostBase$|cmdb.cc_ObjDes$|cc_ObjAttDes$|cmdb.cc_ObjectBase_(.*)_pub_"
 # plugin
 mapper-plugin-path = "etc/monstache-plugin.so"
 

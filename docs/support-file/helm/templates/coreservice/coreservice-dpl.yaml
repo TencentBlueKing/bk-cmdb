@@ -1,0 +1,111 @@
+{{- if .Values.coreservice.enabled }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-coreservice"
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    component: coreservice
+spec:
+  replicas: {{ .Values.coreservice.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: coreservice
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        component: coreservice
+        values-hash: "{{ toYaml .Values | sha256sum | trunc 63 }}"
+      {{- with .Values.coreservice.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.coreservice.podAnnotations }}
+        {{ toYaml .Values.coreservice.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: coreservice
+        image: {{ .Values.image.registry }}/{{ .Values.coreservice.image.repository }}:v{{ default .Chart.AppVersion .Values.coreservice.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        workingDir: {{ .Values.coreservice.workDir }}
+        command: ["./cmdb_coreservice"]
+        args:
+        - --addrport=$(POD_IP):{{ .Values.coreservice.port }}
+        {{- if .Values.coreservice.configDir }}
+        - --config={{ .Values.coreservice.configDir }}
+        {{- end }}
+        - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        {{- if .Values.coreservice.command.logDir }}
+        - --log-dir={{ .Values.coreservice.command.logDir }}
+        {{- end }}
+        - --v={{ .Values.coreservice.command.logLevel }}
+        - --logtostderr={{ .Values.coreservice.command.logToStdErr }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.coreservice.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.coreservice.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        {{- if .Values.coreservice.resources }}
+        resources: {{ toYaml .Values.coreservice.resources | nindent 10 }}
+        {{- end }}
+
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        {{- if .Values.coreservice.env -}}
+          {{ toYaml .Values.coreservice.env | indent 10 }}
+        {{- end }}
+
+        ports:
+        - containerPort: {{ .Values.coreservice.port }}
+
+        volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.coreservice.configDir }}
+          - name: configures
+            mountPath: {{ .Values.coreservice.configDir }}
+          {{- end }}
+      volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.coreservice.configDir }}
+        - name: configures
+          configMap:
+            name: {{ .Release.Name }}-coreservice-configures
+        {{- end }}
+
+      {{- with .Values.coreservice.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.coreservice.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+      {{- with .Values.coreservice.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+
+{{- end }}

@@ -77,5 +77,15 @@ func (s *coreService) initProcess(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/process/business_default_set_module_info/{bk_biz_id}", Handler: s.GetBusinessDefaultSetModuleInfo})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/process/module_bound_template/{bk_module_id}", Handler: s.RemoveTemplateBindingOnModule})
 
+	// service template attribute
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/process/service_template_attribute",
+		Handler: s.CreateServiceTemplateAttrs})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/service_template/attribute",
+		Handler: s.UpdateServiceTemplateAttribute})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/service_template/attribute",
+		Handler: s.DeleteServiceTemplateAttribute})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/service_template/attribute",
+		Handler: s.ListServiceTemplateAttribute})
+
 	utility.AddToRestfulWebService(web)
 }

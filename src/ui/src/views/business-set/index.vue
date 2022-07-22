@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div class="business-set-layout">
     <div class="business-set-options clearfix">
@@ -105,16 +117,18 @@
         slot="empty"
         :stuff="table.stuff">
         <i18n path="业务集列表提示语" class="table-empty-tips">
-          <bk-link theme="primary" place="auth" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
-          <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS_SET }" place="create">
-            <bk-button slot-scope="{ disabled }" text
-              theme="primary"
-              class="text-btn"
-              :disabled="disabled"
-              @click="handleCreate">
-              {{$t('立即创建')}}
-            </bk-button>
-          </cmdb-auth>
+          <template #auth><bk-link theme="primary" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link></template>
+          <template #create>
+            <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS_SET }">
+              <bk-button slot-scope="{ disabled }" text
+                theme="primary"
+                class="text-btn"
+                :disabled="disabled"
+                @click="handleCreate">
+                {{$t('立即创建')}}
+              </bk-button>
+            </cmdb-auth>
+          </template>
         </i18n>
       </cmdb-table-empty>
     </bk-table>
@@ -455,6 +469,10 @@
       }
 
       const isBuiltin = inst => inst?.default === 1
+
+      if (query.value.create) {
+        handleCreate()
+      }
 
       return  {
         properties,

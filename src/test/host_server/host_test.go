@@ -51,18 +51,17 @@ var _ = Describe("host test", func() {
 				"bk_service_status":   "1",
 				"bk_set_env":          "3",
 			}
-			rsp, err := instClient.CreateSet(context.Background(), strconv.FormatInt(bizId, 10), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data["bk_set_name"].(string)).To(Equal("test"))
-			parentIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_parent_id"])
+			rsp, e := instClient.CreateSet(context.Background(), bizId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(e).NotTo(HaveOccurred())
+			Expect(rsp["bk_set_name"].(string)).To(Equal("test"))
+			parentIdRes, err := commonutil.GetInt64ByInterface(rsp["bk_parent_id"])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(parentIdRes).To(Equal(bizId))
-			bizIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			bizIdRes, err := commonutil.GetInt64ByInterface(rsp["bk_biz_id"])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bizIdRes).To(Equal(bizId))
-			setId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_set_id"])
+			setId, err = commonutil.GetInt64ByInterface(rsp["bk_set_id"])
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -73,20 +72,19 @@ var _ = Describe("host test", func() {
 				"service_category_id": 2,
 				"service_template_id": 0,
 			}
-			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data["bk_module_name"].(string)).To(Equal("cc_module"))
+			rsp, e := instClient.CreateModule(context.Background(), bizId, setId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(e).NotTo(HaveOccurred())
+			Expect(rsp["bk_module_name"].(string)).To(Equal("cc_module"))
 
-			setIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_set_id"])
+			setIdRes, err := commonutil.GetInt64ByInterface(rsp["bk_set_id"])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(setIdRes).To(Equal(setId))
 
-			parentIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_parent_id"])
+			parentIdRes, err := commonutil.GetInt64ByInterface(rsp["bk_parent_id"])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(parentIdRes).To(Equal(setId))
-			moduleId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
+			moduleId, err = commonutil.GetInt64ByInterface(rsp["bk_module_id"])
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -1211,11 +1209,10 @@ var _ = Describe("list_hosts_topo test", func() {
 			"bk_service_status":   "1",
 			"bk_set_env":          "3",
 		}
-		setRsp, err := instClient.CreateSet(context.Background(), strconv.FormatInt(bizId, 10), header, setInput)
+		setRsp, err := instClient.CreateSet(context.Background(), bizId, header, setInput)
 		util.RegisterResponse(setRsp)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(setRsp.Result).To(Equal(true))
-		setId, err := commonutil.GetInt64ByInterface(setRsp.Data[common.BKSetIDField])
+		setId, err := commonutil.GetInt64ByInterface(setRsp[common.BKSetIDField])
 		Expect(err).NotTo(HaveOccurred())
 
 		By("create module cc_module")
@@ -1225,11 +1222,10 @@ var _ = Describe("list_hosts_topo test", func() {
 			"service_category_id": 2,
 			"service_template_id": 0,
 		}
-		moduleRsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, moduleInput)
-		util.RegisterResponse(moduleRsp)
+		moduleRsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, moduleInput)
+		util.RegisterResponseWithRid(moduleRsp, header)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(moduleRsp.Result).To(Equal(true))
-		moduleId1, err := commonutil.GetInt64ByInterface(moduleRsp.Data[common.BKModuleIDField])
+		moduleId1, err := commonutil.GetInt64ByInterface(moduleRsp[common.BKModuleIDField])
 		Expect(err).NotTo(HaveOccurred())
 
 		By("create module cc_module1")
@@ -1239,11 +1235,10 @@ var _ = Describe("list_hosts_topo test", func() {
 			"service_category_id": 2,
 			"service_template_id": 0,
 		}
-		moduleRsp1, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, moduleInput1)
-		util.RegisterResponse(moduleRsp1)
+		moduleRsp1, err := instClient.CreateModule(context.Background(), bizId, setId, header, moduleInput1)
+		util.RegisterResponseWithRid(moduleRsp1, header)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(moduleRsp1.Result).To(Equal(true))
-		moduleId2, err := commonutil.GetInt64ByInterface(moduleRsp1.Data[common.BKModuleIDField])
+		moduleId2, err := commonutil.GetInt64ByInterface(moduleRsp1[common.BKModuleIDField])
 		Expect(err).NotTo(HaveOccurred())
 
 		By("add host using api")

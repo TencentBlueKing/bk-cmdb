@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div class="service-wrapper">
     <div class="options clearfix">
@@ -37,14 +49,6 @@
             @change="handleSearch">
           </bk-search-select>
         </div>
-        <cmdb-switcher-group v-model="currentView" tips-key="host_service_list_view_tips" :tips="$t('标签或路径切换')">
-          <cmdb-switcher-item name="path" :tips="$t('显示拓扑')">
-            <i class="icon-cc-instance-path"></i>
-          </cmdb-switcher-item>
-          <cmdb-switcher-item name="label" :tips="$t('显示标签')">
-            <i class="icon-cc-label"></i>
-          </cmdb-switcher-item>
-        </cmdb-switcher-group>
       </div>
     </div>
     <div class="tables">
@@ -54,7 +58,6 @@
         :key="instance.id"
         :instance="instance"
         :expanded="index === 0"
-        :current-view="currentView"
         @delete-instance="handleDeleteInstance"
         @update-instance="handleUpdateInstance"
         @check-change="handleCheckChange"
@@ -93,16 +96,12 @@
   import { mapState } from 'vuex'
   import serviceInstanceTable from './service-instance-table.vue'
   import authMixin from '../mixin-auth'
-  import CmdbSwitcherGroup from '@/components/switcher/switcher-group'
-  import CmdbSwitcherItem from '@/components/switcher/switcher-item'
   import { readonlyMixin } from '../mixin-readonly'
   import { historyLabelProxy, hostServiceInstancesProxy } from '../service-proxy'
 
   export default {
     components: {
-      serviceInstanceTable,
-      CmdbSwitcherGroup,
-      CmdbSwitcherItem
+      serviceInstanceTable
     },
     mixins: [authMixin, readonlyMixin],
     data() {

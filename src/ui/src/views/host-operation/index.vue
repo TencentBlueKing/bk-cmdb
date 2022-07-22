@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div class="layout" v-bkloading="{
     isLoading: $loading(Object.values(request)) || loading
@@ -19,17 +31,19 @@
           lineHeight: '30px'
         }">
         <i18n path="以下N台主机转移失败">
-          <span place="N">{{resources.length}}</span>
-          <bk-link class="fail-detail-link" theme="primary" @click="handleViewFailDetail" place="link">
-            {{$t('点击查看详情')}}
-          </bk-link>
+          <template #N><span>{{resources.length}}</span></template>
+          <template #link>
+            <bk-link class="fail-detail-link" theme="primary" @click="handleViewFailDetail">
+              {{$t('点击查看详情')}}
+            </bk-link>
+          </template>
         </i18n>
       </cmdb-tips>
       <div class="info clearfix mb20">
         <label class="info-label fl">{{$t('已选主机')}}：</label>
         <div class="info-content">
           <i18n path="N台主机">
-            <b class="info-count" place="count">{{resources.length}}</b>
+            <template #count><b class="info-count">{{resources.length}}</b></template>
           </i18n>
           <i class="edit-trigger icon icon-cc-edit" v-if="!changeHostDisabled" @click="handleChangeHost"></i>
         </div>

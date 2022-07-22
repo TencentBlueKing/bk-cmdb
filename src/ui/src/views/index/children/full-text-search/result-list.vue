@@ -1,9 +1,21 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div class="result-list">
     <template v-if="!fetching && list.length">
       <div class="data-list">
         <component v-for="(item, index) in list" :key="index"
-          :is="`item-${item.type}`"
+          :is="`item-${item.comp || item.type}`"
           :property-map="propertyMap"
           :data="item" />
       </div>
@@ -30,6 +42,7 @@
   import { computed, defineComponent, reactive, ref, watch } from '@vue/composition-api'
   import NoSearchResults from '@/views/status/no-search-results.vue'
   import ItemBiz from './item-biz.vue'
+  import ItemBizSet from './item-bizset.vue'
   import ItemModel from './item-model.vue'
   import ItemInstance from './item-instance.vue'
   import ItemHost from './item-host.vue'
@@ -43,6 +56,8 @@
   export default defineComponent({
     components: {
       NoSearchResults,
+      [ItemBiz.name]: ItemBiz,
+      [ItemBizSet.name]: ItemBizSet,
       [ItemBiz.name]: ItemBiz,
       [ItemModel.name]: ItemModel,
       [ItemInstance.name]: ItemInstance,

@@ -194,6 +194,11 @@ func (s *Service) ListHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
+	if len(option.ServiceTemplateIDs) > common.BKMaxLimitSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
 	if err := checkIDs(option.ModuleIDs); err != nil {
 		blog.Errorf("get module host apply rule failed, parameter bk_module_ids invalid, err: %v, rid: %s", err, rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_module_ids"))
@@ -256,13 +261,22 @@ func (s *Service) BatchCreateOrUpdateHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(batchResult)
 }
 
-func generateCondition(dataStr string, hostIDs []int64) (map[string]interface{}, map[string]interface{}) {
+func generateCondition(dataStr string, hostIDs []int64) (map[string]interface{}, map[string]interface{},
+	errors.CCErrorCoder) {
+
 	data := make(map[string]interface{})
 	_ = json.Unmarshal([]byte(dataStr), &data)
 
 	cond := make([]map[string]interface{}, 0)
-
 	for key, value := range data {
+		// 对于主机特殊属性字段需要转化成数组进行查询
+		if util.InArray(key, metadata.HostSpecialFields) {
+			valueStr, ok := value.(string)
+			if !ok {
+				return nil, nil, errors.New(common.CCErrCommParamsNeedString, key)
+			}
+			value = strings.Split(valueStr, ",")
+		}
 		cond = append(cond, map[string]interface{}{
 			key: map[string]interface{}{common.BKDBNE: value},
 		})
@@ -271,7 +285,7 @@ func generateCondition(dataStr string, hostIDs []int64) (map[string]interface{},
 		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs},
 		common.BKDBOR:        cond,
 	}
-	return mergeCond, data
+	return mergeCond, data, nil
 }
 
 // GenerateModuleApplyPlan generate module host apply rule plan
@@ -342,7 +356,14 @@ func (s *Service) updateHostPlan(planResult metadata.HostApplyPlanResult, kit *r
 				<-pipeline
 			}()
 
-			mergeCond, data := generateCondition(dataStr, hostIDs)
+			mergeCond, data, cErr := generateCondition(dataStr, hostIDs)
+			if cErr != nil {
+				if firstErr == nil {
+					firstErr = cErr
+				}
+				blog.Errorf("generate query condition failed, err: %v, rid: %s", cErr, kit.Rid)
+				return
+			}
 			counts, cErr := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 				common.BKTableNameBaseHost, []map[string]interface{}{mergeCond})
 			if cErr != nil {
@@ -552,7 +573,13 @@ func (s *Service) updateHostAttributes(kit *rest.Kit, planResult []metadata.Host
 	if err != nil {
 		return err
 	}
-	mergeCond, data := generateCondition(dataStr, hostIDs)
+
+	mergeCond, data, cErr := generateCondition(dataStr, hostIDs)
+	if cErr != nil {
+		blog.Errorf("generate query condition failed, err: %v, rid: %s", cErr, kit.Rid)
+		return cErr
+	}
+
 	counts, cErr := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 		common.BKTableNameBaseHost, []map[string]interface{}{mergeCond})
 	if cErr != nil {
@@ -1208,6 +1235,11 @@ func (s *Service) GetServiceTemplateHostApplyRule(ctx *rest.Contexts) {
 	if option.ApplicationID == 0 {
 		blog.Errorf("get service template rule failed, bk_biz_id shouldn't empty, rid: %s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id"))
+		return
+	}
+
+	if len(option.ServiceTemplateIDs) > common.BKMaxLimitSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
 	}
 

@@ -298,6 +298,11 @@ type DeleteHostRequest struct {
 	HostIDArr     []int64 `json:"bk_host_ids"`
 }
 
+// ListServiceCategoryOption list service category option
+type ListServiceCategoryOption struct {
+	BizID int64 `json:"bk_biz_id"`
+}
+
 type OneServiceCategoryResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceCategory `json:"data"`
@@ -653,4 +658,16 @@ func (d *DistinctFieldOption) Validate() (rawError errors.RawErrorInfo) {
 type CreateModelTable struct {
 	ObjectIDs  []string `json:"bk_object_ids"`
 	IsMainLine bool     `json:"is_main_line"`
+}
+
+// ServiceTemplateAttributeResult service template attribute result
+type ServiceTemplateAttributeResult struct {
+	BaseResp `json:",inline"`
+	Data     *ServTempAttrData `json:"data"`
+}
+
+// SetTemplateAttributeResult set template attribute result
+type SetTemplateAttributeResult struct {
+	BaseResp `json:",inline"`
+	Data     *SetTempAttrData `json:"data"`
 }

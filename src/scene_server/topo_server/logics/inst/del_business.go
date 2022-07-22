@@ -14,7 +14,7 @@ package inst
 
 import (
 	"strconv"
-	
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -171,43 +171,43 @@ func (b *business) cleanBizAndRelatedResources(kit *rest.Kit, bizID int64) error
 		return err
 	}
 
-	// 2. clean module/set template
-	if err := b.cleanTemplate(kit, bizID); err != nil {
-		return err
-	}
-
-	// 3. clean process
+	// 2. clean process
 	if err := b.cleanProcess(kit, bizID); err != nil {
 		return err
 	}
 
-	// 4. clean service instance
+	// 3. clean service instance
 	if err := b.cleanServiceInstance(kit, bizID); err != nil {
 		return err
 	}
 
-	// 5. clean module
+	// 4. clean module
 	if err := b.cleanModule(kit, bizID); err != nil {
 		return err
 	}
 
-	// 6. clean set
+	// 5. clean set
 	if err := b.cleanSet(kit, bizID); err != nil {
 		return err
 	}
 
-	// 7. clean mainline topo
+	// 6. clean mainline topo
 	if err := b.cleanTopo(kit, bizID); err != nil {
 		return err
 	}
 
-	// 8. clean biz
-	if err := b.cleanBiz(kit, bizID); err != nil {
+	// 7. clean module/set template
+	if err := b.cleanTemplate(kit, bizID); err != nil {
 		return err
 	}
 
-	// 9. clean property
+	// 8. clean property
 	if err := b.cleanProperty(kit, bizID); err != nil {
+		return err
+	}
+
+	// 9. clean biz
+	if err := b.cleanBiz(kit, bizID); err != nil {
 		return err
 	}
 
@@ -230,7 +230,7 @@ func (b *business) cleanDynamicGroup(kit *rest.Kit, bizID int64) error {
 	distinctOpt := &metadata.DistinctFieldOption{
 		TableName: common.BKTableNameDynamicGroup,
 		Field:     common.BKFieldID,
-		Filter:    mapstr.MapStr{
+		Filter: mapstr.MapStr{
 			common.BKAppIDField: bizID,
 		},
 	}
@@ -268,18 +268,18 @@ func (b *business) cleanDynamicGroup(kit *rest.Kit, bizID int64) error {
 }
 
 func (b *business) cleanTemplate(kit *rest.Kit, bizID int64) error {
-	// 1. clean process template
+	// 1. clean set template and set service template relation
+	if err := b.cleanSetTemplate(kit, bizID); err != nil {
+		return err
+	}
+
+	// 2. clean process template
 	if err := b.cleanProcessTemplate(kit, bizID); err != nil {
 		return err
 	}
 
-	// 2. clean service template
+	// 3. clean service template
 	if err := b.cleanServiceTemplate(kit, bizID); err != nil {
-		return err
-	}
-
-	// 3. clean set template and set service template relation
-	if err := b.cleanSetTemplate(kit, bizID); err != nil {
 		return err
 	}
 
@@ -295,7 +295,7 @@ func (b *business) cleanProcessTemplate(kit *rest.Kit, bizID int64) error {
 	distinctOpt := &metadata.DistinctFieldOption{
 		TableName: common.BKTableNameProcessTemplate,
 		Field:     common.BKFieldID,
-		Filter:    mapstr.MapStr{
+		Filter: mapstr.MapStr{
 			common.BKAppIDField: bizID,
 		},
 	}
@@ -328,8 +328,7 @@ func (b *business) cleanProcessTemplate(kit *rest.Kit, bizID int64) error {
 			idsBatch = ids[i : i+batchSize]
 		}
 
-		if err := b.clientSet.CoreService().Process().DeleteProcessTemplateBatch(kit.Ctx, kit.Header, idsBatch);
-			err != nil {
+		if err := b.clientSet.CoreService().Process().DeleteProcessTemplateBatch(kit.Ctx, kit.Header, idsBatch); err != nil {
 			blog.Errorf("batch delete process template err: %v, rid: %s", err, kit.Rid)
 			return err
 		}
@@ -342,7 +341,7 @@ func (b *business) cleanServiceTemplate(kit *rest.Kit, bizID int64) error {
 	distinctOpt := &metadata.DistinctFieldOption{
 		TableName: common.BKTableNameServiceTemplate,
 		Field:     common.BKFieldID,
-		Filter:    mapstr.MapStr{
+		Filter: mapstr.MapStr{
 			common.BKAppIDField: bizID,
 		},
 	}
@@ -373,7 +372,7 @@ func (b *business) cleanSetTemplate(kit *rest.Kit, bizID int64) error {
 	distinctOpt := &metadata.DistinctFieldOption{
 		TableName: common.BKTableNameSetTemplate,
 		Field:     common.BKFieldID,
-		Filter:    mapstr.MapStr{
+		Filter: mapstr.MapStr{
 			common.BKAppIDField: bizID,
 		},
 	}
@@ -419,29 +418,55 @@ func (b *business) cleanSetTemplate(kit *rest.Kit, bizID int64) error {
 }
 
 func (b *business) cleanServiceCategory(kit *rest.Kit, bizID int64) error {
-	distinctOpt := &metadata.DistinctFieldOption{
-		TableName: common.BKTableNameServiceCategory,
-		Field:     common.BKFieldID,
-		Filter:    mapstr.MapStr{
-			common.BKAppIDField: bizID,
-		},
+	opt := metadata.ListServiceCategoriesOption{
+		BusinessID:     bizID,
+		WithStatistics: false,
 	}
 
-	rst, errDistinct := b.clientSet.CoreService().Common().GetDistinctField(kit.Ctx, kit.Header, distinctOpt)
-	if errDistinct != nil {
-		blog.Errorf("get service category ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt,
-			errDistinct, kit.Rid)
-		return errDistinct
-	}
-
-	ids, err := util.SliceInterfaceToInt64(rst)
+	categories, err := b.clientSet.CoreService().Process().ListServiceCategories(kit.Ctx, kit.Header, opt)
 	if err != nil {
-		blog.Errorf("service category ids to int failed, ids: %v, err: %v, rid: %s", rst, err, kit.Rid)
+		blog.Errorf("get service categories failed, opt: %+v, err: %v, rid: %s", opt, err, kit.Rid)
 		return err
 	}
 
+	// rearrange service categories in the order of child then parent
+	parentMap := make(map[int64][]int64, 0)
+	ids := make([]int64, 0)
+	idMap := make(map[int64]struct{})
+	for _, info := range categories.Info {
+		category := info.ServiceCategory
+
+		// ignore the shared categories
+		if category.BizID != bizID {
+			continue
+		}
+
+		if category.ParentID == 0 {
+			idMap[category.ID] = struct{}{}
+			ids = append(ids, category.ID)
+			continue
+		}
+		parentMap[category.ParentID] = append(parentMap[category.ParentID], category.ID)
+	}
+
+	for parentID, childIDs := range parentMap {
+		for _, id := range childIDs {
+			idMap[id] = struct{}{}
+		}
+
+		// if parent category is a child of another category, place its children before that
+		if _, exists := idMap[parentID]; exists {
+			ids = append(childIDs, ids...)
+			continue
+		}
+
+		ids = append(ids, childIDs...)
+		idMap[parentID] = struct{}{}
+		ids = append(ids, parentID)
+	}
+
 	for _, id := range ids {
-		if err := b.clientSet.CoreService().Process().DeleteServiceCategory(kit.Ctx, kit.Header, id); err != nil{
+		if err := b.clientSet.CoreService().Process().DeleteServiceCategory(kit.Ctx, kit.Header, id); err != nil {
 			blog.Errorf("failed to delete service category, id: %v, err: %v, rid: %s", id, err, kit.Rid)
 			return err
 		}
@@ -454,7 +479,7 @@ func (b *business) cleanProcess(kit *rest.Kit, bizID int64) error {
 	distinctOpt := &metadata.DistinctFieldOption{
 		TableName: common.BKTableNameProcessInstanceRelation,
 		Field:     common.BKProcessIDField,
-		Filter:    mapstr.MapStr{
+		Filter: mapstr.MapStr{
 			common.BKAppIDField: bizID,
 		},
 	}
@@ -478,7 +503,7 @@ func (b *business) cleanProcess(kit *rest.Kit, bizID int64) error {
 		if (i + batchSize) >= idsLen {
 			idsBatch = ids[i:idsLen]
 		} else {
-			idsBatch = ids[:i+batchSize]
+			idsBatch = ids[i : i+batchSize]
 		}
 
 		// clean process instance association
@@ -515,8 +540,7 @@ func (b *business) cleanProcess(kit *rest.Kit, bizID int64) error {
 		}
 
 		if err := b.clientSet.CoreService().Process().DeleteProcessInstanceRelation(kit.Ctx, kit.Header,
-			optDelProcInstRel);
-			err != nil {
+			optDelProcInstRel); err != nil {
 			return err
 		}
 	}
@@ -528,7 +552,7 @@ func (b *business) cleanServiceInstance(kit *rest.Kit, bizID int64) error {
 	distinctOpt := &metadata.DistinctFieldOption{
 		TableName: common.BKTableNameServiceInstance,
 		Field:     common.BKFieldID,
-		Filter:    mapstr.MapStr{
+		Filter: mapstr.MapStr{
 			common.BKAppIDField: bizID,
 		},
 	}
@@ -558,7 +582,7 @@ func (b *business) cleanServiceInstance(kit *rest.Kit, bizID int64) error {
 		if (i + batchSize) >= idsLen {
 			idsBatch = ids[i:idsLen]
 		} else {
-			idsBatch = ids[:i+batchSize]
+			idsBatch = ids[i : i+batchSize]
 		}
 
 		optDel := &metadata.CoreDeleteServiceInstanceOption{
@@ -583,7 +607,7 @@ func (b *business) cleanSet(kit *rest.Kit, bizID int64) error {
 	distinctOpt := &metadata.DistinctFieldOption{
 		TableName: common.BKTableNameBaseSet,
 		Field:     common.BKSetIDField,
-		Filter:    mapstr.MapStr{
+		Filter: mapstr.MapStr{
 			common.BKAppIDField: bizID,
 		},
 	}
@@ -612,7 +636,7 @@ func (b *business) cleanSet(kit *rest.Kit, bizID int64) error {
 		if (i + batchSize) >= idsLen {
 			idsBatch = ids[i:idsLen]
 		} else {
-			idsBatch = ids[:i+batchSize]
+			idsBatch = ids[i : i+batchSize]
 		}
 
 		if err := b.set.DeleteSet(kit, bizID, idsBatch); err != nil {
@@ -672,7 +696,7 @@ func (b *business) cleanTopoInstAndAsst(kit *rest.Kit, bizID int64, obj string) 
 	distinctOpt := &metadata.DistinctFieldOption{
 		TableName: tableName,
 		Field:     idField,
-		Filter:    mapstr.MapStr{
+		Filter: mapstr.MapStr{
 			common.BKAppIDField: bizID,
 		},
 	}
@@ -696,7 +720,7 @@ func (b *business) cleanTopoInstAndAsst(kit *rest.Kit, bizID int64, obj string) 
 		if (i + batchSize) >= idsLen {
 			idsBatch = ids[i:idsLen]
 		} else {
-			idsBatch = ids[:i+batchSize]
+			idsBatch = ids[i : i+batchSize]
 		}
 
 		// clean topo instance associations
@@ -749,7 +773,7 @@ func (b *business) cleanObjAttDes(kit *rest.Kit, bizID int64) error {
 	distinctOpt := &metadata.DistinctFieldOption{
 		TableName: common.BKTableNameObjAttDes,
 		Field:     common.BKObjIDField,
-		Filter:    mapstr.MapStr{
+		Filter: mapstr.MapStr{
 			common.BKAppIDField: bizID,
 		},
 	}
@@ -810,7 +834,7 @@ func (b *business) cleanInstAsst(kit *rest.Kit, objID string, instIDs []interfac
 	if len(instIDs) == 0 {
 		return nil
 	}
-	
+
 	opt := &metadata.InstAsstDeleteOption{
 		Opt: metadata.DeleteOption{
 			Condition: mapstr.MapStr{

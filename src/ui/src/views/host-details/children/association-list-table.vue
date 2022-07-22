@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div class="table" v-bkloading="{ isLoading: $loading(propertyRequest, instanceRequest) }">
     <div class="table-info clearfix" @click="expanded = !expanded">
@@ -142,9 +154,10 @@
         return `get_${this.id}_association_list_table_instances`
       },
       page() {
+        // 每次in当前页的id查询，因此page参数每次都是0-size
         return {
           limit: this.pagination.size,
-          start: (this.pagination.current - 1) * this.pagination.size
+          start: 0
         }
       },
       totalPage() {
@@ -156,6 +169,10 @@
       instanceIds() {
         // eslint-disable-next-line max-len
         return this.associationInstances.map(instance => (this.isSource ? instance.bk_asst_inst_id : instance.bk_inst_id))
+      },
+      currentPageInstanceIds() {
+        const start = (this.pagination.current - 1) * this.pagination.size
+        return this.instanceIds.slice(start, start + this.pagination.size)
       },
       header() {
         const headerProperties = this.$tools.getDefaultHeaderProperties(this.properties)
@@ -241,8 +258,12 @@
           const dataListKey = dataListKeys[this.id] || 'info'
 
           this.list = data[dataListKey]
-          this.pagination.count = data.count
-          if (data.count && !data[dataListKey].length) {
+
+          // 此处总数需要使用总实例数，而非data.count因使用in当前页的id查询data.count只是当前页的条数
+          this.pagination.count = this.associationInstances?.length
+
+          // 删除一整页后自动回退到上一页
+          if (this.pagination.count && !data[dataListKey].length) {
             this.pagination.current -= 1
             this.getInstances()
           }
@@ -257,7 +278,7 @@
         const hostCondition = {
           field: 'bk_host_id',
           operator: '$in',
-          value: this.instanceIds
+          value: this.currentPageInstanceIds
         }
         const condition = models.map(model => ({
           bk_obj_id: model,
@@ -289,7 +310,7 @@
           params: {
             condition: {
               bk_biz_id: {
-                $in: this.instanceIds
+                $in: this.currentPageInstanceIds
               }
             },
             fields: [],
@@ -306,7 +327,7 @@
           fields: [],
           bk_biz_set_filter: {
             condition: 'AND',
-            rules: [{ field: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID, operator: 'in', value: this.instanceIds }]
+            rules: [{ field: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID, operator: 'in', value: this.currentPageInstanceIds }]
           },
           page: this.page
         }
@@ -327,7 +348,7 @@
               rules: [{
                 field: 'bk_inst_id',
                 operator: 'in',
-                value: this.instanceIds
+                value: this.currentPageInstanceIds
               }]
             }
           },

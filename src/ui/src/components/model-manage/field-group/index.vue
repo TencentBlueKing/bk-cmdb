@@ -1,3 +1,15 @@
+<!--
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+
 <template>
   <div
     class="field-group"
@@ -8,13 +20,13 @@
     v-bkloading="{ isLoading: $loading(), extCls: 'field-loading' }"
   >
     <div class="field-options">
-      <cmdb-auth :auth="authResources">
+      <cmdb-auth :auth="authResources" @update-auth="handleReceiveAuth">
         <template #default="{ disabled }">
           <bk-button theme="primary" :disabled="disabled"
             @click="handleAddField(displayGroupedProperties[0])">{{$t('新建字段')}}</bk-button>
         </template>
       </cmdb-auth>
-      <cmdb-auth :auth="authResources">
+      <cmdb-auth :auth="authResources" @update-auth="handleReceiveAuth">
         <template #default="{ disabled }">
           <bk-button :disabled="disabled" @click="handleAddGroup">{{$t('新建分组')}}</bk-button>
         </template>
@@ -61,7 +73,7 @@
           <div class="group-header" slot="title">
             <collapse-group-title
               :drag-icon="updateAuth"
-              :dropdown-menu="isEditable(group)"
+              :dropdown-menu="isEditable(group.info)"
               :collapse="groupCollapseState[group.info.bk_group_id]"
               :title="`${group.info.bk_group_name} ( ${group.properties.length} )`"
               @click.native="toggleGroup(group)"
@@ -134,6 +146,7 @@
                   <cmdb-auth
                     class="mr10"
                     :auth="authResources"
+                    @update-auth="handleReceiveAuth"
                     @click.native.stop
                   >
                     <bk-button
@@ -148,6 +161,7 @@
                   </cmdb-auth>
                   <cmdb-auth
                     class="mr10"
+                    @update-auth="handleReceiveAuth"
                     :auth="authResources"
                     @click.native.stop
                     v-if="!property.ispre"
@@ -167,7 +181,7 @@
                 </template>
               </li>
               <li class="field-add fl" v-if="isEditable(group.info)">
-                <cmdb-auth :auth="authResources" tag="div">
+                <cmdb-auth @update-auth="handleReceiveAuth" :auth="authResources" tag="div">
                   <bk-button
                     slot-scope="{ disabled }"
                     class="field-add-btn"
@@ -185,7 +199,7 @@
           </bk-transition>
         </div>
         <div class="add-group">
-          <cmdb-auth :auth="authResources">
+          <cmdb-auth @update-auth="handleReceiveAuth" :auth="authResources">
             <bk-button slot-scope="{ disabled }"
               class="add-group-trigger"
               :text="true"
@@ -834,7 +848,7 @@
             info: group,
             properties: []
           })
-          this.groupCollapseState[group.bk_group_id] = group.is_collapse
+          this.$set(this.groupCollapseState, group.bk_group_id, group.is_collapse)
           this.groupDialog.isShow = false
           this.$success(this.$t('创建成功'))
         } catch (err) {
@@ -1132,6 +1146,9 @@ $modelHighlightColor: #3c96ff;
 }
 
 .field-list {
+  $ghostBorderColor: #dcdee5;
+  $ghostBackgroundColor:#f5f7fa;
+
   margin-top: 7px;
   font-size: 14px;
   position: relative;
@@ -1189,8 +1206,6 @@ $modelHighlightColor: #3c96ff;
       }
     }
     &-ghost {
-      $ghostBorderColor: #dcdee5;
-      $ghostBackgroundColor:#f5f7fa;
       background-color: $ghostBackgroundColor !important;
       border: 1px dashed $ghostBorderColor;
 

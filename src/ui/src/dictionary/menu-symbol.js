@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 export const MENU_ENTRY = 'menu_entry'
 export const MENU_INDEX = 'menu_index'
 export const MENU_BUSINESS = 'menu_business'
@@ -23,8 +35,19 @@ export const MENU_BUSINESS_SERVICE_TOPOLOGY = 'menu_business_service_topology'
 export const MENU_BUSINESS_ADVANCED = 'menu_business_advanced'
 
 export const MENU_BUSINESS_HOST_AND_SERVICE = 'menu_business_host_and_service'
+
+// 服务模板
 export const MENU_BUSINESS_SERVICE_TEMPLATE = 'menu_business_service_template'
+export const MENU_BUSINESS_SERVICE_TEMPLATE_CREATE = 'menu_business_service_template_create'
+export const MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS = 'menu_business_service_template_details'
+export const MENU_BUSINESS_SERVICE_TEMPLATE_EDIT = 'menu_business_service_template_edit'
+
+// 集群模板
 export const MENU_BUSINESS_SET_TEMPLATE = 'menu_business_set_template'
+export const MENU_BUSINESS_SET_TEMPLATE_CREATE = 'menu_business_set_template_create'
+export const MENU_BUSINESS_SET_TEMPLATE_DETAILS = 'menu_business_set_template_details'
+export const MENU_BUSINESS_SET_TEMPLATE_EDIT = 'menu_business_set_template_edit'
+export const MENU_BUSINESS_SET_TEMPLATE_SYNC_HISTORY = 'menu_business_set_template_sync_history'
 
 // 主机属性自动应用
 export const MENU_BUSINESS_HOST_APPLY = 'menu_business_host_apply'
@@ -100,3 +123,6 @@ export const MENU_RESOURCE_CLOUD_RESOURCE = 'menu_resource_cloud_resource'
 // 业务集资源实例
 export const MENU_RESOURCE_BUSINESS_SET = 'menu_resource_business_set'
 export const MENU_RESOURCE_BUSINESS_SET_DETAILS = 'menu_resource_set_business_details'
+
+// 业务(集)选择器中收藏key
+export const BUSINESS_SELECTOR_COLLECTION = 'business_selector_collection'
