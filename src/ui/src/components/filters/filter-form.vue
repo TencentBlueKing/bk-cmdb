@@ -12,6 +12,7 @@
 
 <template>
   <bk-sideslider class="filter-form-sideslider"
+    v-transfer-dom
     :is-show.sync="isShow"
     :width="400"
     :show-mask="false"

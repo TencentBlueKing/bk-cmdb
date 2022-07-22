@@ -111,7 +111,7 @@
               })
           },
         },
-        { title: t('开始导出'), icon: 4, nextButtonVisible: false }
+        { title: t('开始导入'), icon: 4, nextButtonVisible: false }
       ]
 
       return {
