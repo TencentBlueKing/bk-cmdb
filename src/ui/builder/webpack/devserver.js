@@ -16,30 +16,45 @@ const { HOST } = process.env
 const PORT = process.env.PORT && Number(process.env.PORT)
 
 module.exports = config => ({
-  before(app) {
+  setupMiddlewares(middlewares, devServer) {
+    if (!devServer) {
+      throw new Error('webpack-dev-server is not defined')
+    }
+
     const launchMiddleware = require('launch-editor-middleware')
-    app.use('/__open-in-editor', launchMiddleware())
+
+    devServer.app.use('/__open-in-editor', launchMiddleware())
+
+    return middlewares
   },
-  clientLogLevel: 'error',
+
+  client: {
+    logging: 'warn',
+    progress: false,
+    overlay: config.dev.errorOverlay
+      ? { warnings: false, errors: true }
+      : false,
+  },
+
   historyApiFallback: {
     rewrites: [
       { from: /.*/, to: path.posix.join(config.dev.assetsPublicPath, 'index.html') },
     ],
   },
+
+  static: false,
+
   hot: true, // Enabling HMR
-  contentBase: false, // since we use CopyWebpackPlugin.
   compress: true,
+
   host: HOST || config.dev.host,
   port: PORT || config.dev.port,
+
   open: config.dev.autoOpenBrowser,
-  overlay: config.dev.errorOverlay
-    ? { warnings: false, errors: true }
-    : false,
-  publicPath: config.dev.assetsPublicPath,
+
   proxy: config.dev.proxyTable,
-  quiet: false, // necessary for FriendlyErrorsPlugin
-  watchOptions: {
-    poll: config.dev.poll,
-  },
-  stats: 'errors-only', // 'errors-only' | 'minimal' | 'normal' | 'verbose'
+
+  devMiddleware: {
+    stats: 'errors-only', // 'errors-only' | 'minimal' | 'normal' | 'verbose'
+  }
 })
