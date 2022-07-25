@@ -592,7 +592,13 @@
             const { fields, exportRelation  } = state
             const params = {
               export_custom_fields: fields.value.map(property => property.bk_property_id),
-              bk_host_ids: this.table.selection.map(({ host }) => host.bk_host_id)
+              bk_host_ids: this.table.selection.map(({ host }) => host.bk_host_id),
+              export_condition: {
+                page: {
+                  start: 0,
+                  limit: this.table.selection.length
+                }
+              }
             }
             if (exportRelation.value) {
               params.object_unique_id = state.object_unique_id.value
