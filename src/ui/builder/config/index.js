@@ -101,6 +101,21 @@ if (isCustomDevConfigExist) {
   Object.assign(dev, customDevConfig)
 }
 
+if (argv.mock) {
+  // 将所有请求修改为/mock下
+  dev.config.API_URL = dev.config.API_URL.replace('/proxy/', '/mock/')
+
+  // 当devserver中的/mock未匹配时会使用此代理，此代理将/mock的请求代理回默认的/proxy
+  dev.proxyTable['/mock'] = {
+    // 使用默认proxy配置
+    ...dev.proxyTable['/proxy'],
+    // 此时地址都是/mock前缀，同样需要重写为''
+    pathRewrite: {
+      '^/mock': ''
+    }
+  }
+}
+
 module.exports = {
   dev,
 

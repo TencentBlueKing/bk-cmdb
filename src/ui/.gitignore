@@ -19,3 +19,7 @@ eslint.html
 
 # dev config
 /builder/config/index.dev*.js
+
+# mock
+/mock/*
+!/mock/index.js

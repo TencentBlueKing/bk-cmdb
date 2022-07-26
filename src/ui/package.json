@@ -39,6 +39,7 @@
     "lodash.debounce": "4.0.8",
     "lodash.throttle": "4.1.1",
     "md5": "2.2.1",
+    "mockjs": "^1.1.0",
     "moment": "2.22.2",
     "plotly.js": "1.51.3",
     "qs": "^6.9.4",

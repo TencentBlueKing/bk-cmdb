@@ -11,6 +11,8 @@
  */
 
 const path = require('path')
+const mock = require('../../mock/index')
+const MockJS = require('mockjs')
 
 const { HOST } = process.env
 const PORT = process.env.PORT && Number(process.env.PORT)
@@ -22,8 +24,31 @@ module.exports = config => ({
     }
 
     const launchMiddleware = require('launch-editor-middleware')
-
     devServer.app.use('/__open-in-editor', launchMiddleware())
+
+    devServer.app.use(/^\/mock/, (req, res, next) => {
+      const mockDefs = mock.getDefs()
+      const def = mockDefs[req.path]
+
+      // 未找到mock定义则退出，交由proxy服务处理
+      if (!def) {
+        return next()
+      }
+
+      let data
+      if (def.data) {
+        if (typeof def.data === 'function') {
+          data = def.data(req)
+        } else {
+          data = def.data
+        }
+      } else if (def.path) {
+        delete require.cache[def.fullpath]
+        data = require(def.fullpath)
+      }
+
+      res.json(MockJS.mock(data))
+    })
 
     return middlewares
   },
