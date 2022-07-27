@@ -12,6 +12,7 @@
 
 <template>
   <bk-sideslider
+    :transfer="true"
     :width="760"
     :title="$t('操作详情')"
     :is-show.sync="isShow"
