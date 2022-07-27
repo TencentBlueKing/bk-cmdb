@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
@@ -35,18 +36,28 @@ func (s *service) DeleteServiceCategory(ctx context.Context, h http.Header, data
 	return
 }
 
-func (s *service) SearchServiceCategory(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (s *service) SearchServiceCategory(ctx context.Context, h http.Header, opt *metadata.ListServiceCategoryOption) (
+	*metadata.MultipleServiceCategory, errors.CCErrorCoder) {
+
+	resp := new(metadata.MultipleServiceCategoryResult)
 	subPath := "/findmany/proc/service_category"
 
-	err = s.client.Post().
+	err := s.client.Post().
 		WithContext(ctx).
-		Body(data).
+		Body(opt).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 func (s *service) UpdateServiceCategory(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {

@@ -32,7 +32,21 @@ func (s *coreService) initSetTemplate(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/", Handler: s.GetSetTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/topo/set_template/bk_biz_id/{bk_biz_id}/", Handler: s.ListSetTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/topo/set_template/count_instances/bk_biz_id/{bk_biz_id}/", Handler: s.CountSetTplInstances})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodGet,
+		Path:    "/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/service_templates_relations",
+		Handler: s.ListSetServiceTemplateRelations,
+	})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/service_templates", Handler: s.ListSetTplRelatedSvcTpl})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/set_template/attribute",
+		Handler: s.CreateSetTemplateAttribute})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/set_template/attribute",
+		Handler: s.UpdateSetTemplateAttribute})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/set_template/attribute",
+		Handler: s.DeleteSetTemplateAttribute})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/set_template/attribute",
+		Handler: s.ListSetTemplateAttribute})
 
 	utility.AddToRestfulWebService(web)
 }

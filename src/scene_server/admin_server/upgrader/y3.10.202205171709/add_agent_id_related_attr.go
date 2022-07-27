@@ -25,6 +25,8 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // addHostAddressingAttr add host addressing attribute
@@ -280,14 +282,21 @@ func adjustHostUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 			continue
 		}
 
-		if _, exists := index.Keys[common.BKCloudIDField]; !exists {
+		cloudIDExists, ipExists := false, false
+		for _, key := range index.Keys {
+			switch key.Key {
+			case common.BKCloudIDField:
+				cloudIDExists = true
+			case common.BKHostInnerIPField, common.BKHostInnerIPv6Field:
+				ipExists = true
+			}
+		}
+
+		if !cloudIDExists {
 			continue
 		}
 
-		_, ipv4Exists := index.Keys[common.BKHostInnerIPField]
-		_, ipv6Exists := index.Keys[common.BKHostInnerIPv6Field]
-
-		if ipv4Exists || ipv6Exists {
+		if ipExists {
 			err = db.Table(common.BKTableNameBaseHost).DropIndex(ctx, index.Name)
 			if err != nil {
 				blog.Errorf("drop index(%#v) failed, err: %v", index, err)
@@ -301,9 +310,9 @@ func adjustHostUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	newIndexes := []types.Index{
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkHostInnerIP_bkCloudID",
-			Keys: map[string]int32{
-				common.BKHostInnerIPField: 1,
-				common.BKCloudIDField:     1,
+			Keys: bson.D{
+				{common.BKHostInnerIPField, 1},
+				{common.BKCloudIDField, 1},
 			},
 			Unique:     true,
 			Background: true,
@@ -315,9 +324,9 @@ func adjustHostUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkHostInnerIPv6_bkCloudID",
-			Keys: map[string]int32{
-				common.BKHostInnerIPv6Field: 1,
-				common.BKCloudIDField:       1,
+			Keys: bson.D{
+				{common.BKHostInnerIPv6Field, 1},
+				{common.BKCloudIDField, 1},
 			},
 			Unique:     true,
 			Background: true,
@@ -329,8 +338,8 @@ func adjustHostUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkAgentID",
-			Keys: map[string]int32{
-				common.BKAgentIDField: 1,
+			Keys: bson.D{
+				{common.BKAgentIDField, 1},
 			},
 			Unique:     true,
 			Background: true,

@@ -21,7 +21,7 @@
           {{$t('添加主机')}}
         </bk-button>
         <i18n class="select-host-count" path="已选择N台主机" v-show="hosts.length">
-          <span place="count" class="count-number">{{hosts.length}}</span>
+          <template #count><span class="count-number">{{hosts.length}}</span></template>
         </i18n>
       </div>
     </div>

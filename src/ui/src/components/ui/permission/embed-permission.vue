@@ -16,14 +16,14 @@
       <bk-exception type="403">
         <div>
           <i18n path="抱歉您没有查看权限">
-            <bk-button class="text-btn"
-              place="link"
-              text
-              theme="primary"
-              @click="handleApplyPermission"
-            >
-              {{$t('去申请')}}
-            </bk-button>
+            <template #link>
+              <bk-button class="text-btn"
+                text
+                theme="primary"
+                @click="handleApplyPermission">
+                {{$t('去申请')}}
+              </bk-button>
+            </template>
           </i18n>
         </div>
       </bk-exception>

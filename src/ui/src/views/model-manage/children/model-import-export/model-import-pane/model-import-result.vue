@@ -17,8 +17,7 @@
     </div>
     <p class="result-main-text" :class="{ [`is-${data.status}`]: data.status }">
       <i18n path="模型导入结果提示">
-        <span class="succeed-item-count" place="modelCount">{{data.modelCount}}</span>
-        <span class="succeed-item-count" place="relationTypeCount">{{data.relationTypeCount}}</span>
+        <template #modelCount><span class="succeed-item-count">{{data.modelCount}}</span></template>
       </i18n>
     </p>
   </div>
@@ -35,6 +34,7 @@
         default: () => ({
           status: 'success',
           modelCount: 0,
+          // 暂时不显示，之后这里可能还要加上关联关系数
           relationTypeCount: 0
         })
       }

@@ -120,7 +120,8 @@
   import CmdbLoading from '@/components/loading/loading'
   import { sortTopoTree } from '@/utils/tools'
   import {
-    MENU_BUSINESS_HOST_AND_SERVICE
+    MENU_BUSINESS_HOST_AND_SERVICE,
+    MENU_BUSINESS_SET_TEMPLATE_DETAILS
   } from '@/dictionary/menu-symbol'
   export default {
     components: {
@@ -408,9 +409,8 @@
         link.style.color = '#3a84ff'
         link.addEventListener('click', () => {
           this.$routerActions.redirect({
-            name: 'setTemplateConfig',
+            name: MENU_BUSINESS_SET_TEMPLATE_DETAILS,
             params: {
-              mode: 'view',
               templateId: node.data.set_template_id
             },
             history: true

@@ -98,32 +98,57 @@ func (s *service) SearchServiceInstanceBySetTemplate(ctx context.Context, appID 
 	return
 }
 
-func (s *service) DiffServiceInstanceWithTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/find/proc/service_instance/difference"
+// DiffServiceTemplateGeneral diff service template general info
+func (s *service) DiffServiceTemplateGeneral(ctx context.Context, h http.Header,
+	opt *metadata.ServiceTemplateDiffOption) (*metadata.ServiceTemplateGeneralDiff, errors.CCErrorCoder) {
 
-	err = s.client.Post().
+	resp := &struct {
+		metadata.BaseResp `json:",inline"`
+		Data              *metadata.ServiceTemplateGeneralDiff `json:"data"`
+	}{}
+	subPath := "/find/proc/service_template/general_difference"
+
+	err := s.client.Post().
 		WithContext(ctx).
-		Body(data).
+		Body(opt).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
 }
 
-func (s *service) SyncServiceInstanceByTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+// SyncServiceInstanceByTemplate sync service instance by template
+func (s *service) SyncServiceInstanceByTemplate(ctx context.Context, h http.Header,
+	opt *metadata.SyncServiceInstanceByTemplateOption) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
 	subPath := "/update/proc/service_instance/sync"
 
-	err = s.client.Put().
+	err := s.client.Put().
 		WithContext(ctx).
-		Body(data).
+		Body(opt).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *service) ServiceInstanceAddLabels(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {

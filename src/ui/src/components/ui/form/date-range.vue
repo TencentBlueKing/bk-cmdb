@@ -12,6 +12,7 @@
 
 <template>
   <bk-date-picker style="width: 100%"
+    v-bind="otherAttrs"
     v-model="time"
     transfer
     :font-size="fontSize"
@@ -64,6 +65,11 @@
           const localValue = value.map(date => this.$tools.formatTime(date, this.timer ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD'))
           this.localValue = localValue.filter(date => !!date)
         }
+      },
+      otherAttrs() {
+        // 排除options属性，因与date-picker组件props类型冲突，不能直接用
+        const { options, ...otherAttrs } = this.$attrs
+        return otherAttrs
       }
     },
     watch: {

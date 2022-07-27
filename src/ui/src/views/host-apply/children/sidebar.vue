@@ -79,10 +79,10 @@
         @cancel="handleCancelEdit">
         <template #title>
           <i18n path="已选择N个模块" v-if="isModuleMode">
-            <em class="checked-num" place="count">{{checkedList.length}}</em>
+            <template #count><em class="checked-num">{{checkedList.length}}</em></template>
           </i18n>
           <i18n path="已选择N个模板" v-else-if="isTemplateMode">
-            <em class="checked-num" place="count">{{checkedTemplateList.length}}</em>
+            <template #count><em class="checked-num">{{checkedTemplateList.length}}</em></template>
           </i18n>
         </template>
         <template #content>

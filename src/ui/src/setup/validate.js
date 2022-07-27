@@ -25,7 +25,12 @@ import { PARAMETER_TYPES } from '@/dictionary/parameter-types'
  */
 const buildInVaidationRules = {
   length: {
-    validate: (value, [length]) => stringLength(value) <= length
+    validate: (value, [length]) => {
+      if (Array.isArray(value)) {
+        return value?.length <= length
+      }
+      return stringLength(value) <= length
+    }
   },
   repeat: {
     validate: (value, otherValue) => otherValue.findIndex(item => item === value) === -1
@@ -125,8 +130,8 @@ const dictionary = {
       hourFormat: () => '请输入0-59之间的数字',
       dayFormat: () => '请输入00:00-23:59之间的时间',
       namedCharacter: () => '格式不正确，特殊符号仅支持(:_-)',
-      min_value: () => '该值小于最小值',
-      max_value: () => '该值大于最大值',
+      min_value: (field, [val]) => `最小值不可小于${val}`,
+      max_value: (field, [val]) => `最大值不可超过${val}`,
       repeatTagKey: () => '标签键不能重复',
       setNameMap: () => '集群名称重复',
       emptySetName: () => '请勿输入空白集群名称',
@@ -155,8 +160,8 @@ const dictionary = {
       oid: () => 'Please enter the correct content',
       hourFormat: () => 'Please enter the number between 0-59',
       dayFormat: () => 'Please enter the time between 00:00-23:59',
-      min_value: () => 'This value is less than the minimum',
-      max_value: () => 'This value is greater than the maximum',
+      min_value: (field, [val]) => `This value is less than the minimum ${val}`,
+      max_value: (field, [val]) => `This value is greater than the maximum ${val}`,
       setNameMap: () => 'Duplicate Set name',
       emptySetName: () => 'Do not enter blank Set name',
       repeatTagKey: () => 'Label key cannot be repeated',

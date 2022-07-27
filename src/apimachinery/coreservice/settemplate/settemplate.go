@@ -38,6 +38,14 @@ type SetTemplateInterface interface {
 		[]metadata.SetServiceTemplateRelation, errors.CCErrorCoder)
 	ListSetTplRelatedSvcTpl(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (
 		[]metadata.ServiceTemplate, errors.CCErrorCoder)
+	CreateSetTemplateAttribute(ctx context.Context, h http.Header, option *metadata.CreateSetTempAttrsOption) ([]int64,
+		errors.CCErrorCoder)
+	UpdateSetTemplateAttribute(ctx context.Context, h http.Header,
+		option *metadata.UpdateSetTempAttrOption) errors.CCErrorCoder
+	DeleteSetTemplateAttribute(ctx context.Context, h http.Header,
+		option *metadata.DeleteSetTempAttrOption) errors.CCErrorCoder
+	ListSetTemplateAttribute(ctx context.Context, h http.Header, option *metadata.ListSetTempAttrOption) (
+		*metadata.SetTempAttrData, errors.CCErrorCoder)
 }
 
 func NewSetTemplateInterfaceClient(client rest.ClientInterface) SetTemplateInterface {

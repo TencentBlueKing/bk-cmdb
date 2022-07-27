@@ -20,6 +20,8 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func createAuditLogTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -45,9 +47,9 @@ func addAuditLogTableIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	}
 
 	createIdxArr := []types.Index{
-		{Name: "index_bk_supplier_account", Keys: map[string]int32{common.BkSupplierAccount: 1}, Background: true},
-		{Name: "index_audit_type", Keys: map[string]int32{common.BKAuditTypeField: 1}, Background: true},
-		{Name: "index_action", Keys: map[string]int32{common.BKActionField: 1}, Background: true},
+		{Name: "index_bk_supplier_account", Keys: bson.D{{common.BkSupplierAccount, 1}}, Background: true},
+		{Name: "index_audit_type", Keys: bson.D{{common.BKAuditTypeField, 1}}, Background: true},
+		{Name: "index_action", Keys: bson.D{{common.BKActionField, 1}}, Background: true},
 	}
 	for _, idx := range createIdxArr {
 		exist := false

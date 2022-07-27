@@ -20,6 +20,9 @@ import (
 	"configcenter/src/common/index/collections"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func InstanceIndexes() []types.Index {
@@ -63,7 +66,7 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 		Background:              true,
 		Unique:                  true,
 		Name:                    GetUniqueIndexNameByID(id),
-		Keys:                    make(map[string]int32, 0),
+		Keys:                    make(bson.D, 0),
 		PartialFilterExpression: make(map[string]interface{}),
 	}
 	propertiesIDMap := make(map[int64]metadata.Attribute, len(properties))
@@ -96,7 +99,11 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 			return dbIndex, errors.GetGlobalCCError().CreateDefaultCCErrorIf(string(common.English)).
 				CCErrorf(common.CCErrCoreServiceUniqueIndexPropertyType, attr.PropertyID)
 		}
-		dbIndex.Keys[attr.PropertyID] = 1
+
+		dbIndex.Keys = append(dbIndex.Keys, primitive.E{
+			Key:   attr.PropertyID,
+			Value: 1,
+		})
 
 		// NOTICE: 主机agentID唯一校验需要兼容主机无agentID（即agentID为空字符串）的场景
 		// 因为没有绑定agent的主机默认都有一个空字符串的agentID字段，此时agentID实际上并没有重复
@@ -106,20 +113,26 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 				common.BKDBGT:   "",
 			}
 		}
-
 		dbIndex.PartialFilterExpression[attr.PropertyID] = map[string]interface{}{common.BKDBType: dbType}
 	}
 
 	// NOTICE: 主机内网IP+云区域唯一校验需要满足寻址方式为静态的条件，因为动态场景IP可变，更新不及时等情况可能出现重复，不能作为唯一标识
 	if objID == common.BKInnerObjIDHost && len(dbIndex.Keys) == 2 {
-		if _, exists := dbIndex.Keys[common.BKCloudIDField]; !exists {
+		cloudIDExists, ipExists := false, false
+		for _, key := range dbIndex.Keys {
+			switch key.Key {
+			case common.BKCloudIDField:
+				cloudIDExists = true
+			case common.BKHostInnerIPField, common.BKHostInnerIPv6Field:
+				ipExists = true
+			}
+		}
+
+		if !cloudIDExists {
 			return dbIndex, nil
 		}
 
-		_, ipv4Exists := dbIndex.Keys[common.BKHostInnerIPField]
-		_, ipv6Exists := dbIndex.Keys[common.BKHostInnerIPv6Field]
-
-		if ipv4Exists || ipv6Exists {
+		if ipExists {
 			dbIndex.PartialFilterExpression[common.BKAddressingField] = "0"
 		}
 	}

@@ -117,16 +117,18 @@
         slot="empty"
         :stuff="table.stuff">
         <i18n path="业务集列表提示语" class="table-empty-tips">
-          <bk-link theme="primary" place="auth" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
-          <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS_SET }" place="create">
-            <bk-button slot-scope="{ disabled }" text
-              theme="primary"
-              class="text-btn"
-              :disabled="disabled"
-              @click="handleCreate">
-              {{$t('立即创建')}}
-            </bk-button>
-          </cmdb-auth>
+          <template #auth><bk-link theme="primary" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link></template>
+          <template #create>
+            <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS_SET }">
+              <bk-button slot-scope="{ disabled }" text
+                theme="primary"
+                class="text-btn"
+                :disabled="disabled"
+                @click="handleCreate">
+                {{$t('立即创建')}}
+              </bk-button>
+            </cmdb-auth>
+          </template>
         </i18n>
       </cmdb-table-empty>
     </bk-table>

@@ -20,6 +20,8 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func taskMigrate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -40,23 +42,23 @@ func taskMigrate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	indexArr := []types.Index{
 		types.Index{
-			Keys:       map[string]int32{"task_id": 1},
+			Keys:       bson.D{{"task_id", 1}},
 			Name:       "idx_taskID",
 			Unique:     true,
 			Background: true,
 		},
 		types.Index{
-			Keys:       map[string]int32{"name": 1, "status": 1, "create_time": 1},
+			Keys:       bson.D{{"name", 1}, {"status", 1}, {"create_time", 1}},
 			Name:       "idx_name_status_createTime",
 			Background: true,
 		},
 		types.Index{
-			Keys:       map[string]int32{"status": 1, "last_time": 1},
+			Keys:       bson.D{{"status", 1}, {"last_time", 1}},
 			Name:       "idx_status_lastTime",
 			Background: true,
 		},
 		types.Index{
-			Keys:       map[string]int32{"name": 1, "flag": 1, "create_time": 1},
+			Keys:       bson.D{{"name", 1}, {"flag", 1}, {"create_time", 1}},
 			Name:       "idx_name_flag_createTime",
 			Background: true,
 		},

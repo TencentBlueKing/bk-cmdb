@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <bk-input class="cmdb-form-input" type="text" v-model.trim="localValue"></bk-input>
+  <bk-input class="cmdb-form-input" type="text" v-bind="$attrs" v-model.trim="localValue"></bk-input>
 </template>
 
 <script>

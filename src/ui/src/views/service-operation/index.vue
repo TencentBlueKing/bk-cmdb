@@ -19,7 +19,7 @@
       <div class="info clearfix mb20">
         <label class="info-label fl">{{$t('已选实例')}}：</label>
         <i18n tag="div" path="N个" class="info-content">
-          <b class="info-count" place="count">{{serviceInstanceIds.length}}</b>
+          <template #count><b class="info-count">{{serviceInstanceIds.length}}</b></template>
         </i18n>
       </div>
       <div class="info clearfix mb10" ref="changeInfo">

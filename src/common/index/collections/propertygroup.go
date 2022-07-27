@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -33,49 +35,49 @@ var commPropertyGroupIndexes = []types.Index{}
 var deprecatedPropertyGroupIndexes = []types.Index{
 	{
 		Name: "bk_obj_id_1",
-		Keys: map[string]int32{
-			"bk_obj_id": 1,
+		Keys: bson.D{{
+			"bk_obj_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_supplier_account_1",
-		Keys: map[string]int32{
-			"bk_supplier_account": 1,
+		Keys: bson.D{{
+			"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_group_id_1",
-		Keys: map[string]int32{
-			"bk_group_id": 1,
+		Keys: bson.D{{
+			"bk_group_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_unique_id",
-		Keys: map[string]int32{
-			"id": 1,
+		Keys: bson.D{{
+			"id", 1},
 		},
 		Unique:     true,
 		Background: true,
 	},
 	{
 		Name: "idx_unique_groupName",
-		Keys: map[string]int32{
-			"bk_obj_id":     1,
-			"bk_biz_id":     1,
-			"bk_group_name": 1,
+		Keys: bson.D{
+			{"bk_obj_id", 1},
+			{"bk_biz_id", 1},
+			{"bk_group_name", 1},
 		},
 		Unique:     true,
 		Background: true,
 	},
 	{
 		Name: "idx_unique_groupId",
-		Keys: map[string]int32{
-			"bk_obj_id":   1,
-			"bk_biz_id":   1,
-			"bk_group_id": 1,
+		Keys: bson.D{
+			{"bk_obj_id", 1},
+			{"bk_biz_id", 1},
+			{"bk_group_id", 1},
 		},
 		Unique:     true,
 		Background: true,

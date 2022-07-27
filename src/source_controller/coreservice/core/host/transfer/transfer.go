@@ -113,7 +113,7 @@ func (t *genericTransfer) Transfer(kit *rest.Kit, hostIDs []int64, disableHostAp
 	}
 
 	// transfer host module config
-	if err := t.addHostModuleRelation(kit, hostIDs, disableHostApply); err != nil {
+	if err := t.addHostModuleRelationAndHostApply(kit, hostIDs, disableHostApply); err != nil {
 		return err
 	}
 
@@ -360,12 +360,12 @@ func (t *genericTransfer) delHostModuleRelationItem(kit *rest.Kit, bizIDs []int6
 	return nil
 }
 
-// AddSingleHostModuleRelation add single host module relation
-func (t *genericTransfer) addHostModuleRelation(kit *rest.Kit, hostIDs []int64, disable bool) errors.CCErrorCoder {
+// addHostModuleRelationAndHostApply add single host module relation and implement host properties apply
+func (t *genericTransfer) addHostModuleRelationAndHostApply(kit *rest.Kit, hostIDs []int64,
+	disable bool) errors.CCErrorCoder {
 	if len(hostIDs) == 0 || len(t.moduleIDArr) == 0 {
 		return nil
 	}
-
 	existHostModuleIDMap := make(map[int64]map[int64]struct{}, 0)
 
 	// filter already exist modules

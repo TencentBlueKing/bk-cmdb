@@ -33,14 +33,16 @@
         <bk-tab-panel name="hostList" :label="$t('主机列表')">
           <bk-exception class="empty-set" type="empty" scene="part" v-if="emptySet">
             <i18n path="该集群尚未创建模块">
-              <cmdb-auth place="link" :auth="{ type: $OPERATION.C_TOPO, relation: [bizId] }">
-                <bk-button text slot-scope="{ disabled }"
-                  theme="primary"
-                  :disabled="disabled"
-                  @click="handleCreateModule">
-                  {{$t('立即创建')}}
-                </bk-button>
-              </cmdb-auth>
+              <template #link>
+                <cmdb-auth :auth="{ type: $OPERATION.C_TOPO, relation: [bizId] }">
+                  <bk-button text slot-scope="{ disabled }"
+                    theme="primary"
+                    :disabled="disabled"
+                    @click="handleCreateModule">
+                    {{$t('立即创建')}}
+                  </bk-button>
+                </cmdb-auth>
+              </template>
             </i18n>
           </bk-exception>
           <host-list v-show="!emptySet" :active="activeTab === 'hostList'" ref="hostList" v-test-id></host-list>
@@ -148,7 +150,7 @@
         const topologyModels = await this.getTopologyModels()
         const properties = await this.getProperties(topologyModels)
         this.$store.commit('businessHost/setTopologyModels', topologyModels)
-        this.$store.commit('businessHost/setPropertyMap', Object.freeze(properties))
+        this.$store.commit('businessHost/setPropertyMap', properties)
         this.$store.commit('businessHost/resolveCommonRequest')
       } catch (e) {
         console.error(e)
@@ -235,6 +237,9 @@
                 .bk-tab-header {
                     padding: 0;
                     margin: 0 20px;
+                }
+                .bk-tab-section {
+                  height: calc(100% - 50px);
                 }
             }
         }

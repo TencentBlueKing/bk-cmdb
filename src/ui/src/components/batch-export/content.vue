@@ -16,8 +16,8 @@
       <h1 class="title">{{title}}</h1>
       <div class="subtitle-wrapper">
         <i18n class="subtitle" tag="h2" path="分批下载副标题">
-          <strong class="count" place="count">{{count}}</strong>
-          <span place="limit">{{limit}}</span>
+          <template #count><strong class="count">{{count}}</strong></template>
+          <template #limit><span>{{limit}}</span></template>
         </i18n>
         <span class="process-counter">
           <span class="finished">{{finishedCount}}</span>

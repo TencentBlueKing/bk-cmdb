@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -33,81 +35,81 @@ var commModuleBaseIndexes = []types.Index{}
 var deprecatedModuleBaseIndexes = []types.Index{
 	{
 		Name: "bk_module_name_1",
-		Keys: map[string]int32{
-			"bk_module_name": 1,
+		Keys: bson.D{{
+			"bk_module_name", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "default_1",
-		Keys: map[string]int32{
-			"default": 1,
+		Keys: bson.D{{
+			"default", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_biz_id_1",
-		Keys: map[string]int32{
-			"bk_biz_id": 1,
+		Keys: bson.D{{
+			"bk_biz_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_supplier_account_1",
-		Keys: map[string]int32{
-			"bk_supplier_account": 1,
+		Keys: bson.D{{
+			"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_set_id_1",
-		Keys: map[string]int32{
-			"bk_set_id": 1,
+		Keys: bson.D{{
+			"bk_set_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_parent_id_1",
-		Keys: map[string]int32{
-			"bk_parent_id": 1,
+		Keys: bson.D{{
+			"bk_parent_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_module_id_1_bk_biz_id_1",
-		Keys: map[string]int32{
-			"bk_module_id": 1,
-			"bk_biz_id":    1,
+		Keys: bson.D{
+			{"bk_module_id", 1},
+			{"bk_biz_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_unique_moduleID",
-		Keys: map[string]int32{
-			"bk_module_id": 1,
+		Keys: bson.D{{
+			"bk_module_id", 1},
 		},
 		Unique:     true,
 		Background: true,
 	},
 	{
 		Name: "bk_idx_set_template_id_service_template_id",
-		Keys: map[string]int32{
-			"set_template_id":     1,
-			"service_template_id": 1,
+		Keys: bson.D{
+			{"set_template_id", 1},
+			{"service_template_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_idx_set_template_id",
-		Keys: map[string]int32{
-			"set_template_id": 1,
+		Keys: bson.D{{
+			"set_template_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_idx_service_template_id",
-		Keys: map[string]int32{
-			"service_template_id": 1,
+		Keys: bson.D{{
+			"service_template_id", 1},
 		},
 		Background: true,
 	},

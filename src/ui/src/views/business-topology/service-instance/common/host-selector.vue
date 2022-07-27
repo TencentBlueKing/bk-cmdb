@@ -55,7 +55,7 @@
                 <div class="text">
                   <i :class="['bk-icon icon-angle-right', { expand: collapse.expanded.host }]"></i>
                   <i18n path="已选择N台主机">
-                    <span class="count" place="count">{{selected.length}}</span>
+                    <template #count><span class="count">{{selected.length}}</span></template>
                   </i18n>
                 </div>
                 <div class="more" @click.stop="handleClickMore">

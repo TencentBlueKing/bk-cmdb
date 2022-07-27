@@ -35,8 +35,19 @@ export const MENU_BUSINESS_SERVICE_TOPOLOGY = 'menu_business_service_topology'
 export const MENU_BUSINESS_ADVANCED = 'menu_business_advanced'
 
 export const MENU_BUSINESS_HOST_AND_SERVICE = 'menu_business_host_and_service'
+
+// 服务模板
 export const MENU_BUSINESS_SERVICE_TEMPLATE = 'menu_business_service_template'
+export const MENU_BUSINESS_SERVICE_TEMPLATE_CREATE = 'menu_business_service_template_create'
+export const MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS = 'menu_business_service_template_details'
+export const MENU_BUSINESS_SERVICE_TEMPLATE_EDIT = 'menu_business_service_template_edit'
+
+// 集群模板
 export const MENU_BUSINESS_SET_TEMPLATE = 'menu_business_set_template'
+export const MENU_BUSINESS_SET_TEMPLATE_CREATE = 'menu_business_set_template_create'
+export const MENU_BUSINESS_SET_TEMPLATE_DETAILS = 'menu_business_set_template_details'
+export const MENU_BUSINESS_SET_TEMPLATE_EDIT = 'menu_business_set_template_edit'
+export const MENU_BUSINESS_SET_TEMPLATE_SYNC_HISTORY = 'menu_business_set_template_sync_history'
 
 // 主机属性自动应用
 export const MENU_BUSINESS_HOST_APPLY = 'menu_business_host_apply'

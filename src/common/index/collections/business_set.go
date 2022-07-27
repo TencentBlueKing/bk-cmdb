@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -24,26 +26,26 @@ func init() {
 var commBizSetIndexes = []types.Index{
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "biz_set_id",
-		Keys: map[string]int32{
-			common.BKBizSetIDField: 1,
+		Keys: bson.D{{
+			common.BKBizSetIDField, 1},
 		},
 		Unique:     true,
 		Background: true,
 	},
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "biz_set_name",
-		Keys: map[string]int32{
-			common.BKBizSetNameField: 1,
+		Keys: bson.D{{
+			common.BKBizSetNameField, 1},
 		},
 		Unique:     true,
 		Background: true,
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "biz_set_id_biz_set_name_owner_id",
-		Keys: map[string]int32{
-			common.BKBizSetIDField:   1,
-			common.BKBizSetNameField: 1,
-			common.BKOwnerIDField:    1,
+		Keys: bson.D{
+			{common.BKBizSetIDField, 1},
+			{common.BKBizSetNameField, 1},
+			{common.BKOwnerIDField, 1},
 		},
 		Background: true,
 	},

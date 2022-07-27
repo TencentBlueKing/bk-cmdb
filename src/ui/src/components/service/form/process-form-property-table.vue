@@ -53,6 +53,8 @@
 <script>
   import ProcessFormPropertyIp from './process-form-property-ip'
   import ProcessFormAppend from './process-form-append'
+  import { MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
+
   export default {
     components: {
       ProcessFormPropertyIp,
@@ -112,8 +114,10 @@
       },
       getRules(rowProps, property) {
         const rules = this.$tools.getValidateRules(property)
-        // 与模板配置保持一致，统一为必填
         rules.required = true
+        if (property.bk_property_id === 'ip') {
+          rules.required = false
+        }
         return rules
       },
       getComponentType(property) {
@@ -135,7 +139,7 @@
       },
       handleRedirect() {
         this.$routerActions.redirect({
-          name: 'operationalTemplate',
+          name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
           params: {
             bizId: this.form.bizId,
             templateId: this.form.serviceTemplateId

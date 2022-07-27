@@ -15,6 +15,8 @@ package types
 import (
 	"context"
 	"errors"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Errors defines
@@ -110,7 +112,7 @@ type ModeUpdate struct {
 
 // Index define the DB index struct
 type Index struct {
-	Keys                    map[string]int32       `json:"keys" bson:"key"`
+	Keys                    bson.D                 `json:"keys" bson:"key"`
 	Name                    string                 `json:"name" bson:"name"`
 	Unique                  bool                   `json:"unique" bson:"unique"`
 	Background              bool                   `json:"background" bson:"background"`
