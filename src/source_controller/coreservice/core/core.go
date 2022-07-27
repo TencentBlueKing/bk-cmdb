@@ -317,6 +317,13 @@ type ProcessOperation interface {
 
 	GetBusinessDefaultSetModuleInfo(kit *rest.Kit, bizID int64) (metadata.BusinessDefaultSetModuleInfo,
 		errors.CCErrorCoder)
+
+	// service template attribute
+	CreateServiceTemplateAttrs(kit *rest.Kit, attrs *metadata.CreateSvcTempAttrsOption) ([]uint64, errors.CCErrorCoder)
+	UpdateServTempAttr(kit *rest.Kit, option *metadata.UpdateServTempAttrOption) errors.CCErrorCoder
+	DeleteServiceTemplateAttribute(kit *rest.Kit, option *metadata.DeleteServTempAttrOption) errors.CCErrorCoder
+	ListServiceTemplateAttribute(kit *rest.Kit, option *metadata.ListServTempAttrOption) (*metadata.ServTempAttrData,
+		errors.CCErrorCoder)
 }
 
 type LabelOperation interface {
@@ -339,6 +346,11 @@ type SetTemplateOperation interface {
 	ListSetServiceTemplateRelations(kit *rest.Kit, bizID int64, setTemplateID int64) (
 		[]metadata.SetServiceTemplateRelation, errors.CCErrorCoder)
 	ListSetTplRelatedSvcTpl(kit *rest.Kit, bizID, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder)
+	CreateSetTempAttr(kit *rest.Kit, option *metadata.CreateSetTempAttrsOption) ([]uint64, errors.CCErrorCoder)
+	UpdateSetTempAttr(kit *rest.Kit, option *metadata.UpdateSetTempAttrOption) errors.CCErrorCoder
+	DeleteSetTemplateAttribute(kit *rest.Kit, option *metadata.DeleteSetTempAttrOption) errors.CCErrorCoder
+	ListSetTemplateAttribute(kit *rest.Kit, option *metadata.ListSetTempAttrOption) (*metadata.SetTempAttrData,
+		errors.CCErrorCoder)
 }
 
 type HostApplyRuleOperation interface {

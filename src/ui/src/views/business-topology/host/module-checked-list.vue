@@ -16,7 +16,7 @@
       <div class="selected-title">{{$t('结果预览')}}</div>
       <div class="selected-count">
         <i18n path="已选择N个模块">
-          <em class="count" place="count">{{checked.length}}</em>
+          <template #count><em class="count">{{checked.length}}</em></template>
         </i18n>
         <bk-button text theme="primary"
           v-show="checked.length"

@@ -47,7 +47,7 @@
         v-if="selected.length"
         path="已选择条数"
         tag="div">
-        <span class="count" place="count">{{selected.length}}</span>
+        <template #count><span class="count">{{selected.length}}</span></template>
       </i18n>
       <div class="selected-options">
         <bk-button theme="primary" @click="confirm">{{$t('确定')}}</bk-button>

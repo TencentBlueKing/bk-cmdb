@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -32,23 +34,23 @@ var commAsstDesIndexes = []types.Index{}
 var deprecatedAsstDesIndexes = []types.Index{
 	{
 		Name: "idx_unique_id",
-		Keys: map[string]int32{
-			"id": 1,
+		Keys: bson.D{{
+			"id", 1},
 		},
 		Unique:     true,
 		Background: true,
 	},
 	{
 		Name: "idx_supplierId",
-		Keys: map[string]int32{
-			"bk_supplier_account": 1,
+		Keys: bson.D{{
+			"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_asstId",
-		Keys: map[string]int32{
-			"bk_asst_id": 1,
+		Keys: bson.D{{
+			"bk_asst_id", 1},
 		},
 		Background: true,
 	},

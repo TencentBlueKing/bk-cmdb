@@ -16,9 +16,9 @@
     <div class="up-file upload-file" v-bkloading="{ isLoading: isLoading }">
       <img src="../../assets/images/up_file.png">
       <input ref="fileInput" type="file" class="fullARea" @change.prevent="handleFile" />
-      <i18n path="导入提示" tag="p" :places="{ allowType: allowType.join(','), maxSize: maxSizeLocal }">
-        <b place="clickUpload">{{$t('点击上传')}}</b>
-        <br place="breakRow">
+      <i18n path="导入提示" tag="p">
+        <template #clickUpload><b>{{$t('点击上传')}}</b></template>
+        <template #breakRow><br></template>
       </i18n>
     </div>
     <div :class="['upload-file-info', { 'uploading': isLoading }, { 'fail': failed }, { 'uploaded': uploaded }]">

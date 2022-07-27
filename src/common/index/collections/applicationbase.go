@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -32,31 +34,31 @@ var commApplicationBaseIndexes = []types.Index{}
 var deprecatedApplicationBaseIndexes = []types.Index{
 	{
 		Name: "default_1",
-		Keys: map[string]int32{
-			"default": 1,
+		Keys: bson.D{{
+			"default", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_biz_id_1_bk_supplier_account_1",
-		Keys: map[string]int32{
-			"bk_biz_id":           1,
-			"bk_supplier_account": 1,
+		Keys: bson.D{
+			{"bk_biz_id", 1},
+			{"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "default_1_bk_supplier_account_1",
-		Keys: map[string]int32{
-			"default":             1,
-			"bk_supplier_account": 1,
+		Keys: bson.D{
+			{"default", 1},
+			{"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_unique_bizID",
-		Keys: map[string]int32{
-			"bk_biz_id": 1,
+		Keys: bson.D{
+			{"bk_biz_id", 1},
 		},
 		Unique:     true,
 		Background: true,

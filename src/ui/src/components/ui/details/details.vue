@@ -204,6 +204,7 @@
                 width: 35%;
                 padding: 0 16px 0 0;
                 color: #63656e;
+                text-align: right;
                 @include ellipsis;
                 &:after{
                     content: ":";

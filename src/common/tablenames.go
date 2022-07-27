@@ -81,11 +81,13 @@ const (
 	// process tables
 	BKTableNameServiceCategory         = "cc_ServiceCategory"
 	BKTableNameServiceTemplate         = "cc_ServiceTemplate"
+	BKTableNameServiceTemplateAttr     = "cc_ServiceTemplateAttr"
 	BKTableNameServiceInstance         = "cc_ServiceInstance"
 	BKTableNameProcessTemplate         = "cc_ProcessTemplate"
 	BKTableNameProcessInstanceRelation = "cc_ProcessInstanceRelation"
 
 	BKTableNameSetTemplate                = "cc_SetTemplate"
+	BKTableNameSetTemplateAttr            = "cc_SetTemplateAttr"
 	BKTableNameSetServiceTemplateRelation = "cc_SetServiceTemplateRelation"
 	BKTableNameAPITask                    = "cc_APITask"
 	BKTableNameAPITaskSyncHistory         = "cc_APITaskSyncHistory"

@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -30,9 +32,9 @@ func init() {
 var commProcessIndexes = []types.Index{
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "svcInstID_bkProcName",
-		Keys: map[string]int32{
-			common.BKServiceInstanceIDField: 1,
-			common.BKProcessNameField:       1,
+		Keys: bson.D{
+			{common.BKServiceInstanceIDField, 1},
+			{common.BKProcessNameField, 1},
 		},
 		Unique:     true,
 		Background: true,
@@ -43,10 +45,10 @@ var commProcessIndexes = []types.Index{
 	},
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "svcInstID_bkFuncName_bkStartParamRegex",
-		Keys: map[string]int32{
-			common.BKServiceInstanceIDField: 1,
-			common.BKFuncName:               1,
-			common.BKStartParamRegex:        1,
+		Keys: bson.D{
+			{common.BKServiceInstanceIDField, 1},
+			{common.BKFuncName, 1},
+			{common.BKStartParamRegex, 1},
 		},
 		Unique:     true,
 		Background: true,
@@ -62,22 +64,22 @@ var commProcessIndexes = []types.Index{
 var deprecatedProcessIndexes = []types.Index{
 	{
 		Name: "bk_biz_id_1",
-		Keys: map[string]int32{
-			"bk_biz_id": 1,
+		Keys: bson.D{{
+			"bk_biz_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_supplier_account_1",
-		Keys: map[string]int32{
-			"bk_supplier_account": 1,
+		Keys: bson.D{{
+			"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_unique_procID",
-		Keys: map[string]int32{
-			"bk_process_id": 1,
+		Keys: bson.D{{
+			"bk_process_id", 1},
 		},
 		Unique:     true,
 		Background: true,

@@ -52,7 +52,7 @@ func dropPlatVpcIDIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 	}
 	for _, index := range indexes {
 		if len(index.Keys) == 1 && index.Unique {
-			if _, exist := index.Keys["bk_vpc_id"]; exist {
+			if _, exist := index.Keys.Map()["bk_vpc_id"]; exist {
 				if err := db.Table("cc_PlatBase").DropIndex(ctx, index.Name); err != nil {
 					blog.ErrorJSON("delete cloud  bk_vpc_id index error. err: %s ", err)
 					return err

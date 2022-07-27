@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -33,12 +35,12 @@ var commTopoGraphicsIndexes = []types.Index{}
 var deprecatedTopoGraphicsIndexes = []types.Index{
 	{
 		Name: "scope_type_1_scope_id_1_node_type_1_bk_obj_id_1_bk_inst_id_1",
-		Keys: map[string]int32{
-			"scope_type": 1,
-			"scope_id":   1,
-			"node_type":  1,
-			"bk_obj_id":  1,
-			"bk_inst_id": 1,
+		Keys: bson.D{
+			{"scope_type", 1},
+			{"scope_id", 1},
+			{"node_type", 1},
+			{"bk_obj_id", 1},
+			{"bk_inst_id", 1},
 		},
 		Unique:     true,
 		Background: true,

@@ -20,6 +20,8 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 var CreateTableOptions = []struct {
@@ -29,19 +31,19 @@ var CreateTableOptions = []struct {
 	{
 		TableName: common.BKTableNameCloudSyncTask,
 		TableIndex: []types.Index{
-			{Name: "bk_task_id", Keys: map[string]int32{"bk_task_id": 1}, Unique: true, Background: true},
+			{Name: "bk_task_id", Keys: bson.D{{"bk_task_id", 1}}, Unique: true, Background: true},
 		},
 	},
 	{
 		TableName: common.BKTableNameCloudAccount,
 		TableIndex: []types.Index{
-			{Name: "bk_account_id", Keys: map[string]int32{"bk_account_id": 1}, Background: true},
+			{Name: "bk_account_id", Keys: bson.D{{"bk_account_id", 1}}, Background: true},
 		},
 	},
 	{
 		TableName: common.BKTableNameCloudSyncHistory,
 		TableIndex: []types.Index{
-			{Name: "bk_history_id", Keys: map[string]int32{"bk_history_id": 1}, Background: true},
+			{Name: "bk_history_id", Keys: bson.D{{"bk_history_id", 1}}, Background: true},
 		},
 	},
 }

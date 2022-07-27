@@ -1148,6 +1148,7 @@ $modelHighlightColor: #3c96ff;
 .field-list {
   $ghostBorderColor: #dcdee5;
   $ghostBackgroundColor:#f5f7fa;
+
   margin-top: 7px;
   font-size: 14px;
   position: relative;

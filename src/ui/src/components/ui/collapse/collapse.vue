@@ -11,18 +11,12 @@
 -->
 
 <template>
-  <div class="collapse-layout">
-    <div>
-      <div class="collapse-trigger" @click="toggle">
-        <span class="collapse-arrow bk-icon icon-angle-down"
-          :class="{
-            'is-collapsed': hidden
-          }">
-        </span>
-        <span class="collapse-text">
-          <slot name="title">{{label}}</slot>
-        </span>
-      </div>
+  <div :class="['collapse-layout', size]">
+    <div class="collapse-trigger" @click="toggle">
+      <span :class="['collapse-arrow', 'bk-icon', arrowIconClass, { 'is-collapsed': hidden }]"></span>
+      <span class="collapse-text">
+        <slot name="title">{{label}}</slot>
+      </span>
     </div>
     <cmdb-collapse-transition
       @before-enter="handleBeforeEnter"
@@ -47,11 +41,27 @@
       collapse: Boolean,
       label: {
         type: String
+      },
+      arrowType: {
+        type: String,
+        default: 'outlined', // filled
+      },
+      size: {
+        type: String
       }
     },
     data() {
       return {
         hidden: this.collapse
+      }
+    },
+    computed: {
+      arrowIconClass() {
+        const classMap = {
+          outlined: 'icon-angle-down',
+          filled: 'icon-down-shape'
+        }
+        return `${classMap[this.arrowType]} ${this.arrowType}`
       }
     },
     watch: {
@@ -98,17 +108,12 @@
 <style lang="scss">
     .collapse-layout {
         .collapse-trigger {
-            display: inline-block;
-            vertical-align: middle;
-            font-size: 0px;
-            line-height: 16px;
+            display: flex;
             color: #333948;
             font-weight: bold;
-            overflow: visible;
+            align-items: center;
             cursor: pointer;
             .collapse-arrow {
-                display: inline-block;
-                vertical-align: middle;
                 font-size: 20px;
                 font-weight: 700;
                 margin: 0 2px 0 -4px;
@@ -116,11 +121,27 @@
                 &.is-collapsed {
                     transform: rotate(-90deg);
                 }
+
+                &.filled {
+                  font-size: 12px;
+                  color: #63656E;
+                  margin: 0 4px 0 0;
+                }
             }
             .collapse-text {
-                display: inline-block;
-                vertical-align: middle;
+                flex: 1;
                 font-size: 14px;
+            }
+        }
+
+        &.small {
+            .collapse-arrow {
+                &.filled {
+                  margin-top: -1px;
+                }
+            }
+            .collapse-text {
+                font-size: 12px;
             }
         }
     }

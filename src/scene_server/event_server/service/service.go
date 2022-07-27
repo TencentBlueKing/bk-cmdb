@@ -106,6 +106,7 @@ func (s *Service) initService(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/watch/resource/{resource}", Handler: s.WatchEvent})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/host_identifier", Handler: s.SyncHostIdentifier})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/push/host_identifier", Handler: s.PushHostIdentifier})
 
 	utility.AddToRestfulWebService(web)
 

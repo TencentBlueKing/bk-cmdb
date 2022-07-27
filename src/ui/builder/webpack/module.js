@@ -34,6 +34,22 @@ module.exports = () => ({
       test: /\.vue$/,
       loader: 'vue-loader',
     },
+
+    {
+      test: /\.tsx?$/,
+      use: [
+        {
+          loader: 'ts-loader',
+          options: {
+            transpileOnly: true,
+            appendTsSuffixTo: [/\.vue$/],
+          }
+        }
+      ],
+      include: [resolveBase('src')],
+      exclude: [resolveBase('node_modules')]
+    },
+
     {
       test: /\.js$/,
       use: [

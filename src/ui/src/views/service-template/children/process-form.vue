@@ -84,7 +84,8 @@
           <bk-button slot-scope="{ disabled }" v-test-id="type === 'create' ? 'submit' : 'save'"
             class="button-save"
             theme="primary"
-            :disabled="saveDisabled || $loading() || disabled || btnStatus()"
+            :loading="$loading()"
+            :disabled="saveDisabled || disabled || btnStatus()"
             @click="handleSave">
             {{type === 'create' ? $t('提交') : $t('保存')}}
           </bk-button>

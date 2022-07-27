@@ -20,15 +20,17 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // addInstassProcIndex add index for table cc_InstAsst and cc_ProcessTemplate
 func addInstassProcIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	index := types.Index{
-		Keys: map[string]int32{
-			"bk_asst_obj_id":  1,
-			"bk_asst_inst_id": 1,
+		Keys: bson.D{
+			{"bk_asst_obj_id", 1},
+			{"bk_asst_inst_id", 1},
 		},
 		Name:       "bk_idx_bk_asst_obj_id_bk_asst_inst_id",
 		Unique:     false,
@@ -42,9 +44,9 @@ func addInstassProcIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 	}
 
 	index = types.Index{
-		Keys: map[string]int32{
-			"service_template_id": 1,
-			"bk_process_name":     1,
+		Keys: bson.D{
+			{"service_template_id", 1},
+			{"bk_process_name", 1},
 		},
 		Name:       "bk_idx_service_template_id_bk_process_name",
 		Unique:     true,

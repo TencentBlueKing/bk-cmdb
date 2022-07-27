@@ -41,6 +41,14 @@ export const BUILTIN_MODEL_PROPERTY_KEYS = Object.freeze({
   [BUILTIN_MODELS.HOST]: {
     ID: 'bk_host_id',
     NAME: 'bk_host_name'
+  },
+  [BUILTIN_MODELS.MODULE]: {
+    ID: 'bk_module_id',
+    NAME: 'bk_module_name'
+  },
+  [BUILTIN_MODELS.SET]: {
+    ID: 'bk_set_id',
+    NAME: 'bk_set_name'
   }
 })
 

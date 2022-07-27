@@ -41,7 +41,7 @@
 </template>
 
 <script>
-  import { MENU_BUSINESS_HOST_APPLY, MENU_BUSINESS_SET_TOPOLOGY } from '@/dictionary/menu-symbol'
+  import { MENU_BUSINESS_HOST_APPLY, MENU_BUSINESS_SET_TOPOLOGY, MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
   const serviceCategoryRequestId = Symbol('serviceCategoryRequestId')
   export default {
     name: 'service-template-info',
@@ -142,14 +142,9 @@
           this.$error(error.message)
         }
         this.$routerActions.redirect({
-          name: 'operationalTemplate',
+          name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
           params: {
-            templateId: this.instance.service_template_id,
-            moduleId: this.selectedNode.data.bk_inst_id
-          },
-          query: {
-            node: this.selectedNode.id,
-            tab: 'nodeInfo'
+            templateId: this.instance.service_template_id
           },
           history: true
         })
