@@ -38,7 +38,7 @@
   import Bus from '@/utils/bus'
   import router from '@/router/index.js'
   import { sortTopoTree } from '@/utils/tools.js'
-  import serviceTemplateService from '@/services/service-template/index.js'
+  import serviceTemplateService from '@/service/service-template/index.js'
 
   export default defineComponent({
     props: {

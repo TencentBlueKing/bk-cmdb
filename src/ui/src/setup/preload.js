@@ -11,7 +11,7 @@
  */
 
 import { getAuthorizedBusiness, getAuthorizedBusinessSet } from '@/router/business-interceptor.js'
-import { verifyAuth } from '@/services/auth.js'
+import { verifyAuth } from '@/service/auth.js'
 import store from '@/store'
 
 const preloadConfig = {

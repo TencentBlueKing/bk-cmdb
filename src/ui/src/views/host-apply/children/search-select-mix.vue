@@ -36,7 +36,7 @@
   import Bus from '@/utils/bus'
   import { mapGetters } from 'vuex'
   import has from 'has'
-  import { CONFIG_MODE } from '@/services/service-template/index.js'
+  import { CONFIG_MODE } from '@/service/service-template/index.js'
 
   export default {
     props: {

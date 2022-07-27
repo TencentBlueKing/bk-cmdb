@@ -22,7 +22,7 @@ import {
   MENU_BUSINESS_HOST_APPLY_FAILED
 } from '@/dictionary/menu-symbol'
 import { TASK_STATUS, getTask } from './task-helper.js'
-import { CONFIG_MODE } from '@/services/service-template/index.js'
+import { CONFIG_MODE } from '@/service/service-template/index.js'
 
 // before拦截钩子，当本地存在未完成的应用任务则直接跳转到应用页面
 const beforeInterceptor = async (to, from, app) => {

@@ -62,7 +62,7 @@
 <script>
   import { mapGetters } from 'vuex'
   import businessSetService from '@/service/business-set/index.js'
-  import { verifyAuth } from '@/services/auth.js'
+  import { verifyAuth } from '@/service/auth.js'
   import { TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
   import AuthMask from '@/components/ui/auth/auth-mask.vue'
   import {
