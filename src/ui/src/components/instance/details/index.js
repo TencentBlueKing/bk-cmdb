@@ -50,6 +50,7 @@ const createDetails = () => {
           is-show={ visible.value }
           width={ 700 }
           title={ title.value }
+          transfer={ true }
           { ...{ on: { 'update:isShow': close } } }>
           <cmdb-details slot="content"
             { ...{ directives } }

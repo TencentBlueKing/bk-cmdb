@@ -174,52 +174,27 @@ func (st *setTemplate) getSetAttrIDAndPropertyID(kit *rest.Kit, attrIDs []int64)
 	return propertyIDs, attrIdPropertyMap, nil
 }
 
-// getSetMapStr 获取指定集群的全部信息
-func (st *setTemplate) getSetMapStr(kit *rest.Kit, bizID, setTemplateId int64, setIDs []int64, page metadata.BasePage,
-	fields []string) ([]mapstr.MapStr, errors.CCErrorCoder) {
-
-	option := &metadata.QueryCondition{
-		Fields: fields,
-		Condition: map[string]interface{}{
-			common.BKSetTemplateIDField: setTemplateId,
-			common.BKAppIDField:         bizID,
-		},
-		Page:           page,
-		DisableCounter: true,
-	}
-
-	if len(setIDs) > 0 {
-		option.Condition = map[string]interface{}{
-			common.BKSetIDField: map[string]interface{}{
-				common.BKDBIN: setIDs,
-			},
-		}
-	}
-
-	set, err := st.client.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, option)
-	if err != nil {
-		blog.Errorf("get set failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrTopoSetSelectFailed, err.Error())
-	}
-
-	return set.Info, nil
-}
-
-func (st *setTemplate) getSetAttributesResult(kit *rest.Kit, bizID, setTemplateID,
-	setID int64) ([]metadata.AttributeFields, mapstr.MapStr, errors.CCErrorCoder) {
+func (st *setTemplate) getSetAttributesResult(kit *rest.Kit, bizID, setTemplateID, setID int64) (
+	[]metadata.AttributeFields, mapstr.MapStr, errors.CCErrorCoder) {
 
 	attrValues := make([]metadata.AttributeFields, 0)
 
-	page := metadata.BasePage{
-		Limit: common.BKNoLimit,
+	option := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKSetTemplateIDField: setTemplateID,
+			common.BKAppIDField:         bizID,
+			common.BKSetIDField:         setID,
+		},
+		Page:           metadata.BasePage{Limit: common.BKNoLimit},
+		DisableCounter: true,
 	}
-	// get set detail
-	sets, err := st.getSetMapStr(kit, bizID, setTemplateID, []int64{setID}, page, []string{})
+	set, err := st.client.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, option)
 	if err != nil {
-		return attrValues, nil, err
+		blog.Errorf("get set failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
+		return attrValues, nil, kit.CCError.CCErrorf(common.CCErrTopoSetSelectFailed, err.Error())
 	}
-	if len(sets) == 0 {
-		return attrValues, sets[0], nil
+	if len(set.Info) == 0 {
+		return attrValues, nil, nil
 	}
 
 	// 1、获取指定集群模板的属性ID及属性值 get set template attributes
@@ -228,7 +203,7 @@ func (st *setTemplate) getSetAttributesResult(kit *rest.Kit, bizID, setTemplateI
 		return attrValues, nil, cErr
 	}
 	if len(attrIDs) == 0 {
-		return attrValues, sets[0], nil
+		return attrValues, set.Info[0], nil
 	}
 
 	// 2、获取集群 attrID 与 propertyID的映射关系
@@ -238,14 +213,14 @@ func (st *setTemplate) getSetAttributesResult(kit *rest.Kit, bizID, setTemplateI
 	}
 
 	if len(propertyIDs) == 0 {
-		return attrValues, sets[0], nil
+		return attrValues, set.Info[0], nil
 	}
 
 	// 3、根据propertyID 获取对应集群实例的值
 	setPropertyValue := make(map[string]interface{})
 	for _, propertyID := range propertyIDs {
-		if _, ok := sets[0][propertyID]; ok {
-			setPropertyValue[propertyID] = sets[0][propertyID]
+		if _, ok := set.Info[0][propertyID]; ok {
+			setPropertyValue[propertyID] = set.Info[0][propertyID]
 		}
 	}
 
@@ -258,7 +233,7 @@ func (st *setTemplate) getSetAttributesResult(kit *rest.Kit, bizID, setTemplateI
 		})
 	}
 
-	return attrValues, sets[0], nil
+	return attrValues, set.Info[0], nil
 }
 
 // SetWithDeleteModulesRelation 获取涉及到的每个集群下面删除的模块列表
@@ -582,23 +557,29 @@ func (st *setTemplate) CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64
 	fields = append(fields, propertyIDs...)
 
 	// get set detail
-	page := metadata.BasePage{
-		Limit: common.BKNoLimit,
+	option := &metadata.QueryCondition{
+		Fields: fields,
+		Condition: map[string]interface{}{
+			common.BKSetTemplateIDField: setTemplateID,
+			common.BKAppIDField:         bizID,
+		},
+		Page:           metadata.BasePage{Limit: common.BKNoLimit},
+		DisableCounter: true,
 	}
-	sets, err := st.getSetMapStr(kit, bizID, setTemplateID, []int64{}, page, fields)
+	set, err := st.client.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, option)
 	if err != nil {
-		blog.Errorf("list set failed, bizID: %d, setTempID: %d, err: %v, rid: %s", bizID, setTemplateID, err, kit.Rid)
-		return result, err
+		blog.Errorf("get set failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrTopoSetSelectFailed, err.Error())
 	}
 
-	if len(sets) == 0 {
+	if len(set.Info) == 0 {
 		return result, nil
 	}
 
 	setIDs := make([]int64, 0)
 	setMap := make(map[int64]mapstr.MapStr)
 
-	for _, set := range sets {
+	for _, set := range set.Info {
 		setID, err := util.GetInt64ByInterface(set[common.BKSetIDField])
 		if err != nil {
 			return result, kit.CCError.CCErrorf(common.CCErrTopoSetSelectFailed)
@@ -607,11 +588,11 @@ func (st *setTemplate) CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64
 		setMap[setID] = set
 	}
 
-	needSync, err := st.isSyncRequired(kit, bizID, setTemplateID, setIDs, setMap, true, attrIdPropertyIdMap,
+	needSync, ccErr := st.isSyncRequired(kit, bizID, setTemplateID, setIDs, setMap, true, attrIdPropertyIdMap,
 		setTemplateAttrValueMap)
-	if err != nil {
-		blog.Errorf("check set whether need sync failed, setIDs: %+v, err: %v, rid: %s", setIDs, err, kit.Rid)
-		return result, err
+	if ccErr != nil {
+		blog.Errorf("check set whether need sync failed, setIDs: %+v, err: %v, rid: %s", setIDs, ccErr, kit.Rid)
+		return result, ccErr
 	}
 
 	for _, setID := range setIDs {

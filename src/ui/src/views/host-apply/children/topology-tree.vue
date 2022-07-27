@@ -51,7 +51,7 @@
         </i>
         <span v-show="applyEnabled(node)" class="config-icon fr"><i class="bk-cc-icon icon-cc-selected"></i></span>
         <div class="info-content">
-          <span class="node-name">{{data.bk_inst_name}}</span>
+          <span class="node-name" :title="data.bk_inst_name">{{data.bk_inst_name}}</span>
         </div>
       </div>
       <div slot="empty" class="empty">
@@ -472,9 +472,6 @@
               }
               &.is-selected {
                   background-color: #3a84ff;
-              }
-              &.is-leaf-icon {
-                  margin-left: 2px;
               }
           }
           .config-icon {

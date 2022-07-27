@@ -13,6 +13,7 @@
 package settemplate
 
 import (
+	"fmt"
 	"reflect"
 
 	"configcenter/src/common"
@@ -221,6 +222,40 @@ func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
 	}
 }
 
+func (st *setTemplate) getSetMapStrByOption(kit *rest.Kit, option *metadata.ListSetTemplateSyncStatusOption,
+	fields []string) ([]mapstr.MapStr, errors.CCErrorCoder) {
+
+	filter := &metadata.QueryCondition{
+		Fields: fields,
+		Condition: map[string]interface{}{
+			common.BKSetTemplateIDField: option.SetTemplateID,
+			common.BKAppIDField:         option.BizID,
+		},
+		Page:           option.Page,
+		DisableCounter: true,
+	}
+
+	if len(option.SetIDs) > 0 {
+		filter.Condition[common.BKSetIDField] = map[string]interface{}{
+			common.BKDBIN: option.SetIDs,
+		}
+	}
+
+	if len(option.SearchKey) > 0 {
+		filter.Condition[common.BKSetNameField] = map[string]interface{}{
+			common.BKDBLIKE:    fmt.Sprintf(".*%s.*", option.SearchKey),
+			common.BKDBOPTIONS: "i",
+		}
+	}
+	set, err := st.client.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter)
+	if err != nil {
+		blog.Errorf("get set failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrTopoSetSelectFailed, err.Error())
+	}
+
+	return set.Info, nil
+}
+
 // ListSetTemplateSyncStatus batch search set template sync status
 func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata.ListSetTemplateSyncStatusOption) (
 	*metadata.ListAPITaskSyncStatusResult, errors.CCErrorCoder) {
@@ -249,7 +284,8 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata
 	}
 	fields := []string{common.BKSetIDField}
 	fields = append(fields, propertyIDs...)
-	sets, err := st.getSetMapStr(kit, option.BizID, option.SetTemplateID, option.SetIDs, option.Page, fields)
+
+	sets, err := st.getSetMapStrByOption(kit, option, fields)
 	if err != nil {
 		blog.Errorf("list set failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
 		return nil, err

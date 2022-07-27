@@ -20,7 +20,7 @@ const defaultState = {
   available: () => true,
   submit: () => {},
   count: 0,
-  limit: 10000,
+  limit: 30000,
   step: 1,
   status: null,
   presetFields: [],

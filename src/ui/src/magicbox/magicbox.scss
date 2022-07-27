@@ -119,9 +119,6 @@
     .bk-big-tree-node:not(.has-link-line) {
         height: 36px;
         line-height: 36px;
-        &.is-leaf {
-            padding-left: calc(var(--level) * 30px + 28px)
-        }
         &.is-selected {
             .node-folder-icon {
                 color: #3a84ff;
@@ -129,11 +126,6 @@
         }
         .node-options {
             padding-left: 10px;
-            .node-folder-icon {
-                width: 24px;
-                height: 36px;
-                line-height: 36px;
-            }
         }
     }
     .bk-big-tree-node.has-link-line.is-leaf {
