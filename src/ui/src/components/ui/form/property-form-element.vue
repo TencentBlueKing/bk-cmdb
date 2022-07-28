@@ -98,6 +98,9 @@
         if (['int', 'float'].includes(property.bk_property_type)) {
           otherProps.inputType = 'number'
         }
+        if (this.mustRequired === true) {
+          otherProps.clearable = false
+        }
         return { ...validateEvents, ...otherProps }
       }
     }
