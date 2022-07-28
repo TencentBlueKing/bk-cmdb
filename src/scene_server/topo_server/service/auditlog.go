@@ -252,14 +252,7 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 		return
 	}
 
-	obj, err := s.Core.ObjectOperation().FindSingleObject(ctx.Kit, query.Condition.ObjID)
-	if err != nil {
-		blog.Errorf("find object[%s] failed, err: %v, rid: %s", query.Condition.ObjID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	isMainline, err := obj.IsMainlineObject()
+	isMainline, err := s.isMainlineObject(ctx.Kit, query.Condition.ObjID)
 	if err != nil {
 		blog.Errorf("check if object is mainline object failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -293,6 +286,36 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntityWithCount(count, list)
+}
+
+// isMainlineObject check whether objID is mainline object or not
+func (s *Service) isMainlineObject(kit *rest.Kit, objID string) (bool, error) {
+	// judge whether it is an inner mainline model
+	if common.IsInnerMainlineModel(objID) {
+		return true, nil
+	}
+
+	filter := []map[string]interface{}{{
+		common.AssociationKindIDField: common.AssociationKindMainline,
+		common.BKAsstObjIDField:       objID,
+	}}
+	asstCnt, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameObjAsst, filter)
+	if err != nil {
+		blog.Errorf("check object(%s) if is mainline object failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return false, err
+	}
+
+	if len(asstCnt) <= 0 {
+		blog.Errorf("get association by filter: %+v failed, return is empty, rid: %s", filter, kit.Rid)
+		return false, kit.CCError.CCError(common.CCErrorTopoObjectAssociationNotExist)
+	}
+
+	if asstCnt[0] == 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func buildInstAuditCondition(ctx *rest.Contexts, query metadata.InstAuditCondition) (mapstr.MapStr, error) {
