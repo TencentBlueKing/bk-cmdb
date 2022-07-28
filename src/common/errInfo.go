@@ -875,8 +875,8 @@ const (
 	CCErrTaskSubTaskNotFound = 1117002
 	// CCErrTaskStatusNotAllowChangeTo task not allow status change to xx
 	CCErrTaskStatusNotAllowChangeTo = 1117003
-	// CCErrTaskErrResponseEmtpyFail error response empty
-	CCErrTaskErrResponseEmtpyFail = 1117004
+	// CCErrTaskErrResponseemptyFail error response empty
+	CCErrTaskErrResponseemptyFail = 1117004
 	CCErrTaskLockedTaskFail       = 1117005
 	CCErrTaskUnLockedTaskFail     = 1117006
 	CCErrTaskListTaskFail         = 1117007

@@ -285,14 +285,14 @@ func (s *Service) UpdateInsts(ctx *rest.Contexts) {
 	// check inst_id field to be not empty, is dangerous for empty inst_id field, which will update or delete all instance
 	for idx, item := range data.Update {
 		if item.InstID == 0 {
-			blog.Errorf("%d's update item's field `inst_id` emtpy, rid: %s", idx, ctx.Kit.Rid)
+			blog.Errorf("%d's update item's field `inst_id` empty, rid: %s", idx, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "inst_id"))
 			return
 		}
 	}
 	for idx, instID := range data.Delete.InstID {
 		if instID == 0 {
-			blog.Errorf("%d's delete item's field `inst_id` emtpy, rid: %s", idx, ctx.Kit.Rid)
+			blog.Errorf("%d's delete item's field `inst_id` empty, rid: %s", idx, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "inst_ids"))
 			return
 		}
