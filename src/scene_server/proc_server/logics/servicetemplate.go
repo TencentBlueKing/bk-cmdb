@@ -396,10 +396,6 @@ func (lgc *Logic) getServiceRelationMapAndProcessDetails(kit *rest.Kit,
 func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, bizID, serviceTemplateID, moduleID int64,
 	procTempMap map[int64]*metadata.ProcessTemplate) (bool, errors.CCErrorCoder) {
 
-	if len(procTempMap) == 0 {
-		return true, nil
-	}
-
 	serviceInstances, hostIDCount, err := lgc.getServiceInstancesAndHostIdCount(kit, bizID, serviceTemplateID, moduleID)
 	if err != nil {
 		return false, err
@@ -410,6 +406,10 @@ func (lgc *Logic) getModuleProcessSyncStatus(kit *rest.Kit, bizID, serviceTempla
 		if hostIDCount[0] == 0 || len(procTempMap) == 0 {
 			return false, nil
 		}
+		return true, nil
+	}
+
+	if len(procTempMap) == 0 {
 		return true, nil
 	}
 
