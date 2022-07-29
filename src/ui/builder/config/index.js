@@ -17,6 +17,8 @@
 const path = require('path')
 const fs = require('fs')
 const parseArgs = require('minimist')
+const { fixRequestBody } = require('http-proxy-middleware')
+
 
 const config = {
   BUILD_TITLE: '',
@@ -112,7 +114,9 @@ if (argv.mock) {
     // 此时地址都是/mock前缀，同样需要重写为''
     pathRewrite: {
       '^/mock': ''
-    }
+    },
+    // fix proxied POST requests when bodyParser is applied before this middleware
+    onProxyReq: fixRequestBody
   }
 }
 

@@ -30,48 +30,12 @@
       }"
       @select-change="handleSelectChange"
       @expand-change="handleExpandChange">
-      <div :class="['node-info clearfix', { 'is-selected': node.selected }]" slot-scope="{ node, data }">
-        <i class="internal-node-icon fl"
-          v-if="data.default !== 0"
-          :class="getInternalNodeClass(node, data)">
-        </i>
-        <i v-else
-          :class="['node-icon fl', { 'is-selected': node.selected, 'is-template': isTemplate(node) }]">
-          {{data.bk_obj_name[0]}}
-        </i>
-        <cmdb-auth v-if="showCreate(node, data)"
-          class="info-create-trigger fr"
-          :auth="{ type: $OPERATION.C_TOPO, relation: [bizId] }">
-          <template slot-scope="{ disabled }">
-            <i v-if="isBlueKing && !editable"
-              class="node-button disabled-node-button"
-              v-bk-tooltips.top="{ content: $t('蓝鲸业务拓扑节点提示'), interactive: false }">
-              {{$t('新建')}}
-            </i>
-            <i v-else-if="data.set_template_id"
-              class="node-button disabled-node-button"
-              v-bk-tooltips.top="{
-                content: getSetNodeTips(node),
-                interactive: true,
-                onShow: handleSetNodeTipsToggle,
-                onHide: handleSetNodeTipsToggle
-              }">
-              {{$t('新建')}}
-            </i>
-            <bk-button v-else class="node-button" v-test-id="'createNode'"
-              theme="primary"
-              :disabled="disabled"
-              @click.stop="showCreateDialog(node)">
-              {{$t('新建')}}
-            </bk-button>
-          </template>
-        </cmdb-auth>
-        <cmdb-loading :class="['node-count fr', { 'is-selected': node.selected }]"
-          :loading="['pending', undefined].includes(data.status)">
-          {{getNodeCount(data)}}
-        </cmdb-loading>
-        <span class="node-name" :title="node.name">{{node.name}}</span>
-      </div>
+      <template #default="{ node, data }">
+        <topology-tree-node
+          v-bind="{ node, data, isBlueKing, editable, nodeCountType }"
+          @create="handleShowCreateDialog">
+        </topology-tree-node>
+      </template>
     </bk-big-tree>
     <bk-dialog class="bk-dialog-no-padding"
       v-model="createInfo.show"
@@ -117,18 +81,19 @@
   import RouterQuery from '@/router/query'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import FilterStore from '@/components/filters/store'
-  import CmdbLoading from '@/components/loading/loading'
+  import TopologyTreeNode from './topology-tree-node.vue'
   import { sortTopoTree } from '@/utils/tools'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
-    MENU_BUSINESS_SET_TEMPLATE_DETAILS
   } from '@/dictionary/menu-symbol'
+  import topologyInstanceService from '@/service/topology/instance'
+
   export default {
     components: {
       CreateNode,
       CreateSet,
       CreateModule,
-      CmdbLoading
+      TopologyTreeNode
     },
     props: {
       active: {
@@ -142,11 +107,6 @@
         filter: RouterQuery.get('keyword', ''),
         handleFilter: () => ({}),
         nodeCountType: 'host_count',
-        nodeIconMap: {
-          1: 'icon-cc-host-free-pool',
-          2: 'icon-cc-host-breakdown',
-          default: 'icon-cc-host-free-pool'
-        },
         request: {
           instance: Symbol('instance'),
           internal: Symbol('internal'),
@@ -211,14 +171,20 @@
     methods: {
       async initTopology() {
         try {
-          const [topology, internal] = await Promise.all([
+          const [topology, internal, containerTopo] = await Promise.all([
             this.getInstanceTopology(),
-            this.getInternalTopology()
+            this.getInternalTopology(),
+            topologyInstanceService.getContainerTopo()
           ])
+
           sortTopoTree(topology, 'bk_inst_name', 'child')
           sortTopoTree(internal.module, 'bk_module_name')
+          sortTopoTree(containerTopo, 'name')
+
           const root = topology[0] || {}
+
           const children = root.child || []
+
           const idlePool = {
             bk_obj_id: 'set',
             bk_inst_id: internal.bk_set_id,
@@ -233,8 +199,14 @@
             }))
           }
           children.unshift(idlePool)
+
+          // 容器拓扑追加至底部
+          children.push(containerTopo)
+
           this.isBlueKing = root.bk_inst_name === '蓝鲸'
+
           this.$refs.tree.setData(topology)
+
           this.createWatcher()
         } catch (e) {
           console.error(e)
@@ -313,14 +285,6 @@
       getNodeId(data) {
         return `${data.bk_obj_id}-${data.bk_inst_id}`
       },
-      getInternalNodeClass(node, data) {
-        const clazz = []
-        clazz.push(this.nodeIconMap[data.default] || this.nodeIconMap.default)
-        if (node.selected) {
-          clazz.push('is-selected')
-        }
-        return clazz
-      },
       handleSelectChange(node) {
         this.$store.commit('businessHost/setSelectedNode', node)
         Bus.$emit('toggle-host-filter', false)
@@ -375,18 +339,6 @@
           })
         }
       },
-      getNodeCount(data) {
-        const count = data[this.nodeCountType]
-        if (typeof count === 'number') {
-          return count
-        }
-        return 0
-      },
-      showCreate(node, data) {
-        const isModule = data.bk_obj_id === 'module'
-        const isIdleSet = data.is_idle_set
-        return !isModule && !isIdleSet
-      },
       async getBlueKingEditStatus() {
         try {
           this.editable = await this.$store.dispatch('getBlueKingEditStatus', {
@@ -399,37 +351,7 @@
           this.editable = false
         }
       },
-      getSetNodeTips(node) {
-        const tips = document.createElement('div')
-        const span = document.createElement('span')
-        span.innerText = this.$t('需在集群模板中新建')
-        const link = document.createElement('a')
-        link.innerText = this.$t('立即跳转')
-        link.href = 'javascript:void(0)'
-        link.style.color = '#3a84ff'
-        link.addEventListener('click', () => {
-          this.$routerActions.redirect({
-            name: MENU_BUSINESS_SET_TEMPLATE_DETAILS,
-            params: {
-              templateId: node.data.set_template_id
-            },
-            history: true
-          })
-        })
-        tips.appendChild(span)
-        tips.appendChild(link)
-        return tips
-      },
-      handleSetNodeTipsToggle(tips) {
-        const element = tips.reference.parentElement
-        if (tips.state.isVisible) {
-          element.classList.remove('hovering')
-        } else {
-          element.classList.add('hovering')
-        }
-        return true
-      },
-      async showCreateDialog(node) {
+      async handleShowCreateDialog(node) {
         const nodeModel = this.topologyModels.find(data => data.bk_obj_id === node.data.bk_obj_id)
         const nextModelId = nodeModel.bk_next_obj
         this.createInfo.nextModelId = nextModelId
@@ -605,9 +527,6 @@
           bk_inst_name: data.bk_inst_name
         }
       },
-      isTemplate(node) {
-        return node.data.service_template_id || node.data.set_template_id
-      },
       async refreshCount({ hosts, target }) {
         const nodes = []
         if (target) {
@@ -657,97 +576,5 @@
         padding: 10px 0;
         margin-right: 2px;
         @include scrollbar-y(6px);
-        .node-icon {
-            display: block;
-            width: 20px;
-            height: 20px;
-            margin: 8px 4px 8px 0;
-            border-radius: 50%;
-            background-color: #C4C6CC;
-            line-height: 1.666667;
-            text-align: center;
-            font-size: 12px;
-            font-style: normal;
-            color: #FFF;
-            &.is-template {
-                background-color: #97aed6;
-            }
-            &.is-selected {
-                background-color: #3A84FF;
-            }
-        }
-        .node-name {
-            display: block;
-            height: 36px;
-            line-height: 36px;
-            overflow: hidden;
-            @include ellipsis;
-        }
-        .node-count {
-            padding: 0 5px;
-            margin: 9px 20px 9px 4px;
-            height: 18px;
-            line-height: 17px;
-            border-radius: 2px;
-            background-color: #f0f1f5;
-            color: #979ba5;
-            font-size: 12px;
-            text-align: center;
-            &.is-selected {
-                background-color: #a2c5fd;
-                color: #fff;
-            }
-            &.loading {
-              background-color: transparent;
-            }
-        }
-        .internal-node-icon{
-            width: 20px;
-            height: 20px;
-            line-height: 20px;
-            text-align: center;
-            margin: 8px 4px 8px 0;
-            &.is-selected {
-                color: #FFB400;
-            }
-        }
-    }
-    .node-info {
-        &:hover {
-            .info-create-trigger {
-                display: inline-block;
-                & ~ .node-count {
-                    display: none;
-                }
-            }
-        }
-        .info-create-trigger {
-            display: none;
-            font-size: 0;
-            &.hovering {
-                display: inline-block;
-                & ~ .node-count {
-                    display: none;
-                }
-            }
-        }
-        .node-button {
-            height: 24px;
-            padding: 0 6px;
-            margin: 0 20px 0 4px;
-            line-height: 22px;
-            border-radius: 4px;
-            font-size: 12px;
-            min-width: auto;
-            &.disabled-node-button {
-                @include inlineBlock;
-                line-height: 24px;
-                font-style: normal;
-                background-color: #dcdee5;
-                color: #ffffff;
-                outline: none;
-                cursor: not-allowed;
-            }
-        }
     }
 </style>

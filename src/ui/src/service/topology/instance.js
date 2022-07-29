@@ -11,6 +11,7 @@
  */
 
 import http from '@/api'
+import { rollReqUseCount } from '../utils.js'
 
 export const requestIds = {
   getTopology: Symbol('getTopology')
@@ -25,6 +26,16 @@ const getWithStat = async (bizId, config = {}) => {
     return res
   } catch (error) {
     console.error(error)
+  }
+}
+
+const getContainerTopo = async (params, config) => {
+  try {
+    const res = await rollReqUseCount('find/container/topo_path', params, { limit: 100 }, config)
+    return res
+  } catch (error) {
+    console.error(error)
+    return Promise.reject(error)
   }
 }
 
@@ -44,5 +55,6 @@ const geFulltWithStat = async (bizId, config = {}) => {
 
 export default {
   getWithStat,
-  geFulltWithStat
+  geFulltWithStat,
+  getContainerTopo
 }

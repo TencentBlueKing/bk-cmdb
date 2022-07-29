@@ -11,8 +11,10 @@
  */
 
 const path = require('path')
-const mock = require('../../mock/index')
 const MockJS = require('mockjs')
+const bodyParser = require('body-parser')
+
+const mock = require('../../mock/index')
 
 const { HOST } = process.env
 const PORT = process.env.PORT && Number(process.env.PORT)
@@ -22,6 +24,12 @@ module.exports = config => ({
     if (!devServer) {
       throw new Error('webpack-dev-server is not defined')
     }
+
+    // parse application/x-www-form-urlencoded
+    devServer.app.use(bodyParser.urlencoded({ extended: true }))
+
+    // parse application/json
+    devServer.app.use(bodyParser.json())
 
     const launchMiddleware = require('launch-editor-middleware')
     devServer.app.use('/__open-in-editor', launchMiddleware())
