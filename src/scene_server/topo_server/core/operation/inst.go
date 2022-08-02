@@ -114,13 +114,6 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 
 	}
 
-	if batchInfo.InputType != common.InputTypeExcel {
-		return &BatchResult{}, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "input_type")
-	}
-	if len(batchInfo.BatchInfo) == 0 {
-		return &BatchResult{}, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "BatchInfo")
-	}
-
 	results := &BatchResult{}
 	colIdxErrMap := map[int]string{}
 	colIdxList := []int{}
