@@ -34,7 +34,7 @@ type Object interface {
 	Parse(data mapstr.MapStr) error
 
 	Object() meta.Object
-	IsMainlineObject(kit *rest.Kit, objID string) (bool, error)
+	IsMainlineObject() (bool, error)
 	IsCommon() bool
 
 	SetRecordID(id int64)
@@ -117,27 +117,28 @@ func (o *object) IsCommon() bool {
 }
 
 // IsMainlineObject check whether objID is mainline object or not
-func (o *object) IsMainlineObject(kit *rest.Kit, objID string) (bool, error) {
+func (o *object) IsMainlineObject() (bool, error) {
 	// judge whether it is an inner mainline model
-	if common.IsInnerMainlineModel(objID) {
+	if common.IsInnerMainlineModel(o.GetObjectID()) {
 		return true, nil
 	}
 
 	filter := []map[string]interface{}{{
 		common.AssociationKindIDField: common.AssociationKindMainline,
-		common.BKAsstObjIDField:       objID,
+		common.BKAsstObjIDField:       o.GetObjectID(),
 	}}
 
-	asstCnt, err := o.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameObjAsst,
-		filter)
+	asstCnt, err := o.clientSet.CoreService().Count().GetCountByFilter(o.kit.Ctx, o.kit.Header,
+		common.BKTableNameObjAsst, filter)
 	if err != nil {
-		blog.Errorf("check object(%s) if is mainline object failed, err: %v, rid: %s", objID, err, kit.Rid)
+		blog.Errorf("check object(%s) if is mainline object failed, err: %v, rid: %s", o.GetObjectID(), err,
+			o.kit.Rid)
 		return false, err
 	}
 
 	if len(asstCnt) <= 0 {
-		blog.Errorf("get association by filter: %+v failed, return is empty, rid: %s", filter, kit.Rid)
-		return false, kit.CCError.CCError(common.CCErrorTopoObjectAssociationNotExist)
+		blog.Errorf("get association by filter: %+v failed, return is empty, rid: %s", filter, o.kit.Rid)
+		return false, o.kit.CCError.CCError(common.CCErrorTopoObjectAssociationNotExist)
 	}
 
 	if asstCnt[0] == 0 {

@@ -103,24 +103,15 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, obj model.Object, batchInfo 
 		return nil, kit.CCError.Error(common.CCErrTopoImportMainlineForbidden)
 	}
 
-	// forbidden create mainline instance with common api
-	filter := []map[string]interface{}{{
-		common.BKDBOR: []mapstr.MapStr{
-			{common.BKObjIDField: object.ObjectID},
-			{common.BKAsstObjIDField: object.ObjectID},
-		},
-		common.AssociationKindIDField: common.AssociationKindMainline,
-	}}
-	cnt, ccErr := c.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameObjAsst,
-		filter)
-	if ccErr != nil {
-		blog.Errorf("count object(%s) mainline association failed, err: %v, rid: %s", object.ObjectID, ccErr,
-			kit.Rid)
-		return nil, ccErr
+	isMainlin, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("[operation-inst] failed to get if the object(%s) is mainline object, err: %s, rid: %s", object.ObjectID, err.Error(), kit.Rid)
+		return nil, err
 	}
+	if isMainlin {
+		blog.V(5).Infof("CreateInstBatch failed, create %s instance with common create api forbidden, rid: %s", object.ObjectID, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrTopoImportMainlineForbidden)
 
-	if cnt[0] != 0 {
-		return nil, kit.CCError.CCError(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
 	}
 
 	if batchInfo.InputType != common.InputTypeExcel {

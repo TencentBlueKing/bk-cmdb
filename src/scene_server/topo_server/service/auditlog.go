@@ -259,7 +259,7 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 		return
 	}
 
-	isMainline, err := obj.IsMainlineObject(ctx.Kit, query.Condition.ObjID)
+	isMainline, err := obj.IsMainlineObject()
 	if err != nil {
 		blog.Errorf("check if object is mainline object failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
