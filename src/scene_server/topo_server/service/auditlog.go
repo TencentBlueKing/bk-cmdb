@@ -259,14 +259,14 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 		return
 	}
 
-	isMainline, err := obj.IsMainlineObject()
+	isMainline, err := obj.IsMainlineObject(ctx.Kit, query.Condition.ObjID)
 	if err != nil {
 		blog.Errorf("check if object is mainline object failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if isMainline && query.Condition.BizID <= 0 && obj.GetObjectID() != common.BKInnerObjIDHost{
+	if isMainline && query.Condition.BizID <= 0 {
 		blog.Errorf("search mainline object audit must provide bizID, rid: %s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
