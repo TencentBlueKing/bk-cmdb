@@ -230,6 +230,9 @@ const (
 	//CCIllegalRegularExpression the regular expression's type assertion failed
 	CCIllegalRegularExpression = 1199090
 
+	// CCErrCommAtLeastSetOneVal at least set one value
+	CCErrCommAtLeastSetOneVal = 1199091
+
 	// too many requests
 	CCErrTooManyRequestErr = 1199997
 
