@@ -55,7 +55,9 @@
           const previousValue = this.value
           const currentValue = this.$tools.formatTime(value, 'YYYY-MM-DD')
           this.$emit('input', currentValue)
-          this.$emit('change', currentValue, previousValue)
+          if (currentValue !== previousValue) {
+            this.$emit('change', currentValue, previousValue)
+          }
         },
       },
       otherAttrs() {

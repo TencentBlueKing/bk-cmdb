@@ -23,7 +23,7 @@ const find = async (params, config) => {
       http.post('findmany/biz_set', enableCount(params, false), config),
       http.post('findmany/biz_set', enableCount(params, true), config)
     ])
-    return { count, list }
+    return { count: count || 0, list: list || [] }
   } catch (error) {
     console.error(error)
     return Promise.reject(error)
@@ -56,7 +56,7 @@ const findOne = async (params, config = {}) => findById(params[MODEL_ID_KEY], co
 const getAuthorized = async (config) => {
   try {
     const { info: list = [] } = await http.get('findmany/biz_set/with_reduced?sort=bk_biz_set_id', config)
-    return list
+    return list || []
   } catch (error) {
     console.error(error)
     return []
@@ -74,7 +74,7 @@ const previewOfBeforeCreate = async (params, config) => {
       http.post('find/biz_set/preview', enableCount(params, false), config),
       http.post('find/biz_set/preview', enableCount(params, true), config)
     ])
-    return { count, list }
+    return { count: count || 0, list: list || [] }
   } catch (error) {
     console.error(error)
     return { count: 0, list: [] }
@@ -87,7 +87,7 @@ const previewOfAfterCreate = async (params, config) => {
       http.post('find/biz_set/biz_list', enableCount(params, false), config),
       http.post('find/biz_set/biz_list', enableCount(params, true), config)
     ])
-    return { count, list }
+    return { count: count || 0, list: list || [] }
   } catch (error) {
     console.error(error)
     return { count: 0, list: [] }
