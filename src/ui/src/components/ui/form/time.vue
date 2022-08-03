@@ -19,7 +19,8 @@
     v-bind="otherAttrs"
     :clearable="clearable"
     :disabled="disabled"
-    :placeholder="placeholder">
+    :placeholder="placeholder"
+    @pick-success="handleConfirm">
   </bk-date-picker>
 </template>
 
@@ -56,13 +57,20 @@
           const previousValue = this.value
           const currentValue = this.$tools.formatTime(value, 'YYYY-MM-DD HH:mm:ss')
           this.$emit('input', currentValue)
-          this.$emit('change', currentValue, previousValue)
+          if (currentValue !== previousValue) {
+            this.$emit('change', currentValue, previousValue)
+          }
         }
       },
       otherAttrs() {
         // 排除options属性，因与date-picker组件props类型冲突，不能直接用
         const { options, ...otherAttrs } = this.$attrs
         return otherAttrs
+      }
+    },
+    methods: {
+      handleConfirm() {
+        this.$emit('confirm')
       }
     }
   }

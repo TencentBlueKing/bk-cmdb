@@ -163,6 +163,7 @@
           :properties="properties"
           :property-groups="propertyGroups"
           :inst="attribute.inst.edit"
+          :is-main-line="isMainLineModel"
           :type="attribute.type"
           :save-auth="{ type: $OPERATION.C_INST, relation: [model.id] }"
           @on-submit="handleSave"
@@ -298,6 +299,7 @@
       ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('objectModelClassify', ['models', 'getModelById']),
+      ...mapGetters('objectMainLineModule', ['isMainLine']),
       objId() {
         return this.$route.params.objId
       },
@@ -355,6 +357,9 @@
           type: this.$OPERATION.U_INST,
           relation: [this.model.id, parseInt(instId, 10)]
         }))
+      },
+      isMainLineModel() {
+        return this.isMainLine(this.model)
       }
     },
     watch: {
@@ -413,6 +418,7 @@
       this.setupFilter()
       this.setDynamicBreadcrumbs()
       this.throttleGetTableData()
+      this.getMainLine()
     },
     mounted() {
       this.updateFilterTagHeight()
@@ -423,6 +429,7 @@
     },
     methods: {
       ...mapActions('objectModelFieldGroup', ['searchGroup']),
+      ...mapActions('objectMainLineModule', ['searchMainlineObject']),
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
       ...mapActions('objectCommonInst', [
         'createInst',
@@ -603,6 +610,9 @@
           params: {},
           config: { requestId: this.request.groups }
         })
+      },
+      getMainLine() {
+        return this.searchMainlineObject({})
       },
       setTableHeader() {
         return new Promise((resolve) => {
