@@ -32,6 +32,7 @@ func (s *service) CreateServiceInstance(ctx context.Context, h http.Header, data
 	return resp.ServiceInstanceIDs, nil
 }
 
+// UpdateServiceInstances TODO
 func (s *service) UpdateServiceInstances(ctx context.Context, h http.Header, bizID int64, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/updatemany/proc/service_instance/biz/%d"
@@ -46,6 +47,7 @@ func (s *service) UpdateServiceInstances(ctx context.Context, h http.Header, biz
 	return
 }
 
+// DeleteServiceInstance TODO
 func (s *service) DeleteServiceInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/deletemany/proc/service_instance"
@@ -84,6 +86,7 @@ func (s *service) SearchServiceInstance(ctx context.Context, h http.Header,
 	return &resp.Data, nil
 }
 
+// SearchServiceInstanceBySetTemplate TODO
 func (s *service) SearchServiceInstanceBySetTemplate(ctx context.Context, appID string, h http.Header, data map[string]interface{}) (resp *metadata.ResponseInstData, err error) {
 	resp = new(metadata.ResponseInstData)
 	subPath := "/findmany/proc/service/set_template/list_service_instance/biz/%s"
@@ -151,6 +154,7 @@ func (s *service) SyncServiceInstanceByTemplate(ctx context.Context, h http.Head
 	return nil
 }
 
+// ServiceInstanceAddLabels TODO
 func (s *service) ServiceInstanceAddLabels(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/createmany/proc/service_instance/labels"
@@ -165,6 +169,7 @@ func (s *service) ServiceInstanceAddLabels(ctx context.Context, h http.Header, d
 	return
 }
 
+// ServiceInstanceRemoveLabels TODO
 func (s *service) ServiceInstanceRemoveLabels(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/deletemany/proc/service_instance/labels"
@@ -179,6 +184,7 @@ func (s *service) ServiceInstanceRemoveLabels(ctx context.Context, h http.Header
 	return
 }
 
+// ServiceInstanceFindLabels TODO
 func (s *service) ServiceInstanceFindLabels(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/findmany/proc/service_instance/labels/aggregation"

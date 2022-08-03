@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package taskserver TODO
 package taskserver
 
 import (
@@ -25,11 +26,13 @@ import (
 	taskUtil "configcenter/src/apimachinery/taskserver/util"
 )
 
+// TaskServerClientInterface TODO
 type TaskServerClientInterface interface {
 	Task() task.TaskClientInterface
 	Queue(flag string) queue.TaskQueueClientInterface
 }
 
+// NewProcServerClientInterface TODO
 func NewProcServerClientInterface(c *util.Capability, version string) TaskServerClientInterface {
 	base := fmt.Sprintf("/task/%s", version)
 	return &taskServer{
@@ -46,10 +49,12 @@ type taskServer struct {
 	capability  *util.Capability
 }
 
+// Task TODO
 func (ts *taskServer) Task() task.TaskClientInterface {
 	return task.NewTaskClientInterface(ts.client)
 }
 
+// Queue TODO
 func (ts *taskServer) Queue(flag string) queue.TaskQueueClientInterface {
 	ts.RLock()
 	srv, ok := ts.queueClient[flag]

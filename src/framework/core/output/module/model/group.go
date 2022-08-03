@@ -32,6 +32,7 @@ type group struct {
 	id         int
 }
 
+// ToMapStr TODO
 func (cli *group) ToMapStr() types.MapStr {
 	return common.SetValueToMapStrByTags(cli)
 }
@@ -46,18 +47,22 @@ func (cli *group) search() ([]types.MapStr, error) {
 
 }
 
+// IsExists TODO
 func (cli *group) IsExists() (bool, error) {
 
 	items, err := cli.search()
 	return 0 != len(items), err
 }
 
+// Create TODO
 func (cli *group) Create() error {
 
 	id, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Group().CreateGroup(cli.ToMapStr())
 	cli.id = id
 	return err
 }
+
+// Update TODO
 func (cli *group) Update() error {
 
 	dataItems, err := cli.search()
@@ -108,6 +113,8 @@ func (cli *group) Update() error {
 	}
 	return nil
 }
+
+// Save TODO
 func (cli *group) Save() error {
 
 	if exists, err := cli.IsExists(); nil != err {
@@ -119,54 +126,68 @@ func (cli *group) Save() error {
 	return cli.Create()
 }
 
+// GetRecordID TODO
 func (cli *group) GetRecordID() int {
 	return cli.id
 }
 
+// SetID TODO
 func (cli *group) SetID(id string) {
 	cli.GroupID = id
 }
 
+// GetID TODO
 func (cli *group) GetID() string {
 
 	return cli.GroupID
 }
 
+// SetName TODO
 func (cli *group) SetName(name string) {
 	cli.GroupName = name
 }
 
+// GetName TODO
 func (cli *group) GetName() string {
 	return cli.GroupName
 }
 
+// SetIndex TODO
 func (cli *group) SetIndex(idx int) {
 	cli.GroupIndex = idx
 }
 
+// GetIndex TODO
 func (cli *group) GetIndex() int {
 	return cli.GroupIndex
 }
 
+// SetSupplierAccount TODO
 func (cli *group) SetSupplierAccount(ownerID string) {
 	cli.OwnerID = ownerID
 }
 
+// GetSupplierAccount TODO
 func (cli *group) GetSupplierAccount() string {
 	return cli.OwnerID
 }
 
+// SetDefault TODO
 func (cli *group) SetDefault() {
 	cli.IsDefault = true
 }
+
+// SetNonDefault TODO
 func (cli *group) SetNonDefault() {
 	cli.IsDefault = false
 }
 
+// GetDefault TODO
 func (cli *group) GetDefault() bool {
 	return cli.IsDefault
 }
 
+// CreateAttribute TODO
 func (cli *group) CreateAttribute() Attribute {
 	attr := &attribute{
 		PropertyGroup: cli.GroupID,
@@ -174,11 +195,13 @@ func (cli *group) CreateAttribute() Attribute {
 	return attr
 }
 
+// FindAttributesLikeName TODO
 func (cli *group) FindAttributesLikeName(supplierAccount string, attributeName string) (AttributeIterator, error) {
 	cond := common.CreateCondition().Field(PropertyName).Like(attributeName)
 	return newAttributeIterator(supplierAccount, cond)
 }
 
+// FindAttributesByCondition TODO
 func (cli *group) FindAttributesByCondition(supplierAccount string, cond common.Condition) (AttributeIterator, error) {
 	return newAttributeIterator(supplierAccount, cond)
 }

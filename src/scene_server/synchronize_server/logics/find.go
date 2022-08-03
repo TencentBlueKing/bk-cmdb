@@ -51,6 +51,7 @@ func (lgc *Logics) find(ctx context.Context, input *metadata.SynchronizeFindInfo
 	return &result.Data, nil
 }
 
+// Find TODO
 func (lgc *Logics) Find(ctx context.Context, input *metadata.SynchronizeFindInfoParameter) (*metadata.InstDataInfo, errors.CCError) {
 	switch input.DataType {
 	case metadata.SynchronizeOperateDataTypeInstance:
@@ -59,7 +60,7 @@ func (lgc *Logics) Find(ctx context.Context, input *metadata.SynchronizeFindInfo
 		return lgc.find(ctx, input)
 	case metadata.SynchronizeOperateDataTypeModel:
 		// cancel limit
-		//input.Limit = 0
+		// input.Limit = 0
 		return lgc.find(ctx, input)
 	}
 	blog.Warnf("Find not found, input:%#v,rid:%s", input, lgc.rid)

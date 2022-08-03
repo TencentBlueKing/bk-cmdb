@@ -21,6 +21,7 @@ import (
 
 var vendorClients = make(map[string]VendorClient, 0)
 
+// VendorClient TODO
 type VendorClient interface {
 	// NewVendorClient 创建云厂商客户端
 	NewVendorClient(secretID, secretKey string) VendorClient

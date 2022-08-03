@@ -21,7 +21,7 @@ type RegDiscvServer interface {
 	RegisterAndWatch(key string, data []byte) error
 	// GetServNodes get server nodes
 	GetServNodes(key string) ([]string, error)
-	// discover server from the register-discover service platform
+	// Discover server from the register-discover service platform
 	Discover(key string) (<-chan *DiscoverEvent, error)
 	// Cancel to stop server register and discover
 	Cancel()

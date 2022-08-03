@@ -27,6 +27,7 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
+// GetDefaultAppIDWithSupplier TODO
 func (lgc *Logics) GetDefaultAppIDWithSupplier(kit *rest.Kit) (int64, errors.CCError) {
 	cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).Data()
 	appDetails, err := lgc.GetAppDetails(kit, common.BKAppIDField, cond)
@@ -42,6 +43,7 @@ func (lgc *Logics) GetDefaultAppIDWithSupplier(kit *rest.Kit) (int64, errors.CCE
 	return id, nil
 }
 
+// GetDefaultAppID TODO
 func (lgc *Logics) GetDefaultAppID(kit *rest.Kit) (int64, errors.CCError) {
 	cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).Data()
 	appDetails, err := lgc.GetAppDetails(kit, common.BKAppIDField, cond)
@@ -81,6 +83,7 @@ func (lgc *Logics) GetAppDetails(kit *rest.Kit, fields string, condition map[str
 	return nil, errors.New(common.CCErrCommBizNotFoundError, "find resource pool biz failed")
 }
 
+// IsHostExistInApp TODO
 func (lgc *Logics) IsHostExistInApp(kit *rest.Kit, appID, hostID int64) (bool, errors.CCErrorCoder) {
 	conf := metadata.ModuleHostConfigParams{
 		ApplicationID: appID,
@@ -108,6 +111,7 @@ func (lgc *Logics) IsHostExistInApp(kit *rest.Kit, appID, hostID int64) (bool, e
 	return true, nil
 }
 
+// GetSingleApp TODO
 func (lgc *Logics) GetSingleApp(kit *rest.Kit, cond mapstr.MapStr) (mapstr.MapStr, errors.CCError) {
 	cond.Set(common.BKDataStatusField, mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled})
 	query := &metadata.QueryCondition{
@@ -127,6 +131,7 @@ func (lgc *Logics) GetSingleApp(kit *rest.Kit, cond mapstr.MapStr) (mapstr.MapSt
 	return result.Info[0], nil
 }
 
+// GetAppIDByCond TODO
 func (lgc *Logics) GetAppIDByCond(kit *rest.Kit, cond metadata.ConditionWithTime) (
 	[]int64, errors.CCError) {
 
@@ -201,6 +206,7 @@ func (lgc *Logics) GetAppMapByCond(kit *rest.Kit, fields []string, cond mapstr.M
 	return appMap, nil
 }
 
+// ExistInnerModule TODO
 func (lgc *Logics) ExistInnerModule(kit *rest.Kit, moduleIDArr []int64) (bool, errors.CCErrorCoder) {
 	input := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{

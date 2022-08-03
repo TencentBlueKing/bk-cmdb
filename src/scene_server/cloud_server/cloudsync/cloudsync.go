@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package cloudsync TODO
 package cloudsync
 
 import (
@@ -28,6 +29,7 @@ const (
 	syncorNum int = 10
 )
 
+// SyncConf TODO
 type SyncConf struct {
 	ZKClient  *zkclient.ZkClient
 	Logics    *logics.Logics
@@ -35,12 +37,12 @@ type SyncConf struct {
 	MongoConf local.MongoConf
 }
 
-// 云同步接口
+// CloudSyncInterface 云同步接口
 type CloudSyncInterface interface {
 	Sync(task chan *metadata.CloudSyncTask) error
 }
 
-// 进行云资源同步
+// CloudSync 进行云资源同步
 func CloudSync(conf *SyncConf) error {
 	errors.SetGlobalCCError(conf.Logics.CCErr)
 	ctx := context.Background()
@@ -60,7 +62,7 @@ func CloudSync(conf *SyncConf) error {
 		blog.Errorf("Schedule failed, err:%+v", err)
 	}
 
-	//冷启动获取完任务记录列表才继续往下执行
+	// 冷启动获取完任务记录列表才继续往下执行
 	<-scheduler.ListerDone()
 	processor := NewTaskProcessor(scheduler)
 
@@ -72,7 +74,7 @@ func CloudSync(conf *SyncConf) error {
 	return nil
 }
 
-// 同步云资源
+// SyncCloudResource 同步云资源
 func SyncCloudResource(taskChan chan *metadata.CloudSyncTask, conf *SyncConf) {
 	// 云主机channel
 	hostChan := make(chan *metadata.CloudSyncTask, 10)

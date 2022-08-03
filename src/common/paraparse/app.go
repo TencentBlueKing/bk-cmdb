@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SearchParams TODO
 // common search struct
 type SearchParams struct {
 	Condition map[string]interface{} `json:"condition"`

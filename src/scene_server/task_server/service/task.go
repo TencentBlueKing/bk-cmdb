@@ -135,7 +135,7 @@ func (s *Service) StatusToSuccess(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-// StatusToSuccess change the task which task_id in path status to failure
+// StatusToFailure change the task which task_id in path status to failure
 func (s *Service) StatusToFailure(ctx *rest.Contexts) {
 	taskID := ctx.Request.PathParameter("task_id")
 	subTaskID := ctx.Request.PathParameter("sub_task_id")

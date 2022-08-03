@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package blueking defines user login method in blueking system
 package blueking
 
 import (
@@ -58,10 +59,9 @@ type loginResult struct {
 	Data    *loginResultData
 }
 
-type user struct {
-}
+type user struct{}
 
-// LoginUser  user login
+// LoginUser user login
 func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo, loginSucc bool) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 
@@ -127,6 +127,7 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	return user, true
 }
 
+// GetLoginUrl get login url
 func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *metadata.LogoutRequestParams) string {
 	var loginURL string
 	var siteURL string
@@ -160,6 +161,7 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 	return loginURL
 }
 
+// GetUserList get user list
 func (m *user) GetUserList(c *gin.Context, params map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	query := c.Request.URL.Query()

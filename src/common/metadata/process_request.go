@@ -1,3 +1,4 @@
+// Package metadata TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
  * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -16,12 +17,14 @@ import (
 	"configcenter/src/common/errors"
 )
 
+// CreateServiceCategoryOption TODO
 type CreateServiceCategoryOption struct {
 	BizID    int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	Name     string `field:"name" json:"name,omitempty" bson:"name"`
 	ParentID int64  `field:"bk_parent_id" json:"bk_parent_id,omitempty" bson:"bk_parent_id"`
 }
 
+// CreateServiceTemplateOption TODO
 type CreateServiceTemplateOption struct {
 	BizID             int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	Name              string `field:"name" json:"name,omitempty" bson:"name"`
@@ -98,6 +101,7 @@ type SvcTempAllInfo struct {
 	Processes         []ProcessTemplate     `json:"processes"`
 }
 
+// UpdateServiceTemplateOption TODO
 type UpdateServiceTemplateOption struct {
 	BizID             int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	ID                int64  `field:"id" json:"id,omitempty" bson:"id"`
@@ -105,6 +109,7 @@ type UpdateServiceTemplateOption struct {
 	ServiceCategoryID int64  `field:"service_category_id" json:"service_category_id,omitempty" bson:"service_category_id"`
 }
 
+// RemoveFromModuleHost TODO
 type RemoveFromModuleHost struct {
 	MoveToIdle        bool    `field:"move_to_idle" json:"move_to_idle"`
 	HostID            int64   `field:"bk_host_id" json:"bk_host_id"`
@@ -112,6 +117,7 @@ type RemoveFromModuleHost struct {
 	FinalModules      []int64 `field:"final_module_ids" json:"final_module_ids"`
 }
 
+// ServiceInstanceDeletePreview TODO
 type ServiceInstanceDeletePreview struct {
 	ToMoveModuleHosts []RemoveFromModuleHost `field:"to_move_module_hosts" json:"to_move_module_hosts"`
 	HostApplyPlan     HostApplyPlanResult    `field:"host_apply_plan" json:"host_apply_plan"`

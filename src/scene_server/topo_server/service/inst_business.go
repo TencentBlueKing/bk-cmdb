@@ -147,7 +147,7 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	
+
 	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{common.BKAppIDField: bizID},
 	}
@@ -383,6 +383,7 @@ func (s *Service) DeleteBusiness(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// SearchReducedBusinessList TODO
 // find business list with these info：
 // 1. have any authorized resources in a business.
 // 2. only returned with a few field for this business info.
@@ -394,13 +395,13 @@ func (s *Service) SearchReducedBusinessList(ctx *rest.Contexts) {
 	if len(sortParam) > 0 {
 		page.Sort = sortParam
 	}
-	
+
 	if errKey, err := page.Validate(true); err != nil {
 		blog.Errorf("page parameter invalid, errKey: %v, err: %s, rid: %s", errKey, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey))
 		return
 	}
-	
+
 	query := &metadata.QueryCondition{
 		Fields: []string{common.BKAppIDField, common.BKAppNameField},
 		Page:   page,
@@ -701,14 +702,14 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 			MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
 			MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
 		}
-		
+
 		if key, err := searchCond.BizPropertyFilter.Validate(option); err != nil {
 			blog.Errorf("bizPropertyFilter is illegal, err: %v, rid:%s", err, ctx.Kit.Rid)
 			ccErr := defErr.CCErrorf(common.CCErrCommParamsInvalid, fmt.Sprintf("biz.property.%s", key))
 			ctx.RespAutoError(ccErr)
 			return
 		}
-		
+
 		if searchCond.BizPropertyFilter.GetDeep() > querybuilder.MaxDeep {
 			blog.Errorf("bizPropertyFilter is illegal, err: %v, rid: %s", err, ctx.Kit.Rid, ctx.Kit.Rid)
 			ccErr := defErr.CCErrorf(common.CCErrCommParamsInvalid,

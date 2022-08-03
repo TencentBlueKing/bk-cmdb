@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package cloudserver TODO
 package cloudserver
 
 import (
@@ -22,7 +23,9 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CloudServerClientInterface TODO
 type CloudServerClientInterface interface {
+	// CreateAccount TODO
 	// cloud account
 	CreateAccount(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	SearchAccount(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.SearchResp, err error)
@@ -37,6 +40,7 @@ type CloudServerClientInterface interface {
 	SearchSyncRegion(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.SearchResp, err error)
 }
 
+// NewCloudServerClientInterface TODO
 func NewCloudServerClientInterface(c *util.Capability, version string) CloudServerClientInterface {
 	base := fmt.Sprintf("/cloud/%s", version)
 

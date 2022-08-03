@@ -110,6 +110,7 @@ func newNode(objID string) *Node {
 	return &Node{ObjID: objID, Data: map[string]interface{}{}, Children: []*Node{}}
 }
 
+// walk TODO
 // result: map[parentkey]map[childkey]node
 func (n *Node) walk(walkFunc func(node *Node) error) error {
 	for _, child := range n.Children {
@@ -177,6 +178,7 @@ type Topo struct {
 	ProcTopos *ProcessTopo `json:"proc_topo,omitempty"`
 }
 
+// ProModule TODO
 type ProModule struct {
 	ProcessID  uint64 `json:"bk_process_id" bson:"bk_process_id,omitempty"`
 	ModuleName string `json:"bk_module_name" bson:"bk_module_name,omitempty"`
@@ -184,10 +186,13 @@ type ProModule struct {
 	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
+// Process TODO
 type Process struct {
 	Data    map[string]interface{} `json:"data"`
 	Modules []string               `json:"modules"`
 }
+
+// ProcessTopo TODO
 type ProcessTopo struct {
 	BizName   string     `json:"bk_biz_name"`
 	Processes []*Process `json:"procs"`

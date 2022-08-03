@@ -12,10 +12,12 @@
 
 package metadata
 
+// AuthBathVerifyRequest TODO
 type AuthBathVerifyRequest struct {
 	Resources []AuthResource `json:"resources"`
 }
 
+// AuthResource TODO
 type AuthResource struct {
 	BizID        int64  `json:"bk_biz_id"`
 	ResourceType string `json:"resource_type"`
@@ -29,6 +31,7 @@ type AuthResource struct {
 	} `json:"parent_layers"`
 }
 
+// AuthBathVerifyResult TODO
 type AuthBathVerifyResult struct {
 	AuthResource
 	// the authorize decision, whether a user has been authorized or not.

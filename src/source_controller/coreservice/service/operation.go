@@ -25,6 +25,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// SearchInstCount TODO
 func (s *coreService) SearchInstCount(ctx *rest.Contexts) {
 	opt := make(map[string]interface{})
 	if err := ctx.DecodeInto(&opt); err != nil {
@@ -40,6 +41,7 @@ func (s *coreService) SearchInstCount(ctx *rest.Contexts) {
 	ctx.RespEntity(count)
 }
 
+// SearchChartData TODO
 func (s *coreService) SearchChartData(ctx *rest.Contexts) {
 	condition := metadata.ChartConfig{}
 	if err := ctx.DecodeInto(&condition); err != nil {
@@ -56,6 +58,7 @@ func (s *coreService) SearchChartData(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// DeleteOperationChart TODO
 func (s *coreService) DeleteOperationChart(ctx *rest.Contexts) {
 	id := ctx.Request.PathParameter("id")
 	int64ID, err := strconv.ParseInt(id, 10, 64)
@@ -72,6 +75,7 @@ func (s *coreService) DeleteOperationChart(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// CreateOperationChart TODO
 func (s *coreService) CreateOperationChart(ctx *rest.Contexts) {
 	chartConfig := metadata.ChartConfig{}
 	if err := ctx.DecodeInto(&chartConfig); err != nil {
@@ -92,6 +96,7 @@ func (s *coreService) CreateOperationChart(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchChartWithPosition TODO
 func (s *coreService) SearchChartWithPosition(ctx *rest.Contexts) {
 	opt := make(map[string]interface{})
 	if err := ctx.DecodeInto(&opt); err != nil {
@@ -129,6 +134,7 @@ func (s *coreService) SearchChartWithPosition(ctx *rest.Contexts) {
 	ctx.RespEntityWithCount(int64(count), result)
 }
 
+// UpdateOperationChart TODO
 func (s *coreService) UpdateOperationChart(ctx *rest.Contexts) {
 	opt := make(map[string]interface{})
 	if err := ctx.DecodeInto(&opt); err != nil {
@@ -145,6 +151,7 @@ func (s *coreService) UpdateOperationChart(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateChartPosition TODO
 func (s *coreService) UpdateChartPosition(ctx *rest.Contexts) {
 	opt := metadata.ChartPosition{}
 	if err := ctx.DecodeInto(&opt); err != nil {
@@ -160,6 +167,7 @@ func (s *coreService) UpdateChartPosition(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchTimerChartData TODO
 func (s *coreService) SearchTimerChartData(ctx *rest.Contexts) {
 	opt := metadata.ChartConfig{}
 	if err := ctx.DecodeInto(&opt); err != nil {
@@ -178,6 +186,7 @@ func (s *coreService) SearchTimerChartData(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchChartCommon TODO
 func (s *coreService) SearchChartCommon(ctx *rest.Contexts) {
 	opt := make(map[string]interface{})
 	if err := ctx.DecodeInto(&opt); err != nil {
@@ -207,6 +216,7 @@ func (s *coreService) SearchChartCommon(ctx *rest.Contexts) {
 	ctx.RespEntityWithCount(int64(count), nil)
 }
 
+// TimerFreshData TODO
 func (s *coreService) TimerFreshData(ctx *rest.Contexts) {
 	exist, err := mongodb.Client().HasTable(context.Background(), common.BKTableNameChartData)
 	if err != nil {
@@ -228,6 +238,7 @@ func (s *coreService) TimerFreshData(ctx *rest.Contexts) {
 	ctx.RespEntity(true)
 }
 
+// SearchCloudMapping TODO
 func (s *coreService) SearchCloudMapping(ctx *rest.Contexts) {
 	opt := make(map[string]interface{})
 	if err := ctx.DecodeInto(&opt); err != nil {

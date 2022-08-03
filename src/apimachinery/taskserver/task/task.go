@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package task TODO
 package task
 
 import (
@@ -72,6 +73,7 @@ func (t *task) CreateBatch(ctx context.Context, header http.Header, tasks []meta
 	return resp.Data, nil
 }
 
+// ListTask TODO
 func (t *task) ListTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskRequest) (resp *metadata.ListAPITaskResponse, err error) {
 	resp = new(metadata.ListAPITaskResponse)
 	subPath := "/task/findmany/list/%s"
@@ -109,6 +111,7 @@ func (t *task) ListLatestTask(ctx context.Context, header http.Header, name stri
 	return resp.Data, nil
 }
 
+// TaskDetail TODO
 func (t *task) TaskDetail(ctx context.Context, header http.Header, taskID string) (resp *metadata.TaskDetailResponse, err error) {
 	resp = new(metadata.TaskDetailResponse)
 	subPath := "/task/findone/detail/%s"
@@ -147,6 +150,7 @@ func (t *task) DeleteTask(ctx context.Context, header http.Header, taskCond *met
 	return nil
 }
 
+// TaskStatusToSuccess TODO
 func (t *task) TaskStatusToSuccess(ctx context.Context, header http.Header, taskID, subTaskID string) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/task/set/status/sucess/id/%s/sub_id/%s"
@@ -161,6 +165,7 @@ func (t *task) TaskStatusToSuccess(ctx context.Context, header http.Header, task
 	return
 }
 
+// TaskStatusToFailure TODO
 func (t *task) TaskStatusToFailure(ctx context.Context, header http.Header, taskID, subTaskID string, errResponse *metadata.Response) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/task/set/status/failure/id/%s/sub_id/%s"

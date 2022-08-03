@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/selector"
 )
 
+// AddLabels TODO
 func (s *coreService) AddLabels(ctx *rest.Contexts) {
 	inputData := selector.LabelAddRequest{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -32,6 +33,7 @@ func (s *coreService) AddLabels(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// RemoveLabels TODO
 func (s *coreService) RemoveLabels(ctx *rest.Contexts) {
 	inputData := selector.LabelRemoveRequest{}
 	if err := ctx.DecodeInto(&inputData); nil != err {

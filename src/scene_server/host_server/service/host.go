@@ -33,6 +33,7 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
+// AppResult TODO
 type AppResult struct {
 	Result  bool        `json:"result"`
 	Code    int         `json:"code"`
@@ -40,6 +41,7 @@ type AppResult struct {
 	Data    DataInfo    `json:"data"`
 }
 
+// DataInfo TODO
 type DataInfo struct {
 	Count int                      `json:"count"`
 	Info  []map[string]interface{} `json:"info"`
@@ -297,6 +299,7 @@ func (s *Service) GetHostInstanceProperties(ctx *rest.Contexts) {
 
 }
 
+// AddHost TODO
 // add host to host resource pool
 func (s *Service) AddHost(ctx *rest.Contexts) {
 	hostList := new(meta.HostList)
@@ -355,6 +358,7 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 	ctx.RespEntity(retData)
 }
 
+// AddHostByExcel TODO
 // add host come from excel to host resource pool
 func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 	hostList := new(meta.HostList)
@@ -408,6 +412,7 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 	ctx.RespEntity(retData)
 }
 
+// AddHostToResourcePool TODO
 // add host to resource pool, returns bk_host_id of the successfully added hosts
 func (s *Service) AddHostToResourcePool(ctx *rest.Contexts) {
 
@@ -438,6 +443,7 @@ func (s *Service) AddHostToResourcePool(ctx *rest.Contexts) {
 	ctx.RespEntity(retData)
 }
 
+// AddHostFromAgent TODO
 // Deprecated:
 func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 
@@ -501,6 +507,7 @@ func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 	ctx.RespEntity(success)
 }
 
+// SearchHost TODO
 func (s *Service) SearchHost(ctx *rest.Contexts) {
 
 	body := new(meta.HostCommonSearch)
@@ -529,6 +536,7 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 
 }
 
+// SearchHostWithAsstDetail TODO
 func (s *Service) SearchHostWithAsstDetail(ctx *rest.Contexts) {
 
 	body := new(meta.HostCommonSearch)

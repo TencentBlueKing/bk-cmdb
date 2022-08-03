@@ -22,6 +22,7 @@ import (
 	"configcenter/src/storage/dal/types"
 )
 
+// SetTemplateSyncStatusMigrate TODO
 func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableNames := []string{"cc_SetTemplateSyncStatus", "cc_SetTemplateSyncHistory"}
 	for _, tableName := range tableNames {

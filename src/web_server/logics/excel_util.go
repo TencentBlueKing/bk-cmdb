@@ -117,7 +117,7 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 		}
 
 		cell := sheet.Cell(rowIndex, property.ExcelColIndex)
-		//cell.NumFmt = "@"
+		// cell.NumFmt = "@"
 
 		switch property.PropertyType {
 		case common.FieldTypeEnum:
@@ -347,7 +347,7 @@ func checkOrgnization(result map[string]interface{}, department map[int64]metada
 	return result, errMsg
 }
 
-// ProductExcelHeader Excel文件头部，
+// productExcelHeader Excel文件头部，
 func productExcelHeader(ctx context.Context, fields map[string]Property, filter []string, xlsxFile *xlsx.File,
 	sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -450,7 +450,7 @@ func handleHostField(field Property, handleFieldParam *HandleFieldParam, cloudAr
 	if field.IsRequire {
 		isRequire = handleFieldParam.DefLang.Language("web_excel_header_required")
 	}
-	 // 主机部分特殊逻辑 针对云区域与topo进行处理
+	// 主机部分特殊逻辑 针对云区域与topo进行处理
 	if field.ID == common.BKCloudIDField {
 		// 设置属性的id
 		handleFieldParam.Sheet.Cell(2, field.ExcelColIndex).Value = field.ID
@@ -572,16 +572,17 @@ func handleField(field Property, handleFieldParam *HandleFieldParam) {
 	}
 }
 
+// productExcelAssociationHeader TODO
 // ProductExcelHeader Excel文件头部，
 func productExcelAssociationHeader(ctx context.Context, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf,
 	instNum int, asstList []*metadata.Association) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	//第一列(指标说明，橙色)
+	// 第一列(指标说明，橙色)
 	cellStyle := getCellStyle(common.ExcelFirstColumnCellColor, common.ExcelHeaderFirstRowFontColor)
-	//第一列(其余格，粉色)
+	// 第一列(其余格，粉色)
 	colStyle := getCellStyle(common.ExcelHeaderFirstColumnColor, common.ExcelHeaderFirstRowFontColor)
-	//【2-5】列【二】排，(背景色，蓝色)
+	// 【2-5】列【二】排，(背景色，蓝色)
 	backStyle := getCellStyle(common.ExcelHeaderOtherRowColor, common.ExcelHeaderFirstRowFontColor)
 
 	sheet.Col(0).Width = 18
@@ -609,7 +610,7 @@ func productExcelAssociationHeader(ctx context.Context, sheet *xlsx.Sheet, defLa
 	cellAsstID.SetString(defLang.Language("excel_association_object_id"))
 	cellAsstID.SetStyle(getHeaderFirstRowCellStyle(false))
 	choiceCell := xlsx.NewXlsxCellDataValidation(true, true, true)
-	//确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
+	// 确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
 	pureAsstList := []string{}
 	for _, asst := range asstList {
 		pureAsstList = append(pureAsstList, asst.AssociationName)
@@ -662,7 +663,7 @@ const (
 	associationDstInstIndex   = 4
 
 	associationOPAdd = "add"
-	//associationOPUpdate = "update"
+	// associationOPUpdate = "update"
 	associationOPDelete = "delete"
 )
 

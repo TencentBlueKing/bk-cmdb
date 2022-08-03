@@ -27,6 +27,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// CreateServiceTemplate TODO
 func (p *processOperation) CreateServiceTemplate(kit *rest.Kit, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
 	// base attribute validate
 	if field, err := template.Validate(kit.CCError); err != nil {
@@ -103,6 +104,7 @@ func (p *processOperation) CreateServiceTemplate(kit *rest.Kit, template metadat
 	return &template, nil
 }
 
+// GetServiceTemplate TODO
 func (p *processOperation) GetServiceTemplate(kit *rest.Kit, templateID int64) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
 	template := metadata.ServiceTemplate{}
 
@@ -303,6 +305,7 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 	return template, nil
 }
 
+// ListServiceTemplates TODO
 func (p *processOperation) ListServiceTemplates(kit *rest.Kit, option metadata.ListServiceTemplateOption) (*metadata.MultipleServiceTemplate, errors.CCErrorCoder) {
 	filter := map[string]interface{}{
 		common.BKAppIDField: option.BusinessID,
@@ -378,6 +381,7 @@ func (p *processOperation) ListServiceTemplates(kit *rest.Kit, option metadata.L
 	return result, nil
 }
 
+// DeleteServiceTemplate TODO
 func (p *processOperation) DeleteServiceTemplate(kit *rest.Kit, serviceTemplateID int64) errors.CCErrorCoder {
 	template, err := p.GetServiceTemplate(kit, serviceTemplateID)
 	if err != nil {

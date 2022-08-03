@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package registerdiscover TODO
 package registerdiscover
 
 import (
@@ -61,6 +62,7 @@ func (rd *RegDiscover) RegisterAndWatchService(key string, data []byte) error {
 	return rd.rdServer.RegisterAndWatch(key, data)
 }
 
+// GetServNodes TODO
 func (rd *RegDiscover) GetServNodes(key string) ([]string, error) {
 	return rd.rdServer.GetServNodes(key)
 }

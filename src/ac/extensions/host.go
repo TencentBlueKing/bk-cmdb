@@ -112,6 +112,7 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 	return am.constructHostFromSearchResult(ctx, header, hosts)
 }
 
+// MakeResourcesByHosts TODO
 func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) ([]meta.ResourceAttribute, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
@@ -161,6 +162,7 @@ func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Hea
 	return resources, nil
 }
 
+// AuthorizeByHosts TODO
 func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) error {
 	if !am.Enabled() {
 		return nil
@@ -178,6 +180,7 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 	return am.batchAuthorize(ctx, header, resources...)
 }
 
+// GenHostBatchNoPermissionResp TODO
 func (am *AuthManager) GenHostBatchNoPermissionResp(ctx context.Context, header http.Header, action meta.Action, hostIDs []int64) (*metadata.BaseResp, error) {
 	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
 	if err != nil {
@@ -244,6 +247,7 @@ func (am *AuthManager) GenHostBatchNoPermissionResp(ctx context.Context, header 
 	return &resp, nil
 }
 
+// GenEditBizHostNoPermissionResp TODO
 func (am *AuthManager) GenEditBizHostNoPermissionResp(ctx context.Context, header http.Header, hostIDs []int64) (*metadata.BaseResp, error) {
 	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
 	if err != nil {
@@ -274,6 +278,7 @@ func (am *AuthManager) GenEditBizHostNoPermissionResp(ctx context.Context, heade
 	return &resp, nil
 }
 
+// AuthorizeByHostsIDs TODO
 func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action, hostIDs ...int64) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
@@ -295,6 +300,7 @@ func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Head
 	return am.AuthorizeByHosts(ctx, header, action, hosts...)
 }
 
+// AuthorizeCreateHost TODO
 func (am *AuthManager) AuthorizeCreateHost(ctx context.Context, header http.Header, bizID int64) error {
 	if !am.Enabled() {
 		return nil

@@ -123,7 +123,7 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 	ctx.RespEntity(module)
 }
 
-// CheckIsBuiltInModule check if object is built-in object
+// checkIsBuiltInModule check if object is built-in object
 func (s *Service) checkIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) error {
 	// 检查是否时内置集群
 	input := &metadata.Condition{

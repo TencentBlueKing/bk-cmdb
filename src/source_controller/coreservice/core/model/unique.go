@@ -20,6 +20,7 @@ import (
 type modelAttrUnique struct {
 }
 
+// CreateModelAttrUnique TODO
 func (m *modelAttrUnique) CreateModelAttrUnique(kit *rest.Kit, objID string, data metadata.CreateModelAttrUnique) (*metadata.CreateOneDataResult, error) {
 	id, err := m.createModelAttrUnique(kit, objID, data)
 	if err != nil {
@@ -28,6 +29,7 @@ func (m *modelAttrUnique) CreateModelAttrUnique(kit *rest.Kit, objID string, dat
 	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, nil
 }
 
+// UpdateModelAttrUnique TODO
 func (m *modelAttrUnique) UpdateModelAttrUnique(kit *rest.Kit, objID string, id uint64, data metadata.UpdateModelAttrUnique) (*metadata.UpdatedCount, error) {
 	err := m.updateModelAttrUnique(kit, objID, id, data)
 	if err != nil {
@@ -36,6 +38,7 @@ func (m *modelAttrUnique) UpdateModelAttrUnique(kit *rest.Kit, objID string, id 
 	return &metadata.UpdatedCount{Count: 1}, nil
 }
 
+// DeleteModelAttrUnique TODO
 func (m *modelAttrUnique) DeleteModelAttrUnique(kit *rest.Kit, objID string, id uint64) (*metadata.DeletedCount, error) {
 	err := m.deleteModelAttrUnique(kit, objID, id)
 	if err != nil {
@@ -44,6 +47,7 @@ func (m *modelAttrUnique) DeleteModelAttrUnique(kit *rest.Kit, objID string, id 
 	return &metadata.DeletedCount{Count: 1}, nil
 }
 
+// SearchModelAttrUnique TODO
 func (m *modelAttrUnique) SearchModelAttrUnique(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryUniqueResult, error) {
 
 	uniqueItems, err := m.searchModelAttrUnique(kit, inputParam)

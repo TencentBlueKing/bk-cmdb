@@ -40,10 +40,12 @@ type hostApplyRule struct {
 	dependence HostApplyDependence
 }
 
+// HostApplyDependence TODO
 type HostApplyDependence interface {
 	UpdateModelInstance(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 }
 
+// New TODO
 func New(dependence HostApplyDependence) core.HostApplyRuleOperation {
 	rule := &hostApplyRule{
 		dependence: dependence,
@@ -140,6 +142,7 @@ func (p *hostApplyRule) getHostAttribute(kit *rest.Kit, bizID int64, hostAttribu
 	return attributes[0], nil
 }
 
+// CreateHostApplyRule TODO
 func (p *hostApplyRule) CreateHostApplyRule(kit *rest.Kit, bizID int64, option metadata.CreateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder) {
 	now := time.Now()
 	rule := metadata.HostApplyRule{
@@ -202,6 +205,7 @@ func (p *hostApplyRule) CreateHostApplyRule(kit *rest.Kit, bizID int64, option m
 	return rule, nil
 }
 
+// UpdateHostApplyRule TODO
 func (p *hostApplyRule) UpdateHostApplyRule(kit *rest.Kit, bizID int64, ruleID int64, option metadata.UpdateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder) {
 	rule, ccErr := p.GetHostApplyRule(kit, bizID, ruleID)
 	if ccErr != nil {
@@ -272,6 +276,7 @@ func (p *hostApplyRule) DeleteHostApplyRule(kit *rest.Kit, bizID int64,
 	return nil
 }
 
+// GetHostApplyRule TODO
 func (p *hostApplyRule) GetHostApplyRule(kit *rest.Kit, bizID int64, ruleID int64) (metadata.HostApplyRule, errors.CCErrorCoder) {
 	rule := metadata.HostApplyRule{}
 	filter := map[string]interface{}{
@@ -290,6 +295,7 @@ func (p *hostApplyRule) GetHostApplyRule(kit *rest.Kit, bizID int64, ruleID int6
 	return rule, nil
 }
 
+// GetHostApplyRuleByAttributeID TODO
 func (p *hostApplyRule) GetHostApplyRuleByAttributeID(kit *rest.Kit, bizID, moduleID, attributeID int64) (metadata.HostApplyRule, errors.CCErrorCoder) {
 	rule := metadata.HostApplyRule{}
 	filter := map[string]interface{}{
@@ -555,6 +561,7 @@ func match(ctx context.Context, rules map[string]metadata.HostApplyRule, attribu
 	})
 }
 
+// BatchUpdateHostApplyRule TODO
 func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, option metadata.BatchCreateOrUpdateApplyRuleOption) (metadata.BatchCreateOrUpdateHostApplyRuleResult, errors.CCErrorCoder) {
 	rid := kit.Rid
 	batchResult := metadata.BatchCreateOrUpdateHostApplyRuleResult{

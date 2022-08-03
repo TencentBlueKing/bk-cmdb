@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package clientset TODO
 package clientset
 
 import (
@@ -24,12 +25,14 @@ import (
 	"configcenter/src/framework/common/rest"
 )
 
+// ClientConfig TODO
 type ClientConfig struct {
 	// comma separated.
 	ZkAddr string
 	TLS    http.TLSConfig
 }
 
+// NewV3Client TODO
 func NewV3Client(c ClientConfig) (V3ClientSet, error) {
 
 	disc, err := discovery.DiscoveryAPIServer(c.ZkAddr)
@@ -53,6 +56,7 @@ func NewV3Client(c ClientConfig) (V3ClientSet, error) {
 	}, nil
 }
 
+// V3ClientSet TODO
 type V3ClientSet interface {
 	Business() business.Interface
 	Host() host.Interface
@@ -63,14 +67,17 @@ type v3 struct {
 	client rest.ClientInterface
 }
 
+// Business TODO
 func (v *v3) Business() business.Interface {
 	return business.NewBusinessClient(v.client)
 }
 
+// Host TODO
 func (v *v3) Host() host.Interface {
 	return host.NewHostCtrl(v.client)
 }
 
+// Model TODO
 func (v *v3) Model() model.Interface {
 	return model.NewModelClient(v.client)
 }

@@ -18,6 +18,7 @@ import (
 	"configcenter/src/ac/meta"
 )
 
+// ServiceCategoryAuthConfigs TODO
 // utility.AddHandler(rest.Action{Verb: , Path: , Handler: ps.UpdateServiceCategory})
 var ServiceCategoryAuthConfigs = []AuthConfig{
 	{
@@ -63,6 +64,7 @@ var ServiceCategoryAuthConfigs = []AuthConfig{
 	},
 }
 
+// ServiceCategory TODO
 func (ps *parseStream) ServiceCategory() *parseStream {
 	return ParseStreamWithFramework(ps, ServiceCategoryAuthConfigs)
 }

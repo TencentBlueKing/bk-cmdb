@@ -175,6 +175,7 @@ type ObjClassificationObject struct {
 	AsstObjects    map[string][]interface{} `json:"bk_asst_objects"`
 }
 
+// GetInstanceObjectMappingsOption TODO
 type GetInstanceObjectMappingsOption struct {
 	IDs []int64 `json:"ids"`
 }
@@ -185,6 +186,7 @@ type InstanceObjectMappingsResult struct {
 	Data     []ObjectMapping `json:"data"`
 }
 
+// ObjectMapping TODO
 type ObjectMapping struct {
 	ID       int64  `bson:"bk_inst_id"`
 	ObjectID string `bson:"bk_obj_id"`

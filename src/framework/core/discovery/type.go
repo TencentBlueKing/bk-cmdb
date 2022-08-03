@@ -12,9 +12,10 @@
 
 package discovery
 
+// DiscoverInterface TODO
 type DiscoverInterface interface {
-	// OutPut returns the output server address
+	// Output returns the output server address
 	Output() string
-	// IntPut returns the input server address
+	// Input returns the input server address
 	Input() string
 }

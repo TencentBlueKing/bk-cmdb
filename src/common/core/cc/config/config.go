@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package config TODO
 package config
 
 import (
@@ -39,6 +40,7 @@ func NewCCAPIConfig() *CCAPIConfig {
 	}
 }
 
+// GetAddress TODO
 // IPV6 addr port, like ::1:80
 // IPV4 addr port, like 127.0.0.1:80
 // GetAddress get the address

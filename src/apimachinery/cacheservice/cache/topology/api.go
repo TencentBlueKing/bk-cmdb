@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// Interface TODO
 type Interface interface {
 	SearchBusiness(ctx context.Context, h http.Header, bizID int64) (jsonString string, err error)
 	ListBusiness(ctx context.Context, h http.Header, opt *metadata.ListWithIDOption) (jsonArray string, err error)
@@ -30,6 +31,7 @@ type Interface interface {
 	SearchCustomLayer(ctx context.Context, h http.Header, objID string, instID int64) (jsonString string, err error)
 }
 
+// NewCacheClient TODO
 func NewCacheClient(client rest.ClientInterface) Interface {
 	return &baseCache{client: client}
 }

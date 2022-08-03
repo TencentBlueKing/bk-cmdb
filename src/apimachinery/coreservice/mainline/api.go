@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// SearchMainlineModelTopo TODO
 func (m *mainline) SearchMainlineModelTopo(ctx context.Context, header http.Header, withDetail bool) (*metadata.TopoModelNode, errors.CCErrorCoder) {
 	rid := util.GetHTTPCCRequestID(header)
 	ret := new(metadata.SearchTopoModelNodeResult)
@@ -50,6 +51,7 @@ func (m *mainline) SearchMainlineModelTopo(ctx context.Context, header http.Head
 	return &ret.Data, nil
 }
 
+// SearchMainlineInstanceTopo TODO
 func (m *mainline) SearchMainlineInstanceTopo(ctx context.Context, header http.Header, bkBizID int64, withDetail bool) (*metadata.TopoInstanceNode, errors.CCErrorCoder) {
 	rid := util.GetHTTPCCRequestID(header)
 	input := map[string]bool{}

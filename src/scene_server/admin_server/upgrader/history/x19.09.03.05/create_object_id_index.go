@@ -23,6 +23,7 @@ import (
 	"configcenter/src/storage/dal/types"
 )
 
+// CreateObjectIDIndex TODO
 func CreateObjectIDIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	idx := types.Index{
 		Keys: map[string]int32{

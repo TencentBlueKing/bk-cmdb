@@ -1,3 +1,4 @@
+// Package synchronizeserver TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -15,10 +16,11 @@ import (
 	"context"
 	"net/http"
 
-	//"configcenter/src/apimachinery/rest"
+	// "configcenter/src/apimachinery/rest"
 	"configcenter/src/common/metadata"
 )
 
+// Find TODO
 func (s *synchronize) Find(ctx context.Context, h http.Header, input *metadata.SynchronizeFindInfoParameter) (resp *metadata.ResponseInstData, err error) {
 	resp = new(metadata.ResponseInstData)
 	subPath := "/search"

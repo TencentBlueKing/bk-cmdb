@@ -42,6 +42,7 @@ type tokenHandler struct {
 	db  dal.DB
 }
 
+// SetLastWatchToken TODO
 func (w *tokenHandler) SetLastWatchToken(ctx context.Context, token string) error {
 	var err error
 	// do with retry
@@ -60,6 +61,7 @@ func (w *tokenHandler) SetLastWatchToken(ctx context.Context, token string) erro
 	return err
 }
 
+// GetStartWatchToken TODO
 // get the former watched token.
 // if Key is not exist, then token is "".
 func (w *tokenHandler) GetStartWatchToken(ctx context.Context) (token string, err error) {

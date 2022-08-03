@@ -143,7 +143,7 @@ func TestSetOneModel(t *testing.T) {
 	require.NotNil(t, dataResult)
 	require.Equal(t, 1, len(dataResult.Created))
 	require.NotEqual(t, uint64(0), dataResult.Created[0].ID)
-	//require.NotEqual(t, uint64(0), dataResult.Created)
+	// require.NotEqual(t, uint64(0), dataResult.Created)
 
 }
 

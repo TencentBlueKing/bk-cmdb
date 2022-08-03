@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package manager TODO
 package manager
 
 import (
@@ -17,9 +18,11 @@ import (
 )
 
 var (
+	// LoginPluginInfo TODO
 	LoginPluginInfo []*metadata.LoginPluginInfo
 )
 
+// RegisterPlugin TODO
 func RegisterPlugin(params *metadata.LoginPluginInfo) {
 	LoginPluginInfo = append(LoginPluginInfo, params)
 }

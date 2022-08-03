@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package client TODO
 package client
 
 import (
@@ -23,12 +24,14 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
+// Interface TODO
 type Interface interface {
 	GetUserPolicy(ctx context.Context, opt *types.GetPolicyOption) (*operator.Policy, error)
 	ListUserPolicies(ctx context.Context, opts *types.ListPolicyOptions) ([]*types.ActionPolicy, error)
 	GetSystemToken(ctx context.Context) (string, error)
 }
 
+// NewClient TODO
 func NewClient(conf types.IamConfig, opt types.Options) (Interface, error) {
 
 	if err := conf.Validate(); err != nil {

@@ -33,28 +33,50 @@ import (
 )
 
 const (
-	AttributeFieldID              = "id"
+	// AttributeFieldID TODO
+	AttributeFieldID = "id"
+	// AttributeFieldSupplierAccount TODO
 	AttributeFieldSupplierAccount = "bk_supplier_account"
-	AttributeFieldObjectID        = "bk_obj_id"
-	AttributeFieldPropertyID      = "bk_property_id"
-	AttributeFieldPropertyName    = "bk_property_name"
-	AttributeFieldPropertyGroup   = "bk_property_group"
-	AttributeFieldPropertyIndex   = "bk_property_index"
-	AttributeFieldUnit            = "unit"
-	AttributeFieldPlaceHolder     = "placeholder"
-	AttributeFieldIsEditable      = "editable"
-	AttributeFieldIsPre           = "ispre"
-	AttributeFieldIsRequired      = "isrequired"
-	AttributeFieldIsReadOnly      = "isreadonly"
-	AttributeFieldIsOnly          = "isonly"
-	AttributeFieldIsSystem        = "bk_issystem"
-	AttributeFieldIsAPI           = "bk_isapi"
-	AttributeFieldPropertyType    = "bk_property_type"
-	AttributeFieldOption          = "option"
-	AttributeFieldDescription     = "description"
-	AttributeFieldCreator         = "creator"
-	AttributeFieldCreateTime      = "create_time"
-	AttributeFieldLastTime        = "last_time"
+	// AttributeFieldObjectID TODO
+	AttributeFieldObjectID = "bk_obj_id"
+	// AttributeFieldPropertyID TODO
+	AttributeFieldPropertyID = "bk_property_id"
+	// AttributeFieldPropertyName TODO
+	AttributeFieldPropertyName = "bk_property_name"
+	// AttributeFieldPropertyGroup TODO
+	AttributeFieldPropertyGroup = "bk_property_group"
+	// AttributeFieldPropertyIndex TODO
+	AttributeFieldPropertyIndex = "bk_property_index"
+	// AttributeFieldUnit TODO
+	AttributeFieldUnit = "unit"
+	// AttributeFieldPlaceHolder TODO
+	AttributeFieldPlaceHolder = "placeholder"
+	// AttributeFieldIsEditable TODO
+	AttributeFieldIsEditable = "editable"
+	// AttributeFieldIsPre TODO
+	AttributeFieldIsPre = "ispre"
+	// AttributeFieldIsRequired TODO
+	AttributeFieldIsRequired = "isrequired"
+	// AttributeFieldIsReadOnly TODO
+	AttributeFieldIsReadOnly = "isreadonly"
+	// AttributeFieldIsOnly TODO
+	AttributeFieldIsOnly = "isonly"
+	// AttributeFieldIsSystem TODO
+	AttributeFieldIsSystem = "bk_issystem"
+	// AttributeFieldIsAPI TODO
+	AttributeFieldIsAPI = "bk_isapi"
+	// AttributeFieldPropertyType TODO
+	AttributeFieldPropertyType = "bk_property_type"
+	// AttributeFieldOption TODO
+	AttributeFieldOption = "option"
+	// AttributeFieldDescription TODO
+	AttributeFieldDescription = "description"
+	// AttributeFieldCreator TODO
+	AttributeFieldCreator = "creator"
+	// AttributeFieldCreateTime TODO
+	AttributeFieldCreateTime = "create_time"
+	// AttributeFieldLastTime TODO
+	AttributeFieldLastTime = "last_time"
 )
 
 // Attribute attribute metadata definition
@@ -119,11 +141,13 @@ type ObjAttDes struct {
 	PropertyGroupName string `json:"bk_property_group_name"`
 }
 
+// HostObjAttDes TODO
 type HostObjAttDes struct {
 	ObjAttDes        `json:",inline" bson:",inline"`
 	HostApplyEnabled bool `json:"host_apply_enabled"`
 }
 
+// Validate TODO
 func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key string) (rawError errors.RawErrorInfo) {
 	fieldType := attribute.PropertyType
 	switch fieldType {
@@ -164,7 +188,7 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 			Args:    []interface{}{fieldType},
 		}
 	}
-	//如果出现了问题，并且报错原内容为propertyID，则替换为propertyName。
+	// 如果出现了问题，并且报错原内容为propertyID，则替换为propertyName。
 	if rawError.ErrCode != 0 {
 		if key == attribute.PropertyID || key == common.BKPropertyValueField {
 			rawError.Args = []interface{}{attribute.PropertyName}
@@ -322,6 +346,7 @@ func (attribute *Attribute) validBool(ctx context.Context, val interface{}, key 
 	return errors.RawErrorInfo{}
 }
 
+// validTimeZone TODO
 // valid char valid object attribute that is timezone type
 func (attribute *Attribute) validTimeZone(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -752,6 +777,7 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 	}
 }
 
+// validOrganization TODO
 // validBool valid object attribute that is bool type
 func (attribute *Attribute) validOrganization(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -895,7 +921,7 @@ func parseFloatOption(ctx context.Context, val interface{}) FloatOption {
 	return floatOption
 }
 
-// parseIntOption  parse int data in option
+// ParseIntOption  parse int data in option
 func ParseIntOption(ctx context.Context, val interface{}) IntOption {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	intOption := IntOption{}
@@ -1048,7 +1074,7 @@ func parseEnumOption(options []interface{}, enumOptions *[]EnumVal) error {
 	return nil
 }
 
-// parseFloatOption  parse float data in option
+// ParseFloatOption  parse float data in option
 func ParseFloatOption(ctx context.Context, val interface{}) FloatOption {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	floatOption := FloatOption{}
@@ -1075,6 +1101,7 @@ func ParseFloatOption(ctx context.Context, val interface{}) FloatOption {
 	return floatOption
 }
 
+// PrettyValue TODO
 func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (string, error) {
 	if val == nil {
 		return "", nil
@@ -1176,6 +1203,7 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 	return "", nil
 }
 
+// HostApplyFieldMap TODO
 var HostApplyFieldMap = map[string]bool{
 	common.BKOperatorField:        true,
 	common.BKBakOperatorField:     true,
@@ -1226,6 +1254,7 @@ func CheckAllowHostApplyOnField(field *Attribute) bool {
 	return true
 }
 
+// SubAttributeOption TODO
 type SubAttributeOption []SubAttribute
 
 // SubAttribute sub attribute metadata definition
@@ -1244,6 +1273,7 @@ type SubAttribute struct {
 	PropertyGroup string      `field:"bk_property_group" json:"bk_property_group" bson:"bk_property_group"`
 }
 
+// Validate TODO
 func (sa *SubAttribute) Validate(ctx context.Context, data interface{}, key string) (rawError errors.RawErrorInfo) {
 	attr := Attribute{
 		PropertyID:   sa.PropertyID,
@@ -1336,8 +1366,10 @@ func parseSubAttr(options map[string]interface{}) SubAttribute {
 	return subAttr
 }
 
+// EnumOptions TODO
 type EnumOptions []AttributesOption
 
+// AttributesOption TODO
 type AttributesOption struct {
 	ID        string `json:"id" bson:"id"`
 	Name      string `json:"name" bson:"name"`
@@ -1345,4 +1377,5 @@ type AttributesOption struct {
 	IsDefault bool   `json:"is_default" bson:"is_default"`
 }
 
+// ListOptions TODO
 type ListOptions []string

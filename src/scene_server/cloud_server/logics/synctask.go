@@ -24,6 +24,7 @@ import (
 	params "configcenter/src/common/paraparse"
 )
 
+// SearchVpc TODO
 func (lgc *Logics) SearchVpc(kit *rest.Kit, accountID int64, vpcOpt *metadata.SearchVpcOption) (*metadata.VpcHostCntResult, error) {
 	accountConf, err := lgc.GetCloudAccountConf(kit, accountID)
 	if err != nil {
@@ -100,6 +101,7 @@ func (lgc *Logics) GetVpcCloudArea(kit *rest.Kit, vpcIDs []string) (map[string]i
 	return ret, nil
 }
 
+// CreateSyncTask TODO
 func (lgc *Logics) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncTask) (*metadata.CloudSyncTask, error) {
 	result, err := lgc.CoreAPI.CoreService().Cloud().CreateSyncTask(kit.Ctx, kit.Header, task)
 	if err != nil {
@@ -127,6 +129,7 @@ func (lgc *Logics) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncTask) (
 	return result, nil
 }
 
+// SearchSyncTask TODO
 func (lgc *Logics) SearchSyncTask(kit *rest.Kit, option *metadata.SearchSyncTaskOption) (*metadata.MultipleCloudSyncTask, error) {
 	// set default limit
 	if option.Page.Limit == 0 {
@@ -208,7 +211,7 @@ func (lgc *Logics) SearchSyncTask(kit *rest.Kit, option *metadata.SearchSyncTask
 	return result, nil
 }
 
-// 更新vpc对应的主机数
+// updateVpcHostCount 更新vpc对应的主机数
 func (lgc *Logics) updateVpcHostCount(kit *rest.Kit, multiTask *metadata.MultipleCloudSyncTask) error {
 	// 待更新主机数的vpc对象，获取其地址
 	vpcToUpdate := make(map[string]*metadata.VpcSyncInfo)
@@ -256,6 +259,7 @@ func (lgc *Logics) updateVpcHostCount(kit *rest.Kit, multiTask *metadata.Multipl
 	return nil
 }
 
+// UpdateSyncTask TODO
 func (lgc *Logics) UpdateSyncTask(kit *rest.Kit, taskID int64, option map[string]interface{}) error {
 
 	// generate audit log.
@@ -282,6 +286,7 @@ func (lgc *Logics) UpdateSyncTask(kit *rest.Kit, taskID int64, option map[string
 	return nil
 }
 
+// DeleteSyncTask TODO
 func (lgc *Logics) DeleteSyncTask(kit *rest.Kit, taskID int64) error {
 
 	// generate audit log.
@@ -310,6 +315,7 @@ func (lgc *Logics) DeleteSyncTask(kit *rest.Kit, taskID int64) error {
 	return nil
 }
 
+// CreateSyncHistory TODO
 func (lgc *Logics) CreateSyncHistory(kit *rest.Kit, history *metadata.SyncHistory) (*metadata.SyncHistory, error) {
 	result, err := lgc.CoreAPI.CoreService().Cloud().CreateSyncHistory(kit.Ctx, kit.Header, history)
 	if err != nil {
@@ -320,6 +326,7 @@ func (lgc *Logics) CreateSyncHistory(kit *rest.Kit, history *metadata.SyncHistor
 	return result, nil
 }
 
+// SearchSyncHistory TODO
 func (lgc *Logics) SearchSyncHistory(kit *rest.Kit, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, error) {
 	// set default limit
 	if option.Page.Limit == 0 {
@@ -357,6 +364,7 @@ func (lgc *Logics) SearchSyncHistory(kit *rest.Kit, option *metadata.SearchSyncH
 	return result, nil
 }
 
+// SearchSyncRegion TODO
 func (lgc *Logics) SearchSyncRegion(kit *rest.Kit, option *metadata.SearchSyncRegionOption) ([]metadata.SyncRegion, error) {
 	accountConf, err := lgc.GetCloudAccountConf(kit, option.AccountID)
 	if err != nil {

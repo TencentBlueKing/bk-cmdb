@@ -25,17 +25,23 @@ import (
 )
 
 const (
+	// IamRequestHeader TODO
 	IamRequestHeader   = "X-Request-Id"
 	iamAppCodeHeader   = "X-Bk-App-Code"
 	iamAppSecretHeader = "X-Bk-App-Secret"
 
-	SystemIDCMDB     = "bk_cmdb"
+	// SystemIDCMDB TODO
+	SystemIDCMDB = "bk_cmdb"
+	// SystemNameCMDBEn TODO
 	SystemNameCMDBEn = "cmdb"
-	SystemNameCMDB   = "配置平台"
+	// SystemNameCMDB TODO
+	SystemNameCMDB = "配置平台"
 
+	// SystemIDIAM TODO
 	SystemIDIAM = "bk_iam"
 )
 
+// AuthConfig TODO
 type AuthConfig struct {
 	// blueking's auth center addresses
 	Address []string
@@ -48,6 +54,7 @@ type AuthConfig struct {
 	SystemID string
 }
 
+// ParseConfigFromKV TODO
 func ParseConfigFromKV(prefix string, configMap map[string]string) (AuthConfig, error) {
 	var cfg AuthConfig
 	if !auth.EnableAuthorize() {
@@ -91,6 +98,7 @@ func ParseConfigFromKV(prefix string, configMap map[string]string) (AuthConfig, 
 	return cfg, nil
 }
 
+// System TODO
 type System struct {
 	ID                 string     `json:"id,omitempty"`
 	Name               string     `json:"name,omitempty"`
@@ -105,25 +113,35 @@ type System struct {
 type SystemQueryField string
 
 const (
-	FieldBaseInfo               SystemQueryField = "base_info"
-	FieldResourceTypes          SystemQueryField = "resource_types"
-	FieldActions                SystemQueryField = "actions"
-	FieldActionGroups           SystemQueryField = "action_groups"
-	FieldInstanceSelections     SystemQueryField = "instance_selections"
+	// FieldBaseInfo TODO
+	FieldBaseInfo SystemQueryField = "base_info"
+	// FieldResourceTypes TODO
+	FieldResourceTypes SystemQueryField = "resource_types"
+	// FieldActions TODO
+	FieldActions SystemQueryField = "actions"
+	// FieldActionGroups TODO
+	FieldActionGroups SystemQueryField = "action_groups"
+	// FieldInstanceSelections TODO
+	FieldInstanceSelections SystemQueryField = "instance_selections"
+	// FieldResourceCreatorActions TODO
 	FieldResourceCreatorActions SystemQueryField = "resource_creator_actions"
-	FieldCommonActions          SystemQueryField = "common_actions"
+	// FieldCommonActions TODO
+	FieldCommonActions SystemQueryField = "common_actions"
 )
 
+// SysConfig TODO
 type SysConfig struct {
 	Host string `json:"host,omitempty"`
 	Auth string `json:"auth,omitempty"`
 }
 
+// SystemResp TODO
 type SystemResp struct {
 	BaseResponse
 	Data RegisteredSystemInfo `json:"data"`
 }
 
+// RegisteredSystemInfo TODO
 type RegisteredSystemInfo struct {
 	BaseInfo               System                 `json:"base_info"`
 	ResourceTypes          []ResourceType         `json:"resource_types"`
@@ -134,16 +152,19 @@ type RegisteredSystemInfo struct {
 	CommonActions          []CommonAction         `json:"common_actions"`
 }
 
+// BaseResponse TODO
 type BaseResponse struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
 
+// AuthError TODO
 type AuthError struct {
 	RequestID string
 	Reason    error
 }
 
+// Error 用于错误处理
 func (a *AuthError) Error() string {
 	if len(a.RequestID) == 0 {
 		return a.Reason.Error()
@@ -151,53 +172,82 @@ func (a *AuthError) Error() string {
 	return fmt.Sprintf("iam request id: %s, err: %s", a.RequestID, a.Reason.Error())
 }
 
+// TypeID TODO
 type TypeID string
 
 const (
+	// SysModelGroup TODO
 	SysModelGroup TypeID = "sys_model_group"
 
+	// SysInstanceModel TODO
 	// special model resource for selection of instance, not including models whose instances are managed separately
 	SysInstanceModel TypeID = "sys_instance_model"
-	SysModel         TypeID = "sys_model"
+	// SysModel TODO
+	SysModel TypeID = "sys_model"
 	// SysModelEvent special model resource for resource watch, not including inner and mainline models
 	SysModelEvent TypeID = "sys_model_event"
 	// MainlineModelEvent special mainline model resource for resource watch
-	MainlineModelEvent       TypeID = "mainline_model_event"
-	SysInstance              TypeID = "sys_instance"
-	SysAssociationType       TypeID = "sys_association_type"
-	SysAuditLog              TypeID = "sys_audit_log"
-	SysOperationStatistic    TypeID = "sys_operation_statistic"
+	MainlineModelEvent TypeID = "mainline_model_event"
+	// SysInstance TODO
+	SysInstance TypeID = "sys_instance"
+	// SysAssociationType TODO
+	SysAssociationType TypeID = "sys_association_type"
+	// SysAuditLog TODO
+	SysAuditLog TypeID = "sys_audit_log"
+	// SysOperationStatistic TODO
+	SysOperationStatistic TypeID = "sys_operation_statistic"
+	// SysResourcePoolDirectory TODO
 	SysResourcePoolDirectory TypeID = "sys_resource_pool_directory"
-	SysHostRscPoolDirectory  TypeID = "sys_host_rsc_pool_directory"
-	SysCloudArea             TypeID = "sys_cloud_area"
-	SysCloudAccount          TypeID = "sys_cloud_account"
-	SysCloudResourceTask     TypeID = "sys_cloud_resource_task"
-	SysEventWatch            TypeID = "event_watch"
-	Host                     TypeID = "host"
-	UserCustom               TypeID = "usercustom"
+	// SysHostRscPoolDirectory TODO
+	SysHostRscPoolDirectory TypeID = "sys_host_rsc_pool_directory"
+	// SysCloudArea TODO
+	SysCloudArea TypeID = "sys_cloud_area"
+	// SysCloudAccount TODO
+	SysCloudAccount TypeID = "sys_cloud_account"
+	// SysCloudResourceTask TODO
+	SysCloudResourceTask TypeID = "sys_cloud_resource_task"
+	// SysEventWatch TODO
+	SysEventWatch TypeID = "event_watch"
+	// Host TODO
+	Host TypeID = "host"
+	// UserCustom TODO
+	UserCustom TypeID = "usercustom"
 	// InstAsstEvent instance association resource for resource watch
 	InstAsstEvent TypeID = "inst_asst_event"
 
+	// SkipType TODO
 	// for resource type, which is not need to be authorized
 	SkipType TypeID = "skip_type"
 )
 
 const (
-	BizSet               TypeID = "business_set"
-	Business             TypeID = "biz"
+	// BizSet TODO
+	BizSet TypeID = "business_set"
+	// Business TODO
+	Business TypeID = "biz"
+	// BusinessForHostTrans TODO
 	BusinessForHostTrans TypeID = "biz_for_host_trans"
+	// BizCustomQuery TODO
 	// Set                       ResourceTypeID = "set"
 	// Module                    ResourceTypeID = "module"
-	BizCustomQuery            TypeID = "biz_custom_query"
-	BizTopology               TypeID = "biz_topology"
-	BizCustomField            TypeID = "biz_custom_field"
+	BizCustomQuery TypeID = "biz_custom_query"
+	// BizTopology TODO
+	BizTopology TypeID = "biz_topology"
+	// BizCustomField TODO
+	BizCustomField TypeID = "biz_custom_field"
+	// BizProcessServiceTemplate TODO
 	BizProcessServiceTemplate TypeID = "biz_process_service_template"
+	// BizProcessServiceCategory TODO
 	BizProcessServiceCategory TypeID = "biz_process_service_category"
+	// BizProcessServiceInstance TODO
 	BizProcessServiceInstance TypeID = "biz_process_service_instance"
-	BizSetTemplate            TypeID = "biz_set_template"
-	BizHostApply              TypeID = "biz_host_apply"
+	// BizSetTemplate TODO
+	BizSetTemplate TypeID = "biz_set_template"
+	// BizHostApply TODO
+	BizHostApply TypeID = "biz_host_apply"
 )
 
+// ResourceType TODO
 // describe resource type defined and registered to iam.
 type ResourceType struct {
 	// unique id
@@ -213,11 +263,13 @@ type ResourceType struct {
 	Version        int64          `json:"version"`
 }
 
+// ResourceConfig TODO
 type ResourceConfig struct {
 	// the url to get this resource.
 	Path string `json:"path"`
 }
 
+// Parent TODO
 type Parent struct {
 	// only one value for cmdb.
 	// default value: bk_cmdb
@@ -225,16 +277,23 @@ type Parent struct {
 	ResourceID TypeID `json:"id"`
 }
 
+// ActionType TODO
 type ActionType string
 
 const (
+	// Create TODO
 	Create ActionType = "create"
+	// Delete TODO
 	Delete ActionType = "delete"
-	View   ActionType = "view"
-	Edit   ActionType = "edit"
-	List   ActionType = "list"
+	// View TODO
+	View ActionType = "view"
+	// Edit TODO
+	Edit ActionType = "edit"
+	// List TODO
+	List ActionType = "list"
 )
 
+// ActionTypeIDNameMap TODO
 var ActionTypeIDNameMap = map[ActionType]string{
 	Create: "新建",
 	Edit:   "编辑",
@@ -242,111 +301,190 @@ var ActionTypeIDNameMap = map[ActionType]string{
 	View:   "查询",
 }
 
+// ActionID TODO
 type ActionID string
 
 const (
-	EditBusinessHost                   ActionID = "edit_biz_host"
+	// EditBusinessHost TODO
+	EditBusinessHost ActionID = "edit_biz_host"
+	// BusinessHostTransferToResourcePool TODO
 	BusinessHostTransferToResourcePool ActionID = "unassign_biz_host"
-	HostTransferAcrossBusiness         ActionID = "host_transfer_across_business"
+	// HostTransferAcrossBusiness TODO
+	HostTransferAcrossBusiness ActionID = "host_transfer_across_business"
 
+	// CreateBusinessCustomQuery TODO
 	CreateBusinessCustomQuery ActionID = "create_biz_dynamic_query"
-	EditBusinessCustomQuery   ActionID = "edit_biz_dynamic_query"
+	// EditBusinessCustomQuery TODO
+	EditBusinessCustomQuery ActionID = "edit_biz_dynamic_query"
+	// DeleteBusinessCustomQuery TODO
 	DeleteBusinessCustomQuery ActionID = "delete_biz_dynamic_query"
 
+	// EditBusinessCustomField TODO
 	EditBusinessCustomField ActionID = "edit_biz_custom_field"
 
+	// CreateBusinessServiceCategory TODO
 	CreateBusinessServiceCategory ActionID = "create_biz_service_category"
-	EditBusinessServiceCategory   ActionID = "edit_biz_service_category"
+	// EditBusinessServiceCategory TODO
+	EditBusinessServiceCategory ActionID = "edit_biz_service_category"
+	// DeleteBusinessServiceCategory TODO
 	DeleteBusinessServiceCategory ActionID = "delete_biz_service_category"
 
+	// CreateBusinessServiceInstance TODO
 	CreateBusinessServiceInstance ActionID = "create_biz_service_instance"
-	EditBusinessServiceInstance   ActionID = "edit_biz_service_instance"
+	// EditBusinessServiceInstance TODO
+	EditBusinessServiceInstance ActionID = "edit_biz_service_instance"
+	// DeleteBusinessServiceInstance TODO
 	DeleteBusinessServiceInstance ActionID = "delete_biz_service_instance"
 
+	// CreateBusinessServiceTemplate TODO
 	CreateBusinessServiceTemplate ActionID = "create_biz_service_template"
-	EditBusinessServiceTemplate   ActionID = "edit_biz_service_template"
+	// EditBusinessServiceTemplate TODO
+	EditBusinessServiceTemplate ActionID = "edit_biz_service_template"
+	// DeleteBusinessServiceTemplate TODO
 	DeleteBusinessServiceTemplate ActionID = "delete_biz_service_template"
 
+	// CreateBusinessSetTemplate TODO
 	CreateBusinessSetTemplate ActionID = "create_biz_set_template"
-	EditBusinessSetTemplate   ActionID = "edit_biz_set_template"
+	// EditBusinessSetTemplate TODO
+	EditBusinessSetTemplate ActionID = "edit_biz_set_template"
+	// DeleteBusinessSetTemplate TODO
 	DeleteBusinessSetTemplate ActionID = "delete_biz_set_template"
 
+	// CreateBusinessTopology TODO
 	CreateBusinessTopology ActionID = "create_biz_topology"
-	EditBusinessTopology   ActionID = "edit_biz_topology"
+	// EditBusinessTopology TODO
+	EditBusinessTopology ActionID = "edit_biz_topology"
+	// DeleteBusinessTopology TODO
 	DeleteBusinessTopology ActionID = "delete_biz_topology"
 
+	// EditBusinessHostApply TODO
 	EditBusinessHostApply ActionID = "edit_biz_host_apply"
 
-	CreateResourcePoolHost              ActionID = "create_resource_pool_host"
-	EditResourcePoolHost                ActionID = "edit_resource_pool_host"
-	DeleteResourcePoolHost              ActionID = "delete_resource_pool_host"
-	ResourcePoolHostTransferToBusiness  ActionID = "assign_host_to_biz"
+	// CreateResourcePoolHost TODO
+	CreateResourcePoolHost ActionID = "create_resource_pool_host"
+	// EditResourcePoolHost TODO
+	EditResourcePoolHost ActionID = "edit_resource_pool_host"
+	// DeleteResourcePoolHost TODO
+	DeleteResourcePoolHost ActionID = "delete_resource_pool_host"
+	// ResourcePoolHostTransferToBusiness TODO
+	ResourcePoolHostTransferToBusiness ActionID = "assign_host_to_biz"
+	// ResourcePoolHostTransferToDirectory TODO
 	ResourcePoolHostTransferToDirectory ActionID = "host_transfer_in_resource_pool"
 
+	// CreateResourcePoolDirectory TODO
 	CreateResourcePoolDirectory ActionID = "create_resource_pool_directory"
-	EditResourcePoolDirectory   ActionID = "edit_resource_pool_directory"
+	// EditResourcePoolDirectory TODO
+	EditResourcePoolDirectory ActionID = "edit_resource_pool_directory"
+	// DeleteResourcePoolDirectory TODO
 	DeleteResourcePoolDirectory ActionID = "delete_resource_pool_directory"
 
-	CreateBusiness       ActionID = "create_business"
-	EditBusiness         ActionID = "edit_business"
-	ArchiveBusiness      ActionID = "archive_business"
-	FindBusiness         ActionID = "find_business"
+	// CreateBusiness TODO
+	CreateBusiness ActionID = "create_business"
+	// EditBusiness TODO
+	EditBusiness ActionID = "edit_business"
+	// ArchiveBusiness TODO
+	ArchiveBusiness ActionID = "archive_business"
+	// FindBusiness TODO
+	FindBusiness ActionID = "find_business"
+	// ViewBusinessResource TODO
 	ViewBusinessResource ActionID = "find_business_resource"
 
+	// CreateBizSet TODO
 	CreateBizSet ActionID = "create_business_set"
-	EditBizSet   ActionID = "edit_business_set"
+	// EditBizSet TODO
+	EditBizSet ActionID = "edit_business_set"
+	// DeleteBizSet TODO
 	DeleteBizSet ActionID = "delete_business_set"
-	ViewBizSet   ActionID = "view_business_set"
+	// ViewBizSet TODO
+	ViewBizSet ActionID = "view_business_set"
+	// AccessBizSet TODO
 	AccessBizSet ActionID = "access_business_set"
 
+	// CreateCloudArea TODO
 	CreateCloudArea ActionID = "create_cloud_area"
-	EditCloudArea   ActionID = "edit_cloud_area"
+	// EditCloudArea TODO
+	EditCloudArea ActionID = "edit_cloud_area"
+	// DeleteCloudArea TODO
 	DeleteCloudArea ActionID = "delete_cloud_area"
 
+	// CreateCloudAccount TODO
 	CreateCloudAccount ActionID = "create_cloud_account"
-	EditCloudAccount   ActionID = "edit_cloud_account"
+	// EditCloudAccount TODO
+	EditCloudAccount ActionID = "edit_cloud_account"
+	// DeleteCloudAccount TODO
 	DeleteCloudAccount ActionID = "delete_cloud_account"
-	FindCloudAccount   ActionID = "find_cloud_account"
+	// FindCloudAccount TODO
+	FindCloudAccount ActionID = "find_cloud_account"
 
+	// CreateCloudResourceTask TODO
 	CreateCloudResourceTask ActionID = "create_cloud_resource_task"
-	EditCloudResourceTask   ActionID = "edit_cloud_resource_task"
+	// EditCloudResourceTask TODO
+	EditCloudResourceTask ActionID = "edit_cloud_resource_task"
+	// DeleteCloudResourceTask TODO
 	DeleteCloudResourceTask ActionID = "delete_cloud_resource_task"
-	FindCloudResourceTask   ActionID = "find_cloud_resource_task"
+	// FindCloudResourceTask TODO
+	FindCloudResourceTask ActionID = "find_cloud_resource_task"
 
+	// CreateSysModel TODO
 	CreateSysModel ActionID = "create_sys_model"
-	EditSysModel   ActionID = "edit_sys_model"
+	// EditSysModel TODO
+	EditSysModel ActionID = "edit_sys_model"
+	// DeleteSysModel TODO
 	DeleteSysModel ActionID = "delete_sys_model"
 
+	// CreateAssociationType TODO
 	CreateAssociationType ActionID = "create_association_type"
-	EditAssociationType   ActionID = "edit_association_type"
+	// EditAssociationType TODO
+	EditAssociationType ActionID = "edit_association_type"
+	// DeleteAssociationType TODO
 	DeleteAssociationType ActionID = "delete_association_type"
 
+	// CreateModelGroup TODO
 	CreateModelGroup ActionID = "create_model_group"
-	EditModelGroup   ActionID = "edit_model_group"
+	// EditModelGroup TODO
+	EditModelGroup ActionID = "edit_model_group"
+	// DeleteModelGroup TODO
 	DeleteModelGroup ActionID = "delete_model_group"
 
+	// EditBusinessLayer TODO
 	EditBusinessLayer ActionID = "edit_business_layer"
 
+	// EditModelTopologyView TODO
 	EditModelTopologyView ActionID = "edit_model_topology_view"
 
+	// FindOperationStatistic TODO
 	FindOperationStatistic ActionID = "find_operation_statistic"
+	// EditOperationStatistic TODO
 	EditOperationStatistic ActionID = "edit_operation_statistic"
 
+	// FindAuditLog TODO
 	FindAuditLog ActionID = "find_audit_log"
 
-	WatchHostEvent             ActionID = "watch_host_event"
-	WatchHostRelationEvent     ActionID = "watch_host_relation_event"
-	WatchBizEvent              ActionID = "watch_biz_event"
-	WatchSetEvent              ActionID = "watch_set_event"
-	WatchModuleEvent           ActionID = "watch_module_event"
-	WatchProcessEvent          ActionID = "watch_process_event"
-	WatchCommonInstanceEvent   ActionID = "watch_comm_model_inst_event"
+	// WatchHostEvent TODO
+	WatchHostEvent ActionID = "watch_host_event"
+	// WatchHostRelationEvent TODO
+	WatchHostRelationEvent ActionID = "watch_host_relation_event"
+	// WatchBizEvent TODO
+	WatchBizEvent ActionID = "watch_biz_event"
+	// WatchSetEvent TODO
+	WatchSetEvent ActionID = "watch_set_event"
+	// WatchModuleEvent TODO
+	WatchModuleEvent ActionID = "watch_module_event"
+	// WatchProcessEvent TODO
+	WatchProcessEvent ActionID = "watch_process_event"
+	// WatchCommonInstanceEvent TODO
+	WatchCommonInstanceEvent ActionID = "watch_comm_model_inst_event"
+	// WatchMainlineInstanceEvent TODO
 	WatchMainlineInstanceEvent ActionID = "watch_custom_topo_layer_event"
-	WatchInstAsstEvent         ActionID = "watch_inst_asst_event"
-	WatchBizSetEvent           ActionID = "watch_biz_set_event"
+	// WatchInstAsstEvent TODO
+	WatchInstAsstEvent ActionID = "watch_inst_asst_event"
+	// WatchBizSetEvent TODO
+	WatchBizSetEvent ActionID = "watch_biz_set_event"
 
+	// GlobalSettings TODO
 	GlobalSettings ActionID = "global_settings"
 
+	// Unsupported TODO
 	// Unknown is an action that can not be recognized
 	Unsupported ActionID = "unsupported"
 	// Skip is an action that no need to auth
@@ -354,10 +492,12 @@ const (
 )
 
 const (
+	// IAMSysInstTypePrefix TODO
 	// IAM侧资源的通用模型实例前缀标识
 	IAMSysInstTypePrefix = meta.CMDBSysInstTypePrefix
 )
 
+// ResourceAction TODO
 type ResourceAction struct {
 	// must be a unique id in the whole system.
 	ID ActionID `json:"id"`
@@ -370,7 +510,7 @@ type ResourceAction struct {
 	Version              int                  `json:"version"`
 }
 
-// 选择类型, 资源在权限中心产品上配置权限时的作用范围
+// SelectionMode 选择类型, 资源在权限中心产品上配置权限时的作用范围
 type SelectionMode string
 
 const (
@@ -382,6 +522,7 @@ const (
 	modeAll SelectionMode = "all"
 )
 
+// RelateResourceType TODO
 type RelateResourceType struct {
 	SystemID           string                     `json:"system_id"`
 	ID                 TypeID                     `json:"id"`
@@ -392,17 +533,20 @@ type RelateResourceType struct {
 	InstanceSelections []RelatedInstanceSelection `json:"related_instance_selections"`
 }
 
+// Scope TODO
 type Scope struct {
 	Op      string         `json:"op"`
 	Content []ScopeContent `json:"content"`
 }
 
+// ScopeContent TODO
 type ScopeContent struct {
 	Op    string `json:"op"`
 	Field string `json:"field"`
 	Value string `json:"value"`
 }
 
+// RelatedInstanceSelection TODO
 type RelatedInstanceSelection struct {
 	ID       InstanceSelectionID `json:"id"`
 	SystemID string              `json:"system_id"`
@@ -412,6 +556,7 @@ type RelatedInstanceSelection struct {
 	IgnoreAuthPath bool `json:"ignore_iam_path"`
 }
 
+// ActionGroup TODO
 // groups related resource actions to make action selection more organized
 type ActionGroup struct {
 	// must be a unique name in the whole system.
@@ -421,37 +566,58 @@ type ActionGroup struct {
 	Actions   []ActionWithID `json:"actions,omitempty"`
 }
 
+// ActionWithID TODO
 type ActionWithID struct {
 	ID ActionID `json:"id"`
 }
 
+// InstanceSelectionID TODO
 type InstanceSelectionID string
 
 const (
-	// 业务的两种视图，管理的资源也相同，仅名称做区分
-	BusinessSelection                  InstanceSelectionID = "business"
-	BusinessHostTransferSelection      InstanceSelectionID = "business_host_transfer"
-	BizSetSelection                    InstanceSelectionID = "business_set_list"
-	BizHostInstanceSelection           InstanceSelectionID = "biz_host_instance"
-	BizCustomQuerySelection            InstanceSelectionID = "biz_custom_query"
+	// BusinessSelection 业务的两种视图，管理的资源也相同，仅名称做区分
+	BusinessSelection InstanceSelectionID = "business"
+	// BusinessHostTransferSelection TODO
+	BusinessHostTransferSelection InstanceSelectionID = "business_host_transfer"
+	// BizSetSelection TODO
+	BizSetSelection InstanceSelectionID = "business_set_list"
+	// BizHostInstanceSelection TODO
+	BizHostInstanceSelection InstanceSelectionID = "biz_host_instance"
+	// BizCustomQuerySelection TODO
+	BizCustomQuerySelection InstanceSelectionID = "biz_custom_query"
+	// BizProcessServiceTemplateSelection TODO
 	BizProcessServiceTemplateSelection InstanceSelectionID = "biz_process_service_template"
-	BizSetTemplateSelection            InstanceSelectionID = "biz_set_template"
-	SysHostInstanceSelection           InstanceSelectionID = "sys_host_instance"
-	SysModelGroupSelection             InstanceSelectionID = "sys_model_group"
-	SysModelSelection                  InstanceSelectionID = "sys_model"
-	SysModelEventSelection             InstanceSelectionID = "sys_model_event"
-	MainlineModelEventSelection        InstanceSelectionID = "mainline_model_event"
-	SysInstanceModelSelection          InstanceSelectionID = "sys_instance_model"
-	SysAssociationTypeSelection        InstanceSelectionID = "sys_association_type"
-	SysCloudAreaSelection              InstanceSelectionID = "sys_cloud_area"
-	SysCloudAccountSelection           InstanceSelectionID = "sys_cloud_account"
-	SysCloudResourceTaskSelection      InstanceSelectionID = "sys_cloud_resource_task"
-	InstAsstEventSelection             InstanceSelectionID = "inst_asst_event"
-	// 主机池目录的两种视图，管理的资源也相同，仅名称做区分
+	// BizSetTemplateSelection TODO
+	BizSetTemplateSelection InstanceSelectionID = "biz_set_template"
+	// SysHostInstanceSelection TODO
+	SysHostInstanceSelection InstanceSelectionID = "sys_host_instance"
+	// SysModelGroupSelection TODO
+	SysModelGroupSelection InstanceSelectionID = "sys_model_group"
+	// SysModelSelection TODO
+	SysModelSelection InstanceSelectionID = "sys_model"
+	// SysModelEventSelection TODO
+	SysModelEventSelection InstanceSelectionID = "sys_model_event"
+	// MainlineModelEventSelection TODO
+	MainlineModelEventSelection InstanceSelectionID = "mainline_model_event"
+	// SysInstanceModelSelection TODO
+	SysInstanceModelSelection InstanceSelectionID = "sys_instance_model"
+	// SysAssociationTypeSelection TODO
+	SysAssociationTypeSelection InstanceSelectionID = "sys_association_type"
+	// SysCloudAreaSelection TODO
+	SysCloudAreaSelection InstanceSelectionID = "sys_cloud_area"
+	// SysCloudAccountSelection TODO
+	SysCloudAccountSelection InstanceSelectionID = "sys_cloud_account"
+	// SysCloudResourceTaskSelection TODO
+	SysCloudResourceTaskSelection InstanceSelectionID = "sys_cloud_resource_task"
+	// InstAsstEventSelection TODO
+	InstAsstEventSelection InstanceSelectionID = "inst_asst_event"
+	// SysResourcePoolDirectorySelection 主机池目录的两种视图，管理的资源也相同，仅名称做区分
 	SysResourcePoolDirectorySelection InstanceSelectionID = "sys_resource_pool_directory"
-	SysHostRscPoolDirectorySelection  InstanceSelectionID = "sys_host_rsc_pool_directory"
+	// SysHostRscPoolDirectorySelection TODO
+	SysHostRscPoolDirectorySelection InstanceSelectionID = "sys_host_rsc_pool_directory"
 )
 
+// InstanceSelection TODO
 type InstanceSelection struct {
 	// unique
 	ID InstanceSelectionID `json:"id"`
@@ -462,6 +628,7 @@ type InstanceSelection struct {
 	ResourceTypeChain []ResourceChain `json:"resource_type_chain"`
 }
 
+// ResourceChain TODO
 type ResourceChain struct {
 	SystemID string `json:"system_id"`
 	ID       TypeID `json:"id"`
@@ -473,6 +640,7 @@ type iamDiscovery struct {
 	sync.Mutex
 }
 
+// GetServers TODO
 func (s *iamDiscovery) GetServers() ([]string, error) {
 	s.Lock()
 	defer s.Unlock()
@@ -491,16 +659,19 @@ func (s *iamDiscovery) GetServers() ([]string, error) {
 	}
 }
 
+// GetServersChan TODO
 func (s *iamDiscovery) GetServersChan() chan []string {
 	return nil
 }
 
+// RscTypeAndID TODO
 // resource type with id, used to represent resource layer from root to leaf
 type RscTypeAndID struct {
 	ResourceType TypeID `json:"resource_type"`
 	ResourceID   string `json:"resource_id,omitempty"`
 }
 
+// Resource TODO
 // iam resource, system is resource's iam system id, type is resource type, resource id and attribute are used for filtering
 type Resource struct {
 	System    string                 `json:"system"`
@@ -509,17 +680,20 @@ type Resource struct {
 	Attribute map[string]interface{} `json:"attribute,omitempty"`
 }
 
+// ResourceCreatorActions TODO
 // specifies resource creation actions' related actions that resource creator will have permissions to
 type ResourceCreatorActions struct {
 	Config []ResourceCreatorAction `json:"config"`
 }
 
+// ResourceCreatorAction TODO
 type ResourceCreatorAction struct {
 	ResourceID       TypeID                  `json:"id"`
 	Actions          []CreatorRelatedAction  `json:"actions"`
 	SubResourceTypes []ResourceCreatorAction `json:"sub_resource_types,omitempty"`
 }
 
+// CreatorRelatedAction TODO
 type CreatorRelatedAction struct {
 	ID         ActionID `json:"id"`
 	IsRequired bool     `json:"required"`
@@ -540,6 +714,7 @@ type DynamicAction struct {
 	ActionNameEN string
 }
 
+// DeleteCMDBResourceParam TODO
 type DeleteCMDBResourceParam struct {
 	ActionIDs            []ActionID
 	InstanceSelectionIDs []InstanceSelectionID

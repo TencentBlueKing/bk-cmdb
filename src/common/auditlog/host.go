@@ -113,6 +113,7 @@ func (h *hostAuditLog) getBizIDByHostID(kit *rest.Kit, hostIDs []int64) (map[int
 	return hostBizMap, nil
 }
 
+// NewHostAudit TODO
 func NewHostAudit(clientSet coreservice.CoreServiceClientInterface) *hostAuditLog {
 	return &hostAuditLog{
 		audit: audit{

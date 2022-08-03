@@ -25,6 +25,7 @@ import (
 	"configcenter/src/storage/stream"
 )
 
+// NewEvent TODO
 func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterface, watchDB dal.DB, ccDB dal.DB) error {
 	watchMongoDB, ok := watchDB.(*local.Mongo)
 	if !ok {
@@ -98,6 +99,7 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 	return nil
 }
 
+// Event TODO
 type Event struct {
 	watch    stream.LoopInterface
 	watchDB  *local.Mongo

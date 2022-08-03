@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package operation TODO
 package operation
 
 import (
@@ -30,8 +31,10 @@ var _ core.StatisticOperation = (*operationManager)(nil)
 type operationManager struct {
 }
 
+// M TODO
 type M map[string]interface{}
 
+// New TODO
 func New() core.StatisticOperation {
 	return &operationManager{}
 }
@@ -106,6 +109,7 @@ func (m *operationManager) SearchInstCount(kit *rest.Kit, inputParam map[string]
 	return total, nil
 }
 
+// SearchChartData TODO
 func (m *operationManager) SearchChartData(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error) {
 	switch inputParam.ReportType {
 	case common.HostCloudChart:
@@ -131,6 +135,7 @@ func (m *operationManager) SearchChartData(kit *rest.Kit, inputParam metadata.Ch
 	}
 }
 
+// CommonModelStatistic TODO
 func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error) {
 	// get enum options by model's field
 	attribute := metadata.Attribute{}
@@ -233,6 +238,7 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 	return respData, nil
 }
 
+// SearchTimerChartData TODO
 func (m *operationManager) SearchTimerChartData(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error) {
 	condition := map[string]interface{}{}
 	condition[common.OperationReportType] = inputParam.ReportType

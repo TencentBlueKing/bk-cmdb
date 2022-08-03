@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SearchAuthResource TODO
 func (a *auth) SearchAuthResource(ctx context.Context, h http.Header, param metadata.PullResourceParam) (metadata.PullResourceResponse, error) {
 	resp := metadata.PullResourceResponse{}
 	subPath := "/search/auth/resource"

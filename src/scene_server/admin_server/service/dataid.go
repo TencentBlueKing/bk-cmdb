@@ -430,7 +430,7 @@ func (s *Service) getSnapBizID(rid string) (int64, error) {
 	return biz.BizID, nil
 }
 
-// generateGseConfigStreamTo generate host snap stream to config by snap redis config
+// generateGseConfigChannel generate host snap stream to config by snap redis config
 func (s *Service) generateGseConfigChannel(streamToID, dataID int64, rid string,
 	version snapshotVersion) (*metadata.GseConfigChannel, error) {
 

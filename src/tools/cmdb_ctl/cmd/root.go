@@ -25,6 +25,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+// GetRootCmd TODO
 func GetRootCmd() *cobra.Command {
 	return rootCmd
 }

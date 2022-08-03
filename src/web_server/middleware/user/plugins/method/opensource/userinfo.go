@@ -10,7 +10,8 @@
  * limitations under the License.
  */
 
-package open_source
+// Package opensource open-source login method, use configuration to define the user & pwd to login
+package opensource
 
 import (
 	"fmt"
@@ -41,7 +42,7 @@ func init() {
 
 type user struct{}
 
-// LoginUser  user login
+// LoginUser user login
 func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (*metadata.LoginUserInfo, bool) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	session := sessions.Default(c)
@@ -85,6 +86,7 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	return nil, false
 }
 
+// GetLoginUrl get login url
 func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *metadata.LogoutRequestParams) string {
 	var siteURL string
 	var err error
@@ -100,6 +102,7 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 	return fmt.Sprintf("%s/login?c_url=%s%s", siteURL, siteURL, c.Request.URL.String())
 }
 
+// GetUserList get user list
 func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	users := make([]*metadata.LoginSystemUserInfo, 0)

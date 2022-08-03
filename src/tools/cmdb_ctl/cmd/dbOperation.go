@@ -75,6 +75,7 @@ type delData struct {
 //             --colName（collection name）--condition（删除的条件）
 //    --show
 
+// NewDbOperationCommand TODO
 func NewDbOperationCommand() *cobra.Command {
 
 	conf := new(dbOperationConf)
@@ -324,7 +325,7 @@ func newMongo(mongoURI string, mongoRsName string) (*config.Service, error) {
 		URI:          mongoURI,
 		RsName:       mongoRsName,
 	}
-	
+
 	db, err := local.NewMgo(mongoConfig, time.Minute)
 	if err != nil {
 		return nil, err

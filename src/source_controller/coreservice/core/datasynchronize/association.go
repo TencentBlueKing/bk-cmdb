@@ -1,3 +1,4 @@
+// Package datasynchronize TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -29,6 +30,7 @@ type association struct {
 	DataClassify string
 }
 
+// NewSynchronizeAssociationAdapter TODO
 func NewSynchronizeAssociationAdapter(s *metadata.SynchronizeParameter) dataTypeInterface {
 
 	return &association{
@@ -38,6 +40,7 @@ func NewSynchronizeAssociationAdapter(s *metadata.SynchronizeParameter) dataType
 	}
 }
 
+// SaveSynchronize TODO
 func (a *association) SaveSynchronize(kit *rest.Kit) errors.CCError {
 
 	// Each model is written separately for subsequent expansion,
@@ -51,6 +54,7 @@ func (a *association) SaveSynchronize(kit *rest.Kit) errors.CCError {
 
 }
 
+// PreSynchronizeFilter TODO
 func (a *association) PreSynchronizeFilter(kit *rest.Kit) errors.CCError {
 	err := a.preSynchronizeFilterBefore(kit)
 	if err != nil {
@@ -59,6 +63,7 @@ func (a *association) PreSynchronizeFilter(kit *rest.Kit) errors.CCError {
 	return a.base.PreSynchronizeFilter(kit)
 }
 
+// GetErrorStringArr TODO
 func (a *association) GetErrorStringArr(kit *rest.Kit) ([]metadata.ExceptionResult, errors.CCError) {
 
 	if len(a.base.errorArray) == 0 {
@@ -81,7 +86,7 @@ func (a *association) GetErrorStringArr(kit *rest.Kit) ([]metadata.ExceptionResu
 	}
 }
 
-// saveSynchronizeAssociationModuleHostConfig
+// saveSynchronizeAssociationModuleHostConfig TODO
 // Host and module relationship is special, need special implementation
 func (a *association) saveSynchronizeAssociationModuleHostConfig(kit *rest.Kit) errors.CCError {
 	tableName := common.BKTableNameModuleHostConfig

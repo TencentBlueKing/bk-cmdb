@@ -18,44 +18,53 @@ import (
 	"configcenter/src/common/mapstr"
 )
 
+// ID TODO
 type ID struct {
 	ID string `json:"id"`
 }
 
+// IDResult TODO
 type IDResult struct {
 	BaseResp `json:",inline"`
 	Data     ID `json:"data"`
 }
 
+// HostInstanceResult TODO
 type HostInstanceResult struct {
 	BaseResp `json:",inline"`
 	Data     map[string]interface{} `json:"data"`
 }
 
+// FavoriteResult TODO
 type FavoriteResult struct {
 	Count uint64                   `json:"count"`
 	Info  []map[string]interface{} `json:"info"`
 }
 
+// GetHostFavoriteResult TODO
 type GetHostFavoriteResult struct {
 	BaseResp `json:",inline"`
 	Data     FavoriteResult `json:"data"`
 }
 
+// GetHostFavoriteWithIDResult TODO
 type GetHostFavoriteWithIDResult struct {
 	BaseResp `json:",inline"`
 	Data     FavouriteMeta `json:"data"`
 }
 
+// HistoryContent TODO
 type HistoryContent struct {
 	Content string `json:"content"`
 }
 
+// AddHistoryResult TODO
 type AddHistoryResult struct {
 	BaseResp `json:",inline"`
 	Data     ID `json:"data"`
 }
 
+// HistoryMeta TODO
 type HistoryMeta struct {
 	ID         string    `json:"id,omitempty" bson:"id,omitempty" `
 	User       string    `json:"user,omitempty" bson:"user,omitempty"`
@@ -64,31 +73,37 @@ type HistoryMeta struct {
 	OwnerID    string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
+// HistoryResult TODO
 type HistoryResult struct {
 	Count uint64        `json:"count"`
 	Info  []HistoryMeta `json:"info"`
 }
 
+// GetHistoryResult TODO
 type GetHistoryResult struct {
 	BaseResp `json:",inline"`
 	Data     HistoryResult `json:"data"`
 }
 
+// HostInfo TODO
 type HostInfo struct {
 	Count int             `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
 }
 
+// GetHostsResult TODO
 type GetHostsResult struct {
 	BaseResp `json:",inline"`
 	Data     HostInfo `json:"data"`
 }
 
+// GetHostModuleIDsResult TODO
 type GetHostModuleIDsResult struct {
 	BaseResp `json:",inline"`
 	Data     []int64 `json:"data"`
 }
 
+// ParamData TODO
 type ParamData struct {
 	ApplicationID       int64   `json:"bk_biz_id"`
 	HostID              []int64 `json:"bk_host_id"`
@@ -96,6 +111,7 @@ type ParamData struct {
 	OwnerAppplicationID int64   `json:"bk_owner_biz_id"`
 }
 
+// AssignHostToAppParams TODO
 type AssignHostToAppParams struct {
 	ApplicationID      int64   `json:"bk_biz_id"`
 	HostID             []int64 `json:"bk_host_id"`
@@ -104,6 +120,7 @@ type AssignHostToAppParams struct {
 	OwnerModuleID      int64   `json:"bk_owner_module_id"`
 }
 
+// ModuleHost TODO
 type ModuleHost struct {
 	AppID    int64  `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
 	HostID   int64  `json:"bk_host_id,omitempty" bson:"bk_host_id"`
@@ -112,22 +129,26 @@ type ModuleHost struct {
 	OwnerID  string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 }
 
+// HostConfig TODO
 type HostConfig struct {
 	BaseResp `json:",inline"`
 	Data     HostConfigData `json:"data"`
 }
 
+// HostConfigData TODO
 type HostConfigData struct {
 	Count int64        `json:"count"`
 	Info  []ModuleHost `json:"data"`
 	Page  BasePage     `json:"page"`
 }
 
+// HostModuleResp TODO
 type HostModuleResp struct {
 	BaseResp `json:",inline"`
 	Data     []ModuleHost `json:"data"`
 }
 
+// ModuleHostConfigParams TODO
 type ModuleHostConfigParams struct {
 	ApplicationID int64   `json:"bk_biz_id"`
 	HostID        int64   `json:"bk_host_id"`
@@ -135,11 +156,13 @@ type ModuleHostConfigParams struct {
 	OwnerID       string  `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
+// GetUserCustomResult TODO
 type GetUserCustomResult struct {
 	BaseResp `json:",inline"`
 	Data     map[string]interface{} `json:"data"`
 }
 
+// FavouriteParms TODO
 type FavouriteParms struct {
 	ID          string `json:"id,omitempty"`
 	Info        string `json:"info,omitempty"`
@@ -150,6 +173,7 @@ type FavouriteParms struct {
 	BizID       int64  `json:"bk_biz_id"`
 }
 
+// FavouriteMeta TODO
 type FavouriteMeta struct {
 	BizID       int64     `json:"bk_biz_id" bson:"bk_biz_id"`
 	ID          string    `json:"id,omitempty" bson:"id,omitempty"`
@@ -170,11 +194,13 @@ type TransferHostToInnerModule struct {
 	HostID        []int64 `json:"bk_host_id"`
 }
 
+// DistinctIDResponse TODO
 type DistinctIDResponse struct {
 	BaseResp `json:",inline"`
 	Data     DistinctID `json:"data"`
 }
 
+// DistinctID TODO
 type DistinctID struct {
 	IDArr []int64 `json:"id_arr"`
 }

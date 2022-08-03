@@ -18,6 +18,7 @@ type Position struct {
 	Y *int64 `json:"y" bson:"y"`
 }
 
+// GraphAsst TODO
 // Asst the node association node
 type GraphAsst struct {
 	AsstType              string            `json:"bk_asst_type"`
@@ -29,6 +30,7 @@ type GraphAsst struct {
 	Label                 map[string]string `json:"label"`
 }
 
+// TopoGraphics TODO
 type TopoGraphics struct {
 	ScopeType       string                 `json:"scope_type,omitempty" bson:"scope_type,omitempty"` // biz,user,global,classification
 	ScopeID         string                 `json:"scope_id,omitempty" bson:"scope_id,omitempty"`     // ID for ScopeType
@@ -44,10 +46,12 @@ type TopoGraphics struct {
 	Assts           []GraphAsst            `json:"assts,omitempty"`
 }
 
+// UpdateTopoGraphicsInput TODO
 type UpdateTopoGraphicsInput struct {
 	Origin []TopoGraphics `field:"origin" json:"origin" bson:"origin"`
 }
 
+// FillBlank TODO
 func (t *TopoGraphics) FillBlank() *TopoGraphics {
 	t.SetSupplierAccount("0")
 	t.SetExt(map[string]interface{}{})
@@ -55,20 +59,42 @@ func (t *TopoGraphics) FillBlank() *TopoGraphics {
 	return t
 }
 
+// SetNodeType TODO
 func (t *TopoGraphics) SetNodeType(val string) { t.NodeType = val }
-func (t *TopoGraphics) SetObjID(val string)    { t.ObjID = val }
-func (t *TopoGraphics) SetInstID(val int)      { t.InstID = val }
+
+// SetObjID TODO
+func (t *TopoGraphics) SetObjID(val string) { t.ObjID = val }
+
+// SetInstID TODO
+func (t *TopoGraphics) SetInstID(val int) { t.InstID = val }
+
+// SetNodeName TODO
 func (t *TopoGraphics) SetNodeName(val string) { t.NodeName = val }
-func (t *TopoGraphics) SetIsPre(val bool)      { t.IsPre = val }
+
+// SetIsPre TODO
+func (t *TopoGraphics) SetIsPre(val bool) { t.IsPre = val }
+
+// SetPosition TODO
 func (t *TopoGraphics) SetPosition(val Position) {
 	t.Position = val
 }
-func (t *TopoGraphics) SetExt(val map[string]interface{}) { t.Ext = val }
-func (t *TopoGraphics) SetIcon(val string)                { t.Icon = val }
-func (t *TopoGraphics) SetScopeType(val string)           { t.ScopeType = val }
-func (t *TopoGraphics) SetScopeID(val string)             { t.ScopeID = val }
-func (t *TopoGraphics) SetSupplierAccount(val string)     { t.SupplierAccount = val }
 
+// SetExt TODO
+func (t *TopoGraphics) SetExt(val map[string]interface{}) { t.Ext = val }
+
+// SetIcon TODO
+func (t *TopoGraphics) SetIcon(val string) { t.Icon = val }
+
+// SetScopeType TODO
+func (t *TopoGraphics) SetScopeType(val string) { t.ScopeType = val }
+
+// SetScopeID TODO
+func (t *TopoGraphics) SetScopeID(val string) { t.ScopeID = val }
+
+// SetSupplierAccount TODO
+func (t *TopoGraphics) SetSupplierAccount(val string) { t.SupplierAccount = val }
+
+// SearchTopoGraphicsResult TODO
 type SearchTopoGraphicsResult struct {
 	BaseResp `json:",inline"`
 	Data     []TopoGraphics `json:"data"`

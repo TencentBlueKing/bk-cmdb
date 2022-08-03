@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// GetDistinctField TODO
 func (p *common) GetDistinctField(ctx context.Context, h http.Header, option *metadata.DistinctFieldOption) ([]interface{}, errors.CCErrorCoder) {
 	ret := new(metadata.ArrayResponse)
 	subPath := "/findmany/common/distinct_field"

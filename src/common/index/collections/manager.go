@@ -39,7 +39,7 @@ func registerIndexes(tableName string, indexes []types.Index) {
 
 }
 
-// IndexEqual 索引对比， 索引名字不参与对比
+// indexKeyEqual 索引对比， 索引名字不参与对比
 func indexKeyEqual(toDBIndex, dbIndex types.Index) bool {
 
 	if len(toDBIndex.Keys) != len(dbIndex.Keys) {
@@ -65,6 +65,7 @@ func Indexes() map[string][]types.Index {
 	return tableNameIndexes
 }
 
+// DeprecatedIndexName TODO
 //  DeprecatedIndexName 未规范索引的名字。用来对需要删除的未规范索引
 func DeprecatedIndexName() map[string][]string {
 	return deprecatedIndexName

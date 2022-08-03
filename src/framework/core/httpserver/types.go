@@ -16,11 +16,13 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// Server TODO
 type Server interface {
 	ListenAndServe() error
 	RegisterActions(as ...Action)
 }
 
+// Action TODO
 type Action struct {
 	Method  string
 	Path    string

@@ -29,17 +29,17 @@ func (s *Service) Index(c *gin.Context) {
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
 
 	pageConf := gin.H{
-		"site":           s.Config.Site.DomainUrl,
-		"version":        s.Config.Version,
-		"ccversion":      version.CCVersion,
-		"authscheme":     s.Config.Site.AuthScheme,
-		"fullTextSearch": s.Config.Site.FullTextSearch,
-		"role":           role,
-		"curl":           s.Config.LoginUrl,
-		"userName":       userName,
-		"agentAppUrl":    s.Config.AgentAppUrl,
-		"authCenter":     s.Config.AuthCenter,
-		"helpDocUrl":     s.Config.Site.HelpDocUrl,
+		"site":                      s.Config.Site.DomainUrl,
+		"version":                   s.Config.Version,
+		"ccversion":                 version.CCVersion,
+		"authscheme":                s.Config.Site.AuthScheme,
+		"fullTextSearch":            s.Config.Site.FullTextSearch,
+		"role":                      role,
+		"curl":                      s.Config.LoginUrl,
+		"userName":                  userName,
+		"agentAppUrl":               s.Config.AgentAppUrl,
+		"authCenter":                s.Config.AuthCenter,
+		"helpDocUrl":                s.Config.Site.HelpDocUrl,
 		"disableOperationStatistic": s.Config.DisableOperationStatistic,
 	}
 

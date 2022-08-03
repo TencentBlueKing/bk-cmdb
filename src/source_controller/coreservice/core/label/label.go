@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package label TODO
 package label
 
 import (
@@ -32,6 +33,7 @@ func New() core.LabelOperation {
 	return labelOps
 }
 
+// AddLabel TODO
 func (p *labelOperation) AddLabel(kit *rest.Kit, tableName string, option selector.LabelAddOption) errors.CCErrorCoder {
 	if field, err := option.Labels.Validate(); err != nil {
 		blog.Infof("addLabel failed, validate failed, field:%s, err: %+v, rid: %s", field, err, kit.Rid)
@@ -123,6 +125,7 @@ func (p *labelOperation) UpdateLabel(kit *rest.Kit, tableName string,
 	return nil
 }
 
+// RemoveLabel TODO
 func (p *labelOperation) RemoveLabel(kit *rest.Kit, tableName string, option selector.LabelRemoveOption) errors.CCErrorCoder {
 	idField := common.GetInstIDField(tableName)
 

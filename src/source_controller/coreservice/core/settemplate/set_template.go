@@ -34,6 +34,7 @@ func New() core.SetTemplateOperation {
 	return setTplOps
 }
 
+// ValidateBusinessID TODO
 func (p *setTemplateOperation) ValidateBusinessID(kit *rest.Kit, bizID int64) errors.CCErrorCoder {
 	filter := map[string]interface{}{
 		common.BKAppIDField: bizID,
@@ -49,6 +50,7 @@ func (p *setTemplateOperation) ValidateBusinessID(kit *rest.Kit, bizID int64) er
 	return nil
 }
 
+// ValidateServiceTemplateIDs TODO
 func (p *setTemplateOperation) ValidateServiceTemplateIDs(kit *rest.Kit, bizID int64, serviceTemplateIDs ...int64) ([]int64, errors.CCErrorCoder) {
 	serviceTemplateIDs = util.IntArrayUnique(serviceTemplateIDs)
 	filter := map[string]interface{}{
@@ -69,6 +71,7 @@ func (p *setTemplateOperation) ValidateServiceTemplateIDs(kit *rest.Kit, bizID i
 	return serviceTemplateIDs, nil
 }
 
+// CreateSetTemplate TODO
 func (p *setTemplateOperation) CreateSetTemplate(kit *rest.Kit, bizID int64, option metadata.CreateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder) {
 	now := time.Now()
 	setTemplate := metadata.SetTemplate{
@@ -152,6 +155,7 @@ func (p *setTemplateOperation) CreateSetTemplate(kit *rest.Kit, bizID int64, opt
 	return setTemplate, nil
 }
 
+// UpdateSetTemplate TODO
 func (p *setTemplateOperation) UpdateSetTemplate(kit *rest.Kit, setTemplateID int64, option metadata.UpdateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder) {
 	setTemplate := metadata.SetTemplate{}
 
@@ -269,6 +273,7 @@ func (p *setTemplateOperation) UpdateSetTemplate(kit *rest.Kit, setTemplateID in
 	return setTemplate, nil
 }
 
+// DeleteSetTemplate TODO
 func (p *setTemplateOperation) DeleteSetTemplate(kit *rest.Kit, bizID int64, option metadata.DeleteSetTemplateOption) errors.CCErrorCoder {
 	// check reference
 	setFilter := map[string]interface{}{
@@ -317,6 +322,7 @@ func (p *setTemplateOperation) DeleteSetTemplate(kit *rest.Kit, bizID int64, opt
 	return nil
 }
 
+// GetSetTemplate TODO
 func (p *setTemplateOperation) GetSetTemplate(kit *rest.Kit, bizID int64, setTemplateID int64) (metadata.SetTemplate, errors.CCErrorCoder) {
 	setTemplate := metadata.SetTemplate{}
 	filter := map[string]interface{}{
@@ -335,6 +341,7 @@ func (p *setTemplateOperation) GetSetTemplate(kit *rest.Kit, bizID int64, setTem
 	return setTemplate, nil
 }
 
+// ListSetTemplate TODO
 func (p *setTemplateOperation) ListSetTemplate(kit *rest.Kit, bizID int64, option metadata.ListSetTemplateOption) (metadata.MultipleSetTemplateResult, errors.CCErrorCoder) {
 	result := metadata.MultipleSetTemplateResult{}
 
@@ -379,6 +386,7 @@ func (p *setTemplateOperation) ListSetTemplate(kit *rest.Kit, bizID int64, optio
 	return result, nil
 }
 
+// ListSetServiceTemplateRelations TODO
 func (p *setTemplateOperation) ListSetServiceTemplateRelations(kit *rest.Kit, bizID int64, setTemplateID int64) ([]metadata.SetServiceTemplateRelation, errors.CCErrorCoder) {
 	filter := map[string]interface{}{
 		common.BKAppIDField:         bizID,
@@ -395,6 +403,7 @@ func (p *setTemplateOperation) ListSetServiceTemplateRelations(kit *rest.Kit, bi
 	return setServiceTemplateRelations, nil
 }
 
+// ListSetTplRelatedSvcTpl TODO
 func (p *setTemplateOperation) ListSetTplRelatedSvcTpl(kit *rest.Kit, bizID, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder) {
 	relations, err := p.ListSetServiceTemplateRelations(kit, bizID, setTemplateID)
 	if err != nil {

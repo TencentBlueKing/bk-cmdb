@@ -97,6 +97,7 @@ func (t *tokenHandler) getStartTimestamp(ctx context.Context) (*types.TimeStamp,
 	return stamp, nil
 }
 
+// resetWatchTokenWithTimestamp TODO
 // resetWatchToken reset the watch token, and update startAtTime time, so that we can
 // re-watch from the timestamp we set now.
 func (t *tokenHandler) resetWatchTokenWithTimestamp(startAtTime types.TimeStamp) error {

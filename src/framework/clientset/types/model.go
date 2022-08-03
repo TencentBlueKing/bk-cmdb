@@ -18,11 +18,13 @@ import (
 	"configcenter/src/framework/core/types"
 )
 
+// CreateModelCtx TODO
 type CreateModelCtx struct {
 	BaseCtx
 	ModelInfo CreateModelInfo
 }
 
+// CreateModelInfo TODO
 type CreateModelInfo struct {
 	// name of creator of this model
 	Creator string `json:"creator"`
@@ -37,6 +39,7 @@ type CreateModelInfo struct {
 	Icon    string `json:"bk_obj_icon"`
 }
 
+// CreateModelResponse TODO
 type CreateModelResponse struct {
 	BaseResp `json:",inline"`
 	Data     struct {
@@ -44,17 +47,20 @@ type CreateModelResponse struct {
 	} `json:"data"`
 }
 
+// DeleteModelCtx TODO
 type DeleteModelCtx struct {
 	BaseCtx
 	ModelID int64
 }
 
+// UpdateModelCtx TODO
 type UpdateModelCtx struct {
 	BaseCtx
 	ModelID   int64
 	ModelInfo UpdateModelInfo
 }
 
+// UpdateModelInfo TODO
 type UpdateModelInfo struct {
 	ID       int64  `json:"id,omitempty"`
 	Modifier string `json:"modifier,omitempty"`
@@ -67,16 +73,19 @@ type UpdateModelInfo struct {
 	Position string `json:"position,omitempty"`
 }
 
+// GetModelsCtx TODO
 type GetModelsCtx struct {
 	BaseCtx
 	Filters types.MapStr
 }
 
+// GetModelsResult TODO
 type GetModelsResult struct {
 	BaseResp `json:",inline"`
 	Data     []ModelInfo `json:"data"`
 }
 
+// ModelInfo TODO
 type ModelInfo struct {
 	ID          int64     `json:"id,omitempty"`
 	Name        string    `json:"bk_obj_name"`

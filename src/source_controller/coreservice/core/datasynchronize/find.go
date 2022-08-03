@@ -1,3 +1,4 @@
+// Package datasynchronize TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -33,6 +34,7 @@ type associationFindData struct {
 	condition    mapstr.MapStr
 }
 
+// NewSynchronizeFindAdapter TODO
 func NewSynchronizeFindAdapter(input *metadata.SynchronizeFindInfoParameter) associationFindDataInterface {
 
 	return &associationFindData{
@@ -44,6 +46,7 @@ func NewSynchronizeFindAdapter(input *metadata.SynchronizeFindInfoParameter) ass
 	}
 }
 
+// Find TODO
 func (a *associationFindData) Find(kit *rest.Kit) ([]mapstr.MapStr, uint64, errors.CCError) {
 	switch a.dataType {
 	case metadata.SynchronizeOperateDataTypeAssociation:

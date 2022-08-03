@@ -9,6 +9,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// ServiceClientInterface TODO
 type ServiceClientInterface interface {
 	CreateServiceCategory(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteServiceCategory(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
@@ -55,6 +56,7 @@ type ServiceClientInterface interface {
 		opt *metadata.SyncServiceInstanceByTemplateOption) errors.CCErrorCoder
 }
 
+// NewServiceClientInterface TODO
 func NewServiceClientInterface(client rest.ClientInterface) ServiceClientInterface {
 	return &service{client: client}
 }

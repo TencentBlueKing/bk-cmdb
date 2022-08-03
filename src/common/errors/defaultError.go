@@ -23,6 +23,7 @@ type ccDefaultErrorHelper struct {
 	ccErrorStrf func(language string, ErrorCode int, args ...interface{}) CCErrorCoder
 }
 
+// New TODO
 func (cli *ccDefaultErrorHelper) New(errorCode int, msg string) error {
 	return &ccError{
 		code: errorCode,
@@ -32,6 +33,7 @@ func (cli *ccDefaultErrorHelper) New(errorCode int, msg string) error {
 	}
 }
 
+// NewCCError TODO
 func NewCCError(errorCode int, msg string) CCErrorCoder {
 	err := &ccError{
 		code: errorCode,
@@ -42,6 +44,7 @@ func NewCCError(errorCode int, msg string) CCErrorCoder {
 	return err
 }
 
+// CCHttpError TODO
 var CCHttpError = &ccError{
 	code: common.CCErrCommHTTPDoRequestFailed,
 	callback: func() string {
@@ -54,7 +57,7 @@ func (cli *ccDefaultErrorHelper) Error(errCode int) error {
 	return cli.errorStr(cli.language, errCode)
 }
 
-// Error returns an error with args for specific language
+// Errorf returns an error with args for specific language
 func (cli *ccDefaultErrorHelper) Errorf(errCode int, args ...interface{}) error {
 	return cli.errorStrf(cli.language, errCode, args...)
 }
@@ -64,7 +67,7 @@ func (cli *ccDefaultErrorHelper) CCError(errCode int) CCErrorCoder {
 	return cli.ccErrorStr(cli.language, errCode)
 }
 
-// CCError returns an error with args for specific language
+// CCErrorf returns an error with args for specific language
 func (cli *ccDefaultErrorHelper) CCErrorf(errCode int, args ...interface{}) CCErrorCoder {
 	return cli.ccErrorStrf(cli.language, errCode, args...)
 }

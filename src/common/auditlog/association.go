@@ -84,6 +84,7 @@ func (a *instanceAssociationAuditLog) GenerateAuditLog(parameter *generateAuditC
 	}, nil
 }
 
+// NewInstanceAssociationAudit TODO
 func NewInstanceAssociationAudit(clientSet coreservice.CoreServiceClientInterface) *instanceAssociationAuditLog {
 	return &instanceAssociationAuditLog{
 		audit: audit{

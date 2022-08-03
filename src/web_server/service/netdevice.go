@@ -36,6 +36,7 @@ import (
 	"github.com/rentiansheng/xlsx"
 )
 
+// ImportNetDevice TODO
 func (s *Service) ImportNetDevice(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
@@ -159,6 +160,7 @@ func (s *Service) ExportNetDevice(c *gin.Context) {
 	}
 }
 
+// BuildDownLoadNetDeviceExcelTemplate TODO
 func (s *Service) BuildDownLoadNetDeviceExcelTemplate(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	webCommon.SetProxyHeader(c)

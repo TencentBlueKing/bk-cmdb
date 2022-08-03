@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// ProcessClientInterface TODO
 type ProcessClientInterface interface {
 	CreateProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteProcessInstance(ctx context.Context, h http.Header,
@@ -42,6 +43,7 @@ type ProcessClientInterface interface {
 	UpdateProcessInstancesByIDs(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 }
 
+// NewProcessClientInterface TODO
 func NewProcessClientInterface(client rest.ClientInterface) ProcessClientInterface {
 	return &process{client: client}
 }

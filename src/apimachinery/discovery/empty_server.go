@@ -20,10 +20,12 @@ var (
 type emptyServer struct {
 }
 
+// GetServers TODO
 func (es *emptyServer) GetServers() ([]string, error) {
 	return []string{}, nil
 }
 
+// GetServersChan TODO
 func (es *emptyServer) GetServersChan() chan []string {
 	return make(chan []string, 20)
 }

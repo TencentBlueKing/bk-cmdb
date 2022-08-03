@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// LockHost TODO
 func (s *coreService) LockHost(ctx *rest.Contexts) {
 	input := new(metadata.HostLockRequest)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -35,6 +36,7 @@ func (s *coreService) LockHost(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// UnlockHost TODO
 func (s *coreService) UnlockHost(ctx *rest.Contexts) {
 	input := new(metadata.HostLockRequest)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -51,6 +53,7 @@ func (s *coreService) UnlockHost(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// QueryLockHost TODO
 func (s *coreService) QueryLockHost(ctx *rest.Contexts) {
 	input := new(metadata.QueryHostLockRequest)
 	if err := ctx.DecodeInto(input); err != nil {

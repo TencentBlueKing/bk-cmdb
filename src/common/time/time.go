@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package time TODO
 package time
 
 import (
@@ -24,10 +25,12 @@ import (
 	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
+// Time TODO
 type Time struct {
 	time.Time `bson:",inline" json:",inline"`
 }
 
+// MarshalJSON TODO
 func (t Time) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.Time)
 }

@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common"
 )
 
+// SetTemplateAuthConfigs TODO
 var SetTemplateAuthConfigs = []AuthConfig{
 	{
 		Name:           "CreateSetTemplateRegex",

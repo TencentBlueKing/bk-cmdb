@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// Interface TODO
 type Interface interface {
 	SearchHostWithInnerIP(ctx context.Context, h http.Header, opt *metadata.SearchHostWithInnerIPOption) (jsonString string, err error)
 	SearchHostWithHostID(ctx context.Context, h http.Header, opt *metadata.SearchHostWithIDOption) (jsonString string, err error)
@@ -27,6 +28,7 @@ type Interface interface {
 	ListHostWithPage(ctx context.Context, h http.Header, opt *metadata.ListHostWithPage) (cnt int64, jsonString string, err error)
 }
 
+// NewCacheClient TODO
 func NewCacheClient(client rest.ClientInterface) Interface {
 	return &baseCache{client: client}
 }

@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package model TODO
 package model
 
 import (
@@ -156,6 +157,8 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 
 	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, nil
 }
+
+// SetModel TODO
 func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*metadata.SetDataResult, error) {
 
 	dataResult := &metadata.SetDataResult{
@@ -236,6 +239,7 @@ func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*m
 	return dataResult, err
 }
 
+// UpdateModel TODO
 func (m *modelManager) UpdateModel(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
 	updateCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
@@ -248,6 +252,7 @@ func (m *modelManager) UpdateModel(kit *rest.Kit, inputParam metadata.UpdateOpti
 	return &metadata.UpdatedCount{Count: cnt}, err
 }
 
+// DeleteModel TODO
 func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	// read all models by the deletion condition
@@ -360,6 +365,7 @@ func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metada
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
+// SearchModel TODO
 func (m *modelManager) SearchModel(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error) {
 
 	dataResult := &metadata.QueryModelDataResult{}
@@ -387,6 +393,7 @@ func (m *modelManager) SearchModel(kit *rest.Kit, inputParam metadata.QueryCondi
 	return dataResult, nil
 }
 
+// SearchModelWithAttribute TODO
 func (m *modelManager) SearchModelWithAttribute(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelWithAttributeDataResult, error) {
 
 	dataResult := &metadata.QueryModelWithAttributeDataResult{}

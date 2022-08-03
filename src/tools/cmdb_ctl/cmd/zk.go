@@ -31,6 +31,7 @@ type zkConf struct {
 	path string
 }
 
+// NewZkCommand TODO
 func NewZkCommand() *cobra.Command {
 	conf := new(zkConf)
 

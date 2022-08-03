@@ -21,10 +21,12 @@ import (
 	"configcenter/src/common/watch"
 )
 
+// Interface TODO
 type Interface interface {
 	WatchEvent(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (*string, errors.CCErrorCoder)
 }
 
+// NewCacheClient TODO
 func NewCacheClient(client rest.ClientInterface) Interface {
 	return &eventCache{client: client}
 }

@@ -24,6 +24,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// ProcessTemplate TODO
 type ProcessTemplate struct {
 	Metadata metadata.Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 

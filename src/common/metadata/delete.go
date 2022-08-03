@@ -19,7 +19,7 @@ type DeleteOption struct {
 	Condition mapstr.MapStr `json:"condition"`
 }
 
-// DeletedCountResult delete  api http response return result struct
+// DeletedOptionResult delete  api http response return result struct
 type DeletedOptionResult struct {
 	BaseResp `json:",inline"`
 	Data     DeletedCount `json:"data"`

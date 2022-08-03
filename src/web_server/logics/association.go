@@ -70,7 +70,7 @@ func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, o
 	return retAsstObjIDInstInfoMap, objPrimaryInfo, err
 }
 
-//
+// fetchAssociationData TODO
 func (lgc *Logics) fetchAssociationData(ctx context.Context, header http.Header, objID string, instIDArr []int64,
 	modelBizID int64, asstIDArr []string, hasSelfAssociation bool) ([]*metadata.InstAsst, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -82,7 +82,7 @@ func (lgc *Logics) fetchAssociationData(ctx context.Context, header http.Header,
 		blog.Infof("empty  bk_obj_asst_id. obj: %s, rid: %s", objID, rid)
 		return nil, nil
 	}
-	//实例作为关联关系源模型
+	// 实例作为关联关系源模型
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKInstIDField).In(instIDArr)
@@ -102,7 +102,7 @@ func (lgc *Logics) fetchAssociationData(ctx context.Context, header http.Header,
 		return nil, ccErr
 	}
 
-	//实例作为关联关系目标模型
+	// 实例作为关联关系目标模型
 	cond = condition.CreateCondition()
 	cond.Field(common.BKAsstObjIDField).Eq(objID)
 	cond.Field(common.BKAsstInstIDField).In(instIDArr)

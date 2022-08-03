@@ -21,6 +21,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// Healthz TODO
 func (s *AuthService) Healthz(req *restful.Request, resp *restful.Response) {
 	meta := metric.HealthMeta{IsHealthy: true}
 

@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package hostsnap TODO
 package hostsnap
 
 import (
@@ -64,6 +65,7 @@ var (
 	ignoreCompareField = make(map[string]struct{}, 0)
 )
 
+// HostSnap TODO
 type HostSnap struct {
 	redisCli    redis.Client
 	authManager *extensions.AuthManager
@@ -859,6 +861,7 @@ func newHeaderWithRid() (http.Header, string) {
 	return header, rid
 }
 
+// MockMessage TODO
 const MockMessage = "{\"localTime\": \"2017-09-19 16:57:00\", \"data\": \"{\\\"ip\\\":\\\"192.168.1.7\\\"," +
 	"\\\"bizid\\\":0,\\\"cloudid\\\":0,\\\"data\\\":{\\\"timezone\\\":8,\\\"datetime\\\":\\\"2017-09-19 16:57:07\\\"," +
 	"\\\"utctime\\\":\\\"2017-09-19 08:57:07\\\",\\\"country\\\":\\\"Asia\\\",\\\"city\\\":\\\"Shanghai\\\"," +

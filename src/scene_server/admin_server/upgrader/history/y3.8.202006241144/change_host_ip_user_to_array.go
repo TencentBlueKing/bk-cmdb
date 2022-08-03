@@ -27,6 +27,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// changeHostIPAndUserToArray TODO
 // change host inner ip and outer ip and operator and bak operator value from string split by comma to array
 func changeHostIPAndUserToArray(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	count, err := db.Table(common.BKTableNameBaseHost).Find(nil).Count(ctx)

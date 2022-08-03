@@ -41,18 +41,22 @@ type hostKeyGenerator struct {
 	expireRangeSeconds [2]int
 }
 
+// HostDetailKey TODO
 func (h hostKeyGenerator) HostDetailKey(hostID int64) string {
 	return h.namespace + ":detail:" + strconv.FormatInt(hostID, 10)
 }
 
+// HostDetailKeyPrefix TODO
 func (h hostKeyGenerator) HostDetailKeyPrefix() string {
 	return h.namespace + ":detail:"
 }
 
+// HostDetailLockKey TODO
 func (h hostKeyGenerator) HostDetailLockKey(hostID int64) string {
 	return h.namespace + ":detail:lock:" + strconv.FormatInt(hostID, 10)
 }
 
+// IPCloudIDKey TODO
 // key to store the relation with ip and host id:
 // key: bk_host_innerip:bk_cloud_id
 // value: bk_host_id
@@ -61,10 +65,12 @@ func (h hostKeyGenerator) IPCloudIDKey(ip string, cloudID int64) string {
 	return h.namespace + ":ip_cloud_id:" + ip + ":" + strconv.FormatInt(cloudID, 10)
 }
 
+// ListDoneKey TODO
 func (h hostKeyGenerator) ListDoneKey() string {
 	return h.namespace + ":listdone"
 }
 
+// HostIDListKey TODO
 // A redis zset(sorted set) key to store all the host ids, which is used to paged host id quickly,
 // without use mongodb's sort method, which is much more expensive.
 // this key has a expired ttl.
@@ -74,25 +80,30 @@ func (h hostKeyGenerator) HostIDListKey() string {
 	return h.namespace + ":id_list"
 }
 
+// HostIDListTempKey TODO
 // this key is used to store the host id list during refresh, it will be rename to HostIDListKey() after
 // all the host id has been write to temp key.
 func (h hostKeyGenerator) HostIDListTempKey() string {
 	return h.namespace + ":id_list_temp"
 }
 
+// HostIDListKeyExpireSeconds TODO
 func (h hostKeyGenerator) HostIDListKeyExpireSeconds() int64 {
 	// expire after 30 minutes
 	return 30 * 60
 }
 
+// HostIDListExpireKey TODO
 func (h hostKeyGenerator) HostIDListExpireKey() string {
 	return h.namespace + ":id_list:expire"
 }
 
+// HostIDListLockKey TODO
 func (h hostKeyGenerator) HostIDListLockKey() string {
 	return h.namespace + ":id_list:lock"
 }
 
+// WithRandomExpireSeconds TODO
 func (h hostKeyGenerator) WithRandomExpireSeconds() time.Duration {
 	rand.Seed(time.Now().UnixNano())
 	seconds := rand.Intn(h.expireRangeSeconds[1]-h.expireRangeSeconds[0]) + h.expireRangeSeconds[0]

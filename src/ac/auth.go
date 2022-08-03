@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-// auth control
+// Package ac auth control
 package ac
 
 import (
@@ -24,8 +24,10 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
+// NoAuthorizeError TODO
 var NoAuthorizeError = errors.New("no authorize")
 
+// AuthInterface TODO
 type AuthInterface interface {
 	// RegisterSystem register CMDB system to IAM
 	RegisterSystem(ctx context.Context, host string, objects []metadata.Object) error
@@ -45,6 +47,7 @@ type Viewer interface {
 	UpdateView(ctx context.Context, header http.Header, objects []metadata.Object) error
 }
 
+// AuthorizeInterface TODO
 type AuthorizeInterface interface {
 	AuthorizeBatch(ctx context.Context, h http.Header, user meta.UserInfo, resources ...meta.ResourceAttribute) (
 		[]types.Decision, error)

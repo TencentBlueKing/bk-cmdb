@@ -13,5 +13,6 @@
 package manager
 
 import (
-	_ "configcenter/src/web_server/middleware/user/plugins/method/open_source"
+	// import open-source version login plugin
+	_ "configcenter/src/web_server/middleware/user/plugins/method/opensource"
 )

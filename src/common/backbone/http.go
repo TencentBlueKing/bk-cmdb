@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	_ "net/http/pprof"
+	_ "net/http/pprof" // pprof TODO
 	"os"
 	"os/signal"
 	"strconv"
@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/zkclient"
 )
 
+// ListenAndServe TODO
 func ListenAndServe(c Server, svcDisc ServiceRegisterInterface, cancel context.CancelFunc) error {
 	handler := c.Handler
 	if c.PProfEnabled {

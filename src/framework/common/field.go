@@ -61,7 +61,7 @@ func (cli *field) ToMapStr() types.MapStr {
 	return tmpResult
 }
 
-// Eqset a filed equal a value
+// Eq set a filed equal a value
 func (cli *field) Eq(val interface{}) Condition {
 
 	switch v := val.(type) {

@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package common TODO
 package common
 
 import (
@@ -21,12 +22,14 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CommonInterface TODO
 type CommonInterface interface {
 	GetDistinctField(ctx context.Context, h http.Header, option *metadata.DistinctFieldOption) ([]interface{}, errors.CCErrorCoder)
 	GetDistinctCount(ctx context.Context, h http.Header, option *metadata.DistinctFieldOption) (int64,
 		errors.CCErrorCoder)
 }
 
+// NewCommonInterfaceClient TODO
 func NewCommonInterfaceClient(client rest.ClientInterface) CommonInterface {
 	return &common{client: client}
 }

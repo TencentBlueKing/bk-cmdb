@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package service TODO
 package service
 
 import (
@@ -29,6 +30,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// Service TODO
 type Service struct {
 	*backbone.Engine
 	ctx     context.Context
@@ -38,20 +40,24 @@ type Service struct {
 	authorizer ac.AuthorizeInterface
 }
 
+// NewService TODO
 func NewService(ctx context.Context) *Service {
 	return &Service{
 		ctx: ctx,
 	}
 }
 
+// SetEncryptor TODO
 func (s *Service) SetEncryptor(cryptor cryptor.Cryptor) {
 	s.cryptor = cryptor
 }
 
+// SetAuthorizer TODO
 func (s *Service) SetAuthorizer(authorizer ac.AuthorizeInterface) {
 	s.authorizer = authorizer
 }
 
+// WebService TODO
 func (s *Service) WebService() *restful.Container {
 
 	api := new(restful.WebService)

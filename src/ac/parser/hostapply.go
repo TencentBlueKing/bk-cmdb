@@ -19,6 +19,7 @@ import (
 	"configcenter/src/ac/meta"
 )
 
+// HostApplyAuthConfigs TODO
 var HostApplyAuthConfigs = []AuthConfig{
 	{
 		Name:           "CreateHostApplyRuleRegex",
@@ -166,6 +167,7 @@ var HostApplyAuthConfigs = []AuthConfig{
 	},
 }
 
+// HostApply TODO
 func (ps *parseStream) HostApply() *parseStream {
 	return ParseStreamWithFramework(ps, HostApplyAuthConfigs)
 }

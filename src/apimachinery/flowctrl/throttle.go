@@ -14,6 +14,7 @@ package flowctrl
 
 import "github.com/juju/ratelimit"
 
+// RateLimiter TODO
 type RateLimiter interface {
 	// TryAccept returns true if a token is taken immediately. Otherwise,
 	// it returns false.
@@ -32,6 +33,7 @@ type RateLimiter interface {
 	AcceptMany(count int64)
 }
 
+// NewRateLimiter TODO
 func NewRateLimiter(qps, burst int64) RateLimiter {
 	limiter := ratelimit.NewBucketWithRate(float64(qps), burst)
 	return &tokenBucket{
@@ -47,18 +49,22 @@ type tokenBucket struct {
 	burst   int64
 }
 
+// TryAccept TODO
 func (t *tokenBucket) TryAccept() bool {
 	return t.limiter.TakeAvailable(1) == 1
 }
 
+// Accept TODO
 func (t *tokenBucket) Accept() {
 	t.limiter.Wait(1)
 }
 
+// QPS TODO
 func (t *tokenBucket) QPS() int64 {
 	return t.qps
 }
 
+// Burst TODO
 func (t *tokenBucket) Burst() int64 {
 	return t.burst
 }
@@ -68,24 +74,29 @@ func (t *tokenBucket) AcceptMany(count int64) {
 	t.limiter.Wait(count)
 }
 
+// NewMockRateLimiter TODO
 func NewMockRateLimiter() RateLimiter {
 	return &mockRatelimiter{}
 }
 
 type mockRatelimiter struct{}
 
+// TryAccept TODO
 func (*mockRatelimiter) TryAccept() bool {
 	return true
 }
 
+// Accept TODO
 func (*mockRatelimiter) Accept() {
 
 }
 
+// QPS TODO
 func (*mockRatelimiter) QPS() int64 {
 	return 0
 }
 
+// Burst TODO
 func (*mockRatelimiter) Burst() int64 {
 	return 0
 }

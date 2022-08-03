@@ -14,10 +14,12 @@ package reflector
 
 import "configcenter/src/storage/stream/types"
 
+// Capable TODO
 type Capable struct {
 	OnChange OnChangeEvent
 }
 
+// OnChangeEvent TODO
 type OnChangeEvent struct {
 	// only used when list watch is used.
 	OnLister     func(event *types.Event)

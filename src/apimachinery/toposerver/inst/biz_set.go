@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateBizSet TODO
 func (t *instanceClient) CreateBizSet(ctx context.Context, h http.Header, opt metadata.CreateBizSetRequest) (
 	int64, errors.CCErrorCoder) {
 
@@ -46,6 +47,7 @@ func (t *instanceClient) CreateBizSet(ctx context.Context, h http.Header, opt me
 	return resp.Data, nil
 }
 
+// UpdateBizSet TODO
 func (t *instanceClient) UpdateBizSet(ctx context.Context, h http.Header,
 	opt metadata.UpdateBizSetOption) errors.CCErrorCoder {
 
@@ -67,6 +69,7 @@ func (t *instanceClient) UpdateBizSet(ctx context.Context, h http.Header,
 	return resp.CCError()
 }
 
+// DeleteBizSet TODO
 func (t *instanceClient) DeleteBizSet(ctx context.Context, h http.Header,
 	opt metadata.DeleteBizSetOption) errors.CCErrorCoder {
 
@@ -88,6 +91,7 @@ func (t *instanceClient) DeleteBizSet(ctx context.Context, h http.Header,
 	return resp.CCError()
 }
 
+// FindBizInBizSet TODO
 func (t *instanceClient) FindBizInBizSet(ctx context.Context, h http.Header, opt *metadata.FindBizInBizSetOption) (
 	*metadata.InstResult, errors.CCErrorCoder) {
 
@@ -113,6 +117,7 @@ func (t *instanceClient) FindBizInBizSet(ctx context.Context, h http.Header, opt
 	return &resp.Data, nil
 }
 
+// FindBizSetTopo TODO
 func (t *instanceClient) FindBizSetTopo(ctx context.Context, h http.Header, opt *metadata.FindBizSetTopoOption) (
 	[]mapstr.MapStr, errors.CCErrorCoder) {
 
@@ -138,6 +143,7 @@ func (t *instanceClient) FindBizSetTopo(ctx context.Context, h http.Header, opt 
 	return resp.Data, nil
 }
 
+// SearchBusinessSet TODO
 func (t *instanceClient) SearchBusinessSet(ctx context.Context, h http.Header, opt *metadata.QueryBusinessSetRequest) (
 	*metadata.InstResult, errors.CCErrorCoder) {
 

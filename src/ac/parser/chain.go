@@ -14,6 +14,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// RequestContext TODO
 type RequestContext struct {
 	Rid string
 	// http header
@@ -82,7 +83,7 @@ func newParseStream(rc *RequestContext, engine *backbone.Engine) (*parseStream, 
 	return &parseStream{RequestCtx: rc, engine: engine}, nil
 }
 
-// parse is used to parse the auth attribute from RequestContext.
+// Parse is used to parse the auth attribute from RequestContext.
 func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 	if ps.err != nil {
 		return nil, ps.err
@@ -182,6 +183,7 @@ func (ps *parseStream) validateResourceAction() *parseStream {
 	return ps
 }
 
+// validateUserAndSupplier TODO
 // user and supplier account must be set in the http
 // request header, otherwise, an error will be occur.
 func (ps *parseStream) validateUserAndSupplier() *parseStream {

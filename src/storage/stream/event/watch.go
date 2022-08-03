@@ -26,6 +26,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// Watch TODO
 func (e *Event) Watch(ctx context.Context, opts *types.WatchOptions) (*types.Watcher, error) {
 	if err := opts.CheckSetDefault(); err != nil {
 		return nil, err
@@ -297,6 +298,7 @@ func (e *Event) setCleaner(ctx context.Context, eventChan chan *types.Event, col
 	}()
 }
 
+// isFatalError TODO
 // if watch encountered a fatal error, we should watch without resume token, which means from now.
 // errors like:
 // https://jira.mongodb.org/browse/SERVER-44610

@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// ListProcessInstances TODO
 func (lgc *Logic) ListProcessInstances(kit *rest.Kit, bizID int64, serviceInstanceID int64, fields []string) (
 	[]metadata.ProcessInstance, errors.CCErrorCoder) {
 
@@ -93,6 +94,7 @@ func (lgc *Logic) ListProcessInstances(kit *rest.Kit, bizID int64, serviceInstan
 	return processInstanceList, nil
 }
 
+// ListProcessInstanceWithIDs TODO
 func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]metadata.Process, errors.CCErrorCoder) {
 	reqParam := &metadata.QueryCondition{
 		Condition: mapstr.MapStr(map[string]interface{}{
@@ -120,6 +122,7 @@ func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]
 	return processes, nil
 }
 
+// GetProcessInstanceWithID TODO
 func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metadata.Process, errors.CCErrorCoder) {
 	condition := map[string]interface{}{
 		common.BKProcessIDField: procID,
@@ -148,6 +151,7 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 	return process, nil
 }
 
+// UpdateProcessInstance TODO
 func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr.MapStr) errors.CCErrorCoder {
 	delete(info, common.BkSupplierAccount)
 	option := metadata.UpdateOption{
@@ -167,6 +171,7 @@ func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr
 	return nil
 }
 
+// DeleteProcessInstance TODO
 func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) errors.CCErrorCoder {
 	rid := kit.Rid
 	option := metadata.DeleteOption{
@@ -185,6 +190,7 @@ func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) errors.CCEr
 	return nil
 }
 
+// DeleteProcessInstanceBatch TODO
 func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) errors.CCErrorCoder {
 	if procIDs == nil {
 		return nil
@@ -266,6 +272,7 @@ func (lgc *Logic) CreateProcessInstances(kit *rest.Kit, processDatas []map[strin
 	return processIDs, nil
 }
 
+// DiffWithProcessTemplate TODO
 // it works to find the different attribute value between the process instance and it's bounded process template.
 // if needDetail is true, returns with the changed attribute's details, otherwise only returns if process is changed.
 func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metadata.Process, host map[string]interface{},

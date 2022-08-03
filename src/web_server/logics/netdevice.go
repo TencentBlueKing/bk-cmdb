@@ -29,6 +29,7 @@ import (
 	"github.com/rentiansheng/xlsx"
 )
 
+// GetImportNetDevices TODO
 // get date from excel file to import device
 func GetImportNetDevices(header http.Header, defLang language.DefaultCCLanguageIf,
 	f *xlsx.File) (map[int]map[string]interface{}, []string, error) {
@@ -66,6 +67,7 @@ func BuildNetDeviceExcelFromData(ctx context.Context, defLang language.DefaultCC
 	return nil
 }
 
+// GetNetDeviceData TODO
 // get net device data to export
 func (lgc *Logics) GetNetDeviceData(header http.Header, deviceIDStr string) ([]mapstr.MapStr, error) {
 	rid := util.GetHTTPCCRequestID(header)
@@ -126,6 +128,7 @@ func BuildNetDeviceExcelTemplate(header http.Header, defLang language.DefaultCCL
 	return nil
 }
 
+// GetNetDevicefield TODO
 // get feild to import device or generate template
 func GetNetDevicefield(lang language.DefaultCCLanguageIf) map[string]Property {
 
@@ -149,6 +152,7 @@ func GetNetDevicefield(lang language.DefaultCCLanguageIf) map[string]Property {
 	}
 }
 
+// AddNetDeviceExtFields TODO
 // add extra feild to export device
 func AddNetDeviceExtFields(originField map[string]Property, lang language.DefaultCCLanguageIf) {
 

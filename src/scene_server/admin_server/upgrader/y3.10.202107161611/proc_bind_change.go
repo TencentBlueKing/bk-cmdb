@@ -21,7 +21,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-// 更新绑定进程port提示信息
+// updateProcBindInfo 更新绑定进程port提示信息
 func updateProcBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	bindIPAttrFilter := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDProc,

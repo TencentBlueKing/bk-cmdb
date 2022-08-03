@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// CreateAccount TODO
 func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder) {
 	if err := c.validCreateAccount(kit, account); nil != err {
 		blog.Errorf("CreateAccount failed, valid error: %+v, rid: %s", err, kit.Rid)
@@ -53,6 +54,7 @@ func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAcc
 	return account, nil
 }
 
+// SearchAccount TODO
 func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder) {
 	accounts := []metadata.CloudAccount{}
 	option.Condition = util.SetQueryOwner(option.Condition, kit.SupplierAccount)
@@ -94,6 +96,7 @@ func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchClo
 	return &metadata.MultipleCloudAccount{Count: int64(count), Info: results}, nil
 }
 
+// UpdateAccount TODO
 func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, option mapstr.MapStr) errors.CCErrorCoder {
 	if err := c.validUpdateAccount(kit, accountID, option); nil != err {
 		blog.Errorf("UpdateAccount failed, valid error: %+v, rid: %s", err, kit.Rid)
@@ -114,6 +117,7 @@ func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, option ma
 	return nil
 }
 
+// DeleteAccount TODO
 func (c *cloudOperation) DeleteAccount(kit *rest.Kit, accountID int64) errors.CCErrorCoder {
 	if err := c.validDeleteAccount(kit, accountID); nil != err {
 		blog.Errorf("DeleteAccount failed, valid error: %+v, rid: %s", err, kit.Rid)
@@ -129,7 +133,7 @@ func (c *cloudOperation) DeleteAccount(kit *rest.Kit, accountID int64) errors.CC
 	return nil
 }
 
-// 查询云厂商账户配置
+// SearchAccountConf 查询云厂商账户配置
 func (c *cloudOperation) SearchAccountConf(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccountConf, errors.CCErrorCoder) {
 	accountconfs := []metadata.CloudAccountConf{}
 	option.Condition = util.SetQueryOwner(option.Condition, kit.SupplierAccount)
@@ -150,7 +154,7 @@ func (c *cloudOperation) SearchAccountConf(kit *rest.Kit, option *metadata.Searc
 	return &metadata.MultipleCloudAccountConf{Count: int64(count), Info: accountconfs}, nil
 }
 
-// 获取账户总个数
+// countAccount 获取账户总个数
 func (c *cloudOperation) countAccount(kit *rest.Kit, cond mapstr.MapStr) (uint64, error) {
 	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	count, err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(cond).Count(kit.Ctx)
@@ -158,7 +162,7 @@ func (c *cloudOperation) countAccount(kit *rest.Kit, cond mapstr.MapStr) (uint64
 
 }
 
-// 获取各个账户的同步任务数
+// getAcccountTaskcntMap 获取各个账户的同步任务数
 func (c *cloudOperation) getAcccountTaskcntMap(kit *rest.Kit) (map[int64]int64, error) {
 	accountTaskcntMap := make(map[int64]int64)
 	aggregateCond := []interface{}{

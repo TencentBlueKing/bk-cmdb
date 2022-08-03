@@ -14,6 +14,7 @@ package metadata
 
 import "configcenter/src/common/watch"
 
+// SearchHostWithInnerIPOption TODO
 type SearchHostWithInnerIPOption struct {
 	InnerIP string `json:"bk_host_innerip"`
 	CloudID int64  `json:"bk_cloud_id"`
@@ -21,12 +22,14 @@ type SearchHostWithInnerIPOption struct {
 	Fields []string `json:"fields"`
 }
 
+// SearchHostWithIDOption TODO
 type SearchHostWithIDOption struct {
 	HostID int64 `json:"bk_host_id"`
 	// only return these fields in hosts.
 	Fields []string `json:"fields"`
 }
 
+// ListWithIDOption TODO
 type ListWithIDOption struct {
 	// length range is [1,500]
 	IDs []int64 `json:"ids"`
@@ -34,12 +37,14 @@ type ListWithIDOption struct {
 	Fields []string `json:"fields"`
 }
 
+// DeleteArchive TODO
 type DeleteArchive struct {
 	Oid    string      `json:"oid" bson:"oid"`
 	Coll   string      `json:"coll" bson:"coll"`
 	Detail interface{} `json:"detail" bson:"detail"`
 }
 
+// ListHostWithPage TODO
 // list hosts with page in cache, which page info is in redis cache.
 // store in a zset.
 type ListHostWithPage struct {
@@ -52,6 +57,7 @@ type ListHostWithPage struct {
 	Page BasePage `json:"page"`
 }
 
+// WatchEventResp TODO
 type WatchEventResp struct {
 	BaseResp `json:",inline"`
 	Data     *watch.WatchResp `json:"data"`

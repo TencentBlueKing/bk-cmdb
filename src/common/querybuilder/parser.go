@@ -23,11 +23,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// RuleGroup TODO
 type RuleGroup struct {
 	Condition Condition                `json:"condition" field:"condition"`
 	Rules     []map[string]interface{} `json:"rules" field:"rules"`
 }
 
+// ParseRule TODO
 func ParseRule(data map[string]interface{}) (queryFilter Rule, errKey string, err error) {
 	if data == nil {
 		return nil, "", nil
@@ -65,6 +67,7 @@ func ParseRule(data map[string]interface{}) (queryFilter Rule, errKey string, er
 	return queryFilter, "", nil
 }
 
+// ParseRuleFromBytes TODO
 func ParseRuleFromBytes(bs []byte) (queryFilter Rule, errKey string, err error) {
 	data := make(map[string]interface{})
 	if err := json.Unmarshal(bs, &data); err != nil {
@@ -91,6 +94,7 @@ func (qf *QueryFilter) Validate(option *RuleOption) (string, error) {
 	return qf.Rule.Validate(option)
 }
 
+// MarshalJSON TODO
 func (qf *QueryFilter) MarshalJSON() ([]byte, error) {
 	if qf.Rule != nil {
 		return json.Marshal(qf.Rule)
@@ -98,6 +102,7 @@ func (qf *QueryFilter) MarshalJSON() ([]byte, error) {
 	return make([]byte, 0), nil
 }
 
+// UnmarshalJSON TODO
 func (qf *QueryFilter) UnmarshalJSON(raw []byte) error {
 	rule, errKey, err := ParseRuleFromBytes(raw)
 	if err != nil {
@@ -130,6 +135,7 @@ func (qf *QueryFilter) UnmarshalBSON(raw []byte) error {
 	return nil
 }
 
+// MapToQueryFilterHookFunc TODO
 func MapToQueryFilterHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
 		if t != reflect.TypeOf(QueryFilter{}) {

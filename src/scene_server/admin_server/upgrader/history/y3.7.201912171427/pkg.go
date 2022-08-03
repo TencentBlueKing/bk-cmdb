@@ -1,3 +1,4 @@
+// Package y3_7_201912171427 TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -20,6 +21,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// init TODO
 /*
 	set_template 新增 version 字段，用于支持加速diff集群与模板
 

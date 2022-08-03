@@ -23,7 +23,7 @@ func New(dir string) (CCLanguageIf, error) {
 
 	langType, err := LoadLanguageResourceFromDir(dir)
 	if nil != err {
-		//blog.Errorf("failed to load the error resource, error info is %s", err.Error())
+		// blog.Errorf("failed to load the error resource, error info is %s", err.Error())
 		return nil, err
 	}
 	tmp.Load(langType)

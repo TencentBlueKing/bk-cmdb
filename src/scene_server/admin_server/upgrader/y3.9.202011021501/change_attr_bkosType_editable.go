@@ -24,7 +24,7 @@ import (
 func changeAttrBKOSTypeEditable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	filter := map[string]interface{}{
 		common.BKPropertyIDField: common.BKOSTypeField,
-		common.BKObjIDField: common.BKInnerObjIDHost,
+		common.BKObjIDField:      common.BKInnerObjIDHost,
 	}
 
 	doc := map[string]interface{}{
