@@ -348,26 +348,16 @@ func (c *commonInst) CreateInst(kit *rest.Kit, obj model.Object, data mapstr.Map
 		iData["bk_supplier_account"] = kit.SupplierAccount
 	}
 
-	queryCond := []map[string]interface{}{{
-		common.BKObjIDField:           obj.Object().ObjectID,
-		common.AssociationKindIDField: common.AssociationKindMainline,
-	}}
-	cnt, ccErr := c.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameObjAsst,
-		queryCond)
-	if ccErr != nil {
-		blog.Errorf("count object(%s) mainline association failed, err: %v, rid: %s", obj.Object().ObjectID, ccErr,
-			kit.Rid)
-		return nil, ccErr
-	}
-
-	if cnt[0] != 0 {
-		return nil, kit.CCError.CCError(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
-	}
-
-	if err := c.validMainLineParentID(kit, obj, data); nil != err {
-		blog.Errorf("the mainline object(%s) parent id invalid, err: %v, rid: %s", obj.Object().ObjectID, err,
-			kit.Rid)
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("[operation-inst] failed to get if the object(%s) is mainline object, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), kit.Rid)
 		return nil, err
+	}
+	if isMainline {
+		if err := c.validMainLineParentID(kit, obj, data); nil != err {
+			blog.Errorf("[operation-inst] the mainline object(%s) parent id invalid, err: %s, rid: %s", obj.Object().ObjectID, err.Error(), kit.Rid)
+			return nil, err
+		}
 	}
 
 	if err := item.Create(); nil != err {

@@ -56,6 +56,18 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 		return
 	}
 
+	// forbidden create mainline instance with common api
+	isMainline, err := obj.IsMainlineObject()
+	if err != nil {
+		blog.Errorf("CreateInst failed, check whether model %s to be mainline failed, err: %+v, rid: %s", objID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if isMainline == true {
+		// TODO add custom mainline instance param validation
+	}
+
 	if data.Exists("BatchInfo") {
 		/*
 			   BatchInfo data format:
