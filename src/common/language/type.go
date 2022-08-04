@@ -12,7 +12,7 @@
 
 package language
 
-// UnknownTheCodeStrf const define unknow code
+// UnknownTheKeyStrf const define unknow code
 const UnknownTheKeyStrf = "the key is '%v', unknown meaning"
 
 // UnknownTheLanguageStrf define unknow language

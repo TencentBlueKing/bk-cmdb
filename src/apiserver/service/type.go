@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	rootPath = match.RootPath //"/api/v3"
+	rootPath = match.RootPath // "/api/v3"
 )
 
 // HTTPClient http client method

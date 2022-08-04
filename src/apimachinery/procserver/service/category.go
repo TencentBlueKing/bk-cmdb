@@ -8,6 +8,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateServiceCategory TODO
 func (s *service) CreateServiceCategory(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/create/proc/service_category"
@@ -22,6 +23,7 @@ func (s *service) CreateServiceCategory(ctx context.Context, h http.Header, data
 	return
 }
 
+// DeleteServiceCategory TODO
 func (s *service) DeleteServiceCategory(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/delete/proc/service_category"
@@ -36,6 +38,7 @@ func (s *service) DeleteServiceCategory(ctx context.Context, h http.Header, data
 	return
 }
 
+// SearchServiceCategory TODO
 func (s *service) SearchServiceCategory(ctx context.Context, h http.Header, opt *metadata.ListServiceCategoryOption) (
 	*metadata.MultipleServiceCategory, errors.CCErrorCoder) {
 
@@ -60,6 +63,7 @@ func (s *service) SearchServiceCategory(ctx context.Context, h http.Header, opt 
 	return &resp.Data, nil
 }
 
+// UpdateServiceCategory TODO
 func (s *service) UpdateServiceCategory(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/proc/service_category"

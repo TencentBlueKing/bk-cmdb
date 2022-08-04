@@ -17,7 +17,7 @@ import (
 	"configcenter/src/scene_server/cloud_server/logics"
 )
 
-// 云主机同步器
+// HostSyncor 云主机同步器
 type HostSyncor struct {
 	logics *logics.Logics
 	// readKit used for read operation
@@ -26,14 +26,14 @@ type HostSyncor struct {
 	writeKit *rest.Kit
 }
 
-// 创建云主机同步器
+// NewHostSyncor 创建云主机同步器
 func NewHostSyncor(logics *logics.Logics) *HostSyncor {
 	return &HostSyncor{
 		logics: logics,
 	}
 }
 
-// 同步云主机
+// Sync 同步云主机
 func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	defer func() {
 		if err := recover(); err != nil {
@@ -206,7 +206,7 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	return nil
 }
 
-// 根据任务详情和账号信息获取要同步的云主机资源
+// getCloudHostResource 根据任务详情和账号信息获取要同步的云主机资源
 func (h *HostSyncor) getCloudHostResource(task *metadata.CloudSyncTask, accountConf *metadata.CloudAccountConf) (*metadata.CloudHostResource, error) {
 	hostResource, err := h.logics.GetCloudHostResource(h.readKit, *accountConf, task.SyncVpcs)
 	if err != nil {
@@ -217,7 +217,7 @@ func (h *HostSyncor) getCloudHostResource(task *metadata.CloudSyncTask, accountC
 	return hostResource, err
 }
 
-// 同步被销毁的VPC相关资源
+// syncDestroyedVpcs 同步被销毁的VPC相关资源
 func (h *HostSyncor) syncDestroyedVpcs(hostResource *metadata.CloudHostResource,
 	syncResult *metadata.SyncResult) error {
 	if len(hostResource.DestroyedVpcs) == 0 {
@@ -281,7 +281,7 @@ func (h *HostSyncor) syncDestroyedVpcs(hostResource *metadata.CloudHostResource,
 	return nil
 }
 
-// 查询vpc对应的云区域
+// addCLoudId 查询vpc对应的云区域
 func (h *HostSyncor) addCLoudId(accountConf *metadata.CloudAccountConf, hostResource *metadata.CloudHostResource) error {
 	for _, hostRes := range hostResource.HostResource {
 		cloudID, err := h.getCloudId(hostRes.Vpc.VpcID)
@@ -299,7 +299,7 @@ func (h *HostSyncor) addCLoudId(accountConf *metadata.CloudAccountConf, hostReso
 	return nil
 }
 
-// 根据主机实例id获取mongo中的主机信息,并获取有差异的主机
+// getDiffHosts 根据主机实例id获取mongo中的主机信息,并获取有差异的主机
 func (h *HostSyncor) getDiffHosts(hostResource *metadata.CloudHostResource) (map[string][]*metadata.CloudHost, error) {
 	// 云端的主机
 	remoteHostsMap := make(map[string]*metadata.CloudHost)
@@ -365,7 +365,7 @@ func (h *HostSyncor) getDiffHosts(hostResource *metadata.CloudHostResource) (map
 	return diffHosts, nil
 }
 
-// 同步有差异的主机数据
+// syncDiffHosts 同步有差异的主机数据
 func (h *HostSyncor) syncDiffHosts(diffhosts map[string][]*metadata.CloudHost, syncResult *metadata.SyncResult) error {
 	result := new(metadata.SyncResult)
 	var err error
@@ -414,7 +414,7 @@ func (h *HostSyncor) syncDiffHosts(diffhosts map[string][]*metadata.CloudHost, s
 	return nil
 }
 
-// 增加任务同步历史记录
+// addSyncHistory 增加任务同步历史记录
 func (h *HostSyncor) addSyncHistory(syncResult *metadata.SyncResult, taskid int64) (*metadata.SyncHistory, error) {
 	syncHistory := metadata.SyncHistory{
 		TaskID:            taskid,
@@ -430,7 +430,7 @@ func (h *HostSyncor) addSyncHistory(syncResult *metadata.SyncResult, taskid int6
 	return result, nil
 }
 
-// 设置SyncResult的状态信息
+// SetSyncResultStatus 设置SyncResult的状态信息
 func (h *HostSyncor) SetSyncResultStatus(syncResult *metadata.SyncResult, startTime time.Time) error {
 	syncStatus := metadata.CloudSyncSuccess
 	costTime, _ := strconv.ParseFloat(fmt.Sprintf("%.1f", float64(time.Since(startTime)/time.Millisecond)/1000.0), 64)
@@ -447,7 +447,7 @@ func (h *HostSyncor) SetSyncResultStatus(syncResult *metadata.SyncResult, startT
 	return nil
 }
 
-// 根据账号vpcID获取云区域ID
+// getCloudId 根据账号vpcID获取云区域ID
 func (h *HostSyncor) getCloudId(vpcID string) (int64, error) {
 	cond := mapstr.MapStr{common.BKVpcID: vpcID}
 	query := &metadata.QueryCondition{
@@ -471,7 +471,7 @@ func (h *HostSyncor) getCloudId(vpcID string) (int64, error) {
 	return cloudID, nil
 }
 
-// 创建vpc对应的云区域
+// createCloudArea 创建vpc对应的云区域
 func (h *HostSyncor) createCloudArea(vpc *metadata.VpcSyncInfo, accountConf *metadata.CloudAccountConf) (int64, error) {
 	cloudArea := map[string]interface{}{
 		common.BKCloudNameField:  fmt.Sprintf("%d_%s", accountConf.AccountID, vpc.VpcID),
@@ -539,7 +539,7 @@ func getHostIDAndIP(hostInfo map[string]interface{}) (int64, string, error) {
 	return hostID, innerIP, nil
 }
 
-// 获取本地数据库中的主机信息
+// getLocalHosts 获取本地数据库中的主机信息
 func (h *HostSyncor) getLocalHosts(cloudIDs []int64) ([]*metadata.CloudHost, error) {
 	result := make([]*metadata.CloudHost, 0)
 	cond := mapstr.MapStr{
@@ -583,7 +583,7 @@ func (h *HostSyncor) getLocalHosts(cloudIDs []int64) ([]*metadata.CloudHost, err
 	return result, nil
 }
 
-// 添加云主机到本地数据库和主机资源池目录对应关系
+// addHosts 添加云主机到本地数据库和主机资源池目录对应关系
 func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult, error) {
 	syncResult := new(metadata.SyncResult)
 	syncResult.FailInfo.IPError = make(map[string]string)
@@ -631,7 +631,7 @@ func (h *HostSyncor) addHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult
 	return syncResult, nil
 }
 
-// 添加云主机
+// addHost 添加云主机
 func (h *HostSyncor) addHost(cHost *metadata.CloudHost) (string, error) {
 	host := mapstr.MapStr{
 		common.BKCloudIDField:         cHost.CloudID,
@@ -695,7 +695,7 @@ func (h *HostSyncor) addHost(cHost *metadata.CloudHost) (string, error) {
 	return cHost.PrivateIp, nil
 }
 
-// 更新云主机到本地数据库
+// updateHosts 更新云主机到本地数据库
 func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncResult, error) {
 	syncResult := new(metadata.SyncResult)
 	syncResult.FailInfo.IPError = make(map[string]string)
@@ -769,7 +769,7 @@ func (h *HostSyncor) updateHosts(hosts []*metadata.CloudHost) (*metadata.SyncRes
 	return syncResult, nil
 }
 
-// 更新云主机
+// updateHost 更新云主机
 func (h *HostSyncor) updateHost(cloudInstID string, updateInfo map[string]interface{}) error {
 	input := &metadata.UpdateOption{
 		CanEditAll: true,
@@ -786,7 +786,7 @@ func (h *HostSyncor) updateHost(cloudInstID string, updateInfo map[string]interf
 	return nil
 }
 
-// 删除被销毁云主机相关联的数据
+// deleteDestroyedHosts 删除被销毁云主机相关联的数据
 func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) (*metadata.SyncResult, error) {
 	result := new(metadata.SyncResult)
 	result.FailInfo.IPError = make(map[string]string)
@@ -850,7 +850,7 @@ func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) (*metadata.SyncResult
 	return result, nil
 }
 
-// 更新被销毁vpc对应的云区域状态为异常
+// updateDestroyedCloudArea 更新被销毁vpc对应的云区域状态为异常
 func (h *HostSyncor) updateDestroyedCloudArea(cloudIDs []int64) error {
 	input := &metadata.UpdateOption{
 		// must set CanEditAll as true to update the field which can't be editable
@@ -891,7 +891,7 @@ func (h *HostSyncor) updateDestroyedCloudArea(cloudIDs []int64) error {
 	return nil
 }
 
-// 更新同步任务里的vpc状态为被销毁
+// updateDestroyedTaskVpc 更新同步任务里的vpc状态为被销毁
 func (h *HostSyncor) updateDestroyedTaskVpc(taskID int64, vpcs map[string]bool) error {
 	opt := &metadata.SearchCloudOption{
 		Condition: mapstr.MapStr{common.BKCloudSyncTaskID: taskID},
@@ -925,7 +925,7 @@ func (h *HostSyncor) updateDestroyedTaskVpc(taskID int64, vpcs map[string]bool) 
 	return nil
 }
 
-// 更新任务同步状态
+// updateTaskState 更新任务同步状态
 func (h *HostSyncor) updateTaskState(kit *rest.Kit, taskid int64, status string, syncStatusDesc *metadata.SyncStatusDesc) error {
 	option := mapstr.MapStr{common.BKCloudSyncStatus: status}
 	if status == metadata.CloudSyncSuccess || status == metadata.CloudSyncFail {
@@ -942,7 +942,7 @@ func (h *HostSyncor) updateTaskState(kit *rest.Kit, taskid int64, status string,
 	return nil
 }
 
-// 根据主机实例ID获取主机详情
+// getHostDetailByInstIDs 根据主机实例ID获取主机详情
 func (h *HostSyncor) getHostDetailByInstIDs(kit *rest.Kit, instIDs []string) ([]mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
 		common.BKCloudInstIDField: mapstr.MapStr{
@@ -952,7 +952,7 @@ func (h *HostSyncor) getHostDetailByInstIDs(kit *rest.Kit, instIDs []string) ([]
 	return h.getHostDetail(kit, cond)
 }
 
-// 根据主机ID获取主机详情
+// getHostDetailByHostIDs 根据主机ID获取主机详情
 func (h *HostSyncor) getHostDetailByHostIDs(kit *rest.Kit, hostIDs []int64) ([]mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
 		common.BKHostIDField: mapstr.MapStr{
@@ -962,7 +962,7 @@ func (h *HostSyncor) getHostDetailByHostIDs(kit *rest.Kit, hostIDs []int64) ([]m
 	return h.getHostDetail(kit, cond)
 }
 
-// 获取主机详情
+// getHostDetail 获取主机详情
 func (h *HostSyncor) getHostDetail(kit *rest.Kit, cond mapstr.MapStr) ([]mapstr.MapStr, error) {
 	query := &metadata.QueryCondition{
 		Condition: cond,

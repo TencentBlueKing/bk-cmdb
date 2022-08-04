@@ -24,6 +24,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// TransferHostToInnerModule TODO
 func (s *coreService) TransferHostToInnerModule(ctx *rest.Contexts) {
 	inputData := &metadata.TransferHostToInnerModule{}
 	if err := ctx.DecodeInto(inputData); nil != err {
@@ -39,6 +40,7 @@ func (s *coreService) TransferHostToInnerModule(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// TransferHostToNormalModule TODO
 func (s *coreService) TransferHostToNormalModule(ctx *rest.Contexts) {
 	inputData := &metadata.HostsModuleRelation{}
 	if err := ctx.DecodeInto(inputData); nil != err {
@@ -54,6 +56,7 @@ func (s *coreService) TransferHostToNormalModule(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// TransferHostToAnotherBusiness TODO
 func (s *coreService) TransferHostToAnotherBusiness(ctx *rest.Contexts) {
 	inputData := &metadata.TransferHostsCrossBusinessRequest{}
 	if err := ctx.DecodeInto(inputData); nil != err {
@@ -70,6 +73,7 @@ func (s *coreService) TransferHostToAnotherBusiness(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// RemoveFromModule TODO
 func (s *coreService) RemoveFromModule(ctx *rest.Contexts) {
 	inputData := &metadata.RemoveHostsFromModuleOption{}
 	if err := ctx.DecodeInto(inputData); nil != err {
@@ -85,6 +89,7 @@ func (s *coreService) RemoveFromModule(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// GetHostModuleRelation TODO
 func (s *coreService) GetHostModuleRelation(ctx *rest.Contexts) {
 	inputData := &metadata.HostModuleRelationRequest{}
 	if err := ctx.DecodeInto(inputData); nil != err {
@@ -100,6 +105,7 @@ func (s *coreService) GetHostModuleRelation(ctx *rest.Contexts) {
 	ctx.RespEntity(relationArr)
 }
 
+// DeleteHostFromSystem TODO
 func (s *coreService) DeleteHostFromSystem(ctx *rest.Contexts) {
 	inputData := &metadata.DeleteHostRequest{}
 	if err := ctx.DecodeInto(inputData); nil != err {
@@ -116,6 +122,7 @@ func (s *coreService) DeleteHostFromSystem(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// HostIdentifier TODO
 func (s *coreService) HostIdentifier(ctx *rest.Contexts) {
 	inputData := &metadata.SearchHostIdentifierParam{}
 	if err := ctx.DecodeInto(inputData); nil != err {
@@ -133,6 +140,7 @@ func (s *coreService) HostIdentifier(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.SearchHostIdentifierData{Info: hostIdentifierArr, Count: len(hostIdentifierArr)})
 }
 
+// GetHostByID TODO
 func (s *coreService) GetHostByID(ctx *rest.Contexts) {
 	hostID, err := strconv.Atoi(ctx.Request.PathParameter("bk_host_id"))
 	if err != nil {
@@ -155,6 +163,7 @@ func (s *coreService) GetHostByID(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// GetHosts TODO
 func (s *coreService) GetHosts(ctx *rest.Contexts) {
 	var dat metadata.QueryInput
 	if err := ctx.DecodeInto(&dat); err != nil {
@@ -225,6 +234,7 @@ func (s *coreService) GetDistinctHostIDsByTopoRelation(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.DistinctID{IDArr: hostIDArr})
 }
 
+// TransferHostResourceDirectory TODO
 func (s *coreService) TransferHostResourceDirectory(ctx *rest.Contexts) {
 	input := &metadata.TransferHostResourceDirectory{}
 	if err := ctx.DecodeInto(input); err != nil {

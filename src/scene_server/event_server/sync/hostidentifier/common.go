@@ -69,7 +69,7 @@ func buildForStatus(cloudID, innerIP string) []*getstatus.CacheIPInfo {
 	return hostInfos
 }
 
-// 只需要拿到主机的其中一个处于on状态的ip即可
+// getStatusOnAgentIP 只需要拿到主机的其中一个处于on状态的ip即可
 func getStatusOnAgentIP(cloudID, innerIP string, agentStatus map[string]string) (bool, string) {
 	ips := strings.Split(innerIP, ",")
 	for _, ip := range ips {
@@ -81,7 +81,7 @@ func getStatusOnAgentIP(cloudID, innerIP string, agentStatus map[string]string) 
 	return false, ""
 }
 
-// 根据与gse约定，需要根据content的内容拿到对应的ip和cloudID，但是现在接口还未提供相关内容，这里作兼容，如果拿不到，就从key中截取相关的信息
+// buildTaskResultMap 根据与gse约定，需要根据content的内容拿到对应的ip和cloudID，但是现在接口还未提供相关内容，这里作兼容，如果拿不到，就从key中截取相关的信息
 func buildTaskResultMap(originMap map[string]string) map[string]string {
 	taskResultMap := make(map[string]string)
 	for key, val := range originMap {

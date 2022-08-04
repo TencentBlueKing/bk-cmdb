@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package adminserver TODO
 package adminserver
 
 import (
@@ -22,6 +23,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// AdminServerClientInterface TODO
 type AdminServerClientInterface interface {
 	ClearDatabase(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 	Set(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error)
@@ -29,6 +31,7 @@ type AdminServerClientInterface interface {
 	RunSyncDBIndex(ctx context.Context, h http.Header) (*metadata.Response, error)
 }
 
+// NewAdminServerClientInterface TODO
 func NewAdminServerClientInterface(c *util.Capability, version string) AdminServerClientInterface {
 	base := fmt.Sprintf("/migrate/%s", version)
 	return &adminServer{

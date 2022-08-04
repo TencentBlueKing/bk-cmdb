@@ -24,6 +24,7 @@ import (
 	"configcenter/src/storage/dal/types"
 )
 
+// InitHostPropertyApplyDataModel TODO
 func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	// check attribute exist
 	moduleAttributeFilter := map[string]interface{}{

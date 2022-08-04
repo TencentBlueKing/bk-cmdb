@@ -217,6 +217,7 @@ func genAssoInstLockKey(id int64, objectAsstID string) string {
 	return lockKey
 }
 
+// CreateOneInstanceAssociation TODO
 func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error) {
 	inputParam.Data.OwnerID = kit.SupplierAccount
 	exists, err := m.isExists(kit, inputParam.Data.InstID, inputParam.Data.AsstInstID, inputParam.Data.ObjectAsstID,
@@ -353,11 +354,12 @@ func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit, inputP
 	}
 }
 
+// CreateManyInstanceAssociation TODO
 func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error) {
 	dataResult := &metadata.CreateManyDataResult{}
 	for itemIdx, item := range inputParam.Datas {
 		item.OwnerID = kit.SupplierAccount
-		//check is exist
+		// check is exist
 		exists, err := m.isExists(kit, item.InstID, item.AsstInstID, item.ObjectAsstID, item.ObjectID, item.BizID)
 		if nil != err {
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
@@ -451,6 +453,7 @@ func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit, input
 	return dataResult, nil
 }
 
+// SearchInstanceAssociation TODO
 func (m *associationInstance) SearchInstanceAssociation(kit *rest.Kit, objID string, param metadata.QueryCondition) (
 	*metadata.QueryResult, error) {
 
@@ -501,6 +504,7 @@ func (m *associationInstance) CountInstanceAssociations(kit *rest.Kit,
 	return result, nil
 }
 
+// DeleteInstanceAssociation TODO
 func (m *associationInstance) DeleteInstanceAssociation(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (
 	*metadata.DeletedCount, error) {
 

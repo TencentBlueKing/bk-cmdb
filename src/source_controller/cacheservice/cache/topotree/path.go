@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package topo_tree
+package topotree
 
 import (
 	"context"
@@ -24,14 +24,17 @@ import (
 	"configcenter/src/source_controller/cacheservice/cache/mainline"
 )
 
+// NewTopologyTree TODO
 func NewTopologyTree(client *mainline.Client) *TopologyTree {
 	return &TopologyTree{bizCache: client}
 }
 
+// TopologyTree TODO
 type TopologyTree struct {
 	bizCache *mainline.Client
 }
 
+// SearchNodePath TODO
 func (t *TopologyTree) SearchNodePath(ctx context.Context, opt *SearchNodePathOption,
 	supplierAccount string) ([]NodePaths, error) {
 
@@ -506,7 +509,7 @@ func reverse(t []string) []string {
 	return t
 }
 
-// reverse the slice's element from tail to head.
+// reverseNode the slice's element from tail to head.
 func reverseNode(t []Node) []Node {
 	if len(t) == 0 {
 		return t

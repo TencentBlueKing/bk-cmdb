@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package logics TODO
 package logics
 
 import (
@@ -24,6 +25,6 @@ type Logics struct {
 // NewLogics get logics handle
 func NewLogics(engine *backbone.Engine) *Logics {
 	return &Logics{
-		Engine:     engine,
+		Engine: engine,
 	}
 }

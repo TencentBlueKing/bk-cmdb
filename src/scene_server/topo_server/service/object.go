@@ -182,7 +182,7 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKFieldID))
 		return
 	}
-	//update model
+	// update model
 	data := make(map[string]interface{})
 	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
@@ -301,7 +301,7 @@ func (s *Service) SearchModel(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
-// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
+// createObjectTable 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
 // (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 // please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
 // Collection minimum is Timestamp(1616747878, 5)
@@ -319,7 +319,7 @@ func (s *Service) createObjectTable(ctx *rest.Contexts, object map[string]interf
 	return nil
 }
 
-// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
+// createObjectTableByObjectID 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
 // (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 // please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
 // Collection minimum is Timestamp(1616747878, 5)

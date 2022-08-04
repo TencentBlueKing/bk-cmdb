@@ -24,6 +24,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// SearchTopoGraphics TODO
 // CreateClassification create object's classification
 func (s *coreService) SearchTopoGraphics(ctx *rest.Contexts) {
 	selector := meta.TopoGraphics{}
@@ -47,6 +48,7 @@ func (s *coreService) SearchTopoGraphics(ctx *rest.Contexts) {
 	ctx.RespEntity(results)
 }
 
+// UpdateTopoGraphics TODO
 func (s *coreService) UpdateTopoGraphics(ctx *rest.Contexts) {
 	inputBody := struct {
 		Data []meta.TopoGraphics `json:"data" field:"data" bson:"data"`

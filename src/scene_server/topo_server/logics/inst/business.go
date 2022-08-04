@@ -640,6 +640,7 @@ func (b *business) checkModuleNameValid(kit *rest.Kit, input metadata.ModuleOpti
 	return nil
 }
 
+// validateIdleModuleConfigName TODO
 // Validate 判断参数是否合法，注意此处合法的标准如下:
 // 1、key如果存在这个key只要名字不重复即合法
 // 2、如果不存在这个key那么合法即是新增场景
@@ -945,7 +946,7 @@ func (b *business) getResourceBizID(kit *rest.Kit) (int64, error) {
 	return bizID, nil
 }
 
-//updateBusinessModule: 对特殊空闲机池下模块(flag:1,2,3,5)做新增或改名操作
+// updateBusinessModule : 对特殊空闲机池下模块(flag:1,2,3,5)做新增或改名操作
 func (b *business) updateBusinessModule(kit *rest.Kit, module metadata.ModuleOption, bizID int64) error {
 
 	// check param is legal or not

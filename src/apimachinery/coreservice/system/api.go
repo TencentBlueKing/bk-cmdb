@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// GetUserConfig TODO
 func (s *system) GetUserConfig(ctx context.Context, h http.Header) (*metadata.ResponseSysUserConfigData, errors.CCErrorCoder) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
@@ -47,6 +48,7 @@ func (s *system) GetUserConfig(ctx context.Context, h http.Header) (*metadata.Re
 	return &resp.Data, nil
 }
 
+// SearchConfigAdmin TODO
 func (s *system) SearchConfigAdmin(ctx context.Context, h http.Header) (resp *metadata.ConfigAdminResult, err error) {
 	resp = new(metadata.ConfigAdminResult)
 	subPath := "/find/system/config_admin"

@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package stream TODO
 package stream
 
 import (
@@ -28,6 +29,7 @@ import (
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
+// Interface TODO
 // Stream Interface defines all the functionality it have.
 type Interface interface {
 	List(ctx context.Context, opts *types.ListOptions) (ch chan *types.Event, err error)
@@ -68,6 +70,7 @@ func NewStream(conf local.MongoConf) (Interface, error) {
 	return event, nil
 }
 
+// LoopInterface TODO
 type LoopInterface interface {
 	WithOne(opts *types.LoopOneOptions) error
 	WithBatch(opts *types.LoopBatchOptions) error

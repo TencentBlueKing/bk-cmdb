@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/paraparse"
 )
 
+// CreateSet TODO
 func (t *instanceClient) CreateSet(ctx context.Context, appID int64, h http.Header, dat mapstr.MapStr) (mapstr.MapStr,
 	errors.CCErrorCoder) {
 
@@ -46,6 +47,7 @@ func (t *instanceClient) CreateSet(ctx context.Context, appID int64, h http.Head
 	return resp.Data, nil
 }
 
+// DeleteSet TODO
 func (t *instanceClient) DeleteSet(ctx context.Context, appID, setID int64, h http.Header) errors.CCErrorCoder {
 	resp := new(metadata.Response)
 	subPath := "/set/%d/%d"
@@ -68,6 +70,7 @@ func (t *instanceClient) DeleteSet(ctx context.Context, appID, setID int64, h ht
 	return nil
 }
 
+// UpdateSet TODO
 func (t *instanceClient) UpdateSet(ctx context.Context, appID, setID int64, h http.Header,
 	dat map[string]interface{}) errors.CCErrorCoder {
 
@@ -92,6 +95,7 @@ func (t *instanceClient) UpdateSet(ctx context.Context, appID, setID int64, h ht
 	return nil
 }
 
+// SearchSet TODO
 func (t *instanceClient) SearchSet(ctx context.Context, ownerID string, appID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/set/search/%s/%s"
@@ -106,6 +110,7 @@ func (t *instanceClient) SearchSet(ctx context.Context, ownerID string, appID st
 	return
 }
 
+// SearchSetBatch TODO
 func (t *instanceClient) SearchSetBatch(ctx context.Context, appID string, h http.Header, s *metadata.SearchInstBatchOption) (resp *metadata.MapArrayResponse, err error) {
 	resp = new(metadata.MapArrayResponse)
 	subPath := "/findmany/set/bk_biz_id/%s"

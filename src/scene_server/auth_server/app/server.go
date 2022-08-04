@@ -33,6 +33,7 @@ import (
 	"configcenter/src/scene_server/auth_server/service"
 )
 
+// Run TODO
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
@@ -108,6 +109,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	return nil
 }
 
+// AuthServer TODO
 type AuthServer struct {
 	Core    *backbone.Engine
 	Config  *options.Config

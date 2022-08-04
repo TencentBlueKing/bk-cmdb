@@ -21,6 +21,7 @@ import (
 	"configcenter/src/thirdparty/monitor/config"
 )
 
+// GseCmdline TODO
 type GseCmdline struct{}
 
 // NewGseCmdline new a GseCmdline instance

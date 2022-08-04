@@ -75,7 +75,7 @@ func clearSyncTaskData() {
 	err := test.GetDB().Table(common.BKTableNameCloudSyncTask).Delete(context.Background(), map[string]interface{}{})
 	Expect(err).NotTo(HaveOccurred())
 
-	//删除云同步任务id计数
+	// 删除云同步任务id计数
 	err = test.GetDB().Table(common.BKTableNameIDgenerator).Delete(context.Background(), map[string]interface{}{"_id": common.BKTableNameCloudSyncTask})
 	Expect(err).NotTo(HaveOccurred())
 }
@@ -94,11 +94,11 @@ func prepareSyncTaskData() {
 var cloudID1 int64
 
 func prepareCloudData() {
-	//清空云区域表
+	// 清空云区域表
 	err := test.GetDB().Table(common.BKTableNameBasePlat).Delete(context.Background(), map[string]interface{}{})
 	Expect(err).NotTo(HaveOccurred())
 
-	//删除云区域id计数
+	// 删除云区域id计数
 	err = test.GetDB().Table(common.BKTableNameIDgenerator).Delete(context.Background(), map[string]interface{}{"_id": common.BKTableNameBasePlat})
 	Expect(err).NotTo(HaveOccurred())
 
@@ -126,9 +126,9 @@ var _ = Describe("cloud sync task test", func() {
 		// 准备云区域数据
 		prepareCloudData()
 
-		//清空同步任务数据
+		// 清空同步任务数据
 		clearSyncTaskData()
-		//准备同步任务数据
+		// 准备同步任务数据
 		prepareSyncTaskData()
 	})
 

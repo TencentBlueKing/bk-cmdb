@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package system TODO
 package system
 
 import (
@@ -35,6 +36,7 @@ func New() core.SystemOperation {
 	return &systemManager{}
 }
 
+// GetSystemUserConfig TODO
 func (sm *systemManager) GetSystemUserConfig(kit *rest.Kit) (map[string]interface{}, errors.CCErrorCoder) {
 	cond := map[string]string{"type": metadata.CCSystemUserConfigSwitch}
 	result := make(map[string]interface{}, 0)
@@ -47,6 +49,7 @@ func (sm *systemManager) GetSystemUserConfig(kit *rest.Kit) (map[string]interfac
 	return result, nil
 }
 
+// SearchConfigAdmin TODO
 func (sm *systemManager) SearchConfigAdmin(kit *rest.Kit) (*metadata.ConfigAdmin, errors.CCErrorCoder) {
 	cond := map[string]interface{}{
 		"_id": common.ConfigAdminID,

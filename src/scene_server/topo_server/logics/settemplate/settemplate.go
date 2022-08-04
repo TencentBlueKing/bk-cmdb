@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package settemplate TODO
 package settemplate
 
 import (
@@ -25,6 +26,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// SetTemplate TODO
 type SetTemplate interface {
 	DiffSetTplWithInst(kit *rest.Kit, bizID int64, setTemplateID int64, option metadata.DiffSetTplWithInstOption,
 		serviceTemplates []metadata.ServiceTemplate) (metadata.SetDiff, errors.CCErrorCoder)
@@ -42,6 +44,7 @@ type SetTemplate interface {
 		*metadata.ListAPITaskSyncStatusResult, errors.CCErrorCoder)
 }
 
+// NewSetTemplate TODO
 func NewSetTemplate(client apimachinery.ClientSetInterface) SetTemplate {
 	return &setTemplate{
 		client: client,
@@ -310,6 +313,7 @@ func (st *setTemplate) SetWithDeleteModulesRelation(kit *rest.Kit, bizID int64, 
 	return setModuleResults, nil
 }
 
+// DiffSetTplWithInst TODO
 func (st *setTemplate) DiffSetTplWithInst(kit *rest.Kit, bizID int64, setTemplateID int64,
 	option metadata.DiffSetTplWithInstOption, serviceTemplates []metadata.ServiceTemplate) (
 	metadata.SetDiff, errors.CCErrorCoder) {
@@ -364,6 +368,7 @@ func (st *setTemplate) DiffSetTplWithInst(kit *rest.Kit, bizID int64, setTemplat
 	return setDiff, nil
 }
 
+// SyncSetTplToInst TODO
 func (st *setTemplate) SyncSetTplToInst(kit *rest.Kit, bizID int64, setTemplateID int64,
 	option metadata.SyncSetTplToInstOption) errors.CCErrorCoder {
 
@@ -531,6 +536,7 @@ func DiffServiceTemplateWithModules(serviceTemplates []metadata.ServiceTemplate,
 	return moduleDiffs
 }
 
+// CheckSetInstUpdateToDateStatus TODO
 // CheckSetTplInstLatest 检查通过集群模板 setTemplateID 实例化的集群是否都已经达到最新状态
 func (st *setTemplate) CheckSetInstUpdateToDateStatus(kit *rest.Kit, bizID int64,
 	setTemplateID int64) (*metadata.SetTemplateUpdateToDateStatus, errors.CCErrorCoder) {

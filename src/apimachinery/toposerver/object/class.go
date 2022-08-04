@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateClassification TODO
 func (t *object) CreateClassification(ctx context.Context, h http.Header, obj *metadata.Classification) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/create/objectclassification"
@@ -33,6 +34,7 @@ func (t *object) CreateClassification(ctx context.Context, h http.Header, obj *m
 	return
 }
 
+// SelectClassificationWithObjects TODO
 func (t *object) SelectClassificationWithObjects(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/find/classificationobject"
@@ -46,6 +48,8 @@ func (t *object) SelectClassificationWithObjects(ctx context.Context, h http.Hea
 		Into(resp)
 	return
 }
+
+// SelectClassificationWithParams TODO
 func (t *object) SelectClassificationWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/find/objectclassification"
@@ -59,6 +63,8 @@ func (t *object) SelectClassificationWithParams(ctx context.Context, h http.Head
 		Into(resp)
 	return
 }
+
+// UpdateClassification TODO
 func (t *object) UpdateClassification(ctx context.Context, classID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/objectclassification/%s"
@@ -72,6 +78,8 @@ func (t *object) UpdateClassification(ctx context.Context, classID string, h htt
 		Into(resp)
 	return
 }
+
+// DeleteClassification TODO
 func (t *object) DeleteClassification(ctx context.Context, classID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/delete/objectclassification/%s"

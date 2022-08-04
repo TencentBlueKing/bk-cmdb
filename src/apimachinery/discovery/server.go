@@ -51,6 +51,7 @@ type server struct {
 	serversChan  chan []string
 }
 
+// GetServers TODO
 func (s *server) GetServers() ([]string, error) {
 	if s == nil {
 		return []string{}, nil
@@ -125,7 +126,7 @@ func (s *server) resetServer() {
 	s.servers = make([]*types.ServerInfo, 0)
 }
 
-// 当监听到服务节点变化时，将最新的服务节点信息放入该channel里
+// setServersChan 当监听到服务节点变化时，将最新的服务节点信息放入该channel里
 func (s *server) setServersChan() {
 	// 即使没有其他服务消费该channel，也能保证该channel不会阻塞
 	for len(s.serversChan) >= 1 {
@@ -134,12 +135,12 @@ func (s *server) setServersChan() {
 	s.serversChan <- s.getInstances()
 }
 
-// 获取zk上最新的服务节点信息channel
+// GetServersChan 获取zk上最新的服务节点信息channel
 func (s *server) GetServersChan() chan []string {
 	return s.serversChan
 }
 
-// 获取所有注册服务节点的ip:port
+// getInstances 获取所有注册服务节点的ip:port
 func (s *server) getInstances() []string {
 	addrArr := []string{}
 	s.RLock()

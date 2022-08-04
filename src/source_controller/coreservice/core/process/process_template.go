@@ -144,6 +144,7 @@ func (p *processOperation) processNameUniqueValidate(kit *rest.Kit, template *me
 	return nil
 }
 
+// GetProcessTemplate TODO
 func (p *processOperation) GetProcessTemplate(kit *rest.Kit, templateID int64) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
 	template := metadata.ProcessTemplate{}
 
@@ -206,6 +207,7 @@ func (p *processOperation) UpdateProcessTemplate(kit *rest.Kit, templateID int64
 	return template, nil
 }
 
+// ListProcessTemplates TODO
 func (p *processOperation) ListProcessTemplates(kit *rest.Kit, option metadata.ListProcessTemplatesOption) (*metadata.MultipleProcessTemplate, errors.CCErrorCoder) {
 	filter := map[string]interface{}{
 		common.BKAppIDField: option.BusinessID,
@@ -249,6 +251,7 @@ func (p *processOperation) ListProcessTemplates(kit *rest.Kit, option metadata.L
 	return result, nil
 }
 
+// DeleteProcessTemplate TODO
 func (p *processOperation) DeleteProcessTemplate(kit *rest.Kit, processTemplateID int64) errors.CCErrorCoder {
 	template, err := p.GetProcessTemplate(kit, processTemplateID)
 	if err != nil {

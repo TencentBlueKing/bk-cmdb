@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package count TODO
 package count
 
 import (
@@ -20,11 +21,13 @@ import (
 	"configcenter/src/common/errors"
 )
 
+// CountClientInterface TODO
 type CountClientInterface interface {
 	GetCountByFilter(ctx context.Context, h http.Header, table string, filters []map[string]interface{}) ([]int64,
 		errors.CCErrorCoder)
 }
 
+// NewCountClientInterface TODO
 func NewCountClientInterface(client rest.ClientInterface) CountClientInterface {
 	return &count{client: client}
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/onsi/ginkgo/types"
 )
 
+// HtmlReporter TODO
 type HtmlReporter struct {
 	filename        string
 	suite           HtmlTestSuite
@@ -19,6 +20,7 @@ type HtmlReporter struct {
 	reportUrl       string
 }
 
+// HtmlTestSuite TODO
 type HtmlTestSuite struct {
 	FailedTestCases []HtmlTestCase
 	OtherTestCases  []HtmlTestCase
@@ -31,6 +33,7 @@ type HtmlTestSuite struct {
 	Url             string
 }
 
+// HtmlTestCase TODO
 type HtmlTestCase struct {
 	Name    string
 	State   string
@@ -40,6 +43,7 @@ type HtmlTestCase struct {
 
 var dir string
 
+// NewHtmlReporter TODO
 func NewHtmlReporter(filename string, reportUrl string, generateSummary bool) *HtmlReporter {
 	return &HtmlReporter{
 		filename:        strings.Trim(filename, "/"),
@@ -48,6 +52,7 @@ func NewHtmlReporter(filename string, reportUrl string, generateSummary bool) *H
 	}
 }
 
+// SpecSuiteWillBegin TODO
 func (reporter *HtmlReporter) SpecSuiteWillBegin(ginkgoConfig config.GinkgoConfigType, summary *types.SuiteSummary) {
 	reporter.suite = HtmlTestSuite{
 		Name:            summary.SuiteDescription,
@@ -64,13 +69,16 @@ func (reporter *HtmlReporter) SpecSuiteWillBegin(ginkgoConfig config.GinkgoConfi
 	}
 }
 
+// SpecWillRun TODO
 func (reporter *HtmlReporter) SpecWillRun(specSummary *types.SpecSummary) {
 }
 
+// BeforeSuiteDidRun TODO
 func (reporter *HtmlReporter) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
 	reporter.handleSetupSummary("BeforeSuite", setupSummary)
 }
 
+// AfterSuiteDidRun TODO
 func (reporter *HtmlReporter) AfterSuiteDidRun(setupSummary *types.SetupSummary) {
 	reporter.handleSetupSummary("AfterSuite", setupSummary)
 }
@@ -111,6 +119,7 @@ func (reporter *HtmlReporter) transformState(state types.SpecState) string {
 	}
 }
 
+// SpecDidComplete TODO
 func (reporter *HtmlReporter) SpecDidComplete(specSummary *types.SpecSummary) {
 	testCase := HtmlTestCase{
 		Name:    strings.Join(specSummary.ComponentTexts[1:], "/"),
@@ -126,6 +135,7 @@ func (reporter *HtmlReporter) SpecDidComplete(specSummary *types.SpecSummary) {
 	}
 }
 
+// SpecSuiteDidEnd TODO
 func (reporter *HtmlReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
 	reporter.suite.TotalNum = summary.NumberOfSpecsThatWillBeRun
 	reporter.suite.RunTime = summary.RunTime.Seconds()

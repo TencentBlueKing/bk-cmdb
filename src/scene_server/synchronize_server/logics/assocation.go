@@ -24,11 +24,12 @@ import (
 	"configcenter/src/scene_server/synchronize_server/app/options"
 )
 
+// FetchAssociation TODO
 // FetchInst fetch instance struct
 type FetchAssociation struct {
 	lgc        *Logics
 	syncConfig *options.ConfigItem
-	//ingoreAppID []int64
+	// ingoreAppID []int64
 	baseConds mapstr.MapStr
 	appIDArr  []int64
 }

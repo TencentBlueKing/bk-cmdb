@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package identifier TODO
 package identifier
 
 import (
@@ -25,6 +26,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// Identifier TODO
 type Identifier struct {
 	dbQuery          *hostutil.DBExecQuery
 	hosts            []metadata.HostIdentifier
@@ -36,6 +38,7 @@ type Identifier struct {
 	layers           map[string]map[int64]metadata.MainlineInstInfo
 }
 
+// NewIdentifier TODO
 func NewIdentifier() *Identifier {
 	dbQuery := hostutil.NewDBExecQuery()
 	return &Identifier{
@@ -48,6 +51,7 @@ func NewIdentifier() *Identifier {
 	}
 }
 
+// Identifier TODO
 func (i *Identifier) Identifier(kit *rest.Kit, hostIDs []int64) ([]metadata.HostIdentifier, error) {
 	err := i.findHost(kit, hostIDs)
 	if err != nil {
@@ -86,7 +90,7 @@ var identityHostFields = []string{
 	common.BkSupplierAccount,
 }
 
-// FindHost query host info
+// findHost query host info
 func (i *Identifier) findHost(kit *rest.Kit, hostIDs []int64) error {
 	hostCond := condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs)
 	condHostMap := util.SetQueryOwner(hostCond.ToMapStr(), kit.SupplierAccount)

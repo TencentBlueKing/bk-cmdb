@@ -40,6 +40,7 @@ type redisOperation struct {
 	service *config.Service
 }
 
+// NewRedisOperationCommand TODO
 func NewRedisOperationCommand() *cobra.Command {
 
 	conf := new(redisOperation)
@@ -90,7 +91,7 @@ func runRedisScan(conf *redisOperation) error {
 	cursor := redisDefaultCursor
 	printLen := redisDefaultResultNum
 
-	//don't need to open too many conns
+	// don't need to open too many conns
 	config.Conf.RedisConf.MaxOpenConns = redisDefaultConnNum
 
 	redisCli, err := redis.NewFromConfig(config.Conf.RedisConf)
@@ -139,7 +140,7 @@ func runRedisScanDel(conf *redisOperation) error {
 	)
 	cursor := redisDefaultCursor
 
-	//don't need to open too many conns
+	// don't need to open too many conns
 	config.Conf.RedisConf.MaxOpenConns = redisDefaultConnNum
 
 	redisCli, err := redis.NewFromConfig(config.Conf.RedisConf)

@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package synchronize TODO
 package synchronize
 
 import (
@@ -20,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SynchronizeClientInterface TODO
 type SynchronizeClientInterface interface {
 	SynchronizeInstance(ctx context.Context, h http.Header, input *metadata.SynchronizeParameter) (resp *metadata.SynchronizeResult, err error)
 	SynchronizeModel(ctx context.Context, h http.Header, input *metadata.SynchronizeParameter) (resp *metadata.SynchronizeResult, err error)

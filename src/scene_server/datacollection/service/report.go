@@ -24,6 +24,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// SearchReportSummary TODO
 func (s *Service) SearchReportSummary(req *restful.Request, resp *restful.Response) {
 	var err error
 	pHeader := req.Request.Header
@@ -49,6 +50,7 @@ func (s *Service) SearchReportSummary(req *restful.Request, resp *restful.Respon
 
 }
 
+// SearchReport TODO
 func (s *Service) SearchReport(req *restful.Request, resp *restful.Response) {
 	var err error
 	pHeader := req.Request.Header
@@ -76,6 +78,7 @@ func (s *Service) SearchReport(req *restful.Request, resp *restful.Response) {
 	return
 }
 
+// ConfirmReport TODO
 func (s *Service) ConfirmReport(req *restful.Request, resp *restful.Response) {
 	var err error
 	pHeader := req.Request.Header
@@ -103,6 +106,7 @@ func (s *Service) ConfirmReport(req *restful.Request, resp *restful.Response) {
 
 }
 
+// SearchHistory TODO
 func (s *Service) SearchHistory(req *restful.Request, resp *restful.Response) {
 	var err error
 	pHeader := req.Request.Header

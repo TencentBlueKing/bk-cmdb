@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package index TODO
 package index
 
 import (
@@ -22,14 +23,17 @@ import (
 	"configcenter/src/storage/dal/types"
 )
 
+// InstanceIndexes TODO
 func InstanceIndexes() []types.Index {
 	return instanceDefaultIndexes
 }
 
+// InstanceAssociationIndexes TODO
 func InstanceAssociationIndexes() []types.Index {
 	return associationDefaultIndexes
 }
 
+// CCFieldTypeToDBType TODO
 func CCFieldTypeToDBType(typ string) string {
 	switch typ {
 	case common.FieldTypeSingleChar, common.FieldTypeEnum, common.FieldTypeDate, common.FieldTypeList:
@@ -42,21 +46,24 @@ func CCFieldTypeToDBType(typ string) string {
 	return ""
 }
 
+// GetUniqueIndexNameByID TODO
 func GetUniqueIndexNameByID(id uint64) string {
 	return fmt.Sprintf("%s%d", common.CCLogicUniqueIdxNamePrefix, id)
 }
 
-// 获取表中没有规范化前，所有索引的名字, map[collection name][]string{"索引名字"}
+// DeprecatedIndexName 获取表中没有规范化前，所有索引的名字, map[collection name][]string{"索引名字"}
 func DeprecatedIndexName() map[string][]string {
 
 	return collections.DeprecatedIndexName()
 }
 
+// TableIndexes TODO
 func TableIndexes() map[string][]types.Index {
 
 	return collections.Indexes()
 }
 
+// ToDBUniqueIndex TODO
 func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 	properties []metadata.Attribute) (types.Index, errors.CCErrorCoder) {
 	dbIndex := types.Index{

@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateProcessTemplateBatch TODO
 // create a process template for a service template.
 func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 	input := new(metadata.CreateProcessTemplateBatchInput)
@@ -75,6 +76,7 @@ func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 	ctx.RespEntity(ids)
 }
 
+// DeleteProcessTemplateBatch TODO
 func (ps *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 	input := new(metadata.DeleteProcessTemplateBatchInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -131,6 +133,7 @@ func (ps *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// UpdateProcessTemplate TODO
 func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 	input := new(metadata.UpdateProcessTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -184,6 +187,7 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(template)
 }
 
+// GetProcessTemplate TODO
 func (ps *ProcServer) GetProcessTemplate(ctx *rest.Contexts) {
 	input := &struct {
 		BizID int64 `json:"bk_biz_id"`
@@ -207,6 +211,7 @@ func (ps *ProcServer) GetProcessTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(template)
 }
 
+// ListProcessTemplate TODO
 func (ps *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 
 	input := new(metadata.ListProcessTemplateWithServiceTemplateInput)

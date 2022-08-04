@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package redis TODO
 package redis
 
 import (
@@ -40,6 +41,7 @@ var (
 	lastInitErr   errors.CCErrorCoder
 	lastConfigErr errors.CCErrorCoder
 
+	// IsNilErr TODO
 	IsNilErr = redis.IsNilErr
 )
 
@@ -60,6 +62,7 @@ func ClientInstance(prefix string) redis.Client {
 	return nil
 }
 
+// ParseConfig TODO
 func ParseConfig(prefix string, configMap map[string]string) (*redis.Config, errors.CCErrorCoder) {
 	lastConfigErr = nil
 	config, err := cc.Redis(prefix)
@@ -80,6 +83,7 @@ func ParseConfig(prefix string, configMap map[string]string) (*redis.Config, err
 	return &config, nil
 }
 
+// InitClient TODO
 func InitClient(prefix string, config *redis.Config) errors.CCErrorCoder {
 	lock.Lock()
 	defer lock.Unlock()
@@ -102,15 +106,18 @@ func InitClient(prefix string, config *redis.Config) errors.CCErrorCoder {
 	return nil
 }
 
+// Validate TODO
 func Validate() errors.CCErrorCoder {
 	return nil
 }
 
+// UpdateConfig TODO
 func UpdateConfig(prefix string, config redis.Config) {
 	// 不支持热更行
 	return
 }
 
+// Healthz TODO
 func Healthz() (items []metric.HealthItem) {
 	lock.RLock()
 	defer lock.RUnlock()

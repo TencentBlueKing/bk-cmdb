@@ -33,7 +33,7 @@ func TestAssociationInstance(t *testing.T) {
 	asstObjID := "bk_router"
 	associationName := objID + "_" + kindID + "_" + asstObjID
 
-	//create association kind
+	// create association kind
 	asstKindParams := metadata.CreateAssociationKind{}
 	asstKindParams.Data.AssociationKindID = kindID
 	asstKindParams.Data.AssociationKindName = xid.New().String()
@@ -45,7 +45,7 @@ func TestAssociationInstance(t *testing.T) {
 	require.NotNil(t, createasstKindResult)
 	require.NotEqual(t, 0, createasstKindResult.Created.ID)
 
-	//create association model
+	// create association model
 	asstModelParams := metadata.CreateModelAssociation{}
 	asstModelParams.Spec.AsstKindID = kindID
 	asstModelParams.Spec.ObjectID = objID
@@ -56,7 +56,7 @@ func TestAssociationInstance(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, createasstModelResult)
 
-	//create bk_switch instance
+	// create bk_switch instance
 	objInstanceParams := metadata.CreateModelInstance{}
 	objInstanceParams.Data.Set(common.BKInstNameField, xid.New().String())
 	objInstanceParams.Data.Set(common.BKAssetIDField, xid.New().String())
@@ -66,7 +66,7 @@ func TestAssociationInstance(t *testing.T) {
 	require.NotEqual(t, uint64(0), instResult.Created.ID)
 	instID := instResult.Created.ID
 
-	//create bk_router instance
+	// create bk_router instance
 	objAsstInstanceParams := metadata.CreateModelInstance{}
 	objAsstInstanceParams.Data.Set(common.BKInstNameField, xid.New().String())
 	objAsstInstanceParams.Data.Set(common.BKAssetIDField, xid.New().String())
@@ -76,7 +76,7 @@ func TestAssociationInstance(t *testing.T) {
 	require.NotEqual(t, uint64(0), instAsstResult.Created.ID)
 	asstInstID := instAsstResult.Created.ID
 
-	//create association instance
+	// create association instance
 	inputParams := metadata.CreateOneInstanceAssociation{}
 	inputParams.Data.AssociationKindID = kindID
 	inputParams.Data.AsstInstID = int64(asstInstID)
@@ -88,11 +88,11 @@ func TestAssociationInstance(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, asstInstResult)
 
-	//create dup association instance
+	// create dup association instance
 	asstInstResult, err = asstMgr.CreateOneInstanceAssociation(defaultCtx, inputParams)
 	require.NotNil(t, err)
 
-	//create bk_switch instance 1
+	// create bk_switch instance 1
 	objInstanceParams = metadata.CreateModelInstance{}
 	objInstanceParams.Data.Set(common.BKInstNameField, xid.New().String())
 	objInstanceParams.Data.Set(common.BKAssetIDField, xid.New().String())
@@ -102,7 +102,7 @@ func TestAssociationInstance(t *testing.T) {
 	require.NotEqual(t, uint64(0), instResult.Created.ID)
 	instID1 := instResult.Created.ID
 
-	//create bk_switch instance 2
+	// create bk_switch instance 2
 	objInstanceParams = metadata.CreateModelInstance{}
 	objInstanceParams.Data.Set(common.BKInstNameField, xid.New().String())
 	objInstanceParams.Data.Set(common.BKAssetIDField, xid.New().String())
@@ -112,7 +112,7 @@ func TestAssociationInstance(t *testing.T) {
 	require.NotEqual(t, uint64(0), instResult.Created.ID)
 	instID2 := instResult.Created.ID
 
-	//create bk_router instance1
+	// create bk_router instance1
 	objAsstInstanceParams = metadata.CreateModelInstance{}
 	objAsstInstanceParams.Data.Set(common.BKInstNameField, xid.New().String())
 	objAsstInstanceParams.Data.Set(common.BKAssetIDField, xid.New().String())
@@ -122,7 +122,7 @@ func TestAssociationInstance(t *testing.T) {
 	require.NotEqual(t, uint64(0), instAsstResult.Created.ID)
 	asstInstID1 := instAsstResult.Created.ID
 
-	//create bk_router instance2
+	// create bk_router instance2
 	objAsstInstanceParams = metadata.CreateModelInstance{}
 	objAsstInstanceParams.Data.Set(common.BKInstNameField, xid.New().String())
 	objAsstInstanceParams.Data.Set(common.BKAssetIDField, xid.New().String())
@@ -132,7 +132,7 @@ func TestAssociationInstance(t *testing.T) {
 	require.NotEqual(t, uint64(0), instAsstResult.Created.ID)
 	asstInstID2 := instAsstResult.Created.ID
 
-	//create many association instance
+	// create many association instance
 	asstInst1 := metadata.InstAsst{}
 	asstInst2 := metadata.InstAsst{}
 	asstInst3 := metadata.InstAsst{}
@@ -166,7 +166,7 @@ func TestAssociationInstance(t *testing.T) {
 	require.NotEqual(t, uint64(0), len(instManyAsstResult.Created))
 	require.NotEqual(t, uint64(0), len(instManyAsstResult.Repeated))
 
-	//search association instance
+	// search association instance
 	searchCond := metadata.QueryCondition{}
 	searchCond.Condition = mapstr.MapStr{common.BKObjIDField: objID}
 	asstSearchResult, err := asstMgr.SearchInstanceAssociation(defaultCtx, objID, searchCond)
@@ -174,7 +174,7 @@ func TestAssociationInstance(t *testing.T) {
 	require.NotNil(t, asstSearchResult)
 	require.NotEqual(t, 0, asstSearchResult.Count)
 
-	//delete association instance
+	// delete association instance
 	deleteCond := metadata.DeleteOption{}
 	deleteCond.Condition = mapstr.MapStr{common.BKObjIDField: objID}
 	deleteResult, err := asstMgr.DeleteInstanceAssociation(defaultCtx, objID, deleteCond)

@@ -10,13 +10,14 @@
  * limitations under the License.
  */
 
+// Package confregdiscover TODO
 package confregdiscover
 
 import (
 	"configcenter/src/common/backbone/service_mange/zk"
 )
 
-//DiscoverEvent if servers changed, will create a discover event
+// DiscoverEvent if servers changed, will create a discover event
 type DiscoverEvent struct { //
 	Err  error
 	Key  string
@@ -55,7 +56,7 @@ func (crd *ConfRegDiscover) Ping() error {
 	return crd.confRD.Ping()
 }
 
-//Write the configure data
+// Write the configure data
 func (crd *ConfRegDiscover) Write(key string, data []byte) error {
 	return crd.confRD.Write(key, data)
 }
@@ -65,7 +66,7 @@ func (crd *ConfRegDiscover) Read(path string) (string, error) {
 	return crd.confRD.Read(path)
 }
 
-//DiscoverConfig discover the config wether is changed
+// DiscoverConfig discover the config wether is changed
 func (crd *ConfRegDiscover) DiscoverConfig(key string) (<-chan *DiscoverEvent, error) {
 	return crd.confRD.Discover(key)
 }

@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package auth TODO
 package auth
 
 import (
@@ -19,17 +20,22 @@ import (
 	"configcenter/src/common/blog"
 )
 
+// EnableAuth TODO
 var EnableAuth = "true"
 var enableAuth = true
+
+// EnableAuthFlag TODO
 var EnableAuthFlag *authValue
 var once = sync.Once{}
 
 type authValue struct{}
 
+// String 用于打印
 func (a *authValue) String() string {
 	return strconv.FormatBool(enableAuth)
 }
 
+// Set TODO
 func (a *authValue) Set(s string) error {
 	v, err := strconv.ParseBool(s)
 	if err != nil {
@@ -39,6 +45,7 @@ func (a *authValue) Set(s string) error {
 	return nil
 }
 
+// Type TODO
 func (a *authValue) Type() string {
 	return "bool"
 }
@@ -58,6 +65,7 @@ func setEnableAuth(enable bool) {
 	})
 }
 
+// EnableAuthorize TODO
 func EnableAuthorize() bool {
 	return enableAuth
 }

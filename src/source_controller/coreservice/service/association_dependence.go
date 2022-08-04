@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/universalsql/mongo"
 )
 
+// IsInstanceExist TODO
 func (s *coreService) IsInstanceExist(kit *rest.Kit, objID string, instID uint64) (exists bool, err error) {
 	instIDFieldName := common.GetInstIDField(objID)
 	cond := mongo.NewCondition()

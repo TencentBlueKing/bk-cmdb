@@ -10,12 +10,14 @@
  * limitations under the License.
  */
 
+// Package logics TODO
 package logics
 
 import (
 	"configcenter/src/common/backbone"
 )
 
+// Logics TODO
 type Logics struct {
 	*backbone.Engine
 }

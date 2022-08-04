@@ -15,29 +15,37 @@ package operator
 // Calculator is used to calculate the logic value of a list/array of
 // Operator with different of "Calculator Type" instance.
 type Calculator interface {
-	// name of the calculator
+	// Name of the calculator
 	Name() string
 
+	// Result TODO
 	// the calculated resulted with multiple Policy.
 	Result(p []*Policy) (bool, error)
 }
 
+// And TODO
 const And = OperType("AND")
 
+// AndOper TODO
 type AndOper OperType
 
+// Name TODO
 func (a *AndOper) Name() string {
 	return "AND"
 }
 
+// Result TODO
 func (a *AndOper) Result(p []*Policy) (bool, error) {
 	return true, nil
 }
 
+// Or TODO
 const Or = OperType("OR")
 
+// OrOper TODO
 type OrOper OperType
 
+// Name TODO
 func (o *OrOper) Name() string {
 	return "OR"
 }

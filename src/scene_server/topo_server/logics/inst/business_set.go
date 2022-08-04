@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// BusinessOperationInterface business operation methods
+// BusinessSetOperationInterface business operation methods
 type BusinessSetOperationInterface interface {
 
 	// CreateBusinessSet create business set
@@ -32,7 +32,7 @@ type BusinessSetOperationInterface interface {
 	SetProxy(inst InstOperationInterface)
 }
 
-// NewBusinessOperation create a business instance
+// NewBusinessSetOperation create a business instance
 func NewBusinessSetOperation(client apimachinery.ClientSetInterface,
 	authManager *extensions.AuthManager) BusinessSetOperationInterface {
 	return &businessSet{

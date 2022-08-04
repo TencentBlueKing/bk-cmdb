@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 )
 
-//var _ universalsql.WhereStatement = (*statement)(nil)
+// var _ universalsql.WhereStatement = (*statement)(nil)
 var _ universalsql.Result = (*statementResult)(nil)
 
 type statementResult struct {
@@ -28,11 +28,13 @@ type statementResult struct {
 type statement struct {
 }
 
+// ToSQL TODO
 func (d *statementResult) ToSQL() (string, error) {
 	sql, err := json.Marshal(d.ToMapStr())
 	return string(sql), err
 }
 
+// ToMapStr TODO
 func (d *statementResult) ToMapStr() mapstr.MapStr {
 
 	condResult := mapstr.New()
@@ -42,6 +44,7 @@ func (d *statementResult) ToMapStr() mapstr.MapStr {
 	return condResult
 }
 
+// Conditions TODO
 func (d *statement) Conditions(conds ...universalsql.Condition) universalsql.Result {
 
 	result := &statementResult{}

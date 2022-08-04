@@ -34,4 +34,3 @@ type PubSub interface {
 	Subscribe(channels ...string) error
 	Unsubscribe(channels ...string) error
 }
-

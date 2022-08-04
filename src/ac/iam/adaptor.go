@@ -23,8 +23,10 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
+// NotEnoughLayer TODO
 var NotEnoughLayer = fmt.Errorf("not enough layer")
 
+// AdaptAuthOptions TODO
 func AdaptAuthOptions(a *meta.ResourceAttribute) (ActionID, []types.Resource, error) {
 
 	var action ActionID
@@ -477,6 +479,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 	},
 }
 
+// ParseIamPathToAncestors TODO
 func ParseIamPathToAncestors(iamPath []string) ([]metadata.IamResourceInstance, error) {
 	instances := make([]metadata.IamResourceInstance, 0)
 	for _, path := range iamPath {

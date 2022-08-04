@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// UpdateHostCloudAreaField TODO
 func (s *coreService) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 	input := metadata.UpdateHostCloudAreaFieldOption{}
 	if err := ctx.DecodeInto(&input); nil != err {
@@ -35,6 +36,7 @@ func (s *coreService) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// FindCloudAreaHostCount TODO
 func (s *coreService) FindCloudAreaHostCount(ctx *rest.Contexts) {
 	input := metadata.CloudAreaHostCount{}
 	if err := ctx.DecodeInto(&input); nil != err {

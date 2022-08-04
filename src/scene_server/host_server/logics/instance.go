@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// InstNameAsst TODO
 type InstNameAsst struct {
 	ID         string                 `json:"id"`
 	ObjID      string                 `json:"bk_obj_id"`

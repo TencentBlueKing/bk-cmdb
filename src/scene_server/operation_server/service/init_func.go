@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// InitFunc TODO
 func (o *OperationServer) InitFunc() {
 	header := make(http.Header, 0)
 	if "" == util.GetOwnerID(header) {

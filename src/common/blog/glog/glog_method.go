@@ -16,10 +16,12 @@ import (
 	"strconv"
 )
 
+// GetV TODO
 func GetV() Level {
 	return logging.verbosity
 }
 
+// SetV TODO
 func SetV(level Level) {
 	logging.verbosity.Set(strconv.Itoa(int(level)))
 }

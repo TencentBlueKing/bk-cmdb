@@ -42,7 +42,7 @@ const (
 	SynchronizeOperateDataTypeInstance SynchronizeOperateDataType = iota + 1
 	// SynchronizeOperateDataTypeModel synchronize data is model
 	SynchronizeOperateDataTypeModel
-	//SynchronizeOperateDataTypeAssociation synchronize data is association
+	// SynchronizeOperateDataTypeAssociation synchronize data is association
 	SynchronizeOperateDataTypeAssociation
 )
 
@@ -105,8 +105,8 @@ type SynchronizeResult struct {
 
 // SynchronizeDataResult common Synchronize result definition
 type SynchronizeDataResult struct {
-	//Created    []CreatedDataResult `json:"created"`
-	//Updated    []UpdatedDataResult `json:"updated"`
+	// Created    []CreatedDataResult `json:"created"`
+	// Updated    []UpdatedDataResult `json:"updated"`
 	Exceptions []ExceptionResult `json:"exception"`
 }
 
@@ -125,6 +125,7 @@ func (s *SynchronizeClearDataParameter) GenerateSign(key string) {
 	s.Sign = base64.StdEncoding.EncodeToString((m.Sum(nil)))
 }
 
+// Legality TODO
 //  Legality sign is legal
 func (s *SynchronizeClearDataParameter) Legality(key string) bool {
 	m := md5.New()
@@ -133,6 +134,7 @@ func (s *SynchronizeClearDataParameter) Legality(key string) bool {
 	return s.Sign == base64.StdEncoding.EncodeToString((m.Sum(nil)))
 }
 
+// signContext TODO
 // GenerateSign generate sign
 func (s *SynchronizeClearDataParameter) signContext(key string) string {
 	return fmt.Sprintf("key-%s-%s-%d-%d", key, s.SynchronizeFlag, s.Tamestamp, s.Version)

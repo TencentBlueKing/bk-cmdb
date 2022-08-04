@@ -38,8 +38,9 @@ type queryParam struct {
 	IPList   []string    `json:"ip_list"`
 }
 
+// ListHostFavourites TODO
 func (s *Service) ListHostFavourites(ctx *rest.Contexts) {
-	
+
 	query := new(metadata.QueryInput)
 	if err := ctx.DecodeInto(&query); nil != err {
 		ctx.RespAutoError(err)
@@ -56,10 +57,11 @@ func (s *Service) ListHostFavourites(ctx *rest.Contexts) {
 		ctx.RespAutoError(result.CCError())
 		return
 	}
-	
+
 	ctx.RespEntity(result.Data)
 }
 
+// AddHostFavourite TODO
 func (s *Service) AddHostFavourite(ctx *rest.Contexts) {
 
 	param := new(metadata.FavouriteParms)
@@ -115,6 +117,7 @@ func (s *Service) AddHostFavourite(ctx *rest.Contexts) {
 	ctx.RespEntity(result.Data)
 }
 
+// UpdateHostFavouriteByID TODO
 func (s *Service) UpdateHostFavouriteByID(ctx *rest.Contexts) {
 
 	ID := ctx.Request.PathParameter("id")
@@ -182,8 +185,9 @@ func (s *Service) UpdateHostFavouriteByID(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// DeleteHostFavouriteByID TODO
 func (s *Service) DeleteHostFavouriteByID(ctx *rest.Contexts) {
-	
+
 	ID := ctx.Request.PathParameter("id")
 
 	if "" == ID || "0" == ID {
@@ -212,8 +216,9 @@ func (s *Service) DeleteHostFavouriteByID(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// IncrHostFavouritesCount TODO
 func (s *Service) IncrHostFavouritesCount(ctx *rest.Contexts) {
-	
+
 	ID := ctx.Request.PathParameter("id")
 	if "" == ID || "0" == ID {
 		blog.Errorf("delete host favourite failed, with id  %s, rid:%s", ID, ctx.Kit.Rid)

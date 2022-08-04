@@ -19,6 +19,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/host/identifier"
 )
 
+// Identifier TODO
 func (hm *hostManager) Identifier(kit *rest.Kit, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error) {
 	identifier := identifier.NewIdentifier()
 	host, err := identifier.Identifier(kit, input.HostIDs)

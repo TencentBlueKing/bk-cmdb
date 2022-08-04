@@ -26,6 +26,7 @@ const (
 	firstLevelParentId = 0
 )
 
+// CreateServiceCategory TODO
 func (p *processOperation) CreateServiceCategory(kit *rest.Kit, category metadata.ServiceCategory) (*metadata.ServiceCategory, errors.CCErrorCoder) {
 	// base attribute validate
 	if field, err := category.Validate(); err != nil {
@@ -102,6 +103,7 @@ func (p *processOperation) CreateServiceCategory(kit *rest.Kit, category metadat
 	return &category, nil
 }
 
+// IsServiceCategoryLeafNode TODO
 func (p *processOperation) IsServiceCategoryLeafNode(kit *rest.Kit, categoryID int64) (bool, errors.CCErrorCoder) {
 	filter := map[string]interface{}{
 		common.BKParentIDField: categoryID,
@@ -114,6 +116,7 @@ func (p *processOperation) IsServiceCategoryLeafNode(kit *rest.Kit, categoryID i
 	return count == 0, nil
 }
 
+// GetServiceCategory TODO
 func (p *processOperation) GetServiceCategory(kit *rest.Kit, categoryID int64) (*metadata.ServiceCategory, errors.CCErrorCoder) {
 	category := metadata.ServiceCategory{}
 
@@ -131,6 +134,7 @@ func (p *processOperation) GetServiceCategory(kit *rest.Kit, categoryID int64) (
 	return &category, nil
 }
 
+// GetDefaultServiceCategory TODO
 func (p *processOperation) GetDefaultServiceCategory(kit *rest.Kit) (*metadata.ServiceCategory, errors.CCErrorCoder) {
 	category := metadata.ServiceCategory{}
 
@@ -152,6 +156,7 @@ func (p *processOperation) GetDefaultServiceCategory(kit *rest.Kit) (*metadata.S
 	return &category, nil
 }
 
+// UpdateServiceCategory TODO
 func (p *processOperation) UpdateServiceCategory(kit *rest.Kit, categoryID int64, input metadata.ServiceCategory) (*metadata.ServiceCategory, errors.CCErrorCoder) {
 	category, err := p.GetServiceCategory(kit, categoryID)
 	if err != nil {
@@ -202,6 +207,7 @@ func (p *processOperation) UpdateServiceCategory(kit *rest.Kit, categoryID int64
 	return category, nil
 }
 
+// ListServiceCategories TODO
 func (p *processOperation) ListServiceCategories(kit *rest.Kit, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder) {
 	filter := map[string]interface{}{
 		common.BKAppIDField: map[string]interface{}{
@@ -271,6 +277,7 @@ func (p *processOperation) ListServiceCategories(kit *rest.Kit, bizID int64, wit
 	return result, nil
 }
 
+// DeleteServiceCategory TODO
 func (p *processOperation) DeleteServiceCategory(kit *rest.Kit, categoryID int64) errors.CCErrorCoder {
 	category, err := p.GetServiceCategory(kit, categoryID)
 	if err != nil {

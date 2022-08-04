@@ -1,3 +1,4 @@
+// Package x18_12_12_06 TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -161,15 +162,18 @@ type objectUnique struct {
 	LastTime  time.Time   `json:"last_time" bson:"last_time"`
 }
 
+// Now TODO
 func Now() time.Time {
 	return time.Now().UTC()
 }
 
+// UniqueKey TODO
 type UniqueKey struct {
 	Kind string `json:"key_kind" bson:"key_kind"`
 	ID   uint64 `json:"key_id" bson:"key_id"`
 }
 
+// KeysHash TODO
 func (o objectUnique) KeysHash() string {
 	keys := []string{}
 	for _, key := range o.Keys {
@@ -180,5 +184,6 @@ func (o objectUnique) KeysHash() string {
 }
 
 const (
+	// UniqueKeyKindProperty TODO
 	UniqueKeyKindProperty = "property"
 )

@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package identifier TODO
 package identifier
 
 import (
@@ -25,6 +26,7 @@ import (
 	"configcenter/src/storage/stream"
 )
 
+// NewIdentity TODO
 func NewIdentity(
 	watch stream.LoopInterface,
 	isMaster discovery.ServiceManageInterface,

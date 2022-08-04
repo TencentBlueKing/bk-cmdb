@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package service TODO
 package service
 
 import (
@@ -33,6 +34,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// Service TODO
 type Service struct {
 	*options.Config
 	*backbone.Engine
@@ -42,6 +44,7 @@ type Service struct {
 	Logic       *logics.Logics
 }
 
+// WebService TODO
 func (s *Service) WebService() *restful.Container {
 
 	container := restful.NewContainer()
@@ -68,6 +71,7 @@ func (s *Service) WebService() *restful.Container {
 	return container
 }
 
+// Healthz TODO
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta := metric.HealthMeta{IsHealthy: true}
 

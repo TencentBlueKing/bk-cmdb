@@ -30,6 +30,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// AuthVerify TODO
 func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -122,6 +123,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(metadata.NewSuccessResp(resources))
 }
 
+// GetAnyAuthorizedAppList TODO
 func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))

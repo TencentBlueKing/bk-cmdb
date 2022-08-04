@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package options TODO
 package options
 
 import (
@@ -22,10 +23,12 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// ServerOption TODO
 type ServerOption struct {
 	ServConf *config.CCAPIConfig
 }
 
+// Config TODO
 type Config struct {
 	BusinessTopoLevelMax int `json:"level.businessTopoMax"`
 	// Auth is auth config
@@ -35,6 +38,7 @@ type Config struct {
 	Es        elasticsearch.EsConfig
 }
 
+// NewServerOption TODO
 func NewServerOption() *ServerOption {
 	s := ServerOption{
 		ServConf: config.NewCCAPIConfig(),
@@ -43,6 +47,7 @@ func NewServerOption() *ServerOption {
 	return &s
 }
 
+// AddFlags TODO
 func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.AddrPort, "addrport", "127.0.0.1:60001", "The ip address and port for the serve on")
 	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")

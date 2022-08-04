@@ -51,6 +51,7 @@ func Decode2Struct(m map[string]interface{}, st interface{}) error {
 	return nil
 }
 
+// Struct2Map TODO
 func Struct2Map(v interface{}) (map[string]interface{}, error) {
 	bytes, err := json.Marshal(v)
 	if err != nil {

@@ -22,6 +22,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// CreateSetTemplate TODO
 func (s *coreService) CreateSetTemplate(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -45,6 +46,7 @@ func (s *coreService) CreateSetTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateSetTemplate TODO
 func (s *coreService) UpdateSetTemplate(ctx *rest.Contexts) {
 	setTemplateIDStr := ctx.Request.PathParameter(common.BKSetTemplateIDField)
 	setTemplateID, err := strconv.ParseInt(setTemplateIDStr, 10, 64)
@@ -68,6 +70,7 @@ func (s *coreService) UpdateSetTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// DeleteSetTemplate TODO
 func (s *coreService) DeleteSetTemplate(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -90,6 +93,7 @@ func (s *coreService) DeleteSetTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// GetSetTemplate TODO
 func (s *coreService) GetSetTemplate(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -114,6 +118,7 @@ func (s *coreService) GetSetTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(setTemplate)
 }
 
+// ListSetTemplate TODO
 func (s *coreService) ListSetTemplate(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -137,6 +142,7 @@ func (s *coreService) ListSetTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(setTemplateResult)
 }
 
+// CountSetTplInstances TODO
 func (s *coreService) CountSetTplInstances(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -178,6 +184,7 @@ func (s *coreService) CountSetTplInstances(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// ListSetServiceTemplateRelations TODO
 func (s *coreService) ListSetServiceTemplateRelations(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -202,6 +209,7 @@ func (s *coreService) ListSetServiceTemplateRelations(ctx *rest.Contexts) {
 	ctx.RespEntity(relations)
 }
 
+// ListSetTplRelatedSvcTpl TODO
 func (s *coreService) ListSetTplRelatedSvcTpl(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)

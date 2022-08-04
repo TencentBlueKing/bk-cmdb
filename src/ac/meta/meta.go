@@ -10,13 +10,16 @@
  * limitations under the License.
  */
 
+// Package meta TODO
 package meta
 
+// AuthAttribute TODO
 type AuthAttribute struct {
 	User      UserInfo
 	Resources []ResourceAttribute
 }
 
+// UserInfo TODO
 type UserInfo struct {
 	// the name of this user.
 	UserName string
@@ -24,7 +27,10 @@ type UserInfo struct {
 	SupplierAccount string
 }
 
+// Item TODO
 type Item Basic
+
+// Layers TODO
 type Layers []Item
 
 // ResourceAttribute represent one iam resource
@@ -73,6 +79,7 @@ type CommonInfo struct {
 	User UserInfo
 }
 
+// Decision TODO
 type Decision struct {
 	// the authorize decision, whether a user has been authorized or not.
 	Authorized bool
@@ -81,6 +88,7 @@ type Decision struct {
 	Reason string
 }
 
+// ListAuthorizedResourcesParam TODO
 type ListAuthorizedResourcesParam struct {
 	UserName     string       `json:"user_name"`
 	BizID        int64        `json:"bk_biz_id"`
@@ -88,53 +96,86 @@ type ListAuthorizedResourcesParam struct {
 	Action       Action       `json:"action"`
 }
 
+// Action TODO
 type Action string
 
+// String 用于打印
 func (a Action) String() string {
 	return string(a)
 }
 
 const (
-	Create     Action = "create"
+	// Create TODO
+	Create Action = "create"
+	// CreateMany TODO
 	CreateMany Action = "createMany"
-	Update     Action = "update"
+	// Update TODO
+	Update Action = "update"
+	// UpdateMany TODO
 	UpdateMany Action = "updateMany"
-	Delete     Action = "delete"
+	// Delete TODO
+	Delete Action = "delete"
+	// DeleteMany TODO
 	DeleteMany Action = "deleteMany"
-	Archive    Action = "archive"
-	Find       Action = "find"
-	FindMany   Action = "findMany"
-	// unknown action, which is also unsupported actions.
-	Unknown     Action = "unknown"
+	// Archive TODO
+	Archive Action = "archive"
+	// Find TODO
+	Find Action = "find"
+	// FindMany TODO
+	FindMany Action = "findMany"
+	// Unknown action, which is also unsupported actions.
+	Unknown Action = "unknown"
+	// EmptyAction TODO
 	EmptyAction Action = "" // used for register resources
-	SkipAction  Action = "skip"
+	// SkipAction TODO
+	SkipAction Action = "skip"
 
-	Execute          Action = "execute"
+	// Execute TODO
+	Execute Action = "execute"
+	// DefaultHostApply TODO
 	DefaultHostApply Action = "default"
 
+	// MoveResPoolHostToBizIdleModule TODO
 	// move resource pool hosts to a business idle module
 	MoveResPoolHostToBizIdleModule Action = "moveResPoolHostToBizIdleModule"
-	MoveResPoolHostToDirectory     Action = "moveResPoolHostToDirectory"
-	AddHostToResourcePool          Action = "addHostToResourcePool"
+	// MoveResPoolHostToDirectory TODO
+	MoveResPoolHostToDirectory Action = "moveResPoolHostToDirectory"
+	// AddHostToResourcePool TODO
+	AddHostToResourcePool Action = "addHostToResourcePool"
+	// MoveBizHostFromModuleToResPool TODO
 	MoveBizHostFromModuleToResPool Action = "moveHostFromModuleToResPool"
-	MoveHostToAnotherBizModule     Action = "moveHostToAnotherBizModule"
+	// MoveHostToAnotherBizModule TODO
+	MoveHostToAnotherBizModule Action = "moveHostToAnotherBizModule"
 
+	// ModelTopologyView TODO
 	// system base
-	ModelTopologyView      Action = "modelTopologyView"
+	ModelTopologyView Action = "modelTopologyView"
+	// ModelTopologyOperation TODO
 	ModelTopologyOperation Action = "modelTopologyOperation"
 
+	// WatchHost TODO
 	// event watch
-	WatchHost             Action = "host"
-	WatchHostRelation     Action = "host_relation"
-	WatchBiz              Action = "biz"
-	WatchSet              Action = "set"
-	WatchModule           Action = "module"
-	WatchProcess          Action = "process"
-	WatchCommonInstance   Action = "object_instance"
+	WatchHost Action = "host"
+	// WatchHostRelation TODO
+	WatchHostRelation Action = "host_relation"
+	// WatchBiz TODO
+	WatchBiz Action = "biz"
+	// WatchSet TODO
+	WatchSet Action = "set"
+	// WatchModule TODO
+	WatchModule Action = "module"
+	// WatchProcess TODO
+	WatchProcess Action = "process"
+	// WatchCommonInstance TODO
+	WatchCommonInstance Action = "object_instance"
+	// WatchMainlineInstance TODO
 	WatchMainlineInstance Action = "mainline_instance"
-	WatchInstAsst         Action = "inst_asst"
-	WatchBizSet           Action = "biz_set"
+	// WatchInstAsst TODO
+	WatchInstAsst Action = "inst_asst"
+	// WatchBizSet TODO
+	WatchBizSet Action = "biz_set"
 
+	// ViewBusinessResource TODO
 	// can view business related resources, including business and business collection resources
 	ViewBusinessResource Action = "viewBusinessResource"
 

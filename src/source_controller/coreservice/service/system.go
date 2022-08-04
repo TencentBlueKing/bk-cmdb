@@ -17,10 +17,12 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// GetSystemUserConfig TODO
 func (s *coreService) GetSystemUserConfig(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.SystemOperation().GetSystemUserConfig(ctx.Kit))
 }
 
+// SearchConfigAdmin TODO
 func (s *coreService) SearchConfigAdmin(ctx *rest.Contexts) {
 	conf, err := s.core.SystemOperation().SearchConfigAdmin(ctx.Kit)
 	if err != nil {

@@ -24,11 +24,13 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// ModelMainline TODO
 type ModelMainline struct {
 	root         *metadata.TopoModelNode
 	associations []metadata.Association
 }
 
+// NewModelMainline TODO
 func NewModelMainline() (*ModelMainline, error) {
 	modelMainline := &ModelMainline{}
 	modelMainline.associations = make([]metadata.Association, 0)
@@ -83,6 +85,7 @@ func (mm *ModelMainline) constructTopoTree(ctx context.Context) error {
 	return nil
 }
 
+// GetRoot TODO
 func (mm *ModelMainline) GetRoot(ctx context.Context, header http.Header, withDetail bool) (*metadata.TopoModelNode, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if err := mm.loadMainlineAssociations(ctx, header); err != nil {

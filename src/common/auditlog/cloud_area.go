@@ -85,6 +85,7 @@ func (h *cloudAreaAuditLog) GenerateAuditLog(parameter *generateAuditCommonParam
 	return logs, err
 }
 
+// NewCloudAreaAuditLog TODO
 func NewCloudAreaAuditLog(clientSet coreservice.CoreServiceClientInterface) *cloudAreaAuditLog {
 	return &cloudAreaAuditLog{
 		audit: audit{

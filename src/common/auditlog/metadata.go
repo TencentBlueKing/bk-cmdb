@@ -25,6 +25,7 @@ type generateAuditCommonParameter struct {
 	updateFields map[string]interface{}
 }
 
+// NewGenerateAuditCommonParameter TODO
 func NewGenerateAuditCommonParameter(kit *rest.Kit, action metadata.ActionType) *generateAuditCommonParameter {
 	return &generateAuditCommonParameter{
 		kit:    kit,
@@ -32,11 +33,13 @@ func NewGenerateAuditCommonParameter(kit *rest.Kit, action metadata.ActionType) 
 	}
 }
 
+// WithOperateFrom TODO
 func (a *generateAuditCommonParameter) WithOperateFrom(operateFrom metadata.OperateFromType) *generateAuditCommonParameter {
 	a.operateFrom = operateFrom
 	return a
 }
 
+// WithUpdateFields TODO
 func (a *generateAuditCommonParameter) WithUpdateFields(updateFields map[string]interface{}) *generateAuditCommonParameter {
 	a.updateFields = updateFields
 	return a

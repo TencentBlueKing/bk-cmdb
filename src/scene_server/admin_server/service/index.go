@@ -29,6 +29,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// BackgroundTask TODO
 func (s *Service) BackgroundTask(options options.Config) error {
 
 	mongoConf, err := cc.Mongo("mongodb")
@@ -48,6 +49,7 @@ func (s *Service) BackgroundTask(options options.Config) error {
 	return nil
 }
 
+// RunSyncDBIndex TODO
 func (s *Service) RunSyncDBIndex(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
 	rid := util.GetHTTPCCRequestID(rHeader)

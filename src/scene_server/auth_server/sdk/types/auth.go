@@ -22,11 +22,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// Config TODO
 type Config struct {
 	Iam     IamConfig
 	Options Options
 }
 
+// IamConfig TODO
 type IamConfig struct {
 	// blueking's auth center addresses
 	Address []string
@@ -40,6 +42,7 @@ type IamConfig struct {
 	TLS util.TLSClientConfig
 }
 
+// Validate TODO
 func (a IamConfig) Validate() error {
 	if len(a.Address) == 0 {
 		return errors.New("no iam address")
@@ -55,6 +58,7 @@ func (a IamConfig) Validate() error {
 	return nil
 }
 
+// Options TODO
 type Options struct {
 	Metric prometheus.Registerer
 }
@@ -69,6 +73,7 @@ type AuthorizeList struct {
 	IsAny bool `json:"isAny"`
 }
 
+// ResourceType TODO
 type ResourceType string
 
 // Decision describes the authorize decision, have already been authorized(true) or not(false)
@@ -84,6 +89,7 @@ type AuthOptions struct {
 	Resources []Resource `json:"resources"`
 }
 
+// Validate TODO
 func (a AuthOptions) Validate() error {
 	if len(a.System) == 0 {
 		return errors.New("system is empty")
@@ -104,12 +110,14 @@ func (a AuthOptions) Validate() error {
 	return nil
 }
 
+// AuthBatchOptions TODO
 type AuthBatchOptions struct {
 	System  string       `json:"system"`
 	Subject Subject      `json:"subject"`
 	Batch   []*AuthBatch `json:"batch"`
 }
 
+// Validate TODO
 func (a AuthBatchOptions) Validate() error {
 	if len(a.System) == 0 {
 		return errors.New("system is empty")
@@ -135,11 +143,13 @@ func (a AuthBatchOptions) Validate() error {
 	return nil
 }
 
+// AuthBatch TODO
 type AuthBatch struct {
 	Action    Action     `json:"action"`
 	Resources []Resource `json:"resources"`
 }
 
+// Subject TODO
 type Subject struct {
 	Type ResourceType `json:"type"`
 	ID   string       `json:"id"`
@@ -150,6 +160,7 @@ type Action struct {
 	ID string `json:"id"`
 }
 
+// ActionPolicy TODO
 type ActionPolicy struct {
 	Action Action           `json:"action"`
 	Policy *operator.Policy `json:"condition"`
@@ -171,6 +182,7 @@ type Resource struct {
 // it's value's protocol should be like this: ["/biz,1/set,2/"].
 type ResourceAttributes map[string]interface{}
 
+// AuthError TODO
 type AuthError struct {
 	// request id, parsed from iam's http response header(X-Request-Id)
 	Rid     string
@@ -178,10 +190,12 @@ type AuthError struct {
 	Message string
 }
 
+// Error 用于错误处理
 func (ae *AuthError) Error() string {
 	return fmt.Sprintf("code: %d, message: %s, rid :%s", ae.Code, ae.Message, ae.Rid)
 }
 
+// ListWithAttributes TODO
 type ListWithAttributes struct {
 	Operator operator.OperType `json:"op"`
 	// resource instance id list, this list is not required, it also

@@ -20,6 +20,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// setProcessAutoStartAttribute TODO
 // set process model's attribute auto_start's bk_isapi field value to true
 func setProcessAutoStartAttribute(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	cond := map[string]string{

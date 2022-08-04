@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// CMDBConfig TODO
 type CMDBConfig struct {
 	Address  *string
 	User     *string

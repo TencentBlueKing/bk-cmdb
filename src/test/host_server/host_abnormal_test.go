@@ -205,13 +205,13 @@ var _ = Describe("host abnormal test", func() {
 
 	Describe("add host test", func() {
 
-		//清空数据
+		// 清空数据
 		BeforeEach(func() {
 			clearData()
 		})
 
 		Describe("add host using api test", func() {
-			//测试用例运行后，主机数量应为0
+			// 测试用例运行后，主机数量应为0
 			AfterEach(func() {
 				// 查询业务下的主机
 				input := &params.HostCommonSearch{
@@ -428,7 +428,7 @@ var _ = Describe("host abnormal test", func() {
 		})
 
 		Describe("add host using excel test", func() {
-			//测试用例运行后，主机数量应为0
+			// 测试用例运行后，主机数量应为0
 			AfterEach(func() {
 				// 查询业务下的主机
 				input := &params.HostCommonSearch{
@@ -559,7 +559,7 @@ var _ = Describe("host abnormal test", func() {
 		})
 
 		Describe("add host using excel test2", func() {
-			//测试用例运行后，主机数量应为1
+			// 测试用例运行后，主机数量应为1
 			AfterEach(func() {
 				// 查询业务下的主机
 				input := &params.HostCommonSearch{

@@ -422,6 +422,7 @@ func (lgc *Logics) changeStatus(kit *rest.Kit, taskID, subTaskID string, status 
 	return nil
 }
 
+// GetDBHTTPHeader TODO
 func GetDBHTTPHeader(header http.Header) http.Header {
 
 	newHeader := make(http.Header, 0)

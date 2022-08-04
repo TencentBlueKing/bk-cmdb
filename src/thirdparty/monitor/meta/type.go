@@ -12,6 +12,7 @@
 
 package meta
 
+// MonitorType TODO
 type MonitorType string
 
 // common monitor type

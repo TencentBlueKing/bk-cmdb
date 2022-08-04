@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// GetDistinctField TODO
 func (s *coreService) GetDistinctField(ctx *rest.Contexts) {
 	option := new(metadata.DistinctFieldOption)
 	if err := ctx.DecodeInto(option); err != nil {

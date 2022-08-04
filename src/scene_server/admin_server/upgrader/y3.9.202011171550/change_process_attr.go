@@ -27,7 +27,7 @@ import (
 )
 
 func changeProcessAttrs(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	//【启动优先级】增加提示信息： 批量启动进程依据优先级从小到大排序操作，停止进程按反序操作
+	// 【启动优先级】增加提示信息： 批量启动进程依据优先级从小到大排序操作，停止进程按反序操作
 	filter := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDProc,
 		common.BKPropertyIDField: "priority",
@@ -58,7 +58,7 @@ func changeProcessAttrs(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 		return err
 	}
 
-	//【工作路径】提示信息改为：执行进程启停等操作的工作路径
+	// 【工作路径】提示信息改为：执行进程启停等操作的工作路径
 	filter = map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDProc,
 		common.BKPropertyIDField: "work_path",
@@ -126,7 +126,7 @@ func addProcessAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	return nil
 }
 
-// 删除进程实例中的"拉起间隔"，"功能ID"字段
+// deleteProcessInstsFields 删除进程实例中的"拉起间隔"，"功能ID"字段
 func deleteProcessInstsFields(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	filter := map[string]interface{}{
 		"$or": []map[string]interface{}{
@@ -182,7 +182,7 @@ func deleteProcessInstsFields(ctx context.Context, db dal.RDB, conf *upgrader.Co
 	return nil
 }
 
-// 删除进程模版实例中的"拉起间隔"，"功能ID"字段
+// deleteProcessTemplateInstsFields 删除进程模版实例中的"拉起间隔"，"功能ID"字段
 func deleteProcessTemplateInstsFields(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	filter := map[string]interface{}{
 		"$or": []map[string]interface{}{

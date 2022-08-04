@@ -24,6 +24,7 @@ type acDiscovery struct {
 	sync.Mutex
 }
 
+// GetServers TODO
 func (s *acDiscovery) GetServers() ([]string, error) {
 	s.Lock()
 	defer s.Unlock()
@@ -42,6 +43,7 @@ func (s *acDiscovery) GetServers() ([]string, error) {
 	}
 }
 
+// GetServersChan TODO
 func (s *acDiscovery) GetServersChan() chan []string {
 	return nil
 }

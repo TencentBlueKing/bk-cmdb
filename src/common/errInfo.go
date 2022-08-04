@@ -227,7 +227,7 @@ const (
 	// CCErrArrayLengthWrong the length of the array is wrong
 	CCErrArrayLengthWrong = 1199089
 
-	//CCIllegalRegularExpression the regular expression's type assertion failed
+	// CCIllegalRegularExpression the regular expression's type assertion failed
 	CCIllegalRegularExpression = 1199090
 
 	// too many requests

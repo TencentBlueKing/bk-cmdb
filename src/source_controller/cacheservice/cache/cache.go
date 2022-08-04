@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package cache TODO
 package cache
 
 import (
@@ -18,8 +19,8 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/source_controller/cacheservice/cache/host"
 	"configcenter/src/source_controller/cacheservice/cache/mainline"
-	"configcenter/src/source_controller/cacheservice/cache/topo_tree"
 	"configcenter/src/source_controller/cacheservice/cache/topology"
+	"configcenter/src/source_controller/cacheservice/cache/topotree"
 	"configcenter/src/source_controller/cacheservice/event/watch"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/driver/mongodb"
@@ -28,6 +29,7 @@ import (
 	"configcenter/src/storage/stream"
 )
 
+// NewCache TODO
 func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaster discovery.ServiceManageInterface,
 	watchDB dal.DB) (*ClientSet, error) {
 
@@ -48,7 +50,7 @@ func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaste
 	hostClient := host.NewClient()
 
 	cache := &ClientSet{
-		Tree:     topo_tree.NewTopologyTree(mainlineClient),
+		Tree:     topotree.NewTopologyTree(mainlineClient),
 		Host:     hostClient,
 		Business: mainlineClient,
 		Topology: topo,
@@ -57,8 +59,9 @@ func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaste
 	return cache, nil
 }
 
+// ClientSet TODO
 type ClientSet struct {
-	Tree     *topo_tree.TopologyTree
+	Tree     *topotree.TopologyTree
 	Topology *topology.Topology
 	Host     *host.Client
 	Business *mainline.Client

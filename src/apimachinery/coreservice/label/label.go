@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package label TODO
 package label
 
 import (
@@ -21,6 +22,7 @@ import (
 	"configcenter/src/common/selector"
 )
 
+// LabelInterface TODO
 type LabelInterface interface {
 	AddLabel(ctx context.Context, h http.Header, tableName string, option selector.LabelAddOption) errors.CCErrorCoder
 	RemoveLabel(ctx context.Context, h http.Header, tableName string, option selector.LabelRemoveOption) errors.CCErrorCoder
@@ -28,6 +30,7 @@ type LabelInterface interface {
 		option *selector.LabelUpdateOption) errors.CCErrorCoder
 }
 
+// NewLabelInterfaceClient TODO
 func NewLabelInterfaceClient(client rest.ClientInterface) LabelInterface {
 	return &label{client: client}
 }

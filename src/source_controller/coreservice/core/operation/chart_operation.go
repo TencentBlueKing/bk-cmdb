@@ -20,6 +20,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// SearchOperationChart TODO
 func (m *operationManager) SearchOperationChart(kit *rest.Kit, inputParam interface{}) (*metadata.ChartClassification, error) {
 	opt := map[string]interface{}{}
 	chartConfig := make([]metadata.ChartConfig, 0)
@@ -70,6 +71,7 @@ func (m *operationManager) SearchOperationChart(kit *rest.Kit, inputParam interf
 	return chartsInfo, nil
 }
 
+// CreateOperationChart TODO
 func (m *operationManager) CreateOperationChart(kit *rest.Kit, inputParam metadata.ChartConfig) (uint64, error) {
 	configID, err := mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameChartConfig)
 	if err != nil {
@@ -85,6 +87,7 @@ func (m *operationManager) CreateOperationChart(kit *rest.Kit, inputParam metada
 	return configID, nil
 }
 
+// UpdateChartPosition TODO
 func (m *operationManager) UpdateChartPosition(kit *rest.Kit, inputParam interface{}) (interface{}, error) {
 	opt := map[string]interface{}{}
 
@@ -101,6 +104,7 @@ func (m *operationManager) UpdateChartPosition(kit *rest.Kit, inputParam interfa
 	return nil, nil
 }
 
+// DeleteOperationChart TODO
 func (m *operationManager) DeleteOperationChart(kit *rest.Kit, id int64) (interface{}, error) {
 	opt := map[string]interface{}{}
 	opt[common.OperationConfigID] = id
@@ -112,6 +116,7 @@ func (m *operationManager) DeleteOperationChart(kit *rest.Kit, id int64) (interf
 	return nil, nil
 }
 
+// UpdateOperationChart TODO
 func (m *operationManager) UpdateOperationChart(kit *rest.Kit, inputParam map[string]interface{}) (interface{}, error) {
 	opt := map[string]interface{}{}
 	opt[common.OperationConfigID] = inputParam[common.OperationConfigID]

@@ -20,11 +20,11 @@ import (
 )
 
 const (
-	// 同步周期最小值
+	// SyncPeriodMinutesMin 同步周期最小值
 	SyncPeriodMinutesMin = 5
 )
 
-// 同步周期，单位为分钟
+// SyncPeriodMinutes 同步周期，单位为分钟
 var SyncPeriodMinutes int
 
 // 任务处理器
@@ -32,11 +32,12 @@ type taskProcessor struct {
 	scheduler *taskScheduler
 }
 
+// NewTaskProcessor TODO
 func NewTaskProcessor(scheduler *taskScheduler) *taskProcessor {
 	return &taskProcessor{scheduler}
 }
 
-// 不断给taskChan提供任务数据
+// TaskChanLoop 不断给taskChan提供任务数据
 func (t *taskProcessor) TaskChanLoop(taskChan chan *metadata.CloudSyncTask) {
 	go func() {
 		for {

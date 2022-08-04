@@ -23,7 +23,7 @@ func NewFactory(dir string) (CCErrorIf, error) {
 
 	errcode, err := LoadErrorResourceFromDir(dir)
 	if nil != err {
-		//blog.Errorf("failed to load the error resource, error info is %s", err.Error())
+		// blog.Errorf("failed to load the error resource, error info is %s", err.Error())
 		return nil, err
 	}
 	tmp.Load(errcode)
@@ -31,6 +31,7 @@ func NewFactory(dir string) (CCErrorIf, error) {
 	return tmp, nil
 }
 
+// NewFromCtx TODO
 func NewFromCtx(errcode map[string]ErrorCode) CCErrorIf {
 	tmp := &ccErrorHelper{}
 	tmp.Load(errcode)

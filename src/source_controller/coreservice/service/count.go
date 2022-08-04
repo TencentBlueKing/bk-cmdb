@@ -23,6 +23,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// GetCountByFilter TODO
 // get counts in table based on filters, returns in the same order
 func (s *coreService) GetCountByFilter(ctx *rest.Contexts) {
 	req := struct {

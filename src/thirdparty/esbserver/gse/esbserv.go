@@ -1,3 +1,4 @@
+// Package gse TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -20,6 +21,7 @@ import (
 	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
+// GseClientInterface TODO
 type GseClientInterface interface {
 	OperateProcess(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
 	QueryProcOperateResult(ctx context.Context, h http.Header, taskid string) (resp *metadata.GseProcessOperateTaskResult, err error)
@@ -40,6 +42,7 @@ type GseClientInterface interface {
 		[]metadata.GseConfigChannel, bool, error)
 }
 
+// NewGsecClientInterface TODO
 func NewGsecClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigSrv) GseClientInterface {
 	return &gse{
 		client: client,

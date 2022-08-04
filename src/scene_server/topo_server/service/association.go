@@ -137,6 +137,7 @@ func (s *Service) SearchBusinessTopoWithStatistics(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
+// SearchBusinessTopo TODO
 func (s *Service) SearchBusinessTopo(ctx *rest.Contexts) {
 	resp, err := s.searchBusinessTopo(ctx, false, false)
 	if nil != err {
@@ -146,7 +147,7 @@ func (s *Service) SearchBusinessTopo(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
-// SearchBusinessTopo search the business topo
+// searchBusinessTopo search the business topo
 // withSortName 按拼音对名字排序，ui 专用
 func (s *Service) searchBusinessTopo(ctx *rest.Contexts,
 	withStatistics, withSortName bool) ([]*metadata.TopoInstRst, error) {
@@ -234,6 +235,7 @@ func (s *Service) GetTopoNodeHostAndSerInstCount(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SortTopoInst TODO
 func SortTopoInst(instData []*metadata.TopoInstRst) {
 	for _, data := range instData {
 		instNameInGBK, _ := ioutil.ReadAll(transform.NewReader(bytes.NewReader([]byte(data.InstName)), simplifiedchinese.GBK.NewEncoder()))
@@ -770,7 +772,7 @@ func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 	ctx.RespEntity(ret.Info)
 }
 
-//SearchAssociationRelatedInst search all associations of certain model instance, including it as source & target
+// SearchAssociationRelatedInst search all associations of certain model instance, including it as source & target
 func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 	request := &metadata.SearchAssociationRelatedInstRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
@@ -1097,6 +1099,7 @@ func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
 	ctx.RespEntity(result.Data)
 }
 
+// SearchTopoPath TODO
 func (s *Service) SearchTopoPath(ctx *rest.Contexts) {
 	rid := ctx.Kit.Rid
 

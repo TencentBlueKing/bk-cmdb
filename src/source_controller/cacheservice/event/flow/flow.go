@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package flow TODO
 package flow
 
 import (
@@ -93,6 +94,7 @@ func NewFlow(opts flowOptions, getDelEventDetails getDeleteEventDetailsFunc, par
 	}, nil
 }
 
+// Flow TODO
 type Flow struct {
 	flowOptions
 	metrics               *event.EventMetrics
@@ -150,6 +152,7 @@ const (
 	cursorQueueSize = 50000
 )
 
+// RunFlow TODO
 func (f *Flow) RunFlow(ctx context.Context) error {
 	blog.Infof("start run flow for key: %s.", f.key.Namespace())
 
@@ -584,7 +587,7 @@ func getDeleteEventDetails(es []*types.Event, db dal.DB, metrics *event.EventMet
 	return oidDetailMap, false, nil
 }
 
-// getDeleteEventDetails get delete events' oid+collection to related detail map from cmdb
+// getHostDeleteEventDetails get delete events' oid+collection to related detail map from cmdb
 func getHostDeleteEventDetails(es []*types.Event, db dal.DB, metrics *event.EventMetrics) (map[oidCollKey][]byte, bool,
 	error) {
 
@@ -639,6 +642,7 @@ type flowTokenHandler struct {
 	metrics *event.EventMetrics
 }
 
+// NewFlowTokenHandler TODO
 func NewFlowTokenHandler(key event.Key, watchDB dal.DB, metrics *event.EventMetrics) *flowTokenHandler {
 	return &flowTokenHandler{
 		key:     key,
@@ -647,6 +651,7 @@ func NewFlowTokenHandler(key event.Key, watchDB dal.DB, metrics *event.EventMetr
 	}
 }
 
+// SetLastWatchToken TODO
 /* SetLastWatchToken do not set last watch token in the do batch action(set it after events are successfully inserted)
    when there are several masters watching db event, we use db transaction to avoid inserting duplicate data by setting
    the last token after the insertion of db chain nodes in one transaction, since we have a unique index on the cursor

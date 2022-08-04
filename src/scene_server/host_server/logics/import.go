@@ -33,6 +33,7 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
+// AddHost TODO
 func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerID string, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]int64, []string, []string, []string, error) {
 	if len(moduleIDs) == 0 {
 		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
@@ -270,6 +271,7 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 	return hostIDs, successMsg, errMsg, nil
 }
 
+// AddHostToResourcePool TODO
 func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHostToResourcePoolHostList) ([]int64, *metadata.AddHostToResourcePoolResult, error) {
 	bizID, err := lgc.GetDefaultAppIDWithSupplier(kit)
 	if err != nil {
@@ -419,6 +421,7 @@ type importInstance struct {
 	kit           *rest.Kit
 }
 
+// NewImportInstance TODO
 func NewImportInstance(kit *rest.Kit, ownerID string, lgc *Logics) *importInstance {
 	lang := util.GetLanguage(kit.Header)
 	return &importInstance{

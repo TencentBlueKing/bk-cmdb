@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SynchronizeInstance TODO
 func (s *coreService) SynchronizeInstance(ctx *rest.Contexts) {
 	inputData := &metadata.SynchronizeParameter{}
 	if err := ctx.DecodeInto(inputData); nil != err {
@@ -33,6 +34,7 @@ func (s *coreService) SynchronizeInstance(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.SynchronizeDataResult{Exceptions: exceptionArr})
 }
 
+// SynchronizeModel TODO
 func (s *coreService) SynchronizeModel(ctx *rest.Contexts) {
 	inputData := &metadata.SynchronizeParameter{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -48,6 +50,7 @@ func (s *coreService) SynchronizeModel(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.SynchronizeDataResult{Exceptions: exceptionArr})
 }
 
+// SynchronizeAssociation TODO
 func (s *coreService) SynchronizeAssociation(ctx *rest.Contexts) {
 	inputData := &metadata.SynchronizeParameter{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -63,6 +66,7 @@ func (s *coreService) SynchronizeAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.SynchronizeDataResult{Exceptions: exceptionArr})
 }
 
+// SynchronizeFind TODO
 func (s *coreService) SynchronizeFind(ctx *rest.Contexts) {
 	inputData := &metadata.SynchronizeFindInfoParameter{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -78,6 +82,7 @@ func (s *coreService) SynchronizeFind(ctx *rest.Contexts) {
 	ctx.RespEntity(map[string]interface{}{"info": info, "count": cnt})
 }
 
+// SynchronizeClearData TODO
 func (s *coreService) SynchronizeClearData(ctx *rest.Contexts) {
 	inputData := &metadata.SynchronizeClearDataParameter{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -93,6 +98,7 @@ func (s *coreService) SynchronizeClearData(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// SetIdentifierFlag TODO
 func (s *coreService) SetIdentifierFlag(ctx *rest.Contexts) {
 	inputData := &metadata.SetIdenifierFlag{}
 	if err := ctx.DecodeInto(&inputData); nil != err {

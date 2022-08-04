@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package esb TODO
 package esb
 
 import (
@@ -31,6 +32,7 @@ var (
 	tlsConfig     util.TLSClientConfig
 )
 
+// EsbClient TODO
 func EsbClient() esbserver.EsbClientInterface {
 	return esbClient
 }
@@ -75,6 +77,7 @@ func ParseEsbConfig() (*esbutil.EsbConfig, errors.CCErrorCoder) {
 
 }
 
+// InitEsbClient TODO
 func InitEsbClient(defaultCfg *esbutil.EsbConfig) errors.CCErrorCoder {
 
 	apiMachineryConfig := &util.APIMachineryConfig{
@@ -92,10 +95,12 @@ func InitEsbClient(defaultCfg *esbutil.EsbConfig) errors.CCErrorCoder {
 	return nil
 }
 
+// Validate TODO
 func Validate() errors.CCErrorCoder {
 	return nil
 }
 
+// UpdateEsbConfig TODO
 func UpdateEsbConfig(config esbutil.EsbConfig) {
 	go func() {
 		cfgChan <- config

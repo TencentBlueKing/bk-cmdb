@@ -10,7 +10,8 @@
  * limitations under the License.
  */
 
-package skip_login
+// Package skip defines skip login method
+package skip
 
 import (
 	"fmt"
@@ -35,10 +36,9 @@ func init() {
 	manager.RegisterPlugin(plugin)
 }
 
-type user struct {
-}
+type user struct{}
 
-// LoginUser  user login
+// LoginUser user login
 func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo, loginSucc bool) {
 
 	session := sessions.Default(c)
@@ -65,6 +65,7 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	return user, true
 }
 
+// GetLoginUrl get login url
 func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *metadata.LogoutRequestParams) string {
 	var loginURL string
 	var siteURL string
@@ -80,9 +81,9 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 	}
 
 	if common.LogoutHTTPSchemeHTTPS == input.HTTPScheme {
-		siteURL,err = cc.String("webServer.site.httpsDomainUrl")
+		siteURL, err = cc.String("webServer.site.httpsDomainUrl")
 	} else {
-		siteURL,err = cc.String("webServer.site.domainUrl")
+		siteURL, err = cc.String("webServer.site.domainUrl")
 	}
 	if err != nil {
 		siteURL = ""
@@ -96,6 +97,7 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 	return loginURL
 }
 
+// GetUserList get user list
 func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
 	return []*metadata.LoginSystemUserInfo{
 		{

@@ -26,6 +26,7 @@ var (
 	searchServiceInstancesBySetTemplateRuleRegex = regexp.MustCompile(`^/api/v3/findmany/proc/service/set_template/list_service_instance/biz/([0-9]+)/?$`)
 )
 
+// ServiceInstanceAuthConfigs TODO
 var ServiceInstanceAuthConfigs = []AuthConfig{
 	{
 		Name:           "createServiceInstancePattern",
@@ -303,6 +304,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 	},
 }
 
+// ServiceInstance TODO
 func (ps *parseStream) ServiceInstance() *parseStream {
 
 	if ps.hitRegexp(searchServiceInstancesBySetTemplateRuleRegex, http.MethodPost) {

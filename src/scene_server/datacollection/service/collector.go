@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// SearchCollector TODO
 func (s *Service) SearchCollector(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -50,6 +51,7 @@ func (s *Service) SearchCollector(req *restful.Request, resp *restful.Response) 
 	return
 }
 
+// UpdateCollector TODO
 func (s *Service) UpdateCollector(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -82,6 +84,7 @@ func (s *Service) UpdateCollector(req *restful.Request, resp *restful.Response) 
 	return
 }
 
+// DiscoverNetDevice TODO
 func (s *Service) DiscoverNetDevice(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))

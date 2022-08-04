@@ -23,7 +23,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-//addBKApp add bk app
+// addBKApp add bk app
 func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	if count, err := db.Table(common.BKTableNameBaseApp).Find(mapstr.MapStr{common.BKAppNameField: common.BKAppName}).Count(ctx); err != nil {
 		return err

@@ -17,14 +17,22 @@ import (
 )
 
 const (
-	GroupFieldID              = "id"
-	GroupFieldGroupID         = "bk_group_id"
-	GroupFieldGroupName       = "bk_group_name"
-	GroupFieldGroupIndex      = "bk_group_index"
-	GroupFieldObjectID        = "bk_obj_id"
+	// GroupFieldID TODO
+	GroupFieldID = "id"
+	// GroupFieldGroupID TODO
+	GroupFieldGroupID = "bk_group_id"
+	// GroupFieldGroupName TODO
+	GroupFieldGroupName = "bk_group_name"
+	// GroupFieldGroupIndex TODO
+	GroupFieldGroupIndex = "bk_group_index"
+	// GroupFieldObjectID TODO
+	GroupFieldObjectID = "bk_obj_id"
+	// GroupFieldSupplierAccount TODO
 	GroupFieldSupplierAccount = "bk_supplier_account"
-	GroupFieldIsDefault       = "bk_isdefault"
-	GroupFieldIsPre           = "ispre"
+	// GroupFieldIsDefault TODO
+	GroupFieldIsDefault = "bk_isdefault"
+	// GroupFieldIsPre TODO
+	GroupFieldIsPre = "ispre"
 )
 
 // PropertyGroupObjectAtt uset to update or delete the property group object attribute

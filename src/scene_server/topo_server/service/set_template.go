@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// CreateSetTemplate TODO
 func (s *Service) CreateSetTemplate(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -151,6 +152,7 @@ func (s *Service) CreateSetTemplateAllInfo(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.RspID{ID: templateID})
 }
 
+// UpdateSetTemplate TODO
 func (s *Service) UpdateSetTemplate(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -337,6 +339,7 @@ func (s *Service) updateSetTempAllAttrs(kit *rest.Kit, id, bizID int64, prevAttr
 	return nil
 }
 
+// DeleteSetTemplate TODO
 func (s *Service) DeleteSetTemplate(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -366,6 +369,7 @@ func (s *Service) DeleteSetTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// GetSetTemplate TODO
 func (s *Service) GetSetTemplate(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -455,6 +459,7 @@ func (s *Service) getSetTemplateAllInfo(kit *rest.Kit, id, bizID int64) (*metada
 	}, nil
 }
 
+// ListSetTemplate TODO
 func (s *Service) ListSetTemplate(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -482,6 +487,7 @@ func (s *Service) ListSetTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(setTemplate)
 }
 
+// ListSetTemplateWeb TODO
 func (s *Service) ListSetTemplateWeb(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -540,6 +546,7 @@ func (s *Service) ListSetTemplateWeb(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// ListSetTplRelatedSvcTpl TODO
 func (s *Service) ListSetTplRelatedSvcTpl(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -657,14 +664,9 @@ func (s *Service) ListSetTplRelatedSvcTplWithStatistics(ctx *rest.Contexts) {
 		}
 	}
 
-	type ServiceTemplateWithModuleInfo struct {
-		ServiceTemplate metadata.ServiceTemplate `json:"service_template"`
-		HostCount       int                      `json:"host_count"`
-		Modules         []metadata.ModuleInst    `json:"modules"`
-	}
-	result := make([]ServiceTemplateWithModuleInfo, 0)
+	result := make([]metadata.ServiceTemplateWithModuleInfo, 0)
 	for _, svcTpl := range serviceTemplates {
-		info := ServiceTemplateWithModuleInfo{
+		info := metadata.ServiceTemplateWithModuleInfo{
 			ServiceTemplate: svcTpl,
 		}
 		modules, ok := svcTpl2Modules[svcTpl.ID]
@@ -1099,6 +1101,7 @@ func (s *Service) GetSetSyncDetails(ctx *rest.Contexts) {
 	return
 }
 
+// ListSetTemplateSyncHistory TODO
 func (s *Service) ListSetTemplateSyncHistory(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -1125,6 +1128,7 @@ func (s *Service) ListSetTemplateSyncHistory(ctx *rest.Contexts) {
 	return
 }
 
+// ListSetTemplateSyncStatus TODO
 func (s *Service) ListSetTemplateSyncStatus(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -1152,6 +1156,7 @@ func (s *Service) ListSetTemplateSyncStatus(ctx *rest.Contexts) {
 	return
 }
 
+// CheckSetInstUpdateToDateStatus TODO
 func (s *Service) CheckSetInstUpdateToDateStatus(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -1177,6 +1182,7 @@ func (s *Service) CheckSetInstUpdateToDateStatus(ctx *rest.Contexts) {
 	return
 }
 
+// BatchCheckSetInstUpdateToDateStatus TODO
 func (s *Service) BatchCheckSetInstUpdateToDateStatus(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)

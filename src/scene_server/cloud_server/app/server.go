@@ -34,6 +34,7 @@ import (
 	"configcenter/src/thirdparty/secrets"
 )
 
+// Run TODO
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
@@ -125,6 +126,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	return nil
 }
 
+// CloudServer TODO
 type CloudServer struct {
 	Core    *backbone.Engine
 	Config  *options.Config

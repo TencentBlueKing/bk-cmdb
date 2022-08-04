@@ -31,6 +31,7 @@ type Alarm struct {
 	Dimension map[string]string `json:"dimension"`
 }
 
+// ContentName TODO
 func (c *Alarm) ContentName() string {
 	return "alarm"
 }

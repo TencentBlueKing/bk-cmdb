@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// TaskClientInterface TODO
 type TaskClientInterface interface {
 	// Create  新加任务， name 任务名，flag:任务标识，留给业务方做识别任务, instID:任务的执行源实例id, data 每一项任务需要的参数
 	Create(ctx context.Context, header http.Header, flag string, instID int64, data []interface{}) (
@@ -46,6 +47,7 @@ type TaskClientInterface interface {
 		*metadata.ListAPITaskSyncStatusResult, errors.CCErrorCoder)
 }
 
+// NewTaskClientInterface TODO
 func NewTaskClientInterface(client rest.ClientInterface) TaskClientInterface {
 	return &task{client: client}
 }

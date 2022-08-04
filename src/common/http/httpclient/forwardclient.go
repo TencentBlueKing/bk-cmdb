@@ -27,7 +27,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//rest-api http请求代理
+// ReqForward TODO
+// rest-api http请求代理
 func ReqForward(req *restful.Request, url, method string) (string, error) {
 	// blog.Infof("forward %s with header %v", url, req.Request.Header)
 	body, err := ioutil.ReadAll(req.Request.Body)
@@ -49,7 +50,8 @@ func ReqForward(req *restful.Request, url, method string) (string, error) {
 	return string(reply), err
 }
 
-//rest-api请求转发
+// ProxyRestHttp TODO
+// rest-api请求转发
 func ProxyRestHttp(req *restful.Request, resp *restful.Response, addr string) {
 	u, err := url.Parse(addr)
 	if err == nil {
@@ -60,7 +62,8 @@ func ProxyRestHttp(req *restful.Request, resp *restful.Response, addr string) {
 	}
 }
 
-//rest-api请求转发
+// ReqHttp TODO
+// rest-api请求转发
 func ReqHttp(req *restful.Request, url, method string, body []byte) (string, error) {
 	// blog.Infof("forward %s with header %v", url, req.Request.Header)
 	httpcli := NewHttpClient()
@@ -77,7 +80,8 @@ func ReqHttp(req *restful.Request, url, method string, body []byte) (string, err
 	return string(reply), err
 }
 
-//porxy http
+// ProxyHttp TODO
+// porxy http
 func ProxyHttp(c *gin.Context, addr string) {
 	tlsConf, err := util.GetClientTLSConfig("webServer.tls")
 	if err != nil {

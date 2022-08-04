@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package apiserver TODO
 package apiserver
 
 import (
@@ -27,6 +28,7 @@ import (
 	params "configcenter/src/common/paraparse"
 )
 
+// ApiServerClientInterface TODO
 type ApiServerClientInterface interface {
 	Client() rest.ClientInterface
 
@@ -93,6 +95,7 @@ type ApiServerClientInterface interface {
 		*metadata.SearchDataResult, error)
 }
 
+// NewApiServerClientInterface TODO
 func NewApiServerClientInterface(c *util.Capability, version string) ApiServerClientInterface {
 	base := fmt.Sprintf("/api/%s", version)
 	return &apiServer{
