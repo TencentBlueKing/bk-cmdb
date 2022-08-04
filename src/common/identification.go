@@ -20,6 +20,7 @@ import (
 var identification string = "unknown"
 var server *types.ServerInfo
 
+// SetIdentification TODO
 func SetIdentification(id string) {
 	if identification == "unknown" {
 		version.ServiceName = id
@@ -27,6 +28,7 @@ func SetIdentification(id string) {
 	}
 }
 
+// GetIdentification TODO
 func GetIdentification() string {
 	return identification
 }

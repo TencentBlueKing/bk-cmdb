@@ -46,6 +46,7 @@ var (
 	tableName = "cc_ObjectBaseMapping"
 )
 
+// GetInstanceMapping TODO
 // deprecated 不建议使用，新加的要求用户必须传bk_obj_id, 改功能是在实例数据分表后， 只有实例id，没有bk_obj_id的时候使用，
 //     负责将实例id 转为bk_obj_id,
 func GetInstanceMapping(ids []int64) (map[int64]metadata.ObjectMapping, error) {
@@ -72,6 +73,7 @@ func GetInstanceMapping(ids []int64) (map[int64]metadata.ObjectMapping, error) {
 
 }
 
+// GetInstanceObjectMapping TODO
 func GetInstanceObjectMapping(ids []int64) ([]metadata.ObjectMapping, error) {
 	mapping := make([]metadata.ObjectMapping, 0)
 	total := len(ids)
@@ -105,11 +107,12 @@ func GetInstanceObjectMapping(ids []int64) ([]metadata.ObjectMapping, error) {
 	return mapping, nil
 }
 
-// 新加实例id与模型id的对应关系就， ctx 是为了保证事务， doc 为数组的时候表示插入多条数据
+// Create 新加实例id与模型id的对应关系就， ctx 是为了保证事务， doc 为数组的时候表示插入多条数据
 func Create(ctx context.Context, doc interface{}) error {
 	return mongodb.Table(tableName).Insert(ctx, doc)
 }
 
+// Delete TODO
 //  移除实例id与模型id的对应关系就， ctx 是为了保证事务
 func Delete(ctx context.Context, ids []int64) error {
 	filter := map[string]interface{}{

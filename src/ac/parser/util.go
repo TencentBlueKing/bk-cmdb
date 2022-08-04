@@ -280,6 +280,7 @@ func (ps *parseStream) getModelUnique(cond mapstr.MapStr) (metadata.ObjectUnique
 	return modelUniqueResult.Info[0], nil
 }
 
+// getRscPoolHostModuleRelation TODO
 // get hosts relation which these hosts must be in the resource pool
 func (ps *parseStream) getRscPoolHostModuleRelation(hostIDs []int64) (map[int64]int64, error) {
 	opt := &metadata.HostModuleRelationRequest{

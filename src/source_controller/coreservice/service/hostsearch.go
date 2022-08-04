@@ -18,6 +18,7 @@ import (
 	meta "configcenter/src/common/metadata"
 )
 
+// ListHosts TODO
 func (s *coreService) ListHosts(ctx *rest.Contexts) {
 	option := meta.ListHosts{}
 	if err := ctx.DecodeInto(&option); err != nil {

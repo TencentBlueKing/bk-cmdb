@@ -13,5 +13,6 @@
 package manager
 
 import (
+	// import blueking login plugin
 	_ "configcenter/src/web_server/middleware/user/plugins/method/blueking"
 )

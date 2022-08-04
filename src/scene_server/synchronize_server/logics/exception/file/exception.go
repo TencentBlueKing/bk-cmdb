@@ -69,6 +69,7 @@ func (f *Exception) WriteStringln(str string) error {
 	return nil
 }
 
+// Write 用于常见IO
 func (f *Exception) Write(ctx context.Context, exceptions []metadata.ExceptionResult) error {
 	ln := []byte("\n")
 	for _, exception := range exceptions {

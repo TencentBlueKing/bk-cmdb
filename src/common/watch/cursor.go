@@ -27,6 +27,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// NoEventCursor TODO
 // this cursor means there is no event occurs.
 // we send this cursor to our the watcher and if we
 // received a NoEventCursor, then we need to fetch event
@@ -49,20 +50,33 @@ func init() {
 	NoEventCursor = cursor
 }
 
+// CursorType TODO
 type CursorType string
 
 const (
-	NoEvent                 CursorType = "no_event"
-	UnknownType             CursorType = "unknown"
-	Host                    CursorType = "host"
-	ModuleHostRelation      CursorType = "host_relation"
-	Biz                     CursorType = "biz"
-	Set                     CursorType = "set"
-	Module                  CursorType = "module"
-	ObjectBase              CursorType = "object_instance"
-	Process                 CursorType = "process"
+	// NoEvent TODO
+	NoEvent CursorType = "no_event"
+	// UnknownType TODO
+	UnknownType CursorType = "unknown"
+	// Host TODO
+	Host CursorType = "host"
+	// ModuleHostRelation TODO
+	ModuleHostRelation CursorType = "host_relation"
+	// Biz TODO
+	Biz CursorType = "biz"
+	// Set TODO
+	Set CursorType = "set"
+	// Module TODO
+	Module CursorType = "module"
+	// ObjectBase TODO
+	ObjectBase CursorType = "object_instance"
+	// Process TODO
+	Process CursorType = "process"
+	// ProcessInstanceRelation TODO
 	ProcessInstanceRelation CursorType = "process_instance_relation"
-	BizSet                  CursorType = "biz_set"
+	// BizSet TODO
+	BizSet CursorType = "biz_set"
+	// HostIdentifier TODO
 	// a mixed event type, which contains host, host relation, process events etc.
 	// and finally converted to host identifier event.
 	HostIdentifier CursorType = "host_identifier"
@@ -74,6 +88,7 @@ const (
 	BizSetRelation CursorType = "biz_set_relation"
 )
 
+// ToInt TODO
 func (ct CursorType) ToInt() int {
 	switch ct {
 	case NoEvent:
@@ -109,6 +124,7 @@ func (ct CursorType) ToInt() int {
 	}
 }
 
+// ParseInt TODO
 func (ct *CursorType) ParseInt(typ int) {
 	switch typ {
 	case 1:
@@ -174,6 +190,7 @@ type Cursor struct {
 
 const cursorVersion = "1"
 
+// Encode TODO
 func (c Cursor) Encode() (string, error) {
 	if c.Type == "" {
 		return "", errors.New("unsupported type")
@@ -228,6 +245,7 @@ func (c Cursor) Encode() (string, error) {
 	return base64.StdEncoding.EncodeToString(pool.Bytes()), nil
 }
 
+// Decode TODO
 func (c *Cursor) Decode(cur string) error {
 	byt, err := base64.StdEncoding.DecodeString(cur)
 	if err != nil {
@@ -314,6 +332,7 @@ func (c *Cursor) Decode(cur string) error {
 	return nil
 }
 
+// GetEventCursor TODO
 func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 	curType := UnknownType
 	switch coll {

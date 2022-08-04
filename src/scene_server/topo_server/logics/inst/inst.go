@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package inst TODO
 package inst
 
 import (
@@ -392,7 +393,7 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, objID string, batchInfo *met
 	results.SuccessUpdated = updatedInstanceIDs
 	sort.Strings(results.Success)
 
-	//sort error
+	// sort error
 	sort.Ints(colIdxList)
 	for colIdx := range colIdxList {
 		results.Errors = append(results.Errors, colIdxErrMap[colIdxList[colIdx]])
@@ -1221,6 +1222,7 @@ func (c *commonInst) innerHasHost(kit *rest.Kit, moduleIDs []int64) (bool, error
 	return rsp[0] != 0, nil
 }
 
+// getAssociatedObjectWithInsts TODO
 // GetObjectWithInsts get object with insts, get parent or child depends on needChild
 func (c *commonInst) getAssociatedObjectWithInsts(kit *rest.Kit, objID string, instID int64, needChild bool) (
 	[]*ObjectWithInsts, map[int64]int64, error) {

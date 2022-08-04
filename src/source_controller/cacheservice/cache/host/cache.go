@@ -24,6 +24,7 @@ var client *Client
 var clientOnce sync.Once
 var cache *hostCache
 
+// NewClient TODO
 func NewClient() *Client {
 
 	if client != nil {
@@ -39,6 +40,7 @@ func NewClient() *Client {
 	return client
 }
 
+// NewCache TODO
 // Attention, it can only be called for once.
 func NewCache(event reflector.Interface) error {
 

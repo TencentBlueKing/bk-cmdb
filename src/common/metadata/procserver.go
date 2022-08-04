@@ -1,3 +1,4 @@
+// Package metadata TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -18,12 +19,14 @@ import (
 	"configcenter/src/common/mapstr"
 )
 
+// ProcModuleConfig TODO
 type ProcModuleConfig struct {
 	ApplicationID int64  `json:"bk_biz_id"`
 	ModuleName    string `json:"bk_module_name"`
 	ProcessID     int64  `json:"bk_process_id"`
 }
 
+// ProcInstanceModel TODO
 type ProcInstanceModel struct {
 	ApplicationID  int64  `json:"bk_biz_id" bson:"bk_biz_id"`
 	SetID          int64  `json:"bk_set_id" bson:"bk_set_id,omitempty"`
@@ -36,6 +39,7 @@ type ProcInstanceModel struct {
 	OwnerID        string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
+// MatchProcInstParam TODO
 type MatchProcInstParam struct {
 	ApplicationID  int64  `json:"bk_biz_id" bson:"bk_biz_id"`
 	SetName        string `json:"bk_set_name" bson:"bk_set_name"`
@@ -43,16 +47,19 @@ type MatchProcInstParam struct {
 	HostInstanceID string `json:"bk_host_instance_id" bson:"bk_host_instance_id"`
 }
 
+// ProcessOperate TODO
 type ProcessOperate struct {
 	MatchProcInstParam `json:",inline"`
 	OpType             int `json:"bk_proc_optype"`
 }
 
+// ProcModuleResult TODO
 type ProcModuleResult struct {
 	BaseResp `json:",inline"`
 	Data     []ProcModuleConfig `json:"data"`
 }
 
+// ProcInstModelResult TODO
 type ProcInstModelResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
@@ -61,22 +68,27 @@ type ProcInstModelResult struct {
 	} `json:"data"`
 }
 
+// GseHost TODO
 type GseHost struct {
 	HostID    int64  `json:"bk_host_id,omitempty"`
 	Ip        string `json:"ip,omitempty"`
 	BkCloudId int64  `json:"bk_cloud_id"`
 }
 
+// GseProcMeta TODO
 type GseProcMeta struct {
 	Namespace string            `json:"namespace,omitempty"`
 	Name      string            `json:"name,omitempty"`
 	Labels    map[string]string `json:"labels,omitempty"`
 }
 
+// ProcInfoArrResult TODO
 type ProcInfoArrResult struct {
 	BaseResp `json:",inline"`
 	Data     []mapstr.MapStr `json:"data"`
 }
+
+// GseProcRequest TODO
 type GseProcRequest struct {
 	AppID    int64       `json:"bk_biz_id"  bson:"bk_biz_id"`
 	ModuleID int64       `json:"bk_module_id" bson:"bk_module_id"`
@@ -87,13 +99,15 @@ type GseProcRequest struct {
 	Spec     GseProcSpec `json:"spec,omitempty" bson:"spec"`
 }
 
+// ProcInstanceDetail TODO
 type ProcInstanceDetail struct {
 	GseProcRequest `json:",inline" bson:",inline"`
 	OwnerID        string                   `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	HostID         int64                    `json:"bk_host_id" bson:"bk_host_id"`
-	Status         ProcInstanceDetailStatus `json:"status" bson:"status"` //1 register gse sucess, 2 register error need retry 3 unregister error need retry
+	Status         ProcInstanceDetailStatus `json:"status" bson:"status"` // 1 register gse sucess, 2 register error need retry 3 unregister error need retry
 }
 
+// ProcInstanceDetailResult TODO
 type ProcInstanceDetailResult struct {
 	BaseResp `json:",inline"`
 
@@ -103,19 +117,25 @@ type ProcInstanceDetailResult struct {
 	} `json:"data"`
 }
 
+// ProcInstanceDetailStatus TODO
 type ProcInstanceDetailStatus int64
 
 var (
-	ProcInstanceDetailStatusRegisterSucc     ProcInstanceDetailStatus = 1
-	ProcInstanceDetailStatusRegisterFailed   ProcInstanceDetailStatus = 2
+	// ProcInstanceDetailStatusRegisterSucc TODO
+	ProcInstanceDetailStatusRegisterSucc ProcInstanceDetailStatus = 1
+	// ProcInstanceDetailStatusRegisterFailed TODO
+	ProcInstanceDetailStatusRegisterFailed ProcInstanceDetailStatus = 2
+	// ProcInstanceDetailStatusUnRegisterFailed TODO
 	ProcInstanceDetailStatusUnRegisterFailed ProcInstanceDetailStatus = 10
 )
 
+// ModifyProcInstanceDetail TODO
 type ModifyProcInstanceDetail struct {
 	Conds map[string]interface{} `json:"condition"`
 	Data  map[string]interface{} `json:"data"`
 }
 
+// GseProcSpec TODO
 type GseProcSpec struct {
 	Identity         GseProcIdentity         `json:"identity,omitempty"`
 	Control          GseProcControl          `json:"control,omitempty"`
@@ -125,6 +145,7 @@ type GseProcSpec struct {
 	Configmap        []GseProcConfigmap      `json:"configmap,omitempty"`
 }
 
+// GseProcIdentity TODO
 type GseProcIdentity struct {
 	IndexKey   string `json:"index_key,omitempty"`
 	ProcName   string `json:"proc_name,omitempty"`
@@ -134,6 +155,7 @@ type GseProcIdentity struct {
 	LogPath    string `json:"log_path,omitempty"`
 }
 
+// GseProcControl TODO
 type GseProcControl struct {
 	StartCmd   string `json:"start_cmd,omitempty"`
 	StopCmd    string `json:"stop_cmd,omitempty"`
@@ -144,6 +166,7 @@ type GseProcControl struct {
 	HealthCmd  string `json:"health_cmd,omitempty"`
 }
 
+// GseProcResource TODO
 type GseProcResource struct {
 	Cpu  float64 `json:"cpu,omitempty"`
 	Mem  float64 `json:"mem,omitempty"`
@@ -152,6 +175,7 @@ type GseProcResource struct {
 	Net  int     `json:"net,omitempty"`
 }
 
+// GseProcMonitorPlolicy TODO
 type GseProcMonitorPlolicy struct {
 	AutoType       int    `json:"auto_type,omitempty"`
 	StartCheckSecs int    `json:"start_check_secs,omitempty"`
@@ -161,15 +185,18 @@ type GseProcMonitorPlolicy struct {
 	CrontabRule    string `json:"crontab_rule,omitempty"`
 }
 
+// GseProcWarnReportPolicy TODO
 type GseProcWarnReportPolicy struct {
 	ReportId int `json:"report_id,omitempty"`
 }
 
+// GseProcConfigmap TODO
 type GseProcConfigmap struct {
 	Path string `json:"path,omitempty"`
 	Md5  string `json:"md5,omitempty"`
 }
 
+// FilePriviewMap TODO
 type FilePriviewMap struct {
 	Content string `json:"content"`
 	Inst    string `json:"inst"`
@@ -177,8 +204,8 @@ type FilePriviewMap struct {
 
 // InlineProcInfo process info convert gse proc info
 type InlineProcInfo struct {
-	//Meta    GseProcMeta
-	//Spec    GseProcSpec
+	// Meta    GseProcMeta
+	// Spec    GseProcSpec
 	ProcInfo map[string]interface{}
 	ProcNum  int64
 	AppID    int64 // use gse proc namespace
@@ -186,6 +213,7 @@ type InlineProcInfo struct {
 	ProcID   int64
 }
 
+// ProcessOperateTask TODO
 type ProcessOperateTask struct {
 	OperateInfo *ProcessOperate                     `json:"operate_info" bson:"operate_info"`
 	TaskID      string                              `json:"task_id" bson:"task_id"`
@@ -201,17 +229,25 @@ type ProcessOperateTask struct {
 	HTTPHeader  http.Header                         `json:"http_header" bson:"http_header"`
 }
 
+// ProcOpTaskStatus TODO
 type ProcOpTaskStatus int64
 
 var (
-	ProcOpTaskStatusWaitOP       ProcOpTaskStatus = 1
-	ProcOpTaskStatusExecuteing   ProcOpTaskStatus = 115
-	ProcOpTaskStatusErr          ProcOpTaskStatus = 2
-	ProcOpTaskStatusSucc         ProcOpTaskStatus = 3
-	ProcOpTaskStatusHTTPErr      ProcOpTaskStatus = 1101
+	// ProcOpTaskStatusWaitOP TODO
+	ProcOpTaskStatusWaitOP ProcOpTaskStatus = 1
+	// ProcOpTaskStatusExecuteing TODO
+	ProcOpTaskStatusExecuteing ProcOpTaskStatus = 115
+	// ProcOpTaskStatusErr TODO
+	ProcOpTaskStatusErr ProcOpTaskStatus = 2
+	// ProcOpTaskStatusSucc TODO
+	ProcOpTaskStatusSucc ProcOpTaskStatus = 3
+	// ProcOpTaskStatusHTTPErr TODO
+	ProcOpTaskStatusHTTPErr ProcOpTaskStatus = 1101
+	// ProcOpTaskStatusNotTaskIDErr TODO
 	ProcOpTaskStatusNotTaskIDErr ProcOpTaskStatus = 1112
 )
 
+// ProcessOperateTaskResult TODO
 type ProcessOperateTaskResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
@@ -220,21 +256,25 @@ type ProcessOperateTaskResult struct {
 	} `json:"data"`
 }
 
+// ProcessOperateTaskDetail TODO
 type ProcessOperateTaskDetail struct {
 	Errcode int    `json:"errcode" bson:"error_code"`
 	ErrMsg  string `json:"errmsg" bson:"error_msg"`
 }
 
+// GseProcessOperateTaskResult TODO
 type GseProcessOperateTaskResult struct {
 	Data            map[string]ProcessOperateTaskDetail `json:"data"`
 	EsbBaseResponse `json:",inline"`
 }
 
+// EsbResponse TODO
 type EsbResponse struct {
 	EsbBaseResponse `json:",inline"`
 	Data            mapstr.MapStr `json:"data"`
 }
 
+// UserInfo TODO
 type UserInfo struct {
 	Qq          string `json:"qq"`
 	Status      string `json:"status"`
@@ -249,32 +289,38 @@ type UserInfo struct {
 	Email       string `json:"email"`
 }
 
+// EsbUserListResponse TODO
 type EsbUserListResponse struct {
 	EsbBaseResponse `json:",inline"`
 	Data            []UserInfo `json:"data"`
 }
 
+// EsbListUserResponse TODO
 type EsbListUserResponse struct {
 	EsbBaseResponse `json:",inline"`
 	Data            []ListUserItem `json:"data"`
 }
 
+// ListUserItem TODO
 type ListUserItem struct {
 	ID          int64  `json:"id"`
 	Username    string `json:"username"`
 	DisplayName string `json:"display_name"`
 }
 
+// EsbDepartmentResponse TODO
 type EsbDepartmentResponse struct {
 	EsbBaseResponse `json:",inline"`
 	Data            DepartmentData `json:"data"`
 }
 
+// DepartmentData TODO
 type DepartmentData struct {
 	Count   int64            `json:"count"`
 	Results []DepartmentItem `json:"results"`
 }
 
+// DepartmentItem TODO
 type DepartmentItem struct {
 	ID          int64      `json:"id"`
 	Parent      int64      `json:"parent"`
@@ -285,26 +331,31 @@ type DepartmentItem struct {
 	Ancestors   []Ancestor `json:"ancestors"`
 }
 
+// Ancestor TODO
 type Ancestor struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
 }
 
+// EsbDepartmentProfileResponse TODO
 type EsbDepartmentProfileResponse struct {
 	EsbBaseResponse `json:",inline"`
 	Data            DepartmentProfileData `json:"data"`
 }
 
+// DepartmentProfileData TODO
 type DepartmentProfileData struct {
 	Count   int64                   `json:"count"`
 	Results []DepartmentProfileItem `json:"results"`
 }
 
+// DepartmentProfileItem TODO
 type DepartmentProfileItem struct {
 	ID   int64  `json:"id"`
 	Name string `json:"username"`
 }
 
+// EsbBaseResponse TODO
 type EsbBaseResponse struct {
 	Result       bool   `json:"result"`
 	Code         int    `json:"code"`
@@ -312,6 +363,7 @@ type EsbBaseResponse struct {
 	EsbRequestID string `json:"request_id"`
 }
 
+// ProcessModule TODO
 type ProcessModule struct {
 	AppID      int64  `json:"bk_biz_id" bson:"bk_biz_id"`
 	ModuleName string `json:"bk_module_name" bson:"bk_module_name"`
@@ -319,12 +371,14 @@ type ProcessModule struct {
 	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
+// TemplateVersion TODO
 type TemplateVersion struct {
 	Content     string `json:"content" field:"content"`
 	Status      string `json:"status" field:"status"`
 	Description string `json:"description" field:"description"`
 }
 
+// ListProcessRelatedInfoResponse TODO
 type ListProcessRelatedInfoResponse struct {
 	BaseResp `json:",inline"`
 	Data     struct {

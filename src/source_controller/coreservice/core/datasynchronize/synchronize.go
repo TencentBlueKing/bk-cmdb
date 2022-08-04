@@ -21,6 +21,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
+// SynchronizeManager TODO
 type SynchronizeManager struct {
 	dependent OperationDependencies
 }
@@ -32,6 +33,7 @@ func New(dependent OperationDependencies) core.DataSynchronizeOperation {
 	}
 }
 
+// SynchronizeInstanceAdapter TODO
 func (s *SynchronizeManager) SynchronizeInstanceAdapter(kit *rest.Kit, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error) {
 	syncDataAdpater := NewSynchronizeInstanceAdapter(syncData)
 	err := syncDataAdpater.PreSynchronizeFilter(kit)
@@ -44,6 +46,7 @@ func (s *SynchronizeManager) SynchronizeInstanceAdapter(kit *rest.Kit, syncData 
 
 }
 
+// SynchronizeModelAdapter TODO
 func (s *SynchronizeManager) SynchronizeModelAdapter(kit *rest.Kit, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error) {
 	syncDataAdpater := NewSynchronizeModelAdapter(syncData)
 	err := syncDataAdpater.PreSynchronizeFilter(kit)
@@ -55,6 +58,7 @@ func (s *SynchronizeManager) SynchronizeModelAdapter(kit *rest.Kit, syncData *me
 
 }
 
+// SynchronizeAssociationAdapter TODO
 func (s *SynchronizeManager) SynchronizeAssociationAdapter(kit *rest.Kit, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error) {
 	syncDataAdpater := NewSynchronizeAssociationAdapter(syncData)
 	err := syncDataAdpater.PreSynchronizeFilter(kit)
@@ -66,11 +70,13 @@ func (s *SynchronizeManager) SynchronizeAssociationAdapter(kit *rest.Kit, syncDa
 
 }
 
+// Find TODO
 func (s *SynchronizeManager) Find(kit *rest.Kit, input *metadata.SynchronizeFindInfoParameter) ([]mapstr.MapStr, uint64, error) {
 	adapter := NewSynchronizeFindAdapter(input)
 	return adapter.Find(kit)
 }
 
+// ClearData TODO
 func (s *SynchronizeManager) ClearData(kit *rest.Kit, input *metadata.SynchronizeClearDataParameter) error {
 
 	adapter := NewClearData(input)

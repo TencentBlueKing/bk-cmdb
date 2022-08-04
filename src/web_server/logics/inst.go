@@ -64,6 +64,7 @@ func (lgc *Logics) GetImportInsts(ctx context.Context, f *xlsx.File, objID strin
 	}
 }
 
+// GetInstData TODO
 func (lgc *Logics) GetInstData(objID string, instIDArr []int64, header http.Header) ([]mapstr.MapStr, error) {
 	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))

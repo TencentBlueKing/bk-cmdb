@@ -35,6 +35,7 @@ func (lgc *Logics) AddProperty(
 	return meta.AddNetPropertyResult{NetcollectPropertyID: netPropertyID}, nil
 }
 
+// UpdateProperty TODO
 func (lgc *Logics) UpdateProperty(pHeader http.Header, netPropertyID uint64, netPropertyInfo meta.NetcollectProperty) error {
 
 	return lgc.updateProperty(pHeader, netPropertyInfo, netPropertyID, util.GetOwnerID(pHeader))
@@ -208,6 +209,7 @@ func (lgc *Logics) SearchProperty(pHeader http.Header, params *meta.NetCollSearc
 	return &searchResult, nil
 }
 
+// DeleteProperty TODO
 func (lgc *Logics) DeleteProperty(pHeader http.Header, netPropertyID uint64) error {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 	rid := util.GetHTTPCCRequestID(pHeader)
@@ -462,6 +464,7 @@ func (lgc *Logics) updateExistingPropertyByNetPropertyID(netPropertyInfo meta.Ne
 	return nil
 }
 
+// checkNetPropertyExist TODO
 // check if there is the same propertyInfo
 func (lgc *Logics) checkNetPropertyExist(deviceID uint64, propertyID, ownerID string) (bool, error) {
 	rid := util.ExtractRequestIDFromContext(lgc.ctx)
@@ -559,6 +562,7 @@ type propertyShowField struct {
 	propertyName string
 }
 
+// getObjIDsAndShowFields TODO
 // get obj ID list and get field to show by map (bk_obj_id --> bk_obj_name)
 func (lgc *Logics) getObjIDsAndShowFields(pHeader http.Header, objectCond map[string]interface{}) ([]string,
 	map[string]objShowField, error) {
@@ -589,6 +593,7 @@ func (lgc *Logics) getObjIDsAndShowFields(pHeader http.Header, objectCond map[st
 	return objIDs, objIDMapobjName, nil
 }
 
+// getDeviceIDsAndShowFields TODO
 // get device ID list and get field to show by map (device_id --> bk_device_name, ...)
 // add obj show field into device show fields
 func (lgc *Logics) getDeviceIDsAndShowFields(
@@ -618,6 +623,7 @@ func (lgc *Logics) getDeviceIDsAndShowFields(
 	return deviceIDs, deviceIDMapDeviceShowFields, nil
 }
 
+// assembleDeviceShowFieldValue TODO
 // get device IDs from device list
 // assemble value of device list: [deviceID] map [deviceName, deviceModel, objID, objName]
 // objName is taken from objIDMapShowFields
@@ -645,6 +651,7 @@ func (lgc *Logics) assembleDeviceShowFieldValue(deviceData []meta.NetcollectDevi
 	return deviceIDs, deviceIDMapDeviceShowFields
 }
 
+// getPropertyIDsAndShowFields TODO
 // get objectID, property ID list and get field to show by map (bk_property_id --> bk_property_name, ...)
 func (lgc *Logics) getPropertyIDsAndShowFields(pHeader http.Header, propertyCond map[string]interface{}) ([]string,
 	[]string, map[string]propertyShowField, error) {
@@ -670,6 +677,7 @@ func (lgc *Logics) getPropertyIDsAndShowFields(pHeader http.Header, propertyCond
 	return objIDs, propertyIDs, propertyIDMapPropertyShowFields, nil
 }
 
+// assembleAttrShowFieldValue TODO
 // get obj IDs and property IDs , assemble value of attribute list:[propertyID : objID] map [property show fields]
 func (lgc *Logics) assembleAttrShowFieldValue(attrData []meta.Attribute) (
 	objIDs []string, propertyIDs []string, propertyIDMapPropertyShowFields map[string]propertyShowField) {
@@ -696,6 +704,7 @@ func (lgc *Logics) assembleAttrShowFieldValue(attrData []meta.Attribute) (
 	return objIDs, propertyIDs, propertyIDMapPropertyShowFields
 }
 
+// addShowFieldValueIntoNetProperty TODO
 // add group value of device and property to net property
 func (lgc *Logics) addShowFieldValueIntoNetProperty(
 	netPropertys []meta.NetcollectProperty, netPropShowFields netPropertyShowFields) {
@@ -731,6 +740,7 @@ func (lgc *Logics) getDeviceIDsAndPropertyIDsFromNetPropertys(
 	return deviceIDs, propertyIDs
 }
 
+// getDeviceShowField TODO
 // get device shown info by deviceIDs
 func (lgc *Logics) getDeviceShowField(pHeader http.Header, deviceIDs []uint64) (map[uint64]deviceShowField, error) {
 	_, objIDMapShowFields, err := lgc.getObjIDsAndShowFields(pHeader, map[string]interface{}{})
@@ -757,6 +767,7 @@ func (lgc *Logics) getDeviceShowField(pHeader http.Header, deviceIDs []uint64) (
 	return deviceIDMapDeviceShowFields, nil
 }
 
+// getPropertyShowField TODO
 // get property shown info by propertyIDs
 func (lgc *Logics) getPropertyShowField(pHeader http.Header, propertyIDs []string) (map[string]propertyShowField, error) {
 	propertyCond := map[string]interface{}{

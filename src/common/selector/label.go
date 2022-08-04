@@ -1,3 +1,4 @@
+// Package selector TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
  * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -16,13 +17,17 @@ import (
 	"regexp"
 )
 
+// Labels TODO
 type Labels map[string]string
 
 var (
-	LabelNGKeyRule   = regexp.MustCompile(`^[a-zA-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$`)
+	// LabelNGKeyRule TODO
+	LabelNGKeyRule = regexp.MustCompile(`^[a-zA-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$`)
+	// LabelNGValueRule TODO
 	LabelNGValueRule = regexp.MustCompile(`^[a-z0-9A-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$`)
 )
 
+// Validate TODO
 func (lng Labels) Validate() (string, error) {
 	// https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
 	// https://www.replex.io/blog/9-best-practices-and-examples-for-working-with-kubernetes-labels
@@ -47,18 +52,21 @@ func (lng Labels) Validate() (string, error) {
 	return "", nil
 }
 
+// AddLabel TODO
 func (lng Labels) AddLabel(l Labels) {
 	for key, value := range l {
 		lng[key] = value
 	}
 }
 
+// RemoveLabel TODO
 func (lng Labels) RemoveLabel(keys []string) {
 	for _, key := range keys {
 		delete(lng, key)
 	}
 }
 
+// LabelInstance TODO
 type LabelInstance struct {
 	Labels Labels `bson:"labels" json:"labels"`
 }

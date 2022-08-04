@@ -57,6 +57,7 @@ func (am *AuthManager) collectResourceDirectoryByDirectoryIDs(ctx context.Contex
 	return directoryArr, nil
 }
 
+// MakeResourcesByResourceDirectory TODO
 func (am *AuthManager) MakeResourcesByResourceDirectory(header http.Header, action meta.Action, directoryArr ...ModuleSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, directory := range directoryArr {
@@ -75,6 +76,7 @@ func (am *AuthManager) MakeResourcesByResourceDirectory(header http.Header, acti
 	return resources
 }
 
+// AuthorizeByResourceDirectoryID TODO
 func (am *AuthManager) AuthorizeByResourceDirectoryID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
 	if !am.Enabled() {
 		return nil
@@ -91,6 +93,7 @@ func (am *AuthManager) AuthorizeByResourceDirectoryID(ctx context.Context, heade
 	return am.AuthorizeByResourceDirectory(ctx, header, action, directoryArr...)
 }
 
+// AuthorizeByResourceDirectory TODO
 func (am *AuthManager) AuthorizeByResourceDirectory(ctx context.Context, header http.Header, action meta.Action, directoryArr ...ModuleSimplify) error {
 	if !am.Enabled() {
 		return nil

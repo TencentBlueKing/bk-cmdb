@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateObjectBatch TODO
 func (t *object) CreateObjectBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/createmany/object"
@@ -32,6 +33,8 @@ func (t *object) CreateObjectBatch(ctx context.Context, h http.Header, data map[
 		Into(resp)
 	return
 }
+
+// SearchObjectBatch TODO
 func (t *object) SearchObjectBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/findmany/object"
@@ -45,6 +48,8 @@ func (t *object) SearchObjectBatch(ctx context.Context, h http.Header, data map[
 		Into(resp)
 	return
 }
+
+// CreateObject TODO
 func (t *object) CreateObject(ctx context.Context, h http.Header, obj metadata.Object) (resp *metadata.CreateModelResult, err error) {
 	resp = new(metadata.CreateModelResult)
 	subPath := "/create/object"
@@ -58,6 +63,8 @@ func (t *object) CreateObject(ctx context.Context, h http.Header, obj metadata.O
 		Into(resp)
 	return
 }
+
+// SelectObjectWithParams TODO
 func (t *object) SelectObjectWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/find/object"
@@ -71,6 +78,8 @@ func (t *object) SelectObjectWithParams(ctx context.Context, h http.Header, data
 		Into(resp)
 	return
 }
+
+// SelectObjectTopo TODO
 func (t *object) SelectObjectTopo(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/find/objecttopology"
@@ -84,6 +93,8 @@ func (t *object) SelectObjectTopo(ctx context.Context, h http.Header, data map[s
 		Into(resp)
 	return
 }
+
+// UpdateObject TODO
 func (t *object) UpdateObject(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/object/%s"
@@ -97,6 +108,8 @@ func (t *object) UpdateObject(ctx context.Context, objID string, h http.Header, 
 		Into(resp)
 	return
 }
+
+// DeleteObject TODO
 func (t *object) DeleteObject(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/delete/object/%s"

@@ -33,18 +33,22 @@ func setBoldColor(color string, s interface{}) string {
 
 }
 
+// SetGreen TODO
 func SetGreen(v interface{}) string {
 	return setBoldColor(lightGreen, v)
 }
 
+// SetRed TODO
 func SetRed(v interface{}) string {
 	return setBoldColor(lightRed, v)
 }
 
+// SetYellow TODO
 func SetYellow(v interface{}) string {
 	return setBoldColor(lightYellow, v)
 }
 
+// SetBlue TODO
 func SetBlue(v interface{}) string {
 	return setBoldColor(lightBlue, v)
 }

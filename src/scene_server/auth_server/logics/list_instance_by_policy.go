@@ -28,6 +28,7 @@ import (
 	"configcenter/src/scene_server/auth_server/types"
 )
 
+// ListInstanceByPolicy TODO
 // list resource instances that user is privileged to access by policy
 func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID,
 	filter *types.ListInstanceByPolicyFilter, page types.Page, extraCond map[string]interface{}) (
@@ -80,6 +81,7 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID,
 	return lgc.listInstance(kit, cond, resourceType, page)
 }
 
+// ListHostByPolicy TODO
 // list host instances that user is privileged to access by policy
 func (lgc *Logics) ListHostByPolicy(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
 	page types.Page) (*types.ListInstanceResult, error) {

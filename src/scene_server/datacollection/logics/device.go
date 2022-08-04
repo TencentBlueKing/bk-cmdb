@@ -33,6 +33,7 @@ func (lgc *Logics) AddDevice(header http.Header, deviceInfo meta.NetcollectDevic
 	return meta.AddDeviceResult{DeviceID: deviceID}, nil
 }
 
+// UpdateDevice TODO
 func (lgc *Logics) UpdateDevice(pHeader http.Header, netDeviceID uint64, deviceInfo meta.NetcollectDevice) error {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 	rid := util.GetHTTPCCRequestID(pHeader)
@@ -170,6 +171,7 @@ func (lgc *Logics) SearchDevice(pHeader http.Header, params *meta.NetCollSearchP
 	return searchResult, nil
 }
 
+// DeleteDevice TODO
 func (lgc *Logics) DeleteDevice(pHeader http.Header, netDeviceID uint64) error {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 	rid := util.GetHTTPCCRequestID(pHeader)
@@ -244,6 +246,7 @@ func (lgc *Logics) updateDevice(
 	return nil
 }
 
+// addOrUpdateDevice TODO
 // add a device or update an existing device
 func (lgc *Logics) addOrUpdateDevice(pHeader http.Header, deviceInfo meta.NetcollectDevice, ownerID string) (uint64, error) {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
@@ -386,6 +389,7 @@ func (lgc *Logics) updateExistingDeviceByDeviceName(deviceInfo meta.NetcollectDe
 	return nil
 }
 
+// getObjIDMapObjNameFromNetDevice TODO
 // get objID map objName from objID of net device
 func (lgc *Logics) getObjIDMapObjNameFromNetDevice(pHeader http.Header, netDevice []meta.NetcollectDevice) (
 	map[string]string, error) {
@@ -430,6 +434,7 @@ func (lgc *Logics) addShowFieldValueIntoNetDevice(
 	}
 }
 
+// checkIfNetDeviceObject TODO
 // check the deviceInfo if is a net object
 // by checking if bk_obj_id and bk_obj_name function parameter are valid net device object or not
 func (lgc *Logics) checkIfNetDeviceObject(pHeader http.Header, deviceInfo *meta.NetcollectDevice) error {
@@ -441,6 +446,7 @@ func (lgc *Logics) checkIfNetDeviceObject(pHeader http.Header, deviceInfo *meta.
 	return nil
 }
 
+// checkIfNetDeviceNameExist TODO
 // check if net device name exist
 func (lgc *Logics) checkIfNetDeviceNameExist(deviceName string, ownerID string) (bool, error) {
 	rid := util.ExtractRequestIDFromContext(lgc.ctx)
@@ -464,6 +470,7 @@ func (lgc *Logics) checkIfNetDeviceNameExist(deviceName string, ownerID string) 
 	return false, nil
 }
 
+// getNetDeviceIDByName TODO
 // check if net device name exist
 func (lgc *Logics) getNetDeviceIDByName(deviceName string, ownerID string) (uint64, error) {
 	rid := util.ExtractRequestIDFromContext(lgc.ctx)
@@ -483,6 +490,7 @@ func (lgc *Logics) getNetDeviceIDByName(deviceName string, ownerID string) (uint
 	return result.DeviceID, nil
 }
 
+// getNetDeviceObjIDsByCond TODO
 // get net device obj ID
 func (lgc *Logics) getNetDeviceObjIDsByCond(pHeader http.Header, objCond map[string]interface{}) ([]string, error) {
 	rid := util.GetHTTPCCRequestID(pHeader)
@@ -506,6 +514,7 @@ func (lgc *Logics) getNetDeviceObjIDsByCond(pHeader http.Header, objCond map[str
 	return objIDs, nil
 }
 
+// checkDeviceHasProperty TODO
 // check if device has property
 func (lgc *Logics) checkDeviceHasProperty(deviceID uint64, ownerID string) (bool, error) {
 	rid := util.ExtractRequestIDFromContext(lgc.ctx)

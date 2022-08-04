@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/watch"
 )
 
+// Watch TODO
 func (e *eventServer) Watch(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (resp []*watch.WatchEventDetail, err error) {
 	response := new(metadata.WatchEventResp)
 	err = e.client.Post().

@@ -51,6 +51,7 @@ func (lgc *Logics) SearchObjectAttributes(kit *rest.Kit, bizID int64, objectID s
 	return result.Info, nil
 }
 
+// GetTopoIDByName TODO
 func (lgc *Logics) GetTopoIDByName(kit *rest.Kit, c *meta.HostToAppModule) (int64, int64, int64, errors.CCError) {
 	if "" == c.AppName || "" == c.SetName || "" == c.ModuleName {
 		return 0, 0, 0, nil
@@ -201,6 +202,7 @@ func (lgc *Logics) GetSetIDByObjectCond(kit *rest.Kit, appID int64, objectCond [
 	}
 }
 
+// getObjectByParentID TODO
 // deprecated, please use CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo instead
 func (lgc *Logics) getObjectByParentID(kit *rest.Kit, valArr []int64) ([]int64, errors.CCError) {
 	instIDArr := make([]int64, 0)
@@ -287,6 +289,7 @@ func (lgc *Logics) GetObjectInstByCond(kit *rest.Kit, objID string, cond []meta.
 	return instIDArr, nil
 }
 
+// GetHostIDByInstID TODO
 func (lgc *Logics) GetHostIDByInstID(kit *rest.Kit, asstObjId string, instIDArr []int64) ([]int64, errors.CCError) {
 	cond := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).
 		WithAssoObjID(asstObjId).WithAssoInstID(map[string]interface{}{common.BKDBIN: instIDArr}).Data()

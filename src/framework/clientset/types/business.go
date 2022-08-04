@@ -13,42 +13,46 @@
 package types
 
 import (
-    "configcenter/src/framework/core/types"
+	"configcenter/src/framework/core/types"
 )
 
+// BusinessResponse TODO
 type BusinessResponse struct {
 	BaseResp `json:",inline"`
 	Data     types.MapStr `json:"data"`
 }
 
+// CreateBusinessCtx TODO
 type CreateBusinessCtx struct {
-    BaseCtx
+	BaseCtx
 	Tenancy      string
 	BusinessInfo types.MapStr
 }
 
+// UpdateBusinessCtx TODO
 type UpdateBusinessCtx struct {
-    BaseCtx
+	BaseCtx
 	Tenancy      string
 	BusinessID   int64
 	BusinessInfo types.MapStr
 }
 
+// DeleteBusinessCtx TODO
 type DeleteBusinessCtx struct {
-    BaseCtx
+	BaseCtx
 	Tenancy    string
 	BusinessID int64
 }
 
+// ListBusinessCtx TODO
 type ListBusinessCtx struct {
-    BaseCtx
+	BaseCtx
 	Tenancy   string
 	QueryInfo Query
 }
 
+// ListBusinessResult TODO
 type ListBusinessResult struct {
-    BaseResp `json:",inline"`
-    Data     ListInfo `json:"data"`
+	BaseResp `json:",inline"`
+	Data     ListInfo `json:"data"`
 }
-
-

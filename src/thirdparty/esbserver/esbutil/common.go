@@ -1,3 +1,4 @@
+// Package esbutil TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -17,12 +18,14 @@ import (
 	"configcenter/src/common/util"
 )
 
+// EsbConfig TODO
 type EsbConfig struct {
 	Addrs     string
 	AppCode   string
 	AppSecret string
 }
 
+// EsbCommParams TODO
 type EsbCommParams struct {
 	AppCode    string `json:"bk_app_code"`
 	AppSecret  string `json:"bk_app_secret"`
@@ -30,6 +33,7 @@ type EsbCommParams struct {
 	SupplierID string `json:"bk_supplier_id"`
 }
 
+// GetEsbRequestParams TODO
 func GetEsbRequestParams(esbConfig EsbConfig, header http.Header) *EsbCommParams {
 	return &EsbCommParams{
 		AppCode:    esbConfig.AppCode,
@@ -39,6 +43,7 @@ func GetEsbRequestParams(esbConfig EsbConfig, header http.Header) *EsbCommParams
 	}
 }
 
+// GetEsbQueryParameters TODO
 func GetEsbQueryParameters(esbConfig EsbConfig, header http.Header) map[string]string {
 	return map[string]string{
 		"bk_app_code":   esbConfig.AppCode,

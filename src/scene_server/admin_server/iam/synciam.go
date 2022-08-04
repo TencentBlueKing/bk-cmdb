@@ -45,6 +45,7 @@ type syncor struct {
 	db dal.RDB
 }
 
+// NewSyncor TODO
 func NewSyncor() *syncor {
 	return &syncor{}
 }

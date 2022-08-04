@@ -33,7 +33,7 @@ const (
 	makeNewTaskFromFailHostCount = 50
 	// redisTaskListName task list name in redis
 	redisTaskListName = "host_identifier:task_list"
-	// redisFailHostListName fail host list name in redis
+	// RedisFailHostListName fail host list name in redis
 	RedisFailHostListName = "host_identifier:fail_host_list"
 	// Handling the task is being processed
 	Handling = 115
@@ -350,7 +350,7 @@ func (h *HostIdentifier) addToTaskList(task *Task) error {
 	return h.redisCli.RPush(context.Background(), redisTaskListName, task).Err()
 }
 
-// GetFromTaskList get task from redis task list
+// getFromTaskList get task from redis task list
 func (h *HostIdentifier) getFromTaskList() (*Task, error) {
 	result, err := h.redisCli.BLPop(context.Background(), 0, redisTaskListName).Result()
 	if err != nil {
@@ -385,7 +385,7 @@ func (h *HostIdentifier) addToFailHostList(hosts []*HostInfo) {
 	}
 }
 
-// getFailHostList get fail host from redis fail host list
+// getFromFailHostList get fail host from redis fail host list
 func (h *HostIdentifier) getFromFailHostList() (*HostInfo, error) {
 	result, err := h.redisCli.BLPop(context.Background(), 30*time.Second, RedisFailHostListName).Result()
 	if err != nil {

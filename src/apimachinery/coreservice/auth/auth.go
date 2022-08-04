@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package auth TODO
 package auth
 
 import (
@@ -20,10 +21,12 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// AuthClientInterface TODO
 type AuthClientInterface interface {
 	SearchAuthResource(ctx context.Context, h http.Header, param metadata.PullResourceParam) (metadata.PullResourceResponse, error)
 }
 
+// NewAuthClientInterface TODO
 func NewAuthClientInterface(client rest.ClientInterface) AuthClientInterface {
 	return &auth{client: client}
 }

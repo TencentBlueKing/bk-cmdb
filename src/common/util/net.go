@@ -32,6 +32,7 @@ func GetDailAddress(URL string) (string, error) {
 	return uri.Hostname() + ":" + port, err
 }
 
+// PeekRequest TODO
 func PeekRequest(req *http.Request) ([]byte, error) {
 	if req.Body != nil {
 		byt, err := ioutil.ReadAll(req.Body)

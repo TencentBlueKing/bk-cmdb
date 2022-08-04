@@ -19,6 +19,7 @@ import (
 	"time"
 )
 
+// Statistic TODO
 type Statistic struct {
 	// the total seconds of this statistic
 	SustainSecond float64
@@ -40,6 +41,7 @@ type Statistic struct {
 	MaxCostDuration float64
 }
 
+// CollectStatus TODO
 func (s *Statistic) CollectStatus(status *Status) {
 	if status.Error != nil {
 		s.IncreaseFailed()
@@ -49,18 +51,22 @@ func (s *Statistic) CollectStatus(status *Status) {
 	}
 }
 
+// IncreaseRequest TODO
 func (s *Statistic) IncreaseRequest() {
 	s.TotalRequest += 1
 }
 
+// IncreaseSuccess TODO
 func (s *Statistic) IncreaseSuccess() {
 	s.TotalSucceed += 1
 }
 
+// IncreaseFailed TODO
 func (s *Statistic) IncreaseFailed() {
 	s.TotalFailed += 1
 }
 
+// UpdateCostDuration TODO
 // only update success request data
 func (s *Statistic) UpdateCostDuration(t time.Duration) {
 	mt := t.Seconds() * 1000
@@ -85,6 +91,7 @@ func (s *Statistic) UpdateCostDuration(t time.Duration) {
 	}
 }
 
+// Metrics TODO
 type Metrics struct {
 	SustainSeconds float64
 	Concurrent     int
@@ -103,6 +110,7 @@ type Metrics struct {
 	OnTheFlyRequest int64
 }
 
+// Format TODO
 func (m *Metrics) Format() string {
 	var f string
 	f = SetYellow("Load test metrics:\n--------------------\n")
@@ -123,6 +131,7 @@ func (m *Metrics) Format() string {
 	return f + "\n"
 }
 
+// CalculateMetrics TODO
 func (s *Statistic) CalculateMetrics() Metrics {
 
 	var m Metrics

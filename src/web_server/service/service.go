@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package service TODO
 package service
 
 import (
@@ -35,6 +36,7 @@ import (
 	"github.com/holmeswang/contrib/sessions"
 )
 
+// Service TODO
 type Service struct {
 	*options.ServerOption
 	Engine   *backbone.Engine
@@ -44,6 +46,7 @@ type Service struct {
 	Session sessions.RedisStore
 }
 
+// WebService TODO
 func (s *Service) WebService() *gin.Engine {
 	setGinMode()
 	ws := gin.New()
@@ -143,6 +146,7 @@ func setGinMode() {
 	gin.SetMode(mode)
 }
 
+// Healthz TODO
 func (s *Service) Healthz(c *gin.Context) {
 	meta := metric.HealthMeta{IsHealthy: true}
 

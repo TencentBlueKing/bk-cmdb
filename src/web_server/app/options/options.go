@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package options TODO
 package options
 
 import (
@@ -19,12 +20,12 @@ import (
 	"github.com/spf13/pflag"
 )
 
-//ServerOption define option of server in flags
+// ServerOption define option of server in flags
 type ServerOption struct {
 	ServConf *config.CCAPIConfig
 }
 
-//NewServerOption create a ServerOption object
+// NewServerOption create a ServerOption object
 func NewServerOption() *ServerOption {
 	s := ServerOption{
 		ServConf: config.NewCCAPIConfig(),
@@ -33,7 +34,7 @@ func NewServerOption() *ServerOption {
 	return &s
 }
 
-//AddFlags add flags
+// AddFlags add flags
 func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.AddrPort, "addrport", "", "The ip address and port for the serve on")
 	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
@@ -41,12 +42,14 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/ccapi.conf")
 }
 
+// Session TODO
 type Session struct {
 	Name            string
 	DefaultLanguage string
 	MultipleOwner   string
 }
 
+// Site TODO
 type Site struct {
 	AccountUrl      string
 	DomainUrl       string
@@ -65,19 +68,21 @@ type Site struct {
 	HelpDocUrl     string
 }
 
+// Config TODO
 type Config struct {
-	Site         Site
-	Session      Session
-	Redis        redis.Config
-	Version      string
-	AgentAppUrl  string
-	LoginUrl     string
-	LoginVersion string
-	ConfigMap    map[string]string
-	AuthCenter   AppInfo
+	Site                      Site
+	Session                   Session
+	Redis                     redis.Config
+	Version                   string
+	AgentAppUrl               string
+	LoginUrl                  string
+	LoginVersion              string
+	ConfigMap                 map[string]string
+	AuthCenter                AppInfo
 	DisableOperationStatistic bool
 }
 
+// AppInfo TODO
 type AppInfo struct {
 	AppCode string `json:"appCode"`
 	URL     string `json:"url"`

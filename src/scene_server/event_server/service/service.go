@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package service TODO
 package service
 
 import (
@@ -64,6 +65,7 @@ func (s *Service) SetCache(db redis.Client) {
 	s.cache = db
 }
 
+// SetAuthorizer TODO
 func (s *Service) SetAuthorizer(authorizer ac.AuthorizeInterface) {
 	s.authorizer = authorizer
 }

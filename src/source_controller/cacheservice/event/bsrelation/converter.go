@@ -94,6 +94,7 @@ func (b *bizSetRelation) getNeedCareBizFields(ctx context.Context) (map[string]s
 	return fieldMap, nil
 }
 
+// rearrangeBizSetEvents TODO
 // biz set events rearrange policy:
 // 1. If update event's updated fields do not contain "bk_scope" field, we will drop this event.
 // 2. Aggregate multiple same biz set's events to one event, so that we can decrease the amount of biz set relation
@@ -232,6 +233,7 @@ type delArchive struct {
 	Detail map[string]interface{} `bson:"detail"`
 }
 
+// rearrangeBizEvents TODO
 // biz events rearrange policy:
 // 1. Biz event is redirected to its related biz sets' events by traversing all biz sets and checking if the "bk_scope"
 //    field matches the biz's attribute.

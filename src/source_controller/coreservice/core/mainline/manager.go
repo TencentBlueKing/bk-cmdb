@@ -28,6 +28,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// InstanceMainline TODO
 type InstanceMainline struct {
 	bkBizID   int64
 	modelTree *metadata.TopoModelNode
@@ -48,6 +49,7 @@ type InstanceMainline struct {
 	root *metadata.TopoInstanceNode
 }
 
+// NewInstanceMainline TODO
 func NewInstanceMainline(lang language.DefaultCCLanguageIf, proxy dal.DB, bkBizID int64) (*InstanceMainline, error) {
 	im := &InstanceMainline{
 		lang:              lang,
@@ -62,11 +64,13 @@ func NewInstanceMainline(lang language.DefaultCCLanguageIf, proxy dal.DB, bkBizI
 	return im, nil
 }
 
+// SetModelTree TODO
 func (im *InstanceMainline) SetModelTree(ctx context.Context, modelTree *metadata.TopoModelNode) {
 	// step1
 	im.modelTree = modelTree
 }
 
+// LoadModelParentMap TODO
 func (im *InstanceMainline) LoadModelParentMap(ctx context.Context) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	// step2
@@ -80,6 +84,7 @@ func (im *InstanceMainline) LoadModelParentMap(ctx context.Context) {
 	blog.V(5).Infof("LoadModelParentMap mainline models: %#v, objectParentMap: %#v, rid: %s", im.modelIDs, im.objectParentMap, rid)
 }
 
+// LoadSetInstances TODO
 func (im *InstanceMainline) LoadSetInstances(ctx context.Context, header http.Header) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	// set instance list of target business
@@ -96,6 +101,7 @@ func (im *InstanceMainline) LoadSetInstances(ctx context.Context, header http.He
 	return nil
 }
 
+// LoadModuleInstances TODO
 func (im *InstanceMainline) LoadModuleInstances(ctx context.Context, header http.Header) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	// module instance list of target business
@@ -113,6 +119,7 @@ func (im *InstanceMainline) LoadModuleInstances(ctx context.Context, header http
 	return nil
 }
 
+// LoadMainlineInstances TODO
 func (im *InstanceMainline) LoadMainlineInstances(ctx context.Context, header http.Header) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	supplierAccount := util.GetOwnerID(header)
@@ -147,6 +154,7 @@ func (im *InstanceMainline) LoadMainlineInstances(ctx context.Context, header ht
 	return nil
 }
 
+// ConstructBizTopoInstance TODO
 func (im *InstanceMainline) ConstructBizTopoInstance(ctx context.Context, header http.Header, withDetail bool) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	// enqueue business instance to allTopoInstances, instanceMap
@@ -178,6 +186,7 @@ func (im *InstanceMainline) ConstructBizTopoInstance(ctx context.Context, header
 	return nil
 }
 
+// OrganizeSetInstance TODO
 func (im *InstanceMainline) OrganizeSetInstance(ctx context.Context, withDetail bool) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	for _, instance := range im.setInstances {
@@ -216,6 +225,7 @@ func (im *InstanceMainline) OrganizeSetInstance(ctx context.Context, withDetail 
 	return nil
 }
 
+// OrganizeModuleInstance TODO
 func (im *InstanceMainline) OrganizeModuleInstance(ctx context.Context, withDetail bool) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	for _, instance := range im.moduleInstances {
@@ -255,6 +265,7 @@ func (im *InstanceMainline) OrganizeModuleInstance(ctx context.Context, withDeta
 	return nil
 }
 
+// OrganizeMainlineInstance TODO
 func (im *InstanceMainline) OrganizeMainlineInstance(ctx context.Context, withDetail bool) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	for _, instance := range im.mainlineInstances {
@@ -285,6 +296,7 @@ func (im *InstanceMainline) OrganizeMainlineInstance(ctx context.Context, withDe
 	return nil
 }
 
+// CheckAndFillingMissingModels TODO
 func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, header http.Header, withDetail bool) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	supplierAccount := util.GetOwnerID(header)
@@ -389,6 +401,7 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, he
 	return nil
 }
 
+// ConstructInstanceTopoTree TODO
 func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, header http.Header, withDetail bool) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	supplierAccount := util.GetOwnerID(header)
@@ -490,10 +503,12 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, heade
 	return nil
 }
 
+// GetInstanceMap TODO
 func (im *InstanceMainline) GetInstanceMap(ctx context.Context) map[string]*metadata.TopoInstance {
 	return im.instanceMap
 }
 
+// GetRoot TODO
 func (im *InstanceMainline) GetRoot(ctx context.Context) *metadata.TopoInstanceNode {
 	return im.root
 }

@@ -1,3 +1,4 @@
+// Package settemplate TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -20,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SetTemplateInterface TODO
 type SetTemplateInterface interface {
 	CreateSetTemplate(ctx context.Context, h http.Header, bizID int64, option metadata.CreateSetTemplateOption) (*metadata.SetTemplateResult, errors.CCErrorCoder)
 	CreateSetTemplateAllInfo(ctx context.Context, h http.Header, option *metadata.CreateSetTempAllInfoOption) (
@@ -46,10 +48,12 @@ type SetTemplateInterface interface {
 		*metadata.SetTempAttrData, errors.CCErrorCoder)
 }
 
+// NewSetTemplateInterface TODO
 func NewSetTemplateInterface(client rest.ClientInterface) SetTemplateInterface {
 	return &SetTemplate{client: client}
 }
 
+// SetTemplate TODO
 type SetTemplate struct {
 	client rest.ClientInterface
 }

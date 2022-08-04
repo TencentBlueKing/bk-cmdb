@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package auth TODO
 package auth
 
 import (
@@ -21,17 +22,22 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
+// Authorizer TODO
 type Authorizer interface {
+	// Authorize TODO
 	// check if a user's operate resource is already authorized or not.
 	Authorize(ctx context.Context, opts *types.AuthOptions) (*types.Decision, error)
 
+	// AuthorizeBatch TODO
 	// check if a user's operate resources is authorized or not batch.
 	// Note: being authorized resources must be the same resource.
 	AuthorizeBatch(ctx context.Context, opts *types.AuthBatchOptions) ([]*types.Decision, error)
 
+	// AuthorizeAnyBatch TODO
 	// check if a user have any authority of the operate actions batch.
 	AuthorizeAnyBatch(ctx context.Context, opts *types.AuthBatchOptions) ([]*types.Decision, error)
 
+	// ListAuthorizedInstances TODO
 	// list a user's all the authorized resource instance list with an action.
 	// Note: opts.Resources is not required.
 	// the returned list may be huge, we do not do result paging
@@ -39,12 +45,15 @@ type Authorizer interface {
 		*types.AuthorizeList, error)
 }
 
+// ResourceFetcher TODO
 type ResourceFetcher interface {
+	// ListInstancesWithAttributes TODO
 	// get "same" resource instances with attributes
 	// returned with the resource's instance id list matched with options.
 	ListInstancesWithAttributes(ctx context.Context, opts *types.ListWithAttributes) (idList []string, err error)
 }
 
+// NewAuth TODO
 func NewAuth(conf types.Config, fetcher ResourceFetcher) (Authorizer, error) {
 
 	if fetcher == nil {

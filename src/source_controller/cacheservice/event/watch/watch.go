@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package watch TODO
 package watch
 
 import (
@@ -267,6 +268,7 @@ func (c *Client) getEventDetailsWithNodes(kit *rest.Kit, opts *watch.WatchEventO
 	return resp, nil
 }
 
+// getHostIdentityEventDetailWithNodes TODO
 // get host identity from db directly
 func (c *Client) getHostIdentityEventDetailWithNodes(kit *rest.Kit, hitNodes []*watch.ChainNode) (
 	[]*watch.WatchEventDetail, error) {
@@ -428,7 +430,7 @@ func (c *Client) getBizSetRelationEventDetailWithNodes(kit *rest.Kit, hitNodes [
 	return resp, nil
 }
 
-// getBizSetRelationEventDetailWithNodes get biz set relation event details by biz set ids from mongo
+// getBizSetRelationEventDetailFromMongo get biz set relation event details by biz set ids from mongo
 func (c *Client) getBizSetRelationEventDetailFromMongo(kit *rest.Kit, bizSetIDs []int64) (map[int64]string, error) {
 	if len(bizSetIDs) == 0 {
 		return make(map[int64]string), nil
@@ -591,7 +593,7 @@ func (c *Client) WatchFromNow(kit *rest.Kit, key event.Key, opts *watch.WatchEve
 	return e, nil
 }
 
-// watchWithCursor get events with the start cursor which is offered by user.
+// WatchWithCursor get events with the start cursor which is offered by user.
 // it will hold the request for timeout seconds if no matched event is hit.
 // if event has been hit in a round, then events will be returned immediately.
 // if no events hit, then will loop the event every 200ms until timeout and return

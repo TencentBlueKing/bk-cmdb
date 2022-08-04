@@ -32,20 +32,32 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// RequestType TODO
 type RequestType string
 
 const (
-	UnknownType     RequestType = "unknown"
-	TopoType        RequestType = "topo"
-	HostType        RequestType = "host"
-	ProcType        RequestType = "proc"
-	EventType       RequestType = "event"
+	// UnknownType TODO
+	UnknownType RequestType = "unknown"
+	// TopoType TODO
+	TopoType RequestType = "topo"
+	// HostType TODO
+	HostType RequestType = "host"
+	// ProcType TODO
+	ProcType RequestType = "proc"
+	// EventType TODO
+	EventType RequestType = "event"
+	// DataCollectType TODO
 	DataCollectType RequestType = "collect"
-	OperationType   RequestType = "operation"
-	TaskType        RequestType = "task"
-	AdminType       RequestType = "admin"
-	CloudType       RequestType = "cloud"
-	CacheType       RequestType = "cache"
+	// OperationType TODO
+	OperationType RequestType = "operation"
+	// TaskType TODO
+	TaskType RequestType = "task"
+	// AdminType TODO
+	AdminType RequestType = "admin"
+	// CloudType TODO
+	CloudType RequestType = "cloud"
+	// CacheType TODO
+	CacheType RequestType = "cache"
 )
 
 // URLFilterChan url filter chan
@@ -220,7 +232,7 @@ func (s *service) verifyAuthorizeStatus(req *restful.Request,
 				metrics.LabelAppCode: req.Request.Header.Get(common.BKHTTPRequestAppCode),
 			},
 		).Inc()
-		
+
 		permission, err := s.authorizer.GetPermissionToApply(req.Request.Context(), req.Request.Header,
 			attribute.Resources)
 		if err != nil {
@@ -231,10 +243,10 @@ func (s *service) verifyAuthorizeStatus(req *restful.Request,
 				Result: false,
 			}, false
 		}
-		
+
 		blog.WarnJSON("authFilter failed, url: %s, attribute: %s, permission: %s, rid: %s", path, attribute,
 			permission, rid)
-		
+
 		return &metadata.BaseResp{
 			Code:        common.CCNoPermission,
 			ErrMsg:      errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
@@ -242,7 +254,7 @@ func (s *service) verifyAuthorizeStatus(req *restful.Request,
 			Permissions: permission,
 		}, false
 	}
-	
+
 	return nil, true
 }
 

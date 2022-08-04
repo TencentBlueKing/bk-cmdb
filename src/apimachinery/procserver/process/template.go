@@ -8,6 +8,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateProcessTemplate TODO
 func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/createmany/proc/proc_template"
@@ -22,6 +23,7 @@ func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, data
 	return
 }
 
+// DeleteProcessTemplate TODO
 func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/deletemany/proc/proc_template"
@@ -36,6 +38,7 @@ func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, data
 	return
 }
 
+// SearchProcessTemplate TODO
 func (p *process) SearchProcessTemplate(ctx context.Context, h http.Header,
 	i *metadata.ListProcessTemplateWithServiceTemplateInput) (*metadata.MultipleProcessTemplate, errors.CCErrorCoder) {
 
@@ -60,6 +63,7 @@ func (p *process) SearchProcessTemplate(ctx context.Context, h http.Header,
 	return &resp.Data, nil
 }
 
+// UpdateProcessTemplate TODO
 func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/proc/proc_template"

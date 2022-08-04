@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package rest TODO
 package rest
 
 import (
@@ -26,21 +27,25 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// Action TODO
 type Action struct {
 	Verb    string
 	Path    string
 	Handler func(contexts *Contexts)
 }
 
+// RestfulConfig TODO
 type RestfulConfig struct {
 	RootPath string
 }
 
+// Config TODO
 type Config struct {
 	ErrorIf  errors.CCErrorIf
 	Language language.CCLanguageIf
 }
 
+// NewRestUtility TODO
 func NewRestUtility(conf Config) *RestUtility {
 	once.Do(func() {
 		initMetric()
@@ -52,11 +57,13 @@ func NewRestUtility(conf Config) *RestUtility {
 	}
 }
 
+// RestUtility TODO
 type RestUtility struct {
 	Config
 	actions []Action
 }
 
+// AddHandler TODO
 func (r *RestUtility) AddHandler(action Action) {
 	if r.actions == nil {
 		r.actions = make([]Action, 0)
@@ -79,6 +86,7 @@ func (r *RestUtility) AddHandler(action Action) {
 	r.actions = append(r.actions, action)
 }
 
+// AddToRestfulWebService TODO
 func (r *RestUtility) AddToRestfulWebService(ws *restful.WebService) {
 
 	for _, action := range r.actions {

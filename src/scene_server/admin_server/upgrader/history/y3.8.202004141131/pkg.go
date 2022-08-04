@@ -1,3 +1,4 @@
+// Package y3_8_202004141131 TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -20,6 +21,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// init TODO
 /*
 	bk_port_enable字段重命名为bk_enable_port
 */

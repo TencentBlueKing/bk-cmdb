@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateSetTemplate TODO
 func (p *setTemplate) CreateSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.CreateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
@@ -47,6 +48,7 @@ func (p *setTemplate) CreateSetTemplate(ctx context.Context, header http.Header,
 	return ret.Data, nil
 }
 
+// UpdateSetTemplate TODO
 func (p *setTemplate) UpdateSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.UpdateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
@@ -73,6 +75,7 @@ func (p *setTemplate) UpdateSetTemplate(ctx context.Context, header http.Header,
 	return ret.Data, nil
 }
 
+// DeleteSetTemplate TODO
 func (p *setTemplate) DeleteSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.DeleteSetTemplateOption) errors.CCErrorCoder {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
@@ -98,6 +101,7 @@ func (p *setTemplate) DeleteSetTemplate(ctx context.Context, header http.Header,
 	return nil
 }
 
+// GetSetTemplate TODO
 func (p *setTemplate) GetSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (metadata.SetTemplate, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
@@ -123,6 +127,7 @@ func (p *setTemplate) GetSetTemplate(ctx context.Context, header http.Header, bi
 	return ret.Data, nil
 }
 
+// ListSetTemplate TODO
 func (p *setTemplate) ListSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateOption) (*metadata.MultipleSetTemplateResult, errors.CCErrorCoder) {
 	ret := metadata.ListSetTemplateResult{}
 	subPath := "/findmany/topo/set_template/bk_biz_id/%d/"
@@ -146,6 +151,7 @@ func (p *setTemplate) ListSetTemplate(ctx context.Context, header http.Header, b
 	return &ret.Data, nil
 }
 
+// CountSetTplInstances TODO
 func (p *setTemplate) CountSetTplInstances(ctx context.Context, header http.Header, bizID int64, option metadata.CountSetTplInstOption) (map[int64]int64, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp

@@ -55,29 +55,37 @@ func Operation() OperationInterface {
 type operation struct {
 }
 
+// CreateCommonInst TODO
 func (o *operation) CreateCommonInst(target model.Model) CommonInstInterface {
 	return &inst{target: target, datas: types.MapStr{}}
 }
 
+// CreateBusinessInst TODO
 func (o *operation) CreateBusinessInst(target model.Model) BusinessInterface {
 	return &business{target: target, datas: types.MapStr{}}
 }
 
+// CreateSetInst TODO
 func (o *operation) CreateSetInst(target model.Model) SetInterface {
 	return &set{target: target, datas: types.MapStr{}}
 }
 
+// CreateModuleInst TODO
 func (o *operation) CreateModuleInst(target model.Model) ModuleInterface {
 	return &module{target: target, datas: types.MapStr{}}
 }
 
+// CreatePlatInst TODO
 func (o *operation) CreatePlatInst(target model.Model) CommonInstInterface {
 	return &inst{target: target, datas: types.MapStr{}}
 }
+
+// CreateHostInst TODO
 func (o *operation) CreateHostInst(target model.Model) HostInterface {
 	return &host{target: target, datas: types.MapStr{}}
 }
 
+// DeleteHosts TODO
 func (o *operation) DeleteHosts(supplierAccount string, hostIDS []int64) error {
 
 	hostIDArr := make([]string, 0)
@@ -88,56 +96,68 @@ func (o *operation) DeleteHosts(supplierAccount string, hostIDS []int64) error {
 	return client.GetClient().CCV3(client.Params{SupplierAccount: supplierAccount}).Host().DeleteHostBatch(strings.Join(hostIDArr, ","))
 }
 
+// FindCommonInstLikeName TODO
 func (o *operation) FindCommonInstLikeName(target model.Model, instName string) (Iterator, error) {
 	cond := common.CreateCondition().Field(InstName).Like(instName)
 	return NewIteratorInst(target, cond)
 }
 
+// FindCommonInstByCondition TODO
 func (o *operation) FindCommonInstByCondition(target model.Model, cond common.Condition) (Iterator, error) {
 	return NewIteratorInst(target, cond)
 }
 
+// FindBusinessLikeName TODO
 func (o *operation) FindBusinessLikeName(target model.Model, businessName string) (BusinessIterator, error) {
 	cond := common.CreateCondition().Field(BusinessNameField).Like(businessName)
 	return NewIteratorInstBusiness(target, cond)
 }
 
+// FindBusinessByCondition TODO
 func (o *operation) FindBusinessByCondition(target model.Model, condition common.Condition) (BusinessIterator, error) {
 	return NewIteratorInstBusiness(target, condition)
 }
 
+// FindHostsLikeName TODO
 func (o *operation) FindHostsLikeName(target model.Model, hostname string) (HostIterator, error) {
 	cond := common.CreateCondition().Field(HostNameField).Like(hostname)
 	return NewHostIterator(target, cond)
 }
 
+// FindHostsByCondition TODO
 func (o *operation) FindHostsByCondition(target model.Model, condition common.Condition) (HostIterator, error) {
 	return NewHostIterator(target, condition)
 }
 
+// FindModulesLikeName TODO
 func (o *operation) FindModulesLikeName(target model.Model, moduleName string) (ModuleIterator, error) {
 	cond := common.CreateCondition().Field(ModuleName).Like(moduleName)
 	return NewIteratorInstModule(target, cond)
 }
 
+// FindModulesByCondition TODO
 func (o *operation) FindModulesByCondition(target model.Model, cond common.Condition) (ModuleIterator, error) {
 	return NewIteratorInstModule(target, cond)
 }
 
+// FindPlatsLikeName TODO
 func (o *operation) FindPlatsLikeName(target model.Model, platName string) (Iterator, error) {
 	cond := common.CreateCondition().Field(PlatName).Like(platName)
 	return NewIteratorInst(target, cond)
 }
 
+// FindPlatsByCondition TODO
 func (o *operation) FindPlatsByCondition(target model.Model, cond common.Condition) (Iterator, error) {
 	return NewIteratorInst(target, cond)
 }
 
+// FindSetsLikeName TODO
 func (o *operation) FindSetsLikeName(target model.Model, setName string) (SetIterator, error) {
 	cond := common.CreateCondition().Field(SetName).Like(setName)
 	return NewIteratorInstSet(target, cond)
 }
 
+// FindSetsByCondition TODO
 func (o *operation) FindSetsByCondition(target model.Model, cond common.Condition) (SetIterator, error) {
 	return NewIteratorInstSet(target, cond)
 }

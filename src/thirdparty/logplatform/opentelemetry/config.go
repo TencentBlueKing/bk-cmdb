@@ -27,6 +27,7 @@ var (
 	openTelemetryCfg = new(OpenTelemetryConfig)
 )
 
+// OpenTelemetryConfig TODO
 type OpenTelemetryConfig struct {
 	// 表示是否开启日志平台openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
 	enable bool

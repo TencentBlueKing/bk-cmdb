@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateProcessTemplate TODO
 func (s *coreService) CreateProcessTemplate(ctx *rest.Contexts) {
 	template := metadata.ProcessTemplate{}
 	if err := ctx.DecodeInto(&template); err != nil {
@@ -37,6 +38,7 @@ func (s *coreService) CreateProcessTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// GetProcessTemplate TODO
 func (s *coreService) GetProcessTemplate(ctx *rest.Contexts) {
 	processTemplateIDStr := ctx.Request.PathParameter(common.BKProcessTemplateIDField)
 	if len(processTemplateIDStr) == 0 {
@@ -61,6 +63,7 @@ func (s *coreService) GetProcessTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// ListProcessTemplates TODO
 func (s *coreService) ListProcessTemplates(ctx *rest.Contexts) {
 	// filter parameter
 	fp := metadata.ListProcessTemplatesOption{}
@@ -84,6 +87,7 @@ func (s *coreService) ListProcessTemplates(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateProcessTemplate TODO
 func (s *coreService) UpdateProcessTemplate(ctx *rest.Contexts) {
 	processTemplateIDStr := ctx.Request.PathParameter(common.BKProcessTemplateIDField)
 	if len(processTemplateIDStr) == 0 {
@@ -113,6 +117,7 @@ func (s *coreService) UpdateProcessTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// DeleteProcessTemplate TODO
 func (s *coreService) DeleteProcessTemplate(ctx *rest.Contexts) {
 	processTemplateIDStr := ctx.Request.PathParameter(common.BKProcessTemplateIDField)
 	if len(processTemplateIDStr) == 0 {
@@ -137,6 +142,7 @@ func (s *coreService) DeleteProcessTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// BatchDeleteProcessTemplate TODO
 func (s *coreService) BatchDeleteProcessTemplate(ctx *rest.Contexts) {
 	input := struct {
 		ProcessTemplateIDs []int64 `json:"process_template_ids" field:"process_template_ids"`

@@ -19,6 +19,7 @@ import (
 	"configcenter/src/framework/core/discovery"
 )
 
+// CCV3Interface TODO
 type CCV3Interface interface {
 	ModuleGetter
 	SetGetter
@@ -40,6 +41,7 @@ type Client struct {
 	user            string
 }
 
+// New TODO
 func New(conf config.Config, disc discovery.DiscoverInterface) *Client {
 	var c = &Client{}
 	c.httpCli = httpclient.NewHttpClient()
@@ -53,30 +55,47 @@ func New(conf config.Config, disc discovery.DiscoverInterface) *Client {
 	return c
 }
 
+// Host TODO
 func (cli *Client) Host() HostInterface {
 	return newHost(cli)
 }
+
+// Model TODO
 func (cli *Client) Model() ModelInterface {
 	return newModel(cli)
 }
+
+// Classification TODO
 func (cli *Client) Classification() ClassificationInterface {
 	return newClassification(cli)
 }
+
+// Attribute TODO
 func (cli *Client) Attribute() AttributeInterface {
 	return newAttribute(cli)
 }
+
+// CommonInst TODO
 func (cli *Client) CommonInst() CommonInstInterface {
 	return newCommonInst(cli)
 }
+
+// Group TODO
 func (cli *Client) Group() GroupInterface {
 	return newGroup(cli)
 }
+
+// Business TODO
 func (cli *Client) Business() BusinessInterface {
 	return newBusiness(cli)
 }
+
+// Module TODO
 func (cli *Client) Module() ModuleInterface {
 	return newModule(cli)
 }
+
+// Set TODO
 func (cli *Client) Set() SetInterface {
 	return newSet(cli)
 }

@@ -1,3 +1,4 @@
+// Package taskserverutil TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -15,16 +16,19 @@ import (
 	"sync"
 )
 
+// TaskQueueConfig TODO
 type TaskQueueConfig struct {
 	Name  string
 	Addrs func() ([]string, error)
 }
 
+// TaskQueueConfigServ TODO
 type TaskQueueConfigServ struct {
 	addrs map[string]func() ([]string, error)
 	sync.RWMutex
 }
 
+// TaskQueueServDiscoveryInterace TODO
 type TaskQueueServDiscoveryInterace interface {
 	GetServers() ([]string, error)
 	GetServersChan() chan []string
@@ -36,6 +40,7 @@ var (
 	}
 )
 
+// NewTaskServerConfigServ TODO
 //  NewTaskServerConfigServ
 func NewTaskServerConfigServ(srvChan chan TaskQueueConfig) *TaskQueueConfigServ {
 	go func() {
@@ -54,6 +59,7 @@ func NewTaskServerConfigServ(srvChan chan TaskQueueConfig) *TaskQueueConfigServ 
 	return taskQueue
 }
 
+// UpdateTaskServerConfigServ TODO
 func UpdateTaskServerConfigServ(name string, f func() ([]string, error)) {
 	go func() {
 
@@ -71,17 +77,20 @@ type taskQueueConfig struct {
 	flag string
 }
 
+// NewSyncrhonizeConfig TODO
 func NewSyncrhonizeConfig(flag string) TaskQueueServDiscoveryInterace {
 	return &taskQueueConfig{
 		flag: flag,
 	}
 }
 
+// GetEsbServDiscoveryInterace TODO
 func (s *taskQueueConfig) GetEsbServDiscoveryInterace(flag string) TaskQueueServDiscoveryInterace {
 	// mabye will deal some logics about server
 	return s
 }
 
+// GetServers TODO
 func (s *taskQueueConfig) GetServers() ([]string, error) {
 	// mabye will deal some logics about server
 	taskQueue.RLock()
@@ -89,6 +98,7 @@ func (s *taskQueueConfig) GetServers() ([]string, error) {
 	return taskQueue.addrs[s.flag]()
 }
 
+// GetServersChan TODO
 func (s *taskQueueConfig) GetServersChan() chan []string {
 	return nil
 }

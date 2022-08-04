@@ -42,6 +42,7 @@ func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, s
 
 }
 
+// AllGlobalFilter TODO
 func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 		defer func() {
@@ -81,6 +82,7 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 	}
 }
 
+// RequestLogFilter TODO
 func RequestLogFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 		header := req.Request.Header
@@ -94,6 +96,7 @@ func RequestLogFilter() func(req *restful.Request, resp *restful.Response, fchai
 	}
 }
 
+// HTTPRequestIDFilter TODO
 func HTTPRequestIDFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 		GenerateHttpHeaderRID(req.Request, resp.ResponseWriter)
@@ -138,6 +141,7 @@ func GenerateHttpHeaderRID(req *http.Request, resp http.ResponseWriter) {
 	return
 }
 
+// ServiceErrorHandler TODO
 func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *restful.Response) {
 	blog.Errorf("HTTP ERROR: %v, HTTP MESSAGE: %v, RequestURI: %s %s", err.Code, err.Message, req.Request.Method, req.Request.RequestURI)
 	ret := metadata.BaseResp{
@@ -149,7 +153,7 @@ func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *r
 	resp.WriteHeaderAndJson(err.Code, ret, "application/json")
 }
 
-// getHTTPOtherRequestID return other system request id from http header
+// GetHTTPOtherRequestID return other system request id from http header
 func GetHTTPOtherRequestID(header http.Header) string {
 	return header.Get(common.BKHTTPOtherRequestID)
 }

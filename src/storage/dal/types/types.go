@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package types TODO
 package types
 
 import (
@@ -32,16 +33,18 @@ var (
 // Filter condition alias name
 type Filter interface{}
 
+// Table TODO
 type Table interface {
 	// Find 查询多个并反序列化到 Result
 	Find(filter Filter, opts ...*FindOpts) Find
-	// Aggregate 聚合查询
+	// AggregateOne 聚合查询
 	AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error
 	AggregateAll(ctx context.Context, pipeline interface{}, result interface{}, opts ...*AggregateOpts) error
 	// Insert 插入数据, docs 可以为 单个数据 或者 多个数据
 	Insert(ctx context.Context, docs interface{}) error
 	// Update 更新数据
 	Update(ctx context.Context, filter Filter, doc interface{}) error
+	// Upsert TODO
 	// update or insert data
 	Upsert(ctx context.Context, filter Filter, doc interface{}) error
 	// UpdateMultiModel  data based on operators.
@@ -63,7 +66,7 @@ type Table interface {
 	RenameColumn(ctx context.Context, filter Filter, oldName, newColumn string) error
 	// DropColumn 移除字段
 	DropColumn(ctx context.Context, field string) error
-	// 根据条件移除字段
+	// DropColumns 根据条件移除字段
 	DropColumns(ctx context.Context, filter Filter, fields []string) error
 
 	// DropDocsColumn remove a column by the name for doc use filter
@@ -118,32 +121,40 @@ type Index struct {
 	PartialFilterExpression map[string]interface{} `json:"partialFilterExpression" bson:"partialFilterExpression"`
 }
 
+// FindOpts TODO
 type FindOpts struct {
 	WithObjectID *bool
 	WithCount    *bool
 }
 
+// NewFindOpts TODO
 func NewFindOpts() *FindOpts {
 	return &FindOpts{}
 }
 
+// SetWithObjectID TODO
 func (f *FindOpts) SetWithObjectID(bl bool) *FindOpts {
 	f.WithObjectID = &bl
 	return f
 }
+
+// SetWithCount TODO
 func (f *FindOpts) SetWithCount(bl bool) *FindOpts {
 	f.WithCount = &bl
 	return f
 }
 
+// AggregateOpts TODO
 type AggregateOpts struct {
 	AllowDiskUse *bool
 }
 
+// NewAggregateOpts TODO
 func NewAggregateOpts() *AggregateOpts {
 	return &AggregateOpts{}
 }
 
+// SetAllowDiskUse TODO
 func (a *AggregateOpts) SetAllowDiskUse(bl bool) *AggregateOpts {
 	a.AllowDiskUse = &bl
 	return a

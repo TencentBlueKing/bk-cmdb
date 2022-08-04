@@ -22,10 +22,11 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
-	"configcenter/src/source_controller/cacheservice/cache/topo_tree"
+	"configcenter/src/source_controller/cacheservice/cache/topotree"
 	"configcenter/src/source_controller/cacheservice/event"
 )
 
+// SearchHostWithInnerIPInCache TODO
 func (s *cacheService) SearchHostWithInnerIPInCache(ctx *rest.Contexts) {
 	opt := new(metadata.SearchHostWithInnerIPOption)
 	if err := ctx.DecodeInto(&opt); nil != err {
@@ -40,6 +41,7 @@ func (s *cacheService) SearchHostWithInnerIPInCache(ctx *rest.Contexts) {
 	ctx.RespString(&host)
 }
 
+// SearchHostWithHostIDInCache TODO
 func (s *cacheService) SearchHostWithHostIDInCache(ctx *rest.Contexts) {
 	opt := new(metadata.SearchHostWithIDOption)
 	if err := ctx.DecodeInto(&opt); nil != err {
@@ -74,6 +76,7 @@ func (s *cacheService) ListHostWithHostIDInCache(ctx *rest.Contexts) {
 	ctx.RespStringArray(host)
 }
 
+// ListHostWithPageInCache TODO
 func (s *cacheService) ListHostWithPageInCache(ctx *rest.Contexts) {
 	opt := new(metadata.ListHostWithPage)
 	if err := ctx.DecodeInto(&opt); nil != err {
@@ -89,7 +92,7 @@ func (s *cacheService) ListHostWithPageInCache(ctx *rest.Contexts) {
 	ctx.RespCountInfoString(cnt, host)
 }
 
-// ListBusiness list business with id from cache, if not exist in cache, then get from mongodb directly.
+// ListBusinessInCache list business with id from cache, if not exist in cache, then get from mongodb directly.
 func (s *cacheService) ListBusinessInCache(ctx *rest.Contexts) {
 	opt := new(metadata.ListWithIDOption)
 	if err := ctx.DecodeInto(&opt); nil != err {
@@ -105,6 +108,7 @@ func (s *cacheService) ListBusinessInCache(ctx *rest.Contexts) {
 	ctx.RespStringArray(details)
 }
 
+// ListModulesInCache TODO
 // ListModules list modules with id from cache, if not exist in cache, then get from mongodb directly.
 func (s *cacheService) ListModulesInCache(ctx *rest.Contexts) {
 	opt := new(metadata.ListWithIDOption)
@@ -121,6 +125,7 @@ func (s *cacheService) ListModulesInCache(ctx *rest.Contexts) {
 	ctx.RespStringArray(details)
 }
 
+// ListSetsInCache TODO
 // ListSets list sets with id from cache, if not exist in cache, then get from mongodb directly.
 func (s *cacheService) ListSetsInCache(ctx *rest.Contexts) {
 	opt := new(metadata.ListWithIDOption)
@@ -137,6 +142,7 @@ func (s *cacheService) ListSetsInCache(ctx *rest.Contexts) {
 	ctx.RespStringArray(details)
 }
 
+// SearchBusinessInCache TODO
 func (s *cacheService) SearchBusinessInCache(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
@@ -151,6 +157,7 @@ func (s *cacheService) SearchBusinessInCache(ctx *rest.Contexts) {
 	ctx.RespString(&biz)
 }
 
+// SearchSetInCache TODO
 func (s *cacheService) SearchSetInCache(ctx *rest.Contexts) {
 	setID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKSetIDField), 10, 64)
 	if err != nil {
@@ -166,6 +173,7 @@ func (s *cacheService) SearchSetInCache(ctx *rest.Contexts) {
 	ctx.RespString(&set)
 }
 
+// SearchModuleInCache TODO
 func (s *cacheService) SearchModuleInCache(ctx *rest.Contexts) {
 	moduleID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKModuleIDField), 10, 64)
 	if err != nil {
@@ -181,6 +189,7 @@ func (s *cacheService) SearchModuleInCache(ctx *rest.Contexts) {
 	ctx.RespString(&module)
 }
 
+// SearchCustomLayerInCache TODO
 func (s *cacheService) SearchCustomLayerInCache(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter(common.BKObjIDField)
 
@@ -212,7 +221,7 @@ func (s *cacheService) SearchBizTopologyNodePath(ctx *rest.Contexts) {
 		return
 	}
 
-	opt := new(topo_tree.SearchNodePathOption)
+	opt := new(topotree.SearchNodePathOption)
 	if err := ctx.DecodeInto(&opt); nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -248,6 +257,7 @@ func (s *cacheService) SearchBusinessBriefTopology(ctx *rest.Contexts) {
 	ctx.RespString(topo)
 }
 
+// WatchEvent TODO
 func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
 	var err error
 	// sleep for a while if an error occurred to avoid others using wrong input to request too frequently

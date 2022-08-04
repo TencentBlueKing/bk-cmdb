@@ -90,11 +90,13 @@ func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Coll
 	return actions
 }
 
+// MetricController TODO
 type MetricController struct {
 	MetaData   *MetaData
 	Collectors map[CollectorName]CollectInter
 }
 
+// PackMetrics TODO
 func (mc *MetricController) PackMetrics() (*[]byte, error) {
 	mf := MetricFamily{
 		MetaData:     mc.MetaData,

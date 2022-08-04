@@ -88,7 +88,7 @@ func TestUpdateOneInstance(t *testing.T) {
 	instMgr := newInstances(t)
 	objID := "bk_switch"
 
-	//create one bk_switch instance data
+	// create one bk_switch instance data
 	inputParams := metadata.CreateModelInstance{}
 	inputParams.Data.Set(common.BKInstNameField, xid.New().String())
 	inputParams.Data.Set(common.BKAssetIDField, xid.New().String())
@@ -98,7 +98,7 @@ func TestUpdateOneInstance(t *testing.T) {
 	require.NotNil(t, dataResult)
 	require.Equal(t, uint64(0), dataResult.Created.ID)
 
-	//update one bk_switch instance by condition
+	// update one bk_switch instance by condition
 	updateParams := metadata.UpdateOption{}
 	updateParams.Condition = mapstr.MapStr{"bk_sn": "cmdb_sn"}
 	updateParams.Data = mapstr.MapStr{"bk_operator": "test"}
@@ -114,7 +114,7 @@ func TestSearchAndDeleteInstance(t *testing.T) {
 	instMgr := newInstances(t)
 	objID := "bk_switch"
 
-	//create one bk_switch instance data
+	// create one bk_switch instance data
 	inputParams := metadata.CreateModelInstance{}
 	inputParams.Data.Set(common.BKInstNameField, "test_sw1")
 	inputParams.Data.Set(common.BKAssetIDField, "test_sw_001")
@@ -124,7 +124,7 @@ func TestSearchAndDeleteInstance(t *testing.T) {
 	require.NotNil(t, dataResult)
 	require.Equal(t, uint64(0), dataResult.Created.ID)
 
-	//search  this instance
+	// search  this instance
 	searchCond := metadata.QueryCondition{}
 	searchCond.Condition.Set("bk_sn", "cmdb_sn")
 	searchResult, err := instMgr.SearchModelInstance(defaultCtx, objID, searchCond)
@@ -133,7 +133,7 @@ func TestSearchAndDeleteInstance(t *testing.T) {
 	require.NotEqual(t, uint64(0), searchResult.Count)
 	require.NotEqual(t, uint64(0), len(searchResult.Info))
 
-	//delete   this instance
+	// delete   this instance
 	deleteCond := metadata.DeleteOption{}
 	deleteCond.Condition.Set("bk_sn", "cmdb_sn")
 	deleteResult, err := instMgr.DeleteModelInstance(defaultCtx, objID, deleteCond)
@@ -146,7 +146,7 @@ func TestCascadeDeleteInstance(t *testing.T) {
 	instMgr := newInstances(t)
 	objID := "bk_switch"
 
-	//create one bk_switch instance data
+	// create one bk_switch instance data
 	inputParams := metadata.CreateModelInstance{}
 	inputParams.Data.Set(common.BKInstNameField, xid.New().String())
 	inputParams.Data.Set(common.BKAssetIDField, xid.New().String())
@@ -156,7 +156,7 @@ func TestCascadeDeleteInstance(t *testing.T) {
 	require.NotNil(t, dataResult)
 	require.Equal(t, uint64(0), dataResult.Created.ID)
 
-	//delete   this instance
+	// delete   this instance
 	deleteCond := metadata.DeleteOption{}
 	deleteCond.Condition.Set("bk_sn", "cmdb_sn")
 	deleteResult, err := instMgr.CascadeDeleteModelInstance(defaultCtx, objID, deleteCond)

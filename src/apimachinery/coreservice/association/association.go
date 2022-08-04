@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package association TODO
 package association
 
 import (
@@ -20,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// AssociationClientInterface TODO
 type AssociationClientInterface interface {
 	UpdateAssociationType(ctx context.Context, h http.Header, input *metadata.UpdateOption) (*metadata.UpdatedCount,
 		error)
@@ -70,6 +72,7 @@ type AssociationClientInterface interface {
 		*metadata.CountResponseContent, error)
 }
 
+// NewAssociationClientInterface TODO
 func NewAssociationClientInterface(client rest.ClientInterface) AssociationClientInterface {
 	return &association{client: client}
 }

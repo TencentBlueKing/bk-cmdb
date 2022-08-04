@@ -42,7 +42,7 @@ func getFieldsIDIndexMap(fields map[string]Property) map[string]int {
 	return IDNameMap
 }
 
-// getAssociateName  get getAssociate object name
+// getAssociatePrimaryKey  get getAssociate object name
 func getAssociatePrimaryKey(a []interface{}, primaryField []Property) []string {
 	vals := []string{}
 	for _, valRow := range a {
@@ -125,7 +125,7 @@ func getHeaderCellGeneralStyle() *xlsx.Style {
 	return getCellStyle(common.ExcelHeaderOtherRowColor, common.ExcelHeaderOtherRowFontColor)
 }
 
-// getHeaderFirstRowCellStyle
+// getHeaderFirstRowCellStyle TODO
 func getHeaderFirstRowCellStyle(isRequire bool) *xlsx.Style {
 	if isRequire {
 		return getCellStyle(common.ExcelHeaderFirstRowColor, common.ExcelHeaderFirstRowRequireFontColor)
@@ -213,7 +213,7 @@ func replaceEnName(rid string, rowMap mapstr.MapStr, usernameMap map[string]stri
 	return rowMap, nil
 }
 
-// setExcelCellIgnore set the excel cell to be ignored
+// setExcelCellIgnored set the excel cell to be ignored
 func setExcelCellIgnored(sheet *xlsx.Sheet, style *xlsx.Style, row int, col int) {
 	cell := sheet.Cell(row, col)
 	cell.Value = common.ExcelCellIgnoreValue

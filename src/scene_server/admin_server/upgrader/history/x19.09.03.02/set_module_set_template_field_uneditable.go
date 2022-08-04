@@ -21,11 +21,13 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// Idgen TODO
 type Idgen struct {
 	ID         string `bson:"_id"`
 	SequenceID uint64 `bson:"SequenceID"`
 }
 
+// SetModuleServiceTemplateFieldUneditable TODO
 func SetModuleServiceTemplateFieldUneditable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	filter := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDModule,

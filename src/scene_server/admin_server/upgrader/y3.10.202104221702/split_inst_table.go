@@ -47,8 +47,8 @@ func splitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err err
 
 	var objectIDs []string
 	for _, obj := range objs {
-		objInstTable := buildInstTableName(obj.ObjectID, obj.OwnerID)         //instTablePrefix + obj.ObjectID
-		objInstAsstTable := buildInstAsstTableName(obj.ObjectID, obj.OwnerID) //instAsstTablePrefix + obj.ObjectID
+		objInstTable := buildInstTableName(obj.ObjectID, obj.OwnerID)         // instTablePrefix + obj.ObjectID
+		objInstAsstTable := buildInstAsstTableName(obj.ObjectID, obj.OwnerID) // instAsstTablePrefix + obj.ObjectID
 
 		objectIDs = append(objectIDs, obj.ObjectID)
 		if err = createTableFunc(ctx, objInstAsstTable, db); err != nil {
@@ -245,7 +245,7 @@ func splitInstTable(ctx context.Context, db dal.RDB) error {
 func copyInstanceToShardingTable(ctx context.Context, inst map[string]interface{}, db dal.RDB) error {
 
 	objID := fmt.Sprintf("%v", inst[common.BKObjIDField])
-	tableName := buildInstTableName(objID, inst[common.BKOwnerIDField]) //instTablePrefix + objID
+	tableName := buildInstTableName(objID, inst[common.BKOwnerIDField]) // instTablePrefix + objID
 
 	mappingFilter := map[string]interface{}{
 		common.BKInstIDField: inst[common.BKInstIDField],
@@ -395,7 +395,7 @@ func createTableLogicUniqueIndex(ctx context.Context, objID string, tableName st
 	return nil
 }
 
-// 返回的数据只有common.BKPropertyIDField, common.BKPropertyTypeField, common.BKFieldID 三个字段
+// findObjAttrsIDRelation 返回的数据只有common.BKPropertyIDField, common.BKPropertyTypeField, common.BKFieldID 三个字段
 func findObjAttrsIDRelation(ctx context.Context, objID string, db dal.RDB) (map[int64]Attribute, error) {
 	// 获取字段类型,只需要共有字段
 	attrFilter := map[string]interface{}{
@@ -416,6 +416,7 @@ func findObjAttrsIDRelation(ctx context.Context, objID string, db dal.RDB) (map[
 	return attrIDMap, nil
 }
 
+// CCLogicUniqueIdxNamePrefix TODO
 const CCLogicUniqueIdxNamePrefix = "bkcc_unique_"
 
 func toDBUniqueIdx(idx objectUnique, attrIDMap map[int64]Attribute) (types.Index, error) {
@@ -627,6 +628,7 @@ type Attribute struct {
 	Creator           string      `field:"creator" json:"creator" bson:"creator"`
 }
 
+// FindIndexByIndexFields TODO
 func FindIndexByIndexFields(keys map[string]int32, indexList []types.Index) (dbIndex types.Index, exists bool) {
 	for _, idx := range indexList {
 		if len(idx.Keys) != len(keys) {

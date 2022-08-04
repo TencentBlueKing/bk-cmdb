@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// ListServiceCategoryWithStatistics TODO
 func (ps *ProcServer) ListServiceCategoryWithStatistics(ctx *rest.Contexts) {
 	result, err := ps.listServiceCategory(ctx, true)
 	if err != nil {
@@ -29,6 +30,7 @@ func (ps *ProcServer) ListServiceCategoryWithStatistics(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// ListServiceCategory TODO
 func (ps *ProcServer) ListServiceCategory(ctx *rest.Contexts) {
 	result, err := ps.listServiceCategory(ctx, false)
 	if err != nil {
@@ -91,6 +93,7 @@ func (ps *ProcServer) listServiceCategory(ctx *rest.Contexts, withStatistics boo
 	return list, nil
 }
 
+// CreateServiceCategory TODO
 func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 	input := new(metadata.CreateServiceCategoryOption)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -123,6 +126,7 @@ func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 	ctx.RespEntity(category)
 }
 
+// UpdateServiceCategory TODO
 func (ps *ProcServer) UpdateServiceCategory(ctx *rest.Contexts) {
 	input := new(metadata.ServiceCategory)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -149,6 +153,7 @@ func (ps *ProcServer) UpdateServiceCategory(ctx *rest.Contexts) {
 	ctx.RespEntity(category)
 }
 
+// DeleteServiceCategory TODO
 func (ps *ProcServer) DeleteServiceCategory(ctx *rest.Contexts) {
 	input := new(metadata.DeleteCategoryInput)
 	if err := ctx.DecodeInto(input); err != nil {

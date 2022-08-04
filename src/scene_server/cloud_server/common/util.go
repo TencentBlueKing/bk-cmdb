@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-// 将不同云厂商的实例状态转为统一的实例状态
+// CovertInstState 将不同云厂商的实例状态转为统一的实例状态
 func CovertInstState(instState string) string {
 	switch strings.ToLower(instState) {
 	case "starting", "pending", "rebooting":

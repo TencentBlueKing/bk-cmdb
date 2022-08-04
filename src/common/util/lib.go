@@ -28,6 +28,7 @@ import (
 	"github.com/rs/xid"
 )
 
+// InStrArr TODO
 func InStrArr(arr []string, key string) bool {
 	for _, a := range arr {
 		if key == a {
@@ -37,18 +38,22 @@ func InStrArr(arr []string, key string) bool {
 	return false
 }
 
+// GetLanguage TODO
 func GetLanguage(header http.Header) string {
 	return header.Get(common.BKHTTPLanguage)
 }
 
+// GetUser TODO
 func GetUser(header http.Header) string {
 	return header.Get(common.BKHTTPHeaderUser)
 }
 
+// GetOwnerID TODO
 func GetOwnerID(header http.Header) string {
 	return header.Get(common.BKHTTPOwnerID)
 }
 
+// SetOwnerIDAndAccount TODO
 // set supplier id and account in head
 func SetOwnerIDAndAccount(req *restful.Request) {
 	owner := req.Request.Header.Get(common.BKHTTPOwner)
@@ -63,6 +68,7 @@ func GetHTTPCCRequestID(header http.Header) string {
 	return rid
 }
 
+// ExtractRequestIDFromContext TODO
 func ExtractRequestIDFromContext(ctx context.Context) string {
 	if ctx == nil {
 		return ""
@@ -75,6 +81,7 @@ func ExtractRequestIDFromContext(ctx context.Context) string {
 	return ""
 }
 
+// ExtractOwnerFromContext TODO
 func ExtractOwnerFromContext(ctx context.Context) string {
 	if ctx == nil {
 		return ""
@@ -87,6 +94,7 @@ func ExtractOwnerFromContext(ctx context.Context) string {
 	return ""
 }
 
+// NewContextFromGinContext TODO
 func NewContextFromGinContext(c *gin.Context) context.Context {
 	header := c.Request.Header
 	ctx := c.Request.Context()
@@ -96,6 +104,7 @@ func NewContextFromGinContext(c *gin.Context) context.Context {
 	return ctx
 }
 
+// NewContextFromHTTPHeader TODO
 func NewContextFromHTTPHeader(header http.Header) context.Context {
 	rid := GetHTTPCCRequestID(header)
 	user := GetUser(header)
@@ -107,6 +116,7 @@ func NewContextFromHTTPHeader(header http.Header) context.Context {
 	return ctx
 }
 
+// NewHeaderFromContext TODO
 func NewHeaderFromContext(ctx context.Context) http.Header {
 	rid := ctx.Value(common.ContextRequestIDField)
 	ridValue, ok := rid.(string)
@@ -136,6 +146,7 @@ func NewHeaderFromContext(ctx context.Context) http.Header {
 	return header
 }
 
+// BuildHeader TODO
 func BuildHeader(user string, supplierAccount string) http.Header {
 	header := make(http.Header)
 	header.Add(common.BKHTTPOwnerID, supplierAccount)
@@ -145,6 +156,7 @@ func BuildHeader(user string, supplierAccount string) http.Header {
 	return header
 }
 
+// ExtractRequestUserFromContext TODO
 func ExtractRequestUserFromContext(ctx context.Context) string {
 	if ctx == nil {
 		return ""
@@ -157,8 +169,10 @@ func ExtractRequestUserFromContext(ctx context.Context) string {
 	return ""
 }
 
+// AtomicBool TODO
 type AtomicBool int32
 
+// NewBool TODO
 func NewBool(yes bool) *AtomicBool {
 	var n = AtomicBool(0)
 	if yes {
@@ -167,22 +181,27 @@ func NewBool(yes bool) *AtomicBool {
 	return &n
 }
 
+// SetIfNotSet TODO
 func (b *AtomicBool) SetIfNotSet() bool {
 	return atomic.CompareAndSwapInt32((*int32)(b), 0, 1)
 }
 
+// Set TODO
 func (b *AtomicBool) Set() {
 	atomic.StoreInt32((*int32)(b), 1)
 }
 
+// UnSet TODO
 func (b *AtomicBool) UnSet() {
 	atomic.StoreInt32((*int32)(b), 0)
 }
 
+// IsSet TODO
 func (b *AtomicBool) IsSet() bool {
 	return atomic.LoadInt32((*int32)(b)) == 1
 }
 
+// SetTo TODO
 func (b *AtomicBool) SetTo(yes bool) {
 	if yes {
 		atomic.StoreInt32((*int32)(b), 1)
@@ -191,18 +210,31 @@ func (b *AtomicBool) SetTo(yes bool) {
 	}
 }
 
+// IntSlice TODO
 type IntSlice []int
 
-func (p IntSlice) Len() int           { return len(p) }
-func (p IntSlice) Less(i, j int) bool { return p[i] < p[j] }
-func (p IntSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+// Len 用于排序
+func (p IntSlice) Len() int { return len(p) }
 
+// Less 用于排序
+func (p IntSlice) Less(i, j int) bool { return p[i] < p[j] }
+
+// Swap 用于排序
+func (p IntSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+
+// Int64Slice TODO
 type Int64Slice []int64
 
-func (p Int64Slice) Len() int           { return len(p) }
-func (p Int64Slice) Less(i, j int) bool { return p[i] < p[j] }
-func (p Int64Slice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+// Len 用于排序
+func (p Int64Slice) Len() int { return len(p) }
 
+// Less 用于排序
+func (p Int64Slice) Less(i, j int) bool { return p[i] < p[j] }
+
+// Swap 用于排序
+func (p Int64Slice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+
+// GenerateRID TODO
 func GenerateRID() string {
 	unused := "0000"
 	id := xid.New()
@@ -228,6 +260,7 @@ func BuildMongoSyncItemField(key string) string {
 	return BuildMongoField(common.MetadataField, common.MetaDataSynchronizeField, key)
 }
 
+// GetDefaultCCError TODO
 func GetDefaultCCError(header http.Header) errors.DefaultCCErrorIf {
 	globalCCError := errors.GetGlobalCCError()
 	if globalCCError == nil {
@@ -237,6 +270,7 @@ func GetDefaultCCError(header http.Header) errors.DefaultCCErrorIf {
 	return globalCCError.CreateDefaultCCErrorIf(language)
 }
 
+// CCHeader TODO
 func CCHeader(header http.Header) http.Header {
 	newHeader := make(http.Header, 0)
 	newHeader.Add(common.BKHTTPCCRequestID, header.Get(common.BKHTTPCCRequestID))
@@ -271,7 +305,7 @@ func SetReadPreference(ctx context.Context, header http.Header, mode common.Read
 	return ctx, header
 }
 
-// GetDBReadPreference
+// GetDBReadPreference TODO
 func GetDBReadPreference(ctx context.Context) common.ReadPreferenceMode {
 	val := ctx.Value(common.BKHTTPReadReference)
 	if val != nil {
@@ -283,7 +317,7 @@ func GetDBReadPreference(ctx context.Context) common.ReadPreferenceMode {
 	return common.NilMode
 }
 
-// GetHTTPReadPreference
+// GetHTTPReadPreference TODO
 func GetHTTPReadPreference(header http.Header) common.ReadPreferenceMode {
 	mode := header.Get(common.BKHTTPReadReference)
 	if mode == "" {

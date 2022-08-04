@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// getResourceTableName TODO
 // get resource database table name
 func getResourceTableName(resourceType iam.TypeID) string {
 	switch resourceType {
@@ -59,9 +60,9 @@ func getResourceTableName(resourceType iam.TypeID) string {
 		return common.BKTableNameServiceInstance
 	case iam.BizSetTemplate:
 		return common.BKTableNameSetTemplate
-	//case iam.Set:
+	// case iam.Set:
 	//	return common.BKTableNameBaseSet
-	//case iam.Module:
+	// case iam.Module:
 	//	return common.BKTableNameBaseModule
 	default:
 		return ""
@@ -76,6 +77,7 @@ func isResourceIDStringType(resourceType iam.TypeID) bool {
 	return false
 }
 
+// getInstanceResourceObjID TODO
 // get model instance resource's model id
 func getInstanceResourceObjID(resourceType iam.TypeID) string {
 	switch resourceType {
@@ -87,9 +89,9 @@ func getInstanceResourceObjID(resourceType iam.TypeID) string {
 		return common.BKInnerObjIDApp
 	case iam.BizSet:
 		return common.BKInnerObjIDBizSet
-	//case iam.Set:
+	// case iam.Set:
 	//	return common.BKInnerObjIDSet
-	//case iam.Module:
+	// case iam.Module:
 	//	return common.BKInnerObjIDModule
 	default:
 		return ""
@@ -138,7 +140,7 @@ func (lgc *Logics) GetResourcePoolBizID(kit *rest.Kit) (int64, error) {
 	return 0, kit.CCError.CCError(common.CCErrCommNotFound)
 }
 
-// GetCloudMapByIDs get cloud area ID to name map by ID to generate host display name
+// getCloudNameMapByIDs get cloud area ID to name map by ID to generate host display name
 func (lgc *Logics) getCloudNameMapByIDs(kit *rest.Kit, cloudIDs []int64) (map[int64]string, error) {
 	cloudParam := metadata.QueryCondition{
 		Fields:    []string{common.BKCloudIDField, common.BKCloudNameField},

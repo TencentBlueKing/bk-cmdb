@@ -181,14 +181,14 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 		if resourceType == meta.MainlineInstance {
 			parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, object)
 			if err != nil {
-				blog.Errorf("MakeResourcesByObjects failed, make parent auth resource by objects failed, " +
+				blog.Errorf("MakeResourcesByObjects failed, make parent auth resource by objects failed, "+
 					"object: %+v, err: %+v, rid: %s", object, err, rid)
 				return nil, fmt.Errorf("make parent auth resource by objects failed, err: %+v", err)
 			}
 			if len(parentResources) != 1 {
-				blog.Errorf("MakeResourcesByInstances failed, make parent auth resource by objects failed, " +
+				blog.Errorf("MakeResourcesByInstances failed, make parent auth resource by objects failed, "+
 					"get %d with object %s, rid: %s", len(parentResources), object.ObjectID, rid)
-				return nil, fmt.Errorf("make parent auth resource by objects failed, get %d with object %d", 
+				return nil, fmt.Errorf("make parent auth resource by objects failed, get %d with object %d",
 					len(parentResources), object.ID)
 			}
 
@@ -240,6 +240,7 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 	return resultResources, nil
 }
 
+// AuthorizeByInstanceID TODO
 func (am *AuthManager) AuthorizeByInstanceID(ctx context.Context, header http.Header, action meta.Action, objID string, ids ...int64) error {
 	if !am.Enabled() {
 		return nil
@@ -267,6 +268,7 @@ func (am *AuthManager) AuthorizeByInstanceID(ctx context.Context, header http.He
 	return am.AuthorizeByInstances(ctx, header, action, instances...)
 }
 
+// AuthorizeByInstances TODO
 func (am *AuthManager) AuthorizeByInstances(ctx context.Context, header http.Header, action meta.Action, instances ...InstanceSimplify) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 

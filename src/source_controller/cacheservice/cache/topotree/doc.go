@@ -10,11 +10,8 @@
  * limitations under the License.
  */
 
-package topo_tree
-
-/*
-This package is used to support the business topology tree search.
-It use event watch mechanism to cache the business topology related resources, like business list,
-mainline instance list, set list, module list etc.
-It use redis to store the cache, so that we can provide a high performance topology query api.
-*/
+// Package topotree This package is used to support the business topology tree search.
+// It uses event watch mechanism to cache the business topology related resources, like business list,
+// mainline instance list, set list, module list etc.
+// It uses redis to store the cache, so that we can provide a high performance topology query api.
+package topotree

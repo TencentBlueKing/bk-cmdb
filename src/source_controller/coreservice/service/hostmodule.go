@@ -21,6 +21,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// GetHostModulesIDs TODO
 func (s *coreService) GetHostModulesIDs(ctx *rest.Contexts) {
 	dat := &meta.ModuleHostConfigParams{}
 	if err := ctx.DecodeInto(dat); err != nil {

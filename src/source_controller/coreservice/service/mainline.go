@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/http/rest"
 )
 
+// SearchMainlineModelTopo TODO
 func (s *coreService) SearchMainlineModelTopo(ctx *rest.Contexts) {
 	detail := struct {
 		WithDetail bool `json:"with_detail"`
@@ -38,6 +39,7 @@ func (s *coreService) SearchMainlineModelTopo(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchMainlineInstanceTopo TODO
 func (s *coreService) SearchMainlineInstanceTopo(ctx *rest.Contexts) {
 	bkBizID := ctx.Request.PathParameter(common.BKAppIDField)
 	if len(bkBizID) == 0 {

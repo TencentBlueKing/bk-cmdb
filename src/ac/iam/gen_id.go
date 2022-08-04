@@ -21,6 +21,7 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
+// GenIamResource TODO
 func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]types.Resource, error) {
 	// skip actions do not need to relate to resources
 	if act == Skip {
@@ -101,6 +102,7 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 	return nil, fmt.Errorf("gen id failed: unsupported resource type: %s", a.Type)
 }
 
+// genBusinessResource TODO
 // generate business related resource id.
 func genBusinessResource(act ActionID, typ TypeID, attribute *meta.ResourceAttribute) ([]types.Resource, error) {
 	r := types.Resource{
@@ -122,6 +124,7 @@ func genBusinessResource(act ActionID, typ TypeID, attribute *meta.ResourceAttri
 	return []types.Resource{r}, nil
 }
 
+// genBizSetResource TODO
 // generate biz set related resource id.
 func genBizSetResource(act ActionID, typ TypeID, attribute *meta.ResourceAttribute) ([]types.Resource, error) {
 	r := types.Resource{

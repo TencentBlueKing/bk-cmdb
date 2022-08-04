@@ -85,6 +85,10 @@
           eventName = 'blur'
         }
 
+        if (['time'].includes(type)) {
+          eventName = 'confirm'
+        }
+
         return { [eventName]: confirmEdit }
       })
 
@@ -96,9 +100,10 @@
         }
 
         const changed = props.value !== props.editState.value
-
         emit('confirm', changed)
       }
+
+      const clickOutSideMiddleware = event => !event.path.some(node => node.className === 'bk-picker-panel-body-wrapper')
 
       const handleClickOutSide = () => {
         if (isEditing.value) {
@@ -113,7 +118,8 @@
         handleClickOutSide,
         $propertyFormElement,
         confirmEvents,
-        formElementFontSize
+        formElementFontSize,
+        clickOutSideMiddleware
       }
     }
   })
@@ -155,7 +161,8 @@
         <property-form-element ref="$propertyFormElement"
           @click.stop
           v-click-outside="{
-            handler: handleClickOutSide
+            handler: handleClickOutSide,
+            middleware: clickOutSideMiddleware
           }"
           :must-required="mustRequired"
           :property="property"

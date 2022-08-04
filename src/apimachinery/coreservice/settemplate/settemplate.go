@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package settemplate TODO
 package settemplate
 
 import (
@@ -21,6 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SetTemplateInterface TODO
 type SetTemplateInterface interface {
 	CreateSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.CreateSetTemplateOption) (
 		metadata.SetTemplate, errors.CCErrorCoder)
@@ -48,6 +50,7 @@ type SetTemplateInterface interface {
 		*metadata.SetTempAttrData, errors.CCErrorCoder)
 }
 
+// NewSetTemplateInterfaceClient TODO
 func NewSetTemplateInterfaceClient(client rest.ClientInterface) SetTemplateInterface {
 	return &setTemplate{client: client}
 }

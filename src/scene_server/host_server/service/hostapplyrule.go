@@ -31,6 +31,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// CreateHostApplyRule TODO
 func (s *Service) CreateHostApplyRule(ctx *rest.Contexts) {
 	rid := ctx.Kit.Rid
 
@@ -68,6 +69,7 @@ func (s *Service) CreateHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(rule)
 }
 
+// UpdateHostApplyRule TODO
 func (s *Service) UpdateHostApplyRule(ctx *rest.Contexts) {
 	rid := ctx.Kit.Rid
 
@@ -148,6 +150,7 @@ func (s *Service) DeleteHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(make(map[string]interface{}))
 }
 
+// GetHostApplyRule TODO
 func (s *Service) GetHostApplyRule(ctx *rest.Contexts) {
 	rid := ctx.Kit.Rid
 
@@ -177,6 +180,7 @@ func (s *Service) GetHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(rule)
 }
 
+// ListHostApplyRule TODO
 func (s *Service) ListHostApplyRule(ctx *rest.Contexts) {
 	rid := ctx.Kit.Rid
 
@@ -214,6 +218,7 @@ func (s *Service) ListHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(ruleResult)
 }
 
+// BatchCreateOrUpdateHostApplyRule TODO
 func (s *Service) BatchCreateOrUpdateHostApplyRule(ctx *rest.Contexts) {
 	rid := ctx.Kit.Rid
 

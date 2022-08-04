@@ -19,9 +19,9 @@ import (
 	"net/http"
 	"time"
 
-	//"configcenter/src/common/mapstr"
+	// "configcenter/src/common/mapstr"
 	"configcenter/src/test"
-	//"configcenter/src/common"
+	// "configcenter/src/common"
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/test/run"
 
@@ -64,7 +64,7 @@ var _ = Describe("Business Test", func() {
 
 		It("running load test", func() {
 			m := run.FireLoadTest(func() error {
-				//h := CopyHeader(header)
+				// h := CopyHeader(header)
 
 				rsp, err := clientSet.ApiServer().SearchBiz(context.Background(), "0", header, cond)
 				if err != nil {
@@ -81,7 +81,7 @@ var _ = Describe("Business Test", func() {
 	})
 
 	Describe("create business load test", func() {
-		//var header = test.GetHeader()
+		// var header = test.GetHeader()
 		Measure("emit the request", func(b Benchmarker) {
 			runtime := b.Time("runtime", func() {
 

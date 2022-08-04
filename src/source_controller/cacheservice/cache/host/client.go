@@ -27,6 +27,7 @@ import (
 	"configcenter/src/storage/driver/redis"
 )
 
+// Client TODO
 type Client struct {
 	lock tools.RefreshingLock
 }
@@ -164,7 +165,7 @@ func (c *Client) GetHostWithInnerIP(ctx context.Context, opt *metadata.SearchHos
 	}
 }
 
-// ListHostIDsWithPage get host id list sorted with host id with forward sort.
+// ListHostsWithPage get host id list sorted with host id with forward sort.
 // this id list has a ttl life cycle, and triggered with update with user's request.
 func (c *Client) ListHostsWithPage(ctx context.Context, opt *metadata.ListHostWithPage) (int64, []string, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)

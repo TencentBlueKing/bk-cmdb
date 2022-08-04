@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package reflector TODO
 package reflector
 
 import (
@@ -23,12 +24,14 @@ import (
 	"configcenter/src/storage/stream/types"
 )
 
+// Interface TODO
 type Interface interface {
 	Lister(ctx context.Context, opts *types.ListOptions) (ch chan *types.Event, err error)
 	Watcher(ctx context.Context, opts *types.WatchOptions, cap *Capable) error
 	ListWatcher(ctx context.Context, opts *types.ListWatchOptions, cap *Capable) error
 }
 
+// NewReflector TODO
 func NewReflector(conf local.MongoConf) (Interface, error) {
 	s, err := stream.NewStream(conf)
 	if err != nil {
@@ -38,14 +41,17 @@ func NewReflector(conf local.MongoConf) (Interface, error) {
 	return &Reflector{Stream: s}, nil
 }
 
+// Reflector TODO
 type Reflector struct {
 	Stream stream.Interface
 }
 
+// Lister TODO
 func (r *Reflector) Lister(ctx context.Context, opts *types.ListOptions) (ch chan *types.Event, err error) {
 	return r.Stream.List(ctx, opts)
 }
 
+// Watcher TODO
 func (r *Reflector) Watcher(ctx context.Context, opts *types.WatchOptions, cap *Capable) error {
 	if cap == nil {
 		return errors.New("invalid Capable value, must be a pointer and not nil")
@@ -67,6 +73,7 @@ func (r *Reflector) Watcher(ctx context.Context, opts *types.WatchOptions, cap *
 	return nil
 }
 
+// ListWatcher TODO
 func (r *Reflector) ListWatcher(ctx context.Context, opts *types.ListWatchOptions, cap *Capable) error {
 	if cap == nil {
 		return errors.New("invalid Capable value, must be a pointer and not nil")

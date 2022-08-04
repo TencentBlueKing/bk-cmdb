@@ -32,6 +32,7 @@ import (
 // Netdevicebeat netdevicebeat collector name
 const Netdevicebeat = "netdevicebeat"
 
+// SearchCollector TODO
 func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcollectorSearch) (int64, []metadata.Netcollector, error) {
 	collectors := make([]metadata.Netcollector, 0)
 
@@ -197,6 +198,7 @@ func (lgc *Logics) findCollectorMap(cond interface{}) (map[string]metadata.Netco
 	return collectorMap, nil
 }
 
+// UpdateCollector TODO
 func (lgc *Logics) UpdateCollector(header http.Header, config metadata.Netcollector) error {
 	filter := map[string]interface{}{
 		common.BKCloudIDField:     config.CloudID,
@@ -226,6 +228,7 @@ func (lgc *Logics) UpdateCollector(header http.Header, config metadata.Netcollec
 	return lgc.DiscoverNetDevice(header, []metadata.Netcollector{config})
 }
 
+// DiscoverNetDevice TODO
 func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netcollector) error {
 
 	// fetch global_params
@@ -441,6 +444,7 @@ func (lgc *Logics) findCustom() ([]Custom, error) {
 	return customs, nil
 }
 
+// NetDeviceConfig TODO
 type NetDeviceConfig struct {
 	DataID      int64      `yaml:"dataid,omitempty"`
 	CloudID     int64      `yaml:"bk_cloud_id,omitempty"`
@@ -455,10 +459,12 @@ type NetDeviceConfig struct {
 	Report      Report     `yaml:"report,omitempty"`
 }
 
+// Report TODO
 type Report struct {
 	Debug bool `yaml:"debug,omitempty"`
 }
 
+// Custom TODO
 type Custom struct {
 	DeviceModel string `yaml:"device_model,omitempty"`
 	ObjectID    string `yaml:"bk_obj_id,omitempty"`
@@ -489,6 +495,7 @@ type SnmpConfig struct {
 	MaxOids int `yaml:"max_oids,omitempty"`
 }
 
+// Version TODO
 type Version string
 
 // SnmpVersion constant

@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// GetBizTopology TODO
 func (t *Topology) GetBizTopology(kit *rest.Kit, biz int64) (*string, error) {
 	// read from secondary in mongodb cluster.
 	kit.Ctx = util.SetDBReadPreference(kit.Ctx, common.SecondaryPreferredMode)

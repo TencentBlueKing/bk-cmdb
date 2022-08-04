@@ -46,20 +46,21 @@ type synchronizeItem struct {
 	objIDMap map[string]bool
 	// modelclassificationMap sync model classification
 	modelclassificationMap map[string]bool
-	appIDArr             []int64
-	version              int64
+	appIDArr               []int64
+	version                int64
 }
 
+// NewSynchronizeItem TODO
 func (lgc *Logics) NewSynchronizeItem(version int64, syncConfig *options.ConfigItem) synchronizeItemInterface {
 
 	ret := &synchronizeItem{
-		lgc:                  lgc,
-		config:               syncConfig,
-		baseCondition:        mapstr.New(),
-		objIDMap:             make(map[string]bool, 0),
+		lgc:                    lgc,
+		config:                 syncConfig,
+		baseCondition:          mapstr.New(),
+		objIDMap:               make(map[string]bool, 0),
 		modelclassificationMap: make(map[string]bool, 0),
-		appIDArr:             make([]int64, 0),
-		version:              version,
+		appIDArr:               make([]int64, 0),
+		version:                version,
 	}
 	ret.configPretreatment()
 	return ret

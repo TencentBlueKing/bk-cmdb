@@ -16,6 +16,7 @@ package language
 type DefaultCCLanguageIf interface {
 	// Language returns an content with key
 	Language(key string) string
+	// Languagef TODO
 	// Errorf returns an content with key
 	Languagef(key string, args ...interface{}) string
 }

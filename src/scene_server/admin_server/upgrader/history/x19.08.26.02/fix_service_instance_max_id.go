@@ -21,12 +21,13 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// Idgen TODO
 type Idgen struct {
 	ID         string `bson:"_id"`
 	SequenceID uint64 `bson:"SequenceID"`
 }
 
-// 将 cc_idgenerator 中 cc_ProcessTemplate 和 cc_ServiceInstance 两个key的值升级到他们的最大值
+// FixServiceInstanceMaxID 将 cc_idgenerator 中 cc_ProcessTemplate 和 cc_ServiceInstance 两个key的值升级到他们的最大值
 func FixServiceInstanceMaxID(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	filter := map[string]interface{}{
 		"_id": common.BKTableNameServiceInstance,

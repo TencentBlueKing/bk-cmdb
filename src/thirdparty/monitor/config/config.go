@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package config TODO
 package config
 
 import (
@@ -20,20 +21,30 @@ import (
 )
 
 const (
-	QueueSizeMax     = 1000
-	QueueSizeMin     = 1
+	// QueueSizeMax TODO
+	QueueSizeMax = 1000
+	// QueueSizeMin TODO
+	QueueSizeMin = 1
+	// QueueSizeDefault TODO
 	QueueSizeDefault = 100
 
-	QPSMax     = 50
-	QPSMin     = 1
+	// QPSMax TODO
+	QPSMax = 50
+	// QPSMin TODO
+	QPSMin = 1
+	// QPSDefault TODO
 	QPSDefault = 10
 
-	BurstMax     = 100
-	BurstMin     = 1
+	// BurstMax TODO
+	BurstMax = 100
+	// BurstMin TODO
+	BurstMin = 1
+	// BurstDefault TODO
 	BurstDefault = 20
 )
 
 var (
+	// MonitorCfg TODO
 	MonitorCfg = new(MonitorConfig)
 )
 

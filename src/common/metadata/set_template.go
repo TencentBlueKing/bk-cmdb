@@ -1,3 +1,4 @@
+// Package metadata TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
  * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -33,6 +34,7 @@ type SetTemplate struct {
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
+// Validate TODO
 func (st SetTemplate) Validate(errProxy errors.DefaultCCErrorIf) (key string, err error) {
 	st.Name, err = util.ValidTopoNameField(st.Name, "name", errProxy)
 	if err != nil {
@@ -41,7 +43,7 @@ func (st SetTemplate) Validate(errProxy errors.DefaultCCErrorIf) (key string, er
 	return "", nil
 }
 
-// 拓扑模板与服务模板多对多关系, 记录拓扑模板的构成
+// SetServiceTemplateRelation 拓扑模板与服务模板多对多关系, 记录拓扑模板的构成
 type SetServiceTemplateRelation struct {
 	BizID             int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	SetTemplateID     int64  `field:"set_template_id" json:"set_template_id" bson:"set_template_id"`

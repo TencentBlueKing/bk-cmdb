@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package topology TODO
 package topology
 
 import (
@@ -29,6 +30,7 @@ import (
 	"configcenter/src/storage/stream"
 )
 
+// NewTopology TODO
 func NewTopology(isMaster discovery.ServiceManageInterface, loopW stream.LoopInterface) (*Topology, error) {
 
 	t := &Topology{
@@ -59,6 +61,7 @@ func NewTopology(isMaster discovery.ServiceManageInterface, loopW stream.LoopInt
 	return t, nil
 }
 
+// Topology TODO
 type Topology struct {
 	db          dal.DB
 	rds         redis.Client

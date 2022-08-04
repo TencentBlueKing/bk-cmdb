@@ -161,6 +161,7 @@
             :properties="properties"
             :property-groups="propertyGroups"
             :inst="attribute.inst.edit"
+            :is-main-line="true"
             :type="attribute.type"
             :save-auth="saveAuth"
             @on-submit="handleSave"

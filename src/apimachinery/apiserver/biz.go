@@ -22,6 +22,7 @@ import (
 	params "configcenter/src/common/paraparse"
 )
 
+// CreateBiz TODO
 func (a *apiServer) CreateBiz(ctx context.Context, ownerID string, h http.Header, params map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
 	resp = new(metadata.CreateInstResult)
 	subPath := "/biz/%s"
@@ -36,6 +37,7 @@ func (a *apiServer) CreateBiz(ctx context.Context, ownerID string, h http.Header
 	return
 }
 
+// UpdateBiz TODO
 func (a *apiServer) UpdateBiz(ctx context.Context, ownerID string, bizID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/biz/%s/%s"
@@ -74,6 +76,7 @@ func (a *apiServer) UpdateBizDataStatus(ctx context.Context, ownerID string, fla
 	return nil
 }
 
+// SearchBiz TODO
 func (a *apiServer) SearchBiz(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/biz/search/%s"

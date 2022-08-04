@@ -13,44 +13,50 @@
 package types
 
 import (
-    "configcenter/src/framework/core/types"
+	"configcenter/src/framework/core/types"
 )
 
+// CreateSetCtx TODO
 type CreateSetCtx struct {
 	BaseCtx
-	SetID  int64
-	Set    types.MapStr
+	SetID int64
+	Set   types.MapStr
 }
 
+// CreateSetResult TODO
 type CreateSetResult struct {
-    BaseResp `json:",inline"`
-    Data     struct {
-        ID int64 `json:"id"`
-    } `json:"data"`
+	BaseResp `json:",inline"`
+	Data     struct {
+		ID int64 `json:"id"`
+	} `json:"data"`
 }
 
+// DeleteSetCtx TODO
 type DeleteSetCtx struct {
-    BaseCtx
-    BusinessID int64
-    SetID      int64
+	BaseCtx
+	BusinessID int64
+	SetID      int64
 }
 
+// UpdateSetCtx TODO
 type UpdateSetCtx struct {
-    BaseCtx
-    BusinessID int64
-    SetID      int64
-    Set types.MapStr
+	BaseCtx
+	BusinessID int64
+	SetID      int64
+	Set        types.MapStr
 }
 
+// ListSetCtx TODO
 type ListSetCtx struct {
-    BaseCtx
-    Tenancy    string
-    BusinessID int64
-    SetID      int64
-    Filter     Query
+	BaseCtx
+	Tenancy    string
+	BusinessID int64
+	SetID      int64
+	Filter     Query
 }
 
+// ListSetResult TODO
 type ListSetResult struct {
-    BaseResp `json:",inline"`
-    Data     ListInfo
+	BaseResp `json:",inline"`
+	Data     ListInfo
 }

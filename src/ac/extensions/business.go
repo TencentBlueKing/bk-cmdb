@@ -58,6 +58,7 @@ func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Hea
 	return instances, nil
 }
 
+// MakeResourcesByBusiness TODO
 func (am *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.Action, businesses ...BusinessSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, business := range businesses {
@@ -107,6 +108,7 @@ func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Head
 	return am.batchAuthorize(ctx, header, resources...)
 }
 
+// AuthorizeByBusinessID TODO
 func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.Header, action meta.Action, businessIDs ...int64) error {
 	if !am.Enabled() {
 		return nil
@@ -120,6 +122,7 @@ func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.He
 	return am.AuthorizeByBusiness(ctx, header, action, businesses...)
 }
 
+// GenBizBatchNoPermissionResp TODO
 func (am *AuthManager) GenBizBatchNoPermissionResp(ctx context.Context, header http.Header, action meta.Action,
 	bizIDs []int64) (*metadata.BaseResp, error) {
 	businesses, err := am.collectBusinessByIDs(ctx, header, bizIDs...)

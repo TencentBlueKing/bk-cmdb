@@ -37,6 +37,7 @@ type HttpServer struct {
 	webContainer *restful.Container
 }
 
+// NewHttpServer TODO
 func NewHttpServer(port uint, addr, sock string) *HttpServer {
 
 	wsContainer := restful.NewContainer()
@@ -50,6 +51,7 @@ func NewHttpServer(port uint, addr, sock string) *HttpServer {
 	}
 }
 
+// SetSsl TODO
 func (s *HttpServer) SetSsl(cafile, certfile, keyfile, certPasswd string) {
 	s.caFile = cafile
 	s.certFile = certfile
@@ -58,16 +60,18 @@ func (s *HttpServer) SetSsl(cafile, certfile, keyfile, certPasswd string) {
 	s.isSSL = true
 }
 
+// RegisterWebServer TODO
 func (s *HttpServer) RegisterWebServer(rootPath string, filter restful.FilterFunction, actions []*Action) error {
-	//new a web service
+	// new a web service
 	ws := s.NewWebService(rootPath, filter)
 
-	//register action
+	// register action
 	s.RegisterActions(ws, actions)
 
 	return nil
 }
 
+// NewWebService TODO
 func (s *HttpServer) NewWebService(rootPath string, filter restful.FilterFunction) *restful.WebService {
 	ws := new(restful.WebService)
 	if "" != rootPath {
@@ -84,9 +88,13 @@ func (s *HttpServer) NewWebService(rootPath string, filter restful.FilterFunctio
 
 	return ws
 }
+
+// GetWebContainer TODO
 func (s *HttpServer) GetWebContainer() *restful.Container {
 	return s.webContainer
 }
+
+// RegisterActions TODO
 func (s *HttpServer) RegisterActions(ws *restful.WebService, actions []*Action) {
 	blog.Debug("RegisterActions")
 	for _, action := range actions {
@@ -123,10 +131,11 @@ func (s *HttpServer) registerActionsFilter(r *restful.RouteBuilder, filters []re
 	}
 }
 
+// ListenAndServe TODO
 func (s *HttpServer) ListenAndServe() error {
 
 	var chError = make(chan error, 1)
-	//list and serve by addrport
+	// list and serve by addrport
 	go func() {
 		addrport := net.JoinHostPort(s.addr, strconv.FormatUint(uint64(s.port), 10))
 		httpserver := &http.Server{Addr: addrport, Handler: s.webContainer}

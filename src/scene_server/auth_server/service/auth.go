@@ -24,7 +24,7 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
-// AuthorizeBath works to check if a user has the authority to operate resources.
+// AuthorizeBatch works to check if a user has the authority to operate resources.
 func (s *AuthService) AuthorizeBatch(ctx *rest.Contexts) {
 	opts := new(types.AuthBatchOptions)
 	err := ctx.DecodeInto(opts)

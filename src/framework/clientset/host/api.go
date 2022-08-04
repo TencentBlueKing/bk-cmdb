@@ -18,6 +18,7 @@ import (
 	types2 "configcenter/src/framework/core/types"
 )
 
+// Interface TODO
 type Interface interface {
 	ListHosts(ctx *types.ListHostsCtx) (*types.HostsInfo, error)
 	GetHostDetails(ctx *types.GetHostCtx) ([]types.HostAttribute, error)
@@ -26,6 +27,7 @@ type Interface interface {
 	DeleteHosts(ctx *types.DeleteHostsCtx) error
 }
 
+// NewHostCtrl TODO
 func NewHostCtrl(client rest.ClientInterface) Interface {
 	return &hostClient{
 		client: client,

@@ -40,6 +40,7 @@ var (
 	}
 )
 
+// ActionIDNameMap TODO
 var ActionIDNameMap = map[ActionID]string{
 	EditBusinessHost:                    "业务主机编辑",
 	BusinessHostTransferToResourcePool:  "主机归还主机池",
@@ -127,6 +128,7 @@ func GenerateActions(objects []metadata.Object) []ResourceAction {
 	return resourceActionList
 }
 
+// GenerateStaticActions TODO
 func GenerateStaticActions() []ResourceAction {
 	resourceActionList := make([]ResourceAction, 0)
 	// add business resource actions

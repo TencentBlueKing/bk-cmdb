@@ -19,6 +19,7 @@ import (
 	"configcenter/src/framework/common/rest"
 )
 
+// ModuleInterface TODO
 type ModuleInterface interface {
 	CreateModule(ctx *types.CreateModuleCtx) (int64, error)
 	DeleteModule(ctx *types.DeleteModuleCtx) error
@@ -32,6 +33,7 @@ type module struct {
 	client rest.ClientInterface
 }
 
+// CreateModule TODO
 func (m *module) CreateModule(ctx *types.CreateModuleCtx) (int64, error) {
 	resp := new(types.CreateModuleResult)
 	subPath := fmt.Sprintf("/module/%d/%d", ctx.BusinessID, ctx.SetID)
@@ -53,6 +55,7 @@ func (m *module) CreateModule(ctx *types.CreateModuleCtx) (int64, error) {
 	return resp.Data.ID, nil
 }
 
+// DeleteModule TODO
 func (m *module) DeleteModule(ctx *types.DeleteModuleCtx) error {
 	resp := new(types.Response)
 	subPath := fmt.Sprintf("/module/%d/%d/%d", ctx.BusinessID, ctx.SetID, ctx.ModuleID)
@@ -74,6 +77,7 @@ func (m *module) DeleteModule(ctx *types.DeleteModuleCtx) error {
 	return nil
 }
 
+// UpdateModule TODO
 func (m *module) UpdateModule(ctx *types.UpdateModuleCtx) error {
 	resp := new(types.Response)
 	subPath := fmt.Sprintf("/module/%d/%d/%d", ctx.BusinessID, ctx.SetID, ctx.ModuleID)
@@ -95,6 +99,7 @@ func (m *module) UpdateModule(ctx *types.UpdateModuleCtx) error {
 	return nil
 }
 
+// ListModules TODO
 func (m *module) ListModules(ctx *types.ListModulesCtx) (*types.ListInfo, error) {
 	resp := new(types.ListModulesResult)
 	subPath := fmt.Sprintf("/module/search/%s/%d/%d", ctx.Tenancy, ctx.BusinessID, ctx.SetID)

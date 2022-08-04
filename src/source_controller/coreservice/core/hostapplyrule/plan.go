@@ -30,7 +30,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-//GenerateApplyPlan 生成主机属性自动应用执行计划
+// GenerateApplyPlan 生成主机属性自动应用执行计划
 func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder) {
 	rid := kit.Rid
 
@@ -163,7 +163,7 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 	return result, nil
 }
 
-// isRuleEqualOrNot: When the attribute type is "organization", the type obtained from the database is the database's
+// isRuleEqualOrNot : When the attribute type is "organization", the type obtained from the database is the database's
 // native primitive.A type. When converted to []interface{}, the type is int64, the type of propertyValue is
 // []interface{}, and the type of each element inside is json.Number, which needs to be unified before comparing.
 // The rest of the attribute types can be compared directly in non-organization scenarios.

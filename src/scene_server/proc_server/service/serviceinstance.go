@@ -29,7 +29,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-// createServiceInstances 创建服务实例
+// CreateServiceInstances 创建服务实例
 // 支持直接创建和通过模板创建，用 module 是否绑定模版信息区分两种情况
 // 通过模板创建时，进程信息则表现为更新
 func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
@@ -382,6 +382,7 @@ func (ps *ProcServer) SearchHostWithNoServiceInstance(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.SearchHostWithNoSvcInstOutput{HostIDs: hostIDs})
 }
 
+// SearchServiceInstancesInModuleWeb TODO
 func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	input := new(metadata.GetServiceInstanceInModuleInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -458,6 +459,7 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchServiceInstancesBySetTemplate TODO
 func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
@@ -532,6 +534,7 @@ func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(serviceInstanceResult)
 }
 
+// SearchServiceInstancesInModule TODO
 func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 	input := new(metadata.GetServiceInstanceInModuleInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -567,6 +570,7 @@ func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 	ctx.RespEntity(instances)
 }
 
+// ListServiceInstancesDetails TODO
 func (ps *ProcServer) ListServiceInstancesDetails(ctx *rest.Contexts) {
 	input := new(metadata.ListServiceInstanceDetailOption)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -665,6 +669,7 @@ func (ps *ProcServer) UpdateServiceInstances(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// DeleteServiceInstance TODO
 func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 	input := new(metadata.DeleteServiceInstanceOption)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -1157,7 +1162,7 @@ type hostAndServiceInstsOpt struct {
 // pTemplateMap: 进程模板id为key的processTemplates Map
 // hostWithSrvInstMap: 由于模块下的host并不一定全部实例化 serviceInstance中的hostId map.
 
-// getHostAndServiceInstances 获取后续计算实例列表的的基本信息
+// getHostAndServiceInsts 获取后续计算实例列表的的基本信息
 func (ps *ProcServer) getHostAndServiceInsts(ctx *rest.Contexts, option *hostAndServiceInstsOpt,
 	module *metadata.ModuleInst, serviceInstances []metadata.ServiceInstance) (
 	map[int64][]metadata.ProcessInstanceRelation, *metadata.MultipleProcessInstanceRelation,
@@ -1724,7 +1729,7 @@ func (ps *ProcServer) getModuleMapStr(kit *rest.Kit, bizID, serviceTemplateId in
 	return modules.Info, nil
 }
 
-// getSrvTemplateAttrIdAndValue 获取服务模板的属性id以及对应的属性值
+// getSrvTemplateAttrIdAndPropertyValue 获取服务模板的属性id以及对应的属性值
 func (ps *ProcServer) getSrvTemplateAttrIdAndPropertyValue(kit *rest.Kit, bizID, serviceTemplateID int64) ([]int64,
 	map[int64]interface{}, ccErr.CCErrorCoder) {
 
@@ -2710,6 +2715,7 @@ func (ps *ProcServer) compensateSvcTempSyncStatus(kit *rest.Kit, moduleIDs []int
 	return statuses, nil
 }
 
+// ListServiceInstancesWithHost TODO
 func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
 	input := new(metadata.ListServiceInstancesWithHostInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -2840,6 +2846,7 @@ func (ps *ProcServer) ServiceInstanceUpdateLabels(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// ServiceInstanceAddLabels TODO
 func (ps *ProcServer) ServiceInstanceAddLabels(ctx *rest.Contexts) {
 	option := selector.SvcInstLabelAddOption{}
 	if err := ctx.DecodeInto(&option); err != nil {
@@ -2907,6 +2914,7 @@ func (ps *ProcServer) ServiceInstanceAddLabels(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// ServiceInstanceRemoveLabels TODO
 func (ps *ProcServer) ServiceInstanceRemoveLabels(ctx *rest.Contexts) {
 	option := selector.SvcInstLabelRemoveOption{}
 	if err := ctx.DecodeInto(&option); err != nil {

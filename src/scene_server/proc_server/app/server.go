@@ -29,6 +29,7 @@ import (
 	"configcenter/src/scene_server/proc_server/service"
 )
 
+// Run TODO
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 
 	svrInfo, err := types.NewServerInfo(op.ServConf)

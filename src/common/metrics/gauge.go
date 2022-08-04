@@ -19,6 +19,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// Gauge TODO
 type Gauge struct {
 	valGauge prometheus.GaugeFunc
 	maxGauge prometheus.GaugeFunc
@@ -30,6 +31,7 @@ type Gauge struct {
 	max uint64
 }
 
+// NewGauge TODO
 func NewGauge(opt prometheus.GaugeOpts) *Gauge {
 	g := Gauge{}
 	g.valGauge = prometheus.NewGaugeFunc(
@@ -51,16 +53,19 @@ func NewGauge(opt prometheus.GaugeOpts) *Gauge {
 	return &g
 }
 
+// Describe TODO
 func (g *Gauge) Describe(ch chan<- *prometheus.Desc) {
 	g.valGauge.Describe(ch)
 	g.maxGauge.Describe(ch)
 }
 
+// Collect TODO
 func (g *Gauge) Collect(ch chan<- prometheus.Metric) {
 	g.valGauge.Collect(ch)
 	g.maxGauge.Collect(ch)
 }
 
+// Inc TODO
 func (g *Gauge) Inc() {
 	new := g.Add(1)
 	old := atomic.LoadUint64(&g.max)
@@ -68,10 +73,13 @@ func (g *Gauge) Inc() {
 		atomic.CompareAndSwapUint64(&g.max, old, new)
 	}
 }
+
+// Dec TODO
 func (g *Gauge) Dec() {
 	g.Add(-1)
 }
 
+// Add TODO
 func (g *Gauge) Add(val float64) uint64 {
 	for {
 		oldBits := atomic.LoadUint64(&g.val)

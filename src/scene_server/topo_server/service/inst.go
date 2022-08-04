@@ -77,6 +77,7 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 	ctx.RespEntity(setInst)
 }
 
+// CreateManyInstance TODO
 func (s *Service) CreateManyInstance(ctx *rest.Contexts) {
 	data := new(metadata.CreateManyCommInst)
 	if err := ctx.DecodeInto(&data); err != nil {
@@ -171,6 +172,7 @@ func (s *Service) CreateInstsByImport(ctx *rest.Contexts) {
 	ctx.RespEntity(setInst)
 }
 
+// DeleteInsts TODO
 func (s *Service) DeleteInsts(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
 
@@ -806,6 +808,7 @@ func (s *Service) SearchInstTopo(ctx *rest.Contexts) {
 	ctx.RespEntity(instItems)
 }
 
+// SearchInstAssociation TODO
 // Deprecated 2019-09-30 废弃接口
 func (s *Service) SearchInstAssociation(ctx *rest.Contexts) {
 
@@ -860,6 +863,7 @@ func (s *Service) SearchInstAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(rsp)
 }
 
+// SearchInstAssociationUI TODO
 func (s *Service) SearchInstAssociationUI(ctx *rest.Contexts) {
 
 	objID := ctx.Request.PathParameter(common.BKObjIDField)

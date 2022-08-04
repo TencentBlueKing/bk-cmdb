@@ -96,6 +96,7 @@ const (
 
 // ignore  resource pool
 
+// ResourcePool TODO
 const ResourcePool = "资源池"
 
 // ESIndexMetaSettings elasticsearch index settings.

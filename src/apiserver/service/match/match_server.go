@@ -26,6 +26,7 @@ var (
 )
 
 const (
+	// RootPath TODO
 	RootPath = "/api/v3"
 )
 

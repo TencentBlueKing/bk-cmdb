@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package language TODO
 package language
 
 import (
@@ -50,7 +51,7 @@ func (cli *ccLanguageHelper) Languagef(language string, key string, args ...inte
 	return cli.languageStrf(language, key, args...)
 }
 
-// load load language package file from dir
+// Load load language package file from dir
 func (cli *ccLanguageHelper) Load(lang map[string]LanguageMap) {
 	// blog.V(3).Infof("loaded language resource: %#v", lang)
 	cli.lang = lang
@@ -112,6 +113,7 @@ func LoadLanguageResourceFromDir(dir string) (map[string]LanguageMap, error) {
 	return langMap, nil
 }
 
+// GetLang TODO
 func (cli *ccLanguageHelper) GetLang() map[string]LanguageMap {
 	return cli.lang
 }
@@ -146,6 +148,7 @@ func (cli *ccLanguageHelper) getLanguageStr(codemgr LanguageMap, key string) str
 
 var replayHolderReg = regexp.MustCompile(`\[(.*?)\]`)
 
+// languageStr TODO
 // errorStr 错误码转换成错误信息，此方法适合不需要动态填充参数的错误信息
 func (cli *ccLanguageHelper) languageStr(language, key string) string {
 
@@ -174,6 +177,7 @@ func (cli *ccLanguageHelper) languageStr(language, key string) string {
 	return cli.getLanguageStr(codemgr, key)
 }
 
+// languageStrf TODO
 // errorStrf retruns the error message string by code within language, format should define within error resource file
 func (cli *ccLanguageHelper) languageStrf(language, key string, args ...interface{}) string {
 

@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// CreateSyncTask TODO
 func (c *cloudOperation) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncTask) (*metadata.CloudSyncTask, errors.CCErrorCoder) {
 	if err := c.validCreateSyncTask(kit, task); nil != err {
 		blog.Errorf("CreateAccount failed, valid error: %+v, rid: %s", err, kit.Rid)
@@ -59,6 +60,7 @@ func (c *cloudOperation) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncT
 	return task, nil
 }
 
+// SearchSyncTask TODO
 func (c *cloudOperation) SearchSyncTask(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudSyncTask, errors.CCErrorCoder) {
 	results := make([]metadata.CloudSyncTask, 0)
 	option.Condition = util.SetQueryOwner(option.Condition, kit.SupplierAccount)
@@ -79,6 +81,7 @@ func (c *cloudOperation) SearchSyncTask(kit *rest.Kit, option *metadata.SearchCl
 	return &metadata.MultipleCloudSyncTask{Count: int64(count), Info: results}, nil
 }
 
+// UpdateSyncTask TODO
 func (c *cloudOperation) UpdateSyncTask(kit *rest.Kit, taskID int64, option mapstr.MapStr) errors.CCErrorCoder {
 	if err := c.validUpdateSyncTask(kit, taskID, option); nil != err {
 		blog.Errorf("UpdateSyncTask failed, valid error: %+v, rid: %s", err, kit.Rid)
@@ -108,6 +111,7 @@ func (c *cloudOperation) UpdateSyncTask(kit *rest.Kit, taskID int64, option maps
 	return nil
 }
 
+// DeleteSyncTask TODO
 func (c *cloudOperation) DeleteSyncTask(kit *rest.Kit, taskID int64) errors.CCErrorCoder {
 	cond := mapstr.MapStr{common.BKCloudSyncTaskID: taskID}
 	// 获取账户信息，用来处理后续的账号能否被删除的逻辑
@@ -128,6 +132,7 @@ func (c *cloudOperation) DeleteSyncTask(kit *rest.Kit, taskID int64) errors.CCEr
 	return nil
 }
 
+// CreateSyncHistory TODO
 func (c *cloudOperation) CreateSyncHistory(kit *rest.Kit, history *metadata.SyncHistory) (*metadata.SyncHistory, errors.CCErrorCoder) {
 	id, err := c.dbProxy.NextSequence(kit.Ctx, common.BKTableNameCloudSyncHistory)
 	if nil != err {
@@ -147,6 +152,7 @@ func (c *cloudOperation) CreateSyncHistory(kit *rest.Kit, history *metadata.Sync
 	return history, nil
 }
 
+// SearchSyncHistory TODO
 func (c *cloudOperation) SearchSyncHistory(kit *rest.Kit, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder) {
 	results := make([]metadata.SyncHistory, 0)
 	// 设置查询条件
@@ -207,6 +213,7 @@ func (c *cloudOperation) getSyncTaskCloudVendor(kit *rest.Kit, accountID int64) 
 	return result.CloudVendor, nil
 }
 
+// DeleteDestroyedHostRelated TODO
 func (c *cloudOperation) DeleteDestroyedHostRelated(kit *rest.Kit, option *metadata.DeleteDestroyedHostRelatedOption) errors.CCErrorCoder {
 	// update destroyed host
 	updateHostCond := map[string]interface{}{

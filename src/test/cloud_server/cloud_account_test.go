@@ -42,11 +42,11 @@ func NewTmpAccount() map[string]interface{} {
 
 // 清除表数据，保证测试用例之间互不干扰
 func clearAccountData() {
-	//清空云账户表
+	// 清空云账户表
 	err := test.GetDB().Table(common.BKTableNameCloudAccount).Delete(context.Background(), map[string]interface{}{})
 	Expect(err).NotTo(HaveOccurred())
 
-	//删除云账户id计数
+	// 删除云账户id计数
 	err = test.GetDB().Table(common.BKTableNameIDgenerator).Delete(context.Background(), map[string]interface{}{"_id": common.BKTableNameCloudAccount})
 	Expect(err).NotTo(HaveOccurred())
 }
@@ -65,10 +65,10 @@ func prepareAccountData() {
 var _ = Describe("cloud account test", func() {
 
 	BeforeEach(func() {
-		//清空数据
+		// 清空数据
 		clearAccountData()
 		clearSyncTaskData()
-		//准备数据
+		// 准备数据
 		prepareAccountData()
 	})
 

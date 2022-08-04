@@ -74,6 +74,7 @@ func (inst *instance) CreateManyInstance(ctx context.Context, h http.Header, obj
 	return &resp.Data, nil
 }
 
+// SetManyInstance TODO
 func (inst *instance) SetManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.SetManyModelInstance) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/setmany/model/%s/instances"
@@ -166,6 +167,7 @@ func (inst *instance) DeleteInstance(ctx context.Context, h http.Header, objID s
 	return &resp.Data, nil
 }
 
+// DeleteInstanceCascade TODO
 func (inst *instance) DeleteInstanceCascade(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
 	resp = new(metadata.DeletedOptionResult)
 	subPath := "/delete/model/%s/instance/cascade"
@@ -180,6 +182,7 @@ func (inst *instance) DeleteInstanceCascade(ctx context.Context, h http.Header, 
 	return
 }
 
+// ReadInstanceStruct TODO
 //  ReadInstanceStruct 按照结构体返回实例数据
 func (inst *instance) ReadInstanceStruct(ctx context.Context, h http.Header, objID string,
 	input *metadata.QueryCondition, result interface{}) errors.CCErrorCoder {

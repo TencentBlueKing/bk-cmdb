@@ -1,3 +1,4 @@
+// Package queue TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -18,6 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// Post TODO
 func (tq *taskQueue) Post(ctx context.Context, header http.Header, path string, data interface{}) (resp *metadata.Response, err error) {
 	resp = &metadata.Response{}
 

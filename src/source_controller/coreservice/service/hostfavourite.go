@@ -25,6 +25,7 @@ import (
 	"github.com/rs/xid"
 )
 
+// AddHostFavourite TODO
 func (s *coreService) AddHostFavourite(ctx *rest.Contexts) {
 	user := ctx.Request.PathParameter("user")
 	paras := new(meta.FavouriteParms)
@@ -75,6 +76,7 @@ func (s *coreService) AddHostFavourite(ctx *rest.Contexts) {
 	ctx.RespEntity(meta.ID{ID: id})
 }
 
+// UpdateHostFavouriteByID TODO
 func (s *coreService) UpdateHostFavouriteByID(ctx *rest.Contexts) {
 	id := ctx.Request.PathParameter("id")
 	user := ctx.Request.PathParameter("user")
@@ -152,6 +154,7 @@ func (s *coreService) UpdateHostFavouriteByID(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// DeleteHostFavouriteByID TODO
 func (s *coreService) DeleteHostFavouriteByID(ctx *rest.Contexts) {
 	id := ctx.Request.PathParameter("id")
 	user := ctx.Request.PathParameter("user")
@@ -184,6 +187,7 @@ func (s *coreService) DeleteHostFavouriteByID(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// ListHostFavourites TODO
 func (s *coreService) ListHostFavourites(ctx *rest.Contexts) {
 	dat := new(meta.ObjQueryInput)
 	if err := ctx.DecodeInto(dat); err != nil {
@@ -234,6 +238,7 @@ func (s *coreService) ListHostFavourites(ctx *rest.Contexts) {
 
 }
 
+// GetHostFavouriteByID TODO
 func (s *coreService) GetHostFavouriteByID(ctx *rest.Contexts) {
 	ID := ctx.Request.PathParameter("id")
 	user := ctx.Request.PathParameter("user")

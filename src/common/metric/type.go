@@ -20,12 +20,14 @@ import (
 	"configcenter/src/common/version"
 )
 
+// MetricFamily TODO
 type MetricFamily struct {
 	MetaData     *MetaData                   `json:"metaData"`
 	MetricBundle map[CollectorName][]*Metric `json:"metricBundle"`
 	ReportTimeMs int64                       `json:"reportTimeMs"`
 }
 
+// Metric TODO
 type Metric struct {
 	*MetricMeta `json:",inline"`
 	Value       *FloatOrString   `json:"value"`
@@ -64,12 +66,16 @@ func newMetric(m MetricInterf) (*Metric, error) {
 	}, nil
 }
 
+// CollectorName TODO
 type CollectorName string
+
+// Collector TODO
 type Collector struct {
 	Name      CollectorName
 	Collector CollectInter
 }
 
+// MetaData TODO
 type MetaData struct {
 	Module        string            `json:"module"`
 	ServerAddress string            `json:"server_address"`
@@ -77,6 +83,7 @@ type MetaData struct {
 	Labels        map[string]string `json:"label"`
 }
 
+// HealthResponse TODO
 type HealthResponse struct {
 	Code    int        `json:"code"`
 	OK      bool       `json:"ok"`
@@ -85,6 +92,7 @@ type HealthResponse struct {
 	Result  bool       `json:"result"`
 }
 
+// SetCommonResponse TODO
 func (h *HealthResponse) SetCommonResponse() {
 	// set version in healthz response
 	h.Data.Version = map[string]interface{}{
@@ -94,6 +102,7 @@ func (h *HealthResponse) SetCommonResponse() {
 	}
 }
 
+// HealthInfo TODO
 type HealthInfo struct {
 	Module     string `json:"module"`
 	Address    string `json:"address"`
@@ -102,6 +111,7 @@ type HealthInfo struct {
 	Version    map[string]interface{} `json:"version"`
 }
 
+// VersionInfo TODO
 type VersionInfo struct {
 	Module    string `json:"module"`
 	Version   string `json:"version"`
@@ -109,6 +119,7 @@ type VersionInfo struct {
 	CommitID  string `json:"commit_id"`
 }
 
+// Action TODO
 type Action struct {
 	Method      string
 	Path        string

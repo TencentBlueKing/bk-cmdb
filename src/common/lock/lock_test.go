@@ -15,7 +15,7 @@ import (
 func testRedisClient() redis.Client {
 
 	client := redis.NewClient(&rawRedis.Options{
-		Addr:     "127.0.0.1:44446", //s.Addr(),
+		Addr:     "127.0.0.1:44446", // s.Addr(),
 		Password: "xxxx",            // no password set
 		DB:       0,                 // use default DB
 	})

@@ -27,7 +27,7 @@ func init() {
 	rootCmd.AddCommand(NewConfCommand())
 }
 
-
+// NewConfCommand TODO
 func NewConfCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
@@ -37,10 +37,11 @@ func NewConfCommand() *cobra.Command {
 			return checkConf(cmd)
 		},
 	}
-	cmd.Flags().StringP("dir","d", "", "the directory path where the configuration file is located")
-	cmd.Flags().StringP("file","f", "", "the path of the configuration file")
+	cmd.Flags().StringP("dir", "d", "", "the directory path where the configuration file is located")
+	cmd.Flags().StringP("file", "f", "", "the path of the configuration file")
 	return cmd
 }
+
 // isExists checks target dir/file exist or not.
 func isExists(path string) bool {
 	_, err := os.Stat(path)
@@ -100,8 +101,8 @@ func checkConf(cmd *cobra.Command) error {
 }
 
 func checkFileType(path string) error {
-	s := strings.Split(path,".")
-	fileType := s[len(s) - 1]
+	s := strings.Split(path, ".")
+	fileType := s[len(s)-1]
 	if fileType != "yaml" && fileType != "yml" {
 		return fmt.Errorf("file format error")
 	}

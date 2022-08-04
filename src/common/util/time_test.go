@@ -30,7 +30,7 @@ func TestGetCurrentTimeStr(t *testing.T) {
 }
 
 func TestConvParamsTime(t *testing.T) {
-	//strJSON := `{"page":{"start":0,"limit":10,"sort":"bk_host_id"},"pattern":"","bk_biz_id":2,"ip":{"flag":"bk_host_innerip|bk_host_outerip","exact":0,"data":[]},"condition":[{"bk_obj_id":"host","fields":[],"condition":[{"create_time":["2018-03-04","2018-03-17"]}]},{"bk_obj_id":"biz","fields":[],"condition":[{"field":"default","operator":"$ne","value":1}]},{"bk_obj_id":"module","fields":[],"condition":[]},{"bk_obj_id":"set","fields":[],"condition":[]}]}`
+	// strJSON := `{"page":{"start":0,"limit":10,"sort":"bk_host_id"},"pattern":"","bk_biz_id":2,"ip":{"flag":"bk_host_innerip|bk_host_outerip","exact":0,"data":[]},"condition":[{"bk_obj_id":"host","fields":[],"condition":[{"create_time":["2018-03-04","2018-03-17"]}]},{"bk_obj_id":"biz","fields":[],"condition":[{"field":"default","operator":"$ne","value":1}]},{"bk_obj_id":"module","fields":[],"condition":[]},{"bk_obj_id":"set","fields":[],"condition":[]}]}`
 	strJSON := `{"bk_host_id":{"$in":[99,100,101,102,103,104]},"create_time":{"$in":["2018-03-16 02:45:28","2018-03-16"]}}`
 	var a interface{}
 	err := json.Unmarshal([]byte(strJSON), &a)

@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package inst TODO
 package inst
 
 import (
@@ -42,10 +43,12 @@ type inst struct {
 	datas  types.MapStr
 }
 
+// GetModel TODO
 func (cli *inst) GetModel() model.Model {
 	return cli.target
 }
 
+// GetInstID TODO
 func (cli *inst) GetInstID() int {
 	id, err := cli.datas.Int(InstID)
 	if nil != err {
@@ -53,14 +56,18 @@ func (cli *inst) GetInstID() int {
 	}
 	return id
 }
+
+// GetInstName TODO
 func (cli *inst) GetInstName() string {
 	return cli.datas.String(InstName)
 }
 
+// GetValues TODO
 func (cli *inst) GetValues() (types.MapStr, error) {
 	return cli.datas, nil
 }
 
+// SetValue TODO
 func (cli *inst) SetValue(key string, value interface{}) error {
 
 	// TODO:需要增加对输入的key 的校验
@@ -84,10 +91,10 @@ func (cli *inst) search() ([]model.Attribute, []types.MapStr, error) {
 	// extract the object id
 	objID := cli.target.GetID()
 	cond.Field(model.ObjectID).Eq(objID)
-	//log.Infof("attrs:%#v", attrs)
+	// log.Infof("attrs:%#v", attrs)
 	// extract the required id
 	for _, attrItem := range attrs {
-		//log.Infof("attrs:%#v", attrItem)
+		// log.Infof("attrs:%#v", attrItem)
 		if attrItem.GetKey() {
 
 			attrVal := cli.datas.String(attrItem.GetID())
@@ -104,6 +111,7 @@ func (cli *inst) search() ([]model.Attribute, []types.MapStr, error) {
 	return attrs, existItems, err
 }
 
+// IsExists TODO
 func (cli *inst) IsExists() (bool, error) {
 
 	_, existItems, err := cli.search()
@@ -113,6 +121,8 @@ func (cli *inst) IsExists() (bool, error) {
 
 	return 0 != len(existItems), nil
 }
+
+// Create TODO
 func (cli *inst) Create() error {
 
 	instID, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).CommonInst().CreateCommonInst(cli.datas)
@@ -122,6 +132,8 @@ func (cli *inst) Create() error {
 	cli.datas.Set(InstID, instID)
 	return nil
 }
+
+// Update TODO
 func (cli *inst) Update() error {
 
 	attrs, existItems, err := cli.search()
@@ -169,6 +181,8 @@ func (cli *inst) Update() error {
 
 	return nil
 }
+
+// Save TODO
 func (cli *inst) Save() error {
 
 	if exists, err := cli.IsExists(); nil != err {

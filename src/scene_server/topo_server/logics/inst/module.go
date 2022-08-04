@@ -210,6 +210,7 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 	return inst, nil
 }
 
+// checkModuleServiceTemplate TODO
 // validate service category id and service template id
 // 如果服务分类没有设置，则从服务模版中获取，如果服务模版也没有设置，则参数错误
 // 有效参数参数形式:

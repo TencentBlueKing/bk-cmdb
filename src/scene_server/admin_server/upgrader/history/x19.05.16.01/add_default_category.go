@@ -22,6 +22,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// ServiceCategory TODO
 type ServiceCategory struct {
 	Metadata metadata.Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 

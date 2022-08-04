@@ -18,7 +18,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// TransferHostToInnerModule transfer host to inner module
+// TransferToInnerModule transfer host to inner module
 // 转移到空闲机/故障机模块
 func (hm *hostManager) TransferToInnerModule(kit *rest.Kit, input *metadata.TransferHostToInnerModule) error {
 	return hm.hostTransfer.TransferToInnerModule(kit, input)
@@ -37,6 +37,7 @@ func (hm *hostManager) TransferToAnotherBusiness(kit *rest.Kit, input *metadata.
 	return hm.hostTransfer.TransferToAnotherBusiness(kit, input)
 }
 
+// DeleteFromSystem TODO
 // DeleteHost delete host from cmdb
 func (hm *hostManager) DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) error {
 	return hm.hostTransfer.DeleteFromSystem(kit, input)
@@ -47,6 +48,7 @@ func (hm *hostManager) RemoveFromModule(kit *rest.Kit, input *metadata.RemoveHos
 	return hm.hostTransfer.RemoveFromModule(kit, input)
 }
 
+// GetHostModuleRelation TODO
 func (hm *hostManager) GetHostModuleRelation(kit *rest.Kit, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error) {
 	return hm.hostTransfer.GetHostModuleRelation(kit, input)
 }
@@ -56,6 +58,7 @@ func (hm *hostManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, input *me
 	return hm.hostTransfer.GetDistinctHostIDsByTopoRelation(kit, input)
 }
 
+// TransferResourceDirectory TODO
 func (hm *hostManager) TransferResourceDirectory(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
 	return hm.hostTransfer.TransferResourceDirectory(kit, input)
 }

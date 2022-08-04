@@ -93,6 +93,7 @@ func (cc *ConfCenter) WriteAllConfs2Center(confDir, errRes, languageRes string) 
 	return nil
 }
 
+// WriteErrorRes2Center TODO
 func (cc *ConfCenter) WriteErrorRes2Center(errorres string) error {
 	info, err := os.Stat(errorres)
 	if os.ErrNotExist == err {
@@ -118,6 +119,7 @@ func (cc *ConfCenter) WriteErrorRes2Center(errorres string) error {
 	return cc.confRegDiscv.Write(key, data)
 }
 
+// WriteLanguageRes2Center TODO
 func (cc *ConfCenter) WriteLanguageRes2Center(languageres string) error {
 	info, err := os.Stat(languageres)
 	if os.ErrNotExist == err {
@@ -164,13 +166,14 @@ func (cc *ConfCenter) WriteConfs2Center(confRootPath string) error {
 			continue
 		} else {
 			blog.Infof("write configure to center %s success", key)
-			//cc.listenFileChange(key,filePath)
+			// cc.listenFileChange(key,filePath)
 		}
 	}
 
 	return nil
 }
 
+// WriteConfigure TODO
 func (cc *ConfCenter) WriteConfigure(confFilePath, key string) error {
 	confFile, err := os.Open(confFilePath)
 	if err != nil {
@@ -205,7 +208,7 @@ var mongodbViper *viper.Viper
 var commonViper *viper.Viper
 var extraViper *viper.Viper
 
-//此方法给adminserver实现热更新,监听每个文件，当文件发生更改时，将改后的数据重新写到注册中心
+// listenFileChange 此方法给adminserver实现热更新,监听每个文件，当文件发生更改时，将改后的数据重新写到注册中心
 func (cc *ConfCenter) listenFileChange(configcenterPath string, filePath string) {
 	v := viper.New()
 	base := path.Base(filePath)

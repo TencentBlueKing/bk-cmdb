@@ -10,14 +10,16 @@
  * limitations under the License.
  */
 
-package topo_tree
+package topotree
 
+// SearchNodePathOption TODO
 // search one of the node's path in the the business topology.
 type SearchNodePathOption struct {
 	Business int64           `json:"bk_biz_id"`
 	Nodes    []*MainlineNode `json:"bk_nodes"`
 }
 
+// MainlineNode TODO
 type MainlineNode struct {
 	// mainline topology object
 	Object string `json:"bk_obj_id"`
@@ -34,6 +36,7 @@ type NodePaths struct {
 	Paths [][]Node `json:"bk_paths"`
 }
 
+// Node TODO
 type Node struct {
 	// mainline topology object
 	Object string `json:"bk_obj_id"`

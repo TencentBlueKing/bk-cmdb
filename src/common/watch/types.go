@@ -18,15 +18,21 @@ import (
 	"configcenter/src/storage/stream/types"
 )
 
+// EventType TODO
 type EventType string
 
 const (
-	Create  EventType = "create"
-	Update  EventType = "update"
-	Delete  EventType = "delete"
+	// Create TODO
+	Create EventType = "create"
+	// Update TODO
+	Update EventType = "update"
+	// Delete TODO
+	Delete EventType = "delete"
+	// Unknown TODO
 	Unknown EventType = "unknown"
 )
 
+// Validate TODO
 func (e EventType) Validate() error {
 	switch e {
 	case Create, Update, Delete:
@@ -36,6 +42,7 @@ func (e EventType) Validate() error {
 	}
 }
 
+// ConvertOperateType TODO
 func ConvertOperateType(typ types.OperType) EventType {
 	switch typ {
 	case types.Insert:
@@ -49,6 +56,7 @@ func ConvertOperateType(typ types.OperType) EventType {
 	}
 }
 
+// ChainNode TODO
 type ChainNode struct {
 	// self increasing id, used for sequential batch query
 	ID uint64 `json:"id" bson:"id"`
@@ -69,6 +77,7 @@ type ChainNode struct {
 	SubResource []string `json:"bk_sub_resource,omitempty" bson:"bk_sub_resource,omitempty"`
 }
 
+// LastChainNodeData TODO
 type LastChainNodeData struct {
 	Coll        string          `json:"_id" bson:"_id"`
 	ID          uint64          `json:"id" bson:"id"`

@@ -68,6 +68,7 @@ func (am *AuthManager) extractBusinessIDFromSets(sets ...SetSimplify) (int64, er
 	return businessID, nil
 }
 
+// MakeResourcesBySet TODO
 func (am *AuthManager) MakeResourcesBySet(header http.Header, action meta.Action, businessID int64, sets ...SetSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, set := range sets {
@@ -87,6 +88,7 @@ func (am *AuthManager) MakeResourcesBySet(header http.Header, action meta.Action
 	return resources
 }
 
+// AuthorizeBySetID TODO
 func (am *AuthManager) AuthorizeBySetID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
 	if !am.Enabled() {
 		return nil
@@ -106,6 +108,7 @@ func (am *AuthManager) AuthorizeBySetID(ctx context.Context, header http.Header,
 	return am.AuthorizeBySet(ctx, header, action, sets...)
 }
 
+// AuthorizeBySet TODO
 func (am *AuthManager) AuthorizeBySet(ctx context.Context, header http.Header, action meta.Action, sets ...SetSimplify) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 

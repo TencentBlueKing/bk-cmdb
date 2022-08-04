@@ -20,6 +20,7 @@ import (
 	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
 
+// CreateOneModelInstance TODO
 func (s *coreService) CreateOneModelInstance(ctx *rest.Contexts) {
 	inputData := metadata.CreateModelInstance{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -29,6 +30,7 @@ func (s *coreService) CreateOneModelInstance(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.InstanceOperation().CreateModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
+// CreateManyModelInstances TODO
 func (s *coreService) CreateManyModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.CreateManyModelInstance{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -38,6 +40,7 @@ func (s *coreService) CreateManyModelInstances(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.InstanceOperation().CreateManyModelInstance(ctx.Kit, ctx.Request.PathParameter(common.BKObjIDField), inputData))
 }
 
+// UpdateModelInstances TODO
 func (s *coreService) UpdateModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.UpdateOption{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -48,6 +51,7 @@ func (s *coreService) UpdateModelInstances(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.InstanceOperation().UpdateModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
+// SearchModelInstances TODO
 func (s *coreService) SearchModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.QueryCondition{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -100,6 +104,7 @@ func (s *coreService) CountModelInstances(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// DeleteModelInstances TODO
 func (s *coreService) DeleteModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -109,6 +114,7 @@ func (s *coreService) DeleteModelInstances(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.InstanceOperation().DeleteModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
+// CascadeDeleteModelInstances TODO
 func (s *coreService) CascadeDeleteModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -118,6 +124,7 @@ func (s *coreService) CascadeDeleteModelInstances(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.InstanceOperation().CascadeDeleteModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
+// GetInstanceObjectMapping TODO
 func (s *coreService) GetInstanceObjectMapping(ctx *rest.Contexts) {
 	inputData := metadata.GetInstanceObjectMappingsOption{}
 	if err := ctx.DecodeInto(&inputData); nil != err {

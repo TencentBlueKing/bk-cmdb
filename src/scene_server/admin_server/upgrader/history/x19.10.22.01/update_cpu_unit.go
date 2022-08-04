@@ -22,6 +22,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// UpdateCpuUnit TODO
 func UpdateCpuUnit(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	filter := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDHost,

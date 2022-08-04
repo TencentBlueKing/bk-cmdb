@@ -40,7 +40,7 @@ func (cli *ccErrorHelper) CreateDefaultCCErrorIf(language string) DefaultCCError
 	}
 }
 
-// Errorf returns an error that adapt to the error interface which not accepts arguments
+// Error f returns an error that adapt to the error interface which not accepts arguments
 func (cli *ccErrorHelper) Error(language string, errCode int) error {
 	return &ccError{code: errCode, callback: func() string {
 		return cli.errorStr(language, errCode)
@@ -61,19 +61,20 @@ func (cli *ccErrorHelper) CCError(language string, errCode int) CCErrorCoder {
 	}}
 }
 
-// Errorf returns an error that adapt to the error interface which accepts arguments
+// CCErrorf returns an error that adapt to the error interface which accepts arguments
 func (cli *ccErrorHelper) CCErrorf(language string, ErrorCode int, args ...interface{}) CCErrorCoder {
 	return &ccError{code: ErrorCode, callback: func() string {
 		return cli.errorStrf(language, ErrorCode, args...)
 	}}
 }
 
-// load load language package file from dir
+// Load load language package file from dir
 func (cli *ccErrorHelper) Load(errcode map[string]ErrorCode) {
 	// blog.V(3).Infof("loaded error resource: %#v", errcode)
 	cli.errCode = errcode
 }
 
+// LoadErrorResourceFromDir TODO
 func LoadErrorResourceFromDir(dir string) (map[string]ErrorCode, error) {
 	// read all language file from dir
 	var errCode = map[string]ErrorCode{}
@@ -129,6 +130,7 @@ func LoadErrorResourceFromDir(dir string) (map[string]ErrorCode, error) {
 	return errCode, nil
 }
 
+// GetErrorCode TODO
 func (cli *ccErrorHelper) GetErrorCode() map[string]ErrorCode {
 	return cli.errCode
 }
@@ -146,7 +148,7 @@ func (cli *ccErrorHelper) getErrorCode(language string) ErrorCode {
 	return codemgr
 }
 
-// getErrorString get errors string interface
+// getErrorStr ing get errors string interface
 func (cli *ccErrorHelper) getErrorStr(codemgr ErrorCode, errCode int) string {
 
 	reset := false

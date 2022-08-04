@@ -21,15 +21,16 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
-	//"configcenter/src/common/blog"
+	// "configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/synchronize_server/app/options"
 	synchronizeService "configcenter/src/scene_server/synchronize_server/service"
-	//"configcenter/src/storage/dal/redis"
+	// "configcenter/src/storage/dal/redis"
 	synchronizeClient "configcenter/src/apimachinery/synchronize"
 	synchronizeUtil "configcenter/src/apimachinery/synchronize/util"
 )
 
+// Run TODO
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
@@ -81,6 +82,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	return nil
 }
 
+// SynchronizeServer TODO
 type SynchronizeServer struct {
 	Core                    *backbone.Engine
 	Config                  *options.Config

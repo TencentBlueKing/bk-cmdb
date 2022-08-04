@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SynchronizeInstance TODO
 func (sync *synchronize) SynchronizeInstance(ctx context.Context, h http.Header, input *metadata.SynchronizeParameter) (resp *metadata.SynchronizeResult, err error) {
 	resp = new(metadata.SynchronizeResult)
 	subPath := "/set/synchronize/instance"
@@ -33,6 +34,7 @@ func (sync *synchronize) SynchronizeInstance(ctx context.Context, h http.Header,
 	return
 }
 
+// SynchronizeModel TODO
 func (sync *synchronize) SynchronizeModel(ctx context.Context, h http.Header, input *metadata.SynchronizeParameter) (resp *metadata.SynchronizeResult, err error) {
 	resp = new(metadata.SynchronizeResult)
 	subPath := "/set/synchronize/model"
@@ -47,6 +49,7 @@ func (sync *synchronize) SynchronizeModel(ctx context.Context, h http.Header, in
 	return
 }
 
+// SynchronizeAssociation TODO
 func (sync *synchronize) SynchronizeAssociation(ctx context.Context, h http.Header, input *metadata.SynchronizeParameter) (resp *metadata.SynchronizeResult, err error) {
 	resp = new(metadata.SynchronizeResult)
 	subPath := "/set/synchronize/association"
@@ -61,6 +64,7 @@ func (sync *synchronize) SynchronizeAssociation(ctx context.Context, h http.Head
 	return
 }
 
+// SynchronizeFind TODO
 func (sync *synchronize) SynchronizeFind(ctx context.Context, h http.Header, input *metadata.SynchronizeFindInfoParameter) (resp *metadata.ResponseInstData, err error) {
 	resp = new(metadata.ResponseInstData)
 	subPath := "/read/synchronize"
@@ -75,6 +79,7 @@ func (sync *synchronize) SynchronizeFind(ctx context.Context, h http.Header, inp
 	return
 }
 
+// SynchronizeClearData TODO
 func (sync *synchronize) SynchronizeClearData(ctx context.Context, h http.Header, input *metadata.SynchronizeClearDataParameter) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/clear/synchronize/data"
@@ -89,6 +94,7 @@ func (sync *synchronize) SynchronizeClearData(ctx context.Context, h http.Header
 	return
 }
 
+// SetIdentifierFlag TODO
 func (sync *synchronize) SetIdentifierFlag(ctx context.Context, h http.Header, input *metadata.SetIdenifierFlag) (resp *metadata.SynchronizeResult, err error) {
 	resp = new(metadata.SynchronizeResult)
 	subPath := "/set/synchronize/identifier/flag"
