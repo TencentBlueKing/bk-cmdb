@@ -113,7 +113,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 
 {{- define "cmdb.redis.pwd" -}}
 {{- if .Values.redis.enabled -}}
-      {{- .Values.redis.auth.password -}}
+      {{- required "redis.auth.password is required" .Values.redis.auth.password  -}}
 {{- else }}
      {{- .Values.redis.redis.pwd -}}
 {{- end -}}
@@ -198,7 +198,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 
 {{- define "cmdb.mongodb.pwd" -}}
   {{- if eq .Values.mongodb.enabled true -}}
-    {{- .Values.mongodb.auth.password -}}
+    {{- required "mongodb.auth.password is required" .Values.mongodb.auth.password -}}
   {{- else -}}
     {{- .Values.mongodb.externalMongodb.pwd -}}
   {{- end -}}
