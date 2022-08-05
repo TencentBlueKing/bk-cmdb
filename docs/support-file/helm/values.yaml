@@ -1233,7 +1233,7 @@ common:
     session:
       name: cc3
       multipleOwner: "0"
-      userInfo: cc:cc
+      userInfo:
     ## webserver common config app parameters
     ## @param common.webServer.app.authAppCode bk-iam app code
     ## @param common.webServer.app.authUrl bk-iam url
@@ -1248,7 +1248,7 @@ common:
     ## @param common.webServer.login.version bk-cmdb login mode
     ##
     login:
-      version: opensource
+      version: skip-login
   ## monitor common config parameters
   ##
   monitor:
@@ -1494,7 +1494,7 @@ mongodb:
   auth:
     enabled: true
     username: cc
-    password: cc
+    password:
     database: cmdb
   ## @param mongodb.host mongodb host
   ##
@@ -1583,7 +1583,7 @@ redis:
   ## @param redis.auth.password redis authentication password
   auth:
     enabled: true
-    password: blueking
+    password:
   ## external redis parameters
   ##
   redis:
