@@ -13,13 +13,13 @@
 #ifndef _GSE_DATA_UDP_RECEIVER_H_
 #define _GSE_DATA_UDP_RECEIVER_H_
 
-#include <unistd.h>
-#include "net/udp/udp_server.h"
 #include "eventloop/event_loop.h"
+#include "net/udp/udp_server.h"
 #include "receiver/receiver.h"
-namespace gse { 
-namespace dataserver {
+#include <unistd.h>
 
+namespace gse {
+namespace data {
 
 class UdpReceiver : public Receiver
 {
@@ -30,19 +30,24 @@ public:
     int Start();
     int Stop();
     void Join();
+
 protected:
 private:
-    void MsgHandler(gse::eventloop::EventLoop* loop, gse::net::udp::UdpMessagePtr & msg);
+    void MsgHandler(gse::eventloop::EventLoop* loop, gse::net::udp::UdpMessagePtr msg);
+    int MigrationUdpListennerFd();
+    int StartMigrationSerivce();
 
 private:
     std::shared_ptr<gse::net::udp::UdpServer> m_udpServer;
     std::shared_ptr<std::thread> m_udpServerThread;
-    //UdpServerWorker* m_udpserver;
+
+    std::unique_ptr<gse::net::MigrationClient> m_migrationClient;
+    std::unique_ptr<gse::net::MigrationServer> m_migrationServer;
     int m_serverIp;
     int m_serverPort;
-
+    int m_listennerFd;
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif // !_GSE_DATA_UDP_RECEIVER_H_

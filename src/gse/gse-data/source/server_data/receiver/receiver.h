@@ -13,17 +13,17 @@
 #ifndef _GSE_DATA_RECEIVER_H_
 #define _GSE_DATA_RECEIVER_H_
 
-#include <string>
 #include "conf/confItem.h"
-#include "safe/ssl.h"
-#include "safe/lock.h"
 #include "datacell.h"
-#include "opscollection/ops.h"
+#include "ops/ops.h"
+#include "safe/lock.h"
+#include "safe/ssl.h"
+#include <string>
 
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
 
-typedef void (*RecvDataCallBack)(DataCell *pDataCell, void* pCaller);
+typedef void (*RecvDataCallBack)(DataCell *pDataCell, void *pCaller);
 
 class Receiver
 {
@@ -37,38 +37,38 @@ public:
     virtual void Join() = 0;
 
 public:
-    inline void SetGseConf(DataProcessConfig& cfg)
+    inline void SetConfig(std::shared_ptr<DataProcessConfig> cfg)
     {
-        m_gseCfg = cfg;
+        m_configPtr = cfg;
     }
 
-    inline void SetOPS(OpsCollection*  ptrOPSReport)
+    inline void SetOPS(OpsCollection *ptrOPSReport)
     {
         m_ptrOPSReport = ptrOPSReport;
     }
 
 public:
-    void UpdateConf(const ReceiverConf& receiverConf);
-    void SetRecvCallBack(RecvDataCallBack fnRecvData, void* pCaller);
+    void UpdateConf(const ReceiverConf &receiverConf);
+    void SetRecvCallBack(RecvDataCallBack fnRecvData, void *pCaller);
 
 protected:
-    ReceiverConf* m_recevierConf;
+    ReceiverConf *m_recevierConf;
     RecvDataCallBack m_fnRecvData;
-    void* m_pCaller;
+    void *m_pCaller;
     std::string m_servIp;
     uint16_t m_servPort;
-    SSL*  m_ptrSSL;
+    SSL *m_ptrSSL;
 
 protected:
-    DataProcessConfig  m_gseCfg;
+    std::shared_ptr<DataProcessConfig> m_configPtr;
 
 protected:
-    OpsCollection*  m_ptrOPSReport;
+    OpsCollection *m_ptrOPSReport;
 
 private:
-   gse::safe::RWLock m_upConfLock;
+    gse::safe::RWLock m_upConfLock;
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif

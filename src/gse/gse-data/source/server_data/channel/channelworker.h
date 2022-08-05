@@ -14,19 +14,18 @@
 #define _GSE_DATA_CHANNELWORKER_H_
 
 #include <event.h>
-#include <concurrentqueue.h>
-#include <boost/circular_buffer.hpp>
-#include "thread/thread.h"
-#include "safe/lock.h"
-#include "dataStruct/safe_queue.h"
-#include "opscollection/ops.h"
+
+#include "concurrentqueue/concurrentqueue.h"
 #include "datacell.h"
+#include "datastruct/safe_queue.h"
+#include "ops/ops.h"
+#include "safe/lock.h"
+#include "tools/thread.h"
 
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
 
-
-class ChannelWorker: public gse::thread::Thread
+class ChannelWorker : public gse::tools::thread::Thread
 {
 public:
     ChannelWorker(int id, void* pParent);
@@ -34,26 +33,26 @@ public:
 
 public:
     int Init();
-    int run();
     int ThreadFun();
     void stop();
 
     void Notify(DataCell* pDataCell);
 
 public:
-    inline void SetOPS(OpsCollection*  ptrOPSReport)
+    inline void SetOPS(OpsCollection* ptrOPSReport)
     {
         m_ptrOPSReport = ptrOPSReport;
     }
 
 private:
     static void QueueMsgHandler(int fd, short which, void* v);
-    static void OpsMsgHandler(int fd, short which, void *v);
+    static void OpsMsgHandler(int fd, short which, void* v);
 
 private:
     void cleanEvent();
     void dealData(DataCell* pDataCell);
     void ReportQueueSizeMetric();
+
 private:
     int m_notifyFd[2];
 
@@ -69,13 +68,13 @@ private:
     int m_workId;
     void* m_pParent;
     gse::safe::RWLock m_dataQueueLock;
-    moodycamel::ConcurrentQueue<DataCell *>* m_ptrDataQueue;
+    moodycamel::ConcurrentQueue<DataCell*>* m_ptrDataQueue;
 
 private:
-    OpsCollection*  m_ptrOPSReport;
+    OpsCollection* m_ptrOPSReport;
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 
 #endif

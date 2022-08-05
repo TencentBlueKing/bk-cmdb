@@ -10,16 +10,19 @@
  * limitations under the License.
  */
 
-#ifndef _DATA_REDIS_SENTINEL_PUB_H_
-#define _DATA_REDIS_SENTINEL_PUB_H_
+#ifndef _DATA_REDIS_SENTINEL_PUBLISHER_H_
+#define _DATA_REDIS_SENTINEL_PUBLISHER_H_
 
 #include <string>
+
+#include "db/redisapi/async_factory.h"
+#include "db/redisapi/factory.h"
+#include "eventthread/event_thread.h"
 #include "safe/lock.h"
-#include "eventthread/gseEventThread.h"
-#include "db/redisapi/sync_redis.h"
+
 #include "redis_pub_producer.h"
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
 
 class RedisSentinelPublisher
 {
@@ -28,35 +31,26 @@ public:
     ~RedisSentinelPublisher();
 
 public:
-    static void perMinHandler(int fd, short what, void* param);
+    int Init();
+    redis::RedisErrorCode Produce(const std::string &key, const std::string &value);
+    void GetHost(std::string &host, int &port);
+    void SetMasterName(const std::string &masterName);
+    void SetSentinelPasswd(const std::string &passwd);
 
-public:
-    int init();
-    // publish to redis
-    int produce(const std::string &key, const std::string &value);
-
-    void setMasterName(const std::string &mastername);
-
-    void getRedisMasterHostAndPort(string &host, int &port);
 private:
-    int checkMaster();
-    int createRedisClient();
-    int getRedisMaster(std::string &host, int &port);
-    void stop();
+    void Stop();
 
 private:
     std::string m_host;
     int m_port;
-    std::string m_masterHost;
-    int m_masterPort;
+    std::string m_sentienlPasswd;
     std::string m_masterPasswd;
     std::string m_masterName;
-    RedisPublishProducer *m_client;
     gse::safe::RWLock m_clientLock;
-    rgse::GseEventThread m_eventManager;
+    gse::redis::AsyncRedisSentinelPtr m_redisSentinal;
+    gse::redis::RedisSentinelPtr m_syncRedisSentinal;
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif
-

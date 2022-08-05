@@ -14,9 +14,12 @@
 #define _DATA_REDIS_PUB_PRODUCER_H_
 
 #include <string>
-#include "db/redisapi/async_redis.h"
-namespace gse { 
-namespace dataserver {
+
+#include "db/redisapi/factory.h"
+#include "safe/lock.h"
+
+namespace gse {
+namespace data {
 
 using namespace std;
 
@@ -27,21 +30,21 @@ public:
     ~RedisPublishProducer();
 
 public:
-
     // init will connect redis
     int init();
     // publish to redis
-    int produce(const std::string &key, const std::string &value);
-    
+    redis::RedisErrorCode produce(const std::string &key, const std::string &value);
+
     void GetHost(std::string &host, int &port);
+
 private:
     std::string m_host;
     int m_port;
     string m_passwd;
-    gse::redis::RedisMsgWriter *m_client;
+    gse::redis::RedisStandalonePtr m_redisStandalone;
+    gse::safe::RWLock m_clientLock;
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif
-

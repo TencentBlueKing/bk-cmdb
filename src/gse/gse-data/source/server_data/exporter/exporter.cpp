@@ -11,13 +11,13 @@
  */
 
 #include "exporter.h"
-#include "tools/macros.h"
 #include "bbx/gse_errno.h"
+#include "tools/macros.h"
 
 #include "dataserver.h"
 
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
 
 Exporter::Exporter()
 {
@@ -41,11 +41,10 @@ Exporter::~Exporter()
         delete m_next;
     }
 
-    LOG_INFO("will to delete the exporter '%s'",SAFE_CSTR(m_name.c_str()));
+    LOG_INFO("will to delete the exporter '%s'", SAFE_CSTR(m_name.c_str()));
 
     // ChannelIDFilter 此处仅保留了指针，不需要释放，由出生地管理
     m_filters.Clear();
-
 }
 
 void Exporter::UpdateConf(ExporterConfigWrapper::ExporterConfigTypeEnum type, void *conf)
@@ -78,7 +77,7 @@ void Exporter::SetNeedStop()
 bool Exporter::IsNeedStop()
 {
     // 超过60 秒即认为达到该被清理的标准
-    return m_setStopTimestamp == 0 ? false : ((gse::tools::time::GetUTCSecond() - m_setStopTimestamp) > 60);
+    return m_setStopTimestamp == 0 ? false : ((gse::tools::time::GetUTCSecond() - m_setStopTimestamp) > 120);
 }
 std::string Exporter::GetExporterName()
 {
@@ -99,7 +98,6 @@ bool Exporter::FilterByDataID(DataCell *pDataCell)
     return true;
 }
 
-
 bool Exporter::FilterByChannelID(DataCell *pDataCell)
 {
     pDataCell->ClearTableNames();
@@ -113,7 +111,7 @@ bool Exporter::FilterByChannelID(DataCell *pDataCell)
     for (; iter != tmp_filters.end(); ++iter)
     {
         ChannelIDFilter *ptr_filters = *iter;
-        if( NULL == ptr_filters)
+        if (NULL == ptr_filters)
         {
             continue;
         }
@@ -133,7 +131,7 @@ bool Exporter::FilterByChannelID(DataCell *pDataCell)
             continue;
         }
 
-        if(!ptr_filters->IsValidData(pDataCell))
+        if (!ptr_filters->IsValidData(pDataCell))
         {
             continue;
         }
@@ -157,19 +155,26 @@ bool Exporter::FilterByDataFlow(DataCell *pDataCell)
 
 void Exporter::AddFilter(ChannelIDFilter *ptrChannelIDFilter)
 {
-    if(NULL != ptrChannelIDFilter)
+    if (NULL != ptrChannelIDFilter)
     {
         LOG_DEBUG("add filter (%s) for the exporter '%s'", SAFE_CSTR(ptrChannelIDFilter->m_configName.c_str()), SAFE_CSTR(m_name.c_str()));
         m_filters.PushBack(ptrChannelIDFilter);
     }
 }
 
+void Exporter::DumpConfig(string &config)
+{
+    m_ptrConfWrapper->DumpConfig(config);
+}
+
+void Exporter::DumpStatus(string &config)
+{
+}
+
 bool Exporter::Filter(DataCell *pDataCell)
 {
     switch (m_ptrConfWrapper->m_exporterConfTypeEnum)
     {
-    case ExporterConfigWrapper::DataIDConfType:
-        return FilterByDataID(pDataCell);
     case ExporterConfigWrapper::ChannelIDConfType:
         return FilterByChannelID(pDataCell);
     case ExporterConfigWrapper::DataFlowConfType:
@@ -191,10 +196,14 @@ int Exporter::WriteTo(DataCell *pDataCell)
         return GSE_ERROR;
     }
 
+    // int delaySec = 0;
+    // TIME_DEALY_SECOND(pDataCell->GetCreationTimestamp(), delaySec);
+    // OPMetric::AddMsgDelayMsCounter(kdispathMessageDirection, delaySec);
+
     if (GSE_SUCCESS != Write(pDataCell))
     {
         LOG_WARN("fail to write data into exporter[%s]", SAFE_CSTR(m_name.c_str()));
-        DataServer::Instance().GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_LOST_STATE));
+        DataServer::GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_LOST_STATE));
     }
     if (NULL != m_next)
     {
@@ -204,6 +213,22 @@ int Exporter::WriteTo(DataCell *pDataCell)
     return GSE_SUCCESS;
 }
 
+std::string Exporter::TypeToStrName(int type)
+{
+    static std::map<int, std::string> exporterTypeName =
+        {
+            {KAFKA_COMMON, "kafka"},
+            {REDIS_SENTINEL_PUB, "redis sentinel"},
+            {REDIS_PUB, "redis stand-alone"},
+            {EXPORT_PULSAR, "pulsar"}};
 
+    auto it = exporterTypeName.find(type);
+    if (it != exporterTypeName.end())
+    {
+        return it->second;
+    }
+    return "";
 }
-}
+
+} // namespace data
+} // namespace gse

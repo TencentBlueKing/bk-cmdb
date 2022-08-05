@@ -18,16 +18,16 @@
 
 //#include "gseTime.h"
 
-#include "eventthread/gseEventThread.h"
-#include "thread/thread.h"
+#include "eventthread/event_thread.h"
 #include "safe/lock.h"
+#include "tools/thread.h"
 
 namespace gse {
-namespace dataserver {
+namespace data {
 /**
  *@brief 时间中心，统一获取时间的位置避免高频获取时间带来性能的开销和时获取到的时间不准确
  */
-class TimeCenter:public gse::thread::Thread
+class TimeCenter : public gse::tools::thread::Thread
 {
 
 public:
@@ -48,6 +48,7 @@ public:
      * @param timestamp 输出参数
      */
     void StandardTimestampString(std::string& timestamp);
+
 public:
     /**
      * @brief 单例接口
@@ -60,22 +61,22 @@ public:
     virtual int ThreadFun();
 
 private:
-    static void timeUpdateEventHandler(evutil_socket_t fd, short which, void * v);
+    static void timeUpdateEventHandler(evutil_socket_t fd, short which, void* v);
     void updateTime();
-private:
 
+private:
     /**
      * @brief 时间
      */
-     time_t m_dataTime;
+    time_t m_dataTime;
     /**
      * @brief 监控的tag
      */
-     time_t m_tagTime;
+    time_t m_tagTime;
     /**
      *@brief 停止标记
      */
-     bool  m_isNeedStop;
+    bool m_isNeedStop;
     /**
      *@brief 同步读写锁
      */
@@ -85,12 +86,10 @@ private:
      */
     std::string m_dateTimeStr;
 
-    event_base *m_baseEv;
-    event * m_updateTimeEvent;
-
+    event_base* m_baseEv;
+    event* m_updateTimeEvent;
 };
 
-
-}
-}
+} // namespace data
+} // namespace gse
 #endif

@@ -16,12 +16,12 @@
 #include "tools/macros.h"
 #include <json/json.h>
 
+#include "tools/json_helper.hpp"
+
 #include "conf/confItem.h"
 
-namespace gse
-{
-namespace dataserver
-{
+namespace gse {
+namespace data {
 
 using namespace std;
 
@@ -32,98 +32,314 @@ using namespace std;
 DataProcessConfig::DataProcessConfig()
 {
     m_enableOps = false;
-    m_filenum = 100;
-    m_filesize = 100;
-    m_promethusPort = 59402;
 }
 
 DataProcessConfig::DataProcessConfig(const std::string &configfile)
 {
-    parseConfigFile(configfile);
+    ParseConfigFile(configfile);
+    m_configFilePath = configfile;
+}
+
+bool DataProcessConfig::LoadConfig(const string &configfile)
+{
+    if (ParseConfigFile(configfile) != GSE_SUCCESS)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 DataProcessConfig::~DataProcessConfig()
 {
 }
 
-std::string DataProcessConfig::getDataSvrClusterName()
+int DataProcessConfig::ParseConfigFile(const std::string &filename)
 {
-    return m_clusterName;
-}
 
-std::string DataProcessConfig::getDataSvrIp()
-{
-    return m_serverIp;
-}
-
-std::string DataProcessConfig::getDataSvrInstanceId()
-{
-    return m_instanceId;
-}
-
-int DataProcessConfig::parseConfigFile(const std::string &filename)
-{
-    std::string config_content;
-    int ret_value = gse::tools::filesystem::ReadFromFile(filename, config_content);
-    if (GSE_SUCCESS != ret_value)
+    std::string strConfig;
+    int ret = gse::tools::filesystem::ReadFromFile(filename, strConfig);
+    if (GSE_SUCCESS != ret)
     {
         LOG_ERROR("it is failed to read the config by the absolute path ( %s ) ", SAFE_CSTR(filename.c_str()));
-        return ret_value;
+        return ret;
     }
 
-    LOG_DEBUG("Base config file[%s]", filename.c_str());
-    Json::Reader reader(Json::Features::strictMode());
-    Json::Value cfgValue;
-    if (!reader.parse(config_content, cfgValue, false))
+    const std::string &strJsonConfig = strConfig;
+    std::string errMsg;
+
+    rj::Document doc;
+
+    if (!gse::tools::json::LoadDocument(strJsonConfig, doc, errMsg))
     {
-        LOG_ERROR("fail to parse dataflow configure by json. the configure text is [%s]", SAFE_CSTR(config_content.c_str()));
-        return GSE_JSON_INVALID;
+        LOG_ERROR("failed to parse json(%s), error:%s", strConfig.c_str(), errMsg.c_str());
+        return GSE_ERROR;
     }
 
-    m_dataflowfile = cfgValue.get("dataflow", "").asString();
-    m_eventZk = cfgValue.get("eventzkhost", "").asString();
-    m_configZk = cfgValue.get("zkhost", "").asString();
-    m_zkauth = cfgValue.get("zkauth", "").asString();
-    m_serverIp = cfgValue.get("datasvrip", "0.0.0.0").asString();
-    m_clusterName = cfgValue.get("clustername", "").asString();
+    // dataflow:
+    {
+        rj::Value::ConstMemberIterator iter = doc.FindMember("dataflow");
+        if (iter != doc.MemberEnd() && iter->value.IsObject())
+        {
+            // receiver:
+            // exporter:
+            // channel:
+        }
+        else
+        {
+            LOG_WARN("failed to parse config file, dataflow item not valid json object");
+        }
+    }
 
-    m_channelidZkHost = cfgValue.get("channelidzkhost", "").asString();
-    m_channelidZkAuth = cfgValue.get("channelidzkauth", "").asString();
+    //  logger:
+    {
+        rj::Value::ConstMemberIterator iter = doc.FindMember("logger");
+        if (iter != doc.MemberEnd() && iter->value.IsObject())
+        {
 
-    m_promethusBindIp = cfgValue.get("prometheus_http_svr_ip", "0.0.0.0").asString();
-    m_promethusPort = cfgValue.get("prometheus_datasvr_port", 59402).asInt();
+            auto logPath = gse::tools::json::JsonHelper<std::string>::GetValue(iter->value, "path", "./logs");
+            m_loggerConfig.m_path = logPath.m_value;
+            auto logLevel = gse::tools::json::JsonHelper<std::string>::GetValue(iter->value, "level", "error");
+            m_loggerConfig.m_level = logLevel.m_value;
 
-    m_regionID = cfgValue.get("dftregid", "").asString();
-    m_cityID = cfgValue.get("dftcityid", "").asString();
-    m_passwdfile = cfgValue.get("password_keyfile", "").asString();
-    m_certPath = cfgValue.get("cert", "").asString();
-    m_watchpath = cfgValue.get("watchpath", "").asString();
-    m_logPath = cfgValue.get("log", "").asString();
-    m_pidFilePath = cfgValue.get("pid", "").asString();
-    m_filesize = cfgValue.get("logfilesize", 100).asInt();
-    m_filenum = cfgValue.get("logfilenum", 100).asInt();
-    m_logLevel = cfgValue.get("level", "debug").asString();
+            auto fileSize = gse::tools::json::JsonHelper<int>::GetValue(iter->value, "filesize_mb", 100);
+            m_loggerConfig.m_fileSize = fileSize.m_value;
+            auto fileNum = gse::tools::json::JsonHelper<int>::GetValue(iter->value, "filenum", 100);
+            m_loggerConfig.m_fileCount = fileNum.m_value;
 
+            auto rotate = gse::tools::json::JsonHelper<int>::GetValue(iter->value, "rotate", 0);
+            m_loggerConfig.m_rotate = rotate.m_value;
+            auto flushTimeMs = gse::tools::json::JsonHelper<int>::GetValue(iter->value, "flush_interval_ms", 500);
+            m_loggerConfig.m_flushIntervalMs = flushTimeMs.m_value;
+        }
+        else
+        {
+            LOG_WARN("failed to parse config file, logger item not valid json object");
+        }
+    }
+    // zookeeper:
+    {
+        rj::Value::ConstMemberIterator iter = doc.FindMember("zookeeper");
+        if (iter != doc.MemberEnd() && iter->value.IsObject())
+        {
+            auto zkhost = gse::tools::json::JsonHelper<std::string>::GetValue(iter->value, "host", "");
+            m_zooKeeperConfig.m_serviceDiscoverZkHost = zkhost.m_value;
+            auto zkauth = gse::tools::json::JsonHelper<std::string>::GetValue(iter->value, "token", "");
+            m_zooKeeperConfig.m_serviceDiscoverZkAuth = zkauth.m_value;
 
-    m_enableOps = cfgValue.get("enableops", false).asBool();
+            auto timeoutMs = gse::tools::json::JsonHelper<int>::GetValue(iter->value, "timeout_ms", kDefaultZkTimeoutMs);
+            m_zooKeeperConfig.m_timeout = timeoutMs.m_value;
+
+            auto channelidZkhost = gse::tools::json::JsonHelper<std::string>::GetValue(iter->value, "channelid_host", "");
+            m_zooKeeperConfig.m_channelIdConfigZkHost = channelidZkhost.m_value;
+            auto channelidZkAuth = gse::tools::json::JsonHelper<std::string>::GetValue(iter->value, "channelid_token", "");
+            m_zooKeeperConfig.m_channelIdConfigZkAuth = channelidZkAuth.m_value;
+        }
+        else
+        {
+            LOG_WARN("failed to parse config file, zookeeper item not valid json object");
+        }
+    }
+
+    {
+        rj::Value::ConstMemberIterator iter = doc.FindMember("zookeeper_dataid");
+        if (iter != doc.MemberEnd() && iter->value.IsArray())
+        {
+
+            for (auto &val : iter->value.GetArray())
+            {
+                if (!val.IsObject())
+                {
+                    LOG_ERROR("zookeeper_dataid is not object");
+                    break;
+                }
+
+                DataIdZKConfig dataIdZkConfig;
+                auto zkhost = gse::tools::json::JsonHelper<std::string>::GetValue(val, "host", "");
+                dataIdZkConfig.m_zkhost = zkhost.m_value;
+                auto zkauth = gse::tools::json::JsonHelper<std::string>::GetValue(val, "token", "");
+                dataIdZkConfig.m_zkAuth = zkauth.m_value;
+                auto dataIdZkPath = gse::tools::json::JsonHelper<std::string>::GetValue(val, "dataid_zk_path", "/gse/config/etc/dataserver/data");
+                dataIdZkConfig.m_dataIdPath = dataIdZkPath.m_value;
+                auto storageZkPath = gse::tools::json::JsonHelper<std::string>::GetValue(val, "storage_zk_path", "/gse/config/etc/dataserver/storage/all");
+                dataIdZkConfig.m_storagePath = storageZkPath.m_value;
+
+                m_dataIdZk.push_back(dataIdZkConfig);
+            }
+        }
+        else
+        {
+            LOG_WARN("failed to parse config file, zookeeper_dataid item not valid json object");
+        }
+    }
+    // cluster:
+    {
+        rj::Value::ConstMemberIterator iter = doc.FindMember("cluster");
+        if (iter != doc.MemberEnd() && iter->value.IsObject())
+        {
+
+            auto clusterName = gse::tools::json::JsonHelper<std::string>::GetValue(iter->value, "cluster_name", "0");
+            m_clusterInfoConfig.m_clusterName = clusterName.m_value;
+
+            // default ,don't need config
+            auto serviceName = gse::tools::json::JsonHelper<std::string>::GetValue(iter->value, "service_name", "data");
+            m_clusterInfoConfig.m_serviceName = serviceName.m_value;
+
+            auto instanceId = gse::tools::json::JsonHelper<std::string>::GetValue(iter->value, "instance_id", "58625");
+            m_clusterInfoConfig.m_instanceId = instanceId.m_value;
+
+            auto selfIp = gse::tools::net::GetMachineIp();
+            auto nodeIp = gse::tools::json::JsonHelper<std::string>::GetValue(iter->value, "advertise_ip", selfIp);
+            m_clusterInfoConfig.m_advertiseIp = nodeIp.m_value;
+
+            auto zoneId = gse::tools::json::JsonHelper<std::string>::GetValue(iter->value, "zone_id", "test");
+            m_clusterInfoConfig.m_zoneId = zoneId.m_value;
+            auto cityId = gse::tools::json::JsonHelper<std::string>::GetValue(iter->value, "city_id", "test");
+            m_clusterInfoConfig.m_cityId = cityId.m_value;
+        }
+        else
+        {
+            LOG_WARN("failed to parse config file, cluster item not valid json object");
+        }
+    }
+
+    // metrics
+    {
+        rj::Value::ConstMemberIterator iter = doc.FindMember("metric");
+        if (iter != doc.MemberEnd() && iter->value.IsObject())
+        {
+            auto bindIp = gse::tools::json::JsonHelper<std::string>::GetValue(iter->value, "exporter_bind_ip", "0.0.0.0");
+            m_metricsConfig.m_promethusBindIP = bindIp.m_value;
+
+            auto bindPort = gse::tools::json::JsonHelper<int>::GetValue(iter->value, "exporter_bind_port", 59402);
+            m_metricsConfig.m_promethusListenPort = bindPort.m_value;
+
+            auto threadNum = gse::tools::json::JsonHelper<int>::GetValue(iter->value, "exporter_thread_num", 1);
+            m_metricsConfig.m_threadNum = threadNum.m_value;
+
+            auto anableOps = gse::tools::json::JsonHelper<bool>::GetValue(iter->value, "enableops", false);
+            m_opsConfig.m_enableOps = anableOps.m_value;
+        }
+        else
+        {
+            LOG_WARN("failed to parse config file, metric item not valid json object");
+        }
+    }
+
+    // ops
+    {
+        rj::Value::ConstMemberIterator iter = doc.FindMember("ops");
+        if (iter != doc.MemberEnd() && iter->value.IsObject())
+        {
+        }
+        else
+        {
+            LOG_WARN("failed to parse config file, ops item not valid json object");
+        }
+    }
+
+    // channelapi service
+
+    {
+        rj::Value::ConstMemberIterator iter = doc.FindMember("channel");
+        if (iter != doc.MemberEnd() && iter->value.IsObject())
+        {
+            auto bindIp = gse::tools::json::JsonHelper<std::string>::GetValue(iter->value, "http_bind_ip", "0.0.0.0");
+            m_channelIdApiServiceConfig.m_bindIp = bindIp.m_value;
+
+            auto bindPort = gse::tools::json::JsonHelper<int>::GetValue(iter->value, "http_bind_port", 59402);
+            m_channelIdApiServiceConfig.m_bindPort = bindPort.m_value;
+
+            auto threadNum = gse::tools::json::JsonHelper<int>::GetValue(iter->value, "http_thread_num", 32);
+            m_channelIdApiServiceConfig.m_threadNum = threadNum.m_value;
+            m_channelIdApiServiceConfig.m_valid = true;
+        }
+        else
+        {
+            LOG_WARN("failed to parse config file, channelid item not valid json object");
+        }
+    }
+
+    // balance config
+    {
+        rj::Value::ConstMemberIterator iter = doc.FindMember("load_balance");
+        if (iter != doc.MemberEnd() && iter->value.IsObject())
+        {
+            auto devName = gse::tools::json::JsonHelper<std::string>::GetValue(iter->value, "ethname", "eth1");
+            m_balanceConfig.m_netDevName = devName.m_value;
+
+            auto maxSpeed = gse::tools::json::JsonHelper<int>::GetValue(iter->value, "max_speed", 10000);
+            m_balanceConfig.m_netDevMaxSpeed = maxSpeed.m_value;
+
+            auto agentCountLoadWeight = gse::tools::json::JsonHelper<int>::GetValue(iter->value, "agent_count_loadweight", kDefaultAgentCountLoadWeight);
+            m_balanceConfig.m_agentCountLoadWeight = agentCountLoadWeight.m_value;
+
+            auto cpuUsageLoadWeight = gse::tools::json::JsonHelper<int>::GetValue(iter->value, "cpuusage_loadweight", kDefaultCpuUsageLoadWeightLoadWeight);
+            m_balanceConfig.m_cpuUsageLoadWeight = cpuUsageLoadWeight.m_value;
+
+            auto netUsageLoadWeight = gse::tools::json::JsonHelper<int>::GetValue(iter->value, "netusage_loadweight", kDefaultNetUsageLoadWeightLoadWeight);
+            m_balanceConfig.m_netUsageLoadWeight = netUsageLoadWeight.m_value;
+
+            auto memUsageLoadWeight = gse::tools::json::JsonHelper<int>::GetValue(iter->value, "memusage_loadweight", kDefaultMemUsageLoadWeightLoadWeight);
+            m_balanceConfig.m_memUsageLoadWeight = memUsageLoadWeight.m_value;
+        }
+        else
+        {
+            LOG_WARN("failed to parse config file, load_balance config item not valid json object");
+        }
+    }
+
+    m_pidFilePath = gse::tools::json::JsonHelper<std::string>::GetValue(doc, "pidfile", "./run").m_value;
+    m_configFilePath = filename;
+    LOG_DEBUG("Base config file[%s]", filename.c_str());
+
     return GSE_SUCCESS;
 }
 
-std::string DataProcessConfig::get_prometheus_http_svr_ip()
+int DataProcessConfig::GetPrometheusListenerPort()
 {
-    return m_promethusBindIp;
+    return m_metricsConfig.m_promethusListenPort;
 }
 
-uint16_t DataProcessConfig::get_prometheus_datasvr_port()
+std::string DataProcessConfig::GetPrometheusBindIp()
 {
-    return m_promethusPort;
+    return m_metricsConfig.m_promethusBindIP;
 }
 
-bool DataProcessConfig::getOpsFlag()
+std::string DataProcessConfig::GetDataSvrClusterName()
 {
-    return m_enableOps;
+    return m_clusterInfoConfig.m_clusterName;
 }
 
+std::string DataProcessConfig::GetDataSvrInstanceId()
+{
+    return m_clusterInfoConfig.m_instanceId;
+}
+
+std::string DataProcessConfig::GetAdvertiseIp()
+{
+    return m_clusterInfoConfig.m_advertiseIp;
+}
+
+bool DataProcessConfig::GetOpsFlag()
+{
+    return m_opsConfig.m_enableOps;
+}
+
+ZooKeeperConfig *DataProcessConfig::GetZookeeperConfig()
+{
+    return &m_zooKeeperConfig;
+}
+
+std::vector<DataIdZKConfig> *DataProcessConfig::GetDataIdZkConfig()
+{
+    return &m_dataIdZk;
+}
+
+ChannelIdApiServiceConfig *DataProcessConfig::GetChannelIdApiServiceConfig()
+{
+    return &m_channelIdApiServiceConfig;
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 // class DataConf
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -147,7 +363,7 @@ DataConf::~DataConf()
 
 int DataConf::DecodeConf(const string &text)
 {
-    //string tt = "{\"receiver\":[{\"name\":\"r_bkdata\",\"protocol\":1,\"bind\":\"127.0.0.1\",\"port\":58625,\"cert\":\"etc/cert\",\"protostack\":1},{\"name\":\"r_tglog\",\"protocol\":2,\"bind\":\"127.0.0.1\",\"port\":58625,\"cert\":\"\",\"protostack\":0}],\"exporter\":[{\"name\":\"e_log\",\"type\":1,\"path\":\"logs/data/\",\"filename\":\"%Y%m%d-%5N.log\",\"maxlogsize\":1000,\"maxfilenum\":100},{\"name\":\"e_bkdata_withfilters\",\"type\":8,\"filters\":[\"FilterRegex\"],\"zk\":\"\"},{\"name\":\"e_bkdata\",\"type\":8,\"filters\":[\"FilterRegex\"],\"zk\":\"\"}],\"filters\":[{\"name\":\"FilterRegex\",\"matcher\":{\"conditions\":[{\"delimiter\":\"|\",\"fieldindex\":0,\"word\":\"test.*\"}]}}],\"channel\":[{\"name\":\"bkdata\",\"decode\":0,\"receiver\":\"r_tglog\",\"exporter\":[\"e_log\"]}]}";
+    // string tt = "{\"receiver\":[{\"name\":\"r_bkdata\",\"protocol\":1,\"bind\":\"127.0.0.1\",\"port\":58625,\"cert\":\"etc/cert\",\"protostack\":1},{\"name\":\"r_tglog\",\"protocol\":2,\"bind\":\"127.0.0.1\",\"port\":58625,\"cert\":\"\",\"protostack\":0}],\"exporter\":[{\"name\":\"e_log\",\"type\":1,\"path\":\"logs/data/\",\"filename\":\"%Y%m%d-%5N.log\",\"maxlogsize\":1000,\"maxfilenum\":100},{\"name\":\"e_bkdata_withfilters\",\"type\":8,\"filters\":[\"FilterRegex\"],\"zk\":\"\"},{\"name\":\"e_bkdata\",\"type\":8,\"filters\":[\"FilterRegex\"],\"zk\":\"\"}],\"filters\":[{\"name\":\"FilterRegex\",\"matcher\":{\"conditions\":[{\"delimiter\":\"|\",\"fieldindex\":0,\"word\":\"test.*\"}]}}],\"channel\":[{\"name\":\"bkdata\",\"decode\":0,\"receiver\":\"r_tglog\",\"exporter\":[\"e_log\"]}]}";
     return parseDataFlowConf(text);
 }
 
@@ -172,12 +388,21 @@ int DataConf::parseDataFlowConf(const string &confText)
     // begin to decode dataflow config
     LOG_DEBUG("begin to decode dataflow config[%s]", SAFE_CSTR(confText.c_str()));
     Json::Reader reader(Json::Features::strictMode());
-    Json::Value cfgValue;
-    if (!reader.parse(confText, cfgValue, false))
+
+    Json::Value dataConfigValue;
+    if (!reader.parse(confText, dataConfigValue, false))
     {
         LOG_ERROR("fail to parse dataflow configure by json. the configure text is [%s]", SAFE_CSTR(confText.c_str()));
         return GSE_JSON_INVALID;
     }
+
+    if (!dataConfigValue.isMember("dataflow"))
+    {
+        LOG_ERROR("fail to parse dataflow configure by json,lack 'dataflow', the configure text is [%s]", SAFE_CSTR(confText.c_str()));
+        return GSE_JSON_INVALID;
+    }
+
+    Json::Value &cfgValue = dataConfigValue["dataflow"];
 
     DataFlowConf *pDataFlowConf = new DataFlowConf();
     // parse filters
@@ -250,12 +475,26 @@ int DataConf::parseReceiverConf(const Json::Value &cfgValue)
         ReceiverConf *pReceiverConf = new ReceiverConf();
         pReceiverConf->m_name = name;
         pReceiverConf->m_protocol = ReceiverProtocolEnum(cfgValue[index].get("protocol", int(R_PROTO_UNKNOWN)).asInt());
-        pReceiverConf->m_bind = cfgValue[index].get("bind", "").asString();
-        pReceiverConf->m_port = cfgValue[index].get("port", 0).asUInt();
+        pReceiverConf->m_bind = cfgValue[index].get("bind_ip", "0.0.0.0").asString();
+        pReceiverConf->m_port = cfgValue[index].get("bind_port", 0).asUInt();
         pReceiverConf->m_certPath = cfgValue[index].get("cert", "").asString();
         pReceiverConf->m_protoStack = ProtocolStackEnum(cfgValue[index].get("protostack", int(PS_TYPE_UNKNOWN)).asInt());
-        pReceiverConf->m_workThreadNum = cfgValue[index].get("workthreadnum", 4).asInt();
-        //for udp receiver
+        pReceiverConf->m_workThreadNum = cfgValue[index].get("workernum", 4).asInt();
+        pReceiverConf->m_maxMessageLen = cfgValue[index].get("maxmessagelen", TCP_DEFAULT_MESSAGE_LEN).asInt();
+
+        pReceiverConf->m_backlogSize = cfgValue[index].get("backlog", DEFAULT_BACKLOG_SIZE).asInt();
+
+        pReceiverConf->m_caPath = cfgValue[index].get("cafile", "").asString();
+        pReceiverConf->m_certPath = cfgValue[index].get("certfile", "").asString();
+        pReceiverConf->m_keyPath = cfgValue[index].get("keyfile", "").asString();
+        pReceiverConf->m_passwdPath = cfgValue[index].get("passwdfile", "").asString();
+
+        if (pReceiverConf->m_maxMessageLen > TCP_MAX_MESSAGE_LEN)
+        {
+            pReceiverConf->m_maxMessageLen = TCP_MAX_MESSAGE_LEN;
+        }
+
+        // for udp receiver
         pReceiverConf->m_recvBufSize = cfgValue[index].get("recvbufsize", 33554432).asInt64();
 
         if (!insertReceiver(name, pReceiverConf))
@@ -391,20 +630,21 @@ int DataConf::parseExporterConf(const Json::Value &cfgValue)
                 LOG_WARN("failed to parse the ds proxy exporter config for exporter[%s]", SAFE_CSTR(name.c_str()));
                 continue;
             }
+            ptr_ds_proxy_exporter_conf->m_extentions = pExporterConf->m_extensions;
             pExporterConf->m_dsProxyConf = ptr_ds_proxy_exporter_conf;
             break;
         }
         case E_TYPE_PULSAR:
+        {
+            PulsarExporterConf *ptr_pulsar_exporter_conf = parsePulsarExporterConf(name, cfgValue[index]);
+            if (NULL == ptr_pulsar_exporter_conf)
             {
-                PulsarExporterConf* ptr_pulsar_exporter_conf = parsePulsarExporterConf(name, cfgValue[index]);
-                if(NULL == ptr_pulsar_exporter_conf)
-                {
-                    LOG_WARN("failed to parse the pulsar exporter config for exporter[%s]", SAFE_CSTR(name.c_str()));
-                    continue;
-                }
-                
-                pExporterConf->m_pulsarConf = ptr_pulsar_exporter_conf; 
+                LOG_WARN("failed to parse the pulsar exporter config for exporter[%s]", SAFE_CSTR(name.c_str()));
+                continue;
             }
+
+            pExporterConf->m_pulsarConf = ptr_pulsar_exporter_conf;
+        }
         break;
         default:
             LOG_WARN("unknown the exporter config type");
@@ -467,19 +707,20 @@ LogExporterConf *DataConf::parseLogExporterConf(const std::string &name, const J
 
 KafkaExporterConf *DataConf::parseKafkaExporterConf(const std::string &name, const Json::Value &cfgValue)
 {
-    KafkaExporterConf* pKafkaExporterConf = new KafkaExporterConf();
+    KafkaExporterConf *pKafkaExporterConf = new KafkaExporterConf();
     pKafkaExporterConf->m_cluster = cfgValue.get("cluster", "").asString();
     pKafkaExporterConf->m_producerNum = cfgValue.get("producernum", KAFKA_MAX_PRODUCER).asInt();
     pKafkaExporterConf->m_defaultTopicName = cfgValue.get("defaulttopicname", "").asString();
 
-    pKafkaExporterConf->m_kafkaConfig.m_queueBufferingMaxMessages =  cfgValue.get("queue_buffering_max_messages", DEFAULT_MAX_KAFKA_QUEUE_SIZE).asString();
-    pKafkaExporterConf->m_kafkaConfig.m_messageMaxBytes = cfgValue.get("message_max_bytes", DEFAULT_MAX_KAFKA_MESSAGE_BYTES_SIZE).asString();
+    pKafkaExporterConf->m_kafkaConfig.m_queueBufferingMaxMessages = cfgValue.get("queue_buffering_max_messages", DEFAULT_MAX_KAFKA_QUEUE_SIZE).asInt();
+    pKafkaExporterConf->m_kafkaConfig.m_messageMaxBytes = cfgValue.get("message_max_bytes", DEFAULT_MAX_KAFKA_MESSAGE_BYTES_SIZE).asInt();
     pKafkaExporterConf->m_kafkaConfig.m_securityProtocol = cfgValue.get("security_protocol", "").asString();
     pKafkaExporterConf->m_kafkaConfig.m_saslMechanisms = cfgValue.get("sasl_mechanisms", "").asString();
     pKafkaExporterConf->m_kafkaConfig.m_saslUserName = cfgValue.get("sasl_username", "").asString();
     pKafkaExporterConf->m_kafkaConfig.m_saslPasswd = cfgValue.get("sasl_passwd", "").asString();
-    pKafkaExporterConf->m_kafkaConfig.m_requestRequiredAcks =  cfgValue.get("request_required_acks", "1").asString();
-    pKafkaExporterConf->m_kafkaConfig.m_queueBufferingMaxMs =  cfgValue.get("queue_buffering_max_ms", "200").asString();
+    pKafkaExporterConf->m_kafkaConfig.m_requestRequiredAcks = cfgValue.get("request_required_acks", "1").asString();
+    pKafkaExporterConf->m_kafkaConfig.m_queueBufferingMaxMs = cfgValue.get("queue_buffering_max_ms", 200).asInt();
+    pKafkaExporterConf->m_kafkaConfig.m_clientid = cfgValue.get("clientid", "").asString();
 
     if (cfgValue.isMember("filters") && cfgValue["filters"].isArray())
     {
@@ -573,11 +814,35 @@ DSProxyExporterConf *DataConf::parseDSProxyExporterConf(const std::string &name,
 
     ptr_ds_proxy_exporter_conf->m_proxyProtocol = cfgValue.get("proxyprotocol", PROXY_PROTOCOL_TCP).asString();
     ptr_ds_proxy_exporter_conf->m_proxyVersion = cfgValue.get("proxyversion", PROXY_VERSION_1).asString();
-    ptr_ds_proxy_exporter_conf->m_certPath = cfgValue.get("cert", "").asString();
+    ptr_ds_proxy_exporter_conf->m_certPath = cfgValue.get("certfile", "").asString();
+    ptr_ds_proxy_exporter_conf->m_keyfilePath = cfgValue.get("keyfile", "").asString();
+    ptr_ds_proxy_exporter_conf->m_caFilePath = cfgValue.get("cafile", "").asString();
+    std::string default_password_keyfile = ptr_ds_proxy_exporter_conf->m_certPath + "/cert_encrypt.key";
+
+    ptr_ds_proxy_exporter_conf->m_passwdFilePath = cfgValue.get("passwdfile", default_password_keyfile).asString();
     ptr_ds_proxy_exporter_conf->m_connectionNumEachAddress = cfgValue.get("connectionnum", 3).asUInt();
     ptr_ds_proxy_exporter_conf->m_heartbeat = cfgValue.get("heartbeat", false).asBool();
     ptr_ds_proxy_exporter_conf->m_noblock = cfgValue.get("noblock", true).asBool();
     ptr_ds_proxy_exporter_conf->m_fillChannelid = cfgValue.get("fillChannelid", true).asBool();
+
+    ptr_ds_proxy_exporter_conf->m_httpURI = cfgValue.get("http_request_uri", "").asString();
+
+    if (cfgValue.isMember("platids") && cfgValue["platids"].isArray())
+    {
+        for (Json::ArrayIndex j = 0; j < cfgValue["platids"].size(); j++)
+        {
+            ptr_ds_proxy_exporter_conf->m_platids.push_back(cfgValue["platids"][j].asInt());
+        }
+    }
+
+    bool is_thirdpartyCert = cfgValue.get("is_thirdparty_cert", false).asBool();
+    if (is_thirdpartyCert)
+    {
+        ptr_ds_proxy_exporter_conf->m_thirdPartyCertPasswd = cfgValue.get("third_party_cert_passwd", "").asString();
+        ptr_ds_proxy_exporter_conf->m_thirdPartyCertFile = cfgValue.get("third_party_cert", "").asString();
+        ptr_ds_proxy_exporter_conf->m_thirdPartyKeyFile = cfgValue.get("third_party_keyfile", "").asString();
+        ptr_ds_proxy_exporter_conf->m_isThirdPartyCert = true;
+    }
 
     return ptr_ds_proxy_exporter_conf;
 }
@@ -591,9 +856,9 @@ DSProxyExporterConf *DataConf::parseDSProxyExporterConf(const std::string &name,
 },
 */
 
-PulsarExporterConf* DataConf::parsePulsarExporterConf(const std::string& name, const Json::Value& cfgValue)
+PulsarExporterConf *DataConf::parsePulsarExporterConf(const std::string &name, const Json::Value &cfgValue)
 {
-    PulsarExporterConf* ptr_pulsar_exporter_conf = new PulsarExporterConf();
+    PulsarExporterConf *ptr_pulsar_exporter_conf = new PulsarExporterConf();
 
     ptr_pulsar_exporter_conf->m_serviceUrl = cfgValue.get("service_url", "").asString();
     ptr_pulsar_exporter_conf->m_producerNum = cfgValue.get("producernum", 8).asInt();
@@ -603,13 +868,11 @@ PulsarExporterConf* DataConf::parsePulsarExporterConf(const std::string& name, c
     ptr_pulsar_exporter_conf->m_tlsKeyFilePath = cfgValue.get("tlskeyfilepath", "").asString();
     ptr_pulsar_exporter_conf->m_token = cfgValue.get("token", "").asString();
 
-    
-    LOG_DEBUG("pulsar export config, url:%s, producernum:%d, topicname:%s, token:%s",   
-        ptr_pulsar_exporter_conf->m_serviceUrl.c_str(),  ptr_pulsar_exporter_conf->m_producerNum, 
-        ptr_pulsar_exporter_conf->m_topicName.c_str(), ptr_pulsar_exporter_conf->m_token.c_str());
+    LOG_DEBUG("pulsar export config, url:%s, producernum:%d, topicname:%s, token:%s",
+              ptr_pulsar_exporter_conf->m_serviceUrl.c_str(), ptr_pulsar_exporter_conf->m_producerNum,
+              ptr_pulsar_exporter_conf->m_topicName.c_str(), ptr_pulsar_exporter_conf->m_token.c_str());
     return ptr_pulsar_exporter_conf;
 }
-
 
 int DataConf::parseChannelConf(DataFlowConf *pDataFlowConf, const Json::Value &cfgValue)
 {
@@ -617,7 +880,7 @@ int DataConf::parseChannelConf(DataFlowConf *pDataFlowConf, const Json::Value &c
     if (NULL == pDataFlowConf)
     {
         LOG_WARN("the pointer of dataflow conf is NULL when parse receiver conf");
-        iRet = GSE_INVALIDARGS;
+        iRet = GSE_ERROR;
         return iRet;
     }
 
@@ -636,7 +899,7 @@ int DataConf::parseChannelConf(DataFlowConf *pDataFlowConf, const Json::Value &c
             continue;
         }
 
-        ChannelConf* pChannelConf = new ChannelConf();
+        ChannelConf *pChannelConf = new ChannelConf();
         pChannelConf->m_name = name;
         pChannelConf->m_decodeType = DecodeTypeEnum(cfgValue[index].get("decode", int(D_TYPE_UNKNOWN)).asInt());
         pChannelConf->m_isKeepTiming = cfgValue[index].get("keeptiming", false).asBool();
@@ -671,17 +934,17 @@ int DataConf::parseChannelConf(DataFlowConf *pDataFlowConf, const Json::Value &c
     return iRet;
 }
 
-int DataConf::parseOpsConf(DataFlowConf* pDataFlowConf, const Json::Value& cfgValue)
+int DataConf::parseOpsConf(DataFlowConf *pDataFlowConf, const Json::Value &cfgValue)
 {
     int iRet = GSE_SUCCESS;
     if (NULL == pDataFlowConf)
     {
         LOG_WARN("the pointer of dataflow conf is NULL when parse ops conf");
-        iRet = GSE_INVALIDARGS;
+        iRet = GSE_ERROR;
         return iRet;
     }
 
-    OpsConf* ptr_ops_conf = &pDataFlowConf->m_ops;
+    OpsConf *ptr_ops_conf = &pDataFlowConf->m_ops;
     ptr_ops_conf->m_agentOpsChannelID = cfgValue.get("agentopschannelid", 0).asInt();
     ptr_ops_conf->m_opsChannelID = cfgValue.get("opschannelid", 0).asInt();
     ptr_ops_conf->m_opsThreadCount = cfgValue.get("ops_threadcount", 16).asInt();
@@ -690,8 +953,8 @@ int DataConf::parseOpsConf(DataFlowConf* pDataFlowConf, const Json::Value& cfgVa
         for (Json::ArrayIndex j = 0; j < cfgValue["ops_addresses"].size(); j++)
         {
             OpsAddress address;
-            address.m_ip = cfgValue["ops_addresses"][j].get("ip","").asString();
-            address.m_port = cfgValue["ops_addresses"][j].get("port",0).asUInt();
+            address.m_ip = cfgValue["ops_addresses"][j].get("ip", "").asString();
+            address.m_port = cfgValue["ops_addresses"][j].get("port", 0).asUInt();
 
             ptr_ops_conf->m_opsAddress.push_back(address);
         }
@@ -871,5 +1134,6 @@ ReceiverConf *DataConf::findReceiverConf(std::string &receiverName)
 
     return pReceiverConf;
 }
-}
-}
+
+} // namespace data
+} // namespace gse

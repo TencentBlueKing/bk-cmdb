@@ -21,7 +21,7 @@
 // Date
 
 namespace gse {
-namespace dataserver {
+namespace data {
 Date::Date()
 {
 	Init();
