@@ -110,6 +110,9 @@ const (
 
 	// BKTableNameBaseContainer the table name of the Container
 	BKTableNameBaseContainer = "cc_ContainerBase"
+
+	// BKTableNameBasePods the table name of the Pods
+	BKTableNameBasePods = "cc_PodsBase"
 )
 
 // common field names
@@ -284,4 +287,13 @@ const (
 
 	// MountsField container mounts field
 	MountsField = "mounts"
+)
+
+const (
+	// KubeReferenceKind reference's kind, for example deployment, daemonSet, etc.
+	KubeReferenceKind = "reference_kind"
+	// KubeReferenceName reference's name, for example deployment name, daemonSet name, etc.
+	KubeReferenceName = "reference_name"
+	// KubeReferenceID reference's id, for example deployment id, daemonSet id, etc.
+	KubeReferenceID = "bk_reference_id"
 )
