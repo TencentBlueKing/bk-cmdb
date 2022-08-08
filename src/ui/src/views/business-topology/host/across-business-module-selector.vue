@@ -86,7 +86,6 @@
   import { mapGetters } from 'vuex'
   import { AuthRequestId, afterVerify } from '@/components/ui/auth/auth-queue.js'
   import ModuleCheckedList from './module-checked-list.vue'
-  import { sortTopoTree } from '@/utils/tools'
   import { ONE_TO_ONE, MULTI_TO_ONE } from '@/dictionary/host-transfer-type.js'
 
   export default {
@@ -218,7 +217,6 @@
         try {
           this.checked = []
           const internalTop = await this.getInternalModules()
-          sortTopoTree(internalTop, 'bk_inst_name', 'child')
           this.$refs.tree.setData(internalTop)
         } catch (e) {
           this.$refs.tree.setData([])
