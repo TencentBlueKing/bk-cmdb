@@ -55,12 +55,12 @@
             @click="handleTransfer($event, 'business', false)">
             {{$t('业务模块')}}
           </cmdb-auth>
-          <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]" v-test-id="'transferResource'"
-            @click="handleTransfer($event, 'resource', !isIdleModule)">
+          <li :class="['bk-dropdown-item', { disabled: !isIdleSetModules }]" v-test-id="'transferResource'"
+            @click="handleTransfer($event, 'resource', !isIdleSetModules)">
             {{$t('主机池')}}
           </li>
-          <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]" v-test-id="'transferAcrossBusiness'"
-            @click="handleTransfer($event, 'acrossBusiness', !isIdleModule)">
+          <li :class="['bk-dropdown-item', { disabled: !isIdleSetModules }]" v-test-id="'transferAcrossBusiness'"
+            @click="handleTransfer($event, 'acrossBusiness', !isIdleSetModules)">
             {{$t('其他业务')}}
           </li>
         </ul>
