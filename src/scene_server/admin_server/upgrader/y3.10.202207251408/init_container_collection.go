@@ -37,7 +37,7 @@ func addContainerCollection(ctx context.Context, db dal.RDB) error {
 		kubeTypes.BKTableNameBaseDaemonSet, kubeTypes.BKTableNameBaseStatefulSet,
 		kubeTypes.BKTableNameGameStatefulSet, kubeTypes.BKTableNameGameDeployment,
 		kubeTypes.BKTableNameBaseCronJob, kubeTypes.BKTableNameBaseJob,
-		kubeTypes.BKTableNameBasePods,
+		kubeTypes.BKTableNameBasePodWorkload,
 	}
 
 	for _, collection := range collections {
@@ -47,12 +47,15 @@ func addContainerCollection(ctx context.Context, db dal.RDB) error {
 			return err
 		}
 
-		if !exists {
-			if err := db.CreateTable(ctx, collection); err != nil {
-				blog.Errorf("create %s table failed, err: %v", collection, err)
-				return err
-			}
+		if exists {
+			continue
 		}
+
+		if err := db.CreateTable(ctx, collection); err != nil {
+			blog.Errorf("create %s table failed, err: %v", collection, err)
+			return err
+		}
+
 	}
 	return nil
 }
@@ -83,7 +86,7 @@ func addContainerCollectionIndex(ctx context.Context, db dal.RDB) error {
 		kubeTypes.BKTableNameBaseDeployment, kubeTypes.BKTableNameBaseDaemonSet,
 		kubeTypes.BKTableNameBaseStatefulSet, kubeTypes.BKTableNameGameStatefulSet,
 		kubeTypes.BKTableNameGameDeployment, kubeTypes.BKTableNameBaseCronJob,
-		kubeTypes.BKTableNameBaseJob, kubeTypes.BKTableNameBasePods,
+		kubeTypes.BKTableNameBaseJob, kubeTypes.BKTableNameBasePodWorkload,
 	}
 
 	for _, table := range workLoadTables {
@@ -140,7 +143,7 @@ func addContainerTableIndexes(ctx context.Context, db dal.RDB) error {
 		}
 		err = db.Table(kubeTypes.BKTableNameBaseContainer).CreateIndex(ctx, index)
 		if err != nil && !db.IsDuplicatedError(err) {
-			blog.Errorf("create index for container table failed, err: %v, index: %+v", err, index)
+			blog.Errorf("create index for container table failed, index: %+v, err: %v", index, err)
 			return err
 		}
 	}

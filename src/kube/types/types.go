@@ -110,9 +110,6 @@ const (
 
 	// BKTableNameBaseContainer the table name of the Container
 	BKTableNameBaseContainer = "cc_ContainerBase"
-
-	// BKTableNameBasePods the table name of the Pods
-	BKTableNameBasePods = "cc_PodsBase"
 )
 
 // common field names
