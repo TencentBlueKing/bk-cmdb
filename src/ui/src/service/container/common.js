@@ -10,20 +10,10 @@
  * limitations under the License.
  */
 
-import { TOPO_MODE_KEYS } from '@/dictionary/container.js'
+import { CONTAINER_OBJECTS, WORKLOAD_TYPES } from '@/dictionary/container'
 
-export default function (item, modelId, propertyId, topoMode) {
-  if (!modelId || !propertyId) {
-    return null
-  }
+// 根据workload具体类型判断是否为workload
+export const isWorkload = type => Object.values(WORKLOAD_TYPES).includes(type)
 
-  // 容器拓扑主机
-  if (topoMode === TOPO_MODE_KEYS.CONTAINER) {
-    return item?.[propertyId]
-  }
-
-  if (modelId === 'host') {
-    return item?.[modelId]?.[propertyId]
-  }
-  return item?.[modelId]?.map(value => value[propertyId])
-}
+// 获取容器节点大类型
+export const getContainerNodeType = type => (isWorkload(type) ? CONTAINER_OBJECTS.WORKLOAD : type)

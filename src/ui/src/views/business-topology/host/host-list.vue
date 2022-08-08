@@ -37,7 +37,7 @@
         <template slot-scope="{ row }">
           <cmdb-property-value
             :theme="column.bk_property_id === 'bk_host_id' ? 'primary' : 'default'"
-            :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id)"
+            :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id, topoMode)"
             :show-unit="false"
             :property="column"
             :multiple="column.bk_obj_id !== 'host'"
@@ -78,6 +78,10 @@
   import FilterStore, { setupFilterStore } from '@/components/filters/store'
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
   import { ONE_TO_ONE } from '@/dictionary/host-transfer-type.js'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+  import { CONTAINER_OBJECTS, CONTAINER_OBJECT_PROPERTY_KEYS, TOPO_MODE_KEYS } from '@/dictionary/container.js'
+  import hostContainerService from '@/service/host/container.js'
+  import { getContainerNodeType } from '@/service/container/common.js'
 
   export default {
     components: {
@@ -115,7 +119,8 @@
           moveToResource: Symbol('moveToResource'),
           moveToIdleModule: Symbol('moveToIdleModule')
         },
-        filtersTagHeight: 0
+        filtersTagHeight: 0,
+        tableHeader: []
       }
     },
     computed: {
@@ -126,13 +131,29 @@
         'selectedNode',
         'commonRequest'
       ]),
-      tableHeader() {
-        return FilterStore.header
+      isContainerNode() {
+        return !!this.selectedNode?.data?.is_container
+      },
+      isBizNode() {
+        return this.selectedNode?.data?.bk_obj_id === BUILTIN_MODELS.BUSINESS
+      },
+      topoMode() {
+        if (this.isContainerNode) {
+          return TOPO_MODE_KEYS.CONTAINER
+        }
+        if (this.isBizNode) {
+          return TOPO_MODE_KEYS.BIZ_NODE
+        }
+        return TOPO_MODE_KEYS.NORMAL
       }
     },
     watch: {
       $route() {
         this.initFilterStore()
+      },
+      topoMode(mode) {
+        FilterStore.setTopoMode(mode)
+        this.tableHeader = FilterStore.getHeader()
       }
     },
     created() {
@@ -148,7 +169,10 @@
         }
         this.table.pagination.current = parseInt(page, 10)
         this.table.pagination.limit = parseInt(limit, 10)
-        tab === 'hostList' && node && this.selectedNode && this.getHostList()
+
+        if (tab === 'hostList' && node && this.selectedNode) {
+          this.getHostList()
+        }
       }, { throttle: 16, ignore: ['keyword'] })
     },
     mounted() {
@@ -174,17 +198,20 @@
           settingReference && settingReference._tippy && settingReference._tippy.disable()
         }, 1000)
       },
-      initFilterStore() {
+      async initFilterStore() {
         const currentRouteName = this.$route.name
         if (this.storageRouteName === currentRouteName) return
         this.storageRouteName = currentRouteName
-        setupFilterStore({
+        await setupFilterStore({
           bk_biz_id: this.bizId,
           header: {
             custom: this.$route.meta.customInstanceColumn,
+            customContainer: this.$route.meta.customContainerInstanceColumn,
             global: 'host_global_custom_table_columns'
           }
         })
+        FilterStore.setTopoMode(this.topoMode)
+        this.tableHeader = FilterStore.getHeader()
       },
       getColumnSortable(column) {
         const isHostProperty = column.bk_obj_id === 'host'
@@ -240,11 +267,9 @@
         }
         ColumnsConfig.open({
           props: {
-            properties: FilterStore.properties.filter(property => property.bk_obj_id === 'host'
-              || (property.bk_obj_id === 'module' && property.bk_property_id === 'bk_module_name')
-              || (property.bk_obj_id === 'set' && property.bk_property_id === 'bk_set_name')),
+            properties: FilterStore.columnConfigProperties,
             selected: FilterStore.defaultHeader.map(property => property.bk_property_id),
-            disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
+            disabledColumns: FilterStore.fixedPropertyIds
           },
           handler: {
             apply: async (properties) => {
@@ -269,14 +294,10 @@
         try {
           await this.commonRequest
           this.commonRequestFinished = true
-          const result = await this.$store.dispatch('hostSearch/searchHost', {
-            params: this.getParams(),
-            config: {
-              requestId: this.request.table,
-              cancelPrevious: true
-            }
-          })
-          this.table.data = result.info
+
+          const result = await this.getSearchRequest()
+
+          this.table.data = result.info || []
           this.table.pagination.count = result.count
         } catch (e) {
           console.error(e)
@@ -284,9 +305,31 @@
           this.table.pagination.count = 0
         }
       },
-      getParams() {
+      getSearchRequest() {
+        const params = this.getParams(this.topoMode)
+        const config = {
+          requestId: this.request.table,
+          cancelPrevious: true
+        }
+
+        if (this.topoMode === TOPO_MODE_KEYS.CONTAINER) {
+          return hostContainerService.findAll(params, config)
+        }
+
+        return this.$store.dispatch('hostSearch/searchHost', { params, config })
+      },
+      getParams(type) {
+        const paramsMap = {
+          normal: this.getNormalParams,
+          container: this.getContainerParams,
+          bizNode: this.getBizNodeParams
+        }
+
+        return paramsMap[type](type)
+      },
+      getNormalParams(type) {
         const params = {
-          ...FilterStore.getSearchParams(),
+          ...FilterStore.getSearchParams(type),
           page: {
             ...this.$tools.getPageParams(this.table.pagination),
             sort: this.table.sort
@@ -307,6 +350,44 @@
         const modelCondition = params.condition.find(modelCondition => modelCondition.bk_obj_id === modelConditionId)
         modelCondition.condition.push(topoCondition)
         return params
+      },
+      getContainerParams(type) {
+        const params = {
+          ...FilterStore.getSearchParams(type),
+          page: {
+            ...this.$tools.getPageParams(this.table.pagination),
+            sort: this.table.sort
+          }
+        }
+
+        const selectedNodeData = this.selectedNode.data
+
+        // 容器节点的属性ID
+        const fieldMap = {
+          [CONTAINER_OBJECTS.CLUSTER]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.CLUSTER].ID,
+          [CONTAINER_OBJECTS.FOLDER]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.FOLDER].ID,
+          [CONTAINER_OBJECTS.NAMESPACE]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.NAMESPACE].ID,
+          [CONTAINER_OBJECTS.WORKLOAD]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.WORKLOAD].ID,
+        }
+        const nodeType = getContainerNodeType(selectedNodeData.bk_obj_id)
+
+        // folder节点参数特殊处理
+        if (nodeType === CONTAINER_OBJECTS.FOLDER) {
+          params.folder = true
+          // folder父节点为cluster节点
+          params[fieldMap[CONTAINER_OBJECTS.CLUSTER]] = this.selectedNode.parent.data.bk_inst_id
+        } else {
+          // 添加节点的属性ID参数，如 bk_namespace_id
+          params[fieldMap[nodeType]] = selectedNodeData.bk_inst_id
+        }
+
+        // 节点的类型值，workload节点时为具体的类型，如 daemonSet
+        params.kind = selectedNodeData.bk_obj_id
+
+        return params
+      },
+      getBizNodeParams(type) {
+        return this.getNormalParams(type)
       },
       handleTransfer(type) {
         const actionMap = {

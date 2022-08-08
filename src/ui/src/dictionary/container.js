@@ -10,11 +10,101 @@
  * limitations under the License.
  */
 
+import { BUILTIN_MODELS } from './model-constants'
+
 export const CONTAINER_OBJECTS = Object.freeze({
   CLUSTER: 'cluster',
   NAMESPACE: 'namespace',
+  FOLDER: 'folder',
+  WORKLOAD: 'workload',
   POD: 'pod',
   CONTAINER: 'container',
-  WORKLOAD: 'workload',
   NODE: 'node'
+})
+
+export const CONTAINER_OBJECT_NAMES = Object.freeze({
+  [CONTAINER_OBJECTS.CLUSTER]: {
+    FULL: 'Cluster',
+    SHORT: 'C'
+  },
+  [CONTAINER_OBJECTS.NAMESPACE]: {
+    FULL: 'Namespace',
+    SHORT: 'Ns'
+  },
+  [CONTAINER_OBJECTS.FOLDER]: {
+    FULL: 'Folder',
+    SHORT: 'F'
+  },
+  [CONTAINER_OBJECTS.WORKLOAD]: {
+    FULL: 'Workload',
+    SHORT: 'Wl'
+  },
+  [CONTAINER_OBJECTS.POD]: {
+    FULL: 'Pod',
+    SHORT: 'P'
+  },
+  [CONTAINER_OBJECTS.CONTAINER]: {
+    FULL: 'Container',
+    SHORT: 'Cn'
+  },
+  [CONTAINER_OBJECTS.NODE]: {
+    FULL: 'Node',
+    SHORT: 'Nd'
+  }
+})
+
+export const CONTAINER_OBJECT_LEVELS = Object.freeze({
+  [CONTAINER_OBJECTS.CLUSTER]: {
+    NEXT: CONTAINER_OBJECTS.NAMESPACE,
+    PREV: BUILTIN_MODELS.BUSINESS
+  },
+  [CONTAINER_OBJECTS.NAMESPACE]: {
+    NEXT: CONTAINER_OBJECTS.WORKLOAD,
+    PREV: CONTAINER_OBJECTS.CLUSTER
+  },
+  [CONTAINER_OBJECTS.FOLDER]: {
+    NEXT: BUILTIN_MODELS.HOST,
+    PREV: CONTAINER_OBJECTS.CLUSTER
+  },
+  [CONTAINER_OBJECTS.WORKLOAD]: {
+    NEXT: BUILTIN_MODELS.HOST,
+    PREV: CONTAINER_OBJECTS.NAMESPACE
+  }
+})
+
+export const WORKLOAD_TYPES = Object.freeze({
+  DEPLOYMENT: 'deployment',
+  STATEFUL_SET: 'statefulSet',
+  DAEMON_SET: 'daemonSet',
+  GAME_STATEFUL_SET: 'gameStatefulSet',
+  GAME_DEPLOYMENT: 'gameDeployment',
+  CRON_JOB: 'cronJob',
+  JOB: 'job',
+  PODS: 'pods'
+})
+
+export const TOPO_MODE_KEYS = Object.freeze({
+  CONTAINER: 'container',
+  BIZ_NODE: 'bizNode',
+  NORMAL: 'normal',
+  NONE: 'none'
+})
+
+export const CONTAINER_OBJECT_PROPERTY_KEYS = Object.freeze({
+  [CONTAINER_OBJECTS.CLUSTER]: {
+    ID: 'bk_cluster_id',
+    NAME: 'bk_cluster_name'
+  },
+  [CONTAINER_OBJECTS.NAMESPACE]: {
+    ID: 'bk_namespace_id',
+    NAME: 'bk_namespace_name'
+  },
+  [CONTAINER_OBJECTS.FOLDER]: {
+    ID: 'bk_folder_id',
+    NAME: 'bk_folder_name'
+  },
+  [CONTAINER_OBJECTS.WORKLOAD]: {
+    ID: 'bk_workload_id',
+    NAME: 'bk_workload_name'
+  }
 })

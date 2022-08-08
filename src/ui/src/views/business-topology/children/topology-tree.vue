@@ -28,6 +28,8 @@
         nameKey: 'bk_inst_name',
         childrenKey: 'child'
       }"
+      :lazy-method="lazyGetChildrenNode"
+      :lazy-disabled="isLazyDisabledNode"
       @select-change="handleSelectChange"
       @expand-change="handleExpandChange">
       <template #default="{ node, data }">
@@ -87,6 +89,7 @@
     MENU_BUSINESS_HOST_AND_SERVICE,
   } from '@/dictionary/menu-symbol'
   import topologyInstanceService from '@/service/topology/instance'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
 
   export default {
     components: {
@@ -138,7 +141,8 @@
         handler(value) {
           const map = {
             hostList: 'host_count',
-            serviceInstance: 'service_instance_count'
+            serviceInstance: 'service_instance_count',
+            podList: 'pod_count'
           }
           if (Object.keys(map).includes(value)) {
             this.nodeCountType = map[value]
@@ -174,7 +178,13 @@
           const [topology, internal, containerTopo] = await Promise.all([
             this.getInstanceTopology(),
             this.getInternalTopology(),
-            topologyInstanceService.getContainerTopo()
+            topologyInstanceService.getContainerTopo({
+              bizId: this.bizId,
+              params: {
+                bk_reference_obj_id: BUILTIN_MODELS.BUSINESS,
+                bk_reference_id: this.bizId
+              }
+            })
           ])
 
           sortTopoTree(topology, 'bk_inst_name', 'child')
@@ -201,7 +211,7 @@
           children.unshift(idlePool)
 
           // 容器拓扑追加至底部
-          children.push(containerTopo)
+          children.push(...containerTopo)
 
           this.isBlueKing = root.bk_inst_name === '蓝鲸'
 
@@ -285,16 +295,51 @@
       getNodeId(data) {
         return `${data.bk_obj_id}-${data.bk_inst_id}`
       },
+      isContainerNode(node) {
+        return node.data.is_container
+      },
+      isLazyDisabledNode(node) {
+        return !this.isContainerNode(node)
+      },
+      async lazyGetChildrenNode(node) {
+        const topoList = await topologyInstanceService.getContainerTopo({
+          bizId: this.bizId,
+          params: {
+            bk_reference_obj_id: node.data.bk_obj_id,
+            bk_reference_id: node.data.bk_inst_id
+          }
+        })
+
+        // 指定哪些是叶子节点，叶子节点不会再显示展开的小箭头
+        const leafIds = topoList?.filter(item => item.is_workload)?.map(item => this.getNodeId(item))
+
+        // 待数据添加为树节点后，设置节点对应的统计数据
+        setTimeout(() => {
+          this.setNodeCount([node, ...node.children])
+        }, 0)
+
+        return {
+          data: topoList,
+          leaf: leafIds
+        }
+      },
       handleSelectChange(node) {
         this.$store.commit('businessHost/setSelectedNode', node)
         Bus.$emit('toggle-host-filter', false)
+
+        const oldId = this.$route.query.node
+        const newId = node.id
+
         const query = {
-          node: node.id,
+          node: newId,
           page: 1,
           _t: Date.now()
         }
         RouterQuery.set(query)
-        this.initialized && FilterStore.setActiveCollection(null)
+
+        if (FilterStore.hasCondition && oldId !== newId) {
+          FilterStore.setActiveCollection(null)
+        }
       },
       handleDefaultExpand(node) {
         const nodes = []
@@ -309,15 +354,38 @@
         this.setNodeCount(nodes)
       },
       handleExpandChange(node) {
-        if (!node.expanded) return
+        if (!node.expanded || this.isContainerNode(node)) return
         this.setNodeCount([node, ...node.children])
       },
       async setNodeCount(targetNodes, force = false) {
         const nodes = force
           ? targetNodes
           : targetNodes.filter(({ data }) => !['pending', 'finished'].includes(data.status))
+
         if (!nodes.length) return
+
         nodes.forEach(({ data }) => this.$set(data, 'status', 'pending'))
+
+        const normalNodes = []
+        const containerNodes = []
+        nodes.forEach((node) => {
+          if (this.isContainerNode(node)) {
+            containerNodes.push(node)
+          } else {
+            normalNodes.push(node)
+          }
+        })
+
+        // targetNodes可能同时存在有传统节点和容器节点，仅当存在对应的节点时才去获取其统计数据
+        if (normalNodes.length) {
+          this.setNormalNodeCount(normalNodes)
+        }
+
+        if (containerNodes.length) {
+          this.setContainerNodeCount(containerNodes)
+        }
+      },
+      async setNormalNodeCount(nodes) {
         try {
           const result = await this.$store.dispatch('objectMainLineModule/getTopoStatistics', {
             bizId: this.bizId,
@@ -331,6 +399,33 @@
             this.$set(data, 'status', 'finished')
             this.$set(data, 'host_count', count.host_count)
             this.$set(data, 'service_instance_count', count.service_instance_count)
+          })
+        } catch (error) {
+          console.error(error)
+          nodes.forEach((node) => {
+            this.$set(node.data, 'status', 'error')
+          })
+        }
+      },
+      async setContainerNodeCount(nodes) {
+        const typeMap = {
+          hostList: 'host',
+          podList: 'pod'
+        }
+        try {
+          const params = {
+            bizId: this.bizId,
+            type: typeMap[this.active],
+            params: nodes.map(({ data }) => ({
+              kind: data.bk_obj_id,
+              id: data.bk_inst_id
+            }))
+          }
+          const nodeStats = await topologyInstanceService.getContainerTopoNodeStats(params)
+          nodes.forEach(({ data }) => {
+            const stat = nodeStats.find(item => item.kind === data.bk_obj_id && item.id === data.bk_inst_id)
+            this.$set(data, 'status', 'finished')
+            this.$set(data, this.nodeCountType, stat.count)
           })
         } catch (error) {
           console.error(error)

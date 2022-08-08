@@ -10,20 +10,10 @@
  * limitations under the License.
  */
 
-import { TOPO_MODE_KEYS } from '@/dictionary/container.js'
+import http from '@/api'
 
-export default function (item, modelId, propertyId, topoMode) {
-  if (!modelId || !propertyId) {
-    return null
-  }
+export const findAll = (data, config) => http.post('find/kube/hosts/search', data, config)
 
-  // 容器拓扑主机
-  if (topoMode === TOPO_MODE_KEYS.CONTAINER) {
-    return item?.[propertyId]
-  }
-
-  if (modelId === 'host') {
-    return item?.[modelId]?.[propertyId]
-  }
-  return item?.[modelId]?.map(value => value[propertyId])
+export default {
+  findAll
 }

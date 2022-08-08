@@ -13,6 +13,7 @@
 const path = require('path')
 const MockJS = require('mockjs')
 const bodyParser = require('body-parser')
+const { pathToRegexp } = require('path-to-regexp')
 
 const mock = require('../../mock/index')
 
@@ -36,7 +37,20 @@ module.exports = config => ({
 
     devServer.app.use(/^\/mock/, (req, res, next) => {
       const mockDefs = mock.getDefs()
-      const def = mockDefs[req.path]
+      let def = mockDefs[req.path]
+
+      // 完全匹配未找到，尝试使用路径正则匹配
+      if (!def) {
+        for (const [path, value] of Object.entries(mockDefs)) {
+          const reg = pathToRegexp(path)
+          const result = reg.exec(req.path)
+          if (reg.exec(req.path)) {
+            def = value
+            req.pathRegResult = result
+            break
+          }
+        }
+      }
 
       // 未找到mock定义则退出，交由proxy服务处理
       if (!def) {

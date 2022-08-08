@@ -11,6 +11,7 @@
  */
 
 import http from '@/api'
+import { normalizationTopo } from '@/service/container/transition.js'
 import { rollReqUseCount } from '../utils.js'
 
 export const requestIds = {
@@ -29,15 +30,17 @@ const getWithStat = async (bizId, config = {}) => {
   }
 }
 
-const getContainerTopo = async (params, config) => {
+const getContainerTopo = async ({ bizId, params }, config) => {
   try {
-    const res = await rollReqUseCount('find/container/topo_path', params, { limit: 100 }, config)
-    return res
+    const topoList = await rollReqUseCount(`find/container/${bizId}/topo_path`, params, { limit: 10 }, config)
+    return normalizationTopo(topoList)
   } catch (error) {
     console.error(error)
     return Promise.reject(error)
   }
 }
+
+const getContainerTopoNodeStats = ({ bizId, type, params }, config) => http.post(`find/container/${bizId}/topo_node/${type}/count`, params, config)
 
 const geFulltWithStat = async (bizId, config = {}) => {
   try {
@@ -56,5 +59,6 @@ const geFulltWithStat = async (bizId, config = {}) => {
 export default {
   getWithStat,
   geFulltWithStat,
-  getContainerTopo
+  getContainerTopo,
+  getContainerTopoNodeStats
 }

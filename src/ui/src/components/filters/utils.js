@@ -275,6 +275,24 @@ export function transformGeneralModelCondition(condition, properties) {
   }
 }
 
+export function transformContainerCondition(condition, properties, header) {
+  const params = transformGeneralModelCondition(condition, properties)
+  return {
+    fields: header.map(property => property.bk_property_id),
+    condition: params.conditions,
+    time_condition: params.time_condition
+  }
+}
+
+export function transformContainerNodeCondition(condition, properties) {
+  const params = transformGeneralModelCondition(condition, properties)
+
+  // 容器节点属性暂时不会存在time_condition，所以这里只取conditions，之后如果存在，实现也会有变化
+  return {
+    condition: params.conditions
+  }
+}
+
 export function splitIP(raw) {
   const list = []
   raw.trim().split(/\n|;|；|,|，/)
@@ -355,8 +373,8 @@ export function defineProperty(definition) {
 export function getUniqueProperties(preset, dynamic) {
   const unique = dynamic.filter(property => !preset.includes(property))
   const full = [...preset, ...unique]
-  const ids = [...new Set(full.map(property => property.id))]
-  return ids.map(id => full.find(property => property.id === id))
+  const ids = [...new Set(full.map(property => property?.id))]
+  return ids.map(id => full.find(property => property?.id === id))
 }
 
 function getPropertyPriority(property) {
@@ -391,5 +409,7 @@ export default {
   defineProperty,
   getUniqueProperties,
   getInitialProperties,
-  transformGeneralModelCondition
+  transformGeneralModelCondition,
+  transformContainerCondition,
+  transformContainerNodeCondition
 }

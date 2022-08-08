@@ -10,20 +10,22 @@
  * limitations under the License.
  */
 
-import { TOPO_MODE_KEYS } from '@/dictionary/container.js'
+import http from '@/api'
+import { normalizationProperty } from '@/service/container/transition.js'
 
-export default function (item, modelId, propertyId, topoMode) {
-  if (!modelId || !propertyId) {
-    return null
-  }
+export const find = ({ objId, params }, config) => http.post(`find/container/${objId}/attributes`, params, config)
 
-  // 容器拓扑主机
-  if (topoMode === TOPO_MODE_KEYS.CONTAINER) {
-    return item?.[propertyId]
+export const getAll = async ({ objId, params }, config) => {
+  try {
+    const list = await find({ objId, params }, config)
+    return normalizationProperty(list, objId)
+  } catch (error) {
+    console.error(error)
+    return Promise.reject(error)
   }
+}
 
-  if (modelId === 'host') {
-    return item?.[modelId]?.[propertyId]
-  }
-  return item?.[modelId]?.map(value => value[propertyId])
+export default {
+  find,
+  getAll
 }

@@ -46,7 +46,8 @@
       const isShowCreate = (node, data) => {
         const isModule = data.bk_obj_id === 'module'
         const isIdleSet = data.is_idle_set
-        return !isModule && !isIdleSet
+        const isContainer = data.is_container
+        return !isModule && !isIdleSet && !isContainer
       }
 
       const getSetNodeTips = (node) => {
@@ -108,14 +109,14 @@
 </script>
 
 <template>
-  <div :class="['topology-tree-node', { 'is-selected': node.selected }]">
+  <div :class="['topology-tree-node', { 'is-container': node.data.is_container, 'is-selected': node.selected }]">
     <i class="internal-node-icon"
       v-if="data.default !== 0"
       :class="getInternalNodeClass(node, data)">
     </i>
     <i v-else
       :class="['node-icon', { 'is-selected': node.selected, 'is-template': isTemplate(node) }]">
-      {{data.bk_obj_name[0]}}
+      {{data.icon_text || data.bk_obj_name[0]}}
     </i>
 
     <span class="node-name" :title="node.name">{{node.name}}</span>
@@ -169,6 +170,12 @@
           display: none;
         }
       }
+    }
+  }
+
+  &.is-container {
+    .node-icon {
+      border-radius: 4px;
     }
   }
 

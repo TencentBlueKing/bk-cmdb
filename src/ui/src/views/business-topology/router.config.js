@@ -29,6 +29,7 @@ export default [{
       i18n: '业务拓扑'
     },
     customInstanceColumn: 'business_topology_table_column_config',
+    customContainerInstanceColumn: 'business_topology_container_table_column_config',
     customFilterProperty: 'business_topology_filter_property_config'
   }),
   children: [{
