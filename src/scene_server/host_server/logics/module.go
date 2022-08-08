@@ -224,20 +224,20 @@ func (lgc *Logics) MoveHostToResourcePool(kit *rest.Kit, conf *metadata.DefaultM
 
 	cond := metadata.ConditionWithTime{
 		Condition: []metadata.ConditionItem{
-			{
-				Field: common.BKDefaultField, Operator: common.BKDBNE, Value: common.NormalModuleFlag,
-			},
+			{Field: common.BKDefaultField, Operator: common.BKDBNE, Value: common.NormalModuleFlag},
+			{Field: common.BKAppIDField, Operator: common.BKDBEQ, Value: conf.ApplicationID},
 		},
 	}
 	moduleIDs, err := lgc.GetModuleIDByCond(kit, cond)
 	if err != nil {
 		blog.Errorf("move host to resource pool, but get module ids failed, input: %+v, param: %+v, err: %v, rid: %s",
-			err, conf, cond, kit.Rid)
+			conf, cond, err, kit.Rid)
 		return nil, err
 	}
 
 	if len(moduleIDs) == 0 {
-		blog.Errorf("move host to resource pool, module not found, cond: %+v, param: %+v, rid: %s", conf, cond, kit.Rid)
+		blog.Errorf("move host to resource pool, module not found, input: %+v, param: %+v, rid: %s",
+			conf, cond, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrHostModuleNotExist, "idle pool")
 	}
 
