@@ -13,24 +13,24 @@
 #ifndef _GSE_DATA_DATACHANNEL_H_
 #define _GSE_DATA_DATACHANNEL_H_
 
-#include <vector>
-#include <string>
-#include <map>
-#include "dataStruct/safe_map.h"
-#include "dataStruct/safe_queue.h"
+#include "datastruct/safe_map.h"
+#include "datastruct/safe_queue.h"
 #include "safe/lock.h"
+#include <map>
+#include <string>
+#include <vector>
 
-#include "conf/confItem.h"
-#include "conf/dataconf.h"
-#include "conf/configurator.h"
 #include "channelworker.h"
-#include "datacell.h"
-#include "receiver/receiver.h"
-#include "exporter/exporter.h"
 #include "codec/codec.h"
-#include "eventthread/gseEventThread.h"
-namespace gse { 
-namespace dataserver {
+#include "conf/confItem.h"
+#include "conf/configurator.h"
+#include "conf/dataconf.h"
+#include "datacell.h"
+#include "eventthread/event_thread.h"
+#include "exporter/exporter.h"
+#include "receiver/receiver.h"
+namespace gse {
+namespace data {
 using namespace std;
 
 class DataChannel
@@ -50,12 +50,12 @@ public:
     virtual ~DataChannel();
 
 public:
-    inline void SetGseConf(DataProcessConfig &cfg)
+    inline void SetGseConf(std::shared_ptr<DataProcessConfig> cfg)
     {
-        m_gseCfg = cfg;
+        m_configPtr = cfg;
     }
 
-    void SetConftor(Configurator* conftor)
+    void SetConftor(Configurator *conftor)
     {
         m_conftor = conftor;
     }
@@ -65,45 +65,39 @@ public:
     int Stop();
     void Join();
     void UpdateConf(const ChannelConf &channelConf);
-    void UpdateIDToStorage(IDToStorage *ptrIDToStorage);
     int DecodeMsg(DataCell *pDataCell);
     int ExportData(DataCell *pDataCell);
 
-    void SetOps(OpsCollection* ptr_ops_report);
-    void stopExporter(uint32_t channelid);
+    void SetOps(OpsCollection *ptr_ops_report);
+
+    void SetDataCellChannelidByServiceId(DataCell *pDataCell);
+
 private:
     static void cleanExporter(evutil_socket_t fd, short what, void *args);
-    static void handleConfigUpdateEvent(void *args, int storageIndex, uint32_t channelID);
     static void handlRecvDataCell(DataCell *pDataCell, void *pCaller);
     void localHanlerRecvDataCell(DataCell *pDataCell);
+
 private:
     int init();
-    int startChannelWorker();
-    int stopChannelWorker();
+    int StartChannelWorker();
+    int StopChannelWorker();
     int startReceiver();
-    int stopReceiver();
+    int StopReceiver();
 
     int directExport(DataCell *pDataCell);
     int dispatchChannelWorker(DataCell *pDataCell);
 
 private:
-    // common exporter manager methods
-    void createExporter();
-    Exporter *createDataIDExporter(StorageConfigVector *ptrStorage);
-    void updateDataIDExporter(StorageConfigVector *ptrStorage);
-    Exporter *createChannelIDExporter(ChannelIDStorage *ptrStorage);
-    void updateChannelIDExporter(ChannelIDStorage *ptrStorage);
-
 private:
-    int createDataflowExporter();
-    void clearDataflowExporter();
+    int CreateDataflowExporter();
+    void ClearDataflowExporter();
 
 private:
     void dataflowExporterWrite(DataCell *pDataCell);
-    
 
 private:
-    DataProcessConfig m_gseCfg;
+    std::shared_ptr<DataProcessConfig> m_configPtr;
+
 private:
     std::string m_channelName;
     std::string m_receiverName;
@@ -118,8 +112,7 @@ private:
     OpsCollection *m_opsReport;
     gse::datastruct::SafeQueue<Exporter *> m_toDeletedExporter;
 
-
-    Configurator* m_conftor;
+    Configurator *m_conftor;
 
 private:
     std::vector<Exporter *> m_vDataflowExporter;
@@ -128,13 +121,13 @@ private:
     StorageIndexToExporterMap m_storageIndexToExporter;
     ChannelIDToExporterMap m_channelIDToExporter;
 
-    rgse::GseEventThread *m_ptrEventThread;
+    EventThread *m_ptrEventThread;
 
 private:
     IDToStorage *m_ptrIDToStorage;
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 
 #endif

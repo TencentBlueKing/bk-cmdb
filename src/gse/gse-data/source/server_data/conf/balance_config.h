@@ -13,6 +13,72 @@
 #ifndef _GSE_DATA_CONFIG_BALANCE_H_
 #define _GSE_DATA_CONFIG_BALANCE_H_
 
-}
-}
+#include <memory>
+#include <thread>
+
+#include <rapidjson/document.h>     // rapidjson's DOM-style API
+#include <rapidjson/prettywriter.h> // for stringify JSON
+#include <rapidjson/stringbuffer.h>
+
+#include "dataconf.h"
+
+namespace gse {
+namespace data {
+
+class SystemResourceMonitor final
+{
+public:
+    SystemResourceMonitor() noexcept;
+    SystemResourceMonitor(const std::string &ethName) noexcept;
+    virtual ~SystemResourceMonitor();
+    int Start();
+    void Stop();
+    void Join();
+
+    double GetCpuUsage() const;
+    double GetMemUsage() const;
+    double GetNetUsage() const;
+
+    void SetEthName(const std::string &ethName);
+    void SetNetDevMaxSpeed(int maxSpeed);
+
+private:
+    void GetSystemResourceUsage();
+
+    void ReportLoad();
+    double CpuUsage();
+    double MemUsage();
+    double NetUsage();
+
+    uint64_t GetMaxNetBandFromConfig();
+
+private:
+    double m_cpuUsage;
+    double m_memUsage;
+    double m_netUsage;
+
+    uint64_t m_maxSpeed;
+    std::string m_ethName;
+    bool m_exit;
+
+    std::thread m_systemResourceMonitorThread;
+};
+
+class SystemConnectionMonitor final
+{
+public:
+    SystemConnectionMonitor();
+    virtual ~SystemConnectionMonitor();
+
+    uint64_t GetMaxConnectionCount() const;
+    uint64_t GetConnectionCount();
+    void SetMaxConnectionCount(uint64_t maxConnectionCount);
+
+private:
+    uint64_t m_maxConnectionCount;
+};
+
+} // namespace data
+} // namespace gse
+
 #endif

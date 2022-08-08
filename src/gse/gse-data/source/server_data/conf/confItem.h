@@ -12,39 +12,41 @@
 #ifndef _GSE_DATA_CONFITEM_H_
 #define _GSE_DATA_CONFITEM_H_
 
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
-#include "tools/macros.h"
-#include "dataStruct/safe_map.h"
-#include "conf/bkdata_config_v1.h"
 #include "conf/channel_id_config.h"
-#include "log/log.h"
 #include "conf_common.h"
+#include "datastruct/safe_map.h"
+#include "log/log.h"
+#include "tools/macros.h"
 
-namespace gse { 
-namespace dataserver {
+#include "net/protocol/factory.hpp"
+
+namespace gse {
+namespace data {
 
 #define KAFKA_MAX_QUEUE 100000
 #define KAFKA_MAX_PRODUCER 8
 
 #define PULSAR_MAX_PRODUCER 8
-#define DEFAULT_MAX_KAFKA_QUEUE_SIZE 10000000
-#define DEFAULT_MAX_KAFKA_MESSAGE_BYTES_SIZE 10000000
-
 
 #ifndef OPS_QUEUE_MAX
 #define OPS_QUEUE_MAX (102400)
 #endif
 
+#define TCP_MAX_MESSAGE_LEN (64 << 20)
+#define TCP_DEFAULT_MESSAGE_LEN (10 << 20)
+
+#define MAX_QUEUE_SIZE (40960 * 60)
+
+#define DEFAULT_BACKLOG_SIZE (4096)
+
 typedef int StorageIndex;
 typedef uint32_t DataIDType;
 typedef uint32_t ChannelIDType;
 typedef uint32_t StreamToIDType;
-typedef std::vector<StorageConfigType> StorageConfigVector;
-typedef gse::datastruct::SafeMap<StorageIndex, StorageConfigVector *> StorageConfigMap;
-typedef gse::datastruct::SafeMap<DataIDType, DataID *> DataIDConfigMap;
 
 typedef enum ReceiverProtocolEnum_
 {
@@ -58,10 +60,10 @@ typedef enum ReceiverProtocolEnum_
 typedef enum ProtocolStackEnum_
 {
     PS_TYPE_UNKNOWN = 0,
-    PS_TYPE_GSEDATA = 1,                   // 2.0 通用的动态协议
-    PS_TYPE_GSEDATA_V1 = 2,                // 兼容V1.0 版本的DS通信协议
+    PS_TYPE_GSEDATA = 1,                    // 通用的动态协议
+    PS_TYPE_GSEDATA_V1 = 2,                 // 兼容V1.0 版本的DS通信协议
     PS_TYPE_GSEDATA_V1_FOR_TGLOG_PROXY = 3, // 用于兼容 原 数据链路（tdbank->tglog->datamore->transit server)推送的数据
-    PS_TYPE_GSEDATA_V2 = 4                  //gse2.0
+    PS_TYPE_GSEDATA_GENERAL = 4             // gse2.0
 } ProtocolStackEnum;
 
 typedef enum ExporterTypeEnum_
@@ -88,9 +90,8 @@ typedef enum DecodeTypeEnum_
     D_TYPE_GSEDATA_PACKAGE = 4,
     D_TYPE_GSEDATA_PACKAGE_V1 = 5,         // 兼容V1.0 版本的DS通信协议数据解析
     D_TYPE_GSEDATA_V1_FOR_TGLOG_PROXY = 6, // 用于兼容 原 数据链路（tdbank->tglog->datamore->transit server)推送的数据
-    D_TYPE_ONLY_TRANSPORT = 7,              // 不做实质的解析，仅作数据透传
-    D_TYPE_GSEDATA_PACKAGE_V2 = 8,
-    D_TYPE_GSEDATA_PACKAGE_OPEN = 9
+    D_TYPE_ONLY_TRANSPORT = 7,             // 不做实质的解析，仅作数据透传
+    D_TYPE_GSEDATA_PACKAGE_V2 = 8
 } DecodeTypeEnum;
 
 typedef enum FilterTypeEnum_
@@ -106,8 +107,15 @@ typedef struct ReceiverConf_
     std::string m_bind;
     uint16_t m_port;
     int m_workThreadNum;
+
+    std::string m_caPath;
     std::string m_certPath;
+    std::string m_keyPath;
+    std::string m_passwdPath;
+
     uint32_t m_recvBufSize;
+    uint32_t m_maxMessageLen;
+    uint32_t m_backlogSize;
     ProtocolStackEnum m_protoStack;
 
     ReceiverConf_()
@@ -117,6 +125,8 @@ typedef struct ReceiverConf_
         m_workThreadNum = 16;
         m_recvBufSize = 33554432;
         m_protoStack = PS_TYPE_UNKNOWN;
+        m_maxMessageLen = TCP_DEFAULT_MESSAGE_LEN;
+        m_backlogSize = 4096;
     }
 
     ReceiverConf_ &operator=(const ReceiverConf_ &srcConf)
@@ -126,15 +136,58 @@ typedef struct ReceiverConf_
         this->m_bind = srcConf.m_bind;
         this->m_port = srcConf.m_port;
         this->m_workThreadNum = srcConf.m_workThreadNum;
-        this->m_certPath = srcConf.m_certPath;
         this->m_protoStack = srcConf.m_protoStack;
         this->m_recvBufSize = srcConf.m_recvBufSize;
+        this->m_maxMessageLen = srcConf.m_maxMessageLen;
+        this->m_caPath = srcConf.m_caPath;
+        this->m_certPath = srcConf.m_certPath;
+        this->m_keyPath = srcConf.m_keyPath;
+        this->m_passwdPath = srcConf.m_passwdPath;
+        this->m_backlogSize = srcConf.m_backlogSize;
+
         return *this;
     }
 
     ReceiverConf_(const ReceiverConf_ &srcConf)
     {
         *this = srcConf;
+    }
+    std::string ProtocolIDToName()
+    {
+        static std::map<int, std::string> protocolNameDict = {
+            {R_PROTO_TCP, "TCP"},
+            {R_PROTO_UDP, "UDP"},
+            {R_PROTO_KCP, "KCP"},
+            {R_PROTO_HTTP, "HTTP"}};
+
+        auto it = protocolNameDict.find(m_protocol);
+        if (it != protocolNameDict.end())
+        {
+            return it->second;
+        }
+        else
+        {
+            return std::string("unkown");
+        }
+    }
+
+    int Protostack()
+    {
+        static std::map<int, int> protocolStackDict = {
+            {PS_TYPE_GSEDATA, gse::net::DATA_DYNAMIC_PROTO},
+            {PS_TYPE_GSEDATA_V1, gse::net::DATA_PROTO},
+            {PS_TYPE_GSEDATA_V1_FOR_TGLOG_PROXY, gse::net::DATA_TGLOG_PROTO},
+            {PS_TYPE_GSEDATA_GENERAL, gse::net::DATA_GENERAL_PROTO}};
+
+        auto it = protocolStackDict.find(m_protoStack);
+        if (it != protocolStackDict.end())
+        {
+            return it->second;
+        }
+        else
+        {
+            return -1;
+        }
     }
 
 } ReceiverConf;
@@ -191,7 +244,7 @@ typedef struct LogExporterConf_
     ~LogExporterConf_()
     {
         m_vFilterName.clear();
-        for (int i = 0; i < m_vFilterConf.size(); i++)
+        for (std::size_t i = 0; i < m_vFilterConf.size(); i++)
         {
             FilterConf *pFilterConf = m_vFilterConf[i];
             if (pFilterConf != NULL)
@@ -215,12 +268,12 @@ typedef struct LogExporterConf_
             this->m_sourcedIDS.push_back(srcConf.m_sourcedIDS.at(idx));
         }
         this->m_vFilterName.clear();
-        for (int i = 0; i < srcConf.m_vFilterName.size(); i++)
+        for (std::size_t i = 0; i < srcConf.m_vFilterName.size(); i++)
         {
             this->m_vFilterName.push_back(srcConf.m_vFilterName[i]);
         }
 
-        for (int j = 0; j < this->m_vFilterConf.size(); j++)
+        for (std::size_t j = 0; j < this->m_vFilterConf.size(); j++)
         {
             FilterConf *pFilterConf = this->m_vFilterConf[j];
             if (pFilterConf != NULL)
@@ -230,7 +283,7 @@ typedef struct LogExporterConf_
         }
         this->m_vFilterConf.clear();
 
-        for (int k = 0; k < srcConf.m_vFilterConf.size(); k++)
+        for (std::size_t k = 0; k < srcConf.m_vFilterConf.size(); k++)
         {
             FilterConf *pSrcConf = srcConf.m_vFilterConf[k];
             if (NULL == pSrcConf)
@@ -256,6 +309,7 @@ typedef struct KafkaExporterConf_
     std::string m_cluster;
     int32_t m_producerNum;
     std::string m_defaultTopicName;
+    std::string m_clientid;
     std::vector<std::string> m_vFilterName;
     std::vector<FilterConf *> m_vFilterConf;
 
@@ -266,12 +320,13 @@ typedef struct KafkaExporterConf_
         m_cluster = "";
         m_defaultTopicName = "";
         m_producerNum = KAFKA_MAX_PRODUCER;
+        m_clientid = "";
     }
 
     ~KafkaExporterConf_()
     {
         m_vFilterName.clear();
-        for (int i = 0; i < m_vFilterConf.size(); i++)
+        for (std::size_t i = 0; i < m_vFilterConf.size(); i++)
         {
             FilterConf *pFilterConf = m_vFilterConf[i];
             if (pFilterConf != NULL)
@@ -290,12 +345,12 @@ typedef struct KafkaExporterConf_
         m_kafkaConfig = srcConf.m_kafkaConfig;
 
         this->m_vFilterName.clear();
-        for (int i = 0; i < srcConf.m_vFilterName.size(); i++)
+        for (std::size_t i = 0; i < srcConf.m_vFilterName.size(); i++)
         {
             this->m_vFilterName.push_back(srcConf.m_vFilterName[i]);
         }
 
-        for (int j = 0; j < this->m_vFilterConf.size(); j++)
+        for (std::size_t j = 0; j < this->m_vFilterConf.size(); j++)
         {
             FilterConf *pFileConf = this->m_vFilterConf[j];
             if (pFileConf != NULL)
@@ -304,7 +359,7 @@ typedef struct KafkaExporterConf_
             }
         }
         this->m_vFilterConf.clear();
-        for (int k = 0; k < srcConf.m_vFilterConf.size(); k++)
+        for (std::size_t k = 0; k < srcConf.m_vFilterConf.size(); k++)
         {
             FilterConf *pSrcConf = srcConf.m_vFilterConf[k];
             if (NULL == pSrcConf)
@@ -324,7 +379,7 @@ typedef struct KafkaExporterConf_
 
     void CopyFilterConfs(std::vector<FilterConf *> &vFilterConf)
     {
-        for (int i = 0; i < m_vFilterConf.size(); ++i)
+        for (std::size_t i = 0; i < m_vFilterConf.size(); ++i)
         {
             FilterConf *pTmp = m_vFilterConf[i];
             if (NULL == pTmp)
@@ -370,7 +425,7 @@ typedef struct PulsarExporterConf_
         this->m_producerNum = srcConf.m_producerNum;
         this->m_topicName = srcConf.m_topicName;
         this->m_tlsTrustCertsFilePath = srcConf.m_tlsTrustCertsFilePath;
-        this->m_tlsCertFilePath = srcConf.m_tlsCertFilePath; 
+        this->m_tlsCertFilePath = srcConf.m_tlsCertFilePath;
         this->m_tlsKeyFilePath = srcConf.m_tlsKeyFilePath;
         this->m_token = srcConf.m_token;
         return *this;
@@ -397,7 +452,7 @@ typedef struct RedisExporterConf_
     ~RedisExporterConf_()
     {
         m_vFilterName.clear();
-        for (int i = 0; i < m_vFilterConf.size(); i++)
+        for (std::size_t i = 0; i < m_vFilterConf.size(); i++)
         {
             FilterConf *pFilterConf = m_vFilterConf[i];
             if (pFilterConf != NULL)
@@ -413,12 +468,12 @@ typedef struct RedisExporterConf_
         this->m_cluster = srcConf.m_cluster;
 
         this->m_vFilterName.clear();
-        for (int i = 0; i < srcConf.m_vFilterName.size(); i++)
+        for (std::size_t i = 0; i < srcConf.m_vFilterName.size(); i++)
         {
             this->m_vFilterName.push_back(srcConf.m_vFilterName[i]);
         }
 
-        for (int j = 0; j < this->m_vFilterConf.size(); j++)
+        for (std::size_t j = 0; j < this->m_vFilterConf.size(); j++)
         {
             FilterConf *pFileConf = this->m_vFilterConf[j];
             if (pFileConf != NULL)
@@ -427,7 +482,7 @@ typedef struct RedisExporterConf_
             }
         }
         this->m_vFilterConf.clear();
-        for (int k = 0; k < srcConf.m_vFilterConf.size(); k++)
+        for (std::size_t k = 0; k < srcConf.m_vFilterConf.size(); k++)
         {
             FilterConf *pSrcConf = srcConf.m_vFilterConf[k];
             if (NULL == pSrcConf)
@@ -461,7 +516,7 @@ typedef struct BkDataExporterConf_
     ~BkDataExporterConf_()
     {
         m_vFilterName.clear();
-        for (int i = 0; i < m_vFilterConf.size(); i++)
+        for (std::size_t i = 0; i < m_vFilterConf.size(); i++)
         {
             FilterConf *pFilterConf = m_vFilterConf[i];
             if (pFilterConf != NULL)
@@ -476,12 +531,12 @@ typedef struct BkDataExporterConf_
     {
         this->m_zkAddrs = srcConf.m_zkAddrs;
         this->m_vFilterName.clear();
-        for (int i = 0; i < srcConf.m_vFilterName.size(); i++)
+        for (std::size_t i = 0; i < srcConf.m_vFilterName.size(); i++)
         {
             this->m_vFilterName.push_back(srcConf.m_vFilterName[i]);
         }
 
-        for (int j = 0; j < m_vFilterConf.size(); j++)
+        for (std::size_t j = 0; j < m_vFilterConf.size(); j++)
         {
             FilterConf *pFilterConf = m_vFilterConf[j];
             if (pFilterConf != NULL)
@@ -491,7 +546,7 @@ typedef struct BkDataExporterConf_
         }
         m_vFilterConf.clear();
 
-        for (int k = 0; k < srcConf.m_vFilterConf.size(); k++)
+        for (std::size_t k = 0; k < srcConf.m_vFilterConf.size(); k++)
         {
             FilterConf *pSrcConf = srcConf.m_vFilterConf[k];
             if (NULL == pSrcConf)
@@ -520,6 +575,26 @@ typedef struct BkDataExporterConf_
 #define PROXY_PROTOCOL_UDP "udp"
 #endif
 
+#ifndef PROXY_PROTOCOL_HTTP
+#define PROXY_PROTOCOL_HTTP "http"
+#endif
+
+#ifndef PROXY_PROTOCOL_HTTPS
+#define PROXY_PROTOCOL_HTTPS "https"
+#endif
+
+#ifndef PROXY_PROTOCOL_PROTOBUF
+#define PROXY_PROTOCOL_PROTOBUF "protobuff"
+#endif
+
+#ifndef PROXY_PROTOCOL_GRPC
+#define PROXY_PROTOCOL_GRPC "grpc"
+#endif
+
+#ifndef PROXY_PROTOCOL_THRIFT
+#define PROXY_PROTOCOL_THRIFT "thrift"
+#endif
+
 #ifndef PROXY_VERSION_1
 #define PROXY_VERSION_1 "v1"
 #endif
@@ -531,7 +606,12 @@ typedef struct BkDataExporterConf_
 typedef struct DSProxyExporterConf_
 {
     std::vector<Address> m_addresses;
+    std::vector<std::string> m_extentions;
     std::string m_certPath;
+    std::string m_passwdFilePath;
+    std::string m_caFilePath;
+    std::string m_keyfilePath;
+
     // proxy version v1 or v2
     std::string m_proxyVersion;
     // proxy protocol udp or tcp
@@ -541,30 +621,61 @@ typedef struct DSProxyExporterConf_
     bool m_noblock;
     bool m_fillChannelid;
 
+    std::string m_httpURI;
+    std::string m_thirdPartyCertPasswd;
+    std::string m_thirdPartyCertFile;
+    std::string m_thirdPartyKeyFile;
+
+    bool m_isThirdPartyCert;
+    std::vector<int> m_platids;
+
+    /*
+    union ProtocolConf
+    {
+    TCPProtocolConf *m_tcpConf;
+    UDPProtocolConf *m_udpConf;
+    HTTPProtocolConf *m_httpConf;
+    }m_protocolConf;
+    */
+
     DSProxyExporterConf_ &operator=(const DSProxyExporterConf_ &srcConf)
     {
         std::size_t max_count = srcConf.m_addresses.size();
         for (std::size_t idx = 0; idx < max_count; ++idx)
         {
             m_addresses.push_back(srcConf.m_addresses.at(idx));
+            LOG_DEBUG("copy dsproxy address size:%d, ip:%s, port:%d", max_count, m_addresses[idx].m_ip.c_str(), m_addresses[idx].m_port);
         }
         this->m_certPath = srcConf.m_certPath;
+        this->m_passwdFilePath = srcConf.m_passwdFilePath;
+        this->m_keyfilePath = srcConf.m_keyfilePath;
+        this->m_caFilePath = srcConf.m_caFilePath;
+
         this->m_connectionNumEachAddress = srcConf.m_connectionNumEachAddress;
         this->m_proxyVersion = srcConf.m_proxyVersion;
         this->m_proxyProtocol = srcConf.m_proxyProtocol;
         this->m_heartbeat = srcConf.m_heartbeat;
         this->m_noblock = srcConf.m_noblock;
         this->m_fillChannelid = srcConf.m_fillChannelid;
+        this->m_extentions = srcConf.m_extentions;
+        this->m_httpURI = srcConf.m_httpURI;
+        this->m_thirdPartyCertPasswd = srcConf.m_thirdPartyCertPasswd;
+        this->m_thirdPartyCertFile = srcConf.m_thirdPartyCertFile;
+        this->m_thirdPartyKeyFile = srcConf.m_thirdPartyKeyFile;
+        this->m_isThirdPartyCert = srcConf.m_isThirdPartyCert;
+        this->m_platids = srcConf.m_platids;
         return *this;
     }
-    
+
     DSProxyExporterConf_()
     {
-        m_connectionNumEachAddress = 5;
+        m_connectionNumEachAddress = 1;
         m_heartbeat = false;
         m_noblock = true;
         m_fillChannelid = false;
+        m_isThirdPartyCert = false;
     }
+
     DSProxyExporterConf_(const DSProxyExporterConf_ &srcConf)
     {
         m_addresses.clear();
@@ -641,40 +752,35 @@ typedef struct ExporterConf_
         this->m_extensions = srcConf.m_extensions;
         switch (this->m_type)
         {
-        case E_TYPE_LOG:
-        {
+        case E_TYPE_LOG: {
             if (srcConf.m_logConf != NULL)
             {
                 this->m_logConf = new LogExporterConf(*srcConf.m_logConf);
             }
         }
         break;
-        case E_TYPE_BKDATA:
-        {
+        case E_TYPE_BKDATA: {
             if (srcConf.m_bkdataConf != NULL)
             {
                 this->m_bkdataConf = new BkDataExporterConf(*srcConf.m_bkdataConf);
             }
         }
         break;
-        case E_TYPE_KAFKA:
-        {
+        case E_TYPE_KAFKA: {
             if (srcConf.m_kafkaConf != NULL)
             {
                 this->m_kafkaConf = new KafkaExporterConf(*srcConf.m_kafkaConf);
             }
         }
         break;
-        case E_TYPE_REDIS:
-        {
+        case E_TYPE_REDIS: {
             if (srcConf.m_redisConf != NULL)
             {
                 this->m_redisConf = new RedisExporterConf(*srcConf.m_redisConf);
             }
         }
         break;
-        case E_TYPE_DS_PROXY:
-        {
+        case E_TYPE_DS_PROXY: {
             if (srcConf.m_dsProxyConf != NULL)
             {
                 this->m_dsProxyConf = new DSProxyExporterConf(*srcConf.m_dsProxyConf);
@@ -682,13 +788,12 @@ typedef struct ExporterConf_
         }
         break;
 
-        case E_TYPE_PULSAR:
-        {
+        case E_TYPE_PULSAR: {
             if (srcConf.m_pulsarConf != NULL)
             {
                 LOG_DEBUG("new pulsar export conf");
                 this->m_pulsarConf = new PulsarExporterConf(*srcConf.m_pulsarConf);
-            }           
+            }
         }
         break;
         default:
@@ -711,8 +816,6 @@ typedef struct ExporterConf_
     }
 
 } ExporterConf;
-
-
 
 typedef struct ChannelConf_
 {
@@ -742,7 +845,7 @@ typedef struct ChannelConf_
             m_receiverConf = NULL;
         }
 
-        for (int i = 0; i < m_vExporterConf.size(); i++)
+        for (std::size_t i = 0; i < m_vExporterConf.size(); i++)
         {
             ExporterConf *pExporterConf = m_vExporterConf[i];
             delete pExporterConf;
@@ -766,12 +869,12 @@ typedef struct ChannelConf_
             this->m_receiverConf = new ReceiverConf(*srcConf.m_receiverConf);
         }
         this->m_vExporterName.clear();
-        for (int i = 0; i < srcConf.m_vExporterName.size(); i++)
+        for (std::size_t i = 0; i < srcConf.m_vExporterName.size(); i++)
         {
             this->m_vExporterName.push_back(srcConf.m_vExporterName[i]);
         }
 
-        for (int j = 0; j < m_vExporterConf.size(); j++)
+        for (std::size_t j = 0; j < m_vExporterConf.size(); j++)
         {
             ExporterConf *pExporterConf = m_vExporterConf[j];
             if (pExporterConf != NULL)
@@ -781,7 +884,7 @@ typedef struct ChannelConf_
         }
         m_vExporterConf.clear();
 
-        for (int k = 0; k < srcConf.m_vExporterConf.size(); k++)
+        for (std::size_t k = 0; k < srcConf.m_vExporterConf.size(); k++)
         {
             ExporterConf *pConf = srcConf.m_vExporterConf[k];
             if (NULL == pConf)
@@ -807,12 +910,13 @@ typedef struct ChannelConf_
 
 typedef struct OpsAddress_
 {
-    OpsAddress_(){
+    OpsAddress_()
+    {
         m_port = 0;
     }
     std::string m_ip;
     uint16_t m_port;
-}OpsAddress;
+} OpsAddress;
 
 typedef struct OpsConf_
 {
@@ -829,7 +933,7 @@ typedef struct OpsConf_
     uint64_t m_opsThreadCount;
     uint64_t m_maxQueneSize;
 
-}OpsConf;
+} OpsConf;
 
 typedef struct DataFlowConf_
 {
@@ -860,7 +964,7 @@ typedef struct DataFlowConf_
         Clear();
     }
 
-    void GetOpsConf(OpsConf& ops)
+    void GetOpsConf(OpsConf &ops)
     {
         ops = m_ops;
     }
@@ -919,77 +1023,16 @@ typedef struct DataFlowConf_
 
 } DataFlowConf;
 
-// DataID 和ChannelID 与DataStorage 之间的关系是 1:1
-class DataStorage
-{
-public:
-    DataStorage()
-    {
-        m_next = NULL;
-        m_isDataID = false;
-        m_storage.m_ptrChannelIDStorage = NULL;
-        m_storage.m_ptrDataIDConfig = NULL;  // 不需要在此结构中释放内存
-        m_storageType = UNKNOWN;
-    }
-
-    ~DataStorage()
-    {
-        if(!m_isDataID)
-        {
-            delete m_storage.m_ptrChannelIDStorage;
-            m_storage.m_ptrChannelIDStorage = NULL;
-        }
-
-        if (NULL != m_next)
-        {
-            delete m_next;
-        }
-    }
-
-public:
-    inline void SetNext(DataStorage *ptrNext)
-    {
-        if (NULL != m_next)
-        {
-            m_next->SetNext(ptrNext);
-            return;
-        }
-
-        m_next = ptrNext;
-    }
-
-public:
-    DataStorage *m_next;
-    StorageType m_storageType;
-    bool m_isDataID;
-
-    union {
-        // DataID 兼容V1版本而保留， 可以是多个存储，表示此列表里的存储都需要被写入数据
-        StorageConfigVector *m_ptrDataIDConfig;
-
-        // channelid config，可以是多个，表示此链表下的存储都需要被写入数据
-        ChannelIDStorage *m_ptrChannelIDStorage;
-
-    } m_storage;
-};
-
-
 class IDToStorage
 {
 public:
-    typedef void (*WatchEventFunc)(void* args, int storageIndex, uint32_t channelID);
+    typedef void (*WatchEventFunc)(void *args, int storageIndex, uint32_t channelID);
+
 public:
     IDToStorage(){};
     virtual ~IDToStorage(){};
-
-public:
-    virtual DataID *GetStorageByDataID(uint32_t dataID) = 0;
-    virtual DataStorage *GetAllStorages() = 0;
-    virtual DataStorage *GetStorageByIndex(int storageIndex) = 0;
-    virtual DataStorage *GetStorageByChannelID(uint32_t channelID) = 0;
-    virtual void WatchUpdateEvent(WatchEventFunc callback, void *args) = 0;
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif

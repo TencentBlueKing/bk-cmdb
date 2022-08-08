@@ -11,24 +11,31 @@
  */
 
 #include "zkconftor.h"
-#include <zookeeper/zookeeper.h>
 #include "log/log.h"
 #include "tools/macros.h"
+#include <zookeeper/zookeeper.h>
 //#include "discover/zkapi/zk_client.h"
 #include "discover/zkapi/zk_api.h"
 
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
 
 ZkConftor::ZkConftor(const ZkConftorParam &zkParam)
 {
     m_zkClient = NULL;
+    m_external = false;
     m_zkParam = zkParam;
+    m_acl = zkParam.m_ZkAuth.empty() ? false : true;
+}
+
+ZkConftor::ZkConftor(gse::discover::zkapi::ZkApi *zkClient, bool acl)
+    : m_zkClient(zkClient), m_external(true), m_acl(acl)
+{
 }
 
 ZkConftor::~ZkConftor()
 {
-    if (m_zkClient != NULL)
+    if (m_zkClient != NULL && !m_external)
     {
         m_zkClient->ZkClose();
         delete m_zkClient;
@@ -38,10 +45,14 @@ ZkConftor::~ZkConftor()
 
 int ZkConftor::Start()
 {
-    int iRet = connectZkHost();
-    if (iRet != GSE_SUCCESS)
+    //使用外的zkClient
+    if (m_zkClient == NULL)
     {
-        return iRet;
+        int iRet = connectZkHost();
+        if (iRet != GSE_SUCCESS)
+        {
+            return iRet;
+        }
     }
 
     return GSE_SUCCESS;
@@ -53,7 +64,7 @@ int ZkConftor::Stop()
     return GSE_SUCCESS;
 }
 
-int ZkConftor::CreateConfItemWithParents(const std::string &key, std::string &value)
+int ZkConftor::CreateConfItemWithParents(const std::string &key, std::string &value, bool isEphemeral)
 {
     std::vector<std::string> split_values;
     gse::tools::strings::SplitString(split_values, key, "/");
@@ -70,7 +81,14 @@ int ZkConftor::CreateConfItemWithParents(const std::string &key, std::string &va
         if (idx == (max_count - 1))
         {
             // 已经拼接完全部路径
-            return CreateConfItem(target_path, value);
+            if (isEphemeral)
+            {
+                return CreateEphemeralNode(target_path, value);
+            }
+            else
+            {
+                return CreateConfItem(target_path, value);
+            }
         }
 
         if (m_zkClient->ZkExists(target_path, NULL, NULL, NULL))
@@ -90,6 +108,36 @@ int ZkConftor::CreateConfItem(const std::string &key, std::string &value)
     return iRet;
 }
 
+int ZkConftor::CreateEphemeralNode(const std::string &path, const std::string &value)
+{
+    if (NULL == m_zkClient)
+    {
+        LOG_WARN("fail to create ephemeral node[%s], because the conf client is NULL", SAFE_CSTR(path.c_str()));
+        return GSE_ERROR;
+    }
+
+    string strrst;
+    int ret = m_zkClient->ZkCreateEphemeral(path, value, strrst, m_acl);
+    if (ret != GSE_SUCCESS)
+    {
+        if (GSE_ZK_NODE_EXIST == ret)
+        {
+            LOG_INFO("fail to create ephemeral node[%s], because the node is exist", SAFE_CSTR(path.c_str()));
+            ret = GSE_SUCCESS;
+        }
+        else
+        {
+            LOG_ERROR("fail to create ephemeral node[%s], ret=[%d]", SAFE_CSTR(path.c_str()), ret);
+        }
+
+        return ret;
+    }
+
+    LOG_INFO("success to create ephemeral node[%s] for value[%s]", SAFE_CSTR(path.c_str()), SAFE_CSTR(value.c_str()));
+
+    return GSE_SUCCESS;
+}
+
 int ZkConftor::GetConfItem(const std::string &key, std::string &value, FnWatchConf pFnWatchConf, void *lpWatcher, int confItemFlag)
 {
     LOG_INFO("get config item[%s], watch callback[0x%x], wather[0x%x], confItemFlag[%d]", key.c_str(), pFnWatchConf, lpWatcher, confItemFlag);
@@ -107,7 +155,7 @@ int ZkConftor::GetConfItem(const std::string &key, std::string &value, FnWatchCo
     return iRet;
 }
 
-int ZkConftor::GetConfItemAsync(const std::string &key, FnWatchConf pFnWatchConf, void *lpWatcher, int confItemFlag, FnZkGetValueCallBack pFnGetValueCallBack, void* ptr_callback)
+int ZkConftor::GetConfItemAsync(const std::string &key, FnWatchConf pFnWatchConf, void *lpWatcher, int confItemFlag, FnZkGetValueCallBack pFnGetValueCallBack, void *ptr_callback)
 {
     WatcherInfo *pWatcher = NULL;
     if (pFnWatchConf != NULL)
@@ -125,18 +173,25 @@ int ZkConftor::GetConfItemAsync(const std::string &key, FnWatchConf pFnWatchConf
     }
 
     int iRet = GSE_SUCCESS;
-    gse::discover::zkapi::ZkApi::ZK_WATCH_FUN  wfun = (pFnWatchConf == NULL ?  NULL : ZkConftor::valueWatcher);
+    gse::discover::zkapi::ZkApi::ZK_WATCH_FUN wfun = (pFnWatchConf == NULL ? NULL : ZkConftor::valueWatcher);
     gse::discover::zkapi::ZkApi::ZK_DATA_FUN sfun = (pFnGetValueCallBack == NULL ? NULL : pFnGetValueCallBack);
 
     iRet = m_zkClient->ZkaGet(key, wfun, this, sfun, ptr_callback);
 
     if (GSE_SUCCESS != iRet)
     {
-        LOG_WARN("fail to get value of node[%s]. iRet=[%d]", SAFE_CSTR(key.c_str()), iRet);
+        if (iRet == GSE_ZK_NODE_NOTEXIST)
+        {
+            LOG_INFO("fail to get value of node:%s, node not exist", key.c_str());
+        }
+        else
+        {
+            LOG_WARN("fail to get value of node:%s, ret:%d", key.c_str(), iRet);
+        }
     }
     else
     {
-        LOG_INFO("success to get value of the node[%s], iret[%d]", SAFE_CSTR(key.c_str()), iRet);
+        LOG_INFO("success to get value of the node:%s, ret:%d", key.c_str(), iRet);
         if (pWatcher != NULL)
         {
             updateWatcher(key, pWatcher);
@@ -145,8 +200,7 @@ int ZkConftor::GetConfItemAsync(const std::string &key, FnWatchConf pFnWatchConf
     return iRet;
 }
 
-
-int ZkConftor::GetChildConfItemAsync(const std::string &key, FnWatchConf pFnWatchConf, void *lpWatcher, int confItemFlag, FnZkGetChildCallBack pFnGetChildCallBack, void* ptr_callback)
+int ZkConftor::GetChildConfItemAsync(const std::string &key, FnWatchConf pFnWatchConf, void *lpWatcher, int confItemFlag, FnZkGetChildCallBack pFnGetChildCallBack, void *ptr_callback)
 {
     WatcherInfo *pWatcher = NULL;
     if (pFnWatchConf != NULL)
@@ -162,17 +216,23 @@ int ZkConftor::GetChildConfItemAsync(const std::string &key, FnWatchConf pFnWatc
         LOG_WARN("fail to get config nodes of key[%s], because didn't create the conftor, check the conftor start or not");
         return GSE_ERROR;
     }
-    //int32_t ZkNewClient::ZkaGetChildren(const string & path,  ZK_WATCH_FUN wfun, void * wctx, ZK_STRINGS_FUN sfun, const void * data)
+    // int32_t ZkNewClient::ZkaGetChildren(const string & path,  ZK_WATCH_FUN wfun, void * wctx, ZK_STRINGS_FUN sfun, const void * data)
 
     int iRet = GSE_SUCCESS;
-    gse::discover::zkapi::ZkApi::ZK_WATCH_FUN  wfun = (pFnWatchConf == NULL ? NULL : ZkConftor::childWatcher);
+    gse::discover::zkapi::ZkApi::ZK_WATCH_FUN wfun = (pFnWatchConf == NULL ? NULL : ZkConftor::childWatcher);
     gse::discover::zkapi::ZkApi::ZK_STRINGS_FUN sfun = (pFnGetChildCallBack == NULL ? NULL : pFnGetChildCallBack);
-
 
     iRet = m_zkClient->ZkaGetChildren(key, wfun, this, sfun, ptr_callback);
     if (GSE_SUCCESS != iRet)
     {
-        LOG_WARN("fail to get nodes of key[%s]. iRet=[%d]", SAFE_CSTR(key.c_str()), iRet);
+        if (iRet == GSE_ZK_NODE_NOTEXIST)
+        {
+            LOG_INFO("fail to get nodes [%s], node not exist", key.c_str());
+        }
+        else
+        {
+            LOG_ERROR("fail to get nodes [%s], ret=[%d]", key.c_str(), iRet);
+        }
     }
     else
     {
@@ -185,7 +245,6 @@ int ZkConftor::GetChildConfItemAsync(const std::string &key, FnWatchConf pFnWatc
 
     return iRet;
 }
-
 
 int ZkConftor::GetChildConfItem(const std::string &key, std::vector<std::string> &values, FnWatchConf pFnWatchConf, void *lpWatcher, int confItemFlag)
 {
@@ -201,10 +260,8 @@ int ZkConftor::GetChildConfItem(const std::string &key, std::vector<std::string>
     return iRet;
 }
 
-
 int ZkConftor::ExistConfItem(const std::string &key, FnWatchConf pFnWatchConf, void *lpWatcher, int confItemFlag)
 {
-   
     WatcherInfo *pWatcher = NULL;
     if (pFnWatchConf != NULL)
     {
@@ -219,7 +276,6 @@ int ZkConftor::ExistConfItem(const std::string &key, FnWatchConf pFnWatchConf, v
         return GSE_ERROR;
     }
 
-    int iret = GSE_SUCCESS;
     bool bret = false;
     if (NULL == pWatcher)
     {
@@ -230,19 +286,31 @@ int ZkConftor::ExistConfItem(const std::string &key, FnWatchConf pFnWatchConf, v
         bret = m_zkClient->ZkExists(key, ZkConftor::existWatcher, this, NULL);
     }
 
-    if (GSE_SUCCESS != iret)
+    if (!bret)
     {
-        LOG_WARN("fail to exist nodes of key[%s]. iRet=[%d]", SAFE_CSTR(key.c_str()), iret);
+        if (m_zkClient->ZkGetError() == GSE_ZK_NODE_NOTEXIST)
+        {
+            LOG_INFO("nodes of key:%s not exist", SAFE_CSTR(key.c_str()));
+            if (pWatcher != NULL)
+            {
+                updateWatcher(key, pWatcher);
+            }
+        }
+        else
+        {
+            LOG_ERROR("call zk exist node failed, key:%s, error:%s", SAFE_CSTR(key.c_str()));
+        }
     }
     else
     {
-        LOG_INFO("success to get nodes of key[%s]", SAFE_CSTR(key.c_str()));
+        LOG_DEBUG("success to get nodes of key:%s", SAFE_CSTR(key.c_str()));
         if (pWatcher != NULL)
         {
             updateWatcher(key, pWatcher);
         }
     }
-    return iret;
+
+    return GSE_SUCCESS;
 }
 
 int ZkConftor::SetConfItem(const std::string &key, const std::string &value)
@@ -271,7 +339,7 @@ int ZkConftor::connectZkHost()
     ret = m_zkClient->ZkInit(m_zkParam.m_ZkHost, NULL, timeout, -1, NULL, this, flags, m_zkParam.m_password);
     if (GSE_SUCCESS != ret)
     {
-        LOG_ERROR("fail to connect to the zk (%s), the timeout is (%d), please to check the password", SAFE_CSTR(m_zkParam.m_ZkHost.c_str()), timeout);
+        LOG_ERROR("fail to connect to the zk (%s), the timeout is (%d), please to check the password", m_zkParam.m_ZkHost.c_str(), timeout);
         return ret;
     }
 
@@ -282,9 +350,10 @@ int ZkConftor::connectZkHost()
 
 void ZkConftor::closeZkHost()
 {
-    if (m_zkClient != NULL)
+    if (m_zkClient != NULL && !m_external)
     {
         m_zkClient->ApiClose();
+        m_zkClient->ApiJoin();
     }
 }
 
@@ -297,12 +366,12 @@ int ZkConftor::createNode(const std::string &path, const std::string &value)
     }
 
     string strrst;
-    int ret = m_zkClient->ZkCreateNormal(path, value, strrst, !m_zkParam.m_password.empty());
+    int ret = m_zkClient->ZkCreateNormal(path, value, strrst, m_acl);
     if (ret != GSE_SUCCESS)
     {
         if (GSE_ZK_NODE_EXIST == ret)
         {
-            LOG_WARN("fail to create node[%s], because the node is exist", SAFE_CSTR(path.c_str()));
+            LOG_INFO("fail to create node[%s], because the node is exist", SAFE_CSTR(path.c_str()));
             ret = GSE_SUCCESS;
         }
         else
@@ -313,7 +382,7 @@ int ZkConftor::createNode(const std::string &path, const std::string &value)
         return ret;
     }
 
-    LOG_INFO("success to create node[%s] for value[%s]", SAFE_CSTR(path.c_str()), SAFE_CSTR(value.c_str()));
+    LOG_DEBUG("success to create node[%s] for value[%s]", SAFE_CSTR(path.c_str()), SAFE_CSTR(value.c_str()));
 
     return GSE_SUCCESS;
 }
@@ -326,7 +395,6 @@ void ZkConftor::defaultWatcher(int type, int state, const char *path, void *wctx
     {
         if (ZK_EXPIRED_SESSION_STATE_DEF == state)
         {
-
         }
     }
 }
@@ -344,7 +412,7 @@ void ZkConftor::ZkEventHandle(int type, int state, const char *path, void *wctx)
     pZkConftor->m_mapKeyWatcher.Find(key, pWatcher);
     if (pWatcher == NULL)
     {
-        LOG_WARN("No callback function for this key(%s), event:%d", key.c_str(), type);
+        LOG_WARN("no callback function for this key(%s), event:%d", key.c_str(), type);
         return;
     }
     pZkConftor->m_mapKeyWatcher.EraseByKey(key);
@@ -354,7 +422,8 @@ void ZkConftor::ZkEventHandle(int type, int state, const char *path, void *wctx)
     conf_item.m_Key = std::string(path);
     conf_item.m_confItemFlag = pWatcher->m_watchConfItemFlag;
 
-    switch (type) {
+    switch (type)
+    {
     case ZK_CREATED_EVENT_DEF:
         if (GSE_SUCCESS != pZkConftor->getNode(key, value, NULL))
         {
@@ -447,7 +516,14 @@ int ZkConftor::getNode(const std::string &path, std::string &value, WatcherInfo 
 
     if (GSE_SUCCESS != iRet)
     {
-        LOG_WARN("fail to get value of node[%s]. iRet=[%d]", SAFE_CSTR(path.c_str()), iRet);
+        if (iRet == GSE_ZK_NODE_NOTEXIST)
+        {
+            LOG_INFO("fail to get value of node:%s, node not exist", path.c_str());
+        }
+        else
+        {
+            LOG_ERROR("fail to get value of node:%s. iRet:%d", path.c_str(), iRet);
+        }
     }
     else
     {
@@ -472,11 +548,46 @@ int ZkConftor::setNode(const std::string &path, const std::string &value)
     int iRet = m_zkClient->ZkSet(path, value, -1, NULL);
     if (GSE_SUCCESS != iRet)
     {
-        LOG_WARN("fail to set value of node[%s]. iRet=[%d]", SAFE_CSTR(path.c_str()), iRet);
+        if (iRet == GSE_ZK_NODE_NOTEXIST)
+        {
+            LOG_INFO("fail to set value of node[%s]. node not exist", SAFE_CSTR(path.c_str()));
+        }
+        else
+        {
+            LOG_WARN("fail to set value of node[%s]. iRet=[%d]", SAFE_CSTR(path.c_str()), iRet);
+        }
     }
     else
     {
         LOG_INFO("success to set value of the node [%s], the value is [%s]", SAFE_CSTR(path.c_str()), SAFE_CSTR(value.c_str()));
+    }
+
+    return iRet;
+}
+
+int ZkConftor::DeleteConfItem(const std::string &path)
+{
+    if (NULL == m_zkClient)
+    {
+        LOG_WARN("fail to set node[%s], because didn't create the conftor, check the conftor start or not");
+        return GSE_ERROR;
+    }
+
+    int iRet = m_zkClient->ZkDelete(path, -1);
+    if (GSE_SUCCESS != iRet)
+    {
+        if (GSE_ZK_NODE_NOTEXIST == iRet)
+        {
+            LOG_INFO("failed to delete the node[%s], node not exist", SAFE_CSTR(path.c_str()));
+        }
+        else
+        {
+            LOG_WARN("failed to delete the node[%s]. ret=[%d]", SAFE_CSTR(path.c_str()), iRet);
+        }
+    }
+    else
+    {
+        LOG_INFO("success to delete the node [%s]", SAFE_CSTR(path.c_str()));
     }
 
     return iRet;
@@ -518,7 +629,14 @@ int ZkConftor::getChildrenNodes(const std::string &path, std::vector<std::string
 
     if (GSE_SUCCESS != iRet)
     {
-        LOG_WARN("fail to get nodes of key[%s]. iRet=[%d]", SAFE_CSTR(path.c_str()), iRet);
+        if (iRet == GSE_ZK_NODE_NOTEXIST)
+        {
+            LOG_INFO("failed to get nodes [%s], node not exist", path.c_str());
+        }
+        else
+        {
+            LOG_WARN("failed to get nodes [%s], ret=[%d]", path.c_str(), iRet);
+        }
     }
     else
     {
@@ -531,5 +649,5 @@ int ZkConftor::getChildrenNodes(const std::string &path, std::vector<std::string
 
     return iRet;
 }
-}
-}
+} // namespace data
+} // namespace gse

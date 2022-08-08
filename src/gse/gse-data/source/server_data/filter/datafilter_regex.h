@@ -16,7 +16,7 @@
 #include "datafilter.h"
 //#include "gseRegex.h"
 namespace gse { 
-namespace dataserver {
+namespace data {
 
 class DataFilterRegexImpl : public IDataFilter
 {

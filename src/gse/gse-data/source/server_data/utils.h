@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 namespace gse { 
-namespace dataserver {
+namespace data {
 
 using namespace std;
 
@@ -24,7 +24,7 @@ using namespace std;
 void alarm(const string &ip, const string content, int warnID);
 
 int splitString(char* target, string delimiter, vector<int>& outVec);
-int getNetWide(const char* devName);
+int GetNetDevSpeed(const char* devName);
 uint32_t stringHash(const char *str, size_t len);
 }
 }

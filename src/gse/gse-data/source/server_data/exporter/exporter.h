@@ -13,14 +13,14 @@
 #ifndef _GSE_DATA_EXPORTER_H_
 #define _GSE_DATA_EXPORTER_H_
 
-#include <string>
-#include "safe/lock.h"
-#include "dataStruct/safe_vector.h"
-#include "datacell.h"
 #include "conf/confItem.h"
-#include "opscollection/ops.h"
-namespace gse { 
-namespace dataserver {
+#include "datacell.h"
+#include "datastruct/safe_vector.h"
+#include "ops/ops.h"
+#include "safe/lock.h"
+#include <string>
+namespace gse {
+namespace data {
 
 class ExporterConfigWrapper
 {
@@ -29,7 +29,6 @@ public:
     {
         UNKNOWN = -1,
         DataFlowConfType = 0,
-        DataIDConfType = 1,
         ChannelIDConfType = 2
 
     } ExporterConfigTypeEnum;
@@ -40,21 +39,14 @@ public:
         m_exporterConfTypeEnum = type;
         switch (m_exporterConfTypeEnum)
         {
-//        case ExporterConfigWrapper::ChannelIDConfType:
-//            m_conf.m_ptrChannelIDConfig = reinterpret_cast<ChannelIDStorage*>(conf);
-//            break;
-        case ExporterConfigWrapper::DataIDConfType:
-            m_conf.m_ptrDataIDConfig = reinterpret_cast<StorageConfigType*>(conf);
-            break;
         case ExporterConfigWrapper::DataFlowConfType:
-            m_conf.m_exporterConf = new ExporterConf(*(reinterpret_cast<ExporterConf*>(conf)));
+            m_conf.m_exporterConf = new ExporterConf(*(reinterpret_cast<ExporterConf *>(conf)));
             break;
         case ExporterConfigWrapper::ChannelIDConfType:
-            m_conf.m_ptrChannelIdExporterConfig = new ChannelIdExporterConfig(*(reinterpret_cast<ChannelIdExporterConfig*>(conf)));
+            m_conf.m_ptrChannelIdExporterConfig = new ChannelIdExporterConfig(*(reinterpret_cast<ChannelIdExporterConfig *>(conf)));
             break;
         default:
             m_conf.m_exporterConf = NULL;
-            m_conf.m_ptrDataIDConfig = NULL;
             m_conf.m_ptrChannelIdExporterConfig = NULL;
             break;
         }
@@ -71,13 +63,6 @@ public:
                 m_conf.m_ptrChannelIdExporterConfig = NULL;
             }
             break;
-        case ExporterConfigWrapper::DataIDConfType:
-            if (m_conf.m_ptrDataIDConfig != NULL)
-            {
-                delete m_conf.m_ptrDataIDConfig;
-                m_conf.m_ptrDataIDConfig = NULL;
-            }
-            break;
         case ExporterConfigWrapper::DataFlowConfType:
             if (m_conf.m_exporterConf != NULL)
             {
@@ -90,19 +75,23 @@ public:
         }
     }
 
-private:
-    //DISALLOW_COPY_AND_ASSIGN(ExporterConfigWrapper);
+    void DumpConfig(std::string &config)
+    {
+        // only dump channelid type config
+        if (m_exporterConfTypeEnum == ExporterConfigWrapper::ChannelIDConfType)
+        {
+            config = m_conf.m_ptrChannelIdExporterConfig->m_streamToCluster.ToJSON();
+        }
+    }
 
 public:
     ExporterConfigTypeEnum m_exporterConfTypeEnum;
 
-    union {
+    union
+    {
         // dataflow 本地配置
         ExporterConf *m_exporterConf;
-        // dataid 关联的存储配置
-        StorageConfigType *m_ptrDataIDConfig;
         // channelid 关联的存储配置
-        //ChannelIDStorage *m_ptrChannelIDConfig;
         ChannelIdExporterConfig *m_ptrChannelIdExporterConfig;
     } m_conf;
 };
@@ -118,22 +107,21 @@ public:
     virtual int Stop() = 0;
     virtual int Write(DataCell *pDataCell) = 0;
 
-
 public:
-    inline void SetGseConf(DataProcessConfig& cfg)
+    inline void SetGseConf(std::shared_ptr<DataProcessConfig> cfg)
     {
-        m_gseCfg = cfg;
+        m_configPtr = cfg;
     }
 
-    inline bool IsExistsAndUpdateFilter(const std::string& storageName, ChannelIDFilter* ptrChannelIDFilter)
+    inline bool IsExistsAndUpdateFilter(const std::string &storageName, ChannelIDFilter *ptrChannelIDFilter)
     {
         LOG_DEBUG("check the exporter (%s) with the storage (%s)", m_name.c_str(), storageName.c_str());
-        if(m_name.compare(storageName) == 0)
+        if (m_name.compare(storageName) == 0)
         {
             AddFilter(ptrChannelIDFilter);
             return true;
         }
-        else if(NULL != m_next)
+        else if (NULL != m_next)
         {
             return m_next->IsExistsAndUpdateFilter(storageName, ptrChannelIDFilter);
         }
@@ -150,31 +138,36 @@ public:
     void SetExporterId(int id);
     int GetExporterId();
 
+    std::string TypeToStrName(int type);
+
 public:
     bool Filter(DataCell *pDataCell);
     bool FilterByDataID(DataCell *pDataCell);
     bool FilterByChannelID(DataCell *pDataCell);
     bool FilterByDataFlow(DataCell *pDataCell);
-    void AddFilter(ChannelIDFilter* ptrChannelIDFilter);
+    void AddFilter(ChannelIDFilter *ptrChannelIDFilter);
+
+    void DumpConfig(std::string &config);
+    void DumpStatus(string &config);
 
 protected:
     gse::safe::RWLock m_upConfLock;
     ExporterConfigWrapper *m_ptrConfWrapper;
     std::string m_name;
-    gse::datastruct::SafeVector<ChannelIDFilter*>  m_filters;
+    gse::datastruct::SafeVector<ChannelIDFilter *> m_filters;
 
 protected:
-    OpsCollection*  m_ptrOPSReport;
+    OpsCollection *m_ptrOPSReport;
+
 protected:
-    DataProcessConfig  m_gseCfg;
+    std::shared_ptr<DataProcessConfig> m_configPtr;
+
 private:
-    // 一个Exporter 关联一个存储集群，
-    // 当一个ID 的数据需要向多个存储发数据的时候就需要将多个exporter 组织成职责链
     Exporter *m_next;
-    int      m_setStopTimestamp;
+    int m_setStopTimestamp;
     int m_id;
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif

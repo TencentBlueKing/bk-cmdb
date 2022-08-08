@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+OPTIONS=""
+
+OPTIONS+=" --quiet"
+OPTIONS+=" --verbose=3"
+OPTIONS+=" --extensions=hpp,cpp"
+
+FILTER=""
+
+FILTER+="-whitespace/braces"
+FILTER+=",-whitespace/line_length"
+FILTER+=",-whitespace/comments"
+FILTER+=",-whitespace/newline"
+FILTER+=",-whitespace/indent"
+FILTER+=",-build/include_order"
+FILTER+=",-build/include_what_you_use"
+FILTER+=",-build/c++11"
+FILTER+=",-runtime/explicit"
+FILTER+=",-readability/casting"
+
+cpplint.py $OPTIONS --filter=$FILTER $1
