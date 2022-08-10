@@ -320,6 +320,162 @@ func (ps *parseStream) business() *parseStream {
 	return ps
 }
 
+var (
+	findKubeAttrsRegexp     = regexp.MustCompile(`^/api/v3/kube/find/container/{object}/attributes$`)
+	createKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/create/cluster/bk_biz_id/{bk_biz_id}$`)
+	deleteKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/delete/cluster/bk_biz_id/{bk_biz_id}$`)
+	findKubeClusterRegexp   = regexp.MustCompile(`^/api/v3/kube/findmany/cluster/bk_biz_id/{bk_biz_id}$`)
+
+	createKubeNodeRegexp    = regexp.MustCompile(`^/api/v3/kube/createmany/node/bk_biz_id/{bk_biz_id}$`)
+	createKubePodRegexp     = regexp.MustCompile(`^/api/v3/kube/createmany/pod/bk_biz_id/{bk_biz_id}$`)
+	findKubeNodeRegexp      = regexp.MustCompile(`^/api/v3/kube/findmany/node/bk_biz_id/{bk_biz_id}$`)
+	findKubeTopoPathRegexp  = regexp.MustCompile(`^/api/v3/kube/find/topo_path/bk_biz_id/{bk_biz_id}$`)
+	findKubeTopoCountRegexp = regexp.MustCompile(`^/api/v3/kube/find/{bk_biz_id}/topo_node/{type}/count$`)
+)
+
+func (ps *parseStream) container() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+	//todo: 后续补齐
+	if ps.hitRegexp(findKubeAttrsRegexp, http.MethodGet) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+
+		//object, err := ps.RequestCtx.getValueFromBody("object")
+		//if err != nil {
+		//	ps.err = err
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(createKubeClusterRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(deleteKubeClusterRegexp, http.MethodDelete) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(findKubeClusterRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(createKubeNodeRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(createKubePodRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(findKubeNodeRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(findKubeTopoPathRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(findKubeTopoCountRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 8 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	return ps
+}
+
 const (
 	createBizSetPattern                  = `/api/v3/create/biz_set`
 	deleteBizSetPattern                  = `/api/v3/deletemany/biz_set`

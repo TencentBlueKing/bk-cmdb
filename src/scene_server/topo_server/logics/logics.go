@@ -16,6 +16,7 @@ import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common/language"
+	"configcenter/src/scene_server/topo_server/logics/container"
 	"configcenter/src/scene_server/topo_server/logics/inst"
 	"configcenter/src/scene_server/topo_server/logics/model"
 	"configcenter/src/scene_server/topo_server/logics/operation"
@@ -39,6 +40,7 @@ type Logics interface {
 	BusinessOperation() inst.BusinessOperationInterface
 	BusinessSetOperation() inst.BusinessSetOperationInterface
 	SetTemplateOperation() settemplate.SetTemplate
+	ContainerOperation() container.ClusterOperationInterface
 }
 
 type logics struct {
@@ -57,6 +59,7 @@ type logics struct {
 	business          inst.BusinessOperationInterface
 	businessSet       inst.BusinessSetOperationInterface
 	setTemplate       settemplate.SetTemplate
+	container         container.ClusterOperationInterface
 }
 
 // New create a logics manager
@@ -76,7 +79,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	groupOperation := model.NewGroupOperation(client)
 	businessOperation := inst.NewBusinessOperation(client, authManager)
 	businessSetOperation := inst.NewBusinessSetOperation(client, authManager)
-
+	containerOperation := container.NewClusterOperation(client, authManager)
 	setTemplate := settemplate.NewSetTemplate(client)
 
 	instOperation.SetProxy(instAssociationOperation)
@@ -88,7 +91,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	attributeOperation.SetProxy(groupOperation, objectOperation)
 	businessOperation.SetProxy(instOperation, moduleOperation, setOperation)
 	businessSetOperation.SetProxy(instOperation)
-
+	containerOperation.SetProxy(containerOperation)
 	return &logics{
 		classification:    classificationOperation,
 		set:               setOperation,
@@ -105,6 +108,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		business:          businessOperation,
 		businessSet:       businessSetOperation,
 		setTemplate:       setTemplate,
+		container:         containerOperation,
 	}
 }
 
@@ -176,6 +180,11 @@ func (l *logics) BusinessOperation() inst.BusinessOperationInterface {
 // BusinessOperation return a inst provide BusinessOperation
 func (l *logics) BusinessSetOperation() inst.BusinessSetOperationInterface {
 	return l.businessSet
+}
+
+// ContainerOperation return a inst provide ContainerOperation
+func (l *logics) ContainerOperation() container.ClusterOperationInterface {
+	return l.container
 }
 
 // SetTemplateOperation set template operation

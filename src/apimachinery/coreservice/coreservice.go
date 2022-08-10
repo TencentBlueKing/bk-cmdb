@@ -35,6 +35,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/topographics"
 	"configcenter/src/apimachinery/coreservice/transaction"
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/apimachinery/toposerver/container"
 	"configcenter/src/apimachinery/util"
 )
 
@@ -42,6 +43,7 @@ type CoreServiceClientInterface interface {
 	Instance() instance.InstanceClientInterface
 	Model() model.ModelClientInterface
 	Association() association.AssociationClientInterface
+	Container() container.ContainerInterface
 	Synchronize() synchronize.SynchronizeClientInterface
 	Mainline() mainline.MainlineClientInterface
 	Host() host.HostClientInterface
@@ -77,6 +79,10 @@ func (c *coreService) Instance() instance.InstanceClientInterface {
 
 func (c *coreService) Model() model.ModelClientInterface {
 	return model.NewModelClientInterface(c.restCli)
+}
+
+func (c *coreService) Container() container.ContainerInterface {
+	return container.NewContainerInterface(c.restCli)
 }
 
 func (c *coreService) Association() association.AssociationClientInterface {

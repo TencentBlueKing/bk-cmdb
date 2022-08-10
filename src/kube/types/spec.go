@@ -17,6 +17,8 @@
 
 package types
 
+import "errors"
+
 // ClusterSpec describes the common attributes of cluster, it is used by the structure below it.
 type ClusterSpec struct {
 	// BizID business id in cc
@@ -55,7 +57,7 @@ type Reference struct {
 // WorkloadSpec describes the common attributes of workload, it is used by the structure below it.
 type WorkloadSpec struct {
 	NamespaceSpec `json:",inline" bson:",inline`
-	Workload      *Reference `json:"workload" bson:"workload"`
+	Ref           *Reference `json:"ref" bson:"ref"`
 }
 
 // PodSpec describes the common attributes of pod, it is used by the structure below it.
@@ -76,4 +78,73 @@ type PodSpec struct {
 
 	// Pod pod name in third party platform
 	Pod *string `json:"pod" bson:"pod"`
+}
+
+// GetKubeSubTopoObject 获取指定资源的下一级拓扑资源对象，需要首先判断是否是
+func GetKubeSubTopoObject(object string) string {
+
+	switch object {
+	case KubeBusiness:
+		return KubeCluster
+	case KubeCluster:
+		return KubeNamespace
+	case KubeNamespace:
+		return KubeWorkload
+	default:
+		return KubePod
+	}
+}
+
+// GetWorkLoadTables 获取workload子项
+func GetWorkLoadTables() []string {
+
+	return []string{
+		BKTableNameBaseDeployment,
+		BKTableNameGameDeployment,
+		BKTableNameBaseJob,
+		BKTableNameBaseCronJob,
+		BKTableNameGameStatefulSet,
+		BKTableNameBaseStatefulSet,
+		BKTableNameBaseDaemonSet,
+		BKTableNameBasePodWorkload,
+	}
+}
+
+// IsContainerTopoResource 判断是否是容器拓扑对象
+func IsContainerTopoResource(object string) bool {
+	switch object {
+	case KubeBusiness, KubeCluster, KubeNode, KubeNamespace, KubeWorkload:
+		return true
+	default:
+		return false
+	}
+}
+
+// GetCollectionWithObject 根据容器对象获取对应的collection
+func GetCollectionWithObject(object string) ([]string, error) {
+	switch object {
+	case KubeCluster:
+		return []string{BKTableNameBaseCluster}, nil
+	case KubeNamespace:
+		return []string{BKTableNameBaseNamespace}, nil
+	case KubeNode:
+		return []string{BKTableNameBaseNode}, nil
+	case KubePod:
+		return []string{BKTableNameBasePod}, nil
+	case KubeWorkload:
+		return GetWorkLoadTables(), nil
+	default:
+		return []string{}, errors.New("no corresponding table found")
+	}
+}
+
+func IsKubeResourceKind(object string) bool {
+	switch object {
+	case KubeBusiness, KubeCluster, KubeNode, KubeNamespace, string(KubeDeployment),
+		string(KubeStatefulSet), string(KubeDaemonSet), string(KubeGameStatefulSet), string(KubeGameDeployment),
+		string(KubeCronJob), string(KubeJob), string(KubePodWorkload):
+		return true
+	default:
+		return false
+	}
 }

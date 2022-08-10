@@ -19,6 +19,9 @@ package types
 
 // identification of k8s in cc
 const (
+	// KubeBusiness k8s business type
+	KubeBusiness = "biz"
+
 	// KubeCluster k8s cluster type
 	KubeCluster = "cluster"
 
@@ -65,6 +68,11 @@ const (
 
 	// KubePodWorkload k8s pod workload type
 	KubePodWorkload WorkloadType = "pods"
+)
+
+const (
+	ReferenceKind = "reference_kind"
+	ReferenceID   = "bk_reference_id"
 )
 
 // table names
@@ -126,6 +134,30 @@ const (
 
 // cluster field names
 const (
+
+	// BKIDField the id definition
+	BKIDField = "id"
+
+	// KubeNameField the name definition
+	KubeNameField = "name"
+
+	// BKBizIDField business id field
+	BKBizIDField = "bk_biz_id"
+
+	// BKSupplierAccountField supplier account
+	BKSupplierAccountField = "bk_supplier_account"
+
+	// CreatorField the creator field
+	CreatorField = "creator"
+
+	// ModifierField the modifier field
+	ModifierField = "modifier"
+
+	// CreateTimeField the create time field
+	CreateTimeField = "create_time"
+
+	// LastTimeField the last time field
+	LastTimeField = "last_time"
 	// BKClusterIDFiled cluster unique id field in cc
 	BKClusterIDFiled = "bk_cluster_id"
 
@@ -152,6 +184,8 @@ const (
 
 	// TypeField cluster type field
 	TypeField = "type"
+	// SchedulingEngineField scheduling engine
+	SchedulingEngineField = "scheduling_engine"
 )
 
 // node field names
@@ -180,11 +214,14 @@ const (
 	// KubeProxyModeField node proxy mode field
 	KubeProxyModeField = "kube_proxy_mode"
 
+	// PodCidrField pod address allocation range
+	PodCidrField = "pod_cidr"
+
 	// BKNodeIDField cluster unique id field in cc
 	BKNodeIDField = "bk_node_id"
 
 	// NodeField node name field in third party platform
-	NodeField = "node"
+	NodeField = "node_name"
 )
 
 // namespace field names
@@ -227,6 +264,9 @@ const (
 
 	// IPsField pod ips field
 	IPsField = "ips"
+
+	// ControlledBy owning replica controller
+	ControlledBy = "controlled_by"
 
 	// VolumesField pod volumes field
 	VolumesField = "volumes"
@@ -285,3 +325,10 @@ const (
 	// MountsField container mounts field
 	MountsField = "mounts"
 )
+
+// ContainerAttrsRsp 容器资源属性回应
+type ContainerAttrsRsp struct {
+	Field    string `json:"field"`
+	Type     string `json:"type"`
+	Required bool   `json:"required"`
+}

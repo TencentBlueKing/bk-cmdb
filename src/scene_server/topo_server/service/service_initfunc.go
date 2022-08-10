@@ -91,6 +91,51 @@ func (s *Service) initBusiness(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+// container data operation.
+func (s *Service) initContainer(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodGet,
+		Path:    "/kube/find/kube/{object}/attributes",
+		Handler: s.FindContainerAttrs})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/create/cluster/bk_biz_id/{bk_biz_id}",
+		Handler: s.CreateCluster})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path:    "/kube/delete/cluster/bk_biz_id/{bk_biz_id}",
+		Handler: s.DeleteCluster})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/findmany/cluster/bk_biz_id/{bk_biz_id}",
+		Handler: s.SearchClusters})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/createmany/node/bk_biz_id/{bk_biz_id}",
+		Handler: s.BatchCreateNode})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/createmany/pod/bk_biz_id/{bk_biz_id}",
+		Handler: s.BatchCreatePod})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/findmany/node/bk_biz_id/{bk_biz_id}",
+		Handler: s.SearchNodes})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/find/topo_path/bk_biz_id/{bk_biz_id}",
+		Handler: s.SearchKubeTopoPath})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/api/v3/kube/find/{bk_biz_id}/topo_node/{type}/count",
+		Handler: s.CountKubeTopoHostsOrPods})
+
+	utility.AddToRestfulWebService(web)
+}
+
 // 业务集
 func (s *Service) initBizSet(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
@@ -275,6 +320,7 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initAuditLog(web)
 	s.initBusiness(web)
 	s.initBizSet(web)
+	s.initContainer(web)
 	s.initInst(web)
 	s.initModule(web)
 	s.initSet(web)
