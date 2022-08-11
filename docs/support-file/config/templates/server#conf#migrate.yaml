@@ -1,13 +1,7 @@
-# 配置中心
-configServer:
-  addrs: __BK_CMDB_ZK_ADDR__
-  usr:
-  pwd:
 # 注册中心
 registerServer:
   addrs: __BK_CMDB_ZK_ADDR__
-  usr:
-  pwd:
+
 # 指定configures的路径，通过这个路径找到其他的配置文件
 confs:
   dir: __BK_HOME__/cmdb/server/conf
