@@ -90,6 +90,12 @@ export const TOPO_MODE_KEYS = Object.freeze({
   NONE: 'none'
 })
 
+export const MIX_SEARCH_MODES = Object.freeze({
+  LIKE_CONTAINER: 'likeContainer',
+  LIKE_NORMAL: 'likeNormal',
+  UNKNOW: 'unknow'
+})
+
 export const CONTAINER_OBJECT_PROPERTY_KEYS = Object.freeze({
   [CONTAINER_OBJECTS.CLUSTER]: {
     ID: 'bk_cluster_id',

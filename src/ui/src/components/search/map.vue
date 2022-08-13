@@ -1,4 +1,4 @@
-/*
+<!--
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
@@ -8,20 +8,40 @@
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
- */
+-->
 
-export default function (item, modelId, propertyId, isContainerHost) {
-  if (!modelId || !propertyId) {
-    return null
-  }
+<template>
+  <bk-input
+    v-model.trim="localValue"
+    v-bind="$attrs"
+    @clear="() => $emit('clear')"
+    @focus="handleToggle(true, ...arguments)"
+    @blur="handleToggle(false, ...arguments)">
+  </bk-input>
+</template>
 
-  // 容器拓扑主机
-  if (isContainerHost) {
-    return item?.[propertyId]
+<script>
+  import activeMixin from './mixins/active'
+  export default {
+    name: 'cmdb-search-map',
+    mixins: [activeMixin],
+    props: {
+      value: {
+        type: String
+      }
+    },
+    computed: {
+      localValue: {
+        get() {
+          return this.value
+        },
+        set(value) {
+          this.$emit('input', value)
+          this.$emit('change', value)
+        }
+      }
+    },
+    methods: {
+    }
   }
-
-  if (modelId === 'host') {
-    return item?.[modelId]?.[propertyId]
-  }
-  return item?.[modelId]?.map(value => value[propertyId])
-}
+</script>

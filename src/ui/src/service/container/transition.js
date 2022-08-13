@@ -11,7 +11,7 @@
  */
 
 import { CONTAINER_OBJECT_NAMES } from '@/dictionary/container'
-import { isWorkload, getContainerNodeType } from './common.js'
+import { isWorkload, getContainerNodeType, getNormalType } from './common.js'
 import Utils from '@/components/filters/utils.js'
 
 export const normalizationTopo = (topoList) => {
@@ -39,13 +39,13 @@ export const normalizationTopo = (topoList) => {
 }
 
 export const normalizationProperty = (propertyList, objId) => {
-  const properties = propertyList.map((item, index) => Utils.defineProperty({
-    id: Date.now() + index,
+  const properties = propertyList.map(item => Utils.defineProperty({
+    id: `${objId}_${item.field}`,
     bk_obj_id: objId,
     bk_property_id: item.field,
     bk_property_name: item.name,
     bk_property_index: Infinity,
-    bk_property_type: item.type,
+    bk_property_type: getNormalType(item.type),
     required: item.required,
     editable: item.editable,
     option: item.option

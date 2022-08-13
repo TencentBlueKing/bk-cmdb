@@ -88,9 +88,18 @@
         slot="footer"
         slot-scope="{ sticky }"
         :class="{ 'is-sticky': sticky }">
-        <bk-button class="option-search mr10" theme="primary" :disabled="errors.any()" @click="handleSearch">
-          {{$t('查询')}}
-        </bk-button>
+        <span v-bk-tooltips="{
+          disabled: !searchDisabled,
+          content: $t('条件无效，Node条件属性与其他条件属性不能同时设置')
+        }">
+          <bk-button
+            class="option-search mr10"
+            theme="primary"
+            :disabled="errors.any() || searchDisabled"
+            @click="handleSearch">
+            {{$t('查询')}}
+          </bk-button>
+        </span>
         <template v-if="collectable">
           <span class="option-collect-wrapper" v-if="collection"
             v-bk-tooltips="{
@@ -110,7 +119,7 @@
             theme="light"
             trigger="manual"
             :width="280"
-            :z-index="1002"
+            :z-index="99999"
             :tippy-options="{
               interactive: true,
               hideOnClick: false,
@@ -121,7 +130,7 @@
               disabled: allowCollect,
               content: $t('请先填写筛选条件')
             }">
-            <bk-button theme="default" :disabled="!allowCollect" @click="handleCreateCollection">
+            <bk-button theme="default" :disabled="!allowCollect || isMixCondition" @click="handleCreateCollection">
               {{$t('收藏此条件')}}
             </bk-button>
             <section class="collection-form" slot="content">
@@ -166,6 +175,7 @@
   import OperatorSelector from './operator-selector'
   import { mapGetters } from 'vuex'
   import Utils from './utils'
+
   export default {
     components: {
       OperatorSelector
@@ -214,9 +224,17 @@
         const hasIP = !!this.IPCondition.text.trim().length
         const hasCondition = Object.keys(this.condition).some((id) => {
           const { value } = this.condition[id]
-          return !!String(value).trim().length
+          return !Utils.isEmptyCondition(value)
         })
         return hasIP || hasCondition
+      },
+      isMixCondition() {
+        const hasNodeField = Utils.hasNodeField(this.selected, this.condition)
+        const hasNormalTopoField = Utils.hasNormalTopoField(this.selected, this.condition)
+        return hasNormalTopoField && hasNodeField
+      },
+      searchDisabled() {
+        return this.isMixCondition
       }
     },
     watch: {

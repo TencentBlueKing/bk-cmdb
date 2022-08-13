@@ -17,3 +17,14 @@ export const isWorkload = type => Object.values(WORKLOAD_TYPES).includes(type)
 
 // 获取容器节点大类型
 export const getContainerNodeType = type => (isWorkload(type) ? CONTAINER_OBJECTS.WORKLOAD : type)
+
+// 与传统模型字段类型的映射，原则上在交互形态完全一致的情况下才可以转换
+export const typeMapping = {
+  string: 'singlechar',
+  numeric: 'float',
+  mapString: 'map',
+  array: 'array',
+  object: 'object'
+}
+
+export const getNormalType = type => typeMapping[type] || type

@@ -19,7 +19,7 @@ import i18n from '@/i18n'
 import QS from 'qs'
 import RouterQuery from '@/router/query'
 import throttle from 'lodash.throttle'
-import { CONTAINER_OBJECTS, TOPO_MODE_KEYS } from '@/dictionary/container.js'
+import { CONTAINER_OBJECTS, TOPO_MODE_KEYS, MIX_SEARCH_MODES } from '@/dictionary/container.js'
 import containerPropertyService from '@/service/container/property.js'
 
 function getStorageHeader(type, key, properties) {
@@ -51,7 +51,31 @@ const FilterStore = new Vue({
       needResetPage: false,
       throttleSearch: throttle(this.dispatchSearch, 100, { leading: false }),
       topoMode: '',
-      fixedPropertyIds: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
+      fixedPropertyIds: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id'],
+      defaultConditionProperties: {
+        [TOPO_MODE_KEYS.BIZ_NODE]: [
+          ['bk_set_name', 'set'],
+          ['bk_module_name', 'module'],
+          ['operator', 'host'],
+          ['bk_bak_operator', 'host'],
+          ['bk_cloud_id', 'host'],
+          ['name', 'node']
+        ],
+        [TOPO_MODE_KEYS.NORMAL]: [
+          ['bk_set_name', 'set'],
+          ['bk_module_name', 'module'],
+          ['operator', 'host'],
+          ['bk_bak_operator', 'host'],
+          ['bk_cloud_id', 'host']
+        ],
+        [TOPO_MODE_KEYS.CONTAINER]: [
+          ['operator', 'host'],
+          ['bk_bak_operator', 'host'],
+          ['bk_cloud_id', 'host'],
+          ['name', 'node'],
+          ['roles', 'node']
+        ]
+      }
     }
   },
   computed: {
@@ -62,6 +86,12 @@ const FilterStore = new Vue({
       return this.config.bk_biz_id || void 0
     },
     userBehaviorKey() {
+      if (this.isBizNode) {
+        return 'biz_node_host_common_filter'
+      }
+      if (this.isContainerMode) {
+        return this.bizId ? 'container_topology_host_common_filter' : 'container_resource_host_common_filter'
+      }
       return this.bizId ? 'topology_host_common_filter' : 'resource_host_common_filter'
     },
     collectable() {
@@ -80,6 +110,30 @@ const FilterStore = new Vue({
     isContainerTopo() {
       return this.topoMode === TOPO_MODE_KEYS.CONTAINER
     },
+    isBizNode() {
+      return this.topoMode === TOPO_MODE_KEYS.BIZ_NODE
+    },
+    isContainerSearchMode() {
+      return this.searchMode === MIX_SEARCH_MODES.LIKE_CONTAINER
+    },
+    isContainerMode() {
+      return this.isContainerTopo || this.isContainerSearchMode
+    },
+    hasNormalTopoField() {
+      return Utils.hasNormalTopoField(this.selected, this.condition)
+    },
+    hasNodeField() {
+      return Utils.hasNodeField(this.selected, this.condition)
+    },
+    searchMode() {
+      if (this.hasNormalTopoField) {
+        return MIX_SEARCH_MODES.LIKE_NORMAL
+      }
+      if (this.hasNodeField) {
+        return MIX_SEARCH_MODES.LIKE_CONTAINER
+      }
+      return MIX_SEARCH_MODES.UNKNOW
+    },
     searchHandler() {
       return this.config.searchHandler || (() => {})
     },
@@ -91,7 +145,7 @@ const FilterStore = new Vue({
       let key
       let properties
       const hostProperties = this.getModelProperties('host')
-      if (this.isContainerTopo) {
+      if (this.isContainerMode) {
         // 容器拓扑中的自定义字段使用独立的key
         key = this.config.header && this.config.header.customContainer
         // 容器节点属性
@@ -180,6 +234,9 @@ const FilterStore = new Vue({
   watch: {
     selected() {
       this.initCondition()
+    },
+    topoMode(mode) {
+      this.changeTopoMode(mode)
     }
   },
   methods: {
@@ -190,7 +247,7 @@ const FilterStore = new Vue({
       try {
         Object.keys(query).forEach((key) => {
           const [id, operator] = key.split('.')
-          const property = Utils.findProperty(id, this.properties)
+          const property = Utils.findProperty(id, this.properties, 'id')
           const value = query[key].toString().split(',')
           if (property && operator && value.length) {
             properties.push(property)
@@ -207,16 +264,16 @@ const FilterStore = new Vue({
       this.condition = condition
     },
     setupNormalProperty() {
+      // 用户选择后的保存结果
       const userBehavior = store.state.userCustom.usercustom[this.userBehaviorKey] || []
-      const normal = userBehavior.length ? userBehavior : [
-        ['bk_set_name', 'set'],
-        ['bk_module_name', 'module'],
-        ['operator', 'host'],
-        ['bk_bak_operator', 'host'],
-        ['bk_cloud_id', 'host']
-      ]
-      // eslint-disable-next-line max-len
-      this.createOrUpdateCondition(normal.map(([field, model]) => ({ field, model })), { createOnly: true, useDefaultData: true })
+
+      // 优先使用用户保存的，否则初始化为对应拓扑类型的初始值
+      const normal = userBehavior.length ? userBehavior : this.defaultConditionProperties[this.topoMode]
+
+      this.createOrUpdateCondition(
+        normal.map(([field, model]) => ({ field, model })),
+        { createOnly: true, useDefaultData: true }
+      )
     },
     setupIPQuery() {
       const query = QS.parse(RouterQuery.get('ip'))
@@ -238,6 +295,18 @@ const FilterStore = new Vue({
         }
       })
       this.condition = newConditon
+    },
+    changeTopoMode(mode) {
+      // 设置topoMode值，在其它方法中得以使用到最新的值
+      this.setTopoMode(mode)
+
+      this.setHeader()
+
+      // 此时selected为上一个mode的，需要清空，在setupNormalProperty方法中会使用在设置条件时已保存的值
+      this.updateSelected([])
+
+      // 使用当前mode重新创建选项与条件
+      this.setupNormalProperty()
     },
     setTopoMode(mode) {
       this.topoMode = mode
@@ -390,9 +459,11 @@ const FilterStore = new Vue({
       // 取之前先设置为最新的值
       this.setHeader()
 
-      return this.header
+      // 由于属性数据异步加载，可能会存在无效的数据，过滤后返回
+      return this.header.filter(header => header)
     },
-    getSearchParams(topoMode) {
+    getSearchParams() {
+      const header = this.getHeader()
       const transformedIP = Utils.transformIP(this.IP.text)
       const flag = []
       this.IP.inner && flag.push('bk_host_innerip')
@@ -406,17 +477,29 @@ const FilterStore = new Vue({
         }
       }
 
-      if (topoMode === TOPO_MODE_KEYS.CONTAINER) {
+      if (this.isContainerMode) {
+        const hostConds = {}
+        const nodeConds = {}
+        const hostProperties = this.getModelProperties('host')
+        const nodeProperties = this.getModelProperties(CONTAINER_OBJECTS.NODE)
+        for (const [id, cond] of Object.entries(this.condition)) {
+          if (hostProperties.some(prop => String(prop.id) === String(id))) {
+            hostConds[id] = cond
+          }
+          if (nodeProperties.some(prop => String(prop.id) === String(id))) {
+            nodeConds[id] = cond
+          }
+        }
+
         params.host_condition = Utils.transformContainerCondition(
-          this.condition,
+          hostConds,
           this.selected,
-          this.header.filter(property => !property?.isInject)
+          header.filter(property => !property?.isInject)
         )
 
         // 容器节点属性条件
         params.node_filter = Utils.transformContainerNodeCondition(
-          this.condition,
-          // TODO只取容器节点属性
+          nodeConds,
           this.selected,
         )
 
@@ -427,7 +510,7 @@ const FilterStore = new Vue({
         params.condition = Utils.transformCondition(
           this.condition,
           this.selected,
-          this.header.filter(property => !property?.isInject)
+          header.filter(property => !property?.isInject)
         )
         if (transformedIP.condition) {
           const { condition } = params.condition.find(condition => condition.bk_obj_id === 'host')
@@ -517,7 +600,8 @@ const FilterStore = new Vue({
     async loadCollections() {
       const { info: collections } = await api.post('hosts/favorites/search', {
         condition: {
-          bk_biz_id: this.bizId
+          bk_biz_id: this.bizId,
+          type: this.isContainerMode ? 'container' : 'tradition'
         }
       }, {
         requestId: this.request.collections
@@ -526,7 +610,9 @@ const FilterStore = new Vue({
       return this.collections
     },
     async createCollection(data) {
-      const response = await api.post('hosts/favorites', data, {
+      const params = data || {}
+      params.type = this.isContainerMode ? 'container' : 'tradition'
+      const response = await api.post('hosts/favorites', params, {
         requestId: this.request.createCollection,
         globalError: false,
         transformData: false

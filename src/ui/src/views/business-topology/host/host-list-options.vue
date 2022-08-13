@@ -236,6 +236,9 @@
       hostProperties() {
         return FilterStore.getModelProperties('host')
       },
+      isContainerNode() {
+        return this.$parent.isContainerNode
+      },
       count() {
         return this.$parent.table.pagination.count
       },
@@ -252,12 +255,20 @@
         return this.isNormalNode && this.selectedNode.data.bk_obj_id === 'module'
       },
       isIdleModule() {
+        if (this.isContainerNode) {
+          return false
+        }
+
         return this.selection.every((data) => {
           const modules = data.module
           return modules.every(module => module.default === 1)
         })
       },
       isIdleSetModules() {
+        if (this.isContainerNode) {
+          return false
+        }
+
         return this.selection.every(data => data.module.every(module => module.default >= 1))
       },
       removeAvailable() {
@@ -274,7 +285,7 @@
           bk_property_name: `${this.$t('云区域')}ID:IP`,
           bk_property_type: 'singlechar'
         })
-        const clipboardList = FilterStore.header.slice()
+        const clipboardList = this.$parent.tableHeader.slice()
         clipboardList.splice(1, 0, IPWithCloud)
         return clipboardList
       },
@@ -413,9 +424,16 @@
         showImport()
       },
       handleCopy(property) {
+        console.log(property)
         const copyText = this.selection.map((data) => {
           const modelId = property.bk_obj_id
-          const modelData = data[modelId]
+          let modelData = data[modelId]
+
+          // 容器节点的数据是打平的不需要通过modelId获取
+          if (this.isContainerNode) {
+            modelData = data
+          }
+
           if (property.id === this.IPWithCloudSymbol) {
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')

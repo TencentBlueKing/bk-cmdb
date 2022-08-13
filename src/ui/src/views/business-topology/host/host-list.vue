@@ -37,7 +37,7 @@
         <template slot-scope="{ row }">
           <cmdb-property-value
             :theme="column.bk_property_id === 'bk_host_id' ? 'primary' : 'default'"
-            :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id, topoMode)"
+            :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id, isContainerHost)"
             :show-unit="false"
             :property="column"
             :multiple="column.bk_obj_id !== 'host'"
@@ -78,7 +78,7 @@
   import FilterStore, { setupFilterStore } from '@/components/filters/store'
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
   import { ONE_TO_ONE } from '@/dictionary/host-transfer-type.js'
-  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+  import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
   import { CONTAINER_OBJECTS, CONTAINER_OBJECT_PROPERTY_KEYS, TOPO_MODE_KEYS } from '@/dictionary/container.js'
   import hostContainerService from '@/service/host/container.js'
   import { getContainerNodeType } from '@/service/container/common.js'
@@ -145,6 +145,21 @@
           return TOPO_MODE_KEYS.BIZ_NODE
         }
         return TOPO_MODE_KEYS.NORMAL
+      },
+      customInstanceColumnKey() {
+        if (this.topoMode === TOPO_MODE_KEYS.CONTAINER) {
+          return this.$route.meta.customContainerInstanceColumn
+        }
+        return this.$route.meta.customInstanceColumn
+      },
+      isContainerSearchMode() {
+        return FilterStore.isContainerSearchMode
+      },
+      searchMode() {
+        return FilterStore.searchMode
+      },
+      isContainerHost() {
+        return this.isContainerSearchMode || this.isContainerNode
       }
     },
     watch: {
@@ -153,6 +168,9 @@
       },
       topoMode(mode) {
         FilterStore.setTopoMode(mode)
+        this.tableHeader = FilterStore.getHeader()
+      },
+      searchMode() {
         this.tableHeader = FilterStore.getHeader()
       }
     },
@@ -275,11 +293,13 @@
             apply: async (properties) => {
               await this.handleApplyColumnsConfig(properties)
               FilterStore.setHeader(properties)
+              this.tableHeader = FilterStore.getHeader()
               FilterStore.dispatchSearch()
             },
             reset: async () => {
               await this.handleApplyColumnsConfig()
               FilterStore.setHeader(FilterStore.defaultHeader)
+              this.tableHeader = FilterStore.getHeader()
               FilterStore.dispatchSearch()
             }
           }
@@ -287,7 +307,7 @@
       },
       handleApplyColumnsConfig(properties = []) {
         return this.$store.dispatch('userCustom/saveUsercustom', {
-          [this.$route.meta.customInstanceColumn]: properties.map(property => property.bk_property_id)
+          [this.customInstanceColumnKey]: properties.map(property => property.bk_property_id)
         })
       },
       async getHostList() {
@@ -312,7 +332,7 @@
           cancelPrevious: true
         }
 
-        if (this.topoMode === TOPO_MODE_KEYS.CONTAINER) {
+        if (this.topoMode === TOPO_MODE_KEYS.CONTAINER || this.isContainerSearchMode) {
           return hostContainerService.findAll(params, config)
         }
 
@@ -325,11 +345,11 @@
           bizNode: this.getBizNodeParams
         }
 
-        return paramsMap[type](type)
+        return paramsMap[type]()
       },
-      getNormalParams(type) {
+      getNormalParams() {
         const params = {
-          ...FilterStore.getSearchParams(type),
+          ...FilterStore.getSearchParams(),
           page: {
             ...this.$tools.getPageParams(this.table.pagination),
             sort: this.table.sort
@@ -351,9 +371,9 @@
         modelCondition.condition.push(topoCondition)
         return params
       },
-      getContainerParams(type) {
+      getContainerParams() {
         const params = {
-          ...FilterStore.getSearchParams(type),
+          ...FilterStore.getSearchParams(),
           page: {
             ...this.$tools.getPageParams(this.table.pagination),
             sort: this.table.sort
@@ -368,6 +388,7 @@
           [CONTAINER_OBJECTS.FOLDER]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.FOLDER].ID,
           [CONTAINER_OBJECTS.NAMESPACE]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.NAMESPACE].ID,
           [CONTAINER_OBJECTS.WORKLOAD]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.WORKLOAD].ID,
+          [BUILTIN_MODELS.BUSINESS]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].ID,
         }
         const nodeType = getContainerNodeType(selectedNodeData.bk_obj_id)
 
@@ -386,8 +407,11 @@
 
         return params
       },
-      getBizNodeParams(type) {
-        return this.getNormalParams(type)
+      getBizNodeParams() {
+        if (this.isContainerSearchMode) {
+          return this.getContainerParams()
+        }
+        return this.getNormalParams()
       },
       handleTransfer(type) {
         const actionMap = {
