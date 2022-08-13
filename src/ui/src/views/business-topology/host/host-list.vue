@@ -75,6 +75,7 @@
   import Bus from '@/utils/bus.js'
   import RouterQuery from '@/router/query'
   import HostFilterTag from '@/components/filters/filter-tag'
+  import FilterUtils from '@/components/filters/utils'
   import FilterStore, { setupFilterStore } from '@/components/filters/store'
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
   import { ONE_TO_ONE } from '@/dictionary/host-transfer-type.js'
@@ -169,6 +170,8 @@
       topoMode(mode) {
         FilterStore.setTopoMode(mode)
         this.tableHeader = FilterStore.getHeader()
+        // 重置selection防止因数据结构不同导致获取数据错误
+        this.table.selection = []
       },
       searchMode() {
         this.tableHeader = FilterStore.getHeader()
@@ -271,7 +274,7 @@
           name: MENU_BUSINESS_HOST_DETAILS,
           params: {
             bizId: this.bizId,
-            id: row.host.bk_host_id
+            id: this.isContainerHost ? row.bk_host_id : row.host.bk_host_id
           },
           history: true
         })
@@ -326,19 +329,20 @@
         }
       },
       getSearchRequest() {
-        const params = this.getParams(this.topoMode)
+        const params = this.getParams()
         const config = {
           requestId: this.request.table,
           cancelPrevious: true
         }
 
-        if (this.topoMode === TOPO_MODE_KEYS.CONTAINER || this.isContainerSearchMode) {
+        if (this.isContainerHost) {
           return hostContainerService.findAll(params, config)
         }
 
         return this.$store.dispatch('hostSearch/searchHost', { params, config })
       },
-      getParams(type) {
+      getParams() {
+        const type = this.topoMode
         const paramsMap = {
           normal: this.getNormalParams,
           container: this.getContainerParams,
@@ -550,7 +554,7 @@
           // eslint-disable-next-line prefer-destructuring
           const internalModule = modules[0]
           await this.$http.post(`host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, {
-            bk_host_ids: this.table.selection.map(data => data.host.bk_host_id),
+            bk_host_ids: FilterUtils.getSelectedHostIds(this.table.selection, this.isContainerHost),
             default_internal_module: internalModule.data.bk_inst_id,
             is_remove_from_all: true
           }, {
@@ -575,7 +579,7 @@
           sourceModel: this.selectedNode.data.bk_obj_id,
           sourceId: this.selectedNode.data.bk_inst_id,
           targetModules: modules.map(node => node.data.bk_inst_id).join(','),
-          resources: this.table.selection.map(item => item.host.bk_host_id).join(','),
+          resources: FilterUtils.getSelectedHostIds(this.table.selection, this.isContainerHost)?.join(','),
           node: this.selectedNode.id
         }
         this.$routerActions.redirect({

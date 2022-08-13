@@ -13,7 +13,10 @@
 <template>
   <div class="options-layout clearfix">
     <div class="options options-left fl">
-      <cmdb-auth class="option" :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
+      <cmdb-auth
+        v-show="!isContainerHost"
+        class="option mr10"
+        :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
         <bk-button theme="primary" slot-scope="{ disabled }" v-test-id="'addHost'"
           :disabled="disabled || !isNormalModuleNode"
           :title="isNormalModuleNode ? '' : $t('仅能在业务模块下新增')"
@@ -21,12 +24,16 @@
           {{$t('新增')}}
         </bk-button>
       </cmdb-auth>
-      <bk-button class="ml10" v-test-id="'edit'"
+
+      <bk-button v-test-id="'edit'"
         :disabled="!hasSelection"
         @click="handleMultipleEdit">
         {{$t('编辑')}}
       </bk-button>
-      <bk-dropdown-menu class="option ml10" trigger="click"
+
+      <bk-dropdown-menu
+        v-show="!isContainerHost"
+        class="option ml10" trigger="click"
         font-size="medium"
         :disabled="!hasSelection"
         @show="isTransferMenuOpen = true"
@@ -65,6 +72,7 @@
           </li>
         </ul>
       </bk-dropdown-menu>
+
       <bk-dropdown-menu class="option ml10" trigger="click"
         v-show="isNormalNode"
         font-size="medium"
@@ -88,6 +96,7 @@
           </cmdb-auth>
         </ul>
       </bk-dropdown-menu>
+
       <bk-dropdown-menu class="option ml10" trigger="click"
         v-show="isNormalModuleNode"
         font-size="medium"
@@ -134,7 +143,11 @@
             v-test-id="'batchExport'">
             {{$t('导出全部')}}
           </li>
-          <cmdb-auth tag="li" class="bk-dropdown-item with-auth" v-test-id="'importUpdate'"
+          <cmdb-auth
+            v-show="!isContainerHost"
+            tag="li"
+            class="bk-dropdown-item with-auth"
+            v-test-id="'importUpdate'"
             :auth="{ type: $OPERATION.U_HOST, relation: [bizId] }">
             <span href="javascript:void(0)"
               slot-scope="{ disabled }"
@@ -154,10 +167,13 @@
         @click="handleSetFilters">
       </icon-button>
     </div>
+
     <edit-multiple-host ref="editMultipleHost" v-test-id
       :properties="hostProperties"
-      :selection="$parent.table.selection">
+      :selection="$parent.table.selection"
+      :is-container-host="isContainerHost">
     </edit-multiple-host>
+
     <cmdb-dialog v-model="dialog.show" v-bind="dialog.props" :height="650">
       <component
         :is="dialog.component"
@@ -239,6 +255,9 @@
       isContainerNode() {
         return this.$parent.isContainerNode
       },
+      isContainerHost() {
+        return this.$parent.isContainerHost
+      },
       count() {
         return this.$parent.table.pagination.count
       },
@@ -255,7 +274,7 @@
         return this.isNormalNode && this.selectedNode.data.bk_obj_id === 'module'
       },
       isIdleModule() {
-        if (this.isContainerNode) {
+        if (this.isContainerHost) {
           return false
         }
 
@@ -265,7 +284,7 @@
         })
       },
       isIdleSetModules() {
-        if (this.isContainerNode) {
+        if (this.isContainerHost) {
           return false
         }
 
@@ -322,7 +341,7 @@
           query: {
             sourceModel: this.selectedNode.data.bk_obj_id,
             sourceId: this.selectedNode.data.bk_inst_id,
-            resources: this.selection.map(item => item.host.bk_host_id).join(','),
+            resources: this.getSelectedHostIds(this.selection)?.join(','),
             node: this.selectedNode.id
           },
           history: true
@@ -345,7 +364,7 @@
             const { fields, exportRelation  } = state
             const params = {
               export_custom_fields: fields.value.map(property => property.bk_property_id),
-              bk_host_ids: this.selection.map(({ host }) => host.bk_host_id),
+              bk_host_ids: this.getSelectedHostIds(this.selection),
               bk_biz_id: this.bizId
             }
             if (exportRelation.value) {
@@ -376,6 +395,7 @@
           count: this.count,
           submit: (state, task) => {
             const { fields, exportRelation  } = state
+            // TODO: 如何兼容容器拓扑
             const exportCondition = this.$parent.getParams()
             const params = {
               export_custom_fields: fields.value.map(property => property.bk_property_id),
@@ -424,13 +444,12 @@
         showImport()
       },
       handleCopy(property) {
-        console.log(property)
         const copyText = this.selection.map((data) => {
           const modelId = property.bk_obj_id
           let modelData = data[modelId]
 
           // 容器节点的数据是打平的不需要通过modelId获取
-          if (this.isContainerNode) {
+          if (this.isContainerHost) {
             modelData = data
           }
 
@@ -464,7 +483,7 @@
           sourceModel: this.selectedNode.data.bk_obj_id,
           sourceId: this.selectedNode.data.bk_inst_id,
           targetModules: this.selectedNode.data.bk_inst_id,
-          resources: selected.map(item => item.host.bk_host_id).join(','),
+          resources: this.getSelectedHostIds(selected)?.join(','),
           node: this.selectedNode.id
         }
         this.$routerActions.redirect({
@@ -481,6 +500,9 @@
       },
       handleSetFilters() {
         FilterForm.show()
+      },
+      getSelectedHostIds(selected) {
+        return FilterUtils.getSelectedHostIds(selected, this.isContainerHost)
       }
     }
   }

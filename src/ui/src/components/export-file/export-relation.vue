@@ -156,7 +156,7 @@
       const setSelectionUniqueCheck = (relation) => {
         const [firstUniqueCheck] = relation.relation_unique_checks
         const preset = relation.relation_unique_checks.find(uniqueCheck => uniqueCheck.ispre) || firstUniqueCheck
-        setRelation(relation.relation_obj_id, preset.id)
+        setRelation(relation.relation_obj_id, preset?.id)
       }
       const handleSelect = (selection, relation) => {
         const selected = selection.includes(relation)

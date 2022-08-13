@@ -422,6 +422,13 @@ export function hasNodeField(selected, condition) {
   return hasNodeField
 }
 
+export function getSelectedHostIds(selected, isContainerHost) {
+  if (isContainerHost) {
+    return selected.map(row => row.bk_host_id)
+  }
+  return selected.map(({ host }) => host.bk_host_id)
+}
+
 export default {
   getLabel,
   getPlaceholder,
@@ -444,5 +451,6 @@ export default {
   transformContainerNodeCondition,
   isEmptyCondition,
   hasNormalTopoField,
-  hasNodeField
+  hasNodeField,
+  getSelectedHostIds
 }
