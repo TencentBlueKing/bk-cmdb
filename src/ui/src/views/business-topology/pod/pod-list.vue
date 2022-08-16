@@ -22,9 +22,10 @@
   import {
     MENU_POD_DETAILS,
   } from '@/dictionary/menu-symbol'
-  import { CONTAINER_OBJECTS } from '@/dictionary/container'
+  import { CONTAINER_OBJECTS, CONTAINER_OBJECT_PROPERTY_KEYS, CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container'
   import containerPropertyService from '@/service/container/property.js'
   import podService from '@/service/pod/index.js'
+  import { getContainerNodeType } from '@/service/container/common.js'
 
   export default defineComponent({
     components: {
@@ -47,8 +48,11 @@
       })
 
       const columnsConfig = reactive({
-        disabledColumns: ['name', 'namespace'],
-        selected: []
+        disabledColumns: [
+          CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].ID,
+          'name',
+          'namespace'
+        ]
       })
 
       const properties = ref([])
@@ -56,6 +60,8 @@
       const columnsConfigKey = 'pod_custom_table_columns'
 
       const bizId = computed(() => store.getters['objectBiz/bizId'])
+
+      const selectedNode = computed(() => store.getters['businessHost/selectedNode'])
 
       const query = computed(() => RouterQuery.getAll())
 
@@ -72,6 +78,30 @@
       const customColumns = computed(() => usercustom.value[columnsConfigKey] || [])
       const globalCustomColumns = computed(() =>  globalUsercustom.value?.pod_global_custom_table_columns || [])
 
+      // 查询条件组件相关属性数据
+      const filterProperty = computed(() => properties.value.find(property => property.id === filter.field))
+      const filterType = computed(() => filterProperty.value?.bk_property_type ?? 'singlechar')
+
+      const getList = async () => {
+        try {
+          const { list, count } = await podService.find(getSearchParams(), {
+            requestId: requestIds.list,
+            cancelPrevious: true,
+            globalPermission: false
+          })
+
+          table.data = list
+          table.pagination.count = count
+        } catch (error) {
+          console.error(error)
+        }
+      }
+
+      const saveColumnsConfig = (properties = []) => store.dispatch('userCustom/saveUsercustom', {
+        [columnsConfigKey]: properties.map(property => property.bk_property_id)
+      })
+
+      // 自定义表头变更后，更新table.header
       watch(customColumns, () => setTableHeader())
 
       watchEffect(async () => {
@@ -81,10 +111,10 @@
           requestId: requestIds.property,
           fromCache: true
         })
-        console.log(podProperties)
         properties.value = podProperties
 
         setTableHeader()
+
         getList()
       })
 
@@ -109,23 +139,19 @@
       )
 
       const setTableHeader = () => {
-        console.log(usercustom.value[columnsConfigKey] || [], 'usercustom.value[columnsConfigKey]', customColumns)
-        const customColumns = customColumns?.value.length ? customColumns.value : globalCustomColumns.value
-        const headerProperties = getHeaderProperties(properties.value, customColumns, columnsConfig.disabledColumns)
+        const configColumns = customColumns.value.length ? customColumns.value : globalCustomColumns.value
+        const headerProperties = getHeaderProperties(properties.value, configColumns, columnsConfig.disabledColumns)
 
         table.header = headerProperties.map(property => ({
           id: property.bk_property_id,
           name: getHeaderPropertyName(property),
           property
         }))
-
-        columnsConfig.selected = properties.value.map(property => property.bk_property_id)
       }
 
-
-      // 查询条件组件相关属性数据
-      const filterProperty = computed(() => properties.value.find(property => property.id === filter.field))
-      const filterType = computed(() => filterProperty.value?.bk_property_type ?? 'singlechar')
+      const clearTableHeader = () => {
+        table.header = []
+      }
 
       // 更新filter数据，无值状态时则使用默认数据初始化
       const updateFilter = (field, value = '', operator = '') => {
@@ -144,7 +170,7 @@
       }
 
       // 计算查询条件参数
-      const searchParams = computed(() => {
+      const getSearchParams = () => {
         const params = {
           bk_biz_id: bizId.value,
           fields: table.header.map(item => item.id),
@@ -155,17 +181,38 @@
           }
         }
 
-        // 这里先直接复用转换通用模型实例查询条件的方法
+        const selectedNodeData = selectedNode.value.data
+
+        // 容器节点的属性ID
+        const fieldMap = {
+          [CONTAINER_OBJECTS.CLUSTER]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.CLUSTER].ID,
+          [CONTAINER_OBJECTS.NAMESPACE]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.NAMESPACE].ID
+        }
+        const nodeType = getContainerNodeType(selectedNodeData.bk_obj_id)
+
+        // folder节点参数特殊处理
+        if (nodeType === CONTAINER_OBJECTS.FOLDER) {
+          params.folder = true
+          // folder父节点为cluster节点
+          params[fieldMap[CONTAINER_OBJECTS.CLUSTER]] = this.selectedNode.parent.data.bk_inst_id
+        } else if (nodeType === CONTAINER_OBJECTS.WORKLOAD) {
+          params.ref = {
+            id: selectedNodeData.bk_inst_id,
+            kind: selectedNodeData.bk_obj_id
+          }
+        } else {
+          // 添加节点的属性ID参数，如 bk_namespace_id
+          params[fieldMap[nodeType]] = selectedNodeData.bk_inst_id
+        }
+
         const condition = {
           [filter.field]: {
             value: filter.value,
             operator: filter.operator
           }
         }
-        console.log(condition, 'conditionconditioncondition')
-        const { conditions } = transformGeneralModelCondition(condition, properties.value)
 
-        console.log(conditions, 'conditionsconditions++')
+        const { conditions } = transformGeneralModelCondition(condition, properties.value)
 
         if (conditions) {
           params.filter = {
@@ -175,21 +222,6 @@
         }
 
         return params
-      })
-
-      const getList = async () => {
-        try {
-          const { list, count } = await podService.find(searchParams.value, {
-            requestId: requestIds.list,
-            cancelPrevious: true,
-            globalPermission: false
-          })
-
-          table.data = list
-          table.pagination.count = count
-        } catch (error) {
-          console.error(error)
-        }
       }
 
       const handlePageChange = (current = 1) => {
@@ -236,15 +268,21 @@
         }
         ColumnsConfig.open({
           props: {
-            properties: [],
-            selected: [],
-            disabledColumns: []
+            properties: properties.value,
+            selected: table.header.map(item => item.id),
+            disabledColumns: columnsConfig.disabledColumns
           },
           handler: {
             apply: async (properties) => {
-              console.log(properties)
+              // 先清空表头，防止更新排序后未重新渲染
+              clearTableHeader()
+              await saveColumnsConfig(properties)
+              getList()
             },
             reset: async () => {
+              clearTableHeader()
+              await saveColumnsConfig([])
+              getList()
             }
           }
         })
@@ -273,7 +311,6 @@
       :filter="filter">
     </pod-list-options>
     <bk-table class="pod-table"
-      ref="table"
       v-bkloading="{ isLoading: $loading(Object.values(requestIds)) }"
       :data="table.data"
       :pagination="table.pagination"
@@ -285,7 +322,7 @@
       @header-click="handleHeaderClick">
       <bk-table-column type="selection" width="50" align="center" fixed></bk-table-column>
       <bk-table-column v-for="column in table.header"
-        show-overflow-tooltip
+        :show-overflow-tooltip="!['map'].includes(column.property.bk_property_type)"
         :min-width="column.id === 'id' ? 80 : 120"
         :key="column.id"
         :sortable="'custom'"

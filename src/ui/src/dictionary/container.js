@@ -118,3 +118,26 @@ export const CONTAINER_OBJECT_PROPERTY_KEYS = Object.freeze({
     NAME: 'bk_pod_name'
   }
 })
+
+export const CONTAINER_OBJECT_INST_KEYS = Object.freeze({
+  [CONTAINER_OBJECTS.CLUSTER]: {
+    ID: 'id',
+    NAME: 'name'
+  },
+  [CONTAINER_OBJECTS.NAMESPACE]: {
+    ID: 'id',
+    NAME: 'name'
+  },
+  [CONTAINER_OBJECTS.FOLDER]: {
+    ID: 'id',
+    NAME: 'name'
+  },
+  [CONTAINER_OBJECTS.WORKLOAD]: {
+    ID: 'id',
+    NAME: 'name'
+  },
+  [CONTAINER_OBJECTS.POD]: {
+    ID: 'id',
+    NAME: 'name'
+  }
+})

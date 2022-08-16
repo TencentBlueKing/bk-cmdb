@@ -12,13 +12,53 @@
 
 import http from '@/api'
 import { normalizationProperty } from '@/service/container/transition.js'
+import { CONTAINER_OBJECTS, CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container.js'
+
+
+function createIdProperty(objId) {
+  const keyMap = {
+    [CONTAINER_OBJECTS.CLUSTER]: CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.CLUSTER].ID,
+    [CONTAINER_OBJECTS.NAMESPACE]: CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.NAMESPACE].ID,
+    [CONTAINER_OBJECTS.WORKLOAD]: CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.WORKLOAD].ID,
+    [CONTAINER_OBJECTS.FOLDER]: CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.FOLDER].ID,
+    [CONTAINER_OBJECTS.POD]: CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].ID
+  }
+  return {
+    id: `${objId}_${keyMap[objId]}`,
+    bk_obj_id: objId,
+    bk_property_id: keyMap[objId] || 'id',
+    bk_property_name: 'ID',
+    bk_property_index: -1,
+    bk_property_type: 'int',
+    isonly: true,
+    ispre: true,
+    bk_isapi: true,
+    bk_issystem: true,
+    isreadonly: true,
+    editable: false,
+    bk_property_group: null,
+    is_inject: true
+  }
+}
 
 export const find = ({ objId, params }, config) => http.post(`find/container/${objId}/attributes`, params, config)
 
-export const getAll = async ({ objId, params }, config) => {
+export const getAll = async ({ objId, params }, config, injectId = true) => {
   try {
     const list = await find({ objId, params }, config)
-    return normalizationProperty(list, objId)
+
+    const properties = normalizationProperty(list, objId)
+
+    if (!injectId) {
+      return properties
+    }
+
+    if (list.some(property => property.is_inject)) {
+      return properties
+    }
+
+    properties.unshift(createIdProperty(objId))
+    return properties
   } catch (error) {
     console.error(error)
     return Promise.reject(error)
