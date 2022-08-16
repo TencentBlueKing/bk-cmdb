@@ -328,10 +328,25 @@
         Bus.$emit('toggle-host-filter', false)
 
         const oldId = this.$route.query.node
+        const oldTab = this.$route.query.tab
+        // 服务实例视图参数
+        const oldView = this.$route.query.view
         const newId = node.id
+
+        let tab = oldTab
+        let view = oldView
+        if (node.data?.is_container && oldTab === 'serviceInstance') {
+          tab = ''
+          view = ''
+        }
+        if (!node.data?.is_container && oldTab === 'podList') {
+          tab = ''
+        }
 
         const query = {
           node: newId,
+          tab,
+          view,
           page: 1,
           _t: Date.now()
         }

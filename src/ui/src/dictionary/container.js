@@ -112,5 +112,9 @@ export const CONTAINER_OBJECT_PROPERTY_KEYS = Object.freeze({
   [CONTAINER_OBJECTS.WORKLOAD]: {
     ID: 'bk_workload_id',
     NAME: 'bk_workload_name'
+  },
+  [CONTAINER_OBJECTS.POD]: {
+    ID: 'bk_pod_id',
+    NAME: 'bk_pod_name'
   }
 })

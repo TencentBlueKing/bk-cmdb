@@ -10,8 +10,9 @@
  * limitations under the License.
  */
 
+import i18n from '@/i18n/index.js'
 import { CONTAINER_OBJECT_NAMES } from '@/dictionary/container'
-import { isWorkload, getContainerNodeType, getNormalType } from './common.js'
+import { isWorkload, getContainerNodeType, getPropertyType, getPropertyName } from './common.js'
 import Utils from '@/components/filters/utils.js'
 
 export const normalizationTopo = (topoList) => {
@@ -43,9 +44,9 @@ export const normalizationProperty = (propertyList, objId) => {
     id: `${objId}_${item.field}`,
     bk_obj_id: objId,
     bk_property_id: item.field,
-    bk_property_name: item.name,
+    bk_property_name: getPropertyName(item.field, objId, i18n.locale),
     bk_property_index: Infinity,
-    bk_property_type: getNormalType(item.type),
+    bk_property_type: getPropertyType(item.type),
     required: item.required,
     editable: item.editable,
     option: item.option

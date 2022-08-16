@@ -45,7 +45,12 @@
           </bk-exception>
           <host-list v-show="!emptySet" :active="activeTab === 'hostList'" ref="hostList" v-test-id></host-list>
         </bk-tab-panel>
-        <bk-tab-panel name="serviceInstance" :label="$t('服务实例')">
+
+        <bk-tab-panel name="podList" :label="$t('Pod列表')" v-if="isContainerNode">
+          <pod-list v-if="activeTab === 'podList'" v-test-id></pod-list>
+        </bk-tab-panel>
+
+        <bk-tab-panel name="serviceInstance" :label="$t('服务实例')" v-if="!isContainerNode">
           <div class="non-business-module" v-if="!showServiceInstance">
             <div class="tips">
               <i class="bk-cc-icon icon-cc-tips"></i>
@@ -54,6 +59,7 @@
           </div>
           <service-instance-view v-else-if="activeTab === 'serviceInstance'" v-test-id></service-instance-view>
         </bk-tab-panel>
+
         <bk-tab-panel name="nodeInfo" :label="$t('节点信息')">
           <div class="default-node-info" v-if="!showNodeInfo">
             <div class="info-item">
@@ -81,12 +87,14 @@
   import Bus from '@/utils/bus.js'
   import RouterQuery from '@/router/query'
   import ServiceInstanceView from './service-instance/view'
+  import PodList from './pod/pod-list.vue'
   export default {
     components: {
       TopologyTree,
       HostList,
       ServiceNodeInfo,
-      ServiceInstanceView
+      ServiceInstanceView,
+      PodList
     },
     data() {
       return {
@@ -119,6 +127,9 @@
       emptySet() {
         return this.selectedNode && this.selectedNode.data.bk_obj_id === 'set'
           && this.selectedNode.children && !this.selectedNode.children.length
+      },
+      isContainerNode() {
+        return !!this.selectedNode?.data?.is_container
       }
     },
     watch: {

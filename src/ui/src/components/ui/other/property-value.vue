@@ -24,6 +24,10 @@
     :value="value"
     display-type="info">
   </service-template-value>
+  <mapstring-value
+    v-else-if="isMapstring"
+    :value="value">
+  </mapstring-value>
   <component :is="tag" v-bind="attrs" v-else>{{displayValue}}</component>
 </template>
 
@@ -31,17 +35,19 @@
   import UserValue from './user-value'
   import TableValue from './table-value'
   import ServiceTemplateValue from '@/components/search/service-template'
+  import MapstringValue from './mapstring-value.vue'
   const ORG_CACHES = {}
   export default {
     name: 'cmdb-property-value',
     components: {
       UserValue,
       TableValue,
-      ServiceTemplateValue
+      ServiceTemplateValue,
+      MapstringValue
     },
     props: {
       value: {
-        type: [String, Number, Array, Boolean],
+        type: [String, Number, Array, Boolean, Object],
         default: ''
       },
       property: {
@@ -105,6 +111,9 @@
       },
       isOrg() {
         return this.property.bk_property_type === 'organization'
+      },
+      isMapstring() {
+        return this.property.bk_property_type === 'map'
       }
     },
     watch: {

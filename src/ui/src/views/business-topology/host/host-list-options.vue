@@ -205,8 +205,8 @@
     MENU_BUSINESS_TRANSFER_HOST
   } from '@/dictionary/menu-symbol'
   import FilterForm from '@/components/filters/filter-form.js'
-  import FilterCollection from '@/components/filters/filter-collection'
-  import FilterFastSearch from '@/components/filters/filter-fast-search'
+  import FilterCollection from '@/components/filters/filter-collection.vue'
+  import FilterFastSearch from '@/components/filters/filter-fast-search.vue'
   import FilterStore from '@/components/filters/store'
   import FilterUtils from '@/components/filters/utils'
   import { update as updateHost } from '@/service/host/import'
@@ -394,7 +394,7 @@
           defaultSelectedFields: this.tableHeaderPropertyIdList,
           count: this.count,
           submit: (state, task) => {
-            const { fields, exportRelation  } = state
+            const { fields, exportRelation } = state
             // TODO: 如何兼容容器拓扑
             const exportCondition = this.$parent.getParams()
             const params = {

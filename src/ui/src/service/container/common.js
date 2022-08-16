@@ -27,4 +27,120 @@ export const typeMapping = {
   object: 'object'
 }
 
-export const getNormalType = type => typeMapping[type] || type
+export const getPropertyType = type => typeMapping[type] || type
+
+export const getPropertyName = (id, objId, locale) => {
+  const lang = locale === 'en' ? 'en' : 'zh'
+  return propertyNameI18n[objId]?.[id]?.[lang]
+}
+
+export const propertyNameI18n = {
+  [CONTAINER_OBJECTS.NODE]: {
+    name: {
+      zh: '节点名称',
+      en: 'Name'
+    },
+    roles: {
+      zh: '节点角色',
+      en: 'Roles'
+    },
+    labels: {
+      zh: '节点标签',
+      en: 'Labels'
+    },
+    creation_timestamp: {
+      zh: '节点创建时间',
+      en: 'CreationTimestamp'
+    },
+    taints: {
+      zh: '节点污点',
+      en: 'Taints'
+    },
+    unschedulable: {
+      zh: '是否可调度',
+      en: 'Unschedulable'
+    },
+    internal_ip: {
+      zh: '节点内网IP',
+      en: 'InternalIP'
+    },
+    external_ip: {
+      zh: '节点外网IP',
+      en: 'ExternalIP'
+    },
+    hostname: {
+      zh: '节点主机名',
+      en: 'Hostname'
+    },
+    runtime: {
+      zh: '运行时组件',
+      en: 'ContainerRuntime'
+    },
+    kube_proxy: {
+      zh: 'Kube-proxy代理模式',
+      en: 'kubeProxy'
+    },
+    pod_cidr: {
+      zh: '节点Pod地址范围',
+      en: 'PodCIDR'
+    }
+  },
+  [CONTAINER_OBJECTS.POD]: {
+    name: {
+      zh: 'Pod名称',
+      en: 'Name'
+    },
+    namespace: {
+      zh: '所属命名空间',
+      en: 'Namespace'
+    },
+    priority: {
+      zh: 'Pod优先级',
+      en: 'Priority'
+    },
+    node_name: {
+      zh: '指定节点调度',
+      en: 'NodeName'
+    },
+    start_time: {
+      zh: 'Pod启动时间',
+      en: 'StartTime'
+    },
+    labels: {
+      zh: 'Pod标签',
+      en: 'Labels'
+    },
+    ip: {
+      zh: 'Pod容器网络IP',
+      en: 'IP'
+    },
+    ips: {
+      zh: 'Pod容器网络IPs',
+      en: 'IPs'
+    },
+    controlled_by: {
+      zh: '所属副本控制器',
+      en: 'ControlledBy'
+    },
+    containers: {
+      zh: 'Pod包含容器',
+      en: 'Containers'
+    },
+    qos_class: {
+      zh: 'Pod服务质量',
+      en: 'QoSClass'
+    },
+    volumes: {
+      zh: 'Pod卷信息',
+      en: 'Volumes'
+    },
+    node_selectors: {
+      zh: '将Pod指派给节点',
+      en: 'Node-Selectors'
+    },
+    tolerations: {
+      zh: 'Pod污点',
+      en: 'Tolerations'
+    }
+  }
+}
