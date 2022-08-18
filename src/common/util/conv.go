@@ -162,7 +162,7 @@ func GetFloat64ByInterface(a interface{}) (float64, error) {
 }
 
 // GetMapInterfaceByInterface get map interface by interface
-func GetMapInterfaceByInerface(data interface{}) ([]interface{}, error) {
+func GetMapInterfaceByInterface(data interface{}) ([]interface{}, error) {
 	values := make([]interface{}, 0)
 	switch data.(type) {
 	case []int:
