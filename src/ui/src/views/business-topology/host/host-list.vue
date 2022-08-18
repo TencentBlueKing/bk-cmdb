@@ -81,7 +81,7 @@
   import { ONE_TO_ONE } from '@/dictionary/host-transfer-type.js'
   import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
   import { CONTAINER_OBJECTS, CONTAINER_OBJECT_PROPERTY_KEYS, TOPO_MODE_KEYS } from '@/dictionary/container.js'
-  import hostContainerService from '@/service/host/container.js'
+  import containerHostService from '@/service/container/host.js'
   import { getContainerNodeType } from '@/service/container/common.js'
 
   export default {
@@ -336,7 +336,7 @@
         }
 
         if (this.isContainerHost) {
-          return hostContainerService.findAll(params, config)
+          return containerHostService.findAll(params, config)
         }
 
         return this.$store.dispatch('hostSearch/searchHost', { params, config })

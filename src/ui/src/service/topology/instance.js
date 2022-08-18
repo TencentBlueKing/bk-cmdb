@@ -40,7 +40,17 @@ const getContainerTopo = async ({ bizId, params }, config) => {
   }
 }
 
-const getContainerTopoNodeStats = ({ bizId, type, params }, config) => http.post(`find/container/${bizId}/topo_node/${type}/count`, params, config)
+const getContainerTopoNodeStats = async ({ bizId, params }, config) => {
+  const [hostStats, podStats] = await Promise.all([
+    http.post(`find/container/${bizId}/topo_node/host/count`, params, config),
+    http.post(`find/container/${bizId}/topo_node/pod/count`, params, config)
+  ])
+
+  return {
+    hostStats,
+    podStats
+  }
+}
 
 const geFulltWithStat = async (bizId, config = {}) => {
   try {

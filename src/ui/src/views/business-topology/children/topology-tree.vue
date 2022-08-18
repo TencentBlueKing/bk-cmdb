@@ -142,7 +142,8 @@
           const map = {
             hostList: 'host_count',
             serviceInstance: 'service_instance_count',
-            podList: 'pod_count'
+            podList: 'pod_count',
+            nodeInfo: 'host_count'
           }
           if (Object.keys(map).includes(value)) {
             this.nodeCountType = map[value]
@@ -423,24 +424,21 @@
         }
       },
       async setContainerNodeCount(nodes) {
-        const typeMap = {
-          hostList: 'host',
-          podList: 'pod'
-        }
         try {
           const params = {
             bizId: this.bizId,
-            type: typeMap[this.active],
             params: nodes.map(({ data }) => ({
               kind: data.bk_obj_id,
               id: data.bk_inst_id
             }))
           }
-          const nodeStats = await topologyInstanceService.getContainerTopoNodeStats(params)
+          const { hostStats, podStats } = await topologyInstanceService.getContainerTopoNodeStats(params)
           nodes.forEach(({ data }) => {
-            const stat = nodeStats.find(item => item.kind === data.bk_obj_id && item.id === data.bk_inst_id)
+            const hostStat = hostStats.find(item => item.kind === data.bk_obj_id && item.id === data.bk_inst_id)
+            const podStat = podStats.find(item => item.kind === data.bk_obj_id && item.id === data.bk_inst_id)
             this.$set(data, 'status', 'finished')
-            this.$set(data, this.nodeCountType, stat.count)
+            this.$set(data, 'host_count', hostStat.count)
+            this.$set(data, 'pod_count', podStat.count)
           })
         } catch (error) {
           console.error(error)

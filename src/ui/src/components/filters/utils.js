@@ -379,6 +379,21 @@ export function defineProperty(definition) {
   }, definition)
 }
 
+export function definePropertyGroup(definition) {
+  return Object.assign({}, {
+    id: null,
+    bk_biz_id: 0,
+    bk_obj_id: null,
+    bk_group_id: 'default',
+    bk_group_index: -1,
+    bk_group_name: '基础信息',
+    bk_isdefault: true,
+    bk_supplier_account: '0',
+    is_collapse: false,
+    ispre: false
+  }, definition)
+}
+
 export function getUniqueProperties(preset, dynamic) {
   const unique = dynamic.filter(property => !preset.includes(property))
   const full = [...preset, ...unique]
@@ -452,5 +467,6 @@ export default {
   isEmptyCondition,
   hasNormalTopoField,
   hasNodeField,
-  getSelectedHostIds
+  getSelectedHostIds,
+  definePropertyGroup
 }

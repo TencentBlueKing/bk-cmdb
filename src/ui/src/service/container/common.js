@@ -11,6 +11,9 @@
  */
 
 import { CONTAINER_OBJECTS, WORKLOAD_TYPES } from '@/dictionary/container'
+import containerClusterService from '@/service/container/cluster'
+import containerNamespaceService from '@/service/container/namespace'
+import containerWorkloadService from '@/service/container/workload'
 
 // 根据workload具体类型判断是否为workload
 export const isWorkload = type => Object.values(WORKLOAD_TYPES).includes(type)
@@ -24,7 +27,8 @@ export const typeMapping = {
   numeric: 'float',
   mapString: 'map',
   array: 'array',
-  object: 'object'
+  object: 'object',
+  timestamp: 'time'
 }
 
 export const getPropertyType = type => typeMapping[type] || type
@@ -34,7 +38,111 @@ export const getPropertyName = (id, objId, locale) => {
   return propertyNameI18n[objId]?.[id]?.[lang]
 }
 
+export const getContainerInstanceService = (objId) => {
+  const services = {
+    [CONTAINER_OBJECTS.CLUSTER]: containerClusterService,
+    [CONTAINER_OBJECTS.NAMESPACE]: containerNamespaceService,
+    [CONTAINER_OBJECTS.WORKLOAD]: containerWorkloadService
+  }
+
+  return services[objId]
+}
+
 export const propertyNameI18n = {
+  [CONTAINER_OBJECTS.CLUSTER]: {
+    name: {
+      zh: '集群名称',
+      en: 'clustername'
+    },
+    scheduling_engine: {
+      zh: '调度引擎',
+      en: 'enginetype'
+    },
+    uid: {
+      zh: '集群ID',
+      en: 'clusterid'
+    },
+    xid: {
+      zh: 'TKE集群ID',
+      en: 'systemid'
+    },
+    version: {
+      zh: '集群版本',
+      en: 'version'
+    },
+    network_type: {
+      zh: '网络类型',
+      en: 'networktype'
+    },
+    region: {
+      zh: '所属地域',
+      en: 'region'
+    },
+    vpc: {
+      zh: 'VPC',
+      en: 'vpcid'
+    },
+    network: {
+      zh: '集群网络',
+      en: 'clusternetwork'
+    },
+    type: {
+      zh: '集群类型',
+      en: 'clustertype'
+    }
+  },
+  [CONTAINER_OBJECTS.NAMESPACE]: {
+    name: {
+      zh: '命名空间名称',
+      en: 'Name'
+    },
+    cluster_uid: {
+      zh: '集群ID',
+      en: 'clusterid'
+    },
+    labels: {
+      zh: '命名空间标签',
+      en: 'Labels'
+    },
+    resource_quotas: {
+      zh: '命名空间资源限制',
+      en: 'Resource Quotas'
+    }
+  },
+  [CONTAINER_OBJECTS.WORKLOAD]: {
+    name: {
+      zh: '工作负载名称',
+      en: 'Name'
+    },
+    namespace: {
+      zh: '所属命名空间',
+      en: 'Namespace'
+    },
+    strategy_type: {
+      zh: '升级策略',
+      en: 'StrategyType'
+    },
+    labels: {
+      zh: '工作负载标签',
+      en: 'Labels'
+    },
+    selector: {
+      zh: '工作负载选择器',
+      en: 'Selector'
+    },
+    replicas: {
+      zh: '工作负载实例数',
+      en: 'Replicas'
+    },
+    min_ready_seconds: {
+      zh: '最小就绪时间',
+      en: 'MinReadySeconds'
+    },
+    rolling_update_strategy: {
+      zh: '滚动更新策略',
+      en: 'RollingUpdateStrategy'
+    }
+  },
   [CONTAINER_OBJECTS.NODE]: {
     name: {
       zh: '节点名称',

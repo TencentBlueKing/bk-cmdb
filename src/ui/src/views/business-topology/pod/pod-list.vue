@@ -24,7 +24,7 @@
   } from '@/dictionary/menu-symbol'
   import { CONTAINER_OBJECTS, CONTAINER_OBJECT_PROPERTY_KEYS, CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container'
   import containerPropertyService from '@/service/container/property.js'
-  import podService from '@/service/pod/index.js'
+  import containerPodService from '@/service/container/pod.js'
   import { getContainerNodeType } from '@/service/container/common.js'
 
   export default defineComponent({
@@ -83,8 +83,13 @@
       const filterType = computed(() => filterProperty.value?.bk_property_type ?? 'singlechar')
 
       const getList = async () => {
+        const params = getSearchParams()
+        if (!params.fields?.length) {
+          return
+        }
+
         try {
-          const { list, count } = await podService.find(getSearchParams(), {
+          const { list, count } = await containerPodService.find(params, {
             requestId: requestIds.list,
             cancelPrevious: true,
             globalPermission: false
@@ -105,7 +110,7 @@
       watch(customColumns, () => setTableHeader())
 
       watchEffect(async () => {
-        const podProperties = await containerPropertyService.getAll({
+        const podProperties = await containerPropertyService.getMany({
           objId: CONTAINER_OBJECTS.POD
         }, {
           requestId: requestIds.property,

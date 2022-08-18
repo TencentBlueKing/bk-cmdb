@@ -60,18 +60,10 @@
           <service-instance-view v-else-if="activeTab === 'serviceInstance'" v-test-id></service-instance-view>
         </bk-tab-panel>
 
-        <bk-tab-panel name="nodeInfo" :label="$t('节点信息')">
-          <div class="default-node-info" v-if="!showNodeInfo">
-            <div class="info-item">
-              <label class="name">{{$t('ID')}}:</label>
-              <span class="value">{{nodeId}}</span>
-            </div>
-            <div class="info-item">
-              <label class="name">{{$t('节点名称')}}</label>
-              <span class="value">{{nodeName}}</span>
-            </div>
-          </div>
-          <service-node-info v-else :active="activeTab === 'nodeInfo'" ref="nodeInfo" v-test-id></service-node-info>
+        <bk-tab-panel name="nodeInfo" :label="$t('节点信息')" render-directive="if">
+          <simple-node-info v-if="isSimpleNodeInfo" />
+          <container-node-info v-else-if="isContainerNode" />
+          <service-node-info v-else :active="activeTab === 'nodeInfo'" />
         </bk-tab-panel>
       </bk-tab>
     </div>
@@ -82,7 +74,9 @@
 <script>
   import TopologyTree from './children/topology-tree.vue'
   import HostList from './host/host-list.vue'
+  import SimpleNodeInfo from './children/simple-node-info.vue'
   import ServiceNodeInfo from './children/service-node-info.vue'
+  import ContainerNodeInfo from './children/container-node-info.vue'
   import { mapGetters } from 'vuex'
   import Bus from '@/utils/bus.js'
   import RouterQuery from '@/router/query'
@@ -92,7 +86,9 @@
     components: {
       TopologyTree,
       HostList,
+      SimpleNodeInfo,
       ServiceNodeInfo,
+      ContainerNodeInfo,
       ServiceInstanceView,
       PodList
     },
@@ -115,14 +111,8 @@
       showServiceInstance() {
         return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module' && this.selectedNode.data.default === 0
       },
-      showNodeInfo() {
-        return this.selectedNode && this.selectedNode.data.default === 0
-      },
-      nodeId() {
-        return this.selectedNode ? this.selectedNode.data.bk_inst_id : '--'
-      },
-      nodeName() {
-        return this.selectedNode && this.selectedNode.data.bk_inst_name
+      isSimpleNodeInfo() {
+        return this.selectedNode && this.selectedNode.data.default !== 0
       },
       emptySet() {
         return this.selectedNode && this.selectedNode.data.bk_obj_id === 'set'
@@ -135,11 +125,11 @@
     watch: {
       activeTab(tab) {
         this.$nextTick(() => {
-          RouterQuery.set({
+          // 仅保留公用的参数重置路由
+          RouterQuery.setAll({
+            node: RouterQuery.get('node'),
             tab,
-            _t: Date.now(),
-            page: '',
-            limit: ''
+            _t: Date.now()
           })
         })
       },
@@ -264,21 +254,6 @@
             .bk-cc-icon {
                 font-size: 16px;
                 margin-top: -2px;
-            }
-        }
-    }
-    .default-node-info {
-        padding: 20px 0 20px 36px;
-        display: flex;
-        .info-item {
-            flex: auto;
-            max-width: 400px;
-            font-size: 14px;
-            .name {
-                color: #63656e;
-            }
-            .value {
-                color: #313238;
             }
         }
     }

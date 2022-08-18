@@ -124,6 +124,15 @@ class RouterQuery {
     })
   }
 
+  setAll(value) {
+    redirect({
+      ...this.route,
+      query: {
+        ...value
+      }
+    })
+  }
+
   delete(key) {
     const query = {
       ...this.route.query

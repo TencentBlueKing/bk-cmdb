@@ -49,7 +49,8 @@ export const normalizationProperty = (propertyList, objId) => {
     bk_property_type: getPropertyType(item.type),
     required: item.required,
     editable: item.editable,
-    option: item.option
+    option: item.option,
+    bk_isapi: false
   }))
 
   return properties

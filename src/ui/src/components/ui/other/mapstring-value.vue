@@ -19,7 +19,7 @@
     name: 'cmdb-mapstring-value',
     props: {
       value: {
-        type: Object,
+        type: [String, Object],
         default: () => ({})
       }
     },
@@ -154,6 +154,7 @@
   align-items: center;
   overflow: hidden;
   font-size: 12px;
+  float: none !important;
   .tag-item {
     display: inline-block;
     max-width: 80px;

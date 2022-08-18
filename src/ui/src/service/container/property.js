@@ -32,18 +32,18 @@ function createIdProperty(objId) {
     bk_property_type: 'int',
     isonly: true,
     ispre: true,
-    bk_isapi: true,
+    bk_isapi: false,
     bk_issystem: true,
     isreadonly: true,
     editable: false,
-    bk_property_group: null,
+    bk_property_group: 'default',
     is_inject: true
   }
 }
 
 export const find = ({ objId, params }, config) => http.post(`find/container/${objId}/attributes`, params, config)
 
-export const getAll = async ({ objId, params }, config, injectId = true) => {
+export const getMany = async ({ objId, params }, config, injectId = true) => {
   try {
     const list = await find({ objId, params }, config)
 
@@ -67,5 +67,5 @@ export const getAll = async ({ objId, params }, config, injectId = true) => {
 
 export default {
   find,
-  getAll
+  getMany
 }

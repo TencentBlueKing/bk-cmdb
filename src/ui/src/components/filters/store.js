@@ -544,7 +544,7 @@ const FilterStore = new Vue({
       })
 
       // Node的属性
-      const nodeProperties = await containerPropertyService.getAll({
+      const nodeProperties = await containerPropertyService.getMany({
         objId: CONTAINER_OBJECTS.NODE
       }, {
         requestId: this.request.containerProperty,

@@ -11,13 +11,13 @@
  */
 
 import http from '@/api'
-import { CONTAINER_OBJECTS, CONTAINER_OBJECT_PROPERTY_KEYS } from '@/dictionary/container.js'
+import { CONTAINER_OBJECTS, CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container.js'
 import { enableCount, onePageParams } from '../utils.js'
 
-const POD_ID_KEY = CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.POD].ID
+const ID_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.NAMESPACE].ID
 
 const find = async (params, config) => {
-  const api = `findmany/pod/bk_biz_id/${params.bk_biz_id}`
+  const api = `kube/findmany/namespace/bk_biz_id/${params.bk_biz_id}`
   try {
     const [{ info: list = [] }, { count = 0 }] = await Promise.all([
       http.post(api, enableCount(params, false), config),
@@ -32,11 +32,11 @@ const find = async (params, config) => {
 
 const findById = async (id, bizId, config = {}) => {
   try {
-    const { info: [instance = null] } = await http.post(`findmany/pod/bk_biz_id/${bizId}`, enableCount({
-      bk_biz_set_filter: {
+    const { info: [instance = null] } = await http.post(`kube/findmany/namespace/bk_biz_id/${bizId}`, enableCount({
+      filter: {
         condition: 'AND',
         rules: [{
-          field: POD_ID_KEY,
+          field: ID_KEY,
           operator: 'equal',
           value: id
         }]
@@ -51,10 +51,10 @@ const findById = async (id, bizId, config = {}) => {
   }
 }
 
-const findOne = async (params, config = {}) => findById(params[POD_ID_KEY], params.bizId, config)
+const getOne = async (params, config = {}) => findById(params[ID_KEY], params.bizId, config)
 
 export default {
   find,
   findById,
-  findOne
+  getOne
 }
