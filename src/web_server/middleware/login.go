@@ -26,8 +26,8 @@ import (
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
 
 // Engine TODO

@@ -32,7 +32,7 @@ import (
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
 
-	"github.com/chalice-1831/zip"
+	"github.com/alexmullins/zip"
 	"github.com/gin-gonic/gin"
 	"github.com/rentiansheng/xlsx"
 )

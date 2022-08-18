@@ -20,7 +20,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/redis"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // CommitTransaction 提交事务
@@ -50,7 +49,10 @@ func (c *Mongo) CommitTransaction(ctx context.Context, cap *metadata.TxnCapable)
 	}
 	// reset the transaction state, so that we can commit the transaction after start the
 	// transaction immediately.
-	mongo.CmdbPrepareCommitOrAbort(reloadSession)
+	if err := CmdbPrepareCommitOrAbort(reloadSession); err != nil {
+		blog.Errorf("reset the commit transaction state failed, err: %v, rid: %v", err, rid)
+		return err
+	}
 
 	// we commit the transaction with the session id
 	err = reloadSession.CommitTransaction(ctx)
@@ -78,7 +80,10 @@ func (c *Mongo) AbortTransaction(ctx context.Context, cap *metadata.TxnCapable) 
 	}
 	// reset the transaction state, so that we can abort the transaction after start the
 	// transaction immediately.
-	mongo.CmdbPrepareCommitOrAbort(reloadSession)
+	if err := CmdbPrepareCommitOrAbort(reloadSession); err != nil {
+		blog.Errorf("reset abort transaction state failed, err: %v, rid: %v", err, rid)
+		return false, err
+	}
 
 	// we abort the transaction with the session id
 	err = reloadSession.AbortTransaction(ctx)

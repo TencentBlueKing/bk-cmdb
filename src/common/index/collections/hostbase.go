@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -29,9 +31,9 @@ func init() {
 var commHostBaseIndexes = []types.Index{
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "bkHostInnerIP_bkCloudID",
-		Keys: map[string]int32{
-			common.BKHostInnerIPField: 1,
-			common.BKCloudIDField:     1,
+		Keys: bson.D{
+			{common.BKHostInnerIPField, 1},
+			{common.BKCloudIDField, 1},
 		},
 		Unique:     true,
 		Background: true,
@@ -42,9 +44,9 @@ var commHostBaseIndexes = []types.Index{
 	},
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "bkHostInnerIPv6_bkCloudID",
-		Keys: map[string]int32{
-			common.BKHostInnerIPv6Field: 1,
-			common.BKCloudIDField:       1,
+		Keys: bson.D{
+			{common.BKHostInnerIPv6Field, 1},
+			{common.BKCloudIDField, 1},
 		},
 		Unique:     true,
 		Background: true,
@@ -59,74 +61,74 @@ var commHostBaseIndexes = []types.Index{
 var deprecatedHostBaseIndexes = []types.Index{
 	{
 		Name: "bk_host_name_1",
-		Keys: map[string]int32{
-			"bk_host_name": 1,
+		Keys: bson.D{{
+			"bk_host_name", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_host_innerip_1",
-		Keys: map[string]int32{
-			"bk_host_innerip": 1,
+		Keys: bson.D{{
+			"bk_host_innerip", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_host_id_1_bk_supplier_account_1",
-		Keys: map[string]int32{
-			"bk_host_id":          1,
-			"bk_supplier_account": 1,
+		Keys: bson.D{
+			{"bk_host_id", 1},
+			{"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	/* 	{
 		Name: "innerIP_platID",
-		Keys: map[string]int32{
-			"bk_host_innerip": 1,
+		Keys: bson.D{{
+			"bk_host_innerip", 1}
 			"bk_cloud_id":     1,
 		},
 		Background: false,
 	}, */
 	{
 		Name: "bk_supplier_account_1",
-		Keys: map[string]int32{
-			"bk_supplier_account": 1,
+		Keys: bson.D{{
+			"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_cloud_id_1",
-		Keys: map[string]int32{
-			"bk_cloud_id": 1,
+		Keys: bson.D{{
+			"bk_cloud_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_unique_hostID",
-		Keys: map[string]int32{
-			"bk_host_id": 1,
+		Keys: bson.D{{
+			"bk_host_id", 1},
 		},
 		Unique:     true,
 		Background: true,
 	},
 	{
 		Name: "cloudInstID",
-		Keys: map[string]int32{
-			"bk_cloud_inst_id": 1,
+		Keys: bson.D{{
+			"bk_cloud_inst_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_idx_bk_asset_id",
-		Keys: map[string]int32{
-			"bk_asset_id": 1,
+		Keys: bson.D{{
+			"bk_asset_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_os_type_1",
-		Keys: map[string]int32{
-			"bk_os_type": 1,
+		Keys: bson.D{{
+			"bk_os_type", 1},
 		},
 		Background: true,
 	},

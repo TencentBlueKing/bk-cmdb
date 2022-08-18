@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -33,25 +35,25 @@ var commDynamicGroupIndexes = []types.Index{}
 var deprecatedDynamicGroupIndexes = []types.Index{
 	{
 		Name: "id_1",
-		Keys: map[string]int32{
-			"id": 1,
+		Keys: bson.D{{
+			"id", 1},
 		},
 		Unique:     true,
 		Background: true,
 	},
 	{
 		Name: "id_1_bk_biz_id_1",
-		Keys: map[string]int32{
-			"bk_biz_id": 1,
-			"id":        1,
+		Keys: bson.D{
+			{"bk_biz_id", 1},
+			{"id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "bk_biz_id_1_name_1",
-		Keys: map[string]int32{
-			"bk_biz_id": 1,
-			"name":      1,
+		Keys: bson.D{
+			{"bk_biz_id", 1},
+			{"name", 1},
 		},
 		Unique:     true,
 		Background: true,

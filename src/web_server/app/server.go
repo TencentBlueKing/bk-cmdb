@@ -28,8 +28,6 @@ import (
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	websvc "configcenter/src/web_server/service"
-
-	"github.com/holmeswang/contrib/sessions"
 )
 
 // WebServer TODO
@@ -79,15 +77,16 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	var redisErr error
 	if webSvr.Config.Redis.MasterName == "" {
 		// MasterName 为空，表示使用直连redis 。 使用Host,Port 做链接redis参数
-		service.Session, redisErr = sessions.NewRedisStore(10, "tcp", webSvr.Config.Redis.Address, webSvr.Config.Redis.Password, []byte("secret"))
+		service.Session, redisErr = redis.NewRedisStore(10, "tcp", webSvr.Config.Redis.Address,
+			webSvr.Config.Redis.Password, []byte("secret"))
 		if redisErr != nil {
 			return fmt.Errorf("failed to create new redis store, error info is %v", redisErr)
 		}
 	} else {
 		// MasterName 不为空，表示使用哨兵模式的redis。MasterName 是Master标记
 		address := strings.Split(webSvr.Config.Redis.Address, ";")
-		service.Session, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, webSvr.Config.Redis.MasterName,
-			"tcp", webSvr.Config.Redis.Password, webSvr.Config.Redis.SentinelPassword, []byte("secret"))
+		service.Session, redisErr = redis.NewRedisStoreWithSentinel(address, 10, webSvr.Config.Redis.MasterName, "tcp",
+			webSvr.Config.Redis.Password, webSvr.Config.Redis.SentinelPassword, []byte("secret"))
 		if redisErr != nil {
 			return fmt.Errorf("failed to create new redis store, error info is %v", redisErr)
 		}

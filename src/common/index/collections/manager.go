@@ -46,8 +46,10 @@ func indexKeyEqual(toDBIndex, dbIndex types.Index) bool {
 		return false
 	}
 
-	for key, val := range toDBIndex.Keys {
-		dbVal, exists := dbIndex.Keys[key]
+	toDBIndexMap := toDBIndex.Keys.Map()
+	dbIndexMap := dbIndex.Keys.Map()
+	for key, val := range toDBIndexMap {
+		dbVal, exists := dbIndexMap[key]
 		if !exists {
 			return false
 		}

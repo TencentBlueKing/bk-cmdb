@@ -59,7 +59,33 @@ func GetIntByInterface(a interface{}) (int, error) {
 	return id, err
 }
 
-// GetInt64ByInterface TODO
+// GetInt32ByInterface get int32 by interface
+func GetInt32ByInterface(a interface{}) (int32, error) {
+	id := int32(0)
+	var err error
+	switch val := a.(type) {
+	case int:
+		id = int32(val)
+	case int32:
+		id = val
+	case int64:
+		id = int32(val)
+	case json.Number:
+		var tmpID int64
+		tmpID, err = val.Int64()
+		id = int32(tmpID)
+	case float64:
+		id = int32(val)
+	case float32:
+		id = int32(val)
+	default:
+		err = errors.New("not numeric")
+
+	}
+	return id, err
+}
+
+// GetInt64ByInterface get int64 by interface
 func GetInt64ByInterface(a interface{}) (int64, error) {
 	var id int64 = 0
 	var err error
@@ -99,7 +125,7 @@ func GetInt64ByInterface(a interface{}) (int64, error) {
 	return id, err
 }
 
-// GetFloat64ByInterface TODO
+// GetFloat64ByInterface get float64 by interface
 func GetFloat64ByInterface(a interface{}) (float64, error) {
 	switch i := a.(type) {
 	case int:
@@ -135,7 +161,7 @@ func GetFloat64ByInterface(a interface{}) (float64, error) {
 	}
 }
 
-// GetMapInterfaceByInerface TODO
+// GetMapInterfaceByInterface get map interface by interface
 func GetMapInterfaceByInerface(data interface{}) ([]interface{}, error) {
 	values := make([]interface{}, 0)
 	switch data.(type) {

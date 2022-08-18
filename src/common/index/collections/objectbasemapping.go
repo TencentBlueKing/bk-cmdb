@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -28,8 +30,8 @@ func init() {
 var commInstanceObjectBaseMappingIndexes = []types.Index{
 	{
 		Name: common.CCLogicIndexNamePrefix + "InstID",
-		Keys: map[string]int32{
-			common.BKInstIDField: 1,
+		Keys: bson.D{{
+			common.BKInstIDField, 1},
 		},
 		Background: true,
 	},

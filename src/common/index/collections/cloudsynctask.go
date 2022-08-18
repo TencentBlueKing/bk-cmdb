@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -33,8 +35,8 @@ var commCloudSyncTaskIndexes = []types.Index{}
 var deprecatedCloudSyncTaskIndexes = []types.Index{
 	{
 		Name: "bk_task_id",
-		Keys: map[string]int32{
-			"bk_task_id": 1,
+		Keys: bson.D{{
+			"bk_task_id", 1},
 		},
 		Unique:     true,
 		Background: true,
