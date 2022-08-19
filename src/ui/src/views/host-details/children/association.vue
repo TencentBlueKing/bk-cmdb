@@ -142,7 +142,7 @@
         }
     }
     .options {
-        padding: 15px 0;
+        padding: 14px 0;
         font-size: 0;
         .options-button {
             height: 32px;

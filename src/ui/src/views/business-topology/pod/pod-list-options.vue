@@ -40,7 +40,7 @@
           _t: Date.now(),
           page: 1,
           field: props.filter.field,
-          pod_name: value,
+          value,
           operator: props.filter.operator
         })
       }
