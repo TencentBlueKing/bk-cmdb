@@ -26,6 +26,8 @@ export const enableCount = (params = {}, flag = false) => {
 
 export const onePageParams = () => ({ start: 0, limit: 1 })
 
+export const maxPageParams = (max = 500) => ({ start: 0, limit: max })
+
 // 使用enableCount的方式滚动拉取接口数据（先获取总数）
 export const rollReqUseCount = async (
   url,

@@ -32,14 +32,7 @@
                 </span>
                 <slot :name="property['bk_property_id']">
                   <cmdb-property-value
-                    v-if="isShowOverflowTips(property)"
-                    v-bk-overflow-tips
-                    :class="'property-value fl'"
-                    :value="inst[property.bk_property_id]"
-                    :property="property">
-                  </cmdb-property-value>
-                  <cmdb-property-value
-                    v-else
+                    :is-show-overflow-tips="isShowOverflowTips(property)"
                     :class="'property-value fl'"
                     :value="inst[property.bk_property_id]"
                     :property="property">

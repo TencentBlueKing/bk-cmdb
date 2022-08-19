@@ -87,6 +87,7 @@
   import ModuleSelectorWithTab from '@/views/business-topology/host/module-selector-with-tab.vue'
   import { readonlyMixin } from '../mixin-readonly'
   import { topoPathProxy } from '../service-proxy'
+  import containerHostService from '@/service/container/host'
 
   export default {
     name: 'cmdb-host-info',
@@ -94,6 +95,11 @@
       [ModuleSelectorWithTab.name]: ModuleSelectorWithTab
     },
     mixins: [readonlyMixin],
+    props: {
+      isContainerHost: {
+        type: Boolean
+      }
+    },
     data() {
       return {
         displayType: window.localStorage.getItem('host_topology_display_type') || 'double',
@@ -106,6 +112,7 @@
           width: 828,
           height: 600
         },
+        containerTopoPaths: [],
         request: {
           moveToIdleModule: Symbol('moveToIdleModule')
         }
@@ -143,7 +150,7 @@
       },
       topologyList() {
         const modules = this.info.module || []
-        return this.topoNodesPath.map((item) => {
+        const normalTopoPaths = this.topoNodesPath.map((item) => {
           const instId = item.topo_node.bk_inst_id
           const module = modules.find(module => module.bk_module_id === instId)
           return {
@@ -153,6 +160,15 @@
             isInternal: module && module.default !== 0
           }
         }).sort((itemA, itemB) => itemA.path.localeCompare(itemB.path, 'zh-Hans-CN', { sensitivity: 'accent' }))
+
+        const containerTopoPaths = this.containerTopoPaths.find(topo => topo.bk_host_id === this.host.bk_host_id)?.paths
+        const newContainerTopoPaths = containerTopoPaths?.map(item => ({
+          id: item.bk_cluster_id,
+          path: item.path.replaceAll('##', ' / '),
+          isInternal: false
+        }))
+
+        return [...normalTopoPaths, ...newContainerTopoPaths || []]
       },
       showMore() {
         if (this.isSingleColumn) {
@@ -164,12 +180,13 @@
         return this.$store.getters['objectModelClassify/getModelById']('host')
       },
       confirmLoading() {
-        return this.$loading(Object.values(this.request))
+        return this.$loading(this.request.moveToIdleModule)
       }
     },
     watch: {
       async info() {
         await this.getModulePathInfo()
+        this.getContainerTopoPaths()
       }
     },
     methods: {
@@ -185,6 +202,14 @@
           console.error(e)
           this.topoNodesPath = []
         }
+      },
+      async getContainerTopoPaths() {
+        if (!this.isContainerHost) {
+          return
+        }
+
+        const { info: paths } = await containerHostService.getNodePath({ ids: [this.host.bk_host_id] })
+        this.containerTopoPaths = paths || []
       },
       viewAll() {
         this.showAll = !this.showAll

@@ -139,5 +139,9 @@ export const CONTAINER_OBJECT_INST_KEYS = Object.freeze({
   [CONTAINER_OBJECTS.POD]: {
     ID: 'id',
     NAME: 'name'
+  },
+  [CONTAINER_OBJECTS.NODE]: {
+    ID: 'id',
+    NAME: 'name'
   }
 })

@@ -28,7 +28,19 @@
     v-else-if="isMapstring"
     :value="value">
   </mapstring-value>
-  <component :is="tag" v-bind="attrs" v-else>{{displayValue}}</component>
+  <component
+    :is="tag"
+    v-bind="attrs"
+    v-bk-overflow-tips
+    v-else-if="isShowOverflowTips">
+    {{displayValue}}
+  </component>
+  <component
+    :is="tag"
+    v-bind="attrs"
+    v-else>
+    {{displayValue}}
+  </component>
 </template>
 
 <script>
@@ -85,7 +97,8 @@
         }
       },
       formatCellValue: Function,
-      multiple: Boolean
+      multiple: Boolean,
+      isShowOverflowTips: Boolean
     },
     data() {
       return {
@@ -185,8 +198,8 @@
 </script>
 
 <style lang="scss" scoped>
-    .value-primary-theme {
-        color: $primaryColor;
-        cursor: pointer;
-    }
+  .value-primary-theme {
+    color: $primaryColor;
+    cursor: pointer;
+  }
 </style>

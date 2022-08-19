@@ -1640,5 +1640,6 @@
     "批量同步集群模板": "Batch Sync Set Template",
     "批量同步模板": "Batch Sync Template",
     "条件无效，Node条件属性与其他条件属性不能同时设置": "The condition is invalid, the Node condition attribute and other condition attributes cannot be set at the same time",
-    "Pod列表": "Pod List"
+    "Pod列表": "Pod List",
+    "容器节点信息": "Container node information"
 }

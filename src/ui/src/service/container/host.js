@@ -14,6 +14,9 @@ import http from '@/api'
 
 export const findAll = (data, config) => http.post('find/kube/hosts/search', data, config)
 
+export const getNodePath = (data, config) => http.post('kube/find/host_node_path', data, config)
+
 export default {
-  findAll
+  findAll,
+  getNodePath
 }
