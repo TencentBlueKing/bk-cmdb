@@ -342,6 +342,36 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, req *http.Requ
 		}
 	}
 
+	for _, sheet := range f.Sheets {
+		if sheet.Name != "association" {
+			continue
+		}
+
+		asstInfoMap, assoErrMsg := GetAssociationExcelData(sheet, common.HostAddMethodExcelAssociationIndexOffset,
+			defLang)
+
+		if len(asstInfoMap) > 0 {
+			asstInfoMapInput := &metadata.RequestImportAssociation{
+				AssociationInfoMap: asstInfoMap,
+			}
+			asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, req.Header,
+				common.BKInnerObjIDHost, asstInfoMapInput)
+			if asstResultErr != nil {
+				blog.Errorf("update host association failed, err: %v, rid: %s", asstResultErr, rid)
+				result.Code = common.CCErrCommHTTPDoRequestFailed
+				result.ErrMsg = defErr.Errorf(common.CCErrCommHTTPDoRequestFailed).Error()
+				return result
+			}
+
+			assoErrMsg = append(assoErrMsg, asstResult.Data.ErrMsgMap...)
+			if result.Result && !asstResult.Result {
+				result.BaseResp = asstResult.BaseResp
+			}
+		}
+
+		result.Data.Set("asst_error", assoErrMsg)
+	}
+
 	return result
 }
 
