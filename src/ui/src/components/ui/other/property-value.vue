@@ -201,5 +201,6 @@
   .value-primary-theme {
     color: $primaryColor;
     cursor: pointer;
+    display: block;
   }
 </style>

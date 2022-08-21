@@ -128,6 +128,7 @@
           // 仅保留公用的参数重置路由
           RouterQuery.setAll({
             node: RouterQuery.get('node'),
+            _f: RouterQuery.get('_f'),
             tab,
             _t: Date.now()
           })

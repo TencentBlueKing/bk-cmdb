@@ -37,19 +37,24 @@ function load(dir) {
         return
       }
 
-      delete require.cache[filepath]
-      const def = require(filepath)
+      try {
+        delete require.cache[filepath]
+        const def = require(filepath)
 
-      // 解析处理def
-      Object.keys(def).forEach((key) => {
-        if (def[key].path) {
+
+        // 解析处理def
+        Object.keys(def).forEach((key) => {
+          if (def[key].path) {
           // 限制path只能相对于入口文件
-          def[key].fullpath = path.resolve(dir, './', def[key].path)
-        }
-      })
+            def[key].fullpath = path.resolve(dir, './', def[key].path)
+          }
+        })
 
-      // 合并到一起
-      Object.assign(defs, def)
+        // 合并到一起
+        Object.assign(defs, def)
+      } catch (err) {
+        console.error(err)
+      }
     }
   })
 }

@@ -168,14 +168,17 @@
       }
 
       const handleValueClick = (row, column) => {
-        if (column.bk_property_id !== 'id') {
+        if (column.id !== 'id') {
           return
         }
         routerActions.redirect({
           name: MENU_POD_DETAILS,
           params: {
             bizId: bizId.value,
-            id: row.id
+            podId: row.id
+          },
+          query: {
+            tab: 'property'
           },
           history: true
         })

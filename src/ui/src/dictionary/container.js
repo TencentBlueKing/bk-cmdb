@@ -116,6 +116,10 @@ export const CONTAINER_OBJECT_PROPERTY_KEYS = Object.freeze({
   [CONTAINER_OBJECTS.POD]: {
     ID: 'bk_pod_id',
     NAME: 'bk_pod_name'
+  },
+  [CONTAINER_OBJECTS.CONTAINER]: {
+    ID: 'bk_container_id',
+    NAME: 'bk_container_name'
   }
 })
 
@@ -147,5 +151,11 @@ export const CONTAINER_OBJECT_INST_KEYS = Object.freeze({
     FULL_ID: `${CONTAINER_OBJECTS.NODE}_id`,
     NAME: 'name',
     FULL_NAME: `${CONTAINER_OBJECTS.NODE}_name`
+  },
+  [CONTAINER_OBJECTS.CONTAINER]: {
+    ID: 'id',
+    FULL_ID: `${CONTAINER_OBJECTS.CONTAINER}_id`,
+    NAME: 'name',
+    FULL_NAME: `${CONTAINER_OBJECTS.CONTAINER}_name`
   }
 })

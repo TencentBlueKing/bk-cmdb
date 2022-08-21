@@ -129,3 +129,4 @@ export const BUSINESS_SELECTOR_COLLECTION = 'business_selector_collection'
 
 // Pod
 export const MENU_POD_DETAILS = 'menu_pod_details'
+export const MENU_POD_CONTAINER_DETAILS = 'menu_pod_container_details'

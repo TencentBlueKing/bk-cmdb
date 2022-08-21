@@ -250,5 +250,55 @@ export const propertyNameI18n = {
       zh: 'Pod污点',
       en: 'Tolerations'
     }
+  },
+  [CONTAINER_OBJECTS.CONTAINER]: {
+    name: {
+      zh: '名称',
+      en: 'Name'
+    },
+    container_uid: {
+      zh: '容器ID',
+      en: 'Container ID'
+    },
+    image: {
+      zh: '镜像信息',
+      en: 'Image'
+    },
+    ports: {
+      zh: '容器端口',
+      en: 'Ports'
+    },
+    host_ports: {
+      zh: '主机端口映射',
+      en: 'Host Ports'
+    },
+    args: {
+      zh: '启动参数',
+      en: 'Args'
+    },
+    started: {
+      zh: '启动时间',
+      en: 'Started'
+    },
+    limits: {
+      zh: '资源限制',
+      en: 'Limits'
+    },
+    requests: {
+      zh: '申请资源大小',
+      en: 'Requests'
+    },
+    liveness: {
+      zh: '存活探针',
+      en: 'Liveness'
+    },
+    environment: {
+      zh: '环境变量',
+      en: 'Environment'
+    },
+    mounts: {
+      zh: '挂载卷',
+      en: 'Mounts'
+    }
   }
 }

@@ -1,43 +1,25 @@
-<!--
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
--->
-
 <script>
   import { computed, defineComponent, reactive, ref, watch, watchEffect } from '@vue/composition-api'
   import store from '@/store'
-  import RouterQuery from '@/router/query'
   import routerActions from '@/router/actions'
-  import { getDefaultPaginationConfig, getSort, getHeaderProperties, getHeaderPropertyName } from '@/utils/tools.js'
-  import { transformGeneralModelCondition, getDefaultData } from '@/components/filters/utils.js'
+  import { getDefaultPaginationConfig, getSort, getHeaderProperties, getHeaderPropertyName, getPropertyCopyValue } from '@/utils/tools.js'
+  import { transformGeneralModelCondition } from '@/components/filters/utils.js'
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
-  import PodListOptions from './pod-list-options.vue'
-  import { MENU_POD_DETAILS } from '@/dictionary/menu-symbol'
-  import { CONTAINER_OBJECTS, CONTAINER_OBJECT_PROPERTY_KEYS, CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container'
+  import { CONTAINER_OBJECTS, CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container'
+  import { MENU_POD_CONTAINER_DETAILS } from '@/dictionary/menu-symbol'
   import containerPropertyService from '@/service/container/property.js'
-  import containerPodService from '@/service/container/pod.js'
-  import { getContainerNodeType } from '@/service/container/common.js'
+  import containerConService from '@/service/container/container.js'
 
   export default defineComponent({
-    components: {
-      PodListOptions
-    },
-    setup() {
+    setup(props, { root }) {
       const requestIds = {
         property: Symbol(),
         list: Symbol()
       }
 
-      const MODEL_ID_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].ID
-      const MODEL_NAME_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].NAME
-      const MODEL_FULL_NAME_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].FULL_NAME
+      const MODEL_ID_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.CONTAINER].ID
+      const MODEL_NAME_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.CONTAINER].NAME
+      const MODEL_FULL_NAME_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.CONTAINER].FULL_NAME
 
       const table = reactive({
         data: [],
@@ -51,22 +33,19 @@
         disabledColumns: [
           MODEL_ID_KEY,
           MODEL_NAME_KEY,
-          'namespace'
+          'container_uid'
         ]
       })
 
       const properties = ref([])
 
-      const columnsConfigKey = 'pod_custom_table_columns'
+      const columnsConfigKey = 'pod_container_custom_table_columns'
 
       const bizId = computed(() => store.getters['objectBiz/bizId'])
-
-      const selectedNode = computed(() => store.getters['businessHost/selectedNode'])
-
-      const query = computed(() => RouterQuery.getAll())
+      const podId = computed(() => parseInt(root.$route.params.podId, 10))
 
       const filter = reactive({
-        field: query.value.field || MODEL_FULL_NAME_KEY,
+        field: MODEL_FULL_NAME_KEY,
         value: '',
         operator: '$regex'
       })
@@ -78,9 +57,9 @@
       const customColumns = computed(() => usercustom.value[columnsConfigKey] || [])
       const globalCustomColumns = computed(() =>  globalUsercustom.value?.pod_global_custom_table_columns || [])
 
-      // 查询条件组件相关属性数据
-      const filterProperty = computed(() => properties.value.find(property => property.id === filter.field))
-      const filterType = computed(() => filterProperty.value?.bk_property_type ?? 'singlechar')
+      const clipboardList = computed(() => table.header.slice())
+
+      const hasSelection = computed(() => !!table.selection?.length)
 
       const getList = async () => {
         const params = getSearchParams()
@@ -89,7 +68,7 @@
         }
 
         try {
-          const { list, count } = await containerPodService.find(params, {
+          const { list, count } = await containerConService.find(params, {
             requestId: requestIds.list,
             cancelPrevious: true,
             globalPermission: false
@@ -110,38 +89,18 @@
       watch(customColumns, () => setTableHeader())
 
       watchEffect(async () => {
-        const podProperties = await containerPropertyService.getMany({
-          objId: CONTAINER_OBJECTS.POD
+        const conProperties = await containerPropertyService.getMany({
+          objId: CONTAINER_OBJECTS.CONTAINER
         }, {
           requestId: requestIds.property,
           fromCache: true
         })
-        properties.value = podProperties
+        properties.value = conProperties
 
         setTableHeader()
 
         getList()
       })
-
-      // 监听查询参数触发查询
-      watch(
-        query,
-        async (query) => {
-          const {
-            page = 1,
-            limit = table.pagination.limit,
-            value = '',
-            operator = '',
-            field = MODEL_FULL_NAME_KEY
-          } = query
-          updateFilter(field, value, operator)
-
-          table.pagination.current = parseInt(page, 10)
-          table.pagination.limit = parseInt(limit, 10)
-
-          getList()
-        }
-      )
 
       const setTableHeader = () => {
         const configColumns = customColumns.value.length ? customColumns.value : globalCustomColumns.value
@@ -158,56 +117,17 @@
         table.header = []
       }
 
-      // 更新filter数据，无值状态时则使用默认数据初始化
-      const updateFilter = (field, value = '', operator = '') => {
-        if (field) {
-          filter.field = field
-        }
-
-        if (!filterProperty.value) return
-
-        // 业务集中的singlechar类型统一使用$regex
-        const options = filterType.value === 'singlechar' ? { operator: '$regex', value: '' } : {}
-        const defaultData = { ...getDefaultData(filterProperty.value), ...options }
-
-        filter.operator = operator || defaultData.operator
-        filter.value = value || defaultData.value
-      }
-
       // 计算查询条件参数
       const getSearchParams = () => {
         const params = {
           bk_biz_id: bizId.value,
+          bk_pod_id: podId.value,
           fields: table.header.map(item => item.id),
           page: {
             start: table.pagination.limit * (table.pagination.current - 1),
             limit: table.pagination.limit,
             sort: table.sort
           }
-        }
-
-        const selectedNodeData = selectedNode.value.data
-
-        // 容器节点的属性ID
-        const fieldMap = {
-          [CONTAINER_OBJECTS.CLUSTER]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.CLUSTER].ID,
-          [CONTAINER_OBJECTS.NAMESPACE]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.NAMESPACE].ID
-        }
-        const nodeType = getContainerNodeType(selectedNodeData.bk_obj_id)
-
-        // folder节点参数特殊处理
-        if (nodeType === CONTAINER_OBJECTS.FOLDER) {
-          params.folder = true
-          // folder父节点为cluster节点
-          params[fieldMap[CONTAINER_OBJECTS.CLUSTER]] = this.selectedNode.parent.data.bk_inst_id
-        } else if (nodeType === CONTAINER_OBJECTS.WORKLOAD) {
-          params.ref = {
-            id: selectedNodeData.bk_inst_id,
-            kind: selectedNodeData.bk_obj_id
-          }
-        } else {
-          // 添加节点的属性ID参数，如 bk_namespace_id
-          params[fieldMap[nodeType]] = selectedNodeData.bk_inst_id
         }
 
         const condition = {
@@ -230,23 +150,19 @@
       }
 
       const handlePageChange = (current = 1) => {
-        RouterQuery.set({
-          page: current,
-          _t: Date.now()
-        })
+        table.pagination.current = current
+        getList()
       }
 
       const handleLimitChange = (limit) => {
-        RouterQuery.set({
-          limit,
-          page: 1,
-          _t: Date.now()
-        })
+        table.pagination.current = 1
+        table.pagination.limit = limit
+        getList()
       }
 
       const handleSortChange = (sort) => {
         table.sort = getSort(sort)
-        RouterQuery.set('_t', Date.now())
+        getList()
       }
 
       const handleValueClick = (row, column) => {
@@ -254,10 +170,14 @@
           return
         }
         routerActions.redirect({
-          name: MENU_POD_DETAILS,
+          name: MENU_POD_CONTAINER_DETAILS,
           params: {
             bizId: bizId.value,
-            podId: row.id
+            podId: podId.value,
+            containerId: row.id
+          },
+          query: {
+            tab: 'property'
           },
           history: true
         })
@@ -293,16 +213,35 @@
         })
       }
 
+      const handleSearch = async (value) => {
+        table.pagination.current = 1
+        filter.value = value
+        getList()
+      }
+
+      const handleCopy = (column) => {
+        const copyText = table.selection.map(row => getPropertyCopyValue(row[column.id], column.property))
+        root.$copyText(copyText.join('\n')).then(() => {
+          root.$success(root.$t('复制成功'))
+        }, () => {
+          root.$error(root.$t('复制失败'))
+        })
+      }
+
       return {
         requestIds,
         table,
         filter,
+        clipboardList,
+        hasSelection,
         handlePageChange,
         handleLimitChange,
         handleSortChange,
         handleValueClick,
         handleSelectionChange,
-        handleHeaderClick
+        handleHeaderClick,
+        handleSearch,
+        handleCopy
       }
     }
   })
@@ -310,16 +249,28 @@
 
 <template>
   <div class="pod-list">
-    <pod-list-options
-      :table-header="table.header"
-      :table-selection="table.selection"
-      :filter="filter">
-    </pod-list-options>
-    <bk-table class="pod-table"
+    <div class="list-options">
+      <div class="option">
+        <cmdb-clipboard-selector class="options-clipboard"
+          :list="clipboardList"
+          :disabled="!hasSelection"
+          @on-copy="handleCopy">
+        </cmdb-clipboard-selector>
+      </div>
+      <div class="option">
+        <bk-input class="filter-fast-search"
+          v-model.trim="filter.value"
+          :placeholder="$t('请输入名称')"
+          @enter="handleSearch">
+        </bk-input>
+      </div>
+    </div>
+
+    <bk-table class="list-table"
       v-bkloading="{ isLoading: $loading(Object.values(requestIds)) }"
       :data="table.data"
       :pagination="table.pagination"
-      :max-height="$APP.height - 250"
+      :max-height="$APP.height - 325"
       @page-change="handlePageChange"
       @page-limit-change="handleLimitChange"
       @sort-change="handleSortChange"
@@ -351,10 +302,27 @@
 
 <style lang="scss" scoped>
 .pod-list {
-  overflow: hidden;
-}
+  height: 100%;
+  overflow: auto;
+  @include scrollbar-y;
 
-.pod-table {
-  margin-top: 10px;
+  .list-options {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 14px;
+
+    .option {
+      display: flex;
+      align-items: center;
+
+      .filter-fast-search {
+        width: 300px;
+      }
+    }
+  }
+
+  .list-table {
+    margin-top: 14px;
+  }
 }
 </style>
