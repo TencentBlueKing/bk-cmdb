@@ -187,7 +187,7 @@ const (
 	BKNodeIDField = "bk_node_id"
 
 	// NodeField node name field in third party platform
-	NodeField = "node"
+	NodeField = "node_name"
 )
 
 // namespace field names
@@ -248,6 +248,21 @@ const (
 
 	// PodUIDField pod unique id field in third party platform
 	PodUIDField = "pod_uid"
+
+	// RefField pod relate workload field
+	RefField = "ref"
+
+	// RefIDField pod relate workload id field
+	RefIDField = "ref.id"
+
+	// RefNameField pod relate workload name field
+	RefNameField = "ref.name"
+
+	// RefKindField pod relate workload kind field
+	RefKindField = "ref.kind"
+
+	// NodeNameFiled pod relate node name field
+	NodeNameFiled = "node_name"
 )
 
 // container field names

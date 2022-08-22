@@ -55,7 +55,7 @@ type Reference struct {
 // WorkloadSpec describes the common attributes of workload, it is used by the structure below it.
 type WorkloadSpec struct {
 	NamespaceSpec `json:",inline" bson:",inline`
-	Workload      *Reference `json:"workload" bson:"workload"`
+	Ref           *Reference `json:"ref" bson:"ref"`
 }
 
 // PodSpec describes the common attributes of pod, it is used by the structure below it.

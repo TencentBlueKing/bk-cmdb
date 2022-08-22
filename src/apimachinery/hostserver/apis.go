@@ -16,8 +16,10 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
+	"configcenter/src/kube/types"
 )
 
 func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
@@ -631,4 +633,30 @@ func (hs *hostServer) FindCloudAreaHostCount(ctx context.Context, header http.He
 		Do().
 		Into(resp)
 	return
+}
+
+// SearchHostWithKube search host with k8s condition
+func (hs *hostServer) SearchKubeHost(ctx context.Context, h http.Header, req types.SearchHostReq) (
+	*metadata.SearchHost, errors.CCErrorCoder) {
+
+	result := metadata.SearchHostResult{}
+	subPath := "/hosts/kube/search"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(result)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if ccErr := result.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return result.Data, nil
 }

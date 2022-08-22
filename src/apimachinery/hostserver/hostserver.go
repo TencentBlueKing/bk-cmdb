@@ -19,8 +19,10 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
+	"configcenter/src/kube/types"
 )
 
 type HostServerClientInterface interface {
@@ -75,6 +77,10 @@ type HostServerClientInterface interface {
 	SearchCloudArea(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.SearchResp, err error)
 	DeleteCloudArea(ctx context.Context, h http.Header, cloudID int64) (resp *metadata.Response, err error)
 	FindCloudAreaHostCount(ctx context.Context, header http.Header, option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error)
+
+	// SearchHostWithKube search host with k8s condition
+	SearchKubeHost(ctx context.Context, h http.Header, req types.SearchHostReq) (*metadata.SearchHost,
+		errors.CCErrorCoder)
 }
 
 func NewHostServerClientInterface(c *util.Capability, version string) HostServerClientInterface {

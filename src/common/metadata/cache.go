@@ -12,8 +12,6 @@
 
 package metadata
 
-import "configcenter/src/common/watch"
-
 type SearchHostWithInnerIPOption struct {
 	InnerIP string `json:"bk_host_innerip"`
 	CloudID int64  `json:"bk_cloud_id"`
@@ -50,9 +48,4 @@ type ListHostWithPage struct {
 	// sort field is not used.
 	// max page limit is 1000
 	Page BasePage `json:"page"`
-}
-
-type WatchEventResp struct {
-	BaseResp `json:",inline"`
-	Data     *watch.WatchResp `json:"data"`
 }
