@@ -1372,3 +1372,8 @@ const (
 	// DefaultResBusinessSetFlag the default resource business set flag
 	DefaultResBusinessSetFlag = 1
 )
+
+const (
+	// HostFavoriteType host query favorite condition type
+	HostFavoriteType = "type"
+)
