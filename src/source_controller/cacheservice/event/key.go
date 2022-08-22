@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+	kubetypes "configcenter/src/kube/types"
 
 	"github.com/tidwall/gjson"
 )
@@ -307,12 +308,12 @@ func GenBizSetRelationDetail(bizSetID int64, bizIDsStr string) string {
 }
 
 // kubeFields kube related resource id and name fields, used for validation
-var kubeFields = []string{types.IDField, types.NameField}
+var kubeFields = []string{common.BKFieldID, common.BKFieldName}
 
 // KubeClusterKey kube cluster event watch key
 var KubeClusterKey = Key{
-	namespace:  watchCacheNamespace + types.KubeCluster,
-	collection: types.BKTableNameBaseCluster,
+	namespace:  watchCacheNamespace + kubetypes.KubeCluster,
+	collection: kubetypes.BKTableNameBaseCluster,
 	ttlSeconds: 6 * 60 * 60,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, kubeFields...)
@@ -324,17 +325,17 @@ var KubeClusterKey = Key{
 		return nil
 	},
 	instName: func(doc []byte) string {
-		return gjson.GetBytes(doc, types.NameField).String()
+		return gjson.GetBytes(doc, common.BKFieldName).String()
 	},
 	instID: func(doc []byte) int64 {
-		return gjson.GetBytes(doc, types.IDField).Int()
+		return gjson.GetBytes(doc, common.BKFieldID).Int()
 	},
 }
 
 // KubeNodeKey kube node event watch key
 var KubeNodeKey = Key{
-	namespace:  watchCacheNamespace + types.KubeNode,
-	collection: types.BKTableNameBaseNode,
+	namespace:  watchCacheNamespace + kubetypes.KubeNode,
+	collection: kubetypes.BKTableNameBaseNode,
 	ttlSeconds: 6 * 60 * 60,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, kubeFields...)
@@ -346,17 +347,17 @@ var KubeNodeKey = Key{
 		return nil
 	},
 	instName: func(doc []byte) string {
-		return gjson.GetBytes(doc, types.NameField).String()
+		return gjson.GetBytes(doc, common.BKFieldName).String()
 	},
 	instID: func(doc []byte) int64 {
-		return gjson.GetBytes(doc, types.IDField).Int()
+		return gjson.GetBytes(doc, common.BKFieldID).Int()
 	},
 }
 
 // KubeNamespaceKey kube namespace event watch key
 var KubeNamespaceKey = Key{
-	namespace:  watchCacheNamespace + types.KubeNamespace,
-	collection: types.BKTableNameBaseNamespace,
+	namespace:  watchCacheNamespace + kubetypes.KubeNamespace,
+	collection: kubetypes.BKTableNameBaseNamespace,
 	ttlSeconds: 6 * 60 * 60,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, kubeFields...)
@@ -368,17 +369,17 @@ var KubeNamespaceKey = Key{
 		return nil
 	},
 	instName: func(doc []byte) string {
-		return gjson.GetBytes(doc, types.NameField).String()
+		return gjson.GetBytes(doc, common.BKFieldName).String()
 	},
 	instID: func(doc []byte) int64 {
-		return gjson.GetBytes(doc, types.IDField).Int()
+		return gjson.GetBytes(doc, common.BKFieldID).Int()
 	},
 }
 
 // KubeWorkloadKey kube workload event watch key
 var KubeWorkloadKey = Key{
-	namespace:  watchCacheNamespace + types.KubeWorkload,
-	collection: types.BKTableNameBaseWorkload,
+	namespace:  watchCacheNamespace + kubetypes.KubeWorkload,
+	collection: kubetypes.BKTableNameBaseWorkload,
 	ttlSeconds: 6 * 60 * 60,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, kubeFields...)
@@ -394,17 +395,17 @@ var KubeWorkloadKey = Key{
 		return nil
 	},
 	instName: func(doc []byte) string {
-		return gjson.GetBytes(doc, types.NameField).String()
+		return gjson.GetBytes(doc, common.BKFieldName).String()
 	},
 	instID: func(doc []byte) int64 {
-		return gjson.GetBytes(doc, types.IDField).Int()
+		return gjson.GetBytes(doc, common.BKFieldID).Int()
 	},
 }
 
 // KubePodKey kube Pod event watch key
 var KubePodKey = Key{
-	namespace:  watchCacheNamespace + types.KubePod,
-	collection: types.BKTableNameBasePod,
+	namespace:  watchCacheNamespace + kubetypes.KubePod,
+	collection: kubetypes.BKTableNameBasePod,
 	ttlSeconds: 6 * 60 * 60,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, kubeFields...)
@@ -416,10 +417,10 @@ var KubePodKey = Key{
 		return nil
 	},
 	instName: func(doc []byte) string {
-		return gjson.GetBytes(doc, types.NameField).String()
+		return gjson.GetBytes(doc, common.BKFieldName).String()
 	},
 	instID: func(doc []byte) int64 {
-		return gjson.GetBytes(doc, types.IDField).Int()
+		return gjson.GetBytes(doc, common.BKFieldID).Int()
 	},
 }
 
@@ -498,6 +499,7 @@ func (k Key) ShardingCollection(objID, supplierAccount string) string {
 	return common.GetObjectInstTableName(objID, supplierAccount)
 }
 
+// SupplierAccount get event supplier account
 func (k Key) SupplierAccount(doc []byte) string {
 	return gjson.GetBytes(doc, common.BkSupplierAccount).String()
 }

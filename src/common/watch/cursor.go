@@ -22,6 +22,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	kubetypes "configcenter/src/kube/types"
 	"configcenter/src/storage/stream/types"
 
 	"github.com/tidwall/gjson"
@@ -368,15 +369,15 @@ func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 		curType = InstAsst
 	case common.BKTableNameBaseBizSet:
 		curType = BizSet
-	case types.BKTableNameBaseCluster:
+	case kubetypes.BKTableNameBaseCluster:
 		curType = KubeCluster
-	case types.BKTableNameBaseNode:
+	case kubetypes.BKTableNameBaseNode:
 		curType = KubeNode
-	case types.BKTableNameBaseNamespace:
+	case kubetypes.BKTableNameBaseNamespace:
 		curType = KubeNamespace
-	case types.BKTableNameBaseWorkload:
+	case kubetypes.BKTableNameBaseWorkload:
 		curType = KubeWorkload
-	case types.BKTableNameBasePod:
+	case kubetypes.BKTableNameBasePod:
 		curType = KubePod
 	default:
 		blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.ID())

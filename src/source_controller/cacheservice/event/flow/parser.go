@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/json"
 	types2 "configcenter/src/common/types"
 	"configcenter/src/common/watch"
+	kubetypes "configcenter/src/kube/types"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/stream/types"
@@ -100,8 +101,7 @@ func parseInstAsstEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap m
 	case types.Delete:
 		doc, exist := oidDetailMap[oidCollKey{oid: e.Oid, coll: e.Collection}]
 		if !exist {
-			blog.Errorf("run flow, received %s event, but delete doc[oid: %s] detail not exists, rid: %s",
-				key.Collection(), e.Oid, rid)
+			blog.Errorf("%s event delete doc[oid: %s] detail not exists, rid: %s", key.Collection(), e.Oid, rid)
 			return nil, nil, false, nil
 		}
 		// update delete event detail doc bytes from del archive
@@ -180,8 +180,8 @@ func parseInstAsstEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap m
 }
 
 // parsePodEvent parse pod events into db chain nodes and details, pod detail includes its containers
-func parsePodEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oidCollKey][]byte, id uint64, rid string) (
-	*watch.ChainNode, []byte, bool, error) {
+func parsePodEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oidCollKey][]byte, id uint64,
+	rid string) (*watch.ChainNode, []byte, bool, error) {
 
 	switch e.OperationType {
 	case types.Insert:
@@ -301,21 +301,21 @@ func parseKubeWorkloadEvent(db dal.DB, key event.Key, e *types.Event, oidDetailM
 	// get workload sub resource by event collection
 	switch e.Collection {
 	case kubetypes.BKTableNameBaseDeployment:
-		chainNode.SubResource = []string{kubetypes.KubeDeployment}
+		chainNode.SubResource = []string{string(kubetypes.KubeDeployment)}
 	case kubetypes.BKTableNameBaseStatefulSet:
-		chainNode.SubResource = []string{kubetypes.KubeStatefulSet}
+		chainNode.SubResource = []string{string(kubetypes.KubeStatefulSet)}
 	case kubetypes.BKTableNameBaseDaemonSet:
-		chainNode.SubResource = []string{kubetypes.KubeDaemonSet}
-	case kubetypes.BKTableNameBaseGameStatefulSet:
-		chainNode.SubResource = []string{kubetypes.KubeGameStatefulSet}
-	case kubetypes.BKTableNameBaseGameDeployment:
-		chainNode.SubResource = []string{kubetypes.KubeGameDeployment}
+		chainNode.SubResource = []string{string(kubetypes.KubeDaemonSet)}
+	case kubetypes.BKTableNameGameStatefulSet:
+		chainNode.SubResource = []string{string(kubetypes.KubeGameStatefulSet)}
+	case kubetypes.BKTableNameGameDeployment:
+		chainNode.SubResource = []string{string(kubetypes.KubeGameDeployment)}
 	case kubetypes.BKTableNameBaseCronJob:
-		chainNode.SubResource = []string{kubetypes.KubeCronJob}
+		chainNode.SubResource = []string{string(kubetypes.KubeCronJob)}
 	case kubetypes.BKTableNameBaseJob:
-		chainNode.SubResource = []string{kubetypes.KubeJob}
+		chainNode.SubResource = []string{string(kubetypes.KubeJob)}
 	case kubetypes.BKTableNameBasePodWorkload:
-		chainNode.SubResource = []string{kubetypes.KubePodWorkload}
+		chainNode.SubResource = []string{string(kubetypes.KubePodWorkload)}
 	default:
 		blog.Errorf("kube workload event coll %s is invalid, doc: %s, rid: %s", e.Collection, e.DocBytes, rid)
 		return nil, nil, false, nil

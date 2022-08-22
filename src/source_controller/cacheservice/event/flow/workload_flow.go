@@ -23,6 +23,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	kubetypes "configcenter/src/kube/types"
 	"configcenter/src/storage/stream/types"
 )
 

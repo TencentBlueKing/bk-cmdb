@@ -36,6 +36,7 @@ type flowTokenHandler struct {
 	metrics *event.EventMetrics
 }
 
+// NewFlowTokenHandler new flow token handler
 func NewFlowTokenHandler(key event.Key, watchDB dal.DB, metrics *event.EventMetrics) *flowTokenHandler {
 	return &flowTokenHandler{
 		key:     key,
@@ -73,7 +74,8 @@ func (f *flowTokenHandler) GetStartWatchToken(ctx context.Context) (token string
 	}
 
 	data := new(watch.LastChainNodeData)
-	if err := f.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKTokenField).One(ctx, data); err != nil {
+	err = f.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKTokenField).One(ctx, data)
+	if err != nil {
 		if !f.watchDB.IsNotFoundError(err) {
 			f.metrics.CollectMongoError()
 			blog.ErrorJSON("run flow, but get start watch token failed, err: %v, filter: %+v", err, filter)

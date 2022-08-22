@@ -78,6 +78,9 @@ const (
 	// BKTableNameBaseNamespace the table name of the Namespace
 	BKTableNameBaseNamespace = "cc_NamespaceBase"
 
+	// BKTableNameBaseWorkload virtual table name of Workload, specific workload data are stored in separate tables
+	BKTableNameBaseWorkload = "cc_WorkloadBase"
+
 	// BKTableNameBaseDeployment the table name of the Deployment
 	BKTableNameBaseDeployment = "cc_DeploymentBase"
 
