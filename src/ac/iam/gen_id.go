@@ -92,6 +92,10 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 		return make([]types.Resource, 0), nil
 	case meta.ProcessServiceCategory:
 		return genProcessServiceCategoryResource(act, rscType, a)
+	case meta.KubeCluster, meta.KubeNode, meta.KubeNamespace, meta.KubeWorkload, meta.KubeDeployment,
+		meta.KubeStatefulSet, meta.KubeDaemonSet, meta.KubeGameStatefulSet, meta.KubeGameDeployment, meta.KubeCronJob,
+		meta.KubeJob, meta.KubePodWorkload, meta.KubePod, meta.KubeContainer:
+		return make([]types.Resource, 0), nil
 	default:
 		if IsCMDBSysInstance(a.Basic.Type) {
 			return genSysInstanceResource(act, rscType, a)
