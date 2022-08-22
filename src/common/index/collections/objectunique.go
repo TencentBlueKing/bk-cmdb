@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -33,15 +35,15 @@ var commObjectUniqueIndexes = []types.Index{}
 var deprecatedObjectUniqueIndexes = []types.Index{
 	{
 		Name: "bk_obj_id",
-		Keys: map[string]int32{
-			"bk_obj_id": 1,
+		Keys: bson.D{{
+			"bk_obj_id", 1},
 		},
 		Background: false,
 	},
 	{
 		Name: "idx_unique_id",
-		Keys: map[string]int32{
-			"id": 1,
+		Keys: bson.D{{
+			"id", 1},
 		},
 		Unique:     true,
 		Background: true,

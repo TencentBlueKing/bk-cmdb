@@ -20,12 +20,14 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 var (
-	sortFlag      = int32(1)
+	sortFlag      = 1
 	idUniqueIndex = types.Index{
-		Keys:       map[string]int32{common.BKFieldID: sortFlag},
+		Keys:       bson.D{{common.BKFieldID, sortFlag}},
 		Unique:     true,
 		Background: true,
 		Name:       "idx_unique_id",
@@ -34,8 +36,8 @@ var (
 
 func changeUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	idxUniqueObjIDGroupName := types.Index{
-		Keys: map[string]int32{common.BKObjIDField: sortFlag, common.BKAppIDField: sortFlag,
-			common.BKPropertyGroupNameField: sortFlag},
+		Keys: bson.D{{common.BKObjIDField, sortFlag}, {common.BKAppIDField, sortFlag},
+			{common.BKPropertyGroupNameField, sortFlag}},
 		Unique:     true,
 		Background: true,
 		Name:       "idx_unique_objID_groupName",
@@ -56,7 +58,8 @@ func changeUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (
 			continue
 		}
 		// 已经存在业务ID不需要再操作了
-		if _, ok := index.Keys[common.BKAppIDField]; ok {
+
+		if _, ok := index.Keys.Map()[common.BKAppIDField]; ok {
 			if index.Name == idxUniqueGroupName {
 				isCreateUniqueGroupName = false
 			}

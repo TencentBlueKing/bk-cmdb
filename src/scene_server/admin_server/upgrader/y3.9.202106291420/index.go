@@ -21,6 +21,8 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func addIndexex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
@@ -29,13 +31,13 @@ func addIndexex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err err
 		"cc_ServiceInstance": {
 			Name:       "bkcc_idx_bkBizID_ID",
 			Background: true,
-			Keys:       map[string]int32{"bk_biz_id": 1, "id": 1},
+			Keys:       bson.D{{"bk_biz_id", 1}, {"id", 1}},
 		},
 
 		"cc_ModuleHostConfig": {
 			Name:       "bkcc_idx_bkBizID_bkHostID",
 			Background: true,
-			Keys:       map[string]int32{"bk_biz_id": 1, "bk_host_id": 1},
+			Keys:       bson.D{{"bk_biz_id", 1}, {"bk_host_id", 1}},
 		},
 	}
 

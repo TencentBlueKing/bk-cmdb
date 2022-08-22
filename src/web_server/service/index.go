@@ -18,8 +18,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/version"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
 
 // Index html file

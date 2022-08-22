@@ -21,6 +21,8 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // addServiceTemplateTableColumn add host_apply_enabled field to service template table.
@@ -47,46 +49,46 @@ func addHostApplyRuleTableColumn(ctx context.Context, db dal.RDB, conf *upgrader
 	indexes := []types.Index{
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bizID_ModuleID_serviceTemplateID_attrID",
-			Keys: map[string]int32{
-				common.BKAppIDField:             1,
-				common.BKModuleIDField:          1,
-				common.BKServiceTemplateIDField: 1,
-				common.BKAttributeIDField:       1,
+			Keys: bson.D{
+				{common.BKAppIDField, 1},
+				{common.BKModuleIDField, 1},
+				{common.BKServiceTemplateIDField, 1},
+				{common.BKAttributeIDField, 1},
 			},
 			Unique:     true,
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "host_property_under_service_template",
-			Keys: map[string]int32{
-				common.BKServiceTemplateIDField: 1,
-				common.BKAttributeIDField:       1,
+			Keys: bson.D{
+				{common.BKServiceTemplateIDField, 1},
+				{common.BKAttributeIDField, 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "bizID_serviceTemplateID_attrID",
-			Keys: map[string]int32{
-				common.BKAppIDField:             1,
-				common.BKServiceTemplateIDField: 1,
-				common.BKAttributeIDField:       1,
+			Keys: bson.D{
+				{common.BKAppIDField, 1},
+				{common.BKServiceTemplateIDField, 1},
+				{common.BKAttributeIDField, 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "bizID_moduleID_attrID",
-			Keys: map[string]int32{
-				common.BKAppIDField:       1,
-				common.BKModuleIDField:    1,
-				common.BKAttributeIDField: 1,
+			Keys: bson.D{
+				{common.BKAppIDField, 1},
+				{common.BKModuleIDField, 1},
+				{common.BKAttributeIDField, 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "moduleID_attrID",
-			Keys: map[string]int32{
-				common.BKModuleIDField:    1,
-				common.BKAttributeIDField: 1,
+			Keys: bson.D{
+				{common.BKModuleIDField, 1},
+				{common.BKAttributeIDField, 1},
 			},
 			Background: true,
 		},

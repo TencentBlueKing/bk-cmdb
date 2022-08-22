@@ -20,11 +20,13 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func addOsTypeIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	index := types.Index{
-		Keys:       map[string]int32{"bk_os_type": 1},
+		Keys:       bson.D{{"bk_os_type", 1}},
 		Name:       "bk_os_type_1",
 		Unique:     false,
 		Background: true,
