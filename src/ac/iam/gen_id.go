@@ -235,6 +235,17 @@ func genResourceWatch(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]
 		}
 		return []types.Resource{r}, nil
 
+	case WatchKubeWorkloadEvent:
+		r := types.Resource{
+			System: SystemIDCMDB,
+		}
+
+		r.Type = types.ResourceType(KubeWorkloadEvent)
+		if att.InstanceIDEx != "" {
+			r.ID = att.InstanceIDEx
+		}
+		return []types.Resource{r}, nil
+
 	default:
 		return make([]types.Resource, 0), nil
 	}

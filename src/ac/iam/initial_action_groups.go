@@ -362,6 +362,21 @@ func genResourceManageActionGroups() []ActionGroup {
 						{
 							ID: WatchBizSetEvent,
 						},
+						{
+							ID: WatchKubeClusterEvent,
+						},
+						{
+							ID: WatchKubeNodeEvent,
+						},
+						{
+							ID: WatchKubeNamespaceEvent,
+						},
+						{
+							ID: WatchKubeWorkloadEvent,
+						},
+						{
+							ID: WatchKubePodEvent,
+						},
 					},
 				},
 			},

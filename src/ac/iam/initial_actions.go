@@ -117,6 +117,11 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchMainlineInstanceEvent:          "自定义拓扑层级事件监听",
 	WatchInstAsstEvent:                  "实例关联事件监听",
 	WatchBizSetEvent:                    "业务集事件监听",
+	WatchKubeClusterEvent:               "容器集群事件监听",
+	WatchKubeNodeEvent:                  "容器节点事件监听",
+	WatchKubeNamespaceEvent:             "容器命名空间事件监听",
+	WatchKubeWorkloadEvent:              "容器工作负载事件监听",
+	WatchKubePodEvent:                   "容器Pod事件监听",
 	GlobalSettings:                      "全局设置",
 	CreateContainerCluster:              "容器集群新建",
 	EditContainerCluster:                "容器集群编辑",
@@ -170,6 +175,7 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genOperationStatisticActions()...)
 	resourceActionList = append(resourceActionList, genAuditLogActions()...)
 	resourceActionList = append(resourceActionList, genEventWatchActions()...)
+	resourceActionList = append(resourceActionList, genKubeEventWatchActions()...)
 	resourceActionList = append(resourceActionList, genConfigAdminActions()...)
 	resourceActionList = append(resourceActionList, genContainerManagementActions()...)
 
@@ -1328,6 +1334,56 @@ func genEventWatchActions() []ResourceAction {
 		Version:        1,
 	})
 	return actions
+}
+
+func genKubeEventWatchActions() []ResourceAction {
+	return []ResourceAction{
+		{
+			ID:      WatchKubeClusterEvent,
+			Name:    ActionIDNameMap[WatchKubeClusterEvent],
+			NameEn:  "Kube Cluster Event Listen",
+			Type:    View,
+			Version: 1,
+		},
+		{
+			ID:      WatchKubeNodeEvent,
+			Name:    ActionIDNameMap[WatchKubeNodeEvent],
+			NameEn:  "Kube Node Event Listen",
+			Type:    View,
+			Version: 1,
+		},
+		{
+			ID:      WatchKubeNamespaceEvent,
+			Name:    ActionIDNameMap[WatchKubeNamespaceEvent],
+			NameEn:  "Kube Namespace Event Listen",
+			Type:    View,
+			Version: 1,
+		},
+		{
+			ID:     WatchKubeWorkloadEvent,
+			Name:   ActionIDNameMap[WatchKubeWorkloadEvent],
+			NameEn: "Kube Workload Event Listen",
+			Type:   View,
+			RelatedResourceTypes: []RelateResourceType{
+				{
+					SystemID: SystemIDCMDB,
+					ID:       KubeWorkloadEvent,
+					InstanceSelections: []RelatedInstanceSelection{{
+						SystemID: SystemIDCMDB,
+						ID:       KubeWorkloadEventSelection,
+					}},
+				},
+			},
+			Version: 1,
+		},
+		{
+			ID:      WatchKubePodEvent,
+			Name:    ActionIDNameMap[WatchKubePodEvent],
+			NameEn:  "Kube Pod Event Listen",
+			Type:    View,
+			Version: 1,
+		},
+	}
 }
 
 func genConfigAdminActions() []ResourceAction {

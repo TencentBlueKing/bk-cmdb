@@ -177,6 +177,8 @@ const (
 	UserCustom               TypeID = "usercustom"
 	// InstAsstEvent instance association resource for resource watch
 	InstAsstEvent TypeID = "inst_asst_event"
+	// KubeWorkloadEvent kube workload resource for resource watch
+	KubeWorkloadEvent TypeID = "kube_workload_event"
 
 	// for resource type, which is not need to be authorized
 	SkipType TypeID = "skip_type"
@@ -345,6 +347,18 @@ const (
 	WatchInstAsstEvent         ActionID = "watch_inst_asst_event"
 	WatchBizSetEvent           ActionID = "watch_biz_set_event"
 
+	// watch kube related event actions
+	// WatchKubeClusterEvent watch kube cluster event action id
+	WatchKubeClusterEvent ActionID = "watch_kube_cluster"
+	// WatchKubeNodeEvent watch kube node event action id
+	WatchKubeNodeEvent ActionID = "watch_kube_node"
+	// WatchKubeNamespaceEvent watch kube namespace event action id
+	WatchKubeNamespaceEvent ActionID = "watch_kube_namespace"
+	// WatchKubeWorkloadEvent watch kube workload event action id, authorized by workload type as sub-resource
+	WatchKubeWorkloadEvent ActionID = "watch_kube_workload"
+	// WatchKubePodEvent watch kube pod event action id, its event detail includes containers in it
+	WatchKubePodEvent ActionID = "watch_kube_pod"
+
 	GlobalSettings ActionID = "global_settings"
 
 	// Unknown is an action that can not be recognized
@@ -486,6 +500,7 @@ const (
 	SysModelSelection                  InstanceSelectionID = "sys_model"
 	SysModelEventSelection             InstanceSelectionID = "sys_model_event"
 	MainlineModelEventSelection        InstanceSelectionID = "mainline_model_event"
+	KubeWorkloadEventSelection         InstanceSelectionID = "kube_workload_event"
 	SysInstanceModelSelection          InstanceSelectionID = "sys_instance_model"
 	SysAssociationTypeSelection        InstanceSelectionID = "sys_association_type"
 	SysCloudAreaSelection              InstanceSelectionID = "sys_cloud_area"
