@@ -16,6 +16,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"configcenter/src/common/metadata"
 )
 
 type WatchEventOptions struct {
@@ -68,6 +70,12 @@ func (w *WatchEventOptions) Validate() error {
 	}
 
 	return nil
+}
+
+// WatchEventResp watch event response
+type WatchEventResp struct {
+	metadata.BaseResp `json:",inline"`
+	Data              *WatchResp `json:"data"`
 }
 
 type WatchResp struct {
