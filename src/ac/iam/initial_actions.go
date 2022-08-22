@@ -123,6 +123,20 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchKubeWorkloadEvent:              "容器工作负载事件监听",
 	WatchKubePodEvent:                   "容器Pod事件监听",
 	GlobalSettings:                      "全局设置",
+	CreateContainerCluster:              "容器集群新建",
+	EditContainerCluster:                "容器集群编辑",
+	DeleteContainerCluster:              "容器集群删除",
+	CreateContainerNode:                 "容器集群节点新建",
+	EditContainerNode:                   "容器集群节点编辑",
+	DeleteContainerNode:                 "容器集群节点删除",
+	CreateContainerNamespace:            "容器命名空间新建",
+	EditContainerNamespace:              "容器命名空间编辑",
+	DeleteContainerNamespace:            "容器命名空间删除",
+	CreateContainerWorkload:             "容器工作负载新建",
+	EditContainerWorkload:               "容器工作负载编辑",
+	DeleteContainerWorkload:             "容器工作负载删除",
+	CreateContainerPod:                  "容器Pod新建",
+	DeleteContainerPod:                  "容器Pod删除",
 }
 
 // GenerateActions generate all the actions registered to IAM.
@@ -163,6 +177,7 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genEventWatchActions()...)
 	resourceActionList = append(resourceActionList, genKubeEventWatchActions()...)
 	resourceActionList = append(resourceActionList, genConfigAdminActions()...)
+	resourceActionList = append(resourceActionList, genContainerManagementActions()...)
 
 	return resourceActionList
 }
@@ -1383,4 +1398,139 @@ func genConfigAdminActions() []ResourceAction {
 		Version:              1,
 	})
 	return actions
+}
+
+func genContainerManagementActions() []ResourceAction {
+	actions := make([]ResourceAction, 0)
+
+	actions = append(actions, genContainerClusterActions()...)
+	actions = append(actions, genContainerNodeActions()...)
+	actions = append(actions, genContainerNamespaceActions()...)
+	actions = append(actions, genContainerWorkloadActions()...)
+	actions = append(actions, genContainerPodActions()...)
+
+	return actions
+}
+
+func genContainerClusterActions() []ResourceAction {
+	return []ResourceAction{
+		{
+			ID:      CreateContainerCluster,
+			Name:    ActionIDNameMap[CreateContainerCluster],
+			NameEn:  "Create Container Cluster",
+			Type:    Create,
+			Version: 1,
+		},
+		{
+			ID:      EditContainerCluster,
+			Name:    ActionIDNameMap[EditContainerCluster],
+			NameEn:  "Edit Container Cluster",
+			Type:    Edit,
+			Version: 1,
+		},
+		{
+			ID:      DeleteContainerCluster,
+			Name:    ActionIDNameMap[DeleteContainerCluster],
+			NameEn:  "Delete Container Cluster",
+			Type:    Delete,
+			Version: 1,
+		},
+	}
+}
+
+func genContainerNodeActions() []ResourceAction {
+	return []ResourceAction{
+		{
+			ID:      CreateContainerNode,
+			Name:    ActionIDNameMap[CreateContainerNode],
+			NameEn:  "Create Container Node",
+			Type:    Create,
+			Version: 1,
+		},
+		{
+			ID:      EditContainerNode,
+			Name:    ActionIDNameMap[EditContainerNode],
+			NameEn:  "Edit Container Node",
+			Type:    Edit,
+			Version: 1,
+		},
+		{
+			ID:      DeleteContainerNode,
+			Name:    ActionIDNameMap[DeleteContainerNode],
+			NameEn:  "Delete Container Node",
+			Type:    Delete,
+			Version: 1,
+		},
+	}
+}
+
+func genContainerNamespaceActions() []ResourceAction {
+	return []ResourceAction{
+		{
+			ID:      CreateContainerNamespace,
+			Name:    ActionIDNameMap[CreateContainerNamespace],
+			NameEn:  "Create Container Namespace",
+			Type:    Create,
+			Version: 1,
+		},
+		{
+			ID:      EditContainerNamespace,
+			Name:    ActionIDNameMap[EditContainerNamespace],
+			NameEn:  "Edit Container Namespace",
+			Type:    Edit,
+			Version: 1,
+		},
+		{
+			ID:      DeleteContainerNamespace,
+			Name:    ActionIDNameMap[DeleteContainerNamespace],
+			NameEn:  "Delete Container Namespace",
+			Type:    Delete,
+			Version: 1,
+		},
+	}
+}
+
+func genContainerWorkloadActions() []ResourceAction {
+	return []ResourceAction{
+		{
+			ID:      CreateContainerWorkload,
+			Name:    ActionIDNameMap[CreateContainerWorkload],
+			NameEn:  "Create Container Workload",
+			Type:    Create,
+			Version: 1,
+		},
+		{
+			ID:      EditContainerWorkload,
+			Name:    ActionIDNameMap[EditContainerWorkload],
+			NameEn:  "Edit Container Workload",
+			Type:    Edit,
+			Version: 1,
+		},
+		{
+			ID:      DeleteContainerWorkload,
+			Name:    ActionIDNameMap[DeleteContainerWorkload],
+			NameEn:  "Delete Container Workload",
+			Type:    Delete,
+			Version: 1,
+		},
+	}
+}
+
+func genContainerPodActions() []ResourceAction {
+	return []ResourceAction{
+		{
+			ID:      CreateContainerPod,
+			Name:    ActionIDNameMap[CreateContainerPod],
+			NameEn:  "Create Container Pod",
+			Type:    Create,
+			Version: 1,
+		},
+		{
+			ID:      DeleteContainerPod,
+			Name:    ActionIDNameMap[DeleteContainerPod],
+			NameEn:  "Delete Container Pod",
+			Type:    Delete,
+			Version: 1,
+		},
+	}
 }
