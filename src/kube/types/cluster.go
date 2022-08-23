@@ -80,11 +80,7 @@ type CreateClusterResult struct {
 	ID int64 `field:"id" json:"id" bson:"id"`
 }
 
-type ClusterID struct {
-	ID  int64 `json:"id"`
-	Uid int64 `json:"uid"`
-}
-
+// DeleteClusterOption 删除集群的请求
 type DeleteClusterOption struct {
 	IDs  []int64 `json:"id"`
 	Uids []int64 `json:"uid"`
@@ -142,6 +138,7 @@ type QueryClusterReq struct {
 	Fields []string                  `json:"fields"`
 }
 
+// Validate validate the QueryClusterReq
 func (option *QueryClusterReq) Validate() ccErr.RawErrorInfo {
 	op := &querybuilder.RuleOption{
 		NeedSameSliceElementType: true,
@@ -166,7 +163,7 @@ func (option *QueryClusterReq) Validate() ccErr.RawErrorInfo {
 	return ccErr.RawErrorInfo{}
 }
 
-// ResponseCluster
+// ResponseCluster  查询集群的回应
 type ResponseCluster struct {
 	Data []Cluster `json:"cluster"`
 }

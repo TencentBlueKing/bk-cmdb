@@ -27,6 +27,7 @@ import (
 	"configcenter/src/kube/types"
 )
 
+// BatchCreateNode 批量创建node
 func (st *Container) BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
 	data *types.CreateNodesReq) ([]int64, errors.CCErrorCoder) {
 	ret := new(types.CreateNodesResult)

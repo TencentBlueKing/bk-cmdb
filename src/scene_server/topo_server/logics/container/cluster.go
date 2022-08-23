@@ -233,7 +233,8 @@ func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesReq, bizID 
 }
 
 // CreateCluster create container  cluster
-func (b *kube) CreateCluster(kit *rest.Kit, data *types.ClusterBaseFields, bizID int64, bkSupplierAccount string) (int64, error) {
+func (b *kube) CreateCluster(kit *rest.Kit, data *types.ClusterBaseFields, bizID int64, bkSupplierAccount string) (
+	int64, error) {
 
 	cond := map[string]interface{}{common.BKDBOR: []map[string]interface{}{
 		{

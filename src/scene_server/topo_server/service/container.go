@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 )
 
@@ -225,11 +226,32 @@ func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathR
 				})
 			}
 		case types.BKTableNameBaseNamespace:
-			// todo: 补充namespace查询
+
+			option := &types.QueryReq{
+				Table:     types.BKTableNameBaseNamespace,
+				Condition: query,
+			}
+			namespaces, err := s.Engine.CoreAPI.CoreService().Kube().FindInst(kit.Ctx, kit.Header, option)
+			if err != nil {
+				blog.Errorf("find namespace failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
+				return result, err
+			}
+			for _, namespace := range namespaces.Info {
+				id, err := util.GetInt64ByInterface(namespace[types.BKIDField])
+				if err != nil {
+					blog.Errorf("find namespace failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
+					return result, err
+				}
+				result.Info = append(result.Info, types.KubeObjectInfo{
+					ID:   id,
+					Name: util.GetStrByInterface(namespace[types.KubeNameField]),
+					Kind: types.KubeNamespace,
+				})
+			}
 			return result, nil
 
 		default:
-			// todo: 补充workload的查询
+
 			return result, nil
 		}
 	}

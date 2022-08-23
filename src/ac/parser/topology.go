@@ -333,6 +333,7 @@ var (
 	findKubeTopoCountRegexp = regexp.MustCompile(`^/api/v3/kube/find/{bk_biz_id}/topo_node/{type}/count$`)
 )
 
+// NOCC:golint/fnsize(整体属于 container 操作需要放在一起)
 func (ps *parseStream) container() *parseStream {
 	if ps.shouldReturn() {
 		return ps

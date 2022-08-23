@@ -138,6 +138,7 @@ func GetCollectionWithObject(object string) ([]string, error) {
 	}
 }
 
+// IsKubeResourceKind 判断是否是容器资源对象
 func IsKubeResourceKind(object string) bool {
 	switch object {
 	case KubeBusiness, KubeCluster, KubeNode, KubeNamespace, string(KubeDeployment),

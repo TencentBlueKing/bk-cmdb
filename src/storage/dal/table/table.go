@@ -37,6 +37,7 @@ type Fields struct {
 // FieldsDescriptors table of field descriptor.
 type FieldsDescriptors []FieldDescriptor
 
+// MergeFields 对表字段的合并
 func MergeFields(all ...FieldsDescriptors) *Fields {
 	result := &Fields{
 		descriptors: make([]FieldDescriptor, 0),

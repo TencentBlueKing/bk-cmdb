@@ -27,6 +27,7 @@ import (
 	"configcenter/src/kube/types"
 )
 
+// ContainerInterface 容器实现接口
 type ContainerInterface interface {
 	CreateCluster(ctx context.Context, h http.Header, bizID int64, option *types.ClusterBaseFields) (
 		*types.CreateClusterResult, errors.CCErrorCoder)
@@ -40,10 +41,12 @@ type ContainerInterface interface {
 		*types.ResponseNode, errors.CCErrorCoder)
 }
 
+// NewContainerInterface 初始化container client对象
 func NewContainerInterface(client rest.ClientInterface) ContainerInterface {
 	return &Container{client: client}
 }
 
+// Container container对象
 type Container struct {
 	client rest.ClientInterface
 }

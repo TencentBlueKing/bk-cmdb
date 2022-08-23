@@ -59,6 +59,7 @@ var ContainerSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: MountsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 }
 
+// Container 容器表定义
 type Container struct {
 	// cc的自增主键
 	ID int64 `json:"bk_container_id"`

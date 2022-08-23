@@ -45,6 +45,7 @@ var NodeSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: PodCidrField, Type: enumor.String, IsRequired: false, IsEditable: true},
 }
 
+// Node node 结构描述
 type Node struct {
 	// ID cluster auto-increment ID in cc
 	ID int64 `json:"id" bson:"id"`
@@ -100,7 +101,7 @@ type QueryNodeReq struct {
 	Fields     []string                  `json:"fields"`
 }
 
-// ResponseNode
+// ResponseNode 查询node的回应
 type ResponseNode struct {
 	Data []Node `json:"node"`
 }
@@ -143,6 +144,8 @@ func (option *QueryNodeReq) Validate() ccErr.RawErrorInfo {
 	}
 	return ccErr.RawErrorInfo{}
 }
+
+// Validate validate the NodeBaseFields
 func (node *NodeBaseFields) Validate() error {
 	if *node.HostID == 0 {
 		return errors.New("host id must be set")
@@ -159,6 +162,8 @@ func (node *NodeBaseFields) Validate() error {
 	//}
 	return nil
 }
+
+// ValidateCreate validate the create nodes request
 func (option *CreateNodesReq) ValidateCreate() error {
 
 	if len(option.Nodes) == 0 {
