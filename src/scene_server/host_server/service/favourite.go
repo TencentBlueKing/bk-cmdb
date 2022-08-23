@@ -39,7 +39,7 @@ type queryParam struct {
 }
 
 func (s *Service) ListHostFavourites(ctx *rest.Contexts) {
-	
+
 	query := new(metadata.QueryInput)
 	if err := ctx.DecodeInto(&query); nil != err {
 		ctx.RespAutoError(err)
@@ -56,15 +56,22 @@ func (s *Service) ListHostFavourites(ctx *rest.Contexts) {
 		ctx.RespAutoError(result.CCError())
 		return
 	}
-	
+
 	ctx.RespEntity(result.Data)
 }
 
+// AddHostFavourite add host query favorite condition
 func (s *Service) AddHostFavourite(ctx *rest.Contexts) {
 
 	param := new(metadata.FavouriteParms)
 	if err := ctx.DecodeInto(&param); nil != err {
 		ctx.RespAutoError(err)
+		return
+	}
+
+	if param.Type != metadata.Container && param.Type != metadata.Tradition {
+		blog.Errorf("host query favorite condition type is invalid, type: %s, rid: %s", param.Type, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.HostFavoriteType))
 		return
 	}
 
@@ -78,7 +85,8 @@ func (s *Service) AddHostFavourite(ctx *rest.Contexts) {
 		// check if the info string matches the required structure
 		err := json.Unmarshal([]byte(param.Info), &infoParam{})
 		if err != nil {
-			blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), param.Info, ctx.Kit.Rid)
+			blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input: %+v, rid: %s", err, param.Info,
+				ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "info"))
 			return
 		}
@@ -86,7 +94,8 @@ func (s *Service) AddHostFavourite(ctx *rest.Contexts) {
 	if param.QueryParams != "" {
 		err := json.Unmarshal([]byte(param.QueryParams), &queryParams{})
 		if err != nil {
-			blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), param.QueryParams, ctx.Kit.Rid)
+			blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input:%+v, rid:%s", err, param.QueryParams,
+				ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "query params"))
 			return
 		}
@@ -101,7 +110,8 @@ func (s *Service) AddHostFavourite(ctx *rest.Contexts) {
 			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if !result.Result {
-			blog.Errorf("AddHostFavourite http response error,err code:%d,err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, param, ctx.Kit.Rid)
+			blog.Errorf("http response error, err code: %d, err msg: %s, input: %+v, rid: %s", result.Code,
+				result.ErrMsg, param, ctx.Kit.Rid)
 			return result.CCError()
 		}
 		return nil
@@ -183,7 +193,7 @@ func (s *Service) UpdateHostFavouriteByID(ctx *rest.Contexts) {
 }
 
 func (s *Service) DeleteHostFavouriteByID(ctx *rest.Contexts) {
-	
+
 	ID := ctx.Request.PathParameter("id")
 
 	if "" == ID || "0" == ID {
@@ -213,7 +223,7 @@ func (s *Service) DeleteHostFavouriteByID(ctx *rest.Contexts) {
 }
 
 func (s *Service) IncrHostFavouritesCount(ctx *rest.Contexts) {
-	
+
 	ID := ctx.Request.PathParameter("id")
 	if "" == ID || "0" == ID {
 		blog.Errorf("delete host favourite failed, with id  %s, rid:%s", ID, ctx.Kit.Rid)

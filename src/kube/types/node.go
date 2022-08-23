@@ -22,25 +22,27 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+	"configcenter/src/common/criteria/enumor"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
+	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
 )
 
 // NodeSpecFieldsDescriptor node spec's fields descriptors.
 var NodeSpecFieldsDescriptor = table.FieldsDescriptors{
-	{Field: KubeNameField, Type: table.String, IsRequired: true, IsEditable: false},
-	{Field: RolesField, Type: table.Enum, IsRequired: false, IsEditable: true},
-	{Field: LabelsField, Type: table.MapString, IsRequired: false, IsEditable: true},
-	{Field: TaintsField, Type: table.MapString, IsRequired: false, IsEditable: true},
-	{Field: UnschedulableField, Type: table.Boolean, IsRequired: false, IsEditable: true},
-	{Field: InternalIPField, Type: table.Array, IsRequired: false, IsEditable: true},
-	{Field: ExternalIPField, Type: table.Array, IsRequired: false, IsEditable: true},
-	{Field: HostnameField, Type: table.String, IsRequired: false, IsEditable: true},
-	{Field: RuntimeComponentField, Type: table.String, IsRequired: false, IsEditable: true},
-	{Field: KubeProxyModeField, Type: table.String, IsRequired: false, IsEditable: true},
-	{Field: PodCidrField, Type: table.String, IsRequired: false, IsEditable: true},
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: RolesField, Type: enumor.Enum, IsRequired: false, IsEditable: true},
+	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
+	{Field: TaintsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
+	{Field: UnschedulableField, Type: enumor.Boolean, IsRequired: false, IsEditable: true},
+	{Field: InternalIPField, Type: enumor.Array, IsRequired: false, IsEditable: true},
+	{Field: ExternalIPField, Type: enumor.Array, IsRequired: false, IsEditable: true},
+	{Field: HostnameField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: RuntimeComponentField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: KubeProxyModeField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: PodCidrField, Type: enumor.String, IsRequired: false, IsEditable: true},
 }
 
 type Node struct {
@@ -63,18 +65,18 @@ type NodeBaseFields struct {
 	// ClusterID the node ID to which the cluster belongs
 	ClusterID *int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
 	// ClusterUID the node ID to which the cluster belongs
-	ClusterUID       *string             `json:"cluster_uid" bson:"cluster_uid"`
-	Name             *string             `json:"name" bson:"name"`
-	Roles            *string             `json:"roles" bson:"roles"`
-	Labels           table.MapStringType `json:"labels" bson:"labels"`
-	Taints           table.MapStringType `json:"taints" bson:"taints"`
-	Unschedulable    bool                `json:"unschedulable" bson:"unschedulable"`
-	InternalIP       *[]string           `json:"internal_ip" bson:"internal_ip"`
-	ExternalIP       *[]string           `json:"external_ip" bson:"external_ip"`
-	HostName         *string             `json:"hostname" bson:"hostname"`
-	RuntimeComponent *string             `json:"runtime_component" bson:"runtime_component"`
-	KubeProxyMode    *string             `json:"kube_proxy_mode" bson:"kube_proxy_mode"`
-	PodCidr          *string             `json:"pod_cidr" bson:"pod_cidr"`
+	ClusterUID       *string              `json:"cluster_uid" bson:"cluster_uid"`
+	Name             *string              `json:"name" bson:"name"`
+	Roles            *string              `json:"roles" bson:"roles"`
+	Labels           enumor.MapStringType `json:"labels" bson:"labels"`
+	Taints           enumor.MapStringType `json:"taints" bson:"taints"`
+	Unschedulable    bool                 `json:"unschedulable" bson:"unschedulable"`
+	InternalIP       *[]string            `json:"internal_ip" bson:"internal_ip"`
+	ExternalIP       *[]string            `json:"external_ip" bson:"external_ip"`
+	HostName         *string              `json:"hostname" bson:"hostname"`
+	RuntimeComponent *string              `json:"runtime_component" bson:"runtime_component"`
+	KubeProxyMode    *string              `json:"kube_proxy_mode" bson:"kube_proxy_mode"`
+	PodCidr          *string              `json:"pod_cidr" bson:"pod_cidr"`
 }
 
 // CreateNodesReq 批量创建node请求
@@ -172,4 +174,18 @@ func (option *CreateNodesReq) ValidateCreate() error {
 		}
 	}
 	return nil
+}
+
+// SearchHostReq search host request
+type SearchHostReq struct {
+	BizID       int64                    `json:"bk_biz_id"`
+	ClusterID   int64                    `json:"bk_cluster_id"`
+	Folder      bool                     `json:"folder"`
+	NamespaceID int64                    `json:"bk_namespace_id"`
+	WorkloadID  int64                    `json:"bk_workload_id"`
+	WlKind      WorkloadType             `json:"kind"`
+	NodeFilter  *filter.Expression       `json:"node_filter"`
+	Ip          metadata.IPInfo          `json:"ip"`
+	HostCond    metadata.SearchCondition `json:"host_condition"`
+	Page        metadata.BasePage        `json:"page"`
 }

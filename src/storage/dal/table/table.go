@@ -20,40 +20,8 @@ package table
 import (
 	"errors"
 	"time"
-)
 
-// FieldType define the table's field data type.
-type FieldType string
-
-// MapStringType 自定义 map[string]string
-type MapStringType map[string]string
-
-const (
-	// Numeric means this field is numeric data type.
-	Numeric FieldType = "numeric"
-
-	// Timestamp means this field is timestamp data type.
-	Timestamp FieldType = "timestamp"
-
-	// Boolean means this field is boolean data type.
-	Boolean FieldType = "bool"
-	// String means this field is string data type.
-	String FieldType = "string"
-	// MapString means this field is map string type.there is a special map for
-	// container scenarios, in which both key and value must be of string type,
-	// such as label, taints, etc. At this time, these variables need to be set
-	// to this type to facilitate judgment and verification.
-	MapString FieldType = "mapString"
-	// Array means this field is array data type.
-	Array FieldType = "array"
-	// Object means this field is object data type.
-	Object FieldType = "object"
-	// Enum means this field is enum enum type.
-	Enum FieldType = "enum"
-	// Note: subsequent support for other types can be added here.
-	// after adding a type, pay attention to adding a verification
-	// function for this type synchronously. special attention is
-	// paid to whether the array elements also need to synchronize support for this type.
+	"configcenter/src/common/criteria/enumor"
 )
 
 // Fields table's fields details.
@@ -63,7 +31,7 @@ type Fields struct {
 	// fields defines all the table's fields.
 	fields []string
 	// fieldType the type corresponding to the field.
-	fieldType map[string]FieldType
+	fieldType map[string]enumor.FieldType
 }
 
 // FieldsDescriptors table of field descriptor.
@@ -73,7 +41,7 @@ func MergeFields(all ...FieldsDescriptors) *Fields {
 	result := &Fields{
 		descriptors: make([]FieldDescriptor, 0),
 		fields:      make([]string, 0),
-		fieldType:   make(map[string]FieldType),
+		fieldType:   make(map[string]enumor.FieldType),
 	}
 
 	if len(all) == 0 {
@@ -91,8 +59,8 @@ func MergeFields(all ...FieldsDescriptors) *Fields {
 }
 
 // FieldsType returns the corresponding type of all fields.
-func (f Fields) FieldsType() map[string]FieldType {
-	copied := make(map[string]FieldType)
+func (f Fields) FieldsType() map[string]enumor.FieldType {
+	copied := make(map[string]enumor.FieldType)
 	for k, v := range f.fieldType {
 		copied[k] = v
 	}
@@ -101,7 +69,7 @@ func (f Fields) FieldsType() map[string]FieldType {
 }
 
 // OneFieldType returns the type corresponding to the specified field.
-func (f Fields) OneFieldType(field string) FieldType {
+func (f Fields) OneFieldType(field string) enumor.FieldType {
 	return f.fieldType[field]
 }
 
@@ -152,7 +120,7 @@ type FieldDescriptor struct {
 	// Field is field's name.
 	Field string
 	// Type is this field's data type.
-	Type FieldType
+	Type enumor.FieldType
 	// IsRequired is it required.
 	IsRequired bool
 	// IsEditable is it editable.

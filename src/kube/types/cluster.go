@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+	"configcenter/src/common/criteria/enumor"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
@@ -34,41 +35,41 @@ var ClusterFields = table.MergeFields(ClusterFieldsDescriptor)
 // ClusterFieldsDescriptor cluster's fields descriptors.
 var ClusterFieldsDescriptor = table.MergeFieldDescriptors(
 	table.FieldsDescriptors{
-		{Field: BKIDField, Type: table.Numeric, IsRequired: true, IsEditable: false},
-		{Field: BKBizIDField, Type: table.Numeric, IsRequired: true, IsEditable: false},
-		{Field: BKSupplierAccountField, Type: table.String, IsRequired: true, IsEditable: false},
-		{Field: CreatorField, Type: table.String, IsRequired: true, IsEditable: false},
-		{Field: ModifierField, Type: table.String, IsRequired: true, IsEditable: true},
-		{Field: CreateTimeField, Type: table.Numeric, IsRequired: true, IsEditable: false},
-		{Field: LastTimeField, Type: table.Numeric, IsRequired: true, IsEditable: true},
+		{Field: BKIDField, Type: enumor.Numeric, IsRequired: true, IsEditable: false},
+		{Field: BKBizIDField, Type: enumor.Numeric, IsRequired: true, IsEditable: false},
+		{Field: BKSupplierAccountField, Type: enumor.String, IsRequired: true, IsEditable: false},
+		{Field: CreatorField, Type: enumor.String, IsRequired: true, IsEditable: false},
+		{Field: ModifierField, Type: enumor.String, IsRequired: true, IsEditable: true},
+		{Field: CreateTimeField, Type: enumor.Numeric, IsRequired: true, IsEditable: false},
+		{Field: LastTimeField, Type: enumor.Numeric, IsRequired: true, IsEditable: true},
 	},
 	table.MergeFieldDescriptors(ClusterSpecFieldsDescriptor),
 )
 
 // ClusterSpecFieldsDescriptor cluster spec's fields descriptors.
 var ClusterSpecFieldsDescriptor = table.FieldsDescriptors{
-	{Field: KubeNameField, Type: table.String, IsRequired: true, IsEditable: false},
-	{Field: SchedulingEngineField, Type: table.String, IsRequired: false, IsEditable: false},
-	{Field: UidField, Type: table.String, IsRequired: true, IsEditable: false},
-	{Field: XidField, Type: table.String, IsRequired: false, IsEditable: false},
-	{Field: VersionField, Type: table.String, IsRequired: false, IsEditable: true},
-	{Field: NetworkTypeField, Type: table.Enum, IsRequired: false, IsEditable: true},
-	{Field: RegionField, Type: table.String, IsRequired: false, IsEditable: true},
-	{Field: VpcField, Type: table.String, IsRequired: false, IsEditable: false},
-	{Field: NetworkField, Type: table.String, IsRequired: false, IsEditable: false},
-	{Field: TypeField, Type: table.String, IsRequired: false, IsEditable: true},
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: SchedulingEngineField, Type: enumor.String, IsRequired: false, IsEditable: false},
+	{Field: UidField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: XidField, Type: enumor.String, IsRequired: false, IsEditable: false},
+	{Field: VersionField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: NetworkTypeField, Type: enumor.Enum, IsRequired: false, IsEditable: true},
+	{Field: RegionField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: VpcField, Type: enumor.String, IsRequired: false, IsEditable: false},
+	{Field: NetworkField, Type: enumor.String, IsRequired: false, IsEditable: false},
+	{Field: TypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
 }
 
 // Cluster container cluster table structure
 type Cluster struct {
 	// ID cluster auto-increment ID in cc
-	ID int64 `json:"id" bson:"id"`
+	ID *int64 `json:"id" bson:"id"`
 	// BizID the business ID to which the cluster belongs
-	BizID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
+	BizID *int64 `json:"bk_biz_id" bson:"bk_biz_id"`
 	// ClusterFields cluster base fields
 	ClusterBaseFields `json:",inline" bson:",inline"`
 	// SupplierAccount the supplier account that this resource belongs to.
-	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	SupplierAccount *string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }

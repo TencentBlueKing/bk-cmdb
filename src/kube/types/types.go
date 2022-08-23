@@ -86,6 +86,9 @@ const (
 	// BKTableNameBaseNamespace the table name of the Namespace
 	BKTableNameBaseNamespace = "cc_NamespaceBase"
 
+	// BKTableNameBaseWorkload virtual table name of Workload, specific workload data are stored in separate tables
+	BKTableNameBaseWorkload = "cc_WorkloadBase"
+
 	// BKTableNameBaseDeployment the table name of the Deployment
 	BKTableNameBaseDeployment = "cc_DeploymentBase"
 
@@ -285,6 +288,21 @@ const (
 
 	// PodUIDField pod unique id field in third party platform
 	PodUIDField = "pod_uid"
+
+	// RefField pod relate workload field
+	RefField = "ref"
+
+	// RefIDField pod relate workload id field
+	RefIDField = "ref.id"
+
+	// RefNameField pod relate workload name field
+	RefNameField = "ref.name"
+
+	// RefKindField pod relate workload kind field
+	RefKindField = "ref.kind"
+
+	// NodeNameFiled pod relate node name field
+	NodeNameFiled = "node_name"
 )
 
 // container field names
@@ -325,10 +343,3 @@ const (
 	// MountsField container mounts field
 	MountsField = "mounts"
 )
-
-// ContainerAttrsRsp 容器资源属性回应
-type ContainerAttrsRsp struct {
-	Field    string `json:"field"`
-	Type     string `json:"type"`
-	Required bool   `json:"required"`
-}

@@ -116,9 +116,10 @@ func (b *bizSetRelation) parseEvent(e *types.Event, id uint64, rid string) (*wat
 		ClusterTime: e.ClusterTime,
 		Oid:         e.Oid,
 		// redirect all the event type to update.
-		EventType: watch.ConvertOperateType(types.Update),
-		Token:     e.Token.Data,
-		Cursor:    cursor,
+		EventType:       watch.ConvertOperateType(types.Update),
+		Token:           e.Token.Data,
+		Cursor:          cursor,
+		SupplierAccount: b.key.SupplierAccount(e.DocBytes),
 	}
 
 	if instanceID := b.mixKey.InstanceID(e.DocBytes); instanceID > 0 {

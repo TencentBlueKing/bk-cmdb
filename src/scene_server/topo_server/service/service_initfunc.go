@@ -343,4 +343,6 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initInternalTask(web)
 
 	s.initResourceDirectory(web)
+
+	s.initKube(web)
 }

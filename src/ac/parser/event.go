@@ -70,9 +70,8 @@ func (ps *parseStream) watch() *parseStream {
 			},
 		}
 
-		if resource == string(watch.ObjectBase) || resource == string(watch.MainlineInstance) ||
-			resource == string(watch.InstAsst) {
-
+		switch watch.CursorType(resource) {
+		case watch.ObjectBase, watch.MainlineInstance, watch.InstAsst:
 			body, err := ps.RequestCtx.getRequestBody()
 			if err != nil {
 				ps.err = err
@@ -89,6 +88,19 @@ func (ps *parseStream) watch() *parseStream {
 					return ps
 				}
 				authResource.InstanceID = model.ID
+			}
+		case watch.KubeWorkload:
+			body, err := ps.RequestCtx.getRequestBody()
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+
+			// use sub resource(corresponding to the kind of the workload) for authorization if it is set
+			// if sub resource is not set, verify authorization of the resource(which means all sub resources)
+			subResource := gjson.GetBytes(body, "bk_filter."+common.BKSubResourceField)
+			if subResource.Exists() {
+				authResource.InstanceIDEx = subResource.String()
 			}
 		}
 

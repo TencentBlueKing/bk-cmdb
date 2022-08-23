@@ -445,4 +445,5 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initCloudSync(web)
 	s.initAuth(web)
 	s.initCommon(web)
+	s.initKube(web)
 }

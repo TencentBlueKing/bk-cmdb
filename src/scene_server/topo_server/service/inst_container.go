@@ -133,7 +133,7 @@ func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathR
 			}
 			for _, cluster := range clusters.Data {
 				result.Info = append(result.Info, types.KubeObjectInfo{
-					ID:   cluster.ID,
+					ID:   *cluster.ID,
 					Name: *cluster.Name,
 					Kind: types.KubeCluster,
 				})

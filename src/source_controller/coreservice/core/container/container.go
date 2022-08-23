@@ -181,8 +181,6 @@ func (p *containerOperation) SearchNode(kit *rest.Kit, input *metadata.QueryCond
 	}
 
 	result := &types.ResponseNode{Data: nodes}
-	blog.Errorf("333333333333333333 clusters: %+v", result)
-
 	return result, nil
 }
 
@@ -200,7 +198,6 @@ func (p *containerOperation) SearchCluster(kit *rest.Kit, input *metadata.QueryC
 	}
 
 	result := &types.ResponseCluster{Data: clusters}
-	blog.Errorf("333333333333333333 clusters: %+v", result)
 
 	return result, nil
 }
@@ -243,18 +240,18 @@ func (p *containerOperation) CreateCluster(kit *rest.Kit, bizID int64, data *typ
 	}
 
 	// generate id field
-	id, err := mongodb.Client().NextSequence(kit.Ctx, types.BKTableNameBaseCluster)
+	idTmp, err := mongodb.Client().NextSequence(kit.Ctx, types.BKTableNameBaseCluster)
 	if nil != err {
 		blog.Errorf("create cluster failed, generate id failed, err: %+v, rid: %s", err, kit.Rid)
 		return 0, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 
 	now := time.Now().Unix()
-	blog.Errorf("88888888888888888888 uid: %v, name: %v", *data.Uid, *data.Name)
+	id := int64(idTmp)
 	cluster := &types.Cluster{
-		ID:                int64(id),
-		BizID:             bizID,
-		SupplierAccount:   kit.SupplierAccount,
+		ID:                &id,
+		BizID:             &bizID,
+		SupplierAccount:   &kit.SupplierAccount,
 		ClusterBaseFields: *data,
 		Revision: table.Revision{
 			CreateTime: now,
@@ -269,5 +266,5 @@ func (p *containerOperation) CreateCluster(kit *rest.Kit, bizID int64, data *typ
 		return 0, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
 	}
 
-	return cluster.ID, nil
+	return *cluster.ID, nil
 }

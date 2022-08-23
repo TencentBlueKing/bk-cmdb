@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
+	"configcenter/src/kube/types"
 )
 
 // InstanceInterface instance operation interface
@@ -94,6 +95,52 @@ type InstanceInterface interface {
 	// SearchBusinessSet search business set
 	SearchBusinessSet(ctx context.Context, h http.Header, opt *metadata.QueryBusinessSetRequest) (
 		*metadata.InstResult, errors.CCErrorCoder)
+
+	// CreateNamespace create namespace
+	CreateNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsCreateReq) (
+		*types.NsCreateRespData, errors.CCErrorCoder)
+
+	// UpdateNamespace update namespace
+	UpdateNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsUpdateReq) errors.CCErrorCoder
+
+	// DeleteNamespace delete namespace
+	DeleteNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsDeleteReq) errors.CCErrorCoder
+
+	// ListNamespace list namespace
+	ListNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsQueryReq) (
+		*metadata.InstDataInfo, errors.CCErrorCoder)
+
+	// CreateWorkload create workload
+	CreateWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
+		option *types.WlCreateReq) (*types.WlCreateRespData, errors.CCErrorCoder)
+
+	// UpdateWorkload update workload
+	UpdateWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
+		option *types.WlUpdateReq) errors.CCErrorCoder
+
+	// DeleteWorkload delete workload
+	DeleteWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
+		option *types.WlDeleteReq) errors.CCErrorCoder
+
+	// ListWorkload list workload
+	ListWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
+		option *types.WlQueryReq) (*metadata.InstDataInfo, errors.CCErrorCoder)
+
+	// ListPod list pod
+	ListPod(ctx context.Context, header http.Header, bizID int64, option *types.PodQueryReq) (
+		*metadata.InstDataInfo, errors.CCErrorCoder)
+
+	// ListContainer list container
+	ListContainer(ctx context.Context, header http.Header, bizID int64, option *types.ContainerQueryReq) (
+		*metadata.InstDataInfo, errors.CCErrorCoder)
+
+	// FindNodePathForHost find node path for host
+	FindNodePathForHost(ctx context.Context, header http.Header, option *types.HostPathReq) (
+		*types.HostPathData, errors.CCErrorCoder)
+
+	// FindPodPath find pod path
+	FindPodPath(ctx context.Context, header http.Header, bizID int64, option *types.PodPathReq) (*types.PodPathData,
+		errors.CCErrorCoder)
 }
 
 type instanceClient struct {
