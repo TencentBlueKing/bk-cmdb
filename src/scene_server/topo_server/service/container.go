@@ -283,6 +283,7 @@ func combinationConditions(option []types.KubeResourceInfo) []map[string]interfa
 	return filter
 }
 
+// CountKubeTopoHostsOrPods 计算节点的数量
 func (s *Service) CountKubeTopoHostsOrPods(ctx *rest.Contexts) {
 
 	option := new(types.KubeTopoCountReq)

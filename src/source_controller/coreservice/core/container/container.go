@@ -190,7 +190,8 @@ func (p *containerOperation) SearchNode(kit *rest.Kit, input *metadata.QueryCond
 }
 
 // SearchCluster 查找容器集群
-func (p *containerOperation) SearchCluster(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseCluster, error) {
+func (p *containerOperation) SearchCluster(kit *rest.Kit, input *metadata.QueryCondition) (
+	*types.ResponseCluster, error) {
 
 	clusters := make([]types.Cluster, 0)
 	err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(input.Condition).Start(uint64(input.Page.Start)).
