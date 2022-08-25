@@ -18,7 +18,6 @@
 package service
 
 import (
-	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -61,7 +60,8 @@ func (s *Service) FindPodPath(ctx *rest.Contexts) {
 		common.BKAppIDField: mapstr.MapStr{common.BKDBEQ: bizID},
 		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: req.PodIDs},
 	}
-	fields := []string{common.BKFieldID, types.ClusterUIDField, types.NamespaceField, types.RefField}
+	fields := []string{common.BKFieldID, types.BKClusterIDFiled, types.BKNamespaceIDField, types.NamespaceField,
+		types.RefField}
 	query := &metadata.QueryCondition{
 		Condition: cond,
 		Fields:    fields,
@@ -91,6 +91,7 @@ func (s *Service) FindPodPath(ctx *rest.Contexts) {
 
 func (s *Service) buildPodPaths(kit *rest.Kit, bizName string, pods []mapstr.MapStr) ([]types.PodPath, error) {
 	paths := make([]types.PodPath, 0)
+	clusterIDs := make([]int64, 0)
 	for _, pod := range pods {
 		id, err := pod.Int64(common.BKFieldID)
 		if err != nil {
@@ -99,9 +100,17 @@ func (s *Service) buildPodPaths(kit *rest.Kit, bizName string, pods []mapstr.Map
 			return nil, err
 		}
 
-		clusterUID, err := pod.String(types.ClusterUIDField)
+		clusterID, err := pod.Int64(types.BKClusterIDFiled)
 		if err != nil {
-			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.ClusterUIDField, pod,
+			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.BKClusterIDFiled, pod,
+				err, kit.Rid)
+			return nil, err
+		}
+		clusterIDs = append(clusterIDs, clusterID)
+
+		namespaceID, err := pod.Int64(types.BKNamespaceIDField)
+		if err != nil {
+			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.BKNamespaceIDField, pod,
 				err, kit.Rid)
 			return nil, err
 		}
@@ -142,12 +151,28 @@ func (s *Service) buildPodPaths(kit *rest.Kit, bizName string, pods []mapstr.Map
 		}
 
 		path := types.PodPath{
-			PodID:      id,
-			Path:       fmt.Sprintf("%s##%s##%s##%s", bizName, clusterUID, namespace, workloadName),
-			WorkloadID: workloadID,
-			Kind:       types.WorkloadType(workloadKind),
+			BizName:      bizName,
+			ClusterID:    clusterID,
+			NamespaceID:  namespaceID,
+			Namespace:    namespace,
+			Kind:         types.WorkloadType(workloadKind),
+			WorkloadID:   workloadID,
+			WorkloadName: workloadName,
+			PodID:        id,
 		}
 		paths = append(paths, path)
+	}
+
+	if len(clusterIDs) != 0 {
+		clusterIDWithName, err := s.getClusterIDWithName(kit, clusterIDs)
+		if err != nil {
+			blog.Errorf("get cluster id with name failed, clusterIDs: %v, err: %v, rid: %s", clusterIDs, err, kit.Rid)
+			return nil, err
+		}
+
+		for idx, path := range paths {
+			paths[idx].ClusterName = clusterIDWithName[path.ClusterID]
+		}
 	}
 
 	return paths, nil

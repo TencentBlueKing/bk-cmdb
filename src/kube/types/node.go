@@ -30,8 +30,14 @@ type SearchHostReq struct {
 	NamespaceID int64                    `json:"bk_namespace_id"`
 	WorkloadID  int64                    `json:"bk_workload_id"`
 	WlKind      WorkloadType             `json:"kind"`
-	NodeFilter  *filter.Expression       `json:"node_filter"`
+	NodeCond    *NodeCond                `json:"node_cond"`
 	Ip          metadata.IPInfo          `json:"ip"`
 	HostCond    metadata.SearchCondition `json:"host_condition"`
 	Page        metadata.BasePage        `json:"page"`
+}
+
+// NodeCond node condition for search host
+type NodeCond struct {
+	Filter *filter.Expression `json:"filter"`
+	Fields []string           `json:"fields"`
 }

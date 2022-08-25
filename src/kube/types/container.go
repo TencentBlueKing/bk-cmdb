@@ -25,6 +25,11 @@ import (
 	"configcenter/src/filter"
 )
 
+const (
+	// ContainerQueryLimit limit on the number of container query
+	ContainerQueryLimit = 500
+)
+
 // ContainerQueryReq container query request
 type ContainerQueryReq struct {
 	PodID  int64              `json:"bk_pod_id"`
@@ -42,11 +47,8 @@ func (p *ContainerQueryReq) Validate() errors.RawErrorInfo {
 		}
 	}
 
-	if errInfo, err := p.Page.Validate(false); err != nil {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{errInfo},
-		}
+	if err := p.Page.ValidateWithEnableCount(false, ContainerQueryLimit); err.ErrCode != 0 {
+		return err
 	}
 
 	// todo validate Filter
@@ -54,12 +56,9 @@ func (p *ContainerQueryReq) Validate() errors.RawErrorInfo {
 }
 
 // BuildCond build query container condition
-func (p *ContainerQueryReq) BuildCond(supplierAccount string) (mapstr.MapStr, error) {
+func (p *ContainerQueryReq) BuildCond() (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
 		BKPodIDField: p.PodID,
-	}
-	if supplierAccount != "" {
-		cond[common.BkSupplierAccount] = supplierAccount
 	}
 
 	if p.Filter != nil {

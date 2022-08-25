@@ -25,7 +25,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -108,7 +107,8 @@ func (s *coreService) GetNamespaceSpec(kit *rest.Kit, spec *types.NamespaceSpec)
 	}
 
 	filter := map[string]interface{}{
-		common.BKAppIDField: *spec.BizID,
+		common.BKAppIDField:   *spec.BizID,
+		common.BKOwnerIDField: kit.SupplierAccount,
 	}
 	if spec.NamespaceID != nil {
 		filter[common.BKFieldID] = *spec.NamespaceID
@@ -117,7 +117,6 @@ func (s *coreService) GetNamespaceSpec(kit *rest.Kit, spec *types.NamespaceSpec)
 		filter[types.ClusterUIDField] = *spec.ClusterUID
 		filter[common.BKFieldName] = *spec.Namespace
 	}
-	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
 
 	ns := types.Namespace{}
 	if err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Find(filter).One(kit.Ctx, &ns); err != nil {

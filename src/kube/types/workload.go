@@ -44,13 +44,15 @@ const (
 	LabelSelectorOpDoesNotExist LabelSelectorOperator = "DoesNotExist"
 )
 
-var (
+const (
 	// WlUpdateLimit limit on the number of workload updates
 	WlUpdateLimit = 200
 	// WlDeleteLimit limit on the number of workload delete
 	WlDeleteLimit = 200
 	// WlCreateLimit limit on the number of workload create
 	WlCreateLimit = 200
+	// WlQueryLimit limit on the number of workload query
+	WlQueryLimit = 500
 )
 
 // Type represents the stored type of IntOrString.
@@ -623,11 +625,8 @@ func (wl *WlQueryReq) Validate() errors.RawErrorInfo {
 		}
 	}
 
-	if errInfo, err := wl.Page.Validate(false); err != nil {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{errInfo},
-		}
+	if err := wl.Page.ValidateWithEnableCount(false, WlQueryLimit); err.ErrCode != 0 {
+		return err
 	}
 
 	// todo validate Filter
@@ -637,11 +636,8 @@ func (wl *WlQueryReq) Validate() errors.RawErrorInfo {
 // BuildCond build query workload condition
 func (wl *WlQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
-		common.BKAppIDField: bizID,
-	}
-
-	if supplierAccount != "" {
-		cond[common.BkSupplierAccount] = supplierAccount
+		common.BKAppIDField:      bizID,
+		common.BkSupplierAccount: supplierAccount,
 	}
 
 	if wl.ClusterID != nil {

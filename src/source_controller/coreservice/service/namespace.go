@@ -25,7 +25,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/util"
 	"configcenter/src/kube/orm"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/driver/mongodb"
@@ -106,7 +105,8 @@ func (s *coreService) GetClusterSpec(kit *rest.Kit, spec *types.ClusterSpec) (*t
 	}
 
 	filter := map[string]interface{}{
-		common.BKAppIDField: *spec.BizID,
+		common.BKAppIDField:   *spec.BizID,
+		common.BKOwnerIDField: kit.SupplierAccount,
 	}
 	if spec.ClusterID != nil {
 		filter[common.BKFieldID] = *spec.ClusterID
@@ -114,7 +114,6 @@ func (s *coreService) GetClusterSpec(kit *rest.Kit, spec *types.ClusterSpec) (*t
 	if spec.ClusterUID != nil {
 		filter[types.UidField] = *spec.ClusterUID
 	}
-	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
 
 	cluster := types.Cluster{}
 	if err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(filter).One(kit.Ctx, &cluster); err != nil {

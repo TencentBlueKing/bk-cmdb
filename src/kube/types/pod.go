@@ -25,6 +25,11 @@ import (
 	"configcenter/src/filter"
 )
 
+const (
+	// PodQueryLimit limit on the number of pod query
+	PodQueryLimit = 500
+)
+
 // PodQueryReq pod query request
 type PodQueryReq struct {
 	WorkloadSpec `json:",inline" bson:",inline"`
@@ -55,11 +60,8 @@ func (p *PodQueryReq) Validate() errors.RawErrorInfo {
 		}
 	}
 
-	if errInfo, err := p.Page.Validate(false); err != nil {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{errInfo},
-		}
+	if err := p.Page.ValidateWithEnableCount(false, PodQueryLimit); err.ErrCode != 0 {
+		return err
 	}
 
 	// todo validate Filter
@@ -69,10 +71,8 @@ func (p *PodQueryReq) Validate() errors.RawErrorInfo {
 // BuildCond build query pod condition
 func (p *PodQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
-		common.BKAppIDField: bizID,
-	}
-	if supplierAccount != "" {
-		cond[common.BkSupplierAccount] = supplierAccount
+		common.BKAppIDField:      bizID,
+		common.BkSupplierAccount: supplierAccount,
 	}
 
 	if p.ClusterID != nil {
