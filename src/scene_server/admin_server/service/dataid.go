@@ -250,6 +250,7 @@ func (s *Service) generateGseConfigStreamTo(header http.Header, user string, def
 			StorageAddresses: redisStreamToAddresses,
 			Password:         s.Config.SnapRedis.Password,
 			MasterName:       s.Config.SnapRedis.MasterName,
+			SentinelPasswd:   s.Config.SnapRedis.SentinelPassword,
 		}
 
 		// The special logic here is to be compatible with the changes of the gse, it is necessary to explicitly specify
