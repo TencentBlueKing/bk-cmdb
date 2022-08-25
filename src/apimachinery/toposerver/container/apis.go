@@ -35,6 +35,8 @@ type ContainerInterface interface {
 		*types.ResponseCluster, errors.CCErrorCoder)
 	DeleteCluster(ctx context.Context, header http.Header, bizID int64,
 		option *types.DeleteClusterOption) errors.CCErrorCoder
+	BatchDeleteNode(ctx context.Context, header http.Header, bizID int64,
+		option *types.ArrangeDeleteNodeOption) errors.CCErrorCoder
 	BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
 		data *types.CreateNodesReq) ([]int64, errors.CCErrorCoder)
 	SearchNode(ctx context.Context, header http.Header, input *metadata.QueryCondition) (

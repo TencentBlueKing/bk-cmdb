@@ -29,6 +29,11 @@ import (
 	"configcenter/src/storage/dal/table"
 )
 
+const (
+	maxDeleteClusterNum = 10
+	maxDeleteNodeNum    = 100
+)
+
 // ClusterFields merge the fields of the cluster and the details corresponding to the fields together.
 var ClusterFields = table.MergeFields(ClusterFieldsDescriptor)
 
@@ -82,15 +87,44 @@ type CreateClusterResult struct {
 
 // DeleteClusterOption 删除集群的请求
 type DeleteClusterOption struct {
-	IDs  []int64 `json:"id"`
-	Uids []int64 `json:"uid"`
+	IDs  []int64 `json:"ids"`
+	Uids []int64 `json:"uids"`
 }
 
-const (
-	maxDeleteClusterNum = 10
-)
+// DeleteNodeCmdbOption 通过cmdb的id进行删除node
+type DeleteNodeCmdbOption struct {
+	ClusterID int64 `json:"bk_cluster_id"`
+	ID        int64 `json:"id"`
+}
 
-// Validate validate the  DeleteClusterOption
+// DeleteNodeOption 通过原生id进行删除node
+type DeleteNodeOption struct {
+	ClusterUID string `json:"cluster_uid"`
+	Name       string `json:"name"`
+}
+
+// BatchDeleteNodeOption 删除node请求
+type BatchDeleteNodeOption struct {
+	NodeCmdbIDs []DeleteNodeCmdbOption `json:"node_cmdb_ids"`
+	NodeIDs     []DeleteNodeOption     `json:"node_ids"`
+}
+
+// Validate validate the BatchDeleteNodeOption
+func (option *BatchDeleteNodeOption) Validate() error {
+	if len(option.NodeIDs) > 0 && len(option.NodeCmdbIDs) > 0 {
+		return errors.New("params cannot be set at the same time")
+	}
+	if len(option.NodeIDs) == 0 && len(option.NodeCmdbIDs) == 0 {
+		return errors.New("params must be set")
+	}
+	if len(option.NodeIDs) > maxDeleteNodeNum || len(option.NodeCmdbIDs) > maxDeleteNodeNum {
+		return fmt.Errorf("the maximum number of nodes to be deleted is not allowed to exceed %d",
+			maxDeleteClusterNum)
+	}
+	return nil
+}
+
+// Validate validate the DeleteClusterOption
 func (option *DeleteClusterOption) Validate() error {
 
 	if len(option.IDs) > 0 && len(option.Uids) > 0 {

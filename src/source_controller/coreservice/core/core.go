@@ -126,6 +126,8 @@ type ContainerOperation interface {
 	SearchCluster(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseCluster, error)
 	DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption) (*metadata.DeletedCount,
 		errors.CCErrorCoder)
+	BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.ArrangeDeleteNodeOption) (
+		*metadata.DeletedCount, errors.CCErrorCoder)
 	BatchCreateNode(kit *rest.Kit, bizID int64, data []types.NodeBaseFields) ([]int64, errors.CCErrorCoder)
 	SearchNode(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseNode, error)
 }

@@ -81,17 +81,23 @@ type PodSpec struct {
 }
 
 // GetKubeSubTopoObject 获取指定资源的下一级拓扑资源对象，需要首先判断是否是
-func GetKubeSubTopoObject(object string) string {
+func GetKubeSubTopoObject(object string, id int64, bizID int64) (string, map[string]interface{}) {
 
 	switch object {
 	case KubeBusiness:
-		return KubeCluster
+		return KubeCluster, map[string]interface{}{
+			BKBizIDField: bizID,
+		}
 	case KubeCluster:
-		return KubeNamespace
+		return KubeNamespace, map[string]interface{}{
+			BKClusterIDFiled: id,
+		}
 	case KubeNamespace:
-		return KubeWorkload
+		return KubeWorkload, map[string]interface{}{
+			BKNamespaceIDField: id,
+		}
 	default:
-		return KubePod
+		return KubePod, map[string]interface{}{}
 	}
 }
 
@@ -113,7 +119,7 @@ func GetWorkLoadTables() []string {
 // IsContainerTopoResource 判断是否是容器拓扑对象
 func IsContainerTopoResource(object string) bool {
 	switch object {
-	case KubeBusiness, KubeCluster, KubeNode, KubeNamespace, KubeWorkload:
+	case KubeBusiness, KubeCluster, KubeNode, KubeNamespace, KubeWorkload, KubePod, KubeContainer:
 		return true
 	default:
 		return false
@@ -131,6 +137,8 @@ func GetCollectionWithObject(object string) ([]string, error) {
 		return []string{BKTableNameBaseNode}, nil
 	case KubePod:
 		return []string{BKTableNameBasePod}, nil
+	case KubeContainer:
+		return []string{BKTableNameBaseContainer}, nil
 	case KubeWorkload:
 		return GetWorkLoadTables(), nil
 	default:
@@ -144,6 +152,58 @@ func IsKubeResourceKind(object string) bool {
 	case KubeBusiness, KubeCluster, KubeNode, KubeNamespace, string(KubeDeployment),
 		string(KubeStatefulSet), string(KubeDaemonSet), string(KubeGameStatefulSet), string(KubeGameDeployment),
 		string(KubeCronJob), string(KubeJob), string(KubePodWorkload):
+		return true
+	default:
+		return false
+	}
+}
+
+// GetKindByWorkLoadTableNameMap 获取对应的workload类型
+func GetKindByWorkLoadTableNameMap(table string) (map[string]string, error) {
+	switch table {
+	case BKTableNameBaseDeployment:
+		return map[string]string{
+			table: string(KubeDeployment),
+		}, nil
+	case BKTableNameBaseStatefulSet:
+		return map[string]string{
+			table: string(KubeStatefulSet),
+		}, nil
+	case BKTableNameBaseDaemonSet:
+		return map[string]string{
+			table: string(KubeDaemonSet),
+		}, nil
+	case BKTableNameGameStatefulSet:
+		return map[string]string{
+			table: string(KubeGameStatefulSet),
+		}, nil
+	case BKTableNameGameDeployment:
+		return map[string]string{
+			table: string(KubeGameDeployment),
+		}, nil
+	case BKTableNameBaseCronJob:
+		return map[string]string{
+			table: string(KubeCronJob),
+		}, nil
+	case BKTableNameBaseJob:
+		return map[string]string{
+			table: string(KubeJob),
+		}, nil
+	case BKTableNameBasePodWorkload:
+		return map[string]string{
+			table: string(KubePodWorkload),
+		}, nil
+	default:
+		return nil, errors.New("this table name does not exist")
+	}
+
+}
+
+// IsWorkLoadKind 是否是workload 类型
+func IsWorkLoadKind(kind string) bool {
+	switch kind {
+	case string(KubeDeployment), string(KubeStatefulSet), string(KubeDaemonSet), string(KubeJob),
+		string(KubeCronJob), string(KubeGameStatefulSet), string(KubeGameDeployment), string(KubePodWorkload):
 		return true
 	default:
 		return false

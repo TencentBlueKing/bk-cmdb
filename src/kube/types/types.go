@@ -135,6 +135,13 @@ const (
 	KindField = "kind"
 )
 
+const (
+	// KubeHostKind host kind
+	KubeHostKind = "host"
+	// KubePodKind pod kind
+	KubePodKind = "pod"
+)
+
 // cluster field names
 const (
 

@@ -59,36 +59,6 @@ var ContainerSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: MountsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 }
 
-// Container 容器表定义
-type Container struct {
-	// cc的自增主键
-	ID int64 `json:"bk_container_id"`
-	// PodID pod id in cc
-	PodID *int64 `json:"bk_pod_id" bson:"bk_pod_id"`
-
-	// Pod pod name in third party platform
-	Pod     *string `json:"pod" bson:"pod"`
-	OwnerID string  `json:"bk_supplier_account"`
-	Name    string  `json:"name"`
-	// 容器ID
-	ContainerID string `json:"container_id"`
-	Image       string `json:"image,omitempty"`
-	// 确认下这两个端口有什么区别
-	//Ports     []v1.ContainerPort `json:"ports,omitempty"`
-	//HostPorts []v1.ContainerPort `json:"host_ports,omitempty"`
-	Args []string `json:"args,omitempty"`
-	// 启动时间，unix时间戳
-	Started int64 `json:"started,omitempty"`
-	//Limits  v1.ResourceList `json:"limits,omitempty"`
-	//Requests    v1.ResourceList  `json:"requests,omitempty"`
-	//Liveness    *v1.Probe        `json:"liveness,omitempty"`
-	//Environment []v1.EnvVar      `json:"environment,omitempty"`
-	//Mounts      []v1.VolumeMount `json:"mounts,omitempty"`
-	// cc时间，unix时间戳（或者按之前的用时间类型？）
-	LastTime   int64 `json:"last_time"`
-	CreateTime int64 `json:"create_time"`
-}
-
 // PodQueryReq pod query request
 type PodQueryReq struct {
 	WorkloadSpec `json:",inline" bson:",inline"`
@@ -191,9 +161,93 @@ func (p *PodQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.Map
 	return cond, nil
 }
 
-// ContainerAttrsRsp 容器资源属性回应
-type ContainerAttrsRsp struct {
+// KubeAttrsRsp 容器资源属性回应
+type KubeAttrsRsp struct {
 	Field    string `json:"field"`
 	Type     string `json:"type"`
 	Required bool   `json:"required"`
+}
+
+// Pod pod details
+type Pod struct {
+	// cc的自增主键
+	ID              int64   `json:"bk_pod_id"`
+	SupplierAccount *string `json:"bk_supplier_account"`
+	PodCoreInfo     `json:",inline" bson:",inline"`
+	// Revision record this app's revision information
+	table.Revision `json:",inline" bson:",inline"`
+}
+
+// PodCoreInfo pod core details
+type PodCoreInfo struct {
+	SysSpec       `json:",inline"`
+	Name          *string           `json:"name"`
+	Priority      *int32            `json:"priority,omitempty"`
+	Labels        map[string]string `json:"labels,omitempty"`
+	IP            *string           `json:"ip,omitempty"`
+	IPs           []PodIP           `json:"ips,omitempty"`
+	Volumes       []Volume          `json:"volumes,omitempty"`
+	QOSClass      PodQOSClass       `json:"qos_class,omitempty"`
+	NodeSelectors map[string]string `json:"node_selectors,omitempty"`
+	Tolerations   []Toleration      `json:"tolerations,omitempty"`
+}
+
+// Container container details
+type Container struct {
+	// cc的自增主键
+	ID      int64 `json:"bk_container_id"`
+	PodID   int64 `json:"bk_pod_id"`
+	SysSpec `json:",inline"`
+	Name    string `json:"name"`
+	// 容器ID
+	ContainerID string `json:"container_uid"`
+	Image       string `json:"image,omitempty"`
+	// 确认下这两个端口有什么区别
+	Ports     []ContainerPort `json:"ports,omitempty"`
+	HostPorts []ContainerPort `json:"host_ports,omitempty"`
+	Args      []string        `json:"args,omitempty"`
+	// 启动时间，unix时间戳
+	Started     int64         `json:"started,omitempty"`
+	Limits      ResourceList  `json:"limits,omitempty"`
+	Requests    ResourceList  `json:"requests,omitempty"`
+	Liveness    *Probe        `json:"liveness,omitempty"`
+	Environment []EnvVar      `json:"environment,omitempty"`
+	Mounts      []VolumeMount `json:"mounts,omitempty"`
+	// Revision record this app's revision information
+	table.Revision `json:",inline" bson:",inline"`
+}
+
+type ContainerCoreInfo struct {
+}
+
+// SysSpec 存放cc的容器相关的关系信息，所有类型共用这个结构体
+type SysSpec struct {
+	BizID     int64 `json:"bk_biz_id"`
+	ClusterID int64 `json:"bk_cluster_id,omitempty"`
+	// 冗余的cluster id
+	Cluster     string `json:"cluster_id,omitempty"`
+	NameSpaceID int64  `json:"bk_namespace_id,omitempty"`
+	// 冗余的namespace名称
+	NameSpace string `json:"namespace,omitempty"`
+	Workload  *Ref   `json:"workload,omitempty"`
+	HostID    int64  `json:"bk_host_id,omitempty"`
+	NodeID    int64  `json:"bk_node_id,omitempty"`
+	// 冗余的node名称
+	Node string `json:"node,omitempty"`
+	// 所有容器相关数据用相同的relation结构体，pod不需要这两个字段，仅container需要这两个字段
+	PodID int64  `json:"bk_pod_id,omitempty"`
+	Pod   string `json:"pod_name,omitempty"`
+}
+
+// Ref 存放pod相关的workload关联信息
+type Ref struct {
+	Kind string `json:"kind"`
+	// 冗余的workload名称
+	Name string `json:"name,omitempty"`
+	// ID workload在cc中的ID
+	ID int64 `json:"id,omitempty"`
+}
+
+// CreatePodsReq 创建Pods请求
+type CreatePodsReq struct {
 }

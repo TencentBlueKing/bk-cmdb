@@ -18,13 +18,14 @@
 package container
 
 import (
+	"errors"
 	"sync"
 
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/kube/types"
@@ -32,14 +33,12 @@ import (
 
 // ClusterOperationInterface container cluster operation methods
 type ClusterOperationInterface interface {
-
-	// CreateCluster create container cluster
 	CreateCluster(kit *rest.Kit, data *types.ClusterBaseFields, bizID int64, bkSupplierAccount string) (int64, error)
 	DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption, bkSupplierAccount string) error
+	BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.ArrangeDeleteNodeOption, bkSupplierAccount string) error
 	SearchCluster(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseCluster, error)
 	BatchCreateNode(kit *rest.Kit, data *types.CreateNodesReq, bizID int64, bkSupplierAccount string) ([]int64, error)
 	SearchNode(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseNode, error)
-	// SetProxy container cluster proxy
 	SetProxy(inst ClusterOperationInterface)
 }
 
@@ -63,6 +62,54 @@ func (b *kube) SetProxy(cluster ClusterOperationInterface) {
 	b.cluster = cluster
 }
 
+// BatchDeleteNode  batch delete nodes.
+func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.ArrangeDeleteNodeOption,
+	bkSupplierAccount string) error {
+
+	// 1、检查是否存在这些node，必须都存在才能删除否则返回报错
+	cond := make([]map[string]interface{}, 0)
+	if option.Flag {
+		for clusterUid, names := range option.Option {
+			cond = append(cond, map[string]interface{}{
+				types.ClusterUIDField: clusterUid,
+				types.NodeField:       map[string]interface{}{common.BKDBIN: names},
+			})
+		}
+	} else {
+		for clusterID, ids := range option.Option {
+			cond = append(cond, map[string]interface{}{
+				types.BKClusterIDFiled: clusterID,
+				types.BKNodeIDField:    map[string]interface{}{common.BKDBIN: ids},
+			})
+		}
+	}
+
+	// 查找是否有pod
+	counts, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		types.BKTableNameBaseCluster, cond)
+	if err != nil {
+		blog.Errorf("count nodes failed, cond: %#v, err: %v, rid: %s", cond, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrTopoInstDeleteFailed)
+	}
+
+	var podNum int64
+	for _, count := range counts {
+		podNum += count
+	}
+
+	if podNum > 0 {
+		blog.Errorf("count nodes failed, cond: %#v, err: %v, rid: %s", cond, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errors.New("no pods can exist under the node"))
+	}
+
+	// 3、进行批量删除node
+	if err := b.clientSet.CoreService().Container().BatchDeleteNode(kit.Ctx, kit.Header, bizID, option); err != nil {
+		blog.Errorf("delete cluster failed, option: %#v, err: %v, rid: %s", option, err, kit.Rid)
+		return err
+	}
+	return nil
+}
+
 // DeleteCluster delete cluster instance.
 func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption,
 	bkSupplierAccount string) error {
@@ -71,7 +118,9 @@ func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClu
 	if len(option.Uids) > 0 {
 		cond = []map[string]interface{}{
 			{
-				types.ClusterUIDField: option.Uids,
+				types.ClusterUIDField: map[string]interface{}{
+					common.BKDBIN: option.Uids,
+				},
 				common.BKAppIDField:   bizID,
 				common.BKOwnerIDField: bkSupplierAccount,
 			},
@@ -81,7 +130,9 @@ func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClu
 	if len(option.IDs) > 0 {
 		cond = []map[string]interface{}{
 			{
-				types.BKIDField:       option.IDs,
+				types.BKIDField: map[string]interface{}{
+					common.BKDBIN: option.IDs,
+				},
 				common.BKAppIDField:   bizID,
 				common.BKOwnerIDField: bkSupplierAccount,
 			},
@@ -132,7 +183,7 @@ func (b *kube) isExsitKubeResource(kit *rest.Kit, option *types.DeleteClusterOpt
 	bkSupplierAccount string) (bool, error) {
 
 	var wg sync.WaitGroup
-	var firstErr errors.CCErrorCoder
+	var firstErr ccErr.CCErrorCoder
 
 	workLoads := types.GetWorkLoadTables()
 	tables := []string{
@@ -146,6 +197,10 @@ func (b *kube) isExsitKubeResource(kit *rest.Kit, option *types.DeleteClusterOpt
 	for _, table := range tables {
 		wg.Add(1)
 		go func(table string, bizID int64, bkSupplierAccount string) {
+			defer func() {
+				// one search gcoroutine done.
+				wg.Done()
+			}()
 
 			filter := make([]map[string]interface{}, 0)
 			if len(option.Uids) > 0 {

@@ -85,6 +85,12 @@ type CreateNodesReq struct {
 	Nodes []NodeBaseFields `json:"nodes"`
 }
 
+// ArrangeDeleteNodeOption 整理后的删除Node请求
+type ArrangeDeleteNodeOption struct {
+	Option map[interface{}][]interface{} `json:"option"`
+	Flag   bool                          `json:"flag"`
+}
+
 // CreateNodesResult 创建集群结果
 type CreateNodesResult struct {
 	metadata.BaseResp

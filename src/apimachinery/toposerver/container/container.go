@@ -81,7 +81,6 @@ func (st *Container) SearchCluster(ctx context.Context, header http.Header, inpu
 // SearchNode search node.
 func (st *Container) SearchNode(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
 	*types.ResponseNode, errors.CCErrorCoder) {
-	//ret := new(table.ResponseCluster)
 	ret := struct {
 		metadata.BaseResp
 		Data types.ResponseNode `json:"data"`
@@ -131,9 +130,34 @@ func (st *Container) CreateCluster(ctx context.Context, header http.Header, bizI
 func (st *Container) DeleteCluster(ctx context.Context, header http.Header, bizID int64,
 	option *types.DeleteClusterOption) errors.CCErrorCoder {
 	ret := new(types.CreateClusterResult)
-	subPath := "/kube/delete/cluster/{bk_biz_id}/instance"
+	subPath := "/kube/delete/cluster/%d/instance"
 
-	err := st.client.Post().
+	err := st.client.Delete().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("delete cluster failed, http request failed, err: %v", err)
+		return errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.CCError()
+	}
+
+	return nil
+}
+
+// BatchDeleteNode delete cluster.
+func (st *Container) BatchDeleteNode(ctx context.Context, header http.Header, bizID int64,
+	option *types.ArrangeDeleteNodeOption) errors.CCErrorCoder {
+	ret := new(types.CreateClusterResult)
+	subPath := "/kube/deletemany/node/%d/instance"
+
+	err := st.client.Delete().
 		WithContext(ctx).
 		Body(option).
 		SubResourcef(subPath, bizID).

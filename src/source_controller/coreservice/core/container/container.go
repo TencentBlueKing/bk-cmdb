@@ -40,6 +40,48 @@ func New() core.ContainerOperation {
 	return container
 }
 
+// BatchDeleteNode delete node instances.
+func (p *containerOperation) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.ArrangeDeleteNodeOption) (
+	*metadata.DeletedCount, errors.CCErrorCoder) {
+
+	num := 0
+	if option.Flag {
+		for uid, names := range option.Option {
+			filter := map[string]interface{}{
+				common.BKAppIDField:   bizID,
+				common.BKOwnerIDField: kit.SupplierAccount,
+				types.ClusterUIDField: uid,
+				types.NodeField: map[string]interface{}{
+					common.BKDBIN: names,
+				},
+			}
+			if err := mongodb.Client().Table(types.BKTableNameBaseCluster).Delete(kit.Ctx, filter); err != nil {
+				blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+				return nil, kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
+			}
+			num += len(names)
+		}
+		return &metadata.DeletedCount{Count: uint64(num)}, nil
+	}
+
+	for clusterID, ids := range option.Option {
+		filter := map[string]interface{}{
+			common.BKAppIDField:    bizID,
+			common.BKOwnerIDField:  kit.SupplierAccount,
+			types.BKClusterIDFiled: clusterID,
+			types.BKNodeIDField: map[string]interface{}{
+				common.BKDBIN: ids,
+			},
+		}
+		if err := mongodb.Client().Table(types.BKTableNameBaseCluster).Delete(kit.Ctx, filter); err != nil {
+			blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+			return nil, kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
+		}
+		num += len(ids)
+	}
+	return &metadata.DeletedCount{Count: uint64(num)}, nil
+}
+
 // DeleteCluster delete cluster instance.
 func (p *containerOperation) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption) (
 	*metadata.DeletedCount, errors.CCErrorCoder) {
@@ -78,10 +120,10 @@ func (p *containerOperation) DeleteCluster(kit *rest.Kit, bizID int64, option *t
 func validateNodeData(kit *rest.Kit, bizID int64, node types.NodeBaseFields) errors.CCErrorCoder {
 
 	clusterFilter := map[string]interface{}{
-		common.BKAppIDField:    bizID,
-		common.BKOwnerIDField:  kit.SupplierAccount,
-		types.BKClusterIDFiled: node.ClusterID,
-		types.ClusterUIDField:  node.ClusterUID,
+		common.BKAppIDField:   bizID,
+		common.BKOwnerIDField: kit.SupplierAccount,
+		types.BKIDField:       *node.ClusterID,
+		types.UidField:        *node.ClusterUID,
 	}
 	cnt, err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(clusterFilter).Count(kit.Ctx)
 	if nil != err {

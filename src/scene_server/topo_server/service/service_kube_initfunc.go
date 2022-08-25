@@ -66,16 +66,25 @@ func (s *Service) initKube(web *restful.WebService) {
 		Handler: s.ListContainer})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodGet,
-		Path:    "/kube/find/kube/{object}/attributes",
-		Handler: s.FindContainerAttrs})
+		Path:    "/kube/find/{object}/attributes",
+		Handler: s.FindResourceAttrs})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/kube/create/cluster/bk_biz_id/{bk_biz_id}",
 		Handler: s.CreateCluster})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/createmany/pod/bk_biz_id/{bk_biz_id}",
+		Handler: s.BatchCreatePods})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
 		Path:    "/kube/delete/cluster/bk_biz_id/{bk_biz_id}",
 		Handler: s.DeleteCluster})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path:    "/kube/deletemany/node/bk_biz_id/{bk_biz_id}",
+		Handler: s.BatchDeleteNode})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/kube/findmany/cluster/bk_biz_id/{bk_biz_id}",
 		Handler: s.SearchClusters})
@@ -97,7 +106,7 @@ func (s *Service) initKube(web *restful.WebService) {
 		Handler: s.SearchKubeTopoPath})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/api/v3/kube/find/{bk_biz_id}/topo_node/{type}/count",
+		Path:    "/kube/find/{bk_biz_id}/topo_node/{type}/count",
 		Handler: s.CountKubeTopoHostsOrPods})
 
 	utility.AddToRestfulWebService(web)

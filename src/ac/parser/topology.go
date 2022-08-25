@@ -321,7 +321,7 @@ func (ps *parseStream) business() *parseStream {
 }
 
 var (
-	findKubeAttrsRegexp     = regexp.MustCompile(`^/api/v3/kube/find/container/{object}/attributes$`)
+	findKubeAttrsRegexp     = regexp.MustCompile(`^/api/v3/kube/find/{object}/attributes$`)
 	createKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/create/cluster/bk_biz_id/{bk_biz_id}$`)
 	deleteKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/delete/cluster/bk_biz_id/{bk_biz_id}$`)
 	findKubeClusterRegexp   = regexp.MustCompile(`^/api/v3/kube/findmany/cluster/bk_biz_id/{bk_biz_id}$`)
@@ -331,6 +331,7 @@ var (
 	findKubeNodeRegexp      = regexp.MustCompile(`^/api/v3/kube/findmany/node/bk_biz_id/{bk_biz_id}$`)
 	findKubeTopoPathRegexp  = regexp.MustCompile(`^/api/v3/kube/find/topo_path/bk_biz_id/{bk_biz_id}$`)
 	findKubeTopoCountRegexp = regexp.MustCompile(`^/api/v3/kube/find/{bk_biz_id}/topo_node/{type}/count$`)
+	createKubePodsRegexp    = regexp.MustCompile(`^/api/v3/kube/createmany/pod/bk_biz_id/{bk_biz_id}$`)
 )
 
 // NOCC:golint/fnsize(整体属于 container 操作需要放在一起)

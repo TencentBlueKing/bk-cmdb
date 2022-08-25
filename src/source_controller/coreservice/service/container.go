@@ -105,3 +105,21 @@ func (s *coreService) DeleteClusterInstance(ctx *rest.Contexts) {
 
 	ctx.RespEntityWithError(s.core.ContainerOperation().DeleteCluster(ctx.Kit, bizID, option))
 }
+
+// BatchDeleteNodeInstance delete cluster instance.
+func (s *coreService) BatchDeleteNodeInstance(ctx *rest.Contexts) {
+	option := new(types.ArrangeDeleteNodeOption)
+	if err := ctx.DecodeInto(option); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	if err != nil {
+		blog.Error("url parameter bk_biz_id not integer, bizID: %s, rid: %s", ctx.Request.PathParameter("bk_biz_id"),
+			ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+		return
+	}
+
+	ctx.RespEntityWithError(s.core.ContainerOperation().BatchDeleteNode(ctx.Kit, bizID, option))
+}
