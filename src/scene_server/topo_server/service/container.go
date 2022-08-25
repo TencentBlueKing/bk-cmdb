@@ -65,7 +65,7 @@ func (s *Service) ListContainer(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err = req.BuildCond(ctx.Kit.SupplierAccount)
+	cond, err = req.BuildCond()
 	if err != nil {
 		blog.Errorf("build query container condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

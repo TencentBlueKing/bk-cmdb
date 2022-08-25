@@ -59,13 +59,15 @@ const (
 	ResourceQuotaScopeCrossNamespacePodAffinity ResourceQuotaScope = "CrossNamespacePodAffinity"
 )
 
-var (
+const (
 	// NsUpdateLimit limit on the number of namespace updates
 	NsUpdateLimit = 200
 	// NsDeleteLimit limit on the number of namespace delete
 	NsDeleteLimit = 200
 	// NsCreateLimit limit on the number of namespace create
 	NsCreateLimit = 200
+	// NsQueryLimit limit on the number of namespace query
+	NsQueryLimit = 500
 )
 
 // Namespace define the namespace struct.
@@ -334,11 +336,8 @@ func (ns *NsQueryReq) Validate() errors.RawErrorInfo {
 		}
 	}
 
-	if errInfo, err := ns.Page.Validate(false); err != nil {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{errInfo},
-		}
+	if err := ns.Page.ValidateWithEnableCount(false, NsQueryLimit); err.ErrCode != 0 {
+		return err
 	}
 
 	// todo validate Filter
@@ -348,11 +347,10 @@ func (ns *NsQueryReq) Validate() errors.RawErrorInfo {
 // BuildCond build query namespace condition
 func (ns *NsQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
-		common.BKAppIDField: bizID,
+		common.BKAppIDField:      bizID,
+		common.BkSupplierAccount: supplierAccount,
 	}
-	if supplierAccount != "" {
-		cond[common.BkSupplierAccount] = supplierAccount
-	}
+
 	if ns.ClusterID != nil {
 		cond[BKClusterIDFiled] = ns.ClusterID
 	}

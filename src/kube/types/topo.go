@@ -66,9 +66,10 @@ type HostNodePath struct {
 
 // NodePath node path
 type NodePath struct {
-	Path      string `json:"path"`
-	ClusterID int64  `json:"bk_cluster_id"`
-	BizID     int64  `json:"bk_biz_id"`
+	BizID       int64  `json:"bk_biz_id"`
+	BizName     string `json:"biz_name"`
+	ClusterID   int64  `json:"bk_cluster_id"`
+	ClusterName string `json:"cluster_name"`
 }
 
 // HostNodeRelation get host and node relation message
@@ -77,7 +78,7 @@ type HostNodeRelation struct {
 	HostWithNode        map[int64][]mapstr.MapStr
 	NodeIDWithBizID     map[int64]int64
 	NodeIDWithClusterID map[int64]int64
-	ClusterIDWithUid    map[int64]string
+	ClusterIDWithName   map[int64]string
 }
 
 // PodPathReq pod path request
@@ -116,8 +117,13 @@ type PodPathData struct {
 
 // PodPath pod container topological path
 type PodPath struct {
-	PodID      int64        `json:"bk_pod_id"`
-	Path       string       `json:"path"`
-	WorkloadID int64        `json:"bk_workload_id"`
-	Kind       WorkloadType `json:"kind"`
+	BizName      string       `json:"biz_name"`
+	ClusterID    int64        `json:"bk_cluster_id"`
+	ClusterName  string       `json:"cluster_name"`
+	NamespaceID  int64        `json:"bk_namespace_id"`
+	Namespace    string       `json:"namespace"`
+	Kind         WorkloadType `json:"kind"`
+	WorkloadID   int64        `json:"bk_workload_id"`
+	WorkloadName string       `json:"workload_name"`
+	PodID        int64        `json:"bk_pod_id"`
 }

@@ -15,6 +15,7 @@ package metadata
 import (
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 )
 
@@ -77,6 +78,19 @@ type GetHistoryResult struct {
 type HostInfo struct {
 	Count int             `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
+}
+
+// ExtractHostIDs extract hostIDs
+func (h HostInfo) ExtractHostIDs() ([]int64, error) {
+	ids := make([]int64, 0)
+	for _, h := range h.Info {
+		id, err := h.Int64(common.BKHostIDField)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
 }
 
 type GetHostsResult struct {
