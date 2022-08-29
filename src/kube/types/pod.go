@@ -18,9 +18,11 @@
 package types
 
 import (
+	"errors"
+
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
-	"configcenter/src/common/errors"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/filter"
@@ -59,6 +61,13 @@ var ContainerSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: MountsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 }
 
+const (
+	// PodQueryLimit limit on the number of pod query.
+	PodQueryLimit = 500
+	// CreatePodsLimit the maximum number of pods to be created at one time.
+	CreatePodsLimit = 200
+)
+
 // PodQueryReq pod query request
 type PodQueryReq struct {
 	WorkloadSpec `json:",inline" bson:",inline"`
@@ -71,11 +80,11 @@ type PodQueryReq struct {
 }
 
 // Validate validate PodQueryReq
-func (p *PodQueryReq) Validate() errors.RawErrorInfo {
+func (p *PodQueryReq) Validate() ccErr.RawErrorInfo {
 	if (p.ClusterID != nil || p.NamespaceID != nil || (p.Ref != nil && p.Ref.ID != nil) || p.NodeID != 0) &&
 		(p.ClusterUID != nil || p.Namespace != nil || (p.Ref != nil && p.Ref.Name != nil) || p.NodeName != "") {
 
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrorTopoIdentificationIllegal,
 		}
 	}
@@ -83,30 +92,25 @@ func (p *PodQueryReq) Validate() errors.RawErrorInfo {
 	if p.Ref != nil && ((p.Ref.Name == nil && p.Ref.ID == nil) || p.Ref.Kind == nil ||
 		!IsInnerWorkload(WorkloadType(*p.Ref.Kind))) {
 
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{RefField},
 		}
 	}
 
-	if errInfo, err := p.Page.Validate(false); err != nil {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{errInfo},
-		}
+	if err := p.Page.ValidateWithEnableCount(false, PodQueryLimit); err.ErrCode != 0 {
+		return err
 	}
 
 	// todo validate Filter
-	return errors.RawErrorInfo{}
+	return ccErr.RawErrorInfo{}
 }
 
 // BuildCond build query pod condition
 func (p *PodQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
-		common.BKAppIDField: bizID,
-	}
-	if supplierAccount != "" {
-		cond[common.BkSupplierAccount] = supplierAccount
+		common.BKAppIDField:      bizID,
+		common.BkSupplierAccount: supplierAccount,
 	}
 
 	if p.ClusterID != nil {
@@ -161,17 +165,10 @@ func (p *PodQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.Map
 	return cond, nil
 }
 
-// KubeAttrsRsp 容器资源属性回应
-type KubeAttrsRsp struct {
-	Field    string `json:"field"`
-	Type     string `json:"type"`
-	Required bool   `json:"required"`
-}
-
 // Pod pod details
 type Pod struct {
 	// cc的自增主键
-	ID              int64   `json:"bk_pod_id"`
+	ID              int64   `json:"id"`
 	SupplierAccount *string `json:"bk_supplier_account"`
 	PodCoreInfo     `json:",inline" bson:",inline"`
 	// Revision record this app's revision information
@@ -180,7 +177,6 @@ type Pod struct {
 
 // PodCoreInfo pod core details
 type PodCoreInfo struct {
-	SysSpec       `json:",inline"`
 	Name          *string           `json:"name"`
 	Priority      *int32            `json:"priority,omitempty"`
 	Labels        map[string]string `json:"labels,omitempty"`
@@ -195,10 +191,17 @@ type PodCoreInfo struct {
 // Container container details
 type Container struct {
 	// cc的自增主键
-	ID      int64 `json:"bk_container_id"`
-	PodID   int64 `json:"bk_pod_id"`
-	SysSpec `json:",inline"`
-	Name    string `json:"name"`
+	ID                int64 `json:"id"`
+	PodID             int64 `json:"bk_pod_id"`
+	SysSpec           `json:",inline"`
+	ContainerCoreInfo `json:",inline"`
+	// Revision record this app's revision information
+	table.Revision `json:",inline" bson:",inline"`
+}
+
+// ContainerCoreInfo container core details
+type ContainerCoreInfo struct {
+	Name string `json:"name"`
 	// 容器ID
 	ContainerID string `json:"container_uid"`
 	Image       string `json:"image,omitempty"`
@@ -207,17 +210,12 @@ type Container struct {
 	HostPorts []ContainerPort `json:"host_ports,omitempty"`
 	Args      []string        `json:"args,omitempty"`
 	// 启动时间，unix时间戳
-	Started     int64         `json:"started,omitempty"`
-	Limits      ResourceList  `json:"limits,omitempty"`
-	Requests    ResourceList  `json:"requests,omitempty"`
-	Liveness    *Probe        `json:"liveness,omitempty"`
-	Environment []EnvVar      `json:"environment,omitempty"`
-	Mounts      []VolumeMount `json:"mounts,omitempty"`
-	// Revision record this app's revision information
-	table.Revision `json:",inline" bson:",inline"`
-}
-
-type ContainerCoreInfo struct {
+	Started         int64         `json:"started,omitempty"`
+	Limits          ResourceList  `json:"limits,omitempty"`
+	ReqSysSpecuests ResourceList  `json:"requests,omitempty"`
+	Liveness        *Probe        `json:"liveness,omitempty"`
+	Environment     []EnvVar      `json:"environment,omitempty"`
+	Mounts          []VolumeMount `json:"mounts,omitempty"`
 }
 
 // SysSpec 存放cc的容器相关的关系信息，所有类型共用这个结构体
@@ -239,7 +237,7 @@ type SysSpec struct {
 	Pod   string `json:"pod_name,omitempty"`
 }
 
-// Ref 存放pod相关的workload关联信息
+// Ref pod-related workload association information.
 type Ref struct {
 	Kind string `json:"kind"`
 	// 冗余的workload名称
@@ -248,6 +246,42 @@ type Ref struct {
 	ID int64 `json:"id,omitempty"`
 }
 
-// CreatePodsReq 创建Pods请求
+// PodsInfo details of creating pods.
+type PodsInfo struct {
+	PodCoreInfo `json:",inline"`
+	Containers  []ContainerCoreInfo `json:"containers"`
+}
+
+// Validate validate the PodCoreInfo
+func (option *PodCoreInfo) Validate() error {
+
+	return nil
+}
+
+// Validate validate the ContainerCoreInfo
+func (option *ContainerCoreInfo) Validate() error {
+	return nil
+}
+
+// CreatePodsReq create Pods request
 type CreatePodsReq struct {
+	Pods []PodsInfo `json:"pods"`
+}
+
+// Validate validate the CreatePodsReq
+func (option *CreatePodsReq) Validate() error {
+	if len(option.Pods) == 0 {
+		return errors.New("param cannot be empty")
+	}
+	for _, pod := range option.Pods {
+		if err := pod.Validate(); err != nil {
+			return err
+		}
+		for _, container := range pod.Containers {
+			if err := container.Validate(); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

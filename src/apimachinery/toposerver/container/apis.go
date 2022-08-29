@@ -31,6 +31,8 @@ import (
 type ContainerInterface interface {
 	CreateCluster(ctx context.Context, h http.Header, bizID int64, option *types.ClusterBaseFields) (
 		*types.CreateClusterResult, errors.CCErrorCoder)
+	UpdateClusterFields(ctx context.Context, header http.Header, bizID int64, supplierAccount string,
+		data *types.UpdateClusterOption) errors.CCErrorCoder
 	SearchCluster(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
 		*types.ResponseCluster, errors.CCErrorCoder)
 	DeleteCluster(ctx context.Context, header http.Header, bizID int64,

@@ -34,10 +34,12 @@ import (
 // ClusterOperationInterface container cluster operation methods
 type ClusterOperationInterface interface {
 	CreateCluster(kit *rest.Kit, data *types.ClusterBaseFields, bizID int64, bkSupplierAccount string) (int64, error)
+	UpdateClusterFields(kit *rest.Kit, data *types.UpdateClusterOption, bizID int64, supplierAccount string) error
 	DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption, bkSupplierAccount string) error
 	BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.ArrangeDeleteNodeOption, bkSupplierAccount string) error
 	SearchCluster(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseCluster, error)
 	BatchCreateNode(kit *rest.Kit, data *types.CreateNodesReq, bizID int64, bkSupplierAccount string) ([]int64, error)
+	BatchCreatePod(kit *rest.Kit, data *types.CreatePodsReq, bizID int64, bkSupplierAccount string) ([]int64, error)
 	SearchNode(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseNode, error)
 	SetProxy(inst ClusterOperationInterface)
 }
@@ -64,7 +66,7 @@ func (b *kube) SetProxy(cluster ClusterOperationInterface) {
 
 // BatchDeleteNode  batch delete nodes.
 func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.ArrangeDeleteNodeOption,
-	bkSupplierAccount string) error {
+	supplierAccount string) error {
 
 	// 1、检查是否存在这些node，必须都存在才能删除否则返回报错
 	cond := make([]map[string]interface{}, 0)
@@ -73,6 +75,7 @@ func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.Arrange
 			cond = append(cond, map[string]interface{}{
 				types.ClusterUIDField: clusterUid,
 				types.NodeField:       map[string]interface{}{common.BKDBIN: names},
+				common.BKOwnerIDField: supplierAccount,
 			})
 		}
 	} else {
@@ -80,6 +83,7 @@ func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.Arrange
 			cond = append(cond, map[string]interface{}{
 				types.BKClusterIDFiled: clusterID,
 				types.BKNodeIDField:    map[string]interface{}{common.BKDBIN: ids},
+				common.BKOwnerIDField:  supplierAccount,
 			})
 		}
 	}
@@ -112,7 +116,7 @@ func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.Arrange
 
 // DeleteCluster delete cluster instance.
 func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption,
-	bkSupplierAccount string) error {
+	supplierAccount string) error {
 
 	cond := make([]map[string]interface{}, 0)
 	if len(option.Uids) > 0 {
@@ -122,7 +126,7 @@ func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClu
 					common.BKDBIN: option.Uids,
 				},
 				common.BKAppIDField:   bizID,
-				common.BKOwnerIDField: bkSupplierAccount,
+				common.BKOwnerIDField: supplierAccount,
 			},
 		}
 	}
@@ -134,7 +138,7 @@ func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClu
 					common.BKDBIN: option.IDs,
 				},
 				common.BKAppIDField:   bizID,
-				common.BKOwnerIDField: bkSupplierAccount,
+				common.BKOwnerIDField: supplierAccount,
 			},
 		}
 	}
@@ -160,7 +164,7 @@ func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClu
 
 	// whether the associated resources under the cluster have been deleted.
 	// Such as namespace, node, deployment, pod, container.
-	exsit, cErr := b.isExsitKubeResource(kit, option, bizID, bkSupplierAccount)
+	exsit, cErr := b.isExsitKubeResource(kit, option, bizID, supplierAccount)
 	if cErr != nil {
 		blog.Errorf("failed to obtain resources under the cluster, bizID: %d, option: %+v, err: %v, rid: %s",
 			bizID, option, cErr, kit.Rid)
@@ -250,8 +254,33 @@ func (b *kube) isExsitKubeResource(kit *rest.Kit, option *types.DeleteClusterOpt
 	return false, nil
 }
 
+func (b *kube) batchCreatePodAndContainer(kit *rest.Kit, data *types.CreatePodsReq, bizID int64,
+	supplierAccount string) ([]int64, error) {
+
+	// 1、校验这个pod不能存在
+	// 2、创建pod
+	// 3、再创建pod下面的containers
+	//for _, pod := range data.Pods {
+	//
+	//}
+	return nil, nil
+}
+
+// BatchCreatePod batch create pod.
+// 应该是三种场景:1、仅创建pod 。2、仅创建容器。3、创建pod的同时创建容器。
+func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsReq, bizID int64, supplierAccount string) (
+	[]int64, error) {
+
+	//ids, err := b.batchCreatePodAndContainer(kit, data, bizID, supplierAccount)
+	//if err != nil {
+	//	return []int64{}, nil
+	//}
+
+	return nil, nil
+}
+
 // BatchCreateNode batch create node.
-func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesReq, bizID int64, bkSupplierAccount string) (
+func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesReq, bizID int64, supplierAccount string) (
 	[]int64, error) {
 
 	names := make([]string, 0)
@@ -265,7 +294,7 @@ func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesReq, bizID 
 			common.BKDBIN: names,
 		},
 		common.BKAppIDField:   bizID,
-		common.BKOwnerIDField: bkSupplierAccount,
+		common.BKOwnerIDField: supplierAccount,
 	}
 
 	counts, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
@@ -287,20 +316,32 @@ func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesReq, bizID 
 	return result, nil
 }
 
+// UpdateClusterFields 更新集群字段
+func (b *kube) UpdateClusterFields(kit *rest.Kit, data *types.UpdateClusterOption, bizID int64,
+	supplierAccount string) error {
+
+	err := b.clientSet.CoreService().Container().UpdateClusterFields(kit.Ctx, kit.Header, bizID, supplierAccount, data)
+	if err != nil {
+		blog.Errorf("create business failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
+		return err
+	}
+	return nil
+}
+
 // CreateCluster create container  cluster
-func (b *kube) CreateCluster(kit *rest.Kit, data *types.ClusterBaseFields, bizID int64, bkSupplierAccount string) (
+func (b *kube) CreateCluster(kit *rest.Kit, data *types.ClusterBaseFields, bizID int64, supplierAccount string) (
 	int64, error) {
 
 	cond := map[string]interface{}{common.BKDBOR: []map[string]interface{}{
 		{
 			common.BKFieldName:    *data.Name,
 			common.BKAppIDField:   bizID,
-			common.BKOwnerIDField: bkSupplierAccount,
+			common.BKOwnerIDField: supplierAccount,
 		},
 		{
 			common.BKFieldName:    *data.Uid,
 			common.BKAppIDField:   bizID,
-			common.BKOwnerIDField: bkSupplierAccount,
+			common.BKOwnerIDField: supplierAccount,
 		},
 	},
 	}

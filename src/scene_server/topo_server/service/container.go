@@ -66,7 +66,7 @@ func (s *Service) ListContainer(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err = req.BuildCond(ctx.Kit.SupplierAccount)
+	cond, err = req.BuildCond()
 	if err != nil {
 		blog.Errorf("build query container condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -217,6 +217,41 @@ func reorganizeDeleteOption(option *types.BatchDeleteNodeOption) *types.ArrangeD
 
 // BatchCreatePod batch create pods.
 func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
+	data := new(types.CreatePodsReq)
+	if err := ctx.DecodeInto(data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := data.Validate(); err != nil {
+		blog.Errorf("batch create nodes param verification failed, data: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	var ids []int64
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		var err error
+		ids, err = s.Logics.ContainerOperation().BatchCreatePod(ctx.Kit, data, bizID, ctx.Kit.SupplierAccount)
+		if err != nil {
+			blog.Errorf("create business cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(ids)
 
 }
 
@@ -275,7 +310,16 @@ func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathR
 		Fields:         []string{types.BKIDField, types.KubeNameField},
 		DisableCounter: true,
 	}
-	blog.Errorf("filter: %+v, tableNames: %+v", filter, tableNames)
+
+	// 按照拓扑的展示，将folder放到最前面
+	if tableNames[0] == types.BKTableNameBaseNamespace {
+		result.Info = append(result.Info, types.KubeObjectInfo{
+			ID:   types.KubeFolderID,
+			Name: types.KubeFolderName,
+			Kind: types.KubeFolder,
+		})
+	}
+
 	for _, tableName := range tableNames {
 		// 根据转化的对象找到对应的表，然后根据id 应该是根据不同的
 		switch tableName {
@@ -315,8 +359,6 @@ func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathR
 					Kind: types.KubeNamespace,
 				})
 			}
-			return result, nil
-
 		default:
 
 			option := &types.QueryReq{
@@ -344,53 +386,60 @@ func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathR
 					Kind: kind[tableName],
 				})
 			}
-			return result, nil
 		}
 	}
 
 	return result, nil
 }
 
-func combinationConditions(infos []types.KubeResourceInfo) ([]map[string]interface{}, map[string]string) {
+// 这里整理出来条件如果是folder类型的话，实际上pod数应该是0
+// folder的主机数量实际上是需要看clusterID的对应的node表中的hasPod为false的hostID进行去重之后的本业务主机数量。
+func combinationConditions(infos []types.KubeResourceInfo, bizID int64,
+	supplierAccount string) []map[string]interface{} {
 
 	filters := make([]map[string]interface{}, 0)
-	idObjectMap := make(map[string]string)
+	blog.Errorf("0000000000 infos: %+v", infos)
 	// 判断拓扑的资源的类别，分为cluster，namespace、和workload三大类。
 	for _, info := range infos {
 		switch info.Kind {
+		case types.KubeFolder:
+			filters = append(filters, map[string]interface{}{
+				types.BKClusterIDFiled:       info.ID,
+				types.HasPodField:            false,
+				types.BKBizIDField:           bizID,
+				types.BKSupplierAccountField: supplierAccount,
+			})
+
 		case types.KubeCluster:
 			filters = append(filters, map[string]interface{}{
-				types.BKClusterIDFiled: info.ID,
+				types.BKClusterIDFiled:       info.ID,
+				types.BKBizIDField:           bizID,
+				types.BKSupplierAccountField: supplierAccount,
 			})
-			if _, ok := idObjectMap[types.BKClusterIDFiled]; !ok {
-				idObjectMap[types.BKClusterIDFiled] = types.KubeCluster
-			}
 
-		case types.NamespaceField:
+		case types.KubeNamespace:
 			filters = append(filters, map[string]interface{}{
-				types.BKNamespaceIDField: info.ID,
+				types.BKNamespaceIDField:     info.ID,
+				types.BKBizIDField:           bizID,
+				types.BKSupplierAccountField: supplierAccount,
 			})
 
-			if _, ok := idObjectMap[types.BKNamespaceIDField]; !ok {
-				idObjectMap[types.BKNamespaceIDField] = types.NamespaceField
-			}
 		default:
 			filters = append(filters, map[string]interface{}{
-				types.ReferenceID:   info.ID,
-				types.ReferenceKind: info.Kind,
+				types.RefIDField:             info.ID,
+				types.RefKindField:           info.Kind,
+				types.BKBizIDField:           bizID,
+				types.BKSupplierAccountField: supplierAccount,
 			})
-			if _, ok := idObjectMap[info.Kind]; !ok {
-				idObjectMap[info.Kind] = types.KubeWorkload
-			}
 		}
 	}
-	return filters, idObjectMap
+	return filters
 }
 
 // CountKubeTopoHostsOrPods 计算节点的数量
 func (s *Service) CountKubeTopoHostsOrPods(ctx *rest.Contexts) {
 
-	option := new(types.KubeTopoCountReq)
+	option := new(types.KubeTopoCountOption)
 	if err := ctx.DecodeInto(option); err != nil {
 		blog.Errorf("failed to parse the params, error: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
@@ -415,29 +464,56 @@ func (s *Service) CountKubeTopoHostsOrPods(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	filters, idObjectMap := combinationConditions(option.ResourceInfos)
+
+	filters := combinationConditions(option.ResourceInfos, bizID, ctx.Kit.SupplierAccount)
 	result := make([]types.KubeTopoCountRsp, 0)
 	if kind == types.KubePodKind {
 		// 这里需要限制一下，分10批次，每次10个进行查询，之后进行组合
+		// filters 这里包含了folder的条件，在查询pod的时候需要将folder的条件过滤出来 并且赋予0值剩余的再进行查询pod数量。
+		podFilters := make([]map[string]interface{}, 0)
+
+		resIDMap := make(map[int]struct{})
+		for id, filter := range filters {
+			// 如果filter中含有 "has_pod"字段 那么说明folder节点，
+			if _, ok := filter[types.HasPodField]; ok {
+				resIDMap[id] = struct{}{}
+				continue
+			}
+			// 重新整理需要查询pod的条件
+			podFilters = append(podFilters, filter)
+		}
 		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
-			types.BKTableNameBasePod, filters)
+			types.BKTableNameBasePod, podFilters)
 		if err != nil {
-			blog.Errorf("count node failed, cond: %#v, err: %v, rid: %s", filters, err, ctx.Kit.Rid)
+			blog.Errorf("count pod failed, cond: %#v, err: %v, rid: %s", podFilters, err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
-		for id, count := range counts {
+
+		var idx int
+		for id := range option.ResourceInfos {
+			if _, ok := resIDMap[id]; ok {
+				result = append(result, types.KubeTopoCountRsp{
+					Kind:  option.ResourceInfos[id].Kind,
+					ID:    option.ResourceInfos[id].ID,
+					Count: 0,
+				})
+				continue
+			}
+
 			result = append(result, types.KubeTopoCountRsp{
 				Kind:  option.ResourceInfos[id].Kind,
 				ID:    option.ResourceInfos[id].ID,
-				Count: count,
+				Count: counts[idx],
 			})
+			idx++
 		}
+
 		ctx.RespEntity(result)
 		return
 	}
 
-	result, err = s.getTopoHostNumber(ctx, filters, bizID, idObjectMap)
+	result, err = s.getTopoHostNumber(ctx, option.ResourceInfos, filters, bizID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -445,66 +521,74 @@ func (s *Service) CountKubeTopoHostsOrPods(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-func (s *Service) getTopoHostNumber(ctx *rest.Contexts, filters []map[string]interface{}, bizID int64,
-	idObjectMap map[string]string) ([]types.KubeTopoCountRsp, error) {
+func (s *Service) getTopoHostNumber(ctx *rest.Contexts, resourceInfos []types.KubeResourceInfo,
+	filters []map[string]interface{}, bizID int64) (
+	[]types.KubeTopoCountRsp, error) {
 
 	// 如果是要获取host的话，1、这块是需要返回所有的hostID。2、对这些hostID 进行去重。3、将这些hostID 和业务ID 组合起来查一下
 	// modulehostconfig 表，最终得到的数量才是真正的主机数
 	result := make([]types.KubeTopoCountRsp, 0)
-	for _, filter := range filters {
-		hostIDs, err := s.getHostIDsByCond(ctx.Kit, filter, types.BKTableNameBasePod)
-		if err != nil {
-			return nil, err
-		}
 
-		count, err := s.hasHostNumber(ctx.Kit, bizID, hostIDs)
-		if err != nil {
-			blog.Errorf("count host failed, cond: %#v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
-			return nil, err
-		}
+	for id, filter := range filters {
 
-		if types.IsWorkLoadKind(util.GetStrByInterface(filter["reference_kind"])) {
-			id, _ := util.GetInt64ByInterface(filter["bk_reference_id"])
+		// 得判断一下是否是folder 如果是folder那么需要查的是node表
+		if resourceInfos[id].Kind == types.KubeFolder {
+			count, err := s.getHostIDsByCond(ctx.Kit, filter, types.BKTableNameBaseNode, bizID)
+			if err != nil {
+				return nil, err
+			}
 			result = append(result, types.KubeTopoCountRsp{
-				Kind:  util.GetStrByInterface(filter["reference_kind"]),
+				Kind:  resourceInfos[id].Kind,
+				ID:    resourceInfos[id].ID,
+				Count: count,
+			})
+			continue
+		}
+
+		// 此处计算的是 除了folder之外的pod表中的主机数量
+		count, err := s.getHostIDsByCond(ctx.Kit, filter, types.BKTableNameBasePod, bizID)
+		if err != nil {
+			return nil, err
+		}
+
+		if types.IsWorkLoadKind(util.GetStrByInterface(filter[types.RefKindField])) {
+			id, _ := util.GetInt64ByInterface(filter[types.RefIDField])
+			result = append(result, types.KubeTopoCountRsp{
+				Kind:  util.GetStrByInterface(filter[types.RefKindField]),
 				ID:    id,
 				Count: count,
 			})
 			continue
 		}
-		for k, v := range filter {
-			id, _ := util.GetInt64ByInterface(v)
-			result = append(result, types.KubeTopoCountRsp{
-				Kind:  idObjectMap[k],
-				ID:    id,
-				Count: count,
-			})
+
+		var (
+			folderHostCount int64
+		)
+
+		if clusterID, ok := filter[types.BKClusterIDFiled]; ok {
+			// 计算集群在folder下的主机数量
+			nodeFilter := mapstr.MapStr{
+				types.BKClusterIDFiled:       clusterID,
+				types.HasPodField:            false,
+				types.BKBizIDField:           bizID,
+				types.BKSupplierAccountField: ctx.Kit.SupplierAccount,
+			}
+			folderHostCount, err = s.getHostIDsByCond(ctx.Kit, nodeFilter, types.BKTableNameBaseNode, bizID)
+			if err != nil {
+				return nil, err
+			}
 		}
+
+		result = append(result, types.KubeTopoCountRsp{
+			Kind:  resourceInfos[id].Kind,
+			ID:    resourceInfos[id].ID,
+			Count: count + folderHostCount,
+		})
 	}
 	return result, nil
 }
 
-// HasHosts check if this business still has hosts.
-func (s *Service) hasHostNumber(kit *rest.Kit, bizID int64, hostIDs []int64) (int64, error) {
-
-	option := []map[string]interface{}{{
-		common.BKAppIDField: bizID,
-		common.BKHostIDField: map[string]interface{}{
-			common.BKDBIN: hostIDs,
-		},
-	}}
-
-	rsp, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-		common.BKTableNameModuleHostConfig, option)
-	if err != nil {
-		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, kit.Rid)
-		return 0, err
-	}
-
-	return rsp[0], nil
-}
-
-func (s *Service) getHostIDsByCond(kit *rest.Kit, cond mapstr.MapStr, table string) ([]int64, error) {
+func (s *Service) getHostIDsByCond(kit *rest.Kit, cond mapstr.MapStr, table string, bizID int64) (int64, error) {
 
 	query := &metadata.QueryCondition{
 		Condition: cond,
@@ -518,7 +602,7 @@ func (s *Service) getHostIDsByCond(kit *rest.Kit, cond mapstr.MapStr, table stri
 	insts, err := s.Engine.CoreAPI.CoreService().Kube().FindInst(kit.Ctx, kit.Header, option)
 	if err != nil {
 		blog.Errorf("find inst failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
-		return nil, err
+		return 0, err
 	}
 
 	hostIDMap := make(map[int64]struct{})
@@ -527,7 +611,7 @@ func (s *Service) getHostIDsByCond(kit *rest.Kit, cond mapstr.MapStr, table stri
 		if err != nil {
 			blog.Errorf("get inst attribute failed, attr: %s, node: %v, err: %v, rid: %s", common.BKHostIDField, inst,
 				err, kit.Rid)
-			return nil, err
+			return 0, err
 		}
 		hostIDMap[hostID] = struct{}{}
 	}
@@ -537,12 +621,26 @@ func (s *Service) getHostIDsByCond(kit *rest.Kit, cond mapstr.MapStr, table stri
 	for id := range hostIDMap {
 		hostIDs = append(hostIDs, id)
 	}
-	blog.Errorf("111111111111111 option: %+v, hostIDs: %v", option, hostIDs)
 
-	return hostIDs, nil
+	countOp := []map[string]interface{}{{
+		common.BKAppIDField: bizID,
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: hostIDs,
+		},
+	}}
+
+	rsp, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameModuleHostConfig, countOp)
+	if err != nil {
+		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, kit.Rid)
+		return 0, err
+	}
+
+	return rsp[0], nil
+
 }
 
-// SearchKubeTopoPath 查询容器拓扑路径
+// SearchKubeTopoPath querying container topology paths.
 func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 
 	option := new(types.KubeTopoPathReq)
@@ -585,6 +683,10 @@ func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 				blog.Errorf("count node failed, err: %v, cond: %#v, rid: %s", err, filter, ctx.Kit.Rid)
 				ctx.RespAutoError(err)
 				return
+			}
+			// 对于cluster下一级拓扑，除了namespace 还需要增加一个folder
+			if tableName == types.BKTableNameBaseNamespace {
+				counts[0] += 1
 			}
 			count += counts[0]
 		}
@@ -629,7 +731,7 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 	if searchCond.Filter != nil {
 		cond, errKey, rawErr := searchCond.Filter.ToMgo()
 		if rawErr != nil {
-			blog.Errorf("parse biz filter(%#v) failed, err: %v, rid: %s", searchCond.Filter, rawErr, ctx.Kit.Rid)
+			blog.Errorf("parse biz failed, filter: %+v, err: %v, rid: %s", searchCond.Filter, rawErr, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey))
 			return
 		}
@@ -655,7 +757,7 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
 			types.BKTableNameBaseNode, filter)
 		if err != nil {
-			blog.Errorf("count node failed, err: %v, cond: %#v, rid: %s", err, filter, ctx.Kit.Rid)
+			blog.Errorf("count node failed, cond: %+v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
@@ -670,11 +772,10 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 	}
 	result, err := s.Logics.ContainerOperation().SearchNode(ctx.Kit, query)
 	if err != nil {
-		blog.Errorf("search cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("search node failed, filter: %+v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
 		return
 	}
-	ctx.RespEntity(result.Data)
-
+	ctx.RespEntityWithCount(0, result.Data)
 }
 
 // SearchClusters 根据用户指定的条件查询cluster
@@ -739,33 +840,32 @@ func (s *Service) SearchClusters(ctx *rest.Contexts) {
 		blog.Errorf("search cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
 	}
-	ctx.RespEntity(result.Data)
+	ctx.RespEntityWithCount(0, result.Data)
 }
 
-// CreateCluster create a container cluster
-func (s *Service) CreateCluster(ctx *rest.Contexts) {
-	data := new(types.ClusterBaseFields)
+// UpdateClusterFields 更新集群字段
+func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
+	// 还是用之前的结构体作为参数，json解析后看下不空的字段，根据tag获取是否是可编辑的字段，如果是可编辑的字段那么可以更新，如果是不可编辑字
+	// 段那么直接报错
+	data := new(types.UpdateClusterOption)
 	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if err := data.ValidateCreate(); err != nil {
-		blog.Errorf("validate create container cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	if err := data.Validate(); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	var id int64
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		id, err = s.Logics.ContainerOperation().CreateCluster(ctx.Kit, data, bizID, ctx.Kit.SupplierAccount)
+		err = s.Logics.ContainerOperation().UpdateClusterFields(ctx.Kit, data, bizID, ctx.Kit.SupplierAccount)
 		if err != nil {
 			blog.Errorf("create cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -778,11 +878,11 @@ func (s *Service) CreateCluster(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(id)
+	ctx.RespEntity(nil)
 }
 
-// BatchCreatePods create pods in batches
-func (s *Service) BatchCreatePods(ctx *rest.Contexts) {
+// CreateCluster create a container cluster
+func (s *Service) CreateCluster(ctx *rest.Contexts) {
 	data := new(types.ClusterBaseFields)
 	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)

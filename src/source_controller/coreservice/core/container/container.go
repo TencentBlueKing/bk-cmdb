@@ -18,6 +18,7 @@
 package container
 
 import (
+	"configcenter/src/kube/orm"
 	"time"
 
 	"configcenter/src/common"
@@ -248,6 +249,55 @@ func (p *containerOperation) SearchCluster(kit *rest.Kit, input *metadata.QueryC
 	result := &types.ResponseCluster{Data: clusters}
 
 	return result, nil
+}
+
+// CreateContainer create pod instance.
+func (p *containerOperation) CreateContainer(kit *rest.Kit, bizID int64, data *types.ContainerCoreInfo) (int64,
+	errors.CCErrorCoder) {
+	return 0, nil
+}
+
+// CreatePod create pod instance.
+func (p *containerOperation) CreatePod(kit *rest.Kit, bizID int64, data *types.PodCoreInfo) (int64,
+	errors.CCErrorCoder) {
+	return 0, nil
+}
+
+// UpdateClusterFields create cluster instance.
+func (p *containerOperation) UpdateClusterFields(kit *rest.Kit, bizID int64, supplierAccount string,
+	data *types.UpdateClusterOption) errors.CCErrorCoder {
+
+	for _, one := range data.Cluster {
+		filter := make(map[string]interface{})
+		if one.ID != 0 {
+			filter = map[string]interface{}{
+				types.BKIDField:       one.ID,
+				types.BKBizIDField:    bizID,
+				common.BKOwnerIDField: supplierAccount,
+			}
+		}
+		if one.UID != "" {
+			filter = map[string]interface{}{
+				types.UidField:        one.UID,
+				types.BKBizIDField:    bizID,
+				common.BKOwnerIDField: supplierAccount,
+			}
+		}
+		opts := orm.NewFieldOptions().AddIgnoredFields(common.BKFieldID, types.ClusterUIDField, common.BKFieldName)
+		updateData, err := orm.GetUpdateFieldsWithOption(one, opts)
+		if err != nil {
+			blog.Errorf("get update data failed, data: %v, err: %v, rid: %s", one, err, kit.Rid)
+
+			return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+		}
+		err = mongodb.Client().Table(types.BKTableNameBaseCluster).Update(kit.Ctx, filter, updateData)
+		if err != nil {
+			blog.Errorf("update namespace failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
+				err, kit.Rid)
+			return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+		}
+	}
+	return nil
 }
 
 // CreateCluster create cluster instance.

@@ -96,6 +96,8 @@ func GetKubeSubTopoObject(object string, id int64, bizID int64) (string, map[str
 		return KubeWorkload, map[string]interface{}{
 			BKNamespaceIDField: id,
 		}
+	case KubeFolder:
+		return "", map[string]interface{}{}
 	default:
 		return KubePod, map[string]interface{}{}
 	}
@@ -119,7 +121,7 @@ func GetWorkLoadTables() []string {
 // IsContainerTopoResource 判断是否是容器拓扑对象
 func IsContainerTopoResource(object string) bool {
 	switch object {
-	case KubeBusiness, KubeCluster, KubeNode, KubeNamespace, KubeWorkload, KubePod, KubeContainer:
+	case KubeBusiness, KubeCluster, KubeNode, KubeNamespace, KubeWorkload, KubePod, KubeContainer, KubeFolder:
 		return true
 	default:
 		return false
@@ -149,7 +151,7 @@ func GetCollectionWithObject(object string) ([]string, error) {
 // IsKubeResourceKind 判断是否是容器资源对象
 func IsKubeResourceKind(object string) bool {
 	switch object {
-	case KubeBusiness, KubeCluster, KubeNode, KubeNamespace, string(KubeDeployment),
+	case KubeBusiness, KubeCluster, KubeNode, KubeFolder, KubeNamespace, string(KubeDeployment),
 		string(KubeStatefulSet), string(KubeDaemonSet), string(KubeGameStatefulSet), string(KubeGameDeployment),
 		string(KubeCronJob), string(KubeJob), string(KubePodWorkload):
 		return true
@@ -208,4 +210,11 @@ func IsWorkLoadKind(kind string) bool {
 	default:
 		return false
 	}
+}
+
+// KubeAttrsRsp 容器资源属性回应
+type KubeAttrsRsp struct {
+	Field    string `json:"field"`
+	Type     string `json:"type"`
+	Required bool   `json:"required"`
 }

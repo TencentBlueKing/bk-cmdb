@@ -18,8 +18,6 @@
 package service
 
 import (
-	"fmt"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -70,9 +68,10 @@ func (s *Service) FindNodePathForHost(ctx *rest.Contexts) {
 			clusterID := relation.NodeIDWithClusterID[id]
 			bizID := relation.NodeIDWithBizID[id]
 			path := types.NodePath{
-				Path:      fmt.Sprintf("%s##%s", bizIDWithName[bizID], relation.ClusterIDWithUid[clusterID]),
-				ClusterID: clusterID,
-				BizID:     bizID,
+				BizID:       bizID,
+				BizName:     bizIDWithName[bizID],
+				ClusterID:   clusterID,
+				ClusterName: relation.ClusterIDWithName[clusterID],
 			}
 			paths[idx] = path
 		}
@@ -91,7 +90,7 @@ func (s *Service) FindNodePathForHost(ctx *rest.Contexts) {
 func (s *Service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.HostNodeRelation, error) {
 	cond := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDs}}
 	fields := []string{
-		common.BKFieldID, common.BKAppIDField, types.BKClusterIDFiled, types.ClusterUIDField, common.BKHostIDField,
+		common.BKFieldID, common.BKAppIDField, types.BKClusterIDFiled, common.BKHostIDField,
 	}
 	query := &metadata.QueryCondition{
 		Condition: cond,
@@ -112,7 +111,7 @@ func (s *Service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.Ho
 	hostWithNode := make(map[int64][]mapstr.MapStr)
 	nodeIDWithBizID := make(map[int64]int64)
 	nodeIDWithClusterID := make(map[int64]int64)
-	clusterIDWithUid := make(map[int64]string)
+	clusterIDs := make([]int64, 0)
 	for _, node := range nodes.Info {
 		bizID, err := node.Int64(common.BKAppIDField)
 		if err != nil {
@@ -146,13 +145,13 @@ func (s *Service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.Ho
 		}
 		nodeIDWithClusterID[id] = clusterID
 
-		clusterUID, err := node.String(types.ClusterUIDField)
-		if err != nil {
-			blog.Errorf("get node attribute failed, attr: %s, node: %v, err: %v, rid: %s", types.ClusterUIDField, node,
-				err, kit.Rid)
-			return nil, err
-		}
-		clusterIDWithUid[clusterID] = clusterUID
+		clusterIDs = append(clusterIDs, clusterID)
+	}
+
+	clusterIDWithName, err := s.getClusterIDWithName(kit, clusterIDs)
+	if err != nil {
+		blog.Errorf("get cluster id with name failed, clusterIDs: %v, err: %v, rid: %s", clusterIDs, err, kit.Rid)
+		return nil, err
 	}
 
 	return &types.HostNodeRelation{
@@ -160,8 +159,47 @@ func (s *Service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.Ho
 		HostWithNode:        hostWithNode,
 		NodeIDWithBizID:     nodeIDWithBizID,
 		NodeIDWithClusterID: nodeIDWithClusterID,
-		ClusterIDWithUid:    clusterIDWithUid,
+		ClusterIDWithName:   clusterIDWithName,
 	}, nil
+}
+
+func (s *Service) getClusterIDWithName(kit *rest.Kit, clusterIDs []int64) (map[int64]string, error) {
+	cond := mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: clusterIDs}}
+	fields := []string{common.BKFieldID, common.BKFieldName}
+	query := &metadata.QueryCondition{
+		Condition: cond,
+		Fields:    fields,
+	}
+	option := &types.QueryReq{
+		Table:     types.BKTableNameBaseCluster,
+		Condition: query,
+	}
+	var err error
+	result, err := s.Engine.CoreAPI.CoreService().Kube().FindInst(kit.Ctx, kit.Header, option)
+	if err != nil {
+		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
+		return nil, err
+	}
+
+	idWithName := make(map[int64]string)
+	for _, cluster := range result.Info {
+		id, err := cluster.Int64(common.BKFieldID)
+		if err != nil {
+			blog.Errorf("get node attribute failed, attr: %s, cluster: %v, err: %v, rid: %s", common.BKFieldID, cluster,
+				err, kit.Rid)
+			return nil, err
+		}
+
+		name, err := cluster.String(common.BKFieldName)
+		if err != nil {
+			blog.Errorf("get node attribute failed, attr: %s, cluster: %v, err: %v, rid: %s", common.BKFieldName,
+				cluster, err, kit.Rid)
+			return nil, err
+		}
+		idWithName[id] = name
+	}
+
+	return idWithName, nil
 }
 
 func (s *Service) getBizIDWithName(kit *rest.Kit, bizIDs []int64) (map[int64]string, error) {

@@ -31,6 +31,9 @@ const (
 	// KubeNamespace k8s namespace type
 	KubeNamespace = "namespace"
 
+	// KubeFolder k8s folder type
+	KubeFolder = "folder"
+
 	// KubeWorkload k8s workload type
 	KubeWorkload = "workload"
 
@@ -68,11 +71,6 @@ const (
 
 	// KubePodWorkload k8s pod workload type
 	KubePodWorkload WorkloadType = "pods"
-)
-
-const (
-	ReferenceKind = "reference_kind"
-	ReferenceID   = "bk_reference_id"
 )
 
 // table names
@@ -206,6 +204,9 @@ const (
 	// TaintsField node taints field
 	TaintsField = "taints"
 
+	// HasPodField node taints field
+	HasPodField = "has_pod"
+
 	// UnschedulableField node unschedulable field
 	UnschedulableField = "unschedulable"
 
@@ -310,6 +311,13 @@ const (
 
 	// NodeNameFiled pod relate node name field
 	NodeNameFiled = "node_name"
+)
+
+const (
+	// FolderID 每个cluster只有唯一的 folder，此节点没有表，统一用 999 表示 folder的ID，如果需要确认具体的 folder 需要与clusterID
+	// 结合起来使用
+	KubeFolderID   = 999
+	KubeFolderName = "空Pod节点"
 )
 
 // container field names

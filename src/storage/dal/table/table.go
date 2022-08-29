@@ -32,6 +32,8 @@ type Fields struct {
 	fields []string
 	// fieldType the type corresponding to the field.
 	fieldType map[string]enumor.FieldType
+	// isEditable the type corresponding to the field.
+	isEditable map[string]bool
 }
 
 // FieldsDescriptors table of field descriptor.
@@ -43,6 +45,7 @@ func MergeFields(all ...FieldsDescriptors) *Fields {
 		descriptors: make([]FieldDescriptor, 0),
 		fields:      make([]string, 0),
 		fieldType:   make(map[string]enumor.FieldType),
+		isEditable:  make(map[string]bool),
 	}
 
 	if len(all) == 0 {
@@ -54,6 +57,7 @@ func MergeFields(all ...FieldsDescriptors) *Fields {
 			result.descriptors = append(result.descriptors, f)
 			result.fieldType[f.Field] = f.Type
 			result.fields = append(result.fields, f.Field)
+			result.isEditable[f.Field] = f.IsEditable
 		}
 	}
 	return result
@@ -63,6 +67,26 @@ func MergeFields(all ...FieldsDescriptors) *Fields {
 func (f Fields) FieldsType() map[string]enumor.FieldType {
 	copied := make(map[string]enumor.FieldType)
 	for k, v := range f.fieldType {
+		copied[k] = v
+	}
+
+	return copied
+}
+
+// FieldsEditable returns the corresponding editable of all fields.
+func (f Fields) FieldsEditable() map[string]bool {
+	copied := make(map[string]bool)
+	for k, v := range f.isEditable {
+		copied[k] = v
+	}
+
+	return copied
+}
+
+// FieldsType returns the corresponding type of all fields.
+func (f Fields) IsFieldEditable() map[string]bool {
+	copied := make(map[string]bool)
+	for k, v := range f.isEditable {
 		copied[k] = v
 	}
 

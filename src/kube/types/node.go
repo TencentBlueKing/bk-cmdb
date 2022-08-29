@@ -66,7 +66,11 @@ type NodeBaseFields struct {
 	// ClusterID the node ID to which the cluster belongs
 	ClusterID *int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
 	// ClusterUID the node ID to which the cluster belongs
-	ClusterUID       *string              `json:"cluster_uid" bson:"cluster_uid"`
+	ClusterUID *string `json:"cluster_uid" bson:"cluster_uid"`
+	// HasPod this field indicates whether there is a pod in the node.
+	// if there is a pod, this field is true. If there is no pod, this
+	// field is false. this field is false when node is created by default.
+	HasPod           bool                 `json:"has_pod" bson:"has_pod"`
 	Name             *string              `json:"name" bson:"name"`
 	Roles            *string              `json:"roles" bson:"roles"`
 	Labels           enumor.MapStringType `json:"labels" bson:"labels"`
@@ -80,18 +84,18 @@ type NodeBaseFields struct {
 	PodCidr          *string              `json:"pod_cidr" bson:"pod_cidr"`
 }
 
-// CreateNodesReq 批量创建node请求
+// CreateNodesReq create node requests in batches.
 type CreateNodesReq struct {
 	Nodes []NodeBaseFields `json:"nodes"`
 }
 
-// ArrangeDeleteNodeOption 整理后的删除Node请求
+// ArrangeDeleteNodeOption cleaned up delete Node request
 type ArrangeDeleteNodeOption struct {
 	Option map[interface{}][]interface{} `json:"option"`
 	Flag   bool                          `json:"flag"`
 }
 
-// CreateNodesResult 创建集群结果
+// CreateNodesResult create node results in batches.
 type CreateNodesResult struct {
 	metadata.BaseResp
 	Info []int64 `json:"ids" bson:"ids"`
@@ -122,13 +126,6 @@ func (option *QueryNodeReq) Validate() ccErr.RawErrorInfo {
 
 	if err := option.Page.ValidateWithEnableCount(false, common.BKMaxLimitSize); err.ErrCode != 0 {
 		return err
-	}
-
-	if option.ClusterID == 0 && option.ClusterUID == 0 && option.HostID == 0 {
-		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{errors.New("the param cluster_id and cluster_uid cannot be empty at the same time")},
-		}
 	}
 
 	if option.ClusterUID > 0 && option.ClusterID > 0 {
@@ -195,8 +192,14 @@ type SearchHostReq struct {
 	NamespaceID int64                    `json:"bk_namespace_id"`
 	WorkloadID  int64                    `json:"bk_workload_id"`
 	WlKind      WorkloadType             `json:"kind"`
-	NodeFilter  *filter.Expression       `json:"node_filter"`
+	NodeCond    *NodeCond                `json:"node_cond"`
 	Ip          metadata.IPInfo          `json:"ip"`
 	HostCond    metadata.SearchCondition `json:"host_condition"`
 	Page        metadata.BasePage        `json:"page"`
+}
+
+// NodeCond node condition for search host
+type NodeCond struct {
+	Filter *filter.Expression `json:"filter"`
+	Fields []string           `json:"fields"`
 }

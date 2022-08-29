@@ -102,6 +102,78 @@ func (st *Container) SearchNode(ctx context.Context, header http.Header, input *
 	return &ret.Data, nil
 }
 
+// CreateContainer create cluster.
+func (st *Container) CreateContainer(ctx context.Context, header http.Header, bizID int64,
+	data *types.ContainerCoreInfo) (*types.CreateContainerResult, errors.CCErrorCoder) {
+	ret := new(types.CreateContainerResult)
+	subPath := "/kube/create/container/%d/instance"
+	err := st.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("create pod failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+
+	return ret, nil
+}
+
+// CreatePod create cluster.
+func (st *Container) CreatePod(ctx context.Context, header http.Header, bizID int64,
+	data *types.PodCoreInfo) (*types.CreatePodResult, errors.CCErrorCoder) {
+	ret := new(types.CreatePodResult)
+	subPath := "/kube/create/pod/%d/instance"
+	err := st.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("create pod failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+
+	return ret, nil
+}
+
+// UpdateClusterFields update cluster fields.
+func (st *Container) UpdateClusterFields(ctx context.Context, header http.Header, bizID int64, supplierAccount string,
+	data *types.UpdateClusterOption) errors.CCErrorCoder {
+	ret := new(types.CreateClusterResult)
+	subPath := "/kube/updatemany/cluster/%s/%d/instance"
+	err := st.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, supplierAccount, bizID).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("create cluster failed, http request failed, err: %+v", err)
+		return errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.CCError()
+	}
+
+	return nil
+}
+
 // CreateCluster create cluster.
 func (st *Container) CreateCluster(ctx context.Context, header http.Header, bizID int64,
 	data *types.ClusterBaseFields) (*types.CreateClusterResult, errors.CCErrorCoder) {

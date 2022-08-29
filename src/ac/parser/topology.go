@@ -40,7 +40,8 @@ func (ps *parseStream) topology() *parseStream {
 		audit().
 		fullTextSearch().
 		cloudArea().
-		businessSet()
+		businessSet().
+		container()
 
 	return ps
 }
@@ -323,8 +324,11 @@ func (ps *parseStream) business() *parseStream {
 var (
 	findKubeAttrsRegexp     = regexp.MustCompile(`^/api/v3/kube/find/{object}/attributes$`)
 	createKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/create/cluster/bk_biz_id/{bk_biz_id}$`)
-	deleteKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/delete/cluster/bk_biz_id/{bk_biz_id}$`)
-	findKubeClusterRegexp   = regexp.MustCompile(`^/api/v3/kube/findmany/cluster/bk_biz_id/{bk_biz_id}$`)
+	updateKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/cluster/bk_biz_id/{bk_biz_id}$`)
+
+	deleteKubeClusterRegexp     = regexp.MustCompile(`^/api/v3/kube/delete/cluster/bk_biz_id/{bk_biz_id}$`)
+	findKubeClusterRegexp       = regexp.MustCompile(`^/api/v3/kube/findmany/cluster/bk_biz_id/{bk_biz_id}$`)
+	updatemanyKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/cluster/bk_biz_id/{bk_biz_id}$`)
 
 	createKubeNodeRegexp    = regexp.MustCompile(`^/api/v3/kube/createmany/node/bk_biz_id/{bk_biz_id}$`)
 	createKubePodRegexp     = regexp.MustCompile(`^/api/v3/kube/createmany/pod/bk_biz_id/{bk_biz_id}$`)
@@ -474,7 +478,153 @@ func (ps *parseStream) container() *parseStream {
 
 		return ps
 	}
+	if ps.shouldReturn() {
+		return ps
+	}
 
+	if ps.hitPattern(findNodePathForHostPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeNode,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(createNamespaceRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeNamespace,
+					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(updateNamespaceRegexp, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeNamespace,
+					Action: meta.Update,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(deleteNamespaceRegexp, http.MethodDelete) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeNamespace,
+					Action: meta.Delete,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findNamespaceRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeNamespace,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(createWorkloadRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeWorkload,
+					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(updateWorkloadRegexp, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeWorkload,
+					Action: meta.Update,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(deleteWorkloadRegexp, http.MethodDelete) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeWorkload,
+					Action: meta.Delete,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findWorkloadRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeWorkload,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findPodPathRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubePod,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findPodRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubePod,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findContainerRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeContainer,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
 	return ps
 }
 
@@ -1737,3 +1887,24 @@ func (ps *parseStream) cloudArea() *parseStream {
 
 	return ps
 }
+
+var (
+	createNamespaceRegexp = regexp.MustCompile(`^/api/v3/kube/createmany/namespace/bk_biz_id/([0-9]+)/?$`)
+	updateNamespaceRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/namespace/bk_biz_id/([0-9]+)/?$`)
+	deleteNamespaceRegexp = regexp.MustCompile(`^/api/v3/kube/deletemany/namespace/bk_biz_id/([0-9]+)/?$`)
+	findNamespaceRegexp   = regexp.MustCompile(`^/api/v3/kube/findmany/namespace/bk_biz_id/([0-9]+)/?$`)
+
+	createWorkloadRegexp = regexp.MustCompile(`^/api/v3/kube/createmany/workload/[^\s/]+/[0-9]+/?$`)
+	updateWorkloadRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/workload/[^\s/]+/[0-9]+/?$`)
+	deleteWorkloadRegexp = regexp.MustCompile(`^/api/v3/kube/deletemany/workload/[^\s/]+/[0-9]+/?$`)
+	findWorkloadRegexp   = regexp.MustCompile(`^/api/v3/kube/findmany/workload/[^\s/]+/[0-9]+/?$`)
+
+	findPodPathRegexp = regexp.MustCompile(`^/api/v3/kube/find/pod_path/bk_biz_id/([0-9]+)/?$`)
+	findPodRegexp     = regexp.MustCompile(`^/api/v3/kube/findmany/pod/bk_biz_id/([0-9]+)/?$`)
+
+	findContainerRegexp = regexp.MustCompile(`^/api/v3/kube/findmany/container/bk_biz_id/([0-9]+)/?$`)
+)
+
+const (
+	findNodePathForHostPattern = "/api/v3/kube/find/host_node_path"
+)

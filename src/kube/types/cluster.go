@@ -85,6 +85,18 @@ type CreateClusterResult struct {
 	ID int64 `field:"id" json:"id" bson:"id"`
 }
 
+// CreateContainerResult 创建容器结果
+type CreateContainerResult struct {
+	metadata.BaseResp
+	ID int64 `field:"id" json:"id" bson:"id"`
+}
+
+// CreatePodResult 创建pod结果
+type CreatePodResult struct {
+	metadata.BaseResp
+	ID int64 `field:"id" json:"id" bson:"id"`
+}
+
 // DeleteClusterOption 删除集群的请求
 type DeleteClusterOption struct {
 	IDs  []int64 `json:"ids"`
@@ -197,18 +209,43 @@ func (option *QueryClusterReq) Validate() ccErr.RawErrorInfo {
 	return ccErr.RawErrorInfo{}
 }
 
-// ResponseCluster  查询集群的回应
+// ResponseCluster  query the response of the container cluster.
 type ResponseCluster struct {
 	Data []Cluster `json:"cluster"`
 }
 
-// QueryClusterInfo query cluster response
-type QueryClusterInfo struct {
-	Info  []Cluster `json:"info"`
-	Count int       `json:"count"`
+// UpdateClusterOption 更新集群字段
+type UpdateClusterOption struct {
+	Cluster []OneUpdateCluster `json:"cluster"`
 }
 
-// ValidateCreate 校验创建集群参数是否合法
+// OneUpdateCluster
+type OneUpdateCluster struct {
+	ID   int64             `json:"id"`
+	UID  string            `json:"uid"`
+	Data ClusterBaseFields `json:"data"`
+}
+
+// Validate validate the UpdateClusterOption
+func (option *UpdateClusterOption) Validate() error {
+
+	for _, one := range option.Cluster {
+		if one.UID == "" && one.ID == 0 {
+			return errors.New("id and uid cannot be empty at the same time")
+		}
+		if one.UID != "" && one.ID != 0 {
+			return errors.New("id and uid cannot be set at the same time")
+		}
+		// 这里需要校验字段非空字段是否是可编辑的，如果是不可编辑的直接报错
+		//for _, data := range one.Data {
+		//
+		//}
+	}
+
+	return nil
+}
+
+// ValidateCreate check whether the parameters for creating a cluster are legal.
 func (option *ClusterBaseFields) ValidateCreate() error {
 
 	if option.Name == nil || *option.Name == "" {
@@ -228,19 +265,23 @@ func (option *ClusterBaseFields) ValidateCreate() error {
 	return nil
 }
 
-// KubeResourceInfo 请求资源的种类和对应的资源ID
+// KubeResourceInfo the type of the requested resource and the corresponding resource ID.
+// it should be noted that when the kind is folder, the host cannot be obtained through
+// the pod table. In this case, the node table needs to be used to find the corresponding
+// number of hosts. Since the node is only associated with the cluster, the id in this
+// scenario needs to pass the corresponding clusterID.
 type KubeResourceInfo struct {
 	Kind string `json:"kind"`
 	ID   int64  `json:"id"`
 }
 
-// KubeTopoCountReq 计算资源节点主机或者pod数量的请求
-type KubeTopoCountReq struct {
+// KubeTopoCountOption calculate the number of hosts or pods under the container resource node.
+type KubeTopoCountOption struct {
 	ResourceInfos []KubeResourceInfo `json:"resource_info"`
 }
 
-// Validate validate the KubeTopoCountReq
-func (option *KubeTopoCountReq) Validate() ccErr.RawErrorInfo {
+// Validate validate the KubeTopoCountOption
+func (option *KubeTopoCountOption) Validate() ccErr.RawErrorInfo {
 	if len(option.ResourceInfos) > 100 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
