@@ -1596,6 +1596,8 @@ var (
 	findPodRegexp     = regexp.MustCompile(`^/api/v3/kube/findmany/pod/bk_biz_id/([0-9]+)/?$`)
 
 	findContainerRegexp = regexp.MustCompile(`^/api/v3/kube/findmany/container/bk_biz_id/([0-9]+)/?$`)
+
+	findMapStrFieldValRegexp = regexp.MustCompile(`^/api/v3/kube/find/field/map_str_val/bk_biz_id/([0-9]+)/?$`)
 )
 
 const (
@@ -1752,5 +1754,16 @@ func (ps *parseStream) container() *parseStream {
 		return ps
 	}
 
+	if ps.hitRegexp(findMapStrFieldValRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeNode,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
 	return ps
 }

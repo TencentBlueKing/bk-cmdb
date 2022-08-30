@@ -100,6 +100,12 @@ func (w *Workload) ValidateCreate() errors.RawErrorInfo {
 		}
 	}
 
+	if w.NamespaceID != nil && (w.ClusterUID != nil || w.Namespace != nil) {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrorTopoIdentificationIllegal,
+		}
+	}
+
 	if w.Name == nil {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,

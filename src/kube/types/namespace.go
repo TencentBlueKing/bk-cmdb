@@ -91,6 +91,12 @@ func (ns *Namespace) ValidateCreate() errors.RawErrorInfo {
 		}
 	}
 
+	if ns.ClusterUID != nil && ns.ClusterID != nil {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrorTopoIdentificationIllegal,
+		}
+	}
+
 	if ns.Name == nil {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
