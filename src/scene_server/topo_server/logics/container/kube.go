@@ -39,7 +39,7 @@ type ClusterOperationInterface interface {
 	BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.ArrangeDeleteNodeOption, bkSupplierAccount string) error
 	SearchCluster(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseCluster, error)
 	BatchCreateNode(kit *rest.Kit, data *types.CreateNodesReq, bizID int64, bkSupplierAccount string) ([]int64, error)
-	BatchCreatePod(kit *rest.Kit, data *types.CreatePodsReq, bizID int64, bkSupplierAccount string) ([]int64, error)
+	BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption, bizID int64, bkSupplierAccount string) ([]int64, error)
 	SearchNode(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseNode, error)
 	SetProxy(inst ClusterOperationInterface)
 }
@@ -255,7 +255,7 @@ func (b *kube) isExsitKubeResource(kit *rest.Kit, option *types.DeleteClusterOpt
 }
 
 // BatchCreatePod batch create pod.
-func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsReq, bizID int64, supplierAccount string) (
+func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption, bizID int64, supplierAccount string) (
 	[]int64, error) {
 
 	//1、校验这个pod不能存在

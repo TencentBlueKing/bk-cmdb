@@ -263,8 +263,8 @@ func (option *ContainerCoreInfo) Validate() error {
 	return nil
 }
 
-// CreatePodsReq create Pods request
-type CreatePodsReq struct {
+// CreatePodsOption create Pods request
+type CreatePodsOption struct {
 	Pods         []PodsInfo `json:"pods"`
 	KubeSpecInfo *KubeSpec  `json:"kube_spec"`
 	CmdbSpecInfo *CmdbSpec  `json:"cmdb_spec"`
@@ -311,7 +311,7 @@ func (option *CmdbSpec) Validate() error {
 }
 
 // Validate validate the CreatePodsReq
-func (option *CreatePodsReq) Validate() error {
+func (option *CreatePodsOption) Validate() error {
 	if len(option.Pods) == 0 {
 		return errors.New("param cannot be empty")
 	}
