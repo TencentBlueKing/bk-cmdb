@@ -321,313 +321,6 @@ func (ps *parseStream) business() *parseStream {
 	return ps
 }
 
-var (
-	findKubeAttrsRegexp     = regexp.MustCompile(`^/api/v3/kube/find/{object}/attributes$`)
-	createKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/create/cluster/bk_biz_id/{bk_biz_id}$`)
-	updateKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/cluster/bk_biz_id/{bk_biz_id}$`)
-
-	deleteKubeClusterRegexp     = regexp.MustCompile(`^/api/v3/kube/delete/cluster/bk_biz_id/{bk_biz_id}$`)
-	findKubeClusterRegexp       = regexp.MustCompile(`^/api/v3/kube/findmany/cluster/bk_biz_id/{bk_biz_id}$`)
-	updatemanyKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/cluster/bk_biz_id/{bk_biz_id}$`)
-
-	createKubeNodeRegexp    = regexp.MustCompile(`^/api/v3/kube/createmany/node/bk_biz_id/{bk_biz_id}$`)
-	createKubePodRegexp     = regexp.MustCompile(`^/api/v3/kube/createmany/pod/bk_biz_id/{bk_biz_id}$`)
-	findKubeNodeRegexp      = regexp.MustCompile(`^/api/v3/kube/findmany/node/bk_biz_id/{bk_biz_id}$`)
-	findKubeTopoPathRegexp  = regexp.MustCompile(`^/api/v3/kube/find/topo_path/bk_biz_id/{bk_biz_id}$`)
-	findKubeTopoCountRegexp = regexp.MustCompile(`^/api/v3/kube/find/{bk_biz_id}/topo_node/{type}/count$`)
-	createKubePodsRegexp    = regexp.MustCompile(`^/api/v3/kube/createmany/pod/bk_biz_id/{bk_biz_id}$`)
-)
-
-// NOCC:golint/fnsize(整体属于 container 操作需要放在一起)
-func (ps *parseStream) container() *parseStream {
-	if ps.shouldReturn() {
-		return ps
-	}
-	//todo: 后续补齐
-	if ps.hitRegexp(findKubeAttrsRegexp, http.MethodGet) {
-		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
-			return ps
-		}
-
-		//object, err := ps.RequestCtx.getValueFromBody("object")
-		//if err != nil {
-		//	ps.err = err
-		//	return ps
-		//}
-
-		return ps
-	}
-
-	if ps.hitRegexp(createKubeClusterRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 7 {
-			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
-			return ps
-		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
-
-		return ps
-	}
-
-	if ps.hitRegexp(deleteKubeClusterRegexp, http.MethodDelete) {
-		if len(ps.RequestCtx.Elements) != 7 {
-			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
-			return ps
-		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
-
-		return ps
-	}
-
-	if ps.hitRegexp(findKubeClusterRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 7 {
-			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
-			return ps
-		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
-
-		return ps
-	}
-
-	if ps.hitRegexp(createKubeNodeRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 7 {
-			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
-			return ps
-		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
-
-		return ps
-	}
-
-	if ps.hitRegexp(createKubePodRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 7 {
-			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
-			return ps
-		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
-
-		return ps
-	}
-
-	if ps.hitRegexp(findKubeNodeRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 7 {
-			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
-			return ps
-		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
-
-		return ps
-	}
-
-	if ps.hitRegexp(findKubeTopoPathRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 7 {
-			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
-			return ps
-		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
-
-		return ps
-	}
-
-	if ps.hitRegexp(findKubeTopoCountRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 8 {
-			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
-			return ps
-		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
-
-		return ps
-	}
-	if ps.shouldReturn() {
-		return ps
-	}
-
-	if ps.hitPattern(findNodePathForHostPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.KubeNode,
-					Action: meta.Find,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitRegexp(createNamespaceRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.KubeNamespace,
-					Action: meta.Create,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitRegexp(updateNamespaceRegexp, http.MethodPut) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.KubeNamespace,
-					Action: meta.Update,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitRegexp(deleteNamespaceRegexp, http.MethodDelete) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.KubeNamespace,
-					Action: meta.Delete,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitRegexp(findNamespaceRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.KubeNamespace,
-					Action: meta.Find,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitRegexp(createWorkloadRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.KubeWorkload,
-					Action: meta.Create,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitRegexp(updateWorkloadRegexp, http.MethodPut) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.KubeWorkload,
-					Action: meta.Update,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitRegexp(deleteWorkloadRegexp, http.MethodDelete) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.KubeWorkload,
-					Action: meta.Delete,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitRegexp(findWorkloadRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.KubeWorkload,
-					Action: meta.Find,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitRegexp(findPodPathRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.KubePod,
-					Action: meta.Find,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitRegexp(findPodRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.KubePod,
-					Action: meta.Find,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitRegexp(findContainerRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.KubeContainer,
-					Action: meta.Find,
-				},
-			},
-		}
-		return ps
-	}
-	return ps
-}
-
 const (
 	createBizSetPattern                  = `/api/v3/create/biz_set`
 	deleteBizSetPattern                  = `/api/v3/deletemany/biz_set`
@@ -1888,7 +1581,26 @@ func (ps *parseStream) cloudArea() *parseStream {
 	return ps
 }
 
+const (
+	findNodePathForHostPattern = "/api/v3/kube/find/host_node_path"
+)
+
 var (
+	findKubeAttrsRegexp     = regexp.MustCompile(`^/api/v3/kube/find/{object}/attributes$`)
+	createKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/create/cluster/bk_biz_id/{bk_biz_id}$`)
+	updateKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/cluster/bk_biz_id/{bk_biz_id}$`)
+
+	deleteKubeClusterRegexp     = regexp.MustCompile(`^/api/v3/kube/delete/cluster/bk_biz_id/{bk_biz_id}$`)
+	findKubeClusterRegexp       = regexp.MustCompile(`^/api/v3/kube/findmany/cluster/bk_biz_id/{bk_biz_id}$`)
+	updatemanyKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/cluster/bk_biz_id/{bk_biz_id}$`)
+
+	createKubeNodeRegexp    = regexp.MustCompile(`^/api/v3/kube/createmany/node/bk_biz_id/{bk_biz_id}$`)
+	createKubePodRegexp     = regexp.MustCompile(`^/api/v3/kube/createmany/pod/bk_biz_id/{bk_biz_id}$`)
+	findKubeNodeRegexp      = regexp.MustCompile(`^/api/v3/kube/findmany/node/bk_biz_id/{bk_biz_id}$`)
+	findKubeTopoPathRegexp  = regexp.MustCompile(`^/api/v3/kube/find/topo_path/bk_biz_id/{bk_biz_id}$`)
+	findKubeTopoCountRegexp = regexp.MustCompile(`^/api/v3/kube/find/{bk_biz_id}/topo_node/{type}/count$`)
+	createKubePodsRegexp    = regexp.MustCompile(`^/api/v3/kube/createmany/pod/bk_biz_id/{bk_biz_id}$`)
+
 	createNamespaceRegexp = regexp.MustCompile(`^/api/v3/kube/createmany/namespace/bk_biz_id/([0-9]+)/?$`)
 	updateNamespaceRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/namespace/bk_biz_id/([0-9]+)/?$`)
 	deleteNamespaceRegexp = regexp.MustCompile(`^/api/v3/kube/deletemany/namespace/bk_biz_id/([0-9]+)/?$`)
@@ -1903,8 +1615,308 @@ var (
 	findPodRegexp     = regexp.MustCompile(`^/api/v3/kube/findmany/pod/bk_biz_id/([0-9]+)/?$`)
 
 	findContainerRegexp = regexp.MustCompile(`^/api/v3/kube/findmany/container/bk_biz_id/([0-9]+)/?$`)
+
+	findMapStrFieldValRegexp = regexp.MustCompile(`^/api/v3/kube/find/field/map_str_val/bk_biz_id/([0-9]+)/?$`)
 )
 
-const (
-	findNodePathForHostPattern = "/api/v3/kube/find/host_node_path"
-)
+// NOCC:golint/fnsize(整体属于 container 操作需要放在一起)
+func (ps *parseStream) container() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+	//todo: 后续补齐
+	if ps.hitRegexp(findKubeAttrsRegexp, http.MethodGet) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+
+		//object, err := ps.RequestCtx.getValueFromBody("object")
+		//if err != nil {
+		//	ps.err = err
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(createKubeClusterRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(deleteKubeClusterRegexp, http.MethodDelete) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(findKubeClusterRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(createKubeNodeRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(createKubePodRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(findKubeNodeRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(findKubeTopoPathRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+
+	if ps.hitRegexp(findKubeTopoCountRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 8 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+		//
+		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		//if err != nil {
+		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+		//	return ps
+		//}
+
+		return ps
+	}
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitPattern(findNodePathForHostPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeNode,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(createNamespaceRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeNamespace,
+					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(updateNamespaceRegexp, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeNamespace,
+					Action: meta.Update,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(deleteNamespaceRegexp, http.MethodDelete) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeNamespace,
+					Action: meta.Delete,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findNamespaceRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeNamespace,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(createWorkloadRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeWorkload,
+					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(updateWorkloadRegexp, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeWorkload,
+					Action: meta.Update,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(deleteWorkloadRegexp, http.MethodDelete) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeWorkload,
+					Action: meta.Delete,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findWorkloadRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeWorkload,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findPodPathRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubePod,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findPodRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubePod,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findContainerRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeContainer,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(findMapStrFieldValRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.KubeNode,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+	}
+	return ps
+}

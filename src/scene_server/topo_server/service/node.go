@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 )
 
@@ -327,7 +328,6 @@ func (s *Service) BatchCreateNode(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
 	var ids []int64
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
@@ -349,6 +349,87 @@ func (s *Service) BatchCreateNode(ctx *rest.Contexts) {
 
 }
 
+// FindKubeMapStrFieldVal find k8s mapStr type field value
+func (s *Service) FindKubeMapStrFieldVal(ctx *rest.Contexts) {
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	req := types.QueryFieldValReq{}
+	if err := ctx.DecodeInto(&req); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := req.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	table, err := types.GetKubeTableName(req.Kind)
+	if err != nil {
+		blog.Errorf("get table name failed, kind: %s, err: %v, rid: %s", req.Kind, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	cond := mapstr.MapStr{common.BKAppIDField: bizID}
+	query := &metadata.QueryCondition{
+		Fields:    req.Fields,
+		Condition: cond,
+		Page:      req.Page,
+	}
+	option := &types.QueryReq{
+		Table:     table,
+		Condition: query,
+	}
+
+	result, err := s.Engine.CoreAPI.CoreService().Kube().FindInst(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	if err != nil {
+
+		blog.Errorf("find instance failed, cond: %v, table: %s, err: %v, rid: %s", query, table, err, ctx.Kit.Rid)
+	}
+	info := make(map[string][]types.KV)
+	uniqueMap := make(map[string]struct{})
+	for _, inst := range result.Info {
+		for _, field := range req.Fields {
+			val, ok := inst[field]
+			if !ok {
+				continue
+			}
+			mapVal, ok := val.(map[string]interface{})
+			if !ok {
+				blog.Errorf("value is not map string type, val: %v, field: %s, rid: %s", val, field, ctx.Kit.Rid)
+				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+				return
+			}
+
+			for key, val := range mapVal {
+				unique := key + ":" + util.GetStrByInterface(val)
+				if _, ok := uniqueMap[unique]; ok {
+					continue
+				}
+				kv := types.KV{
+					Key: key,
+					Val: val,
+				}
+				info[field] = append(info[field], kv)
+				uniqueMap[unique] = struct{}{}
+			}
+		}
+	}
+
+	ctx.RespEntity(
+		types.MapStrFieldVal{
+			Info: info,
+		},
+	)
+}
+
 // SearchNodes 根据用户指定的条件查询 nodes
 func (s *Service) SearchNodes(ctx *rest.Contexts) {
 
@@ -368,6 +449,7 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
+
 		ctx.RespAutoError(err)
 		return
 	}
@@ -421,4 +503,5 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntityWithCount(0, result.Data)
+
 }
