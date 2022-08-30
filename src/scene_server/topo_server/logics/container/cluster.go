@@ -254,27 +254,15 @@ func (b *kube) isExsitKubeResource(kit *rest.Kit, option *types.DeleteClusterOpt
 	return false, nil
 }
 
-func (b *kube) batchCreatePodAndContainer(kit *rest.Kit, data *types.CreatePodsReq, bizID int64,
-	supplierAccount string) ([]int64, error) {
-
-	// 1、校验这个pod不能存在
-	// 2、创建pod
-	// 3、再创建pod下面的containers
-	//for _, pod := range data.Pods {
-	//
-	//}
-	return nil, nil
-}
-
 // BatchCreatePod batch create pod.
-// 应该是三种场景:1、仅创建pod 。2、仅创建容器。3、创建pod的同时创建容器。
 func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsReq, bizID int64, supplierAccount string) (
 	[]int64, error) {
 
-	//ids, err := b.batchCreatePodAndContainer(kit, data, bizID, supplierAccount)
-	//if err != nil {
-	//	return []int64{}, nil
-	//}
+	//1、校验这个pod不能存在
+
+	//2、创建pod
+
+	//3、再创建pod下面的containers
 
 	return nil, nil
 }

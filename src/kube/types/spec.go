@@ -56,13 +56,13 @@ type Reference struct {
 
 // WorkloadSpec describes the common attributes of workload, it is used by the structure below it.
 type WorkloadSpec struct {
-	NamespaceSpec `json:",inline" bson:",inline`
+	NamespaceSpec `json:",inline" bson:",inline"`
 	Ref           *Reference `json:"ref" bson:"ref"`
 }
 
 // PodSpec describes the common attributes of pod, it is used by the structure below it.
 type PodSpec struct {
-	WorkloadSpec `json:",inline" bson:",inline`
+	WorkloadSpec `json:",inline" bson:",inline"`
 
 	// NodeID node id in cc
 	NodeID *int64 `json:"bk_node_id" bson:"bk_node_id"`
@@ -217,4 +217,45 @@ type KubeAttrsRsp struct {
 	Field    string `json:"field"`
 	Type     string `json:"type"`
 	Required bool   `json:"required"`
+}
+
+// KubeReference store pod-related workload related information
+type KubeReference struct {
+	// WorkloadKind workload kind
+	WorkloadKind *string `json:"workload_kind" bson:"workload_kind"`
+
+	// WorkloadName workload name
+	WorkloadName *string `json:"workload_name" bson:"workload_name"`
+}
+
+// CmdbReference store pod-related workload related information
+type CmdbReference struct {
+	// WorkloadKind workload kind
+	WorkloadKind *string `json:"workload_kind" bson:"workload_kind"`
+
+	// WorkloadID workload id in cc
+	WorkloadID *int64 `json:"workload_id" bson:"workload_id"`
+}
+
+// KubeSpec 相关容器字段信息
+type KubeSpec struct {
+	// ClusterUID cluster id in third party platform
+	ClusterUID *string `json:"cluster_uid" bson:"cluster_uid"`
+	// Namespace namespace name in third party platform
+	Namespace *string `json:"namespace" bson:"namespace"`
+	// Node node name in third party platform
+	Node *string `json:"node" bson:"node"`
+
+	KubeReference `json:",inline" bson:",inline"`
+}
+
+// CmdbSpec 容器字段在cmdb中的相关信息
+type CmdbSpec struct {
+	// ClusterID cluster id in cc
+	ClusterID *int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
+	// NamespaceID namespace id in cc
+	NamespaceID   *int64 `json:"bk_namespace_id" bson:"bk_namespace_id"`
+	CmdbReference `json:",inline" bson:",inline"`
+	// NodeID node id in cc
+	NodeID *int64 `json:"bk_node_id" bson:"bk_node_id"`
 }

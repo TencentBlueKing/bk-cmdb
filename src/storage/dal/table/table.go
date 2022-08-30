@@ -83,7 +83,7 @@ func (f Fields) FieldsEditable() map[string]bool {
 	return copied
 }
 
-// FieldsType returns the corresponding type of all fields.
+// IsFieldEditable returns the corresponding editable of all fields.
 func (f Fields) IsFieldEditable() map[string]bool {
 	copied := make(map[string]bool)
 	for k, v := range f.isEditable {

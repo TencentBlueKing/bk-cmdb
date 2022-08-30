@@ -64,8 +64,8 @@ var ContainerSpecFieldsDescriptor = table.FieldsDescriptors{
 const (
 	// PodQueryLimit limit on the number of pod query.
 	PodQueryLimit = 500
-	// CreatePodsLimit the maximum number of pods to be created at one time.
-	CreatePodsLimit = 200
+	// createPodsLimit the maximum number of pods to be created at one time.
+	createPodsLimit = 200
 )
 
 // PodQueryReq pod query request
@@ -265,13 +265,81 @@ func (option *ContainerCoreInfo) Validate() error {
 
 // CreatePodsReq create Pods request
 type CreatePodsReq struct {
-	Pods []PodsInfo `json:"pods"`
+	Pods         []PodsInfo `json:"pods"`
+	KubeSpecInfo *KubeSpec  `json:"kube_spec"`
+	CmdbSpecInfo *CmdbSpec  `json:"cmdb_spec"`
+}
+
+// Validate validate the KubeSpec
+func (option *KubeSpec) Validate() error {
+	if option.ClusterUID == nil {
+		return errors.New("cluster uid must be set")
+	}
+	if option.Namespace == nil {
+		return errors.New("namespace must be set")
+	}
+	if option.Node == nil {
+		return errors.New("node must be set")
+	}
+	if option.WorkloadKind == nil {
+		return errors.New("workload kind must be set")
+	}
+	if option.WorkloadName == nil {
+		return errors.New("workload name must be set")
+	}
+	return nil
+}
+
+// Validate validate the CmdbSpec
+func (option *CmdbSpec) Validate() error {
+	if option.ClusterID == nil {
+		return errors.New("cluster uid must be set")
+	}
+	if option.NamespaceID == nil {
+		return errors.New("namespace must be set")
+	}
+	if option.NodeID == nil {
+		return errors.New("node must be set")
+	}
+	if option.WorkloadKind == nil {
+		return errors.New("workload kind must be set")
+	}
+	if option.WorkloadID == nil {
+		return errors.New("workload id must be set")
+	}
+	return nil
 }
 
 // Validate validate the CreatePodsReq
 func (option *CreatePodsReq) Validate() error {
 	if len(option.Pods) == 0 {
 		return errors.New("param cannot be empty")
+	}
+	if len(option.Pods) > createPodsLimit {
+		return errors.New("param cannot be empty")
+	}
+	if option.KubeSpecInfo == nil && option.CmdbSpecInfo == nil {
+		return errors.New("kube spec and cmdb spec cannot be empty at the same time")
+	}
+	if option.KubeSpecInfo != nil && option.CmdbSpecInfo != nil {
+		return errors.New("kube spec and cmdb spec cannot be set at the same time")
+	}
+	// 需要补充每个指针都不能为空
+	if option.KubeSpecInfo != nil {
+		if option.KubeSpecInfo.ClusterUID == nil {
+			return errors.New("cluster uid cannot be empty")
+		}
+
+	}
+	if option.CmdbSpecInfo != nil {
+		if err := option.CmdbSpecInfo.Validate(); err != nil {
+			return err
+		}
+	}
+	if option.KubeSpecInfo != nil {
+		if err := option.KubeSpecInfo.Validate(); err != nil {
+			return err
+		}
 	}
 	for _, pod := range option.Pods {
 		if err := pod.Validate(); err != nil {

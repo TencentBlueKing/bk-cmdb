@@ -219,7 +219,7 @@ type UpdateClusterOption struct {
 	Cluster []OneUpdateCluster `json:"cluster"`
 }
 
-// OneUpdateCluster
+// OneUpdateCluster 更新单个集群详情
 type OneUpdateCluster struct {
 	ID   int64             `json:"id"`
 	UID  string            `json:"uid"`

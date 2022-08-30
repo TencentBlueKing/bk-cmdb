@@ -265,7 +265,7 @@ func (p *containerOperation) CreatePod(kit *rest.Kit, bizID int64, data *types.P
 
 // UpdateClusterFields create cluster instance.
 func (p *containerOperation) UpdateClusterFields(kit *rest.Kit, bizID int64, supplierAccount string,
-	data *types.UpdateClusterOption) errors.CCErrorCoder {
+	data *types.UpdateClusterOption) (*metadata.UpdatedCount, errors.CCErrorCoder) {
 
 	for _, one := range data.Cluster {
 		filter := make(map[string]interface{})
@@ -288,16 +288,16 @@ func (p *containerOperation) UpdateClusterFields(kit *rest.Kit, bizID int64, sup
 		if err != nil {
 			blog.Errorf("get update data failed, data: %v, err: %v, rid: %s", one, err, kit.Rid)
 
-			return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+			return &metadata.UpdatedCount{Count: 0}, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 		}
 		err = mongodb.Client().Table(types.BKTableNameBaseCluster).Update(kit.Ctx, filter, updateData)
 		if err != nil {
 			blog.Errorf("update namespace failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
 				err, kit.Rid)
-			return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+			return &metadata.UpdatedCount{Count: 0}, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 		}
 	}
-	return nil
+	return &metadata.UpdatedCount{Count: uint64(len(data.Cluster))}, nil
 }
 
 // CreateCluster create cluster instance.

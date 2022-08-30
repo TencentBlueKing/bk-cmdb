@@ -18,6 +18,8 @@
 package service
 
 import (
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -237,4 +239,186 @@ func (s *Service) getBizIDWithName(kit *rest.Kit, bizIDs []int64) (map[int64]str
 	}
 
 	return bizIDWithName, nil
+}
+
+func reorganizeDeleteOption(option *types.BatchDeleteNodeOption) *types.ArrangeDeleteNodeOption {
+	deleteOption := make(map[interface{}][]interface{})
+	flag := false
+	if len(option.NodeIDs) > 0 {
+		nameMap := make(map[string]struct{})
+		for _, nodeID := range option.NodeIDs {
+			if _, ok := nameMap[nodeID.Name]; !ok {
+				deleteOption[nodeID.ClusterUID] = append(deleteOption[nodeID.ClusterUID], nodeID.Name)
+			}
+		}
+		flag = true
+	}
+
+	if len(option.NodeCmdbIDs) > 0 {
+		idMap := make(map[int64]struct{})
+		for _, nodeID := range option.NodeCmdbIDs {
+			if _, ok := idMap[nodeID.ID]; !ok {
+				deleteOption[nodeID.ClusterID] = append(deleteOption[nodeID.ClusterID], nodeID.ID)
+			}
+		}
+	}
+
+	return &types.ArrangeDeleteNodeOption{
+		Option: deleteOption,
+		Flag:   flag,
+	}
+}
+
+// BatchDeleteNode delete nodes.
+func (s *Service) BatchDeleteNode(ctx *rest.Contexts) {
+	option := new(types.BatchDeleteNodeOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	deleteOption := reorganizeDeleteOption(option)
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		var err error
+		err = s.Logics.ContainerOperation().BatchDeleteNode(ctx.Kit, bizID, deleteOption, ctx.Kit.SupplierAccount)
+		if err != nil {
+			blog.Errorf("delete cluster failed, biz: %d, option: %+v, err: %v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+// BatchCreateNode batch create nodes.
+func (s *Service) BatchCreateNode(ctx *rest.Contexts) {
+	data := new(types.CreateNodesReq)
+	if err := ctx.DecodeInto(data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := data.ValidateCreate(); err != nil {
+		blog.Errorf("batch create nodes param verification failed, data: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	var ids []int64
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		var err error
+		ids, err = s.Logics.ContainerOperation().BatchCreateNode(ctx.Kit, data, bizID, ctx.Kit.SupplierAccount)
+		if err != nil {
+			blog.Errorf("create business cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(ids)
+
+}
+
+// SearchNodes 根据用户指定的条件查询 nodes
+func (s *Service) SearchNodes(ctx *rest.Contexts) {
+
+	searchCond := new(types.QueryNodeReq)
+	if err := ctx.DecodeInto(searchCond); err != nil {
+		blog.Errorf("failed to parse the params, error: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
+		return
+	}
+
+	if cErr := searchCond.Validate(); cErr.ErrCode != 0 {
+		blog.Errorf("validate request failed, err: %v, rid: %s", cErr, ctx.Kit.Rid)
+		ctx.RespAutoError(cErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	filter := mapstr.New()
+	if searchCond.Filter != nil {
+		cond, errKey, rawErr := searchCond.Filter.ToMgo()
+		if rawErr != nil {
+			blog.Errorf("parse biz failed, filter: %+v, err: %v, rid: %s", searchCond.Filter, rawErr, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey))
+			return
+		}
+		filter = cond
+	}
+
+	// 无论条件中是否有bk_biz_id、supplier_account,这里统一替换成url中的bk_biz_id 和kit中的supplier_account
+	filter[types.BKBizIDField] = bizID
+	filter[types.BKSupplierAccountField] = ctx.Kit.SupplierAccount
+	if searchCond.HostID != 0 {
+		filter[common.BKHostIDField] = searchCond.HostID
+	}
+	if searchCond.ClusterUID != 0 {
+		filter[types.ClusterUIDField] = searchCond.ClusterUID
+	}
+	if searchCond.ClusterID != 0 {
+		filter[types.BKClusterIDFiled] = searchCond.ClusterID
+	}
+
+	// count biz in cluster enable count is set
+	if searchCond.Page.EnableCount {
+		filter := []map[string]interface{}{filter}
+		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
+			types.BKTableNameBaseNode, filter)
+		if err != nil {
+			blog.Errorf("count node failed, cond: %+v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		ctx.RespEntityWithCount(counts[0], make([]mapstr.MapStr, 0))
+		return
+	}
+
+	query := &metadata.QueryCondition{
+		Condition: filter,
+		Page:      searchCond.Page,
+		Fields:    searchCond.Fields,
+	}
+	result, err := s.Logics.ContainerOperation().SearchNode(ctx.Kit, query)
+	if err != nil {
+		blog.Errorf("search node failed, filter: %+v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
+		return
+	}
+	ctx.RespEntityWithCount(0, result.Data)
 }
