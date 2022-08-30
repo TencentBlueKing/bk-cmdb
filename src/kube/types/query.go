@@ -47,3 +47,46 @@ func (q *QueryReq) Validate() errors.RawErrorInfo {
 
 	return errors.RawErrorInfo{}
 }
+
+const queryFieldValLimit = 500
+
+// QueryFieldValReq query field value request
+type QueryFieldValReq struct {
+	Kind   string            `json:"kind"`
+	Fields []string          `json:"fields"`
+	Page   metadata.BasePage `json:"page,omitempty"`
+}
+
+// Validate validate QueryFieldValReq
+func (q *QueryFieldValReq) Validate() errors.RawErrorInfo {
+	if q.Kind == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"kind"},
+		}
+	}
+
+	if len(q.Fields) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"fields"},
+		}
+	}
+
+	if err := q.Page.ValidateWithEnableCount(false, queryFieldValLimit); err.ErrCode != 0 {
+		return err
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// MapStrFieldVal map string type field value
+type MapStrFieldVal struct {
+	Info map[string][]KV `json:"info"`
+}
+
+// KV key value pair struct
+type KV struct {
+	Key string      `json:"key"`
+	Val interface{} `json:"val"`
+}
