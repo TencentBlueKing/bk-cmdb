@@ -58,16 +58,16 @@
         instance.value = await containerPodService.getOne(params)
 
         // 拓扑路径
-        const { info: [{ paths }] } = await containerPodService.getPodPath({
+        const { info } = await containerPodService.getPodPath({
           bk_biz_id: bizId.value,
           ids: [podId.value]
         })
-        topoPaths.value = paths
+        topoPaths.value = info
       })
 
       const topologyList = computed(() => topoPaths.value.map(topo => ({
         ...topo,
-        path: topo.path.replaceAll('##', ' / ')
+        path: `${topo.biz_name} / ${topo.cluster_name} / ${topo.namespace} / ${topo.workload_name}`
       })))
 
       watch(active, (active) => {
@@ -78,7 +78,8 @@
         routerActions.redirect({
           name: MENU_BUSINESS_HOST_AND_SERVICE,
           query: {
-            node: `${path.kind}-${path.bk_workload_id}`
+            node: `${path.kind}-${path.bk_workload_id}`,
+            topo_path: `cluster-${path.bk_cluster_id},namespace-${path.bk_namespace_id},${path.kind}-${path.bk_workload_id}`
           },
           params: {
             bizId: bizId.value

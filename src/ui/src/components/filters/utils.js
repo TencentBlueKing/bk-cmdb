@@ -271,6 +271,37 @@ export function transformGeneralModelCondition(condition, properties) {
       continue
     }
 
+    if (property.bk_property_type === 'map') {
+      const tags = {}
+      value.forEach((val) => {
+        const [k, v] = val.split('=')
+        if (tags[k]) {
+          tags[k].push(v)
+        } else {
+          tags[k] = [v]
+        }
+      })
+
+      const rules = []
+      for (const [key, vals] of Object.entries(tags)) {
+        rules.push({
+          field: key,
+          operator: queryBuilderOperator(operator),
+          value: vals
+        })
+      }
+
+      conditions.rules.push({
+        field: property.bk_property_id,
+        operator: 'filter_object',
+        value: {
+          condition: 'OR',
+          rules
+        }
+      })
+      continue
+    }
+
     conditions.rules.push({
       field: property.bk_property_id,
       operator: queryBuilderOperator(operator),
@@ -288,17 +319,18 @@ export function transformContainerCondition(condition, properties, header) {
   const params = transformGeneralModelCondition(condition, properties)
   return {
     fields: header.map(property => property.bk_property_id),
-    condition: params?.conditions,
+    condition: params?.conditions?.rules,
     time_condition: params?.time_condition
   }
 }
 
-export function transformContainerNodeCondition(condition, properties) {
+export function transformContainerNodeCondition(condition, properties, header) {
   const params = transformGeneralModelCondition(condition, properties)
 
   // 容器节点属性暂时不会存在time_condition，所以这里只取conditions，之后如果存在，实现也会有变化
   return {
-    condition: params?.conditions
+    fields: header.map(property => property.bk_property_id),
+    filter: params?.conditions
   }
 }
 
@@ -437,10 +469,7 @@ export function hasNodeField(selected, condition) {
   return hasNodeField
 }
 
-export function getSelectedHostIds(selected, isContainerHost) {
-  if (isContainerHost) {
-    return selected.map(row => row.bk_host_id)
-  }
+export function getSelectedHostIds(selected) {
   return selected.map(({ host }) => host.bk_host_id)
 }
 

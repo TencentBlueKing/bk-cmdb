@@ -10,14 +10,9 @@
  * limitations under the License.
  */
 
-export default function (item, modelId, propertyId, isContainerHost) {
+export default function (item, modelId, propertyId) {
   if (!modelId || !propertyId) {
     return null
-  }
-
-  // 容器拓扑主机
-  if (isContainerHost) {
-    return item?.[propertyId]
   }
 
   if (modelId === 'host') {

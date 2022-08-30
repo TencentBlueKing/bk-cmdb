@@ -83,6 +83,10 @@
       const filterType = computed(() => filterProperty.value?.bk_property_type ?? 'singlechar')
 
       const getList = async () => {
+        if (!selectedNode.value) {
+          return
+        }
+
         const params = getSearchParams()
         if (!params.fields?.length) {
           return
@@ -128,6 +132,8 @@
         query,
         async (query) => {
           const {
+            tab = 'podList',
+            node,
             page = 1,
             limit = table.pagination.limit,
             value = '',
@@ -139,7 +145,9 @@
           table.pagination.current = parseInt(page, 10)
           table.pagination.limit = parseInt(limit, 10)
 
-          getList()
+          if (tab === 'podList' && node && selectedNode.value) {
+            getList()
+          }
         }
       )
 

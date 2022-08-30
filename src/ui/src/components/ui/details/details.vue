@@ -133,7 +133,7 @@
     },
     methods: {
       isShowOverflowTips(property) {
-        const complexTypes = ['map', 'object']
+        const complexTypes = ['map']
         return !complexTypes.includes(property.bk_property_type)
       },
       handleEdit() {

@@ -44,7 +44,7 @@ module.exports = config => ({
         for (const [path, value] of Object.entries(mockDefs)) {
           const reg = pathToRegexp(path)
           const result = reg.exec(req.path)
-          if (reg.exec(req.path)) {
+          if (result) {
             def = value
             req.pathRegResult = result
             break

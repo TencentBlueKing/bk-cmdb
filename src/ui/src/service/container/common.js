@@ -14,9 +14,12 @@ import { CONTAINER_OBJECTS, WORKLOAD_TYPES } from '@/dictionary/container'
 import containerClusterService from '@/service/container/cluster'
 import containerNamespaceService from '@/service/container/namespace'
 import containerWorkloadService from '@/service/container/workload'
+import containerNodeService from '@/service/container/node'
 
 // 根据workload具体类型判断是否为workload
 export const isWorkload = type => Object.values(WORKLOAD_TYPES).includes(type)
+
+export const isFolder = type => type === CONTAINER_OBJECTS.FOLDER
 
 // 获取容器节点大类型
 export const getContainerNodeType = type => (isWorkload(type) ? CONTAINER_OBJECTS.WORKLOAD : type)
@@ -38,11 +41,14 @@ export const getPropertyName = (id, objId, locale) => {
   return propertyNameI18n[objId]?.[id]?.[lang]
 }
 
+export const isContainerObject = objId => Object.values(CONTAINER_OBJECTS).includes(objId)
+
 export const getContainerInstanceService = (objId) => {
   const services = {
     [CONTAINER_OBJECTS.CLUSTER]: containerClusterService,
     [CONTAINER_OBJECTS.NAMESPACE]: containerNamespaceService,
-    [CONTAINER_OBJECTS.WORKLOAD]: containerWorkloadService
+    [CONTAINER_OBJECTS.WORKLOAD]: containerWorkloadService,
+    [CONTAINER_OBJECTS.NODE]: containerNodeService
   }
 
   return services[objId]
@@ -156,10 +162,6 @@ export const propertyNameI18n = {
       zh: '节点标签',
       en: 'Labels'
     },
-    creation_timestamp: {
-      zh: '节点创建时间',
-      en: 'CreationTimestamp'
-    },
     taints: {
       zh: '节点污点',
       en: 'Taints'
@@ -180,11 +182,11 @@ export const propertyNameI18n = {
       zh: '节点主机名',
       en: 'Hostname'
     },
-    runtime: {
+    runtime_component: {
       zh: '运行时组件',
       en: 'ContainerRuntime'
     },
-    kube_proxy: {
+    kube_proxy_mode: {
       zh: 'Kube-proxy代理模式',
       en: 'kubeProxy'
     },
@@ -206,14 +208,6 @@ export const propertyNameI18n = {
       zh: 'Pod优先级',
       en: 'Priority'
     },
-    node_name: {
-      zh: '指定节点调度',
-      en: 'NodeName'
-    },
-    start_time: {
-      zh: 'Pod启动时间',
-      en: 'StartTime'
-    },
     labels: {
       zh: 'Pod标签',
       en: 'Labels'
@@ -230,9 +224,9 @@ export const propertyNameI18n = {
       zh: '所属副本控制器',
       en: 'ControlledBy'
     },
-    containers: {
-      zh: 'Pod包含容器',
-      en: 'Containers'
+    container_uid: {
+      zh: '容器ID',
+      en: 'Container ID'
     },
     qos_class: {
       zh: 'Pod服务质量',

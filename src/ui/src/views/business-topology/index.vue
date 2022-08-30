@@ -46,18 +46,19 @@
           <host-list v-show="!emptySet" :active="activeTab === 'hostList'" ref="hostList" v-test-id></host-list>
         </bk-tab-panel>
 
-        <bk-tab-panel name="podList" :label="$t('Pod列表')" v-if="isContainerNode">
+        <bk-tab-panel
+          :name="isContainerNode ? 'podList' : 'serviceInstance'"
+          :label="$t(isContainerNode ? 'Pod列表' : '服务实例')">
           <pod-list v-if="activeTab === 'podList'" v-test-id></pod-list>
-        </bk-tab-panel>
-
-        <bk-tab-panel name="serviceInstance" :label="$t('服务实例')" v-if="!isContainerNode">
-          <div class="non-business-module" v-if="!showServiceInstance">
-            <div class="tips">
-              <i class="bk-cc-icon icon-cc-tips"></i>
-              <span>{{$t('非业务模块，无服务实例，请选择业务模块查看')}}</span>
+          <template v-else>
+            <div class="non-business-module" v-if="!showServiceInstance">
+              <div class="tips">
+                <i class="bk-cc-icon icon-cc-tips"></i>
+                <span>{{$t('非业务模块，无服务实例，请选择业务模块查看')}}</span>
+              </div>
             </div>
-          </div>
-          <service-instance-view v-else-if="activeTab === 'serviceInstance'" v-test-id></service-instance-view>
+            <service-instance-view v-else-if="activeTab === 'serviceInstance'" v-test-id></service-instance-view>
+          </template>
         </bk-tab-panel>
 
         <bk-tab-panel name="nodeInfo" :label="$t('节点信息')" render-directive="if">
@@ -127,9 +128,10 @@
         this.$nextTick(() => {
           // 仅保留公用的参数重置路由
           RouterQuery.setAll({
-            node: RouterQuery.get('node'),
-            _f: RouterQuery.get('_f'),
             tab,
+            node: RouterQuery.get('node'),
+            topo_path: this.isContainerNode ? RouterQuery.get('topo_path') : undefined,
+            _f: RouterQuery.get('_f'),
             _t: Date.now()
           })
         })

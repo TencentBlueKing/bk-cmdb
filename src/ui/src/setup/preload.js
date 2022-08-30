@@ -13,6 +13,7 @@
 import { getAuthorizedBusiness, getAuthorizedBusinessSet } from '@/router/business-interceptor.js'
 import { verifyAuth } from '@/service/auth.js'
 import store from '@/store'
+import $http from '@/api'
 
 const preloadConfig = {
   fromCache: false,
@@ -79,6 +80,9 @@ export const verifyPlatformManagementAuth = async () => {
 }
 
 export default async function (app) {
+  // 设置全局请求头
+  $http.setHeader('HTTP_BLUEKING_SUPPLIER_ID', store.getters.supplierAccount)
+
   if (window.Site.authscheme === 'iam') {
     verifyPlatformManagementAuth()
   } else {

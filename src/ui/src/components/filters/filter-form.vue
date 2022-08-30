@@ -175,6 +175,7 @@
   import OperatorSelector from './operator-selector'
   import { mapGetters } from 'vuex'
   import Utils from './utils'
+  import { isContainerObject } from '@/service/container/common'
 
   export default {
     components: {
@@ -300,13 +301,21 @@
         }
         const {
           bk_obj_id: modelId,
-          bk_property_id: propertyId
+          bk_property_id: propertyId,
+          bk_property_type: propertyType
         } = property
+
         const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
         const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
         if (isSetName || isModuleName) {
           return Object.assign(props, { bizId: FilterStore.bizId })
         }
+
+        // 容器对象标签属性，需要注入标签kv数据作为选项
+        if (isContainerObject(modelId) && propertyType === 'map') {
+          return Object.assign(props, { options: FilterStore.containerPropertyMapValue?.[modelId]?.[propertyId] })
+        }
+
         return props
       },
       getPlaceholder(property) {
@@ -451,7 +460,7 @@
         this.isShow = false
       },
       focusIP() {
-        this.$refs.ip.$el.querySelector('textarea').focus()
+        this.$refs?.ip?.$el.querySelector('textarea').focus()
       }
     }
   }

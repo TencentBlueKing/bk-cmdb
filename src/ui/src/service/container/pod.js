@@ -11,10 +11,10 @@
  */
 
 import http from '@/api'
-import { CONTAINER_OBJECTS, CONTAINER_OBJECT_PROPERTY_KEYS } from '@/dictionary/container.js'
+import { CONTAINER_OBJECTS, CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container.js'
 import { enableCount, onePageParams } from '../utils.js'
 
-const ID_KEY = CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.POD].ID
+const ID_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].ID
 
 const find = async (params, config) => {
   const api = `kube/findmany/pod/bk_biz_id/${params.bk_biz_id}`
@@ -55,9 +55,15 @@ const getOne = async (params, config = {}) => findById(params[ID_KEY], params.bi
 
 const getPodPath = (params, config) => http.post(`kube/find/pod_path/bk_biz_id/${params.bk_biz_id}`, params, config)
 
+const getCount = async (params, config = {}) => {
+  const { count } = await http.post(`kube/find/pod_path/bk_biz_id/${params.bk_biz_id}`, enableCount(params, true), config)
+  return count
+}
+
 export default {
   find,
   findById,
   getOne,
-  getPodPath
+  getPodPath,
+  getCount
 }

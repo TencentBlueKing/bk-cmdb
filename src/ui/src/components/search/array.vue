@@ -14,6 +14,7 @@
   <bk-tag-input ref="tagInput"
     allow-create
     allow-auto-match
+    v-if="multiple"
     v-model="localValue"
     v-bind="$attrs"
     :list="[]"
@@ -21,6 +22,13 @@
     @click.native="handleToggle(true)"
     @blur="handleToggle(false, ...arguments)">
   </bk-tag-input>
+  <bk-input v-else
+    v-model.trim="localValue"
+    v-bind="$attrs"
+    @clear="() => $emit('clear')"
+    @focus="handleToggle(true, ...arguments)"
+    @blur="handleToggle(false, ...arguments)">
+  </bk-input>
 </template>
 
 <script>
@@ -30,11 +38,21 @@
     mixins: [activeMixin],
     props: {
       value: {
-        type: Array,
+        type: [Array, String],
         default: () => ([])
+      },
+      fuzzy: {
+        type: Boolean,
+        default: undefined
       }
     },
     computed: {
+      multiple() {
+        if (typeof this.fuzzy === 'boolean') {
+          return !this.fuzzy
+        }
+        return Array.isArray(this.value)
+      },
       localValue: {
         get() {
           return this.value
@@ -45,8 +63,13 @@
         }
       }
     },
-    mounted() {
-      this.addPasteEvent()
+    watch: {
+      multiple: {
+        immediate: true,
+        handler(multiple) {
+          multiple ? this.addPasteEvent() : this.removePasteEvent()
+        }
+      }
     },
     beforeDestroy() {
       this.removePasteEvent()

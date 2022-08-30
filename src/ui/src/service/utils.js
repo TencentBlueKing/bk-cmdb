@@ -113,3 +113,52 @@ export const rollReq = async (
 
   return results
 }
+
+// 给定指定的总数自动分页获取所有数据
+export const rollReqUseTotalCount = async (
+  url,
+  params = {},
+  options = {},
+  config = {},
+  method = 'post',
+  getter
+) => {
+  const { start = 1, limit = 1000, total, listKey = 'info' } = options
+
+  let index = start
+  const size = limit
+  const results = []
+
+  // 分页方法
+  const page = index => ({ ...(params.page || {}), start: (index - 1) * size, limit: size })
+
+  // 请求列表的req
+  const req = index => http[method](url, enableCount({
+    ...params,
+    page: page(index)
+  }, false), config)
+
+  // 列表一共要拉取多少次
+  const max = Math.ceil(total / size)
+
+  // 循环组装得到所有的req
+  const reqs = []
+  while (index <= max) {
+    reqs.push(req(index))
+    index += 1
+  }
+
+  const all = await Promise.all(reqs)
+
+  if (getter) {
+    all.forEach((data) => {
+      results.push(getter(data))
+    })
+  } else {
+    all.forEach(({ [listKey]: list = [] }) => {
+      results.push(...list)
+    })
+  }
+
+  return results
+}

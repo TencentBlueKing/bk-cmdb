@@ -53,8 +53,14 @@ const findById = async (id, bizId, config = {}) => {
 
 const getOne = async (params, config = {}) => findById(params[ID_KEY], params.bizId, config)
 
+const getCount = async (params, config = {}) => {
+  const { count } = await http.post(`kube/findmany/node/bk_biz_id/${params.bk_biz_id}`, enableCount(params, true), config)
+  return count
+}
+
 export default {
   find,
   findById,
-  getOne
+  getOne,
+  getCount
 }

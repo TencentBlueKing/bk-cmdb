@@ -12,10 +12,10 @@
 
 import i18n from '@/i18n/index.js'
 import { CONTAINER_OBJECT_NAMES } from '@/dictionary/container'
-import { isWorkload, getContainerNodeType, getPropertyType, getPropertyName } from './common.js'
+import { isWorkload, isFolder, getContainerNodeType, getPropertyType, getPropertyName } from './common.js'
 import Utils from '@/components/filters/utils.js'
 
-export const normalizationTopo = (topoList) => {
+export const normalizationTopo = (topoList, refId) => {
   const topo = topoList.map((item) => {
     // 小分类，具体类型
     const { kind } = item
@@ -32,7 +32,10 @@ export const normalizationTopo = (topoList) => {
       child: [],
       icon_text: CONTAINER_OBJECT_NAMES[type].SHORT,
       is_container: true,
-      is_workload: isWorkload(item.kind)
+      is_workload: isWorkload(item.kind),
+      is_folder: isFolder(type),
+      // 上一级的id
+      ref_id: refId
     }
   })
 

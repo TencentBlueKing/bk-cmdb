@@ -446,13 +446,7 @@
       handleCopy(property) {
         const copyText = this.selection.map((data) => {
           const modelId = property.bk_obj_id
-          let modelData = data[modelId]
-
-          // 容器节点的数据是打平的不需要通过modelId获取
-          if (this.isContainerHost) {
-            modelData = data
-          }
-
+          const modelData = data[modelId]
           if (property.id === this.IPWithCloudSymbol) {
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')

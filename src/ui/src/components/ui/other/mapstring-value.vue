@@ -19,7 +19,7 @@
     name: 'cmdb-mapstring-value',
     props: {
       value: {
-        type: [String, Object],
+        type: [String, Object, Array],
         default: () => ({})
       }
     },
@@ -30,11 +30,20 @@
       let tips = null
 
       const tags = computed(() => {
-        const labels = props.value
-        if (!labels) {
+        if (!props.value) {
           return []
         }
-        return Object.keys(labels).map(key => `${key} : ${labels[key]}`)
+
+        let list = props.value
+        if (!Array.isArray(props.value)) {
+          list = [props.value]
+        }
+
+        const labels = []
+        list.filter(item => item).forEach((item) => {
+          labels.push(...Object.keys(item).map(key => `${key} : ${item[key]}`))
+        })
+        return labels
       })
 
       const handleResize = () => {

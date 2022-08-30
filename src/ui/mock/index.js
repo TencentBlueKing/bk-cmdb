@@ -16,14 +16,15 @@ const path = require('path')
 const baseDir = path.resolve(__dirname, './')
 const selfpath = path.resolve(__filename, './')
 
-// 所有mock定义的集合
-const defs = {}
-
 function load(dir) {
+  // 所有mock定义的集合
+  const allDefs = {}
+
   const dirList = fs.readdirSync(dir, { withFileTypes: true })
   dirList.forEach((dirent) => {
     if (dirent.isDirectory()) {
-      load(path.join(dir, dirent.name))
+      const defs = load(path.join(dir, dirent.name))
+      Object.assign(allDefs, defs)
     } else if (dirent.isFile()) {
       const filepath = path.join(dir, dirent.name)
 
@@ -41,7 +42,6 @@ function load(dir) {
         delete require.cache[filepath]
         const def = require(filepath)
 
-
         // 解析处理def
         Object.keys(def).forEach((key) => {
           if (def[key].path) {
@@ -51,19 +51,19 @@ function load(dir) {
         })
 
         // 合并到一起
-        Object.assign(defs, def)
+        Object.assign(allDefs, def)
       } catch (err) {
         console.error(err)
       }
     }
   })
+
+  return allDefs
 }
 
 function getDefs() {
   // 每一次重新load，确保为最新的定义
-  load(baseDir)
-
-  return defs
+  return load(baseDir)
 }
 
 module.exports = {

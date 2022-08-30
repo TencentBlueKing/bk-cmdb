@@ -13,7 +13,7 @@
 import http from '@/api'
 import { normalizationProperty } from '@/service/container/transition.js'
 import { CONTAINER_OBJECTS, CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container.js'
-
+import { rollReqUseTotalCount } from '@/service/utils'
 
 function createIdProperty(objId) {
   const keyMap = {
@@ -43,7 +43,7 @@ function createIdProperty(objId) {
   }
 }
 
-export const find = ({ objId, params }, config) => http.post(`find/container/${objId}/attributes`, params, config)
+export const find = ({ objId, params }, config) => http.get(`kube/find/${objId}/attributes`, params, config)
 
 export const getMany = async ({ objId, params }, config, injectId = true) => {
   try {
@@ -67,7 +67,36 @@ export const getMany = async ({ objId, params }, config, injectId = true) => {
   }
 }
 
+export const getMapValue = async (params, total, config) => {
+  const result = await rollReqUseTotalCount(
+    `kube/find/field/map_str_val/bk_biz_id/${params.bk_biz_id}`,
+    params,
+    { limit: 200, total },
+    config,
+    'post',
+    data => data.info
+  )
+
+  const mergeResult = {}
+  const { fields = [] } = params
+  result.forEach((row) => {
+    fields.forEach((field) => {
+      const data = row[field] || []
+      if (mergeResult[field]) {
+        // 去重
+        const newItems = data.filter(item => !mergeResult[field].some(x => x.key === item.key && x.val === item.val))
+        mergeResult[field].push(...newItems)
+      } else {
+        mergeResult[field] = data.slice()
+      }
+    })
+  })
+
+  return mergeResult
+}
+
 export default {
   find,
-  getMany
+  getMany,
+  getMapValue
 }

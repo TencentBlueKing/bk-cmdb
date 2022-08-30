@@ -54,20 +54,24 @@
         propertyGroups.value = objPropertyGroups
 
         // 实例
-        const params = { id: containerId.value, bizId: bizId.value }
+        const params = {
+          id: containerId.value,
+          podId: podId.value,
+          bizId: bizId.value
+        }
         instance.value = await containerConService.getOne(params)
 
         // 拓扑路径
-        const { info: [{ paths }] } = await containerPodService.getPodPath({
+        const { info } = await containerPodService.getPodPath({
           bk_biz_id: bizId.value,
           ids: [podId.value]
         })
-        topoPaths.value = paths
+        topoPaths.value = info
       })
 
       const topologyList = computed(() => topoPaths.value.map(topo => ({
         ...topo,
-        path: topo.path.replaceAll('##', ' / ')
+        path: `${topo.biz_name} / ${topo.cluster_name} / ${topo.namespace} / ${topo.workload_name}`
       })))
 
       watch(active, (active) => {

@@ -62,7 +62,7 @@ export default [
       },
       {
         name: MENU_POD_CONTAINER_DETAILS,
-        path: 'container/:containerId',
+        path: 'pod/:podId/container/:containerId',
         component: () => import('@/views/pod-details/children/container-details.vue'),
         meta: new Meta({
           owner: MENU_BUSINESS,

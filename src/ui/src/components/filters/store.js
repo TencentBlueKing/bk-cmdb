@@ -21,6 +21,7 @@ import RouterQuery from '@/router/query'
 import throttle from 'lodash.throttle'
 import { CONTAINER_OBJECTS, TOPO_MODE_KEYS, MIX_SEARCH_MODES } from '@/dictionary/container.js'
 import containerPropertyService from '@/service/container/property.js'
+import { getContainerInstanceService } from '@/service/container/common'
 
 function getStorageHeader(type, key, properties) {
   if (!key) {
@@ -50,7 +51,7 @@ const FilterStore = new Vue({
       activeCollection: null,
       needResetPage: false,
       throttleSearch: throttle(this.dispatchSearch, 100, { leading: false }),
-      topoMode: '',
+      topoMode: TOPO_MODE_KEYS.NORMAL,
       fixedPropertyIds: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id'],
       defaultConditionProperties: {
         [TOPO_MODE_KEYS.BIZ_NODE]: [
@@ -75,7 +76,8 @@ const FilterStore = new Vue({
           ['name', 'node'],
           ['roles', 'node']
         ]
-      }
+      },
+      containerPropertyMapValue: {}
     }
   },
   computed: {
@@ -494,13 +496,14 @@ const FilterStore = new Vue({
         params.host_condition = Utils.transformContainerCondition(
           hostConds,
           this.selected,
-          header.filter(property => !property?.isInject)
+          header.filter(property => !property?.isInject && property.bk_obj_id === 'host')
         )
 
         // 容器节点属性条件
-        params.node_filter = Utils.transformContainerNodeCondition(
+        params.node_cond = Utils.transformContainerNodeCondition(
           nodeConds,
           this.selected,
+          header.filter(property => !property?.isInject && property.bk_obj_id === CONTAINER_OBJECTS.NODE)
         )
 
         if (transformedIP.condition) {
@@ -597,6 +600,31 @@ const FilterStore = new Vue({
       this.propertyGroups = groups
       return groups
     },
+    async getContainerPropertyMapValue() {
+      const objIds = [CONTAINER_OBJECTS.NODE]
+      for (const objId of objIds) {
+        const objProperties = this.getModelProperties(objId)
+        const mapTypeFields = objProperties
+          .filter(prop => prop.bk_property_type === 'map')
+          .map(prop => prop.bk_property_id)
+
+        const service = getContainerInstanceService(objId)
+        // TODO: 确定资源主机bizId
+        const total = await service.getCount({
+          bk_biz_id: this.bizId
+        })
+
+        if (total && mapTypeFields?.length) {
+          const values = await containerPropertyService.getMapValue({
+            bk_biz_id: this.bizId,
+            kind: objId,
+            fields: mapTypeFields
+          }, total)
+
+          this.containerPropertyMapValue[objId] = values
+        }
+      }
+    },
     async loadCollections() {
       const { info: collections } = await api.post('hosts/favorites/search', {
         condition: {
@@ -669,8 +697,9 @@ export async function setupFilterStore(config = {}) {
   FilterStore.activeCollection = null
   await Promise.all([
     FilterStore.getProperties(),
-    FilterStore.getPropertyGroups()
+    FilterStore.getPropertyGroups(),
   ])
+  await FilterStore.getContainerPropertyMapValue()
   FilterStore.setupIPQuery()
   FilterStore.setupPropertyQuery()
   FilterStore.setupNormalProperty()

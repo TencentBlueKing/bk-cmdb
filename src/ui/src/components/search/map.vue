@@ -11,13 +11,15 @@
 -->
 
 <template>
-  <bk-input
-    v-model.trim="localValue"
+  <bk-tag-input ref="tagInput"
+    v-model="localValue"
     v-bind="$attrs"
-    @clear="() => $emit('clear')"
-    @focus="handleToggle(true, ...arguments)"
+    :trigger="trigger"
+    :list="list"
+    @removeAll="() => $emit('clear')"
+    @click.native="handleToggle(true)"
     @blur="handleToggle(false, ...arguments)">
-  </bk-input>
+  </bk-tag-input>
 </template>
 
 <script>
@@ -27,7 +29,24 @@
     mixins: [activeMixin],
     props: {
       value: {
-        type: String
+        type: Array,
+        default: () => ([])
+      },
+      options: {
+        type: Array,
+        default: () => ([])
+      },
+      idKey: {
+        type: String,
+        default: 'key'
+      },
+      nameKey: {
+        type: String,
+        default: 'val'
+      },
+      trigger: {
+        type: String,
+        default: 'focus'
       }
     },
     computed: {
@@ -39,6 +58,12 @@
           this.$emit('input', value)
           this.$emit('change', value)
         }
+      },
+      list() {
+        return this.options.map(opt => ({
+          id: `${opt[this.idKey]}=${opt[this.nameKey]}`,
+          name: `${opt[this.idKey]}=${opt[this.nameKey]}`
+        }))
       }
     },
     methods: {

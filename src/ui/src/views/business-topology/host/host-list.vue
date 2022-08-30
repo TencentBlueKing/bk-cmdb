@@ -27,7 +27,7 @@
       @header-click="handleHeaderClick">
       <bk-table-column type="selection" width="50" align="center" fixed></bk-table-column>
       <bk-table-column v-for="column in tableHeader"
-        show-overflow-tooltip
+        :show-overflow-tooltip="column.bk_property_type !== 'map'"
         :min-width="column.bk_property_id === 'bk_host_id' ? 80 : 120"
         :key="column.bk_property_id"
         :sortable="getColumnSortable(column)"
@@ -37,7 +37,7 @@
         <template slot-scope="{ row }">
           <cmdb-property-value
             :theme="column.bk_property_id === 'bk_host_id' ? 'primary' : 'default'"
-            :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id, isContainerHost)"
+            :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id)"
             :show-unit="false"
             :property="column"
             :multiple="column.bk_obj_id !== 'host'"
@@ -242,7 +242,7 @@
       renderHeader(property) {
         const content = [this.$tools.getHeaderPropertyName(property)]
         const modelId = property.bk_obj_id
-        if (modelId !== 'host') {
+        if (modelId !== 'host' && modelId !== CONTAINER_OBJECTS.NODE) {
           const model = this.getModelById(modelId)
           const suffix = this.$createElement('span', { style: { color: '#979BA5', marginLeft: '4px' } }, [`(${model.bk_obj_name})`])
           content.push(suffix)
@@ -274,7 +274,7 @@
           name: MENU_BUSINESS_HOST_DETAILS,
           params: {
             bizId: this.bizId,
-            id: this.isContainerHost ? row.bk_host_id : row.host.bk_host_id
+            id: row.host.bk_host_id
           },
           history: true
         })
@@ -554,7 +554,7 @@
           // eslint-disable-next-line prefer-destructuring
           const internalModule = modules[0]
           await this.$http.post(`host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, {
-            bk_host_ids: FilterUtils.getSelectedHostIds(this.table.selection, this.isContainerHost),
+            bk_host_ids: FilterUtils.getSelectedHostIds(this.table.selection),
             default_internal_module: internalModule.data.bk_inst_id,
             is_remove_from_all: true
           }, {
@@ -579,7 +579,7 @@
           sourceModel: this.selectedNode.data.bk_obj_id,
           sourceId: this.selectedNode.data.bk_inst_id,
           targetModules: modules.map(node => node.data.bk_inst_id).join(','),
-          resources: FilterUtils.getSelectedHostIds(this.table.selection, this.isContainerHost)?.join(','),
+          resources: FilterUtils.getSelectedHostIds(this.table.selection)?.join(','),
           node: this.selectedNode.id
         }
         this.$routerActions.redirect({

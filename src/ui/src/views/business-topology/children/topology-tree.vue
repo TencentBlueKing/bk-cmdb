@@ -90,6 +90,8 @@
   } from '@/dictionary/menu-symbol'
   import topologyInstanceService from '@/service/topology/instance'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
+  import { isWorkload } from '@/service/container/common'
+  import { CONTAINER_OBJECTS } from '@/dictionary/container'
 
   export default {
     components: {
@@ -176,17 +178,13 @@
     methods: {
       async initTopology() {
         try {
-          const [topology, internal, containerTopo] = await Promise.all([
+          const [topology, internal, container] = await Promise.all([
             this.getInstanceTopology(),
             this.getInternalTopology(),
-            topologyInstanceService.getContainerTopo({
-              bizId: this.bizId,
-              params: {
-                bk_reference_obj_id: BUILTIN_MODELS.BUSINESS,
-                bk_reference_id: this.bizId
-              }
-            })
+            this.getContainerTopology()
           ])
+
+          const { topo: containerTopo, leafIds: containerLeafIds } = container
 
           sortTopoTree(topology, 'bk_inst_name', 'child')
           sortTopoTree(internal.module, 'bk_module_name')
@@ -217,6 +215,8 @@
           this.isBlueKing = root.bk_inst_name === '蓝鲸'
 
           this.$refs.tree.setData(topology)
+
+          containerLeafIds.forEach(id => this.$refs.tree.setExpanded(id))
 
           this.createWatcher()
         } catch (e) {
@@ -293,16 +293,106 @@
           }
         })
       },
+      async getContainerTopology() {
+        const topoPath = this.$route.query.topo_path
+        const topoPathQueue = topoPath?.split(',') || []
+
+        const leadPath = topoPathQueue?.[0]?.split('-')
+        const leadObj = leadPath?.[0]
+        const currentClusterId = leadPath?.[1]
+
+        // 容器拓扑的第1层级为cluster，先获取cluster拓扑
+        const clusterTopo = await topologyInstanceService.getContainerTopo({
+          bizId: this.bizId,
+          params: {
+            bk_reference_obj_id: BUILTIN_MODELS.BUSINESS,
+            bk_reference_id: this.bizId
+          }
+        })
+
+        let asyncTopoTreeData = null
+        let parentData = null
+        const leafIds = []
+
+        // 如果查询参数打头的不是cluster则认为不处于容器拓扑，直接返回第1层级的cluster拓扑即可
+        if (leadObj !== CONTAINER_OBJECTS.CLUSTER) {
+          return { topo: clusterTopo, leafIds }
+        }
+
+        // 遍历查询参数的拓扑路径，获取对应的节点数据，以还原拓扑
+        for (let i = 0; i < topoPathQueue.length; i++) {
+          const path = topoPathQueue[i]?.split('-')
+          const objId = path[0]
+          const instId = Number(path[1])
+
+          if (this.isContainerLeaf(objId) || objId === CONTAINER_OBJECTS.FOLDER) {
+            break
+          }
+
+          const data = await topologyInstanceService.getContainerTopo({
+            bizId: this.bizId,
+            params: {
+              bk_reference_obj_id: objId,
+              bk_reference_id: instId
+            }
+          })
+
+          // 加载第1个层级的时候，将数据赋予asyncTopoTreeData，因为此处为引用赋值，此后对data追加child时数据
+          if (!asyncTopoTreeData) {
+            asyncTopoTreeData = data
+          } else {
+            // 之后加载的每个层级，找到与之对应在的parent并添加为child
+            const foundNode = parentData.find(parent => parent.bk_inst_id === instId)
+            if (foundNode && data) {
+              foundNode.child = data
+            }
+          }
+
+          // 数据作为下一次的parent
+          parentData = data
+
+          // 记录所有的叶子节点id
+          if (data) {
+            const nodeIds = data
+              .filter(item => this.isContainerLeaf(item.bk_obj_id) || item.is_folder)
+              .map(item => this.getNodeId(item))
+            leafIds.push(...nodeIds)
+          }
+        }
+
+        // 找到当前的那个cluster，将异步获取的topo追加为child
+        const currentClusterTopo = clusterTopo.find(topo => topo.bk_inst_id === Number(currentClusterId))
+        if (currentClusterTopo) {
+          currentClusterTopo.child = asyncTopoTreeData
+        }
+
+        return { topo: clusterTopo, leafIds }
+      },
       getNodeId(data) {
+        // folder实际是不存在instid的，默认给了一个999，所以需要再加上上级id以确保节点id全局唯一
+        if (data.is_folder) {
+          return `${data.bk_obj_id}-${data.bk_inst_id}-${data.ref_id}`
+        }
+
         return `${data.bk_obj_id}-${data.bk_inst_id}`
       },
       isContainerNode(node) {
         return node.data.is_container
       },
+      isContainerFolder(node) {
+        return node.data.is_folder
+      },
       isLazyDisabledNode(node) {
         return !this.isContainerNode(node)
       },
+      isContainerLeaf(objId) {
+        return isWorkload(objId)
+      },
       async lazyGetChildrenNode(node) {
+        if (this.isContainerLeaf(node.data.bk_obj_id) || this.isContainerFolder(node)) {
+          return {}
+        }
+
         const topoList = await topologyInstanceService.getContainerTopo({
           bizId: this.bizId,
           params: {
@@ -312,7 +402,7 @@
         })
 
         // 指定哪些是叶子节点，叶子节点不会再显示展开的小箭头
-        const leafIds = topoList?.filter(item => item.is_workload)?.map(item => this.getNodeId(item))
+        const leafIds = topoList?.filter(item => item.is_workload || item.is_folder)?.map(item => this.getNodeId(item))
 
         // 待数据添加为树节点后，设置节点对应的统计数据
         setTimeout(() => {
@@ -351,11 +441,27 @@
           page: 1,
           _t: Date.now()
         }
+        if (this.isContainerNode(node)) {
+          query.topo_path = this.genTopoPathByNode(node).join(',')
+        } else {
+          query.topo_path = undefined
+        }
         RouterQuery.set(query)
 
         if (FilterStore.hasCondition && oldId !== newId) {
           FilterStore.setActiveCollection(null)
         }
+      },
+      genTopoPathByNode(node) {
+        const path = []
+        let currentNode = node
+
+        while (currentNode.parent) {
+          path.push(this.getNodeId(currentNode.data))
+          currentNode = currentNode.parent
+        }
+
+        return path.reverse()
       },
       handleDefaultExpand(node) {
         const nodes = []
@@ -427,15 +533,24 @@
         try {
           const params = {
             bizId: this.bizId,
-            params: nodes.map(({ data }) => ({
-              kind: data.bk_obj_id,
-              id: data.bk_inst_id
-            }))
+            params: {
+              resource_info: nodes.map(({ data }) => ({
+                kind: data.bk_obj_id,
+                // folder传递的是上级clusterid
+                id: data.is_folder ? data.ref_id : data.bk_inst_id
+              }))
+            }
           }
           const { hostStats, podStats } = await topologyInstanceService.getContainerTopoNodeStats(params)
           nodes.forEach(({ data }) => {
-            const hostStat = hostStats.find(item => item.kind === data.bk_obj_id && item.id === data.bk_inst_id)
-            const podStat = podStats.find(item => item.kind === data.bk_obj_id && item.id === data.bk_inst_id)
+            const finder = (item) => {
+              if (data.is_folder) {
+                return item.kind === data.bk_obj_id && item.id === data.ref_id
+              }
+              return item.kind === data.bk_obj_id && item.id === data.bk_inst_id
+            }
+            const hostStat = hostStats.find(finder)
+            const podStat = podStats.find(finder)
             this.$set(data, 'status', 'finished')
             this.$set(data, 'host_count', hostStat.count)
             this.$set(data, 'pod_count', podStat.count)
