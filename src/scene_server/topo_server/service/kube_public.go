@@ -29,6 +29,90 @@ import (
 	"configcenter/src/kube/types"
 )
 
+// FindKubeMapStrFieldVal find k8s mapStr type field value
+func (s *Service) FindKubeMapStrFieldVal(ctx *rest.Contexts) {
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	req := types.QueryFieldValReq{}
+	if err := ctx.DecodeInto(&req); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := req.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	table, err := types.GetKubeTableName(req.Kind)
+	if err != nil {
+		blog.Errorf("get table name failed, kind: %s, err: %v, rid: %s", req.Kind, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	cond := mapstr.MapStr{common.BKAppIDField: bizID}
+	query := &metadata.QueryCondition{
+		Fields:    req.Fields,
+		Condition: cond,
+		Page:      req.Page,
+	}
+	option := &types.QueryReq{
+		Table:     table,
+		Condition: query,
+	}
+
+	result, err := s.Engine.CoreAPI.CoreService().Kube().FindInst(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	if err != nil {
+
+		blog.Errorf("find instance failed, cond: %v, table: %s, err: %v, rid: %s", query, table, err, ctx.Kit.Rid)
+	}
+	info := make(map[string][]types.KV)
+	uniqueMap := make(map[string]struct{})
+	for _, inst := range result.Info {
+		for _, field := range req.Fields {
+			val, ok := inst[field]
+			if !ok {
+				continue
+			}
+			if val == nil {
+				continue
+			}
+			mapVal, ok := val.(map[string]interface{})
+			if !ok {
+				blog.Errorf("value is not map string type, val: %v, field: %s, rid: %s", val, field, ctx.Kit.Rid)
+				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+				return
+			}
+
+			for key, val := range mapVal {
+				unique := key + ":" + util.GetStrByInterface(val)
+				if _, ok := uniqueMap[unique]; ok {
+					continue
+				}
+				kv := types.KV{
+					Key: key,
+					Val: val,
+				}
+				info[field] = append(info[field], kv)
+				uniqueMap[unique] = struct{}{}
+			}
+		}
+	}
+
+	ctx.RespEntity(
+		types.MapStrFieldVal{
+			Info: info,
+		},
+	)
+}
+
 // convertKubeCondition 根据不同的资源生成不同的查询条件
 func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathReq, filter mapstr.MapStr,
 	tableNames []string) (*types.KubeTopoPathRsp, error) {

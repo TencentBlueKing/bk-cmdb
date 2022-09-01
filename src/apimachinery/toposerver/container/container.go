@@ -53,6 +53,32 @@ func (st *Container) BatchCreateNode(ctx context.Context, header http.Header, bi
 
 }
 
+// BatchCreatePod batch create pod.
+func (st *Container) BatchCreatePod(ctx context.Context, header http.Header, bizID int64,
+	data *types.CreatePodsOption) ([]int64, errors.CCErrorCoder) {
+	ret := new(types.CreateNodesResult)
+	subPath := "/kube/createmany/pod/%d/instance"
+
+	err := st.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("batch create node failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+
+	return ret.Info, nil
+
+}
+
 // SearchCluster create cluster.
 func (st *Container) SearchCluster(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
 	*types.ResponseCluster, errors.CCErrorCoder) {

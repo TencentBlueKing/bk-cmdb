@@ -266,7 +266,7 @@ func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ids, err = s.Logics.ContainerOperation().BatchCreatePod(ctx.Kit, data, bizID, ctx.Kit.SupplierAccount)
+		ids, err = s.Logics.ContainerOperation().BatchCreatePod(ctx.Kit, data, bizID)
 		if err != nil {
 			blog.Errorf("create business cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err

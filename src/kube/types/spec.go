@@ -141,6 +141,22 @@ func GetCollectionWithObject(object string) ([]string, error) {
 		return []string{BKTableNameBasePod}, nil
 	case KubeContainer:
 		return []string{BKTableNameBaseContainer}, nil
+	case string(KubeDeployment):
+		return []string{BKTableNameBaseDeployment}, nil
+	case string(KubeDaemonSet):
+		return []string{BKTableNameBaseDaemonSet}, nil
+	case string(KubeStatefulSet):
+		return []string{BKTableNameBaseStatefulSet}, nil
+	case string(KubeGameStatefulSet):
+		return []string{BKTableNameGameStatefulSet}, nil
+	case string(KubeGameDeployment):
+		return []string{BKTableNameGameDeployment}, nil
+	case string(KubeCronJob):
+		return []string{BKTableNameBaseCronJob}, nil
+	case string(KubeJob):
+		return []string{BKTableNameBaseJob}, nil
+	case string(KubePodWorkload):
+		return []string{BKTableNameBasePodWorkload}, nil
 	case KubeWorkload:
 		return GetWorkLoadTables(), nil
 	default:
@@ -244,8 +260,8 @@ type KubeSpec struct {
 	// Namespace namespace name in third party platform
 	Namespace *string `json:"namespace" bson:"namespace"`
 	// Node node name in third party platform
-	Node *string `json:"node" bson:"node"`
-
+	Node          *string `json:"node" bson:"node"`
+	PodName       *string `json:"pod_name" bson:"pod_name"`
 	KubeReference `json:",inline" bson:",inline"`
 }
 
@@ -258,4 +274,5 @@ type CmdbSpec struct {
 	CmdbReference `json:",inline" bson:",inline"`
 	// NodeID node id in cc
 	NodeID *int64 `json:"bk_node_id" bson:"bk_node_id"`
+	PodID  *int64 `json:"bk_pod_id" bson:"bk_pod_id"`
 }

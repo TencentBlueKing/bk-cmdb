@@ -41,6 +41,8 @@ type ContainerInterface interface {
 		option *types.ArrangeDeleteNodeOption) errors.CCErrorCoder
 	BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
 		data *types.CreateNodesReq) ([]int64, errors.CCErrorCoder)
+	BatchCreatePod(ctx context.Context, header http.Header, bizID int64,
+		data *types.CreatePodsOption) ([]int64, errors.CCErrorCoder)
 	SearchNode(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
 		*types.ResponseNode, errors.CCErrorCoder)
 }

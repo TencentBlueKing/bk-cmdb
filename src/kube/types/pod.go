@@ -168,9 +168,9 @@ func (p *PodQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.Map
 // Pod pod details
 type Pod struct {
 	// cc的自增主键
-	ID              int64   `json:"id"`
-	SupplierAccount *string `json:"bk_supplier_account"`
-	PodCoreInfo     `json:",inline" bson:",inline"`
+	ID          int64 `json:"id"`
+	SysSpec     `json:",inline" bson:",inline"`
+	PodCoreInfo `json:",inline" bson:",inline"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }
@@ -220,21 +220,22 @@ type ContainerCoreInfo struct {
 
 // SysSpec 存放cc的容器相关的关系信息，所有类型共用这个结构体
 type SysSpec struct {
-	BizID     int64 `json:"bk_biz_id"`
-	ClusterID int64 `json:"bk_cluster_id,omitempty"`
+	BizID           *int64  `json:"bk_biz_id"`
+	SupplierAccount *string `json:"bk_supplier_account"`
+	ClusterID       *int64  `json:"bk_cluster_id,omitempty"`
 	// 冗余的cluster id
-	Cluster     string `json:"cluster_id,omitempty"`
-	NameSpaceID int64  `json:"bk_namespace_id,omitempty"`
+	ClusterUID  *string `json:"cluster_uid,omitempty"`
+	NameSpaceID *int64  `json:"bk_namespace_id,omitempty"`
 	// 冗余的namespace名称
-	NameSpace string `json:"namespace,omitempty"`
-	Workload  *Ref   `json:"workload,omitempty"`
-	HostID    int64  `json:"bk_host_id,omitempty"`
-	NodeID    int64  `json:"bk_node_id,omitempty"`
+	NameSpace *string `json:"namespace,omitempty"`
+	Workload  *Ref    `json:"workload,omitempty"`
+	HostID    *int64  `json:"bk_host_id,omitempty"`
+	NodeID    *int64  `json:"bk_node_id,omitempty"`
 	// 冗余的node名称
-	Node string `json:"node,omitempty"`
+	Node *string `json:"node,omitempty"`
 	// 所有容器相关数据用相同的relation结构体，pod不需要这两个字段，仅container需要这两个字段
-	PodID int64  `json:"bk_pod_id,omitempty"`
-	Pod   string `json:"pod_name,omitempty"`
+	PodID *int64  `json:"bk_pod_id,omitempty"`
+	Pod   *string `json:"pod_name,omitempty"`
 }
 
 // Ref pod-related workload association information.
@@ -248,8 +249,11 @@ type Ref struct {
 
 // PodsInfo details of creating pods.
 type PodsInfo struct {
-	PodCoreInfo `json:",inline"`
-	Containers  []ContainerCoreInfo `json:"containers"`
+	KubeSpecInfo *KubeSpec `json:"kube_spec"`
+	CmdbSpecInfo *CmdbSpec `json:"cmdb_spec"`
+	HostID       *int64    `json:"bk_host_id"`
+	PodCoreInfo  `json:",inline"`
+	Containers   []ContainerCoreInfo `json:"containers"`
 }
 
 // Validate validate the PodCoreInfo
@@ -265,9 +269,7 @@ func (option *ContainerCoreInfo) Validate() error {
 
 // CreatePodsOption create Pods request
 type CreatePodsOption struct {
-	Pods         []PodsInfo `json:"pods"`
-	KubeSpecInfo *KubeSpec  `json:"kube_spec"`
-	CmdbSpecInfo *CmdbSpec  `json:"cmdb_spec"`
+	Pods []PodsInfo `json:"pods"`
 }
 
 // Validate validate the KubeSpec
@@ -312,39 +314,44 @@ func (option *CmdbSpec) Validate() error {
 
 // Validate validate the CreatePodsReq
 func (option *CreatePodsOption) Validate() error {
+
 	if len(option.Pods) == 0 {
 		return errors.New("param cannot be empty")
 	}
+
 	if len(option.Pods) > createPodsLimit {
 		return errors.New("param cannot be empty")
 	}
-	if option.KubeSpecInfo == nil && option.CmdbSpecInfo == nil {
-		return errors.New("kube spec and cmdb spec cannot be empty at the same time")
-	}
-	if option.KubeSpecInfo != nil && option.CmdbSpecInfo != nil {
-		return errors.New("kube spec and cmdb spec cannot be set at the same time")
-	}
-	// 需要补充每个指针都不能为空
-	if option.KubeSpecInfo != nil {
-		if option.KubeSpecInfo.ClusterUID == nil {
-			return errors.New("cluster uid cannot be empty")
+
+	for _, pod := range option.Pods {
+		if pod.KubeSpecInfo == nil && pod.CmdbSpecInfo == nil {
+			return errors.New("kube spec and cmdb spec cannot be empty at the same time")
+		}
+		if pod.KubeSpecInfo != nil && pod.CmdbSpecInfo != nil {
+			return errors.New("kube spec and cmdb spec cannot be set at the same time")
+		}
+		// 需要补充每个指针都不能为空
+		if pod.KubeSpecInfo != nil {
+			if pod.KubeSpecInfo.ClusterUID == nil {
+				return errors.New("cluster uid cannot be empty")
+			}
 		}
 
-	}
-	if option.CmdbSpecInfo != nil {
-		if err := option.CmdbSpecInfo.Validate(); err != nil {
-			return err
+		if pod.CmdbSpecInfo != nil {
+			if err := pod.CmdbSpecInfo.Validate(); err != nil {
+				return err
+			}
 		}
-	}
-	if option.KubeSpecInfo != nil {
-		if err := option.KubeSpecInfo.Validate(); err != nil {
-			return err
+		if pod.KubeSpecInfo != nil {
+			if err := pod.KubeSpecInfo.Validate(); err != nil {
+				return err
+			}
 		}
-	}
-	for _, pod := range option.Pods {
+
 		if err := pod.Validate(); err != nil {
 			return err
 		}
+
 		for _, container := range pod.Containers {
 			if err := container.Validate(); err != nil {
 				return err

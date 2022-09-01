@@ -27,6 +27,26 @@ import (
 	"configcenter/src/kube/types"
 )
 
+// BatchCreatePod batch create nodes
+func (s *coreService) BatchCreatePod(ctx *rest.Contexts) {
+
+	inputData := new(types.CreatePodsOption)
+	if err := ctx.DecodeInto(inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	if err != nil {
+		blog.Error("url parameter bk_biz_id not integer, bizID: %s, rid: %s", ctx.Request.PathParameter("bk_biz_id"),
+			ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+		return
+	}
+
+	ctx.RespEntityWithError(s.core.ContainerOperation().BatchCreatePod(ctx.Kit, bizID, inputData.Pods))
+
+}
+
 // BatchCreateNode batch create nodes
 func (s *coreService) BatchCreateNode(ctx *rest.Contexts) {
 

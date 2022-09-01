@@ -134,6 +134,7 @@ type ContainerOperation interface {
 	BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.ArrangeDeleteNodeOption) (
 		*metadata.DeletedCount, errors.CCErrorCoder)
 	BatchCreateNode(kit *rest.Kit, bizID int64, data []types.NodeBaseFields) ([]int64, errors.CCErrorCoder)
+	BatchCreatePod(kit *rest.Kit, bizID int64, data []types.PodsInfo) ([]int64, errors.CCErrorCoder)
 	SearchNode(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseNode, error)
 }
 

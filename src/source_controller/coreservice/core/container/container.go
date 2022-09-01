@@ -18,6 +18,7 @@
 package container
 
 import (
+	"configcenter/src/common/util"
 	"configcenter/src/kube/orm"
 	"time"
 
@@ -153,6 +154,186 @@ func validateNodeData(kit *rest.Kit, bizID int64, node types.NodeBaseFields) err
 	return nil
 }
 
+// BatchCreatePod create container node data in batches.
+func (p *containerOperation) BatchCreatePod(kit *rest.Kit, bizID int64, data []types.PodsInfo) ([]int64,
+	errors.CCErrorCoder) {
+
+	// generate ids field
+	ids, err := mongodb.Client().NextSequences(kit.Ctx, types.BKTableNameBaseNode, len(data))
+	if nil != err {
+		blog.Errorf("create node failed, generate ids failed, err: %+v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
+	}
+
+	podIDs := make([]int64, 0)
+	now := time.Now().Unix()
+
+	cmdbField := []string{types.BKClusterIDFiled, types.BKNamespaceIDField, types.BKIDField}
+	kubeField := []string{types.ClusterUIDField, types.NamespaceField, types.KubeNameField}
+	// 这里有一个问题，就是如果用户传的是ccID  那么应该是不知道他上一级的kube信息。所以这里要获一下上一级信息。同理如果传的是kube信息，那么
+	// 也需要获取一下上一级的ccID信息。
+	for idx, pod := range data {
+		tmpSpec := types.SysSpec{}
+		if pod.KubeSpecInfo != nil {
+			// 通过workload kind 获取表名
+			tablename, err := types.GetCollectionWithObject(*pod.KubeSpecInfo.WorkloadKind)
+			if err != nil {
+				blog.Errorf("get collection failed, kind: %s, err: %v, rid: %s",
+					*pod.KubeSpecInfo.KubeReference.WorkloadKind, err, kit.Rid)
+				return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
+			}
+			filter := map[string]interface{}{
+				common.BKAppIDField:   bizID,
+				common.BKOwnerIDField: kit.SupplierAccount,
+				types.ClusterUIDField: *pod.KubeSpecInfo.ClusterUID,
+				types.NamespaceField:  *pod.KubeSpecInfo.Namespace,
+				types.KubeNameField:   *pod.KubeSpecInfo.WorkloadName,
+			}
+			workload := make([]map[string]interface{}, 0)
+			err = mongodb.Client().Table(tablename[0]).Find(filter).Fields(cmdbField...).All(kit.Ctx, &workload)
+			if err != nil {
+				blog.Errorf("query host module config failed, err: %s, rid:%s", err, kit.Rid)
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+			if len(workload) > 1 {
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+			clusterID, err := util.GetInt64ByInterface(workload[0][types.BKClusterIDFiled])
+			if err != nil {
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+
+			namespaceID, err := util.GetInt64ByInterface(workload[0][types.BKNamespaceIDField])
+			if err != nil {
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+			workloadID, err := util.GetInt64ByInterface(workload[0][types.BKIDField])
+			if err != nil {
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+
+			node := make([]map[string]interface{}, 0)
+			err = mongodb.Client().Table(types.BKTableNameBaseNode).Find(filter).Fields([]string{types.BKIDField}...).
+				All(kit.Ctx, &node)
+			if err != nil {
+				blog.Errorf("query host module config failed, err: %s, rid:%s", err, kit.Rid)
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+			if len(node) > 1 {
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+			nodeID, err := util.GetInt64ByInterface(node[0][types.BKIDField])
+			if err != nil {
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+			tmpSpec = types.SysSpec{
+				BizID:           &bizID,
+				SupplierAccount: &kit.SupplierAccount,
+				ClusterID:       &clusterID,
+				ClusterUID:      pod.KubeSpecInfo.ClusterUID,
+				NameSpaceID:     &namespaceID,
+				NameSpace:       pod.KubeSpecInfo.Namespace,
+				Workload: &types.Ref{
+					Kind: *pod.KubeSpecInfo.WorkloadKind,
+					Name: *pod.KubeSpecInfo.WorkloadName,
+					ID:   workloadID,
+				},
+				HostID: pod.HostID,
+				NodeID: &nodeID,
+				Node:   pod.KubeSpecInfo.Node,
+			}
+		}
+
+		if pod.CmdbSpecInfo != nil {
+			// 通过workload kind 获取表名
+			tablename, err := types.GetCollectionWithObject(*pod.CmdbSpecInfo.WorkloadKind)
+			if err != nil {
+				blog.Errorf("get collection failed, kind: %s, err: %v, rid: %s",
+					*pod.CmdbSpecInfo.WorkloadKind, err, kit.Rid)
+				return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
+			}
+			filter := map[string]interface{}{
+				common.BKAppIDField:      bizID,
+				common.BKOwnerIDField:    kit.SupplierAccount,
+				types.BKClusterIDFiled:   *pod.CmdbSpecInfo.ClusterID,
+				types.BKNamespaceIDField: *pod.CmdbSpecInfo.NamespaceID,
+				types.BKIDField:          *pod.CmdbSpecInfo.WorkloadID,
+			}
+			workload := make([]map[string]interface{}, 0)
+			err = mongodb.Client().Table(tablename[0]).Find(filter).Fields(kubeField...).All(kit.Ctx, &workload)
+			if err != nil {
+				blog.Errorf("query host module config failed, err: %s, rid:%s", err, kit.Rid)
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+			if len(workload) > 1 {
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+
+			clusterUID := util.GetStrByInterface(workload[0][types.ClusterUIDField])
+			if err != nil {
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+
+			namespace := util.GetStrByInterface(workload[0][types.NamespaceField])
+			if err != nil {
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+			workloadname := util.GetStrByInterface(workload[0][types.KubeNameField])
+			if err != nil {
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+
+			node := make([]map[string]interface{}, 0)
+			err = mongodb.Client().Table(types.BKTableNameBaseNode).Find(filter).Fields([]string{types.BKIDField}...).
+				All(kit.Ctx, &node)
+			if err != nil {
+				blog.Errorf("query host module config failed, err: %s, rid:%s", err, kit.Rid)
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+			if len(node) > 1 {
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+			nodeID, err := util.GetInt64ByInterface(node[0][types.BKIDField])
+			if err != nil {
+				return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			}
+			tmpSpec = types.SysSpec{
+				BizID:           &bizID,
+				SupplierAccount: &kit.SupplierAccount,
+				ClusterID:       pod.CmdbSpecInfo.ClusterID,
+				ClusterUID:      &clusterUID,
+				NameSpaceID:     pod.CmdbSpecInfo.NamespaceID,
+				NameSpace:       &namespace,
+				Workload: &types.Ref{
+					Kind: *pod.CmdbSpecInfo.WorkloadKind,
+					Name: workloadname,
+					ID:   *pod.CmdbSpecInfo.WorkloadID,
+				},
+				HostID: pod.HostID,
+				NodeID: &nodeID,
+				Node:   pod.KubeSpecInfo.Node,
+			}
+		}
+		node := &types.Pod{
+			ID:          int64(ids[idx]),
+			SysSpec:     tmpSpec,
+			PodCoreInfo: pod.PodCoreInfo,
+			Revision: table.Revision{
+				CreateTime: now,
+				LastTime:   now,
+				Creator:    kit.User,
+				Modifier:   kit.User,
+			},
+		}
+		podIDs = append(podIDs, int64(ids[idx]))
+		if err := mongodb.Client().Table(types.BKTableNameBaseNode).Insert(kit.Ctx, node); err != nil {
+			blog.Errorf("create node failed, db insert failed, node: %+v, err: %+v, rid: %s", node, err, kit.Rid)
+			return nil, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
+		}
+	}
+	return podIDs, nil
+}
+
 // BatchCreateNode create container node data in batches.
 func (p *containerOperation) BatchCreateNode(kit *rest.Kit, bizID int64, data []types.NodeBaseFields) ([]int64,
 	errors.CCErrorCoder) {
@@ -189,7 +370,6 @@ func (p *containerOperation) BatchCreateNode(kit *rest.Kit, bizID int64, data []
 
 	now := time.Now().Unix()
 	for idx, node := range data {
-
 		if err := validateNodeData(kit, bizID, node); err != nil {
 			return nil, err
 		}

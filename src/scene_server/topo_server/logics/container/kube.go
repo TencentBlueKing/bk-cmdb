@@ -39,7 +39,7 @@ type ClusterOperationInterface interface {
 	BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.ArrangeDeleteNodeOption, bkSupplierAccount string) error
 	SearchCluster(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseCluster, error)
 	BatchCreateNode(kit *rest.Kit, data *types.CreateNodesReq, bizID int64, bkSupplierAccount string) ([]int64, error)
-	BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption, bizID int64, bkSupplierAccount string) ([]int64, error)
+	BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption, bizID int64) ([]int64, error)
 	SearchNode(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseNode, error)
 	SetProxy(inst ClusterOperationInterface)
 }
@@ -255,16 +255,58 @@ func (b *kube) isExsitKubeResource(kit *rest.Kit, option *types.DeleteClusterOpt
 }
 
 // BatchCreatePod batch create pod.
-func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption, bizID int64, supplierAccount string) (
+func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption, bizID int64) (
 	[]int64, error) {
 
-	//1、校验这个pod不能存在
+	//1、校验pods不能存在，整体上看用户传过来的条件根据不同类型的条件获取是否存在pods
+	filters := make([]map[string]interface{}, 0)
 
-	//2、创建pod
+	// 整理查询条件
+	for _, pod := range data.Pods {
+		filter := map[string]interface{}{
+			common.BKOwnerIDField: kit.SupplierAccount,
+			types.BKBizIDField:    bizID,
+		}
+		if pod.KubeSpecInfo != nil {
+			filter[types.ClusterUIDField] = *pod.KubeSpecInfo.ClusterUID
+			filter[types.NamespaceField] = *pod.KubeSpecInfo.Namespace
+			filter[types.NodeNameFiled] = *pod.KubeSpecInfo.Node
+			filter[types.KubeNameField] = *pod.KubeSpecInfo.PodName
+			filter[types.RefKindField] = *pod.KubeSpecInfo.WorkloadKind
+			filter[types.RefNameField] = *pod.KubeSpecInfo.WorkloadName
+		}
+		if pod.CmdbSpecInfo != nil {
+			filter[types.BKClusterIDFiled] = *pod.CmdbSpecInfo.ClusterID
+			filter[types.BKNamespaceIDField] = *pod.CmdbSpecInfo.NamespaceID
+			filter[types.BKNodeIDField] = *pod.CmdbSpecInfo.NodeID
+			filter[types.BKPodIDField] = *pod.CmdbSpecInfo.PodID
+			filter[types.RefKindField] = *pod.KubeSpecInfo.WorkloadKind
+			filter[types.RefIDField] = *pod.CmdbSpecInfo.WorkloadID
+		}
+		filters = append(filters, filter)
+	}
 
-	//3、再创建pod下面的containers
-
-	return nil, nil
+	counts, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		types.BKTableNameBasePod, filters)
+	if err != nil {
+		blog.Errorf("count cluster failed, cond: %#v, err: %v, rid: %s", filters, err, kit.Rid)
+		return nil, err
+	}
+	var podNum int64
+	for _, count := range counts {
+		podNum += count
+	}
+	if podNum > 0 {
+		blog.Errorf("some pod already exists and the creation fails, rid: %s", kit.Rid)
+		return nil, errors.New("some pod already exists and the creation fails")
+	}
+	//2、创建pod和container
+	result, err := b.clientSet.CoreService().Container().BatchCreatePod(kit.Ctx, kit.Header, bizID, data)
+	if err != nil {
+		blog.Errorf("create nodes failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
+		return nil, err
+	}
+	return result, nil
 }
 
 // BatchCreateNode batch create node.
