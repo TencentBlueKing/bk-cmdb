@@ -41,8 +41,7 @@ If you want to know more about the above features, please refer to the [Function
 * [Replace Community Version with This Version](docs/overview/upgrade-from-ce.md)
 
 ## Roadmap
-* [Version iteration rules (In Chinese)](docs/VERSION.md)
-* [Changelog](version.md)
+* [Changelog (In Chinese)](docs/support-file/changelog/release.md)
 
 ## Support
 - [Wiki (In Chinese)](https://github.com/Tencent/bk-cmdb/wiki) or ask for help

@@ -1,0 +1,292 @@
+#elasticsearch配置
+es:
+  #全文检索功能开关(取值：off/on)，默认是off，开启是on
+  fullTextSearch: "off"
+  #elasticsearch服务监听url，默认是[http://127.0.0.1:9200](http://127.0.0.1:9200/)
+  url: http://__BK_CMDB_ES7_REST_ADDR__
+  # es 认证使用
+  #用户
+  usr: __BK_CMDB_ES7_USER__
+  #密码
+  pwd: __BK_CMDB_ES7_PASSWORD__
+
+# esb配置
+  esb:
+  addr: http://__BK_PAAS_PRIVATE_ADDR__
+  appCode: __BK_CMDB_APP_CODE__
+  appSecret: __BK_CMDB_APP_SECRET__
+  insecureSkipVerify: true
+  certFile:
+  keyFile:
+  caFile:
+  password:
+
+# web_server专属配置
+webServer:
+  api:
+    host: __BK_CMDB_API_HOST__
+    port: __BK_CMDB_API_PORT__
+    #显示版本，比如v3为3.x
+    version: v3
+  #会话相关
+  session:
+    #会话名
+    name: cc3
+    skip: "0"
+    #是否支持同时登录同一用户，0为不支持，1为支持
+    multipleOwner: "0"
+    #登陆方式为opensource时的用户密码，用户和密码以:分割，多个账户以逗号分割，如user1:password1,user2:password2
+    userInfo:
+  site:
+    #该值表示部署完成后,输入到浏览器中访问的cmdb 网址
+    domainUrl: __BK_CMDB_PUBLIC_URL__
+    httpsDomainUrl: __BK_CMDB_PUBLIC_URL__
+    #登录地址
+    bkLoginUrl: http://__BK_PAAS_PUBLIC_ADDR__/login/?app_id=%s&c_url=%s
+    bkHttpsLoginUrl: https://__BK_PAAS_PUBLIC_ADDR__/login/?app_id=%s&c_url=%s
+    appCode: __BK_CMDB_APP_CODE__
+    checkUrl: http://__BK_PAAS_PRIVATE_ADDR__/login/accounts/get_user/?bk_token=
+    resourcesPath: /tmp/
+    #前端基础页面位置
+    htmlRoot: __BK_HOME__/cmdb/web/
+    authscheme: iam
+    # 蓝鲸配置桌面地址
+    bkDesktopUrl:  http://__BK_PAAS_PUBLIC_ADDR__
+    # paas的地址，给前端的人员选择器使用
+    paasDomainUrl: http://__BK_PAAS_PRIVATE_ADDR__
+    #帮助文档地址
+    helpDocUrl: https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品简介/Overview.md
+    paas:
+      # pass的tls相关配置
+      tls:
+        # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+        insecureSkipVerify:
+        # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+        certFile:
+        # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+        keyFile:
+        # CA证书的路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+        caFile:
+        # 用于解密根据RFC1423加密的证书密钥的PEM块
+        password:
+  app:
+    #蓝鲸权限中心的应用编码
+    authAppCode: bk_iam
+    # 权限中心地址
+    authUrl: __BK_HTTP_SCHEMA__://__BK_PAAS_PUBLIC_ADDR__/o/bk_iam/apply-custom-perm
+    # 用来配置节点管理平台的url
+    agentAppUrl: __BK_HTTP_SCHEMA__://__BK_PAAS_PUBLIC_ADDR__/o/bk_nodeman/
+    #权限模式，web页面使用，可选值: internal, iam
+    authscheme: iam
+  login:
+    # 使用的登录系统， skip-login 免登陆模式， blueking 默认登录模式， 使用蓝鲸登录
+    version: blueking
+
+# operation_server专属配置
+operationServer:
+  timer:
+    # 00:00-23:59,运营统计定时收集数据时间点,默认是为00:30
+    #定时同步的时间点
+    spec: 15:30 # 00:00 - 23:59
+  # 禁用运营统计数据统计功能，默认false，如果设置为true，将无法查看定时统计的主机、模型实例等的变化数据
+  disableOperationStatistic: false
+
+#auth_server专属配置
+authServer:
+  #蓝鲸权限中心地址,可配置多个,用,(逗号)分割
+  address: http://__BK_IAM_PRIVATE_ADDR__
+  #cmdb项目在蓝鲸权限中心的应用编码
+  appCode: __BK_CMDB_APP_CODE__
+  #cmdb项目在蓝鲸权限中心的应用密钥
+  appSecret: __BK_CMDB_APP_SECRET__
+  authCenter:
+    # 权限中心tls配置
+    tls:
+      # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+      insecureSkipVerify:
+      # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+      certFile:
+      # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+      keyFile:
+      # CA证书的路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+      caFile:
+      # 用于解密根据RFC1423加密的证书密钥的PEM块
+      password:
+  #开发商ID
+  supplierID: "0"
+
+#cloudServer专属配置
+cloudServer:
+  # 加密服务使用
+  cryptor:
+    enableCryptor: true
+    # 访问密码服务来获取密钥的URL，格式如/api/v1/secrets/cloud_account
+    secretKeyUrl: __BK_CMDB_SECRET_KEY_URL__
+    # 密钥服务的地址，必须以http://或者https://开头
+    secretsAddrs: __BK_CMDB_SECRETS_ADDR__
+    # 密码服务的权限凭证Token
+    secretsToken: __BK_CMDB_SECRETS_TOKEN__
+    # 密码服务的项目名称
+    secretsProject: __BK_CMDB_SECRETS_PROJECT__
+    # 密码服务的环境名称
+    secretsEnv: __BK_CMDB_SECRETS_ENV__
+  # 云同步任务
+  syncTask:
+    # 同步周期,最小为5分钟
+    syncPeriodMinutes: __BK_CMDB_CLOUD_SYNC_PERIOD_MINUTES__
+
+# datacollection专属配置
+datacollection:
+  hostsnap:
+    # 主机静态数据采集模式，将数据导入kafka或者redis，可选值是 kafka、redis，默认值为redis（仅用于新插件bkmonitorbeat）
+    reportMode: redis
+    # 当主机快照数据属性,如cpu,bk_cpu_mhz,bk_disk,bk_mem这些数值型数据变动的范围大于该配置的值时，进行db数据的更新
+    # 默认值为10%，最小值为1%，以百分比为单位
+    changeRangePercent: 10
+    # 用于设置单个服务主机快照处理请求能力，起到限流的作用，令牌桶配置，最多请求数通过burst设置。qps的默认值为40，burst的默认值为100
+    rateLimiter:
+      qps: 40
+      burst: 100
+    # 主机快照属性，如cpu,bk_cpu_mhz,bk_disk,bk_mem等数据的处理时间窗口，用于限制在指定周期的前多少分钟可以让请求通过，超过限定时间将不会处理请求。
+    # 它的下一级有三个参数，atTime,checkIntervalHours，windowMinute 当不配置windowMinute，窗口不生效。当配置了windowMinute,至少配置atTime
+    # 或者checkIntervalHours中的一个，否则不生效。当atTime和checkIntervalHours都配置时，取atTime这个配置的语义功能
+    # 如果窗口生效，启动的时候，会先跑完windowMinutes。然后再生效
+    timeWindow:
+      # atTime，设置一天中，几点开启时间窗口，如配置成14:40，表示14:40开启窗口，如果配置格式不正确，默认值为1:00
+      atTime:
+      # checkIntervalHours，规定每隔几个小时窗口开启，单位为小时，如配置成 3，表示每隔3个小时，开启时间窗口，如果配置格式不正确，默认值为 1
+      checkIntervalHours: 1
+      # windowMinutes，代表开启时间窗口后，多长时间内请求可以通过，单位为分钟。如配置成 60，表示开启窗口时间60分钟内请求可以通过。
+      # 注意：该时间不能大于窗口每次开启的间隔时间，取值范围不能小于等于0，如果配置不正确，默认值为15
+      windowMinutes: 15
+
+# 监控配置，monitor配置项必须存在
+monitor:
+  # 监控插件名称，有noop，blueking， 不填时默认为noop
+  pluginName: noop
+  # 是否开启监控
+  enableMonitor: false
+  # 当使用blueking监控插件时，上报数据所需要的数据通道标识,如1500000
+  dataID: 0
+  # 采集数据后能够缓存的队列长度，设置范围为1～1000, 默认为100
+  queueSize: 100
+  # 采集数据用的gsecmdline命令绝对路径，默认版本需要大于等于2.0.2，默认路径：__BK_GSE_AGENT_HOME__/plugins/bin/gsecmdline
+  gsecmdlinePath: __BK_GSE_AGENT_HOME__/plugins/bin/gsecmdline
+  # 对应的domainsocket绝对路径，默认路径：__BK_GSE_AGENT_HOME__/agent/data/ipc.state.report
+  domainSocketPath: __BK_GSE_AGENT_HOME__/agent/data/ipc.state.report
+  # 用于对数据上报进行频率控制和限流
+  # qps的设置范围为1～50，默认值为10
+  # burst的设置范围为1～100，默认值为20
+  rateLimiter:
+    qps: 10
+    burst: 20
+
+# cacheService相关配置
+cacheService:
+  # 业务简要拓扑缓存的定时刷新时间，默认为15分钟，最小为2分钟。每次会将所有的业务的拓扑刷新一次到缓存中。
+  briefTopologySyncIntervalMinutes: 15
+
+# 日志平台openTelemetry跟踪链接入相关配置
+openTelemetry:
+  # 表示是否开启日志平台openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
+  enable: false
+  # 日志平台openTelemetry跟踪链功能的自定义上报服务地址
+  endpoint:
+  # 日志平台openTelemetry跟踪链功能的上报data_id, 用于旧版的数据上报
+  bkDataID:
+  # 日志平台openTelemetry跟踪链功能的bk.data.token, 用于新版的数据上报
+  bkDataToken:
+  # 连接日志平台tls配置
+  tls:
+    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+    insecureSkipVerify:
+    # 服务使用的证书
+    certFile:
+    # 服务使用的证书对应的密钥
+    keyFile:
+    # CA证书，用于验证对方证书
+    caFile:
+    # 用于解密根据RFC1423加密的证书密钥的PEM块
+    password:
+
+# eventServer相关配置
+eventServer:
+  # 下发主机身份相关配置
+  hostIdentifier:
+    # 是否开始下发主机身份功能, 有两个值，true和false，当处于true时，开启下发主机身份功能，false时，关闭该功能
+    startUp: true
+    # 每隔多少个小时进行一次全量主机身份批量的同步操作，整数值，单位为小时，注：刚启动服务时，会等一个周期后再进行全量同步操作
+    batchSyncIntervalHours: 6
+    # 用于设置推送主机身份请求gse的taskServer能力，起到限流的作用。qps的默认值为200, 代表每秒最多推送的主机数量，burst的默认值为200
+    rateLimiter:
+      qps: 200
+      burst: 200
+    # 下发主机身份文件名
+    fileName: "hostid"
+    # 当下发主机为linux操作系统时，相关配置
+    linux:
+      # 下发主机身份文件路径
+      filePath: __BK_GSE_SYNCDATA_LINUX_HOSTID_DIR__
+      # 下发主机身份文件所有者
+      fileOwner: "root"
+      # 下发主机身份文件权限值
+      filePrivilege: 644
+    # 当下发主机为windows操作系统时，相关配置
+    windows:
+      # 下发主机身份文件路径
+      filePath: __BK_GSE_SYNCDATA_WINDOWS_HOSTID_DIR__
+      # 下发主机身份文件所有者
+      fileOwner: "root"
+      # 下发主机身份文件权限值
+      filePrivilege: 644
+
+# 直接调用gse服务相关配置
+gse:
+  # 调用gse的apiServer服务时相关配置
+  apiServer:
+    # 此配置为数组类型，可配置连接gse的apiServer的多个host:port格式的值，去建立连接
+    endpoints:
+      - __BK_GSE_CACHE_APISERVER_HOST__:__BK_GSE_CACHE_APISERVER_PORT__
+      # 证书相关信息
+    insecureSkipVerify: true
+    certFile: __BK_HOME__/cert/platform.cert
+    keyFile: __BK_HOME__/cert/platform.key
+    caFile: __BK_HOME__/cert/gseca.crt
+    password:
+  # 调用gse的taskServer服务时相关配置
+  taskServer:
+    # 此配置为数组类型，可配置连接gse的taskServer的多个host:port格式的值，去建立连接
+    endpoints:
+      - __BK_GSE_TASKSERVER_HOST__:__BK_GSE_TASK_PORT__
+    # 证书相关信息
+    insecureSkipVerify: true
+    certFile: __BK_HOME__/cert/platform.cert
+    keyFile: __BK_HOME__/cert/platform.key
+    caFile: __BK_HOME__/cert/gseca.crt
+    password:
+
+# 当主机静态数据采集模式为kafka时，datacollection处理插件bkmonitorbeat采集上来的主机静态数据，选择kafka作为数据导入组件时的相关配置
+kafka:
+  snap:
+    brokers:
+      - __BK_CMDB_KAFKA_HOST__:__BK_CMDB_KAFKA_PORT__
+    # groupID为固定值，请勿随便修改，修改后会导致重复消费过去的数据
+    groupID: bk_cmdb_snapshot_group
+    # partition数量固定为1，保证消息的顺序性
+    partition: 1
+    # 安全协议SASL_PLAINTEXT，SASL机制SCRAM-SHA-512的账号、密码信息
+    user:
+    password:
+
+# cmdb服务tls配置
+tls:
+  # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+  insecureSkipVerify:
+  # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+  certFile:
+  # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+  keyFile:
+  # CA证书的路径，用于验证对方证书,,如:/data/cmdb/cert/ca.crt
+  caFile:
+  # 用于解密根据RFC1423加密的证书密钥的PEM块
+  password:
