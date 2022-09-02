@@ -29,7 +29,7 @@ else
 	configcenter/src/common/version.CCTag=${GITTAG} -X configcenter/src/common/version.CCDistro=${CCDistro}"
 endif
 
-DOCS_DIR?=$(PROJECT_PATH)/src/configcenter/docs)
+DOCS_DIR?=$(PROJECT_PATH)/docs
 SCRIPT_DIR?=$(PROJECT_PATH)/scripts
 RESOURCE_DIR?=$(PROJECT_PATH)/resources
 SOURCE_ROOT?=$(PROJECT_PATH)/src
