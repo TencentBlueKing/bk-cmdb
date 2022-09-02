@@ -81,8 +81,7 @@ func (lgc *Logics) GetNormalModuleByModuleID(kit *rest.Kit, appID, moduleID int6
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
 		query)
 	if err != nil {
-		blog.Errorf("GetNormalModuleByModuleID http do error, err:%s,input:%#v,rid:%s", err.Error(), query, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		return nil, kit.CCError.Errorf(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	return result.Info, nil

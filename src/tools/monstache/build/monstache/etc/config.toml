@@ -1,5 +1,6 @@
-# mongodb settings
-mongo-url = "mongodb://cc:cc@localhost:27017/cmdb"
+# mongodb settings fill in according to the official url format of mongo.
+# Note that you need to set the database name, username and password corresponding to cmdb
+mongo-url = ""
 
 # elasticsearch settings
 elasticsearch-urls = ["http://localhost:9200"]
