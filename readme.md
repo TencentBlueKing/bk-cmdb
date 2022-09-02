@@ -48,8 +48,7 @@
 * [使用Helm部署CMDB到K8S环境](helm/README.md)
 
 ## Roadmap
-* [版本规划](docs/VERSION.md)
-* [版本日志](version.md)
+* [版本日志](docs/support-file/changelog/release.md)
 
 ## Support
 - [wiki](https://github.com/Tencent/bk-cmdb/wiki)

@@ -13,16 +13,16 @@
 #ifndef _GSE_COMMON_ZKCONFTOR_H_
 #define _GSE_COMMON_ZKCONFTOR_H_
 
-#include <string>
-#include "dataStruct/safe_map.h"
-#include "discover/zkapi/zk_client.h"
+#include "datastruct/safe_map.h"
 #include "discover/zkapi/zk_api.h"
+#include "discover/zkapi/zk_client.h"
+#include <string>
 
 #include "bbx/gse_errno.h"
 
 #include "conftor.h"
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
 /* zookeeper state constants */
 #define ZK_EXPIRED_SESSION_STATE_DEF -112
 #define ZK_AUTH_FAILED_STATE_DEF -113
@@ -47,8 +47,8 @@ typedef struct ZkConftorParam_
     std::string m_BasePath;
     std::string m_password;
 
-    ZkConftorParam_(){}
-    ~ZkConftorParam_(){}
+    ZkConftorParam_() {}
+    ~ZkConftorParam_() {}
 
     ZkConftorParam_& operator=(const ZkConftorParam_& src)
     {
@@ -63,28 +63,32 @@ typedef struct ZkConftorParam_
     {
         *this = src;
     }
-}ZkConftorParam;
+} ZkConftorParam;
 
 class ZkConftor : public Conftor
 {
 public:
     ZkConftor(const ZkConftorParam& zkParam);
+    ZkConftor(gse::discover::zkapi::ZkApi* zkClient, bool acl);
     virtual ~ZkConftor();
 
     int Start();
     int Stop();
-    int CreateConfItemWithParents(const std::string& key, std::string& value);
+    int CreateConfItemWithParents(const std::string& key, std::string& value, bool isEphemeral = false);
     int CreateConfItem(const std::string& key, std::string& value);
     int GetConfItem(const std::string& key, std::string& value, FnWatchConf pFnWatchConf, void* lpWatcher, int confItemFlag);
     int GetChildConfItem(const std::string& key, std::vector<std::string>& values, FnWatchConf pFnWatchConf, void* lpWatcher, int confItemFlag);
-    int ExistConfItem(const std::string &key, FnWatchConf pFnWatchConf, void *lpWatcher, int confItemFlag);
+    int ExistConfItem(const std::string& key, FnWatchConf pFnWatchConf, void* lpWatcher, int confItemFlag);
     int SetConfItem(const std::string& key, const std::string& value);
-    
 
-    int GetConfItemAsync(const std::string &key, FnWatchConf pFnWatchConf, void *lpWatcher, int confItemFlag,  FnZkGetValueCallBack pFnGetValueCallBack, void* ptr_callback);
-    int GetChildConfItemAsync(const std::string &key, FnWatchConf pFnWatchConf, void *lpWatcher, int confItemFlag, FnZkGetChildCallBack pFnGetChildCallBack, void *ptr_callback);
+    int CreateEphemeralNode(const std::string& path, const std::string& value);
+    int CreateEphemeralConfItemWithParents(const std::string& key, std::string& value);
+
+    int GetConfItemAsync(const std::string& key, FnWatchConf pFnWatchConf, void* lpWatcher, int confItemFlag, FnZkGetValueCallBack pFnGetValueCallBack, void* ptr_callback);
+    int GetChildConfItemAsync(const std::string& key, FnWatchConf pFnWatchConf, void* lpWatcher, int confItemFlag, FnZkGetChildCallBack pFnGetChildCallBack, void* ptr_callback);
+    int DeleteConfItem(const std::string& path);
+
 protected:
-
 private:
     int connectZkHost();
     void closeZkHost();
@@ -106,23 +110,25 @@ private:
        SESSION_EVENT_DEF -1
        NOTWATCHING_EVENT_DEF -2
      * **/
-    static void defaultWatcher(int type, int state, const char *path, void *wctx);
-    static void existWatcher(int type, int state, const char *path, void *wctx);
-    static void childWatcher(int type, int state, const char *path, void *wctx);
-    static void valueWatcher(int type, int state, const char *path, void *wctx);
-    static void ZkEventHandle(int type, int state, const char *path, void *wctx);
-    static void ZkSessionEventHandle(int type, int state, const char *path, void *wctx);
+    static void defaultWatcher(int type, int state, const char* path, void* wctx);
+    static void existWatcher(int type, int state, const char* path, void* wctx);
+    static void childWatcher(int type, int state, const char* path, void* wctx);
+    static void valueWatcher(int type, int state, const char* path, void* wctx);
+    static void ZkEventHandle(int type, int state, const char* path, void* wctx);
+    static void ZkSessionEventHandle(int type, int state, const char* path, void* wctx);
 
+    static void GetValueCallback(int32_t rc, const char* value, int32_t value_len, const struct Stat* stat, const void* data);
 
-    static void GetValueCallback(int32_t rc, const char *value, int32_t value_len, const struct Stat *stat, const void *data);
 private:
-    //gse::discover::zkapi::ZkClient* m_zkClient;
+    // gse::discover::zkapi::ZkClient* m_zkClient;
     gse::discover::zkapi::ZkApi* m_zkClient;
+    bool m_external;
+    bool m_acl;
     std::string m_zkauth;
     ZkConftorParam m_zkParam;
     gse::datastruct::SafeMap<const std::string, WatcherInfo*> m_mapKeyWatcher;
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif //_GSE_COMMON_ZKCONFTOR_H_

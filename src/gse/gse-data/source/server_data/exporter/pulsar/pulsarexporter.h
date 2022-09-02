@@ -22,7 +22,7 @@
 #include "conf/confItem.h"
 
 namespace gse {
-namespace dataserver {
+namespace data {
 
 class PulsarExporter : public Exporter
 {
@@ -40,9 +40,7 @@ private:
     
     bool startWithChannelID(ChannelIdExporterConfig *ptrChannelIDConfig);
     bool startWithDataFlow(ExporterConf* ptrExporterConf);
-    bool startWithDataID(StorageConfigType* ptrStorageConfig);
     static void pulsarPoll(int fd, short what, void* v);
-    std::string formaURL(StorageConfigType *ptrStorageConfig);
     void toPulsarTopics(const std::vector<std::string> &topicnames, std::vector<std::string> &newtopicnames);
 
 private:

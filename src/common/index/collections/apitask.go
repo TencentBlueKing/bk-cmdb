@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -33,35 +35,35 @@ var commAPITaskIndexes = []types.Index{}
 var deprecatedAPITaskIndexes = []types.Index{
 	{
 		Name: "idx_taskID",
-		Keys: map[string]int32{
-			"task_id": 1,
+		Keys: bson.D{{
+			"task_id", 1},
 		},
 		Unique:     true,
 		Background: true,
 	},
 	{
 		Name: "idx_name_status_createTime",
-		Keys: map[string]int32{
-			"create_time": 1,
-			"name":        1,
-			"status":      1,
+		Keys: bson.D{
+			{"create_time", 1},
+			{"name", 1},
+			{"status", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_status_lastTime",
-		Keys: map[string]int32{
-			"status":    1,
-			"last_time": 1,
+		Keys: bson.D{
+			{"status", 1},
+			{"last_time", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_name_flag_createTime",
-		Keys: map[string]int32{
-			"name":        1,
-			"flag":        1,
-			"create_time": 1,
+		Keys: bson.D{
+			{"name", 1},
+			{"flag", 1},
+			{"create_time", 1},
 		},
 		Background: true,
 	},

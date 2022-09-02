@@ -33,17 +33,11 @@
 #include "tools/net.h"
 //#include "warn_report.h"
 namespace gse { 
-namespace dataserver {
+namespace data {
 
 void alarm(const string &ip, const string content, int warnID)
 {
     LOG_ERROR("send warn failed , ip:%s, content:%s, warnid:%d", ip.c_str(), content.c_str(), warnID);
-    /*
-    if (WarnReport::Warn_Report(ip.c_str(), content, warnID) < 0)
-    {
-        LOG_ERROR("failed report warnning");
-    }
-    */
 }
 
 
@@ -65,7 +59,7 @@ int splitString(char* target, string delimiter, vector<int>& outVec)
 }
 
 
-int getNetWide(const char* devName)
+int GetNetDevSpeed(const char* devName)
 {
     struct ifreq ifr, *ifrp;  // 接口请求结构
     int fd;  // to  access socket  通过socket访问网卡的 文件描述符号fd

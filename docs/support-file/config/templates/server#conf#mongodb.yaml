@@ -1,0 +1,26 @@
+# mongodb配置
+mongodb:
+  host: __BK_CMDB_MONGODB_HOST__
+  port: __BK_CMDB_MONGODB_PORT__
+  usr: __BK_CMDB_MONGODB_USERNAME__
+  pwd: __BK_CMDB_MONGODB_PASSWORD__
+  database: cmdb
+  maxOpenConns: 3000
+  maxIdleConns: 100
+  mechanism: SCRAM-SHA-1
+  rsName: rs0
+  #mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+  socketTimeoutSeconds: 10
+# 用于保存事件监听数据的mongodb配置
+watch:
+  host: __BK_CMDB_EVENTS_MONGODB_HOST__
+  port: __BK_CMDB_EVENTS_MONGODB_PORT__
+  usr: __BK_CMDB_EVENTS_MONGODB_USERNAME__
+  pwd: __BK_CMDB_EVENTS_MONGODB_PASSWORD__
+  database: __BK_CMDB_EVENTS_MONGODB_DATABASE__
+  maxOpenConns: 3000
+  maxIdleConns: 100
+  mechanism: SCRAM-SHA-1
+  rsName: rs0
+  #mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+  socketTimeoutSeconds: 10

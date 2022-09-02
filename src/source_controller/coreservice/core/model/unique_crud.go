@@ -495,7 +495,8 @@ func (m *modelAttrUnique) checkDuplicateInstances(kit *rest.Kit, objInstTable st
 	}
 
 	groupFilter := make(map[string]interface{}, 0)
-	for key := range index.Keys {
+	indexKeyMap := index.Keys.Map()
+	for key := range indexKeyMap {
 		groupFilter[key] = "$" + key
 	}
 	checkInstDupFilter := []map[string]interface{}{

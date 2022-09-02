@@ -1,0 +1,36 @@
+redis:
+  #公共redis配置信息,用于存取缓存，用户信息等数据
+  host: __BK_CMDB_REDIS_HOST__:__BK_CMDB_REDIS_PORT__
+  pwd: __BK_CMDB_REDIS_PASSWORD__
+  sentinelPwd: __BK_CMDB_REDIS_SENTINEL_PASSWORD__
+  database: "0"
+  maxOpenConns: 3000
+  maxIDleConns: 1000
+
+  #以下几个redis配置为datacollection模块所需的配置,用于接收第三方提供的数据
+  #接收主机信息数据的redis
+  snap:
+    host: __BK_CMDB_REDIS_HOST__:__BK_CMDB_REDIS_PORT__
+    pwd: __BK_CMDB_REDIS_PASSWORD__
+    sentinelPwd: __BK_CMDB_REDIS_SENTINEL_PASSWORD__
+    database: "0"
+    maxOpenConns: 3000
+    maxIdleConns: 1000
+
+  #接收模型实例数据的redis
+  discover:
+    host: __BK_CMDB_REDIS_HOST__:__BK_CMDB_REDIS_PORT__
+    pwd: __BK_CMDB_REDIS_PASSWORD__
+    sentinelPwd: __BK_CMDB_REDIS_SENTINEL_PASSWORD__
+    database: "0"
+    maxOpenConns: 3000
+    maxIdleConns: 100
+
+  #接受硬件数据的redis
+  netcollect:
+    host: __BK_CMDB_REDIS_HOST__:__BK_CMDB_REDIS_PORT__
+    pwd: __BK_CMDB_REDIS_PASSWORD__
+    sentinelPwd: __BK_CMDB_REDIS_SENTINEL_PASSWORD__
+    database: "0"
+    maxOpenConns: 3000
+    maxIdleConns: 100

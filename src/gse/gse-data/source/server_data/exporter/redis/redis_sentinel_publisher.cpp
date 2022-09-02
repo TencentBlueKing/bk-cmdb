@@ -11,184 +11,87 @@
  */
 
 #include "redis_sentinel_publisher.h"
-#include <vector>
-#include "log/log.h"
-#include "bbx/gse_errno.h"
-#include "tools/macros.h"
-namespace gse { 
-namespace dataserver {
 
+#include <vector>
+
+#include "bbx/gse_errno.h"
+#include "db/redisapi/async_factory.h"
+#include "db/redisapi/factory.h"
+#include "db/redisapi/options.hpp"
+#include "log/log.h"
+#include "tools/finally.hpp"
+#include "tools/macros.h"
+
+namespace gse {
+namespace data {
 
 RedisSentinelPublisher::RedisSentinelPublisher(const std::string &host, int port, const std::string &passwd)
 {
-    m_client = NULL;
     m_host = host;
     m_port = port;
     m_masterPasswd = passwd;
-    m_masterPort = -1;
+    m_redisSentinal = nullptr;
 }
 
 RedisSentinelPublisher::~RedisSentinelPublisher()
 {
-    stop();
-
-    m_clientLock.WLock();
-    if (m_client != NULL)
-    {
-        delete m_client;
-        m_client = NULL;
-    }
-    m_clientLock.UnLock();
+    Stop();
 }
 
-int RedisSentinelPublisher::init()
+int RedisSentinelPublisher::Init()
 {
-    // get redis master when start, and check every 1 min
-    checkMaster();
+    gse::redis::RedisSentinelOptions options(m_masterName, "default", m_masterPasswd, m_sentienlPasswd);
+    options.SetNodes({{m_host, m_port}});
 
-    int iRet = m_eventManager.registerTimerPersistEvent(RedisSentinelPublisher::perMinHandler, this, 60);
-    if (iRet < 0)
+    m_redisSentinal = gse::redis::AsyncRedisFactory::CreateSentinelMaster(options);
+    if (m_redisSentinal == nullptr)
     {
-        LOG_ERROR("fail ot start one timer to check redis master. iRet(%d)", iRet);
+        LOG_ERROR("failed to create redis sentinal client, api return nullptr");
         return GSE_ERROR;
     }
 
-    return m_eventManager.Start();
-}
-
-void RedisSentinelPublisher::stop()
-{
-    m_eventManager.clear();
-    m_eventManager.stop();
-    m_eventManager.Join();
-}
-
-void RedisSentinelPublisher::perMinHandler(int fd, short what, void* param)
-{
-    RedisSentinelPublisher *ptrThis = reinterpret_cast<RedisSentinelPublisher *>(param);
-    ptrThis->checkMaster();
-}
-
-int RedisSentinelPublisher::checkMaster()
-{
-    string host;
-    int port;
-
-    int ret = getRedisMaster(host, port);
-    if (ret != GSE_SUCCESS)
+    if (!m_redisSentinal->IsOK())
     {
-        LOG_WARN("fail to get redis master info. iRet(%d)", ret);
-        return ret;
+        LOG_ERROR("failed to create redis sentinal client, error:%s", m_redisSentinal->Error());
+        return GSE_ERROR;
     }
 
-    if (m_masterHost == host && m_masterPort == port)
-    {
-        return GSE_SUCCESS;
-    }
-
-    // master changed
-    m_masterHost = host;
-    m_masterPort = port;
-    LOG_INFO("the redis master has changed, the new redis master is %s:%d", SAFE_CSTR(m_masterHost.c_str()), m_masterPort);
-
-    ret = createRedisClient();
-    if (ret != GSE_SUCCESS)
-    {
-        LOG_ERROR("fail to create a new redis client which connected to reids master(%s:%d), iRet:%d", SAFE_CSTR(m_masterHost.c_str()), m_masterPort, ret);
-        return ret;
-    }
+    LOG_DEBUG("create sentinal redis client(%s:%d), mastername:%s", m_host.c_str(), m_port, m_masterName.c_str());
 
     return GSE_SUCCESS;
 }
 
-int RedisSentinelPublisher::createRedisClient()
+void RedisSentinelPublisher::Stop()
 {
-    m_clientLock.WLock();
-    // release old client
-    if (m_client != NULL)
-    {
-        delete m_client;
-        m_client = NULL;
-    }
-
-    // passwd is configed on zk
-    m_client = new RedisPublishProducer(m_masterHost, m_masterPort, m_masterPasswd);
-    int ret = m_client->init();
-    if (ret != GSE_SUCCESS)
-    {
-        delete m_client;
-        m_client = NULL;
-        m_clientLock.UnLock();
-        return ret;
-    }
-    m_clientLock.UnLock();
-
-    return GSE_SUCCESS;
+    m_redisSentinal.reset();
 }
 
-void RedisSentinelPublisher::setMasterName(const std::string &mastername)
+void RedisSentinelPublisher::SetMasterName(const std::string &masterName)
 {
-    m_masterName = mastername;
+    m_masterName = masterName;
 }
 
-void RedisSentinelPublisher::getRedisMasterHostAndPort(string &host, int &port)
+void RedisSentinelPublisher::SetSentinelPasswd(const std::string &passwd)
 {
-    host = m_masterHost;
-    port = m_masterPort;
-    return;
-}
-int RedisSentinelPublisher::getRedisMaster(string &host, int &port)
-{
-    // connect and 'SENTINEL get-master-addr-by-name mymaster' get master ip port
-    gse::redis::sync::Redis client(m_host, m_port);
-    std::string errmsg;
-    bool bret = client.Connect(errmsg);
-    if (!bret)
-    {
-        LOG_ERROR("connect sentinel redis failed, errmsg:%s", errmsg.c_str());
-        return GSE_ERROR;
-    }
-
-    const string QueryCmd = "SENTINEL get-master-addr-by-name " + m_masterName;
-    vector<string> result;
-    std::string errormsg;
-    bret = client.ExecRedisCommand(QueryCmd, result, errormsg);
-    if (!bret)
-    {
-        LOG_ERROR("SENTINEL get-master-addr-by-name %s faile, errormsg:%s", m_masterName.c_str(), errormsg.c_str());
-        return GSE_ERROR;
-    }
-
-    client.Close();
-
-    // result is ip and port
-    // > SENTINEL get-master-addr-by-name mymaster
-    // 1) "ip"
-    // 2) "port"
-    //
-    if (result.size() != 2)
-    {
-        LOG_ERROR("SENTINEL get-master-addr-by-name %s result error", m_masterName.c_str());
-        return GSE_ERROR;
-    }
-    host = result[0];
-    port = gse::tools::strings::StringToInt16(result[1]);
-
-    return GSE_SUCCESS;
+    m_sentienlPasswd = passwd;
 }
 
-int RedisSentinelPublisher::produce(const string &key, const string &value)
+gse::redis::RedisErrorCode RedisSentinelPublisher::Produce(const string &key, const string &value)
 {
     m_clientLock.RLock();
-    if (m_client == NULL)
-    {
+    auto _ = gse::tools::defer::finally([this]() {
         m_clientLock.UnLock();
-        return GSE_ERROR;
-    }
-    int ret = m_client->produce(key, value);
-    m_clientLock.UnLock();
-    return ret;
+    });
+
+    LOG_DEBUG("publish %s %s to redis", key.c_str(), value.c_str());
+    return m_redisSentinal->Publish(key, value);
 }
 
+void RedisSentinelPublisher::GetHost(std::string &host, int &port)
+{
+    host = m_host;
+    port = m_port;
 }
-}
+
+} // namespace data
+} // namespace gse

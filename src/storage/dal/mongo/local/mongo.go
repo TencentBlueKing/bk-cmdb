@@ -836,8 +836,18 @@ func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 		createIndexOpt.SetExpireAfterSeconds(index.ExpireAfterSeconds)
 	}
 
+	keys := index.Keys
+	for index, key := range keys {
+		val, err := util.GetInt32ByInterface(key.Value)
+		if err != nil {
+			return err
+		}
+		key.Value = val
+		keys[index] = key
+	}
+
 	createIndexInfo := mongo.IndexModel{
-		Keys:    index.Keys,
+		Keys:    keys,
 		Options: createIndexOpt,
 	}
 

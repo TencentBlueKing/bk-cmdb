@@ -14,10 +14,10 @@
 #define _GSE_DATA_CODEC_H_
 
 #include "datacell.h"
-//#include "opscollection/ops.h"
+//#include "ops/ops.h"
 
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
 
 class OpsCollection;
 
@@ -28,21 +28,19 @@ public:
     virtual ~Codec();
 
 public:
-    inline void SetOPS(OpsCollection*  ptrOPSReport)
+    inline void SetOPS(OpsCollection* ptrOPSReport)
     {
         m_ptrOPSReport = ptrOPSReport;
     }
 
 public:
-    virtual int DecodeMsg(DataCell *pDataCell) = 0;
-    virtual int EncodeMsg(DataCell *pDataCell) = 0;
-
+    virtual int DecodeMsg(DataCell* pDataCell) = 0;
+    virtual int EncodeMsg(DataCell* pDataCell) = 0;
 
 protected:
-    OpsCollection*  m_ptrOPSReport;
-
+    OpsCollection* m_ptrOPSReport;
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif //_GSE_DATA_CODEC_H_
