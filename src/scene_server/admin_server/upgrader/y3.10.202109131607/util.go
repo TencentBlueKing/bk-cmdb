@@ -139,11 +139,20 @@ func parseAutomaticInstancePolicy(policy *operator.Policy) (*parsedInstancePolic
 		// one id's policy uses equal operator, while multiple ids are aggregated into one policy with in operator
 		switch policy.Operator {
 		case operator.Equal:
-			id, err := util.GetInt64ByInterface(value)
-			if err != nil {
-				return nil, fmt.Errorf("parse policy op(%s) id value(%#v) failed, err: %v", policy.Operator, value, err)
+			switch v := value.(type) {
+			case string:
+				id, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("parse policy op(%s) id(%s) failed, err: %v", policy.Operator, v, err)
+				}
+				ids = []int64{id}
+			default:
+				id, err := util.GetInt64ByInterface(v)
+				if err != nil {
+					return nil, fmt.Errorf("parse policy op(%s) id(%#v) failed, err: %v", policy.Operator, v, err)
+				}
+				ids = []int64{id}
 			}
-			ids = []int64{id}
 		case operator.In:
 			valueArr, ok := value.([]interface{})
 			if !ok || len(valueArr) == 0 {
@@ -152,9 +161,17 @@ func parseAutomaticInstancePolicy(policy *operator.Policy) (*parsedInstancePolic
 			var err error
 			ids = make([]int64, len(valueArr))
 			for index, val := range valueArr {
-				ids[index], err = util.GetInt64ByInterface(val)
-				if err != nil {
-					return nil, fmt.Errorf("parse policy op(%s) id(%#v) failed, err: %v", policy.Operator, val, err)
+				switch v := val.(type) {
+				case string:
+					ids[index], err = strconv.ParseInt(v, 10, 64)
+					if err != nil {
+						return nil, fmt.Errorf("parse policy op(%s) id(%s) failed, err: %v", policy.Operator, v, err)
+					}
+				default:
+					ids[index], err = util.GetInt64ByInterface(v)
+					if err != nil {
+						return nil, fmt.Errorf("parse policy op(%s) id(%#v) failed, err: %v", policy.Operator, v, err)
+					}
 				}
 			}
 		default:
