@@ -89,10 +89,10 @@ func (s *coreService) SearchNodeInstances(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.ContainerOperation().SearchNode(ctx.Kit, inputData))
 }
 
-// CreatePodInstance create cluster instance.
-func (s *coreService) CreatePodInstance(ctx *rest.Contexts) {
-	inputData := new(types.PodCoreInfo)
+// UpdateNodeInstance update node instance.
+func (s *coreService) UpdateNodeInstance(ctx *rest.Contexts) {
 
+	inputData := new(types.UpdateNodeOption)
 	if err := ctx.DecodeInto(inputData); nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -106,27 +106,15 @@ func (s *coreService) CreatePodInstance(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ContainerOperation().CreatePod(ctx.Kit, bizID, inputData))
-}
-
-// CreateContainerInstance create cluster instance.
-func (s *coreService) CreateContainerInstance(ctx *rest.Contexts) {
-	inputData := new(types.ContainerCoreInfo)
-
-	if err := ctx.DecodeInto(inputData); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	supplierAccount := ctx.Request.PathParameter("supplierAccount")
 	if err != nil {
 		blog.Error("url parameter bk_biz_id not integer, bizID: %s, rid: %s", ctx.Request.PathParameter("bk_biz_id"),
 			ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKOwnerIDField))
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ContainerOperation().CreateContainer(ctx.Kit, bizID, inputData))
+	ctx.RespEntityWithError(s.core.ContainerOperation().UpdateNodeFields(ctx.Kit, bizID, supplierAccount, inputData))
 }
 
 // UpdateClusterInstance update cluster instance.
@@ -151,7 +139,7 @@ func (s *coreService) UpdateClusterInstance(ctx *rest.Contexts) {
 	if err != nil {
 		blog.Error("url parameter bk_biz_id not integer, bizID: %s, rid: %s", ctx.Request.PathParameter("bk_biz_id"),
 			ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKOwnerIDField))
 		return
 	}
 

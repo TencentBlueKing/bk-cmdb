@@ -89,8 +89,17 @@ func (f Fields) IsFieldEditable() map[string]bool {
 	for k, v := range f.isEditable {
 		copied[k] = v
 	}
-
 	return copied
+}
+
+// IsFieldEditableByField returns the corresponding editable of specified field.
+func (f Fields) IsFieldEditableByField(field string) bool {
+	for k, v := range f.isEditable {
+		if field == k {
+			return v
+		}
+	}
+	return false
 }
 
 // OneFieldType returns the type corresponding to the specified field.

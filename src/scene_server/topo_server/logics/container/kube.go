@@ -34,7 +34,6 @@ import (
 // ClusterOperationInterface container cluster operation methods
 type ClusterOperationInterface interface {
 	CreateCluster(kit *rest.Kit, data *types.ClusterBaseFields, bizID int64, bkSupplierAccount string) (int64, error)
-	UpdateClusterFields(kit *rest.Kit, data *types.UpdateClusterOption, bizID int64, supplierAccount string) error
 	DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption, bkSupplierAccount string) error
 	BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.ArrangeDeleteNodeOption, bkSupplierAccount string) error
 	SearchCluster(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseCluster, error)
@@ -346,18 +345,6 @@ func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesReq, bizID 
 		return nil, err
 	}
 	return result, nil
-}
-
-// UpdateClusterFields 更新集群字段
-func (b *kube) UpdateClusterFields(kit *rest.Kit, data *types.UpdateClusterOption, bizID int64,
-	supplierAccount string) error {
-
-	err := b.clientSet.CoreService().Container().UpdateClusterFields(kit.Ctx, kit.Header, bizID, supplierAccount, data)
-	if err != nil {
-		blog.Errorf("create business failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
-		return err
-	}
-	return nil
 }
 
 // CreateCluster create container  cluster

@@ -103,6 +103,10 @@ func (s *coreService) initContainerInstances(web *restful.WebService) {
 		Path:    "/kube/updatemany/cluster/{supplierAccount}/{bk_biz_id}/instance",
 		Handler: s.UpdateClusterInstance})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/updatemany/node/{supplierAccount}/{bk_biz_id}/instance",
+		Handler: s.UpdateNodeInstance})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
 		Path:    "/kube/delete/cluster/{bk_biz_id}/instance",
 		Handler: s.DeleteClusterInstance})

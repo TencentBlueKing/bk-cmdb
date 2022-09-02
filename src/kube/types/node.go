@@ -20,6 +20,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"reflect"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
@@ -29,6 +30,9 @@ import (
 	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
 )
+
+// NodeFields merge the fields of the cluster and the details corresponding to the fields together.
+var NodeFields = table.MergeFields(NodeSpecFieldsDescriptor)
 
 // NodeSpecFieldsDescriptor node spec's fields descriptors.
 var NodeSpecFieldsDescriptor = table.FieldsDescriptors{
@@ -70,18 +74,41 @@ type NodeBaseFields struct {
 	// HasPod this field indicates whether there is a pod in the node.
 	// if there is a pod, this field is true. If there is no pod, this
 	// field is false. this field is false when node is created by default.
-	HasPod           bool                 `json:"has_pod" bson:"has_pod"`
-	Name             *string              `json:"name" bson:"name"`
-	Roles            *string              `json:"roles" bson:"roles"`
-	Labels           enumor.MapStringType `json:"labels" bson:"labels"`
-	Taints           enumor.MapStringType `json:"taints" bson:"taints"`
-	Unschedulable    bool                 `json:"unschedulable" bson:"unschedulable"`
-	InternalIP       *[]string            `json:"internal_ip" bson:"internal_ip"`
-	ExternalIP       *[]string            `json:"external_ip" bson:"external_ip"`
-	HostName         *string              `json:"hostname" bson:"hostname"`
-	RuntimeComponent *string              `json:"runtime_component" bson:"runtime_component"`
-	KubeProxyMode    *string              `json:"kube_proxy_mode" bson:"kube_proxy_mode"`
-	PodCidr          *string              `json:"pod_cidr" bson:"pod_cidr"`
+	HasPod           *bool                 `json:"has_pod" bson:"has_pod"`
+	Name             *string               `json:"name" bson:"name"`
+	Roles            *string               `json:"roles" bson:"roles"`
+	Labels           *enumor.MapStringType `json:"labels" bson:"labels"`
+	Taints           *enumor.MapStringType `json:"taints" bson:"taints"`
+	Unschedulable    bool                  `json:"unschedulable" bson:"unschedulable"`
+	InternalIP       *[]string             `json:"internal_ip" bson:"internal_ip"`
+	ExternalIP       *[]string             `json:"external_ip" bson:"external_ip"`
+	HostName         *string               `json:"hostname" bson:"hostname"`
+	RuntimeComponent *string               `json:"runtime_component" bson:"runtime_component"`
+	KubeProxyMode    *string               `json:"kube_proxy_mode" bson:"kube_proxy_mode"`
+	PodCidr          *string               `json:"pod_cidr" bson:"pod_cidr"`
+}
+
+// UpdateValidate 校验更新node场景的参数有效性
+func (option *NodeBaseFields) UpdateValidate() error {
+	if option == nil {
+		return errors.New("node information must be given")
+	}
+	typeOfOption := reflect.TypeOf(*option)
+	valueOfOption := reflect.ValueOf(*option)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+		fieldValue := valueOfOption.Field(i)
+		//	1、查看每个变量是否为空指针。如果是空指针表示不更新此字段，直接跳过
+		if fieldValue.IsNil() {
+			continue
+		}
+		// 2、非空指针的变量获取对应的tag。
+		tag := typeOfOption.Field(i).Tag.Get("json")
+		// 3、根据tag获取是否是可编辑字段
+		if !NodeFields.IsFieldEditableByField(tag) {
+			return fmt.Errorf("field [%s] is a non-editable field", tag)
+		}
+	}
+	return nil
 }
 
 // CreateNodesReq create node requests in batches.
@@ -146,6 +173,51 @@ func (option *QueryNodeReq) Validate() ccErr.RawErrorInfo {
 		}
 	}
 	return ccErr.RawErrorInfo{}
+}
+
+// NodeCmdbOption node related information in cmdb.
+type NodeCmdbOption struct {
+	ClusterID int `json:"bk_cluster_id"`
+	ID        int `json:"id"`
+}
+
+// NodeKubeOption information about the node itself.
+type NodeKubeOption struct {
+	ClusterUID string `json:"cluster_uid"`
+	Name       string `json:"name"`
+}
+
+// OneUpdateNode update individual node details.
+type OneUpdateNode struct {
+	NodeCmdbFilter *NodeCmdbOption `json:"node_cmdb_filter"`
+	NodeKubeFilter *NodeKubeOption `json:"node_kube_filter"`
+	Data           *NodeBaseFields `json:"data"`
+}
+
+// UpdateNodeOption update node field option
+type UpdateNodeOption struct {
+	Nodes []OneUpdateNode `json:"nodes"`
+}
+
+// Validate check whether the request parameters for updating the node are legal.
+func (option *UpdateNodeOption) Validate() error {
+
+	if len(option.Nodes) == 0 {
+		return errors.New("parameter cannot be empty")
+	}
+
+	for _, node := range option.Nodes {
+		if node.NodeCmdbFilter == nil && node.NodeKubeFilter == nil {
+			return errors.New("node_cmdb_filter and node_kube_filter cannot be empty at the same time")
+		}
+		if node.NodeCmdbFilter != nil && node.NodeKubeFilter != nil {
+			return errors.New("node_cmdb_filter and node_kube_filter cannot be set at the same time")
+		}
+		if err := node.Data.UpdateValidate(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Validate validate the NodeBaseFields

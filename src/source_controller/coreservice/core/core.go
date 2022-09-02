@@ -125,10 +125,9 @@ type ContainerOperation interface {
 	CreateCluster(kit *rest.Kit, bizID int64, option *types.ClusterBaseFields) (int64, errors.CCErrorCoder)
 	UpdateClusterFields(kit *rest.Kit, bizID int64, supplierAccount string,
 		data *types.UpdateClusterOption) (*metadata.UpdatedCount, errors.CCErrorCoder)
+	UpdateNodeFields(kit *rest.Kit, bizID int64, supplierAccount string,
+		data *types.UpdateNodeOption) (*metadata.UpdatedCount, errors.CCErrorCoder)
 	SearchCluster(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseCluster, error)
-	CreatePod(kit *rest.Kit, bizID int64, data *types.PodCoreInfo) (int64, errors.CCErrorCoder)
-	CreateContainer(kit *rest.Kit, bizID int64, data *types.ContainerCoreInfo) (int64,
-		errors.CCErrorCoder)
 	DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption) (*metadata.DeletedCount,
 		errors.CCErrorCoder)
 	BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.ArrangeDeleteNodeOption) (

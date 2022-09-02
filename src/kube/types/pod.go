@@ -201,21 +201,18 @@ type Container struct {
 
 // ContainerCoreInfo container core details
 type ContainerCoreInfo struct {
-	Name string `json:"name"`
-	// 容器ID
-	ContainerID string `json:"container_uid"`
-	Image       string `json:"image,omitempty"`
-	// 确认下这两个端口有什么区别
-	Ports     []ContainerPort `json:"ports,omitempty"`
-	HostPorts []ContainerPort `json:"host_ports,omitempty"`
-	Args      []string        `json:"args,omitempty"`
-	// 启动时间，unix时间戳
-	Started         int64         `json:"started,omitempty"`
-	Limits          ResourceList  `json:"limits,omitempty"`
-	ReqSysSpecuests ResourceList  `json:"requests,omitempty"`
-	Liveness        *Probe        `json:"liveness,omitempty"`
-	Environment     []EnvVar      `json:"environment,omitempty"`
-	Mounts          []VolumeMount `json:"mounts,omitempty"`
+	Name            string          `json:"name"`
+	ContainerID     string          `json:"container_uid"`
+	Image           string          `json:"image,omitempty"`
+	Ports           []ContainerPort `json:"ports,omitempty"`
+	HostPorts       []ContainerPort `json:"host_ports,omitempty"`
+	Args            []string        `json:"args,omitempty"`
+	Started         int64           `json:"started,omitempty"`
+	Limits          ResourceList    `json:"limits,omitempty"`
+	ReqSysSpecuests ResourceList    `json:"requests,omitempty"`
+	Liveness        *Probe          `json:"liveness,omitempty"`
+	Environment     []EnvVar        `json:"environment,omitempty"`
+	Mounts          []VolumeMount   `json:"mounts,omitempty"`
 }
 
 // SysSpec 存放cc的容器相关的关系信息，所有类型共用这个结构体

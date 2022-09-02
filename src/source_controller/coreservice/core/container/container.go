@@ -484,16 +484,43 @@ func (p *containerOperation) SearchCluster(kit *rest.Kit, input *metadata.QueryC
 	return result, nil
 }
 
-// CreateContainer create pod instance.
-func (p *containerOperation) CreateContainer(kit *rest.Kit, bizID int64, data *types.ContainerCoreInfo) (int64,
-	errors.CCErrorCoder) {
-	return 0, nil
-}
+// UpdateNodeFields create cluster instance.
+func (p *containerOperation) UpdateNodeFields(kit *rest.Kit, bizID int64, supplierAccount string,
+	data *types.UpdateNodeOption) (*metadata.UpdatedCount, errors.CCErrorCoder) {
 
-// CreatePod create pod instance.
-func (p *containerOperation) CreatePod(kit *rest.Kit, bizID int64, data *types.PodCoreInfo) (int64,
-	errors.CCErrorCoder) {
-	return 0, nil
+	for _, node := range data.Nodes {
+		filter := map[string]interface{}{
+			types.BKBizIDField:    bizID,
+			common.BKOwnerIDField: supplierAccount,
+		}
+		if node.NodeKubeFilter != nil {
+
+		}
+		if node.NodeCmdbFilter != nil {
+		}
+
+		if one.ID != 0 {
+			filter[types.BKIDField] = one.ID
+		}
+		if one.UID != "" {
+			filter[types.UidField] = one.UID
+		}
+
+		opts := orm.NewFieldOptions().AddIgnoredFields(common.BKFieldID, types.ClusterUIDField, common.BKFieldName)
+		updateData, err := orm.GetUpdateFieldsWithOption(one, opts)
+		if err != nil {
+			blog.Errorf("get update data failed, data: %v, err: %v, rid: %s", one, err, kit.Rid)
+			return &metadata.UpdatedCount{Count: 0}, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+		}
+
+		err = mongodb.Client().Table(types.BKTableNameBaseCluster).Update(kit.Ctx, filter, updateData)
+		if err != nil {
+			blog.Errorf("update cluster failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
+				err, kit.Rid)
+			return &metadata.UpdatedCount{Count: 0}, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+		}
+	}
+	return &metadata.UpdatedCount{Count: uint64(len(data.Cluster))}, nil
 }
 
 // UpdateClusterFields create cluster instance.
@@ -501,31 +528,28 @@ func (p *containerOperation) UpdateClusterFields(kit *rest.Kit, bizID int64, sup
 	data *types.UpdateClusterOption) (*metadata.UpdatedCount, errors.CCErrorCoder) {
 
 	for _, one := range data.Cluster {
-		filter := make(map[string]interface{})
+		filter := map[string]interface{}{
+			types.BKBizIDField:    bizID,
+			common.BKOwnerIDField: supplierAccount,
+		}
+
 		if one.ID != 0 {
-			filter = map[string]interface{}{
-				types.BKIDField:       one.ID,
-				types.BKBizIDField:    bizID,
-				common.BKOwnerIDField: supplierAccount,
-			}
+			filter[types.BKIDField] = one.ID
 		}
 		if one.UID != "" {
-			filter = map[string]interface{}{
-				types.UidField:        one.UID,
-				types.BKBizIDField:    bizID,
-				common.BKOwnerIDField: supplierAccount,
-			}
+			filter[types.UidField] = one.UID
 		}
+
 		opts := orm.NewFieldOptions().AddIgnoredFields(common.BKFieldID, types.ClusterUIDField, common.BKFieldName)
 		updateData, err := orm.GetUpdateFieldsWithOption(one, opts)
 		if err != nil {
 			blog.Errorf("get update data failed, data: %v, err: %v, rid: %s", one, err, kit.Rid)
-
 			return &metadata.UpdatedCount{Count: 0}, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 		}
+
 		err = mongodb.Client().Table(types.BKTableNameBaseCluster).Update(kit.Ctx, filter, updateData)
 		if err != nil {
-			blog.Errorf("update namespace failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
+			blog.Errorf("update cluster failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
 				err, kit.Rid)
 			return &metadata.UpdatedCount{Count: 0}, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 		}

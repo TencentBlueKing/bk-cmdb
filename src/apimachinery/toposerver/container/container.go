@@ -176,8 +176,32 @@ func (st *Container) CreatePod(ctx context.Context, header http.Header, bizID in
 	return ret, nil
 }
 
+// UpdateNodeFields update node fields.
+func (st *Container) UpdateNodeFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
+	data *types.UpdateNodeOption) errors.CCErrorCoder {
+	ret := new(types.CreateClusterResult)
+	subPath := "/kube/updatemany/node/%s/%d/instance"
+	err := st.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, supplierAccount, bizID).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("update node field failed, err: %+v", err)
+		return errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.CCError()
+	}
+
+	return nil
+}
+
 // UpdateClusterFields update cluster fields.
-func (st *Container) UpdateClusterFields(ctx context.Context, header http.Header, bizID int64, supplierAccount string,
+func (st *Container) UpdateClusterFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
 	data *types.UpdateClusterOption) errors.CCErrorCoder {
 	ret := new(types.CreateClusterResult)
 	subPath := "/kube/updatemany/cluster/%s/%d/instance"
@@ -190,7 +214,7 @@ func (st *Container) UpdateClusterFields(ctx context.Context, header http.Header
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("create cluster failed, http request failed, err: %+v", err)
+		blog.Errorf("update cluster field failed, err: %+v", err)
 		return errors.CCHttpError
 	}
 	if ret.CCError() != nil {

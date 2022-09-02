@@ -421,5 +421,42 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntityWithCount(0, result.Data)
+}
+
+// UpdateNodeFields update the node field.
+func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
+
+	data := new(types.UpdateNodeOption)
+	if err := ctx.DecodeInto(data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := data.Validate(); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := s.Engine.CoreAPI.CoreService().Container().UpdateNodeFields(ctx.Kit.Ctx, ctx.Kit.Header,
+			ctx.Kit.SupplierAccount, bizID, data)
+		if err != nil {
+			blog.Errorf("create cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(nil)
 
 }

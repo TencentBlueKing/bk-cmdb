@@ -114,8 +114,9 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 		return
 	}
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var err error
-		err = s.Logics.ContainerOperation().UpdateClusterFields(ctx.Kit, data, bizID, ctx.Kit.SupplierAccount)
+		//err = s.Logics.ContainerOperation().UpdateClusterFields(ctx.Kit, data, bizID, ctx.Kit.SupplierAccount)
+		err := s.Engine.CoreAPI.CoreService().Container().UpdateClusterFields(ctx.Kit.Ctx, ctx.Kit.Header,
+			ctx.Kit.SupplierAccount, bizID, data)
 		if err != nil {
 			blog.Errorf("create cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
