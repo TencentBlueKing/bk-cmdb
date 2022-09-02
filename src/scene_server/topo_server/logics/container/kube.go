@@ -258,7 +258,7 @@ func (b *kube) isExsitKubeResource(kit *rest.Kit, option *types.DeleteClusterOpt
 func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption, bizID int64) (
 	[]int64, error) {
 
-	//1、校验pods不能存在，整体上看用户传过来的条件根据不同类型的条件获取是否存在pods
+	// 1、校验pods不能存在，整体上看用户传过来的条件根据不同类型的条件获取是否存在pods
 	filters := make([]map[string]interface{}, 0)
 
 	// 整理查询条件
@@ -292,6 +292,7 @@ func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption, bizID
 		blog.Errorf("count cluster failed, cond: %#v, err: %v, rid: %s", filters, err, kit.Rid)
 		return nil, err
 	}
+
 	var podNum int64
 	for _, count := range counts {
 		podNum += count
@@ -300,10 +301,11 @@ func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption, bizID
 		blog.Errorf("some pod already exists and the creation fails, rid: %s", kit.Rid)
 		return nil, errors.New("some pod already exists and the creation fails")
 	}
+
 	//2、创建pod和container
 	result, err := b.clientSet.CoreService().Container().BatchCreatePod(kit.Ctx, kit.Header, bizID, data)
 	if err != nil {
-		blog.Errorf("create nodes failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
+		blog.Errorf("create pod failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
 		return nil, err
 	}
 	return result, nil

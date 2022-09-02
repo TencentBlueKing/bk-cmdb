@@ -117,7 +117,7 @@ func (s *coreService) initContainerInstances(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/kube/createmany/pod/{bk_biz_id}/instance",
-		Handler: s.BatchCreateNode})
+		Handler: s.BatchCreatePod})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/kube/search/cluster/instances",

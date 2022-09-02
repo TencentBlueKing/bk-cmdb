@@ -244,6 +244,7 @@ func (s *Service) ListPod(ctx *rest.Contexts) {
 
 // BatchCreatePod batch create pods.
 func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
+
 	data := new(types.CreatePodsOption)
 	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)

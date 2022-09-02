@@ -264,6 +264,7 @@ func (option *PodCoreInfo) Validate() error {
 
 // Validate validate the ContainerCoreInfo
 func (option *ContainerCoreInfo) Validate() error {
+
 	return nil
 }
 
@@ -274,6 +275,7 @@ type CreatePodsOption struct {
 
 // Validate validate the KubeSpec
 func (option *KubeSpec) Validate() error {
+
 	if option.ClusterUID == nil {
 		return errors.New("cluster uid must be set")
 	}
@@ -294,14 +296,15 @@ func (option *KubeSpec) Validate() error {
 
 // Validate validate the CmdbSpec
 func (option *CmdbSpec) Validate() error {
+
 	if option.ClusterID == nil {
-		return errors.New("cluster uid must be set")
+		return errors.New("cluster id must be set")
 	}
 	if option.NamespaceID == nil {
-		return errors.New("namespace must be set")
+		return errors.New("namespace id must be set")
 	}
 	if option.NodeID == nil {
-		return errors.New("node must be set")
+		return errors.New("node id must be set")
 	}
 	if option.WorkloadKind == nil {
 		return errors.New("workload kind must be set")
@@ -309,6 +312,7 @@ func (option *CmdbSpec) Validate() error {
 	if option.WorkloadID == nil {
 		return errors.New("workload id must be set")
 	}
+
 	return nil
 }
 
@@ -330,18 +334,13 @@ func (option *CreatePodsOption) Validate() error {
 		if pod.KubeSpecInfo != nil && pod.CmdbSpecInfo != nil {
 			return errors.New("kube spec and cmdb spec cannot be set at the same time")
 		}
-		// 需要补充每个指针都不能为空
-		if pod.KubeSpecInfo != nil {
-			if pod.KubeSpecInfo.ClusterUID == nil {
-				return errors.New("cluster uid cannot be empty")
-			}
-		}
 
 		if pod.CmdbSpecInfo != nil {
 			if err := pod.CmdbSpecInfo.Validate(); err != nil {
 				return err
 			}
 		}
+
 		if pod.KubeSpecInfo != nil {
 			if err := pod.KubeSpecInfo.Validate(); err != nil {
 				return err

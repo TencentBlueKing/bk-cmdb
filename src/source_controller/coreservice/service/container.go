@@ -35,6 +35,7 @@ func (s *coreService) BatchCreatePod(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if err != nil {
 		blog.Error("url parameter bk_biz_id not integer, bizID: %s, rid: %s", ctx.Request.PathParameter("bk_biz_id"),
