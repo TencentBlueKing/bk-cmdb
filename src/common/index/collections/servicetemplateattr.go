@@ -20,6 +20,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -28,18 +30,26 @@ func init() {
 
 var commServiceTemplateAttrIndexes = []types.Index{
 	{
-		Keys: map[string]int32{
-			common.BKFieldID: 1,
+		Keys: bson.D{
+			{
+				common.BKFieldID, 1,
+			},
 		},
 		Name:       common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
 		Unique:     true,
 		Background: true,
 	},
 	{
-		Keys: map[string]int32{
-			common.BKAppIDField:             1,
-			common.BKServiceTemplateIDField: 1,
-			common.BKAttributeIDField:       1,
+		Keys: bson.D{
+			{
+				common.BKAppIDField, 1,
+			},
+			{
+				common.BKServiceTemplateIDField, 1,
+			},
+			{
+				common.BKAttributeIDField, 1,
+			},
 		},
 		Name: common.CCLogicUniqueIdxNamePrefix + common.BKAppIDField + "_" + common.BKServiceTemplateIDField + "_" +
 			common.BKAttributeIDField,

@@ -21,6 +21,7 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"gopkg.in/mgo.v2"
 )
 
@@ -32,14 +33,14 @@ var CreateTableOptions = []struct {
 	{
 		TableName: common.BKTableNameChartConfig,
 		TableIndex: []types.Index{
-			{Keys: map[string]int32{"config_id": 1}, Name: "config_id", Unique: true, Background: true},
-			{Name: common.BKObjIDField, Keys: map[string]int32{"bk_obj_id": 1}, Background: true},
+			{Keys: bson.D{{"config_id", 1}}, Name: "config_id", Unique: true, Background: true},
+			{Name: common.BKObjIDField, Keys: bson.D{{"bk_obj_id", 1}}, Background: true},
 		},
 	},
 	{
 		TableName: common.BKTableNameChartPosition,
 		TableIndex: []types.Index{
-			{Name: "bk_biz_id", Keys: map[string]int32{"bk_biz_id": 1}, Background: true},
+			{Name: "bk_biz_id", Keys: bson.D{{"bk_biz_id", 1}}, Background: true},
 		},
 	},
 	{

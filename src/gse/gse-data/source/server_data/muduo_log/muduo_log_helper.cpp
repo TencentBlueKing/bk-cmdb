@@ -24,7 +24,7 @@
 #include <map>
 
 namespace gse {
-namespace dataserver {
+namespace data {
 using namespace std;
 MuduoLogHelper::MuduoLogHelper()
 {

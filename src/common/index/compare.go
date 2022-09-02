@@ -16,19 +16,23 @@ import (
 	"reflect"
 
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // FindIndexByIndexFields 根据索引中用到的字段找db中对应的索引，
 // 注意： 索引字段的排序方式，是否background，unique，partialFilterExpression 有存在不同的情况。
 //       由于mongodb 不允许同一组字段加多个索引
-func FindIndexByIndexFields(keys map[string]int32, indexList []types.Index) (dbIndex types.Index, exists bool) {
+func FindIndexByIndexFields(keys bson.D, indexList []types.Index) (dbIndex types.Index, exists bool) {
+	targetIdxMap := keys.Map()
 	for _, idx := range indexList {
-		if len(idx.Keys) != len(keys) {
+		idxMap := idx.Keys.Map()
+		if len(targetIdxMap) != len(idxMap) {
 			continue
 		}
 		exists = true
-		for key := range idx.Keys {
-			if _, keyExists := keys[key]; !keyExists {
+		for key := range idxMap {
+			if _, keyExists := targetIdxMap[key]; !keyExists {
 				exists = false
 				break
 			}
@@ -53,7 +57,12 @@ func IndexEqual(toDBIndex, dbIndex types.Index) bool {
 	if toDBIndex.ExpireAfterSeconds != dbIndex.ExpireAfterSeconds {
 		return false
 	}
-	if len(toDBIndex.Keys) != len(dbIndex.Keys) {
+
+	toDBIdxMap := toDBIndex.Keys.Map()
+
+	dbIdxMap := dbIndex.Keys.Map()
+
+	if len(toDBIdxMap) != len(dbIdxMap) {
 		return false
 	}
 
@@ -61,8 +70,8 @@ func IndexEqual(toDBIndex, dbIndex types.Index) bool {
 		return false
 	}
 
-	for key, val := range toDBIndex.Keys {
-		dbVal, exists := dbIndex.Keys[key]
+	for key, val := range toDBIdxMap {
+		dbVal, exists := dbIdxMap[key]
 		if !exists {
 			return false
 		}

@@ -13,36 +13,39 @@
 #ifndef _GSE_DATA_KAFKA_EXPORTER_H_
 #define _GSE_DATA_KAFKA_EXPORTER_H_
 
-#include <vector>
-#include "exporter/exporter.h"
-#include "datacell.h"
-#include "kafka_producer.h"
-#include "dataStruct/safe_map.h"
-#include "filter/datafilter.h"
 #include "conf/confItem.h"
-#include "eventthread/gseEventThread.h"
-namespace gse { 
-namespace dataserver {
+#include "datacell.h"
+#include "datastruct/safe_map.h"
+#include "eventthread/event_thread.h"
+#include "exporter/exporter.h"
+#include "filter/datafilter.h"
+#include "kafka_producer.h"
+#include <vector>
+namespace gse {
+namespace data {
 
 class KafkaExporter : public Exporter
 {
 public:
     KafkaExporter();
     virtual ~KafkaExporter();
+
 public:
     static void KafkaPoll(int fd, short what, void* v);
+
 public:
     int Start();
     int Stop();
-    int Write(DataCell *pDataCell);
+    int Write(DataCell* pDataCell);
 
 private:
     void clear();
     int createKafkaProducers();
 
-    bool startWithChannelID(ChannelIdExporterConfig *ptrChannelIDConfig);
+    bool startWithChannelID(ChannelIdExporterConfig* ptrChannelIDConfig);
     bool startWithDataFlow(ExporterConf* ptrExporterConf);
-    bool startWithDataID(StorageConfigType* ptrStorageConfig);
+
+    void FormatKey(DataCell* pDataCell, std::string& key);
 
 private:
     std::vector<KafkaProducer*> m_vKafkaProducer;
@@ -51,14 +54,15 @@ private:
     int32_t m_kafkaMaxQueue;
     int32_t m_kafkaMaxMessageBytes;
     int32_t m_producerNum;
-    rgse::GseEventThread m_eventManager;
+    EventThread m_eventManager;
+    bool m_threadStoped;
     std::string m_defaultTopicName;
     std::string m_token;
 
-    std::string m_selfIp;
+    std::string m_advertiseIP;
     KafkaConfig m_kafkaConfig;
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif

@@ -18,7 +18,7 @@
 #include "redis_sentinel_publisher.h"
 #include "redis_pub_producer.h"
 namespace gse { 
-namespace dataserver {
+namespace data {
 
 class RedisExporter : public Exporter
 {
@@ -34,7 +34,6 @@ public:
 private:
     bool startWithChannelID(ChannelIdExporterConfig *ptrChannelIDConfig);
     bool startWithDataFlow(ExporterConf* ptrExporterConf);
-    bool startWithDataID(StorageConfigType* ptrStorageConfig);
 
 private:
     RedisSentinelPublisher*   m_ptrSentinelPubliser;

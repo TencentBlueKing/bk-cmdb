@@ -11,15 +11,19 @@
  */
 
 #include "redisexporter.h"
-#include "log/log.h"
-#include "tools/macros.h"
+
 #include "bbx/gse_errno.h"
+#include "db/redisapi/errors.hpp"
+#include "log/log.h"
+#include "ops/op_metric.h"
+#include "tools/finally.hpp"
+#include "tools/macros.h"
 #include "tools/strings.h"
 
 #include "dataserver.h"
 
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
 
 RedisExporter::RedisExporter()
 {
@@ -34,36 +38,34 @@ RedisExporter::~RedisExporter()
 
 bool RedisExporter::startWithChannelID(ChannelIdExporterConfig *ptrChannelIDConfig)
 {
+    StreamToCluster *streamToCluster = &ptrChannelIDConfig->m_streamToCluster;
+    std::string host = streamToCluster->m_redisCluster->m_addresses[0].m_ip;
+    uint16_t port = streamToCluster->m_redisCluster->m_addresses[0].m_port;
+    std::string passwd = streamToCluster->m_redisCluster->m_passwd;
+    std::string masterName = streamToCluster->m_redisCluster->m_masterName;
+    std::string sentinelPasswd = streamToCluster->m_redisCluster->m_sentinelPasswd;
 
-    switch (ptrChannelIDConfig->m_storageType)
+    switch (streamToCluster->m_clusterType)
     {
-    case REDIS_SENTINEL_PUB:
-    {
-        std::string sentinal_host = ptrChannelIDConfig->m_storage.m_redisStorage->m_addresses[0].m_ip;
-        uint16_t sentinal_port = ptrChannelIDConfig->m_storage.m_redisStorage->m_addresses[0].m_port;
-        std::string passwd = ptrChannelIDConfig->m_storage.m_redisStorage->m_passwd;
-        std::string master_name = ptrChannelIDConfig->m_storage.m_redisStorage->m_masterName;
-        RedisSentinelPublisher *producer = new RedisSentinelPublisher(sentinal_host, sentinal_port, passwd);
-         LOG_INFO("create a new redis sentinel publish producer, the address is  (%s:%d), master name(%s)", SAFE_CSTR(sentinal_host.c_str()), sentinal_port, master_name.c_str());
-        producer->setMasterName(master_name);
-        if (producer->init() == GSE_SUCCESS)
+    case REDIS_SENTINEL_PUB: {
+
+        RedisSentinelPublisher *producer = new RedisSentinelPublisher(host, port, passwd);
+        LOG_INFO("create a new redis sentinel publish producer, the address is  (%s:%d), master name(%s)", SAFE_CSTR(host.c_str()), port, masterName.c_str());
+        producer->SetMasterName(masterName);
+        producer->SetSentinelPasswd(sentinelPasswd);
+        if (producer->Init() == GSE_SUCCESS)
         {
             m_ptrSentinelPubliser = producer;
         }
         else
         {
-            LOG_ERROR("it is failed to create a new redis sentinel publish producer, the address is  (%s:%d)", SAFE_CSTR(sentinal_host.c_str()), sentinal_port);
+            LOG_ERROR("it is failed to create a new redis sentinel publish producer, the address is  (%s:%d)", SAFE_CSTR(host.c_str()), port);
             delete producer;
             return false;
         }
     }
     break;
-    case REDIS_PUB:
-    {
-
-        std::string host = ptrChannelIDConfig->m_storage.m_redisStorage->m_addresses[0].m_ip;
-        uint16_t port = ptrChannelIDConfig->m_storage.m_redisStorage->m_addresses[0].m_port;
-        std::string passwd = ptrChannelIDConfig->m_storage.m_redisStorage->m_passwd;
+    case REDIS_PUB: {
         RedisPublishProducer *producer = new RedisPublishProducer(host, port, passwd);
         LOG_INFO("create a new redis publish producer, the address is  (%s:%d)", SAFE_CSTR(host.c_str()), port);
         if (producer->init() == GSE_SUCCESS)
@@ -80,7 +82,7 @@ bool RedisExporter::startWithChannelID(ChannelIdExporterConfig *ptrChannelIDConf
     }
     break;
     default:
-        LOG_ERROR("it is failed to create a redis producer, because the storage  type (%d) is invalid", ptrChannelIDConfig->m_storageType);
+        LOG_ERROR("it is failed to create a redis producer, because the storage  type (%d) is invalid", streamToCluster->m_clusterType);
         return false;
     }
     return true; // success
@@ -91,65 +93,10 @@ bool RedisExporter::startWithDataFlow(ExporterConf *ptrExporterConf)
     return false;
 }
 
-bool RedisExporter::startWithDataID(StorageConfigType *ptrStorageConfig)
-{
-    switch (ptrStorageConfig->m_storageType)
-    {
-    case REDIS_SENTINEL_PUB:
-    {
-        RedisSentinelPublisher *producer = new RedisSentinelPublisher(ptrStorageConfig->m_host, ptrStorageConfig->m_port, ptrStorageConfig->m_passwd);
-         LOG_INFO("create a new redis sentinel publish producer, the address is  (%s:%d)", SAFE_CSTR(ptrStorageConfig->m_host.c_str()), ptrStorageConfig->m_port);
-        producer->setMasterName(ptrStorageConfig->m_masterName);
-        if (producer->init() == GSE_SUCCESS)
-        {
-            m_ptrSentinelPubliser = producer;
-        }
-        else
-        {
-            LOG_ERROR("it is failed to create a new redis sentinel publish producer, the address is  (%s:%d)", SAFE_CSTR(ptrStorageConfig->m_host.c_str()), ptrStorageConfig->m_port);
-            delete producer;
-            return false;
-        }
-    }
-    break;
-    case REDIS_PUB:
-    {
-        RedisPublishProducer *producer = new RedisPublishProducer(ptrStorageConfig->m_host, ptrStorageConfig->m_port, ptrStorageConfig->m_passwd);
-        LOG_INFO("create a new redis publish producer, the address is  (%s:%d)", SAFE_CSTR(ptrStorageConfig->m_host.c_str()), ptrStorageConfig->m_port);
-        if (producer->init() == GSE_SUCCESS)
-        {
-            m_ptrPubliser = producer;
-        }
-        else
-        {
-            LOG_ERROR("it is failed to create a new redis publish producer, the address is  (%s:%d)", SAFE_CSTR(ptrStorageConfig->m_host.c_str()), ptrStorageConfig->m_port);
-            delete producer;
-            return false;
-        }
-    }
-    break;
-    default:
-        LOG_ERROR("it is failed to create a redis producer, because the storage  (%s:%d) type (%d) is invalid", SAFE_CSTR(ptrStorageConfig->m_host.c_str()), ptrStorageConfig->m_port, ptrStorageConfig->m_storageType);
-        return false;
-    }
-    return true; // success
-}
-
 int RedisExporter::Start()
 {
     switch (m_ptrConfWrapper->m_exporterConfTypeEnum)
     {
-    case ExporterConfigWrapper::DataIDConfType:
-        m_upConfLock.RLock();
-        if (!startWithDataID(m_ptrConfWrapper->m_conf.m_ptrDataIDConfig))
-        {
-            m_upConfLock.UnLock();
-            LOG_ERROR("start redis exporter (%s) by dataid config failed", SAFE_CSTR(m_name.c_str()));
-            return GSE_ERROR;
-        }
-        m_upConfLock.UnLock();
-        LOG_INFO("start redis exporter (%s) by dataid config", SAFE_CSTR(m_name.c_str()));
-        return GSE_SUCCESS;
     case ExporterConfigWrapper::ChannelIDConfType:
         m_upConfLock.RLock();
         if (!startWithChannelID(m_ptrConfWrapper->m_conf.m_ptrChannelIdExporterConfig))
@@ -182,13 +129,15 @@ int RedisExporter::Start()
 
 int RedisExporter::Stop()
 {
-    if(NULL != m_ptrSentinelPubliser)
+    if (NULL != m_ptrSentinelPubliser)
     {
         delete m_ptrSentinelPubliser;
+        m_ptrSentinelPubliser = NULL;
     }
-    if(NULL != m_ptrPubliser)
+    if (NULL != m_ptrPubliser)
     {
         delete m_ptrPubliser;
+        m_ptrPubliser = NULL;
     }
     return GSE_SUCCESS;
 }
@@ -196,21 +145,21 @@ int RedisExporter::Stop()
 int RedisExporter::Write(DataCell *pDataCell)
 {
 
-    if(NULL == pDataCell)
+    if (NULL == pDataCell)
     {
         LOG_WARN("the parameter is valid. the pointer of data cell is [%x]", pDataCell);
         return GSE_ERROR;
     }
 
     pDataCell->DealLineBreak();
-    //m_ptrOPSReport->PutOpsData(pDataCell->ToOPS(kOutputState + "_redis"));
+    // m_ptrOPSReport->PutOpsData(pDataCell->ToOPS(kOutputState + "_redis"));
 
     std::string value(pDataCell->GetDataBuf(), pDataCell->GetDataBufLen());
 
     std::vector<std::string> str_topics;
     pDataCell->GetTableName(str_topics);
 
-    if(str_topics.empty())
+    if (str_topics.empty())
     {
         LOG_INFO("not found the topic for the channel id (%u)", pDataCell->GetChannelID());
         return GSE_ERROR;
@@ -219,37 +168,47 @@ int RedisExporter::Write(DataCell *pDataCell)
     std::string master_host;
     int master_port;
 
+    int errcode = 0;
+    uint64_t beginTimestamp = gse::tools::time::GetUTCMillsec();
+    auto _ = gse::tools::defer::finally([&]() {
+        uint64_t endTimestamp = gse::tools::time::GetUTCMillsec();
+        uint64_t costTime = (endTimestamp >= beginTimestamp) ? (endTimestamp >= beginTimestamp) : 0;
+        OPMetric::AddMessageQueneRequestMillsecondsMetrics("redis", costTime);
+        OPMetric::AddSendMsgBytesCounter(kOutputRedis, kOutputRedis, value.size());
+        OPMetric::AddSendMsgCounter(kOutputRedis, kOutputRedis, errcode, 1);
+    });
+
     std::size_t max_count = str_topics.size();
     for (std::size_t idx = 0; idx < max_count; ++idx)
     {
         std::string str_topic = str_topics.at(idx);
-        LOG_DEBUG("will send the data (%s) to redis with the topic (%s), the channelid (%d) exporter name (%s)", SAFE_CSTR(value.c_str()), SAFE_CSTR(str_topic.c_str()), pDataCell->GetChannelID(),SAFE_CSTR(m_name.c_str()));
+        LOG_DEBUG("will send the data (%s) to redis with the channelname (%s), the channelid (%d) exporter name (%s)", SAFE_CSTR(value.c_str()), SAFE_CSTR(str_topic.c_str()), pDataCell->GetChannelID(), SAFE_CSTR(m_name.c_str()));
         if (NULL != m_ptrSentinelPubliser)
         {
-            OPMetric::RedisMsgInc();
-            m_ptrSentinelPubliser->getRedisMasterHostAndPort(master_host, master_port);
-            int ret = m_ptrSentinelPubliser->produce(str_topic, value);
+            m_ptrSentinelPubliser->GetHost(master_host, master_port);
+            gse::redis::RedisErrorCode ret = m_ptrSentinelPubliser->Produce(str_topic, value);
 
-            if (ret == GSE_SUCCESS)
+            if (ret == gse::redis::RedisErrorCode::E_OK)
             {
                 std::string redis_host = master_host + "|" + gse::tools::strings::ToString(master_port);
                 pDataCell->SetOutputType("redis_sentinel");
                 pDataCell->SetOutputAddress(redis_host);
-                DataServer::Instance().GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_OUTPUT_STATE));
+                DataServer::GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_OUTPUT_STATE));
             }
             else
             {
                 pDataCell->SetErrorMsg("failed to send to redis", OPS_ERROR_REDIS_ERROR);
-                DataServer::Instance().GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_LOST_STATE));
+                DataServer::GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_LOST_STATE));
+                LOG_ERROR("failed to send msg to redis, error:%d", ret);
+                errcode = (int)ret;
             }
         }
 
         if (NULL != m_ptrPubliser)
         {
-            OPMetric::RedisMsgInc();
-            int ret = m_ptrPubliser->produce(str_topic, value);
+            gse::redis::RedisErrorCode ret = m_ptrPubliser->produce(str_topic, value);
 
-            if (ret == GSE_SUCCESS)
+            if (ret == gse::redis::RedisErrorCode::E_OK)
             {
                 std::string redis_host;
                 int port = 0;
@@ -257,19 +216,20 @@ int RedisExporter::Write(DataCell *pDataCell)
                 m_ptrPubliser->GetHost(redis_host, port);
                 pDataCell->SetOutputType("redis_sentinel");
                 pDataCell->SetOutputAddress(address);
-                DataServer::Instance().GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_OUTPUT_STATE));
+                DataServer::GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_OUTPUT_STATE));
             }
             else
             {
                 pDataCell->SetErrorMsg("failed to end to redis", OPS_ERROR_REDIS_ERROR);
-                DataServer::Instance().GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_LOST_STATE));
+                DataServer::GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_LOST_STATE));
+                LOG_ERROR("failed to send msg to redis, error:%d", ret);
+                errcode = (int)ret;
             }
         }
     }
 
-    LOG_WARN("it is not set any redis writer for the data (%d)", pDataCell->GetChannelID());
     return GSE_SUCCESS;
 }
 
-}
-}
+} // namespace data
+} // namespace gse

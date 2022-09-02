@@ -12,7 +12,7 @@
 
 #include "conftor.h"
 namespace gse { 
-namespace dataserver {
+namespace data {
 
 Conftor::Conftor()
 {

@@ -281,11 +281,11 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata
 	if cErr != nil {
 		return nil, cErr
 	}
-	if len(propertyIDs) == 0 {
-		return &metadata.ListAPITaskSyncStatusResult{Count: 0, Info: make([]metadata.APITaskSyncStatus, 0)}, nil
-	}
+
 	fields := []string{common.BKSetIDField}
-	fields = append(fields, propertyIDs...)
+	if len(propertyIDs) > 0 {
+		fields = append(fields, propertyIDs...)
+	}
 
 	sets, err := st.getSetMapStrByOption(kit, option, fields)
 	if err != nil {

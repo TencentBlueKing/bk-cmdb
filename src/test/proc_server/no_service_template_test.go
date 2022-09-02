@@ -936,7 +936,8 @@ var _ = Describe("no service template test", func() {
 				"protocol": "1",
 				"enable":   true,
 			}
-			ExpectBindInfoArr, err := commonutil.GetMapInterfaceByInerface(data.Info[0].Property[common.BKProcBindInfo])
+			ExpectBindInfoArr, err := commonutil.GetMapInterfaceByInterface(
+				data.Info[0].Property[common.BKProcBindInfo])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(ExpectBindInfoArr)).To(Equal(int(1)))
 			expectBindInfo, ok := ExpectBindInfoArr[0].(map[string]interface{})

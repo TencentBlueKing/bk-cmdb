@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -33,53 +35,53 @@ var commProcessInstanceRelationIndexes = []types.Index{}
 var deprecatedProcessInstanceRelationIndexes = []types.Index{
 	{
 		Name: "idx_bkServiceInstanceID",
-		Keys: map[string]int32{
-			"service_instance_id": 1,
+		Keys: bson.D{{
+			"service_instance_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_bkProcessTemplateID",
-		Keys: map[string]int32{
-			"process_template_id": 1,
+		Keys: bson.D{{
+			"process_template_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_bkBizID",
-		Keys: map[string]int32{
-			"bk_biz_id": 1,
+		Keys: bson.D{{
+			"bk_biz_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_bkProcessID",
-		Keys: map[string]int32{
-			"bk_process_id": 1,
+		Keys: bson.D{{
+			"bk_process_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_bkHostID",
-		Keys: map[string]int32{
-			"bk_host_id": 1,
+		Keys: bson.D{{
+			"bk_host_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_unique_serviceInstID_ProcID",
-		Keys: map[string]int32{
-			"service_instance_id": 1,
-			"bk_process_id":       1,
+		Keys: bson.D{
+			{"service_instance_id", 1},
+			{"bk_process_id", 1},
 		},
 		Unique:     true,
 		Background: true,
 	},
 	{
 		Name: "idx_unique_procID_hostID",
-		Keys: map[string]int32{
-			"bk_process_id": 1,
-			"bk_host_id":    1,
+		Keys: bson.D{
+			{"bk_process_id", 1},
+			{"bk_host_id", 1},
 		},
 		Unique:     true,
 		Background: true,

@@ -24,6 +24,8 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func initTemplateAttribute(ctx context.Context, db dal.RDB, tableName, templateIDField string) error {
@@ -45,18 +47,26 @@ func initTemplateAttribute(ctx context.Context, db dal.RDB, tableName, templateI
 	// add index if it isn't exist
 	indexes := []types.Index{
 		{
-			Keys: map[string]int32{
-				common.BKFieldID: 1,
+			Keys: bson.D{
+				{
+					common.BKFieldID, 1,
+				},
 			},
 			Name:       common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
 			Unique:     true,
 			Background: true,
 		},
 		{
-			Keys: map[string]int32{
-				common.BKAppIDField:       1,
-				templateIDField:           1,
-				common.BKAttributeIDField: 1,
+			Keys: bson.D{
+				{
+					common.BKAppIDField, 1,
+				},
+				{
+					templateIDField, 1,
+				},
+				{
+					common.BKAttributeIDField, 1,
+				},
 			},
 			Name: common.CCLogicUniqueIdxNamePrefix + common.BKAppIDField + "_" + templateIDField + "_" +
 				common.BKAttributeIDField,

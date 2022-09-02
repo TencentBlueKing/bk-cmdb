@@ -12,9 +12,9 @@
 
 #ifndef CONF_COMMON_H
 #define CONF_COMMON_H
-
+#include <string>
 namespace gse {
-namespace dataserver {
+namespace data {
 
 class KafkaConfig
 {
@@ -23,19 +23,24 @@ public:
     std::string m_saslMechanisms;
     std::string m_saslUserName;
     std::string m_saslPasswd;
-    std::string m_messageMaxBytes;
-    std::string m_queueBufferingMaxMessages;
+    int m_messageMaxBytes;
+    int m_queueBufferingMaxMessages;
     std::string m_requestRequiredAcks;
-    std::string m_queueBufferingMaxMs;
+    int m_queueBufferingMaxMs;
+    int m_msgTimeoutMs;
+    std::string m_partitioner;
+    std::string m_clientid;
     KafkaConfig()
     {
-        m_messageMaxBytes = "10000000"; // 10MB
+        m_messageMaxBytes = 10000000; // 10MB
         m_requestRequiredAcks = "1";
-        m_queueBufferingMaxMs = "200";
-        m_queueBufferingMaxMessages = "4000000";
+        m_queueBufferingMaxMs = 0;
+        m_queueBufferingMaxMessages = 0;
+        m_msgTimeoutMs = 0;
+        m_partitioner = "murmur2_random";
     }
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif // CONF_COMMON_H

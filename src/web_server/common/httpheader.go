@@ -15,8 +15,8 @@ package common
 import (
 	"configcenter/src/common"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
 
 // SetProxyHeader TODO
