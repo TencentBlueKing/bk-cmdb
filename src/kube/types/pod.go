@@ -18,7 +18,10 @@
 package types
 
 import (
+	"configcenter/src/common/blog"
 	"errors"
+	"fmt"
+	"reflect"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
@@ -29,10 +32,13 @@ import (
 	"configcenter/src/storage/dal/table"
 )
 
+// PodFields merge the fields of the cluster and the details corresponding to the fields together.
+var PodFields = table.MergeFields(PodSpecFieldsDescriptor)
+
 // PodSpecFieldsDescriptor pod spec's fields descriptors.
 var PodSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
-	{Field: NamespaceField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	//	{Field: NamespaceField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: PriorityField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: IPField, Type: enumor.String, IsRequired: false, IsEditable: true},
@@ -44,6 +50,9 @@ var PodSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: NodeSelectorsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: TolerationsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 }
+
+// ContainerFields merge the fields of the cluster and the details corresponding to the fields together.
+var ContainerFields = table.MergeFields(ContainerSpecFieldsDescriptor)
 
 // ContainerSpecFieldsDescriptor container spec's fields descriptors.
 var ContainerSpecFieldsDescriptor = table.FieldsDescriptors{
@@ -168,71 +177,71 @@ func (p *PodQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.Map
 // Pod pod details
 type Pod struct {
 	// cc的自增主键
-	ID          int64 `json:"id"`
-	SysSpec     `json:",inline" bson:",inline"`
-	PodCoreInfo `json:",inline" bson:",inline"`
+	ID            int64 `json:"id" bson:"id"`
+	SysSpec       `json:",inline" bson:",inline"`
+	PodBaseFields `json:",inline" bson:",inline"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }
 
-// PodCoreInfo pod core details
-type PodCoreInfo struct {
-	Name          *string           `json:"name"`
-	Priority      *int32            `json:"priority,omitempty"`
-	Labels        map[string]string `json:"labels,omitempty"`
-	IP            *string           `json:"ip,omitempty"`
-	IPs           []PodIP           `json:"ips,omitempty"`
-	Volumes       []Volume          `json:"volumes,omitempty"`
-	QOSClass      PodQOSClass       `json:"qos_class,omitempty"`
-	NodeSelectors map[string]string `json:"node_selectors,omitempty"`
-	Tolerations   []Toleration      `json:"tolerations,omitempty"`
+// PodBaseFields pod core details
+type PodBaseFields struct {
+	Name          *string           `json:"name" bson:"name"`
+	Priority      *int32            `json:"priority,omitempty" bson:"priority"`
+	Labels        map[string]string `json:"labels,omitempty"  bson:"labels"`
+	IP            *string           `json:"ip,omitempty"  bson:"ip"`
+	IPs           []PodIP           `json:"ips,omitempty"  bson:"ips"`
+	Volumes       []Volume          `json:"volumes,omitempty"  bson:"volumes"`
+	QOSClass      PodQOSClass       `json:"qos_class,omitempty"  bson:"qos_class"`
+	NodeSelectors map[string]string `json:"node_selectors,omitempty"  bson:"node_selectors"`
+	Tolerations   []Toleration      `json:"tolerations,omitempty" bson:"tolerations"`
 }
 
 // Container container details
 type Container struct {
 	// cc的自增主键
-	ID                int64 `json:"id"`
-	PodID             int64 `json:"bk_pod_id"`
-	SysSpec           `json:",inline"`
-	ContainerCoreInfo `json:",inline"`
+	ID    int64 `json:"id" bson:"id"`
+	PodID int64 `json:"bk_pod_id" bson:"bk_pod_id"`
+	//SysSpec             `json:",inline"`
+	ContainerBaseFields `json:",inline"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }
 
-// ContainerCoreInfo container core details
-type ContainerCoreInfo struct {
-	Name            string          `json:"name"`
-	ContainerID     string          `json:"container_uid"`
-	Image           string          `json:"image,omitempty"`
-	Ports           []ContainerPort `json:"ports,omitempty"`
-	HostPorts       []ContainerPort `json:"host_ports,omitempty"`
-	Args            []string        `json:"args,omitempty"`
-	Started         int64           `json:"started,omitempty"`
-	Limits          ResourceList    `json:"limits,omitempty"`
-	ReqSysSpecuests ResourceList    `json:"requests,omitempty"`
-	Liveness        *Probe          `json:"liveness,omitempty"`
-	Environment     []EnvVar        `json:"environment,omitempty"`
-	Mounts          []VolumeMount   `json:"mounts,omitempty"`
+// ContainerBaseFields container core details
+type ContainerBaseFields struct {
+	Name            *string         `json:"name" bson:"name"`
+	ContainerID     *string         `json:"container_uid" bson:"container_uid"`
+	Image           *string         `json:"image" bson:"image"`
+	Ports           []ContainerPort `json:"ports,omitempty" bson:"ports"`
+	HostPorts       []ContainerPort `json:"host_ports,omitempty" bson:"host_ports"`
+	Args            []string        `json:"args,omitempty" bson:"args"`
+	Started         *int64          `json:"started,omitempty" bson:"started"`
+	Limits          ResourceList    `json:"limits,omitempty" bson:"limits"`
+	ReqSysSpecuests ResourceList    `json:"requests,omitempty" bson:"requests"`
+	Liveness        *Probe          `json:"liveness,omitempty" bson:"liveness"`
+	Environment     []EnvVar        `json:"environment,omitempty" bson:"environment"`
+	Mounts          []VolumeMount   `json:"mounts,omitempty" bson:"mounts"`
 }
 
 // SysSpec 存放cc的容器相关的关系信息，所有类型共用这个结构体
 type SysSpec struct {
-	BizID           *int64  `json:"bk_biz_id"`
-	SupplierAccount *string `json:"bk_supplier_account"`
-	ClusterID       *int64  `json:"bk_cluster_id,omitempty"`
+	BizID           *int64  `json:"bk_biz_id" bson:"bk_biz_id"`
+	SupplierAccount *string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ClusterID       *int64  `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
 	// 冗余的cluster id
-	ClusterUID  *string `json:"cluster_uid,omitempty"`
-	NameSpaceID *int64  `json:"bk_namespace_id,omitempty"`
+	ClusterUID  *string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
+	NameSpaceID *int64  `json:"bk_namespace_id,omitempty" bson:"bk_namespace_id"`
 	// 冗余的namespace名称
-	NameSpace *string `json:"namespace,omitempty"`
-	Workload  *Ref    `json:"workload,omitempty"`
-	HostID    *int64  `json:"bk_host_id,omitempty"`
-	NodeID    *int64  `json:"bk_node_id,omitempty"`
+	NameSpace *string `json:"namespace,omitempty" bson:"namespace"`
+	Workload  *Ref    `json:"ref,omitempty" bson:"ref"`
+	HostID    *int64  `json:"bk_host_id,omitempty" bson:"bk_host_id"`
+	NodeID    *int64  `json:"bk_node_id,omitempty" bson:"bk_node_id"`
 	// 冗余的node名称
-	Node *string `json:"node,omitempty"`
+	Node *string `json:"node_name,omitempty" bson:"node_name"`
 	// 所有容器相关数据用相同的relation结构体，pod不需要这两个字段，仅container需要这两个字段
-	PodID *int64  `json:"bk_pod_id,omitempty"`
-	Pod   *string `json:"pod_name,omitempty"`
+	PodID *int64  `json:"bk_pod_id,omitempty" bson:"bk_pod_id ,omitempty"`
+	Pod   *string `json:"pod_name,omitempty" bson:"pod_name ,omitempty"`
 }
 
 // Ref pod-related workload association information.
@@ -246,26 +255,98 @@ type Ref struct {
 
 // PodsInfo details of creating pods.
 type PodsInfo struct {
-	KubeSpecInfo *KubeSpec `json:"kube_spec"`
-	CmdbSpecInfo *CmdbSpec `json:"cmdb_spec"`
-	HostID       *int64    `json:"bk_host_id"`
-	PodCoreInfo  `json:",inline"`
-	Containers   []ContainerCoreInfo `json:"containers"`
+	KubeSpecInfo  *KubeSpec `json:"kube_spec"`
+	CmdbSpecInfo  *CmdbSpec `json:"cmdb_spec"`
+	HostID        *int64    `json:"bk_host_id"`
+	PodBaseFields `json:",inline"`
+	Containers    []ContainerBaseFields `json:"containers"`
 }
 
-// Validate validate the PodCoreInfo
-func (option *PodCoreInfo) Validate() error {
+// CreateValidate validate the PodBaseFields
+func (option *PodBaseFields) CreateValidate() error {
 
+	// 首先获取必填字段列表。
+	requireMap := make(map[string]struct{}, 0)
+	requires := PodFields.RequiredFields()
+	for field, required := range requires {
+		if required {
+			requireMap[field] = struct{}{}
+		}
+	}
+
+	if option == nil {
+		return errors.New("node information must be given")
+	}
+	blog.Errorf("22222222222222222222 requireMap: %+v", requireMap)
+	typeOfOption := reflect.TypeOf(*option)
+	valueOfOption := reflect.ValueOf(*option)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+
+		tag := typeOfOption.Field(i).Tag.Get("json")
+		if PodFields.IsFieldRequiredByField(tag) {
+			fieldValue := valueOfOption.Field(i)
+			if fieldValue.IsNil() {
+				blog.Errorf("00000000000000000 tag: %v", tag)
+				return fmt.Errorf("required fields cannot be empty, %s", tag)
+			}
+			blog.Errorf("fffffffffffffffffff tag: %v", tag)
+
+			delete(requireMap, tag)
+		}
+	}
+
+	if len(requireMap) > 0 {
+		blog.Errorf("00000000000000000 requireMap: %v", requireMap)
+
+		return fmt.Errorf("required fields cannot be empty")
+	}
 	return nil
 }
 
-// Validate validate the ContainerCoreInfo
-func (option *ContainerCoreInfo) Validate() error {
+// CreateValidate validate the ContainerBaseFields
+func (option *ContainerBaseFields) CreateValidate() error {
 
+	// 首先获取必填字段列表。
+	requireMap := make(map[string]struct{}, 0)
+	requires := ContainerFields.RequiredFields()
+	for field, required := range requires {
+		if required {
+			requireMap[field] = struct{}{}
+		}
+	}
+
+	if option == nil {
+		return errors.New("node information must be given")
+	}
+	blog.Errorf("9999999999999999999999 requireMap: %+v", requireMap)
+	typeOfOption := reflect.TypeOf(*option)
+	valueOfOption := reflect.ValueOf(*option)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+		tag := typeOfOption.Field(i).Tag.Get("json")
+
+		if ContainerFields.IsFieldRequiredByField(tag) {
+
+			fieldValue := valueOfOption.Field(i)
+			blog.Errorf("11111111111111 tag: %v，fieldValue: %v", tag, fieldValue)
+
+			if fieldValue.IsNil() {
+				blog.Errorf("22222222222222222 tag: %v", tag)
+				return fmt.Errorf("required fields cannot be empty, %s", tag)
+			}
+			delete(requireMap, tag)
+		}
+	}
+
+	if len(requireMap) > 0 {
+		blog.Errorf("11111111111111 requireMap: %v", requireMap)
+
+		return fmt.Errorf("required fields cannot be empty")
+	}
 	return nil
+
 }
 
-// CreatePodsOption create Pods request
+// CreatePodsOption create pods option
 type CreatePodsOption struct {
 	Pods []PodsInfo `json:"pods"`
 }
@@ -313,15 +394,15 @@ func (option *CmdbSpec) Validate() error {
 	return nil
 }
 
-// Validate validate the CreatePodsReq
+// Validate validate the CreatePodsOption
 func (option *CreatePodsOption) Validate() error {
 
 	if len(option.Pods) == 0 {
-		return errors.New("param cannot be empty")
+		return errors.New("params cannot be empty")
 	}
 
 	if len(option.Pods) > createPodsLimit {
-		return errors.New("param cannot be empty")
+		return fmt.Errorf("the maximum number of pods created at one time cannot exceed %d", createPodsLimit)
 	}
 
 	for _, pod := range option.Pods {
@@ -344,12 +425,12 @@ func (option *CreatePodsOption) Validate() error {
 			}
 		}
 
-		if err := pod.Validate(); err != nil {
+		if err := pod.CreateValidate(); err != nil {
 			return err
 		}
 
 		for _, container := range pod.Containers {
-			if err := container.Validate(); err != nil {
+			if err := container.CreateValidate(); err != nil {
 				return err
 			}
 		}

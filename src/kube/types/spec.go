@@ -54,13 +54,15 @@ type Reference struct {
 	ID *int64 `json:"id" bson:"id"`
 }
 
-// WorkloadSpec describes the common attributes of workload, it is used by the structure below it.
+// WorkloadSpec describes the common attributes of workload,
+// it is used by the structure below it.
 type WorkloadSpec struct {
 	NamespaceSpec `json:",inline" bson:",inline"`
 	Ref           *Reference `json:"ref" bson:"ref"`
 }
 
-// PodSpec describes the common attributes of pod, it is used by the structure below it.
+// PodSpec describes the common attributes of pod,
+// it is used by the structure below it.
 type PodSpec struct {
 	WorkloadSpec `json:",inline" bson:",inline"`
 
@@ -80,7 +82,7 @@ type PodSpec struct {
 	Pod *string `json:"pod" bson:"pod"`
 }
 
-// GetKubeSubTopoObject 获取指定资源的下一级拓扑资源对象，需要首先判断是否是
+// GetKubeSubTopoObject get the next-level topology resource object of the specified resource
 func GetKubeSubTopoObject(object string, id int64, bizID int64) (string, map[string]interface{}) {
 
 	switch object {
@@ -103,7 +105,7 @@ func GetKubeSubTopoObject(object string, id int64, bizID int64) (string, map[str
 	}
 }
 
-// GetWorkLoadTables 获取workload子项
+// GetWorkLoadTables get the table name of the full workload.
 func GetWorkLoadTables() []string {
 
 	return []string{
@@ -118,7 +120,7 @@ func GetWorkLoadTables() []string {
 	}
 }
 
-// IsContainerTopoResource 判断是否是容器拓扑对象
+// IsContainerTopoResource determine whether it is a container object type.
 func IsContainerTopoResource(object string) bool {
 	switch object {
 	case KubeBusiness, KubeCluster, KubeNode, KubeNamespace, KubeWorkload, KubePod, KubeContainer, KubeFolder:
@@ -128,7 +130,7 @@ func IsContainerTopoResource(object string) bool {
 	}
 }
 
-// GetCollectionWithObject 根据容器对象获取对应的collection
+// GetCollectionWithObject get the corresponding collection name based on the container object resource
 func GetCollectionWithObject(object string) ([]string, error) {
 	switch object {
 	case KubeCluster:
@@ -164,7 +166,7 @@ func GetCollectionWithObject(object string) ([]string, error) {
 	}
 }
 
-// IsKubeResourceKind 判断是否是容器资源对象
+// IsKubeResourceKind determine whether it is a container resource object.
 func IsKubeResourceKind(object string) bool {
 	switch object {
 	case KubeBusiness, KubeCluster, KubeNode, KubeFolder, KubeNamespace, string(KubeDeployment),
@@ -176,7 +178,7 @@ func IsKubeResourceKind(object string) bool {
 	}
 }
 
-// GetKindByWorkLoadTableNameMap 获取对应的workload类型
+// GetKindByWorkLoadTableNameMap get the corresponding workload type according to the database table name.
 func GetKindByWorkLoadTableNameMap(table string) (map[string]string, error) {
 	switch table {
 	case BKTableNameBaseDeployment:
@@ -217,7 +219,7 @@ func GetKindByWorkLoadTableNameMap(table string) (map[string]string, error) {
 
 }
 
-// IsWorkLoadKind 是否是workload 类型
+// IsWorkLoadKind whether the resource type is workload
 func IsWorkLoadKind(kind string) bool {
 	switch kind {
 	case string(KubeDeployment), string(KubeStatefulSet), string(KubeDaemonSet), string(KubeJob),
@@ -253,19 +255,18 @@ type CmdbReference struct {
 	WorkloadID *int64 `json:"workload_id" bson:"workload_id"`
 }
 
-// KubeSpec 相关容器字段信息
+// KubeSpec related container field information
 type KubeSpec struct {
 	// ClusterUID cluster id in third party platform
 	ClusterUID *string `json:"cluster_uid" bson:"cluster_uid"`
-	// Namespace namespace name in third party platform
+	// Namespace namespace's name in third party platform
 	Namespace *string `json:"namespace" bson:"namespace"`
-	// Node node name in third party platform
-	Node          *string `json:"node" bson:"node"`
-	PodName       *string `json:"pod_name" bson:"pod_name"`
+	// Node node's name in third party platform
+	Node          *string `json:"node_name" bson:"node"`
 	KubeReference `json:",inline" bson:",inline"`
 }
 
-// CmdbSpec 容器字段在cmdb中的相关信息
+// CmdbSpec information about container fields in cmdb.
 type CmdbSpec struct {
 	// ClusterID cluster id in cc
 	ClusterID *int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
@@ -274,5 +275,4 @@ type CmdbSpec struct {
 	CmdbReference `json:",inline" bson:",inline"`
 	// NodeID node id in cc
 	NodeID *int64 `json:"bk_node_id" bson:"bk_node_id"`
-	PodID  *int64 `json:"bk_pod_id" bson:"bk_pod_id"`
 }

@@ -42,11 +42,11 @@ type ContainerInterface interface {
 	BatchDeleteNode(ctx context.Context, header http.Header, bizID int64,
 		option *types.ArrangeDeleteNodeOption) errors.CCErrorCoder
 	BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
-		data *types.CreateNodesReq) ([]int64, errors.CCErrorCoder)
+		data *types.CreateNodesOption) ([]int64, errors.CCErrorCoder)
 	BatchCreatePod(ctx context.Context, header http.Header, bizID int64,
 		data *types.CreatePodsOption) ([]int64, errors.CCErrorCoder)
 	SearchNode(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
-		*types.ResponseNode, errors.CCErrorCoder)
+		*types.SearchNodeRsp, errors.CCErrorCoder)
 }
 
 // NewContainerInterface 初始化container client对象

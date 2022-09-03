@@ -51,7 +51,7 @@ func (s *coreService) BatchCreatePod(ctx *rest.Contexts) {
 // BatchCreateNode batch create nodes
 func (s *coreService) BatchCreateNode(ctx *rest.Contexts) {
 
-	inputData := new(types.CreateNodesReq)
+	inputData := new(types.CreateNodesOption)
 	if err := ctx.DecodeInto(inputData); nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -65,7 +65,6 @@ func (s *coreService) BatchCreateNode(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntityWithError(s.core.ContainerOperation().BatchCreateNode(ctx.Kit, bizID, inputData.Nodes))
-
 }
 
 // SearchClusterInstances 查找集群实例

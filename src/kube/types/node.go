@@ -55,6 +55,14 @@ type Node struct {
 	ID int64 `json:"id" bson:"id"`
 	// BizID the business ID to which the cluster belongs
 	BizID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
+
+	// HostID the node ID to which the host belongs
+	HostID *int64 `json:"bk_host_id" bson:"bk_host_id"`
+	// ClusterID the node ID to which the cluster belongs
+	ClusterID *int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
+	// ClusterUID the node ID to which the cluster belongs
+	ClusterUID *string `json:"cluster_uid" bson:"cluster_uid"`
+
 	// NodeFields node base fields
 	NodeBaseFields `json:",inline" bson:",inline"`
 	// SupplierAccount the supplier account that this resource belongs to.
@@ -63,14 +71,8 @@ type Node struct {
 	table.Revision `json:",inline" bson:",inline"`
 }
 
-// NodeBaseFields node的基础属性字段描述
+// NodeBaseFields node's basic attribute field description.
 type NodeBaseFields struct {
-	// HostID the node ID to which the host belongs
-	HostID *int64 `json:"bk_host_id" bson:"bk_host_id"`
-	// ClusterID the node ID to which the cluster belongs
-	ClusterID *int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
-	// ClusterUID the node ID to which the cluster belongs
-	ClusterUID *string `json:"cluster_uid" bson:"cluster_uid"`
 	// HasPod this field indicates whether there is a pod in the node.
 	// if there is a pod, this field is true. If there is no pod, this
 	// field is false. this field is false when node is created by default.
@@ -88,7 +90,7 @@ type NodeBaseFields struct {
 	PodCidr          *string               `json:"pod_cidr" bson:"pod_cidr"`
 }
 
-// UpdateValidate 校验更新node场景的参数有效性
+// UpdateValidate verifying the validity of parameters for updating node scenarios
 func (option *NodeBaseFields) UpdateValidate() error {
 	if option == nil {
 		return errors.New("node information must be given")
@@ -97,13 +99,15 @@ func (option *NodeBaseFields) UpdateValidate() error {
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
 		fieldValue := valueOfOption.Field(i)
-		//	1、查看每个变量是否为空指针。如果是空指针表示不更新此字段，直接跳过
+		//	1、check each variable for a null pointer.
+		//	if it is a null pointer, it means that
+		//	this field will not be updated, skip it directly.
 		if fieldValue.IsNil() {
 			continue
 		}
-		// 2、非空指针的变量获取对应的tag。
+		// 2、a variable with a non-null pointer gets the corresponding tag.
 		tag := typeOfOption.Field(i).Tag.Get("json")
-		// 3、根据tag获取是否是可编辑字段
+		// 3、get whether it is an editable field based on tag
 		if !NodeFields.IsFieldEditableByField(tag) {
 			return fmt.Errorf("field [%s] is a non-editable field", tag)
 		}
@@ -111,9 +115,19 @@ func (option *NodeBaseFields) UpdateValidate() error {
 	return nil
 }
 
-// CreateNodesReq create node requests in batches.
-type CreateNodesReq struct {
-	Nodes []NodeBaseFields `json:"nodes"`
+type NodeReqParam struct {
+	// HostID the node ID to which the host belongs
+	HostID int64 `json:"bk_host_id" bson:"bk_host_id"`
+	// ClusterID the node ID to which the cluster belongs
+	ClusterID int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
+	// ClusterUID the node ID to which the cluster belongs
+	ClusterUID     string `json:"cluster_uid" bson:"cluster_uid"`
+	NodeBaseFields `json:",inline" bson:",inline"`
+}
+
+// CreateNodesOption create node requests in batches.
+type CreateNodesOption struct {
+	Nodes []NodeReqParam `json:"nodes"`
 }
 
 // ArrangeDeleteNodeOption cleaned up delete Node request
@@ -138,8 +152,8 @@ type QueryNodeReq struct {
 	Fields     []string                  `json:"fields"`
 }
 
-// ResponseNode 查询node的回应
-type ResponseNode struct {
+// SearchNodeRsp query node's response.
+type SearchNodeRsp struct {
 	Data []Node `json:"node"`
 }
 
@@ -220,14 +234,14 @@ func (option *UpdateNodeOption) Validate() error {
 	return nil
 }
 
-// Validate validate the NodeBaseFields
-func (node *NodeBaseFields) Validate() error {
-	if *node.HostID == 0 {
-		return errors.New("host id must be set")
-	}
-	if *node.ClusterID == 0 {
-		return errors.New("cluster id must be set")
-	}
+// CreateValidate validate the NodeBaseFields
+func (node *NodeBaseFields) CreateValidate() error {
+	//if *node.HostID == 0 {
+	//	return errors.New("host id must be set")
+	//}
+	//if *node.ClusterID == 0 {
+	//	return errors.New("cluster id must be set")
+	//}
 	//if err := ValidateString(*node.ClusterUID, StringSettings{}); err != nil {
 	//	return err
 	//}
@@ -239,7 +253,7 @@ func (node *NodeBaseFields) Validate() error {
 }
 
 // ValidateCreate validate the create nodes request
-func (option *CreateNodesReq) ValidateCreate() error {
+func (option *CreateNodesOption) ValidateCreate() error {
 
 	if len(option.Nodes) == 0 {
 		return errors.New("param must be set")
@@ -249,7 +263,7 @@ func (option *CreateNodesReq) ValidateCreate() error {
 		return errors.New("the number of nodes created at one time does not exceed 100")
 	}
 	for _, node := range option.Nodes {
-		if err := node.Validate(); err != nil {
+		if err := node.CreateValidate(); err != nil {
 			return err
 		}
 	}

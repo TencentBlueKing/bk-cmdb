@@ -29,7 +29,7 @@ import (
 
 // BatchCreateNode 批量创建node
 func (st *Container) BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
-	data *types.CreateNodesReq) ([]int64, errors.CCErrorCoder) {
+	data *types.CreateNodesOption) ([]int64, errors.CCErrorCoder) {
 	ret := new(types.CreateNodesResult)
 	subPath := "/kube/createmany/node/%d/instance"
 
@@ -106,10 +106,10 @@ func (st *Container) SearchCluster(ctx context.Context, header http.Header, inpu
 
 // SearchNode search node.
 func (st *Container) SearchNode(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
-	*types.ResponseNode, errors.CCErrorCoder) {
+	*types.SearchNodeRsp, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp
-		Data types.ResponseNode `json:"data"`
+		Data types.SearchNodeRsp `json:"data"`
 	}{}
 
 	subPath := "/kube/search/node/instances"
@@ -130,7 +130,7 @@ func (st *Container) SearchNode(ctx context.Context, header http.Header, input *
 
 // CreateContainer create cluster.
 func (st *Container) CreateContainer(ctx context.Context, header http.Header, bizID int64,
-	data *types.ContainerCoreInfo) (*types.CreateContainerResult, errors.CCErrorCoder) {
+	data *types.ContainerBaseFields) (*types.CreateContainerResult, errors.CCErrorCoder) {
 	ret := new(types.CreateContainerResult)
 	subPath := "/kube/create/container/%d/instance"
 	err := st.client.Post().
@@ -154,7 +154,7 @@ func (st *Container) CreateContainer(ctx context.Context, header http.Header, bi
 
 // CreatePod create cluster.
 func (st *Container) CreatePod(ctx context.Context, header http.Header, bizID int64,
-	data *types.PodCoreInfo) (*types.CreatePodResult, errors.CCErrorCoder) {
+	data *types.PodBaseFields) (*types.CreatePodResult, errors.CCErrorCoder) {
 	ret := new(types.CreatePodResult)
 	subPath := "/kube/create/pod/%d/instance"
 	err := st.client.Post().

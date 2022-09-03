@@ -310,7 +310,7 @@ func (s *Service) BatchDeleteNode(ctx *rest.Contexts) {
 
 // BatchCreateNode batch create nodes.
 func (s *Service) BatchCreateNode(ctx *rest.Contexts) {
-	data := new(types.CreateNodesReq)
+	data := new(types.CreateNodesOption)
 	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return

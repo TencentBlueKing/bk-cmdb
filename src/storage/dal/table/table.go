@@ -34,6 +34,8 @@ type Fields struct {
 	fieldType map[string]enumor.FieldType
 	// isEditable the type corresponding to the field.
 	isEditable map[string]bool
+	// isRequired the type corresponding to the field.
+	isRequired map[string]bool
 }
 
 // FieldsDescriptors table of field descriptor.
@@ -46,6 +48,7 @@ func MergeFields(all ...FieldsDescriptors) *Fields {
 		fields:      make([]string, 0),
 		fieldType:   make(map[string]enumor.FieldType),
 		isEditable:  make(map[string]bool),
+		isRequired:  make(map[string]bool),
 	}
 
 	if len(all) == 0 {
@@ -58,6 +61,7 @@ func MergeFields(all ...FieldsDescriptors) *Fields {
 			result.fieldType[f.Field] = f.Type
 			result.fields = append(result.fields, f.Field)
 			result.isEditable[f.Field] = f.IsEditable
+			result.isRequired[f.Field] = f.IsRequired
 		}
 	}
 	return result
@@ -83,13 +87,32 @@ func (f Fields) FieldsEditable() map[string]bool {
 	return copied
 }
 
-// IsFieldEditable returns the corresponding editable of all fields.
-func (f Fields) IsFieldEditable() map[string]bool {
+// RequiredFields returns the corresponding required of all fields.
+func (f Fields) RequiredFields() map[string]bool {
+	copied := make(map[string]bool)
+	for k, v := range f.isRequired {
+		copied[k] = v
+	}
+	return copied
+}
+
+// EditableFields returns the corresponding editable of all fields.
+func (f Fields) EditableFields() map[string]bool {
 	copied := make(map[string]bool)
 	for k, v := range f.isEditable {
 		copied[k] = v
 	}
 	return copied
+}
+
+// IsFieldRequiredByField returns the corresponding editable of specified field.
+func (f Fields) IsFieldRequiredByField(field string) bool {
+	for k, v := range f.isRequired {
+		if field == k {
+			return v
+		}
+	}
+	return false
 }
 
 // IsFieldEditableByField returns the corresponding editable of specified field.

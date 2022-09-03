@@ -37,9 +37,9 @@ type ClusterOperationInterface interface {
 	DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption, bkSupplierAccount string) error
 	BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.ArrangeDeleteNodeOption, bkSupplierAccount string) error
 	SearchCluster(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseCluster, error)
-	BatchCreateNode(kit *rest.Kit, data *types.CreateNodesReq, bizID int64, bkSupplierAccount string) ([]int64, error)
+	BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, bizID int64, bkSupplierAccount string) ([]int64, error)
 	BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption, bizID int64) ([]int64, error)
-	SearchNode(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseNode, error)
+	SearchNode(kit *rest.Kit, input *metadata.QueryCondition) (*types.SearchNodeRsp, error)
 	SetProxy(inst ClusterOperationInterface)
 }
 
@@ -257,10 +257,8 @@ func (b *kube) isExsitKubeResource(kit *rest.Kit, option *types.DeleteClusterOpt
 func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption, bizID int64) (
 	[]int64, error) {
 
-	// 1、校验pods不能存在，整体上看用户传过来的条件根据不同类型的条件获取是否存在pods
 	filters := make([]map[string]interface{}, 0)
 
-	// 整理查询条件
 	for _, pod := range data.Pods {
 		filter := map[string]interface{}{
 			common.BKOwnerIDField: kit.SupplierAccount,
@@ -270,7 +268,7 @@ func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption, bizID
 			filter[types.ClusterUIDField] = *pod.KubeSpecInfo.ClusterUID
 			filter[types.NamespaceField] = *pod.KubeSpecInfo.Namespace
 			filter[types.NodeNameFiled] = *pod.KubeSpecInfo.Node
-			filter[types.KubeNameField] = *pod.KubeSpecInfo.PodName
+			filter[types.KubeNameField] = *pod.Name
 			filter[types.RefKindField] = *pod.KubeSpecInfo.WorkloadKind
 			filter[types.RefNameField] = *pod.KubeSpecInfo.WorkloadName
 		}
@@ -278,7 +276,7 @@ func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption, bizID
 			filter[types.BKClusterIDFiled] = *pod.CmdbSpecInfo.ClusterID
 			filter[types.BKNamespaceIDField] = *pod.CmdbSpecInfo.NamespaceID
 			filter[types.BKNodeIDField] = *pod.CmdbSpecInfo.NodeID
-			filter[types.BKPodIDField] = *pod.CmdbSpecInfo.PodID
+			filter[types.KubeNameField] = *pod.Name
 			filter[types.RefKindField] = *pod.KubeSpecInfo.WorkloadKind
 			filter[types.RefIDField] = *pod.CmdbSpecInfo.WorkloadID
 		}
@@ -311,7 +309,7 @@ func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption, bizID
 }
 
 // BatchCreateNode batch create node.
-func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesReq, bizID int64, supplierAccount string) (
+func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, bizID int64, supplierAccount string) (
 	[]int64, error) {
 
 	names := make([]string, 0)
@@ -398,7 +396,7 @@ func (b *kube) SearchCluster(kit *rest.Kit, input *metadata.QueryCondition) (*ty
 }
 
 // SearchNode search node by condition
-func (b *kube) SearchNode(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseNode, error) {
+func (b *kube) SearchNode(kit *rest.Kit, input *metadata.QueryCondition) (*types.SearchNodeRsp, error) {
 
 	result, err := b.clientSet.CoreService().Container().SearchNode(kit.Ctx, kit.Header, input)
 	if err != nil {

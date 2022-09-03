@@ -256,6 +256,7 @@ func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
