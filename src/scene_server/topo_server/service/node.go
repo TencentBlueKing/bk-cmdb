@@ -242,31 +242,25 @@ func (s *Service) getBizIDWithName(kit *rest.Kit, bizIDs []int64) (map[int64]str
 }
 
 func reorganizeDeleteOption(option *types.BatchDeleteNodeOption) *types.ArrangeDeleteNodeOption {
-	deleteOption := make(map[interface{}][]interface{})
-	flag := false
-	if len(option.NodeIDs) > 0 {
-		nameMap := make(map[string]struct{})
-		for _, nodeID := range option.NodeIDs {
-			if _, ok := nameMap[nodeID.Name]; !ok {
-				deleteOption[nodeID.ClusterUID] = append(deleteOption[nodeID.ClusterUID], nodeID.Name)
-			}
-		}
-		flag = true
+
+	delOption := &types.ArrangeDeleteNodeOption{
+		NodeKubeInfo: make(map[string][]string),
+		NodeCmdbInfo: make(map[int64][]int64),
 	}
 
-	if len(option.NodeCmdbIDs) > 0 {
-		idMap := make(map[int64]struct{})
-		for _, nodeID := range option.NodeCmdbIDs {
-			if _, ok := idMap[nodeID.ID]; !ok {
-				deleteOption[nodeID.ClusterID] = append(deleteOption[nodeID.ClusterID], nodeID.ID)
-			}
+	if len(option.Data.NodeKubeIDs) > 0 {
+		for _, node := range option.Data.NodeKubeIDs {
+			delOption.NodeKubeInfo[node.ClusterUID] = append(delOption.NodeKubeInfo[node.ClusterUID], node.Name...)
 		}
 	}
 
-	return &types.ArrangeDeleteNodeOption{
-		Option: deleteOption,
-		Flag:   flag,
+	if len(option.Data.NodeCmdbIDs) > 0 {
+		for _, node := range option.Data.NodeCmdbIDs {
+			delOption.NodeCmdbInfo[node.ClusterID] = append(delOption.NodeCmdbInfo[node.ClusterID], node.ID...)
+		}
 	}
+
+	return delOption
 }
 
 // BatchDeleteNode delete nodes.
@@ -294,7 +288,7 @@ func (s *Service) BatchDeleteNode(ctx *rest.Contexts) {
 		var err error
 		err = s.Logics.ContainerOperation().BatchDeleteNode(ctx.Kit, bizID, deleteOption, ctx.Kit.SupplierAccount)
 		if err != nil {
-			blog.Errorf("delete cluster failed, biz: %d, option: %+v, err: %v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+			blog.Errorf("delete node failed, biz: %d, option: %+v, err: %v, rid: %s", bizID, option, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil

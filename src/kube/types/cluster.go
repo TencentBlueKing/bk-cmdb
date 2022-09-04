@@ -81,57 +81,65 @@ type Cluster struct {
 	table.Revision `json:",inline" bson:",inline"`
 }
 
-// CreateClusterResult 创建集群结果
+// CreateClusterResult create cluster result.
 type CreateClusterResult struct {
 	metadata.BaseResp
 	ID int64 `field:"id" json:"id" bson:"id"`
 }
 
-// CreateContainerResult 创建容器结果
+// CreateContainerResult create container result.
 type CreateContainerResult struct {
 	metadata.BaseResp
 	ID int64 `field:"id" json:"id" bson:"id"`
 }
 
-// CreatePodResult 创建pod结果
+// CreatePodResult create pod result.
 type CreatePodResult struct {
 	metadata.BaseResp
 	ID int64 `field:"id" json:"id" bson:"id"`
 }
 
-// DeleteClusterOption 删除集群的请求
+// DeleteClusterOption delete cluster result.
 type DeleteClusterOption struct {
 	IDs  []int64 `json:"ids"`
-	Uids []int64 `json:"uids"`
+	UIDs []int64 `json:"uids"`
 }
 
-// DeleteNodeCmdbOption 通过cmdb的id进行删除node
+// DeleteNodeCmdbOption delete node by id of cmdb.
 type DeleteNodeCmdbOption struct {
-	ClusterID int64 `json:"bk_cluster_id"`
-	ID        int64 `json:"id"`
+	ClusterID int64   `json:"bk_cluster_id"`
+	ID        []int64 `json:"id"`
 }
 
-// DeleteNodeOption 通过原生id进行删除node
-type DeleteNodeOption struct {
-	ClusterUID string `json:"cluster_uid"`
-	Name       string `json:"name"`
+// DeleteNodeKubeOption delete node by native id.
+type DeleteNodeKubeOption struct {
+	ClusterUID string   `json:"cluster_uid"`
+	Name       []string `json:"name"`
 }
 
-// BatchDeleteNodeOption 删除node请求
-type BatchDeleteNodeOption struct {
+// DeleteOptionDetail 删除node的详细信息
+type DeleteOptionDetail struct {
 	NodeCmdbIDs []DeleteNodeCmdbOption `json:"node_cmdb_ids"`
-	NodeIDs     []DeleteNodeOption     `json:"node_ids"`
+	NodeKubeIDs []DeleteNodeKubeOption `json:"node_kube_ids"`
+}
+
+// BatchDeleteNodeOption delete nodes option.
+type BatchDeleteNodeOption struct {
+	Data DeleteOptionDetail `json:"data"`
 }
 
 // Validate validate the BatchDeleteNodeOption
 func (option *BatchDeleteNodeOption) Validate() error {
-	if len(option.NodeIDs) > 0 && len(option.NodeCmdbIDs) > 0 {
+
+	if len(option.Data.NodeKubeIDs) > 0 && len(option.Data.NodeCmdbIDs) > 0 {
 		return errors.New("params cannot be set at the same time")
 	}
-	if len(option.NodeIDs) == 0 && len(option.NodeCmdbIDs) == 0 {
+
+	if len(option.Data.NodeKubeIDs) == 0 && len(option.Data.NodeCmdbIDs) == 0 {
 		return errors.New("params must be set")
 	}
-	if len(option.NodeIDs) > maxDeleteNodeNum || len(option.NodeCmdbIDs) > maxDeleteNodeNum {
+
+	if len(option.Data.NodeKubeIDs) > maxDeleteNodeNum || len(option.Data.NodeCmdbIDs) > maxDeleteNodeNum {
 		return fmt.Errorf("the maximum number of nodes to be deleted is not allowed to exceed %d",
 			maxDeleteClusterNum)
 	}
@@ -141,15 +149,15 @@ func (option *BatchDeleteNodeOption) Validate() error {
 // Validate validate the DeleteClusterOption
 func (option *DeleteClusterOption) Validate() error {
 
-	if len(option.IDs) > 0 && len(option.Uids) > 0 {
+	if len(option.IDs) > 0 && len(option.UIDs) > 0 {
 		return errors.New("cannot fill in the id and uid fields at the same time")
 	}
 
-	if len(option.IDs) == 0 && len(option.Uids) == 0 {
+	if len(option.IDs) == 0 && len(option.UIDs) == 0 {
 		return errors.New("cluster id or uid must be set at least one")
 	}
 
-	if len(option.IDs) > maxDeleteClusterNum || len(option.Uids) > maxDeleteClusterNum {
+	if len(option.IDs) > maxDeleteClusterNum || len(option.UIDs) > maxDeleteClusterNum {
 		return fmt.Errorf("the maximum number of clusters to be deleted is not allowed to exceed %d",
 			maxDeleteClusterNum)
 	}

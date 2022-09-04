@@ -47,13 +47,13 @@ func (p *containerOperation) BatchDeleteNode(kit *rest.Kit, bizID int64, option 
 	*metadata.DeletedCount, errors.CCErrorCoder) {
 
 	num := 0
-	if option.Flag {
-		for uid, names := range option.Option {
+	if len(option.NodeKubeInfo) > 0 {
+		for clusterUID, names := range option.NodeKubeInfo {
 			filter := map[string]interface{}{
 				common.BKAppIDField:   bizID,
 				common.BKOwnerIDField: kit.SupplierAccount,
-				types.ClusterUIDField: uid,
-				types.NodeField: map[string]interface{}{
+				types.ClusterUIDField: clusterUID,
+				types.KubeNameField: map[string]interface{}{
 					common.BKDBIN: names,
 				},
 			}
@@ -61,26 +61,28 @@ func (p *containerOperation) BatchDeleteNode(kit *rest.Kit, bizID int64, option 
 				blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 				return nil, kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
 			}
-			num += len(names)
 		}
-		return &metadata.DeletedCount{Count: uint64(num)}, nil
+		num = len(option.NodeKubeInfo)
+	}
+	if len(option.NodeCmdbInfo) > 0 {
+
+		for clusterID, ids := range option.NodeCmdbInfo {
+			filter := map[string]interface{}{
+				common.BKAppIDField:    bizID,
+				common.BKOwnerIDField:  kit.SupplierAccount,
+				types.BKClusterIDFiled: clusterID,
+				types.BKIDField: map[string]interface{}{
+					common.BKDBIN: ids,
+				},
+			}
+			if err := mongodb.Client().Table(types.BKTableNameBaseCluster).Delete(kit.Ctx, filter); err != nil {
+				blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+				return nil, kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
+			}
+		}
+		num = len(option.NodeCmdbInfo)
 	}
 
-	for clusterID, ids := range option.Option {
-		filter := map[string]interface{}{
-			common.BKAppIDField:    bizID,
-			common.BKOwnerIDField:  kit.SupplierAccount,
-			types.BKClusterIDFiled: clusterID,
-			types.BKNodeIDField: map[string]interface{}{
-				common.BKDBIN: ids,
-			},
-		}
-		if err := mongodb.Client().Table(types.BKTableNameBaseCluster).Delete(kit.Ctx, filter); err != nil {
-			blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
-			return nil, kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
-		}
-		num += len(ids)
-	}
 	return &metadata.DeletedCount{Count: uint64(num)}, nil
 }
 
@@ -95,20 +97,19 @@ func (p *containerOperation) DeleteCluster(kit *rest.Kit, bizID int64, option *t
 		filter = map[string]interface{}{
 			common.BKAppIDField:   bizID,
 			common.BKOwnerIDField: kit.SupplierAccount,
-			types.ClusterUIDField: map[string]interface{}{
-				common.BKDBIN: option.Uids,
+			types.BKIDField: map[string]interface{}{
+				common.BKDBIN: option.IDs,
 			},
 		}
 	}
 
-	if len(option.Uids) > 0 {
-		num = len(option.Uids)
-
+	if len(option.UIDs) > 0 {
+		num = len(option.UIDs)
 		filter = map[string]interface{}{
 			common.BKAppIDField:   bizID,
 			common.BKOwnerIDField: kit.SupplierAccount,
-			types.BKIDField: map[string]interface{}{
-				common.BKDBIN: option.IDs,
+			types.UidField: map[string]interface{}{
+				common.BKDBIN: option.UIDs,
 			},
 		}
 	}

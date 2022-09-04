@@ -130,10 +130,10 @@ type CreateNodesOption struct {
 	Nodes []NodeReqParam `json:"nodes"`
 }
 
-// ArrangeDeleteNodeOption cleaned up delete Node request
+// ArrangeDeleteNodeOption reorganize request parameters for deleting nodes.
 type ArrangeDeleteNodeOption struct {
-	Option map[interface{}][]interface{} `json:"option"`
-	Flag   bool                          `json:"flag"`
+	NodeCmdbInfo map[int64][]int64   `json:"node_cmdb_info"`
+	NodeKubeInfo map[string][]string `json:"node_kube_info"`
 }
 
 // CreateNodesResult create node results in batches.

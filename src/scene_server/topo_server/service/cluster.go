@@ -187,7 +187,6 @@ func (s *Service) DeleteCluster(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	//1、重新整理一下请求
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
