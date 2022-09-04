@@ -2,6 +2,7 @@
   import { computed, defineComponent, reactive, ref, watch, watchEffect } from '@vue/composition-api'
   import store from '@/store'
   import routerActions from '@/router/actions'
+  import tableMixin from '@/mixins/table'
   import { getDefaultPaginationConfig, getSort, getHeaderProperties, getHeaderPropertyName, getPropertyCopyValue } from '@/utils/tools.js'
   import { transformGeneralModelCondition } from '@/components/filters/utils.js'
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
@@ -11,6 +12,10 @@
   import containerConService from '@/service/container/container.js'
 
   export default defineComponent({
+    mixins: [tableMixin],
+    mounted() {
+      this.disabledTableSettingDefaultBehavior()
+    },
     setup(props, { root }) {
       const requestIds = {
         property: Symbol(),
@@ -268,6 +273,7 @@
 
     <bk-table class="list-table"
       v-bkloading="{ isLoading: $loading(Object.values(requestIds)) }"
+      ref="table"
       :data="table.data"
       :pagination="table.pagination"
       :max-height="$APP.height - 325"

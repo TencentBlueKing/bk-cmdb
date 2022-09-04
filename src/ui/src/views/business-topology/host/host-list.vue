@@ -66,6 +66,7 @@
   import AcrossBusinessModuleSelector from './across-business-module-selector.vue'
   import MoveToResourceConfirm from './move-to-resource-confirm.vue'
   import hostValueFilter from '@/filters/host'
+  import tableMixin from '@/mixins/table'
   import { mapGetters } from 'vuex'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
@@ -96,6 +97,7 @@
     filters: {
       hostValueFilter
     },
+    mixins: [tableMixin],
     props: {
       active: Boolean
     },
@@ -148,7 +150,7 @@
         return TOPO_MODE_KEYS.NORMAL
       },
       customInstanceColumnKey() {
-        if (this.topoMode === TOPO_MODE_KEYS.CONTAINER) {
+        if (this.isContainerHost) {
           return this.$route.meta.customContainerInstanceColumn
         }
         return this.$route.meta.customInstanceColumn
@@ -169,6 +171,7 @@
       },
       topoMode(mode) {
         FilterStore.setTopoMode(mode)
+
         this.tableHeader = FilterStore.getHeader()
         // 重置selection防止因数据结构不同导致获取数据错误
         this.table.selection = []
@@ -178,7 +181,10 @@
       }
     },
     created() {
+      FilterStore.setTopoMode(this.topoMode)
+
       this.initFilterStore()
+
       this.unwatchRouter = RouterQuery.watch('*', ({
         tab = 'hostList',
         node,
@@ -212,17 +218,13 @@
       this.unwatchFilter()
     },
     methods: {
-      disabledTableSettingDefaultBehavior() {
-        setTimeout(() => {
-          const settingReference = this.$refs.table.$el.querySelector('.bk-table-column-setting .bk-tooltip-ref')
-          // eslint-disable-next-line no-underscore-dangle
-          settingReference && settingReference._tippy && settingReference._tippy.disable()
-        }, 1000)
-      },
       async initFilterStore() {
         const currentRouteName = this.$route.name
-        if (this.storageRouteName === currentRouteName) return
+        if (this.storageRouteName === currentRouteName || currentRouteName !== MENU_BUSINESS_HOST_AND_SERVICE) {
+          return
+        }
         this.storageRouteName = currentRouteName
+
         await setupFilterStore({
           bk_biz_id: this.bizId,
           header: {
@@ -231,7 +233,7 @@
             global: 'host_global_custom_table_columns'
           }
         })
-        FilterStore.setTopoMode(this.topoMode)
+
         this.tableHeader = FilterStore.getHeader()
       },
       getColumnSortable(column) {
@@ -294,15 +296,21 @@
           },
           handler: {
             apply: async (properties) => {
+              // 先清空表头，防止更新排序后未重新渲染
+              this.tableHeader = []
+
               await this.handleApplyColumnsConfig(properties)
-              FilterStore.setHeader(properties)
+
+              // 获取最新的表头，内部会读取到上方保存的配置
               this.tableHeader = FilterStore.getHeader()
+
               FilterStore.dispatchSearch()
             },
             reset: async () => {
               await this.handleApplyColumnsConfig()
-              FilterStore.setHeader(FilterStore.defaultHeader)
+
               this.tableHeader = FilterStore.getHeader()
+
               FilterStore.dispatchSearch()
             }
           }

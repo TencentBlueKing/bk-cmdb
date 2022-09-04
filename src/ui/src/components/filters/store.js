@@ -51,7 +51,8 @@ const FilterStore = new Vue({
       activeCollection: null,
       needResetPage: false,
       throttleSearch: throttle(this.dispatchSearch, 100, { leading: false }),
-      topoMode: TOPO_MODE_KEYS.NORMAL,
+      topoMode: null,
+      resourceScope: null,
       fixedPropertyIds: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id'],
       defaultConditionProperties: {
         [TOPO_MODE_KEYS.BIZ_NODE]: [
@@ -91,6 +92,9 @@ const FilterStore = new Vue({
       if (this.isBizNode) {
         return 'biz_node_host_common_filter'
       }
+      if (this.isResourceAssigned) {
+        return 'resource_assigned_host_common_filter'
+      }
       if (this.isContainerMode) {
         return this.bizId ? 'container_topology_host_common_filter' : 'container_resource_host_common_filter'
       }
@@ -119,6 +123,7 @@ const FilterStore = new Vue({
       return this.searchMode === MIX_SEARCH_MODES.LIKE_CONTAINER
     },
     isContainerMode() {
+      // isContainerSearchMode适用于业务拓扑主机和资源主机搜索
       return this.isContainerTopo || this.isContainerSearchMode
     },
     hasNormalTopoField() {
@@ -135,6 +140,9 @@ const FilterStore = new Vue({
         return MIX_SEARCH_MODES.LIKE_CONTAINER
       }
       return MIX_SEARCH_MODES.UNKNOW
+    },
+    isResourceAssigned() {
+      return this.resourceScope?.toString() === '0'
     },
     searchHandler() {
       return this.config.searchHandler || (() => {})
@@ -219,16 +227,24 @@ const FilterStore = new Vue({
       return existedSelectedCondition || existedIP
     },
     columnConfigProperties() {
-      if (this.isContainerTopo) {
+      if (this.isContainerMode) {
         const properties = FilterStore.properties.filter(property => property.bk_obj_id === 'host'
         || (property.bk_obj_id === CONTAINER_OBJECTS.NODE))
 
         return properties
       }
 
-      const properties = FilterStore.properties.filter(property => property.bk_obj_id === 'host'
-        || (property.bk_obj_id === 'module' && property.bk_property_id === 'bk_module_name')
-        || (property.bk_obj_id === 'set' && property.bk_property_id === 'bk_set_name'))
+      const properties = FilterStore.properties.filter((property) => {
+        const { bk_obj_id: objId, bk_property_id: propId } = property
+        const isHost = objId === 'host'
+        const isModuleName = objId === 'module' && propId === 'bk_module_name'
+        const isSetName = objId === 'set' && propId === 'bk_set_name'
+        const isBizName = objId === 'biz' && propId  === 'bk_biz_name'
+        if (!this.bizId) {
+          return isHost || isModuleName || isSetName || isBizName
+        }
+        return isHost || isModuleName || isSetName
+      })
 
       return properties
     }
@@ -237,8 +253,13 @@ const FilterStore = new Vue({
     selected() {
       this.initCondition()
     },
-    topoMode(mode) {
-      this.changeTopoMode(mode)
+    topoMode(newMode, oldMode) {
+      // 必须要求为真值因为首次（刷新页面）不期望执行因会导致filter被清除
+      if (newMode && oldMode && newMode !== oldMode) {
+        // 此时selected为上一个mode的，需要清空，在setupNormalProperty方法中会使用在设置条件时已保存的值
+        FilterStore.updateSelected([])
+        FilterStore.setupNormalProperty()
+      }
     }
   },
   methods: {
@@ -270,7 +291,15 @@ const FilterStore = new Vue({
       const userBehavior = store.state.userCustom.usercustom[this.userBehaviorKey] || []
 
       // 优先使用用户保存的，否则初始化为对应拓扑类型的初始值
-      const normal = userBehavior.length ? userBehavior : this.defaultConditionProperties[this.topoMode]
+      let normal = []
+      if (userBehavior.length) {
+        normal = userBehavior
+      } else if (this.isResourceAssigned) {
+        // 资源已分配视图，使用业务节点一致的默认值
+        normal = this.defaultConditionProperties[TOPO_MODE_KEYS.BIZ_NODE]
+      } else {
+        normal = this.defaultConditionProperties[this.topoMode || TOPO_MODE_KEYS.NORMAL]
+      }
 
       this.createOrUpdateCondition(
         normal.map(([field, model]) => ({ field, model })),
@@ -298,20 +327,11 @@ const FilterStore = new Vue({
       })
       this.condition = newConditon
     },
-    changeTopoMode(mode) {
-      // 设置topoMode值，在其它方法中得以使用到最新的值
-      this.setTopoMode(mode)
-
-      this.setHeader()
-
-      // 此时selected为上一个mode的，需要清空，在setupNormalProperty方法中会使用在设置条件时已保存的值
-      this.updateSelected([])
-
-      // 使用当前mode重新创建选项与条件
-      this.setupNormalProperty()
-    },
     setTopoMode(mode) {
       this.topoMode = mode
+    },
+    setResourceScope(scope) {
+      this.resourceScope = scope
     },
     setCondition(data = {}) {
       this.condition = data.condition || this.condition
@@ -327,9 +347,11 @@ const FilterStore = new Vue({
     },
     createOrUpdateCondition(data, options = {}) {
       const { createOnly = false, useDefaultData = false } = options
+
       data.forEach(({ field, model, operator, value }) => {
-        // eslint-disable-next-line max-len
-        const existProperty = this.selected.find(property => property.bk_property_id === field && property.bk_obj_id === model)
+        const existProperty = this.selected
+          .find(property => property.bk_property_id === field && property.bk_obj_id === model)
+
         if (!existProperty) {
           const property = Utils.findPropertyByPropertyId(field, this.getModelProperties(model))
           if (property) {
@@ -347,6 +369,7 @@ const FilterStore = new Vue({
           condition.value = useDefaultData ? defaultData.value : value
         }
       })
+
       this.throttleSearch()
     },
     updateIP(data = {}) {
@@ -601,6 +624,11 @@ const FilterStore = new Vue({
       return groups
     },
     async getContainerPropertyMapValue() {
+      // 资源主机视图暂不支持标签类数据搜索
+      if (!this.bizId) {
+        return
+      }
+
       const objIds = [CONTAINER_OBJECTS.NODE]
       for (const objId of objIds) {
         const objProperties = this.getModelProperties(objId)
@@ -609,7 +637,6 @@ const FilterStore = new Vue({
           .map(prop => prop.bk_property_id)
 
         const service = getContainerInstanceService(objId)
-        // TODO: 确定资源主机bizId
         const total = await service.getCount({
           bk_biz_id: this.bizId
         })
@@ -671,6 +698,7 @@ const FilterStore = new Vue({
       return Promise.resolve()
     },
     async updateUserBehavior(properties) {
+      // console.log(this.userBehaviorKey, 'this.userBehaviorKeythis.userBehaviorKey')
       await store.dispatch('userCustom/saveUsercustom', {
         [this.userBehaviorKey]: properties.map(property => [property.bk_property_id, property.bk_obj_id])
       })
@@ -695,6 +723,8 @@ export async function setupFilterStore(config = {}) {
   FilterStore.condition = {}
   FilterStore.components = {}
   FilterStore.activeCollection = null
+  FilterStore.topoMode = null
+  FilterStore.resourceScope = null
   await Promise.all([
     FilterStore.getProperties(),
     FilterStore.getPropertyGroups(),

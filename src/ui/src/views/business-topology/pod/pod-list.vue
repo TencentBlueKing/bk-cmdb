@@ -15,6 +15,7 @@
   import store from '@/store'
   import RouterQuery from '@/router/query'
   import routerActions from '@/router/actions'
+  import tableMixin from '@/mixins/table'
   import { getDefaultPaginationConfig, getSort, getHeaderProperties, getHeaderPropertyName } from '@/utils/tools.js'
   import { transformGeneralModelCondition, getDefaultData } from '@/components/filters/utils.js'
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
@@ -28,6 +29,10 @@
   export default defineComponent({
     components: {
       PodListOptions
+    },
+    mixins: [tableMixin],
+    mounted() {
+      this.disabledTableSettingDefaultBehavior()
     },
     setup() {
       const requestIds = {
@@ -325,6 +330,7 @@
     </pod-list-options>
     <bk-table class="pod-table"
       v-bkloading="{ isLoading: $loading(Object.values(requestIds)) }"
+      ref="table"
       :data="table.data"
       :pagination="table.pagination"
       :max-height="$APP.height - 250"

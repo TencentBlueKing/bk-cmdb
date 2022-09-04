@@ -12,12 +12,16 @@
 
 import Vue from 'vue'
 import http from '@/api'
+import containerHostService from '@/service/container/host'
 
 export default new Vue({
   data() {
     return {
       results: new Map(),
-      queue: []
+      queue: [],
+      isContainerSearchMode: false,
+      isResourceAssigned: false,
+      containerTopoPaths: []
     }
   },
   watch: {
@@ -36,11 +40,14 @@ export default new Vue({
     },
     dispatchRequest() {
       this.requestTimer && clearTimeout(this.requestTimer)
-      this.requestTimer = setTimeout(() => {
+      this.requestTimer = setTimeout(async () => {
         // 一次执行请求后将队列清空
         const queue = this.queue.splice(0)
         // 由于不能跨业务批量查询，此处拆分不同业务下的模块
         const requestMap = new Map()
+
+        const hostIds = []
+
         queue.forEach((meta) => {
           const requestSet = requestMap.get(meta.data.bk_biz_id)
           if (requestSet) {
@@ -50,28 +57,51 @@ export default new Vue({
             newRequestSet.add(meta)
             requestMap.set(meta.data.bk_biz_id, newRequestSet)
           }
-        })
-        // 不同业务分别发起请求
-        requestMap.forEach((requestSet, bizId) => {
-          const newModules = this.seperateNode(bizId, requestSet)
-          if (!newModules.length) {
-            this.resolvePromise(bizId, requestSet)
-          } else {
-            http.post(`find/topopath/biz/${bizId}`, {
-              topo_nodes: newModules
-            }).then((data) => {
-              this.setResults(bizId, data.nodes)
-              this.resolvePromise(bizId, requestSet)
-            })
+
+          if (!hostIds.some(id => id === meta.data.hostId)) {
+            hostIds.push(meta.data.hostId)
           }
         })
+
+        // 容器拓扑路径
+        if (this.isResourceAssigned) {
+          const { info: paths } = await containerHostService.getNodePath({ ids: hostIds })
+          this.containerTopoPaths = paths || []
+
+          // 已分配并且为容器搜索模式，此处独立完成结果返回
+          if (this.isContainerSearchMode) {
+            queue.forEach((meta) => {
+              const containerPaths = this.containerTopoPaths.find(item => item.bk_host_id === meta.data.hostId)?.paths
+              meta.resolve({
+                container: containerPaths
+              })
+            })
+          }
+        }
+
+        if (!this.isContainerSearchMode) {
+          // 不同业务分别发起请求
+          requestMap.forEach((requestSet, bizId) => {
+            const newModules = this.seperateNode(bizId, requestSet)
+            if (!newModules.length) {
+              this.resolvePromise(bizId, requestSet)
+            } else {
+              http.post(`find/topopath/biz/${bizId}`, {
+                topo_nodes: newModules
+              }).then((data) => {
+                this.setResults(bizId, data.nodes)
+                this.resolvePromise(bizId, requestSet)
+              })
+            }
+          })
+        }
       }, 200)
     },
     // 将业务下的模块去重，并去掉已缓存的模块id
     seperateNode(bizId, requestSet) {
       const modules = []
       requestSet.forEach(({ data }) => {
-        modules.push(...data.modules)
+        modules.push(...(data.modules ?? []))
       })
       const uniqueModules = [...new Set(modules)]
       // eslint-disable-next-line max-len
@@ -98,7 +128,7 @@ export default new Vue({
     resolvePromise(bizId, requestSet) {
       const resultMap = this.results.get(bizId) || new Map()
       requestSet.forEach((meta) => {
-        const result = meta.data.modules.map(moduleId => resultMap.get(moduleId) || {
+        const result = meta.data.modules?.map(moduleId => resultMap.get(moduleId) || {
           bk_biz_id: bizId,
           topo_node: {
             bk_inst_id: moduleId,
@@ -106,7 +136,12 @@ export default new Vue({
           },
           topo_path: []
         })
-        meta.resolve(result)
+
+        const containerPaths = this.containerTopoPaths.find(item => item.bk_host_id === meta.data.hostId)?.paths
+        meta.resolve({
+          normal: result,
+          container: containerPaths
+        })
       })
     }
   }

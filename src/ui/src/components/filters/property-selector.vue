@@ -80,13 +80,15 @@
         modelPropertyMap.host = modelPropertyMap.host
           .filter(property => !ignoreHostProperties.includes(property.bk_property_id))
 
-        // 资源-主机视图，全量的字段
-        if (!FilterStore.bizId) {
+        // 当前处于业务节点，使用全量的字段(包括node)
+        if (FilterStore.isBizNode) {
           return modelPropertyMap
         }
 
-        // 当前处于业务节点，全量的字段
-        if (FilterStore.isBizNode) {
+        // 资源已分配主机视图，暂时不支持node对象map类型的字段
+        if (FilterStore.isResourceAssigned) {
+          modelPropertyMap.node = modelPropertyMap.node
+            .filter(property => !['map'].includes(property.bk_property_type))
           return modelPropertyMap
         }
 
