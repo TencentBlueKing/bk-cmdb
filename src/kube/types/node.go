@@ -81,7 +81,7 @@ type NodeBaseFields struct {
 	Roles            *string               `json:"roles" bson:"roles"`
 	Labels           *enumor.MapStringType `json:"labels" bson:"labels"`
 	Taints           *enumor.MapStringType `json:"taints" bson:"taints"`
-	Unschedulable    bool                  `json:"unschedulable" bson:"unschedulable"`
+	Unschedulable    *bool                 `json:"unschedulable" bson:"unschedulable"`
 	InternalIP       *[]string             `json:"internal_ip" bson:"internal_ip"`
 	ExternalIP       *[]string             `json:"external_ip" bson:"external_ip"`
 	HostName         *string               `json:"hostname" bson:"hostname"`

@@ -20,6 +20,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"reflect"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
@@ -32,6 +33,7 @@ import (
 const (
 	maxDeleteClusterNum = 10
 	maxDeleteNodeNum    = 100
+	maxUpdateClusterNum = 10
 )
 
 // ClusterFields merge the fields of the cluster and the details corresponding to the fields together.
@@ -154,7 +156,7 @@ func (option *DeleteClusterOption) Validate() error {
 	return nil
 }
 
-// ClusterBaseFields 创建集群请求字段
+// ClusterBaseFields basic description fields for container clusters.
 type ClusterBaseFields struct {
 	Name *string `json:"name" bson:"name"`
 	// SchedulingEngine scheduling engines, such as k8s, tke, etc.
@@ -214,12 +216,12 @@ type ResponseCluster struct {
 	Data []Cluster `json:"cluster"`
 }
 
-// UpdateClusterOption 更新集群字段
+// UpdateClusterOption update cluster request。
 type UpdateClusterOption struct {
-	Cluster []OneUpdateCluster `json:"cluster"`
+	Clusters []OneUpdateCluster `json:"clusters"`
 }
 
-// OneUpdateCluster 更新单个集群详情
+// OneUpdateCluster update individual cluster information.
 type OneUpdateCluster struct {
 	ID   int64             `json:"id"`
 	UID  string            `json:"uid"`
@@ -229,19 +231,53 @@ type OneUpdateCluster struct {
 // Validate validate the UpdateClusterOption
 func (option *UpdateClusterOption) Validate() error {
 
-	for _, one := range option.Cluster {
+	if option == nil {
+		return errors.New("cluster option is null")
+	}
+
+	if len(option.Clusters) == 0 {
+		return errors.New("the params for updating the cluster must be set")
+	}
+	if len(option.Clusters) > maxUpdateClusterNum {
+		return fmt.Errorf("the number of update clusters cannot exceed %d at a time", maxUpdateClusterNum)
+	}
+
+	for _, one := range option.Clusters {
 		if one.UID == "" && one.ID == 0 {
 			return errors.New("id and uid cannot be empty at the same time")
 		}
 		if one.UID != "" && one.ID != 0 {
 			return errors.New("id and uid cannot be set at the same time")
 		}
-		// 这里需要校验字段非空字段是否是可编辑的，如果是不可编辑的直接报错
-		//for _, data := range one.Data {
-		//
-		//}
+		if err := one.Data.UpdateValidate(); err != nil {
+			return err
+		}
 	}
+	return nil
+}
 
+// UpdateValidate verifying the validity of parameters for updating node scenarios
+func (option *ClusterBaseFields) UpdateValidate() error {
+	if option == nil {
+		return errors.New("node information must be given")
+	}
+	typeOfOption := reflect.TypeOf(*option)
+	valueOfOption := reflect.ValueOf(*option)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+		fieldValue := valueOfOption.Field(i)
+		//	1、check each variable for a null pointer.
+		//	if it is a null pointer, it means that
+		//	this field will not be updated, skip it directly.
+		if fieldValue.IsNil() {
+			continue
+		}
+		// 2、a variable with a non-null pointer gets the corresponding tag.
+		tag := typeOfOption.Field(i).Tag.Get("json")
+		// 3、get whether it is an editable field based on tag
+		if !ClusterFields.IsFieldEditableByField(tag) {
+			return fmt.Errorf("field [%s] is a non-editable field", tag)
+		}
+	}
 	return nil
 }
 

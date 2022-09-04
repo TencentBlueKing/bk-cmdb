@@ -81,7 +81,7 @@ func (s *Service) initKube(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/kube/updatemany/node/bk_biz_id/{bk_biz_id}",
-		Handler: s.UpdateClusterFields})
+		Handler: s.UpdateNodeFields})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
 		Path:    "/kube/delete/cluster/bk_biz_id/{bk_biz_id}",

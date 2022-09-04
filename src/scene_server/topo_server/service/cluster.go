@@ -93,10 +93,9 @@ func (s *Service) SearchClusters(ctx *rest.Contexts) {
 	ctx.RespEntityWithCount(0, result.Data)
 }
 
-// UpdateClusterFields 更新集群字段
+// UpdateClusterFields update cluster fields
 func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
-	// 还是用之前的结构体作为参数，json解析后看下不空的字段，根据tag获取是否是可编辑的字段，如果是可编辑的字段那么可以更新，如果是不可编辑字
-	// 段那么直接报错
+
 	data := new(types.UpdateClusterOption)
 	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
@@ -114,7 +113,6 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 		return
 	}
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		//err = s.Logics.ContainerOperation().UpdateClusterFields(ctx.Kit, data, bizID, ctx.Kit.SupplierAccount)
 		err := s.Engine.CoreAPI.CoreService().Container().UpdateClusterFields(ctx.Kit.Ctx, ctx.Kit.Header,
 			ctx.Kit.SupplierAccount, bizID, data)
 		if err != nil {

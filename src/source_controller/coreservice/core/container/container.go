@@ -539,9 +539,9 @@ func (p *containerOperation) UpdateNodeFields(kit *rest.Kit, bizID int64, suppli
 		}
 
 		opts := orm.NewFieldOptions().AddIgnoredFields(common.BKFieldID, types.ClusterUIDField, common.BKFieldName)
-		updateData, err := orm.GetUpdateFieldsWithOption(node, opts)
+		updateData, err := orm.GetUpdateFieldsWithOption(node.Data, opts)
 		if err != nil {
-			blog.Errorf("get update data failed, data: %v, err: %v, rid: %s", node, err, kit.Rid)
+			blog.Errorf("get update data failed, data: %v, err: %v, rid: %s", node.Data, err, kit.Rid)
 			return &metadata.UpdatedCount{Count: 0}, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 		}
 
@@ -559,7 +559,7 @@ func (p *containerOperation) UpdateNodeFields(kit *rest.Kit, bizID int64, suppli
 func (p *containerOperation) UpdateClusterFields(kit *rest.Kit, bizID int64, supplierAccount string,
 	data *types.UpdateClusterOption) (*metadata.UpdatedCount, errors.CCErrorCoder) {
 
-	for _, one := range data.Cluster {
+	for _, one := range data.Clusters {
 		filter := map[string]interface{}{
 			types.BKBizIDField:    bizID,
 			common.BKOwnerIDField: supplierAccount,
@@ -573,7 +573,7 @@ func (p *containerOperation) UpdateClusterFields(kit *rest.Kit, bizID int64, sup
 		}
 
 		opts := orm.NewFieldOptions().AddIgnoredFields(common.BKFieldID, types.ClusterUIDField, common.BKFieldName)
-		updateData, err := orm.GetUpdateFieldsWithOption(one, opts)
+		updateData, err := orm.GetUpdateFieldsWithOption(one.Data, opts)
 		if err != nil {
 			blog.Errorf("get update data failed, data: %v, err: %v, rid: %s", one, err, kit.Rid)
 			return &metadata.UpdatedCount{Count: 0}, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
@@ -586,7 +586,7 @@ func (p *containerOperation) UpdateClusterFields(kit *rest.Kit, bizID int64, sup
 			return &metadata.UpdatedCount{Count: 0}, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 		}
 	}
-	return &metadata.UpdatedCount{Count: uint64(len(data.Cluster))}, nil
+	return &metadata.UpdatedCount{Count: uint64(len(data.Clusters))}, nil
 }
 
 // CreateCluster create cluster instance.
