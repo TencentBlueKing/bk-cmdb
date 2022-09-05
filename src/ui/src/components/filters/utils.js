@@ -311,13 +311,13 @@ export function transformIP(raw) {
 const operatorSymbolMap = {
   $eq: '=',
   $ne: '≠',
-  $in: '*=',
-  $nin: '*≠',
+  $in: 'in',
+  $nin: 'not in',
   $gt: '>',
   $lt: '<',
   $gte: '≥',
   $lte: '≤',
-  $regex: '~=',
+  $regex: 'like',
   $range: '≤ ≥'
 }
 export function getOperatorSymbol(operator) {
