@@ -342,6 +342,15 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, req *http.Requ
 		}
 	}
 
+	return lgc.updateHostAssociation(ctx, f, req, result, defLang)
+}
+
+// updateHostAssociation excel export host data, update host association
+func (lgc *Logics) updateHostAssociation(ctx context.Context, f *xlsx.File, req *http.Request,
+	result *metadata.ResponseDataMapStr, defLang lang.DefaultCCLanguageIf) *metadata.ResponseDataMapStr {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Header))
+
 	for _, sheet := range f.Sheets {
 		if sheet.Name != "association" {
 			continue
@@ -371,7 +380,6 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, req *http.Requ
 
 		result.Data.Set("asst_error", assoErrMsg)
 	}
-
 	return result
 }
 
