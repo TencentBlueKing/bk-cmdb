@@ -302,3 +302,27 @@ func (k *kube) ListContainer(ctx context.Context, header http.Header, input *met
 
 	return &result.Data, nil
 }
+
+// DeletePods delete pods api
+func (k *kube) DeletePods(ctx context.Context, h http.Header, opt *types.DeletePodsByIDsOption) errors.CCErrorCoder {
+	resp := new(metadata.Response)
+	subPath := "/deletemany/pod"
+
+	err := k.client.Delete().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -447,3 +447,69 @@ type ContainerInstResp struct {
 type ContainerDataResp struct {
 	Info []Container `json:"info"`
 }
+
+// DeletePodsOption delete pods option, pods are aggregated by biz id
+type DeletePodsOption struct {
+	// Data array of delete pod data that defines pods to be deleted in one biz
+	Data []DeletePodData `json:"data"`
+}
+
+// DeletePodData delete pods data, including biz id and pods in it
+type DeletePodData struct {
+	// BizID biz id
+	BizID int64 `json:"bk_biz_id"`
+	// PodIDs pod cc id array
+	PodIDs []int64 `json:"ids"`
+}
+
+// Validate delete pods option
+func (d *DeletePodsOption) Validate() ccErr.RawErrorInfo {
+	if len(d.Data) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"data"}}
+	}
+
+	if len(d.Data) > common.BKMaxWriteOpLimit {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit, Args: []interface{}{
+			"data", common.BKMaxWriteOpLimit}}
+	}
+
+	// validate that all delete pods count must not exceed 200
+	podsCnt := 0
+	for _, data := range d.Data {
+		if data.BizID == 0 {
+			return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKAppIDField}}
+		}
+
+		if len(data.PodIDs) == 0 {
+			return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"ids"}}
+		}
+
+		podsCnt += len(data.PodIDs)
+		if podsCnt > common.BKMaxWriteOpLimit {
+			return ccErr.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit, Args: []interface{}{
+				"pods", common.BKMaxWriteOpLimit}}
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// DeletePodsByIDsOption delete pods by ids option
+type DeletePodsByIDsOption struct {
+	// PodIDs delete pod id array
+	PodIDs []int64 `json:"ids"`
+}
+
+// Validate delete pods by id option
+func (d *DeletePodsByIDsOption) Validate() ccErr.RawErrorInfo {
+	if len(d.PodIDs) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"ids"}}
+	}
+
+	if len(d.PodIDs) > common.BKMaxWriteOpLimit {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit, Args: []interface{}{
+			"ids", common.BKMaxWriteOpLimit}}
+	}
+
+	return ccErr.RawErrorInfo{}
+}

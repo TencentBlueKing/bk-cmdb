@@ -85,6 +85,9 @@ const (
 
 	// BKMaxSyncIdentifierLimit sync identifier max value
 	BKMaxSyncIdentifierLimit = 200
+
+	// BKMaxWriteOpLimit maximum limit of write operation.
+	BKMaxWriteOpLimit = 200
 )
 
 const (
