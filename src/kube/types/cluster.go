@@ -37,21 +37,7 @@ const (
 )
 
 // ClusterFields merge the fields of the cluster and the details corresponding to the fields together.
-var ClusterFields = table.MergeFields(ClusterFieldsDescriptor)
-
-// ClusterFieldsDescriptor cluster's fields descriptors.
-var ClusterFieldsDescriptor = table.MergeFieldDescriptors(
-	table.FieldsDescriptors{
-		{Field: BKIDField, Type: enumor.Numeric, IsRequired: true, IsEditable: false},
-		{Field: BKBizIDField, Type: enumor.Numeric, IsRequired: true, IsEditable: false},
-		{Field: BKSupplierAccountField, Type: enumor.String, IsRequired: true, IsEditable: false},
-		{Field: CreatorField, Type: enumor.String, IsRequired: true, IsEditable: false},
-		{Field: ModifierField, Type: enumor.String, IsRequired: true, IsEditable: true},
-		{Field: CreateTimeField, Type: enumor.Numeric, IsRequired: true, IsEditable: false},
-		{Field: LastTimeField, Type: enumor.Numeric, IsRequired: true, IsEditable: true},
-	},
-	table.MergeFieldDescriptors(ClusterSpecFieldsDescriptor),
-)
+var ClusterFields = table.MergeFields(ClusterSpecFieldsDescriptor)
 
 // ClusterSpecFieldsDescriptor cluster spec's fields descriptors.
 var ClusterSpecFieldsDescriptor = table.FieldsDescriptors{
@@ -292,20 +278,35 @@ func (option *ClusterBaseFields) UpdateValidate() error {
 // ValidateCreate check whether the parameters for creating a cluster are legal.
 func (option *ClusterBaseFields) ValidateCreate() error {
 
-	if option.Name == nil || *option.Name == "" {
-		return errors.New("name can not be empty")
-	}
-	//if err := ValidateString(*option.Name, StringSettings{}); err != nil {
-	//	return err
-	//}
-
-	if option.Uid == nil || *option.Uid == "" {
-		return errors.New("uid can not be empty")
+	// 首先获取必填字段列表。
+	requireMap := make(map[string]struct{}, 0)
+	requires := ClusterFields.RequiredFields()
+	for field, required := range requires {
+		if required {
+			requireMap[field] = struct{}{}
+		}
 	}
 
-	//if err := ValidateString(*option.Uid, StringSettings{}); err != nil {
-	//	return err
-	//}
+	if option == nil {
+		return errors.New("cluster information must be given")
+	}
+	typeOfOption := reflect.TypeOf(*option)
+	valueOfOption := reflect.ValueOf(*option)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+		tag := typeOfOption.Field(i).Tag.Get("json")
+		if ClusterFields.IsFieldRequiredByField(tag) {
+			fieldValue := valueOfOption.Field(i)
+			if fieldValue.IsNil() {
+				return fmt.Errorf("required fields cannot be empty, %s", tag)
+			}
+			delete(requireMap, tag)
+		}
+	}
+
+	if len(requireMap) > 0 {
+		return fmt.Errorf("required fields cannot be empty")
+	}
+
 	return nil
 }
 

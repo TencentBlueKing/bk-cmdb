@@ -92,9 +92,11 @@ type NodeBaseFields struct {
 
 // UpdateValidate verifying the validity of parameters for updating node scenarios
 func (option *NodeBaseFields) UpdateValidate() error {
+
 	if option == nil {
 		return errors.New("node information must be given")
 	}
+
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
@@ -235,20 +237,37 @@ func (option *UpdateNodeOption) Validate() error {
 }
 
 // CreateValidate validate the NodeBaseFields
-func (node *NodeBaseFields) CreateValidate() error {
-	//if *node.HostID == 0 {
-	//	return errors.New("host id must be set")
-	//}
-	//if *node.ClusterID == 0 {
-	//	return errors.New("cluster id must be set")
-	//}
-	//if err := ValidateString(*node.ClusterUID, StringSettings{}); err != nil {
-	//	return err
-	//}
+func (option *NodeBaseFields) CreateValidate() error {
 
-	//if err := ValidateString(*node.Name, StringSettings{}); err != nil {
-	//	return err
-	//}
+	// 首先获取必填字段列表。
+	requireMap := make(map[string]struct{}, 0)
+	requires := NodeFields.RequiredFields()
+	for field, required := range requires {
+		if required {
+			requireMap[field] = struct{}{}
+		}
+	}
+
+	if option == nil {
+		return errors.New("node information must be given")
+	}
+	typeOfOption := reflect.TypeOf(*option)
+	valueOfOption := reflect.ValueOf(*option)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+		tag := typeOfOption.Field(i).Tag.Get("json")
+		if NodeFields.IsFieldRequiredByField(tag) {
+			fieldValue := valueOfOption.Field(i)
+			if fieldValue.IsNil() {
+				return fmt.Errorf("required fields cannot be empty, %s", tag)
+			}
+			delete(requireMap, tag)
+		}
+	}
+
+	if len(requireMap) > 0 {
+		return fmt.Errorf("required fields cannot be empty")
+	}
+
 	return nil
 }
 

@@ -67,7 +67,8 @@ func (b *kube) SetProxy(cluster ClusterOperationInterface) {
 func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.ArrangeDeleteNodeOption,
 	supplierAccount string) error {
 
-	// 1、检查是否存在这些node，必须都存在才能删除否则返回报错
+	// 1、check whether these nodes exist, they must all exist before they can be deleted,
+	// otherwise an error will be returned.
 	cond := make([]map[string]interface{}, 0)
 	podCond := make([]map[string]interface{}, 0)
 	num := 0
@@ -107,7 +108,6 @@ func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.Arrange
 		}
 	}
 
-	// 检查获取到node的数量和参数是否一致
 	counts, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 		types.BKTableNameBaseNode, cond)
 	if err != nil {
@@ -124,7 +124,7 @@ func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.Arrange
 		return kit.CCError.CCErrorf(common.CCErrTopoInstDeleteFailed)
 	}
 
-	// 查找是否有pod
+	// 2、check if there is a pod on the node.
 	counts, err = b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 		types.BKTableNameBasePod, podCond)
 	if err != nil {
@@ -142,7 +142,7 @@ func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.Arrange
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errors.New("no pods can exist under the node"))
 	}
 
-	// 3、进行批量删除node
+	// 3、batch delete nodes
 	if err := b.clientSet.CoreService().Container().BatchDeleteNode(kit.Ctx, kit.Header, bizID, option); err != nil {
 		blog.Errorf("delete node failed, option: %#v, err: %v, rid: %s", option, err, kit.Rid)
 		return err

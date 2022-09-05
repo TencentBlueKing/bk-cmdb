@@ -265,6 +265,10 @@ type PodsInfo struct {
 // CreateValidate validate the PodBaseFields
 func (option *PodBaseFields) CreateValidate() error {
 
+	if option == nil {
+		return errors.New("pod information must be given")
+	}
+
 	// 首先获取必填字段列表。
 	requireMap := make(map[string]struct{}, 0)
 	requires := PodFields.RequiredFields()
@@ -274,30 +278,20 @@ func (option *PodBaseFields) CreateValidate() error {
 		}
 	}
 
-	if option == nil {
-		return errors.New("node information must be given")
-	}
-	blog.Errorf("22222222222222222222 requireMap: %+v", requireMap)
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
-
 		tag := typeOfOption.Field(i).Tag.Get("json")
 		if PodFields.IsFieldRequiredByField(tag) {
 			fieldValue := valueOfOption.Field(i)
 			if fieldValue.IsNil() {
-				blog.Errorf("00000000000000000 tag: %v", tag)
 				return fmt.Errorf("required fields cannot be empty, %s", tag)
 			}
-			blog.Errorf("fffffffffffffffffff tag: %v", tag)
-
 			delete(requireMap, tag)
 		}
 	}
 
 	if len(requireMap) > 0 {
-		blog.Errorf("00000000000000000 requireMap: %v", requireMap)
-
 		return fmt.Errorf("required fields cannot be empty")
 	}
 	return nil
