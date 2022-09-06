@@ -113,7 +113,7 @@ func (s *Service) FindKubeMapStrFieldVal(ctx *rest.Contexts) {
 	)
 }
 
-// convertKubeCondition 根据不同的资源生成不同的查询条件
+// convertKubeCondition generate different query conditions based on different resources.
 func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathReq, filter mapstr.MapStr,
 	tableNames []string) (*types.KubeTopoPathRsp, error) {
 
@@ -125,7 +125,7 @@ func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathR
 		Fields:         []string{types.BKIDField, types.KubeNameField},
 		DisableCounter: true}
 
-	// 按照拓扑的展示，将folder放到最前面
+	// according to the topology display, put the folder to the front
 	if tableNames[0] == types.BKTableNameBaseNamespace {
 		result.Info = append(result.Info, types.KubeObjectInfo{
 			ID: types.KubeFolderID, Name: types.KubeFolderName, Kind: types.KubeFolder,
@@ -133,7 +133,6 @@ func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathR
 	}
 
 	for _, tableName := range tableNames {
-		// 根据转化的对象找到对应的表，然后根据id 应该是根据不同的
 		switch tableName {
 		case types.BKTableNameBaseCluster:
 			clusters, err := s.Logics.ContainerOperation().SearchCluster(kit, query)
@@ -200,13 +199,10 @@ func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathR
 	return result, nil
 }
 
-// 这里整理出来条件如果是folder类型的话，实际上pod数应该是0
-// folder的主机数量实际上是需要看clusterID的对应的node表中的hasPod为false的hostID进行去重之后的本业务主机数量。
 func combinationConditions(infos []types.KubeResourceInfo, bizID int64,
 	supplierAccount string) []map[string]interface{} {
 
 	filters := make([]map[string]interface{}, 0)
-	// 判断拓扑的资源的类别，分为cluster，namespace、和workload三大类。
 	for _, info := range infos {
 		switch info.Kind {
 		case types.KubeFolder:
@@ -243,7 +239,7 @@ func combinationConditions(infos []types.KubeResourceInfo, bizID int64,
 	return filters
 }
 
-// CountKubeTopoHostsOrPods 计算节点的数量
+// CountKubeTopoHostsOrPods count the number of node pods or hosts
 func (s *Service) CountKubeTopoHostsOrPods(ctx *rest.Contexts) {
 
 	option := new(types.KubeTopoCountOption)
@@ -275,18 +271,15 @@ func (s *Service) CountKubeTopoHostsOrPods(ctx *rest.Contexts) {
 	filters := combinationConditions(option.ResourceInfos, bizID, ctx.Kit.SupplierAccount)
 	result := make([]types.KubeTopoCountRsp, 0)
 	if kind == types.KubePodKind {
-		// 这里需要限制一下，分10批次，每次10个进行查询，之后进行组合
-		// filters 这里包含了folder的条件，在查询pod的时候需要将folder的条件过滤出来 并且赋予0值剩余的再进行查询pod数量。
 		podFilters := make([]map[string]interface{}, 0)
 
 		resIDMap := make(map[int]struct{})
 		for id, filter := range filters {
-			// 如果filter中含有 "has_pod"字段 那么说明folder节点，
+			// if the filter contains the "has_pod" field, it indicates the folder node
 			if _, ok := filter[types.HasPodField]; ok {
 				resIDMap[id] = struct{}{}
 				continue
 			}
-			// 重新整理需要查询pod的条件
 			podFilters = append(podFilters, filter)
 		}
 		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
@@ -331,13 +324,16 @@ func (s *Service) CountKubeTopoHostsOrPods(ctx *rest.Contexts) {
 func (s *Service) getTopoHostNumber(ctx *rest.Contexts, resourceInfos []types.KubeResourceInfo,
 	filters []map[string]interface{}, bizID int64) ([]types.KubeTopoCountRsp, error) {
 
-	// 如果是要获取host的话，1、这块是需要返回所有的hostID。2、对这些hostID 进行去重。3、将这些hostID 和业务ID 组合起来查一下
-	// modulehostconfig 表，最终得到的数量才是真正的主机数
+	// obtaining a host requires the following steps:
+	// 1、get all hostIDs of the node.
+	// 2、deduplicate hostID.
+	// 3、combine the hostID and business ID to check the modulehostconfig table,
+	// and the final number is the real number of hosts.
 	result := make([]types.KubeTopoCountRsp, 0)
 
 	for id, filter := range filters {
 
-		// 得判断一下是否是folder 如果是folder那么需要查的是node表
+		// determine whether this node is a folder If it is a folder, then you need to check the node table.
 		if resourceInfos[id].Kind == types.KubeFolder {
 			count, err := s.getHostIDsByCond(ctx.Kit, filter, types.BKTableNameBaseNode, bizID)
 			if err != nil {
@@ -351,7 +347,7 @@ func (s *Service) getTopoHostNumber(ctx *rest.Contexts, resourceInfos []types.Ku
 			continue
 		}
 
-		// 此处计算的是 除了folder之外的pod表中的主机数量
+		// what counts here is the number of hosts in the pod table excluding folders.
 		count, err := s.getHostIDsByCond(ctx.Kit, filter, types.BKTableNameBasePod, bizID)
 		if err != nil {
 			return nil, err
@@ -370,9 +366,9 @@ func (s *Service) getTopoHostNumber(ctx *rest.Contexts, resourceInfos []types.Ku
 		var (
 			folderHostCount int64
 		)
-
+		// for the calculation of the number of hosts under the cluster,
+		// it is necessary to add the number of hosts under the folder node under the cluster.
 		if clusterID, ok := filter[types.BKClusterIDFiled]; ok {
-			// 计算集群在folder下的主机数量
 			nodeFilter := mapstr.MapStr{
 				types.BKClusterIDFiled:       clusterID,
 				types.HasPodField:            false,
@@ -469,7 +465,7 @@ func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 		return
 	}
 
-	// 获取下一级资源对象
+	// get the next level resource object.
 	subObject, filter := types.GetKubeSubTopoObject(option.ReferenceObjID, option.ReferenceID, bizID)
 	tableNames, err := types.GetCollectionWithObject(subObject)
 	if err != nil {
@@ -490,7 +486,7 @@ func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 				ctx.RespAutoError(err)
 				return
 			}
-			// 对于cluster下一级拓扑，除了namespace 还需要增加一个folder
+			// for the next-level topology of the cluster, a folder needs to be added in addition to the namespace.
 			if tableName == types.BKTableNameBaseNamespace {
 				counts[0] += 1
 			}
@@ -510,7 +506,7 @@ func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-// FindResourceAttrs 获取容器对象的属性信息
+// FindResourceAttrs get the attribute information of the container object
 func (s *Service) FindResourceAttrs(ctx *rest.Contexts) {
 
 	object := ctx.Request.PathParameter("object")

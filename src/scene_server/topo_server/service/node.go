@@ -339,10 +339,9 @@ func (s *Service) BatchCreateNode(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(ids)
-
 }
 
-// SearchNodes 根据用户指定的条件查询 nodes
+// SearchNodes query nodes based on user-specified criteria
 func (s *Service) SearchNodes(ctx *rest.Contexts) {
 
 	searchCond := new(types.QueryNodeReq)
@@ -377,7 +376,8 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 		filter = cond
 	}
 
-	// 无论条件中是否有bk_biz_id、supplier_account,这里统一替换成url中的bk_biz_id 和kit中的supplier_account
+	// regardless of whether there is bk_biz_id or supplier_account in the condition,
+	// it is uniformly replaced with bk_biz_id in url and supplier_account in kit.
 	filter[types.BKBizIDField] = bizID
 	filter[types.BKSupplierAccountField] = ctx.Kit.SupplierAccount
 	if searchCond.HostID != 0 {

@@ -24,6 +24,7 @@ import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -154,44 +155,48 @@ func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.Arrange
 func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption,
 	supplierAccount string) error {
 
-	cond := make([]map[string]interface{}, 0)
+	cond := make(map[string]interface{})
 	if len(option.UIDs) > 0 {
-		cond = []map[string]interface{}{
-			{
-				types.ClusterUIDField: map[string]interface{}{
-					common.BKDBIN: option.UIDs,
-				},
-				common.BKAppIDField:   bizID,
-				common.BKOwnerIDField: supplierAccount,
-			},
+		cond = map[string]interface{}{
+
+			types.ClusterUIDField: map[string]interface{}{
+				common.BKDBIN: option.UIDs},
+			common.BKAppIDField:   bizID,
+			common.BKOwnerIDField: supplierAccount,
 		}
 	}
 
 	if len(option.IDs) > 0 {
-		cond = []map[string]interface{}{
-			{
-				types.BKIDField: map[string]interface{}{
-					common.BKDBIN: option.IDs,
-				},
-				common.BKAppIDField:   bizID,
-				common.BKOwnerIDField: supplierAccount,
+		cond = map[string]interface{}{
+
+			types.BKIDField: map[string]interface{}{
+				common.BKDBIN: option.IDs,
 			},
+			common.BKAppIDField:   bizID,
+			common.BKOwnerIDField: supplierAccount,
 		}
 	}
 
-	counts, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-		types.BKTableNameBaseCluster, cond)
-	if err != nil {
-		blog.Errorf("count cluster failed, cond: %#v, err: %v, rid: %s", cond, err, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrTopoInstDeleteFailed)
+	input := &metadata.QueryCondition{
+		Condition: cond,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Fields: []string{types.BKIDField},
 	}
-	if len(option.UIDs) > 0 && int(counts[0]) != len(option.UIDs) {
+	result, err := b.clientSet.CoreService().Container().SearchCluster(kit.Ctx, kit.Header, input)
+	if err != nil {
+		blog.Errorf("search cluster failed, input: %#v, err: %v, rid: %s", input, err, kit.Rid)
+		return err
+	}
+
+	if len(option.UIDs) > 0 && len(result.Data) != len(option.UIDs) {
 		blog.Errorf("the number of instances obtained is inconsistent with the param, bizID: %d, uid: %#v, "+
 			"err: %v, rid: %s", bizID, option.UIDs, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrTopoInstDeleteFailed, "uid")
 	}
 
-	if len(option.IDs) > 0 && int(counts[0]) != len(option.IDs) {
+	if len(option.IDs) > 0 && len(result.Data) != len(option.IDs) {
 		blog.Errorf("the number of instances obtained is inconsistent with the param, bizID: %d, ids: %#v, err: %v,"+
 			" rid: %s", option.IDs, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrTopoInstDeleteFailed, "id")
@@ -214,6 +219,21 @@ func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClu
 	if err := b.clientSet.CoreService().Container().DeleteCluster(kit.Ctx, kit.Header, bizID, option); err != nil {
 		blog.Errorf("delete cluster failed, option: %#v, err: %v, rid: %s", option, err, kit.Rid)
 		return err
+	}
+
+	// for audit log.
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+	audit := auditlog.NewKubeAudit(b.clientSet.CoreService())
+	auditLog, err := audit.GenerateClusterAuditLog(generateAuditParameter, result.Data)
+	if err != nil {
+		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	err = audit.SaveAuditLog(kit, auditLog...)
+	if err != nil {
+		blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 	return nil
 }
@@ -375,6 +395,33 @@ func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, biz
 		blog.Errorf("create nodes failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
 		return nil, err
 	}
+	nodes := make([]types.Node, 0)
+	for id, node := range data.Nodes {
+		nodes = append(nodes, types.Node{
+			ID:              result[id],
+			BizID:           bizID,
+			HostID:          node.HostID,
+			ClusterID:       node.ClusterID,
+			ClusterUID:      node.ClusterUID,
+			NodeBaseFields:  node.NodeBaseFields,
+			SupplierAccount: kit.SupplierAccount,
+		})
+	}
+	// for audit log.
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	audit := auditlog.NewKubeAudit(b.clientSet.CoreService())
+	auditLog, err := audit.GenerateNodeAuditLog(generateAuditParameter, nodes)
+	if err != nil {
+		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	err = audit.SaveAuditLog(kit, auditLog...)
+	if err != nil {
+		blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrAuditSaveLogFailed)
+	}
+
 	return result, nil
 }
 
@@ -413,7 +460,22 @@ func (b *kube) CreateCluster(kit *rest.Kit, data *types.ClusterBaseFields, bizID
 		return 0, err
 	}
 
-	return result.ID, nil
+	// for audit log.
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	audit := auditlog.NewKubeAudit(b.clientSet.CoreService())
+	auditLog, err := audit.GenerateClusterAuditLog(generateAuditParameter, []types.Cluster{*result.Info})
+	if err != nil {
+		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return 0, err
+	}
+
+	err = audit.SaveAuditLog(kit, auditLog...)
+	if err != nil {
+		blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return 0, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	}
+
+	return *result.Info.ID, nil
 }
 
 // SearchCluster search clusters

@@ -128,58 +128,10 @@ func (st *Container) SearchNode(ctx context.Context, header http.Header, input *
 	return &ret.Data, nil
 }
 
-// CreateContainer create cluster.
-func (st *Container) CreateContainer(ctx context.Context, header http.Header, bizID int64,
-	data *types.ContainerBaseFields) (*types.CreateContainerResult, errors.CCErrorCoder) {
-	ret := new(types.CreateContainerResult)
-	subPath := "/kube/create/container/%d/instance"
-	err := st.client.Post().
-		WithContext(ctx).
-		Body(data).
-		SubResourcef(subPath, bizID).
-		WithHeaders(header).
-		Do().
-		Into(ret)
-
-	if err != nil {
-		blog.Errorf("create pod failed, err: %+v", err)
-		return nil, errors.CCHttpError
-	}
-	if ret.CCError() != nil {
-		return nil, ret.CCError()
-	}
-
-	return ret, nil
-}
-
-// CreatePod create cluster.
-func (st *Container) CreatePod(ctx context.Context, header http.Header, bizID int64,
-	data *types.PodBaseFields) (*types.CreatePodResult, errors.CCErrorCoder) {
-	ret := new(types.CreatePodResult)
-	subPath := "/kube/create/pod/%d/instance"
-	err := st.client.Post().
-		WithContext(ctx).
-		Body(data).
-		SubResourcef(subPath, bizID).
-		WithHeaders(header).
-		Do().
-		Into(ret)
-
-	if err != nil {
-		blog.Errorf("create pod failed, err: %+v", err)
-		return nil, errors.CCHttpError
-	}
-	if ret.CCError() != nil {
-		return nil, ret.CCError()
-	}
-
-	return ret, nil
-}
-
 // UpdateNodeFields update node fields.
 func (st *Container) UpdateNodeFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
 	data *types.UpdateNodeOption) errors.CCErrorCoder {
-	ret := new(types.CreateClusterResult)
+	ret := new(metadata.UpdatedCount)
 	subPath := "/kube/updatemany/node/%s/%d/instance"
 	err := st.client.Post().
 		WithContext(ctx).
@@ -193,9 +145,6 @@ func (st *Container) UpdateNodeFields(ctx context.Context, header http.Header, s
 		blog.Errorf("update node field failed, err: %+v", err)
 		return errors.CCHttpError
 	}
-	if ret.CCError() != nil {
-		return ret.CCError()
-	}
 
 	return nil
 }
@@ -203,7 +152,7 @@ func (st *Container) UpdateNodeFields(ctx context.Context, header http.Header, s
 // UpdateClusterFields update cluster fields.
 func (st *Container) UpdateClusterFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
 	data *types.UpdateClusterOption) errors.CCErrorCoder {
-	ret := new(types.CreateClusterResult)
+	ret := new(metadata.UpdatedCount)
 	subPath := "/kube/updatemany/cluster/%s/%d/instance"
 	err := st.client.Post().
 		WithContext(ctx).
@@ -216,9 +165,6 @@ func (st *Container) UpdateClusterFields(ctx context.Context, header http.Header
 	if err != nil {
 		blog.Errorf("update cluster field failed, err: %+v", err)
 		return errors.CCHttpError
-	}
-	if ret.CCError() != nil {
-		return ret.CCError()
 	}
 
 	return nil
@@ -251,7 +197,7 @@ func (st *Container) CreateCluster(ctx context.Context, header http.Header, bizI
 // DeleteCluster delete cluster.
 func (st *Container) DeleteCluster(ctx context.Context, header http.Header, bizID int64,
 	option *types.DeleteClusterOption) errors.CCErrorCoder {
-	ret := new(types.CreateClusterResult)
+	ret := new(metadata.DeletedCount)
 	subPath := "/kube/delete/cluster/%d/instance"
 
 	err := st.client.Delete().
@@ -266,9 +212,6 @@ func (st *Container) DeleteCluster(ctx context.Context, header http.Header, bizI
 		blog.Errorf("delete cluster failed, http request failed, err: %v", err)
 		return errors.CCHttpError
 	}
-	if ret.CCError() != nil {
-		return ret.CCError()
-	}
 
 	return nil
 }
@@ -276,7 +219,7 @@ func (st *Container) DeleteCluster(ctx context.Context, header http.Header, bizI
 // BatchDeleteNode delete cluster.
 func (st *Container) BatchDeleteNode(ctx context.Context, header http.Header, bizID int64,
 	option *types.ArrangeDeleteNodeOption) errors.CCErrorCoder {
-	ret := new(types.CreateClusterResult)
+	ret := new(metadata.DeletedCount)
 	subPath := "/kube/deletemany/node/%d/instance"
 
 	err := st.client.Delete().
@@ -290,9 +233,6 @@ func (st *Container) BatchDeleteNode(ctx context.Context, header http.Header, bi
 	if err != nil {
 		blog.Errorf("delete cluster failed, http request failed, err: %v", err)
 		return errors.CCHttpError
-	}
-	if ret.CCError() != nil {
-		return ret.CCError()
 	}
 
 	return nil

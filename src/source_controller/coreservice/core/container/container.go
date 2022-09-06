@@ -591,14 +591,14 @@ func (p *containerOperation) UpdateClusterFields(kit *rest.Kit, bizID int64, sup
 }
 
 // CreateCluster create cluster instance.
-func (p *containerOperation) CreateCluster(kit *rest.Kit, bizID int64, data *types.ClusterBaseFields) (int64,
+func (p *containerOperation) CreateCluster(kit *rest.Kit, bizID int64, data *types.ClusterBaseFields) (*types.Cluster,
 	errors.CCErrorCoder) {
 
 	// it is necessary to judge whether there is duplicate data here, to prevent subsequent calls to coreservice
 	// directly and lack of verification.
 	if err := data.ValidateCreate(); err != nil {
 		blog.Errorf("create cluster failed, data: %+v, err: %+v, rid: %s", data, err, kit.Rid)
-		return 0, kit.CCError.CCError(common.CCErrCommParamsInvalid)
+		return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
 	}
 
 	nameFilter := map[string]interface{}{
@@ -619,19 +619,19 @@ func (p *containerOperation) CreateCluster(kit *rest.Kit, bizID int64, data *typ
 	count, err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(nameFilter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("query cluster failed, filter: %+v, err: %+v, rid: %s", nameFilter, err, kit.Rid)
-		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if count > 0 {
 		blog.Errorf("create cluster failed, name or uid duplicated, name: %s, uid: %s, rid: %s", data.Name,
 			data.Uid, kit.Rid)
-		return 0, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, "name or uid")
+		return nil, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, "name or uid")
 	}
 
 	// generate id field
 	idTmp, err := mongodb.Client().NextSequence(kit.Ctx, types.BKTableNameBaseCluster)
 	if nil != err {
 		blog.Errorf("create cluster failed, generate id failed, err: %+v, rid: %s", err, kit.Rid)
-		return 0, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 
 	now := time.Now().Unix()
@@ -651,8 +651,8 @@ func (p *containerOperation) CreateCluster(kit *rest.Kit, bizID int64, data *typ
 
 	if err := mongodb.Client().Table(types.BKTableNameBaseCluster).Insert(kit.Ctx, cluster); err != nil {
 		blog.Errorf("create cluster failed, db insert failed, doc: %+v, err: %+v, rid: %s", cluster, err, kit.Rid)
-		return 0, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
+		return nil, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
 	}
 
-	return *cluster.ID, nil
+	return cluster, nil
 }

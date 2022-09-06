@@ -122,7 +122,7 @@ type InstanceOperation interface {
 
 // ContainerOperation crud operations on container data.
 type ContainerOperation interface {
-	CreateCluster(kit *rest.Kit, bizID int64, option *types.ClusterBaseFields) (int64, errors.CCErrorCoder)
+	CreateCluster(kit *rest.Kit, bizID int64, option *types.ClusterBaseFields) (*types.Cluster, errors.CCErrorCoder)
 	UpdateClusterFields(kit *rest.Kit, bizID int64, supplierAccount string,
 		data *types.UpdateClusterOption) (*metadata.UpdatedCount, errors.CCErrorCoder)
 	UpdateNodeFields(kit *rest.Kit, bizID int64, supplierAccount string,

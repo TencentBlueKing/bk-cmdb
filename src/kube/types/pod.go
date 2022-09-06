@@ -18,7 +18,6 @@
 package types
 
 import (
-	"configcenter/src/common/blog"
 	"errors"
 	"fmt"
 	"reflect"
@@ -186,23 +185,22 @@ type Pod struct {
 
 // PodBaseFields pod core details
 type PodBaseFields struct {
-	Name          *string           `json:"name" bson:"name"`
-	Priority      *int32            `json:"priority,omitempty" bson:"priority"`
-	Labels        map[string]string `json:"labels,omitempty"  bson:"labels"`
-	IP            *string           `json:"ip,omitempty"  bson:"ip"`
-	IPs           []PodIP           `json:"ips,omitempty"  bson:"ips"`
-	Volumes       []Volume          `json:"volumes,omitempty"  bson:"volumes"`
-	QOSClass      PodQOSClass       `json:"qos_class,omitempty"  bson:"qos_class"`
-	NodeSelectors map[string]string `json:"node_selectors,omitempty"  bson:"node_selectors"`
-	Tolerations   []Toleration      `json:"tolerations,omitempty" bson:"tolerations"`
+	Name          *string            `json:"name" bson:"name"`
+	Priority      *int32             `json:"priority,omitempty" bson:"priority"`
+	Labels        *map[string]string `json:"labels,omitempty"  bson:"labels"`
+	IP            *string            `json:"ip,omitempty"  bson:"ip"`
+	IPs           *[]PodIP           `json:"ips,omitempty"  bson:"ips"`
+	Volumes       *[]Volume          `json:"volumes,omitempty"  bson:"volumes"`
+	QOSClass      *PodQOSClass       `json:"qos_class,omitempty"  bson:"qos_class"`
+	NodeSelectors *map[string]string `json:"node_selectors,omitempty"  bson:"node_selectors"`
+	Tolerations   *[]Toleration      `json:"tolerations,omitempty" bson:"tolerations"`
 }
 
 // Container container details
 type Container struct {
 	// cc的自增主键
-	ID    int64 `json:"id" bson:"id"`
-	PodID int64 `json:"bk_pod_id" bson:"bk_pod_id"`
-	//SysSpec             `json:",inline"`
+	ID                  int64 `json:"id" bson:"id"`
+	PodID               int64 `json:"bk_pod_id" bson:"bk_pod_id"`
 	ContainerBaseFields `json:",inline"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
@@ -224,22 +222,24 @@ type ContainerBaseFields struct {
 	Mounts          []VolumeMount   `json:"mounts,omitempty" bson:"mounts"`
 }
 
-// SysSpec 存放cc的容器相关的关系信息，所有类型共用这个结构体
+// SysSpec the relationship information related to the container
+// that stores the cc, all types share this structure.
 type SysSpec struct {
 	BizID           *int64  `json:"bk_biz_id" bson:"bk_biz_id"`
 	SupplierAccount *string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	ClusterID       *int64  `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
-	// 冗余的cluster id
+	// redundant cluster id
 	ClusterUID  *string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
 	NameSpaceID *int64  `json:"bk_namespace_id,omitempty" bson:"bk_namespace_id"`
-	// 冗余的namespace名称
+	// redundant namespace names
 	NameSpace *string `json:"namespace,omitempty" bson:"namespace"`
 	Workload  *Ref    `json:"ref,omitempty" bson:"ref"`
 	HostID    *int64  `json:"bk_host_id,omitempty" bson:"bk_host_id"`
 	NodeID    *int64  `json:"bk_node_id,omitempty" bson:"bk_node_id"`
-	// 冗余的node名称
+	// redundant node names
 	Node *string `json:"node_name,omitempty" bson:"node_name"`
-	// 所有容器相关数据用相同的relation结构体，pod不需要这两个字段，仅container需要这两个字段
+	// all container related data use the same relation structure, pod
+	// does not need these two fields, only container needs these two fields.
 	PodID *int64  `json:"bk_pod_id,omitempty" bson:"bk_pod_id ,omitempty"`
 	Pod   *string `json:"pod_name,omitempty" bson:"pod_name ,omitempty"`
 }
@@ -247,9 +247,9 @@ type SysSpec struct {
 // Ref pod-related workload association information.
 type Ref struct {
 	Kind string `json:"kind"`
-	// 冗余的workload名称
+	// redundant workload names
 	Name string `json:"name,omitempty"`
-	// ID workload在cc中的ID
+	// ID workload ID in cc
 	ID int64 `json:"id,omitempty"`
 }
 
@@ -269,7 +269,7 @@ func (option *PodBaseFields) CreateValidate() error {
 		return errors.New("pod information must be given")
 	}
 
-	// 首先获取必填字段列表。
+	// first get a list of required fields.
 	requireMap := make(map[string]struct{}, 0)
 	requires := PodFields.RequiredFields()
 	for field, required := range requires {
@@ -300,7 +300,7 @@ func (option *PodBaseFields) CreateValidate() error {
 // CreateValidate validate the ContainerBaseFields
 func (option *ContainerBaseFields) CreateValidate() error {
 
-	// 首先获取必填字段列表。
+	// first get a list of required fields.
 	requireMap := make(map[string]struct{}, 0)
 	requires := ContainerFields.RequiredFields()
 	for field, required := range requires {
@@ -312,7 +312,6 @@ func (option *ContainerBaseFields) CreateValidate() error {
 	if option == nil {
 		return errors.New("node information must be given")
 	}
-	blog.Errorf("9999999999999999999999 requireMap: %+v", requireMap)
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
@@ -321,10 +320,7 @@ func (option *ContainerBaseFields) CreateValidate() error {
 		if ContainerFields.IsFieldRequiredByField(tag) {
 
 			fieldValue := valueOfOption.Field(i)
-			blog.Errorf("11111111111111 tag: %v，fieldValue: %v", tag, fieldValue)
-
 			if fieldValue.IsNil() {
-				blog.Errorf("22222222222222222 tag: %v", tag)
 				return fmt.Errorf("required fields cannot be empty, %s", tag)
 			}
 			delete(requireMap, tag)
@@ -332,8 +328,6 @@ func (option *ContainerBaseFields) CreateValidate() error {
 	}
 
 	if len(requireMap) > 0 {
-		blog.Errorf("11111111111111 requireMap: %v", requireMap)
-
 		return fmt.Errorf("required fields cannot be empty")
 	}
 	return nil

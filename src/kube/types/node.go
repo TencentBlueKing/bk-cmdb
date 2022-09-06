@@ -31,6 +31,11 @@ import (
 	"configcenter/src/storage/dal/table"
 )
 
+const (
+	maxDeleteNodeNum = 100
+	maxCreateNodeNum = 100
+)
+
 // NodeFields merge the fields of the cluster and the details corresponding to the fields together.
 var NodeFields = table.MergeFields(NodeSpecFieldsDescriptor)
 
@@ -49,7 +54,7 @@ var NodeSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: PodCidrField, Type: enumor.String, IsRequired: false, IsEditable: true},
 }
 
-// Node node 结构描述
+// Node node structural description.
 type Node struct {
 	// ID cluster auto-increment ID in cc
 	ID int64 `json:"id" bson:"id"`
@@ -57,11 +62,11 @@ type Node struct {
 	BizID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
 
 	// HostID the node ID to which the host belongs
-	HostID *int64 `json:"bk_host_id" bson:"bk_host_id"`
+	HostID int64 `json:"bk_host_id" bson:"bk_host_id"`
 	// ClusterID the node ID to which the cluster belongs
-	ClusterID *int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
+	ClusterID int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
 	// ClusterUID the node ID to which the cluster belongs
-	ClusterUID *string `json:"cluster_uid" bson:"cluster_uid"`
+	ClusterUID string `json:"cluster_uid" bson:"cluster_uid"`
 
 	// NodeFields node base fields
 	NodeBaseFields `json:",inline" bson:",inline"`
@@ -117,6 +122,48 @@ func (option *NodeBaseFields) UpdateValidate() error {
 	return nil
 }
 
+// DeleteNodeCmdbOption delete node by id of cmdb.
+type DeleteNodeCmdbOption struct {
+	ClusterID int64   `json:"bk_cluster_id"`
+	ID        []int64 `json:"id"`
+}
+
+// DeleteNodeKubeOption delete node by native id.
+type DeleteNodeKubeOption struct {
+	ClusterUID string   `json:"cluster_uid"`
+	Name       []string `json:"name"`
+}
+
+// DeleteOptionDetail delete node request details
+type DeleteOptionDetail struct {
+	NodeCmdbIDs []DeleteNodeCmdbOption `json:"node_cmdb_ids"`
+	NodeKubeIDs []DeleteNodeKubeOption `json:"node_kube_ids"`
+}
+
+// BatchDeleteNodeOption delete nodes option.
+type BatchDeleteNodeOption struct {
+	Data DeleteOptionDetail `json:"data"`
+}
+
+// Validate validate the BatchDeleteNodeOption
+func (option *BatchDeleteNodeOption) Validate() error {
+
+	if len(option.Data.NodeKubeIDs) > 0 && len(option.Data.NodeCmdbIDs) > 0 {
+		return errors.New("params cannot be set at the same time")
+	}
+
+	if len(option.Data.NodeKubeIDs) == 0 && len(option.Data.NodeCmdbIDs) == 0 {
+		return errors.New("params must be set")
+	}
+
+	if len(option.Data.NodeKubeIDs) > maxDeleteNodeNum || len(option.Data.NodeCmdbIDs) > maxDeleteNodeNum {
+		return fmt.Errorf("the maximum number of nodes to be deleted is not allowed to exceed %d",
+			maxDeleteClusterNum)
+	}
+	return nil
+}
+
+// NodeReqParam node request parameter details.
 type NodeReqParam struct {
 	// HostID the node ID to which the host belongs
 	HostID int64 `json:"bk_host_id" bson:"bk_host_id"`
@@ -239,7 +286,11 @@ func (option *UpdateNodeOption) Validate() error {
 // CreateValidate validate the NodeBaseFields
 func (option *NodeBaseFields) CreateValidate() error {
 
-	// 首先获取必填字段列表。
+	if option == nil {
+		return errors.New("node information must be given")
+	}
+
+	// get a list of required fields.
 	requireMap := make(map[string]struct{}, 0)
 	requires := NodeFields.RequiredFields()
 	for field, required := range requires {
@@ -248,9 +299,6 @@ func (option *NodeBaseFields) CreateValidate() error {
 		}
 	}
 
-	if option == nil {
-		return errors.New("node information must be given")
-	}
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
@@ -278,8 +326,8 @@ func (option *CreateNodesOption) ValidateCreate() error {
 		return errors.New("param must be set")
 	}
 
-	if len(option.Nodes) > 100 {
-		return errors.New("the number of nodes created at one time does not exceed 100")
+	if len(option.Nodes) > maxCreateNodeNum {
+		return fmt.Errorf("the number of nodes created at one time does not exceed %d", maxCreateNodeNum)
 	}
 	for _, node := range option.Nodes {
 		if err := node.CreateValidate(); err != nil {

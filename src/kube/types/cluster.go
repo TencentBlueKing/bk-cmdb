@@ -32,7 +32,6 @@ import (
 
 const (
 	maxDeleteClusterNum = 10
-	maxDeleteNodeNum    = 100
 	maxUpdateClusterNum = 10
 )
 
@@ -70,7 +69,7 @@ type Cluster struct {
 // CreateClusterResult create cluster result.
 type CreateClusterResult struct {
 	metadata.BaseResp
-	ID int64 `field:"id" json:"id" bson:"id"`
+	Info *Cluster `json:"info"`
 }
 
 // CreateContainerResult create container result.
@@ -89,47 +88,6 @@ type CreatePodResult struct {
 type DeleteClusterOption struct {
 	IDs  []int64 `json:"ids"`
 	UIDs []int64 `json:"uids"`
-}
-
-// DeleteNodeCmdbOption delete node by id of cmdb.
-type DeleteNodeCmdbOption struct {
-	ClusterID int64   `json:"bk_cluster_id"`
-	ID        []int64 `json:"id"`
-}
-
-// DeleteNodeKubeOption delete node by native id.
-type DeleteNodeKubeOption struct {
-	ClusterUID string   `json:"cluster_uid"`
-	Name       []string `json:"name"`
-}
-
-// DeleteOptionDetail 删除node的详细信息
-type DeleteOptionDetail struct {
-	NodeCmdbIDs []DeleteNodeCmdbOption `json:"node_cmdb_ids"`
-	NodeKubeIDs []DeleteNodeKubeOption `json:"node_kube_ids"`
-}
-
-// BatchDeleteNodeOption delete nodes option.
-type BatchDeleteNodeOption struct {
-	Data DeleteOptionDetail `json:"data"`
-}
-
-// Validate validate the BatchDeleteNodeOption
-func (option *BatchDeleteNodeOption) Validate() error {
-
-	if len(option.Data.NodeKubeIDs) > 0 && len(option.Data.NodeCmdbIDs) > 0 {
-		return errors.New("params cannot be set at the same time")
-	}
-
-	if len(option.Data.NodeKubeIDs) == 0 && len(option.Data.NodeCmdbIDs) == 0 {
-		return errors.New("params must be set")
-	}
-
-	if len(option.Data.NodeKubeIDs) > maxDeleteNodeNum || len(option.Data.NodeCmdbIDs) > maxDeleteNodeNum {
-		return fmt.Errorf("the maximum number of nodes to be deleted is not allowed to exceed %d",
-			maxDeleteClusterNum)
-	}
-	return nil
 }
 
 // Validate validate the DeleteClusterOption
@@ -278,7 +236,11 @@ func (option *ClusterBaseFields) UpdateValidate() error {
 // ValidateCreate check whether the parameters for creating a cluster are legal.
 func (option *ClusterBaseFields) ValidateCreate() error {
 
-	// 首先获取必填字段列表。
+	if option == nil {
+		return errors.New("cluster information must be given")
+	}
+
+	// get a list of required fields.
 	requireMap := make(map[string]struct{}, 0)
 	requires := ClusterFields.RequiredFields()
 	for field, required := range requires {
@@ -287,9 +249,6 @@ func (option *ClusterBaseFields) ValidateCreate() error {
 		}
 	}
 
-	if option == nil {
-		return errors.New("cluster information must be given")
-	}
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
@@ -344,14 +303,14 @@ func (option *KubeTopoCountOption) Validate() ccErr.RawErrorInfo {
 	return ccErr.RawErrorInfo{}
 }
 
-// KubeTopoCountRsp 节点主机或者Pod数量的回应
+// KubeTopoCountRsp the response of the node host or the number of pods
 type KubeTopoCountRsp struct {
 	Kind  string `json:"kind"`
 	ID    int64  `json:"id"`
 	Count int64  `json:"count"`
 }
 
-// KubeTopoPathReq 获取容器拓扑路径请求
+// KubeTopoPathReq get container topology path request.
 type KubeTopoPathReq struct {
 	ReferenceObjID string            `json:"bk_reference_obj_id"`
 	ReferenceID    int64             `json:"bk_reference_id"`
@@ -368,7 +327,7 @@ func (option *KubeTopoPathReq) Validate() ccErr.RawErrorInfo {
 		}
 	}
 
-	// 判断下是都合法是否合法
+	// is the resource type legal
 	if !IsContainerTopoResource(option.ReferenceObjID) {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
@@ -382,14 +341,14 @@ func (option *KubeTopoPathReq) Validate() ccErr.RawErrorInfo {
 	return ccErr.RawErrorInfo{}
 }
 
-// KubeObjectInfo 容器对象信息
+// KubeObjectInfo container object information.
 type KubeObjectInfo struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
 	Kind string `json:"kind"`
 }
 
-// KubeTopoPathRsp 获取拓扑路径回应
+// KubeTopoPathRsp get topology path response.
 type KubeTopoPathRsp struct {
 	Info  []KubeObjectInfo `json:"info"`
 	Count int              `json:"count"`
