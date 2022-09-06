@@ -208,18 +208,18 @@ type Container struct {
 
 // ContainerBaseFields container core details
 type ContainerBaseFields struct {
-	Name            *string         `json:"name" bson:"name"`
-	ContainerID     *string         `json:"container_uid" bson:"container_uid"`
-	Image           *string         `json:"image" bson:"image"`
-	Ports           []ContainerPort `json:"ports,omitempty" bson:"ports"`
-	HostPorts       []ContainerPort `json:"host_ports,omitempty" bson:"host_ports"`
-	Args            []string        `json:"args,omitempty" bson:"args"`
-	Started         *int64          `json:"started,omitempty" bson:"started"`
-	Limits          ResourceList    `json:"limits,omitempty" bson:"limits"`
-	ReqSysSpecuests ResourceList    `json:"requests,omitempty" bson:"requests"`
-	Liveness        *Probe          `json:"liveness,omitempty" bson:"liveness"`
-	Environment     []EnvVar        `json:"environment,omitempty" bson:"environment"`
-	Mounts          []VolumeMount   `json:"mounts,omitempty" bson:"mounts"`
+	Name            *string          `json:"name" bson:"name"`
+	ContainerID     *string          `json:"container_uid" bson:"container_uid"`
+	Image           *string          `json:"image" bson:"image"`
+	Ports           *[]ContainerPort `json:"ports,omitempty" bson:"ports"`
+	HostPorts       *[]ContainerPort `json:"host_ports,omitempty" bson:"host_ports"`
+	Args            *[]string        `json:"args,omitempty" bson:"args"`
+	Started         *int64           `json:"started,omitempty" bson:"started"`
+	Limits          *ResourceList    `json:"limits,omitempty" bson:"limits"`
+	ReqSysSpecuests *ResourceList    `json:"requests,omitempty" bson:"requests"`
+	Liveness        *Probe           `json:"liveness,omitempty" bson:"liveness"`
+	Environment     *[]EnvVar        `json:"environment,omitempty" bson:"environment"`
+	Mounts          *[]VolumeMount   `json:"mounts,omitempty" bson:"mounts"`
 }
 
 // SysSpec the relationship information related to the container
@@ -257,7 +257,7 @@ type Ref struct {
 type PodsInfo struct {
 	KubeSpecInfo  *KubeSpec `json:"kube_spec"`
 	CmdbSpecInfo  *CmdbSpec `json:"cmdb_spec"`
-	HostID        *int64    `json:"bk_host_id"`
+	HostID        int64     `json:"bk_host_id"`
 	PodBaseFields `json:",inline"`
 	Containers    []ContainerBaseFields `json:"containers"`
 }
@@ -318,7 +318,6 @@ func (option *ContainerBaseFields) CreateValidate() error {
 		tag := typeOfOption.Field(i).Tag.Get("json")
 
 		if ContainerFields.IsFieldRequiredByField(tag) {
-
 			fieldValue := valueOfOption.Field(i)
 			if fieldValue.IsNil() {
 				return fmt.Errorf("required fields cannot be empty, %s", tag)

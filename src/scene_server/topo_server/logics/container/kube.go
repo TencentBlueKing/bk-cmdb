@@ -352,11 +352,33 @@ func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption, bizID
 		return nil, errors.New("some pod already exists and the creation fails")
 	}
 
-	//2、创建pod和container
+	//2、create pods and containers.
 	result, err := b.clientSet.CoreService().Container().BatchCreatePod(kit.Ctx, kit.Header, bizID, data)
 	if err != nil {
 		blog.Errorf("create pod failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
 		return nil, err
+	}
+
+	// for audit log.
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	audit := auditlog.NewKubeAudit(b.clientSet.CoreService())
+
+	pods := make([]types.Pod, 0)
+	//for id, pod := range data.Pods {
+	//	pods = append(pods, types.Pod{
+	//		ID: result[id],
+	//	})
+	//}
+	auditLog, err := audit.GeneratePodAuditLog(generateAuditParameter, pods)
+	if err != nil {
+		blog.Errorf(" create cluster, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	err = audit.SaveAuditLog(kit, auditLog...)
+	if err != nil {
+		blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 	return result, nil
 }
@@ -465,7 +487,7 @@ func (b *kube) CreateCluster(kit *rest.Kit, data *types.ClusterBaseFields, bizID
 	audit := auditlog.NewKubeAudit(b.clientSet.CoreService())
 	auditLog, err := audit.GenerateClusterAuditLog(generateAuditParameter, []types.Cluster{*result.Info})
 	if err != nil {
-		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf(" create cluster, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return 0, err
 	}
 

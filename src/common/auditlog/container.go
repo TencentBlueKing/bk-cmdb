@@ -90,13 +90,13 @@ func (c *kubeAuditLog) GenerateNamespaceAuditLog(param *generateAuditCommonParam
 }
 
 // GeneratePodAuditLog generate audit log of kube pod.
-func (c *kubeAuditLog) GeneratePodAuditLog(param *generateAuditCommonParameter, data []mockKube) (
+func (c *kubeAuditLog) GeneratePodAuditLog(param *generateAuditCommonParameter, data []types.Pod) (
 	[]metadata.AuditLog, errors.CCErrorCoder) {
 
 	auditLogs := make([]metadata.AuditLog, len(data))
 
 	for index, d := range data {
-		auditLog, err := c.generateAuditLog(param, metadata.KubePod, d.ID, d.BizID, d.Name, d)
+		auditLog, err := c.generateAuditLog(param, metadata.KubePod, &d.ID, d.BizID, d.Name, d)
 		if err != nil {
 			return nil, err
 		}

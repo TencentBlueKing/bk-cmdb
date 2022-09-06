@@ -162,7 +162,7 @@ func validateNodeData(kit *rest.Kit, bizID int64, node types.NodeReqParam) error
 }
 
 func (p *containerOperation) getSysSpecInfoByKubeCond(kit *rest.Kit, kubeSpec *types.KubeSpec, bizID int64,
-	hostID *int64) (*types.SysSpec, errors.CCErrorCoder) {
+	hostID int64) (*types.SysSpec, errors.CCErrorCoder) {
 
 	cmdbField := []string{types.BKClusterIDFiled, types.BKNamespaceIDField, types.BKIDField}
 
@@ -251,14 +251,14 @@ func (p *containerOperation) getSysSpecInfoByKubeCond(kit *rest.Kit, kubeSpec *t
 			Name: *kubeSpec.WorkloadName,
 			ID:   workloadID,
 		},
-		HostID: hostID,
+		HostID: &hostID,
 		NodeID: &nodeID,
 		Node:   kubeSpec.Node,
 	}, nil
 }
 
 func (p *containerOperation) getSysSpecInfoByCmdbCond(kit *rest.Kit, cmdbSpec *types.CmdbSpec, bizID int64,
-	hostID *int64) (*types.SysSpec, errors.CCErrorCoder) {
+	hostID int64) (*types.SysSpec, errors.CCErrorCoder) {
 	// 通过workload kind 获取表名
 	tableName, err := types.GetCollectionWithObject(*cmdbSpec.WorkloadKind)
 	if err != nil {
@@ -342,7 +342,7 @@ func (p *containerOperation) getSysSpecInfoByCmdbCond(kit *rest.Kit, cmdbSpec *t
 			Name: workloadname,
 			ID:   *cmdbSpec.WorkloadID,
 		},
-		HostID: hostID,
+		HostID: &hostID,
 		NodeID: cmdbSpec.NodeID,
 		Node:   &nodename,
 	}, nil
