@@ -224,20 +224,23 @@
         condition.forEach((data) => {
           const realCondition = (data.condition || []).reduce((accumulator, current) => {
             if (['$gte', '$lte'].includes(current.operator)) {
+              // $gte和$lte，可能是单个field也可能是同一field的范围设置，如果是范围一个field会拆分为两条cond
+              const isRange = data.condition.filter(cond => cond.field === current.field)?.length > 1
+
               // 将相同字段的$gte/$lte两个条件合并为一个range条件，用于表单组件渲染
               let index = accumulator.findIndex(exist => exist.field === current.field)
               if (index === -1) {
                 index = accumulator.push({
                   field: current.field,
-                  operator: '$range',
-                  value: []
+                  operator: isRange ? '$range' : current.operator,
+                  value: isRange ? [] : current.value
                 }) - 1
               }
               const range = accumulator[index]
-              if (current.operator === '$gte') {
-                range.value.unshift(current.value)
-              } else {
-                range.value.push(current.value)
+
+              // 如果是范围并且确保field一致，需要组装为一个范围数组格式值
+              if (isRange && current.field === range.field) {
+                range.value?.[current.operator === '$gte' ? 'unshift' : 'push'](current.value)
               }
             } else if (current.operator === '$eq') {
               // 将老数据的eq转换为当前支持的数据格式
