@@ -240,20 +240,11 @@ func (p *containerOperation) getSysSpecInfoByKubeCond(kit *rest.Kit, kubeSpec *t
 	}
 
 	return &types.SysSpec{
-		BizID:           &bizID,
-		SupplierAccount: &kit.SupplierAccount,
-		ClusterID:       &clusterID,
-		ClusterUID:      kubeSpec.ClusterUID,
-		NameSpaceID:     &namespaceID,
-		NameSpace:       kubeSpec.Namespace,
-		Workload: &types.Ref{
-			Kind: *kubeSpec.WorkloadKind,
-			Name: *kubeSpec.WorkloadName,
-			ID:   workloadID,
-		},
-		HostID: &hostID,
-		NodeID: &nodeID,
-		Node:   kubeSpec.Node,
+		BizID:           &bizID, SupplierAccount: &kit.SupplierAccount,
+		ClusterID:       &clusterID, ClusterUID:      kubeSpec.ClusterUID,
+		NameSpaceID:     &namespaceID, NameSpace:       kubeSpec.Namespace,
+		Workload: &types.Ref{Kind: *kubeSpec.WorkloadKind, Name: *kubeSpec.WorkloadName, ID:   workloadID,},
+		HostID: &hostID, NodeID: &nodeID, Node:   kubeSpec.Node,
 	}, nil
 }
 

@@ -61,27 +61,6 @@ type WorkloadSpec struct {
 	Ref           *Reference `json:"ref" bson:"ref"`
 }
 
-// PodSpec describes the common attributes of pod,
-// it is used by the structure below it.
-type PodSpec struct {
-	WorkloadSpec `json:",inline" bson:",inline"`
-
-	// NodeID node id in cc
-	NodeID *int64 `json:"bk_node_id" bson:"bk_node_id"`
-
-	// Node node name in third party platform
-	Node *string `json:"node" bson:"node"`
-
-	// HostID host id in cc
-	HostID *int64 `json:"bk_host_id" bson:"bk_host_id"`
-
-	// PodID pod id in cc
-	PodID *int64 `json:"bk_pod_id" bson:"bk_pod_id"`
-
-	// Pod pod name in third party platform
-	Pod *string `json:"pod" bson:"pod"`
-}
-
 // GetKubeSubTopoObject get the next-level topology resource object of the specified resource
 func GetKubeSubTopoObject(object string, id int64, bizID int64) (string, map[string]interface{}) {
 

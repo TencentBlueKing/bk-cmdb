@@ -67,11 +67,10 @@ type Node struct {
 	ClusterID int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
 	// ClusterUID the node ID to which the cluster belongs
 	ClusterUID string `json:"cluster_uid" bson:"cluster_uid"`
-
-	// NodeFields node base fields
-	NodeBaseFields `json:",inline" bson:",inline"`
 	// SupplierAccount the supplier account that this resource belongs to.
 	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	// NodeFields node base fields
+	NodeBaseFields `json:",inline" bson:",inline"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }
