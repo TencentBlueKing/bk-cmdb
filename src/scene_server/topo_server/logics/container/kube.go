@@ -497,7 +497,7 @@ func (b *kube) CreateCluster(kit *rest.Kit, data *types.ClusterBaseFields, bizID
 		return 0, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
-	return *result.Info.ID, nil
+	return result.Info.ID, nil
 }
 
 // SearchCluster search clusters

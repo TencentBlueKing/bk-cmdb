@@ -45,7 +45,7 @@ func (c *kubeAuditLog) GenerateClusterAuditLog(param *generateAuditCommonParamet
 	auditLogs := make([]metadata.AuditLog, len(data))
 
 	for index, d := range data {
-		log, err := c.generateAuditLog(param, metadata.KubeCluster, d.ID, d.BizID, d.Name, d)
+		log, err := c.generateAuditLog(param, metadata.KubeCluster, &d.ID, &d.BizID, d.Name, d)
 		if err != nil {
 			return nil, err
 		}

@@ -55,13 +55,13 @@ var ClusterSpecFieldsDescriptor = table.FieldsDescriptors{
 // Cluster container cluster table structure
 type Cluster struct {
 	// ID cluster auto-increment ID in cc
-	ID *int64 `json:"id" bson:"id"`
+	ID int64 `json:"id" bson:"id"`
 	// BizID the business ID to which the cluster belongs
-	BizID *int64 `json:"bk_biz_id" bson:"bk_biz_id"`
+	BizID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
 	// ClusterFields cluster base fields
 	ClusterBaseFields `json:",inline" bson:",inline"`
 	// SupplierAccount the supplier account that this resource belongs to.
-	SupplierAccount *string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }

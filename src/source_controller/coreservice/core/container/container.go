@@ -637,9 +637,9 @@ func (p *containerOperation) CreateCluster(kit *rest.Kit, bizID int64, data *typ
 	now := time.Now().Unix()
 	id := int64(idTmp)
 	cluster := &types.Cluster{
-		ID:                &id,
-		BizID:             &bizID,
-		SupplierAccount:   &kit.SupplierAccount,
+		ID:                id,
+		BizID:             bizID,
+		SupplierAccount:   kit.SupplierAccount,
 		ClusterBaseFields: *data,
 		Revision: table.Revision{
 			CreateTime: now,
