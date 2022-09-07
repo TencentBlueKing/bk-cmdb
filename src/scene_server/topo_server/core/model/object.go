@@ -116,29 +116,36 @@ func (o *object) IsCommon() bool {
 	return o.obj.IsCommon()
 }
 
+// IsMainlineObject check whether objID is mainline object or not
 func (o *object) IsMainlineObject() (bool, error) {
-	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
-	asst, err := o.clientSet.CoreService().Association().ReadModelAssociation(o.kit.Ctx, o.kit.Header,
-		&metadata.QueryCondition{Condition: cond})
+	// judge whether it is an inner mainline model
+	if common.IsInnerMainlineModel(o.GetObjectID()) {
+		return true, nil
+	}
+
+	filter := []map[string]interface{}{{
+		common.AssociationKindIDField: common.AssociationKindMainline,
+		common.BKAsstObjIDField:       o.GetObjectID(),
+	}}
+
+	asstCnt, err := o.clientSet.CoreService().Count().GetCountByFilter(o.kit.Ctx, o.kit.Header,
+		common.BKTableNameObjAsst, filter)
 	if err != nil {
+		blog.Errorf("check object(%s) if is mainline object failed, err: %v, rid: %s", o.GetObjectID(), err,
+			o.kit.Rid)
 		return false, err
 	}
 
-	if !asst.Result {
-		return false, asst.CCError()
+	if len(asstCnt) <= 0 {
+		blog.Errorf("get association by filter: %+v failed, return is empty, rid: %s", filter, o.kit.Rid)
+		return false, o.kit.CCError.CCError(common.CCErrorTopoObjectAssociationNotExist)
 	}
 
-	if len(asst.Data.Info) <= 0 {
-		return false, fmt.Errorf("model association [%+v] not found", cond)
+	if asstCnt[0] == 0 {
+		return false, nil
 	}
 
-	for _, mainline := range asst.Data.Info {
-		if mainline.ObjectID == o.GetObjectID() || mainline.AsstObjID == o.GetObjectID() {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return true, nil
 }
 
 func (o *object) searchAttributes(cond condition.Condition) ([]AttributeInterface, error) {

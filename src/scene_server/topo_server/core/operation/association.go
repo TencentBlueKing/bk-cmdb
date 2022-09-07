@@ -267,29 +267,34 @@ func (assoc *association) CreateCommonInstAssociation(kit *rest.Kit, data *metad
 	return nil
 }
 
+// IsMainlineObject check whether objID is mainline object or not
 func (assoc *association) IsMainlineObject(kit *rest.Kit, objID string) (bool, error) {
-	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
-	asst, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
-		&metadata.QueryCondition{Condition: cond})
+	// judge whether it is an inner mainline model
+	if common.IsInnerMainlineModel(objID) {
+		return true, nil
+	}
+
+	filter := []map[string]interface{}{{
+		common.AssociationKindIDField: common.AssociationKindMainline,
+		common.BKAsstObjIDField:       objID,
+	}}
+	asstCnt, err := assoc.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameObjAsst, filter)
 	if err != nil {
+		blog.Errorf("check object(%s) if is mainline object failed, err: %v, rid: %s", objID, err, kit.Rid)
 		return false, err
 	}
 
-	if !asst.Result {
-		return false, errors.New(asst.Code, asst.ErrMsg)
+	if len(asstCnt) <= 0 {
+		blog.Errorf("get association by filter: %+v failed, return is empty, rid: %s", filter, kit.Rid)
+		return false, kit.CCError.CCError(common.CCErrorTopoObjectAssociationNotExist)
 	}
 
-	if len(asst.Data.Info) <= 0 {
-		return false, fmt.Errorf("model association [%+v] not found", cond)
+	if asstCnt[0] == 0 {
+		return false, nil
 	}
 
-	for _, mainline := range asst.Data.Info {
-		if mainline.ObjectID == objID || mainline.AsstObjID == objID {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return true, nil
 }
 
 func (assoc *association) DeleteAssociationWithPreCheck(kit *rest.Kit, associationID int64) error {
