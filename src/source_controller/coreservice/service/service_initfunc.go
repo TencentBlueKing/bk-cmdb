@@ -90,6 +90,51 @@ func (s *coreService) initAttrUnique(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+func (s *coreService) initContainerInstances(web *restful.WebService) {
+
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/create/cluster/{bk_biz_id}/instance",
+		Handler: s.CreateClusterInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/updatemany/cluster/{supplierAccount}/{bk_biz_id}/instance",
+		Handler: s.UpdateClusterInstance})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/updatemany/node/{supplierAccount}/{bk_biz_id}/instance",
+		Handler: s.UpdateNodeInstance})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path:    "/kube/delete/cluster/{bk_biz_id}/instance",
+		Handler: s.DeleteClusterInstance})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path:    "/kube/deletemany/node/{bk_biz_id}/instance",
+		Handler: s.BatchDeleteNodeInstance})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/createmany/node/{bk_biz_id}/instance",
+		Handler: s.BatchCreateNode})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/createmany/pod/{bk_biz_id}/instance",
+		Handler: s.BatchCreatePod})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/search/cluster/instances",
+		Handler: s.SearchClusterInstances})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/search/node/instances",
+		Handler: s.SearchNodeInstances})
+
+	utility.AddToRestfulWebService(web)
+
+}
+
 func (s *coreService) initModelInstances(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.engine.CCErr,
@@ -394,6 +439,7 @@ func (s *coreService) initCommon(web *restful.WebService) {
 func (s *coreService) initService(web *restful.WebService) {
 	s.initModelClassification(web)
 	s.initModel(web)
+	s.initContainerInstances(web)
 	s.initAssociationKind(web)
 	s.initAttrUnique(web)
 	s.initModelAssociation(web)

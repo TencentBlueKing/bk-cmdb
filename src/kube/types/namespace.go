@@ -19,11 +19,21 @@ package types
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/criteria/enumor"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/filter"
+	"configcenter/src/storage/dal/table"
 )
+
+// NamespaceSpecFieldsDescriptor namespace spec's fields descriptors.
+var NamespaceSpecFieldsDescriptor = table.FieldsDescriptors{
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
+	{Field: ClusterUIDField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: ResourceQuotasField, Type: enumor.Array, IsRequired: false, IsEditable: true},
+}
 
 // ScopeSelectorOperator a scope selector operator is the set of operators
 // that can be used in a scope selector requirement.

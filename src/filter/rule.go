@@ -61,7 +61,7 @@ type RuleOption struct {
 	// Parent field name, used when filtering object/array elements
 	Parent string
 	// ParentType parent type, used when filtering object/array elements
-	ParentType enumor.ColumnType
+	ParentType enumor.FieldType
 }
 
 var _ RuleFactory = new(AtomRule)
@@ -114,7 +114,7 @@ func (ar *AtomRule) Validate(opt *ExprOption) error {
 	return nil
 }
 
-func validateFieldValue(v interface{}, typ enumor.ColumnType) error {
+func validateFieldValue(v interface{}, typ enumor.FieldType) error {
 	switch reflect.TypeOf(v).Kind() {
 	case reflect.Array, reflect.Slice:
 		return validateSliceElements(v, typ)
@@ -149,7 +149,7 @@ func validateFieldValue(v interface{}, typ enumor.ColumnType) error {
 	return nil
 }
 
-func validateSliceElements(v interface{}, typ enumor.ColumnType) error {
+func validateSliceElements(v interface{}, typ enumor.FieldType) error {
 	value := reflect.ValueOf(v)
 	length := value.Len()
 	if length == 0 {

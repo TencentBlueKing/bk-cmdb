@@ -19,6 +19,9 @@ package types
 
 // identification of k8s in cc
 const (
+	// KubeBusiness k8s business type
+	KubeBusiness = "biz"
+
 	// KubeCluster k8s cluster type
 	KubeCluster = "cluster"
 
@@ -27,6 +30,9 @@ const (
 
 	// KubeNamespace k8s namespace type
 	KubeNamespace = "namespace"
+
+	// KubeFolder k8s folder type
+	KubeFolder = "folder"
 
 	// KubeWorkload k8s workload type
 	KubeWorkload = "workload"
@@ -127,8 +133,39 @@ const (
 	KindField = "kind"
 )
 
+const (
+	// KubeHostKind host kind
+	KubeHostKind = "host"
+	// KubePodKind pod kind
+	KubePodKind = "pod"
+)
+
 // cluster field names
 const (
+
+	// BKIDField the id definition
+	BKIDField = "id"
+
+	// KubeNameField the name definition
+	KubeNameField = "name"
+
+	// BKBizIDField business id field
+	BKBizIDField = "bk_biz_id"
+
+	// BKSupplierAccountField supplier account
+	BKSupplierAccountField = "bk_supplier_account"
+
+	// CreatorField the creator field
+	CreatorField = "creator"
+
+	// ModifierField the modifier field
+	ModifierField = "modifier"
+
+	// CreateTimeField the create time field
+	CreateTimeField = "create_time"
+
+	// LastTimeField the last time field
+	LastTimeField = "last_time"
 	// BKClusterIDFiled cluster unique id field in cc
 	BKClusterIDFiled = "bk_cluster_id"
 
@@ -155,6 +192,8 @@ const (
 
 	// TypeField cluster type field
 	TypeField = "type"
+	// SchedulingEngineField scheduling engine
+	SchedulingEngineField = "scheduling_engine"
 )
 
 // node field names
@@ -164,6 +203,9 @@ const (
 
 	// TaintsField node taints field
 	TaintsField = "taints"
+
+	// HasPodField node taints field
+	HasPodField = "has_pod"
 
 	// UnschedulableField node unschedulable field
 	UnschedulableField = "unschedulable"
@@ -182,6 +224,9 @@ const (
 
 	// KubeProxyModeField node proxy mode field
 	KubeProxyModeField = "kube_proxy_mode"
+
+	// PodCidrField pod address allocation range
+	PodCidrField = "pod_cidr"
 
 	// BKNodeIDField cluster unique id field in cc
 	BKNodeIDField = "bk_node_id"
@@ -231,6 +276,9 @@ const (
 	// IPsField pod ips field
 	IPsField = "ips"
 
+	// ControlledBy owning replica controller
+	ControlledBy = "controlled_by"
+
 	// VolumesField pod volumes field
 	VolumesField = "volumes"
 
@@ -265,6 +313,13 @@ const (
 	NodeNameFiled = "node_name"
 )
 
+const (
+	// KubeFolderID 每个cluster只有唯一的 folder，此节点没有表，统一用 999 表示 folder的ID，如果需要确认具体的 folder
+	// 需要与clusterID结合起来使用
+	KubeFolderID   = 999
+	KubeFolderName = "空Pod节点"
+)
+
 // container field names
 const (
 	// ContainerUIDField container unique id field in third party platform
@@ -291,7 +346,7 @@ const (
 	// LimitsField container limits field
 	LimitsField = "limits"
 
-	// container requests field
+	// RequestsField requests field
 	RequestsField = "requests"
 
 	// LivenessField container liveness field

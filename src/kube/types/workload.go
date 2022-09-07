@@ -23,12 +23,26 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/criteria/enumor"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/filter"
 	"configcenter/src/kube/orm"
+	"configcenter/src/storage/dal/table"
 )
+
+// WorkLoadSpecFieldsDescriptor workLoad spec's fields descriptors.
+var WorkLoadSpecFieldsDescriptor = table.FieldsDescriptors{
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: NamespaceField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
+	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
+	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: true, IsEditable: true},
+	{Field: StrategyTypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: MinReadySecondsField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
+	{Field: RollingUpdateStrategyField, Type: enumor.Object, IsRequired: false, IsEditable: true},
+}
 
 // LabelSelectorOperator a label selector operator is the set of operators that can be used in a selector requirement.
 type LabelSelectorOperator string

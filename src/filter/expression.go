@@ -46,7 +46,7 @@ type ExprOption struct {
 	//    is in the RuleFields' key restricts.
 	// 2. all the expression's rule field should be a sub-set
 	//    of the RuleFields' key.
-	RuleFields map[string]enumor.ColumnType
+	RuleFields map[string]enumor.FieldType
 	// MaxInLimit defines the max element of the in operator
 	// If not set, then use default value: DefaultMaxInLimit
 	MaxInLimit uint

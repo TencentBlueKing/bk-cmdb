@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/kube/types"
 )
 
 // kubeAuditLog provides methods to generate and save kube audit log.
@@ -38,13 +39,13 @@ type mockKube struct {
 }
 
 // GenerateClusterAuditLog generate audit log of kube cluster.
-func (c *kubeAuditLog) GenerateClusterAuditLog(param *generateAuditCommonParameter, data []mockKube) (
-	[]metadata.AuditLog, errors.CCErrorCoder) {
+func (c *kubeAuditLog) GenerateClusterAuditLog(param *generateAuditCommonParameter,
+	data []types.Cluster) ([]metadata.AuditLog, errors.CCErrorCoder) {
 
 	auditLogs := make([]metadata.AuditLog, len(data))
 
 	for index, d := range data {
-		log, err := c.generateAuditLog(param, metadata.KubeCluster, d.ID, d.BizID, d.Name, d)
+		log, err := c.generateAuditLog(param, metadata.KubeCluster, &d.ID, &d.BizID, d.Name, d)
 		if err != nil {
 			return nil, err
 		}
@@ -55,13 +56,13 @@ func (c *kubeAuditLog) GenerateClusterAuditLog(param *generateAuditCommonParamet
 }
 
 // GenerateNodeAuditLog generate audit log of kube node.
-func (c *kubeAuditLog) GenerateNodeAuditLog(param *generateAuditCommonParameter, data []mockKube) (
+func (c *kubeAuditLog) GenerateNodeAuditLog(param *generateAuditCommonParameter, data []types.Node) (
 	[]metadata.AuditLog, errors.CCErrorCoder) {
 
 	auditLogs := make([]metadata.AuditLog, len(data))
 
 	for index, d := range data {
-		auditLog, err := c.generateAuditLog(param, metadata.KubeNode, d.ID, d.BizID, d.Name, d)
+		auditLog, err := c.generateAuditLog(param, metadata.KubeNode, &d.ID, &d.BizID, d.Name, d)
 		if err != nil {
 			return nil, err
 		}
@@ -89,13 +90,13 @@ func (c *kubeAuditLog) GenerateNamespaceAuditLog(param *generateAuditCommonParam
 }
 
 // GeneratePodAuditLog generate audit log of kube pod.
-func (c *kubeAuditLog) GeneratePodAuditLog(param *generateAuditCommonParameter, data []mockKube) (
+func (c *kubeAuditLog) GeneratePodAuditLog(param *generateAuditCommonParameter, data []types.Pod) (
 	[]metadata.AuditLog, errors.CCErrorCoder) {
 
 	auditLogs := make([]metadata.AuditLog, len(data))
 
 	for index, d := range data {
-		auditLog, err := c.generateAuditLog(param, metadata.KubePod, d.ID, d.BizID, d.Name, d)
+		auditLog, err := c.generateAuditLog(param, metadata.KubePod, &d.ID, d.BizID, d.Name, d)
 		if err != nil {
 			return nil, err
 		}

@@ -241,3 +241,44 @@ func (s *Service) ListPod(ctx *rest.Contexts) {
 
 	ctx.RespEntity(res)
 }
+
+// BatchCreatePod batch create pods.
+func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
+
+	data := new(types.CreatePodsOption)
+	if err := ctx.DecodeInto(data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := data.Validate(); err != nil {
+		blog.Errorf("batch create pods param verification failed, data: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	var ids []int64
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		var err error
+		ids, err = s.Logics.ContainerOperation().BatchCreatePod(ctx.Kit, data, bizID)
+		if err != nil {
+			blog.Errorf("create business cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(ids)
+}
