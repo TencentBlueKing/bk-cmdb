@@ -479,8 +479,8 @@ func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.Kv
 
 }
 
-// GetAssociationExcelData read sheet of association data from excel
-func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int, defLang lang.DefaultCCLanguageIf) (
+// getAssociationExcelData read sheet of association data from excel
+func getAssociationExcelData(sheet *xlsx.Sheet, firstRow int, defLang lang.DefaultCCLanguageIf) (
 	map[int]metadata.ExcelAssociation, []metadata.RowMsgData) {
 
 	rowCnt := len(sheet.Rows)

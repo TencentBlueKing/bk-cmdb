@@ -171,7 +171,7 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 			continue
 		}
 
-		asstInfoMap, errMsg := GetAssociationExcelData(sheet, common.HostAddMethodExcelAssociationIndexOffset,
+		asstInfoMap, errMsg := getAssociationExcelData(sheet, common.HostAddMethodExcelAssociationIndexOffset,
 			defLang)
 
 		if len(asstInfoMap) > 0 {
