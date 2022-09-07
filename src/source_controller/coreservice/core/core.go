@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/selector"
+	"configcenter/src/kube/types"
 )
 
 // ModelAttributeGroup model attribute group methods definitions
@@ -117,6 +118,23 @@ type InstanceOperation interface {
 	DeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount,
 		error)
+}
+
+// ContainerOperation crud operations on container data.
+type ContainerOperation interface {
+	CreateCluster(kit *rest.Kit, bizID int64, option *types.ClusterBaseFields) (*types.Cluster, errors.CCErrorCoder)
+	UpdateClusterFields(kit *rest.Kit, bizID int64, supplierAccount string,
+		data *types.UpdateClusterOption) (*metadata.UpdatedCount, errors.CCErrorCoder)
+	UpdateNodeFields(kit *rest.Kit, bizID int64, supplierAccount string,
+		data *types.UpdateNodeOption) (*metadata.UpdatedCount, errors.CCErrorCoder)
+	SearchCluster(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseCluster, error)
+	DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption) (*metadata.DeletedCount,
+		errors.CCErrorCoder)
+	BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.BatchDeleteNodeOption) (
+		*metadata.DeletedCount, errors.CCErrorCoder)
+	BatchCreateNode(kit *rest.Kit, bizID int64, data []types.OneNodeCreateOption) ([]*types.Node, errors.CCErrorCoder)
+	BatchCreatePod(kit *rest.Kit, bizID int64, data []types.PodsInfo) ([]types.Pod, errors.CCErrorCoder)
+	SearchNode(kit *rest.Kit, input *metadata.QueryCondition) (*types.SearchNodeRsp, error)
 }
 
 // AssociationKind association kind methods
@@ -234,6 +252,7 @@ type StatisticOperation interface {
 type Core interface {
 	ModelOperation() ModelOperation
 	InstanceOperation() InstanceOperation
+	ContainerOperation() ContainerOperation
 	AssociationOperation() AssociationOperation
 	TopoOperation() TopoOperation
 	DataSynchronizeOperation() DataSynchronizeOperation
@@ -414,6 +433,7 @@ type CommonOperation interface {
 type core struct {
 	model           ModelOperation
 	instance        InstanceOperation
+	container       ContainerOperation
 	association     AssociationOperation
 	dataSynchronize DataSynchronizeOperation
 	topo            TopoOperation
@@ -434,6 +454,7 @@ type core struct {
 func New(
 	model ModelOperation,
 	instance InstanceOperation,
+	container ContainerOperation,
 	association AssociationOperation,
 	dataSynchronize DataSynchronizeOperation,
 	topo TopoOperation, host HostOperation,
@@ -452,6 +473,7 @@ func New(
 		model:           model,
 		instance:        instance,
 		association:     association,
+		container:       container,
 		dataSynchronize: dataSynchronize,
 		topo:            topo,
 		host:            host,
@@ -474,6 +496,10 @@ func (m *core) ModelOperation() ModelOperation {
 
 func (m *core) InstanceOperation() InstanceOperation {
 	return m.instance
+}
+
+func (m *core) ContainerOperation() ContainerOperation {
+	return m.container
 }
 
 func (m *core) AssociationOperation() AssociationOperation {

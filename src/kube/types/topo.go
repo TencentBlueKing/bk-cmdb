@@ -18,8 +18,10 @@
 package types
 
 import (
+	"errors"
+
 	"configcenter/src/common"
-	"configcenter/src/common/errors"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
@@ -30,21 +32,21 @@ type HostPathReq struct {
 }
 
 // Validate validate HostPathReq
-func (h *HostPathReq) Validate() errors.RawErrorInfo {
+func (h *HostPathReq) Validate() ccErr.RawErrorInfo {
 	if len(h.HostIDs) == 0 {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"ids"},
 		}
 	}
 
 	if len(h.HostIDs) > common.BKMaxLimitSize {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommXXExceedLimit,
 			Args:    []interface{}{"ids", common.BKMaxLimitSize},
 		}
 	}
-	return errors.RawErrorInfo{}
+	return ccErr.RawErrorInfo{}
 }
 
 // HostPathResp node path for hosts response
@@ -87,21 +89,21 @@ type PodPathReq struct {
 }
 
 // Validate validate PodPathReq
-func (p *PodPathReq) Validate() errors.RawErrorInfo {
+func (p *PodPathReq) Validate() ccErr.RawErrorInfo {
 	if len(p.PodIDs) == 0 {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"ids"},
 		}
 	}
 
 	if len(p.PodIDs) > common.BKMaxLimitSize {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommXXExceedLimit,
 			Args:    []interface{}{"ids", common.BKMaxLimitSize},
 		}
 	}
-	return errors.RawErrorInfo{}
+	return ccErr.RawErrorInfo{}
 }
 
 // PodPathResp pod container topological path response
@@ -126,4 +128,89 @@ type PodPath struct {
 	WorkloadID   int64        `json:"bk_workload_id"`
 	WorkloadName string       `json:"workload_name"`
 	PodID        int64        `json:"bk_pod_id"`
+}
+
+// KubeResourceInfo the type of the requested resource and the corresponding resource ID.
+// it should be noted that when the kind is folder, the host cannot be obtained through
+// the pod table. In this case, the node table needs to be used to find the corresponding
+// number of hosts. Since the node is only associated with the cluster, the id in this
+// scenario needs to pass the corresponding clusterID.
+type KubeResourceInfo struct {
+	Kind string `json:"kind"`
+	ID   int64  `json:"id"`
+}
+
+// KubeTopoCountOption calculate the number of hosts or pods under the container resource node.
+type KubeTopoCountOption struct {
+	ResourceInfos []KubeResourceInfo `json:"resource_info"`
+}
+
+// Validate validate the KubeTopoCountOption
+func (option *KubeTopoCountOption) Validate() ccErr.RawErrorInfo {
+	if len(option.ResourceInfos) > 100 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{errors.New("the requested array length exceeds the maximum value of 100")},
+		}
+	}
+	for _, info := range option.ResourceInfos {
+		if !IsKubeResourceKind(info.Kind) {
+			return ccErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{errors.New("non-container resource objects\n")},
+			}
+		}
+	}
+	return ccErr.RawErrorInfo{}
+}
+
+// KubeTopoCountRsp the response of the node host or the number of pods
+type KubeTopoCountRsp struct {
+	Kind  string `json:"kind"`
+	ID    int64  `json:"id"`
+	Count int64  `json:"count"`
+}
+
+// KubeTopoPathOption get container topology path request.
+type KubeTopoPathOption struct {
+	ReferenceObjID string            `json:"bk_reference_obj_id"`
+	ReferenceID    int64             `json:"bk_reference_id"`
+	Page           metadata.BasePage `json:"page"`
+}
+
+// Validate validate the KubeTopoPathReq
+func (option *KubeTopoPathOption) Validate() ccErr.RawErrorInfo {
+
+	if option.ReferenceID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{errors.New("bk_reference_id must be set")},
+		}
+	}
+
+	// is the resource type legal
+	if !IsContainerTopoResource(option.ReferenceObjID) {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{errors.New("bk_reference_obj_id is illegal")},
+		}
+	}
+
+	if err := option.Page.ValidateWithEnableCount(false, common.BKMaxLimitSize); err.ErrCode != 0 {
+		return err
+	}
+	return ccErr.RawErrorInfo{}
+}
+
+// KubeObjectInfo container object information.
+type KubeObjectInfo struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+	Kind string `json:"kind"`
+}
+
+// KubeTopoPathRsp get topology path response.
+type KubeTopoPathRsp struct {
+	Info  []KubeObjectInfo `json:"info"`
+	Count int              `json:"count"`
 }

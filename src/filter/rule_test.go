@@ -137,7 +137,7 @@ func TestRuleValidate(t *testing.T) {
 	}
 
 	opt := &ExprOption{
-		RuleFields: map[string]enumor.ColumnType{
+		RuleFields: map[string]enumor.FieldType{
 			"test1": enumor.String,
 		},
 		MaxNotInLimit: 3,
@@ -150,7 +150,7 @@ func TestRuleValidate(t *testing.T) {
 
 	// test invalid atomic rule scenario
 	opt = &ExprOption{
-		RuleFields: map[string]enumor.ColumnType{
+		RuleFields: map[string]enumor.FieldType{
 			"test2": enumor.String,
 		},
 	}
@@ -178,7 +178,7 @@ func TestRuleValidate(t *testing.T) {
 
 	// TODO confirm how to deal with object & array
 	opt = &ExprOption{
-		RuleFields: map[string]enumor.ColumnType{
+		RuleFields: map[string]enumor.FieldType{
 			"test":                enumor.Numeric,
 			"test1.element.test2": enumor.String,
 			"test3":               enumor.Time,

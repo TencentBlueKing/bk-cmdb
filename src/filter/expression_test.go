@@ -283,7 +283,7 @@ func TestExpressionValidateOption(t *testing.T) {
 	}
 
 	opt := &ExprOption{
-		RuleFields: map[string]enumor.ColumnType{
+		RuleFields: map[string]enumor.FieldType{
 			"string":       enumor.String,
 			"int":          enumor.Numeric,
 			"string_array": enumor.String,

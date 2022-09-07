@@ -67,5 +67,53 @@ func (s *Service) initKube(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/kube/findmany/container/bk_biz_id/{bk_biz_id}",
 		Handler: s.ListContainer})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodGet,
+		Path:    "/kube/find/{object}/attributes",
+		Handler: s.FindResourceAttrs})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/create/cluster/bk_biz_id/{bk_biz_id}",
+		Handler: s.CreateCluster})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/updatemany/cluster/bk_biz_id/{bk_biz_id}",
+		Handler: s.UpdateClusterFields})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/updatemany/node/bk_biz_id/{bk_biz_id}",
+		Handler: s.UpdateNodeFields})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path:    "/kube/delete/cluster/bk_biz_id/{bk_biz_id}",
+		Handler: s.DeleteCluster})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path:    "/kube/deletemany/node/bk_biz_id/{bk_biz_id}",
+		Handler: s.BatchDeleteNode})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/findmany/cluster/bk_biz_id/{bk_biz_id}",
+		Handler: s.SearchClusters})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/createmany/node/bk_biz_id/{bk_biz_id}",
+		Handler: s.BatchCreateNode})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/createmany/pod/bk_biz_id/{bk_biz_id}",
+		Handler: s.BatchCreatePod})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/findmany/node/bk_biz_id/{bk_biz_id}",
+		Handler: s.SearchNodes})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/find/topo_path/bk_biz_id/{bk_biz_id}",
+		Handler: s.SearchKubeTopoPath})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/kube/find/{bk_biz_id}/topo_node/{type}/count",
+		Handler: s.CountKubeTopoHostsOrPods})
+
 	utility.AddToRestfulWebService(web)
 }
