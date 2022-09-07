@@ -22,7 +22,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	errIf "configcenter/src/common/errors"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/json"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -330,8 +330,7 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, req *http.Requ
 		}
 		result, resultErr = lgc.CoreAPI.ApiServer().UpdateHost(context.Background(), req.Header, params)
 		if resultErr != nil {
-			blog.Errorf("update host http request failed, err: %v, rid: %s", resultErr,
-				util.GetHTTPCCRequestID(req.Header))
+			blog.Errorf("update host http request failed, err: %v, rid: %s", resultErr, rid)
 			return &metadata.ResponseDataMapStr{
 				BaseResp: metadata.BaseResp{
 					Result: false,
@@ -349,7 +348,7 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, req *http.Requ
 // updateHostAssociation excel export host data, update host association
 func (lgc *Logics) updateHostAssociation(ctx context.Context, f *xlsx.File, req *http.Request,
 	result *metadata.ResponseDataMapStr, defLang lang.DefaultCCLanguageIf, rid string,
-	defErr errIf.DefaultCCErrorIf) *metadata.ResponseDataMapStr {
+	defErr ccErr.DefaultCCErrorIf) *metadata.ResponseDataMapStr {
 
 	for _, sheet := range f.Sheets {
 		if sheet.Name != "association" {
