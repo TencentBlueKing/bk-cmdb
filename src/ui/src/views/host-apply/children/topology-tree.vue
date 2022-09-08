@@ -65,7 +65,6 @@
   import { mapGetters, mapState } from 'vuex'
   import Bus from '@/utils/bus'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
-  import { sortTopoTree } from '@/utils/tools'
   import topologyInstanceService, { requestIds as topologyrequestIds } from '@/services/topology/instance.js'
   import { CONFIG_MODE } from '@/services/service-template/index.js'
 
@@ -154,18 +153,6 @@
           this.setModuleApplyStatusByTemplate(this.treeStat?.withTemplateModuleIdMap.get(id))
         }
       })
-
-      sortTopoTree(data, 'bk_inst_name', 'child')
-
-      // 将空闲机池放到顶部
-      const root = data[0] || {}
-      const children = root.child || []
-      const idleIndex = children.findIndex(item => item.default === 1)
-      if (idleIndex !== -1) {
-        const idlePool = children[idleIndex]
-        children.splice(idleIndex, 1)
-        children.unshift(idlePool)
-      }
 
       this.treeData = data
       this.mainLine = mainLine
