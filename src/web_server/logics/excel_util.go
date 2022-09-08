@@ -111,6 +111,9 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 
 	// 校验模型字段唯一标识和Excel表头字段唯一标识是否一致，如果不一致，提示无法导入，请修改为正确的唯一标识
 	for unique := range indexNameMap {
+		if unique == common.BKInstIDField || unique == common.BKHostIDField{
+			continue
+		}
 		if _, ok := fields[unique]; !ok {
 			return nil, fmt.Errorf("导入的Excel数据，%s字段唯一标识不存在", unique)
 		}

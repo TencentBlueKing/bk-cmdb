@@ -202,6 +202,7 @@ var SetTemplateAuthConfigs = []AuthConfig{
 	}, {
 		Name:             "CheckSetInstUpdateToDateStatusRegex",
 		Description:      "检查集群模板的同步状态",
+		// NOCC:tosa/linelength(ignore length)
 		Regex:            regexp.MustCompile(`^/api/v3/findmany/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/set_template_status/?$`),
 		HTTPMethod:       http.MethodGet,
 		BizIDGetter:      BizIDFromURLGetter,
