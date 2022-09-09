@@ -92,6 +92,13 @@
           return
         }
 
+        if (selectedNode.value?.data?.is_folder) {
+          table.data = []
+          table.pagination.count = 0
+
+          return
+        }
+
         const params = getSearchParams()
         if (!params.fields?.length) {
           return

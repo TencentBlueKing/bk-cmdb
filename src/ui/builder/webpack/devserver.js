@@ -26,11 +26,13 @@ module.exports = config => ({
       throw new Error('webpack-dev-server is not defined')
     }
 
-    // parse application/x-www-form-urlencoded
-    devServer.app.use(bodyParser.urlencoded({ extended: true }))
+    if (config.dev.useMock) {
+      // parse application/x-www-form-urlencoded
+      devServer.app.use(bodyParser.urlencoded({ extended: true }))
 
-    // parse application/json
-    devServer.app.use(bodyParser.json())
+      // parse application/json
+      devServer.app.use(bodyParser.json())
+    }
 
     const launchMiddleware = require('launch-editor-middleware')
     devServer.app.use('/__open-in-editor', launchMiddleware())

@@ -5,7 +5,8 @@
   export default defineComponent({
     setup() {
       const selectedNode = computed(() => store.getters['businessHost/selectedNode'])
-      const nodeId = computed(() =>  selectedNode.value?.data?.bk_inst_id ?? '--')
+      const isFolder = computed(() =>  selectedNode.value?.data?.is_folder)
+      const nodeId = computed(() =>  (isFolder.value ? '--' : selectedNode.value?.data?.bk_inst_id ?? '--'))
       const nodeName = computed(() => selectedNode.value?.data?.bk_inst_name ?? '--')
 
       return {

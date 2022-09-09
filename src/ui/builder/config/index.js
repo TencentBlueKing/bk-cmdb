@@ -93,7 +93,9 @@ const dev = {
   // https://vue-loader.vuejs.org/en/options.html#cachebusting
   cacheBusting: true,
 
-  cssSourceMap: true
+  cssSourceMap: true,
+
+  useMock: false
 }
 
 const customDevConfigPath = path.resolve(__dirname, `index.dev.${argv.env || 'ee'}.js`)
@@ -118,6 +120,8 @@ if (argv.mock) {
     // fix proxied POST requests when bodyParser is applied before this middleware
     onProxyReq: fixRequestBody
   }
+
+  dev.useMock = true
 }
 
 module.exports = {

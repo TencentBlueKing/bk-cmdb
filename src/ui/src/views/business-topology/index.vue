@@ -113,7 +113,7 @@
         return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module' && this.selectedNode.data.default === 0
       },
       isSimpleNodeInfo() {
-        return this.selectedNode && this.selectedNode.data.default !== 0
+        return this.selectedNode && (this.selectedNode.data.default !== 0 || this.selectedNode.data.is_folder)
       },
       emptySet() {
         return this.selectedNode && this.selectedNode.data.bk_obj_id === 'set'
