@@ -255,6 +255,18 @@
       async getHostList(event) {
         try {
           const { count, info } = await this.getSearchRequest()
+
+          // 容器主机时为每条记录添加biz，统一数据结构供后续使用
+          if (this.isContainerSearchMode) {
+            info.forEach((item, index) => {
+              const bizId = item?.node?.[index]?.bk_biz_id
+              item.biz = [{
+                bk_biz_id: bizId,
+                default: 0
+              }]
+            })
+          }
+
           this.table.pagination.count = count
           this.table.list = info
           this.table.stuff.type = event ? 'search' : 'default'
@@ -341,7 +353,6 @@
         if (property.bk_obj_id !== 'host' || property.bk_property_id !== 'bk_host_id') {
           return
         }
-        // TODO: 缺少biz
         // eslint-disable-next-line prefer-destructuring
         const business = item.biz[0]
         if (business.default) {

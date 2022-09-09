@@ -529,6 +529,11 @@ const FilterStore = new Vue({
           header.filter(property => !property?.isInject && property.bk_obj_id === CONTAINER_OBJECTS.NODE)
         )
 
+        // 资源已分配视图fields中注入业务id
+        if (this.isResourceAssigned) {
+          params.node_cond?.fields?.unshift('bk_biz_id')
+        }
+
         if (transformedIP.condition) {
           params.host_condition.condition.push(transformedIP.condition)
         }

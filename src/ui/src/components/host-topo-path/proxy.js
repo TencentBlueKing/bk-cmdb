@@ -13,6 +13,7 @@
 import Vue from 'vue'
 import http from '@/api'
 import containerHostService from '@/service/container/host'
+import hostSearchService from '@/service/host/search'
 
 export default new Vue({
   data() {
@@ -68,11 +69,23 @@ export default new Vue({
           const { info: paths } = await containerHostService.getNodePath({ ids: hostIds })
           this.containerTopoPaths = paths || []
 
-          // 已分配并且为容器搜索模式，此处独立完成结果返回
+          // 已分配并且为容器搜索模式，拓扑路径采用通过主机ids获取的方式
           if (this.isContainerSearchMode) {
+            // 通过主机获取获取传统拓扑路径
+            const normalTopoPaths = await hostSearchService.getTopoPath({ ids: hostIds }) || []
+
             queue.forEach((meta) => {
               const containerPaths = this.containerTopoPaths.find(item => item.bk_host_id === meta.data.hostId)?.paths
+
+              // 将数据格式统一为`find/topopath/biz/${bizId}`接口格式，便于后续使用
+              const hostNormalTopoList = normalTopoPaths.find(item => item.id === meta.data.hostId)?.topo_path
+              const hostNormalTopoPaths = hostNormalTopoList.map(topo => ({
+                topo_node: topo.find(item => item.bk_obj_id === 'module'),
+                topo_path: topo
+              }))
+
               meta.resolve({
+                normal: hostNormalTopoPaths,
                 container: containerPaths
               })
             })
