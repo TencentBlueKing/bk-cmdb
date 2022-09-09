@@ -32,6 +32,8 @@
 <script>
   import { translateAuth } from '@/setup/permission'
   import { MENU_RESOURCE_BUSINESS } from '@/dictionary/menu-symbol'
+  import businessService from '@/service/business/search.js'
+
   export default {
     computed: {
       bizId() {
@@ -40,10 +42,12 @@
     },
     methods: {
       async handleApplyPermission() {
+        const allBusinessList = await businessService.findAll()
+        const availableBusiness = allBusinessList.some(business => business.bk_biz_id === this.bizId)
         try {
           const permission = translateAuth({
             type: this.$OPERATION.R_BIZ_RESOURCE,
-            relation: this.bizId ? [this.bizId] : []
+            relation: availableBusiness ? [this.bizId] : []
           })
           const skipUrl = await this.$store.dispatch('auth/getSkipUrl', {
             params: permission,
