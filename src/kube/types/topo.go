@@ -20,11 +20,10 @@ package types
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
-// HostPathReq node path for hosts request
+// HostPathReq find host path request
 type HostPathReq struct {
 	HostIDs []int64 `json:"ids"`
 }
@@ -75,7 +74,7 @@ type NodePath struct {
 // HostNodeRelation get host and node relation message
 type HostNodeRelation struct {
 	BizIDs              []int64
-	HostWithNode        map[int64][]mapstr.MapStr
+	HostWithNode        map[int64][]Node
 	NodeIDWithBizID     map[int64]int64
 	NodeIDWithClusterID map[int64]int64
 	ClusterIDWithName   map[int64]string

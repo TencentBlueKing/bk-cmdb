@@ -17,6 +17,10 @@
 
 package types
 
+import (
+	"fmt"
+)
+
 // identification of k8s in cc
 const (
 	// KubeBusiness k8s business type
@@ -46,6 +50,50 @@ const (
 
 // WorkloadType workload type enum
 type WorkloadType string
+
+// Validate validate WorkloadType
+func (t WorkloadType) Validate() error {
+	switch t {
+	case KubeDeployment, KubeStatefulSet, KubeDaemonSet,
+		KubeGameStatefulSet, KubeGameDeployment, KubeCronJob,
+		KubeJob, KubePodWorkload:
+		return nil
+	default:
+		return fmt.Errorf("can not support this type of workload, kind: %s", t)
+	}
+}
+
+// Table get the table name based on the workload type
+func (t WorkloadType) Table() (string, error) {
+	switch t {
+	case KubeDeployment:
+		return BKTableNameBaseDeployment, nil
+
+	case KubeStatefulSet:
+		return BKTableNameBaseStatefulSet, nil
+
+	case KubeDaemonSet:
+		return BKTableNameBaseDaemonSet, nil
+
+	case KubeGameStatefulSet:
+		return BKTableNameGameStatefulSet, nil
+
+	case KubeGameDeployment:
+		return BKTableNameGameDeployment, nil
+
+	case KubeCronJob:
+		return BKTableNameBaseCronJob, nil
+
+	case KubeJob:
+		return BKTableNameBaseJob, nil
+
+	case KubePodWorkload:
+		return BKTableNameBasePodWorkload, nil
+
+	default:
+		return "", fmt.Errorf("can not find table name, kind: %s", t)
+	}
+}
 
 const (
 	// KubeDeployment k8s deployment type
@@ -378,7 +426,7 @@ func GetKubeTableName(kind string) (string, error) {
 		return BKTableNameBaseNode, nil
 
 	default:
-		table, err := GetWorkloadTableName(WorkloadType(kind))
+		table, err := WorkloadType(kind).Table()
 		if err != nil {
 			return "", err
 		}

@@ -25,7 +25,10 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/kube/types"
+	"configcenter/src/storage/dal/table"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -39,7 +42,7 @@ func (s *coreService) CreateWorkload(ctx *rest.Contexts) {
 	}
 
 	kind := types.WorkloadType(ctx.Request.PathParameter(types.KindField))
-	table, err := types.GetWorkloadTableName(kind)
+	tableName, err := kind.Table()
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KindField))
 		return
@@ -56,9 +59,9 @@ func (s *coreService) CreateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	ids, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, table, len(req.Data))
+	ids, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, tableName, len(req.Data))
 	if err != nil {
-		blog.Errorf("get workload ids failed, table: %s, err: %v, rid: %s", table, err, ctx.Kit.Rid)
+		blog.Errorf("get workload ids failed, table: %s, err: %v, rid: %s", tableName, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return
 	}
@@ -80,12 +83,18 @@ func (s *coreService) CreateWorkload(ctx *rest.Contexts) {
 		respData.IDs[idx] = id
 		data.SetID(id)
 		now := time.Now().Unix()
-		data.SetCreateTime(now)
-		data.SetUpdateTime(now)
+		data.SetCreateMsg(
+			table.Revision{
+				Creator:    ctx.Kit.User,
+				Modifier:   ctx.Kit.User,
+				CreateTime: now,
+				LastTime:   now,
+			},
+		)
 		data.SetSupplierAccount(ctx.Kit.SupplierAccount)
-		err = mongodb.Client().Table(table).Insert(ctx.Kit.Ctx, data)
+		err = mongodb.Client().Table(tableName).Insert(ctx.Kit.Ctx, data)
 		if err != nil {
-			blog.Errorf("add workload failed, table: %s, data: %v, err: %v, rid: %s", table, data, err, ctx.Kit.Rid)
+			blog.Errorf("add workload failed, table: %s, data: %v, err: %v, rid: %s", tableName, data, err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
 			return
 		}
@@ -151,7 +160,7 @@ func (s *coreService) UpdateWorkload(ctx *rest.Contexts) {
 	}
 
 	kind := types.WorkloadType(ctx.Request.PathParameter(types.KindField))
-	table, err := types.GetWorkloadTableName(kind)
+	table, err := kind.Table()
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KindField))
 		return
@@ -170,7 +179,7 @@ func (s *coreService) UpdateWorkload(ctx *rest.Contexts) {
 
 	for _, data := range req.Data {
 		filter := data.BuildUpdateFilter(bizID, ctx.Kit.SupplierAccount)
-		updateData, err := data.BuildUpdateData()
+		updateData, err := data.BuildUpdateData(ctx.Kit.User)
 		if err != nil {
 			blog.Errorf("get update data failed, kind: %s, data: %v, err: %v, rid: %s", kind, data, err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
@@ -199,7 +208,7 @@ func (s *coreService) DeleteWorkload(ctx *rest.Contexts) {
 	}
 
 	kind := types.WorkloadType(ctx.Request.PathParameter(types.KindField))
-	table, err := types.GetWorkloadTableName(kind)
+	table, err := kind.Table()
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KindField))
 		return
@@ -216,31 +225,55 @@ func (s *coreService) DeleteWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	for _, data := range req.Data {
-		var filter map[string]interface{}
-		if data.ID != 0 {
-			filter = map[string]interface{}{
-				common.BKAppIDField:   bizID,
-				common.BKOwnerIDField: ctx.Kit.SupplierAccount,
-				common.BKFieldID:      data.ID,
-			}
-		} else {
-			filter = map[string]interface{}{
-				common.BKAppIDField:   bizID,
-				types.ClusterUIDField: data.ClusterUID,
-				types.NamespaceField:  data.Namespace,
-				common.BKFieldName:    data.Name,
-				common.BKOwnerIDField: ctx.Kit.SupplierAccount,
-			}
-		}
-
-		err = mongodb.Client().Table(table).Delete(ctx.Kit.Ctx, filter)
-		if err != nil {
-			blog.Errorf("delete workload failed, filter: %v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))
-			return
-		}
+	filter, err := req.BuildCond(bizID, ctx.Kit.SupplierAccount)
+	if err != nil {
+		blog.Errorf("delete workload failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := mongodb.Client().Table(table).Delete(ctx.Kit.Ctx, filter); err != nil {
+		blog.Errorf("delete workload failed, filter: %v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))
+		return
 	}
 
 	ctx.RespEntity(nil)
+}
+
+// ListWorkload list container
+func (s *coreService) ListWorkload(ctx *rest.Contexts) {
+	input := new(metadata.QueryCondition)
+	if err := ctx.DecodeInto(input); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	kind := types.WorkloadType(ctx.Request.PathParameter(types.KindField))
+	if err := kind.Validate(); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	table, err := kind.Table()
+	if err != nil {
+		blog.Errorf("workload kind is invalid, kind: %v, rid: %s", kind, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KindField))
+		return
+	}
+
+	workloads := make([]mapstr.MapStr, 0)
+	err = mongodb.Client().Table(table).Find(input.Condition).Start(uint64(input.Page.Start)).
+		Limit(uint64(input.Page.Limit)).
+		Sort(input.Page.Sort).
+		Fields(input.Fields...).All(ctx.Kit.Ctx, &workloads)
+	if err != nil {
+		blog.Errorf("search workload failed, cond: %v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result := &metadata.QueryResult{
+		Info: workloads,
+	}
+	ctx.RespEntity(result)
 }

@@ -73,7 +73,7 @@ func (c *kubeAuditLog) GenerateNodeAuditLog(param *generateAuditCommonParameter,
 }
 
 // GenerateNamespaceAuditLog generate audit log of kube namespace.
-func (c *kubeAuditLog) GenerateNamespaceAuditLog(param *generateAuditCommonParameter, data []mockKube) (
+func (c *kubeAuditLog) GenerateNamespaceAuditLog(param *generateAuditCommonParameter, data []types.Namespace) (
 	[]metadata.AuditLog, errors.CCErrorCoder) {
 
 	auditLogs := make([]metadata.AuditLog, len(data))
@@ -106,43 +106,25 @@ func (c *kubeAuditLog) GeneratePodAuditLog(param *generateAuditCommonParameter, 
 	return auditLogs, nil
 }
 
-// GenerateWorkloadAuditLog generate audit log of kube workload.
-func (c *kubeAuditLog) GenerateWorkloadAuditLog(param *generateAuditCommonParameter, data []mockKube) (
-	[]metadata.AuditLog, errors.CCErrorCoder) {
-
-	auditLogs := make([]metadata.AuditLog, len(data))
-
-	for index, d := range data {
-		auditLog, err := c.generateAuditLog(param, metadata.KubeWorkload, d.ID, d.BizID, d.Name, d)
-		if err != nil {
-			return nil, err
-		}
-		auditLogs[index] = auditLog
-	}
-
-	return auditLogs, nil
-}
-
 // kubeWorkloadData kube workload audit data struct, including workload type and its actual data
 type kubeWorkloadData struct {
-	Kind string      `json:"kind" bson:"kind"`
-	Data interface{} `json:"data" bson:"data"`
+	Kind types.WorkloadType `json:"kind" bson:"kind"`
+	Data types.WorkloadI    `json:"data" bson:"data"`
 }
 
-// GenerateDeploymentAuditLog generate audit log of kube deployment workload.
-// TODO add other workload type generate functions like this
-func (c *kubeAuditLog) GenerateDeploymentAuditLog(param *generateAuditCommonParameter, data []mockKube) (
-	[]metadata.AuditLog, errors.CCErrorCoder) {
+// GenerateWorkloadAuditLog generate audit log of kube workload.
+func (c *kubeAuditLog) GenerateWorkloadAuditLog(param *generateAuditCommonParameter, data []types.WorkloadI,
+	kind types.WorkloadType) ([]metadata.AuditLog, errors.CCErrorCoder) {
 
 	auditLogs := make([]metadata.AuditLog, len(data))
 
 	for index, d := range data {
 		wl := &kubeWorkloadData{
-			// TODO replace with actual kind definition
-			Kind: "deployment",
+			Kind: kind,
 			Data: d,
 		}
-		auditLog, err := c.generateAuditLog(param, metadata.KubeWorkload, d.ID, d.BizID, d.Name, wl)
+
+		auditLog, err := c.generateAuditLog(param, metadata.KubeWorkload, d.GetID(), d.GetBizID(), d.GetName(), wl)
 		if err != nil {
 			return nil, err
 		}

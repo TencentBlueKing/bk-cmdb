@@ -54,8 +54,6 @@ func (s *Service) initKube(web *restful.WebService) {
 	// topo
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/kube/find/host_node_path",
 		Handler: s.FindNodePathForHost})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/kube/find/field/map_str_val/bk_biz_id/{bk_biz_id}",
-		Handler: s.FindKubeMapStrFieldVal})
 
 	// pod
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/kube/find/pod_path/bk_biz_id/{bk_biz_id}",

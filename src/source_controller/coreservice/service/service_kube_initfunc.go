@@ -40,6 +40,9 @@ func (s *coreService) initKube(web *restful.WebService) {
 		Handler: s.UpdateNamespace})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/namespace/bk_biz_id/{bk_biz_id}",
 		Handler: s.DeleteNamespace})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/namespace/bk_biz_id/{bk_biz_id}",
+		Handler: s.DeleteNamespace})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/namespace", Handler: s.ListNamespace})
 
 	// workload
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/workload/{kind}/{bk_biz_id}",
@@ -48,6 +51,12 @@ func (s *coreService) initKube(web *restful.WebService) {
 		Handler: s.UpdateWorkload})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/workload/{kind}/{bk_biz_id}",
 		Handler: s.DeleteWorkload})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/workload/{kind}", Handler: s.ListWorkload})
 
+	// pod
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/pod", Handler: s.ListPod})
+
+	// container
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/container", Handler: s.ListContainer})
 	utility.AddToRestfulWebService(web)
 }

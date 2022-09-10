@@ -40,6 +40,7 @@ type innerStruct struct {
 type cases struct {
 	Spec        `json:",inline" bson:",inline"`
 	IntVal      *int               `json:"int_val" bson:"int_val"`
+	NoPointVal  int                `json:"no_point_val" bson:"no_point_val"`
 	StrVal      *string            `json:"str_val" bson:"str_val"`
 	BoolVal     *bool              `json:"bool_val" bson:"bool_val"`
 	MapVal      *map[string]string `json:"map_val" bson:"map_val"`
@@ -69,6 +70,7 @@ func TestGetUpdateFieldWithOption(t *testing.T) {
 
 	requestData := &cases{
 		IntVal:      &intVal,
+		NoPointVal:  intVal,
 		StrVal:      &strVal,
 		BoolVal:     &boolVal,
 		ArrayVal:    &arrayVal,
@@ -107,6 +109,11 @@ func TestGetUpdateFieldWithOption(t *testing.T) {
 		return
 	}
 
+	if !reflect.DeepEqual(values["no_point_val"], nil) {
+		t.Errorf("get no point value")
+		return
+	}
+
 	if !reflect.DeepEqual(values["str_val"], "stringVal") {
 		t.Errorf("get str_val field failed, not equal")
 		return
@@ -128,8 +135,8 @@ func TestGetUpdateFieldWithOption(t *testing.T) {
 
 	// test nil
 	values, err = GetUpdateFieldsWithOption(nil, opts)
-	if err != nil {
-		t.Logf("can not get nil update field failed, err: %v", err)
+	if err == nil {
+		t.Errorf("get nil update field should have error")
 		return
 	}
 }

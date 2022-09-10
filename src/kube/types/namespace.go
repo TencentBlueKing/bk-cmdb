@@ -83,13 +83,13 @@ const (
 // Namespace define the namespace struct.
 type Namespace struct {
 	ClusterSpec     `json:",inline" bson:",inline"`
-	ID              *int64             `json:"id" bson:"id"`
-	Name            *string            `json:"name" bson:"name"`
-	Labels          *map[string]string `json:"labels" bson:"labels"`
-	ResourceQuotas  *[]ResourceQuota   `json:"resource_quotas" bson:"resource_quotas"`
-	CreateTime      *int64             `json:"create_time" bson:"create_time"`
-	UpdateTime      *int64             `json:"update_time" bson:"update_time"`
-	SupplierAccount *string            `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ID              *int64             `json:"id,omitempty" bson:"id"`
+	Name            *string            `json:"name,omitempty" bson:"name"`
+	Labels          *map[string]string `json:"labels,omitempty" bson:"labels"`
+	ResourceQuotas  *[]ResourceQuota   `json:"resource_quotas,omitempty" bson:"resource_quotas"`
+	SupplierAccount *string            `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	// Revision record this app's revision information
+	table.Revision `json:",inline" bson:",inline"`
 }
 
 // ValidateCreate validate create namespace
@@ -107,9 +107,9 @@ func (ns *Namespace) ValidateCreate() errors.RawErrorInfo {
 		}
 	}
 
-	if ns.Name == nil {
+	if ns.Name == nil || *ns.Name == "" {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{common.BKFieldName},
 		}
 	}
@@ -171,7 +171,7 @@ func (ns *NsUpdateReq) Validate() errors.RawErrorInfo {
 			return err
 		}
 
-		sum += data.Count()
+		sum += len(data.IDs)
 		if sum > NsUpdateLimit {
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommXXExceedLimit,
@@ -183,46 +183,40 @@ func (ns *NsUpdateReq) Validate() errors.RawErrorInfo {
 	return errors.RawErrorInfo{}
 }
 
-// NsUpdateData update namespace struct
-type NsUpdateData struct {
-	ID     []int64    `json:"id"`
-	Unique []NsUnique `json:"unique"`
-	Info   *Namespace `json:"info"`
+// BuildQueryCond build query update namespace condition
+func (ns *NsUpdateReq) BuildQueryCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
+	ids := make([]int64, 0)
+	for _, data := range ns.Data {
+		ids = append(ids, data.IDs...)
+	}
+	cond := mapstr.MapStr{
+		common.BKAppIDField:      bizID,
+		common.BkSupplierAccount: supplierAccount,
+		common.BKFieldID:         mapstr.MapStr{common.BKDBIN: ids},
+	}
+
+	return cond, nil
 }
 
-// Count return namespace update data count
-func (ns *NsUpdateData) Count() int {
-	if len(ns.ID) != 0 {
-		return len(ns.ID)
-	}
-
-	if len(ns.Unique) != 0 {
-		return len(ns.Unique)
-	}
-
-	return 0
+// NsUpdateData update namespace struct
+type NsUpdateData struct {
+	IDs  []int64    `json:"ids"`
+	Info *Namespace `json:"info"`
 }
 
 // Validate validate namespace update data
 func (ns *NsUpdateData) Validate() errors.RawErrorInfo {
-	if len(ns.ID) == 0 && len(ns.Unique) == 0 {
+	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"id and unique"},
+			Args:    []interface{}{"ids"},
 		}
 	}
 
-	if len(ns.ID) != 0 && len(ns.Unique) != 0 {
+	if len(ns.IDs) > NsUpdateLimit {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"id and unique"},
-		}
-	}
-
-	if ns.Info == nil {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"info"},
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"ids", NsUpdateLimit},
 		}
 	}
 
@@ -236,29 +230,14 @@ func (ns *NsUpdateData) Validate() errors.RawErrorInfo {
 type NsUnique struct {
 	ClusterUID string `json:"cluster_uid" bson:"cluster_uid"`
 	Name       string `json:"name" bson:"name"`
-	ID         int64  `json:"id" bson:"id"`
 }
 
 // Validate validate NsUnique
 func (ns *NsUnique) Validate() errors.RawErrorInfo {
-	if ns.Name != "" && ns.ClusterUID != "" && ns.ID != 0 {
+	if ns.ClusterUID == "" || ns.Name == "" {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"data"},
-		}
-	}
-
-	if ns.Name == "" && ns.ClusterUID == "" && ns.ID == 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"data"},
-		}
-	}
-
-	if ns.ID == 0 && (ns.ClusterUID == "" || ns.Name == "") {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"data"},
+			Args:    []interface{}{"uniques"},
 		}
 	}
 
@@ -267,32 +246,36 @@ func (ns *NsUnique) Validate() errors.RawErrorInfo {
 
 // NsDeleteReq delete namespace request
 type NsDeleteReq struct {
-	Data []NsUnique `json:"data"`
+	IDs []int64 `json:"ids"`
 }
 
 // Validate validate NsDeleteReq
 func (ns *NsDeleteReq) Validate() errors.RawErrorInfo {
-	if len(ns.Data) == 0 {
+	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"data"},
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"ids"},
 		}
 	}
 
-	if len(ns.Data) > NsDeleteLimit {
+	if len(ns.IDs) > NsDeleteLimit {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommXXExceedLimit,
-			Args:    []interface{}{"data", NsDeleteLimit},
-		}
-	}
-
-	for _, data := range ns.Data {
-		if err := data.Validate(); err.ErrCode != 0 {
-			return err
+			Args:    []interface{}{"ids", NsDeleteLimit},
 		}
 	}
 
 	return errors.RawErrorInfo{}
+}
+
+// BuildCond build delete namespace condition
+func (ns *NsDeleteReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
+	cond := mapstr.MapStr{
+		common.BKAppIDField:      bizID,
+		common.BkSupplierAccount: supplierAccount,
+		common.BKFieldID:         mapstr.MapStr{common.BKDBIN: ns.IDs},
+	}
+	return cond, nil
 }
 
 // NsCreateReq create namespace request
@@ -382,4 +365,15 @@ func (ns *NsQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.Map
 		cond = mapstr.MapStr{common.BKDBAND: []mapstr.MapStr{cond, filterCond}}
 	}
 	return cond, nil
+}
+
+// NsInstResp namespace instance response
+type NsInstResp struct {
+	metadata.BaseResp `json:",inline"`
+	Data              NsDataResp `json:"data"`
+}
+
+// NsDataResp namespace data
+type NsDataResp struct {
+	Data []Namespace `json:"data"`
 }

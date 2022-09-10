@@ -56,7 +56,7 @@ func GetUpdateFieldsWithOption(data interface{}, opts *FieldOption) (map[string]
 // getUpdateFields get update fields from object.
 // 1. the input v can only be struct or *struct.
 // 2. fields with a bson value of ',inline' must be pointers or struct.
-// 3. unless the value of bson tag is ',inline', the fields in the struct can only be pointers
+// 3. if the value is not pointers type, it will ignore this field, unless the value of bson tag is ',inline'.
 // 4. when the value of bson tag is ',inline', it will pick up the value inside and level with the outer layer.
 // 5. except for the field whose bson value of tag is', inline', it only determines whether the outermost
 // field needs to be updated.
@@ -99,7 +99,7 @@ func getUpdateFields(v interface{}) (map[string]interface{}, error) {
 		}
 
 		if fieldVal.Kind() != reflect.Ptr {
-			return nil, fmt.Errorf("the struct field should be pointer type, field: %s", name)
+			continue
 		}
 
 		if fieldVal.IsNil() {

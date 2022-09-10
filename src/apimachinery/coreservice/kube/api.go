@@ -126,6 +126,31 @@ func (k *kube) DeleteNamespace(ctx context.Context, header http.Header, bizID in
 	return nil
 }
 
+// ListNamespace list namespace
+func (k *kube) ListNamespace(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
+	*types.NsDataResp, errors.CCErrorCoder) {
+	result := types.NsInstResp{}
+
+	subPath := "/findmany/namespace"
+	err := k.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&result)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if ccErr := result.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return &result.Data, nil
+}
+
 // CreateWorkload create workload
 func (k *kube) CreateWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
 	option *types.WlCreateReq) (*types.WlCreateRespData, errors.CCErrorCoder) {
@@ -197,4 +222,83 @@ func (k *kube) DeleteWorkload(ctx context.Context, header http.Header, bizID int
 	}
 
 	return nil
+}
+
+// ListWorkload list workload
+func (k *kube) ListWorkload(ctx context.Context, header http.Header, input *metadata.QueryCondition,
+	kind types.WorkloadType) (*types.WlDataResp, errors.CCErrorCoder) {
+	result := types.WlInstResp{
+		Data: types.WlDataResp{
+			Kind: kind,
+		},
+	}
+
+	subPath := "/findmany/workload/%s"
+	err := k.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, kind).
+		WithHeaders(header).
+		Do().
+		Into(&result)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if ccErr := result.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return &result.Data, nil
+}
+
+// ListPod list Pod
+func (k *kube) ListPod(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
+	*types.PodDataResp, errors.CCErrorCoder) {
+	result := types.PodInstResp{}
+
+	subPath := "/findmany/pod"
+	err := k.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&result)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if ccErr := result.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return &result.Data, nil
+}
+
+// ListContainer list Container
+func (k *kube) ListContainer(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
+	*types.ContainerDataResp, errors.CCErrorCoder) {
+	result := types.ContainerInstResp{}
+
+	subPath := "/findmany/container"
+	err := k.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&result)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if ccErr := result.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return &result.Data, nil
 }

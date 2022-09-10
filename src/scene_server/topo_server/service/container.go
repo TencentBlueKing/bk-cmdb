@@ -89,22 +89,17 @@ func (s *Service) ListContainer(ctx *rest.Contexts) {
 	}
 
 	query := &metadata.QueryCondition{
-		Condition:      cond,
-		Page:           req.Page,
-		Fields:         req.Fields,
-		DisableCounter: true,
+		Condition: cond,
+		Page:      req.Page,
+		Fields:    req.Fields,
 	}
 
-	option := &types.QueryReq{
-		Table:     types.BKTableNameBaseContainer,
-		Condition: query,
-	}
-	res, err := s.Engine.CoreAPI.CoreService().Kube().FindInst(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListContainer(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		blog.Errorf("find container failed, cond: %v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(res)
+	ctx.RespEntityWithCount(0, resp.Info)
 }

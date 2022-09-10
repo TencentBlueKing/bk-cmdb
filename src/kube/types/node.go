@@ -57,18 +57,18 @@ var NodeSpecFieldsDescriptor = table.FieldsDescriptors{
 // Node node structural description.
 type Node struct {
 	// ID cluster auto-increment ID in cc
-	ID int64 `json:"id" bson:"id"`
+	ID int64 `json:"id,omitempty" bson:"id"`
 	// BizID the business ID to which the cluster belongs
-	BizID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
+	BizID int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
 
 	// HostID the node ID to which the host belongs
-	HostID int64 `json:"bk_host_id" bson:"bk_host_id"`
+	HostID int64 `json:"bk_host_id,omitempty" bson:"bk_host_id"`
 	// ClusterID the node ID to which the cluster belongs
-	ClusterID int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
+	ClusterID int64 `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
 	// ClusterUID the node ID to which the cluster belongs
-	ClusterUID string `json:"cluster_uid" bson:"cluster_uid"`
+	ClusterUID string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
 	// SupplierAccount the supplier account that this resource belongs to.
-	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	SupplierAccount string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 	// NodeFields node base fields
 	NodeBaseFields `json:",inline" bson:",inline"`
 	// Revision record this app's revision information
@@ -80,18 +80,18 @@ type NodeBaseFields struct {
 	// HasPod this field indicates whether there is a pod in the node.
 	// if there is a pod, this field is true. If there is no pod, this
 	// field is false. this field is false when node is created by default.
-	HasPod           *bool                 `json:"has_pod" bson:"has_pod"`
-	Name             *string               `json:"name" bson:"name"`
-	Roles            *string               `json:"roles" bson:"roles"`
-	Labels           *enumor.MapStringType `json:"labels" bson:"labels"`
-	Taints           *enumor.MapStringType `json:"taints" bson:"taints"`
-	Unschedulable    *bool                 `json:"unschedulable" bson:"unschedulable"`
-	InternalIP       *[]string             `json:"internal_ip" bson:"internal_ip"`
-	ExternalIP       *[]string             `json:"external_ip" bson:"external_ip"`
-	HostName         *string               `json:"hostname" bson:"hostname"`
-	RuntimeComponent *string               `json:"runtime_component" bson:"runtime_component"`
-	KubeProxyMode    *string               `json:"kube_proxy_mode" bson:"kube_proxy_mode"`
-	PodCidr          *string               `json:"pod_cidr" bson:"pod_cidr"`
+	HasPod           *bool                 `json:"has_pod,omitempty" bson:"has_pod"`
+	Name             *string               `json:"name,omitempty" bson:"name"`
+	Roles            *string               `json:"roles,omitempty" bson:"roles"`
+	Labels           *enumor.MapStringType `json:"labels,omitempty" bson:"labels"`
+	Taints           *enumor.MapStringType `json:"taints,omitempty" bson:"taints"`
+	Unschedulable    *bool                 `json:"unschedulable,omitempty" bson:"unschedulable"`
+	InternalIP       *[]string             `json:"internal_ip,omitempty" bson:"internal_ip"`
+	ExternalIP       *[]string             `json:"external_ip,omitempty" bson:"external_ip"`
+	HostName         *string               `json:"hostname,omitempty" bson:"hostname"`
+	RuntimeComponent *string               `json:"runtime_component,omitempty" bson:"runtime_component"`
+	KubeProxyMode    *string               `json:"kube_proxy_mode,omitempty" bson:"kube_proxy_mode"`
+	PodCidr          *string               `json:"pod_cidr,omitempty" bson:"pod_cidr"`
 }
 
 // UpdateValidate verifying the validity of parameters for updating node scenarios
