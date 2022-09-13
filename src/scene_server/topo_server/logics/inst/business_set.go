@@ -69,7 +69,7 @@ func (b *businessSet) CreateBusinessSet(kit *rest.Kit, data *metadata.CreateBizS
 
 	if resp.Count > 0 {
 		blog.Errorf("biz set name has been created, num: %d, err: %v, rid: %s", resp.Count, err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrTopoInstCreateFailed, "biz set name has been created")
+		return nil, kit.CCError.CCErrorf(common.CCErrorBizSetNameDuplicated)
 	}
 
 	data.BizSetAttr[common.BKBizSetScopeField] = data.BizSetScope
