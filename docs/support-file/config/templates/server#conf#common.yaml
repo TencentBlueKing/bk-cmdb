@@ -11,7 +11,7 @@ es:
   pwd: __BK_CMDB_ES7_PASSWORD__
 
 # esb配置
-  esb:
+esb:
   addr: http://__BK_PAAS_PRIVATE_ADDR__
   appCode: __BK_CMDB_APP_CODE__
   appSecret: __BK_CMDB_APP_SECRET__
