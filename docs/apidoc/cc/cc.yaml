@@ -1296,3 +1296,25 @@
   dest_path: /api/v3/event/push/host_identifier
   dest_http_method: POST
   is_hidden: true
+
+- path: /v2/cc/add_cloud_host_to_biz/
+  name: add_cloud_host_to_biz
+  label: 新增云主机到业务的空闲机模块
+  label_en: add cloud host to biz idle module
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/createmany/cloud_hosts
+  dest_http_method: POST
+  is_hidden: true
+
+- path: /v2/cc/delete_cloud_host_from_biz/
+  name: delete_cloud_host_from_biz
+  label: 从业务空闲机集群删除云主机
+  label_en: delete cloud host from biz idle set
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/deletemany/cloud_hosts
+  dest_http_method: DELETE
+  is_hidden: true
