@@ -24,6 +24,7 @@ import (
 type associationModel struct {
 }
 
+// CreateModelAssociation TODO
 func (m *associationModel) CreateModelAssociation(kit *rest.Kit, inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {
 	enableMainlineAssociationType := false
 	return m.createModelAssociation(kit, inputParam, enableMainlineAssociationType)
@@ -91,6 +92,7 @@ func (m *associationModel) createModelAssociation(kit *rest.Kit, inputParam meta
 	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, nil
 }
 
+// SetModelAssociation TODO
 func (m *associationModel) SetModelAssociation(kit *rest.Kit, inputParam metadata.SetModelAssociation) (*metadata.SetDataResult, error) {
 
 	// TODO: need to care instance association, which used this model association
@@ -98,6 +100,7 @@ func (m *associationModel) SetModelAssociation(kit *rest.Kit, inputParam metadat
 	return nil, nil
 }
 
+// UpdateModelAssociation TODO
 func (m *associationModel) UpdateModelAssociation(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
 	// ATTENTION: only to update the fields except bk_obj_asst_id, bk_obj_id, bk_asst_obj_id
@@ -138,6 +141,7 @@ func (m *associationModel) UpdateModelAssociation(kit *rest.Kit, inputParam meta
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
+// SearchModelAssociation TODO
 func (m *associationModel) SearchModelAssociation(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 
 	searchCond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
@@ -176,6 +180,7 @@ func (m *associationModel) CountModelAssociations(kit *rest.Kit, input *metadata
 	return &metadata.CommonCountResult{Count: count}, nil
 }
 
+// DeleteModelAssociation TODO
 func (m *associationModel) DeleteModelAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	// read all model associations
@@ -216,6 +221,7 @@ func (m *associationModel) DeleteModelAssociation(kit *rest.Kit, inputParam meta
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
+// CascadeDeleteModelAssociation TODO
 func (m *associationModel) CascadeDeleteModelAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	// read all model associations

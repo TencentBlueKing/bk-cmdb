@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package hostserver TODO
 package hostserver
 
 import (
@@ -25,6 +26,7 @@ import (
 	"configcenter/src/kube/types"
 )
 
+// HostServerClientInterface TODO
 type HostServerClientInterface interface {
 	DeleteHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetHostInstanceProperties(ctx context.Context, ownerID string, hostID string, h http.Header) (resp *metadata.HostInstancePropertiesResult, err error)
@@ -60,6 +62,7 @@ type HostServerClientInterface interface {
 	UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	UpdateHostPropertyBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 
+	// CreateDynamicGroup TODO
 	// dynamic group interfaces.
 	CreateDynamicGroup(ctx context.Context, header http.Header, data map[string]interface{}) (resp *metadata.IDResult, err error)
 	UpdateDynamicGroup(ctx context.Context, bizID, id string, header http.Header, data map[string]interface{}) (resp *metadata.BaseResp, err error)
@@ -83,6 +86,7 @@ type HostServerClientInterface interface {
 		errors.CCErrorCoder)
 }
 
+// NewHostServerClientInterface TODO
 func NewHostServerClientInterface(c *util.Capability, version string) HostServerClientInterface {
 	base := fmt.Sprintf("/host/%s", version)
 	return &hostServer{

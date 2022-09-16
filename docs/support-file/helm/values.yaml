@@ -1233,7 +1233,7 @@ common:
     session:
       name: cc3
       multipleOwner: "0"
-      userInfo: cc:cc
+      userInfo:
     ## webserver common config app parameters
     ## @param common.webServer.app.authAppCode bk-iam app code
     ## @param common.webServer.app.authUrl bk-iam url
@@ -1248,7 +1248,7 @@ common:
     ## @param common.webServer.login.version bk-cmdb login mode
     ##
     login:
-      version: opensource
+      version: skip-login
   ## monitor common config parameters
   ##
   monitor:
@@ -1304,10 +1304,16 @@ common:
     ## 日志平台openTelemetry跟踪链功能的自定义上报服务地址
     ##
     endpoint:
-    ## @param common.openTelemetry.bkDataID the bkDataID about tracking chain function
-    ## 日志平台openTelemetry跟踪链功能的上报data_id
+    ## @param common.openTelemetry.bkDataID the bkDataID about tracking chain function，
+    ## used for data reporting of the old version
+    ## 日志平台openTelemetry跟踪链功能的上报data_id，用于旧版的数据上报
     ##
     bkDataID:
+    ## @param common.openTelemetry.bkDataToken the bk.data.token about tracking chain function
+    ## 日志平台openTelemetry跟踪链功能的bk.data.token，用于新版的数据上报
+    ## used for data reporting of the new version
+    ##
+    bkDataToken:
     ## @param common.openTelemetry.tls.insecureSkipVerify openTelemetry insecureSkipVerify config
     ## @param common.openTelemetry.tls.certFile openTelemetry certFile
     ## @param common.openTelemetry.tls.keyFile openTelemetry keyFile
@@ -1494,7 +1500,7 @@ mongodb:
   auth:
     enabled: true
     username: cc
-    password: cc
+    password:
     database: cmdb
   ## @param mongodb.host mongodb host
   ##
@@ -1583,7 +1589,7 @@ redis:
   ## @param redis.auth.password redis authentication password
   auth:
     enabled: true
-    password: blueking
+    password:
   ## external redis parameters
   ##
   redis:

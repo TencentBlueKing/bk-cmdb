@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package user TODO
 package user
 
 import (
@@ -22,13 +23,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// LoginInterface TODO
 // User 登录系统抽象出来接口
 type LoginInterface interface {
-	// 判断用户是否登录
+	// LoginUser 判断用户是否登录
 	LoginUser(c *gin.Context) (isLogin bool)
-	// 获取登录系统的URL
+	// GetLoginUrl 获取登录系统的URL
 	GetLoginUrl(c *gin.Context) string
-	// 获取不同登录方式下对应的用户列表
+	// GetUserList 获取不同登录方式下对应的用户列表
 	GetUserList(c *gin.Context) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo)
 }
 

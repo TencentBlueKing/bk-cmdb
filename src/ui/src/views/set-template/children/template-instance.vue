@@ -117,9 +117,11 @@
         <cmdb-table-empty slot="empty" :stuff="table.stuff">
           <div>
             <i18n path="空集群模板实例提示" tag="div">
-              <bk-button style="font-size: 14px;" text @click="handleLinkServiceTopo" place="link">
-                {{$t('业务拓扑')}}
-              </bk-button>
+              <template #link>
+                <bk-button style="font-size: 14px;" text @click="handleLinkServiceTopo">
+                  {{$t('业务拓扑')}}
+                </bk-button>
+              </template>
             </i18n>
           </div>
         </cmdb-table-empty>

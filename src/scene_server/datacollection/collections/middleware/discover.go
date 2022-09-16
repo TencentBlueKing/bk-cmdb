@@ -23,6 +23,7 @@ import (
 	"configcenter/src/storage/dal/redis"
 )
 
+// Discover TODO
 type Discover struct {
 	ctx        context.Context
 	httpHeader http.Header
@@ -79,6 +80,7 @@ func (d *Discover) Analyze(msg *string) (bool, error) {
 	return false, nil
 }
 
+// MockMessage TODO
 var MockMessage = `{
     "meta": {
         "model": {

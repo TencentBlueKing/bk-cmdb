@@ -210,6 +210,7 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 	return inst, nil
 }
 
+// checkModuleServiceTemplate TODO
 // validate service category id and service template id
 // 如果服务分类没有设置，则从服务模版中获取，如果服务模版也没有设置，则参数错误
 // 有效参数参数形式:
@@ -554,9 +555,30 @@ func (m *module) validUpdateModuleDataWithTemplateAttr(kit *rest.Kit, bizID int6
 
 	fields := bytes.Buffer{}
 	for _, attr := range attrs.Info {
-		if reflect.DeepEqual(data[attr.PropertyID], moduleData[attr.PropertyID]) {
-			continue
+		switch attr.PropertyType {
+		case common.FieldTypeTime:
+			// convert property value to time type for comparison
+			updateVal, err := util.ConvToTime(data[attr.PropertyID])
+			if err != nil {
+				blog.Errorf("parse updated value(%+v) failed, err: %v, rid: %s", data[attr.PropertyID], err, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, attr.PropertyID)
+			}
+
+			prevVal, err := util.ConvToTime(moduleData[attr.PropertyID])
+			if err != nil {
+				blog.Errorf("parse prev value(%+v) failed, err: %v, rid: %s", moduleData[attr.PropertyID], err, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, attr.PropertyID)
+			}
+
+			if reflect.DeepEqual(prevVal, updateVal) {
+				continue
+			}
+		default:
+			if reflect.DeepEqual(data[attr.PropertyID], moduleData[attr.PropertyID]) {
+				continue
+			}
 		}
+
 		fields.WriteString(attr.PropertyID)
 		fields.WriteByte(',')
 	}

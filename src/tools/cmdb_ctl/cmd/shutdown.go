@@ -31,6 +31,7 @@ type shutdownConf struct {
 	pids     string
 }
 
+// NewShutdownCommand TODO
 func NewShutdownCommand() *cobra.Command {
 	conf := new(shutdownConf)
 

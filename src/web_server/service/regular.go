@@ -132,6 +132,7 @@ type verifyRegularExpressDataResult struct {
 	InvalidReason string `json:"invalid_reason"`
 }
 
+// VerifyRegularContentBatchRequest TODO
 type VerifyRegularContentBatchRequest struct {
 	Items []struct {
 		Regular string `json:"regular"`
@@ -139,6 +140,7 @@ type VerifyRegularContentBatchRequest struct {
 	} `json:"items"`
 }
 
+// VerifyRegularExpressRequest TODO
 type VerifyRegularExpressRequest struct {
 	Regular string `json:"regular"`
 }

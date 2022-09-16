@@ -42,10 +42,11 @@ type HostInterface interface {
 	// CreateHostBatch create host
 	CreateHostBatch(bizID int64, moduleIDS []int64, data ...types.MapStr) ([]int, error)
 
+	// UpdateHostBatch TODO
 	// update update host by hostID, hostID could be separated by a comma
 	UpdateHostBatch(data types.MapStr, hostID string) error
 
-	// DeleteHost delete host by hostID, hostID could be separated by a comma
+	// DeleteHostBatch delete host by hostID, hostID could be separated by a comma
 	DeleteHostBatch(hostID string) error
 
 	// TransferHostToBusinessModule transfer host to business module
@@ -80,7 +81,7 @@ func newHost(cli *Client) *Host {
 	}
 }
 
-// TransferHostModule transfer hosts to another modules in the same business
+// TransferHostToBusinessModule transfer hosts to another modules in the same business
 func (h *Host) TransferHostToBusinessModule(bizID int64, hostIDS []int64, newModuleIDS []int64, isIncrement bool) error {
 
 	params := types.MapStr{}
@@ -252,9 +253,9 @@ func (h *Host) CreateHostBatch(bizID int64, moduleIDS []int64, data ...types.Map
 		infos[index] = data[index]
 	}
 	param := types.MapStr{
-		"bk_biz_id":      bizID,
-		"bk_module_id":   moduleIDS,
-		"host_info":      infos,
+		"bk_biz_id":    bizID,
+		"bk_module_id": moduleIDS,
+		"host_info":    infos,
 	}
 	targetURL := fmt.Sprintf("%s/api/v3/hosts/sync/new/host", h.cli.GetAddress())
 	rst, err := h.cli.httpCli.POST(targetURL, nil, param.ToJSON())
@@ -383,7 +384,7 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 		log.Errorf("json error: %v", err)
 	}
 
-	//fmt.Printf("search host param:%s\n", out)
+	// fmt.Printf("search host param:%s\n", out)
 
 	targetURL := fmt.Sprintf("%s/api/v3/hosts/search", h.cli.GetAddress())
 	rst, err := h.cli.httpCli.POST(targetURL, nil, out)
@@ -445,7 +446,7 @@ func (h *Host) SearchHost(cond common.Condition) ([]types.MapStr, error) {
 
 	}
 
-	//fmt.Println("host data:", resultMap)
+	// fmt.Println("host data:", resultMap)
 
 	return resultMap, err
 }

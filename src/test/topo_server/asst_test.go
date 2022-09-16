@@ -316,7 +316,7 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(false))
 	})
 
-	//check "SearchAssociationRelatedInst" features available.
+	// check "SearchAssociationRelatedInst" features available.
 	It("search inst association related", func() {
 		input := &metadata.SearchAssociationRelatedInstRequest{
 			Fields: []string{
@@ -343,7 +343,7 @@ var _ = Describe("inst test", func() {
 		Expect(len(rsp.Data)).To(Equal(2))
 		Expect(rsp.Data[0].ObjectAsstID).To(Equal("bk_router_default_bk_switch"))
 	})
-	//check "SearchAssociationRelatedInst" "limit-check<=500" function.
+	// check "SearchAssociationRelatedInst" "limit-check<=500" function.
 	It("search inst association related", func() {
 		input := &metadata.SearchAssociationRelatedInstRequest{
 			Fields: []string{
@@ -368,7 +368,7 @@ var _ = Describe("inst test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
-	//check "SearchAssociationRelatedInst" "fields can not be empty." function.
+	// check "SearchAssociationRelatedInst" "fields can not be empty." function.
 	It("search inst association related", func() {
 		input := &metadata.SearchAssociationRelatedInstRequest{
 			Fields: []string{},
@@ -682,7 +682,7 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(false))
 	})
 
-	//check "DeleteInstBatch" "the number of IDs should be less than 500." function.
+	// check "DeleteInstBatch" "the number of IDs should be less than 500." function.
 	It("delete inst association batch", func() {
 		list := make([]int64, 501, 501)
 		input := &metadata.DeleteAssociationInstBatchRequest{
@@ -694,7 +694,7 @@ var _ = Describe("inst test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
-	//check "DeleteInstBatch" necessary input: bk_obj_id
+	// check "DeleteInstBatch" necessary input: bk_obj_id
 	It("delete inst association batch", func() {
 		input := &metadata.DeleteAssociationInstBatchRequest{
 			ID:       []int64{instAsst1, instAsst2},
@@ -705,7 +705,7 @@ var _ = Describe("inst test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
-	//check "DeleteInstBatch" features available.
+	// check "DeleteInstBatch" features available.
 	It("delete inst association batch", func() {
 		input := &metadata.DeleteAssociationInstBatchRequest{
 			ID:       []int64{instAsst1, instAsst2, instAsst3, instAsst4, instAsst5},

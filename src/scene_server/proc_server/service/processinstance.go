@@ -32,6 +32,7 @@ import (
 	processhook "configcenter/src/thirdparty/hooks/process"
 )
 
+// CreateProcessInstances TODO
 func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 	input := new(metadata.CreateRawProcessInstanceInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -151,6 +152,7 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 	return processIDs, nil
 }
 
+// UpdateProcessInstancesByIDs TODO
 func (ps *ProcServer) UpdateProcessInstancesByIDs(ctx *rest.Contexts) {
 	input := metadata.UpdateProcessByIDsInput{}
 	if err := ctx.DecodeInto(&input); err != nil {
@@ -255,6 +257,7 @@ func (ps *ProcServer) UpdateProcessInstancesByIDs(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateProcessInstances TODO
 func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 	input := metadata.UpdateRawProcessInstanceInput{}
 	if err := ctx.DecodeInto(&input); err != nil {
@@ -659,6 +662,7 @@ func (ps *ProcServer) validateProcessInstance(kit *rest.Kit, process *metadata.P
 	return nil
 }
 
+// DeleteProcessInstance TODO
 func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 	input := new(metadata.DeleteProcessInstanceInServiceInstanceInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -860,6 +864,7 @@ func (ps *ProcServer) checkIfSvcInstNeedCascadeDelete(kit *rest.Kit, bizID int64
 	return updatedSvcInstIDs, delSvcInstIDs, nil
 }
 
+// ListProcessInstances TODO
 func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {
 	input := new(metadata.ListProcessInstancesOption)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -1588,8 +1593,10 @@ func (ps *ProcServer) ListProcessInstancesDetails(ctx *rest.Contexts) {
 	ctx.RespEntity(processResult.Info)
 }
 
+// UnbindServiceTemplateOnModuleEnable TODO
 var UnbindServiceTemplateOnModuleEnable = true
 
+// RemoveTemplateBindingOnModule TODO
 func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
 	if UnbindServiceTemplateOnModuleEnable {
 		ctx.RespErrorCodeOnly(common.CCErrProcUnbindModuleServiceTemplateDisabled, "unbind service template from module disabled")

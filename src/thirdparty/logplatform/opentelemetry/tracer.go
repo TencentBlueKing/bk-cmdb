@@ -51,6 +51,7 @@ func InitTracer(ctx context.Context) error {
 		semconv.SchemaURL,
 		semconv.ServiceNameKey.String(serviceName()),
 		attribute.Key("bk_data_id").Int64(openTelemetryCfg.bkDataID),
+		attribute.Key("bk.data.token").String(openTelemetryCfg.bkDataToken),
 	)
 
 	// 初始化Trace配置

@@ -14,6 +14,7 @@ package types
 
 import "configcenter/src/framework/core/types"
 
+// CreateInstanceCtx TODO
 type CreateInstanceCtx struct {
 	BaseCtx
 	Tenancy  string
@@ -21,6 +22,7 @@ type CreateInstanceCtx struct {
 	Instance types.MapStr
 }
 
+// CreateInstanceResult TODO
 type CreateInstanceResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
@@ -28,6 +30,7 @@ type CreateInstanceResult struct {
 	} `json:"data"`
 }
 
+// ListInstanceCtx TODO
 type ListInstanceCtx struct {
 	BaseCtx
 	Tenancy  string
@@ -35,6 +38,7 @@ type ListInstanceCtx struct {
 	Filter   Query
 }
 
+// QueryInstance TODO
 type QueryInstance struct {
 	Page   Page     `json:"page"`
 	Fields []string `json:"fields"`
@@ -42,22 +46,25 @@ type QueryInstance struct {
 	Condition map[string][]QueryVerb `json:"condition"`
 }
 
+// ListInstanceResult TODO
 type ListInstanceResult struct {
 	BaseResp `json:",inline"`
 	Data     ListInfo `json:"data"`
 }
 
+// UpdateObjectCtx TODO
 type UpdateObjectCtx struct {
-    BaseCtx
-    Tenancy string
-    ObjectID string 
-    InstanceID int64
-    Object types.MapStr
+	BaseCtx
+	Tenancy    string
+	ObjectID   string
+	InstanceID int64
+	Object     types.MapStr
 }
 
+// DeleteObjectCtx TODO
 type DeleteObjectCtx struct {
-    BaseCtx
-    Tenancy string
-    ObjectID string
-    InstanceID int64
+	BaseCtx
+	Tenancy    string
+	ObjectID   string
+	InstanceID int64
 }

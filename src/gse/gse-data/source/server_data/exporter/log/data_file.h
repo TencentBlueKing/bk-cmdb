@@ -14,7 +14,7 @@
 #define __GSE_DATA_EXPORTER_DATA_FILE__
 
 namespace gse {
-namespace dataserver {
+namespace data {
 
 class DataLog {
 public:

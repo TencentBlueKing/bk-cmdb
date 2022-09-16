@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateServiceInstance TODO
 func (s *coreService) CreateServiceInstance(ctx *rest.Contexts) {
 	instance := new(metadata.ServiceInstance)
 	if err := ctx.DecodeInto(instance); err != nil {
@@ -38,6 +39,7 @@ func (s *coreService) CreateServiceInstance(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// CreateServiceInstances TODO
 func (s *coreService) CreateServiceInstances(ctx *rest.Contexts) {
 	instances := []*metadata.ServiceInstance{}
 	if err := ctx.DecodeInto(&instances); err != nil {
@@ -54,6 +56,7 @@ func (s *coreService) CreateServiceInstances(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// ConstructServiceInstanceName TODO
 func (s *coreService) ConstructServiceInstanceName(ctx *rest.Contexts) {
 	params := new(metadata.SrvInstNameParams)
 	if err := ctx.DecodeInto(params); err != nil {
@@ -70,6 +73,7 @@ func (s *coreService) ConstructServiceInstanceName(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// ReconstructServiceInstanceName TODO
 func (s *coreService) ReconstructServiceInstanceName(ctx *rest.Contexts) {
 	serviceInstanceIDStr := ctx.Request.PathParameter(common.BKServiceInstanceIDField)
 	if len(serviceInstanceIDStr) == 0 {
@@ -92,6 +96,7 @@ func (s *coreService) ReconstructServiceInstanceName(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// GetServiceInstance TODO
 func (s *coreService) GetServiceInstance(ctx *rest.Contexts) {
 	serviceInstanceIDStr := ctx.Request.PathParameter(common.BKServiceInstanceIDField)
 	if len(serviceInstanceIDStr) == 0 {
@@ -116,6 +121,7 @@ func (s *coreService) GetServiceInstance(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// ListServiceInstances TODO
 func (s *coreService) ListServiceInstances(ctx *rest.Contexts) {
 	// filter parameter
 	fp := metadata.ListServiceInstanceOption{}
@@ -140,6 +146,7 @@ func (s *coreService) ListServiceInstances(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// ListServiceInstanceDetail TODO
 func (s *coreService) ListServiceInstanceDetail(ctx *rest.Contexts) {
 	// filter parameter
 	fp := metadata.ListServiceInstanceDetailOption{}
@@ -165,6 +172,7 @@ func (s *coreService) ListServiceInstanceDetail(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateServiceInstances TODO
 func (s *coreService) UpdateServiceInstances(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	if len(bizIDStr) == 0 {
@@ -196,6 +204,7 @@ func (s *coreService) UpdateServiceInstances(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// DeleteServiceInstance TODO
 func (s *coreService) DeleteServiceInstance(ctx *rest.Contexts) {
 	option := metadata.CoreDeleteServiceInstanceOption{}
 	if err := ctx.DecodeInto(&option); err != nil {
@@ -212,6 +221,7 @@ func (s *coreService) DeleteServiceInstance(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// GetBusinessDefaultSetModuleInfo TODO
 func (s *coreService) GetBusinessDefaultSetModuleInfo(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	if len(bizIDStr) == 0 {
@@ -245,6 +255,7 @@ func (s *coreService) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostIDs
 	return nil
 }
 
+// RemoveTemplateBindingOnModule TODO
 func (s *coreService) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
 	moduleIDStr := ctx.Request.PathParameter(common.BKModuleIDField)
 	moduleID, err := strconv.ParseInt(moduleIDStr, 10, 64)

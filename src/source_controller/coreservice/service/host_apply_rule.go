@@ -24,6 +24,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// CreateHostApplyRule TODO
 func (s *coreService) CreateHostApplyRule(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -47,6 +48,7 @@ func (s *coreService) CreateHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateHostApplyRule TODO
 func (s *coreService) UpdateHostApplyRule(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -117,7 +119,7 @@ func (s *coreService) updateModuleHostApplyStatus(kit *rest.Kit, bizID int64, mo
 	return nil
 }
 
-// updateServiceTemplateHostApplyStatus after judging the host automatic application rule corresponding to the deleted
+// updateTemplateHostApplyStatus after judging the host automatic application rule corresponding to the deleted
 // template, whether the template has other corresponding host automatic application rules in the cc_HostApplyRule
 // table, if not, the host automatic application state corresponding to this template needs to be turned off.
 func (s *coreService) updateTemplateHostApplyStatus(kit *rest.Kit, bizID int64, serviceTemplateIDs []int64,
@@ -176,6 +178,7 @@ func (s *coreService) updateHostApplyEnableStatus(kit *rest.Kit, bizID int64,
 	return nil
 }
 
+// DeleteHostApplyRule TODO
 func (s *coreService) DeleteHostApplyRule(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -205,6 +208,7 @@ func (s *coreService) DeleteHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// GetHostApplyRule TODO
 func (s *coreService) GetHostApplyRule(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -229,6 +233,7 @@ func (s *coreService) GetHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(rule)
 }
 
+// ListHostApplyRule TODO
 func (s *coreService) ListHostApplyRule(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -252,6 +257,7 @@ func (s *coreService) ListHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(hostApplyRuleResult)
 }
 
+// GenerateApplyPlan TODO
 func (s *coreService) GenerateApplyPlan(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -275,6 +281,7 @@ func (s *coreService) GenerateApplyPlan(ctx *rest.Contexts) {
 	ctx.RespEntity(applyPlans)
 }
 
+// SearchRuleRelatedModules TODO
 func (s *coreService) SearchRuleRelatedModules(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -298,6 +305,7 @@ func (s *coreService) SearchRuleRelatedModules(ctx *rest.Contexts) {
 	ctx.RespEntity(modules)
 }
 
+// BatchUpdateHostApplyRule TODO
 func (s *coreService) BatchUpdateHostApplyRule(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -321,6 +329,7 @@ func (s *coreService) BatchUpdateHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateHostByHostApplyRule TODO
 func (s *coreService) UpdateHostByHostApplyRule(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -354,7 +363,7 @@ func (s *coreService) UpdateHostByHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-// SearchRuleRelatedServiceTemplate search rule related service templates
+// SearchRuleRelatedServiceTemplates search rule related service templates
 func (s *coreService) SearchRuleRelatedServiceTemplates(ctx *rest.Contexts) {
 	option := metadata.RuleRelatedServiceTemplateOption{}
 	if err := ctx.DecodeInto(&option); err != nil {

@@ -15,10 +15,11 @@ package common
 import (
 	"configcenter/src/common"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
 
+// SetProxyHeader TODO
 func SetProxyHeader(c *gin.Context) {
 	// http request header add user
 	session := sessions.Default(c)
@@ -32,6 +33,7 @@ func SetProxyHeader(c *gin.Context) {
 	c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
 }
 
+// GetLanguageByHTTPRequest TODO
 func GetLanguageByHTTPRequest(c *gin.Context) string {
 
 	cookieLanguage, err := c.Cookie(common.BKHTTPCookieLanugageKey)

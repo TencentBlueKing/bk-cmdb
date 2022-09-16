@@ -70,6 +70,7 @@ func (lgc *Logics) GetResourcePoolModuleID(kit *rest.Kit, condition mapstr.MapSt
 	return -1, "", kit.CCError.Error(common.CCErrTopoGetAppFailed)
 }
 
+// GetNormalModuleByModuleID TODO
 func (lgc *Logics) GetNormalModuleByModuleID(kit *rest.Kit, appID, moduleID int64) ([]mapstr.MapStr, errors.CCError) {
 	query := &metadata.QueryCondition{
 		Page:      metadata.BasePage{Start: 0, Limit: 1, Sort: common.BKModuleIDField},
@@ -80,13 +81,13 @@ func (lgc *Logics) GetNormalModuleByModuleID(kit *rest.Kit, appID, moduleID int6
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
 		query)
 	if err != nil {
-		blog.Errorf("GetNormalModuleByModuleID http do error, err:%s,input:%#v,rid:%s", err.Error(), query, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		return nil, kit.CCError.Errorf(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	return result.Info, nil
 }
 
+// GetModuleIDByCond TODO
 func (lgc *Logics) GetModuleIDByCond(kit *rest.Kit, cond metadata.ConditionWithTime) (
 	[]int64, errors.CCError) {
 
@@ -156,6 +157,7 @@ func (lgc *Logics) GetModuleMapByCond(kit *rest.Kit, fields []string, cond mapst
 	return moduleMap, nil
 }
 
+// GetModuleIDAndIsInternal TODO
 func (lgc *Logics) GetModuleIDAndIsInternal(kit *rest.Kit, bizID, moduleID int64) (int64, bool, error) {
 	if moduleID == 0 {
 		cond := map[string]interface{}{
@@ -187,7 +189,7 @@ func (lgc *Logics) GetModuleIDAndIsInternal(kit *rest.Kit, bizID, moduleID int64
 	}
 }
 
-//
+// MoveHostToResourcePool transfer hosts to a resource pool
 func (lgc *Logics) MoveHostToResourcePool(kit *rest.Kit, conf *metadata.DefaultModuleHostConfigParams) ([]metadata.ExceptionResult, error) {
 
 	ownerAppID, err := lgc.GetDefaultAppID(kit)
@@ -219,13 +221,26 @@ func (lgc *Logics) MoveHostToResourcePool(kit *rest.Kit, conf *metadata.DefaultM
 		return nil, err
 	}
 
-	conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithAppID(conf.ApplicationID)
-	moduleID, _, err := lgc.GetResourcePoolModuleID(kit, conds.MapStr())
+	cond := metadata.ConditionWithTime{
+		Condition: []metadata.ConditionItem{
+			{Field: common.BKDefaultField, Operator: common.BKDBNE, Value: common.NormalModuleFlag},
+			{Field: common.BKAppIDField, Operator: common.BKDBEQ, Value: conf.ApplicationID},
+		},
+	}
+	moduleIDs, err := lgc.GetModuleIDByCond(kit, cond)
 	if err != nil {
-		blog.Errorf("move host to resource pool, but get module id failed, err: %v, input:%+v,param:%+v,rid:%s", err, conf, conds.Data(), kit.Rid)
+		blog.Errorf("move host to resource pool, but get module ids failed, input: %+v, param: %+v, err: %v, rid: %s",
+			conf, cond, err, kit.Rid)
 		return nil, err
 	}
-	errHostID, err := lgc.notExistAppModuleHost(kit, []int64{conf.ApplicationID}, []int64{moduleID}, conf.HostIDs)
+
+	if len(moduleIDs) == 0 {
+		blog.Errorf("move host to resource pool, module not found, input: %+v, param: %+v, rid: %s",
+			conf, cond, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrHostModuleNotExist, "idle pool")
+	}
+
+	errHostID, err := lgc.notExistAppModuleHost(kit, []int64{conf.ApplicationID}, moduleIDs, conf.HostIDs)
 	if err != nil {
 		blog.Errorf("move host to resource pool, notExistAppModuleHost error, err: %v, owneAppID: %d, input:%#v, rid:%s", err, ownerAppID, conf, kit.Rid)
 		return nil, err
@@ -376,7 +391,7 @@ func (lgc *Logics) AssignHostToApp(kit *rest.Kit, conf *metadata.DefaultModuleHo
 		blog.Warnf("WithPrevious failed, err: %+v, rid: %s", err, kit.Rid)
 	}
 
-	result, err := lgc.CoreAPI.CoreService().Host().TransferToAnotherBusiness(kit.Ctx, kit.Header, assignParams) //.AssignHostToApp(ctx, srvData.header, params)
+	result, err := lgc.CoreAPI.CoreService().Host().TransferToAnotherBusiness(kit.Ctx, kit.Header, assignParams)
 	if err != nil {
 		blog.Errorf("assign host to app, but assign to app http do error. err: %v, input:%+v,param:%+v,rid:%s", err, conf, assignParams, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrHostEditRelationPoolFail)

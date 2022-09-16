@@ -23,6 +23,7 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
+// Authorize TODO
 type Authorize struct {
 	// iam client
 	iam client.Interface
@@ -30,6 +31,7 @@ type Authorize struct {
 	fetcher ResourceFetcher
 }
 
+// Authorize TODO
 func (a *Authorize) Authorize(ctx context.Context, opts *types.AuthOptions) (*types.Decision, error) {
 	if err := opts.Validate(); err != nil {
 		return nil, err
@@ -57,10 +59,12 @@ func (a *Authorize) Authorize(ctx context.Context, opts *types.AuthOptions) (*ty
 	return &types.Decision{Authorized: authorized}, nil
 }
 
+// AuthorizeBatch TODO
 func (a *Authorize) AuthorizeBatch(ctx context.Context, opts *types.AuthBatchOptions) ([]*types.Decision, error) {
 	return a.authorizeBatch(ctx, opts, true)
 }
 
+// AuthorizeAnyBatch TODO
 func (a *Authorize) AuthorizeAnyBatch(ctx context.Context, opts *types.AuthBatchOptions) ([]*types.Decision, error) {
 	return a.authorizeBatch(ctx, opts, false)
 }

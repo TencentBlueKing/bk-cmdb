@@ -131,7 +131,7 @@ return elements
 `
 )
 
-// getPagedHostIDListScript get paged host id list from redis, it returns all the paged host
+// getPagedHostDetailList get paged host id list from redis, it returns all the paged host
 // id list if zset key is exist.
 // Otherwise, return with a not exist error
 // Note: the returned host detail string may be empty when the host detail is not exist.

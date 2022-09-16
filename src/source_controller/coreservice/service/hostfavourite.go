@@ -84,6 +84,7 @@ func (s *coreService) AddHostFavourite(ctx *rest.Contexts) {
 	ctx.RespEntity(meta.ID{ID: id})
 }
 
+// UpdateHostFavouriteByID TODO
 func (s *coreService) UpdateHostFavouriteByID(ctx *rest.Contexts) {
 	id := ctx.Request.PathParameter("id")
 	user := ctx.Request.PathParameter("user")
@@ -161,6 +162,7 @@ func (s *coreService) UpdateHostFavouriteByID(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// DeleteHostFavouriteByID TODO
 func (s *coreService) DeleteHostFavouriteByID(ctx *rest.Contexts) {
 	id := ctx.Request.PathParameter("id")
 	user := ctx.Request.PathParameter("user")
@@ -246,6 +248,7 @@ func (s *coreService) ListHostFavourites(ctx *rest.Contexts) {
 
 }
 
+// GetHostFavouriteByID TODO
 func (s *coreService) GetHostFavouriteByID(ctx *rest.Contexts) {
 	ID := ctx.Request.PathParameter("id")
 	user := ctx.Request.PathParameter("user")

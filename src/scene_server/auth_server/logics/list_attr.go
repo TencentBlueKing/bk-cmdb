@@ -51,7 +51,7 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.Att
 			return nil, err
 		}
 	}
-	
+
 	res, err := lgc.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, &param)
 	if err != nil {
 		blog.ErrorJSON("read model attribute failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)

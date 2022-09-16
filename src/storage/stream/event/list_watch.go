@@ -21,6 +21,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// ListWatch TODO
 func (e *Event) ListWatch(ctx context.Context, opts *types.ListWatchOptions) (*types.Watcher, error) {
 	if err := opts.CheckSetDefault(); err != nil {
 		return nil, err

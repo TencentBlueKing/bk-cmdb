@@ -12,6 +12,7 @@
 
 <template>
   <bk-sideslider
+    :transfer="true"
     :width="800"
     :title="internalTitle"
     :is-show.sync="isShow"

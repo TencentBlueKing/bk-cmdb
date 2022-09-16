@@ -228,8 +228,13 @@
               const property = this.$tools.clone(findProperty)
               // 初始化值
               if (this.multiple) {
-                property.__extra__.ruleList = this.ruleList.filter(item => item.bk_attribute_id === property.id)
-                property.__extra__.value = this.getPropertyDefaultValue(property)
+                const rules = this.ruleList.filter(item => item.bk_attribute_id === property.id)
+                property.__extra__.ruleList = rules
+
+                // 配置值全部相同（未配置的在ruleList不存在即不参与判断）则初始化“修改后”的值为相同的那个配置值
+                const firstValue = rules?.[0]?.bk_property_value
+                const isSameValue = rules.every(rule => rule?.bk_property_value === firstValue)
+                property.__extra__.value = isSameValue ? firstValue : this.getPropertyDefaultValue(property)
               } else {
                 const rule = this.ruleList.find(item => item.bk_attribute_id === property.id) || {}
                 property.__extra__.ruleId = rule.id

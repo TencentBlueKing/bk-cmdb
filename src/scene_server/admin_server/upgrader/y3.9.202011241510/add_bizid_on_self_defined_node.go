@@ -22,7 +22,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-// 补全自定义层级的bk_biz_id字段
+// addBizIDOnSelfDefinedNode 补全自定义层级的bk_biz_id字段
 func addBizIDOnSelfDefinedNode(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	// 获取主线模型里的bk_asst_id->bk_obj_id的映射关系

@@ -16,7 +16,7 @@ import (
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/types"
-	//"fmt"
+	// "fmt"
 	"io"
 )
 
@@ -49,6 +49,7 @@ func newAttributeIterator(supplierAccount string, cond common.Condition) (Attrib
 	return attrIterator, nil
 }
 
+// ForEach TODO
 func (cli *attributeIterator) ForEach(itemCallback func(item Attribute) error) error {
 
 	for {
@@ -72,6 +73,7 @@ func (cli *attributeIterator) ForEach(itemCallback func(item Attribute) error) e
 
 }
 
+// Next TODO
 func (cli *attributeIterator) Next() (Attribute, error) {
 
 	if len(cli.buffer) == cli.bufIdx {

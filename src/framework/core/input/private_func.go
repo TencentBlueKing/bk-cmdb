@@ -16,11 +16,13 @@ import (
 	"configcenter/src/framework/common"
 )
 
+// makeInputerKey TODO
 // create a new inputer key
 func makeInputerKey() InputerKey {
 	return InputerKey(common.UUID())
 }
 
+// inputerExists TODO
 // checkWorkerExists check whether the inputer exists
 func inputerExists(target MapInputer, key InputerKey) bool {
 	_, ok := target[key]

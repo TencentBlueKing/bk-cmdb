@@ -24,6 +24,7 @@ import (
 	"github.com/apache/thrift/lib/go/thrift"
 )
 
+// GseApiServerClient TODO
 type GseApiServerClient struct {
 	endpoints []string
 	tlsConf   *util.TLSClientConfig
@@ -65,6 +66,7 @@ func (g *GseApiServerClient) getClient() (*apiClient, error) {
 	return client, nil
 }
 
+// GseTaskServerClient TODO
 type GseTaskServerClient struct {
 	endpoints []string
 	tlsConf   *util.TLSClientConfig

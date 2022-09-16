@@ -12,11 +12,13 @@
 
 package language
 
+// Content TODO
 // Error implementation of content interface
 func (cli *ccLanguage) Content() string {
 	return cli.callback()
 }
 
+// GetKey TODO
 // GetCode returns key
 func (cli *ccLanguage) GetKey() string {
 	return cli.key

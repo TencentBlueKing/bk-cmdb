@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package logics TODO
 package logics
 
 import (
@@ -17,6 +18,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// Logics TODO
 type Logics struct {
 	CoreAPI apimachinery.ClientSetInterface
 	db      dal.RDB

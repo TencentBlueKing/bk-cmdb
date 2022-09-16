@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package ssl TODO
 package ssl
 
 import (
@@ -20,6 +21,7 @@ import (
 	"io/ioutil"
 )
 
+// ClientTLSConfNoVerify TODO
 // client tls config without verify
 func ClientTLSConfNoVerify() *tls.Config {
 	return &tls.Config{
@@ -27,6 +29,7 @@ func ClientTLSConfNoVerify() *tls.Config {
 	}
 }
 
+// ClientTslConfVerityServer TODO
 func ClientTslConfVerityServer(caFile string) (*tls.Config, error) {
 	caPool, err := loadCa(caFile)
 	if err != nil {
@@ -40,6 +43,7 @@ func ClientTslConfVerityServer(caFile string) (*tls.Config, error) {
 	return conf, nil
 }
 
+// ClientTLSConfVerity TODO
 func ClientTLSConfVerity(caFile, certFile, keyFile, passwd string) (*tls.Config, error) {
 	caPool, err := loadCa(caFile)
 	if err != nil {
@@ -96,7 +100,7 @@ func loadCa(caFile string) (*x509.CertPool, error) {
 }
 
 func loadCertificates(certFile, keyFile, passwd string) (*tls.Certificate, error) {
-	//key file
+	// key file
 	priKey, err := ioutil.ReadFile(keyFile)
 	if err != nil {
 		return nil, err
@@ -119,7 +123,7 @@ func loadCertificates(certFile, keyFile, passwd string) (*tls.Certificate, error
 		})
 	}
 
-	//certificate
+	// certificate
 	certData, err := ioutil.ReadFile(certFile)
 	if err != nil {
 		return nil, err

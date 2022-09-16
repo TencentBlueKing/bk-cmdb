@@ -147,6 +147,7 @@ func (c *classification) DeleteClassification(kit *rest.Kit, id int64) error {
 	return nil
 }
 
+// FindClassificationWithObjects TODO
 func (c *classification) FindClassificationWithObjects(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.ClassificationWithObject, error) {
 	classifications, err := c.FindClassification(kit, cond)
 	if err != nil {

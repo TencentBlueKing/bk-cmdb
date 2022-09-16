@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package service TODO
 package service
 
 import (
@@ -68,6 +69,7 @@ type coreService struct {
 	core        core.Core
 }
 
+// SetConfig TODO
 func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf, lang language.CCLanguageIf) error {
 
 	s.cfg = cfg
@@ -152,6 +154,7 @@ func (s *coreService) WebService() *restful.Container {
 	return container
 }
 
+// Language TODO
 func (s *coreService) Language(header http.Header) language.DefaultCCLanguageIf {
 	lang := util.GetLanguage(header)
 	l, exist := s.langFactory[common.LanguageType(lang)]

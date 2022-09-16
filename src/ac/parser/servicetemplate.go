@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/blog"
 )
 
+// ServiceTemplateAuthConfigs TODO
 var ServiceTemplateAuthConfigs = []AuthConfig{
 	{
 		Name:           "createServiceTemplatePattern",
@@ -303,6 +304,7 @@ var ServiceTemplateAuthConfigs = []AuthConfig{
 	},
 }
 
+// ServiceTemplate TODO
 func (ps *parseStream) ServiceTemplate() *parseStream {
 	return ParseStreamWithFramework(ps, ServiceTemplateAuthConfigs)
 }

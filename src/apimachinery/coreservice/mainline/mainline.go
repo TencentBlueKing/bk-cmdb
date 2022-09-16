@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package mainline TODO
 package mainline
 
 import (
@@ -21,11 +22,13 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// MainlineClientInterface TODO
 type MainlineClientInterface interface {
 	SearchMainlineModelTopo(ctx context.Context, h http.Header, withDetail bool) (*metadata.TopoModelNode, errors.CCErrorCoder)
 	SearchMainlineInstanceTopo(ctx context.Context, h http.Header, bkBizID int64, withDetail bool) (resp *metadata.TopoInstanceNode, err errors.CCErrorCoder)
 }
 
+// NewMainlineClientInterface TODO
 func NewMainlineClientInterface(client rest.ClientInterface) MainlineClientInterface {
 	return &mainline{client: client}
 }

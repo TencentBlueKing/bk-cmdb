@@ -17,7 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//Action restful action struct
+// Action restful action struct
 type Action struct {
 	Verb    string               // Verb identifying the action ("GET", "POST", "WATCH", PROXY", etc).
 	Path    string               // The path of the action
@@ -25,6 +25,7 @@ type Action struct {
 	Handler gin.HandlerFunc
 }
 
+// NewAction TODO
 func NewAction(verb, path string, params []*restful.Parameter, handler gin.HandlerFunc) *Action {
 	return &Action{
 		Verb:    verb,

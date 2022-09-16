@@ -26,11 +26,14 @@ import (
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
 
+// Engine TODO
 var Engine *backbone.Engine
+
+// CacheCli TODO
 var CacheCli redis.Client
 
 // ValidLogin valid the user login status
@@ -95,7 +98,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 
 }
 
-// IsAuthed check user is authed
+// isAuthed check user is authed
 func isAuthed(c *gin.Context, config options.Config) bool {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	user := user.NewUser(config, Engine, CacheCli)

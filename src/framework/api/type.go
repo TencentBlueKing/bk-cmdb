@@ -105,9 +105,12 @@ const (
 	SetServiceClose          = "2"
 )
 
+// HostModuleActionType TODO
 type HostModuleActionType string
 
 const (
-	HostAppendModule  HostModuleActionType = "append"
+	// HostAppendModule TODO
+	HostAppendModule HostModuleActionType = "append"
+	// HostReplaceModule TODO
 	HostReplaceModule HostModuleActionType = "replace"
 )

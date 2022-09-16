@@ -88,18 +88,22 @@
     </div>
     <span class="tips-content" ref="tipsContent">
       <i18n path="当前模块主机为空，请先XXX" tag="p" v-if="!hasHost">
-        <a href="javascript:;"
-          class="action-link" place="action"
-          @click="handleClickAddHost">
-          {{$t('添加主机')}}
-        </a>
+        <template #action>
+          <a href="javascript:;"
+            class="action-link"
+            @click="handleClickAddHost">
+            {{$t('添加主机')}}
+          </a>
+        </template>
       </i18n>
       <i18n path="当前模块所属的服务模板内进程信息为空，请先XXX" tag="p" v-else-if="isEmptyServiceTemplate">
-        <a href="javascript:;"
-          class="action-link" place="action"
-          @click="handleGoServiceTemplate">
-          {{$t('前往补充')}}
-        </a>
+        <template #action>
+          <a href="javascript:;"
+            class="action-link"
+            @click="handleGoServiceTemplate">
+            {{$t('前往补充')}}
+          </a>
+        </template>
       </i18n>
     </span>
   </div>

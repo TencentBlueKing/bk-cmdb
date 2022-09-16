@@ -48,7 +48,7 @@ type taskScheduler struct {
 	listerDone chan bool
 }
 
-// 调度器配置
+// SchedulerConf 调度器配置
 type SchedulerConf struct {
 	ZKClient  *zkclient.ZkClient
 	Logics    *logics.Logics
@@ -56,7 +56,7 @@ type SchedulerConf struct {
 	MongoConf local.MongoConf
 }
 
-// 调度器实例创建
+// NewTaskScheduler 调度器实例创建
 func NewTaskScheduler(conf *SchedulerConf) (*taskScheduler, error) {
 	reflector, err := reflector.NewReflector(conf.MongoConf)
 	if err != nil {
@@ -74,7 +74,7 @@ func NewTaskScheduler(conf *SchedulerConf) (*taskScheduler, error) {
 	}, nil
 }
 
-// 调度云同步任务
+// Schedule 调度云同步任务
 func (t *taskScheduler) Schedule(ctx context.Context) error {
 	// 监听任务表事件
 	if err := t.watchTaskTable(ctx); err != nil {
@@ -89,7 +89,7 @@ func (t *taskScheduler) Schedule(ctx context.Context) error {
 	return nil
 }
 
-// 监听zk的cloudserver节点变化，有变化时重置哈希环
+// watchServerNode 监听zk的cloudserver节点变化，有变化时重置哈希环
 func (t *taskScheduler) watchServerNode() error {
 	go func() {
 		for servers := range t.logics.Discovery().CloudServer().GetServersChan() {
@@ -105,7 +105,7 @@ type taskEvent struct {
 	Oid                    primitive.ObjectID `json:"_id" bson:"_id"`
 }
 
-// 监听云资源同步任务表事件，有变更时进行相应的处理
+// watchTaskTable 监听云资源同步任务表事件，有变更时进行相应的处理
 func (t *taskScheduler) watchTaskTable(ctx context.Context) error {
 	opts := &stypes.ListWatchOptions{
 		Options: stypes.Options{
@@ -127,37 +127,37 @@ func (t *taskScheduler) watchTaskTable(ctx context.Context) error {
 	return t.reflector.ListWatcher(ctx, opts, capable)
 }
 
-// 表记录新增处理逻辑
+// changeOnAdd 表记录新增处理逻辑
 func (t *taskScheduler) changeOnAdd(event *stypes.Event) {
 	blog.V(4).Infof("OnAdd event, taskid:%d", event.Document.(*taskEvent).TaskID)
 	t.addTask(event.Oid, &event.Document.(*taskEvent).CloudSyncTask)
 }
 
-// 表记录更新处理逻辑
+// changeOnUpdate 表记录更新处理逻辑
 func (t *taskScheduler) changeOnUpdate(event *stypes.Event) {
 	blog.V(4).Infof("OnUpdate event, taskid:%d", event.Document.(*taskEvent).TaskID)
 	t.addTask(event.Oid, &event.Document.(*taskEvent).CloudSyncTask)
 }
 
-// 表记录删除处理逻辑
+// changeOnDelete 表记录删除处理逻辑
 func (t *taskScheduler) changeOnDelete(event *stypes.Event) {
 	blog.V(4).Infof("OnDelete event, oid:%s", event.Oid)
 	t.delTask(event.Oid)
 }
 
-// 冷启动时已有表记录的处理逻辑
+// changeOnLister 冷启动时已有表记录的处理逻辑
 func (t *taskScheduler) changeOnLister(event *stypes.Event) {
 	blog.V(4).Infof("changeOnLister event, taskid:%d", event.Document.(*taskEvent).TaskID)
 	t.addTask(event.Oid, &event.Document.(*taskEvent).CloudSyncTask)
 }
 
-// 冷启动时已有表记录获取完成时的处理逻辑
+// changeOnListerDone 冷启动时已有表记录获取完成时的处理逻辑
 func (t *taskScheduler) changeOnListerDone() {
 	blog.V(4).Info("changeOnListerDone event")
 	close(t.listerDone)
 }
 
-// 根据服务节点设置哈希环
+// setHashring 根据服务节点设置哈希环
 func (t *taskScheduler) setHashring(serversAddrs []string) {
 	blog.V(4).Infof("setHashring, serversAddrs:%#v", serversAddrs)
 	t.mu.Lock()
@@ -170,7 +170,7 @@ func (t *taskScheduler) setHashring(serversAddrs []string) {
 	}
 }
 
-// 添加任务
+// addTask 添加任务
 func (t *taskScheduler) addTask(oid string, task *metadata.CloudSyncTask) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -178,7 +178,7 @@ func (t *taskScheduler) addTask(oid string, task *metadata.CloudSyncTask) error 
 	return nil
 }
 
-// 删除任务
+// delTask 删除任务
 func (t *taskScheduler) delTask(oid string) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -186,7 +186,7 @@ func (t *taskScheduler) delTask(oid string) error {
 	return nil
 }
 
-// 获取属于当前进程的任务列表
+// GetTaskList 获取属于当前进程的任务列表
 func (t *taskScheduler) GetTaskList() ([]*metadata.CloudSyncTask, error) {
 	tasks := []*metadata.CloudSyncTask{}
 	t.mu.RLock()
@@ -206,7 +206,7 @@ func (t *taskScheduler) GetTaskList() ([]*metadata.CloudSyncTask, error) {
 	return tasks, nil
 }
 
-// 记录列表获取是否完成的channel
+// ListerDone 记录列表获取是否完成的channel
 func (t *taskScheduler) ListerDone() chan bool {
 	return t.listerDone
 }

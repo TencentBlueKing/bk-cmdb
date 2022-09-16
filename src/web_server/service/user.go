@@ -25,8 +25,8 @@ import (
 	webcom "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
 
 type userDataResult struct {
@@ -60,6 +60,7 @@ func (s *Service) GetUserList(c *gin.Context) {
 	return
 }
 
+// UpdateUserLanguage TODO
 func (s *Service) UpdateUserLanguage(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	session := sessions.Default(c)
@@ -90,6 +91,7 @@ func (s *Service) UpdateUserLanguage(c *gin.Context) {
 	return
 }
 
+// UserInfo TODO
 func (s *Service) UserInfo(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	session := sessions.Default(c)
@@ -132,6 +134,7 @@ func (s *Service) UserInfo(c *gin.Context) {
 	return
 }
 
+// UpdateSupplier TODO
 func (s *Service) UpdateSupplier(c *gin.Context) {
 
 	rid := util.GetHTTPCCRequestID(c.Request.Header)

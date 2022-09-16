@@ -1,3 +1,4 @@
+// Package datasynchronize TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -24,6 +25,7 @@ type instance struct {
 	DataClassify string
 }
 
+// NewSynchronizeInstanceAdapter TODO
 func NewSynchronizeInstanceAdapter(s *metadata.SynchronizeParameter) dataTypeInterface {
 
 	return &instance{
@@ -34,6 +36,7 @@ func NewSynchronizeInstanceAdapter(s *metadata.SynchronizeParameter) dataTypeInt
 	}
 }
 
+// PreSynchronizeFilter TODO
 func (inst *instance) PreSynchronizeFilter(kit *rest.Kit) errors.CCError {
 	err := inst.preSynchronizeFilterBefore(kit)
 	if err != nil {
@@ -42,6 +45,7 @@ func (inst *instance) PreSynchronizeFilter(kit *rest.Kit) errors.CCError {
 	return inst.base.PreSynchronizeFilter(kit)
 }
 
+// GetErrorStringArr TODO
 func (inst *instance) GetErrorStringArr(kit *rest.Kit) ([]metadata.ExceptionResult, errors.CCError) {
 
 	if len(inst.base.errorArray) == 0 {
@@ -52,6 +56,7 @@ func (inst *instance) GetErrorStringArr(kit *rest.Kit) ([]metadata.ExceptionResu
 
 }
 
+// SaveSynchronize TODO
 func (inst *instance) SaveSynchronize(kit *rest.Kit) errors.CCError {
 	// Each model is written separately for subsequent expansion,
 	// each model may be processed differently.

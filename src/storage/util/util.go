@@ -10,8 +10,10 @@
  * limitations under the License.
  */
 
+// Package util TODO
 package util
 
 const (
+	// TxnIDName TODO
 	TxnIDName = "cmdb_transaction_id"
 )

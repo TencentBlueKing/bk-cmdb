@@ -15,6 +15,8 @@ package index
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 /*
@@ -25,39 +27,39 @@ var (
 	instanceDefaultIndexes = []types.Index{
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkObjId",
-			Keys: map[string]int32{
-				"bk_obj_id": 1,
+			Keys: bson.D{
+				{"bk_obj_id", 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkSupplierAccount_bkObjID",
-			Keys: map[string]int32{
-				"bk_supplier_account": 1,
-				"bk_obj_id":           1,
+			Keys: bson.D{
+				{"bk_supplier_account", 1},
+				{"bk_obj_id", 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkInstId_bkSupplierAccount",
-			Keys: map[string]int32{
-				"bk_inst_id":          1,
-				"bk_supplier_account": 1,
+			Keys: bson.D{
+				{"bk_inst_id", 1},
+				{"bk_supplier_account", 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkInstName_bkSupplierAccount",
-			Keys: map[string]int32{
-				"bk_inst_name":        1,
-				"bk_supplier_account": 1,
+			Keys: bson.D{
+				{"bk_inst_name", 1},
+				{"bk_supplier_account", 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkInstId",
-			Keys: map[string]int32{
-				"bk_inst_id": 1,
+			Keys: bson.D{
+				{"bk_inst_id", 1},
 			},
 			Background: true,
 			// 新加 2021年03月11日
@@ -66,15 +68,15 @@ var (
 	}
 )
 
-// 建表前需要先建立预定义主线模型的唯一索引
+// MainLineInstanceUniqueIndex 建表前需要先建立预定义主线模型的唯一索引
 func MainLineInstanceUniqueIndex() []types.Index {
 
 	return []types.Index{
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkParentID_bkInstName",
-			Keys: map[string]int32{
-				"bk_parent_id": 1,
-				"bk_inst_name": 1,
+			Keys: bson.D{
+				{"bk_parent_id", 1},
+				{"bk_inst_name", 1},
 			},
 			Background: false,
 			Unique:     true,
@@ -86,14 +88,14 @@ func MainLineInstanceUniqueIndex() []types.Index {
 	}
 }
 
-// 建表前需要先建立预非主线模型的唯一索引
+// InstanceUniqueIndex 建表前需要先建立预非主线模型的唯一索引
 func InstanceUniqueIndex() []types.Index {
 
 	return []types.Index{
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkInstName",
-			Keys: map[string]int32{
-				"bk_inst_name": 1,
+			Keys: bson.D{
+				{"bk_inst_name", 1},
 			},
 			Background: false,
 			Unique:     true,

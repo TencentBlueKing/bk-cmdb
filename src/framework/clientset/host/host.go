@@ -10,20 +10,22 @@
  * limitations under the License.
  */
 
+// Package host TODO
 package host
 
 import (
-    "fmt"
-    
-    "configcenter/src/framework/clientset/types"
-    "configcenter/src/framework/common/rest"
-    types2 "configcenter/src/framework/core/types"
+	"fmt"
+
+	"configcenter/src/framework/clientset/types"
+	"configcenter/src/framework/common/rest"
+	types2 "configcenter/src/framework/core/types"
 )
 
 type hostClient struct {
 	client rest.ClientInterface
 }
 
+// ListHosts TODO
 func (h *hostClient) ListHosts(ctx *types.ListHostsCtx) (*types.HostsInfo, error) {
 	resp := new(types.ListHostResult)
 	subPath := "/hosts/search"
@@ -45,6 +47,7 @@ func (h *hostClient) ListHosts(ctx *types.ListHostsCtx) (*types.HostsInfo, error
 	return &resp.Data, nil
 }
 
+// GetHostDetails TODO
 func (h *hostClient) GetHostDetails(ctx *types.GetHostCtx) ([]types.HostAttribute, error) {
 	resp := new(types.GetHostResult)
 	subPath := fmt.Sprintf("/hosts/%s/%d", ctx.Tenancy, ctx.HostID)
@@ -66,6 +69,7 @@ func (h *hostClient) GetHostDetails(ctx *types.GetHostCtx) ([]types.HostAttribut
 	return resp.Data, nil
 }
 
+// GetHostSnapshot TODO
 func (h *hostClient) GetHostSnapshot(ctx *types.GetHostSnapshotCtx) (types2.MapStr, error) {
 	resp := new(types.GetHostSnapshotResult)
 	subPath := fmt.Sprintf("/hosts/snapshot/%d", ctx.HostID)
@@ -87,6 +91,7 @@ func (h *hostClient) GetHostSnapshot(ctx *types.GetHostSnapshotCtx) (types2.MapS
 	return resp.Data, nil
 }
 
+// UpdateHostsAttributes TODO
 func (h *hostClient) UpdateHostsAttributes(ctx *types.UpdateHostsAttributesCtx) error {
 	resp := new(types.GetHostSnapshotResult)
 	subPath := "/hosts/batch"
@@ -108,6 +113,7 @@ func (h *hostClient) UpdateHostsAttributes(ctx *types.UpdateHostsAttributesCtx) 
 	return nil
 }
 
+// DeleteHosts TODO
 func (h *hostClient) DeleteHosts(ctx *types.DeleteHostsCtx) error {
 	resp := new(types.GetHostSnapshotResult)
 	subPath := "/hosts/batch"

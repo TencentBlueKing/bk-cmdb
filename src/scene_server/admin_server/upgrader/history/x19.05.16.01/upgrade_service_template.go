@@ -32,6 +32,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// ProcessInstanceRelation TODO
 type ProcessInstanceRelation struct {
 	Metadata metadata.Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 
@@ -47,6 +48,7 @@ type ProcessInstanceRelation struct {
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
+// ServiceTemplate TODO
 type ServiceTemplate struct {
 	Metadata metadata.Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 
@@ -65,6 +67,7 @@ type ServiceTemplate struct {
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 }
 
+// ProcessTemplate TODO
 type ProcessTemplate struct {
 	Metadata metadata.Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 
@@ -84,6 +87,7 @@ type ProcessTemplate struct {
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 }
 
+// ServiceInstance TODO
 type ServiceInstance struct {
 	Metadata metadata.Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 	ID       int64             `field:"id" json:"id,omitempty" bson:"id"`
@@ -105,6 +109,7 @@ type ServiceInstance struct {
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 }
 
+// Process TODO
 type Process struct {
 	Metadata        metadata.Metadata      `field:"metadata" json:"metadata" bson:"metadata"`
 	ProcNum         *int64                 `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num" structs:"proc_num"`
@@ -535,6 +540,7 @@ func procInstToProcTemplate(inst Process) *ProcessProperty {
 	return &template
 }
 
+// ProcessProperty TODO
 type ProcessProperty struct {
 	ProcNum            metadata.PropertyInt64    `field:"proc_num" json:"proc_num" bson:"proc_num" validate:"max=10000,min=1"`
 	StopCmd            metadata.PropertyString   `field:"stop_cmd" json:"stop_cmd" bson:"stop_cmd"`

@@ -1,3 +1,4 @@
+// Package metadata TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
  * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -20,7 +21,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-// 云账户
+// CloudAccount 云账户
 type CloudAccount struct {
 	AccountName string    `json:"bk_account_name" bson:"bk_account_name"`
 	CloudVendor string    `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
@@ -35,10 +36,12 @@ type CloudAccount struct {
 	LastTime    time.Time `json:"last_time" bson:"last_time"`
 }
 
+// ToMapStr TODO
 func (c *CloudAccount) ToMapStr() mapstr.MapStr {
 	return mapstr.SetValueToMapStrByTags(c)
 }
 
+// Validate TODO
 func (c *CloudAccount) Validate() (rawError errors.RawErrorInfo) {
 	if c.AccountName == "" {
 		return errors.RawErrorInfo{
@@ -77,7 +80,7 @@ func (c *CloudAccount) Validate() (rawError errors.RawErrorInfo) {
 	return errors.RawErrorInfo{}
 }
 
-// 带有额外信息的云账户
+// CloudAccountWithExtraInfo 带有额外信息的云账户
 type CloudAccountWithExtraInfo struct {
 	CloudAccount `json:",inline"`
 	// 是否能删除账户，只有该账户下不存在同步任务了，才能删除，此时才能为true，否则为false
@@ -91,7 +94,7 @@ const (
 	TencentCloud string = "2"
 )
 
-// 支持的云厂商
+// SupportedCloudVendors 支持的云厂商
 // 实现了相应的云厂商插件
 var SupportedCloudVendors = []string{AWS, TencentCloud}
 
@@ -102,7 +105,7 @@ const (
 	CloudSyncInProgress string = "cloud_sync_in_progress"
 )
 
-// 云厂商账户配置
+// CloudAccountConf 云厂商账户配置
 type CloudAccountConf struct {
 	AccountID  int64  `json:"bk_account_id" bson:"bk_account_id"`
 	VendorName string `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
@@ -110,6 +113,7 @@ type CloudAccountConf struct {
 	SecretKey  string `json:"bk_secret_key" bson:"bk_secret_key"`
 }
 
+// SearchCloudOption TODO
 type SearchCloudOption struct {
 	Condition mapstr.MapStr `json:"condition" bson:"condition" field:"condition"`
 	Page      BasePage      `json:"page" bson:"page" field:"page"`
@@ -118,31 +122,37 @@ type SearchCloudOption struct {
 	IsFuzzy bool `json:"is_fuzzy" bson:"is_fuzzy"`
 }
 
+// SearchSyncTaskOption TODO
 type SearchSyncTaskOption struct {
 	SearchCloudOption `json:",inline"`
 	// 是否实时获取云厂商vpc下最新的主机数
 	LastestHostCount bool `json:"latest_hostcount" bson:"latest_host_count"`
 }
 
+// SearchVpcHostCntOption TODO
 type SearchVpcHostCntOption struct {
 	RegionVpcs []RegionVpc
 }
 
+// RegionVpc TODO
 type RegionVpc struct {
 	Region string `json:"bk_region"`
 	VpcID  string `json:"bk_vpc_id"`
 }
 
+// SearchVpcOption TODO
 type SearchVpcOption struct {
 	Region string `json:"bk_region"`
 }
 
+// SearchSyncRegionOption TODO
 type SearchSyncRegionOption struct {
 	AccountID int64 `json:"bk_account_id" bson:"bk_account_id"`
 	// 是否返回地域下的主机数，返回主机数会导致请求更耗时，默认为false
 	WithHostCount bool `json:"with_host_count" bson:"with_host_count"`
 }
 
+// SearchSyncHistoryOption TODO
 type SearchSyncHistoryOption struct {
 	SearchCloudOption `json:",inline"`
 	TaskID            int64  `json:"bk_task_id" bson:"bk_task_id"`
@@ -150,35 +160,42 @@ type SearchSyncHistoryOption struct {
 	EndTime           string `json:"end_time" bson:"end_time"`
 }
 
+// DeleteDestroyedHostRelatedOption TODO
 type DeleteDestroyedHostRelatedOption struct {
 	HostIDs []int64 `json:"host_ids" bson:"host_ids"`
 }
 
+// MultipleSyncHistory TODO
 type MultipleSyncHistory struct {
 	Count int64         `json:"count"`
 	Info  []SyncHistory `json:"info"`
 }
 
+// MultipleCloudAccount TODO
 type MultipleCloudAccount struct {
 	Count int64                       `json:"count"`
 	Info  []CloudAccountWithExtraInfo `json:"info"`
 }
 
+// MultipleCloudAccountConf TODO
 type MultipleCloudAccountConf struct {
 	Count int64              `json:"count"`
 	Info  []CloudAccountConf `json:"info"`
 }
 
+// CloudAccountVerify TODO
 type CloudAccountVerify struct {
 	SecretID    string `json:"bk_secret_id"`
 	SecretKey   string `json:"bk_secret_key"`
 	CloudVendor string `json:"bk_cloud_vendor"`
 }
 
+// SearchAccountValidityOption TODO
 type SearchAccountValidityOption struct {
 	AccountIDs []int64 `json:"account_ids" bson:"account_ids"`
 }
 
+// Validate TODO
 func (s *SearchAccountValidityOption) Validate() (rawError errors.RawErrorInfo) {
 	if len(s.AccountIDs) == 0 || len(s.AccountIDs) > common.BKMaxInstanceLimit {
 		return errors.RawErrorInfo{
@@ -190,22 +207,26 @@ func (s *SearchAccountValidityOption) Validate() (rawError errors.RawErrorInfo) 
 	return errors.RawErrorInfo{}
 }
 
+// AccountValidityInfo TODO
 type AccountValidityInfo struct {
 	AccountID int64  `json:"bk_account_id" bson:"bk_account_id"`
 	ErrMsg    string `json:"err_msg" bson:"err_msg"`
 }
 
+// VpcInfo TODO
 type VpcInfo struct {
 	VpcName string `json:"bk_vpc_name"`
 	VpcID   string `json:"bk_vpc_id"`
 	Region  string `json:"bk_region"`
 }
 
+// SearchVpcResult TODO
 type SearchVpcResult struct {
 	Count string            `json:"count"`
 	Info  []VpcInstancesCnt `json:"info"`
 }
 
+// VpcInstancesCnt TODO
 type VpcInstancesCnt struct {
 	VpcId     string `json:"bk_vpc_id"`
 	VpcName   string `json:"bk_vpc_name"`
@@ -213,7 +234,7 @@ type VpcInstancesCnt struct {
 	HostCount int64  `json:"bk_host_count"`
 }
 
-// 云同步任务
+// CloudSyncTask 云同步任务
 type CloudSyncTask struct {
 	TaskID            int64          `json:"bk_task_id" bson:"bk_task_id"`
 	TaskName          string         `json:"bk_task_name" bson:"bk_task_name"`
@@ -238,6 +259,7 @@ func (c *CloudSyncTask) ToMapStr() mapstr.MapStr {
 	return mapstr.SetValueToMapStrByTags(c)
 }
 
+// VpcSyncInfo TODO
 type VpcSyncInfo struct {
 	VpcID        string `json:"bk_vpc_id" bson:"bk_vpc_id"`
 	VpcName      string `json:"bk_vpc_name" bson:"bk_vpc_name"`
@@ -249,37 +271,44 @@ type VpcSyncInfo struct {
 	Destroyed bool `json:"destroyed" bson:"destroyed"`
 }
 
+// MultipleCloudSyncTask TODO
 type MultipleCloudSyncTask struct {
 	Count int64           `json:"count"`
 	Info  []CloudSyncTask `json:"info"`
 }
 
+// VpcHostCntResult TODO
 type VpcHostCntResult struct {
 	Count int64         `json:"count"`
 	Info  []VpcSyncInfo `json:"info"`
 }
 
+// Region TODO
 type Region struct {
 	RegionId    string `json:"bk_region" bson:"bk_region"`
 	RegionName  string `json:"bk_region_name" bson:"bk_region_name"`
 	RegionState string `json:"bk_region_state" bson:"bk_region_state"`
 }
 
+// VpcsInfo TODO
 type VpcsInfo struct {
 	Count  int64  `json:"count" bson:"count"`
 	VpcSet []*Vpc `json:"vpc_set" bson:"vpc_set"`
 }
 
+// Vpc TODO
 type Vpc struct {
 	VpcId   string `json:"bk_vpc_id" bson:"bk_vpc_id"`
 	VpcName string `json:"bk_vpc_name" bson:"bk_vpc_name"`
 }
 
+// InstancesInfo TODO
 type InstancesInfo struct {
 	Count       int64       `json:"count" bson:"count"`
 	InstanceSet []*Instance `json:"instance_set" bson:"instance_set"`
 }
 
+// Instance TODO
 type Instance struct {
 	InstanceId    string `json:"bk_cloud_inst_id" bson:"bk_cloud_inst_id"`
 	PrivateIp     string `json:"bk_host_innerip" bson:"bk_host_innerip"`
@@ -288,7 +317,7 @@ type Instance struct {
 	VpcId         string `json:"bk_vpc_id" bson:"bk_vpc_id"`
 }
 
-// 云主机同步时的资源数据
+// CloudHostResource 云主机同步时的资源数据
 type CloudHostResource struct {
 	HostResource  []*VpcInstances
 	DestroyedVpcs []*VpcSyncInfo
@@ -296,12 +325,14 @@ type CloudHostResource struct {
 	AccountConf   *CloudAccountConf `json:"account_conf" bson:"account_conf"`
 }
 
+// VpcInstances TODO
 type VpcInstances struct {
 	Vpc       *VpcSyncInfo
 	CloudID   int64 `json:"bk_cloud_id" bson:"bk_cloud_id"`
 	Instances []*Instance
 }
 
+// CloudHost TODO
 type CloudHost struct {
 	Instance   `json:",inline"`
 	CloudID    int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
@@ -310,6 +341,7 @@ type CloudHost struct {
 	VendorName string `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
 }
 
+// HostSyncInfo TODO
 type HostSyncInfo struct {
 	HostID        int64     `json:"bk_host_id" bson:"bk_host_id"`
 	CloudID       int64     `json:"bk_cloud_id" bson:"bk_cloud_id"`
@@ -322,7 +354,7 @@ type HostSyncInfo struct {
 	LastTime      time.Time `json:"last_time" bson:"last_time"`
 }
 
-// 云区域
+// CloudArea 云区域
 type CloudArea struct {
 	CloudID     int64     `json:"bk_cloud_id" bson:"bk_cloud_id"`
 	CloudName   string    `json:"bk_cloud_name" bson:"bk_cloud_name"`
@@ -339,6 +371,7 @@ type CloudArea struct {
 	LastTime    time.Time `json:"last_time" bson:"last_time"`
 }
 
+// SyncRegion TODO
 type SyncRegion struct {
 	RegionId    string `json:"bk_region" bson:"bk_region"`
 	RegionName  string `json:"bk_region_name" bson:"bk_region_name"`
@@ -346,7 +379,7 @@ type SyncRegion struct {
 	HostCount   int64  `json:"bk_host_count" bson:"bk_host_count"`
 }
 
-// 同步历史记录
+// SyncHistory 同步历史记录
 type SyncHistory struct {
 	HistoryID         int64          `json:"bk_history_id" bson:"bk_history_id"`
 	TaskID            int64          `json:"bk_task_id" bson:"bk_task_id"`
@@ -357,26 +390,31 @@ type SyncHistory struct {
 	CreateTime        time.Time      `json:"create_time" bson:"create_time"`
 }
 
+// SyncStatusDesc TODO
 type SyncStatusDesc struct {
 	CostTime  float64 `json:"cost_time" bson:"cost_time"`
 	ErrorInfo string  `json:"error_info" bson:"error_info"`
 }
 
+// SyncDetail TODO
 type SyncDetail struct {
 	NewAdd SyncSuccessInfo `json:"new_add" bson:"new_add"`
 	Update SyncSuccessInfo `json:"update" bson:"update"`
 }
 
+// SyncSuccessInfo TODO
 type SyncSuccessInfo struct {
 	Count int64    `json:"count" bson:"count"`
 	IPs   []string `json:"ips" bson:"ips"`
 }
 
+// SyncFailInfo TODO
 type SyncFailInfo struct {
 	Count   int64             `json:"count" bson:"count"`
 	IPError map[string]string `json:"ip_error" bson:"ip_error"`
 }
 
+// SyncResult TODO
 type SyncResult struct {
 	SuccessInfo       SyncSuccessInfo `json:"success_info" bson:"success_info"`
 	FailInfo          SyncFailInfo    `json:"fail_info" bson:"fail_info"`
@@ -385,6 +423,7 @@ type SyncResult struct {
 	StatusDescription SyncStatusDesc  `json:"bk_status_description" bson:"bk_status_description"`
 }
 
+// SecretKeyResult TODO
 type SecretKeyResult struct {
 	Code    int           `json:"code"`
 	Message string        `json:"message"`
@@ -392,10 +431,12 @@ type SecretKeyResult struct {
 	Data    SecretKeyInfo `json:"data"`
 }
 
+// SecretKeyInfo TODO
 type SecretKeyInfo struct {
 	Content SecretContent `json:"content"`
 }
 
+// SecretContent TODO
 type SecretContent struct {
 	SecretKey string `json:"secret_key"`
 }

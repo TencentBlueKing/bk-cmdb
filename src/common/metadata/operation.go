@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common"
 )
 
+// ChartConfig TODO
 type ChartConfig struct {
 	ConfigID   uint64 `json:"config_id" bson:"config_id"`
 	ReportType string `json:"report_type" bson:"report_type"`
@@ -31,25 +32,30 @@ type ChartConfig struct {
 	XAxisCount int64  `json:"x_axis_count" bson:"x_axis_count"`
 }
 
+// ChartPosition TODO
 type ChartPosition struct {
 	BizID    int64        `json:"bk_biz_id" bson:"bk_biz_id"`
 	Position PositionInfo `json:"position" bson:"position"`
 	OwnerID  string       `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
+// PositionInfo TODO
 type PositionInfo struct {
 	Host []uint64 `json:"host" bson:"host"`
 	Inst []uint64 `json:"inst" bson:"inst"`
 }
 
+// ModelInstChange TODO
 type ModelInstChange map[string]*InstChangeCount
 
+// InstChangeCount TODO
 type InstChangeCount struct {
 	Create int64 `json:"create" bson:"create"`
 	Update int64 `json:"update" bson:"update"`
 	Delete int64 `json:"delete" bson:"delete"`
 }
 
+// AggregateIntResponse TODO
 type AggregateIntResponse struct {
 	BaseResp `json:",inline"`
 	Data     []IntIDCount `json:"data"`
@@ -67,6 +73,7 @@ type IntIDArrayCount struct {
 	Count []int64 `json:"count" bson:"count"`
 }
 
+// AggregateStringResponse TODO
 type AggregateStringResponse struct {
 	BaseResp `json:",inline"`
 	Data     []StringIDCount `json:"data"`
@@ -88,16 +95,19 @@ type ObjectIDCount struct {
 	Count int64 `bson:"count" json:"instance_count"`
 }
 
+// UpdateInstCount TODO
 type UpdateInstCount struct {
 	ID    UpdateID `json:"id" bson:"_id"`
 	Count int64    `json:"count" bson:"count"`
 }
 
+// UpdateID TODO
 type UpdateID struct {
 	ObjID  string `json:"bk_obj_id" bson:"bk_obj_id"`
 	InstID int64  `json:"bk_inst_id" bson:"bk_inst_id"`
 }
 
+// HostChangeChartData TODO
 type HostChangeChartData struct {
 	ReportType string          `json:"report_type" bson:"report_type"`
 	Data       []StringIDCount `json:"data" bson:"data"`
@@ -105,6 +115,7 @@ type HostChangeChartData struct {
 	CreateTime string          `json:"create_time" bson:"create_time"`
 }
 
+// ChartData TODO
 type ChartData struct {
 	ReportType string      `json:"report_type" bson:"report_type"`
 	Data       interface{} `json:"data" data:"data"`
@@ -112,6 +123,7 @@ type ChartData struct {
 	LastTime   time.Time   `json:"last_time" bson:"last_time"`
 }
 
+// ModelInstChartData TODO
 type ModelInstChartData struct {
 	ReportType string          `json:"report_type" bson:"report_type"`
 	Data       []StringIDCount `json:"data" data:"data"`
@@ -119,26 +131,31 @@ type ModelInstChartData struct {
 	LastTime   time.Time       `json:"last_time" bson:"last_time"`
 }
 
+// SearchChartResponse TODO
 type SearchChartResponse struct {
 	BaseResp `json:",inline"`
 	Data     SearchChartConfig `json:"data"`
 }
 
+// SearchChartCommon TODO
 type SearchChartCommon struct {
 	BaseResp `json:",inline"`
 	Data     CommonSearchChart `json:"data"`
 }
 
+// CommonSearchChart TODO
 type CommonSearchChart struct {
 	Count uint64      `json:"count"`
 	Info  ChartConfig `json:"info"`
 }
 
+// SearchChartConfig TODO
 type SearchChartConfig struct {
 	Count uint64                   `json:"count"`
 	Info  map[string][]ChartConfig `json:"info"`
 }
 
+// CloudMapping TODO
 type CloudMapping struct {
 	CreateTime Time   `json:"create_time" bson:"create_time"`
 	LastTime   Time   `json:"last_time" bson:"lsat_time"`
@@ -147,17 +164,20 @@ type CloudMapping struct {
 	CloudID    int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
 }
 
+// ChartClassification TODO
 type ChartClassification struct {
 	Host []ChartConfig `json:"host"`
 	Inst []ChartConfig `json:"inst"`
 	Nav  []ChartConfig `json:"nav"`
 }
 
+// ObjectIDName TODO
 type ObjectIDName struct {
 	ObjectID   string `json:"bk_object_id"`
 	ObjectName string `json:"bk_object_name"`
 }
 
+// StatisticInstOperation TODO
 type StatisticInstOperation struct {
 	Create []StringIDCount   `json:"create"`
 	Delete []StringIDCount   `json:"delete"`
@@ -165,10 +185,12 @@ type StatisticInstOperation struct {
 }
 
 var (
+	// BizModuleHostChart TODO
 	BizModuleHostChart = ChartConfig{
 		ReportType: common.BizModuleHostChart,
 	}
 
+	// HostOsChart TODO
 	HostOsChart = ChartConfig{
 		ReportType: common.HostOSChart,
 		Name:       "按操作系统类型统计",
@@ -179,6 +201,7 @@ var (
 		XAxisCount: 10,
 	}
 
+	// HostBizChart TODO
 	HostBizChart = ChartConfig{
 		ReportType: common.HostBizChart,
 		Name:       "按业务统计",
@@ -188,6 +211,7 @@ var (
 		XAxisCount: 10,
 	}
 
+	// HostCloudChart TODO
 	HostCloudChart = ChartConfig{
 		ReportType: common.HostCloudChart,
 		Name:       "按云区域统计",
@@ -198,6 +222,7 @@ var (
 		XAxisCount: 20,
 	}
 
+	// HostChangeBizChart TODO
 	HostChangeBizChart = ChartConfig{
 		ReportType: common.HostChangeBizChart,
 		Name:       "主机数量变化趋势",
@@ -205,10 +230,12 @@ var (
 		XAxisCount: 20,
 	}
 
+	// ModelAndInstCountChart TODO
 	ModelAndInstCountChart = ChartConfig{
 		ReportType: common.ModelAndInstCount,
 	}
 
+	// ModelInstChart TODO
 	ModelInstChart = ChartConfig{
 		ReportType: common.ModelInstChart,
 		Name:       "实例数量统计",
@@ -217,6 +244,7 @@ var (
 		XAxisCount: 10,
 	}
 
+	// ModelInstChangeChart TODO
 	ModelInstChangeChart = ChartConfig{
 		ReportType: common.ModelInstChangeChart,
 		Name:       "实例变更统计",
@@ -225,6 +253,7 @@ var (
 		XAxisCount: 10,
 	}
 
+	// InnerChartsMap TODO
 	InnerChartsMap = map[string]ChartConfig{
 		common.BizModuleHostChart:   BizModuleHostChart,
 		common.ModelAndInstCount:    ModelAndInstCountChart,
@@ -236,6 +265,7 @@ var (
 		common.ModelInstChangeChart: ModelInstChangeChart,
 	}
 
+	// InnerChartsArr TODO
 	InnerChartsArr = []string{
 		common.BizModuleHostChart,
 		common.ModelAndInstCount,

@@ -13,23 +13,27 @@
 #include "channel_id_config.h"
 #include <string.h>
 
-#include "log/log.h"
-#include "tools/macros.h"
-#include "tools/error.h"
-#include "tools/time.h"
 #include "bbx/gse_errno.h"
+#include "log/log.h"
+#include "tools/error.h"
+#include "tools/macros.h"
 #include "tools/pipe.h"
+#include "tools/time.h"
 
 #include "conf/confItem.h"
+#include "dataserver.h"
+#include "exporter/dsproxy/proxy_exporter.h"
 #include "exporter/exporter.h"
 #include "exporter/kafka/kafkaexporter.h"
-#include "exporter/redis/redisexporter.h"
 #include "exporter/pulsar/pulsarexporter.h"
+#include "exporter/redis/redisexporter.h"
+#include "ops/op_healthz.h"
+#include "ops/op_metric.h"
 
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
 
-bool ChannelIDFilter::CheckAndFilter( DataCell *ptrDataCell)
+bool ChannelIDFilter::CheckAndFilter(DataCell *ptrDataCell)
 {
     if (m_streamFilterAnd.empty())
     {
@@ -67,14 +71,14 @@ bool ChannelIDFilter::CheckAndFilter( DataCell *ptrDataCell)
         {
             if (CheckDataFilter(ptrDataCell, ptr_stream_filter))
             {
-                //one filter match success,check next
+                // one filter match success,check next
                 continue;
             }
 
             return false;
         }
     }
-        // Note:  check in data, this case only check the first filed
+
     return true;
 }
 
@@ -85,7 +89,7 @@ bool ChannelIDFilter::CheckProtocolFilter(DataCell *ptrDataCell, StreamFilter *f
 
     LOG_DEBUG("will check or extension's (%s) with the filter value (%s)", SAFE_CSTR(extension_str.c_str()), SAFE_CSTR(filter->m_fieldDataValue.c_str()));
     std::string tagfilter = "[" + filter->m_fieldDataValue + "]";
-    if(extension_str.find(tagfilter) != std::string::npos)
+    if (extension_str.find(tagfilter) != std::string::npos)
     {
         return true;
     }
@@ -93,16 +97,6 @@ bool ChannelIDFilter::CheckProtocolFilter(DataCell *ptrDataCell, StreamFilter *f
     return false;
 }
 
-std::string StreamFilter::ToString()
-{
-    std::string strbuff = "{\nName:%s, FieldIndex:%d, FieldDataType:%s, FieldDataValue:%s, Separator:%s, FieldIn:%s\n}";
-    std::string str_result;
-    char buff[1024] = {0};
-    snprintf(buff, sizeof(buff), strbuff.c_str(), m_name.c_str(), m_fieldIndex, m_fieldDataType.c_str(), m_fieldDataValue.c_str(), m_separator.c_str(), m_fieldIn.c_str());
-    str_result.append(buff);
-    str_result.append("\n");
-    return str_result;
-}
 std::string ChannelIDFilter::ToString()
 {
     /*
@@ -117,19 +111,17 @@ std::string ChannelIDFilter::ToString()
 
     std::string stream_filter_and;
 
-    for (std::vector<StreamFilter*>::iterator it = m_streamFilterAnd.begin(); it != m_streamFilterAnd.end(); it++)
+    for (std::vector<StreamFilter *>::iterator it = m_streamFilterAnd.begin(); it != m_streamFilterAnd.end(); it++)
     {
         stream_filter_and.append((*it)->ToString());
     }
 
-
     std::string stream_filter_or;
 
-    for (std::vector<StreamFilter*>::iterator it = m_streamFilterOr.begin(); it != m_streamFilterOr.end(); it++)
+    for (std::vector<StreamFilter *>::iterator it = m_streamFilterOr.begin(); it != m_streamFilterOr.end(); it++)
     {
         stream_filter_or.append((*it)->ToString());
     }
-
 
     std::string strbuff = "StreamTo:{\nStreamToName:%s, StorageConfigName:%s, TopicName:%s, StreamFilterAnd:%s, StreamFilterOr:%s\n}";
     std::string str_result;
@@ -143,7 +135,7 @@ std::string ChannelIDFilter::ToString()
 bool ChannelIDFilter::CheckDataFilter(DataCell *ptrDataCell, StreamFilter *filter)
 {
     string table_name;
-    char * pos = strstr(ptrDataCell->GetDataBuf(), filter->m_separator.c_str());
+    char *pos = strstr(ptrDataCell->GetDataBuf(), filter->m_separator.c_str());
     if (pos != NULL)
     {
         table_name.assign(ptrDataCell->GetDataBuf(), (pos - ptrDataCell->GetDataBuf()));
@@ -162,7 +154,6 @@ bool ChannelIDFilter::CheckDataFilter(DataCell *ptrDataCell, StreamFilter *filte
 
     return true;
 }
-
 
 bool ChannelIDFilter::checkOrFilter(DataCell *ptrDataCell)
 {
@@ -205,6 +196,27 @@ void ChannelIDFilter::GetTopicName(std::string &topicname)
     topicname.append(m_tableName);
 }
 
+uint32_t ChannelIDFilter::GetMemSize()
+{
+    uint32_t memSize = sizeof(ChannelIDFilter);
+    memSize += m_streamToName.length();
+    memSize += m_configName.length();
+    memSize += m_tableName.length();
+    memSize += m_andFilterStringInProtocol.length();
+
+    for (auto filter : m_streamFilterAnd)
+    {
+        memSize += filter->GetMemSize();
+    }
+
+    for (auto filter : m_streamFilterOr)
+    {
+        memSize += filter->GetMemSize();
+    }
+
+    return memSize;
+}
+
 bool ChannelIDFilter::IsValidData(DataCell *ptrDataCell)
 {
     if (m_streamFilterOr.empty())
@@ -235,532 +247,9 @@ StreamFilter *ChannelIDConfig::GetFilter(const std::string &filterName)
     return NULL;
 }
 
-StreamConfig *ChannelIDConfig::GetConfig(const std::string &configName)
+void ChannelIdStreamExporterManager::CleanInvalidExporter()
 {
-    std::size_t max_count = m_streamConfig.size();
-    for (std::size_t idx = 0; idx < max_count; ++idx)
-    {
-        StreamConfig *ptr_stream_config = m_streamConfig.at(idx);
-        if (ptr_stream_config->m_name.compare(configName) == 0)
-        {
-            return ptr_stream_config;
-        }
-    }
-    return NULL;
-}
-
-ChannelIDStorage *ChannelIDConfig::ToChannelIDStorage()
-{
-#if 0
-    ChannelIDStorage *ptr_channelid_storag = NULL;
-
-    std::size_t max_count = m_streamTo.size();
-    LOG_DEBUG("create channel id storage: streamto size:%d", max_count);
-    for (std::size_t stream_to_idx = 0; stream_to_idx < max_count; ++stream_to_idx)
-    {
-        StreamTo *ptr_stream_to = m_streamTo.at(stream_to_idx);
-        ChannelIDStorage *ptr_channelid_storage_tmp = new ChannelIDStorage();
-        ptr_channelid_storage_tmp->m_streamToName = ptr_stream_to->m_name;
-        ptr_channelid_storage_tmp->m_channelID = m_ptrMetadata->m_channelID;
-        ptr_channelid_storage_tmp->m_ptrChannelIDFilters->m_streamToName = ptr_stream_to->m_name;
-        ptr_channelid_storage_tmp->m_ptrChannelIDFilters->m_configName = ptr_stream_to->m_configName;
-        ptr_channelid_storage_tmp->m_ptrChannelIDFilters->m_tableName = ptr_stream_to->m_ptrTargetStorageTable->m_name;
-
-        // get config
-        StreamConfig *ptr_stream_config = GetConfig(ptr_stream_to->m_configName);
-        if (NULL == ptr_stream_config)
-        {
-            LOG_ERROR("the config name (%s) is invalid, please to check the channel id (%u) config in zk", SAFE_CSTR(ptr_stream_to->m_configName.c_str()), m_ptrMetadata->m_channelID);
-            delete ptr_channelid_storage_tmp;
-            continue;
-        }
-        ptr_channelid_storage_tmp->m_ptrConfigInfo = ptr_stream_config;
-
-        if (ptr_stream_config->m_reportMode == "kafka") // only suport kafka and file
-        {
-            ptr_channelid_storage_tmp->m_storageType = KAFKA_COMMON;
-        }
-        else if (ptr_stream_config->m_reportMode == "pulsar")
-        {
-            ptr_channelid_storage_tmp->m_storageType = EXPORT_PULSAR;
-            std::string pulsar_topic_name;
-            if (!ptr_stream_to->m_ptrTargetStorageTable->m_persistent.empty())
-            {
-                pulsar_topic_name.append(ptr_stream_to->m_ptrTargetStorageTable->m_persistent);
-                pulsar_topic_name.append("://");
-            }
-            else
-            {
-                pulsar_topic_name.append("persistent");
-                pulsar_topic_name.append("://");
-            }
-            if (!ptr_stream_to->m_ptrTargetStorageTable->m_tenant.empty())
-            {
-                pulsar_topic_name.append(ptr_stream_to->m_ptrTargetStorageTable->m_tenant);
-                pulsar_topic_name.append("/");
-            }
-            if (!ptr_stream_to->m_ptrTargetStorageTable->m_namespace.empty())
-            {
-                pulsar_topic_name.append(ptr_stream_to->m_ptrTargetStorageTable->m_namespace);
-                pulsar_topic_name.append("/");
-            }
-            pulsar_topic_name.append(ptr_stream_to->m_ptrTargetStorageTable->m_name);
-        }
-        else
-        {
-            ptr_channelid_storage_tmp->m_storageType = EXPORT_FILE;
-        }
-
-        // get and filter
-        std::size_t max_count = m_streamTo.at(stream_to_idx)->m_filterNameAnd.size();
-        for (std::size_t idx = 0; idx < max_count; ++idx)
-        {
-            std::string filter_name = m_streamTo.at(stream_to_idx)->m_filterNameAnd.at(idx);
-            StreamFilter *ptr_stream_filter = GetFilter(filter_name);
-            if (NULL == ptr_stream_filter)
-            {
-                LOG_ERROR("the filter name (%s) is invalid, please to check the channel id (%u) config in zk", SAFE_CSTR(filter_name.c_str()), m_ptrMetadata->m_channelID);
-                continue;
-            }
-            ptr_channelid_storage_tmp->m_ptrChannelIDFilters->m_streamFilterAnd.push_back(ptr_stream_filter);
-
-            if (ptr_stream_filter->m_fieldIn.compare("protocol") == 0)
-            {
-                ptr_channelid_storage_tmp->m_ptrChannelIDFilters->m_andFilterStringInProtocol.append(ptr_stream_filter->m_fieldDataValue);
-            }
-            else
-            {
-                ptr_channelid_storage_tmp->m_ptrChannelIDFilters->m_isNeedCheckAndFilterInData = true;
-            }
-        }
-
-        //  get or filter
-        max_count = m_streamTo.at(stream_to_idx)->m_filterNameOr.size();
-        for (std::size_t idx = 0; idx < max_count; ++idx)
-        {
-            std::string filter_name = m_streamTo.at(stream_to_idx)->m_filterNameOr.at(idx);
-            StreamFilter *ptr_stream_filter = GetFilter(filter_name);
-            if (NULL == ptr_stream_filter)
-            {
-                LOG_ERROR("the filter name (%s) is invalid, please to check the channel id (%u) config in zk", SAFE_CSTR(filter_name.c_str()), m_ptrMetadata->m_channelID);
-                continue;
-            }
-            ptr_channelid_storage_tmp->m_ptrChannelIDFilters->m_streamFilterOr.push_back(ptr_stream_filter);
-        }
-
-        if (NULL != ptr_channelid_storag)
-        {
-            ptr_channelid_storag->SetNext(ptr_channelid_storage_tmp);
-        }
-        else
-        {
-            ptr_channelid_storag = ptr_channelid_storage_tmp;
-        }
-    }
-
-    return ptr_channelid_storag;
-#endif
-    return NULL;
-}
-
-std::string ChannelIDStorage::ToString()
-{
-    std::string strbuff = "ChannelID:%d, StreamToName:%s, StorageType:%d{\n";
-    std::string str_result;
-    char buff[1024] = {0};
-    snprintf(buff, sizeof(buff), strbuff.c_str(), m_channelID, m_streamToName.c_str(), m_storageType);
-    str_result.append(buff);
-
-    if (m_ptrConfigInfo != NULL)
-    {
-        str_result.append(m_ptrConfigInfo->ToString());
-    }
-
-    if (m_ptrChannelIDFilters != NULL)
-    {
-        str_result.append(m_ptrChannelIDFilters->ToString());
-    }
-
-    str_result.append("\n}\n\n");
-    return str_result;
-}
-
-
-std::string StreamConfig::ToString()
-{
-    std::string host_list;
-    for (std::vector<Address*>::iterator it = m_addresses.begin(); it != m_addresses.end(); it++)
-    {
-        host_list.append((*it)->ToString());
-        host_list.append(",");
-    }
-    host_list.erase(host_list.end()-1);
-
-    std::string strbuff = "StorageConfig:{\nName:%s, ReportMode:%s, LogDir:%s, PulsarURL:%s, Host:%s, Token:%s\n}";
-    std::string str_result;
-    char buff[4096] = {0};
-    snprintf(buff, sizeof(buff), strbuff.c_str(), m_name.c_str(), m_reportMode.c_str(), m_dataLogDir.c_str(), m_pulsarUrl.c_str(), host_list.c_str(), m_token.c_str());
-    str_result.append(buff);
-    str_result.append("\n");
-    return str_result;
-}
-
-
-bool ChannelIDConfigFactory::ParseMetadata(const Json::Value &metadata, Metadata *ptrMetadata, std::string &errorMsg)
-{
-    ptrMetadata->m_name = metadata.get("name", "").asString();
-    ptrMetadata->m_version = metadata.get("version", "").asString();
-    ptrMetadata->m_requestPlatName = metadata.get("plat_name", "").asString();
-    ptrMetadata->m_channelID = metadata.get("channel_id", 0).asInt();
-    if (metadata.isMember("label"))
-    {
-        ptrMetadata->m_label.m_bizid = metadata["label"].get("label", 0).asInt();
-        ptrMetadata->m_label.m_bkBizName = metadata["label"].get("bk_biz_name", "").asString();
-        ptrMetadata->m_label.m_odm = metadata["label"].get("odm", "").asString();
-    }
-    return true;
-}
-
-
-void ChannelIDConfigFactory::ParseKafkaConfig(const Json::Value &input_json, KafkaStorageTable *kafka_table)
-{
-    kafka_table->m_topicName = input_json.get("topic_name", "").asString();
-    kafka_table->m_bizId = input_json.get("biz_id", "").asString();
-    kafka_table->m_dataSet = input_json.get("data_set", "").asString();
-    kafka_table->m_partition = input_json.get("partition", -1).asInt();
-    return;
-}
-
-
-void ChannelIDConfigFactory::ParsePulsarConfig(const Json::Value &input_json, PulsarStorageTable *pulsar_table)
-{
-    pulsar_table->m_namespace = input_json.get("namespace", "").asString();
-    pulsar_table->m_persistent = input_json.get("persisten", "persistent").asString();
-    pulsar_table->m_tenant = input_json.get("tenant", "").asString();
-    pulsar_table->m_topicName = input_json.get("topic_name", "").asString();
-    pulsar_table->m_bizId = input_json.get("biz_id", "").asString();
-    pulsar_table->m_dataSet = input_json.get("data_set", "").asString();
-    return;
-}
-
-void ChannelIDConfigFactory::ParseRedisConfig(const Json::Value &input_json, RedisStorageTable *redis_table)
-{
-    redis_table->m_channelName = input_json.get("channel_name", "").asString();
-    redis_table->m_bizId = input_json.get("biz_id", "").asString();
-    redis_table->m_dataSet = input_json.get("data_set", "").asString();
-
-    return;
-}
-
-bool ChannelIDConfigFactory::ParseStreamTo(const Json::Value &inputJson, std::vector<StreamTo *> &streamTo, std::string &errorMsg)
-{
-    if (!inputJson.isArray())
-    {
-        errorMsg = "'stream_to' node is not an array";
-        return false;
-    }
-
-    Json::ArrayIndex maxSize = inputJson.size();
-    for (Json::ArrayIndex idx = 0; idx < maxSize; ++idx)
-    {
-        Json::Value stream_channel = inputJson[idx];
-        StreamTo *ptr_stream_to = new StreamTo();
-        streamTo.push_back(ptr_stream_to);
-        ptr_stream_to->m_name = stream_channel.get("name", "").asString();
-
-        if (!stream_channel.isMember("stream_to"))
-        {
-            errorMsg = "'stream_to' node is not exist";
-            return false;
-        }
-        Json::Value stream_to_value = stream_channel["stream_to"];
-        ptr_stream_to->m_streamToId = stream_to_value.get("stream_to_id", -1).asInt();
-
-        if (stream_to_value.isMember("kafka"))
-        {
-            Json::Value kafka_config = stream_to_value["kafka"];
-            KafkaStorageTable * kafka_table = new KafkaStorageTable();
-            ParseKafkaConfig(kafka_config, kafka_table);
-            ptr_stream_to->m_storageTable.m_kafkaStorageTable = kafka_table;
-            ptr_stream_to->m_storageType = KAFKA_COMMON;
-        }
-        else if (stream_to_value.isMember("pulsar"))
-        {
-            Json::Value pulsar_config = stream_to_value["pulsar"];
-            PulsarStorageTable * pulsar_table = new PulsarStorageTable();
-            ParsePulsarConfig(pulsar_config, pulsar_table);
-            ptr_stream_to->m_storageTable.m_pulsarStorageTable = pulsar_table;
-            ptr_stream_to->m_storageType = EXPORT_PULSAR;
-        }
-        else if (stream_to_value.isMember("redis"))
-        {
-            Json::Value redis_config = stream_to_value["redis"];
-            ptr_stream_to->m_storageType = REDIS_SENTINEL_PUB;
-            RedisStorageTable * redis_table = new RedisStorageTable();
-            ParseRedisConfig(redis_config, redis_table);
-            ptr_stream_to->m_storageTable.m_redisStorageTable = redis_table;
-        }
-        else
-        {
-            errorMsg = "Invalid configuration, missing one of them (kafka/pulsar/redis)";
-            return false;
-        }
-
-        if (stream_channel.isMember("filter_name_and"))
-        {
-            Json::Value filter_name_and = stream_channel["filter_name_and"];
-            if (!filter_name_and.isArray())
-            {
-                errorMsg = "'stream_to/filter_name_and' is not an array";
-                return false;
-            }
-
-            Json::ArrayIndex filter_name_and_size = filter_name_and.size();
-            for (Json::ArrayIndex idx = 0; idx != filter_name_and_size; ++idx)
-            {
-                if (!filter_name_and[idx].isString())
-                {
-                    errorMsg = "stream_to/filter_name_and[" + gse::tools::strings::ToString(idx) + "] is not a string value";
-                    return false;
-                }
-                ptr_stream_to->m_filterNameAnd.push_back(filter_name_and[idx].asString());
-            }
-        }
-
-        if (stream_channel.isMember("filter_name_or"))
-        {
-            Json::Value filter_name_or = stream_channel["filter_name_or"];
-            if (!filter_name_or.isArray())
-            {
-                errorMsg = "'stream_to/filter_name_or' is not an array";
-                return false;
-            }
-
-            Json::ArrayIndex filter_name_or_size = filter_name_or.size();
-            for (Json::ArrayIndex idx = 0; idx != filter_name_or_size; ++idx)
-            {
-                if (!filter_name_or[idx].isString())
-                {
-                    errorMsg = "stream_to/filter_name_or[" + gse::tools::strings::ToString(idx) + "] is not a string value";
-                    return false;
-                }
-                ptr_stream_to->m_filterNameOr.push_back(filter_name_or[idx].asString());
-            }
-        }
-    }
-    return true;
-}
-
-bool ChannelIDConfigFactory::ParseStreamConfig(const Json::Value &inputJson, std::vector<StreamConfig *> &streamConfig, std::string &errorMsg)
-{
-    if (!inputJson.isArray())
-    {
-        errorMsg = "'stream_configs' is not an array";
-        return false;
-    }
-
-    Json::ArrayIndex stream_config_size = inputJson.size();
-    for (Json::ArrayIndex idx = 0; idx < stream_config_size; ++idx)
-    {
-        StreamConfig *ptr_stream_config = new StreamConfig();
-        streamConfig.push_back(ptr_stream_config);
-        Json::Value stream_config_value = inputJson[idx];
-        ptr_stream_config->m_name = stream_config_value.get("name", "").asString();
-        ptr_stream_config->m_reportMode = stream_config_value.get("report_mode", "").asString();
-        ptr_stream_config->m_dataLogDir = stream_config_value.get("data_log_path", "").asString();
-
-        // 以单条数据1K计算，最高约 缓存 18GB 的存储空间
-        ptr_stream_config->m_dataLogFileName = stream_config_value.get("data_log_filename", "").asString();
-
-        if (ptr_stream_config->m_reportMode == "kafka")
-        {
-            ptr_stream_config->m_kafkaConfig.m_queueBufferingMaxMessages =  stream_config_value.get("queue_buffering_max_messages", DEFAULT_MAX_KAFKA_QUEUE_SIZE).asString();
-            ptr_stream_config->m_kafkaConfig.m_messageMaxBytes =  stream_config_value.get("message_max_bytes", DEFAULT_MAX_KAFKA_MESSAGE_BYTES_SIZE).asString();
-            ptr_stream_config->m_kafkaConfig.m_securityProtocol =  stream_config_value.get("security_protocol", "").asString();
-            ptr_stream_config->m_kafkaConfig.m_saslMechanisms =  stream_config_value.get("sasl_mechanisms", "").asString();
-            ptr_stream_config->m_kafkaConfig.m_saslUserName =  stream_config_value.get("sasl_username", "").asString();
-            ptr_stream_config->m_kafkaConfig.m_saslPasswd =  stream_config_value.get("sasl_passwd", "").asString();
-            ptr_stream_config->m_kafkaConfig.m_requestRequiredAcks =  stream_config_value.get("request_required_acks", "1").asString();
-            ptr_stream_config->m_kafkaConfig.m_queueBufferingMaxMs =  stream_config_value.get("queue_buffering_max_ms", "200").asString();
-        }
-        else if (ptr_stream_config->m_reportMode == "pulsar")
-        {
-            ptr_stream_config->m_token = stream_config_value.get("token", "").asString();
-        }
-
-        
-        if (!stream_config_value.isMember("storage_address"))
-        {
-            continue;
-        }
-
-        Json::Value stream_config_storage_address_value = stream_config_value["storage_address"];
-        if (!stream_config_storage_address_value.isArray())
-        {
-            continue;
-        }
-
-        Json::ArrayIndex stream_config_storage_address_value_size = stream_config_storage_address_value.size();
-        for (Json::ArrayIndex idx = 0; idx < stream_config_storage_address_value_size; ++idx)
-        {
-            Address *ptr_address = new Address();
-            ptr_stream_config->m_addresses.push_back(ptr_address);
-            ptr_address->m_ip = stream_config_storage_address_value[idx].get("ip", "").asString();
-            ptr_address->m_port = stream_config_storage_address_value[idx].get("port", 0).asUInt64();
-        }
-    }
-    return true;
-}
-
-
-bool ChannelIDConfigFactory::ParseStorageAddresses(Json::Value &storage_addresses, std::vector<Address> &addresses)
-{
-    if (!storage_addresses.isArray())
-    {
-        LOG_ERROR("storage address must bu array, input json(%s)", storage_addresses.toStyledString().c_str());
-        return false;
-    }
-
-    Json::ArrayIndex storage_address_size = storage_addresses.size();
-    for (Json::ArrayIndex idx = 0; idx < storage_address_size; ++idx)
-    {
-        Address address;
-        address.m_ip = storage_addresses[idx].get("ip", "").asString();
-        address.m_port = storage_addresses[idx].get("port", 0).asInt();
-        addresses.push_back(address);
-    }
-
-    return true;
-}
-
-bool ChannelIDConfigFactory::ParseExporterConfig(const Json::Value &exporter_cfg_json, ChannelIdExporterConfig * exporter_cfg, std::string &errorMsg)
-{
-    exporter_cfg->m_name = exporter_cfg_json.get("name", "").asString();
-    exporter_cfg->m_reportMode = exporter_cfg_json.get("report_mode", "").asString();
-    exporter_cfg->m_rawJsonStr = exporter_cfg_json.toStyledString();
-    if (exporter_cfg->m_reportMode == "kafka")
-    {
-        if (!exporter_cfg_json.isMember("kafka"))
-        {
-            LOG_ERROR("failed to parse exporter config, the kafka entry is missing (%s)",
-                      exporter_cfg_json.toStyledString().c_str());
-            return false;
-        }
-
-        exporter_cfg->m_storageType = KAFKA_COMMON;
-        exporter_cfg->m_storage.m_kafkaStorage = new KafkaStorage();
-
-        KafkaConfig * ptr_kafka_config = &exporter_cfg->m_storage.m_kafkaStorage->m_kafkaConfig;
-        ptr_kafka_config->m_queueBufferingMaxMessages =  exporter_cfg_json["kafka"].get("queue_buffering_max_messages", DEFAULT_MAX_KAFKA_QUEUE_SIZE).asString();
-        ptr_kafka_config->m_messageMaxBytes =  exporter_cfg_json["kafka"].get("message_max_bytes", DEFAULT_MAX_KAFKA_MESSAGE_BYTES_SIZE).asString();
-        ptr_kafka_config->m_securityProtocol =  exporter_cfg_json["kafka"].get("security_protocol", "").asString();
-        ptr_kafka_config->m_saslMechanisms =  exporter_cfg_json["kafka"].get("sasl_mechanisms", "").asString();
-        ptr_kafka_config->m_saslUserName =  exporter_cfg_json["kafka"].get("sasl_username", "").asString();
-        ptr_kafka_config->m_saslPasswd =  exporter_cfg_json["kafka"].get("sasl_passwd", "").asString();
-        ptr_kafka_config->m_requestRequiredAcks =  exporter_cfg_json["kafka"].get("request_required_acks", "1").asString();
-        ptr_kafka_config->m_queueBufferingMaxMs =  exporter_cfg_json["kafka"].get("queue_buffering_max_ms", "200").asString();
-
-        LOG_DEBUG("exporter name:%s, parse kafka config(securit_protocal:%s, sasl_mechanisms:%s, user_name:%s, buffering_max_ms:%s, buffering_max_message:%s)",
-                  exporter_cfg->m_name.c_str(),
-                  ptr_kafka_config->m_securityProtocol.c_str(),
-                  ptr_kafka_config->m_saslMechanisms.c_str(),
-                  ptr_kafka_config->m_saslUserName.c_str(),
-                  ptr_kafka_config->m_queueBufferingMaxMs.c_str(),
-                  ptr_kafka_config->m_queueBufferingMaxMessages.c_str());
-
-        if (!exporter_cfg_json["kafka"].isMember("storage_address"))
-        {
-            LOG_ERROR("failed to parse exporter config, the storage_address entry is missing in Kafka JSON(%s)",
-                      exporter_cfg_json.toStyledString().c_str());
-            return false;
-        }
-
-        Json::Value storage_addresses = exporter_cfg_json["kafka"]["storage_address"];
-        if (!ParseStorageAddresses(storage_addresses, exporter_cfg->m_storage.m_kafkaStorage->m_addresses))
-        {
-            LOG_ERROR("failed to parse exporter config, the storage_address is empty",
-                      exporter_cfg_json.toStyledString().c_str());
-            return false;
-        }
-
-    }
-    else if (exporter_cfg->m_reportMode == "pulsar")
-    {
-        if (!exporter_cfg_json.isMember("pulsar"))
-        {
-            LOG_ERROR("failed to parse exporter config, the pulsar entry is missing (%s)",
-                      exporter_cfg_json.toStyledString().c_str());
-            return false;
-        }
-
-        exporter_cfg->m_storageType = EXPORT_PULSAR;
-        exporter_cfg->m_storage.m_pulsarStorage = new PulsarStorage();
-        exporter_cfg->m_storage.m_pulsarStorage->m_token = exporter_cfg_json["pulsar"].get("token", "").asString();
-        Json::Value storage_addresses = exporter_cfg_json["pulsar"]["storage_address"];
-        ParseStorageAddresses(storage_addresses, exporter_cfg->m_storage.m_pulsarStorage->m_addresses);
-    }
-    else if (exporter_cfg->m_reportMode == "redis")
-    {
-        if (!exporter_cfg_json.isMember("redis"))
-        {
-            LOG_ERROR("failed to redis exporter config, the pulsar entry is missing (%s)",
-                      exporter_cfg_json.toStyledString().c_str());
-            return false;
-        }
-
-        exporter_cfg->m_storage.m_redisStorage = new RedisStorage();
-        std::string mode = exporter_cfg_json["redis"].get("mode", "sentinel").asString();
-        if (mode == kRedisSentinel)
-        {
-            exporter_cfg->m_storageType = REDIS_SENTINEL_PUB;
-        }
-        else if (mode == kRedisSingle)
-        {
-            exporter_cfg->m_storageType = REDIS_PUB;
-        }
-
-        exporter_cfg->m_storage.m_redisStorage->m_masterName = exporter_cfg_json["redis"].get("master_name", "").asString();
-        exporter_cfg->m_storage.m_redisStorage->m_passwd = exporter_cfg_json["redis"].get("passwd", "").asString();
-        Json::Value storage_addresses = exporter_cfg_json["redis"]["storage_address"];
-        ParseStorageAddresses(storage_addresses, exporter_cfg->m_storage.m_redisStorage->m_addresses);
-    }
-    else
-    {
-        LOG_ERROR("failed to parse exporter config, invalid config (%s)",
-                  exporter_cfg_json.toStyledString().c_str());
-        return false;
-    }
-    return true;
-}
-
-
-bool ChannelIDConfigFactory::ParseStreamFilter(const Json::Value &inputJson, std::vector<StreamFilter *> &streamFilter, std::string &errorMsg)
-{
-    if (!inputJson.isArray())
-    {
-        errorMsg = "'stream_filters' is not an array";
-        return false;
-    }
-
-    Json::ArrayIndex stream_filter_size = inputJson.size();
-    for (Json::ArrayIndex idx = 0; idx < stream_filter_size; ++idx)
-    {
-        StreamFilter *ptr_stream_filter = new StreamFilter();
-        Json::Value stream_filter_value = inputJson[idx];
-        streamFilter.push_back(ptr_stream_filter);
-        ptr_stream_filter->m_name = stream_filter_value.get("name", "").asString();
-        ptr_stream_filter->m_fieldIndex = stream_filter_value.get("field_index", 0).asInt64();
-        ptr_stream_filter->m_fieldDataType = stream_filter_value.get("field_data_type", "").asString();
-        ptr_stream_filter->m_fieldDataValue = stream_filter_value.get("field_data_value", "").asString();
-        ptr_stream_filter->m_separator = stream_filter_value.get("field_separator", "").asString();
-        ptr_stream_filter->m_fieldIn = stream_filter_value.get("field_in", "").asString();
-    }
-    return true;
-}
-
-void ChannelIdExporterManager::CleanInvalidExporter()
-{
-    std::list<Exporter*>::iterator it = m_needDeleteExporters.begin();
+    std::list<Exporter *>::iterator it = m_needDeleteExporters.begin();
     for (; it != m_needDeleteExporters.end();)
     {
         if ((*it) != NULL)
@@ -787,97 +276,26 @@ void ChannelIdExporterManager::CleanInvalidExporter()
 
 ChannelIdExporterConfig::ChannelIdExporterConfig()
 {
-    m_storage.m_kafkaStorage = NULL;
-    m_storage.m_pulsarStorage = NULL;
-    m_storage.m_redisStorage = NULL;
     m_setDeleteTimestamp = 0;
-    m_storageType = UNKNOWN;
     m_streamToId = 0;
 }
 ChannelIdExporterConfig::~ChannelIdExporterConfig()
 {
-    if (m_storageType == KAFKA_COMMON)
-    {
-        if (m_storage.m_kafkaStorage != NULL)
-        {
-            delete m_storage.m_kafkaStorage;
-            m_storage.m_kafkaStorage = NULL;
-        }
-    }
-    else if (m_storageType == REDIS_SENTINEL_PUB)
-    {
-        if (m_storage.m_redisStorage != NULL)
-        {
-            delete m_storage.m_redisStorage;
-            m_storage.m_redisStorage = NULL;
-        }
-    }
-    else if (m_storageType == EXPORT_PULSAR)
-    {
-        if (m_storage.m_pulsarStorage != NULL)
-        {
-            delete m_storage.m_pulsarStorage;
-            m_storage.m_pulsarStorage = NULL;
-        }
-    }
 }
 
-ChannelIdExporterConfig& ChannelIdExporterConfig::operator=(const ChannelIdExporterConfig &srcConf)
+ChannelIdExporterConfig &ChannelIdExporterConfig::operator=(ChannelIdExporterConfig &srcConf)
 {
-    this->m_name = srcConf.m_name;
-    this->m_reportMode = srcConf.m_reportMode;
     this->m_streamToId = srcConf.m_streamToId;
-
-
-    if (srcConf.m_reportMode == "kafka")
-    {
-        this->m_storageType = KAFKA_COMMON;
-        if (this->m_storage.m_kafkaStorage != NULL)
-        {
-            delete this->m_storage.m_kafkaStorage;
-            this->m_storage.m_kafkaStorage = NULL;
-        }
-        this->m_storage.m_kafkaStorage = new KafkaStorage();
-        *this->m_storage.m_kafkaStorage = *srcConf.m_storage.m_kafkaStorage;
-        LOG_DEBUG("copy kafka storage config, dest:%s, src:%s",
-                  this->m_storage.m_kafkaStorage->m_kafkaConfig.m_saslUserName.c_str(), srcConf.m_storage.m_kafkaStorage->m_kafkaConfig.m_saslUserName.c_str());
-
-    }
-    else if (srcConf.m_reportMode == "pulsar")
-    {
-        this->m_storageType = EXPORT_PULSAR;
-        if (this->m_storage.m_pulsarStorage != NULL)
-        {
-            delete this->m_storage.m_pulsarStorage;
-            this->m_storage.m_pulsarStorage = NULL;
-        }
-        this->m_storage.m_pulsarStorage = new PulsarStorage();
-        *this->m_storage.m_pulsarStorage = *srcConf.m_storage.m_pulsarStorage;
-    }
-    else if (srcConf.m_reportMode == "redis")
-    {
-        if (this->m_storage.m_redisStorage != NULL)
-        {
-            delete this->m_storage.m_redisStorage;
-            this->m_storage.m_redisStorage = NULL;
-        }
-        this->m_storageType = srcConf.m_storageType;
-        this->m_storage.m_redisStorage = new RedisStorage();
-        *this->m_storage.m_redisStorage = *srcConf.m_storage.m_redisStorage;
-    }
-    return *this;
+    this->m_streamToCluster.CopyFrom(&srcConf.m_streamToCluster);
 }
 
-ChannelIdExporterConfig::ChannelIdExporterConfig(const ChannelIdExporterConfig &srcConf)
+ChannelIdExporterConfig::ChannelIdExporterConfig(ChannelIdExporterConfig &srcConf)
 {
-    m_storage.m_kafkaStorage = NULL;
-    m_storage.m_pulsarStorage = NULL;
-    m_storage.m_redisStorage = NULL;
     m_setDeleteTimestamp = 0;
     *this = srcConf;
 }
 
-ChannelIdExporterManager::ChannelIdExporterManager()
+ChannelIdStreamExporterManager::ChannelIdStreamExporterManager()
 {
     m_cleanTime.tv_sec = 10;
     m_cleanTime.tv_usec = 0;
@@ -886,9 +304,12 @@ ChannelIdExporterManager::ChannelIdExporterManager()
     m_evBase = NULL;
     m_cleanTimerEvent = NULL;
     m_exporterUpdateEvent = NULL;
+    m_stoped = false;
+
+    LOG_DEBUG("ChannelIdStreamExporterManager init");
 }
 
-void ChannelIdExporterManager::FreeEvent()
+void ChannelIdStreamExporterManager::FreeEvent()
 {
     if (m_cleanTimerEvent != NULL)
     {
@@ -919,11 +340,11 @@ void ChannelIdExporterManager::FreeEvent()
     }
 }
 
-ChannelIdExporterManager::~ChannelIdExporterManager()
+ChannelIdStreamExporterManager::~ChannelIdStreamExporterManager()
 {
     LOG_DEBUG("delete ChannelIdExporterManager obj(%p)", this);
     FreeEvent();
-    std::list<Exporter*>::iterator it = m_needDeleteExporters.begin();
+    std::list<Exporter *>::iterator it = m_needDeleteExporters.begin();
     for (; it != m_needDeleteExporters.end(); it++)
     {
         Exporter *ptr_delete = (*it);
@@ -933,7 +354,7 @@ ChannelIdExporterManager::~ChannelIdExporterManager()
         delete ptr_delete;
     }
 
-    std::map<uint32_t, Exporter*>::iterator m_it = m_exporters.begin();
+    std::map<uint32_t, Exporter *>::iterator m_it = m_exporters.begin();
     for (; m_it != m_exporters.end();)
     {
         Exporter *ptr_delete = m_it->second;
@@ -944,26 +365,27 @@ ChannelIdExporterManager::~ChannelIdExporterManager()
     }
 }
 
-void ChannelIdExporterManager::InvalidExporterCleanTimerEvent(int fd, short which, void *v)
+void ChannelIdStreamExporterManager::InvalidExporterCleanTimerEvent(int fd, short which, void *v)
 {
-    ChannelIdExporterManager *ptr_this = (ChannelIdExporterManager*)v;
+    ChannelIdStreamExporterManager *ptr_this = (ChannelIdStreamExporterManager *)v;
     ptr_this->CleanInvalidExporter();
 }
 
-int ChannelIdExporterManager::UpdateExporterConfig(ZkEvent *event)
+int ChannelIdStreamExporterManager::UpdateExporterConfig(ZkEvent *event)
 {
     int ret = gse::tools::pipe::WritePipe(m_exporterUpdateNotifyFd[1], &event, sizeof(event));
     return (ret > 0 ? GSE_SUCCESS : GSE_ERROR);
 }
 
-void ChannelIdExporterManager::stop()
+void ChannelIdStreamExporterManager::Stop()
 {
+    m_stoped = true;
     FreeEvent();
 }
 
-void ChannelIdExporterManager::ExporterUpdateEvent(int fd, short which, void *v)
+void ChannelIdStreamExporterManager::ExporterUpdateEvent(int fd, short which, void *v)
 {
-    ChannelIdExporterManager *ptr_this = (ChannelIdExporterManager*)v;
+    ChannelIdStreamExporterManager *ptr_this = (ChannelIdStreamExporterManager *)v;
     ChannelIdExporterConfig *exporter_cfg = NULL;
 
     ZkEvent *event = NULL;
@@ -981,23 +403,22 @@ void ChannelIdExporterManager::ExporterUpdateEvent(int fd, short which, void *v)
         return;
     }
 
-    switch(event->m_eventType)
+    switch (event->m_eventType)
     {
     case ZK_EVENT_LIST:
         break;
     case ZK_EVENT_DELETE:
     {
-        uint32_t* ptr_channelid = (uint32_t*)event->m_msg;
+        uint32_t *ptr_channelid = (uint32_t *)event->m_msg;
         ptr_this->DeleteExporter(*ptr_channelid);
         delete ptr_channelid;
         break;
     }
-    case ZK_EVENT_CHANGE://no break
+    case ZK_EVENT_CHANGE: // no break
     case ZK_EVENT_CREATE:
     {
         exporter_cfg = (ChannelIdExporterConfig *)event->m_msg;
-        ptr_this->Update(exporter_cfg);
-        LOG_DEBUG("update exporter config:(%s)", exporter_cfg->m_rawJsonStr.c_str());
+        ptr_this->StreamExporterUpdate(exporter_cfg);
         delete exporter_cfg;
         break;
     }
@@ -1007,16 +428,18 @@ void ChannelIdExporterManager::ExporterUpdateEvent(int fd, short which, void *v)
 
     delete event;
     return;
-
 }
-int ChannelIdExporterManager::Init()
+
+int ChannelIdStreamExporterManager::Init()
 {
     return 0;
 }
 
-int ChannelIdExporterManager::ThreadFun()
+int ChannelIdStreamExporterManager::ThreadFun()
 {
-    int ret = -1;
+    LOG_DEBUG("ChannelIdStreamExporterManager running");
+
+    int rc = -1;
     gse::tools::pipe::CreatePipe(m_exporterUpdateNotifyFd);
     m_evBase = event_base_new();
     if (NULL == m_evBase)
@@ -1026,7 +449,7 @@ int ChannelIdExporterManager::ThreadFun()
         LOG_ERROR("failed to new event base object for channel id manager thread, errno:%d, errmsg:%s", tmp_errno, SAFE_CSTR(tmp_errmsg.c_str()));
         return GSE_SYSTEMERROR;
     }
-    m_cleanTimerEvent = event_new(m_evBase, -1, EV_PERSIST, ChannelIdExporterManager::InvalidExporterCleanTimerEvent, this);
+    m_cleanTimerEvent = event_new(m_evBase, -1, EV_PERSIST, ChannelIdStreamExporterManager::InvalidExporterCleanTimerEvent, this);
     if (NULL == m_cleanTimerEvent)
     {
         int tmp_errno = gse_errno;
@@ -1034,15 +457,16 @@ int ChannelIdExporterManager::ThreadFun()
         LOG_ERROR("failed to new clean timer event errno:%d, errmsg:%s", tmp_errno, SAFE_CSTR(tmp_errmsg.c_str()));
         return GSE_SYSTEMERROR;
     }
-    ret = event_add(m_cleanTimerEvent, &m_cleanTime);
-    if (ret < 0)
+    rc = event_add(m_cleanTimerEvent, &m_cleanTime);
+    if (rc < 0)
     {
         int tmp_errno = gse_errno;
         std::string tmp_errmsg = gse::tools::error::ErrnoToStr(tmp_errno);
-        LOG_ERROR("failed to start clean invalid channel id timer event. ret:%d, errno:%d, errmsg:%s", ret, tmp_errno, SAFE_CSTR(tmp_errmsg.c_str()));
+        LOG_ERROR("failed to start clean invalid channel id timer event. rc:%d, errno:%d, errmsg:%s", rc, tmp_errno, SAFE_CSTR(tmp_errmsg.c_str()));
         return GSE_SYSTEMERROR;
     }
-    m_exporterUpdateEvent = event_new(m_evBase, m_exporterUpdateNotifyFd[0], EV_PERSIST|EV_READ, ChannelIdExporterManager::ExporterUpdateEvent, this);
+    m_exporterUpdateEvent = event_new(m_evBase, m_exporterUpdateNotifyFd[0], EV_PERSIST | EV_READ,
+                                      ChannelIdStreamExporterManager::ExporterUpdateEvent, this);
     if (NULL == m_exporterUpdateEvent)
     {
         int tmp_errno = gse_errno;
@@ -1051,78 +475,91 @@ int ChannelIdExporterManager::ThreadFun()
         return GSE_SYSTEMERROR;
     }
 
-    ret = event_add(m_exporterUpdateEvent, NULL);
-    if (ret < 0)
+    rc = event_add(m_exporterUpdateEvent, NULL);
+    if (rc < 0)
     {
         int tmp_errno = gse_errno;
         std::string tmp_errmsg = gse::tools::error::ErrnoToStr(tmp_errno);
         LOG_ERROR("failed to start channel id update event errno:%d, errmsg:%s", tmp_errno, SAFE_CSTR(tmp_errmsg.c_str()));
         return GSE_SYSTEMERROR;
     }
-    ret = event_base_loop(m_evBase, 0);
-    int tmp_errno = gse_errno;
-    std::string tmp_errmsg = gse::tools::error::ErrnoToStr(tmp_errno);
-    LOG_FATAL("exporter manager event base loop abnomal break. ret:%d, errno:%d, errmsg:%s", ret, tmp_errno, SAFE_CSTR(tmp_errmsg.c_str()));
+
+    do
+    {
+        rc = event_base_loop(m_evBase, 0);
+        int tmpErrno = gse_errno;
+        std::string tmp_errmsg = gse::tools::error::ErrnoToStr(tmpErrno);
+        LOG_FATAL("exporter manager event base loop abnomal break. ret:%d, errno:%d, errmsg:%s", rc,
+                  tmpErrno, SAFE_CSTR(tmp_errmsg.c_str()));
+    } while (rc < 0 && !m_stoped);
+
     return GSE_SUCCESS;
 }
 
-
-Exporter * ChannelIdExporterManager::CreateExporter(ChannelIdExporterConfig* ptr_stream_to_id_config)
+Exporter *ChannelIdStreamExporterManager::CreateExporter(ChannelIdExporterConfig *ptr_stream_to_id_config)
 {
     Exporter *ptr_exporter = NULL;
+    std::string hostAddr;
 
-    switch (ptr_stream_to_id_config->m_storageType)
+    StreamToCluster *cluster = &ptr_stream_to_id_config->m_streamToCluster;
+
+    switch (ptr_stream_to_id_config->m_streamToCluster.m_clusterType)
     {
     case KAFKA_COMMON:
-        LOG_DEBUG("create exporter (id:%d, name:%s, type:%d, address:%s) ",
-                  ptr_stream_to_id_config->m_streamToId,
-                  ptr_stream_to_id_config->m_name.c_str(),
-                  ptr_stream_to_id_config->m_storageType,
-                  ptr_stream_to_id_config->m_storage.m_kafkaStorage->ToString().c_str()
-                  );
         ptr_exporter = new KafkaExporter();
         ptr_exporter->UpdateConf(ExporterConfigWrapper::ChannelIDConfType, ptr_stream_to_id_config);
-        LOG_INFO("create a new kafka exporter for the storage %s", SAFE_CSTR(ptr_stream_to_id_config->m_storage.m_kafkaStorage->ToString().c_str()));
+        LOG_INFO("create a new kafka exporter for the storage %s", cluster->m_kafkaCluster->ToString().c_str());
+        hostAddr = cluster->m_kafkaCluster->ToString();
         break;
     case REDIS_PUB:
-        LOG_DEBUG("create redis client for the storage %s", ptr_stream_to_id_config->m_storage.m_redisStorage->ToString().c_str());
+        LOG_DEBUG("create redis client for the storage %s", cluster->m_redisCluster->ToString().c_str());
         ptr_exporter = new RedisExporter();
         ptr_exporter->UpdateConf(ExporterConfigWrapper::ChannelIDConfType, ptr_stream_to_id_config);
+        hostAddr = cluster->m_redisCluster->ToString();
         break;
     case REDIS_SENTINEL_PUB:
-        LOG_DEBUG("create redis sentinel client for the storage %s", ptr_stream_to_id_config->m_storage.m_redisStorage->ToString().c_str());
+        LOG_DEBUG("create redis sentinel client for the storage %s", cluster->m_redisCluster->ToString().c_str());
         ptr_exporter = new RedisExporter();
         ptr_exporter->UpdateConf(ExporterConfigWrapper::ChannelIDConfType, ptr_stream_to_id_config);
+        hostAddr = cluster->m_redisCluster->ToString();
         break;
     case EXPORT_DSPROXY:
-        LOG_ERROR("unsupport ds proxy exporter config");
-        return NULL;
+        LOG_DEBUG("create ds proxy client for the storage %s", cluster->m_dsproxy->ToString().c_str());
+        ptr_exporter = new ProxyExporter();
+        ptr_exporter->UpdateConf(ExporterConfigWrapper::ChannelIDConfType, ptr_stream_to_id_config);
+        hostAddr = cluster->m_dsproxy->ToString();
+        break;
     case EXPORT_PULSAR:
-        LOG_INFO("create a new pulsar exporter for the storage %s", SAFE_CSTR(ptr_stream_to_id_config->m_storage.m_pulsarStorage->ToString().c_str()));
+        LOG_INFO("create a new pulsar exporter for the storage %s", cluster->m_pulsarCluster->ToString().c_str());
         ptr_exporter = new PulsarExporter();
         ptr_exporter->UpdateConf(ExporterConfigWrapper::ChannelIDConfType, ptr_stream_to_id_config);
+        hostAddr = cluster->m_pulsarCluster->ToString();
+
         break;
     default:
-        LOG_ERROR("it is failed to create a exporter for the unkown storage(index %d type %s)", ptr_stream_to_id_config->m_streamToId, ptr_stream_to_id_config->m_reportMode.c_str());
+        LOG_ERROR("it is failed to create a exporter for the unkown storage(index: %d, type: %s)", ptr_stream_to_id_config->m_streamToId, cluster->m_reportMode.c_str());
         return NULL;
     }
 
+    ptr_exporter->SetGseConf(DataServer::GetConfigPtr());
     if (GSE_SUCCESS != ptr_exporter->Start())
     {
         LOG_ERROR("it is failed to start the exporter (%s) ", SAFE_CSTR(ptr_exporter->GetExporterName().c_str()));
         delete ptr_exporter;
+        // std::string errMsg = "failed to start exporter, host address: " + hostAddr;
+        //  OpHealthZ::AddInitHealthInfo(ptr_exporter->TypeToStrName(cluster->m_clusterType) + "_" + gse::tools::strings::ToString(ptr_stream_to_id_config->m_streamToId), errMsg, -1);
         return NULL;
     }
 
+    // OpHealthZ::AddInitHealthInfo(ptr_exporter->TypeToStrName(cluster->m_clusterType) + "_" + gse::tools::strings::ToString(ptr_stream_to_id_config->m_streamToId), "ok", 0);
     return ptr_exporter;
-
 }
 
-Exporter * ChannelIdExporterManager::GetExport(uint32_t exporter_id)
+Exporter *ChannelIdStreamExporterManager::GetExport(uint32_t exporter_id)
 {
     Exporter *ptr_exporter = NULL;
     m_rwLock.RLock();
-    std::map<uint32_t, Exporter*>::iterator it = m_exporters.find(exporter_id);
+    std::map<uint32_t, Exporter *>::iterator it = m_exporters.find(exporter_id);
     if (it != m_exporters.end())
     {
         ptr_exporter = it->second;
@@ -1131,10 +568,23 @@ Exporter * ChannelIdExporterManager::GetExport(uint32_t exporter_id)
     return ptr_exporter;
 }
 
-int ChannelIdExporterManager::DeleteExporter(uint32_t exporter_id)
+bool ChannelIdStreamExporterManager::Find(uint32_t exporterId)
+{
+    m_rwLock.RLock();
+    auto it = m_exporters.find(exporterId);
+    if (it != m_exporters.end())
+    {
+        m_rwLock.UnLock();
+        return true;
+    }
+    m_rwLock.UnLock();
+    return false;
+}
+
+int ChannelIdStreamExporterManager::DeleteExporter(uint32_t exporter_id)
 {
     m_rwLock.WLock();
-    std::map<uint32_t, Exporter*>::iterator it = m_exporters.find(exporter_id);
+    std::map<uint32_t, Exporter *>::iterator it = m_exporters.find(exporter_id);
     if (it != m_exporters.end())
     {
         if (it->second != NULL)
@@ -1142,25 +592,26 @@ int ChannelIdExporterManager::DeleteExporter(uint32_t exporter_id)
             it->second->SetNeedStop();
             m_needDeleteExporters.push_back(it->second);
         }
-        LOG_DEBUG("delete expoerter id(%d) exporter config, will stop old exporter(%p))", exporter_id, it->second);
+        LOG_DEBUG("delete exporter-id(%d), will stop old exporter(%p))", exporter_id, it->second);
         m_exporters.erase(it);
     }
     m_rwLock.UnLock();
     return GSE_SUCCESS;
 }
-int ChannelIdExporterManager::Update(ChannelIdExporterConfig* ptr_exporter_cfg)
+
+int ChannelIdStreamExporterManager::StreamExporterUpdate(ChannelIdExporterConfig *ptr_exporter_cfg)
 {
-    Exporter* exporter = NULL;
+    Exporter *exporter = NULL;
     exporter = CreateExporter(ptr_exporter_cfg);
     if (exporter == NULL)
     {
         LOG_ERROR("failed to update exporter, exporter(name:%s, id:%d, type:%d)",
-                  ptr_exporter_cfg->m_name.c_str(), ptr_exporter_cfg->m_streamToId, ptr_exporter_cfg->m_storageType);
+                  ptr_exporter_cfg->m_streamToCluster.m_name.c_str(), ptr_exporter_cfg->m_streamToId, ptr_exporter_cfg->m_streamToCluster.m_clusterType);
         return GSE_ERROR;
     }
     exporter->SetExporterId(ptr_exporter_cfg->m_streamToId);
     m_rwLock.WLock();
-    std::map<uint32_t, Exporter*>::iterator it = m_exporters.find(ptr_exporter_cfg->m_streamToId);
+    std::map<uint32_t, Exporter *>::iterator it = m_exporters.find(ptr_exporter_cfg->m_streamToId);
     if (it != m_exporters.end())
     {
         if (it->second != NULL)
@@ -1168,49 +619,71 @@ int ChannelIdExporterManager::Update(ChannelIdExporterConfig* ptr_exporter_cfg)
             it->second->SetNeedStop();
             m_needDeleteExporters.push_back(it->second);
         }
-        LOG_DEBUG("update streamToId(%d) exporter config, will stop old exporter(%p)", ptr_exporter_cfg->m_streamToId, it->second);
+        LOG_DEBUG("update streamto_id(%d) exporter config, will stop old exporter(%p)", ptr_exporter_cfg->m_streamToId, it->second);
         m_exporters.erase(it);
     }
+
     m_exporters.insert(std::make_pair(ptr_exporter_cfg->m_streamToId, exporter));
     m_rwLock.UnLock();
     LOG_DEBUG("push exporter(%d:%p) into manager list", ptr_exporter_cfg->m_streamToId, exporter);
     return GSE_SUCCESS;
 }
 
-//channel id config manager
-bool ChannelIdManager::WriteByFilter(DataCell* ptr_datacell)
+// channel id config manager
+bool ChannelIdManager::WriteByFilter(DataCell *ptr_datacell)
 {
-    uint32_t channel_id = ptr_datacell->GetChannelID();
+    uint32_t channel_id = 0;
+
+    if (!m_isPlatId)
+    {
+        channel_id = ptr_datacell->GetChannelID();
+    }
+    else
+    {
+        channel_id = GetPlatNum(ptr_datacell->GetChannelID());
+    }
+
     ChannelIdStreamConfig *ptr_channel_id_stream_cfg = GetChannelStreamConfig(channel_id);
+    LOG_DEBUG("get channel route by id:%d, config:%p, isplat:%d", channel_id, ptr_channel_id_stream_cfg, m_isPlatId);
+    bool has_exporter = false;
     while (ptr_channel_id_stream_cfg != NULL)
     {
+        has_exporter = true;
         std::string table_name;
         ptr_channel_id_stream_cfg->GetTableName(table_name);
-        LOG_DEBUG("write date cell(channleid:%d) filter by channel name(%s), table name(%s)", channel_id, ptr_channel_id_stream_cfg->m_channelName.c_str(), table_name.c_str());
+        LOG_DEBUG("write date cell(channleid:%d) filter by channel name(%s), table name(%s)",
+                  channel_id, ptr_channel_id_stream_cfg->m_channelName.c_str(), table_name.c_str());
         if (ptr_channel_id_stream_cfg->m_filter.IsValidData(ptr_datacell))
         {
-            std::string table_name;
-            ptr_channel_id_stream_cfg->GetTableName(table_name);
             LOG_DEBUG("data cell(channleid:%d, stream_to_id:%d) filter success, will send by exporter. table name[%s]", ptr_datacell->GetChannelID(), ptr_channel_id_stream_cfg->m_streamToId, table_name.c_str());
+            ptr_datacell->ClearTableNames();
             ptr_datacell->AddTableName(table_name);
-            Exporter * exporter = m_channelIdExporterManager->GetExport(ptr_channel_id_stream_cfg->m_streamToId);
+            Exporter *exporter = DataServer::GetStreamExporterManagerInst()->GetExport(ptr_channel_id_stream_cfg->m_streamToId);
             if (exporter != NULL)
             {
                 exporter->Write(ptr_datacell);
                 LOG_DEBUG("data cell(channleid:%d) filter success, send by exporter[%s]", ptr_datacell->GetChannelID(), exporter->GetExporterName().c_str());
             }
+            else
+            {
+                LOG_INFO("failed to send data cell(channleid:%d), no exporter(%d) config", channel_id, ptr_channel_id_stream_cfg->m_streamToId);
+            }
         }
         ptr_channel_id_stream_cfg = ptr_channel_id_stream_cfg->m_next;
+        if (ptr_channel_id_stream_cfg != NULL)
+        {
+            LOG_DEBUG("get channel next route by id:%d, config:%p, isplat:%d", channel_id, ptr_channel_id_stream_cfg, m_isPlatId);
+        }
     }
-    return true;
+
+    return has_exporter;
 }
 
 ChannelIdStreamConfig *ChannelIdManager::GetChannelStreamConfig(uint32_t channel_id)
 {
-    std::map<uint32_t, ChannelIdStreamConfig*>::iterator it;
-    ChannelIdStreamConfig* ptr_channel_id_stream_cfg = NULL;
+    ChannelIdStreamConfig *ptr_channel_id_stream_cfg = NULL;
     m_rwLock.RLock();
-    it = m_channelIds.find(channel_id);
+    auto it = m_channelIds.find(channel_id);
     if (it != m_channelIds.end())
     {
         ptr_channel_id_stream_cfg = it->second;
@@ -1219,30 +692,43 @@ ChannelIdStreamConfig *ChannelIdManager::GetChannelStreamConfig(uint32_t channel
     return ptr_channel_id_stream_cfg;
 }
 
-ChannelIdManager::ChannelIdManager()
+void ChannelIdManager::GetChannelIdListByStreamId(uint32_t streamid, std::vector<uint32_t> &channelidList)
 {
-    m_channelIdExporterManager = NULL;
-    m_evBase = NULL;
-    m_cleanTimerEvent = NULL;
-    m_channelIdUpdateEvent = NULL;
-    m_cleanTime.tv_sec = 20;
-    m_cleanTime.tv_usec = 0;
+    m_rwLock.RLock();
+    for (auto it : m_channelIds)
+    {
+        LOG_DEBUG("find channelid by streamid:%d, config(channelid:%d, streamid:%d)", streamid, it.second->m_channelID, it.second->m_streamToId);
+        if ((it.second != nullptr))
+        {
+            ChannelIdStreamConfig *pNext = it.second;
+            do
+            {
+                if (pNext->m_streamToId == streamid)
+                {
+                    channelidList.push_back(pNext->m_channelID);
+                }
+                pNext = pNext->m_next;
+            } while (pNext != nullptr);
+        }
+    }
+    m_rwLock.UnLock();
 }
 
-ChannelIdManager::ChannelIdManager(ChannelIdExporterManager *channelIdExporterManager)
+ChannelIdManager::ChannelIdManager(bool is_platid)
 {
-    m_cleanTime.tv_sec = 20;
-    m_cleanTime.tv_usec = 0;
-    m_channelIdExporterManager = channelIdExporterManager;
     m_evBase = NULL;
     m_cleanTimerEvent = NULL;
     m_channelIdUpdateEvent = NULL;
+    m_cleanTime.tv_sec = 20;
+    m_cleanTime.tv_usec = 0;
+    m_isPlatId = is_platid;
+    m_stoped = false;
 }
 
 ChannelIdManager::~ChannelIdManager()
 {
     FreeEvent();
-    std::list<ChannelIdStreamConfig*>::iterator it = m_needDeleteChannelIds.begin();
+    std::list<ChannelIdStreamConfig *>::iterator it = m_needDeleteChannelIds.begin();
     for (; it != m_needDeleteChannelIds.end();)
     {
         ChannelIdStreamConfig *ptr_delete = (*it);
@@ -1254,16 +740,16 @@ ChannelIdManager::~ChannelIdManager()
         it = m_needDeleteChannelIds.erase(it);
     }
 
-    std::map<uint32_t, ChannelIdStreamConfig*>::iterator m_it = m_channelIds.begin();
-    for (; m_it != m_channelIds.end();)
+    auto itChannel = m_channelIds.begin();
+    for (; itChannel != m_channelIds.end();)
     {
-        ChannelIdStreamConfig *ptr_delete = m_it->second;
+        ChannelIdStreamConfig *ptr_delete = itChannel->second;
         if (ptr_delete != NULL)
         {
             delete ptr_delete;
         }
 
-        m_channelIds.erase(m_it++);
+        m_channelIds.erase(itChannel++);
     }
 }
 
@@ -1275,7 +761,7 @@ void ChannelIdManager::InvalidDataCleanTimerEvent(int fd, short which, void *v)
     ptr_this->CleanChannelIdInvalidPtr();
 }
 
-void ChannelIdManager::FreeChannelIdPtr(ChannelIDConfig * ptr)
+void ChannelIdManager::FreeChannelIdPtr(ChannelIDConfig *ptr)
 {
     if (ptr == NULL)
     {
@@ -1284,7 +770,7 @@ void ChannelIdManager::FreeChannelIdPtr(ChannelIDConfig * ptr)
     ptr->SetNeedDelete();
     std::string str_key = ptr->m_strChannelId + "|" + gse::tools::strings::ToString((uint64_t)ptr);
     m_freeChannelidLock.WLock();
-    std::map<std::string, ChannelIDConfig*>::iterator it = m_needFreeChannelIDconfig.find(str_key);
+    std::map<std::string, ChannelIDConfig *>::iterator it = m_needFreeChannelIDconfig.find(str_key);
     if (it == m_needFreeChannelIDconfig.end())
     {
         m_needFreeChannelIDconfig.insert(std::make_pair(str_key, ptr));
@@ -1294,15 +780,15 @@ void ChannelIdManager::FreeChannelIdPtr(ChannelIDConfig * ptr)
 }
 void ChannelIdManager::CleanChannelIdInvalidPtr()
 {
-    LOG_DEBUG("Free channelid mem, map size:%d", m_needFreeChannelIDconfig.size());
+    LOG_DEBUG("free channelid mem, map size:%d", m_needFreeChannelIDconfig.size());
     m_freeChannelidLock.WLock();
-    std::map<std::string, ChannelIDConfig*>::iterator it = m_needFreeChannelIDconfig.begin();
+    std::map<std::string, ChannelIDConfig *>::iterator it = m_needFreeChannelIDconfig.begin();
     for (; it != m_needFreeChannelIDconfig.end();)
     {
         ChannelIDConfig *ptr_delete = it->second;
         if (ptr_delete != NULL)
         {
-            LOG_DEBUG("Free channelid mem, key:%s, %p", it->first.c_str(), it->second);
+            LOG_DEBUG("free channelid mem, key:%s, %p", it->first.c_str(), it->second);
             if (ptr_delete->IsNeedDelete())
             {
                 LOG_DEBUG("free channelid config, channlied(%s), request count(%d), reponse count(%d), create time(%d), now(%d)", ptr_delete->m_strChannelId.c_str(),
@@ -1325,7 +811,7 @@ void ChannelIdManager::CleanChannelIdInvalidPtr()
 }
 void ChannelIdManager::CleanInvalidChannelId()
 {
-    std::list<ChannelIdStreamConfig*>::iterator it = m_needDeleteChannelIds.begin();
+    std::list<ChannelIdStreamConfig *>::iterator it = m_needDeleteChannelIds.begin();
     for (; it != m_needDeleteChannelIds.end();)
     {
         ChannelIdStreamConfig *ptr_delete = (*it);
@@ -1342,7 +828,7 @@ void ChannelIdManager::CleanInvalidChannelId()
             }
             else
             {
-                 ++it;
+                ++it;
             }
         }
         else
@@ -1358,7 +844,7 @@ void ChannelIdManager::ChannelIdUpdateEvent(int fd, short which, void *v)
     ChannelIdManager *ptr_this = (ChannelIdManager *)v;
 
     ZkEvent *event = NULL;
-    ChannelIDConfig * ptr_channel_id_cfg;
+    ChannelIDConfig *ptr_channel_id_cfg;
     if (gse::tools::pipe::ReadPipe(fd, &event, sizeof(event)) < 0)
     {
         int tmp_errno = gse_socket_errno;
@@ -1373,13 +859,13 @@ void ChannelIdManager::ChannelIdUpdateEvent(int fd, short which, void *v)
         return;
     }
 
-    switch(event->m_eventType)
+    switch (event->m_eventType)
     {
     case ZK_EVENT_LIST:
         break;
     case ZK_EVENT_DELETE:
     {
-        uint32_t* ptr_channelid = (uint32_t*)event->m_msg;
+        uint32_t *ptr_channelid = (uint32_t *)event->m_msg;
         ptr_this->HandleChannelIdDelete(*ptr_channelid);
         delete ptr_channelid;
         break;
@@ -1389,7 +875,6 @@ void ChannelIdManager::ChannelIdUpdateEvent(int fd, short which, void *v)
     {
         ptr_channel_id_cfg = (ChannelIDConfig *)event->m_msg;
         ptr_this->HandleChannelIdUpdate(ptr_channel_id_cfg);
-        LOG_DEBUG("update channel id config:(%s)", ptr_channel_id_cfg->m_originData.c_str());
         delete ptr_channel_id_cfg;
         break;
     }
@@ -1399,9 +884,7 @@ void ChannelIdManager::ChannelIdUpdateEvent(int fd, short which, void *v)
 
     delete event;
     return;
-
 }
-
 
 void ChannelIdManager::FreeEvent()
 {
@@ -1428,13 +911,22 @@ void ChannelIdManager::FreeEvent()
 
     if (m_evBase != NULL)
     {
-        event_base_loopexit(m_evBase, NULL);
-        event_base_free(m_evBase);
-        m_evBase = NULL;
+        if (m_stoped)
+        {
+            event_base_free(m_evBase);
+            m_evBase = NULL;
+        }
+        else
+        {
+            event_base_loopbreak(m_evBase);
+            LOG_DEBUG("stop event base loop");
+        }
     }
 }
-void ChannelIdManager::stop()
+void ChannelIdManager::Stop()
 {
+    LOG_DEBUG("channelid manager stopping, channelId:%d", m_isPlatId);
+    m_stoped = true;
     FreeEvent();
 }
 
@@ -1466,7 +958,7 @@ int ChannelIdManager::ThreadFun()
         LOG_ERROR("failed to start clean invalid channel id timer event. ret:%d, errno:%d, errmsg:%s", ret, tmp_errno, SAFE_CSTR(tmp_errmsg.c_str()));
         return GSE_SYSTEMERROR;
     }
-    m_channelIdUpdateEvent = event_new(m_evBase, m_channelIdUpudateNotifyFd[0], EV_PERSIST|EV_READ, ChannelIdManager::ChannelIdUpdateEvent, this);
+    m_channelIdUpdateEvent = event_new(m_evBase, m_channelIdUpudateNotifyFd[0], EV_PERSIST | EV_READ, ChannelIdManager::ChannelIdUpdateEvent, this);
     if (NULL == m_channelIdUpdateEvent)
     {
         int tmp_errno = gse_errno;
@@ -1485,23 +977,28 @@ int ChannelIdManager::ThreadFun()
     ret = event_base_loop(m_evBase, 0);
     int tmp_errno = gse_errno;
     std::string tmp_errmsg = gse::tools::error::ErrnoToStr(tmp_errno);
-    LOG_FATAL("channel id manager event base loop abnomal break. ret:%d, errno:%d, errmsg:%s", ret, tmp_errno, SAFE_CSTR(tmp_errmsg.c_str()));
+    LOG_ERROR("channel id manager thread exit. ret:%d, errno:%d, errmsg:%s", ret, tmp_errno, SAFE_CSTR(tmp_errmsg.c_str()));
     return GSE_SUCCESS;
 }
+
 int ChannelIdManager::Update(ZkEvent *event)
 {
     int ret = gse::tools::pipe::WritePipe(m_channelIdUpudateNotifyFd[1], &event, sizeof(event));
-    return ((ret < 0 ) ? GSE_ERROR : GSE_SUCCESS);
+    return ((ret < 0) ? GSE_ERROR : GSE_SUCCESS);
 }
+
 int ChannelIdManager::HandleChannelIdDelete(uint32_t channelid)
 {
     m_rwLock.WLock();
-    std::map<uint32_t, ChannelIdStreamConfig*>::iterator it = m_channelIds.find(channelid);
+    auto it = m_channelIds.find(channelid);
     if (it != m_channelIds.end())
     {
-        ChannelIdStreamConfig* ptr_channelid_config = it->second;
+        ChannelIdStreamConfig *ptr_channelid_config = it->second;
         if (ptr_channelid_config != NULL)
         {
+            LOG_DEBUG("delete channelid(%d), channelid  count(%d)", channelid, m_channelIds.size());
+            OPMetric::AddChannelIdMetrics("channelid", -1);
+            OPMetric::AddChannelIdUsageMemoryMetrics("channelid", -1 * (it->second->GetUseMemSize()));
             ptr_channelid_config->SetNeedDelete();
             m_needDeleteChannelIds.push_back(ptr_channelid_config);
         }
@@ -1510,7 +1007,21 @@ int ChannelIdManager::HandleChannelIdDelete(uint32_t channelid)
     m_rwLock.UnLock();
     return GSE_SUCCESS;
 }
-int ChannelIdManager::HandleChannelIdUpdate(ChannelIDConfig* ptr_channel_id_config)
+
+bool ChannelIdManager::Find(uint32_t channelId)
+{
+    m_rwLock.RLock();
+    auto it = m_channelIds.find(channelId);
+    if (it != m_channelIds.end())
+    {
+        m_rwLock.UnLock();
+        return true;
+    }
+    m_rwLock.UnLock();
+    return false;
+}
+
+int ChannelIdManager::HandleChannelIdUpdate(ChannelIDConfig *ptr_channel_id_config)
 {
     ChannelIdStreamConfig *ptr_channel_id_stream_cfg = NULL;
     if (ptr_channel_id_config->m_ptrMetadata == NULL)
@@ -1519,23 +1030,26 @@ int ChannelIdManager::HandleChannelIdUpdate(ChannelIDConfig* ptr_channel_id_conf
         return GSE_ERROR;
     }
     uint32_t m_channelID = ptr_channel_id_config->m_ptrMetadata->m_channelID;
-    std::size_t max_count = ptr_channel_id_config->m_streamTo.size();
+    std::size_t max_count = ptr_channel_id_config->m_channels.size();
     if (max_count <= 0)
     {
         LOG_ERROR("channel id config invalid, config json(%s)", ptr_channel_id_config->m_originData.c_str());
         return GSE_ERROR;
     }
+
     LOG_DEBUG("channelid :%d, channel count:%d, start create correlation channelid config", ptr_channel_id_config->m_ptrMetadata->m_channelID, max_count);
     for (std::size_t stream_to_idx = 0; stream_to_idx < max_count; ++stream_to_idx)
     {
-        ChannelIdStreamConfig *ptr_channelid_config_tmp = new ChannelIdStreamConfig();
-        StreamTo *ptr_stream_to = ptr_channel_id_config->m_streamTo.at(stream_to_idx);
-        int stream_to_id = ptr_stream_to->m_streamToId;
-        ptr_channelid_config_tmp->m_channelName = ptr_stream_to->m_name;
-        ptr_channelid_config_tmp->m_streamToId = ptr_stream_to->m_streamToId;
-        for (std::size_t idx = 0; idx < ptr_stream_to->m_filterNameAnd.size(); ++idx)
+        ChannelIdStreamConfig *ptrChannelidConfigTmp = new ChannelIdStreamConfig();
+        Channel *ptrChannel = ptr_channel_id_config->m_channels.at(stream_to_idx);
+        StreamTo *ptrStreamTo = &ptrChannel->m_streamTo;
+        int stream_to_id = ptrStreamTo->m_streamToId;
+        ptrChannelidConfigTmp->m_channelName = ptrChannel->m_name;
+        ptrChannelidConfigTmp->m_streamToId = ptrStreamTo->m_streamToId;
+
+        for (std::size_t idx = 0; idx < ptrChannel->m_filterAndName.size(); ++idx)
         {
-            std::string filter_name = ptr_stream_to->m_filterNameAnd.at(idx);
+            std::string filter_name = ptrChannel->m_filterAndName.at(idx);
             StreamFilter *ptr_stream_filter = ptr_channel_id_config->GetFilter(filter_name);
             if (NULL == ptr_stream_filter)
             {
@@ -1543,11 +1057,12 @@ int ChannelIdManager::HandleChannelIdUpdate(ChannelIDConfig* ptr_channel_id_conf
                 continue;
             }
             LOG_DEBUG("channelid(%d) add Andfilter(%s)", ptr_channel_id_config->m_ptrMetadata->m_channelID, ptr_stream_filter->m_name.c_str());
-            ptr_channelid_config_tmp->AddAndFilters(ptr_stream_filter);
+            ptrChannelidConfigTmp->AddAndFilters(ptr_stream_filter);
         }
-        for (std::size_t idx = 0; idx < ptr_stream_to->m_filterNameOr.size(); ++idx)
+
+        for (std::size_t idx = 0; idx < ptrChannel->m_filterOrName.size(); ++idx)
         {
-            std::string filter_name = ptr_stream_to->m_filterNameOr.at(idx);
+            std::string filter_name = ptrChannel->m_filterOrName.at(idx);
             StreamFilter *ptr_stream_filter = ptr_channel_id_config->GetFilter(filter_name);
             if (NULL == ptr_stream_filter)
             {
@@ -1555,32 +1070,37 @@ int ChannelIdManager::HandleChannelIdUpdate(ChannelIDConfig* ptr_channel_id_conf
                 continue;
             }
             LOG_DEBUG("channelid(%d) add or filter(%s)", ptr_channel_id_config->m_ptrMetadata->m_channelID, ptr_stream_filter->m_name.c_str());
-            ptr_channelid_config_tmp->AddOrFilters(ptr_stream_filter);
+            ptrChannelidConfigTmp->AddOrFilters(ptr_stream_filter);
         }
-        ptr_channelid_config_tmp->CopyTableConfig(ptr_stream_to);
-        ptr_channelid_config_tmp->m_channelID = m_channelID;
+
+        ptrChannelidConfigTmp->CopyTableConfig(ptrStreamTo);
+        ptrChannelidConfigTmp->m_channelID = m_channelID;
         std::string table_name;
         if (ptr_channel_id_stream_cfg == NULL)
         {
-            ptr_channel_id_stream_cfg = ptr_channelid_config_tmp;
+            ptr_channel_id_stream_cfg = ptrChannelidConfigTmp;
             ptr_channel_id_stream_cfg->GetTableName(table_name);
             LOG_DEBUG("Create channelId first stream config(id:%d, table name:%s, exporter id:%d, ptr:%p)",
-                      ptr_channel_id_stream_cfg->m_channelID, table_name.c_str(), ptr_channel_id_stream_cfg->m_streamToId, ptr_channelid_config_tmp);
+                      ptr_channel_id_stream_cfg->m_channelID, table_name.c_str(), ptr_channel_id_stream_cfg->m_streamToId, ptrChannelidConfigTmp);
         }
         else
         {
-            ptr_channel_id_stream_cfg->SetNext(ptr_channelid_config_tmp);
-            ptr_channelid_config_tmp->GetTableName(table_name);
+            ptr_channel_id_stream_cfg->SetNext(ptrChannelidConfigTmp);
+            ptrChannelidConfigTmp->GetTableName(table_name);
             LOG_DEBUG("Create ChannelId next stream config(id:%d, table name:%s, exporter id:%d, ptr:%p)",
-                      ptr_channelid_config_tmp->m_channelID, table_name.c_str(), ptr_channelid_config_tmp->m_streamToId, ptr_channelid_config_tmp);
+                      m_channelID, table_name.c_str(), ptr_channel_id_stream_cfg->m_streamToId, ptrChannelidConfigTmp);
         }
     }
 
     m_rwLock.WLock();
-    std::map<uint32_t, ChannelIdStreamConfig*>::iterator it = m_channelIds.find(ptr_channel_id_config->m_ptrMetadata->m_channelID);
+
+    auto it = m_channelIds.find(ptr_channel_id_config->m_ptrMetadata->m_channelID);
+    int count = 1;
     if (it != m_channelIds.end())
     {
-        ChannelIdStreamConfig* ptr_channel_id_delete = NULL;
+        ChannelIdStreamConfig *ptr_channel_id_delete = NULL;
+        count -= 1;
+        LOG_DEBUG("delete old exist channelid:%d", ptr_channel_id_config->m_ptrMetadata->m_channelID);
         ptr_channel_id_delete = it->second;
         if (ptr_channel_id_delete != NULL)
         {
@@ -1589,34 +1109,100 @@ int ChannelIdManager::HandleChannelIdUpdate(ChannelIDConfig* ptr_channel_id_conf
         }
         m_channelIds.erase(it);
     }
+
     m_channelIds.insert(std::make_pair(m_channelID, ptr_channel_id_stream_cfg));
     m_rwLock.UnLock();
+    OPMetric::AddChannelIdMetrics("channelid", count);
+    OPMetric::AddChannelIdUsageMemoryMetrics("channelid", count * (ptr_channel_id_stream_cfg->GetUseMemSize()));
     return GSE_SUCCESS;
 }
-KafkaStorage::KafkaStorage()
-{}
-KafkaStorage::~KafkaStorage()
-{}
-std::string KafkaStorage::ToString()
+
+void ChannelIdStreamConfig::Dump(string &strDump)
 {
-    std::string kafka_string;
-    std::vector<Address>::iterator it;
-    for (it = m_addresses.begin(); it != m_addresses.end(); it++)
+    Json::Value root;
+    Json::Value channels;
+    Json::Value filters;
+
+    root["channelid"] = Json::Value(m_channelID);
+
+    ChannelIdStreamConfig *pNext = this;
+    do
     {
-        kafka_string.append((*it).m_ip);
-        kafka_string.append(":");
-        kafka_string.append(gse::tools::strings::ToString((*it).m_port));
-        if (it != m_addresses.end())
+        Json::Value channel;
+        channel["streamid"] = Json::Value(pNext->m_streamToId);
+        channel["name"] = Json::Value(pNext->m_channelName);
+
+        switch (m_storageType)
         {
-            kafka_string.append(";");
+        case KAFKA_TOPIC:
+            if (pNext->m_storageTable.m_kafkaStorageTable != nullptr)
+            {
+                channel["kafka"] = pNext->m_storageTable.m_kafkaStorageTable->ToJSONValue();
+            }
             break;
+        case REDIS_CHANNEL:
+            if (pNext->m_storageTable.m_redisStorageTable != nullptr)
+            {
+                channel["redis"] = pNext->m_storageTable.m_redisStorageTable->ToJSONValue();
+            }
+            break;
+        case PULSAR_TOPIC:
+            if (pNext->m_storageTable.m_pulsarStorageTable != nullptr)
+            {
+                channel["pulsar"] = pNext->m_storageTable.m_pulsarStorageTable->ToJSONValue();
+            }
+            break;
+        case DSPROXY:
+            break;
+
+        default:
+            LOG_WARN("unkown table type:%d", m_storageType);
         }
+
+        Json::Value andFilter;
+
+        for (auto filter : pNext->m_filter.m_streamFilterAnd)
+        {
+            andFilter.append(Json::Value(filter->m_name));
+        }
+
+        if (andFilter.size() > 0)
+        {
+            channel["filter_name_and"] = andFilter;
+        }
+
+        Json::Value orFilter;
+        for (auto filter : pNext->m_filter.m_streamFilterOr)
+        {
+            orFilter.append(Json::Value(filter->m_name));
+        }
+
+        if (orFilter.size() > 0)
+        {
+            channel["filter_name_or"] = orFilter;
+        }
+
+        channels.append(channel);
+
+        // filter
+
+        for (auto filter : pNext->m_filter.m_streamFilterAnd)
+        {
+            filters.append(filter->ToJSONValue());
+        }
+
+        pNext = pNext->m_next;
+    } while (pNext != nullptr);
+
+    root["channels"] = channels;
+    if (filters.size() > 0)
+    {
+        root["filters"] = filters;
     }
-    kafka_string.append(", username:");
-    kafka_string.append(m_kafkaConfig.m_saslUserName);
-    kafka_string.append(", saslmechanisms:");
-    kafka_string.append(m_kafkaConfig.m_saslMechanisms);
-    return kafka_string;
+
+    strDump = root.toStyledString();
+    return;
 }
-}
-}
+
+} // namespace data
+} // namespace gse

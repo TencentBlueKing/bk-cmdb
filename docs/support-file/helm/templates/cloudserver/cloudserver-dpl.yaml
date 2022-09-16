@@ -98,17 +98,17 @@ spec:
 
       {{- with .Values.cloudserver.nodeSelector }}
       nodeSelector:
-      {{ toYaml . | indent 8 }}
+      {{ toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.cloudserver.affinity }}
       affinity:
-        {{ toYaml . | indent 8 }}
+        {{ toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.cloudserver.tolerations }}
       tolerations:
-        {{ toYaml . | indent 8 }}
+        {{ toYaml . | nindent 8 }}
       {{- end }}
 
 {{- end }}

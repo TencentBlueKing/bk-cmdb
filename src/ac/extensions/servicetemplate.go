@@ -57,6 +57,7 @@ func (am *AuthManager) extractBusinessIDFromServiceTemplate(templates ...metadat
 	return businessID, nil
 }
 
+// MakeResourcesByServiceTemplate TODO
 func (am *AuthManager) MakeResourcesByServiceTemplate(header http.Header, action meta.Action, businessID int64, templates ...metadata.ServiceTemplate) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, template := range templates {
@@ -76,6 +77,7 @@ func (am *AuthManager) MakeResourcesByServiceTemplate(header http.Header, action
 	return resources
 }
 
+// AuthorizeByServiceTemplateID TODO
 func (am *AuthManager) AuthorizeByServiceTemplateID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
 	if !am.Enabled() {
 		return nil
@@ -92,6 +94,7 @@ func (am *AuthManager) AuthorizeByServiceTemplateID(ctx context.Context, header 
 	return am.AuthorizeByServiceTemplates(ctx, header, action, templates...)
 }
 
+// AuthorizeByServiceTemplates TODO
 func (am *AuthManager) AuthorizeByServiceTemplates(ctx context.Context, header http.Header, action meta.Action, templates ...metadata.ServiceTemplate) error {
 	if !am.Enabled() {
 		return nil

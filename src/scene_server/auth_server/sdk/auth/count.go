@@ -112,6 +112,7 @@ func (a *Authorize) countIamIDKey(op operator.OperType, fv *operator.FieldValue)
 	return ids, nil
 }
 
+// preAnalyzeContent TODO
 // get isAny flag and the content if illegal or not.
 func preAnalyzeContent(op operator.OperType, content *operator.Content) error {
 
@@ -136,6 +137,7 @@ func preAnalyzeContent(op operator.OperType, content *operator.Content) error {
 	return nil
 }
 
+// countContent TODO
 // count all the resource ids according to the operator and content, eg policies.
 func (a *Authorize) countContent(ctx context.Context, op operator.OperType, content *operator.Content,
 	resourceType types.ResourceType) (idList *types.AuthorizeList, err error) {
@@ -221,7 +223,7 @@ func calculateSetForAnd(sets []types.AuthorizeList, cnt int) (*types.AuthorizeLi
 		idBase   int
 		baseFlag bool
 	)
-	//we find base set firstly.
+	// we find base set firstly.
 	for id, setBase := range sets {
 		if !setBase.IsAny {
 			idBase = id
@@ -237,7 +239,7 @@ func calculateSetForAnd(sets []types.AuthorizeList, cnt int) (*types.AuthorizeLi
 
 		hitOuter := true
 		for _, set := range sets[1:] {
-			//if this set'isAny is true skip it.
+			// if this set'isAny is true skip it.
 			if set.IsAny {
 				continue
 			}
@@ -292,7 +294,7 @@ func calculateSetForOr(sets []types.AuthorizeList, cnt int) (*types.AuthorizeLis
 
 }
 
-// calculateSet: put the authorized instance ID into the Ids, op must be one of And or Or.
+// calculateSet : put the authorized instance ID into the Ids, op must be one of And or Or.
 func calculateSet(op operator.OperType, sets []types.AuthorizeList) (*types.AuthorizeList, error) {
 	if sets == nil {
 		return nil, errors.New("sets can not be nil")
@@ -313,6 +315,7 @@ func calculateSet(op operator.OperType, sets []types.AuthorizeList) (*types.Auth
 	}
 }
 
+// hasIamPath TODO
 // check user's policy has _bk_iam_path_ or not.
 func hasIamPath(p *operator.Policy) bool {
 	switch p.Operator {

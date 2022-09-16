@@ -2,7 +2,6 @@ package proc_server_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"configcenter/src/common/mapstr"
@@ -100,18 +99,17 @@ var _ = BeforeSuite(func() {
 				"bk_service_status":   "1",
 				"bk_set_env":          "3",
 			}
-			rsp, err := instClient.CreateSet(context.Background(), strconv.FormatInt(bizId, 10), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			Expect(rsp.Data["bk_set_name"].(string)).To(Equal("test"))
-			parentIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_parent_id"])
+			rsp, e := instClient.CreateSet(context.Background(), bizId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(e).NotTo(HaveOccurred())
+			Expect(rsp["bk_set_name"].(string)).To(Equal("test"))
+			parentIdRes, err := commonutil.GetInt64ByInterface(rsp["bk_parent_id"])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(parentIdRes).To(Equal(bizId))
-			bizIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			bizIdRes, err := commonutil.GetInt64ByInterface(rsp["bk_biz_id"])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bizIdRes).To(Equal(bizId))
-			setId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_set_id"])
+			setId, err = commonutil.GetInt64ByInterface(rsp["bk_set_id"])
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})

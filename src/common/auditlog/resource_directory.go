@@ -73,6 +73,7 @@ func (h *resourceDirAuditLog) GenerateAuditLog(parameter *generateAuditCommonPar
 	}, nil
 }
 
+// NewResourceDirAuditLog TODO
 func NewResourceDirAuditLog(clientSet coreservice.CoreServiceClientInterface) *resourceDirAuditLog {
 	return &resourceDirAuditLog{
 		audit: audit{

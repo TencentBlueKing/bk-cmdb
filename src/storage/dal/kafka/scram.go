@@ -18,6 +18,7 @@ import (
 	"github.com/xdg-go/scram"
 )
 
+// SHA512 TODO
 var SHA512 scram.HashGeneratorFcn = sha512.New
 
 // XDGSCRAMClient is a SCRAM client.

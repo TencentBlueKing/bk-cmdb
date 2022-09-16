@@ -62,14 +62,17 @@ type host struct {
 	datas       types.MapStr
 }
 
+// GetBizs TODO
 func (cli *host) GetBizs() []types.MapStr {
 	return cli.bizs
 }
 
+// GetSets TODO
 func (cli *host) GetSets() []types.MapStr {
 	return cli.sets
 }
 
+// GetModules TODO
 func (cli *host) GetModules() []types.MapStr {
 	return cli.modules
 }
@@ -106,7 +109,7 @@ func (cli *host) reset() error {
 		}
 
 		cli.moduleIDS = append(cli.moduleIDS, id)
-		//fmt.Println("the module id:", id)
+		// fmt.Println("the module id:", id)
 	}
 
 	// parse set
@@ -128,42 +131,51 @@ func (cli *host) reset() error {
 	return nil
 }
 
+// SetBusinessID TODO
 func (cli *host) SetBusinessID(bizID int64) {
 	cli.bizID = bizID
 }
 
+// SetModuleIDS TODO
 func (cli *host) SetModuleIDS(moduleIDS []int64, isIncrement bool) {
 	cli.moduleIDS = moduleIDS
 	cli.isIncrement = isIncrement
 }
 
+// GetModel TODO
 func (cli *host) GetModel() model.Model {
 	return cli.target
 }
 
+// GetInstID TODO
 func (cli *host) GetInstID() (int64, error) {
 	return cli.datas.Int64(cccommon.BKHostIDField)
 }
 
+// GetInstName TODO
 func (cli *host) GetInstName() string {
 	return cli.datas.String(cccommon.BKHostIDField)
 }
 
+// GetValues TODO
 func (cli *host) GetValues() (types.MapStr, error) {
 	return cli.datas, nil
 }
 
+// SetValue TODO
 func (cli *host) SetValue(key string, value interface{}) error {
 	cli.datas.Set(key, value)
 	return nil
 }
 
+// Transfer TODO
 func (cli *host) Transfer() TransferInterface {
 	return &transfer{
 		targetHost: cli,
 	}
 }
 
+// ResetAssociationValue TODO
 func (cli *host) ResetAssociationValue() error {
 	attrs, err := cli.target.Attributes()
 	if nil != err {
@@ -248,6 +260,8 @@ func (cli *host) search() ([]model.Attribute, []types.MapStr, error) {
 	items, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Host().SearchHost(cond)
 	return attrs, items, err
 }
+
+// IsExists TODO
 func (cli *host) IsExists() (bool, error) {
 
 	attrs, err := cli.target.Attributes()
@@ -278,6 +292,8 @@ func (cli *host) IsExists() (bool, error) {
 
 	return 0 != len(items), nil
 }
+
+// Create TODO
 func (cli *host) Create() error {
 	if exists, err := cli.IsExists(); nil != err {
 		return err
@@ -300,6 +316,7 @@ func (cli *host) Create() error {
 
 }
 
+// Update TODO
 func (cli *host) Update() error {
 
 	attrs, existItems, err := cli.search()
@@ -307,7 +324,7 @@ func (cli *host) Update() error {
 		return err
 	}
 
-	//log.Infof("update the exists:%s %d", string(cli.datas.ToJSON()), 0)
+	// log.Infof("update the exists:%s %d", string(cli.datas.ToJSON()), 0)
 
 	// clear the invalid data
 	cli.datas.ForEach(func(key string, val interface{}) {
@@ -316,11 +333,11 @@ func (cli *host) Update() error {
 				return
 			}
 		}
-		//log.Infof("remove the invalid field:%s", key)
+		// log.Infof("remove the invalid field:%s", key)
 		cli.datas.Remove(key)
 	})
 
-	cli.datas.Remove("create_time") //invalid check , need to delete
+	cli.datas.Remove("create_time") // invalid check , need to delete
 
 	for _, existItem := range existItems {
 
@@ -332,7 +349,7 @@ func (cli *host) Update() error {
 		updateCond := common.CreateCondition()
 		updateCond.Field(ModuleID).Eq(hostID)
 
-		//log.Infof("the exists:%s %d", string(existItem.ToJSON()), hostID)
+		// log.Infof("the exists:%s %d", string(existItem.ToJSON()), hostID)
 		err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Host().UpdateHostBatch(cli.datas, strconv.Itoa(int(hostID)))
 		if err != nil {
 			log.Errorf("failed to update host, error info is %s", err.Error())
@@ -351,6 +368,8 @@ func (cli *host) Update() error {
 
 	return nil
 }
+
+// Save TODO
 func (cli *host) Save() error {
 
 	if exists, err := cli.IsExists(); nil != err {

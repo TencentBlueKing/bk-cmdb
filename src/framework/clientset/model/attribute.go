@@ -19,6 +19,7 @@ import (
 	"configcenter/src/framework/common/rest"
 )
 
+// AttributeInterface TODO
 type AttributeInterface interface {
 	CreateAttribute(ctx *types.CreateAttributeCtx) (int64, error)
 	DeleteAttribute(ctx *types.DeleteAttributeCtx) error
@@ -32,6 +33,7 @@ type attribute struct {
 	client rest.ClientInterface
 }
 
+// CreateAttribute TODO
 func (a *attribute) CreateAttribute(ctx *types.CreateAttributeCtx) (int64, error) {
 	resp := new(types.CreateAttributeResult)
 	subPath := "/create/objectattr"
@@ -53,6 +55,7 @@ func (a *attribute) CreateAttribute(ctx *types.CreateAttributeCtx) (int64, error
 	return resp.Data.ID, nil
 }
 
+// DeleteAttribute TODO
 func (a *attribute) DeleteAttribute(ctx *types.DeleteAttributeCtx) error {
 	resp := new(types.Response)
 	subPath := fmt.Sprintf("/delete/objectattr/%d", ctx.AttributeID)
@@ -74,6 +77,7 @@ func (a *attribute) DeleteAttribute(ctx *types.DeleteAttributeCtx) error {
 	return nil
 }
 
+// UpdateAttribute TODO
 func (a *attribute) UpdateAttribute(ctx *types.UpdateAttributeCtx) error {
 	resp := new(types.Response)
 	subPath := fmt.Sprintf("/update/objectattr/%d", ctx.AttributeID)
@@ -95,6 +99,7 @@ func (a *attribute) UpdateAttribute(ctx *types.UpdateAttributeCtx) error {
 	return nil
 }
 
+// GetAttribute TODO
 func (a *attribute) GetAttribute(ctx *types.GetAttributeCtx) ([]types.Attribute, error) {
 	resp := new(types.GetAttributeResult)
 	subPath := "/find/objectattr"

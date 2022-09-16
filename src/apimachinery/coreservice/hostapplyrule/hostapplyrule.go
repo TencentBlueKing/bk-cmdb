@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package hostapplyrule TODO
 package hostapplyrule
 
 import (
@@ -21,6 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// HostApplyRuleInterface TODO
 type HostApplyRuleInterface interface {
 	CreateHostApplyRule(ctx context.Context, header http.Header, bizID int64,
 		option metadata.CreateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder)
@@ -46,6 +48,7 @@ type HostApplyRuleInterface interface {
 		option *metadata.RuleRelatedServiceTemplateOption) ([]metadata.SrvTemplate, errors.CCErrorCoder)
 }
 
+// NewHostApplyRuleClient TODO
 func NewHostApplyRuleClient(client rest.ClientInterface) HostApplyRuleInterface {
 	return &hostApplyRule{client: client}
 }

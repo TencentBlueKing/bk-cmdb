@@ -14,7 +14,7 @@ package inst
 
 import (
 	"configcenter/src/framework/common"
-	//"configcenter/src/framework/logics/log"
+	// "configcenter/src/framework/logics/log"
 	"io"
 
 	"configcenter/src/framework/core/output/module/client"
@@ -35,6 +35,7 @@ type iteratorInstModule struct {
 	bufIdx      int
 }
 
+// NewIteratorInstModule TODO
 func NewIteratorInstModule(target model.Model, cond common.Condition) (ModuleIterator, error) {
 
 	iter := &iteratorInstModule{
@@ -57,6 +58,7 @@ func NewIteratorInstModule(target model.Model, cond common.Condition) (ModuleIte
 
 }
 
+// Next TODO
 func (cli *iteratorInstModule) Next() (ModuleInterface, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
@@ -87,6 +89,7 @@ func (cli *iteratorInstModule) Next() (ModuleInterface, error) {
 	return returnItem, nil
 }
 
+// ForEach TODO
 func (cli *iteratorInstModule) ForEach(callbackItem func(item ModuleInterface) error) error {
 	for {
 

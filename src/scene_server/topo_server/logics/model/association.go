@@ -38,6 +38,7 @@ type AssociationOperationInterface interface {
 	UpdateObjectAssociation(kit *rest.Kit, data mapstr.MapStr, assoID int64) error
 	SearchObjectAssocWithAssocKindList(kit *rest.Kit, asstKindIDs []string) (resp *metadata.AssociationList, err error)
 
+	// CreateMainlineAssociation TODO
 	// Mainline
 	// CreateMainlineAssociation create mainline object association
 	CreateMainlineAssociation(kit *rest.Kit, data *metadata.MainlineAssociation) (

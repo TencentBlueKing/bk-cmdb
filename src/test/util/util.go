@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package util TODO
 package util
 
 import (
@@ -22,6 +23,7 @@ import (
 	"k8s.io/client-go/util/jsonpath"
 )
 
+// JsonPathExtractInt TODO
 func JsonPathExtractInt(responses map[string]interface{}, key, name, path string) int64 {
 	output := JsonPathExtract(responses, key, name, path)
 	value, err := strconv.ParseInt(output, 10, 64)
@@ -29,6 +31,7 @@ func JsonPathExtractInt(responses map[string]interface{}, key, name, path string
 	return value
 }
 
+// JsonPathExtract TODO
 func JsonPathExtract(responses map[string]interface{}, key, name, path string) string {
 	j := jsonpath.New(name)
 	err := j.Parse(path)
@@ -43,6 +46,7 @@ func JsonPathExtract(responses map[string]interface{}, key, name, path string) s
 	return out
 }
 
+// RenderTemplate TODO
 func RenderTemplate(templateContext map[string]interface{}, urlTemplate string) string {
 	var subPathBuffer bytes.Buffer
 	t := template.Must(template.New("url template").Parse(urlTemplate))
@@ -55,6 +59,7 @@ func RenderTemplate(templateContext map[string]interface{}, urlTemplate string) 
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
+// RandSeq TODO
 func RandSeq(n int) string {
 	b := make([]rune, n)
 	for i := range b {

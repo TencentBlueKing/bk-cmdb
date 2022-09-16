@@ -36,6 +36,7 @@ import (
 	"configcenter/src/thirdparty/monitor"
 )
 
+// Run TODO
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
@@ -216,6 +217,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	return nil
 }
 
+// MigrateServer TODO
 type MigrateServer struct {
 	Core         *backbone.Engine
 	Config       *options.Config

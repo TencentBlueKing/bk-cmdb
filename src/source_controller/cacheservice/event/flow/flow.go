@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package flow TODO
 package flow
 
 import (
@@ -83,6 +84,7 @@ func NewFlow(opts flowOptions, getDelEventDetails getDeleteEventDetailsFunc, par
 	}, nil
 }
 
+// Flow TODO
 type Flow struct {
 	flowOptions
 	metrics               *event.EventMetrics
@@ -140,6 +142,7 @@ const (
 	cursorQueueSize = 50000
 )
 
+// RunFlow TODO
 func (f *Flow) RunFlow(ctx context.Context) error {
 	blog.Infof("start run flow for key: %s.", f.key.Namespace())
 

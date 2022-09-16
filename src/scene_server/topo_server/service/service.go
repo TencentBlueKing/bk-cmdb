@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package service TODO
 package service
 
 import (
@@ -30,6 +31,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// Service TODO
 type Service struct {
 	Engine      *backbone.Engine
 	Logics      logics.Logics
@@ -74,11 +76,13 @@ type ModelType struct {
 	BizID int64 `json:"bk_biz_id"`
 }
 
+// MapStrWithModelBizID TODO
 type MapStrWithModelBizID struct {
 	ModelBizID int64
 	Data       mapstr.MapStr
 }
 
+// UnmarshalJSON TODO
 func (m *MapStrWithModelBizID) UnmarshalJSON(data []byte) error {
 	modelType := new(ModelType)
 	if err := json.Unmarshal(data, modelType); err != nil {

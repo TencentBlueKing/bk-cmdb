@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -33,16 +35,16 @@ var commChartConfigIndexes = []types.Index{}
 var deprecatedChartConfigIndexes = []types.Index{
 	{
 		Name: "config_id",
-		Keys: map[string]int32{
-			"config_id": 1,
+		Keys: bson.D{{
+			"config_id", 1},
 		},
 		Unique:     true,
 		Background: true,
 	},
 	{
 		Name: "bk_obj_id",
-		Keys: map[string]int32{
-			"bk_obj_id": 1,
+		Keys: bson.D{{
+			"bk_obj_id", 1},
 		},
 		Background: true,
 	},

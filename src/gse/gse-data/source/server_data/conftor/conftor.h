@@ -15,8 +15,8 @@
 
 #include <string>
 #include <vector>
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
 
 typedef enum ConfItemValueTypeEnum_
 {
@@ -24,7 +24,7 @@ typedef enum ConfItemValueTypeEnum_
     CONFITEMVALUE_TYPE_KEYS = 1,
     CONFITEMVALUE_TYPE_CREATE = 2,
     CONFITEMVALUE_TYPE_DELETE = 3
-}ConfItemValueTypeEnum;
+} ConfItemValueTypeEnum;
 
 typedef struct WatchConfItem_
 {
@@ -38,7 +38,7 @@ typedef struct WatchConfItem_
         m_valueType = CONFITEMVALUE_TYPE_VALUE;
         m_confItemFlag = 0;
     }
-    ~WatchConfItem_(){}
+    ~WatchConfItem_() {}
 
     WatchConfItem_& operator=(const WatchConfItem_& src)
     {
@@ -53,7 +53,7 @@ typedef struct WatchConfItem_
     {
         *this = src;
     }
-}WatchConfItem;
+} WatchConfItem;
 
 typedef void (*FnWatchConf)(WatchConfItem& confItem, void* lpWatcher);
 
@@ -63,12 +63,13 @@ typedef struct WatcherInfo_
     int m_watchConfItemFlag;
     void* m_lpWatcher;
 
-    WatcherInfo_(){
+    WatcherInfo_()
+    {
         m_lpWatcher = NULL;
         m_pFnWatchConf = NULL;
         m_watchConfItemFlag = 0;
     }
-    ~WatcherInfo_(){}
+    ~WatcherInfo_() {}
 
     WatcherInfo_& operator=(const WatcherInfo_& src)
     {
@@ -77,10 +78,10 @@ typedef struct WatcherInfo_
         this->m_lpWatcher = src.m_lpWatcher;
         return *this;
     }
-}WatcherInfo;
+} WatcherInfo;
 
-typedef void (*FnZkGetChildCallBack)(std::string &path, int rc, std::vector<std::string> &values, const void* data);
-typedef void (*FnZkGetValueCallBack)(std::string &path, int rc, const char *value, int32_t value_len, const struct Stat *stat, const void *data);
+typedef void (*FnZkGetChildCallBack)(std::string& path, int rc, std::vector<std::string>& values, const void* data);
+typedef void (*FnZkGetValueCallBack)(std::string& path, int rc, const char* value, int32_t value_len, const struct Stat* stat, const void* data);
 //    typedef void(*ZK_DATA_FUN)(int32_t rc, const char *value, int32_t value_len, const struct Stat *stat, const void *data);
 class Conftor
 {
@@ -90,22 +91,20 @@ public:
 
     virtual int Start() = 0;
     virtual int Stop() = 0;
-    virtual int CreateConfItemWithParents(const std::string& key, std::string& value) = 0;
+    virtual int CreateConfItemWithParents(const std::string& key, std::string& value, bool isEphemeral = false) = 0;
     virtual int CreateConfItem(const std::string& key, std::string& value) = 0;
     virtual int GetConfItem(const std::string& key, std::string& value, FnWatchConf pFnWatchConf, void* lpWather, int confItemFlag) = 0;
-    virtual int GetConfItemAsync(const std::string &key, FnWatchConf pFnWatchConf,void *lpWatcher, int confItemFlag,  FnZkGetValueCallBack pFnGetValueCallBack, void* ptr_callback) = 0;
-    virtual int GetChildConfItemAsync(const std::string &key, FnWatchConf pFnWatchConf, void *lpWatcher, int confItemFlag, FnZkGetChildCallBack pFnGetChildResultConf, void *ptr_callback) = 0;
-    virtual int GetChildConfItem(const std::string& key,std::vector<std::string>& values, FnWatchConf pFnWatchConf, void* lpWather, int confItemFlag) = 0;
+    virtual int GetConfItemAsync(const std::string& key, FnWatchConf pFnWatchConf, void* lpWatcher, int confItemFlag, FnZkGetValueCallBack pFnGetValueCallBack, void* ptr_callback) = 0;
+    virtual int GetChildConfItemAsync(const std::string& key, FnWatchConf pFnWatchConf, void* lpWatcher, int confItemFlag, FnZkGetChildCallBack pFnGetChildResultConf, void* ptr_callback) = 0;
+    virtual int GetChildConfItem(const std::string& key, std::vector<std::string>& values, FnWatchConf pFnWatchConf, void* lpWather, int confItemFlag) = 0;
     virtual int SetConfItem(const std::string& key, const std::string& value) = 0;
-    virtual int ExistConfItem(const std::string &key, FnWatchConf pFnWatchConf, void *lpWatcher, int confItemFlag) = 0;
+    virtual int ExistConfItem(const std::string& key, FnWatchConf pFnWatchConf, void* lpWatcher, int confItemFlag) = 0;
+    virtual int DeleteConfItem(const std::string& key) = 0;
 
-    
 protected:
-
 private:
-
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif //_GSE_COMMON_CONFTOR_H_

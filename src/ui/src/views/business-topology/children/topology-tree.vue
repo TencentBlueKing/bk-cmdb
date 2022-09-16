@@ -84,7 +84,6 @@
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import FilterStore from '@/components/filters/store'
   import TopologyTreeNode from './topology-tree-node.vue'
-  import { sortTopoTree } from '@/utils/tools'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
   } from '@/dictionary/menu-symbol'
@@ -185,10 +184,6 @@
           ])
 
           const { topo: containerTopo, leafIds: containerLeafIds } = container
-
-          sortTopoTree(topology, 'bk_inst_name', 'child')
-          sortTopoTree(internal.module, 'bk_module_name')
-          sortTopoTree(containerTopo, 'name')
 
           const root = topology[0] || {}
 

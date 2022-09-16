@@ -40,14 +40,13 @@ var _ = Describe("service template test", func() {
 		})
 
 		It("search service category", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField: bizId,
+			input := &metadata.ListServiceCategoryOption{
+				BizID: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceCategory(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp)
+			j, _ := json.Marshal(rsp)
 			resMap["service_category"] = j
 		})
 
@@ -169,14 +168,13 @@ var _ = Describe("service template test", func() {
 		})
 
 		It("search service category", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField: bizId,
+			input := &metadata.ListServiceCategoryOption{
+				BizID: bizId,
 			}
 			rsp, err := serviceClient.SearchServiceCategory(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp)
+			j, _ := json.Marshal(rsp)
 			Expect(j).To(Equal(resMap["service_category"]))
 		})
 
@@ -187,11 +185,11 @@ var _ = Describe("service template test", func() {
 				"service_category_id": categoryId,
 				"service_template_id": serviceTemplateId,
 			}
-			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			moduleId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
+			rsp, e := instClient.CreateModule(context.Background(), bizId, setId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(e).NotTo(HaveOccurred())
+			var err error
+			moduleId, err = commonutil.GetInt64ByInterface(rsp["bk_module_id"])
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -202,11 +200,10 @@ var _ = Describe("service template test", func() {
 					"sort": "id",
 				},
 			}
-			rsp, err := instClient.SearchModule(context.Background(), "0", strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-			util.RegisterResponse(rsp)
+			rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp)
+			j, _ := json.Marshal(rsp)
 			Expect(j).To(ContainSubstring("\"bk_module_name\":\"st\""))
 			Expect(j).To(ContainSubstring(fmt.Sprintf("\"service_template_id\":%d", serviceTemplateId)))
 			Expect(j).To(ContainSubstring(fmt.Sprintf("\"service_category_id\":%d", categoryId)))
@@ -220,10 +217,9 @@ var _ = Describe("service template test", func() {
 				"service_category_id": categoryId,
 				"service_template_id": 10000,
 			}
-			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("create module with unmatch category and template", func() {
@@ -233,10 +229,9 @@ var _ = Describe("service template test", func() {
 				"service_category_id": 2,
 				"service_template_id": serviceTemplateId,
 			}
-			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("create module with same template", func() {
@@ -246,10 +241,9 @@ var _ = Describe("service template test", func() {
 				"service_category_id": categoryId,
 				"service_template_id": serviceTemplateId,
 			}
-			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("search module", func() {
@@ -259,11 +253,10 @@ var _ = Describe("service template test", func() {
 					"sort": "id",
 				},
 			}
-			rsp, err := instClient.SearchModule(context.Background(), "0", strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-			util.RegisterResponse(rsp)
+			rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp)
+			j, _ := json.Marshal(rsp)
 			Expect(j).To(Equal(resMap["module"]))
 		})
 
@@ -273,10 +266,9 @@ var _ = Describe("service template test", func() {
 				"service_category_id": 2,
 				"service_template_id": 1000,
 			}
-			rsp, err := instClient.UpdateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), strconv.FormatInt(moduleId, 10), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			err := instClient.UpdateModule(context.Background(), bizId, setId, moduleId, header, input)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("search module", func() {
@@ -286,25 +278,23 @@ var _ = Describe("service template test", func() {
 					"sort": "id",
 				},
 			}
-			rsp, err := instClient.SearchModule(context.Background(), "0", strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-			util.RegisterResponse(rsp)
+			rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp)
+			j, _ := json.Marshal(rsp)
 			Expect(j).To(ContainSubstring("\"bk_module_name\":\"st\""))
 			Expect(j).To(ContainSubstring(fmt.Sprintf("\"service_template_id\":%d", serviceTemplateId)))
 			Expect(j).To(ContainSubstring(fmt.Sprintf("\"service_category_id\":%d", categoryId)))
 		})
 
 		It("delete service template with module", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField:   bizId,
-				"service_template_id": serviceTemplateId,
+			input := &metadata.DeleteServiceTemplatesInput{
+				BizID:             bizId,
+				ServiceTemplateID: serviceTemplateId,
 			}
-			rsp, err := serviceClient.DeleteServiceTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			err := serviceClient.DeleteServiceTemplate(context.Background(), header, input)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("search service template", func() {
@@ -404,18 +394,21 @@ var _ = Describe("service template test", func() {
 		})
 
 		It("search process template", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField:   bizId,
-				"service_template_id": serviceTemplateId,
+			input := &metadata.ListProcessTemplateWithServiceTemplateInput{
+				BizID:             bizId,
+				ServiceTemplateID: serviceTemplateId,
 			}
 			rsp, err := processClient.SearchProcessTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp)
-			Expect(j).To(ContainSubstring("\"bk_func_name\":{\"as_default_value\":true,\"value\":\"p1\"}"))
-			Expect(j).To(ContainSubstring("\"bk_process_name\":{\"as_default_value\":true,\"value\":\"p1\"}"))
-			Expect(j).To(ContainSubstring("\"bk_start_param_regex\":{\"as_default_value\":false,\"value\":\"123\"}"))
+			j, _ := json.Marshal(rsp)
+			Expect(j).To(Or(ContainSubstring("\"bk_func_name\":{\"as_default_value\":true,\"value\":\"p1\"}"),
+				ContainSubstring("\"bk_func_name\":{\"value\":\"p1\",\"as_default_value\":true}")))
+			Expect(j).To(Or(ContainSubstring("\"bk_process_name\":{\"as_default_value\":true,\"value\":\"p1\"}"),
+				ContainSubstring("\"bk_process_name\":{\"value\":\"p1\",\"as_default_value\":true}")))
+			Expect(j).To(Or(
+				ContainSubstring("\"bk_start_param_regex\":{\"as_default_value\":false,\"value\":\"123\"}"),
+				ContainSubstring("\"bk_start_param_regex\":{\"value\":\"123\",\"as_default_value\":false}")))
 			Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d", processTemplateId)))
 			resMap["process_template"] = j
 		})
@@ -525,15 +518,14 @@ var _ = Describe("service template test", func() {
 		})
 
 		It("search process template", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField:   bizId,
-				"service_template_id": serviceTemplateId,
+			input := &metadata.ListProcessTemplateWithServiceTemplateInput{
+				BizID:             bizId,
+				ServiceTemplateID: serviceTemplateId,
 			}
 			rsp, err := processClient.SearchProcessTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp)
+			j, _ := json.Marshal(rsp)
 			Expect(j).To(Equal(resMap["process_template"]))
 		})
 
@@ -786,24 +778,31 @@ var _ = Describe("service template test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp)
-			Expect(j).To(ContainSubstring("\"bk_func_name\":{\"as_default_value\":true,\"value\":\"p1\"}"))
-			Expect(j).To(ContainSubstring("\"bk_process_name\":{\"as_default_value\":true,\"value\":\"123\"}"))
-			Expect(j).To(ContainSubstring("\"bk_start_param_regex\":{\"as_default_value\":true,\"value\":\"123456\"}"))
+			Expect(j).To(Or(ContainSubstring("\"bk_func_name\":{\"as_default_value\":true,\"value\":\"p1\"}"),
+				ContainSubstring("\"bk_func_name\":{\"value\":\"p1\",\"as_default_value\":true}")))
+			Expect(j).To(Or(ContainSubstring("\"bk_process_name\":{\"as_default_value\":true,\"value\":\"123\"}"),
+				ContainSubstring("\"bk_process_name\":{\"value\":\"123\",\"as_default_value\":true}")))
+			Expect(j).To(Or(
+				ContainSubstring("\"bk_start_param_regex\":{\"as_default_value\":true,\"value\":\"123456\"}"),
+				ContainSubstring("\"bk_start_param_regex\":{\"value\":\"123456\",\"as_default_value\":true}")))
 		})
 
 		It("search process template", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField:   bizId,
-				"service_template_id": serviceTemplateId,
+			input := &metadata.ListProcessTemplateWithServiceTemplateInput{
+				BizID:             bizId,
+				ServiceTemplateID: serviceTemplateId,
 			}
 			rsp, err := processClient.SearchProcessTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp)
-			Expect(j).To(ContainSubstring("\"bk_func_name\":{\"as_default_value\":true,\"value\":\"p1\"}"))
-			Expect(j).To(ContainSubstring("\"bk_process_name\":{\"as_default_value\":true,\"value\":\"123\"}"))
-			Expect(j).To(ContainSubstring("\"bk_start_param_regex\":{\"as_default_value\":true,\"value\":\"123456\"}"))
+			j, _ := json.Marshal(rsp)
+			Expect(j).To(Or(ContainSubstring("\"bk_func_name\":{\"as_default_value\":true,\"value\":\"p1\"}"),
+				ContainSubstring("\"bk_func_name\":{\"value\":\"p1\",\"as_default_value\":true}")))
+			Expect(j).To(Or(ContainSubstring("\"bk_process_name\":{\"as_default_value\":true,\"value\":\"123\"}"),
+				ContainSubstring("\"bk_process_name\":{\"value\":\"123\",\"as_default_value\":true}")))
+			Expect(j).To(Or(
+				ContainSubstring("\"bk_start_param_regex\":{\"as_default_value\":true,\"value\":\"123456\"}"),
+				ContainSubstring("\"bk_start_param_regex\":{\"value\":\"123456\",\"as_default_value\":true}")))
 			resMap["process_template"] = j
 		})
 	})
@@ -878,10 +877,9 @@ var _ = Describe("service template test", func() {
 				"bk_parent_id":        setId,
 				"service_category_id": categoryId,
 			}
-			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-			util.RegisterResponse(rsp)
+			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
 
 		It("update service template with same name as another module in the same set with a module using this template", func() {
@@ -939,24 +937,41 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.DeleteServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
 
 		It("sync service instance and template after add and change process template", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField:   bizId,
-				"bk_module_ids":       []int64{moduleId},
-				"service_template_id": serviceTemplateId,
+			input := &metadata.SyncServiceInstanceByTemplateOption{
+				BizID:             bizId,
+				ModuleIDs:         []int64{moduleId},
+				ServiceTemplateID: serviceTemplateId,
 			}
-			rsp, err := serviceClient.SyncServiceInstanceByTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			err := serviceClient.SyncServiceInstanceByTemplate(context.Background(), header, input)
+			util.RegisterResponseWithRid(err, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 
-			// wait for some time to get the async task done
-			time.Sleep(time.Second * 20)
+			// wait till the async task is done
+			for {
+				time.Sleep(time.Second * 10)
+
+				statusOpt := &metadata.ListLatestSyncStatusRequest{
+					Condition: map[string]interface{}{
+						common.BKInstIDField:   moduleId,
+						common.BKTaskTypeField: common.SyncModuleTaskFlag,
+					},
+					Fields: []string{common.BKStatusField},
+				}
+
+				res, err := clientSet.TaskServer().Task().ListLatestSyncStatus(context.Background(), header, statusOpt)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(res)).To(Equal(1))
+				Expect(res[0].Status.IsFailure()).NotTo(BeTrue())
+				if res[0].Status.IsSuccessful() {
+					break
+				}
+			}
 		})
 
 		It("search module", func() {
@@ -966,11 +981,10 @@ var _ = Describe("service template test", func() {
 					"sort": "id",
 				},
 			}
-			rsp, err := instClient.SearchModule(context.Background(), "0", strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-			util.RegisterResponse(rsp)
+			rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp)
+			j, _ := json.Marshal(rsp)
 			Expect(j).To(ContainSubstring("\"bk_module_name\":\"abcdefg\""))
 			Expect(j).To(ContainSubstring(fmt.Sprintf("\"service_template_id\":%d", serviceTemplateId)))
 			Expect(j).To(ContainSubstring("\"service_category_id\":2"))
@@ -1584,15 +1598,14 @@ var _ = Describe("service template test", func() {
 		})
 
 		It("search process template", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField:   bizId,
-				"service_template_id": serviceTemplateId,
+			input := &metadata.ListProcessTemplateWithServiceTemplateInput{
+				BizID:             bizId,
+				ServiceTemplateID: serviceTemplateId,
 			}
 			rsp, err := processClient.SearchProcessTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp)
+			j, _ := json.Marshal(rsp)
 			Expect(j).To(ContainSubstring("\"count\":0"))
 		})
 
@@ -1622,18 +1635,35 @@ var _ = Describe("service template test", func() {
 		})
 
 		It("sync service instance and template after remove process template", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField:   bizId,
-				"bk_module_ids":       []int64{moduleId},
-				"service_template_id": serviceTemplateId,
+			input := &metadata.SyncServiceInstanceByTemplateOption{
+				BizID:             bizId,
+				ModuleIDs:         []int64{moduleId},
+				ServiceTemplateID: serviceTemplateId,
 			}
-			rsp, err := serviceClient.SyncServiceInstanceByTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			err := serviceClient.SyncServiceInstanceByTemplate(context.Background(), header, input)
+			util.RegisterResponseWithRid(err, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 
-			// wait for some time to get the async task done
-			time.Sleep(time.Second * 20)
+			// wait till the async task is done
+			for {
+				time.Sleep(time.Second * 10)
+
+				statusOpt := &metadata.ListLatestSyncStatusRequest{
+					Condition: map[string]interface{}{
+						common.BKInstIDField:   moduleId,
+						common.BKTaskTypeField: common.SyncModuleTaskFlag,
+					},
+					Fields: []string{common.BKStatusField},
+				}
+
+				res, err := clientSet.TaskServer().Task().ListLatestSyncStatus(context.Background(), header, statusOpt)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(res)).To(Equal(1))
+				Expect(res[0].Status.IsFailure()).NotTo(BeTrue())
+				if res[0].Status.IsSuccessful() {
+					break
+				}
+			}
 		})
 
 		It("search process instance", func() {
@@ -1654,11 +1684,10 @@ var _ = Describe("service template test", func() {
 					"sort": "id",
 				},
 			}
-			rsp, err := instClient.SearchModule(context.Background(), "0", strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-			util.RegisterResponse(rsp)
+			rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true), rsp.ToString())
-			j, err := json.Marshal(rsp)
+			j, _ := json.Marshal(rsp)
 			Expect(j).To(ContainSubstring("\"service_category_id\":2"))
 		})
 
@@ -1697,27 +1726,21 @@ var _ = Describe("service template test", func() {
 						"sort": "id",
 					},
 				}
-				rsp, err := instClient.SearchModule(context.Background(), "0", strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-				util.RegisterResponse(rsp)
+				rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true), rsp.ToString())
-				j, err := json.Marshal(rsp)
+				j, _ := json.Marshal(rsp)
 				Expect(j).To(ContainSubstring("\"service_template_id\":0"))
 			})
 
 			It("delete service template", func() {
-				input := map[string]interface{}{
-					"metadata": map[string]interface{}{
-						"label": map[string]interface{}{
-							"bk_biz_id": strconv.FormatInt(bizId, 10),
-						},
-					},
-					"service_template_id": serviceTemplateId,
+				input := &metadata.DeleteServiceTemplatesInput{
+					BizID:             bizId,
+					ServiceTemplateID: serviceTemplateId,
 				}
-				rsp, err := serviceClient.DeleteServiceTemplate(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				err := serviceClient.DeleteServiceTemplate(context.Background(), header, input)
+				util.RegisterResponseWithRid(err, header)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			})
 
 			It("search service template", func() {
@@ -1753,18 +1776,13 @@ var _ = Describe("service template test", func() {
 			})
 
 			It("search service category", func() {
-				input := map[string]interface{}{
-					"metadata": map[string]interface{}{
-						"label": map[string]interface{}{
-							"bk_biz_id": strconv.FormatInt(bizId, 10),
-						},
-					},
+				input := &metadata.ListServiceCategoryOption{
+					BizID: bizId,
 				}
 				rsp, err := serviceClient.SearchServiceCategory(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true), rsp.ToString())
-				j, err := json.Marshal(rsp)
+				j, _ := json.Marshal(rsp)
 				Expect(j).NotTo(ContainSubstring(fmt.Sprintf("\"id\":%d", categoryId)))
 			})
 
@@ -1782,6 +1800,897 @@ var _ = Describe("service template test", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false), rsp.ToString())
 			})
+		})
+	})
+})
+
+var _ = Describe("service template attribute test", func() {
+	ctx := context.Background()
+
+	moduleAttrMap := make(map[string]metadata.Attribute)
+	categoryIDs := make([]int64, 0)
+
+	It("test preparation", func() {
+		By("get all service categories for later use", func() {
+			input := &metadata.ListServiceCategoryOption{
+				BizID: bizId,
+			}
+			rsp, err := serviceClient.SearchServiceCategory(ctx, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+
+			for _, category := range rsp.Info {
+				if category.ParentID > 0 {
+					categoryIDs = append(categoryIDs, category.ID)
+				}
+			}
+		})
+
+		By("create module attributes and then get all module attributes for later use", func() {
+			input := &metadata.CreateModelAttributes{
+				Attributes: []metadata.Attribute{{
+					ObjectID:     common.BKInnerObjIDModule,
+					PropertyID:   "int_attr",
+					PropertyName: "int_attr",
+					IsEditable:   true,
+					PropertyType: common.FieldTypeInt,
+				}, {
+					ObjectID:     common.BKInnerObjIDModule,
+					PropertyID:   "str_attr",
+					PropertyName: "str_attr",
+					IsEditable:   true,
+					PropertyType: common.FieldTypeSingleChar,
+					BizID:        bizId,
+				}, {
+					ObjectID:     common.BKInnerObjIDModule,
+					PropertyID:   "enum_attr",
+					PropertyName: "enum_attr",
+					IsEditable:   true,
+					PropertyType: common.FieldTypeEnum,
+					Option: []metadata.EnumVal{{
+						ID:        "key1",
+						Name:      "value1",
+						Type:      "text",
+						IsDefault: true,
+					}, {
+						ID:        "key2",
+						Name:      "value2",
+						Type:      "text",
+						IsDefault: false,
+					}},
+					BizID: bizId,
+				}},
+			}
+			res, err := clientSet.CoreService().Model().CreateModelAttrs(ctx, header, common.BKInnerObjIDModule, input)
+			util.RegisterResponseWithRid(res, header)
+			Expect(err).NotTo(HaveOccurred())
+
+			readInput := &metadata.QueryCondition{
+				Page:           metadata.BasePage{Limit: common.BKNoLimit},
+				DisableCounter: true,
+			}
+			rsp, err := clientSet.CoreService().Model().ReadModelAttr(ctx, header, common.BKInnerObjIDModule, readInput)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+
+			for _, attr := range rsp.Info {
+				moduleAttrMap[attr.PropertyID] = attr
+			}
+		})
+	})
+
+	It("normal service template attribute test", func() {
+		var svcTempID int64
+
+		svcTempAttrs := []metadata.SvcTempAttr{{
+			AttributeID:   moduleAttrMap["int_attr"].ID,
+			PropertyValue: 1,
+		}, {
+			AttributeID:   moduleAttrMap["str_attr"].ID,
+			PropertyValue: "str",
+		}}
+
+		procTempName1, procTempName2, procTempName3 := "proc1", "proc2", "proc3"
+		procTempArr := []metadata.ProcessTemplate{{
+			Property: &metadata.ProcessProperty{
+				FuncName:    metadata.PropertyString{Value: &procTempName1},
+				ProcessName: metadata.PropertyString{Value: &procTempName1},
+				Description: metadata.PropertyString{Value: &procTempName1},
+			},
+		}, {
+			Property: &metadata.ProcessProperty{
+				FuncName:    metadata.PropertyString{Value: &procTempName2},
+				ProcessName: metadata.PropertyString{Value: &procTempName2},
+				Description: metadata.PropertyString{Value: &procTempName2},
+			},
+		}}
+
+		By("create service template all info", func() {
+			option := &metadata.CreateSvcTempAllInfoOption{
+				BizID:             bizId,
+				Name:              "attr_service_template",
+				ServiceCategoryID: categoryIDs[0],
+				Attributes:        svcTempAttrs,
+				Processes:         procTempArr,
+			}
+
+			var err error
+			svcTempID, err = serviceClient.CreateServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(svcTempID, header)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		By("get service template all info", func() {
+			option := &metadata.GetSvcTempAllInfoOption{
+				ID:    svcTempID,
+				BizID: bizId,
+			}
+			rsp, err := serviceClient.GetServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.ID).To(Equal(svcTempID))
+			Expect(rsp.BizID).To(Equal(bizId))
+			Expect(rsp.Name).To(Equal("attr_service_template"))
+			Expect(len(rsp.Processes)).To(Equal(2))
+			Expect(rsp.Processes[0].Property.ProcessName.Value).To(Equal(procTempArr[1].Property.ProcessName.Value))
+			Expect(rsp.Processes[0].Property.FuncName.Value).To(Equal(procTempArr[1].Property.FuncName.Value))
+			Expect(rsp.Processes[0].Property.Description.Value).To(Equal(procTempArr[1].Property.Description.Value))
+			Expect(rsp.Processes[1].Property.ProcessName.Value).To(Equal(procTempArr[0].Property.ProcessName.Value))
+			Expect(rsp.Processes[1].Property.FuncName.Value).To(Equal(procTempArr[0].Property.FuncName.Value))
+			Expect(rsp.Processes[1].Property.Description.Value).To(Equal(procTempArr[0].Property.Description.Value))
+			Expect(len(rsp.Attributes)).To(Equal(2))
+			Expect(rsp.Attributes[0].AttributeID).To(Equal(svcTempAttrs[0].AttributeID))
+			intVal, e := commonutil.GetIntByInterface(rsp.Attributes[0].PropertyValue)
+			Expect(e).NotTo(HaveOccurred())
+			Expect(intVal).To(Equal(1))
+			Expect(rsp.Attributes[1].AttributeID).To(Equal(svcTempAttrs[1].AttributeID))
+			Expect(rsp.Attributes[1].PropertyValue).To(Equal(svcTempAttrs[1].PropertyValue))
+		})
+
+		var moduleID int64
+		By("create module using template", func() {
+			data := map[string]interface{}{
+				"bk_module_name":      "attr_module1",
+				"bk_biz_id":           bizId,
+				"bk_parent_id":        setId,
+				"service_category_id": categoryIDs[0],
+				"service_template_id": svcTempID,
+			}
+			rsp, e := instClient.CreateModule(ctx, bizId, setId, header, data)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(e).NotTo(HaveOccurred())
+			var err error
+			moduleID, err = commonutil.GetInt64ByInterface(rsp[common.BKModuleIDField])
+			Expect(err).To(BeNil())
+		})
+
+		By("check service template related module has the attributes", func() {
+			input := &params.SearchParams{
+				Condition: map[string]interface{}{common.BKServiceTemplateIDField: svcTempID},
+				Page:      map[string]interface{}{"sort": common.BKModuleIDField},
+			}
+			rsp, e := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(e).NotTo(HaveOccurred())
+			Expect(rsp.Count).Should(Equal(1))
+			Expect(rsp.Info).Should(HaveLen(1))
+			createdModuleID, err := commonutil.GetInt64ByInterface(rsp.Info[0][common.BKModuleIDField])
+			Expect(err).To(BeNil())
+			Expect(createdModuleID).Should(Equal(moduleID))
+			intVal, err := commonutil.GetInt64ByInterface(rsp.Info[0]["int_attr"])
+			Expect(err).To(BeNil())
+			Expect(intVal).Should(Equal(int64(1)))
+			Expect(commonutil.GetStrByInterface(rsp.Info[0]["str_attr"])).Should(Equal("str"))
+		})
+
+		procTempIDs := make([]int64, 0)
+		By("check service template related process template", func() {
+			input := &metadata.ListProcessTemplateWithServiceTemplateInput{
+				BizID:             bizId,
+				ServiceTemplateID: svcTempID,
+				Page:              metadata.BasePage{Sort: common.BKFieldID},
+			}
+			rsp, err := processClient.SearchProcessTemplate(ctx, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(rsp.Info)).To(Equal(2))
+			for idx, template := range rsp.Info {
+				Expect(template.Property.ProcessName.Value).To(Equal(procTempArr[idx].Property.ProcessName.Value))
+				Expect(template.Property.FuncName.Value).To(Equal(procTempArr[idx].Property.FuncName.Value))
+				Expect(template.Property.Description.Value).To(Equal(procTempArr[idx].Property.Description.Value))
+				procTempIDs = append(procTempIDs, template.ID)
+			}
+		})
+
+		By("transfer host to the module", func() {
+			transInput := map[string]interface{}{
+				"bk_biz_id":    bizId,
+				"bk_host_id":   []int64{hostId1},
+				"bk_module_id": []int64{moduleID},
+				"is_increment": false,
+			}
+			rsp, err := hostServerClient.TransferHostModule(ctx, header, transInput)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
+		var svcInstID int64
+		By("search service instance", func() {
+			input := &metadata.GetServiceInstanceInModuleInput{
+				BizID:    bizId,
+				ModuleID: moduleID,
+			}
+			data, err := serviceClient.SearchServiceInstance(ctx, header, input)
+			util.RegisterResponseWithRid(data, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(data.Info)).To(Equal(1))
+			svcInstID = data.Info[0].ID
+		})
+
+		By("check module processes", func() {
+			input := &metadata.ListProcessInstancesOption{
+				BizID:             bizId,
+				ServiceInstanceID: svcInstID,
+			}
+			data, err := processClient.SearchProcessInstance(context.Background(), header, input)
+			util.RegisterResponse(data)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(data)).To(Equal(2))
+			Expect(data[0].Property[common.BKProcessNameField]).To(Equal(procTempName2))
+			Expect(data[0].Property[common.BKFuncName]).To(Equal(procTempName2))
+			Expect(data[0].Property[common.BKDescriptionField]).To(Equal(procTempName2))
+			Expect(data[1].Property[common.BKProcessNameField]).To(Equal(procTempName1))
+			Expect(data[1].Property[common.BKFuncName]).To(Equal(procTempName1))
+			Expect(data[1].Property[common.BKDescriptionField]).To(Equal(procTempName1))
+		})
+
+		By("update module without service template attributes", func() {
+			input := map[string]interface{}{
+				common.BKModuleTypeField: "2",
+				"int_attr":               1,
+				"str_attr":               "str",
+				"enum_attr":              "key2",
+			}
+			err := instClient.UpdateModule(ctx, bizId, setId, moduleID, header, input)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		By("update service template all info", func() {
+			svcTempAttrs = []metadata.SvcTempAttr{{
+				AttributeID:   moduleAttrMap["int_attr"].ID,
+				PropertyValue: 2,
+			}, {
+				AttributeID:   moduleAttrMap["enum_attr"].ID,
+				PropertyValue: "key1",
+			}}
+
+			procTempArr = []metadata.ProcessTemplate{{
+				ID: procTempIDs[1],
+				Property: &metadata.ProcessProperty{
+					FuncName:    metadata.PropertyString{Value: &procTempName1},
+					ProcessName: metadata.PropertyString{Value: &procTempName1},
+					Description: metadata.PropertyString{Value: &procTempName1},
+				},
+			}, {
+				Property: &metadata.ProcessProperty{
+					FuncName:    metadata.PropertyString{Value: &procTempName3},
+					ProcessName: metadata.PropertyString{Value: &procTempName3},
+					Description: metadata.PropertyString{Value: &procTempName3},
+				},
+			}}
+
+			option := &metadata.UpdateSvcTempAllInfoOption{
+				ID:         svcTempID,
+				BizID:      bizId,
+				Name:       "attr_service_template1",
+				Attributes: svcTempAttrs,
+				Processes:  procTempArr,
+			}
+
+			err := serviceClient.UpdateServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		By("check updated service template all info", func() {
+			option := &metadata.GetSvcTempAllInfoOption{
+				ID:    svcTempID,
+				BizID: bizId,
+			}
+			rsp, err := serviceClient.GetServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.ID).To(Equal(svcTempID))
+			Expect(rsp.BizID).To(Equal(bizId))
+			Expect(rsp.Name).To(Equal("attr_service_template1"))
+			Expect(len(rsp.Processes)).To(Equal(2))
+			Expect(rsp.Processes[0].Property.ProcessName.Value).To(Equal(procTempArr[1].Property.ProcessName.Value))
+			Expect(rsp.Processes[0].Property.FuncName.Value).To(Equal(procTempArr[1].Property.FuncName.Value))
+			Expect(rsp.Processes[0].Property.Description.Value).To(Equal(procTempArr[1].Property.Description.Value))
+			Expect(rsp.Processes[1].Property.ProcessName.Value).To(Equal(procTempArr[0].Property.ProcessName.Value))
+			Expect(rsp.Processes[1].Property.FuncName.Value).To(Equal(&procTempName2))
+			Expect(rsp.Processes[1].Property.Description.Value).To(Equal(procTempArr[0].Property.Description.Value))
+			Expect(len(rsp.Attributes)).To(Equal(2))
+			Expect(rsp.Attributes[0].AttributeID).To(Equal(svcTempAttrs[0].AttributeID))
+			intVal, e := commonutil.GetIntByInterface(rsp.Attributes[0].PropertyValue)
+			Expect(e).NotTo(HaveOccurred())
+			Expect(intVal).To(Equal(2))
+			Expect(rsp.Attributes[1].AttributeID).To(Equal(svcTempAttrs[1].AttributeID))
+			Expect(rsp.Attributes[1].PropertyValue).To(Equal(svcTempAttrs[1].PropertyValue))
+		})
+
+		By("diff service template with module", func() {
+			option := &metadata.ServiceTemplateDiffOption{
+				BizID:             bizId,
+				ServiceTemplateID: svcTempID,
+				ModuleID:          moduleID,
+			}
+			res, err := serviceClient.DiffServiceTemplateGeneral(ctx, header, option)
+			util.RegisterResponseWithRid(res, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(res.Changed)).To(Equal(1))
+			Expect(res.Changed[0].Id).To(Equal(procTempIDs[1]))
+			Expect(res.Changed[0].Name).To(Equal(procTempName1))
+			Expect(len(res.Added)).To(Equal(1))
+			Expect(res.Added[0].Name).To(Equal(procTempName3))
+			Expect(len(res.Removed)).To(Equal(1))
+			Expect(res.Removed[0].Name).To(Equal(procTempName1))
+			Expect(len(res.Attributes)).To(Equal(2))
+			for _, attr := range res.Attributes {
+				if attr.ID == moduleAttrMap["int_attr"].ID {
+					templatePropertyValue, err := commonutil.GetIntByInterface(attr.TemplatePropertyValue)
+					Expect(err).To(BeNil())
+					Expect(templatePropertyValue).To(Equal(2))
+					instancePropertyValue, err := commonutil.GetIntByInterface(attr.InstancePropertyValue)
+					Expect(err).To(BeNil())
+					Expect(instancePropertyValue).To(Equal(1))
+				} else {
+					Expect(attr.ID).To(Equal(moduleAttrMap["enum_attr"].ID))
+					Expect(commonutil.GetStrByInterface(attr.TemplatePropertyValue)).To(Equal("key1"))
+					Expect(commonutil.GetStrByInterface(attr.InstancePropertyValue)).To(Equal("key2"))
+				}
+			}
+		})
+
+		By("sync module", func() {
+			input := &metadata.SyncServiceInstanceByTemplateOption{
+				BizID:             bizId,
+				ModuleIDs:         []int64{moduleID},
+				ServiceTemplateID: svcTempID,
+			}
+			err := serviceClient.SyncServiceInstanceByTemplate(ctx, header, input)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).NotTo(HaveOccurred())
+
+			// wait till the async task is done
+			for {
+				time.Sleep(time.Second * 10)
+
+				statusOpt := &metadata.ListLatestSyncStatusRequest{
+					Condition: map[string]interface{}{
+						common.BKInstIDField:   moduleID,
+						common.BKTaskTypeField: common.SyncModuleTaskFlag,
+					},
+					Fields: []string{common.BKStatusField},
+				}
+
+				res, err := clientSet.TaskServer().Task().ListLatestSyncStatus(ctx, header, statusOpt)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(res)).To(Equal(1))
+				Expect(res[0].Status.IsFailure()).NotTo(BeTrue())
+				if res[0].Status.IsSuccessful() {
+					break
+				}
+			}
+		})
+
+		By("check module attributes has changed", func() {
+			input := &params.SearchParams{
+				Condition: map[string]interface{}{common.BKServiceTemplateIDField: svcTempID},
+				Page:      map[string]interface{}{"sort": common.BKModuleIDField},
+			}
+			rsp, e := instClient.SearchModule(ctx, "0", bizId, setId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(e).NotTo(HaveOccurred())
+			Expect(rsp.Count).Should(Equal(1))
+			Expect(rsp.Info).Should(HaveLen(1))
+			intVal, err := commonutil.GetInt64ByInterface(rsp.Info[0]["int_attr"])
+			Expect(err).To(BeNil())
+			Expect(intVal).Should(Equal(int64(2)))
+			Expect(commonutil.GetStrByInterface(rsp.Info[0]["enum_attr"])).Should(Equal("key1"))
+		})
+
+		By("check module processes has changed", func() {
+			input := &metadata.ListProcessInstancesOption{
+				BizID:             bizId,
+				ServiceInstanceID: svcInstID,
+			}
+			data, err := processClient.SearchProcessInstance(ctx, header, input)
+			util.RegisterResponse(data)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(data)).To(Equal(2))
+			Expect(data[0].Relation.ProcessTemplateID).To(Equal(procTempIDs[1]))
+			Expect(commonutil.GetStrByInterface(data[0].Property[common.BKProcessNameField])).To(Equal(procTempName1))
+			Expect(commonutil.GetStrByInterface(data[0].Property[common.BKFuncName])).To(Equal(procTempName2))
+			Expect(commonutil.GetStrByInterface(data[0].Property[common.BKDescriptionField])).To(Equal(procTempName2))
+			Expect(commonutil.GetStrByInterface(data[1].Property[common.BKProcessNameField])).To(Equal(procTempName3))
+			Expect(commonutil.GetStrByInterface(data[1].Property[common.BKFuncName])).To(Equal(procTempName3))
+			Expect(commonutil.GetStrByInterface(data[1].Property[common.BKDescriptionField])).To(Equal(procTempName3))
+		})
+
+		By("update service template attributes", func() {
+			svcTempAttrs = []metadata.SvcTempAttr{{
+				AttributeID:   moduleAttrMap["int_attr"].ID,
+				PropertyValue: 4,
+			}, {
+				AttributeID:   moduleAttrMap["enum_attr"].ID,
+				PropertyValue: "key2",
+			}}
+
+			option := &metadata.UpdateServTempAttrOption{
+				BizID:      bizId,
+				ID:         svcTempID,
+				Attributes: svcTempAttrs,
+			}
+			err := serviceClient.UpdateServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(BeNil())
+		})
+
+		var setTempAttrIDs []int64
+		By("list service template attributes", func() {
+			option := &metadata.ListServTempAttrOption{
+				BizID: bizId,
+				ID:    svcTempID,
+			}
+			rsp, err := serviceClient.ListServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(BeNil())
+			Expect(len(rsp.Attributes)).To(Equal(2))
+			Expect(rsp.Attributes[0].AttributeID).To(Equal(svcTempAttrs[0].AttributeID))
+			intVal, e := commonutil.GetIntByInterface(rsp.Attributes[0].PropertyValue)
+			Expect(e).NotTo(HaveOccurred())
+			Expect(intVal).To(Equal(4))
+			Expect(rsp.Attributes[1].AttributeID).To(Equal(svcTempAttrs[1].AttributeID))
+			Expect(rsp.Attributes[1].PropertyValue).To(Equal(svcTempAttrs[1].PropertyValue))
+			setTempAttrIDs = []int64{rsp.Attributes[0].AttributeID, rsp.Attributes[1].AttributeID}
+		})
+
+		By("delete service template attributes", func() {
+			option := &metadata.DeleteServTempAttrOption{
+				BizID:        bizId,
+				ID:           svcTempID,
+				AttributeIDs: []int64{setTempAttrIDs[0]},
+			}
+			err := serviceClient.DeleteServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(BeNil())
+		})
+
+		By("check service template attribute is deleted", func() {
+			option := &metadata.ListServTempAttrOption{
+				BizID: bizId,
+				ID:    svcTempID,
+			}
+			rsp, err := serviceClient.ListServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(BeNil())
+			Expect(len(rsp.Attributes)).To(Equal(1))
+			Expect(rsp.Attributes[0].AttributeID).To(Equal(setTempAttrIDs[1]))
+		})
+
+		By("transfer host to idle module", func() {
+			transInput := &metadata.DefaultModuleHostConfigParams{
+				ApplicationID: bizId,
+				HostIDs:       []int64{hostId1},
+			}
+			rsp, err := hostServerClient.MoveHost2EmptyModule(ctx, header, transInput)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
+		By("delete module", func() {
+			err := clientSet.TopoServer().Instance().DeleteModule(ctx, bizId, setId, moduleID, header)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(BeNil())
+		})
+
+		By("delete service template", func() {
+			input := &metadata.DeleteServiceTemplatesInput{
+				BizID:             bizId,
+				ServiceTemplateID: svcTempID,
+			}
+			err := serviceClient.DeleteServiceTemplate(ctx, header, input)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		By("check if service template attributes are deleted", func() {
+			option := &metadata.ListServTempAttrOption{
+				BizID: bizId,
+				ID:    svcTempID,
+			}
+			rsp, err := serviceClient.ListServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	It("abnormal service template attribute test", func() {
+		svcTempAttrs := []metadata.SvcTempAttr{{
+			AttributeID:   moduleAttrMap["int_attr"].ID,
+			PropertyValue: 1,
+		}, {
+			AttributeID:   moduleAttrMap["str_attr"].ID,
+			PropertyValue: "str",
+		}}
+
+		procTempName1, procTempName2, procTempName3 := "proc1", "proc2", "proc3"
+		procTempArr := []metadata.ProcessTemplate{{
+			Property: &metadata.ProcessProperty{
+				FuncName:    metadata.PropertyString{Value: &procTempName1},
+				ProcessName: metadata.PropertyString{Value: &procTempName1},
+				Description: metadata.PropertyString{Value: &procTempName1},
+			},
+		}, {
+			Property: &metadata.ProcessProperty{
+				FuncName:    metadata.PropertyString{Value: &procTempName2},
+				ProcessName: metadata.PropertyString{Value: &procTempName2},
+				Description: metadata.PropertyString{Value: &procTempName2},
+			},
+		}}
+
+		By("create service template all info with no name", func() {
+			option := &metadata.CreateSvcTempAllInfoOption{
+				BizID:             bizId,
+				ServiceCategoryID: categoryIDs[0],
+				Attributes:        svcTempAttrs,
+				Processes:         procTempArr,
+			}
+
+			_, err := serviceClient.CreateServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("create service template all info with no category", func() {
+			option := &metadata.CreateSvcTempAllInfoOption{
+				BizID:      bizId,
+				Name:       "no_category_service_template",
+				Attributes: svcTempAttrs,
+				Processes:  procTempArr,
+			}
+
+			_, err := serviceClient.CreateServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("create service template all info with invalid process templates", func() {
+			option := &metadata.CreateSvcTempAllInfoOption{
+				BizID:             bizId,
+				Name:              "attr_service_template",
+				ServiceCategoryID: categoryIDs[0],
+				Attributes:        svcTempAttrs,
+				Processes: []metadata.ProcessTemplate{{
+					Property: &metadata.ProcessProperty{
+						ProcessName: metadata.PropertyString{Value: &procTempName1},
+					},
+				}},
+			}
+
+			_, err := serviceClient.CreateServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("create service template all info with invalid attributes", func() {
+			option := &metadata.CreateSvcTempAllInfoOption{
+				BizID:     bizId,
+				Name:      "test2",
+				Processes: procTempArr,
+				Attributes: []metadata.SvcTempAttr{{
+					AttributeID:   moduleAttrMap["str_attr"].ID,
+					PropertyValue: 222,
+				}},
+			}
+
+			_, err := serviceClient.CreateServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+
+			option.Attributes = []metadata.SvcTempAttr{{
+				AttributeID:   moduleAttrMap[common.BKSetNameField].ID,
+				PropertyValue: "test3",
+			}}
+			_, err = serviceClient.CreateServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		var svcTempID int64
+		By("create service template all info", func() {
+			option := &metadata.CreateSvcTempAllInfoOption{
+				BizID:             bizId,
+				Name:              "service_template_all_info",
+				ServiceCategoryID: categoryIDs[0],
+				Processes:         procTempArr,
+				Attributes:        svcTempAttrs,
+			}
+
+			var err error
+			svcTempID, err = serviceClient.CreateServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(svcTempID, header)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		By("create service template all info with duplicate name", func() {
+			option := &metadata.CreateSvcTempAllInfoOption{
+				BizID:     bizId,
+				Name:      "service_template_all_info",
+				Processes: procTempArr,
+			}
+
+			_, err := serviceClient.CreateServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("get service template all info with invalid id", func() {
+			option := &metadata.GetSvcTempAllInfoOption{
+				ID:    10000,
+				BizID: bizId,
+			}
+			_, err := serviceClient.GetServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		var moduleID int64
+		By("create module using template", func() {
+			data := map[string]interface{}{
+				"bk_module_name":      "attr_module1",
+				"bk_biz_id":           bizId,
+				"bk_parent_id":        setId,
+				"service_category_id": categoryIDs[0],
+				"service_template_id": svcTempID,
+			}
+			rsp, e := instClient.CreateModule(ctx, bizId, setId, header, data)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(e).NotTo(HaveOccurred())
+			var err error
+			moduleID, err = commonutil.GetInt64ByInterface(rsp[common.BKModuleIDField])
+			Expect(err).To(BeNil())
+		})
+
+		By("update module using service template attributes", func() {
+			input := map[string]interface{}{
+				"int_attr": 5,
+			}
+			err := instClient.UpdateModule(ctx, bizId, setId, moduleID, header, input)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("update service template all info with no id", func() {
+			procTempArr = []metadata.ProcessTemplate{{
+				Property: &metadata.ProcessProperty{
+					FuncName:    metadata.PropertyString{Value: &procTempName3},
+					ProcessName: metadata.PropertyString{Value: &procTempName3},
+					Description: metadata.PropertyString{Value: &procTempName3},
+				},
+			}}
+
+			option := &metadata.UpdateSvcTempAllInfoOption{
+				BizID:     bizId,
+				Name:      "test4",
+				Processes: procTempArr,
+			}
+
+			err := serviceClient.UpdateServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("update service template all info with invalid id", func() {
+			option := &metadata.UpdateSvcTempAllInfoOption{
+				ID:        1000,
+				BizID:     bizId,
+				Name:      "test4",
+				Processes: procTempArr,
+			}
+
+			err := serviceClient.UpdateServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("update service template all info with invalid process templates", func() {
+			option := &metadata.UpdateSvcTempAllInfoOption{
+				ID:        svcTempID,
+				BizID:     bizId,
+				Name:      "test5",
+				Processes: []metadata.ProcessTemplate{{}},
+			}
+
+			err := serviceClient.UpdateServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("update service template all info with invalid attributes", func() {
+			option := &metadata.UpdateSvcTempAllInfoOption{
+				ID:        svcTempID,
+				BizID:     bizId,
+				Name:      "test6",
+				Processes: procTempArr,
+				Attributes: []metadata.SvcTempAttr{{
+					AttributeID:   moduleAttrMap["int_attr"].ID,
+					PropertyValue: "test",
+				}},
+			}
+
+			err := serviceClient.UpdateServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+
+			option.Attributes = []metadata.SvcTempAttr{{
+				AttributeID:   moduleAttrMap[common.BKSetNameField].ID,
+				PropertyValue: "test7",
+			}}
+			err = serviceClient.UpdateServiceTemplateAllInfo(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("update service template attributes with not exist attribute", func() {
+			option := &metadata.UpdateServTempAttrOption{
+				BizID: bizId,
+				ID:    svcTempID,
+				Attributes: []metadata.SvcTempAttr{{
+					AttributeID:   moduleAttrMap["enum_attr"].ID,
+					PropertyValue: "key2",
+				}},
+			}
+			err := serviceClient.UpdateServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("update service template attributes with invalid attribute", func() {
+			option := &metadata.UpdateServTempAttrOption{
+				BizID: bizId,
+				ID:    svcTempID,
+				Attributes: []metadata.SvcTempAttr{{
+					AttributeID:   moduleAttrMap["int_attr"].ID,
+					PropertyValue: "111",
+				}},
+			}
+			err := serviceClient.UpdateServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("list service template attributes with no biz id", func() {
+			option := &metadata.ListServTempAttrOption{
+				ID: svcTempID,
+			}
+			rsp, err := serviceClient.ListServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("list service template attributes with no service template id", func() {
+			option := &metadata.ListServTempAttrOption{
+				ID: svcTempID,
+			}
+			rsp, err := serviceClient.ListServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("list service template attributes with invalid biz id", func() {
+			option := &metadata.ListServTempAttrOption{
+				BizID: 1000,
+				ID:    svcTempID,
+			}
+			rsp, err := serviceClient.ListServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("list service template attributes with invalid service template id", func() {
+			option := &metadata.ListServTempAttrOption{
+				BizID: bizId,
+				ID:    1000,
+			}
+			rsp, err := serviceClient.ListServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("delete service template attributes with no ids", func() {
+			option := &metadata.DeleteServTempAttrOption{
+				BizID: bizId,
+				ID:    svcTempID,
+			}
+			err := serviceClient.DeleteServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		var setTempAttrIDs []int64
+		By("list service template attributes", func() {
+			option := &metadata.ListServTempAttrOption{
+				BizID: bizId,
+				ID:    svcTempID,
+			}
+			rsp, err := serviceClient.ListServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(BeNil())
+			Expect(len(rsp.Attributes)).To(Equal(2))
+			Expect(rsp.Attributes[0].AttributeID).To(Equal(svcTempAttrs[0].AttributeID))
+			intVal, e := commonutil.GetIntByInterface(rsp.Attributes[0].PropertyValue)
+			Expect(e).NotTo(HaveOccurred())
+			Expect(intVal).To(Equal(1))
+			Expect(rsp.Attributes[1].AttributeID).To(Equal(svcTempAttrs[1].AttributeID))
+			Expect(rsp.Attributes[1].PropertyValue).To(Equal(svcTempAttrs[1].PropertyValue))
+		})
+
+		By("delete service template attributes with no biz id", func() {
+			option := &metadata.DeleteServTempAttrOption{
+				ID:           svcTempID,
+				AttributeIDs: setTempAttrIDs,
+			}
+			err := serviceClient.DeleteServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("delete service template attributes with no template id", func() {
+			option := &metadata.DeleteServTempAttrOption{
+				BizID:        bizId,
+				AttributeIDs: setTempAttrIDs,
+			}
+			err := serviceClient.DeleteServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("delete service template attributes with invalid biz id", func() {
+			option := &metadata.DeleteServTempAttrOption{
+				BizID:        1000,
+				ID:           svcTempID,
+				AttributeIDs: setTempAttrIDs,
+			}
+			err := serviceClient.DeleteServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("delete service template attributes with invalid template id", func() {
+			option := &metadata.DeleteServTempAttrOption{
+				BizID:        bizId,
+				ID:           1000,
+				AttributeIDs: setTempAttrIDs,
+			}
+			err := serviceClient.DeleteServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("delete service template attributes with invalid ids", func() {
+			option := &metadata.DeleteServTempAttrOption{
+				BizID:        bizId,
+				ID:           svcTempID,
+				AttributeIDs: []int64{1000},
+			}
+			err := serviceClient.DeleteServiceTemplateAttribute(ctx, header, option)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })

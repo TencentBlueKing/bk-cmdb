@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SearchAuthResource TODO
 func (s *coreService) SearchAuthResource(ctx *rest.Contexts) {
 	param := metadata.PullResourceParam{}
 	if err := ctx.DecodeInto(&param); err != nil {

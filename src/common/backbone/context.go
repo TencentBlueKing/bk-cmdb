@@ -20,6 +20,7 @@ type ccContext struct {
 	ctx context.Context
 }
 
+// CCContextInterface TODO
 type CCContextInterface interface {
 	WithCancel() (context.Context, context.CancelFunc)
 }
@@ -30,7 +31,7 @@ func newCCContext() CCContextInterface {
 	}
 }
 
-// WithCancel
+// WithCancel TODO
 func (c *ccContext) WithCancel() (context.Context, context.CancelFunc) {
 	return context.WithCancel(c.ctx)
 }

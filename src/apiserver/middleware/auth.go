@@ -16,6 +16,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// BasicAuthenticate TODO
 func BasicAuthenticate(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	u, p, ok := req.Request.BasicAuth()
 	if !ok || u != "admin" || p != "admin" {
@@ -26,6 +27,7 @@ func BasicAuthenticate(req *restful.Request, resp *restful.Response, chain *rest
 	chain.ProcessFilter(req, resp)
 }
 
+// ValidAuth TODO
 func ValidAuth() {
 
 }

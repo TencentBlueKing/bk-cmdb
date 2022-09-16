@@ -1,3 +1,4 @@
+// Package operation TODO
 package operation
 
 import (
@@ -8,6 +9,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// OperationClientInterface TODO
 type OperationClientInterface interface {
 	SearchChartData(ctx context.Context, h http.Header, data metadata.ChartConfig) (resp *metadata.Response, err error)
 	SearchInstCount(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CoreUint64Response, err error)
@@ -21,6 +23,7 @@ type OperationClientInterface interface {
 	TimerFreshData(ctx context.Context, h http.Header, data interface{}) (resp *metadata.BoolResponse, err error)
 }
 
+// NewOperationClientInterface TODO
 func NewOperationClientInterface(client rest.ClientInterface) OperationClientInterface {
 	return &operation{client: client}
 }

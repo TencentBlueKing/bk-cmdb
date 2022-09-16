@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// ClearDatabase TODO
 func (a *adminServer) ClearDatabase(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/clear"
@@ -33,6 +34,7 @@ func (a *adminServer) ClearDatabase(ctx context.Context, h http.Header) (resp *m
 	return
 }
 
+// Set TODO
 func (a *adminServer) Set(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/migrate/system/hostcrossbiz/%s"
@@ -47,6 +49,7 @@ func (a *adminServer) Set(ctx context.Context, ownerID string, h http.Header) (r
 	return
 }
 
+// Migrate TODO
 func (a *adminServer) Migrate(ctx context.Context, ownerID string, distribution string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/migrate/%s/%s"
@@ -61,6 +64,7 @@ func (a *adminServer) Migrate(ctx context.Context, ownerID string, distribution 
 	return
 }
 
+// RunSyncDBIndex TODO
 func (a *adminServer) RunSyncDBIndex(ctx context.Context, h http.Header) (*metadata.Response, error) {
 	resp := new(metadata.Response)
 	subPath := "/migrate/sync/db/index"

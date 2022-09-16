@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/types"
 )
 
+// NewMockBackbone TODO
 func NewMockBackbone(c *Config) (*Engine, error) {
 	engine := &Engine{
 		CoreAPI:  apimachinery.NewMockApiMachinery(),
@@ -32,22 +33,27 @@ func NewMockBackbone(c *Config) (*Engine, error) {
 
 type mockDisc struct{}
 
+// Ping TODO
 func (*mockDisc) Ping() error {
 	return nil
 }
 
+// Stop TODO
 func (*mockDisc) Stop() error {
 	return nil
 }
 
+// Register TODO
 func (*mockDisc) Register(path string, c types.ServerInfo) error {
 	return nil
 }
 
+// Cancel TODO
 func (*mockDisc) Cancel() {
 
 }
 
+// ClearRegisterPath TODO
 func (*mockDisc) ClearRegisterPath() error {
 	return nil
 }

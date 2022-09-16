@@ -12,10 +12,11 @@
 
 <template>
   <bk-sideslider class="filter-form-sideslider"
+    v-transfer-dom
     :is-show.sync="isShow"
     :width="400"
     :show-mask="false"
-    :transfer="false"
+    :transfer="true"
     :quick-close="false"
     @hidden="handleClosed">
     <div class="filter-form-header" slot="header">
@@ -185,7 +186,9 @@
       focus: {
         inserted: (el) => {
           const input = el.querySelector('textarea')
-          input.focus()
+          setTimeout(() => {
+            input.focus()
+          }, 0)
         }
       }
     },

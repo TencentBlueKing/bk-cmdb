@@ -28,6 +28,7 @@ import (
 
 var resourceParentMap = iam.GetResourceParentMap()
 
+// FetchInstanceInfo TODO
 // fetch resource instances' specified attributes info using instance ids
 func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter,
 	extraCond map[string]interface{}) ([]map[string]interface{}, error) {
@@ -119,6 +120,7 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, fil
 	return instances.Info, nil
 }
 
+// FetchHostInfo TODO
 // fetch hosts' specified attributes info using host ids
 func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
 	[]map[string]interface{}, error) {
@@ -347,6 +349,7 @@ func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filt
 	return instances, nil
 }
 
+// ValidateFetchInstanceInfoRequest TODO
 func (lgc *Logics) ValidateFetchInstanceInfoRequest(kit *rest.Kit, req *types.PullResourceReq) (*types.FetchInstanceInfoFilter, error) {
 	filter, ok := req.Filter.(types.FetchInstanceInfoFilter)
 	if !ok {
@@ -361,6 +364,7 @@ func (lgc *Logics) ValidateFetchInstanceInfoRequest(kit *rest.Kit, req *types.Pu
 	return &filter, nil
 }
 
+// getResourceIamPath TODO
 // get resource iam path
 func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iam.TypeID, instance map[string]interface{}) ([]string, error) {
 	if resourceType == iam.Host {

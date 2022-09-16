@@ -73,6 +73,7 @@ func (h *attributeGroupAuditLog) GenerateAuditLog(parameter *generateAuditCommon
 	}, nil
 }
 
+// NewAttributeGroupAuditLog TODO
 func NewAttributeGroupAuditLog(clientSet coreservice.CoreServiceClientInterface) *attributeGroupAuditLog {
 	return &attributeGroupAuditLog{
 		audit: audit{

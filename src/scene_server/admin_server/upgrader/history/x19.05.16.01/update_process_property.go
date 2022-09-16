@@ -530,6 +530,7 @@ func updateFuncIDProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	return nil
 }
 
+// UpdateProcPortPropertyGroupName TODO
 func UpdateProcPortPropertyGroupName(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	// update proc_port group name
 	row := &metadata.Group{

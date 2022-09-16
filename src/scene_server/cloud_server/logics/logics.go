@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package logics TODO
 package logics
 
 import (
@@ -25,6 +26,7 @@ type Logics struct {
 	authorizer ac.AuthorizeInterface
 }
 
+// NewLogics TODO
 func NewLogics(engine *backbone.Engine, cryptor cryptor.Cryptor, authorizer ac.AuthorizeInterface) *Logics {
 	return &Logics{
 		Engine:     engine,

@@ -1,3 +1,4 @@
+// Package queue TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -19,10 +20,12 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// TaskQueueClientInterface TODO
 type TaskQueueClientInterface interface {
 	Post(ctx context.Context, h http.Header, path string, data interface{}) (resp *metadata.Response, err error)
 }
 
+// NewSychronizeClientInterface TODO
 func NewSychronizeClientInterface(client rest.ClientInterface) TaskQueueClientInterface {
 	return &taskQueue{
 		client: client,

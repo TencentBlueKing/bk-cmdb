@@ -104,6 +104,7 @@ var (
 	skipBizIdList *skipBizId
 )
 
+// cronInsEnumInfo TODO
 // regular update instance enum ID to name
 func cronInsEnumInfo(input *monstachemap.InitPluginInput) {
 
@@ -764,7 +765,8 @@ func indexingObjectInstance(input *monstachemap.MapperPluginInput, output *monst
 	return nil
 }
 
-//the internal resource pool does not need to be displayed externally. The ID corresponding to the internal resource
+// initSkipBizId TODO
+// the internal resource pool does not need to be displayed externally. The ID corresponding to the internal resource
 // pool is saved. When writing to es from Mongo, the relevant doc needs to be masked.
 func initSkipBizId(input *monstachemap.InitPluginInput) error {
 

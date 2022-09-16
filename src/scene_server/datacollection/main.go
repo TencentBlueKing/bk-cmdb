@@ -80,6 +80,7 @@ func mock() {
 	os.Exit(0)
 }
 
+// sendMock TODO
 // send mock message to target datacollection.
 func sendMock(collectorName string) error {
 	resp, err := http.Post(mockDataCollectioAddr, "application/json", bytes.NewBufferString(`{"name":"`+collectorName+`"}`))

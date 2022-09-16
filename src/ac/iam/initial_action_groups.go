@@ -452,6 +452,7 @@ func genModelManageActionGroups() []ActionGroup {
 	}
 }
 
+// GenModelInstanceManageActionGroups TODO
 func GenModelInstanceManageActionGroups(objects []metadata.Object) []ActionGroup {
 	if len(objects) == 0 {
 		return make([]ActionGroup, 0)

@@ -93,7 +93,7 @@
         return !HostStore.isSelected
       },
       transferToOtherDisabled() {
-        return !HostStore.isAllIdleModule || HostStore.hosts.some(host => host.biz[0].default === 1)
+        return !HostStore.isAllIdleSet || HostStore.hosts.some(host => host.biz[0].default === 1)
       },
     },
     methods: {
@@ -167,9 +167,9 @@
           this.$error('所选主机已在主机池中')
           return false
         }
-        const { isAllIdleModule } = HostStore
-        if (!isAllIdleModule) {
-          this.$error(this.$t('仅支持对空闲机模块下的主机进行操作', { idleModule: this.$store.state.globalConfig.config.idlePool.idle }))
+        const { isAllIdleSet } = HostStore
+        if (!isAllIdleSet) {
+          this.$error(this.$t('仅支持对空闲机池下的主机进行操作', { idleSet: this.$store.state.globalConfig.config.set }))
           return false
         }
         const [bizId] = HostStore.bizSet

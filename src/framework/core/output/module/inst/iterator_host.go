@@ -36,6 +36,7 @@ type hostIterator struct {
 	bufIdx      int
 }
 
+// NewHostIterator TODO
 func NewHostIterator(target model.Model, cond common.Condition) (*hostIterator, error) {
 	grpIterator := &hostIterator{
 		targetModel: target,
@@ -59,6 +60,7 @@ func NewHostIterator(target model.Model, cond common.Condition) (*hostIterator, 
 	return grpIterator, nil
 }
 
+// ForEach TODO
 func (cli *hostIterator) ForEach(itemCallback func(item HostInterface) error) (err error) {
 	var item HostInterface
 	for {
@@ -84,6 +86,7 @@ func (cli *hostIterator) ForEach(itemCallback func(item HostInterface) error) (e
 	return err
 }
 
+// Next TODO
 func (cli *hostIterator) Next() (HostInterface, error) {
 	if len(cli.buffer) == cli.bufIdx {
 
@@ -93,7 +96,7 @@ func (cli *hostIterator) Next() (HostInterface, error) {
 		if nil != err {
 			return nil, err
 		}
-		//fmt.Println("the err:", err)
+		// fmt.Println("the err:", err)
 		if 0 == len(existItems) {
 			cli.bufIdx = 0
 			return nil, io.EOF

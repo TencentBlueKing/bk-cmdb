@@ -17,9 +17,11 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
+// ProcessClientInterface TODO
 type ProcessClientInterface interface {
 	CreateProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteProcessInstance(ctx context.Context, h http.Header,
@@ -30,7 +32,8 @@ type ProcessClientInterface interface {
 
 	CreateProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
-	SearchProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	SearchProcessTemplate(ctx context.Context, h http.Header, i *metadata.ListProcessTemplateWithServiceTemplateInput) (
+		*metadata.MultipleProcessTemplate, errors.CCErrorCoder)
 	UpdateProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 
 	ListProcessRelatedInfo(ctx context.Context, h http.Header, bizID int64, data metadata.ListProcessRelatedInfoOption) (resp *metadata.ListProcessRelatedInfoResponse, err error)
@@ -40,6 +43,7 @@ type ProcessClientInterface interface {
 	UpdateProcessInstancesByIDs(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 }
 
+// NewProcessClientInterface TODO
 func NewProcessClientInterface(client rest.ClientInterface) ProcessClientInterface {
 	return &process{client: client}
 }

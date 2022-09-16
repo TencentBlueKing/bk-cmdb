@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// ForbiddenModifyMainlineObjectUniqueWhiteList TODO
 var ForbiddenModifyMainlineObjectUniqueWhiteList = []string{
 	common.BKInnerObjIDHost,
 }

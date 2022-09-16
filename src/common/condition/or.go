@@ -16,6 +16,7 @@ import (
 	types "configcenter/src/common/mapstr"
 )
 
+// OR TODO
 // Field create a field
 type OR interface {
 	Item(val interface{}) Condition

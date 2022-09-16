@@ -80,6 +80,7 @@ func loadErrorAndLanguage(errorres string, languageres string, handler *CCHandle
 	return nil
 }
 
+// LoadConfigFromLocalFile TODO
 func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
 	cnfDir, _ := String("confs.dir")
 
@@ -130,6 +131,7 @@ func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
 	return nil
 }
 
+// SetRedisFromByte TODO
 func SetRedisFromByte(data []byte) error {
 	var err error
 	confLock.Lock()
@@ -150,6 +152,7 @@ func SetRedisFromByte(data []byte) error {
 	return nil
 }
 
+// SetRedisFromFile TODO
 func SetRedisFromFile(target string) error {
 	var err error
 	confLock.Lock()
@@ -162,6 +165,7 @@ func SetRedisFromFile(target string) error {
 	return nil
 }
 
+// SetMongodbFromByte TODO
 func SetMongodbFromByte(data []byte) error {
 	var err error
 	confLock.Lock()
@@ -182,6 +186,7 @@ func SetMongodbFromByte(data []byte) error {
 	return nil
 }
 
+// SetMongodbFromFile TODO
 func SetMongodbFromFile(target string) error {
 	var err error
 	confLock.Lock()
@@ -194,6 +199,7 @@ func SetMongodbFromFile(target string) error {
 	return nil
 }
 
+// SetCommonFromByte TODO
 func SetCommonFromByte(data []byte) error {
 	var err error
 	confLock.Lock()
@@ -215,6 +221,7 @@ func SetCommonFromByte(data []byte) error {
 	return nil
 }
 
+// SetCommonFromFile TODO
 func SetCommonFromFile(target string) error {
 	var err error
 	confLock.Lock()
@@ -227,11 +234,12 @@ func SetCommonFromFile(target string) error {
 	return nil
 }
 
+// SetExtraFromByte TODO
 func SetExtraFromByte(data []byte) error {
 	var err error
 	confLock.Lock()
 	defer confLock.Unlock()
-	//if it is not nil, do not create a new parser, but add the new configuration information to viper
+	// if it is not nil, do not create a new parser, but add the new configuration information to viper
 	if extraParser != nil {
 		err = extraParser.parser.ReadConfig(bytes.NewBuffer(data))
 		if err != nil {
@@ -248,6 +256,7 @@ func SetExtraFromByte(data []byte) error {
 	return nil
 }
 
+// SetExtraFromFile TODO
 func SetExtraFromFile(target string) error {
 	var err error
 	confLock.Lock()
@@ -260,6 +269,7 @@ func SetExtraFromFile(target string) error {
 	return nil
 }
 
+// SetMigrateFromByte TODO
 func SetMigrateFromByte(data []byte) error {
 	var err error
 	confLock.Lock()
@@ -280,6 +290,7 @@ func SetMigrateFromByte(data []byte) error {
 	return nil
 }
 
+// SetMigrateFromFile TODO
 func SetMigrateFromFile(target string) error {
 	var err error
 	confLock.Lock()
@@ -484,7 +495,7 @@ func Int(key string) (int, error) {
 	return 0, err.New("config not found")
 }
 
-// Int return the int value of the configuration information according to the key.
+// Int64 return the int value of the configuration information according to the key.
 func Int64(key string) (int64, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
@@ -555,6 +566,7 @@ func StringSlice(key string) ([]string, error) {
 	return nil, err.New("config not found")
 }
 
+// IsExist TODO
 func IsExist(key string) bool {
 	confLock.RLock()
 	defer confLock.RUnlock()

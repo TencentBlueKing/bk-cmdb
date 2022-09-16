@@ -29,7 +29,7 @@ import (
 type FetchInst struct {
 	lgc        *Logics
 	syncConfig *options.ConfigItem
-	//ingoreAppID []int64
+	// ingoreAppID []int64
 	baseConds mapstr.MapStr
 	appIDArr  []int64
 }

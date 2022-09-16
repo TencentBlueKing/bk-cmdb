@@ -245,6 +245,7 @@ func (c *cloudOperation) validUpdateSyncTask(kit *rest.Kit, taskID int64, option
 	return nil
 }
 
+// validSyncVpcInfo TODO
 // Valid sync vpc info
 func (c *cloudOperation) validSyncVpcInfo(kit *rest.Kit, syncVpcs []metadata.VpcSyncInfo) errors.CCErrorCoder {
 	if len(syncVpcs) == 0 {
@@ -274,6 +275,7 @@ func (c *cloudOperation) validSyncVpcInfo(kit *rest.Kit, syncVpcs []metadata.Vpc
 	return nil
 }
 
+// validResourceDirExist TODO
 // Valid resource dir which must be exist
 func (c *cloudOperation) validResourceDirExist(kit *rest.Kit, syncVpcs []metadata.VpcSyncInfo) errors.CCErrorCoder {
 	syncDirs := make(map[int64]bool)
@@ -308,6 +310,7 @@ func (c *cloudOperation) validResourceDirExist(kit *rest.Kit, syncVpcs []metadat
 	return nil
 }
 
+// validCloudIDExist TODO
 // Valid cloudID which must be exist
 func (c *cloudOperation) validCloudIDExist(kit *rest.Kit, syncVpcs []metadata.VpcSyncInfo) errors.CCErrorCoder {
 	cloudIDs := make(map[int64]bool)

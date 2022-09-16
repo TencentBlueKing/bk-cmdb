@@ -15,15 +15,15 @@
 
 #include <string>
 #include <event.h>
-#include "thread/thread.h"
-#include "dataStruct/safe_map.h"
-#include "dataStruct/safe_queue.h"
+#include "tools/thread.h"
+#include "datastruct/safe_map.h"
+#include "datastruct/safe_queue.h"
 #include "safe/lock.h"
 #include "exporter/exporter.h"
 #include "datacell.h"
 #include "log/log.h"
 namespace gse { 
-namespace dataserver {
+namespace data {
 
 class LogExporter : public Exporter
 {

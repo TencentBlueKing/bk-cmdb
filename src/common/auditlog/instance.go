@@ -143,6 +143,7 @@ func (i *instanceAuditLog) isMainline(kit *rest.Kit, objID string) (bool, error)
 	return false, nil
 }
 
+// NewInstanceAudit TODO
 func NewInstanceAudit(clientSet coreservice.CoreServiceClientInterface) *instanceAuditLog {
 	return &instanceAuditLog{
 		audit: audit{

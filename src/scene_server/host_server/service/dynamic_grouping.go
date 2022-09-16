@@ -535,6 +535,7 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 	ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCSystemUnknownError))
 }
 
+// changeTimeToMatchLocalZone TODO
 // change the time in UTC format to the time in the local time zone
 func changeTimeToMatchLocalZone(conditions []meta.DynamicGroupInfoCondition) {
 	for _, condition := range conditions {

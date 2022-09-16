@@ -28,7 +28,7 @@ const (
 	timeWithLocationPattern = `^[0-9]{4}[\-]{1}[0-9]{2}[\-]{1}[0-9]{2}[T]{1}[0-9]{2}[\:]{1}[0-9]{2}[\:]{1}[0-9]{2}([\.]{1}[0-9]+)?[\+]{1}[0-9]{2}[\:]{1}[0-9]{2}$`
 	// timeZonePattern    = `^[a-zA-Z]+/[a-z\-\_+\-A-Z]+$`
 	timeZonePattern = `^[a-zA-Z0-9\-−_\/\+]+$`
-	//userPattern the user names regex expression
+	// userPattern the user names regex expression
 	userPattern = `^(\d|[a-zA-Z])([a-zA-Z0-9\@.,_-])*$`
 )
 
@@ -44,7 +44,7 @@ var (
 	userRegexp             = regexp.MustCompile(userPattern)
 )
 
-// 字符串输入长度
+// CheckLen 字符串输入长度
 func CheckLen(sInput string, min, max int) bool {
 	if len(sInput) >= min && len(sInput) <= max {
 		return true
@@ -52,21 +52,22 @@ func CheckLen(sInput string, min, max int) bool {
 	return false
 }
 
-// 是否大、小写字母组合
+// IsChar 是否大、小写字母组合
 func IsChar(sInput string) bool {
 	return charRegexp.MatchString(sInput)
 }
 
-// 是否字母、数字组合
+// IsNumChar 是否字母、数字组合
 func IsNumChar(sInput string) bool {
 	return numCharRegexp.MatchString(sInput)
 }
 
-// 是否日期
+// IsDate 是否日期
 func IsDate(sInput string) bool {
 	return dateRegexp.MatchString(sInput)
 }
 
+// DateTimeFieldType TODO
 type DateTimeFieldType string
 
 const (
@@ -77,7 +78,7 @@ const (
 	invalidDateTimeType  DateTimeFieldType = "invalid"
 )
 
-// 是否时间
+// IsTime 是否时间
 func IsTime(sInput string) (DateTimeFieldType, bool) {
 	if dateTimeRegexp.MatchString(sInput) {
 		return timeWithoutLocationType, true
@@ -88,16 +89,17 @@ func IsTime(sInput string) (DateTimeFieldType, bool) {
 	return invalidDateTimeType, false
 }
 
-// 是否时区
+// IsTimeZone 是否时区
 func IsTimeZone(sInput string) bool {
 	return timeZoneRegexp.MatchString(sInput)
 }
 
-// 是否用户
+// IsUser 是否用户
 func IsUser(sInput string) bool {
 	return userRegexp.MatchString(sInput)
 }
 
+// Str2Time TODO
 // str2time
 func Str2Time(timeStr string, timeType DateTimeFieldType) time.Time {
 	var layout string
@@ -127,6 +129,7 @@ func FirstNotEmptyString(strs ...string) string {
 	return ""
 }
 
+// ContainsAnyString TODO
 func ContainsAnyString(s string, subs ...string) bool {
 	for index := range subs {
 		if strings.Contains(s, subs[index]) {

@@ -222,7 +222,7 @@
           rules.required = true
         }
 
-        if (this.isMainLine && ['bk_set_name', 'bk_module_name', 'bk_inst_name'].includes(property.bk_property_id)) {
+        if (this.isMainLine && ['bk_biz_name', 'bk_set_name', 'bk_module_name', 'bk_inst_name'].includes(property.bk_property_id)) {
           rules.businessTopoInstNames = true
           rules.length = 256
           rules.singlechar = false

@@ -24,6 +24,7 @@ type OutputerKey string
 
 // Puter send the data input
 type Puter interface {
+	// Put TODO
 	// save into the storage
 	Put(data types.MapStr) error
 }
@@ -35,6 +36,7 @@ type Outputer interface {
 	// This information will be printed when the Inputer is abnormal, which is convenient for debugging.
 	Name() string
 
+	// Put TODO
 	// Run the output main loop. This should block until be signalled to stop by invocation of the Stop() method.
 	Put(data types.MapStr) error
 

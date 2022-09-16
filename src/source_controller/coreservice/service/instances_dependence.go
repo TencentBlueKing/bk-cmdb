@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-// IsInstanceExist used to check if the  instances  asst exist
+// IsInstAsstExist used to check if the  instances  asst exist
 func (s *coreService) IsInstAsstExist(kit *rest.Kit, objID string, instID uint64) (exists bool, err error) {
 	// to many call. can use $or. but universalsql parse or condtion error.
 
@@ -155,6 +155,7 @@ func (s *coreService) SearchUnique(kit *rest.Kit, objID string) (uniqueAttr []me
 	return result.Info, err
 }
 
+// UpdateModelInstance TODO
 func (s *coreService) UpdateModelInstance(kit *rest.Kit, objID string, param metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 	return s.core.InstanceOperation().UpdateModelInstance(kit, objID, param)
 }

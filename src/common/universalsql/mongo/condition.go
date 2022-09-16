@@ -46,11 +46,13 @@ func NewConditionFromMapStr(inputCond mapstr.MapStr) (outputCond universalsql.Co
 	return parseConditionFromMapStr(newCondition(), "", inputCond)
 }
 
+// ToSQL TODO
 func (m *mongoCondition) ToSQL() (string, error) {
 	sql, err := json.Marshal(m.ToMapStr())
 	return string(sql), err
 }
 
+// ToMapStr TODO
 func (m *mongoCondition) ToMapStr() mapstr.MapStr {
 
 	result := mapstr.New()
@@ -87,7 +89,7 @@ func (m *mongoCondition) ToMapStr() mapstr.MapStr {
 		result.Set(universalsql.OR, orElements)
 	}
 
-	//merge not elements
+	// merge not elements
 	notElements := mapstr.NewArray()
 	for _, ele := range m.not {
 		tmp := ele.ToMapStr()
@@ -99,7 +101,7 @@ func (m *mongoCondition) ToMapStr() mapstr.MapStr {
 		result.Set(universalsql.NOT, notElements)
 	}
 
-	//merge nor elements
+	// merge nor elements
 	norElements := mapstr.NewArray()
 	for _, ele := range m.nor {
 		tmp := ele.ToMapStr()
@@ -119,31 +121,37 @@ func (m *mongoCondition) ToMapStr() mapstr.MapStr {
 	return result
 }
 
+// Element TODO
 func (m *mongoCondition) Element(elements ...universalsql.ConditionElement) universalsql.Condition {
 	m.elements = append(m.elements, elements...)
 	return m
 }
 
+// And TODO
 func (m *mongoCondition) And(elements ...universalsql.ConditionElement) universalsql.Condition {
 	m.and = append(m.and, elements...)
 	return m
 }
 
+// Or TODO
 func (m *mongoCondition) Or(elements ...universalsql.ConditionElement) universalsql.Condition {
 	m.or = append(m.or, elements...)
 	return m
 }
 
+// Not TODO
 func (m *mongoCondition) Not(elements ...universalsql.ConditionElement) universalsql.Condition {
 	m.not = append(m.or, elements...)
 	return m
 }
 
+// Nor TODO
 func (m *mongoCondition) Nor(elements ...universalsql.ConditionElement) universalsql.Condition {
 	m.nor = append(m.or, elements...)
 	return m
 }
 
+// Embed TODO
 func (m *mongoCondition) Embed(embedName string) (origin, embed universalsql.Condition) {
 
 	tmp := newCondition()

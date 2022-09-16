@@ -48,14 +48,13 @@
 * [使用Helm部署CMDB到K8S环境](helm/README.md)
 
 ## Roadmap
-* [版本规划](docs/VERSION.md)
-* [版本日志](version.md)
+* [版本日志](docs/support-file/changelog/release.md)
 
 ## Support
 - [wiki](https://github.com/Tencent/bk-cmdb/wiki)
 - [白皮书](https://docs.bk.tencent.com/cmdb/)
 - [蓝鲸论坛](https://bk.tencent.com/s-mart/community)
-- [蓝鲸 DevOps 在线视频教程](https://cloud.tencent.com/developer/edu/major-100008)
+- [蓝鲸 DevOps 在线视频教程](https://bk.tencent.com/s-mart/video/)
 - [蓝鲸社区版交流1群](https://jq.qq.com/?_wv=1027&k=5zk8F7G)
 - 技术交流QQ群(305496802), 扫码入群戳[这里](docs/resource/img/qq.png)
 

@@ -23,6 +23,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// Attribute TODO
 type Attribute struct {
 	ID                uint64      `json:"id" bson:"id"`
 	OwnerID           string      `json:"bk_supplier_account" bson:"bk_supplier_account"`

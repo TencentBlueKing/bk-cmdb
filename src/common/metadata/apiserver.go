@@ -12,40 +12,48 @@
 
 package metadata
 
+// RolePriResult TODO
 type RolePriResult struct {
 	BaseResp `json:",inline"`
 	Data     []string `json:"data"`
 }
 
+// RoleAppResult TODO
 type RoleAppResult struct {
 	BaseResp `json:",inline"`
 	Data     []map[string]interface{} `json:"data"`
 }
 
+// MainLineResult TODO
 type MainLineResult struct {
 	BaseResp `json:",inline"`
 	Data     []map[string]interface{} `json:"data"`
 }
 
+// AppQueryResult TODO
 type AppQueryResult struct {
 	BaseResp `json:",inline"`
 	Data     InstResult `json:"data"`
 }
 
+// ObjectAttrBatchResult TODO
 type ObjectAttrBatchResult struct {
 	BaseResp `json:",inline"`
 	Data     map[string]ObjectAttr `json:"data"`
 }
 
+// ObjectAttr TODO
 type ObjectAttr struct {
 	Attr []interface{} `json:"attr"`
 }
 
+// ObjectAttrResult TODO
 type ObjectAttrResult struct {
 	BaseResp `json:",inline"`
 	Data     []Attribute `json:"data"`
 }
 
+// ObjectAttrGroupResult TODO
 type ObjectAttrGroupResult struct {
 	BaseResp `json:",inline"`
 	Data     []AttributeGroup `json:"data"`

@@ -33,6 +33,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// Client TODO
 type Client struct {
 	// cache is cc redis client.
 	cache redis.Client
@@ -44,6 +45,7 @@ type Client struct {
 	db dal.DB
 }
 
+// NewClient TODO
 func NewClient(watchDB dal.DB, db dal.DB, cache redis.Client) *Client {
 	return &Client{watchDB: watchDB, db: db, cache: cache}
 }
@@ -269,7 +271,7 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 	return &detail, true, nil
 }
 
-// searchFollowingEventNodes search nodes after the node(excluding itself) by cursor
+// searchFollowingEventChainNodes search nodes after the node(excluding itself) by cursor
 func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, opts *searchFollowingChainNodesOption) (
 	bool, []*watch.ChainNode, uint64, error) {
 
@@ -380,7 +382,7 @@ func (c *Client) getLastEventID(kit *rest.Kit, key event.Key) (uint64, error) {
 	return data.ID, nil
 }
 
-// searchFollowingEventChainNodes search nodes after the node(excluding itself) by id
+// searchFollowingEventChainNodesByID search nodes after the node(excluding itself) by id
 func (c *Client) searchFollowingEventChainNodesByID(kit *rest.Kit, opt *searchFollowingChainNodesOption) (
 	[]*watch.ChainNode, error) {
 
@@ -410,6 +412,7 @@ func (c *Client) searchFollowingEventChainNodesByID(kit *rest.Kit, opt *searchFo
 	return nodes, nil
 }
 
+// searchEventDetailsFromRedis TODO
 /** searchEventDetailsFromRedis get event details by cursors from redis, record the failed ones.
   returns the details that are successfully acquired from redis, the cursors with no detail in redis, and their map to
   the index in detail array so that we can get detail from mongo and fill them into the proper location in detail array

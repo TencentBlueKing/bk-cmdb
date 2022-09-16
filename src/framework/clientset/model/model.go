@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package model TODO
 package model
 
 import (
@@ -19,6 +20,7 @@ import (
 	"configcenter/src/framework/common/rest"
 )
 
+// ModelInterface TODO
 type ModelInterface interface {
 	CreateModel(ctx *types.CreateModelCtx) (int64, error)
 	DeleteModel(ctx *types.DeleteModelCtx) error
@@ -30,6 +32,7 @@ type modelClient struct {
 	client rest.ClientInterface
 }
 
+// CreateModel TODO
 func (m *modelClient) CreateModel(ctx *types.CreateModelCtx) (int64, error) {
 	resp := new(types.CreateModelResponse)
 	subPath := "/create/object"
@@ -51,6 +54,7 @@ func (m *modelClient) CreateModel(ctx *types.CreateModelCtx) (int64, error) {
 	return resp.Data.ID, nil
 }
 
+// DeleteModel TODO
 func (m *modelClient) DeleteModel(ctx *types.DeleteModelCtx) error {
 	resp := new(types.Response)
 	subPath := fmt.Sprintf("/delete/object/%d", ctx.ModelID)
@@ -72,6 +76,7 @@ func (m *modelClient) DeleteModel(ctx *types.DeleteModelCtx) error {
 	return nil
 }
 
+// UpdateModel TODO
 func (m *modelClient) UpdateModel(ctx *types.UpdateModelCtx) error {
 	resp := new(types.Response)
 	subPath := fmt.Sprintf("/update/object/%d", ctx.ModelID)
@@ -93,6 +98,7 @@ func (m *modelClient) UpdateModel(ctx *types.UpdateModelCtx) error {
 	return nil
 }
 
+// GetModels TODO
 func (m *modelClient) GetModels(ctx *types.GetModelsCtx) ([]types.ModelInfo, error) {
 	resp := new(types.GetModelsResult)
 	subPath := "/find/object"

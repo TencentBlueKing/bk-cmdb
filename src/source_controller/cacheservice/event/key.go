@@ -25,6 +25,7 @@ const watchCacheNamespace = common.BKCacheKeyV3Prefix + "watch:"
 
 var hostFields = []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField}
 
+// HostKey TODO
 var HostKey = Key{
 	namespace:  watchCacheNamespace + "host",
 	collection: common.BKTableNameBaseHost,
@@ -47,6 +48,7 @@ var HostKey = Key{
 	},
 }
 
+// ModuleHostRelationKey TODO
 var ModuleHostRelationKey = Key{
 	namespace:  watchCacheNamespace + "host_relation",
 	collection: common.BKTableNameModuleHostConfig,
@@ -58,6 +60,8 @@ var ModuleHostRelationKey = Key{
 }
 
 var bizFields = []string{common.BKAppIDField, common.BKAppNameField}
+
+// BizKey TODO
 var BizKey = Key{
 	namespace:  watchCacheNamespace + common.BKInnerObjIDApp,
 	collection: common.BKTableNameBaseApp,
@@ -81,6 +85,8 @@ var BizKey = Key{
 }
 
 var setFields = []string{common.BKSetIDField, common.BKSetNameField}
+
+// SetKey TODO
 var SetKey = Key{
 	namespace:  watchCacheNamespace + common.BKInnerObjIDSet,
 	collection: common.BKTableNameBaseSet,
@@ -104,6 +110,8 @@ var SetKey = Key{
 }
 
 var moduleFields = []string{common.BKModuleIDField, common.BKModuleNameField}
+
+// ModuleKey TODO
 var ModuleKey = Key{
 	namespace:  watchCacheNamespace + common.BKInnerObjIDModule,
 	collection: common.BKTableNameBaseModule,
@@ -126,6 +134,7 @@ var ModuleKey = Key{
 	},
 }
 
+// ObjectBaseKey TODO
 var ObjectBaseKey = Key{
 	namespace:  watchCacheNamespace + common.BKInnerObjIDObject,
 	collection: common.BKTableNameBaseInst,
@@ -150,6 +159,7 @@ var ObjectBaseKey = Key{
 	},
 }
 
+// MainlineInstanceKey TODO
 var MainlineInstanceKey = Key{
 	namespace:  watchCacheNamespace + "mainline_instance",
 	collection: common.BKTableNameMainlineInstance,
@@ -175,6 +185,8 @@ var MainlineInstanceKey = Key{
 }
 
 var processFields = []string{common.BKProcessIDField, common.BKProcessNameField}
+
+// ProcessKey TODO
 var ProcessKey = Key{
 	namespace:  watchCacheNamespace + common.BKInnerObjIDProc,
 	collection: common.BKTableNameBaseProcess,
@@ -198,6 +210,8 @@ var ProcessKey = Key{
 }
 
 var processInstanceRelationFields = []string{common.BKProcessIDField, common.BKServiceInstanceIDField, common.BKHostIDField}
+
+// ProcessInstanceRelationKey TODO
 var ProcessInstanceRelationKey = Key{
 	namespace:  watchCacheNamespace + "process_instance_relation",
 	collection: common.BKTableNameProcessInstanceRelation,
@@ -221,6 +235,7 @@ var ProcessInstanceRelationKey = Key{
 // the mix of host, host relation, process events.
 const hostIdentityWatchCollName = "cc_HostIdentityMixed"
 
+// HostIdentityKey TODO
 var HostIdentityKey = Key{
 	namespace:  watchCacheNamespace + "host_identity",
 	collection: hostIdentityWatchCollName,
@@ -262,6 +277,8 @@ var InstAsstKey = Key{
 }
 
 var bizSetFields = []string{common.BKBizSetIDField, common.BKBizSetNameField}
+
+// BizSetKey TODO
 var BizSetKey = Key{
 	namespace:  watchCacheNamespace + common.BKInnerObjIDBizSet,
 	collection: common.BKTableNameBaseBizSet,
@@ -286,6 +303,7 @@ var BizSetKey = Key{
 // bizSetRelationWatchCollName a virtual collection name for biz set & biz events in the form of their relation events
 const bizSetRelationWatchCollName = "cc_bizSetRelationMixed"
 
+// BizSetRelationKey TODO
 var BizSetRelationKey = Key{
 	namespace:  watchCacheNamespace + "biz_set_relation",
 	collection: bizSetRelationWatchCollName,
@@ -424,6 +442,7 @@ var KubePodKey = Key{
 	},
 }
 
+// Key TODO
 type Key struct {
 	namespace string
 	// the watching db collection name
@@ -445,20 +464,24 @@ type Key struct {
 	instID func(doc []byte) int64
 }
 
+// DetailKey TODO
 // Note: do not change the format, it will affect the way in event server to
 // get the details with lua scripts.
 func (k Key) DetailKey(cursor string) string {
 	return k.namespace + ":detail:" + cursor
 }
 
+// Namespace TODO
 func (k Key) Namespace() string {
 	return k.namespace
 }
 
+// TTLSeconds TODO
 func (k Key) TTLSeconds() int64 {
 	return k.ttlSeconds
 }
 
+// Validate TODO
 func (k Key) Validate(doc []byte) error {
 	if k.validator != nil {
 		return k.validator(doc)
@@ -467,6 +490,7 @@ func (k Key) Validate(doc []byte) error {
 	return nil
 }
 
+// Name TODO
 func (k Key) Name(doc []byte) string {
 	if k.instName != nil {
 		return k.instName(doc)
@@ -474,6 +498,7 @@ func (k Key) Name(doc []byte) string {
 	return ""
 }
 
+// InstanceID TODO
 func (k Key) InstanceID(doc []byte) int64 {
 	if k.instID != nil {
 		return k.instID(doc)
@@ -481,6 +506,7 @@ func (k Key) InstanceID(doc []byte) int64 {
 	return 0
 }
 
+// Collection TODO
 func (k Key) Collection() string {
 	return k.collection
 }

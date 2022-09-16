@@ -19,6 +19,7 @@ import (
 	"configcenter/src/ac/meta"
 )
 
+// OperationStatisticAuthConfigs TODO
 /*
  http.MethodPost,  "/create/operation/chart"
  http.MethodDelete,  "/delete/operation/chart/{id}"
@@ -83,6 +84,7 @@ var OperationStatisticAuthConfigs = []AuthConfig{
 	},
 }
 
+// OperationStatistic TODO
 func (ps *parseStream) OperationStatistic() *parseStream {
 	return ParseStreamWithFramework(ps, OperationStatisticAuthConfigs)
 }

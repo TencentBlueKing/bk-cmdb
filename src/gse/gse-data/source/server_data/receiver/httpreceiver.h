@@ -13,38 +13,66 @@
 #ifndef _GSE_DATA_HTTP_RECEIVER_H_
 #define _GSE_DATA_HTTP_RECEIVER_H_
 
+#include "net/http/http_common.hpp"
+#include "net/http/http_message.hpp"
+#include "net/migration/migration_client.h"
+#include "net/migration/migration_server.h"
 #include "receiver.h"
-#include "net/http/http_server.h"
-namespace gse { 
-namespace dataserver {
+
+namespace gse {
+namespace data {
 
 #ifndef SEND_DATA_BY_DATAID
 #define SEND_DATA_BY_DATAID "/gse/v1/senddata/"
 #endif
 
-class HttpReceiver: public Receiver
+class HttpReceiverHandler : public gse::net::http::HTTPHandler
+{
+
+public:
+    HttpReceiverHandler();
+    HttpReceiverHandler(RecvDataCallBack fnRecvData, void *pCaller);
+    virtual ~HttpReceiverHandler();
+    void SetServerIp(const std ::string &ip);
+    void SetServerPort(uint16_t port);
+
+private:
+    void makeResponse(int errorCode, const std::string &message, std::string &response) noexcept;
+    int OnPost(gse::net::http::HTTPMessagePtr message, std::string &response) noexcept;
+    uint32_t getChannelIDFromURI(const char *uri) noexcept;
+
+private:
+    RecvDataCallBack m_callback;
+    void *m_caller;
+
+    std::string m_servIp;
+    uint16_t m_servPort;
+};
+
+class HttpReceiver : public Receiver,
+                     public gse::net::http::HTTPHandler
 {
 public:
     HttpReceiver();
     virtual ~HttpReceiver();
 
 public:
-    int Start();
-    int Stop();
-    void Join();
+    int Start() override;
+    int Stop() override;
+    void Join() override;
 
 private:
+    int StartMigrationSerivce();
 
 private:
-    uint32_t getChannelIDFromURI(const char* uri);
-    void OnHttpMessageHandler(gse::net::http::HttpMessagePtr message, std::string &response);
-    void makeResponse(int errorCode, const std::string &message);
-
-private:
-    gse::net::http::HttpServer *m_httpserver;
+    gse::net::http::HTTPServer *m_httpserver;
     std::thread m_listenThread;
+
+    std::unique_ptr<gse::net::MigrationClient> m_migrationClient;
+    std::unique_ptr<gse::net::MigrationServer> m_migrationServer;
+    int m_listennerFd;
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif

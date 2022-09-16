@@ -20,7 +20,7 @@
 #include "common/time.h"
 
 namespace gse {
-namespace dataserver {
+namespace data {
 
 
 TimeCenter::TimeCenter()

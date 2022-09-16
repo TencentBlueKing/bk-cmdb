@@ -1,3 +1,4 @@
+// Package secrets TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -25,6 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// SecretsClient TODO
 type SecretsClient interface {
 	// GetCloudAccountSecretKey get cloud account secret key
 	GetCloudAccountSecretKey(ctx context.Context, h http.Header) (string, error)
@@ -81,7 +83,7 @@ type secretsClient struct {
 type SecretsConfig struct {
 	// SecretKeyUrl, the url to get secret_key which used to encrypt and decrypt cloud account
 	SecretKeyUrl string
-	//SecretsAddrs, the addrs of bk-secrets service, start with http:// or https://
+	// SecretsAddrs, the addrs of bk-secrets service, start with http:// or https://
 	SecretsAddrs string
 	// SecretsToken , as a header param for sending the api request to bk-secrets service
 	SecretsToken string
@@ -124,6 +126,7 @@ type scDiscovery struct {
 	sync.Mutex
 }
 
+// GetServers TODO
 func (s *scDiscovery) GetServers() ([]string, error) {
 	s.Lock()
 	defer s.Unlock()
@@ -142,6 +145,7 @@ func (s *scDiscovery) GetServers() ([]string, error) {
 	}
 }
 
+// GetServersChan TODO
 func (s *scDiscovery) GetServersChan() chan []string {
 	return nil
 }

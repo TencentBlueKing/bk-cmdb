@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateManyModelClassification TODO
 func (m *model) CreateManyModelClassification(ctx context.Context, h http.Header, input *metadata.CreateManyModelClassifiaction) (resp *metadata.CreatedManyOptionResult, err error) {
 	resp = new(metadata.CreatedManyOptionResult)
 	subPath := "/createmany/model/classification"
@@ -60,6 +61,7 @@ func (m *model) CreateModelClassification(ctx context.Context, h http.Header,
 	return &resp.Data, nil
 }
 
+// SetManyModelClassification TODO
 func (m *model) SetManyModelClassification(ctx context.Context, h http.Header, input *metadata.SetManyModelClassification) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/setmany/model/classification"
@@ -74,6 +76,7 @@ func (m *model) SetManyModelClassification(ctx context.Context, h http.Header, i
 	return
 }
 
+// SetModelClassification TODO
 func (m *model) SetModelClassification(ctx context.Context, h http.Header, input *metadata.SetOneModelClassification) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/set/model/classification"
@@ -192,6 +195,7 @@ func (m *model) CreateModel(ctx context.Context, h http.Header, input *metadata.
 	return &resp.Data, nil
 }
 
+// SetModel TODO
 func (m *model) SetModel(ctx context.Context, h http.Header, input *metadata.SetModel) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/set/model"
@@ -231,6 +235,7 @@ func (m *model) UpdateModel(ctx context.Context, h http.Header, input *metadata.
 	return &resp.Data, nil
 }
 
+// DeleteModel TODO
 func (m *model) DeleteModel(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
 	resp = new(metadata.DeletedOptionResult)
 	subPath := "/delete/model"
@@ -269,6 +274,7 @@ func (m *model) DeleteModelCascade(ctx context.Context, h http.Header, modelID i
 	return &resp.Data, err
 }
 
+// ReadModelWithAttribute TODO
 func (m *model) ReadModelWithAttribute(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelWithAttributeResult, err error) {
 	resp = new(metadata.ReadModelWithAttributeResult)
 	subPath := "/read/model/with/attribute"
@@ -413,6 +419,7 @@ func (m *model) UpdateModelAttrsByCondition(ctx context.Context, h http.Header, 
 	return &resp.Data, nil
 }
 
+// SetModelAttrs TODO
 func (m *model) SetModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.SetModelAttributes) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/set/model/%s/attributes"
@@ -427,6 +434,7 @@ func (m *model) SetModelAttrs(ctx context.Context, h http.Header, objID string, 
 	return
 }
 
+// DeleteModelAttr TODO
 func (m *model) DeleteModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
 	resp = new(metadata.DeletedOptionResult)
 	subPath := "/delete/model/%s/attributes"
@@ -571,6 +579,7 @@ func (m *model) CreateAttributeGroup(ctx context.Context, h http.Header, objID s
 	return &resp.Data, nil
 }
 
+// UpdateAttributeGroup TODO
 func (m *model) UpdateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.UpdateOption) (resp metadata.UpdatedOptionResult, err error) {
 	subPath := "/update/model/%s/group"
 
@@ -610,6 +619,7 @@ func (m *model) UpdateAttributeGroupByCondition(ctx context.Context, h http.Head
 	return &resp.Data, nil
 }
 
+// SetAttributeGroup TODO
 func (m *model) SetAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.SetModelAttributes) (resp metadata.SetOptionResult, err error) {
 	subPath := "/set/model/%s/group"
 
@@ -623,6 +633,7 @@ func (m *model) SetAttributeGroup(ctx context.Context, h http.Header, objID stri
 	return
 }
 
+// DeleteAttributeGroup TODO
 func (m *model) DeleteAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.DeleteOption) (resp metadata.DeletedOptionResult, err error) {
 	subPath := "/delete/model/%s/group"
 
@@ -779,6 +790,7 @@ func (m *model) GetModelStatistics(ctx context.Context, h http.Header) (resp *me
 	return
 }
 
+// CreateModelTables TODO
 func (m *model) CreateModelTables(ctx context.Context, h http.Header,
 	input *metadata.CreateModelTable) (err error) {
 

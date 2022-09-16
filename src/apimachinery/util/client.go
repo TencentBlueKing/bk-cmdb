@@ -65,6 +65,7 @@ func NewClient(c *TLSClientConfig, conf ...ExtraClientConfig) (*http.Client, err
 	return client, nil
 }
 
+// HttpClient TODO
 type HttpClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }

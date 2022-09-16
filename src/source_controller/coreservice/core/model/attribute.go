@@ -35,6 +35,7 @@ type modelAttribute struct {
 	language language.CCLanguageIf
 }
 
+// CreateModelAttributes TODO
 func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inputParam metadata.CreateModelAttributes) (dataResult *metadata.CreateManyDataResult, err error) {
 
 	dataResult = &metadata.CreateManyDataResult{
@@ -116,6 +117,7 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 	return dataResult, nil
 }
 
+// SetModelAttributes TODO
 func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputParam metadata.SetModelAttributes) (dataResult *metadata.SetDataResult, err error) {
 
 	dataResult = &metadata.SetDataResult{
@@ -178,6 +180,8 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputPa
 
 	return dataResult, nil
 }
+
+// UpdateModelAttributes TODO
 func (m *modelAttribute) UpdateModelAttributes(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
 	if err := m.model.isValid(kit, objID); nil != err {
@@ -200,6 +204,7 @@ func (m *modelAttribute) UpdateModelAttributes(kit *rest.Kit, objID string, inpu
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
+// UpdateModelAttributesIndex TODO
 func (m *modelAttribute) UpdateModelAttributesIndex(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (result *metadata.UpdateAttrIndexData, err error) {
 
 	// attributes exist check
@@ -292,6 +297,7 @@ func (m *modelAttribute) UpdateModelAttributesIndex(kit *rest.Kit, objID string,
 	return result, nil
 }
 
+// UpdateModelAttributesByCondition TODO
 func (m *modelAttribute) UpdateModelAttributesByCondition(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
 	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
@@ -309,6 +315,7 @@ func (m *modelAttribute) UpdateModelAttributesByCondition(kit *rest.Kit, inputPa
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
+// DeleteModelAttributes TODO
 func (m *modelAttribute) DeleteModelAttributes(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	if err := m.model.isValid(kit, objID); nil != err {
@@ -351,6 +358,7 @@ func (m *modelAttribute) SearchModelAttributes(kit *rest.Kit, objID string, inpu
 	}, nil
 }
 
+// SearchModelAttributesByCondition TODO
 func (m *modelAttribute) SearchModelAttributesByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
 
 	dataResult := &metadata.QueryModelAttributeDataResult{

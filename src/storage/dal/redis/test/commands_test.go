@@ -41,12 +41,12 @@ var _ = Describe("Commands", func() {
 			DB:       0,
 		})
 
-		//client = localRedis.NewFailoverClient(&redis.FailoverOptions{
+		// client = localRedis.NewFailoverClient(&redis.FailoverOptions{
 		//	MasterName:       "mymaster",
 		//	SentinelAddrs:    []string{"localhost:26379", "localhost:26380", "localhost:26381"},
 		//	SentinelPassword: "",
 		//	Password:         "",
-		//})
+		// })
 
 		Expect(client.FlushDB(ctx).Err()).NotTo(HaveOccurred())
 	})
