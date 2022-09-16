@@ -77,7 +77,10 @@
           timezone: [IN, NIN],
           foreignkey: [IN, NIN],
           table: [IN, NIN],
-          'service-template': [IN]
+          'service-template': [IN],
+          array: [IN, NIN, LIKE],
+          object: [IN, NIN, LIKE],
+          map: [IN, NIN]
         }
         const nameDescription = {
           [EQ]: this.$t('等于'),

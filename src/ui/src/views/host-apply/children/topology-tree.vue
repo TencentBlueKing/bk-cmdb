@@ -66,8 +66,8 @@
   import Bus from '@/utils/bus'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import { sortTopoTree } from '@/utils/tools'
-  import topologyInstanceService, { requestIds as topologyrequestIds } from '@/services/topology/instance.js'
-  import { CONFIG_MODE } from '@/services/service-template/index.js'
+  import topologyInstanceService, { requestIds as topologyrequestIds } from '@/service/topology/instance.js'
+  import { CONFIG_MODE } from '@/service/service-template/index.js'
 
   export default {
     props: {

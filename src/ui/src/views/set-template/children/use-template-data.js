@@ -16,7 +16,7 @@ import { getValue } from '@/utils/tools'
 
 import propertyService from '@/service/property/property.js'
 import propertyGroupService from '@/service/property/group.js'
-import setTemplateService from '@/services/set-template/index.js'
+import setTemplateService from '@/service/set-template/index.js'
 
 export const templateDetailRequestId = Symbol()
 

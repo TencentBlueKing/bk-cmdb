@@ -12,6 +12,7 @@
 
 /* eslint-disable no-unused-vars */
 import $http from '@/api'
+import { CONTAINER_OBJECTS, CONTAINER_OBJECT_NAMES } from '@/dictionary/container.js'
 
 const state = {
   classifications: [],
@@ -115,6 +116,36 @@ const actions = {
      */
   searchClassificationsObjects({ commit, state, dispatch, rootGetters }, { params = {}, config }) {
     return $http.post('find/classificationobject', params, config).then((data) => {
+      const classification = data || []
+
+      // 注入容器分组和对象
+      const containerClassification = {
+        id: Date.now(),
+        bk_ishidden: true, // 在页面中不显示
+        bk_classification_icon: '',
+        bk_classification_id: 'bk_container',
+        bk_classification_name: '容器',
+        bk_classification_type: '',
+        bk_objects: []
+      }
+      Object.keys(CONTAINER_OBJECTS).forEach((objKey) => {
+        const objId = CONTAINER_OBJECTS[objKey]
+        containerClassification.bk_objects.push({
+          id: Date.now(),
+          bk_classification_id: 'bk_container',
+          bk_ishidden: true,
+          bk_ispaused: false,
+          ispre: false,
+          bk_obj_icon: 'icon-cc-default',
+          bk_obj_id: objId,
+          bk_obj_name: CONTAINER_OBJECT_NAMES[objId].FULL,
+          bk_supplier_account: '0',
+          position: ''
+        })
+      })
+
+      classification.push(containerClassification)
+
       commit('setClassificationsObjects', data)
       return data
     })

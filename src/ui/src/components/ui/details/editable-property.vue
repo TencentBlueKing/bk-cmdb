@@ -124,7 +124,7 @@
     <!-- 详情态 -->
     <cmdb-property-value
       v-if="!isEditing"
-      v-bk-overflow-tips
+      :is-show-overflow-tips="true"
       :class="['property-value', { 'is-loading': loading }]"
       tag="div"
       :ref="`property-value-${property.bk_property_id}`"

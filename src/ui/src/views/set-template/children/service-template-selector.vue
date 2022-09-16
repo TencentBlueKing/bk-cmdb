@@ -87,7 +87,7 @@
 <script>
   import { MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
   import { mapGetters } from 'vuex'
-  import serviceTemplateService from '@/services/service-template/index.js'
+  import serviceTemplateService from '@/service/service-template/index.js'
 
   export default {
     name: 'serviceTemplateSelector',
