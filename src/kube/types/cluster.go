@@ -235,15 +235,10 @@ type UpdateClusterOption struct {
 func (option *UpdateClusterOption) Validate() error {
 
 	if option == nil {
-		return errors.New("cluster option is null")
+		return errors.New("cluster information must be given")
 	}
 
-	if len(option.Clusters) == 0 {
-		return errors.New("the params for updating the cluster must be set")
-	}
-	if len(option.Clusters) > maxUpdateClusterNum {
-		return fmt.Errorf("the number of update clusters cannot exceed %d at a time", maxUpdateClusterNum)
-	}
+	// get a list of required fields.
 
 	for _, one := range option.Clusters {
 		if one.ID == 0 {
@@ -254,5 +249,6 @@ func (option *UpdateClusterOption) Validate() error {
 			return err
 		}
 	}
+
 	return nil
 }
