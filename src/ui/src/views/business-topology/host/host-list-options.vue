@@ -62,12 +62,12 @@
             @click="handleTransfer($event, 'business', false)">
             {{$t('业务模块')}}
           </cmdb-auth>
-          <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]" v-test-id="'transferResource'"
-            @click="handleTransfer($event, 'resource', !isIdleModule)">
+          <li :class="['bk-dropdown-item', { disabled: !isIdleSetModules }]" v-test-id="'transferResource'"
+            @click="handleTransfer($event, 'resource', !isIdleSetModules)">
             {{$t('主机池')}}
           </li>
-          <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]" v-test-id="'transferAcrossBusiness'"
-            @click="handleTransfer($event, 'acrossBusiness', !isIdleModule)">
+          <li :class="['bk-dropdown-item', { disabled: !isIdleSetModules }]" v-test-id="'transferAcrossBusiness'"
+            @click="handleTransfer($event, 'acrossBusiness', !isIdleSetModules)">
             {{$t('其他业务')}}
           </li>
         </ul>
@@ -365,7 +365,13 @@
             const params = {
               export_custom_fields: fields.value.map(property => property.bk_property_id),
               bk_host_ids: this.getSelectedHostIds(this.selection),
-              bk_biz_id: this.bizId
+              bk_biz_id: this.bizId,
+              export_condition: {
+                page: {
+                  start: 0,
+                  limit: this.selection.length
+                }
+              }
             }
             if (exportRelation.value) {
               params.object_unique_id = state.object_unique_id.value

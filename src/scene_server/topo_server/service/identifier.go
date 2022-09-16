@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SearchIdentifier TODO
 func (s *Service) SearchIdentifier(ctx *rest.Contexts) {
 	param := new(metadata.SearchIdentifierParam)
 	if err := ctx.DecodeInto(&param); err != nil {

@@ -21,6 +21,7 @@ var (
 	}
 )
 
+// ResourceTypeIDMap TODO
 var ResourceTypeIDMap = map[TypeID]string{
 	Business:                 "业务",
 	BizSet:                   "业务集",
@@ -66,6 +67,7 @@ func GenerateResourceTypes(models []metadata.Object) []ResourceType {
 	return resourceTypeList
 }
 
+// GenerateStaticResourceTypes TODO
 func GenerateStaticResourceTypes() []ResourceType {
 	resourceTypeList := make([]ResourceType, 0)
 
@@ -98,7 +100,7 @@ func genBusinessResources() []ResourceType {
 			DescriptionEn: "hosts under a business or in resource pool",
 			Parents: []Parent{{
 				SystemID: SystemIDCMDB,
-				//ResourceID: Module,
+				// ResourceID: Module,
 				ResourceID: Business,
 			}, {
 				SystemID:   SystemIDCMDB,
@@ -206,7 +208,7 @@ func genBusinessResources() []ResourceType {
 			Version: 1,
 		},
 		// only for host topology usage, not related to actions
-		//{
+		// {
 		//	ID:            Set,
 		//	Name:          ResourceTypeIDMap[Set],
 		//	NameEn:        "Set",
@@ -217,8 +219,8 @@ func genBusinessResources() []ResourceType {
 		//		Path: "/auth/v3/find/resource",
 		//	},
 		//	Version: 1,
-		//},
-		//{
+		// },
+		// {
 		//	ID:            Module,
 		//	Name:          ResourceTypeIDMap[Module],
 		//	NameEn:        "Module",
@@ -232,7 +234,7 @@ func genBusinessResources() []ResourceType {
 		//		Path: "/auth/v3/find/resource",
 		//	},
 		//	Version: 1,
-		//},
+		// },
 	}
 }
 

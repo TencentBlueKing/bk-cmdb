@@ -1290,7 +1290,7 @@ func (ps *parseStream) hostTransfer() *parseStream {
 
 	// synchronize hosts directly to a module in a business if this host does not exist.
 	// otherwise, this operation will only change host's attribute.
-	//if ps.hitPattern(moveHostToBusinessOrModulePattern, http.MethodPost) {
+	// if ps.hitPattern(moveHostToBusinessOrModulePattern, http.MethodPost) {
 	//	bizID, err := ps.parseBusinessID()
 	//	if err != nil {
 	//		ps.err = err
@@ -1307,7 +1307,7 @@ func (ps *parseStream) hostTransfer() *parseStream {
 	//	}
 	//
 	//	return ps
-	//}
+	// }
 
 	if ps.hitRegexp(transferHostWithAutoClearServiceInstanceRegex, http.MethodPost) ||
 		ps.hitRegexp(transferHostWithAutoClearServiceInstancePreviewRegex, http.MethodPost) {

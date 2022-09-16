@@ -21,6 +21,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// CreateProcessInstanceRelation TODO
 func (p *processOperation) CreateProcessInstanceRelation(kit *rest.Kit, relation *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
 	if err := p.validateRelation(kit, relation); err != nil {
 		return nil, err
@@ -33,6 +34,7 @@ func (p *processOperation) CreateProcessInstanceRelation(kit *rest.Kit, relation
 	return relation, nil
 }
 
+// CreateProcessInstanceRelations TODO
 func (p *processOperation) CreateProcessInstanceRelations(kit *rest.Kit, relations []*metadata.ProcessInstanceRelation) ([]*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
 	for _, relation := range relations {
 		if err := p.validateRelation(kit, relation); err != nil {
@@ -76,6 +78,7 @@ func (p *processOperation) validateRelation(kit *rest.Kit, relation *metadata.Pr
 	return nil
 }
 
+// GetProcessInstanceRelation TODO
 func (p *processOperation) GetProcessInstanceRelation(kit *rest.Kit, processInstanceID int64) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
 	relation := metadata.ProcessInstanceRelation{}
 
@@ -93,6 +96,7 @@ func (p *processOperation) GetProcessInstanceRelation(kit *rest.Kit, processInst
 	return &relation, nil
 }
 
+// UpdateProcessInstanceRelation TODO
 func (p *processOperation) UpdateProcessInstanceRelation(kit *rest.Kit, processInstanceID int64, input metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
 	relation, err := p.GetProcessInstanceRelation(kit, processInstanceID)
 	if err != nil {
@@ -118,6 +122,7 @@ func (p *processOperation) UpdateProcessInstanceRelation(kit *rest.Kit, processI
 	return relation, nil
 }
 
+// ListProcessInstanceRelation TODO
 func (p *processOperation) ListProcessInstanceRelation(kit *rest.Kit, option metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, errors.CCErrorCoder) {
 	filter := map[string]interface{}{
 		common.BKAppIDField: option.BusinessID,
@@ -165,6 +170,7 @@ func (p *processOperation) ListProcessInstanceRelation(kit *rest.Kit, option met
 	return result, nil
 }
 
+// DeleteProcessInstanceRelation TODO
 func (p *processOperation) DeleteProcessInstanceRelation(kit *rest.Kit, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder {
 	deleteFilter := map[string]interface{}{}
 	if option.BusinessID != nil {

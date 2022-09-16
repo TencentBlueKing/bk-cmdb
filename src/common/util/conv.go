@@ -21,6 +21,7 @@ import (
 	"strings"
 )
 
+// GetStrByInterface TODO
 func GetStrByInterface(a interface{}) string {
 	if nil == a {
 		return ""
@@ -28,6 +29,7 @@ func GetStrByInterface(a interface{}) string {
 	return fmt.Sprintf("%v", a)
 }
 
+// GetIntByInterface TODO
 func GetIntByInterface(a interface{}) (int, error) {
 	id := 0
 	var err error
@@ -57,6 +59,33 @@ func GetIntByInterface(a interface{}) (int, error) {
 	return id, err
 }
 
+// GetInt32ByInterface get int32 by interface
+func GetInt32ByInterface(a interface{}) (int32, error) {
+	id := int32(0)
+	var err error
+	switch val := a.(type) {
+	case int:
+		id = int32(val)
+	case int32:
+		id = val
+	case int64:
+		id = int32(val)
+	case json.Number:
+		var tmpID int64
+		tmpID, err = val.Int64()
+		id = int32(tmpID)
+	case float64:
+		id = int32(val)
+	case float32:
+		id = int32(val)
+	default:
+		err = errors.New("not numeric")
+
+	}
+	return id, err
+}
+
+// GetInt64ByInterface parse interface to int64, **notice: string type is not allowed**
 func GetInt64ByInterface(a interface{}) (int64, error) {
 	var id int64 = 0
 	var err error
@@ -70,7 +99,7 @@ func GetInt64ByInterface(a interface{}) (int64, error) {
 	case int32:
 		id = int64(a.(int32))
 	case int64:
-		id = int64(a.(int64))
+		id = a.(int64)
 	case uint:
 		id = int64(a.(uint))
 	case uint8:
@@ -96,6 +125,7 @@ func GetInt64ByInterface(a interface{}) (int64, error) {
 	return id, err
 }
 
+// GetFloat64ByInterface get float64 by interface
 func GetFloat64ByInterface(a interface{}) (float64, error) {
 	switch i := a.(type) {
 	case int:
@@ -131,7 +161,8 @@ func GetFloat64ByInterface(a interface{}) (float64, error) {
 	}
 }
 
-func GetMapInterfaceByInerface(data interface{}) ([]interface{}, error) {
+// GetMapInterfaceByInterface get map interface by interface
+func GetMapInterfaceByInterface(data interface{}) ([]interface{}, error) {
 	values := make([]interface{}, 0)
 	switch data.(type) {
 	case []int:
@@ -163,7 +194,7 @@ func GetMapInterfaceByInerface(data interface{}) ([]interface{}, error) {
 	return values, nil
 }
 
-// SliceStrToInt: 将字符串切片转换为整型切片
+// SliceStrToInt : 将字符串切片转换为整型切片
 func SliceStrToInt(sliceStr []string) ([]int, error) {
 	sliceInt := make([]int, 0)
 	for _, idStr := range sliceStr {
@@ -215,6 +246,7 @@ func GetStrValsFromArrMapInterfaceByKey(arrI []interface{}, key string) []string
 	return ret
 }
 
+// ConverToInterfaceSlice TODO
 func ConverToInterfaceSlice(value interface{}) []interface{} {
 	rflVal := reflect.ValueOf(value)
 	for rflVal.CanAddr() {
@@ -288,6 +320,7 @@ func SliceInterfaceToInt64(faceSlice []interface{}) ([]int64, error) {
 	return results, nil
 }
 
+// SliceInterfaceToString TODO
 // SliceInterfaceToBool将interface切片转化为string切片,且interface的真实类型必须是string.
 // 失败则返回nil,error.
 func SliceInterfaceToString(faceSlice []interface{}) ([]string, error) {
@@ -298,7 +331,7 @@ func SliceInterfaceToString(faceSlice []interface{}) ([]string, error) {
 	for i, item := range faceSlice {
 		var ok bool
 
-		//如果转化失败则返回错误.
+		// 如果转化失败则返回错误.
 		if results[i], ok = item.(string); !ok {
 			return nil, errors.New("can't convert to string")
 		}
@@ -307,7 +340,7 @@ func SliceInterfaceToString(faceSlice []interface{}) ([]string, error) {
 	return results, nil
 }
 
-// SliceInterfaceToBool将interface切片转化为bool切片,且interface的真实类型必须是bool.
+// SliceInterfaceToBool 将interface切片转化为bool切片,且interface的真实类型必须是bool.
 // 失败则返回nil,error.
 func SliceInterfaceToBool(faceSlice []interface{}) ([]bool, error) {
 	// 预分配空间.
@@ -317,7 +350,7 @@ func SliceInterfaceToBool(faceSlice []interface{}) ([]bool, error) {
 	for i, item := range faceSlice {
 		var ok bool
 
-		//如果转化失败则返回错误.
+		// 如果转化失败则返回错误.
 		if results[i], ok = item.(bool); !ok {
 			return nil, errors.New("can't convert to bool")
 		}

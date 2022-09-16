@@ -1,3 +1,4 @@
+// Package association TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -19,6 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// AssociationInterface TODO
 type AssociationInterface interface {
 	SearchType(ctx context.Context, h http.Header, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error)
 	CreateType(ctx context.Context, h http.Header, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error)
@@ -48,10 +50,12 @@ type AssociationInterface interface {
 		objID string, input *metadata.CommonCountFilter) (*metadata.Response, error)
 }
 
+// NewAssociationInterface TODO
 func NewAssociationInterface(client rest.ClientInterface) AssociationInterface {
 	return &Association{client: client}
 }
 
+// Association TODO
 type Association struct {
 	client rest.ClientInterface
 }

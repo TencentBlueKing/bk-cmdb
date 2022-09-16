@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package iam TODO
 package iam
 
 import (
@@ -33,6 +34,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// IAM TODO
 type IAM struct {
 	Client iamClientInterface
 }

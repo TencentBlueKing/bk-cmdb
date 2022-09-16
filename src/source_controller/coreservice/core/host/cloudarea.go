@@ -25,6 +25,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// UpdateHostCloudAreaField TODO
 func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder {
 	rid := kit.Rid
 	context := kit.Ctx
@@ -122,6 +123,7 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.Up
 	return nil
 }
 
+// FindCloudAreaHostCount TODO
 func (hm *hostManager) FindCloudAreaHostCount(kit *rest.Kit, input metadata.CloudAreaHostCount) ([]metadata.CloudAreaHostCountElem, error) {
 	if len(input.CloudIDs) == 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_cloud_ids")

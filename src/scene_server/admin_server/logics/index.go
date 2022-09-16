@@ -38,6 +38,7 @@ import (
  如何展示错误给用户
 */
 
+// DBSync TODO
 func DBSync(e *backbone.Engine, db dal.RDB, options options.Config) {
 	f := func() {
 		defaultDBTable = db
@@ -64,12 +65,13 @@ type dbTable struct {
 	options                    options.Config
 }
 
+// RunSyncDBTableIndex TODO
 func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB,
 	options options.Config) {
 
 	rid := util.GenerateRID()
 	for dbReady := false; !dbReady; {
-		//等待数据库初始化
+		// 等待数据库初始化
 		if !dbReady {
 			var err error
 			dbReady, err = upgrader.DBReady(ctx, db)
@@ -124,6 +126,7 @@ func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB,
 
 }
 
+// RunSyncDBIndex TODO
 func RunSyncDBIndex(ctx context.Context, e *backbone.Engine) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccErr := e.CCErr.CreateDefaultCCErrorIf("en")
@@ -154,7 +157,7 @@ func RunSyncDBIndex(ctx context.Context, e *backbone.Engine) error {
 	return nil
 }
 
-// 同步表中定义的索引
+// syncIndexes 同步表中定义的索引
 func (dt *dbTable) syncIndexes(ctx context.Context) error {
 	if err := dt.syncDBTableIndexes(ctx); err != nil {
 		blog.Warnf("sync table index to db error. err: %s, rid: %s", err.Error(), dt.rid)
@@ -200,7 +203,7 @@ func (dt *dbTable) syncDBTableIndexes(ctx context.Context) error {
 	return nil
 }
 
-// 返回的数据只有common.BKPropertyIDField, common.BKPropertyTypeField, common.BKFieldID 三个字段
+// findObjAttrs 返回的数据只有common.BKPropertyIDField, common.BKPropertyTypeField, common.BKFieldID 三个字段
 func (dt *dbTable) findObjAttrs(ctx context.Context, objID string) ([]metadata.Attribute, error) {
 	// 获取字段类型,只需要共有字段
 	attrFilter := map[string]interface{}{
@@ -477,7 +480,7 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 
 	}
 
-	//清理表的时候，需要有延时，表至少要生存两个定时删除的周期
+	// 清理表的时候，需要有延时，表至少要生存两个定时删除的周期
 	// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
 	// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 	// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
@@ -601,6 +604,7 @@ func (dt *dbTable) findObjUniques(ctx context.Context, objID string) ([]types.In
 	return indexes, nil
 }
 
+// ErrDropIndexNameNotFound TODO
 func ErrDropIndexNameNotFound(err error) bool {
 	if strings.HasPrefix(err.Error(), "(IndexNotFound) index not found with name") {
 		return true

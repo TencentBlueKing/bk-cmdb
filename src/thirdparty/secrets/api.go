@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// GetCloudAccountSecretKey TODO
 func (s *secretsClient) GetCloudAccountSecretKey(ctx context.Context, header http.Header) (string, error) {
 	util.CopyHeader(s.basicHeader, header)
 	resp := new(metadata.SecretKeyResult)

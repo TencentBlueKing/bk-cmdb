@@ -12,6 +12,7 @@
 
 package metadata
 
+// BkSystemInstallRequest TODO
 type BkSystemInstallRequest struct {
 	SetName    string                            `json:"bk_set_name"`
 	ModuleName string                            `json:"bk_module_name"`

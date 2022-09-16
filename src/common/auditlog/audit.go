@@ -30,6 +30,7 @@ type audit struct {
 	clientSet coreservice.CoreServiceClientInterface
 }
 
+// SaveAuditLog TODO
 func (a *audit) SaveAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) errors.CCErrorCoder {
 	return a.clientSet.Audit().SaveAuditLog(kit.Ctx, kit.Header, logs...)
 }

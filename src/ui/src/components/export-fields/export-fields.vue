@@ -68,7 +68,7 @@
     </div>
     <footer class="footer" slot="footer">
       <i18n path="已选个数" v-show="!!selected.length">
-        <span class="count" place="count">{{selected.length}}</span>
+        <template #count><span class="count">{{selected.length}}</span></template>
       </i18n>
       <div class="selected-options">
         <bk-button theme="primary" :disabled="!selected.length" @click="confirm">{{$t('开始导出')}}</bk-button>

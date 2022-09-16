@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package backbone TODO
 package backbone
 
 import (
@@ -130,6 +131,7 @@ func validateParameter(input *BackboneParameter) error {
 	return nil
 }
 
+// NewBackbone TODO
 func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error) {
 	if err := validateParameter(input); err != nil {
 		return nil, err
@@ -226,6 +228,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	return engine, nil
 }
 
+// StartServer TODO
 func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, HTTPHandler http.Handler, pprofEnabled bool) error {
 	tlsConf, err := getTLSConf()
 	if err != nil {
@@ -267,6 +270,7 @@ func New(regPath string, disc ServiceRegisterInterface) (*Engine, error) {
 	}, nil
 }
 
+// Engine TODO
 type Engine struct {
 	CoreAPI            apimachinery.ClientSetInterface
 	apiMachineryConfig *util.APIMachineryConfig
@@ -288,18 +292,22 @@ type Engine struct {
 	CCCtx    CCContextInterface
 }
 
+// Discovery TODO
 func (e *Engine) Discovery() discovery.DiscoveryInterface {
 	return e.discovery
 }
 
+// ApiMachineryConfig TODO
 func (e *Engine) ApiMachineryConfig() *util.APIMachineryConfig {
 	return e.apiMachineryConfig
 }
 
+// ServiceManageClient TODO
 func (e *Engine) ServiceManageClient() *zk.ZkClient {
 	return e.client
 }
 
+// Metric TODO
 func (e *Engine) Metric() *metrics.Service {
 	return e.metric
 }
@@ -344,10 +352,12 @@ func (e *Engine) onRedisUpdate(previous, current cc.ProcessConfig) {
 	}
 }
 
+// Ping TODO
 func (e *Engine) Ping() error {
 	return e.SvcDisc.Ping()
 }
 
+// WithRedis TODO
 func (e *Engine) WithRedis(prefixes ...string) (redis.Config, error) {
 	// use default prefix if no prefix is specified, or use the first prefix
 	var prefix string
@@ -360,6 +370,7 @@ func (e *Engine) WithRedis(prefixes ...string) (redis.Config, error) {
 	return cc.Redis(prefix)
 }
 
+// WithMongo TODO
 func (e *Engine) WithMongo(prefixes ...string) (mongo.Config, error) {
 	var prefix string
 	if len(prefixes) == 0 {

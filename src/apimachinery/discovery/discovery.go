@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package discovery TODO
 package discovery
 
 import (
@@ -22,11 +23,13 @@ import (
 	"configcenter/src/common/types"
 )
 
+// ServiceManageInterface TODO
 type ServiceManageInterface interface {
-	// 判断当前进程是否为master 进程， 服务注册节点的第一个节点
+	// IsMaster 判断当前进程是否为master 进程， 服务注册节点的第一个节点
 	IsMaster() bool
 }
 
+// DiscoveryInterface TODO
 type DiscoveryInterface interface {
 	ApiServer() Interface
 	MigrateServer() Interface
@@ -46,10 +49,11 @@ type DiscoveryInterface interface {
 	ServiceManageInterface
 }
 
+// Interface TODO
 type Interface interface {
-	// 获取注册在zk上的所有服务节点
+	// GetServers 获取注册在zk上的所有服务节点
 	GetServers() ([]string, error)
-	// 最新的服务节点信息存放在该channel里，可被用来消费，以监听服务节点的变化
+	// GetServersChan 最新的服务节点信息存放在该channel里，可被用来消费，以监听服务节点的变化
 	GetServersChan() chan []string
 }
 
@@ -86,58 +90,72 @@ type discover struct {
 	servers map[string]*server
 }
 
+// ApiServer TODO
 func (d *discover) ApiServer() Interface {
 	return d.servers[types.CC_MODULE_APISERVER]
 }
 
+// MigrateServer TODO
 func (d *discover) MigrateServer() Interface {
 	return d.servers[types.CC_MODULE_MIGRATE]
 }
 
+// EventServer TODO
 func (d *discover) EventServer() Interface {
 	return d.servers[types.CC_MODULE_EVENTSERVER]
 }
 
+// HostServer TODO
 func (d *discover) HostServer() Interface {
 	return d.servers[types.CC_MODULE_HOST]
 }
 
+// ProcServer TODO
 func (d *discover) ProcServer() Interface {
 	return d.servers[types.CC_MODULE_PROC]
 }
 
+// TopoServer TODO
 func (d *discover) TopoServer() Interface {
 	return d.servers[types.CC_MODULE_TOPO]
 }
 
+// DataCollect TODO
 func (d *discover) DataCollect() Interface {
 	return d.servers[types.CC_MODULE_DATACOLLECTION]
 }
 
+// GseProcServer TODO
 func (d *discover) GseProcServer() Interface {
 	return d.servers[types.GSE_MODULE_PROCSERVER]
 }
 
+// CoreService TODO
 func (d *discover) CoreService() Interface {
 	return d.servers[types.CC_MODULE_CORESERVICE]
 }
 
+// OperationServer TODO
 func (d *discover) OperationServer() Interface {
 	return d.servers[types.CC_MODULE_OPERATION]
 }
 
+// TaskServer TODO
 func (d *discover) TaskServer() Interface {
 	return d.servers[types.CC_MODULE_TASK]
 }
 
+// CloudServer TODO
 func (d *discover) CloudServer() Interface {
 	return d.servers[types.CC_MODULE_CLOUD]
 }
 
+// AuthServer TODO
 func (d *discover) AuthServer() Interface {
 	return d.servers[types.CC_MODULE_AUTH]
 }
 
+// CacheService TODO
 func (d *discover) CacheService() Interface {
 	return d.servers[types.CC_MODULE_CACHESERVICE]
 }

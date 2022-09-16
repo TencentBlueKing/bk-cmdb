@@ -27,6 +27,7 @@ import (
 	"github.com/rs/xid"
 )
 
+// SearchReportSummary TODO
 func (lgc *Logics) SearchReportSummary(header http.Header, param metadata.ParamSearchNetcollectReport) ([]*metadata.NetcollectReportSummary, error) {
 	rid := util.GetHTTPCCRequestID(header)
 	// search reports
@@ -120,6 +121,7 @@ func (lgc *Logics) buildSearchCond(header http.Header, param metadata.ParamSearc
 	return cond, nil
 }
 
+// SearchReport TODO
 func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNetcollectReport) (uint64, []metadata.NetcollectReport, error) {
 	rid := util.GetHTTPCCRequestID(header)
 	cond, err := lgc.buildSearchCond(header, param)
@@ -342,6 +344,7 @@ func (lgc *Logics) findInstAssociation(header http.Header, objectID string, inst
 	return resp.Data, nil
 }
 
+// ConfirmReport TODO
 func (lgc *Logics) ConfirmReport(header http.Header, reports []metadata.NetcollectReport) *metadata.RspNetcollectConfirm {
 	result := metadata.RspNetcollectConfirm{Errors: []string{}}
 	for index := range reports {
@@ -584,6 +587,7 @@ func (lgc *Logics) saveHistory(report *metadata.NetcollectReport, success bool) 
 	return err
 }
 
+// SearchHistory TODO
 func (lgc *Logics) SearchHistory(header http.Header, param metadata.ParamSearchNetcollectReport) (uint64, []metadata.NetcollectHistory, error) {
 	rid := util.GetHTTPCCRequestID(header)
 	reports := make([]metadata.NetcollectHistory, 0)

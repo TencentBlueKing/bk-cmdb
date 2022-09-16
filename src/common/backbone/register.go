@@ -21,10 +21,11 @@ import (
 	"configcenter/src/framework/core/errors"
 )
 
+// ServiceRegisterInterface TODO
 type ServiceRegisterInterface interface {
 	// Ping to ping server
 	Ping() error
-	// register local server info, it can only be called for once.
+	// Register local server info, it can only be called for once.
 	Register(path string, c types.ServerInfo) error
 	// Cancel to stop server register and discover
 	Cancel()
@@ -32,6 +33,7 @@ type ServiceRegisterInterface interface {
 	ClearRegisterPath() error
 }
 
+// NewServiceRegister TODO
 func NewServiceRegister(client *zk.ZkClient) (ServiceRegisterInterface, error) {
 	s := new(serviceRegister)
 	s.client = registerdiscover.NewRegDiscoverEx(client)
@@ -42,6 +44,7 @@ type serviceRegister struct {
 	client *registerdiscover.RegDiscover
 }
 
+// Register TODO
 func (s *serviceRegister) Register(path string, c types.ServerInfo) error {
 	if c.RegisterIP == "0.0.0.0" {
 		return errors.New("register ip can not be 0.0.0.0")

@@ -22,11 +22,17 @@ import (
 )
 
 const (
-	PageName         = "page"
-	PageSort         = "sort"
-	PageStart        = "start"
-	PageLimit        = "limit"
-	DBFields         = "fields"
+	// PageName TODO
+	PageName = "page"
+	// PageSort TODO
+	PageSort = "sort"
+	// PageStart TODO
+	PageStart = "start"
+	// PageLimit TODO
+	PageLimit = "limit"
+	// DBFields TODO
+	DBFields = "fields"
+	// DBQueryCondition TODO
 	DBQueryCondition = "condition"
 )
 
@@ -38,6 +44,7 @@ type BasePage struct {
 	EnableCount bool   `json:"enable_count,omitempty" mapstructure:"enable_count,omitempty"`
 }
 
+// Validate TODO
 func (page BasePage) Validate(allowNoLimit bool) (string, error) {
 	// 此场景下如果仅仅是获取查询对象的数量，page的其余参数只能是初始化值
 	if page.EnableCount {
@@ -115,6 +122,7 @@ func (page BasePage) ValidateWithEnableCount(allowNoLimit bool, maxLimit ...int)
 	return ccErr.RawErrorInfo{}
 }
 
+// ParsePage TODO
 func ParsePage(origin interface{}) BasePage {
 	if origin == nil {
 		return BasePage{Limit: common.BKNoLimit}
@@ -139,6 +147,7 @@ func ParsePage(origin interface{}) BasePage {
 	return result
 }
 
+// ToSearchSort TODO
 func (page BasePage) ToSearchSort() []SearchSort {
 	return NewSearchSortParse().String(page.Sort).ToSearchSortArr()
 }

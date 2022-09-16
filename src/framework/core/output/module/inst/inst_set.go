@@ -20,7 +20,7 @@ import (
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	//"fmt"
+	// "fmt"
 )
 
 var _ SetInterface = (*set)(nil)
@@ -46,24 +46,29 @@ type set struct {
 	datas  types.MapStr
 }
 
+// SetBusinessID TODO
 func (cli *set) SetBusinessID(bizID int64) {
 	cli.bizID = bizID
 }
 
+// GetModel TODO
 func (cli *set) GetModel() model.Model {
 	return cli.target
 }
 
+// IsMainLine TODO
 func (cli *set) IsMainLine() bool {
 	// TODO：判断当前实例是否为主线实例
 	return true
 }
 
+// GetAssociationModels TODO
 func (cli *set) GetAssociationModels() ([]model.Model, error) {
 	// TODO:需要读取此实例关联的实例，所对应的所有模型
 	return nil, nil
 }
 
+// GetInstID TODO
 func (cli *set) GetInstID() int {
 	id, err := cli.datas.Int(SetID)
 	if nil != err {
@@ -71,14 +76,18 @@ func (cli *set) GetInstID() int {
 	}
 	return id
 }
+
+// GetInstName TODO
 func (cli *set) GetInstName() string {
 	return cli.datas.String(SetName)
 }
 
+// GetValues TODO
 func (cli *set) GetValues() (types.MapStr, error) {
 	return cli.datas, nil
 }
 
+// SetValue TODO
 func (cli *set) SetValue(key string, value interface{}) error {
 
 	// TODO:需要根据model 的定义对输入的key 及value 进行校验
@@ -118,13 +127,15 @@ func (cli *set) search() ([]model.Attribute, []types.MapStr, error) {
 		}
 	}
 
-	//fmt.Println("cond:", cond.ToMapStr())
+	// fmt.Println("cond:", cond.ToMapStr())
 
 	// search by condition
 	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Set().SearchSets(cond)
 
 	return attrs, existItems, err
 }
+
+// IsExists TODO
 func (cli *set) IsExists() (bool, error) {
 
 	if 0 < cli.bizID {
@@ -139,6 +150,7 @@ func (cli *set) IsExists() (bool, error) {
 	return 0 != len(existItems), nil
 }
 
+// Create TODO
 func (cli *set) Create() error {
 
 	setID, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Set().CreateSet(cli.bizID, cli.datas)
@@ -148,6 +160,8 @@ func (cli *set) Create() error {
 	cli.datas.Set(SetID, setID)
 	return nil
 }
+
+// Update TODO
 func (cli *set) Update() error {
 
 	attrs, existItems, err := cli.search()
@@ -166,9 +180,9 @@ func (cli *set) Update() error {
 		cli.datas.Remove(key)
 	})
 
-	//log.Infof("the business %d", cli.bizID)
+	// log.Infof("the business %d", cli.bizID)
 
-	cli.datas.Remove("create_time") //invalid check , need to delete
+	cli.datas.Remove("create_time") // invalid check , need to delete
 
 	supplierAccount := cli.target.GetSupplierAccount()
 	for _, existItem := range existItems {
@@ -193,6 +207,8 @@ func (cli *set) Update() error {
 	}
 	return nil
 }
+
+// Save TODO
 func (cli *set) Save() error {
 
 	if exists, err := cli.IsExists(); nil != err {

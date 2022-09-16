@@ -22,56 +22,69 @@ import (
 	"configcenter/src/common/querybuilder"
 )
 
+// SearchInstResult TODO
 type SearchInstResult struct {
 	BaseResp `json:",inline"`
 	Data     InstResult `json:"data"`
 }
 
+// AppBasicInfoResult TODO
 type AppBasicInfoResult struct {
 	BaseResp
 	Data BizBasicInfo `json:"data"`
 }
 
+// CreateModelResult TODO
 type CreateModelResult struct {
 	BaseResp `json:",inline"`
 	Data     Object `json:"data"`
 }
+
+// SearchModelResult TODO
 type SearchModelResult struct {
 	BaseResp `json:",inline"`
 	Data     []Object `json:"data"`
 }
 
+// SearchInnterAppTopoResult TODO
 type SearchInnterAppTopoResult struct {
 	BaseResp `json:",inline"`
 	Data     InnterAppTopo
 }
 
+// MainlineObjectTopoResult TODO
 type MainlineObjectTopoResult struct {
 	BaseResp `json:",inline"`
 	Data     []MainlineObjectTopo `json:"data"`
 }
 
+// CommonInstTopo TODO
 type CommonInstTopo struct {
 	InstNameAsst
 	Count    int            `json:"count"`
 	Children []InstNameAsst `json:"children"`
 }
 
+// CommonInstTopoV2 TODO
 type CommonInstTopoV2 struct {
 	Prev []*CommonInstTopo `json:"prev"`
 	Next []*CommonInstTopo `json:"next"`
 	Curr interface{}       `json:"curr"`
 }
+
+// SearchAssociationTopoResult TODO
 type SearchAssociationTopoResult struct {
 	BaseResp `json:",inline"`
 	Data     []CommonInstTopoV2 `json:"data"`
 }
 
+// SearchTopoResult TODO
 type SearchTopoResult struct {
 	BaseResp `json:",inline"`
 	Data     []*CommonInstTopo `json:"data"`
 }
 
+// QueryBusinessRequest TODO
 type QueryBusinessRequest struct {
 	Fields []string `json:"fields"`
 	Page   BasePage `json:"page"`
@@ -83,7 +96,7 @@ type QueryBusinessRequest struct {
 }
 
 // PreviewBusinessSetRequest 此场景的预览用于用户创建业务集但是还没有点击创建时的中间阶段预览场景。由于此时还没有真正的创建业务集，所以
-//并没有生成业务集实例，只能用范围条件进行获取业务范围。
+// 并没有生成业务集实例，只能用范围条件进行获取业务范围。
 type PreviewBusinessSetRequest struct {
 	BizSetPropertyFilter *querybuilder.QueryFilter `json:"bk_scope"`
 	Filter               *querybuilder.QueryFilter `json:"filter"`
@@ -195,12 +208,14 @@ func (option *QueryBusinessSetRequest) Validate(allowNoLimit bool) ccErr.RawErro
 	return ccErr.RawErrorInfo{}
 }
 
+// BriefBizRelations TODO
 type BriefBizRelations struct {
 	Business   interface{} `json:"bk_biz_id"`
 	SrcInstID  interface{} `json:"src_id"`
 	DestInstID interface{} `json:"dest_id"`
 }
 
+// GetBriefBizRelationOptions TODO
 type GetBriefBizRelationOptions struct {
 	// the source object, which should be one of the mainline object, except host model.
 	SrcBizObj string `json:"src_biz_obj"`
@@ -260,10 +275,12 @@ func (o *GetBriefBizRelationOptions) Validate() ccErr.RawErrorInfo {
 	return ccErr.RawErrorInfo{ErrCode: 0}
 }
 
+// UpdateBusinessStatusOption TODO
 type UpdateBusinessStatusOption struct {
 	BizName string `json:"bk_biz_name" mapstructure:"bk_biz_name"`
 }
 
+// SearchResourceDirParams TODO
 type SearchResourceDirParams struct {
 	Fields    []string      `json:"fields"`
 	Page      BasePage      `json:"page"`
@@ -271,6 +288,7 @@ type SearchResourceDirParams struct {
 	IsFuzzy   bool          `json:"is_fuzzy"`
 }
 
+// SearchResourceDirResult TODO
 type SearchResourceDirResult struct {
 	BizID      int64  `json:"bk_biz_id"`
 	ModuleID   int64  `json:"bk_module_id"`
@@ -279,6 +297,7 @@ type SearchResourceDirResult struct {
 	HostCount  int64  `json:"host_count"`
 }
 
+// SearchBriefBizTopoOption TODO
 type SearchBriefBizTopoOption struct {
 	BizID        int64    `json:"bk_biz_id"`
 	SetFields    []string `json:"set_fields"`
@@ -317,16 +336,19 @@ func (o *SearchBriefBizTopoOption) Validate() (rawError ccErr.RawErrorInfo) {
 	return ccErr.RawErrorInfo{}
 }
 
+// SetTopo TODO
 type SetTopo struct {
 	Set         map[string]interface{} `json:"set"`
 	ModuleTopos []*ModuleTopo          `json:"modules"`
 }
 
+// ModuleTopo TODO
 type ModuleTopo struct {
 	Module map[string]interface{}   `json:"module"`
 	Hosts  []map[string]interface{} `json:"hosts"`
 }
 
+// SearchBriefBizTopoResult TODO
 type SearchBriefBizTopoResult struct {
 	BaseResp `json:",inline"`
 	Data     []*SetTopo

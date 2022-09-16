@@ -25,6 +25,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// CreateProcessTemplate create process template
 func (p *processOperation) CreateProcessTemplate(kit *rest.Kit, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
 	// base attribute validate
 	if field, err := template.Validate(); err != nil {
@@ -32,9 +33,12 @@ func (p *processOperation) CreateProcessTemplate(kit *rest.Kit, template metadat
 		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
-	*template.Property.ProcessName.AsDefaultValue = true
-	*template.Property.FuncName.AsDefaultValue = true
-	if template.Property != nil && template.Property.ProcessName.Value != nil {
+
+	isNameDefaultVal := true
+	template.Property.ProcessName.AsDefaultValue = &isNameDefaultVal
+	template.Property.FuncName.AsDefaultValue = &isNameDefaultVal
+
+	if template.Property.ProcessName.Value != nil {
 		template.ProcessName = *template.Property.ProcessName.Value
 	}
 
@@ -140,6 +144,7 @@ func (p *processOperation) processNameUniqueValidate(kit *rest.Kit, template *me
 	return nil
 }
 
+// GetProcessTemplate TODO
 func (p *processOperation) GetProcessTemplate(kit *rest.Kit, templateID int64) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
 	template := metadata.ProcessTemplate{}
 
@@ -155,6 +160,7 @@ func (p *processOperation) GetProcessTemplate(kit *rest.Kit, templateID int64) (
 	return &template, nil
 }
 
+// UpdateProcessTemplate update process template
 func (p *processOperation) UpdateProcessTemplate(kit *rest.Kit, templateID int64, rawProperty map[string]interface{}) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
 	template, err := p.GetProcessTemplate(kit, templateID)
 	if err != nil {
@@ -177,8 +183,9 @@ func (p *processOperation) UpdateProcessTemplate(kit *rest.Kit, templateID int64
 		return nil, err
 	}
 
-	*template.Property.ProcessName.AsDefaultValue = true
-	*template.Property.FuncName.AsDefaultValue = true
+	isNameDefaultVal := true
+	template.Property.ProcessName.AsDefaultValue = &isNameDefaultVal
+	template.Property.FuncName.AsDefaultValue = &isNameDefaultVal
 	template.Modifier = kit.User
 	template.LastTime = time.Now()
 
@@ -200,6 +207,7 @@ func (p *processOperation) UpdateProcessTemplate(kit *rest.Kit, templateID int64
 	return template, nil
 }
 
+// ListProcessTemplates TODO
 func (p *processOperation) ListProcessTemplates(kit *rest.Kit, option metadata.ListProcessTemplatesOption) (*metadata.MultipleProcessTemplate, errors.CCErrorCoder) {
 	filter := map[string]interface{}{
 		common.BKAppIDField: option.BusinessID,
@@ -243,6 +251,7 @@ func (p *processOperation) ListProcessTemplates(kit *rest.Kit, option metadata.L
 	return result, nil
 }
 
+// DeleteProcessTemplate TODO
 func (p *processOperation) DeleteProcessTemplate(kit *rest.Kit, processTemplateID int64) errors.CCErrorCoder {
 	template, err := p.GetProcessTemplate(kit, processTemplateID)
 	if err != nil {

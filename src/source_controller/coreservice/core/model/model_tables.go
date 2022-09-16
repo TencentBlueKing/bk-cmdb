@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateModelTables TODO
 func (m *modelManager) CreateModelTables(kit *rest.Kit, inputParam metadata.CreateModelTable) error {
 	for _, objID := range inputParam.ObjectIDs {
 		if err := m.createObjectShardingTables(kit, objID, inputParam.IsMainLine); err != nil {

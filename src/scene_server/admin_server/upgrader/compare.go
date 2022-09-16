@@ -25,8 +25,10 @@ import (
 	migration版本号对比
 */
 
+// VersionNgPrefix TODO
 const VersionNgPrefix = "y"
 
+// VersionCmp TODO
 func VersionCmp(version1, version2 string) int {
 	if strings.HasPrefix(version1, VersionNgPrefix) && strings.HasPrefix(version2, VersionNgPrefix) {
 		return V36VersionCmp(version1, version2)
@@ -39,6 +41,7 @@ func VersionCmp(version1, version2 string) int {
 	return StringCompare(version1, version2)
 }
 
+// Int64Compare TODO
 func Int64Compare(val1, val2 int64) int {
 	if val1 == val2 {
 		return 0
@@ -49,6 +52,7 @@ func Int64Compare(val1, val2 int64) int {
 	}
 }
 
+// StringCompare TODO
 func StringCompare(s1, s2 string) int {
 	if s1 == s2 {
 		return 0
@@ -59,6 +63,7 @@ func StringCompare(s1, s2 string) int {
 	}
 }
 
+// V36VersionCmp TODO
 func V36VersionCmp(version1, version2 string) int {
 	// version format should be validate before compare
 	ngVersion1, err := ParseNgVersion(version1)
@@ -80,14 +85,17 @@ func V36VersionCmp(version1, version2 string) int {
 	return StringCompare(ngVersion1.Patch, ngVersion2.Patch)
 }
 
+// NgVersion TODO
 type NgVersion struct {
 	Major int64
 	Minor int64
 	Patch string
 }
 
+// PatchRegex TODO
 var PatchRegex = regexp.MustCompile(`^\d{12}$`)
 
+// ParseNgVersion TODO
 func ParseNgVersion(version string) (NgVersion, error) {
 	ngVersion := NgVersion{}
 	invalidMessage := fmt.Errorf("invalid version [%s]", version)

@@ -23,6 +23,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// CreateServiceTemplate TODO
 func (s *coreService) CreateServiceTemplate(ctx *rest.Contexts) {
 	template := metadata.ServiceTemplate{}
 	if err := ctx.DecodeInto(&template); err != nil {
@@ -39,6 +40,7 @@ func (s *coreService) CreateServiceTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// GetServiceTemplate TODO
 func (s *coreService) GetServiceTemplate(ctx *rest.Contexts) {
 	serviceTemplateIDStr := ctx.Request.PathParameter(common.BKServiceTemplateIDField)
 	if len(serviceTemplateIDStr) == 0 {
@@ -63,6 +65,7 @@ func (s *coreService) GetServiceTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// GetServiceTemplateWithStatistics TODO
 func (s *coreService) GetServiceTemplateWithStatistics(ctx *rest.Contexts) {
 	serviceTemplateIDStr := ctx.Request.PathParameter(common.BKServiceTemplateIDField)
 	if len(serviceTemplateIDStr) == 0 {
@@ -114,6 +117,7 @@ func (s *coreService) GetServiceTemplateWithStatistics(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// ListServiceTemplateDetail TODO
 func (s *coreService) ListServiceTemplateDetail(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	if len(bizIDStr) == 0 {
@@ -194,6 +198,7 @@ func (s *coreService) ListServiceTemplateDetail(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// ListServiceTemplates TODO
 func (s *coreService) ListServiceTemplates(ctx *rest.Contexts) {
 	// filter parameter
 	fp := metadata.ListServiceTemplateOption{}
@@ -212,6 +217,7 @@ func (s *coreService) ListServiceTemplates(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateServiceTemplate TODO
 func (s *coreService) UpdateServiceTemplate(ctx *rest.Contexts) {
 	serviceTemplateIDStr := ctx.Request.PathParameter(common.BKServiceTemplateIDField)
 	if len(serviceTemplateIDStr) == 0 {
@@ -276,6 +282,7 @@ func (s *coreService) UpdateBatchServiceTemplates(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// DeleteServiceTemplate TODO
 func (s *coreService) DeleteServiceTemplate(ctx *rest.Contexts) {
 	serviceTemplateIDStr := ctx.Request.PathParameter(common.BKServiceTemplateIDField)
 	if len(serviceTemplateIDStr) == 0 {

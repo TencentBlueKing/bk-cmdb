@@ -25,11 +25,11 @@
 
 ### 安装Chart
 
- 使用以下命令安装名称为`bkcmdb`的release, 其中`<bkcmdb helm repo url>`代表helm仓库地址:
+ 使用以下命令安装名称为`bkcmdb`的release, 其中`<bkcmdb helm repo url>`代表helm仓库地址, password为自己设置的任意密码:
 
 ```shell
 $ helm repo add bkee <bkcmdb helm repo url>
-$ helm install bkcmdb bkee/bkcmdb
+$ helm install bkcmdb bkee/bkcmdb --set mongodb.auth.password=${password} --set redis.auth.password=${password}
 ```
 
 上述命令将使用默认配置在Kubernetes集群中部署bkcmdb, 并输出访问指引。

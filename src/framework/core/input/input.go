@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package input TODO
 package input
 
 import (
@@ -29,6 +30,7 @@ type manager struct {
 	inputerChan chan *wrapInputer
 }
 
+// AddInputer TODO
 func (cli *manager) AddInputer(params InputerParams) InputerKey {
 
 	key := makeInputerKey()

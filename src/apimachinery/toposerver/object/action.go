@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateModel TODO
 func (t *object) CreateModel(ctx context.Context, h http.Header, model *metadata.MainLineObject) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/create/topomodelmainline"
@@ -33,6 +34,7 @@ func (t *object) CreateModel(ctx context.Context, h http.Header, model *metadata
 	return
 }
 
+// DeleteModel TODO
 func (t *object) DeleteModel(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/delete/topomodelmainline/object/%s"
@@ -47,6 +49,7 @@ func (t *object) DeleteModel(ctx context.Context, objID string, h http.Header) (
 	return
 }
 
+// SelectModel TODO
 func (t *object) SelectModel(ctx context.Context, h http.Header) (resp *metadata.MainlineObjectTopoResult, err error) {
 	resp = new(metadata.MainlineObjectTopoResult)
 	subPath := "/find/topomodelmainline"
@@ -61,6 +64,7 @@ func (t *object) SelectModel(ctx context.Context, h http.Header) (resp *metadata
 	return
 }
 
+// SelectModelByClsID TODO
 func (t *object) SelectModelByClsID(ctx context.Context, ownerID string, clsID string, objID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/topo/model/%s/%s/%s"
@@ -75,6 +79,7 @@ func (t *object) SelectModelByClsID(ctx context.Context, ownerID string, clsID s
 	return
 }
 
+// SelectInst TODO
 func (t *object) SelectInst(ctx context.Context, bizID int64, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/find/topoinst/biz/%d"

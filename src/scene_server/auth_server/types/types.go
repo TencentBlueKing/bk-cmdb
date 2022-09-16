@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package types TODO
 package types
 
 import (
@@ -23,24 +24,40 @@ import (
 )
 
 const (
-	SuccessCode                  = 0
-	UnauthorizedErrorCode        = 401
-	NotFoundErrorCode            = 404
-	InternalServerErrorCode      = 500
+	// SuccessCode TODO
+	SuccessCode = 0
+	// UnauthorizedErrorCode TODO
+	UnauthorizedErrorCode = 401
+	// NotFoundErrorCode TODO
+	NotFoundErrorCode = 404
+	// InternalServerErrorCode TODO
+	InternalServerErrorCode = 500
+	// UnprocessableEntityErrorCode TODO
 	UnprocessableEntityErrorCode = 422
 
-	ListAttrMethod             Method = "list_attr"
-	ListAttrValueMethod        Method = "list_attr_value"
-	ListInstanceMethod         Method = "list_instance"
-	FetchInstanceInfoMethod    Method = "fetch_instance_info"
+	// ListAttrMethod TODO
+	ListAttrMethod Method = "list_attr"
+	// ListAttrValueMethod TODO
+	ListAttrValueMethod Method = "list_attr_value"
+	// ListInstanceMethod TODO
+	ListInstanceMethod Method = "list_instance"
+	// FetchInstanceInfoMethod TODO
+	FetchInstanceInfoMethod Method = "fetch_instance_info"
+	// ListInstanceByPolicyMethod TODO
 	ListInstanceByPolicyMethod Method = "list_instance_by_policy"
-	SearchInstanceMethod       Method = "search_instance"
+	// SearchInstanceMethod TODO
+	SearchInstanceMethod Method = "search_instance"
 
-	IDField   = "id"
+	// IDField TODO
+	IDField = "id"
+	// NameField TODO
 	NameField = "display_name"
 )
 
+// Method TODO
 type Method string
+
+// PullResourceReq TODO
 type PullResourceReq struct {
 	Type   iam.TypeID  `json:"type"`
 	Method Method      `json:"method"`
@@ -48,6 +65,7 @@ type PullResourceReq struct {
 	Page   Page        `json:"page,omitempty"`
 }
 
+// UnmarshalJSON TODO
 func (req *PullResourceReq) UnmarshalJSON(raw []byte) error {
 	data := struct {
 		Type   iam.TypeID      `json:"type"`
@@ -100,11 +118,13 @@ func (req *PullResourceReq) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
+// Page TODO
 type Page struct {
 	Limit  int64 `json:"limit"`
 	Offset int64 `json:"offset"`
 }
 
+// IsIllegal TODO
 func (page *Page) IsIllegal() bool {
 	if page.Limit == 0 {
 		return false
@@ -115,6 +135,7 @@ func (page *Page) IsIllegal() bool {
 	return false
 }
 
+// ListAttrValueFilter TODO
 type ListAttrValueFilter struct {
 	Attr    string `json:"attr"`
 	Keyword string `json:"keyword,omitempty"`
@@ -122,57 +143,68 @@ type ListAttrValueFilter struct {
 	IDs []interface{} `json:"ids,omitempty"`
 }
 
+// ListInstanceFilter TODO
 type ListInstanceFilter struct {
 	Parent  *ParentFilter `json:"parent,omitempty"`
 	Keyword string        `json:"keyword,omitempty"`
 }
 
+// ParentFilter TODO
 type ParentFilter struct {
 	Type iam.TypeID `json:"type"`
 	ID   string     `json:"id"`
 }
 
+// ResourceTypeChainFilter TODO
 type ResourceTypeChainFilter struct {
 	SystemID string     `json:"system_id"`
 	ID       iam.TypeID `json:"id"`
 }
 
+// FetchInstanceInfoFilter TODO
 type FetchInstanceInfoFilter struct {
 	IDs   []string `json:"ids"`
 	Attrs []string `json:"attrs,omitempty"`
 }
 
+// ListInstanceByPolicyFilter TODO
 type ListInstanceByPolicyFilter struct {
 	Expression *operator.Policy `json:"expression"`
 }
 
+// AttrResource TODO
 type AttrResource struct {
 	ID          string `json:"id"`
 	DisplayName string `json:"display_name"`
 }
 
+// ListAttrValueResult TODO
 type ListAttrValueResult struct {
 	Count   int64               `json:"count"`
 	Results []AttrValueResource `json:"results"`
 }
 
+// AttrValueResource TODO
 type AttrValueResource struct {
 	// id type is string, int or bool
 	ID          interface{} `json:"id"`
 	DisplayName string      `json:"display_name"`
 }
 
+// ListInstanceResult TODO
 type ListInstanceResult struct {
 	Count   int64              `json:"count"`
 	Results []InstanceResource `json:"results"`
 }
 
+// InstanceResource TODO
 type InstanceResource struct {
 	ID          string         `json:"id"`
 	DisplayName string         `json:"display_name"`
 	Path        []InstancePath `json:"path,omitempty"`
 }
 
+// InstancePath TODO
 type InstancePath struct {
 	Type        iam.TypeID `json:"type"`
 	ID          string     `json:"id"`

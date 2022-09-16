@@ -80,6 +80,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
+// RegisterAuthAccount TODO
 /**
 	此接口用于在全新环境部署时，需要进行调用，目的是注册CMDB平台信息到IAM接口
 	需要传入host参数，是authserver的ip:port信息，如下通过curl调用：

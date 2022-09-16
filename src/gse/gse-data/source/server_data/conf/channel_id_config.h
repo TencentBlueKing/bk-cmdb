@@ -10,463 +10,94 @@
  * limitations under the License.
  */
 
-
 #ifndef _GSE_DATA_CONFIG_CHANNELID_V2_H_
 #define _GSE_DATA_CONFIG_CHANNELID_V2_H_
 
-#include <string>
-#include <vector>
 #include <list>
-#include <json/json.h>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 #include <event2/event.h>
-#include "tools/strings.h"
+#include <json/json.h>
+
 #include "safe/lock.h"
-#include "thread/thread.h"
+#include "tools/thread.h"
+#include "tools/finally.hpp"
+#include "tools/rapidjson_macro.h"
+#include "tools/strings.h"
 
-#include "datacell.h"
-#include "conf/bkdata_config_v1.h"
+#include "api/channelid_def.h"
+#include "api/channelid_struct.h"
 #include "conf/conf_common.h"
+#include "datacell.h"
 
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
 
-// config tglog/659 or tdm
-#ifndef ZK_CHANNEL_ID_CONFIG_BASE_PATH
-#define ZK_CHANNEL_ID_CONFIG_BASE_PATH (std::string("/gse/config/server/dataserver/channelid"))
-#endif
-
-#ifndef ZK_CHANNEL_ID_CONFIG_PATH
-#define ZK_CHANNEL_ID_CONFIG_PATH(id) (std::string("/gse/config/server/dataserver/channelid/") + std::string(id))
-#endif
-
-#ifndef ZK_CHANNEL_ID_CONFIG_FILTER_PATH
-#define ZK_CHANNEL_ID_CONFIG_FILTER_PATH(channelID) (ZK_CHANNEL_ID_CONFIG_PATH(channelID) + "/filter")
-#endif
-
-#ifndef ZK_CHANNEL_ID_CONFIG_METADATA_PATH
-#define ZK_CHANNEL_ID_CONFIG_METADATA_PATH(channelID) (ZK_CHANNEL_ID_CONFIG_PATH(channelID) + "/metadata")
-#endif
-
-#ifndef ZK_CHANNEL_ID_CONFIG_WITH_FILTERNAME_PATH
-#define ZK_CHANNEL_ID_CONFIG_WITH_FILTERNAME_PATH(channelID, filterName) (ZK_CHANNEL_ID_CONFIG_FILTER_PATH(channelID) + "/" + std::string(filterName))
-#endif
-
-#ifndef ZK_CHANNEL_ID_CONFIG_EXPORTER_PATH
-#define ZK_CHANNEL_ID_CONFIG_EXPORTER_PATH(channelID) (ZK_CHANNEL_ID_CONFIG_PATH(channelID) + "/exporter")
-#endif
-
-#ifndef ZK_CHANNEL_ID_CONFIG_WITH_EXPORTERNAME_PATH
-#define ZK_CHANNEL_ID_CONFIG_WITH_EXPORTERNAME_PATH(channelID, exporterName) (ZK_CHANNEL_ID_CONFIG_EXPORTER_PATH(channelID) + "/" + std::string(exporterName))
-#endif
-
-#ifndef ZK_CHANNEL_ID_CONFIG_CHANNEL_PATH
-#define ZK_CHANNEL_ID_CONFIG_CHANNEL_PATH(channelID) (ZK_CHANNEL_ID_CONFIG_PATH(channelID) + "/channel")
-#endif
-
-#ifndef ZK_CHANNEL_ID_CONFIG_WITH_CHANNELNAME_PATH
-#define ZK_CHANNEL_ID_CONFIG_WITH_CHANNELNAME_PATH(channelID, channelName) (ZK_CHANNEL_ID_CONFIG_CHANNEL_PATH(channelID) + "/" + std::string(channelName))
-#endif
-
-
-
-//TGLOG channelid watch path
-
-#ifndef ZK_CHANNEL_ID_TGLOG_NOTIFY_PATH
-#define ZK_CHANNEL_ID_TGLOG_NOTIFY_PATH(watch_path) (std::string("/gse/config/server/dataserver/tglog/") + watch_path)
-#endif
-
-//--------------------------------------------------
-//streamId
-#ifndef ZK_STREAM_ID_CONFIG_BASE_PATH
-#define ZK_STREAM_ID_CONFIG_BASE_PATH std::string("/gse/config/server/dataserver/streamto")
-#endif
-
-#ifndef ZK_STREAM_ID_CONFIG_PATH
-#define ZK_STREAM_ID_CONFIG_PATH(streamToId) ZK_STREAM_ID_CONFIG_BASE_PATH + "/" + std::string(streamToId)
-#endif
-
-#ifndef ZK_STREAM_TO_ID_CONFIG_METADATA_PATH
-#define ZK_STREAM_TO_ID_CONFIG_METADATA_PATH(streamToId) (ZK_STREAM_ID_CONFIG_PATH(streamToId) + "/metadata")
-#endif
-
-
-const std::string kRedisSentinel = "sentinel";
-const std::string kRedisSingle = "single";
-const std::string kRedisCluster = "cluster";
-
-enum StorageTypeEn
+enum TopicType
 {
-    EN_KAFKA_TYPE = 0,
-    EN_PULSAR_TYPE = 1,
-    EN_REDIS_TYPE  = 2
+    UNKONW_TOPIC = 0,
+    KAFKA_TOPIC = 1,
+    REDIS_CHANNEL = 2,
+    PULSAR_TOPIC = 3,
+    DSPROXY = 4
 };
 
-
-enum StorageTableTypeEn
+typedef enum ZkEventType_
 {
-    EN_KAFKA_STORAGE_TABLE = 0,
-    EN_PULSAR_STORAGE_TABLE = 1,
-    EN_REDIS_SOTRAGE_TABLE = 2
-};
+    ZK_EVENT_LIST = 0,
+    ZK_EVENT_CHANGE = 1,
+    ZK_EVENT_CREATE = 2,
+    ZK_EVENT_DELETE = 3
+} ZkEventType;
 
-class Address
-{
-public:
-    std::string m_ip;
-    uint16_t m_port;
-
-public:
-    Address() : m_ip(""), m_port(0) {}
-
-    std::string ToString()
-    {
-        std::string strbuff = "Host:{host:%s, port:%d}";
-        std::string str_result;
-        char buff[1024] = {0};
-        snprintf(buff, sizeof(buff), strbuff.c_str(), m_ip.c_str(), m_port);
-        str_result.append(buff);
-        return str_result;
-    }
-};
-
-class MetaLabel
+class ZkEvent
 {
 public:
-    std::string m_odm;
-    std::string m_bkBizName;
-    int m_bizid;
-public:
-    MetaLabel() : m_odm(""), m_bkBizName(""), m_bizid(0) {}
-};
-
-class Metadata
-{
-public:
-    std::string m_name;
-    std::string m_version;
-    uint32_t m_channelID;
-    std::string m_requestPlatName;
-    MetaLabel m_label;
-
-public:
-    Metadata() : m_name(""), m_version(""), m_channelID(0), m_requestPlatName("") {}
-};
-
-
-class TargetStorageTable
-{
-public:
-    std::string m_name;
-    std::string m_tenant;
-    std::string m_namespace;
-    std::string m_persistent;
-    std::string m_type;//kafka,pular,redis....
-public:
-    TargetStorageTable() : m_name(""),m_tenant(""), m_namespace(""), m_persistent(""),m_type("")  {}
-};
-
-//"biz_id":0,"data_set":"0bkmonitor_1500145","partition":1,"topic_name":"0bkmonitor_15001450"
-class KafkaStorageTable
-{
-public:
-    std::string m_bizId;
-    std::string m_dataSet;
-    std::string m_topicName;
-    int m_partition;
-
-public:
-    KafkaStorageTable() : m_topicName(""),m_bizId(""), m_dataSet(""), m_partition(1)  {}
-
-    inline void CopyFrom(KafkaStorageTable *src)
+    ZkEventType m_eventType;
+    void *m_msg;
+    ZkEvent()
+        : m_eventType(ZK_EVENT_CHANGE), m_msg(NULL)
     {
-        if (src == NULL)
-        {
-            return;
-        }
-        m_bizId = src->m_bizId;
-        m_dataSet = src->m_dataSet;
-        m_topicName = src->m_topicName;
-        m_partition = src->m_partition;
-        if (m_topicName == "")
-        {
-            m_topicName = src->m_dataSet + src->m_bizId;
-        }
-    }
-};
-
-class PulsarStorageTable
-{
-public:
-    std::string m_tenant;
-    std::string m_namespace;
-    std::string m_persistent;
-    std::string m_bizId;
-    std::string m_dataSet;
-    std::string m_topicName;
-    PulsarStorageTable():m_tenant(""),m_namespace(""), m_persistent(""), m_bizId(""), m_dataSet(""), m_topicName("") {}
-
-    inline void CopyFrom(PulsarStorageTable *src)
-    {
-        if (src == NULL)
-        {
-            return;
-        }
-        m_tenant = src->m_tenant;
-        m_namespace = src->m_namespace;
-        m_persistent = src->m_persistent;
-        m_bizId = src->m_bizId;
-        m_dataSet = src->m_dataSet;
-        m_topicName = src->m_topicName;
-
-
-        std::string pulsar_topic_name;
-        if (!m_persistent.empty())
-        {
-            pulsar_topic_name.append(m_persistent);
-            pulsar_topic_name.append("://");
-        }
-        else
-        {
-            pulsar_topic_name.append("persistent");
-            pulsar_topic_name.append("://");
-        }
-
-        if (!m_tenant.empty())
-        {
-            pulsar_topic_name.append(m_tenant);
-            pulsar_topic_name.append("/");
-        }
-        if (!m_namespace.empty())
-        {
-            pulsar_topic_name.append(m_namespace);
-            pulsar_topic_name.append("/");
-        }
-
-        if (m_topicName=="")
-        {
-            m_topicName = m_dataSet + m_bizId;
-        }
-        m_topicName = pulsar_topic_name.append(m_topicName);
-    }
-};
-
-class RedisStorageTable
-{
-public:
-    std::string m_channelName;
-    std::string m_bizId;
-    std::string m_dataSet;
-    RedisStorageTable():m_channelName(""),m_bizId(""),m_dataSet("") {}
-
-    inline void CopyFrom(RedisStorageTable *src)
-    {
-        if (src == NULL)
-        {
-            return;
-        }
-        m_channelName = src->m_channelName;
-        m_bizId = src->m_bizId;
-        m_dataSet = src->m_dataSet;
-        if (m_channelName=="")
-        {
-            m_channelName = m_dataSet + m_bizId;
-        }
-    }
-};
-
-class StreamTo
-{
-public:
-    std::string m_name;
-    std::string m_configName;
-    int m_storageType;
-    union StorageTable{
-        KafkaStorageTable *m_kafkaStorageTable;
-        PulsarStorageTable *m_pulsarStorageTable;
-        RedisStorageTable *m_redisStorageTable;
-    }m_storageTable;
-
-    std::vector<std::string> m_filterNameAnd;
-    std::vector<std::string> m_filterNameOr;
-    int m_streamToId;
-
-public:
-    inline StreamTo *Clone()
-    {
-        StreamTo *ptr_tmp = new StreamTo();
-        ptr_tmp->CopyFrom(this);
-        return ptr_tmp;
-    }
-    inline void CopyFrom(StreamTo *src)
-    {
-        m_name = src->m_name;
-        m_configName = src->m_configName;
-        m_filterNameAnd.clear();
-        m_filterNameOr.clear();
-        for (std::vector<std::string>::iterator it = src->m_filterNameAnd.begin(); it != src->m_filterNameAnd.end(); ++it)
-        {
-            m_filterNameAnd.push_back((*it));
-        }
-        for (std::vector<std::string>::iterator it = src->m_filterNameOr.begin(); it != src->m_filterNameOr.end(); ++it)
-        {
-            m_filterNameOr.push_back((*it));
-        }
-    }
-
-public:
-    StreamTo() : m_name(""), m_configName(""), m_streamToId(-1)
-    {
-        m_storageType = UNKNOWN;
-    }
-
-    ~StreamTo()
-    {
-        switch (m_storageType)
-        {
-        case KAFKA_COMMON:
-            if (m_storageTable.m_kafkaStorageTable != NULL)
-            {
-                delete m_storageTable.m_kafkaStorageTable;
-                m_storageTable.m_kafkaStorageTable = NULL;
-            }
-            break;
-        case EXPORT_PULSAR:
-            if (m_storageTable.m_pulsarStorageTable != NULL)
-            {
-                delete m_storageTable.m_pulsarStorageTable;
-                m_storageTable.m_pulsarStorageTable = NULL;
-            }
-            break;
-        case REDIS_SENTINEL_PUB:
-            if (m_storageTable.m_redisStorageTable != NULL)
-            {
-                delete m_storageTable.m_redisStorageTable;
-                m_storageTable.m_redisStorageTable = NULL;
-            }
-            break;
-        }
-    }
-};
-
-
-class StreamConfig
-{
-public:
-    std::string m_name;
-    std::string m_reportMode;
-    std::string m_dataLogDir;
-    std::string m_dataLogFileName;
-    std::string m_pulsarUrl;
-    std::vector<Address *> m_addresses;
-    std::string m_token;
-    KafkaConfig m_kafkaConfig;
-
-
-public:
-    inline StreamConfig *Clone()
-    {
-        StreamConfig *ptr_tmp = new StreamConfig();
-        ptr_tmp->CopyFrom(this);
-        return ptr_tmp;
-    }
-
-    inline void CopyFrom(StreamConfig *src)
-    {
-        m_name = src->m_name;
-        m_reportMode = src->m_reportMode;
-        m_dataLogDir = src->m_dataLogDir;
-        m_dataLogFileName = src->m_dataLogFileName;
-        m_pulsarUrl = src->m_pulsarUrl;
-        m_kafkaConfig = src->m_kafkaConfig;
-        m_token = src->m_token;
-        if (!m_addresses.empty())
-        {
-            for (std::vector<Address *>::iterator it = m_addresses.begin(); it != m_addresses.end(); ++it)
-            {
-                delete (*it);
-            }
-            m_addresses.clear();
-        }
-
-        for (std::vector<Address *>::iterator it = src->m_addresses.begin(); it != src->m_addresses.end(); ++it)
-        {
-            Address *ptr_tmp = new Address();
-            ptr_tmp->m_ip = (*it)->m_ip;
-            ptr_tmp->m_port = (*it)->m_port;
-            m_addresses.push_back(ptr_tmp);
-        }
-    }
-
-    std::string ToString();
-public:
-    StreamConfig() : m_name(""), m_reportMode(""), m_dataLogDir(""), m_dataLogFileName("")
-    {
-        m_token = "";
-    }
-
-    ~StreamConfig()
-    {
-        for (std::vector<Address *>::iterator it = m_addresses.begin(); it != m_addresses.end(); ++it)
-        {
-            delete (*it);
-        }
-    }
-};
-
-class StreamFilter
-{
-public:
-    int16_t m_fieldIndex;
-    std::string m_name;
-    std::string m_fieldDataType;
-    std::string m_fieldDataValue;
-    std::string m_separator;
-    std::string m_fieldIn;
-
-public:
-    StreamFilter() : m_fieldIndex(0), m_name(""), m_fieldDataType(""), m_fieldDataValue(""), m_separator(""), m_fieldIn("")
-    {
-    }
-
-    std::string ToString();
-public:
-    inline StreamFilter *Clone()
-    {
-        StreamFilter *ptr_tmp = new StreamFilter();
-        ptr_tmp->CopyFrom(this);
-        return ptr_tmp;
-    }
-    inline void CopyFrom(StreamFilter *src)
-    {
-        m_name = src->m_name;
-        m_fieldIndex = src->m_fieldIndex;
-        m_fieldDataType = src->m_fieldDataType;
-        m_fieldDataValue = src->m_fieldDataValue;
-        m_separator = src->m_separator;
-        m_fieldIn = src->m_fieldIn;
     }
 };
 
 class ChannelIDFilter
 {
 public:
-    ChannelIDFilter() : m_streamToName(""), m_configName(""), m_tableName(""), m_andFilterStringInProtocol(""), m_isNeedCheckAndFilterInData(false) {
+    ChannelIDFilter()
+        : m_streamToName(""), m_configName(""), m_tableName(""), m_andFilterStringInProtocol(""), m_isNeedCheckAndFilterInData(false)
+    {
     }
     ~ChannelIDFilter()
     {
+        for (std::vector<StreamFilter *>::iterator it = m_streamFilterAnd.begin(); it != m_streamFilterAnd.end(); ++it)
+        {
+            delete (*it);
+        }
+        m_streamFilterAnd.clear();
+
+        for (std::vector<StreamFilter *>::iterator it = m_streamFilterOr.begin(); it != m_streamFilterOr.end(); ++it)
+        {
+            delete (*it);
+        }
+        m_streamFilterOr.clear();
     }
 
 public:
     bool IsValidData(DataCell *ptrDataCell);
     void GetTopicName(std::string &topicname);
     std::string ToString();
+    uint32_t GetMemSize();
+
 private:
     bool CheckAndFilter(DataCell *ptrDataCell);
     bool checkOrFilter(DataCell *ptrDataCell);
 
-
     bool CheckProtocolFilter(DataCell *ptrDataCell, StreamFilter *filter);
     bool CheckDataFilter(DataCell *ptrDataCell, StreamFilter *filter);
+
 public:
     std::string m_streamToName;
     std::string m_configName;
@@ -477,149 +108,15 @@ public:
     bool m_isNeedCheckAndFilterInData;
 };
 
-class ChannelIDStorage
-{
-
-public:
-    uint32_t m_channelID;
-    std::string m_streamToName;
-    StorageType m_storageType;
-    StreamConfig *m_ptrConfigInfo;
-    ChannelIDFilter *m_ptrChannelIDFilters;
-
-public:
-    ChannelIDStorage() : m_streamToName("")
-    {
-        m_channelID = 0;
-        m_ptrConfigInfo = NULL;
-        m_ptrChannelIDFilters = new ChannelIDFilter();
-        m_storageType = UNKNOWN;
-        m_next = NULL;
-    }
-
-    ~ChannelIDStorage()
-    {
-        delete m_ptrChannelIDFilters;
-        m_ptrChannelIDFilters = NULL;
-        if (NULL != m_next)
-        {
-            delete m_next;
-        }
-    }
-
-    std::string ToString();
-
-public:
-    inline void SetNext(ChannelIDStorage *ptrNext)
-    {
-        if (NULL != m_next)
-        {
-            m_next->SetNext(ptrNext);
-            return;
-        }
-        m_next = ptrNext;
-    }
-
-public:
-    ChannelIDStorage *m_next;
-};
-
-class KafkaStorage
-{
-public:
-    KafkaStorage();
-    ~KafkaStorage();
-public:
-    std::vector<Address> m_addresses;
-    KafkaConfig m_kafkaConfig;
-    std::string ToString();
-};
-
-
-class PulsarStorage
-{
-public:
-    PulsarStorage(){}
-    ~PulsarStorage(){}
-public:
-    std::string m_token;
-    std::vector<Address> m_addresses;
-    std::string ToString()
-    {
-        std::string str_pulsar_storage_addr;
-        std::vector<Address>::iterator it;
-        for (it = m_addresses.begin(); it != m_addresses.end(); it++)
-        {
-            str_pulsar_storage_addr.append((*it).m_ip);
-            str_pulsar_storage_addr.append(":");
-            str_pulsar_storage_addr.append(gse::tools::strings::ToString((*it).m_port));
-            if (it != m_addresses.end())
-            {
-                str_pulsar_storage_addr.append(";");
-                break;
-            }
-        }
-        return str_pulsar_storage_addr;
-    }
-};
-
-
-class RedisStorage
-{
-public:
-    RedisStorage() {}
-    ~RedisStorage(){}
-public:
-    std::vector<Address> m_addresses;
-    std::string m_passwd;
-    std::string m_masterName;
-    std::string ToString()
-    {
-        std::string str_redis_storage_addr;
-        std::vector<Address>::iterator it;
-        for (it = m_addresses.begin(); it != m_addresses.end(); it++)
-        {
-            str_redis_storage_addr.append((*it).m_ip);
-            str_redis_storage_addr.append(":");
-            str_redis_storage_addr.append(gse::tools::strings::ToString((*it).m_port));
-            if (it != m_addresses.end())
-            {
-                str_redis_storage_addr.append(";");
-                break;
-            }
-
-        }
-        return str_redis_storage_addr;
-    }
-};
-
-
-typedef enum ZkEventType_
-{
-    ZK_EVENT_LIST = 0,
-    ZK_EVENT_CHANGE = 1,
-    ZK_EVENT_CREATE = 2,
-    ZK_EVENT_DELETE = 3
-}ZkEventType;
-
-class ZkEvent
-{
-public:
-    ZkEventType m_eventType;
-    void *m_msg;
-    ZkEvent() : m_eventType(ZK_EVENT_CHANGE), m_msg(NULL) {
-    }
-};
-
 class ChannelIdExporterConfig
 {
 public:
     ChannelIdExporterConfig();
     ~ChannelIdExporterConfig();
 
-    ChannelIdExporterConfig &operator=(const ChannelIdExporterConfig &srcConf);
+    ChannelIdExporterConfig &operator=(ChannelIdExporterConfig &srcConf);
 
-    ChannelIdExporterConfig(const ChannelIdExporterConfig &srcConf);
+    ChannelIdExporterConfig(ChannelIdExporterConfig &srcConf);
 
     inline void SetNeedDelete()
     {
@@ -631,17 +128,9 @@ public:
     }
 
 public:
-    std::string m_reportMode;
-    int m_storageType;
-    union Storage
-    {
-        KafkaStorage*   m_kafkaStorage;
-        PulsarStorage*  m_pulsarStorage;
-        RedisStorage* m_redisStorage;
-    }m_storage;
+    StreamToCluster m_streamToCluster;
     int m_streamToId;
-    std::string m_name;
-    std::string m_rawJsonStr;
+
 private:
     int m_setDeleteTimestamp;
 };
@@ -675,19 +164,17 @@ public:
     {
         m_ptrMetadata = new Metadata();
         m_setDeleteTimestamp = 0;
-        m_bMetaInitFinish  = false;
+        m_bMetaInitFinish = false;
         m_bFilterInitFinish = false;
         m_bStreamToInitFinish = false;
         m_success = true;
     }
-    ChannelIDConfig(std::string channelid_str) : m_strChannelId(channelid_str)
+    ChannelIDConfig(std::string channelid_str)
+        : m_strChannelId(channelid_str)
     {
         m_ptrMetadata = new Metadata();
         m_setDeleteTimestamp = 0;
         m_success = true;
-        m_bMetaInitFinish  = false;
-        m_bFilterInitFinish = false;
-        m_bStreamToInitFinish = false;
     }
     ~ChannelIDConfig()
     {
@@ -696,12 +183,7 @@ public:
             delete m_ptrMetadata;
         }
 
-        for (std::vector<StreamTo *>::iterator it = m_streamTo.begin(); it != m_streamTo.end(); ++it)
-        {
-            delete (*it);
-        }
-
-        for (std::vector<StreamConfig *>::iterator it = m_streamConfig.begin(); it != m_streamConfig.end(); ++it)
+        for (std::vector<Channel *>::iterator it = m_channels.begin(); it != m_channels.end(); ++it)
         {
             delete (*it);
         }
@@ -733,7 +215,7 @@ public:
 
     bool IsComplete()
     {
-        bool all_done =  false;
+        bool all_done = false;
         return all_done;
     }
 
@@ -747,99 +229,61 @@ public:
         m_success = false;
     }
 
-//    void InitLevel1RequestCount()
-//    {
-//        //request  [filter, channels]
-//        m_Level1RRCount.m_requestCount = 2;
-//    }
 public:
-    // 返回ChannelID关联的所有存储的信息
-    ChannelIDStorage *ToChannelIDStorage();
     StreamFilter *GetFilter(const std::string &filterName);
-
-private:
-    StreamConfig *GetConfig(const std::string &configName);
 
 public:
     Metadata *m_ptrMetadata;
-    std::vector<StreamTo *> m_streamTo;
-    std::vector<StreamConfig *> m_streamConfig;
     std::vector<StreamFilter *> m_streamFilter;
+    std::vector<Channel *> m_channels;
     std::string m_originData;
 
     std::string m_strChannelId;
-//    ZkMessageCount m_Level1RRCount;
-//    ZkMessageCount m_channelRRCount;
-//    ZkMessageCount m_FilterRRCount;
-//    ZkMessageCount m_MetaRRCount;
+
     ZkMessageCount m_zkReqResponseCount;
     bool m_success;
     int m_setDeleteTimestamp;
-private:
 
+private:
     bool m_bMetaInitFinish;
     bool m_bFilterInitFinish;
     bool m_bStreamToInitFinish;
 };
 
-class ChannelIDConfigFactory
-{
-public:
-    ChannelIDConfigFactory(){};
-    virtual ~ChannelIDConfigFactory(){};
-
-public:
-    bool ParseMetadata(const Json::Value &inputJson, Metadata *ptrMetadata, std::string &errorMsg);
-    bool ParseStreamTo(const Json::Value &inputJson, std::vector<StreamTo *> &streamTo, std::string &errorMsg);
-    bool ParseStreamConfig(const Json::Value &inputJson, std::vector<StreamConfig *> &streamConfig, std::string &errorMsg);
-    bool ParseStreamFilter(const Json::Value &inputJson, std::vector<StreamFilter *> &streamFilter, std::string &errorMsg);
-
-
-    bool ParseExporterConfig(const Json::Value &inputJson, ChannelIdExporterConfig *exporter_cfg, std::string &errorMsg);
-    bool ParseStorageAddresses(Json::Value &storage_addresses, std::vector<Address> &addresses);
-    void ParseKafkaConfig(const Json::Value &input_json, KafkaStorageTable *kafka_table);
-    void ParsePulsarConfig(const Json::Value &input_json, PulsarStorageTable *pulsar_table);
-    void ParseRedisConfig(const Json::Value &input_json, RedisStorageTable *redis_table);
-};
-
+// inner channelid
 class ChannelIdStreamConfig
 {
 public:
     uint32_t m_channelID;
     uint32_t m_streamToId;
     std::string m_channelName;
-    ChannelIDFilter *m_ptrChannelIDFilters;
     int m_storageType;
-    union StorageTable{
-        KafkaStorageTable *m_kafkaStorageTable;
-        PulsarStorageTable *m_pulsarStorageTable;
-        RedisStorageTable *m_redisStorageTable;
-    }m_storageTable;
-
-    std::vector<StreamFilter *> m_streamFilterAnd;
-    std::vector<StreamFilter *> m_streamFilterOr;
-    ChannelIDFilter m_filter;
-public:
-    ChannelIdStreamConfig() : m_channelName("")
+    union StorageTable
     {
-        m_channelID = 0;
-        m_streamToId = 0;
-        m_ptrChannelIDFilters = new ChannelIDFilter();
-        m_next = NULL;
-        m_storageType = UNKNOWN;
-        m_setDeleteTimestamp = 0;
+        KafkaTopic *m_kafkaStorageTable;
+        PulsarTopic *m_pulsarStorageTable;
+        RedisChannel *m_redisStorageTable;
+    } m_storageTable;
+
+    ChannelIDFilter m_filter;
+
+public:
+    ChannelIdStreamConfig()
+        : m_channelName(""), m_channelID(0), m_streamToId(0),
+          m_next(NULL), m_storageType(UNKONW_TOPIC),
+          m_setDeleteTimestamp(0)
+    {
+        m_storageTable.m_kafkaStorageTable = nullptr;
     }
 
     ~ChannelIdStreamConfig()
     {
-        delete m_ptrChannelIDFilters;
-        m_ptrChannelIDFilters = NULL;
         if (NULL != m_next)
         {
             delete m_next;
         }
 
-        if (m_storageType == KAFKA_COMMON)
+        if (m_storageType == KAFKA_TOPIC)
         {
             if (m_storageTable.m_kafkaStorageTable != NULL)
             {
@@ -847,7 +291,7 @@ public:
                 m_storageTable.m_kafkaStorageTable = NULL;
             }
         }
-        else if (m_storageType == REDIS_SENTINEL_PUB)
+        else if (m_storageType == REDIS_CHANNEL)
         {
             if (m_storageTable.m_redisStorageTable != NULL)
             {
@@ -855,7 +299,7 @@ public:
                 m_storageTable.m_redisStorageTable = NULL;
             }
         }
-        else if (m_storageType == EXPORT_PULSAR)
+        else if (m_storageType == PULSAR_TOPIC)
         {
             if (m_storageTable.m_pulsarStorageTable != NULL)
             {
@@ -872,42 +316,44 @@ public:
 
     void GetTableName(std::string &table_name)
     {
-        switch(m_storageType)
+        switch (m_storageType)
         {
-            case KAFKA_COMMON:
+        case KAFKA_TOPIC:
             table_name = m_storageTable.m_kafkaStorageTable->m_topicName;
             break;
-        case EXPORT_PULSAR:
+        case PULSAR_TOPIC:
             table_name = m_storageTable.m_pulsarStorageTable->m_topicName;
             break;
-        case REDIS_SENTINEL_PUB:
+        case REDIS_CHANNEL:
             table_name = m_storageTable.m_redisStorageTable->m_channelName;
             break;
         }
     }
 
-    void CopyTableConfig(StreamTo * ptr_stream_to)
+    void CopyTableConfig(StreamTo *ptrStreamTo)
     {
-        m_storageType = ptr_stream_to->m_storageType;
 
-        switch(ptr_stream_to->m_storageType)
+        if (ptrStreamTo->m_reportMode == ChannelIDOperationRequestMethodKafka)
         {
-        case KAFKA_COMMON:
-            m_storageTable.m_kafkaStorageTable = new KafkaStorageTable();
-            m_storageTable.m_kafkaStorageTable->CopyFrom(ptr_stream_to->m_storageTable.m_kafkaStorageTable);
-            break;
-        case EXPORT_PULSAR:
-            m_storageTable.m_pulsarStorageTable = new PulsarStorageTable();
-            m_storageTable.m_pulsarStorageTable->CopyFrom(ptr_stream_to->m_storageTable.m_pulsarStorageTable);
-            break;
-        case REDIS_SENTINEL_PUB:
-            m_storageTable.m_redisStorageTable = new RedisStorageTable();
-            m_storageTable.m_redisStorageTable->CopyFrom(ptr_stream_to->m_storageTable.m_redisStorageTable);
-            break;
+            m_storageTable.m_kafkaStorageTable = new KafkaTopic();
+            m_storageTable.m_kafkaStorageTable->CopyFrom(&ptrStreamTo->m_kafkaTopic);
+            m_storageType = KAFKA_TOPIC;
+        }
+        else if (ptrStreamTo->m_reportMode == ChannelIDOperationRequestMethodPulsar)
+        {
+            m_storageTable.m_pulsarStorageTable = new PulsarTopic();
+            m_storageTable.m_pulsarStorageTable->CopyFrom(&ptrStreamTo->m_pulsarTopic);
+            m_storageType = PULSAR_TOPIC;
+        }
+        else if (ptrStreamTo->m_reportMode == ChannelIDOperationRequestMethodRedis)
+        {
+            m_storageTable.m_redisStorageTable = new RedisChannel();
+            m_storageTable.m_redisStorageTable->CopyFrom(&ptrStreamTo->m_redisChannel);
+            m_storageType = REDIS_CHANNEL;
         }
     }
 
-    void AddAndFilters(StreamFilter* filter)
+    void AddAndFilters(StreamFilter *filter)
     {
         StreamFilter *ptr_filter = new StreamFilter();
         ptr_filter->CopyFrom(filter);
@@ -922,8 +368,7 @@ public:
         }
     }
 
-
-    void AddOrFilters(StreamFilter* filter)
+    void AddOrFilters(StreamFilter *filter)
     {
         StreamFilter *ptr_filter = new StreamFilter();
         ptr_filter->CopyFrom(filter);
@@ -939,6 +384,37 @@ public:
         std::string fmt_str;
         return fmt_str;
     }
+
+    uint32_t GetUseMemSize()
+    {
+        uint32_t memSize = 0;
+        memSize = sizeof(ChannelIdStreamConfig) + m_channelName.length();
+        if (m_storageType == KAFKA_TOPIC)
+        {
+            if (m_storageTable.m_kafkaStorageTable != NULL)
+            {
+                memSize += m_storageTable.m_kafkaStorageTable->GetMemSize();
+            }
+        }
+        else if (m_storageType == REDIS_CHANNEL)
+        {
+            if (m_storageTable.m_redisStorageTable != NULL)
+            {
+                memSize += m_storageTable.m_redisStorageTable->GetMemSize();
+            }
+        }
+        else if (m_storageType == PULSAR_TOPIC)
+        {
+            if (m_storageTable.m_pulsarStorageTable != NULL)
+            {
+                memSize += m_storageTable.m_pulsarStorageTable->GetMemSize();
+            }
+        }
+        memSize += m_filter.GetMemSize();
+        return memSize;
+    }
+
+    void Dump(std::string &strDump);
 
 public:
     inline void SetNext(ChannelIdStreamConfig *ptrNext)
@@ -958,27 +434,28 @@ public:
 
 class Exporter;
 
-class ChannelIdExporterManager : public gse::thread::Thread
+class ChannelIdStreamExporterManager : public gse::tools::thread::Thread
 {
 public:
-    ChannelIdExporterManager();
-    virtual ~ChannelIdExporterManager();
+    ChannelIdStreamExporterManager();
+    virtual ~ChannelIdStreamExporterManager();
 
 public:
     int Init();
-    int run();
     int ThreadFun();
-    void stop();
+    void Stop();
 
     int UpdateExporterConfig(ZkEvent *event);
     void CleanInvalidExporter();
-    Exporter * GetExport(uint32_t exporter_id);
+    Exporter *GetExport(uint32_t exporter_id);
     int DeleteExporter(uint32_t exporter_id);
 
     void FreeEvent();
+    bool Find(uint32_t exporterId);
+
 private:
-    Exporter * CreateExporter(ChannelIdExporterConfig* ptr_stream_to_id_config);
-    int Update(ChannelIdExporterConfig* ptr_stream_to_id_config);
+    Exporter *CreateExporter(ChannelIdExporterConfig *ptr_stream_to_id_config);
+    int StreamExporterUpdate(ChannelIdExporterConfig *ptr_stream_to_id_config);
 
 private:
     static void ExporterUpdateEvent(int fd, short which, void *v);
@@ -986,9 +463,9 @@ private:
 
 private:
     gse::safe::RWLock m_rwLock;
-    std::map<uint32_t, Exporter*> m_exporters;
-    std::list<Exporter*> m_needDeleteExporters;
-
+    std::map<uint32_t, Exporter *> m_exporters;
+    std::list<Exporter *> m_needDeleteExporters;
+    bool m_stoped;
     //  thread run
     int m_exporterUpdateNotifyFd[2];
     event_base *m_evBase;
@@ -997,52 +474,55 @@ private:
     struct timeval m_cleanTime;
 };
 
-
-class ChannelIdManager : public gse::thread::Thread
+class ChannelIdManager : public gse::tools::thread::Thread
 {
 public:
-    ChannelIdManager();
-    ChannelIdManager(ChannelIdExporterManager *channelIdExporterManager);
+    ChannelIdManager(bool is_platid = false);
     virtual ~ChannelIdManager();
 
 public:
-    int run();
-    void stop();
     int ThreadFun();
-    //channel id manager
+    void Stop();
+
+    // channel id manager
     int Update(ZkEvent *event);
     void FreeEvent();
-    //filter
-    bool WriteByFilter(DataCell* ptr_datacell);
-    void FreeChannelIdPtr(ChannelIDConfig * ptr);
+    bool WriteByFilter(DataCell *ptr_datacell);
+    void FreeChannelIdPtr(ChannelIDConfig *ptr);
+    bool Find(uint32_t channelId);
+    ChannelIdStreamConfig *GetChannelStreamConfig(uint32_t channel_id);
+
+    // only for stack
+    void GetChannelIdListByStreamId(uint32_t streamid, std::vector<uint32_t> &channelidList);
 
 public:
     int m_channelIdUpudateNotifyFd[2];
+
 private:
     static void ChannelIdUpdateEvent(int fd, short which, void *v);
     static void InvalidDataCleanTimerEvent(int fd, short which, void *v);
-    ChannelIdStreamConfig *GetChannelStreamConfig(uint32_t channel_id);
-    int HandleChannelIdUpdate(ChannelIDConfig* ptr_channel_id_config);
+    int HandleChannelIdUpdate(ChannelIDConfig *ptr_channel_id_config);
     int HandleChannelIdDelete(uint32_t channelid);
     void CleanInvalidChannelId();
     void CleanChannelIdInvalidPtr();
+
 private:
     gse::safe::RWLock m_rwLock;
-    std::map<uint32_t, ChannelIdStreamConfig*> m_channelIds;
-    std::list<ChannelIdStreamConfig*> m_needDeleteChannelIds;
+    std::unordered_map<uint32_t, ChannelIdStreamConfig *> m_channelIds;
+    std::list<ChannelIdStreamConfig *> m_needDeleteChannelIds;
 
     gse::safe::RWLock m_freeChannelidLock;
-    std::map<std::string, ChannelIDConfig*> m_needFreeChannelIDconfig;
+    std::map<std::string, ChannelIDConfig *> m_needFreeChannelIDconfig;
 
-    ChannelIdExporterManager *m_channelIdExporterManager;
-
-//  thread run
+    bool m_isPlatId;
+    //  thread run
     event_base *m_evBase;
     struct event *m_cleanTimerEvent;
     struct event *m_channelIdUpdateEvent;
     struct timeval m_cleanTime;
+    bool m_stoped;
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif

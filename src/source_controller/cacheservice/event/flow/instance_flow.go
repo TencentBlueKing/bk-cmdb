@@ -77,6 +77,7 @@ type mainlineObjectMap struct {
 	lock sync.RWMutex
 }
 
+// Get TODO
 func (m *mainlineObjectMap) Get() map[string]struct{} {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
@@ -87,17 +88,20 @@ func (m *mainlineObjectMap) Get() map[string]struct{} {
 	return data
 }
 
+// Set TODO
 func (m *mainlineObjectMap) Set(data map[string]struct{}) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	m.data = data
 }
 
+// InstanceFlow TODO
 type InstanceFlow struct {
 	Flow
 	*mainlineObjectMap
 }
 
+// RunFlow TODO
 func (f *InstanceFlow) RunFlow(ctx context.Context) error {
 	blog.Infof("start run flow for key: %s.", f.key.Namespace())
 

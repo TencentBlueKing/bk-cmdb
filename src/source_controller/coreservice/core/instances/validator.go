@@ -34,6 +34,7 @@ type validator struct {
 	language      language.CCLanguageIf
 }
 
+// NewValidator TODO
 // Init init
 func NewValidator(kit *rest.Kit, dependent OperationDependences, objID string, bizID int64, language language.CCLanguageIf) (*validator, error) {
 	valid := &validator{}

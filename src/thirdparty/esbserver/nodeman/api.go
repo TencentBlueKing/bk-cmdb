@@ -1,3 +1,4 @@
+// Package nodeman TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -20,6 +21,7 @@ import (
 	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
+// NodeManClientInterface TODO
 type NodeManClientInterface interface {
 	SearchPackage(ctx context.Context, h http.Header, processname string) (resp *SearchPluginPackageResult, err error)
 	SearchProcess(ctx context.Context, h http.Header, processname string) (resp *SearchPluginProcessResult, err error)
@@ -29,6 +31,7 @@ type NodeManClientInterface interface {
 	SearchPluginHost(ctx context.Context, h http.Header, processname string) (resp *SearchPluginHostResult, err error)
 }
 
+// NewNodeManClientInterface TODO
 func NewNodeManClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigSrv) NodeManClientInterface {
 	return &nodeman{
 		client: client,
@@ -41,6 +44,7 @@ type nodeman struct {
 	client rest.ClientInterface
 }
 
+// ESBBaseResult TODO
 type ESBBaseResult struct {
 	Message   string `json:"message"`
 	Code      string `json:"code"`
@@ -48,16 +52,19 @@ type ESBBaseResult struct {
 	RequestID string `json:"request_id"`
 }
 
+// SearchPluginPackageResult TODO
 type SearchPluginPackageResult struct {
 	ESBBaseResult
 	Data []PluginPackage `json:"data"`
 }
 
+// SearchPluginProcessResult TODO
 type SearchPluginProcessResult struct {
 	ESBBaseResult
 	Data PluginProcess `json:"data"`
 }
 
+// SearchPluginProcessInfoResult TODO
 type SearchPluginProcessInfoResult struct {
 	ESBBaseResult
 	Data PluginProcessInfo `json:"data"`
@@ -221,11 +228,13 @@ type UpgradePluginRequest struct {
 	Hosts []UpgradePluginHostField `json:"hosts"`
 }
 
+// UpgradePluginConfig TODO
 type UpgradePluginConfig struct {
 	InnerIPs []string `json:"inner_ips"` // 支持多台机器使用同一配置文件 机器ip必须在hosts参数中存在 否则不操作
 	Content  string   `json:"content,omitempty"`
 }
 
+// UpgradePluginHostField TODO
 type UpgradePluginHostField struct {
 	InnerIPs string `json:"inner_ips"` // 支持多台机器使用同一配置文件 机器ip必须在hosts参数中存在 否则不操作
 }
@@ -235,6 +244,7 @@ type esbUpgradePluginParams struct {
 	*UpgradePluginRequest
 }
 
+// UpgradePluginResult TODO
 type UpgradePluginResult struct {
 	ESBBaseResult
 	Data struct {
@@ -355,6 +365,7 @@ type SearchTaskResult struct {
 	Data Task `json:"data"`
 }
 
+// Task TODO
 type Task struct {
 	BkBizID   string `json:"bk_biz_id"`
 	BkCloudID string `json:"bk_cloud_id"`
@@ -379,6 +390,7 @@ type Task struct {
 	ID        int64         `json:"id"`
 }
 
+// Host TODO
 type Host struct {
 	BkBizID   int64  `json:"bk_biz_id,string"`
 	BkCloudID int64  `json:"bk_cloud_id,string"`
@@ -420,6 +432,7 @@ type SearchPluginHostResult struct {
 	Data []PluginHost `json:"data"`
 }
 
+// PluginHost TODO
 type PluginHost struct {
 	Status   string `json:"status"` // UNREGISTER RUNNING TERMINATED
 	Host     Host   `json:"host"`

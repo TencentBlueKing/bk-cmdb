@@ -68,10 +68,10 @@ var AllModule = map[string]bool{
 	CC_MODULE_EVENTSERVER:    true,
 	CC_MODULE_CORESERVICE:    true,
 	// CC_MODULE_SYNCHRONZESERVER: true,
-	CC_MODULE_OPERATION: true,
-	CC_MODULE_TASK:      true,
-	CC_MODULE_CLOUD:     true,
-	CC_MODULE_AUTH:      true,
+	CC_MODULE_OPERATION:    true,
+	CC_MODULE_TASK:         true,
+	CC_MODULE_CLOUD:        true,
+	CC_MODULE_AUTH:         true,
 	CC_MODULE_CACHESERVICE: true,
 }
 
@@ -83,10 +83,14 @@ const (
 )
 
 const (
-	CCConfigureRedis  = "redis"
-	CCConfigureMongo  = "mongodb"
+	// CCConfigureRedis TODO
+	CCConfigureRedis = "redis"
+	// CCConfigureMongo TODO
+	CCConfigureMongo = "mongodb"
+	// CCConfigureCommon TODO
 	CCConfigureCommon = "common"
-	CCConfigureExtra  = "extra"
+	// CCConfigureExtra TODO
+	CCConfigureExtra = "extra"
 )
 
 // ServerInfo define base server information
@@ -203,6 +207,7 @@ type EventServInfo struct {
 	ServerInfo
 }
 
+// RegisterAddress TODO
 // Address convert struct to host address
 func (s *ServerInfo) RegisterAddress() string {
 	if s == nil {
@@ -211,6 +216,7 @@ func (s *ServerInfo) RegisterAddress() string {
 	return fmt.Sprintf("%s://%s:%d", s.Scheme, s.RegisterIP, s.Port)
 }
 
+// Instance TODO
 func (s *ServerInfo) Instance() string {
 	if s == nil {
 		return ""

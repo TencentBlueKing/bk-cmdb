@@ -28,9 +28,11 @@ import (
 	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 )
 
+// HostMapStr TODO
 // host map with string type ip and operator, can only get host from db with this map
 type HostMapStr map[string]interface{}
 
+// UnmarshalBSON TODO
 func (h *HostMapStr) UnmarshalBSON(b []byte) error {
 	if h == nil {
 		return bsonx.ErrNilDocument
@@ -134,9 +136,11 @@ func parseBsonStringArrayValueToString(value bsoncore.Value) ([]byte, error) {
 	}
 }
 
+// StringArrayToString TODO
 // special field whose string array value is parsed into string value from db
 type StringArrayToString string
 
+// UnmarshalBSONValue TODO
 func (s *StringArrayToString) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {
 	if s == nil {
 		return bsonx.ErrNilDocument
@@ -158,6 +162,7 @@ func (s *StringArrayToString) UnmarshalBSONValue(typo bsontype.Type, raw []byte)
 var HostSpecialFields = []string{common.BKHostInnerIPField, common.BKHostOuterIPField, common.BKOperatorField,
 	common.BKBakOperatorField, common.BKHostInnerIPv6Field, common.BKHostOuterIPv6Field}
 
+// ConvertHostSpecialStringToArray TODO
 // convert host ip and operator fields value from string to array
 // NOTICE: if host special value is empty, convert it to null to trespass the unique check, **do not change this logic**
 func ConvertHostSpecialStringToArray(host map[string]interface{}) map[string]interface{} {

@@ -1,3 +1,4 @@
+// Package synchronizeserver TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -19,10 +20,12 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SynchronizeClientInterface TODO
 type SynchronizeClientInterface interface {
 	Find(ctx context.Context, h http.Header, input *metadata.SynchronizeFindInfoParameter) (resp *metadata.ResponseInstData, err error)
 }
 
+// NewSychronizeClientInterface TODO
 func NewSychronizeClientInterface(client rest.ClientInterface) SynchronizeClientInterface {
 	return &synchronize{
 		client: client,

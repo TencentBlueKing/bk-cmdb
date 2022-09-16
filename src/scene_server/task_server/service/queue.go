@@ -35,6 +35,7 @@ var (
 	dbMaxRetry = 20
 )
 
+// TaskInfo TODO
 type TaskInfo struct {
 	Name    string
 	Addr    func() ([]string, error)
@@ -43,6 +44,7 @@ type TaskInfo struct {
 	LockTTL int64
 }
 
+// TaskQueue TODO
 type TaskQueue struct {
 	task  []TaskInfo
 	close bool
@@ -50,6 +52,7 @@ type TaskQueue struct {
 	service *Service
 }
 
+// NewQueue TODO
 func (s *Service) NewQueue(taskMap map[string]TaskInfo) *TaskQueue {
 	var taskArr []TaskInfo
 	codeTaskInfoMap := s.initCodeTaskConfig()
@@ -71,12 +74,14 @@ func (s *Service) NewQueue(taskMap map[string]TaskInfo) *TaskQueue {
 	}
 }
 
+// Stop TODO
 func (tq *TaskQueue) Stop() {
 	tq.close = true
 	tq.Wait()
 	return
 }
 
+// Start TODO
 func (tq *TaskQueue) Start() {
 	go tq.compensate(context.Background())
 

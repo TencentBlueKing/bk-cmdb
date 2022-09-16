@@ -16,7 +16,7 @@
 #include "net/kcp/gseKcpServer.h"
 #include "receiver.h"
 namespace gse { 
-namespace dataserver {
+namespace data {
 
 class KcpReceiver : public Receiver, public GseKcpServer
 {

@@ -644,7 +644,7 @@ func (s *Service) FindBizSetTopo(ctx *rest.Contexts) {
 	ctx.RespEntity(topo)
 }
 
-// getBizSetIDList 获取有权限的biz set ids
+// getAuthBizSetIDList 获取有权限的biz set ids
 func (s *Service) getAuthBizSetIDList(kit *rest.Kit, action meta.Action) (bool, []int64, error) {
 
 	// 最终有权限的biz set list

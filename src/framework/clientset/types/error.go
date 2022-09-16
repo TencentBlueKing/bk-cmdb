@@ -17,20 +17,21 @@ import "fmt"
 const (
 	// skip 0.
 	_ = iota
+	// HttpRequestFailed TODO
 	// start error code from 100000001
 	HttpRequestFailed = 100000000 + iota
 )
 
-
+// ErrorDetail TODO
 type ErrorDetail struct {
-    _ struct{}
+	_ struct{}
 	// error code.
 	Code int
 	// error message details.
 	Message string
 }
 
+// Error 用于错误处理
 func (e *ErrorDetail) Error() string {
 	return fmt.Sprintf("error code: %d, error message: %s", e.Code, e.Message)
 }
-

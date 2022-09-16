@@ -1,3 +1,4 @@
+// Package metadata TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
  * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -25,6 +26,7 @@ import (
 )
 
 const (
+	// TopoNodeKeyword TODO
 	TopoNodeKeyword = "keyword"
 )
 
@@ -48,6 +50,7 @@ type HostApplyRule struct {
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
 }
 
+// Validate TODO
 func (h *HostApplyRule) Validate() (string, error) {
 	return "", nil
 }
@@ -60,15 +63,18 @@ type CreateHostApplyRuleOption struct {
 	PropertyValue     interface{} `json:"bk_property_value"`
 }
 
+// UpdateHostApplyRuleOption TODO
 type UpdateHostApplyRuleOption struct {
 	PropertyValue interface{} `field:"bk_property_value" json:"bk_property_value" bson:"bk_property_value" mapstructure:"bk_property_value"`
 }
 
+// MultipleHostApplyRuleResult TODO
 type MultipleHostApplyRuleResult struct {
 	Count int64           `json:"count" mapstructure:"count"`
 	Info  []HostApplyRule `json:"info" mapstructure:"info"`
 }
 
+// ListHostApplyRuleOption TODO
 type ListHostApplyRuleOption struct {
 	ApplicationID      int64    `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	ModuleIDs          []int64  `json:"bk_module_ids" bson:"bk_module_ids"`
@@ -77,6 +83,7 @@ type ListHostApplyRuleOption struct {
 	Page               BasePage `json:"page" bson:"page"`
 }
 
+// ListHostRelatedApplyRuleOption TODO
 type ListHostRelatedApplyRuleOption struct {
 	HostIDs []int64  `field:"bk_host_ids" json:"bk_host_ids" bson:"bk_host_ids" mapstructure:"bk_host_ids"`
 	Page    BasePage `json:"page" mapstructure:"page"`
@@ -158,10 +165,12 @@ func (option *DeleteHostApplyRuleOption) ValidateModuleOption() (rawError errors
 	return errors.RawErrorInfo{}
 }
 
+// BatchCreateOrUpdateApplyRuleOption TODO
 type BatchCreateOrUpdateApplyRuleOption struct {
 	Rules []CreateOrUpdateApplyRuleOption `field:"host_apply_rules" json:"host_apply_rules" bson:"host_apply_rules" mapstructure:"host_apply_rules"`
 }
 
+// UpdateHostByHostApplyRuleOption TODO
 type UpdateHostByHostApplyRuleOption struct {
 	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids" bson:"bk_host_ids" mapstructure:"bk_host_ids"`
 }
@@ -174,10 +183,12 @@ type CreateOrUpdateApplyRuleOption struct {
 	PropertyValue     interface{} `json:"bk_property_value" bson:"bk_property_value"`
 }
 
+// BatchCreateOrUpdateHostApplyRuleResult TODO
 type BatchCreateOrUpdateHostApplyRuleResult struct {
 	Items []CreateOrUpdateHostApplyRuleResult `json:"items" mapstructure:"items"`
 }
 
+// CreateOrUpdateHostApplyRuleResult TODO
 type CreateOrUpdateHostApplyRuleResult struct {
 	ErrorContainer `json:",inline"`
 	Index          int           `json:"index" mapstructure:"index"`
@@ -201,12 +212,14 @@ type HostApplyTransRules struct {
 	Changed    bool            `json:"changed"`
 	FinalRules []HostAttribute `json:"final_rules"`
 }
+
+// Host2Modules TODO
 type Host2Modules struct {
 	HostID    int64   `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id" mapstructure:"bk_host_id"`
 	ModuleIDs []int64 `field:"bk_module_ids" json:"bk_module_ids" bson:"bk_module_ids" mapstructure:"bk_module_ids"`
 }
 
-// 主机属性自动应用执行计划生成逻辑核心数据结构
+// HostApplyPlanOption 主机属性自动应用执行计划生成逻辑核心数据结构
 // 设计背景：该数据结构需要支持如下三种场景
 // 1. 应用模块配置到主机属性
 // 2. 编辑模块配置(可能未保存), 预览应用效果(查看是否有冲突)
@@ -221,6 +234,7 @@ type HostApplyPlanOption struct {
 	ConflictResolvers []HostApplyConflictResolver `field:"conflict_resolvers" json:"conflict_resolvers" bson:"conflict_resolvers" mapstructure:"conflict_resolvers"`
 }
 
+// HostApplyConflictField TODO
 type HostApplyConflictField struct {
 	AttributeID   int64       `field:"bk_attribute_id" json:"bk_attribute_id" bson:"bk_attribute_id" mapstructure:"bk_attribute_id"`
 	PropertyID    string      `field:"bk_property_id" json:"bk_property_id" mapstructure:"bk_property_id"`
@@ -232,12 +246,14 @@ type HostApplyConflictField struct {
 	UnresolvedConflictExist bool `field:"unresolved_conflict_exist" json:"unresolved_conflict_exist" mapstructure:"unresolved_conflict_exist"`
 }
 
+// HostApplyUpdateField TODO
 type HostApplyUpdateField struct {
 	AttributeID   int64       `field:"bk_attribute_id" json:"bk_attribute_id" bson:"bk_attribute_id" mapstructure:"bk_attribute_id"`
 	PropertyID    string      `field:"bk_property_id" json:"bk_property_id" mapstructure:"bk_property_id"`
 	PropertyValue interface{} `field:"bk_property_value" json:"bk_property_value" mapstructure:"bk_property_value"`
 }
 
+// OneHostApplyPlan TODO
 type OneHostApplyPlan struct {
 	ErrorContainer `json:",inline"`
 	HostID         int64     `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id" mapstructure:"bk_host_id"`
@@ -251,6 +267,7 @@ type OneHostApplyPlan struct {
 	UnresolvedConflictCount int64 `field:"unresolved_conflict_count" json:"unresolved_conflict_count" mapstructure:"unresolved_conflict_count"`
 }
 
+// GetUpdateData TODO
 func (plan OneHostApplyPlan) GetUpdateData() map[string]interface{} {
 	updateData := map[string]interface{}{}
 	for _, field := range plan.UpdateFields {
@@ -259,6 +276,7 @@ func (plan OneHostApplyPlan) GetUpdateData() map[string]interface{} {
 	return updateData
 }
 
+// GetUpdateDataStr TODO
 func (plan OneHostApplyPlan) GetUpdateDataStr() string {
 	fields := make([]string, len(plan.UpdateFields))
 
@@ -271,6 +289,7 @@ func (plan OneHostApplyPlan) GetUpdateDataStr() string {
 	return "{" + strings.Join(fields, ",") + "}"
 }
 
+// HostApplyPlanResult TODO
 type HostApplyPlanResult struct {
 	Plans []OneHostApplyPlan `field:"plans" json:"plans" bson:"plans" mapstructure:"plans"`
 	// 未解决的冲突主机数
@@ -336,7 +355,7 @@ type HostApplyTaskResult struct {
 	TaskID string `json:"task_id"`
 }
 
-// HostApplyModuleOption request parameters automatically applied by the host in the module scenario.
+// HostApplyModulesOption request parameters automatically applied by the host in the module scenario.
 type HostApplyModulesOption struct {
 	HostApplyPlanBase `json:",inline"`
 	// ModuleIDs Module list
@@ -401,6 +420,8 @@ type HostApplyRsp struct {
 	BizId  int    `json:"bk_biz_id"`
 	TaskId string `json:"task_id"`
 }
+
+// HostApplyPlanRequest TODO
 type HostApplyPlanRequest struct {
 	ApplicationID      int64                       `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	RemoveRuleIDs      []int64                     `field:"remove_rule_ids" json:"remove_rule_ids" bson:"remove_rule_ids" mapstructure:"remove_rule_ids"`
@@ -413,21 +434,25 @@ type HostApplyPlanRequest struct {
 	HostIDs []int64 `field:"bk_host_ids" json:"bk_host_ids" bson:"bk_host_ids" mapstructure:"bk_host_ids"`
 }
 
+// HostApplyResult TODO
 type HostApplyResult struct {
 	ErrorContainer `json:",inline"`
 	HostID         int64 `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id" mapstructure:"bk_host_id"`
 }
 
+// MultipleHostApplyResult TODO
 type MultipleHostApplyResult struct {
 	ErrorContainer `json:",inline"`
 	HostResults    []HostApplyResult `field:"host_results" json:"host_results" bson:"host_results" mapstructure:"host_results"`
 }
 
+// ErrorContainer TODO
 type ErrorContainer struct {
 	ErrCode int    `json:"error_code" json:"error_code" bson:"error_code" mapstructure:"error_code"`
 	ErrMsg  string `json:"error_message" json:"error_message" bson:"error_message" mapstructure:"error_message"`
 }
 
+// SetError TODO
 func (container *ErrorContainer) SetError(err errors.CCErrorCoder) {
 	if err == nil {
 		return
@@ -436,6 +461,7 @@ func (container *ErrorContainer) SetError(err errors.CCErrorCoder) {
 	container.ErrMsg = err.Error()
 }
 
+// GetError TODO
 func (container *ErrorContainer) GetError() errors.CCErrorCoder {
 	if container.ErrCode == 0 {
 		return nil
@@ -443,6 +469,7 @@ func (container *ErrorContainer) GetError() errors.CCErrorCoder {
 	return errors.New(container.ErrCode, container.ErrMsg)
 }
 
+// SearchRuleRelatedModulesOption TODO
 type SearchRuleRelatedModulesOption struct {
 	QueryFilter *querybuilder.QueryFilter `json:"query_filter" field:"query_filter" mapstructure:"query_filter"`
 }
@@ -450,7 +477,7 @@ type SearchRuleRelatedModulesOption struct {
 // UpdateHostApplyEnableStatusOption update host auto-applied status request.
 type UpdateHostApplyEnableStatusOption struct {
 
-	//IDs the module scene represents the list of module IDs. In the template scene,this ID is the list of template IDs.
+	// IDs the module scene represents the list of module IDs. In the template scene,this ID is the list of template IDs.
 	IDs        []int64 `json:"ids" mapstructure:"ids"`
 	Enable     bool    `json:"enabled" mapstructure:"enabled"`
 	ClearRules bool    `json:"clear_rules" mapstructure:"clear_rules"`
@@ -488,7 +515,7 @@ type HostApplyStatusResult struct {
 	HostApplyEnabled bool  `json:"host_apply_enabled"`
 }
 
-// RuleRelatedServiceTemplate rule related service template option
+// RuleRelatedServiceTemplateOption rule related service template option
 type RuleRelatedServiceTemplateOption struct {
 	ApplicationID int64                     `json:"bk_biz_id"`
 	QueryFilter   *querybuilder.QueryFilter `json:"query_filter"`

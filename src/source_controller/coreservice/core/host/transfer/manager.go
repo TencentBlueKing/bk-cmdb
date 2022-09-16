@@ -25,11 +25,13 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// TransferManager TODO
 type TransferManager struct {
 	dependence          OperationDependence
 	hostApplyDependence HostApplyRuleDependence
 }
 
+// OperationDependence TODO
 type OperationDependence interface {
 	AutoCreateServiceInstanceModuleHost(kit *rest.Kit, hostIDs []int64, moduleIDs []int64) errors.CCErrorCoder
 	SelectObjectAttWithParams(kit *rest.Kit, objID string, bizIDs []int64) (attribute []metadata.Attribute, err error)
@@ -37,11 +39,13 @@ type OperationDependence interface {
 	CreateAuditLogDependence(kit *rest.Kit, logs ...metadata.AuditLog) error
 }
 
+// HostApplyRuleDependence TODO
 type HostApplyRuleDependence interface {
 	RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relations []metadata.ModuleHost) (metadata.MultipleHostApplyResult,
 		errors.CCErrorCoder)
 }
 
+// New TODO
 func New(dependence OperationDependence, hostApplyDependence HostApplyRuleDependence) *TransferManager {
 	return &TransferManager{
 		dependence:          dependence,
@@ -376,6 +380,7 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 	}, nil
 }
 
+// DeleteFromSystem TODO
 // DeleteHost delete host module relation and host info
 func (manager *TransferManager) DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) error {
 	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, nil, false, false)
@@ -442,6 +447,7 @@ func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, 
 	return hostIDArr, nil
 }
 
+// TransferResourceDirectory TODO
 func (manager *TransferManager) TransferResourceDirectory(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
 	// validate input bk_module_id
 	existHostIDs, err := manager.validTransferResourceDirParams(kit, input)

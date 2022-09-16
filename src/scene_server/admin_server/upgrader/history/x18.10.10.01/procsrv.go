@@ -1,3 +1,4 @@
+// Package x18_10_10_01 TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -19,6 +20,7 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"gopkg.in/mgo.v2"
 )
 
@@ -34,7 +36,8 @@ func addProcOpTaskTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 		}
 	}
 	indexs := []types.Index{
-		types.Index{Name: "idx_taskID_gseTaskID", Keys: map[string]int32{common.BKTaskIDField: 1, common.BKGseOpTaskIDField: 1}, Background: true},
+		types.Index{Name: "idx_taskID_gseTaskID", Keys: bson.D{{common.BKTaskIDField, 1},
+			{common.BKGseOpTaskIDField, 1}}, Background: true},
 	}
 	for _, index := range indexs {
 
@@ -57,9 +60,13 @@ func addProcInstanceModelTable(ctx context.Context, db dal.RDB, conf *upgrader.C
 		}
 	}
 	indexs := []types.Index{
-		types.Index{Name: "idx_bkBizID_bkSetID_bkModuleID_bkHostInstanceID", Keys: map[string]int32{common.BKAppIDField: 1, common.BKSetIDField: 1, common.BKModuleIDField: 1, "bk_host_instance_id": 1}, Background: true},
-		types.Index{Name: "idx_bkBizID_bkHostID", Keys: map[string]int32{common.BKAppIDField: 1, common.BKHostIDField: 1}, Background: true},
-		types.Index{Name: "idx_bkBizID_bkProcessID", Keys: map[string]int32{common.BKAppIDField: 1, common.BKProcessIDField: 1}, Background: true},
+		types.Index{Name: "idx_bkBizID_bkSetID_bkModuleID_bkHostInstanceID", Keys: bson.D{
+			{common.BKAppIDField, 1}, {common.BKSetIDField, 1}, {common.BKModuleIDField, 1},
+			{"bk_host_instance_id", 1}}, Background: true},
+		types.Index{Name: "idx_bkBizID_bkHostID", Keys: bson.D{{common.BKAppIDField, 1},
+			{common.BKHostIDField, 1}}, Background: true},
+		types.Index{Name: "idx_bkBizID_bkProcessID", Keys: bson.D{{common.BKAppIDField, 1},
+			{common.BKProcessIDField, 1}}, Background: true},
 	}
 	for _, index := range indexs {
 		if err = db.Table(tableName).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
@@ -80,9 +87,12 @@ func addProcInstanceDetailTable(ctx context.Context, db dal.RDB, conf *upgrader.
 		}
 	}
 	indexs := []types.Index{
-		types.Index{Name: "idx_bkBizID_bkModuleID_bkProcessID", Keys: map[string]int32{common.BKAppIDField: 1, common.BKModuleIDField: 1, common.BKProcessIDField: 1}, Background: true},
-		types.Index{Name: "idx_bkBizID_status", Keys: map[string]int32{common.BKAppIDField: 1, common.BKStatusField: 1}, Background: true},
-		types.Index{Name: "idx_bkBizID_bkHostID", Keys: map[string]int32{common.BKAppIDField: 1, common.BKHostIDField: 1}, Background: true},
+		types.Index{Name: "idx_bkBizID_bkModuleID_bkProcessID", Keys: bson.D{{common.BKAppIDField, 1},
+			{common.BKModuleIDField, 1}, {common.BKProcessIDField, 1}}, Background: true},
+		types.Index{Name: "idx_bkBizID_status", Keys: bson.D{{common.BKAppIDField, 1},
+			{common.BKStatusField, 1}}, Background: true},
+		types.Index{Name: "idx_bkBizID_bkHostID", Keys: bson.D{{common.BKAppIDField, 1},
+			{common.BKHostIDField, 1}}, Background: true},
 	}
 	for _, index := range indexs {
 		if err = db.Table(tableName).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {

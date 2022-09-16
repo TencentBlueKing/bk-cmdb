@@ -10,17 +10,21 @@
  * limitations under the License.
  */
 
+// Package plugins defines all login method related plugins
 package plugins
 
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
+
+	// register plugins
 	_ "configcenter/src/web_server/middleware/user/plugins/register"
 
 	"github.com/gin-gonic/gin"
 )
 
+// CurrentPlugin get current login plugin
 func CurrentPlugin(c *gin.Context, version string) metadata.LoginUserPluginInerface {
 	if "" == version {
 		version = common.BKBluekingLoginPluginVersion

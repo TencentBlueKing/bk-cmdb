@@ -16,6 +16,7 @@ import (
 	"time"
 )
 
+// NetcollectDevice TODO
 type NetcollectDevice struct {
 	DeviceID    uint64     `json:"device_id,omitempty" bson:"device_id,omitempty"`
 	DeviceName  string     `json:"device_name,omitempty" bson:"device_name,omitempty"`
@@ -28,6 +29,7 @@ type NetcollectDevice struct {
 	LastTime    *time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time,omitempty"`
 }
 
+// NetcollectProperty TODO
 type NetcollectProperty struct {
 	NetcollectPropertyID uint64     `json:"netcollect_property_id,omitempty" bson:"netcollect_property_id,omitempty"`
 	PropertyID           string     `json:"bk_property_id" bson:"bk_property_id,omitempty"`
@@ -46,15 +48,19 @@ type NetcollectProperty struct {
 	DeviceModel          string     `json:"device_model,omitempty" bson:"-"`
 }
 
+// ParamNetcollectorSearch TODO
 type ParamNetcollectorSearch struct {
 	Query string   `json:"query"`
 	Page  BasePage `json:"page"`
 }
+
+// RspNetcollectorSearch TODO
 type RspNetcollectorSearch struct {
 	Count int64          `json:"count"`
 	Info  []Netcollector `json:"info"`
 }
 
+// Netcollector TODO
 type Netcollector struct {
 	CloudID       int64              `json:"bk_cloud_id" bson:"bk_cloud_id"`
 	CloudName     string             `json:"bk_cloud_name" bson:"-"`
@@ -69,10 +75,12 @@ type Netcollector struct {
 	Config        NetcollectConfig   `json:"config" bson:"config"`
 }
 
+// ParamNetcollectDiscover TODO
 type ParamNetcollectDiscover struct {
 	Collectors []Netcollector `json:"collectors"`
 }
 
+// NetcollectorStatus TODO
 type NetcollectorStatus struct {
 	CollectorStatus string `json:"collector_status" bson:"collector_status"`
 	ConfigStatus    string `json:"config_status" bson:"config_status"`
@@ -92,12 +100,14 @@ const (
 	CollectorReportStatusAbnormal = "abnormal"
 )
 
+// NetcollectConfig TODO
 type NetcollectConfig struct {
 	ScanRange []string `json:"scan_range" bson:"scan_range"`
 	Period    string   `json:"period" bson:"period"`
 	Community string   `json:"community" bson:"community"`
 }
 
+// ParamSearchNetcollectReport TODO
 type ParamSearchNetcollectReport struct {
 	Action    string   `json:"action"`
 	ObjectID  string   `json:"bk_object_id"`
@@ -109,6 +119,7 @@ type ParamSearchNetcollectReport struct {
 	Page      BasePage `json:"page"`
 }
 
+// NetcollectReportSummary TODO
 type NetcollectReportSummary struct {
 	CloudID    int64          `json:"bk_cloud_id"`
 	CloudName  string         `json:"bk_cloud_name"`
@@ -116,19 +127,24 @@ type NetcollectReportSummary struct {
 	Statistics map[string]int `json:"operation"`
 }
 
+// RspNetcollectReport TODO
 type RspNetcollectReport struct {
 	Count uint64             `json:"count"`
 	Info  []NetcollectReport `json:"info"`
 }
+
+// RspNetcollectHistory TODO
 type RspNetcollectHistory struct {
 	Count uint64              `json:"count"`
 	Info  []NetcollectHistory `json:"info"`
 }
 
+// ParamNetcollectComfirm TODO
 type ParamNetcollectComfirm struct {
 	Reports []NetcollectReport `json:"reports"`
 }
 
+// NetcollectReport TODO
 type NetcollectReport struct {
 	Action        string `json:"action" bson:"action"`
 	CloudID       int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
@@ -146,11 +162,13 @@ type NetcollectReport struct {
 	Associations []NetcollectReportAssociation `json:"associations" bson:"associations"`
 }
 
+// NetcollectHistory TODO
 type NetcollectHistory struct {
 	NetcollectReport `json:",inline" bson:",inline"`
 	Success          bool `json:"success" bson:"success"`
 }
 
+// NetcollectReportAttribute TODO
 type NetcollectReportAttribute struct {
 	PropertyID   string      `json:"bk_property_id" bson:"bk_property_id"`
 	PropertyName string      `json:"bk_property_name" bson:"-"`
@@ -163,6 +181,7 @@ type NetcollectReportAttribute struct {
 	Error   string `json:"error,omitempty" bson:"-"`
 }
 
+// NetcollectReportAssociation TODO
 type NetcollectReportAssociation struct {
 	Action       string `json:"action" bson:"-"`
 	AsstInstName string `json:"bk_asst_inst_name" bson:"bk_asst_inst_name"`
@@ -174,12 +193,14 @@ type NetcollectReportAssociation struct {
 	Configuration string `json:"configuration" bson:"configuration"`
 }
 
+// NetcollectReportAsstCond TODO
 type NetcollectReportAsstCond struct {
 	PropertyID   string      `json:"bk_property_id" bson:"bk_property_id"`
 	PropertyName string      `json:"bk_property_name" bson:"bk_property_name"`
 	Value        interface{} `json:"value" bson:"value"`
 }
 
+// RspNetcollectConfirm TODO
 type RspNetcollectConfirm struct {
 	ChangeAttributeSuccess    int      `json:"change_attribute_success"`
 	ChangeAttributeFailure    int      `json:"change_attribute_failure"`
@@ -189,11 +210,16 @@ type RspNetcollectConfirm struct {
 }
 
 const (
+	// ReporctActionCreate TODO
 	ReporctActionCreate = "create"
+	// ReporctActionUpdate TODO
 	ReporctActionUpdate = "update"
+	// ReporctActionDelete TODO
 	ReporctActionDelete = "delete"
 )
 const (
+	// ReporctMethodAccept TODO
 	ReporctMethodAccept = "accept"
+	// ReporctMethodIgnore TODO
 	ReporctMethodIgnore = "ignore"
 )

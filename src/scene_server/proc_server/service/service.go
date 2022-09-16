@@ -1,3 +1,4 @@
+// Package service TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -34,6 +35,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// ProcServer TODO
 type ProcServer struct {
 	*backbone.Engine
 	Config             *options.Config
@@ -43,6 +45,7 @@ type ProcServer struct {
 	Logic              *logics.Logic
 }
 
+// WebService TODO
 func (ps *ProcServer) WebService() *restful.Container {
 	getErrFunc := func() errors.CCErrorIf {
 		return ps.Engine.CCErr
@@ -242,6 +245,7 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+// Healthz TODO
 func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 	meta := metric.HealthMeta{IsHealthy: true}
 
@@ -287,6 +291,7 @@ func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 	_ = resp.WriteEntity(answer)
 }
 
+// OnProcessConfigUpdate TODO
 func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig) {
 	ps.Config = &options.Config{}
 

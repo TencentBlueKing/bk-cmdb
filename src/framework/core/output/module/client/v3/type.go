@@ -39,6 +39,7 @@ const (
 )
 
 const (
+	// HostInfoField TODO
 	HostInfoField = "host_info"
 )
 

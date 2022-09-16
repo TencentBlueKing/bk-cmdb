@@ -22,11 +22,12 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-//add unit to bk_property_name.
+// addCpuMemDiskUnit TODO
+// add unit to bk_property_name.
 func addCpuMemDiskUnit(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	var err error
 
-	//cpu
+	// cpu
 	filter := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDHost,
 		common.BKPropertyIDField: "bk_cpu_mhz",
@@ -39,7 +40,7 @@ func addCpuMemDiskUnit(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 		return fmt.Errorf("addCpuMemDiskUnit(bk_cpu_mhz) failed, err: %v", err)
 	}
 
-	//mem
+	// mem
 	filter[common.BKPropertyIDField] = "bk_mem"
 	doc[common.BKPropertyNameField] = "内存容量(MB)"
 	if err = db.Table(common.BKTableNameObjAttDes).Update(ctx, filter, doc); err != nil {
@@ -47,7 +48,7 @@ func addCpuMemDiskUnit(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 		return fmt.Errorf("addCpuMemDiskUnit(bk_mem) failed, err: %v", err)
 	}
 
-	//disk
+	// disk
 	filter[common.BKPropertyIDField] = "bk_disk"
 	doc[common.BKPropertyNameField] = "磁盘容量(GB)"
 	if err = db.Table(common.BKTableNameObjAttDes).Update(ctx, filter, doc); err != nil {

@@ -36,6 +36,7 @@ type BusinessInterface interface {
 	SearchBusiness(cond common.Condition) ([]types.MapStr, error)
 	// CreateBusiness create host
 	CreateBusiness(data types.MapStr) (int, error)
+	// UpdateBusiness TODO
 	// update update host by bizID, bizID could be separated by a comma
 	UpdateBusiness(data types.MapStr, bizID int) error
 	// DeleteBusiness delete host by bizID, bizID could be separated by a comma
@@ -128,7 +129,7 @@ func (h *Business) SearchBusiness(cond common.Condition) ([]types.MapStr, error)
 	}
 
 	out := param.ToJSON()
-	//log.Infof("search business param %s", out)
+	// log.Infof("search business param %s", out)
 
 	targetURL := fmt.Sprintf("%s/api/v3/biz/search/%s", h.cli.GetAddress(), h.cli.GetSupplierAccount())
 	rst, err := h.cli.httpCli.POST(targetURL, nil, out)

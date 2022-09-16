@@ -1,3 +1,4 @@
+// Package user TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -21,6 +22,7 @@ import (
 	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
+// UserClientInterface TODO
 type UserClientInterface interface {
 	GetAllUsers(ctx context.Context, h http.Header) (resp *metadata.EsbUserListResponse, err error)
 	ListUsers(ctx context.Context, h http.Header, params map[string]string) (resp *metadata.EsbListUserResponse, err error)
@@ -29,6 +31,7 @@ type UserClientInterface interface {
 	GetDepartmentProfile(ctx context.Context, q *http.Request) (resp *metadata.EsbDepartmentProfileResponse, err error)
 }
 
+// NewUserClientInterface TODO
 func NewUserClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigSrv) UserClientInterface {
 	return &user{
 		client: client,

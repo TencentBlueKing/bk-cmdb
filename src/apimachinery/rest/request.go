@@ -51,17 +51,24 @@ func init() {
 	})
 }
 
+// VerbType TODO
 // http request verb type
 type VerbType string
 
 const (
-	PUT    VerbType = http.MethodPut
-	POST   VerbType = http.MethodPost
-	GET    VerbType = http.MethodGet
+	// PUT TODO
+	PUT VerbType = http.MethodPut
+	// POST TODO
+	POST VerbType = http.MethodPost
+	// GET TODO
+	GET VerbType = http.MethodGet
+	// DELETE TODO
 	DELETE VerbType = http.MethodDelete
-	PATCH  VerbType = http.MethodPatch
+	// PATCH TODO
+	PATCH VerbType = http.MethodPatch
 )
 
+// Request TODO
 type Request struct {
 	parent *RESTClient
 
@@ -90,6 +97,7 @@ type Request struct {
 	err  error
 }
 
+// WithMetricDimension TODO
 // add this request a addition dimension value, which helps us to separate
 // request metrics with a dimension label.
 func (r *Request) WithMetricDimension(value string) *Request {
@@ -97,6 +105,7 @@ func (r *Request) WithMetricDimension(value string) *Request {
 	return r
 }
 
+// WithParams TODO
 func (r *Request) WithParams(params map[string]string) *Request {
 	if r.params == nil {
 		r.params = make(url.Values)
@@ -107,6 +116,7 @@ func (r *Request) WithParams(params map[string]string) *Request {
 	return r
 }
 
+// WithParamsFromURL TODO
 func (r *Request) WithParamsFromURL(u *url.URL) *Request {
 	if r.params == nil {
 		r.params = make(url.Values)
@@ -118,6 +128,7 @@ func (r *Request) WithParamsFromURL(u *url.URL) *Request {
 	return r
 }
 
+// WithParam TODO
 func (r *Request) WithParam(paramName, value string) *Request {
 	if r.params == nil {
 		r.params = make(url.Values)
@@ -126,6 +137,7 @@ func (r *Request) WithParam(paramName, value string) *Request {
 	return r
 }
 
+// WithHeaders TODO
 func (r *Request) WithHeaders(header http.Header) *Request {
 	if r.headers == nil {
 		r.headers = header
@@ -140,21 +152,25 @@ func (r *Request) WithHeaders(header http.Header) *Request {
 	return r
 }
 
+// Peek TODO
 func (r *Request) Peek() *Request {
 	r.peek = true
 	return r
 }
 
+// WithContext TODO
 func (r *Request) WithContext(ctx context.Context) *Request {
 	r.ctx = ctx
 	return r
 }
 
+// WithTimeout TODO
 func (r *Request) WithTimeout(d time.Duration) *Request {
 	r.timeout = d
 	return r
 }
 
+// SubResourcef TODO
 func (r *Request) SubResourcef(subPath string, args ...interface{}) *Request {
 	r.subPathArgs = args
 	return r.subResource(subPath)
@@ -166,6 +182,7 @@ func (r *Request) subResource(subPath string) *Request {
 	return r
 }
 
+// Body TODO
 func (r *Request) Body(body interface{}) *Request {
 	if nil == body {
 		r.body = []byte("")
@@ -207,6 +224,7 @@ func (r *Request) Body(body interface{}) *Request {
 	return r
 }
 
+// WrapURL TODO
 func (r *Request) WrapURL() *url.URL {
 	finalUrl := &url.URL{}
 	if len(r.baseURL) != 0 {
@@ -256,6 +274,7 @@ func (r *Request) checkToleranceLatency(start *time.Time, url string, rid string
 		r.headers.Get(common.BKHTTPHeaderUser), r.verb, url, r.body, rid)
 }
 
+// Do TODO
 func (r *Request) Do() *Result {
 	result := new(Result)
 
@@ -401,6 +420,7 @@ func (r *Request) tryThrottle(url string) {
 	}
 }
 
+// Result TODO
 type Result struct {
 	Rid        string
 	Body       []byte
@@ -410,6 +430,7 @@ type Result struct {
 	Header     http.Header
 }
 
+// Into TODO
 func (r *Result) Into(obj interface{}) error {
 	if nil != r.Err {
 		return r.Err
@@ -430,6 +451,7 @@ func (r *Result) Into(obj interface{}) error {
 	return nil
 }
 
+// IntoJsonString TODO
 func (r *Result) IntoJsonString() (*metadata.JsonStringResp, error) {
 	if nil != r.Err {
 		return nil, r.Err
@@ -485,6 +507,7 @@ func (r *Result) IntoJsonString() (*metadata.JsonStringResp, error) {
 	return resp, nil
 }
 
+// IntoJsonCntInfoString TODO
 func (r *Result) IntoJsonCntInfoString() (*metadata.JsonCntInfoResp, error) {
 	if nil != r.Err {
 		return nil, r.Err
@@ -616,6 +639,7 @@ func (r *Request) handleMockResult() *Result {
 	panic("got empty mock response")
 }
 
+// isConnectionReset TODO
 // Returns if the given err is "connection reset by peer" error.
 func isConnectionReset(err error) bool {
 	if urlErr, ok := err.(*url.Error); ok {

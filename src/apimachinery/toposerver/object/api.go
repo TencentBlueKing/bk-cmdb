@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// ObjectInterface TODO
 type ObjectInterface interface {
 	CreateModel(ctx context.Context, h http.Header, model *metadata.MainLineObject) (resp *metadata.Response, err error)
 	DeleteModel(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error)
@@ -80,6 +81,7 @@ type ObjectInterface interface {
 		err error)
 }
 
+// NewObjectInterface TODO
 func NewObjectInterface(client rest.ClientInterface) ObjectInterface {
 	return &object{
 		client: client,

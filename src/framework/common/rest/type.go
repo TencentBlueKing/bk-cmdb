@@ -20,17 +20,24 @@ import (
 	chttp "configcenter/src/framework/common/http"
 )
 
+// VerbType TODO
 // http request verb type
 type VerbType string
 
 const (
-	PUT    VerbType = http.MethodPut
-	POST   VerbType = http.MethodPost
-	GET    VerbType = http.MethodGet
+	// PUT TODO
+	PUT VerbType = http.MethodPut
+	// POST TODO
+	POST VerbType = http.MethodPost
+	// GET TODO
+	GET VerbType = http.MethodGet
+	// DELETE TODO
 	DELETE VerbType = http.MethodDelete
-	PATCH  VerbType = http.MethodPatch
+	// PATCH TODO
+	PATCH VerbType = http.MethodPatch
 )
 
+// Capability TODO
 type Capability struct {
 	Client   chttp.HttpClient
 	Discover discovery.Interface
@@ -38,6 +45,7 @@ type Capability struct {
 	Mock     MockInfo
 }
 
+// MockInfo TODO
 type MockInfo struct {
 	Mocked      bool
 	SetMockData bool

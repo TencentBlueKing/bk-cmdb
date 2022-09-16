@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package app TODO
 package app
 
 import (
@@ -17,6 +18,7 @@ import (
 	"configcenter/src/tools/cmdb_ctl/cmd"
 )
 
+// Run TODO
 func Run() error {
 	config.Conf = new(config.Config)
 

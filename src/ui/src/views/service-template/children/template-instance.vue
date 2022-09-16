@@ -94,10 +94,12 @@
         <cmdb-table-empty slot="empty" :stuff="table.stuff">
           <div>
             <i18n path="空服务模板实例提示" tag="div">
-              <bk-button style="font-size: 14px;" text place="link"
-                @click="handleToCreatedInstance">
-                {{$t('创建服务实例')}}
-              </bk-button>
+              <template #link>
+                <bk-button style="font-size: 14px;" text
+                  @click="handleToCreatedInstance">
+                  {{$t('创建服务实例')}}
+                </bk-button>
+              </template>
             </i18n>
           </div>
         </cmdb-table-empty>

@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package metadata TODO
 package metadata
 
 import (
@@ -24,12 +25,14 @@ import (
 	"configcenter/src/common/util"
 )
 
+// ModelKind TODO
 type ModelKind string
 
 const (
 	// LabelTrue and LabelFalse is used to define if the label value is a bool value,
 	// which is true or false.
-	LabelTrue  string = "true"
+	LabelTrue string = "true"
+	// LabelFalse TODO
 	LabelFalse string = "false"
 
 	// LabelBusinessID is used to define a label key which value is the business number value.
@@ -37,15 +40,22 @@ const (
 
 	// LabelModelKind is used to define a label key which describe what kind of this object is.
 	// this label key is always used with the value of PublicModelKindValue or BusinessModelKindValue.
-	LabelModelKind         string    = "object_kind"
-	PublicModelKindValue   ModelKind = "public_object"
+	LabelModelKind string = "object_kind"
+	// PublicModelKindValue TODO
+	PublicModelKindValue ModelKind = "public_object"
+	// BusinessModelKindValue TODO
 	BusinessModelKindValue ModelKind = "business_object"
 )
 
 var (
+	// LabelKeyNotExistError TODO
 	LabelKeyNotExistError = errors.New("label key does not exist")
 )
+
+// MetadataBizField TODO
 var MetadataBizField = "metadata.label.bk_biz_id"
+
+// BizLabelNotExist TODO
 var BizLabelNotExist = mapstr.MapStr{"metadata.label.bk_biz_id": mapstr.MapStr{"$exists": false}}
 
 /*
@@ -60,6 +70,7 @@ func PublicAndBizCondition(meta Metadata) mapstr.MapStr {
 }
 */
 
+// BizIDFromMetadata TODO
 func BizIDFromMetadata(meta Metadata) (int64, error) {
 	var businessID int64
 	var err error
@@ -74,6 +85,7 @@ func BizIDFromMetadata(meta Metadata) (int64, error) {
 	return businessID, nil
 }
 
+// PublicAndBizCondition TODO
 func PublicAndBizCondition(meta Metadata) mapstr.MapStr {
 	var businessID int64
 	var err error
@@ -104,23 +116,29 @@ func NewPublicOrBizConditionByBizID(businessID int64) mapstr.MapStr {
 }
 
 const (
+	// BKMetadata TODO
 	BKMetadata string = "metadata"
-	BKLabel    string = "label"
+	// BKLabel TODO
+	BKLabel string = "label"
 )
 
 // Label define the Label type used to limit the scope of application of resources
 type Label map[string]string
 
+// NewMetaDataFromBusinessID TODO
 func NewMetaDataFromBusinessID(value string) Metadata {
 	label := make(Label)
 	label[LabelBusinessID] = value
 	meta := Metadata{Label: label}
 	return meta
 }
+
+// NewMetadata TODO
 func NewMetadata(bizID int64) Metadata {
 	return NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 }
 
+// GetBusinessIDFromMeta TODO
 func GetBusinessIDFromMeta(data interface{}) string {
 	if nil == data {
 		return ""
@@ -140,7 +158,7 @@ func GetBusinessIDFromMeta(data interface{}) string {
 	return bizID
 }
 
-// GetBizIDFromMetadata parse biz id from metadata, 0 for global case
+// ParseBizIDFromData parse biz id from metadata, 0 for global case
 // nil ==> 0, error
 // [] ==> 0, error
 // {}  ==> 0, nil
@@ -171,6 +189,7 @@ func ParseBizIDFromData(rawData mapstr.MapStr) (int64, error) {
 
 }
 
+// MetadataWrapper TODO
 type MetadataWrapper struct {
 	Metadata Metadata `json:"metadata"`
 }
@@ -180,6 +199,7 @@ type Metadata struct {
 	Label Label `field:"label" json:"label" bson:"label"`
 }
 
+// ParseBizID TODO
 func (md *Metadata) ParseBizID() (int64, error) {
 	if md == nil {
 		return 0, errors.New("invalid nil matadata")
@@ -191,19 +211,23 @@ func (md *Metadata) ParseBizID() (int64, error) {
 	return bizID, nil
 }
 
+// ToMapStr TODO
 func (md *Metadata) ToMapStr() mapstr.MapStr {
 	return mapstr.MapStr{"label": md.Label.ToMapStr()}
 }
 
+// Set TODO
 func (label Label) Set(key, value string) {
 	label[key] = value
 }
 
+// Get TODO
 func (label Label) Get(key string) (exist bool, value string) {
 	value, exist = label[key]
 	return
 }
 
+// ToMapStr TODO
 func (label Label) ToMapStr() mapstr.MapStr {
 	result := make(map[string]interface{})
 	for key, value := range label {
@@ -212,7 +236,7 @@ func (label Label) ToMapStr() mapstr.MapStr {
 	return result
 }
 
-// isTrue is used to check if the label key is a true value or not.
+// IsTrue is used to check if the label key is a true value or not.
 // if the key does not exist, it will return with a LabelKeyNotExistError,
 // which can be used to check it, if you do care about it.
 func (label Label) IsTrue(key string) (bool, error) {
@@ -224,7 +248,7 @@ func (label Label) IsTrue(key string) (bool, error) {
 	return strconv.ParseBool(value)
 }
 
-// int64 is used to get a int64 value from a label key.
+// Int64 is used to get a int64 value from a label key.
 // if the key does not exist, it will return with a LabelKeyNotExistError,
 // which can be used to check it, if you do care about it.
 func (label Label) Int64(key string) (int64, error) {
@@ -236,14 +260,17 @@ func (label Label) Int64(key string) (int64, error) {
 	return strconv.ParseInt(value, 10, 64)
 }
 
+// GetBusinessID TODO
 func (label Label) GetBusinessID() (int64, error) {
 	return label.Int64(LabelBusinessID)
 }
 
+// SetBusinessID TODO
 func (label Label) SetBusinessID(id int64) {
 	label[LabelBusinessID] = strconv.FormatInt(id, 10)
 }
 
+// GetModelKind TODO
 func (label Label) GetModelKind() (ModelKind, error) {
 	kind, exist := label[LabelModelKind]
 	if !exist {
@@ -258,6 +285,7 @@ func (label Label) GetModelKind() (ModelKind, error) {
 	}
 }
 
+// SetModelKind TODO
 func (label Label) SetModelKind(kind ModelKind) {
 	label[LabelModelKind] = string(kind)
 }

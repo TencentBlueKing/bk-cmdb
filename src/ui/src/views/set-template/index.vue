@@ -14,12 +14,15 @@
   <div class="template-layout">
     <cmdb-tips class="mb10" tips-key="showSetTips">
       <i18n path="集群模板功能提示" class="tips-text">
-        <a class="tips-link" href="javascript:void(0)" @click="handleGoBusinessTopo" place="topo">
-          {{$t('业务拓扑')}}
-        </a>
-        <a class="tips-link" href="javascript:void(0)" @click="handleGoServiceTemplate" place="template">
-          {{$t('服务模板')}}
-        </a>
+        <template #topo>
+          <a class="tips-link" href="javascript:void(0)" @click="handleGoBusinessTopo">
+            {{$t('业务拓扑')}}
+          </a></template>
+        <template #template>
+          <a class="tips-link" href="javascript:void(0)" @click="handleGoServiceTemplate">
+            {{$t('服务模板')}}
+          </a>
+        </template>
       </i18n>
     </cmdb-tips>
     <div class="options clearfix">

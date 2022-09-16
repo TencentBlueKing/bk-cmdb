@@ -86,15 +86,18 @@ type objectUnique struct {
 	LastTime  time.Time   `json:"last_time" bson:"last_time"`
 }
 
+// Now TODO
 func Now() time.Time {
 	return time.Now().UTC()
 }
 
+// UniqueKey TODO
 type UniqueKey struct {
 	Kind string `json:"key_kind" bson:"key_kind"`
 	ID   uint64 `json:"key_id" bson:"key_id"`
 }
 
 const (
+	// UniqueKeyKindProperty TODO
 	UniqueKeyKindProperty = "property"
 )

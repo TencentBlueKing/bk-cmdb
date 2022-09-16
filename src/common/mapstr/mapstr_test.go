@@ -85,7 +85,7 @@ func TestMapStrInto(t *testing.T) {
 
 	tmp := &testData{}
 	target.MarshalJSONInto(tmp)
-	//t.Logf("the test tmp %#v", tmp)
+	// t.Logf("the test tmp %#v", tmp)
 
 	maps := mapstr.NewArrayFromInterface([]map[string]interface{}{
 		{"k": "value"}, {"i": 0},
@@ -376,10 +376,10 @@ func TestClone(t *testing.T) {
 
 func TestLargeNumber(t *testing.T) {
 	testData := mapstr.MapStr{
-		"int": int(5000000000000000000),
-		"uint": uint(5000000000000000000),
-		"int64": int64(5000000000000000000),
-		"uint64": uint64(5000000000000000000),
+		"int":     int(5000000000000000000),
+		"uint":    uint(5000000000000000000),
+		"int64":   int64(5000000000000000000),
+		"uint64":  uint64(5000000000000000000),
 		"float64": float64(5000000000000000000),
 		"float32": float32(5000000000000000000),
 	}

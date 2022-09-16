@@ -26,7 +26,7 @@ type cloudAccountAuditLog struct {
 
 // GenerateAuditLog generate audit log of cloud account, if data is nil, will auto get data by accountID.
 func (h *cloudAccountAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, accountID int64,
-	data *metadata.CloudAccount, ) (*metadata.AuditLog, error) {
+	data *metadata.CloudAccount) (*metadata.AuditLog, error) {
 	kit := parameter.kit
 
 	if data == nil {
@@ -63,6 +63,7 @@ func (h *cloudAccountAuditLog) GenerateAuditLog(parameter *generateAuditCommonPa
 	}, nil
 }
 
+// NewCloudAccountAuditLog TODO
 func NewCloudAccountAuditLog(clientSet coreservice.CoreServiceClientInterface) *cloudAccountAuditLog {
 	return &cloudAccountAuditLog{
 		audit: audit{

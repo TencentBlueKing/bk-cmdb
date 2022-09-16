@@ -160,7 +160,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 		return
 	}
 
-	//ownerID := c.Param(common.BKOwnerIDField)
+	// ownerID := c.Param(common.BKOwnerIDField)
 	objID := c.Param(common.BKObjIDField)
 
 	modelBizID := input.AppID

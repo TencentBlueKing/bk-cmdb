@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package eventserver TODO
 package eventserver
 
 import (
@@ -22,10 +23,12 @@ import (
 	"configcenter/src/common/watch"
 )
 
+// EventServerClientInterface TODO
 type EventServerClientInterface interface {
 	Watch(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (resp []*watch.WatchEventDetail, err error)
 }
 
+// NewEventServerClientInterface TODO
 func NewEventServerClientInterface(c *util.Capability, version string) EventServerClientInterface {
 	base := fmt.Sprintf("/event/%s", version)
 

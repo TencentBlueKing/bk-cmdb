@@ -29,9 +29,10 @@ else
 	configcenter/src/common/version.CCTag=${GITTAG} -X configcenter/src/common/version.CCDistro=${CCDistro}"
 endif
 
-SCRIPT_DIR?=$(realpath $(firstword $(subst :, ,${GOPATH}))/src/configcenter/scripts)
-RESOURCE_DIR?=$(realpath $(firstword $(subst :, ,${GOPATH}))/src/configcenter/resources)
-SOURCE_ROOT?=$(realpath $(firstword $(subst :, ,${GOPATH}))/src/configcenter/src)
+DOCS_DIR?=$(PROJECT_PATH)/docs
+SCRIPT_DIR?=$(PROJECT_PATH)/scripts
+RESOURCE_DIR?=$(PROJECT_PATH)/resources
+SOURCE_ROOT?=$(PROJECT_PATH)/src
 BUILD_DIR?=$(SOURCE_ROOT)/bin/build/$(VERSION)
 BIN_PATH?=$(BUILD_DIR)
 export OUTPUT_DIR = ${BIN_PATH}

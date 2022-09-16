@@ -13,6 +13,7 @@
 package settemplate
 
 import (
+	"fmt"
 	"reflect"
 
 	"configcenter/src/common"
@@ -24,6 +25,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// GetSets TODO
 func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int64) ([]metadata.SetInst,
 	errors.CCErrorCoder) {
 
@@ -63,7 +65,7 @@ func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int6
 
 // isSyncRequired Note: If the parameter isInterrupt is true, it will return if a state to be synchronized is found.
 // At this time, the rest of the cluster state will be set to synchronized by default. If you need to return all pending
-//synchronization status state setId, you need to set this parameter to false.
+// synchronization status state setId, you need to set this parameter to false.
 func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID, setTemplateID int64, setIDs []int64,
 	setMap map[int64]mapstr.MapStr, isInterrupt bool, attrIdPropertyIdMap map[int64]string,
 	setTemplateAttrValueMap map[int64]interface{}) (map[int64]bool, errors.CCErrorCoder) {
@@ -130,7 +132,7 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID, setTemplateID int64,
 	return checkResult, nil
 }
 
-// diffModuleServiceTpl check different of modules with template in one set
+// diffModuleServiceTplAndAttrs check different of modules with template in one set
 func diffModuleServiceTplAndAttrs(serviceTplCnt, moduleCnt int64, serviceTemplates map[int64]metadata.ServiceTemplate,
 	modules []metadata.ModuleInst, attrIdPropertyIdMap map[int64]string, setMap mapstr.MapStr,
 	setTemplateAttrValueMap map[int64]interface{}) bool {
@@ -165,6 +167,7 @@ func diffModuleServiceTplAndAttrs(serviceTplCnt, moduleCnt int64, serviceTemplat
 	return false
 }
 
+// GetLatestSyncTaskDetail TODO
 func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit,
 	taskCond metadata.ListAPITaskDetail) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder) {
 
@@ -221,6 +224,40 @@ func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
 	}
 }
 
+func (st *setTemplate) getSetMapStrByOption(kit *rest.Kit, option *metadata.ListSetTemplateSyncStatusOption,
+	fields []string) ([]mapstr.MapStr, errors.CCErrorCoder) {
+
+	filter := &metadata.QueryCondition{
+		Fields: fields,
+		Condition: map[string]interface{}{
+			common.BKSetTemplateIDField: option.SetTemplateID,
+			common.BKAppIDField:         option.BizID,
+		},
+		Page:           option.Page,
+		DisableCounter: true,
+	}
+
+	if len(option.SetIDs) > 0 {
+		filter.Condition[common.BKSetIDField] = map[string]interface{}{
+			common.BKDBIN: option.SetIDs,
+		}
+	}
+
+	if len(option.SearchKey) > 0 {
+		filter.Condition[common.BKSetNameField] = map[string]interface{}{
+			common.BKDBLIKE:    fmt.Sprintf(".*%s.*", option.SearchKey),
+			common.BKDBOPTIONS: "i",
+		}
+	}
+	set, err := st.client.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter)
+	if err != nil {
+		blog.Errorf("get set failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrTopoSetSelectFailed, err.Error())
+	}
+
+	return set.Info, nil
+}
+
 // ListSetTemplateSyncStatus batch search set template sync status
 func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata.ListSetTemplateSyncStatusOption) (
 	*metadata.ListAPITaskSyncStatusResult, errors.CCErrorCoder) {
@@ -244,12 +281,13 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata
 	if cErr != nil {
 		return nil, cErr
 	}
-	if len(propertyIDs) == 0 {
-		return &metadata.ListAPITaskSyncStatusResult{Count: 0, Info: make([]metadata.APITaskSyncStatus, 0)}, nil
-	}
+
 	fields := []string{common.BKSetIDField}
-	fields = append(fields, propertyIDs...)
-	sets, err := st.getSetMapStr(kit, option.BizID, option.SetTemplateID, option.SetIDs, option.Page, fields)
+	if len(propertyIDs) > 0 {
+		fields = append(fields, propertyIDs...)
+	}
+
+	sets, err := st.getSetMapStrByOption(kit, option, fields)
 	if err != nil {
 		blog.Errorf("list set failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
 		return nil, err

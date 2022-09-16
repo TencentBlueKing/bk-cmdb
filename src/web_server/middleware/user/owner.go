@@ -28,6 +28,7 @@ import (
 	"configcenter/src/storage/dal/redis"
 )
 
+// OwnerManager TODO
 type OwnerManager struct {
 	Engine   *backbone.Engine
 	CacheCli redis.Client
@@ -36,6 +37,7 @@ type OwnerManager struct {
 	header   http.Header
 }
 
+// NewOwnerManager TODO
 func NewOwnerManager(userName, ownerID, language string) *OwnerManager {
 	ownerManager := new(OwnerManager)
 	ownerManager.UserName = userName
@@ -50,10 +52,12 @@ func NewOwnerManager(userName, ownerID, language string) *OwnerManager {
 	return ownerManager
 }
 
+// SetHttpHeader TODO
 func (m *OwnerManager) SetHttpHeader(key, val string) {
 	m.header.Set(key, val)
 }
 
+// InitOwner TODO
 func (m *OwnerManager) InitOwner() (*metadata.IamPermission, errors.CCErrorCoder) {
 	rid := util.GetHTTPCCRequestID(m.header)
 	blog.V(5).Infof("init owner %s, rid: %s", m.OwnerID, rid)

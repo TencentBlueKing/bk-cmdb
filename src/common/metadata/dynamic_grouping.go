@@ -52,7 +52,7 @@ var (
 	// DynamicGroupOperators all operators -> current newest operators.
 	DynamicGroupOperators = map[string]string{
 		DynamicGroupOperatorEQ:   DynamicGroupOperatorEQ,
-		DynamicGroupOperatorNE:   DynamicGroupOperatorNIN,
+		DynamicGroupOperatorNE:   DynamicGroupOperatorNE,
 		DynamicGroupOperatorIN:   DynamicGroupOperatorIN,
 		DynamicGroupOperatorNIN:  DynamicGroupOperatorNIN,
 		DynamicGroupOperatorLTE:  DynamicGroupOperatorLTE,
@@ -308,7 +308,7 @@ func (g *DynamicGroup) Validate(validatefunc Validatefunc) error {
 	return g.Info.Validate(g.ObjID, validatefunc)
 }
 
-// DynamicGroupResultBatch is batch result struct of dynamic group.
+// DynamicGroupBatch is batch result struct of dynamic group.
 type DynamicGroupBatch struct {
 	// Count batch count.
 	Count uint64 `json:"count"`

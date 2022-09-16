@@ -22,9 +22,11 @@ import (
 )
 
 const (
+	// CC_time_type_parse_flag TODO
 	CC_time_type_parse_flag = "cc_time_type"
 )
 
+// ObjQueryInput TODO
 type ObjQueryInput struct {
 	Condition      interface{} `json:"condition"`
 	Fields         string      `json:"fields"`
@@ -51,7 +53,7 @@ func (o *ObjQueryInput) ConvTime() error {
 	return nil
 }
 
-//convTimeItem 转义具体的某一项,将查询条件中字段包含cc_time_type
+// convTimeItem 转义具体的某一项,将查询条件中字段包含cc_time_type
 func (o *ObjQueryInput) convTimeItem(item interface{}) (interface{}, error) {
 
 	switch item.(type) {
@@ -100,7 +102,7 @@ func (o *ObjQueryInput) convTimeItem(item interface{}) (interface{}, error) {
 			item = arrItem
 		}
 	case []interface{}:
-		//如果是数据，递归转换所有子项
+		// 如果是数据，递归转换所有子项
 		arrItem, ok := item.([]interface{})
 		if true == ok {
 			for index, value := range arrItem {

@@ -1,3 +1,4 @@
+// Package association TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -18,6 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SearchType TODO
 func (asst *Association) SearchType(ctx context.Context, h http.Header, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error) {
 	resp = new(metadata.SearchAssociationTypeResult)
 	subPath := "/find/associationtype"
@@ -33,6 +35,7 @@ func (asst *Association) SearchType(ctx context.Context, h http.Header, request 
 	return
 }
 
+// CreateType TODO
 func (asst *Association) CreateType(ctx context.Context, h http.Header, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
 	resp = new(metadata.CreateAssociationTypeResult)
 	subPath := "/create/associationtype"
@@ -47,6 +50,8 @@ func (asst *Association) CreateType(ctx context.Context, h http.Header, request 
 
 	return
 }
+
+// UpdateType TODO
 func (asst *Association) UpdateType(ctx context.Context, h http.Header, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error) {
 	resp = new(metadata.UpdateAssociationTypeResult)
 	subPath := "/update/associationtype/%d"
@@ -61,6 +66,7 @@ func (asst *Association) UpdateType(ctx context.Context, h http.Header, asstType
 	return
 }
 
+// DeleteType TODO
 func (asst *Association) DeleteType(ctx context.Context, h http.Header, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error) {
 	resp = new(metadata.DeleteAssociationTypeResult)
 	subPath := "/delete/associationtype/%d"
@@ -76,6 +82,7 @@ func (asst *Association) DeleteType(ctx context.Context, h http.Header, asstType
 	return
 }
 
+// SearchObject TODO
 func (asst *Association) SearchObject(ctx context.Context, h http.Header, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error) {
 	resp = new(metadata.SearchAssociationObjectResult)
 	subPath := "/find/objectassociation"
@@ -91,6 +98,7 @@ func (asst *Association) SearchObject(ctx context.Context, h http.Header, reques
 	return
 }
 
+// CreateObject TODO
 func (asst *Association) CreateObject(ctx context.Context, h http.Header, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error) {
 	resp = new(metadata.CreateAssociationObjectResult)
 	subPath := "/create/objectassociation"
@@ -106,6 +114,7 @@ func (asst *Association) CreateObject(ctx context.Context, h http.Header, reques
 	return
 }
 
+// UpdateObject TODO
 func (asst *Association) UpdateObject(ctx context.Context, h http.Header, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error) {
 	resp = new(metadata.UpdateAssociationObjectResult)
 	subPath := "/update/objectassociation/%d"
@@ -121,6 +130,7 @@ func (asst *Association) UpdateObject(ctx context.Context, h http.Header, asstID
 	return
 }
 
+// DeleteObject TODO
 func (asst *Association) DeleteObject(ctx context.Context, h http.Header, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error) {
 	resp = new(metadata.DeleteAssociationObjectResult)
 	subPath := "/delete/objectassociation/%d"
@@ -135,6 +145,8 @@ func (asst *Association) DeleteObject(ctx context.Context, h http.Header, asstID
 
 	return
 }
+
+// SearchInst TODO
 func (asst *Association) SearchInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
 	resp = new(metadata.SearchAssociationInstResult)
 	subPath := "/find/instassociation"
@@ -150,6 +162,7 @@ func (asst *Association) SearchInst(ctx context.Context, h http.Header, request 
 	return
 }
 
+// SearchAssociationRelatedInst TODO
 func (asst *Association) SearchAssociationRelatedInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationRelatedInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
 	resp = new(metadata.SearchAssociationInstResult)
 	subPath := "/find/instassociation/related"
@@ -165,6 +178,7 @@ func (asst *Association) SearchAssociationRelatedInst(ctx context.Context, h htt
 	return
 }
 
+// CreateInst TODO
 func (asst *Association) CreateInst(ctx context.Context, h http.Header, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
 	resp = new(metadata.CreateAssociationInstResult)
 	subPath := "/create/instassociation"
@@ -180,6 +194,7 @@ func (asst *Association) CreateInst(ctx context.Context, h http.Header, request 
 	return
 }
 
+// CreateManyInstAssociation TODO
 func (asst *Association) CreateManyInstAssociation(ctx context.Context, header http.Header,
 	request *metadata.CreateManyInstAsstRequest) (*metadata.CreateManyInstAsstResult, error) {
 	resp := new(metadata.CreateManyInstAsstResult)
@@ -196,6 +211,7 @@ func (asst *Association) CreateManyInstAssociation(ctx context.Context, header h
 	return resp, err
 }
 
+// DeleteInst TODO
 func (asst *Association) DeleteInst(ctx context.Context, h http.Header, objID string, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error) {
 	resp = new(metadata.DeleteAssociationInstResult)
 	subPath := "/delete/instassociation/%s/%d"
@@ -211,6 +227,7 @@ func (asst *Association) DeleteInst(ctx context.Context, h http.Header, objID st
 	return
 }
 
+// DeleteInstBatch TODO
 func (asst *Association) DeleteInstBatch(ctx context.Context, h http.Header, assoIDs *metadata.DeleteAssociationInstBatchRequest) (resp *metadata.DeleteAssociationInstBatchResult, err error) {
 	resp = new(metadata.DeleteAssociationInstBatchResult)
 	subPath := "/delete/instassociation/batch"
@@ -226,6 +243,7 @@ func (asst *Association) DeleteInstBatch(ctx context.Context, h http.Header, ass
 	return
 }
 
+// SearchObjectAssoWithAssoKindList TODO
 func (asst *Association) SearchObjectAssoWithAssoKindList(ctx context.Context, h http.Header, assoKindIDs metadata.AssociationKindIDs) (resp *metadata.ListAssociationsWithAssociationKindResult, err error) {
 	resp = new(metadata.ListAssociationsWithAssociationKindResult)
 	subPath := "/find/topoassociationtype"

@@ -32,6 +32,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// CreateServiceTemplate TODO
 func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 	option := new(metadata.CreateServiceTemplateOption)
 	if err := ctx.DecodeInto(option); err != nil {
@@ -162,6 +163,7 @@ func (ps *ProcServer) CreateServiceTemplateAllInfo(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.RspID{ID: templateID})
 }
 
+// GetServiceTemplate TODO
 func (ps *ProcServer) GetServiceTemplate(ctx *rest.Contexts) {
 	templateIDStr := ctx.Request.PathParameter(common.BKServiceTemplateIDField)
 	templateID, err := strconv.ParseInt(templateIDStr, 10, 64)
@@ -724,6 +726,8 @@ func (ps *ProcServer) DeleteHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 
 }
+
+// UpdateServiceTemplate TODO
 func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 	option := new(metadata.UpdateServiceTemplateOption)
 	if err := ctx.DecodeInto(option); err != nil {
@@ -835,6 +839,25 @@ func (ps *ProcServer) updateSvcTempAllAttrs(kit *rest.Kit, id, bizID int64, prev
 		}
 	}
 
+	// delete service template attributes
+	if len(attrMap) > 0 {
+		deletedAttrIDs := make([]int64, 0)
+		for attrID := range attrMap {
+			deletedAttrIDs = append(deletedAttrIDs, attrID)
+		}
+
+		deleteOpt := &metadata.DeleteServTempAttrOption{
+			BizID:        bizID,
+			ID:           id,
+			AttributeIDs: deletedAttrIDs,
+		}
+		err := ps.CoreAPI.CoreService().Process().DeleteServiceTemplateAttribute(kit.Ctx, kit.Header, deleteOpt)
+		if err != nil {
+			blog.Errorf("delete service template attrs failed, opt: %+v, err: %v, rid: %s", deleteOpt, err, kit.Rid)
+			return err
+		}
+	}
+
 	// add service template attributes
 	if len(addedAttrs) > 0 {
 		addOpt := &metadata.CreateSvcTempAttrsOption{
@@ -861,25 +884,6 @@ func (ps *ProcServer) updateSvcTempAllAttrs(kit *rest.Kit, id, bizID int64, prev
 		err := ps.CoreAPI.CoreService().Process().UpdateServiceTemplateAttribute(kit.Ctx, kit.Header, updateOpt)
 		if err != nil {
 			blog.Errorf("update service template attrs failed, opt: %+v, err: %v, rid: %s", updateOpt, err, kit.Rid)
-			return err
-		}
-	}
-
-	// delete service template attributes
-	if len(attrMap) > 0 {
-		deletedAttrIDs := make([]int64, 0)
-		for attrID := range attrMap {
-			deletedAttrIDs = append(deletedAttrIDs, attrID)
-		}
-
-		deleteOpt := &metadata.DeleteServTempAttrOption{
-			BizID:        bizID,
-			ID:           id,
-			AttributeIDs: deletedAttrIDs,
-		}
-		err := ps.CoreAPI.CoreService().Process().DeleteServiceTemplateAttribute(kit.Ctx, kit.Header, deleteOpt)
-		if err != nil {
-			blog.Errorf("delete service template attrs failed, opt: %+v, err: %v, rid: %s", deleteOpt, err, kit.Rid)
 			return err
 		}
 	}
@@ -913,6 +917,15 @@ func (ps *ProcServer) updateSvcTempAllProcTemps(kit *rest.Kit, id, bizID int64, 
 		}
 	}
 
+	// delete service template procTemps
+	for procTempID := range procTempMap {
+		err := ps.CoreAPI.CoreService().Process().DeleteProcessTemplate(kit.Ctx, kit.Header, procTempID)
+		if err != nil {
+			blog.Errorf("delete process template %d failed, err: %v, rid: %s", procTempID, err, kit.Rid)
+			return err
+		}
+	}
+
 	// add service template procTemps
 	for _, procTemp := range addedProcTemps {
 		_, err := ps.CoreAPI.CoreService().Process().CreateProcessTemplate(kit.Ctx, kit.Header, &procTemp)
@@ -937,18 +950,10 @@ func (ps *ProcServer) updateSvcTempAllProcTemps(kit *rest.Kit, id, bizID int64, 
 		}
 	}
 
-	// delete service template procTemps
-	for procTempID := range procTempMap {
-		err := ps.CoreAPI.CoreService().Process().DeleteProcessTemplate(kit.Ctx, kit.Header, procTempID)
-		if err != nil {
-			blog.Errorf("delete process template %d failed, err: %v, rid: %s", procTempID, err, kit.Rid)
-			return err
-		}
-	}
-
 	return nil
 }
 
+// ListServiceTemplates TODO
 func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 	input := new(metadata.ListServiceTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -1058,6 +1063,7 @@ func (ps *ProcServer) FindServiceTemplateCountInfo(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// DeleteServiceTemplate TODO
 // a service template can be delete only when it is not be used any more,
 // which means that no process instance belongs to it.
 func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
@@ -1157,7 +1163,7 @@ func (ps *ProcServer) GetServiceTemplateSyncStatus(ctx *rest.Contexts) {
 	}
 }
 
-// SearchRuleRelatedServiceTemplate search rule related service templates
+// SearchRuleRelatedServiceTemplates search rule related service templates
 func (ps *ProcServer) SearchRuleRelatedServiceTemplates(ctx *rest.Contexts) {
 	requestBody := new(metadata.RuleRelatedServiceTemplateOption)
 	if err := ctx.DecodeInto(requestBody); err != nil {

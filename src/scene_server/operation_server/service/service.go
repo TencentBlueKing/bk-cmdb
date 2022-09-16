@@ -1,3 +1,4 @@
+// Package service TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -53,6 +54,7 @@ type srvComm struct {
 	lgc           *logics.Logics
 }
 
+// OperationServer TODO
 type OperationServer struct {
 	*backbone.Engine
 	Config      *options.Config
@@ -79,6 +81,7 @@ func (o *OperationServer) newSrvComm(header http.Header) *srvComm {
 	}
 }
 
+// WebService TODO
 func (o *OperationServer) WebService() *restful.Container {
 
 	getErrFunc := func() errors.CCErrorIf {
@@ -123,6 +126,7 @@ func (o *OperationServer) newOperationService(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+// Healthz TODO
 func (o *OperationServer) Healthz(req *restful.Request, resp *restful.Response) {
 	meta := metric.HealthMeta{IsHealthy: true}
 
@@ -168,6 +172,7 @@ func (o *OperationServer) Healthz(req *restful.Request, resp *restful.Response) 
 	resp.WriteEntity(answer)
 }
 
+// OnOperationConfigUpdate TODO
 func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessConfig) {
 	var err error
 	o.Config = &options.Config{}

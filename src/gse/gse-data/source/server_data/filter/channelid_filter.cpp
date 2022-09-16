@@ -12,7 +12,7 @@
 
 #include "channelid_filter.h"
 namespace gse { 
-namespace dataserver {
+namespace data {
 
 ChannelId_Filter::ChannelId_Filter()
 {

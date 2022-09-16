@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package host TODO
 package host
 
 import (
@@ -39,6 +40,7 @@ type hostCache struct {
 	event reflector.Interface
 }
 
+// Run TODO
 func (h *hostCache) Run() error {
 
 	opts := types.Options{

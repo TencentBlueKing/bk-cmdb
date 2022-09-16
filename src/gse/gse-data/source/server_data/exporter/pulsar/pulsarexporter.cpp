@@ -12,15 +12,15 @@
 
 #include "pulsarexporter.h"
 
-#include "log/log.h"
 #include "bbx/gse_errno.h"
+#include "log/log.h"
 #include "tools/strings.h"
 
-#include "filter/channelid_filter.h"
 #include "dataserver.h"
+#include "filter/channelid_filter.h"
 
 namespace gse {
-namespace dataserver {
+namespace data {
 
 PulsarExporter::PulsarExporter()
 {
@@ -53,7 +53,7 @@ int PulsarExporter::createPulsarProducers()
         {
             LOG_WARN("fail to start pulsar producer[%d] exporter[%s] with service url[%s]", i, SAFE_CSTR(m_name.c_str()), SAFE_CSTR(m_serivce_url.c_str()));
             delete producer;
-            continue;
+            return GSE_ERROR;
         }
 
         m_pulsarPorducers.push_back(producer);
@@ -66,10 +66,15 @@ int PulsarExporter::createPulsarProducers()
 
 bool PulsarExporter::startWithChannelID(ChannelIdExporterConfig *ptrChannelIDConfig)
 {
-    m_name = ptrChannelIDConfig->m_name;
-    m_serivce_url = "pulsar://" + ptrChannelIDConfig->m_storage.m_pulsarStorage->m_addresses[0].m_ip  + ":" + gse::tools::strings::ToString(ptrChannelIDConfig->m_storage.m_pulsarStorage->m_addresses[0].m_port);
+    StreamToCluster *streamToCluster = &ptrChannelIDConfig->m_streamToCluster;
+    m_name = streamToCluster->m_name;
+
+    m_serivce_url = "pulsar://" + streamToCluster->m_pulsarCluster->m_addresses[0].m_ip + ":" +
+                    gse::tools::strings::ToString(streamToCluster->m_pulsarCluster->m_addresses[0].m_port);
+
     LOG_DEBUG("pulsar url:%s", m_serivce_url.c_str());
-    m_token =  ptrChannelIDConfig->m_storage.m_pulsarStorage->m_token;
+    m_token = streamToCluster->m_pulsarCluster->m_token;
+
     if (m_producerNum <= 0 || m_producerNum > PULSAR_MAX_PRODUCER)
     {
         m_producerNum = PULSAR_MAX_PRODUCER;
@@ -86,12 +91,12 @@ bool PulsarExporter::startWithDataFlow(ExporterConf *ptrExporterConf)
     m_tlsTrustCertsFilePath = ptrExporterConf->m_pulsarConf->m_tlsTrustCertsFilePath;
     m_tlsKeyFilePath = ptrExporterConf->m_pulsarConf->m_tlsKeyFilePath;
     m_tlsCertFilePath = ptrExporterConf->m_pulsarConf->m_tlsCertFilePath;
-    LOG_DEBUG("start pulsar data flow, producernum:%d, m_token:%s", 
-            ptrExporterConf->m_pulsarConf->m_producerNum, m_token.c_str()) ;
+    LOG_DEBUG("start pulsar data flow, producernum:%d, m_token:%s",
+              ptrExporterConf->m_pulsarConf->m_producerNum, m_token.c_str());
     m_serivce_url = ptrExporterConf->m_pulsarConf->m_serviceUrl;
     m_name = ptrExporterConf->m_name;
-    LOG_DEBUG("start pulsar with dataflow config, producernum:%d, url:%s, name:%s", 
-        m_producerNum, m_serivce_url.c_str(), m_name.c_str());
+    LOG_DEBUG("start pulsar with dataflow config, producernum:%d, url:%s, name:%s",
+              m_producerNum, m_serivce_url.c_str(), m_name.c_str());
     if (m_producerNum <= 0)
     {
         m_producerNum = PULSAR_MAX_PRODUCER;
@@ -99,37 +104,10 @@ bool PulsarExporter::startWithDataFlow(ExporterConf *ptrExporterConf)
     return true;
 }
 
-std::string PulsarExporter::formaURL(StorageConfigType *ptrStorageConfig)
-{
-    std::string pulsar_url = "pulsar://" + ptrStorageConfig->m_host + ":" + gse::tools::strings::ToString(ptrStorageConfig->m_port);
-    LOG_DEBUG("pulsar url:%s", pulsar_url.c_str());
-    return pulsar_url;
-}
-
-bool PulsarExporter::startWithDataID(StorageConfigType *ptrStorageConfig)
-{
-    std::string url = formaURL(ptrStorageConfig);
-    m_serivce_url = url;
-    m_producerNum = PULSAR_MAX_PRODUCER;
-    m_name = "pulsar";
-    m_token = ptrStorageConfig->m_token;
-    return true;
-}
-
 int PulsarExporter::Start()
 {
     switch (m_ptrConfWrapper->m_exporterConfTypeEnum)
     {
-    case ExporterConfigWrapper::DataIDConfType:
-        m_upConfLock.RLock();
-        if (!startWithDataID(m_ptrConfWrapper->m_conf.m_ptrDataIDConfig))
-        {
-            m_upConfLock.UnLock();
-            return GSE_ERROR;
-        }
-        m_upConfLock.UnLock();
-        LOG_DEBUG("start pulsar exporter (%s) by data id config", SAFE_CSTR(m_name.c_str()));
-        return createPulsarProducers();
     case ExporterConfigWrapper::ChannelIDConfType:
         m_upConfLock.RLock();
         if (!startWithChannelID(m_ptrConfWrapper->m_conf.m_ptrChannelIdExporterConfig))
@@ -138,7 +116,7 @@ int PulsarExporter::Start()
             return GSE_ERROR;
         }
         m_upConfLock.UnLock();
-        LOG_DEBUG("start pulsar exporter (%s) by data flow config", SAFE_CSTR(m_name.c_str()));
+        LOG_DEBUG("start pulsar exporter (%s) by zk config", SAFE_CSTR(m_name.c_str()));
         return createPulsarProducers();
     case ExporterConfigWrapper::DataFlowConfType:
         m_upConfLock.RLock();
@@ -174,8 +152,6 @@ int PulsarExporter::Write(DataCell *pDataCell)
 
     pDataCell->DealLineBreak();
 
-
-    OPMetric::PulsarMsgInc();
     int producerSize = m_pulsarPorducers.size();
     if (producerSize <= 0)
     {
@@ -211,15 +187,15 @@ int PulsarExporter::Write(DataCell *pDataCell)
         LOG_DEBUG("will send the data (%s) to pulsar with the topic (%s), the channelid (%d) the key (%s) exporter name (%s)", SAFE_CSTR(value.c_str()), SAFE_CSTR(str_topic.c_str()), pDataCell->GetChannelID(), SAFE_CSTR(str_key.c_str()), SAFE_CSTR(m_name.c_str()));
         if (GSE_SUCCESS != pulsarProducer->excuteProduce(str_topic, pDataCell->GetPartition(), str_key, value))
         {
-            LOG_ERROR("it is failed to send the data (%s) to kafka with the topic(%s), the channelid (%d), the key (%s) exporter name (%s)", SAFE_CSTR(value.c_str()), SAFE_CSTR(str_topic.c_str()), pDataCell->GetChannelID(), SAFE_CSTR(str_key.c_str()), SAFE_CSTR(m_name.c_str()));
+            LOG_ERROR("it is failed to send the data (%s) to pulsar with the topic(%s), the channelid (%d), the key (%s) exporter name (%s)", SAFE_CSTR(value.c_str()), SAFE_CSTR(str_topic.c_str()), pDataCell->GetChannelID(), SAFE_CSTR(str_key.c_str()), SAFE_CSTR(m_name.c_str()));
             pDataCell->SetErrorMsg("pulsar produce failed", OPS_ERROR_PULSAR_ERROR);
-            DataServer::Instance().GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_LOST_STATE));
+            DataServer::GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_LOST_STATE));
         }
     }
 
     pDataCell->SetOutputType("pulsar");
     pDataCell->SetOutputAddress(m_serivce_url);
-    DataServer::Instance().GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_OUTPUT_STATE));
+    DataServer::GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_OUTPUT_STATE));
     return GSE_SUCCESS;
 }
 
@@ -238,5 +214,5 @@ void PulsarExporter::clear()
     m_pulsarPorducers.clear();
 }
 
-}
-}
+} // namespace data
+} // namespace gse

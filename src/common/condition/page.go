@@ -20,10 +20,15 @@ import (
 )
 
 const (
-	PageName         = "page"
-	PageSort         = "sort"
-	PageStart        = "start"
-	DBFields         = "fields"
+	// PageName TODO
+	PageName = "page"
+	// PageSort TODO
+	PageSort = "sort"
+	// PageStart TODO
+	PageStart = "start"
+	// DBFields TODO
+	DBFields = "fields"
+	// DBQueryCondition TODO
 	DBQueryCondition = "condition"
 )
 
@@ -34,6 +39,7 @@ type BasePage struct {
 	Start int    `json:"start,omitempty"`
 }
 
+// ParsePage TODO
 func ParsePage(origin interface{}) BasePage {
 	if origin == nil {
 		return BasePage{Limit: common.BKNoLimit}

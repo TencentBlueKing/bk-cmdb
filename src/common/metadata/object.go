@@ -21,21 +21,36 @@ import (
 )
 
 const (
-	ModelFieldID          = "id"
-	ModelFieldObjCls      = "bk_classification_id"
-	ModelFieldObjIcon     = "bk_obj_icon"
-	ModelFieldObjectID    = "bk_obj_id"
-	ModelFieldObjectName  = "bk_obj_name"
-	ModelFieldIsHidden    = "bk_ishidden"
-	ModelFieldIsPre       = "ispre"
-	ModelFieldIsPaused    = "bk_ispaused"
-	ModelFieldPosition    = "position"
-	ModelFieldOwnerID     = "bk_supplier_account"
+	// ModelFieldID TODO
+	ModelFieldID = "id"
+	// ModelFieldObjCls TODO
+	ModelFieldObjCls = "bk_classification_id"
+	// ModelFieldObjIcon TODO
+	ModelFieldObjIcon = "bk_obj_icon"
+	// ModelFieldObjectID TODO
+	ModelFieldObjectID = "bk_obj_id"
+	// ModelFieldObjectName TODO
+	ModelFieldObjectName = "bk_obj_name"
+	// ModelFieldIsHidden TODO
+	ModelFieldIsHidden = "bk_ishidden"
+	// ModelFieldIsPre TODO
+	ModelFieldIsPre = "ispre"
+	// ModelFieldIsPaused TODO
+	ModelFieldIsPaused = "bk_ispaused"
+	// ModelFieldPosition TODO
+	ModelFieldPosition = "position"
+	// ModelFieldOwnerID TODO
+	ModelFieldOwnerID = "bk_supplier_account"
+	// ModelFieldDescription TODO
 	ModelFieldDescription = "description"
-	ModelFieldCreator     = "creator"
-	ModelFieldModifier    = "modifier"
-	ModelFieldCreateTime  = "create_time"
-	ModelFieldLastTime    = "last_time"
+	// ModelFieldCreator TODO
+	ModelFieldCreator = "creator"
+	// ModelFieldModifier TODO
+	ModelFieldModifier = "modifier"
+	// ModelFieldCreateTime TODO
+	ModelFieldCreateTime = "create_time"
+	// ModelFieldLastTime TODO
+	ModelFieldLastTime = "last_time"
 )
 
 // Object object metadata definition
@@ -71,6 +86,7 @@ func (o *Object) GetInstIDFieldName() string {
 
 }
 
+// GetInstIDFieldByObjID TODO
 func GetInstIDFieldByObjID(objID string) string {
 	switch objID {
 	case common.BKInnerObjIDBizSet:
@@ -95,6 +111,7 @@ func GetInstIDFieldByObjID(objID string) string {
 
 }
 
+// GetInstNameFieldName TODO
 func GetInstNameFieldName(objID string) string {
 	switch objID {
 	case common.BKInnerObjIDBizSet:
@@ -152,6 +169,8 @@ func (o *Object) GetObjectID() string {
 func (o *Object) IsCommon() bool {
 	return IsCommon(o.ObjectID)
 }
+
+// IsCommon TODO
 func IsCommon(objID string) bool {
 	switch objID {
 	case common.BKInnerObjIDBizSet:
@@ -195,6 +214,7 @@ type MainLineObject struct {
 	AssociationID string `json:"bk_asst_obj_id"`
 }
 
+// ObjectClsDes TODO
 type ObjectClsDes struct {
 	ID      int    `json:"id" bson:"id"`
 	ClsID   string `json:"bk_classification_id" bson:"bk_classification_id"`
@@ -203,6 +223,7 @@ type ObjectClsDes struct {
 	ClsIcon string `json:"bk_classification_icon" bson:"bk_classification_icon"`
 }
 
+// InnerModule TODO
 type InnerModule struct {
 	ModuleID         int64  `field:"bk_module_id" json:"bk_module_id" bson:"bk_module_id" mapstructure:"bk_module_id"`
 	ModuleName       string `field:"bk_module_name" bson:"bk_module_name" json:"bk_module_name" mapstructure:"bk_module_name"`
@@ -210,6 +231,7 @@ type InnerModule struct {
 	HostApplyEnabled bool   `field:"host_apply_enabled" bson:"host_apply_enabled" json:"host_apply_enabled" mapstructure:"host_apply_enabled"`
 }
 
+// InnterAppTopo TODO
 type InnterAppTopo struct {
 	SetID   int64         `json:"bk_set_id" field:"bk_set_id"`
 	SetName string        `json:"bk_set_name" field:"bk_set_name"`
@@ -235,23 +257,23 @@ type ObjectTopo struct {
 	Arrows    string   `json:"arrows"`
 }
 
-//ObjectCountParams define parameter of search objects count
+// ObjectCountParams define parameter of search objects count
 type ObjectCountParams struct {
 	Condition ObjectIDArray `json:"condition"`
 }
 
-//ObjectIDArray a slice of object ids
+// ObjectIDArray a slice of object ids
 type ObjectIDArray struct {
 	ObjectIDs []string `json:"obj_ids"`
 }
 
-//ObjectCountResult result by searching object count
+// ObjectCountResult result by searching object count
 type ObjectCountResult struct {
 	BaseResp `json:",inline"`
 	Data     []ObjectCountDetails `json:"data"`
 }
 
-//ObjectCountDetails one object count or error message of searching
+// ObjectCountDetails one object count or error message of searching
 type ObjectCountDetails struct {
 	ObjectID  string `json:"bk_obj_id"`
 	InstCount uint64 `json:"inst_count"`

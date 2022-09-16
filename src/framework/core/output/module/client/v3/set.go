@@ -58,7 +58,7 @@ func (cli *Set) CreateSet(bizID int64, data types.MapStr) (int, error) {
 		return 0, err
 	}
 
-	//fmt.Println("the set id:", string(rst))
+	// fmt.Println("the set id:", string(rst))
 	gs := gjson.ParseBytes(rst)
 
 	// check result
@@ -163,7 +163,7 @@ func (cli *Set) SearchSets(cond common.Condition) ([]types.MapStr, error) {
 		return nil, errors.New("data is empty")
 	}
 
-	//fmt.Println("data:", dataStr)
+	// fmt.Println("data:", dataStr)
 
 	resultMap := make([]types.MapStr, 0)
 	err = json.Unmarshal([]byte(dataStr), &resultMap)

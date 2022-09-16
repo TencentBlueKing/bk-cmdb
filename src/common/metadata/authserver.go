@@ -12,6 +12,7 @@
 
 package metadata
 
+// PullResourceParam TODO
 type PullResourceParam struct {
 	Collection string                 `json:"collection"`
 	Condition  map[string]interface{} `json:"condition"`
@@ -20,11 +21,13 @@ type PullResourceParam struct {
 	Offset     int64                  `json:"offset"`
 }
 
+// PullResourceResponse TODO
 type PullResourceResponse struct {
 	BaseResp `json:",inline"`
 	Data     PullResourceResult `json:"data"`
 }
 
+// PullResourceResult TODO
 type PullResourceResult struct {
 	Count int64                    `json:"count"`
 	Info  []map[string]interface{} `json:"info"`

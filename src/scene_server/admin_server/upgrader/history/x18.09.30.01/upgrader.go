@@ -27,7 +27,7 @@ func cleanBKCloud(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err e
 
 	clouds := []map[string]interface{}{}
 
-	err = db.Table(common.BKTableNameBasePlat).Find(mapstr.New()).Sort("create_time").All(ctx, &clouds) //db.GetMutilByCondition(common.BKTableNameBasePlat, nil, mapstr.MapStr{}, &clouds, "create_time", 0, 0)
+	err = db.Table(common.BKTableNameBasePlat).Find(mapstr.New()).Sort("create_time").All(ctx, &clouds) // db.GetMutilByCondition(common.BKTableNameBasePlat, nil, mapstr.MapStr{}, &clouds, "create_time", 0, 0)
 	if nil != err && !db.IsNotFoundError(err) {
 		return err
 	}

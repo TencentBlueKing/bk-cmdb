@@ -16,6 +16,7 @@ import (
 	"configcenter/src/framework/common/rest"
 )
 
+// Interface TODO
 type Interface interface {
 	Model() ModelInterface
 	Attribute() AttributeInterface
@@ -24,6 +25,7 @@ type Interface interface {
 	Instance() InstanceInterface
 }
 
+// NewModelClient TODO
 func NewModelClient(client rest.ClientInterface) Interface {
 	return &modelAPI{
 		client: client,
@@ -34,30 +36,35 @@ type modelAPI struct {
 	client rest.ClientInterface
 }
 
+// Attribute TODO
 func (m *modelAPI) Attribute() AttributeInterface {
 	return &attribute{
 		client: m.client,
 	}
 }
 
+// Module TODO
 func (m *modelAPI) Module() ModuleInterface {
 	return &module{
 		client: m.client,
 	}
 }
 
+// Set TODO
 func (m *modelAPI) Set() SetInterface {
 	return &setClient{
 		client: m.client,
 	}
 }
 
+// Instance TODO
 func (m *modelAPI) Instance() InstanceInterface {
 	return &instClient{
 		client: m.client,
 	}
 }
 
+// Model TODO
 func (m *modelAPI) Model() ModelInterface {
 	return &modelClient{
 		client: m.client,

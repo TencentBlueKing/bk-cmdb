@@ -14,18 +14,22 @@ package types
 
 import "configcenter/src/scene_server/auth_server/sdk/operator"
 
+// BaseResp TODO
 type BaseResp struct {
 	Code    int64  `json:"code"`
 	Message string `json:"message"`
 }
 
+// GetPolicyOption TODO
 type GetPolicyOption AuthOptions
 
+// GetPolicyResp TODO
 type GetPolicyResp struct {
 	BaseResp `json:",inline"`
 	Data     *operator.Policy `json:"data"`
 }
 
+// ListPolicyOptions TODO
 type ListPolicyOptions struct {
 	System    string     `json:"system"`
 	Subject   Subject    `json:"subject"`
@@ -33,6 +37,7 @@ type ListPolicyOptions struct {
 	Resources []Resource `json:"resources"`
 }
 
+// ListPolicyResp TODO
 type ListPolicyResp struct {
 	BaseResp `json:",inline"`
 	Data     []*ActionPolicy `json:"data"`

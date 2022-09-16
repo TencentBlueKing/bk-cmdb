@@ -24,6 +24,7 @@ var (
 	rAuth string   // redis pwd
 )
 
+// SetGseConfig TODO
 func SetGseConfig(pAddr, pUser, pPwd, redisPort, redisPwd string) {
 	addr = strings.Split(pAddr, ",")
 	usr = pUser
@@ -32,6 +33,7 @@ func SetGseConfig(pAddr, pUser, pPwd, redisPort, redisPwd string) {
 	rAuth = redisPwd
 }
 
+// GetSetConfig TODO
 func GetSetConfig() ([]string, string, string, string, string) {
 	return addr, usr, pwd, rPort, rAuth
 }

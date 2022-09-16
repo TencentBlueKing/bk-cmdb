@@ -30,6 +30,7 @@ import (
 	"configcenter/src/apimachinery/util"
 )
 
+// ClientSetInterface TODO
 type ClientSetInterface interface {
 	HostServer() hostserver.HostServerClientInterface
 	TopoServer() toposerver.TopoServerClientInterface
@@ -48,6 +49,7 @@ type ClientSetInterface interface {
 	Healthz() healthz.HealthzInterface
 }
 
+// NewApiMachinery TODO
 func NewApiMachinery(c *util.APIMachineryConfig, discover discovery.DiscoveryInterface) (ClientSetInterface, error) {
 	client, err := util.NewClient(c.TLSConfig)
 	if err != nil {
@@ -58,6 +60,7 @@ func NewApiMachinery(c *util.APIMachineryConfig, discover discovery.DiscoveryInt
 	return NewClientSet(client, discover, flowcontrol), nil
 }
 
+// NewClientSet TODO
 func NewClientSet(client util.HttpClient, discover discovery.DiscoveryInterface, throttle flowctrl.RateLimiter) ClientSetInterface {
 	return &ClientSet{
 		version:  "v3",
@@ -67,6 +70,7 @@ func NewClientSet(client util.HttpClient, discover discovery.DiscoveryInterface,
 	}
 }
 
+// NewMockClientSet TODO
 func NewMockClientSet() *ClientSet {
 	return &ClientSet{
 		version:  "unit_test",
@@ -77,6 +81,7 @@ func NewMockClientSet() *ClientSet {
 	}
 }
 
+// ClientSet TODO
 type ClientSet struct {
 	version  string
 	client   util.HttpClient
@@ -85,6 +90,7 @@ type ClientSet struct {
 	Mock     util.MockInfo
 }
 
+// HostServer TODO
 func (cs *ClientSet) HostServer() hostserver.HostServerClientInterface {
 	c := &util.Capability{
 		Client:   cs.client,
@@ -96,6 +102,7 @@ func (cs *ClientSet) HostServer() hostserver.HostServerClientInterface {
 	return hostserver.NewHostServerClientInterface(c, cs.version)
 }
 
+// TopoServer TODO
 func (cs *ClientSet) TopoServer() toposerver.TopoServerClientInterface {
 	c := &util.Capability{
 		Client:   cs.client,
@@ -107,6 +114,7 @@ func (cs *ClientSet) TopoServer() toposerver.TopoServerClientInterface {
 	return toposerver.NewTopoServerClient(c, cs.version)
 }
 
+// ProcServer TODO
 func (cs *ClientSet) ProcServer() procserver.ProcServerClientInterface {
 	c := &util.Capability{
 		Client:   cs.client,
@@ -117,6 +125,7 @@ func (cs *ClientSet) ProcServer() procserver.ProcServerClientInterface {
 	return procserver.NewProcServerClientInterface(c, cs.version)
 }
 
+// AdminServer TODO
 func (cs *ClientSet) AdminServer() adminserver.AdminServerClientInterface {
 	c := &util.Capability{
 		Client:   cs.client,
@@ -128,6 +137,7 @@ func (cs *ClientSet) AdminServer() adminserver.AdminServerClientInterface {
 	return adminserver.NewAdminServerClientInterface(c, cs.version)
 }
 
+// ApiServer TODO
 func (cs *ClientSet) ApiServer() apiserver.ApiServerClientInterface {
 	c := &util.Capability{
 		Client:   cs.client,
@@ -137,6 +147,7 @@ func (cs *ClientSet) ApiServer() apiserver.ApiServerClientInterface {
 	return apiserver.NewApiServerClientInterface(c, cs.version)
 }
 
+// EventServer TODO
 func (cs *ClientSet) EventServer() eventserver.EventServerClientInterface {
 	c := &util.Capability{
 		Client:   cs.client,
@@ -148,6 +159,7 @@ func (cs *ClientSet) EventServer() eventserver.EventServerClientInterface {
 	return eventserver.NewEventServerClientInterface(c, cs.version)
 }
 
+// Healthz TODO
 func (cs *ClientSet) Healthz() healthz.HealthzInterface {
 	c := &util.Capability{
 		Client:   cs.client,
@@ -156,6 +168,7 @@ func (cs *ClientSet) Healthz() healthz.HealthzInterface {
 	return healthz.NewHealthzClient(c, cs.discover)
 }
 
+// CoreService TODO
 func (cs *ClientSet) CoreService() coreservice.CoreServiceClientInterface {
 	c := &util.Capability{
 		Client:   cs.client,
@@ -166,6 +179,7 @@ func (cs *ClientSet) CoreService() coreservice.CoreServiceClientInterface {
 	return coreservice.NewCoreServiceClient(c, cs.version)
 }
 
+// TaskServer TODO
 func (cs *ClientSet) TaskServer() taskserver.TaskServerClientInterface {
 	c := &util.Capability{
 		Client:   cs.client,
@@ -176,6 +190,7 @@ func (cs *ClientSet) TaskServer() taskserver.TaskServerClientInterface {
 	return taskserver.NewProcServerClientInterface(c, cs.version)
 }
 
+// CloudServer TODO
 func (cs *ClientSet) CloudServer() cloudserver.CloudServerClientInterface {
 	c := &util.Capability{
 		Client:   cs.client,
@@ -186,6 +201,7 @@ func (cs *ClientSet) CloudServer() cloudserver.CloudServerClientInterface {
 	return cloudserver.NewCloudServerClientInterface(c, cs.version)
 }
 
+// AuthServer TODO
 func (cs *ClientSet) AuthServer() authserver.AuthServerClientInterface {
 	c := &util.Capability{
 		Client:   cs.client,
@@ -196,6 +212,7 @@ func (cs *ClientSet) AuthServer() authserver.AuthServerClientInterface {
 	return authserver.NewAuthServerClientInterface(c, cs.version)
 }
 
+// CacheService TODO
 func (cs *ClientSet) CacheService() cacheservice.CacheServiceClientInterface {
 	c := &util.Capability{
 		Client:   cs.client,

@@ -37,6 +37,7 @@ import (
 	"github.com/rentiansheng/xlsx"
 )
 
+// ImportNetProperty TODO
 func (s *Service) ImportNetProperty(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
@@ -160,6 +161,7 @@ func (s *Service) ExportNetProperty(c *gin.Context) {
 	}
 }
 
+// BuildDownLoadNetPropertyExcelTemplate TODO
 func (s *Service) BuildDownLoadNetPropertyExcelTemplate(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	webCommon.SetProxyHeader(c)

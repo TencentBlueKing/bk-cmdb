@@ -18,7 +18,7 @@ import (
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/types"
-	//"fmt"
+	// "fmt"
 )
 
 var _ GroupIterator = (*groupIterator)(nil)
@@ -49,6 +49,7 @@ func newGroupIterator(supplierAccount string, cond common.Condition) (GroupItera
 	return grpIterator, nil
 }
 
+// ForEach TODO
 func (cli *groupIterator) ForEach(itemCallback func(item Group) error) error {
 
 	for {
@@ -72,6 +73,8 @@ func (cli *groupIterator) ForEach(itemCallback func(item Group) error) error {
 	}
 
 }
+
+// Next TODO
 func (cli *groupIterator) Next() (Group, error) {
 
 	if len(cli.buffer) == cli.bufIdx {

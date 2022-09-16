@@ -23,9 +23,13 @@ import (
 )
 
 var (
+	// TypeNumeric TODO
 	TypeNumeric = "numeric"
+	// TypeBoolean TODO
 	TypeBoolean = "boolean"
-	TypeString  = "string"
+	// TypeString TODO
+	TypeString = "string"
+	// TypeUnknown TODO
 	TypeUnknown = "unknown"
 )
 

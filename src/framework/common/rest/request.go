@@ -43,6 +43,7 @@ func init() {
 	})
 }
 
+// Request TODO
 type Request struct {
 	capability *Capability
 
@@ -63,6 +64,7 @@ type Request struct {
 	err error
 }
 
+// WithParam TODO
 func (r *Request) WithParam(paramName, value string) *Request {
 	if r.params == nil {
 		r.params = make(url.Values)
@@ -71,6 +73,7 @@ func (r *Request) WithParam(paramName, value string) *Request {
 	return r
 }
 
+// WithHeaders TODO
 func (r *Request) WithHeaders(header http.Header) *Request {
 	if r.headers == nil {
 		r.headers = header
@@ -85,22 +88,26 @@ func (r *Request) WithHeaders(header http.Header) *Request {
 	return r
 }
 
+// WithContext TODO
 func (r *Request) WithContext(ctx context.Context) *Request {
 	r.ctx = ctx
 	return r
 }
 
+// WithTimeout TODO
 func (r *Request) WithTimeout(d time.Duration) *Request {
 	r.timeout = d
 	return r
 }
 
+// SubResource TODO
 func (r *Request) SubResource(subPath string) *Request {
 	subPath = strings.TrimLeft(subPath, "/")
 	r.subPath = subPath
 	return r
 }
 
+// Body TODO
 func (r *Request) Body(body interface{}) *Request {
 	if nil == body {
 		r.body = bytes.NewReader([]byte(""))
@@ -142,6 +149,7 @@ func (r *Request) Body(body interface{}) *Request {
 	return r
 }
 
+// WrapURL TODO
 func (r *Request) WrapURL() *url.URL {
 	finalUrl := &url.URL{}
 	if len(r.baseURL) != 0 {
@@ -170,6 +178,7 @@ func (r *Request) WrapURL() *url.URL {
 	return finalUrl
 }
 
+// Do TODO
 func (r *Request) Do() *Result {
 	result := new(Result)
 	if r.err != nil {
@@ -275,12 +284,14 @@ func (r *Request) tryThrottle(url string) {
 	}
 }
 
+// Result TODO
 type Result struct {
 	Body       []byte
 	Err        error
 	StatusCode int
 }
 
+// Into TODO
 func (r *Result) Into(obj interface{}) error {
 	if nil != r.Err {
 		return r.Err
@@ -357,6 +368,7 @@ func (r *Request) handleMockResult() *Result {
 	panic("got empty mock response")
 }
 
+// isConnectionReset TODO
 // Returns if the given err is "connection reset by peer" error.
 func isConnectionReset(err error) bool {
 	if urlErr, ok := err.(*url.Error); ok {

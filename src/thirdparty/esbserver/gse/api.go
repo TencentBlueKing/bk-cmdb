@@ -1,3 +1,4 @@
+// Package gse TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -20,6 +21,7 @@ import (
 	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
+// OperateProcess TODO
 func (p *gse) OperateProcess(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/operate_proc/"
@@ -39,6 +41,7 @@ func (p *gse) OperateProcess(ctx context.Context, h http.Header, data *metadata.
 	return
 }
 
+// QueryProcOperateResult TODO
 func (p *gse) QueryProcOperateResult(ctx context.Context, h http.Header, taskID string) (resp *metadata.GseProcessOperateTaskResult, err error) {
 	resp = new(metadata.GseProcessOperateTaskResult)
 	subPath := "/v2/gse/get_proc_operate_result/"
@@ -58,6 +61,7 @@ func (p *gse) QueryProcOperateResult(ctx context.Context, h http.Header, taskID 
 	return
 }
 
+// QueryProcStatus TODO
 func (p *gse) QueryProcStatus(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/get_proc_status/"
@@ -76,6 +80,7 @@ func (p *gse) QueryProcStatus(ctx context.Context, h http.Header, data *metadata
 	return
 }
 
+// RegisterProcInfo TODO
 func (p *gse) RegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/register_proc_info/"
@@ -95,6 +100,7 @@ func (p *gse) RegisterProcInfo(ctx context.Context, h http.Header, data *metadat
 	return
 }
 
+// UnRegisterProcInfo TODO
 func (p *gse) UnRegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/unregister_proc_info/"
@@ -114,6 +120,7 @@ func (p *gse) UnRegisterProcInfo(ctx context.Context, h http.Header, data *metad
 	return
 }
 
+// ConfigAddStreamTo TODO
 func (p *gse) ConfigAddStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigAddStreamToParams) (
 	*metadata.GseConfigAddStreamToResult, error) {
 
@@ -141,6 +148,7 @@ func (p *gse) ConfigAddStreamTo(ctx context.Context, h http.Header, data *metada
 	return resp.Data, nil
 }
 
+// ConfigUpdateStreamTo TODO
 func (p *gse) ConfigUpdateStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigUpdateStreamToParams) error {
 	resp := new(metadata.EsbBaseResponse)
 	subPath := "/v2/gse/config_update_streamto/"
@@ -166,6 +174,7 @@ func (p *gse) ConfigUpdateStreamTo(ctx context.Context, h http.Header, data *met
 	return nil
 }
 
+// ConfigDeleteStreamTo TODO
 func (p *gse) ConfigDeleteStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigDeleteStreamToParams) error {
 	resp := new(metadata.EsbBaseResponse)
 	subPath := "/v2/gse/config_delete_streamto/"
@@ -191,6 +200,7 @@ func (p *gse) ConfigDeleteStreamTo(ctx context.Context, h http.Header, data *met
 	return nil
 }
 
+// ConfigQueryStreamTo TODO
 func (p *gse) ConfigQueryStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigQueryStreamToParams) (
 	[]metadata.GseConfigAddStreamToParams, error) {
 
@@ -218,6 +228,7 @@ func (p *gse) ConfigQueryStreamTo(ctx context.Context, h http.Header, data *meta
 	return resp.Data, nil
 }
 
+// ConfigAddRoute TODO
 func (p *gse) ConfigAddRoute(ctx context.Context, h http.Header, data *metadata.GseConfigAddRouteParams) (
 	*metadata.GseConfigAddRouteResult, error) {
 
@@ -245,6 +256,7 @@ func (p *gse) ConfigAddRoute(ctx context.Context, h http.Header, data *metadata.
 	return resp.Data, nil
 }
 
+// ConfigUpdateRoute TODO
 func (p *gse) ConfigUpdateRoute(ctx context.Context, h http.Header, data *metadata.GseConfigUpdateRouteParams) error {
 	resp := new(metadata.EsbBaseResponse)
 	subPath := "/v2/gse/config_update_route/"
@@ -270,6 +282,7 @@ func (p *gse) ConfigUpdateRoute(ctx context.Context, h http.Header, data *metada
 	return nil
 }
 
+// ConfigDeleteRoute TODO
 func (p *gse) ConfigDeleteRoute(ctx context.Context, h http.Header, data *metadata.GseConfigDeleteRouteParams) error {
 	resp := new(metadata.EsbBaseResponse)
 	subPath := "/v2/gse/config_delete_route/"
@@ -295,6 +308,7 @@ func (p *gse) ConfigDeleteRoute(ctx context.Context, h http.Header, data *metada
 	return nil
 }
 
+// ConfigQueryRoute TODO
 func (p *gse) ConfigQueryRoute(ctx context.Context, h http.Header, data *metadata.GseConfigQueryRouteParams) (
 	[]metadata.GseConfigChannel, bool, error) {
 

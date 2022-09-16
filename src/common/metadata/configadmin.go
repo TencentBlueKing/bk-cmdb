@@ -34,7 +34,7 @@ type PlatformSettingResult struct {
 	Data     PlatformSettingConfig `json:"data"`
 }
 
-// ConfigAdminParams used to admin the cmdb config
+// ConfigAdminParmams used to admin the cmdb config
 type ConfigAdminParmams struct {
 	Config ConfigAdmin `json:"config"`
 }
@@ -128,7 +128,7 @@ func (s GlobalModule) Validate() error {
 	return nil
 }
 
-// AdminBackendCfg
+// AdminBackendCfg TODO
 type AdminBackendCfg struct {
 	MaxBizTopoLevel int64  `json:"max_biz_topo_level"`
 	SnapshotBizName string `json:"snapshot_biz_name"`
@@ -147,7 +147,7 @@ func (b AdminBackendCfg) Validate() error {
 	return nil
 }
 
-// ObjectString
+// ObjectString TODO
 type ObjectString string
 
 // Validate validate the fields of ObjectString
@@ -385,10 +385,13 @@ type SetOption struct {
 }
 
 const (
-	ConfigUpdateTypeSet    ConfigUpdateType = "set"
+	// ConfigUpdateTypeSet TODO
+	ConfigUpdateTypeSet ConfigUpdateType = "set"
+	// ConfigUpdateTypeModule TODO
 	ConfigUpdateTypeModule ConfigUpdateType = "module"
 )
 
+// ConfigUpdateType TODO
 type ConfigUpdateType string
 
 // ConfigUpdateSettingOption  used to modify the idle update config
@@ -563,6 +566,7 @@ func (b *BaseCfgItem) ValidateRegex() error {
 	return nil
 }
 
+// I18N TODO
 type I18N struct {
 	CN string `json:"cn"`
 	EN string `json:"en"`
@@ -585,14 +589,17 @@ func (s SiteCfg) Validate() error {
 	return nil
 }
 
+// TitleItem TODO
 type TitleItem struct {
 	BaseCfgItem `json:",inline"`
 }
 
+// FooterItem TODO
 type FooterItem struct {
 	Links []LinksItem `json:"links"`
 }
 
+// LinksItem TODO
 type LinksItem struct {
 	BaseCfgItem `json:",inline"`
 	Enabled     bool `json:"enabled"`
@@ -649,58 +656,72 @@ func (v ValidationRulesCfg) Validate() error {
 	return nil
 }
 
+// NumberItem TODO
 type NumberItem struct {
 	BaseCfgItem `json:",inline"`
 }
 
+// FloatItem TODO
 type FloatItem struct {
 	BaseCfgItem `json:",inline"`
 }
 
+// SinglecharItem TODO
 type SinglecharItem struct {
 	BaseCfgItem `json:",inline"`
 }
 
+// LongcharItem TODO
 type LongcharItem struct {
 	BaseCfgItem `json:",inline"`
 }
 
+// AssociationIdItem TODO
 type AssociationIdItem struct {
 	BaseCfgItem `json:",inline"`
 }
 
+// ClassifyIdItem TODO
 type ClassifyIdItem struct {
 	BaseCfgItem `json:",inline"`
 }
 
+// ModelIdItem TODO
 type ModelIdItem struct {
 	BaseCfgItem `json:",inline"`
 }
 
+// EnumIdItem TODO
 type EnumIdItem struct {
 	BaseCfgItem `json:",inline"`
 }
 
+// EnumNameItem TODO
 type EnumNameItem struct {
 	BaseCfgItem `json:",inline"`
 }
 
+// FieldIdItem TODO
 type FieldIdItem struct {
 	BaseCfgItem `json:",inline"`
 }
 
+// NamedCharacterItem TODO
 type NamedCharacterItem struct {
 	BaseCfgItem `json:",inline"`
 }
 
+// InstanceTagKeyItem TODO
 type InstanceTagKeyItem struct {
 	BaseCfgItem `json:",inline"`
 }
 
+// InstanceTagValueItem TODO
 type InstanceTagValueItem struct {
 	BaseCfgItem `json:",inline"`
 }
 
+// BusinessTopoInstNamesItem TODO
 type BusinessTopoInstNamesItem struct {
 	BaseCfgItem `json:",inline"`
 }

@@ -758,16 +758,14 @@ var _ = Describe("host abnormal test", func() {
 				"service_category_id": 2,
 				"service_template_id": templateID,
 			}
-			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizID, 10),
-				strconv.FormatInt(setID, 10), header, input)
-			util.RegisterResponse(rsp)
+			rsp, err := instClient.CreateModule(context.Background(), bizID, setID, header, input)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
 			responses["req_ba23073a86944d0cb6386a1b2a7341ed1"] = rsp
 
-			//create module rule
+			// create module rule
 			moduleID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a7341ed1",
-				"name:$.data.bk_module_id", "{.data.bk_module_id}")
+				"name:$.bk_module_id", "{.bk_module_id}")
 			attributeID := util.JsonPathExtractInt(responses, "req_269f039e70864ca29c0ca7bfce344ed5", "name:$.data.id",
 				"{.data.id}")
 			moduleRuleInput := map[string]interface{}{
@@ -837,7 +835,7 @@ var _ = Describe("host abnormal test", func() {
 			bizID := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d",
 				"name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			moduleID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a7341ed1",
-				"name:$.data.bk_module_id", "{.data.bk_module_id}")
+				"name:$.bk_module_id", "{.bk_module_id}")
 			option := metadata.GetHostApplyStatusParam{
 				ApplicationID: bizID,
 				ModuleIDs:     []int64{moduleID},
@@ -936,7 +934,7 @@ var _ = Describe("host abnormal test", func() {
 			bizID := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d", "name:$.data.bk_biz_id",
 				"{.data.bk_biz_id}")
 			moduleID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a7341ed1",
-				"name:$.data.bk_module_id", "{.data.bk_module_id}")
+				"name:$.bk_module_id", "{.bk_module_id}")
 
 			input := map[string]interface{}{
 				"bk_biz_id": bizID,
@@ -984,7 +982,7 @@ var _ = Describe("host abnormal test", func() {
 			bizID := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d",
 				"name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			moduleID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a7341ed1",
-				"name:$.data.bk_module_id", "{.data.bk_module_id}")
+				"name:$.bk_module_id", "{.bk_module_id}")
 			templateID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a331wq2", "name:$.data.id",
 				"{.data.id}")
 			option := metadata.ModuleFinalRulesParam{

@@ -38,6 +38,7 @@ type queryParam struct {
 	IPList   []string    `json:"ip_list"`
 }
 
+// ListHostFavourites TODO
 func (s *Service) ListHostFavourites(ctx *rest.Contexts) {
 
 	query := new(metadata.QueryInput)
@@ -125,6 +126,7 @@ func (s *Service) AddHostFavourite(ctx *rest.Contexts) {
 	ctx.RespEntity(result.Data)
 }
 
+// UpdateHostFavouriteByID TODO
 func (s *Service) UpdateHostFavouriteByID(ctx *rest.Contexts) {
 
 	ID := ctx.Request.PathParameter("id")
@@ -192,6 +194,7 @@ func (s *Service) UpdateHostFavouriteByID(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// DeleteHostFavouriteByID TODO
 func (s *Service) DeleteHostFavouriteByID(ctx *rest.Contexts) {
 
 	ID := ctx.Request.PathParameter("id")
@@ -222,6 +225,7 @@ func (s *Service) DeleteHostFavouriteByID(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// IncrHostFavouritesCount TODO
 func (s *Service) IncrHostFavouritesCount(ctx *rest.Contexts) {
 
 	ID := ctx.Request.PathParameter("id")

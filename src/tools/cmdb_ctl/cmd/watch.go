@@ -58,6 +58,7 @@ func (w *watchConf) addFlags(cmd *cobra.Command) {
 		"of object_instance or mainline_instance resource")
 }
 
+// NewWatchCommand TODO
 func NewWatchCommand() *cobra.Command {
 	conf := new(watchConf)
 
@@ -275,12 +276,14 @@ func runStartFromWatch(c *watchConf) error {
 	return nil
 }
 
+// WatchResp TODO
 type WatchResp struct {
 	// watched events or not
 	Watched bool      `json:"bk_watched"`
 	Events  []*Detail `json:"bk_events"`
 }
 
+// Detail TODO
 type Detail struct {
 	Cursor    string `json:"bk_cursor"`
 	Resource  string `json:"bk_resource"`

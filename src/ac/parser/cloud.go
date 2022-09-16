@@ -219,6 +219,7 @@ var (
 	deleteCloudResourceDirectoryRegexp = regexp.MustCompile(`^/api/v3/delete/resource/directory/([0-9]+)$`)
 )
 
+// CloudResourceDirectory TODO
 func (ps *parseStream) CloudResourceDirectory() *parseStream {
 
 	if ps.shouldReturn() {

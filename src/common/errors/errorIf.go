@@ -47,6 +47,7 @@ type CCErrorIf interface {
 	Load(res map[string]ErrorCode)
 }
 
+// NewFromStdError TODO
 func NewFromStdError(err error, defaultErrCode int) CCErrorCoder {
 	ccErr, ok := err.(CCErrorCoder)
 	if ok == true {
@@ -66,20 +67,24 @@ func GetGlobalCCError() CCErrorIf {
 	return globalCCError
 }
 
+// SetGlobalCCError TODO
 func SetGlobalCCError(ccError CCErrorIf) {
 	globalCCError = ccError
 }
 
 var (
+	// GlobalCCErrorNotInitialized TODO
 	// 1199074 is CCErrCommGlobalCCErrorNotInitialized actually
 	GlobalCCErrorNotInitialized = New(1199074, "global cc error not initialized")
 )
 
+// RawErrorInfo TODO
 type RawErrorInfo struct {
 	ErrCode int
 	Args    []interface{}
 }
 
+// ToCCError TODO
 func (rei *RawErrorInfo) ToCCError(ccErrorIF DefaultCCErrorIf) CCErrorCoder {
 	if rei.ErrCode == 0 {
 		return nil

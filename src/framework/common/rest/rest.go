@@ -10,12 +10,14 @@
  * limitations under the License.
  */
 
+// Package rest TODO
 package rest
 
 import (
 	"strings"
 )
 
+// ClientInterface TODO
 type ClientInterface interface {
 	Verb(verb VerbType) *Request
 	Post() *Request
@@ -25,6 +27,7 @@ type ClientInterface interface {
 	Patch() *Request
 }
 
+// NewRESTClient TODO
 func NewRESTClient(c *Capability, baseUrl string) ClientInterface {
 	baseUrl = strings.Trim(baseUrl, "/")
 	baseUrl = "/" + baseUrl + "/"
@@ -34,11 +37,13 @@ func NewRESTClient(c *Capability, baseUrl string) ClientInterface {
 	}
 }
 
+// RESTClient TODO
 type RESTClient struct {
 	baseUrl    string
 	capability *Capability
 }
 
+// Verb TODO
 func (r *RESTClient) Verb(verb VerbType) *Request {
 	return &Request{
 		verb:       verb,
@@ -47,22 +52,27 @@ func (r *RESTClient) Verb(verb VerbType) *Request {
 	}
 }
 
+// Post TODO
 func (r *RESTClient) Post() *Request {
 	return r.Verb(POST)
 }
 
+// Put TODO
 func (r *RESTClient) Put() *Request {
 	return r.Verb(PUT)
 }
 
+// Get TODO
 func (r *RESTClient) Get() *Request {
 	return r.Verb(GET)
 }
 
+// Delete TODO
 func (r *RESTClient) Delete() *Request {
 	return r.Verb(DELETE)
 }
 
+// Patch TODO
 func (r *RESTClient) Patch() *Request {
 	return r.Verb(PATCH)
 }

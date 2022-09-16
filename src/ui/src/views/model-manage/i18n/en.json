@@ -1,11 +1,12 @@
 {
   "X的关联关系": "The association of {model}",
-  "模型导入结果提示": "Successfully imported {modelCount} model(s) and {relationTypeCount} association item(s).",
+  "模型导入结果提示": "Successfully imported {modelCount} model(s)",
   "确认完成导出提示": "Confirm completion of export?",
   "用户须知": "Notice",
   "导出内容确认": "Confirmation",
   "导出设置": "Settings",
   "开始导出": "Process",
+  "开始导入": "Process",
   "删除后，不导出": "Do not export",
   "不在本次导出的模型中": "Not in export list",
   "加选模型": "Add to export list",
@@ -62,5 +63,9 @@
   "确认导入": "Confirm import",
   "内置模型不允许导出": "Built-in models are not allowed to be exported",
   "没有选择任何导入模型或模型全部已在目标环境存在": "No imported models are selected or all models already exist in the target environment",
-  "模型导入导出用户须知": "1. When the imported model already exists in the target environment (ID), it will be displayed as \"Conflict\" and cannot be imported;\n2. If the exported association type already exists in the target environment (ID), please set overwrite or skip update in the imported process;\n3. If there is sensitive enterprise data (such as employee name, job title, etc.) in the model, please desensitize it before exporting to avoid leaking sensitive information;\n4. When the model group is in import process, it will search for the group name that matches the same ID in the target environment. If it does not exist, you can choose to create a new one or place it in Uncategorized group;\n5. In order to avoid leakage of user information, the exported data will not contain information about the creator or modifier of the data in the local environment;\n6. In order to avoid the conflict of model data being tampered by multiple parties at the same time, only one imported task is allowed to exist at the same time;\n7. Due to the logical protection of the CMDB's own functions, the built-in model of CMDB is not allowed to be imported or exported, please be aware."
+  "模型导入导出用户须知": "1. When the imported model already exists in the target environment (ID), it will be displayed as \"Conflict\" and cannot be imported;\n2. If the exported association type already exists in the target environment (ID), please set overwrite or skip update in the imported process;\n3. If there is sensitive enterprise data (such as employee name, job title, etc.) in the model, please desensitize it before exporting to avoid leaking sensitive information;\n4. When the model group is in import process, it will search for the group name that matches the same ID in the target environment. If it does not exist, you can choose to create a new one or place it in Uncategorized group;\n5. In order to avoid leakage of user information, the exported data will not contain information about the creator or modifier of the data in the local environment;\n6. In order to avoid the conflict of model data being tampered by multiple parties at the same time, only one imported task is allowed to exist at the same time;\n7. Due to the logical protection of the CMDB's own functions, the built-in model of CMDB is not allowed to be imported or exported, please be aware.",
+  "当前导入内容没有关联类型": "The current import has no associated type",
+  "分组下有模型，不能删除": "There are models under the group that cannot be deleted",
+  "已选": "Selected",
+  "导入模型": "Import Model"
 }
