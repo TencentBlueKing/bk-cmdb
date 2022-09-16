@@ -22,6 +22,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// ChangeSetPropertyName TODO
 func ChangeSetPropertyName(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	filter := map[string]interface{}{
 		common.BKPropertyIDField: "bk_set_name",

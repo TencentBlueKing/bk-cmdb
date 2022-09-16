@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -33,32 +35,32 @@ var commServiceTemplateIndexes = []types.Index{}
 var deprecatedServiceTemplateIndexes = []types.Index{
 	{
 		Name: "id_1_bk_biz_id_1",
-		Keys: map[string]int32{
-			"id":        1,
-			"bk_biz_id": 1,
+		Keys: bson.D{
+			{"id", 1},
+			{"bk_biz_id", 1},
 		},
-		Background: true, //1,
+		Background: true, // 1,
 	},
 	{
 		Name: "idx_bkBizID",
-		Keys: map[string]int32{
-			"bk_biz_id": 1,
+		Keys: bson.D{{
+			"bk_biz_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_unique_id",
-		Keys: map[string]int32{
-			"id": 1,
+		Keys: bson.D{{
+			"id", 1},
 		},
 		Unique:     true,
 		Background: true,
 	},
 	{
 		Name: "bk_idx_bk_biz_id_name",
-		Keys: map[string]int32{
-			"bk_biz_id": 1,
-			"name":      1,
+		Keys: bson.D{
+			{"bk_biz_id", 1},
+			{"name", 1},
 		},
 		Unique:     true,
 		Background: true,

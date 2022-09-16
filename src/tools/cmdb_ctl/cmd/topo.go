@@ -34,6 +34,7 @@ type topoCheckConf struct {
 	bizID int64
 }
 
+// NewTopoCheckCommand TODO
 func NewTopoCheckCommand() *cobra.Command {
 	conf := new(topoCheckConf)
 
@@ -215,7 +216,7 @@ func (s *topoCheckService) searchMainlineInstance() error {
 	for _, objectID := range s.modelIDs {
 		mainlineInstances := make([]map[string]interface{}, 0)
 
-		cond :=map[string]interface{}{
+		cond := map[string]interface{}{
 			common.BKObjIDField: objectID,
 			common.BKAppIDField: s.bizID,
 		}

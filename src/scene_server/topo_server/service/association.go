@@ -13,10 +13,9 @@
 package service
 
 import (
-	"bytes"
-	"io/ioutil"
 	"sort"
 	"strconv"
+	"strings"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
@@ -27,9 +26,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-
-	"golang.org/x/text/encoding/simplifiedchinese"
-	"golang.org/x/text/transform"
+	"configcenter/src/common/util"
 )
 
 // CreateMainLineObject create a new model in the main line topo
@@ -129,7 +126,7 @@ func (s *Service) SearchObjectByClassificationID(ctx *rest.Contexts) {
 
 // SearchBusinessTopoWithStatistics calculate how many service instances on each topo instance node
 func (s *Service) SearchBusinessTopoWithStatistics(ctx *rest.Contexts) {
-	resp, err := s.searchBusinessTopo(ctx, true, true)
+	resp, err := s.searchBusinessTopo(ctx, true)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -137,8 +134,9 @@ func (s *Service) SearchBusinessTopoWithStatistics(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
+// SearchBusinessTopo search business topo without statistics
 func (s *Service) SearchBusinessTopo(ctx *rest.Contexts) {
-	resp, err := s.searchBusinessTopo(ctx, false, false)
+	resp, err := s.searchBusinessTopo(ctx, false)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -146,10 +144,8 @@ func (s *Service) SearchBusinessTopo(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
-// SearchBusinessTopo search the business topo
-// withSortName 按拼音对名字排序，ui 专用
-func (s *Service) searchBusinessTopo(ctx *rest.Contexts,
-	withStatistics, withSortName bool) ([]*metadata.TopoInstRst, error) {
+// searchBusinessTopo search the business topo, sort by topo instance name
+func (s *Service) searchBusinessTopo(ctx *rest.Contexts, withStatistics bool) ([]*metadata.TopoInstRst, error) {
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("failed to parse the path params id(%s), err: %v , rid: %s", ctx.Request.PathParameter("app_id"),
@@ -169,10 +165,8 @@ func (s *Service) searchBusinessTopo(ctx *rest.Contexts,
 		return nil, err
 	}
 
-	if withSortName {
-		// sort before response,
-		SortTopoInst(topoInstRst)
-	}
+	// sort before response
+	SortTopoInst(topoInstRst)
 
 	return topoInstRst, nil
 }
@@ -234,22 +228,34 @@ func (s *Service) GetTopoNodeHostAndSerInstCount(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SortTopoInst sort topo inst in the order of default then 0-9a-z ignoring english case or chinese pinyin
 func SortTopoInst(instData []*metadata.TopoInstRst) {
-	for _, data := range instData {
-		instNameInGBK, _ := ioutil.ReadAll(transform.NewReader(bytes.NewReader([]byte(data.InstName)), simplifiedchinese.GBK.NewEncoder()))
-		data.InstName = string(instNameInGBK)
-	}
-
 	sort.Slice(instData, func(i, j int) bool {
+		// default set should be at the front
+		iDefault := instData[i].Default
+		jDefault := instData[j].Default
+
+		if iDefault != 0 && jDefault == 0 {
+			return true
+		}
+
+		if iDefault == 0 && jDefault != 0 {
+			return false
+		}
+
+		// sort others by their initials
+		iInitials := strings.ToLower(util.GetInitials(instData[i].InstName))
+		jInitials := strings.ToLower(util.GetInitials(instData[j].InstName))
+
+		if iInitials != jInitials {
+			return iInitials < jInitials
+		}
+
 		return instData[i].InstName < instData[j].InstName
 	})
 
-	for _, data := range instData {
-		instNameInUTF, _ := ioutil.ReadAll(transform.NewReader(bytes.NewReader([]byte(data.InstName)), simplifiedchinese.GBK.NewDecoder()))
-		data.InstName = string(instNameInUTF)
-	}
-
 	for idx := range instData {
+		// sort child topo
 		SortTopoInst(instData[idx].Child)
 	}
 }
@@ -770,7 +776,7 @@ func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 	ctx.RespEntity(ret.Info)
 }
 
-//SearchAssociationRelatedInst search all associations of certain model instance, including it as source & target
+// SearchAssociationRelatedInst search all associations of certain model instance, including it as source & target
 func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 	request := &metadata.SearchAssociationRelatedInstRequest{}
 	if err := ctx.DecodeInto(request); err != nil {
@@ -1097,6 +1103,7 @@ func (s *Service) DeleteAssociationInstBatch(ctx *rest.Contexts) {
 	ctx.RespEntity(result.Data)
 }
 
+// SearchTopoPath TODO
 func (s *Service) SearchTopoPath(ctx *rest.Contexts) {
 	rid := ctx.Kit.Rid
 

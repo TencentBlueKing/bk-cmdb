@@ -32,6 +32,7 @@ type hostModuleLog struct {
 	cur       []metadata.ModuleHost
 }
 
+// NewHostModuleLog TODO
 func NewHostModuleLog(clientSet coreservice.CoreServiceClientInterface, hostID []int64) *hostModuleLog {
 	return &hostModuleLog{
 		audit: audit{
@@ -41,6 +42,7 @@ func NewHostModuleLog(clientSet coreservice.CoreServiceClientInterface, hostID [
 	}
 }
 
+// WithPrevious TODO
 func (h *hostModuleLog) WithPrevious(kit *rest.Kit) errors.CCError {
 	if h.pre != nil {
 		return nil
@@ -53,6 +55,7 @@ func (h *hostModuleLog) WithPrevious(kit *rest.Kit) errors.CCError {
 	return nil
 }
 
+// WithCurrent TODO
 func (h *hostModuleLog) WithCurrent(kit *rest.Kit) errors.CCError {
 	if h.cur != nil {
 		return nil
@@ -342,7 +345,7 @@ func (h *hostModuleLog) getApps(kit *rest.Kit, appIDs []int64) ([]mapstr.MapStr,
 	return result.Info, nil
 }
 
-// GenerateAuditLog generate audit log of host module relate.
+// generateAuditLog generate audit log of host module relate.
 func (h *hostModuleLog) generateAuditLog(action metadata.ActionType, hostID, bizID int64, hostIP string,
 	preData, curData metadata.HostBizTopo) *metadata.AuditLog {
 	return &metadata.AuditLog{

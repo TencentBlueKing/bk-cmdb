@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package condition TODO
 package condition
 
 import (
@@ -75,9 +76,12 @@ func (cli *condition) SetPage(page types.MapStr) error {
 	return nil
 }
 
+// SetFields TODO
 func (cli *condition) SetFields(fields []string) {
 	cli.filterFields = fields
 }
+
+// GetFields TODO
 func (cli *condition) GetFields() []string {
 	return cli.filterFields
 }
@@ -184,6 +188,7 @@ func (cli *condition) GetSort() string {
 	return cli.sort
 }
 
+// Field TODO
 // CreateField create a field
 func (cli *condition) Field(fieldName string) Field {
 	field := &field{
@@ -194,6 +199,7 @@ func (cli *condition) Field(fieldName string) Field {
 	return field
 }
 
+// NewOR TODO
 // CreateField create a field
 func (cli *condition) NewOR() OR {
 	field := &orField{
@@ -209,9 +215,9 @@ func (cli *condition) ToMapStr() types.MapStr {
 	for _, item := range cli.fields {
 		tmpResult.Merge(item.ToMapStr())
 	}
-	//Note: Here ToMapStr is the query condition for conversion to mongodb.
-	//When there are multiple or, the last one will prevail.
-	//The reason why this field uses array is for future compatibility consideration.
+	// Note: Here ToMapStr is the query condition for conversion to mongodb.
+	// When there are multiple or, the last one will prevail.
+	// The reason why this field uses array is for future compatibility consideration.
 	for _, item := range cli.or {
 		tmpResult.Merge(item.ToMapStr())
 	}

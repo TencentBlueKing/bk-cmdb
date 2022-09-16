@@ -14,6 +14,7 @@ package util
 
 import "strings"
 
+// CalSliceDiff TODO
 func CalSliceDiff(oldSlice, newSlice []string) (subs, plugs []string) {
 	subs = make([]string, 0)
 	plugs = make([]string, 0)
@@ -30,6 +31,7 @@ func CalSliceDiff(oldSlice, newSlice []string) (subs, plugs []string) {
 	return
 }
 
+// CaseInsensitiveContains TODO
 func CaseInsensitiveContains(s string, substr string) bool {
 	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
 }
@@ -64,6 +66,7 @@ func ContainsInt(set []int64, sub int64) bool {
 	return false
 }
 
+// CalSliceInt64Diff TODO
 func CalSliceInt64Diff(oldSlice, newSlice []int64) (subs, inter, plugs []int64) {
 	subs = make([]int64, 0)
 	inter = make([]int64, 0)

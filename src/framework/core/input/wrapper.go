@@ -13,15 +13,15 @@
 package input
 
 import (
-    "sync"
-    "time"
+	"sync"
+	"time"
 
 	"configcenter/src/framework/core/output"
 )
 
 // wrapInputer the Inputer wrapper
 type wrapInputer struct {
-    sync.Mutex
+	sync.Mutex
 	isTiming  bool
 	frequency time.Duration
 	kind      InputerType
@@ -31,34 +31,40 @@ type wrapInputer struct {
 	exception ExceptionFunc
 }
 
+// SetStatus TODO
 func (cli *wrapInputer) SetStatus(status InputerStatus) {
-    cli.Lock()
-    defer cli.Unlock()
+	cli.Lock()
+	defer cli.Unlock()
 	cli.status = status
 }
 
+// GetStatus TODO
 func (cli *wrapInputer) GetStatus() InputerStatus {
-    cli.Lock()
-    defer cli.Unlock()
+	cli.Lock()
+	defer cli.Unlock()
 	return cli.status
 }
 
+// GetFrequency TODO
 func (cli *wrapInputer) GetFrequency() time.Duration {
-    cli.Lock()
-    defer cli.Unlock()
+	cli.Lock()
+	defer cli.Unlock()
 	return cli.frequency
 }
 
+// Name TODO
 func (cli *wrapInputer) Name() string {
-    cli.Lock()
-    defer cli.Unlock()
+	cli.Lock()
+	defer cli.Unlock()
 	return cli.inputer.Name()
 }
 
+// Run TODO
 func (cli *wrapInputer) Run(ctx InputerContext) *InputerResult {
 	return cli.inputer.Run(ctx)
 }
 
+// Stop TODO
 func (cli *wrapInputer) Stop() {
 	cli.inputer.Stop()
 }

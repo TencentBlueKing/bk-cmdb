@@ -35,7 +35,7 @@
               </div>
             </template>
             <template v-else>
-              <div class="icon-box" style="cursor: default;">
+              <div class="icon-box" :class="{ 'is-builtin': activeModel.ispre }" style="cursor: default;">
                 <i class="icon" :class="activeModel.bk_obj_icon || 'icon-cc-default'"></i>
               </div>
             </template>
@@ -666,6 +666,12 @@
             font-size: 20px;
             color: $cmdbBorderFocusColor;
             cursor: pointer;
+
+            &.is-builtin {
+              background: #f5f7fa;
+              color: #798aad;
+            }
+
             &:hover {
                 .hover-text {
                     background: rgba(0, 0, 0, .5);

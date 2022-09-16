@@ -26,7 +26,7 @@ import (
 func TestCreateAssociationKind(t *testing.T) {
 	asstMgr := newAssociation(t)
 
-	//create association kind without ID
+	// create association kind without ID
 	inputParams := metadata.CreateAssociationKind{}
 	inputParams.Data.AssociationKindName = xid.New().String()
 	inputParams.Data.DestinationToSourceNote = "test"
@@ -35,18 +35,18 @@ func TestCreateAssociationKind(t *testing.T) {
 	dataResult, err := asstMgr.CreateAssociationKind(defaultCtx, inputParams)
 	require.NotNil(t, err)
 
-	//create a valid association kind
+	// create a valid association kind
 	inputParams.Data.AssociationKindID = xid.New().String()
 	dataResult, err = asstMgr.CreateAssociationKind(defaultCtx, inputParams)
 	require.Nil(t, err)
 	require.NotNil(t, dataResult)
 	require.NotEqual(t, uint64(0), dataResult.Created.ID)
 
-	//create a new association kind with dup kind ID
+	// create a new association kind with dup kind ID
 	dataResult, err = asstMgr.CreateAssociationKind(defaultCtx, inputParams)
 	require.NotNil(t, err)
 
-	//create a new association kind with dup kind Name
+	// create a new association kind with dup kind Name
 	inputParams.Data.AssociationKindName = xid.New().String()
 	dataResult, err = asstMgr.CreateAssociationKind(defaultCtx, inputParams)
 	require.Nil(t, err)
@@ -55,7 +55,7 @@ func TestCreateAssociationKind(t *testing.T) {
 func TestCreateManyAssociationKind(t *testing.T) {
 	asstMgr := newAssociation(t)
 
-	//create two association kind
+	// create two association kind
 	inputParams := metadata.CreateManyAssociationKind{}
 	asstKind1 := metadata.AssociationKind{}
 	asstKind2 := metadata.AssociationKind{}
@@ -92,12 +92,12 @@ func TestSetAssociationKind(t *testing.T) {
 	inputParams.Data.Direction = "test"
 	inputParams.Data.SourceToDestinationNote = "test"
 
-	//create set association kind with create result
+	// create set association kind with create result
 	dataResult, err := asstMgr.SetAssociationKind(defaultCtx, inputParams)
 	require.Nil(t, err)
 	require.Equal(t, 1, len(dataResult.Created))
 
-	//create set association kind with update result
+	// create set association kind with update result
 	dataResult, err = asstMgr.SetAssociationKind(defaultCtx, inputParams)
 	require.Nil(t, err)
 	require.Equal(t, 1, len(dataResult.Updated))
@@ -107,7 +107,7 @@ func TestSetAssociationKind(t *testing.T) {
 func TestSetManyAssociationKind(t *testing.T) {
 	asstMgr := newAssociation(t)
 
-	//create two association kind  in the same kind id
+	// create two association kind  in the same kind id
 	inputParams := metadata.SetManyAssociationKind{}
 	asstKind1 := metadata.AssociationKind{}
 	asstKind2 := metadata.AssociationKind{}
@@ -137,7 +137,7 @@ func TestSetManyAssociationKind(t *testing.T) {
 func TestUpdateAssociationKind(t *testing.T) {
 	asstMgr := newAssociation(t)
 
-	//create association kind without ID
+	// create association kind without ID
 	asstKind := metadata.CreateAssociationKind{}
 	updateKind := metadata.UpdateOption{}
 	kindID := xid.New().String()
@@ -166,7 +166,7 @@ func TestUpdateAssociationKind(t *testing.T) {
 func TestSearchAssociationKind(t *testing.T) {
 	asstMgr := newAssociation(t)
 
-	//create association kind
+	// create association kind
 	asstKind := metadata.CreateAssociationKind{}
 	kindID := xid.New().String()
 
@@ -181,7 +181,7 @@ func TestSearchAssociationKind(t *testing.T) {
 	require.NotNil(t, dataResult.Created)
 	require.NotEqual(t, 0, dataResult.Created.ID)
 
-	//search association kind
+	// search association kind
 	searchCond := metadata.QueryCondition{}
 	searchCond.Condition = mapstr.MapStr{common.AssociationKindIDField: asstKind}
 	searchResult, err := asstMgr.SearchAssociationKind(defaultCtx, searchCond)
@@ -193,7 +193,7 @@ func TestSearchAssociationKind(t *testing.T) {
 func TestDeleteassociationKind(t *testing.T) {
 	asstMgr := newAssociation(t)
 
-	//create association kind
+	// create association kind
 	asstKind := metadata.CreateAssociationKind{}
 	kindID := xid.New().String()
 
@@ -208,7 +208,7 @@ func TestDeleteassociationKind(t *testing.T) {
 	require.NotNil(t, dataResult.Created)
 	require.NotEqual(t, 0, dataResult.Created.ID)
 
-	//delete the created association kind by condition
+	// delete the created association kind by condition
 	searchCond := metadata.DeleteOption{}
 	searchCond.Condition = mapstr.MapStr{common.AssociationKindIDField: asstKind}
 	searchResult, err := asstMgr.DeleteAssociationKind(defaultCtx, searchCond)

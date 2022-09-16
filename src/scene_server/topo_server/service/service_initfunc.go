@@ -93,7 +93,7 @@ func (s *Service) initBusiness(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
-// 业务集
+// initBizSet 业务集
 func (s *Service) initBizSet(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.Engine.CCErr,
@@ -241,7 +241,7 @@ func (s *Service) initIdentifier(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
-// 全文索引
+// initFullTextSearch 全文索引
 func (s *Service) initFullTextSearch(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.Engine.CCErr,
@@ -253,7 +253,7 @@ func (s *Service) initFullTextSearch(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
-// 资源池目录
+// initResourceDirectory 资源池目录
 func (s *Service) initResourceDirectory(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.Engine.CCErr,

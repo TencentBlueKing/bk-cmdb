@@ -16,53 +16,86 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
 )
 
-func (t *instanceClient) CreateSet(ctx context.Context, appID string, h http.Header, dat mapstr.MapStr) (resp *metadata.CreateInstResult, err error) {
-	resp = new(metadata.CreateInstResult)
-	subPath := "/set/%s"
+// CreateSet TODO
+func (t *instanceClient) CreateSet(ctx context.Context, appID int64, h http.Header, dat mapstr.MapStr) (mapstr.MapStr,
+	errors.CCErrorCoder) {
 
-	err = t.client.Post().
+	resp := new(metadata.CreateInstResult)
+	subPath := "/set/%d"
+
+	err := t.client.Post().
 		WithContext(ctx).
 		Body(dat).
 		SubResourcef(subPath, appID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
 }
 
-func (t *instanceClient) DeleteSet(ctx context.Context, appID string, setID string, h http.Header) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/set/%s/%s"
+// DeleteSet TODO
+func (t *instanceClient) DeleteSet(ctx context.Context, appID, setID int64, h http.Header) errors.CCErrorCoder {
+	resp := new(metadata.Response)
+	subPath := "/set/%d/%d"
 
-	err = t.client.Delete().
+	err := t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
 		SubResourcef(subPath, appID, setID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (t *instanceClient) UpdateSet(ctx context.Context, appID string, setID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/set/%s/%s"
+// UpdateSet TODO
+func (t *instanceClient) UpdateSet(ctx context.Context, appID, setID int64, h http.Header,
+	dat map[string]interface{}) errors.CCErrorCoder {
 
-	err = t.client.Put().
+	resp := new(metadata.Response)
+	subPath := "/set/%d/%d"
+
+	err := t.client.Put().
 		WithContext(ctx).
 		Body(dat).
 		SubResourcef(subPath, appID, setID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
+// SearchSet TODO
 func (t *instanceClient) SearchSet(ctx context.Context, ownerID string, appID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/set/search/%s/%s"
@@ -77,6 +110,7 @@ func (t *instanceClient) SearchSet(ctx context.Context, ownerID string, appID st
 	return
 }
 
+// SearchSetBatch TODO
 func (t *instanceClient) SearchSetBatch(ctx context.Context, appID string, h http.Header, s *metadata.SearchInstBatchOption) (resp *metadata.MapArrayResponse, err error) {
 	resp = new(metadata.MapArrayResponse)
 	subPath := "/findmany/set/bk_biz_id/%s"

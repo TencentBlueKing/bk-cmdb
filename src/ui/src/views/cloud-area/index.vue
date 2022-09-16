@@ -14,12 +14,16 @@
   <div class="cloud-area-layout">
     <cmdb-tips class="cloud-area-tips" tips-key="cloud-area-tips">
       <i18n path="云区域提示语">
-        <bk-button text size="small" place="resource" style="padding: 0" @click="linkResource">
-          {{$t('云资源发现')}}
-        </bk-button>
-        <bk-button text size="small" place="agent" style="padding: 0" @click="linkAgent">
-          {{$t('节点管理')}}
-        </bk-button>
+        <template #resource>
+          <bk-button text size="small" style="padding: 0" @click="linkResource">
+            {{$t('云资源发现')}}
+          </bk-button>
+        </template>
+        <template #agent>
+          <bk-button text size="small" style="padding: 0" @click="linkAgent">
+            {{$t('节点管理')}}
+          </bk-button>
+        </template>
       </i18n>
     </cmdb-tips>
     <div class="cloud-area-options">

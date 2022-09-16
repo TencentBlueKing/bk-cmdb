@@ -182,7 +182,7 @@ func (cli *HostWrapper) SetTopo(bizID int64, setName, moduleName string, act Hos
 		return fmt.Errorf("not found the module(%s)", moduleName)
 	}
 
-	//fmt.Println("moduleids:", moduleIDS)
+	// fmt.Println("moduleids:", moduleIDS)
 	switch act {
 	case HostAppendModule:
 		cli.host.SetModuleIDS(moduleIDS, true)

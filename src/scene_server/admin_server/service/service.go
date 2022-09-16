@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package service TODO
 package service
 
 import (
@@ -38,6 +39,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// Service TODO
 type Service struct {
 	*backbone.Engine
 	*logics.Logics
@@ -50,28 +52,34 @@ type Service struct {
 	ConfigCenter *configures.ConfCenter
 }
 
+// NewService TODO
 func NewService(ctx context.Context) *Service {
 	return &Service{
 		ctx: ctx,
 	}
 }
 
+// SetDB TODO
 func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
 }
 
+// SetWatchDB TODO
 func (s *Service) SetWatchDB(watchDB dal.RDB) {
 	s.watchDB = watchDB
 }
 
+// SetCache TODO
 func (s *Service) SetCache(cache redis.Client) {
 	s.cache = cache
 }
 
+// SetIam TODO
 func (s *Service) SetIam(iam *iam.IAM) {
 	s.iam = iam
 }
 
+// WebService TODO
 func (s *Service) WebService() *restful.Container {
 	container := restful.NewContainer()
 
@@ -117,6 +125,7 @@ func (s *Service) WebService() *restful.Container {
 	return container
 }
 
+// Healthz TODO
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta := metric.HealthMeta{IsHealthy: true}
 
@@ -162,6 +171,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(answer)
 }
 
+// MonitorHealth TODO
 func (s *Service) MonitorHealth(req *restful.Request, resp *restful.Response) {
 	rid := util.GenerateRID()
 	alam := &meta.Alarm{

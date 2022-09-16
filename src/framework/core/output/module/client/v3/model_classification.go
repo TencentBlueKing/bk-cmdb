@@ -21,9 +21,12 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// ClassificationGetter TODO
 type ClassificationGetter interface {
 	Classification() ClassificationInterface
 }
+
+// ClassificationInterface TODO
 type ClassificationInterface interface {
 	CreateClassification(data types.MapStr) (int, error)
 	DeleteClassification(cond common.Condition) error
@@ -32,6 +35,7 @@ type ClassificationInterface interface {
 	UpdateClassification(data types.MapStr, cond common.Condition) error
 }
 
+// Classification TODO
 type Classification struct {
 	cli *Client
 }

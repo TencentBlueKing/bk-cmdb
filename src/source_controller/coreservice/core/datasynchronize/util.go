@@ -1,3 +1,4 @@
+// Package datasynchronize TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -54,6 +55,7 @@ func newSynchronizeAdapter(syncData *metadata.SynchronizeParameter) *synchronize
 	}
 }
 
+// PreSynchronizeFilter TODO
 func (s *synchronizeAdapter) PreSynchronizeFilter(kit *rest.Kit) errors.CCError {
 	if s.syncData.SynchronizeFlag == "" {
 		// TODO  return error not synchronize sign
@@ -101,6 +103,7 @@ func (s *synchronizeAdapter) PreSynchronizeFilter(kit *rest.Kit) errors.CCError 
 	return nil
 }
 
+// GetErrorStringArr TODO
 func (s *synchronizeAdapter) GetErrorStringArr(kit *rest.Kit) ([]metadata.ExceptionResult, errors.CCError) {
 	if len(s.errorArray) == 0 {
 		return nil, nil
@@ -281,6 +284,7 @@ type buildSameInfo struct {
 	syncData *metadata.SynchronizeParameter
 }
 
+// NewBuildSameInfo TODO
 func NewBuildSameInfo(info *metadata.SynchronizeItem, syncData *metadata.SynchronizeParameter) *buildSameInfo {
 	return &buildSameInfo{
 		info:     info,
@@ -289,6 +293,7 @@ func NewBuildSameInfo(info *metadata.SynchronizeItem, syncData *metadata.Synchro
 	}
 }
 
+// BuildSameInfoBaseCond TODO
 func (bsi *buildSameInfo) BuildSameInfoBaseCond(kit *rest.Kit) errors.CCError {
 	info := bsi.info
 	ownerID, err := info.Info.String(common.BKOwnerIDField)
@@ -300,6 +305,7 @@ func (bsi *buildSameInfo) BuildSameInfoBaseCond(kit *rest.Kit) errors.CCError {
 	return nil
 }
 
+// BuildSameInfoObjDescCond TODO
 func (bsi *buildSameInfo) BuildSameInfoObjDescCond(kit *rest.Kit) errors.CCError {
 	info := bsi.info
 	objID, err := info.Info.String(common.BKObjIDField)
@@ -312,6 +318,7 @@ func (bsi *buildSameInfo) BuildSameInfoObjDescCond(kit *rest.Kit) errors.CCError
 	return nil
 }
 
+// BuildSameInfoObjAttrDescCond TODO
 func (bsi *buildSameInfo) BuildSameInfoObjAttrDescCond(kit *rest.Kit) errors.CCError {
 	info := bsi.info
 	objID, err := info.Info.String(common.BKObjIDField)
@@ -330,6 +337,7 @@ func (bsi *buildSameInfo) BuildSameInfoObjAttrDescCond(kit *rest.Kit) errors.CCE
 	return nil
 }
 
+// BuildSameInfoObjAttrGroupCond TODO
 func (bsi *buildSameInfo) BuildSameInfoObjAttrGroupCond(kit *rest.Kit) errors.CCError {
 	info := bsi.info
 	objID, err := info.Info.String(common.BKObjIDField)
@@ -348,6 +356,7 @@ func (bsi *buildSameInfo) BuildSameInfoObjAttrGroupCond(kit *rest.Kit) errors.CC
 	return nil
 }
 
+// BuildSameInfoObjClassificationCond TODO
 func (bsi *buildSameInfo) BuildSameInfoObjClassificationCond(kit *rest.Kit) errors.CCError {
 	info := bsi.info
 	classificationID, err := info.Info.String(common.BKClassificationIDField)
@@ -360,6 +369,7 @@ func (bsi *buildSameInfo) BuildSameInfoObjClassificationCond(kit *rest.Kit) erro
 	return nil
 }
 
+// Condition TODO
 func (bsi *buildSameInfo) Condition() mapstr.MapStr {
 	return bsi.cond
 }

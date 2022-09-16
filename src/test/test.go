@@ -1,3 +1,4 @@
+// Package test TODO
 package test
 
 import (
@@ -28,6 +29,7 @@ var reportUrl string
 var reportDir string
 var db *local.Mongo
 
+// TestConfig TODO
 type TestConfig struct {
 	ZkAddr         string
 	Concurrent     int
@@ -39,6 +41,7 @@ type TestConfig struct {
 	RedisCfg       RedisConfig
 }
 
+// RedisConfig TODO
 type RedisConfig struct {
 	RedisAddress string
 	RedisPort    string
@@ -93,14 +96,17 @@ func init() {
 	fmt.Println("**** initialize clientSet success ***")
 }
 
+// GetClientSet TODO
 func GetClientSet() apimachinery.ClientSetInterface {
 	return clientSet
 }
 
+// GetTestConfig TODO
 func GetTestConfig() TestConfig {
 	return tConfig
 }
 
+// GetHeader TODO
 func GetHeader() http.Header {
 	header := make(http.Header)
 	header.Add(common.BKHTTPOwnerID, "0")
@@ -109,6 +115,7 @@ func GetHeader() http.Header {
 	return header
 }
 
+// ClearDatabase TODO
 func ClearDatabase() {
 	fmt.Println("********Clear Database*************")
 	// clientSet.AdminServer().ClearDatabase(context.Background(), GetHeader())
@@ -130,6 +137,7 @@ func ClearDatabase() {
 	clientSet.AdminServer().RunSyncDBIndex(context.Background(), GetHeader())
 }
 
+// GetReportUrl TODO
 func GetReportUrl() string {
 	if !strings.HasSuffix(reportUrl, "/") {
 		reportUrl = reportUrl + "/"
@@ -137,6 +145,7 @@ func GetReportUrl() string {
 	return reportUrl
 }
 
+// GetReportDir TODO
 func GetReportDir() string {
 	if !strings.HasSuffix(reportDir, "/") {
 		reportDir = reportDir + "/"
@@ -144,6 +153,7 @@ func GetReportDir() string {
 	return reportDir
 }
 
+// GetDB TODO
 func GetDB() *local.Mongo {
 	return db
 }

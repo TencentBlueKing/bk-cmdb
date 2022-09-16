@@ -407,8 +407,10 @@ openTelemetry:
   enable: false
   # 日志平台openTelemetry跟踪链功能的自定义上报服务地址
   endpoint:
-  # 日志平台openTelemetry跟踪链功能的上报data_id
+  # 日志平台openTelemetry跟踪链功能的上报data_id, 用于旧版的数据上报，和bkDataToken同时配置时，会取bkDataToken
   bkDataID:
+  # 日志平台openTelemetry跟踪链功能的bk.data.token, 用于新版的数据上报，和bkDataID同时配置时，会取bkDataToken
+  bkDataToken:
   # 服务tls配置
   tls:
     # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验

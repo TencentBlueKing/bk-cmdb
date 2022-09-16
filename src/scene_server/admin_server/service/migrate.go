@@ -33,6 +33,7 @@ import (
 	streamtypes "configcenter/src/storage/stream/types"
 
 	"github.com/emicklei/go-restful/v3"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
@@ -125,16 +126,16 @@ func (s *Service) createWatchDBChainCollections(rid string) error {
 		}
 
 		indexes := []daltypes.Index{
-			{Name: "index_id", Keys: map[string]int32{common.BKFieldID: -1}, Background: true, Unique: true},
-			{Name: "index_cursor", Keys: map[string]int32{common.BKCursorField: -1}, Background: true, Unique: true},
-			{Name: "index_cluster_time", Keys: map[string]int32{common.BKClusterTimeField: -1}, Background: true,
+			{Name: "index_id", Keys: bson.D{{common.BKFieldID, -1}}, Background: true, Unique: true},
+			{Name: "index_cursor", Keys: bson.D{{common.BKCursorField, -1}}, Background: true, Unique: true},
+			{Name: "index_cluster_time", Keys: bson.D{{common.BKClusterTimeField, -1}}, Background: true,
 				ExpireAfterSeconds: dbChainTTLTime},
 		}
 
 		if cursorType == watch.ObjectBase || cursorType == watch.MainlineInstance || cursorType == watch.InstAsst {
 
 			subResourceIndex := daltypes.Index{
-				Name: "index_sub_resource", Keys: map[string]int32{common.BKSubResourceField: 1}, Background: true,
+				Name: "index_sub_resource", Keys: bson.D{{common.BKSubResourceField, 1}}, Background: true,
 			}
 			indexes = append(indexes, subResourceIndex)
 		}
@@ -333,6 +334,7 @@ func (s *Service) refreshConfig(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(metadata.NewSuccessResp("refresh config success"))
 }
 
+// MigrationResponse TODO
 type MigrationResponse struct {
 	metadata.BaseResp `json:",inline"`
 	Data              interface{} `json:"data"`
@@ -341,6 +343,7 @@ type MigrationResponse struct {
 	FinishedVersions  []string    `json:"finished_migrations"`
 }
 
+// MigrateSpecifyVersionRequest TODO
 type MigrateSpecifyVersionRequest struct {
 	CommitID  string `json:"commit_id"`
 	TimeStamp int64  `json:"time_stamp"`

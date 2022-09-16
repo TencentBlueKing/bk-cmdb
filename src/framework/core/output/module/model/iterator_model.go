@@ -18,7 +18,7 @@ import (
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/types"
-	//"fmt"
+	// "fmt"
 )
 
 var _ Iterator = (*iterator)(nil)
@@ -35,13 +35,13 @@ func newModelIterator(supplierAccount string, cond common.Condition) (Iterator, 
 		cond:   cond,
 		buffer: make([]types.MapStr, 0),
 	}
-	//cond.Field(SupplierAccount).Eq(supplierAccount)
-	//fmt.Println("owner:", supplierAccount)
+	// cond.Field(SupplierAccount).Eq(supplierAccount)
+	// fmt.Println("owner:", supplierAccount)
 	items, err := client.GetClient().CCV3(client.Params{SupplierAccount: supplierAccount}).Model().SearchObjects(cond)
 	if nil != err {
 		return nil, err
 	}
-	//fmt.Println("the model:", items, "cond:", string(cond.ToMapStr().ToJSON()))
+	// fmt.Println("the model:", items, "cond:", string(cond.ToMapStr().ToJSON()))
 
 	objIterator.buffer = items
 	objIterator.bufIdx = 0
@@ -52,6 +52,7 @@ func newModelIterator(supplierAccount string, cond common.Condition) (Iterator, 
 	return objIterator, nil
 }
 
+// ForEach TODO
 func (cli *iterator) ForEach(itemCallback func(item Model) error) error {
 
 	for {
@@ -77,6 +78,7 @@ func (cli *iterator) ForEach(itemCallback func(item Model) error) error {
 
 }
 
+// Next TODO
 func (cli *iterator) Next() (Model, error) {
 
 	if len(cli.buffer) == cli.bufIdx {

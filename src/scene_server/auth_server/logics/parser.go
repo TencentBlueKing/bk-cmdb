@@ -36,6 +36,7 @@ const (
 	stringType  = "string"
 )
 
+// parseFilterToMongo TODO
 // parse filter expression to corresponding resource type's mongo query condition,
 // nil means having no query condition for the resource type, and using this filter can't get any resource of this type
 func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, filter *operator.Policy, resourceType iam.TypeID) (map[string]interface{}, error) {
@@ -163,6 +164,7 @@ func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, f
 	}
 }
 
+// parseIamPathToMongo TODO
 // parse iam path filter expression to corresponding resource type's mongo query condition
 func (lgc *Logics) parseIamPathToMongo(ctx context.Context, header http.Header, resourceType iam.TypeID, op operator.OperType, value interface{}) (map[string]interface{}, error) {
 	// generate path condition
@@ -269,6 +271,7 @@ func (lgc *Logics) parseIamPathToMongo(ctx context.Context, header http.Header, 
 	}, nil
 }
 
+// parseIamPathToMongo TODO
 // parse string format iam path to mongo condition
 func parseIamPathToMongo(iamPath string, op string) (map[string]interface{}, error) {
 	pathItemArr := strings.Split(strings.Trim(iamPath, "/"), "/")
@@ -373,9 +376,9 @@ func GetResourceIDField(resourceType iam.TypeID) string {
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory,
 		iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldID
-	//case iam.Set:
+	// case iam.Set:
 	//	return common.BKSetIDField
-	//case iam.Module:
+	// case iam.Module:
 	//	return common.BKModuleIDField
 	default:
 		if iam.IsIAMSysInstance(resourceType) {
@@ -411,9 +414,9 @@ func GetResourceNameField(resourceType iam.TypeID) string {
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory,
 		iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldName
-	//case iam.Set:
+	// case iam.Set:
 	//	return common.BKSetNameField
-	//case iam.Module:
+	// case iam.Module:
 	//	return common.BKModuleNameField
 	default:
 		if iam.IsIAMSysInstance(resourceType) {

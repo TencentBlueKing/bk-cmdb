@@ -1,3 +1,4 @@
+// Package nodeman TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -18,6 +19,7 @@ import (
 	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
+// SearchPackage TODO
 func (p *nodeman) SearchPackage(ctx context.Context, h http.Header, processname string) (resp *SearchPluginPackageResult, err error) {
 	resp = new(SearchPluginPackageResult)
 	subPath := "/v2/nodeman/%s/package/"
@@ -32,6 +34,7 @@ func (p *nodeman) SearchPackage(ctx context.Context, h http.Header, processname 
 	return
 }
 
+// SearchProcess TODO
 func (p *nodeman) SearchProcess(ctx context.Context, h http.Header, processname string) (resp *SearchPluginProcessResult, err error) {
 	resp = new(SearchPluginProcessResult)
 	subPath := "/v2/nodeman/process/%s/"
@@ -46,6 +49,7 @@ func (p *nodeman) SearchProcess(ctx context.Context, h http.Header, processname 
 	return
 }
 
+// SearchProcessInfo TODO
 func (p *nodeman) SearchProcessInfo(ctx context.Context, h http.Header, processname string) (resp *SearchPluginProcessInfoResult, err error) {
 	resp = new(SearchPluginProcessInfoResult)
 	subPath := "/v2/nodeman/process_info/%s/"
@@ -60,6 +64,7 @@ func (p *nodeman) SearchProcessInfo(ctx context.Context, h http.Header, processn
 	return
 }
 
+// UpgradePlugin TODO
 func (p *nodeman) UpgradePlugin(ctx context.Context, h http.Header, bizID string, data *UpgradePluginRequest) (resp *UpgradePluginResult, err error) {
 	resp = new(UpgradePluginResult)
 	subPath := "/v2/nodeman/%s/tasks/"
@@ -80,6 +85,7 @@ func (p *nodeman) UpgradePlugin(ctx context.Context, h http.Header, bizID string
 	return
 }
 
+// SearchTask TODO
 func (p *nodeman) SearchTask(ctx context.Context, h http.Header, bizID int64, taskID int64) (resp *SearchTaskResult, err error) {
 	resp = new(SearchTaskResult)
 	subPath := "/v2/nodeman/%d/tasks/%d/"
@@ -94,6 +100,7 @@ func (p *nodeman) SearchTask(ctx context.Context, h http.Header, bizID int64, ta
 	return
 }
 
+// SearchPluginHost TODO
 func (p *nodeman) SearchPluginHost(ctx context.Context, h http.Header, processname string) (resp *SearchPluginHostResult, err error) {
 	resp = new(SearchPluginHostResult)
 	subPath := "/v2/nodeman/0/host_status/get_host/"

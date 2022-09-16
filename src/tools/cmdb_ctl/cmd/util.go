@@ -16,13 +16,17 @@ import (
 	"fmt"
 )
 
+// WithRedColor TODO
 func WithRedColor(str string) string {
 	return fmt.Sprintf("%c[1;40;31m>> %s %c[0m\n", 0x1B, str, 0x1B)
 }
 
+// WithGreenColor TODO
 func WithGreenColor(str string) string {
 	return fmt.Sprintf("%c[1;40;32m>> %s %c[0m\n", 0x1B, str, 0x1B)
 }
+
+// WithBlueColor TODO
 func WithBlueColor(str string) string {
 	return fmt.Sprintf("%c[1;40;34m>> %s %c[0m\n", 0x1B, str, 0x1B)
 }

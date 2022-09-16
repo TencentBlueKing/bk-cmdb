@@ -435,7 +435,7 @@
 
           if (model.object_asst && excluded) {
             model.object_asst = model.object_asst.filter(asst => !excluded
-              .some(excludedAsst => excludedAsst.bk_asst_id === asst.bk_asst_id))
+              .some(excludedAsst => excludedAsst.bk_obj_asst_id === asst.bk_obj_asst_id))
           }
 
           return includedModels?.[model.bk_obj_id]

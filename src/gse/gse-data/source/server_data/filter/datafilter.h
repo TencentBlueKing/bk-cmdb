@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 namespace gse { 
-namespace dataserver {
+namespace data {
 
 class DataFilterCfg
 {

@@ -15,6 +15,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -317,27 +318,35 @@ func getReturnStr(code int, message string, data interface{}) string {
 
 }
 
+// Host simplified host struct
+type Host struct {
+	// HostID 主机ID(host_id)
+	HostID int64 `json:"bk_host_id" bson:"bk_host_id"`
+	// HostName 主机名称
+	HostName string `json:"bk_host_name" bson:"bk_host_name"`
+	// InnerIP 内网IP
+	InnerIP string `json:"bk_host_innerip" bson:"bk_host_innerip"`
+	// OuterIP 外网IP
+	OuterIP string `json:"bk_host_outerip" bson:"bk_host_outerip"`
+}
+
+// ListenIPOptions TODO
 func (s *Service) ListenIPOptions(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
 	webCommon.SetProxyHeader(c)
-	header := c.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(c.Request.Header))
 
 	hostIDStr := c.Param("bk_host_id")
 	hostID, err := strconv.ParseInt(hostIDStr, 10, 64)
 	if err != nil {
 		blog.Infof("host id invalid, convert to int failed, hostID: %s, err: %+v, rid: %s", hostID, err, rid)
-		result := metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrCommParamsInvalid,
-				ErrMsg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKHostIDField).Error(),
-			},
-		}
+		result := metadata.BaseResp{Result: false, Code: common.CCErrCommParamsInvalid,
+			ErrMsg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKHostIDField).Error()}
 		c.JSON(http.StatusOK, result)
 		return
 	}
+
 	option := metadata.ListHostsWithNoBizParameter{
 		HostPropertyFilter: &querybuilder.QueryFilter{
 			Rule: querybuilder.CombinedRule{
@@ -351,27 +360,15 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 				},
 			},
 		},
-		Fields: []string{
-			common.BKHostIDField,
-			common.BKHostNameField,
-			common.BKHostInnerIPField,
-			common.BKHostOuterIPField,
-		},
-		Page: metadata.BasePage{
-			Start: 0,
-			Limit: 1,
-		},
+		Fields: []string{common.BKHostIDField, common.BKHostNameField, common.BKHostInnerIPField,
+			common.BKHostOuterIPField},
+		Page: metadata.BasePage{Limit: 1},
 	}
 	resp, err := s.CoreAPI.ApiServer().ListHostWithoutApp(ctx, c.Request.Header, option)
 	if err != nil {
 		blog.Errorf("get host by id failed, hostID: %d, err: %+v, rid: %s", hostID, err, rid)
-		result := metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrHostGetFail,
-				ErrMsg: defErr.Error(common.CCErrHostGetFail).Error(),
-			},
-		}
+		result := metadata.BaseResp{Result: false, Code: common.CCErrHostGetFail,
+			ErrMsg: defErr.Error(common.CCErrHostGetFail).Error()}
 		c.JSON(http.StatusOK, result)
 		return
 	}
@@ -382,34 +379,19 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 	}
 	if len(resp.Data.Info) == 0 {
 		blog.Errorf("host not found, hostID: %d, rid: %s", hostID, rid)
-		result := metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrCommNotFound,
-				ErrMsg: defErr.Error(common.CCErrCommNotFound).Error(),
-			},
-		}
+		result := metadata.BaseResp{Result: false, Code: common.CCErrCommNotFound,
+			ErrMsg: defErr.Error(common.CCErrCommNotFound).Error()}
 		c.JSON(http.StatusOK, result)
 		return
 	}
-	type Host struct {
-		HostID   int64  `json:"bk_host_id" bson:"bk_host_id"`           // 主机ID(host_id)								数字
-		HostName string `json:"bk_host_name" bson:"bk_host_name"`       // 主机名称
-		InnerIP  string `json:"bk_host_innerip" bson:"bk_host_innerip"` // 内网IP
-		OuterIP  string `json:"bk_host_outerip" bson:"bk_host_outerip"` // 外网IP
-	}
+
 	host := Host{}
 	raw := resp.Data.Info[0]
 	if err := mapstr.DecodeFromMapStr(&host, raw); err != nil {
 		msg := fmt.Sprintf("decode response data into host failed, raw: %+v, err: %+v, rid: %s", raw, err, rid)
 		blog.Error(msg)
-		result := metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrCommJSONUnmarshalFailed,
-				ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(),
-			},
-		}
+		result := metadata.BaseResp{Result: false, Code: common.CCErrCommJSONUnmarshalFailed,
+			ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()}
 		c.JSON(http.StatusOK, result)
 		return
 	}
@@ -424,10 +406,7 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 		ipOptions = append(ipOptions, host.OuterIP)
 	}
 	result := metadata.ResponseDataMapStr{
-		BaseResp: metadata.BaseResp{
-			Result: true,
-			Code:   0,
-		},
+		BaseResp: metadata.BaseResp{Result: true, Code: 0},
 		Data: map[string]interface{}{
 			"options": ipOptions,
 		},
@@ -636,14 +615,33 @@ func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Proper
 		hostFields = append(hostFields, property.ID)
 	}
 
-	hostInfo, err := s.Logics.GetHostData(appID, input.HostIDArr, hostFields, input.ExportCond, header, defLang)
-	if err != nil {
-		blog.Errorf("get hosts failed, host id: %v, err: %v, rid: %s", input.HostIDArr, err, rid)
-		return nil, err
+	if input.ExportCond.Page.Limit <= 0 || input.ExportCond.Page.Limit > common.BKMaxOnceExportLimit {
+		return nil, errors.New(defLang.Languagef("export_page_limit_err", common.BKMaxOnceExportLimit))
 	}
+
+	hostInfo := make([]mapstr.MapStr, 0)
+	hostCount := input.ExportCond.Page.Limit + input.ExportCond.Page.Start
+	limit := input.ExportCond.Page.Limit
+	for start := input.ExportCond.Page.Start; start < hostCount; start = start + common.BKMaxExportLimit {
+		input.ExportCond.Page.Start = start
+		if limit > common.BKMaxExportLimit {
+			input.ExportCond.Page.Limit = common.BKMaxExportLimit
+			limit = limit - common.BKMaxExportLimit
+		} else {
+			input.ExportCond.Page.Limit = limit
+		}
+
+		hostData, err := s.Logics.GetHostData(appID, input.HostIDArr, hostFields, input.ExportCond, header, defLang)
+		if err != nil {
+			blog.Errorf("get host info failed, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+		hostInfo = append(hostInfo, hostData...)
+	}
+
 	if len(hostInfo) == 0 {
 		blog.Errorf("not find host, host id: %v, cond: %#v, rid: %s", input.HostIDArr, input.ExportCond, rid)
-		return nil, err
+		return nil, nil
 	}
 
 	if err := s.handleModule(hostInfo, rid); err != nil {
@@ -713,6 +711,7 @@ func (s *Service) handleModule(hostInfo []mapstr.MapStr, rid string) error {
 	return nil
 }
 
+// handleSet TODO
 // handleModule 处理set数据
 func (s *Service) handleSet(hostInfo []mapstr.MapStr, rid string) ([]int64, map[int64][]int64, error) {
 	// 统计host与set关系

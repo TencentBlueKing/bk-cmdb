@@ -15,11 +15,11 @@
 import $http from '@/api'
 
 const state = {
-
+  mainLineModels: []
 }
 
 const getters = {
-
+  isMainLine: state => searchModel => state.mainLineModels.some(model => model.bk_obj_id === searchModel.bk_obj_id)
 }
 
 const actions = {
@@ -56,7 +56,10 @@ const actions = {
      * @return {promises} promises 对象
      */
   searchMainlineObject({ commit, state, dispatch, rootGetters }, { params, config }) {
-    return $http.post('find/topomodelmainline', params, config)
+    return $http.post('find/topomodelmainline', params, config).then((data) => {
+      commit('setMainLineModels', data)
+      return data
+    })
   },
 
   /**
@@ -141,7 +144,9 @@ const actions = {
 }
 
 const mutations = {
-
+  setMainLineModels(state, models) {
+    state.mainLineModels = models
+  }
 }
 
 export default {

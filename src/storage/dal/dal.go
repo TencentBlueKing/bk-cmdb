@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package dal TODO
 package dal
 
 import (
@@ -33,7 +34,7 @@ type DB interface {
 	// NextSequence 获取新序列号(非事务)
 	NextSequence(ctx context.Context, sequenceName string) (uint64, error)
 
-	//NextSequences 批量获取新序列号(非事务)
+	// NextSequences 批量获取新序列号(非事务)
 	NextSequences(ctx context.Context, sequenceName string, num int) ([]uint64, error)
 
 	// Ping 健康检查
@@ -58,7 +59,7 @@ type DB interface {
 	// CommitTransaction 提交事务
 	CommitTransaction(context.Context, *metadata.TxnCapable) error
 	// AbortTransaction 取消事务
-	AbortTransaction(context.Context, *metadata.TxnCapable) (bool,error)
+	AbortTransaction(context.Context, *metadata.TxnCapable) (bool, error)
 
 	// InitTxnManager TxnID management of initial transaction
 	InitTxnManager(r redis.Client) error

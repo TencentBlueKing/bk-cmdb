@@ -20,12 +20,15 @@ import (
 	"configcenter/src/common/http/httpclient"
 )
 
+// NewMetricController TODO
 func NewMetricController(conf Config, healthFunc HealthFunc, collectors ...*Collector) []Action {
 	return newMetricController(conf, healthFunc, collectors...)
 }
 
+// RunModeType TODO
 type RunModeType string
 
+// RoleType TODO
 // used when your module running with Master_Slave_Mode mode
 type RoleType string
 
@@ -80,18 +83,22 @@ type MetricMeta struct {
 	Help string `json:"help"`
 }
 
+// MetricInterf TODO
 type MetricInterf interface {
 	GetMeta() *MetricMeta
 	GetValue() (*FloatOrString, error)
 	GetExtension() (*MetricExtension, error)
 }
 
+// MetricExtension TODO
 type MetricExtension struct{}
 
+// CollectInter TODO
 type CollectInter interface {
 	Collect() []MetricInterf
 }
 
+// NewCollector TODO
 func NewCollector(name string, collector CollectInter) *Collector {
 	return &Collector{
 		Name:      CollectorName(name),
@@ -99,6 +106,7 @@ func NewCollector(name string, collector CollectInter) *Collector {
 	}
 }
 
+// CheckHealthy TODO
 func CheckHealthy(address string) error {
 	if "" == address {
 		return errors.New("address not found")

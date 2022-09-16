@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package openapi TODO
 package openapi
 
 import (
@@ -20,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// GetProcessPortByApplicationID TODO
 func (p *openapi) GetProcessPortByApplicationID(ctx context.Context, appID string, h http.Header, dat []mapstr.MapStr) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/openapi/GetProcessPortByApplicationID/%s"
@@ -34,6 +36,7 @@ func (p *openapi) GetProcessPortByApplicationID(ctx context.Context, appID strin
 	return
 }
 
+// GetProcessPortByIP TODO
 func (p *openapi) GetProcessPortByIP(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/openapi/GetProcessPortByIP"

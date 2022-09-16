@@ -42,46 +42,46 @@ const defaultjson = `{
 }`
 
 // 使用parse函数得到disk.
-func getDiskFromParse(value *gjson.Result) (uint64,string){
-	setter ,str:= parseSetter(value,"127.0.0.1","0.0.0.0")
-	
+func getDiskFromParse(value *gjson.Result) (uint64, string) {
+	setter, str := parseSetter(value, "127.0.0.1", "0.0.0.0")
+
 	// 获取bk_disk字段.
-	cv,ok:= setter["bk_disk"]
+	cv, ok := setter["bk_disk"]
 	Expect(ok).To(BeTrue())
-	
+
 	// 将结果转化为uint64.
-	results,ok := cv.(uint64)
+	results, ok := cv.(uint64)
 	Expect(ok).To(BeTrue())
-	return results,str
+	return results, str
 }
 
 // 自己计算disk.
-func getDiskFromSelf(value *gjson.Result) uint64{
+func getDiskFromSelf(value *gjson.Result) uint64 {
 	var sum uint64
 	arr := value.Get("data.disk.usage.#.total").Array()
-	for _,v := range arr{
+	for _, v := range arr {
 		sum += v.Uint() >> 10 >> 10 >> 10
 	}
 	return sum
 }
 
 // 使用parse函数得到mem.
-func getMemFromParse(value *gjson.Result) (uint64,string){
-	setter ,str:= parseSetter(value,"127.0.0.1","0.0.0.0")
-	
+func getMemFromParse(value *gjson.Result) (uint64, string) {
+	setter, str := parseSetter(value, "127.0.0.1", "0.0.0.0")
+
 	// 获取bk_disk字段.
-	cv,ok:= setter["bk_mem"]
+	cv, ok := setter["bk_mem"]
 	Expect(ok).To(BeTrue())
-	
+
 	// 将结果转化为uint64.
-	results,ok := cv.(uint64)
+	results, ok := cv.(uint64)
 	Expect(ok).To(BeTrue())
-	return results,str
+	return results, str
 }
 
 // 自己计算mem.
-func getMemFromSelf(value *gjson.Result) uint64{
-	return  value.Get("data.mem.meminfo.total").Uint() >> 10 >> 10
+func getMemFromSelf(value *gjson.Result) uint64 {
+	return value.Get("data.mem.meminfo.total").Uint() >> 10 >> 10
 }
 
 var _ = Describe("Hostsnap", func() {
@@ -89,24 +89,24 @@ var _ = Describe("Hostsnap", func() {
 		It("", func() {
 			// 解析为gjson.Result.
 			gson := gjson.Parse(defaultjson)
-			
+
 			// 求出parse函数得出的结果与理论结果.
-			shouldout :=getDiskFromSelf(&gson)
-			result,_ := getDiskFromParse(&gson)
+			shouldout := getDiskFromSelf(&gson)
+			result, _ := getDiskFromParse(&gson)
 
 			Expect(shouldout).To(Equal(result))
 
 		})
 	})
 
-	Context("test key-mem",func(){
+	Context("test key-mem", func() {
 		It("", func() {
 			// 解析为gjson.Result.
 			gson := gjson.Parse(defaultjson)
-			
+
 			// 求出parse函数得出的结果与理论结果.
 			shouldout := getMemFromSelf(&gson)
-			result,_:=getMemFromParse(&gson)
+			result, _ := getMemFromParse(&gson)
 
 			Expect(shouldout).To(Equal(result))
 

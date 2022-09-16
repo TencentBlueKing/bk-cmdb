@@ -34,6 +34,7 @@ func init() {
 	pidfile = cwd + "/pid/" + filepath.Base(os.Args[0]) + ".pid"
 }
 
+// SavePid TODO
 func SavePid() error {
 	if err := WritePid(); err != nil {
 		return fmt.Errorf("write pid file failed. err:%s", err.Error())

@@ -26,7 +26,7 @@
 
  windowMinutes,代表开启时间窗口后,多长时间内请求可以通过,单位为分钟。如配置成 60,表示开启窗口时间60分钟内请求可以通过。
  注意：该时间不能大于窗口每次开启的间隔时间，取值范围不能小于等于0，如果配置不正确，默认值为15
- */
+*/
 
 package hostsnap
 
@@ -44,16 +44,17 @@ const (
 	// oneDayToMinutes the value of one day converted into minutes. 24 * 60
 	oneDayToMinutes = 1440
 	// oneDayToHours the value of one day converted into hours.
-	oneDayToHours = 24
-	defaultWindowMinutes = 15
+	oneDayToHours             = 24
+	defaultWindowMinutes      = 15
 	defaultCheckIntervalHours = 1
-	defaultAtTime = "1:00"
-	defaultAtTimeHour = 1
-	defaultAtTimeMin = 0
+	defaultAtTime             = "1:00"
+	defaultAtTimeHour         = 1
+	defaultAtTimeMin          = 0
 	// oneHourToMinutes the value of one hour converted into minutes
 	oneHourToMinutes = 60
 )
 
+// Window TODO
 type Window struct {
 	// exist time window exists as true, does not exist as false
 	exist bool
@@ -98,7 +99,7 @@ func (w *Window) doFixedTimeTasks(atTime string) {
 	if hour > now.Hour() || (now.Hour() == hour && min > now.Minute()) {
 		time.Sleep(targetTime.Sub(now))
 	} else {
-		time.Sleep(targetTime.Add(time.Hour*24).Sub(now))
+		time.Sleep(targetTime.Add(time.Hour * 24).Sub(now))
 	}
 
 	w.doTimedTasks(oneDayToHours)
@@ -107,7 +108,7 @@ func (w *Window) doFixedTimeTasks(atTime string) {
 // doTimedTasks do tasks according to a certain time interval
 func (w *Window) doTimedTasks(intervalTimeIntVal int) {
 	w.setStartTime(time.Now())
-	timer := time.NewTicker(time.Hour*time.Duration(intervalTimeIntVal))
+	timer := time.NewTicker(time.Hour * time.Duration(intervalTimeIntVal))
 	for {
 		select {
 		case <-timer.C:
@@ -119,7 +120,7 @@ func (w *Window) doTimedTasks(intervalTimeIntVal int) {
 func (w *Window) doIntervalHoursTasks(checkIntervalHours int) {
 	now := time.Now()
 	w.setStartTime(now)
-	time.Sleep(time.Minute * time.Duration(oneHourToMinutes - now.Minute()))
+	time.Sleep(time.Minute * time.Duration(oneHourToMinutes-now.Minute()))
 	w.doTimedTasks(checkIntervalHours)
 }
 
@@ -138,7 +139,7 @@ func (w *Window) canPassWindow() bool {
 	return true
 }
 
-// NewWindow create a time window
+// newWindow create a time window
 func newWindow() *Window {
 	w := &Window{}
 
@@ -176,7 +177,7 @@ func newWindow() *Window {
 }
 
 func parseTime(atTime string) (hour, min int) {
-	timeVal := strings.Split(atTime,":")
+	timeVal := strings.Split(atTime, ":")
 	if len(timeVal) != 2 {
 		blog.Errorf("the format of atTime value %s is wrong, set the default value %s", atTime, defaultAtTime)
 		return defaultAtTimeHour, defaultAtTimeMin

@@ -1,6 +1,7 @@
 package reporter
 
 const (
+	// HtmlTemplate TODO
 	HtmlTemplate = `
 <html>
 	<head>
@@ -67,6 +68,7 @@ const (
 	</body>
 </html>
 `
+	// SummaryHtmlTemplate TODO
 	SummaryHtmlTemplate = `
 <html>
 <head>
@@ -115,6 +117,7 @@ const (
 </html>
 `
 
+	// SummaryTemplate TODO
 	SummaryTemplate = `
 		<tr>
 			<td>{{.Name}}</td>
@@ -126,6 +129,7 @@ const (
 		</tr>
 `
 
+	// FailedTemplate TODO
 	FailedTemplate = `
 	{{ if ne .State "Passed" }}
 	<div id="{{.Name}}">

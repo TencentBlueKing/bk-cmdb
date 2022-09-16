@@ -20,12 +20,14 @@ import (
 	"configcenter/src/common/types"
 )
 
+// Config TODO
 type Config struct {
 	RegisterPath string
 	RegisterInfo types.ServerInfo
 	CoreAPI      apimachinery.ClientSetInterface
 }
 
+// Server TODO
 type Server struct {
 	ListenAddr   string
 	ListenPort   uint

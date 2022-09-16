@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package logics TODO
 package logics
 
 import (
@@ -26,6 +27,7 @@ import (
 	"github.com/robfig/cron"
 )
 
+// GetBizHostCount TODO
 func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.StringIDCount, error) {
 	// get biz count
 	bizFilter := []map[string]interface{}{{
@@ -106,6 +108,7 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.StringIDCount
 	return info, nil
 }
 
+// CreateInnerChart TODO
 func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConfig) (uint64, error) {
 	opt, ok := metadata.InnerChartsMap[chartInfo.ReportType]
 	if !ok {
@@ -124,6 +127,7 @@ func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConf
 	return result.Data, nil
 }
 
+// InnerChartData TODO
 func (lgc *Logics) InnerChartData(kit *rest.Kit, chartInfo metadata.ChartConfig) (interface{}, error) {
 	switch chartInfo.ReportType {
 	case common.BizModuleHostChart:
@@ -148,12 +152,13 @@ func (lgc *Logics) InnerChartData(kit *rest.Kit, chartInfo metadata.ChartConfig)
 	}
 }
 
+// TimerFreshData TODO
 func (lgc *Logics) TimerFreshData(ctx context.Context) {
 	lgc.CheckTableExist(ctx)
 
 	c := cron.New()
 	spec := lgc.timerSpec // 从配置文件读取的时间
-	_, err := c.AddFunc(spec, func() {
+	err := c.AddFunc(spec, func() {
 		disableOperationStatistic, err := cc.Bool("operationServer.disableOperationStatistic")
 		if err != nil {
 			blog.Error("can not find config operationServer.disableOperationStatistic, err: %v", err)

@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package logics TODO
 package logics
 
 import (
@@ -177,7 +178,7 @@ func (l *logics) BusinessOperation() inst.BusinessOperationInterface {
 	return l.business
 }
 
-// BusinessOperation return a inst provide BusinessOperation
+// BusinessSetOperation return a inst provide BusinessOperation
 func (l *logics) BusinessSetOperation() inst.BusinessSetOperationInterface {
 	return l.businessSet
 }

@@ -18,19 +18,23 @@ import (
 	"configcenter/src/common/mapstr"
 )
 
+// HostLockRequest TODO
 type HostLockRequest struct {
 	IDS []int64 `json:"id_list"`
 }
 
+// QueryHostLockRequest TODO
 type QueryHostLockRequest struct {
 	IDS []int64 `json:"id_list"`
 }
 
+// HostLockResultResponse TODO
 type HostLockResultResponse struct {
 	BaseResp `json:",inline"`
 	Data     map[int64]bool `json:"data"`
 }
 
+// HostLockData TODO
 type HostLockData struct {
 	User       string    `json:"bk_user" bson:"bk_user"`
 	ID         int64     `json:"bk_host_id" bson:"bk_host_id"`
@@ -38,6 +42,7 @@ type HostLockData struct {
 	OwnerID    string    `json:"-" bson:"bk_supplier_account"`
 }
 
+// HostLockQueryResponse TODO
 type HostLockQueryResponse struct {
 	BaseResp `json:",inline"`
 	Data     struct {
@@ -46,6 +51,7 @@ type HostLockQueryResponse struct {
 	}
 }
 
+// HostLockResponse TODO
 type HostLockResponse struct {
 	BaseResp `json:",inline"`
 	Data     mapstr.MapStr `json:"data"`

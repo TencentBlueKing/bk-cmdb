@@ -1,0 +1,4394 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": 596,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 56,
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 0,
+            "y": 1
+          },
+          "hiddenSeries": false,
+          "id": 28,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": true,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": "false",
+              "expression": "a",
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "接收送数据量",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": "true",
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "data_total_recv_msg_bytets",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "A",
+              "source": ""
+            },
+            {
+              "alias": "",
+              "cluster": [],
+              "display": "false",
+              "expression": "a",
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "发送数据量",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": "true",
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "data_total_send_msg_bytets",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "B",
+              "source": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "总数据流量",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:2344",
+              "format": "Bps",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:2345",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 12,
+            "y": 1
+          },
+          "hiddenSeries": false,
+          "id": 13,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "sort": "current",
+            "sortDesc": false,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": false,
+              "expression": "a",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": "true",
+                  "filter_dict": {},
+                  "functions": [],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "process_connection_count",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "A",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "TCP连接数",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1504",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1505",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 0,
+            "y": 6
+          },
+          "hiddenSeries": false,
+          "id": 50,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": "false",
+              "expression": "a",
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": true,
+                  "filter_dict": {},
+                  "functions": [],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "AVG",
+                  "metric_field": "channel_id_count",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "A",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "ChannelID数量",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1398",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1399",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 12,
+            "y": 6
+          },
+          "hiddenSeries": false,
+          "id": 48,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": "false",
+              "expression": "a",
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": "true",
+                  "filter_dict": {},
+                  "functions": [],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "AVG",
+                  "metric_field": "channel_id_memusage",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "A",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "ChannelID内存使用量",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1294",
+              "format": "deckbytes",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1295",
+              "format": "deckbytes",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "cacheTimeout": null,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 6,
+            "w": 24,
+            "x": 0,
+            "y": 11
+          },
+          "hiddenSeries": false,
+          "id": 16,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "hideEmpty": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": "false",
+              "expression": "a",
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": "true",
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "worker_queune_msg_count",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "A",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "内部队列待处理消息量",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1373",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1374",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
+      "title": "基础数据",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 64,
+      "panels": [
+        {
+          "aliasColors": {
+            "{node=\"\"}": "orange"
+          },
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 0,
+            "y": 2
+          },
+          "hiddenSeries": false,
+          "id": 6,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "hideEmpty": false,
+            "hideZero": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "sort": "total",
+            "sortDesc": false,
+            "total": true,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null as zero",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": false,
+              "expression": "",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": true,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "1m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 30,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "recv_msg_counter",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "C",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "TCP消息数",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:838",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:839",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "cacheTimeout": null,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 12,
+            "y": 2
+          },
+          "hiddenSeries": false,
+          "id": 73,
+          "interval": null,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "$tag_bk_pod",
+              "cluster": [],
+              "display": true,
+              "expression": "a / b * 100",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 30,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "recv_msg_counter",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "error",
+                      "method": "eq",
+                      "value": [
+                        "0"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "alias": "",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": "auto",
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "recv_msg_counter",
+                  "refId": "b",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": []
+                }
+              ],
+              "refId": "B",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "TCP数据处理成功率",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1139",
+              "format": "percent",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1140",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 0,
+            "y": 7
+          },
+          "hiddenSeries": false,
+          "id": 40,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "sort": "current",
+            "sortDesc": true,
+            "total": true,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": false,
+              "expression": "",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": true,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "1m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "recv_msg_counter",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "codec",
+                      "method": "eq",
+                      "value": [
+                        "codecv1"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "message_type",
+                      "method": "eq",
+                      "value": [
+                        "9"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "A",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Agent动态数据协议消息统计",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1011",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1012",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 12,
+            "y": 7
+          },
+          "hiddenSeries": false,
+          "id": 68,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": true,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": false,
+              "expression": "",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": true,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 30,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "recv_msg_counter",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "codec",
+                      "method": "eq",
+                      "value": [
+                        "codecv1"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "message_type",
+                      "method": "eq",
+                      "value": [
+                        "3084"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "B",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "非动态数据协议",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1171",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1172",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 0,
+            "y": 12
+          },
+          "hiddenSeries": false,
+          "id": 66,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "sort": "current",
+            "sortDesc": true,
+            "total": true,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": false,
+              "expression": "",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": true,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "recv_msg_counter",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "codec",
+                      "method": "eq",
+                      "value": [
+                        "codecv1"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "message_type",
+                      "method": "eq",
+                      "value": [
+                        "1"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "B",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Agent心跳消息",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1091",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1092",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {
+            "{node=\"\"}": "orange"
+          },
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "decimals": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 12,
+            "y": 12
+          },
+          "hiddenSeries": false,
+          "id": 24,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": true,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": "false",
+              "expression": "a",
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod ($tag_apiname)",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": "true",
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "code",
+                    "apiname",
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "request_msg_count",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "A",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Agent2.0 接入调度",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1251",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1252",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
+      "title": "接收数据",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 2
+      },
+      "id": 60,
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 0,
+            "y": 3
+          },
+          "hiddenSeries": false,
+          "id": 46,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": true,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": false,
+              "expression": "",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod (success)",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": true,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_counter",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "error_code",
+                      "method": "eq",
+                      "value": [
+                        "0"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "quene_type",
+                      "method": "eq",
+                      "value": [
+                        "kafka"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "B",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            },
+            {
+              "alias": "",
+              "cluster": [],
+              "display": false,
+              "expression": "",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod (failed)",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": true,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_counter",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "quene_type",
+                      "method": "eq",
+                      "value": [
+                        "kafka"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "error_code",
+                      "method": "neq",
+                      "value": [
+                        "0"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "D",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "kafka队列发送消息统计",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "cacheTimeout": null,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 12,
+            "y": 3
+          },
+          "hiddenSeries": false,
+          "id": 72,
+          "interval": null,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "$tag_bk_pod",
+              "cluster": [],
+              "display": true,
+              "expression": "a /b * 100",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_counter",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "quene_type",
+                      "method": "eq",
+                      "value": [
+                        "kafka"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "error_code",
+                      "method": "eq",
+                      "value": [
+                        "0"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "alias": "",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": "auto",
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_counter",
+                  "refId": "b",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "quene_type",
+                      "method": "eq",
+                      "value": [
+                        "kafka"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "B",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "kafka队列发送消息成功率",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:415",
+              "format": "percent",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:416",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 6,
+            "w": 24,
+            "x": 0,
+            "y": 8
+          },
+          "hiddenSeries": false,
+          "id": 44,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "sort": "current",
+            "sortDesc": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "$tag_node:$tag_quene_type",
+              "cluster": [],
+              "display": false,
+              "expression": "",
+              "hide": true,
+              "host": [],
+              "module": [],
+              "only_promql": true,
+              "query_configs": [],
+              "refId": "C",
+              "showExpression": false,
+              "source": "sum(rate(message_queue_request_millseconds{module=\"data\"}[2m]))by (node,quene_type)/sum(rate(message_queue_request_counter{module=\"data\"}[2m]))  by (node,quene_type)",
+              "step": ""
+            },
+            {
+              "alias": "$tag_bk_pod ($tag_quene_type)",
+              "cluster": [],
+              "display": true,
+              "expression": "a / b",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod:$tag_quene_type",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "1m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod",
+                    "quene_type"
+                  ],
+                  "interval": 30,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_millseconds",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "quene_type",
+                      "method": "eq",
+                      "value": [
+                        "kafka"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "alias": "$tag_bk_pod:$tag_quene_type",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "1m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod",
+                    "quene_type"
+                  ],
+                  "interval": 30,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_counter",
+                  "refId": "b",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "A",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "kafka耗时统计",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1591",
+              "format": "ms",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1592",
+              "format": "ms",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 0,
+            "y": 14
+          },
+          "hiddenSeries": false,
+          "id": 54,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": true,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": false,
+              "expression": "",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod (success)",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": true,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_counter",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "direction",
+                      "method": "eq",
+                      "value": [
+                        "request"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "error_code",
+                      "method": "eq",
+                      "value": [
+                        "0"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "quene_type",
+                      "method": "eq",
+                      "value": [
+                        "redis"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "B",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            },
+            {
+              "alias": "",
+              "cluster": [],
+              "display": false,
+              "expression": "",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod (failed)",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": true,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_counter",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "direction",
+                      "method": "eq",
+                      "value": [
+                        "request"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "error_code",
+                      "method": "neq",
+                      "value": [
+                        "0"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "quene_type",
+                      "method": "eq",
+                      "value": [
+                        "redis"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "D",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "redis队列发送消息统计",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "cacheTimeout": null,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 12,
+            "y": 14
+          },
+          "hiddenSeries": false,
+          "id": 74,
+          "interval": null,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "$tag_bk_pod",
+              "cluster": [],
+              "display": true,
+              "expression": "a /b * 100",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 30,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_counter",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "quene_type",
+                      "method": "eq",
+                      "value": [
+                        "redis"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "error_code",
+                      "method": "eq",
+                      "value": [
+                        "0"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "alias": "",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 30,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_counter",
+                  "refId": "b",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "quene_type",
+                      "method": "eq",
+                      "value": [
+                        "redis"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "B",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "redis队列发送消息成功率",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:643",
+              "format": "percent",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:644",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 6,
+            "w": 24,
+            "x": 0,
+            "y": 19
+          },
+          "hiddenSeries": false,
+          "id": 76,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "sort": "total",
+            "sortDesc": false,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "$tag_node:$tag_quene_type",
+              "cluster": [],
+              "display": false,
+              "expression": "",
+              "hide": true,
+              "host": [],
+              "module": [],
+              "only_promql": true,
+              "query_configs": [],
+              "refId": "C",
+              "showExpression": false,
+              "source": "sum(rate(message_queue_request_millseconds{module=\"data\"}[2m]))by (node,quene_type)/sum(rate(message_queue_request_counter{module=\"data\"}[2m]))  by (node,quene_type)",
+              "step": ""
+            },
+            {
+              "alias": "$tag_bk_pod ($tag_quene_type)",
+              "cluster": [],
+              "display": true,
+              "expression": "a / b",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod:$tag_quene_type",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "1m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod",
+                    "quene_type"
+                  ],
+                  "interval": 30,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_millseconds",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "quene_type",
+                      "method": "eq",
+                      "value": [
+                        "redis"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "alias": "$tag_bk_pod:$tag_quene_type",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "1m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod",
+                    "quene_type"
+                  ],
+                  "interval": 30,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_counter",
+                  "refId": "b",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "A",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "redis耗时统计",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:1591",
+              "format": "ms",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:1592",
+              "format": "ms",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 0,
+            "y": 25
+          },
+          "hiddenSeries": false,
+          "id": 53,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": true,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": false,
+              "expression": "",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod:failed",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": true,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_counter",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "direction",
+                      "method": "eq",
+                      "value": [
+                        "response"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "error_code",
+                      "method": "neq",
+                      "value": [
+                        "0"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "quene_type",
+                      "method": "eq",
+                      "value": [
+                        "pulasr"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "A",
+              "source": ""
+            },
+            {
+              "alias": "",
+              "cluster": [],
+              "display": false,
+              "expression": "",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod:success",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": true,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_counter",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "direction",
+                      "method": "eq",
+                      "value": [
+                        "response"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "error_code",
+                      "method": "eq",
+                      "value": [
+                        "0"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "quene_type",
+                      "method": "eq",
+                      "value": [
+                        "pulasr"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "D",
+              "source": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "pulsar队列发送消息统计",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:931",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:932",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "cacheTimeout": null,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 12,
+            "y": 25
+          },
+          "hiddenSeries": false,
+          "id": 75,
+          "interval": null,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "成功率",
+              "cluster": [],
+              "display": true,
+              "expression": "a /b * 100",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 30,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_counter",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "quene_type",
+                      "method": "eq",
+                      "value": [
+                        "pulsar"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "error_code",
+                      "method": "eq",
+                      "value": [
+                        "0"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "alias": "",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 30,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "message_queue_request_counter",
+                  "refId": "b",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "quene_type",
+                      "method": "eq",
+                      "value": [
+                        "pulsar"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "B",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "pulsar队列发送消息成功率",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:723",
+              "format": "percent",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:724",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
+      "title": "发送数据",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 3
+      },
+      "id": 58,
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 0,
+            "y": 4
+          },
+          "hiddenSeries": false,
+          "id": 38,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "sideWidth": null,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "$tag_apiname成功率($tag_bk_pod)",
+              "cluster": [],
+              "display": true,
+              "expression": "a / b *100",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "api-$tag_apiname($tag_node)",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "apiname",
+                    "bk_pod"
+                  ],
+                  "interval": 120,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "api_requests_total",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "code",
+                      "method": "eq",
+                      "value": [
+                        "0"
+                      ]
+                    },
+                    {
+                      "condition": "and",
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "alias": "",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "apiname",
+                    "bk_pod"
+                  ],
+                  "interval": 120,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "api_requests_total",
+                  "refId": "b",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": []
+                }
+              ],
+              "refId": "A",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "ChannelId API 成功率",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "percent",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "percent",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 12,
+            "y": 4
+          },
+          "hiddenSeries": false,
+          "id": 32,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "sort": "max",
+            "sortDesc": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "$tag_apiname耗时($tag_bk_pod)",
+              "cluster": [],
+              "display": true,
+              "expression": "a / b",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "api-$tag_apiname($tag_node)",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "1m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "apiname",
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "response_milliseconds",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "alias": "",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": false,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "1m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "apiname",
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "api_requests_total",
+                  "refId": "b",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "A",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "ChannelId API耗时",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:776",
+              "format": "ms",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:777",
+              "format": "ms",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 24,
+            "x": 0,
+            "y": 9
+          },
+          "hiddenSeries": false,
+          "id": 34,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": true,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": false,
+              "expression": "",
+              "hide": false,
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "api-$tag_apiname($tag_bk_pod)",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": true,
+                  "filter_dict": {},
+                  "functions": [
+                    {
+                      "id": "rate",
+                      "params": [
+                        {
+                          "id": "window",
+                          "value": "2m"
+                        }
+                      ]
+                    }
+                  ],
+                  "group_by": [
+                    "apiname",
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "SUM",
+                  "metric_field": "api_requests_total",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "A",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "ChannelId-API调用频率",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
+      "title": "Channel API",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "id": 62,
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 6,
+            "w": 12,
+            "x": 0,
+            "y": 5
+          },
+          "hiddenSeries": false,
+          "id": 4,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": "false",
+              "expression": "a",
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": "true",
+                  "filter_dict": {},
+                  "functions": [],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "AVG",
+                  "metric_field": "process_mem_usage",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "A",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "内存使用率",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:695",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:696",
+              "format": "percent",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 6,
+            "w": 12,
+            "x": 12,
+            "y": 5
+          },
+          "hiddenSeries": false,
+          "id": 19,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": "false",
+              "expression": "a",
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": "true",
+                  "filter_dict": {},
+                  "functions": [],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "AVG",
+                  "metric_field": "process_thread_total",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "A",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "线程数",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:936",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:937",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 5,
+            "w": 24,
+            "x": 0,
+            "y": 11
+          },
+          "hiddenSeries": false,
+          "id": 2,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "rightSide": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.10",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "",
+              "cluster": [],
+              "display": "false",
+              "expression": "a",
+              "host": [],
+              "module": [],
+              "only_promql": false,
+              "query_configs": [
+                {
+                  "alias": "$tag_bk_pod",
+                  "data_source_label": "bk_monitor",
+                  "data_type_label": "time_series",
+                  "display": "true",
+                  "filter_dict": {},
+                  "functions": [],
+                  "group_by": [
+                    "bk_pod"
+                  ],
+                  "interval": 60,
+                  "interval_unit": "s",
+                  "method": "AVG",
+                  "metric_field": "process_cpu_usage_ratio",
+                  "refId": "a",
+                  "result_table_id": "",
+                  "result_table_label": "kubernetes",
+                  "time_field": "",
+                  "where": [
+                    {
+                      "key": "module",
+                      "method": "eq",
+                      "value": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "refId": "A",
+              "showExpression": false,
+              "source": "",
+              "step": ""
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "CPU使用率",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:992",
+              "format": "percent",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:993",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
+      "title": "系统性能指标",
+      "type": "row"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "gse-data",
+  "uid": "JLljhNj7z",
+  "version": 102
+}

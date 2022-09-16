@@ -1,0 +1,106 @@
+# vim:sts=2 ts=2 sw=2
+
+- name: admin
+  module: cmdb
+  project_dir: cmdb/server
+  alias: cmdb
+  language: golang
+  version: __VERSION__
+
+- name: api
+  module: cmdb
+  project_dir: cmdb/server
+  alias: cmdb
+  language: golang
+  version: __VERSION__
+
+- name: auth
+  module: cmdb
+  project_dir: cmdb/server
+  alias: cmdb
+  language: golang
+  version: __VERSION__
+
+- name: cloud
+  module: cmdb
+  project_dir: cmdb/server
+  alias: cmdb
+  language: golang
+  version: __VERSION__
+
+- name: cache
+  module: cmdb
+  project_dir: cmdb/server
+  alias: cmdb
+  language: golang
+  version: __VERSION__
+
+- name: core
+  module: cmdb
+  project_dir: cmdb/server
+  alias: cmdb
+  language: golang
+  version: __VERSION__
+
+- name: datacollection
+  module: cmdb
+  project_dir: cmdb/server
+  alias: cmdb
+  language: golang
+  version: __VERSION__
+
+- name: event
+  module: cmdb
+  project_dir: cmdb/server
+  alias: cmdb
+  language: golang
+  version: __VERSION__
+
+- name: host
+  module: cmdb
+  project_dir: cmdb/server
+  alias: cmdb
+  language: golang
+  version: __VERSION__
+
+- name: operation
+  module: cmdb
+  project_dir: cmdb/server
+  alias: cmdb
+  language: golang
+  version: __VERSION__
+
+- name: proc
+  module: cmdb
+  project_dir: cmdb/server
+  alias: cmdb
+  language: golang
+  version: __VERSION__
+
+- name: synchronize
+  module: cmdb
+  project_dir: cmdb/server
+  alias: cmdb
+  language: golang
+  version: __VERSION__
+
+- name: task
+  module: cmdb
+  project_dir: cmdb/server
+  alias: cmdb
+  language: golang
+  version: __VERSION__
+
+- name: topo
+  module: cmdb
+  project_dir: cmdb/server
+  alias: cmdb
+  language: golang
+  version: __VERSION__
+
+- name: web
+  module: cmdb
+  project_dir: cmdb/server
+  alias: cmdb
+  language: golang
+  version: __VERSION__

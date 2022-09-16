@@ -46,26 +46,34 @@ type module struct {
 	datas  types.MapStr
 }
 
+// SetTopo TODO
 func (cli *module) SetTopo(bizID, setID int64) {
 	cli.setID = setID
 	cli.bizID = bizID
 
 }
+
+// GetModel TODO
 func (cli *module) GetModel() model.Model {
 	return cli.target
 }
 
+// GetInstID TODO
 func (cli *module) GetInstID() (int64, error) {
 	return cli.datas.Int64(ModuleID)
 }
+
+// GetInstName TODO
 func (cli *module) GetInstName() string {
 	return cli.datas.String(ModuleName)
 }
 
+// GetValues TODO
 func (cli *module) GetValues() (types.MapStr, error) {
 	return cli.datas, nil
 }
 
+// SetValue TODO
 func (cli *module) SetValue(key string, value interface{}) error {
 
 	// TODO:需要根据model 的定义对输入的key 及value 进行校验
@@ -114,7 +122,7 @@ func (cli *module) search() ([]model.Attribute, []types.MapStr, error) {
 			cond.Field(attrItem.GetID()).Eq(attrVal)
 		}
 	}
-	
+
 	// search by condition
 	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Module().SearchModules(cond)
 
@@ -122,6 +130,7 @@ func (cli *module) search() ([]model.Attribute, []types.MapStr, error) {
 
 }
 
+// IsExists TODO
 func (cli *module) IsExists() (bool, error) {
 
 	_, items, err := cli.search()
@@ -130,6 +139,8 @@ func (cli *module) IsExists() (bool, error) {
 	}
 	return 0 != len(items), nil
 }
+
+// Create TODO
 func (cli *module) Create() error {
 
 	if 0 <= cli.setID {
@@ -148,6 +159,8 @@ func (cli *module) Create() error {
 	cli.datas.Set(ModuleID, moduleID)
 	return nil
 }
+
+// Update TODO
 func (cli *module) Update() error {
 
 	attrs, existItems, err := cli.search()
@@ -172,7 +185,7 @@ func (cli *module) Update() error {
 	if 0 < cli.bizID {
 		cli.datas.Set(BusinessID, cli.bizID)
 	}
-	cli.datas.Remove("create_time") //invalid check , need to delete
+	cli.datas.Remove("create_time") // invalid check , need to delete
 	for _, existItem := range existItems {
 
 		instID, err := existItem.Int64(ModuleID)
@@ -193,9 +206,11 @@ func (cli *module) Update() error {
 	}
 	return nil
 }
+
+// Save TODO
 func (cli *module) Save() error {
 
-	//fmt.Println("bizID:", cli.bizID, "setID:", cli.setID)
+	// fmt.Println("bizID:", cli.bizID, "setID:", cli.setID)
 	if exists, err := cli.IsExists(); nil != err {
 		return err
 	} else if exists {

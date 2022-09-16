@@ -230,7 +230,7 @@ func (bw BackendWorker) updateSetAttributesWithSetTemplate(kit *rest.Kit, setID 
 	return nil
 }
 
-// syncSetAttributes
+// syncSetAttributes TODO
 func (bw BackendWorker) syncSetAttributes(kit *rest.Kit, bizID, setTemplateID, setID int64) error {
 	// 1、获取集群模板中的属性id以及对应的属性值 property_value
 	attrIDs, setTemplateAttrValueMap, cErr := bw.getSetTemplateAttrIdAndPropertyValue(kit, bizID, setTemplateID)

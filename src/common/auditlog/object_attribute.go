@@ -72,6 +72,7 @@ func (h *objectAttributeAuditLog) GenerateAuditLog(parameter *generateAuditCommo
 	}, nil
 }
 
+// NewObjectAttributeAuditLog TODO
 func NewObjectAttributeAuditLog(clientSet coreservice.CoreServiceClientInterface) *objectAttributeAuditLog {
 	return &objectAttributeAuditLog{
 		audit: audit{

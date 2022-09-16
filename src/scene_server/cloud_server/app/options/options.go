@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package options TODO
 package options
 
 import (
@@ -44,6 +45,7 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&s.EnableCryptor, "enable-cryptor", true, "enable cryptor or not")
 }
 
+// Config TODO
 type Config struct {
 	SecretKeyUrl   string
 	SecretsAddrs   string

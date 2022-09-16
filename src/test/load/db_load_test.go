@@ -60,7 +60,7 @@ func initData() {
 		Address:  tConfig.RedisCfg.RedisAddress + ":" + tConfig.RedisCfg.RedisPort,
 		Password: tConfig.RedisCfg.RedisPasswd,
 		Database: "0",
-		//MasterName: redisMasterName,
+		// MasterName: redisMasterName,
 	}
 
 	var err error
@@ -76,7 +76,7 @@ func initData() {
 }
 
 func GetClient() (*local.Mongo, error) {
-	//fmt.Println("********mongouri:", test.GetTestConfig().MongoURI)
+	// fmt.Println("********mongouri:", test.GetTestConfig().MongoURI)
 	mongoConfig := local.MongoConf{
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
 		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
@@ -94,7 +94,7 @@ func GetClient() (*local.Mongo, error) {
 	return m, nil
 }
 
-//清空表数据
+// 清空表数据
 func clearData(tablename string) error {
 	client, err := GetClient()
 	if err != nil {
@@ -139,10 +139,10 @@ func DistributedInsertCommit(client1, client2 *local.Mongo, tablename string) er
 		return err
 	}
 
-	//err = client2.Table(tablename).Insert(ctx, map[string]string{"distrkey002_" + ts: DBWriteStr})
-	//if err != nil {
+	// err = client2.Table(tablename).Insert(ctx, map[string]string{"distrkey002_" + ts: DBWriteStr})
+	// if err != nil {
 	//	return err
-	//}
+	// }
 
 	err = client2.CommitTransaction(ctx)
 	if err != nil {
@@ -188,17 +188,17 @@ func LocalInsertCommit(client *local.Mongo, tablename string) error {
 var _ = Describe("DB Operation Load Test", func() {
 	initData()
 	client1, err := GetClient()
-	//fmt.Println("********getclient err:", err)
+	// fmt.Println("********getclient err:", err)
 	Expect(err).Should(BeNil())
 	client2, err := GetClient()
 	Expect(err).Should(BeNil())
 	tablename := "cc_tranTest"
-	//事务操作前，清空数据
+	// 事务操作前，清空数据
 	err = clearData(tablename)
 	Expect(err).Should(BeNil())
 
 	Describe("distributed insert load test", func() {
-		//var header = test.GetHeader()
+		// var header = test.GetHeader()
 		Measure("emit the request", func(b Benchmarker) {
 			runtime := b.Time("runtime", func() {
 				err := DistributedInsertCommit(client1, client2, tablename)
@@ -221,7 +221,7 @@ var _ = Describe("DB Operation Load Test", func() {
 	})
 
 	Describe("local insert load test", func() {
-		//var header = test.GetHeader()
+		// var header = test.GetHeader()
 		Measure("emit the request", func(b Benchmarker) {
 			runtime := b.Time("runtime", func() {
 				err := LocalInsertCommit(client1, tablename)
@@ -244,7 +244,7 @@ var _ = Describe("DB Operation Load Test", func() {
 	})
 
 	Describe("notxn insert load test", func() {
-		//var header = test.GetHeader()
+		// var header = test.GetHeader()
 		Measure("emit the request", func(b Benchmarker) {
 			runtime := b.Time("runtime", func() {
 				err := NotxnInsertCommit(client1, tablename)

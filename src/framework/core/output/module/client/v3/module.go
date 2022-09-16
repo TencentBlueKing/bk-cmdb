@@ -53,7 +53,7 @@ func (cli *Module) CreateModule(bizID, setID int64, data types.MapStr) (int, err
 	data.Set(SupplierAccount, cli.cli.GetSupplierAccount())
 
 	targetURL := fmt.Sprintf("%s/api/v3/module/%d/%d", cli.cli.GetAddress(), bizID, setID)
-	//fmt.Println("create url:", targetURL, data)
+	// fmt.Println("create url:", targetURL, data)
 	rst, err := cli.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return 0, err
@@ -96,7 +96,7 @@ func (cli *Module) DeleteModule(bizID, setID, moduleID int64) error {
 func (cli *Module) UpdateModule(bizID, setID, moduleID int64, data types.MapStr) error {
 
 	targetURL := fmt.Sprintf("%s/api/v3/module/%d/%d/%d", cli.cli.GetAddress(), bizID, setID, moduleID)
-	//fmt.Println("url:", targetURL, data)
+	// fmt.Println("url:", targetURL, data)
 	rst, err := cli.cli.httpCli.PUT(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return err

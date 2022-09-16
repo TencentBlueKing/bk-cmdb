@@ -12,6 +12,7 @@
 
 <template>
   <bk-sideslider
+    :transfer="true"
     :width="800"
     :title="$t('批量编辑')"
     :is-show.sync="isShow"

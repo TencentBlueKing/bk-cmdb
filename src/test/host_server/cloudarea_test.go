@@ -61,7 +61,7 @@ func NewTmpCloudArea() map[string]interface{} {
 var _ = Describe("cloud area test", func() {
 
 	BeforeEach(func() {
-		//准备数据
+		// 准备数据
 		prepareCloudData()
 	})
 
@@ -250,7 +250,7 @@ var _ = Describe("cloud area test", func() {
 var cloudID1, cloudID2, cloudIDTmp int64
 
 func prepareCloudData() {
-	//清空云区域表
+	// 清空云区域表
 	err := test.GetDB().Table(common.BKTableNameBasePlat).Delete(context.Background(), map[string]interface{}{})
 	Expect(err).NotTo(HaveOccurred())
 

@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package model TODO
 package model
 
 import (
@@ -37,10 +38,12 @@ type model struct {
 	id          int64
 }
 
+// ToMapStr TODO
 func (cli *model) ToMapStr() types.MapStr {
 	return common.SetValueToMapStrByTags(cli)
 }
 
+// Attributes TODO
 func (cli *model) Attributes() ([]Attribute, error) {
 
 	cond := common.CreateCondition().Field(ObjectID).Like(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID)
@@ -73,6 +76,8 @@ func (cli *model) search() ([]types.MapStr, error) {
 	// search all objects by condition
 	return client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Model().SearchObjects(cond)
 }
+
+// IsExists TODO
 func (cli *model) IsExists() (bool, error) {
 
 	items, err := cli.search()
@@ -81,6 +86,8 @@ func (cli *model) IsExists() (bool, error) {
 	}
 	return 0 != len(items), nil
 }
+
+// Create TODO
 func (cli *model) Create() error {
 
 	id, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Model().CreateObject(cli.ToMapStr())
@@ -91,6 +98,8 @@ func (cli *model) Create() error {
 	cli.id = id
 	return nil
 }
+
+// Update TODO
 func (cli *model) Update() error {
 
 	dataItems, err := cli.search()
@@ -125,6 +134,8 @@ func (cli *model) Update() error {
 	}
 	return nil
 }
+
+// Save TODO
 func (cli *model) Save() error {
 
 	if exists, err := cli.IsExists(); nil != err {
@@ -135,6 +146,7 @@ func (cli *model) Save() error {
 	return cli.Create()
 }
 
+// CreateAttribute TODO
 func (cli *model) CreateAttribute() Attribute {
 	attr := &attribute{
 		ObjectID:      cli.ObjectID,
@@ -145,82 +157,112 @@ func (cli *model) CreateAttribute() Attribute {
 	return attr
 }
 
+// SetClassification TODO
 func (cli *model) SetClassification(classificationID string) {
 	cli.ObjCls = classificationID
 }
 
+// GetClassification TODO
 func (cli *model) GetClassification() string {
 	return cli.ObjCls
 }
 
+// SetIcon TODO
 func (cli *model) SetIcon(iconName string) {
 	cli.ObjIcon = iconName
 }
 
+// GetIcon TODO
 func (cli *model) GetIcon() string {
 	return cli.ObjIcon
 }
 
+// SetID TODO
 func (cli *model) SetID(id string) {
 	cli.ObjectID = id
 }
 
+// GetID TODO
 func (cli *model) GetID() string {
 	return cli.ObjectID
 }
 
+// SetName TODO
 func (cli *model) SetName(name string) {
 	cli.ObjectName = name
 }
+
+// GetName TODO
 func (cli *model) GetName() string {
 	return cli.ObjectName
 }
 
+// SetPaused TODO
 func (cli *model) SetPaused() {
 	cli.IsPaused = true
 }
 
+// SetNonPaused TODO
 func (cli *model) SetNonPaused() {
 	cli.IsPaused = false
 }
 
+// Paused TODO
 func (cli *model) Paused() bool {
 	return cli.IsPaused
 }
 
+// SetPosition TODO
 func (cli *model) SetPosition(position string) {
 	cli.Position = position
 }
 
+// GetPosition TODO
 func (cli *model) GetPosition() string {
 	return cli.Position
 }
 
+// SetSupplierAccount TODO
 func (cli *model) SetSupplierAccount(ownerID string) {
 	cli.OwnerID = ownerID
 }
+
+// GetSupplierAccount TODO
 func (cli *model) GetSupplierAccount() string {
 	return cli.OwnerID
 }
 
+// SetDescription TODO
 func (cli *model) SetDescription(desc string) {
 	cli.Description = desc
 }
+
+// GetDescription TODO
 func (cli *model) GetDescription() string {
 	return cli.Description
 }
+
+// SetCreator TODO
 func (cli *model) SetCreator(creator string) {
 	cli.Creator = creator
 }
+
+// GetCreator TODO
 func (cli *model) GetCreator() string {
 	return cli.Creator
 }
+
+// SetModifier TODO
 func (cli *model) SetModifier(modifier string) {
 	cli.Modifier = modifier
 }
+
+// GetModifier TODO
 func (cli *model) GetModifier() string {
 	return cli.Modifier
 }
+
+// CreateGroup TODO
 func (cli *model) CreateGroup() Group {
 	g := &group{
 		OwnerID:  cli.OwnerID,
@@ -229,17 +271,24 @@ func (cli *model) CreateGroup() Group {
 	return g
 }
 
+// FindAttributesLikeName TODO
 func (cli *model) FindAttributesLikeName(attributeName string) (AttributeIterator, error) {
 	cond := common.CreateCondition().Field(PropertyName).Like(attributeName)
 	return newAttributeIterator(cli.OwnerID, cond)
 }
+
+// FindAttributesByCondition TODO
 func (cli *model) FindAttributesByCondition(cond common.Condition) (AttributeIterator, error) {
 	return newAttributeIterator(cli.OwnerID, cond)
 }
+
+// FindGroupsLikeName TODO
 func (cli *model) FindGroupsLikeName(groupName string) (GroupIterator, error) {
 	cond := common.CreateCondition().Field(GroupName).Like(groupName).Field(ObjectID).Eq(cli.GetID())
 	return newGroupIterator(cli.OwnerID, cond)
 }
+
+// FindGroupsByCondition TODO
 func (cli *model) FindGroupsByCondition(cond common.Condition) (GroupIterator, error) {
 	return newGroupIterator(cli.OwnerID, cond.Field(ObjectID).Eq(cli.GetID()))
 }

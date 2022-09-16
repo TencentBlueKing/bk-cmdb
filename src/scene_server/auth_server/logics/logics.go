@@ -10,16 +10,19 @@
  * limitations under the License.
  */
 
+// Package logics TODO
 package logics
 
 import (
 	"configcenter/src/apimachinery"
 )
 
+// Logics TODO
 type Logics struct {
 	CoreAPI apimachinery.ClientSetInterface
 }
 
+// NewLogics TODO
 func NewLogics(CoreAPI apimachinery.ClientSetInterface) *Logics {
 	return &Logics{
 		CoreAPI: CoreAPI,

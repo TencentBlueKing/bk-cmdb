@@ -13,58 +13,41 @@
 #ifndef _MUDUOHELPER_H_
 #define _MUDUOHELPER_H_
 
-
 #include <string>
 
 #include <muduo/base/AsyncLogging.h>
 
-#include "dataStruct/safe_map.h"
+#include "datastruct/safe_map.h"
 #include "safe/lock.h"
 
 namespace gse {
-namespace dataserver {
+namespace data {
 
 class MuduoLogHelper
 {
 public:
-	~MuduoLogHelper();
+    ~MuduoLogHelper();
 
-	static MuduoLogHelper& Instance();
+    static MuduoLogHelper &Instance();
 
-	/**
-	Describe:
-		create the data sink
-	Parameters:
-		szPrefix		[in] the path where the data log file save
-		max_size_file	[in] the max size of one file. its unit is MB
-		max_num_file	[in] the max number of the log files
-		flush_msec	[in] the time span decide when flush the data from cache to log file. if zero, will flush immediately
-								its unit is microseconds
-	*******************************************************************************************************/
-    int CreateDataSink(const std::string& szPrefix = "./logs/data/", unsigned int max_size_file = 10, unsigned int max_num_file = 20, int flush_msec = 500);
-    static void WriteWithoutFmt(int sink,  const char* buff);
-    static void asyncOutput(int sink_id, const char* log, int len);
+    int CreateDataSink(const std::string &szPrefix = "./logs/data/", unsigned int max_size_file = 10, unsigned int max_num_file = 20, int flush_msec = 500);
+    static void WriteWithoutFmt(int sink, const char *buff);
+    static void asyncOutput(int sink_id, const char *log, int len);
 
 private:
-	MuduoLogHelper();
+    MuduoLogHelper();
 
-	MuduoLogHelper(const MuduoLogHelper&);
-    MuduoLogHelper& operator=(const MuduoLogHelper&);
-    muduo::AsyncLogging* GetLogSink(int sink_id);
+    muduo::AsyncLogging *GetLogSink(int sink_id);
 
     gse::safe::RWLock m_rwLock;
     std::map<int, muduo::AsyncLogging *> m_sinks;
-    
 };
 
 #define STRINGIZE2(s) #s
-#define STRINGIZE(s)  STRINGIZE2(s)
+#define STRINGIZE(s) STRINGIZE2(s)
 
-
-#define MUDUO_LOG_DATA(sink, buff)\
+#define MUDUO_LOG_DATA(sink, buff) \
     MuduoLogHelper::WriteWithoutFmt(sink, buff)
 #endif
-
-
 }
 }

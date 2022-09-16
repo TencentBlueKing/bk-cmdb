@@ -18,9 +18,9 @@
       :max-height="maxHeight || ($APP.height - 220 - 119)"
       @page-change="handlePageChange"
       @page-limit-change="handleSizeChange">
-      <bk-table-column :label="$t('内网IP')" min-width="120">
+      <bk-table-column :label="$t('内网IP')" min-width="150" show-overflow-tooltip>
         <template slot-scope="{ row }">
-          <bk-button theme="primary" text @click="handleShowDetails(row)">
+          <bk-button class="ip-value" theme="primary" text @click="handleShowDetails(row)">
             {{row.expect_host.bk_host_innerip}}
           </bk-button>
         </template>
@@ -274,6 +274,9 @@
         padding: 8px 0;
         line-height: 1.6;
         word-break: break-word;
+    }
+    .ip-value {
+      white-space: nowrap;
     }
 </style>
 <style lang="scss">

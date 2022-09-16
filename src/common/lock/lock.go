@@ -1,3 +1,4 @@
+// Package lock TODO
 package lock
 
 import (
@@ -37,11 +38,13 @@ type Locker interface {
 	Unlock() error
 }
 
+// MLocker TODO
 type MLocker interface {
 	MLock(rid string, retrytimes int, expire time.Duration, values ...StrFormat) (locked bool, err error)
 	MUnlock() error
 }
 
+// NewLocker TODO
 func NewLocker(cache redis.Client) Locker {
 
 	return &lock{
@@ -70,6 +73,7 @@ func (l *lock) Lock(key StrFormat, expire time.Duration) (locked bool, err error
 	return locked, err
 }
 
+// NewMLocker TODO
 func NewMLocker(cache redis.Client) MLocker {
 
 	return &mlock{
@@ -80,6 +84,7 @@ func NewMLocker(cache redis.Client) MLocker {
 	}
 }
 
+// getExecSetNxBoolResult TODO
 // parse setnx result，generate key-lockResult pair
 // the return value like: " setnx cc:v3:61_felen_cx_run_felen_rt c3eqnlv6bt34kavtdotg: true "
 // so we should split use space to get the key ,use ":" to get the result true or false
@@ -101,6 +106,7 @@ func getExecSetNxBoolResult(result string) (string, bool) {
 	return keySlice[1], false
 }
 
+// MLock TODO
 func (l *mlock) MLock(rid string, retry int, expire time.Duration, keys ...StrFormat) (locked bool, err error) {
 	if l.isFirst {
 		return false, errors.New("repeat lock")
@@ -183,6 +189,7 @@ func (l *mlock) MLock(rid string, retry int, expire time.Duration, keys ...StrFo
 	return false, errors.New("obtain lock fail")
 }
 
+// Unlock TODO
 func (l *lock) Unlock() error {
 	// locked sucess , can unlock
 	if !l.needUnlock {
@@ -191,6 +198,7 @@ func (l *lock) Unlock() error {
 	return l.cache.Del(context.Background(), l.key).Err()
 }
 
+// MUnlock TODO
 func (l *mlock) MUnlock() error {
 	// locked sucess , can unlock
 	if !l.needUnlock {

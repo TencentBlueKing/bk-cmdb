@@ -20,12 +20,14 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 var (
-	sortFlag      = int32(1)
+	sortFlag      = 1
 	idUniqueIndex = types.Index{
-		Keys:       map[string]int32{common.BKFieldID: sortFlag},
+		Keys:       bson.D{{common.BKFieldID, sortFlag}},
 		Unique:     true,
 		Background: true,
 		Name:       "idx_unique_id",
@@ -34,7 +36,7 @@ var (
 
 func changeSetUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	idxUniqueParentIDSetName := types.Index{
-		Keys:       map[string]int32{common.BKParentIDField: sortFlag, common.BKSetNameField: sortFlag},
+		Keys:       bson.D{{common.BKParentIDField, sortFlag}, {common.BKSetNameField, sortFlag}},
 		Unique:     true,
 		Background: true,
 		Name:       "idx_unique_parentID_setName",
@@ -53,8 +55,9 @@ func changeSetUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		}
 
 		if len(index.Keys) == 2 {
-			_, ok1 := index.Keys[common.BKParentIDField]
-			_, ok2 := index.Keys[common.BKSetNameField]
+			indexKeyMap := index.Keys.Map()
+			_, ok1 := indexKeyMap[common.BKParentIDField]
+			_, ok2 := indexKeyMap[common.BKSetNameField]
 			if ok1 && ok2 {
 				if index.Unique == true {
 					isCreateUniqueSetName = false

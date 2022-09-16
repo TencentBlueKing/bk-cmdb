@@ -22,12 +22,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// LoginUserInfoOwnerUinList TODO
 type LoginUserInfoOwnerUinList struct {
 	OwnerID   string `json:"id"`
 	OwnerName string `json:"name"`
 	Role      int64  `json:"role"`
 }
 
+// LoginUserInfo TODO
 type LoginUserInfo struct {
 	UserName      string                      `json:"username"`
 	ChName        string                      `json:"chname"`
@@ -36,20 +38,22 @@ type LoginUserInfo struct {
 	Role          string                      `json:"-"`
 	BkToken       string                      `json:"bk_token"`
 	OnwerUin      string                      `json:"current_supplier"`
-	OwnerUinArr   []LoginUserInfoOwnerUinList `json:"supplier_list"` //user all owner uin
+	OwnerUinArr   []LoginUserInfoOwnerUinList `json:"supplier_list"` // user all owner uin
 	IsOwner       bool                        `json:"-"`             // is master
-	Extra         map[string]interface{}      `json:"extra"`         //custom information
+	Extra         map[string]interface{}      `json:"extra"`         // custom information
 	Language      string                      `json:"-"`
 	AvatarUrl     string                      `json:"avatar_url"`
 	MultiSupplier bool                        `json:"multi_supplier"`
 }
 
+// LoginPluginInfo TODO
 type LoginPluginInfo struct {
 	Name       string // plugin info
 	Version    string // In what version is used
 	HandleFunc LoginUserPluginInerface
 }
 
+// LoginUserPluginParams TODO
 type LoginUserPluginParams struct {
 	Url          string
 	IsMultiOwner bool
@@ -57,46 +61,54 @@ type LoginUserPluginParams struct {
 	Header       http.Header    // Reserved word, not used now
 }
 
+// LoginUserPluginInerface TODO
 type LoginUserPluginInerface interface {
 	LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *LoginUserInfo, loginSucc bool)
 	GetLoginUrl(c *gin.Context, config map[string]string, input *LogoutRequestParams) string
 	GetUserList(c *gin.Context, config map[string]string) ([]*LoginSystemUserInfo, *errors.RawErrorInfo)
 }
 
+// LoginSystemUserInfo TODO
 type LoginSystemUserInfo struct {
 	CnName string `json:"chinese_name"`
 	EnName string `json:"english_name"`
 }
 
+// LonginSystemUserListResult TODO
 type LonginSystemUserListResult struct {
 	BaseResp `json:",inline"`
 	Data     []*LoginSystemUserInfo `json:"data"`
 }
 
+// DepartmentResult TODO
 type DepartmentResult struct {
 	BaseResp `json:",inline"`
 	Data     *DepartmentData `json:"data"`
 }
 
+// DepartmentProfileResult TODO
 type DepartmentProfileResult struct {
 	BaseResp `json:",inline"`
 	Data     *DepartmentProfileData `json:"data"`
 }
 
+// LoginUserInfoDetail TODO
 type LoginUserInfoDetail struct {
 	UserName      string                      `json:"username"`
 	ChName        string                      `json:"chname"`
 	OnwerUin      string                      `json:"current_supplier"`
-	OwnerUinArr   []LoginUserInfoOwnerUinList `json:"supplier_list"` //user all owner uin
+	OwnerUinArr   []LoginUserInfoOwnerUinList `json:"supplier_list"` // user all owner uin
 	AvatarUrl     string                      `json:"avatar_url"`
 	MultiSupplier bool                        `json:"multi_supplier"`
 }
 
+// LoginUserInfoResult TODO
 type LoginUserInfoResult struct {
 	BaseResp `json:",inline"`
 	Data     LoginUserInfoDetail `json:"data"`
 }
 
+// LoginChangeSupplierResult TODO
 type LoginChangeSupplierResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
@@ -104,6 +116,7 @@ type LoginChangeSupplierResult struct {
 	} `json:"data"`
 }
 
+// LogoutResult TODO
 type LogoutResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
@@ -111,20 +124,26 @@ type LogoutResult struct {
 	} `json:"data"`
 }
 
+// LogoutRequestParams TODO
 type LogoutRequestParams struct {
 	HTTPScheme string `json:"http_scheme"`
 }
 
+// ExcelAssociationOperate TODO
 type ExcelAssociationOperate int
 
 const (
 	_ ExcelAssociationOperate = iota
+	// ExcelAssociationOperateError TODO
 	ExcelAssociationOperateError
+	// ExcelAssociationOperateAdd TODO
 	ExcelAssociationOperateAdd
-	//ExcelAssociationOperateUpdate
+	// ExcelAssociationOperateDelete TODO
+	// ExcelAssociationOperateUpdate
 	ExcelAssociationOperateDelete
 )
 
+// ExcelAssociation TODO
 type ExcelAssociation struct {
 	ObjectAsstID string                  `json:"bk_obj_asst_id"`
 	Operate      ExcelAssociationOperate `json:"operate"`
@@ -132,6 +151,7 @@ type ExcelAssociation struct {
 	DstPrimary   string                  `json:"dst_primary_key"`
 }
 
+// ObjectAsstIDStatisticsInfo TODO
 type ObjectAsstIDStatisticsInfo struct {
 	Create int64 `json:"create"`
 	Delete int64 `json:"delete"`

@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/watch"
 )
 
+// WatchEvent TODO
 func (s *Service) WatchEvent(ctx *rest.Contexts) {
 	resource := ctx.Request.PathParameter("resource")
 	options := new(watch.WatchEventOptions)

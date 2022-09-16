@@ -38,6 +38,7 @@ import (
 var maxSizeFlag = flag.Uint64("log_max_size", 500, "Max size (MB) per file.")
 var maxSize uint64 = 0
 
+// MaxSize TODO
 func MaxSize() uint64 {
 	if maxSize == 0 {
 		maxSize = *maxSizeFlag * 1024 * 1024
@@ -48,6 +49,7 @@ func MaxSize() uint64 {
 // MaxNum is the maximum of log files for one thread.
 var maxNumFlag = flag.Int("log_max_num", 6, "Max num of file. The oldest will be removed if there is a extra file created.")
 
+// MaxNum TODO
 func MaxNum() int {
 	return *maxNumFlag
 }
@@ -62,8 +64,13 @@ type fileInfo struct {
 // sorting a list of fileInfo
 type fileInfoList []fileInfo
 
-func (b fileInfoList) Len() int           { return len(b) }
-func (b fileInfoList) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+// Len 用于排序
+func (b fileInfoList) Len() int { return len(b) }
+
+// Swap 用于排序
+func (b fileInfoList) Swap(i, j int) { b[i], b[j] = b[j], b[i] }
+
+// Less 用于排序
 func (b fileInfoList) Less(i, j int) bool { return b[i].timestamp < b[j].timestamp }
 
 // fileBlock is a block of chain in logKeeper.

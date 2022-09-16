@@ -262,13 +262,18 @@ func (s *set) DeleteSet(kit *rest.Kit, bizID int64, setIDs []int64) error {
 		return err
 	}
 
-	taskCond := &metadata.DeleteOption{
-		Condition: setCond,
-	}
-	if err = s.clientSet.TaskServer().Task().DeleteTask(kit.Ctx, kit.Header, taskCond); err != nil {
-		blog.Errorf("failed to delete set sync task message failed, bizID: %d, setIDs: %#v, err: %v, rid: %s",
-			bizID, setIDs, err, kit.Rid)
-		return err
+	if len(setIDs) > 0 {
+		taskCond := &metadata.DeleteOption{
+			Condition: mapstr.MapStr{
+				common.BKInstIDField:   mapstr.MapStr{common.BKDBIN: setIDs},
+				common.BKTaskTypeField: common.SyncSetTaskFlag,
+			},
+		}
+		if err = s.clientSet.TaskServer().Task().DeleteTask(kit.Ctx, kit.Header, taskCond); err != nil {
+			blog.Errorf("failed to delete set sync task message failed, bizID: %d, setIDs: %#v, err: %v, rid: %s",
+				bizID, setIDs, err, kit.Rid)
+			return err
+		}
 	}
 
 	// clear the sets
@@ -391,6 +396,30 @@ func (s *set) validateUpdateSetData(kit *rest.Kit, bizID int64, data, setData ma
 
 	fields := bytes.Buffer{}
 	for _, attr := range attrs.Info {
+		switch attr.PropertyType {
+		case common.FieldTypeTime:
+			// convert property value to time type for comparison
+			updateVal, err := util.ConvToTime(data[attr.PropertyID])
+			if err != nil {
+				blog.Errorf("parse updated value(%+v) failed, err: %v, rid: %s", data[attr.PropertyID], err, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, attr.PropertyID)
+			}
+
+			prevVal, err := util.ConvToTime(setData[attr.PropertyID])
+			if err != nil {
+				blog.Errorf("parse prev value(%+v) failed, err: %v, rid: %s", setData[attr.PropertyID], err, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, attr.PropertyID)
+			}
+
+			if reflect.DeepEqual(prevVal, updateVal) {
+				continue
+			}
+		default:
+			if reflect.DeepEqual(data[attr.PropertyID], setData[attr.PropertyID]) {
+				continue
+			}
+		}
+
 		if reflect.DeepEqual(data[attr.PropertyID], setData[attr.PropertyID]) {
 			continue
 		}

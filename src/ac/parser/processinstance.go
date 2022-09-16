@@ -21,8 +21,10 @@ import (
 	"configcenter/src/ac/meta"
 )
 
+// ProcessInstanceIAMResourceType TODO
 var ProcessInstanceIAMResourceType = meta.ProcessServiceInstance
 
+// ProcessInstanceAuthConfigs TODO
 var ProcessInstanceAuthConfigs = []AuthConfig{
 	{
 		Name:           "createProcessInstances",
@@ -158,6 +160,7 @@ var ProcessInstanceAuthConfigs = []AuthConfig{
 	},
 }
 
+// ProcessInstance TODO
 func (ps *parseStream) ProcessInstance() *parseStream {
 	return ParseStreamWithFramework(ps, ProcessInstanceAuthConfigs)
 }

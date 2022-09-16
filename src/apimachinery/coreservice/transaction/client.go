@@ -29,6 +29,7 @@ import (
 	"configcenter/src/storage/dal/mongo/local"
 )
 
+// Transaction TODO
 type Transaction interface {
 	// CommitTransaction is to commit the transaction.
 	CommitTransaction(ctx context.Context, h http.Header) error
@@ -38,6 +39,7 @@ type Transaction interface {
 	autoRun(ctx context.Context, h http.Header, run func() error) (bool, error)
 }
 
+// NewTransaction TODO
 func (t *txn) NewTransaction(h http.Header, opts ...metadata.TxnOption) (Transaction, error) {
 	cap, err := local.GenTxnCableAndSetHeader(h, opts...)
 	if err != nil {
@@ -125,6 +127,7 @@ type transaction struct {
 	client  rest.ClientInterface
 }
 
+// CommitTransaction TODO
 // call core service to commit transaction
 func (t *transaction) CommitTransaction(ctx context.Context, h http.Header) error {
 	if t.locked {

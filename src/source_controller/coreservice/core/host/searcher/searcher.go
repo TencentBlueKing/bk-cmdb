@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package searcher TODO
 package searcher
 
 import (
@@ -25,10 +26,12 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// Searcher TODO
 type Searcher struct {
 	CacheHost *host.Client
 }
 
+// New TODO
 func New() Searcher {
 	return Searcher{
 		CacheHost: host.NewClient(),
@@ -163,6 +166,7 @@ func (s *Searcher) ListHosts(ctx context.Context, option metadata.ListHosts) (se
 	return searchResult, nil
 }
 
+// ListHostsWithCache TODO
 func (s *Searcher) ListHostsWithCache(ctx context.Context, fields []string, page metadata.BasePage, rid string) (
 	searchResult *metadata.ListHostResult, skip bool, err error) {
 	opt := &metadata.ListHostWithPage{

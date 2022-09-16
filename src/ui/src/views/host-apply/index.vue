@@ -63,7 +63,7 @@
     MENU_BUSINESS_HOST_APPLY_EDIT,
     MENU_BUSINESS_HOST_APPLY_CONFLICT
   } from '@/dictionary/menu-symbol'
-  import { CONFIG_MODE } from '@/services/service-template/index.js'
+  import { CONFIG_MODE } from '@/service/service-template/index.js'
   import configDetails from './children/details.vue'
 
   export default {
@@ -199,8 +199,11 @@
           this.$refs.details.reset()
         }
 
-        // 业务拓扑模式且模板配置了自动应用，则不需要请求数据
+        // 业务拓扑模式且模板配置了自动应用，则不需要请求数据，但需要将规则数据重置
         if (this.isModuleMode && this.currentNode.service_template_host_apply_enabled) {
+          this.initRuleList = []
+          this.hasRule = false
+          this.checkedPropertyIdList = []
           return
         }
 
@@ -312,7 +315,10 @@
             mode: this.mode
           },
           query: {
-            id: this.targetId
+            id: this.targetId,
+            // 为统一UI交互全部使用batch模式
+            batch: 1,
+            action: 'batch-edit'
           },
           history: true
         })

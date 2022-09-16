@@ -20,12 +20,14 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// CreateServiceTemplate TODO
 func (p *processOperation) CreateServiceTemplate(kit *rest.Kit, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
 	// base attribute validate
 	if field, err := template.Validate(kit.CCError); err != nil {
@@ -102,6 +104,7 @@ func (p *processOperation) CreateServiceTemplate(kit *rest.Kit, template metadat
 	return &template, nil
 }
 
+// GetServiceTemplate TODO
 func (p *processOperation) GetServiceTemplate(kit *rest.Kit, templateID int64) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
 	template := metadata.ServiceTemplate{}
 
@@ -269,25 +272,30 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 		updateData[common.BKModuleNameField] = template.Name
 	}
 
-	option := map[string]interface{}{
-		common.BKServiceTemplateIDField: template.ID,
-	}
-	modules := new(metadata.ModuleInst)
-	e := mongodb.Client().Table(common.BKTableNameBaseModule).Find(option).One(kit.Ctx, &modules)
-	if e != nil {
-		blog.Errorf("get module failed, filter: %+v, err: %v, rid: %s", option, err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-	// 判断是否需要更新分类的找一个模块的分类即可,因为所有模块的分类都是一样的
-	if input.ServiceCategoryID != 0 && modules.ServiceCategoryID != input.ServiceCategoryID {
-		updateData[common.BKServiceCategoryIDField] = template.ServiceCategoryID
+	// update module category if there is a difference
+	if input.ServiceCategoryID != 0 {
+		option := map[string]interface{}{
+			common.BKServiceTemplateIDField: template.ID,
+			common.BKServiceCategoryIDField: mapstr.MapStr{
+				common.BKDBNE: input.ServiceCategoryID,
+			},
+		}
+		cnt, e := mongodb.Client().Table(common.BKTableNameBaseModule).Find(option).Count(kit.Ctx)
+		if e != nil {
+			blog.Errorf("count module failed, filter: %+v, err: %v, rid: %s", option, err, kit.Rid)
+			return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		}
+
+		if cnt > 0 {
+			updateData[common.BKServiceCategoryIDField] = template.ServiceCategoryID
+		}
 	}
 
 	if len(updateData) == 0 {
 		return template, nil
 	}
 
-	// update name of the modules using this service template
+	// update name & category of the modules using this service template
 	moduleFilter := map[string]interface{}{common.BKServiceTemplateIDField: template.ID}
 	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Update(kit.Ctx, moduleFilter, updateData); err != nil {
 		blog.ErrorJSON("UpdateServiceTemplate failed, update modules using this service template failed, filter: %s,"+
@@ -297,6 +305,7 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 	return template, nil
 }
 
+// ListServiceTemplates TODO
 func (p *processOperation) ListServiceTemplates(kit *rest.Kit, option metadata.ListServiceTemplateOption) (*metadata.MultipleServiceTemplate, errors.CCErrorCoder) {
 	filter := map[string]interface{}{
 		common.BKAppIDField: option.BusinessID,
@@ -372,6 +381,7 @@ func (p *processOperation) ListServiceTemplates(kit *rest.Kit, option metadata.L
 	return result, nil
 }
 
+// DeleteServiceTemplate TODO
 func (p *processOperation) DeleteServiceTemplate(kit *rest.Kit, serviceTemplateID int64) errors.CCErrorCoder {
 	template, err := p.GetServiceTemplate(kit, serviceTemplateID)
 	if err != nil {

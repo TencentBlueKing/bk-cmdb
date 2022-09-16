@@ -30,11 +30,13 @@ var tables = []string{
 	common.BKTableNameProcessTemplate,
 }
 
+// PageSize TODO
 const PageSize = 200
 
 // ,
 // common.BKTableNameProcessInstanceRelation,
 
+// RemoveMetadata TODO
 func RemoveMetadata(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	for _, tableName := range tables {
 		if err := removeMetadata(ctx, db, conf, tableName); err != nil {
@@ -95,6 +97,7 @@ func removeMetadata(ctx context.Context, db dal.RDB, conf *upgrader.Config, tabl
 	return nil
 }
 
+// RemoveMetadataProcess TODO
 func RemoveMetadataProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameBaseProcess
 	type MetaDataItem struct {
@@ -146,6 +149,7 @@ func RemoveMetadataProcess(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	return nil
 }
 
+// RemoveMetadataFromRelation TODO
 func RemoveMetadataFromRelation(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameProcessInstanceRelation
 	type MetaDataItem struct {

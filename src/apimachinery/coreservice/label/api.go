@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// AddLabel TODO
 func (l *label) AddLabel(ctx context.Context, h http.Header, tableName string, option selector.LabelAddOption) errors.CCErrorCoder {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ret := new(metadata.BaseResp)
@@ -52,6 +53,7 @@ func (l *label) AddLabel(ctx context.Context, h http.Header, tableName string, o
 	return nil
 }
 
+// RemoveLabel TODO
 func (l *label) RemoveLabel(ctx context.Context, h http.Header, tableName string, option selector.LabelRemoveOption) errors.CCErrorCoder {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ret := new(metadata.BaseResp)

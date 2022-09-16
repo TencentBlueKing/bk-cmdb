@@ -15,7 +15,9 @@
     <bk-alert type="warning" class="tips-alert">
       <template slot="title">
         <i18n path="服务模板的自动应用配置将覆盖其关联模块已有的规则操作提示">
-          <bk-link place="link" theme="primary" class="view-link" @click="handleShow">{{$t('点击查看')}}</bk-link>
+          <template #link>
+            <bk-link theme="primary" class="view-link" @click="handleShow">{{$t('点击查看')}}</bk-link>
+          </template>
         </i18n>
       </template>
     </bk-alert>
@@ -46,7 +48,7 @@
       <div class="module-list">
         <div class="searchbar">
           <i18n path="共N个关联模块" class="count">
-            <em class="num" place="count">{{displayModuleList.length}}</em>
+            <template #count><em class="num">{{displayModuleList.length}}</em></template>
           </i18n>
           <bk-input
             class="search-input"
@@ -109,7 +111,7 @@
   import store from '@/store'
   import routerActions from '@/router/actions'
   import { getDefaultPaginationConfig } from '@/utils/tools.js'
-  import serviceTemplateService, { CONFIG_MODE } from '@/services/service-template/index.js'
+  import serviceTemplateService, { CONFIG_MODE } from '@/service/service-template/index.js'
   import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
 
   export default defineComponent({

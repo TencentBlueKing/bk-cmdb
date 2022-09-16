@@ -18,20 +18,31 @@ import (
 	"configcenter/src/framework/core/types"
 )
 
+// AttributeType TODO
 type AttributeType string
 
 const (
+	// SingleChar TODO
 	SingleChar AttributeType = "singlechar"
-	LongChar   AttributeType = "longchar"
-	Int        AttributeType = "int"
-	Enum       AttributeType = "enum"
-	Date       AttributeType = "date"
-	Time       AttributeType = "time"
+	// LongChar TODO
+	LongChar AttributeType = "longchar"
+	// Int TODO
+	Int AttributeType = "int"
+	// Enum TODO
+	Enum AttributeType = "enum"
+	// Date TODO
+	Date AttributeType = "date"
+	// Time TODO
+	Time AttributeType = "time"
+	// ObjectUser TODO
 	ObjectUser AttributeType = "objuser"
-	TimeZone   AttributeType = "timezone"
-	Bool       AttributeType = "bool"
+	// TimeZone TODO
+	TimeZone AttributeType = "timezone"
+	// Bool TODO
+	Bool AttributeType = "bool"
 )
 
+// Attribute TODO
 type Attribute struct {
 	Description   string        `json:"description,omitempty"`
 	UpdateAt      time.Time     `json:"last_time,omitempty"`
@@ -55,11 +66,13 @@ type Attribute struct {
 	IsPre         bool          `json:"ispre,omitempty"`
 }
 
+// CreateAttributeCtx TODO
 type CreateAttributeCtx struct {
 	BaseCtx
 	Attribute Attribute
 }
 
+// CreateAttributeResult TODO
 type CreateAttributeResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
@@ -67,22 +80,26 @@ type CreateAttributeResult struct {
 	} `json:"data"`
 }
 
+// DeleteAttributeCtx TODO
 type DeleteAttributeCtx struct {
 	BaseCtx
 	AttributeID int64
 }
 
+// UpdateAttributeCtx TODO
 type UpdateAttributeCtx struct {
 	BaseCtx
 	AttributeID int64
 	Attribute   Attribute
 }
 
+// GetAttributeCtx TODO
 type GetAttributeCtx struct {
 	BaseCtx
 	Filter types.MapStr
 }
 
+// GetAttributeResult TODO
 type GetAttributeResult struct {
 	BaseResp `json:",inline"`
 	Data     []Attribute `json:"data"`

@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -33,39 +35,39 @@ var commAuditLogIndexes = []types.Index{}
 var deprecatedAuditLogIndexes = []types.Index{
 	{
 		Name: "index_id",
-		Keys: map[string]int32{
-			"id": 1,
+		Keys: bson.D{{
+			"id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "index_operationTime",
-		Keys: map[string]int32{
-			"operation_time": 1,
+		Keys: bson.D{{
+			"operation_time", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "index_user",
-		Keys: map[string]int32{
-			"user": 1,
+		Keys: bson.D{{
+			"user", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "index_resourceName",
-		Keys: map[string]int32{
-			"resource_name": 1,
+		Keys: bson.D{{
+			"resource_name", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "index_operationTime_auditType_resourceType_action",
-		Keys: map[string]int32{
-			"audit_type":     1,
-			"resource_type":  1,
-			"action":         1,
-			"operation_time": 1,
+		Keys: bson.D{
+			{"audit_type", 1},
+			{"resource_type", 1},
+			{"action", 1},
+			{"operation_time", 1},
 		},
 		Background: true,
 	},

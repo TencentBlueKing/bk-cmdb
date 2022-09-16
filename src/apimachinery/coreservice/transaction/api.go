@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// NewTxn TODO
 func NewTxn(client rest.ClientInterface) Interface {
 	return &txn{client: client}
 }
@@ -28,11 +29,12 @@ type txn struct {
 	client rest.ClientInterface
 }
 
+// Interface TODO
 // Transaction interface
 type Interface interface {
-	// StartTransaction 开启新事务
+	// NewTransaction 开启新事务
 	NewTransaction(h http.Header, opts ...metadata.TxnOption) (Transaction, error)
-	// AutoRun is a transaction wrapper. it will automatically commit or abort the
+	// AutoRunTxn is a transaction wrapper. it will automatically commit or abort the
 	// transaction depend on the f(), if f() returns with an error, then abort the
 	// transaction, otherwise, it will commit the transaction.
 	AutoRunTxn(ctx context.Context, h http.Header, run func() error, opts ...metadata.TxnOption) error

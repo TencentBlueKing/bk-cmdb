@@ -61,6 +61,7 @@ var registLock sync.Mutex
 		x19_09_03_02
 */
 
+// LegacyMigrationVersion TODO
 var LegacyMigrationVersion = []string{
 	"v3.0.8",
 	"v3.0.9-beta.1",
@@ -109,6 +110,7 @@ var LegacyMigrationVersion = []string{
 	"x19_10_22_01",
 }
 
+// ValidMigrationVersionFormat TODO
 var ValidMigrationVersionFormat = []*regexp.Regexp{
 	// regexp.MustCompile(`^v(\d+\.){2}\d+$`),
 	// regexp.MustCompile(`^v(\d+\.){2}\d+\-beta\.\d+$`),
@@ -121,6 +123,7 @@ var ValidMigrationVersionFormat = []*regexp.Regexp{
 	regexp.MustCompile(`^y(\d+\.){2}\d{12}$`),
 }
 
+// ValidateMigrationVersionFormat TODO
 func ValidateMigrationVersionFormat(version string) error {
 	// only check newer add migration's version
 	if util.InStrArr(LegacyMigrationVersion, version) {
@@ -198,7 +201,7 @@ func RegisterUpgraderWithRedis(version string, handlerFunc func(context.Context,
 	upgraderPool = append(upgraderPool, v)
 }
 
-// RegisterUpgraderWithIam register upgrader with iam
+// RegisterUpgraderWithIAM register upgrader with iam
 func RegisterUpgraderWithIAM(version string, handlerFunc func(context.Context, dal.RDB, *iam.IAM, *Config) error) {
 	if err := ValidateMigrationVersionFormat(version); err != nil {
 		blog.Fatalf("validate migration version format failed, err: %s", err.Error())
@@ -361,10 +364,12 @@ func saveVersion(ctx context.Context, db dal.RDB, version *Version) error {
 	return db.Table(common.BKTableNameSystem).Update(ctx, condition, version)
 }
 
+// System TODO
 type System struct {
 	Type string `bson:"type"`
 }
 
+// Version TODO
 type Version struct {
 	System            `bson:",inline"`
 	CurrentVersion    string `bson:"current_version"`
@@ -374,4 +379,5 @@ type Version struct {
 	InitDistroVersion string `bson:"init_distro_version"`
 }
 
+// SystemTypeVersion TODO
 const SystemTypeVersion = "version"

@@ -73,7 +73,7 @@
 
         let eventName = 'change'
 
-        if (['singlechar', 'int', 'float'].includes(type)) {
+        if (['singlechar'].includes(type)) {
           eventName = 'enter'
         }
 
@@ -81,8 +81,12 @@
           eventName = 'on-selected'
         }
 
-        if (['objuser'].includes(type)) {
+        if (['objuser', 'int', 'float'].includes(type)) {
           eventName = 'blur'
+        }
+
+        if (['time'].includes(type)) {
+          eventName = 'confirm'
         }
 
         return { [eventName]: confirmEdit }
@@ -96,9 +100,10 @@
         }
 
         const changed = props.value !== props.editState.value
-
         emit('confirm', changed)
       }
+
+      const clickOutSideMiddleware = event => !event.path.some(node => node.className === 'bk-picker-panel-body-wrapper')
 
       const handleClickOutSide = () => {
         if (isEditing.value) {
@@ -113,7 +118,8 @@
         handleClickOutSide,
         $propertyFormElement,
         confirmEvents,
-        formElementFontSize
+        formElementFontSize,
+        clickOutSideMiddleware
       }
     }
   })
@@ -124,7 +130,7 @@
     <!-- 详情态 -->
     <cmdb-property-value
       v-if="!isEditing"
-      v-bk-overflow-tips
+      :is-show-overflow-tips="true"
       :class="['property-value', { 'is-loading': loading }]"
       tag="div"
       :ref="`property-value-${property.bk_property_id}`"
@@ -155,7 +161,8 @@
         <property-form-element ref="$propertyFormElement"
           @click.stop
           v-click-outside="{
-            handler: handleClickOutSide
+            handler: handleClickOutSide,
+            middleware: clickOutSideMiddleware
           }"
           :must-required="mustRequired"
           :property="property"

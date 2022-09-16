@@ -16,20 +16,27 @@
 #include <string.h>
 #include <string>
 
-#include "dataStruct/safe_map.h"
-#include "dataStruct/safe_queue.h"
-#include "tools/net.h"
-#include "tools/strings.h"
 #include "conftor/conftor.h"
 #include "dataconf.h"
+#include "datastruct/safe_map.h"
+#include "datastruct/safe_queue.h"
+#include "eventthread/event_thread.h"
+#include "tools/net.h"
+#include "tools/strings.h"
 #include "tools/thread.h"
-#include "eventthread/gseEventThread.h"
 
+#include "balance_config.h"
 #include "conf/channel_id_config.h"
-#include "conf/bkdata_config_v1.h"
+#include "discover/zkapi/zk_api.h"
+#include "tools/json_helper.hpp"
+#include "tools/json_property.hpp"
 
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
+
+#define DATA_BASE_PATH "/gse/config/server/dataserver"
+#define DATA_OPS_SERVICE_CONF_PATH "/gse/v2/config/data/ops_config"
+#define ZK_SERIVCE_NODE_PATH "/gse/v2/service/data"
 
 enum ConfItemFlag
 {
@@ -52,11 +59,16 @@ enum ConfItemFlag
     CONFITEMFLAG_STORAGE_FROM_BKDATA = 14,
     CONFITEMFLAG_STORAGE_CONFIG_FROM_BKDATA = 15,
 
-    CONFITEMFLAG_STREAMTO_CONFIG_LIST = 16,
-    CONFITEMFLAG_STREAMTO_CONFIG_VALUE = 17,
+    CONFITEMFLAG_STREAMTO_CONFIG_LIST,
+    CONFITEMFLAG_STREAMTO_CONFIG_VALUE,
 
-    CONFITEMFLAG_TGLOG_CHANNEL_ID_VALUE = 18,
+    CONFITEMFLAG_TGLOG_CHANNEL_ID_VALUE,
 
+    CONFITEMFLAG_PLAT_ID_CONFIG_LIST,
+    CONFITEMFLAG_PLAT_ID_CONFIG_VALUE,
+
+    CONFITEMFLAG_OPS_SERVICE_CONFIG_LIST,
+    CONFITEMFLAG_OPS_SERVICE_CONFIG_VALUE,
     CONFITEMFLAG_MAX_NUM
 };
 
@@ -98,58 +110,236 @@ inline uint32_t split_channel_id(const char *target)
     return 0;
 }
 
-typedef struct _EventCallbackParams{
-    IDToStorage::WatchEventFunc  m_eventCallbackFunc;
-    void*           m_ptrCallbackArgs;
-}EventCallbackParams;
+typedef struct _EventCallbackParams
+{
+    IDToStorage::WatchEventFunc m_eventCallbackFunc;
+    void *m_ptrCallbackArgs;
+} EventCallbackParams;
 
+class ServiceNodeMeta
+{
+public:
+    ServiceNodeMeta() {}
 
+    rapidjson::Document ToJsonValue()
+    {
+        rapidjson::Document nodeMeta(rapidjson::kObjectType);
+        nodeMeta.AddMember("zone_id", m_zoneId, nodeMeta.GetAllocator());
+        nodeMeta.AddMember("city_id", m_cityId, nodeMeta.GetAllocator());
+        nodeMeta.AddMember("cluster_name", m_clusterName, nodeMeta.GetAllocator());
+        nodeMeta.AddMember("cluster_id", m_clusterId, nodeMeta.GetAllocator());
+        nodeMeta.AddMember("service_name", m_serviceName, nodeMeta.GetAllocator());
+        nodeMeta.AddMember("service_id", m_serviceId, nodeMeta.GetAllocator());
+        nodeMeta.AddMember("node_ip", m_advertiseIp, nodeMeta.GetAllocator());
+
+        return nodeMeta;
+    }
+
+public:
+    std::string m_zoneId;
+    std::string m_cityId;
+    std::string m_clusterName;
+    std::string m_clusterId;
+    std::string m_serviceName;
+    std::string m_serviceId;
+    std::string m_advertiseIp;
+
+public:
+    static const MetaType *properties[];
+};
+
+class ServiceNode
+{
+public:
+    ServiceNode()
+        : m_ssl(false), m_port(58625) {}
+
+    rapidjson::Document ToJsonValue()
+    {
+        rapidjson::Document docValue(rapidjson::kObjectType);
+
+        docValue.AddMember("service_ip", m_serviceIP, docValue.GetAllocator());
+        docValue.AddMember("protocol", m_protocol, docValue.GetAllocator());
+        docValue.AddMember("port", m_port, docValue.GetAllocator());
+        docValue.AddMember("ssl", m_ssl, docValue.GetAllocator());
+        if (m_proto > 0)
+        {
+            docValue.AddMember("proto", m_proto, docValue.GetAllocator());
+        }
+
+        return docValue;
+    }
+
+    std::string ToJsonStr()
+    {
+        auto jsonDoc = ToJsonValue();
+
+        rapidjson::StringBuffer strBuffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(strBuffer);
+
+        jsonDoc.Accept(writer);
+        LOG_DEBUG("service node json(%s)", strBuffer.GetString());
+        return std::string(strBuffer.GetString());
+    }
+
+public:
+    std::string m_serviceIP;
+    uint32_t m_port;
+    std::string m_protocol;
+    int m_proto;
+    bool m_ssl;
+
+public:
+    static const MetaType *properties[];
+};
+
+class NodeLoadBalance
+{
+public:
+    NodeLoadBalance()
+        : m_cpuUsage(0.0),
+          m_memUsage(0.0),
+          m_netUsage(0.0),
+          m_maxConnectionCount(0),
+          m_connectionCount(0)
+    {
+    }
+    std::string ToJsonStr()
+    {
+    }
+
+    rapidjson::Document ToJsonValue()
+    {
+        rapidjson::Document docExtandValue(rapidjson::kObjectType);
+        rapidjson::Document loadValue(rapidjson::kObjectType);
+
+        loadValue.AddMember("agent_count_max", m_maxConnectionCount, loadValue.GetAllocator());
+        loadValue.AddMember("agent_count", m_connectionCount, loadValue.GetAllocator());
+
+        docExtandValue.AddMember("cpu_rate", m_cpuUsage, loadValue.GetAllocator());
+        docExtandValue.AddMember("memory_rate", m_memUsage, loadValue.GetAllocator());
+        docExtandValue.AddMember("network_rate", m_netUsage, loadValue.GetAllocator());
+
+        loadValue.AddMember("extend", docExtandValue, loadValue.GetAllocator());
+
+        return loadValue;
+    }
+
+public:
+    double m_cpuUsage;
+    double m_memUsage;
+    double m_netUsage;
+    uint64_t m_maxConnectionCount;
+    uint64_t m_connectionCount;
+};
+
+class ServerNode
+{
+public:
+    ServerNode();
+    std::string ToJson()
+    {
+    }
+
+private:
+    ServiceNode m_seviceNode;
+    ServiceNodeMeta m_serviceMate;
+    NodeLoadBalance m_loadInfo;
+};
+
+using ServiceID = int;
+
+class OpsServiceConfig
+{
+public:
+    OpsServiceConfig()
+        : m_serivceId(0),
+          m_channelId(-1)
+    {
+    }
+
+    int ParseJsonConfig(const std::string &jsonConfig)
+    {
+        std::string errMsg;
+        rj::Document doc;
+        if (!gse::tools::json::LoadDocument(jsonConfig.c_str(), doc, errMsg))
+        {
+            LOG_ERROR("failed to load json, input json:%s", jsonConfig.c_str());
+            return GSE_ERROR;
+        }
+
+        auto channelIdVale = gse::tools::json::JsonHelper<int>::GetValue(doc, "channel_id", 0);
+
+        if (channelIdVale.m_isOK)
+        {
+            m_channelId = channelIdVale.m_value;
+        }
+        else
+        {
+            LOG_ERROR("failed to get channel_id value, errmsg:%s", channelIdVale.m_errMsg.c_str());
+            return GSE_ERROR;
+        }
+
+        auto serviceIdValue = gse::tools::json::JsonHelper<int>::GetValue(doc, "service_id", -1);
+
+        if (serviceIdValue.m_isOK)
+        {
+            m_serivceId = serviceIdValue.m_value;
+        }
+        else
+        {
+            LOG_ERROR("failed to get service_id value, errmsg:%s", serviceIdValue.m_errMsg.c_str());
+            return GSE_ERROR;
+        }
+        return GSE_SUCCESS;
+    }
+
+public:
+    int m_serivceId;
+    int m_channelId;
+};
 
 class Configurator : public IDToStorage
 {
 public:
     typedef void (*PTRConfigWatchFunc)(WatchConfItem &confItem);
 
-
 public:
     Configurator();
     virtual ~Configurator();
 
 public:
-    // overloaded
-    virtual DataID *GetStorageByDataID(uint32_t dataID);
-    virtual DataStorage *GetAllStorages();
-    virtual DataStorage *GetStorageByIndex(int storageIndex);
-    virtual DataStorage *GetStorageByChannelID(uint32_t channelID);
-    virtual void WatchUpdateEvent(WatchEventFunc callback, void *args);
-
-public:
-    // init function
-
     // Init init self from remote config center
-    int Init(const std::string &dataFlowConf, const std::string &confHost, const std::string &password, const std::string &bkdataZK, const string &channelid_zkhost, const string &channelid_zkauth, const std::string &selfIp, const std::string &regionID, const std::string &cityID, const std::string &clusterName, const std::string &instanceId, const std::string &watchpath);
+    int Init(std::shared_ptr<DataProcessConfig> configPtr);
+    void DeleteEphemeralZkNodes();
+    int StartConftor();
+    void StopConftor();
 
 public:
     // static functions
     static void reportBalance(evutil_socket_t fd, short what, void *args);
-    static void cleanDataID(evutil_socket_t fd, short what, void *args);
     static uint32_t getDefaultTglogChannelId();
+    static void ReportSystemLoad(evutil_socket_t fd, short what, void *args);
 
 public:
-    // common functions
-    void GetAllChannelID(std::vector<std::string> &channelid_list);
-    void GetAllDataID(std::vector<std::string> &dataid_list);
-    void GetAllV1StorageID(std::vector<std::string> &storage_id_list);
-
-    ChannelIdManager *GetChannelIdManager();
+    ChannelIdManager *GetPlatIdManager();
     DataFlowConf *GetDataFlowConf();
+
+    void SetChannelIdZkClient(std::shared_ptr<gse::discover::zkapi::ZkApi> zkClient, bool zkAcl);
+    void SetDiscoverZkClient(std::shared_ptr<gse::discover::zkapi::ZkApi> zkClient, bool zkAcl);
+
 public:
     void GetChannelsConfigValue(std::string &path, int rc, std::vector<std::string> &values, ChannelIDConfig *ptr_channelid_config);
 
-    void GetChannelConfigValueCallBack(std::string &path, int rc, std::string &property_value, void* ptr_callbackobj);
-    void ParseMetaConfig(std::string &path, int rc, std::string &property_value, ChannelIDConfig* ptr_channelid_config);
-    void GetFiltersValue(std::string &path, int rc, std::vector<std::string> &values, ChannelIDConfig * ptr_channelid_config);
-    void UpdateFilterValue(std::string &path, int rc, std::string &property_value, void* ptr_callbackobj);
+    void GetChannelConfigValueCallBack(std::string &path, int rc, std::string &property_value, void *ptr_callbackobj);
+    void ParseMetaConfig(std::string &path, int rc, std::string &property_value, ChannelIDConfig *ptr_channelid_config);
+    void GetFiltersValue(std::string &path, int rc, std::vector<std::string> &values, ChannelIDConfig *ptr_channelid_config);
+    void UpdateFilterValue(std::string &path, int rc, std::string &property_value, void *ptr_callbackobj);
+
+    int CreateV2ServiceNode();
+    int CreateOpsServiceConfigNode();
+    int GetChannelIdByOpsServiceId(int serviceId);
+
 private:
     // InitFromLocalConfig init self from local config
     // Maybe this function will be replaced by another way
@@ -158,84 +348,85 @@ private:
     static void watchConfCallBack(WatchConfItem &confItem, void *lpWatcher);
 
     static void channelNodeChangeCallBack(WatchConfItem &confItem, void *lpWatcher);
-   
+
     static void updateDataConf(WatchConfItem &confItem, void *lpWatcher);
     static void handleChannelIdChildListChangeEvt(WatchConfItem &confItem, void *lpWatcher);
+    static void handlePlatIdChildListChangeEvt(WatchConfItem &confItem, void *lpWatcher);
     static void updateChannelIDConfig(WatchConfItem &confItem, void *lpWatcher);
-    static void updateStorage(WatchConfItem &confItem, void *lpWatcher);
-    static void updateStorageConfig(WatchConfItem &confItem, void *lpWatcher);
-    static void updateDataID(WatchConfItem &confItem, void *lpWatcher);
-    static void updateDataIDConfig(WatchConfItem &confItem, void *lpWatcher);
+    static void updatePlatIdConfig(WatchConfItem &confItem, void *lpWatcher);
+
     static void updateBalanceConfig(WatchConfItem &confItem, void *lpWatcher);
-    static void updateDataIDFromBKData(WatchConfItem &confItem, void *lpWatcher);
-    static void updateDataIDConfigFromBKData(WatchConfItem &confItem, void *lpWatcher);
-    static void updateStorageFromBKData(WatchConfItem &confItem, void *lpWatcher);
-    static void updateStorageConfigFromBKData(WatchConfItem &confItem, void *lpWatcher);
-    static void handleExporterChildListChangeEvtFromZK(WatchConfItem &confItem, void *lpWatcher);
-    static void handleExporterValueChangeEvtFromZK(WatchConfItem &confItem, void *lpWatcher);
+    static void handleStreamChildListChangeEvtFromZK(WatchConfItem &confItem, void *lpWatcher);
+    static void handleStreamValueChangeEvtFromZK(WatchConfItem &confItem, void *lpWatcher);
     static void handleTglogChannelIdChangeEvtFromZK(WatchConfItem &confItem, void *lpWatcher);
 
-    static void GetChannelsListResultCallBack(std::string &path, int rc, std::vector<std::string> &values, const void* ptr_callbackobj);
-    static void GetFiltersResultCallBack(std::string &path, int rc, std::vector<std::string> &values, const void* ptr_callbackobj);
+    static void HandleOpsConfigChildListChangeEvt(WatchConfItem &confItem, void *lpWatcher);
+    static void UpdateOpsConfigValue(WatchConfItem &confItem, void *lpWatcher);
 
-    static void ChannelValueResultCallBack(std::string &path, int rc, const char *value, int32_t value_len, const struct Stat *stat, const void* ptr_callbackobj);
+    static void GetChannelsListResultCallBack(std::string &path, int rc, std::vector<std::string> &values, const void *ptr_callbackobj);
+    static void GetFiltersResultCallBack(std::string &path, int rc, std::vector<std::string> &values, const void *ptr_callbackobj);
+
+    static void ChannelValueResultCallBack(std::string &path, int rc, const char *value, int32_t value_len, const struct Stat *stat, const void *ptr_callbackobj);
     static void GetMetaValueCallBack(std::string &path, int rc, const char *value, int32_t value_len, const struct Stat *stat, const void *ptr_callbackobj);
-    static void FilterValueResultCallBack(std::string &path, int rc, const char *value, int32_t value_len, const struct Stat *stat, const void* ptr_callbackobj);
+    static void FilterValueResultCallBack(std::string &path, int rc, const char *value, int32_t value_len, const struct Stat *stat, const void *ptr_callbackobj);
+
+    template <typename T>
+    void ToJsonObj(rapidjson::Writer<rapidjson::StringBuffer> &writer, T object);
 
 private:
     // update config from zk
 
     int watchConfigsFromZK();
     int watchDataFlow();
-    int watchStorage();
-    int watchExporter();
     // watchStorageFromBKData 仅用于兼容存量bkdata 里关于dataid 的配置，未来需要被废弃
-    int watchStorageFromBKData();
     int watchChannelID();
-    int watchStreamToID();
+    int watchPlatID();
     int WatchTglogChannelId();
-    int watchDataID();
-    // watchDataIDFromBKData 仅用于兼容存量bkdata 里关于dataid 的配置，未来需要被废弃
-    int watchDataIDFromBKData();
+    int watchOpsServiceConfig();
 
     int watchBalanceConfig();
     void watchChannelIdConfig(WatchConfItem &confItem);
-    int updateStorageConfigFromZK(StorageIndex storageIndex, const std::string &nodePath);
-    int updateStorageConfigFromBKDataZK(StorageIndex storageIndex, const std::string &nodePath);
-    int updateDataIDConfigFromZK(const std::string &nodePath, const std::string &dataID);
-    int updateDataIDConfigFromBKDataZK(const std::string &nodePath, const std::string &dataID);
+    void watchPlatIdConfig(WatchConfItem &confItem);
     int updateChannelIDConfigFromZK(uint32_t channelID);
 
-    int updateStreamToIdConfigFromZK(std::string &stream_to_id);
-    int deleteStreamToIdConfigFromZK(std::string &stream_to_id);
-    int updateStorageConfig();
     int updateDataFlowConf(const std::string &context);
-    int updateStorageConfig(StorageIndex storageIndex, const std::string &context);
     int updateChannelID(uint32_t channelId, const std::string &context);
     int DeleteChannelID(uint32_t channelId);
+    bool FindChannelID(uint32_t channelId);
+
+    int updatePlatID(uint32_t plat_id);
+    int deletePlatID(uint32_t platid);
 
     // updateDataID compatible with existing configurations about dataid (now it is channel id)
     int updateDataID(uint32_t dataID, const std::string &context);
-    
-    int updateDataServerBalanceConfig(const std::string &context);
+
+    int updateDataServerBalanceConfig(const string &path, const std::string &context);
     int updateDataServerLoadBalanceNode();
 
+    void WatchOpsConfigValueChangeEvt(const std::string &path);
+    void WatchOpsConfigChildNodeChangeEvt(const std::string &path);
     void updateLocationFromZK();
 
-    void watchStreamToChildNodes();
+    void ReportLoadInfo();
 
-    //private ,support async zk api get channelid
+    // private ,support async zk api get channelid
     bool CanSendUpdateEventMsg(ChannelIDConfig *ptr_channelid_config);
     void SendUpdateChannelIdConfigEventMsg(ChannelIDConfig *ptr_channelid_config);
     bool IsFinishAndFailed(ChannelIDConfig *ptr_channelid_config);
     void DoUpdateChannelIdConfigRequest(ChannelIDConfig *ptr_channelid_config);
     void DelayFreeChannelIdConfig(ChannelIDConfig *ptr_channelid_config);
+
+    int GetOpsConfig(const std::string &zkNodePath, std::string &configValue);
+
+    void UpdateOpsServiceConfig(const std::string &cfgJson);
+    std::string BuildServiceNodeJson();
+    bool GetServiceConfig(const std::string &serviceName, ServiceNode &serviceConfig);
+
 private:
     // read channelid config
-    bool readMetadata(const std::string& metadataPath, ChannelIDConfig *ptr_channelid_config, std::string& errorMsg);
-    bool readFilters(const std::string& fileterPath, ChannelIDConfig *ptr_channelid_config, std::string& errorMsg);
-    bool readExporters(const std::string& exporterPath, std::vector<StreamConfig*>& exporters, std::string& errorMsg);
-    bool readChannels(const std::string& channelPath, ChannelIDConfig *ptr_channelid_config, std::string& errorMsg );
+    bool readMetadata(const std::string &metadataPath, ChannelIDConfig *ptr_channelid_config, std::string &errorMsg);
+    bool readFilters(const std::string &fileterPath, ChannelIDConfig *ptr_channelid_config, std::string &errorMsg);
+    bool readChannels(const std::string &channelPath, ChannelIDConfig *ptr_channelid_config, std::string &errorMsg);
 
 private:
     // set config into zk
@@ -243,63 +434,56 @@ private:
     int createBaseConfItem();
 
 private:
-    int startConftor();
-    void stopConftor();
-
-private:
     Conftor *m_conftor;
     DataConf *m_dataConf;
-    std::string m_confHost;
-    std::string m_confHostPassword;
+
+    std::shared_ptr<SystemResourceMonitor> m_systemResourceMonitor;
+    std::shared_ptr<SystemConnectionMonitor> m_systemConnectionMonitor;
+
     std::string m_selfIp;
     std::string m_clusterName;
     std::string m_instanceId;
     std::string m_localDataFlowConfig;
-
-
-    std::string m_channelidZkHost;
-    std::string m_channelidZkAuth;
     std::string m_watchPath;
 
+    std::shared_ptr<gse::discover::zkapi::ZkApi> m_channelIdZkClient;
+    bool m_channelIdZkAcl;
+
+    std::shared_ptr<gse::discover::zkapi::ZkApi> m_discoverZkClient;
+    bool m_discoverZkAcl;
+
 private:
-    // 兼容 V1 版本DS 的配置
     Json::Value m_cfgLoadBalanceValue;
-    StorageConfigMap m_storagesV1;
-    DataIDConfigMap m_dataIDSV1;
-    gse::datastruct::SafeQueue<DataID*>  m_toDeleteDataIDS;
-    gse::datastruct::SafeQueue<ChannelIDConfig*> m_toDeleteChannelIDS;
-    gse::datastruct::SafeQueue<ChannelIdExporterConfig*> m_toDeleteStreamToIDS;
+    gse::datastruct::SafeQueue<ChannelIDConfig *> m_toDeleteChannelIDS;
+    gse::datastruct::SafeQueue<ChannelIdExporterConfig *> m_toDeleteStreamToIDS;
 
     gse::datastruct::SafeMap<ChannelIDType, ChannelIDConfig *> m_channelIDS;
     gse::datastruct::SafeMap<StreamToIDType, ChannelIdExporterConfig *> m_streamToIdConfig;
 
-    std::string m_regionID;
+    gse::datastruct::SafeMap<ServiceID, OpsServiceConfig> m_opsConfig;
+
+    std::string m_zoneID;
     std::string m_cityID;
-    rgse::GseEventThread *m_ptrEventThread;
+    std::string m_ethName;
+    EventThread *m_ptrEventThread;
 
 private:
-    // V1 版本DS负载均衡的参数配置
     float m_cpuUsage;
     float m_hostPerformance;
     float m_hostLoadBance;
     float m_loadweight;
     float m_dloadweight;
 
-    BaseCfg m_baseCfg;
     std::string m_bkdataZK;
-    Conftor *m_bkdataZKConftor;
 
     Conftor *m_channelIdZKConftor;
-    ChannelIdManager *m_channelIdManager;
-    ChannelIdExporterManager *m_channelIdExporterManager;
+
+    ChannelIdManager *m_platIdManager;
+
 private:
-    // factory
-    ChannelIDConfigFactory m_channelIDConfigFactory;
     void (*m_ptrConfigFunc[CONFITEMFLAG_MAX_NUM])(WatchConfItem &confItem, void *lpWatcher);
-    std::vector<EventCallbackParams*> m_callbacks;
+    std::vector<EventCallbackParams *> m_callbacks;
 };
-
-
 
 struct ChannelIdZkCallBackObj
 {
@@ -313,6 +497,6 @@ struct ChannelIdZkCallBackObj
     }
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif //_GSE_DATA_CONFIGURATOR_H_

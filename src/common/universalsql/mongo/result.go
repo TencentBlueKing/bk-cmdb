@@ -22,10 +22,12 @@ var _ universalsql.Result = (*result)(nil)
 type result struct {
 }
 
+// ToSQL TODO
 func (r *result) ToSQL() (string, error) {
 	return "", nil
 }
 
+// ToMapStr TODO
 func (r *result) ToMapStr() mapstr.MapStr {
 	return mapstr.New()
 }

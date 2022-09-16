@@ -22,8 +22,10 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// ProcMgrGroupID TODO
 var ProcMgrGroupID = "proc_mgr"
 
+// AddProcAttrGroup TODO
 func AddProcAttrGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	doc := map[string]interface{}{
 		common.BKIsCollapseField:         true,
@@ -48,6 +50,7 @@ func AddProcAttrGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	return nil
 }
 
+// ChangeProcFieldGroup TODO
 func ChangeProcFieldGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	filter := map[string]interface{}{
 		common.BKPropertyIDField: map[string]interface{}{

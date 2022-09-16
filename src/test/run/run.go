@@ -10,23 +10,30 @@
  * limitations under the License.
  */
 
+// Package run TODO
 package run
 
 import (
 	"time"
 )
 
+// Concurrent TODO
 var Concurrent int
+
+// SustainSeconds TODO
 var SustainSeconds float64
 
+// TotalRequest TODO
 // if TotalRequest is set,it has higher priority than SustainSecond
 var TotalRequest int64
 
+// Status TODO
 type Status struct {
 	CostDuration time.Duration
 	Error        error
 }
 
+// FireLoadTest TODO
 func FireLoadTest(f func() error) Metrics {
 	start := time.Now()
 	limiter := NewStreamLimiter(Concurrent)

@@ -11,22 +11,94 @@
  */
 
 #include "httpreceiver.h"
-#include "net/http/http_server.h"
+
+#include <memory>
+
 #include "bbx/gse_errno.h"
+#include "dataserver.h"
+#include "net/http/http_server.hpp"
 #include "tools/macros.h"
-namespace gse { 
-namespace dataserver {
 
-HttpReceiver::HttpReceiver()
-{
-    m_httpserver = NULL;
-}
+namespace gse {
+namespace data {
 
-HttpReceiver::~HttpReceiver()
+HttpReceiverHandler::HttpReceiverHandler()
+    : m_callback(nullptr), m_caller(nullptr)
 {
 }
 
-uint32_t HttpReceiver::getChannelIDFromURI(const char *uri)
+HttpReceiverHandler::HttpReceiverHandler(RecvDataCallBack fnRecvData, void *pCaller)
+    : m_callback(fnRecvData), m_caller(pCaller)
+{
+}
+
+HttpReceiverHandler::~HttpReceiverHandler()
+{
+}
+
+int HttpReceiverHandler::OnPost(gse::net::http::HTTPMessagePtr message, std::string &response) noexcept
+{
+    std::string content;
+    content = message->GetBody();
+    OPMetric::HttpMsgInc(content.size());
+    if (content.empty())
+    {
+        LOG_ERROR("it is to read nothing from the http request");
+        makeResponse(GSE_ERROR, std::string("it is to read nothing from the http request"), response);
+        return EVHTP_RES_SERVERR;
+    }
+
+    std::string uri = message->GetURI();
+    uint32_t channel_id = getChannelIDFromURI(uri.c_str());
+
+    DataCell *pDataCell = new DataCell();
+    std::string clientIP = message->GetClientIP();
+    pDataCell->SetSourceIp(clientIP);
+    pDataCell->SetServerIP(DataServer::GetAdvertiseIP());
+    pDataCell->SetServerPort(m_servPort);
+    pDataCell->SetChannelProtocol("HTTP");
+    pDataCell->SetChannelID(channel_id);
+
+    if (GSE_SUCCESS != pDataCell->CopyData(content.c_str(), content.size()))
+    {
+        LOG_ERROR("it is failed to copy the body data (%s) int a datacell", SAFE_CSTR(content.c_str()));
+        makeResponse(GSE_ERROR, std::string("it is failed to copy the body data into a datacell"), response);
+        delete pDataCell;
+        return EVHTP_RES_SERVERR;
+    }
+
+    if (NULL == m_callback)
+    {
+        LOG_ERROR("it is failed to transport data into next module, the callback is null");
+        makeResponse(GSE_ERROR, std::string("it is failed to transport data into next module, the callback is null"), response);
+        delete pDataCell;
+        return EVHTP_RES_SERVERR;
+    }
+
+    m_callback(pDataCell, m_caller);
+    makeResponse(GSE_SUCCESS, std::string("success"), response);
+    return HTTP_STATUS_CODE_200;
+}
+
+void HttpReceiverHandler::SetServerIp(const std ::string &ip)
+{
+    m_servIp = ip;
+}
+void HttpReceiverHandler::SetServerPort(uint16_t port)
+{
+    m_servPort = port;
+}
+
+void HttpReceiverHandler::makeResponse(int errorCode, const std::string &message, std::string &response) noexcept
+{
+    response.assign("{\"code\":");
+    response.append(gse::tools::strings::ToString(errorCode));
+    response.append(",\"message\":\"");
+    response.append(message);
+    response.append("\"}");
+}
+
+uint32_t HttpReceiverHandler::getChannelIDFromURI(const char *uri) noexcept
 {
     std::string uri_str(uri);
     std::size_t pos = uri_str.find_last_of("/");
@@ -38,94 +110,60 @@ uint32_t HttpReceiver::getChannelIDFromURI(const char *uri)
     return 0;
 }
 
-void HttpReceiver::makeResponse(int errorCode, const std::string &message)
+HttpReceiver::HttpReceiver()
+    : m_listennerFd(-1), m_httpserver(NULL)
 {
-    std::string result("{\"code\":");
-    result.append(gse::tools::strings::ToString(errorCode));
-    result.append(",\"message\":\"");
-    result.append(message);
-    result.append("\"}");
 }
 
-void HttpReceiver::OnHttpMessageHandler(gse::net::http::HttpMessagePtr message, std::string &response)
+HttpReceiver::~HttpReceiver()
 {
-    std::string content;
-    message->GetMessage(content);
-    OPMetric::HttpMsgInc();
-    if (content.empty())
+}
+
+int HttpReceiver::StartMigrationSerivce()
+{
+    m_migrationClient = std::unique_ptr<gse::net::MigrationClient>(new gse::net::MigrationClient(m_servPort, 20));
+    int domainListenFd = -1;
+    if (m_migrationClient->ConnectDomainSocket() != GSE_SUCCESS)
     {
-        LOG_ERROR("it is to read nothing from the http request");
-        makeResponse(GSE_ERROR, std::string("it is to read nothing from the http request"));
-        return;
+        LOG_WARN("failed to connect domain socket");
+    }
+    else
+    {
+        m_listennerFd = m_migrationClient->MigrateListennerFd();
+        domainListenFd = m_migrationClient->MigrateDomainSocketListenner();
     }
 
-    gse::net::http::HttpURIPtr urisptr = message->GetHttpURIPtr();
-    std::string uri = urisptr->GetURI();
-    uint32_t channel_id = getChannelIDFromURI(uri.c_str());
+    auto pFuncGetListernnerFd = std::bind(&gse::net::http::HTTPServer::GetEvhtpListennerFd, m_httpserver);
+    auto pFuncStopListenner = std::bind(&gse::net::http::HTTPServer::StoppingListenner, m_httpserver);
 
-    // create data cell, it' will be deleted in exporter layer
-    DataCell *pDataCell = new DataCell();
+    m_migrationServer = std::unique_ptr<gse::net::MigrationServer>(new gse::net::MigrationServer(m_servPort));
+    m_migrationServer->SetGetListennerFdCallback(pFuncGetListernnerFd);
+    m_migrationServer->SetStopListennerCallback(pFuncStopListenner);
+    m_migrationServer->SetFinishedCallback(&DataServer::GracefullyQuit);
 
-    // copy data
-    pDataCell->SetSourceIp(gse::tools::strings::StringToUint32(message->GetClientIP()));
-    //pDataCell->SetSourcePort(message->getClientPort());
-    pDataCell->SetServerIp(gse::tools::net::StringToIp(m_servIp, true));
-    pDataCell->SetServerPort(m_servPort);
-    pDataCell->SetChannelProtocol("HTTP");
-    pDataCell->SetChannelID(channel_id);
-
-    if (GSE_SUCCESS != pDataCell->CopyData(content.c_str(), content.size()))
-    {
-        LOG_ERROR("it is failed to copy the body data (%s) int a datacell", SAFE_CSTR(content.c_str()));
-        makeResponse(GSE_ERROR, std::string("it is failed to copy the body data into a datacell"));
-        delete pDataCell;
-        return;
-    }
-
-    if (NULL == m_fnRecvData)
-    {
-        LOG_ERROR("it is failed to transport data into next module, the callback is null");
-        makeResponse(GSE_ERROR, std::string("it is failed to transport data into next module, the callback is null"));
-        delete pDataCell;
-        return;
-    }
-
-    m_fnRecvData(pDataCell, m_pCaller);
-    makeResponse(GSE_SUCCESS, std::string("success"));
-
+    return m_migrationServer->StartMigrationService(domainListenFd);
 }
 
 int HttpReceiver::Start()
 {
-    if (NULL == m_recevierConf)
-    {
-        LOG_ERROR("the configure of http receiver is empty, please check configure");
-        return GSE_SYSTEMERROR;
-    }
-
     m_servIp = m_recevierConf->m_bind;
     m_servPort = m_recevierConf->m_port;
-    if ("" == m_servIp)
+
+    m_httpserver = new gse::net::http::HTTPServer(m_servIp, m_servPort, m_recevierConf->m_workThreadNum);
+
+    auto httpHandler = std::make_shared<HttpReceiverHandler>(m_fnRecvData, m_pCaller);
+    httpHandler->SetServerIp(m_servIp);
+    httpHandler->SetServerPort(m_servPort);
+    m_httpserver->RegisterHandler(SEND_DATA_BY_DATAID, httpHandler);
+    m_httpserver->SetBacklogSize(m_recevierConf->m_backlogSize);
+
+    if (DataServer::GetUpgradeFlag())
     {
-        m_servIp = gse::tools::net::GetMachineIp();
+        StartMigrationSerivce();
+        m_httpserver->SetListenerFd(m_listennerFd);
     }
 
-    auto msg_handler = std::bind(&HttpReceiver::OnHttpMessageHandler, this, std::placeholders::_1, std::placeholders::_2);
-
-    m_httpserver = new gse::net::http::HttpServer(m_servIp, m_servPort, m_recevierConf->m_workThreadNum);
-    gse::net::http::HttpURIPtr dataid_uri(new gse::net::http::HttpURI(SEND_DATA_BY_DATAID));
-    gse::net::http::HttpHandlerPtr dataid_handler(new gse::net::http::HttpHandler(gse::net::http::HttpMethodPost,
-                                                        dataid_uri, msg_handler));
-
-    std::string errormsg;
-    m_httpserver->RegistHandler(dataid_handler, errormsg);
-    if (errormsg != "")
-    {
-        LOG_ERROR("register dataid handler failed, errormsg:%s", errormsg.c_str());
-        return GSE_ERROR;
-    }
-
-    auto httpserver_thread = std::bind(&gse::net::http::HttpServer::Start, m_httpserver);
+    auto httpserver_thread = std::bind(&gse::net::http::HTTPServer::Start, m_httpserver);
     m_listenThread = std::thread(httpserver_thread);
 
     LOG_INFO("http receiver[%s] has start on (ip:[%s], port:[%d]) with worker thread[%d]", SAFE_CSTR(m_recevierConf->m_name.c_str()), SAFE_CSTR(m_servIp.c_str()), m_servPort, m_recevierConf->m_workThreadNum);
@@ -135,12 +173,14 @@ int HttpReceiver::Start()
 
 int HttpReceiver::Stop()
 {
+    m_httpserver->Stop();
     return GSE_SUCCESS;
 }
 
 void HttpReceiver::Join()
 {
     m_listenThread.join();
+    LOG_DEBUG("http receiver(%s) joined,", m_recevierConf->m_name.c_str());
 }
-}
-}
+} // namespace data
+} // namespace gse

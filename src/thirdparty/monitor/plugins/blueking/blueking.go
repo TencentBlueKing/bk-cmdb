@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package blueking TODO
 package blueking
 
 import (
@@ -97,6 +98,7 @@ type EventData struct {
 	Data   []*EventMsg `json:"data"`
 }
 
+// EventMsg TODO
 type EventMsg struct {
 	EventName   string            `json:"event_name"`
 	EventInfo   EventInfo         `json:"event"`
@@ -105,6 +107,7 @@ type EventMsg struct {
 	TimeStampMs int64             `json:"timestamp"`
 }
 
+// EventInfo TODO
 type EventInfo struct {
 	Content string `json:"content"`
 }

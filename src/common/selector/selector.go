@@ -1,3 +1,4 @@
+// Package selector TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
  * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -19,6 +20,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// LabelAddOption TODO
 type LabelAddOption struct {
 	InstanceIDs []int64 `json:"instance_ids"`
 	Labels      Labels  `json:"labels"`
@@ -36,16 +38,19 @@ type LabelUpdateRequest struct {
 	TableName string             `json:"table_name"`
 }
 
+// LabelAddRequest TODO
 type LabelAddRequest struct {
 	Option    LabelAddOption `json:"option"`
 	TableName string         `json:"table_name"`
 }
 
+// LabelRemoveOption TODO
 type LabelRemoveOption struct {
 	InstanceIDs []int64  `json:"instance_ids"`
 	Keys        []string `json:"keys"`
 }
 
+// LabelRemoveRequest TODO
 type LabelRemoveRequest struct {
 	Option    LabelRemoveOption `json:"option"`
 	TableName string            `json:"table_name"`
@@ -69,17 +74,25 @@ type SvcInstLabelRemoveOption struct {
 	LabelRemoveOption
 }
 
+// Operator TODO
 type Operator string
 
 const (
+	// DoesNotExist TODO
 	DoesNotExist Operator = "!"
-	Equals       Operator = "="
-	In           Operator = "in"
-	NotEquals    Operator = "!="
-	NotIn        Operator = "notin"
-	Exists       Operator = "exists"
+	// Equals TODO
+	Equals Operator = "="
+	// In TODO
+	In Operator = "in"
+	// NotEquals TODO
+	NotEquals Operator = "!="
+	// NotIn TODO
+	NotIn Operator = "notin"
+	// Exists TODO
+	Exists Operator = "exists"
 )
 
+// AvailableOperators TODO
 var AvailableOperators = []Operator{
 	DoesNotExist,
 	Equals,
@@ -89,12 +102,14 @@ var AvailableOperators = []Operator{
 	Exists,
 }
 
+// Selector TODO
 type Selector struct {
 	Key      string   `json:"key" field:"key" bson:"key"`
 	Operator Operator `json:"operator" field:"operator" bson:"operator"`
 	Values   []string `json:"values" field:"values" bson:"values"`
 }
 
+// Validate TODO
 func (s *Selector) Validate() (string, error) {
 	if util.InArray(s.Operator, AvailableOperators) == false {
 		return "operator", fmt.Errorf("operator %s not available, available operators: %+v", s.Operator, AvailableOperators)
@@ -118,6 +133,7 @@ func (s *Selector) Validate() (string, error) {
 	return "", nil
 }
 
+// ToMgoFilter TODO
 func (s *Selector) ToMgoFilter() (map[string]interface{}, error) {
 	filter := make(map[string]interface{})
 	field := "labels." + s.Key
@@ -162,8 +178,10 @@ func (s *Selector) ToMgoFilter() (map[string]interface{}, error) {
 	return filter, nil
 }
 
+// Selectors TODO
 type Selectors []Selector
 
+// Validate TODO
 func (ss Selectors) Validate() (string, error) {
 	for _, selector := range ss {
 		if key, err := selector.Validate(); err != nil {
@@ -173,6 +191,7 @@ func (ss Selectors) Validate() (string, error) {
 	return "", nil
 }
 
+// ToMgoFilter TODO
 func (ss Selectors) ToMgoFilter() (map[string]interface{}, error) {
 	filters := make([]map[string]interface{}, 0)
 	for _, selector := range ss {

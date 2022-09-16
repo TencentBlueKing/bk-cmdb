@@ -29,10 +29,12 @@ import (
 
 var confC *CC
 
+// NewConfigCenter TODO
 func NewConfigCenter(ctx context.Context, disc crd.ConfRegDiscvIf, confPath string, handler *CCHandler) error {
 	return New(ctx, confPath, disc, handler)
 }
 
+// New TODO
 func New(ctx context.Context, confPath string, disc crd.ConfRegDiscvIf, handler *CCHandler) error {
 	confC = &CC{
 		ctx:           ctx,
@@ -57,8 +59,10 @@ func New(ctx context.Context, confPath string, disc crd.ConfRegDiscvIf, handler 
 	return nil
 }
 
+// ProcHandlerFunc TODO
 type ProcHandlerFunc func(previous, current ProcessConfig)
 
+// CCHandler TODO
 type CCHandler struct {
 	OnProcessUpdate  ProcHandlerFunc
 	OnExtraUpdate    ProcHandlerFunc
@@ -68,6 +72,7 @@ type CCHandler struct {
 	OnRedisUpdate    func(previous, current ProcessConfig)
 }
 
+// CC TODO
 type CC struct {
 	sync.Mutex
 	// used to stop the config center gracefully.

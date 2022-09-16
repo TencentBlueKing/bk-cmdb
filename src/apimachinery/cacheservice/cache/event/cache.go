@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/watch"
 )
 
+// WatchEvent TODO
 func (e *eventCache) WatchEvent(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (*string,
 	errors.CCErrorCoder) {
 

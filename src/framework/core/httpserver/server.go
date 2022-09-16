@@ -21,6 +21,7 @@ import (
 	"strconv"
 )
 
+// HttpServer TODO
 type HttpServer struct {
 	server *httpserver.HttpServer
 	rootWS *restful.WebService
@@ -31,6 +32,7 @@ type HttpServer struct {
 
 var _ Server = &HttpServer{}
 
+// NewServer TODO
 func NewServer(opt *option.Options) (*HttpServer, error) {
 	addr, port, err := net.SplitHostPort(opt.Addrport)
 	if err != nil {
@@ -52,13 +54,17 @@ func NewServer(opt *option.Options) (*HttpServer, error) {
 	}, nil
 }
 
+// GetPort TODO
 func (s *HttpServer) GetPort() uint {
 	return s.port
 }
+
+// GetAddr TODO
 func (s *HttpServer) GetAddr() string {
 	return s.addr
 }
 
+// RegisterActions TODO
 func (s *HttpServer) RegisterActions(as ...Action) {
 	var httpactions []*httpserver.Action
 	for _, a := range as {
@@ -67,6 +73,7 @@ func (s *HttpServer) RegisterActions(as ...Action) {
 	s.server.RegisterActions(s.rootWS, httpactions)
 }
 
+// ListenAndServe TODO
 func (s *HttpServer) ListenAndServe() error {
 	return s.server.ListenAndServe()
 }

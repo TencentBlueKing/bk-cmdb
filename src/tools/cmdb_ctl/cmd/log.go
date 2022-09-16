@@ -35,6 +35,7 @@ type logConf struct {
 	addrPort string
 }
 
+// NewLogCommand TODO
 func NewLogCommand() *cobra.Command {
 	conf := new(logConf)
 

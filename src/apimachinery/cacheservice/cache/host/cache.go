@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SearchHostWithInnerIP TODO
 func (b *baseCache) SearchHostWithInnerIP(ctx context.Context, h http.Header, opt *metadata.SearchHostWithInnerIPOption) (jsonString string, err error) {
 
 	resp, err := b.client.Post().
@@ -42,6 +43,7 @@ func (b *baseCache) SearchHostWithInnerIP(ctx context.Context, h http.Header, op
 	return resp.Data, nil
 }
 
+// SearchHostWithHostID TODO
 func (b *baseCache) SearchHostWithHostID(ctx context.Context, h http.Header, opt *metadata.SearchHostWithIDOption) (jsonString string, err error) {
 
 	resp, err := b.client.Post().
@@ -86,6 +88,7 @@ func (b *baseCache) ListHostWithPage(ctx context.Context, h http.Header, opt *me
 	return resp.Data.Count, resp.Data.Info, nil
 }
 
+// ListHostWithHostID TODO
 func (b *baseCache) ListHostWithHostID(ctx context.Context, h http.Header, opt *metadata.ListWithIDOption) (jsonString string, err error) {
 
 	resp, err := b.client.Post().

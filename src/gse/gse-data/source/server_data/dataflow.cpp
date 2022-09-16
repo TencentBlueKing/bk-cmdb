@@ -11,9 +11,11 @@
  */
 
 #include "dataflow.h"
+#include "dataserver.h"
 #include "tools/macros.h"
-namespace gse { 
-namespace dataserver {
+
+namespace gse {
+namespace data {
 using namespace std;
 
 DataFlow::DataFlow()
@@ -62,13 +64,12 @@ int DataFlow::Start()
         }
 
         DataChannel* pDataChannel = new DataChannel();
-        
-        pDataChannel->SetGseConf(m_gseCfg);
+
         pDataChannel->UpdateConf(*pChannelConf);
         pDataChannel->SetOps(m_opsReport);
+        pDataChannel->SetGseConf(DataServer::GetConfigPtr());
         pDataChannel->SetConftor((Configurator*)m_ptrIDToStorage);
-        pDataChannel->UpdateIDToStorage(m_ptrIDToStorage);
-        if(GSE_SUCCESS != pDataChannel->Start())
+        if (GSE_SUCCESS != pDataChannel->Start())
         {
             LOG_WARN("fail to start datachannel[%s]", SAFE_CSTR(pChannelConf->m_name.c_str()));
         }
@@ -79,7 +80,7 @@ int DataFlow::Start()
         }
     }
 
-    if (m_mapDataChannels.size() <= 0)
+    if (m_mapDataChannels.size() == 0)
     {
         LOG_WARN("no datachannel started successfully");
         return GSE_ERROR;
@@ -111,6 +112,8 @@ void DataFlow::Join()
         DataChannel* pChannel = iter->second;
         pChannel->Join();
     }
+
+    LOG_DEBUG("dataflow service joined");
 }
 
 void DataFlow::UpdateConf(DataFlowConf* pFlowConf)
@@ -136,9 +139,5 @@ void DataFlow::UpdateIDToStorage(IDToStorage* ptrIDToStorage)
     m_ptrIDToStorage = ptrIDToStorage;
 }
 
-IDToStorage* DataFlow::GetIDToStorage()
-{
-    return m_ptrIDToStorage;
-}
-}
-}
+} // namespace data
+} // namespace gse

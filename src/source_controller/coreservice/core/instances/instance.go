@@ -55,6 +55,7 @@ func (m *instanceManager) instCnt(kit *rest.Kit, objID string, cond mapstr.MapSt
 	return cnt, exists, err
 }
 
+// CreateModelInstance TODO
 func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error) {
 	rid := util.ExtractRequestIDFromContext(kit.Ctx)
 
@@ -391,7 +392,7 @@ func getFirstIP(ip interface{}) string {
 	return util.GetStrByInterface(ip)
 }
 
-// updateHostProcessBindIP update processes using changed ip
+// updateProcessBindIP update processes using changed ip
 func (m *instanceManager) updateProcessBindIP(kit *rest.Kit, data map[string]interface{}, processIDs []int64) error {
 	processFilter := map[string]interface{}{common.BKProcessIDField: map[string]interface{}{common.BKDBIN: processIDs}}
 
@@ -403,6 +404,7 @@ func (m *instanceManager) updateProcessBindIP(kit *rest.Kit, data map[string]int
 	return nil
 }
 
+// SearchModelInstance TODO
 func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 	blog.V(9).Infof("search instance with parameter: %+v, rid: %s", inputParam, kit.Rid)
 
@@ -504,6 +506,7 @@ func (m *instanceManager) CountModelInstances(kit *rest.Kit,
 	return result, nil
 }
 
+// DeleteModelInstance TODO
 func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	instIDs := []int64{}
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
@@ -554,6 +557,7 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
 }
 
+// CascadeDeleteModelInstance TODO
 func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	instIDs := []int64{}
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)

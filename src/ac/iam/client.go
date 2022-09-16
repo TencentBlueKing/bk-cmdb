@@ -28,6 +28,7 @@ const (
 )
 
 var (
+	// ErrNotFound TODO
 	ErrNotFound = errors.New("Not Found")
 )
 
@@ -39,6 +40,7 @@ type iamClient struct {
 	basicHeader http.Header
 }
 
+// IAMClientCfg TODO
 type IAMClientCfg struct {
 	Config AuthConfig
 	// http client instance
@@ -47,6 +49,7 @@ type IAMClientCfg struct {
 	BasicHeader http.Header
 }
 
+// NewIAMClient TODO
 func NewIAMClient(cfg *IAMClientCfg) *iamClient {
 	return &iamClient{
 		config:      cfg.Config,
@@ -400,6 +403,7 @@ func (c *iamClient) UpdateActionGroups(ctx context.Context, actionGroups []Actio
 	return nil
 }
 
+// RegisterInstanceSelections TODO
 func (c *iamClient) RegisterInstanceSelections(ctx context.Context, instanceSelections []InstanceSelection) error {
 
 	resp := new(BaseResponse)

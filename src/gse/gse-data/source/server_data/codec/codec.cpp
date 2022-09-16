@@ -12,7 +12,7 @@
 
 #include "codec/codec.h"
 namespace gse { 
-namespace dataserver {
+namespace data {
 
 Codec::Codec()
 {

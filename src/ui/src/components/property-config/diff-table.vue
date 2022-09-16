@@ -12,6 +12,7 @@
 
 <script lang="ts">
   import { defineComponent, PropType } from '@vue/composition-api'
+  import isEqual from 'lodash/isEqual'
 
   interface IPropertyDiff {
     id: number,
@@ -30,7 +31,7 @@
     },
     setup() {
       const getDiffType = (diff: IPropertyDiff) => {
-        if (diff.inst_value !== diff.template_value) {
+        if (!isEqual(diff.inst_value,  diff.template_value)) {
           return 'changed'
         }
       }
@@ -53,7 +54,7 @@
           <div class="diff-item" v-for="(diff, index) in propertyDiff" :key="index">
             <div class="property-name" v-bk-overflow-tips>{{diff.property.bk_property_name}}</div>
             <cmdb-property-value
-              v-bk-overflow-tips
+              :is-show-overflow-tips="true"
               class="property-value"
               tag="div"
               :value="diff.inst_value"
@@ -65,7 +66,7 @@
           <div class="diff-item" v-for="(diff, index) in propertyDiff" :key="index">
             <div class="property-name">{{diff.property.bk_property_name}}</div>
             <cmdb-property-value
-              v-bk-overflow-tips
+              :is-show-overflow-tips="true"
               :class="['property-value', getDiffType(diff)]"
               tag="div"
               :value="diff.template_value"

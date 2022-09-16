@@ -1,3 +1,4 @@
+// Package esbutil TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -17,6 +18,7 @@ import (
 	"configcenter/src/common/blog"
 )
 
+// EsbConfigSrv TODO
 type EsbConfigSrv struct {
 	addrs     string
 	appCode   string
@@ -24,10 +26,12 @@ type EsbConfigSrv struct {
 	sync.RWMutex
 }
 
+// EsbSrvDiscoveryInterface TODO
 type EsbSrvDiscoveryInterface interface {
 	GetServers() ([]string, error)
 }
 
+// NewEsbConfigSrv TODO
 func NewEsbConfigSrv(srvChan chan EsbConfig, defaultCfg *EsbConfig) *EsbConfigSrv {
 	esb := &EsbConfigSrv{}
 
@@ -55,11 +59,13 @@ func NewEsbConfigSrv(srvChan chan EsbConfig, defaultCfg *EsbConfig) *EsbConfigSr
 	return esb
 }
 
+// GetEsbSrvDiscoveryInterface TODO
 func (esb *EsbConfigSrv) GetEsbSrvDiscoveryInterface() EsbSrvDiscoveryInterface {
 	// maybe will deal some logic about server
 	return esb
 }
 
+// GetServers TODO
 func (esb *EsbConfigSrv) GetServers() ([]string, error) {
 	// maybe will deal some logic about server
 	esb.RLock()
@@ -67,10 +73,12 @@ func (esb *EsbConfigSrv) GetServers() ([]string, error) {
 	return []string{esb.addrs}, nil
 }
 
+// GetServersChan TODO
 func (esb *EsbConfigSrv) GetServersChan() chan []string {
 	return nil
 }
 
+// GetConfig TODO
 func (esb *EsbConfigSrv) GetConfig() EsbConfig {
 	esb.RLock()
 	defer esb.RUnlock()

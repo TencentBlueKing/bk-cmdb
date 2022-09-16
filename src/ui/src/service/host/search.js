@@ -11,6 +11,7 @@
  */
 
 import http from '@/api'
+
 const findOne = async ({ bk_host_id: hostId, bk_biz_id: bizId, config }) => {
   try {
     const { info } = await http.post('hosts/search', {
@@ -35,6 +36,9 @@ const findOne = async ({ bk_host_id: hostId, bk_biz_id: bizId, config }) => {
   }
 }
 
+const getTopoPath = (data, config) => http.post('find/host/topopath', data, config)
+
 export default {
-  findOne
+  findOne,
+  getTopoPath
 }

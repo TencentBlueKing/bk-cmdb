@@ -84,12 +84,15 @@ type APITaskSyncStatus struct {
 // APITaskStatus task status type
 type APITaskStatus string
 
+// IsFinished TODO
 func (s APITaskStatus) IsFinished() bool {
 	if s == APITaskStatusSuccess || s == APITAskStatusFail {
 		return true
 	}
 	return false
 }
+
+// IsSuccessful TODO
 func (s APITaskStatus) IsSuccessful() bool {
 	if s == APITaskStatusSuccess {
 		return true
@@ -97,6 +100,7 @@ func (s APITaskStatus) IsSuccessful() bool {
 	return false
 }
 
+// IsFailure TODO
 func (s APITaskStatus) IsFailure() bool {
 	if s == APITAskStatusFail {
 		return true
@@ -123,32 +127,38 @@ const (
 	APITAskStatusNeedSync APITaskStatus = "need_sync"
 )
 
+// ListAPITaskRequest TODO
 type ListAPITaskRequest struct {
 	Condition mapstr.MapStr `json:"condition"`
 	Page      BasePage      `json:"page"`
 }
 
+// ListAPITaskLatestRequest TODO
 type ListAPITaskLatestRequest struct {
 	Condition mapstr.MapStr `json:"condition"`
 	Fields    []string      `json:"fields"`
 }
 
+// ListAPITaskLatestResponse TODO
 type ListAPITaskLatestResponse struct {
 	BaseResp
 	Data []APITaskDetail `json:"data"`
 }
 
+// ListAPITaskData TODO
 type ListAPITaskData struct {
 	Info  []APITaskDetail `json:"info"`
 	Count int64           `json:"count"`
 	Page  BasePage        `json:"page"`
 }
 
+// ListAPITaskResponse TODO
 type ListAPITaskResponse struct {
 	BaseResp
 	Data ListAPITaskData `json:"data"`
 }
 
+// CreateTaskResponse TODO
 type CreateTaskResponse struct {
 	BaseResp
 	Data APITaskDetail `json:"data"`

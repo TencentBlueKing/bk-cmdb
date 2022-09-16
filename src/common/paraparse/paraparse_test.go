@@ -94,7 +94,7 @@ func TestSpecialCharChange(t *testing.T) {
 
 	for _, item := range testUnits {
 		dst := SpecialCharChange(item.src)
-		//blog.Infof("src:%s, expact dst:%s, dst:%s", item.src, item.dst, dst)
+		// blog.Infof("src:%s, expact dst:%s, dst:%s", item.src, item.dst, dst)
 		require.Equal(t, item.dst, dst)
 	}
 

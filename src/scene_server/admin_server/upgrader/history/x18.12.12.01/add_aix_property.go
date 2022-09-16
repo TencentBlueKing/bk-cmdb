@@ -1,3 +1,4 @@
+// Package x18_12_12_01 TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -23,6 +24,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// Attribute TODO
 type Attribute struct {
 	ID                int64       `json:"id" bson:"id"`
 	OwnerID           string      `json:"bk_supplier_account" bson:"bk_supplier_account"`

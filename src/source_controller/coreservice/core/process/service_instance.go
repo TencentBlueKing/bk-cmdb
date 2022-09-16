@@ -28,6 +28,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// CreateServiceInstance TODO
 func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder) {
 	// base attribute validate
 	if field, err := instance.Validate(); err != nil {
@@ -226,6 +227,7 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 	return instance, nil
 }
 
+// CreateServiceInstances TODO
 func (p *processOperation) CreateServiceInstances(kit *rest.Kit, instances []*metadata.ServiceInstance) ([]*metadata.ServiceInstance, errors.CCErrorCoder) {
 	var wg sync.WaitGroup
 	var lock sync.RWMutex
@@ -268,6 +270,7 @@ func (p *processOperation) CreateServiceInstances(kit *rest.Kit, instances []*me
 	return insts, nil
 }
 
+// GetServiceInstance TODO
 func (p *processOperation) GetServiceInstance(kit *rest.Kit, instanceID int64) (*metadata.ServiceInstance, errors.CCErrorCoder) {
 	instance := metadata.ServiceInstance{}
 
@@ -283,6 +286,7 @@ func (p *processOperation) GetServiceInstance(kit *rest.Kit, instanceID int64) (
 	return &instance, nil
 }
 
+// UpdateServiceInstances TODO
 func (p *processOperation) UpdateServiceInstances(kit *rest.Kit, bizID int64, option *metadata.UpdateServiceInstanceOption) errors.CCErrorCoder {
 	for _, data := range option.Data {
 		needUpdate := data.Update
@@ -303,6 +307,7 @@ func (p *processOperation) UpdateServiceInstances(kit *rest.Kit, bizID int64, op
 	return nil
 }
 
+// ListServiceInstance TODO
 func (p *processOperation) ListServiceInstance(kit *rest.Kit, option metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder) {
 	if option.BusinessID == 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
@@ -379,6 +384,7 @@ func (p *processOperation) ListServiceInstance(kit *rest.Kit, option metadata.Li
 	return result, nil
 }
 
+// ListServiceInstanceDetail TODO
 func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstanceDetail, errors.CCErrorCoder) {
 	if option.BusinessID <= 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
@@ -541,6 +547,7 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 	return result, nil
 }
 
+// DeleteServiceInstance TODO
 func (p *processOperation) DeleteServiceInstance(kit *rest.Kit, serviceInstanceIDs []int64) errors.CCErrorCoder {
 	for _, serviceInstanceID := range serviceInstanceIDs {
 		instance, err := p.GetServiceInstance(kit, serviceInstanceID)
@@ -571,7 +578,7 @@ func (p *processOperation) DeleteServiceInstance(kit *rest.Kit, serviceInstanceI
 	return nil
 }
 
-// GetServiceInstanceName get service instance's name, format: `IP + first process name + first process port`
+// generateServiceInstanceName get service instance's name, format: `IP + first process name + first process port`
 // 可能应用场景：1. 查询服务实例时组装名称；2. 更新进程信息时根据组装名称直接更新到 `name` 字段
 // issue: https://github.com/Tencent/bk-cmdb/issues/2485
 func (p *processOperation) generateServiceInstanceName(kit *rest.Kit, instanceID int64) (string, errors.CCErrorCoder) {
@@ -703,6 +710,7 @@ func (p *processOperation) updateServiceInstanceName(kit *rest.Kit, instanceID i
 	return nil
 }
 
+// GetBusinessDefaultSetModuleInfo TODO
 // GetDefaultModuleIDs get business's default module id, default module type specified by DefaultResModuleFlag
 // be careful: it doesn't ensure business have all default module or set
 func (p *processOperation) GetBusinessDefaultSetModuleInfo(kit *rest.Kit, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder) {
@@ -958,6 +966,7 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 	return nil
 }
 
+// RemoveTemplateBindingOnModule TODO
 func (p *processOperation) RemoveTemplateBindingOnModule(kit *rest.Kit, moduleID int64) errors.CCErrorCoder {
 	moduleFilter := map[string]interface{}{
 		common.BKModuleIDField: moduleID,

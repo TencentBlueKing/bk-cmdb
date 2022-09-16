@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// LockHost TODO
 func (lgc *Logics) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) errors.CCError {
 
 	hostLockResult, err := lgc.CoreAPI.CoreService().Host().LockHost(kit.Ctx, kit.Header, input)
@@ -34,6 +35,7 @@ func (lgc *Logics) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) erro
 	return nil
 }
 
+// UnlockHost TODO
 func (lgc *Logics) UnlockHost(kit *rest.Kit, input *metadata.HostLockRequest) errors.CCError {
 
 	hostUnlockResult, err := lgc.CoreAPI.CoreService().Host().UnlockHost(kit.Ctx, kit.Header, input)
@@ -48,6 +50,7 @@ func (lgc *Logics) UnlockHost(kit *rest.Kit, input *metadata.HostLockRequest) er
 	return nil
 }
 
+// QueryHostLock TODO
 func (lgc *Logics) QueryHostLock(kit *rest.Kit, input *metadata.QueryHostLockRequest) (map[int64]bool, errors.CCError) {
 
 	hostLockResult, err := lgc.CoreAPI.CoreService().Host().QueryHostLock(kit.Ctx, kit.Header, input)

@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SearchVpc TODO
 func (s *Service) SearchVpc(ctx *rest.Contexts) {
 	vpcOpt := new(metadata.SearchVpcOption)
 	if err := ctx.DecodeInto(vpcOpt); err != nil {
@@ -46,6 +47,7 @@ func (s *Service) SearchVpc(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// CreateSyncTask TODO
 func (s *Service) CreateSyncTask(ctx *rest.Contexts) {
 	task := new(metadata.CloudSyncTask)
 	if err := ctx.DecodeInto(task); err != nil {
@@ -87,6 +89,7 @@ func (s *Service) CreateSyncTask(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchSyncTask TODO
 func (s *Service) SearchSyncTask(ctx *rest.Contexts) {
 	option := metadata.SearchSyncTaskOption{}
 	if err := ctx.DecodeInto(&option); err != nil {
@@ -103,6 +106,7 @@ func (s *Service) SearchSyncTask(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateSyncTask TODO
 func (s *Service) UpdateSyncTask(ctx *rest.Contexts) {
 	taskIDStr := ctx.Request.PathParameter(common.BKCloudSyncTaskID)
 	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
@@ -134,6 +138,7 @@ func (s *Service) UpdateSyncTask(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// DeleteSyncTask TODO
 func (s *Service) DeleteSyncTask(ctx *rest.Contexts) {
 	taskIDStr := ctx.Request.PathParameter(common.BKCloudSyncTaskID)
 	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
@@ -159,6 +164,7 @@ func (s *Service) DeleteSyncTask(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// SearchSyncHistory TODO
 func (s *Service) SearchSyncHistory(ctx *rest.Contexts) {
 	option := metadata.SearchSyncHistoryOption{}
 	if err := ctx.DecodeInto(&option); err != nil {
@@ -175,6 +181,7 @@ func (s *Service) SearchSyncHistory(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchSyncRegion TODO
 func (s *Service) SearchSyncRegion(ctx *rest.Contexts) {
 	option := metadata.SearchSyncRegionOption{}
 	if err := ctx.DecodeInto(&option); err != nil {

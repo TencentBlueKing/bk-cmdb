@@ -107,7 +107,7 @@
       @cancel="closeAssignDialog">
       <div class="assign-content" v-if="assign.show">
         <i18n class="assign-count" tag="div" path="已选择主机">
-          <span place="count">{{table.checked.length}}</span>
+          <template #count><span>{{table.checked.length}}</span></template>
         </i18n>
         <div class="assign-seleted">
           <p>{{assign.label}}</p>
@@ -227,7 +227,7 @@
           bk_property_name: `${this.$t('云区域')}ID:IP`,
           bk_property_type: 'singlechar'
         })
-        const clipboardList = FilterStore.header.slice()
+        const clipboardList = this.$parent.tableHeader.slice()
         clipboardList.splice(1, 0, IPWithCloud)
         return clipboardList
       },
@@ -592,7 +592,13 @@
             const { fields, exportRelation  } = state
             const params = {
               export_custom_fields: fields.value.map(property => property.bk_property_id),
-              bk_host_ids: this.table.selection.map(({ host }) => host.bk_host_id)
+              bk_host_ids: this.table.selection.map(({ host }) => host.bk_host_id),
+              export_condition: {
+                page: {
+                  start: 0,
+                  limit: this.table.selection.length
+                }
+              }
             }
             if (exportRelation.value) {
               params.object_unique_id = state.object_unique_id.value

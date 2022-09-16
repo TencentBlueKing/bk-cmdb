@@ -14,6 +14,7 @@ package metadata
 
 import "time"
 
+// TxnOption TODO
 type TxnOption struct {
 	// transaction timeout time
 	// min value: 5 * time.Second
@@ -21,6 +22,7 @@ type TxnOption struct {
 	Timeout time.Duration
 }
 
+// TxnCapable TODO
 type TxnCapable struct {
 	Timeout   time.Duration `json:"timeout"`
 	SessionID string        `json:"session_id"`

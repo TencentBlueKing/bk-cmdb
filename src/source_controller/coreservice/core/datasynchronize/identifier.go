@@ -114,7 +114,7 @@ func (s *setIdentifierFlag) addFlag(kit *rest.Kit) errors.CCErrorCoder {
 	return nil
 }
 
-// repalceFlag 使用当前cmdb系统同步身份标识。该操作会删除之前的所有的cmdb系统同步身份标识
+// replaceFlag 使用当前cmdb系统同步身份标识。该操作会删除之前的所有的cmdb系统同步身份标识
 func (s *setIdentifierFlag) replaceFlag(kit *rest.Kit) errors.CCErrorCoder {
 	conds := condition.CreateCondition()
 	conds.Field(s.instIDField).In(s.params.IdentifierID)
@@ -130,7 +130,7 @@ func (s *setIdentifierFlag) replaceFlag(kit *rest.Kit) errors.CCErrorCoder {
 	return nil
 }
 
-// deleteFlag
+// deleteFlag TODO
 func (s *setIdentifierFlag) deleteFlag(kit *rest.Kit) errors.CCErrorCoder {
 	conds := condition.CreateCondition()
 	conds.Field(s.instIDField).In(s.params.IdentifierID)

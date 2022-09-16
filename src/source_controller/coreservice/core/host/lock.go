@@ -26,6 +26,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// LockHost TODO
 func (hm *hostManager) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) errors.CCError {
 	input.IDS = util.IntArrayUnique(input.IDS)
 	condition := mapstr.MapStr{
@@ -79,6 +80,7 @@ func (hm *hostManager) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) 
 	return nil
 }
 
+// UnlockHost TODO
 func (hm *hostManager) UnlockHost(kit *rest.Kit, input *metadata.HostLockRequest) errors.CCError {
 	conds := mapstr.MapStr{
 		common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.IDS},
@@ -93,6 +95,7 @@ func (hm *hostManager) UnlockHost(kit *rest.Kit, input *metadata.HostLockRequest
 	return nil
 }
 
+// QueryHostLock TODO
 func (hm *hostManager) QueryHostLock(kit *rest.Kit, input *metadata.QueryHostLockRequest) ([]metadata.HostLockData, errors.CCError) {
 	hostLockInfoArr := make([]metadata.HostLockData, 0)
 	conds := mapstr.MapStr{

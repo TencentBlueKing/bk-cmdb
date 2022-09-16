@@ -23,10 +23,10 @@
         <div class="config-item">
           <div class="item-label">
             <i18n path="已选择N个模块：" v-if="isModuleMode">
-              <span place="count">{{ids.length}}</span>
+              <template #count><span>{{ids.length}}</span></template>
             </i18n>
             <i18n path="已选择N个模板：" v-else-if="isTemplateMode">
-              <span place="count">{{ids.length}}</span>
+              <template #count><span>{{ids.length}}</span></template>
             </i18n>
           </div>
           <div class="item-content">
@@ -125,7 +125,7 @@
       v-bind="leaveConfirmConfig"
       reverse
       :title="$t('是否退出配置')"
-      :content="$t('启用步骤未完成，退出将会丢失当前配置')"
+      :content="$t('启用步骤未完成，退出将撤销当前操作')"
       :ok-text="$t('退出')"
       :cancel-text="$t('取消')">
     </leave-confirm>
@@ -140,7 +140,7 @@
   import propertyConfigTable from './property-config-table'
   import serviceTemplateTips from './service-template-tips.vue'
   import { MENU_BUSINESS_HOST_APPLY_CONFIRM } from '@/dictionary/menu-symbol'
-  import { CONFIG_MODE } from '@/services/service-template/index.js'
+  import { CONFIG_MODE } from '@/service/service-template/index.js'
 
   export default {
     name: 'multi-config',
