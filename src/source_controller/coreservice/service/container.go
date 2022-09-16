@@ -36,15 +36,8 @@ func (s *coreService) BatchCreatePod(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
-	if err != nil {
-		blog.Error("url parameter bk_biz_id not integer, bizID: %s, rid: %s", ctx.Request.PathParameter("bk_biz_id"),
-			ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
-		return
-	}
 
-	ctx.RespEntityWithError(s.core.ContainerOperation().BatchCreatePod(ctx.Kit, bizID, inputData.Pods))
+	ctx.RespEntityWithError(s.core.ContainerOperation().BatchCreatePod(ctx.Kit, inputData.Data))
 
 }
 
@@ -67,8 +60,8 @@ func (s *coreService) BatchCreateNode(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.ContainerOperation().BatchCreateNode(ctx.Kit, bizID, inputData.Nodes))
 }
 
-// SearchClusterInstances 查找集群实例
-func (s *coreService) SearchClusterInstances(ctx *rest.Contexts) {
+// SearchClusters search container clusters
+func (s *coreService) SearchClusters(ctx *rest.Contexts) {
 	inputData := new(metadata.QueryCondition)
 
 	if err := ctx.DecodeInto(inputData); nil != err {
@@ -78,21 +71,40 @@ func (s *coreService) SearchClusterInstances(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.ContainerOperation().SearchCluster(ctx.Kit, inputData))
 }
 
-// SearchNodeInstances 查找集群实例
-func (s *coreService) SearchNodeInstances(ctx *rest.Contexts) {
+// SearchNodes search container nodes
+func (s *coreService) SearchNodes(ctx *rest.Contexts) {
 	inputData := new(metadata.QueryCondition)
 	if err := ctx.DecodeInto(inputData); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntityWithError(s.core.ContainerOperation().SearchNode(ctx.Kit, inputData))
+
+	if err := inputData.Page.ValidateLimit(common.BKMaxUpdateOrCreatePageSize); err != nil {
+		blog.Errorf("page params is invalid, input: %+v, err: %v, rid: %s", inputData, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	nodes := make([]types.Node, 0)
+	err := mongodb.Client().Table(types.BKTableNameBaseNode).Find(inputData.Condition).
+		Start(uint64(inputData.Page.Start)).
+		Limit(uint64(inputData.Page.Limit)).
+		Sort(inputData.Page.Sort).
+		Fields(inputData.Fields...).All(ctx.Kit.Ctx, &nodes)
+	if err != nil {
+		blog.Errorf("search nodes failed, input %+v, err: %v, rid: %s", inputData, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result := &types.SearchNodeRsp{Data: nodes}
+	ctx.RespEntityWithError(result, nil)
 }
 
-// UpdateNodeInstance update node instance.
-func (s *coreService) UpdateNodeInstance(ctx *rest.Contexts) {
+// BatchUpdateNode batch update node.
+func (s *coreService) BatchUpdateNode(ctx *rest.Contexts) {
 
-	inputData := new(types.UpdateNodeOption)
-	if err := ctx.DecodeInto(inputData); nil != err {
+	input := new(types.UpdateNodeOption)
+	if err := ctx.DecodeInto(input); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -113,15 +125,15 @@ func (s *coreService) UpdateNodeInstance(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ContainerOperation().UpdateNodeFields(ctx.Kit, bizID, supplierAccount, inputData))
+	ctx.RespEntityWithError(s.core.ContainerOperation().BatchUpdateNodeFields(ctx.Kit, bizID, supplierAccount, input))
 }
 
-// UpdateClusterInstance update cluster instance.
-func (s *coreService) UpdateClusterInstance(ctx *rest.Contexts) {
+// BatchUpdateCluster update cluster.
+func (s *coreService) BatchUpdateCluster(ctx *rest.Contexts) {
 
-	inputData := new(types.UpdateClusterOption)
+	input := new(types.UpdateClusterOption)
 
-	if err := ctx.DecodeInto(inputData); nil != err {
+	if err := ctx.DecodeInto(input); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -141,14 +153,14 @@ func (s *coreService) UpdateClusterInstance(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKOwnerIDField))
 		return
 	}
-
-	ctx.RespEntityWithError(s.core.ContainerOperation().UpdateClusterFields(ctx.Kit, bizID, supplierAccount, inputData))
+	result, err := s.core.ContainerOperation().BatchUpdateClusterFields(ctx.Kit, bizID, supplierAccount, input)
+	ctx.RespEntityWithError(result, err)
 }
 
-// CreateClusterInstance create cluster instance.
-func (s *coreService) CreateClusterInstance(ctx *rest.Contexts) {
+// CreateCluster create cluster instance.
+func (s *coreService) CreateCluster(ctx *rest.Contexts) {
 
-	inputData := new(types.ClusterBaseFields)
+	inputData := new(types.Cluster)
 
 	if err := ctx.DecodeInto(inputData); nil != err {
 		ctx.RespAutoError(err)
@@ -166,8 +178,8 @@ func (s *coreService) CreateClusterInstance(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.ContainerOperation().CreateCluster(ctx.Kit, bizID, inputData))
 }
 
-// DeleteClusterInstance delete cluster instance.
-func (s *coreService) DeleteClusterInstance(ctx *rest.Contexts) {
+// BatchDeleteCluster delete clusters.
+func (s *coreService) BatchDeleteCluster(ctx *rest.Contexts) {
 	option := new(types.DeleteClusterOption)
 	if err := ctx.DecodeInto(option); nil != err {
 		ctx.RespAutoError(err)
@@ -184,8 +196,8 @@ func (s *coreService) DeleteClusterInstance(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.ContainerOperation().DeleteCluster(ctx.Kit, bizID, option))
 }
 
-// BatchDeleteNodeInstance delete cluster instance.
-func (s *coreService) BatchDeleteNodeInstance(ctx *rest.Contexts) {
+// BatchDeleteNode delete cluster instance.
+func (s *coreService) BatchDeleteNode(ctx *rest.Contexts) {
 	option := new(types.BatchDeleteNodeOption)
 	if err := ctx.DecodeInto(option); nil != err {
 		ctx.RespAutoError(err)

@@ -37,7 +37,7 @@ const (
 )
 
 // ClusterFields merge the fields of the cluster and the details corresponding to the fields together.
-var ClusterFields = table.MergeFields(ClusterSpecFieldsDescriptor)
+var ClusterFields = table.MergeFields(CommonSpecFieldsDescriptor, BizIDDescriptor, ClusterSpecFieldsDescriptor)
 
 // ClusterSpecFieldsDescriptor cluster spec's fields descriptors.
 var ClusterSpecFieldsDescriptor = table.FieldsDescriptors{
@@ -61,15 +61,33 @@ type Cluster struct {
 	BizID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
 	// SupplierAccount the supplier account that this resource belongs to.
 	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	// ClusterFields cluster base fields
-	ClusterBaseFields `json:",inline" bson:",inline"`
+	// Name cluster name.
+	Name *string `json:"name,omitempty" bson:"name"`
+	// SchedulingEngine scheduling engines, such as k8s, tke, etc.
+	SchedulingEngine *string `json:"scheduling_engine,omitempty" bson:"scheduling_engine"`
+	// Uid ID of the cluster itself
+	Uid *string `json:"uid,omitempty" bson:"uid"`
+	// Xid The underlying cluster ID it depends on
+	Xid *string `json:"xid,omitempty" bson:"xid"`
+	// Version cluster version
+	Version *string `json:"version,omitempty" bson:"version"`
+	// NetworkType network type, such as overlay or underlay
+	NetworkType *string `json:"network_type,omitempty" bson:"network_type"`
+	// Region the region where the cluster is located
+	Region *string `json:"region,omitempty" bson:"region"`
+	// Vpc vpc network
+	Vpc *string `json:"vpc,omitempty" bson:"vpc"`
+	// NetWork global routing network address (container overlay network) For example: ["1.1.1.0/21"]
+	NetWork *[]string `json:"network,omitempty" bson:"network"`
+	// Type cluster network type, e.g. public clusters, private clusters, etc.
+	Type *string `json:"type,omitempty" bson:"type"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }
 
 func initClusterFieldsType() {
-	typeOfCat := reflect.TypeOf(ClusterBaseFields{})
-	valueOf := reflect.ValueOf(ClusterBaseFields{})
+	typeOfCat := reflect.TypeOf(Cluster{})
+	valueOf := reflect.ValueOf(Cluster{})
 	for i := 0; i < typeOfCat.NumField(); i++ {
 		// 获取每个成员的结构体字段类型
 		for _, descripor := range ClusterSpecFieldsDescriptor {
@@ -107,55 +125,37 @@ func (option *DeleteClusterOption) Validate() error {
 	return nil
 }
 
-// ClusterBaseFields basic description fields for container clusters.
-type ClusterBaseFields struct {
-	Name *string `json:"name" bson:"name"`
-	// SchedulingEngine scheduling engines, such as k8s, tke, etc.
-	SchedulingEngine *string `json:"scheduling_engine" bson:"scheduling_engine"`
-	// Uid ID of the cluster itself
-	Uid *string `json:"uid" bson:"uid"`
-	// Xid The underlying cluster ID it depends on
-	Xid *string `json:"xid" bson:"xid"`
-	// Version cluster version
-	Version *string `json:"version" bson:"version"`
-	// NetworkType network type, such as overlay or underlay
-	NetworkType *string `json:"network_type" bson:"network_type"`
-	// Region the region where the cluster is located
-	Region *string `json:"region" bson:"region"`
-	// Vpc vpc network
-	Vpc *string `json:"vpc" bson:"vpc"`
-	// NetWork global routing network address (container overlay network) For example: ["1.1.1.0/21"]
-	NetWork *[]string `json:"network" bson:"network"`
-	// Type cluster network type, e.g. public clusters, private clusters, etc.
-	Type *string `json:"type" bson:"type"`
-}
-
 // CreateValidate check whether the parameters for creating a cluster are legal.
-func (option *ClusterBaseFields) CreateValidate() error {
+func (option *Cluster) CreateValidate() error {
 
 	if option == nil {
 		return errors.New("cluster information must be given")
 	}
 
-	// get a list of required fields.
-
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag := typeOfOption.Field(i).Tag.Get("json")
-		if !ClusterFields.IsFieldRequiredByField(tag) {
+		// a variable with a non-null pointer gets the corresponding tag.
+		// for example, it needs to be compatible when the tag is "name,omitempty"
+		tagTmp := typeOfOption.Field(i).Tag.Get("json")
+		tags := strings.Split(tagTmp, ",")
+
+		if !ClusterFields.IsFieldRequiredByField(tags[0]) {
+			continue
+		}
+		if IsCommonField(tags[0]) {
 			continue
 		}
 		fieldValue := valueOfOption.Field(i)
 		if fieldValue.IsNil() {
-			return fmt.Errorf("required fields cannot be empty, %s", tag)
+			return fmt.Errorf("required fields cannot be empty, %s", tags[0])
 		}
 	}
 	return nil
 }
 
 // UpdateValidate verifying the validity of parameters for updating node scenarios
-func (option *ClusterBaseFields) updateValidate() error {
+func (option *Cluster) updateValidate() error {
 
 	if option == nil {
 		return errors.New("node information must be given")
@@ -175,7 +175,9 @@ func (option *ClusterBaseFields) updateValidate() error {
 		// for example, it needs to be compatible when the tag is "name,omitempty"
 		tagTmp := typeOfOption.Field(i).Tag.Get("json")
 		tags := strings.Split(tagTmp, ",")
-
+		if IsCommonField(tags[0]) {
+			continue
+		}
 		// 3、get whether it is an editable field based on tag
 		if !ClusterFields.IsFieldEditableByField(tags[0]) {
 			return fmt.Errorf("field [%s] is a non-editable field", tags[0])
@@ -223,8 +225,8 @@ type ResponseCluster struct {
 
 // OneUpdateCluster update individual cluster information.
 type OneUpdateCluster struct {
-	ID   int64             `json:"id"`
-	Data ClusterBaseFields `json:"data"`
+	ID   int64   `json:"id"`
+	Data Cluster `json:"data"`
 }
 
 // UpdateClusterOption update cluster request。

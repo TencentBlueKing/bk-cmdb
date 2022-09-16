@@ -39,7 +39,7 @@ var KubePodConfigs = []AuthConfig{
 	{
 		Name:           "batchDeletePod",
 		Description:    "批量删除Pod",
-		Pattern:        "/api/v3/kube/deletemany/pod",
+		Pattern:        "/api/v3/deletemany/kube/pod",
 		HTTPMethod:     http.MethodDelete,
 		ResourceType:   meta.KubePod,
 		ResourceAction: meta.Delete,

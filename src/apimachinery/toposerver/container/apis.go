@@ -29,7 +29,7 @@ import (
 
 // ContainerInterface the container implements the interface
 type ContainerInterface interface {
-	CreateCluster(ctx context.Context, h http.Header, bizID int64, option *types.ClusterBaseFields) (
+	CreateCluster(ctx context.Context, h http.Header, bizID int64, option *types.Cluster) (
 		*types.CreateClusterResult, errors.CCErrorCoder)
 	UpdateClusterFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
 		data *types.UpdateClusterOption) errors.CCErrorCoder
@@ -43,8 +43,8 @@ type ContainerInterface interface {
 		option *types.BatchDeleteNodeOption) errors.CCErrorCoder
 	BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
 		data *types.CreateNodesOption) (*types.CreateNodesResult, errors.CCErrorCoder)
-	BatchCreatePod(ctx context.Context, header http.Header, bizID int64,
-		data *types.CreatePodsOption) ([]types.Pod, errors.CCErrorCoder)
+	BatchCreatePod(ctx context.Context, header http.Header, data *types.CreatePodsOption) (
+		[]types.Pod, errors.CCErrorCoder)
 	SearchNode(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
 		*types.SearchNodeRsp, errors.CCErrorCoder)
 }

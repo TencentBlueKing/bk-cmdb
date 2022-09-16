@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_10_202207251408
+package y3_10_202209191408
 
 import (
 	"context"
@@ -26,22 +26,22 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.10.202207251408", upgrade)
+	upgrader.RegistUpgrader("y3.10.202209191408", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.10.202207251408, init container collection and index")
+	blog.Infof("start execute y3.10.202209191408, init container collection and index")
 
 	if err = addContainerCollection(ctx, db); err != nil {
-		blog.Errorf("upgrade y3.10.202207251408 add container collection failed, err: %v", err)
+		blog.Errorf("upgrade y3.10.202209191408 add container collection failed, err: %v", err)
 		return err
 	}
 
 	if err = addContainerCollectionIndex(ctx, db); err != nil {
-		blog.Errorf("upgrade y3.10.202207251408 add container collection index failed, err: %v", err)
+		blog.Errorf("upgrade y3.10.202209191408 add container collection index failed, err: %v", err)
 		return err
 	}
 
-	blog.Infof("upgrade y3.10.202207251408 init container success")
+	blog.Infof("upgrade y3.10.202209191408 init container success")
 	return nil
 }

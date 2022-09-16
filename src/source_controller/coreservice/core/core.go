@@ -123,10 +123,10 @@ type InstanceOperation interface {
 
 // ContainerOperation crud operations on container data.
 type ContainerOperation interface {
-	CreateCluster(kit *rest.Kit, bizID int64, option *types.ClusterBaseFields) (*types.Cluster, errors.CCErrorCoder)
-	UpdateClusterFields(kit *rest.Kit, bizID int64, supplierAccount string,
+	CreateCluster(kit *rest.Kit, bizID int64, option *types.Cluster) (*types.Cluster, errors.CCErrorCoder)
+	BatchUpdateClusterFields(kit *rest.Kit, bizID int64, supplierAccount string,
 		data *types.UpdateClusterOption) (*metadata.UpdatedCount, errors.CCErrorCoder)
-	UpdateNodeFields(kit *rest.Kit, bizID int64, supplierAccount string,
+	BatchUpdateNodeFields(kit *rest.Kit, bizID int64, supplierAccount string,
 		data *types.UpdateNodeOption) (*metadata.UpdatedCount, errors.CCErrorCoder)
 	SearchCluster(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseCluster, error)
 	DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption) (*metadata.DeletedCount,
@@ -134,8 +134,7 @@ type ContainerOperation interface {
 	BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.BatchDeleteNodeOption) (
 		*metadata.DeletedCount, errors.CCErrorCoder)
 	BatchCreateNode(kit *rest.Kit, bizID int64, data []types.OneNodeCreateOption) ([]*types.Node, errors.CCErrorCoder)
-	BatchCreatePod(kit *rest.Kit, bizID int64, data []types.PodsInfo) ([]types.Pod, errors.CCErrorCoder)
-	SearchNode(kit *rest.Kit, input *metadata.QueryCondition) (*types.SearchNodeRsp, error)
+	BatchCreatePod(kit *rest.Kit, data []types.PodsInfoArray) ([]types.Pod, errors.CCErrorCoder)
 }
 
 // AssociationKind association kind methods

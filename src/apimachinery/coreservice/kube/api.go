@@ -35,7 +35,7 @@ func (k *kube) FindInst(ctx context.Context, header http.Header, option *types.Q
 	err := k.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResourcef("/kube/find/inst").
+		SubResourcef("/find/kube/inst").
 		WithHeaders(header).
 		Do().
 		Into(resp)

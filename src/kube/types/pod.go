@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
@@ -258,7 +259,6 @@ func (option *PodBaseFields) createValidate() error {
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -306,14 +306,21 @@ func (option *ContainerBaseFields) createValidate() error {
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag := typeOfOption.Field(i).Tag.Get("json")
-		if !ClusterFields.IsFieldRequiredByField(tag) {
+		// a variable with a non-null pointer gets the corresponding tag.
+		// for example, it needs to be compatible when the tag is "name,omitempty"
+		tagTmp := typeOfOption.Field(i).Tag.Get("json")
+		tags := strings.Split(tagTmp, ",")
+		if IsCommonField(tags[0]) {
 			continue
 		}
-		if ContainerFields.IsFieldRequiredByField(tag) {
+
+		if !ContainerFields.IsFieldRequiredByField(tags[0]) {
+			continue
+		}
+		if ContainerFields.IsFieldRequiredByField(tags[0]) {
 			fieldValue := valueOfOption.Field(i)
 			if fieldValue.IsNil() {
-				return fmt.Errorf("required fields cannot be empty, %s", tag)
+				return fmt.Errorf("required fields cannot be empty, %s", tags[0])
 			}
 		}
 	}
@@ -358,41 +365,53 @@ type PodsInfo struct {
 
 // CreatePodsOption create pods option
 type CreatePodsOption struct {
-	Pods []PodsInfo `json:"pods"`
+	Data []PodsInfoArray `json:"data"`
+}
+
+// PodsInfoArray create pods option
+type PodsInfoArray struct {
+	BizID int64      `json:"bk_biz_id"`
+	Pods  []PodsInfo `json:"pods"`
 }
 
 // Validate validate the CreatePodsOption
 func (option *CreatePodsOption) Validate() error {
 
-	if len(option.Pods) == 0 {
+	if len(option.Data) == 0 {
 		return errors.New("params cannot be empty")
 	}
-
-	if len(option.Pods) > createPodsLimit {
+	var podsLen int
+	for _, data := range option.Data {
+		podsLen += len(data.Pods)
+	}
+	if podsLen > createPodsLimit {
 		return fmt.Errorf("the maximum number of pods created at one time cannot exceed %d", createPodsLimit)
 	}
 
-	for _, pod := range option.Pods {
-		if pod.Spec == nil {
-			return errors.New("spec filter cannot be empty at the same time")
-		}
+	for _, data := range option.Data {
+		for _, pod := range data.Pods {
+			if pod.Spec == nil {
+				return errors.New("spec filter cannot be empty at the same time")
+			}
 
-		if err := pod.Spec.validate(); err != nil {
-			return err
-		}
-		if pod.HostID == 0 {
-			return errors.New("host id must be set")
-		}
-
-		if err := pod.createValidate(); err != nil {
-			return err
-		}
-
-		for _, container := range pod.Containers {
-			if err := container.createValidate(); err != nil {
+			if err := pod.Spec.validate(); err != nil {
 				return err
 			}
+			if pod.HostID == 0 {
+				return errors.New("host id must be set")
+			}
+
+			if err := pod.createValidate(); err != nil {
+				return err
+			}
+
+			for _, container := range pod.Containers {
+				if err := container.createValidate(); err != nil {
+					return err
+				}
+			}
 		}
+
 	}
 	return nil
 }

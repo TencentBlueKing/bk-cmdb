@@ -13,6 +13,7 @@
 package parser
 
 import (
+	"configcenter/src/kube/types"
 	"errors"
 	"fmt"
 	"net/http"
@@ -1596,40 +1597,42 @@ func (ps *parseStream) cloudArea() *parseStream {
 }
 
 const (
-	findNodePathForHostPattern = "/api/v3/kube/find/host_node_path"
+	findNodePathForHostPattern = "/api/v3/find/kube/host_node_path"
 )
 
 var (
-	findKubeAttrsRegexp     = regexp.MustCompile(`^/api/v3/kube/find/{object}/attributes$`)
-	createKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/create/cluster/bk_biz_id/{bk_biz_id}$`)
+	findKubeAttrsRegexp = regexp.MustCompile(`^/api/v3/find/kube/[^\s/]+/attributes$`)
 
-	deleteKubeClusterRegexp     = regexp.MustCompile(`^/api/v3/kube/delete/cluster/bk_biz_id/{bk_biz_id}$`)
-	findKubeClusterRegexp       = regexp.MustCompile(`^/api/v3/kube/findmany/cluster/bk_biz_id/{bk_biz_id}$`)
-	updatemanyKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/cluster/bk_biz_id/{bk_biz_id}$`)
+	createKubeClusterRegexp     = regexp.MustCompile(`^/api/v3/create/kube/cluster/bk_biz_id/([0-9]+)$`)
+	deleteKubeClustersRegexp    = regexp.MustCompile(`^/api/v3/delete/kube/cluster/bk_biz_id/([0-9]+)$`)
+	findKubeClusterRegexp       = regexp.MustCompile(`^/api/v3/findmany/kube/cluster/bk_biz_id/([0-9]+)$`)
+	updatemanyKubeClusterRegexp = regexp.MustCompile(`^/api/v3/updatemany/kube/cluster/bk_biz_id/([0-9]+)$`)
 
-	createKubeNodeRegexp    = regexp.MustCompile(`^/api/v3/kube/createmany/node/bk_biz_id/{bk_biz_id}$`)
-	createKubePodRegexp     = regexp.MustCompile(`^/api/v3/kube/createmany/pod/bk_biz_id/{bk_biz_id}$`)
-	findKubeNodeRegexp      = regexp.MustCompile(`^/api/v3/kube/findmany/node/bk_biz_id/{bk_biz_id}$`)
-	findKubeTopoPathRegexp  = regexp.MustCompile(`^/api/v3/kube/find/topo_path/bk_biz_id/{bk_biz_id}$`)
-	findKubeTopoCountRegexp = regexp.MustCompile(`^/api/v3/kube/find/{bk_biz_id}/topo_node/{type}/count$`)
-	createKubePodsRegexp    = regexp.MustCompile(`^/api/v3/kube/createmany/pod/bk_biz_id/{bk_biz_id}$`)
+	createKubeNodeRegexp     = regexp.MustCompile(`^/api/v3/createmany/kube/node/bk_biz_id/([0-9]+)$`)
+	findKubeNodeRegexp       = regexp.MustCompile(`^/api/v3/findmany/kube/node/bk_biz_id/([0-9]+)$`)
+	deleteKubeNodeRegexp     = regexp.MustCompile(`^/api/v3/deletemany/kube/node/bk_biz_id/([0-9]+)$`)
+	updatemanyKubeNodeRegexp = regexp.MustCompile(`^/api/v3/updatemany/kube/node/bk_biz_id/([0-9]+)$`)
 
-	createNamespaceRegexp = regexp.MustCompile(`^/api/v3/kube/createmany/namespace/bk_biz_id/([0-9]+)/?$`)
-	updateNamespaceRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/namespace/bk_biz_id/([0-9]+)/?$`)
-	deleteNamespaceRegexp = regexp.MustCompile(`^/api/v3/kube/deletemany/namespace/bk_biz_id/([0-9]+)/?$`)
-	findNamespaceRegexp   = regexp.MustCompile(`^/api/v3/kube/findmany/namespace/bk_biz_id/([0-9]+)/?$`)
+	findKubeTopoPathRegexp  = regexp.MustCompile(`^/api/v3/find/kube/topo_path/bk_biz_id/([0-9]+)$`)
+	findKubeTopoCountRegexp = regexp.MustCompile(`^/api/v3/find/kube/([0-9]+)/topo_node/[^\s/]+/count$`)
+	createKubePodsRegexp    = regexp.MustCompile(`^/api/v3/createmany/kube/pod`)
 
-	createWorkloadRegexp = regexp.MustCompile(`^/api/v3/kube/createmany/workload/[^\s/]+/[0-9]+/?$`)
-	updateWorkloadRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/workload/[^\s/]+/[0-9]+/?$`)
-	deleteWorkloadRegexp = regexp.MustCompile(`^/api/v3/kube/deletemany/workload/[^\s/]+/[0-9]+/?$`)
-	findWorkloadRegexp   = regexp.MustCompile(`^/api/v3/kube/findmany/workload/[^\s/]+/[0-9]+/?$`)
+	createNamespaceRegexp = regexp.MustCompile(`^/api/v3/createmany/kube/namespace/bk_biz_id/([0-9]+)/?$`)
+	updateNamespaceRegexp = regexp.MustCompile(`^/api/v3/updatemany/kube/namespace/bk_biz_id/([0-9]+)/?$`)
+	deleteNamespaceRegexp = regexp.MustCompile(`^/api/v3/deletemany/kube/namespace/bk_biz_id/([0-9]+)/?$`)
+	findNamespaceRegexp   = regexp.MustCompile(`^/api/v3/findmany/kube/namespace/bk_biz_id/([0-9]+)/?$`)
 
-	findPodPathRegexp = regexp.MustCompile(`^/api/v3/kube/find/pod_path/bk_biz_id/([0-9]+)/?$`)
-	findPodRegexp     = regexp.MustCompile(`^/api/v3/kube/findmany/pod/bk_biz_id/([0-9]+)/?$`)
+	createWorkloadRegexp = regexp.MustCompile(`^/api/v3/createmany/kube/workload/[^\s/]+/[0-9]+/?$`)
+	updateWorkloadRegexp = regexp.MustCompile(`^/api/v3/updatemany/kube/workload/[^\s/]+/[0-9]+/?$`)
+	deleteWorkloadRegexp = regexp.MustCompile(`^/api/v3/deletemany/kube/workload/[^\s/]+/[0-9]+/?$`)
+	findWorkloadRegexp   = regexp.MustCompile(`^/api/v3/findmany/kube/workload/[^\s/]+/[0-9]+/?$`)
 
-	findContainerRegexp = regexp.MustCompile(`^/api/v3/kube/findmany/container/bk_biz_id/([0-9]+)/?$`)
+	findPodPathRegexp = regexp.MustCompile(`^/api/v3/find/kube/pod_path/bk_biz_id/([0-9]+)/?$`)
+	findPodRegexp     = regexp.MustCompile(`^/api/v3/findmany/kube/pod/bk_biz_id/([0-9]+)/?$`)
 
-	findMapStrFieldValRegexp = regexp.MustCompile(`^/api/v3/kube/find/field/map_str_val/bk_biz_id/([0-9]+)/?$`)
+	findContainerRegexp = regexp.MustCompile(`^/api/v3/findmany/kube/container/bk_biz_id/([0-9]+)/?$`)
+
+	findMapStrFieldValRegexp = regexp.MustCompile(`^/api/v3/find/kube/field/map_str_val/bk_biz_id/([0-9]+)/?$`)
 )
 
 // NOCC:golint/fnsize(整体属于 container 操作需要放在一起)
@@ -1637,18 +1640,21 @@ func (ps *parseStream) container() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
-	//todo: 后续补齐
+
 	if ps.hitRegexp(findKubeAttrsRegexp, http.MethodGet) {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
 			return ps
 		}
 
-		//object, err := ps.RequestCtx.getValueFromBody("object")
-		//if err != nil {
-		//	ps.err = err
-		//	return ps
-		//}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+			},
+		}
 
 		return ps
 	}
@@ -1658,28 +1664,67 @@ func (ps *parseStream) container() *parseStream {
 			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
 			return ps
 		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
 
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.KubeCluster,
+					Action: meta.Create,
+				},
+			},
+		}
 		return ps
 	}
 
-	if ps.hitRegexp(deleteKubeClusterRegexp, http.MethodDelete) {
+	if ps.hitRegexp(deleteKubeClustersRegexp, http.MethodDelete) {
 		if len(ps.RequestCtx.Elements) != 7 {
 			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
 			return ps
 		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
 
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.KubeCluster,
+					Action: meta.Delete,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(updatemanyKubeClusterRegexp, http.MethodPut) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.KubeCluster,
+					Action: meta.UpdateMany,
+				},
+			},
+		}
 		return ps
 	}
 
@@ -1688,13 +1733,21 @@ func (ps *parseStream) container() *parseStream {
 			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
 			return ps
 		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
 
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.KubeCluster,
+					Action: meta.FindMany,
+				},
+			},
+		}
 		return ps
 	}
 
@@ -1703,27 +1756,48 @@ func (ps *parseStream) container() *parseStream {
 			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
 			return ps
 		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
 
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.KubeNode,
+					Action: meta.CreateMany,
+				},
+			},
+		}
 		return ps
 	}
 
-	if ps.hitRegexp(createKubePodRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 7 {
-			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+	if ps.hitRegexp(createKubePodsRegexp, http.MethodPost) {
+
+		option := new(types.CreatePodsOption)
+		body, err := ps.RequestCtx.getRequestBody()
+		if err != nil {
+			ps.err = err
 			return ps
 		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
+		if err := json.Unmarshal(body, option); err != nil {
+			ps.err = fmt.Errorf("unmarshal request body failed, err: %+v", err)
+			return ps
+		}
+
+		for _, data := range option.Data {
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					BusinessID: data.BizID,
+					Basic: meta.Basic{
+						Type:   meta.KubePod,
+						Action: meta.CreateMany,
+					},
+				},
+			}
+		}
 
 		return ps
 	}
@@ -1733,13 +1807,69 @@ func (ps *parseStream) container() *parseStream {
 			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
 			return ps
 		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
 
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.KubeNode,
+					Action: meta.FindMany,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(deleteKubeNodeRegexp, http.MethodDelete) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.KubeNode,
+					Action: meta.DeleteMany,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(updatemanyKubeNodeRegexp, http.MethodPut) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.KubeNode,
+					Action: meta.UpdateMany,
+				},
+			},
+		}
 		return ps
 	}
 
@@ -1748,13 +1878,21 @@ func (ps *parseStream) container() *parseStream {
 			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
 			return ps
 		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
 
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.Business,
+					InstanceID: bizID,
+					Action:     meta.ViewBusinessResource,
+				},
+			},
+		}
 		return ps
 	}
 
@@ -1763,12 +1901,20 @@ func (ps *parseStream) container() *parseStream {
 			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
 			return ps
 		}
-		//
-		//bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
-		//if err != nil {
-		//	ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
-		//	return ps
-		//}
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.Business,
+					InstanceID: bizID,
+					Action:     meta.ViewBusinessResource,
+				},
+			},
+		}
 
 		return ps
 	}

@@ -97,39 +97,39 @@ func (s *coreService) initContainerInstances(web *restful.WebService) {
 		Language: s.engine.Language,
 	})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/kube/create/cluster/{bk_biz_id}/instance",
-		Handler: s.CreateClusterInstance})
+		Path:    "/create/kube/cluster/{bk_biz_id}",
+		Handler: s.CreateCluster})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut,
-		Path:    "/kube/updatemany/cluster/{supplierAccount}/{bk_biz_id}/instance",
-		Handler: s.UpdateClusterInstance})
+		Path:    "/updatemany/kube/cluster/{supplierAccount}/{bk_biz_id}",
+		Handler: s.BatchUpdateCluster})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPut,
-		Path:    "/kube/updatemany/node/{supplierAccount}/{bk_biz_id}/instance",
-		Handler: s.UpdateNodeInstance})
+		Path:    "/updatemany/kube/node/{supplierAccount}/{bk_biz_id}",
+		Handler: s.BatchUpdateNode})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
-		Path:    "/kube/delete/cluster/{bk_biz_id}/instance",
-		Handler: s.DeleteClusterInstance})
+		Path:    "/deletemany/kube/cluster/{bk_biz_id}",
+		Handler: s.BatchDeleteCluster})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
-		Path:    "/kube/deletemany/node/{bk_biz_id}/instance",
-		Handler: s.BatchDeleteNodeInstance})
+		Path:    "/deletemany/kube/node/{bk_biz_id}",
+		Handler: s.BatchDeleteNode})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/kube/createmany/node/{bk_biz_id}/instance",
+		Path:    "/createmany/kube/node/{bk_biz_id}",
 		Handler: s.BatchCreateNode})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/kube/createmany/pod/{bk_biz_id}/instance",
+		Path:    "/createmany/kube/pod",
 		Handler: s.BatchCreatePod})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/kube/search/cluster/instances",
-		Handler: s.SearchClusterInstances})
+		Path:    "/findmany/kube/cluster",
+		Handler: s.SearchClusters})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/kube/search/node/instances",
-		Handler: s.SearchNodeInstances})
+		Path:    "/findmany/kube/node",
+		Handler: s.SearchNodes})
 
 	utility.AddToRestfulWebService(web)
 

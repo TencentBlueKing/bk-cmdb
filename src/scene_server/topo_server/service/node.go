@@ -18,6 +18,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -364,29 +365,40 @@ func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	nodeIDs, nodeIDUpdateFields := make([]int64, 0), make(map[int64]types.Node)
+
+	for _, node := range data.Nodes {
+		nodeIDs = append(nodeIDs, node.NodeIDs...)
+		for _, id := range node.NodeIDs {
+			nodeIDUpdateFields[id] = *node.Data
+		}
+	}
+
+	// duplicate nodeIDs are not allowed
+	nodeIDMap := make(map[int64]struct{})
+	for _, nodeID := range nodeIDs {
+		if _, ok := nodeIDMap[nodeID]; ok {
+			blog.Errorf("duplicate value for nodeID parameter, nodeID: %d, rid: %s", nodeID, ctx.Kit.Rid)
+			ctx.RespAutoError(errors.New("duplicate value for nodeID parameter"))
+			return
+		}
+		nodeIDMap[nodeID] = struct{}{}
+	}
+
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	nodeIDs := make([]int64, 0)
-	for _, node := range data.Nodes {
-		nodeIDs = append(nodeIDs, node.NodeIDs...)
-	}
-	cond := map[string]interface{}{
-		types.BKIDField: map[string]interface{}{
-			common.BKDBIN: nodeIDs,
-		},
-		common.BKAppIDField:   bizID,
-		common.BKOwnerIDField: ctx.Kit.SupplierAccount,
-	}
 
 	query := &metadata.QueryCondition{
-		Condition: cond,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
+		Condition: map[string]interface{}{
+			types.BKIDField:       map[string]interface{}{common.BKDBIN: nodeIDs},
+			common.BKAppIDField:   bizID,
+			common.BKOwnerIDField: ctx.Kit.SupplierAccount},
+		Page: metadata.BasePage{Limit: common.BKNoLimit},
 	}
 	result, err := s.Engine.CoreAPI.CoreService().Container().SearchNode(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
@@ -395,28 +407,34 @@ func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Engine.CoreAPI.CoreService().Container().UpdateNodeFields(ctx.Kit.Ctx, ctx.Kit.Header,
-			ctx.Kit.SupplierAccount, bizID, data)
-		if err != nil {
+		if err := s.Engine.CoreAPI.CoreService().Container().UpdateNodeFields(ctx.Kit.Ctx, ctx.Kit.Header,
+			ctx.Kit.SupplierAccount, bizID, data); err != nil {
 			blog.Errorf("create cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
-		// for audit log.
-		// todo:补充更新具体字段的信息
-		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
-		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
-		auditLog, err := audit.GenerateNodeAuditLog(generateAuditParameter, result.Data)
-		if err != nil {
-			blog.Errorf("update node failed, generate audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return err
-		}
 
-		err = audit.SaveAuditLog(ctx.Kit, auditLog...)
-		if err != nil {
-			blog.Errorf("update node failed, save audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCErrorf(common.CCErrAuditSaveLogFailed)
-		}
+		for _, node := range result.Data {
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
+			updateFields, err := mapstr.Struct2Map(nodeIDUpdateFields[node.ID])
+			if err != nil {
+				blog.Errorf("update fields convert failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
 
+			generateAuditParameter.WithUpdateFields(updateFields)
+			audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
+			auditLog, err := audit.GenerateNodeAuditLog(generateAuditParameter, result.Data)
+			if err != nil {
+				blog.Errorf("update node failed, generate audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
+
+			err = audit.SaveAuditLog(ctx.Kit, auditLog...)
+			if err != nil {
+				blog.Errorf("update node failed, save audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return ctx.Kit.CCError.CCErrorf(common.CCErrAuditSaveLogFailed)
+			}
+		}
 		return nil
 	})
 
@@ -426,5 +444,4 @@ func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
-
 }

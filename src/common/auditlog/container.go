@@ -30,14 +30,6 @@ type kubeAuditLog struct {
 	audit
 }
 
-// mockKube mocked kube related struct, used as a placeholder because the actual structs are not defined yet
-// TODO replace it with the actual struct for each generate audit log function, remove it after all is done
-type mockKube struct {
-	ID    *int64
-	Name  *string
-	BizID *int64
-}
-
 // GenerateClusterAuditLog generate audit log of kube cluster.
 func (c *kubeAuditLog) GenerateClusterAuditLog(param *generateAuditCommonParameter,
 	data []types.Cluster) ([]metadata.AuditLog, errors.CCErrorCoder) {

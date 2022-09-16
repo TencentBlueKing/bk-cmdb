@@ -38,7 +38,7 @@ const (
 )
 
 // NodeFields merge the fields of the cluster and the details corresponding to the fields together.
-var NodeFields = table.MergeFields(NodeSpecFieldsDescriptor)
+var NodeFields = table.MergeFields(CommonSpecFieldsDescriptor, BizIDDescriptor, NodeSpecFieldsDescriptor)
 
 // NodeSpecFieldsDescriptor node spec's fields descriptors.
 var NodeSpecFieldsDescriptor = table.FieldsDescriptors{
@@ -69,29 +69,7 @@ type Node struct {
 	ClusterID int64 `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
 	// ClusterUID the node ID to which the cluster belongs
 	ClusterUID string `json:"cluster_uid" bson:"cluster_uid"`
-	// NodeFields node base fields
-	NodeBaseFields `json:",inline" bson:",inline"`
-	// Revision record this app's revision information
-	table.Revision `json:",inline" bson:",inline"`
-}
 
-func initNodeFieldsType() {
-	typeOfCat := reflect.TypeOf(NodeBaseFields{})
-	valueOf := reflect.ValueOf(NodeBaseFields{})
-	for i := 0; i < typeOfCat.NumField(); i++ {
-		// 获取每个成员的结构体字段类型
-		for _, descripor := range NodeSpecFieldsDescriptor {
-			fieldType := typeOfCat.Field(i)
-			tag := fieldType.Tag.Get("json")
-			if descripor.Field == tag {
-				descripor.Type = enumor.GetFieldType(valueOf.Field(i).Type().String())
-			}
-		}
-	}
-}
-
-// NodeBaseFields node's basic attribute field description.
-type NodeBaseFields struct {
 	// HasPod this field indicates whether there is a pod in the node.
 	// if there is a pod, this field is true. If there is no pod, this
 	// field is false. this field is false when node is created by default.
@@ -107,29 +85,49 @@ type NodeBaseFields struct {
 	RuntimeComponent *string               `json:"runtime_component,omitempty" bson:"runtime_component"`
 	KubeProxyMode    *string               `json:"kube_proxy_mode,omitempty" bson:"kube_proxy_mode"`
 	PodCidr          *string               `json:"pod_cidr,omitempty" bson:"pod_cidr"`
+	// Revision record this app's revision information
+	table.Revision `json:",inline" bson:",inline"`
+}
+
+func initNodeFieldsType() {
+	typeOfCat := reflect.TypeOf(Node{})
+	valueOf := reflect.ValueOf(Node{})
+	for i := 0; i < typeOfCat.NumField(); i++ {
+		// 获取每个成员的结构体字段类型
+		for _, descripor := range NodeSpecFieldsDescriptor {
+			fieldType := typeOfCat.Field(i)
+			tag := fieldType.Tag.Get("json")
+			if descripor.Field == tag {
+				descripor.Type = enumor.GetFieldType(valueOf.Field(i).Type().String())
+			}
+		}
+	}
 }
 
 // CreateValidate validate the NodeBaseFields
-func (option *NodeBaseFields) CreateValidate() error {
+func (option *Node) CreateValidate() error {
 
 	if option == nil {
 		return errors.New("node information must be given")
 	}
 
 	// get a list of required fields.
-
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag := typeOfOption.Field(i).Tag.Get("json")
-		if !NodeFields.IsFieldRequiredByField(tag) {
+		// a variable with a non-null pointer gets the corresponding tag.
+		// for example, it needs to be compatible when the tag is "name,omitempty"
+		tagTmp := typeOfOption.Field(i).Tag.Get("json")
+		tags := strings.Split(tagTmp, ",")
+		if IsCommonField(tags[0]) {
 			continue
 		}
-		if NodeFields.IsFieldRequiredByField(tag) {
-			fieldValue := valueOfOption.Field(i)
-			if fieldValue.IsNil() {
-				return fmt.Errorf("required fields cannot be empty, %s", tag)
-			}
+		if !NodeFields.IsFieldRequiredByField(tags[0]) {
+			continue
+		}
+		fieldValue := valueOfOption.Field(i)
+		if fieldValue.IsNil() {
+			return fmt.Errorf("required fields cannot be empty, %s", tags[0])
 		}
 	}
 
@@ -139,7 +137,7 @@ func (option *NodeBaseFields) CreateValidate() error {
 	return nil
 }
 
-func (option *NodeBaseFields) validateNodeIP() error {
+func (option *Node) validateNodeIP() error {
 	if option.ExternalIP == nil && option.InternalIP == nil {
 		return errors.New("external_ip and internal_ip cannot be null at the same time")
 	}
@@ -159,7 +157,7 @@ func (option *NodeBaseFields) validateNodeIP() error {
 }
 
 // UpdateValidate verifying the validity of parameters for updating node scenarios
-func (option *NodeBaseFields) updateValidate() error {
+func (option *Node) updateValidate() error {
 
 	if option == nil {
 		return errors.New("node information must be given")
@@ -179,6 +177,9 @@ func (option *NodeBaseFields) updateValidate() error {
 		// for example, it needs to be compatible when the tag is "name,omitempty"
 		tagTmp := typeOfOption.Field(i).Tag.Get("json")
 		tags := strings.Split(tagTmp, ",")
+		if IsCommonField(tags[0]) {
+			continue
+		}
 		// 3、get whether it is an editable field based on tag
 		if !NodeFields.IsFieldEditableByField(tags[0]) {
 			return fmt.Errorf("field [%s] is a non-editable field", tags[0])
@@ -217,8 +218,8 @@ type OneNodeCreateOption struct {
 	// HostID the node ID to which the host belongs
 	HostID int64 `json:"bk_host_id" bson:"bk_host_id"`
 	// ClusterID the node ID to which the cluster belongs
-	ClusterID      int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
-	NodeBaseFields `json:",inline" bson:",inline"`
+	ClusterID int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
+	Node      `json:",inline" bson:",inline"`
 }
 
 // ValidateCreate validate the OneNodeCreateOption
@@ -312,8 +313,8 @@ type NodeKubeOption struct {
 
 // UpdateNodeInfo update individual node details.
 type UpdateNodeInfo struct {
-	NodeIDs []int64         `json:"ids"`
-	Data    *NodeBaseFields `json:"data"`
+	NodeIDs []int64 `json:"ids"`
+	Data    *Node   `json:"data"`
 }
 
 // UpdateNodeOption update node field option
@@ -333,7 +334,6 @@ func (option *UpdateNodeOption) Validate() error {
 			return errors.New("node_ids must be set")
 		}
 		if err := node.Data.updateValidate(); err != nil {
-
 			return err
 		}
 	}

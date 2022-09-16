@@ -29,7 +29,7 @@ import (
 	"configcenter/src/kube/types"
 )
 
-// SearchClusters 根据用户指定的条件查询cluster
+// SearchClusters query based on user-specified criteria cluster
 func (s *Service) SearchClusters(ctx *rest.Contexts) {
 
 	searchCond := new(types.QueryClusterOption)
@@ -69,7 +69,6 @@ func (s *Service) SearchClusters(ctx *rest.Contexts) {
 	// count biz in cluster enable count is set
 	if searchCond.Page.EnableCount {
 		filter := []map[string]interface{}{filter}
-
 		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
 			types.BKTableNameBaseCluster, filter)
 		if err != nil {
@@ -113,26 +112,23 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	clusterIDs := make([]int64, 0)
 	for _, cluster := range data.Clusters {
 		clusterIDs = append(clusterIDs, cluster.ID)
 	}
 
 	cond := map[string]interface{}{
-
-		types.BKIDField: map[string]interface{}{
-			common.BKDBIN: clusterIDs,
-		},
+		types.BKIDField:       map[string]interface{}{common.BKDBIN: clusterIDs},
 		common.BKAppIDField:   bizID,
 		common.BKOwnerIDField: ctx.Kit.SupplierAccount,
 	}
 
 	input := &metadata.QueryCondition{
 		Condition: cond,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 	}
+
 	result, err := s.Engine.CoreAPI.CoreService().Container().SearchCluster(ctx.Kit.Ctx, ctx.Kit.Header, input)
 	if err != nil {
 		blog.Errorf("search cluster failed, input: %#v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
@@ -141,10 +137,9 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 	}
 
 	if len(result.Data) != len(clusterIDs) {
-		blog.Errorf("the number of instances obtained is inconsistent with the param, bizID: %d, ids: %#v, err: %v,"+
-			" rid: %s", clusterIDs, err, ctx.Kit.Rid)
+		blog.Errorf("the number of instances obtained is inconsistent with the param, bizID: %d, ids: %#v, err: %v, "+
+			"rid: %s", bizID, clusterIDs, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrTopoInstUpdateFailed, "id"))
-
 		return
 	}
 
@@ -159,17 +154,26 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
 		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
 
-		// TODO：具体的更新字段
-		auditLog, err := audit.GenerateClusterAuditLog(generateAuditParameter, result.Data)
-		if err != nil {
-			blog.Errorf("create cluster, generate audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return err
-		}
+		for id, cluster := range result.Data {
+			updateFields, err := mapstr.Struct2Map(data.Clusters[id].Data)
+			if err != nil {
+				blog.Errorf("update fields convert failed, data: %+v, err: %v, rid: %s", data.Clusters[id].Data,
+					err, ctx.Kit.Rid)
+				return err
+			}
 
-		err = audit.SaveAuditLog(ctx.Kit, auditLog...)
-		if err != nil {
-			blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+			generateAuditParameter.WithUpdateFields(updateFields)
+			auditLog, err := audit.GenerateClusterAuditLog(generateAuditParameter, []types.Cluster{cluster})
+			if err != nil {
+				blog.Errorf("create cluster, generate audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
+
+			err = audit.SaveAuditLog(ctx.Kit, auditLog...)
+			if err != nil {
+				blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return ctx.Kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+			}
 		}
 		return nil
 	})
@@ -178,13 +182,12 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-
 	ctx.RespEntity(nil)
 }
 
 // CreateCluster create a container cluster
 func (s *Service) CreateCluster(ctx *rest.Contexts) {
-	data := new(types.ClusterBaseFields)
+	data := new(types.Cluster)
 	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return

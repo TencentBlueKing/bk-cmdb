@@ -17,7 +17,10 @@
 
 package types
 
-import "errors"
+import (
+	"configcenter/src/storage/dal/table"
+	"errors"
+)
 
 func init() {
 	initClusterFieldsType()
@@ -66,6 +69,40 @@ type Reference struct {
 type WorkloadSpec struct {
 	NamespaceSpec `json:",inline" bson:",inline"`
 	Ref           *Reference `json:"ref" bson:"ref"`
+}
+
+// CommonSpecFieldsDescriptor public field properties
+var CommonSpecFieldsDescriptor = table.FieldsDescriptors{
+	{Field: BKIDField, IsRequired: true, IsEditable: false},
+	{Field: BKSupplierAccountField, IsRequired: true, IsEditable: false},
+	{Field: CreatorField, IsRequired: true, IsEditable: false},
+	{Field: ModifierField, IsRequired: true, IsEditable: true},
+	{Field: CreateTimeField, IsRequired: true, IsEditable: false},
+	{Field: LastTimeField, IsRequired: true, IsEditable: true},
+}
+
+// BizIDDescriptor bizID descriptor is taken out separately and not placed in CommonSpecFieldsDescriptor because
+// bk_biz_id does not exist in the container table and needs to be processed separately.
+var BizIDDescriptor = table.FieldsDescriptors{
+	{Field: BKBizIDField, IsRequired: true, IsEditable: false},
+}
+
+// IsCommonField judges whether the field is a special field.
+// If it belongs to common fields or biz_id field, it needs
+// to skip unified verification whether it is creating a scene or updating a scene.
+func IsCommonField(field string) bool {
+	for _, commonDescriptor := range CommonSpecFieldsDescriptor {
+		if commonDescriptor.Field == field {
+			return true
+		}
+	}
+
+	for _, bizDescriptor := range BizIDDescriptor {
+		if field == bizDescriptor.Field {
+			return true
+		}
+	}
+	return false
 }
 
 // GetKubeSubTopoObject get the next-level topology resource object of the specified resource
@@ -229,10 +266,11 @@ type SpecInfo struct {
 	ClusterID *int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
 	// NamespaceID namespace id in cc
 	NamespaceID *int64 `json:"bk_namespace_id" bson:"bk_namespace_id"`
-	// WorkloadKind workload kind
-	WorkloadKind *string `json:"workload_kind" bson:"workload_kind"`
-	// WorkloadID workload id in cc
-	WorkloadID *int64 `json:"workload_id" bson:"workload_id"`
+	//// WorkloadKind workload kind
+	//WorkloadKind *string `json:"workload_kind" bson:"workload_kind"`
+	//// WorkloadID workload id in cc
+	//WorkloadID *int64 `json:"workload_id" bson:"workload_id"`
+	Ref Ref `json:"ref" bson:"ref"`
 	// NodeID node id in cc
 	NodeID *int64 `json:"bk_node_id" bson:"bk_node_id"`
 }
@@ -252,15 +290,15 @@ func (option *SpecInfo) validate() error {
 		return errors.New("node id must be set")
 	}
 
-	if option.WorkloadKind == nil {
+	if option.Ref.Kind == "" {
 		return errors.New("workload kind must be set")
 	}
 
-	if !IsInnerWorkload(WorkloadType(*option.WorkloadKind)) {
+	if !IsInnerWorkload(WorkloadType(option.Ref.Kind)) {
 		return errors.New("workload is illegal type")
 	}
 
-	if option.WorkloadID == nil || *option.WorkloadID == 0 {
+	if option.Ref.ID == 0 {
 		return errors.New("workload id must be set")
 	}
 

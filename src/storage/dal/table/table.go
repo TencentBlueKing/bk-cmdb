@@ -53,9 +53,9 @@ func MergeFields(all ...FieldsDescriptors) *Fields {
 	if len(all) == 0 {
 		return result
 	}
-
 	for _, col := range all {
 		for _, f := range col {
+
 			result.descriptors = append(result.descriptors, f)
 			result.fieldType[f.Field] = f.Type
 			result.fields = append(result.fields, f.Field)

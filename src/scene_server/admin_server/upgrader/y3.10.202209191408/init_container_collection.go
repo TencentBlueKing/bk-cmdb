@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_10_202207251408
+package y3_10_202209191408
 
 import (
 	"context"
@@ -26,6 +26,8 @@ import (
 	kubeTypes "configcenter/src/kube/types"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func addContainerCollection(ctx context.Context, db dal.RDB) error {
@@ -100,16 +102,19 @@ func addContainerCollectionIndex(ctx context.Context, db dal.RDB) error {
 func addContainerTableIndexes(ctx context.Context, db dal.RDB) error {
 	indexes := []types.Index{
 		{
-			Name:       common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
-			Keys:       map[string]int32{common.BKFieldID: 1},
+			Name: common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
+
+			Keys: bson.D{
+				{common.BKFieldID, 1},
+			},
 			Background: true,
 			Unique:     true,
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bk_pod_id_container_uid",
-			Keys: map[string]int32{
-				kubeTypes.BKPodIDField:      1,
-				kubeTypes.ContainerUIDField: 1,
+			Keys: bson.D{
+				{kubeTypes.BKPodIDField, 1},
+				{kubeTypes.ContainerUIDField, 1},
 			},
 			Background: true,
 			Unique:     true,
@@ -153,18 +158,18 @@ func addContainerTableIndexes(ctx context.Context, db dal.RDB) error {
 var podIndexes = []types.Index{
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
-		Keys: map[string]int32{
-			common.BKFieldID: 1,
+		Keys: bson.D{
+			{common.BKFieldID, 1},
 		},
 		Background: true,
 		Unique:     true,
 	},
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "bk_reference_id_reference_kind_name",
-		Keys: map[string]int32{
-			kubeTypes.RefIDField:   1,
-			kubeTypes.RefKindField: 1,
-			common.BKFieldName:     1,
+		Keys: bson.D{
+			{kubeTypes.RefIDField, 1},
+			{kubeTypes.RefKindField, 1},
+			{common.BKFieldName, 1},
 		},
 		Background: true,
 		Unique:     true,
@@ -172,37 +177,39 @@ var podIndexes = []types.Index{
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix +
 			"bk_biz_id_cluster_uid_namespace_reference_kind_reference_name_name",
-		Keys: map[string]int32{
-			common.BKAppIDField:       1,
-			kubeTypes.ClusterUIDField: 1,
-			kubeTypes.KubeNamespace:   1,
-			kubeTypes.RefKindField:    1,
-			kubeTypes.RefNameField:    1,
-			common.BKFieldName:        1,
+		Keys: bson.D{
+			{common.BKAppIDField, 1},
+			{kubeTypes.ClusterUIDField, 1},
+			{kubeTypes.KubeNamespace, 1},
+			{kubeTypes.RefKindField, 1},
+			{kubeTypes.RefNameField, 1},
+			{common.BKFieldName, 1},
 		},
 		Unique:     true,
 		Background: true,
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "bk_biz_id_reference_name_reference_kind",
-		Keys: map[string]int32{
-			common.BKAppIDField:    1,
-			kubeTypes.RefNameField: 1,
-			kubeTypes.RefKindField: 1,
+		Keys: bson.D{
+			{common.BKAppIDField, 1},
+			{kubeTypes.RefNameField, 1},
+			{kubeTypes.RefKindField, 1},
 		},
 		Background: true,
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "bk_reference_id_reference_kind",
-		Keys: map[string]int32{
-			kubeTypes.RefIDField:   1,
-			kubeTypes.RefKindField: 1,
+		Keys: bson.D{
+			{kubeTypes.RefIDField, 1},
+			{kubeTypes.RefKindField, 1},
 		},
 		Background: true,
 	},
 	{
-		Name:       common.CCLogicIndexNamePrefix + common.BKHostIDField,
-		Keys:       map[string]int32{common.BKHostIDField: 1},
+		Name: common.CCLogicIndexNamePrefix + common.BKHostIDField,
+		Keys: bson.D{
+			{common.BKHostIDField, 1},
+		},
 		Background: true,
 	},
 }
@@ -246,44 +253,48 @@ func addPodTableIndexes(ctx context.Context, db dal.RDB) error {
 func addWorkLoadTableIndexes(ctx context.Context, db dal.RDB, workLoadKind string) error {
 	indexes := []types.Index{
 		{
-			Name:       common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
-			Keys:       map[string]int32{common.BKFieldID: 1},
+			Name: common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
+			Keys: bson.D{
+				{common.BKFieldID, 1},
+			},
 			Background: true,
 			Unique:     true,
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bk_namespace_id_name",
-			Keys: map[string]int32{
-				kubeTypes.BKNamespaceIDField: 1,
-				common.BKFieldName:           1,
+			Keys: bson.D{
+				{kubeTypes.BKNamespaceIDField, 1},
+				{common.BKFieldName, 1},
 			},
 			Background: true,
 			Unique:     true,
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bk_biz_id_bk_cluster_uid_namespace_name",
-			Keys: map[string]int32{
-				common.BKAppIDField:       1,
-				kubeTypes.ClusterUIDField: 1,
-				kubeTypes.NamespaceField:  1,
-				common.BKFieldName:        1,
+			Keys: bson.D{
+				{common.BKAppIDField, 1},
+				{kubeTypes.ClusterUIDField, 1},
+				{kubeTypes.NamespaceField, 1},
+				{common.BKFieldName, 1},
 			},
 			Unique:     true,
 			Background: true,
 		},
 		{
-			Name:       common.CCLogicIndexNamePrefix + kubeTypes.ClusterUIDField,
-			Keys:       map[string]int32{kubeTypes.ClusterUIDField: 1},
+			Name: common.CCLogicIndexNamePrefix + kubeTypes.ClusterUIDField,
+			Keys: bson.D{
+				{kubeTypes.ClusterUIDField, 1},
+			},
 			Background: true,
 		},
 		{
 			Name:       common.CCLogicIndexNamePrefix + kubeTypes.BKClusterIDFiled,
-			Keys:       map[string]int32{kubeTypes.BKClusterIDFiled: 1},
+			Keys:       bson.D{{kubeTypes.BKClusterIDFiled, 1}},
 			Background: true,
 		},
 		{
 			Name:       common.CCLogicIndexNamePrefix + common.BKFieldName,
-			Keys:       map[string]int32{common.BKFieldName: 1},
+			Keys:       bson.D{{common.BKFieldName, 1}},
 			Background: true,
 		},
 	}
@@ -326,37 +337,37 @@ func addNamespaceTableIndexes(ctx context.Context, db dal.RDB) error {
 	indexes := []types.Index{
 		{
 			Name:       common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
-			Keys:       map[string]int32{common.BKFieldID: 1},
+			Keys:       bson.D{{common.BKFieldID, 1}},
 			Background: true,
 			Unique:     true,
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bk_cluster_id_name",
-			Keys: map[string]int32{
-				kubeTypes.BKClusterIDFiled: 1,
-				common.BKFieldName:         1,
+			Keys: bson.D{
+				{kubeTypes.BKClusterIDFiled, 1},
+				{common.BKFieldName, 1},
 			},
 			Background: true,
 			Unique:     true,
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bk_biz_id_cluster_uid_name",
-			Keys: map[string]int32{
-				common.BKAppIDField:       1,
-				kubeTypes.ClusterUIDField: 1,
-				common.BKFieldName:        1,
+			Keys: bson.D{
+				{common.BKAppIDField, 1},
+				{kubeTypes.ClusterUIDField, 1},
+				{common.BKFieldName, 1},
 			},
 			Unique:     true,
 			Background: true,
 		},
 		{
 			Name:       common.CCLogicIndexNamePrefix + kubeTypes.ClusterUIDField,
-			Keys:       map[string]int32{kubeTypes.ClusterUIDField: 1},
+			Keys:       bson.D{{kubeTypes.ClusterUIDField, 1}},
 			Background: true,
 		},
 		{
 			Name:       common.CCLogicIndexNamePrefix + kubeTypes.BKClusterIDFiled,
-			Keys:       map[string]int32{kubeTypes.BKClusterIDFiled: 1},
+			Keys:       bson.D{{kubeTypes.BKClusterIDFiled, 1}},
 			Background: true,
 		},
 	}
@@ -399,36 +410,36 @@ func addClusterTableIndexes(ctx context.Context, db dal.RDB) error {
 	indexes := []types.Index{
 		{
 			Name:       common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
-			Keys:       map[string]int32{common.BKFieldID: 1},
+			Keys:       bson.D{{common.BKFieldID, 1}},
 			Background: true,
 			Unique:     true,
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bk_biz_id_uid",
-			Keys: map[string]int32{
-				common.BKAppIDField: 1,
-				kubeTypes.UidField:  1,
+			Keys: bson.D{
+				{common.BKAppIDField, 1},
+				{kubeTypes.UidField, 1},
 			},
 			Background: true,
 			Unique:     true,
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bk_biz_id_name",
-			Keys: map[string]int32{
-				common.BKAppIDField: 1,
-				common.BKFieldName:  1,
+			Keys: bson.D{
+				{common.BKAppIDField, 1},
+				{common.BKFieldName, 1},
 			},
 			Unique:     true,
 			Background: true,
 		},
 		{
 			Name:       common.CCLogicIndexNamePrefix + common.BKAppIDField,
-			Keys:       map[string]int32{common.BKAppIDField: 1},
+			Keys:       bson.D{{common.BKAppIDField, 1}},
 			Background: true,
 		},
 		{
 			Name:       common.CCLogicIndexNamePrefix + kubeTypes.XidField,
-			Keys:       map[string]int32{kubeTypes.XidField: 1},
+			Keys:       bson.D{{kubeTypes.XidField, 1}},
 			Background: true,
 		},
 	}
@@ -471,42 +482,42 @@ func addNodeTableIndexes(ctx context.Context, db dal.RDB) error {
 	indexes := []types.Index{
 		{
 			Name:       common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
-			Keys:       map[string]int32{common.BKFieldID: 1},
+			Keys:       bson.D{{common.BKFieldID, 1}},
 			Background: true,
 			Unique:     true,
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bk_biz_id_cluster_uid_name",
-			Keys: map[string]int32{
-				common.BKAppIDField:       1,
-				kubeTypes.ClusterUIDField: 1,
-				common.BKFieldName:        1,
+			Keys: bson.D{
+				{common.BKAppIDField, 1},
+				{kubeTypes.ClusterUIDField, 1},
+				{common.BKFieldName, 1},
 			},
 			Background: true,
 			Unique:     true,
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bk_cluster_id_id",
-			Keys: map[string]int32{
-				kubeTypes.BKClusterIDFiled: 1,
-				common.BKFieldID:           1,
+			Keys: bson.D{
+				{kubeTypes.BKClusterIDFiled, 1},
+				{common.BKFieldID, 1},
 			},
 			Unique:     true,
 			Background: true,
 		},
 		{
 			Name:       common.CCLogicIndexNamePrefix + kubeTypes.ClusterUIDField,
-			Keys:       map[string]int32{kubeTypes.ClusterUIDField: 1},
+			Keys:       bson.D{{kubeTypes.ClusterUIDField, 1}},
 			Background: true,
 		},
 		{
 			Name:       common.CCLogicIndexNamePrefix + kubeTypes.BKClusterIDFiled,
-			Keys:       map[string]int32{kubeTypes.BKClusterIDFiled: 1},
+			Keys:       bson.D{{kubeTypes.BKClusterIDFiled, 1}},
 			Background: true,
 		},
 		{
 			Name:       common.CCLogicIndexNamePrefix + common.BKHostIDField,
-			Keys:       map[string]int32{common.BKHostIDField: 1},
+			Keys:       bson.D{{common.BKHostIDField, 1}},
 			Background: true,
 		},
 	}
