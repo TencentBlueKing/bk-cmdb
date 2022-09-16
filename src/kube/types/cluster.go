@@ -238,7 +238,12 @@ func (option *UpdateClusterOption) Validate() error {
 		return errors.New("cluster information must be given")
 	}
 
-	// get a list of required fields.
+	if len(option.Clusters) == 0 {
+		return errors.New("the params for updating the cluster must be set")
+	}
+	if len(option.Clusters) > maxUpdateClusterNum {
+		return fmt.Errorf("the number of update clusters cannot exceed %d at a time", maxUpdateClusterNum)
+	}
 
 	for _, one := range option.Clusters {
 		if one.ID == 0 {
