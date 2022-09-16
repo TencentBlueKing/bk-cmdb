@@ -117,8 +117,6 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 
 	case strings.Contains(string(*u), "/classificationobject"):
 		from, to, isHit = rootPath, topoRoot, true
-	case strings.Contains(string(*u), "/kube"):
-		from, to, isHit = rootPath, topoRoot, true
 	case strings.Contains(string(*u), "/objectattr"):
 		from, to, isHit = rootPath, topoRoot, true
 	case strings.Contains(string(*u), "/objectunique"):

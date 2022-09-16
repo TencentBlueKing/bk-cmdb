@@ -41,7 +41,7 @@ var PodSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: PriorityField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: IPField, Type: enumor.String, IsRequired: false, IsEditable: true},
-	{Field: IPsField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: IPsField, Type: enumor.Array, IsRequired: false, IsEditable: true},
 	{Field: ControlledBy, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: ContainerUIDField, Type: enumor.Array, IsRequired: false, IsEditable: true},
 	{Field: VolumesField, Type: enumor.Object, IsRequired: false, IsEditable: true},
