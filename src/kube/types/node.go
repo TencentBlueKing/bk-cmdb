@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
@@ -175,10 +176,11 @@ func (option *NodeBaseFields) updateValidate() error {
 			continue
 		}
 		// 2、a variable with a non-null pointer gets the corresponding tag.
-		tag := typeOfOption.Field(i).Tag.Get("json")
+		tagTmp := typeOfOption.Field(i).Tag.Get("json")
+		tags := strings.Split(tagTmp, ",")
 		// 3、get whether it is an editable field based on tag
-		if !NodeFields.IsFieldEditableByField(tag) {
-			return fmt.Errorf("field [%s] is a non-editable field", tag)
+		if !NodeFields.IsFieldEditableByField(tags[0]) {
+			return fmt.Errorf("field [%s] is a non-editable field", tags[0])
 		}
 	}
 	return nil

@@ -37,11 +37,10 @@ var PodFields = table.MergeFields(PodSpecFieldsDescriptor)
 // PodSpecFieldsDescriptor pod spec's fields descriptors.
 var PodSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
-	//	{Field: NamespaceField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: PriorityField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: IPField, Type: enumor.String, IsRequired: false, IsEditable: true},
-	{Field: IPsField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: IPsField, Type: enumor.Array, IsRequired: false, IsEditable: true},
 	{Field: ControlledBy, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: ContainerUIDField, Type: enumor.Array, IsRequired: false, IsEditable: true},
 	{Field: VolumesField, Type: enumor.Object, IsRequired: false, IsEditable: true},
