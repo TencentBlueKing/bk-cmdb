@@ -18,8 +18,10 @@
 package service
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/driver/mongodb"
@@ -46,4 +48,43 @@ func (s *coreService) ListPod(ctx *rest.Contexts) {
 
 	result := &types.PodDataResp{Info: pods}
 	ctx.RespEntity(result)
+}
+
+func (s *coreService) DeletePods(ctx *rest.Contexts) {
+	opt := new(types.DeletePodsByIDsOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// delete the containers in the pods
+	delContainerCond := mapstr.MapStr{
+		types.BKPodIDField: mapstr.MapStr{common.BKDBIN: opt.PodIDs},
+	}
+
+	err := mongodb.Client().Table(types.BKTableNameBaseContainer).Delete(ctx.Kit.Ctx, delContainerCond)
+	if err != nil {
+		blog.Errorf("delete containers failed, cond: %+v, err: %v, rid: %s", delContainerCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// delete the pods
+	delPodCond := mapstr.MapStr{
+		types.BKIDField: mapstr.MapStr{common.BKDBIN: opt.PodIDs},
+	}
+
+	err = mongodb.Client().Table(types.BKTableNameBasePod).Delete(ctx.Kit.Ctx, delPodCond)
+	if err != nil {
+		blog.Errorf("delete pods failed, cond: %+v, err: %v, rid: %s", delPodCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
 }

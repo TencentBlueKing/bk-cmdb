@@ -70,6 +70,9 @@ type KubeClientInterface interface {
 	// ListContainer list container
 	ListContainer(ctx context.Context, header http.Header, input *metadata.QueryCondition) (*types.ContainerDataResp,
 		errors.CCErrorCoder)
+
+	// DeletePods delete pods
+	DeletePods(ctx context.Context, h http.Header, opt *types.DeletePodsByIDsOption) errors.CCErrorCoder
 }
 
 // NewKubeClientInterface new kube client interface
