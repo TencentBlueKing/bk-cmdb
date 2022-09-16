@@ -60,6 +60,7 @@ func (s *Service) initKube(web *restful.WebService) {
 		Handler: s.FindPodPath})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/kube/findmany/pod/bk_biz_id/{bk_biz_id}",
 		Handler: s.ListPod})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/kube/deletemany/pod", Handler: s.DeletePods})
 
 	// container
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/kube/findmany/container/bk_biz_id/{bk_biz_id}",

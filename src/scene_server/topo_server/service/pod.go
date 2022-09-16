@@ -22,6 +22,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -252,4 +253,85 @@ func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(ids)
+}
+
+// DeletePods delete pods and their containers
+func (s *Service) DeletePods(ctx *rest.Contexts) {
+	opt := new(types.DeletePodsOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// get to delete pods and containers in them
+	orCond := make([]mapstr.MapStr, len(opt.Data))
+
+	for index, delData := range opt.Data {
+		orCond[index] = mapstr.MapStr{
+			common.BKAppIDField: delData.BizID,
+			types.BKIDField:     mapstr.MapStr{common.BKDBIN: delData.PodIDs},
+		}
+	}
+
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.BKDBOR: orCond},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+	}
+
+	podResp, err := s.Engine.CoreAPI.CoreService().Kube().ListPod(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	if err != nil {
+		blog.Errorf("find pod failed, cond: %v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// if all pods are already deleted, return
+	if len(podResp.Info) == 0 {
+		ctx.RespEntity(nil)
+		return
+	}
+
+	// generate audit logs
+	audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
+	auditLogs, err := audit.GeneratePodAuditLog(generateAuditParameter, podResp.Info)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// delete pods
+	podIDs := make([]int64, len(podResp.Info))
+	for index, pod := range podResp.Info {
+		podIDs[index] = pod.ID
+	}
+
+	delOpt := &types.DeletePodsByIDsOption{
+		PodIDs: podIDs,
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := s.Engine.CoreAPI.CoreService().Kube().DeletePods(ctx.Kit.Ctx, ctx.Kit.Header, delOpt)
+		if err != nil {
+			blog.Errorf("delete pods failed, opt: %+v, del opt: %+v, err: %v, rid: %s", opt, delOpt, err, ctx.Kit.Rid)
+			return err
+		}
+
+		// save audit logs
+		if err = audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
 }
