@@ -176,6 +176,7 @@ func (option *NodeBaseFields) updateValidate() error {
 			continue
 		}
 		// 2、a variable with a non-null pointer gets the corresponding tag.
+		// for example, it needs to be compatible when the tag is "name,omitempty"
 		tagTmp := typeOfOption.Field(i).Tag.Get("json")
 		tags := strings.Split(tagTmp, ",")
 		// 3、get whether it is an editable field based on tag
