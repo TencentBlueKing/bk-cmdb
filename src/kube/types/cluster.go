@@ -52,19 +52,6 @@ var ClusterSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: TypeField, IsRequired: false, IsEditable: true},
 }
 
-//var ClusterSpecFieldsDescriptor = table.FieldsDescriptors{
-//	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
-//	{Field: SchedulingEngineField, Type: enumor.String, IsRequired: false, IsEditable: false},
-//	{Field: UidField, Type: enumor.String, IsRequired: true, IsEditable: false},
-//	{Field: XidField, Type: enumor.String, IsRequired: false, IsEditable: false},
-//	{Field: VersionField, Type: enumor.String, IsRequired: false, IsEditable: true},
-//	{Field: NetworkTypeField, Type: enumor.Enum, IsRequired: false, IsEditable: true},
-//	{Field: RegionField, Type: enumor.String, IsRequired: false, IsEditable: true},
-//	{Field: VpcField, Type: enumor.String, IsRequired: false, IsEditable: false},
-//	{Field: NetworkField, Type: enumor.String, IsRequired: false, IsEditable: false},
-//	{Field: TypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
-//}
-
 // Cluster container cluster table structure
 type Cluster struct {
 	// ID cluster auto-increment ID in cc

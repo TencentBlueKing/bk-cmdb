@@ -54,20 +54,6 @@ var NodeSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: PodCidrField, IsRequired: false, IsEditable: true},
 }
 
-//var NodeSpecFieldsDescriptor = table.FieldsDescriptors{
-//	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
-//	{Field: RolesField, Type: enumor.Enum, IsRequired: false, IsEditable: true},
-//	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
-//	{Field: TaintsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
-//	{Field: UnschedulableField, Type: enumor.Boolean, IsRequired: false, IsEditable: true},
-//	{Field: InternalIPField, Type: enumor.Array, IsRequired: false, IsEditable: true},
-//	{Field: ExternalIPField, Type: enumor.Array, IsRequired: false, IsEditable: true},
-//	{Field: HostnameField, Type: enumor.String, IsRequired: false, IsEditable: true},
-//	{Field: RuntimeComponentField, Type: enumor.String, IsRequired: false, IsEditable: true},
-//	{Field: KubeProxyModeField, Type: enumor.String, IsRequired: false, IsEditable: true},
-//	{Field: PodCidrField, Type: enumor.String, IsRequired: false, IsEditable: true},
-//}
-
 // Node node structural description.
 type Node struct {
 	// ID cluster auto-increment ID in cc
