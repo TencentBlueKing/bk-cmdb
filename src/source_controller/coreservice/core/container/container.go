@@ -281,8 +281,8 @@ func (p *containerOperation) BatchCreatePod(kit *rest.Kit, bizID int64, data []t
 }
 
 // BatchCreateNode create container node data in batches.
-func (p *containerOperation) BatchCreateNode(kit *rest.Kit, bizID int64, data []types.OneNodeCreateOption) ([]*types.Node,
-	errors.CCErrorCoder) {
+func (p *containerOperation) BatchCreateNode(kit *rest.Kit, bizID int64, data []types.OneNodeCreateOption) (
+	[]*types.Node, errors.CCErrorCoder) {
 
 	names := make([]string, 0)
 	for _, node := range data {
