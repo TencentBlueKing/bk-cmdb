@@ -122,7 +122,7 @@ func (option *NodeBaseFields) CreateValidate() error {
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
 		tag := typeOfOption.Field(i).Tag.Get("json")
-		if !ClusterFields.IsFieldRequiredByField(tag) {
+		if !NodeFields.IsFieldRequiredByField(tag) {
 			continue
 		}
 		if NodeFields.IsFieldRequiredByField(tag) {
