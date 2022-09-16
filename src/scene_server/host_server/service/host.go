@@ -1782,8 +1782,8 @@ func (s *Service) getHostByKubeTopoFilter(kit *rest.Kit, req types.SearchHostReq
 
 	hostIDs := make([]int64, 0)
 	for _, pod := range resp.Info {
-		if *pod.HostID != 0 {
-			hostIDs = append(hostIDs, *pod.HostID)
+		if pod.HostID != 0 {
+			hostIDs = append(hostIDs, pod.HostID)
 		}
 	}
 	return hostIDs, nil
