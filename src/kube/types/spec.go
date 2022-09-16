@@ -29,13 +29,13 @@ func init() {
 // ClusterSpec describes the common attributes of cluster, it is used by the structure below it.
 type ClusterSpec struct {
 	// BizID business id in cc
-	BizID *int64 `json:"bk_biz_id" bson:"bk_biz_id"`
+	BizID *int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
 
 	// ClusterID cluster id in cc
-	ClusterID *int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
+	ClusterID *int64 `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
 
 	// ClusterUID cluster id in third party platform
-	ClusterUID *string `json:"cluster_uid" bson:"cluster_uid"`
+	ClusterUID *string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
 }
 
 // NamespaceSpec describes the common attributes of namespace, it is used by the structure below it.
@@ -43,16 +43,16 @@ type NamespaceSpec struct {
 	ClusterSpec `json:",inline" bson:",inline"`
 
 	// NamespaceID namespace id in cc
-	NamespaceID *int64 `json:"bk_namespace_id" bson:"bk_namespace_id"`
+	NamespaceID *int64 `json:"bk_namespace_id,omitempty" bson:"bk_namespace_id"`
 
 	// Namespace namespace name in third party platform
-	Namespace *string `json:"namespace" bson:"namespace"`
+	Namespace *string `json:"namespace,omitempty" bson:"namespace"`
 }
 
 // Reference store pod-related workload related information
 type Reference struct {
 	// Kind workload kind
-	Kind *string `json:"kind" bson:"kind"`
+	Kind *WorkloadType `json:"kind" bson:"kind"`
 
 	// Name workload name
 	Name *string `json:"name" bson:"name"`

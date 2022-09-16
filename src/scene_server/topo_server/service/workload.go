@@ -21,6 +21,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -38,9 +39,9 @@ func (s *Service) CreateWorkload(ctx *rest.Contexts) {
 	}
 
 	kind := types.WorkloadType(ctx.Request.PathParameter(types.KindField))
-	if !types.IsInnerWorkload(kind) {
-		blog.Errorf("workload kind is invalid, kind: %v, rid: %s", kind, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KindField))
+	if err := kind.Validate(); err != nil {
+		blog.Errorf("workload kind is invalid, kind: %v, err: %v, rid: %s", kind, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -60,6 +61,24 @@ func (s *Service) CreateWorkload(ctx *rest.Contexts) {
 		data, err = s.Engine.CoreAPI.CoreService().Kube().CreateWorkload(ctx.Kit.Ctx, ctx.Kit.Header, bizID, kind, &req)
 		if err != nil {
 			blog.Errorf("create workload failed, data: %v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
+			return err
+		}
+
+		// audit log.
+		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
+		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
+		for idx := range req.Data {
+			req.Data[idx].SetBizID(bizID)
+			req.Data[idx].SetID(data.IDs[idx])
+			req.Data[idx].SetSupplierAccount(ctx.Kit.SupplierAccount)
+		}
+		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, req.Data, kind)
+		if err != nil {
+			blog.Errorf("generate audit log failed, ids: %v, err: %v, rid: %s", data.IDs, err, ctx.Kit.Rid)
+			return err
+		}
+		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
+			blog.Errorf("save audit log failed, ids: %v, err: %v, rid: %s", data.IDs, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -83,8 +102,8 @@ func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
 	}
 
 	kind := types.WorkloadType(ctx.Request.PathParameter(types.KindField))
-	if !types.IsInnerWorkload(kind) {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KindField))
+	if err := kind.Validate(); err != nil {
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -99,10 +118,44 @@ func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
+	cond, err := req.BuildQueryCond(bizID, ctx.Kit.SupplierAccount)
+	if err != nil {
+		blog.Errorf("update workload failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req.Data, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	query := &metadata.QueryCondition{
+		Condition: cond,
+	}
+	workloads, err := s.listWorkload(ctx.Kit, query, kind)
+	if err != nil {
+		blog.Errorf("list workload failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req.Data, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(workloads) == 0 {
+		ctx.RespEntity(nil)
+		return
+	}
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Engine.CoreAPI.CoreService().Kube().UpdateWorkload(ctx.Kit.Ctx, ctx.Kit.Header, bizID, kind, &req)
 		if err != nil {
 			blog.Errorf("update workload failed, data: %v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
+			return err
+		}
+
+		// audit log.
+		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
+		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
+		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, workloads, kind)
+		if err != nil {
+			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", workloads, err, ctx.Kit.Rid)
+			return err
+		}
+		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
+			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", workloads, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -126,8 +179,8 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 	}
 
 	kind := types.WorkloadType(ctx.Request.PathParameter(types.KindField))
-	if !types.IsInnerWorkload(kind) {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KindField))
+	if err := kind.Validate(); err != nil {
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -142,10 +195,44 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 		return
 	}
 
+	cond, err := req.BuildCond(bizID, ctx.Kit.SupplierAccount)
+	if err != nil {
+		blog.Errorf("delete workload failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	query := &metadata.QueryCondition{
+		Condition: cond,
+	}
+	workloads, err := s.listWorkload(ctx.Kit, query, kind)
+	if err != nil {
+		blog.Errorf("list workload failed, bizID: %s, req: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(workloads) != len(req.IDs) {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
+		return
+	}
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Engine.CoreAPI.CoreService().Kube().DeleteWorkload(ctx.Kit.Ctx, ctx.Kit.Header, bizID, kind, &req)
 		if err != nil {
 			blog.Errorf("delete workload failed, data: %v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
+			return err
+		}
+
+		// audit log.
+		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
+		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
+		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, workloads, kind)
+		if err != nil {
+			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", workloads, err, ctx.Kit.Rid)
+			return err
+		}
+		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
+			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", workloads, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -159,6 +246,18 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+func (s *Service) listWorkload(kit *rest.Kit, query *metadata.QueryCondition, kind types.WorkloadType) (
+	[]types.WorkloadI, error) {
+
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListWorkload(kit.Ctx, kit.Header, query, kind)
+	if err != nil {
+		blog.Errorf("find workload failed, kind: %s, cond: %v, err: %v, rid: %s", kind, query, err, kit.Rid)
+		return nil, err
+	}
+
+	return resp.Info, nil
+}
+
 // ListWorkload list workload
 func (s *Service) ListWorkload(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
@@ -169,7 +268,7 @@ func (s *Service) ListWorkload(ctx *rest.Contexts) {
 	}
 
 	kind := types.WorkloadType(ctx.Request.PathParameter(types.KindField))
-	table, err := types.GetWorkloadTableName(kind)
+	table, err := kind.Table()
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KindField))
 		return
@@ -210,22 +309,23 @@ func (s *Service) ListWorkload(ctx *rest.Contexts) {
 	}
 
 	query := &metadata.QueryCondition{
-		Condition:      cond,
-		Page:           req.Page,
-		Fields:         req.Fields,
-		DisableCounter: true,
+		Condition: cond,
+		Page:      req.Page,
+		Fields:    req.Fields,
 	}
 
-	option := &types.QueryReq{
-		Table:     table,
-		Condition: query,
-	}
-	res, err := s.Engine.CoreAPI.CoreService().Kube().FindInst(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	workloads, err := s.listWorkload(ctx.Kit, query, kind)
 	if err != nil {
-		blog.Errorf("find workload failed, cond: %v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
+		blog.Errorf("list workload failed, bizID: %s, cond: %v, err: %v, rid: %s", bizID, query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(res)
+	if len(workloads) == 0 {
+		ctx.RespEntityWithCount(0, []mapstr.MapStr{})
+		return
+	}
+
+	ctx.RespEntityWithCount(0, workloads)
+
 }

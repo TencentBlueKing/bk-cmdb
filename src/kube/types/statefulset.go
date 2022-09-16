@@ -20,6 +20,7 @@ package types
 import (
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/kube/orm"
 )
 
@@ -50,24 +51,25 @@ type RollingUpdateStatefulSetStrategy struct {
 // StatefulSet define the statefulSet struct.
 type StatefulSet struct {
 	Workload              `json:",inline" bson:",inline"`
-	StrategyType          *StatefulSetUpdateStrategyType    `json:"strategy_type" bson:"strategy_type"`
-	RollingUpdateStrategy *RollingUpdateStatefulSetStrategy `json:"rolling_update_strategy" bson:"rolling_update_strategy"`
+	StrategyType          *StatefulSetUpdateStrategyType    `json:"strategy_type,omitempty" bson:"strategy_type"`
+	RollingUpdateStrategy *RollingUpdateStatefulSetStrategy `json:"rolling_update_strategy,omitempty" bson:"rolling_update_strategy"`
 }
 
 // StatefulSetUpdateData defines the statefulSet update data common operation.
 type StatefulSetUpdateData struct {
-	WlIdentification `json:",inline"`
-	Info             StatefulSet `json:"info"`
+	WlCommonUpdate `json:",inline"`
+	Info           StatefulSet `json:"info"`
 }
 
 // BuildUpdateData build statefulSet update data
-func (d *StatefulSetUpdateData) BuildUpdateData() (map[string]interface{}, error) {
+func (d *StatefulSetUpdateData) BuildUpdateData(user string) (map[string]interface{}, error) {
 	now := time.Now().Unix()
-	d.Info.UpdateTime = &now
 	opts := orm.NewFieldOptions().AddIgnoredFields(wlIgnoreField...)
 	updateData, err := orm.GetUpdateFieldsWithOption(d.Info, opts)
 	if err != nil {
 		return nil, err
 	}
+	updateData[common.LastTimeField] = now
+	updateData[common.ModifierField] = user
 	return updateData, err
 }

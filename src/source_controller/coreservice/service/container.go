@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/kube/types"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 // BatchCreatePod batch create nodes
@@ -199,4 +200,27 @@ func (s *coreService) BatchDeleteNodeInstance(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntityWithError(s.core.ContainerOperation().BatchDeleteNode(ctx.Kit, bizID, option))
+}
+
+// ListContainer list container
+func (s *coreService) ListContainer(ctx *rest.Contexts) {
+	input := new(metadata.QueryCondition)
+	if err := ctx.DecodeInto(input); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	containers := make([]types.Container, 0)
+	err := mongodb.Client().Table(types.BKTableNameBaseContainer).Find(input.Condition).Start(uint64(input.Page.Start)).
+		Limit(uint64(input.Page.Limit)).
+		Sort(input.Page.Sort).
+		Fields(input.Fields...).All(ctx.Kit.Ctx, &containers)
+	if err != nil {
+		blog.Errorf("search container failed, cond: %v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result := &types.ContainerDataResp{Info: containers}
+	ctx.RespEntity(result)
 }

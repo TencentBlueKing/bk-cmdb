@@ -25,8 +25,10 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
 	"configcenter/src/kube/orm"
 	"configcenter/src/kube/types"
+	"configcenter/src/storage/dal/table"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -77,8 +79,12 @@ func (s *coreService) CreateNamespace(ctx *rest.Contexts) {
 		data.ClusterSpec = *spec
 		data.ID = &id
 		now := time.Now().Unix()
-		data.CreateTime = &now
-		data.UpdateTime = &now
+		data.Revision = table.Revision{
+			Creator:    ctx.Kit.User,
+			Modifier:   ctx.Kit.User,
+			CreateTime: now,
+			LastTime:   now,
+		}
 		data.SupplierAccount = &ctx.Kit.SupplierAccount
 
 		err = mongodb.Client().Table(types.BKTableNameBaseNamespace).Insert(ctx.Kit.Ctx, &data)
@@ -156,34 +162,16 @@ func (s *coreService) UpdateNamespace(ctx *rest.Contexts) {
 
 	// build filter
 	for _, data := range req.Data {
-		var filter map[string]interface{}
-		if len(data.ID) != 0 {
-			filter = map[string]interface{}{
-				common.BKAppIDField:   bizID,
-				common.BKOwnerIDField: ctx.Kit.SupplierAccount,
-				common.BKFieldID: map[string]interface{}{
-					common.BKDBIN: data.ID,
-				},
-			}
-		}
-
-		if len(data.Unique) != 0 {
-			orCond := make([]map[string]interface{}, 0)
-			for _, unique := range data.Unique {
-				cond := map[string]interface{}{
-					types.ClusterUIDField: unique.ClusterUID,
-					common.BKFieldName:    unique.Name,
-				}
-				orCond = append(orCond, cond)
-			}
-			filter = map[string]interface{}{
-				common.BKAppIDField:   bizID,
-				common.BKOwnerIDField: ctx.Kit.SupplierAccount,
-				common.BKDBOR:         orCond,
-			}
+		filter := map[string]interface{}{
+			common.BKAppIDField:   bizID,
+			common.BKOwnerIDField: ctx.Kit.SupplierAccount,
+			common.BKFieldID: map[string]interface{}{
+				common.BKDBIN: data.IDs,
+			},
 		}
 		now := time.Now().Unix()
-		data.Info.UpdateTime = &now
+		data.Info.LastTime = now
+		data.Info.Modifier = ctx.Kit.User
 		// build update data
 		opts := orm.NewFieldOptions().AddIgnoredFields(common.BKFieldID, types.ClusterUIDField, common.BKFieldName)
 		updateData, err := orm.GetUpdateFieldsWithOption(data.Info, opts)
@@ -226,30 +214,40 @@ func (s *coreService) DeleteNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	for _, data := range req.Data {
-		var filter map[string]interface{}
-		if data.ID != 0 {
-			filter = map[string]interface{}{
-				common.BKAppIDField:   bizID,
-				common.BKOwnerIDField: ctx.Kit.SupplierAccount,
-				common.BKFieldID:      data.ID,
-			}
-		} else {
-			filter = map[string]interface{}{
-				common.BKAppIDField:   bizID,
-				common.BKOwnerIDField: ctx.Kit.SupplierAccount,
-				types.ClusterUIDField: data.ClusterUID,
-				common.BKFieldName:    data.Name,
-			}
-		}
-
-		err = mongodb.Client().Table(types.BKTableNameBaseNamespace).Delete(ctx.Kit.Ctx, filter)
-		if err != nil {
-			blog.Errorf("delete namespace failed, filter: %v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))
-			return
-		}
+	filter, err := req.BuildCond(bizID, ctx.Kit.SupplierAccount)
+	if err != nil {
+		blog.Errorf("delete namespace failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Delete(ctx.Kit.Ctx, filter); err != nil {
+		blog.Errorf("delete namespace failed, filter: %v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))
+		return
 	}
 
 	ctx.RespEntity(nil)
+}
+
+// ListNamespace list namespace
+func (s *coreService) ListNamespace(ctx *rest.Contexts) {
+	input := new(metadata.QueryCondition)
+	if err := ctx.DecodeInto(input); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	namespaces := make([]types.Namespace, 0)
+	err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Find(input.Condition).Start(uint64(input.Page.Start)).
+		Limit(uint64(input.Page.Limit)).
+		Sort(input.Page.Sort).
+		Fields(input.Fields...).All(ctx.Kit.Ctx, &namespaces)
+	if err != nil {
+		blog.Errorf("search namespace failed, cond: %v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result := &types.NsDataResp{Data: namespaces}
+	ctx.RespEntity(result)
 }

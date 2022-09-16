@@ -79,14 +79,3 @@ func (q *QueryFieldValReq) Validate() errors.RawErrorInfo {
 
 	return errors.RawErrorInfo{}
 }
-
-// MapStrFieldVal map string type field value
-type MapStrFieldVal struct {
-	Info map[string][]KV `json:"info"`
-}
-
-// KV key value pair struct
-type KV struct {
-	Key string      `json:"key"`
-	Val interface{} `json:"val"`
-}

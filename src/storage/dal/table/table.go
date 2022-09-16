@@ -179,10 +179,10 @@ type FieldDescriptor struct {
 
 // Revision resource revision information.
 type Revision struct {
-	Creator    string `json:"creator" bson:"creator"`
-	Modifier   string `json:"modifier" bson:"modifier"`
-	CreateTime int64  `json:"create_time" bson:"create_time"`
-	LastTime   int64  `json:"last_time" bson:"last_time"`
+	Creator    string `json:"creator,omitempty" bson:"creator"`
+	Modifier   string `json:"modifier,omitempty" bson:"modifier"`
+	CreateTime int64  `json:"create_time,omitempty" bson:"create_time"`
+	LastTime   int64  `json:"last_time,omitempty" bson:"last_time"`
 }
 
 // ValidateCreate validation of parameters in the creation scene.

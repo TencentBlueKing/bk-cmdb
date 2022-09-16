@@ -18,6 +18,7 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -66,19 +67,14 @@ func (s *Service) FindPodPath(ctx *rest.Contexts) {
 		Condition: cond,
 		Fields:    fields,
 	}
-	option := &types.QueryReq{
-		Table:     types.BKTableNameBasePod,
-		Condition: query,
-	}
-
-	result, err := s.Engine.CoreAPI.CoreService().Kube().FindInst(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListPod(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
-		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
+		blog.Errorf("find pod failed, cond: %v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	paths, err := s.buildPodPaths(ctx.Kit, bizName, result.Info)
+	paths, err := s.buildPodPaths(ctx.Kit, bizName, resp.Info)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -89,75 +85,56 @@ func (s *Service) FindPodPath(ctx *rest.Contexts) {
 	})
 }
 
-func (s *Service) buildPodPaths(kit *rest.Kit, bizName string, pods []mapstr.MapStr) ([]types.PodPath, error) {
+func (s *Service) buildPodPaths(kit *rest.Kit, bizName string, pods []types.Pod) ([]types.PodPath, error) {
 	paths := make([]types.PodPath, 0)
 	clusterIDs := make([]int64, 0)
 	for _, pod := range pods {
-		id, err := pod.Int64(common.BKFieldID)
-		if err != nil {
-			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", common.BKFieldID, pod, err,
-				kit.Rid)
-			return nil, err
-		}
+		id := pod.ID
 
-		clusterID, err := pod.Int64(types.BKClusterIDFiled)
-		if err != nil {
-			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.BKClusterIDFiled, pod,
-				err, kit.Rid)
-			return nil, err
+		if pod.ClusterID == 0 {
+			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.BKClusterIDFiled,
+				kit.Rid)
+			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.BKClusterIDFiled)
 		}
+		clusterID := pod.ClusterID
 		clusterIDs = append(clusterIDs, clusterID)
 
-		namespaceID, err := pod.Int64(types.BKNamespaceIDField)
-		if err != nil {
-			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.BKNamespaceIDField, pod,
-				err, kit.Rid)
-			return nil, err
-		}
-
-		namespace, err := pod.String(types.NamespaceField)
-		if err != nil {
-			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.NamespaceField, pod,
-				err, kit.Rid)
-			return nil, err
-		}
-
-		ref, err := pod.MapStr(types.RefField)
-		if err != nil {
-			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefField, pod, err,
+		if pod.NameSpaceID == 0 {
+			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.BKNamespaceIDField,
 				kit.Rid)
-			return nil, err
+			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.BKNamespaceIDField)
 		}
+		namespaceID := pod.NameSpaceID
 
-		workloadID, err := ref.Int64(common.BKFieldID)
-		if err != nil {
-			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefIDField, pod, err,
-				kit.Rid)
-			return nil, err
+		if pod.NameSpace == "" {
+			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.NamespaceField, kit.Rid)
+			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.NamespaceField)
 		}
+		namespace := pod.NameSpace
 
-		workloadName, err := ref.String(common.BKFieldName)
-		if err != nil {
-			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefNameField, pod, err,
-				kit.Rid)
-			return nil, err
+		//
+		if pod.Workload.Kind == "" {
+			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefKindField, kit.Rid)
+			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.RefKindField)
 		}
-
-		workloadKind, err := ref.String(types.KindField)
-		if err != nil {
-			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefKindField, pod, err,
-				kit.Rid)
-			return nil, err
+		if pod.Workload.Name == "" {
+			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefNameField, kit.Rid)
+			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.RefNameField)
 		}
+		if pod.Workload.ID == 0 {
+			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefIDField, kit.Rid)
+			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.RefIDField)
+		}
+		ref := pod.Workload
 
 		path := types.PodPath{
 			BizName:      bizName,
 			ClusterID:    clusterID,
 			NamespaceID:  namespaceID,
 			Namespace:    namespace,
-			Kind:         types.WorkloadType(workloadKind),
-			WorkloadID:   workloadID,
-			WorkloadName: workloadName,
+			Kind:         types.WorkloadType(ref.Kind),
+			WorkloadID:   ref.ID,
+			WorkloadName: ref.Name,
 			PodID:        id,
 		}
 		paths = append(paths, path)
@@ -222,24 +199,18 @@ func (s *Service) ListPod(ctx *rest.Contexts) {
 	}
 
 	query := &metadata.QueryCondition{
-		Condition:      cond,
-		Page:           req.Page,
-		Fields:         req.Fields,
-		DisableCounter: true,
+		Condition: cond,
+		Page:      req.Page,
+		Fields:    req.Fields,
 	}
-
-	option := &types.QueryReq{
-		Table:     types.BKTableNameBasePod,
-		Condition: query,
-	}
-	res, err := s.Engine.CoreAPI.CoreService().Kube().FindInst(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListPod(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		blog.Errorf("find pod failed, cond: %v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(res)
+	ctx.RespEntityWithCount(0, resp.Info)
 }
 
 // BatchCreatePod batch create pods.

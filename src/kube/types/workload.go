@@ -19,7 +19,6 @@ package types
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"configcenter/src/common"
@@ -84,25 +83,28 @@ type WorkloadI interface {
 	ValidateCreate() errors.RawErrorInfo
 	ValidateUpdate() errors.RawErrorInfo
 	SetID(id int64)
-	SetCreateTime(createTime int64)
-	SetUpdateTime(updateTime int64)
-	GetNamespaceSpec() NamespaceSpec
+	SetBizID(bizID int64)
+	SetCreateMsg(revision table.Revision)
 	SetNamespaceSpec(spec NamespaceSpec)
 	SetSupplierAccount(supplierAccount string)
+	GetNamespaceSpec() NamespaceSpec
+	GetBizID() *int64
+	GetID() *int64
+	GetName() *string
 }
 
 // Workload define the workload common struct.
 type Workload struct {
 	NamespaceSpec   `json:",inline" bson:",inline"`
-	ID              *int64             `json:"id" bson:"id"`
-	Name            *string            `json:"name" bson:"name"`
-	Labels          *map[string]string `json:"labels" bson:"labels"`
-	Selector        *LabelSelector     `json:"selector" bson:"selector"`
-	Replicas        *int64             `json:"replicas" bson:"replicas"`
-	MinReadySeconds *int64             `json:"min_ready_seconds" bson:"min_ready_seconds"`
-	CreateTime      *int64             `json:"create_time" bson:"create_time"`
-	UpdateTime      *int64             `json:"update_time" bson:"update_time"`
-	SupplierAccount *string            `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ID              *int64             `json:"id,omitempty" bson:"id"`
+	Name            *string            `json:"name,omitempty" bson:"name"`
+	Labels          *map[string]string `json:"labels,omitempty" bson:"labels"`
+	Selector        *LabelSelector     `json:"selector,omitempty" bson:"selector"`
+	Replicas        *int64             `json:"replicas,omitempty" bson:"replicas"`
+	MinReadySeconds *int64             `json:"min_ready_seconds,omitempty" bson:"min_ready_seconds"`
+	SupplierAccount *string            `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	// Revision record this app's revision information
+	table.Revision `json:",inline" bson:",inline"`
 }
 
 // ValidateCreate validate create workload
@@ -110,7 +112,7 @@ func (w *Workload) ValidateCreate() errors.RawErrorInfo {
 	if w.NamespaceID == nil && (w.ClusterUID == nil || w.Namespace == nil) {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{BKNamespaceIDField + " or <" + ClusterUIDField + " and " + NamespaceField + " >"},
+			Args:    []interface{}{BKNamespaceIDField + " or < " + ClusterUIDField + " and " + NamespaceField + " >"},
 		}
 	}
 
@@ -120,9 +122,9 @@ func (w *Workload) ValidateCreate() errors.RawErrorInfo {
 		}
 	}
 
-	if w.Name == nil {
+	if w.Name == nil || *w.Name == "" {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{common.BKFieldName},
 		}
 	}
@@ -141,14 +143,14 @@ func (w *Workload) SetID(id int64) {
 	w.ID = &id
 }
 
-// SetCreateTime set create time
-func (w *Workload) SetCreateTime(createTime int64) {
-	w.CreateTime = &createTime
+// SetBizID set bizID
+func (w *Workload) SetBizID(bizID int64) {
+	w.BizID = &bizID
 }
 
-// SetUpdateTime set update time
-func (w *Workload) SetUpdateTime(updateTime int64) {
-	w.UpdateTime = &updateTime
+// SetCreateMsg set create message
+func (w *Workload) SetCreateMsg(revision table.Revision) {
+	w.Revision = revision
 }
 
 // SetSupplierAccount set supplierAccount
@@ -156,14 +158,29 @@ func (w *Workload) SetSupplierAccount(supplierAccount string) {
 	w.SupplierAccount = &supplierAccount
 }
 
+// SetNamespaceSpec set namespace spec
+func (w *Workload) SetNamespaceSpec(spec NamespaceSpec) {
+	w.NamespaceSpec = spec
+}
+
 // GetNamespaceSpec get namespace spec
 func (w *Workload) GetNamespaceSpec() NamespaceSpec {
 	return w.NamespaceSpec
 }
 
-// SetNamespaceSpec set namespace spec
-func (w *Workload) SetNamespaceSpec(spec NamespaceSpec) {
-	w.NamespaceSpec = spec
+// GetBizID get workload biz id
+func (w *Workload) GetBizID() *int64 {
+	return w.BizID
+}
+
+// GetID get workload id
+func (w *Workload) GetID() *int64 {
+	return w.ID
+}
+
+// GetName get workload name
+func (w *Workload) GetName() *string {
+	return w.Name
 }
 
 // LabelSelector a label selector is a label query over a set of resources.
@@ -197,108 +214,44 @@ type IntOrString struct {
 	StrVal string `json:"str_val" bson:"str_val"`
 }
 
-// WlIdentification workload unique identity to identify workload
-type WlIdentification struct {
-	ID     []int64    `json:"id"`
-	Unique []WlUnique `json:"unique"`
+// WlCommonUpdate workload common update value and function
+type WlCommonUpdate struct {
+	IDs []int64 `json:"ids"`
 }
 
-// Count return namespace update data count
-func (w *WlIdentification) Count() int {
-	if len(w.ID) != 0 {
-		return len(w.ID)
-	}
-
-	if len(w.Unique) != 0 {
-		return len(w.Unique)
-	}
-
-	return 0
+// GetIDs get update workload ids
+func (w *WlCommonUpdate) GetIDs() []int64 {
+	return w.IDs
 }
 
-// Validate validate WlIdentification
-func (w *WlIdentification) Validate() errors.RawErrorInfo {
-	if len(w.ID) == 0 && len(w.Unique) == 0 {
+// Validate validate WlCommonUpdate
+func (w *WlCommonUpdate) Validate() errors.RawErrorInfo {
+	if len(w.IDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"id and unique"},
+			Args:    []interface{}{"ids"},
 		}
 	}
 
-	if len(w.ID) != 0 && len(w.Unique) != 0 {
+	if len(w.IDs) >= WlUpdateLimit {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"id and unique"},
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"data", WlUpdateLimit},
 		}
 	}
-
 	return errors.RawErrorInfo{}
 }
 
 // BuildUpdateFilter build update filter
-func (w *WlIdentification) BuildUpdateFilter(bizID int64, supplierAccount string) map[string]interface{} {
-	var filter map[string]interface{}
-	if len(w.ID) != 0 {
-		filter = map[string]interface{}{
-			common.BKAppIDField:   bizID,
-			common.BKOwnerIDField: supplierAccount,
-			common.BKFieldID: map[string]interface{}{
-				common.BKDBIN: w.ID,
-			},
-		}
-	}
-
-	if len(w.Unique) != 0 {
-		orCond := make([]map[string]interface{}, 0)
-		for _, unique := range w.Unique {
-			cond := map[string]interface{}{
-				ClusterUIDField:    unique.ClusterUID,
-				NamespaceField:     unique.Namespace,
-				common.BKFieldName: unique.Name,
-			}
-			orCond = append(orCond, cond)
-		}
-		filter = map[string]interface{}{
-			common.BKAppIDField:   bizID,
-			common.BKOwnerIDField: supplierAccount,
-			common.BKDBOR:         orCond,
-		}
+func (w *WlCommonUpdate) BuildUpdateFilter(bizID int64, supplierAccount string) map[string]interface{} {
+	filter := map[string]interface{}{
+		common.BKAppIDField:   bizID,
+		common.BKOwnerIDField: supplierAccount,
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBIN: w.IDs,
+		},
 	}
 	return filter
-}
-
-// WlUnique workload unique identification
-type WlUnique struct {
-	ClusterUID string `json:"cluster_uid" bson:"cluster_uid"`
-	Namespace  string `json:"namespace" bson:"namespace"`
-	Name       string `json:"name" bson:"name"`
-	ID         int64  `json:"id" bson:"id"`
-}
-
-// Validate validate WlUnique
-func (wl *WlUnique) Validate() errors.RawErrorInfo {
-	if wl.Name != "" && wl.ClusterUID != "" && wl.Namespace != "" && wl.ID != 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"data"},
-		}
-	}
-
-	if wl.Name == "" && wl.ClusterUID == "" && wl.Namespace != "" && wl.ID == 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"data"},
-		}
-	}
-
-	if wl.ID == 0 && (wl.Namespace == "" || wl.ClusterUID == "" || wl.Name == "") {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"data"},
-		}
-	}
-
-	return errors.RawErrorInfo{}
 }
 
 type jsonWlUpdateReq struct {
@@ -319,8 +272,12 @@ func (w *WlUpdateReq) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	if req.Data == nil || !IsInnerWorkload(kind) {
+	if req.Data == nil {
 		return nil
+	}
+
+	if err := kind.Validate(); err != nil {
+		return err
 	}
 
 	switch kind {
@@ -369,6 +326,33 @@ func (w *WlUpdateReq) UnmarshalJSON(data []byte) error {
 			w.Data = append(w.Data, data)
 		}
 
+	case KubeCronJob:
+		array := make([]*CronJobUpdateData, 0)
+		if err := json.Unmarshal(req.Data, &array); err != nil {
+			return err
+		}
+		for _, data := range array {
+			w.Data = append(w.Data, data)
+		}
+
+	case KubeJob:
+		array := make([]*JobUpdateData, 0)
+		if err := json.Unmarshal(req.Data, &array); err != nil {
+			return err
+		}
+		for _, data := range array {
+			w.Data = append(w.Data, data)
+		}
+
+	case KubePodWorkload:
+		array := make([]*PodsWorkloadUpdateData, 0)
+		if err := json.Unmarshal(req.Data, &array); err != nil {
+			return err
+		}
+		for _, data := range array {
+			w.Data = append(w.Data, data)
+		}
+
 	default:
 		array := make([]*WlUpdateData, 0)
 		if err := json.Unmarshal(req.Data, &array); err != nil {
@@ -381,9 +365,24 @@ func (w *WlUpdateReq) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// BuildQueryCond build query workload condition
+func (w *WlUpdateReq) BuildQueryCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
+	ids := make([]int64, 0)
+	for _, data := range w.Data {
+		ids = append(ids, data.GetIDs()...)
+	}
+	cond := mapstr.MapStr{
+		common.BKAppIDField:      bizID,
+		common.BkSupplierAccount: supplierAccount,
+		common.BKFieldID:         mapstr.MapStr{common.BKDBIN: ids},
+	}
+
+	return cond, nil
+}
+
 // Validate validate workload update request data
-func (d *WlUpdateReq) Validate() errors.RawErrorInfo {
-	if len(d.Data) == 0 {
+func (w *WlUpdateReq) Validate() errors.RawErrorInfo {
+	if len(w.Data) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"data"},
@@ -391,12 +390,12 @@ func (d *WlUpdateReq) Validate() errors.RawErrorInfo {
 	}
 
 	sum := 0
-	for _, data := range d.Data {
+	for _, data := range w.Data {
 		if err := data.Validate(); err.ErrCode != 0 {
 			return err
 		}
 
-		sum += data.Count()
+		sum += len(data.GetIDs())
 		if sum > WlUpdateLimit {
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommXXExceedLimit,
@@ -411,60 +410,182 @@ func (d *WlUpdateReq) Validate() errors.RawErrorInfo {
 // WlUpdateDataI defines the workload update data common operation.
 type WlUpdateDataI interface {
 	Validate() errors.RawErrorInfo
-	Count() int
+	GetIDs() []int64
 	BuildUpdateFilter(bizID int64, supplierAccount string) map[string]interface{}
-	BuildUpdateData() (map[string]interface{}, error)
+	BuildUpdateData(user string) (map[string]interface{}, error)
 }
 
 // WlUpdateData defines the workload update data common operation.
 type WlUpdateData struct {
-	WlIdentification `json:",inline"`
-	Info             Workload `json:"info"`
+	WlCommonUpdate `json:",inline"`
+	Info           Workload `json:"info"`
 }
 
 // BuildUpdateData build workload update data
-func (w *WlUpdateData) BuildUpdateData() (map[string]interface{}, error) {
+func (w *WlUpdateData) BuildUpdateData(user string) (map[string]interface{}, error) {
 	now := time.Now().Unix()
-	w.Info.UpdateTime = &now
 	opts := orm.NewFieldOptions().AddIgnoredFields(wlIgnoreField...)
 	updateData, err := orm.GetUpdateFieldsWithOption(w.Info, opts)
 	if err != nil {
 		return nil, err
 	}
+	updateData[common.LastTimeField] = now
+	updateData[common.ModifierField] = user
 	return updateData, err
 }
 
 // WlDeleteReq workload delete request
 type WlDeleteReq struct {
-	Data []WlUnique `json:"data"`
+	IDs []int64 `json:"ids"`
 }
 
 // Validate validate WlDeleteReq
 func (ns *WlDeleteReq) Validate() errors.RawErrorInfo {
-	if len(ns.Data) == 0 {
+	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"data"},
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"ids"},
 		}
 	}
 
-	if len(ns.Data) > WlDeleteLimit {
+	if len(ns.IDs) > WlDeleteLimit {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommXXExceedLimit,
-			Args:    []interface{}{"data", WlDeleteLimit},
-		}
-	}
-
-	for _, data := range ns.Data {
-		if err := data.Validate(); err.ErrCode != 0 {
-			return err
+			Args:    []interface{}{"ids", WlDeleteLimit},
 		}
 	}
 
 	return errors.RawErrorInfo{}
 }
 
-type jsonWlCreateReq struct {
+// BuildCond build delete workload condition
+func (wl *WlDeleteReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
+	cond := mapstr.MapStr{
+		common.BKAppIDField:      bizID,
+		common.BkSupplierAccount: supplierAccount,
+		common.BKFieldID:         mapstr.MapStr{common.BKDBIN: wl.IDs},
+	}
+	return cond, nil
+}
+
+// WlDataResp workload data
+type WlDataResp struct {
+	Kind WorkloadType `json:"kind"`
+	Info []WorkloadI  `json:"info"`
+}
+
+type jsonWlInfo struct {
+	Info json.RawMessage `json:"info"`
+}
+
+// UnmarshalJSON unmarshal WlDataResp
+func (w *WlDataResp) UnmarshalJSON(data []byte) error {
+	kind := w.Kind
+	wlData := jsonWlInfo{}
+	if err := json.Unmarshal(data, &wlData); err != nil {
+		return err
+	}
+
+	if err := kind.Validate(); err != nil {
+		return err
+	}
+
+	if wlData.Info == nil {
+		return nil
+	}
+
+	switch kind {
+	case KubeDeployment:
+		array := make([]*Deployment, 0)
+		if err := json.Unmarshal(wlData.Info, &array); err != nil {
+			return err
+		}
+		for _, data := range array {
+			w.Info = append(w.Info, data)
+		}
+
+	case KubeStatefulSet:
+		array := make([]*StatefulSet, 0)
+		if err := json.Unmarshal(wlData.Info, &array); err != nil {
+			return err
+		}
+		for _, data := range array {
+			w.Info = append(w.Info, data)
+		}
+
+	case KubeDaemonSet:
+		array := make([]*DaemonSet, 0)
+		if err := json.Unmarshal(wlData.Info, &array); err != nil {
+			return err
+		}
+		for _, data := range array {
+			w.Info = append(w.Info, data)
+		}
+
+	case KubeGameDeployment:
+		array := make([]*GameDeployment, 0)
+		if err := json.Unmarshal(wlData.Info, &array); err != nil {
+			return err
+		}
+		for _, data := range array {
+			w.Info = append(w.Info, data)
+		}
+
+	case KubeGameStatefulSet:
+		array := make([]*GameStatefulSet, 0)
+		if err := json.Unmarshal(wlData.Info, &array); err != nil {
+			return err
+		}
+		for _, data := range array {
+			w.Info = append(w.Info, data)
+		}
+
+	case KubeCronJob:
+		array := make([]*CronJob, 0)
+		if err := json.Unmarshal(wlData.Info, &array); err != nil {
+			return err
+		}
+		for _, data := range array {
+			w.Info = append(w.Info, data)
+		}
+
+	case KubeJob:
+		array := make([]*Job, 0)
+		if err := json.Unmarshal(wlData.Info, &array); err != nil {
+			return err
+		}
+		for _, data := range array {
+			w.Info = append(w.Info, data)
+		}
+
+	case KubePodWorkload:
+		array := make([]*PodsWorkload, 0)
+		if err := json.Unmarshal(wlData.Info, &array); err != nil {
+			return err
+		}
+		for _, data := range array {
+			w.Info = append(w.Info, data)
+		}
+
+	default:
+		array := make([]*Workload, 0)
+		if err := json.Unmarshal(wlData.Info, &array); err != nil {
+			return err
+		}
+		for _, data := range array {
+			w.Info = append(w.Info, data)
+		}
+	}
+	return nil
+}
+
+// WlInstResp workload instance response
+type WlInstResp struct {
+	metadata.BaseResp `json:",inline"`
+	Data              WlDataResp `json:"data"`
+}
+
+type jsonWlData struct {
 	Data json.RawMessage `json:"data"`
 }
 
@@ -477,13 +598,17 @@ type WlCreateReq struct {
 // UnmarshalJSON unmarshal WlUpdateReq
 func (w *WlCreateReq) UnmarshalJSON(data []byte) error {
 	kind := w.Kind
-	req := jsonWlCreateReq{}
-	if err := json.Unmarshal(data, &req); err != nil {
+	req := new(jsonWlData)
+	if err := json.Unmarshal(data, req); err != nil {
 		return err
 	}
 
-	if req.Data == nil || !IsInnerWorkload(kind) {
+	if len(req.Data) == 0 {
 		return nil
+	}
+
+	if err := kind.Validate(); err != nil {
+		return err
 	}
 
 	switch kind {
@@ -525,6 +650,33 @@ func (w *WlCreateReq) UnmarshalJSON(data []byte) error {
 
 	case KubeGameStatefulSet:
 		array := make([]*GameStatefulSet, 0)
+		if err := json.Unmarshal(req.Data, &array); err != nil {
+			return err
+		}
+		for _, data := range array {
+			w.Data = append(w.Data, data)
+		}
+
+	case KubeCronJob:
+		array := make([]*CronJob, 0)
+		if err := json.Unmarshal(req.Data, &array); err != nil {
+			return err
+		}
+		for _, data := range array {
+			w.Data = append(w.Data, data)
+		}
+
+	case KubeJob:
+		array := make([]*Job, 0)
+		if err := json.Unmarshal(req.Data, &array); err != nil {
+			return err
+		}
+		for _, data := range array {
+			w.Data = append(w.Data, data)
+		}
+
+	case KubePodWorkload:
+		array := make([]*PodsWorkload, 0)
 		if err := json.Unmarshal(req.Data, &array); err != nil {
 			return err
 		}
@@ -582,51 +734,7 @@ type WlCreateRespData struct {
 
 var wlIgnoreField = []string{
 	common.BKAppIDField, BKClusterIDFiled, ClusterUIDField, BKNamespaceIDField, NamespaceField, common.BKFieldName,
-	common.BKFieldID,
-}
-
-// IsInnerWorkload is inner workload type
-func IsInnerWorkload(kind WorkloadType) bool {
-	switch kind {
-	case KubeDeployment, KubeStatefulSet, KubeDaemonSet,
-		KubeGameStatefulSet, KubeGameDeployment, KubeCronJob,
-		KubeJob, KubePodWorkload:
-		return true
-	default:
-		return false
-	}
-}
-
-// GetWorkloadTableName get workload table name
-func GetWorkloadTableName(kind WorkloadType) (string, error) {
-	switch kind {
-	case KubeDeployment:
-		return BKTableNameBaseDeployment, nil
-
-	case KubeStatefulSet:
-		return BKTableNameBaseStatefulSet, nil
-
-	case KubeDaemonSet:
-		return BKTableNameBaseDaemonSet, nil
-
-	case KubeGameStatefulSet:
-		return BKTableNameGameStatefulSet, nil
-
-	case KubeGameDeployment:
-		return BKTableNameGameDeployment, nil
-
-	case KubeCronJob:
-		return BKTableNameBaseCronJob, nil
-
-	case KubeJob:
-		return BKTableNameBaseJob, nil
-
-	case KubePodWorkload:
-		return BKTableNameBasePodWorkload, nil
-
-	default:
-		return "", fmt.Errorf("can not find table name, kind: %s", kind)
-	}
+	common.BKFieldID, common.CreateTimeField,
 }
 
 // WlQueryReq workload query request
@@ -684,4 +792,16 @@ func (wl *WlQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.Map
 		cond = mapstr.MapStr{common.BKDBAND: []mapstr.MapStr{cond, filterCond}}
 	}
 	return cond, nil
+}
+
+// IsInnerWorkload is inner workload type
+func IsInnerWorkload(kind WorkloadType) bool {
+	switch kind {
+	case KubeDeployment, KubeStatefulSet, KubeDaemonSet,
+		KubeGameStatefulSet, KubeGameDeployment, KubeCronJob,
+		KubeJob, KubePodWorkload:
+		return true
+	default:
+		return false
+	}
 }

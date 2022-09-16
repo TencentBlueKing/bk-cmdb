@@ -644,6 +644,7 @@ var (
 
 const (
 	findBriefTopologyNodeRelation = "/api/v3/find/topo/biz/brief_node_relation"
+	findHostTopoPath              = "/api/v3/find/host/topopath"
 )
 
 func (ps *parseStream) mainline() *parseStream {
@@ -739,6 +740,18 @@ func (ps *parseStream) mainline() *parseStream {
 		return ps
 	}
 
+	if ps.hitPattern(findHostTopoPath, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.MainlineInstanceTopology,
+					Action: meta.Find,
+				},
+			},
+		}
+
+		return ps
+	}
 	return ps
 }
 
