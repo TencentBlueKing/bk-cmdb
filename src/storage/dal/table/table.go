@@ -212,6 +212,5 @@ func (r Revision) ValidateUpdate() error {
 	if len(r.Creator) != 0 {
 		return errors.New("creator can not be updated")
 	}
-
 	return nil
 }

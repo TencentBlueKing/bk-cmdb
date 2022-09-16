@@ -82,7 +82,6 @@ func (p *containerOperation) DeleteCluster(kit *rest.Kit, bizID int64, option *t
 			},
 		}
 	}
-
 	if err := mongodb.Client().Table(types.BKTableNameBaseCluster).Delete(kit.Ctx, filter); err != nil {
 		blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
@@ -322,11 +321,10 @@ func (p *containerOperation) BatchCreateNode(kit *rest.Kit, bizID int64, data []
 		}
 		node.NodeBaseFields.HasPod = &hasPod
 		node := &types.Node{
-			ID:        int64(ids[idx]),
-			BizID:     bizID,
-			HostID:    node.HostID,
-			ClusterID: node.ClusterID,
-
+			ID:              int64(ids[idx]),
+			BizID:           bizID,
+			HostID:          node.HostID,
+			ClusterID:       node.ClusterID,
 			NodeBaseFields:  node.NodeBaseFields,
 			SupplierAccount: kit.SupplierAccount,
 			Revision: table.Revision{

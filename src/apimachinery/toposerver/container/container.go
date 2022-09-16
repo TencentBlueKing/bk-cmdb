@@ -48,9 +48,7 @@ func (st *Container) BatchCreateNode(ctx context.Context, header http.Header, bi
 	if ret.CCError() != nil {
 		return nil, ret.CCError()
 	}
-
 	return ret, nil
-
 }
 
 // BatchCreatePod batch create pod.

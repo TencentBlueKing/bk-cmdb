@@ -242,7 +242,6 @@ func (b *kube) isExistKubeResource(kit *rest.Kit, option *types.DeleteClusterOpt
 			}()
 
 			filter := make([]map[string]interface{}, 0)
-
 			if len(option.IDs) > 0 {
 				filter = []map[string]interface{}{
 					{
@@ -380,6 +379,7 @@ func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, biz
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 	audit := auditlog.NewKubeAudit(b.clientSet.CoreService())
 	auditLog, err := audit.GenerateNodeAuditLog(generateAuditParameter, result.Info)
+
 	if err != nil {
 		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err

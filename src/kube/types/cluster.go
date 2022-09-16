@@ -260,6 +260,7 @@ func (option *UpdateClusterOption) Validate() error {
 			return errors.New("id cannot be empty at the same time")
 		}
 		if err := one.Data.updateValidate(); err != nil {
+
 			return err
 		}
 	}

@@ -344,6 +344,7 @@ func (option *UpdateNodeOption) Validate() error {
 			return errors.New("node_ids must be set")
 		}
 		if err := node.Data.updateValidate(); err != nil {
+
 			return err
 		}
 	}
