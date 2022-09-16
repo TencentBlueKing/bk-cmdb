@@ -131,7 +131,7 @@ func (st *Container) UpdateNodeFields(ctx context.Context, header http.Header, s
 	data *types.UpdateNodeOption) errors.CCErrorCoder {
 	ret := new(metadata.UpdatedCount)
 	subPath := "/kube/updatemany/node/%s/%d/instance"
-	err := st.client.Post().
+	err := st.client.Put().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath, supplierAccount, bizID).
@@ -152,7 +152,7 @@ func (st *Container) UpdateClusterFields(ctx context.Context, header http.Header
 	data *types.UpdateClusterOption) errors.CCErrorCoder {
 	ret := new(metadata.UpdatedCount)
 	subPath := "/kube/updatemany/cluster/%s/%d/instance"
-	err := st.client.Post().
+	err := st.client.Put().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath, supplierAccount, bizID).

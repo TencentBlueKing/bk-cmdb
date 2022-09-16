@@ -74,11 +74,11 @@ func (s *Service) initKube(web *restful.WebService) {
 		Path:    "/kube/create/cluster/bk_biz_id/{bk_biz_id}",
 		Handler: s.CreateCluster})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
 		Path:    "/kube/updatemany/cluster/bk_biz_id/{bk_biz_id}",
 		Handler: s.UpdateClusterFields})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
 		Path:    "/kube/updatemany/node/bk_biz_id/{bk_biz_id}",
 		Handler: s.UpdateNodeFields})
 
