@@ -1601,7 +1601,6 @@ const (
 var (
 	findKubeAttrsRegexp     = regexp.MustCompile(`^/api/v3/kube/find/{object}/attributes$`)
 	createKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/create/cluster/bk_biz_id/{bk_biz_id}$`)
-	updateKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/cluster/bk_biz_id/{bk_biz_id}$`)
 
 	deleteKubeClusterRegexp     = regexp.MustCompile(`^/api/v3/kube/delete/cluster/bk_biz_id/{bk_biz_id}$`)
 	findKubeClusterRegexp       = regexp.MustCompile(`^/api/v3/kube/findmany/cluster/bk_biz_id/{bk_biz_id}$`)
