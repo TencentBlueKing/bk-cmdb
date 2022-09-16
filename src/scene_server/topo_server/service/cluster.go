@@ -21,6 +21,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -31,7 +32,7 @@ import (
 // SearchClusters 根据用户指定的条件查询cluster
 func (s *Service) SearchClusters(ctx *rest.Contexts) {
 
-	searchCond := new(types.QueryClusterReq)
+	searchCond := new(types.QueryClusterOption)
 	if err := ctx.DecodeInto(searchCond); err != nil {
 		blog.Errorf("failed to parse the params, error: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
@@ -85,7 +86,7 @@ func (s *Service) SearchClusters(ctx *rest.Contexts) {
 		Page:      searchCond.Page,
 		Fields:    searchCond.Fields,
 	}
-	result, err := s.Logics.ContainerOperation().SearchCluster(ctx.Kit, query)
+	result, err := s.Engine.CoreAPI.CoreService().Container().SearchCluster(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		blog.Errorf("search cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
@@ -112,12 +113,63 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+	clusterIDs := make([]int64, 0)
+	for _, cluster := range data.Clusters {
+		clusterIDs = append(clusterIDs, cluster.ID)
+	}
+
+	cond := map[string]interface{}{
+
+		types.BKIDField: map[string]interface{}{
+			common.BKDBIN: clusterIDs,
+		},
+		common.BKAppIDField:   bizID,
+		common.BKOwnerIDField: ctx.Kit.SupplierAccount,
+	}
+
+	input := &metadata.QueryCondition{
+		Condition: cond,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	result, err := s.Engine.CoreAPI.CoreService().Container().SearchCluster(ctx.Kit.Ctx, ctx.Kit.Header, input)
+	if err != nil {
+		blog.Errorf("search cluster failed, input: %#v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(result.Data) != len(clusterIDs) {
+		blog.Errorf("the number of instances obtained is inconsistent with the param, bizID: %d, ids: %#v, err: %v,"+
+			" rid: %s", clusterIDs, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrTopoInstUpdateFailed, "id"))
+
+		return
+	}
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Engine.CoreAPI.CoreService().Container().UpdateClusterFields(ctx.Kit.Ctx, ctx.Kit.Header,
 			ctx.Kit.SupplierAccount, bizID, data)
 		if err != nil {
 			blog.Errorf("create cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
+		}
+		// for audit log.
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
+		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
+
+		// TODO：具体的更新字段
+		auditLog, err := audit.GenerateClusterAuditLog(generateAuditParameter, result.Data)
+		if err != nil {
+			blog.Errorf("create cluster, generate audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+
+		err = audit.SaveAuditLog(ctx.Kit, auditLog...)
+		if err != nil {
+			blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 		}
 		return nil
 	})
@@ -138,7 +190,7 @@ func (s *Service) CreateCluster(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := data.ValidateCreate(); err != nil {
+	if err := data.CreateValidate(); err != nil {
 		blog.Errorf("validate create container cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return

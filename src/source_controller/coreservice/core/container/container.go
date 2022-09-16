@@ -43,44 +43,24 @@ func New() core.ContainerOperation {
 }
 
 // BatchDeleteNode delete node instances.
-func (p *containerOperation) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.ArrangeDeleteNodeOption) (
+func (p *containerOperation) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.BatchDeleteNodeOption) (
 	*metadata.DeletedCount, errors.CCErrorCoder) {
 
 	num := 0
-	if len(option.NodeKubeInfo) > 0 {
-		for clusterUID, names := range option.NodeKubeInfo {
-			filter := map[string]interface{}{
-				common.BKAppIDField:   bizID,
-				common.BKOwnerIDField: kit.SupplierAccount,
-				types.ClusterUIDField: clusterUID,
-				types.KubeNameField: map[string]interface{}{
-					common.BKDBIN: names,
-				},
-			}
-			if err := mongodb.Client().Table(types.BKTableNameBaseCluster).Delete(kit.Ctx, filter); err != nil {
-				blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
-				return nil, kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
-			}
+	for _, node := range option.Nodes {
+		filter := map[string]interface{}{
+			common.BKAppIDField:    bizID,
+			common.BKOwnerIDField:  kit.SupplierAccount,
+			types.BKClusterIDFiled: node.ClusterID,
+			types.BKIDField: map[string]interface{}{
+				common.BKDBIN: node.IDs,
+			},
 		}
-		num = len(option.NodeKubeInfo)
-	}
-	if len(option.NodeCmdbInfo) > 0 {
-
-		for clusterID, ids := range option.NodeCmdbInfo {
-			filter := map[string]interface{}{
-				common.BKAppIDField:    bizID,
-				common.BKOwnerIDField:  kit.SupplierAccount,
-				types.BKClusterIDFiled: clusterID,
-				types.BKIDField: map[string]interface{}{
-					common.BKDBIN: ids,
-				},
-			}
-			if err := mongodb.Client().Table(types.BKTableNameBaseCluster).Delete(kit.Ctx, filter); err != nil {
-				blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
-				return nil, kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
-			}
+		if err := mongodb.Client().Table(types.BKTableNameBaseNode).Delete(kit.Ctx, filter); err != nil {
+			blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+			return nil, kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
 		}
-		num = len(option.NodeCmdbInfo)
+		num += len(node.IDs)
 	}
 
 	return &metadata.DeletedCount{Count: uint64(num)}, nil
@@ -102,17 +82,6 @@ func (p *containerOperation) DeleteCluster(kit *rest.Kit, bizID int64, option *t
 			},
 		}
 	}
-
-	if len(option.UIDs) > 0 {
-		num = len(option.UIDs)
-		filter = map[string]interface{}{
-			common.BKAppIDField:   bizID,
-			common.BKOwnerIDField: kit.SupplierAccount,
-			types.UidField: map[string]interface{}{
-				common.BKDBIN: option.UIDs,
-			},
-		}
-	}
 	if err := mongodb.Client().Table(types.BKTableNameBaseCluster).Delete(kit.Ctx, filter); err != nil {
 		blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
@@ -120,17 +89,12 @@ func (p *containerOperation) DeleteCluster(kit *rest.Kit, bizID int64, option *t
 	return &metadata.DeletedCount{Count: uint64(num)}, nil
 }
 
-func validateNodeData(kit *rest.Kit, bizID int64, node types.NodeReqParam) errors.CCErrorCoder {
+func validateNodeData(kit *rest.Kit, bizID int64, node types.OneNodeCreateOption) errors.CCErrorCoder {
 
 	clusterFilter := map[string]interface{}{
 		common.BKAppIDField:   bizID,
 		common.BKOwnerIDField: kit.SupplierAccount,
-	}
-	if node.ClusterID == 0 {
-		clusterFilter[types.BKIDField] = node.ClusterID
-	}
-	if node.ClusterUID != "" {
-		clusterFilter[types.UidField] = node.ClusterUID
+		types.BKIDField:       node.ClusterID,
 	}
 
 	cnt, err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(clusterFilter).Count(kit.Ctx)
@@ -161,94 +125,7 @@ func validateNodeData(kit *rest.Kit, bizID int64, node types.NodeReqParam) error
 	return nil
 }
 
-func (p *containerOperation) getSysSpecInfoByKubeCond(kit *rest.Kit, kubeSpec *types.KubeSpec, bizID int64,
-	hostID int64) (*types.SysSpec, errors.CCErrorCoder) {
-
-	cmdbField := []string{types.BKClusterIDFiled, types.BKNamespaceIDField, types.BKIDField}
-
-	// 通过workload kind 获取表名
-	tableName, err := types.GetCollectionWithObject(*kubeSpec.WorkloadKind)
-	if err != nil {
-		blog.Errorf("get table failed, kind: %s, name: %s, err: %v, rid: %s", *kubeSpec.KubeReference.WorkloadKind,
-			*kubeSpec.KubeReference.WorkloadName, err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
-	}
-
-	filter := map[string]interface{}{
-		common.BKAppIDField:   bizID,
-		common.BKOwnerIDField: kit.SupplierAccount,
-		types.ClusterUIDField: *kubeSpec.ClusterUID,
-		types.NamespaceField:  *kubeSpec.Namespace,
-		types.KubeNameField:   *kubeSpec.WorkloadName,
-	}
-
-	workload := make([]map[string]interface{}, 0)
-	err = mongodb.Client().Table(tableName[0]).Find(filter).Fields(cmdbField...).All(kit.Ctx, &workload)
-	if err != nil {
-		blog.Errorf("query host module config failed, err: %s, rid:%s", err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-
-	if len(workload) == 0 {
-		return nil, kit.CCError.CCError(common.CCErrCommNotFound)
-	}
-	if len(workload) > 1 {
-		return nil, kit.CCError.CCError(common.CCErrCommGetMultipleObject)
-	}
-
-	clusterID, err := util.GetInt64ByInterface(workload[0][types.BKClusterIDFiled])
-	if err != nil {
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-
-	namespaceID, err := util.GetInt64ByInterface(workload[0][types.BKNamespaceIDField])
-	if err != nil {
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-	workloadID, err := util.GetInt64ByInterface(workload[0][types.BKIDField])
-	if err != nil {
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-
-	nodeFilter := map[string]interface{}{
-		common.BKAppIDField:   bizID,
-		common.BKOwnerIDField: kit.SupplierAccount,
-		types.ClusterUIDField: *kubeSpec.ClusterUID,
-		types.KubeNameField:   *kubeSpec.Node,
-	}
-	nodes := make([]map[string]interface{}, 0)
-	err = mongodb.Client().Table(types.BKTableNameBaseNode).Find(nodeFilter).Fields([]string{types.BKIDField}...).
-		All(kit.Ctx, &nodes)
-	if err != nil {
-		blog.Errorf("query node failed, filter: %+v, err: %s, rid:%s", filter, err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-	if len(nodes) == 0 {
-		blog.Errorf("query to multiple nodes, filter: %+v, rid: %s", filter, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-
-	if len(nodes) > 1 {
-		blog.Errorf("query to multiple nodes, filter: %+v, rid: %s", filter, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommGetMultipleObject)
-	}
-
-	nodeID, err := util.GetInt64ByInterface(nodes[0][types.BKIDField])
-	if err != nil {
-		blog.Errorf("get node id failed, node: %+v, err: %v, rid : %s", nodes, err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-
-	return &types.SysSpec{
-		BizID:           &bizID, SupplierAccount: &kit.SupplierAccount,
-		ClusterID:       &clusterID, ClusterUID:      kubeSpec.ClusterUID,
-		NameSpaceID:     &namespaceID, NameSpace:       kubeSpec.Namespace,
-		Workload: &types.Ref{Kind: *kubeSpec.WorkloadKind, Name: *kubeSpec.WorkloadName, ID:   workloadID,},
-		HostID: &hostID, NodeID: &nodeID, Node:   kubeSpec.Node,
-	}, nil
-}
-
-func (p *containerOperation) getSysSpecInfoByCmdbCond(kit *rest.Kit, cmdbSpec *types.CmdbSpec, bizID int64,
+func (p *containerOperation) getSysSpecInfoByCond(kit *rest.Kit, cmdbSpec *types.SpecInfo, bizID int64,
 	hostID int64) (*types.SysSpec, errors.CCErrorCoder) {
 	// 通过workload kind 获取表名
 	tableName, err := types.GetCollectionWithObject(*cmdbSpec.WorkloadKind)
@@ -264,7 +141,6 @@ func (p *containerOperation) getSysSpecInfoByCmdbCond(kit *rest.Kit, cmdbSpec *t
 		types.BKNamespaceIDField: *cmdbSpec.NamespaceID,
 		types.BKIDField:          *cmdbSpec.WorkloadID,
 	}
-
 	kubeField := []string{types.ClusterUIDField, types.NamespaceField, types.KubeNameField}
 	workload := make([]map[string]interface{}, 0)
 
@@ -322,25 +198,25 @@ func (p *containerOperation) getSysSpecInfoByCmdbCond(kit *rest.Kit, cmdbSpec *t
 	}
 
 	return &types.SysSpec{
-		BizID:           &bizID,
-		SupplierAccount: &kit.SupplierAccount,
-		ClusterID:       cmdbSpec.ClusterID,
-		ClusterUID:      &clusterUID,
-		NameSpaceID:     cmdbSpec.NamespaceID,
-		NameSpace:       &namespace,
-		Workload: &types.Ref{
+		BizID:           bizID,
+		SupplierAccount: kit.SupplierAccount,
+		ClusterID:       *cmdbSpec.ClusterID,
+		ClusterUID:      clusterUID,
+		NameSpaceID:     *cmdbSpec.NamespaceID,
+		NameSpace:       namespace,
+		Workload: types.Ref{
 			Kind: *cmdbSpec.WorkloadKind,
 			Name: workloadname,
 			ID:   *cmdbSpec.WorkloadID,
 		},
-		HostID: &hostID,
-		NodeID: cmdbSpec.NodeID,
-		Node:   &nodename,
+		HostID: hostID,
+		NodeID: *cmdbSpec.NodeID,
+		Node:   nodename,
 	}, nil
 }
 
 // BatchCreatePod create container node data in batches.
-func (p *containerOperation) BatchCreatePod(kit *rest.Kit, bizID int64, data []types.PodsInfo) ([]int64,
+func (p *containerOperation) BatchCreatePod(kit *rest.Kit, bizID int64, data []types.PodsInfo) ([]types.Pod,
 	errors.CCErrorCoder) {
 	// generate pod ids field
 	ids, err := mongodb.Client().NextSequences(kit.Ctx, types.BKTableNameBasePod, len(data))
@@ -348,30 +224,17 @@ func (p *containerOperation) BatchCreatePod(kit *rest.Kit, bizID int64, data []t
 		blog.Errorf("create pod failed, generate ids failed, err: %+v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
-
-	podIDs := make([]int64, 0)
+	pods := make([]types.Pod, 0)
 	now := time.Now().Unix()
 
 	// 这里有一个问题，就是如果用户传的是ccID  那么应该是不知道他上一级的kube信息。所以这里要获一下上一级信息。同理如果传的是kube信息，那么
 	// 也需要获取一下上一级的ccID信息。
 	for idx, pod := range data {
-		sysSpec := new(types.SysSpec)
-		if pod.KubeSpecInfo != nil {
-			tmpSpec, ccErr := p.getSysSpecInfoByKubeCond(kit, pod.KubeSpecInfo, bizID, pod.HostID)
-			if ccErr != nil {
-				return nil, ccErr
-			}
-			sysSpec = tmpSpec
+		sysSpec, ccErr := p.getSysSpecInfoByCond(kit, pod.Spec, bizID, pod.HostID)
+		if ccErr != nil {
+			return nil, ccErr
 		}
-
-		if pod.CmdbSpecInfo != nil {
-			tmpSpec, ccErr := p.getSysSpecInfoByCmdbCond(kit, pod.CmdbSpecInfo, bizID, pod.HostID)
-			if ccErr != nil {
-				return nil, ccErr
-			}
-			sysSpec = tmpSpec
-		}
-		podInfo := &types.Pod{
+		podInfo := types.Pod{
 			ID:            int64(ids[idx]),
 			SysSpec:       *sysSpec,
 			PodBaseFields: pod.PodBaseFields,
@@ -382,8 +245,8 @@ func (p *containerOperation) BatchCreatePod(kit *rest.Kit, bizID int64, data []t
 				Modifier:   kit.User,
 			},
 		}
-		podIDs = append(podIDs, int64(ids[idx]))
-		if err := mongodb.Client().Table(types.BKTableNameBasePod).Insert(kit.Ctx, podInfo); err != nil {
+		pods = append(pods, podInfo)
+		if err := mongodb.Client().Table(types.BKTableNameBasePod).Insert(kit.Ctx, &podInfo); err != nil {
 			blog.Errorf("create pod failed, db insert failed, node: %+v, err: %+v, rid: %s", podInfo, err, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
 		}
@@ -394,8 +257,8 @@ func (p *containerOperation) BatchCreatePod(kit *rest.Kit, bizID int64, data []t
 			blog.Errorf("create container failed, generate ids failed, err: %+v, rid: %s", err, kit.Rid)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 		}
-		for id, info := range pod.Containers {
 
+		for id, info := range pod.Containers {
 			container := &types.Container{
 				ID:                  int64(containerIDs[id]),
 				PodID:               int64(ids[idx]),
@@ -414,12 +277,12 @@ func (p *containerOperation) BatchCreatePod(kit *rest.Kit, bizID int64, data []t
 			}
 		}
 	}
-	return podIDs, nil
+	return pods, nil
 }
 
 // BatchCreateNode create container node data in batches.
-func (p *containerOperation) BatchCreateNode(kit *rest.Kit, bizID int64, data []types.NodeReqParam) ([]int64,
-	errors.CCErrorCoder) {
+func (p *containerOperation) BatchCreateNode(kit *rest.Kit, bizID int64, data []types.OneNodeCreateOption) (
+	[]*types.Node, errors.CCErrorCoder) {
 
 	names := make([]string, 0)
 	for _, node := range data {
@@ -449,16 +312,19 @@ func (p *containerOperation) BatchCreateNode(kit *rest.Kit, bizID int64, data []
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 
-	nodeIDs := make([]int64, 0)
-
+	result := make([]*types.Node, 0)
+	hasPod := false
 	now := time.Now().Unix()
 	for idx, node := range data {
 		if err := validateNodeData(kit, bizID, node); err != nil {
 			return nil, err
 		}
+		node.NodeBaseFields.HasPod = &hasPod
 		node := &types.Node{
 			ID:              int64(ids[idx]),
 			BizID:           bizID,
+			HostID:          node.HostID,
+			ClusterID:       node.ClusterID,
 			NodeBaseFields:  node.NodeBaseFields,
 			SupplierAccount: kit.SupplierAccount,
 			Revision: table.Revision{
@@ -468,14 +334,14 @@ func (p *containerOperation) BatchCreateNode(kit *rest.Kit, bizID int64, data []
 				Modifier:   kit.User,
 			},
 		}
-		nodeIDs = append(nodeIDs, int64(ids[idx]))
 		if err := mongodb.Client().Table(types.BKTableNameBaseNode).Insert(kit.Ctx, node); err != nil {
 			blog.Errorf("create node failed, db insert failed, node: %+v, err: %+v, rid: %s", node, err, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
 		}
+		result = append(result, node)
 	}
 
-	return nodeIDs, nil
+	return result, nil
 }
 
 // SearchNode find container nodes
@@ -518,16 +384,14 @@ func (p *containerOperation) SearchCluster(kit *rest.Kit, input *metadata.QueryC
 func (p *containerOperation) UpdateNodeFields(kit *rest.Kit, bizID int64, supplierAccount string,
 	data *types.UpdateNodeOption) (*metadata.UpdatedCount, errors.CCErrorCoder) {
 
+	filter := map[string]interface{}{
+		types.BKBizIDField:    bizID,
+		common.BKOwnerIDField: supplierAccount,
+	}
 	for _, node := range data.Nodes {
-		filter := map[string]interface{}{
-			types.BKBizIDField:    bizID,
-			common.BKOwnerIDField: supplierAccount,
-		}
-		if node.NodeKubeFilter != nil {
-			filter[types.KubeNameField] = node.NodeKubeFilter.Name
-		}
-		if node.NodeCmdbFilter != nil {
-			filter[types.BKIDField] = node.NodeCmdbFilter.ID
+
+		filter[types.BKIDField] = map[string]interface{}{
+			common.BKDBIN: node.NodeIDs,
 		}
 
 		opts := orm.NewFieldOptions().AddIgnoredFields(common.BKFieldID, types.ClusterUIDField, common.BKFieldName)
@@ -539,10 +403,11 @@ func (p *containerOperation) UpdateNodeFields(kit *rest.Kit, bizID int64, suppli
 
 		err = mongodb.Client().Table(types.BKTableNameBaseNode).Update(kit.Ctx, filter, updateData)
 		if err != nil {
-			blog.Errorf("update cluster failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
+			blog.Errorf("update node failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
 				err, kit.Rid)
 			return &metadata.UpdatedCount{Count: 0}, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 		}
+
 	}
 	return &metadata.UpdatedCount{Count: uint64(len(data.Nodes))}, nil
 }
@@ -559,9 +424,6 @@ func (p *containerOperation) UpdateClusterFields(kit *rest.Kit, bizID int64, sup
 
 		if one.ID != 0 {
 			filter[types.BKIDField] = one.ID
-		}
-		if one.UID != "" {
-			filter[types.UidField] = one.UID
 		}
 
 		opts := orm.NewFieldOptions().AddIgnoredFields(common.BKFieldID, types.ClusterUIDField, common.BKFieldName)
@@ -587,7 +449,7 @@ func (p *containerOperation) CreateCluster(kit *rest.Kit, bizID int64, data *typ
 
 	// it is necessary to judge whether there is duplicate data here, to prevent subsequent calls to coreservice
 	// directly and lack of verification.
-	if err := data.ValidateCreate(); err != nil {
+	if err := data.CreateValidate(); err != nil {
 		blog.Errorf("create cluster failed, data: %+v, err: %+v, rid: %s", data, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
 	}

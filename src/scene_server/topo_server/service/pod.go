@@ -92,30 +92,39 @@ func (s *Service) buildPodPaths(kit *rest.Kit, bizName string, pods []types.Pod)
 	for _, pod := range pods {
 		id := pod.ID
 
-		if pod.ClusterID == nil {
+		if pod.ClusterID == 0 {
 			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.BKClusterIDFiled,
 				kit.Rid)
 			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.BKClusterIDFiled)
 		}
-		clusterID := *pod.ClusterID
+		clusterID := pod.ClusterID
 		clusterIDs = append(clusterIDs, clusterID)
 
-		if pod.NameSpaceID == nil {
+		if pod.NameSpaceID == 0 {
 			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.BKNamespaceIDField,
 				kit.Rid)
 			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.BKNamespaceIDField)
 		}
-		namespaceID := *pod.NameSpaceID
+		namespaceID := pod.NameSpaceID
 
-		if pod.NameSpace == nil {
+		if pod.NameSpace == "" {
 			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.NamespaceField, kit.Rid)
 			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.NamespaceField)
 		}
-		namespace := *pod.NameSpace
+		namespace := pod.NameSpace
 
-		if pod.Workload == nil {
-			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefField, kit.Rid)
-			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.RefField)
+		//
+		if pod.Workload.Kind == "" {
+			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefKindField, kit.Rid)
+			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.RefKindField)
+		}
+		if pod.Workload.Name == "" {
+			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefNameField, kit.Rid)
+			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.RefNameField)
+		}
+		if pod.Workload.ID == 0 {
+			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefIDField, kit.Rid)
+			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.RefIDField)
 		}
 		ref := pod.Workload
 
@@ -233,7 +242,7 @@ func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
 		var err error
 		ids, err = s.Logics.ContainerOperation().BatchCreatePod(ctx.Kit, data, bizID)
 		if err != nil {
-			blog.Errorf("create business cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("create pod failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 		return nil

@@ -22,6 +22,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -200,28 +201,6 @@ func (s *Service) getBizIDWithName(kit *rest.Kit, bizIDs []int64) (map[int64]str
 	return bizIDWithName, nil
 }
 
-func reorganizeDeleteOption(option *types.BatchDeleteNodeOption) *types.ArrangeDeleteNodeOption {
-
-	delOption := &types.ArrangeDeleteNodeOption{
-		NodeKubeInfo: make(map[string][]string),
-		NodeCmdbInfo: make(map[int64][]int64),
-	}
-
-	if len(option.Data.NodeKubeIDs) > 0 {
-		for _, node := range option.Data.NodeKubeIDs {
-			delOption.NodeKubeInfo[node.ClusterUID] = append(delOption.NodeKubeInfo[node.ClusterUID], node.Name...)
-		}
-	}
-
-	if len(option.Data.NodeCmdbIDs) > 0 {
-		for _, node := range option.Data.NodeCmdbIDs {
-			delOption.NodeCmdbInfo[node.ClusterID] = append(delOption.NodeCmdbInfo[node.ClusterID], node.ID...)
-		}
-	}
-
-	return delOption
-}
-
 // BatchDeleteNode delete nodes.
 func (s *Service) BatchDeleteNode(ctx *rest.Contexts) {
 	option := new(types.BatchDeleteNodeOption)
@@ -241,11 +220,10 @@ func (s *Service) BatchDeleteNode(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	deleteOption := reorganizeDeleteOption(option)
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		err = s.Logics.ContainerOperation().BatchDeleteNode(ctx.Kit, bizID, deleteOption, ctx.Kit.SupplierAccount)
+		err = s.Logics.ContainerOperation().BatchDeleteNode(ctx.Kit, bizID, option, ctx.Kit.SupplierAccount)
 		if err != nil {
 			blog.Errorf("delete node failed, biz: %d, option: %+v, err: %v, rid: %s", bizID, option, err, ctx.Kit.Rid)
 			return err
@@ -286,7 +264,7 @@ func (s *Service) BatchCreateNode(ctx *rest.Contexts) {
 		var err error
 		ids, err = s.Logics.ContainerOperation().BatchCreateNode(ctx.Kit, data, bizID, ctx.Kit.SupplierAccount)
 		if err != nil {
-			blog.Errorf("create business cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("create node failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -303,7 +281,7 @@ func (s *Service) BatchCreateNode(ctx *rest.Contexts) {
 // SearchNodes query nodes based on user-specified criteria
 func (s *Service) SearchNodes(ctx *rest.Contexts) {
 
-	searchCond := new(types.QueryNodeReq)
+	searchCond := new(types.QueryNodeOption)
 	if err := ctx.DecodeInto(searchCond); err != nil {
 		blog.Errorf("failed to parse the params, error: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
@@ -319,7 +297,6 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
-
 		ctx.RespAutoError(err)
 		return
 	}
@@ -342,9 +319,7 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 	if searchCond.HostID != 0 {
 		filter[common.BKHostIDField] = searchCond.HostID
 	}
-	if searchCond.ClusterUID != 0 {
-		filter[types.ClusterUIDField] = searchCond.ClusterUID
-	}
+
 	if searchCond.ClusterID != 0 {
 		filter[types.BKClusterIDFiled] = searchCond.ClusterID
 	}
@@ -368,7 +343,7 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 		Page:      searchCond.Page,
 		Fields:    searchCond.Fields,
 	}
-	result, err := s.Logics.ContainerOperation().SearchNode(ctx.Kit, query)
+	result, err := s.Engine.CoreAPI.CoreService().Container().SearchNode(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		blog.Errorf("search node failed, filter: %+v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
 		return
@@ -395,6 +370,30 @@ func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+	nodeIDs := make([]int64, 0)
+	for _, node := range data.Nodes {
+		nodeIDs = append(nodeIDs, node.NodeIDs...)
+	}
+	cond := map[string]interface{}{
+		types.BKIDField: map[string]interface{}{
+			common.BKDBIN: nodeIDs,
+		},
+		common.BKAppIDField:   bizID,
+		common.BKOwnerIDField: ctx.Kit.SupplierAccount,
+	}
+
+	query := &metadata.QueryCondition{
+		Condition: cond,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	result, err := s.Engine.CoreAPI.CoreService().Container().SearchNode(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	if err != nil {
+		blog.Errorf("search node failed, filter: %+v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
+		return
+	}
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Engine.CoreAPI.CoreService().Container().UpdateNodeFields(ctx.Kit.Ctx, ctx.Kit.Header,
 			ctx.Kit.SupplierAccount, bizID, data)
@@ -402,6 +401,22 @@ func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
 			blog.Errorf("create cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
+		// for audit log.
+		// todo:补充更新具体字段的信息
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
+		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
+		auditLog, err := audit.GenerateNodeAuditLog(generateAuditParameter, result.Data)
+		if err != nil {
+			blog.Errorf("update node failed, generate audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
+
+		err = audit.SaveAuditLog(ctx.Kit, auditLog...)
+		if err != nil {
+			blog.Errorf("update node failed, save audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return ctx.Kit.CCError.CCErrorf(common.CCErrAuditSaveLogFailed)
+		}
+
 		return nil
 	})
 

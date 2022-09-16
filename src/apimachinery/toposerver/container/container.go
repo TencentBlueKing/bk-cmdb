@@ -29,7 +29,7 @@ import (
 
 // BatchCreateNode 批量创建node
 func (st *Container) BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
-	data *types.CreateNodesOption) ([]int64, errors.CCErrorCoder) {
+	data *types.CreateNodesOption) (*types.CreateNodesResult, errors.CCErrorCoder) {
 	ret := new(types.CreateNodesResult)
 	subPath := "/kube/createmany/node/%d/instance"
 
@@ -48,15 +48,13 @@ func (st *Container) BatchCreateNode(ctx context.Context, header http.Header, bi
 	if ret.CCError() != nil {
 		return nil, ret.CCError()
 	}
-
-	return ret.Info, nil
-
+	return ret, nil
 }
 
 // BatchCreatePod batch create pod.
 func (st *Container) BatchCreatePod(ctx context.Context, header http.Header, bizID int64,
-	data *types.CreatePodsOption) ([]int64, errors.CCErrorCoder) {
-	ret := new(types.CreateNodesResult)
+	data *types.CreatePodsOption) ([]types.Pod, errors.CCErrorCoder) {
+	ret := new(types.CreatePodsResult)
 	subPath := "/kube/createmany/pod/%d/instance"
 
 	err := st.client.Post().
@@ -218,7 +216,7 @@ func (st *Container) DeleteCluster(ctx context.Context, header http.Header, bizI
 
 // BatchDeleteNode delete cluster.
 func (st *Container) BatchDeleteNode(ctx context.Context, header http.Header, bizID int64,
-	option *types.ArrangeDeleteNodeOption) errors.CCErrorCoder {
+	option *types.BatchDeleteNodeOption) errors.CCErrorCoder {
 	ret := new(metadata.DeletedCount)
 	subPath := "/kube/deletemany/node/%d/instance"
 

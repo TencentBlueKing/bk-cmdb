@@ -19,6 +19,13 @@ package types
 
 import "errors"
 
+func init() {
+	initClusterFieldsType()
+	initNodeFieldsType()
+	initPodFieldsType()
+	initContainerFieldsType()
+}
+
 // ClusterSpec describes the common attributes of cluster, it is used by the structure below it.
 type ClusterSpec struct {
 	// BizID business id in cc
@@ -216,42 +223,46 @@ type KubeAttrsRsp struct {
 	Required bool   `json:"required"`
 }
 
-// KubeReference store pod-related workload related information
-type KubeReference struct {
-	// WorkloadKind workload kind
-	WorkloadKind *string `json:"workload_kind" bson:"workload_kind"`
-
-	// WorkloadName workload name
-	WorkloadName *string `json:"workload_name" bson:"workload_name"`
-}
-
-// CmdbReference store pod-related workload related information
-type CmdbReference struct {
-	// WorkloadKind workload kind
-	WorkloadKind *string `json:"workload_kind" bson:"workload_kind"`
-
-	// WorkloadID workload id in cc
-	WorkloadID *int64 `json:"workload_id" bson:"workload_id"`
-}
-
-// KubeSpec related container field information
-type KubeSpec struct {
-	// ClusterUID cluster id in third party platform
-	ClusterUID *string `json:"cluster_uid" bson:"cluster_uid"`
-	// Namespace namespace's name in third party platform
-	Namespace *string `json:"namespace" bson:"namespace"`
-	// Node node's name in third party platform
-	Node          *string `json:"node_name" bson:"node"`
-	KubeReference `json:",inline" bson:",inline"`
-}
-
-// CmdbSpec information about container fields in cmdb.
-type CmdbSpec struct {
+// SpecInfo information about container fields in cmdb.
+type SpecInfo struct {
 	// ClusterID cluster id in cc
 	ClusterID *int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
 	// NamespaceID namespace id in cc
-	NamespaceID   *int64 `json:"bk_namespace_id" bson:"bk_namespace_id"`
-	CmdbReference `json:",inline" bson:",inline"`
+	NamespaceID *int64 `json:"bk_namespace_id" bson:"bk_namespace_id"`
+	// WorkloadKind workload kind
+	WorkloadKind *string `json:"workload_kind" bson:"workload_kind"`
+	// WorkloadID workload id in cc
+	WorkloadID *int64 `json:"workload_id" bson:"workload_id"`
 	// NodeID node id in cc
 	NodeID *int64 `json:"bk_node_id" bson:"bk_node_id"`
+}
+
+// validate validate the CmdbSpec
+func (option *SpecInfo) validate() error {
+
+	if option.ClusterID == nil || *option.ClusterID == 0 {
+		return errors.New("cluster id must be set")
+	}
+
+	if option.NamespaceID == nil || *option.NamespaceID == 0 {
+		return errors.New("namespace id must be set")
+	}
+
+	if option.NodeID == nil || *option.NodeID == 0 {
+		return errors.New("node id must be set")
+	}
+
+	if option.WorkloadKind == nil {
+		return errors.New("workload kind must be set")
+	}
+
+	if !IsInnerWorkload(WorkloadType(*option.WorkloadKind)) {
+		return errors.New("workload is illegal type")
+	}
+
+	if option.WorkloadID == nil || *option.WorkloadID == 0 {
+		return errors.New("workload id must be set")
+	}
+
+	return nil
 }

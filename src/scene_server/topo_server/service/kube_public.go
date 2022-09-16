@@ -30,7 +30,7 @@ import (
 )
 
 // convertKubeCondition generate different query conditions based on different resources.
-func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathReq, filter mapstr.MapStr,
+func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathOption, filter mapstr.MapStr,
 	tableNames []string) (*types.KubeTopoPathRsp, error) {
 
 	result := &types.KubeTopoPathRsp{Info: make([]types.KubeObjectInfo, 0)}
@@ -51,7 +51,7 @@ func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathR
 	for _, tableName := range tableNames {
 		switch tableName {
 		case types.BKTableNameBaseCluster:
-			clusters, err := s.Logics.ContainerOperation().SearchCluster(kit, query)
+			clusters, err := s.Engine.CoreAPI.CoreService().Container().SearchCluster(kit.Ctx, kit.Header, query)
 			if err != nil {
 				blog.Errorf("search cluster failed, err: %v, rid: %s", err, kit.Rid)
 				return result, err
@@ -361,7 +361,7 @@ func (s *Service) getHostIDsByCond(kit *rest.Kit, cond mapstr.MapStr, table stri
 // SearchKubeTopoPath querying container topology paths.
 func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 
-	option := new(types.KubeTopoPathReq)
+	option := new(types.KubeTopoPathOption)
 	if err := ctx.DecodeInto(option); err != nil {
 		blog.Errorf("failed to parse the params, error: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")

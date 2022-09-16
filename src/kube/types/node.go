@@ -41,17 +41,17 @@ var NodeFields = table.MergeFields(NodeSpecFieldsDescriptor)
 
 // NodeSpecFieldsDescriptor node spec's fields descriptors.
 var NodeSpecFieldsDescriptor = table.FieldsDescriptors{
-	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
-	{Field: RolesField, Type: enumor.Enum, IsRequired: false, IsEditable: true},
-	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
-	{Field: TaintsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
-	{Field: UnschedulableField, Type: enumor.Boolean, IsRequired: false, IsEditable: true},
-	{Field: InternalIPField, Type: enumor.Array, IsRequired: false, IsEditable: true},
-	{Field: ExternalIPField, Type: enumor.Array, IsRequired: false, IsEditable: true},
-	{Field: HostnameField, Type: enumor.String, IsRequired: false, IsEditable: true},
-	{Field: RuntimeComponentField, Type: enumor.String, IsRequired: false, IsEditable: true},
-	{Field: KubeProxyModeField, Type: enumor.String, IsRequired: false, IsEditable: true},
-	{Field: PodCidrField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: KubeNameField, IsRequired: true, IsEditable: false},
+	{Field: RolesField, IsRequired: false, IsEditable: true},
+	{Field: LabelsField, IsRequired: false, IsEditable: true},
+	{Field: TaintsField, IsRequired: false, IsEditable: true},
+	{Field: UnschedulableField, IsRequired: false, IsEditable: true},
+	{Field: InternalIPField, IsRequired: false, IsEditable: true},
+	{Field: ExternalIPField, IsRequired: false, IsEditable: true},
+	{Field: HostnameField, IsRequired: false, IsEditable: true},
+	{Field: RuntimeComponentField, IsRequired: false, IsEditable: true},
+	{Field: KubeProxyModeField, IsRequired: false, IsEditable: true},
+	{Field: PodCidrField, IsRequired: false, IsEditable: true},
 }
 
 // Node node structural description.
@@ -59,20 +59,34 @@ type Node struct {
 	// ID cluster auto-increment ID in cc
 	ID int64 `json:"id,omitempty" bson:"id"`
 	// BizID the business ID to which the cluster belongs
-	BizID int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
-
+	BizID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
+	// SupplierAccount the supplier account that this resource belongs to.
+	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	// HostID the node ID to which the host belongs
 	HostID int64 `json:"bk_host_id,omitempty" bson:"bk_host_id"`
 	// ClusterID the node ID to which the cluster belongs
 	ClusterID int64 `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
 	// ClusterUID the node ID to which the cluster belongs
-	ClusterUID string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
-	// SupplierAccount the supplier account that this resource belongs to.
-	SupplierAccount string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	ClusterUID string `json:"cluster_uid" bson:"cluster_uid"`
 	// NodeFields node base fields
 	NodeBaseFields `json:",inline" bson:",inline"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
+}
+
+func initNodeFieldsType() {
+	typeOfCat := reflect.TypeOf(NodeBaseFields{})
+	valueOf := reflect.ValueOf(NodeBaseFields{})
+	for i := 0; i < typeOfCat.NumField(); i++ {
+		// 获取每个成员的结构体字段类型
+		for _, descripor := range NodeSpecFieldsDescriptor {
+			fieldType := typeOfCat.Field(i)
+			tag := fieldType.Tag.Get("json")
+			if descripor.Field == tag {
+				descripor.Type = enumor.GetFieldType(valueOf.Field(i).Type().String())
+			}
+		}
+	}
 }
 
 // NodeBaseFields node's basic attribute field description.
@@ -94,8 +108,57 @@ type NodeBaseFields struct {
 	PodCidr          *string               `json:"pod_cidr,omitempty" bson:"pod_cidr"`
 }
 
+// CreateValidate validate the NodeBaseFields
+func (option *NodeBaseFields) CreateValidate() error {
+
+	if option == nil {
+		return errors.New("node information must be given")
+	}
+
+	// get a list of required fields.
+
+	typeOfOption := reflect.TypeOf(*option)
+	valueOfOption := reflect.ValueOf(*option)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+		tag := typeOfOption.Field(i).Tag.Get("json")
+		if !ClusterFields.IsFieldRequiredByField(tag) {
+			continue
+		}
+		if NodeFields.IsFieldRequiredByField(tag) {
+			fieldValue := valueOfOption.Field(i)
+			if fieldValue.IsNil() {
+				return fmt.Errorf("required fields cannot be empty, %s", tag)
+			}
+		}
+	}
+
+	if err := option.validateNodeIP(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (option *NodeBaseFields) validateNodeIP() error {
+	if option.ExternalIP == nil && option.InternalIP == nil {
+		return errors.New("external_ip and internal_ip cannot be null at the same time")
+	}
+	var (
+		bExternalIP, bInternalIP bool
+	)
+	if option.ExternalIP != nil && len(*option.ExternalIP) == 0 {
+		bExternalIP = true
+	}
+	if option.InternalIP != nil && len(*option.InternalIP) == 0 {
+		bInternalIP = true
+	}
+	if bExternalIP && bInternalIP {
+		return errors.New("external_ip and internal_ip cannot be null at the same time")
+	}
+	return nil
+}
+
 // UpdateValidate verifying the validity of parameters for updating node scenarios
-func (option *NodeBaseFields) UpdateValidate() error {
+func (option *NodeBaseFields) updateValidate() error {
 
 	if option == nil {
 		return errors.New("node information must be given")
@@ -121,92 +184,95 @@ func (option *NodeBaseFields) UpdateValidate() error {
 	return nil
 }
 
-// DeleteNodeCmdbOption delete node by id of cmdb.
-type DeleteNodeCmdbOption struct {
+// OneDeleteNodeOption delete node by id of cmdb.
+type OneDeleteNodeOption struct {
 	ClusterID int64   `json:"bk_cluster_id"`
-	ID        []int64 `json:"id"`
-}
-
-// DeleteNodeKubeOption delete node by native id.
-type DeleteNodeKubeOption struct {
-	ClusterUID string   `json:"cluster_uid"`
-	Name       []string `json:"name"`
-}
-
-// DeleteOptionDetail delete node request details
-type DeleteOptionDetail struct {
-	NodeCmdbIDs []DeleteNodeCmdbOption `json:"node_cmdb_ids"`
-	NodeKubeIDs []DeleteNodeKubeOption `json:"node_kube_ids"`
+	IDs       []int64 `json:"ids"`
 }
 
 // BatchDeleteNodeOption delete nodes option.
 type BatchDeleteNodeOption struct {
-	Data DeleteOptionDetail `json:"data"`
+	Nodes []OneDeleteNodeOption `json:"nodes"`
 }
 
 // Validate validate the BatchDeleteNodeOption
 func (option *BatchDeleteNodeOption) Validate() error {
 
-	if len(option.Data.NodeKubeIDs) > 0 && len(option.Data.NodeCmdbIDs) > 0 {
-		return errors.New("params cannot be set at the same time")
-	}
-
-	if len(option.Data.NodeKubeIDs) == 0 && len(option.Data.NodeCmdbIDs) == 0 {
+	if len(option.Nodes) == 0 {
 		return errors.New("params must be set")
 	}
 
-	if len(option.Data.NodeKubeIDs) > maxDeleteNodeNum || len(option.Data.NodeCmdbIDs) > maxDeleteNodeNum {
+	if len(option.Nodes) > maxDeleteNodeNum {
 		return fmt.Errorf("the maximum number of nodes to be deleted is not allowed to exceed %d",
 			maxDeleteClusterNum)
 	}
 	return nil
 }
 
-// NodeReqParam node request parameter details.
-type NodeReqParam struct {
+// OneNodeCreateOption node request parameter details.
+type OneNodeCreateOption struct {
 	// HostID the node ID to which the host belongs
 	HostID int64 `json:"bk_host_id" bson:"bk_host_id"`
 	// ClusterID the node ID to which the cluster belongs
-	ClusterID int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
-	// ClusterUID the node ID to which the cluster belongs
-	ClusterUID     string `json:"cluster_uid" bson:"cluster_uid"`
+	ClusterID      int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
 	NodeBaseFields `json:",inline" bson:",inline"`
+}
+
+// ValidateCreate validate the OneNodeCreateOption
+func (option *OneNodeCreateOption) ValidateCreate() error {
+	if option.HostID == 0 {
+		return errors.New("host id must be set")
+	}
+	if option.ClusterID == 0 {
+		return errors.New("cluster id must be set")
+	}
+	if err := option.CreateValidate(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // CreateNodesOption create node requests in batches.
 type CreateNodesOption struct {
-	Nodes []NodeReqParam `json:"nodes"`
+	Nodes []OneNodeCreateOption `json:"nodes"`
 }
 
-// ArrangeDeleteNodeOption reorganize request parameters for deleting nodes.
-type ArrangeDeleteNodeOption struct {
-	NodeCmdbInfo map[int64][]int64   `json:"node_cmdb_info"`
-	NodeKubeInfo map[string][]string `json:"node_kube_info"`
+// ValidateCreate validate the create nodes request
+func (option *CreateNodesOption) ValidateCreate() error {
+
+	if len(option.Nodes) == 0 {
+		return errors.New("param must be set")
+	}
+
+	if len(option.Nodes) > maxCreateNodeNum {
+		return fmt.Errorf("the number of nodes created at one time does not exceed %d", maxCreateNodeNum)
+	}
+
+	for _, node := range option.Nodes {
+		if err := node.ValidateCreate(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // CreateNodesResult create node results in batches.
 type CreateNodesResult struct {
 	metadata.BaseResp
-	Info []int64 `json:"ids" bson:"ids"`
+	Info []Node `json:"data" bson:"data"`
 }
 
-// QueryNodeReq query node by query builder
-type QueryNodeReq struct {
-	Filter     *querybuilder.QueryFilter `json:"filter"`
-	ClusterID  int64                     `json:"bk_cluster_id"`
-	HostID     int64                     `json:"bk_host_id"`
-	ClusterUID int64                     `json:"cluster_uid"`
-	Page       metadata.BasePage         `json:"page"`
-	Fields     []string                  `json:"fields"`
-}
-
-// SearchNodeRsp query node's response.
-type SearchNodeRsp struct {
-	Data []Node `json:"node"`
+// QueryNodeOption query node by query builder
+type QueryNodeOption struct {
+	Filter    *querybuilder.QueryFilter `json:"filter"`
+	ClusterID int64                     `json:"bk_cluster_id"`
+	HostID    int64                     `json:"bk_host_id"`
+	Page      metadata.BasePage         `json:"page"`
+	Fields    []string                  `json:"fields"`
 }
 
 // Validate validate the param QueryNodeReq
-func (option *QueryNodeReq) Validate() ccErr.RawErrorInfo {
+func (option *QueryNodeOption) Validate() ccErr.RawErrorInfo {
 	op := &querybuilder.RuleOption{
 		NeedSameSliceElementType: true,
 		MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
@@ -215,13 +281,6 @@ func (option *QueryNodeReq) Validate() ccErr.RawErrorInfo {
 
 	if err := option.Page.ValidateWithEnableCount(false, common.BKMaxLimitSize); err.ErrCode != 0 {
 		return err
-	}
-
-	if option.ClusterUID > 0 && option.ClusterID > 0 {
-		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{errors.New("the param cluster_id and cluster_uid can only be filled in one")},
-		}
 	}
 
 	if option.Filter == nil {
@@ -237,10 +296,9 @@ func (option *QueryNodeReq) Validate() ccErr.RawErrorInfo {
 	return ccErr.RawErrorInfo{}
 }
 
-// NodeCmdbOption node related information in cmdb.
-type NodeCmdbOption struct {
-	ClusterID int `json:"bk_cluster_id"`
-	ID        int `json:"id"`
+// SearchNodeRsp query node's response.
+type SearchNodeRsp struct {
+	Data []Node `json:"node"`
 }
 
 // NodeKubeOption information about the node itself.
@@ -249,16 +307,15 @@ type NodeKubeOption struct {
 	Name       string `json:"name"`
 }
 
-// OneUpdateNode update individual node details.
-type OneUpdateNode struct {
-	NodeCmdbFilter *NodeCmdbOption `json:"node_cmdb_filter"`
-	NodeKubeFilter *NodeKubeOption `json:"node_kube_filter"`
-	Data           *NodeBaseFields `json:"data"`
+// UpdateNodeInfo update individual node details.
+type UpdateNodeInfo struct {
+	NodeIDs []int64         `json:"ids"`
+	Data    *NodeBaseFields `json:"data"`
 }
 
 // UpdateNodeOption update node field option
 type UpdateNodeOption struct {
-	Nodes []OneUpdateNode `json:"nodes"`
+	Nodes []UpdateNodeInfo `json:"nodes"`
 }
 
 // Validate check whether the request parameters for updating the node are legal.
@@ -269,67 +326,11 @@ func (option *UpdateNodeOption) Validate() error {
 	}
 
 	for _, node := range option.Nodes {
-		if node.NodeCmdbFilter == nil && node.NodeKubeFilter == nil {
-			return errors.New("node_cmdb_filter and node_kube_filter cannot be empty at the same time")
+		if len(node.NodeIDs) == 0 {
+			return errors.New("node_ids must be set")
 		}
-		if node.NodeCmdbFilter != nil && node.NodeKubeFilter != nil {
-			return errors.New("node_cmdb_filter and node_kube_filter cannot be set at the same time")
-		}
-		if err := node.Data.UpdateValidate(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+		if err := node.Data.updateValidate(); err != nil {
 
-// CreateValidate validate the NodeBaseFields
-func (option *NodeBaseFields) CreateValidate() error {
-
-	if option == nil {
-		return errors.New("node information must be given")
-	}
-
-	// get a list of required fields.
-	requireMap := make(map[string]struct{}, 0)
-	requires := NodeFields.RequiredFields()
-	for field, required := range requires {
-		if required {
-			requireMap[field] = struct{}{}
-		}
-	}
-
-	typeOfOption := reflect.TypeOf(*option)
-	valueOfOption := reflect.ValueOf(*option)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag := typeOfOption.Field(i).Tag.Get("json")
-		if NodeFields.IsFieldRequiredByField(tag) {
-			fieldValue := valueOfOption.Field(i)
-			if fieldValue.IsNil() {
-				return fmt.Errorf("required fields cannot be empty, %s", tag)
-			}
-			delete(requireMap, tag)
-		}
-	}
-
-	if len(requireMap) > 0 {
-		return fmt.Errorf("required fields cannot be empty")
-	}
-
-	return nil
-}
-
-// ValidateCreate validate the create nodes request
-func (option *CreateNodesOption) ValidateCreate() error {
-
-	if len(option.Nodes) == 0 {
-		return errors.New("param must be set")
-	}
-
-	if len(option.Nodes) > maxCreateNodeNum {
-		return fmt.Errorf("the number of nodes created at one time does not exceed %d", maxCreateNodeNum)
-	}
-	for _, node := range option.Nodes {
-		if err := node.CreateValidate(); err != nil {
 			return err
 		}
 	}

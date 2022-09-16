@@ -50,6 +50,21 @@ var PodSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: TolerationsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 }
 
+func initContainerFieldsType() {
+	typeOfCat := reflect.TypeOf(ContainerBaseFields{})
+	valueOf := reflect.ValueOf(ContainerBaseFields{})
+	for i := 0; i < typeOfCat.NumField(); i++ {
+		// 获取每个成员的结构体字段类型
+		for _, descripor := range ContainerSpecFieldsDescriptor {
+			fieldType := typeOfCat.Field(i)
+			tag := fieldType.Tag.Get("json")
+			if descripor.Field == tag {
+				descripor.Type = enumor.GetFieldType(valueOf.Field(i).Type().String())
+			}
+		}
+	}
+}
+
 // ContainerFields merge the fields of the cluster and the details corresponding to the fields together.
 var ContainerFields = table.MergeFields(ContainerSpecFieldsDescriptor)
 
@@ -69,11 +84,29 @@ var ContainerSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: MountsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 }
 
+func initPodFieldsType() {
+	typeOfCat := reflect.TypeOf(PodBaseFields{})
+	valueOf := reflect.ValueOf(PodBaseFields{})
+	for i := 0; i < typeOfCat.NumField(); i++ {
+		// 获取每个成员的结构体字段类型
+		for _, descripor := range PodSpecFieldsDescriptor {
+			fieldType := typeOfCat.Field(i)
+			tag := fieldType.Tag.Get("json")
+			if descripor.Field == tag {
+				descripor.Type = enumor.GetFieldType(valueOf.Field(i).Type().String())
+			}
+		}
+	}
+}
+
 const (
-	// PodQueryLimit limit on the number of pod query.
-	PodQueryLimit = 500
+	// podQueryLimit limit on the number of pod query.
+	podQueryLimit = 500
 	// createPodsLimit the maximum number of pods to be created at one time.
 	createPodsLimit = 200
+
+	// containerQueryLimit limit on the number of container query
+	containerQueryLimit = 500
 )
 
 // PodQueryReq pod query request
@@ -107,7 +140,7 @@ func (p *PodQueryReq) Validate() ccErr.RawErrorInfo {
 		}
 	}
 
-	if err := p.Page.ValidateWithEnableCount(false, PodQueryLimit); err.ErrCode != 0 {
+	if err := p.Page.ValidateWithEnableCount(false, podQueryLimit); err.ErrCode != 0 {
 		return err
 	}
 
@@ -197,6 +230,39 @@ type PodBaseFields struct {
 	Tolerations   *[]Toleration      `json:"tolerations,omitempty" bson:"tolerations"`
 }
 
+// createValidate validate the PodBaseFields
+func (option *PodBaseFields) createValidate() error {
+
+	if option == nil {
+		return errors.New("pod information must be set")
+	}
+
+	if option.Name == nil || *option.Name == "" {
+		return errors.New("pod name must be set")
+	}
+
+	// first get a list of required fields.
+	requires := PodFields.RequiredFields()
+	for _, required := range requires {
+		if !required {
+			continue
+		}
+		typeOfOption := reflect.TypeOf(*option)
+		valueOfOption := reflect.ValueOf(*option)
+		for i := 0; i < typeOfOption.NumField(); i++ {
+			tag := typeOfOption.Field(i).Tag.Get("json")
+			if PodFields.IsFieldRequiredByField(tag) {
+				fieldValue := valueOfOption.Field(i)
+				if fieldValue.IsNil() {
+					return fmt.Errorf("required fields cannot be empty, %s", tag)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 // Container container details
 type Container struct {
 	// cc的自增主键
@@ -223,26 +289,55 @@ type ContainerBaseFields struct {
 	Mounts          *[]VolumeMount   `json:"mounts,omitempty" bson:"mounts"`
 }
 
+// createValidate validate the ContainerBaseFields
+func (option *ContainerBaseFields) createValidate() error {
+
+	if option == nil {
+		return errors.New("container information must be set")
+	}
+
+	if option.Name == nil || *option.Name == "" {
+		return errors.New("container name must be set")
+	}
+
+	if option.ContainerID == nil || *option.ContainerID == "" {
+		return errors.New("container name must be set")
+	}
+
+	typeOfOption := reflect.TypeOf(*option)
+	valueOfOption := reflect.ValueOf(*option)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+		tag := typeOfOption.Field(i).Tag.Get("json")
+		if !ClusterFields.IsFieldRequiredByField(tag) {
+			continue
+		}
+		if ContainerFields.IsFieldRequiredByField(tag) {
+			fieldValue := valueOfOption.Field(i)
+			if fieldValue.IsNil() {
+				return fmt.Errorf("required fields cannot be empty, %s", tag)
+			}
+		}
+	}
+
+	return nil
+}
+
 // SysSpec the relationship information related to the container
 // that stores the cc, all types share this structure.
 type SysSpec struct {
-	BizID           *int64  `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
-	SupplierAccount *string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
-	ClusterID       *int64  `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
+	BizID           int64  `json:"bk_biz_id" bson:"bk_biz_id"`
+	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ClusterID       int64  `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
 	// redundant cluster id
-	ClusterUID  *string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
-	NameSpaceID *int64  `json:"bk_namespace_id,omitempty" bson:"bk_namespace_id"`
+	ClusterUID  string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
+	NameSpaceID int64  `json:"bk_namespace_id,omitempty" bson:"bk_namespace_id"`
 	// redundant namespace names
-	NameSpace *string `json:"namespace,omitempty" bson:"namespace"`
-	Workload  *Ref    `json:"ref,omitempty" bson:"ref"`
-	HostID    *int64  `json:"bk_host_id,omitempty" bson:"bk_host_id"`
-	NodeID    *int64  `json:"bk_node_id,omitempty" bson:"bk_node_id"`
+	NameSpace string `json:"namespace,omitempty" bson:"namespace"`
+	Workload  Ref    `json:"ref,omitempty" bson:"ref"`
+	HostID    int64  `json:"bk_host_id,omitempty" bson:"bk_host_id"`
+	NodeID    int64  `json:"bk_node_id,omitempty" bson:"bk_node_id"`
 	// redundant node names
-	Node *string `json:"node_name,omitempty" bson:"node_name"`
-	// all container related data use the same relation structure, pod
-	// does not need these two fields, only container needs these two fields.
-	PodID *int64  `json:"bk_pod_id,omitempty" bson:"bk_pod_id ,omitempty"`
-	Pod   *string `json:"pod_name,omitempty" bson:"pod_name ,omitempty"`
+	Node string `json:"node_name,omitempty" bson:"node_name"`
 }
 
 // Ref pod-related workload association information.
@@ -256,130 +351,15 @@ type Ref struct {
 
 // PodsInfo details of creating pods.
 type PodsInfo struct {
-	KubeSpecInfo  *KubeSpec `json:"kube_spec"`
-	CmdbSpecInfo  *CmdbSpec `json:"cmdb_spec"`
+	Spec          *SpecInfo `json:"spec"`
 	HostID        int64     `json:"bk_host_id"`
 	PodBaseFields `json:",inline"`
 	Containers    []ContainerBaseFields `json:"containers"`
 }
 
-// CreateValidate validate the PodBaseFields
-func (option *PodBaseFields) CreateValidate() error {
-
-	if option == nil {
-		return errors.New("pod information must be given")
-	}
-
-	// first get a list of required fields.
-	requireMap := make(map[string]struct{}, 0)
-	requires := PodFields.RequiredFields()
-	for field, required := range requires {
-		if required {
-			requireMap[field] = struct{}{}
-		}
-	}
-
-	typeOfOption := reflect.TypeOf(*option)
-	valueOfOption := reflect.ValueOf(*option)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag := typeOfOption.Field(i).Tag.Get("json")
-		if PodFields.IsFieldRequiredByField(tag) {
-			fieldValue := valueOfOption.Field(i)
-			if fieldValue.IsNil() {
-				return fmt.Errorf("required fields cannot be empty, %s", tag)
-			}
-			delete(requireMap, tag)
-		}
-	}
-
-	if len(requireMap) > 0 {
-		return fmt.Errorf("required fields cannot be empty")
-	}
-	return nil
-}
-
-// CreateValidate validate the ContainerBaseFields
-func (option *ContainerBaseFields) CreateValidate() error {
-
-	// first get a list of required fields.
-	requireMap := make(map[string]struct{}, 0)
-	requires := ContainerFields.RequiredFields()
-	for field, required := range requires {
-		if required {
-			requireMap[field] = struct{}{}
-		}
-	}
-
-	if option == nil {
-		return errors.New("node information must be given")
-	}
-	typeOfOption := reflect.TypeOf(*option)
-	valueOfOption := reflect.ValueOf(*option)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag := typeOfOption.Field(i).Tag.Get("json")
-
-		if ContainerFields.IsFieldRequiredByField(tag) {
-			fieldValue := valueOfOption.Field(i)
-			if fieldValue.IsNil() {
-				return fmt.Errorf("required fields cannot be empty, %s", tag)
-			}
-			delete(requireMap, tag)
-		}
-	}
-
-	if len(requireMap) > 0 {
-		return fmt.Errorf("required fields cannot be empty")
-	}
-	return nil
-
-}
-
 // CreatePodsOption create pods option
 type CreatePodsOption struct {
 	Pods []PodsInfo `json:"pods"`
-}
-
-// Validate validate the KubeSpec
-func (option *KubeSpec) Validate() error {
-
-	if option.ClusterUID == nil {
-		return errors.New("cluster uid must be set")
-	}
-	if option.Namespace == nil {
-		return errors.New("namespace must be set")
-	}
-	if option.Node == nil {
-		return errors.New("node must be set")
-	}
-	if option.WorkloadKind == nil {
-		return errors.New("workload kind must be set")
-	}
-	if option.WorkloadName == nil {
-		return errors.New("workload name must be set")
-	}
-	return nil
-}
-
-// Validate validate the CmdbSpec
-func (option *CmdbSpec) Validate() error {
-
-	if option.ClusterID == nil {
-		return errors.New("cluster id must be set")
-	}
-	if option.NamespaceID == nil {
-		return errors.New("namespace id must be set")
-	}
-	if option.NodeID == nil {
-		return errors.New("node id must be set")
-	}
-	if option.WorkloadKind == nil {
-		return errors.New("workload kind must be set")
-	}
-	if option.WorkloadID == nil {
-		return errors.New("workload id must be set")
-	}
-
-	return nil
 }
 
 // Validate validate the CreatePodsOption
@@ -394,36 +374,75 @@ func (option *CreatePodsOption) Validate() error {
 	}
 
 	for _, pod := range option.Pods {
-		if pod.KubeSpecInfo == nil && pod.CmdbSpecInfo == nil {
-			return errors.New("kube spec and cmdb spec cannot be empty at the same time")
-		}
-		if pod.KubeSpecInfo != nil && pod.CmdbSpecInfo != nil {
-			return errors.New("kube spec and cmdb spec cannot be set at the same time")
+		if pod.Spec == nil {
+			return errors.New("spec filter cannot be empty at the same time")
 		}
 
-		if pod.CmdbSpecInfo != nil {
-			if err := pod.CmdbSpecInfo.Validate(); err != nil {
-				return err
-			}
+		if err := pod.Spec.validate(); err != nil {
+			return err
+		}
+		if pod.HostID == 0 {
+			return errors.New("host id must be set")
 		}
 
-		if pod.KubeSpecInfo != nil {
-			if err := pod.KubeSpecInfo.Validate(); err != nil {
-				return err
-			}
-		}
-
-		if err := pod.CreateValidate(); err != nil {
+		if err := pod.createValidate(); err != nil {
 			return err
 		}
 
 		for _, container := range pod.Containers {
-			if err := container.CreateValidate(); err != nil {
+			if err := container.createValidate(); err != nil {
 				return err
 			}
 		}
 	}
 	return nil
+}
+
+// ContainerQueryReq container query request
+type ContainerQueryReq struct {
+	PodID  int64              `json:"bk_pod_id"`
+	Filter *filter.Expression `json:"filter"`
+	Fields []string           `json:"fields,omitempty"`
+	Page   metadata.BasePage  `json:"page,omitempty"`
+}
+
+// Validate validate ContainerQueryReq
+func (p *ContainerQueryReq) Validate() ccErr.RawErrorInfo {
+	if p.PodID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{BKPodIDField},
+		}
+	}
+
+	if err := p.Page.ValidateWithEnableCount(false, containerQueryLimit); err.ErrCode != 0 {
+		return err
+	}
+
+	// todo validate Filter
+	return ccErr.RawErrorInfo{}
+}
+
+// BuildCond build query container condition
+func (p *ContainerQueryReq) BuildCond() (mapstr.MapStr, error) {
+	cond := mapstr.MapStr{
+		BKPodIDField: p.PodID,
+	}
+
+	if p.Filter != nil {
+		filterCond, err := p.Filter.ToMgo()
+		if err != nil {
+			return nil, err
+		}
+		cond = mapstr.MapStr{common.BKDBAND: []mapstr.MapStr{cond, filterCond}}
+	}
+	return cond, nil
+}
+
+// CreatePodsResult create pods results in batches.
+type CreatePodsResult struct {
+	metadata.BaseResp
+	Info []Pod `json:"data" bson:"data"`
 }
 
 // PodInstResp pod instance response

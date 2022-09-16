@@ -19,7 +19,6 @@ package table
 
 import (
 	"errors"
-	"time"
 
 	"configcenter/src/common/criteria/enumor"
 )
@@ -107,22 +106,12 @@ func (f Fields) EditableFields() map[string]bool {
 
 // IsFieldRequiredByField returns the corresponding editable of specified field.
 func (f Fields) IsFieldRequiredByField(field string) bool {
-	for k, v := range f.isRequired {
-		if field == k {
-			return v
-		}
-	}
-	return false
+	return f.isRequired[field]
 }
 
 // IsFieldEditableByField returns the corresponding editable of specified field.
 func (f Fields) IsFieldEditableByField(field string) bool {
-	for k, v := range f.isEditable {
-		if field == k {
-			return v
-		}
-	}
-	return false
+	return f.isEditable[field]
 }
 
 // OneFieldType returns the type corresponding to the specified field.
@@ -196,9 +185,6 @@ type Revision struct {
 	LastTime   int64  `json:"last_time,omitempty" bson:"last_time"`
 }
 
-// lagSeconds fault tolerance for ntp errors of different devices.
-const lagSeconds = 5 * 60
-
 // ValidateCreate validation of parameters in the creation scene.
 func (r Revision) ValidateCreate() error {
 
@@ -207,16 +193,11 @@ func (r Revision) ValidateCreate() error {
 	}
 
 	if r.Creator != r.Modifier {
-		return errors.New("creator can not be empty")
+		return errors.New("creator and Modifier need to be consistent\n")
 	}
 
 	if r.CreateTime == 0 {
 		return errors.New("create time must be set")
-	}
-
-	now := time.Now().Unix()
-	if (r.CreateTime <= (now - lagSeconds)) || (r.CreateTime >= (now + lagSeconds)) {
-		return errors.New("invalid create time")
 	}
 
 	return nil
@@ -230,15 +211,6 @@ func (r Revision) ValidateUpdate() error {
 
 	if len(r.Creator) != 0 {
 		return errors.New("creator can not be updated")
-	}
-
-	now := time.Now().Unix()
-	if (r.LastTime <= (now - lagSeconds)) || (r.LastTime >= (now + lagSeconds)) {
-		return errors.New("invalid update time")
-	}
-
-	if r.LastTime < r.CreateTime-lagSeconds {
-		return errors.New("update time must be later than create time")
 	}
 	return nil
 }

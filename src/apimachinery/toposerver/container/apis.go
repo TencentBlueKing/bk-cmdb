@@ -40,11 +40,11 @@ type ContainerInterface interface {
 	DeleteCluster(ctx context.Context, header http.Header, bizID int64,
 		option *types.DeleteClusterOption) errors.CCErrorCoder
 	BatchDeleteNode(ctx context.Context, header http.Header, bizID int64,
-		option *types.ArrangeDeleteNodeOption) errors.CCErrorCoder
+		option *types.BatchDeleteNodeOption) errors.CCErrorCoder
 	BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
-		data *types.CreateNodesOption) ([]int64, errors.CCErrorCoder)
+		data *types.CreateNodesOption) (*types.CreateNodesResult, errors.CCErrorCoder)
 	BatchCreatePod(ctx context.Context, header http.Header, bizID int64,
-		data *types.CreatePodsOption) ([]int64, errors.CCErrorCoder)
+		data *types.CreatePodsOption) ([]types.Pod, errors.CCErrorCoder)
 	SearchNode(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
 		*types.SearchNodeRsp, errors.CCErrorCoder)
 }

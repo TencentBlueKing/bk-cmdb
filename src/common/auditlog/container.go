@@ -96,7 +96,7 @@ func (c *kubeAuditLog) GeneratePodAuditLog(param *generateAuditCommonParameter, 
 	auditLogs := make([]metadata.AuditLog, len(data))
 
 	for index, d := range data {
-		auditLog, err := c.generateAuditLog(param, metadata.KubePod, &d.ID, d.BizID, d.Name, d)
+		auditLog, err := c.generateAuditLog(param, metadata.KubePod, &d.ID, &d.BizID, d.Name, d)
 		if err != nil {
 			return nil, err
 		}

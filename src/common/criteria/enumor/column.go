@@ -17,11 +17,15 @@
 
 package enumor
 
+import "strings"
+
 // FieldType define the table's field data type.
 type FieldType string
 
 // MapStringType 自定义 map[string]string
 type MapStringType map[string]string
+
+type NumericType int64
 
 const (
 	// Numeric means this field is numeric data type.
@@ -50,3 +54,17 @@ const (
 	// function for this type synchronously. special attention is
 	// paid to whether the array elements also need to synchronize support for this type.
 )
+
+// GetFieldType 根据反射的方式获取到的type需要进行处理
+func GetFieldType(fieldType string) FieldType {
+
+	// 如果是指针类型，那么需要将*去掉
+	t := strings.TrimPrefix(fieldType, "*")
+
+	// 如果是自定义类型那么需要将包部分去掉，值保留类型名称
+	if strings.Contains(t, ".") {
+		tTmps := strings.Split(t, ".")
+		t = tTmps[len(tTmps)-1]
+	}
+	return FieldType(t)
+}

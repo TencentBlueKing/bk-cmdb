@@ -793,3 +793,15 @@ func (wl *WlQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.Map
 	}
 	return cond, nil
 }
+
+// IsInnerWorkload is inner workload type
+func IsInnerWorkload(kind WorkloadType) bool {
+	switch kind {
+	case KubeDeployment, KubeStatefulSet, KubeDaemonSet,
+		KubeGameStatefulSet, KubeGameDeployment, KubeCronJob,
+		KubeJob, KubePodWorkload:
+		return true
+	default:
+		return false
+	}
+}
