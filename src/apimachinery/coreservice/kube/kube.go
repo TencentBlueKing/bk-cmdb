@@ -30,8 +30,8 @@ import (
 // KubeClientInterface the kube client interface
 type KubeClientInterface interface {
 	// FindInst find instance with table name and condition
-	FindInst(ctx context.Context, header http.Header, option *types.QueryReq) (
-		*metadata.InstDataInfo, errors.CCErrorCoder)
+	FindInst(ctx context.Context, header http.Header, option *types.QueryReq) (*metadata.InstDataInfo,
+		errors.CCErrorCoder)
 
 	// CreateNamespace create namespace
 	CreateNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsCreateReq) (
@@ -42,6 +42,10 @@ type KubeClientInterface interface {
 
 	// DeleteNamespace delete namespace
 	DeleteNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsDeleteReq) errors.CCErrorCoder
+
+	// ListNamespace list namespace
+	ListNamespace(ctx context.Context, header http.Header, input *metadata.QueryCondition) (*types.NsDataResp,
+		errors.CCErrorCoder)
 
 	// CreateWorkload create workload
 	CreateWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
@@ -54,6 +58,18 @@ type KubeClientInterface interface {
 	// DeleteWorkload delete workload
 	DeleteWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
 		option *types.WlDeleteReq) errors.CCErrorCoder
+
+	// ListWorkload list workload
+	ListWorkload(ctx context.Context, header http.Header, input *metadata.QueryCondition, kind types.WorkloadType) (
+		*types.WlDataResp, errors.CCErrorCoder)
+
+	// ListPod list pod
+	ListPod(ctx context.Context, header http.Header, input *metadata.QueryCondition) (*types.PodDataResp,
+		errors.CCErrorCoder)
+
+	// ListContainer list container
+	ListContainer(ctx context.Context, header http.Header, input *metadata.QueryCondition) (*types.ContainerDataResp,
+		errors.CCErrorCoder)
 }
 
 // NewKubeClientInterface new kube client interface

@@ -97,12 +97,13 @@ func (p *PodQueryReq) Validate() ccErr.RawErrorInfo {
 		}
 	}
 
-	if p.Ref != nil && ((p.Ref.Name == nil && p.Ref.ID == nil) || p.Ref.Kind == nil ||
-		!IsInnerWorkload(WorkloadType(*p.Ref.Kind))) {
-
-		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{RefField},
+	if p.Ref != nil {
+		err := p.Ref.Kind.Validate()
+		if (p.Ref.Name == nil && p.Ref.ID == nil) || p.Ref.Kind == nil || err != nil {
+			return ccErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{RefField},
+			}
 		}
 	}
 
@@ -176,7 +177,7 @@ func (p *PodQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.Map
 // Pod pod details
 type Pod struct {
 	// cc的自增主键
-	ID            int64 `json:"id" bson:"id"`
+	ID            int64 `json:"id,omitempty" bson:"id"`
 	SysSpec       `json:",inline" bson:",inline"`
 	PodBaseFields `json:",inline" bson:",inline"`
 	// Revision record this app's revision information
@@ -185,7 +186,7 @@ type Pod struct {
 
 // PodBaseFields pod core details
 type PodBaseFields struct {
-	Name          *string            `json:"name" bson:"name"`
+	Name          *string            `json:"name,omitempty" bson:"name"`
 	Priority      *int32             `json:"priority,omitempty" bson:"priority"`
 	Labels        *map[string]string `json:"labels,omitempty"  bson:"labels"`
 	IP            *string            `json:"ip,omitempty"  bson:"ip"`
@@ -199,18 +200,18 @@ type PodBaseFields struct {
 // Container container details
 type Container struct {
 	// cc的自增主键
-	ID                  int64 `json:"id" bson:"id"`
-	PodID               int64 `json:"bk_pod_id" bson:"bk_pod_id"`
-	ContainerBaseFields `json:",inline"`
+	ID                  int64 `json:"id,omitempty" bson:"id"`
+	PodID               int64 `json:"bk_pod_id,omitempty" bson:"bk_pod_id"`
+	ContainerBaseFields `json:",inline" bson:",inline"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }
 
 // ContainerBaseFields container core details
 type ContainerBaseFields struct {
-	Name            *string          `json:"name" bson:"name"`
-	ContainerID     *string          `json:"container_uid" bson:"container_uid"`
-	Image           *string          `json:"image" bson:"image"`
+	Name            *string          `json:"name,omitempty" bson:"name"`
+	ContainerID     *string          `json:"container_uid,omitempty" bson:"container_uid"`
+	Image           *string          `json:"image,omitempty" bson:"image"`
 	Ports           *[]ContainerPort `json:"ports,omitempty" bson:"ports"`
 	HostPorts       *[]ContainerPort `json:"host_ports,omitempty" bson:"host_ports"`
 	Args            *[]string        `json:"args,omitempty" bson:"args"`
@@ -225,8 +226,8 @@ type ContainerBaseFields struct {
 // SysSpec the relationship information related to the container
 // that stores the cc, all types share this structure.
 type SysSpec struct {
-	BizID           *int64  `json:"bk_biz_id" bson:"bk_biz_id"`
-	SupplierAccount *string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	BizID           *int64  `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
+	SupplierAccount *string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 	ClusterID       *int64  `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
 	// redundant cluster id
 	ClusterUID  *string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
@@ -423,4 +424,26 @@ func (option *CreatePodsOption) Validate() error {
 		}
 	}
 	return nil
+}
+
+// PodInstResp pod instance response
+type PodInstResp struct {
+	metadata.BaseResp `json:",inline"`
+	Data              PodDataResp `json:"data"`
+}
+
+// PodDataResp pod data response
+type PodDataResp struct {
+	Info []Pod `json:"info"`
+}
+
+// ContainerInstResp container instance response
+type ContainerInstResp struct {
+	metadata.BaseResp `json:",inline"`
+	Data              ContainerDataResp `json:"data"`
+}
+
+// ContainerDataResp container data response
+type ContainerDataResp struct {
+	Info []Container `json:"info"`
 }

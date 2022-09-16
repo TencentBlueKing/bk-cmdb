@@ -20,6 +20,7 @@ package types
 import (
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/kube/orm"
 )
 
@@ -51,24 +52,25 @@ type RollingUpdateDeployment struct {
 // Deployment define the deployment struct.
 type Deployment struct {
 	Workload              `json:",inline" bson:",inline"`
-	StrategyType          *DeploymentStrategyType  `json:"strategy_type" bson:"strategy_type"`
-	RollingUpdateStrategy *RollingUpdateDeployment `json:"rolling_update_strategy" bson:"rolling_update_strategy"`
+	StrategyType          *DeploymentStrategyType  `json:"strategy_type,omitempty" bson:"strategy_type"`
+	RollingUpdateStrategy *RollingUpdateDeployment `json:"rolling_update_strategy,omitempty" bson:"rolling_update_strategy"`
 }
 
 // DeployUpdateData defines the deployment update data common operation.
 type DeployUpdateData struct {
-	WlIdentification `json:",inline"`
-	Info             Deployment `json:"info"`
+	WlCommonUpdate `json:",inline"`
+	Info           Deployment `json:"info"`
 }
 
 // BuildUpdateData build deployment update data
-func (d *DeployUpdateData) BuildUpdateData() (map[string]interface{}, error) {
+func (d *DeployUpdateData) BuildUpdateData(user string) (map[string]interface{}, error) {
 	now := time.Now().Unix()
-	d.Info.UpdateTime = &now
 	opts := orm.NewFieldOptions().AddIgnoredFields(wlIgnoreField...)
 	updateData, err := orm.GetUpdateFieldsWithOption(d.Info, opts)
 	if err != nil {
 		return nil, err
 	}
+	updateData[common.LastTimeField] = now
+	updateData[common.ModifierField] = user
 	return updateData, err
 }

@@ -1721,9 +1721,9 @@ func (s *Service) getHostIDsByKubeCond(kit *rest.Kit, req types.SearchHostReq) (
 		return hostIDs, nil
 	}
 
-	// find hostIDs by node filter
+	// find hostIDs by node or cluster filter
 	if (req.NodeCond != nil && req.NodeCond.Filter != nil) || req.ClusterID != 0 {
-		hostIDs, err = s.getHostByNode(kit, req, hasHostIDCond, hostIDs)
+		hostIDs, err = s.getHostByClusterOrNode(kit, req, hasHostIDCond, hostIDs)
 		if err != nil {
 			blog.Errorf("get hostID by node filter failed, err: %v, rid: %s", err, kit.Rid)
 			return nil, err
@@ -1744,7 +1744,7 @@ func (s *Service) getHostByKubeTopoFilter(kit *rest.Kit, req types.SearchHostReq
 
 	// it mean that want to find the host in folder
 	if req.Folder {
-		hostIDs, err := s.getHostInFolder(kit, req.ClusterID)
+		hostIDs, err := s.getHostInFolder(kit, req.BizID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -1769,60 +1769,64 @@ func (s *Service) getHostByKubeTopoFilter(kit *rest.Kit, req types.SearchHostReq
 		cond[types.RefKindField] = req.WlKind
 	}
 
-	hostIDs, err := s.getHostIDsByCond(kit, cond, types.BKTableNameBasePod)
+	fields := []string{common.BKHostIDField}
+	query := &meta.QueryCondition{
+		Condition: cond,
+		Fields:    fields,
+	}
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListPod(kit.Ctx, kit.Header, query)
 	if err != nil {
+		blog.Errorf("find pod failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
 		return nil, err
+	}
+
+	hostIDs := make([]int64, 0)
+	for _, pod := range resp.Info {
+		if *pod.HostID != 0 {
+			hostIDs = append(hostIDs, *pod.HostID)
+		}
+	}
+	return hostIDs, nil
+}
+
+func (s *Service) getHostInFolder(kit *rest.Kit, bizID int64, clusterID int64) ([]int64, error) {
+	if bizID == 0 {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField)
+	}
+
+	if clusterID == 0 {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, types.BKClusterIDFiled)
+	}
+
+	cond := mapstr.MapStr{
+		common.BKAppIDField:    bizID,
+		types.BKClusterIDFiled: clusterID,
+		types.HasPodField:      false,
+	}
+
+	fields := []string{common.BKHostIDField}
+	query := &meta.QueryCondition{
+		Condition: cond,
+		Fields:    fields,
+	}
+	resp, err := s.Engine.CoreAPI.CoreService().Container().SearchNode(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
+		return nil, err
+	}
+	hostIDs := make([]int64, 0)
+	for _, node := range resp.Data {
+		if node.HostID != 0 {
+			hostIDs = append(hostIDs, node.HostID)
+		}
 	}
 
 	return hostIDs, nil
 }
 
-func (s *Service) getHostInFolder(kit *rest.Kit, clusterID int64) ([]int64, error) {
-	if clusterID == 0 {
-		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, types.BKClusterIDFiled)
-	}
-
-	cond := mapstr.MapStr{types.BKClusterIDFiled: clusterID}
-	// 1. find hostIDs by clusterID condition for node
-	nodeHostIDs, err := s.getHostIDsByCond(kit, cond, types.BKTableNameBaseNode)
-	if err != nil {
-		return nil, err
-	}
-
-	// 2. find hostIDs by clusterID condition for pod
-	podHostIDs, err := s.getHostIDsByCond(kit, cond, types.BKTableNameBasePod)
-	if err != nil {
-		return nil, err
-	}
-	podHostIDMap := make(map[int64]struct{})
-	for _, hostID := range podHostIDs {
-		podHostIDMap[hostID] = struct{}{}
-	}
-
-	// 3. get the hostID which is node but don't have pod
-	nodeHostIDMap := make(map[int64]struct{})
-	result := make([]int64, 0)
-	for _, hostID := range nodeHostIDs {
-		// skip if the hostID already judged it
-		if _, ok := nodeHostIDMap[hostID]; ok {
-			continue
-		}
-		nodeHostIDMap[hostID] = struct{}{}
-
-		// skip if the pod is on the host
-		if _, ok := podHostIDMap[hostID]; ok {
-			continue
-		}
-
-		result = append(result, hostID)
-	}
-
-	return result, nil
-}
-
-// getHostByNode get hostID by node
+// getHostByNode get hostID by cluster or node
 // this func can not find hostIDs only by bizID condition
-func (s *Service) getHostByNode(kit *rest.Kit, req types.SearchHostReq, hasHostIDCond bool, hostIDs []int64) (
+func (s *Service) getHostByClusterOrNode(kit *rest.Kit, req types.SearchHostReq, hasHostIDCond bool, hostIDs []int64) (
 	[]int64, error) {
 	var err error
 	cond := mapstr.MapStr{}
@@ -1831,7 +1835,7 @@ func (s *Service) getHostByNode(kit *rest.Kit, req types.SearchHostReq, hasHostI
 		if err != nil {
 			blog.Errorf("node filter to mongo condition failed: %v, err: %v, rid: %s", req.NodeCond.Filter, err,
 				kit.Rid)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "node_filter")
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "node_cond")
 		}
 	}
 
@@ -1847,43 +1851,24 @@ func (s *Service) getHostByNode(kit *rest.Kit, req types.SearchHostReq, hasHostI
 		cond[common.BKHostIDField] = mapstr.MapStr{common.BKDBIN: hostIDs}
 	}
 
-	ids, err := s.getHostIDsByCond(kit, cond, types.BKTableNameBaseNode)
-	if err != nil {
-		return nil, err
-	}
-
-	return ids, nil
-}
-
-func (s *Service) getHostIDsByCond(kit *rest.Kit, cond mapstr.MapStr, table string) ([]int64, error) {
 	fields := []string{common.BKHostIDField}
 	query := &meta.QueryCondition{
 		Condition: cond,
 		Fields:    fields,
 	}
-	option := &types.QueryReq{
-		Table:     table,
-		Condition: query,
-	}
-	var err error
-	insts, err := s.Engine.CoreAPI.CoreService().Kube().FindInst(kit.Ctx, kit.Header, option)
+	resp, err := s.Engine.CoreAPI.CoreService().Container().SearchNode(kit.Ctx, kit.Header, query)
 	if err != nil {
-		blog.Errorf("find inst failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
+		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
 		return nil, err
 	}
-
-	hostIDs := make([]int64, 0)
-	for _, inst := range insts.Info {
-		hostID, err := util.GetInt64ByInterface(inst[common.BKHostIDField])
-		if err != nil {
-			blog.Errorf("get inst attribute failed, attr: %s, node: %v, err: %v, rid: %s", common.BKHostIDField, inst,
-				err, kit.Rid)
-			return nil, err
+	ids := make([]int64, 0)
+	for _, node := range resp.Data {
+		if node.HostID != 0 {
+			ids = append(ids, node.HostID)
 		}
-		hostIDs = append(hostIDs, hostID)
 	}
 
-	return hostIDs, nil
+	return ids, nil
 }
 
 func (s *Service) buildResult(kit *rest.Kit, hosts []mapstr.MapStr, req types.SearchHostReq) ([]mapstr.MapStr, error) {
@@ -1912,7 +1897,7 @@ func (s *Service) buildResult(kit *rest.Kit, hosts []mapstr.MapStr, req types.Se
 		return nil, err
 	}
 
-	hostIDToNode := make(map[int64][]mapstr.MapStr)
+	hostIDToNode := make(map[int64][]types.Node)
 	if req.NodeCond != nil && len(req.NodeCond.Fields) != 0 {
 		hostIDToNode, err = s.findNodeByHostIDs(kit, hostIDs, req.NodeCond.Fields)
 		if err != nil {
@@ -1935,35 +1920,26 @@ func (s *Service) buildResult(kit *rest.Kit, hosts []mapstr.MapStr, req types.Se
 	return result, nil
 }
 
-func (s *Service) findNodeByHostIDs(kit *rest.Kit, hostIDs []int64, fields []string) (map[int64][]mapstr.MapStr,
-	error) {
-
+func (s *Service) findNodeByHostIDs(kit *rest.Kit, hostIDs []int64, fields []string) (map[int64][]types.Node, error) {
 	fields = append(fields, common.BKHostIDField)
 	cond := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDs}}
 	query := &meta.QueryCondition{
 		Condition: cond,
 		Fields:    fields,
 	}
-	option := &types.QueryReq{
-		Table:     types.BKTableNameBaseNode,
-		Condition: query,
-	}
-
-	result, err := s.Engine.CoreAPI.CoreService().Kube().FindInst(kit.Ctx, kit.Header, option)
+	resp, err := s.Engine.CoreAPI.CoreService().Container().SearchNode(kit.Ctx, kit.Header, query)
 	if err != nil {
-		blog.Errorf("find inst failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
+		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
 		return nil, err
 	}
 
-	hostIDToNode := make(map[int64][]mapstr.MapStr)
-	for _, node := range result.Info {
-		hostID, err := node.Int64(common.BKHostIDField)
-		if err != nil {
-			blog.Errorf("get node attribute failed, attr: %s, node: %v, err: %v, rid: %s", common.BKHostIDField,
-				node, err, kit.Rid)
-			return nil, err
+	hostIDToNode := make(map[int64][]types.Node)
+	for _, node := range resp.Data {
+		if node.HostID == 0 {
+			continue
 		}
-		delete(node, common.BKHostIDField)
+
+		hostID := node.HostID
 		hostIDToNode[hostID] = append(hostIDToNode[hostID], node)
 	}
 

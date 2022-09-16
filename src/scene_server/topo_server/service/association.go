@@ -1142,3 +1142,82 @@ func (s *Service) SearchTopoPath(ctx *rest.Contexts) {
 
 	ctx.RespEntity(result)
 }
+
+// SearchHostTopoPath search host topo path
+func (s *Service) SearchHostTopoPath(ctx *rest.Contexts) {
+	req := new(metadata.HostTopoPathReq)
+	if err := ctx.DecodeInto(req); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := req.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	cond := &metadata.HostModuleRelationRequest{
+		HostIDArr: req.HostIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	resp, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	if err != nil {
+		blog.Errorf("get host module relation failed, err: %v, cond: %v, rid: %s", err, cond, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	hostToModule := make(map[int64][]int64)
+	hostToBiz := make(map[int64]int64)
+	bizIDs := make([]int64, 0)
+	uniqueMap := make(map[int64]struct{})
+	for _, relation := range resp.Info {
+		bizID := relation.AppID
+		hostID := relation.HostID
+		hostToModule[hostID] = append(hostToModule[hostID], relation.ModuleID)
+		hostToBiz[hostID] = bizID
+		if _, ok := uniqueMap[bizID]; ok {
+			continue
+		}
+		uniqueMap[bizID] = struct{}{}
+		bizIDs = append(bizIDs, bizID)
+	}
+
+	bizToTopo := make(map[int64]*metadata.TopoInstanceNode)
+	for _, bizID := range bizIDs {
+		topoRoot, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx,
+			ctx.Kit.Header, bizID, false)
+		if err != nil {
+			blog.Errorf("search mainline instance topo failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+
+		bizToTopo[bizID] = topoRoot
+	}
+
+	result := make([]*metadata.HostTopoPath, len(req.HostIDs))
+	for idx, hostID := range req.HostIDs {
+		bizID := hostToBiz[hostID]
+		topo := bizToTopo[bizID]
+		paths := make([][]*metadata.TopoInstanceNodeSimplify, 0)
+		for _, moduleID := range hostToModule[hostID] {
+			topoPath := topo.TraversalFindNode(common.BKInnerObjIDModule, moduleID)
+			path := make([]*metadata.TopoInstanceNodeSimplify, 0)
+			for _, item := range topoPath {
+				simplify := item.ToSimplify()
+				path = append(path, simplify)
+			}
+			paths = append(paths, path)
+		}
+
+		result[idx] = &metadata.HostTopoPath{
+			HostID: hostID,
+			Path:   paths,
+		}
+	}
+
+	ctx.RespEntity(result)
+}
