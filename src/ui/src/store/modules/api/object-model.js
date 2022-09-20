@@ -18,8 +18,7 @@ const state = {
 }
 
 const getters = {
-  activeModel: state => state.activeModel,
-  isMainLine: state => state.activeModel.bk_classification_id === 'bk_biz_topo'
+  activeModel: state => state.activeModel
 }
 
 const actions = {

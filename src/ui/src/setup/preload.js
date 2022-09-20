@@ -78,6 +78,18 @@ export const verifyPlatformManagementAuth = async () => {
   }
 }
 
+/**
+ * 获取主线模型，数据会写入store
+ */
+const getMainLineModels = async () => {
+  store.dispatch('objectMainLineModule/searchMainlineObject', {
+    config: {
+      ...preloadConfig,
+      requestId: 'getMainLineModels'
+    }
+  })
+}
+
 export default async function (app) {
   if (window.Site.authscheme === 'iam') {
     verifyPlatformManagementAuth()
@@ -91,6 +103,8 @@ export default async function (app) {
 
   // 获取有访问权限的业务集
   getAuthorizedBusinessSet()
+
+  getMainLineModels()
 
   return Promise.all([
     getGlobalConfig(app),
