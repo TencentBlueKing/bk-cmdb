@@ -251,7 +251,7 @@ func TestExpressionValidateOption(t *testing.T) {
 							Value:    123,
 						},
 						&AtomRule{
-							Field:    "string_array",
+							Field:    "enum_array",
 							Operator: In.Factory(),
 							Value:    []string{"b", "c"},
 						},
@@ -282,19 +282,14 @@ func TestExpressionValidateOption(t *testing.T) {
 		},
 	}
 
-	opt := &ExprOption{
-		RuleFields: map[string]enumor.FieldType{
-			"string":       enumor.String,
-			"int":          enumor.Numeric,
-			"string_array": enumor.String,
-			"int_array":    enumor.Numeric,
-			"bool":         enumor.Boolean,
-			"time":         enumor.Time,
-		},
-		MaxInLimit:    0,
-		MaxNotInLimit: 0,
-		MaxRulesLimit: 10,
-	}
+	opt := NewDefaultExprOpt(map[string]enumor.FieldType{
+		"string":     enumor.String,
+		"int":        enumor.Numeric,
+		"enum_array": enumor.Enum,
+		"int_array":  enumor.Numeric,
+		"bool":       enumor.Boolean,
+		"time":       enumor.Time,
+	})
 
 	if err := expr.Validate(opt); err != nil {
 		t.Errorf("validate expression failed, err: %v", err)
@@ -316,12 +311,12 @@ func TestExpressionValidateOption(t *testing.T) {
 	}
 	opt.RuleFields["int"] = enumor.Numeric
 
-	opt.RuleFields["string_array"] = enumor.Boolean
+	opt.RuleFields["enum_array"] = enumor.Boolean
 	if err := expr.Validate(opt); !strings.Contains(err.Error(), "value should be a boolean") {
-		t.Errorf("validate numeric type failed, err: %v", err)
+		t.Errorf("validate bool type failed, err: %v", err)
 		return
 	}
-	opt.RuleFields["string_array"] = enumor.String
+	opt.RuleFields["enum_array"] = enumor.String
 
 	opt.RuleFields["bool"] = enumor.Time
 	if err := expr.Validate(opt); !strings.Contains(err.Error(), "is not of time type") {
@@ -345,7 +340,7 @@ func TestExpressionValidateOption(t *testing.T) {
 	opt.MaxRulesDepth = 3
 
 	opt.MaxRulesLimit = 3
-	if err := expr.Validate(opt); !strings.Contains(err.Error(), "rules elements number is overhead") {
+	if err := expr.Validate(opt); !strings.Contains(err.Error(), "rules elements number exceeds limit: 3") {
 		t.Errorf("validate rule limit failed, err: %v", err)
 		return
 	}

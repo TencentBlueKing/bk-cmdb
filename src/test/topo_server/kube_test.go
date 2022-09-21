@@ -19,8 +19,8 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
-	"configcenter/src/common/querybuilder"
 	commonutil "configcenter/src/common/util"
+	"configcenter/src/filter"
 	"configcenter/src/kube/types"
 	"configcenter/src/test"
 	"configcenter/src/test/util"
@@ -254,13 +254,13 @@ var _ = Describe("kube cluster test", func() {
 		By("search kube cluster by name")
 		func() {
 			input := &types.QueryClusterOption{
-				Filter: &querybuilder.QueryFilter{
-					Rule: querybuilder.CombinedRule{
-						Condition: querybuilder.ConditionAnd,
-						Rules: []querybuilder.Rule{
-							&querybuilder.AtomRule{
+				Filter: &filter.Expression{
+					RuleFactory: &filter.CombinedRule{
+						Condition: filter.And,
+						Rules: []filter.RuleFactory{
+							&filter.AtomRule{
 								Field:    types.KubeNameField,
-								Operator: querybuilder.OperatorEqual,
+								Operator: filter.OpFactory(filter.Equal),
 								Value:    "cluster",
 							},
 						},
@@ -287,16 +287,11 @@ var _ = Describe("kube cluster test", func() {
 
 		func() {
 			input := &types.QueryClusterOption{
-				Filter: &querybuilder.QueryFilter{
-					Rule: querybuilder.CombinedRule{
-						Condition: querybuilder.ConditionAnd,
-						Rules: []querybuilder.Rule{
-							&querybuilder.AtomRule{
-								Field:    types.KubeNameField,
-								Operator: querybuilder.OperatorEqual,
-								Value:    "cluster",
-							},
-						},
+				Filter: &filter.Expression{
+					RuleFactory: &filter.AtomRule{
+						Field:    types.KubeNameField,
+						Operator: filter.OpFactory(filter.Equal),
+						Value:    "cluster",
 					},
 				},
 				Page: metadata.BasePage{
@@ -450,16 +445,11 @@ var _ = Describe("kube cluster test", func() {
 
 		func() {
 			input := &types.QueryNodeOption{
-				Filter: &querybuilder.QueryFilter{
-					Rule: querybuilder.CombinedRule{
-						Condition: querybuilder.ConditionAnd,
-						Rules: []querybuilder.Rule{
-							&querybuilder.AtomRule{
-								Field:    types.KubeNameField,
-								Operator: querybuilder.OperatorEqual,
-								Value:    "node",
-							},
-						},
+				Filter: &filter.Expression{
+					RuleFactory: &filter.AtomRule{
+						Field:    types.KubeNameField,
+						Operator: filter.OpFactory(filter.Equal),
+						Value:    "node",
 					},
 				},
 				Page: metadata.BasePage{
@@ -477,16 +467,11 @@ var _ = Describe("kube cluster test", func() {
 
 		func() {
 			input := &types.QueryNodeOption{
-				Filter: &querybuilder.QueryFilter{
-					Rule: querybuilder.CombinedRule{
-						Condition: querybuilder.ConditionAnd,
-						Rules: []querybuilder.Rule{
-							&querybuilder.AtomRule{
-								Field:    types.KubeNameField,
-								Operator: querybuilder.OperatorIn,
-								Value:    []string{"node", "node2"},
-							},
-						},
+				Filter: &filter.Expression{
+					RuleFactory: &filter.AtomRule{
+						Field:    types.KubeNameField,
+						Operator: filter.OpFactory(filter.In),
+						Value:    []string{"node", "node2"},
 					},
 				},
 				Page: metadata.BasePage{

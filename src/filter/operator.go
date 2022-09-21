@@ -68,8 +68,6 @@ func init() {
 	opFactory[OpFactory(contains.Name())] = &contains
 	containsSensitive := ContainsSensitiveOp(ContainsSensitive)
 	opFactory[OpFactory(containsSensitive.Name())] = &containsSensitive
-	containsInsensitive := ContainsInsensitiveOp(ContainsInsensitive)
-	opFactory[OpFactory(containsInsensitive.Name())] = &containsInsensitive
 	notContains := NotContainsOp(NotContains)
 	opFactory[OpFactory(notContains.Name())] = &notContains
 	notContainsInsensitive := NotContainsInsensitiveOp(NotContainsInsensitive)
@@ -96,9 +94,9 @@ func init() {
 	opFactory[OpFactory(exist.Name())] = &exist
 	notExist := NotExistOp(NotExist)
 	opFactory[OpFactory(notExist.Name())] = &notExist
-	filterObj := FilterObjectOp(FilterObject)
-	opFactory[OpFactory(filterObj.Name())] = &filterObj
-	filterArr := FilterArrayOp(FilterArray)
+	obj := ObjectOp(Object)
+	opFactory[OpFactory(obj.Name())] = &obj
+	filterArr := ArrayOp(Array)
 	opFactory[OpFactory(filterArr.Name())] = &filterArr
 }
 
@@ -149,18 +147,21 @@ const (
 	Unknown OpType = "unknown"
 
 	// generic operator
+
 	// Equal operator
 	Equal OpType = "equal"
 	// NotEqual operator
 	NotEqual OpType = "not_equal"
 
 	// set operator that is used to filter element using the value array
+
 	// In operator
 	In OpType = "in"
 	// NotIn operator
 	NotIn OpType = "not_in"
 
 	// numeric compare operator
+
 	// Less operator
 	Less OpType = "less"
 	// LessOrEqual operator
@@ -171,6 +172,7 @@ const (
 	GreaterOrEqual OpType = "greater_or_equal"
 
 	// datetime operator, ** need to be parsed to mongo in coreservice to avoid json marshaling **
+
 	// DatetimeLess operator
 	DatetimeLess OpType = "datetime_less"
 	// DatetimeLessOrEqual operator
@@ -181,34 +183,34 @@ const (
 	DatetimeGreaterOrEqual OpType = "datetime_greater_or_equal"
 
 	// string operator
+
 	// BeginsWith operator with case-sensitive
 	BeginsWith OpType = "begins_with"
 	// BeginsWithInsensitive operator with case-insensitive
-	BeginsWithInsensitive OpType = "begins_with_insensitive"
+	BeginsWithInsensitive OpType = "begins_with_i"
 	// NotBeginsWith operator with case-sensitive
 	NotBeginsWith OpType = "not_begins_with"
 	// NotBeginsWithInsensitive operator with case-insensitive
-	NotBeginsWithInsensitive OpType = "not_begins_with_insensitive"
+	NotBeginsWithInsensitive OpType = "not_begins_with_i"
 	// Contains operator with case-insensitive, compatible for the query builder's same operator that's case-insensitive
 	Contains OpType = "contains"
 	// ContainsSensitive operator with case-sensitive
-	ContainsSensitive OpType = "contains_sensitive"
-	// ContainsInsensitive operator with case-insensitive
-	ContainsInsensitive OpType = "contains_insensitive"
+	ContainsSensitive OpType = "contains_s"
 	// NotContains operator with case-sensitive
 	NotContains OpType = "not_contains"
 	// NotContainsInsensitive operator with case-insensitive
-	NotContainsInsensitive OpType = "not_contains_insensitive"
+	NotContainsInsensitive OpType = "not_contains_i"
 	// EndsWith operator with case-sensitive
 	EndsWith OpType = "ends_with"
 	// EndsWithInsensitive operator with case-insensitive
-	EndsWithInsensitive OpType = "ends_with_insensitive"
+	EndsWithInsensitive OpType = "ends_with_i"
 	// NotEndsWith operator with case-sensitive
 	NotEndsWith OpType = "not_ends_with"
 	// NotEndsWithInsensitive operator with case-insensitive
-	NotEndsWithInsensitive OpType = "not_ends_with_insensitive"
+	NotEndsWithInsensitive OpType = "not_ends_with_i"
 
 	// array operator
+
 	// IsEmpty operator
 	IsEmpty OpType = "is_empty"
 	// IsNotEmpty operator
@@ -217,22 +219,25 @@ const (
 	Size OpType = "size"
 
 	// null check operator
+
 	// IsNull operator
 	IsNull OpType = "is_null"
 	// IsNotNull operator
 	IsNotNull OpType = "is_not_null"
 
 	// existence check operator
+
 	// Exist operator
 	Exist OpType = "exist"
 	// NotExist operator
 	NotExist OpType = "not_exist"
 
-	// filter embeded elements operator
-	// FilterObject filter object fields operator
-	FilterObject OpType = "filter_object"
-	// FilterArray filter array elements operator
-	FilterArray OpType = "filter_array"
+	// filter embedded elements operator
+
+	// Object filter object fields operator
+	Object OpType = "filter_object"
+	// Array filter array elements operator
+	Array OpType = "filter_array"
 )
 
 // OpType defines the operators supported by cc.
@@ -243,9 +248,9 @@ func (op OpType) Validate() error {
 	switch op {
 	case Equal, NotEqual, In, NotIn, Less, LessOrEqual, Greater, GreaterOrEqual, DatetimeLess, DatetimeLessOrEqual,
 		DatetimeGreater, DatetimeGreaterOrEqual, BeginsWith, BeginsWithInsensitive, NotBeginsWith,
-		NotBeginsWithInsensitive, Contains, ContainsSensitive, ContainsInsensitive, NotContains, NotContainsInsensitive,
-		EndsWith, EndsWithInsensitive, NotEndsWith, NotEndsWithInsensitive, IsEmpty, IsNotEmpty, Size, IsNull,
-		IsNotNull, Exist, NotExist, FilterObject, FilterArray:
+		NotBeginsWithInsensitive, Contains, ContainsSensitive, NotContains, NotContainsInsensitive, EndsWith,
+		EndsWithInsensitive, NotEndsWith, NotEndsWithInsensitive, IsEmpty, IsNotEmpty, Size, IsNull,
+		IsNotNull, Exist, NotExist, Object, Array:
 	default:
 		return fmt.Errorf("unsupported operator: %s", op)
 	}
@@ -308,10 +313,6 @@ func (o EqualOp) ToMgo(field string, value interface{}) (map[string]interface{},
 		return nil, errors.New("field is empty")
 	}
 
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
-	}
-
 	return mapstr.MapStr{
 		field: map[string]interface{}{common.BKDBEQ: value},
 	}, nil
@@ -339,10 +340,6 @@ func (ne NotEqualOp) ToMgo(field string, value interface{}) (map[string]interfac
 		return nil, errors.New("field is empty")
 	}
 
-	if err := ne.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
-	}
-
 	return mapstr.MapStr{
 		field: map[string]interface{}{common.BKDBNE: value},
 	}, nil
@@ -358,14 +355,11 @@ func (o InOp) Name() OpType {
 
 // ValidateValue validate in operator's value
 func (o InOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	maxInLimit := DefaultMaxInLimit
-	if opt != nil {
-		if opt.MaxInLimit > 0 {
-			maxInLimit = opt.MaxInLimit
-		}
+	if opt == nil {
+		return errors.New("validate option must be set")
 	}
 
-	err := util.ValidateSliceOfBasicType(v, maxInLimit)
+	err := util.ValidateSliceOfBasicType(v, opt.MaxInLimit)
 	if err != nil {
 		return fmt.Errorf("in operator's value is invalid, err: %v", err)
 	}
@@ -377,10 +371,6 @@ func (o InOp) ValidateValue(v interface{}, opt *ExprOption) error {
 func (o InOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
 	if len(field) == 0 {
 		return nil, errors.New("field is empty")
-	}
-
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
 	}
 
 	return mapstr.MapStr{
@@ -398,14 +388,11 @@ func (o NotInOp) Name() OpType {
 
 // ValidateValue validate not in value
 func (o NotInOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	maxNotInLimit := DefaultMaxNotInLimit
-	if opt != nil {
-		if opt.MaxNotInLimit > 0 {
-			maxNotInLimit = opt.MaxNotInLimit
-		}
+	if opt == nil {
+		return errors.New("validate option must be set")
 	}
 
-	err := util.ValidateSliceOfBasicType(v, maxNotInLimit)
+	err := util.ValidateSliceOfBasicType(v, opt.MaxNotInLimit)
 	if err != nil {
 		return fmt.Errorf("nin operator's value is invalid, err: %v", err)
 	}
@@ -417,10 +404,6 @@ func (o NotInOp) ValidateValue(v interface{}, opt *ExprOption) error {
 func (o NotInOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
 	if len(field) == 0 {
 		return nil, errors.New("field is empty")
-	}
-
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
 	}
 
 	return mapstr.MapStr{
@@ -450,10 +433,6 @@ func (o LessOp) ToMgo(field string, value interface{}) (map[string]interface{}, 
 		return nil, errors.New("field is empty")
 	}
 
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
-	}
-
 	return mapstr.MapStr{
 		field: map[string]interface{}{common.BKDBLT: value},
 	}, nil
@@ -479,10 +458,6 @@ func (o LessOrEqualOp) ValidateValue(v interface{}, opt *ExprOption) error {
 func (o LessOrEqualOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
 	if len(field) == 0 {
 		return nil, errors.New("field is empty")
-	}
-
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
 	}
 
 	return mapstr.MapStr{
@@ -512,10 +487,6 @@ func (o GreaterOp) ToMgo(field string, value interface{}) (map[string]interface{
 		return nil, errors.New("field is empty")
 	}
 
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
-	}
-
 	return mapstr.MapStr{
 		field: map[string]interface{}{common.BKDBGT: value},
 	}, nil
@@ -541,10 +512,6 @@ func (o GreaterOrEqualOp) ValidateValue(v interface{}, opt *ExprOption) error {
 func (o GreaterOrEqualOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
 	if len(field) == 0 {
 		return nil, errors.New("field is empty")
-	}
-
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
 	}
 
 	return mapstr.MapStr{
@@ -709,10 +676,6 @@ func (o BeginsWithOp) ToMgo(field string, value interface{}) (map[string]interfa
 		return nil, errors.New("field is empty")
 	}
 
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
-	}
-
 	return mapstr.MapStr{
 		field: map[string]interface{}{
 			common.BKDBLIKE: fmt.Sprintf("^%s", value),
@@ -742,10 +705,6 @@ func (o BeginsWithInsensitiveOp) ValidateValue(v interface{}, opt *ExprOption) e
 func (o BeginsWithInsensitiveOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
 	if len(field) == 0 {
 		return nil, errors.New("field is empty")
-	}
-
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
 	}
 
 	return mapstr.MapStr{
@@ -780,10 +739,6 @@ func (o NotBeginsWithOp) ToMgo(field string, value interface{}) (map[string]inte
 		return nil, errors.New("field is empty")
 	}
 
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
-	}
-
 	return mapstr.MapStr{
 		field: map[string]interface{}{
 			common.BKDBNot: map[string]interface{}{common.BKDBLIKE: fmt.Sprintf("^%s", value)},
@@ -813,10 +768,6 @@ func (o NotBeginsWithInsensitiveOp) ValidateValue(v interface{}, opt *ExprOption
 func (o NotBeginsWithInsensitiveOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
 	if len(field) == 0 {
 		return nil, errors.New("field is empty")
-	}
-
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
 	}
 
 	return mapstr.MapStr{
@@ -853,10 +804,6 @@ func (o ContainsOp) ToMgo(field string, value interface{}) (map[string]interface
 		return nil, errors.New("field is empty")
 	}
 
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
-	}
-
 	return mapstr.MapStr{
 		field: map[string]interface{}{
 			common.BKDBLIKE:    value,
@@ -889,49 +836,9 @@ func (o ContainsSensitiveOp) ToMgo(field string, value interface{}) (map[string]
 		return nil, errors.New("field is empty")
 	}
 
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
-	}
-
 	return mapstr.MapStr{
 		field: map[string]interface{}{
 			common.BKDBLIKE: value,
-		},
-	}, nil
-}
-
-// ContainsInsensitiveOp is contains insensitive operator
-type ContainsInsensitiveOp OpType
-
-// Name is contains insensitive operator name
-func (o ContainsInsensitiveOp) Name() OpType {
-	return ContainsInsensitive
-}
-
-// ValidateValue validate contains insensitive operator's value
-func (o ContainsInsensitiveOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateNotEmptyStringType(v)
-	if err != nil {
-		return fmt.Errorf("contains insensitive operator's value is invalid, err: %v", err)
-	}
-
-	return nil
-}
-
-// ToMgo convert the contains insensitive operator's field and value to a mongo query condition.
-func (o ContainsInsensitiveOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
-	if len(field) == 0 {
-		return nil, errors.New("field is empty")
-	}
-
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
-	}
-
-	return mapstr.MapStr{
-		field: map[string]interface{}{
-			common.BKDBLIKE:    value,
-			common.BKDBOPTIONS: "i",
 		},
 	}, nil
 }
@@ -958,10 +865,6 @@ func (o NotContainsOp) ValidateValue(v interface{}, opt *ExprOption) error {
 func (o NotContainsOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
 	if len(field) == 0 {
 		return nil, errors.New("field is empty")
-	}
-
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
 	}
 
 	return mapstr.MapStr{
@@ -993,10 +896,6 @@ func (o NotContainsInsensitiveOp) ValidateValue(v interface{}, opt *ExprOption) 
 func (o NotContainsInsensitiveOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
 	if len(field) == 0 {
 		return nil, errors.New("field is empty")
-	}
-
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
 	}
 
 	return mapstr.MapStr{
@@ -1033,10 +932,6 @@ func (o EndsWithOp) ToMgo(field string, value interface{}) (map[string]interface
 		return nil, errors.New("field is empty")
 	}
 
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
-	}
-
 	return mapstr.MapStr{
 		field: map[string]interface{}{
 			common.BKDBLIKE: fmt.Sprintf("%s$", value),
@@ -1066,10 +961,6 @@ func (o EndsWithInsensitiveOp) ValidateValue(v interface{}, opt *ExprOption) err
 func (o EndsWithInsensitiveOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
 	if len(field) == 0 {
 		return nil, errors.New("field is empty")
-	}
-
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
 	}
 
 	return mapstr.MapStr{
@@ -1104,10 +995,6 @@ func (o NotEndsWithOp) ToMgo(field string, value interface{}) (map[string]interf
 		return nil, errors.New("field is empty")
 	}
 
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
-	}
-
 	return mapstr.MapStr{
 		field: map[string]interface{}{
 			common.BKDBNot: map[string]interface{}{common.BKDBLIKE: fmt.Sprintf("%s$", value)},
@@ -1137,10 +1024,6 @@ func (o NotEndsWithInsensitiveOp) ValidateValue(v interface{}, opt *ExprOption) 
 func (o NotEndsWithInsensitiveOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
 	if len(field) == 0 {
 		return nil, errors.New("field is empty")
-	}
-
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
 	}
 
 	return mapstr.MapStr{
@@ -1230,10 +1113,6 @@ func (o SizeOp) ValidateValue(v interface{}, opt *ExprOption) error {
 func (o SizeOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
 	if len(field) == 0 {
 		return nil, errors.New("field is empty")
-	}
-
-	if err := o.ValidateValue(value, nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
 	}
 
 	return mapstr.MapStr{
@@ -1347,37 +1226,32 @@ func (o NotExistOp) ToMgo(field string, value interface{}) (map[string]interface
 	}, nil
 }
 
-// FilterObjectOp is filter object operator
-type FilterObjectOp OpType
+// ObjectOp is filter object operator
+type ObjectOp OpType
 
 // Name is filter object operator name
-func (o FilterObjectOp) Name() OpType {
-	return FilterObject
+func (o ObjectOp) Name() OpType {
+	return Object
 }
 
 // ValidateValue validate filter object operator value
-func (o FilterObjectOp) ValidateValue(v interface{}, opt *ExprOption) error {
+func (o ObjectOp) ValidateValue(v interface{}, opt *ExprOption) error {
 	// filter object operator's value is the sub-rule to filter the object's field.
 	subRule, ok := v.(RuleFactory)
 	if !ok {
 		return fmt.Errorf("filter object operator's value(%+v) is not a rule type", v)
 	}
 
-	// validate filter object rule depth, then continues to validate children rule depth
-	var childOpt *ExprOption
-	if opt != nil && opt.MaxRulesDepth > 0 {
-		if opt.MaxRulesDepth == 1 {
-			return fmt.Errorf("expression rules depth exceeds maximum")
-		}
-
-		childOpt = &ExprOption{
-			RuleFields:    opt.RuleFields,
-			MaxInLimit:    opt.MaxInLimit,
-			MaxNotInLimit: opt.MaxNotInLimit,
-			MaxRulesLimit: opt.MaxRulesLimit,
-			MaxRulesDepth: opt.MaxRulesDepth - 1,
-		}
+	// validate filter array rule depth, then continues to validate children rule depth
+	if opt == nil {
+		return errors.New("validate option must be set")
 	}
+	if opt.MaxRulesDepth <= 1 {
+		return fmt.Errorf("expression rules depth exceeds maximum")
+	}
+
+	childOpt := cloneExprOption(opt)
+	childOpt.MaxRulesDepth = opt.MaxRulesDepth - 1
 
 	if err := subRule.Validate(childOpt); err != nil {
 		return fmt.Errorf("invalid value(%+v), err: %v", v, err)
@@ -1387,7 +1261,7 @@ func (o FilterObjectOp) ValidateValue(v interface{}, opt *ExprOption) error {
 }
 
 // ToMgo convert the filter object operator's field and value to a mongo query condition.
-func (o FilterObjectOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
+func (o ObjectOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
 	if len(field) == 0 {
 		return nil, errors.New("field is empty")
 	}
@@ -1395,10 +1269,6 @@ func (o FilterObjectOp) ToMgo(field string, value interface{}) (map[string]inter
 	subRule, ok := value.(RuleFactory)
 	if !ok {
 		return nil, fmt.Errorf("filter object operator's value(%+v) is not a rule type", value)
-	}
-
-	if err := subRule.Validate(nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
 	}
 
 	parentOpt := &RuleOption{
@@ -1410,19 +1280,20 @@ func (o FilterObjectOp) ToMgo(field string, value interface{}) (map[string]inter
 }
 
 const (
-	FilterArrayElement = "element"
+	ArrayElement = "element"
 )
 
-// FilterArrayOp is filter array operator
-type FilterArrayOp OpType
+// ArrayOp is filter array operator
+type ArrayOp OpType
 
 // Name is filter array operator name
-func (o FilterArrayOp) Name() OpType {
-	return FilterArray
+func (o ArrayOp) Name() OpType {
+	return Array
 }
 
 // ValidateValue validate filter array operator value
-func (o FilterArrayOp) ValidateValue(v interface{}, opt *ExprOption) error {
+func (o ArrayOp) ValidateValue(v interface{}, opt *ExprOption) error {
+
 	// filter array operator's value is the sub-rule to filter the array's field.
 	subRule, ok := v.(RuleFactory)
 	if !ok {
@@ -1430,20 +1301,16 @@ func (o FilterArrayOp) ValidateValue(v interface{}, opt *ExprOption) error {
 	}
 
 	// validate filter array rule depth, then continues to validate children rule depth
-	var childOpt *ExprOption
-	if opt != nil && opt.MaxRulesDepth > 0 {
-		if opt.MaxRulesDepth == 1 {
-			return fmt.Errorf("expression rules depth exceeds maximum")
-		}
-
-		childOpt = &ExprOption{
-			RuleFields:    opt.RuleFields,
-			MaxInLimit:    opt.MaxInLimit,
-			MaxNotInLimit: opt.MaxNotInLimit,
-			MaxRulesLimit: opt.MaxRulesLimit,
-			MaxRulesDepth: opt.MaxRulesDepth - 1,
-		}
+	if opt == nil {
+		return errors.New("validate option must be set")
 	}
+
+	if opt.MaxRulesDepth <= 1 {
+		return fmt.Errorf("expression rules depth exceeds maximum")
+	}
+
+	childOpt := cloneExprOption(opt)
+	childOpt.MaxRulesDepth = opt.MaxRulesDepth - 1
 
 	if err := subRule.Validate(childOpt); err != nil {
 		return fmt.Errorf("invalid value(%+v), err: %v", v, err)
@@ -1453,7 +1320,7 @@ func (o FilterArrayOp) ValidateValue(v interface{}, opt *ExprOption) error {
 }
 
 // ToMgo convert the filter array operator's field and value to a mongo query condition.
-func (o FilterArrayOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
+func (o ArrayOp) ToMgo(field string, value interface{}) (map[string]interface{}, error) {
 	if len(field) == 0 {
 		return nil, errors.New("field is empty")
 	}
@@ -1461,10 +1328,6 @@ func (o FilterArrayOp) ToMgo(field string, value interface{}) (map[string]interf
 	subRule, ok := value.(RuleFactory)
 	if !ok {
 		return nil, fmt.Errorf("filter array operator's value(%+v) is not a rule type", value)
-	}
-
-	if err := subRule.Validate(nil); err != nil {
-		return nil, fmt.Errorf("invalid value(%+v), err: %v", value, err)
 	}
 
 	parentOpt := &RuleOption{

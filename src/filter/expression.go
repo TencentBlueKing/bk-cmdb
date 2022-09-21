@@ -29,14 +29,8 @@ import (
 )
 
 const (
-	// DefaultMaxInLimit defines the default max in limit
-	DefaultMaxInLimit = uint(20)
-	// DefaultMaxNotInLimit defines the default max nin limit
-	DefaultMaxNotInLimit = uint(20)
-	// DefaultMaxRuleLimit defines the default max number of rules limit
-	DefaultMaxRuleLimit = uint(5)
-	// DefaultMaxRulesDepth defines the default max number of rules depth
-	DefaultMaxRulesDepth = uint(3)
+	// MaxRulesDepth defines the maximum number of rules depth
+	MaxRulesDepth = uint(3)
 )
 
 // ExprOption defines how to validate an expression.
@@ -47,18 +41,39 @@ type ExprOption struct {
 	// 2. all the expression's rule field should be a sub-set
 	//    of the RuleFields' key.
 	RuleFields map[string]enumor.FieldType
-	// MaxInLimit defines the max element of the in operator
-	// If not set, then use default value: DefaultMaxInLimit
+	// IgnoreRuleFields defines if expression rule field validation needs to be ignored.
+	IgnoreRuleFields bool
+	// MaxInLimit defines the maximum element of the in operator
 	MaxInLimit uint
-	// MaxNotInLimit defines the max element of the nin operator
-	// If not set, then use default value: DefaultMaxNotInLimit
+	// MaxNotInLimit defines the maximum element of the nin operator
 	MaxNotInLimit uint
-	// MaxRulesLimit defines the max number of rules an expression allows.
-	// If not set, then use default value: DefaultMaxRuleLimit
+	// MaxRulesLimit defines the maximum number of rules an expression allows.
 	MaxRulesLimit uint
-	// MaxRulesDepth defines the max depth of rules an expression allows.
-	// If not set, then use default value: DefaultMaxRulesDepth
+	// MaxRulesDepth defines the maximum depth of rules an expression allows.
 	MaxRulesDepth uint
+}
+
+// NewDefaultExprOpt init an expression option with default limit option.
+func NewDefaultExprOpt(ruleFields map[string]enumor.FieldType) *ExprOption {
+	return &ExprOption{
+		RuleFields:    ruleFields,
+		MaxInLimit:    200,
+		MaxNotInLimit: 200,
+		MaxRulesLimit: 50,
+		MaxRulesDepth: MaxRulesDepth,
+	}
+}
+
+// NewDefaultExprOpt init an expression option with default limit option.
+func cloneExprOption(opt *ExprOption) *ExprOption {
+	return &ExprOption{
+		RuleFields:       opt.RuleFields,
+		IgnoreRuleFields: opt.IgnoreRuleFields,
+		MaxInLimit:       opt.MaxInLimit,
+		MaxNotInLimit:    opt.MaxNotInLimit,
+		MaxRulesLimit:    opt.MaxRulesLimit,
+		MaxRulesDepth:    opt.MaxRulesDepth,
+	}
 }
 
 // Expression is to build a query expression
@@ -67,28 +82,20 @@ type Expression struct {
 }
 
 // Validate if the expression is valid or not.
-func (exp Expression) Validate(opts ...*ExprOption) error {
-	if len(opts) > 1 {
-		return errors.New("expression's validate option only support at most one")
+func (exp Expression) Validate(opt *ExprOption) error {
+	if opt == nil {
+		return errors.New("expression's validate option must be set")
 	}
 
 	if exp.RuleFactory == nil {
 		return errors.New("expression should not be nil")
 	}
 
-	// TODO confirm if we need to restrict that expression must be a combined rule?
-	rule, ok := exp.RuleFactory.(*CombinedRule)
-	if !ok {
-		return errors.New("expression must be a combined rule")
+	if opt.MaxRulesDepth > MaxRulesDepth {
+		return fmt.Errorf("max rule depth exceeds maximum limit: %d", MaxRulesDepth)
 	}
 
-	if len(opts) > 0 {
-		if opts[0].MaxRulesDepth == 0 {
-			opts[0].MaxRulesDepth = DefaultMaxRulesDepth
-		}
-		return rule.Validate(opts[0])
-	}
-	return rule.Validate(&ExprOption{MaxRulesDepth: DefaultMaxRulesDepth})
+	return exp.RuleFactory.Validate(opt)
 }
 
 // MarshalJSON marshal Expression into json value

@@ -282,7 +282,7 @@ func (s *Service) ListWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	if rawErr := req.Validate(); rawErr.ErrCode != 0 {
+	if rawErr := req.Validate(kind); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}

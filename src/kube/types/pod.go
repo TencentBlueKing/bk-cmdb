@@ -110,7 +110,13 @@ func (p *PodQueryReq) Validate() ccErr.RawErrorInfo {
 		return err
 	}
 
-	// todo validate Filter
+	op := filter.NewDefaultExprOpt(PodFields.FieldsType())
+	if err := p.Filter.Validate(op); err != nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{err.Error()},
+		}
+	}
 	return ccErr.RawErrorInfo{}
 }
 
@@ -392,7 +398,13 @@ func (p *ContainerQueryReq) Validate() ccErr.RawErrorInfo {
 		return err
 	}
 
-	// todo validate Filter
+	op := filter.NewDefaultExprOpt(ContainerFields.FieldsType())
+	if err := p.Filter.Validate(op); err != nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{err.Error()},
+		}
+	}
 	return ccErr.RawErrorInfo{}
 }
 

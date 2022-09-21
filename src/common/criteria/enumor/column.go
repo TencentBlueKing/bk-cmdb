@@ -50,7 +50,7 @@ const (
 	Array FieldType = "array"
 	// Object means this field is object data type.
 	Object FieldType = "object"
-	// Enum means this field is enum enum type.
+	// Enum means this field is enum type.
 	Enum FieldType = "enum"
 	// Note: subsequent support for other types can be added here.
 	// after adding a type, pay attention to adding a verification

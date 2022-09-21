@@ -44,10 +44,10 @@ var (
 				Rules: []RuleFactory{
 					&AtomRule{
 						Field:    "test1",
-						Operator: FilterArray.Factory(),
+						Operator: Array.Factory(),
 						Value: &AtomRule{
-							Field:    FilterArrayElement,
-							Operator: FilterObject.Factory(),
+							Field:    ArrayElement,
+							Operator: Object.Factory(),
 							Value: &CombinedRule{
 								Condition: And,
 								Rules: []RuleFactory{
@@ -131,7 +131,7 @@ func TestRuleValidate(t *testing.T) {
 		Value:    []string{"a", "b", "c"},
 	}
 
-	if err := rule.Validate(nil); err != nil {
+	if err := rule.Validate(NewDefaultExprOpt(map[string]enumor.FieldType{"test1": enumor.String})); err != nil {
 		t.Errorf("rule validate failed, err: %v", err)
 		return
 	}
@@ -161,6 +161,7 @@ func TestRuleValidate(t *testing.T) {
 	}
 
 	opt = &ExprOption{
+		MaxRulesLimit: 10,
 		MaxNotInLimit: 2,
 	}
 
@@ -171,15 +172,13 @@ func TestRuleValidate(t *testing.T) {
 
 	// test combined rule validation
 	rule = exampleRule
-	if err := rule.Validate(opt); err != nil {
-		t.Errorf("rule validate failed, err: %v", err)
-		return
-	}
 
 	// TODO confirm how to deal with object & array
 	opt = &ExprOption{
 		RuleFields: map[string]enumor.FieldType{
 			"test":                enumor.Numeric,
+			"test1":               enumor.Array,
+			"test1.element":       enumor.Object,
 			"test1.element.test2": enumor.String,
 			"test3":               enumor.Time,
 		},
@@ -278,29 +277,6 @@ func TestRuleToMgo(t *testing.T) {
 
 	if !reflect.DeepEqual(mgo, expectMgo) {
 		t.Errorf("rule mongo condition %+v is invalid", mgo)
-		return
-	}
-
-	// test invalid atomic rule to mongo scenario
-	rule = &AtomRule{
-		Field:    "",
-		Operator: NotIn.Factory(),
-		Value:    []string{"a", "b", "c"},
-	}
-
-	if _, err = rule.ToMgo(nil); err == nil {
-		t.Errorf("covert rule to mongo should fail")
-		return
-	}
-
-	rule = &AtomRule{
-		Field:    "test1",
-		Operator: NotIn.Factory(),
-		Value:    []interface{}{"a", 1, "c"},
-	}
-
-	if _, err = rule.ToMgo(nil); err == nil {
-		t.Errorf("covert rule to mongo should fail")
 		return
 	}
 
@@ -445,7 +421,7 @@ func testExampleRule(t *testing.T, r RuleFactory) {
 		return
 	}
 
-	if subAtomRule1.Operator != FilterArray.Factory() {
+	if subAtomRule1.Operator != Array.Factory() {
 		t.Errorf("first sub sub rule op %s is not ne", subAtomRule1.Operator)
 		return
 	}
@@ -456,12 +432,12 @@ func testExampleRule(t *testing.T, r RuleFactory) {
 		return
 	}
 
-	if filterArrVal.Field != FilterArrayElement {
-		t.Errorf("filter array rule field %s is not %s", subAtomRule.Field, FilterArrayElement)
+	if filterArrVal.Field != ArrayElement {
+		t.Errorf("filter array rule field %s is not %s", subAtomRule.Field, ArrayElement)
 		return
 	}
 
-	if filterArrVal.Operator != FilterObject.Factory() {
+	if filterArrVal.Operator != Object.Factory() {
 		t.Errorf("filter array rule op %s is not filter object", subAtomRule.Operator)
 		return
 	}

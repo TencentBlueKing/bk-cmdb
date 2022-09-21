@@ -33,6 +33,7 @@ import (
 )
 
 // WorkLoadSpecFieldsDescriptor workLoad spec's fields descriptors.
+// TODO remove this when kube attribute api supports workload types
 var WorkLoadSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: NamespaceField, Type: enumor.String, IsRequired: true, IsEditable: false},
@@ -42,6 +43,12 @@ var WorkLoadSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: StrategyTypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: MinReadySecondsField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
 	{Field: RollingUpdateStrategyField, Type: enumor.Object, IsRequired: false, IsEditable: true},
+}
+
+// WorkLoadBaseFieldsDescriptor workLoad base fields descriptors.
+var WorkLoadBaseFieldsDescriptor = table.FieldsDescriptors{
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: NamespaceField, Type: enumor.String, IsRequired: true, IsEditable: false},
 }
 
 // LabelSelectorOperator a label selector operator is the set of operators that can be used in a selector requirement.
@@ -677,7 +684,7 @@ type WlQueryReq struct {
 }
 
 // Validate validate WlQueryReq
-func (wl *WlQueryReq) Validate() errors.RawErrorInfo {
+func (wl *WlQueryReq) Validate(kind WorkloadType) errors.RawErrorInfo {
 	if (wl.ClusterID != 0 || wl.NamespaceID != 0) && (wl.ClusterUID != "" && wl.Namespace != "") {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrorTopoIdentificationIllegal,
@@ -688,7 +695,21 @@ func (wl *WlQueryReq) Validate() errors.RawErrorInfo {
 		return err
 	}
 
-	// todo validate Filter
+	fields, err := kind.Fields()
+	if err != nil {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{KindField},
+		}
+	}
+
+	op := filter.NewDefaultExprOpt(fields.FieldsType())
+	if err := wl.Filter.Validate(op); err != nil {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{err.Error()},
+		}
+	}
 	return errors.RawErrorInfo{}
 }
 
