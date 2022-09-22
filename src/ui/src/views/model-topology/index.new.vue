@@ -176,6 +176,7 @@
   import memoize from 'lodash.memoize'
   import debounce from 'lodash.debounce'
   import throttle from 'lodash.throttle'
+  import { UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants.js'
 
   // cytoscape实例，不能放到data中管理
   let cy = null
@@ -1190,7 +1191,8 @@
           await this.createMainlineObject({
             params: {
               bk_asst_obj_id: this.addBusinessLevel.parent.bk_obj_id,
-              bk_classification_id: 'bk_biz_topo',
+              // 新建的主线模型放到未分类分组，因其它分组都是可以被删除的
+              bk_classification_id: UNCATEGORIZED_GROUP_ID,
               bk_obj_icon: data.bk_obj_icon,
               bk_obj_id: data.bk_obj_id,
               bk_obj_name: data.bk_obj_name,
@@ -1210,6 +1212,9 @@
 
           // 更新拓扑图
           this.updateNetwork()
+
+          // 更新主线模型
+          this.getMainLineModel()
 
           this.cancelCreateBusinessLevel()
         } catch (e) {

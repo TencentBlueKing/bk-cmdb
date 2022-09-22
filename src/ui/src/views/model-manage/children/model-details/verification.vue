@@ -85,6 +85,8 @@
 <script>
   import theVerificationDetail from './verification-detail'
   import { mapActions, mapGetters } from 'vuex'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+
   export default {
     components: {
       theVerificationDetail
@@ -119,8 +121,10 @@
       ...mapGetters('objectModel', [
         'activeModel'
       ]),
+      ...mapGetters('objectMainLineModule', ['isMainLine']),
       isTopoModel() {
-        return ['bk_biz_topo', 'bk_organization'].includes(this.activeModel.bk_classification_id)
+        // 主线模型除主机外
+        return this.isMainLine(this.activeModel) && this.activeModel.bk_obj_id !== BUILTIN_MODELS.HOST
       },
       isReadOnly() {
         if (this.activeModel) {
