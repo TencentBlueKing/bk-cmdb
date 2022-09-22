@@ -37,10 +37,10 @@ go mod tidy
 
 ## 编译
 
-### 进入源码根目录：
+### 进入源码可执行文件目录：
 
 ``` shell
-cd configcenter/src
+cd configcenter/cmd
 ```
 
 #### 编译共有三种模式
@@ -104,7 +104,7 @@ make ui NPM=cnpm
 make package
 ```
 
-归档包存放位置： configcenter/src/bin/pub/cmdb.tar.gz 
+归档包存放位置： configcenter/bin/pub/cmdb.tar.gz 
 
 
 ### Docker 镜像制作

@@ -19,20 +19,20 @@ VERSION?=$(shell git symbolic-ref -q --short HEAD || git describe --all --tags -
 ISDEBUG?=false
 CCDistro?=community
 ifeq ($(ISDEBUG),true)
-	GOBUILD_FLAGS = -ldflags "-X configcenter/src/common/version.CCRunMode=dev -X\
-	configcenter/src/common/version.CCVersion=${VERSION} -X configcenter/src/common/version.CCBuildTime=${BUILDTIME} -X\
-	configcenter/src/common/version.CCGitHash=${GITHASH} -X configcenter/src/common/version.CCTag=${GITTAG} -X\
-	configcenter/src/common/version.CCDistro=${CCDistro}"
+	GOBUILD_FLAGS = -ldflags "-X configcenter/pkg/version.CCRunMode=dev -X\
+	configcenter/pkg/version.CCVersion=${VERSION} -X configcenter/pkg/version.CCBuildTime=${BUILDTIME} -X\
+	configcenter/pkg/version.CCGitHash=${GITHASH} -X configcenter/pkg/version.CCTag=${GITTAG} -X\
+	configcenter/pkg/version.CCDistro=${CCDistro}"
 else
-	GOBUILD_FLAGS = -ldflags "-X configcenter/src/common/version.CCVersion=${VERSION} -X\
-	configcenter/src/common/version.CCBuildTime=${BUILDTIME} -X configcenter/src/common/version.CCGitHash=${GITHASH} -X\
-	configcenter/src/common/version.CCTag=${GITTAG} -X configcenter/src/common/version.CCDistro=${CCDistro}"
+	GOBUILD_FLAGS = -ldflags "-X configcenter/pkg/version.CCVersion=${VERSION} -X\
+	configcenter/pkg/version.CCBuildTime=${BUILDTIME} -X configcenter/pkg/version.CCGitHash=${GITHASH} -X\
+	configcenter/pkg/version.CCTag=${GITTAG} -X configcenter/pkg/version.CCDistro=${CCDistro}"
 endif
 
 DOCS_DIR?=$(PROJECT_PATH)/docs
 SCRIPT_DIR?=$(PROJECT_PATH)/scripts
 RESOURCE_DIR?=$(PROJECT_PATH)/resources
-SOURCE_ROOT?=$(PROJECT_PATH)/src
+SOURCE_ROOT?=$(PROJECT_PATH)
 BUILD_DIR?=$(SOURCE_ROOT)/bin/build/$(VERSION)
 BIN_PATH?=$(BUILD_DIR)
 export OUTPUT_DIR = ${BIN_PATH}

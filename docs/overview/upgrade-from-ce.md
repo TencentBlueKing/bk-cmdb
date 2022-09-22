@@ -54,7 +54,7 @@ wget https://github.com/Tencent/bk-cmdb/archive/release-${release}.tar.gz
 tar -xf release-${release}.tar.gz
 mkdir src
 mv bk-cmdb-release-${release} src/configcenter
-cd src/configcenter/src
+cd src/configcenter
 
 GITHASH=${release} GITTAG=ocr-${release} VERSION=${release} make
 ```
@@ -134,7 +134,7 @@ supervisorctl -c ${BKCE}/etc/supervisor-cmdb-server.conf status
 ```bash
 #!/bin/bash
 
-cd tmp/src/configcenter/src/bin/build/v3.2.8
+cd tmp/src/configcenter/bin/build/v3.2.8
 files="$(find . -type f -name "cmdb_*")"
 for file in $files;do
 	cp -f ${file} ${BKCE}/cmdb/server/bin/
@@ -195,7 +195,7 @@ supervisorctl -c ${BKCE}/etc/supervisor-cmdb-server.conf status
 现象：
 
 ```
-go build -i -ldflags "-X configcenter/src/common/version.CCVersion= -X configcenter/src/common/version.CCBuildTime=2019-05-09T14:35:01+0800 -X configcenter/src/common/version.CCGitHash= -X configcenter/src/common/version.CCTag=" -o tmp/src/configcenter/src/bin/build/cmdb_proccontroller/cmdb_proccontroller
+go build -i -ldflags "-X configcenter/common/version.CCVersion= -X configcenter/common/version.CCBuildTime=2019-05-09T14:35:01+0800 -X configcenter/common/version.CCGitHash= -X configcenter/common/version.CCTag=" -o tmp/src/configcenter/bin/build/cmdb_proccontroller/cmdb_proccontroller
 fatal: not a git repository (or any of the parent directories): .git
 fatal: not a git repository (or any of the parent directories): .git
 fatal: not a git repository (or any of the parent directories): .git
@@ -212,7 +212,7 @@ fatal: not a git repository (or any of the parent directories): .git
 出错现象如下：
 
 ```bash
-go build -i -ldflags "-X configcenter/src/common/version.CCVersion=v3.2.8-t -X configcenter/src/common/version.CCBuildTime=2019-05-09T15:00:38+0800 -X configcenter/src/common/version.CCGitHash=xxx-t -X configcenter/src/common/version.CCTag=release-v3.2.8-t" -o tmp/src/configcenter/src/bin/build/v3.2.8-t/cmdb_webserver/cmdb_webserver
+go build -i -ldflags "-X configcenter/common/version.CCVersion=v3.2.8-t -X configcenter/common/version.CCBuildTime=2019-05-09T15:00:38+0800 -X configcenter/common/version.CCGitHash=xxx-t -X configcenter/common/version.CCTag=release-v3.2.8-t" -o tmp/src/configcenter/bin/build/v3.2.8-t/cmdb_webserver/cmdb_webserver
 File "./generate.py", line 55
 print 'generate.py -t <target>  -i <base_image> -o <output>'
                                                            ^

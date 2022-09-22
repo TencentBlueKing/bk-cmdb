@@ -1,13 +1,13 @@
-src/bin/*
-src/*/*/cmdb_*
-src/apiserver/*apiserver
-src/apiserver/cmdb_*
-src/scene_server/*/*server
-src/scene_server/*/*collection
-src/source_controller/*/*controller
-src/source_controller/*/coreservice
-src/web*/*server
-src/web*/cmdb_*
+bin/*
+*/*/cmdb_*
+cmd/apiserver/*apiserver
+cmd/apiserver/cmdb_*
+cmd/scene_server/*/*server
+cmd/scene_server/*/*collection
+cmd/source_controller/*/*controller
+cmd/source_controller/*/coreservice
+web*/*server
+web*/cmdb_*
 *exvim*
 
 .DS_Store

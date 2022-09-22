@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 pushd $(pwd) > /dev/null
-    cd ../src
+    cd ../cmd
     DIRS=$(find * -maxdepth 0 -type d)
     for tmp in $DIRS;do
         FILES=$(find $tmp -name 'Makefile')

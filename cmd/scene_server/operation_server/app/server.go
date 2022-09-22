@@ -1,0 +1,97 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package app
+
+import (
+	"configcenter/cmd/scene_server/operation_server/app/options"
+	"configcenter/cmd/scene_server/operation_server/service"
+	"configcenter/pkg/ac/extensions"
+	iamtype "configcenter/pkg/ac/iam"
+	"context"
+	"fmt"
+	"time"
+
+	"configcenter/pkg/auth"
+	"configcenter/pkg/backbone"
+	"configcenter/pkg/blog"
+	"configcenter/pkg/common"
+	"configcenter/pkg/types"
+)
+
+// Run TODO
+func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
+	svrInfo, err := types.NewServerInfo(op.ServConf)
+	if err != nil {
+		blog.Errorf("fail to new server information. err: %s", err.Error())
+		return fmt.Errorf("make server information failed, err:%v", err)
+	}
+
+	operationSvr := new(service.OperationServer)
+
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: operationSvr.OnOperationConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     op.ServConf.RegDiscover,
+		SrvInfo:      svrInfo,
+	}
+	engine, err := backbone.NewBackbone(ctx, input)
+	if err != nil {
+		return fmt.Errorf("new backbone failed, err: %v", err)
+	}
+	configReady := false
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		if operationSvr.Config.Ready() {
+			configReady = true
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	if false == configReady {
+		return fmt.Errorf("waiting for configuration timeout, maybe parse configuration failed")
+	}
+	operationSvr.Config.Mongo, err = engine.WithMongo()
+	if err != nil {
+		return err
+	}
+
+	operationSvr.Config.Auth, err = iamtype.ParseConfigFromKV("authServer", nil)
+	if err != nil {
+		blog.Warnf("parse auth center config failed: %v", err)
+	}
+
+	iamCli := new(iamtype.IAM)
+	if auth.EnableAuthorize() {
+		blog.Info("enable auth center access")
+		iamCli, err = iamtype.NewIAM(operationSvr.Config.Auth, engine.Metric().Registry())
+		if err != nil {
+			return fmt.Errorf("new iam client failed: %v", err)
+		}
+	} else {
+		blog.Infof("disable auth center access")
+	}
+	operationSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
+
+	operationSvr.Engine = engine
+
+	go operationSvr.InitFunc()
+	if err := backbone.StartServer(ctx, cancel, engine, operationSvr.WebService(), true); err != nil {
+		return err
+	}
+
+	select {
+	case <-ctx.Done():
+		blog.Infof("operation will exit!")
+	}
+
+	return nil
+}

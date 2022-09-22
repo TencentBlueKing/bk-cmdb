@@ -1,7 +1,7 @@
 module.exports = {
   projects: [
     {
-      root: './src/ui/'
+      root: './ui/'
     }
   ]
 }

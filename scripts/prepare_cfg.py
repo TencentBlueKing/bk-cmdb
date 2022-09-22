@@ -10,8 +10,8 @@ import sys
     @mkdir -p $(BIN_PATH)/$(TARGET_NAME)/conf/errors
     @mkdir -p $(BIN_PATH)/$(TARGET_NAME)/conf/certs
     @mkdir -p $(BIN_PATH)/$(TARGET_NAME)/conf/language
-    @cp -R $(RESOURCE_DIR)/errors/*  $(BIN_PATH)/$(TARGET_NAME)/conf/errors
-    @cp -R $(RESOURCE_DIR)/language/*  $(BIN_PATH)/$(TARGET_NAME)/conf/language
+    @cp -R $(RESOURCE_DIR)/i18n/errors/*  $(BIN_PATH)/$(TARGET_NAME)/conf/errors
+    @cp -R $(RESOURCE_DIR)/i18n/language/*  $(BIN_PATH)/$(TARGET_NAME)/conf/language
     @sed  -e 's/cmdb-name-placeholder/${TARGET_NAME}/g;s/cmdb-port-placeholder/${TARGET_PORT}/g' $(SCRIPT_DIR)/template.sh.start > $(BIN_PATH)/$(TARGET_NAME)/start.sh
     @sed  -e 's/cmdb-name-placeholder/${TARGET_NAME}/g;' $(SCRIPT_DIR)/template.sh.stop > $(BIN_PATH)/$(TARGET_NAME)/stop.sh
     @cp -f $(SCRIPT_DIR)/template.sh.start $(BIN_PATH)/$(TARGET_NAME)/template.sh.start
@@ -61,8 +61,8 @@ if __name__ == "__main__":
 
     # @cp -R $(RESOURCE_DIR)/errors/*  $(BIN_PATH)/$(TARGET_NAME)/conf/errors
     # @cp -R $(RESOURCE_DIR)/language/*  $(BIN_PATH)/$(TARGET_NAME)/conf/language
-    shutil.copytree(os.path.join(resource_dir, "errors"), os.path.join(bin_path, target_name, "conf/errors"))
-    shutil.copytree(os.path.join(resource_dir, "language"), os.path.join(bin_path, target_name, "conf/language"))
+    shutil.copytree(os.path.join(resource_dir, "i18n/errors"), os.path.join(bin_path, target_name, "conf/errors"))
+    shutil.copytree(os.path.join(resource_dir, "i18n/language"), os.path.join(bin_path, target_name, "conf/language"))
 
     # @sed  -e 's/cmdb-name-placeholder/${TARGET_NAME}/g;s/cmdb-port-placeholder/${TARGET_PORT}/g' $(SCRIPT_DIR)/template.sh.start > $(BIN_PATH)/$(TARGET_NAME)/start.sh
     with open(os.path.join(script_dir, "template.sh.start"), "r") as f:
