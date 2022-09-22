@@ -75,7 +75,14 @@ func getSetInstanceResult(kit *rest.Kit, setMap mapstr.MapStr) (metadata.SetInst
 		return metadata.SetInst{}, kit.CCError.CCErrorf(common.CCErrTopoSetSelectFailed, common.BKSetIDField)
 	}
 
-	return metadata.SetInst{BizID: bizID, SetTemplateID: setTemplateID, SetID: setID}, nil
+	set := metadata.SetInst{
+		BizID:         bizID,
+		SetID:         setID,
+		SetName:       util.GetStrByInterface(setMap[common.BKSetNameField]),
+		SetTemplateID: setTemplateID,
+	}
+	return set, nil
+
 }
 
 func (st *setTemplate) getModuleResult(kit *rest.Kit, bizID, setTemplateID, setID int64) ([]metadata.ModuleInst,
