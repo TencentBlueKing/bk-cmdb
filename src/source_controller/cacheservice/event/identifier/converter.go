@@ -409,7 +409,11 @@ func (f *hostIdentity) getDeletedProcessHosts(startUnix int64, oids []string, ri
 
 	pList := make([]int64, 0)
 	for _, doc := range docs {
-		pID := doc.Lookup("detail", common.BKProcessIDField).Int64()
+		pID, ok := doc.Lookup("detail", common.BKProcessIDField).Int64OK()
+		if !ok {
+			blog.Errorf("process id type is illegal, skip, instance: %s, rid: %s", doc.Lookup("detail").String(), rid)
+			continue
+		}
 		if pID <= 0 {
 			blog.Errorf("host identify event, get process id from instance: %s failed, skip, rid: %s",
 				doc.Lookup("detail").String(), rid)
