@@ -113,7 +113,7 @@ loop:
 
 var hostIDJson = `{"bk_host_id":%d}`
 
-// rearrangeHostRelationEvents TODO
+// rearrangeHostRelationEvents rearrange host relation events
 // host relation events arrange policy:
 // 1. redirect relation event to host change event.
 // 2. care about all kinds of event types.
@@ -172,7 +172,11 @@ func (f *hostIdentity) rearrangeHostRelationEvents(es []*types.Event, rid string
 	}
 
 	for _, doc := range docs {
-		hostID := doc.Lookup("detail", common.BKHostIDField).Int64()
+		hostID, ok := doc.Lookup("detail", common.BKHostIDField).Int64OK()
+		if !ok {
+			blog.Errorf("host id type is illegal, skip, relation: %s, rid: %s", doc.Lookup("detail").String(), rid)
+			continue
+		}
 		if hostID <= 0 {
 			blog.Errorf("host identify event, get host id from relation: %s failed, skip, rid: %s",
 				doc.Lookup("detail").String(), rid)
@@ -405,7 +409,11 @@ func (f *hostIdentity) getDeletedProcessHosts(startUnix int64, oids []string, ri
 
 	pList := make([]int64, 0)
 	for _, doc := range docs {
-		pID := doc.Lookup("detail", common.BKProcessIDField).Int64()
+		pID, ok := doc.Lookup("detail", common.BKProcessIDField).Int64OK()
+		if !ok {
+			blog.Errorf("process id type is illegal, skip, instance: %s, rid: %s", doc.Lookup("detail").String(), rid)
+			continue
+		}
 		if pID <= 0 {
 			blog.Errorf("host identify event, get process id from instance: %s failed, skip, rid: %s",
 				doc.Lookup("detail").String(), rid)
