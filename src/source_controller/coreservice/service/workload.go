@@ -70,28 +70,30 @@ func (s *coreService) CreateWorkload(ctx *rest.Contexts) {
 		IDs: make([]int64, len(ids)),
 	}
 	for idx, data := range req.Data {
-		spec := data.GetNamespaceSpec()
-		spec.BizID = &bizID
+		wlBase := data.GetWorkloadBase()
+		spec := wlBase.NamespaceSpec
+		spec.BizID = bizID
 		nsSpec, err := s.GetNamespaceSpec(ctx.Kit, &spec)
 		if err != nil {
 			blog.Errorf("get namespace spec message failed, data: %v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
+		wlBase.NamespaceSpec = *nsSpec
+
 		id := int64(ids[idx])
-		data.SetNamespaceSpec(*nsSpec)
+		wlBase.ID = id
 		respData.IDs[idx] = id
-		data.SetID(id)
 		now := time.Now().Unix()
-		data.SetCreateMsg(
-			table.Revision{
-				Creator:    ctx.Kit.User,
-				Modifier:   ctx.Kit.User,
-				CreateTime: now,
-				LastTime:   now,
-			},
-		)
-		data.SetSupplierAccount(ctx.Kit.SupplierAccount)
+		revision := table.Revision{
+			Creator:    ctx.Kit.User,
+			Modifier:   ctx.Kit.User,
+			CreateTime: now,
+			LastTime:   now,
+		}
+		wlBase.Revision = revision
+		wlBase.SupplierAccount = ctx.Kit.SupplierAccount
+		data.SetWorkloadBase(wlBase)
 		err = mongodb.Client().Table(tableName).Insert(ctx.Kit.Ctx, data)
 		if err != nil {
 			blog.Errorf("add workload failed, table: %s, data: %v, err: %v, rid: %s", tableName, data, err, ctx.Kit.Rid)
@@ -105,26 +107,20 @@ func (s *coreService) CreateWorkload(ctx *rest.Contexts) {
 
 // GetNamespaceSpec get namespace spec
 func (s *coreService) GetNamespaceSpec(kit *rest.Kit, spec *types.NamespaceSpec) (*types.NamespaceSpec, error) {
-	if spec.BizID == nil {
+	if spec.BizID == 0 {
 		blog.Errorf("bizID can not be empty, rid: %s", kit.Rid)
 		return nil, errors.New("bizID can not be empty")
 	}
 
-	if spec.NamespaceID == nil && (spec.ClusterUID == nil || spec.Namespace == nil) {
-		blog.Errorf("namespaceID and namespaceUID can not be empty at the same time, rid: %s", kit.Rid)
-		return nil, errors.New("namespaceID and namespaceUID can not be empty at the same time")
+	if spec.NamespaceID == 0 {
+		blog.Errorf("namespaceID can not be empty, rid: %s", kit.Rid)
+		return nil, errors.New("namespaceID can not be empty")
 	}
 
 	filter := map[string]interface{}{
-		common.BKAppIDField:   *spec.BizID,
+		common.BKAppIDField:   spec.BizID,
 		common.BKOwnerIDField: kit.SupplierAccount,
-	}
-	if spec.NamespaceID != nil {
-		filter[common.BKFieldID] = *spec.NamespaceID
-	}
-	if spec.ClusterUID != nil && spec.Namespace != nil {
-		filter[types.ClusterUIDField] = *spec.ClusterUID
-		filter[common.BKFieldName] = *spec.Namespace
+		common.BKFieldID:      spec.NamespaceID,
 	}
 
 	ns := types.Namespace{}

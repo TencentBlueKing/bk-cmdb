@@ -51,9 +51,23 @@ type RollingUpdateDaemonSet struct {
 
 // DaemonSet define the daemonSet struct.
 type DaemonSet struct {
-	Workload              `json:",inline" bson:",inline"`
+	WorkloadBase          `json:",inline" bson:",inline"`
+	Labels                *map[string]string           `json:"labels,omitempty" bson:"labels"`
+	Selector              *LabelSelector               `json:"selector,omitempty" bson:"selector"`
+	Replicas              *int64                       `json:"replicas,omitempty" bson:"replicas"`
+	MinReadySeconds       *int64                       `json:"min_ready_seconds,omitempty" bson:"min_ready_seconds"`
 	StrategyType          *DaemonSetUpdateStrategyType `json:"strategy_type,omitempty" bson:"strategy_type"`
 	RollingUpdateStrategy *RollingUpdateDaemonSet      `json:"rolling_update_strategy,omitempty" bson:"rolling_update_strategy"`
+}
+
+// GetWorkloadBase get workload base
+func (d *DaemonSet) GetWorkloadBase() WorkloadBase {
+	return d.WorkloadBase
+}
+
+// SetWorkloadBase set workload base
+func (d *DaemonSet) SetWorkloadBase(wl WorkloadBase) {
+	d.WorkloadBase = wl
 }
 
 // DaemonSetUpdateData defines the daemonSet update data common operation.

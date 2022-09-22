@@ -19,6 +19,7 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"configcenter/src/common"
@@ -82,47 +83,31 @@ const (
 type WorkloadI interface {
 	ValidateCreate() errors.RawErrorInfo
 	ValidateUpdate() errors.RawErrorInfo
-	SetID(id int64)
-	SetBizID(bizID int64)
-	SetCreateMsg(revision table.Revision)
-	SetNamespaceSpec(spec NamespaceSpec)
-	SetSupplierAccount(supplierAccount string)
-	GetNamespaceSpec() NamespaceSpec
-	GetBizID() *int64
-	GetID() *int64
-	GetName() *string
+	GetWorkloadBase() WorkloadBase
+	SetWorkloadBase(wl WorkloadBase)
 }
 
-// Workload define the workload common struct.
-type Workload struct {
+// WorkloadBase define the workload common struct, k8s workload attributes are placed in their respective structures,
+// except for very public variables, please do not put them in.
+type WorkloadBase struct {
 	NamespaceSpec   `json:",inline" bson:",inline"`
-	ID              *int64             `json:"id,omitempty" bson:"id"`
-	Name            *string            `json:"name,omitempty" bson:"name"`
-	Labels          *map[string]string `json:"labels,omitempty" bson:"labels"`
-	Selector        *LabelSelector     `json:"selector,omitempty" bson:"selector"`
-	Replicas        *int64             `json:"replicas,omitempty" bson:"replicas"`
-	MinReadySeconds *int64             `json:"min_ready_seconds,omitempty" bson:"min_ready_seconds"`
-	SupplierAccount *string            `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	ID              int64  `json:"id,omitempty" bson:"id"`
+	Name            string `json:"name,omitempty" bson:"name"`
+	SupplierAccount string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }
 
 // ValidateCreate validate create workload
-func (w *Workload) ValidateCreate() errors.RawErrorInfo {
-	if w.NamespaceID == nil && (w.ClusterUID == nil || w.Namespace == nil) {
+func (w *WorkloadBase) ValidateCreate() errors.RawErrorInfo {
+	if w.NamespaceID == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{BKNamespaceIDField + " or < " + ClusterUIDField + " and " + NamespaceField + " >"},
+			Args:    []interface{}{BKNamespaceIDField},
 		}
 	}
 
-	if w.NamespaceID != nil && (w.ClusterUID != nil || w.Namespace != nil) {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrorTopoIdentificationIllegal,
-		}
-	}
-
-	if w.Name == nil || *w.Name == "" {
+	if w.Name == "" {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{common.BKFieldName},
@@ -133,54 +118,9 @@ func (w *Workload) ValidateCreate() errors.RawErrorInfo {
 }
 
 // ValidateUpdate validate update workload
-func (w *Workload) ValidateUpdate() errors.RawErrorInfo {
+func (w *WorkloadBase) ValidateUpdate() errors.RawErrorInfo {
 	// todo
 	return errors.RawErrorInfo{}
-}
-
-// SetID set id
-func (w *Workload) SetID(id int64) {
-	w.ID = &id
-}
-
-// SetBizID set bizID
-func (w *Workload) SetBizID(bizID int64) {
-	w.BizID = &bizID
-}
-
-// SetCreateMsg set create message
-func (w *Workload) SetCreateMsg(revision table.Revision) {
-	w.Revision = revision
-}
-
-// SetSupplierAccount set supplierAccount
-func (w *Workload) SetSupplierAccount(supplierAccount string) {
-	w.SupplierAccount = &supplierAccount
-}
-
-// SetNamespaceSpec set namespace spec
-func (w *Workload) SetNamespaceSpec(spec NamespaceSpec) {
-	w.NamespaceSpec = spec
-}
-
-// GetNamespaceSpec get namespace spec
-func (w *Workload) GetNamespaceSpec() NamespaceSpec {
-	return w.NamespaceSpec
-}
-
-// GetBizID get workload biz id
-func (w *Workload) GetBizID() *int64 {
-	return w.BizID
-}
-
-// GetID get workload id
-func (w *Workload) GetID() *int64 {
-	return w.ID
-}
-
-// GetName get workload name
-func (w *Workload) GetName() *string {
-	return w.Name
 }
 
 // LabelSelector a label selector is a label query over a set of resources.
@@ -262,6 +202,15 @@ type jsonWlUpdateReq struct {
 type WlUpdateReq struct {
 	Kind WorkloadType    `json:"kind"`
 	Data []WlUpdateDataI `json:"data"`
+}
+
+// GetCount get workload update count
+func (wl *WlUpdateReq) GetCount() int {
+	count := 0
+	for _, data := range wl.Data {
+		count += len(data.GetIDs())
+	}
+	return count
 }
 
 // UnmarshalJSON unmarshal WlUpdateReq
@@ -354,13 +303,7 @@ func (w *WlUpdateReq) UnmarshalJSON(data []byte) error {
 		}
 
 	default:
-		array := make([]*WlUpdateData, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
+		return fmt.Errorf("can not support this workload type: %v", kind)
 	}
 	return nil
 }
@@ -418,7 +361,7 @@ type WlUpdateDataI interface {
 // WlUpdateData defines the workload update data common operation.
 type WlUpdateData struct {
 	WlCommonUpdate `json:",inline"`
-	Info           Workload `json:"info"`
+	Info           WorkloadBase `json:"info"`
 }
 
 // BuildUpdateData build workload update data
@@ -568,13 +511,7 @@ func (w *WlDataResp) UnmarshalJSON(data []byte) error {
 		}
 
 	default:
-		array := make([]*Workload, 0)
-		if err := json.Unmarshal(wlData.Info, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Info = append(w.Info, data)
-		}
+		return fmt.Errorf("can not support this workload type: %v", kind)
 	}
 	return nil
 }
@@ -685,13 +622,7 @@ func (w *WlCreateReq) UnmarshalJSON(data []byte) error {
 		}
 
 	default:
-		array := make([]*Workload, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
+		return fmt.Errorf("can not support this workload type: %v", kind)
 	}
 	return nil
 }
@@ -747,7 +678,7 @@ type WlQueryReq struct {
 
 // Validate validate WlQueryReq
 func (wl *WlQueryReq) Validate() errors.RawErrorInfo {
-	if (wl.ClusterID != nil || wl.NamespaceID != nil) && (wl.ClusterUID != nil && wl.Namespace != nil) {
+	if (wl.ClusterID != 0 || wl.NamespaceID != 0) && (wl.ClusterUID != "" && wl.Namespace != "") {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrorTopoIdentificationIllegal,
 		}
@@ -768,19 +699,19 @@ func (wl *WlQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.Map
 		common.BkSupplierAccount: supplierAccount,
 	}
 
-	if wl.ClusterID != nil {
+	if wl.ClusterID != 0 {
 		cond[BKClusterIDFiled] = wl.ClusterID
 	}
 
-	if wl.ClusterUID != nil {
+	if wl.ClusterUID != "" {
 		cond[ClusterUIDField] = wl.ClusterUID
 	}
 
-	if wl.NamespaceID != nil {
+	if wl.NamespaceID != 0 {
 		cond[BKNamespaceIDField] = wl.NamespaceID
 	}
 
-	if wl.Namespace != nil {
+	if wl.Namespace != "" {
 		cond[NamespaceField] = wl.Namespace
 	}
 
@@ -792,16 +723,4 @@ func (wl *WlQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.Map
 		cond = mapstr.MapStr{common.BKDBAND: []mapstr.MapStr{cond, filterCond}}
 	}
 	return cond, nil
-}
-
-// IsInnerWorkload is inner workload type
-func IsInnerWorkload(kind WorkloadType) bool {
-	switch kind {
-	case KubeDeployment, KubeStatefulSet, KubeDaemonSet,
-		KubeGameStatefulSet, KubeGameDeployment, KubeCronJob,
-		KubeJob, KubePodWorkload:
-		return true
-	default:
-		return false
-	}
 }

@@ -51,9 +51,23 @@ type RollingUpdateDeployment struct {
 
 // Deployment define the deployment struct.
 type Deployment struct {
-	Workload              `json:",inline" bson:",inline"`
+	WorkloadBase          `json:",inline" bson:",inline"`
+	Labels                *map[string]string       `json:"labels,omitempty" bson:"labels"`
+	Selector              *LabelSelector           `json:"selector,omitempty" bson:"selector"`
+	Replicas              *int64                   `json:"replicas,omitempty" bson:"replicas"`
+	MinReadySeconds       *int64                   `json:"min_ready_seconds,omitempty" bson:"min_ready_seconds"`
 	StrategyType          *DeploymentStrategyType  `json:"strategy_type,omitempty" bson:"strategy_type"`
 	RollingUpdateStrategy *RollingUpdateDeployment `json:"rolling_update_strategy,omitempty" bson:"rolling_update_strategy"`
+}
+
+// GetWorkloadBase get workload base
+func (d *Deployment) GetWorkloadBase() WorkloadBase {
+	return d.WorkloadBase
+}
+
+// SetWorkloadBase set workload base
+func (d *Deployment) SetWorkloadBase(wl WorkloadBase) {
+	d.WorkloadBase = wl
 }
 
 // DeployUpdateData defines the deployment update data common operation.

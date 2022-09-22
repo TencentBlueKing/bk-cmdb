@@ -113,7 +113,7 @@ type ClusterBaseFields struct {
 	// SchedulingEngine scheduling engines, such as k8s, tke, etc.
 	SchedulingEngine *string `json:"scheduling_engine" bson:"scheduling_engine"`
 	// Uid ID of the cluster itself
-	Uid *string `json:"uid" bson:"uid"`
+	Uid string `json:"uid" bson:"uid"`
 	// Xid The underlying cluster ID it depends on
 	Xid *string `json:"xid" bson:"xid"`
 	// Version cluster version

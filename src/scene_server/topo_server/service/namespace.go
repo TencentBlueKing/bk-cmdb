@@ -60,11 +60,10 @@ func (s *Service) CreateNamespace(ctx *rest.Contexts) {
 		// audit log.
 		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
-		// todo validate length
 		for idx := range req.Data {
-			req.Data[idx].BizID = &bizID
-			req.Data[idx].ID = &data.IDs[idx]
-			req.Data[idx].SupplierAccount = &ctx.Kit.SupplierAccount
+			req.Data[idx].BizID = bizID
+			req.Data[idx].ID = data.IDs[idx]
+			req.Data[idx].SupplierAccount = ctx.Kit.SupplierAccount
 		}
 		auditLogs, err := audit.GenerateNamespaceAuditLog(auditParam, req.Data)
 		if err != nil {
@@ -123,8 +122,8 @@ func (s *Service) UpdateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	if len(namespaces) == 0 {
-		ctx.RespEntity(nil)
+	if len(namespaces) != req.GetCount() {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
 		return
 	}
 

@@ -83,31 +83,25 @@ const (
 // Namespace define the namespace struct.
 type Namespace struct {
 	ClusterSpec     `json:",inline" bson:",inline"`
-	ID              *int64             `json:"id,omitempty" bson:"id"`
-	Name            *string            `json:"name,omitempty" bson:"name"`
+	ID              int64              `json:"id,omitempty" bson:"id"`
+	Name            string             `json:"name,omitempty" bson:"name"`
 	Labels          *map[string]string `json:"labels,omitempty" bson:"labels"`
 	ResourceQuotas  *[]ResourceQuota   `json:"resource_quotas,omitempty" bson:"resource_quotas"`
-	SupplierAccount *string            `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	SupplierAccount string             `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }
 
 // ValidateCreate validate create namespace
 func (ns *Namespace) ValidateCreate() errors.RawErrorInfo {
-	if ns.ClusterUID == nil && ns.ClusterID == nil {
+	if ns.ClusterID == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{ClusterUIDField + " or " + BKClusterIDFiled},
+			Args:    []interface{}{BKClusterIDFiled},
 		}
 	}
 
-	if ns.ClusterUID != nil && ns.ClusterID != nil {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrorTopoIdentificationIllegal,
-		}
-	}
-
-	if ns.Name == nil || *ns.Name == "" {
+	if ns.Name == "" {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{common.BKFieldName},
@@ -154,6 +148,15 @@ type ScopedResourceSelectorRequirement struct {
 // NsUpdateReq update namespace request struct
 type NsUpdateReq struct {
 	Data []NsUpdateData `json:"data"`
+}
+
+// GetCount get namespace update count
+func (ns *NsUpdateReq) GetCount() int {
+	count := 0
+	for _, data := range ns.Data {
+		count += len(data.IDs)
+	}
+	return count
 }
 
 // Validate validate namespace update request data
@@ -329,7 +332,7 @@ type NsQueryReq struct {
 
 // Validate validate NsQueryReq
 func (ns *NsQueryReq) Validate() errors.RawErrorInfo {
-	if ns.ClusterUID != nil && ns.ClusterID != nil {
+	if ns.ClusterUID != "" && ns.ClusterID != 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrorTopoIdentificationIllegal,
 		}
@@ -350,10 +353,10 @@ func (ns *NsQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.Map
 		common.BkSupplierAccount: supplierAccount,
 	}
 
-	if ns.ClusterID != nil {
+	if ns.ClusterID != 0 {
 		cond[BKClusterIDFiled] = ns.ClusterID
 	}
-	if ns.ClusterUID != nil {
+	if ns.ClusterUID != "" {
 		cond[ClusterUIDField] = ns.ClusterUID
 	}
 
