@@ -19,6 +19,8 @@
       <i18n path="导入提示" tag="p">
         <template #clickUpload><b>{{$t('点击上传')}}</b></template>
         <template #breakRow><br></template>
+        <template #allowType>{{allowType.join(',')}}</template>
+        <template #maxSize>{{maxSizeLocal}}</template>
       </i18n>
     </div>
     <div :class="['upload-file-info', { 'uploading': isLoading }, { 'fail': failed }, { 'uploaded': uploaded }]">

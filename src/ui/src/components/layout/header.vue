@@ -31,7 +31,6 @@
     <section class="header-info">
       <bk-popover class="info-item"
         theme="light header-info-popover"
-        trigger="click"
         animation="fade"
         placement="bottom-end"
         :arrow="false"
@@ -47,7 +46,6 @@
       </bk-popover>
       <bk-popover class="info-item"
         theme="light header-info-popover"
-        trigger="click"
         animation="fade"
         placement="bottom-end"
         :arrow="false"

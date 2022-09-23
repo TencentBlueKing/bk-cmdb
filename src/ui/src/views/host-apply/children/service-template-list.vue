@@ -80,15 +80,17 @@
         const current = targetId.value ? state.fullList.find(item => item.id === targetId.value) : state.fullList[0]
         state.current = current ?? {}
 
-        const counts = await store.dispatch('hostApply/getTemplateRuleCount', {
-          params: {
-            bk_biz_id: bizId,
-            service_template_ids: state.fullList.map(item => item.id)
-          }
-        })
-        state.displayList.forEach((node) => {
-          node.host_apply_rule_count = counts.find(item => item.service_template_id === node.id)?.count
-        })
+        if (state.fullList?.length) {
+          const counts = await store.dispatch('hostApply/getTemplateRuleCount', {
+            params: {
+              bk_biz_id: bizId,
+              service_template_ids: state.fullList.map(item => item.id)
+            }
+          })
+          state.displayList.forEach((node) => {
+            node.host_apply_rule_count = counts.find(item => item.service_template_id === node.id)?.count
+          })
+        }
       })
 
       const handleClickItem = (item) => {

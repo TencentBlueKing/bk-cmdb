@@ -65,7 +65,7 @@
                       tabindex="-1"
                       @click="toggleLockState(property)">
                       <i class="icon-cc-lock-fill" v-if="values[property.bk_property_id].as_default_value"></i>
-                      <i class="icon-cc-lock-line" v-else></i>
+                      <i class="icon-cc-unlock-fill" v-else></i>
                     </span>
                     <span class="form-error">{{getFormError(property)}}</span>
                   </div>
@@ -87,7 +87,7 @@
             :loading="$loading()"
             :disabled="saveDisabled || disabled || btnStatus()"
             @click="handleSave">
-            {{type === 'create' ? $t('提交') : $t('保存')}}
+            {{type === 'create' ? $t('提交') : $t('确定')}}
           </bk-button>
         </cmdb-auth>
         <bk-button class="button-cancel" @click="handleCancel" v-test-id="'cancel'">

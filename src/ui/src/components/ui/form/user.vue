@@ -191,3 +191,8 @@
         cursor: pointer;
     }
 </style>
+<style lang="scss">
+  .tippy-box[data-theme="light user-selector-popover"] {
+    bottom: -4px
+  }
+</style>

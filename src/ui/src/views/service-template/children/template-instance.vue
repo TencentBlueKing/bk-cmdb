@@ -64,8 +64,8 @@
             <cmdb-auth
               :auth="syncAuth"
               v-bk-tooltips="{
-                content: $t('实例正在同步，无法操作'),
-                disabled: !isSyncing(row.status)
+                content: isSyncing(row.status) ? $t('实例正在同步，无法操作') : $t('已是最新内容，无需同步'),
+                disabled: !isSyncDisabled(row.status)
               }">
               <template #default="{ disabled }">
                 <bk-button text

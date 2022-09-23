@@ -103,7 +103,7 @@
       v-if="!readonly"
       width="180"
       :label="$t('操作')"
-      :render-header="multiple ? (h, data) => renderColumnHeader(h, data, $t('忽略操作不影响原有配置')) : null">
+      :render-header="multiple ? (h, data) => renderColumnHeader(h, data, $t('忽略的字段在本次操作不会进行变更')) : null">
       <template slot-scope="{ row }">
         <bk-button theme="primary" text @click="handlePropertyRowDel(row)">
           <span v-if="multiple">{{$t(row.__extra__.ignore ? '恢复' : '忽略')}}</span>
