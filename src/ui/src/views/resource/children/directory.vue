@@ -137,7 +137,8 @@
     computed: {
       ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters('resourceHost', [
-        'directoryList'
+        'directoryList',
+        'directorySortedList'
       ]),
       stickyDirectory() {
         return this.usercustom[CUSTOM_STICKY_KEY] || []
@@ -148,14 +149,7 @@
           const lowerCaseSearch = this.dirSearch.toLowerCase()
           list = this.directoryList.filter(module => module.bk_module_name.toLowerCase().indexOf(lowerCaseSearch) > -1)
         }
-        const count = this.stickyDirectory.length
-        list.sort((dirA, dirB) => {
-          const stickyIndexA = this.stickyDirectory.indexOf(dirA.bk_module_id) + 1
-          const stickyIndexB = this.stickyDirectory.indexOf(dirB.bk_module_id) + 1
-
-          return (stickyIndexA || (count + 1)) - (stickyIndexB || (count + 1))
-        })
-        return list
+        return this.directorySortedList(this.stickyDirectory, list)
       },
       totalCount() {
         return this.directoryList.reduce((accumulator, directory) => accumulator + directory.host_count, 0)

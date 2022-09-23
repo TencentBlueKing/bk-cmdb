@@ -17,7 +17,7 @@
       'is-dragging': isDragging,
       'is-readonly': !updateAuth
     }"
-    v-bkloading="{ isLoading: $loading(), extCls: 'field-loading' }"
+    v-bkloading="{ isLoading: $loading(Object.values(requestIds)), extCls: 'field-loading' }"
   >
     <div class="field-options">
       <cmdb-auth :auth="authResources" @update-auth="handleReceiveAuth">
@@ -437,6 +437,10 @@
         configProperty: {
           show: false,
           selected: []
+        },
+        requestIds: {
+          properties: Symbol(),
+          propertyGroups: Symbol()
         }
       }
     },
@@ -656,7 +660,7 @@
           objId: this.objId,
           params: this.isGlobalView ? {} : { bk_biz_id: this.bizId },
           config: {
-            requestId: `get_searchGroup_${this.objId}`,
+            requestId: this.requestIds.propertyGroups,
             cancelPrevious: true
           }
         })
@@ -672,7 +676,7 @@
         return this.searchObjectAttribute({
           params,
           config: {
-            requestId: `post_searchObjectAttribute_${this.objId}`,
+            requestId: this.requestIds.properties,
             cancelPrevious: true
           }
         })
@@ -947,9 +951,8 @@
             }
           })
 
-          const properties = await this.getProperties()
-
-          this.init(properties, this.groups)
+          // 重新初始化字段及分组
+          this.resetData()
 
           this.$success(this.$t('修改成功'))
         } catch (error) {

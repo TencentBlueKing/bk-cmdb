@@ -25,12 +25,20 @@ const defaultSetting = {
 
 export const currentSetting = shallowReactive(defaultSetting)
 
+export const finalSetting = ref({
+  targets: Object.keys(targetMap),
+  models: [],
+  instances: []
+})
+
 export const allModelIds = ref([])
 
 export const handleReset = () => {
   currentSetting.targets = Object.keys(targetMap),
   currentSetting.models = []
   currentSetting.instances = []
+
+  finalSetting.value = currentSetting
 }
 
 export default function useAdvancedSetting(options = {}, root) {
@@ -50,6 +58,10 @@ export default function useAdvancedSetting(options = {}, root) {
     currentSetting.models = activeSetting.models
     currentSetting.instances = activeSetting.instances
     onConfirm && onConfirm()
+
+    finalSetting.value.targets = currentSetting.targets.slice()
+    finalSetting.value.models = currentSetting.models
+    finalSetting.value.instances = currentSetting.instances
   }
 
   const handleCancel = () => {

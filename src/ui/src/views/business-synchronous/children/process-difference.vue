@@ -29,7 +29,7 @@
     </ul>
 
     <!-- 变更详情 -->
-    <div class="change-details"
+    <div class="change-details" ref="changeDetails"
       v-bkloading="{ isLoading: currentDiffLoading }"
       v-if="currentDiff"
       :key="`${currentDiff.process_template_id}-${currentDiff.process_template_name}`">
@@ -97,19 +97,22 @@
         <!-- 实例列表 -->
         <ul
           class="instance-list"
+          ref="instanceList"
           v-bkloading="{ isLoading: currentDiff.module.instancesLoading }">
           <li class="instance-item"
             v-for="(instance, instanceIndex) in currentDiff.module.serviceInstances"
             :key="instanceIndex"
             @click="viewInstanceDiff(instance, moduleId)">
-            <span class="instance-name" v-bk-overflow-tips>
-              {{instance.name}}
+            <div class="instance-diff">
+              <div class="instance-name" v-bk-overflow-tips>
+                {{instance.name}}
+              </div>
               <label
                 :class="['instance-change-type', instance.type]"
                 v-if="translateChangedType(instance.type)">
                 {{translateChangedType(instance.type)}}
               </label>
-            </span>
+            </div>
           </li>
         </ul>
       </cmdb-collapse>
@@ -138,6 +141,7 @@
   import formatter from '@/filters/formatter'
   import { mapGetters } from 'vuex'
   import isEmpty from 'lodash/isEmpty'
+  import throttle from 'lodash/throttle'
 
   export default {
     components: {
@@ -202,6 +206,16 @@
       if (this.processDiff?.length) {
         this.loadProcessDiff(this.processDiff[0])
       }
+
+      this.throttleHideTooltips = throttle(this.hideTooltips, 100)
+    },
+    mounted() {
+      setTimeout(() => {
+        this.$refs.changeDetails.addEventListener('scroll', this.throttleHideTooltips)
+      }, 1000)
+    },
+    beforeDestroy() {
+      this.$refs.changeDetails.removeEventListener('scroll', this.throttleHideTooltips)
     },
     methods: {
       /**
@@ -344,6 +358,12 @@
           getCategoryById: this.getCategoryById
         }
         this.instanceDiffSlider.show = true
+      },
+      hideTooltips() {
+        const instanceNameDoms = this.$refs?.instanceList?.getElementsByClassName('instance-name')
+        // eslint-disable-next-line no-underscore-dangle
+        const tippyInsts = Array.from(instanceNameDoms, el => el?._tippy)
+        tippyInsts.forEach(inst => inst?.hide())
       }
     }
   }
@@ -483,9 +503,12 @@
         font-weight: bold;
       }
     }
-    .instance-name {
+    .instance-diff {
       padding-right: 28px;
       position: relative;
+      width: 100%
+    }
+    .instance-name {
       @include ellipsis;
     }
     .instance-diff-count {
@@ -512,8 +535,8 @@
       }
       &.changed,
       &.others {
-        color: #FF9C01;
-        background: #3a84ff29;
+        color: #FE9C00;
+        background: #FFF1DB;
       }
     }
   }

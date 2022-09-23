@@ -116,6 +116,7 @@
             :searchable="true"
             :clearable="false"
             :disabled="$loading(assign.requestId)"
+            :loading="$loading(authRequestId)"
             :placeholder="assign.placeholder"
             v-model="assign.id">
             <bk-option v-for="option in assignOptions"
@@ -153,7 +154,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
-  import { afterVerify } from '@/components/ui/auth/auth-queue.js'
+  import { AuthRequestId, afterVerify } from '@/components/ui/auth/auth-queue.js'
   import cmdbImport from '@/components/import/import'
   import cmdbButtonGroup from '@/components/ui/other/button-group'
   import Bus from '@/utils/bus.js'
@@ -165,6 +166,8 @@
   import FilterStore from '@/components/filters/store'
   import FilterUtils from '@/components/filters/utils'
   import hostImportService from '@/service/host/import'
+  const CUSTOM_STICKY_KEY = 'sticky-directory'
+
   export default {
     components: {
       cmdbImport,
@@ -192,15 +195,20 @@
           requestId: Symbol('assignHosts')
         },
         assignOptions: [],
-        IPWithCloudSymbol: Symbol('IPWithCloud')
+        IPWithCloudSymbol: Symbol('IPWithCloud'),
+        authRequestId: AuthRequestId
       }
     },
     computed: {
+      ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters('resourceHost', [
         'activeDirectory',
         'defaultDirectory',
-        'directoryList'
+        'directorySortedList'
       ]),
+      stickyDirectory() {
+        return this.usercustom[CUSTOM_STICKY_KEY] || []
+      },
       directoryId() {
         if (this.activeDirectory) {
           return this.activeDirectory.bk_module_id
@@ -376,20 +384,14 @@
         }
       },
       handleAssignHosts(id) {
-        let { directoryId } = this
-        if (!directoryId) {
-          const hosts = HostStore.getSelected()
-          directoryId = hosts[0].module[0].bk_module_id
-          const isSameModule = hosts.every((host) => {
-            const [module] = host.module
-            return module.bk_module_id === directoryId
-          })
-          if (!isSameModule) {
-            this.$error(this.$t('仅支持对相同目录下的主机进行操作'))
-            this.closeAssignDialog()
-            return false
-          }
-        }
+        this.assign.show = true
+
+        const hosts = HostStore.getSelected()
+        const directoryIds = hosts.map((host) => {
+          const [module] = host.module
+          return module.bk_module_id
+        })
+        const directoryIdList = [...new Set(directoryIds)]
 
         if (id === 'toBusiness') {
           this.assign.placeholder = this.$t('请选择xx', { name: this.$t('业务') })
@@ -401,7 +403,7 @@
             afterVerify((authData) => {
               this.sortBusinessByAuth(authData)
               // 使用排序后的业务列表更新列表选项
-              this.setAssignOptions(directoryId)
+              this.setAssignOptions(directoryIdList)
             })
           }, 0)
         } else {
@@ -410,29 +412,33 @@
           this.assign.title = this.$t('分配到主机池其他目录')
         }
 
-        this.setAssignOptions(directoryId)
-        this.assign.show = true
+        this.setAssignOptions(directoryIdList)
       },
-      setAssignOptions(directoryId) {
+      setAssignOptions(directoryIdList) {
         if (this.assign.curSelected === 'toBusiness') {
           this.assignOptions = this.businessList.map(item => ({
             id: item.bk_biz_id,
             name: `[${item.bk_biz_id}] ${item.bk_biz_name}`,
             disabled: !item?.is_pass ?? true,
-            auth: {
+            auth: directoryIdList.map(directoryId => ({
               type: this.$OPERATION.TRANSFER_HOST_TO_BIZ,
               relation: [[[directoryId], [item.bk_biz_id]]]
-            }
+            }))
           }))
         } else {
-          this.assignOptions = this.directoryList.filter(item => item.bk_module_id !== directoryId).map(item => ({
+          const directoryList = this.directorySortedList(this.stickyDirectory)
+          const directorySortedList = directoryIdList?.length === 1
+            ? directoryList.filter(item => item.bk_module_id !== directoryIdList[0])
+            : directoryList
+
+          this.assignOptions = directorySortedList.map(item => ({
             id: item.bk_module_id,
             name: item.bk_module_name,
             disabled: true,
-            auth: {
+            auth: directoryIdList.map(directoryId => ({
               type: this.$OPERATION.TRANSFER_HOST_TO_DIRECTORY,
               relation: [[[directoryId], [item.bk_module_id]]]
-            }
+            }))
           }))
         }
       },

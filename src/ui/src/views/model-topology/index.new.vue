@@ -78,7 +78,11 @@
           <span class="group-name" :title="group.bk_classification_name">{{group['bk_classification_name']}}</span>
           <span class="model-count">{{group['bk_objects'].length}}</span>
           <i
-            class="bk-cc-icon icon-cc-hide"
+            :class="[
+              'bk-cc-icon',
+              'icon-eye',
+              topoNav.hideGroupIds.includes(group['bk_classification_id']) ? 'icon-cc-close-eye' : 'icon-cc-open-eye'
+            ]"
             @click.stop="handleToggleGroup(group)"
           >
           </i>
@@ -107,7 +111,11 @@
                 <p class="name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</p>
               </div>
               <i
-                class="bk-cc-icon icon-cc-hide"
+                :class="[
+                  'bk-cc-icon',
+                  'icon-eye',
+                  topoNav.hideNodeIds.includes(model['bk_obj_id']) ? 'icon-cc-close-eye' : 'icon-cc-open-eye'
+                ]"
                 @click.stop="handleToggleNode(model, group)"
               >
               </i>
@@ -1354,7 +1362,7 @@
             &:hover {
                 background: #e1ecff;
 
-                .icon-cc-hide {
+                .icon-eye {
                     display: inline-block;
                 }
             }
@@ -1377,7 +1385,7 @@
                 }
             }
             &.invisible {
-                .icon-cc-hide {
+                .icon-eye {
                     display: inline-block;
                 }
                 .group-name {
@@ -1415,7 +1423,7 @@
                 color: #979ba5;
                 margin: 0 -4px;
             }
-            .icon-cc-hide {
+            .icon-eye {
                 display: none;
                 position: absolute;
                 right: 16px;
@@ -1438,7 +1446,7 @@
             &:hover {
                 background: #ebf4ff;
 
-                .icon-cc-hide {
+                .icon-eye {
                     display: inline-block;
                 }
             }
@@ -1447,7 +1455,7 @@
                 opacity: .6;
             }
             &.invisible {
-                .icon-cc-hide {
+                .icon-eye {
                     display: inline-block;
                 }
                 .info,
@@ -1487,7 +1495,7 @@
                     color: $cmdbBorderColor;
                 }
             }
-            .icon-cc-hide {
+            .icon-eye {
                 display: none;
                 position: absolute;
                 right: 16px;
