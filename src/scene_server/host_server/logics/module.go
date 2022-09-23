@@ -284,7 +284,8 @@ func (lgc *Logics) MoveHostToResourcePool(kit *rest.Kit, conf *metadata.DefaultM
 
 // notExistAppModuleHost get hostIDs those don't exist in the modules
 func (lgc *Logics) notExistAppModuleHost(kit *rest.Kit, appIDs []int64, moduleIDs []int64, hostIDArr []int64) ([]int64,
-	error) {
+	errors.CCErrorCoder) {
+
 	hostModuleInput := &metadata.DistinctHostIDByTopoRelationRequest{
 		ApplicationIDArr: appIDs,
 		ModuleIDArr:      moduleIDs,
@@ -460,4 +461,53 @@ func (lgc *Logics) convertHostIDToHostIP(kit *rest.Kit, hostIDArr []int64) []str
 	}
 
 	return ips
+}
+
+// ValidateHostInModule validate if host are all in modules specified by cond
+func (lgc *Logics) ValidateHostInModule(kit *rest.Kit, hostIDs []int64, moduleCond mapstr.MapStr) errors.CCErrorCoder {
+
+	// get module ids by condition
+	moduleReq := &metadata.QueryCondition{
+		Condition:      moduleCond,
+		Fields:         []string{common.BKModuleIDField},
+		Page:           metadata.BasePage{Limit: common.BKNoLimit},
+		DisableCounter: true,
+	}
+
+	moduleRes := new(metadata.ResponseModuleInstance)
+	err := lgc.CoreAPI.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
+		moduleReq, &moduleRes)
+	if err != nil {
+		blog.Errorf("get modules failed, input: %#v, err: %v, rid: %s", moduleReq, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if err = moduleRes.CCError(); err != nil {
+		blog.Errorf("get modules failed, input: %#v, err: %v, rid: %s", moduleReq, err, kit.Rid)
+		return err
+	}
+
+	moduleIDs := make([]int64, len(moduleRes.Data.Info))
+	for index, module := range moduleRes.Data.Info {
+		moduleIDs[index] = module.ModuleID
+	}
+
+	// check if all hosts belongs to the modules
+	relationCond := mapstr.MapStr{
+		common.BKHostIDField:   mapstr.MapStr{common.BKDBIN: hostIDs},
+		common.BKModuleIDField: mapstr.MapStr{common.BKDBNIN: moduleIDs},
+	}
+
+	counts, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameModuleHostConfig, []map[string]interface{}{relationCond})
+	if err != nil {
+		blog.Error("get illegal relation count failed, cond: %+v, err: %v, rid: %s", relationCond, err, kit.Rid)
+		return err
+	}
+
+	if len(counts) != 1 || int(counts[0]) > 0 {
+		blog.Error("not all hosts(%+v) belongs to the modules(%+v), input: %+v, rid: %s", hostIDs, moduleIDs, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
+	}
+
+	return nil
 }

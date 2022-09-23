@@ -695,13 +695,9 @@ func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr 
 		ApplicationID: bizID,
 		HostIDArr:     hostIDArr,
 	}
-	result, err := lgc.CoreAPI.CoreService().Host().DeleteHostFromSystem(kit.Ctx, kit.Header, input)
+	err = lgc.CoreAPI.CoreService().Host().DeleteHostFromSystem(kit.Ctx, kit.Header, input)
 	if err != nil {
-		blog.Errorf("delete host failed, err: %v, hostID: %#v,appID: %d, rid: %s", err, hostIDArr, bizID, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if err := result.CCError(); err != nil {
-		blog.Errorf("delete host failed, err: %v, hostID: %#v,appID: %d, rid: %s", err, hostIDArr, bizID, kit.Rid)
+		blog.Error("delete host failed, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
 		return nil, err
 	}
 
