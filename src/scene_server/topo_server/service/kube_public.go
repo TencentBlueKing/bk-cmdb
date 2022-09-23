@@ -29,7 +29,7 @@ import (
 	"configcenter/src/kube/types"
 )
 
-// convertKubeCondition generate different query conditions based on different resources.
+// findKubeTopoPathIfo generate different query conditions based on different resources.
 func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathOption, filter mapstr.MapStr,
 	tableNames []string) (*types.KubeTopoPathRsp, error) {
 

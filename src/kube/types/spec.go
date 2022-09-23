@@ -18,16 +18,17 @@
 package types
 
 import (
-	"configcenter/src/storage/dal/table"
 	"errors"
+
+	"configcenter/src/storage/dal/table"
 )
 
-func init() {
-	initClusterFieldsType()
-	initNodeFieldsType()
-	initPodFieldsType()
-	initContainerFieldsType()
-}
+//func init() {
+//	initClusterFieldsType()
+//	initNodeFieldsType()
+//	initPodFieldsType()
+//	initContainerFieldsType()
+//}
 
 // ClusterSpec describes the common attributes of cluster, it is used by the structure below it.
 type ClusterSpec struct {

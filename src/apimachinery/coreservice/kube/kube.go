@@ -73,6 +73,25 @@ type KubeClientInterface interface {
 
 	// DeletePods delete pods
 	DeletePods(ctx context.Context, h http.Header, opt *types.DeletePodsByIDsOption) errors.CCErrorCoder
+
+	CreateCluster(ctx context.Context, h http.Header, bizID int64, option *types.Cluster) (
+		*types.CreateClusterResult, errors.CCErrorCoder)
+	UpdateClusterFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
+		data *types.UpdateClusterOption) errors.CCErrorCoder
+	UpdateNodeFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
+		data *types.UpdateNodeOption) errors.CCErrorCoder
+	SearchCluster(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
+		*types.ResponseCluster, errors.CCErrorCoder)
+	DeleteCluster(ctx context.Context, header http.Header, bizID int64,
+		option *types.DeleteClusterOption) errors.CCErrorCoder
+	BatchDeleteNode(ctx context.Context, header http.Header, bizID int64,
+		option *types.BatchDeleteNodeOption) errors.CCErrorCoder
+	BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
+		data *types.CreateNodesOption) (*types.CreateNodesResult, errors.CCErrorCoder)
+	BatchCreatePod(ctx context.Context, header http.Header, data *types.CreatePodsOption) (
+		[]types.Pod, errors.CCErrorCoder)
+	SearchNode(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
+		*types.SearchNodeRsp, errors.CCErrorCoder)
 }
 
 // NewKubeClientInterface new kube client interface

@@ -34,6 +34,9 @@ const (
 	// Time means this field is Time data type.
 	Time FieldType = "time"
 
+	// Timestamp means this field is timestamp data type.
+	Timestamp FieldType = "timestamp"
+
 	// Boolean means this field is boolean data type.
 	Boolean FieldType = "bool"
 	// String means this field is string data type.

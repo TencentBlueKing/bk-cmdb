@@ -85,8 +85,8 @@ var ContainerSpecFieldsDescriptor = table.FieldsDescriptors{
 }
 
 func initPodFieldsType() {
-	typeOfCat := reflect.TypeOf(PodBaseFields{})
-	valueOf := reflect.ValueOf(PodBaseFields{})
+	typeOfCat := reflect.TypeOf(Pod{})
+	valueOf := reflect.ValueOf(Pod{})
 	for i := 0; i < typeOfCat.NumField(); i++ {
 		// 获取每个成员的结构体字段类型
 		for _, descripor := range PodSpecFieldsDescriptor {
@@ -208,13 +208,6 @@ type Pod struct {
 	// cc的自增主键
 	ID            int64 `json:"id,omitempty" bson:"id"`
 	SysSpec       `json:",inline" bson:",inline"`
-	PodBaseFields `json:",inline" bson:",inline"`
-	// Revision record this app's revision information
-	table.Revision `json:",inline" bson:",inline"`
-}
-
-// PodBaseFields pod core details
-type PodBaseFields struct {
 	Name          *string            `json:"name,omitempty" bson:"name"`
 	Priority      *int32             `json:"priority,omitempty" bson:"priority"`
 	Labels        *map[string]string `json:"labels,omitempty"  bson:"labels"`
@@ -224,10 +217,12 @@ type PodBaseFields struct {
 	QOSClass      *PodQOSClass       `json:"qos_class,omitempty"  bson:"qos_class"`
 	NodeSelectors *map[string]string `json:"node_selectors,omitempty"  bson:"node_selectors"`
 	Tolerations   *[]Toleration      `json:"tolerations,omitempty" bson:"tolerations"`
+	// Revision record this app's revision information
+	table.Revision `json:",inline" bson:",inline"`
 }
 
 // createValidate validate the PodBaseFields
-func (option *PodBaseFields) createValidate() error {
+func (option *Pod) createValidate() error {
 
 	if option == nil {
 		return errors.New("pod information must be set")
@@ -246,12 +241,26 @@ func (option *PodBaseFields) createValidate() error {
 		typeOfOption := reflect.TypeOf(*option)
 		valueOfOption := reflect.ValueOf(*option)
 		for i := 0; i < typeOfOption.NumField(); i++ {
-			tag := typeOfOption.Field(i).Tag.Get("json")
-			if PodFields.IsFieldRequiredByField(tag) {
-				fieldValue := valueOfOption.Field(i)
-				if fieldValue.IsNil() {
-					return fmt.Errorf("required fields cannot be empty, %s", tag)
-				}
+			tagTmp := typeOfOption.Field(i).Tag.Get("json")
+			tags := strings.Split(tagTmp, ",")
+			if tags[0] == "" {
+				continue
+			}
+			if IsCommonField(tags[0]) {
+				continue
+			}
+
+			if !ClusterFields.IsFieldRequiredByField(tags[0]) {
+				continue
+			}
+
+			fieldValue := valueOfOption.Field(i)
+			if fieldValue.Kind() != reflect.Ptr || fieldValue.Kind() != reflect.UnsafePointer {
+				continue
+			}
+
+			if fieldValue.IsNil() {
+				return fmt.Errorf("required fields cannot be empty, %s", tags)
 			}
 		}
 	}
@@ -306,6 +315,10 @@ func (option *ContainerBaseFields) createValidate() error {
 		// for example, it needs to be compatible when the tag is "name,omitempty"
 		tagTmp := typeOfOption.Field(i).Tag.Get("json")
 		tags := strings.Split(tagTmp, ",")
+
+		if tags[0] == "" {
+			continue
+		}
 		if IsCommonField(tags[0]) {
 			continue
 		}
@@ -313,11 +326,14 @@ func (option *ContainerBaseFields) createValidate() error {
 		if !ContainerFields.IsFieldRequiredByField(tags[0]) {
 			continue
 		}
-		if ContainerFields.IsFieldRequiredByField(tags[0]) {
-			fieldValue := valueOfOption.Field(i)
-			if fieldValue.IsNil() {
-				return fmt.Errorf("required fields cannot be empty, %s", tags[0])
-			}
+
+		fieldValue := valueOfOption.Field(i)
+		if fieldValue.Kind() != reflect.Ptr || fieldValue.Kind() != reflect.UnsafePointer {
+			continue
+		}
+
+		if fieldValue.IsNil() {
+			return fmt.Errorf("required fields cannot be empty, %s", tags[0])
 		}
 	}
 
@@ -353,10 +369,10 @@ type Ref struct {
 
 // PodsInfo details of creating pods.
 type PodsInfo struct {
-	Spec          *SpecInfo `json:"spec"`
-	HostID        int64     `json:"bk_host_id"`
-	PodBaseFields `json:",inline"`
-	Containers    []ContainerBaseFields `json:"containers"`
+	Spec       SpecInfo `json:"spec"`
+	HostID     int64    `json:"bk_host_id"`
+	Pod        `json:",inline"`
+	Containers []ContainerBaseFields `json:"containers"`
 }
 
 // CreatePodsOption create pods option
@@ -386,9 +402,6 @@ func (option *CreatePodsOption) Validate() error {
 
 	for _, data := range option.Data {
 		for _, pod := range data.Pods {
-			if pod.Spec == nil {
-				return errors.New("spec filter cannot be empty at the same time")
-			}
 
 			if err := pod.Spec.validate(); err != nil {
 				return err

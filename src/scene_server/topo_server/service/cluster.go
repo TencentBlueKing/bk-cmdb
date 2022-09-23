@@ -85,7 +85,7 @@ func (s *Service) SearchClusters(ctx *rest.Contexts) {
 		Page:      searchCond.Page,
 		Fields:    searchCond.Fields,
 	}
-	result, err := s.Engine.CoreAPI.CoreService().Container().SearchCluster(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchCluster(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		blog.Errorf("search cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		return
@@ -101,7 +101,6 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
 	if err := data.Validate(); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -129,7 +128,7 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 	}
 
-	result, err := s.Engine.CoreAPI.CoreService().Container().SearchCluster(ctx.Kit.Ctx, ctx.Kit.Header, input)
+	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchCluster(ctx.Kit.Ctx, ctx.Kit.Header, input)
 	if err != nil {
 		blog.Errorf("search cluster failed, input: %#v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -139,12 +138,12 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 	if len(result.Data) != len(clusterIDs) {
 		blog.Errorf("the number of instances obtained is inconsistent with the param, bizID: %d, ids: %#v, err: %v, "+
 			"rid: %s", bizID, clusterIDs, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrTopoInstUpdateFailed, "id"))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrTopoInstUpdateFailed))
 		return
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Engine.CoreAPI.CoreService().Container().UpdateClusterFields(ctx.Kit.Ctx, ctx.Kit.Header,
+		err := s.Engine.CoreAPI.CoreService().Kube().UpdateClusterFields(ctx.Kit.Ctx, ctx.Kit.Header,
 			ctx.Kit.SupplierAccount, bizID, data)
 		if err != nil {
 			blog.Errorf("create cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
@@ -205,6 +204,7 @@ func (s *Service) CreateCluster(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	var id int64
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
@@ -242,12 +242,12 @@ func (s *Service) DeleteCluster(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		err = s.Logics.ContainerOperation().DeleteCluster(ctx.Kit, bizID, option, ctx.Kit.SupplierAccount)
 		if err != nil {
-			blog.Errorf("delete cluster failed, biz: %d, option: %+v, err: %v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+			blog.Errorf("delete cluster failed, biz: %d, option: %+v, err: %v, rid: %s", bizID, option, err,
+				ctx.Kit.Rid)
 			return err
 		}
 		return nil

@@ -41,16 +41,16 @@ var ClusterFields = table.MergeFields(CommonSpecFieldsDescriptor, BizIDDescripto
 
 // ClusterSpecFieldsDescriptor cluster spec's fields descriptors.
 var ClusterSpecFieldsDescriptor = table.FieldsDescriptors{
-	{Field: KubeNameField, IsRequired: true, IsEditable: false},
-	{Field: SchedulingEngineField, IsRequired: false, IsEditable: false},
-	{Field: UidField, IsRequired: true, IsEditable: false},
-	{Field: XidField, IsRequired: false, IsEditable: false},
-	{Field: VersionField, IsRequired: false, IsEditable: true},
-	{Field: NetworkTypeField, IsRequired: false, IsEditable: true},
-	{Field: RegionField, IsRequired: false, IsEditable: true},
-	{Field: VpcField, IsRequired: false, IsEditable: false},
-	{Field: NetworkField, IsRequired: false, IsEditable: false},
-	{Field: TypeField, IsRequired: false, IsEditable: true},
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: SchedulingEngineField, Type: enumor.String, IsRequired: false, IsEditable: false},
+	{Field: UidField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: XidField, Type: enumor.String, IsRequired: false, IsEditable: false},
+	{Field: VersionField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: NetworkTypeField, Type: enumor.Enum, IsRequired: false, IsEditable: true},
+	{Field: RegionField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: VpcField, Type: enumor.String, IsRequired: false, IsEditable: false},
+	{Field: NetworkField, Type: enumor.String, IsRequired: false, IsEditable: false},
+	{Field: TypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
 }
 
 // Cluster container cluster table structure
@@ -139,14 +139,22 @@ func (option *Cluster) CreateValidate() error {
 		// for example, it needs to be compatible when the tag is "name,omitempty"
 		tagTmp := typeOfOption.Field(i).Tag.Get("json")
 		tags := strings.Split(tagTmp, ",")
-
-		if !ClusterFields.IsFieldRequiredByField(tags[0]) {
+		if tags[0] == "" {
 			continue
 		}
 		if IsCommonField(tags[0]) {
 			continue
 		}
+
+		if !ClusterFields.IsFieldRequiredByField(tags[0]) {
+			continue
+		}
+
 		fieldValue := valueOfOption.Field(i)
+		if fieldValue.Kind() != reflect.Ptr || fieldValue.Kind() != reflect.UnsafePointer {
+			continue
+		}
+
 		if fieldValue.IsNil() {
 			return fmt.Errorf("required fields cannot be empty, %s", tags[0])
 		}
@@ -165,19 +173,29 @@ func (option *Cluster) updateValidate() error {
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
 		fieldValue := valueOfOption.Field(i)
-		//	1、check each variable for a null pointer.
+
+		// 1、a variable with a non-null pointer gets the corresponding tag.
+		// for example, it needs to be compatible when the tag is "name,omitempty"
+		tagTmp := typeOfOption.Field(i).Tag.Get("json")
+		tags := strings.Split(tagTmp, ",")
+		if tags[0] == "" {
+			continue
+		}
+		if IsCommonField(tags[0]) {
+			continue
+		}
+
+		if fieldValue.Kind() != reflect.Ptr || fieldValue.Kind() != reflect.UnsafePointer {
+			continue
+		}
+
+		//	2、check each variable for a null pointer.
 		//	if it is a null pointer, it means that
 		//	this field will not be updated, skip it directly.
 		if fieldValue.IsNil() {
 			continue
 		}
-		// 2、a variable with a non-null pointer gets the corresponding tag.
-		// for example, it needs to be compatible when the tag is "name,omitempty"
-		tagTmp := typeOfOption.Field(i).Tag.Get("json")
-		tags := strings.Split(tagTmp, ",")
-		if IsCommonField(tags[0]) {
-			continue
-		}
+
 		// 3、get whether it is an editable field based on tag
 		if !ClusterFields.IsFieldEditableByField(tags[0]) {
 			return fmt.Errorf("field [%s] is a non-editable field", tags[0])
@@ -226,12 +244,12 @@ type ResponseCluster struct {
 // OneUpdateCluster update individual cluster information.
 type OneUpdateCluster struct {
 	ID   int64   `json:"id"`
-	Data Cluster `json:"data"`
+	Data Cluster `json:"cluster"`
 }
 
 // UpdateClusterOption update cluster request。
 type UpdateClusterOption struct {
-	Clusters []OneUpdateCluster `json:"clusters"`
+	Clusters []OneUpdateCluster `json:"data"`
 }
 
 // Validate validate the UpdateClusterOption
@@ -253,7 +271,6 @@ func (option *UpdateClusterOption) Validate() error {
 			return errors.New("id cannot be empty at the same time")
 		}
 		if err := one.Data.updateValidate(); err != nil {
-
 			return err
 		}
 	}

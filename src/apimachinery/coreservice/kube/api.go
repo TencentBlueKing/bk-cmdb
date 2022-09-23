@@ -326,3 +326,202 @@ func (k *kube) DeletePods(ctx context.Context, h http.Header, opt *types.DeleteP
 
 	return nil
 }
+
+// BatchCreateNode batch create nodes
+func (k *kube) BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
+	data *types.CreateNodesOption) (*types.CreateNodesResult, errors.CCErrorCoder) {
+	ret := new(types.CreateNodesResult)
+	subPath := "/createmany/kube/node/%d"
+
+	err := k.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+	return ret, nil
+}
+
+// BatchCreatePod batch create pod.
+func (k *kube) BatchCreatePod(ctx context.Context, header http.Header,
+	data *types.CreatePodsOption) ([]types.Pod, errors.CCErrorCoder) {
+	ret := new(types.CreatePodsResult)
+	subPath := "/createmany/kube/pod"
+
+	err := k.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+
+	return ret.Info, nil
+
+}
+
+// SearchCluster create cluster.
+func (k *kube) SearchCluster(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
+	*types.ResponseCluster, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp
+		Data types.ResponseCluster `json:"data"`
+	}{}
+
+	subPath := "/findmany/kube/cluster"
+	err := k.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	return &ret.Data, nil
+}
+
+// SearchNode search node.
+func (k *kube) SearchNode(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
+	*types.SearchNodeRsp, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp
+		Data types.SearchNodeRsp `json:"data"`
+	}{}
+
+	subPath := "/findmany/kube/node"
+	err := k.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	return &ret.Data, nil
+}
+
+// UpdateNodeFields update node fields.
+func (k *kube) UpdateNodeFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
+	data *types.UpdateNodeOption) errors.CCErrorCoder {
+	ret := new(metadata.UpdatedCount)
+	subPath := "/updatemany/kube/node/%s/%d"
+	err := k.client.Put().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, supplierAccount, bizID).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	return nil
+}
+
+// UpdateClusterFields update cluster fields.
+func (k *kube) UpdateClusterFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
+	data *types.UpdateClusterOption) errors.CCErrorCoder {
+	ret := new(metadata.UpdatedCount)
+	subPath := "/updatemany/kube/cluster/%s/%d"
+	err := k.client.Put().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, supplierAccount, bizID).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	return nil
+}
+
+// CreateCluster create cluster.
+func (k *kube) CreateCluster(ctx context.Context, header http.Header, bizID int64,
+	data *types.Cluster) (*types.CreateClusterResult, errors.CCErrorCoder) {
+	ret := new(types.CreateClusterResult)
+	subPath := "/create/kube/cluster/%d"
+	err := k.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+
+	return ret, nil
+}
+
+// DeleteCluster delete cluster.
+func (k *kube) DeleteCluster(ctx context.Context, header http.Header, bizID int64,
+	option *types.DeleteClusterOption) errors.CCErrorCoder {
+	ret := new(metadata.DeletedCount)
+	subPath := "/deletemany/kube/cluster/%d"
+
+	err := k.client.Delete().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	return nil
+}
+
+// BatchDeleteNode delete cluster.
+func (k *kube) BatchDeleteNode(ctx context.Context, header http.Header, bizID int64,
+	option *types.BatchDeleteNodeOption) errors.CCErrorCoder {
+	ret := new(metadata.DeletedCount)
+	subPath := "/deletemany/kube/node/%d"
+
+	err := k.client.Delete().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	return nil
+}

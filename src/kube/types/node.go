@@ -42,17 +42,17 @@ var NodeFields = table.MergeFields(CommonSpecFieldsDescriptor, BizIDDescriptor, 
 
 // NodeSpecFieldsDescriptor node spec's fields descriptors.
 var NodeSpecFieldsDescriptor = table.FieldsDescriptors{
-	{Field: KubeNameField, IsRequired: true, IsEditable: false},
-	{Field: RolesField, IsRequired: false, IsEditable: true},
-	{Field: LabelsField, IsRequired: false, IsEditable: true},
-	{Field: TaintsField, IsRequired: false, IsEditable: true},
-	{Field: UnschedulableField, IsRequired: false, IsEditable: true},
-	{Field: InternalIPField, IsRequired: false, IsEditable: true},
-	{Field: ExternalIPField, IsRequired: false, IsEditable: true},
-	{Field: HostnameField, IsRequired: false, IsEditable: true},
-	{Field: RuntimeComponentField, IsRequired: false, IsEditable: true},
-	{Field: KubeProxyModeField, IsRequired: false, IsEditable: true},
-	{Field: PodCidrField, IsRequired: false, IsEditable: true},
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: RolesField, Type: enumor.Enum, IsRequired: false, IsEditable: true},
+	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
+	{Field: TaintsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
+	{Field: UnschedulableField, Type: enumor.Boolean, IsRequired: false, IsEditable: true},
+	{Field: InternalIPField, Type: enumor.Array, IsRequired: false, IsEditable: true},
+	{Field: ExternalIPField, Type: enumor.Array, IsRequired: false, IsEditable: true},
+	{Field: HostnameField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: RuntimeComponentField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: KubeProxyModeField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: PodCidrField, Type: enumor.String, IsRequired: false, IsEditable: true},
 }
 
 // Node node structural description.
@@ -119,13 +119,20 @@ func (option *Node) CreateValidate() error {
 		// for example, it needs to be compatible when the tag is "name,omitempty"
 		tagTmp := typeOfOption.Field(i).Tag.Get("json")
 		tags := strings.Split(tagTmp, ",")
+		if tags[0] == "" {
+			continue
+		}
 		if IsCommonField(tags[0]) {
 			continue
 		}
+
 		if !NodeFields.IsFieldRequiredByField(tags[0]) {
 			continue
 		}
 		fieldValue := valueOfOption.Field(i)
+		if fieldValue.Kind() != reflect.Ptr || fieldValue.Kind() != reflect.UnsafePointer {
+			continue
+		}
 		if fieldValue.IsNil() {
 			return fmt.Errorf("required fields cannot be empty, %s", tags[0])
 		}
@@ -167,19 +174,27 @@ func (option *Node) updateValidate() error {
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
 		fieldValue := valueOfOption.Field(i)
-		//	1、check each variable for a null pointer.
+		// 1、a variable with a non-null pointer gets the corresponding tag.
+		// for example, it needs to be compatible when the tag is "name,omitempty"
+		tagTmp := typeOfOption.Field(i).Tag.Get("json")
+		tags := strings.Split(tagTmp, ",")
+		if tags[0] == "" {
+			continue
+		}
+		if IsCommonField(tags[0]) {
+			continue
+		}
+
+		if fieldValue.Kind() != reflect.Ptr || fieldValue.Kind() != reflect.UnsafePointer {
+			continue
+		}
+		//	2、check each variable for a null pointer.
 		//	if it is a null pointer, it means that
 		//	this field will not be updated, skip it directly.
 		if fieldValue.IsNil() {
 			continue
 		}
-		// 2、a variable with a non-null pointer gets the corresponding tag.
-		// for example, it needs to be compatible when the tag is "name,omitempty"
-		tagTmp := typeOfOption.Field(i).Tag.Get("json")
-		tags := strings.Split(tagTmp, ",")
-		if IsCommonField(tags[0]) {
-			continue
-		}
+
 		// 3、get whether it is an editable field based on tag
 		if !NodeFields.IsFieldEditableByField(tags[0]) {
 			return fmt.Errorf("field [%s] is a non-editable field", tags[0])
@@ -188,25 +203,19 @@ func (option *Node) updateValidate() error {
 	return nil
 }
 
-// OneDeleteNodeOption delete node by id of cmdb.
-type OneDeleteNodeOption struct {
-	ClusterID int64   `json:"bk_cluster_id"`
-	IDs       []int64 `json:"ids"`
-}
-
 // BatchDeleteNodeOption delete nodes option.
 type BatchDeleteNodeOption struct {
-	Nodes []OneDeleteNodeOption `json:"nodes"`
+	IDs []int64 `json:"ids"`
 }
 
 // Validate validate the BatchDeleteNodeOption
 func (option *BatchDeleteNodeOption) Validate() error {
 
-	if len(option.Nodes) == 0 {
-		return errors.New("params must be set")
+	if len(option.IDs) == 0 {
+		return errors.New("node ids must be set")
 	}
 
-	if len(option.Nodes) > maxDeleteNodeNum {
+	if len(option.IDs) > maxDeleteNodeNum {
 		return fmt.Errorf("the maximum number of nodes to be deleted is not allowed to exceed %d",
 			maxDeleteClusterNum)
 	}
@@ -238,7 +247,7 @@ func (option *OneNodeCreateOption) ValidateCreate() error {
 
 // CreateNodesOption create node requests in batches.
 type CreateNodesOption struct {
-	Nodes []OneNodeCreateOption `json:"nodes"`
+	Nodes []OneNodeCreateOption `json:"data"`
 }
 
 // ValidateCreate validate the create nodes request
@@ -314,12 +323,12 @@ type NodeKubeOption struct {
 // UpdateNodeInfo update individual node details.
 type UpdateNodeInfo struct {
 	NodeIDs []int64 `json:"ids"`
-	Data    *Node   `json:"data"`
+	Data    *Node   `json:"node"`
 }
 
 // UpdateNodeOption update node field option
 type UpdateNodeOption struct {
-	Nodes []UpdateNodeInfo `json:"nodes"`
+	Nodes []UpdateNodeInfo `json:"data"`
 }
 
 // Validate check whether the request parameters for updating the node are legal.

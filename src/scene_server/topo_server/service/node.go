@@ -103,7 +103,7 @@ func (s *Service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.Ho
 		Fields:    fields,
 	}
 
-	resp, ccErr := s.Engine.CoreAPI.CoreService().Container().SearchNode(kit.Ctx, kit.Header, query)
+	resp, ccErr := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
 	if ccErr != nil {
 		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, ccErr, kit.Rid)
 		return nil, ccErr
@@ -145,7 +145,7 @@ func (s *Service) getClusterIDWithName(kit *rest.Kit, clusterIDs []int64) (map[i
 		Fields:    fields,
 	}
 
-	resp, ccErr := s.Engine.CoreAPI.CoreService().Container().SearchCluster(kit.Ctx, kit.Header, query)
+	resp, ccErr := s.Engine.CoreAPI.CoreService().Kube().SearchCluster(kit.Ctx, kit.Header, query)
 	if ccErr != nil {
 		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, ccErr, kit.Rid)
 		return nil, ccErr
@@ -344,7 +344,7 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 		Page:      searchCond.Page,
 		Fields:    searchCond.Fields,
 	}
-	result, err := s.Engine.CoreAPI.CoreService().Container().SearchNode(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		blog.Errorf("search node failed, filter: %+v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
 		return
@@ -400,14 +400,14 @@ func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
 			common.BKOwnerIDField: ctx.Kit.SupplierAccount},
 		Page: metadata.BasePage{Limit: common.BKNoLimit},
 	}
-	result, err := s.Engine.CoreAPI.CoreService().Container().SearchNode(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		blog.Errorf("search node failed, filter: %+v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		return
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		if err := s.Engine.CoreAPI.CoreService().Container().UpdateNodeFields(ctx.Kit.Ctx, ctx.Kit.Header,
+		if err := s.Engine.CoreAPI.CoreService().Kube().UpdateNodeFields(ctx.Kit.Ctx, ctx.Kit.Header,
 			ctx.Kit.SupplierAccount, bizID, data); err != nil {
 			blog.Errorf("create cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
