@@ -103,20 +103,26 @@ func (h *host) TransferToAnotherBusiness(ctx context.Context, header http.Header
 	return
 }
 
-// DeleteHostFromSystem TODO
-// DeleteHost delete host
-func (h *host) DeleteHostFromSystem(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) (resp *metadata.BaseResp, err error) {
-	resp = new(metadata.BaseResp)
+// DeleteHostFromSystem delete host from cc system
+func (h *host) DeleteHostFromSystem(ctx context.Context, header http.Header,
+	input *metadata.DeleteHostRequest) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
 	subPath := "/delete/host"
 
-	err = h.client.Delete().
+	err := h.client.Delete().
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	return resp.CCError()
 }
 
 // GetHostModuleRelation get host module relation

@@ -21,6 +21,7 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initTransfer(web)
 	s.initDynamicGroup(web)
 	s.initUsercustom(web)
+	s.initCloudHost(web)
 
 }
 
@@ -323,6 +324,22 @@ func (s *Service) initUsercustom(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/usercustom/user/search", Handler: s.GetUserCustom})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/usercustom/default/model", Handler: s.GetModelDefaultCustom})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/usercustom/default/model/{obj_id}", Handler: s.SaveModelDefaultCustom})
+
+	utility.AddToRestfulWebService(web)
+
+}
+
+// initCloudHost init cloud host related api, **dedicated for cloud host management, do not use them for other use**
+func (s *Service) initCloudHost(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/cloud_hosts",
+		Handler: s.AddCloudHostToBiz})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/cloud_hosts",
+		Handler: s.DeleteCloudHostFromBiz})
 
 	utility.AddToRestfulWebService(web)
 

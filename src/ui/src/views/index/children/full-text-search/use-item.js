@@ -95,15 +95,9 @@ export default function useItem(list, root) {
     root.$routerActions.redirect(to)
   }
   const handleGoInstace = (source, newTab = true) => {
-    const model = getModelById(source.bk_obj_id)
     const isPauserd = getModelById(source.bk_obj_id).bk_ispaused
-    if (model.bk_classification_id === 'bk_biz_topo') {
-      root.$bkMessage({
-        message: root.$t('主线模型无法查看'),
-        theme: 'warning'
-      })
-      return
-    } if (isPauserd) {
+
+    if (isPauserd) {
       root.$bkMessage({
         message: root.$t('该模型已停用'),
         theme: 'warning'

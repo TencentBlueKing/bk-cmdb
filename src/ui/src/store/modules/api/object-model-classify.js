@@ -14,8 +14,7 @@
 import $http from '@/api'
 
 const state = {
-  classifications: [],
-  invisibleClassifications: ['bk_host_manage', 'bk_biz_topo']
+  classifications: []
 }
 
 const getters = {
@@ -33,26 +32,7 @@ const getters = {
     })
     return models
   },
-  getModelById: (state, getters) => id => getters.models.find(model => model.bk_obj_id === id),
-  activeClassifications: (state) => {
-    const { classifications } = state
-    // 1.去掉停用模型
-    let activeClassifications = classifications.map((classification) => {
-      const activeClassification = { ...classification }
-      activeClassification.bk_objects = activeClassification.bk_objects.filter(model => !model.bk_ispaused)
-      return activeClassification
-    })
-    // 2.去掉无启用模型的分类和不显示的分类
-    activeClassifications = activeClassifications.filter((classification) => {
-      const {
-        bk_classification_id: bkClassificationId,
-        bk_objects: bkObjects
-      } = classification
-      // eslint-disable-next-line max-len
-      return !state.invisibleClassifications.includes(bkClassificationId) && Array.isArray(bkObjects) && bkObjects.length
-    })
-    return activeClassifications
-  }
+  getModelById: (state, getters) => id => getters.models.find(model => model.bk_obj_id === id)
 }
 
 const actions = {

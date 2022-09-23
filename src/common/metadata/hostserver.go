@@ -1117,3 +1117,51 @@ type BizHostCpuCount struct {
 	CpuCount       int64 `json:"cpu_count"`
 	NoCpuHostCount int64 `json:"no_cpu_host_count"`
 }
+
+// AddCloudHostToBizParam add cloud host to biz idle module request parameter
+type AddCloudHostToBizParam struct {
+	BizID    int64           `json:"bk_biz_id"`
+	HostInfo []mapstr.MapStr `json:"host_info"`
+}
+
+// Validate AddCloudHostToBizParam
+func (c *AddCloudHostToBizParam) Validate() errors.RawErrorInfo {
+	if c.BizID <= 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid, Args: []interface{}{common.BKAppIDField}}
+	}
+
+	if len(c.HostInfo) == 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"host_info"}}
+	}
+
+	if len(c.HostInfo) > common.BKWriteOpLimit {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit, Args: []interface{}{"host_info",
+			common.BKWriteOpLimit}}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// DeleteCloudHostFromBizParam delete cloud host from biz idle set request parameter
+type DeleteCloudHostFromBizParam struct {
+	BizID   int64   `json:"bk_biz_id"`
+	HostIDs []int64 `json:"bk_host_ids"`
+}
+
+// Validate DeleteCloudHostFromBizParam
+func (c *DeleteCloudHostFromBizParam) Validate() errors.RawErrorInfo {
+	if c.BizID <= 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid, Args: []interface{}{common.BKAppIDField}}
+	}
+
+	if len(c.HostIDs) == 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"bk_host_ids"}}
+	}
+
+	if len(c.HostIDs) > common.BKWriteOpLimit {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit, Args: []interface{}{"bk_host_ids",
+			common.BKWriteOpLimit}}
+	}
+
+	return errors.RawErrorInfo{}
+}
