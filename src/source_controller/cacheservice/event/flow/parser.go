@@ -71,6 +71,8 @@ func parseEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oidCo
 				key.Collection(), e.DocBytes, e.Oid, err, rid)
 			return nil, nil, false, nil
 		}
+
+	// since following event cannot be parsed, skip them and do not retry
 	case types.Invalidate:
 		blog.Errorf("loop flow, received invalid event operation type, doc: %s, rid: %s", e.DocBytes, rid)
 		return nil, nil, false, nil
@@ -112,6 +114,8 @@ func parseInstAsstEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap m
 				key.Collection(), e.DocBytes, e.Oid, err, rid)
 			return nil, nil, false, nil
 		}
+
+	// since following event cannot be parsed, skip them and do not retry
 	case types.Invalidate:
 		blog.Errorf("loop flow, received invalid event operation type, doc: %s, rid: %s", e.DocBytes, rid)
 		return nil, nil, false, nil
@@ -160,9 +164,8 @@ func parseInstAsstEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap m
 		SupplierAccount: key.SupplierAccount(e.DocBytes),
 	}
 
-	objID := gjson.GetBytes(e.DocBytes, common.BKObjIDField).String()
-	asstObjID := gjson.GetBytes(e.DocBytes, common.BKAsstObjIDField).String()
-	chainNode.SubResource = []string{objID, asstObjID}
+	chainNode.SubResource = []string{gjson.GetBytes(e.DocBytes, common.BKObjIDField).String(),
+		gjson.GetBytes(e.DocBytes, common.BKAsstObjIDField).String()}
 
 	detail := types.EventDetail{
 		Detail:        types.JsonString(e.DocBytes),
@@ -211,7 +214,7 @@ func parsePodEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oi
 
 		// set container details to deleted pod detail, and update the event detail doc bytes
 		podDetail := *e.Document.(*map[string]interface{})
-		podDetail["containers"] = append(containers, delContainers)
+		podDetail["containers"] = append(containers, delContainers...)
 
 		byt, err := json.Marshal(podDetail)
 		if err != nil {
@@ -254,6 +257,7 @@ func parsePodEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oi
 		}
 		e.DocBytes = byt
 
+	// since invalid event cannot be parsed, skip them and do not retry
 	default:
 		blog.Errorf("pod event %s op type %s is invalid, doc: %s, rid: %s", e.Oid, e.OperationType, e.DocBytes, rid)
 		return nil, nil, false, nil
@@ -316,6 +320,8 @@ func parseKubeWorkloadEvent(db dal.DB, key event.Key, e *types.Event, oidDetailM
 		chainNode.SubResource = []string{string(kubetypes.KubeJob)}
 	case kubetypes.BKTableNameBasePodWorkload:
 		chainNode.SubResource = []string{string(kubetypes.KubePodWorkload)}
+
+	// since invalid event cannot be parsed, skip them and do not retry
 	default:
 		blog.Errorf("kube workload event coll %s is invalid, doc: %s, rid: %s", e.Collection, e.DocBytes, rid)
 		return nil, nil, false, nil

@@ -134,15 +134,15 @@ func (ct CursorType) ToInt() int {
 	case BizSetRelation:
 		return 15
 	case KubeCluster:
-		return 16
-	case KubeNode:
 		return 17
-	case KubeNamespace:
+	case KubeNode:
 		return 18
-	case KubeWorkload:
+	case KubeNamespace:
 		return 19
-	case KubePod:
+	case KubeWorkload:
 		return 20
+	case KubePod:
+		return 21
 	default:
 		return -1
 	}
@@ -179,15 +179,15 @@ func (ct *CursorType) ParseInt(typ int) {
 		*ct = BizSet
 	case 15:
 		*ct = BizSetRelation
-	case 16:
-		*ct = KubeCluster
 	case 17:
-		*ct = KubeNode
+		*ct = KubeCluster
 	case 18:
-		*ct = KubeNamespace
+		*ct = KubeNode
 	case 19:
-		*ct = KubeWorkload
+		*ct = KubeNamespace
 	case 20:
+		*ct = KubeWorkload
+	case 21:
 		*ct = KubePod
 	default:
 		*ct = UnknownType

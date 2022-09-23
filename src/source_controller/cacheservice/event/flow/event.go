@@ -90,6 +90,31 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 		return err
 	}
 
+	if err := e.runKubeCluster(context.Background()); err != nil {
+		blog.Errorf("run kube cluster event flow failed, err: %v", err)
+		return err
+	}
+
+	if err := e.runKubeNode(context.Background()); err != nil {
+		blog.Errorf("run kube node event flow failed, err: %v", err)
+		return err
+	}
+
+	if err := e.runKubeNamespace(context.Background()); err != nil {
+		blog.Errorf("run kube namespace event flow failed, err: %v", err)
+		return err
+	}
+	
+	if err := e.runKubeWorkload(context.Background()); err != nil {
+		blog.Errorf("run kube workload event flow failed, err: %v", err)
+		return err
+	}
+
+	if err := e.runKubePod(context.Background()); err != nil {
+		blog.Errorf("run kube pod event flow failed, err: %v", err)
+		return err
+	}
+
 	gc := &gc{
 		ccDB:     ccDB,
 		isMaster: isMaster,
