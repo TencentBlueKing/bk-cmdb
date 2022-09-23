@@ -95,17 +95,21 @@ func (lgc *Logics) GetPermissionToApply(kit *rest.Kit, rs []meta.ResourceAttribu
 					instTypeIDsMap[iam.TypeID(ancestor.Type)] = append(instTypeIDsMap[iam.TypeID(ancestor.Type)], ancestorID)
 				}
 			}
-			instance = append(instance, metadata.IamResourceInstance{
-				Type:     string(res.Type),
-				TypeName: getTypeName(iam.TypeID(res.Type), sysInstModelIDNameMap),
-				ID:       res.ID,
-			})
-			instID, err := strconv.ParseInt(res.ID, 10, 64)
-			if err != nil {
-				blog.Errorf("parse instance id to int failed, instID:%#v, err: %s, rid: %s", res.ID, err, kit.Rid)
-				return nil, err
+
+			if len(res.ID) > 0 {
+				instance = append(instance, metadata.IamResourceInstance{
+					Type:     string(res.Type),
+					TypeName: getTypeName(iam.TypeID(res.Type), sysInstModelIDNameMap),
+					ID:       res.ID,
+				})
+				instID, err := strconv.ParseInt(res.ID, 10, 64)
+				if err != nil {
+					blog.Errorf("parse instance id to int failed, instID:%#v, err: %s, rid: %s", res.ID, err, kit.Rid)
+					return nil, err
+				}
+				instTypeIDsMap[iam.TypeID(res.Type)] = append(instTypeIDsMap[iam.TypeID(res.Type)], instID)
 			}
-			instTypeIDsMap[iam.TypeID(res.Type)] = append(instTypeIDsMap[iam.TypeID(res.Type)], instID)
+
 			permissionMap[actionID][string(res.Type)] = append(permissionMap[actionID][string(res.Type)], instance)
 		}
 	}
