@@ -64,9 +64,8 @@ func (s *coreService) CreateNamespace(ctx *rest.Contexts) {
 	}
 	for idx, data := range req.Data {
 		spec := &types.ClusterSpec{
-			BizID:      &bizID,
-			ClusterID:  data.ClusterID,
-			ClusterUID: data.ClusterUID,
+			BizID:     bizID,
+			ClusterID: data.ClusterID,
 		}
 		spec, err := s.GetClusterSpec(ctx.Kit, spec)
 		if err != nil {
@@ -77,7 +76,7 @@ func (s *coreService) CreateNamespace(ctx *rest.Contexts) {
 		id := int64(ids[idx])
 		respData.IDs[idx] = id
 		data.ClusterSpec = *spec
-		data.ID = &id
+		data.ID = id
 		now := time.Now().Unix()
 		data.Revision = table.Revision{
 			Creator:    ctx.Kit.User,
@@ -85,7 +84,7 @@ func (s *coreService) CreateNamespace(ctx *rest.Contexts) {
 			CreateTime: now,
 			LastTime:   now,
 		}
-		data.SupplierAccount = &ctx.Kit.SupplierAccount
+		data.SupplierAccount = ctx.Kit.SupplierAccount
 
 		err = mongodb.Client().Table(types.BKTableNameBaseNamespace).Insert(ctx.Kit.Ctx, &data)
 		if err != nil {
@@ -100,25 +99,20 @@ func (s *coreService) CreateNamespace(ctx *rest.Contexts) {
 
 // GetClusterSpec get cluster spec
 func (s *coreService) GetClusterSpec(kit *rest.Kit, spec *types.ClusterSpec) (*types.ClusterSpec, error) {
-	if spec.BizID == nil {
+	if spec.BizID == 0 {
 		blog.Errorf("bizID can not be empty, rid: %s", kit.Rid)
 		return nil, errors.New("bizID can not be empty")
 	}
 
-	if spec.ClusterID == nil && spec.ClusterUID == nil {
-		blog.Errorf("clusterID and clusterUID can not be empty at the same time, rid: %s", kit.Rid)
-		return nil, errors.New("clusterID and clusterUID can not be empty at the same time")
+	if spec.ClusterID == 0 {
+		blog.Errorf("clusterID can not be empty at the same time, rid: %s", kit.Rid)
+		return nil, errors.New("clusterID can not be empty")
 	}
 
 	filter := map[string]interface{}{
-		common.BKAppIDField:   *spec.BizID,
+		common.BKAppIDField:   spec.BizID,
 		common.BKOwnerIDField: kit.SupplierAccount,
-	}
-	if spec.ClusterID != nil {
-		filter[common.BKFieldID] = *spec.ClusterID
-	}
-	if spec.ClusterUID != nil {
-		filter[types.UidField] = *spec.ClusterUID
+		common.BKFieldID:      spec.ClusterID,
 	}
 
 	cluster := types.Cluster{}
@@ -133,9 +127,9 @@ func (s *coreService) GetClusterSpec(kit *rest.Kit, spec *types.ClusterSpec) (*t
 	}
 
 	result := types.ClusterSpec{
-		BizID:      &cluster.BizID,
-		ClusterID:  &cluster.ID,
-		ClusterUID: cluster.Uid,
+		BizID:      cluster.BizID,
+		ClusterID:  cluster.ID,
+		ClusterUID: *cluster.Uid,
 	}
 	return &result, nil
 }

@@ -71,7 +71,7 @@ func (c *kubeAuditLog) GenerateNamespaceAuditLog(param *generateAuditCommonParam
 	auditLogs := make([]metadata.AuditLog, len(data))
 
 	for index, d := range data {
-		auditLog, err := c.generateAuditLog(param, metadata.KubeNamespace, d.ID, d.BizID, d.Name, d)
+		auditLog, err := c.generateAuditLog(param, metadata.KubeNamespace, &d.ID, &d.BizID, &d.Name, d)
 		if err != nil {
 			return nil, err
 		}
@@ -116,7 +116,11 @@ func (c *kubeAuditLog) GenerateWorkloadAuditLog(param *generateAuditCommonParame
 			Data: d,
 		}
 
-		auditLog, err := c.generateAuditLog(param, metadata.KubeWorkload, d.GetID(), d.GetBizID(), d.GetName(), wl)
+		wlBase := d.GetWorkloadBase()
+		id := wlBase.ID
+		bizID := wlBase.BizID
+		name := wlBase.Name
+		auditLog, err := c.generateAuditLog(param, metadata.KubeWorkload, &id, &bizID, &name, wl)
 		if err != nil {
 			return nil, err
 		}

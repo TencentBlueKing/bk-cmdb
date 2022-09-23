@@ -68,9 +68,11 @@ func (s *Service) CreateWorkload(ctx *rest.Contexts) {
 		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
 		for idx := range req.Data {
-			req.Data[idx].SetBizID(bizID)
-			req.Data[idx].SetID(data.IDs[idx])
-			req.Data[idx].SetSupplierAccount(ctx.Kit.SupplierAccount)
+			wlBase := req.Data[idx].GetWorkloadBase()
+			wlBase.BizID = bizID
+			wlBase.ID = data.IDs[idx]
+			wlBase.SupplierAccount = ctx.Kit.SupplierAccount
+			req.Data[idx].SetWorkloadBase(wlBase)
 		}
 		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, req.Data, kind)
 		if err != nil {
@@ -134,8 +136,8 @@ func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	if len(workloads) == 0 {
-		ctx.RespEntity(nil)
+	if len(workloads) != req.GetCount() {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
 		return
 	}
 

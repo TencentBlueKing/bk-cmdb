@@ -122,21 +122,19 @@ type PodQueryReq struct {
 
 // Validate validate PodQueryReq
 func (p *PodQueryReq) Validate() ccErr.RawErrorInfo {
-	if (p.ClusterID != nil || p.NamespaceID != nil || (p.Ref != nil && p.Ref.ID != nil) || p.NodeID != 0) &&
-		(p.ClusterUID != nil || p.Namespace != nil || (p.Ref != nil && p.Ref.Name != nil) || p.NodeName != "") {
+	if (p.ClusterID != 0 || p.NamespaceID != 0 || p.Ref.ID != 0 || p.NodeID != 0) &&
+		(p.ClusterUID != "" || p.Namespace != "" || p.Ref.Name != "" || p.NodeName != "") {
 
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrorTopoIdentificationIllegal,
 		}
 	}
 
-	if p.Ref != nil {
-		err := p.Ref.Kind.Validate()
-		if (p.Ref.Name == nil && p.Ref.ID == nil) || p.Ref.Kind == nil || err != nil {
-			return ccErr.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsInvalid,
-				Args:    []interface{}{RefField},
-			}
+	err := p.Ref.Kind.Validate()
+	if (p.Ref.Name != "" || p.Ref.ID != 0) && err != nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{RefField},
 		}
 	}
 
@@ -155,34 +153,32 @@ func (p *PodQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.Map
 		common.BkSupplierAccount: supplierAccount,
 	}
 
-	if p.ClusterID != nil {
+	if p.ClusterID != 0 {
 		cond[BKClusterIDFiled] = p.ClusterID
 	}
 
-	if p.ClusterUID != nil {
+	if p.ClusterUID != "" {
 		cond[ClusterUIDField] = p.ClusterUID
 	}
 
-	if p.NamespaceID != nil {
+	if p.NamespaceID != 0 {
 		cond[BKNamespaceIDField] = p.NamespaceID
 	}
 
-	if p.Namespace != nil {
+	if p.Namespace != "" {
 		cond[NamespaceField] = p.Namespace
 	}
 
-	if p.Ref != nil {
-		if p.Ref.Kind != nil {
-			cond[RefKindField] = p.Ref.Kind
-		}
+	if p.Ref.Kind != "" {
+		cond[RefKindField] = p.Ref.Kind
+	}
 
-		if p.Ref.Name != nil {
-			cond[RefNameField] = p.Ref.Name
-		}
+	if p.Ref.Name != "" {
+		cond[RefNameField] = p.Ref.Name
+	}
 
-		if p.Ref.ID != nil {
-			cond[RefIDField] = p.Ref.ID
-		}
+	if p.Ref.ID != 0 {
+		cond[RefIDField] = p.Ref.ID
 	}
 
 	if p.HostID != 0 {

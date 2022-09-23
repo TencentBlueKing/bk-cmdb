@@ -40,8 +40,6 @@ func (s *coreService) initKube(web *restful.WebService) {
 		Handler: s.UpdateNamespace})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/namespace/bk_biz_id/{bk_biz_id}",
 		Handler: s.DeleteNamespace})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/namespace/bk_biz_id/{bk_biz_id}",
-		Handler: s.DeleteNamespace})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/namespace", Handler: s.ListNamespace})
 
 	// workload

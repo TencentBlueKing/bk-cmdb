@@ -406,7 +406,7 @@ func (b *kube) CreateCluster(kit *rest.Kit, data *types.Cluster, bizID int64, su
 			common.BKOwnerIDField: supplierAccount,
 		},
 		{
-			common.BKFieldName:    *data.Uid,
+			common.BKFieldName:    data.Uid,
 			common.BKAppIDField:   bizID,
 			common.BKOwnerIDField: supplierAccount,
 		},
