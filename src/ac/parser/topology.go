@@ -13,7 +13,6 @@
 package parser
 
 import (
-	"configcenter/src/kube/types"
 	"errors"
 	"fmt"
 	"net/http"
@@ -25,6 +24,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	"configcenter/src/kube/types"
 )
 
 func (ps *parseStream) topology() *parseStream {

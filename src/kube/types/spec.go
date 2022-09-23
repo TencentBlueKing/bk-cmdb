@@ -18,8 +18,9 @@
 package types
 
 import (
-	"configcenter/src/storage/dal/table"
 	"errors"
+
+	"configcenter/src/storage/dal/table"
 )
 
 func init() {
