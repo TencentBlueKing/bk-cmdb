@@ -26,7 +26,21 @@ import (
 
 // CronJob define the cronJob struct.
 type CronJob struct {
-	Workload `json:",inline" bson:",inline"`
+	WorkloadBase    `json:",inline" bson:",inline"`
+	Labels          *map[string]string `json:"labels,omitempty" bson:"labels"`
+	Selector        *LabelSelector     `json:"selector,omitempty" bson:"selector"`
+	Replicas        *int64             `json:"replicas,omitempty" bson:"replicas"`
+	MinReadySeconds *int64             `json:"min_ready_seconds,omitempty" bson:"min_ready_seconds"`
+}
+
+// GetWorkloadBase get workload base
+func (c *CronJob) GetWorkloadBase() WorkloadBase {
+	return c.WorkloadBase
+}
+
+// SetWorkloadBase set workload base
+func (c *CronJob) SetWorkloadBase(wl WorkloadBase) {
+	c.WorkloadBase = wl
 }
 
 // CronJobUpdateData defines the cronJob update data common operation.

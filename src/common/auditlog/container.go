@@ -30,14 +30,6 @@ type kubeAuditLog struct {
 	audit
 }
 
-// mockKube mocked kube related struct, used as a placeholder because the actual structs are not defined yet
-// TODO replace it with the actual struct for each generate audit log function, remove it after all is done
-type mockKube struct {
-	ID    *int64
-	Name  *string
-	BizID *int64
-}
-
 // GenerateClusterAuditLog generate audit log of kube cluster.
 func (c *kubeAuditLog) GenerateClusterAuditLog(param *generateAuditCommonParameter,
 	data []types.Cluster) ([]metadata.AuditLog, errors.CCErrorCoder) {
@@ -79,7 +71,7 @@ func (c *kubeAuditLog) GenerateNamespaceAuditLog(param *generateAuditCommonParam
 	auditLogs := make([]metadata.AuditLog, len(data))
 
 	for index, d := range data {
-		auditLog, err := c.generateAuditLog(param, metadata.KubeNamespace, d.ID, d.BizID, d.Name, d)
+		auditLog, err := c.generateAuditLog(param, metadata.KubeNamespace, &d.ID, &d.BizID, &d.Name, d)
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +116,11 @@ func (c *kubeAuditLog) GenerateWorkloadAuditLog(param *generateAuditCommonParame
 			Data: d,
 		}
 
-		auditLog, err := c.generateAuditLog(param, metadata.KubeWorkload, d.GetID(), d.GetBizID(), d.GetName(), wl)
+		wlBase := d.GetWorkloadBase()
+		id := wlBase.ID
+		bizID := wlBase.BizID
+		name := wlBase.Name
+		auditLog, err := c.generateAuditLog(param, metadata.KubeWorkload, &id, &bizID, &name, wl)
 		if err != nil {
 			return nil, err
 		}

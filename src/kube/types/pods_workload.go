@@ -26,7 +26,21 @@ import (
 
 // PodsWorkload define the pods workload struct.
 type PodsWorkload struct {
-	Workload `json:",inline" bson:",inline"`
+	WorkloadBase    `json:",inline" bson:",inline"`
+	Labels          *map[string]string `json:"labels,omitempty" bson:"labels"`
+	Selector        *LabelSelector     `json:"selector,omitempty" bson:"selector"`
+	Replicas        *int64             `json:"replicas,omitempty" bson:"replicas"`
+	MinReadySeconds *int64             `json:"min_ready_seconds,omitempty" bson:"min_ready_seconds"`
+}
+
+// GetWorkloadBase get workload base
+func (p *PodsWorkload) GetWorkloadBase() WorkloadBase {
+	return p.WorkloadBase
+}
+
+// SetWorkloadBase set workload base
+func (p *PodsWorkload) SetWorkloadBase(wl WorkloadBase) {
+	p.WorkloadBase = wl
 }
 
 // PodsWorkloadUpdateData defines the pods workload update data common operation.

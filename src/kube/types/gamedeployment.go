@@ -62,9 +62,23 @@ type RollingUpdateGameDeployment struct {
 
 // GameDeployment define the gameDeployment struct.
 type GameDeployment struct {
-	Workload              `json:",inline" bson:",inline"`
+	WorkloadBase          `json:",inline" bson:",inline"`
+	Labels                *map[string]string                `json:"labels,omitempty" bson:"labels"`
+	Selector              *LabelSelector                    `json:"selector,omitempty" bson:"selector"`
+	Replicas              *int64                            `json:"replicas,omitempty" bson:"replicas"`
+	MinReadySeconds       *int64                            `json:"min_ready_seconds,omitempty" bson:"min_ready_seconds"`
 	StrategyType          *GameDeploymentUpdateStrategyType `json:"strategy_type,omitempty" bson:"strategy_type"`
 	RollingUpdateStrategy *RollingUpdateGameDeployment      `json:"rolling_update_strategy,omitempty" bson:"rolling_update_strategy"`
+}
+
+// GetWorkloadBase get workload base
+func (d *GameDeployment) GetWorkloadBase() WorkloadBase {
+	return d.WorkloadBase
+}
+
+// SetWorkloadBase set workload base
+func (g *GameDeployment) SetWorkloadBase(wl WorkloadBase) {
+	g.WorkloadBase = wl
 }
 
 // GameDeployUpdateData defines the gameDeployment update data common operation.

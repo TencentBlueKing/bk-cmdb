@@ -50,9 +50,23 @@ type RollingUpdateStatefulSetStrategy struct {
 
 // StatefulSet define the statefulSet struct.
 type StatefulSet struct {
-	Workload              `json:",inline" bson:",inline"`
+	WorkloadBase          `json:",inline" bson:",inline"`
+	Labels                *map[string]string                `json:"labels,omitempty" bson:"labels"`
+	Selector              *LabelSelector                    `json:"selector,omitempty" bson:"selector"`
+	Replicas              *int64                            `json:"replicas,omitempty" bson:"replicas"`
+	MinReadySeconds       *int64                            `json:"min_ready_seconds,omitempty" bson:"min_ready_seconds"`
 	StrategyType          *StatefulSetUpdateStrategyType    `json:"strategy_type,omitempty" bson:"strategy_type"`
 	RollingUpdateStrategy *RollingUpdateStatefulSetStrategy `json:"rolling_update_strategy,omitempty" bson:"rolling_update_strategy"`
+}
+
+// GetWorkloadBase get workload base
+func (s *StatefulSet) GetWorkloadBase() WorkloadBase {
+	return s.WorkloadBase
+}
+
+// SetWorkloadBase set workload base
+func (s *StatefulSet) SetWorkloadBase(wl WorkloadBase) {
+	s.WorkloadBase = wl
 }
 
 // StatefulSetUpdateData defines the statefulSet update data common operation.

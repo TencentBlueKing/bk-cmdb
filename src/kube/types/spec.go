@@ -29,13 +29,13 @@ func init() {
 // ClusterSpec describes the common attributes of cluster, it is used by the structure below it.
 type ClusterSpec struct {
 	// BizID business id in cc
-	BizID *int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
+	BizID int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
 
 	// ClusterID cluster id in cc
-	ClusterID *int64 `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
+	ClusterID int64 `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
 
 	// ClusterUID cluster id in third party platform
-	ClusterUID *string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
+	ClusterUID string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
 }
 
 // NamespaceSpec describes the common attributes of namespace, it is used by the structure below it.
@@ -43,29 +43,29 @@ type NamespaceSpec struct {
 	ClusterSpec `json:",inline" bson:",inline"`
 
 	// NamespaceID namespace id in cc
-	NamespaceID *int64 `json:"bk_namespace_id,omitempty" bson:"bk_namespace_id"`
+	NamespaceID int64 `json:"bk_namespace_id,omitempty" bson:"bk_namespace_id"`
 
 	// Namespace namespace name in third party platform
-	Namespace *string `json:"namespace,omitempty" bson:"namespace"`
+	Namespace string `json:"namespace,omitempty" bson:"namespace"`
 }
 
 // Reference store pod-related workload related information
 type Reference struct {
 	// Kind workload kind
-	Kind *WorkloadType `json:"kind" bson:"kind"`
+	Kind WorkloadType `json:"kind" bson:"kind"`
 
 	// Name workload name
-	Name *string `json:"name" bson:"name"`
+	Name string `json:"name" bson:"name"`
 
 	// ID workload id in cc
-	ID *int64 `json:"id" bson:"id"`
+	ID int64 `json:"id" bson:"id"`
 }
 
 // WorkloadSpec describes the common attributes of workload,
 // it is used by the structure below it.
 type WorkloadSpec struct {
 	NamespaceSpec `json:",inline" bson:",inline"`
-	Ref           *Reference `json:"ref" bson:"ref"`
+	Ref           Reference `json:"ref" bson:"ref"`
 }
 
 // GetKubeSubTopoObject get the next-level topology resource object of the specified resource
@@ -256,7 +256,7 @@ func (option *SpecInfo) validate() error {
 		return errors.New("workload kind must be set")
 	}
 
-	if !IsInnerWorkload(WorkloadType(*option.WorkloadKind)) {
+	if err := WorkloadType(*option.WorkloadKind).Validate(); err != nil {
 		return errors.New("workload is illegal type")
 	}
 

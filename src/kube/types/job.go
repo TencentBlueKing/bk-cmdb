@@ -26,7 +26,21 @@ import (
 
 // Job define the job struct.
 type Job struct {
-	Workload `json:",inline" bson:",inline"`
+	WorkloadBase    `json:",inline" bson:",inline"`
+	Labels          *map[string]string `json:"labels,omitempty" bson:"labels"`
+	Selector        *LabelSelector     `json:"selector,omitempty" bson:"selector"`
+	Replicas        *int64             `json:"replicas,omitempty" bson:"replicas"`
+	MinReadySeconds *int64             `json:"min_ready_seconds,omitempty" bson:"min_ready_seconds"`
+}
+
+// GetWorkloadBase get workload base
+func (j *Job) GetWorkloadBase() WorkloadBase {
+	return j.WorkloadBase
+}
+
+// SetWorkloadBase set workload base
+func (j *Job) SetWorkloadBase(wl WorkloadBase) {
+	j.WorkloadBase = wl
 }
 
 // JobUpdateData defines the job update data common operation.
