@@ -93,7 +93,7 @@ func (s *Service) MoveHost2RecycleModule(ctx *rest.Contexts) {
 	s.moveHostToDefaultModule(ctx, common.DefaultRecycleModuleFlag)
 }
 
-// MoveHostToResourcePool TODO
+// MoveHostToResourcePool move host to resource pool
 func (s *Service) MoveHostToResourcePool(ctx *rest.Contexts) {
 	conf := new(metadata.DefaultModuleHostConfigParams)
 	if err := ctx.DecodeInto(&conf); nil != err {
@@ -112,7 +112,7 @@ func (s *Service) MoveHostToResourcePool(ctx *rest.Contexts) {
 		exceptionArr, err = s.Logic.MoveHostToResourcePool(ctx.Kit, conf)
 		if err != nil {
 			blog.Errorf("move host to resource pool failed, err:%s, input:%#v, rid:%s", err.Error(), conf, ctx.Kit.Rid)
-			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+			return err
 		}
 		return nil
 	})

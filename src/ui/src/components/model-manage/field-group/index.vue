@@ -448,6 +448,7 @@
       ...mapState('userCustom', ['globalUsercustom']),
       ...mapGetters(['supplierAccount']),
       ...mapGetters('objectModel', ['activeModel']),
+      ...mapGetters('objectMainLineModule', ['isMainLine']),
       isGlobalView() {
         const [topRoute] = this.$route.matched
         return topRoute ? topRoute.name !== MENU_BUSINESS : true
@@ -491,7 +492,7 @@
         return this.curModel.id || null
       },
       isMainLineModel() {
-        return ['bk_host_manage', 'bk_biz_topo', 'bk_organization'].includes(this.curModel.bk_classification_id)
+        return this.isMainLine(this.curModel)
       },
       authResources() {
         if (this.customObjId) { // 业务自定义字段
@@ -516,7 +517,7 @@
         return this.globalUsercustom[`${this.objId}_global_custom_table_columns`]
       },
       canEditSort() {
-        return !this.customObjId && this.curModel.bk_classification_id !== 'bk_biz_topo'
+        return !this.customObjId
       }
     },
     watch: {
