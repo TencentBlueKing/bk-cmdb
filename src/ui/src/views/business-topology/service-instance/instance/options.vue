@@ -62,13 +62,13 @@
       <cmdb-auth class="options-sync" v-if="withTemplate"
         :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
         <bk-button slot-scope="{ disabled: authDisabled }"
-          :disabled="authDisabled || !hasDifference"
+          :disabled="authDisabled || !hasDifference || isSyncing"
           @click="handleSyncTemplate">
           <span class="sync-wrapper">
-            <i class="bk-icon icon-refresh"></i>
-            {{$t('同步模板')}}
+            <i :class="['bk-icon', 'icon-refresh', { 'is-syncing': isSyncing }]"></i>
+            {{$t(isSyncing ? '同步中' : '同步模板')}}
           </span>
-          <span class="topo-status" v-show="hasDifference"></span>
+          <span class="topo-status" v-show="hasDifference && !isSyncing"></span>
         </bk-button>
       </cmdb-auth>
     </div>
@@ -131,8 +131,11 @@
         historyLabels: {},
         searchValue: [],
         request: {
-          label: Symbol('label')
-        }
+          label: Symbol('label'),
+          diff: Symbol('diff')
+        },
+        syncStatusTimer: null,
+        isSyncing: false
       }
     },
     computed: {
@@ -180,7 +183,7 @@
         handler(withTemplate) {
           if (withTemplate) {
             this.checkProcessTemplate()
-            this.checkDifference()
+            this.checkSyncStatus()
           }
         }
       },
@@ -214,6 +217,10 @@
       Bus.$off('instance-selection-change', this.handleInstanceSelectionChange)
       Bus.$off('update-labels', this.updateHistoryLabels)
       Bus.$off('delete-complete', this.checkDifference)
+
+      if (this.syncStatusTimer) {
+        clearTimeout(this.syncStatusTimer)
+      }
     },
     methods: {
       async updateHistoryLabels() {
@@ -339,6 +346,7 @@
               bk_module_ids: [this.selectedNode.data.bk_inst_id],
             },
             config: {
+              requestId: this.request.diff,
               cancelPrevious: true
             }
           })
@@ -363,7 +371,34 @@
           console.error(error)
         }
       },
-      handleSyncTemplate() {
+      async checkSyncStatus() {
+        const [moduleSyncData] = await this.$store.dispatch('serviceTemplate/getServiceTemplateInstanceStatus', {
+          bizId: this.bizId,
+          params: {
+            bk_module_ids: [this.selectedNode.data.bk_inst_id],
+            service_template_id: this.selectedNode.data.service_template_id
+          }
+        })
+        this.isSyncing = ['new', 'waiting', 'executing'].includes(moduleSyncData?.status)
+
+        if (this.isSyncing) {
+          if (this.syncStatusTimer) {
+            clearTimeout(this.syncStatusTimer)
+          }
+
+          this.syncStatusTimer = setTimeout(() => {
+            this.checkSyncStatus()
+          }, 1000)
+        } else {
+          this.checkDifference()
+        }
+      },
+      async handleSyncTemplate() {
+        if (!this.hasDifference) {
+          this.$info(this.$t('已是最新内容，无需同步'))
+          return
+        }
+
         this.$routerActions.redirect({
           name: 'syncServiceFromModule',
           params: {
@@ -484,6 +519,10 @@
         .icon-refresh {
             font-size: 12px;
             margin-right: 4px;
+
+            &.is-syncing {
+              animation: spiner 1s linear infinite
+            }
         }
         .topo-status {
             position: absolute;
@@ -504,6 +543,15 @@
       .action-link {
         color: $primaryColor;
         margin-left: 2px;
+      }
+    }
+
+    @keyframes spiner {
+      0% {
+        transform: rotate(0deg)
+      }
+      100% {
+        transform: rotate(360deg)
       }
     }
 </style>

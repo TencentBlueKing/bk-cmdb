@@ -35,7 +35,8 @@
         placement="bottom-end"
         :arrow="false"
         :tippy-options="{
-          animateFill: false
+          animateFill: false,
+          hideOnClick: false
         }">
         <i class="question-icon icon-cc-default"></i>
         <template slot="content">
@@ -50,7 +51,8 @@
         placement="bottom-end"
         :arrow="false"
         :tippy-options="{
-          animateFill: false
+          animateFill: false,
+          hideOnClick: false
         }">
         <span class="info-user">
           <span class="user-name">{{userName}}</span>

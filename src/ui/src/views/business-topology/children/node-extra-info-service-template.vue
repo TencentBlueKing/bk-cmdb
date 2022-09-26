@@ -88,7 +88,11 @@
     methods: {
       setInfo() {
         this.getServiceInfo()
-        this.getModuleApplyStatusByTemplate()
+
+        // 使用了服务模板需要查看模块所属的服务模板是否开启了主机自动应用
+        if (this.instance.service_template_id) {
+          this.getModuleApplyStatusByTemplate()
+        }
       },
       async getServiceInfo() {
         const categories = await this.getServiceCategories()

@@ -14,6 +14,7 @@ import cursor from '@/directives/cursor'
 import { IAM_ACTIONS } from '@/dictionary/iam-auth'
 import { $error } from '@/magicbox'
 import isEqual from 'lodash/isEqual'
+import uniqBy from 'lodash/uniqBy'
 
 const SYSTEM_ID = 'bk_cmdb'
 
@@ -45,9 +46,10 @@ function convertRelation(relation = [], type) {
   }
 }
 
-// 将相同动作下的相同视图的实例合并到一起
+// 将相同动作下的相同视图的实例合并到一起，并且将相同的实例去重
 function mergeSameActions(actions) {
   const actionMap = new Map()
+
   actions.forEach((action) => {
     const viewMap = actionMap.get(action.id) || new Map()
     action.related_resource_types.forEach(({ type, instances }) => {
@@ -57,17 +59,21 @@ function mergeSameActions(actions) {
     })
     actionMap.set(action.id, viewMap)
   })
+
   const permission = {
     system_id: SYSTEM_ID,
     actions: []
   }
+
   actionMap.forEach((viewMap, actionId) => {
     const relatedResourceTypes = []
     viewMap.forEach((viewInstances, viewType) => {
+      // 将每个view下的实例去重，viewInstances中每一条实例的结构可能是 [inst] 或者 [inst, inst, ...]，所以必须要合并所有实例以确定其唯一性
+      const instances = uniqBy(viewInstances, insts => insts?.reduce((acc, cur) => `${acc}/${cur?.id}_${cur?.type}`, ''))
       relatedResourceTypes.push({
         type: viewType,
         system_id: SYSTEM_ID,
-        instances: viewInstances
+        instances
       })
     })
     permission.actions.push({

@@ -151,7 +151,6 @@
       await to(this.loadTopoPath())
 
       const templateDetail = await serviceTemplateService.findById(this.templateId, { bk_biz_id: this.bizId })
-      console.log(templateDetail)
 
       const title = this.moduleIds?.length > 1 ? '批量同步模板' : '同步模板'
       this.$store.commit('setTitle', `${this.$t(title)}【${templateDetail?.name}】`)

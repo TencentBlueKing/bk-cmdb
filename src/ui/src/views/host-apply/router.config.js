@@ -31,7 +31,6 @@ const beforeInterceptor = async (to, from, app) => {
 
   // 规范化配置模式路由，不合法的模式强制跳转至首页
   const allowedModes = Object.values(CONFIG_MODE)
-  console.log('zzzssss', to?.params?.mode)
   if (!allowedModes.includes(to?.params?.mode)) {
     $router.push({
       name: MENU_BUSINESS_HOST_APPLY,
