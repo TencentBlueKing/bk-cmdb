@@ -60,15 +60,15 @@ type Node struct {
 	// ID cluster auto-increment ID in cc
 	ID int64 `json:"id,omitempty" bson:"id"`
 	// BizID the business ID to which the cluster belongs
-	BizID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
+	BizID int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
 	// SupplierAccount the supplier account that this resource belongs to.
-	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	SupplierAccount string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 	// HostID the node ID to which the host belongs
 	HostID int64 `json:"bk_host_id,omitempty" bson:"bk_host_id"`
 	// ClusterID the node ID to which the cluster belongs
 	ClusterID int64 `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
 	// ClusterUID the node ID to which the cluster belongs
-	ClusterUID string `json:"cluster_uid" bson:"cluster_uid"`
+	ClusterUID string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
 
 	// HasPod this field indicates whether there is a pod in the node.
 	// if there is a pod, this field is true. If there is no pod, this
@@ -119,6 +119,7 @@ func (option *Node) CreateValidate() error {
 		// for example, it needs to be compatible when the tag is "name,omitempty"
 		tagTmp := typeOfOption.Field(i).Tag.Get("json")
 		tags := strings.Split(tagTmp, ",")
+		// handle the scenario where the tag is ",inline"
 		if tags[0] == "" {
 			continue
 		}
@@ -173,7 +174,6 @@ func (option *Node) updateValidate() error {
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
-		fieldValue := valueOfOption.Field(i)
 		// 1、a variable with a non-null pointer gets the corresponding tag.
 		// for example, it needs to be compatible when the tag is "name,omitempty"
 		tagTmp := typeOfOption.Field(i).Tag.Get("json")
@@ -184,7 +184,7 @@ func (option *Node) updateValidate() error {
 		if IsCommonField(tags[0]) {
 			continue
 		}
-
+		fieldValue := valueOfOption.Field(i)
 		if fieldValue.Kind() != reflect.Ptr || fieldValue.Kind() != reflect.UnsafePointer {
 			continue
 		}

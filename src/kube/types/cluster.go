@@ -172,7 +172,6 @@ func (option *Cluster) updateValidate() error {
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
-		fieldValue := valueOfOption.Field(i)
 
 		// 1、a variable with a non-null pointer gets the corresponding tag.
 		// for example, it needs to be compatible when the tag is "name,omitempty"
@@ -185,6 +184,7 @@ func (option *Cluster) updateValidate() error {
 			continue
 		}
 
+		fieldValue := valueOfOption.Field(i)
 		if fieldValue.Kind() != reflect.Ptr || fieldValue.Kind() != reflect.UnsafePointer {
 			continue
 		}
