@@ -154,7 +154,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
-  import { AuthRequestId, afterVerify } from '@/components/ui/auth/auth-queue.js'
+  import { AuthRequestId } from '@/components/ui/auth/auth-queue.js'
   import cmdbImport from '@/components/import/import'
   import cmdbButtonGroup from '@/components/ui/other/button-group'
   import Bus from '@/utils/bus.js'
@@ -196,7 +196,12 @@
         },
         assignOptions: [],
         IPWithCloudSymbol: Symbol('IPWithCloud'),
-        authRequestId: AuthRequestId
+        authRequestId: AuthRequestId,
+        assignOptionAuthedMap: {
+          biz: {},
+          dir: {}
+        },
+        currentDirectoryIdList: []
       }
     },
     computed: {
@@ -334,6 +339,12 @@
         if (!prev._t && query.adv) {
           FilterForm.show()
         }
+      },
+      assignOptionAuthedMap: {
+        handler() {
+          this.sortAssignOptionByAuth()
+        },
+        deep: true
       }
     },
     async created() {
@@ -361,10 +372,19 @@
           HostStore.setBusinessList(this.businessList)
         }
       },
-      sortBusinessByAuth(authData) {
-        const list = this.businessList.map((item, index) => ({ ...item, is_pass: authData[index]?.is_pass }))
-        list.sort((itemA, itemB) => itemB?.is_pass - itemA?.is_pass)
-        this.businessList = list
+      sortAssignOptionByAuth() {
+        // 暂时只排序业务，目录因为有置顶逻辑且数量不多
+        if (this.assign.curSelected === 'toBusiness') {
+          const list = this.businessList.map(item => ({
+            ...item,
+            is_pass: this.assignOptionAuthedMap.biz[item.bk_biz_id]
+          }))
+          list.sort((itemA, itemB) => itemB?.is_pass - itemA?.is_pass)
+          this.businessList = list
+
+          // 使用排序后的业务列表更新列表选项
+          this.setAssignOptions(this.currentDirectoryIdList)
+        }
       },
       openAgentApp() {
         const { agent } = window.Site
@@ -386,6 +406,11 @@
       handleAssignHosts(id) {
         this.assign.show = true
 
+        this.assignOptionAuthedMap = {
+          biz: {},
+          dir: {}
+        }
+
         const hosts = HostStore.getSelected()
         const directoryIds = hosts.map((host) => {
           const [module] = host.module
@@ -393,19 +418,12 @@
         })
         const directoryIdList = [...new Set(directoryIds)]
 
+        this.currentDirectoryIdList = directoryIdList
+
         if (id === 'toBusiness') {
           this.assign.placeholder = this.$t('请选择xx', { name: this.$t('业务') })
           this.assign.label = this.$t('业务列表')
           this.assign.title = this.$t('分配到业务空闲机', { idleSet: this.$store.state.globalConfig.config.set })
-
-          // 必要的setTimeout，因依赖dialog显示并且auth完成后
-          setTimeout(() => {
-            afterVerify((authData) => {
-              this.sortBusinessByAuth(authData)
-              // 使用排序后的业务列表更新列表选项
-              this.setAssignOptions(directoryIdList)
-            })
-          }, 0)
         } else {
           this.assign.placeholder = this.$t('请选择xx', { name: this.$t('目录') })
           this.assign.label = this.$t('目录列表')
@@ -444,6 +462,11 @@
       },
       handleUpdateAssignAuth(option, authorized) {
         option.disabled = !authorized
+        if (this.assign.curSelected === 'toBusiness') {
+          this.$set(this.assignOptionAuthedMap.biz, option.id, authorized)
+        } else {
+          this.$set(this.assignOptionAuthedMap.dir, option.id, authorized)
+        }
       },
       closeAssignDialog() {
         this.assign.id = ''
