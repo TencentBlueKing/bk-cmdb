@@ -107,10 +107,6 @@
             isAdd = true
             newCollection = [...oldCollection, model.bk_obj_id]
           }
-          if (isAdd && this.collectedCount >= this.maxCustomNavigationCount) {
-            this.$warn(this.$t('限制添加导航提示', { max: this.maxCustomNavigationCount }))
-            return false
-          }
           const promise = this.$store.dispatch('userCustom/saveUsercustom', {
             [MENU_RESOURCE_COLLECTION]: newCollection
           })

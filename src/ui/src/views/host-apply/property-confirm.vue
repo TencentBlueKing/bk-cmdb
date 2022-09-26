@@ -16,18 +16,18 @@
     <div class="host-apply-confirm">
       <div class="update-options">
         <div class="option-label">
-          <i18n path="同时更新失效主机">
+          <i18n path="同时更新未应用主机">
             <template #invalid>
-              <span class="has-tips" v-bk-tooltips="$t('属性当前值与目标值不一致的主机')">{{$t('-失效主机')}}</span>
+              <span class="has-tips" v-bk-tooltips="$t('属性当前值与目标值不一致的主机')">{{$t('-未应用主机')}}</span>
             </template>
           </i18n>
         </div>
         <bk-radio-group class="option-content" v-model="updateOption.changed">
           <bk-radio :value="true">
-            {{$t('是将把失效主机更新为当前的配置')}}
+            {{$t('是将把未应用主机更新为当前的配置')}}
           </bk-radio>
           <bk-radio :value="false">
-            {{$t('否将保留失效主机的配置')}}
+            {{$t('否将保留未应用主机的配置')}}
           </bk-radio>
         </bk-radio-group>
       </div>

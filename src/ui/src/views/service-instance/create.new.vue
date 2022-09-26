@@ -331,12 +331,13 @@
         // 第一内网IP
         if (ipValue === '3') {
           const [innerIP] = host.bk_host_innerip.split(',')
-          return innerIP || mapping[1]
+          return innerIP
         }
         // 第一外网IP
         if (ipValue === '4') {
           const [outerIP] = host.bk_host_outerip.split(',')
-          return outerIP || mapping[1]
+          // 可能不存在，允许返回为空
+          return outerIP
         }
         return ''
       },
