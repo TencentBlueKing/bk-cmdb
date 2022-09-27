@@ -184,9 +184,9 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	cc.AddConfigCenter(configCenter)
 
 	// get the real configuration center.
-	curentConfigCenter := cc.CurrentConfigCenter()
+	currentConfigCenter := cc.CurrentConfigCenter()
 
-	err = cc.NewConfigCenter(ctx, curentConfigCenter, input.ConfigPath, handler)
+	err = cc.NewConfigCenter(ctx, currentConfigCenter, input.ConfigPath, handler)
 	if err != nil {
 		return nil, fmt.Errorf("new config center failed, err: %v", err)
 	}
