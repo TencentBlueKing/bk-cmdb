@@ -103,11 +103,18 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 		return nil, err
 	}
 
+	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, kit.Header)
+	if err != nil {
+		blog.Errorf("search platform setting failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
+
+	conf := res.Data
 	// create set
 	setData := mapstr.MapStr{
 		common.BKAppIDField:    bizID,
 		common.BKInstParentStr: bizID,
-		common.BKSetNameField:  common.DefaultResSetName,
+		common.BKSetNameField:  conf.BuiltInSetName,
 		common.BKDefaultField:  common.DefaultResSetFlag,
 	}
 	setInst, err := b.set.CreateSet(kit, bizID, setData)
@@ -131,7 +138,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 		common.BKSetIDField:             setID,
 		common.BKInstParentStr:          setID,
 		common.BKAppIDField:             bizID,
-		common.BKModuleNameField:        common.DefaultResModuleName,
+		common.BKModuleNameField:        conf.BuiltInModuleConfig.IdleName,
 		common.BKDefaultField:           common.DefaultResModuleFlag,
 		common.BKServiceTemplateIDField: common.ServiceTemplateIDNotSet,
 		common.BKSetTemplateIDField:     common.SetTemplateIDNotSet,
@@ -144,7 +151,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 	}
 
 	// create fault module
-	moduleData.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
+	moduleData.Set(common.BKModuleNameField, conf.BuiltInModuleConfig.FaultName)
 	moduleData.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
 	if _, err = b.module.CreateModule(kit, bizID, setID, moduleData); err != nil {
 		blog.Errorf("create fault module failed, err: %v, rid: %s", err, kit.Rid)
@@ -152,14 +159,41 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 	}
 
 	// create recycle module
-	moduleData.Set(common.BKModuleNameField, common.DefaultRecycleModuleName)
+	moduleData.Set(common.BKModuleNameField, conf.BuiltInModuleConfig.RecycleName)
 	moduleData.Set(common.BKDefaultField, common.DefaultRecycleModuleFlag)
 	if _, err = b.module.CreateModule(kit, bizID, setID, moduleData); err != nil {
 		blog.Errorf("create recycle module failed, err: %v, rid: %s", err, kit.Rid)
 		return data, err
 	}
 
+	err = b.createUserDefinedModules(kit, conf, bizID, setID, defaultCategory.ID)
+	if err != nil {
+		blog.Errorf("create business failed, create user module failed, err: %v, rid: %s", err, kit.Rid)
+		return bizInst, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
 	return bizInst, nil
+}
+
+func (b *business) createUserDefinedModules(kit *rest.Kit, conf metadata.PlatformSettingConfig, bizID, setID,
+	defaultCategoryID int64) error {
+	for _, module := range conf.BuiltInModuleConfig.UserModules {
+		// create user module
+		userModuleData := mapstr.MapStr{
+			common.BKSetIDField:             setID,
+			common.BKInstParentStr:          setID,
+			common.BKAppIDField:             bizID,
+			common.BKModuleNameField:        module.Value,
+			common.BKDefaultField:           common.DefaultUserResModuleFlag,
+			common.BKServiceTemplateIDField: common.ServiceTemplateIDNotSet,
+			common.BKSetTemplateIDField:     common.SetTemplateIDNotSet,
+			common.BKServiceCategoryIDField: defaultCategoryID,
+		}
+		_, err := b.module.CreateModule(kit, bizID, setID, userModuleData)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // FindBiz FindBiz
