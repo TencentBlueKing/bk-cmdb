@@ -178,19 +178,18 @@ func (b *business) createUserDefinedModules(kit *rest.Kit, conf metadata.Platfor
 	defaultCategoryID int64) error {
 	for _, module := range conf.BuiltInModuleConfig.UserModules {
 		// create user module
-		userModuleData := mapstr.New()
-		userModuleData.Set(common.BKSetIDField, setID)
-		userModuleData.Set(common.BKInstParentStr, setID)
-		userModuleData.Set(common.BKAppIDField, bizID)
-		userModuleData.Set(common.BKModuleNameField, module.Value)
-
-		userModuleData.Set(common.BKDefaultField, common.DefaultUserResModuleFlag)
-		userModuleData.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
-		userModuleData.Set(common.BKSetTemplateIDField, common.SetTemplateIDNotSet)
-		userModuleData.Set(common.BKServiceCategoryIDField, defaultCategoryID)
-
+		userModuleData := mapstr.MapStr{
+			common.BKSetIDField:             setID,
+			common.BKInstParentStr:          setID,
+			common.BKAppIDField:             bizID,
+			common.BKModuleNameField:        module.Value,
+			common.BKDefaultField:           common.DefaultUserResModuleFlag,
+			common.BKServiceTemplateIDField: common.ServiceTemplateIDNotSet,
+			common.BKSetTemplateIDField:     common.SetTemplateIDNotSet,
+			common.BKServiceCategoryIDField: defaultCategoryID,
+		}
 		_, err := b.module.CreateModule(kit, bizID, setID, userModuleData)
-		if nil != err {
+		if err != nil {
 			return err
 		}
 	}
