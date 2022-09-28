@@ -1600,19 +1600,19 @@ const (
 )
 
 var (
-	findKubeAttrsRegexp     = regexp.MustCompile(`^/api/v3/kube/find/{object}/attributes$`)
-	createKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/create/cluster/bk_biz_id/{bk_biz_id}$`)
+	findKubeAttrsRegexp     = regexp.MustCompile(`^/api/v3/kube/find/[^\s/]+/attributes`)
+	createKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/create/cluster/bk_biz_id/([0-9]+)/?$`)
 
-	deleteKubeClusterRegexp     = regexp.MustCompile(`^/api/v3/kube/delete/cluster/bk_biz_id/{bk_biz_id}$`)
-	findKubeClusterRegexp       = regexp.MustCompile(`^/api/v3/kube/findmany/cluster/bk_biz_id/{bk_biz_id}$`)
-	updatemanyKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/cluster/bk_biz_id/{bk_biz_id}$`)
+	deleteKubeClusterRegexp     = regexp.MustCompile(`^/api/v3/kube/delete/cluster/bk_biz_id/([0-9]+)/?$`)
+	findKubeClusterRegexp       = regexp.MustCompile(`^/api/v3/kube/findmany/cluster/bk_biz_id/([0-9]+)/?$`)
+	updatemanyKubeClusterRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/cluster/bk_biz_id/([0-9]+)/?$`)
 
-	createKubeNodeRegexp    = regexp.MustCompile(`^/api/v3/kube/createmany/node/bk_biz_id/{bk_biz_id}$`)
-	createKubePodRegexp     = regexp.MustCompile(`^/api/v3/kube/createmany/pod/bk_biz_id/{bk_biz_id}$`)
-	findKubeNodeRegexp      = regexp.MustCompile(`^/api/v3/kube/findmany/node/bk_biz_id/{bk_biz_id}$`)
-	findKubeTopoPathRegexp  = regexp.MustCompile(`^/api/v3/kube/find/topo_path/bk_biz_id/{bk_biz_id}$`)
-	findKubeTopoCountRegexp = regexp.MustCompile(`^/api/v3/kube/find/{bk_biz_id}/topo_node/{type}/count$`)
-	createKubePodsRegexp    = regexp.MustCompile(`^/api/v3/kube/createmany/pod/bk_biz_id/{bk_biz_id}$`)
+	createKubeNodeRegexp    = regexp.MustCompile(`^/api/v3/kube/createmany/node/bk_biz_id/([0-9]+)/?$`)
+	createKubePodRegexp     = regexp.MustCompile(`^/api/v3/kube/createmany/pod/bk_biz_id/([0-9]+)/?$`)
+	findKubeNodeRegexp      = regexp.MustCompile(`^/api/v3/kube/findmany/node/bk_biz_id/([0-9]+)/?$`)
+	findKubeTopoPathRegexp  = regexp.MustCompile(`^/api/v3/kube/find/topo_path/bk_biz_id/([0-9]+)$`)
+	findKubeTopoCountRegexp = regexp.MustCompile(`^/api/v3/kube/find/([0-9]+)/topo_node/[^\s/]+/count$`)
+	createKubePodsRegexp    = regexp.MustCompile(`^/api/v3/kube/createmany/pod/bk_biz_id/([0-9]+)/?$`)
 
 	createNamespaceRegexp = regexp.MustCompile(`^/api/v3/kube/createmany/namespace/bk_biz_id/([0-9]+)/?$`)
 	updateNamespaceRegexp = regexp.MustCompile(`^/api/v3/kube/updatemany/namespace/bk_biz_id/([0-9]+)/?$`)

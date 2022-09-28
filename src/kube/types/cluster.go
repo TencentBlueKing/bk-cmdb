@@ -41,7 +41,7 @@ var ClusterFields = table.MergeFields(ClusterSpecFieldsDescriptor)
 
 // ClusterSpecFieldsDescriptor cluster spec's fields descriptors.
 var ClusterSpecFieldsDescriptor = table.FieldsDescriptors{
-	{Field: KubeNameField, IsRequired: true, IsEditable: false},
+	{Field: KubeNameField, IsRequired: true, IsEditable: true},
 	{Field: SchedulingEngineField, IsRequired: false, IsEditable: false},
 	{Field: UidField, IsRequired: true, IsEditable: false},
 	{Field: XidField, IsRequired: false, IsEditable: false},
