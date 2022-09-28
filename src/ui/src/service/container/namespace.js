@@ -17,7 +17,7 @@ import { enableCount, onePageParams } from '../utils.js'
 const ID_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.NAMESPACE].ID
 
 const find = async (params, config) => {
-  const api = `kube/findmany/namespace/bk_biz_id/${params.bk_biz_id}`
+  const api = `findmany/kube/namespace/bk_biz_id/${params.bk_biz_id}`
   try {
     const [{ info: list = [] }, { count = 0 }] = await Promise.all([
       http.post(api, enableCount(params, false), config),
@@ -32,7 +32,7 @@ const find = async (params, config) => {
 
 const findById = async (id, bizId, config = {}) => {
   try {
-    const { info: [instance = null] } = await http.post(`kube/findmany/namespace/bk_biz_id/${bizId}`, enableCount({
+    const { info: [instance = null] } = await http.post(`findmany/kube/namespace/bk_biz_id/${bizId}`, enableCount({
       filter: {
         condition: 'AND',
         rules: [{

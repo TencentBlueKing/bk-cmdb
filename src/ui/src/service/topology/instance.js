@@ -32,7 +32,7 @@ const getWithStat = async (bizId, config = {}) => {
 
 const getContainerTopo = async ({ bizId, params }, config) => {
   try {
-    const topoList = await rollReqUseCount(`kube/find/topo_path/bk_biz_id/${bizId}`, params, { limit: 100 }, config)
+    const topoList = await rollReqUseCount(`find/kube/topo_path/bk_biz_id/${bizId}`, params, { limit: 100 }, config)
     return normalizationTopo(topoList, params.bk_reference_id)
   } catch (error) {
     console.error(error)
@@ -42,8 +42,8 @@ const getContainerTopo = async ({ bizId, params }, config) => {
 
 const getContainerTopoNodeStats = async ({ bizId, params }, config) => {
   const [hostStats, podStats] = await Promise.all([
-    http.post(`kube/find/${bizId}/topo_node/host/count`, params, config),
-    http.post(`kube/find/${bizId}/topo_node/pod/count`, params, config)
+    http.post(`find/kube/${bizId}/topo_node/host/count`, params, config),
+    http.post(`find/kube/${bizId}/topo_node/pod/count`, params, config)
   ])
 
   return {
