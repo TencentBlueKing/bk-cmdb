@@ -30,6 +30,11 @@ const actions = {
   searchServiceTemplate({ commit, state, dispatch, rootGetters }, { params, config }) {
     return $http.post('findmany/proc/service_template', params, config)
   },
+
+  searchServiceTemplateWithStatus({ commit, state, dispatch, rootGetters }, { params, config }) {
+    return $http.post('findmany/proc/service_template/with_status', params, config)
+  },
+
   /**
      * 查询服务模板统计数量
      * @param {Function} commit store commit mutation hander

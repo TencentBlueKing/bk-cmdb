@@ -190,7 +190,7 @@
               'limit-list': [20, 50, 100]
             })
           },
-          sort: '-id',
+          sort: '',
           stuff: {
             type: 'default',
             payload: {
@@ -245,7 +245,7 @@
     },
     methods: {
       ...mapActions('serviceTemplate', [
-        'searchServiceTemplate',
+        'searchServiceTemplateWithStatus',
         'deleteServiceTemplate',
         'getServiceTemplateSyncStatus'
       ]),
@@ -258,18 +258,18 @@
             this.getTableData()
           }
           this.table.pagination.count = templateData.count
-          this.table.list = templateData.info.map((template) => {
+          this.table.list = templateData.info.map(({ service_template: template, need_sync: needSync }) => {
             const second = this.allSecondaryList.find(clazz => clazz.id === template.service_category_id)
             const mainCategory = this.mainList.find(clazz => second && clazz.id === second.bk_parent_id)
             const secondName = second ? second.name : '--'
             const mainCategoryName = mainCategory ? mainCategory.name : '--'
             template.service_category = `${mainCategoryName} / ${secondName}`
+            template.need_sync = needSync
             return template
           })
           this.table.stuff.type = this.hasFilter ? 'search' : 'default'
           if (this.table.list.length) {
             this.getTemplateCount()
-            this.getTemplateSyncStatus()
           }
         } catch ({ permission }) {
           if (permission) {
@@ -310,7 +310,7 @@
         }
       },
       getTemplateData() {
-        return this.searchServiceTemplate({
+        return this.searchServiceTemplateWithStatus({
           params: this.params,
           config: {
             requestId: this.request.list,
@@ -329,31 +329,6 @@
         this.classificationList = categories
         this.mainList = this.classificationList.filter(classification => !classification.bk_parent_id)
         this.allSecondaryList = this.classificationList.filter(classification => classification.bk_parent_id)
-      },
-      async getTemplateSyncStatus() {
-        try {
-          const { service_templates: syncStatusList = [] } = await this.getServiceTemplateSyncStatus({
-            bizId: this.bizId,
-            params: {
-              is_partial: true,
-              service_template_ids: this.table.list.map(row => row.id)
-            },
-            config: {
-              cancelPrevious: true
-            }
-          })
-          this.table.list.forEach((row) => {
-            const syncStatus = syncStatusList.find(status => status.service_template_id === row.id) || {}
-            if (syncStatus) {
-              this.$set(row, 'need_sync', syncStatus.need_sync)
-            }
-          })
-        } catch (error) {
-          console.error(error)
-          this.table.list.forEach((row) => {
-            this.$set(row, 'need_sync', false)
-          })
-        }
       },
       handleSelect(id = '') {
         this.secondaryList = this.allSecondaryList.filter(classification => classification.bk_parent_id === id)

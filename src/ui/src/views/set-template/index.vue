@@ -55,7 +55,7 @@
       @sort-change="handleSortChange">
       <bk-table-column label="ID" prop="id" class-name="is-highlight" sortable="custom">
         <div slot-scope="{ row }" v-bk-overflow-tips
-          :class="['template-name', { 'need-sync': row._need_sync_ }]">
+          :class="['template-name', { 'need-sync': row.need_sync }]">
           {{row.id}}
         </div>
       </bk-table-column>
@@ -117,7 +117,7 @@
     data() {
       return {
         list: [],
-        originList: [],
+        originList: null,
         searchName: '',
         table: {
           stuff: {
@@ -126,7 +126,7 @@
               resource: this.$t('集群模板')
             }
           },
-          sort: '-last_time'
+          sort: ''
         },
         request: {
           getSetTemplates: Symbol('getSetTemplates')
@@ -135,11 +135,6 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId'])
-    },
-    watch: {
-      originList() {
-        this.getSyncStatus()
-      }
     },
     async created() {
       await this.getSetTemplates()
@@ -160,25 +155,45 @@
         const list = (data.info || []).map(item => ({
           set_instance_count: item.set_instance_count,
           ...item.set_template,
-          _need_sync_: false
+          need_sync: false
         }))
         this.list = list
-        this.originList = list
+
+        if (this.list.length) {
+          this.getSyncStatus()
+        }
       },
       async getSyncStatus() {
         try {
-          if (this.originList.length) {
-            const data = await this.$store.dispatch('setTemplate/getSetTemplateStatus', {
-              bizId: this.bizId,
-              params: {
-                set_template_ids: this.originList.map(item => item.id)
+          const data = await this.$store.dispatch('setTemplate/getSetTemplateStatus', {
+            bizId: this.bizId,
+            params: {
+              set_template_ids: this.list.map(item => item.id)
+            }
+          })
+          this.list.forEach((item) => {
+            const syncStatus = data.find(status => status.set_template_id === item.id)
+            if (syncStatus) {
+              this.$set(item, 'need_sync', syncStatus.need_sync)
+            }
+          })
+
+          if (!this.table.sort) {
+            this.list.sort((a, b) => {
+              // 待同步排前面，相同时再使用名称比较
+              if (a.need_sync > b.need_sync) {
+                return -1
               }
-            })
-            this.originList.forEach((item) => {
-              const syncStatus = data.find(status => status.set_template_id === item.id)
-              if (syncStatus) {
-                this.$set(item, '_need_sync_', syncStatus.need_sync)
+              if (a.need_sync && b.need_sync) {
+                return a.name.localeCompare(b.name)
               }
+
+              // 都是已同步状态则只比较名称
+              if (!a.need_sync && !b.need_sync) {
+                return a.name.localeCompare(b.name)
+              }
+
+              return 0
             })
           }
         } catch (e) {
@@ -213,14 +228,17 @@
         })
       },
       handleFilterTemplate() {
-        const originList = this.$tools.clone(this.originList)
+        if (!this.originList) {
+          this.originList = this.list.slice()
+        }
+
         this.list = this.searchName
-          ? originList.filter(template => template.name.indexOf(this.searchName) !== -1)
-          : originList
+          ? this.originList.filter(template => template.name.indexOf(this.searchName) !== -1)
+          : this.originList.slice()
         this.table.stuff.type = this.searchName ? 'search' : 'default'
       },
       handleClearFilter() {
-        this.list = this.originList
+        this.list = this.originList.slice()
         this.table.stuff.type = 'default'
       },
       handleSelectable(row) {
