@@ -150,36 +150,6 @@ func (t *task) DeleteTask(ctx context.Context, header http.Header, taskCond *met
 	return nil
 }
 
-// TaskStatusToSuccess TODO
-func (t *task) TaskStatusToSuccess(ctx context.Context, header http.Header, taskID, subTaskID string) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/task/set/status/sucess/id/%s/sub_id/%s"
-
-	err = t.client.Put().
-		WithContext(ctx).
-		Body(nil).
-		SubResourcef(subPath, taskID, subTaskID).
-		WithHeaders(header).
-		Do().
-		Into(resp)
-	return
-}
-
-// TaskStatusToFailure TODO
-func (t *task) TaskStatusToFailure(ctx context.Context, header http.Header, taskID, subTaskID string, errResponse *metadata.Response) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/task/set/status/failure/id/%s/sub_id/%s"
-
-	err = t.client.Put().
-		WithContext(ctx).
-		Body(errResponse).
-		SubResourcef(subPath, taskID, subTaskID).
-		WithHeaders(header).
-		Do().
-		Into(resp)
-	return
-}
-
 // ListLatestSyncStatus list latest sync status by condition
 func (t *task) ListLatestSyncStatus(ctx context.Context, header http.Header,
 	option *metadata.ListLatestSyncStatusRequest) ([]metadata.APITaskSyncStatus, errors.CCErrorCoder) {
