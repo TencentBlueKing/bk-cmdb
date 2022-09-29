@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_10_202209191408
+package y3_10_202209281408
 
 import (
 	"context"
@@ -422,15 +422,6 @@ func addClusterTableIndexes(ctx context.Context, db dal.RDB) error {
 			},
 			Background: true,
 			Unique:     true,
-		},
-		{
-			Name: common.CCLogicUniqueIdxNamePrefix + "bk_biz_id_name",
-			Keys: bson.D{
-				{common.BKAppIDField, 1},
-				{common.BKFieldName, 1},
-			},
-			Unique:     true,
-			Background: true,
 		},
 		{
 			Name:       common.CCLogicIndexNamePrefix + common.BKAppIDField,
