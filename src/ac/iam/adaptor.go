@@ -409,6 +409,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.WatchMainlineInstance: WatchMainlineInstanceEvent,
 		meta.WatchInstAsst:         WatchInstAsstEvent,
 		meta.WatchBizSet:           WatchBizSetEvent,
+		meta.WatchPlat:             WatchPlatEvent,
 		meta.WatchKubeCluster:      WatchKubeClusterEvent,
 		meta.WatchKubeNode:         WatchKubeNodeEvent,
 		meta.WatchKubeNamespace:    WatchKubeNamespaceEvent,

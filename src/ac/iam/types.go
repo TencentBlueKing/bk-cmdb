@@ -482,6 +482,8 @@ const (
 	WatchInstAsstEvent ActionID = "watch_inst_asst_event"
 	// WatchBizSetEvent TODO
 	WatchBizSetEvent ActionID = "watch_biz_set_event"
+	// WatchPlatEvent watch cloud area event action id
+	WatchPlatEvent ActionID = "watch_plat_event"
 
 	// watch kube related event actions
 
