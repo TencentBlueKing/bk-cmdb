@@ -26,31 +26,6 @@ import (
 	"configcenter/src/kube/types"
 )
 
-// FindInst find instance with table name and condition
-func (k *kube) FindInst(ctx context.Context, header http.Header, option *types.QueryReq) (
-	*metadata.InstDataInfo, errors.CCErrorCoder) {
-
-	resp := new(metadata.QueryConditionResult)
-
-	err := k.client.Post().
-		WithContext(ctx).
-		Body(option).
-		SubResourcef("/find/kube/inst").
-		WithHeaders(header).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, errors.CCHttpError
-	}
-
-	if ccErr := resp.CCError(); ccErr != nil {
-		return nil, ccErr
-	}
-
-	return &resp.Data, nil
-}
-
 // CreateNamespace create namespace
 func (k *kube) CreateNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsCreateReq) (
 	*types.NsCreateRespData, errors.CCErrorCoder) {
@@ -395,6 +370,10 @@ func (k *kube) SearchCluster(ctx context.Context, header http.Header, input *met
 	if err != nil {
 		return nil, errors.CCHttpError
 	}
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+
 	return &ret.Data, nil
 }
 
@@ -418,6 +397,10 @@ func (k *kube) SearchNode(ctx context.Context, header http.Header, input *metada
 	if err != nil {
 		return nil, errors.CCHttpError
 	}
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+
 	return &ret.Data, nil
 }
 

@@ -224,7 +224,7 @@ func (s *Service) BatchDeleteNode(ctx *rest.Contexts) {
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		err = s.Logics.ContainerOperation().BatchDeleteNode(ctx.Kit, bizID, option, ctx.Kit.SupplierAccount)
+		err = s.Logics.KubeOperation().BatchDeleteNode(ctx.Kit, bizID, option)
 		if err != nil {
 			blog.Errorf("delete node failed, biz: %d, option: %+v, err: %v, rid: %s", bizID, option, err, ctx.Kit.Rid)
 			return err
@@ -242,6 +242,7 @@ func (s *Service) BatchDeleteNode(ctx *rest.Contexts) {
 
 // BatchCreateNode batch create nodes.
 func (s *Service) BatchCreateNode(ctx *rest.Contexts) {
+
 	data := new(types.CreateNodesOption)
 	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
@@ -253,17 +254,18 @@ func (s *Service) BatchCreateNode(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	var ids []int64
 
+	var ids []int64
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ids, err = s.Logics.ContainerOperation().BatchCreateNode(ctx.Kit, data, bizID, ctx.Kit.SupplierAccount)
+		ids, err = s.Logics.KubeOperation().BatchCreateNode(ctx.Kit, data, bizID)
 		if err != nil {
 			blog.Errorf("create node failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -360,7 +362,6 @@ func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
 	if err := data.Validate(); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -371,7 +372,7 @@ func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
 	for _, node := range data.Nodes {
 		nodeIDs = append(nodeIDs, node.NodeIDs...)
 		for _, id := range node.NodeIDs {
-			nodeIDUpdateFields[id] = *node.Data
+			nodeIDUpdateFields[id] = node.Data
 		}
 	}
 
@@ -403,6 +404,7 @@ func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
 	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		blog.Errorf("search node failed, filter: %+v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 

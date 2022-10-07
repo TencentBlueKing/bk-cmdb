@@ -66,17 +66,17 @@ func (s *Service) SearchClusters(ctx *rest.Contexts) {
 	filter[types.BKBizIDField] = bizID
 	filter[types.BKSupplierAccountField] = ctx.Kit.SupplierAccount
 
-	// count biz in cluster enable count is set
+	// get the number of clusters
 	if searchCond.Page.EnableCount {
-		filter := []map[string]interface{}{filter}
+		cond := []map[string]interface{}{filter}
 		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
-			types.BKTableNameBaseCluster, filter)
+			types.BKTableNameBaseCluster, cond)
 		if err != nil {
-			blog.Errorf("count biz failed, err: %v, cond: %#v, rid: %s", err, filter, ctx.Kit.Rid)
+			blog.Errorf("count cluster failed, cond: %#v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
-		ctx.RespEntityWithCount(counts[0], make([]mapstr.MapStr, 0))
+		ctx.RespEntityWithCount(counts[0], make([]types.Cluster, 0))
 		return
 	}
 
@@ -101,10 +101,12 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	if err := data.Validate(); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
@@ -164,13 +166,13 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 			generateAuditParameter.WithUpdateFields(updateFields)
 			auditLog, err := audit.GenerateClusterAuditLog(generateAuditParameter, []types.Cluster{cluster})
 			if err != nil {
-				blog.Errorf("create cluster, generate audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				blog.Errorf("generate audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 				return err
 			}
 
 			err = audit.SaveAuditLog(ctx.Kit, auditLog...)
 			if err != nil {
-				blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				blog.Errorf("save audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 				return ctx.Kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 			}
 		}
@@ -184,14 +186,13 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-// CreateCluster create a container cluster
+// CreateCluster create a cluster
 func (s *Service) CreateCluster(ctx *rest.Contexts) {
 	data := new(types.Cluster)
 	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-
 	if err := data.CreateValidate(); err != nil {
 		blog.Errorf("validate create container cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -208,7 +209,7 @@ func (s *Service) CreateCluster(ctx *rest.Contexts) {
 	var id int64
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		id, err = s.Logics.ContainerOperation().CreateCluster(ctx.Kit, data, bizID, ctx.Kit.SupplierAccount)
+		id, err = s.Logics.KubeOperation().CreateCluster(ctx.Kit, data, bizID)
 		if err != nil {
 			blog.Errorf("create cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -226,6 +227,7 @@ func (s *Service) CreateCluster(ctx *rest.Contexts) {
 
 // DeleteCluster delete cluster.
 func (s *Service) DeleteCluster(ctx *rest.Contexts) {
+
 	option := new(types.DeleteClusterOption)
 	if err := ctx.DecodeInto(option); err != nil {
 		ctx.RespAutoError(err)
@@ -242,9 +244,10 @@ func (s *Service) DeleteCluster(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		err = s.Logics.ContainerOperation().DeleteCluster(ctx.Kit, bizID, option, ctx.Kit.SupplierAccount)
+		err = s.Logics.KubeOperation().DeleteCluster(ctx.Kit, bizID, option)
 		if err != nil {
 			blog.Errorf("delete cluster failed, biz: %d, option: %+v, err: %v, rid: %s", bizID, option, err,
 				ctx.Kit.Rid)

@@ -478,9 +478,8 @@ func addNodeTableIndexes(ctx context.Context, db dal.RDB) error {
 			Unique:     true,
 		},
 		{
-			Name: common.CCLogicUniqueIdxNamePrefix + "bk_biz_id_cluster_uid_name",
+			Name: common.CCLogicUniqueIdxNamePrefix + "cluster_uid_name",
 			Keys: bson.D{
-				{common.BKAppIDField, 1},
 				{kubeTypes.ClusterUIDField, 1},
 				{common.BKFieldName, 1},
 			},
@@ -488,10 +487,10 @@ func addNodeTableIndexes(ctx context.Context, db dal.RDB) error {
 			Unique:     true,
 		},
 		{
-			Name: common.CCLogicUniqueIdxNamePrefix + "bk_cluster_id_id",
+			Name: common.CCLogicUniqueIdxNamePrefix + "bk_cluster_id_name",
 			Keys: bson.D{
 				{kubeTypes.BKClusterIDFiled, 1},
-				{common.BKFieldID, 1},
+				{common.BKFieldName, 1},
 			},
 			Unique:     true,
 			Background: true,

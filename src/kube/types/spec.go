@@ -19,16 +19,12 @@ package types
 
 import (
 	"errors"
+	"fmt"
+	"reflect"
+	"strings"
 
 	"configcenter/src/storage/dal/table"
 )
-
-//func init() {
-//	initClusterFieldsType()
-//	initNodeFieldsType()
-//	initPodFieldsType()
-//	initContainerFieldsType()
-//}
 
 // ClusterSpec describes the common attributes of cluster, it is used by the structure below it.
 type ClusterSpec struct {
@@ -86,12 +82,61 @@ var CommonSpecFieldsDescriptor = table.FieldsDescriptors{
 // bk_biz_id does not exist in the container table and needs to be processed separately.
 var BizIDDescriptor = table.FieldsDescriptors{
 	{Field: BKBizIDField, IsRequired: true, IsEditable: false},
+	{Field: "bk_host_id", IsRequired: false, IsEditable: false},
 }
 
-// IsCommonField judges whether the field is a special field.
+// isRequiredField check if field is required Field is not filled
+func isRequiredField(tag string, value reflect.Value, i int) error {
+	// do a pocket inspection to prevent the front from being blocked
+	if isCommonField(tag) {
+		return nil
+	}
+	fieldValue := value.Field(i)
+	if fieldValue.Kind() != reflect.Ptr && fieldValue.Kind() != reflect.UnsafePointer {
+		return nil
+	}
+	if fieldValue.IsNil() {
+		return fmt.Errorf("required fields cannot be empty, %s", tag)
+	}
+	return nil
+}
+
+func isEditableField(tag string, value reflect.Value, i int) bool {
+
+	if isCommonField(tag) {
+		return true
+	}
+
+	field := value.Field(i)
+	if field.Kind() != reflect.Ptr && field.Kind() != reflect.UnsafePointer {
+		return true
+	}
+
+	//	check each variable for a null pointer.
+	//	if it is a null pointer, it means that
+	//	this field will not be updated, skip it directly.
+	if field.IsNil() {
+		return true
+	}
+	return false
+}
+
+// getFieldTag a variable with a non-null pointer gets the corresponding tag.
+// for example, it needs to be compatible when the tag is "name,omitempty"
+func getFieldTag(typeOfOption reflect.Type, i int) (string, bool) {
+	tagTmp := typeOfOption.Field(i).Tag.Get("json")
+	tags := strings.Split(tagTmp, ",")
+
+	if tags[0] == "" {
+		return "", true
+	}
+	return tags[0], false
+}
+
+// isCommonField judges whether the field is a special field.
 // If it belongs to common fields or biz_id field, it needs
 // to skip unified verification whether it is creating a scene or updating a scene.
-func IsCommonField(field string) bool {
+func isCommonField(field string) bool {
 	for _, commonDescriptor := range CommonSpecFieldsDescriptor {
 		if commonDescriptor.Field == field {
 			return true
@@ -122,8 +167,8 @@ func GetKubeSubTopoObject(object string, id int64, bizID int64) (string, map[str
 		return KubeWorkload, map[string]interface{}{
 			BKNamespaceIDField: id,
 		}
-	case KubeFolder:
-		return "", map[string]interface{}{}
+	case KubeFolder, KubePod:
+		return "", nil
 	default:
 		return KubePod, map[string]interface{}{}
 	}
@@ -267,10 +312,7 @@ type SpecInfo struct {
 	ClusterID *int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
 	// NamespaceID namespace id in cc
 	NamespaceID *int64 `json:"bk_namespace_id" bson:"bk_namespace_id"`
-	//// WorkloadKind workload kind
-	//WorkloadKind *string `json:"workload_kind" bson:"workload_kind"`
-	//// WorkloadID workload id in cc
-	//WorkloadID *int64 `json:"workload_id" bson:"workload_id"`
+	// Ref the workload at the upper level of the pod
 	Ref Ref `json:"ref" bson:"ref"`
 	// NodeID node id in cc
 	NodeID *int64 `json:"bk_node_id" bson:"bk_node_id"`
@@ -291,16 +333,12 @@ func (option *SpecInfo) validate() error {
 		return errors.New("node id must be set")
 	}
 
-	if option.Ref.Kind == "" {
-		return errors.New("workload kind must be set")
+	if option.Ref.Kind == "" || option.Ref.ID == 0 {
+		return errors.New("workload must be set")
 	}
 
 	if err := WorkloadType(option.Ref.Kind).Validate(); err != nil {
 		return errors.New("workload is illegal type")
-	}
-
-	if option.Ref.ID == 0 {
-		return errors.New("workload id must be set")
 	}
 
 	return nil

@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
@@ -50,21 +49,6 @@ var PodSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: TolerationsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 }
 
-func initContainerFieldsType() {
-	typeOfCat := reflect.TypeOf(ContainerBaseFields{})
-	valueOf := reflect.ValueOf(ContainerBaseFields{})
-	for i := 0; i < typeOfCat.NumField(); i++ {
-		// 获取每个成员的结构体字段类型
-		for _, descripor := range ContainerSpecFieldsDescriptor {
-			fieldType := typeOfCat.Field(i)
-			tag := fieldType.Tag.Get("json")
-			if descripor.Field == tag {
-				descripor.Type = enumor.GetFieldType(valueOf.Field(i).Type().String())
-			}
-		}
-	}
-}
-
 // ContainerFields merge the fields of the cluster and the details corresponding to the fields together.
 var ContainerFields = table.MergeFields(ContainerSpecFieldsDescriptor)
 
@@ -84,27 +68,11 @@ var ContainerSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: MountsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 }
 
-func initPodFieldsType() {
-	typeOfCat := reflect.TypeOf(Pod{})
-	valueOf := reflect.ValueOf(Pod{})
-	for i := 0; i < typeOfCat.NumField(); i++ {
-		// 获取每个成员的结构体字段类型
-		for _, descripor := range PodSpecFieldsDescriptor {
-			fieldType := typeOfCat.Field(i)
-			tag := fieldType.Tag.Get("json")
-			if descripor.Field == tag {
-				descripor.Type = enumor.GetFieldType(valueOf.Field(i).Type().String())
-			}
-		}
-	}
-}
-
 const (
 	// podQueryLimit limit on the number of pod query.
 	podQueryLimit = 500
 	// createPodsLimit the maximum number of pods to be created at one time.
 	createPodsLimit = 200
-
 	// containerQueryLimit limit on the number of container query
 	containerQueryLimit = 500
 )
@@ -241,26 +209,17 @@ func (option *Pod) createValidate() error {
 		typeOfOption := reflect.TypeOf(*option)
 		valueOfOption := reflect.ValueOf(*option)
 		for i := 0; i < typeOfOption.NumField(); i++ {
-			tagTmp := typeOfOption.Field(i).Tag.Get("json")
-			tags := strings.Split(tagTmp, ",")
-			if tags[0] == "" {
-				continue
-			}
-			if IsCommonField(tags[0]) {
+			tag, flag := getFieldTag(typeOfOption, i)
+			if flag {
 				continue
 			}
 
-			if !ClusterFields.IsFieldRequiredByField(tags[0]) {
+			if !PodFields.IsFieldRequiredByField(tag) {
 				continue
 			}
 
-			fieldValue := valueOfOption.Field(i)
-			if fieldValue.Kind() != reflect.Ptr || fieldValue.Kind() != reflect.UnsafePointer {
-				continue
-			}
-
-			if fieldValue.IsNil() {
-				return fmt.Errorf("required fields cannot be empty, %s", tags)
+			if err := isRequiredField(tag, valueOfOption, i); err != nil {
+				return err
 			}
 		}
 	}
@@ -311,29 +270,18 @@ func (option *ContainerBaseFields) createValidate() error {
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
-		// a variable with a non-null pointer gets the corresponding tag.
-		// for example, it needs to be compatible when the tag is "name,omitempty"
-		tagTmp := typeOfOption.Field(i).Tag.Get("json")
-		tags := strings.Split(tagTmp, ",")
 
-		if tags[0] == "" {
-			continue
-		}
-		if IsCommonField(tags[0]) {
+		tag, flag := getFieldTag(typeOfOption, i)
+		if flag {
 			continue
 		}
 
-		if !ContainerFields.IsFieldRequiredByField(tags[0]) {
+		if !ContainerFields.IsFieldRequiredByField(tag) {
 			continue
 		}
 
-		fieldValue := valueOfOption.Field(i)
-		if fieldValue.Kind() != reflect.Ptr || fieldValue.Kind() != reflect.UnsafePointer {
-			continue
-		}
-
-		if fieldValue.IsNil() {
-			return fmt.Errorf("required fields cannot be empty, %s", tags[0])
+		if err := isRequiredField(tag, valueOfOption, i); err != nil {
+			return err
 		}
 	}
 
@@ -402,7 +350,6 @@ func (option *CreatePodsOption) Validate() error {
 
 	for _, data := range option.Data {
 		for _, pod := range data.Pods {
-
 			if err := pod.Spec.validate(); err != nil {
 				return err
 			}
@@ -420,7 +367,6 @@ func (option *CreatePodsOption) Validate() error {
 				}
 			}
 		}
-
 	}
 	return nil
 }

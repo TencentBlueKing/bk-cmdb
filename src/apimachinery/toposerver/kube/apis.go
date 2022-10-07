@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package container
+package kube
 
 import (
 	"context"
@@ -27,34 +27,34 @@ import (
 	"configcenter/src/kube/types"
 )
 
-// ContainerInterface the container implements the interface
-type ContainerInterface interface {
+// KubeOperationInterface the kube implements the interface
+type KubeOperationInterface interface {
 	CreateCluster(ctx context.Context, h http.Header, bizID int64, option *types.Cluster) (
-		*types.CreateClusterResult, errors.CCErrorCoder)
-	UpdateClusterFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
-		data *types.UpdateClusterOption) errors.CCErrorCoder
-	UpdateNodeFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
-		data *types.UpdateNodeOption) errors.CCErrorCoder
-	SearchCluster(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
-		*types.ResponseCluster, errors.CCErrorCoder)
+		*metadata.Response, errors.CCErrorCoder)
+	UpdateClusterFields(ctx context.Context, header http.Header, bizID int64,
+		data *types.UpdateClusterOption) (*metadata.Response, errors.CCErrorCoder)
+	SearchCluster(ctx context.Context, header http.Header, bizID int64, input *types.QueryClusterOption) (
+		*metadata.Response, errors.CCErrorCoder)
 	DeleteCluster(ctx context.Context, header http.Header, bizID int64,
-		option *types.DeleteClusterOption) errors.CCErrorCoder
+		option *types.DeleteClusterOption) (*metadata.Response, errors.CCErrorCoder)
 	BatchDeleteNode(ctx context.Context, header http.Header, bizID int64,
-		option *types.BatchDeleteNodeOption) errors.CCErrorCoder
+		option *types.BatchDeleteNodeOption) (*metadata.Response, errors.CCErrorCoder)
 	BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
-		data *types.CreateNodesOption) (*types.CreateNodesResult, errors.CCErrorCoder)
+		data *types.CreateNodesOption) (*metadata.Response, errors.CCErrorCoder)
+	UpdateNodeFields(ctx context.Context, header http.Header, bizID int64, data *types.UpdateNodeOption) (
+		*metadata.Response, errors.CCErrorCoder)
+	SearchNode(ctx context.Context, header http.Header, bizID int64, input *types.QueryNodeOption) (
+		*metadata.Response, errors.CCErrorCoder)
 	BatchCreatePod(ctx context.Context, header http.Header, data *types.CreatePodsOption) (
 		[]types.Pod, errors.CCErrorCoder)
-	SearchNode(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
-		*types.SearchNodeRsp, errors.CCErrorCoder)
 }
 
-// NewContainerInterface initialize the container client object
-func NewContainerInterface(client rest.ClientInterface) ContainerInterface {
-	return &Container{client: client}
+// NewKubeOperationInterface initialize the container client object
+func NewKubeOperationInterface(client rest.ClientInterface) KubeOperationInterface {
+	return &Kube{client: client}
 }
 
-// Container container object
-type Container struct {
+// Kube container object
+type Kube struct {
 	client rest.ClientInterface
 }

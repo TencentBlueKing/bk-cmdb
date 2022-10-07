@@ -37,7 +37,6 @@ import (
 	"configcenter/src/apimachinery/coreservice/topographics"
 	"configcenter/src/apimachinery/coreservice/transaction"
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/apimachinery/toposerver/container"
 	"configcenter/src/apimachinery/util"
 )
 
@@ -46,7 +45,6 @@ type CoreServiceClientInterface interface {
 	Instance() instance.InstanceClientInterface
 	Model() model.ModelClientInterface
 	Association() association.AssociationClientInterface
-	Container() container.ContainerInterface
 	Synchronize() synchronize.SynchronizeClientInterface
 	Mainline() mainline.MainlineClientInterface
 	Host() host.HostClientInterface
@@ -89,8 +87,8 @@ func (c *coreService) Model() model.ModelClientInterface {
 }
 
 // Container container related api client
-func (c *coreService) Container() container.ContainerInterface {
-	return container.NewContainerInterface(c.restCli)
+func (c *coreService) Container() kube.KubeClientInterface {
+	return kube.NewKubeClientInterface(c.restCli)
 }
 
 // Association TODO

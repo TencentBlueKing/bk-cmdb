@@ -29,9 +29,6 @@ import (
 
 // KubeClientInterface the kube client interface
 type KubeClientInterface interface {
-	// FindInst find instance with table name and condition
-	FindInst(ctx context.Context, header http.Header, option *types.QueryReq) (*metadata.InstDataInfo,
-		errors.CCErrorCoder)
 
 	// CreateNamespace create namespace
 	CreateNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsCreateReq) (

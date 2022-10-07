@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
@@ -41,7 +40,7 @@ var ClusterFields = table.MergeFields(CommonSpecFieldsDescriptor, BizIDDescripto
 
 // ClusterSpecFieldsDescriptor cluster spec's fields descriptors.
 var ClusterSpecFieldsDescriptor = table.FieldsDescriptors{
-	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: true},
 	{Field: SchedulingEngineField, Type: enumor.String, IsRequired: false, IsEditable: false},
 	{Field: UidField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: XidField, Type: enumor.String, IsRequired: false, IsEditable: false},
@@ -85,20 +84,8 @@ type Cluster struct {
 	table.Revision `json:",inline" bson:",inline"`
 }
 
-func initClusterFieldsType() {
-	typeOfCat := reflect.TypeOf(Cluster{})
-	valueOf := reflect.ValueOf(Cluster{})
-	for i := 0; i < typeOfCat.NumField(); i++ {
-		// 获取每个成员的结构体字段类型
-		for _, descripor := range ClusterSpecFieldsDescriptor {
-			fieldType := typeOfCat.Field(i)
-			tag := fieldType.Tag.Get("json")
-			if descripor.Field == tag {
-				descripor.Type = enumor.GetFieldType(valueOf.Field(i).Type().String())
-			}
-		}
-	}
-}
+// IgnoredUpdateClusterFields update the fields that need to be ignored in the cluster scenario.
+var IgnoredUpdateClusterFields = []string{common.BKFieldID, common.BKOwnerIDField, BKBizIDField, ClusterUIDField}
 
 // CreateClusterResult create cluster result.
 type CreateClusterResult struct {
@@ -115,7 +102,7 @@ type DeleteClusterOption struct {
 func (option *DeleteClusterOption) Validate() error {
 
 	if len(option.IDs) == 0 {
-		return errors.New("cluster id must be set at least one")
+		return errors.New("cluster ids must be set")
 	}
 
 	if len(option.IDs) > maxDeleteClusterNum {
@@ -135,28 +122,17 @@ func (option *Cluster) CreateValidate() error {
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
-		// a variable with a non-null pointer gets the corresponding tag.
-		// for example, it needs to be compatible when the tag is "name,omitempty"
-		tagTmp := typeOfOption.Field(i).Tag.Get("json")
-		tags := strings.Split(tagTmp, ",")
-		if tags[0] == "" {
-			continue
-		}
-		if IsCommonField(tags[0]) {
+		tag, flag := getFieldTag(typeOfOption, i)
+		if flag {
 			continue
 		}
 
-		if !ClusterFields.IsFieldRequiredByField(tags[0]) {
+		if !ClusterFields.IsFieldRequiredByField(tag) {
 			continue
 		}
 
-		fieldValue := valueOfOption.Field(i)
-		if fieldValue.Kind() != reflect.Ptr || fieldValue.Kind() != reflect.UnsafePointer {
-			continue
-		}
-
-		if fieldValue.IsNil() {
-			return fmt.Errorf("required fields cannot be empty, %s", tags[0])
+		if err := isRequiredField(tag, valueOfOption, i); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -166,39 +142,25 @@ func (option *Cluster) CreateValidate() error {
 func (option *Cluster) updateValidate() error {
 
 	if option == nil {
-		return errors.New("node information must be given")
+		return errors.New("cluster information must be given")
 	}
 
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
 
-		// 1、a variable with a non-null pointer gets the corresponding tag.
-		// for example, it needs to be compatible when the tag is "name,omitempty"
-		tagTmp := typeOfOption.Field(i).Tag.Get("json")
-		tags := strings.Split(tagTmp, ",")
-		if tags[0] == "" {
-			continue
-		}
-		if IsCommonField(tags[0]) {
+		tag, flag := getFieldTag(typeOfOption, i)
+		if flag {
 			continue
 		}
 
-		fieldValue := valueOfOption.Field(i)
-		if fieldValue.Kind() != reflect.Ptr || fieldValue.Kind() != reflect.UnsafePointer {
+		if flag := isEditableField(tag, valueOfOption, i); flag {
 			continue
 		}
 
-		//	2、check each variable for a null pointer.
-		//	if it is a null pointer, it means that
-		//	this field will not be updated, skip it directly.
-		if fieldValue.IsNil() {
-			continue
-		}
-
-		// 3、get whether it is an editable field based on tag
-		if !ClusterFields.IsFieldEditableByField(tags[0]) {
-			return fmt.Errorf("field [%s] is a non-editable field", tags[0])
+		// get whether it is an editable field based on tag
+		if !ClusterFields.IsFieldEditableByField(tag) {
+			return fmt.Errorf("field [%s] is a non-editable field", tag)
 		}
 	}
 	return nil
@@ -236,7 +198,7 @@ func (option *QueryClusterOption) Validate() ccErr.RawErrorInfo {
 	return ccErr.RawErrorInfo{}
 }
 
-// ResponseCluster  query the response of the container cluster.
+// ResponseCluster query the response of the cluster.
 type ResponseCluster struct {
 	Data []Cluster `json:"cluster"`
 }
@@ -268,7 +230,7 @@ func (option *UpdateClusterOption) Validate() error {
 
 	for _, one := range option.Clusters {
 		if one.ID == 0 {
-			return errors.New("id cannot be empty at the same time")
+			return errors.New("id cannot be empty")
 		}
 		if err := one.Data.updateValidate(); err != nil {
 			return err

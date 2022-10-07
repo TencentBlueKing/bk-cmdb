@@ -1811,7 +1811,7 @@ func (s *Service) getHostInFolder(kit *rest.Kit, bizID int64, clusterID int64) (
 		Condition: cond,
 		Fields:    fields,
 	}
-	resp, err := s.Engine.CoreAPI.CoreService().Container().SearchNode(kit.Ctx, kit.Header, query)
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
 	if err != nil {
 		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
 		return nil, err
@@ -1858,7 +1858,7 @@ func (s *Service) getHostByClusterOrNode(kit *rest.Kit, req types.SearchHostReq,
 		Condition: cond,
 		Fields:    fields,
 	}
-	resp, err := s.Engine.CoreAPI.CoreService().Container().SearchNode(kit.Ctx, kit.Header, query)
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
 	if err != nil {
 		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
 		return nil, err
@@ -1929,7 +1929,7 @@ func (s *Service) findNodeByHostIDs(kit *rest.Kit, hostIDs []int64, fields []str
 		Condition: cond,
 		Fields:    fields,
 	}
-	resp, err := s.Engine.CoreAPI.CoreService().Container().SearchNode(kit.Ctx, kit.Header, query)
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
 	if err != nil {
 		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
 		return nil, err

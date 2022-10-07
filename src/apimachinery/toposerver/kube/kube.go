@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package container
+package kube
 
 import (
 	"context"
@@ -27,11 +27,11 @@ import (
 	"configcenter/src/kube/types"
 )
 
-// BatchCreateNode batch create nodes
-func (st *Container) BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
-	data *types.CreateNodesOption) (*types.CreateNodesResult, errors.CCErrorCoder) {
-	ret := new(types.CreateNodesResult)
-	subPath := "/createmany/kube/node/%d"
+// BatchCreateNode batch create node
+func (st *Kube) BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
+	data *types.CreateNodesOption) (*metadata.Response, errors.CCErrorCoder) {
+	ret := new(metadata.Response)
+	subPath := "/createmany/kube/node/bk_biz_id/%d"
 
 	err := st.client.Post().
 		WithContext(ctx).
@@ -52,7 +52,7 @@ func (st *Container) BatchCreateNode(ctx context.Context, header http.Header, bi
 }
 
 // BatchCreatePod batch create pod.
-func (st *Container) BatchCreatePod(ctx context.Context, header http.Header,
+func (st *Kube) BatchCreatePod(ctx context.Context, header http.Header,
 	data *types.CreatePodsOption) ([]types.Pod, errors.CCErrorCoder) {
 	ret := new(types.CreatePodsResult)
 	subPath := "/createmany/kube/pod"
@@ -77,101 +77,101 @@ func (st *Container) BatchCreatePod(ctx context.Context, header http.Header,
 
 }
 
-// SearchCluster create cluster.
-func (st *Container) SearchCluster(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
-	*types.ResponseCluster, errors.CCErrorCoder) {
-	ret := struct {
-		metadata.BaseResp
-		Data types.ResponseCluster `json:"data"`
-	}{}
+// SearchCluster search cluster.
+func (st *Kube) SearchCluster(ctx context.Context, header http.Header, bizID int64, input *types.QueryClusterOption) (
+	*metadata.Response, errors.CCErrorCoder) {
+	ret := new(metadata.Response)
 
-	subPath := "/findmany/kube/cluster"
+	subPath := "/findmany/kube/cluster/bk_biz_id/%d"
 	err := st.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResourcef(subPath).
+		SubResourcef(subPath, bizID).
 		WithHeaders(header).
 		Do().
 		Into(&ret)
 
 	if err != nil {
-		blog.Errorf("search cluster failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	return &ret.Data, nil
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+	return ret, nil
 }
 
 // SearchNode search node.
-func (st *Container) SearchNode(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
-	*types.SearchNodeRsp, errors.CCErrorCoder) {
-	ret := struct {
-		metadata.BaseResp
-		Data types.SearchNodeRsp `json:"data"`
-	}{}
+func (st *Kube) SearchNode(ctx context.Context, header http.Header, bizID int64, input *types.QueryNodeOption) (
+	*metadata.Response, errors.CCErrorCoder) {
+	ret := new(metadata.Response)
 
-	subPath := "/findmany/kube/node"
+	subPath := "/findmany/kube/node/bk_biz_id/%d"
 	err := st.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResourcef(subPath).
+		SubResourcef(subPath, bizID).
 		WithHeaders(header).
 		Do().
 		Into(&ret)
 
 	if err != nil {
-		blog.Errorf("search node failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
-	return &ret.Data, nil
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+	return ret, nil
 }
 
 // UpdateNodeFields update node fields.
-func (st *Container) UpdateNodeFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
-	data *types.UpdateNodeOption) errors.CCErrorCoder {
-	ret := new(metadata.UpdatedCount)
-	subPath := "/updatemany/kube/node/%s/%d"
+func (st *Kube) UpdateNodeFields(ctx context.Context, header http.Header, bizID int64,
+	data *types.UpdateNodeOption) (*metadata.Response, errors.CCErrorCoder) {
+	ret := new(metadata.Response)
+	subPath := "/updatemany/kube/node/bk_biz_id/%d"
 	err := st.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath, supplierAccount, bizID).
+		SubResourcef(subPath, bizID).
 		WithHeaders(header).
 		Do().
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("update node field failed, err: %+v", err)
-		return errors.CCHttpError
+		return nil, errors.CCHttpError
 	}
-
-	return nil
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+	return ret, nil
 }
 
 // UpdateClusterFields update cluster fields.
-func (st *Container) UpdateClusterFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
-	data *types.UpdateClusterOption) errors.CCErrorCoder {
-	ret := new(metadata.UpdatedCount)
-	subPath := "/updatemany/kube/cluster/%s/%d"
+func (st *Kube) UpdateClusterFields(ctx context.Context, header http.Header, bizID int64,
+	data *types.UpdateClusterOption) (*metadata.Response, errors.CCErrorCoder) {
+	ret := new(metadata.Response)
+	subPath := "/updatemany/kube/cluster/bk_biz_id/%d"
 	err := st.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath, supplierAccount, bizID).
+		SubResourcef(subPath, bizID).
 		WithHeaders(header).
 		Do().
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("update cluster field failed, err: %+v", err)
-		return errors.CCHttpError
+		return nil, errors.CCHttpError
 	}
-
-	return nil
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+	return ret, nil
 }
 
 // CreateCluster create cluster.
-func (st *Container) CreateCluster(ctx context.Context, header http.Header, bizID int64,
-	data *types.Cluster) (*types.CreateClusterResult, errors.CCErrorCoder) {
-	ret := new(types.CreateClusterResult)
-	subPath := "/create/kube/cluster/%d"
+func (st *Kube) CreateCluster(ctx context.Context, header http.Header, bizID int64,
+	data *types.Cluster) (*metadata.Response, errors.CCErrorCoder) {
+	ret := new(metadata.Response)
+	subPath := "/create/kube/cluster/bk_biz_id/%d"
 	err := st.client.Post().
 		WithContext(ctx).
 		Body(data).
@@ -181,7 +181,6 @@ func (st *Container) CreateCluster(ctx context.Context, header http.Header, bizI
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("create cluster failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
 	if ret.CCError() != nil {
@@ -192,10 +191,10 @@ func (st *Container) CreateCluster(ctx context.Context, header http.Header, bizI
 }
 
 // DeleteCluster delete cluster.
-func (st *Container) DeleteCluster(ctx context.Context, header http.Header, bizID int64,
-	option *types.DeleteClusterOption) errors.CCErrorCoder {
-	ret := new(metadata.DeletedCount)
-	subPath := "/deletemany/kube/cluster/%d"
+func (st *Kube) DeleteCluster(ctx context.Context, header http.Header, bizID int64,
+	option *types.DeleteClusterOption) (*metadata.Response, errors.CCErrorCoder) {
+	ret := new(metadata.Response)
+	subPath := "/delete/kube/cluster/bk_biz_id/%d"
 
 	err := st.client.Delete().
 		WithContext(ctx).
@@ -206,18 +205,21 @@ func (st *Container) DeleteCluster(ctx context.Context, header http.Header, bizI
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("delete cluster failed, http request failed, err: %v", err)
-		return errors.CCHttpError
+		return nil, errors.CCHttpError
 	}
 
-	return nil
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+
+	return ret, nil
 }
 
-// BatchDeleteNode delete cluster.
-func (st *Container) BatchDeleteNode(ctx context.Context, header http.Header, bizID int64,
-	option *types.BatchDeleteNodeOption) errors.CCErrorCoder {
-	ret := new(metadata.DeletedCount)
-	subPath := "/deletemany/kube/node/%d"
+// BatchDeleteNode delete node.
+func (st *Kube) BatchDeleteNode(ctx context.Context, header http.Header, bizID int64,
+	option *types.BatchDeleteNodeOption) (*metadata.Response, errors.CCErrorCoder) {
+	ret := new(metadata.Response)
+	subPath := "/deletemany/kube/node/bk_biz_id/%d"
 
 	err := st.client.Delete().
 		WithContext(ctx).
@@ -228,9 +230,12 @@ func (st *Container) BatchDeleteNode(ctx context.Context, header http.Header, bi
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("delete cluster failed, http request failed, err: %v", err)
-		return errors.CCHttpError
+		return nil, errors.CCHttpError
 	}
 
-	return nil
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+
+	return ret, nil
 }
