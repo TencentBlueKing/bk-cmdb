@@ -1304,6 +1304,9 @@ func (c *commonInst) getAssociatedObjectWithInsts(kit *rest.Kit, objID string, i
 		if objPair.Object.IsCommon() {
 			innerCond.Condition[common.BKObjIDField] = objPair.Object.ObjectID
 		}
+		if objPair.Object.ObjectID == common.BKInnerObjIDHost {
+			innerCond.Fields = append(innerCond.Fields, common.BKHostInnerIPField)
+		}
 
 		rspItems, err := c.FindInst(kit, objPair.Object.ObjectID, innerCond)
 		if err != nil {
