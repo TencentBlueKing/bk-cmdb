@@ -14,6 +14,7 @@ package event
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"strings"
 	"time"
@@ -88,7 +89,7 @@ func (e *Event) Watch(ctx context.Context, opts *types.WatchOptions) (*types.Wat
 		}
 
 		if err != nil {
-			if err == context.Canceled {
+			if errors.Is(err, context.Canceled) {
 				// if error is context cancelled, then loop watch will exit at the same time
 				return
 			}
