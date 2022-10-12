@@ -317,11 +317,12 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit, request *meta
 	param := &metadata.CreateManyInstanceAssociation{}
 	for _, item := range request.Details {
 		param.Datas = append(param.Datas, metadata.InstAsst{
-			InstID:       item.InstID,
-			ObjectID:     request.ObjectID,
-			AsstInstID:   item.AsstInstID,
-			AsstObjectID: request.AsstObjectID,
-			ObjectAsstID: request.ObjectAsstID,
+			InstID:            item.InstID,
+			ObjectID:          request.ObjectID,
+			AsstInstID:        item.AsstInstID,
+			AsstObjectID:      request.AsstObjectID,
+			ObjectAsstID:      request.ObjectAsstID,
+			AssociationKindID: item.AssociationKindID,
 		})
 	}
 
