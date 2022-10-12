@@ -126,6 +126,7 @@ func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[str
 			c.Request.Header = c.Request.Header.Clone()
 			lock.Unlock()
 
+			lock.Lock()
 			userListEsbSub, errNew := user.GetUserList(c, params)
 			if errNew != nil {
 				firstErr = errNew.ToCCError(defErr)
@@ -133,7 +134,6 @@ func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[str
 				return
 			}
 
-			lock.Lock()
 			userListEsb = append(userListEsb, userListEsbSub...)
 			lock.Unlock()
 		}(subStr)
