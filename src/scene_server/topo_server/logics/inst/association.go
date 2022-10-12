@@ -314,6 +314,18 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit, request *meta
 		return nil, rawErr.ToCCError(kit.CCError)
 	}
 
+	cond := &metadata.QueryCondition{Condition: mapstr.MapStr{common.AssociationObjAsstIDField: request.ObjectAsstID}}
+	result, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
+	if err != nil {
+		blog.Errorf("search object association with cond[%#v] failed, err: %v, rid: %s", cond, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(result.Info) == 0 {
+		blog.Errorf("can not find object association[%s]. rid: %s", request.ObjectAsstID, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrorTopoObjectAssociationNotExist)
+	}
+
 	param := &metadata.CreateManyInstanceAssociation{}
 	for _, item := range request.Details {
 		param.Datas = append(param.Datas, metadata.InstAsst{
@@ -322,7 +334,7 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit, request *meta
 			AsstInstID:        item.AsstInstID,
 			AsstObjectID:      request.AsstObjectID,
 			ObjectAsstID:      request.ObjectAsstID,
-			AssociationKindID: item.AssociationKindID,
+			AssociationKindID: result.Info[0].AsstKindID,
 		})
 	}
 
