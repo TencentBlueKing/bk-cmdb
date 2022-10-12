@@ -16,6 +16,7 @@ import (
 	"configcenter/src/web_server/middleware/user/plugins"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mohae/deepcopy"
 )
 
 func parseModelBizID(data string) (int64, error) {
@@ -126,7 +127,7 @@ func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[str
 			c.Request.Header = c.Request.Header.Clone()
 			lock.Unlock()
 
-			userListEsbSub, errNew := user.GetUserList(c, params)
+			userListEsbSub, errNew := user.GetUserList(c, deepcopy.Copy(params).(map[string]string))
 			if errNew != nil {
 				firstErr = errNew.ToCCError(defErr)
 				blog.Errorf("get users(%s) list from ESB failed, err: %v, rid: %s", subStr, firstErr, rid)

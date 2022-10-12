@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	apiutil "configcenter/src/apimachinery/util"
@@ -166,11 +165,8 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 func (m *user) GetUserList(c *gin.Context, params map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	query := c.Request.URL.Query()
-	var lock sync.RWMutex
 	for key, values := range query {
-		lock.Lock()
 		params[key] = strings.Join(values, ";")
-		lock.Unlock()
 	}
 
 	// try to use esb user list api

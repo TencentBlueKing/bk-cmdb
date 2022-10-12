@@ -16,7 +16,6 @@ import (
 	"context"
 	"net/http"
 	"net/url"
-	"sync"
 
 	"configcenter/src/common/metadata"
 	"configcenter/src/thirdparty/esbserver/esbutil"
@@ -88,15 +87,10 @@ func (p *user) ListUsers(ctx context.Context, h http.Header, params map[string]s
 	if params == nil {
 		params = make(map[string]string)
 	}
-
-	var lock sync.RWMutex
-	lock.Lock()
 	if _, ok := params["fields"]; ok == false {
 		params["fields"] = "username,id,display_name"
 	}
 	params["no_page"] = "true"
-	lock.Unlock()
-
 	err = p.client.Get().
 		WithContext(ctx).
 		WithParams(params).
