@@ -229,20 +229,12 @@ func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
-	if err != nil {
-		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	var ids []int64
-
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ids, err = s.Logics.ContainerOperation().BatchCreatePod(ctx.Kit, data, bizID)
+		ids, err = s.Logics.KubeOperation().BatchCreatePod(ctx.Kit, data)
 		if err != nil {
-			blog.Errorf("create pod failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("create pods failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 		return nil

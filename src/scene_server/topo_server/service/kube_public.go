@@ -29,7 +29,7 @@ import (
 	"configcenter/src/kube/types"
 )
 
-// convertKubeCondition generate different query conditions based on different resources.
+// findKubeTopoPathIfo generate different query conditions based on different resources.
 func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathOption, filter mapstr.MapStr,
 	tableNames []string) (*types.KubeTopoPathRsp, error) {
 
@@ -51,7 +51,7 @@ func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathO
 	for _, tableName := range tableNames {
 		switch tableName {
 		case types.BKTableNameBaseCluster:
-			clusters, err := s.Engine.CoreAPI.CoreService().Container().SearchCluster(kit.Ctx, kit.Header, query)
+			clusters, err := s.Engine.CoreAPI.CoreService().Kube().SearchCluster(kit.Ctx, kit.Header, query)
 			if err != nil {
 				blog.Errorf("search cluster failed, err: %v, rid: %s", err, kit.Rid)
 				return result, err
@@ -63,50 +63,35 @@ func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathO
 			}
 		case types.BKTableNameBaseNamespace:
 
-			option := &types.QueryReq{
-				Table:     types.BKTableNameBaseNamespace,
-				Condition: query,
-			}
-			namespaces, err := s.Engine.CoreAPI.CoreService().Kube().FindInst(kit.Ctx, kit.Header, option)
+			namespaces, err := s.Engine.CoreAPI.CoreService().Kube().ListNamespace(kit.Ctx, kit.Header, query)
 			if err != nil {
 				blog.Errorf("find namespace failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
 				return result, err
 			}
-			for _, namespace := range namespaces.Info {
-				id, err := util.GetInt64ByInterface(namespace[types.BKIDField])
-				if err != nil {
-					blog.Errorf("find namespace failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
-					return result, err
-				}
+			for _, namespace := range namespaces.Data {
 				result.Info = append(result.Info, types.KubeObjectInfo{
-					ID: id, Name: util.GetStrByInterface(namespace[types.KubeNameField]), Kind: types.KubeNamespace,
+					ID:   namespace.ID,
+					Name: namespace.Name,
+					Kind: types.KubeNamespace,
 				})
 			}
 		default:
-
-			option := &types.QueryReq{
-				Table:     tableName,
-				Condition: query,
-			}
-			workloads, cErr := s.Engine.CoreAPI.CoreService().Kube().FindInst(kit.Ctx, kit.Header, option)
-			if cErr != nil {
-				blog.Errorf("find namespace failed, cond: %v, err: %v, rid: %s", query, cErr, kit.Rid)
-				return result, cErr
-			}
 
 			kind, err := types.GetKindByWorkLoadTableNameMap(tableName)
 			if err != nil {
 				return result, err
 			}
-
+			workloads, cErr := s.Engine.CoreAPI.CoreService().Kube().ListWorkload(kit.Ctx, kit.Header, query,
+				types.WorkloadType(kind[tableName]))
+			if cErr != nil {
+				blog.Errorf("find namespace failed, cond: %v, err: %v, rid: %s", query, cErr, kit.Rid)
+				return result, cErr
+			}
 			for _, workload := range workloads.Info {
-				id, err := util.GetInt64ByInterface(workload[types.BKIDField])
-				if err != nil {
-					blog.Errorf("find namespace failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
-					return result, err
-				}
 				result.Info = append(result.Info, types.KubeObjectInfo{
-					ID: id, Name: util.GetStrByInterface(workload[types.KubeNameField]), Kind: kind[tableName],
+					ID:   workload.GetWorkloadBase().ID,
+					Name: workload.GetWorkloadBase().Name,
+					Kind: kind[tableName],
 				})
 			}
 		}
@@ -251,7 +236,7 @@ func (s *Service) getTopoHostNumber(ctx *rest.Contexts, resourceInfos []types.Ku
 
 		// determine whether this node is a folder If it is a folder, then you need to check the node table.
 		if resourceInfos[id].Kind == types.KubeFolder {
-			count, err := s.getHostIDsByCond(ctx.Kit, filter, types.BKTableNameBaseNode, bizID)
+			count, err := s.getHostIDsInNodeByCond(ctx.Kit, filter, bizID)
 			if err != nil {
 				return nil, err
 			}
@@ -264,7 +249,7 @@ func (s *Service) getTopoHostNumber(ctx *rest.Contexts, resourceInfos []types.Ku
 		}
 
 		// what counts here is the number of hosts in the pod table excluding folders.
-		count, err := s.getHostIDsByCond(ctx.Kit, filter, types.BKTableNameBasePod, bizID)
+		count, err := s.getHostIDsInPodsByCond(ctx.Kit, filter, bizID)
 		if err != nil {
 			return nil, err
 		}
@@ -291,7 +276,7 @@ func (s *Service) getTopoHostNumber(ctx *rest.Contexts, resourceInfos []types.Ku
 				types.BKBizIDField:           bizID,
 				types.BKSupplierAccountField: ctx.Kit.SupplierAccount,
 			}
-			folderHostCount, err = s.getHostIDsByCond(ctx.Kit, nodeFilter, types.BKTableNameBaseNode, bizID)
+			folderHostCount, err = s.getHostIDsInNodeByCond(ctx.Kit, nodeFilter, bizID)
 			if err != nil {
 				return nil, err
 			}
@@ -306,36 +291,25 @@ func (s *Service) getTopoHostNumber(ctx *rest.Contexts, resourceInfos []types.Ku
 	return result, nil
 }
 
-func (s *Service) getHostIDsByCond(kit *rest.Kit, cond mapstr.MapStr, table string, bizID int64) (int64, error) {
+func (s *Service) getHostIDsInNodeByCond(kit *rest.Kit, cond mapstr.MapStr, bizID int64) (int64, error) {
 
 	query := &metadata.QueryCondition{
 		Condition: cond,
 		Fields:    []string{common.BKHostIDField},
 	}
-	option := &types.QueryReq{
-		Table:     table,
-		Condition: query,
-	}
-	var err error
-	insts, err := s.Engine.CoreAPI.CoreService().Kube().FindInst(kit.Ctx, kit.Header, option)
-	if err != nil {
-		blog.Errorf("find inst failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
-		return 0, err
+
+	nodes, cErr := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
+	if cErr != nil {
+		blog.Errorf("find nodes failed, cond: %v, err: %v, rid: %s", query, cErr, kit.Rid)
+		return 0, cErr
 	}
 
 	hostIDMap := make(map[int64]struct{})
-	for _, inst := range insts.Info {
-		hostID, err := util.GetInt64ByInterface(inst[common.BKHostIDField])
-		if err != nil {
-			blog.Errorf("get inst attribute failed, attr: %s, node: %v, err: %v, rid: %s", common.BKHostIDField, inst,
-				err, kit.Rid)
-			return 0, err
-		}
-		hostIDMap[hostID] = struct{}{}
+	for _, node := range nodes.Data {
+		hostIDMap[node.HostID] = struct{}{}
 	}
 
 	hostIDs := make([]int64, 0)
-
 	for id := range hostIDMap {
 		hostIDs = append(hostIDs, id)
 	}
@@ -355,7 +329,44 @@ func (s *Service) getHostIDsByCond(kit *rest.Kit, cond mapstr.MapStr, table stri
 	}
 
 	return rsp[0], nil
+}
 
+func (s *Service) getHostIDsInPodsByCond(kit *rest.Kit, cond mapstr.MapStr, bizID int64) (int64, error) {
+
+	query := &metadata.QueryCondition{
+		Condition: cond,
+		Fields:    []string{common.BKHostIDField},
+	}
+	pods, cErr := s.Engine.CoreAPI.CoreService().Kube().ListPod(kit.Ctx, kit.Header, query)
+	if cErr != nil {
+		blog.Errorf("find pods failed, cond: %v, err: %v, rid: %s", query, cErr, kit.Rid)
+		return 0, cErr
+	}
+	hostIDMap := make(map[int64]struct{})
+	for _, pod := range pods.Info {
+		hostIDMap[pod.HostID] = struct{}{}
+	}
+
+	hostIDs := make([]int64, 0)
+	for id := range hostIDMap {
+		hostIDs = append(hostIDs, id)
+	}
+
+	countOp := []map[string]interface{}{{
+		common.BKAppIDField: bizID,
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: hostIDs,
+		},
+	}}
+
+	rsp, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameModuleHostConfig, countOp)
+	if err != nil {
+		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, kit.Rid)
+		return 0, err
+	}
+
+	return rsp[0], nil
 }
 
 // SearchKubeTopoPath querying container topology paths.
@@ -383,9 +394,14 @@ func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 
 	// get the next level resource object.
 	subObject, filter := types.GetKubeSubTopoObject(option.ReferenceObjID, option.ReferenceID, bizID)
+	if filter == nil {
+		blog.Errorf("failed to get subObject, option: %+v, err: %v, rid: %s", option, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsInvalid))
+		return
+	}
 	tableNames, err := types.GetCollectionWithObject(subObject)
 	if err != nil {
-		blog.Errorf("failed get , err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("failed get tableName, subObject: %s, err: %v, rid: %s", subObject, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -415,7 +431,7 @@ func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 
 	result, err := s.findKubeTopoPathIfo(ctx.Kit, option, filter, tableNames)
 	if err != nil {
-		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("failed to get topo path, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

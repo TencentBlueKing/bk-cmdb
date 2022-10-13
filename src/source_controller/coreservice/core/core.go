@@ -121,21 +121,12 @@ type InstanceOperation interface {
 		error)
 }
 
-// ContainerOperation crud operations on container data.
-type ContainerOperation interface {
-	CreateCluster(kit *rest.Kit, bizID int64, option *types.ClusterBaseFields) (*types.Cluster, errors.CCErrorCoder)
-	UpdateClusterFields(kit *rest.Kit, bizID int64, supplierAccount string,
-		data *types.UpdateClusterOption) (*metadata.UpdatedCount, errors.CCErrorCoder)
-	UpdateNodeFields(kit *rest.Kit, bizID int64, supplierAccount string,
-		data *types.UpdateNodeOption) (*metadata.UpdatedCount, errors.CCErrorCoder)
-	SearchCluster(kit *rest.Kit, input *metadata.QueryCondition) (*types.ResponseCluster, error)
-	DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption) (*metadata.DeletedCount,
-		errors.CCErrorCoder)
-	BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.BatchDeleteNodeOption) (
-		*metadata.DeletedCount, errors.CCErrorCoder)
+// KubeOperation crud operations on container data.
+type KubeOperation interface {
+	CreateCluster(kit *rest.Kit, bizID int64, option *types.Cluster) (*types.Cluster, errors.CCErrorCoder)
 	BatchCreateNode(kit *rest.Kit, bizID int64, data []types.OneNodeCreateOption) ([]*types.Node, errors.CCErrorCoder)
-	BatchCreatePod(kit *rest.Kit, bizID int64, data []types.PodsInfo) ([]types.Pod, errors.CCErrorCoder)
-	SearchNode(kit *rest.Kit, input *metadata.QueryCondition) (*types.SearchNodeRsp, error)
+	GetSysSpecInfoByCond(kit *rest.Kit, spec types.SpecInfo, bizID int64,
+		hostID int64) (*types.SysSpec, errors.CCErrorCoder)
 }
 
 // AssociationKind association kind methods
@@ -256,7 +247,7 @@ type StatisticOperation interface {
 type Core interface {
 	ModelOperation() ModelOperation
 	InstanceOperation() InstanceOperation
-	ContainerOperation() ContainerOperation
+	KubeOperation() KubeOperation
 	AssociationOperation() AssociationOperation
 	TopoOperation() TopoOperation
 	DataSynchronizeOperation() DataSynchronizeOperation
@@ -451,7 +442,7 @@ type CommonOperation interface {
 type core struct {
 	model           ModelOperation
 	instance        InstanceOperation
-	container       ContainerOperation
+	container       KubeOperation
 	association     AssociationOperation
 	dataSynchronize DataSynchronizeOperation
 	topo            TopoOperation
@@ -472,7 +463,7 @@ type core struct {
 func New(
 	model ModelOperation,
 	instance InstanceOperation,
-	container ContainerOperation,
+	container KubeOperation,
 	association AssociationOperation,
 	dataSynchronize DataSynchronizeOperation,
 	topo TopoOperation, host HostOperation,
@@ -518,8 +509,8 @@ func (m *core) InstanceOperation() InstanceOperation {
 	return m.instance
 }
 
-// ContainerOperation container related operations
-func (m *core) ContainerOperation() ContainerOperation {
+// KubeOperation container related operations
+func (m *core) KubeOperation() KubeOperation {
 	return m.container
 }
 

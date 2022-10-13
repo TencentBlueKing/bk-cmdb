@@ -31,8 +31,6 @@ func (s *coreService) initKube(web *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/kube/find/inst", Handler: s.FindInst})
-
 	// namespace
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/namespace/bk_biz_id/{bk_biz_id}",
 		Handler: s.CreateNamespace})

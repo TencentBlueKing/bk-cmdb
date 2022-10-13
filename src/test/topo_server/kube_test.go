@@ -1,0 +1,519 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package topo_server_test
+
+import (
+	"context"
+	"encoding/json"
+
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
+	params "configcenter/src/common/paraparse"
+	"configcenter/src/common/querybuilder"
+	commonutil "configcenter/src/common/util"
+	"configcenter/src/kube/types"
+	"configcenter/src/test"
+	"configcenter/src/test/util"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
+
+var _ = Describe("kube cluster test", func() {
+	ctx := context.Background()
+	var bizId, clusterID, clusterID2, hostId1, nodeID, nodeID2 int64
+	Describe("test preparation", func() {
+		It("create business bk_biz_name = 'cc_biz'", func() {
+			test.ClearDatabase()
+
+			input := map[string]interface{}{
+				"life_cycle":        "2",
+				"language":          "1",
+				"bk_biz_maintainer": "admin",
+				"bk_biz_name":       "cc_biz",
+				"time_zone":         "Africa/Accra",
+			}
+			rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data).To(ContainElement("cc_biz"))
+			bizId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("add host using api", func() {
+			input := map[string]interface{}{
+				"bk_biz_id": bizId,
+				"host_info": map[string]interface{}{
+					"4": map[string]interface{}{
+						"bk_host_innerip": "127.0.0.1",
+						"bk_asset_id":     "addhost_api_asset_1",
+						"bk_cloud_id":     0,
+						"bk_comment":      "127.0.0.1 comment",
+					},
+				},
+			}
+			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.ToString())
+		})
+
+		It("search host created using api", func() {
+			input := &params.HostCommonSearch{
+				AppID: int(bizId),
+				Ip: params.IPInfo{
+					Data:  []string{"127.0.0.1"},
+					Exact: 1,
+					Flag:  "bk_host_innerip|bk_host_outerip",
+				},
+				Page: params.PageInfo{
+					Sort: "bk_host_id",
+				},
+			}
+			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(1))
+			data := rsp.Data.Info[0]["host"].(map[string]interface{})
+			Expect(data["bk_host_innerip"].(string)).To(Equal("127.0.0.1"))
+			Expect(data["bk_asset_id"].(string)).To(Equal("addhost_api_asset_1"))
+			hostId1, err = commonutil.GetInt64ByInterface(data["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+	})
+
+	// 1、创建集群类的测试
+	It("create kube cluster", func() {
+
+		By("create cluster")
+		func() {
+			clusterName := "cluster"
+			schedulingEngine := "k8s"
+			uid := "BCS-K8S-25001"
+			xid := "cls-hox2lkf2"
+			version := "0.1"
+			networkType := "underlay"
+			region := "shenzhen"
+			vpc := "vpc-q6awe02n"
+			network := []string{"1.1.1.0/21"}
+			clusterType := "public"
+			createCLuster := &types.Cluster{
+				Name:             &clusterName,
+				SchedulingEngine: &schedulingEngine,
+				Uid:              &uid,
+				Xid:              &xid,
+				Version:          &version,
+				NetworkType:      &networkType,
+				Region:           &region,
+				Vpc:              &vpc,
+				NetWork:          &network,
+				Type:             &clusterType,
+			}
+
+			result, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
+
+			util.RegisterResponse(result)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Result).To(Equal(true))
+			id, cErr := commonutil.GetInt64ByInterface(result.Data)
+			Expect(cErr).NotTo(HaveOccurred())
+			clusterID = id
+		}()
+
+		By("create cluster again")
+
+		func() {
+			clusterName := "cluster1"
+			schedulingEngine := "k8s"
+			uid := "BCS-K8S-250011"
+			xid := "cls-hox2lkf21"
+			version := "0.11"
+			networkType := "underlay"
+			region := "shenzhen"
+			vpc := "vpc-q6awe02n"
+			network := []string{"1.1.1.0/21"}
+			clusterType := "public"
+			createCLuster := &types.Cluster{
+				Name:             &clusterName,
+				SchedulingEngine: &schedulingEngine,
+				Uid:              &uid,
+				Xid:              &xid,
+				Version:          &version,
+				NetworkType:      &networkType,
+				Region:           &region,
+				Vpc:              &vpc,
+				NetWork:          &network,
+				Type:             &clusterType,
+			}
+
+			result, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Result).To(Equal(true))
+			id, cErr := commonutil.GetInt64ByInterface(result.Data)
+			Expect(cErr).NotTo(HaveOccurred())
+
+			clusterID2 = id
+		}()
+
+		By("create kube cluster without cluster name")
+
+		func() {
+			schedulingEngine := "k8s"
+			uid := "BCS-K8S-250012"
+			xid := "cls-hox2lkf21"
+			version := "0.11"
+			networkType := "underlay"
+			region := "shenzhen"
+			vpc := "vpc-q6awe02n"
+			network := []string{"1.1.1.0/21"}
+			clusterType := "public"
+			createCLuster := &types.Cluster{
+				SchedulingEngine: &schedulingEngine,
+				Uid:              &uid,
+				Xid:              &xid,
+				Version:          &version,
+				NetworkType:      &networkType,
+				Region:           &region,
+				Vpc:              &vpc,
+				NetWork:          &network,
+				Type:             &clusterType,
+			}
+
+			result, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
+
+			util.RegisterResponse(result)
+			Expect(err.Error()).Should(ContainSubstring("cannot be empty"))
+		}()
+	})
+
+	It("update kube cluster field", func() {
+
+		By("update cluster version")
+		func() {
+			version := "0.2"
+			data := &types.UpdateClusterOption{
+				Clusters: []types.OneUpdateCluster{
+					{
+						ID: clusterID,
+						Data: types.Cluster{
+							Version: &version,
+						},
+					},
+				},
+			}
+			rsp, err := kubeClient.UpdateClusterFields(ctx, header, bizId, data)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+
+		}()
+
+		By("update kube cluster non-editable field")
+
+		func() {
+			uid := "uid"
+			data := &types.UpdateClusterOption{
+				Clusters: []types.OneUpdateCluster{
+					{
+						ID: clusterID,
+						Data: types.Cluster{
+							Uid: &uid,
+						},
+					},
+				},
+			}
+			result, err := kubeClient.UpdateClusterFields(ctx, header, bizId, data)
+			util.RegisterResponse(result)
+			Expect(err.Error()).Should(ContainSubstring("non-editable field"))
+		}()
+
+		By("delete kube cluster")
+
+		func() {
+			option := &types.DeleteClusterOption{
+				IDs: []int64{clusterID2},
+			}
+			rsp, err := kubeClient.DeleteCluster(ctx, header, bizId, option)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		}()
+
+		By("search kube cluster by name")
+		func() {
+			input := &types.QueryClusterOption{
+				Filter: &querybuilder.QueryFilter{
+					Rule: querybuilder.CombinedRule{
+						Condition: querybuilder.ConditionAnd,
+						Rules: []querybuilder.Rule{
+							&querybuilder.AtomRule{
+								Field:    types.KubeNameField,
+								Operator: querybuilder.OperatorEqual,
+								Value:    "cluster",
+							},
+						},
+					},
+				},
+				Page: metadata.BasePage{
+					Start: 0,
+					Limit: 10,
+				},
+			}
+			result, err := kubeClient.SearchCluster(ctx, header, bizId, input)
+			util.RegisterResponseWithRid(result, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Result).To(Equal(true))
+
+			var info rest.CountInfo
+			j, _ := json.Marshal(&result.Data)
+			json.Unmarshal(j, &info)
+			Expect(info.Count).Should(Equal(int64(0)))
+
+		}()
+
+		By("search kube count cluster by name")
+
+		func() {
+			input := &types.QueryClusterOption{
+				Filter: &querybuilder.QueryFilter{
+					Rule: querybuilder.CombinedRule{
+						Condition: querybuilder.ConditionAnd,
+						Rules: []querybuilder.Rule{
+							&querybuilder.AtomRule{
+								Field:    types.KubeNameField,
+								Operator: querybuilder.OperatorEqual,
+								Value:    "cluster",
+							},
+						},
+					},
+				},
+				Page: metadata.BasePage{
+					EnableCount: true,
+				},
+			}
+			result, err := kubeClient.SearchCluster(ctx, header, bizId, input)
+			util.RegisterResponseWithRid(result, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Result).To(Equal(true))
+
+			var info rest.CountInfo
+			j, _ := json.Marshal(&result.Data)
+			json.Unmarshal(j, &info)
+			Expect(info.Count).Should(Equal(int64(1)))
+		}()
+	})
+
+	It("create kube node", func() {
+		By("create node")
+		func() {
+			node := "node"
+			unschedulable := false
+			hostName := "hostname"
+			internalIP := []string{"1.1.1.1", "2.2.2.2"}
+			externalIP := []string{"3.3.3.3", "4.4.4.4"}
+			createNode := &types.CreateNodesOption{
+				Nodes: []types.OneNodeCreateOption{
+					{
+						HostID:    hostId1,
+						ClusterID: clusterID,
+						Node: types.Node{
+							Name:          &node,
+							Unschedulable: &unschedulable,
+							InternalIP:    &internalIP,
+							ExternalIP:    &externalIP,
+							HostName:      &hostName,
+						},
+					},
+				},
+			}
+			result, err := kubeClient.BatchCreateNode(ctx, header, bizId, createNode)
+			util.RegisterResponse(result)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Result).To(Equal(true))
+			j, _ := json.Marshal(result.Data)
+			var data []int64
+			json.Unmarshal(j, &data)
+			nodeID = data[0]
+		}()
+
+		By("create node")
+		func() {
+			node := "node2"
+			unschedulable := false
+			hostName := "hostname"
+			internalIP := []string{"1.1.1.1", "2.2.2.2"}
+			externalIP := []string{"3.3.3.3", "4.4.4.4"}
+			createNode := &types.CreateNodesOption{
+				Nodes: []types.OneNodeCreateOption{
+					{
+						HostID:    hostId1,
+						ClusterID: clusterID,
+						Node: types.Node{
+							Name:          &node,
+							Unschedulable: &unschedulable,
+							InternalIP:    &internalIP,
+							ExternalIP:    &externalIP,
+							HostName:      &hostName,
+						},
+					},
+				},
+			}
+			result, err := kubeClient.BatchCreateNode(ctx, header, bizId, createNode)
+			util.RegisterResponse(result)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Result).To(Equal(true))
+			j, _ := json.Marshal(result.Data)
+			var data []int64
+			json.Unmarshal(j, &data)
+			nodeID2 = data[0]
+		}()
+
+		By("create node without name")
+
+		func() {
+			unschedulable := false
+			hostName := "hostname"
+			internalIP := []string{"1.1.1.1", "2.2.2.2"}
+			externalIP := []string{"3.3.3.3", "4.4.4.4"}
+			createNode := &types.CreateNodesOption{
+				Nodes: []types.OneNodeCreateOption{
+					{
+						HostID:    hostId1,
+						ClusterID: clusterID,
+						Node: types.Node{
+							Unschedulable: &unschedulable,
+							InternalIP:    &internalIP,
+							ExternalIP:    &externalIP,
+							HostName:      &hostName,
+						},
+					},
+				},
+			}
+			result, err := kubeClient.BatchCreateNode(ctx, header, bizId, createNode)
+			util.RegisterResponse(result)
+			Expect(err.Error()).Should(ContainSubstring("cannot be empty"))
+		}()
+
+	})
+
+	It("update kube node", func() {
+		By("update node fields")
+		func() {
+			internalIP := []string{"5.5.5.5", "6.6.6.6"}
+			createNode := &types.UpdateNodeOption{
+				Nodes: []types.UpdateNodeInfo{
+					{
+						NodeIDs: []int64{nodeID},
+						Data: types.Node{
+							InternalIP: &internalIP,
+						},
+					},
+				},
+			}
+			result, err := kubeClient.UpdateNodeFields(ctx, header, bizId, createNode)
+			util.RegisterResponse(result)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Result).To(Equal(true))
+		}()
+
+		By("update node non-editable field")
+		func() {
+			name := "nodetest"
+			option := &types.UpdateNodeOption{
+				Nodes: []types.UpdateNodeInfo{
+					{
+						NodeIDs: []int64{nodeID},
+						Data: types.Node{
+							Name: &name,
+						},
+					},
+				},
+			}
+			result, err := kubeClient.UpdateNodeFields(ctx, header, bizId, option)
+			util.RegisterResponse(result)
+			Expect(err.Error()).Should(ContainSubstring("non-editable field"))
+		}()
+
+		By("search node by node name")
+
+		func() {
+			input := &types.QueryNodeOption{
+				Filter: &querybuilder.QueryFilter{
+					Rule: querybuilder.CombinedRule{
+						Condition: querybuilder.ConditionAnd,
+						Rules: []querybuilder.Rule{
+							&querybuilder.AtomRule{
+								Field:    types.KubeNameField,
+								Operator: querybuilder.OperatorEqual,
+								Value:    "node",
+							},
+						},
+					},
+				},
+				Page: metadata.BasePage{
+					Start: 0,
+					Limit: 10,
+				},
+			}
+			result, err := kubeClient.SearchNode(ctx, header, bizId, input)
+			util.RegisterResponseWithRid(result, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Result).To(Equal(true))
+		}()
+
+		By("search node count by node name")
+
+		func() {
+			input := &types.QueryNodeOption{
+				Filter: &querybuilder.QueryFilter{
+					Rule: querybuilder.CombinedRule{
+						Condition: querybuilder.ConditionAnd,
+						Rules: []querybuilder.Rule{
+							&querybuilder.AtomRule{
+								Field:    types.KubeNameField,
+								Operator: querybuilder.OperatorIn,
+								Value:    []string{"node", "node2"},
+							},
+						},
+					},
+				},
+				Page: metadata.BasePage{
+					EnableCount: true,
+				},
+			}
+			result, err := kubeClient.SearchNode(ctx, header, bizId, input)
+			util.RegisterResponseWithRid(result, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Result).To(Equal(true))
+
+			var info rest.CountInfo
+			j, _ := json.Marshal(&result.Data)
+			json.Unmarshal(j, &info)
+			Expect(info.Count).Should(Equal(int64(2)))
+
+		}()
+
+		By("delete kube node")
+
+		func() {
+			option := &types.BatchDeleteNodeOption{
+				IDs: []int64{nodeID2},
+			}
+			rsp, err := kubeClient.BatchDeleteNode(ctx, header, bizId, option)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		}()
+	})
+})

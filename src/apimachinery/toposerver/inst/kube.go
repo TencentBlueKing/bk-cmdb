@@ -35,7 +35,7 @@ func (t *instanceClient) CreateNamespace(ctx context.Context, header http.Header
 	err := t.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResourcef("/kube/createmany/namespace/bk_biz_id/%d", bizID).
+		SubResourcef("/createmany/kube/namespace/bk_biz_id/%d", bizID).
 		WithHeaders(header).
 		Do().
 		Into(&result)
@@ -60,7 +60,7 @@ func (t *instanceClient) UpdateNamespace(ctx context.Context, header http.Header
 	err := t.client.Put().
 		WithContext(ctx).
 		Body(option).
-		SubResourcef("/kube/updatemany/namespace/bk_biz_id/%d", bizID).
+		SubResourcef("/updatemany/kube/namespace/bk_biz_id/%d", bizID).
 		WithHeaders(header).
 		Do().
 		Into(&result)
@@ -85,7 +85,7 @@ func (t *instanceClient) DeleteNamespace(ctx context.Context, header http.Header
 	err := t.client.Delete().
 		WithContext(ctx).
 		Body(option).
-		SubResourcef("/kube/deletemany/namespace/bk_biz_id/%d", bizID).
+		SubResourcef("/deletemany/kube/namespace/bk_biz_id/%d", bizID).
 		WithHeaders(header).
 		Do().
 		Into(&result)
@@ -110,7 +110,7 @@ func (t *instanceClient) ListNamespace(ctx context.Context, header http.Header, 
 	err := t.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResourcef("/kube/findmany/namespace/bk_biz_id/%d", bizID).
+		SubResourcef("/findmany/kube/namespace/bk_biz_id/%d", bizID).
 		WithHeaders(header).
 		Do().
 		Into(&result)
@@ -135,7 +135,7 @@ func (t *instanceClient) CreateWorkload(ctx context.Context, header http.Header,
 	err := t.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResourcef("/kube/createmany/workload/%s/%d", kind, bizID).
+		SubResourcef("/createmany/kube/workload/%s/%d", kind, bizID).
 		WithHeaders(header).
 		Do().
 		Into(&result)
@@ -159,7 +159,7 @@ func (t *instanceClient) UpdateWorkload(ctx context.Context, header http.Header,
 	err := t.client.Put().
 		WithContext(ctx).
 		Body(option).
-		SubResourcef("/kube/updatemany/workload/%s/%d", kind, bizID).
+		SubResourcef("/updatemany/kube/workload/%s/%d", kind, bizID).
 		WithHeaders(header).
 		Do().
 		Into(&result)
@@ -183,7 +183,7 @@ func (t *instanceClient) DeleteWorkload(ctx context.Context, header http.Header,
 	err := t.client.Delete().
 		WithContext(ctx).
 		Body(option).
-		SubResourcef("/kube/deletemany/workload/%s/%d", kind, bizID).
+		SubResourcef("/deletemany/kube/workload/%s/%d", kind, bizID).
 		WithHeaders(header).
 		Do().
 		Into(&result)
@@ -208,7 +208,7 @@ func (t *instanceClient) ListWorkload(ctx context.Context, header http.Header, b
 	err := t.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResourcef("/kube/findmany/workload/%s/%d", kind, bizID).
+		SubResourcef("/findmany/kube/workload/%s/%d", kind, bizID).
 		WithHeaders(header).
 		Do().
 		Into(&result)
@@ -233,7 +233,7 @@ func (t *instanceClient) ListPod(ctx context.Context, header http.Header, bizID 
 	err := t.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResourcef("/kube/findmany/pod/bk_biz_id/%d", bizID).
+		SubResourcef("/findmany/kube/pod/bk_biz_id/%d", bizID).
 		WithHeaders(header).
 		Do().
 		Into(&result)
@@ -258,7 +258,7 @@ func (t *instanceClient) ListContainer(ctx context.Context, header http.Header, 
 	err := t.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResourcef("/kube/findmany/container/bk_biz_id/%d", bizID).
+		SubResourcef("/findmany/kube/container/bk_biz_id/%d", bizID).
 		WithHeaders(header).
 		Do().
 		Into(&result)
@@ -283,7 +283,7 @@ func (t *instanceClient) FindNodePathForHost(ctx context.Context, header http.He
 	err := t.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResourcef("/kube/find/host_node_path").
+		SubResourcef("/find/kube/host_node_path").
 		WithHeaders(header).
 		Do().
 		Into(&result)
@@ -308,7 +308,7 @@ func (t *instanceClient) FindPodPath(ctx context.Context, header http.Header, bi
 	err := t.client.Post().
 		WithContext(ctx).
 		Body(option).
-		SubResourcef("/kube/find/pod_path/bk_biz_id/%d", bizID).
+		SubResourcef("/find/kube/pod_path/bk_biz_id/%d", bizID).
 		WithHeaders(header).
 		Do().
 		Into(&result)

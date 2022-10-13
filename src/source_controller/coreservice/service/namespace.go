@@ -129,7 +129,7 @@ func (s *coreService) GetClusterSpec(kit *rest.Kit, spec *types.ClusterSpec) (*t
 	result := types.ClusterSpec{
 		BizID:      cluster.BizID,
 		ClusterID:  cluster.ID,
-		ClusterUID: cluster.Uid,
+		ClusterUID: *cluster.Uid,
 	}
 	return &result, nil
 }

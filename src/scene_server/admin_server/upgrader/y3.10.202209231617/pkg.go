@@ -15,38 +15,33 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package parser
+package y3_10_202209231617
 
 import (
-	"net/http"
+	"context"
 
-	"configcenter/src/ac/meta"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-// kubeRelated generate kube related resource auth parse stream
-func (ps *parseStream) kubeRelated() *parseStream {
-	if ps.shouldReturn() {
-		return ps
+func init() {
+	upgrader.RegistUpgrader("y3.10.202209231617", upgrade)
+}
+
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	blog.Infof("start execute y3.10.202209231617, add cloud host related attribute")
+
+	if err = addCloudHostIdentifierAttr(ctx, db, conf); err != nil {
+		blog.Errorf("upgrade y3.10.202209231617 add cloud host related attribute failed, err: %v", err)
+		return err
 	}
 
-	ps.KubePod()
+	if err = updateCloudVendorAttr(ctx, db, conf); err != nil {
+		blog.Errorf("upgrade y3.10.202209231617 update cloud vendor attribute failed, err: %v", err)
+		return err
+	}
 
-	return ps
-}
-
-// KubePodConfigs kube pod auth parser configs
-var KubePodConfigs = []AuthConfig{
-	{
-		Name:           "batchDeletePod",
-		Description:    "批量删除Pod",
-		Pattern:        "/api/v3/deletemany/kube/pod",
-		HTTPMethod:     http.MethodDelete,
-		ResourceType:   meta.KubePod,
-		ResourceAction: meta.Delete,
-	},
-}
-
-// KubePod generate kube pod auth parse stream
-func (ps *parseStream) KubePod() *parseStream {
-	return ParseStreamWithFramework(ps, KubePodConfigs)
+	blog.Infof("upgrade y3.10.202209231617 add cloud host related attribute success")
+	return nil
 }

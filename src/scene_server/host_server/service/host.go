@@ -222,16 +222,10 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 			ApplicationID: appID,
 			HostIDArr:     iHostIDArr,
 		}
-		delResult, err := s.CoreAPI.CoreService().Host().DeleteHostFromSystem(ctx.Kit.Ctx, ctx.Kit.Header, input)
+		err = s.CoreAPI.CoreService().Host().DeleteHostFromSystem(ctx.Kit.Ctx, ctx.Kit.Header, input)
 		if err != nil {
-			blog.Error("DeleteHostBatch DeleteHost http do error. err:%s, input:%s, rid:%s", err.Error(), input,
-				ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !delResult.Result {
-			blog.Errorf("DeleteHostBatch DeleteHost http reply error. result: %#v, input:%#v, rid:%s", delResult,
-				input, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrHostDeleteFail)
+			blog.Error("delete host failed, input: %+v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
+			return err
 		}
 
 		// to save audit.
@@ -1817,7 +1811,7 @@ func (s *Service) getHostInFolder(kit *rest.Kit, bizID int64, clusterID int64) (
 		Condition: cond,
 		Fields:    fields,
 	}
-	resp, err := s.Engine.CoreAPI.CoreService().Container().SearchNode(kit.Ctx, kit.Header, query)
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
 	if err != nil {
 		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
 		return nil, err
@@ -1864,7 +1858,7 @@ func (s *Service) getHostByClusterOrNode(kit *rest.Kit, req types.SearchHostReq,
 		Condition: cond,
 		Fields:    fields,
 	}
-	resp, err := s.Engine.CoreAPI.CoreService().Container().SearchNode(kit.Ctx, kit.Header, query)
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
 	if err != nil {
 		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
 		return nil, err
@@ -1935,7 +1929,7 @@ func (s *Service) findNodeByHostIDs(kit *rest.Kit, hostIDs []int64, fields []str
 		Condition: cond,
 		Fields:    fields,
 	}
-	resp, err := s.Engine.CoreAPI.CoreService().Container().SearchNode(kit.Ctx, kit.Header, query)
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
 	if err != nil {
 		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
 		return nil, err

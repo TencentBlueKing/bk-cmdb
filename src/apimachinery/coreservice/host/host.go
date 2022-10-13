@@ -32,8 +32,7 @@ type HostClientInterface interface {
 
 	RemoveFromModule(ctx context.Context, header http.Header, input *metadata.RemoveHostsFromModuleOption) (
 		resp *metadata.OperaterException, err error)
-	DeleteHostFromSystem(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) (
-		resp *metadata.BaseResp, err error)
+	DeleteHostFromSystem(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) errors.CCErrorCoder
 
 	GetHostModuleRelation(ctx context.Context, header http.Header, input *metadata.HostModuleRelationRequest) (
 		*metadata.HostConfigData, error)

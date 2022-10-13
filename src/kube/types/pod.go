@@ -49,21 +49,6 @@ var PodSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: TolerationsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 }
 
-func initContainerFieldsType() {
-	typeOfCat := reflect.TypeOf(ContainerBaseFields{})
-	valueOf := reflect.ValueOf(ContainerBaseFields{})
-	for i := 0; i < typeOfCat.NumField(); i++ {
-		// 获取每个成员的结构体字段类型
-		for _, descripor := range ContainerSpecFieldsDescriptor {
-			fieldType := typeOfCat.Field(i)
-			tag := fieldType.Tag.Get("json")
-			if descripor.Field == tag {
-				descripor.Type = enumor.GetFieldType(valueOf.Field(i).Type().String())
-			}
-		}
-	}
-}
-
 // ContainerFields merge the fields of the cluster and the details corresponding to the fields together.
 var ContainerFields = table.MergeFields(ContainerSpecFieldsDescriptor)
 
@@ -83,27 +68,11 @@ var ContainerSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: MountsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 }
 
-func initPodFieldsType() {
-	typeOfCat := reflect.TypeOf(PodBaseFields{})
-	valueOf := reflect.ValueOf(PodBaseFields{})
-	for i := 0; i < typeOfCat.NumField(); i++ {
-		// 获取每个成员的结构体字段类型
-		for _, descripor := range PodSpecFieldsDescriptor {
-			fieldType := typeOfCat.Field(i)
-			tag := fieldType.Tag.Get("json")
-			if descripor.Field == tag {
-				descripor.Type = enumor.GetFieldType(valueOf.Field(i).Type().String())
-			}
-		}
-	}
-}
-
 const (
 	// podQueryLimit limit on the number of pod query.
 	podQueryLimit = 500
 	// createPodsLimit the maximum number of pods to be created at one time.
 	createPodsLimit = 200
-
 	// containerQueryLimit limit on the number of container query
 	containerQueryLimit = 500
 )
@@ -207,13 +176,6 @@ type Pod struct {
 	// cc的自增主键
 	ID            int64 `json:"id,omitempty" bson:"id"`
 	SysSpec       `json:",inline" bson:",inline"`
-	PodBaseFields `json:",inline" bson:",inline"`
-	// Revision record this app's revision information
-	table.Revision `json:",inline" bson:",inline"`
-}
-
-// PodBaseFields pod core details
-type PodBaseFields struct {
 	Name          *string            `json:"name,omitempty" bson:"name"`
 	Priority      *int32             `json:"priority,omitempty" bson:"priority"`
 	Labels        *map[string]string `json:"labels,omitempty"  bson:"labels"`
@@ -223,10 +185,12 @@ type PodBaseFields struct {
 	QOSClass      *PodQOSClass       `json:"qos_class,omitempty"  bson:"qos_class"`
 	NodeSelectors *map[string]string `json:"node_selectors,omitempty"  bson:"node_selectors"`
 	Tolerations   *[]Toleration      `json:"tolerations,omitempty" bson:"tolerations"`
+	// Revision record this app's revision information
+	table.Revision `json:",inline" bson:",inline"`
 }
 
 // createValidate validate the PodBaseFields
-func (option *PodBaseFields) createValidate() error {
+func (option *Pod) createValidate() error {
 
 	if option == nil {
 		return errors.New("pod information must be set")
@@ -245,16 +209,20 @@ func (option *PodBaseFields) createValidate() error {
 		typeOfOption := reflect.TypeOf(*option)
 		valueOfOption := reflect.ValueOf(*option)
 		for i := 0; i < typeOfOption.NumField(); i++ {
-			tag := typeOfOption.Field(i).Tag.Get("json")
-			if PodFields.IsFieldRequiredByField(tag) {
-				fieldValue := valueOfOption.Field(i)
-				if fieldValue.IsNil() {
-					return fmt.Errorf("required fields cannot be empty, %s", tag)
-				}
+			tag, flag := getFieldTag(typeOfOption, i)
+			if flag {
+				continue
+			}
+
+			if !PodFields.IsFieldRequiredByField(tag) {
+				continue
+			}
+
+			if err := isRequiredField(tag, valueOfOption, i); err != nil {
+				return err
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -302,15 +270,18 @@ func (option *ContainerBaseFields) createValidate() error {
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag := typeOfOption.Field(i).Tag.Get("json")
-		if !ClusterFields.IsFieldRequiredByField(tag) {
+
+		tag, flag := getFieldTag(typeOfOption, i)
+		if flag {
 			continue
 		}
-		if ContainerFields.IsFieldRequiredByField(tag) {
-			fieldValue := valueOfOption.Field(i)
-			if fieldValue.IsNil() {
-				return fmt.Errorf("required fields cannot be empty, %s", tag)
-			}
+
+		if !ContainerFields.IsFieldRequiredByField(tag) {
+			continue
+		}
+
+		if err := isRequiredField(tag, valueOfOption, i); err != nil {
+			return err
 		}
 	}
 
@@ -346,47 +317,54 @@ type Ref struct {
 
 // PodsInfo details of creating pods.
 type PodsInfo struct {
-	Spec          *SpecInfo `json:"spec"`
-	HostID        int64     `json:"bk_host_id"`
-	PodBaseFields `json:",inline"`
-	Containers    []ContainerBaseFields `json:"containers"`
+	Spec       SpecInfo `json:"spec"`
+	HostID     int64    `json:"bk_host_id"`
+	Pod        `json:",inline"`
+	Containers []ContainerBaseFields `json:"containers"`
 }
 
 // CreatePodsOption create pods option
 type CreatePodsOption struct {
-	Pods []PodsInfo `json:"pods"`
+	Data []PodsInfoArray `json:"data"`
+}
+
+// PodsInfoArray create pods option
+type PodsInfoArray struct {
+	BizID int64      `json:"bk_biz_id"`
+	Pods  []PodsInfo `json:"pods"`
 }
 
 // Validate validate the CreatePodsOption
 func (option *CreatePodsOption) Validate() error {
 
-	if len(option.Pods) == 0 {
+	if len(option.Data) == 0 {
 		return errors.New("params cannot be empty")
 	}
-
-	if len(option.Pods) > createPodsLimit {
+	var podsLen int
+	for _, data := range option.Data {
+		podsLen += len(data.Pods)
+	}
+	if podsLen > createPodsLimit {
 		return fmt.Errorf("the maximum number of pods created at one time cannot exceed %d", createPodsLimit)
 	}
 
-	for _, pod := range option.Pods {
-		if pod.Spec == nil {
-			return errors.New("spec filter cannot be empty at the same time")
-		}
-
-		if err := pod.Spec.validate(); err != nil {
-			return err
-		}
-		if pod.HostID == 0 {
-			return errors.New("host id must be set")
-		}
-
-		if err := pod.createValidate(); err != nil {
-			return err
-		}
-
-		for _, container := range pod.Containers {
-			if err := container.createValidate(); err != nil {
+	for _, data := range option.Data {
+		for _, pod := range data.Pods {
+			if err := pod.Spec.validate(); err != nil {
 				return err
+			}
+			if pod.HostID == 0 {
+				return errors.New("host id must be set")
+			}
+
+			if err := pod.createValidate(); err != nil {
+				return err
+			}
+
+			for _, container := range pod.Containers {
+				if err := container.createValidate(); err != nil {
+					return err
+				}
 			}
 		}
 	}
