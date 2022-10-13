@@ -10,7 +10,8 @@
  * limitations under the License.
  */
 
-import { reactive, shallowReactive, ref } from '@vue/composition-api'
+import { reactive, shallowReactive, ref } from 'vue'
+import store from '@/store'
 
 export const targetMap = {
   model: '模型',
@@ -23,7 +24,7 @@ const defaultSetting = {
   instances: []
 }
 
-export const currentSetting = shallowReactive(defaultSetting)
+export const currentSetting = shallowReactive({ ...defaultSetting })
 
 export const finalSetting = ref({
   targets: Object.keys(targetMap),
@@ -41,7 +42,7 @@ export const handleReset = () => {
   finalSetting.value = currentSetting
 }
 
-export default function useAdvancedSetting(options = {}, root) {
+export default function useAdvancedSetting(options = {}) {
   const { onConfirm, onShow, onCancel } = options
 
   const activeSetting = reactive(defaultSetting)
@@ -78,7 +79,7 @@ export default function useAdvancedSetting(options = {}, root) {
 
   // 获取所有的模型ID值
   allModelIds.value = []
-  const classifications = root.$store.getters['objectModelClassify/classifications']
+  const classifications = store.getters['objectModelClassify/classifications']
   const displayModelList = []
   classifications.forEach((classification) => {
     displayModelList.push({

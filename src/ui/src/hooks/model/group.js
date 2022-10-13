@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { reactive, toRefs, isRef, watch } from '@vue/composition-api'
+import { reactive, toRefs, isRef, watch } from 'vue'
 import groupService from '@/service/property/group'
 export default function (options = {}) {
   const state = reactive({

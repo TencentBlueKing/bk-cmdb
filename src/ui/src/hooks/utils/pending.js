@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { computed, ref, watch } from '@vue/composition-api'
+import { computed, ref, watch } from 'vue'
 
 export default function (pendings = [], initValue = false) {
   let timer = null

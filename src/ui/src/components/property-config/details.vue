@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, PropType, ref } from '@vue/composition-api'
+  import { computed, defineComponent, PropType, ref } from 'vue'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
   import EditableProperty from '@/components/ui/details/editable-property.vue'

@@ -49,7 +49,7 @@
 </template>
 
 <script>
-  import { defineComponent, ref, computed, toRef } from '@vue/composition-api'
+  import { defineComponent, ref, computed, toRef } from 'vue'
   import { t } from '@/i18n'
   import has from 'has'
   import cloneDeep from 'lodash/cloneDeep'

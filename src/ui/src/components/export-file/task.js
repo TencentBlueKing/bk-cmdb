@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { reactive, toRefs } from '@vue/composition-api'
+import { reactive, toRefs } from 'vue'
 import i18n from '@/i18n'
 import useState from './state'
 const task = reactive({

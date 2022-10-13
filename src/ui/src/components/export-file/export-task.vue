@@ -49,7 +49,7 @@
 <script>
   import useState from './state'
   import useTask from './task'
-  import { computed } from '@vue/composition-api'
+  import { computed } from 'vue'
   export default {
     setup() {
       const [{ count, limit }] = useState()

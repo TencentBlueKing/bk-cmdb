@@ -33,7 +33,7 @@
   </div>
 </template>
 <script>
-  import { defineComponent, reactive, toRefs, watch, watchEffect, set, del, onActivated, computed, onBeforeUnmount, nextTick, ref, onMounted } from '@vue/composition-api'
+  import { defineComponent, reactive, toRefs, watch, watchEffect, set, del, onActivated, computed, onBeforeUnmount, nextTick, ref, onMounted } from 'vue'
   import store from '@/store'
   import Bus from '@/utils/bus'
   import router from '@/router/index.js'

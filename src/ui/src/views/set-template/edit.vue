@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, ref } from '@vue/composition-api'
+  import { computed, defineComponent, ref } from 'vue'
   import router from '@/router/index.js'
   import routerActions from '@/router/actions'
   import ManagementForm from './children/management-form.vue'
