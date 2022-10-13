@@ -19,6 +19,8 @@ package types
 
 import (
 	"fmt"
+
+	"configcenter/src/storage/dal/table"
 )
 
 // identification of k8s in cc
@@ -92,6 +94,38 @@ func (t WorkloadType) Table() (string, error) {
 
 	default:
 		return "", fmt.Errorf("can not find table name, kind: %s", t)
+	}
+}
+
+// Fields get the workload type related table fields
+func (t WorkloadType) Fields() (*table.Fields, error) {
+	switch t {
+	case KubeDeployment:
+		return DeploymentFields, nil
+
+	case KubeStatefulSet:
+		return StatefulSetFields, nil
+
+	case KubeDaemonSet:
+		return DaemonSetFields, nil
+
+	case KubeGameStatefulSet:
+		return GameStatefulSetFields, nil
+
+	case KubeGameDeployment:
+		return GameDeploymentFields, nil
+
+	case KubeCronJob:
+		return CronJobFields, nil
+
+	case KubeJob:
+		return JobFields, nil
+
+	case KubePodWorkload:
+		return PodsWorkloadFields, nil
+
+	default:
+		return nil, fmt.Errorf("workload type %s is not supported", t)
 	}
 }
 

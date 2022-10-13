@@ -21,8 +21,24 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/criteria/enumor"
 	"configcenter/src/kube/orm"
+	"configcenter/src/storage/dal/table"
 )
+
+// JobFields merge the fields of the Job and the details corresponding to the fields together.
+var JobFields = table.MergeFields(CommonSpecFieldsDescriptor, WorkLoadBaseFieldsDescriptor,
+	JobSpecFieldsDescriptor)
+
+// JobSpecFieldsDescriptor Job spec's fields descriptors.
+var JobSpecFieldsDescriptor = table.FieldsDescriptors{
+	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
+	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
+	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: true, IsEditable: true},
+	{Field: StrategyTypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: MinReadySecondsField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
+	{Field: RollingUpdateStrategyField, Type: enumor.Object, IsRequired: false, IsEditable: true},
+}
 
 // Job define the job struct.
 type Job struct {

@@ -306,10 +306,10 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 
 	filter := mapstr.New()
 	if searchCond.Filter != nil {
-		cond, errKey, rawErr := searchCond.Filter.ToMgo()
+		cond, rawErr := searchCond.Filter.ToMgo()
 		if rawErr != nil {
 			blog.Errorf("parse biz failed, filter: %+v, err: %v, rid: %s", searchCond.Filter, rawErr, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey))
+			ctx.RespAutoError(rawErr)
 			return
 		}
 		filter = cond

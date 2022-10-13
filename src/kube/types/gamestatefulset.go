@@ -21,8 +21,24 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/criteria/enumor"
 	"configcenter/src/kube/orm"
+	"configcenter/src/storage/dal/table"
 )
+
+// GameStatefulSetFields merge the fields of the GameStatefulSet and the details corresponding to the fields together.
+var GameStatefulSetFields = table.MergeFields(CommonSpecFieldsDescriptor, WorkLoadBaseFieldsDescriptor,
+	GameStatefulSetSpecFieldsDescriptor)
+
+// GameStatefulSetSpecFieldsDescriptor GameStatefulSet spec's fields descriptors.
+var GameStatefulSetSpecFieldsDescriptor = table.FieldsDescriptors{
+	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
+	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
+	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: true, IsEditable: true},
+	{Field: StrategyTypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: MinReadySecondsField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
+	{Field: RollingUpdateStrategyField, Type: enumor.Object, IsRequired: false, IsEditable: true},
+}
 
 // GameStatefulSetUpdateStrategyType is a string enumeration type that enumerates
 // all possible update strategies for the StatefulSet controller.

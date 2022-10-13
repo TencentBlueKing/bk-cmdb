@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/criteria/enumor"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/querybuilder"
 	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
 )
@@ -246,21 +245,15 @@ type CreateNodesResult struct {
 
 // QueryNodeOption query node by query builder
 type QueryNodeOption struct {
-	Filter    *querybuilder.QueryFilter `json:"filter"`
-	ClusterID int64                     `json:"bk_cluster_id"`
-	HostID    int64                     `json:"bk_host_id"`
-	Page      metadata.BasePage         `json:"page"`
-	Fields    []string                  `json:"fields"`
+	Filter    *filter.Expression `json:"filter"`
+	ClusterID int64              `json:"bk_cluster_id"`
+	HostID    int64              `json:"bk_host_id"`
+	Page      metadata.BasePage  `json:"page"`
+	Fields    []string           `json:"fields"`
 }
 
 // Validate validate the param QueryNodeReq
 func (option *QueryNodeOption) Validate() ccErr.RawErrorInfo {
-	op := &querybuilder.RuleOption{
-		NeedSameSliceElementType: true,
-		MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
-		MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
-	}
-
 	if err := option.Page.ValidateWithEnableCount(false, common.BKMaxLimitSize); err.ErrCode != 0 {
 		return err
 	}
@@ -269,10 +262,11 @@ func (option *QueryNodeOption) Validate() ccErr.RawErrorInfo {
 		return ccErr.RawErrorInfo{}
 	}
 
-	if invalidKey, err := option.Filter.Validate(op); err != nil {
+	op := filter.NewDefaultExprOpt(NodeFields.FieldsType())
+	if err := option.Filter.Validate(op); err != nil {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{fmt.Errorf("conditions.%s, err: %s", invalidKey, err.Error())},
+			Args:    []interface{}{err.Error()},
 		}
 	}
 	return ccErr.RawErrorInfo{}

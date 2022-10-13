@@ -21,8 +21,24 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/criteria/enumor"
 	"configcenter/src/kube/orm"
+	"configcenter/src/storage/dal/table"
 )
+
+// DaemonSetFields merge the fields of the DaemonSet and the details corresponding to the fields together.
+var DaemonSetFields = table.MergeFields(CommonSpecFieldsDescriptor, WorkLoadBaseFieldsDescriptor,
+	DaemonSetSpecFieldsDescriptor)
+
+// DaemonSetSpecFieldsDescriptor DaemonSet spec's fields descriptors.
+var DaemonSetSpecFieldsDescriptor = table.FieldsDescriptors{
+	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
+	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
+	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: true, IsEditable: true},
+	{Field: StrategyTypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: MinReadySecondsField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
+	{Field: RollingUpdateStrategyField, Type: enumor.Object, IsRequired: false, IsEditable: true},
+}
 
 // DaemonSetUpdateStrategyType is a strategy according to which a daemon set gets updated.
 type DaemonSetUpdateStrategyType string

@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/criteria/enumor"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/querybuilder"
+	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
 )
 
@@ -168,19 +168,13 @@ func (option *Cluster) updateValidate() error {
 
 // QueryClusterOption query cluster by query builder
 type QueryClusterOption struct {
-	Filter *querybuilder.QueryFilter `json:"filter"`
-	Page   metadata.BasePage         `json:"page"`
-	Fields []string                  `json:"fields"`
+	Filter *filter.Expression `json:"filter"`
+	Page   metadata.BasePage  `json:"page"`
+	Fields []string           `json:"fields"`
 }
 
-// Validate validate the QueryClusterOption
+// Validate the QueryClusterOption
 func (option *QueryClusterOption) Validate() ccErr.RawErrorInfo {
-	op := &querybuilder.RuleOption{
-		NeedSameSliceElementType: true,
-		MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
-		MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
-	}
-
 	if err := option.Page.ValidateWithEnableCount(false, common.BKMaxLimitSize); err.ErrCode != 0 {
 		return err
 	}
@@ -189,10 +183,11 @@ func (option *QueryClusterOption) Validate() ccErr.RawErrorInfo {
 		return ccErr.RawErrorInfo{}
 	}
 
-	if invalidKey, err := option.Filter.Validate(op); err != nil {
+	op := filter.NewDefaultExprOpt(ClusterFields.FieldsType())
+	if err := option.Filter.Validate(op); err != nil {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{fmt.Errorf("conditions.%s, err: %s", invalidKey, err.Error())},
+			Args:    []interface{}{err.Error()},
 		}
 	}
 	return ccErr.RawErrorInfo{}

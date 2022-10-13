@@ -475,6 +475,7 @@ func (s *Service) FindResourceAttrs(ctx *rest.Contexts) {
 			})
 		}
 	case types.KubeWorkload:
+		// TODO compatible for different types of workload
 		for _, descriptor := range types.WorkLoadSpecFieldsDescriptor {
 			result = append(result, types.KubeAttrsRsp{
 				Field:    descriptor.Field,

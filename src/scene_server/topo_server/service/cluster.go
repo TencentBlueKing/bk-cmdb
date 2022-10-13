@@ -54,10 +54,10 @@ func (s *Service) SearchClusters(ctx *rest.Contexts) {
 
 	filter := mapstr.New()
 	if searchCond.Filter != nil {
-		cond, errKey, rawErr := searchCond.Filter.ToMgo()
+		cond, rawErr := searchCond.Filter.ToMgo()
 		if rawErr != nil {
 			blog.Errorf("parse biz filter(%#v) failed, err: %v, rid: %s", searchCond.Filter, rawErr, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, errKey))
+			ctx.RespAutoError(rawErr)
 			return
 		}
 		filter = cond

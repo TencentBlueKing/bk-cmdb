@@ -22,7 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -79,7 +79,6 @@ func (ar *AtomRule) WithType() RuleType {
 }
 
 // Validate this atom rule is valid or not
-// Note: opt can be nil, check it before using it.
 func (ar *AtomRule) Validate(opt *ExprOption) error {
 	if len(ar.Field) == 0 {
 		return errors.New("field is empty")
@@ -94,20 +93,64 @@ func (ar *AtomRule) Validate(opt *ExprOption) error {
 		return errors.New("rule value can not be nil")
 	}
 
-	if opt != nil && len(opt.RuleFields) > 0 {
-		// TODO confirm how to deal with object and array
-		typ, exist := opt.RuleFields[ar.Field]
-		if !exist {
-			return fmt.Errorf("rule field: %s is not exist in the expr option", ar.Field)
-		}
+	if opt == nil {
+		return errors.New("validate option must be set")
+	}
 
+	// ignore rule fields validation, only validate the operator's value
+	if opt.IgnoreRuleFields {
+		if err := ar.Operator.Operator().ValidateValue(ar.Value, opt); err != nil {
+			return fmt.Errorf("%s validate failed, %v", ar.Field, err)
+		}
+		return nil
+	}
+
+	if len(opt.RuleFields) == 0 {
+		return errors.New("validate rule fields option must be set")
+	}
+
+	typ, exist := opt.RuleFields[ar.Field]
+	if !exist {
+		return fmt.Errorf("rule field: %s is not exist in the expr option", ar.Field)
+	}
+
+	childOpt := cloneExprOption(opt)
+
+	// TODO confirm how to deal with object and array and mapstr
+	switch ar.Operator {
+	case OpFactory(Object):
+		if typ != enumor.Object && typ != enumor.MapString {
+			return fmt.Errorf("%s is of %s type, should not use operator: %s", ar.Field, typ, ar.Operator)
+		}
+	case OpFactory(Array):
+		if typ != enumor.Array {
+			return fmt.Errorf("%s is of %s type, should not use operator: %s", ar.Field, typ, ar.Operator)
+		}
+	default:
 		if err := validateFieldValue(ar.Value, typ); err != nil {
 			return fmt.Errorf("invalid %s's value, %v", ar.Field, err)
 		}
 	}
 
+	switch typ {
+	case enumor.Object, enumor.Array:
+		ruleFields := make(map[string]enumor.FieldType)
+		for field, typ := range opt.RuleFields {
+			if strings.HasPrefix(field, ar.Field+".") {
+				ruleFields[strings.TrimPrefix(field, ar.Field+".")] = typ
+			}
+		}
+		childOpt.RuleFields = ruleFields
+
+		if err := ar.Operator.Operator().ValidateValue(ar.Value, childOpt); err != nil {
+			return fmt.Errorf("%s validate failed, %v", ar.Field, err)
+		}
+	case enumor.MapString:
+		childOpt.IgnoreRuleFields = true
+	}
+
 	// validate the operator's value
-	if err := ar.Operator.Operator().ValidateValue(ar.Value, opt); err != nil {
+	if err := ar.Operator.Operator().ValidateValue(ar.Value, childOpt); err != nil {
 		return fmt.Errorf("%s validate failed, %v", ar.Field, err)
 	}
 
@@ -122,7 +165,7 @@ func validateFieldValue(v interface{}, typ enumor.FieldType) error {
 	}
 
 	switch typ {
-	case enumor.String:
+	case enumor.String, enumor.Enum:
 		if reflect.ValueOf(v).Type().Kind() != reflect.String {
 			return errors.New("value should be a string")
 		}
@@ -170,7 +213,7 @@ func validateSliceElements(v interface{}, typ enumor.FieldType) error {
 func (ar *AtomRule) RuleFields() []string {
 	switch ar.Operator {
 	// TODO confirm how to deal with these
-	case OpFactory(FilterObject), OpFactory(FilterArray):
+	case OpFactory(Object), OpFactory(Array):
 		// filter object and array operator's fields are its sub-rule fields with its prefix.
 		subRule, ok := ar.Value.(RuleFactory)
 		if !ok {
@@ -204,21 +247,11 @@ func (ar *AtomRule) ToMgo(opts ...*RuleOption) (map[string]interface{}, error) {
 			return ar.Operator.Operator().ToMgo(opt.Parent+"."+ar.Field, ar.Value)
 		case enumor.Array:
 			switch ar.Field {
-			case FilterArrayElement:
+			case ArrayElement:
 				// filter array element, matches if any of the elements matches the filter
 				return ar.Operator.Operator().ToMgo(opt.Parent, ar.Value)
 			default:
-				// filter specific element of array by index specified in field
-				index, err := strconv.Atoi(ar.Field)
-				if err != nil {
-					return nil, fmt.Errorf("parse filter array index %s failed, err: %v", ar.Field, err)
-				}
-
-				if index <= 0 {
-					return nil, fmt.Errorf("filter array index %d is invalid", index)
-				}
-
-				return ar.Operator.Operator().ToMgo(opt.Parent+"."+ar.Field, ar.Value)
+				return nil, fmt.Errorf("filter array field %s is invalid", ar.Field)
 			}
 		default:
 			return nil, fmt.Errorf("parent type %s is invalid", opt.ParentType)
@@ -254,7 +287,7 @@ func (ar *AtomRule) UnmarshalJSON(raw []byte) error {
 
 		ar.Value = array
 		return nil
-	case OpFactory(FilterObject), OpFactory(FilterArray):
+	case OpFactory(Object), OpFactory(Array):
 		// filter object and array operator's value should be a rule.
 		subRule, err := parseJsonRule(br.Value)
 		if err != nil {
@@ -321,7 +354,7 @@ func (ar *AtomRule) UnmarshalBSON(raw []byte) error {
 
 		ar.Value = array
 		return nil
-	case OpFactory(FilterObject), OpFactory(FilterArray):
+	case OpFactory(Object), OpFactory(Array):
 		// filter object and array operator's value should be a rule.
 		subRule, err := parseBsonRule(br.Value.Document())
 		if err != nil {
@@ -354,7 +387,6 @@ func (cr *CombinedRule) WithType() RuleType {
 }
 
 // Validate the combined rule
-// Note: opt can be nil, check it before using it.
 func (cr *CombinedRule) Validate(opt *ExprOption) error {
 	if err := cr.Condition.Validate(); err != nil {
 		return err
@@ -364,25 +396,25 @@ func (cr *CombinedRule) Validate(opt *ExprOption) error {
 		return errors.New("combined rules shouldn't be empty")
 	}
 
-	maxRules := DefaultMaxRuleLimit
-	if opt != nil && opt.MaxRulesLimit > 0 {
-		maxRules = opt.MaxRulesLimit
+	if opt == nil {
+		return errors.New("validate option must be set")
 	}
 
-	if len(cr.Rules) > int(maxRules) {
-		return fmt.Errorf("rules elements number is overhead, it at most have %d rules", maxRules)
+	if len(cr.Rules) > int(opt.MaxRulesLimit) {
+		return fmt.Errorf("rules elements number exceeds limit: %d", opt.MaxRulesLimit)
 	}
 
-	fieldsReminder := make(map[string]bool)
-	for _, field := range cr.RuleFields() {
-		fieldsReminder[field] = true
-	}
+	// validate rule fields if not ignored
+	if !opt.IgnoreRuleFields {
+		fieldsReminder := make(map[string]bool)
+		for _, field := range cr.RuleFields() {
+			fieldsReminder[field] = true
+		}
 
-	if len(fieldsReminder) == 0 {
-		return errors.New("invalid expression, no field is found to query")
-	}
+		if len(fieldsReminder) == 0 {
+			return errors.New("invalid expression, no field is found to query")
+		}
 
-	if opt != nil && len(opt.RuleFields) > 0 {
 		reminder := make(map[string]bool)
 		for col := range opt.RuleFields {
 			reminder[col] = true
@@ -397,20 +429,12 @@ func (cr *CombinedRule) Validate(opt *ExprOption) error {
 	}
 
 	// validate combined rule depth, then continues to validate children rule depth
-	var childOpt *ExprOption
-	if opt != nil && opt.MaxRulesDepth > 0 {
-		if opt.MaxRulesDepth == 1 {
-			return fmt.Errorf("expression rules depth exceeds maximum")
-		}
-
-		childOpt = &ExprOption{
-			RuleFields:    opt.RuleFields,
-			MaxInLimit:    opt.MaxInLimit,
-			MaxNotInLimit: opt.MaxNotInLimit,
-			MaxRulesLimit: opt.MaxRulesLimit,
-			MaxRulesDepth: opt.MaxRulesDepth - 1,
-		}
+	if opt.MaxRulesDepth <= 1 {
+		return fmt.Errorf("expression rules depth exceeds maximum")
 	}
+
+	childOpt := cloneExprOption(opt)
+	childOpt.MaxRulesDepth = opt.MaxRulesDepth - 1
 
 	for _, one := range cr.Rules {
 		if err := one.Validate(childOpt); err != nil {

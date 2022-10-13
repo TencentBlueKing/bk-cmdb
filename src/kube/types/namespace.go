@@ -342,7 +342,13 @@ func (ns *NsQueryReq) Validate() errors.RawErrorInfo {
 		return err
 	}
 
-	// todo validate Filter
+	op := filter.NewDefaultExprOpt(NodeFields.FieldsType())
+	if err := ns.Filter.Validate(op); err != nil {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{err.Error()},
+		}
+	}
 	return errors.RawErrorInfo{}
 }
 
