@@ -24,16 +24,19 @@
 </template>
 
 <script>
-  import { computed, defineComponent } from '@vue/composition-api'
+  import { computed, defineComponent } from 'vue'
+  import store from '@/store'
+  import { t } from '@/i18n'
+  import routerActions from '@/router/actions'
+  import RouterQuery from '@/router/query'
   import { targetMap, finalSetting, handleReset } from './use-advanced-setting.js'
-  import useRoute, { pickQuery } from './use-route.js'
+  import { pickQuery } from './use-route.js'
 
   export default defineComponent({
-    setup(props, { root }) {
-      const { $store, $routerActions } = root
-      const { route } = useRoute(root)
+    setup() {
+      const route = computed(() => RouterQuery.route)
 
-      const getModelById = $store.getters['objectModelClassify/getModelById']
+      const getModelById = store.getters['objectModelClassify/getModelById']
       const getModelName = id => getModelById(id)?.bk_obj_name ?? '--'
 
       const targetModels = computed(() => {
@@ -42,7 +45,7 @@
           const modelIds = finalSetting.value[`${target}s`]
           targetModels.push({
             targetName: targetMap[target],
-            models: modelIds.length ? modelIds.map(id => getModelName(id)).join(' | ') : root.$t('全部')
+            models: modelIds.length ? modelIds.map(id => getModelName(id)).join(' | ') : t('全部')
           })
         })
         return targetModels
@@ -62,7 +65,7 @@
       const handleClear = () => {
         handleReset()
         const query = pickQuery(route.value.query, ['tab', 'keyword'])
-        $routerActions.redirect({
+        routerActions.redirect({
           query: {
             ...query,
             t: Date.now()

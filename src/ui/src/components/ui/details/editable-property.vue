@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, PropType, ref, nextTick } from '@vue/composition-api'
+  import { computed, defineComponent, PropType, ref, nextTick } from 'vue'
   import PropertyFormElement from '@/components/ui/form/property-form-element.vue'
 
   interface IProperty {

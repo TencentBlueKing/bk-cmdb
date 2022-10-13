@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, ref, watch, onMounted } from '@vue/composition-api'
+  import { computed, defineComponent, ref, watch, onMounted } from 'vue'
   import router from '@/router/index.js'
   import store from '@/store'
   import RouterQuery from '@/router/query'

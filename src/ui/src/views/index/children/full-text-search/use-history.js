@@ -10,16 +10,17 @@
  * limitations under the License.
  */
 
-import { computed, ref, watch } from '@vue/composition-api'
-import useRoute from './use-route.js'
+import { computed, ref, watch } from 'vue'
+import store from '@/store'
+import routerActions from '@/router/actions'
+import RouterQuery from '@/router/query'
 
-export default function useHistory(state, root) {
-  const { $store, $routerActions, $route } = root
+export default function useHistory(state) {
   const { keyword, focusWithin, forceHide } = state
-  const { route } = useRoute(root)
+  const route = computed(() => RouterQuery.route)
 
-  $store.commit('fullTextSearch/getSearchHistory')
-  const historyList = computed(() => $store.state.fullTextSearch.searchHistory)
+  store.commit('fullTextSearch/getSearchHistory')
+  const historyList = computed(() => store.state.fullTextSearch.searchHistory)
 
   const selectHistory = ref(false)
   const selectIndex = ref(-1)
@@ -57,13 +58,13 @@ export default function useHistory(state, root) {
   }
 
   const handlClearHistory = () => {
-    $store.commit('fullTextSearch/clearSearchHistory')
+    store.commit('fullTextSearch/clearSearchHistory')
   }
 
   const handleHistorySearch = (history) => {
     localForceHide.value = true
-    $routerActions.redirect({
-      name: $route.name,
+    routerActions.redirect({
+      name: route.value.name,
       query: {
         ...route.value.query,
         keyword: history,

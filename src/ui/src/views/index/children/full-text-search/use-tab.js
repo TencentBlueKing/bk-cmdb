@@ -10,7 +10,9 @@
  * limitations under the License.
  */
 
-import { ref, watch, reactive } from '@vue/composition-api'
+import { ref, watch, reactive } from 'vue'
+import store from '@/store'
+import { t } from '@/i18n'
 
 export const categories = ref([])
 
@@ -24,8 +26,8 @@ export const sizes = reactive({
   containerHeight: 0
 })
 
-export default function useTab(aggregations, root) {
-  const getModelById = root.$store.getters['objectModelClassify/getModelById']
+export default function useTab(aggregations) {
+  const getModelById = store.getters['objectModelClassify/getModelById']
 
   const calculateSizes = () => {
     const $categories = document.querySelector('.categories')
@@ -101,7 +103,7 @@ export default function useTab(aggregations, root) {
     if (models.length && modelCount > 0) {
       categories.value.unshift({
         id: models.map(({ id }) => id).join(','),
-        name: root.$t('模型'),
+        name: t('模型'),
         kind: 'model',
         count: modelCount > 999 ? '999+' : modelCount,
         total: modelCount

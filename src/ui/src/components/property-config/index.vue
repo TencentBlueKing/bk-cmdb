@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { defineComponent, ref, toRef, toRefs, PropType, watch } from '@vue/composition-api'
+  import { defineComponent, ref, toRef, toRefs, PropType, watch } from 'vue'
   import { formatValue } from '@/utils/tools.js'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'

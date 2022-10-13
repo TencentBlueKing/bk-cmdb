@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { ref } from '@vue/composition-api'
+import { ref } from 'vue'
 import associationService from '@/service/association'
 export default function ({ immeidate = false } = {}) {
   const associations = ref([])

@@ -68,7 +68,7 @@
 </template>
 
 <script>
-  import { computed, watch, toRef } from '@vue/composition-api'
+  import { computed, watch, toRef } from 'vue'
   import useState from './state'
   import useModelAssociation from '@/hooks/model/association'
   import useBatchUniqueCheck from '@/hooks/unique-check/batch'

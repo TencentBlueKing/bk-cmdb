@@ -107,7 +107,7 @@
 </template>
 
 <script>
-  import { defineComponent, reactive, toRefs, watch, watchEffect } from '@vue/composition-api'
+  import { defineComponent, reactive, toRefs, watch, watchEffect } from 'vue'
   import store from '@/store'
   import routerActions from '@/router/actions'
   import { getDefaultPaginationConfig } from '@/utils/tools.js'
