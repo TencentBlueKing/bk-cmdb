@@ -1565,9 +1565,23 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 
 var _ = Describe("cloud host test", func() {
 	ctx := context.Background()
-	var bizID, bizID1, setID, moduleID, hostID1, hostID2 int64
+	var bizID, bizID1, setID, moduleID, hostID1, hostID2, cloudID int64
 
 	It("test preparation", func() {
+		By("create cloud area name = 'cloud_host_plat'", func() {
+			resp, err := hostServerClient.CreateCloudArea(context.Background(), header, map[string]interface{}{
+				"bk_cloud_name":   "cloud_host_plat",
+				"bk_status":       "1",
+				"bk_cloud_vendor": "1",
+				"bk_account_id":   2,
+				"creator":         "admin",
+			})
+			util.RegisterResponse(resp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Result).To(Equal(true))
+			cloudID = int64(resp.Data.Created.ID)
+		})
+
 		By("create business bk_biz_name = 'cloud_host_biz'", func() {
 			input := map[string]interface{}{
 				"life_cycle":        "2",
@@ -1638,11 +1652,11 @@ var _ = Describe("cloud host test", func() {
 				HostInfo: []mapstr.MapStr{
 					{
 						common.BKHostInnerIPField: "127.0.0.111",
-						common.BKCloudIDField:     0,
+						common.BKCloudIDField:     cloudID,
 					},
 					{
 						common.BKHostInnerIPField: "127.0.0.112",
-						common.BKCloudIDField:     0,
+						common.BKCloudIDField:     cloudID,
 					},
 				},
 			}
@@ -1655,7 +1669,10 @@ var _ = Describe("cloud host test", func() {
 		})
 
 		By("check created cloud hosts", func() {
-			rsp, err := hostServerClient.SearchHost(ctx, header, &params.HostCommonSearch{AppID: int(bizID)})
+			rsp, err := hostServerClient.SearchHost(ctx, header, &params.HostCommonSearch{
+				AppID: int(bizID),
+				Page:  params.PageInfo{Sort: common.BKHostInnerIPField},
+			})
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -1668,6 +1685,36 @@ var _ = Describe("cloud host test", func() {
 				innerIP := commonutil.GetStrByInterface(host[common.BKHostInnerIPField])
 				Expect(hostID == hostID1 && innerIP == "127.0.0.111" || hostID == hostID2 && innerIP == "127.0.0.112").
 					To(Equal(true))
+			}
+		})
+
+		By("import cloud host to same biz again", func() {
+			input := &metadata.AddCloudHostToBizParam{
+				BizID: bizID,
+				HostInfo: []mapstr.MapStr{{
+					common.BKHostInnerIPField: "127.0.0.111",
+					common.BKCloudIDField:     cloudID,
+					common.BKHostNameField:    "127.0.0.111",
+				}},
+			}
+
+			rsp, err := hostServerClient.AddCloudHostToBiz(ctx, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+
+			searchRsp, e := hostServerClient.SearchHost(ctx, header, &params.HostCommonSearch{AppID: int(bizID)})
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(e).NotTo(HaveOccurred())
+			Expect(searchRsp.Result).To(Equal(true))
+
+			for _, data := range searchRsp.Data.Info {
+				host, ok := data["host"].(map[string]interface{})
+				Expect(ok).To(Equal(true))
+				hostID, err := commonutil.GetInt64ByInterface(host[common.BKHostIDField])
+				Expect(err).NotTo(HaveOccurred())
+				if hostID == hostID1 {
+					Expect(commonutil.GetStrByInterface(host[common.BKHostNameField])).To(Equal("127.0.0.111"))
+				}
 			}
 		})
 
@@ -1699,7 +1746,7 @@ var _ = Describe("cloud host test", func() {
 				HostInfo: []mapstr.MapStr{
 					{
 						common.BKHostInnerIPField: "127.0.0.113",
-						common.BKCloudIDField:     0,
+						common.BKCloudIDField:     cloudID,
 					},
 				},
 			}
@@ -1715,11 +1762,11 @@ var _ = Describe("cloud host test", func() {
 				HostInfo: []mapstr.MapStr{
 					{
 						common.BKHostInnerIPField: "127.0.0.114",
-						common.BKCloudIDField:     0,
+						common.BKCloudIDField:     cloudID,
 					},
 					{
 						common.BKHostInnerIPField: "127.0.0.1144",
-						common.BKCloudIDField:     0,
+						common.BKCloudIDField:     cloudID,
 					},
 				},
 			}
@@ -1729,12 +1776,12 @@ var _ = Describe("cloud host test", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		By("add cloud hosts with duplicate host", func() {
+		By("add cloud hosts with duplicate host in different biz", func() {
 			input := &metadata.AddCloudHostToBizParam{
-				BizID: bizID,
+				BizID: bizID1,
 				HostInfo: []mapstr.MapStr{{
 					common.BKHostInnerIPField: "127.0.0.111",
-					common.BKCloudIDField:     0,
+					common.BKCloudIDField:     cloudID,
 				}},
 			}
 
@@ -1747,7 +1794,7 @@ var _ = Describe("cloud host test", func() {
 			input := &metadata.AddCloudHostToBizParam{
 				HostInfo: []mapstr.MapStr{{
 					common.BKHostInnerIPField: "127.0.0.115",
-					common.BKCloudIDField:     0,
+					common.BKCloudIDField:     cloudID,
 				}},
 			}
 
