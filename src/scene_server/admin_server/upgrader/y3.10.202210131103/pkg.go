@@ -25,9 +25,9 @@ func init() {
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	err = addHpUnixProperty(ctx, db, conf)
+	err = addHpUxProperty(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade y3_10_202210131103] addHpUnixProperty error  %s", err.Error())
+		blog.Errorf("[upgrade y3_10_202210131103] addHpUxProperty error  %s", err.Error())
 		return err
 	}
 	return

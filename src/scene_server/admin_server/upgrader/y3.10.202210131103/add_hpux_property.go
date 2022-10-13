@@ -50,7 +50,7 @@ type attribute struct {
 	LastTime          *time.Time  `json:"last_time" bson:"last_time"`
 }
 
-func addHpUnixProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addHpUxProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(common.BKDefaultOwnerID)
@@ -69,14 +69,14 @@ func addHpUnixProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 		return err
 	}
 	for _, enum := range enumOpts {
-		if enum.ID == common.HostOSTypeEnumHpUNIX {
+		if enum.ID == common.HostOSTypeEnumHpUX {
 			return nil
 		}
 	}
 
 	hpUnixEnum := metadata.EnumVal{
-		ID:   common.HostOSTypeEnumHpUNIX,
-		Name: "hp-unix",
+		ID:   common.HostOSTypeEnumHpUX,
+		Name: "HP-UX",
 		Type: "text",
 	}
 	enumOpts = append(enumOpts, hpUnixEnum)
