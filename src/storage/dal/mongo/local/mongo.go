@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	kubetypes "configcenter/src/kube/types"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/dal/types"
@@ -645,6 +646,22 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 
 	case common.BKTableNameBaseInst:
 	case common.BKTableNameInstAsst:
+
+	case kubetypes.BKTableNameBaseCluster:
+	case kubetypes.BKTableNameBaseNode:
+	case kubetypes.BKTableNameBaseNamespace:
+	case kubetypes.BKTableNameBaseWorkload:
+	case kubetypes.BKTableNameBaseDeployment:
+	case kubetypes.BKTableNameBaseStatefulSet:
+	case kubetypes.BKTableNameBaseDaemonSet:
+	case kubetypes.BKTableNameGameDeployment:
+	case kubetypes.BKTableNameGameStatefulSet:
+	case kubetypes.BKTableNameBaseCronJob:
+	case kubetypes.BKTableNameBaseJob:
+	case kubetypes.BKTableNameBasePodWorkload:
+	case kubetypes.BKTableNameBaseCustom:
+	case kubetypes.BKTableNameBasePod:
+	case kubetypes.BKTableNameBaseContainer:
 		// NOTE: should not use the table name for archive, the object instance and association
 		// was saved in sharding tables, we still case the BKTableNameBaseInst here for the archive
 		// error message in order to find the wrong table name used in logics level.
