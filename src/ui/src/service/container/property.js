@@ -43,7 +43,7 @@ function createIdProperty(objId) {
   }
 }
 
-export const find = ({ objId, params }, config) => http.get(`kube/find/${objId}/attributes`, params, config)
+export const find = ({ objId, params }, config) => http.get(`find/kube/${objId}/attributes`, params, config)
 
 export const getMany = async ({ objId, params }, config, injectId = true) => {
   try {
@@ -69,7 +69,7 @@ export const getMany = async ({ objId, params }, config, injectId = true) => {
 
 export const getMapValue = async (params, total, config) => {
   const result = await rollReqUseTotalCount(
-    `kube/find/field/map_str_val/bk_biz_id/${params.bk_biz_id}`,
+    `find/kube/field/map_str_val/bk_biz_id/${params.bk_biz_id}`,
     params,
     { limit: 200, total },
     config,
