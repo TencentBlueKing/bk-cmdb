@@ -50,73 +50,149 @@ func (s *coreService) BatchCreatePod(ctx *rest.Contexts) {
 	}
 	pods := make([]types.Pod, 0)
 	now := time.Now().Unix()
-
+	nodeIDMap := make(map[int64]struct{})
 	for _, info := range inputData.Data {
 		for idx, pod := range info.Pods {
-			sysSpec, ccErr := s.core.KubeOperation().GetSysSpecInfoByCond(ctx.Kit, pod.Spec, info.BizID, pod.HostID)
-			if ccErr != nil {
-				ctx.RespAutoError(ccErr)
+			podTmp, nodeID, err := s.insertPodTable(ctx.Kit, pod, info.BizID, now, int64(ids[idx]))
+			if err != nil {
+				ctx.RespAutoError(err)
 				return
 			}
-			podInfo := types.Pod{
-				ID:            int64(ids[idx]),
-				SysSpec:       *sysSpec,
-				Name:          pod.Name,
-				Priority:      pod.Priority,
-				Labels:        pod.Labels,
-				IP:            pod.IP,
-				IPs:           pod.IPs,
-				Volumes:       pod.Volumes,
-				QOSClass:      pod.QOSClass,
-				NodeSelectors: pod.NodeSelectors,
-				Tolerations:   pod.Tolerations,
-				Revision: table.Revision{
-					CreateTime: now,
-					LastTime:   now,
-					Creator:    ctx.Kit.User,
-					Modifier:   ctx.Kit.User,
-				},
-			}
-			pods = append(pods, podInfo)
-			if err := mongodb.Client().Table(types.BKTableNameBasePod).Insert(ctx.Kit.Ctx, &podInfo); err != nil {
-				blog.Errorf("create pod failed, db insert failed, node: %+v, err: %+v, rid: %s", podInfo, err, ctx.Kit.Rid)
-				ctx.RespAutoError(ccErr)
-				return
+			pods = append(pods, podTmp)
+			if nodeID != 0 {
+				nodeIDMap[nodeID] = struct{}{}
 			}
 
+			// skip if there is no container information in the pod
+			if len(pod.Containers) == 0 {
+				continue
+			}
 			// generate pod ids field
 			containerIDs, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, types.BKTableNameBaseContainer,
 				len(pod.Containers))
 			if err != nil {
 				blog.Errorf("create container failed, generate ids failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-				ctx.RespAutoError(ccErr)
+				ctx.RespAutoError(err)
 				return
 			}
 
-			for id, info := range pod.Containers {
-				container := &types.Container{
-					ID:                  int64(containerIDs[id]),
-					PodID:               int64(ids[idx]),
-					ContainerBaseFields: info,
-					Revision: table.Revision{
-						CreateTime: now,
-						LastTime:   now,
-						Creator:    ctx.Kit.User,
-						Modifier:   ctx.Kit.User,
-					},
-				}
-				err := mongodb.Client().Table(types.BKTableNameBaseContainer).Insert(ctx.Kit.Ctx, container)
+			for id, container := range pod.Containers {
+				err := s.insertContainerTable(ctx.Kit, int64(containerIDs[id]), int64(ids[idx]), container, now)
 				if err != nil {
-					blog.Errorf("create container failed, db insert failed, container: %+v, err: %+v, rid: %s",
-						container, err, ctx.Kit.Rid)
-					ctx.RespAutoError(ccErr)
+					ctx.RespAutoError(err)
 					return
 				}
 			}
 		}
 	}
+	nodeIDs := make([]int64, 0)
+	for id := range nodeIDMap {
+		nodeIDs = append(nodeIDs, id)
+	}
 
+	if len(nodeIDs) == 0 {
+		ctx.RespEntityWithError(pods, nil)
+		return
+	}
+
+	if err := s.updateNodeField(ctx.Kit, nodeIDs); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
 	ctx.RespEntityWithError(pods, nil)
+}
+
+func (s *coreService) insertPodTable(kit *rest.Kit, pod types.PodsInfo, bizID int64, now, id int64) (
+	types.Pod, int64, error) {
+
+	sysSpec, hasPod, ccErr := s.core.KubeOperation().GetSysSpecInfoByCond(kit, pod.Spec, bizID, pod.HostID)
+	if ccErr != nil {
+		return types.Pod{}, 0, ccErr
+	}
+
+	podInfo := types.Pod{
+		ID:            id,
+		SysSpec:       *sysSpec,
+		Name:          pod.Name,
+		Priority:      pod.Priority,
+		Labels:        pod.Labels,
+		IP:            pod.IP,
+		IPs:           pod.IPs,
+		Volumes:       pod.Volumes,
+		QOSClass:      pod.QOSClass,
+		NodeSelectors: pod.NodeSelectors,
+		Tolerations:   pod.Tolerations,
+		Revision: table.Revision{
+			CreateTime: now,
+			LastTime:   now,
+			Creator:    kit.User,
+			Modifier:   kit.User,
+		},
+	}
+	if err := mongodb.Client().Table(types.BKTableNameBasePod).Insert(kit.Ctx, &podInfo); err != nil {
+		blog.Errorf("create pod failed, db insert failed, pod: %+v, err: %+v, rid: %s", podInfo, err, kit.Rid)
+		return types.Pod{}, 0, err
+	}
+	// this scenario shows that the hasPod flag has been set to true and does not need to be reset
+	var nodeID int64
+	if !hasPod {
+		nodeID = sysSpec.NodeID
+	}
+	return podInfo, nodeID, nil
+}
+
+func (s *coreService) insertContainerTable(kit *rest.Kit, containerID, podID int64, info types.Container,
+	now int64) error {
+
+	container := &types.Container{
+		ID:              containerID,
+		SupplierAccount: kit.SupplierAccount,
+		PodID:           podID,
+		Name:            info.Name,
+		ContainerID:     info.ContainerID,
+		Image:           info.Image,
+		Ports:           info.Ports,
+		HostPorts:       info.HostPorts,
+		Args:            info.Args,
+		Started:         info.Started,
+		Limits:          info.Limits,
+		ReqSysSpecuests: info.ReqSysSpecuests,
+		Liveness:        info.Liveness,
+		Environment:     info.Environment,
+		Mounts:          info.Mounts,
+		Revision: table.Revision{
+			CreateTime: now,
+			LastTime:   now,
+			Creator:    kit.User,
+			Modifier:   kit.User,
+		},
+	}
+	err := mongodb.Client().Table(types.BKTableNameBaseContainer).Insert(kit.Ctx, container)
+	if err != nil {
+		blog.Errorf("create container failed, db insert failed, container: %+v, err: %+v, rid: %s",
+			container, err, kit.Rid)
+		return err
+	}
+	return nil
+}
+
+// updateNodeField here you need to update the has_pod in the node uniformly
+func (s *coreService) updateNodeField(kit *rest.Kit, nodeIDs []int64) error {
+
+	filter := map[string]interface{}{
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBIN: nodeIDs,
+		},
+	}
+
+	updateData := map[string]interface{}{
+		types.HasPodField: true,
+	}
+	if err := mongodb.Client().Table(types.BKTableNameBaseNode).Update(kit.Ctx, filter, updateData); err != nil {
+		blog.Errorf("update node has_pod field failed, filter: %v, err: %+v, rid: %s", filter, err, kit.Rid)
+		return err
+	}
+	return nil
 }
 
 // BatchCreateNode batch create nodes

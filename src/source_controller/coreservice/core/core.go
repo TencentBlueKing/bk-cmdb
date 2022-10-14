@@ -126,7 +126,7 @@ type KubeOperation interface {
 	CreateCluster(kit *rest.Kit, bizID int64, option *types.Cluster) (*types.Cluster, errors.CCErrorCoder)
 	BatchCreateNode(kit *rest.Kit, bizID int64, data []types.OneNodeCreateOption) ([]*types.Node, errors.CCErrorCoder)
 	GetSysSpecInfoByCond(kit *rest.Kit, spec types.SpecInfo, bizID int64,
-		hostID int64) (*types.SysSpec, errors.CCErrorCoder)
+		hostID int64) (*types.SysSpec, bool, errors.CCErrorCoder)
 }
 
 // AssociationKind association kind methods
