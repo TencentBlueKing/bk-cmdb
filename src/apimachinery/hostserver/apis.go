@@ -701,7 +701,7 @@ func (hs *hostServer) FindCloudAreaHostCount(ctx context.Context, header http.He
 func (hs *hostServer) SearchKubeHost(ctx context.Context, h http.Header, req types.SearchHostReq) (
 	*metadata.SearchHost, errors.CCErrorCoder) {
 
-	result := metadata.SearchHostResult{}
+	result := new(metadata.SearchHostResult)
 	subPath := "/hosts/kube/search"
 
 	err := hs.client.Post().

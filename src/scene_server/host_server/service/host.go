@@ -1803,7 +1803,7 @@ func (s *Service) getHostInFolder(kit *rest.Kit, bizID int64, clusterID int64) (
 	cond := mapstr.MapStr{
 		common.BKAppIDField:    bizID,
 		types.BKClusterIDFiled: clusterID,
-		types.HasPodField:      false,
+		types.HasPodField:      mapstr.MapStr{common.BKDBNE: true},
 	}
 
 	fields := []string{common.BKHostIDField}
