@@ -18,6 +18,8 @@
 package types
 
 import (
+	"reflect"
+
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
 	"configcenter/src/common/errors"
@@ -26,6 +28,9 @@ import (
 	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
 )
+
+// NamespaceFields merge the fields of the namespace and the details corresponding to the fields together.
+var NamespaceFields = table.MergeFields(CommonSpecFieldsDescriptor, BizIDDescriptor, NamespaceSpecFieldsDescriptor)
 
 // NamespaceSpecFieldsDescriptor namespace spec's fields descriptors.
 var NamespaceSpecFieldsDescriptor = table.FieldsDescriptors{
@@ -113,7 +118,32 @@ func (ns *Namespace) ValidateCreate() errors.RawErrorInfo {
 
 // ValidateUpdate validate update namespace
 func (ns *Namespace) ValidateUpdate() errors.RawErrorInfo {
-	// todo
+	if ns == nil {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+		}
+	}
+
+	typeOfOption := reflect.TypeOf(*ns)
+	valueOfOption := reflect.ValueOf(*ns)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+		tag, flag := getFieldTag(typeOfOption, i)
+		if flag {
+			continue
+		}
+
+		if flag := isEditableField(tag, valueOfOption, i); flag {
+			continue
+		}
+
+		// get whether it is an editable field based on tag
+		if !NamespaceFields.IsFieldEditableByField(tag) {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{tag},
+			}
+		}
+	}
 	return errors.RawErrorInfo{}
 }
 
@@ -342,7 +372,7 @@ func (ns *NsQueryReq) Validate() errors.RawErrorInfo {
 		return err
 	}
 
-	op := filter.NewDefaultExprOpt(NodeFields.FieldsType())
+	op := filter.NewDefaultExprOpt(NamespaceFields.FieldsType())
 	if err := ns.Filter.Validate(op); err != nil {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,

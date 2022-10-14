@@ -18,10 +18,12 @@
 package types
 
 import (
+	"reflect"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
+	"configcenter/src/common/errors"
 	"configcenter/src/kube/orm"
 	"configcenter/src/storage/dal/table"
 )
@@ -57,6 +59,37 @@ func (p *PodsWorkload) GetWorkloadBase() WorkloadBase {
 // SetWorkloadBase set workload base
 func (p *PodsWorkload) SetWorkloadBase(wl WorkloadBase) {
 	p.WorkloadBase = wl
+}
+
+// ValidateUpdate validate update workload
+func (w *PodsWorkload) ValidateUpdate() errors.RawErrorInfo {
+	if w == nil {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+		}
+	}
+
+	typeOfOption := reflect.TypeOf(*w)
+	valueOfOption := reflect.ValueOf(*w)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+		tag, flag := getFieldTag(typeOfOption, i)
+		if flag {
+			continue
+		}
+
+		if flag := isEditableField(tag, valueOfOption, i); flag {
+			continue
+		}
+
+		// get whether it is an editable field based on tag
+		if !PodsWorkloadFields.IsFieldEditableByField(tag) {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{tag},
+			}
+		}
+	}
+	return errors.RawErrorInfo{}
 }
 
 // PodsWorkloadUpdateData defines the pods workload update data common operation.

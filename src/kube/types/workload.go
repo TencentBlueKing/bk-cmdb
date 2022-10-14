@@ -124,12 +124,6 @@ func (w *WorkloadBase) ValidateCreate() errors.RawErrorInfo {
 	return errors.RawErrorInfo{}
 }
 
-// ValidateUpdate validate update workload
-func (w *WorkloadBase) ValidateUpdate() errors.RawErrorInfo {
-	// todo
-	return errors.RawErrorInfo{}
-}
-
 // LabelSelector a label selector is a label query over a set of resources.
 // the result of matchLabels and matchExpressions are ANDed. An empty label
 // selector matches all objects. A null label selector matches no objects.

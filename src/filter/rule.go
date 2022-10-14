@@ -404,30 +404,6 @@ func (cr *CombinedRule) Validate(opt *ExprOption) error {
 		return fmt.Errorf("rules elements number exceeds limit: %d", opt.MaxRulesLimit)
 	}
 
-	// validate rule fields if not ignored
-	if !opt.IgnoreRuleFields {
-		fieldsReminder := make(map[string]bool)
-		for _, field := range cr.RuleFields() {
-			fieldsReminder[field] = true
-		}
-
-		if len(fieldsReminder) == 0 {
-			return errors.New("invalid expression, no field is found to query")
-		}
-
-		reminder := make(map[string]bool)
-		for col := range opt.RuleFields {
-			reminder[col] = true
-		}
-
-		// all the rule's field should exist in the reminder.
-		for one := range fieldsReminder {
-			if exist := reminder[one]; !exist {
-				return fmt.Errorf("expression rules field(%s) should not exist(not supported)", one)
-			}
-		}
-	}
-
 	// validate combined rule depth, then continues to validate children rule depth
 	if opt.MaxRulesDepth <= 1 {
 		return fmt.Errorf("expression rules depth exceeds maximum")
