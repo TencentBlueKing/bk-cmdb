@@ -235,15 +235,9 @@ func (option *Pod) createValidate() error {
 // Container container details
 type Container struct {
 	// cc的自增主键
-	ID                  int64 `json:"id,omitempty" bson:"id"`
-	PodID               int64 `json:"bk_pod_id,omitempty" bson:"bk_pod_id"`
-	ContainerBaseFields `json:",inline" bson:",inline"`
-	// Revision record this app's revision information
-	table.Revision `json:",inline" bson:",inline"`
-}
-
-// ContainerBaseFields container core details
-type ContainerBaseFields struct {
+	ID              int64            `json:"id,omitempty" bson:"id"`
+	PodID           int64            `json:"bk_pod_id,omitempty" bson:"bk_pod_id"`
+	SupplierAccount string           `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	Name            *string          `json:"name,omitempty" bson:"name"`
 	ContainerID     *string          `json:"container_uid,omitempty" bson:"container_uid"`
 	Image           *string          `json:"image,omitempty" bson:"image"`
@@ -256,10 +250,12 @@ type ContainerBaseFields struct {
 	Liveness        *Probe           `json:"liveness,omitempty" bson:"liveness"`
 	Environment     *[]EnvVar        `json:"environment,omitempty" bson:"environment"`
 	Mounts          *[]VolumeMount   `json:"mounts,omitempty" bson:"mounts"`
+	// Revision record this app's revision information
+	table.Revision `json:",inline" bson:",inline"`
 }
 
 // createValidate validate the ContainerBaseFields
-func (option *ContainerBaseFields) createValidate() error {
+func (option *Container) createValidate() error {
 
 	if option == nil {
 		return errors.New("container information must be set")
@@ -326,7 +322,7 @@ type PodsInfo struct {
 	Spec       SpecInfo `json:"spec"`
 	HostID     int64    `json:"bk_host_id"`
 	Pod        `json:",inline"`
-	Containers []ContainerBaseFields `json:"containers"`
+	Containers []Container `json:"containers"`
 }
 
 // CreatePodsOption create pods option
