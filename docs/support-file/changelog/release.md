@@ -1,3 +1,7 @@
+## [Version: v3.10.x-feature-container-manage-alpha2] - 2022-10-14
+**新增功能**
+- 新增容器数据纳管能力
+
 ## [Version: v3.10.19-feature-container-manage-alpha1] - 2022-09-16
 **新增功能**
 - 新增容器数据纳管能力
