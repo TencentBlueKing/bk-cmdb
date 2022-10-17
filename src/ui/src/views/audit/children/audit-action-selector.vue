@@ -73,7 +73,6 @@
         } catch (error) {
           this.dictionary = []
         }
-        console.log('test')
       }
     }
   }
