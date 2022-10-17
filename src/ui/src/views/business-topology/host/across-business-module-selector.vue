@@ -163,6 +163,7 @@
     },
     async created() {
       this.getFullAmountBusiness()
+      console.log('test')
     },
     methods: {
       generateRelation(businesses) {
