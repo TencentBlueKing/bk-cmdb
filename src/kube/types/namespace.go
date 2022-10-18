@@ -30,7 +30,8 @@ import (
 )
 
 // NamespaceFields merge the fields of the namespace and the details corresponding to the fields together.
-var NamespaceFields = table.MergeFields(CommonSpecFieldsDescriptor, BizIDDescriptor, NamespaceSpecFieldsDescriptor)
+var NamespaceFields = table.MergeFields(CommonSpecFieldsDescriptor, BizIDDescriptor,
+	ClusterBaseRefDescriptor, NamespaceSpecFieldsDescriptor)
 
 // NamespaceSpecFieldsDescriptor namespace spec's fields descriptors.
 var NamespaceSpecFieldsDescriptor = table.FieldsDescriptors{
@@ -38,6 +39,12 @@ var NamespaceSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: ClusterUIDField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: ResourceQuotasField, Type: enumor.Array, IsRequired: false, IsEditable: true},
+}
+
+// NamespaceBaseRefDescriptor the description used when other resources refer to the namespace.
+var NamespaceBaseRefDescriptor = table.FieldsDescriptors{
+	{Field: NamespaceField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: BKNamespaceIDField, Type: enumor.Numeric, IsRequired: false, IsEditable: false},
 }
 
 // ScopeSelectorOperator a scope selector operator is the set of operators
@@ -127,12 +134,12 @@ func (ns *Namespace) ValidateUpdate() errors.RawErrorInfo {
 	typeOfOption := reflect.TypeOf(*ns)
 	valueOfOption := reflect.ValueOf(*ns)
 	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, i)
+		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
 		if flag {
 			continue
 		}
 
-		if flag := isEditableField(tag, valueOfOption, i); flag {
+		if flag := isNotEditableField(tag, valueOfOption, i); flag {
 			continue
 		}
 
@@ -370,6 +377,10 @@ func (ns *NsQueryReq) Validate() errors.RawErrorInfo {
 
 	if err := ns.Page.ValidateWithEnableCount(false, NsQueryLimit); err.ErrCode != 0 {
 		return err
+	}
+
+	if ns.Filter == nil {
+		return errors.RawErrorInfo{}
 	}
 
 	op := filter.NewDefaultExprOpt(NamespaceFields.FieldsType())

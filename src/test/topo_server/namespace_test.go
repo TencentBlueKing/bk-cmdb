@@ -80,13 +80,9 @@ var _ = Describe("namespace test", func() {
 			Type:             &clusterType,
 		}
 
-		result, err := kubeClient.CreateCluster(ctx, header, bizID, createCLuster)
-
-		util.RegisterResponse(result)
+		id, err := kubeClient.CreateCluster(ctx, header, bizID, createCLuster)
+		util.RegisterResponse(id)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.Result).To(Equal(true))
-		id, cErr := commonutil.GetInt64ByInterface(result.Data)
-		Expect(cErr).NotTo(HaveOccurred())
 		clusterID = id
 
 	})

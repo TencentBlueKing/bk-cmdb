@@ -33,10 +33,12 @@ import (
 const (
 	maxDeleteNodeNum = 100
 	maxCreateNodeNum = 100
+	maxUpdateNodeNum = 100
 )
 
 // NodeFields merge the fields of the cluster and the details corresponding to the fields together.
-var NodeFields = table.MergeFields(CommonSpecFieldsDescriptor, BizIDDescriptor, NodeSpecFieldsDescriptor)
+var NodeFields = table.MergeFields(CommonSpecFieldsDescriptor, BizIDDescriptor, HostIDDescriptor,
+	ClusterBaseRefDescriptor, NodeSpecFieldsDescriptor)
 
 // NodeSpecFieldsDescriptor node spec's fields descriptors.
 var NodeSpecFieldsDescriptor = table.FieldsDescriptors{
@@ -51,6 +53,12 @@ var NodeSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: RuntimeComponentField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: KubeProxyModeField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: PodCidrField, Type: enumor.String, IsRequired: false, IsEditable: true},
+}
+
+// NodeBaseRefDescriptor the description used when other resources refer to the node.
+var NodeBaseRefDescriptor = table.FieldsDescriptors{
+	{Field: NodeField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: BKNodeIDField, Type: enumor.Numeric, IsRequired: false, IsEditable: false},
 }
 
 // Node node structural description.
@@ -103,7 +111,7 @@ func (option *Node) createValidate() error {
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
 
-		tag, flag := getFieldTag(typeOfOption, i)
+		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
 		if flag {
 			continue
 		}
@@ -125,24 +133,15 @@ func (option *Node) createValidate() error {
 
 func (option *Node) validateNodeIP(isCreate bool) error {
 
-	var (
-		bExternalIP, bInternalIP bool
-	)
-
 	if isCreate && option.ExternalIP == nil && option.InternalIP == nil {
 		return errors.New("external_ip and internal_ip cannot be null at the same time")
 	}
 
-	if option.ExternalIP != nil && len(*option.ExternalIP) == 0 {
-		bExternalIP = true
-	}
-	if option.InternalIP != nil && len(*option.InternalIP) == 0 {
-		bInternalIP = true
+	if (option.ExternalIP != nil && len(*option.ExternalIP) == 0) &&
+		(option.InternalIP != nil && len(*option.InternalIP) == 0) {
+		return errors.New("the length of external_ip and internal_ip cannot be 0 at the same time")
 	}
 
-	if bExternalIP && bInternalIP {
-		return errors.New("external_ip and internal_ip cannot be null at the same time")
-	}
 	return nil
 }
 
@@ -156,12 +155,12 @@ func (option *Node) updateValidate() error {
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, i)
+		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
 		if flag {
 			continue
 		}
 
-		if flag := isEditableField(tag, valueOfOption, i); flag {
+		if flag := isNotEditableField(tag, valueOfOption, i); flag {
 			continue
 		}
 
@@ -218,6 +217,13 @@ type CreateNodesOption struct {
 	Nodes []OneNodeCreateOption `json:"data"`
 }
 
+// CreateNodesRsp create the response
+// message body of the node result to the user.
+type CreateNodesRsp struct {
+	metadata.BaseResp
+	Data metadata.RspIDs `json:"data"`
+}
+
 // ValidateCreate validate the create nodes request
 func (option *CreateNodesOption) ValidateCreate() error {
 
@@ -245,11 +251,9 @@ type CreateNodesResult struct {
 
 // QueryNodeOption query node by query builder
 type QueryNodeOption struct {
-	Filter    *filter.Expression `json:"filter"`
-	ClusterID int64              `json:"bk_cluster_id"`
-	HostID    int64              `json:"bk_host_id"`
-	Page      metadata.BasePage  `json:"page"`
-	Fields    []string           `json:"fields"`
+	Filter *filter.Expression `json:"filter"`
+	Page   metadata.BasePage  `json:"page"`
+	Fields []string           `json:"fields"`
 }
 
 // Validate validate the param QueryNodeReq
@@ -291,42 +295,27 @@ type UpdateNodeInfo struct {
 
 // UpdateNodeOption update node field option
 type UpdateNodeOption struct {
-	Nodes []UpdateNodeInfo `json:"data"`
+	IDs  []int64 `json:"ids"`
+	Data Node    `json:"data"`
 }
 
 // Validate check whether the request parameters for updating the node are legal.
 func (option *UpdateNodeOption) Validate() error {
 
-	if len(option.Nodes) == 0 {
+	if len(option.IDs) == 0 {
 		return errors.New("parameter cannot be empty")
 	}
+	if len(option.IDs) > maxUpdateNodeNum {
+		return fmt.Errorf("the number of nodes to be updated at one time cannot exceed %d", maxUpdateNodeNum)
+	}
 
-	for _, node := range option.Nodes {
-		if len(node.NodeIDs) == 0 {
-			return errors.New("node_ids must be set")
-		}
-		if err := node.Data.validateNodeIP(false); err != nil {
-			return err
-		}
-		if err := node.Data.updateValidate(); err != nil {
-			return err
-		}
+	if err := option.Data.validateNodeIP(false); err != nil {
+		return err
+	}
+	if err := option.Data.updateValidate(); err != nil {
+		return err
 	}
 	return nil
-}
-
-// SearchHostReq search host request
-type SearchHostReq struct {
-	BizID       int64                    `json:"bk_biz_id"`
-	ClusterID   int64                    `json:"bk_cluster_id"`
-	Folder      bool                     `json:"folder"`
-	NamespaceID int64                    `json:"bk_namespace_id"`
-	WorkloadID  int64                    `json:"bk_workload_id"`
-	WlKind      WorkloadType             `json:"kind"`
-	NodeCond    *NodeCond                `json:"node_cond"`
-	Ip          metadata.IPInfo          `json:"ip"`
-	HostCond    metadata.SearchCondition `json:"host_condition"`
-	Page        metadata.BasePage        `json:"page"`
 }
 
 // NodeCond node condition for search host

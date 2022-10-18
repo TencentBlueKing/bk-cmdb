@@ -213,3 +213,17 @@ type KubeTopoPathRsp struct {
 	Info  []KubeObjectInfo `json:"info"`
 	Count int              `json:"count"`
 }
+
+// SearchHostReq search host request
+type SearchHostReq struct {
+	BizID       int64                    `json:"bk_biz_id"`
+	ClusterID   int64                    `json:"bk_cluster_id"`
+	Folder      bool                     `json:"folder"`
+	NamespaceID int64                    `json:"bk_namespace_id"`
+	WorkloadID  int64                    `json:"bk_workload_id"`
+	WlKind      WorkloadType             `json:"kind"`
+	NodeCond    *NodeCond                `json:"node_cond"`
+	Ip          metadata.IPInfo          `json:"ip"`
+	HostCond    metadata.SearchCondition `json:"host_condition"`
+	Page        metadata.BasePage        `json:"page"`
+}

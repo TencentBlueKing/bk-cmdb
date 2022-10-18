@@ -45,10 +45,11 @@ var WorkLoadSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: RollingUpdateStrategyField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 }
 
-// WorkLoadBaseFieldsDescriptor workLoad base fields descriptors.
-var WorkLoadBaseFieldsDescriptor = table.FieldsDescriptors{
-	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
-	{Field: NamespaceField, Type: enumor.String, IsRequired: true, IsEditable: false},
+// WorkLoadRefDescriptor  the description used when other resources refer to the workload.
+var WorkLoadRefDescriptor = table.FieldsDescriptors{
+	{Field: RefKindField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: RefIDField, Type: enumor.Numeric, IsRequired: false, IsEditable: false},
+	{Field: RefNameField, Type: enumor.String, IsRequired: false, IsEditable: false},
 }
 
 // LabelSelectorOperator a label selector operator is the set of operators that can be used in a selector requirement.
@@ -695,6 +696,10 @@ func (wl *WlQueryReq) Validate(kind WorkloadType) errors.RawErrorInfo {
 			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{KindField},
 		}
+	}
+
+	if wl.Filter == nil {
+		return errors.RawErrorInfo{}
 	}
 
 	op := filter.NewDefaultExprOpt(fields.FieldsType())

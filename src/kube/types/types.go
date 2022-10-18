@@ -440,30 +440,3 @@ const (
 	// MountsField container mounts field
 	MountsField = "mounts"
 )
-
-// GetKubeTableName get k8s table name
-func GetKubeTableName(kind string) (string, error) {
-	switch kind {
-	case KubeCluster:
-		return BKTableNameBaseCluster, nil
-
-	case KubeNamespace:
-		return BKTableNameBaseNamespace, nil
-
-	case KubePod:
-		return BKTableNameBasePod, nil
-
-	case KubeContainer:
-		return BKTableNameBaseContainer, nil
-
-	case KubeNode:
-		return BKTableNameBaseNode, nil
-
-	default:
-		table, err := WorkloadType(kind).Table()
-		if err != nil {
-			return "", err
-		}
-		return table, nil
-	}
-}

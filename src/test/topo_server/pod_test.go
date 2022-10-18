@@ -128,13 +128,10 @@ var _ = Describe("pod test", func() {
 			Type:             &clusterType,
 		}
 
-		result, err := kubeClient.CreateCluster(ctx, header, bizID, createCLuster)
+		id, err := kubeClient.CreateCluster(ctx, header, bizID, createCLuster)
 
-		util.RegisterResponse(result)
+		util.RegisterResponse(id)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.Result).To(Equal(true))
-		id, cErr := commonutil.GetInt64ByInterface(result.Data)
-		Expect(cErr).NotTo(HaveOccurred())
 		clusterID = id
 
 		// create namespace
@@ -214,11 +211,7 @@ var _ = Describe("pod test", func() {
 		nodeResult, err := kubeClient.BatchCreateNode(ctx, header, bizID, createNode)
 		util.RegisterResponse(nodeResult)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(nodeResult.Result).To(Equal(true))
-		j, _ := json.Marshal(nodeResult.Data)
-		var data []int64
-		json.Unmarshal(j, &data)
-		nodeID = data[0]
+		nodeID = nodeResult[0]
 	})
 
 	It("create pod and container", func() {
@@ -229,12 +222,12 @@ var _ = Describe("pod test", func() {
 					BizID: bizID,
 					Pods: []types.PodsInfo{
 						{
-							Spec: types.SpecInfo{
-								ClusterID:   &clusterID,
-								NamespaceID: &namespaceID,
-								NodeID:      &nodeID,
-								Ref: types.Ref{
-									Kind: wlKind,
+							Spec: types.SpecSimpleInfo{
+								ClusterID:   clusterID,
+								NamespaceID: namespaceID,
+								NodeID:      nodeID,
+								Ref: types.Reference{
+									Kind: types.WorkloadType(wlKind),
 									ID:   wlID,
 								},
 							},
@@ -258,11 +251,7 @@ var _ = Describe("pod test", func() {
 		result, err := kubeClient.BatchCreatePod(ctx, header, &createOpt)
 		util.RegisterResponseWithRid(result, header)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.Result).To(Equal(true))
-		j, _ := json.Marshal(result.Data)
-		var data []int64
-		json.Unmarshal(j, &data)
-		podID = data[0]
+		podID = result[0]
 	})
 
 	It("find pod", func() {

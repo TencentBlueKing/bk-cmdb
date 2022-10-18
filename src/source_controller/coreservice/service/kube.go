@@ -18,166 +18,30 @@
 package service
 
 import (
-	"configcenter/src/storage/dal/table"
 	"strconv"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/orm"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/driver/mongodb"
 )
 
-// BatchCreatePod batch create nodes
-func (s *coreService) BatchCreatePod(ctx *rest.Contexts) {
+// updateNodeField here you need to update the has_pod in the node uniformly
+func (s *coreService) updateNodeField(kit *rest.Kit, nodeIDMap map[int64]struct{}) error {
 
-	inputData := new(types.CreatePodsOption)
-	if err := ctx.DecodeInto(inputData); nil != err {
-		ctx.RespAutoError(err)
-		return
+	if len(nodeIDMap) == 0 {
+		return nil
 	}
 
-	// generate pod ids field
-	ids, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, types.BKTableNameBasePod, len(inputData.Data))
-	if err != nil {
-		blog.Errorf("create pods failed, generate ids failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	pods := make([]types.Pod, 0)
-	now := time.Now().Unix()
-	nodeIDMap := make(map[int64]struct{})
-	for _, info := range inputData.Data {
-		for idx, pod := range info.Pods {
-			podTmp, nodeID, err := s.insertPodTable(ctx.Kit, pod, info.BizID, now, int64(ids[idx]))
-			if err != nil {
-				ctx.RespAutoError(err)
-				return
-			}
-			pods = append(pods, podTmp)
-			if nodeID != 0 {
-				nodeIDMap[nodeID] = struct{}{}
-			}
-
-			// skip if there is no container information in the pod
-			if len(pod.Containers) == 0 {
-				continue
-			}
-			// generate pod ids field
-			containerIDs, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, types.BKTableNameBaseContainer,
-				len(pod.Containers))
-			if err != nil {
-				blog.Errorf("create container failed, generate ids failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-				ctx.RespAutoError(err)
-				return
-			}
-
-			for id, container := range pod.Containers {
-				err := s.insertContainerTable(ctx.Kit, int64(containerIDs[id]), int64(ids[idx]), container, now)
-				if err != nil {
-					ctx.RespAutoError(err)
-					return
-				}
-			}
-		}
-	}
 	nodeIDs := make([]int64, 0)
 	for id := range nodeIDMap {
 		nodeIDs = append(nodeIDs, id)
 	}
-
-	if len(nodeIDs) == 0 {
-		ctx.RespEntityWithError(pods, nil)
-		return
-	}
-
-	if err := s.updateNodeField(ctx.Kit, nodeIDs); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	ctx.RespEntityWithError(pods, nil)
-}
-
-func (s *coreService) insertPodTable(kit *rest.Kit, pod types.PodsInfo, bizID int64, now, id int64) (
-	types.Pod, int64, error) {
-
-	sysSpec, hasPod, ccErr := s.core.KubeOperation().GetSysSpecInfoByCond(kit, pod.Spec, bizID, pod.HostID)
-	if ccErr != nil {
-		return types.Pod{}, 0, ccErr
-	}
-
-	podInfo := types.Pod{
-		ID:            id,
-		SysSpec:       *sysSpec,
-		Name:          pod.Name,
-		Priority:      pod.Priority,
-		Labels:        pod.Labels,
-		IP:            pod.IP,
-		IPs:           pod.IPs,
-		Volumes:       pod.Volumes,
-		QOSClass:      pod.QOSClass,
-		NodeSelectors: pod.NodeSelectors,
-		Tolerations:   pod.Tolerations,
-		Revision: table.Revision{
-			CreateTime: now,
-			LastTime:   now,
-			Creator:    kit.User,
-			Modifier:   kit.User,
-		},
-	}
-	if err := mongodb.Client().Table(types.BKTableNameBasePod).Insert(kit.Ctx, &podInfo); err != nil {
-		blog.Errorf("create pod failed, db insert failed, pod: %+v, err: %+v, rid: %s", podInfo, err, kit.Rid)
-		return types.Pod{}, 0, err
-	}
-	// this scenario shows that the hasPod flag has been set to true and does not need to be reset
-	var nodeID int64
-	if !hasPod {
-		nodeID = sysSpec.NodeID
-	}
-	return podInfo, nodeID, nil
-}
-
-func (s *coreService) insertContainerTable(kit *rest.Kit, containerID, podID int64, info types.Container,
-	now int64) error {
-
-	container := &types.Container{
-		ID:              containerID,
-		SupplierAccount: kit.SupplierAccount,
-		PodID:           podID,
-		Name:            info.Name,
-		ContainerID:     info.ContainerID,
-		Image:           info.Image,
-		Ports:           info.Ports,
-		HostPorts:       info.HostPorts,
-		Args:            info.Args,
-		Started:         info.Started,
-		Limits:          info.Limits,
-		ReqSysSpecuests: info.ReqSysSpecuests,
-		Liveness:        info.Liveness,
-		Environment:     info.Environment,
-		Mounts:          info.Mounts,
-		Revision: table.Revision{
-			CreateTime: now,
-			LastTime:   now,
-			Creator:    kit.User,
-			Modifier:   kit.User,
-		},
-	}
-	err := mongodb.Client().Table(types.BKTableNameBaseContainer).Insert(kit.Ctx, container)
-	if err != nil {
-		blog.Errorf("create container failed, db insert failed, container: %+v, err: %+v, rid: %s",
-			container, err, kit.Rid)
-		return err
-	}
-	return nil
-}
-
-// updateNodeField here you need to update the has_pod in the node uniformly
-func (s *coreService) updateNodeField(kit *rest.Kit, nodeIDs []int64) error {
 
 	filter := map[string]interface{}{
 		common.BKFieldID: map[string]interface{}{
@@ -210,8 +74,8 @@ func (s *coreService) BatchCreateNode(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
 	}
-
-	ctx.RespEntityWithError(s.core.KubeOperation().BatchCreateNode(ctx.Kit, bizID, inputData.Nodes))
+	nodes, err := s.core.KubeOperation().BatchCreateNode(ctx.Kit, bizID, inputData.Nodes)
+	ctx.RespEntityWithError(nodes, err)
 }
 
 // SearchClusters search clusters
@@ -238,8 +102,7 @@ func (s *coreService) SearchClusters(ctx *rest.Contexts) {
 
 	result := &types.ResponseCluster{Data: clusters}
 
-	ctx.RespEntityWithError(result, nil)
-
+	ctx.RespEntity(result)
 }
 
 // SearchNodes search nodes
@@ -266,7 +129,7 @@ func (s *coreService) SearchNodes(ctx *rest.Contexts) {
 	}
 
 	result := &types.SearchNodeRsp{Data: nodes}
-	ctx.RespEntityWithError(result, nil)
+	ctx.RespEntity(result)
 }
 
 // BatchUpdateNode batch update node.
@@ -286,41 +149,31 @@ func (s *coreService) BatchUpdateNode(ctx *rest.Contexts) {
 		return
 	}
 
-	supplierAccount := ctx.Request.PathParameter("supplierAccount")
-	if supplierAccount == "" {
-		blog.Error("url parameter supplierAccount is not set, rid: %s", ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKOwnerIDField))
+	filter := map[string]interface{}{
+		types.BKBizIDField:    bizID,
+		common.BKOwnerIDField: ctx.Kit.SupplierAccount,
+	}
+	filter[types.BKIDField] = map[string]interface{}{
+		common.BKDBIN: input.IDs,
+	}
+
+	opts := orm.NewFieldOptions().AddIgnoredFields(types.IgnoredUpdateNodeFields...)
+	updateData, err := orm.GetUpdateFieldsWithOption(input.Data, opts)
+	if err != nil {
+		blog.Errorf("get update data failed, data: %v, err: %v, rid: %s", input.Data, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 
-	filter := map[string]interface{}{
-		types.BKBizIDField:    bizID,
-		common.BKOwnerIDField: supplierAccount,
-	}
-	for _, node := range input.Nodes {
-
-		filter[types.BKIDField] = map[string]interface{}{
-			common.BKDBIN: node.NodeIDs,
-		}
-
-		opts := orm.NewFieldOptions().AddIgnoredFields(types.IgnoredUpdateNodeFields...)
-		updateData, err := orm.GetUpdateFieldsWithOption(node.Data, opts)
-		if err != nil {
-			blog.Errorf("get update data failed, data: %v, err: %v, rid: %s", node.Data, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-
-		err = mongodb.Client().Table(types.BKTableNameBaseNode).Update(ctx.Kit.Ctx, filter, updateData)
-		if err != nil {
-			blog.Errorf("update node failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
-				err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
+	err = mongodb.Client().Table(types.BKTableNameBaseNode).Update(ctx.Kit.Ctx, filter, updateData)
+	if err != nil {
+		blog.Errorf("update node failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
+			err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
 	}
 
-	ctx.RespEntityWithError(&metadata.UpdatedCount{Count: uint64(len(input.Nodes))}, nil)
+	ctx.RespEntity(nil)
 }
 
 // BatchUpdateCluster update cluster.
@@ -341,62 +194,50 @@ func (s *coreService) BatchUpdateCluster(ctx *rest.Contexts) {
 		return
 	}
 
-	supplierAccount := ctx.Request.PathParameter("supplierAccount")
-	if supplierAccount == "" {
-		blog.Error("url parameter supplierAccount is not set, rid: %s", ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKOwnerIDField))
+	filter := map[string]interface{}{types.BKBizIDField: bizID}
+	util.SetQueryOwner(filter, ctx.Kit.SupplierAccount)
+
+	filter[types.BKIDField] = map[string]interface{}{
+		common.BKDBIN: input.IDs,
+	}
+
+	opts := orm.NewFieldOptions().AddIgnoredFields(types.IgnoredUpdateClusterFields...)
+	updateData, err := orm.GetUpdateFieldsWithOption(input.Data, opts)
+	if err != nil {
+		blog.Errorf("get update data failed, data: %v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommDBUpdateFailed))
 		return
 	}
 
-	for _, one := range input.Clusters {
-		filter := map[string]interface{}{
-			types.BKBizIDField:    bizID,
-			common.BKOwnerIDField: supplierAccount,
-		}
-
-		if one.ID != 0 {
-			filter[types.BKIDField] = one.ID
-		}
-
-		opts := orm.NewFieldOptions().AddIgnoredFields(types.IgnoredUpdateClusterFields...)
-		updateData, err := orm.GetUpdateFieldsWithOption(one.Data, opts)
-		if err != nil {
-			blog.Errorf("get update data failed, data: %v, err: %v, rid: %s", one, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommDBUpdateFailed))
-			return
-		}
-
-		err = mongodb.Client().Table(types.BKTableNameBaseCluster).Update(ctx.Kit.Ctx, filter, updateData)
-		if err != nil {
-			blog.Errorf("update cluster failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
-				err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommDBUpdateFailed))
-			return
-		}
+	err = mongodb.Client().Table(types.BKTableNameBaseCluster).Update(ctx.Kit.Ctx, filter, updateData)
+	if err != nil {
+		blog.Errorf("update cluster failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
+			err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommDBUpdateFailed))
+		return
 	}
-
-	ctx.RespEntityWithError(&metadata.UpdatedCount{Count: uint64(len(input.Clusters))}, nil)
+	ctx.RespEntity(nil)
 }
 
-// CreateCluster create cluster instance.
+// CreateCluster create kube cluster.
 func (s *coreService) CreateCluster(ctx *rest.Contexts) {
 
 	inputData := new(types.Cluster)
-
 	if err := ctx.DecodeInto(inputData); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
-		blog.Error("url parameter bk_biz_id not integer, bizID: %s, rid: %s", ctx.Request.PathParameter("bk_biz_id"),
-			ctx.Kit.Rid)
+		blog.Error("url param bk_biz_id not integer, bizID: %s, rid: %s",
+			ctx.Request.PathParameter(common.BKAppIDField), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.KubeOperation().CreateCluster(ctx.Kit, bizID, inputData))
+	cluster, err := s.core.KubeOperation().CreateCluster(ctx.Kit, bizID, inputData)
+	ctx.RespEntityWithError(cluster, err)
 }
 
 // BatchDeleteCluster delete clusters.
@@ -417,9 +258,7 @@ func (s *coreService) BatchDeleteCluster(ctx *rest.Contexts) {
 	}
 
 	filter := make(map[string]interface{}, 0)
-	num := 0
 	if len(option.IDs) > 0 {
-		num = len(option.IDs)
 		filter = map[string]interface{}{
 			common.BKAppIDField:   bizID,
 			common.BKOwnerIDField: ctx.Kit.SupplierAccount,
@@ -433,8 +272,7 @@ func (s *coreService) BatchDeleteCluster(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
-	ctx.RespEntityWithError(uint64(num), nil)
+	ctx.RespEntity(nil)
 }
 
 // BatchDeleteNode delete clusters.
@@ -469,16 +307,13 @@ func (s *coreService) BatchDeleteNode(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	num := len(option.IDs)
-
-	ctx.RespEntityWithError(&metadata.DeletedCount{Count: uint64(num)}, nil)
-
+	ctx.RespEntity(nil)
 }
 
 // ListContainer list container
 func (s *coreService) ListContainer(ctx *rest.Contexts) {
 	input := new(metadata.QueryCondition)
-	if err := ctx.DecodeInto(input); nil != err {
+	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}

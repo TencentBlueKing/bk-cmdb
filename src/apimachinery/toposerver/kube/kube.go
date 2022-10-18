@@ -29,8 +29,8 @@ import (
 
 // BatchCreateNode batch create node
 func (st *Kube) BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
-	data *types.CreateNodesOption) (*metadata.Response, errors.CCErrorCoder) {
-	ret := new(metadata.Response)
+	data *types.CreateNodesOption) ([]int64, errors.CCErrorCoder) {
+	ret := new(types.CreateNodesRsp)
 	subPath := "/createmany/kube/node/bk_biz_id/%d"
 
 	err := st.client.Post().
@@ -42,19 +42,19 @@ func (st *Kube) BatchCreateNode(ctx context.Context, header http.Header, bizID i
 		Into(ret)
 
 	if err != nil {
-		blog.Errorf("batch create node failed, http request failed, err: %+v", err)
 		return nil, errors.CCHttpError
 	}
 	if ret.CCError() != nil {
 		return nil, ret.CCError()
 	}
-	return ret, nil
+
+	return ret.Data.IDs, nil
 }
 
 // BatchCreatePod batch create pod.
 func (st *Kube) BatchCreatePod(ctx context.Context, header http.Header,
-	data *types.CreatePodsOption) (*metadata.Response, errors.CCErrorCoder) {
-	ret := new(metadata.Response)
+	data *types.CreatePodsOption) ([]int64, errors.CCErrorCoder) {
+	ret := new(types.CreatePodsRsp)
 	subPath := "/createmany/kube/pod"
 
 	err := st.client.Post().
@@ -73,8 +73,7 @@ func (st *Kube) BatchCreatePod(ctx context.Context, header http.Header,
 		return nil, ret.CCError()
 	}
 
-	return ret, nil
-
+	return ret.Data.IDs, nil
 }
 
 // SearchCluster search cluster.
@@ -169,8 +168,8 @@ func (st *Kube) UpdateClusterFields(ctx context.Context, header http.Header, biz
 
 // CreateCluster create cluster.
 func (st *Kube) CreateCluster(ctx context.Context, header http.Header, bizID int64,
-	data *types.Cluster) (*metadata.Response, errors.CCErrorCoder) {
-	ret := new(metadata.Response)
+	data *types.Cluster) (int64, errors.CCErrorCoder) {
+	ret := new(types.CreateClusterRsp)
 	subPath := "/create/kube/cluster/bk_biz_id/%d"
 	err := st.client.Post().
 		WithContext(ctx).
@@ -181,13 +180,13 @@ func (st *Kube) CreateCluster(ctx context.Context, header http.Header, bizID int
 		Into(ret)
 
 	if err != nil {
-		return nil, errors.CCHttpError
+		return 0, errors.CCHttpError
 	}
 	if ret.CCError() != nil {
-		return nil, ret.CCError()
+		return 0, ret.CCError()
 	}
 
-	return ret, nil
+	return ret.Data.ID, nil
 }
 
 // DeleteCluster delete cluster.

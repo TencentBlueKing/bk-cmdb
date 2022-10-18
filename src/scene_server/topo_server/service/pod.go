@@ -18,6 +18,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -100,40 +101,39 @@ func (s *Service) buildPodPaths(kit *rest.Kit, bizName string, pods []types.Pod)
 		clusterID := pod.ClusterID
 		clusterIDs = append(clusterIDs, clusterID)
 
-		if pod.NameSpaceID == 0 {
+		if pod.NamespaceSpec.NamespaceID == 0 {
 			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.BKNamespaceIDField,
 				kit.Rid)
 			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.BKNamespaceIDField)
 		}
-		namespaceID := pod.NameSpaceID
+		namespaceID := pod.NamespaceSpec.NamespaceID
 
-		if pod.NameSpace == "" {
+		if pod.NamespaceSpec.Namespace == "" {
 			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.NamespaceField, kit.Rid)
 			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.NamespaceField)
 		}
-		namespace := pod.NameSpace
+		namespace := pod.NamespaceSpec.Namespace
 
-		//
-		if pod.Workload.Kind == "" {
+		if pod.WorkloadSpec.Ref.Kind == "" {
 			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefKindField, kit.Rid)
 			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.RefKindField)
 		}
-		if pod.Workload.Name == "" {
+		if pod.WorkloadSpec.Ref.Name == "" {
 			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefNameField, kit.Rid)
 			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.RefNameField)
 		}
-		if pod.Workload.ID == 0 {
+		if pod.WorkloadSpec.Ref.ID == 0 {
 			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefIDField, kit.Rid)
 			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.RefIDField)
 		}
-		ref := pod.Workload
+		ref := pod.WorkloadSpec.Ref
 
 		path := types.PodPath{
 			BizName:      bizName,
 			ClusterID:    clusterID,
 			NamespaceID:  namespaceID,
 			Namespace:    namespace,
-			Kind:         types.WorkloadType(ref.Kind),
+			Kind:         ref.Kind,
 			WorkloadID:   ref.ID,
 			WorkloadName: ref.Name,
 			PodID:        id,
@@ -229,6 +229,41 @@ func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
 		return
 	}
 
+	filters := make([]map[string]interface{}, 0)
+	for _, info := range data.Data {
+		for _, pod := range info.Pods {
+			filter := map[string]interface{}{
+				common.BKOwnerIDField:    ctx.Kit.SupplierAccount,
+				types.BKBizIDField:       info.BizID,
+				types.BKClusterIDFiled:   pod.Spec.ClusterID,
+				types.BKNamespaceIDField: pod.Spec.NamespaceID,
+				types.BKNodeIDField:      pod.Spec.NodeID,
+				types.KubeNameField:      *pod.Name,
+				types.RefKindField:       pod.Spec.Ref.Kind,
+				types.RefIDField:         pod.Spec.Ref.ID,
+			}
+			filters = append(filters, filter)
+		}
+	}
+
+	counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
+		types.BKTableNameBasePod, filters)
+	if err != nil {
+		blog.Errorf("count pods failed, filter: %#v, err: %v, rid: %s", filters, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	var podNum int64
+	for _, count := range counts {
+		podNum += count
+	}
+	if podNum > 0 {
+		blog.Errorf("some pods already exists and the creation fails, filter: %#v, rid: %s", filters, ctx.Kit.Rid)
+		ctx.RespAutoError(errors.New("some pod already exists and the creation fails"))
+		return
+	}
+
 	var ids []int64
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
@@ -244,7 +279,7 @@ func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(ids)
+	ctx.RespEntity(metadata.RspIDs{IDs: ids})
 }
 
 // DeletePods delete pods and their containers

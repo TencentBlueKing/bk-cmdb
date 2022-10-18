@@ -81,13 +81,9 @@ var _ = Describe("workload test", func() {
 			Type:             &clusterType,
 		}
 
-		clusterResult, err := kubeClient.CreateCluster(ctx, header, bizID, createCLuster)
-
-		util.RegisterResponse(clusterResult)
+		id, err := kubeClient.CreateCluster(ctx, header, bizID, createCLuster)
+		util.RegisterResponse(id)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(clusterResult.Result).To(Equal(true))
-		id, cErr := commonutil.GetInt64ByInterface(clusterResult.Data)
-		Expect(cErr).NotTo(HaveOccurred())
 		clusterID = id
 
 		ns := types.Namespace{

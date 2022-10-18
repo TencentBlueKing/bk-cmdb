@@ -18,6 +18,7 @@
 package service
 
 import (
+	"errors"
 	"strconv"
 
 	"configcenter/src/common"
@@ -29,8 +30,8 @@ import (
 	"configcenter/src/kube/types"
 )
 
-// findKubeTopoPathIfo generate different query conditions based on different resources.
-func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathOption, filter mapstr.MapStr,
+// findKubeTopoPathInfo generate different query conditions based on different resources.
+func (s *Service) findKubeTopoPathInfo(kit *rest.Kit, option *types.KubeTopoPathOption, filter mapstr.MapStr,
 	tableNames []string) (*types.KubeTopoPathRsp, error) {
 
 	result := &types.KubeTopoPathRsp{Info: make([]types.KubeObjectInfo, 0)}
@@ -57,6 +58,10 @@ func (s *Service) findKubeTopoPathIfo(kit *rest.Kit, option *types.KubeTopoPathO
 				return result, err
 			}
 			for _, cluster := range clusters.Data {
+				if cluster.Name == nil {
+					blog.Errorf("cluster name is nil, cluster: %v, rid: %s", cluster, err, kit.Rid)
+					return nil, errors.New("cluster name is nil")
+				}
 				result.Info = append(result.Info, types.KubeObjectInfo{
 					ID: cluster.ID, Name: *cluster.Name, Kind: types.KubeCluster,
 				})
@@ -127,7 +132,6 @@ func combinationConditions(infos []types.KubeResourceInfo, bizID int64,
 				types.BKBizIDField:           bizID,
 				types.BKSupplierAccountField: supplierAccount,
 			})
-
 		default:
 			filters = append(filters, map[string]interface{}{
 				types.RefIDField:             info.ID,
@@ -162,7 +166,8 @@ func (s *Service) CountKubeTopoHostsOrPods(ctx *rest.Contexts) {
 		ctx.RespAutoError(cErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -182,6 +187,12 @@ func (s *Service) CountKubeTopoHostsOrPods(ctx *rest.Contexts) {
 				continue
 			}
 			podFilters = append(podFilters, filter)
+		}
+		// here it is explained that the node to be queried is a folder,
+		// then the number of pods must be 0.
+		if len(podFilters) == 0 {
+			ctx.RespEntity(result)
+			return
 		}
 		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
 			types.BKTableNameBasePod, podFilters)
@@ -233,7 +244,6 @@ func (s *Service) getTopoHostNumber(ctx *rest.Contexts, resourceInfos []types.Ku
 	result := make([]types.KubeTopoCountRsp, 0)
 
 	for id, filter := range filters {
-
 		// determine whether this node is a folder If it is a folder, then you need to check the node table.
 		if resourceInfos[id].Kind == types.KubeFolder {
 			count, err := s.getHostIDsInNodeByCond(ctx.Kit, filter, bizID)
@@ -254,8 +264,13 @@ func (s *Service) getTopoHostNumber(ctx *rest.Contexts, resourceInfos []types.Ku
 			return nil, err
 		}
 
-		if types.IsWorkLoadKind(util.GetStrByInterface(filter[types.RefKindField])) {
-			id, _ := util.GetInt64ByInterface(filter[types.RefIDField])
+		workloadType := types.WorkloadType(util.GetStrByInterface(filter[types.RefKindField]))
+		// the scenario dealt with here is the workload type calculation number.
+		if err := workloadType.Validate(); err == nil {
+			id, err := util.GetInt64ByInterface(filter[types.RefIDField])
+			if err != nil {
+				return nil, err
+			}
 			result = append(result, types.KubeTopoCountRsp{
 				Kind:  util.GetStrByInterface(filter[types.RefKindField]),
 				ID:    id,
@@ -429,7 +444,7 @@ func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := s.findKubeTopoPathIfo(ctx.Kit, option, filter, tableNames)
+	result, err := s.findKubeTopoPathInfo(ctx.Kit, option, filter, tableNames)
 	if err != nil {
 		blog.Errorf("failed to get topo path, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -438,12 +453,13 @@ func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-// FindResourceAttrs get the attribute information of the container object
+// FindResourceAttrs get the attribute information of the kube object
+// for front-end use only
 func (s *Service) FindResourceAttrs(ctx *rest.Contexts) {
 
 	object := ctx.Request.PathParameter("object")
 	if !types.IsContainerTopoResource(object) {
-		blog.Errorf("the parameter is invalid and does not belong to the container object(%s)", object)
+		blog.Errorf("the param is invalid and does not belong to the kube object(%s)", object)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "object"))
 		return
 	}

@@ -31,6 +31,41 @@ func (s *coreService) initKube(web *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/create/kube/cluster/{bk_biz_id}",
+		Handler: s.CreateCluster})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path:    "/updatemany/kube/cluster/{bk_biz_id}",
+		Handler: s.BatchUpdateCluster})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path:    "/deletemany/kube/cluster/{bk_biz_id}",
+		Handler: s.BatchDeleteCluster})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/findmany/kube/cluster",
+		Handler: s.SearchClusters})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path:    "/updatemany/kube/node/{bk_biz_id}",
+		Handler: s.BatchUpdateNode})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path:    "/deletemany/kube/node/{bk_biz_id}",
+		Handler: s.BatchDeleteNode})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/createmany/kube/node/{bk_biz_id}",
+		Handler: s.BatchCreateNode})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/createmany/kube/pod",
+		Handler: s.BatchCreatePod})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/findmany/kube/node",
+		Handler: s.SearchNodes})
+
 	// namespace
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/namespace/bk_biz_id/{bk_biz_id}",
 		Handler: s.CreateNamespace})

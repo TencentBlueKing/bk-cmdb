@@ -405,14 +405,15 @@ func (k *kube) SearchNode(ctx context.Context, header http.Header, input *metada
 }
 
 // UpdateNodeFields update node fields.
-func (k *kube) UpdateNodeFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
+func (k *kube) UpdateNodeFields(ctx context.Context, header http.Header, bizID int64,
 	data *types.UpdateNodeOption) errors.CCErrorCoder {
-	ret := new(metadata.UpdatedCount)
-	subPath := "/updatemany/kube/node/%s/%d"
+
+	ret := new(metadata.BaseResp)
+	subPath := "/updatemany/kube/node/%d"
 	err := k.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath, supplierAccount, bizID).
+		SubResourcef(subPath, bizID).
 		WithHeaders(header).
 		Do().
 		Into(ret)
@@ -425,14 +426,15 @@ func (k *kube) UpdateNodeFields(ctx context.Context, header http.Header, supplie
 }
 
 // UpdateClusterFields update cluster fields.
-func (k *kube) UpdateClusterFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
+func (k *kube) UpdateClusterFields(ctx context.Context, header http.Header, bizID int64,
 	data *types.UpdateClusterOption) errors.CCErrorCoder {
-	ret := new(metadata.UpdatedCount)
-	subPath := "/updatemany/kube/cluster/%s/%d"
+
+	ret := new(metadata.BaseResp)
+	subPath := "/updatemany/kube/cluster/%d"
 	err := k.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath, supplierAccount, bizID).
+		SubResourcef(subPath, bizID).
 		WithHeaders(header).
 		Do().
 		Into(ret)
@@ -470,7 +472,7 @@ func (k *kube) CreateCluster(ctx context.Context, header http.Header, bizID int6
 // DeleteCluster delete cluster.
 func (k *kube) DeleteCluster(ctx context.Context, header http.Header, bizID int64,
 	option *types.DeleteClusterOption) errors.CCErrorCoder {
-	ret := new(metadata.DeletedCount)
+	ret := new(metadata.Response)
 	subPath := "/deletemany/kube/cluster/%d"
 
 	err := k.client.Delete().
@@ -491,7 +493,7 @@ func (k *kube) DeleteCluster(ctx context.Context, header http.Header, bizID int6
 // BatchDeleteNode delete cluster.
 func (k *kube) BatchDeleteNode(ctx context.Context, header http.Header, bizID int64,
 	option *types.BatchDeleteNodeOption) errors.CCErrorCoder {
-	ret := new(metadata.DeletedCount)
+	ret := new(metadata.Response)
 	subPath := "/deletemany/kube/node/%d"
 
 	err := k.client.Delete().

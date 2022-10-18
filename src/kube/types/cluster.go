@@ -48,8 +48,14 @@ var ClusterSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: NetworkTypeField, Type: enumor.Enum, IsRequired: false, IsEditable: true},
 	{Field: RegionField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: VpcField, Type: enumor.String, IsRequired: false, IsEditable: false},
-	{Field: NetworkField, Type: enumor.String, IsRequired: false, IsEditable: false},
+	{Field: NetworkField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: TypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
+}
+
+// ClusterBaseRefDescriptor the description used when other resources refer to the cluster.
+var ClusterBaseRefDescriptor = table.FieldsDescriptors{
+	{Field: ClusterUIDField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: BKClusterIDFiled, Type: enumor.Numeric, IsRequired: false, IsEditable: false},
 }
 
 // Cluster container cluster table structure
@@ -87,7 +93,7 @@ type Cluster struct {
 // IgnoredUpdateClusterFields update the fields that need to be ignored in the cluster scenario.
 var IgnoredUpdateClusterFields = []string{common.BKFieldID, common.BKOwnerIDField, BKBizIDField, ClusterUIDField}
 
-// CreateClusterResult create cluster result.
+// CreateClusterResult create cluster result for internal call.
 type CreateClusterResult struct {
 	metadata.BaseResp
 	Info *Cluster `json:"data"`
@@ -96,6 +102,12 @@ type CreateClusterResult struct {
 // DeleteClusterOption delete cluster result.
 type DeleteClusterOption struct {
 	IDs []int64 `json:"ids"`
+}
+
+// CreateClusterRsp create cluster result for external call.
+type CreateClusterRsp struct {
+	metadata.BaseResp
+	Data metadata.RspID `json:"data"`
 }
 
 // Validate validate the DeleteClusterOption
@@ -122,7 +134,7 @@ func (option *Cluster) CreateValidate() error {
 	typeOfOption := reflect.TypeOf(*option)
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, i)
+		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
 		if flag {
 			continue
 		}
@@ -149,12 +161,12 @@ func (option *Cluster) updateValidate() error {
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
 
-		tag, flag := getFieldTag(typeOfOption, i)
+		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
 		if flag {
 			continue
 		}
 
-		if flag := isEditableField(tag, valueOfOption, i); flag {
+		if flag := isNotEditableField(tag, valueOfOption, i); flag {
 			continue
 		}
 
@@ -198,15 +210,10 @@ type ResponseCluster struct {
 	Data []Cluster `json:"cluster"`
 }
 
-// OneUpdateCluster update individual cluster information.
-type OneUpdateCluster struct {
-	ID   int64   `json:"id"`
-	Data Cluster `json:"cluster"`
-}
-
 // UpdateClusterOption update cluster request。
 type UpdateClusterOption struct {
-	Clusters []OneUpdateCluster `json:"data"`
+	IDs  []int64 `json:"ids"`
+	Data Cluster `json:"data"`
 }
 
 // Validate validate the UpdateClusterOption
@@ -216,20 +223,15 @@ func (option *UpdateClusterOption) Validate() error {
 		return errors.New("cluster information must be given")
 	}
 
-	if len(option.Clusters) == 0 {
+	if len(option.IDs) == 0 {
 		return errors.New("the params for updating the cluster must be set")
 	}
-	if len(option.Clusters) > maxUpdateClusterNum {
+	if len(option.IDs) > maxUpdateClusterNum {
 		return fmt.Errorf("the number of update clusters cannot exceed %d at a time", maxUpdateClusterNum)
 	}
 
-	for _, one := range option.Clusters {
-		if one.ID == 0 {
-			return errors.New("id cannot be empty")
-		}
-		if err := one.Data.updateValidate(); err != nil {
-			return err
-		}
+	if err := option.Data.updateValidate(); err != nil {
+		return err
 	}
 
 	return nil

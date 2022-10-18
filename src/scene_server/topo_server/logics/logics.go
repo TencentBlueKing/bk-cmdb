@@ -92,7 +92,6 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	attributeOperation.SetProxy(groupOperation, objectOperation)
 	businessOperation.SetProxy(instOperation, moduleOperation, setOperation)
 	businessSetOperation.SetProxy(instOperation)
-	kubeOperation.SetProxy(kubeOperation)
 	return &logics{
 		classification:    classificationOperation,
 		set:               setOperation,

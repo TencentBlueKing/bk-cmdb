@@ -32,7 +32,9 @@ import (
 )
 
 // PodFields merge the fields of the cluster and the details corresponding to the fields together.
-var PodFields = table.MergeFields(PodSpecFieldsDescriptor)
+var PodFields = table.MergeFields(CommonSpecFieldsDescriptor, BizIDDescriptor, HostIDDescriptor,
+	ClusterBaseRefDescriptor, NodeBaseRefDescriptor, NamespaceBaseRefDescriptor,
+	WorkLoadRefDescriptor, PodSpecFieldsDescriptor)
 
 // PodSpecFieldsDescriptor pod spec's fields descriptors.
 var PodSpecFieldsDescriptor = table.FieldsDescriptors{
@@ -49,8 +51,13 @@ var PodSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: TolerationsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 }
 
+// PodBaseRefDescriptor the description used when other resources refer to the pod.
+var PodBaseRefDescriptor = table.FieldsDescriptors{
+	{Field: BKPodIDField, Type: enumor.Numeric, IsRequired: true, IsEditable: false},
+}
+
 // ContainerFields merge the fields of the cluster and the details corresponding to the fields together.
-var ContainerFields = table.MergeFields(ContainerSpecFieldsDescriptor)
+var ContainerFields = table.MergeFields(CommonSpecFieldsDescriptor, PodBaseRefDescriptor, ContainerSpecFieldsDescriptor)
 
 // ContainerSpecFieldsDescriptor container spec's fields descriptors.
 var ContainerSpecFieldsDescriptor = table.FieldsDescriptors{
@@ -108,6 +115,10 @@ func (p *PodQueryReq) Validate() ccErr.RawErrorInfo {
 
 	if err := p.Page.ValidateWithEnableCount(false, podQueryLimit); err.ErrCode != 0 {
 		return err
+	}
+
+	if p.Filter == nil {
+		return ccErr.RawErrorInfo{}
 	}
 
 	op := filter.NewDefaultExprOpt(PodFields.FieldsType())
@@ -215,7 +226,7 @@ func (option *Pod) createValidate() error {
 		typeOfOption := reflect.TypeOf(*option)
 		valueOfOption := reflect.ValueOf(*option)
 		for i := 0; i < typeOfOption.NumField(); i++ {
-			tag, flag := getFieldTag(typeOfOption, i)
+			tag, flag := getFieldTag(typeOfOption, JsonTag, i)
 			if flag {
 				continue
 			}
@@ -273,7 +284,7 @@ func (option *Container) createValidate() error {
 	valueOfOption := reflect.ValueOf(*option)
 	for i := 0; i < typeOfOption.NumField(); i++ {
 
-		tag, flag := getFieldTag(typeOfOption, i)
+		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
 		if flag {
 			continue
 		}
@@ -293,17 +304,10 @@ func (option *Container) createValidate() error {
 // SysSpec the relationship information related to the container
 // that stores the cc, all types share this structure.
 type SysSpec struct {
-	BizID           int64  `json:"bk_biz_id" bson:"bk_biz_id"`
 	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	ClusterID       int64  `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
-	// redundant cluster id
-	ClusterUID  string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
-	NameSpaceID int64  `json:"bk_namespace_id,omitempty" bson:"bk_namespace_id"`
-	// redundant namespace names
-	NameSpace string `json:"namespace,omitempty" bson:"namespace"`
-	Workload  Ref    `json:"ref,omitempty" bson:"ref"`
-	HostID    int64  `json:"bk_host_id,omitempty" bson:"bk_host_id"`
-	NodeID    int64  `json:"bk_node_id,omitempty" bson:"bk_node_id"`
+	WorkloadSpec    `json:",inline" bson:",inline"`
+	HostID          int64 `json:"bk_host_id,omitempty" bson:"bk_host_id"`
+	NodeID          int64 `json:"bk_node_id,omitempty" bson:"bk_node_id"`
 	// redundant node names
 	Node string `json:"node_name,omitempty" bson:"node_name"`
 }
@@ -319,8 +323,8 @@ type Ref struct {
 
 // PodsInfo details of creating pods.
 type PodsInfo struct {
-	Spec       SpecInfo `json:"spec"`
-	HostID     int64    `json:"bk_host_id"`
+	Spec       SpecSimpleInfo `json:"spec"`
+	HostID     int64          `json:"bk_host_id"`
 	Pod        `json:",inline"`
 	Containers []Container `json:"containers"`
 }
@@ -328,6 +332,13 @@ type PodsInfo struct {
 // CreatePodsOption create pods option
 type CreatePodsOption struct {
 	Data []PodsInfoArray `json:"data"`
+}
+
+// CreatePodsRsp the response message
+// body of the created pod result to the user.
+type CreatePodsRsp struct {
+	metadata.BaseResp
+	Data metadata.RspIDs `json:"data"`
 }
 
 // PodsInfoArray create pods option
@@ -392,6 +403,10 @@ func (p *ContainerQueryReq) Validate() ccErr.RawErrorInfo {
 
 	if err := p.Page.ValidateWithEnableCount(false, containerQueryLimit); err.ErrCode != 0 {
 		return err
+	}
+
+	if p.Filter == nil {
+		return ccErr.RawErrorInfo{}
 	}
 
 	op := filter.NewDefaultExprOpt(ContainerFields.FieldsType())

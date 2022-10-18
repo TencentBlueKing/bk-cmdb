@@ -29,11 +29,12 @@ import (
 )
 
 // GameDeploymentFields merge the fields of the GameDeployment and the details corresponding to the fields together.
-var GameDeploymentFields = table.MergeFields(CommonSpecFieldsDescriptor, WorkLoadBaseFieldsDescriptor,
-	GameDeploymentSpecFieldsDescriptor)
+var GameDeploymentFields = table.MergeFields(CommonSpecFieldsDescriptor, NamespaceBaseRefDescriptor,
+	ClusterBaseRefDescriptor, GameDeploymentSpecFieldsDescriptor)
 
 // GameDeploymentSpecFieldsDescriptor GameDeployment spec's fields descriptors.
 var GameDeploymentSpecFieldsDescriptor = table.FieldsDescriptors{
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: true, IsEditable: true},
@@ -110,12 +111,12 @@ func (w *GameDeployment) ValidateUpdate() errors.RawErrorInfo {
 	typeOfOption := reflect.TypeOf(*w)
 	valueOfOption := reflect.ValueOf(*w)
 	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, i)
+		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
 		if flag {
 			continue
 		}
 
-		if flag := isEditableField(tag, valueOfOption, i); flag {
+		if flag := isNotEditableField(tag, valueOfOption, i); flag {
 			continue
 		}
 

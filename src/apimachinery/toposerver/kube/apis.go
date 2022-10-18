@@ -29,8 +29,7 @@ import (
 
 // KubeOperationInterface the kube implements the interface
 type KubeOperationInterface interface {
-	CreateCluster(ctx context.Context, h http.Header, bizID int64, option *types.Cluster) (
-		*metadata.Response, errors.CCErrorCoder)
+	CreateCluster(ctx context.Context, h http.Header, bizID int64, option *types.Cluster) (int64, errors.CCErrorCoder)
 	UpdateClusterFields(ctx context.Context, header http.Header, bizID int64,
 		data *types.UpdateClusterOption) (*metadata.Response, errors.CCErrorCoder)
 	SearchCluster(ctx context.Context, header http.Header, bizID int64, input *types.QueryClusterOption) (
@@ -40,12 +39,10 @@ type KubeOperationInterface interface {
 	BatchDeleteNode(ctx context.Context, header http.Header, bizID int64,
 		option *types.BatchDeleteNodeOption) (*metadata.Response, errors.CCErrorCoder)
 	BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
-		data *types.CreateNodesOption) (*metadata.Response, errors.CCErrorCoder)
+		data *types.CreateNodesOption) ([]int64, errors.CCErrorCoder)
 	UpdateNodeFields(ctx context.Context, header http.Header, bizID int64, data *types.UpdateNodeOption) (
 		*metadata.Response, errors.CCErrorCoder)
 	SearchNode(ctx context.Context, header http.Header, bizID int64, input *types.QueryNodeOption) (
-		*metadata.Response, errors.CCErrorCoder)
-	BatchCreatePod(ctx context.Context, header http.Header, data *types.CreatePodsOption) (
 		*metadata.Response, errors.CCErrorCoder)
 
 	// CreateNamespace create namespace
@@ -81,6 +78,8 @@ type KubeOperationInterface interface {
 	// ListPod list pod
 	ListPod(ctx context.Context, header http.Header, bizID int64, option *types.PodQueryReq) (
 		*metadata.InstDataInfo, errors.CCErrorCoder)
+
+	BatchCreatePod(ctx context.Context, header http.Header, data *types.CreatePodsOption) ([]int64, errors.CCErrorCoder)
 
 	// ListContainer list container
 	ListContainer(ctx context.Context, header http.Header, bizID int64, option *types.ContainerQueryReq) (

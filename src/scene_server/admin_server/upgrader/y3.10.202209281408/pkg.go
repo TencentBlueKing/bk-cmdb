@@ -32,12 +32,12 @@ func init() {
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	blog.Infof("start execute y3.10.202209281408, init container collection and index")
 
-	if err = addContainerCollection(ctx, db); err != nil {
+	if err = addKubeCollection(ctx, db); err != nil {
 		blog.Errorf("upgrade y3.10.202209281408 add container collection failed, err: %v", err)
 		return err
 	}
 
-	if err = addContainerCollectionIndex(ctx, db); err != nil {
+	if err = addKubeCollectionIndex(ctx, db); err != nil {
 		blog.Errorf("upgrade y3.10.202209281408 add container collection index failed, err: %v", err)
 		return err
 	}

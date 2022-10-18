@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"strings"
 
+	"configcenter/src/common/criteria/enumor"
 	"configcenter/src/storage/dal/table"
 )
 
@@ -70,19 +71,23 @@ type WorkloadSpec struct {
 
 // CommonSpecFieldsDescriptor public field properties
 var CommonSpecFieldsDescriptor = table.FieldsDescriptors{
-	{Field: BKIDField, IsRequired: true, IsEditable: false},
-	{Field: BKSupplierAccountField, IsRequired: true, IsEditable: false},
-	{Field: CreatorField, IsRequired: true, IsEditable: false},
-	{Field: ModifierField, IsRequired: true, IsEditable: true},
-	{Field: CreateTimeField, IsRequired: true, IsEditable: false},
-	{Field: LastTimeField, IsRequired: true, IsEditable: true},
+	{Field: BKIDField, Type: enumor.Numeric, IsRequired: true, IsEditable: false},
+	{Field: BKSupplierAccountField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: CreatorField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: ModifierField, Type: enumor.String, IsRequired: true, IsEditable: true},
+	{Field: CreateTimeField, Type: enumor.Timestamp, IsRequired: true, IsEditable: false},
+	{Field: LastTimeField, Type: enumor.Timestamp, IsRequired: true, IsEditable: true},
 }
 
 // BizIDDescriptor bizID descriptor is taken out separately and not placed in CommonSpecFieldsDescriptor because
 // bk_biz_id does not exist in the container table and needs to be processed separately.
 var BizIDDescriptor = table.FieldsDescriptors{
-	{Field: BKBizIDField, IsRequired: true, IsEditable: false},
-	{Field: "bk_host_id", IsRequired: false, IsEditable: false},
+	{Field: BKBizIDField, Type: enumor.Numeric, IsRequired: true, IsEditable: false},
+}
+
+// HostIDDescriptor the description used when other resources refer to the host.
+var HostIDDescriptor = table.FieldsDescriptors{
+	{Field: "bk_host_id", Type: enumor.Numeric, IsRequired: false, IsEditable: false},
 }
 
 // isRequiredField check if field is required Field is not filled
@@ -101,7 +106,7 @@ func isRequiredField(tag string, value reflect.Value, i int) error {
 	return nil
 }
 
-func isEditableField(tag string, value reflect.Value, i int) bool {
+func isNotEditableField(tag string, value reflect.Value, i int) bool {
 
 	if isCommonField(tag) {
 		return true
@@ -112,19 +117,26 @@ func isEditableField(tag string, value reflect.Value, i int) bool {
 		return true
 	}
 
-	//	check each variable for a null pointer.
-	//	if it is a null pointer, it means that
-	//	this field will not be updated, skip it directly.
+	// check each variable for a null pointer.
+	// if it is a null pointer, it means that
+	// this field will not be updated, skip it directly.
 	if field.IsNil() {
 		return true
 	}
 	return false
 }
 
+const (
+	// JsonTag tag type is json
+	JsonTag = "json"
+)
+
 // getFieldTag a variable with a non-null pointer gets the corresponding tag.
 // for example, it needs to be compatible when the tag is "name,omitempty"
-func getFieldTag(typeOfOption reflect.Type, i int) (string, bool) {
-	tagTmp := typeOfOption.Field(i).Tag.Get("json")
+func getFieldTag(typeOfOption reflect.Type, tag string, i int) (string, bool) {
+	tagTmp := typeOfOption.Field(i).Tag.Get(tag)
+	//tagTmp := typeOfOption.Field(i).Tag.Get("json")
+
 	tags := strings.Split(tagTmp, ",")
 
 	if tags[0] == "" {
@@ -148,6 +160,13 @@ func isCommonField(field string) bool {
 			return true
 		}
 	}
+
+	for _, hostDescriptor := range HostIDDescriptor {
+		if field == hostDescriptor.Field {
+			return true
+		}
+	}
+
 	return false
 }
 
@@ -288,48 +307,37 @@ func GetKindByWorkLoadTableNameMap(table string) (map[string]string, error) {
 
 }
 
-// IsWorkLoadKind whether the resource type is workload
-func IsWorkLoadKind(kind string) bool {
-	switch kind {
-	case string(KubeDeployment), string(KubeStatefulSet), string(KubeDaemonSet), string(KubeJob),
-		string(KubeCronJob), string(KubeGameStatefulSet), string(KubeGameDeployment), string(KubePodWorkload):
-		return true
-	default:
-		return false
-	}
-}
-
-// KubeAttrsRsp 容器资源属性回应
+// KubeAttrsRsp kube resource attribute response
 type KubeAttrsRsp struct {
 	Field    string `json:"field"`
 	Type     string `json:"type"`
 	Required bool   `json:"required"`
 }
 
-// SpecInfo information about container fields in cmdb.
-type SpecInfo struct {
+// SpecSimpleInfo information about container fields in cmdb.
+type SpecSimpleInfo struct {
 	// ClusterID cluster id in cc
-	ClusterID *int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
+	ClusterID int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
 	// NamespaceID namespace id in cc
-	NamespaceID *int64 `json:"bk_namespace_id" bson:"bk_namespace_id"`
+	NamespaceID int64 `json:"bk_namespace_id" bson:"bk_namespace_id"`
 	// Ref the workload at the upper level of the pod
-	Ref Ref `json:"ref" bson:"ref"`
+	Ref Reference `json:"ref" bson:"ref"`
 	// NodeID node id in cc
-	NodeID *int64 `json:"bk_node_id" bson:"bk_node_id"`
+	NodeID int64 `json:"bk_node_id" bson:"bk_node_id"`
 }
 
 // validate validate the spec info
-func (option *SpecInfo) validate() error {
+func (option *SpecSimpleInfo) validate() error {
 
-	if option.ClusterID == nil || *option.ClusterID == 0 {
+	if option.ClusterID == 0 {
 		return errors.New("cluster id must be set")
 	}
 
-	if option.NamespaceID == nil || *option.NamespaceID == 0 {
+	if option.NamespaceID == 0 {
 		return errors.New("namespace id must be set")
 	}
 
-	if option.NodeID == nil || *option.NodeID == 0 {
+	if option.NodeID == 0 {
 		return errors.New("node id must be set")
 	}
 
