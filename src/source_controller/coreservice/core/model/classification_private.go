@@ -28,7 +28,7 @@ func (m *modelClassification) isValid(kit *rest.Kit, classificationID string) (b
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
-	cnt, err := m.count(kit, cond)
+	cnt, err := m.count(kit, cond.ToMapStr())
 	return 0 != cnt, err
 }
 
