@@ -13,6 +13,7 @@
 <template>
   <bk-dialog
     v-model="isShow"
+    :mask-close="true"
     :draggable="false"
     :width="730"
     @after-leave="handleClosed">

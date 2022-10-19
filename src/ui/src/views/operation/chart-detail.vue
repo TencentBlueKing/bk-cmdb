@@ -15,7 +15,7 @@
     <bk-dialog v-model="showDia"
       class="bk-dialog-no-padding bk-dialog-no-tools"
       :close-icon="false"
-      :mask-close="false"
+      :mask-close="true"
       :show-footer="false"
       :width="720"
       ref="dialog">

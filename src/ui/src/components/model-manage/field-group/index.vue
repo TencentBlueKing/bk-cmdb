@@ -215,7 +215,7 @@
 
     <bk-dialog class="bk-dialog-no-padding"
       v-model="dialog.isShow"
-      :mask-close="false"
+      :mask-close="true"
       :width="600"
       @cancel="handleCancelAddProperty"
       @confirm="handleConfirmAddProperty">
@@ -247,7 +247,7 @@
     <bk-dialog class="bk-dialog-no-padding group-dialog"
       v-model="groupDialog.isShow"
       width="480"
-      :mask-close="false"
+      :mask-close="true"
       @after-leave="handleCancelGroupLeave">
       <div class="group-dialog-header" slot="tools">{{groupDialog.title}}</div>
       <div class="group-dialog-content" v-if="groupDialog.isShowContent">
