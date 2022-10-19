@@ -17,7 +17,7 @@ func GenerateCommonActions() []CommonAction {
 	return []CommonAction{
 		{
 			Name:        "业务运维",
-			EnglishName: "operator",
+			EnglishName: "Business Maintainer",
 			Actions: []ActionWithID{
 				{ID: ViewBusinessResource},
 				{ID: EditBusinessHost},
@@ -43,6 +43,31 @@ func GenerateCommonActions() []CommonAction {
 				{ID: EditBusinessCustomField},
 				{ID: EditBusinessHostApply},
 				{ID: FindBusiness},
+			},
+		},
+		{
+			Name:        "业务只读",
+			EnglishName: "Business Visitor",
+			Actions: []ActionWithID{
+				{ID: ViewBusinessResource},
+				{ID: FindBusiness},
+			},
+		},
+		{
+			Name:        "业务集运维",
+			EnglishName: "Biz-set Maintainer",
+			Actions: []ActionWithID{
+				{ID: AccessBizSet},
+				{ID: DeleteBizSet},
+				{ID: ViewBizSet},
+			},
+		},
+		{
+			Name:        "业务集只读",
+			EnglishName: "Biz-set Visitor",
+			Actions: []ActionWithID{
+				{ID: AccessBizSet},
+				{ID: ViewBizSet},
 			},
 		},
 		{

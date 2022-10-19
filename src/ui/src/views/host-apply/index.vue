@@ -315,7 +315,10 @@
             mode: this.mode
           },
           query: {
-            id: this.targetId
+            id: this.targetId,
+            // 为统一UI交互全部使用batch模式
+            batch: 1,
+            action: 'batch-edit'
           },
           history: true
         })

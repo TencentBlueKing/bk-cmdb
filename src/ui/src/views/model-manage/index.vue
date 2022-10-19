@@ -273,7 +273,7 @@
       class="bk-dialog-no-padding bk-dialog-no-tools group-dialog dialog"
       :close-icon="false"
       :width="600"
-      :mask-close="false"
+      :mask-close="true"
       v-model="groupDialog.isShow"
     >
       <div class="dialog-content">
@@ -356,7 +356,7 @@
       class="bk-dialog-no-padding"
       :width="400"
       :show-footer="false"
-      :mask-close="false"
+      :mask-close="true"
       v-model="modelCreatedDialogVisible"
     >
       <div class="success-content">

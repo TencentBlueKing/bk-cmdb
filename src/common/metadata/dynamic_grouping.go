@@ -52,7 +52,7 @@ var (
 	// DynamicGroupOperators all operators -> current newest operators.
 	DynamicGroupOperators = map[string]string{
 		DynamicGroupOperatorEQ:   DynamicGroupOperatorEQ,
-		DynamicGroupOperatorNE:   DynamicGroupOperatorNIN,
+		DynamicGroupOperatorNE:   DynamicGroupOperatorNE,
 		DynamicGroupOperatorIN:   DynamicGroupOperatorIN,
 		DynamicGroupOperatorNIN:  DynamicGroupOperatorNIN,
 		DynamicGroupOperatorLTE:  DynamicGroupOperatorLTE,

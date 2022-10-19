@@ -25,7 +25,7 @@
 
 <script>
   import { computed, defineComponent } from '@vue/composition-api'
-  import { targetMap, currentSetting, handleReset } from './use-advanced-setting.js'
+  import { targetMap, finalSetting, handleReset } from './use-advanced-setting.js'
   import useRoute, { pickQuery } from './use-route.js'
 
   export default defineComponent({
@@ -38,8 +38,8 @@
 
       const targetModels = computed(() => {
         const targetModels = []
-        currentSetting.targets.forEach((target) => {
-          const modelIds = currentSetting[`${target}s`]
+        finalSetting.value.targets.forEach((target) => {
+          const modelIds = finalSetting.value[`${target}s`]
           targetModels.push({
             targetName: targetMap[target],
             models: modelIds.length ? modelIds.map(id => getModelName(id)).join(' | ') : root.$t('全部')
@@ -50,14 +50,14 @@
 
       const customized = computed(() => {
         const changedModels = []
-        currentSetting.targets.forEach((target) => {
-          const modelIds = currentSetting[`${target}s`]
+        finalSetting.value.targets.forEach((target) => {
+          const modelIds = finalSetting.value[`${target}s`]
           changedModels.push(modelIds.length > 0)
         })
         return changedModels.some(changed => changed)
       })
 
-      const targetScopes = computed(() => currentSetting.targets.map(target => targetMap[target]).join(' | '))
+      const targetScopes = computed(() => finalSetting.value.targets.map(target => targetMap[target]).join(' | '))
 
       const handleClear = () => {
         handleReset()
@@ -75,7 +75,6 @@
         targetMap,
         targetScopes,
         targetModels,
-        currentSetting,
         handleClear
       }
     }

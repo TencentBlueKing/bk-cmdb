@@ -222,6 +222,8 @@
       align-items: center;
       .search-input {
         flex: 1;
+        max-width: 646px;
+
         /deep/ {
           .bk-input-text {
             border: 0;
@@ -251,7 +253,7 @@
         }
       }
       .advanced-link {
-        margin-left: 12px;
+        margin-left: 8px;
       }
     }
   }

@@ -13,7 +13,7 @@
 import store from '@/store'
 import i18n from '@/i18n'
 import isInt from 'validator/es/lib/isInt'
-import queryBuilderOperator from '@/utils/query-builder-operator'
+import queryBuilderOperator, { QUERY_OPERATOR, QUERY_OPERATOR_SYMBOL } from '@/utils/query-builder-operator'
 
 const getModelById = store.getters['objectModelClassify/getModelById']
 export function getLabel(property) {
@@ -59,10 +59,8 @@ export function getPlaceholder(property) {
  * @param {string} defaultData.value 默认值
  * @returns {object}
  */
-export function getDefaultData(property, defaultData = { operator: '$in', value: [] }) {
-  const EQ = '$eq'
-  const RANGE = '$range'
-  const IN = '$in'
+export function getDefaultData(property, defaultData = { operator: QUERY_OPERATOR.IN, value: [] }) {
+  const { EQ, RANGE, IN } = QUERY_OPERATOR
   const defaultMap = {
     singlechar: { operator: IN, value: [] },
     int: { operator: EQ, value: '' },
@@ -308,20 +306,8 @@ export function transformIP(raw) {
   return transformedIP
 }
 
-const operatorSymbolMap = {
-  $eq: '=',
-  $ne: '≠',
-  $in: '*=',
-  $nin: '*≠',
-  $gt: '>',
-  $lt: '<',
-  $gte: '≥',
-  $lte: '≤',
-  $regex: '~=',
-  $range: '≤ ≥'
-}
 export function getOperatorSymbol(operator) {
-  return operatorSymbolMap[operator]
+  return QUERY_OPERATOR_SYMBOL[operator]
 }
 
 export function getDefaultIP() {

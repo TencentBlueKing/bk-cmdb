@@ -90,6 +90,9 @@ const (
 
 	// BKMaxSyncIdentifierLimit sync identifier max value
 	BKMaxSyncIdentifierLimit = 200
+
+	// BKWriteOpLimit default write operation limit
+	BKWriteOpLimit = 200
 )
 
 const (
@@ -717,6 +720,9 @@ const (
 
 	// BKAgentIDField the agent id field, used by agent to identify a host
 	BKAgentIDField = "bk_agent_id"
+
+	// BKCloudHostIdentifierField defines if the host is a cloud host that doesn't allow cross biz transfer
+	BKCloudHostIdentifierField = "bk_cloud_host_identifier"
 )
 
 const (

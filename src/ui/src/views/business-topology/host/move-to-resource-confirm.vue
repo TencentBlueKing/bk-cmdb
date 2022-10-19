@@ -16,11 +16,11 @@
     <i18n tag="p" path="确认归还主机池忽略主机数量" class="content" v-if="hasInvalid">
       <template #count><span class="count">{{count}}</span></template>
       <template #invalid><span class="invalid">{{invalidList.length}}</span></template>
-      <template #idleModule><span>{{$store.state.globalConfig.config.idlePool.idle}}</span></template>
+      <template #idleSet><span>{{idleSet}}</span></template>
     </i18n>
     <i18n tag="p" path="确认归还主机池主机数量" class="content" v-else>
       <template #count><span class="count">{{count}}</span></template>
-      <template #idleModule><span>{{$store.state.globalConfig.config.idlePool.idle}}</span></template>
+      <template #idleSet><span>{{idleSet}}</span></template>
     </i18n>
     <p class="content">{{$t('归还主机池提示')}}</p>
     <div class="directory">
@@ -81,6 +81,9 @@
     computed: {
       hasInvalid() {
         return !!this.invalidList.length
+      },
+      idleSet() {
+        return this.$store.state.globalConfig.config.set
       }
     },
     created() {

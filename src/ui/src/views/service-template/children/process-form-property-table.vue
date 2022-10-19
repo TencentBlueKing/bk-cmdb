@@ -46,7 +46,7 @@
         tabindex="-1"
         @click="setLockState(rowProps)">
         <i class="icon-cc-lock-fill" v-if="isLocked(rowProps)"></i>
-        <i class="icon-cc-lock-line" v-else></i>
+        <i class="icon-cc-unlock-fill" v-else></i>
       </span>
     </div>
   </cmdb-form-table>

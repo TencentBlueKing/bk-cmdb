@@ -73,11 +73,11 @@
                     <bk-button
                       :disabled="!hasConflict || disabled"
                       @click="$emit('view-conflict')">
-                      <span v-bk-tooltips="{ content: $t('无失效需处理') }" v-if="!hasConflict">
-                        {{$t('失效主机')}}<em class="conflict-num">{{conflictNum}}</em>
+                      <span v-bk-tooltips="{ content: $t('无未应用需处理') }" v-if="!hasConflict">
+                        {{$t('未应用主机')}}<em class="conflict-num">{{conflictNum}}</em>
                       </span>
                       <span v-else>
-                        {{$t('失效主机')}}<em class="conflict-num">{{conflictNum}}</em>
+                        {{$t('未应用主机')}}<em class="conflict-num">{{conflictNum}}</em>
                       </span>
                     </bk-button>
                   </template>

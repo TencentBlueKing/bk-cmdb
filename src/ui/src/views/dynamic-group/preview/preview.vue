@@ -18,6 +18,7 @@
     :title="title"
     :show-footer="false"
     :draggable="false"
+    :mask-close="true"
     @after-leave="handleHidden">
     <bk-table class="preview-table"
       ref="table"

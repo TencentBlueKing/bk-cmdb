@@ -176,6 +176,7 @@
         this.$router.push({
           name: MENU_RESOURCE_CLOUD_ACCOUNT
         })
+        this.container?.hide()
       },
       handleAddVPC() {
         this.showVPCSelector = true

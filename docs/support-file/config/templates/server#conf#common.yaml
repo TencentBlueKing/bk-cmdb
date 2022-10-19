@@ -11,7 +11,7 @@ es:
   pwd: __BK_CMDB_ES7_PASSWORD__
 
 # esb配置
-  esb:
+esb:
   addr: http://__BK_PAAS_PRIVATE_ADDR__
   appCode: __BK_CMDB_APP_CODE__
   appSecret: __BK_CMDB_APP_SECRET__
@@ -55,7 +55,7 @@ webServer:
     # paas的地址，给前端的人员选择器使用
     paasDomainUrl: http://__BK_PAAS_PRIVATE_ADDR__
     #帮助文档地址
-    helpDocUrl: https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品简介/Overview.md
+    helpDocUrl: __BK_HTTP_SCHEMA__://__BK_PAAS_PUBLIC_ADDR__/o/bk_docs_center/markdown/配置平台/产品白皮书/产品简介/Overview.md
     paas:
       # pass的tls相关配置
       tls:

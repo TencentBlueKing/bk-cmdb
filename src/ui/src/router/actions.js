@@ -13,7 +13,9 @@
 import has from 'has'
 import router from './index'
 import { Base64 } from 'js-base64'
+import merge from 'lodash/merge'
 import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+
 export const redirect = function ({ name, params = {}, query = {}, history = false, reload = false, back = false }) {
   const queryBackup = { ...query }
   const currentRoute = router.app.$route
@@ -82,7 +84,7 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
   }
 }
 
-export const back = function () {
+export const back = function (customRoute = {}) {
   let record
   if (has(router.app.$route.query, '_f')) {
     try {
@@ -95,7 +97,7 @@ export const back = function () {
   if (record) {
     try {
       const route = JSON.parse(Base64.decode(record))
-      redirect({ ...route, back: true })
+      redirect(merge(route, customRoute, { back: true }))
     } catch (error) {
       router.go(-1)
     }

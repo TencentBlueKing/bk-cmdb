@@ -85,6 +85,8 @@
 <script>
   import theVerificationDetail from './verification-detail'
   import { mapActions, mapGetters } from 'vuex'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+
   export default {
     components: {
       theVerificationDetail
@@ -119,8 +121,10 @@
       ...mapGetters('objectModel', [
         'activeModel'
       ]),
+      ...mapGetters('objectMainLineModule', ['isMainLine']),
       isTopoModel() {
-        return ['bk_biz_topo', 'bk_organization'].includes(this.activeModel.bk_classification_id)
+        // 主线模型除主机外
+        return this.isMainLine(this.activeModel) && this.activeModel.bk_obj_id !== BUILTIN_MODELS.HOST
       },
       isReadOnly() {
         if (this.activeModel) {
@@ -132,9 +136,9 @@
     watch: {
       activeModel: {
         immediate: true,
-        handler(activeModel) {
+        async handler(activeModel) {
           if (activeModel.bk_obj_id) {
-            this.initAttrList()
+            await this.initAttrList()
             this.searchVerification()
           }
         }
@@ -211,14 +215,19 @@
         })
       },
       async searchVerification() {
-        const res = await this.searchObjectUniqueConstraints({
+        const uniqueList = await this.searchObjectUniqueConstraints({
           objId: this.activeModel.bk_obj_id,
           params: {},
           config: {
             requestId: 'searchObjectUniqueConstraints'
           }
         })
-        this.table.list = res
+
+        // 只保留在对象属性列表中能找到的规则字段，如果某条记录一个字段都找不到则不会显示
+        const list = uniqueList
+          .filter(item => item.keys.every(key => this.attributeList.find(({ id }) => id === key.key_id)))
+
+        this.table.list = list
       },
       handleShowDetails(row, column) {
         if (column.property === 'operation') return

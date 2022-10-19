@@ -74,7 +74,6 @@
   import { mapGetters } from 'vuex'
   import debounce from 'lodash.debounce'
   import ModuleCheckedList from './module-checked-list.vue'
-  import { sortTopoTree } from '@/utils/tools'
   export default {
     name: 'cmdb-module-selector',
     components: {
@@ -177,7 +176,6 @@
           } else {
             data = await this.getBusinessModules()
           }
-          sortTopoTree(data, 'bk_inst_name', 'child')
           this.$refs.tree.setData(data)
           this.$refs.tree.setExpanded(this.getNodeId(data[0]))
           this.setDefaultChecked()

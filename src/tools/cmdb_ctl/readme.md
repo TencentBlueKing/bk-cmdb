@@ -286,8 +286,8 @@ denyall配置为false的情况下，limit和ttl配置才能生效
      ```
 - 示例
      ```
-         对DB进行查找操作示例:
-             ./tool_ctl --mongo-uri="mongodb://user:pwd@localhost:27017/test?replicaSet=rs0" db find --collection="test_collection" --condition="{\"bk_biz_id\" : 6}"  --resfilter="id,type" --pretty=true
+         对DB进行查找操作示例。其中mongo的url写法按照mongo官方的url格式进行填写。需要设定cmdb对应的数据库名称和replicaSet，如果需要设定用户名密码请按照官方示例进行设置:
+             ./tool_ctl --mongo-uri="mongodb://localhost:27017/test?replicaSet=rs0" db find --collection="test_collection" --condition="{\"bk_biz_id\" : 6}"  --resfilter="id,type" --pretty=true
          回显样式:
              [
              	{
@@ -298,8 +298,8 @@ denyall配置为false的情况下，limit和ttl配置才能生效
              total data num is 1
      ```
      ```
-         显示指定DB中的所有collections
-             ./tool_ctl --mongo-uri="mongodb://user:pwd@localhost:27017/test?replicaSet=rs0" db show
+        显示指定DB中的所有collections。其中mongo的url写法按照mongo官方的url格式进行填写。需要设定cmdb对应的数据库名称和replicaSet，如果需要设定用户名密码请按照官方示例进行设置:
+             ./tool_ctl --mongo-uri="mongodb://localhost:27017/test?replicaSet=rs0" db show
          回显样式:
              cc_test1
              cc_test2
@@ -309,9 +309,9 @@ denyall配置为false的情况下，limit和ttl配置才能生效
              total collection num is 5
      ```
      ```
-          对DB进行删除操作示例:
-              ./tool_ctl --mongo-uri="mongodb://user:pwd@localhost:27017/test?replicaSet=rs0" db delete --collection="test_collection" --condition="{\"bk_biz_id\" : 6}"
-          回显样式
+         对DB进行删除操作示例。其中mongo的url写法按照mongo官方的url格式进行填写。需要设定cmdb对应的数据库名称和replicaSet，如果需要设定用户名密码请按照官方示例进行设置:
+              ./tool_ctl --mongo-uri="mongodb://localhost:27017/test?replicaSet=rs0" db delete --collection="test_collection" --condition="{\"bk_biz_id\" : 6}"
+           回显样式
               delete total data num is 3
      ```
      

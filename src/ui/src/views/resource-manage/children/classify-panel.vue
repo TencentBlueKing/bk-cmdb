@@ -107,10 +107,6 @@
             isAdd = true
             newCollection = [...oldCollection, model.bk_obj_id]
           }
-          if (isAdd && this.collectedCount >= this.maxCustomNavigationCount) {
-            this.$warn(this.$t('限制添加导航提示', { max: this.maxCustomNavigationCount }))
-            return false
-          }
           const promise = this.$store.dispatch('userCustom/saveUsercustom', {
             [MENU_RESOURCE_COLLECTION]: newCollection
           })
@@ -121,18 +117,14 @@
       },
       async toggleDefaultCollection(model) {
         const isCollected = this.isCollected(model)
-        if (!isCollected && this.collection.length >= this.maxCustomNavigationCount) {
-          this.$warn(this.$t('限制添加导航提示', { max: this.maxCustomNavigationCount }))
-        } else {
-          try {
-            const key =  BUILTIN_MODEL_COLLECTION_KEYS[model.bk_obj_id]
-            await this.$store.dispatch('userCustom/saveUsercustom', {
-              [key]: !isCollected
-            })
-            this.$success(isCollected ? this.$t('取消导航成功') : this.$t('添加导航成功'))
-          } catch (e) {
-            console.error(e)
-          }
+        try {
+          const key =  BUILTIN_MODEL_COLLECTION_KEYS[model.bk_obj_id]
+          await this.$store.dispatch('userCustom/saveUsercustom', {
+            [key]: !isCollected
+          })
+          this.$success(isCollected ? this.$t('取消导航成功') : this.$t('添加导航成功'))
+        } catch (e) {
+          console.error(e)
         }
       }
     }
