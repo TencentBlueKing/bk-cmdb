@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 
+	"github.com/mohae/deepcopy"
 	"github.com/rentiansheng/xlsx"
 )
 
@@ -220,6 +221,40 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 	return lgc.importHosts(ctx, f, header, defLang, modelBizID, modelBizID, asstObjectUniqueIDMap, objectUniqueID)
 }
 
+func (lgc *Logics) handleAsstInfoMap(ctx context.Context, header http.Header,
+	asstInfoMap map[int]metadata.ExcelAssociation, asstObjectUniqueIDMap map[string]int64, rid string) error{
+
+	var associationFlag []string
+	for _, info := range asstInfoMap {
+		associationFlag = append(associationFlag, info.ObjectAsstID)
+	}
+	resp, err := lgc.CoreAPI.ApiServer().FindAssociationByObjectAssociationID(ctx, header, common.BKInnerObjIDHost,
+		metadata.FindAssociationByObjectAssociationIDRequest{ObjAsstIDArr: associationFlag})
+	if err != nil {
+		blog.Errorf("find association by object asstID failed, err: %v, rid: %s", err, rid)
+		return err
+	}
+	tempAsstInfo := make(map[string]int64, 0)
+	for _, asstInfo := range resp.Data {
+		_, ok := asstObjectUniqueIDMap[asstInfo.AsstObjID]
+		_, ok2 := asstObjectUniqueIDMap[asstInfo.ObjectID]
+		if ok || ok2 {
+			continue
+		} else {
+			tempAsstInfo[asstInfo.AssociationName] = asstInfo.ID
+		}
+	}
+
+	tempAsstMap := deepcopy.Copy(asstInfoMap).(map[int]metadata.ExcelAssociation)
+	for index, asst := range tempAsstMap {
+		if _, ok := tempAsstInfo[asst.ObjectAsstID]; ok {
+			delete(asstInfoMap, index)
+		}
+	}
+
+	return nil
+}
+
 func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
 	modelBizID int64, moduleID int64, asstObjectUniqueIDMap map[string]int64,
 	objectUniqueID int64) *metadata.ResponseDataMapStr {
@@ -285,7 +320,10 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 		}
 
 		asstMap, assoErrMsg := GetAssociationExcelData(sheet, common.HostAddMethodExcelAssociationIndexOffset, defLang)
-
+		if err := lgc.handleAsstInfoMap(ctx, header, asstMap, asstObjectUniqueIDMap, rid); err != nil {
+			blog.Errorf("handle asst info map failed, err: %v, rid: %s", err, rid)
+			return resp
+		}
 		if len(asstMap) > 0 {
 			asstInfoMapInput := &metadata.RequestImportAssociation{
 				AssociationInfoMap:    asstMap,
@@ -369,8 +407,7 @@ func (lgc *Logics) importStatisticsAssociation(ctx context.Context, header http.
 
 // UpdateHosts update excel import hosts
 func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
-	modelBizID, opType int64, asstObjectUniqueIDMap map[string]int64,
-	objectUniqueID int64) *metadata.ResponseDataMapStr {
+	modelBizID, opType int64, asstObjectUniqueIDMap map[string]int64, objectUniqueID int64) *metadata.ResponseDataMapStr {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -440,7 +477,10 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 	if len(asstInfoMap) == 0 {
 		return result
 	}
-
+	if err := lgc.handleAsstInfoMap(ctx, header, asstInfoMap, asstObjectUniqueIDMap, rid); err != nil {
+		blog.Errorf("handle asst info map failed, err: %v, rid: %s", err, rid)
+		return result
+	}
 	asstInfoMapInput := &metadata.RequestImportAssociation{
 		AssociationInfoMap:    asstInfoMap,
 		AsstObjectUniqueIDMap: asstObjectUniqueIDMap,
