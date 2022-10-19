@@ -17,7 +17,7 @@
     width="740"
     :z-index="2400"
     :close-icon="false"
-    :mask-close="false"
+    :mask-close="true"
     :show-footer="false"
     @cancel="onCloseDialog">
     <permission-main ref="main" :permission="permission" :applied="applied"

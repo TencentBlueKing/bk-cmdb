@@ -76,7 +76,7 @@
     <bk-dialog class="bk-dialog-no-padding"
       v-model="createInfo.show"
       :show-footer="false"
-      :mask-close="false"
+      :mask-close="true"
       :width="580"
       @after-leave="handleAfterCancelCreateNode"
       @cancel="handleCancelCreateNode">

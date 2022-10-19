@@ -14,7 +14,7 @@
   <bk-dialog class="bk-dialog-no-padding edit-label-dialog"
     v-model="isShow"
     :width="580"
-    :mask-close="false"
+    :mask-close="true"
     :esc-close="false"
     @after-leave="handleHidden">
     <div slot="header">

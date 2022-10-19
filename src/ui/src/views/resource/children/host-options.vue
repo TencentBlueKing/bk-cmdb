@@ -100,7 +100,7 @@
       v-model="assign.show"
       header-position="left"
       :width="480"
-      :mask-close="false"
+      :mask-close="true"
       :esc-close="false"
       :close-icon="false"
       :title="assign.title"
