@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/metrics"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -38,11 +39,21 @@ func initMetric() {
 	}, []string{"app_code", "uri"})
 	metrics.Register().MustRegister(rm.totalErrorCount)
 
+	rm.noPermissionRequestTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "cmdb_no_permission_request_total",
+			Help: "total number of request without permission.",
+		},
+		[]string{metrics.LabelHandler, metrics.LabelAppCode},
+	)
+	metrics.Register().MustRegister(rm.noPermissionRequestTotal)
 }
 
 type restMetric struct {
 	// recorded the total responded with error response count
 	totalErrorCount *prometheus.CounterVec
+	// noPermissionRequestTotal is the total number of request without permission
+	noPermissionRequestTotal *prometheus.CounterVec
 }
 
 func (c *Contexts) collectErrorMetric() {
@@ -50,4 +61,13 @@ func (c *Contexts) collectErrorMetric() {
 		"app_code": c.Kit.Header.Get(common.BKHTTPRequestAppCode),
 		"uri":      c.uri,
 	}).Inc()
+}
+
+func (c *Contexts) collectNoAuthMetric() {
+	rm.noPermissionRequestTotal.With(
+		prometheus.Labels{
+			metrics.LabelHandler: c.Request.Request.URL.Path,
+			metrics.LabelAppCode: c.Kit.Header.Get(common.BKHTTPRequestAppCode),
+		},
+	).Inc()
 }

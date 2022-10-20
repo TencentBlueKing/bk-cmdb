@@ -438,6 +438,8 @@ func (c *Contexts) Response(resp *metadata.Response) {
 
 // RespNoAuth respond no auth response
 func (c *Contexts) RespNoAuth(resp *metadata.BaseResp) {
+	c.collectNoAuthMetric()
+
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
