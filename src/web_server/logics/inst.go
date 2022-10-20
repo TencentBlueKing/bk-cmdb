@@ -165,7 +165,10 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 
 		asstInfoMap, errMsg := GetAssociationExcelData(sheet, common.HostAddMethodExcelAssociationIndexOffset,
 			defLang)
-
+		if err := lgc.handleAsstInfoMap(ctx, header, objID, asstInfoMap, asstObjectUniqueIDMap, rid); err != nil {
+			blog.Errorf("handle asst info map failed, err: %v, rid: %s", err, rid)
+			return resultData, common.CCErrWebFileContentFail, err
+		}
 		if len(asstInfoMap) > 0 {
 			asstInfoMapInput := &metadata.RequestImportAssociation{
 				AssociationInfoMap:    asstInfoMap,
