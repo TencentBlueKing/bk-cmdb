@@ -73,7 +73,7 @@
 </template>
 
 <script>
-  import { defineComponent, computed, ref, toRef } from '@vue/composition-api'
+  import { defineComponent, computed, ref, toRef } from 'vue'
   import DropdownOptionButton from './dropdown-option-button.vue'
   import has from 'has'
 

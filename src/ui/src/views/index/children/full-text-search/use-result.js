@@ -10,16 +10,15 @@
  * limitations under the License.
  */
 
-import { computed, isRef, ref, unref } from '@vue/composition-api'
+import { computed, isRef, ref, unref } from 'vue'
+import store from '@/store'
 import debounce from 'lodash.debounce'
 import useSuggestion from './use-suggestion'
 import { currentSetting as advancedSetting, allModelIds } from './use-advanced-setting.js'
 
 const requestId = Symbol('fullTextSearch')
 
-export default function useResult(state, root) {
-  const { $store } = root
-
+export default function useResult(state) {
   const { route, keyword } = state
   const result = ref({})
   const fetching = ref(-1)
@@ -75,7 +74,7 @@ export default function useResult(state, root) {
 
     try {
       fetching.value = true
-      result.value = await $store.dispatch('fullTextSearch/search', {
+      result.value = await store.dispatch('fullTextSearch/search', {
         params: params.value,
         config: {
           requestId
@@ -92,7 +91,7 @@ export default function useResult(state, root) {
     result,
     keyword
   }
-  const { suggestion } = useSuggestion(suggestionState, root, result)
+  const { suggestion } = useSuggestion(suggestionState)
 
   const onkeydownResult = (event) => {
     const { keyCode } = event

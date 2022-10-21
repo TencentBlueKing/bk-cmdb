@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { ref, watch } from '@vue/composition-api'
+import { ref, watch } from 'vue'
 import uniqueCheckService from '@/service/unique-check'
 export default function (modelId) {
   const uniqueChecks = ref([])

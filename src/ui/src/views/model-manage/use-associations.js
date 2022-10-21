@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { ref } from '@vue/composition-api'
+import { ref } from 'vue'
 import { find } from '@/service/association/index.js'
 
 /**

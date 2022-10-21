@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent } from '@vue/composition-api'
+  import { computed, defineComponent } from 'vue'
   import ProcessDifference from './process-difference.vue'
   import PropertyDifference from './property-difference.vue'
 

@@ -52,7 +52,7 @@
 </template>
 
 <script>
-  import { ref, reactive, computed, defineComponent, onMounted, onBeforeUnmount } from '@vue/composition-api'
+  import { ref, reactive, computed, defineComponent, onMounted, onBeforeUnmount } from 'vue'
   import store from '@/store'
   import SaveButton from './save-button.vue'
   import { bkMessage } from 'bk-magic-vue'

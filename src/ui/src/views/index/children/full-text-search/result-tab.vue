@@ -41,8 +41,9 @@
 </template>
 
 <script>
-  import { computed, defineComponent, onMounted, onUpdated, toRefs } from '@vue/composition-api'
-  import useRoute from './use-route.js'
+  import { computed, defineComponent, onMounted, onUpdated, toRefs } from 'vue'
+  import routerActions from '@/router/actions'
+  import RouterQuery from '@/router/query'
   import useTab, { sizes } from './use-tab.js'
 
   export default defineComponent({
@@ -52,22 +53,21 @@
         default: () => ({})
       }
     },
-    setup(props, { root }) {
-      const { $route, $routerActions } = root
-      const { route } = useRoute(root)
+    setup(props) {
+      const route = computed(() => RouterQuery.route)
 
       const { result } = toRefs(props)
       const currentCategory = computed(() => route.value.query.c)
 
       // 分类标签
       const aggregations = computed(() => result.value.aggregations || [])
-      const { categories, calculateSizes } = useTab(aggregations, root)
+      const { categories, calculateSizes } = useTab(aggregations)
 
       const total = computed(() => (result.value.total > 999 ? '999+' : result.value.total))
 
       const handleSelectCategory = (category) => {
-        $routerActions.redirect({
-          name: $route.name,
+        routerActions.redirect({
+          name: route.value.name,
           query: {
             ...route.value.query,
             c: category?.id,

@@ -27,7 +27,8 @@
 </template>
 
 <script>
-  import { defineComponent, toRefs, computed } from '@vue/composition-api'
+  import { defineComponent, toRefs, computed } from 'vue'
+  import { t } from '@/i18n'
   import { getText, getHighlightValue } from './use-item.js'
 
   export default defineComponent({
@@ -42,14 +43,14 @@
         default: () => ({})
       }
     },
-    setup(props, { root }) {
+    setup(props) {
       const { propertyMap } = toRefs(props)
 
       const properties = computed(() => {
         const properties = (propertyMap.value.module || []).slice()
         properties.unshift({
           bk_property_id: 'bk_module_id',
-          bk_property_name: root.$t('ID'),
+          bk_property_name: t('ID'),
         })
         return properties
       })

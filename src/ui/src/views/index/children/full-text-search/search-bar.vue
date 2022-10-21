@@ -73,11 +73,16 @@
 </template>
 
 <script>
-  import { defineComponent, ref, onUnmounted, watch } from '@vue/composition-api'
+  import { defineComponent, ref, onUnmounted, watch, computed } from 'vue'
+  import store from '@/store'
+  import { t } from '@/i18n'
+  import { $bkPopover } from '@/magicbox/index.js'
+  import routerActions from '@/router/actions'
+  import RouterQuery from '@/router/query'
   import useResult from './use-result.js'
   import useSuggestion from './use-suggestion'
   import useHistory from './use-history'
-  import useRoute, { pickQuery } from './use-route.js'
+  import { pickQuery } from './use-route.js'
   import AdvancedSettingPopover from './advanced-setting-popover.vue'
   import AdvancedSettingResult from './advanced-setting-result.vue'
 
@@ -86,12 +91,12 @@
       AdvancedSettingPopover,
       AdvancedSettingResult
     },
-    setup(props, { root }) {
-      const { $store, $routerActions, $route } = root
-      const { route } = useRoute(root)
+    setup() {
+      const route = computed(() => RouterQuery.route)
+      const query = computed(() => RouterQuery.getAll())
 
       const keyword = ref('')
-      watch(() => route.value.query, (query) => {
+      watch(query, (query) => {
         keyword.value = query.keyword || ''
       }, { immediate: true })
 
@@ -100,7 +105,7 @@
       const forceHide = ref(false)
       let maxLengthPopover = null
 
-      const { result, getSearchResult, onkeydownResult, selectResultIndex } = useResult({ route, keyword }, root)
+      const { result, getSearchResult, onkeydownResult, selectResultIndex } = useResult({ route, keyword })
 
       const handleFocus = () => {
         focusWithin.value = true
@@ -125,11 +130,11 @@
       }
 
       const handleSearch = () => {
-        $store.commit('fullTextSearch/setSearchHistory', keyword.value)
+        store.commit('fullTextSearch/setSearchHistory', keyword.value)
         forceHide.value = true
         const query = pickQuery(route.value.query, ['tab'])
-        $routerActions.redirect({
-          name: $route.name,
+        routerActions.redirect({
+          name: route.value.name,
           query: {
             ...query,
             keyword: keyword.value,
@@ -145,9 +150,9 @@
           return
         }
         if (!maxLengthPopover) {
-          maxLengthPopover = root.$bkPopover(searchInput.value.$el, {
+          maxLengthPopover = $bkPopover(searchInput.value.$el, {
             theme: 'dark search-input-max-length',
-            content: root.$t('最大支持搜索32个字符'),
+            content: t('最大支持搜索32个字符'),
             zIndex: 9999,
             trigger: 'manual',
             boundary: 'window',
@@ -170,7 +175,7 @@
         handleHistorySearch,
         handlClearHistory,
         onkeydown
-      } = useHistory(historyState, root)
+      } = useHistory(historyState)
 
       const suggestionState = {
         result,
@@ -180,7 +185,7 @@
         forceHide,
         keyword
       }
-      const { suggestion, showSuggestion } = useSuggestion(suggestionState, root, result)
+      const { suggestion, showSuggestion } = useSuggestion(suggestionState)
 
       const handleClickHistory = (history) => {
         handleHistorySearch(history)

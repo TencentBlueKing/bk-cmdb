@@ -34,7 +34,7 @@
 </template>
 
 <script>
-  import { ref, watch, onMounted } from '@vue/composition-api'
+  import { ref, watch, onMounted } from 'vue'
   import BusinessGneralConfig from './children/business-general-config.vue'
   import PlatformInfoConfig from './children/platform-info-config.vue'
   import IdlePoolConfig from './children/idle-pool-config.vue'

@@ -52,7 +52,7 @@
 </template>
 
 <script>
-  import { computed, defineComponent, reactive, ref, toRefs, watchEffect, watch } from '@vue/composition-api'
+  import { computed, defineComponent, reactive, ref, toRefs, watchEffect, watch } from 'vue'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
   import businessSetService from '@/service/business-set/index.js'
   import routerActions from '@/router/actions'

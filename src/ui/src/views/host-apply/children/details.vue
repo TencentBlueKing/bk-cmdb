@@ -176,7 +176,7 @@
 </template>
 
 <script>
-  import { computed, defineComponent, ref, toRefs } from '@vue/composition-api'
+  import { computed, defineComponent, ref, toRefs } from 'vue'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_BUSINESS_SERVICE_TEMPLATE

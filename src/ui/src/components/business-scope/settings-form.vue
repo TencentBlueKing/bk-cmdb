@@ -59,7 +59,7 @@
 </template>
 
 <script>
-  import { defineComponent, computed, watchEffect, reactive, watch, toRefs, ref } from '@vue/composition-api'
+  import { defineComponent, computed, watchEffect, reactive, watch, toRefs, ref } from 'vue'
   import Utils from '@/components/filters/utils'
   import cmdbPropertySelector from '@/components/property-selector'
   import propertyService from '@/service/property/property.js'

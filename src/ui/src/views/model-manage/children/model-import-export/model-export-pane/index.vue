@@ -33,7 +33,7 @@
 </template>
 
 <script>
-  import { defineComponent, ref } from '@vue/composition-api'
+  import { defineComponent, ref } from 'vue'
   import { t } from '@/i18n'
   import StepPane from '../step-pane.vue'
   import UserNotice from '../user-notice.vue'

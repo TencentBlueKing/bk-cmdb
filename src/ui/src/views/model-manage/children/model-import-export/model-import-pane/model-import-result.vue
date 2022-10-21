@@ -23,7 +23,7 @@
   </div>
 </template>
 <script>
-  import { defineComponent } from '@vue/composition-api'
+  import { defineComponent } from 'vue'
   import { t } from '@/i18n'
 
   export default defineComponent({
