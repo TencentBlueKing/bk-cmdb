@@ -16,7 +16,7 @@
 #include <string>
 #include "conftor.h"
 namespace gse { 
-namespace dataserver {
+namespace data {
 
 class FileConftor : public Conftor
 {

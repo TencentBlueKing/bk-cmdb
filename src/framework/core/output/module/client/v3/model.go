@@ -25,9 +25,12 @@ import (
 	"configcenter/src/framework/core/types"
 )
 
+// ModelGetter TODO
 type ModelGetter interface {
 	Model() ModelInterface
 }
+
+// ModelInterface TODO
 type ModelInterface interface {
 	CreateObject(data types.MapStr) (int64, error)
 	DeleteObject(cond common.Condition) error
@@ -36,6 +39,7 @@ type ModelInterface interface {
 	SearchObjectTopo(cond common.Condition) ([]types.MapStr, error)
 }
 
+// Model TODO
 type Model struct {
 	cli *Client
 }

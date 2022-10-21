@@ -24,7 +24,18 @@ type RspID struct {
 // CreateResult create result
 type CreateResult struct {
 	BaseResp `json:",inline"`
-	Data     []Association `json:"data"`
+	Data     RspID `json:"data"`
+}
+
+// RspIDs response id array
+type RspIDs struct {
+	IDs []int64 `json:"ids"`
+}
+
+// CreateBatchResult create batch result
+type CreateBatchResult struct {
+	BaseResp `json:",inline"`
+	Data     RspIDs `json:"data"`
 }
 
 // UpdateResult update result
@@ -164,6 +175,7 @@ type ObjClassificationObject struct {
 	AsstObjects    map[string][]interface{} `json:"bk_asst_objects"`
 }
 
+// GetInstanceObjectMappingsOption TODO
 type GetInstanceObjectMappingsOption struct {
 	IDs []int64 `json:"ids"`
 }
@@ -174,6 +186,7 @@ type InstanceObjectMappingsResult struct {
 	Data     []ObjectMapping `json:"data"`
 }
 
+// ObjectMapping TODO
 type ObjectMapping struct {
 	ID       int64  `bson:"bk_inst_id"`
 	ObjectID string `bson:"bk_obj_id"`

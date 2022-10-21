@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateAuditLog TODO
 func (s *coreService) CreateAuditLog(ctx *rest.Contexts) {
 	inputData := new(metadata.CreateAuditLogParam)
 
@@ -36,6 +37,7 @@ func (s *coreService) CreateAuditLog(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// SearchAuditLog TODO
 func (s *coreService) SearchAuditLog(ctx *rest.Contexts) {
 	inputData := metadata.QueryCondition{}
 	if err := ctx.DecodeInto(&inputData); nil != err {

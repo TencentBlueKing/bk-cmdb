@@ -14,12 +14,17 @@
 #define _GSE_DATA_TCPRECEIVER_H_
 
 #include "net/tcp_server.h"
-#include "thread/thread.h"
 #include "receiver.h"
-namespace gse { 
-namespace dataserver {
+#include "tools/thread.h"
 
+#include "loadbalance_schedule.h"
+#include "net/message.h"
+#include "net/message_factory.hpp"
+#include "net/msg_processor.h"
+#include "net/tcp_connection.h"
 
+namespace gse {
+namespace data {
 
 class TcpReceiver : public Receiver
 {
@@ -32,22 +37,101 @@ public:
     int Stop();
     void Join();
 
+    void AddMsgProcessor(int msgType, std::shared_ptr<gse::net::MsgProcessor> processor);
+    void SetSheduler(std::shared_ptr<LoadBalanceSchedule> schedule);
+
 private:
     // implement virtual function
-    void OnConnectionEvent(const std::shared_ptr<gse::net::TcpConnection> &conn);
-    void MsgHandler(const std::shared_ptr<gse::net::TcpConnection> &conn, const std::shared_ptr<gse::net::Message> &msg);
+    void OnConnectionEvent(const std::shared_ptr<net::TcpConnection> conn);
+    void MsgHandler(const std::shared_ptr<net::TcpConnection> conn, const std::shared_ptr<net::Message> msg);
     uint32_t getMsgHeadLen();
-    void setProtoMsgHead();
+    void InitProto();
+
+    int StartMigrationSerivce();
+    int MigrationConnections();
+    void RestoreConnectionCallback(evutil_socket_t fd,
+                                   char *evInputBuffer, size_t evInputBufferSize,
+                                   char *evOutputBuffer, size_t evOuputBufferSize,
+                                   const gse::net::InetAddr &local, const gse::net::InetAddr &remote);
+
+    void MigrationTcpListennerFd();
+    int GetListenerFd();
+    void StartTcpServer();
+
+    void RegisterMsgProcessor();
+
 protected:
-    bool loadServerCert(const std::string& certRootPath);
+    bool loadServerCert(const std::string &certRootPath);
 
 private:
-    //TcpServerWorker* m_tcpwork;
     std::shared_ptr<gse::net::TcpServer> m_tcpServer;
-    std::shared_ptr<std::thread> m_tcpServerThread;
+    std::unique_ptr<std::thread> m_tcpServerThread;
+    std::unique_ptr<gse::net::MigrationClient> m_migrationClient;
+    std::unique_ptr<gse::net::MigrationServer> m_migrationServer;
 
+    std::shared_ptr<LoadBalanceSchedule> m_scheduler;
+    std::map<int, std::shared_ptr<gse::net::MsgProcessor>> m_processors;
+    gse::net::EnmProtoType m_protoType;
+    int m_listennerFd;
 };
 
-}
-}
+class SignalControlMsgProcessor : public gse::net::MsgProcessor
+{
+public:
+    SignalControlMsgProcessor();
+    virtual ~SignalControlMsgProcessor();
+
+    void SetScheduler(std::shared_ptr<LoadBalanceSchedule> scheduler);
+    void SetProtoType(gse::net::EnmProtoType protoType);
+
+public:
+    void ProcessMsg(const gse::net::TcpConnectionPtr conn, const gse::net::MessagePtr msg) override;
+    void SendAccessRespose(const std::shared_ptr<gse::net::TcpConnection> conn, const char *resp, int len);
+
+private:
+    void MarshalKeepaliveReponse(std::string &value);
+
+private:
+    std::shared_ptr<LoadBalanceSchedule> m_scheduler;
+    gse::net::EnmProtoType m_protoType;
+};
+
+class DataReportMsgProcessor : public gse::net::MsgProcessor
+{
+public:
+    DataReportMsgProcessor();
+    virtual ~DataReportMsgProcessor();
+
+public:
+    void ProcessMsg(const gse::net::TcpConnectionPtr conn, const gse::net::MessagePtr msg) override;
+
+    void SetRecvDataCallback(RecvDataCallBack fnRecvData, void *pCaller);
+
+private:
+    RecvDataCallBack m_fnRecvData;
+    void *m_pCaller;
+
+private:
+};
+
+class OpsReportMsgProcessor : public gse::net::MsgProcessor
+{
+public:
+    OpsReportMsgProcessor();
+    ~OpsReportMsgProcessor();
+
+public:
+    void ProcessMsg(const gse::net::TcpConnectionPtr conn, const gse::net::MessagePtr msg);
+
+    void SetRecvDataCallback(RecvDataCallBack fnRecvData, void *pCaller);
+
+private:
+    RecvDataCallBack m_fnRecvData;
+    void *m_pCaller;
+
+private:
+};
+
+} // namespace data
+} // namespace gse
 #endif // !_GSE_DATA_TCPRECEIVER_H_

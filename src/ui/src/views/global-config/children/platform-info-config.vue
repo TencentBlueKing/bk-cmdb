@@ -62,7 +62,7 @@
 </template>
 
 <script>
-  import { ref, reactive, computed, defineComponent, onMounted } from '@vue/composition-api'
+  import { ref, reactive, computed, defineComponent, onMounted } from 'vue'
   import SaveButton from './save-button.vue'
   import TheFooter from '@/views/index/children/footer.vue'
   import store from '@/store'

@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package procserver TODO
 package procserver
 
 import (
@@ -22,12 +23,14 @@ import (
 	"configcenter/src/apimachinery/util"
 )
 
+// ProcServerClientInterface TODO
 type ProcServerClientInterface interface {
 	Process() process.ProcessClientInterface
 	OpenAPI() openapi.OpenAPIClientInterface
 	Service() service.ServiceClientInterface
 }
 
+// NewProcServerClientInterface TODO
 func NewProcServerClientInterface(c *util.Capability, version string) ProcServerClientInterface {
 	base := fmt.Sprintf("/process/%s", version)
 	return &procServer{client: rest.NewRESTClient(c, base)}
@@ -37,14 +40,17 @@ type procServer struct {
 	client rest.ClientInterface
 }
 
+// Process TODO
 func (p *procServer) Process() process.ProcessClientInterface {
 	return process.NewProcessClientInterface(p.client)
 }
 
+// OpenAPI TODO
 func (p *procServer) OpenAPI() openapi.OpenAPIClientInterface {
 	return openapi.NewOpenApiClientInterface(p.client)
 }
 
+// Service TODO
 func (p *procServer) Service() service.ServiceClientInterface {
 	return service.NewServiceClientInterface(p.client)
 }

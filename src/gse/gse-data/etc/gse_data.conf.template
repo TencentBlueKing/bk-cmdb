@@ -1,0 +1,79 @@
+{
+    "cluster":{
+        "zone_id":"__BK_GSE_ZONE_ID__",
+        "city_id":"__BK_GSE_CITY_ID__",
+        "instance_id":"__BK_GSE_DATA_CLUSTER_INSTANCE_ID__",
+        "cluster_name":"__BK_GSE_DATA_CLUSTER_NAME__",
+        "advertise_ip":"__BK_GSE_DATA_ADVERTISE_IP__"
+    },
+    "logger":{
+        "path": "__BK_GSE_LOG_PATH__",
+        "level": "__BK_GSE_LOG_LEVEL__",
+        "filesize_mb": __BK_GSE_LOG_FILESIZE_MB__,
+        "filenum": __BK_GSE_LOG_FILENUM__,
+        "rotate": __BK_GSE_LOG_ROTATE__,
+        "flush_interval_ms": __BK_GSE_LOG_FLUSH_INTERVAL_MS__
+    },
+    "zookeeper":{
+        "host":"__BK_GSE_ZK_HOST__",
+        "token":"__BK_GSE_ZK_TOKEN__",
+        "channelid_host":"__BK_GSE_DATA_CHANNELID_ZK_HOST__",
+        "channelid_token":"__BK_GSE_DATA_CHANNELID_ZK_TOKEN__"
+    },
+    "metric":{
+        "exporter_bind_ip":"__BK_GSE_DATA_METRIC_EXPORTER_IP__",
+        "exporter_bind_port":__BK_GSE_DATA_METRIC_EXPORTER_PORT__,
+        "enableops":false	
+    },
+    "channel":{
+        "http_bind_ip": "__BK_GSE_DATA_CHNANEL_HTTP_BIND_IP__",
+        "http_bind_port": __BK_GSE_DATA_CHNANEL_HTTP_BIND_PORT__,
+        "http_thread_num": __BK_GSE_DATA_CHNANEL_HTTP_THREAD_NUM__
+    },
+    "dataflow":{
+        "receiver": [
+            {
+                "name":"agent_service",
+                "protocol":1,
+                "bind_ip":"__BK_GSE_DATA_AGENT_TCP_BIND_IP__",
+                "bind_port":__BK_GSE_DATA_AGENT_TCP_BIND_PORT__,
+                "cafile":"__BK_GSE_DATA_AGENT_TLS_CA_FILE__",
+                "certfile":"__BK_GSE_DATA_AGENT_TLS_CERT_FILE__",
+                "keyfile":"__BK_GSE_DATA_AGENT_TLS_KEY_FILE__",
+                "passwdfile":"__BK_GSE_DATA_AGENT_TLS_PASSWORD_FILE__",
+                "workernum":__BK_GSE_DATA_AGENT_TCP_SERVER_THREAD_NUM__,
+                "protostack":2
+            },
+            {
+                "name": "ops_service",
+                "protocol": 2,
+                "bind_ip":"__BK_GSE_DATA_OPS_BIND_IP__",
+                "bind_port":__BK_GSE_DATA_OPS_BIND_PORT__,
+                "workernum": 1,
+                "protostack": 3
+            }
+        ],
+        "exporter": [
+        ],
+        "filters": [
+        ],
+        "channel": [
+            {
+                "name": "c_agent",
+                "decode": 5,
+                "receiver": "agent_service",
+                "workernum": __BK_GSE_DATA_AGENT_TCP_SERVER_THREAD_NUM__,
+                "exporter": [
+                ]
+            },
+            {
+                "name":"c_ops",
+                "decode":8,
+                "receiver":"ops_service",
+                "workernum": __BK_GSE_DATA_OPS_THREAD_NUM__,
+                "exporter":[
+                ]
+            }
+        ]
+    }
+}

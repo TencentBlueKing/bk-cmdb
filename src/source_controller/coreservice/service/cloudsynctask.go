@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateSyncTask TODO
 func (s *coreService) CreateSyncTask(ctx *rest.Contexts) {
 	task := metadata.CloudSyncTask{}
 	if err := ctx.DecodeInto(&task); err != nil {
@@ -37,6 +38,7 @@ func (s *coreService) CreateSyncTask(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchSyncTask TODO
 func (s *coreService) SearchSyncTask(ctx *rest.Contexts) {
 	option := metadata.SearchCloudOption{}
 	if err := ctx.DecodeInto(&option); err != nil {
@@ -52,6 +54,7 @@ func (s *coreService) SearchSyncTask(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateSyncTask TODO
 func (s *coreService) UpdateSyncTask(ctx *rest.Contexts) {
 	taskIDStr := ctx.Request.PathParameter(common.BKCloudSyncTaskID)
 	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
@@ -74,6 +77,7 @@ func (s *coreService) UpdateSyncTask(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// DeleteSyncTask TODO
 func (s *coreService) DeleteSyncTask(ctx *rest.Contexts) {
 	taskIDStr := ctx.Request.PathParameter(common.BKCloudSyncTaskID)
 	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
@@ -90,6 +94,7 @@ func (s *coreService) DeleteSyncTask(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// CreateSyncHistory TODO
 func (s *coreService) CreateSyncHistory(ctx *rest.Contexts) {
 	history := metadata.SyncHistory{}
 	if err := ctx.DecodeInto(&history); err != nil {
@@ -106,6 +111,7 @@ func (s *coreService) CreateSyncHistory(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchSyncHistory TODO
 func (s *coreService) SearchSyncHistory(ctx *rest.Contexts) {
 	option := metadata.SearchSyncHistoryOption{}
 	if err := ctx.DecodeInto(&option); err != nil {
@@ -121,6 +127,7 @@ func (s *coreService) SearchSyncHistory(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// DeleteDestroyedHostRelated TODO
 func (s *coreService) DeleteDestroyedHostRelated(ctx *rest.Contexts) {
 	option := metadata.DeleteDestroyedHostRelatedOption{}
 	if err := ctx.DecodeInto(&option); err != nil {

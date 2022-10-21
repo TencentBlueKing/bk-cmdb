@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package authserver TODO
 package authserver
 
 import (
@@ -24,6 +25,7 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
+// AuthServerClientInterface TODO
 type AuthServerClientInterface interface {
 	AuthorizeBatch(ctx context.Context, h http.Header, input *types.AuthBatchOptions) ([]types.Decision, error)
 	AuthorizeAnyBatch(ctx context.Context, h http.Header, input *types.AuthBatchOptions) ([]types.Decision, error)
@@ -37,6 +39,7 @@ type AuthServerClientInterface interface {
 		[]metadata.IamCreatorActionPolicy, error)
 }
 
+// NewAuthServerClientInterface TODO
 func NewAuthServerClientInterface(c *util.Capability, version string) AuthServerClientInterface {
 	base := fmt.Sprintf("/ac/%s", version)
 	return &authServer{

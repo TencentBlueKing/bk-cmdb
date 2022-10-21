@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package service TODO
 package service
 
 import (
@@ -64,6 +65,7 @@ func (s *Service) SetCache(db redis.Client) {
 	s.cache = db
 }
 
+// SetAuthorizer TODO
 func (s *Service) SetAuthorizer(authorizer ac.AuthorizeInterface) {
 	s.authorizer = authorizer
 }
@@ -106,6 +108,7 @@ func (s *Service) initService(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/watch/resource/{resource}", Handler: s.WatchEvent})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/host_identifier", Handler: s.SyncHostIdentifier})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/push/host_identifier", Handler: s.PushHostIdentifier})
 
 	utility.AddToRestfulWebService(web)
 

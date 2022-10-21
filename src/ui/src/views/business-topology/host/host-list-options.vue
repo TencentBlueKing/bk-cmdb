@@ -13,10 +13,15 @@
 <template>
   <div class="options-layout clearfix">
     <div class="options options-left fl">
-      <cmdb-auth class="option" :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
+      <cmdb-auth
+        class="option"
+        v-bk-tooltips="{
+          disabled: isNormalModuleNode,
+          content: $t('仅能在业务模块下新增')
+        }"
+        :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
         <bk-button theme="primary" slot-scope="{ disabled }" v-test-id="'addHost'"
           :disabled="disabled || !isNormalModuleNode"
-          :title="isNormalModuleNode ? '' : $t('仅能在业务模块下新增')"
           @click="handleAddHost">
           {{$t('新增')}}
         </bk-button>
@@ -55,12 +60,12 @@
             @click="handleTransfer($event, 'business', false)">
             {{$t('业务模块')}}
           </cmdb-auth>
-          <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]" v-test-id="'transferResource'"
-            @click="handleTransfer($event, 'resource', !isIdleModule)">
+          <li :class="['bk-dropdown-item', { disabled: !isIdleSetModules }]" v-test-id="'transferResource'"
+            @click="handleTransfer($event, 'resource', !isIdleSetModules)">
             {{$t('主机池')}}
           </li>
-          <li :class="['bk-dropdown-item', { disabled: !isIdleModule }]" v-test-id="'transferAcrossBusiness'"
-            @click="handleTransfer($event, 'acrossBusiness', !isIdleModule)">
+          <li :class="['bk-dropdown-item', { disabled: !isIdleSetModules }]" v-test-id="'transferAcrossBusiness'"
+            @click="handleTransfer($event, 'acrossBusiness', !isIdleSetModules)">
             {{$t('其他业务')}}
           </li>
         </ul>
@@ -335,7 +340,13 @@
             const params = {
               export_custom_fields: fields.value.map(property => property.bk_property_id),
               bk_host_ids: this.selection.map(({ host }) => host.bk_host_id),
-              bk_biz_id: this.bizId
+              bk_biz_id: this.bizId,
+              export_condition: {
+                page: {
+                  start: 0,
+                  limit: this.selection.length
+                }
+              }
             }
             if (exportRelation.value) {
               params.object_unique_id = state.object_unique_id.value

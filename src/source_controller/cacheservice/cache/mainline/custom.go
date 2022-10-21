@@ -298,6 +298,7 @@ func getMainlineTopology() ([]mainlineAssociation, error) {
 	return relations, nil
 }
 
+// rankMainlineTopology TODO
 // rankTopology is to rank the biz topology to a array, start from biz to host
 func rankMainlineTopology(relations []mainlineAssociation) []string {
 	rank := make([]string, 0)

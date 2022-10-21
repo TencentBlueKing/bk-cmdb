@@ -1,3 +1,4 @@
+// Package iam TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -20,6 +21,7 @@ import (
 	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
+// IamClientInterface TODO
 type IamClientInterface interface {
 	GetNoAuthSkipUrl(ctx context.Context, header http.Header, p metadata.IamPermission) (string, error)
 	RegisterResourceCreatorAction(ctx context.Context, header http.Header, instance metadata.IamInstanceWithCreator) (
@@ -30,6 +32,7 @@ type IamClientInterface interface {
 		[]metadata.IamBatchOperateInstanceAuthRes, error)
 }
 
+// NewIamClientInterface TODO
 func NewIamClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigSrv) IamClientInterface {
 	return &iam{
 		client: client,

@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { reactive, toRefs, set, del } from '@vue/composition-api'
+import { reactive, toRefs, set, del } from 'vue'
 import useClone from '@/hooks/utils/clone'
 const defaultState = {
   visible: false,
@@ -20,7 +20,7 @@ const defaultState = {
   available: () => true,
   submit: () => {},
   count: 0,
-  limit: 10000,
+  limit: 30000,
   step: 1,
   status: null,
   presetFields: [],

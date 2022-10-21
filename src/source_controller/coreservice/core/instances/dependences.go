@@ -21,7 +21,7 @@ import (
 
 // OperationDependences methods definition
 type OperationDependences interface {
-	// IsInstanceExist used to check if the  instances  asst exist
+	// IsInstAsstExist used to check if the  instances  asst exist
 	IsInstAsstExist(kit *rest.Kit, objID string, instID uint64) (exists bool, err error)
 
 	// DeleteInstAsst used to delete inst asst

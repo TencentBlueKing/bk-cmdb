@@ -35,7 +35,7 @@
 </template>
 
 <script>
-  import { computed, defineComponent, ref } from '@vue/composition-api'
+  import { computed, defineComponent, ref } from 'vue'
   import { t } from '@/i18n'
   import UserNotice from '../user-notice.vue'
   import StepPane from '../step-pane.vue'
@@ -111,7 +111,7 @@
               })
           },
         },
-        { title: t('开始导出'), icon: 4, nextButtonVisible: false }
+        { title: t('开始导入'), icon: 4, nextButtonVisible: false }
       ]
 
       return {

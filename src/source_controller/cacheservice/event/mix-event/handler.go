@@ -47,6 +47,7 @@ func newMixEventTokenHandler(mixKey event.Key, key event.Key, watchDB dal.DB,
 	}
 }
 
+// SetLastWatchToken TODO
 /* SetLastWatchToken do not use this function in the mix events(set after events are successfully inserted)
    when there are several masters watching db event, we use db transaction to avoid inserting duplicate data by setting
    the last token after the insertion of db chain nodes in one transaction, since we have a unique index on the cursor

@@ -59,6 +59,7 @@ func (d *Discover) parseOwnerId(msg *string) string {
 	return ownerId
 }
 
+// CreateInstKey TODO
 func (d *Discover) CreateInstKey(objID string, ownerID string, val []string) string {
 	return fmt.Sprintf("cc:v3:inst[%s:%s:%s:%s]",
 		common.CCSystemCollectorUserName,
@@ -68,6 +69,7 @@ func (d *Discover) CreateInstKey(objID string, ownerID string, val []string) str
 	)
 }
 
+// GetInstFromRedis TODO
 func (d *Discover) GetInstFromRedis(instKey string) (map[string]interface{}, error) {
 
 	val, err := d.redisCli.Get(d.ctx, instKey).Result()
@@ -85,6 +87,7 @@ func (d *Discover) GetInstFromRedis(instKey string) (map[string]interface{}, err
 
 }
 
+// TrySetRedis TODO
 func (d *Discover) TrySetRedis(key string, value []byte, duration time.Duration) {
 	_, err := d.redisCli.Set(d.ctx, key, value, duration).Result()
 	if err != nil {
@@ -95,6 +98,7 @@ func (d *Discover) TrySetRedis(key string, value []byte, duration time.Duration)
 	}
 }
 
+// TryUnsetRedis TODO
 func (d *Discover) TryUnsetRedis(key string) {
 	_, err := d.redisCli.Del(d.ctx, key).Result()
 	if err != nil {

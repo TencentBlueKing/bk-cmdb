@@ -61,7 +61,12 @@
         </bk-table-column>
         <bk-table-column :label="$t('操作')">
           <template slot-scope="{ row }">
-            <cmdb-auth :auth="syncAuth">
+            <cmdb-auth
+              :auth="syncAuth"
+              v-bk-tooltips="{
+                content: isSyncing(row.status) ? $t('实例正在同步，无法操作') : $t('已是最新内容，无需同步'),
+                disabled: !isSyncDisabled(row.status)
+              }">
               <template #default="{ disabled }">
                 <bk-button text
                   :disabled="isSyncDisabled(row.status) || disabled"
@@ -89,10 +94,12 @@
         <cmdb-table-empty slot="empty" :stuff="table.stuff">
           <div>
             <i18n path="空服务模板实例提示" tag="div">
-              <bk-button style="font-size: 14px;" text place="link"
-                @click="handleToCreatedInstance">
-                {{$t('创建服务实例')}}
-              </bk-button>
+              <template #link>
+                <bk-button style="font-size: 14px;" text
+                  @click="handleToCreatedInstance">
+                  {{$t('创建服务实例')}}
+                </bk-button>
+              </template>
             </i18n>
           </div>
         </cmdb-table-empty>
@@ -287,6 +294,8 @@
             }
           })
           this.table.data.sort(a => (a.status === 'need_sync' ? -1 : 0))
+
+          this.$emit('sync-change')
         })
           .catch((err) => {
             console.log(err)

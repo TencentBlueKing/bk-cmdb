@@ -19,6 +19,7 @@ import (
 	"configcenter/src/ac/meta"
 )
 
+// HostApplyAuthConfigs TODO
 var HostApplyAuthConfigs = []AuthConfig{
 	{
 		Name:           "CreateHostApplyRuleRegex",
@@ -72,7 +73,7 @@ var HostApplyAuthConfigs = []AuthConfig{
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.HostApply,
-		ResourceAction: meta.DefaultHostApply,
+		ResourceAction: meta.SkipAction,
 	}, {
 		Name:           "BatchUpdateOrCreateHostApplyRuleRegex",
 		Description:    "批量创建/更新主机属性自动应用规则",
@@ -166,6 +167,7 @@ var HostApplyAuthConfigs = []AuthConfig{
 	},
 }
 
+// HostApply TODO
 func (ps *parseStream) HostApply() *parseStream {
 	return ParseStreamWithFramework(ps, HostApplyAuthConfigs)
 }

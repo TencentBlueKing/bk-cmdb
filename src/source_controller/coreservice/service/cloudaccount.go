@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// 新建云账户
+// CreateAccount 新建云账户
 func (s *coreService) CreateAccount(ctx *rest.Contexts) {
 	account := metadata.CloudAccount{}
 	if err := ctx.DecodeInto(&account); err != nil {
@@ -37,7 +37,7 @@ func (s *coreService) CreateAccount(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-// 查询云账户
+// SearchAccount 查询云账户
 func (s *coreService) SearchAccount(ctx *rest.Contexts) {
 	option := metadata.SearchCloudOption{}
 	if err := ctx.DecodeInto(&option); err != nil {
@@ -53,9 +53,9 @@ func (s *coreService) SearchAccount(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-// 更新云账户
+// UpdateAccount 更新云账户
 func (s *coreService) UpdateAccount(ctx *rest.Contexts) {
-	//get accountID
+	// get accountID
 	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountID)
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
@@ -77,9 +77,9 @@ func (s *coreService) UpdateAccount(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-// 删除云账户
+// DeleteAccount 删除云账户
 func (s *coreService) DeleteAccount(ctx *rest.Contexts) {
-	//get accountID
+	// get accountID
 	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountID)
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
@@ -95,7 +95,7 @@ func (s *coreService) DeleteAccount(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-// 查询云厂商账户配置
+// SearchAccountConf 查询云厂商账户配置
 func (s *coreService) SearchAccountConf(ctx *rest.Contexts) {
 	option := metadata.SearchCloudOption{}
 	if err := ctx.DecodeInto(&option); err != nil {

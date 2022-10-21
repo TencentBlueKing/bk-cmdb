@@ -78,6 +78,7 @@ func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.H
 	return resources, nil
 }
 
+// AuthorizeByObjectIDs TODO
 func (am *AuthManager) AuthorizeByObjectIDs(ctx context.Context, header http.Header, action meta.Action, bizID int64,
 	objIDs ...string) error {
 
@@ -108,6 +109,7 @@ func (am *AuthManager) AuthorizeByObjectIDs(ctx context.Context, header http.Hea
 	return am.batchAuthorize(ctx, header, resources...)
 }
 
+// GenObjectBatchNoPermissionResp TODO
 func (am *AuthManager) GenObjectBatchNoPermissionResp(ctx context.Context, header http.Header, action meta.Action,
 	bizID int64, objIDs []string) (*metadata.BaseResp, error) {
 
@@ -144,6 +146,7 @@ func (am *AuthManager) GenObjectBatchNoPermissionResp(ctx context.Context, heade
 	return &resp, nil
 }
 
+// AuthorizeResourceCreate TODO
 func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.Header, businessID int64, resourceType meta.ResourceType) error {
 	if !am.Enabled() {
 		return nil

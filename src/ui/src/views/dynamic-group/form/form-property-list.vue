@@ -21,8 +21,9 @@
           <form-operator-selector class="item-operator"
             v-if="!withoutOperator.includes(property.bk_property_type)"
             :property="property"
+            :custom-type-map="customTypeMap"
             v-model="condition[property.id].operator"
-            @change="handleOperatorChange(property, ...arguments)">
+            @selected="handleOperatorChange(property, ...arguments)">
           </form-operator-selector>
           <component class="item-value"
             :is="getComponentType(property)"
@@ -44,15 +45,22 @@
 <script>
   import FormOperatorSelector from '@/components/filters/operator-selector.vue'
   import has from 'has'
+  import { QUERY_OPERATOR } from '@/utils/query-builder-operator'
+
   export default {
     components: {
       FormOperatorSelector
     },
     inject: ['dynamicGroupForm'],
     data() {
+      const { EQ, NE, GTE, LTE, RANGE } = QUERY_OPERATOR
       return {
         condition: {},
-        withoutOperator: ['date', 'time', 'bool', 'service-template']
+        withoutOperator: ['date', 'time', 'bool', 'service-template'],
+        customTypeMap: {
+          float: [EQ, NE, GTE, LTE, RANGE],
+          int: [EQ, NE, GTE, LTE, RANGE]
+        }
       }
     },
     computed: {
@@ -80,7 +88,7 @@
       properties: {
         immediate: true,
         handler() {
-          this.UpdateCondition()
+          this.updateCondition()
         }
       }
     },
@@ -129,7 +137,7 @@
           condition.value = detailsFieldData.value
         })
       },
-      UpdateCondition() {
+      updateCondition() {
         const newConditon = {}
         this.properties.forEach((property) => {
           if (has(this.condition, property.id)) {
@@ -148,7 +156,7 @@
           this.condition[property.id].value = []
         } else if (operator === '$regex') {
           const currentValue = this.condition[property.id].value
-          this.condition[property.id].value = Array.isArray(currentValue) ? currentValue[0] : currentValue
+          this.condition[property.id].value = Array.isArray(currentValue) ? (currentValue[0] || '') : currentValue
         } else {
           const defaultValue = this.getDefaultData(property).value
           const currentValue = this.condition[property.id].value
@@ -167,9 +175,11 @@
         } = property
         const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
         const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
-        if (isSetName || isModuleName) {
+
+        if ((isSetName || isModuleName) && this.condition[property.id].operator !== '$regex') {
           return `cmdb-search-${modelId}`
         }
+
         return `cmdb-search-${propertyType}`
       },
       getBindProps(property) {

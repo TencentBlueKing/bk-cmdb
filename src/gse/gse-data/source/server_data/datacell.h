@@ -22,20 +22,14 @@
 
 #include "time_center.h"
 
-namespace gse
-{
-namespace dataserver
-{
+namespace gse {
+namespace data {
 
 //
 // channelid 数据位分布规则：
 // 无符号32位整数，高 12位位平台编号，低20位为数据ID
 // 对于原有的DataID 平台编号为 0 以兼容存量的ID
 //
-
-#ifndef GetOriginChannelID
-#define GetOriginChannelID(channelID) (channelID & 0x3FFFFF)
-#endif
 
 #ifndef GetPlatNum
 #define GetPlatNum(channelID) ((channelID >> 20) & 0x3FF)
@@ -47,7 +41,6 @@ const std::string kDealingState = "dealing";
 const std::string kOutputState = "output";
 const std::string kCodecState = "codec";
 const std::string kAgentOpsState = "ops";
-
 
 enum DataCellOpsStatus
 {
@@ -69,42 +62,33 @@ inline bool is_dataid(uint32_t channelID)
         return false;
     }
     return false;
-//    return GetPlatNum(channelID) == 0;
+    //    return GetPlatNum(channelID) == 0;
 }
 
 class DataCellOPS
 {
 public:
-    DataCellOPS() :m_szChannelID(""), m_szServerPort(""), m_channelProtocol(""), m_szSrcIP(""), m_szServerIP(""),m_state("")
+    DataCellOPS()
+        : m_szServerPort(""), m_channelProtocol(""), m_szSrcIP(""), m_szServerIP(""), m_state("")
     {
-        m_srcIP = 0;
         m_srcPort = 0;
-        m_serverIP = 0;
         m_serverPort = 0;
         m_channelID = 0;
-		m_szChannelID = "0";
-        //m_arrivedTimestamp = m_createdTimestamp = gse::tools::time::GetUTCSecond();
+        m_szChannelID = "0";
         m_arrivedTimestamp = m_createdTimestamp = TimeCenter::Instance()->GetDateTime();
         m_outputTimestamp = m_arrivedTimestamp;
-        m_szCreatedTimestamp = gse::tools::strings::ToString(m_createdTimestamp);
         m_errcode = 0;
-        m_errmsg = "";
         m_status = EN_UNKOWN_STATE;
-        m_outputTag = "";
         m_bytes = 0;
         m_bizid = 0;
         m_opsType = 0;
         m_bufflen = 0;
-        
     }
 
     DataCellOPS(const DataCellOPS &ops)
     {
         m_channelID = ops.m_channelID;
-        m_srcIP = ops.m_srcIP;
         m_srcPort = ops.m_srcPort;
-        m_serverIP = ops.m_serverIP;
-        m_serverPort = ops.m_serverPort;
         m_arrivedTimestamp = ops.m_arrivedTimestamp; // data from the protocol head
         m_createdTimestamp = ops.m_createdTimestamp; // creation timestamp
         m_outputTimestamp = ops.m_outputTimestamp;
@@ -113,9 +97,10 @@ public:
         m_state = ops.m_state;
         m_szServerIP = ops.m_szServerIP;
         m_extensionsInfo = ops.m_extensionsInfo; // data from the dynamical
-		m_szChannelID = ops.m_szChannelID;
-		m_szServerPort = ops.m_szServerPort;
-		m_szCreatedTimestamp = ops.m_szCreatedTimestamp;
+        m_szChannelID = ops.m_szChannelID;
+        m_szServerPort = ops.m_szServerPort;
+        //延时转成string
+        m_szCreatedTimestamp = gse::tools::strings::ToString(m_createdTimestamp);
         m_exportorTag = ops.m_exportorTag;
         m_outputTag = ops.m_outputTag;
         m_errmsg = ops.m_errmsg;
@@ -124,10 +109,6 @@ public:
         m_outputType = ops.m_outputType;
         m_outAddress = ops.m_outAddress;
         m_bytes = ops.m_bytes;
-        if (0 == m_szServerIP.length())
-        {
-            m_szServerIP = gse::tools::net::IpToString(m_serverIP, true);
-        }
         m_bizid = 0;
         m_opsType = 0;
         m_bufflen = 0;
@@ -136,9 +117,7 @@ public:
     DataCellOPS &operator=(const DataCellOPS &ops)
     {
         m_channelID = ops.m_channelID;
-        m_srcIP = ops.m_srcIP;
         m_srcPort = ops.m_srcPort;
-        m_serverIP = ops.m_serverIP;
         m_serverPort = ops.m_serverPort;
         m_arrivedTimestamp = ops.m_arrivedTimestamp; // data from the protocol head
         m_createdTimestamp = ops.m_createdTimestamp; // creation timestamp
@@ -148,9 +127,10 @@ public:
         m_state = ops.m_state;
         m_szServerIP = ops.m_szServerIP;
         m_extensionsInfo = ops.m_extensionsInfo; // data from the dynamical
-		m_szChannelID = ops.m_szChannelID;
-		m_szServerPort = ops.m_szServerPort;
-		m_szCreatedTimestamp = ops.m_szCreatedTimestamp;
+        m_szChannelID = ops.m_szChannelID;
+        m_szServerPort = ops.m_szServerPort;
+        //延时转成string
+        m_szCreatedTimestamp = gse::tools::strings::ToString(m_createdTimestamp);
         m_bytes = ops.m_bytes;
         m_errmsg = ops.m_errmsg;
         m_errcode = ops.m_errcode;
@@ -159,10 +139,6 @@ public:
         m_status = ops.m_status;
         m_outputType = ops.m_outputType;
         m_outAddress = ops.m_outAddress;
-        if (0 == m_szServerIP.length())
-        {
-            m_szServerIP = gse::tools::net::IpToString(m_serverIP, true);
-        }
         return *this;
     }
     void OpsKey(std::string &ops_key)
@@ -174,9 +150,9 @@ public:
         ops_key.append(gse::tools::strings::ToString(min_stamp));
         if (m_extensionsInfo.size() > 0)
         {
-            for (int i = 0; i < m_extensionsInfo.size(); i++)
+            for (size_t i = 0; i < m_extensionsInfo.size(); i++)
             {
-                 ops_key.append(m_extensionsInfo[i]);
+                ops_key.append(m_extensionsInfo[i]);
             }
         }
     }
@@ -185,17 +161,15 @@ public:
     int64_t m_bytes;
     uint32_t m_channelID;
     std::string m_szChannelID;
-    uint32_t m_srcIP;
     uint16_t m_srcPort;
-    uint32_t m_serverIP;
     uint16_t m_serverPort;
-    std::string m_szServerPort;  // 为了OPS 模块不做转换可以拥有更高的执行效率
-    uint32_t m_arrivedTimestamp; // data from the protocol head
-    uint32_t m_createdTimestamp; // creation timestamp
-    uint32_t m_outputTimestamp; // 处理完成时间
-	std::string m_szCreatedTimestamp; // 为 OPS 能够更换的做数据转换，可以拥有更高的执行效率
-    std::string m_outputTag;  // 对账使用key
-    uint32_t m_bizid;         // 兼容V1.0 的bizid 云区域等符合ID
+    std::string m_szServerPort;       // 为了OPS 模块不做转换可以拥有更高的执行效率
+    uint32_t m_arrivedTimestamp;      // data from the protocol head
+    uint32_t m_createdTimestamp;      // creation timestamp
+    uint32_t m_outputTimestamp;       // 处理完成时间
+    std::string m_szCreatedTimestamp; // 为 OPS 能够更换的做数据转换，可以拥有更高的执行效率
+    std::string m_outputTag;          // 对账使用key
+    uint32_t m_bizid;                 // 兼容V1.0 的bizid 云区域等符合ID
     std::string m_channelProtocol;
     std::string m_szSrcIP;
     std::string m_szServerIP;
@@ -217,12 +191,15 @@ class DataCell
 {
 public:
     DataCell()
+        : m_dataBufLen(0),
+          m_dataBuf(nullptr),
+          m_partition(-1),
+          m_encodeDataBufLen(0),
+          m_encodeDataBuf(nullptr),
+          m_isOps(false),
+          m_opsServiceId(0)
+
     {
-        m_dataBufLen = 0;
-        m_dataBuf = nullptr;
-        m_partition = 1;
-        m_encodeDataBufLen = 0;
-        m_encodeDataBuf = nullptr;
     }
 
     ~DataCell()
@@ -246,7 +223,7 @@ public:
     // inline functions
     inline void GetExtensionString(std::string &extension)
     {
-         extension.assign(m_extensions);
+        extension.assign(m_extensions);
     }
 
 public:
@@ -254,7 +231,6 @@ public:
     DataCellOPS *ToOPS(int status);
 
 public:
-    
     bool IsDataID();
 
     void SetChannelProtocol(const std::string &channelProtocol);
@@ -263,7 +239,6 @@ public:
     uint32_t GetSourceIp() const;
     void SetSourceIp(uint32_t ip);
 
-    void SetServerIp(uint32_t ip);
     std::string GetStrServerIp();
     uint32_t GetServerIp();
 
@@ -276,11 +251,12 @@ public:
     char *GetDataBuf() const;
     uint32_t GetDataBufLen() const;
 
-    void SetSourceIp(std::string &ip);
+    void SetSourceIp(const std::string &ip);
+    void SetServerIP(const std::string &ip);
     std::string GetSourceIp();
 
     void SetChannelID(uint32_t channelID);
-    void SetErrorMsg(const std::string & errmsg, int errorcode);
+    void SetErrorMsg(const std::string &errmsg, int errorcode);
     int GetErrorCode();
     uint32_t GetChannelID();
 
@@ -304,9 +280,10 @@ public:
     int CopyData(const char *buf, uint32_t len);
     void DealLineBreak();
     void AppendLineBreak();
+
 public:
     void SetDataKey(const std::string &dataKey);
-    void SetOutputTag(const std::string& tag);
+    void SetOutputTag(const std::string &tag);
     void SetInputTag(const std::string &tag);
     void SetOutputAddress(const std::string &address);
     void SetOutputType(const std::string &type);
@@ -319,6 +296,11 @@ public:
     void SetBizID(uint32_t bizid);
     uint32_t GetBizID();
     uint32_t GetBufferLen();
+    bool IsOpsMsg();
+    void SetOpsMsg(bool isOpsMsg);
+
+    int GetOpsServiceId();
+    void SetOpsServiceId(int opsServiceId);
 
 private:
     uint32_t m_dataBufLen;
@@ -328,6 +310,9 @@ private:
 
     uint32_t m_encodeDataBufLen;
     char *m_encodeDataBuf;
+    bool m_isOps;
+    int m_opsServiceId;
+
 private:
     std::string m_dataKeyForValue;
     std::vector<std::string> m_tableNames;
@@ -335,7 +320,7 @@ private:
 
     std::string m_extensions;
 };
-} // namespace dataserver
+} // namespace data
 } // namespace gse
 
 #endif

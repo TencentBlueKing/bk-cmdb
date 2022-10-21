@@ -20,12 +20,14 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// TopoGraphicsInterface TODO
 type TopoGraphicsInterface interface {
 	SearchTopoGraphics(ctx context.Context, h http.Header, dat *metadata.TopoGraphics) (
 		[]metadata.TopoGraphics, error)
 	UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) error
 }
 
+// NewTopoGraphicsInterface TODO
 func NewTopoGraphicsInterface(client rest.ClientInterface) TopoGraphicsInterface {
 	return &meta{client: client}
 }

@@ -36,6 +36,7 @@ type snapshotCheckConf struct {
 	bizID int
 }
 
+// NewSnapshotCheckCommand TODO
 func NewSnapshotCheckCommand() *cobra.Command {
 	conf := new(snapshotCheckConf)
 

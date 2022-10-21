@@ -32,6 +32,7 @@ func (ps *parseStream) adminRelated() *parseStream {
 	return ps
 }
 
+// ConfigAdminConfigs TODO
 var ConfigAdminConfigs = []AuthConfig{
 	{
 		Name:           "findConfigAdmin",
@@ -50,6 +51,7 @@ var ConfigAdminConfigs = []AuthConfig{
 	},
 }
 
+// PlatformSettingConfig TODO
 var PlatformSettingConfig = []AuthConfig{
 	{
 		Name:           "findPlatformSettingConfig",
@@ -68,6 +70,7 @@ var PlatformSettingConfig = []AuthConfig{
 	},
 }
 
+// ConfigAdmin TODO
 func (ps *parseStream) ConfigAdmin() *parseStream {
 	return ParseStreamWithFramework(ps, ConfigAdminConfigs)
 }

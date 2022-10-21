@@ -20,6 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// ClientInterface TODO
 type ClientInterface interface {
 	Verb(verb VerbType) *Request
 	Post() *Request
@@ -29,6 +30,7 @@ type ClientInterface interface {
 	Patch() *Request
 }
 
+// NewRESTClient TODO
 func NewRESTClient(c *util.Capability, baseUrl string) ClientInterface {
 	if baseUrl != "/" {
 		baseUrl = strings.Trim(baseUrl, "/")
@@ -74,6 +76,7 @@ func NewRESTClient(c *util.Capability, baseUrl string) ClientInterface {
 	return client
 }
 
+// RESTClient TODO
 type RESTClient struct {
 	baseUrl    string
 	capability *util.Capability
@@ -81,6 +84,7 @@ type RESTClient struct {
 	requestDuration *prometheus.HistogramVec
 }
 
+// Verb TODO
 func (r *RESTClient) Verb(verb VerbType) *Request {
 	return &Request{
 		parent:     r,
@@ -90,22 +94,27 @@ func (r *RESTClient) Verb(verb VerbType) *Request {
 	}
 }
 
+// Post TODO
 func (r *RESTClient) Post() *Request {
 	return r.Verb(POST)
 }
 
+// Put TODO
 func (r *RESTClient) Put() *Request {
 	return r.Verb(PUT)
 }
 
+// Get TODO
 func (r *RESTClient) Get() *Request {
 	return r.Verb(GET)
 }
 
+// Delete TODO
 func (r *RESTClient) Delete() *Request {
 	return r.Verb(DELETE)
 }
 
+// Patch TODO
 func (r *RESTClient) Patch() *Request {
 	return r.Verb(PATCH)
 }

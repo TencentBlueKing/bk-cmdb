@@ -19,6 +19,7 @@ import (
 	"configcenter/src/framework/common/rest"
 )
 
+// SetInterface TODO
 type SetInterface interface {
 	CreateSet(ctx *types.CreateSetCtx) (int64, error)
 	DeleteSet(ctx *types.DeleteSetCtx) error
@@ -32,6 +33,7 @@ type setClient struct {
 	client rest.ClientInterface
 }
 
+// CreateSet TODO
 func (s *setClient) CreateSet(ctx *types.CreateSetCtx) (int64, error) {
 	resp := new(types.CreateSetResult)
 	subPath := fmt.Sprintf("/set/%d", ctx.SetID)
@@ -53,6 +55,7 @@ func (s *setClient) CreateSet(ctx *types.CreateSetCtx) (int64, error) {
 	return resp.Data.ID, nil
 }
 
+// DeleteSet TODO
 func (s *setClient) DeleteSet(ctx *types.DeleteSetCtx) error {
 	resp := new(types.Response)
 	subPath := fmt.Sprintf("/set/%d/%d", ctx.BusinessID, ctx.SetID)
@@ -74,6 +77,7 @@ func (s *setClient) DeleteSet(ctx *types.DeleteSetCtx) error {
 	return nil
 }
 
+// UpdateSet TODO
 func (s *setClient) UpdateSet(ctx *types.UpdateSetCtx) error {
 	resp := new(types.Response)
 	subPath := fmt.Sprintf("/module/%d/%d/%d", ctx.BusinessID, ctx.SetID, ctx.ModuleID)
@@ -95,6 +99,7 @@ func (s *setClient) UpdateSet(ctx *types.UpdateSetCtx) error {
 	return nil
 }
 
+// ListSet TODO
 func (s *setClient) ListSet(ctx *types.ListSetCtx) (*types.ListInfo, error) {
 	resp := new(types.ListSetResult)
 	subPath := fmt.Sprintf("/set/search/%s/%d", ctx.Tenancy, ctx.BusinessID)

@@ -123,7 +123,7 @@ func migrateProcBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 
 			updateFilter := map[string]interface{}{
 				common.BKProcIDField: proc.ProcessID,
-				//common.BKProcBindInfo: map[string]interface{}{common.BKDBExists: false},
+				// common.BKProcBindInfo: map[string]interface{}{common.BKDBExists: false},
 			}
 			doc := map[string]interface{}{
 				common.BKProcBindInfo: bindInfoArr,
@@ -302,6 +302,7 @@ func getSubAttr() []SubAttriubte {
 // Attribute attribute metadata definition
 type Attribute metadata.Attribute
 
+// SubAttriubte TODO
 type SubAttriubte metadata.SubAttribute
 
 // dbProcess 当前数据库中数据的格式
@@ -365,11 +366,13 @@ type dbProcessTemplateProperty struct {
 	Enable   *PropertyBool   `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
 }
 
+// PropertyString TODO
 type PropertyString struct {
 	Value          *string `field:"value" json:"value" bson:"value"`
 	AsDefaultValue *bool   `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
+// PropertyBool TODO
 type PropertyBool struct {
 	Value          *bool `field:"value" json:"value" bson:"value"`
 	AsDefaultValue *bool `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`

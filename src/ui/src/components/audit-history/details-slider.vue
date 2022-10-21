@@ -12,6 +12,7 @@
 
 <template>
   <bk-sideslider
+    :transfer="true"
     :width="760"
     :title="$t('操作详情')"
     :is-show.sync="isShow"
@@ -88,8 +89,8 @@
 
         let isTableViewTarget = tableViewTargets.includes(this.details.resource_type)
 
-        // 模型实例删除后可能有模型也同时被删除的情况，因模型实例的审计详情依赖模型数据，所以需要判断模型是否存在，模型不存在则无法用表格展示对比数据。
-        if (this.details.resource_type === 'model_instance') {
+        // 如果拥有模型实例，则需要判断模型是否还存在
+        if (this.details?.operation_detail?.bk_obj_id) {
           isTableViewTarget = this.isModelExisted()
         }
 

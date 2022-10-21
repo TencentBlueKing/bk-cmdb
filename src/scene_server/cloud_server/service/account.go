@@ -28,7 +28,7 @@ import (
 	params "configcenter/src/common/paraparse"
 )
 
-// 云账户连通测试
+// VerifyConnectivity 云账户连通测试
 func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 	account := new(metadata.CloudAccountVerify)
 	if err := ctx.DecodeInto(account); err != nil {
@@ -56,7 +56,7 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-// 查询云账户有效性
+// SearchAccountValidity 查询云账户有效性
 func (s *Service) SearchAccountValidity(ctx *rest.Contexts) {
 	option := new(metadata.SearchAccountValidityOption)
 	if err := ctx.DecodeInto(option); err != nil {
@@ -92,7 +92,7 @@ func (s *Service) SearchAccountValidity(ctx *rest.Contexts) {
 	ctx.RespEntity(validityInfo)
 }
 
-// 新建云账户
+// CreateAccount 新建云账户
 func (s *Service) CreateAccount(ctx *rest.Contexts) {
 	account := new(metadata.CloudAccount)
 	if err := ctx.DecodeInto(account); err != nil {
@@ -169,7 +169,7 @@ func (s *Service) CreateAccount(ctx *rest.Contexts) {
 	ctx.RespEntity(res)
 }
 
-// 查询云账户
+// SearchAccount 查询云账户
 func (s *Service) SearchAccount(ctx *rest.Contexts) {
 	option := metadata.SearchCloudOption{}
 	if err := ctx.DecodeInto(&option); err != nil {
@@ -237,9 +237,9 @@ func (s *Service) SearchAccount(ctx *rest.Contexts) {
 	ctx.RespEntity(res)
 }
 
-// 更新云账户
+// UpdateAccount 更新云账户
 func (s *Service) UpdateAccount(ctx *rest.Contexts) {
-	//get accountID
+	// get accountID
 	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountID)
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
@@ -289,9 +289,9 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-// 删除云账户
+// DeleteAccount 删除云账户
 func (s *Service) DeleteAccount(ctx *rest.Contexts) {
-	//get accountID
+	// get accountID
 	accountIDStr := ctx.Request.PathParameter(common.BKCloudAccountID)
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {

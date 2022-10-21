@@ -30,6 +30,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// CreateProcessInstances TODO
 func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 	input := new(metadata.CreateRawProcessInstanceInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -149,6 +150,7 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 	return processIDs, nil
 }
 
+// UpdateProcessInstancesByIDs TODO
 func (ps *ProcServer) UpdateProcessInstancesByIDs(ctx *rest.Contexts) {
 	input := metadata.UpdateProcessByIDsInput{}
 	if err := ctx.DecodeInto(&input); err != nil {
@@ -253,6 +255,7 @@ func (ps *ProcServer) UpdateProcessInstancesByIDs(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateProcessInstances TODO
 func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 	input := metadata.UpdateRawProcessInstanceInput{}
 	if err := ctx.DecodeInto(&input); err != nil {
@@ -605,6 +608,48 @@ func (ps *ProcServer) getModule(kit *rest.Kit, moduleID int64) (*metadata.Module
 	return &moduleRes.Data.Info[0], nil
 }
 
+var (
+	ipRegex = `^((1?\d{1,2}|2[0-4]\d|25[0-5])[.]){3}(1?\d{1,2}|2[0-4]\d|25[0-5])$`
+)
+
+func (ps *ProcServer) validateProcessInstance(kit *rest.Kit, process *metadata.Process) errors.CCErrorCoder {
+	if process.ProcessName != nil && (len(*process.ProcessName) == 0 ||
+		len(*process.ProcessName) > common.NameFieldMaxLength) {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessNameField)
+	}
+	if process.FuncName != nil && (len(*process.FuncName) == 0 ||
+		len(*process.ProcessName) > common.NameFieldMaxLength) {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFuncName)
+	}
+
+	// validate that process bind info must have ip and port and protocol
+	for _, bindInfo := range process.BindInfo {
+		if bindInfo.Std.IP == nil || len(*bindInfo.Std.IP) == 0 {
+			if err := processhook.ValidateProcessBindIPEmptyHook(); err != nil {
+				return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKIP)
+			}
+		} else {
+			matched, err := regexp.MatchString(ipRegex, *bindInfo.Std.IP)
+			if err != nil || !matched {
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcBindInfo+"."+common.BKIP)
+			}
+		}
+
+		port := (*metadata.PropertyPortValue)(bindInfo.Std.Port)
+		if err := port.Validate(); err != nil {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKPort)
+		}
+
+		protocol := (*metadata.ProtocolType)(bindInfo.Std.Protocol)
+		if err := protocol.Validate(); err != nil {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKProcBindInfo+"."+common.BKProtocol)
+		}
+	}
+
+	return nil
+}
+
+// DeleteProcessInstance TODO
 func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 	input := new(metadata.DeleteProcessInstanceInServiceInstanceInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -806,6 +851,7 @@ func (ps *ProcServer) checkIfSvcInstNeedCascadeDelete(kit *rest.Kit, bizID int64
 	return updatedSvcInstIDs, delSvcInstIDs, nil
 }
 
+// ListProcessInstances TODO
 func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {
 	input := new(metadata.ListProcessInstancesOption)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -1534,8 +1580,10 @@ func (ps *ProcServer) ListProcessInstancesDetails(ctx *rest.Contexts) {
 	ctx.RespEntity(processResult.Info)
 }
 
+// UnbindServiceTemplateOnModuleEnable TODO
 var UnbindServiceTemplateOnModuleEnable = true
 
+// RemoveTemplateBindingOnModule TODO
 func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
 	if UnbindServiceTemplateOnModuleEnable {
 		ctx.RespErrorCodeOnly(common.CCErrProcUnbindModuleServiceTemplateDisabled, "unbind service template from module disabled")

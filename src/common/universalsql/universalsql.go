@@ -10,12 +10,14 @@
  * limitations under the License.
  */
 
+// Package universalsql TODO
 package universalsql
 
 import (
 	"configcenter/src/common/mapstr"
 )
 
+// Result TODO
 type Result interface {
 	ToSQL() (string, error)
 	ToMapStr() mapstr.MapStr

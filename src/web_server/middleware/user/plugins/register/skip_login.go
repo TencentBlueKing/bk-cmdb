@@ -13,5 +13,6 @@
 package manager
 
 import (
-	_ "configcenter/src/web_server/middleware/user/plugins/method/skip_login"
+	// import skip login plugin
+	_ "configcenter/src/web_server/middleware/user/plugins/method/skip"
 )

@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreatePropertyGroup TODO
 func (t *object) CreatePropertyGroup(ctx context.Context, h http.Header, dat metadata.Group) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/create/objectattgroup"
@@ -33,6 +34,7 @@ func (t *object) CreatePropertyGroup(ctx context.Context, h http.Header, dat met
 	return
 }
 
+// UpdatePropertyGroup TODO
 func (t *object) UpdatePropertyGroup(ctx context.Context, h http.Header, cond *metadata.PropertyGroupCondition) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/objectattgroup"
@@ -47,6 +49,7 @@ func (t *object) UpdatePropertyGroup(ctx context.Context, h http.Header, cond *m
 	return
 }
 
+// ExchangePropertyGroupIndex TODO
 func (t *object) ExchangePropertyGroupIndex(ctx context.Context, h http.Header, cond *metadata.ExchangeGroupIndex) (
 	*metadata.Response, error) {
 
@@ -72,6 +75,7 @@ func (t *object) ExchangePropertyGroupIndex(ctx context.Context, h http.Header, 
 	return resp, nil
 }
 
+// DeletePropertyGroup TODO
 func (t *object) DeletePropertyGroup(ctx context.Context, groupID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/delete/objectattgroup/%s"
@@ -86,6 +90,7 @@ func (t *object) DeletePropertyGroup(ctx context.Context, groupID string, h http
 	return
 }
 
+// UpdatePropertyGroupObjectAtt TODO
 func (t *object) UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/objectattgroupproperty"
@@ -100,6 +105,7 @@ func (t *object) UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header
 	return
 }
 
+// DeletePropertyGroupObjectAtt TODO
 func (t *object) DeletePropertyGroupObjectAtt(ctx context.Context, ownerID string, objID string, propertyID string, groupID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/objectatt/group/owner/%s/object/%s/propertyids/%s/groupids/%s"
@@ -114,6 +120,7 @@ func (t *object) DeletePropertyGroupObjectAtt(ctx context.Context, ownerID strin
 	return
 }
 
+// SelectPropertyGroupByObjectID TODO
 func (t *object) SelectPropertyGroupByObjectID(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/find/objectattgroup/object/%s"

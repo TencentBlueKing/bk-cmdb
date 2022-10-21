@@ -29,24 +29,29 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// Get TODO
 func (s *service) Get(req *restful.Request, resp *restful.Response) {
 	s.Do(req, resp)
 }
 
+// Put TODO
 func (s *service) Put(req *restful.Request, resp *restful.Response) {
 	s.Do(req, resp)
 }
 
+// Post TODO
 func (s *service) Post(req *restful.Request, resp *restful.Response) {
 	s.Do(req, resp)
 }
 
+// Delete TODO
 func (s *service) Delete(req *restful.Request, resp *restful.Response) {
 	s.Do(req, resp)
 }
 
 const maxToleranceLatencyTime = 10 * time.Second
 
+// Do TODO
 func (s *service) Do(req *restful.Request, resp *restful.Response) {
 
 	rid := util.GetHTTPCCRequestID(req.Request.Header)

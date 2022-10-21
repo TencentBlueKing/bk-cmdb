@@ -93,7 +93,7 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 	return nil
 }
 
-// aloowInit 是否允许初始化
+// allowInit 是否允许初始化
 func allowInit(ctx context.Context, bizID int64, db dal.DB, opt *option) error {
 
 	// 是否已经初始化过
@@ -153,6 +153,7 @@ type importerBizTopo struct {
 	serviceCategoryL2CacheInfo map[int64]map[string]int64
 }
 
+// NewImporterBizTopo TODO
 func NewImporterBizTopo(importJSON BKTopo, db dal.DB, opt *option) *importerBizTopo {
 	return &importerBizTopo{
 		importJSON:                 importJSON,
@@ -170,6 +171,7 @@ func NewImporterBizTopo(importJSON BKTopo, db dal.DB, opt *option) *importerBizT
 	}
 }
 
+// FilterBKTopo TODO
 func (ibt *importerBizTopo) FilterBKTopo(ctx context.Context, bizID, setParentID int64) error {
 
 	// 检查用户配置服务分类是否存在
@@ -310,6 +312,7 @@ func (ibt *importerBizTopo) filterBKTopoModule(ctx context.Context) error {
 	return nil
 }
 
+// ClearBKTopo TODO
 func (ibt *importerBizTopo) ClearBKTopo(ctx context.Context, bizID int64) error {
 
 	// clear process template
@@ -347,6 +350,7 @@ func (ibt *importerBizTopo) ClearBKTopo(ctx context.Context, bizID int64) error 
 	return nil
 }
 
+// InitBKTopo TODO
 func (ibt *importerBizTopo) InitBKTopo(ctx context.Context, bizID, setParentID int64) error {
 	if err := ibt.initBKServiceCategory(ctx, bizID); err != nil {
 		return err
@@ -792,7 +796,7 @@ func getSetParentID(ctx context.Context, bizID int64, db dal.DB) (int64, error) 
 
 }
 
-// getBkBizID 获取蓝鲸业务的business id
+// getBKBizID 获取蓝鲸业务的business id
 func getBKBizID(ctx context.Context, db dal.DB) (int64, error) {
 	searchCond := condition.CreateCondition()
 	searchCond.Field(common.BKAppNameField).Eq(common.BKAppName)

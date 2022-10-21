@@ -29,7 +29,8 @@ func (ps *parseStream) hostRelated() *parseStream {
 		userCustom().
 		hostFavorite().
 		findObjectIdentifier().
-		HostApply()
+		HostApply().
+		cloudHost()
 	return ps
 }
 
@@ -369,6 +370,9 @@ const (
 
 	// cc system user config
 	systemUserConfig = "/api/v3/system/config/user_config/blueking_modify"
+
+	// 查询业务下的主机CPU数量的特殊接口，给成本管理使用
+	countHostCPUPattern = "/api/v3/host/count/cpu"
 )
 
 var (
@@ -1314,7 +1318,7 @@ func (ps *parseStream) hostTransfer() *parseStream {
 
 	// synchronize hosts directly to a module in a business if this host does not exist.
 	// otherwise, this operation will only change host's attribute.
-	//if ps.hitPattern(moveHostToBusinessOrModulePattern, http.MethodPost) {
+	// if ps.hitPattern(moveHostToBusinessOrModulePattern, http.MethodPost) {
 	//	bizID, err := ps.parseBusinessID()
 	//	if err != nil {
 	//		ps.err = err
@@ -1331,7 +1335,7 @@ func (ps *parseStream) hostTransfer() *parseStream {
 	//	}
 	//
 	//	return ps
-	//}
+	// }
 
 	if ps.hitRegexp(transferHostWithAutoClearServiceInstanceRegex, http.MethodPost) ||
 		ps.hitRegexp(transferHostWithAutoClearServiceInstancePreviewRegex, http.MethodPost) {
@@ -1408,6 +1412,18 @@ func (ps *parseStream) hostTransfer() *parseStream {
 			}
 		}
 
+		return ps
+	}
+
+	if ps.hitPattern(countHostCPUPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ConfigAdmin,
+					Action: meta.Update,
+				},
+			},
+		}
 		return ps
 	}
 
@@ -1520,6 +1536,70 @@ func (ps *parseStream) findObjectIdentifier() *parseStream {
 				Basic: meta.Basic{
 					Action: meta.SkipAction,
 				},
+			},
+		}
+		return ps
+	}
+	return ps
+}
+
+// cloudHost cloud host related api auth parser, create & delete cloud host operations use update biz host auth
+func (ps *parseStream) cloudHost() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitPattern("/api/v3/createmany/cloud_hosts", http.MethodPost) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		if bizID == 0 {
+			ps.err = errors.New("biz id is not set")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.UpdateMany,
+				},
+				BusinessID: bizID,
+				Layers: meta.Layers{{
+					Type:       meta.Business,
+					InstanceID: bizID,
+				}},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern("/api/v3/deletemany/cloud_hosts", http.MethodDelete) {
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		if bizID == 0 {
+			ps.err = errors.New("biz id is not set")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.UpdateMany,
+				},
+				BusinessID: bizID,
+				Layers: meta.Layers{{
+					Type:       meta.Business,
+					InstanceID: bizID,
+				}},
 			},
 		}
 		return ps

@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package apiserver TODO
 package apiserver
 
 import (
@@ -21,11 +22,13 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 )
 
+// ApiServerClientInterface TODO
 type ApiServerClientInterface interface {
 	Client() rest.ClientInterface
 
@@ -62,7 +65,8 @@ type ApiServerClientInterface interface {
 
 	CreateBiz(ctx context.Context, ownerID string, h http.Header, dat map[string]interface{}) (resp *metadata.CreateInstResult, err error)
 	UpdateBiz(ctx context.Context, ownerID string, bizID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
-	UpdateBizDataStatus(ctx context.Context, ownerID string, flag common.DataStatusFlag, bizID string, h http.Header) (resp *metadata.Response, err error)
+	UpdateBizDataStatus(ctx context.Context, ownerID string, flag common.DataStatusFlag, bizID int64,
+		h http.Header) errors.CCErrorCoder
 	UpdateBizPropertyBatch(ctx context.Context, h http.Header, param metadata.UpdateBizPropertyBatchParameter) (
 		resp *metadata.Response, err error)
 	DeleteBiz(ctx context.Context, h http.Header, param metadata.DeleteBizParam) (resp *metadata.Response, err error)
@@ -86,8 +90,12 @@ type ApiServerClientInterface interface {
 	SearchObjectWithTotalInfo(ctx context.Context, h http.Header, params *metadata.BatchExportObject) (
 		*metadata.TotalObjectInfo, error)
 	CreateManyObject(ctx context.Context, h http.Header, params metadata.ImportObjects) ([]metadata.Object, error)
+
+	SearchCloudArea(ctx context.Context, h http.Header, params metadata.CloudAreaSearchParam) (
+		*metadata.SearchDataResult, error)
 }
 
+// NewApiServerClientInterface TODO
 func NewApiServerClientInterface(c *util.Capability, version string) ApiServerClientInterface {
 	base := fmt.Sprintf("/api/%s", version)
 	return &apiServer{

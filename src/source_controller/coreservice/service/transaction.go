@@ -36,7 +36,7 @@ func (s *coreService) CommitTransaction(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-// CommitTransaction to abort transaction
+// AbortTransaction to abort transaction
 func (s *coreService) AbortTransaction(ctx *rest.Contexts) {
 	cap := new(metadata.TxnCapable)
 	if err := ctx.DecodeInto(cap); err != nil {

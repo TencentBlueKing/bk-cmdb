@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package instance TODO
 package instance
 
 import (
@@ -21,6 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// InstanceClientInterface TODO
 type InstanceClientInterface interface {
 	CreateInstance(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelInstance) (
 		*metadata.CreateOneDataResult, error)
@@ -47,6 +49,7 @@ type InstanceClientInterface interface {
 		errors.CCErrorCoder)
 }
 
+// NewInstanceClientInterface TODO
 func NewInstanceClientInterface(client rest.ClientInterface) InstanceClientInterface {
 	return &instance{client: client}
 }

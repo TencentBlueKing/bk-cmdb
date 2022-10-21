@@ -95,6 +95,39 @@ const findAllByIds = async (ids, params, config) => {
   }
 }
 
+const findById = async (id, params, config = {}) => {
+  try {
+    const { info: list = [] } = await http.post('findmany/proc/service_template', {
+      ...params,
+      service_template_ids: [id],
+      page: { start: 0, limit: 1 }
+    }, config)
+
+    return list?.[0]
+  } catch (error) {
+    console.error(error)
+    return []
+  }
+}
+
+// 创建服务模板（全量）
+const create = (data, config) => http.post('create/proc/service_template/all_info', data, config)
+
+// 更新服务模板（全量）
+const update = (data, config) => http.put('update/proc/service_template/all_info', data, config)
+
+// 获取服务模板完整信息（包括属性设置、进程信息）
+const getFullOne = (data, config) => http.post('find/proc/service_template/all_info', data, config)
+
+// 更新属性配置
+const updateProperty = (data, config) => http.put('update/proc/service_template/attribute', data, config)
+
+// 删除属性配置
+const deleteProperty = (data, config = {}) => http.delete('delete/proc/service_template/attribute', { ...config, data })
+
+// 查询属性配置
+const findProperty = (data, config) => http.post('findmany/proc/service_template/attribute', data, config)
+
 export const CONFIG_MODE = {
   MODULE: 'module',
   TEMPLATE: 'template'
@@ -102,6 +135,13 @@ export const CONFIG_MODE = {
 
 export default {
   find,
+  findById,
   findAll,
-  findAllByIds
+  findAllByIds,
+  create,
+  update,
+  getFullOne,
+  updateProperty,
+  deleteProperty,
+  findProperty
 }

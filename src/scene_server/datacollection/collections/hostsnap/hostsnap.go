@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package hostsnap TODO
 package hostsnap
 
 import (
@@ -69,6 +70,7 @@ var (
 	ignoreCompareField = make(map[string]struct{}, 0)
 )
 
+// HostSnap TODO
 type HostSnap struct {
 	redisCli    redis.Client
 	authManager *extensions.AuthManager
@@ -509,6 +511,11 @@ func needToUpdate(src, toCompare, addressing string) bool {
 	for idx, field := range compareFields {
 		if _, ok := ignoreCompareField[field]; ok {
 			// 忽略变更对比的字段直接过滤掉
+			continue
+		}
+
+		// 当不存在该字段时，需要跳过，防止对比出现差异记录了审计
+		if !srcElements[idx].Exists() {
 			continue
 		}
 
@@ -1071,6 +1078,7 @@ func newHeaderWithRid() (http.Header, string) {
 	return header, rid
 }
 
+// MockMessage TODO
 const MockMessage = "{\"localTime\": \"2017-09-19 16:57:00\", \"data\": \"{\\\"ip\\\":\\\"192.168.1.7\\\"," +
 	"\\\"bizid\\\":0,\\\"cloudid\\\":0,\\\"data\\\":{\\\"timezone\\\":8,\\\"datetime\\\":\\\"2017-09-19 16:57:07\\\"," +
 	"\\\"utctime\\\":\\\"2017-09-19 08:57:07\\\",\\\"country\\\":\\\"Asia\\\",\\\"city\\\":\\\"Shanghai\\\"," +

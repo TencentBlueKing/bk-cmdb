@@ -17,7 +17,7 @@
 #include <time.h>
 
 namespace gse {
-namespace dataserver {
+namespace data {
 /**
  *\class  Date
  *\brief  日期

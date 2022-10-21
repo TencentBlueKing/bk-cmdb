@@ -35,6 +35,7 @@ var needCareHostFields = []string{
 	common.BkSupplierAccount,
 }
 
+// rearrangeHostEvents TODO
 // host events arrange policy:
 // 1. do not care delete events, cause if the host is already dropped, then it's identifier event is meaningless.
 // 2. if event's ChangeDesc contains fields as follows, then we care about it, otherwise we can drop this events
@@ -112,6 +113,7 @@ loop:
 
 var hostIDJson = `{"bk_host_id":%d}`
 
+// rearrangeHostRelationEvents rearrange host relation events
 // host relation events arrange policy:
 // 1. redirect relation event to host change event.
 // 2. care about all kinds of event types.
@@ -170,7 +172,11 @@ func (f *hostIdentity) rearrangeHostRelationEvents(es []*types.Event, rid string
 	}
 
 	for _, doc := range docs {
-		hostID := doc.Lookup("detail", common.BKHostIDField).Int64()
+		hostID, ok := doc.Lookup("detail", common.BKHostIDField).Int64OK()
+		if !ok {
+			blog.Errorf("host id type is illegal, skip, relation: %s, rid: %s", doc.Lookup("detail").String(), rid)
+			continue
+		}
 		if hostID <= 0 {
 			blog.Errorf("host identify event, get host id from relation: %s failed, skip, rid: %s",
 				doc.Lookup("detail").String(), rid)
@@ -199,6 +205,7 @@ func (f *hostIdentity) rearrangeHostRelationEvents(es []*types.Event, rid string
 	return hitEvents, nil
 }
 
+// rearrangeProcessEvents TODO
 // process events arrange policy:
 // 1. redirect process event to host change event with process host relation info.
 // 2. care about all kinds of event types.
@@ -302,6 +309,7 @@ type processRelation struct {
 	HostID    int64 `bson:"bk_host_id"`
 }
 
+// convertProcessToHost TODO
 // convert process ids to host ids.
 // we may can not find process's relations info, cause it may already been deleted. so we need
 // to find it in cc_DelArchive collection.
@@ -347,6 +355,7 @@ func (f *hostIdentity) convertProcessToHost(pIDs []int64, rid string) ([]int64, 
 
 }
 
+// getHostWithProcessRelationFromDelArchive TODO
 // get host ids from cc_DelArchive with process's ids
 // a process has only one relation, so we can use process ids find it's unique relations.
 func (f *hostIdentity) getHostWithProcessRelationFromDelArchive(startUnix int64, pIDs []int64, rid string) (
@@ -400,7 +409,11 @@ func (f *hostIdentity) getDeletedProcessHosts(startUnix int64, oids []string, ri
 
 	pList := make([]int64, 0)
 	for _, doc := range docs {
-		pID := doc.Lookup("detail", common.BKProcessIDField).Int64()
+		pID, ok := doc.Lookup("detail", common.BKProcessIDField).Int64OK()
+		if !ok {
+			blog.Errorf("process id type is illegal, skip, instance: %s, rid: %s", doc.Lookup("detail").String(), rid)
+			continue
+		}
 		if pID <= 0 {
 			blog.Errorf("host identify event, get process id from instance: %s failed, skip, rid: %s",
 				doc.Lookup("detail").String(), rid)

@@ -68,7 +68,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if err := s.iam.RegisterSystem(s.ctx, param.Host, models); err != nil {
+	if err := s.iam.Register(s.ctx, param.Host, models, rid); err != nil {
 		blog.Errorf("init iam failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
 			Msg: defErr.CCErrorf(common.CCErrCommInitAuthCenterFailed, err.Error()),
@@ -80,6 +80,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
+// RegisterAuthAccount TODO
 /**
 	此接口用于在全新环境部署时，需要进行调用，目的是注册CMDB平台信息到IAM接口
 	需要传入host参数，是authserver的ip:port信息，如下通过curl调用：

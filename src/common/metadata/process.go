@@ -1,3 +1,4 @@
+// Package metadata TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
  * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -31,25 +32,30 @@ import (
 	"configcenter/src/thirdparty/hooks/process"
 )
 
+// DeleteCategoryInput TODO
 type DeleteCategoryInput struct {
 	ID int64 `json:"id"`
 }
 
+// CreateProcessTemplateBatchInput TODO
 type CreateProcessTemplateBatchInput struct {
 	BizID             int64           `json:"bk_biz_id"`
 	ServiceTemplateID int64           `json:"service_template_id"`
 	Processes         []ProcessDetail `json:"processes"`
 }
 
+// DeleteProcessTemplateBatchInput TODO
 type DeleteProcessTemplateBatchInput struct {
 	BizID            int64   `json:"bk_biz_id"`
 	ProcessTemplates []int64 `json:"process_templates"`
 }
 
+// ProcessDetail TODO
 type ProcessDetail struct {
 	Spec *ProcessProperty `json:"spec"`
 }
 
+// ListServiceTemplateInput TODO
 type ListServiceTemplateInput struct {
 	BizID int64 `json:"bk_biz_id"`
 	// this field can be empty, it a optional condition.
@@ -62,11 +68,13 @@ type ListServiceTemplateInput struct {
 	ServiceTemplateIDs []int64 `json:"service_template_ids"`
 }
 
+// DeleteServiceTemplatesInput TODO
 type DeleteServiceTemplatesInput struct {
 	BizID             int64 `json:"bk_biz_id"`
 	ServiceTemplateID int64 `json:"service_template_id"`
 }
 
+// GetServiceTemplateSyncStatusOption TODO
 type GetServiceTemplateSyncStatusOption struct {
 	ServiceTemplateIDs []int64 `json:"service_template_ids"`
 	ModuleIDs          []int64 `json:"bk_module_ids"`
@@ -74,21 +82,25 @@ type GetServiceTemplateSyncStatusOption struct {
 	IsPartial bool `json:"is_partial"`
 }
 
+// GetServiceTemplateSyncStatusResult TODO
 type GetServiceTemplateSyncStatusResult struct {
 	BaseResp `json:",inline"`
 	Data     *ServiceTemplateSyncStatus `json:"data"`
 }
 
+// ServiceTemplateSyncStatus TODO
 type ServiceTemplateSyncStatus struct {
 	ServiceTemplates []SvcTempSyncStatus `json:"service_templates"`
 	Modules          []ModuleSyncStatus  `json:"modules"`
 }
 
+// SvcTempSyncStatus TODO
 type SvcTempSyncStatus struct {
 	ServiceTemplateID int64 `json:"service_template_id"`
 	NeedSync          bool  `json:"need_sync"`
 }
 
+// ModuleSyncStatus TODO
 type ModuleSyncStatus struct {
 	ModuleID int64 `json:"bk_module_id"`
 	NeedSync bool  `json:"need_sync"`
@@ -119,23 +131,27 @@ type SearchHostWithNoSvcInstOutput struct {
 	HostIDs []int64 `json:"bk_host_ids"`
 }
 
+// CreateRawProcessInstanceInput TODO
 type CreateRawProcessInstanceInput struct {
 	BizID             int64                   `json:"bk_biz_id"`
 	ServiceInstanceID int64                   `json:"service_instance_Id"`
 	Processes         []ProcessInstanceDetail `json:"processes"`
 }
 
+// UpdateRawProcessInstanceInput TODO
 type UpdateRawProcessInstanceInput struct {
 	BizID     int64                    `json:"bk_biz_id"`
 	Processes []Process                `json:"-"`
 	Raw       []map[string]interface{} `json:"processes"`
 }
 
+// DeleteProcessInstanceInServiceInstanceInput TODO
 type DeleteProcessInstanceInServiceInstanceInput struct {
 	BizID              int64   `json:"bk_biz_id"`
 	ProcessInstanceIDs []int64 `json:"process_instance_ids"`
 }
 
+// GetServiceInstanceInModuleInput TODO
 type GetServiceInstanceInModuleInput struct {
 	BizID     int64              `json:"bk_biz_id"`
 	ModuleID  int64              `json:"bk_module_id"`
@@ -145,6 +161,7 @@ type GetServiceInstanceInModuleInput struct {
 	Selectors selector.Selectors `json:"selectors"`
 }
 
+// GetServiceInstanceBySetTemplateInput TODO
 type GetServiceInstanceBySetTemplateInput struct {
 	SetTemplateID int64    `json:"set_template_id"`
 	Page          BasePage `json:"page"`
@@ -152,21 +169,28 @@ type GetServiceInstanceBySetTemplateInput struct {
 
 // ServiceTemplateDiffOption obtain the process template difference information under the service template.
 type ServiceTemplateDiffOption struct {
-	BizID             int64   `json:"bk_biz_id"`
-	ServiceTemplateId int64   `json:"service_template_id"`
-	ModuleIDs         []int64 `json:"bk_module_ids"`
+	BizID             int64 `json:"bk_biz_id"`
+	ServiceTemplateID int64 `json:"service_template_id"`
+	ModuleID          int64 `json:"bk_module_id"`
 }
 
 // ServiceTemplateOptionValidate judge the validity of parameters.
-func (option *ServiceTemplateDiffOption) ServiceTemplateOptionValidate() error {
+func (option *ServiceTemplateDiffOption) ServiceTemplateOptionValidate() cErr.RawErrorInfo {
 
 	if option.BizID == 0 {
-		return fmt.Errorf("the biz id must be set")
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
 	}
-	if len(option.ModuleIDs) == 0 {
-		return fmt.Errorf("the module id must be set")
+	if option.ModuleID == 0 {
+		return cErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKModuleIDField},
+		}
 	}
-	return nil
+
+	return cErr.RawErrorInfo{}
 }
 
 // ListDiffServiceInstancesOption list service instances request.
@@ -178,9 +202,6 @@ type ListDiffServiceInstancesOption struct {
 
 	// ProcessTemplateName 当模板被删除场景下id为0，此时需要通过name找具体请求的模板
 	ProcTemplateName string `json:"process_template_name,omitempty"`
-
-	// ServiceCategory 此请求是获取服务分类场景的实例列表
-	ServiceCategory bool `json:"service_category,omitempty"`
 }
 
 // ServiceInstancesInfo 返回的服务实例信息只需要Id和Name
@@ -215,9 +236,6 @@ type ServiceInstanceDetailReq struct {
 	// ProcessTemplateName 进程模板名字，删除场景下进程模板id是0，需要用name进行区分
 	ProcessTemplateName string `json:"process_template_name,omitempty"`
 	ServiceInstanceId   int64  `json:"service_instance_id"`
-
-	// ServiceCategory 此请求是获取服务分类场景的实例列表
-	ServiceCategory bool `json:"service_category,omitempty"`
 }
 
 // ServiceInstanceDetailResult Details of service instance information.
@@ -259,18 +277,27 @@ type ProcessGeneralInfo struct {
 	Id int64 `json:"id"`
 }
 
-// ServiceTemplateGeneralDiff changes under service template.
-type ServiceTemplateGeneralDiff struct {
-	Changed          []ProcessGeneralInfo `json:"changed"`
-	Added            []ProcessGeneralInfo `json:"added"`
-	Removed          []ProcessGeneralInfo `json:"removed"`
-	ChangedAttribute bool                 `json:"changed_attribute"`
+// AttributeFields 同一属性ID下模板和实例的值
+type AttributeFields struct {
+	ID                    int64       `json:"id"`
+	TemplatePropertyValue interface{} `json:"template_value"`
+	InstancePropertyValue interface{} `json:"inst_value"`
 }
 
+// ServiceTemplateGeneralDiff changes under service template.
+type ServiceTemplateGeneralDiff struct {
+	Changed    []ProcessGeneralInfo `json:"changed"`
+	Added      []ProcessGeneralInfo `json:"added"`
+	Removed    []ProcessGeneralInfo `json:"removed"`
+	Attributes []AttributeFields    `json:"attributes"`
+}
+
+// UpdateServiceInstanceOption TODO
 type UpdateServiceInstanceOption struct {
 	Data []OneUpdatedSrvInst `json:"data"`
 }
 
+// OneUpdatedSrvInst TODO
 type OneUpdatedSrvInst struct {
 	ServiceInstanceID int64                  `json:"service_instance_id"`
 	Update            map[string]interface{} `json:"update"`
@@ -299,6 +326,7 @@ func (option *DiffOption) ServiceInstancesOptionValidate() error {
 	return nil
 }
 
+// Validate TODO
 func (o *UpdateServiceInstanceOption) Validate() (rawError cErr.RawErrorInfo) {
 	if len(o.Data) == 0 {
 		return cErr.RawErrorInfo{
@@ -354,16 +382,19 @@ func (o *UpdateServiceInstanceOption) Validate() (rawError cErr.RawErrorInfo) {
 	return cErr.RawErrorInfo{}
 }
 
+// DeleteServiceInstanceOption TODO
 type DeleteServiceInstanceOption struct {
 	BizID              int64   `json:"bk_biz_id"`
 	ServiceInstanceIDs []int64 `json:"service_instance_ids" field:"service_instance_ids" bson:"service_instance_ids"`
 }
 
+// CoreDeleteServiceInstanceOption TODO
 type CoreDeleteServiceInstanceOption struct {
 	BizID              int64   `json:"bk_biz_id"`
 	ServiceInstanceIDs []int64 `json:"service_instance_ids" field:"service_instance_ids" bson:"service_instance_ids"`
 }
 
+// ProcessChangedAttribute TODO
 type ProcessChangedAttribute struct {
 	ID                    int64       `json:"id"`
 	PropertyID            string      `json:"property_id"`
@@ -383,6 +414,7 @@ type ModuleDiffWithTemplateDetail struct {
 	HasDifference     bool                        `json:"has_difference"`
 }
 
+// ModuleChangedAttribute TODO
 type ModuleChangedAttribute struct {
 	ID                    int64       `json:"id"`
 	PropertyID            string      `json:"property_id"`
@@ -407,15 +439,21 @@ type ServiceDifferenceDetails struct {
 	Type              string                    `json:"type"`
 }
 
+// ServiceDifferenceFlag TODO
 type ServiceDifferenceFlag int64
 
 const (
+	// ServiceChanged TODO
 	ServiceChanged = "changed"
-	ServiceAdded   = "added"
+	// ServiceAdded TODO
+	ServiceAdded = "added"
+	// ServiceRemoved TODO
 	ServiceRemoved = "removed"
-	ServiceOthers  = "others"
+	// ServiceOthers TODO
+	ServiceOthers = "others"
 )
 
+// SrvInstBriefInfo TODO
 type SrvInstBriefInfo struct {
 	ID        int64  `field:"id" json:"id"`
 	Name      string `field:"name" json:"name"`
@@ -436,6 +474,7 @@ type UpsertServiceInstanceInfo struct {
 	Processes []ProcessInstanceDetail `json:"processes,omitempty"`
 }
 
+// CreateServiceInstanceDetail TODO
 type CreateServiceInstanceDetail struct {
 	HostID              int64  `json:"bk_host_id"`
 	ServiceInstanceName string `json:"service_instance_name"`
@@ -443,12 +482,14 @@ type CreateServiceInstanceDetail struct {
 	Processes []ProcessInstanceDetail `json:"processes"`
 }
 
+// ProcessInstanceDetail TODO
 type ProcessInstanceDetail struct {
 	// ProcessTemplateID indicate which process to update if service instance bound with a template
 	ProcessTemplateID int64                  `json:"process_template_id"`
 	ProcessData       map[string]interface{} `json:"process_info"`
 }
 
+// ListProcessTemplateWithServiceTemplateInput TODO
 type ListProcessTemplateWithServiceTemplateInput struct {
 	BizID               int64    `json:"bk_biz_id"`
 	ProcessTemplatesIDs []int64  `json:"process_template_ids"`
@@ -484,6 +525,7 @@ func (o *ListProcessTemplateWithServiceTemplateInput) Validate() (rawError cErr.
 	return cErr.RawErrorInfo{}
 }
 
+// UpdateProcessByIDsInput TODO
 type UpdateProcessByIDsInput struct {
 	BizID      int64                  `json:"bk_biz_id"`
 	ProcessIDs []int64                `json:"process_ids"`
@@ -563,14 +605,7 @@ func (s *SyncServiceInstanceByTemplateOption) Validate() (rawError cErr.RawError
 	return cErr.RawErrorInfo{}
 }
 
-// SyncOneModuleBySvcTempOption sync all service instances in one module by service template option
-type SyncOneModuleBySvcTempOption struct {
-	BizID             int64 `json:"bk_biz_id"`
-	ModuleID          int64 `json:"bk_module_id"`
-	ServiceTemplateID int64 `json:"service_template_id"`
-}
-
-// 用于同步单个模块的服务实例
+// SyncModuleServiceInstanceByTemplateOption 用于同步单个模块的服务实例
 type SyncModuleServiceInstanceByTemplateOption struct {
 	BizID    int64 `json:"bk_biz_id"`
 	ModuleID int64 `json:"bk_module_id"`
@@ -582,6 +617,7 @@ type FindServiceTemplateSyncStatusOption struct {
 	ServiceTemplateID int64   `json:"service_template_id"`
 }
 
+// ListServiceInstancesWithHostInput TODO
 type ListServiceInstancesWithHostInput struct {
 	BizID     int64              `json:"bk_biz_id"`
 	HostID    int64              `json:"bk_host_id"`
@@ -590,6 +626,7 @@ type ListServiceInstancesWithHostInput struct {
 	Page      BasePage           `json:"page"`
 }
 
+// ListProcessInstancesOption TODO
 type ListProcessInstancesOption struct {
 	BizID             int64 `json:"bk_biz_id"`
 	ServiceInstanceID int64 `json:"service_instance_id"`
@@ -601,6 +638,7 @@ type ListProcessInstancesRsp struct {
 	Data []ProcessInstance `json:"data"`
 }
 
+// ListProcessInstancesNameIDsOption TODO
 type ListProcessInstancesNameIDsOption struct {
 	BizID       int64    `json:"bk_biz_id"`
 	ModuleID    int64    `json:"bk_module_id"`
@@ -645,14 +683,17 @@ type ListProcessRelatedInfoOption struct {
 	Page                  BasePage                  `json:"page"`
 }
 
+// SetCondOfP TODO
 type SetCondOfP struct {
 	SetIDs []int64 `json:"bk_set_ids"`
 }
 
+// ModuleCondOfP TODO
 type ModuleCondOfP struct {
 	ModuleIDs []int64 `json:"bk_module_ids"`
 }
 
+// ServiceInstanceCondOfP TODO
 type ServiceInstanceCondOfP struct {
 	IDs []int64 `json:"ids"`
 }
@@ -694,32 +735,38 @@ type ListProcessRelatedInfoResult struct {
 	Process         interface{}              `json:"process"`
 }
 
+// SetDetailOfP TODO
 type SetDetailOfP struct {
 	SetID   int64  `json:"bk_set_id"`
 	SetName string `json:"bk_set_name"`
 	SetEnv  string `json:"bk_set_env"`
 }
 
+// ModuleDetailOfP TODO
 type ModuleDetailOfP struct {
 	ModuleID   int64  `json:"bk_module_id"`
 	ModuleName string `json:"bk_module_name"`
 }
 
+// HostDetailOfP TODO
 type HostDetailOfP struct {
 	HostID  int64  `json:"bk_host_id"`
 	CloudID int64  `json:"bk_cloud_id"`
 	InnerIP string `json:"bk_host_innerip"`
 }
 
+// ServiceInstanceDetailOfP TODO
 type ServiceInstanceDetailOfP struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
 }
 
+// ProcessTemplateDetailOfP TODO
 type ProcessTemplateDetailOfP struct {
 	ID int64 `json:"id"`
 }
 
+// ListProcessInstancesDetailsOption TODO
 type ListProcessInstancesDetailsOption struct {
 	ProcessIDs []int64  `json:"bk_process_ids"`
 	Fields     []string `json:"fields"`
@@ -737,6 +784,7 @@ func (o *ListProcessInstancesDetailsOption) Validate() (rawError cErr.RawErrorIn
 	return cErr.RawErrorInfo{}
 }
 
+// ListProcessInstancesDetailsByIDsOption TODO
 type ListProcessInstancesDetailsByIDsOption struct {
 	BizID      int64    `json:"bk_biz_id"`
 	ProcessIDs []int64  `json:"process_ids"`
@@ -769,23 +817,30 @@ func (o *ListProcessInstancesDetailsByIDsOption) Validate() (rawError cErr.RawEr
 	return cErr.RawErrorInfo{}
 }
 
+// RemoveTemplateBindingOnModuleOption TODO
 type RemoveTemplateBindingOnModuleOption struct {
 	BizID    int64 `json:"bk_biz_id"`
 	ModuleID int64 `json:"bk_module_id"`
 }
 
+// UpdateProcessTemplateInput TODO
 type UpdateProcessTemplateInput struct {
 	BizID             int64                  `json:"bk_biz_id"`
 	ProcessTemplateID int64                  `json:"process_template_id"`
 	Property          map[string]interface{} `json:"process_property"`
 }
 
+// SocketBindType TODO
 type SocketBindType string
 
 const (
-	BindLocalHost   SocketBindType = "1"
-	BindAll         SocketBindType = "2"
-	BindInnerIP     SocketBindType = "3"
+	// BindLocalHost TODO
+	BindLocalHost SocketBindType = "1"
+	// BindAll TODO
+	BindAll SocketBindType = "2"
+	// BindInnerIP TODO
+	BindInnerIP SocketBindType = "3"
+	// BindOuterIP TODO
 	BindOuterIP     SocketBindType = "4"
 	BindLocalHostV6 SocketBindType = "5"
 	BindAllV6       SocketBindType = "6"
@@ -800,6 +855,7 @@ var ProcBindIPHostFieldMap = map[SocketBindType]string{
 	BindOuterIPv6: common.BKHostOuterIPv6Field,
 }
 
+// NeedIPFromHost TODO
 func (p *SocketBindType) NeedIPFromHost() bool {
 	if p == nil {
 		return false
@@ -813,6 +869,7 @@ func (p *SocketBindType) NeedIPFromHost() bool {
 	}
 }
 
+// IP TODO
 func (p *SocketBindType) IP(host map[string]interface{}) (string, error) {
 	if p == nil || *p == "" {
 		return "", process.ValidateProcessBindIPEmptyHook()
@@ -847,6 +904,7 @@ func (p *SocketBindType) IP(host map[string]interface{}) (string, error) {
 	}
 }
 
+// String 用于打印
 func (p *SocketBindType) String() string {
 	// TODO: how to support internationalization?
 	if p == nil {
@@ -874,6 +932,7 @@ func (p *SocketBindType) String() string {
 	}
 }
 
+// Validate TODO
 func (p SocketBindType) Validate() error {
 	validValues := []SocketBindType{BindLocalHost, BindAll, BindInnerIP, BindOuterIP, BindLocalHostV6, BindAllV6,
 		BindInnerIPv6, BindOuterIPv6}
@@ -883,15 +942,19 @@ func (p SocketBindType) Validate() error {
 	return nil
 }
 
+// ProtocolType TODO
 type ProtocolType string
 
 const (
-	ProtocolTypeTCP  ProtocolType = "1"
+	// ProtocolTypeTCP TODO
+	ProtocolTypeTCP ProtocolType = "1"
+	// ProtocolTypeUDP TODO
 	ProtocolTypeUDP  ProtocolType = "2"
 	ProtocolTypeTCP6 ProtocolType = "3"
 	ProtocolTypeUDP6 ProtocolType = "4"
 )
 
+// String 用于打印
 func (p ProtocolType) String() string {
 	switch p {
 	case ProtocolTypeTCP:
@@ -943,6 +1006,7 @@ func ValidateBindIPMatchProtocol(s SocketBindType, p ProtocolType) error {
 	}
 }
 
+// Process TODO
 type Process struct {
 	ProcNum           *int64         `field:"proc_num" json:"proc_num" bson:"proc_num" structs:"proc_num" mapstructure:"proc_num"`
 	StopCmd           *string        `field:"stop_cmd" json:"stop_cmd" bson:"stop_cmd" structs:"stop_cmd" mapstructure:"stop_cmd"`
@@ -970,6 +1034,7 @@ type Process struct {
 	BindInfo          []ProcBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info" structs:"bind_info" mapstructure:"bind_info"`
 }
 
+// Map TODO
 func (p *Process) Map() map[string]interface{} {
 	var bindInfoArr []map[string]interface{}
 	for _, row := range p.BindInfo {
@@ -1005,6 +1070,7 @@ func (p *Process) Map() map[string]interface{} {
 	return procMap
 }
 
+// ServiceCategory TODO
 type ServiceCategory struct {
 	BizID int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 
@@ -1019,6 +1085,7 @@ type ServiceCategory struct {
 	IsBuiltIn bool `field:"is_built_in" json:"is_built_in" bson:"is_built_in"`
 }
 
+// Validate TODO
 func (sc *ServiceCategory) Validate() (field string, err error) {
 	if len(sc.Name) == 0 {
 		return "name", errors.New("name can't be empty")
@@ -1036,22 +1103,26 @@ func (sc *ServiceCategory) Validate() (field string, err error) {
 	return "", nil
 }
 
+// ServiceCategoryWithStatistics TODO
 type ServiceCategoryWithStatistics struct {
 	ServiceCategory ServiceCategory `field:"category" json:"category" bson:"category"`
 	UsageAmount     int64           `field:"usage_amount" json:"usage_amount" bson:"usage_amount"`
 }
 
+// ServiceTemplateWithStatistics TODO
 type ServiceTemplateWithStatistics struct {
 	Template             ServiceTemplate `field:"template" json:"template" bson:"template"`
 	ServiceInstanceCount int64           `field:"service_instance_count" json:"service_instance_count" bson:"service_instance_count"`
 	ProcessInstanceCount int64           `field:"process_instance_count" json:"process_instance_count" bson:"process_instance_count"`
 }
 
+// ServiceTemplateDetail TODO
 type ServiceTemplateDetail struct {
 	ServiceTemplate  ServiceTemplate   `field:"service_template" json:"service_template" bson:"service_template" mapstructure:"service_template"`
 	ProcessTemplates []ProcessTemplate `field:"process_templates" json:"process_templates" bson:"process_templates" mapstructure:"process_templates"`
 }
 
+// ServiceTemplate TODO
 type ServiceTemplate struct {
 	BizID int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 
@@ -1071,6 +1142,7 @@ type ServiceTemplate struct {
 	HostApplyEnabled bool      `field:"host_apply_enabled" json:"host_apply_enabled" bson:"host_apply_enabled"`
 }
 
+// Validate TODO
 func (st *ServiceTemplate) Validate(errProxy cErr.DefaultCCErrorIf) (field string, err error) {
 	st.Name, err = util.ValidTopoNameField(st.Name, "name", errProxy)
 	if err != nil {
@@ -1079,6 +1151,53 @@ func (st *ServiceTemplate) Validate(errProxy cErr.DefaultCCErrorIf) (field strin
 	return "", nil
 }
 
+// ServiceTemplateAttr service template attributes, used to generate module, should not include non-editable fields
+type ServiceTemplateAttr struct {
+	ID int64 `json:"id" bson:"id"`
+
+	BizID             int64       `json:"bk_biz_id" bson:"bk_biz_id"`
+	ServiceTemplateID int64       `json:"service_template_id" bson:"service_template_id"`
+	AttributeID       int64       `json:"bk_attribute_id" bson:"bk_attribute_id"`
+	PropertyValue     interface{} `json:"bk_property_value" bson:"bk_property_value"`
+
+	Creator         string    `json:"creator" bson:"creator"`
+	Modifier        string    `json:"modifier" bson:"modifier"`
+	CreateTime      time.Time `json:"create_time" bson:"create_time"`
+	LastTime        time.Time `json:"last_time" bson:"last_time"`
+	SupplierAccount string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
+
+// Validate ServiceTemplateAttr
+func (s *ServiceTemplateAttr) Validate() cErr.RawErrorInfo {
+	if s.BizID == 0 {
+		return cErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKAppIDField}}
+	}
+
+	if s.ServiceTemplateID == 0 {
+		return cErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{
+			common.BKServiceTemplateIDField}}
+	}
+
+	if s.AttributeID == 0 {
+		return cErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKAttributeIDField}}
+	}
+
+	if s.PropertyValue == nil {
+		return cErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{
+			common.BKPropertyTypeField}}
+	}
+
+	return cErr.RawErrorInfo{}
+}
+
+// ServiceTemplateWithModuleInfo service template with related modules info
+type ServiceTemplateWithModuleInfo struct {
+	ServiceTemplate ServiceTemplate `json:"service_template"`
+	HostCount       int             `json:"host_count"`
+	Modules         []ModuleInst    `json:"modules"`
+}
+
+// ProcessTemplate TODO
 // this works for the process instance which is used for a template.
 type ProcessTemplate struct {
 	ID          int64  `field:"id" json:"id" bson:"id"`
@@ -1098,6 +1217,7 @@ type ProcessTemplate struct {
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
+// Validate TODO
 func (pt *ProcessTemplate) Validate() (field string, err error) {
 	if pt.Property == nil {
 		return "property", errors.New("property field shouldn't be nil")
@@ -1109,6 +1229,7 @@ func (pt *ProcessTemplate) Validate() (field string, err error) {
 	return "", nil
 }
 
+// IsAsDefaultValue TODO
 func IsAsDefaultValue(asDefaultValue *bool) bool {
 	if asDefaultValue != nil {
 		return *asDefaultValue
@@ -1158,6 +1279,7 @@ func (pt *ProcessTemplate) NewProcess(bizID, svcInstID int64, supplierAccount st
 	return processInstance, nil
 }
 
+// FilterValidFields TODO
 func FilterValidFields(fields []string) []string {
 	allFields := GetAllProcessPropertyFields()
 
@@ -1170,6 +1292,7 @@ func FilterValidFields(fields []string) []string {
 	return result
 }
 
+// GetAllProcessPropertyFields TODO
 func GetAllProcessPropertyFields() []string {
 	fields := make([]string, 0)
 	fields = append(fields, "bk_func_name")
@@ -1447,7 +1570,7 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process, host map[string]interfa
 	return process, changed, nil
 }
 
-// FilterEditableFields only return editable fields
+// GetEditableFields only return editable fields
 func (pt *ProcessTemplate) GetEditableFields(fields []string) []string {
 	editableFields := pt.ExtractEditableFields()
 	result := make([]string, 0)
@@ -1459,6 +1582,7 @@ func (pt *ProcessTemplate) GetEditableFields(fields []string) []string {
 	return result
 }
 
+// ExtractEditableFields TODO
 func (pt *ProcessTemplate) ExtractEditableFields() []string {
 	editableFields := make([]string, 0)
 	property := pt.Property
@@ -1522,6 +1646,7 @@ func (pt *ProcessTemplate) ExtractEditableFields() []string {
 	return editableFields
 }
 
+// ExtractInstanceUpdateData TODO
 // InstanceUpdate is used for update instance's value
 func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process, host map[string]interface{}) (
 	map[string]interface{}, error) {
@@ -1627,6 +1752,7 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process, host map[st
 	return data, nil
 }
 
+// ProcessProperty TODO
 type ProcessProperty struct {
 	ProcNum      PropertyInt64  `field:"proc_num" json:"proc_num" bson:"proc_num" validate:"max=10000,min=1"`
 	StopCmd      PropertyString `field:"stop_cmd" json:"stop_cmd" bson:"stop_cmd"`
@@ -1634,29 +1760,30 @@ type ProcessProperty struct {
 	ForceStopCmd PropertyString `field:"face_stop_cmd" json:"face_stop_cmd" bson:"face_stop_cmd"`
 	FuncName     PropertyString `field:"bk_func_name" json:"bk_func_name" bson:"bk_func_name" validate:"required"`
 	WorkPath     PropertyString `field:"work_path" json:"work_path" bson:"work_path"`
-	//BindIP             PropertyBindIP   `field:"bind_ip" json:"bind_ip" bson:"bind_ip"`
+	// BindIP             PropertyBindIP   `field:"bind_ip" json:"bind_ip" bson:"bind_ip"`
 	Priority    PropertyInt64  `field:"priority" json:"priority" bson:"priority" validate:"max=10000,min=1"`
 	ReloadCmd   PropertyString `field:"reload_cmd" json:"reload_cmd" bson:"reload_cmd"`
 	ProcessName PropertyString `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name" validate:"required"`
-	//Port               PropertyPort     `field:"port" json:"port" bson:"port"`
+	// Port               PropertyPort     `field:"port" json:"port" bson:"port"`
 	PidFile        PropertyString `field:"pid_file" json:"pid_file" bson:"pid_file"`
 	AutoStart      PropertyBool   `field:"auto_start" json:"auto_start" bson:"auto_start"`
 	StartCheckSecs PropertyInt64  `field:"bk_start_check_secs" json:"bk_start_check_secs" bson:"bk_start_check_secs" validate:"max=600,min=1"`
 	StartCmd       PropertyString `field:"start_cmd" json:"start_cmd" bson:"start_cmd"`
 	User           PropertyString `field:"user" json:"user" bson:"user"`
 	TimeoutSeconds PropertyInt64  `field:"timeout" json:"timeout" bson:"timeout" validate:"max=10000,min=1"`
-	//Protocol           PropertyProtocol `field:"protocol" json:"protocol" bson:"protocol"`
+	// Protocol           PropertyProtocol `field:"protocol" json:"protocol" bson:"protocol"`
 	Description     PropertyString `field:"description" json:"description" bson:"description"`
 	StartParamRegex PropertyString `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex"`
-	//PortEnable         PropertyBool     `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
-	//GatewayIP       PropertyString   `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip"`
-	//GatewayPort     PropertyString   `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port"`
-	//GatewayProtocol PropertyProtocol `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol"`
-	//GatewayCity     PropertyString   `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city"`
+	// PortEnable         PropertyBool     `field:"bk_enable_port" json:"bk_enable_port" bson:"bk_enable_port"`
+	// GatewayIP       PropertyString   `field:"bk_gateway_ip" json:"bk_gateway_ip" bson:"bk_gateway_ip"`
+	// GatewayPort     PropertyString   `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port"`
+	// GatewayProtocol PropertyProtocol `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol"`
+	// GatewayCity     PropertyString   `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city"`
 
 	BindInfo ProcPropertyBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info" structs:"bind_info" mapstructure:"bind_info"`
 }
 
+// Validate TODO
 func (pt *ProcessProperty) Validate() (field string, err error) {
 	// call all field's Validate method one by one
 	propertyInterfaceType := reflect.TypeOf((*ProcessPropertyInterface)(nil)).Elem()
@@ -1776,10 +1903,12 @@ func (pt *ProcessProperty) Update(input ProcessProperty, rawProperty map[string]
 	return
 }
 
+// ProcessPropertyInterface TODO
 type ProcessPropertyInterface interface {
 	Validate() error
 }
 
+// PropertyInt64 TODO
 type PropertyInt64 struct {
 	Value *int64 `field:"value" json:"value" bson:"value"`
 
@@ -1791,6 +1920,7 @@ type PropertyInt64 struct {
 	AsDefaultValue *bool `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
+// Validate TODO
 func (ti *PropertyInt64) Validate() error {
 	return nil
 }
@@ -1807,6 +1937,7 @@ type PropertyInt64String struct {
 	AsDefaultValue *bool `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
+// Validate TODO
 func (ti *PropertyInt64String) Validate() error {
 	if ti.Value != nil {
 		// 兼容前端
@@ -1822,20 +1953,24 @@ func (ti *PropertyInt64String) Validate() error {
 	return nil
 }
 
+// PropertyBool TODO
 type PropertyBool struct {
 	Value          *bool `field:"value" json:"value" bson:"value"`
 	AsDefaultValue *bool `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
+// Validate TODO
 func (ti *PropertyBool) Validate() error {
 	return nil
 }
 
+// PropertyString TODO
 type PropertyString struct {
 	Value          *string `field:"value" json:"value" bson:"value"`
 	AsDefaultValue *bool   `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
+// Validate TODO
 func (ti *PropertyString) Validate() error {
 	if ti == nil {
 		return nil
@@ -1850,9 +1985,11 @@ func (ti *PropertyString) Validate() error {
 }
 
 var (
+	// ProcessPortFormat TODO
 	ProcessPortFormat = regexp.MustCompile(`^(((([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5]))-(([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5])))|((([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5]))))(,(((([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5])))|((([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5]))-(([1-9][0-9]{0,3})|([1-5][0-9]{4})|(6[0-4][0-9]{3})|(65[0-4][0-9]{2})|(655[0-2][0-9])|(6553[0-5])))))*$`)
 )
 
+// PropertyPort TODO
 type PropertyPort struct {
 	Value          *string `field:"value" json:"value" bson:"value"`
 	AsDefaultValue *bool   `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
@@ -1908,11 +2045,13 @@ type propertyPortItem struct {
 	end   int64
 }
 
+// PropertyBindIP TODO
 type PropertyBindIP struct {
 	Value          *SocketBindType `field:"value" json:"value" bson:"value"`
 	AsDefaultValue *bool           `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
+// Validate TODO
 func (ti *PropertyBindIP) Validate() error {
 	if ti.Value == nil || len(*ti.Value) == 0 {
 		return process.ValidateProcessBindIPEmptyHook()
@@ -1929,6 +2068,7 @@ func (ti *PropertyBindIP) Validate() error {
 	return nil
 }
 
+// PropertyProtocol TODO
 type PropertyProtocol struct {
 	Value          *ProtocolType `field:"value" json:"value" bson:"value"`
 	AsDefaultValue *bool         `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
@@ -1956,6 +2096,7 @@ type ServiceInstance struct {
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
+// Validate TODO
 func (si *ServiceInstance) Validate() (field string, err error) {
 	/*
 		if len(si.Name) == 0 {
@@ -1969,11 +2110,13 @@ func (si *ServiceInstance) Validate() (field string, err error) {
 	return "", nil
 }
 
+// ServiceInstanceDetail TODO
 type ServiceInstanceDetail struct {
 	ServiceInstance
 	ProcessInstances []ProcessInstanceNG `field:"process_instances" json:"process_instances" bson:"process_instances"`
 }
 
+// ServiceInstanceWithTopoPath TODO
 type ServiceInstanceWithTopoPath struct {
 	ServiceInstance
 	TopoPath []TopoInstanceNodeSimplify `field:"topo_path" json:"topo_path" bson:"topo_path"`
@@ -1995,20 +2138,24 @@ type ProcessInstanceRelation struct {
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
+// Validate TODO
 func (pir *ProcessInstanceRelation) Validate() (field string, err error) {
 	return "", nil
 }
 
+// HostProcessRelation TODO
 type HostProcessRelation struct {
 	HostID    int64 `json:"bk_host_id" bson:"bk_host_id"`
 	ProcessID int64 `json:"bk_process_id" bson:"bk_process_id"`
 }
 
+// ProcessInstanceNameIDs TODO
 type ProcessInstanceNameIDs struct {
 	ProcessName string  `json:"bk_process_name"`
 	ProcessIDs  []int64 `json:"process_ids"`
 }
 
+// ProcessInstanceDetailByID TODO
 type ProcessInstanceDetailByID struct {
 	ProcessID           int64                   `json:"process_id"`
 	ServiceInstanceName string                  `json:"service_instance_name"`
@@ -2016,16 +2163,19 @@ type ProcessInstanceDetailByID struct {
 	Relation            ProcessInstanceRelation `json:"relation"`
 }
 
+// ProcessInstance TODO
 type ProcessInstance struct {
 	Property mapstr.MapStr           `json:"property"`
 	Relation ProcessInstanceRelation `json:"relation"`
 }
 
+// ProcessInstanceNG TODO
 type ProcessInstanceNG struct {
 	Process  Process                 `json:"process"`
 	Relation ProcessInstanceRelation `json:"relation"`
 }
 
+// Proc2Module TODO
 type Proc2Module struct {
 	BizID           int64  `json:"bk_biz_id"`
 	ModuleName      string `json:"bk_module_name"`
@@ -2033,11 +2183,13 @@ type Proc2Module struct {
 	SupplierAccount string `json:"bk_supplier_account"`
 }
 
+// LabelAggregationOption TODO
 type LabelAggregationOption struct {
 	BizID    int64  `json:"bk_biz_id"`
 	ModuleID *int64 `json:"bk_module_id" bson:"bk_module_id" field:"bk_module_id"`
 }
 
+// SrvInstNameParams TODO
 type SrvInstNameParams struct {
 	ServiceInstanceID int64                  `json:"service_instance_id"`
 	Host              map[string]interface{} `json:"host"`
@@ -2048,4 +2200,9 @@ type SrvInstNameParams struct {
 type SrvTemplate struct {
 	ID   int64  `json:"id" bson:"id" mapstructure:"id"`
 	Name string `json:"name" bson:"name" mapstructure:"name"`
+}
+
+// ServTempAttrData service template attributes data
+type ServTempAttrData struct {
+	Attributes []ServiceTemplateAttr `json:"attributes"`
 }

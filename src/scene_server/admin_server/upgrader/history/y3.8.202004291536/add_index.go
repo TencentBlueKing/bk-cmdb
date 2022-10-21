@@ -20,6 +20,8 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // createIndex create non-exist index for table
@@ -47,16 +49,12 @@ func createIndex(ctx context.Context, db dal.RDB, tableName string, createIndexA
 func CreateServiceTemplateIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	createIndexArr := []types.Index{
 		{
-			Keys: map[string]int32{
-				common.BKFieldID: 1,
-			},
+			Keys:       bson.D{{common.BKFieldID, 1}},
 			Name:       "idx_id",
 			Background: true,
 		},
 		{
-			Keys: map[string]int32{
-				common.BKAppIDField: 1,
-			},
+			Keys:       bson.D{{common.BKAppIDField, 1}},
 			Name:       "idx_bkBizID",
 			Background: true,
 		},
@@ -68,23 +66,17 @@ func CreateServiceTemplateIndex(ctx context.Context, db dal.RDB, conf *upgrader.
 func CreateProcessTemplateIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	createIndexArr := []types.Index{
 		{
-			Keys: map[string]int32{
-				common.BKServiceTemplateIDField: 1,
-			},
+			Keys:       bson.D{{common.BKServiceTemplateIDField, 1}},
 			Name:       "idx_serviceTemplateID",
 			Background: true,
 		},
 		{
-			Keys: map[string]int32{
-				common.BKFieldID: 1,
-			},
+			Keys:       bson.D{{common.BKFieldID, 1}},
 			Name:       "idx_id",
 			Background: true,
 		},
 		{
-			Keys: map[string]int32{
-				common.BKAppIDField: 1,
-			},
+			Keys:       bson.D{{common.BKAppIDField, 1}},
 			Name:       "idx_bkBizID",
 			Background: true,
 		},
@@ -96,23 +88,17 @@ func CreateProcessTemplateIndex(ctx context.Context, db dal.RDB, conf *upgrader.
 func CreateServiceInstanceIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	createIndexArr := []types.Index{
 		{
-			Keys: map[string]int32{
-				common.BKFieldID: 1,
-			},
+			Keys:       bson.D{{common.BKFieldID, 1}},
 			Name:       "idx_id",
 			Background: true,
 		},
 		{
-			Keys: map[string]int32{
-				common.BKAppIDField: 1,
-			},
+			Keys:       bson.D{{common.BKAppIDField, 1}},
 			Name:       "idx_bkBizID",
 			Background: true,
 		},
 		{
-			Keys: map[string]int32{
-				common.BKServiceTemplateIDField: 1,
-			},
+			Keys:       bson.D{{common.BKServiceTemplateIDField, 1}},
 			Name:       "idx_serviceTemplateID",
 			Background: true,
 		},
@@ -124,30 +110,22 @@ func CreateServiceInstanceIndex(ctx context.Context, db dal.RDB, conf *upgrader.
 func CreateProcessInstanceRelationIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	createIndexArr := []types.Index{
 		{
-			Keys: map[string]int32{
-				common.BKServiceInstanceIDField: 1,
-			},
+			Keys:       bson.D{{common.BKServiceInstanceIDField, 1}},
 			Name:       "idx_bkServiceInstanceID",
 			Background: true,
 		},
 		{
-			Keys: map[string]int32{
-				common.BKProcessTemplateIDField: 1,
-			},
+			Keys:       bson.D{{common.BKProcessTemplateIDField, 1}},
 			Name:       "idx_bkProcessTemplateID",
 			Background: true,
 		},
 		{
-			Keys: map[string]int32{
-				common.BKAppIDField: 1,
-			},
+			Keys:       bson.D{{common.BKAppIDField, 1}},
 			Name:       "idx_bkBizID",
 			Background: true,
 		},
 		{
-			Keys: map[string]int32{
-				common.BKProcessIDField: 1,
-			},
+			Keys:       bson.D{{common.BKProcessIDField, 1}},
 			Name:       "idx_bkProcessID",
 			Background: true,
 		},

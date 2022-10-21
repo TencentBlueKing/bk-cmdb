@@ -24,6 +24,7 @@ import (
 	"github.com/rs/xid"
 )
 
+// AddUserCustom TODO
 func (s *coreService) AddUserCustom(ctx *rest.Contexts) {
 	ID := xid.New()
 	data := make(map[string]interface{})
@@ -51,6 +52,7 @@ func (s *coreService) AddUserCustom(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// UpdateUserCustomByID TODO
 func (s *coreService) UpdateUserCustomByID(ctx *rest.Contexts) {
 	data := make(map[string]interface{})
 	if err := ctx.DecodeInto(&data); nil != err {
@@ -77,6 +79,7 @@ func (s *coreService) UpdateUserCustomByID(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// GetUserCustomByUser TODO
 func (s *coreService) GetUserCustomByUser(ctx *rest.Contexts) {
 	conds := make(map[string]interface{})
 	conds["bk_user"] = ctx.Kit.User

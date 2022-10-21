@@ -15,10 +15,12 @@ import (
 	"github.com/olivere/elastic/v7"
 )
 
+// EsSrv TODO
 type EsSrv struct {
 	Client *elastic.Client
 }
 
+// NewEsClient TODO
 func NewEsClient(esConf EsConfig) (*elastic.Client, error) {
 	// Obtain a client and connect to the default ElasticSearch installation
 	// on 127.0.0.1:9200. Of course you can configure your client to connect
@@ -80,10 +82,10 @@ func (es *EsSrv) Search(ctx context.Context, query elastic.Query, indexes []stri
 	highlight.RequireFieldMatch(false)
 
 	searchSource := elastic.NewSearchSource()
-	//searchSource.TrackScores(true)
+	// searchSource.TrackScores(true)
 	searchSource.From(from)
 	searchSource.Size(size)
-	//searchSource.Sort("_score", false)
+	// searchSource.Sort("_score", false)
 
 	searchResult, err := es.Client.Search().
 		Index(indexes...).
@@ -115,6 +117,7 @@ func (es *EsSrv) Count(ctx context.Context, query elastic.Query, indexes []strin
 	return count, nil
 }
 
+// EsConfig TODO
 type EsConfig struct {
 	FullTextSearch  string
 	EsUrl           string

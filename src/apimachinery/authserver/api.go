@@ -27,6 +27,7 @@ type authorizeBatchResp struct {
 	Data              []types.Decision `json:"data"`
 }
 
+// AuthorizeBatch TODO
 func (a *authServer) AuthorizeBatch(ctx context.Context, h http.Header, input *types.AuthBatchOptions) ([]types.Decision, error) {
 	subPath := "/authorize/batch"
 	response := new(authorizeBatchResp)
@@ -49,6 +50,7 @@ func (a *authServer) AuthorizeBatch(ctx context.Context, h http.Header, input *t
 	return response.Data, nil
 }
 
+// AuthorizeAnyBatch TODO
 func (a *authServer) AuthorizeAnyBatch(ctx context.Context, h http.Header, input *types.AuthBatchOptions) ([]types.Decision, error) {
 	subPath := "/authorize/any/batch"
 	response := new(authorizeBatchResp)
@@ -98,6 +100,7 @@ func (a *authServer) ListAuthorizedResources(ctx context.Context, h http.Header,
 	return response.Data, nil
 }
 
+// GetNoAuthSkipUrl TODO
 func (a *authServer) GetNoAuthSkipUrl(ctx context.Context, h http.Header, input *metadata.IamPermission) (string, error) {
 	response := new(struct {
 		metadata.BaseResp `json:",inline"`
@@ -123,6 +126,7 @@ func (a *authServer) GetNoAuthSkipUrl(ctx context.Context, h http.Header, input 
 	return response.Data, nil
 }
 
+// GetPermissionToApply TODO
 func (a *authServer) GetPermissionToApply(ctx context.Context, h http.Header, input []meta.ResourceAttribute) (*metadata.IamPermission, error) {
 	response := new(struct {
 		metadata.BaseResp `json:",inline"`
@@ -148,6 +152,7 @@ func (a *authServer) GetPermissionToApply(ctx context.Context, h http.Header, in
 	return response.Data, nil
 }
 
+// RegisterResourceCreatorAction TODO
 func (a *authServer) RegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstanceWithCreator) (
 	[]metadata.IamCreatorActionPolicy, error) {
 	response := new(struct {
@@ -174,6 +179,7 @@ func (a *authServer) RegisterResourceCreatorAction(ctx context.Context, h http.H
 	return response.Data, nil
 }
 
+// BatchRegisterResourceCreatorAction TODO
 func (a *authServer) BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstancesWithCreator) (
 	[]metadata.IamCreatorActionPolicy, error) {
 	response := new(struct {

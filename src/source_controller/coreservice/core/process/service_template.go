@@ -20,12 +20,14 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// CreateServiceTemplate TODO
 func (p *processOperation) CreateServiceTemplate(kit *rest.Kit, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
 	// base attribute validate
 	if field, err := template.Validate(kit.CCError); err != nil {
@@ -102,6 +104,7 @@ func (p *processOperation) CreateServiceTemplate(kit *rest.Kit, template metadat
 	return &template, nil
 }
 
+// GetServiceTemplate TODO
 func (p *processOperation) GetServiceTemplate(kit *rest.Kit, templateID int64) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
 	template := metadata.ServiceTemplate{}
 
@@ -117,11 +120,133 @@ func (p *processOperation) GetServiceTemplate(kit *rest.Kit, templateID int64) (
 	return &template, nil
 }
 
-// UpdateServiceTemplate
-// not support update name field yet, so don't need validate name unique before update
-func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64, input metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
+func (p *processOperation) validateServiceCategoryID(kit *rest.Kit, template *metadata.ServiceTemplate,
+	serviceCategoryID int64) errors.CCErrorCoder {
+
+	// update fields to local object
+	if serviceCategoryID == 0 {
+		return nil
+	}
+	template.ServiceCategoryID = serviceCategoryID
+
+	// validate service category id field
+	category, err := p.GetServiceCategory(kit, template.ServiceCategoryID)
+	if err != nil {
+		blog.Errorf("get category failed, serviceCategory id: %d, err: %v, rid: %s", template.ServiceCategoryID,
+			err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+	}
+	if category.BizID != 0 && category.BizID != template.BizID {
+		blog.Errorf("category biz id and template not equal, err: %v, rid: %s", err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+	}
+	isLeafNode, err := p.IsServiceCategoryLeafNode(kit, template.ServiceCategoryID)
+	if err != nil {
+		blog.Errorf("check leaf node failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+	if !isLeafNode {
+		return kit.CCError.CCError(common.CCErrCoreServiceOnlyNodeServiceCategoryAvailable)
+	}
+	return nil
+}
+
+func ifUpdateModuleName(kit *rest.Kit, template *metadata.ServiceTemplate, needCheckName bool) (
+	bool, errors.CCErrorCoder) {
+	if !needCheckName {
+		return false, nil
+	}
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	var checkErr errors.CCErrorCoder
+	// check service template name unique
+	go func() {
+		defer wg.Done()
+		nameFilter := map[string]interface{}{
+			common.BKAppIDField: template.BizID,
+			common.BKFieldName:  template.Name,
+			common.BKFieldID:    map[string]interface{}{common.BKDBNE: template.ID},
+		}
+		count, err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(nameFilter).Count(kit.Ctx)
+		if err != nil {
+			blog.Errorf("count service template with same name failed, filter: %+v, err: %v, rid: %s", nameFilter,
+				err, kit.Rid)
+			checkErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			return
+		}
+		if count > 0 {
+			blog.Errorf("service template name duplicated, count: %d, rid: %s", count, kit.Rid)
+			checkErr = kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKFieldName)
+			return
+		}
+	}()
+
+	needUpdateModuleName := false
+
+	// get modules using this service template
+	go func() {
+		defer wg.Done()
+		moduleFilter := map[string]interface{}{
+			common.BKServiceTemplateIDField: template.ID,
+		}
+		modules := make([]metadata.ModuleInst, 0)
+		err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules)
+		if err != nil {
+			blog.Errorf("count modules using this service template failed, filter: %+v, err: %v, rid: %s", moduleFilter,
+				err, kit.Rid)
+			checkErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+			return
+		}
+		if len(modules) > 0 {
+			parentIDs := make([]int64, len(modules))
+			for _, module := range modules {
+				parentIDs = append(parentIDs, module.ParentID)
+			}
+			// check if other modules has same name with the service template name to be changed
+			moduleNameFilter := map[string]interface{}{
+				common.BKAppIDField:             template.BizID,
+				common.BKModuleNameField:        template.Name,
+				common.BKParentIDField:          map[string]interface{}{common.BKDBIN: parentIDs},
+				common.BKServiceTemplateIDField: map[string]interface{}{common.BKDBNE: template.ID},
+			}
+			count, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleNameFilter).Count(kit.Ctx)
+			if err != nil {
+				blog.Errorf("count modules with same name failed, filter: %+v, err: %v, rid: %s", moduleFilter, err,
+					kit.Rid)
+				checkErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+				return
+			}
+			if count > 0 {
+				blog.Errorf("service template has modules with same name, count: %d, rid: %s", count, kit.Rid)
+				checkErr = kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKFieldName)
+				return
+			}
+			needUpdateModuleName = true
+		}
+	}()
+
+	wg.Wait()
+	if checkErr != nil {
+		return false, checkErr
+	}
+	return needUpdateModuleName, nil
+}
+
+// UpdateServiceTemplate not support update name field yet, so don't need validate name unique before update
+func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64,
+	input metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder) {
+
 	template, err := p.GetServiceTemplate(kit, templateID)
 	if err != nil {
+		return nil, err
+	}
+	if field, err := template.Validate(kit.CCError); err != nil {
+		blog.Errorf("validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
+		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, field)
+		return nil, err
+	}
+
+	if err := p.validateServiceCategoryID(kit, template, input.ServiceCategoryID); err != nil {
 		return nil, err
 	}
 
@@ -130,115 +255,11 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 		template.Name = input.Name
 		needCheckName = true
 	}
-	if field, err := template.Validate(kit.CCError); err != nil {
-		blog.Errorf("UpdateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
-		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, field)
+
+	needUpdateModuleName, err := ifUpdateModuleName(kit, template, needCheckName)
+	if err != nil {
 		return nil, err
 	}
-
-	// update fields to local object
-	if input.ServiceCategoryID != 0 {
-		// 允许模块的服务分类信息与模板的服务分类信息不一致，模块同步按钮会调整模块的分类信息, 详情见 issue #2927
-		template.ServiceCategoryID = input.ServiceCategoryID
-
-		// validate service category id field
-		category, err := p.GetServiceCategory(kit, template.ServiceCategoryID)
-		if err != nil {
-			blog.Errorf("UpdateServiceTemplate failed, category id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
-		}
-		if category.BizID != 0 && category.BizID != template.BizID {
-			blog.Errorf("UpdateServiceTemplate failed, category biz id and template not equal, err: %+v, rid: %s", err, kit.Rid)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
-		}
-		isLeafNode, err := p.IsServiceCategoryLeafNode(kit, template.ServiceCategoryID)
-		if err != nil {
-			blog.Errorf("UpdateServiceTemplate failed, check leaf node failed, err: %+v, rid: %s", err, kit.Rid)
-			return nil, err
-		}
-		if !isLeafNode {
-			return nil, kit.CCError.CCError(common.CCErrCoreServiceOnlyNodeServiceCategoryAvailable)
-		}
-	}
-
-	needUpdateModuleName := false
-	if needCheckName {
-		wg := sync.WaitGroup{}
-		wg.Add(2)
-		var checkErr errors.CCErrorCoder
-		// check service template name unique
-		go func() {
-			defer wg.Done()
-			nameFilter := map[string]interface{}{
-				common.BKAppIDField: template.BizID,
-				common.BKFieldName:  template.Name,
-				common.BKFieldID: map[string]interface{}{
-					common.BKDBNE: template.ID,
-				},
-			}
-			count, err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(nameFilter).Count(kit.Ctx)
-			if err != nil {
-				blog.ErrorJSON("UpdateServiceTemplate failed, count service template with same name failed, filter: %s, err: %s, rid: %s", nameFilter, err, kit.Rid)
-				checkErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-				return
-			}
-			if count > 0 {
-				blog.Errorf("UpdateServiceTemplate failed, service template name duplicated, count: %d, rid: %s", count, kit.Rid)
-				checkErr = kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKFieldName)
-				return
-			}
-		}()
-
-		// get modules using this service template
-		go func() {
-			defer wg.Done()
-			moduleFilter := map[string]interface{}{
-				common.BKServiceTemplateIDField: template.ID,
-			}
-			modules := make([]metadata.ModuleInst, 0)
-			err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).All(kit.Ctx, &modules)
-			if err != nil {
-				blog.ErrorJSON("UpdateServiceTemplate failed, count modules using this service template failed, filter: %s, err: %s, rid: %s", moduleFilter, err, kit.Rid)
-				checkErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-				return
-			}
-			if len(modules) > 0 {
-				parentIDs := make([]int64, len(modules))
-				for _, module := range modules {
-					parentIDs = append(parentIDs, module.ParentID)
-				}
-				// check if other modules has same name with the service template name to be changed
-				moduleNameFilter := map[string]interface{}{
-					common.BKAppIDField:      template.BizID,
-					common.BKModuleNameField: template.Name,
-					common.BKParentIDField: map[string]interface{}{
-						common.BKDBIN: parentIDs,
-					},
-					common.BKServiceTemplateIDField: map[string]interface{}{
-						common.BKDBNE: template.ID,
-					},
-				}
-				count, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleNameFilter).Count(kit.Ctx)
-				if err != nil {
-					blog.ErrorJSON("UpdateServiceTemplate failed, count modules with same name failed, filter: %s, err: %s, rid: %s", moduleFilter, err, kit.Rid)
-					checkErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-					return
-				}
-				if count > 0 {
-					blog.Errorf("UpdateServiceTemplate failed, service template has modules with same name, count: %d, rid: %s", count, kit.Rid)
-					checkErr = kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKFieldName)
-					return
-				}
-				needUpdateModuleName = true
-			}
-		}()
-
-		wg.Wait()
-		if checkErr != nil {
-			return nil, checkErr
-		}
-	}
-
 	// do update
 	filter := map[string]int64{common.BKFieldID: templateID}
 	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Update(kit.Ctx, filter, template); nil != err {
@@ -246,18 +267,45 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
 	}
 
-	// update name of the modules using this service template
+	updateData := make(map[string]interface{})
 	if needUpdateModuleName {
-		moduleFilter := map[string]interface{}{common.BKServiceTemplateIDField: template.ID}
-		updateData := map[string]interface{}{common.BKModuleNameField: template.Name}
-		if err := mongodb.Client().Table(common.BKTableNameBaseModule).Update(kit.Ctx, moduleFilter, updateData); err != nil {
-			blog.ErrorJSON("UpdateServiceTemplate failed, update modules using this service template failed, filter: %s, err: %s, rid: %s", moduleFilter, err, kit.Rid)
-			return nil, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+		updateData[common.BKModuleNameField] = template.Name
+	}
+
+	// update module category if there is a difference
+	if input.ServiceCategoryID != 0 {
+		option := map[string]interface{}{
+			common.BKServiceTemplateIDField: template.ID,
+			common.BKServiceCategoryIDField: mapstr.MapStr{
+				common.BKDBNE: input.ServiceCategoryID,
+			},
 		}
+		cnt, e := mongodb.Client().Table(common.BKTableNameBaseModule).Find(option).Count(kit.Ctx)
+		if e != nil {
+			blog.Errorf("count module failed, filter: %+v, err: %v, rid: %s", option, err, kit.Rid)
+			return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		}
+
+		if cnt > 0 {
+			updateData[common.BKServiceCategoryIDField] = template.ServiceCategoryID
+		}
+	}
+
+	if len(updateData) == 0 {
+		return template, nil
+	}
+
+	// update name & category of the modules using this service template
+	moduleFilter := map[string]interface{}{common.BKServiceTemplateIDField: template.ID}
+	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Update(kit.Ctx, moduleFilter, updateData); err != nil {
+		blog.ErrorJSON("UpdateServiceTemplate failed, update modules using this service template failed, filter: %s,"+
+			" err: %s, rid: %s", moduleFilter, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 	return template, nil
 }
 
+// ListServiceTemplates TODO
 func (p *processOperation) ListServiceTemplates(kit *rest.Kit, option metadata.ListServiceTemplateOption) (*metadata.MultipleServiceTemplate, errors.CCErrorCoder) {
 	filter := map[string]interface{}{
 		common.BKAppIDField: option.BusinessID,
@@ -333,6 +381,7 @@ func (p *processOperation) ListServiceTemplates(kit *rest.Kit, option metadata.L
 	return result, nil
 }
 
+// DeleteServiceTemplate TODO
 func (p *processOperation) DeleteServiceTemplate(kit *rest.Kit, serviceTemplateID int64) errors.CCErrorCoder {
 	template, err := p.GetServiceTemplate(kit, serviceTemplateID)
 	if err != nil {
@@ -365,6 +414,12 @@ func (p *processOperation) DeleteServiceTemplate(kit *rest.Kit, serviceTemplateI
 		blog.Errorf("DeleteServiceTemplate failed, forbidden delete service template be referenced, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, kit.Rid)
 		err := kit.CCError.CCError(common.CCErrCommRemoveReferencedRecordForbidden)
 		return err
+	}
+
+	delAttrFilter := map[string]int64{common.BKServiceTemplateIDField: template.ID}
+	if err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Delete(kit.Ctx, delAttrFilter); err != nil {
+		blog.Errorf("delete service template attr failed, filter: %+v, err: %v, rid: %s", delAttrFilter, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 
 	deleteFilter := map[string]int64{common.BKFieldID: template.ID}

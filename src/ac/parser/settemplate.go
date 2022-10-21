@@ -21,8 +21,10 @@ import (
 	"strconv"
 
 	"configcenter/src/ac/meta"
+	"configcenter/src/common"
 )
 
+// SetTemplateAuthConfigs TODO
 var SetTemplateAuthConfigs = []AuthConfig{
 	{
 		Name:           "CreateSetTemplateRegex",
@@ -31,6 +33,14 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
 		BizIndex:       6,
+		ResourceType:   meta.SetTemplate,
+		ResourceAction: meta.Create,
+	}, {
+		Name:           "CreateSetTemplateAllInfo",
+		Description:    "创建集群模板（全量信息）",
+		Pattern:        "/api/v3/create/topo/set_template/all_info",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
 		ResourceType:   meta.SetTemplate,
 		ResourceAction: meta.Create,
 	}, {
@@ -52,6 +62,26 @@ var SetTemplateAuthConfigs = []AuthConfig{
 				return nil, fmt.Errorf("UpdateSetTemplateRegex regex parse match to int failed, err: %+v", err)
 			}
 			return []int64{id}, nil
+		},
+	}, {
+		Name:           "UpdateSetTemplateAllInfo",
+		Description:    "更新集群模板（全量信息）",
+		Pattern:        "/api/v3/update/topo/set_template/all_info",
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.SetTemplate,
+		ResourceAction: meta.Update,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid set template id")
+			}
+			return []int64{templateID}, nil
 		},
 	}, {
 		Name:           "DeleteSetTemplateRegex",
@@ -94,6 +124,26 @@ var SetTemplateAuthConfigs = []AuthConfig{
 				return nil, fmt.Errorf("getSetTemplate regex parse match to int failed, err: %+v", err)
 			}
 			return []int64{id}, nil
+		},
+	}, {
+		Name:           "GetSetTemplateAllInfo",
+		Description:    "获取集群模板（全量信息）",
+		Pattern:        "/api/v3/find/topo/set_template/all_info",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.SetTemplate,
+		ResourceAction: meta.Find,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid set template id")
+			}
+			return []int64{templateID}, nil
 		},
 	}, {
 		Name:           "ListSetTemplateRegex",
@@ -144,6 +194,16 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		Name:           "DiffSetTplWithInstRegex",
 		Description:    "对比集群模板与集群之间的差异",
 		Regex:          regexp.MustCompile(`^/api/v3/findmany/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/diff_with_instances/?$`),
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    BizIDFromURLGetter,
+		BizIndex:       7,
+		ResourceType:   meta.ModelSet,
+		ResourceAction: meta.FindMany,
+	}, {
+		Name:        "GetHostUnderTheCluster",
+		Description: "获取指定集群下是否有主机",
+		// NOCC:tosa/linelength(忽略长度)
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/topo/set_template/([0-9]+)/bk_biz_id/([0-9]+)/host_with_instances/?$`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    BizIDFromURLGetter,
 		BizIndex:       7,
@@ -219,6 +279,66 @@ var SetTemplateAuthConfigs = []AuthConfig{
 		ResourceType:     meta.ModelSet,
 		ResourceAction:   meta.FindMany,
 		InstanceIDGetter: nil,
+	}, {
+		Name:           "updateSetTemplateAttribute",
+		Description:    "更新集群模板配置字段",
+		Pattern:        "/api/v3/update/topo/set_template/attribute",
+		HTTPMethod:     http.MethodPut,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.SetTemplate,
+		ResourceAction: meta.Update,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid set template id")
+			}
+			return []int64{templateID}, nil
+		},
+	}, {
+		Name:           "deleteSetTemplateAttribute",
+		Description:    "删除集群模板配置字段",
+		Pattern:        "/api/v3/delete/topo/set_template/attribute",
+		HTTPMethod:     http.MethodDelete,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.SetTemplate,
+		ResourceAction: meta.Update,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid set template id")
+			}
+			return []int64{templateID}, nil
+		},
+	}, {
+		Name:           "listSetTemplateAttribute",
+		Description:    "查询集群模板配置字段",
+		Pattern:        "/api/v3/findmany/topo/set_template/attribute",
+		HTTPMethod:     http.MethodPost,
+		BizIDGetter:    DefaultBizIDGetter,
+		ResourceType:   meta.SetTemplate,
+		ResourceAction: meta.FindMany,
+		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) ([]int64, error) {
+			val, err := request.getValueFromBody(common.BKFieldID)
+			if err != nil {
+				return nil, err
+			}
+
+			templateID := val.Int()
+			if templateID <= 0 {
+				return nil, errors.New("invalid set template id")
+			}
+			return []int64{templateID}, nil
+		},
 	},
 }
 

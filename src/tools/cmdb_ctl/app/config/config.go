@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package config TODO
 package config
 
 import (
@@ -27,8 +28,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Conf TODO
 var Conf *Config
 
+// Config TODO
 type Config struct {
 	ZkAddr      string
 	MongoURI    string
@@ -50,11 +53,13 @@ func (c *Config) AddFlags(cmd *cobra.Command) {
 	return
 }
 
+// Service TODO
 type Service struct {
 	ZkCli   *zkclient.ZkClient
 	DbProxy dal.RDB
 }
 
+// NewZkService TODO
 func NewZkService(zkAddr string) (*Service, error) {
 	if zkAddr == "" {
 		return nil, errors.New("zk-addr must set via flag or environment variable")
@@ -68,6 +73,7 @@ func NewZkService(zkAddr string) (*Service, error) {
 	return service, nil
 }
 
+// NewMongoService TODO
 func NewMongoService(mongoURI string, mongoRsName string) (*Service, error) {
 	if mongoURI == "" {
 		return nil, errors.New("mongo-uri must set via flag or environment variable")

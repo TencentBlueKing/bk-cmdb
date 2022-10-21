@@ -442,7 +442,7 @@ func getConfigs(ctx context.Context, db dal.RDB, dir string) (preCfg, curCfg *me
 	return preCfg, curCfg, ret[common.ConfigAdminValueField].(string), nil
 }
 
-// getConfigs get preCfg, curCfg.
+// getAllConfigs get preCfg, curCfg.
 func getAllConfigs(ctx context.Context, db dal.RDB, dir string) (curCfg *metadata.PlatformSettingConfig,
 	preCfg *metadata.ConfigAdmin, dbCfg string, err error) {
 	var pre string
@@ -525,7 +525,7 @@ func getFinalConfig(preCfg, curCfg, dbCfg *metadata.ConfigAdmin) *metadata.Confi
 	return curCfg
 }
 
-// 为了兼容老版本的footer信息,需要将原格式信息内容转化为markdown格式的字符串
+// getContactInfo 为了兼容老版本的footer信息,需要将原格式信息内容转化为markdown格式的字符串
 func getContactInfo(links []metadata.LinksItem) metadata.ContactInfoItem {
 	var (
 		result metadata.ContactInfoItem

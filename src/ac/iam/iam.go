@@ -10,12 +10,14 @@
  * limitations under the License.
  */
 
+// Package iam TODO
 package iam
 
 import (
 	"context"
 	"errors"
 	"net/http"
+	"reflect"
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/apimachinery"
@@ -32,6 +34,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// IAM TODO
 type IAM struct {
 	Client iamClientInterface
 }
@@ -82,19 +85,121 @@ func NewIAM(cfg AuthConfig, reg prometheus.Registerer) (*IAM, error) {
 	}, nil
 }
 
-// RegisterSystem register system to iam
-func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata.Object) error {
+/**
+1. 资源间的依赖关系为 Action 依赖 InstanceSelection 依赖 ResourceType，对资源的增删改操作需要按照这个依赖顺序调整
+2. ActionGroup、ResCreatorAction、CommonAction 依赖于 Action，这些资源的增删操作始终放在最后
+3. 因为资源的名称在系统中是唯一的，所以可能遇到循环依赖的情况（如两个资源分别更新成对方的名字），此时需要引入一个中间变量进行二次更新
+
+综上，具体操作顺序如下：
+  1. 注册cc系统信息
+  2. 删除Action。该操作无依赖
+  3. 更新ResourceType，先更新名字冲突的(包括需要删除的)为中间值，再更新其它的。该操作无依赖
+  4. 新增ResourceType。该操作依赖于上一步中同名的ResourceType均已更新
+  5. 更新InstanceSelection，先更新名字冲突的(包括需要删除的)为中间值，再更新其它的。该操作依赖于上一步中的ResourceType均已新增
+  6. 新增InstanceSelection。该操作依赖于上一步中同名的InstanceSelection均已更新+第4步中的ResourceType均已新增
+  7. 更新ResourceAction，先更新名字冲突的为中间值，再更新其它的。该操作依赖于第2步中同名Action已删除+上一步中InstanceSelection已新增
+  8. 新增ResourceAction。该操作依赖于上一步中同名的ResourceAction均已更新+第6步中的InstanceSelection均已新增
+  9. 删除InstanceSelection。该操作依赖于第2步和第7步中的原本依赖了这些InstanceSelection的Action均已删除和更新
+ 10. 删除ResourceType。该操作依赖于第5步和第9步中的原本依赖了这些ResourceType的InstanceSelection均已删除和更新
+ 11. 注册ActionGroup、ResCreatorAction、CommonAction信息
+*/
+
+// Register cc auth resources to iam
+func (i IAM) Register(ctx context.Context, host string, objects []metadata.Object, rid string) error {
 	if !auth.EnableAuthorize() {
 		return nil
 	}
 
-	systemResp, err := i.Client.GetSystemInfo(ctx, []SystemQueryField{})
-	if err != nil && err != ErrNotFound {
-		blog.Errorf("get system info failed, error: %s", err.Error())
+	registeredInfo, err := i.registerSystem(ctx, host)
+	if err != nil {
 		return err
 	}
-	if systemResp == nil {
-		systemResp = new(SystemResp)
+
+	newResTypes, updateResTypes, removedResTypeIDs := i.crossCompareResTypes(registeredInfo.ResourceTypes, objects)
+	newInstSelections, updateInstSelections, removedInstSelectionIDs := i.crossCompareInstSelections(
+		registeredInfo.InstanceSelections, objects)
+	newResActions, updateResActions, removedResActionIDs := i.crossCompareResActions(registeredInfo.Actions, objects)
+
+	if err = i.removeResActions(ctx, removedResActionIDs, rid); err != nil {
+		return err
+	}
+
+	for _, resourceType := range updateResTypes {
+		if err = i.Client.UpdateResourcesType(ctx, resourceType); err != nil {
+			blog.ErrorJSON("update resource type(%s) failed, err: %s, rid: %s", resourceType, err, rid)
+			return err
+		}
+	}
+
+	if len(newResTypes) > 0 {
+		if err = i.Client.RegisterResourcesTypes(ctx, newResTypes); err != nil {
+			blog.ErrorJSON("register resource types(%s) failed, err: %s, rid: %s", newResTypes, err, rid)
+			return err
+		}
+	}
+
+	for _, instanceSelection := range updateInstSelections {
+		if err = i.Client.UpdateInstanceSelection(ctx, instanceSelection); err != nil {
+			blog.ErrorJSON("update instance selection(%s) failed, err: %s, rid: %s", instanceSelection, err, rid)
+			return err
+		}
+	}
+
+	if len(newInstSelections) > 0 {
+		if err = i.Client.RegisterInstanceSelections(ctx, newInstSelections); err != nil {
+			blog.ErrorJSON("register instance selections(%s) failed, err: %s, rid: %s", newInstSelections, err, rid)
+			return err
+		}
+	}
+
+	for _, resourceAction := range updateResActions {
+		if err = i.Client.UpdateAction(ctx, resourceAction); err != nil {
+			blog.ErrorJSON("update resource action(%s) failed, err: %s, rid: %s", resourceAction, err, rid)
+			return err
+		}
+	}
+
+	if len(newResActions) > 0 {
+		if err = i.Client.RegisterActions(ctx, newResActions); err != nil {
+			blog.ErrorJSON("register resource actions(%s) failed, err: %s, rid: %s", newResActions, err, rid)
+			return err
+		}
+	}
+
+	if len(removedInstSelectionIDs) > 0 {
+		if err = i.Client.DeleteInstanceSelections(ctx, removedInstSelectionIDs); err != nil {
+			blog.ErrorJSON("delete instance selections(%s) failed, err: %s, rid: %s", removedInstSelectionIDs, err, rid)
+			return err
+		}
+	}
+
+	if len(removedResTypeIDs) > 0 {
+		if err = i.Client.DeleteResourcesTypes(ctx, removedResTypeIDs); err != nil {
+			blog.ErrorJSON("delete resource types(%s) failed, err: %s, rid: %s", removedResTypeIDs, err, rid)
+			return err
+		}
+	}
+
+	if err := i.registerActionGroups(ctx, registeredInfo, objects, rid); err != nil {
+		return err
+	}
+
+	if err := i.registerResCreatorActions(ctx, registeredInfo, rid); err != nil {
+		return err
+	}
+
+	if err := i.registerCommonActions(ctx, registeredInfo, rid); err != nil {
+		return err
+	}
+	return nil
+}
+
+// registerSystem register cc system to iam
+func (i IAM) registerSystem(ctx context.Context, host string) (*RegisteredSystemInfo, error) {
+	systemResp, err := i.Client.GetSystemInfo(ctx, []SystemQueryField{})
+	if err != nil && err != ErrNotFound {
+		blog.Errorf("get system info failed, err: %v", err)
+		return nil, err
 	}
 
 	// if iam cmdb system has not been registered, register system
@@ -109,216 +214,480 @@ func (i IAM) RegisterSystem(ctx context.Context, host string, objects []metadata
 				Auth: "basic",
 			},
 		}
+
 		if err = i.Client.RegisterSystem(ctx, sys); err != nil {
-			blog.ErrorJSON("register system %s failed, error: %s", sys, err.Error())
-			return err
+			blog.ErrorJSON("register system(%s) failed, err: %s", sys, err)
+			return nil, err
 		}
+
 		blog.V(5).Infof("register new system %+v succeed", sys)
-	} else if systemResp.Data.BaseInfo.ProviderConfig == nil || systemResp.Data.BaseInfo.ProviderConfig.Host != host {
+		return new(RegisteredSystemInfo), nil
+	}
+
+	providerConfig := systemResp.Data.BaseInfo.ProviderConfig
+
+	if providerConfig == nil || providerConfig.Host != host {
 		// if iam registered cmdb system has no ProviderConfig
 		// or registered host config is different with current host config, update system host config
 		if err = i.Client.UpdateSystemConfig(ctx, &SysConfig{Host: host}); err != nil {
-			blog.Errorf("update system host %s config failed, error: %s", host, err.Error())
-			return err
+			blog.Errorf("update system host %s config failed, err: %v", host, err)
+			return nil, err
 		}
-		if systemResp.Data.BaseInfo.ProviderConfig == nil {
-			blog.V(5).Infof("update system host to %s succeed",
-				systemResp.Data.BaseInfo.ProviderConfig.Host, host)
+
+		if providerConfig == nil {
+			blog.V(5).Infof("update system host to %s succeed", host)
 		} else {
-			blog.V(5).Infof("update system host %s to %s succeed",
-				systemResp.Data.BaseInfo.ProviderConfig.Host, host)
+			blog.V(5).Infof("update system host %s to %s succeed", providerConfig.Host, host)
 		}
 	}
 
-	existResourceTypeMap := make(map[TypeID]bool)
-	removedResourceTypeMap := make(map[TypeID]struct{})
-	newResourceTypes := make([]ResourceType, 0)
-	for _, resourceType := range systemResp.Data.ResourceTypes {
-		existResourceTypeMap[resourceType.ID] = true
-		removedResourceTypeMap[resourceType.ID] = struct{}{}
+	return &systemResp.Data, nil
+}
+
+// iamName record iam name and english name to find if name conflicts
+type iamName struct {
+	Name   string
+	NameEn string
+}
+
+// crossCompareResTypes cross compare resource types to get need create/update/delete ones
+func (i IAM) crossCompareResTypes(registeredResourceTypes []ResourceType, objects []metadata.Object) (
+	[]ResourceType, []ResourceType, []TypeID) {
+
+	registeredResTypeMap := make(map[TypeID]ResourceType)
+	for _, resourceType := range registeredResourceTypes {
+		registeredResTypeMap[resourceType.ID] = resourceType
 	}
+
+	// record the name and resource type id mapping to get the resource types whose name conflicts
+	resNameMap := make(map[string]TypeID)
+	resNameEnMap := make(map[string]TypeID)
+	updateResPrevNameMap := make(map[TypeID]iamName)
+
+	newResTypes := make([]ResourceType, 0)
+	updateResTypes := make([]ResourceType, 0)
+
 	for _, resourceType := range GenerateResourceTypes(objects) {
-		// registered resource type exist in current resource types, should not be removed
-		delete(removedResourceTypeMap, resourceType.ID)
-		// if current resource type is registered, update it, or else register it
-		if existResourceTypeMap[resourceType.ID] {
-			if err = i.Client.UpdateResourcesType(ctx, resourceType); err != nil {
-				blog.ErrorJSON("update resource type %s failed, error: %s, input resource type: %s",
-					resourceType.ID, err.Error(), resourceType)
-				return err
+		resNameMap[resourceType.Name] = resourceType.ID
+		resNameEnMap[resourceType.NameEn] = resourceType.ID
+
+		// if current resource type is not registered, register it, otherwise, update it if its version is changed
+		registeredResType, exists := registeredResTypeMap[resourceType.ID]
+		if exists {
+			// registered resource type exists in current resource types, should not be removed
+			delete(registeredResTypeMap, resourceType.ID)
+
+			if i.compareResType(registeredResType, resourceType) {
+				continue
 			}
-		} else {
-			newResourceTypes = append(newResourceTypes, resourceType)
+
+			updateResPrevNameMap[resourceType.ID] = iamName{
+				Name:   registeredResType.Name,
+				NameEn: registeredResType.NameEn,
+			}
+			updateResTypes = append(updateResTypes, resourceType)
+			continue
+		}
+
+		newResTypes = append(newResTypes, resourceType)
+	}
+
+	// if to update resource type previous name conflict with a valid one, change its name to an intermediate one first
+	conflictResTypes := make([]ResourceType, 0)
+	for _, updateResType := range updateResTypes {
+		prevName := updateResPrevNameMap[updateResType.ID]
+		isConflict := false
+
+		if resNameMap[prevName.Name] != updateResType.ID {
+			isConflict = true
+			updateResType.Name = prevName.Name + "_"
+		}
+
+		if resNameEnMap[prevName.NameEn] != updateResType.ID {
+			isConflict = true
+			updateResType.NameEn = prevName.NameEn + "_"
+		}
+
+		if isConflict {
+			conflictResTypes = append(conflictResTypes, updateResType)
 		}
 	}
 
-	existInstanceSelectionMap := make(map[InstanceSelectionID]bool)
-	removedInstanceSelectionMap := make(map[InstanceSelectionID]struct{})
-	newInstanceSelections := make([]InstanceSelection, 0)
-	for _, instanceSelection := range systemResp.Data.InstanceSelections {
-		existInstanceSelectionMap[instanceSelection.ID] = true
-		removedInstanceSelectionMap[instanceSelection.ID] = struct{}{}
-	}
+	// remove the resource types that are not exist in new resource types
+	removedResTypeIDs := make([]TypeID, len(registeredResTypeMap))
+	idx := 0
+	for resTypeID, resType := range registeredResTypeMap {
+		removedResTypeIDs[idx] = resTypeID
+		idx++
 
-	for _, resourceType := range GenerateInstanceSelections(objects) {
-		// registered instance selection exist in current instance selections, should not be removed
-		delete(removedInstanceSelectionMap, resourceType.ID)
-		// if current instance selection is registered, update it, or else register it
-		if existInstanceSelectionMap[resourceType.ID] {
-			if err = i.Client.UpdateInstanceSelection(ctx, resourceType); err != nil {
-				blog.ErrorJSON("update instance selection %s failed, error: %s, input resource type: %s",
-					resourceType.ID, err.Error(), resourceType)
-				return err
+		// if to remove resource type name conflicts with a valid one, change its name to an intermediate one first
+		isConflict := false
+
+		if _, exists := resNameMap[resType.Name]; exists {
+			resType.Name += "_"
+			isConflict = true
+		}
+		if _, exists := resNameEnMap[resType.NameEn]; exists {
+			resType.NameEn += "_"
+			isConflict = true
+		}
+
+		if isConflict {
+			if resType.Version == 0 {
+				resType.Version = 1
 			}
-		} else {
-			newInstanceSelections = append(newInstanceSelections, resourceType)
+			conflictResTypes = append(conflictResTypes, resType)
 		}
 	}
 
-	existResourceActionMap := make(map[ActionID]bool)
-	removedResourceActionMap := make(map[ActionID]struct{})
-	newResourceActions := make([]ResourceAction, 0)
-	for _, resourceAction := range systemResp.Data.Actions {
-		existResourceActionMap[resourceAction.ID] = true
-		removedResourceActionMap[resourceAction.ID] = struct{}{}
+	return newResTypes, append(conflictResTypes, updateResTypes...), removedResTypeIDs
+}
+
+// compareResType compare if registered resource type that iam returns is the same with the new resource type
+func (i IAM) compareResType(registeredResType, resType ResourceType) bool {
+	if registeredResType.ID != resType.ID ||
+		registeredResType.Name != resType.Name ||
+		registeredResType.NameEn != resType.NameEn ||
+		registeredResType.Description != resType.Description ||
+		registeredResType.DescriptionEn != resType.DescriptionEn ||
+		registeredResType.Version < resType.Version ||
+		registeredResType.ProviderConfig.Path != resType.ProviderConfig.Path {
+		return false
 	}
+
+	if len(registeredResType.Parents) != len(resType.Parents) {
+		return false
+	}
+	for idx, parent := range registeredResType.Parents {
+		resTypeParent := resType.Parents[idx]
+		if parent.ResourceID != resTypeParent.ResourceID || parent.SystemID != resTypeParent.SystemID {
+			return false
+		}
+	}
+
+	return true
+}
+
+// crossCompareInstSelections cross compare instance selections to get need create/update/delete ones
+func (i IAM) crossCompareInstSelections(registeredInstanceSelections []InstanceSelection, objects []metadata.Object) (
+	[]InstanceSelection, []InstanceSelection, []InstanceSelectionID) {
+
+	registeredInstSelectionMap := make(map[InstanceSelectionID]InstanceSelection)
+	for _, instanceSelection := range registeredInstanceSelections {
+		registeredInstSelectionMap[instanceSelection.ID] = instanceSelection
+	}
+
+	// record the name and instance selection id mapping to get the instance selections whose name conflicts
+	selectionNameMap := make(map[string]InstanceSelectionID)
+	selectionNameEnMap := make(map[string]InstanceSelectionID)
+	updateSelectionPrevNameMap := make(map[InstanceSelectionID]iamName)
+
+	newInstSelections := make([]InstanceSelection, 0)
+	updateInstSelections := make([]InstanceSelection, 0)
+
+	for _, instanceSelection := range GenerateInstanceSelections(objects) {
+		selectionNameMap[instanceSelection.Name] = instanceSelection.ID
+		selectionNameEnMap[instanceSelection.NameEn] = instanceSelection.ID
+
+		selection, exists := registeredInstSelectionMap[instanceSelection.ID]
+
+		// if current instance selection is not registered, register it, otherwise, update it if it is changed
+		if exists {
+			// registered instance selection exists in current instance selections, should not be removed
+			delete(registeredInstSelectionMap, instanceSelection.ID)
+
+			if reflect.DeepEqual(selection, instanceSelection) {
+				continue
+			}
+
+			updateSelectionPrevNameMap[instanceSelection.ID] = iamName{
+				Name:   selection.Name,
+				NameEn: selection.NameEn,
+			}
+			updateInstSelections = append(updateInstSelections, instanceSelection)
+			continue
+		}
+
+		newInstSelections = append(newInstSelections, instanceSelection)
+	}
+
+	// if to update selection previous name conflict with a valid one, change its name to an intermediate one first
+	conflictSelections := make([]InstanceSelection, 0)
+	for _, updateSelection := range updateInstSelections {
+		prevName := updateSelectionPrevNameMap[updateSelection.ID]
+		isConflict := false
+
+		if selectionNameMap[prevName.Name] != updateSelection.ID {
+			updateSelection.Name = prevName.Name + "_"
+			isConflict = true
+		}
+
+		if selectionNameEnMap[prevName.NameEn] != updateSelection.ID {
+			updateSelection.NameEn = prevName.NameEn + "_"
+			isConflict = true
+		}
+
+		if isConflict {
+			conflictSelections = append(conflictSelections, updateSelection)
+		}
+	}
+
+	// remove the resource types that are not exist in new resource types
+	removedInstSelectionIDs := make([]InstanceSelectionID, len(registeredInstSelectionMap))
+	idx := 0
+	for selectionID, selection := range registeredInstSelectionMap {
+		removedInstSelectionIDs[idx] = selectionID
+		idx++
+
+		// if to remove selection name conflicts with a valid one, change its name to an intermediate one first
+		isConflict := false
+
+		if _, exists := selectionNameMap[selection.Name]; exists {
+			selection.Name += "_"
+			isConflict = true
+		}
+		if _, exists := selectionNameEnMap[selection.NameEn]; exists {
+			selection.NameEn += "_"
+			isConflict = true
+		}
+
+		if isConflict {
+			conflictSelections = append(conflictSelections, selection)
+		}
+	}
+
+	return newInstSelections, append(conflictSelections, updateInstSelections...), removedInstSelectionIDs
+}
+
+// crossCompareResActions cross compare resource actions to get need create/update/delete ones
+func (i IAM) crossCompareResActions(registeredActions []ResourceAction, objects []metadata.Object) (
+	[]ResourceAction, []ResourceAction, []ActionID) {
+
+	registeredResActionMap := make(map[ActionID]ResourceAction)
+	for _, resourceAction := range registeredActions {
+		registeredResActionMap[resourceAction.ID] = resourceAction
+	}
+
+	// record the name and resource action id mapping to get the instance selections whose name conflicts
+	actionNameMap := make(map[string]ActionID)
+	actionNameEnMap := make(map[string]ActionID)
+	updateActionPrevNameMap := make(map[ActionID]iamName)
+
+	newResActions := make([]ResourceAction, 0)
+	updateResActions := make([]ResourceAction, 0)
+
 	for _, resourceAction := range GenerateActions(objects) {
-		// registered resource action exist in current resource actions, should not be removed
-		delete(removedResourceActionMap, resourceAction.ID)
-		// if current resource action is registered, update it, or else register it
-		if existResourceActionMap[resourceAction.ID] {
-			if err = i.Client.UpdateAction(ctx, resourceAction); err != nil {
-				blog.ErrorJSON("update resource action %s failed, error: %s, input resource action: %s",
-					resourceAction.ID, err.Error(), resourceAction)
-				return err
-			}
-		} else {
-			newResourceActions = append(newResourceActions, resourceAction)
-		}
-	}
+		actionNameMap[resourceAction.Name] = resourceAction.ID
+		actionNameEnMap[resourceAction.NameEn] = resourceAction.ID
 
-	// 因为资源间的依赖关系，删除和更新的顺序为 1.Action 2.InstanceSelection 3.ResourceType
-	// 因为资源间的依赖关系，新建的顺序则反过来为 1.ResourceType 2.InstanceSelection 3.Action
-	// ActionGroup依赖于Action，该资源的增删操作始终放在最后
-	// 先删除资源，再新增资源，因为实例视图的名称在系统中是唯一的，如果不先删，同样名称的实例视图将创建失败
-	// remove redundant actions, redundant instance selections and resource types one by one
-	// when dependencies are all deleted
-	if len(removedResourceActionMap) > 0 {
-		removedResourceActionIDs := make([]ActionID, len(removedResourceActionMap))
-		idx := 0
-		// before deleting action, the dependent action policies must be deleted
-		for resourceActionID := range removedResourceActionMap {
-			if err = i.Client.DeleteActionPolicies(ctx, resourceActionID); err != nil {
-				blog.Errorf("delete action %s policies failed, err: %v", resourceActionID, err)
-				return err
+		// if current resource action is not registered, register it, otherwise, update it if its version is changed
+		action, exists := registeredResActionMap[resourceAction.ID]
+		if exists {
+			// registered resource action exist in current resource actions, should not be removed
+			delete(registeredResActionMap, resourceAction.ID)
+
+			if i.compareResAction(action, resourceAction) {
+				continue
 			}
 
-			removedResourceActionIDs[idx] = resourceActionID
-			idx++
+			updateActionPrevNameMap[action.ID] = iamName{
+				Name:   action.Name,
+				NameEn: action.NameEn,
+			}
+			updateResActions = append(updateResActions, resourceAction)
+			continue
 		}
-		if err = i.Client.DeleteActions(ctx, removedResourceActionIDs); err != nil {
-			blog.ErrorJSON("delete resource actions failed, error: %s, resource actions: %s", err.Error(),
-				removedResourceActionIDs)
+		newResActions = append(newResActions, resourceAction)
+	}
+
+	// if to update action previous name conflict with a valid one, change its name to an intermediate one first
+	conflictActions := make([]ResourceAction, 0)
+	for _, updateAction := range updateResActions {
+		prevName := updateActionPrevNameMap[updateAction.ID]
+		isConflict := false
+
+		if actionNameMap[prevName.Name] != updateAction.ID {
+			updateAction.Name = prevName.Name + "_"
+			isConflict = true
+		}
+
+		if actionNameEnMap[prevName.NameEn] != updateAction.ID {
+			updateAction.NameEn = prevName.NameEn + "_"
+			isConflict = true
+		}
+
+		if isConflict {
+			conflictActions = append(conflictActions, updateAction)
+		}
+	}
+
+	removedResActionIDs := make([]ActionID, len(registeredResActionMap))
+	idx := 0
+	for resourceActionID := range registeredResActionMap {
+		removedResActionIDs[idx] = resourceActionID
+		idx++
+	}
+
+	return newResActions, append(conflictActions, updateResActions...), removedResActionIDs
+}
+
+// compareResAction compare if registered resource action that iam returns is the same with the new resource action
+func (i IAM) compareResAction(registeredAction, action ResourceAction) bool {
+	if registeredAction.ID != action.ID ||
+		registeredAction.Name != action.Name ||
+		registeredAction.NameEn != action.NameEn ||
+		registeredAction.Type != action.Type ||
+		registeredAction.Version < action.Version {
+		return false
+	}
+
+	if len(registeredAction.RelatedResourceTypes) != len(action.RelatedResourceTypes) {
+		return false
+	}
+
+	for idx, registeredResType := range registeredAction.RelatedResourceTypes {
+		resType := action.RelatedResourceTypes[idx]
+
+		// iam default selection mode is "instance"
+		if resType.SelectionMode == "" {
+			resType.SelectionMode = modeInstance
+		}
+
+		if registeredResType.ID != resType.ID || registeredResType.SelectionMode != resType.SelectionMode {
+			return false
+		}
+
+		if registeredResType.Scope == nil && resType.Scope == nil {
+			continue
+		}
+
+		if registeredResType.Scope == nil && resType.Scope != nil ||
+			registeredResType.Scope != nil && resType.Scope == nil {
+			return false
+		}
+
+		if registeredResType.Scope.Op != resType.Scope.Op {
+			return false
+		}
+
+		if len(registeredResType.Scope.Content) != len(resType.Scope.Content) {
+			return false
+		}
+
+		for index, registeredContent := range registeredResType.Scope.Content {
+			content := resType.Scope.Content[index]
+			if registeredContent.Op != content.Op || registeredContent.Value != content.Value ||
+				registeredContent.Field != content.Field {
+				return false
+			}
+		}
+
+		// TODO since iam returns no related selections & we use matching type & selection, skip this comparison
+	}
+
+	if len(registeredAction.RelatedActions) != len(action.RelatedActions) {
+		return false
+	}
+
+	for idx, actionID := range registeredAction.RelatedActions {
+		if actionID != action.RelatedActions[idx] {
+			return false
+		}
+	}
+
+	return true
+}
+
+// removeResActions remove resource actions and related policies
+func (i IAM) removeResActions(ctx context.Context, actionIDs []ActionID, rid string) error {
+	if len(actionIDs) == 0 {
+		return nil
+	}
+
+	// before deleting action, the dependent action policies must be deleted
+	for _, resourceActionID := range actionIDs {
+		if err := i.Client.DeleteActionPolicies(ctx, resourceActionID); err != nil {
+			blog.Errorf("delete action %s policies failed, err: %v, rid: %s", resourceActionID, err, rid)
 			return err
 		}
 	}
 
-	if len(removedInstanceSelectionMap) > 0 {
-		removedInstanceSelectionIDs := make([]InstanceSelectionID, len(removedInstanceSelectionMap))
-		idx := 0
-		for resourceActionID := range removedInstanceSelectionMap {
-			removedInstanceSelectionIDs[idx] = resourceActionID
-			idx++
-		}
-		if err = i.Client.DeleteInstanceSelections(ctx, removedInstanceSelectionIDs); err != nil {
-			blog.ErrorJSON("delete instance selections failed, error: %s, instance selections: %s",
-				err.Error(), removedInstanceSelectionIDs)
-			return err
-		}
+	if err := i.Client.DeleteActions(ctx, actionIDs); err != nil {
+		blog.Errorf("delete resource actions(%+v) failed, err: %v, rid: %s", actionIDs, err, rid)
+		return err
 	}
 
-	if len(removedResourceTypeMap) > 0 {
-		removedResourceTypeIDs := make([]TypeID, len(removedResourceTypeMap))
-		idx := 0
-		for resourceType := range removedResourceTypeMap {
-			removedResourceTypeIDs[idx] = resourceType
-			idx++
-		}
-		if err = i.Client.DeleteResourcesTypes(ctx, removedResourceTypeIDs); err != nil {
-			blog.ErrorJSON("delete resource types failed, error: %s, resource types: %s",
-				err.Error(), removedResourceTypeIDs)
-			return err
-		}
-	}
+	return nil
+}
 
-	if len(newResourceTypes) > 0 {
-		if err = i.Client.RegisterResourcesTypes(ctx, newResourceTypes); err != nil {
-			blog.ErrorJSON("register resource types failed, error: %s, resource types: %s",
-				err.Error(), newResourceTypes)
-			return err
-		}
-	}
+// registerActionGroups register or update resource action groups
+func (i IAM) registerActionGroups(ctx context.Context, registeredInfo *RegisteredSystemInfo,
+	objects []metadata.Object, rid string) error {
 
-	if len(newInstanceSelections) > 0 {
-		if err = i.Client.RegisterInstanceSelections(ctx, newInstanceSelections); err != nil {
-			blog.ErrorJSON("register instance selections failed, error: %s, resource types: %s",
-				err.Error(), newInstanceSelections)
-			return err
-		}
-	}
-
-	if len(newResourceActions) > 0 {
-		if err = i.Client.RegisterActions(ctx, newResourceActions); err != nil {
-			blog.ErrorJSON("register resource actions failed, error: %s, resource actions: %s",
-				err.Error(), newResourceActions)
-			return err
-		}
-	}
-
-	// register or update resource action groups
 	actionGroups := GenerateActionGroups(objects)
-	if len(systemResp.Data.ActionGroups) == 0 {
-		if err = i.Client.RegisterActionGroups(ctx, actionGroups); err != nil {
-			blog.ErrorJSON("register action groups failed, error: %s, action groups: %s", err.Error(), actionGroups)
+
+	if len(registeredInfo.ActionGroups) == 0 {
+		if err := i.Client.RegisterActionGroups(ctx, actionGroups); err != nil {
+			blog.ErrorJSON("register action groups(%s) failed, err: %s, rid: %s", actionGroups, err, rid)
 			return err
 		}
-	} else {
-		if err = i.Client.UpdateActionGroups(ctx, actionGroups); err != nil {
-			blog.ErrorJSON("update action groups failed, error: %s, action groups: %s", err.Error(), actionGroups)
-			return err
-		}
+		return nil
 	}
 
-	// register or update resource creator actions
-	resourceCreatorActions := GenerateResourceCreatorActions()
-	if len(systemResp.Data.ResourceCreatorActions.Config) == 0 {
-		if err = i.Client.RegisterResourceCreatorActions(ctx, resourceCreatorActions); err != nil {
-			blog.ErrorJSON("register resource creator actions failed, error: %s, resource creator actions: %s",
-				err.Error(), resourceCreatorActions)
-			return err
-		}
-	} else {
-		if err = i.Client.UpdateResourceCreatorActions(ctx, resourceCreatorActions); err != nil {
-			blog.ErrorJSON("update resource creator actions failed, error: %s, resource creator actions: %s",
-				err.Error(), resourceCreatorActions)
-			return err
-		}
+	if reflect.DeepEqual(registeredInfo.ActionGroups, actionGroups) {
+		return nil
 	}
 
-	//register or update common actions
+	if err := i.Client.UpdateActionGroups(ctx, actionGroups); err != nil {
+		blog.ErrorJSON("update action groups(%s) failed, err: %s, rid: %s", actionGroups, err, rid)
+		return err
+	}
+	return nil
+}
+
+// registerResCreatorActions register or update resource creator actions
+func (i IAM) registerResCreatorActions(ctx context.Context, registeredInfo *RegisteredSystemInfo, rid string) error {
+	rcActions := GenerateResourceCreatorActions()
+
+	if len(registeredInfo.ResourceCreatorActions.Config) == 0 {
+		if err := i.Client.RegisterResourceCreatorActions(ctx, rcActions); err != nil {
+			blog.ErrorJSON("register resource creator actions(%s) failed, err: %s, rid: %s", rcActions, err, rid)
+			return err
+		}
+		return nil
+	}
+
+	if reflect.DeepEqual(registeredInfo.ResourceCreatorActions, rcActions) {
+		return nil
+	}
+
+	if err := i.Client.UpdateResourceCreatorActions(ctx, rcActions); err != nil {
+		blog.ErrorJSON("update resource creator actions(%s) failed, err: %s, rid: %s", rcActions, err, rid)
+		return err
+	}
+	return nil
+}
+
+// registerCommonActions register or update common actions
+func (i IAM) registerCommonActions(ctx context.Context, registeredInfo *RegisteredSystemInfo, rid string) error {
 	commonActions := GenerateCommonActions()
-	if len(systemResp.Data.CommonActions) == 0 {
-		if err = i.Client.RegisterCommonActions(ctx, commonActions); err != nil {
-			blog.ErrorJSON("register common actions failed, error: %s, common actions: %s", err.Error(), commonActions)
+
+	if len(registeredInfo.CommonActions) == 0 {
+		if err := i.Client.RegisterCommonActions(ctx, commonActions); err != nil {
+			blog.ErrorJSON("register common actions(%s) failed, err: %s, rid: %s", commonActions, err, rid)
 			return err
 		}
-	} else {
-		if err = i.Client.UpdateCommonActions(ctx, commonActions); err != nil {
-			blog.ErrorJSON("update common actions failed, error: %s, common actions: %s", err.Error(), commonActions)
-			return err
-		}
+		return nil
 	}
 
+	if reflect.DeepEqual(registeredInfo.CommonActions, commonActions) {
+		return nil
+	}
+
+	if err := i.Client.UpdateCommonActions(ctx, commonActions); err != nil {
+		blog.ErrorJSON("update common actions(%s) failed, err: %s, rid: %s", commonActions, err, rid)
+		return err
+	}
 	return nil
 }
 

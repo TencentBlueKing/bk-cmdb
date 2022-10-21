@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package settemplate TODO
 package settemplate
 
 import (
@@ -21,6 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SetTemplateInterface TODO
 type SetTemplateInterface interface {
 	CreateSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.CreateSetTemplateOption) (
 		metadata.SetTemplate, errors.CCErrorCoder)
@@ -38,8 +40,17 @@ type SetTemplateInterface interface {
 		[]metadata.SetServiceTemplateRelation, errors.CCErrorCoder)
 	ListSetTplRelatedSvcTpl(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (
 		[]metadata.ServiceTemplate, errors.CCErrorCoder)
+	CreateSetTemplateAttribute(ctx context.Context, h http.Header, option *metadata.CreateSetTempAttrsOption) ([]int64,
+		errors.CCErrorCoder)
+	UpdateSetTemplateAttribute(ctx context.Context, h http.Header,
+		option *metadata.UpdateSetTempAttrOption) errors.CCErrorCoder
+	DeleteSetTemplateAttribute(ctx context.Context, h http.Header,
+		option *metadata.DeleteSetTempAttrOption) errors.CCErrorCoder
+	ListSetTemplateAttribute(ctx context.Context, h http.Header, option *metadata.ListSetTempAttrOption) (
+		*metadata.SetTempAttrData, errors.CCErrorCoder)
 }
 
+// NewSetTemplateInterfaceClient TODO
 func NewSetTemplateInterfaceClient(client rest.ClientInterface) SetTemplateInterface {
 	return &setTemplate{client: client}
 }

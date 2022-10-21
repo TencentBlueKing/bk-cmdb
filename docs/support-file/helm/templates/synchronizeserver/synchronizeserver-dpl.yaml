@@ -74,29 +74,40 @@ spec:
         ports:
         - containerPort: {{ .Values.synchronizeserver.port }}
 
-      {{- if .Values.synchronizeserver.configDir }}
         volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+          - name: plugin-path
+            mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.synchronizeserver.configDir }}
           - name: configures
             mountPath: {{ .Values.synchronizeserver.configDir }}
+          {{- end }}
       volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.synchronizeserver.configDir }}
         - name: configures
           configMap:
             name: {{ .Release.Name }}-synchronizeserver-configures
-      {{- end }}
+        {{- end }}
 
       {{- with .Values.synchronizeserver.nodeSelector }}
       nodeSelector:
-      {{ toYaml . | indent 8 }}
+      {{ toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.synchronizeserver.affinity }}
       affinity:
-        {{ toYaml . | indent 8 }}
+        {{ toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.synchronizeserver.tolerations }}
       tolerations:
-        {{ toYaml . | indent 8 }}
+        {{ toYaml . | nindent 8 }}
       {{- end }}
 
 {{- end }}

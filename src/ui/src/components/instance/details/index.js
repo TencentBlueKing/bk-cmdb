@@ -14,8 +14,7 @@ import useProperty from '@/hooks/model/property'
 import useGroup from '@/hooks/model/group'
 import usePending from '@/hooks/utils/pending'
 import useInstance from '@/hooks/instance/instance'
-import { reactive, computed, toRef } from '@vue/composition-api'
-import Vue from 'vue'
+import Vue, { reactive, computed, toRef } from 'vue'
 import store from '@/store'
 import i18n from '@/i18n'
 const state = reactive({
@@ -50,6 +49,7 @@ const createDetails = () => {
           is-show={ visible.value }
           width={ 700 }
           title={ title.value }
+          transfer={ true }
           { ...{ on: { 'update:isShow': close } } }>
           <cmdb-details slot="content"
             { ...{ directives } }

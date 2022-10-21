@@ -23,6 +23,9 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
@@ -47,8 +50,8 @@ func splitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err err
 
 	var objectIDs []string
 	for _, obj := range objs {
-		objInstTable := buildInstTableName(obj.ObjectID, obj.OwnerID)         //instTablePrefix + obj.ObjectID
-		objInstAsstTable := buildInstAsstTableName(obj.ObjectID, obj.OwnerID) //instAsstTablePrefix + obj.ObjectID
+		objInstTable := buildInstTableName(obj.ObjectID, obj.OwnerID)         // instTablePrefix + obj.ObjectID
+		objInstAsstTable := buildInstAsstTableName(obj.ObjectID, obj.OwnerID) // instAsstTablePrefix + obj.ObjectID
 
 		objectIDs = append(objectIDs, obj.ObjectID)
 		if err = createTableFunc(ctx, objInstAsstTable, db); err != nil {
@@ -245,7 +248,7 @@ func splitInstTable(ctx context.Context, db dal.RDB) error {
 func copyInstanceToShardingTable(ctx context.Context, inst map[string]interface{}, db dal.RDB) error {
 
 	objID := fmt.Sprintf("%v", inst[common.BKObjIDField])
-	tableName := buildInstTableName(objID, inst[common.BKOwnerIDField]) //instTablePrefix + objID
+	tableName := buildInstTableName(objID, inst[common.BKOwnerIDField]) // instTablePrefix + objID
 
 	mappingFilter := map[string]interface{}{
 		common.BKInstIDField: inst[common.BKInstIDField],
@@ -291,14 +294,17 @@ func createTableIndex(ctx context.Context, tableName string, idxs []types.Index,
 		if len(idx.Keys) != 1 {
 			return false
 		}
-		if _, exist := idx.Keys["id"]; exist {
+
+		idxKeyMap := idx.Keys.Map()
+		if _, exist := idxKeyMap["id"]; exist {
 			return true
 		}
 		return false
 	}
 
 	for _, idx := range idxs {
-		_, idExist := idx.Keys["_id"]
+		idxKeyMap := idx.Keys.Map()
+		_, idExist := idxKeyMap["_id"]
 		if len(idx.Keys) == 1 && idExist {
 			// create table index already exist
 			continue
@@ -395,7 +401,7 @@ func createTableLogicUniqueIndex(ctx context.Context, objID string, tableName st
 	return nil
 }
 
-// 返回的数据只有common.BKPropertyIDField, common.BKPropertyTypeField, common.BKFieldID 三个字段
+// findObjAttrsIDRelation 返回的数据只有common.BKPropertyIDField, common.BKPropertyTypeField, common.BKFieldID 三个字段
 func findObjAttrsIDRelation(ctx context.Context, objID string, db dal.RDB) (map[int64]Attribute, error) {
 	// 获取字段类型,只需要共有字段
 	attrFilter := map[string]interface{}{
@@ -416,6 +422,7 @@ func findObjAttrsIDRelation(ctx context.Context, objID string, db dal.RDB) (map[
 	return attrIDMap, nil
 }
 
+// CCLogicUniqueIdxNamePrefix TODO
 const CCLogicUniqueIdxNamePrefix = "bkcc_unique_"
 
 func toDBUniqueIdx(idx objectUnique, attrIDMap map[int64]Attribute) (types.Index, error) {
@@ -424,7 +431,7 @@ func toDBUniqueIdx(idx objectUnique, attrIDMap map[int64]Attribute) (types.Index
 		Name:                    fmt.Sprintf("%s%d", CCLogicUniqueIdxNamePrefix, idx.ID),
 		Unique:                  true,
 		Background:              true,
-		Keys:                    make(map[string]int32, len(idx.Keys)),
+		Keys:                    make(bson.D, 0),
 		PartialFilterExpression: make(map[string]interface{}, len(idx.Keys)),
 	}
 
@@ -447,7 +454,10 @@ func toDBUniqueIdx(idx objectUnique, attrIDMap map[int64]Attribute) (types.Index
 			return dbIdx, fmt.Errorf("build unique index property(%s) type(%s) not support.",
 				key.Kind, attr.PropertyType)
 		}
-		dbIdx.Keys[attr.PropertyID] = 1
+		dbIdx.Keys = append(dbIdx.Keys, primitive.E{
+			Key:   attr.PropertyID,
+			Value: 1,
+		})
 		dbIdx.PartialFilterExpression[attr.PropertyID] = map[string]interface{}{common.BKDBType: dbType}
 	}
 
@@ -536,33 +546,33 @@ const (
 var associationDefaultIndexes = []types.Index{
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkObjId_bkInstID",
-		Keys: map[string]int32{
-			"bk_obj_id":  1,
-			"bk_inst_id": 1,
+		Keys: bson.D{
+			{"bk_obj_id", 1},
+			{"bk_inst_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "id",
-		Keys: map[string]int32{
-			"id": 1,
+		Keys: bson.D{
+			{"id", 1},
 		},
 		Unique:     true,
 		Background: true,
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkInstId_bkObjId",
-		Keys: map[string]int32{
-			"bk_inst_id": 1,
-			"bk_obj_id":  1,
+		Keys: bson.D{
+			{"bk_inst_id", 1},
+			{"bk_obj_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkAsstObjId_bkAsstInstId",
-		Keys: map[string]int32{
-			"bk_asst_obj_id":  1,
-			"bk_asst_inst_id": 1,
+		Keys: bson.D{
+			{"bk_asst_obj_id", 1},
+			{"bk_asst_inst_id", 1},
 		},
 		Background: true,
 	},
@@ -571,22 +581,22 @@ var associationDefaultIndexes = []types.Index{
 var instanceDefaultIndexes = []types.Index{
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkObjId",
-		Keys: map[string]int32{
-			"bk_obj_id": 1,
+		Keys: bson.D{
+			{"bk_obj_id", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkSupplierAccount",
-		Keys: map[string]int32{
-			"bk_supplier_account": 1,
+		Keys: bson.D{
+			{"bk_supplier_account", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkInstId",
-		Keys: map[string]int32{
-			"bk_inst_id": 1,
+		Keys: bson.D{
+			{"bk_inst_id", 1},
 		},
 		Background: true,
 		// 新加 2021年03月11日
@@ -594,8 +604,8 @@ var instanceDefaultIndexes = []types.Index{
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkInstName",
-		Keys: map[string]int32{
-			"bk_inst_name": 1,
+		Keys: bson.D{
+			{"bk_inst_name", 1},
 		},
 		Background: false,
 	},
@@ -627,14 +637,17 @@ type Attribute struct {
 	Creator           string      `field:"creator" json:"creator" bson:"creator"`
 }
 
-func FindIndexByIndexFields(keys map[string]int32, indexList []types.Index) (dbIndex types.Index, exists bool) {
+// FindIndexByIndexFields find index by index fields
+func FindIndexByIndexFields(keys bson.D, indexList []types.Index) (dbIndex types.Index, exists bool) {
+	targetIdxMap := keys.Map()
 	for _, idx := range indexList {
-		if len(idx.Keys) != len(keys) {
+		idxMap := idx.Keys.Map()
+		if len(targetIdxMap) != len(idxMap) {
 			continue
 		}
 		exists = true
-		for key := range idx.Keys {
-			if _, keyExists := keys[key]; !keyExists {
+		for key := range idxMap {
+			if _, keyExists := targetIdxMap[key]; !keyExists {
 				exists = false
 				break
 			}

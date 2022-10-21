@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package options TODO
 package options
 
 import (
@@ -45,6 +46,7 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.Var(auth.EnableAuthFlag, "enable-auth", "The auth center enable status, true for enabled, false for disabled")
 }
 
+// Config TODO
 type Config struct {
 	MongoDB        mongo.Config
 	WatchDB        mongo.Config
@@ -63,22 +65,27 @@ type Config struct {
 	SyncIAMPeriodMinutes int
 }
 
+// LanguageConfig TODO
 type LanguageConfig struct {
 	Res string
 }
 
+// ErrorConfig TODO
 type ErrorConfig struct {
 	Res string
 }
 
+// ConfConfig TODO
 type ConfConfig struct {
 	Dir string
 }
 
+// RegisterConfig TODO
 type RegisterConfig struct {
 	Address string
 }
 
+// ShardingTableConfig TODO
 type ShardingTableConfig struct {
 	// 表中同步索引间隔时间，单位分钟， 最小30分钟， 默认60分钟， 最大720分钟
 	IndexesInterval int64

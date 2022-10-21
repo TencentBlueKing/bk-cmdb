@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package blog TODO
 package blog
 
 import (
@@ -24,6 +25,7 @@ import (
 	"configcenter/src/common/blog/glog"
 )
 
+// init TODO
 // This is temporary until we agree on log dirs and put those into each cmd.
 func init() {
 	flag.Set("logtostderr", "true")
@@ -44,13 +46,17 @@ func (writer GlogWriter) Output(calldepth int, s string) error {
 	return nil
 }
 
+// Print TODO
 func (writer GlogWriter) Print(v ...interface{}) {
 	glog.InfoDepth(1, v...)
 }
+
+// Printf TODO
 func (writer GlogWriter) Printf(format string, v ...interface{}) {
 	glog.InfoDepthf(1, format, v...)
 }
 
+// Println TODO
 func (writer GlogWriter) Println(v ...interface{}) {
 	glog.InfoDepth(1, v...)
 }
@@ -76,28 +82,41 @@ func InitLogs() {
 	})
 }
 
+// CloseLogs TODO
 func CloseLogs() {
 	glog.Flush()
 }
 
 var (
-	Info        = glog.Infof
-	Infof       = glog.Infof
+	// Info TODO
+	Info = glog.Infof
+	// Infof TODO
+	Infof = glog.Infof
+	// InfofDepthf TODO
 	InfofDepthf = glog.InfoDepthf
 
-	Warn  = glog.Warningf
+	// Warn TODO
+	Warn = glog.Warningf
+	// Warnf TODO
 	Warnf = glog.Warningf
 
-	Error        = glog.Errorf
-	Errorf       = glog.Errorf
+	// Error TODO
+	Error = glog.Errorf
+	// Errorf TODO
+	Errorf = glog.Errorf
+	// ErrorfDepthf TODO
 	ErrorfDepthf = glog.ErrorfDepthf
 
-	Fatal  = glog.Fatal
+	// Fatal TODO
+	Fatal = glog.Fatal
+	// Fatalf TODO
 	Fatalf = glog.Fatalf
 
+	// V TODO
 	V = glog.V
 )
 
+// Debug TODO
 func Debug(args ...interface{}) {
 	if format, ok := (args[0]).(string); ok {
 		glog.InfoDepthf(1, format, args[1:]...)
@@ -106,6 +125,7 @@ func Debug(args ...interface{}) {
 	}
 }
 
+// InfoJSON TODO
 func InfoJSON(format string, args ...interface{}) {
 	params := []interface{}{}
 	for _, arg := range args {
@@ -143,6 +163,7 @@ func InfoJSON(format string, args ...interface{}) {
 	glog.InfoDepthf(1, format, params...)
 }
 
+// ErrorJSON TODO
 func ErrorJSON(format string, args ...interface{}) {
 	params := []interface{}{}
 	for _, arg := range args {
@@ -163,6 +184,7 @@ func ErrorJSON(format string, args ...interface{}) {
 	glog.ErrorDepth(1, fmt.Sprintf(format, params...))
 }
 
+// WarnJSON TODO
 func WarnJSON(format string, args ...interface{}) {
 
 	params := []interface{}{}
@@ -208,10 +230,12 @@ type stringFunc interface {
 	String() string
 }
 
+// SetV TODO
 func SetV(level int32) {
 	glog.SetV(glog.Level(level))
 }
 
+// GetV TODO
 func GetV() int32 {
 	return int32(glog.GetV())
 }

@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { toRef, reactive, watch } from '@vue/composition-api'
+import { toRef, reactive, watch } from 'vue'
 import debounce from 'lodash.debounce'
 
 export default function ({ list, keyword, target }) {

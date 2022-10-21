@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -33,8 +35,8 @@ var commHostLockIndexes = []types.Index{}
 var deprecatedHostLockIndexes = []types.Index{
 	{
 		Name: "bk_host_id_1",
-		Keys: map[string]int32{
-			"bk_host_id": 1,
+		Keys: bson.D{{
+			"bk_host_id", 1},
 		},
 		Background: true,
 	},

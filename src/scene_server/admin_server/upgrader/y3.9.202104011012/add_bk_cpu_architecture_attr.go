@@ -128,6 +128,7 @@ type Attribute struct {
 	LastTime          *metadata.Time `json:"last_time" bson:"last_time"`
 }
 
+// EnumVal TODO
 type EnumVal struct {
 	ID        string `bson:"id"           json:"id"`
 	Name      string `bson:"name"         json:"name"`

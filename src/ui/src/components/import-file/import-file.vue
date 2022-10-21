@@ -23,7 +23,7 @@
         @change.prevent="changeFile" />
       <i class="trigger-icon bk-icon icon-upload-cloud"></i>
       <i18n class="trigger-text" path="导入文件拖拽提示">
-        <span class="trigger-text-link" place="clickUpload">{{$t('点击上传')}}</span>
+        <template #clickUpload><span class="trigger-text-link">{{$t('点击上传')}}</span></template>
       </i18n>
     </div>
     <div class="file-info" v-else>
@@ -52,7 +52,7 @@
   import useImport from './index'
   import useStep from './step'
   import useFile from './file'
-  import { computed } from '@vue/composition-api'
+  import { computed } from 'vue'
   export default {
     name: 'import-file',
     setup() {

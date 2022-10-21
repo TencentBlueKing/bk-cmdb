@@ -56,6 +56,7 @@ var (
 	}
 )
 
+// Count TODO
 func (m *modelAttribute) Count(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
 	cnt, err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).Count(kit.Ctx)
 	return cnt, err
@@ -299,7 +300,15 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition) (cnt
 	}
 
 	if err := m.cleanAttributeFieldInInstances(kit.Ctx, kit.SupplierAccount, resultAttrs); err != nil {
-		blog.ErrorJSON("delete object attributes with cond: %s, but delete these attribute in instance failed, err: %v, rid:%s", condMap, err, kit.Rid)
+		blog.Errorf("delete object attributes with cond: %v, but delete these attribute in instance failed, "+
+			"err: %v, rid: %s", condMap, err, kit.Rid)
+		return 0, err
+	}
+
+	// delete template attribute when delete model attribute
+	if err := m.cleanAttrTemplateRelation(kit.Ctx, kit.SupplierAccount, resultAttrs); err != nil {
+		blog.Errorf("delete the relation between attributes and templates failed, attr: %v, err: %v, rid: %s",
+			resultAttrs, err, kit.Rid)
 		return 0, err
 	}
 
@@ -328,6 +337,7 @@ type bizObjectFields struct {
 	fields []string
 }
 
+// cleanAttributeFieldInInstances TODO
 // remove attribute filed in this object's instances
 func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, ownerID string, attrs []metadata.Attribute) error {
 	// this operation may take a long time, do not use transaction
@@ -489,6 +499,39 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 	return nil
 }
 
+func (m *modelAttribute) cleanAttrTemplateRelation(ctx context.Context, ownerID string,
+	attrs []metadata.Attribute) error {
+
+	if len(attrs) == 0 {
+		return nil
+	}
+
+	attrMap := make(map[string][]int64)
+	for _, attr := range attrs {
+		attrMap[attr.ObjectID] = append(attrMap[attr.ObjectID], attr.ID)
+	}
+
+	for objID, attrIDs := range attrMap {
+		cond := mapstr.MapStr{
+			common.BKAttributeIDField: mapstr.MapStr{common.BKDBIN: attrIDs},
+		}
+		cond = util.SetQueryOwner(cond, ownerID)
+		switch objID {
+		case common.BKInnerObjIDSet:
+			if err := mongodb.Client().Table(common.BKTableNameSetTemplateAttr).Delete(ctx, cond); err != nil {
+				return err
+			}
+
+		case common.BKInnerObjIDModule:
+			if err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Delete(ctx, cond); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 const pageSize = 2000
 
 func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID string, info bizObjectFields) error {
@@ -580,6 +623,7 @@ func (m *modelAttribute) cleanHostApplyField(ctx context.Context, ownerID string
 
 }
 
+// isBizObject TODO
 // now, we only support set, module, host model's biz attribute clean operation.
 func isBizObject(objectID string) bool {
 	switch objectID {
@@ -599,6 +643,7 @@ func isBizObject(objectID string) bool {
 	}
 }
 
+// saveCheck TODO
 //  saveCheck 新加字段检查
 func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) error {
 
@@ -764,7 +809,7 @@ func (m *modelAttribute) checkAttributeInUnique(kit *rest.Kit, objIDPropertyIDAr
 	return false, nil
 }
 
-// checkAddRequireField 新加模型属性的时候，如果新加的是必填字段，需要判断是否可以新加必填字段
+// checkAddField 新加模型属性的时候，如果新加的是必填字段，需要判断是否可以新加必填字段
 func (m *modelAttribute) checkAddField(kit *rest.Kit, attribute metadata.Attribute) error {
 	langObjID := m.getLangObjID(kit, attribute.ObjectID)
 	if _, ok := notAddAttrModel[attribute.ObjectID]; ok {
@@ -782,7 +827,7 @@ func (m *modelAttribute) checkAddField(kit *rest.Kit, attribute metadata.Attribu
 	return nil
 }
 
-// 修改模型属性的时候，如果修改的属性包含是否为必填字段(isrequired)，需要判断该模型的必填字段是否允许被修改
+// checkChangeField 修改模型属性的时候，如果修改的属性包含是否为必填字段(isrequired)，需要判断该模型的必填字段是否允许被修改
 func (m *modelAttribute) checkChangeField(kit *rest.Kit, attr metadata.Attribute, attrInfo mapstr.MapStr) error {
 	langObjID := m.getLangObjID(kit, attr.ObjectID)
 	if _, ok := RequiredFieldUnchangeableModels[attr.ObjectID]; ok {
@@ -844,6 +889,7 @@ func (m *modelAttribute) buildUpdateAttrIndexReturn(kit *rest.Kit, objID, proper
 	return result, nil
 }
 
+// GetAttrLastIndex TODO
 func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attribute) (int64, error) {
 	opt := make(map[string]interface{})
 	opt[common.BKObjIDField] = attribute.ObjectID

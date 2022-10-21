@@ -73,6 +73,7 @@
           v-model="moduleName"
           v-validate="'required|businessTopoInstNames|length:256'"
           data-vv-name="moduleName"
+          data-vv-validate-on="blur"
           key="moduleName"
           :placeholder="$t('请输入xx', { name: $t('模块名称') })"
           :disabled="!!withTemplate">

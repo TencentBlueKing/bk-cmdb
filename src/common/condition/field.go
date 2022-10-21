@@ -68,7 +68,7 @@ func (cli *field) ToMapStr() types.MapStr {
 	return tmpResult
 }
 
-// Eqset a filed equal a value
+// Eq set a filed equal a value
 func (cli *field) Eq(val interface{}) Condition {
 	cli.opeartor = BKDBEQ
 	cli.fieldValue = val
@@ -154,6 +154,7 @@ func (cli *field) Exists(val interface{}) Condition {
 	return cli.condition
 }
 
+// GetFieldName TODO
 func (cli *field) GetFieldName() string {
 	return cli.fieldName
 }

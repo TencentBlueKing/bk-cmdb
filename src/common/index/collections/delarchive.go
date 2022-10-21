@@ -15,6 +15,8 @@ package collections
 import (
 	"configcenter/src/common"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -33,24 +35,24 @@ var commDelArchiveIndexes = []types.Index{}
 var deprecatedDelArchiveIndexes = []types.Index{
 	{
 		Name: "oid_1",
-		Keys: map[string]int32{
-			"oid": 1,
+		Keys: bson.D{{
+			"oid", 1},
 		},
 		Background: true,
 	},
 	{
 		Name: "idx_oid_coll",
-		Keys: map[string]int32{
-			"oid":  1,
-			"coll": 1,
+		Keys: bson.D{
+			{"oid", 1},
+			{"coll", 1},
 		},
 		Unique:     true,
 		Background: true,
 	},
 	{
 		Name: "idx_coll",
-		Keys: map[string]int32{
-			"coll": 1,
+		Keys: bson.D{{
+			"coll", 1},
 		},
 		Background: true,
 	},

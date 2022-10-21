@@ -15,7 +15,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
@@ -91,14 +90,13 @@ var _ = Describe("no service template test", func() {
 			})
 
 			It("search service category", func() {
-				input := map[string]interface{}{
-					common.BKAppIDField: bizId,
+				input := &metadata.ListServiceCategoryOption{
+					BizID: bizId,
 				}
 				rsp, err := serviceClient.SearchServiceCategory(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
-				j, err := json.Marshal(rsp)
+				j, _ := json.Marshal(rsp)
 				Expect(j).To(ContainSubstring("\"name\":\"test\""))
 				Expect(j).To(ContainSubstring("\"name\":\"test1\""))
 				Expect(j).To(ContainSubstring("\"name\":\"test2\""))
@@ -142,14 +140,13 @@ var _ = Describe("no service template test", func() {
 			})
 
 			It("search service category", func() {
-				input := map[string]interface{}{
-					common.BKAppIDField: bizId,
+				input := &metadata.ListServiceCategoryOption{
+					BizID: bizId,
 				}
 				rsp, err := serviceClient.SearchServiceCategory(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
-				j, err := json.Marshal(rsp)
+				j, _ := json.Marshal(rsp)
 				Expect(j).To(Equal(resMap["service_category"]))
 			})
 		})
@@ -173,14 +170,13 @@ var _ = Describe("no service template test", func() {
 			})
 
 			It("search service category", func() {
-				input := map[string]interface{}{
-					common.BKAppIDField: bizId,
+				input := &metadata.ListServiceCategoryOption{
+					BizID: bizId,
 				}
 				rsp, err := serviceClient.SearchServiceCategory(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
-				j, err := json.Marshal(rsp)
+				j, _ := json.Marshal(rsp)
 				Expect(j).NotTo(ContainSubstring("\"name\":\"test2\""))
 				Expect(j).To(ContainSubstring("\"name\":\"test3\""))
 				resMap["service_category"] = j
@@ -216,14 +212,13 @@ var _ = Describe("no service template test", func() {
 			})
 
 			It("search service category", func() {
-				input := map[string]interface{}{
-					common.BKAppIDField: bizId,
+				input := &metadata.ListServiceCategoryOption{
+					BizID: bizId,
 				}
 				rsp, err := serviceClient.SearchServiceCategory(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
-				j, err := json.Marshal(rsp)
+				j, _ := json.Marshal(rsp)
 				Expect(j).To(ContainSubstring("\"name\":\"test4\""))
 				resMap["service_category"] = j
 			})
@@ -257,18 +252,18 @@ var _ = Describe("no service template test", func() {
 					"service_category_id": categoryId3,
 					"service_template_id": 0,
 				}
-				rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
-				Expect(rsp.Data["bk_module_name"].(string)).To(Equal("test"))
-				setIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_set_id"])
+				rsp, e := instClient.CreateModule(context.Background(), bizId, setId, header, input)
+				util.RegisterResponseWithRid(rsp, header)
+				Expect(e).NotTo(HaveOccurred())
+				var err error
+				Expect(rsp["bk_module_name"].(string)).To(Equal("test"))
+				setIdRes, err := commonutil.GetInt64ByInterface(rsp["bk_set_id"])
 				Expect(err).NotTo(HaveOccurred())
 				Expect(setIdRes).To(Equal(setId))
-				parentIdRes, err := commonutil.GetInt64ByInterface(rsp.Data["bk_parent_id"])
+				parentIdRes, err := commonutil.GetInt64ByInterface(rsp["bk_parent_id"])
 				Expect(err).NotTo(HaveOccurred())
 				Expect(parentIdRes).To(Equal(setId))
-				moduleId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
+				moduleId, err = commonutil.GetInt64ByInterface(rsp["bk_module_id"])
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -279,11 +274,10 @@ var _ = Describe("no service template test", func() {
 						"sort": "id",
 					},
 				}
-				rsp, err := instClient.SearchModule(context.Background(), "0", strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-				util.RegisterResponse(rsp)
+				rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
-				j, err := json.Marshal(rsp)
+				j, _ := json.Marshal(rsp)
 				Expect(j).To(ContainSubstring("\"bk_module_name\":\"test\""))
 				Expect(j).To(ContainSubstring(fmt.Sprintf("\"service_category_id\":%d", categoryId3)))
 			})
@@ -295,10 +289,9 @@ var _ = Describe("no service template test", func() {
 					"service_category_id": 12345,
 					"service_template_id": 0,
 				}
-				rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
+				rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
 				util.RegisterResponse(rsp)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(false), rsp.BaseResp.ToString())
+				Expect(err).To(HaveOccurred())
 			})
 
 			It("search module", func() {
@@ -308,11 +301,10 @@ var _ = Describe("no service template test", func() {
 						"sort": "id",
 					},
 				}
-				rsp, err := instClient.SearchModule(context.Background(), "0", strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-				util.RegisterResponse(rsp)
+				rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
-				j, err := json.Marshal(rsp)
+				j, _ := json.Marshal(rsp)
 				Expect(j).NotTo(ContainSubstring("module1"))
 			})
 
@@ -328,14 +320,13 @@ var _ = Describe("no service template test", func() {
 			})
 
 			It("search service category", func() {
-				input := map[string]interface{}{
-					common.BKAppIDField: bizId,
+				input := &metadata.ListServiceCategoryOption{
+					BizID: bizId,
 				}
 				rsp, err := serviceClient.SearchServiceCategory(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true), rsp.BaseResp.ToString())
-				j, err := json.Marshal(rsp)
+				j, _ := json.Marshal(rsp)
 				Expect(j).To(Equal(resMap["service_category"]))
 			})
 		})
@@ -945,7 +936,8 @@ var _ = Describe("no service template test", func() {
 				"protocol": "1",
 				"enable":   true,
 			}
-			ExpectBindInfoArr, err := commonutil.GetMapInterfaceByInerface(data.Info[0].Property[common.BKProcBindInfo])
+			ExpectBindInfoArr, err := commonutil.GetMapInterfaceByInterface(
+				data.Info[0].Property[common.BKProcBindInfo])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(ExpectBindInfoArr)).To(Equal(int(1)))
 			expectBindInfo, ok := ExpectBindInfoArr[0].(map[string]interface{})

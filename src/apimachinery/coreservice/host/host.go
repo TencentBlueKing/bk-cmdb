@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package host TODO
 package host
 
 import (
@@ -21,6 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// HostClientInterface TODO
 type HostClientInterface interface {
 	TransferToInnerModule(ctx context.Context, h http.Header, input *metadata.TransferHostToInnerModule) (
 		[]metadata.ExceptionResult, errors.CCErrorCoder)
@@ -30,8 +32,7 @@ type HostClientInterface interface {
 
 	RemoveFromModule(ctx context.Context, header http.Header, input *metadata.RemoveHostsFromModuleOption) (
 		resp *metadata.OperaterException, err error)
-	DeleteHostFromSystem(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) (
-		resp *metadata.BaseResp, err error)
+	DeleteHostFromSystem(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) errors.CCErrorCoder
 
 	GetHostModuleRelation(ctx context.Context, header http.Header, input *metadata.HostModuleRelationRequest) (
 		*metadata.HostConfigData, error)
@@ -47,6 +48,7 @@ type HostClientInterface interface {
 	QueryHostLock(ctx context.Context, header http.Header, input *metadata.QueryHostLockRequest) (
 		resp *metadata.HostLockQueryResponse, err error)
 
+	// CreateDynamicGroup TODO
 	// dynamic grouping interfaces.
 	CreateDynamicGroup(ctx context.Context, header http.Header, data *metadata.DynamicGroup) (resp *metadata.IDResult,
 		err error)
@@ -81,10 +83,12 @@ type HostClientInterface interface {
 	GetHostModulesIDs(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (
 		resp *metadata.GetHostModuleIDsResult, err error)
 
+	// ListHosts TODO
 	// search host
 	ListHosts(ctx context.Context, header http.Header, option *metadata.ListHosts) (resp *metadata.ListHostResult,
 		err error)
 
+	// UpdateHostCloudAreaField TODO
 	// update host's cloud area field
 	UpdateHostCloudAreaField(ctx context.Context, header http.Header,
 		option metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder
@@ -100,6 +104,7 @@ type HostClientInterface interface {
 		option *metadata.TransferHostResourceDirectory) errors.CCErrorCoder
 }
 
+// NewHostClientInterface TODO
 func NewHostClientInterface(client rest.ClientInterface) HostClientInterface {
 	return &host{client: client}
 }

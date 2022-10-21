@@ -15,6 +15,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -31,6 +32,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// CreateServiceTemplate TODO
 func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 	option := new(metadata.CreateServiceTemplateOption)
 	if err := ctx.DecodeInto(option); err != nil {
@@ -80,6 +82,88 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(tpl)
 }
 
+// CreateServiceTemplateAllInfo create service template all info, including attributes and process templates
+func (ps *ProcServer) CreateServiceTemplateAllInfo(ctx *rest.Contexts) {
+	option := new(metadata.CreateSvcTempAllInfoOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	var templateID int64
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		// create service template
+		template := &metadata.ServiceTemplate{
+			BizID:             option.BizID,
+			Name:              option.Name,
+			ServiceCategoryID: option.ServiceCategoryID,
+		}
+
+		tpl, err := ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template)
+		if err != nil {
+			blog.Errorf("create service template(%+v) failed, err: %v, rid: %s", template, err, ctx.Kit.Rid)
+			return err
+		}
+
+		templateID = tpl.ID
+
+		// create service template attributes
+		if len(option.Attributes) > 0 {
+			attrOpt := &metadata.CreateSvcTempAttrsOption{
+				BizID:             option.BizID,
+				ServiceTemplateID: templateID,
+				Attributes:        option.Attributes,
+			}
+
+			_, err = ps.CoreAPI.CoreService().Process().CreateServiceTemplateAttrs(ctx.Kit.Ctx, ctx.Kit.Header, attrOpt)
+			if err != nil {
+				blog.Errorf("create service template attrs(%+v) failed, err: %v, rid: %s", attrOpt, err, ctx.Kit.Rid)
+				return err
+			}
+		}
+
+		// create process templates
+		for _, process := range option.Processes {
+			t := &metadata.ProcessTemplate{
+				BizID:             option.BizID,
+				ServiceTemplateID: templateID,
+				Property:          process.Property,
+			}
+
+			_, err := ps.CoreAPI.CoreService().Process().CreateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, t)
+			if err != nil {
+				blog.Errorf("create process template(%+v) failed, err: %v, rid: %s", t, err, ctx.Kit.Rid)
+				return err
+			}
+		}
+
+		// register service template resource creator action to iam
+		if auth.EnableAuthorize() {
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.BizProcessServiceTemplate),
+				ID:      strconv.FormatInt(tpl.ID, 10),
+				Name:    tpl.Name,
+				Creator: ctx.Kit.User,
+			}
+
+			_, err := ps.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created service template to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(metadata.RspID{ID: templateID})
+}
+
+// GetServiceTemplate TODO
 func (ps *ProcServer) GetServiceTemplate(ctx *rest.Contexts) {
 	templateIDStr := ctx.Request.PathParameter(common.BKServiceTemplateIDField)
 	templateID, err := strconv.ParseInt(templateIDStr, 10, 64)
@@ -111,6 +195,80 @@ func (ps *ProcServer) GetServiceTemplateDetail(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(templateDetail)
+}
+
+// GetServiceTemplateAllInfo get service template all info, including attributes and process templates
+func (ps *ProcServer) GetServiceTemplateAllInfo(ctx *rest.Contexts) {
+	option := new(metadata.GetSvcTempAllInfoOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if option.BizID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKAppIDField))
+		return
+	}
+
+	if option.ID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKFieldID))
+		return
+	}
+
+	allInfo, err := ps.getServiceTemplateAllInfo(ctx.Kit, option.ID, option.BizID)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(allInfo)
+}
+
+func (ps *ProcServer) getServiceTemplateAllInfo(kit *rest.Kit, id, bizID int64) (*metadata.SvcTempAllInfo,
+	errors.CCErrorCoder) {
+
+	// get service template
+	svcTemp, err := ps.CoreAPI.CoreService().Process().GetServiceTemplate(kit.Ctx, kit.Header, id)
+	if err != nil {
+		blog.Errorf("get service template %d failed, err: %v, rid: %s", id, err, kit.Rid)
+		return nil, err
+	}
+
+	if svcTemp.BizID != bizID {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	// get service template attributes
+	attrOpt := &metadata.ListServTempAttrOption{
+		BizID: bizID,
+		ID:    id,
+	}
+	attrs, err := ps.CoreAPI.CoreService().Process().ListServiceTemplateAttribute(kit.Ctx, kit.Header, attrOpt)
+	if err != nil {
+		blog.Errorf("get service template %d attributes failed, err: %v, rid: %s", id, err, kit.Rid)
+		return nil, err
+	}
+
+	// get process templates
+	procTempOpt := &metadata.ListProcessTemplatesOption{
+		BusinessID:         bizID,
+		ServiceTemplateIDs: []int64{id},
+	}
+
+	procTemps, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(kit.Ctx, kit.Header, procTempOpt)
+	if err != nil {
+		blog.Errorf("list process templates failed, input: %+v, err: %v, rid: %s", procTempOpt, err, kit.Rid)
+		return nil, err
+	}
+
+	return &metadata.SvcTempAllInfo{
+		ID:                svcTemp.ID,
+		BizID:             svcTemp.BizID,
+		Name:              svcTemp.Name,
+		ServiceCategoryID: svcTemp.ServiceCategoryID,
+		Attributes:        attrs.Attributes,
+		Processes:         procTemps.Info,
+	}, nil
 }
 
 func (ps *ProcServer) getHostIDByCondition(kit *rest.Kit, bizID int64, serviceTemplateIDs []int64,
@@ -568,6 +726,8 @@ func (ps *ProcServer) DeleteHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 
 }
+
+// UpdateServiceTemplate TODO
 func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 	option := new(metadata.UpdateServiceTemplateOption)
 	if err := ctx.DecodeInto(option); err != nil {
@@ -599,6 +759,201 @@ func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(tpl)
 }
 
+// UpdateServiceTemplateAllInfo update service template all info, including attributes and process templates
+func (ps *ProcServer) UpdateServiceTemplateAllInfo(ctx *rest.Contexts) {
+	option := new(metadata.UpdateSvcTempAllInfoOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	allInfo, err := ps.getServiceTemplateAllInfo(ctx.Kit, option.ID, option.BizID)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		// update service template
+		if option.Name != allInfo.Name || option.ServiceCategoryID != allInfo.ServiceCategoryID {
+			opt := &metadata.ServiceTemplate{
+				Name:              option.Name,
+				ServiceCategoryID: option.ServiceCategoryID,
+			}
+
+			if _, err := ps.CoreAPI.CoreService().Process().UpdateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header,
+				option.ID, opt); err != nil {
+				blog.Errorf("update svc temp %d failed, opt: %+v, err: %v, rid: %s", option.ID, opt, err, ctx.Kit.Rid)
+				return err
+			}
+		}
+
+		// update service template attributes
+		err = ps.updateSvcTempAllAttrs(ctx.Kit, allInfo.ID, allInfo.BizID, allInfo.Attributes, option.Attributes)
+		if err != nil {
+			return err
+		}
+
+		// update process templates
+		err = ps.updateSvcTempAllProcTemps(ctx.Kit, allInfo.ID, allInfo.BizID, allInfo.Processes, option.Processes)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// updateSvcTempAllAttrs update service template attributes, add new attributes and delete redundant attributes
+func (ps *ProcServer) updateSvcTempAllAttrs(kit *rest.Kit, id, bizID int64, prevAttrs []metadata.ServiceTemplateAttr,
+	updateAttrs []metadata.SvcTempAttr) errors.CCErrorCoder {
+
+	attrMap := make(map[int64]interface{})
+	for _, attribute := range prevAttrs {
+		attrMap[attribute.AttributeID] = attribute
+	}
+
+	// cross compare previous attributes and update attributes to find need add/update/delete attributes
+	var addedAttrs, updatedAttrs []metadata.SvcTempAttr
+	for _, attribute := range updateAttrs {
+		value, exists := attrMap[attribute.AttributeID]
+		if !exists {
+			addedAttrs = append(addedAttrs, metadata.SvcTempAttr{
+				AttributeID:   attribute.AttributeID,
+				PropertyValue: attribute.PropertyValue,
+			})
+			continue
+		}
+
+		delete(attrMap, attribute.AttributeID)
+		if !reflect.DeepEqual(value, attribute.PropertyValue) {
+			updatedAttrs = append(updatedAttrs, metadata.SvcTempAttr{
+				AttributeID:   attribute.AttributeID,
+				PropertyValue: attribute.PropertyValue,
+			})
+		}
+	}
+
+	// delete service template attributes
+	if len(attrMap) > 0 {
+		deletedAttrIDs := make([]int64, 0)
+		for attrID := range attrMap {
+			deletedAttrIDs = append(deletedAttrIDs, attrID)
+		}
+
+		deleteOpt := &metadata.DeleteServTempAttrOption{
+			BizID:        bizID,
+			ID:           id,
+			AttributeIDs: deletedAttrIDs,
+		}
+		err := ps.CoreAPI.CoreService().Process().DeleteServiceTemplateAttribute(kit.Ctx, kit.Header, deleteOpt)
+		if err != nil {
+			blog.Errorf("delete service template attrs failed, opt: %+v, err: %v, rid: %s", deleteOpt, err, kit.Rid)
+			return err
+		}
+	}
+
+	// add service template attributes
+	if len(addedAttrs) > 0 {
+		addOpt := &metadata.CreateSvcTempAttrsOption{
+			BizID:             bizID,
+			ServiceTemplateID: id,
+			Attributes:        addedAttrs,
+		}
+
+		_, err := ps.CoreAPI.CoreService().Process().CreateServiceTemplateAttrs(kit.Ctx, kit.Header, addOpt)
+		if err != nil {
+			blog.Errorf("add service template attrs failed, opt: %+v, err: %v, rid: %s", addOpt, err, kit.Rid)
+			return err
+		}
+	}
+
+	// update service template attributes
+	if len(updatedAttrs) > 0 {
+		updateOpt := &metadata.UpdateServTempAttrOption{
+			BizID:      bizID,
+			ID:         id,
+			Attributes: updatedAttrs,
+		}
+
+		err := ps.CoreAPI.CoreService().Process().UpdateServiceTemplateAttribute(kit.Ctx, kit.Header, updateOpt)
+		if err != nil {
+			blog.Errorf("update service template attrs failed, opt: %+v, err: %v, rid: %s", updateOpt, err, kit.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// updateSvcTempAllProcTemps update service template procTemps, add new procTemps and delete redundant procTemps
+func (ps *ProcServer) updateSvcTempAllProcTemps(kit *rest.Kit, id, bizID int64, prevProcTemps,
+	updateProcTemps []metadata.ProcessTemplate) errors.CCErrorCoder {
+
+	procTempMap := make(map[int64]*metadata.ProcessProperty)
+	for _, procTemp := range prevProcTemps {
+		procTempMap[procTemp.ID] = procTemp.Property
+	}
+
+	// cross compare previous procTemps and update procTemps to find need add/update/delete procTemps
+	var addedProcTemps, updatedProcTemps []metadata.ProcessTemplate
+	for _, procTemp := range updateProcTemps {
+		value, exists := procTempMap[procTemp.ID]
+		if !exists {
+			procTemp.BizID = bizID
+			procTemp.ServiceTemplateID = id
+			addedProcTemps = append(addedProcTemps, procTemp)
+			continue
+		}
+
+		delete(procTempMap, procTemp.ID)
+		if !reflect.DeepEqual(value, procTemp.Property) {
+			updatedProcTemps = append(updatedProcTemps, procTemp)
+		}
+	}
+
+	// delete service template procTemps
+	for procTempID := range procTempMap {
+		err := ps.CoreAPI.CoreService().Process().DeleteProcessTemplate(kit.Ctx, kit.Header, procTempID)
+		if err != nil {
+			blog.Errorf("delete process template %d failed, err: %v, rid: %s", procTempID, err, kit.Rid)
+			return err
+		}
+	}
+
+	// add service template procTemps
+	for _, procTemp := range addedProcTemps {
+		_, err := ps.CoreAPI.CoreService().Process().CreateProcessTemplate(kit.Ctx, kit.Header, &procTemp)
+		if err != nil {
+			blog.Errorf("add process template(%+v) failed, err: %v, rid: %s", procTemp, err, kit.Rid)
+			return err
+		}
+	}
+
+	// update service template procTemps
+	for _, procTemp := range updatedProcTemps {
+		property, rawErr := mapstr.Struct2Map(procTemp.Property)
+		if rawErr != nil {
+			blog.Errorf("convert proc temp property(%+v) failed, err: %v, rid: %s", procTemp.Property, rawErr, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommJSONMarshalFailed)
+		}
+
+		_, err := ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(kit.Ctx, kit.Header, procTemp.ID, property)
+		if err != nil {
+			blog.Errorf("update process template(%+v) failed, err: %v, rid: %s", procTemp, err, kit.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ListServiceTemplates TODO
 func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 	input := new(metadata.ListServiceTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -708,6 +1063,7 @@ func (ps *ProcServer) FindServiceTemplateCountInfo(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// DeleteServiceTemplate TODO
 // a service template can be delete only when it is not be used any more,
 // which means that no process instance belongs to it.
 func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
@@ -807,7 +1163,7 @@ func (ps *ProcServer) GetServiceTemplateSyncStatus(ctx *rest.Contexts) {
 	}
 }
 
-// SearchRuleRelatedServiceTemplate search rule related service templates
+// SearchRuleRelatedServiceTemplates search rule related service templates
 func (ps *ProcServer) SearchRuleRelatedServiceTemplates(ctx *rest.Contexts) {
 	requestBody := new(metadata.RuleRelatedServiceTemplateOption)
 	if err := ctx.DecodeInto(requestBody); err != nil {
@@ -843,4 +1199,86 @@ func (ps *ProcServer) SearchRuleRelatedServiceTemplates(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(templates)
+}
+
+// UpdateServiceTemplateAttribute update service template attribute
+func (ps *ProcServer) UpdateServiceTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.UpdateServTempAttrOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err := ps.Engine.CoreAPI.CoreService().Process().UpdateServiceTemplateAttribute(ctx.Kit.Ctx, ctx.Kit.Header,
+			option); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+// DeleteServiceTemplateAttribute delete service template attribute
+func (ps *ProcServer) DeleteServiceTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.DeleteServTempAttrOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err := ps.Engine.CoreAPI.CoreService().Process().DeleteServiceTemplateAttribute(ctx.Kit.Ctx, ctx.Kit.Header,
+			option); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+// ListServiceTemplateAttribute list service template attribute
+func (ps *ProcServer) ListServiceTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.ListServTempAttrOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	data, err := ps.Engine.CoreAPI.CoreService().Process().ListServiceTemplateAttribute(ctx.Kit.Ctx, ctx.Kit.Header,
+		option)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(data)
 }

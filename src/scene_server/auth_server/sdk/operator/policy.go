@@ -20,10 +20,13 @@ import (
 )
 
 const (
-	IamIDKey   = "id"
+	// IamIDKey TODO
+	IamIDKey = "id"
+	// IamPathKey TODO
 	IamPathKey = "_bk_iam_path_"
 )
 
+// Policy TODO
 type Policy struct {
 	Operator OperType `json:"op"`
 	// Element is a pointer interface point to the implements struct,
@@ -31,6 +34,7 @@ type Policy struct {
 	Element
 }
 
+// UnmarshalJSON TODO
 func (p *Policy) UnmarshalJSON(i []byte) error {
 	if string(i) == "{}" {
 		return nil
@@ -105,19 +109,23 @@ func (p *Policy) MarshalJSON() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// Element TODO
 type Element interface {
 	EleName() string
 }
 
+// Content TODO
 type Content struct {
 	// Content is only exist when OperType is "And" or "OR"
 	Content []*Policy `json:"content"`
 }
 
+// EleName TODO
 func (e *Content) EleName() string {
 	return "content"
 }
 
+// FieldValue TODO
 type FieldValue struct {
 	// Field and Value is only exist when OperType is not
 	// one of "And" or "OR"
@@ -125,15 +133,18 @@ type FieldValue struct {
 	Value interface{} `json:"value"`
 }
 
+// EleName TODO
 func (f *FieldValue) EleName() string {
 	return "field_value"
 }
 
+// Field TODO
 type Field struct {
 	Resource  string
 	Attribute string
 }
 
+// UnmarshalJSON TODO
 func (f *Field) UnmarshalJSON(i []byte) error {
 	if string(i) == "\"\"" {
 		f.Attribute = ""
@@ -155,6 +166,7 @@ func (f *Field) UnmarshalJSON(i []byte) error {
 	return nil
 }
 
+// MarshalJSON TODO
 func (f *Field) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf("\"%s.%s\"", f.Resource, f.Attribute)), nil
 }

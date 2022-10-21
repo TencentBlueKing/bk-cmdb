@@ -10,14 +10,13 @@
  * limitations under the License.
  */
 
-import Vue from 'vue'
+import Vue, { toRef, watch } from 'vue'
 import contentComponent from './export'
 import store from '@/store'
 import i18n from '@/i18n'
 import useState from './state'
 import useTask from './task'
 import { bkInfoBox } from 'bk-magic-vue'
-import { toRef, watch } from '@vue/composition-api'
 let instance = null
 const [state, { setState, resetState }] = useState()
 const [, { reset: resetTask }] = useTask()
@@ -84,6 +83,7 @@ const createSideslider = () => {
           is-show={ visible.value }
           width={ 700 }
           title={ title.value }
+          transfer={ true }
           before-close={ beforeClose }
           { ...{ on: { 'update:isShow': close } } }>
           <content-component slot="content"></content-component>

@@ -13,6 +13,9 @@
 package inst
 
 import (
+	"bytes"
+	"reflect"
+
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -20,6 +23,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/version"
@@ -160,44 +164,11 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 		return nil, err
 	}
 
-	// validate service category id and service template id
-	// 如果服务分类没有设置，则从服务模版中获取，如果服务模版也没有设置，则参数错误
-	// 有效参数参数形式:
-	// 1. serviceCategoryID > 0  && serviceTemplateID == 0
-	// 2. serviceCategoryID unset && serviceTemplateID > 0
-	// 3. serviceCategoryID > 0 && serviceTemplateID > 0 && serviceTemplate.ServiceCategoryID == serviceCategoryID
-	// 4. serviceCategoryID unset && serviceTemplateID unset, then module create with default category
-	var serviceCategoryID int64
-	serviceCategoryIDIf, serviceCategoryExist := data.Get(common.BKServiceCategoryIDField)
-	if serviceCategoryExist {
-		serviceCategoryID, err = util.GetInt64ByInterface(serviceCategoryIDIf)
-		if err != nil {
-			blog.Errorf("get service category id failed, err: %v, rid: %s", err, kit.Rid)
-			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
-		}
-	}
-
-	var serviceTemplateID int64
-	serviceTemplateIDIf, serviceTemplateFieldExist := data.Get(common.BKServiceTemplateIDField)
-	if serviceTemplateFieldExist {
-		serviceTemplateID, err = util.GetInt64ByInterface(serviceTemplateIDIf)
-		if err != nil {
-			blog.Errorf("get service template id failed, err: %v, rid: %s", err, kit.Rid)
-			return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
-		}
-	}
-
-	// if need create module using service template
-	if serviceTemplateID == 0 && !version.CanCreateSetModuleWithoutTemplate && defaultVal == 0 {
-		blog.Errorf("not use  service template create set module, rid: %s", kit.Rid)
-		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "service_template_id can not be 0")
-	}
-
-	serviceCategoryID, err = m.checkServiceTemplateParam(kit, serviceCategoryID, serviceTemplateID, bizID,
-		serviceCategoryExist)
+	serviceTemplateID, serviceCategoryID, err := m.checkModuleServiceTemplate(kit, bizID, defaultVal, data)
 	if err != nil {
 		return nil, err
 	}
+
 	data.Set(common.BKServiceCategoryIDField, serviceCategoryID)
 	data.Set(common.BKServiceTemplateIDField, serviceTemplateID)
 	data.Set(common.HostApplyEnabledField, false)
@@ -224,6 +195,12 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 	}
 	data.Remove(common.MetadataField)
 
+	// if service template has attributes, initialize module using these attributes
+	data, err = m.initModuleWithSvcTemp(kit, bizID, serviceTemplateID, data)
+	if err != nil {
+		return nil, err
+	}
+
 	inst, createErr := m.inst.CreateInst(kit, common.BKInnerObjIDModule, data)
 	if createErr != nil {
 		blog.Errorf("create module failed, err: %v, rid: %s", createErr, kit.Rid)
@@ -231,6 +208,53 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 	}
 
 	return inst, nil
+}
+
+// checkModuleServiceTemplate TODO
+// validate service category id and service template id
+// 如果服务分类没有设置，则从服务模版中获取，如果服务模版也没有设置，则参数错误
+// 有效参数参数形式:
+// 1. serviceCategoryID > 0  && serviceTemplateID == 0
+// 2. serviceCategoryID unset && serviceTemplateID > 0
+// 3. serviceCategoryID > 0 && serviceTemplateID > 0 && serviceTemplate.ServiceCategoryID == serviceCategoryID
+// 4. serviceCategoryID unset && serviceTemplateID unset, then module create with default category
+func (m *module) checkModuleServiceTemplate(kit *rest.Kit, bizID, defaultVal int64, data mapstr.MapStr) (int64,
+	int64, error) {
+
+	var err error
+	var serviceCategoryID int64
+	serviceCategoryIDIf, serviceCategoryExist := data.Get(common.BKServiceCategoryIDField)
+	if serviceCategoryExist {
+		serviceCategoryID, err = util.GetInt64ByInterface(serviceCategoryIDIf)
+		if err != nil {
+			blog.Errorf("get service category id failed, err: %v, rid: %s", err, kit.Rid)
+			return 0, 0, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+		}
+	}
+
+	var serviceTemplateID int64
+	serviceTemplateIDIf, serviceTemplateFieldExist := data.Get(common.BKServiceTemplateIDField)
+	if serviceTemplateFieldExist {
+		serviceTemplateID, err = util.GetInt64ByInterface(serviceTemplateIDIf)
+		if err != nil {
+			blog.Errorf("get service template id failed, err: %v, rid: %s", err, kit.Rid)
+			return 0, 0, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+		}
+	}
+
+	// if need create module using service template
+	if serviceTemplateID == 0 && !version.CanCreateSetModuleWithoutTemplate && defaultVal == 0 {
+		blog.Errorf("not use  service template create set module, rid: %s", kit.Rid)
+		return 0, 0, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "service_template_id can not be 0")
+	}
+
+	serviceCategoryID, err = m.checkServiceTemplateParam(kit, serviceCategoryID, serviceTemplateID, bizID,
+		serviceCategoryExist)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return serviceTemplateID, serviceCategoryID, nil
 }
 
 func (m *module) checkServiceTemplateParam(kit *rest.Kit, serviceCategoryID, serviceTemplateID, bizID int64,
@@ -279,6 +303,69 @@ func (m *module) checkServiceTemplateParam(kit *rest.Kit, serviceCategoryID, ser
 	return serviceCategoryID, nil
 }
 
+// initModuleWithSvcTemp initialize module using the service template attributes
+func (m *module) initModuleWithSvcTemp(kit *rest.Kit, bizID, svcTempID int64, module mapstr.MapStr) (mapstr.MapStr,
+	error) {
+
+	if svcTempID == common.ServiceTemplateIDNotSet {
+		return module, nil
+	}
+
+	// get service template attributes
+	tempAttrOpt := &metadata.ListServTempAttrOption{
+		BizID: bizID,
+		ID:    svcTempID,
+	}
+
+	tempAttrs, err := m.clientSet.CoreService().Process().ListServiceTemplateAttribute(kit.Ctx, kit.Header, tempAttrOpt)
+	if err != nil {
+		blog.Errorf("get service template attributes failed, opt: %+v, err: %v, rid: %s", tempAttrOpt, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(tempAttrs.Attributes) == 0 {
+		return module, nil
+	}
+
+	// get corresponding module attributes
+	attrIDs := make([]int64, len(tempAttrs.Attributes))
+	for idx, tempAttr := range tempAttrs.Attributes {
+		attrIDs[idx] = tempAttr.AttributeID
+	}
+
+	attrOpt := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKFieldID: mapstr.MapStr{common.BKDBIN: attrIDs},
+		},
+		Fields:         []string{common.BKFieldID, common.BKPropertyIDField},
+		Page:           metadata.BasePage{Limit: common.BKNoLimit},
+		DisableCounter: true,
+	}
+
+	attrs, e := m.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, common.BKInnerObjIDModule, attrOpt)
+	if e != nil {
+		blog.Errorf("get module attributes failed, opt: %+v, err: %v, rid: %s", attrOpt, err, kit.Rid)
+		return nil, e
+	}
+
+	// use service template attributes to initialize module data
+	attrIDMap := make(map[int64]string)
+	for _, attr := range attrs.Info {
+		attrIDMap[attr.ID] = attr.PropertyID
+	}
+
+	for _, tempAttr := range tempAttrs.Attributes {
+		propertyID, exists := attrIDMap[tempAttr.AttributeID]
+		if !exists {
+			blog.Errorf("service template %d attr %d is not exist, rid: %s", svcTempID, tempAttr.AttributeID, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKSetTemplateIDField)
+		}
+		module[propertyID] = tempAttr.PropertyValue
+	}
+
+	return module, nil
+}
+
 // DeleteModule delete module
 func (m *module) DeleteModule(kit *rest.Kit, bizID int64, setIDs, moduleIDs []int64) error {
 	innerCond := map[string]interface{}{common.BKAppIDField: bizID}
@@ -305,31 +392,32 @@ func (m *module) DeleteModule(kit *rest.Kit, bizID int64, setIDs, moduleIDs []in
 func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, moduleID int64) error {
 
 	innerCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKSetIDField: setID, common.BKModuleIDField: moduleID}
+	fields := []string{common.BKSetTemplateIDField, common.BKServiceTemplateIDField, common.BKServiceCategoryIDField,
+		common.BKModuleNameField}
+	for field := range data {
+		fields = append(fields, field)
+	}
 
 	findCond := &metadata.QueryCondition{
-		Fields: []string{common.BKSetTemplateIDField, common.BKServiceTemplateIDField, common.BKServiceCategoryIDField,
-			common.BKModuleNameField},
+		Fields:         fields,
 		Condition:      innerCond,
 		DisableCounter: true,
 	}
 
-	moduleInstance := new(metadata.ResponseModuleInstance)
-	if err := m.clientSet.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
-		findCond, moduleInstance); err != nil {
+	moduleInstance, err := m.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
+		common.BKInnerObjIDModule, findCond)
+	if err != nil {
 		blog.Errorf("get list modules failed, findCond: %#v, err: %v, rid: %s", findCond, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommParseDBFailed)
 	}
-	if err := moduleInstance.CCError(); err != nil {
-		return err
-	}
-	if len(moduleInstance.Data.Info) > 1 {
+	if len(moduleInstance.Info) > 1 {
 		return kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject)
 	}
-	if len(moduleInstance.Data.Info) == 0 {
+	if len(moduleInstance.Info) == 0 {
 		return kit.CCError.CCErrorf(common.CCErrCommNotFound)
 	}
 
-	if err := validUpdateModuleData(kit, data, moduleInstance.Data.Info[0]); err != nil {
+	if err := m.validUpdateModuleData(kit, bizID, data, moduleInstance.Info[0]); err != nil {
 		blog.Errorf("valid input data by module instance failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -349,7 +437,13 @@ func (m *module) UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, m
 	return nil
 }
 
-func validUpdateModuleData(kit *rest.Kit, data mapstr.MapStr, module metadata.ModuleInst) error {
+func (m *module) validUpdateModuleData(kit *rest.Kit, bizID int64, data, moduleData mapstr.MapStr) error {
+	module := new(metadata.ModuleInst)
+	if err := mapstruct.Decode2Struct(moduleData, module); err != nil {
+		blog.Errorf("decode original module(%+v) failed, err: %v, rid: %s", moduleData, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
+	}
+
 	// 检查并提示禁止修改集群模板ID字段
 	if val, ok := data[common.BKSetTemplateIDField]; ok {
 		setTemplateID, err := util.GetInt64ByInterface(val)
@@ -400,6 +494,98 @@ func validUpdateModuleData(kit *rest.Kit, data mapstr.MapStr, module metadata.Mo
 				return kit.CCError.CCError(common.CCErrorTopoUpdateModuleFromTplNameForbidden)
 			}
 		}
+
+		// 检查并提示禁止修改服务模板配置的属性字段
+		if err := m.validUpdateModuleDataWithTemplateAttr(kit, bizID, data, moduleData, module); err != nil {
+			blog.Errorf("valid update module data(%+v) with template attr failed, err: %v, rid: %s", data, err, kit.Rid)
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+// validUpdateModuleDataWithTemplateAttr validate if module update data contains service template attributes
+func (m *module) validUpdateModuleDataWithTemplateAttr(kit *rest.Kit, bizID int64, data, moduleData mapstr.MapStr,
+	module *metadata.ModuleInst) error {
+
+	// get service template attributes
+	tempAttrOpt := &metadata.ListServTempAttrOption{
+		BizID: bizID,
+		ID:    module.ServiceTemplateID,
+	}
+
+	tempAttrs, err := m.clientSet.CoreService().Process().ListServiceTemplateAttribute(kit.Ctx, kit.Header, tempAttrOpt)
+	if err != nil {
+		blog.Errorf("get service template attributes failed, opt: %+v, err: %v, rid: %s", tempAttrOpt, err, kit.Rid)
+		return err
+	}
+
+	if len(tempAttrs.Attributes) == 0 {
+		return nil
+	}
+
+	// check if update module data contains service template attributes, these attributes are forbidden to update
+	attrIDs := make([]int64, len(tempAttrs.Attributes))
+	for idx, tempAttr := range tempAttrs.Attributes {
+		attrIDs[idx] = tempAttr.AttributeID
+	}
+
+	propertyIDs := make([]string, 0)
+	for key := range data {
+		propertyIDs = append(propertyIDs, key)
+	}
+
+	attrOpt := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKFieldID:         mapstr.MapStr{common.BKDBIN: attrIDs},
+			common.BKPropertyIDField: mapstr.MapStr{common.BKDBIN: propertyIDs},
+		},
+		Fields:         []string{common.BKFieldID, common.BKPropertyIDField},
+		Page:           metadata.BasePage{Limit: common.BKNoLimit},
+		DisableCounter: true,
+	}
+
+	attrs, e := m.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, common.BKInnerObjIDModule, attrOpt)
+	if e != nil {
+		blog.Errorf("get module attributes failed, opt: %+v, err: %v, rid: %s", attrOpt, err, kit.Rid)
+		return e
+	}
+
+	fields := bytes.Buffer{}
+	for _, attr := range attrs.Info {
+		switch attr.PropertyType {
+		case common.FieldTypeTime:
+			// convert property value to time type for comparison
+			updateVal, err := util.ConvToTime(data[attr.PropertyID])
+			if err != nil {
+				blog.Errorf("parse updated value(%+v) failed, err: %v, rid: %s", data[attr.PropertyID], err, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, attr.PropertyID)
+			}
+
+			prevVal, err := util.ConvToTime(moduleData[attr.PropertyID])
+			if err != nil {
+				blog.Errorf("parse prev value(%+v) failed, err: %v, rid: %s", moduleData[attr.PropertyID], err, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, attr.PropertyID)
+			}
+
+			if reflect.DeepEqual(prevVal, updateVal) {
+				continue
+			}
+		default:
+			if reflect.DeepEqual(data[attr.PropertyID], moduleData[attr.PropertyID]) {
+				continue
+			}
+		}
+
+		fields.WriteString(attr.PropertyID)
+		fields.WriteByte(',')
+	}
+
+	if fields.Len() > 0 {
+		forbiddenFields := fields.String()
+		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, forbiddenFields[:len(forbiddenFields)-1])
 	}
 
 	return nil

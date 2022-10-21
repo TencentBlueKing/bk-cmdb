@@ -81,7 +81,7 @@
 </template>
 
 <script>
-  import { ref, computed, reactive, defineComponent, onMounted } from '@vue/composition-api'
+  import { ref, computed, reactive, defineComponent, onMounted } from 'vue'
   import ModuleBuilder from './module-builder.vue'
   import store from '@/store'
   import { bkInfoBox, bkMessage } from 'bk-magic-vue'

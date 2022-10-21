@@ -271,7 +271,7 @@ func (lgc *Logics) buildHostExcelData(handleHostDataParam *HandleHostDataParam) 
 	return instIDArr, nil
 }
 
-// 获取模型关联关系
+// getObjectAssociation 获取模型关联关系
 func (lgc *Logics) getObjectAssociation(ctx context.Context, header http.Header, objID string, modelBizID int64) (
 	[]*metadata.Association, errors.CCErrorCoder) {
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -289,7 +289,7 @@ func (lgc *Logics) getObjectAssociation(ctx context.Context, header http.Header,
 			},
 		},
 	}
-	//确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
+	// 确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
 	resp, err := lgc.CoreAPI.ApiServer().SearchObjectAssociation(ctx, header, cond)
 	if err != nil {
 		blog.ErrorJSON("get object association list failed, err: %v, rid: %s", err, rid)
@@ -502,6 +502,7 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 	return nil
 }
 
+// AddDownExcelHttpHeader TODO
 func AddDownExcelHttpHeader(c *gin.Context, name string) {
 	if strings.HasSuffix(name, ".xls") {
 		c.Header("Content-Type", "application/vnd.ms-excel")
@@ -551,7 +552,7 @@ func GetExcelData(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Prop
 
 }
 
-// GetExcelData excel数据，一个kv结构，key行数（excel中的行数），value内容
+// GetRawExcelData excel数据，一个kv结构，key行数（excel中的行数），value内容
 func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.KvMap, firstRow int,
 	defLang lang.DefaultCCLanguageIf, department map[int64]metadata.DepartmentItem) (map[int]map[string]interface{},
 	[]string, error) {
@@ -637,12 +638,13 @@ func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int, defLang lang.Defau
 	return asstInfoArr, errMsg
 }
 
+// StatisticsAssociation TODO
 func StatisticsAssociation(sheet *xlsx.Sheet, firstRow int) ([]string, map[string]metadata.ObjectAsstIDStatisticsInfo) {
 
 	rowCnt := len(sheet.Rows)
 	index := firstRow
 	asstInfoMap := make(map[string]metadata.ObjectAsstIDStatisticsInfo, 0)
-	//bk_obj_asst_id
+	// bk_obj_asst_id
 	asstNameArr := make([]string, 0)
 	for ; index < rowCnt; index++ {
 		var asstInfo metadata.ObjectAsstIDStatisticsInfo

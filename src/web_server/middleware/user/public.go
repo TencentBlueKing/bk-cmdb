@@ -25,8 +25,8 @@ import (
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/middleware/user/plugins"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
 
 type publicUser struct {
@@ -92,6 +92,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	return true
 }
 
+// GetLoginUrl TODO
 func (m *publicUser) GetLoginUrl(c *gin.Context) string {
 
 	params := new(metadata.LogoutRequestParams)
@@ -108,6 +109,7 @@ func (m *publicUser) GetLoginUrl(c *gin.Context) string {
 
 }
 
+// GetUserList TODO
 func (m *publicUser) GetUserList(c *gin.Context) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
 	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
 	return user.GetUserList(c, m.config.ConfigMap)

@@ -21,7 +21,7 @@
           {{$t('添加主机')}}
         </bk-button>
         <i18n class="select-host-count" path="已选择N台主机" v-show="hosts.length">
-          <span place="count" class="count-number">{{hosts.length}}</span>
+          <template #count><span class="count-number">{{hosts.length}}</span></template>
         </i18n>
       </div>
     </div>
@@ -332,12 +332,13 @@
         // 第一内网IP
         if (ipValue === '3') {
           const [innerIP] = host.bk_host_innerip.split(',')
-          return innerIP || mapping[1]
+          return innerIP
         }
         // 第一外网IP
         if (ipValue === '4') {
           const [outerIP] = host.bk_host_outerip.split(',')
-          return outerIP || mapping[1]
+          // 可能不存在，允许返回为空
+          return outerIP
         }
         // 第一内网IPv6
         if (ipValue === '7') {

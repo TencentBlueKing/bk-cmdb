@@ -46,7 +46,7 @@
         tabindex="-1"
         @click="setLockState(rowProps)">
         <i class="icon-cc-lock-fill" v-if="isLocked(rowProps)"></i>
-        <i class="icon-cc-lock-line" v-else></i>
+        <i class="icon-cc-unlock-fill" v-else></i>
       </span>
     </div>
   </cmdb-form-table>
@@ -162,6 +162,7 @@
         rules.required = true
         // IP字段在模板上被构造为枚举，无法通过ip的正则，此处忽略IP正则
         if (property.bk_property_id === 'ip') {
+          rules.required = false
           delete rules.remoteString
         }
         return rules

@@ -84,12 +84,12 @@ var _ = Describe("host abnormal test", func() {
 				"bk_service_status":   "1",
 				"bk_set_env":          "3",
 			}
-			rsp, err := instClient.CreateSet(context.Background(), strconv.FormatInt(bizId, 10), header, input)
-			util.RegisterResponse(rsp)
+			rsp, err := instClient.CreateSet(context.Background(), bizId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			setId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_set_id"])
-			Expect(err).NotTo(HaveOccurred())
+			var e error
+			setId, e = commonutil.GetInt64ByInterface(rsp["bk_set_id"])
+			Expect(e).NotTo(HaveOccurred())
 		})
 
 		It("create set", func() {
@@ -101,12 +101,12 @@ var _ = Describe("host abnormal test", func() {
 				"bk_service_status":   "1",
 				"bk_set_env":          "3",
 			}
-			rsp, err := instClient.CreateSet(context.Background(), strconv.FormatInt(bizId1, 10), header, input)
-			util.RegisterResponse(rsp)
+			rsp, err := instClient.CreateSet(context.Background(), bizId1, header, input)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			setId1, err = commonutil.GetInt64ByInterface(rsp.Data["bk_set_id"])
-			Expect(err).NotTo(HaveOccurred())
+			var e error
+			setId1, e = commonutil.GetInt64ByInterface(rsp["bk_set_id"])
+			Expect(e).NotTo(HaveOccurred())
 		})
 
 		It("create module", func() {
@@ -116,11 +116,11 @@ var _ = Describe("host abnormal test", func() {
 				"service_category_id": 2,
 				"service_template_id": 0,
 			}
-			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			moduleId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
+			rsp, e := instClient.CreateModule(context.Background(), bizId, setId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(e).NotTo(HaveOccurred())
+			var err error
+			moduleId, err = commonutil.GetInt64ByInterface(rsp["bk_module_id"])
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -131,11 +131,11 @@ var _ = Describe("host abnormal test", func() {
 				"service_category_id": 2,
 				"service_template_id": 0,
 			}
-			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId, 10), strconv.FormatInt(setId, 10), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			moduleId1, err = commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
+			rsp, e := instClient.CreateModule(context.Background(), bizId, setId, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(e).NotTo(HaveOccurred())
+			var err error
+			moduleId1, err = commonutil.GetInt64ByInterface(rsp["bk_module_id"])
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -146,11 +146,11 @@ var _ = Describe("host abnormal test", func() {
 				"service_category_id": 2,
 				"service_template_id": 0,
 			}
-			rsp, err := instClient.CreateModule(context.Background(), strconv.FormatInt(bizId1, 10), strconv.FormatInt(setId1, 10), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-			moduleId2, err = commonutil.GetInt64ByInterface(rsp.Data["bk_module_id"])
+			rsp, e := instClient.CreateModule(context.Background(), bizId1, setId1, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(e).NotTo(HaveOccurred())
+			var err error
+			moduleId2, err = commonutil.GetInt64ByInterface(rsp["bk_module_id"])
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -205,13 +205,13 @@ var _ = Describe("host abnormal test", func() {
 
 	Describe("add host test", func() {
 
-		//清空数据
+		// 清空数据
 		BeforeEach(func() {
 			clearData()
 		})
 
 		Describe("add host using api test", func() {
-			//测试用例运行后，主机数量应为0
+			// 测试用例运行后，主机数量应为0
 			AfterEach(func() {
 				// 查询业务下的主机
 				input := &params.HostCommonSearch{
@@ -428,7 +428,7 @@ var _ = Describe("host abnormal test", func() {
 		})
 
 		Describe("add host using excel test", func() {
-			//测试用例运行后，主机数量应为0
+			// 测试用例运行后，主机数量应为0
 			AfterEach(func() {
 				// 查询业务下的主机
 				input := &params.HostCommonSearch{
@@ -559,7 +559,7 @@ var _ = Describe("host abnormal test", func() {
 		})
 
 		Describe("add host using excel test2", func() {
-			//测试用例运行后，主机数量应为1
+			// 测试用例运行后，主机数量应为1
 			AfterEach(func() {
 				// 查询业务下的主机
 				input := &params.HostCommonSearch{

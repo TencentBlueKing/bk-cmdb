@@ -68,6 +68,10 @@ spec:
         ports:
         - containerPort: {{ .Values.adminserver.port }}
         volumeMounts:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          mountPath: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
         - name: configures
           mountPath: {{ .Values.adminserver.configDir }}
         {{- if .Values.adminserver.volumeMounts }}
@@ -76,6 +80,11 @@ spec:
         {{- end }}
         {{- end }}
       volumes:
+      {{- if .Values.common.monitor.enabled }}
+      - name: plugin-path
+        hostPath:
+          path: {{ .Values.common.monitor.pluginPath }}
+      {{- end }}
       - name: configures
         configMap:
           name: {{ .Release.Name }}-adminserver-configures
@@ -86,14 +95,14 @@ spec:
       {{- end }}
       {{- with .Values.adminserver.nodeSelector }}
       nodeSelector:
-      {{ toYaml . | indent 8 }}
+      {{ toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.adminserver.affinity }}
       affinity:
-        {{ toYaml . | indent 8 }}
+        {{ toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.adminserver.tolerations }}
       tolerations:
-        {{ toYaml . | indent 8 }}
+        {{ toYaml . | nindent 8 }}
       {{- end }}
 {{- end }}

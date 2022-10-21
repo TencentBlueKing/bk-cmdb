@@ -12,6 +12,6 @@
 
 #include "data_file.h"
 namespace gse { 
-namespace dataserver {
+namespace data {
 }
 }

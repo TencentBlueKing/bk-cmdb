@@ -26,6 +26,7 @@ var (
 	searchServiceInstancesBySetTemplateRuleRegex = regexp.MustCompile(`^/api/v3/findmany/proc/service/set_template/list_service_instance/biz/([0-9]+)/?$`)
 )
 
+// ServiceInstanceAuthConfigs TODO
 var ServiceInstanceAuthConfigs = []AuthConfig{
 	{
 		Name:           "createServiceInstancePattern",
@@ -147,16 +148,16 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		HTTPMethod:     http.MethodPut,
 		BizIDGetter:    BizIDFromURLGetter,
 		BizIndex:       7,
-		ResourceType:   meta.ProcessServiceInstance,
-		ResourceAction: meta.UpdateMany,
+		ResourceType:   meta.HostApply,
+		ResourceAction: meta.Update,
 	}, {
 		Name:           "findmanyServiceTemplateHostApplyTaskStatus",
 		Description:    "查看服务模板场景下主机自动应用任务状态",
 		Regex:          regexp.MustCompile(`/api/v3/findmany/proc/service_template/host_apply_plan/status`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    DefaultBizIDGetter,
-		ResourceType:   meta.Business,
-		ResourceAction: meta.ViewBusinessResource,
+		ResourceType:   meta.HostApply,
+		ResourceAction: meta.SkipAction,
 	}, {
 		Name:           "deleteServiceTemplateHostApplyRule",
 		Description:    "删除服务模板场景下主机自动应用规则",
@@ -164,7 +165,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		HTTPMethod:     http.MethodDelete,
 		BizIDGetter:    BizIDFromURLGetter,
 		BizIndex:       7,
-		ResourceType:   meta.ProcessServiceInstance,
+		ResourceType:   meta.HostApply,
 		ResourceAction: meta.Delete,
 	}, {
 		Name:           "updateServiceTemplateHostApplyRule",
@@ -172,8 +173,8 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		Regex:          regexp.MustCompile(`^/api/v3/updatemany/proc/service_template/host_apply_plan/run`),
 		HTTPMethod:     http.MethodPost,
 		BizIDGetter:    DefaultBizIDGetter,
-		ResourceType:   meta.ProcessServiceInstance,
-		ResourceAction: meta.UpdateMany,
+		ResourceType:   meta.HostApply,
+		ResourceAction: meta.Update,
 	}, {
 		Name:           "deleteServiceInstancePattern",
 		Description:    "删除服务实例",
@@ -303,6 +304,7 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 	},
 }
 
+// ServiceInstance TODO
 func (ps *parseStream) ServiceInstance() *parseStream {
 
 	if ps.hitRegexp(searchServiceInstancesBySetTemplateRuleRegex, http.MethodPost) {

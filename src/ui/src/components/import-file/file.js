@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { ref } from '@vue/composition-api'
+import { ref } from 'vue'
 const file = ref(null)
 const state = ref(null)
 const error = ref(null)

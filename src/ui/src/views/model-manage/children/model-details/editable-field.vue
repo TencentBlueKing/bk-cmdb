@@ -71,7 +71,7 @@
 </template>
 
 <script>
-  import { defineComponent, ref, watch } from '@vue/composition-api'
+  import { defineComponent, ref, watch } from 'vue'
   import { Validator } from 'vee-validate'
   import { autofocus } from '@/directives/autofocus'
   import CmdbSinglechar from '@/components/ui/form/singlechar.vue'

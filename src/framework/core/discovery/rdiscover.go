@@ -94,6 +94,7 @@ func (r *RegDiscover) Start() error {
 	}
 }
 
+// GetServer TODO
 func (r *RegDiscover) GetServer(servType string) (string, error) {
 	switch servType {
 	case types.CC_MODULE_APISERVER:
@@ -117,7 +118,7 @@ func (r *RegDiscover) GetApiServ() (string, error) {
 		return "", err
 	}
 
-	//rand
+	// rand
 	rand.Seed(int64(time.Now().Nanosecond()))
 	servInfo := r.apiServers[rand.Intn(lServ)]
 
@@ -171,10 +172,12 @@ func (r *RegDiscover) discoverApiServ(servInfos []string) error {
 	return nil
 }
 
+// Input TODO
 func (r *RegDiscover) Input() string {
 	return ""
 }
 
+// Output TODO
 func (r *RegDiscover) Output() string {
 	apiaddress, err := r.GetApiServ()
 	if err != nil {

@@ -10,15 +10,15 @@
  * limitations under the License.
  */
 
-#include "tools/pipe.h"
-#include "tools/error.h"
-#include "log/log.h"
 #include "channelworker.h"
 #include "datachannel.h"
 #include "dataserver.h"
+#include "log/log.h"
+#include "tools/error.h"
+#include "tools/pipe.h"
 
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
 
 #define MAX_QUEUE_SIZE (40960 * 60)
 
@@ -33,14 +33,14 @@ ChannelWorker::ChannelWorker(int id, void *pParent)
     m_evBase = NULL;
     m_notifyEvent = NULL;
 
-    //m_ptrDataQueue = new boost::circular_buffer<DataCell *>(MAX_QUEUE_SIZE);
+    // m_ptrDataQueue = new boost::circular_buffer<DataCell *>(MAX_QUEUE_SIZE);
     m_ptrDataQueue = new moodycamel::ConcurrentQueue<DataCell *>();
 
     m_opsReportTime.tv_sec = 5;
     m_opsReportTime.tv_usec = 0;
 
     m_msgHandleTime.tv_sec = 0;
-    m_msgHandleTime.tv_usec = 1000 * 100; //100ms
+    m_msgHandleTime.tv_usec = 1000 * 100; // 100ms
 
     m_opsTimerEvent = NULL;
     m_msgTimerEvent = NULL;
@@ -91,7 +91,7 @@ int ChannelWorker::Init()
     {
         int iErrno = gse_errno;
         LOG_ERROR("channel worker[%d]: fail to create notify pipe. ret=[%d], errno=[%d], errmsg=[%s]",
-            m_workId, ret, iErrno, gse::tools::error::ErrnoToStr(iErrno).c_str());
+                  m_workId, ret, iErrno, gse::tools::error::ErrnoToStr(iErrno).c_str());
         return GSE_SYSTEMERROR;
     }
 
@@ -101,7 +101,7 @@ int ChannelWorker::Init()
         {
             int iErrno = gse_errno;
             LOG_ERROR("channel worker[%d]: fail to set notify pipe to non-blocking. errno=[%d], errmsg=[%s]",
-                m_workId, iErrno, gse::tools::error::ErrnoToStr(iErrno).c_str());
+                      m_workId, iErrno, gse::tools::error::ErrnoToStr(iErrno).c_str());
             return GSE_SYSTEMERROR;
         }
     }
@@ -125,7 +125,8 @@ void ChannelWorker::Notify(DataCell *pDataCell)
         return;
     }
     int max_retry_time = 0;
-    while (!m_ptrDataQueue->enqueue(pDataCell)) {
+    while (!m_ptrDataQueue->enqueue(pDataCell))
+    {
         max_retry_time++;
         if (max_retry_time > 5)
         {
@@ -135,8 +136,6 @@ void ChannelWorker::Notify(DataCell *pDataCell)
             break;
         }
     }
-    char notifyC = '0';
-    //tgse::pipe_write(m_notifyFd[1], &notifyC, sizeof(notifyC));
 }
 
 int ChannelWorker::ThreadFun()
@@ -150,7 +149,7 @@ int ChannelWorker::ThreadFun()
         return GSE_SYSTEMERROR;
     }
 
-    m_msgTimerEvent = event_new(m_evBase, -1,  EV_PERSIST, ChannelWorker::QueueMsgHandler, this);
+    m_msgTimerEvent = event_new(m_evBase, -1, EV_PERSIST, ChannelWorker::QueueMsgHandler, this);
     if (NULL == m_msgTimerEvent)
     {
         LOG_ERROR("channel worker[%d]: fail to new msg handle", m_workId);
@@ -184,41 +183,7 @@ int ChannelWorker::ThreadFun()
     LOG_FATAL("channel worker[%d]: event base loop abnomal break. ret=[%d]", m_workId, ret);
 
     return GSE_SUCCESS;
-
 }
-
-//int ChannelWorker::run()
-//{
-//    int ret = -1;
-
-//    m_evBase = event_base_new();
-//    if (NULL == m_evBase)
-//    {
-//        LOG_ERROR("channel worker[%d]: fail to new event base object");
-//        return GSE_SYSTEMERROR;
-//    }
-
-//    // register notify pipe event into libevent
-//    m_notifyEvent = event_new(m_evBase, m_notifyFd[0], EV_READ | EV_PERSIST, ChannelWorker::notifyHandler, this);
-//    if (NULL == m_notifyEvent)
-//    {
-//        LOG_ERROR("channel worker[%d]: fail to new notify event", m_workId);
-//        cleanEvent();
-//        return GSE_SYSTEMERROR;
-//    }
-
-//    ret = event_add(m_notifyEvent, NULL);
-//    if (ret < 0)
-//    {
-//        LOG_ERROR("channel worker[%d]: fail to add notify event. ret=[%d]", m_workId, ret);
-//        return GSE_SYSTEMERROR;
-//    }
-
-//    ret = event_base_loop(m_evBase, 0);
-//    LOG_FATAL("channel worker[%d]: event base loop abnomal break. ret=[%d]", m_workId, ret);
-
-//    return GSE_SUCCESS;
-//}
 
 void ChannelWorker::stop()
 {
@@ -231,17 +196,18 @@ void ChannelWorker::stop()
 void ChannelWorker::QueueMsgHandler(int fd, short which, void *v)
 {
     ChannelWorker *ptr_this = (ChannelWorker *)v;
-   
+
     DataCell *pDataCell;
 
-    while (ptr_this->m_ptrDataQueue->try_dequeue(pDataCell)) {
+    while (ptr_this->m_ptrDataQueue->try_dequeue(pDataCell))
+    {
         ptr_this->dealData(pDataCell);
     }
 }
 
 void ChannelWorker::ReportQueueSizeMetric()
 {
-    std::string metric_name = "data_worker_queune_msg_count";
+    std::string metric_name = "worker_queune_msg_count";
     OPMetric::Instance().ReportQueneCount(metric_name, m_workId, m_ptrDataQueue->size_approx());
 }
 
@@ -257,14 +223,14 @@ void ChannelWorker::dealData(DataCell *pDataCell)
     int iRet = pDataChannel->DecodeMsg(pDataCell);
     if (GSE_SUCCESS != iRet)
     {
-        DataServer::Instance().GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_LOST_STATE));
+        DataServer::GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_LOST_STATE));
         delete pDataCell;
         return;
     }
 
     if (pDataCell->GetErrorCode() == OPS_ERROR_TRANSFER)
     {
-        DataServer::Instance().GetOpsReportClient()->TransferOpsData(pDataCell);
+        DataServer::GetOpsReportClient()->TransferOpsData(pDataCell);
         delete pDataCell;
         return;
     }
@@ -275,7 +241,9 @@ void ChannelWorker::dealData(DataCell *pDataCell)
         return;
     }
 
-    DataServer::Instance().GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_DEALING_STATE));
+    pDataChannel->SetDataCellChannelidByServiceId(pDataCell);
+
+    DataServer::GetOpsReportClient()->PutOpsData(pDataCell->ToOPS(EN_DEALING_STATE));
 
     iRet = pDataChannel->ExportData(pDataCell);
     if (GSE_SUCCESS != iRet)
@@ -287,5 +255,5 @@ void ChannelWorker::dealData(DataCell *pDataCell)
     delete pDataCell;
 }
 
-}
-}
+} // namespace data
+} // namespace gse

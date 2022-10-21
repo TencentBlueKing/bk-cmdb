@@ -20,19 +20,23 @@ import (
 
 var _ Interface = &Clientset{}
 
+// Params TODO
 type Params struct {
 	SupplierAccount string
 	UserName        string
 }
 
+// Interface TODO
 type Interface interface {
 	CCV3(params Params) v3.CCV3Interface
 }
 
+// Clientset TODO
 type Clientset struct {
 	ccv3 *v3.Client
 }
 
+// CCV3 TODO
 func (c *Clientset) CCV3(params Params) v3.CCV3Interface {
 	if c == nil {
 		return nil
@@ -44,6 +48,7 @@ func (c *Clientset) CCV3(params Params) v3.CCV3Interface {
 	return c.ccv3
 }
 
+// NewForConfig TODO
 func NewForConfig(c config.Config, disc discovery.DiscoverInterface) *Clientset {
 	var cs Clientset
 	cs.ccv3 = v3.New(c, disc)
@@ -53,6 +58,7 @@ func NewForConfig(c config.Config, disc discovery.DiscoverInterface) *Clientset 
 
 var client *Clientset
 
+// GetClient TODO
 func GetClient() *Clientset {
 	return client
 }

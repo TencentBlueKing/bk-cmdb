@@ -1,3 +1,4 @@
+// Package esbutil TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -15,16 +16,19 @@ import (
 	"sync"
 )
 
+// SychronizeConfig TODO
 type SychronizeConfig struct {
 	Name  string
 	Addrs []string
 }
 
+// SynchronizeConfigServ TODO
 type SynchronizeConfigServ struct {
 	addrs map[string][]string
 	sync.RWMutex
 }
 
+// SynchronizeServDiscoveryInterace TODO
 type SynchronizeServDiscoveryInterace interface {
 	GetServers() ([]string, error)
 	GetServersChan() chan []string
@@ -36,6 +40,7 @@ var (
 	}
 )
 
+// NewSynchronizeConfigServ TODO
 func NewSynchronizeConfigServ(srvChan chan SychronizeConfig) *SynchronizeConfigServ {
 	go func() {
 		if nil == srvChan {
@@ -56,17 +61,20 @@ type synchronizeConfig struct {
 	flag string
 }
 
+// NewSyncrhonizeConfig TODO
 func NewSyncrhonizeConfig(flag string) SynchronizeServDiscoveryInterace {
 	return &synchronizeConfig{
 		flag: flag,
 	}
 }
 
+// GetEsbServDiscoveryInterace TODO
 func (s *synchronizeConfig) GetEsbServDiscoveryInterace(flag string) SynchronizeServDiscoveryInterace {
 	// mabye will deal some logics about server
 	return s
 }
 
+// GetServers TODO
 func (s *synchronizeConfig) GetServers() ([]string, error) {
 	// mabye will deal some logics about server
 	synchronize.RLock()
@@ -75,6 +83,7 @@ func (s *synchronizeConfig) GetServers() ([]string, error) {
 	return synchronize.addrs[s.flag], nil
 }
 
+// GetServersChan TODO
 func (s *synchronizeConfig) GetServersChan() chan []string {
 	return nil
 }

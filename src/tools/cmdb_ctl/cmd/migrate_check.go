@@ -343,6 +343,7 @@ type duplicateItems struct {
 	Total      int64                  `json:"total" bson:"total"`
 }
 
+// ObjectUnique TODO
 type ObjectUnique struct {
 	ID        uint64               `json:"id" bson:"id"`
 	ObjID     string               `json:"bk_obj_id" bson:"bk_obj_id"`

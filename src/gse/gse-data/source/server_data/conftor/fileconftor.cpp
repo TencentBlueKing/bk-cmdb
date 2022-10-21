@@ -13,7 +13,7 @@
 #include "fileconftor.h"
 #include "bbx/gse_errno.h"
 namespace gse { 
-namespace dataserver {
+namespace data {
 
 FileConftor::FileConftor()
 {

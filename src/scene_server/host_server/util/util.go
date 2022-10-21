@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package util TODO
 package util
 
 import (
@@ -17,6 +18,7 @@ import (
 	"configcenter/src/common/mapstr"
 )
 
+// NewOperation TODO
 func NewOperation() *operation {
 	return &operation{
 		op: make(map[string]interface{}),
@@ -27,79 +29,95 @@ type operation struct {
 	op map[string]interface{}
 }
 
+// Data TODO
 func (o *operation) Data() map[string]interface{} {
 	return o.op
 }
 
+// MapStr TODO
 func (o *operation) MapStr() mapstr.MapStr {
 	return mapstr.NewFromMap(o.op)
 }
 
+// WithHostID TODO
 func (o *operation) WithHostID(hostID int64) *operation {
 	o.op[common.BKHostIDField] = hostID
 	return o
 }
 
+// WithAppID TODO
 func (o *operation) WithAppID(appID int64) *operation {
 	o.op[common.BKAppIDField] = appID
 	return o
 }
 
+// WithOwnerID TODO
 func (o *operation) WithOwnerID(ownerID string) *operation {
 	o.op[common.BKOwnerIDField] = ownerID
 	return o
 }
 
+// WithDefaultField TODO
 func (o *operation) WithDefaultField(d int64) *operation {
 	o.op[common.BKDefaultField] = d
 	return o
 }
 
+// WithInstID TODO
 func (o *operation) WithInstID(instID int64) *operation {
 	o.op[common.BKInstIDField] = instID
 	return o
 }
 
+// WithObjID TODO
 func (o *operation) WithObjID(objID string) *operation {
 	o.op[common.BKObjIDField] = objID
 	return o
 }
 
+// WithPropertyID TODO
 func (o *operation) WithPropertyID(id string) *operation {
 	o.op[common.BKObjAttIDField] = id
 	return o
 }
 
+// WithModuleName TODO
 func (o *operation) WithModuleName(name string) *operation {
 	o.op[common.BKModuleNameField] = name
 	return o
 }
 
+// WithModuleIDs TODO
 func (o *operation) WithModuleIDs(id []int64) *operation {
 	o.op[common.BKModuleIDField] = id
 	return o
 }
 
+// WithModuleID TODO
 func (o *operation) WithModuleID(id int64) *operation {
 	o.op[common.BKModuleIDField] = id
 	return o
 }
 
+// WithAssoObjID TODO
 func (o *operation) WithAssoObjID(id string) *operation {
 	o.op[common.BKAsstObjIDField] = id
 	return o
 }
 
+// WithAssoInstID TODO
 func (o *operation) WithAssoInstID(id map[string]interface{}) *operation {
 	o.op[common.BKAsstInstIDField] = id
 	return o
 }
 
+// WithHostInnerIP TODO
 func (o *operation) WithHostInnerIP(ip string) *operation {
 	o.op[common.BKHostInnerIPField] = ip
 	return o
 }
 
+// WithCloudID TODO
 func (o *operation) WithCloudID(id int64) *operation {
 	o.op[common.BKCloudIDField] = id
 	return o

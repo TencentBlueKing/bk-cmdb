@@ -222,7 +222,7 @@
           rules.required = true
         }
 
-        if (this.isMainLine && ['bk_set_name', 'bk_module_name', 'bk_inst_name'].includes(property.bk_property_id)) {
+        if (this.isMainLine && ['bk_biz_name', 'bk_set_name', 'bk_module_name', 'bk_inst_name'].includes(property.bk_property_id)) {
           rules.businessTopoInstNames = true
           rules.length = 256
           rules.singlechar = false
@@ -355,10 +355,10 @@
     .form-options {
         width: 100%;
         padding: 10px 32px;
-        background-color: #fff;
         font-size: 0;
         &.sticky {
             border-top: 1px solid $cmdbBorderColor;
+            background-color: #fff;
         }
         .button-save {
             min-width: 76px;

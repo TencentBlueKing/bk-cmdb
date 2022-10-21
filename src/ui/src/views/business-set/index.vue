@@ -117,16 +117,18 @@
         slot="empty"
         :stuff="table.stuff">
         <i18n path="业务集列表提示语" class="table-empty-tips">
-          <bk-link theme="primary" place="auth" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
-          <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS_SET }" place="create">
-            <bk-button slot-scope="{ disabled }" text
-              theme="primary"
-              class="text-btn"
-              :disabled="disabled"
-              @click="handleCreate">
-              {{$t('立即创建')}}
-            </bk-button>
-          </cmdb-auth>
+          <template #auth><bk-link theme="primary" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link></template>
+          <template #create>
+            <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS_SET }">
+              <bk-button slot-scope="{ disabled }" text
+                theme="primary"
+                class="text-btn"
+                :disabled="disabled"
+                @click="handleCreate">
+                {{$t('立即创建')}}
+              </bk-button>
+            </cmdb-auth>
+          </template>
         </i18n>
       </cmdb-table-empty>
     </bk-table>
@@ -149,7 +151,7 @@
 </template>
 
 <script>
-  import { computed, defineComponent, reactive, ref, watch, watchEffect } from '@vue/composition-api'
+  import { computed, defineComponent, reactive, ref, watch, watchEffect } from 'vue'
   import { t } from '@/i18n'
   import { OPERATION } from '@/dictionary/iam-auth'
   import { $bkInfo, $success, $error } from '@/magicbox/index.js'

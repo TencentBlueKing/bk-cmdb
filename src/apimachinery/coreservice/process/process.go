@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package process TODO
 package process
 
 import (
@@ -21,7 +22,9 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// ProcessInterface TODO
 type ProcessInterface interface {
+	// CreateServiceCategory TODO
 	// service category
 	CreateServiceCategory(ctx context.Context, h http.Header, category *metadata.ServiceCategory) (
 		*metadata.ServiceCategory, errors.CCErrorCoder)
@@ -34,6 +37,7 @@ type ProcessInterface interface {
 	DeleteServiceCategory(ctx context.Context, h http.Header, categoryID int64) errors.CCErrorCoder
 	GetDefaultServiceCategory(ctx context.Context, h http.Header) (*metadata.ServiceCategory, errors.CCErrorCoder)
 
+	// CreateServiceTemplate TODO
 	// service template
 	CreateServiceTemplate(ctx context.Context, h http.Header, template *metadata.ServiceTemplate) (
 		*metadata.ServiceTemplate, errors.CCErrorCoder)
@@ -51,6 +55,7 @@ type ProcessInterface interface {
 		*metadata.MultipleServiceTemplate, errors.CCErrorCoder)
 	DeleteServiceTemplate(ctx context.Context, h http.Header, serviceTemplateID int64) errors.CCErrorCoder
 
+	// CreateProcessTemplate TODO
 	// process template
 	CreateProcessTemplate(ctx context.Context, h http.Header, template *metadata.ProcessTemplate) (
 		*metadata.ProcessTemplate, errors.CCErrorCoder)
@@ -63,6 +68,7 @@ type ProcessInterface interface {
 	DeleteProcessTemplate(ctx context.Context, h http.Header, processTemplateID int64) errors.CCErrorCoder
 	DeleteProcessTemplateBatch(ctx context.Context, h http.Header, processTemplateIDs []int64) errors.CCErrorCoder
 
+	// CreateServiceInstance TODO
 	// service instance
 	CreateServiceInstance(ctx context.Context, h http.Header, template *metadata.ServiceInstance) (
 		*metadata.ServiceInstance, errors.CCErrorCoder)
@@ -81,6 +87,7 @@ type ProcessInterface interface {
 	ListServiceInstanceDetail(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceDetailOption) (
 		*metadata.MultipleServiceInstanceDetail, errors.CCErrorCoder)
 
+	// CreateProcessInstanceRelation TODO
 	// process instance relation
 	CreateProcessInstanceRelation(ctx context.Context, h http.Header, relation *metadata.ProcessInstanceRelation) (
 		*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
@@ -101,8 +108,20 @@ type ProcessInterface interface {
 	ConstructServiceInstanceName(ctx context.Context, h http.Header,
 		params *metadata.SrvInstNameParams) errors.CCErrorCoder
 	ReconstructServiceInstanceName(ctx context.Context, h http.Header, instanceID int64) errors.CCErrorCoder
+
+	// UpdateServiceTemplateAttribute TODO
+	// service template attribute
+	UpdateServiceTemplateAttribute(ctx context.Context, h http.Header,
+		option *metadata.UpdateServTempAttrOption) errors.CCErrorCoder
+	DeleteServiceTemplateAttribute(ctx context.Context, h http.Header,
+		option *metadata.DeleteServTempAttrOption) errors.CCErrorCoder
+	ListServiceTemplateAttribute(ctx context.Context, h http.Header, option *metadata.ListServTempAttrOption) (
+		*metadata.ServTempAttrData, errors.CCErrorCoder)
+	CreateServiceTemplateAttrs(ctx context.Context, h http.Header, option *metadata.CreateSvcTempAttrsOption) (
+		[]int64, errors.CCErrorCoder)
 }
 
+// NewProcessInterfaceClient TODO
 func NewProcessInterfaceClient(client rest.ClientInterface) ProcessInterface {
 	return &process{client: client}
 }

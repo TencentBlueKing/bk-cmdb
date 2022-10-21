@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { ref } from '@vue/composition-api'
+import { ref } from 'vue'
 const current = ref(1)
 const next = () => {
   current.value = Math.min(current.value + 1, 2)

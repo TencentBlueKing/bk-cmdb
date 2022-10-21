@@ -38,6 +38,7 @@ import (
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
+// Mongo TODO
 type Mongo struct {
 	dbc    *mongo.Client
 	dbname string
@@ -47,6 +48,7 @@ type Mongo struct {
 
 var _ dal.DB = new(Mongo)
 
+// MongoConf TODO
 type MongoConf struct {
 	TimeoutSeconds int
 	MaxOpenConns   uint64
@@ -106,6 +108,7 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 	}, nil
 }
 
+// checkMongodbVersion TODO
 // from now on, mongodb version must >= 4.2.0
 func checkMongodbVersion(db string, client *mongo.Client) error {
 	serverStatus, err := client.Database(db).RunCommand(
@@ -198,11 +201,13 @@ func (c *Mongo) Table(collName string) types.Table {
 	return &col
 }
 
+// GetDBClient TODO
 // get db client
 func (c *Mongo) GetDBClient() *mongo.Client {
 	return c.dbc
 }
 
+// GetDBName TODO
 // get db name
 func (c *Mongo) GetDBName() string {
 	return c.dbname
@@ -509,6 +514,7 @@ func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interf
 	})
 }
 
+// UpdateMany TODO
 // Update 更新数据, 返回修改成功的条数
 func (c *Collection) UpdateMany(ctx context.Context, filter types.Filter, doc interface{}) (uint64, error) {
 	mtc.collectOperCount(c.collName, updateOper)
@@ -596,6 +602,7 @@ func (c *Collection) Delete(ctx context.Context, filter types.Filter) error {
 	return err
 }
 
+// DeleteMany TODO
 // Delete 删除数据， 返回删除的行数
 func (c *Collection) DeleteMany(ctx context.Context, filter types.Filter) (uint64, error) {
 	mtc.collectOperCount(c.collName, deleteOper)
@@ -766,6 +773,7 @@ func (c *Mongo) NextSequences(ctx context.Context, sequenceName string, num int)
 	return sequences, err
 }
 
+// Idgen TODO
 type Idgen struct {
 	ID         string `bson:"_id"`
 	SequenceID uint64 `bson:"SequenceID"`
@@ -828,8 +836,18 @@ func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 		createIndexOpt.SetExpireAfterSeconds(index.ExpireAfterSeconds)
 	}
 
+	keys := index.Keys
+	for index, key := range keys {
+		val, err := util.GetInt32ByInterface(key.Value)
+		if err != nil {
+			return err
+		}
+		key.Value = val
+		keys[index] = key
+	}
+
 	createIndexInfo := mongo.IndexModel{
-		Keys:    index.Keys,
+		Keys:    keys,
 		Options: createIndexOpt,
 	}
 
@@ -1092,6 +1110,7 @@ func (c *Collection) Distinct(ctx context.Context, field string, filter types.Fi
 	return results, err
 }
 
+// Option TODO
 func (f *Find) Option(opts ...*types.FindOpts) {
 	for _, opt := range opts {
 		if opt == nil {

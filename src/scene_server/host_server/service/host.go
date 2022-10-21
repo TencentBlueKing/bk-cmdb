@@ -33,6 +33,7 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
+// AppResult TODO
 type AppResult struct {
 	Result  bool        `json:"result"`
 	Code    int         `json:"code"`
@@ -40,6 +41,7 @@ type AppResult struct {
 	Data    DataInfo    `json:"data"`
 }
 
+// DataInfo TODO
 type DataInfo struct {
 	Count int                      `json:"count"`
 	Info  []map[string]interface{} `json:"info"`
@@ -216,16 +218,10 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 			ApplicationID: appID,
 			HostIDArr:     iHostIDArr,
 		}
-		delResult, err := s.CoreAPI.CoreService().Host().DeleteHostFromSystem(ctx.Kit.Ctx, ctx.Kit.Header, input)
+		err = s.CoreAPI.CoreService().Host().DeleteHostFromSystem(ctx.Kit.Ctx, ctx.Kit.Header, input)
 		if err != nil {
-			blog.Error("DeleteHostBatch DeleteHost http do error. err:%s, input:%s, rid:%s", err.Error(), input,
-				ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !delResult.Result {
-			blog.Errorf("DeleteHostBatch DeleteHost http reply error. result: %#v, input:%#v, rid:%s", delResult,
-				input, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrHostDeleteFail)
+			blog.Error("delete host failed, input: %+v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
+			return err
 		}
 
 		// to save audit.
@@ -297,6 +293,7 @@ func (s *Service) GetHostInstanceProperties(ctx *rest.Contexts) {
 
 }
 
+// AddHost TODO
 // add host to host resource pool
 func (s *Service) AddHost(ctx *rest.Contexts) {
 	hostList := new(meta.HostList)
@@ -355,6 +352,7 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 	ctx.RespEntity(retData)
 }
 
+// AddHostByExcel TODO
 // add host come from excel to host resource pool
 func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 	hostList := new(meta.HostList)
@@ -408,6 +406,7 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 	ctx.RespEntity(retData)
 }
 
+// AddHostToResourcePool TODO
 // add host to resource pool, returns bk_host_id of the successfully added hosts
 func (s *Service) AddHostToResourcePool(ctx *rest.Contexts) {
 
@@ -438,6 +437,7 @@ func (s *Service) AddHostToResourcePool(ctx *rest.Contexts) {
 	ctx.RespEntity(retData)
 }
 
+// AddHostFromAgent TODO
 // Deprecated:
 func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 
@@ -501,6 +501,7 @@ func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 	ctx.RespEntity(success)
 }
 
+// SearchHost TODO
 func (s *Service) SearchHost(ctx *rest.Contexts) {
 
 	body := new(meta.HostCommonSearch)
@@ -529,6 +530,7 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 
 }
 
+// SearchHostWithAsstDetail TODO
 func (s *Service) SearchHostWithAsstDetail(ctx *rest.Contexts) {
 
 	body := new(meta.HostCommonSearch)
@@ -1465,6 +1467,144 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 		"success": successMsg,
 	}
 	ctx.RespEntity(retData)
+}
+
+// CountHostCPU 查询业务下的主机CPU数量的特殊接口，给成本管理使用
+func (s *Service) CountHostCPU(ctx *rest.Contexts) {
+	req := new(meta.CountHostCPUReq)
+	if err := ctx.DecodeInto(&req); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := req.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// get specified biz host cpu count
+	if req.BizID != 0 {
+		cnt, err := s.countBizHostCPU(ctx.Kit, req.BizID)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+		ctx.RespEntity([]meta.BizHostCpuCount{cnt})
+		return
+	}
+
+	// get paged biz ids(including resource pool & not archived biz) sort by id, then get host cpu count of each biz
+	bizReq := &meta.QueryCondition{
+		Condition: mapstr.MapStr{common.BKDataStatusField: mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled}},
+		Page:      meta.BasePage{Start: req.Page.Start, Limit: req.Page.Limit, Sort: common.BKAppIDField},
+		Fields:    []string{common.BKAppIDField},
+	}
+
+	bizRes, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDApp,
+		bizReq)
+	if err != nil {
+		blog.Errorf("get biz ids failed, input: %+v, err: %v, rid: %s", bizReq, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result := make([]meta.BizHostCpuCount, len(bizRes.Info))
+	for idx, biz := range bizRes.Info {
+		bizID, err := biz.Int64(common.BKAppIDField)
+		if err != nil {
+			blog.Errorf("parse biz id failed, biz: %+v, err: %v, rid: %s", biz, err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+			return
+		}
+
+		cnt, err := s.countBizHostCPU(ctx.Kit, bizID)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+		result[idx] = cnt
+	}
+
+	ctx.RespEntity(result)
+}
+
+// countBizHostCPU count host cpu num in one biz
+func (s *Service) countBizHostCPU(kit *rest.Kit, bizID int64) (meta.BizHostCpuCount, error) {
+	cnt := meta.BizHostCpuCount{BizID: bizID}
+
+	pageSize := 500
+	relReq := &meta.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		Page:          meta.BasePage{Start: 0, Limit: pageSize, Sort: common.BKHostIDField},
+		Fields:        []string{common.BKHostIDField},
+	}
+
+	// get host ids in biz and count cpu num, process 1000 relations at a time
+	var prevHostID int64
+	for ; ; relReq.Page.Start += pageSize {
+		relRes, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, relReq)
+		if err != nil {
+			blog.Errorf("get biz host ids failed, req: %+v, err: %v, rid: %s", relReq, err, kit.Rid)
+			return meta.BizHostCpuCount{}, err
+		}
+
+		relLen := len(relRes.Info)
+		if relLen == 0 {
+			break
+		}
+
+		hostIDs := make([]int64, 0)
+		for _, rel := range relRes.Info {
+			// since relations is sorted by host id, we use the previous host id to distinct the ids
+			if rel.HostID == prevHostID {
+				continue
+			}
+			hostIDs = append(hostIDs, rel.HostID)
+			prevHostID = rel.HostID
+		}
+
+		if len(hostIDs) == 0 {
+			continue
+		}
+
+		// get host cpu num, count total host num and cpu num and host with no cpu field num
+		hostReq := &meta.QueryInput{
+			Condition:      mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDs}},
+			Fields:         "bk_cpu",
+			DisableCounter: true,
+		}
+
+		hostRes, err := s.CoreAPI.CoreService().Host().GetHosts(kit.Ctx, kit.Header, hostReq)
+		if err != nil {
+			blog.Errorf("get hosts failed, req: %+v, err: %v, rid: %s", hostReq, err, kit.Rid)
+			return meta.BizHostCpuCount{}, err
+		}
+
+		for _, host := range hostRes.Info {
+			cnt.HostCount++
+			cpuCnt, exists := host["bk_cpu"]
+			if !exists || cpuCnt == nil {
+				cnt.NoCpuHostCount++
+				continue
+			}
+
+			cpuCount, err := util.GetInt64ByInterface(cpuCnt)
+			if err != nil {
+				blog.Errorf("parse host cpu count(%+v) failed, err: %v, rid: %s", cpuCnt, err, kit.Rid)
+				return meta.BizHostCpuCount{}, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_cpu")
+			}
+
+			if cpuCnt == 0 {
+				cnt.NoCpuHostCount++
+				continue
+			}
+
+			cnt.CpuCount += cpuCount
+		}
+
+	}
+
+	return cnt, nil
 }
 
 // AddHostToBusinessIdle add host to business idle module

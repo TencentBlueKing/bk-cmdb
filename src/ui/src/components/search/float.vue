@@ -12,12 +12,18 @@
 
 <template>
   <span class="search-input-wrapper" v-if="multiple">
-    <bk-input class="search-input" type="number" v-model="start" v-on="listeners">
+    <bk-input class="search-input" type="number" v-model="start" :precision="precision" v-on="listeners">
     </bk-input>
     <span class="search-input-grep">-</span>
-    <bk-input class="search-input" type="number" v-model="end" v-on="listeners"></bk-input>
+    <bk-input class="search-input" type="number" v-model="end" :precision="precision" v-on="listeners"></bk-input>
   </span>
-  <bk-input class="search-input" type="number" v-model="localValue" v-on="listeners" v-else></bk-input>
+  <bk-input v-else
+    class="search-input"
+    type="number"
+    v-model="localValue"
+    :precision="precision"
+    v-on="listeners">
+  </bk-input>
 </template>
 
 <script>
@@ -29,6 +35,10 @@
       value: {
         type: [Number, String, Array],
         default: ''
+      },
+      precision: {
+        type: Number,
+        default: 5
       }
     },
     data() {

@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package version TODO
 package version
 
 import (
@@ -39,8 +40,10 @@ var (
 )
 
 var (
+	// CCDistrEnterprise TODO
 	CCDistrEnterprise = "enterprise"
-	CCDistrCommunity  = "community"
+	// CCDistrCommunity TODO
+	CCDistrCommunity = "community"
 )
 
 var (

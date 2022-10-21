@@ -37,7 +37,7 @@ func newClassificationIterator(supplierAccount string, cond common.Condition) (C
 
 	items, err := client.GetClient().CCV3(client.Params{SupplierAccount: supplierAccount}).Classification().SearchClassifications(cond)
 	if nil != err {
-		//fmt.Println("err:", err.Error(), items)
+		// fmt.Println("err:", err.Error(), items)
 		return nil, err
 	}
 
@@ -50,6 +50,7 @@ func newClassificationIterator(supplierAccount string, cond common.Condition) (C
 	return clsIterator, nil
 }
 
+// ForEach TODO
 func (cli *classificationIterator) ForEach(itemCallback func(item Classification) error) error {
 
 	for {
@@ -74,6 +75,7 @@ func (cli *classificationIterator) ForEach(itemCallback func(item Classification
 
 }
 
+// Next TODO
 func (cli *classificationIterator) Next() (Classification, error) {
 
 	if len(cli.buffer) == cli.bufIdx {

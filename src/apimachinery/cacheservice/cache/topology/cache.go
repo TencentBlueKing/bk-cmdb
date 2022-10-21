@@ -90,6 +90,7 @@ func (b *baseCache) ListSets(ctx context.Context, h http.Header, opt *metadata.L
 	return resp.Data, nil
 }
 
+// SearchBusiness TODO
 func (b *baseCache) SearchBusiness(ctx context.Context, h http.Header, bizID int64) (string, error) {
 	resp, err := b.client.Post().
 		WithContext(ctx).
@@ -107,6 +108,7 @@ func (b *baseCache) SearchBusiness(ctx context.Context, h http.Header, bizID int
 	return resp.Data, nil
 }
 
+// SearchSet TODO
 func (b *baseCache) SearchSet(ctx context.Context, h http.Header, setID int64) (string, error) {
 	resp, err := b.client.Post().
 		WithContext(ctx).
@@ -124,6 +126,7 @@ func (b *baseCache) SearchSet(ctx context.Context, h http.Header, setID int64) (
 	return resp.Data, nil
 }
 
+// SearchModule TODO
 func (b *baseCache) SearchModule(ctx context.Context, h http.Header, moduleID int64) (string, error) {
 	resp, err := b.client.Post().
 		WithContext(ctx).
@@ -141,6 +144,7 @@ func (b *baseCache) SearchModule(ctx context.Context, h http.Header, moduleID in
 	return resp.Data, nil
 }
 
+// SearchCustomLayer TODO
 func (b *baseCache) SearchCustomLayer(ctx context.Context, h http.Header, objID string, instID int64) (string, error) {
 	resp, err := b.client.Post().
 		WithContext(ctx).

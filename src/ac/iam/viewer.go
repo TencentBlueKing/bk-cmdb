@@ -29,6 +29,7 @@ type viewer struct {
 	iam    *IAM
 }
 
+// NewViewer TODO
 func NewViewer(client apimachinery.ClientSetInterface, iam *IAM) *viewer {
 	return &viewer{
 		client: client,

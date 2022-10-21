@@ -250,6 +250,7 @@ func (s *Service) generateGseConfigStreamTo(header http.Header, user string, def
 			StorageAddresses: redisStreamToAddresses,
 			Password:         s.Config.SnapRedis.Password,
 			MasterName:       s.Config.SnapRedis.MasterName,
+			SentinelPasswd:   s.Config.SnapRedis.SentinelPassword,
 		}
 
 		// The special logic here is to be compatible with the changes of the gse, it is necessary to explicitly specify
@@ -430,7 +431,7 @@ func (s *Service) getSnapBizID(rid string) (int64, error) {
 	return biz.BizID, nil
 }
 
-// generateGseConfigStreamTo generate host snap stream to config by snap redis config
+// generateGseConfigChannel generate host snap stream to config by snap redis config
 func (s *Service) generateGseConfigChannel(streamToID, dataID int64, rid string,
 	version snapshotVersion) (*metadata.GseConfigChannel, error) {
 

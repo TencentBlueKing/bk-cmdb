@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package healthz TODO
 package healthz
 
 import (
@@ -24,10 +25,12 @@ import (
 	"configcenter/src/common/types"
 )
 
+// HealthzInterface TODO
 type HealthzInterface interface {
 	HealthCheck(moduleName string) (healthy bool, err error)
 }
 
+// NewHealthzClient TODO
 func NewHealthzClient(capability *util.Capability, disc discovery.DiscoveryInterface) HealthzInterface {
 	return &health{
 		capability: capability,
@@ -40,6 +43,7 @@ type health struct {
 	disc       discovery.DiscoveryInterface
 }
 
+// HealthCheck TODO
 func (h *health) HealthCheck(moduleName string) (healthy bool, err error) {
 	switch moduleName {
 	case types.CC_MODULE_DATACOLLECTION:

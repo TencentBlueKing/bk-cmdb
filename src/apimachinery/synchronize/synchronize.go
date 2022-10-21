@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package synchronize TODO
 package synchronize
 
 import (
@@ -23,6 +24,7 @@ import (
 	"configcenter/src/apimachinery/util"
 )
 
+// SynchronizeClientInterface TODO
 type SynchronizeClientInterface interface {
 	SynchronizeSrv(flag string) synchronizeserver.SynchronizeClientInterface
 }
@@ -35,6 +37,7 @@ type synchronizeSrv struct {
 	synchronizeConfig *synchronizeUtil.SynchronizeConfigServ
 }
 
+// NewSynchronize TODO
 func NewSynchronize(apiMachineryConfig *util.APIMachineryConfig, config chan synchronizeUtil.SychronizeConfig) (SynchronizeClientInterface, error) {
 
 	client, err := util.NewClient(apiMachineryConfig.TLSConfig)
@@ -52,6 +55,7 @@ func NewSynchronize(apiMachineryConfig *util.APIMachineryConfig, config chan syn
 	return synchronize, nil
 }
 
+// SynchronizeSrv TODO
 func (s *synchronizeSrv) SynchronizeSrv(flag string) synchronizeserver.SynchronizeClientInterface {
 	s.RLock()
 	srv, ok := s.synchronizeClient[flag]

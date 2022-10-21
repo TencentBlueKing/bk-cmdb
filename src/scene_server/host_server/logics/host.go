@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// GetHostAttributes TODO
 func (lgc *Logics) GetHostAttributes(kit *rest.Kit, bizMetaOpt mapstr.MapStr) ([]metadata.Attribute, error) {
 	searchOp := mapstr.MapStr{
 		common.BKObjIDField: common.BKInnerObjIDHost,
@@ -47,6 +48,7 @@ func (lgc *Logics) GetHostAttributes(kit *rest.Kit, bizMetaOpt mapstr.MapStr) ([
 	return result.Info, nil
 }
 
+// GetHostInstanceDetails TODO
 func (lgc *Logics) GetHostInstanceDetails(kit *rest.Kit, hostID int64) (map[string]interface{}, string, errors.CCError) {
 	// get host details, pre data
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostByID(kit.Ctx, kit.Header, hostID)
@@ -108,7 +110,7 @@ func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, clou
 
 	hostID := int64(0)
 	if len(hostList) == 0 {
-		//host not exist, add host
+		// host not exist, add host
 		host[common.BKHostInnerIPField] = ip
 		host[common.BKCloudIDField] = cloudID
 		host["import_from"] = common.HostAddMethodAgent
@@ -168,7 +170,7 @@ func (lgc *Logics) addHost(kit *rest.Kit, appID int64, host map[string]interface
 	if nil != hasErr {
 		return 0, hasErr
 	}
-	//补充未填写字段的默认值
+	// 补充未填写字段的默认值
 	for _, field := range defaultFields {
 		_, ok := host[field.PropertyID]
 		if !ok {
@@ -540,7 +542,7 @@ func (lgc *Logics) transResourcesValidateDstModuleParams(kit *rest.Kit, moduleID
 	return nil
 }
 
-// transResourcesValidateHostRelations 1、判断所有主机是否在空闲机下面。2、判断主机与业务对应关系是否一致。
+// transResourcesValidateHostRelations 1、判断所有主机是否在空闲机池下面。2、判断主机与业务对应关系是否一致。
 func (lgc *Logics) transResourcesValidateHostRelations(kit *rest.Kit, transResources []metadata.TransferResourceParam,
 	hostIDs []int64) errors.CCError {
 
@@ -555,7 +557,7 @@ func (lgc *Logics) transResourcesValidateHostRelations(kit *rest.Kit, transResou
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
-	//hostRelationMap 以host为维度进行整理，map[hostID]bizID
+	// hostRelationMap 以host为维度进行整理，map[hostID]bizID
 	hostRelationMap := make(map[int64]int64, 0)
 
 	moduleIDs := make([]int64, 0)
@@ -567,14 +569,12 @@ func (lgc *Logics) transResourcesValidateHostRelations(kit *rest.Kit, transResou
 		moduleIDs = append(moduleIDs, relation.ModuleID)
 	}
 
-	// 需要判断所有的原主机所属的模块是否均属于空闲机
+	// 需要判断所有的原主机所属的模块是否均属于空闲机池下
 	filter := []map[string]interface{}{{
 		common.BKModuleIDField: map[string]interface{}{
 			common.BKDBIN: moduleIDs,
 		},
-		common.BKDefaultField: map[string]interface{}{
-			common.BKDBNE: common.DefaultResModuleFlag,
-		},
+		common.BKDefaultField: common.NormalModuleFlag,
 	}}
 
 	counts, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameBaseModule,
@@ -696,13 +696,9 @@ func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr 
 		ApplicationID: bizID,
 		HostIDArr:     hostIDArr,
 	}
-	result, err := lgc.CoreAPI.CoreService().Host().DeleteHostFromSystem(kit.Ctx, kit.Header, input)
+	err = lgc.CoreAPI.CoreService().Host().DeleteHostFromSystem(kit.Ctx, kit.Header, input)
 	if err != nil {
-		blog.Errorf("delete host failed, err: %v, hostID: %#v,appID: %d, rid: %s", err, hostIDArr, bizID, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if err := result.CCError(); err != nil {
-		blog.Errorf("delete host failed, err: %v, hostID: %#v,appID: %d, rid: %s", err, hostIDArr, bizID, kit.Rid)
+		blog.Error("delete host failed, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
 		return nil, err
 	}
 
@@ -1255,6 +1251,7 @@ loop:
 	return nodes, nil
 }
 
+// arrangeInnerModuleTree TODO
 // arrange inner module's topology tree specially.
 func arrangeInnerModuleTree(rid string, withBiz bool, bizsMap map[int64]mapstr.MapStr,
 	innerSetModules map[int64][]mapstr.MapStr, setMap map[int64]mapstr.MapStr) []*metadata.HostTopoNode {
@@ -1389,6 +1386,7 @@ func getTopologyChildren(rid string, rankMap map[string]string, obj string, inst
 
 }
 
+// getInnerObjectDetails TODO
 // get inner object's instance details, as is biz, set, modules from cache
 func (lgc *Logics) getInnerObjectDetails(kit *rest.Kit, withBiz bool, bizList, moduleList,
 	setList []int64) ([]mapstr.MapStr, []mapstr.MapStr, []mapstr.MapStr, error) {
@@ -1487,6 +1485,7 @@ func (lgc *Logics) getInnerObjectDetails(kit *rest.Kit, withBiz bool, bizList, m
 	return bizDetails, setDetails, moduleDetails, nil
 }
 
+// getTopologyRank TODO
 // get mainline topology rank with
 func (lgc *Logics) getTopologyRank(kit *rest.Kit) (map[string]string, map[string]string, []string, error) {
 	mainlineFilter := &metadata.QueryCondition{
@@ -1528,6 +1527,7 @@ func (lgc *Logics) getTopologyRank(kit *rest.Kit) (map[string]string, map[string
 	return rankMap, reverseRankMap, rank, nil
 }
 
+// getCustomObjectInstances TODO
 // get biz custom instances with object
 func (lgc *Logics) getCustomObjectInstances(kit *rest.Kit, obj string, instIDs []interface{}) (
 	[]mapstr.MapStr, error) {

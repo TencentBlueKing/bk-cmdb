@@ -19,11 +19,13 @@ import (
 	"configcenter/src/framework/core/types"
 )
 
+// ListHostsCtx TODO
 type ListHostsCtx struct {
-    BaseCtx
+	BaseCtx
 	Filter ListHostFilter
 }
 
+// ListHostFilter TODO
 type ListHostFilter struct {
 	Page Page `json:"page"`
 	// if you list hosts from the host resource pool,
@@ -33,14 +35,18 @@ type ListHostFilter struct {
 	SearchCondition SearchCondition `json:"condition"`
 }
 
+// IPCtxFlag TODO
 type IPCtxFlag string
 
 const (
+	// InnerIP TODO
 	// search the inner ip or outer ip.
 	InnerIP IPCtxFlag = "bk_host_innerip"
+	// OuterIP TODO
 	OuterIP IPCtxFlag = "bk_host_outerip"
 )
 
+// IPCtx TODO
 type IPCtx struct {
 	Flag IPCtxFlag `json:"flag"`
 	// whether match the ip exactly:
@@ -51,6 +57,7 @@ type IPCtx struct {
 	IPList []string `json:"data"`
 }
 
+// SearchCondition TODO
 type SearchCondition struct {
 	// can be "host", "module", "set", "biz", "object"
 	ObjectName string   `json:"bk_obj_id"`
@@ -58,6 +65,7 @@ type SearchCondition struct {
 	Condition  []Filter `json:"condition"`
 }
 
+// Filter TODO
 type Filter struct {
 	// attribute's name
 	Field string `json:"field"`
@@ -67,11 +75,13 @@ type Filter struct {
 	Value string `json:"value"`
 }
 
+// ListHostResult TODO
 type ListHostResult struct {
 	BaseResp `json:",inline"`
 	Data     HostsInfo `json:"data"`
 }
 
+// HostsInfo TODO
 type HostsInfo struct {
 	Count int64 `json:"count"`
 	// info map format:
@@ -80,6 +90,7 @@ type HostsInfo struct {
 	Info []map[string]types.MapStr `json:"info"`
 }
 
+// GetHostCtx TODO
 type GetHostCtx struct {
 	Ctx     context.Context
 	Header  http.Header
@@ -87,32 +98,38 @@ type GetHostCtx struct {
 	HostID  int64
 }
 
+// GetHostResult TODO
 type GetHostResult struct {
 	BaseResp `json:",inline"`
 	Data     []HostAttribute `json:"data"`
 }
 
+// HostAttribute TODO
 type HostAttribute struct {
 	ID    string `json:"bk_property_id"`
 	Name  string `json:"bk_property_name"`
 	Value string `json:"bk_property_value"`
 }
 
+// GetHostSnapshotCtx TODO
 type GetHostSnapshotCtx struct {
-    BaseCtx
+	BaseCtx
 	HostID int64
 }
 
+// GetHostSnapshotResult TODO
 type GetHostSnapshotResult struct {
 	BaseResp `json:",inline"`
 	Data     types.MapStr `json:"data"`
 }
 
+// UpdateHostsAttributesCtx TODO
 type UpdateHostsAttributesCtx struct {
-    BaseCtx
+	BaseCtx
 	Attributes HostsAttributes
 }
 
+// HostsAttributes TODO
 type HostsAttributes struct {
 	// host ids, comma separated.
 	// like: "1,2,4"
@@ -120,11 +137,13 @@ type HostsAttributes struct {
 	Attributes types.MapStr `json:",inline"`
 }
 
+// DeleteHostsCtx TODO
 type DeleteHostsCtx struct {
-    BaseCtx
-	Hosts  DeletedHostsInfo
+	BaseCtx
+	Hosts DeletedHostsInfo
 }
 
+// DeletedHostsInfo TODO
 type DeletedHostsInfo struct {
 	// host ids, comma separated.
 	// like: "1,2,4"

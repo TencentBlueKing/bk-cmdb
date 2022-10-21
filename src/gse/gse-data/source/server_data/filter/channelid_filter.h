@@ -17,7 +17,7 @@
 #include "datacell.h"
 #include "datafilter.h"
 namespace gse { 
-namespace dataserver {
+namespace data {
 
 class ChannelId_Filter : public IDataFilter
 {

@@ -50,16 +50,19 @@ type InstanceInterface interface {
 	SelectInst(ctx context.Context, objID string, instID int64, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
 	SelectTopo(ctx context.Context, objID string, instID int64, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchTopoResult, err error)
 	SelectAssociationTopo(ctx context.Context, objID string, instID int64, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchAssociationTopoResult, err error)
-	CreateModule(ctx context.Context, appID string, setID string, h http.Header, dat map[string]interface{}) (resp *metadata.CreateInstResult, err error)
-	DeleteModule(ctx context.Context, appID string, setID string, moduleID string, h http.Header) (resp *metadata.Response, err error)
-	UpdateModule(ctx context.Context, appID string, setID string, moduleID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
-	SearchModule(ctx context.Context, ownerID string, appID string, setID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
+	CreateModule(ctx context.Context, appID, setID int64, h http.Header, dat map[string]interface{}) (mapstr.MapStr,
+		errors.CCErrorCoder)
+	DeleteModule(ctx context.Context, appID, setID, moduleID int64, h http.Header) errors.CCErrorCoder
+	UpdateModule(ctx context.Context, appID, setID, moduleID int64, h http.Header,
+		dat map[string]interface{}) errors.CCErrorCoder
+	SearchModule(ctx context.Context, ownerID string, appID, setID int64, h http.Header, s *params.SearchParams) (
+		*metadata.InstResult, errors.CCErrorCoder)
 	SearchModuleByCondition(ctx context.Context, appID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
 	SearchModuleBatch(ctx context.Context, appID string, h http.Header, s *metadata.SearchInstBatchOption) (resp *metadata.MapArrayResponse, err error)
 	SearchModuleWithRelation(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.ResponseInstData, err error)
-	CreateSet(ctx context.Context, appID string, h http.Header, dat mapstr.MapStr) (resp *metadata.CreateInstResult, err error)
-	DeleteSet(ctx context.Context, appID string, setID string, h http.Header) (resp *metadata.Response, err error)
-	UpdateSet(ctx context.Context, appID string, setID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+	CreateSet(ctx context.Context, appID int64, h http.Header, dat mapstr.MapStr) (mapstr.MapStr, errors.CCErrorCoder)
+	DeleteSet(ctx context.Context, appID, setID int64, h http.Header) errors.CCErrorCoder
+	UpdateSet(ctx context.Context, appID, setID int64, h http.Header, dat map[string]interface{}) errors.CCErrorCoder
 	SearchSet(ctx context.Context, ownerID string, appID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
 	SearchSetBatch(ctx context.Context, appID string, h http.Header, s *metadata.SearchInstBatchOption) (resp *metadata.MapArrayResponse, err error)
 	SearchInstsNames(ctx context.Context, h http.Header, s *metadata.SearchInstsNamesOption) (resp *metadata.ArrayResponse, err error)
@@ -100,6 +103,7 @@ type instanceClient struct {
 	client rest.ClientInterface
 }
 
+// NewInstanceClient TODO
 func NewInstanceClient(client rest.ClientInterface) InstanceInterface {
 	return &instanceClient{
 		client: client,

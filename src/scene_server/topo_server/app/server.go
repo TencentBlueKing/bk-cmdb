@@ -138,6 +138,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 const waitForSeconds = 180
 
+// CheckForReadiness TODO
 func (t *TopoServer) CheckForReadiness() error {
 	for i := 1; i < waitForSeconds; i++ {
 		if !t.configReady {

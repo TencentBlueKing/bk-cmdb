@@ -16,10 +16,12 @@ import (
 	"net/http"
 )
 
+// MapBuilder TODO
 type MapBuilder struct {
 	value map[string]interface{}
 }
 
+// NewMapBuilder TODO
 func NewMapBuilder(kvPairs ...interface{}) *MapBuilder {
 	value := map[string]interface{}{}
 	for i := range kvPairs {
@@ -30,14 +32,17 @@ func NewMapBuilder(kvPairs ...interface{}) *MapBuilder {
 	return &MapBuilder{value}
 }
 
+// Build TODO
 func (m *MapBuilder) Build() map[string]interface{} {
 	return m.value
 }
 
+// Set TODO
 func (m *MapBuilder) Set(k string, v interface{}) {
 	m.value[k] = v
 }
 
+// Append TODO
 func (m *MapBuilder) Append(k string, vs ...interface{}) {
 	_, ok := m.value[k]
 	if !ok {
@@ -46,10 +51,12 @@ func (m *MapBuilder) Append(k string, vs ...interface{}) {
 	m.value[k] = append(m.value[k].([]interface{}), vs...)
 }
 
+// Delete TODO
 func (m *MapBuilder) Delete(k string) {
 	delete(m.value, k)
 }
 
+// CopyMap TODO
 func CopyMap(data map[string]interface{}, keys []string, ignores []string) map[string]interface{} {
 	newInst := make(map[string]interface{})
 

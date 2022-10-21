@@ -18,7 +18,18 @@ const state = {
 const getters = {
   activeDirectory: state => state.activeDirectory,
   directoryList: state => state.directoryList,
-  defaultDirectory: state => state.directoryList.find(directory => directory.default === 1)
+  defaultDirectory: state => state.directoryList.find(directory => directory.default === 1),
+  directorySortedList: state => (topList, directoryList) => {
+    const list = directoryList || [...state.directoryList]
+    const count = topList.length
+    list.sort((dirA, dirB) => {
+      const stickyIndexA = topList.indexOf(dirA.bk_module_id) + 1
+      const stickyIndexB = topList.indexOf(dirB.bk_module_id) + 1
+
+      return (stickyIndexA || (count + 1)) - (stickyIndexB || (count + 1))
+    })
+    return list
+  }
 }
 
 const mutations = {

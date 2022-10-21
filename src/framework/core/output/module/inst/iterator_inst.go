@@ -34,6 +34,7 @@ type iteratorInst struct {
 	bufIdx      int
 }
 
+// NewIteratorInst TODO
 func NewIteratorInst(target model.Model, cond common.Condition) (Iterator, error) {
 
 	iter := &iteratorInst{
@@ -57,6 +58,7 @@ func NewIteratorInst(target model.Model, cond common.Condition) (Iterator, error
 
 }
 
+// Next TODO
 func (cli *iteratorInst) Next() (CommonInstInterface, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
@@ -87,6 +89,7 @@ func (cli *iteratorInst) Next() (CommonInstInterface, error) {
 	return returnItem, nil
 }
 
+// ForEach TODO
 func (cli *iteratorInst) ForEach(callbackItem func(item CommonInstInterface) error) error {
 	for {
 

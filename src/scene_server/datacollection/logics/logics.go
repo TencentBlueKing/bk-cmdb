@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package logics TODO
 package logics
 
 import (
@@ -28,6 +29,7 @@ type Logics struct {
 	ctx context.Context
 }
 
+// NewLogics TODO
 func NewLogics(ctx context.Context, engine *backbone.Engine, mgoCli dal.RDB, esb esbserver.EsbClientInterface) *Logics {
 	return &Logics{ctx: ctx, db: mgoCli, Engine: engine, ESB: esb}
 }

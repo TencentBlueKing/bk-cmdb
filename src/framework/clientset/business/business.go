@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package business TODO
 package business
 
 import (
@@ -25,6 +26,7 @@ type biz struct {
 	client rest.ClientInterface
 }
 
+// CreateBusiness TODO
 func (b *biz) CreateBusiness(info *types.CreateBusinessCtx) (types2.MapStr, error) {
 	resp := new(types.BusinessResponse)
 	subPath := fmt.Sprintf("/biz/%s", info.Tenancy)
@@ -46,6 +48,7 @@ func (b *biz) CreateBusiness(info *types.CreateBusinessCtx) (types2.MapStr, erro
 	return resp.Data, nil
 }
 
+// UpdateBusiness TODO
 func (b *biz) UpdateBusiness(info *types.UpdateBusinessCtx) error {
 	resp := new(types.BusinessResponse)
 	subPath := fmt.Sprintf("/biz/%s/%d", info.Tenancy, info.BusinessID)
@@ -67,6 +70,7 @@ func (b *biz) UpdateBusiness(info *types.UpdateBusinessCtx) error {
 	return nil
 }
 
+// DeleteBusiness TODO
 func (b *biz) DeleteBusiness(info *types.DeleteBusinessCtx) error {
 	resp := new(types.BusinessResponse)
 	subPath := fmt.Sprintf("/biz/%s/%d", info.Tenancy, info.BusinessID)
@@ -88,6 +92,7 @@ func (b *biz) DeleteBusiness(info *types.DeleteBusinessCtx) error {
 	return nil
 }
 
+// ListBusiness TODO
 func (b *biz) ListBusiness(info *types.ListBusinessCtx) ([]types2.MapStr, error) {
 	if len(info.Tenancy) == 0 {
 		return nil, errors.New("business's tenancy can not be empty.")

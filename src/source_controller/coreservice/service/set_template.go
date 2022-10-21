@@ -22,6 +22,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// CreateSetTemplate TODO
 func (s *coreService) CreateSetTemplate(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -45,6 +46,7 @@ func (s *coreService) CreateSetTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateSetTemplate TODO
 func (s *coreService) UpdateSetTemplate(ctx *rest.Contexts) {
 	setTemplateIDStr := ctx.Request.PathParameter(common.BKSetTemplateIDField)
 	setTemplateID, err := strconv.ParseInt(setTemplateIDStr, 10, 64)
@@ -68,6 +70,7 @@ func (s *coreService) UpdateSetTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// DeleteSetTemplate TODO
 func (s *coreService) DeleteSetTemplate(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -90,6 +93,7 @@ func (s *coreService) DeleteSetTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// GetSetTemplate TODO
 func (s *coreService) GetSetTemplate(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -114,6 +118,7 @@ func (s *coreService) GetSetTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(setTemplate)
 }
 
+// ListSetTemplate TODO
 func (s *coreService) ListSetTemplate(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -137,6 +142,7 @@ func (s *coreService) ListSetTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(setTemplateResult)
 }
 
+// CountSetTplInstances TODO
 func (s *coreService) CountSetTplInstances(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -178,6 +184,7 @@ func (s *coreService) CountSetTplInstances(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// ListSetServiceTemplateRelations TODO
 func (s *coreService) ListSetServiceTemplateRelations(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -202,6 +209,7 @@ func (s *coreService) ListSetServiceTemplateRelations(ctx *rest.Contexts) {
 	ctx.RespEntity(relations)
 }
 
+// ListSetTplRelatedSvcTpl TODO
 func (s *coreService) ListSetTplRelatedSvcTpl(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
@@ -224,4 +232,98 @@ func (s *coreService) ListSetTplRelatedSvcTpl(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(serviceTemplates)
+}
+
+// CreateSetTemplateAttribute create set template attributes
+func (s *coreService) CreateSetTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.CreateSetTempAttrsOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	ids, err := s.core.SetTemplateOperation().CreateSetTempAttr(ctx.Kit, option)
+	if err != nil {
+		blog.Errorf("create set template attributes(%+v) failed, err: %v, rid: %s", option, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result := metadata.RspIDs{
+		IDs: make([]int64, len(ids)),
+	}
+
+	for idx, id := range ids {
+		result.IDs[idx] = int64(id)
+	}
+	ctx.RespEntity(result)
+}
+
+// UpdateSetTemplateAttribute update set template attribute
+func (s *coreService) UpdateSetTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.UpdateSetTempAttrOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	if err := s.core.SetTemplateOperation().UpdateSetTempAttr(ctx.Kit, option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+// DeleteSetTemplateAttribute delete set template attribute
+func (s *coreService) DeleteSetTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.DeleteSetTempAttrOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	if err := s.core.SetTemplateOperation().DeleteSetTemplateAttribute(ctx.Kit, option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+// ListSetTemplateAttribute list set template attribute
+func (s *coreService) ListSetTemplateAttribute(ctx *rest.Contexts) {
+	option := new(metadata.ListSetTempAttrOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	data, err := s.core.SetTemplateOperation().ListSetTemplateAttribute(ctx.Kit, option)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(data)
 }

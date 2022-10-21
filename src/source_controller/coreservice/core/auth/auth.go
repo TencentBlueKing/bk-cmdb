@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package auth TODO
 package auth
 
 import (
@@ -35,6 +36,7 @@ func New(dbProxy dal.DB) core.AuthOperation {
 	}
 }
 
+// SearchAuthResource TODO
 func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64, []map[string]interface{}, errors.CCErrorCoder) {
 	if param.Collection == "" {
 		blog.ErrorJSON("search auth resource in empty mongo collection, param: %s, rid: %s", param, kit.Rid)

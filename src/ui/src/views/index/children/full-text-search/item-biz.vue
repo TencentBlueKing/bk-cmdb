@@ -29,7 +29,7 @@
 </template>
 
 <script>
-  import { defineComponent, toRefs, computed } from '@vue/composition-api'
+  import { defineComponent, toRefs, computed } from 'vue'
   import { getText, getHighlightValue } from './use-item.js'
 
   export default defineComponent({

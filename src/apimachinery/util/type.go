@@ -25,6 +25,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// APIMachineryConfig TODO
 type APIMachineryConfig struct {
 	// request's qps value
 	QPS int64
@@ -33,6 +34,7 @@ type APIMachineryConfig struct {
 	TLSConfig *TLSClientConfig
 }
 
+// Capability TODO
 type Capability struct {
 	Client     HttpClient
 	Discover   discovery.Interface
@@ -44,6 +46,7 @@ type Capability struct {
 	ToleranceLatencyTime time.Duration
 }
 
+// MetricOption TODO
 type MetricOption struct {
 	// prometheus metric register
 	Register prometheus.Registerer
@@ -51,12 +54,14 @@ type MetricOption struct {
 	DurationBuckets []float64
 }
 
+// MockInfo TODO
 type MockInfo struct {
 	Mocked      bool
 	SetMockData bool
 	MockData    interface{}
 }
 
+// TLSClientConfig TODO
 type TLSClientConfig struct {
 	// Server should be accessed without verifying the TLS certificate. For testing only.
 	InsecureSkipVerify bool

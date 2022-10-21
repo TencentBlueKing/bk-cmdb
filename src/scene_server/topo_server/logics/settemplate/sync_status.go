@@ -13,6 +13,9 @@
 package settemplate
 
 import (
+	"fmt"
+	"reflect"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -22,6 +25,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// GetSets TODO
 func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int64) ([]metadata.SetInst,
 	errors.CCErrorCoder) {
 
@@ -61,9 +65,10 @@ func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int6
 
 // isSyncRequired Note: If the parameter isInterrupt is true, it will return if a state to be synchronized is found.
 // At this time, the rest of the cluster state will be set to synchronized by default. If you need to return all pending
-//synchronization status state setId, you need to set this parameter to false.
-func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID int64, setIDs []int64,
-	isInterrupt bool) (map[int64]bool, errors.CCErrorCoder) {
+// synchronization status state setId, you need to set this parameter to false.
+func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID, setTemplateID int64, setIDs []int64,
+	setMap map[int64]mapstr.MapStr, isInterrupt bool, attrIdPropertyIdMap map[int64]string,
+	setTemplateAttrValueMap map[int64]interface{}) (map[int64]bool, errors.CCErrorCoder) {
 
 	if len(setIDs) == 0 {
 		blog.Errorf("array of set_id is empty, rid: %s", kit.Rid)
@@ -85,22 +90,12 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 	}
 
 	moduleFilter := &metadata.QueryCondition{
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-		Fields: []string{
-			common.BKSetIDField,
-			common.BKModuleIDField,
-			common.BKSetTemplateIDField,
-			common.BKModuleNameField,
-			common.BKServiceTemplateIDField,
-		},
+		Page: metadata.BasePage{Limit: common.BKNoLimit},
+		Fields: []string{common.BKSetIDField, common.BKModuleIDField, common.BKSetTemplateIDField,
+			common.BKModuleNameField, common.BKServiceTemplateIDField},
 		Condition: mapstr.MapStr(map[string]interface{}{
 			common.BKSetTemplateIDField: setTemplateID,
-			common.BKSetIDField: map[string]interface{}{
-				common.BKDBIN: setIDs,
-			},
-		}),
+			common.BKSetIDField:         map[string]interface{}{common.BKDBIN: setIDs}}),
 	}
 
 	modulesInstResult := new(metadata.ResponseModuleInstance)
@@ -128,28 +123,36 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID int64, setTemplateID 
 	checkResult := make(map[int64]bool, len(setIDs))
 	for _, setID := range setIDs {
 		module := setModules[setID]
-		checkResult[setID] = diffModuleServiceTpl(svcTplCnt, svcTplMap, int64(len(module)), module)
+		checkResult[setID] = diffModuleServiceTplAndAttrs(svcTplCnt, int64(len(module)), svcTplMap, module,
+			attrIdPropertyIdMap, setMap[setID], setTemplateAttrValueMap)
 		if isInterrupt && checkResult[setID] {
 			return checkResult, nil
 		}
 	}
-
 	return checkResult, nil
 }
 
-// diffModuleServiceTpl check different of modules with template in one set
-func diffModuleServiceTpl(serviceTplCnt int64, serviceTemplates map[int64]metadata.ServiceTemplate, moduleCnt int64,
-	modules []metadata.ModuleInst) bool {
+// diffModuleServiceTplAndAttrs check different of modules with template in one set
+func diffModuleServiceTplAndAttrs(serviceTplCnt, moduleCnt int64, serviceTemplates map[int64]metadata.ServiceTemplate,
+	modules []metadata.ModuleInst, attrIdPropertyIdMap map[int64]string, setMap mapstr.MapStr,
+	setTemplateAttrValueMap map[int64]interface{}) bool {
+
+	if serviceTplCnt != moduleCnt {
+		return true
+	}
+
+	// 对比集群模板与集群属性值是否有差异
+	for setTemplateAttrID, value := range setTemplateAttrValueMap {
+		if !reflect.DeepEqual(value, setMap[attrIdPropertyIdMap[setTemplateAttrID]]) {
+			return true
+		}
+	}
 	/*
 		depend on logic in func DiffServiceTemplateWithModules
 		if the number of the module and the template is not the same, it changed
 		if the name of the module and the template is not the same, it changed
 		this function only use to check if module and template are the same
 	*/
-
-	if serviceTplCnt != moduleCnt {
-		return true
-	}
 
 	for _, module := range modules {
 		template, ok := serviceTemplates[module.ServiceTemplateID]
@@ -164,6 +167,7 @@ func diffModuleServiceTpl(serviceTplCnt int64, serviceTemplates map[int64]metada
 	return false
 }
 
+// GetLatestSyncTaskDetail TODO
 func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit,
 	taskCond metadata.ListAPITaskDetail) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder) {
 
@@ -220,42 +224,89 @@ func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
 	}
 }
 
+func (st *setTemplate) getSetMapStrByOption(kit *rest.Kit, option *metadata.ListSetTemplateSyncStatusOption,
+	fields []string) ([]mapstr.MapStr, errors.CCErrorCoder) {
+
+	filter := &metadata.QueryCondition{
+		Fields: fields,
+		Condition: map[string]interface{}{
+			common.BKSetTemplateIDField: option.SetTemplateID,
+			common.BKAppIDField:         option.BizID,
+		},
+		Page:           option.Page,
+		DisableCounter: true,
+	}
+
+	if len(option.SetIDs) > 0 {
+		filter.Condition[common.BKSetIDField] = map[string]interface{}{
+			common.BKDBIN: option.SetIDs,
+		}
+	}
+
+	if len(option.SearchKey) > 0 {
+		filter.Condition[common.BKSetNameField] = map[string]interface{}{
+			common.BKDBLIKE:    fmt.Sprintf(".*%s.*", option.SearchKey),
+			common.BKDBOPTIONS: "i",
+		}
+	}
+	set, err := st.client.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, filter)
+	if err != nil {
+		blog.Errorf("get set failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrTopoSetSelectFailed, err.Error())
+	}
+
+	return set.Info, nil
+}
+
 // ListSetTemplateSyncStatus batch search set template sync status
 func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata.ListSetTemplateSyncStatusOption) (
 	*metadata.ListAPITaskSyncStatusResult, errors.CCErrorCoder) {
 
-	// get set ids from option
-	setCond, err := option.ToSetCond(kit.CCError)
+	// validate option
+	err := option.Validate(kit.CCError)
 	if err != nil {
 		blog.Errorf("parse set condition failed, err: %v, cond: %#v, rid: %s", err, option, kit.Rid)
 		return nil, err
 	}
 
-	setOpt := &metadata.QueryCondition{
-		Page:      option.Page,
-		Fields:    []string{common.BKSetIDField},
-		Condition: setCond,
+	// 获取指定集群模板的属性ID及属性值
+	attrIDs, setTemplateAttrValueMap, cErr := st.getSetTemplateAttrIdAndPropertyValue(kit, option.BizID,
+		option.SetTemplateID)
+	if cErr != nil {
+		return nil, cErr
 	}
 
-	setRes := new(metadata.ResponseSetInstance)
-	if err := st.client.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDSet, setOpt,
-		setRes); err != nil {
-		blog.Errorf("get set ids failed, filter: %#v, err: %v, rid: %s", setOpt, err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	// 获取集群 attrID 与 propertyID的映射关系
+	propertyIDs, attrIdPropertyIdMap, cErr := st.getSetAttrIDAndPropertyID(kit, attrIDs)
+	if cErr != nil {
+		return nil, cErr
 	}
 
-	if err := setRes.CCError(); err != nil {
-		blog.Errorf("get set ids failed, filter: %#v, err: %v, rid: %s", setOpt, err, kit.Rid)
+	fields := []string{common.BKSetIDField}
+	if len(propertyIDs) > 0 {
+		fields = append(fields, propertyIDs...)
+	}
+
+	sets, err := st.getSetMapStrByOption(kit, option, fields)
+	if err != nil {
+		blog.Errorf("list set failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
 		return nil, err
 	}
 
-	if len(setRes.Data.Info) == 0 {
+	if len(sets) == 0 {
 		return &metadata.ListAPITaskSyncStatusResult{Count: 0, Info: make([]metadata.APITaskSyncStatus, 0)}, nil
 	}
 
-	setIDs := make([]int64, len(setRes.Data.Info))
-	for index, set := range setRes.Data.Info {
-		setIDs[index] = set.SetID
+	setIDs := make([]int64, 0)
+	setMap := make(map[int64]mapstr.MapStr)
+
+	for _, set := range sets {
+		setID, err := util.GetInt64ByInterface(set[common.BKSetIDField])
+		if err != nil {
+			return nil, kit.CCError.CCErrorf(common.CCErrTopoSetSelectFailed)
+		}
+		setIDs = append(setIDs, setID)
+		setMap[setID] = set
 	}
 
 	// get latest sync set template api task sync status by sets
@@ -279,18 +330,19 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata
 	}
 
 	// compare sets with set templates to get their sync status
-	statusMap, err := st.isSyncRequired(kit, option.BizID, option.SetTemplateID, setIDs, false)
+	statusMap, err := st.isSyncRequired(kit, option.BizID, option.SetTemplateID, setIDs, setMap, false,
+		attrIdPropertyIdMap, setTemplateAttrValueMap)
 	if err != nil {
 		blog.Errorf("check if set need sync failed, err: %v, set ids: %+v, rid: %s", err, setIDs, kit.Rid)
-		return nil, err
+		return &metadata.ListAPITaskSyncStatusResult{}, err
 	}
 
 	reformatStatuses, err := st.rearrangeSetTempSyncStatus(kit, option, taskStatusRes, statusMap)
 	if err != nil {
-		return nil, err
+		return &metadata.ListAPITaskSyncStatusResult{}, err
 	}
 
-	return &metadata.ListAPITaskSyncStatusResult{Count: int64(setRes.Data.Count), Info: reformatStatuses}, nil
+	return &metadata.ListAPITaskSyncStatusResult{Count: int64(len(sets)), Info: reformatStatuses}, nil
 }
 
 // rearrangeSetTempSyncStatus set status by actual status and do another round of filter by status

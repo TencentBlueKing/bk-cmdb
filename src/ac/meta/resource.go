@@ -12,8 +12,10 @@
 
 package meta
 
+// ResourceType TODO
 type ResourceType string
 
+// String 用于打印
 func (r ResourceType) String() string {
 	return string(r)
 }
@@ -65,17 +67,23 @@ const (
 )
 
 const (
+	// CMDBSysInstTypePrefix TODO
 	// CMDB侧资源的通用模型实例前缀标识
 	CMDBSysInstTypePrefix = "comobj_"
 )
 
 const (
+	// NetCollector TODO
 	NetCollector = "netCollector"
-	NetDevice    = "netDevice"
-	NetProperty  = "netProperty"
-	NetReport    = "netReport"
+	// NetDevice TODO
+	NetDevice = "netDevice"
+	// NetProperty TODO
+	NetProperty = "netProperty"
+	// NetReport TODO
+	NetReport = "netReport"
 )
 
+// ResourceDescribe TODO
 type ResourceDescribe struct {
 	Type    ResourceType
 	Actions []Action

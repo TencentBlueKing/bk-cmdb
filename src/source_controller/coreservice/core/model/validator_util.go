@@ -22,7 +22,7 @@ const (
 	mongoCollMaxLength int = 115
 )
 
-// 字符格式限制检查
+// satisfyCharLimit 字符格式限制检查
 func satisfyCharLimit(name string) bool {
 	if strings.ContainsAny(name, mongoFieldNotAllowed) {
 		return false
@@ -30,7 +30,7 @@ func satisfyCharLimit(name string) bool {
 	return true
 }
 
-// 考虑到后续按模型拆分collection，需要限制模型名的字符格式，以满足mongo对collection名的限制要求
+// SatisfyMongoCollLimit 考虑到后续按模型拆分collection，需要限制模型名的字符格式，以满足mongo对collection名的限制要求
 // mongo collection名限制可见 https://docs.mongodb.com/manual/reference/limits/#Restriction-on-Collection-Names
 func SatisfyMongoCollLimit(collName string) bool {
 	if len(collName) > mongoCollMaxLength {
@@ -39,7 +39,7 @@ func SatisfyMongoCollLimit(collName string) bool {
 	return satisfyCharLimit(collName)
 }
 
-// 考虑到后续按模型拆分collection，需要限制模型属性名的字符格式，以满足mongo对字段名的限制要求
+// SatisfyMongoFieldLimit 考虑到后续按模型拆分collection，需要限制模型属性名的字符格式，以满足mongo对字段名的限制要求
 // mongo field名限制可见 https://docs.mongodb.com/manual/reference/limits/#Restrictions-on-Field-Names
 func SatisfyMongoFieldLimit(fieldName string) bool {
 	return satisfyCharLimit(fieldName)

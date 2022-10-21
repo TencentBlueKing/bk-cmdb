@@ -31,7 +31,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
-	"github.com/chalice-1831/zip"
+	"github.com/alexmullins/zip"
 	yl "github.com/ghodss/yaml"
 )
 
@@ -58,6 +58,7 @@ func (lgc *Logics) GetObjectData(objID string, header http.Header, modelBizID in
 
 }
 
+// GetPropertyFieldType TODO
 func GetPropertyFieldType(lang language.DefaultCCLanguageIf) map[string]string {
 	var fieldType = map[string]string{
 		"bk_property_id":         lang.Language("val_type_text"), // "文本",
@@ -75,6 +76,7 @@ func GetPropertyFieldType(lang language.DefaultCCLanguageIf) map[string]string {
 	return fieldType
 }
 
+// GetPropertyFieldDesc TODO
 func GetPropertyFieldDesc(lang language.DefaultCCLanguageIf) map[string]string {
 
 	var fields = map[string]string{
@@ -94,6 +96,7 @@ func GetPropertyFieldDesc(lang language.DefaultCCLanguageIf) map[string]string {
 	return fields
 }
 
+// ConvAttrOption TODO
 func ConvAttrOption(attrItems map[int]map[string]interface{}) {
 	for index, attr := range attrItems {
 
@@ -273,21 +276,18 @@ func (lgc *Logics) BuildZipFile(header http.Header, zipw *zip.Writer, fileName s
 	data []byte) error {
 
 	rid := util.GetHTTPCCRequestID(header)
-	var w io.Writer
-	var err error
+	fh := &zip.FileHeader{
+		Name:   fileName,
+		Method: zip.Deflate,
+	}
+	fh.SetModTime(time.Now())
 	if password != "" {
-		w, err = zipw.Encrypt(fileName, password, zip.AES256Encryption)
-		if err != nil {
-			blog.Errorf("encrypt zip file failed, err: %v, rid: %s", err, rid)
-			return err
-		}
-
-	} else {
-		w, err = zipw.Create(fileName)
-		if err != nil {
-			blog.Errorf("create zip file failed, err: %v, rid: %s", err, rid)
-			return err
-		}
+		fh.SetPassword(password)
+	}
+	w, err := zipw.CreateHeader(fh)
+	if err != nil {
+		blog.Errorf("encrypt zip file failed, err: %v, rid: %s", err, rid)
+		return err
 	}
 
 	if _, err := io.Copy(w, bytes.NewReader(data)); err != nil {

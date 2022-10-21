@@ -2337,6 +2337,11 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 
+		if len(groups) == 0 {
+			ps.err = fmt.Errorf("object attribute group(id: %d) is not exist", groupID)
+			return ps
+		}
+
 		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: groups[0].ObjectID})
 		if err != nil {
 			ps.err = err

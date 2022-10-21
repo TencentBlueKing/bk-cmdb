@@ -24,7 +24,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
-// SearchMainlineBusinessTopo get topo tree of mainline model
+// SearchMainlineInstanceTopo get topo tree of mainline model
 func (m *topoManager) SearchMainlineInstanceTopo(ctx context.Context, header http.Header, bkBizID int64, withDetail bool) (*metadata.TopoInstanceNode, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 

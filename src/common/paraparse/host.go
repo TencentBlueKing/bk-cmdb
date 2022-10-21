@@ -21,15 +21,19 @@ import (
 	"configcenter/src/common/util"
 )
 
-//type Flag string
+// type Flag string
 
 const (
+	// INNERONLY TODO
 	INNERONLY string = "bk_host_innerip"
+	// OUTERONLY TODO
 	OUTERONLY string = "bk_host_outerip"
-	IOBOTH    string = "bk_host_innerip|bk_host_outerip"
+	// IOBOTH TODO
+	IOBOTH string = "bk_host_innerip|bk_host_outerip"
 )
 
-//common search struct
+// HostCommonSearch TODO
+// common search struct
 type HostCommonSearch struct {
 	AppID     int               `json:"bk_biz_id,omitempty"`
 	Ip        IPInfo            `json:"ip"`
@@ -38,27 +42,31 @@ type HostCommonSearch struct {
 	Pattern   string            `json:"pattern,omitempty"`
 }
 
-//ip search info
+// IPInfo TODO
+// ip search info
 type IPInfo struct {
 	Data  []string `json:"data"`
 	Exact int      `json:"exact"`
 	Flag  string   `json:"flag"`
 }
 
-//common page info
+// PageInfo TODO
+// common page info
 type PageInfo struct {
 	Start int    `json:"start"`
 	Limit int    `json:"limit"`
 	Sort  string `json:"sort"`
 }
 
-//search condition
+// SearchCondition TODO
+// search condition
 type SearchCondition struct {
 	Fields    []string      `json:"fields"`
 	Condition []interface{} `json:"condition"`
 	ObjectID  string        `json:"bk_obj_id"`
 }
 
+// ParseHostParams TODO
 func ParseHostParams(input []metadata.ConditionItem, output map[string]interface{}) error {
 	for _, i := range input {
 		switch i.Operator {
@@ -112,6 +120,7 @@ func ParseHostParams(input []metadata.ConditionItem, output map[string]interface
 	return nil
 }
 
+// ParseHostIPParams TODO
 func ParseHostIPParams(ipCond metadata.IPInfo, output map[string]interface{}) error {
 	ipArr := ipCond.Data
 	exact := ipCond.Exact

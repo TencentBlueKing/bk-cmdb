@@ -24,10 +24,12 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// Client TODO
 func (a *apiServer) Client() rest.ClientInterface {
 	return a.client
 }
 
+// AddDefaultApp TODO
 func (a *apiServer) AddDefaultApp(ctx context.Context, h http.Header, ownerID string, params mapstr.MapStr) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "biz/default/%s"
@@ -42,6 +44,7 @@ func (a *apiServer) AddDefaultApp(ctx context.Context, h http.Header, ownerID st
 	return
 }
 
+// SearchDefaultApp TODO
 func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header, ownerID string) (resp *metadata.QueryInstResult, err error) {
 	resp = new(metadata.QueryInstResult)
 	subPath := "biz/default/%s/search"
@@ -56,6 +59,7 @@ func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header, ownerID
 	return
 }
 
+// GetObjectData TODO
 func (a *apiServer) GetObjectData(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ObjectAttrBatchResult, err error) {
 	resp = new(metadata.ObjectAttrBatchResult)
 	subPath := "/findmany/object"
@@ -96,6 +100,7 @@ func (a *apiServer) SearchObjectWithTotalInfo(ctx context.Context, h http.Header
 	return resp.Data, nil
 }
 
+// GetInstDetail TODO
 func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
 
 	resp = new(metadata.QueryInstResult)
@@ -110,6 +115,7 @@ func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, objID stri
 	return
 }
 
+// GetInstUniqueFields TODO
 func (a *apiServer) GetInstUniqueFields(ctx context.Context, h http.Header, objID string, uniqueID int64,
 	params mapstr.MapStr) (resp metadata.QueryUniqueFieldsResult, err error) {
 
@@ -124,6 +130,7 @@ func (a *apiServer) GetInstUniqueFields(ctx context.Context, h http.Header, objI
 	return
 }
 
+// CreateObjectAtt TODO
 func (a *apiServer) CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/create/objectattr"
@@ -138,6 +145,7 @@ func (a *apiServer) CreateObjectAtt(ctx context.Context, h http.Header, obj *met
 	return
 }
 
+// UpdateObjectAtt TODO
 func (a *apiServer) UpdateObjectAtt(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/objectattr/%s"
@@ -151,6 +159,7 @@ func (a *apiServer) UpdateObjectAtt(ctx context.Context, objID string, h http.He
 	return
 }
 
+// DeleteObjectAtt TODO
 func (a *apiServer) DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/delete/objectattr/%s"
@@ -165,6 +174,7 @@ func (a *apiServer) DeleteObjectAtt(ctx context.Context, objID string, h http.He
 	return
 }
 
+// GetObjectAttr TODO
 func (a *apiServer) GetObjectAttr(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ObjectAttrResult, err error) {
 
 	resp = new(metadata.ObjectAttrResult)
@@ -180,6 +190,7 @@ func (a *apiServer) GetObjectAttr(ctx context.Context, h http.Header, params map
 	return
 }
 
+// GetHostData TODO
 func (a *apiServer) GetHostData(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
 
 	resp = new(metadata.QueryInstResult)
@@ -195,6 +206,7 @@ func (a *apiServer) GetHostData(ctx context.Context, h http.Header, params mapst
 	return
 }
 
+// GetObjectGroup TODO
 func (a *apiServer) GetObjectGroup(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.ObjectAttrGroupResult, err error) {
 
 	resp = new(metadata.ObjectAttrGroupResult)
@@ -209,6 +221,7 @@ func (a *apiServer) GetObjectGroup(ctx context.Context, h http.Header, ownerID, 
 	return
 }
 
+// AddHost TODO
 func (a *apiServer) AddHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
 
 	resp = new(metadata.ResponseDataMapStr)
@@ -224,6 +237,7 @@ func (a *apiServer) AddHost(ctx context.Context, h http.Header, params mapstr.Ma
 	return
 }
 
+// AddHostByExcel TODO
 func (a *apiServer) AddHostByExcel(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
 
 	resp = new(metadata.ResponseDataMapStr)
@@ -239,6 +253,7 @@ func (a *apiServer) AddHostByExcel(ctx context.Context, h http.Header, params ma
 	return
 }
 
+// UpdateHost TODO
 func (a *apiServer) UpdateHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
 
 	resp = new(metadata.ResponseDataMapStr)
@@ -254,6 +269,7 @@ func (a *apiServer) UpdateHost(ctx context.Context, h http.Header, params mapstr
 	return
 }
 
+// GetHostModuleRelation TODO
 func (a *apiServer) GetHostModuleRelation(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.HostModuleResp, err error) {
 
 	resp = new(metadata.HostModuleResp)
@@ -269,6 +285,7 @@ func (a *apiServer) GetHostModuleRelation(ctx context.Context, h http.Header, pa
 	return
 }
 
+// AddInst TODO
 func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
 
 	resp = new(metadata.ResponseDataMapStr)
@@ -306,6 +323,7 @@ func (a *apiServer) AddInstByImport(ctx context.Context, h http.Header, ownerID,
 	return resp, nil
 }
 
+// AddObjectBatch TODO
 func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/createmany/object"
@@ -320,6 +338,7 @@ func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, params ma
 	return
 }
 
+// SearchAssociationInst TODO
 func (a *apiServer) SearchAssociationInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
 	resp = new(metadata.SearchAssociationInstResult)
 	subPath := "/find/instassociation"
@@ -335,6 +354,7 @@ func (a *apiServer) SearchAssociationInst(ctx context.Context, h http.Header, re
 	return
 }
 
+// ImportAssociation TODO
 func (a *apiServer) ImportAssociation(ctx context.Context, h http.Header, objID string, input *metadata.RequestImportAssociation) (resp *metadata.ResponeImportAssociation, err error) {
 	resp = new(metadata.ResponeImportAssociation)
 	subPath := "/import/instassociation/%s"
@@ -350,6 +370,7 @@ func (a *apiServer) ImportAssociation(ctx context.Context, h http.Header, objID 
 	return
 }
 
+// GetUserAuthorizedBusinessList TODO
 func (a *apiServer) GetUserAuthorizedBusinessList(ctx context.Context, h http.Header, user string) (*metadata.InstDataInfo, error) {
 	h.Add(common.BKHTTPHeaderUser, user)
 	subPath := "/auth/business-list"
@@ -373,6 +394,7 @@ func (a *apiServer) GetUserAuthorizedBusinessList(ctx context.Context, h http.He
 	return &resp.Data, nil
 }
 
+// SearchNetCollectDevice TODO
 func (a *apiServer) SearchNetCollectDevice(ctx context.Context, h http.Header, cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
 	resp = new(metadata.ResponseInstData)
 
@@ -389,6 +411,7 @@ func (a *apiServer) SearchNetCollectDevice(ctx context.Context, h http.Header, c
 	return
 }
 
+// SearchNetDeviceProperty TODO
 func (a *apiServer) SearchNetDeviceProperty(ctx context.Context, h http.Header, cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
 	resp = new(metadata.ResponseInstData)
 
@@ -405,6 +428,7 @@ func (a *apiServer) SearchNetDeviceProperty(ctx context.Context, h http.Header, 
 	return
 }
 
+// SearchNetCollectDeviceBatch TODO
 func (a *apiServer) SearchNetCollectDeviceBatch(ctx context.Context, h http.Header, cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error) {
 	resp = new(metadata.ResponseInstData)
 
@@ -421,6 +445,7 @@ func (a *apiServer) SearchNetCollectDeviceBatch(ctx context.Context, h http.Head
 	return
 }
 
+// SearchNetDevicePropertyBatch TODO
 func (a *apiServer) SearchNetDevicePropertyBatch(ctx context.Context, h http.Header, cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error) {
 	resp = new(metadata.ResponseInstData)
 
@@ -437,6 +462,7 @@ func (a *apiServer) SearchNetDevicePropertyBatch(ctx context.Context, h http.Hea
 	return
 }
 
+// ListHostWithoutApp TODO
 func (a *apiServer) ListHostWithoutApp(ctx context.Context, h http.Header, option metadata.ListHostsWithNoBizParameter) (resp *metadata.ListHostWithoutAppResponse, err error) {
 	resp = new(metadata.ListHostWithoutAppResponse)
 
@@ -504,6 +530,7 @@ func (a *apiServer) ReadInstance(ctx context.Context, h http.Header, objID strin
 	return
 }
 
+// SearchObjectUnique TODO
 func (t *apiServer) SearchObjectUnique(ctx context.Context, objID string, h http.Header) (
 	resp *metadata.SearchUniqueResult, err error) {
 	resp = new(metadata.SearchUniqueResult)
@@ -519,6 +546,7 @@ func (t *apiServer) SearchObjectUnique(ctx context.Context, objID string, h http
 	return
 }
 
+// FindAssociationByObjectAssociationID TODO
 func (a *apiServer) FindAssociationByObjectAssociationID(ctx context.Context, h http.Header, objID string,
 	input metadata.FindAssociationByObjectAssociationIDRequest) (
 	resp *metadata.FindAssociationByObjectAssociationIDResponse, err error) {
@@ -536,6 +564,7 @@ func (a *apiServer) FindAssociationByObjectAssociationID(ctx context.Context, h 
 	return
 }
 
+// SearchObjectAssociation TODO
 func (asst *apiServer) SearchObjectAssociation(ctx context.Context, h http.Header,
 	request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error) {
 	resp = new(metadata.SearchAssociationObjectResult)
@@ -579,4 +608,30 @@ func (a *apiServer) CreateManyObject(ctx context.Context, h http.Header, params 
 	}
 
 	return resp.Data, nil
+}
+
+// SearchCloudArea TODO
+func (a *apiServer) SearchCloudArea(ctx context.Context, h http.Header, params metadata.CloudAreaSearchParam) (
+	*metadata.SearchDataResult, error) {
+
+	resp := new(metadata.SearchResp)
+	subPath := "/findmany/cloudarea"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return &resp.Data, nil
 }

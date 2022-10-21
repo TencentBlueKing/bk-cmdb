@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package cacheservice TODO
 package cacheservice
 
 import (
@@ -22,16 +23,19 @@ import (
 	"configcenter/src/apimachinery/util"
 )
 
+// Cache TODO
 type Cache interface {
 	Host() host.Interface
 	Topology() topology.Interface
 	Event() event.Interface
 }
 
+// CacheServiceClientInterface TODO
 type CacheServiceClientInterface interface {
 	Cache() Cache
 }
 
+// NewCacheServiceClient TODO
 func NewCacheServiceClient(c *util.Capability, version string) CacheServiceClientInterface {
 	base := fmt.Sprintf("/cache/%s", version)
 	return &cacheService{
@@ -47,20 +51,24 @@ type cache struct {
 	restCli rest.ClientInterface
 }
 
+// Cache TODO
 func (c *cacheService) Cache() Cache {
 	return &cache{
 		restCli: c.restCli,
 	}
 }
 
+// Host TODO
 func (c *cache) Host() host.Interface {
 	return host.NewCacheClient(c.restCli)
 }
 
+// Topology TODO
 func (c *cache) Topology() topology.Interface {
 	return topology.NewCacheClient(c.restCli)
 }
 
+// Event TODO
 func (c *cache) Event() event.Interface {
 	return event.NewCacheClient(c.restCli)
 }

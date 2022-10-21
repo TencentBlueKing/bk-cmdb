@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// ResourceDirectoryInterface TODO
 type ResourceDirectoryInterface interface {
 	CreateResourceDirectory(ctx context.Context, header http.Header, data map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error)
 	UpdateResourceDirectory(ctx context.Context, header http.Header, moduleID int64, data map[string]interface{}) (resp *metadata.Response, err error)
@@ -27,10 +28,12 @@ type ResourceDirectoryInterface interface {
 	DeleteResourceDirectory(ctx context.Context, header http.Header, moduleID int64) (resp *metadata.Response, err error)
 }
 
+// NewResourceDirectoryInterface TODO
 func NewResourceDirectoryInterface(client rest.ClientInterface) ResourceDirectoryInterface {
 	return &ResourceDirectory{client: client}
 }
 
+// ResourceDirectory TODO
 type ResourceDirectory struct {
 	client rest.ClientInterface
 }

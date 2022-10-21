@@ -57,7 +57,7 @@
 </template>
 
 <script>
-  import { computed, defineComponent, reactive, ref, toRefs, watch } from '@vue/composition-api'
+  import { computed, defineComponent, reactive, ref, toRefs, watch } from 'vue'
   import cloneDeep from 'lodash/cloneDeep'
   import isEqual from 'lodash/isEqual'
   import store from '@/store'

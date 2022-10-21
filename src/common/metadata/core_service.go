@@ -73,66 +73,92 @@ type CreateModelAttributes struct {
 	Attributes []Attribute `json:"attributes"`
 }
 
+// SetModelAttributes TODO
 type SetModelAttributes CreateModelAttributes
 
+// CreateModelAttrUnique TODO
 type CreateModelAttrUnique struct {
 	Data ObjectUnique `json:"data"`
 }
 
+// UpdateModelAttrUnique TODO
 type UpdateModelAttrUnique struct {
 	Data UpdateUniqueRequest `json:"data"`
 }
 
+// DeleteModelAttrUnique TODO
 type DeleteModelAttrUnique struct {
 	BizID int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 }
 
+// CreateModelInstance TODO
 type CreateModelInstance struct {
 	Data mapstr.MapStr `json:"data"`
 }
 
+// CreateManyModelInstance TODO
 type CreateManyModelInstance struct {
 	Datas []mapstr.MapStr `json:"datas"`
 }
 
+// SetModelInstance TODO
 type SetModelInstance CreateModelInstance
+
+// SetManyModelInstance TODO
 type SetManyModelInstance CreateManyModelInstance
 
+// CreateAssociationKind TODO
 type CreateAssociationKind struct {
 	Data AssociationKind `json:"data"`
 }
 
+// CreateManyAssociationKind TODO
 type CreateManyAssociationKind struct {
 	Datas []AssociationKind `json:"datas"`
 }
+
+// SetAssociationKind TODO
 type SetAssociationKind CreateAssociationKind
+
+// SetManyAssociationKind TODO
 type SetManyAssociationKind CreateManyAssociationKind
 
+// CreateModelAssociation TODO
 type CreateModelAssociation struct {
 	Spec Association `json:"spec"`
 }
 
+// SetModelAssociation TODO
 type SetModelAssociation CreateModelAssociation
 
+// CreateOneInstanceAssociation TODO
 type CreateOneInstanceAssociation struct {
 	Data InstAsst `json:"data"`
 }
+
+// CreateManyInstanceAssociation TODO
 type CreateManyInstanceAssociation struct {
 	Datas []InstAsst `json:"datas"`
 }
 
+// Dimension TODO
 type Dimension struct {
 	AppID int64 `json:"bk_biz_id"`
 }
 
+// SetOneInstanceAssociation TODO
 type SetOneInstanceAssociation CreateOneInstanceAssociation
+
+// SetManyInstanceAssociation TODO
 type SetManyInstanceAssociation CreateManyInstanceAssociation
 
+// TopoModelNode TODO
 type TopoModelNode struct {
 	Children []*TopoModelNode
 	ObjectID string
 }
 
+// SearchTopoModelNodeResult TODO
 type SearchTopoModelNodeResult struct {
 	BaseResp `json:",inline"`
 	Data     TopoModelNode `json:"data"`
@@ -153,12 +179,14 @@ func (tn *TopoModelNode) LeftestObjectIDList() []string {
 	return objectIDs
 }
 
+// TopoInstanceNodeSimplify TODO
 type TopoInstanceNodeSimplify struct {
 	ObjectID     string `json:"bk_obj_id" field:"bk_obj_id" mapstructure:"bk_obj_id"`
 	InstanceID   int64  `json:"bk_inst_id" field:"bk_inst_id" mapstructure:"bk_inst_id"`
 	InstanceName string `json:"bk_inst_name" field:"bk_inst_name" mapstructure:"bk_inst_name"`
 }
 
+// TopoInstanceNode TODO
 type TopoInstanceNode struct {
 	Children     []*TopoInstanceNode
 	ObjectID     string
@@ -167,11 +195,13 @@ type TopoInstanceNode struct {
 	Detail       map[string]interface{}
 }
 
+// SearchTopoInstanceNodeResult TODO
 type SearchTopoInstanceNodeResult struct {
 	BaseResp `json:",inline"`
 	Data     TopoInstanceNode `json:"data"`
 }
 
+// Name TODO
 func (node *TopoInstanceNode) Name() string {
 	var name string
 	var exist bool
@@ -196,11 +226,13 @@ func (node *TopoInstanceNode) Name() string {
 	return name
 }
 
+// TraversalFindModule TODO
 func (node *TopoInstanceNode) TraversalFindModule(targetID int64) []*TopoInstanceNode {
 	// ex: module1 ==> reverse([bizID, mainline1, ..., mainline2, set1, module1])
 	return node.TraversalFindNode(common.BKInnerObjIDModule, targetID)
 }
 
+// TraversalFindNode TODO
 // common.BKInnerObjIDObject used for matching custom level node
 func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int64) []*TopoInstanceNode {
 	if objectType == common.BKInnerObjIDObject && !common.IsInnerModel(node.ObjectID) && node.InstanceID == targetID {
@@ -221,6 +253,7 @@ func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int6
 	return []*TopoInstanceNode{}
 }
 
+// DeepFirstTraversal TODO
 func (node *TopoInstanceNode) DeepFirstTraversal(f func(node *TopoInstanceNode)) {
 	if node == nil {
 		return
@@ -231,6 +264,7 @@ func (node *TopoInstanceNode) DeepFirstTraversal(f func(node *TopoInstanceNode))
 	f(node)
 }
 
+// ToSimplify TODO
 func (node *TopoInstanceNode) ToSimplify() *TopoInstanceNodeSimplify {
 	if node == nil {
 		return nil
@@ -242,6 +276,7 @@ func (node *TopoInstanceNode) ToSimplify() *TopoInstanceNodeSimplify {
 	}
 }
 
+// TopoInstance TODO
 type TopoInstance struct {
 	ObjectID         string
 	InstanceID       int64
@@ -298,36 +333,48 @@ type DeleteHostRequest struct {
 	HostIDArr     []int64 `json:"bk_host_ids"`
 }
 
+// ListServiceCategoryOption list service category option
+type ListServiceCategoryOption struct {
+	BizID int64 `json:"bk_biz_id"`
+}
+
+// OneServiceCategoryResult TODO
 type OneServiceCategoryResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceCategory `json:"data"`
 }
 
+// OneServiceCategoryWithStatisticsResult TODO
 type OneServiceCategoryWithStatisticsResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceCategoryWithStatistics `json:"data"`
 }
 
+// MultipleServiceCategory TODO
 type MultipleServiceCategory struct {
 	Count int64             `json:"count"`
 	Info  []ServiceCategory `json:"info"`
 }
 
+// MultipleServiceCategoryWithStatistics TODO
 type MultipleServiceCategoryWithStatistics struct {
 	Count int64                           `json:"count"`
 	Info  []ServiceCategoryWithStatistics `json:"info"`
 }
 
+// MultipleServiceCategoryResult TODO
 type MultipleServiceCategoryResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleServiceCategory `json:"data"`
 }
 
+// MultipleServiceCategoryWithStatisticsResult TODO
 type MultipleServiceCategoryWithStatisticsResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleServiceCategoryWithStatistics `json:"data"`
 }
 
+// ListServiceTemplateOption TODO
 type ListServiceTemplateOption struct {
 	BusinessID         int64    `json:"bk_biz_id"`
 	ServiceCategoryID  *int64   `json:"service_category_id"`
@@ -339,10 +386,12 @@ type ListServiceTemplateOption struct {
 	IsExact bool `json:"is_exact"`
 }
 
+// FindServiceTemplateCountInfoOption TODO
 type FindServiceTemplateCountInfoOption struct {
 	ServiceTemplateIDs []int64 `json:"service_template_ids"`
 }
 
+// Validate TODO
 func (o *FindServiceTemplateCountInfoOption) Validate() (rawError errors.RawErrorInfo) {
 	maxLimit := 500
 	if len(o.ServiceTemplateIDs) == 0 || len(o.ServiceTemplateIDs) > maxLimit {
@@ -355,6 +404,7 @@ func (o *FindServiceTemplateCountInfoOption) Validate() (rawError errors.RawErro
 	return errors.RawErrorInfo{}
 }
 
+// FindServiceTemplateCountInfoResult TODO
 type FindServiceTemplateCountInfoResult struct {
 	ServiceTemplateID    int64 `json:"service_template_id"`
 	ProcessTemplateCount int64 `json:"process_template_count"`
@@ -362,31 +412,37 @@ type FindServiceTemplateCountInfoResult struct {
 	ModuleCount          int64 `json:"module_count"`
 }
 
+// OneServiceTemplateResult TODO
 type OneServiceTemplateResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceTemplate `json:"data"`
 }
 
+// OneServiceTemplateWithStatisticsResult TODO
 type OneServiceTemplateWithStatisticsResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceTemplateWithStatistics `json:"data"`
 }
 
+// MultipleServiceTemplateDetailResult TODO
 type MultipleServiceTemplateDetailResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleServiceTemplateDetail `json:"data"`
 }
 
+// MultipleServiceTemplateDetail TODO
 type MultipleServiceTemplateDetail struct {
 	Count uint64                  `json:"count"`
 	Info  []ServiceTemplateDetail `json:"info"`
 }
 
+// MultipleServiceTemplate TODO
 type MultipleServiceTemplate struct {
 	Count uint64            `json:"count"`
 	Info  []ServiceTemplate `json:"info"`
 }
 
+// ListServiceInstanceOption TODO
 type ListServiceInstanceOption struct {
 	BusinessID         int64              `json:"bk_biz_id"`
 	ServiceTemplateID  int64              `json:"service_template_id"`
@@ -399,6 +455,7 @@ type ListServiceInstanceOption struct {
 	Page               BasePage           `json:"page"`
 }
 
+// ListServiceInstanceDetailOption TODO
 type ListServiceInstanceDetailOption struct {
 	BusinessID int64 `json:"bk_biz_id"`
 	ModuleID   int64 `json:"bk_module_id"`
@@ -410,6 +467,7 @@ type ListServiceInstanceDetailOption struct {
 	Page               BasePage           `json:"page,omitempty"`
 }
 
+// ListProcessInstanceRelationOption TODO
 type ListProcessInstanceRelationOption struct {
 	BusinessID         int64    `json:"bk_biz_id"`
 	ProcessIDs         []int64  `json:"process_ids,omitempty"`
@@ -419,26 +477,31 @@ type ListProcessInstanceRelationOption struct {
 	Page               BasePage `json:"page" field:"page"`
 }
 
+// MultipleServiceTemplateResult TODO
 type MultipleServiceTemplateResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleServiceTemplate `json:"data"`
 }
 
+// OneProcessTemplateResult TODO
 type OneProcessTemplateResult struct {
 	BaseResp `json:",inline"`
 	Data     ProcessTemplate `json:"data"`
 }
 
+// MultipleProcessTemplate TODO
 type MultipleProcessTemplate struct {
 	Count uint64            `json:"count"`
 	Info  []ProcessTemplate `json:"info"`
 }
 
+// MultipleProcessTemplateResult TODO
 type MultipleProcessTemplateResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleProcessTemplate `json:"data"`
 }
 
+// DeleteProcessInstanceRelationOption TODO
 type DeleteProcessInstanceRelationOption struct {
 	BusinessID         *int64  `json:"bk_biz_id"`
 	ProcessIDs         []int64 `json:"bk_process_id,omitempty"`
@@ -448,23 +511,28 @@ type DeleteProcessInstanceRelationOption struct {
 	ModuleIDs          []int64 `json:"bk_module_id,omitempty"`
 }
 
+// ListProcessTemplatesOption TODO
 type ListProcessTemplatesOption struct {
 	BusinessID         int64    `json:"bk_biz_id" bson:"bk_biz_id"`
 	ProcessTemplateIDs []int64  `json:"process_template_ids,omitempty" bson:"process_template_ids"`
 	ServiceTemplateIDs []int64  `json:"service_template_ids,omitempty" bson:"service_template_ids"`
 	Page               BasePage `json:"page" field:"page" bson:"page"`
 }
+
+// ListServiceCategoriesOption TODO
 type ListServiceCategoriesOption struct {
 	BusinessID         int64   `json:"bk_biz_id" bson:"bk_biz_id"`
 	ServiceCategoryIDs []int64 `json:"service_category_ids,omitempty" bson:"service_category_ids"`
 	WithStatistics     bool    `json:"with_statistics" bson:"with_statistics"`
 }
 
+// OneServiceInstanceResult TODO
 type OneServiceInstanceResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceInstance `json:"data"`
 }
 
+// ManyServiceInstanceResult TODO
 type ManyServiceInstanceResult struct {
 	BaseResp `json:",inline"`
 	Data     []*ServiceInstance `json:"data"`
@@ -476,51 +544,61 @@ type MultipleServiceInstance struct {
 	Info  []ServiceInstance `json:"info"`
 }
 
+// MultipleServiceInstanceDetail TODO
 type MultipleServiceInstanceDetail struct {
 	Count uint64                  `json:"count"`
 	Info  []ServiceInstanceDetail `json:"info"`
 }
 
+// MultipleServiceInstanceResult TODO
 type MultipleServiceInstanceResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleServiceInstance `json:"data"`
 }
 
+// MultipleServiceInstanceDetailResult TODO
 type MultipleServiceInstanceDetailResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleServiceInstanceDetail `json:"data"`
 }
 
+// OneProcessInstanceRelationResult TODO
 type OneProcessInstanceRelationResult struct {
 	BaseResp `json:",inline"`
 	Data     ProcessInstanceRelation `json:"data"`
 }
 
+// ManyProcessInstanceRelationResult TODO
 type ManyProcessInstanceRelationResult struct {
 	BaseResp `json:",inline"`
 	Data     []*ProcessInstanceRelation `json:"data"`
 }
 
+// MultipleProcessInstanceRelation TODO
 type MultipleProcessInstanceRelation struct {
 	Count uint64                    `json:"count"`
 	Info  []ProcessInstanceRelation `json:"info"`
 }
 
+// MultipleProcessInstanceRelationResult TODO
 type MultipleProcessInstanceRelationResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleProcessInstanceRelation `json:"data"`
 }
 
+// MultipleHostProcessRelation TODO
 type MultipleHostProcessRelation struct {
 	Count uint64                `json:"count"`
 	Info  []HostProcessRelation `json:"info"`
 }
 
+// MultipleHostProcessRelationResult TODO
 type MultipleHostProcessRelationResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleHostProcessRelation `json:"data"`
 }
 
+// BusinessDefaultSetModuleInfo TODO
 type BusinessDefaultSetModuleInfo struct {
 	IdleSetID       int64 `json:"idle_set_id"`
 	IdleModuleID    int64 `json:"idle_module_id"`
@@ -528,6 +606,7 @@ type BusinessDefaultSetModuleInfo struct {
 	RecycleModuleID int64 `json:"recycle_module_id"`
 }
 
+// IsInternalModule TODO
 func (b BusinessDefaultSetModuleInfo) IsInternalModule(moduleID int64) bool {
 	if moduleID == b.IdleModuleID ||
 		moduleID == b.FaultModuleID ||
@@ -537,11 +616,13 @@ func (b BusinessDefaultSetModuleInfo) IsInternalModule(moduleID int64) bool {
 	return false
 }
 
+// BusinessDefaultSetModuleInfoResult TODO
 type BusinessDefaultSetModuleInfoResult struct {
 	BaseResp `json:",inline"`
 	Data     BusinessDefaultSetModuleInfo `json:"data"`
 }
 
+// RemoveTemplateBoundOnModuleResult TODO
 type RemoveTemplateBoundOnModuleResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
@@ -549,6 +630,7 @@ type RemoveTemplateBoundOnModuleResult struct {
 	} `json:"data"`
 }
 
+// MultipleMap TODO
 type MultipleMap struct {
 	Count uint64                   `json:"count"`
 	Info  []map[string]interface{} `json:"info"`
@@ -580,57 +662,68 @@ func (h *DistinctHostIDByTopoRelationRequest) Empty() bool {
 	return true
 }
 
+// CloudAccountResult TODO
 type CloudAccountResult struct {
 	BaseResp `json:",inline"`
 	Data     CloudAccount `json:"data"`
 }
 
+// MultipleCloudAccountResult TODO
 type MultipleCloudAccountResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleCloudAccount `json:"data"`
 }
 
+// TransferHostResourceDirectory TODO
 type TransferHostResourceDirectory struct {
 	ModuleID int64   `json:"bk_module_id"`
 	HostID   []int64 `json:"bk_host_id"`
 }
 
+// MultipleCloudAccountConfResult TODO
 type MultipleCloudAccountConfResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleCloudAccountConf `json:"data"`
 }
 
+// CreateSyncTaskResult TODO
 type CreateSyncTaskResult struct {
 	BaseResp `json:",inline"`
 	Data     CloudSyncTask `json:"data"`
 }
 
+// CreateSyncHistoryesult TODO
 type CreateSyncHistoryesult struct {
 	BaseResp `json:",inline"`
 	Data     SyncHistory `json:"data"`
 }
 
+// MultipleCloudSyncTaskResult TODO
 type MultipleCloudSyncTaskResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleCloudSyncTask `json:"data"`
 }
 
+// MultipleSyncHistoryResult TODO
 type MultipleSyncHistoryResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleSyncHistory `json:"data"`
 }
 
+// MultipleSyncRegionResult TODO
 type MultipleSyncRegionResult struct {
 	BaseResp `json:",inline"`
 	Data     []*Region `json:"data"`
 }
 
+// DistinctFieldOption TODO
 type DistinctFieldOption struct {
 	TableName string                 `json:"table_name"`
 	Field     string                 `json:"field"`
 	Filter    map[string]interface{} `json:"filter"`
 }
 
+// Validate TODO
 func (d *DistinctFieldOption) Validate() (rawError errors.RawErrorInfo) {
 	if d.TableName == "" {
 		return errors.RawErrorInfo{
@@ -653,4 +746,16 @@ func (d *DistinctFieldOption) Validate() (rawError errors.RawErrorInfo) {
 type CreateModelTable struct {
 	ObjectIDs  []string `json:"bk_object_ids"`
 	IsMainLine bool     `json:"is_main_line"`
+}
+
+// ServiceTemplateAttributeResult service template attribute result
+type ServiceTemplateAttributeResult struct {
+	BaseResp `json:",inline"`
+	Data     *ServTempAttrData `json:"data"`
+}
+
+// SetTemplateAttributeResult set template attribute result
+type SetTemplateAttributeResult struct {
+	BaseResp `json:",inline"`
+	Data     *SetTempAttrData `json:"data"`
 }

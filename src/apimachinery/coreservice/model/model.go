@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package model TODO
 package model
 
 import (
@@ -20,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// ModelClientInterface TODO
 type ModelClientInterface interface {
 	CreateManyModelClassification(ctx context.Context, h http.Header, input *metadata.CreateManyModelClassifiaction) (
 		resp *metadata.CreatedManyOptionResult, err error)
@@ -43,6 +45,7 @@ type ModelClientInterface interface {
 	DeleteModelCascade(ctx context.Context, h http.Header, modelID int64) (*metadata.DeletedCount, error)
 	ReadModelWithAttribute(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
 		resp *metadata.ReadModelWithAttributeResult, err error)
+	// ReadModel TODO
 	// TODO replace the calling of ReadModelWithAttribute that do not need the object's attributes with this
 	ReadModel(ctx context.Context, h http.Header, input *metadata.QueryCondition) (*metadata.QueryModelDataResult,
 		error)
@@ -54,6 +57,7 @@ type ModelClientInterface interface {
 		*metadata.UpdatedCount, error)
 	UpdateModelAttrsIndex(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
 		*metadata.UpdateAttrIndexData, error)
+	// UpdateModelAttrsByCondition TODO
 	// deprecated, only for old api
 	UpdateModelAttrsByCondition(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
 		*metadata.UpdatedCount, error)
@@ -61,6 +65,7 @@ type ModelClientInterface interface {
 		resp *metadata.DeletedOptionResult, err error)
 	ReadModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (
 		*metadata.QueryModelAttributeDataResult, error)
+	// ReadModelAttrByCondition TODO
 	// deprecated, only for old api
 	ReadModelAttrByCondition(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
 		*metadata.QueryModelAttributeDataResult, error)
@@ -94,6 +99,7 @@ type ModelClientInterface interface {
 	CreateModelTables(ctx context.Context, h http.Header, input *metadata.CreateModelTable) (err error)
 }
 
+// NewModelClientInterface TODO
 func NewModelClientInterface(client rest.ClientInterface) ModelClientInterface {
 	return &model{client: client}
 }

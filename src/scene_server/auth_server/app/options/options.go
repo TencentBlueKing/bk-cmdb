@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package options TODO
 package options
 
 import (
@@ -44,6 +45,7 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.Var(auth.EnableAuthFlag, "enable-auth", "The auth center enable status, true for enabled, false for disabled")
 }
 
+// Config TODO
 type Config struct {
 	Auth iam.AuthConfig
 	TLS  util.TLSClientConfig

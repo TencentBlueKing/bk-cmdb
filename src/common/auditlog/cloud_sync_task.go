@@ -65,6 +65,7 @@ func (h *syncTaskAuditLog) GenerateAuditLog(parameter *generateAuditCommonParame
 	}, nil
 }
 
+// NewSyncTaskAuditLog TODO
 func NewSyncTaskAuditLog(clientSet coreservice.CoreServiceClientInterface) *syncTaskAuditLog {
 	return &syncTaskAuditLog{
 		audit: audit{

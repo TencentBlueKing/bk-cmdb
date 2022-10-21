@@ -28,10 +28,12 @@ var (
 	convTimeFields = []string{common.CreateTimeField, common.LastTimeField, common.ConfirmTimeField}
 )
 
+// GetCurrentTimeStr TODO
 func GetCurrentTimeStr() string {
 	return time.Now().Format("2006-01-02 15:04:05")
 }
 
+// GetCurrentTimePtr TODO
 func GetCurrentTimePtr() *time.Time {
 	now := time.Now()
 	return &now
@@ -43,6 +45,7 @@ func TimeStrToUnixSecondDefault(str string) int64 {
 	return parseTime.Unix()
 }
 
+// ConvParamsTime TODO
 func ConvParamsTime(data interface{}) interface{} {
 	conds, ok := data.(map[string]interface{})
 	if true != ok && nil != conds {
@@ -168,6 +171,7 @@ func convItemToTime(val interface{}) (interface{}, error) {
 
 var validPeriod = regexp.MustCompile("^\\d*[DHMS]$") // period regexp to check period
 
+// FormatPeriod TODO
 // 00002H --> 2H
 // 0000D/0M ---> ∞
 // empty string / ∞ ---> ∞
@@ -192,4 +196,24 @@ func FormatPeriod(period string) (string, error) {
 	}
 
 	return strconv.Itoa(num) + period[len(period)-1:], nil
+}
+
+// ConvToTime convert to time type value
+func ConvToTime(transVal interface{}) (time.Time, error) {
+	timeVal, ok := transVal.(time.Time)
+	if ok {
+		return timeVal, nil
+	}
+
+	valStr, ok := transVal.(string)
+	if !ok {
+		return time.Time{}, fmt.Errorf("can not transfer value to string type, val: %v", transVal)
+	}
+
+	timeType, isTime := IsTime(valStr)
+	if !isTime {
+		return time.Time{}, fmt.Errorf("it is not a string of time type, val: %v", transVal)
+	}
+
+	return Str2Time(valStr, timeType), nil
 }

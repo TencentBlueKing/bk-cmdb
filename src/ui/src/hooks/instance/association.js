@@ -11,7 +11,7 @@
  */
 
 import service from '@/service/instance/association'
-import { ref, reactive, set } from '@vue/composition-api'
+import { ref, reactive, set } from 'vue'
 import hasOwnProperty from 'has'
 export default function () {
   const instanceMap = reactive({})

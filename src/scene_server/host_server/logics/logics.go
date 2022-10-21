@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package logics TODO
 package logics
 
 import (
@@ -18,6 +19,7 @@ import (
 	"configcenter/src/storage/dal/redis"
 )
 
+// Logics TODO
 type Logics struct {
 	*backbone.Engine
 	cache       redis.Client

@@ -17,18 +17,19 @@ import (
 	crd "configcenter/src/common/confregdiscover"
 )
 
+// ConfigCenter TODO
 type ConfigCenter struct {
-	Type       string // type of configuration center
+	Type               string // type of configuration center
 	ConfigCenterDetail crd.ConfRegDiscvIf
 }
 
 var (
 	configCenterGroup []*ConfigCenter
-	configCenterType = common.BKDefaultConfigCenter // the default configuration center is zookeeper.
+	configCenterType  = common.BKDefaultConfigCenter // the default configuration center is zookeeper.
 )
 
 // SetConfigCenterType use this function to change the type of configuration center.
-func SetConfigCenterType(serverType string){
+func SetConfigCenterType(serverType string) {
 	configCenterType = serverType
 }
 

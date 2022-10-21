@@ -73,6 +73,7 @@ var cloudVendorEnum = []metadata.EnumVal{
 	{ID: "2", Name: "腾讯云", Type: "text"},
 }
 
+// Attribute TODO
 type Attribute struct {
 	ID                int64       `field:"id" json:"id" bson:"id"`
 	OwnerID           string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`

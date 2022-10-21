@@ -224,6 +224,7 @@ func (p *SimplePorter) Mock() error {
 	return nil
 }
 
+// AddMessage TODO
 // Mock handles a mock message.
 func (p *SimplePorter) AddMessage(message *string) error {
 	if message == nil {

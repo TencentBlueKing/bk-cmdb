@@ -21,9 +21,11 @@ module.exports = {
     'plugin:vue/recommended'
   ],
   parserOptions: {
-    parser: '@babel/eslint-parser',
+    parser: '@typescript-eslint/parser',
     ecmaVersion: 2018,
     sourceType: 'module',
+    tsconfigRootDir: __dirname,
+    extraFileExtensions: ['.vue'],
     ecmaFeatures: {
       jsx: true,
       modules: true
@@ -207,7 +209,7 @@ module.exports = {
     'vue/no-boolean-default': 'off',
 
     // https://github.com/vuejs/eslint-plugin-vue/blob/master/docs/rules/no-confusing-v-for-v-if.md
-    'vue/no-confusing-v-for-v-if': 'error',
+    'vue/no-use-v-if-with-v-for': 'error',
 
     // https://github.com/vuejs/eslint-plugin-vue/blob/master/docs/rules/no-dupe-keys.md
     // 二级属性名禁止重复
@@ -447,13 +449,29 @@ module.exports = {
 
     'vue/this-in-template': 'off',
 
-    'vue/no-lone-template': 'off',
+    'vue/multi-word-component-names': 'off',
+    'vue/first-attribute-linebreak': 'off',
+    'vue/no-setup-props-destructure': 'off'
   },
   overrides: [
     {
       files: ['*.vue'],
       rules: {
         indent: 'off'
+      }
+    },
+    {
+      files: ['*.ts', '*.tsx'],
+      parser: '@typescript-eslint/parser',
+      extends: ['eslint-config-tencent/ts'],
+      plugins: ['@typescript-eslint'],
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+      rules: {
+        '@typescript-eslint/semi': ['error', 'never']
       }
     }
   ]

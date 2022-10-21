@@ -18,14 +18,17 @@ type SysUserConfigItem struct {
 	ExpireAt int64 `json:"expire_at" bson:"expire_at"`
 }
 
+// ResponseSysUserConfigData TODO
 type ResponseSysUserConfigData struct {
 	RowType        string            `json:"type"`
 	BluekingModify SysUserConfigItem `json:"blueking_modify"`
 }
 
+// ReponseSysUserConfig TODO
 type ReponseSysUserConfig struct {
 	BaseResp `json:",inline"`
 	Data     ResponseSysUserConfigData `json:"data"`
 }
 
+// CCSystemUserConfigSwitch TODO
 const CCSystemUserConfigSwitch = "user_config_switch"

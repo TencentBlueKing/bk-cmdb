@@ -14,13 +14,13 @@
   <div :class="['confirm-wrapper', { 'has-invalid': hasInvalid }]">
     <h2 class="title">{{$t('确认归还主机池')}}</h2>
     <i18n tag="p" path="确认归还主机池忽略主机数量" class="content" v-if="hasInvalid">
-      <span class="count" place="count">{{count}}</span>
-      <span class="invalid" place="invalid">{{invalidList.length}}</span>
-      <span place="idleModule">{{$store.state.globalConfig.config.idlePool.idle}}</span>
+      <template #count><span class="count">{{count}}</span></template>
+      <template #invalid><span class="invalid">{{invalidList.length}}</span></template>
+      <template #idleSet><span>{{idleSet}}</span></template>
     </i18n>
     <i18n tag="p" path="确认归还主机池主机数量" class="content" v-else>
-      <span class="count" place="count">{{count}}</span>
-      <span place="idleModule">{{$store.state.globalConfig.config.idlePool.idle}}</span>
+      <template #count><span class="count">{{count}}</span></template>
+      <template #idleSet><span>{{idleSet}}</span></template>
     </i18n>
     <p class="content">{{$t('归还主机池提示')}}</p>
     <div class="directory">
@@ -81,6 +81,9 @@
     computed: {
       hasInvalid() {
         return !!this.invalidList.length
+      },
+      idleSet() {
+        return this.$store.state.globalConfig.config.set
       }
     },
     created() {

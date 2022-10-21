@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/watch"
 )
 
+// GetResourceKeyWithCursorType TODO
 // get resource key
 func GetResourceKeyWithCursorType(res watch.CursorType) (Key, error) {
 	var key Key
@@ -70,10 +71,14 @@ func IsConflictError(err error) bool {
 	return false
 }
 
+// HostArchive TODO
 type HostArchive struct {
 	Oid    string              `bson:"oid"`
 	Detail metadata.HostMapStr `bson:"detail"`
 }
 
+// ObjInstTablePrefixRegex TODO
 const ObjInstTablePrefixRegex = "^" + common.BKObjectInstShardingTablePrefix
+
+// InstAsstTablePrefixRegex TODO
 const InstAsstTablePrefixRegex = "^" + common.BKObjectInstAsstShardingTablePrefix

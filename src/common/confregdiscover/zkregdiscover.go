@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"time"
 
-	"configcenter/src/common/zkclient"
 	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/zkclient"
 )
 
 // ZkRegDiscover config register and discover by zookeeper
@@ -45,15 +45,17 @@ func (zkRD *ZkRegDiscover) Ping() error {
 	return zkRD.zkcli.Ping()
 }
 
-//Write to save config data into zookeeper
+// Write to save config data into zookeeper
 func (zkRD *ZkRegDiscover) Write(path string, data []byte) error {
 	return zkRD.zkcli.Update(path, string(data))
 }
 
+// Read 用于常见IO
 func (zkRD *ZkRegDiscover) Read(path string) (string, error) {
 	return zkRD.zkcli.Get(path)
 }
 
+// Discover TODO
 func (zkRD *ZkRegDiscover) Discover(key string) (<-chan *DiscoverEvent, error) {
 
 	env := make(chan *DiscoverEvent, 1)

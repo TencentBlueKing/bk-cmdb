@@ -38,6 +38,7 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 	return nil
 }
 
+// ValidFieldTypeEnumOption TODO
 func ValidFieldTypeEnumOption(option interface{}, errProxy errors.DefaultCCErrorIf) error {
 	if nil == option {
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
@@ -94,6 +95,7 @@ func ValidFieldTypeEnumOption(option interface{}, errProxy errors.DefaultCCError
 	return nil
 }
 
+// ValidFieldTypeIntOption TODO
 func ValidFieldTypeIntOption(option interface{}, errProxy errors.DefaultCCErrorIf) error {
 	if nil == option {
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
@@ -166,6 +168,7 @@ func ValidFieldTypeIntOption(option interface{}, errProxy errors.DefaultCCErrorI
 	return nil
 }
 
+// ValidFieldTypeListOption TODO
 func ValidFieldTypeListOption(option interface{}, errProxy errors.DefaultCCErrorIf) error {
 	if nil == option {
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
@@ -197,6 +200,7 @@ func ValidFieldTypeListOption(option interface{}, errProxy errors.DefaultCCError
 	return nil
 }
 
+// ValidFieldRegularExpressionOption TODO
 func ValidFieldRegularExpressionOption(option interface{}, errProxy errors.DefaultCCErrorIf) error {
 	// check regular is legal
 	if option == nil {

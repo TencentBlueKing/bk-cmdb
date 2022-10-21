@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package cmd TODO
 // apiserver对于接收到的请求可以配置限流策略
 // 该命令行工具可对这些限流策略（规则）进行增删查的操作
 package cmd
@@ -84,6 +85,7 @@ func (c *limiterConf) addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&c.rulenames, "rulenames", "", `the api limiter rule names to get or del, multiple names is separated with ',',like 'name1,name2'`)
 }
 
+// NewLimiterCommand TODO
 func NewLimiterCommand() *cobra.Command {
 	conf := new(limiterConf)
 
