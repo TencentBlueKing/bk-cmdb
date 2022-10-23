@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { defineComponent, PropType } from '@vue/composition-api'
+  import { defineComponent, PropType } from 'vue'
   import PropertyConfigDiffTable from '@/components/property-config/diff-table.vue'
 
   interface IPropertyDiff {

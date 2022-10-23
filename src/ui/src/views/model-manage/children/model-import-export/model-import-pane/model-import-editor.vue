@@ -204,7 +204,7 @@
 </template>
 
 <script>
-  import { defineComponent, reactive, toRef, ref, computed, watch } from '@vue/composition-api'
+  import { defineComponent, reactive, toRef, ref, computed, watch } from 'vue'
   import { t } from '@/i18n'
   import { UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants.js'
   import cloneDeep from 'lodash/cloneDeep'

@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, onBeforeUnmount, reactive, ref, toRefs, watch, watchEffect } from '@vue/composition-api'
+  import { computed, defineComponent, onBeforeUnmount, reactive, ref, toRefs, watch, watchEffect } from 'vue'
   import isEqual from 'lodash/isEqual'
   import store from '@/store'
   import { t } from '@/i18n'

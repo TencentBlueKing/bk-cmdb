@@ -40,7 +40,7 @@
   import exportStatus from './export-status'
   import useState from './state'
   import useTask from './task'
-  import { computed } from '@vue/composition-api'
+  import { computed } from 'vue'
   export default {
     name: 'export-file',
     components: {

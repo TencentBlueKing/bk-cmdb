@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { reactive, isRef, watch, toRefs } from '@vue/composition-api'
+import { reactive, isRef, watch, toRefs } from 'vue'
 import hostSearchService from '@/service/host/search'
 import businessSearchService from '@/service/business/search'
 import instanceSearchService from '@/service/instance/search'

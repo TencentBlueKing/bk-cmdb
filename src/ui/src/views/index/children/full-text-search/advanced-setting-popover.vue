@@ -54,18 +54,20 @@
 </template>
 
 <script>
-  import { defineComponent, toRefs } from '@vue/composition-api'
+  import { defineComponent, computed, toRefs, ref } from 'vue'
+  import routerActions from '@/router/actions'
+  import RouterQuery from '@/router/query'
   import ModelSelector  from '@/components/ui/selector/model.vue'
   import useAdvancedSetting from './use-advanced-setting.js'
-  import useRoute, { pickQuery } from './use-route.js'
+  import { pickQuery } from './use-route.js'
 
   export default defineComponent({
     components: {
       ModelSelector
     },
-    setup(props, { root, refs }) {
-      const { $routerActions } = root
-      const { route } = useRoute(root)
+    setup() {
+      const popover = ref(null)
+      const route = computed(() => RouterQuery.route)
 
       const popoverProps = {
         width: 500,
@@ -88,25 +90,26 @@
         handleTargetClick
       } = useAdvancedSetting({
         onShow() {
-          refs.popover.showHandler()
+          popover.value.showHandler()
         },
         onConfirm() {
           const query = pickQuery(route.value.query, ['tab', 'keyword'])
-          $routerActions.redirect({
+          routerActions.redirect({
             query: {
               ...query,
               t: Date.now()
             }
           })
-          refs.popover.hideHandler()
+          popover.value.hideHandler()
         },
         onCancel() {
-          refs.popover.hideHandler()
+          popover.value.hideHandler()
         }
-      }, root)
+      })
 
       return {
         ...toRefs(activeSetting),
+        popover,
         popoverProps,
         handleShow,
         handleTargetClick,

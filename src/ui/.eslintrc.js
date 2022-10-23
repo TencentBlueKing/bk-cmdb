@@ -209,7 +209,7 @@ module.exports = {
     'vue/no-boolean-default': 'off',
 
     // https://github.com/vuejs/eslint-plugin-vue/blob/master/docs/rules/no-confusing-v-for-v-if.md
-    'vue/no-confusing-v-for-v-if': 'error',
+    'vue/no-use-v-if-with-v-for': 'error',
 
     // https://github.com/vuejs/eslint-plugin-vue/blob/master/docs/rules/no-dupe-keys.md
     // 二级属性名禁止重复
@@ -449,7 +449,9 @@ module.exports = {
 
     'vue/this-in-template': 'off',
 
-    'vue/no-lone-template': 'off'
+    'vue/multi-word-component-names': 'off',
+    'vue/first-attribute-linebreak': 'off',
+    'vue/no-setup-props-destructure': 'off'
   },
   overrides: [
     {

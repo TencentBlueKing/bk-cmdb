@@ -11,8 +11,8 @@
     [
       "@vue/babel-preset-jsx",
       {
-        // https://github.com/vuejs/composition-api
-        "compositionAPI": true
+        // https://www.npmjs.com/package/@vue/babel-preset-jsx
+        "compositionAPI": "naruto"
       }
     ]
   ],
