@@ -2025,12 +2025,6 @@ func (ps *ProcServer) syncSrvInstToAdd(kit *rest.Kit, option metadata.ServiceTem
 		if err := audit.SaveAuditLog(kit, auditLogs...); err != nil {
 			return err
 		}
-		_, e := ps.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
-			moduleUpdateOption)
-		if e != nil {
-			blog.Errorf("update module failed, option: %#v, err: %v, rid: %s", moduleUpdateOption, e, kit.Rid)
-			return e
-		}
 	}
 	return nil
 }

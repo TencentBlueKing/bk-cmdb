@@ -14,6 +14,7 @@ package service
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -28,6 +29,8 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	processhook "configcenter/src/thirdparty/hooks/process"
 )
 
 // CreateProcessInstances TODO

@@ -126,12 +126,18 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 
 	// NOTICE: 主机内网IP+云区域唯一校验需要满足寻址方式为静态的条件，因为动态场景IP可变，更新不及时等情况可能出现重复，不能作为唯一标识
 	if objID == common.BKInnerObjIDHost && len(dbIndex.Keys) == 2 {
-		if _, exists := dbIndex.Keys[common.BKCloudIDField]; !exists {
+
+		keyMap := make(map[string]struct{})
+		for _, v := range dbIndex.Keys {
+			keyMap[v.Key] = struct{}{}
+		}
+
+		if _, exists := keyMap[common.BKCloudIDField]; !exists {
 			return dbIndex, nil
 		}
 
-		_, ipv4Exists := dbIndex.Keys[common.BKHostInnerIPField]
-		_, ipv6Exists := dbIndex.Keys[common.BKHostInnerIPv6Field]
+		_, ipv4Exists := keyMap[common.BKHostInnerIPField]
+		_, ipv6Exists := keyMap[common.BKHostInnerIPv6Field]
 
 		if ipv4Exists || ipv6Exists {
 			dbIndex.PartialFilterExpression[common.BKAddressingField] = "0"

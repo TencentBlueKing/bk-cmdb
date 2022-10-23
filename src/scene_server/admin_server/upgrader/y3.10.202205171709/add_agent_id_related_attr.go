@@ -25,6 +25,8 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // addHostAddressingAttr add host addressing attribute
@@ -280,12 +282,17 @@ func adjustHostUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 			continue
 		}
 
-		if _, exists := index.Keys[common.BKCloudIDField]; !exists {
+		keyMap := make(map[string]struct{})
+		for _, v := range index.Keys {
+			keyMap[v.Key] = struct{}{}
+		}
+
+		if _, exists := keyMap[common.BKCloudIDField]; !exists {
 			continue
 		}
 
-		_, ipv4Exists := index.Keys[common.BKHostInnerIPField]
-		_, ipv6Exists := index.Keys[common.BKHostInnerIPv6Field]
+		_, ipv4Exists := keyMap[common.BKHostInnerIPField]
+		_, ipv6Exists := keyMap[common.BKHostInnerIPv6Field]
 
 		if ipv4Exists || ipv6Exists {
 			err = db.Table(common.BKTableNameBaseHost).DropIndex(ctx, index.Name)
@@ -301,9 +308,9 @@ func adjustHostUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	newIndexes := []types.Index{
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkHostInnerIP_bkCloudID",
-			Keys: map[string]int32{
-				common.BKHostInnerIPField: 1,
-				common.BKCloudIDField:     1,
+			Keys: bson.D{
+				{common.BKHostInnerIPField, 1},
+				{common.BKCloudIDField, 1},
 			},
 			Unique:     true,
 			Background: true,
@@ -315,9 +322,9 @@ func adjustHostUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkHostInnerIPv6_bkCloudID",
-			Keys: map[string]int32{
-				common.BKHostInnerIPv6Field: 1,
-				common.BKCloudIDField:       1,
+			Keys: bson.D{
+				{common.BKHostInnerIPv6Field, 1},
+				{common.BKCloudIDField, 1},
 			},
 			Unique:     true,
 			Background: true,
@@ -329,8 +336,8 @@ func adjustHostUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		},
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkAgentID",
-			Keys: map[string]int32{
-				common.BKAgentIDField: 1,
+			Keys: bson.D{
+				{common.BKAgentIDField, 1},
 			},
 			Unique:     true,
 			Background: true,

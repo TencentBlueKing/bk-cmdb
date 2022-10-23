@@ -194,7 +194,7 @@ func getBaseInfoFromCollectorsMsg(msg *string) (string, []string, []string, int6
 		data = *msg
 	}
 	val := gjson.Parse(data)
-	agentID := gjson.Get(*msg, "agentid").String()
+	agentID := gjson.Get(*msg, "bk_agent_id").String()
 	cloudID := val.Get("cloudid").Int()
 
 	ipv4, ipv6 := getIPsFromMsg(&val)

@@ -61,8 +61,8 @@ var commHostBaseIndexes = []types.Index{
 	},
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "bkAgentID",
-		Keys: map[string]int32{
-			common.BKAgentIDField: 1,
+		Keys: bson.D{
+			{common.BKAgentIDField, 1},
 		},
 		Unique:     true,
 		Background: true,
