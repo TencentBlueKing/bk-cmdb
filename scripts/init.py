@@ -401,15 +401,15 @@ monitor:
       qps: 10
       burst: 20
 
-# 日志平台openTelemetry跟踪链接入相关配置
+# openTelemetry跟踪链接入相关配置
 openTelemetry:
-  # 表示是否开启日志平台openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
+  # 表示是否开启openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
   enable: false
-  # 日志平台openTelemetry跟踪链功能的自定义上报服务地址
+  # openTelemetry跟踪链功能的自定义上报服务地址
   endpoint:
-  # 日志平台openTelemetry跟踪链功能的上报data_id, 用于旧版的数据上报，和bkDataToken同时配置时，会取bkDataToken
+  # openTelemetry跟踪链功能的上报data_id, 用于旧版的数据上报，和bkDataToken同时配置时，会取bkDataToken
   bkDataID:
-  # 日志平台openTelemetry跟踪链功能的bk.data.token, 用于新版的数据上报，和bkDataID同时配置时，会取bkDataToken
+  # openTelemetry跟踪链功能的bk.data.token, 用于新版的数据上报，和bkDataID同时配置时，会取bkDataToken
   bkDataToken:
   # 服务tls配置
   tls:
