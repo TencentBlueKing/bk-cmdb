@@ -1963,7 +1963,7 @@ func (ps *ProcServer) updateModuleAttributesWithServiceTemplate(kit *rest.Kit, m
 	_, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule, option)
 	if err != nil {
 		blog.Errorf("update module failed, option: %#v, err: %v, rid: %s", option, err, kit.Rid)
-		return kit.CCError.CCError(common.CCErrUpdateModuleAttributesFail)
+		return err
 	}
 	return nil
 }

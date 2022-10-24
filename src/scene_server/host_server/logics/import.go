@@ -618,9 +618,11 @@ func (lgc *Logics) AddHosts(kit *rest.Kit, appID int64, moduleID int64, hostInfo
 	}
 	// check host attribute
 	for index, host := range hostInfos {
-		innerIP, isOk := host[common.BKHostInnerIPField].(string)
-		if !isOk || innerIP == "" {
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostInnerIPField)
+		innerIPv4, isIPv4Ok := host[common.BKHostInnerIPField].(string)
+		innerIPv6, isIPv6Ok := host[common.BKHostInnerIPv6Field].(string)
+		if (!isIPv4Ok || innerIPv4 == "") && (!isIPv6Ok || innerIPv6 == "") {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommAtLeastSetOneVal, common.BKHostInnerIPField,
+				common.BKHostInnerIPv6Field)
 		}
 
 		cloudID, ok := host[common.BKCloudIDField]
