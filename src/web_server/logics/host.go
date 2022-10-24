@@ -28,7 +28,6 @@ import (
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 
-	"github.com/mohae/deepcopy"
 	"github.com/rentiansheng/xlsx"
 )
 
@@ -222,7 +221,8 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 }
 
 func (lgc *Logics) handleAsstInfoMap(ctx context.Context, header http.Header, objID string,
-	asstInfoMap map[int]metadata.ExcelAssociation, asstObjectUniqueIDMap map[string]int64, rid string) error{
+	asstInfoMap map[int]metadata.ExcelAssociation, asstObjectUniqueIDMap map[string]int64,
+	rid string) (map[int]metadata.ExcelAssociation, error){
 
 	var associationFlag []string
 	for _, info := range asstInfoMap {
@@ -232,27 +232,26 @@ func (lgc *Logics) handleAsstInfoMap(ctx context.Context, header http.Header, ob
 		metadata.FindAssociationByObjectAssociationIDRequest{ObjAsstIDArr: associationFlag})
 	if err != nil {
 		blog.Errorf("find association by object asstID failed, err: %v, rid: %s", err, rid)
-		return err
+		return nil, err
 	}
 	tempAsstInfo := make(map[string]int64, 0)
 	for _, asstInfo := range resp.Data {
-		_, ok := asstObjectUniqueIDMap[asstInfo.AsstObjID]
-		_, ok2 := asstObjectUniqueIDMap[asstInfo.ObjectID]
-		if ok || ok2 {
+		_, asstObjID := asstObjectUniqueIDMap[asstInfo.AsstObjID]
+		_, objID := asstObjectUniqueIDMap[asstInfo.ObjectID]
+		if asstObjID || objID {
 			continue
-		} else {
-			tempAsstInfo[asstInfo.AssociationName] = asstInfo.ID
 		}
+		tempAsstInfo[asstInfo.AssociationName] = asstInfo.ID
 	}
 
-	tempAsstMap := deepcopy.Copy(asstInfoMap).(map[int]metadata.ExcelAssociation)
-	for index, asst := range tempAsstMap {
+	tempAsstMap := asstInfoMap
+	for index, asst := range asstInfoMap {
 		if _, ok := tempAsstInfo[asst.ObjectAsstID]; ok {
-			delete(asstInfoMap, index)
+			delete(tempAsstMap, index)
 		}
 	}
 
-	return nil
+	return tempAsstMap, nil
 }
 
 func (lgc *Logics) handleExcelAssociation(ctx context.Context, h http.Header, f *xlsx.File, objID string, rid string,
@@ -265,33 +264,39 @@ func (lgc *Logics) handleExcelAssociation(ctx context.Context, h http.Header, f 
 		}
 
 		asstMap, assoErrMsg := GetAssociationExcelData(sheet, common.HostAddMethodExcelAssociationIndexOffset, defLang)
-		if err := lgc.handleAsstInfoMap(ctx, h, objID, asstMap, asstObjectUniqueIDMap, rid); err != nil {
+		asstMap, err := lgc.handleAsstInfoMap(ctx, h, objID, asstMap, asstObjectUniqueIDMap, rid)
+		if err != nil {
 			blog.Errorf("handle asst info map failed, err: %v, rid: %s", err, rid)
 			return resp
 		}
-		if len(asstMap) > 0 {
-			asstInfoMapInput := &metadata.RequestImportAssociation{
-				AssociationInfoMap:    asstMap,
-				AsstObjectUniqueIDMap: asstObjectUniqueIDMap,
-				ObjectUniqueID:        objectUniqueID,
-			}
-			asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, h, objID, asstInfoMapInput)
-			if asstResultErr != nil {
-				blog.Errorf("import host association failed, err: %v, rid: %s", asstResultErr, rid)
-				resp.Code = common.CCErrCommHTTPDoRequestFailed
-				resp.ErrMsg = lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(h)).Errorf(common.
-					CCErrCommHTTPDoRequestFailed).Error()
-				return resp
-			}
+		if len(asstMap) == 0 {
+			blog.Errorf("not found association data need add, rid: %s", rid)
+			return resp
+		}
 
-			assoErrMsg = append(assoErrMsg, asstResult.Data.ErrMsgMap...)
-			if resp.Result && !asstResult.Result {
-				resp.BaseResp = asstResult.BaseResp
-			}
+		asstInfoMapInput := &metadata.RequestImportAssociation{
+			AssociationInfoMap:    asstMap,
+			AsstObjectUniqueIDMap: asstObjectUniqueIDMap,
+			ObjectUniqueID:        objectUniqueID,
+		}
+		asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, h, objID, asstInfoMapInput)
+		if asstResultErr != nil {
+			blog.Errorf("import host association failed, err: %v, rid: %s", asstResultErr, rid)
+			resp.Code = common.CCErrCommHTTPDoRequestFailed
+			resp.ErrMsg = lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(h)).Errorf(common.
+				CCErrCommHTTPDoRequestFailed).Error()
+			return resp
+		}
+
+		assoErrMsg = append(assoErrMsg, asstResult.Data.ErrMsgMap...)
+		if resp.Result && !asstResult.Result {
+			resp.BaseResp = asstResult.BaseResp
 		}
 
 		resp.Data.Set("asst_error", assoErrMsg)
+		return resp
 	}
+
 	return resp
 }
 
