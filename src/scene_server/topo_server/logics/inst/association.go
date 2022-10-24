@@ -1,6 +1,8 @@
 package inst
 
 import (
+	"fmt"
+
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -10,7 +12,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"fmt"
 )
 
 // AssociationOperationInterface association operation methods
