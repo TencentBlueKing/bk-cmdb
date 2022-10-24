@@ -160,7 +160,7 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 
 	resp := &metadata.ResponseDataMapStr{Data: mapstr.New()}
 	resp = lgc.handleExcelAssociation(ctx, header, f, objID, rid, asstObjectUniqueIDMap, objectUniqueID, defLang, resp)
-	resultData = resp.Data
+	resultData.Merge(resp.Data)
 
 	return
 }
