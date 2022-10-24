@@ -16,7 +16,6 @@ import (
 	"configcenter/src/web_server/middleware/user/plugins"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mohae/deepcopy"
 )
 
 func parseModelBizID(data string) (int64, error) {
@@ -100,8 +99,6 @@ func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[str
 		return usernameMap, nil
 	}
 
-	params := make(map[string]string)
-	params["fields"] = "username,display_name"
 	user := plugins.CurrentPlugin(c, s.Config.LoginVersion)
 
 	// 处理请求的用户数据，将用户拼接成不超过500字节的字符串进行用户数据的获取
@@ -123,11 +120,13 @@ func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[str
 			}()
 
 			lock.Lock()
+			params := make(map[string]string)
+			params["fields"] = "username,display_name"
 			params["exact_lookups"] = subStr
 			c.Request.Header = c.Request.Header.Clone()
 			lock.Unlock()
 
-			userListEsbSub, errNew := user.GetUserList(c, deepcopy.Copy(params).(map[string]string))
+			userListEsbSub, errNew := user.GetUserList(c, params)
 			if errNew != nil {
 				firstErr = errNew.ToCCError(defErr)
 				blog.Errorf("get users(%s) list from ESB failed, err: %v, rid: %s", subStr, firstErr, rid)
