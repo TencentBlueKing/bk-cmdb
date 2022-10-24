@@ -153,7 +153,7 @@
     <bk-dialog v-model="successDialogShow"
       width="480"
       :esc-close="false"
-      :mask-close="false"
+      :mask-close="true"
       :show-footer="false"
       :close-icon="false">
       <div class="update-alert-layout">

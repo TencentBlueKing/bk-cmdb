@@ -356,7 +356,7 @@
       class="bk-dialog-no-padding"
       :width="400"
       :show-footer="false"
-      :mask-close="false"
+      :mask-close="true"
       v-model="modelCreatedDialogVisible"
     >
       <div class="success-content">

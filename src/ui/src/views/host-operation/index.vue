@@ -131,7 +131,7 @@
       theme="primary"
       width="650"
       header-position="left"
-      :mask-close="false"
+      :mask-close="true"
       title="失败详情">
       <bk-table
         :data="failDetailDialog.list"
