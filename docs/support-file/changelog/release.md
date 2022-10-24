@@ -1,3 +1,7 @@
+## [Version: 3.10.x_feature-agent-id_alpha5] - 2022-10-24
+**新增功能**
+- 修改bkmonitor beat插件上报的agnetID tag为bk_agent_id
+
 ## [Version: v3.10.21] - 2022-09-28
 **修复功能**
 - 修复新建业务时不能同步创建平台管理中用户自定义模块的问题
