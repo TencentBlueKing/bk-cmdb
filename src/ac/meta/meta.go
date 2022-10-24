@@ -176,6 +176,7 @@ const (
 	WatchBizSet Action = "biz_set"
 
 	// kube related event watch cc actions
+
 	// WatchKubeCluster watch kube cluster event cc action
 	WatchKubeCluster Action = "kube_cluster"
 	// WatchKubeNode watch kube node event cc action
@@ -187,8 +188,7 @@ const (
 	// WatchKubePod watch kube pod event cc action
 	WatchKubePod Action = "kube_pod"
 
-	// ViewBusinessResource TODO
-	// can view business related resources, including business and business collection resources
+	// ViewBusinessResource view business related resources action, including business and business collection resources
 	ViewBusinessResource Action = "viewBusinessResource"
 
 	// AccessBizSet access business set related resources, including business and business related resources

@@ -21,13 +21,13 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
 )
 
