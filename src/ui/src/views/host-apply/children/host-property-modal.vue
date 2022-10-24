@@ -14,7 +14,7 @@
   <bk-dialog
     v-model="show"
     :draggable="false"
-    :mask-close="true"
+    :mask-close="false"
     :width="730"
     header-position="left"
     :title="$t('选择字段')"

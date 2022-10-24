@@ -13,7 +13,7 @@
 <template>
   <bk-dialog class="bk-dialog-no-padding"
     v-model="isShow"
-    :mask-close="true"
+    :mask-close="false"
     :width="580"
     @after-leave="handleHidden">
     <div class="reset-header" slot="header">

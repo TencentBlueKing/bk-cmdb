@@ -46,7 +46,7 @@
     <bk-dialog
       header-position="left"
       :draggable="false"
-      :mask-close="true"
+      :mask-close="false"
       :width="840"
       :title="dialog.title"
       v-model="dialog.visible"

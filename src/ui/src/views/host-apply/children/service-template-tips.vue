@@ -26,7 +26,7 @@
       class="module-modal"
       header-position="left"
       :width="850"
-      :mask-close="true"
+      :mask-close="false"
       :draggable="false">
       <template #header>
         <div class="modal-header">

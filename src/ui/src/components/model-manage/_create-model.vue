@@ -15,7 +15,7 @@
     class="model-dialog dialog bk-dialog-no-padding"
     width="600"
     :close-icon="false"
-    :mask-close="true"
+    :mask-close="false"
     v-model="isShow">
     <div class="dialog-content">
       <p class="title">{{title}}</p>

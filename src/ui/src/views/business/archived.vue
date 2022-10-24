@@ -76,7 +76,7 @@
     <bk-dialog
       class="recovery-dialog"
       :draggable="false"
-      :mask-close="true"
+      :mask-close="false"
       :title="$t('恢复业务')"
       header-position="left"
       v-model="recovery.show">
