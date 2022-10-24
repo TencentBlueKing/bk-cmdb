@@ -24,6 +24,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// CreateTableOptions TODO
 var CreateTableOptions = []struct {
 	TableName  string
 	TableIndex []types.Index
@@ -78,6 +79,7 @@ func upsertTable(ctx context.Context, db dal.RDB, conf *upgrader.Config, tableNa
 	return nil
 }
 
+// CreateTables TODO
 func CreateTables(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	for _, item := range CreateTableOptions {
 		err := upsertTable(ctx, db, conf, item.TableName, item.TableIndex)

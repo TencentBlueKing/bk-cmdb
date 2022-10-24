@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/paraparse"
 )
 
+// CreateModule TODO
 func (t *instanceClient) CreateModule(ctx context.Context, appID, setID int64, h http.Header,
 	dat map[string]interface{}) (mapstr.MapStr, errors.CCErrorCoder) {
 
@@ -46,6 +47,7 @@ func (t *instanceClient) CreateModule(ctx context.Context, appID, setID int64, h
 	return resp.Data, nil
 }
 
+// DeleteModule TODO
 func (t *instanceClient) DeleteModule(ctx context.Context, appID, setID, moduleID int64,
 	h http.Header) errors.CCErrorCoder {
 
@@ -70,6 +72,7 @@ func (t *instanceClient) DeleteModule(ctx context.Context, appID, setID, moduleI
 	return nil
 }
 
+// UpdateModule TODO
 func (t *instanceClient) UpdateModule(ctx context.Context, appID, setID, moduleID int64, h http.Header,
 	dat map[string]interface{}) errors.CCErrorCoder {
 
@@ -94,6 +97,7 @@ func (t *instanceClient) UpdateModule(ctx context.Context, appID, setID, moduleI
 	return nil
 }
 
+// SearchModule TODO
 func (t *instanceClient) SearchModule(ctx context.Context, ownerID string, appID, setID int64, h http.Header,
 	s *params.SearchParams) (*metadata.InstResult, errors.CCErrorCoder) {
 
@@ -118,6 +122,7 @@ func (t *instanceClient) SearchModule(ctx context.Context, ownerID string, appID
 	return &resp.Data, nil
 }
 
+// SearchModuleByCondition TODO
 func (t *instanceClient) SearchModuleByCondition(ctx context.Context, appID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/findmany/module/biz/%s"
@@ -132,6 +137,7 @@ func (t *instanceClient) SearchModuleByCondition(ctx context.Context, appID stri
 	return
 }
 
+// SearchModuleBatch TODO
 func (t *instanceClient) SearchModuleBatch(ctx context.Context, appID string, h http.Header, s *metadata.SearchInstBatchOption) (resp *metadata.MapArrayResponse, err error) {
 	resp = new(metadata.MapArrayResponse)
 	subPath := "/findmany/module/bk_biz_id/%s"
@@ -146,6 +152,7 @@ func (t *instanceClient) SearchModuleBatch(ctx context.Context, appID string, h 
 	return
 }
 
+// SearchModuleWithRelation TODO
 func (t *instanceClient) SearchModuleWithRelation(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.ResponseInstData, err error) {
 	resp = new(metadata.ResponseInstData)
 	subPath := "/findmany/module/with_relation/biz/%s"

@@ -47,7 +47,7 @@
 </template>
 
 <script>
-  import { defineComponent, ref, watch, toRef, nextTick } from '@vue/composition-api'
+  import { defineComponent, ref, watch, toRef, nextTick } from 'vue'
   import { find as findModelRelations } from '@/service/model/association.js'
   import { useAssociations } from '../../use-associations.js'
   import store from '@/store'

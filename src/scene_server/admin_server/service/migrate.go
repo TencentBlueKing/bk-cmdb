@@ -334,6 +334,7 @@ func (s *Service) refreshConfig(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(metadata.NewSuccessResp("refresh config success"))
 }
 
+// MigrationResponse TODO
 type MigrationResponse struct {
 	metadata.BaseResp `json:",inline"`
 	Data              interface{} `json:"data"`
@@ -342,6 +343,7 @@ type MigrationResponse struct {
 	FinishedVersions  []string    `json:"finished_migrations"`
 }
 
+// MigrateSpecifyVersionRequest TODO
 type MigrateSpecifyVersionRequest struct {
 	CommitID  string `json:"commit_id"`
 	TimeStamp int64  `json:"time_stamp"`

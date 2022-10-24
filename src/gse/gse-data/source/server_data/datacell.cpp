@@ -19,14 +19,11 @@
 #include "tools/macros.h"
 #include "tools/net.h"
 
-namespace gse
-{
-namespace dataserver
-{
+namespace gse {
+namespace data {
 DataCellOPS* DataCell::ToOPS(int status)
 {
-    m_dataCellOPS.m_state = status;
-
+    m_dataCellOPS.m_status = status;
     return new DataCellOPS(m_dataCellOPS);
 }
 
@@ -40,47 +37,19 @@ std::string DataCell::GetChannelProtocol()
     return m_dataCellOPS.m_channelProtocol;
 }
 
-uint32_t DataCell::GetSourceIp() const  
-{
-    return m_dataCellOPS.m_srcIP; 
-}
-    
-void DataCell::SetSourceIp(uint32_t ip) 
-{
-    m_dataCellOPS.m_srcIP = ip; 
-    if (0 == m_dataCellOPS.m_szSrcIP.length())
-    {
-        m_dataCellOPS.m_szSrcIP = gse::tools::net::IpToString(ip, true);
-    }
-}
-
-void DataCell::SetServerIp(uint32_t ip)
-{
-    m_dataCellOPS.m_serverIP = ip;
-}
-
-uint32_t DataCell::GetServerIp()
-{
-    return m_dataCellOPS.m_serverIP;
-}
-
 std::string DataCell::GetStrServerIp()
 {
-    if (0 == m_dataCellOPS.m_szServerIP.length())
-    {
-        m_dataCellOPS.m_szServerIP = gse::tools::net::IpToString(m_dataCellOPS.m_serverIP, true);
-    }
     return m_dataCellOPS.m_szServerIP;
 }
 
-uint16_t DataCell::GetSourcePort() const 
+uint16_t DataCell::GetSourcePort() const
 {
-    return m_dataCellOPS.m_srcPort; 
+    return m_dataCellOPS.m_srcPort;
 }
 
-void DataCell::SetSourcePort(uint16_t port) 
+void DataCell::SetSourcePort(uint16_t port)
 {
-    m_dataCellOPS.m_srcPort = port; 
+    m_dataCellOPS.m_srcPort = port;
 }
 
 void DataCell::SetServerPort(uint16_t port)
@@ -94,9 +63,9 @@ uint16_t DataCell::GetServerPort() const
     return m_dataCellOPS.m_serverPort;
 }
 
-char* DataCell::GetDataBuf() const 
-{ 
-    return m_dataBuf; 
+char* DataCell::GetDataBuf() const
+{
+    return m_dataBuf;
 }
 
 uint32_t DataCell::GetDataBufLen() const
@@ -104,22 +73,23 @@ uint32_t DataCell::GetDataBufLen() const
     return m_dataBufLen;
 }
 
-void DataCell::SetSourceIp(std::string &ip)
+void DataCell::SetSourceIp(const std::string& ip)
 {
     m_dataCellOPS.m_szSrcIP = ip;
 }
 
-void DataCell::SetExportorName(const std::string &exportorname)
+void DataCell::SetServerIP(const std::string& ip)
+{
+    m_dataCellOPS.m_szServerIP = ip;
+}
+
+void DataCell::SetExportorName(const std::string& exportorname)
 {
     m_dataCellOPS.m_exportorTag = exportorname;
 }
 
 std::string DataCell::GetSourceIp()
 {
-    if (0 == m_dataCellOPS.m_szSrcIP.length())
-    {
-        m_dataCellOPS.m_szSrcIP = gse::tools::net::IpToString(m_dataCellOPS.m_srcIP, true);
-    }
     return m_dataCellOPS.m_szSrcIP;
 }
 
@@ -129,7 +99,7 @@ void DataCell::SetChannelID(uint32_t channelID)
     m_dataCellOPS.m_szChannelID = gse::tools::strings::ToString(channelID);
 }
 
-void DataCell::SetErrorMsg(const std::string &errmsg, int errorcode)
+void DataCell::SetErrorMsg(const std::string& errmsg, int errorcode)
 {
     m_dataCellOPS.m_errmsg = errmsg;
     m_dataCellOPS.m_errcode = errorcode;
@@ -140,7 +110,7 @@ int DataCell::GetErrorCode()
     return m_dataCellOPS.m_errcode;
 }
 
-uint32_t DataCell::GetChannelID() 
+uint32_t DataCell::GetChannelID()
 {
     return m_dataCellOPS.m_channelID;
 }
@@ -154,7 +124,6 @@ uint32_t DataCell::GetArrivedTimestamp() const
 {
     return m_dataCellOPS.m_arrivedTimestamp;
 }
-
 
 void DataCell::SetOutputTimestamp(uint32_t timestamp)
 {
@@ -181,13 +150,12 @@ int DataCell::GetDelaySeconds() const
     return m_dataCellOPS.m_arrivedTimestamp - m_dataCellOPS.m_createdTimestamp;
 }
 
-void DataCell::PushExtension(std::string &extenInfo)
+void DataCell::PushExtension(std::string& extenInfo)
 {
     m_dataCellOPS.m_extensionsInfo.push_back(extenInfo);
-    //m_extensions.append(extenInfo);
+    // m_extensions.append(extenInfo);
     std::string tagexterninfo = "[" + extenInfo + "]";
     m_extensions.append(tagexterninfo);
-
 }
 
 std::size_t DataCell::GetExtensionSize() const
@@ -207,7 +175,7 @@ std::string DataCell::GetExtensionByIndex(std::size_t index)
 void DataCell::GetExtensions(std::vector<std::string>& extensions)
 {
     std::size_t maxIdx = m_dataCellOPS.m_extensionsInfo.size();
-    for(std::size_t idx = 0; idx < maxIdx ; ++idx)
+    for (std::size_t idx = 0; idx < maxIdx; ++idx)
     {
         extensions.push_back(m_dataCellOPS.m_extensionsInfo.at(idx));
     }
@@ -217,7 +185,7 @@ int DataCell::CopyData(const char* buf, uint32_t len)
 {
     m_dataCellOPS.m_bytes = len;
     // storage \n\0
-    char* pBuf = new char[len+2];
+    char* pBuf = new char[len + 2];
     if (NULL == pBuf)
     {
         int err = gse_errno;
@@ -242,34 +210,32 @@ int DataCell::CopyData(const char* buf, uint32_t len)
 
 void DataCell::DealLineBreak()
 {
-    if(NULL == m_dataBuf || m_dataBufLen == 0)
+    if (NULL == m_dataBuf || m_dataBufLen == 0)
     {
         return;
     }
 
-    if (0x0a == m_dataBuf[m_dataBufLen-1])
+    if (0x0a == m_dataBuf[m_dataBufLen - 1])
     {
-        m_dataBuf[m_dataBufLen-1] = 0;
+        m_dataBuf[m_dataBufLen - 1] = 0;
         m_dataBufLen = m_dataBufLen - 1;
     }
 }
 
-
 void DataCell::AppendLineBreak()
 {
-    if(NULL == m_dataBuf || m_dataBufLen == 0)
+    if (NULL == m_dataBuf || m_dataBufLen == 0)
     {
         return;
     }
 
-    if (0x0a != m_dataBuf[m_dataBufLen-1])
+    if (0x0a != m_dataBuf[m_dataBufLen - 1])
     {
         m_dataBuf[m_dataBufLen] = 0x0a;
         m_dataBufLen += 1;
         m_dataBuf[m_dataBufLen] = 0;
     }
 }
-
 
 uint32_t DataCell::GetBufferLen()
 {
@@ -291,17 +257,17 @@ void DataCell::SetOutputTag(const std::string& tag)
     m_dataCellOPS.m_outputTag = tag;
 }
 
-void DataCell::SetInputTag(const std::string &tag)
+void DataCell::SetInputTag(const std::string& tag)
 {
-    m_dataCellOPS.m_inputTag  = tag;
+    m_dataCellOPS.m_inputTag = tag;
 }
 
-void DataCell::SetOutputAddress(const std::string &address)
+void DataCell::SetOutputAddress(const std::string& address)
 {
     m_dataCellOPS.m_outAddress = address;
 }
 
-void DataCell::SetOutputType(const std::string &type)
+void DataCell::SetOutputType(const std::string& type)
 {
     m_dataCellOPS.m_outputType = type;
 }
@@ -321,7 +287,7 @@ void DataCell::AddTableName(const std::string& tableName)
     m_tableNames.clear();
     m_tableNames.push_back(tableName);
 }
-void DataCell::GetTableName( std::vector<std::string>& tableName)
+void DataCell::GetTableName(std::vector<std::string>& tableName)
 {
     tableName = m_tableNames;
 }
@@ -345,5 +311,26 @@ uint32_t DataCell::GetBizID()
 {
     return m_dataCellOPS.m_bizid;
 }
+
+bool DataCell::IsOpsMsg()
+{
+    return m_isOps;
 }
+
+void DataCell::SetOpsMsg(bool isOpsMsg)
+{
+    m_isOps = isOpsMsg;
 }
+
+int DataCell::GetOpsServiceId()
+{
+    return m_opsServiceId;
+}
+
+void DataCell::SetOpsServiceId(int opsServiceId)
+{
+    m_opsServiceId = opsServiceId;
+}
+
+} // namespace data
+} // namespace gse

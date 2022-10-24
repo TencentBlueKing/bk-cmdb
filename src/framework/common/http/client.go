@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/ssl"
 )
 
+// NewClient TODO
 func NewClient(c *TLSConfig) (*http.Client, error) {
 	tlsConf := new(tls.Config)
 	if (nil != c) && len(c.CAFile) != 0 && len(c.CertFile) != 0 && len(c.KeyFile) != 0 {
@@ -48,6 +49,7 @@ func NewClient(c *TLSConfig) (*http.Client, error) {
 	return client, nil
 }
 
+// HttpClient TODO
 type HttpClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }

@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package resourcedir TODO
 package resourcedir
 
 import (
@@ -19,6 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateResourceDirectory TODO
 func (r *ResourceDirectory) CreateResourceDirectory(ctx context.Context, header http.Header, data map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error) {
 	resp = new(metadata.CreatedOneOptionResult)
 	subPath := "/create/resource/directory"
@@ -33,6 +35,7 @@ func (r *ResourceDirectory) CreateResourceDirectory(ctx context.Context, header 
 	return
 }
 
+// UpdateResourceDirectory TODO
 func (r *ResourceDirectory) UpdateResourceDirectory(ctx context.Context, header http.Header, moduleID int64, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/resource/directory/%d"
@@ -47,6 +50,7 @@ func (r *ResourceDirectory) UpdateResourceDirectory(ctx context.Context, header 
 	return
 }
 
+// SearchResourceDirectory TODO
 func (r *ResourceDirectory) SearchResourceDirectory(ctx context.Context, header http.Header, data map[string]interface{}) (resp *metadata.SearchResp, err error) {
 	resp = new(metadata.SearchResp)
 	subPath := "/findmany/resource/directory"
@@ -61,6 +65,7 @@ func (r *ResourceDirectory) SearchResourceDirectory(ctx context.Context, header 
 	return
 }
 
+// DeleteResourceDirectory TODO
 func (r *ResourceDirectory) DeleteResourceDirectory(ctx context.Context, header http.Header, moduleID int64) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/delete/resource/directory/%d"

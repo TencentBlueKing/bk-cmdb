@@ -38,7 +38,7 @@ type Property struct {
 	IsRequire     bool
 	Group         string
 	ExcelColIndex int
-	NotObjPropery bool //Not an attribute of the object, indicating that the field to be exported is needed for export,
+	NotObjPropery bool // Not an attribute of the object, indicating that the field to be exported is needed for export,
 	AsstObjID     string
 	NotExport     bool
 }
@@ -101,6 +101,7 @@ type PropertyGroup struct {
 	ID    string
 }
 
+// PropertyPrimaryVal TODO
 type PropertyPrimaryVal struct {
 	ID     string
 	Name   string

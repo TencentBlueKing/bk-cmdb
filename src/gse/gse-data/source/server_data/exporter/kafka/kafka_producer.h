@@ -13,31 +13,26 @@
 #ifndef _GSE_KAFKA_PRODUCER_H_
 #define _GSE_KAFKA_PRODUCER_H_
 
+#include "conf/conf_common.h"
+#include "eventthread/event_thread.h"
 #include <ctype.h>
+#include <list>
 #include <signal.h>
 #include <string>
-#include <list>
 #include <sys/queue.h>
-#include "eventthread/gseEventThread.h"
-#include "conf/conf_common.h"
 
 namespace gse {
-namespace dataserver {
+namespace data {
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <rdkafka.h>
+#include <librdkafka/rdkafka.h>
 #ifdef __cplusplus
 }
 #endif
 
-
 using namespace std;
 
-/**
- * @brief kafka producer
- *        生产者
- */
 class KafkaProducer
 {
 
@@ -54,39 +49,34 @@ public:
     ~KafkaProducer();
 
 public:
-    int createProducer(const string &broker);
-    int getProducerState();
-    int excuteProduce(const string &topic, int partition, const std::string& key, const string& value, const std::string& auxiliary);
-    void closeProducer();
-    int getProducerQueueCount();
+    int CreateProducer(const string &broker);
+    int ExcuteProduce(const string &topic, int partition, const std::string &key, const string &value, const std::string &auxiliary);
+    void CloseProducer();
+    int GetProducerQueueCount();
 
     void SetKafkaConfig(KafkaConfig &kafa_conf);
     void SetMaxMessageBytes(int bytes);
-public:
-   void KafkaPoll();
-public:
-    /**
-     * @brief 地址集
-     */
-    string s_brokers;
-    /**
-     * @brief kafka 对象
-     */
-    rd_kafka_t *rk;
 
-    rd_kafka_conf_t *conf;
-    //rd_kafka_topic_conf_t *topic_conf;
+public:
+    void KafkaPoll();
+
+private:
+    static void MsgDeliverCb(rd_kafka_t *rk,
+                             const rd_kafka_message_t *rkmessage, void *opaque);
+
 public:
     static std::string m_runtimeDataDirector;
 
 private:
+    string m_brokers;
+    rd_kafka_t *m_rdKafa;
+    rd_kafka_conf_t *conf;
+
     struct timeval m_lastlogTime;
     int32_t m_maxMessageBytes;
     KafkaConfig m_kafkaConfig;
-
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif
-

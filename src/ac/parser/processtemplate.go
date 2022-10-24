@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/blog"
 )
 
+// ProcessTemplateAuthConfigs TODO
 // NOTE: 进程模板增删改操作检查服务模板的编辑权限
 var ProcessTemplateAuthConfigs = []AuthConfig{
 	{
@@ -164,6 +165,7 @@ var ProcessTemplateAuthConfigs = []AuthConfig{
 	},
 }
 
+// ProcessTemplate TODO
 func (ps *parseStream) ProcessTemplate() *parseStream {
 	return ParseStreamWithFramework(ps, ProcessTemplateAuthConfigs)
 }

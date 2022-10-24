@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateServiceCategory TODO
 func (s *coreService) CreateServiceCategory(ctx *rest.Contexts) {
 	category := metadata.ServiceCategory{}
 	if err := ctx.DecodeInto(&category); err != nil {
@@ -37,6 +38,7 @@ func (s *coreService) CreateServiceCategory(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// GetServiceCategory TODO
 func (s *coreService) GetServiceCategory(ctx *rest.Contexts) {
 	serviceCategoryIDStr := ctx.Request.PathParameter(common.BKServiceCategoryIDField)
 	if len(serviceCategoryIDStr) == 0 {
@@ -61,6 +63,7 @@ func (s *coreService) GetServiceCategory(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// GetDefaultServiceCategory TODO
 func (s *coreService) GetDefaultServiceCategory(ctx *rest.Contexts) {
 	result, err := s.core.ProcessOperation().GetDefaultServiceCategory(ctx.Kit)
 	if err != nil {
@@ -71,6 +74,7 @@ func (s *coreService) GetDefaultServiceCategory(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// ListServiceCategories TODO
 func (s *coreService) ListServiceCategories(ctx *rest.Contexts) {
 	// filter parameter
 	fp := struct {
@@ -105,6 +109,7 @@ func (s *coreService) ListServiceCategories(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateServiceCategory TODO
 func (s *coreService) UpdateServiceCategory(ctx *rest.Contexts) {
 	serviceCategoryIDStr := ctx.Request.PathParameter(common.BKServiceCategoryIDField)
 	if len(serviceCategoryIDStr) == 0 {
@@ -136,6 +141,7 @@ func (s *coreService) UpdateServiceCategory(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// DeleteServiceCategory TODO
 func (s *coreService) DeleteServiceCategory(ctx *rest.Contexts) {
 	serviceCategoryIDStr := ctx.Request.PathParameter(common.BKServiceCategoryIDField)
 	if len(serviceCategoryIDStr) == 0 {

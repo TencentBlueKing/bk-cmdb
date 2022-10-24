@@ -13,70 +13,208 @@
 #ifndef _GSE_DATA_DATACONF_H_
 #define _GSE_DATA_DATACONF_H_
 
-#include <string>
-#include <map>
 #include <json/json.h>
+#include <map>
+#include <string>
 
 #include "safe/lock.h"
 
 #include "conf/confItem.h"
-#include "config/configfile.h"
 #include "tools/json_property.hpp"
 
-using namespace gse::config;
 using namespace gse::tools::json;
 
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
 
+static const int kDefaultZkTimeoutMs = 300000;
+static const int kDefaultNetDevMaxSpeed = 10000;
+static const int kDefaultMaxAgentCount = 50000;
+static const std::string kDefaultDevName = "eth1";
+
+static const int kDefaultAgentCountLoadWeight = 40;
+static const int kDefaultCpuUsageLoadWeightLoadWeight = 20;
+static const int kDefaultNetUsageLoadWeightLoadWeight = 20;
+static const int kDefaultMemUsageLoadWeightLoadWeight = 20;
+
+class PulsarConfig
+{
+public:
+    int m_maxPendingMessages;
+    int m_sendTimeoutMs;
+    int m_compressionType;
+    int m_maxPendingMessagesAcrossPartitions;
+};
+
+class LoggerConfig
+{
+public:
+    LoggerConfig()
+        : m_fileCount(100), m_fileSize(100), m_rotate(0), m_flushIntervalMs(DFT_LOG_FLUSH_MSEC) {}
+
+public:
+    std::string m_path;
+    std::string m_level;
+    int m_fileSize;
+    int m_fileCount;
+    int m_rotate;
+    int m_flushIntervalMs;
+};
+
+class ZooKeeperConfig
+{
+public:
+    ZooKeeperConfig()
+        : m_timeout(kDefaultZkTimeoutMs)
+    {
+    }
+
+    std::string m_serviceDiscoverZkHost;
+    std::string m_serviceDiscoverZkAuth;
+    int m_timeout;
+
+    std::string m_channelIdConfigZkHost;
+    std::string m_channelIdConfigZkAuth;
+};
+
+class MetricsConfig
+{
+public:
+    MetricsConfig()
+        : m_promethusListenPort(59402), m_threadNum(1) {}
+
+public:
+    std::string m_promethusBindIP;
+    uint16_t m_promethusListenPort;
+    int m_threadNum;
+};
+
+class OpsConfig
+{
+public:
+    OpsConfig()
+        : m_enableOps(false) {}
+
+public:
+    bool m_enableOps;
+
+    std::vector<std::string> m_opsServerAddrs;
+    int m_port;
+};
+
+class ClusterInfoConfig
+{
+public:
+    ClusterInfoConfig()
+        : m_serviceName("data")
+    {
+    }
+
+public:
+    std::string m_clusterName;
+    std::string m_clusterId;
+    std::string m_serviceName;
+    std::string m_instanceId;
+    std::string m_advertiseIp;
+    std::string m_zoneId;
+    std::string m_cityId;
+};
+
+class BalanceLoadWeightConfig
+{
+public:
+    BalanceLoadWeightConfig()
+        : m_agentCountLoadWeight(kDefaultAgentCountLoadWeight),
+          m_cpuUsageLoadWeight(kDefaultCpuUsageLoadWeightLoadWeight),
+          m_netUsageLoadWeight(kDefaultNetUsageLoadWeightLoadWeight),
+          m_memUsageLoadWeight(kDefaultMemUsageLoadWeightLoadWeight),
+          m_netDevName(kDefaultDevName),
+          m_netDevMaxSpeed(kDefaultNetDevMaxSpeed),
+          m_maxAgentCount(kDefaultMaxAgentCount)
+    {
+    }
+
+    int m_agentCountLoadWeight;
+    int m_cpuUsageLoadWeight;
+    int m_memUsageLoadWeight;
+    int m_netUsageLoadWeight;
+    int m_maxAgentCount;
+    std::string m_netDevName;
+    int m_netDevMaxSpeed;
+};
+
+class TGLogConfig
+{
+public:
+    std::string m_watchPath;
+};
+
+class ChannelIdApiServiceConfig
+{
+public:
+    ChannelIdApiServiceConfig()
+        : m_valid(false), m_threadNum(1)
+    {
+    }
+
+public:
+    std::string m_bindIp;
+    int m_bindPort;
+    int m_threadNum;
+    bool m_valid;
+};
+
+class DataIdZKConfig
+{
+public:
+    std::string m_zkhost;
+    std::string m_zkAuth;
+    std::string m_dataIdPath;
+    std::string m_storagePath;
+};
 
 class DataProcessConfig
 {
 public:
-    std::string m_configZk;
-    std::string m_eventZk;
-    std::string m_zkauth;
-    std::string m_clusterName;
-    std::string m_instanceId;
-    std::string m_dataflowfile;
-    std::string m_regionID;
-    std::string m_cityID;
-    std::string m_watchpath;
-    std::string m_certPath;
-    std::string m_passwdfile;
-    std::string m_serverIp;
-
-    std::string m_channelidZkHost;
-    std::string m_channelidZkAuth;
-
-    std::string m_runtimePath;
-    std::string m_logPath;
-    std::string m_logLevel;
     std::string m_pidFilePath;
-    std::string m_promethusBindIp;
-    unsigned int m_promethusPort;
-    unsigned int m_filesize;
-    unsigned int m_filenum;
+    LoggerConfig m_loggerConfig;
+    ZooKeeperConfig m_zooKeeperConfig;
+    MetricsConfig m_metricsConfig;
+    OpsConfig m_opsConfig;
+    ClusterInfoConfig m_clusterInfoConfig;
+    TGLogConfig m_tglogConfig;
+    ChannelIdApiServiceConfig m_channelIdApiServiceConfig;
+    std::vector<DataIdZKConfig> m_dataIdZk;
+    BalanceLoadWeightConfig m_balanceConfig;
+    std::string m_runtimePath;
 
     //------------------------
     bool m_enableOps;
+    std::string m_configFilePath;
 
 public:
     DataProcessConfig();
-    DataProcessConfig(const std::string &configfile);
+    DataProcessConfig(const std::string& configfile);
+    bool LoadConfig(const std::string& configfile);
     ~DataProcessConfig();
+
 public:
-    //static const MetaType *properties[];
+    // static const MetaType *properties[];
 
-    std::string get_prometheus_http_svr_ip();
-    uint16_t get_prometheus_datasvr_port();
-    std::string getDataSvrClusterName();
-    std::string getDataSvrInstanceId();
-    std::string getDataSvrIp();
-    bool getOpsFlag();
+    std::string GetPrometheusBindIp();
+    int GetPrometheusListenerPort();
+    std::string GetDataSvrClusterName();
+    std::string GetDataSvrInstanceId();
+    std::string GetAdvertiseIp();
+    bool GetOpsFlag();
 
-private:
-    int parseConfigFile(const std::string &filename);
+    ZooKeeperConfig* GetZookeeperConfig();
+    std::vector<DataIdZKConfig>* GetDataIdZkConfig();
+
+    ChannelIdApiServiceConfig* GetChannelIdApiServiceConfig();
+
+public:
+    int ParseConfigFile(const std::string& filename);
 };
 
 class DataConf
@@ -88,8 +226,13 @@ public:
 public:
     int DecodeConf(const string& text);
     DataFlowConf* GetDataFlowConf();
-protected:
 
+public:
+    FilterConf* findFilterConf(std::string& filterName);
+    ExporterConf* findExporterConf(std::string& exporterName);
+    ReceiverConf* findReceiverConf(std::string& receiverName);
+
+protected:
 private:
     int parseDataFlowConf(const string& confText);
     int parseChannelConf(DataFlowConf* pDataFlowConf, const Json::Value& cfgValue);
@@ -112,9 +255,6 @@ private:
     void clearReceiverConfMap();
     void clearExporterConfMap();
     void clearFilterConfMap();
-    FilterConf* findFilterConf(std::string& filterName);
-    ExporterConf* findExporterConf(std::string& exporterName);
-    ReceiverConf* findReceiverConf(std::string& receiverName);
 
 private:
     gse::safe::MutexLock m_lockDataFlowConf;
@@ -124,6 +264,6 @@ private:
     std::map<std::string, FilterConf*> m_filtersConf;
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif

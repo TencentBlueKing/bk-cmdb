@@ -31,6 +31,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// Run TODO
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
@@ -115,6 +116,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	return nil
 }
 
+// TaskServer TODO
 type TaskServer struct {
 	Core      *backbone.Engine
 	Config    *options.Config
@@ -122,6 +124,7 @@ type TaskServer struct {
 	taskQueue map[string]tasksvc.TaskInfo
 }
 
+// WebService TODO
 func (h *TaskServer) WebService() *restful.Container {
 	return h.Service.WebService()
 }

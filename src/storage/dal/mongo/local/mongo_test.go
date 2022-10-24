@@ -947,8 +947,8 @@ func TestConvInterface(t *testing.T) {
 				"sub_aa":  "ptr",
 			},
 			"tag_test": "11",
-			//"sub_int":  (8888888),
-			//"sub_aa":   "inline",
+			// "sub_int":  (8888888),
+			// "sub_aa":   "inline",
 			"struct_arr": []SubStruct{
 
 				SubStruct{
@@ -1022,7 +1022,7 @@ func TestConvInterface(t *testing.T) {
 		Struct     SubStruct   `bson:"struct" json:"struct"`
 		TagTest    interface{} `bson:"tag_test" json:"tag_test"`
 		StructPtr  *SubStruct  `bson:"struct_ptr" json:"struct_ptr"`
-		//*SubStruct
+		// *SubStruct
 		StructArr []SubStruct `bson:"struct_arr" json:"struct_arr"`
 	}
 

@@ -36,7 +36,7 @@ func (lgc *Logics) GetHostData(appID int64, hostIDArr []int64, hostFields []stri
 	exportCond metadata.HostCommonSearch,
 	header http.Header, defLang lang.DefaultCCLanguageIf) ([]mapstr.MapStr, error) {
 	rid := util.GetHTTPCCRequestID(header)
-	//defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	// defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
 	if len(hostIDArr) == 0 && len(exportCond.Condition) == 0 {
 		return nil, errors.New(defLang.Language("both_hostid_exportcond_empty"))
@@ -313,6 +313,7 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 	return resp
 }
 
+// importStatisticsAssociation TODO
 // Statistics
 func (lgc *Logics) importStatisticsAssociation(ctx context.Context, header http.Header, objID string,
 	sheet *xlsx.Sheet) (map[string]metadata.ObjectAsstIDStatisticsInfo, ccErrrors.CCErrorCoder) {

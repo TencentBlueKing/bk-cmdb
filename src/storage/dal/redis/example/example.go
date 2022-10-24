@@ -27,6 +27,7 @@ func main() {
 	MySentinelClient()
 }
 
+// MyClient TODO
 func MyClient() {
 	client := localRedis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
@@ -37,6 +38,7 @@ func MyClient() {
 	DBOps(client)
 }
 
+// MySentinelClient TODO
 func MySentinelClient() {
 	sentinelClient := localRedis.NewFailoverClient(&redis.FailoverOptions{
 		MasterName:       "mymaster",
@@ -47,6 +49,7 @@ func MySentinelClient() {
 	DBOps(sentinelClient)
 }
 
+// DBOps TODO
 func DBOps(cli localRedis.Client) {
 	ctx := context.Background()
 	key := "mykey"

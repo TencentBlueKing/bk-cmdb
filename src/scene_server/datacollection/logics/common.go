@@ -27,6 +27,7 @@ import (
 // INVALIDID invalid id used as return value
 const INVALIDID uint64 = 0
 
+// checkNetObject TODO
 // by checking if bk_obj_id and bk_obj_name function parameter are valid net device object or not
 // one of bk_obj_id and bk_obj_name can be empty and will return both bk_obj_id if no error
 func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName string) (string, string, error) {
@@ -64,6 +65,7 @@ func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName str
 	return objResult.Info[0].ObjectID, objResult.Info[0].ObjectName, nil
 }
 
+// checkNetObjectProperty TODO
 // by checking if bk_property_id and bk_property_name function parameter are valid net device object property or not
 // one of bk_property_id and bk_property_name can be empty and will return bk_property_id value if no error
 func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, propertyID, propertyName string) (string,
@@ -106,6 +108,7 @@ func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, p
 	return attrResult.Info[0].PropertyID, nil
 }
 
+// checkNetDeviceExist TODO
 // by checking if bk_device_id and bk_device_name function parameter are valid net device or not
 // one of bk_device_id and bk_device_name can be empty and will return bk_device_id and bk_obj_id value if no error
 // bk_obj_id is used to check property
@@ -141,6 +144,7 @@ func (lgc *Logics) checkNetDeviceExist(pheader http.Header, deviceID uint64, dev
 	return deviceData.DeviceID, deviceData.ObjectID, nil
 }
 
+// getNetPropertyID TODO
 // get net property id by device ID and property ID
 func (lgc *Logics) getNetPropertyID(propertyID string, deviceID uint64, ownerID string) (uint64, error) {
 	queryParams := map[string]interface{}{

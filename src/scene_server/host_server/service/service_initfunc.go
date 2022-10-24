@@ -22,6 +22,7 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initDynamicGroup(web)
 	s.initUsercustom(web)
 	s.initAgent(web)
+	s.initCloudHost(web)
 
 }
 
@@ -224,7 +225,8 @@ func (s *Service) initModule(web *restful.WebService) {
 		Handler: s.TransferResourceHostsAcrossBusiness})
 
 	// TODO: Deprecated, delete this api. delete host from business, used for framework
-	//utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/hosts/module/biz/delete", Handler: s.DeleteHostFromBusiness})
+	// utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/hosts/module/biz/delete",
+	// 	Handler: s.DeleteHostFromBusiness})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/topo/relation/read", Handler: s.GetAppHostTopoRelation})
 	// 主机在资源池目录之间转移
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/transfer/resource/directory", Handler: s.TransferHostResourceDirectory})
@@ -341,4 +343,20 @@ func (s *Service) initAgent(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/unbind/agent", Handler: s.UnbindAgent})
 
 	utility.AddToRestfulWebService(web)
+}
+
+// initCloudHost init cloud host related api, **dedicated for cloud host management, do not use them for other use**
+func (s *Service) initCloudHost(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/cloud_hosts",
+		Handler: s.AddCloudHostToBiz})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/cloud_hosts",
+		Handler: s.DeleteCloudHostFromBiz})
+
+	utility.AddToRestfulWebService(web)
+
 }

@@ -292,6 +292,7 @@
     }
     .search-input {
         flex: 1;
+        max-width: 646px;
         /deep/ {
             .bk-textarea-wrapper {
                 border: 0;

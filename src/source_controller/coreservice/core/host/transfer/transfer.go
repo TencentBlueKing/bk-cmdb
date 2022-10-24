@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package transfer TODO
 package transfer
 
 import (
@@ -95,6 +96,7 @@ func (t *genericTransfer) SetCrossBusiness(kit *rest.Kit, bizIDs []int64) {
 	t.srcBizIDs = bizIDs
 }
 
+// Transfer TODO
 func (t *genericTransfer) Transfer(kit *rest.Kit, hostIDs []int64, disableHostApply bool) errors.CCErrorCoder {
 	err := t.validHosts(kit, hostIDs)
 	if err != nil {
@@ -127,6 +129,7 @@ func (t *genericTransfer) Transfer(kit *rest.Kit, hostIDs []int64, disableHostAp
 	return nil
 }
 
+// DeleteHosts TODO
 func (t *genericTransfer) DeleteHosts(kit *rest.Kit, hostIDs []int64) error {
 	if len(hostIDs) == 0 {
 		return nil
@@ -250,6 +253,7 @@ func (t *genericTransfer) validParameterModule(kit *rest.Kit) errors.CCErrorCode
 	return nil
 }
 
+// validHosts TODO
 // validParameterHostBelongbiz  legal
 // check if the host belongs to the transfer business.
 // check host exist
@@ -258,8 +262,11 @@ func (t *genericTransfer) validHosts(kit *rest.Kit, hostIDs []int64) errors.CCEr
 		return nil
 	}
 
-	// check if hosts exist
+	// check if hosts exist and do not contain cloud host that doesn't allow cross biz transfer
 	hostCond := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
+	if t.crossBizTransfer {
+		hostCond[common.BKCloudHostIdentifierField] = mapstr.MapStr{common.BKDBNE: true}
+	}
 	hostCond = util.SetQueryOwner(hostCond, kit.SupplierAccount)
 
 	cnt, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(&hostCond).Count(kit.Ctx)
@@ -270,7 +277,7 @@ func (t *genericTransfer) validHosts(kit *rest.Kit, hostIDs []int64) errors.CCEr
 
 	if int(cnt) < len(hostIDs) {
 		blog.Errorf("valid hosts, but some hosts not exist, hostIDs: %+v, rid: %s", hostIDs, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotExist, hostIDs)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
 	}
 
 	return t.validHostsBelongBiz(kit, hostIDs)
@@ -435,6 +442,7 @@ func (t *genericTransfer) autoCreateServiceInstance(kit *rest.Kit, hostIDs []int
 	return nil
 }
 
+// removeHostServiceInstance TODO
 // remove service instances bound to hosts with process instances in certain modules
 func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int64) errors.CCErrorCoder {
 	// increment transfer don't need to remove service instance
@@ -588,6 +596,7 @@ func (t *genericTransfer) getInnerModuleIDArr(kit *rest.Kit) errors.CCErrorCoder
 	return nil
 }
 
+// GetInnerModuleIDArr TODO
 func (t *genericTransfer) GetInnerModuleIDArr(kit *rest.Kit) ([]int64, errors.CCError) {
 	if len(t.innerModuleID) == 0 {
 		err := t.getInnerModuleIDArr(kit)
@@ -596,6 +605,7 @@ func (t *genericTransfer) GetInnerModuleIDArr(kit *rest.Kit) ([]int64, errors.CC
 	return t.innerModuleID, nil
 }
 
+// HasInnerModule TODO
 func (t *genericTransfer) HasInnerModule(kit *rest.Kit) (bool, error) {
 	innerModuleIDArr, err := t.GetInnerModuleIDArr(kit)
 	if err != nil {

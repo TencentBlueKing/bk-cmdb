@@ -58,7 +58,7 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iam.TypeID, filter 
 			return nil, err
 		}
 	}
-	
+
 	res, err := lgc.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, &param)
 	if err != nil {
 		blog.ErrorJSON("read model attribute failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)
@@ -180,6 +180,7 @@ func (lgc *Logics) getListOptionValues(kit *rest.Kit, filter *types.ListAttrValu
 	return &types.ListAttrValueResult{Count: int64(len(options)), Results: values}, nil
 }
 
+// ValidateListAttrValueRequest TODO
 func (lgc *Logics) ValidateListAttrValueRequest(kit *rest.Kit, req *types.PullResourceReq) (*types.ListAttrValueFilter, error) {
 	filter, ok := req.Filter.(types.ListAttrValueFilter)
 	if !ok {

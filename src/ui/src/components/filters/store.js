@@ -260,6 +260,7 @@ const FilterStore = new Vue({
     dispatchSearch() {
       this.setHeader()
       this.setQuery()
+      // eslint-disable-next-line vue/no-use-computed-property-like-method
       this.searchHandler(this.condition)
       this.resetPage(false)
     },

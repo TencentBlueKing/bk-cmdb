@@ -319,27 +319,35 @@ func getReturnStr(code int, message string, data interface{}) string {
 
 }
 
+// Host simplified host struct
+type Host struct {
+	// HostID 主机ID(host_id)
+	HostID int64 `json:"bk_host_id" bson:"bk_host_id"`
+	// HostName 主机名称
+	HostName string `json:"bk_host_name" bson:"bk_host_name"`
+	// InnerIP 内网IP
+	InnerIP string `json:"bk_host_innerip" bson:"bk_host_innerip"`
+	// OuterIP 外网IP
+	OuterIP string `json:"bk_host_outerip" bson:"bk_host_outerip"`
+}
+
+// ListenIPOptions TODO
 func (s *Service) ListenIPOptions(c *gin.Context) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
 	webCommon.SetProxyHeader(c)
-	header := c.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(c.Request.Header))
 
 	hostIDStr := c.Param("bk_host_id")
 	hostID, err := strconv.ParseInt(hostIDStr, 10, 64)
 	if err != nil {
 		blog.Infof("host id invalid, convert to int failed, hostID: %s, err: %+v, rid: %s", hostID, err, rid)
-		result := metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrCommParamsInvalid,
-				ErrMsg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKHostIDField).Error(),
-			},
-		}
+		result := metadata.BaseResp{Result: false, Code: common.CCErrCommParamsInvalid,
+			ErrMsg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKHostIDField).Error()}
 		c.JSON(http.StatusOK, result)
 		return
 	}
+
 	option := metadata.ListHostsWithNoBizParameter{
 		HostPropertyFilter: &querybuilder.QueryFilter{
 			Rule: querybuilder.CombinedRule{
@@ -369,13 +377,8 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 	resp, err := s.CoreAPI.ApiServer().ListHostWithoutApp(ctx, c.Request.Header, option)
 	if err != nil {
 		blog.Errorf("get host by id failed, hostID: %d, err: %+v, rid: %s", hostID, err, rid)
-		result := metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrHostGetFail,
-				ErrMsg: defErr.Error(common.CCErrHostGetFail).Error(),
-			},
-		}
+		result := metadata.BaseResp{Result: false, Code: common.CCErrHostGetFail,
+			ErrMsg: defErr.Error(common.CCErrHostGetFail).Error()}
 		c.JSON(http.StatusOK, result)
 		return
 	}
@@ -386,13 +389,8 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 	}
 	if len(resp.Data.Info) == 0 {
 		blog.Errorf("host not found, hostID: %d, rid: %s", hostID, rid)
-		result := metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrCommNotFound,
-				ErrMsg: defErr.Error(common.CCErrCommNotFound).Error(),
-			},
-		}
+		result := metadata.BaseResp{Result: false, Code: common.CCErrCommNotFound,
+			ErrMsg: defErr.Error(common.CCErrCommNotFound).Error()}
 		c.JSON(http.StatusOK, result)
 		return
 	}
@@ -409,13 +407,8 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 	if err := mapstr.DecodeFromMapStr(&host, raw); err != nil {
 		msg := fmt.Sprintf("decode response data into host failed, raw: %+v, err: %+v, rid: %s", raw, err, rid)
 		blog.Error(msg)
-		result := metadata.ResponseDataMapStr{
-			BaseResp: metadata.BaseResp{
-				Result: false,
-				Code:   common.CCErrCommJSONUnmarshalFailed,
-				ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(),
-			},
-		}
+		result := metadata.BaseResp{Result: false, Code: common.CCErrCommJSONUnmarshalFailed,
+			ErrMsg: defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error()}
 		c.JSON(http.StatusOK, result)
 		return
 	}
@@ -443,10 +436,7 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 	}
 
 	result := metadata.ResponseDataMapStr{
-		BaseResp: metadata.BaseResp{
-			Result: true,
-			Code:   0,
-		},
+		BaseResp: metadata.BaseResp{Result: true, Code: 0},
 		Data: map[string]interface{}{
 			"options": ipOptions,
 		},
@@ -751,6 +741,7 @@ func (s *Service) handleModule(hostInfo []mapstr.MapStr, rid string) error {
 	return nil
 }
 
+// handleSet TODO
 // handleModule 处理set数据
 func (s *Service) handleSet(hostInfo []mapstr.MapStr, rid string) ([]int64, map[int64][]int64, error) {
 	// 统计host与set关系

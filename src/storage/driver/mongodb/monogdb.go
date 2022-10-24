@@ -49,6 +49,7 @@ func Table(name string) dbType.Table {
 	return db.Table(name)
 }
 
+// ParseConfig TODO
 func ParseConfig(prefix string, configMap map[string]string) (*mongo.Config, errors.CCErrorCoder) {
 	lastConfigErr = nil
 	config, err := cc.Mongo(prefix)
@@ -79,6 +80,7 @@ func ParseConfig(prefix string, configMap map[string]string) (*mongo.Config, err
 	return &config, nil
 }
 
+// InitClient TODO
 func InitClient(prefix string, config *mongo.Config) errors.CCErrorCoder {
 	lastInitErr = nil
 	var dbErr error
@@ -91,15 +93,18 @@ func InitClient(prefix string, config *mongo.Config) errors.CCErrorCoder {
 	return nil
 }
 
+// Validate TODO
 func Validate() errors.CCErrorCoder {
 	return nil
 }
 
+// UpdateConfig TODO
 func UpdateConfig(prefix string, config mongo.Config) {
 	// 不支持热更行
 	return
 }
 
+// Healthz TODO
 func Healthz() (items []metric.HealthItem) {
 
 	item := &metric.HealthItem{

@@ -11,6 +11,7 @@
  */
 
 import { MENU_BUSINESS, MENU_BUSINESS_SET } from '@/dictionary/menu-symbol'
+import businessService from '@/service/business/search.js'
 import businessSetService from '@/service/business-set/index.js'
 import {
   setBizSetIdToStorage,
@@ -85,56 +86,21 @@ export const before = async function (to, from, next) {
     return false
   }
 
-  if (toTopRoute.meta.view === 'permission') {
-    next()
-    return false
-  }
+  // 获取有权限和全部业务列表（带缓存）
+  const [authorizedList, allBusinessList] = await Promise.all([
+    getAuthorizedBusiness(),
+    businessService.findAll()
+  ])
 
-  const authorizedList = await getAuthorizedBusiness()
   const id = parseInt(to.params.bizId || window.localStorage.getItem('selectedBusiness'), 10)
-  const business = authorizedList.find(business => business.bk_biz_id === id)
+  const business = allBusinessList.find(business => business.bk_biz_id === id)
   const hasURLId = to.params.bizId
+  const isAuthorized = authorizedList.some(item => item.bk_biz_id === business?.bk_biz_id)
 
-  // URL或者缓存中的id对应的业务存在
-  if (business) {
-    const isSubRoute = to.matched.length > 1
-    toTopRoute.meta.view = 'default'
-    window.localStorage.setItem('selectedBusiness', id)
-    store.commit('objectBiz/setBizId', id)
-    setBizSetRecentlyUsed(false)
-
-    if (!isSubRoute) { // 如果是一级路由，则重定向到带业务id的二级路由首页(业务拓扑)
-      next({
-        path: `/business/${id}/index`,
-        replace: true
-      })
-      return false
-    }
-    if (!hasURLId) { // 如果是二级路由且URL中不包含业务ID，则补充业务ID到URL中
-      next({
-        name: to.name,
-        params: {
-          ...to.params,
-          bizId: id
-        },
-        query: to.query,
-        replace: true
-      })
-      return false
-    }
-    return true // 正常的有权限的业务，且URL中带了ID，则直接返回，进行后续的路由逻辑
-  }
-
-  // 未找到对应有权限的业务，且URL中有业务ID，则显示一级view的无权限视图
-  if (hasURLId) {
-    toTopRoute.meta.view = 'permission'
-    next()
-    return false
-  }
-
-  // 缓存无ID，URL无ID，则认为是首次进入业务导航，取有权限业务的第一个写入URL中
-  if (authorizedList.length) {
-    const [firstBusiness] = authorizedList
+  // 缓存无ID，URL无ID，则认为是首次进入业务导航，取一个默认业务id进入到二级路由
+  if (!id) {
+    // 优先取有权限业务的第一个写入URL中，否则取系统的第一个业务
+    const firstBusiness = authorizedList?.length ? authorizedList?.[0] : allBusinessList?.[0]
     toTopRoute.meta.view = 'default'
     const defaultId = firstBusiness.bk_biz_id
     window.localStorage.setItem('selectedBusiness', defaultId)
@@ -146,7 +112,43 @@ export const before = async function (to, from, next) {
     return false
   }
 
-  toTopRoute.meta.view = 'permission'
-  next('/business')
-  return false
+  const isSubRoute = to.matched.length > 1
+  toTopRoute.meta.view = 'default'
+  window.localStorage.setItem('selectedBusiness', id)
+  store.commit('objectBiz/setBizId', id)
+  setBizSetRecentlyUsed(false)
+
+  // 补齐业务id，如果是一级路由，则重定向到带业务id的二级路由首页(业务拓扑)
+  if (!isSubRoute) {
+    // next执行完之后，会再次进入route.beforeEach即会再次进入到此拦截器中，此时的route为next中指定的
+    next({
+      path: `/business/${id}/index`,
+      replace: true
+    })
+    return false
+  }
+
+  // 补齐业务id，如果是二级路由且URL中不包含业务ID，则补充业务ID到URL中
+  if (!hasURLId) {
+    next({
+      name: to.name,
+      params: {
+        ...to.params,
+        bizId: id
+      },
+      query: to.query,
+      replace: true
+    })
+    return false
+  }
+
+  // 业务不存在或无权限
+  if (!business || !isAuthorized) {
+    // 优先使用二级路由（内页）展示无权限
+    const targetRoute = to.matched?.[1] ?? to.matched?.[0]
+    targetRoute.meta.view = 'permission'
+  }
+
+  // 总是放行，因为无论如何都需要进入到二级路由，前提是之前的逻辑已经保证了路由的正确性
+  return true
 }

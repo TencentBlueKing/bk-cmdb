@@ -66,6 +66,7 @@ func (s *Service) BKSystemInstall(ctx *rest.Contexts) {
 	ctx.RespEntity("")
 }
 
+// FindSystemUserConfigBKSwitch TODO
 func (s *Service) FindSystemUserConfigBKSwitch(ctx *rest.Contexts) {
 
 	// 没有权限校验

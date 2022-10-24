@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package service TODO
 package service
 
 import (
@@ -65,7 +66,7 @@ func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, disc
 	s.authorizer = iam.NewAuthorizer(clientSet)
 }
 
-// WebServices
+// WebServices TODO
 func (s *service) WebServices() []*restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.engine.CCErr

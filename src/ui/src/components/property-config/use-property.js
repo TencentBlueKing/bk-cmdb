@@ -11,7 +11,7 @@
  */
 
 import has from 'has'
-import { computed, reactive, set } from '@vue/composition-api'
+import { computed, reactive, set } from 'vue'
 
 export default ({ properties, propertyGroups, exclude }) => {
   const groupCollapseState = reactive({})

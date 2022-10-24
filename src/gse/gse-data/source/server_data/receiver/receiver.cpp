@@ -11,8 +11,8 @@
  */
 
 #include "receiver.h"
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
 
 Receiver::Receiver()
 {
@@ -32,13 +32,11 @@ Receiver::~Receiver()
         m_recevierConf = NULL;
     }
 
-    if(NULL != m_ptrSSL)
+    if (NULL != m_ptrSSL)
     {
         delete m_ptrSSL;
     }
-
 }
-
 
 void Receiver::UpdateConf(const ReceiverConf& receiverConf)
 {
@@ -49,13 +47,13 @@ void Receiver::UpdateConf(const ReceiverConf& receiverConf)
     }
 
     m_recevierConf = new ReceiverConf(receiverConf);
-
 }
 
 void Receiver::SetRecvCallBack(RecvDataCallBack fnRecvData, void* pCaller)
 {
     m_fnRecvData = fnRecvData;
     m_pCaller = pCaller;
+    LOG_DEBUG("Set receiver(%s) callback:%p", m_recevierConf->m_name.c_str(), fnRecvData);
 }
-}
-}
+} // namespace data
+} // namespace gse

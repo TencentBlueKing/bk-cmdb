@@ -12,47 +12,57 @@
 
 #include "redis_pub_producer.h"
 
-#include "db/redisapi/async_redis.h"
 #include "bbx/gse_errno.h"
-namespace gse { 
-namespace dataserver {
+#include "db/redisapi/factory.h"
+#include "db/redisapi/options.hpp"
+#include "log/log.h"
+#include "tools/finally.hpp"
+
+namespace gse {
+namespace data {
 
 RedisPublishProducer::RedisPublishProducer(const std::string &host, int port, const std::string &passwd)
 {
     m_host = host;
     m_port = port;
     m_passwd = passwd;
-    //m_client = new RedisWriter(true);
-    m_client = new gse::redis::RedisMsgWriter(m_host, port);
-    if (!m_passwd.empty())
-    {
-        m_client->SetPassword(m_passwd);
-    }
 }
 
 RedisPublishProducer::~RedisPublishProducer()
 {
-    if (m_client != NULL)
-    {
-        //m_client->close();
-        m_client->Stop();
-        m_client->Join();
-        delete m_client;
-        m_client = NULL;
-    }
+    m_redisStandalone.reset();
 }
 
 int RedisPublishProducer::init()
 {
-    m_client->Start();
+    gse::redis::RedisOptions options(m_host, m_port, "default", m_passwd);
+
+    m_redisStandalone = gse::redis::RedisFactory::CreateRedisStandalone(options);
+    if (m_redisStandalone == nullptr)
+    {
+        LOG_ERROR("failed to create redis standalone client, api return nullptr");
+        return GSE_ERROR;
+    }
+
+    if (!m_redisStandalone->IsOK())
+    {
+        LOG_ERROR("failed to create redis sentinal client, error:%s", m_redisStandalone->Error());
+        return GSE_ERROR;
+    }
+
+    LOG_DEBUG("create sentinal redis client(%s:%d) success", m_host.c_str(), m_port);
     return GSE_SUCCESS;
 }
 
-int RedisPublishProducer::produce(const std::string &key, const std::string &value)
+gse::redis::RedisErrorCode RedisPublishProducer::produce(const std::string &key, const std::string &value)
 {
-    int ret = GSE_SUCCESS;
-    m_client->SendMsg("publish", key.c_str(), value.c_str(), value.size());
-    return ret;
+    m_clientLock.RLock();
+    auto _ = gse::tools::defer::finally([this]() {
+        m_clientLock.UnLock();
+    });
+
+    LOG_DEBUG("publish %s %s to redis", key.c_str(), value.c_str());
+    return m_redisStandalone->Publish(key, value);
 }
 
 void RedisPublishProducer::GetHost(std::string &host, int &port)
@@ -60,5 +70,5 @@ void RedisPublishProducer::GetHost(std::string &host, int &port)
     host = m_host;
     port = m_port;
 }
-}
-}
+} // namespace data
+} // namespace gse

@@ -95,6 +95,21 @@ const findAllByIds = async (ids, params, config) => {
   }
 }
 
+const findById = async (id, params, config = {}) => {
+  try {
+    const { info: list = [] } = await http.post('findmany/proc/service_template', {
+      ...params,
+      service_template_ids: [id],
+      page: { start: 0, limit: 1 }
+    }, config)
+
+    return list?.[0]
+  } catch (error) {
+    console.error(error)
+    return []
+  }
+}
+
 // 创建服务模板（全量）
 const create = (data, config) => http.post('create/proc/service_template/all_info', data, config)
 
@@ -120,6 +135,7 @@ export const CONFIG_MODE = {
 
 export default {
   find,
+  findById,
   findAll,
   findAllByIds,
   create,

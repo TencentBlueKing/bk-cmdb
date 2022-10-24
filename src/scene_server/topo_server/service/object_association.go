@@ -220,7 +220,7 @@ func (s *Service) SearchModuleAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
-// FindObjectByObjectAssociationID 根据关联关系bk_obj_asst_id 获取关联信息
+// FindAssociationByObjectAssociationID 根据关联关系bk_obj_asst_id 获取关联信息
 // 专用方法，提供给关联关系导入使用
 func (s *Service) FindAssociationByObjectAssociationID(ctx *rest.Contexts) {
 

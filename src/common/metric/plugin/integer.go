@@ -18,7 +18,8 @@ import (
 	"configcenter/src/common/metric"
 )
 
-//integer
+// NewIntegerCounter TODO
+// integer
 func NewIntegerCounter(name, help string) *IntegerCounter {
 	return &IntegerCounter{
 		name:  name,
@@ -27,13 +28,14 @@ func NewIntegerCounter(name, help string) *IntegerCounter {
 	}
 }
 
-//IntegerCounter counter for integer
+// IntegerCounter counter for integer
 type IntegerCounter struct {
 	name  string
 	help  string
 	value int64
 }
 
+// GetMeta TODO
 func (c *IntegerCounter) GetMeta() metric.MetricMeta {
 	return metric.MetricMeta{
 		Name: c.name,
@@ -41,22 +43,27 @@ func (c *IntegerCounter) GetMeta() metric.MetricMeta {
 	}
 }
 
+// GetValue TODO
 func (c *IntegerCounter) GetValue() (*metric.FloatOrString, error) {
 	return metric.FormFloatOrString(c.value)
 }
 
+// GetExtension TODO
 func (c *IntegerCounter) GetExtension() (*metric.MetricExtension, error) {
 	return nil, nil
 }
 
+// Reset TODO
 func (c *IntegerCounter) Reset() {
 	atomic.StoreInt64(&c.value, 0)
 }
 
+// Inc TODO
 func (c *IntegerCounter) Inc(i int64) {
 	atomic.AddInt64(&c.value, i)
 }
 
+// Dec TODO
 func (c *IntegerCounter) Dec(i int64) {
 	atomic.AddInt64(&c.value, -i)
 }

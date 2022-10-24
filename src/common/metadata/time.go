@@ -28,6 +28,7 @@ import (
 	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
+// Time TODO
 type Time struct {
 	time.Time `bson:",inline" json:",inline"`
 }
@@ -43,6 +44,7 @@ func (t Time) Value() (driver.Value, error) {
 	return t.Time, nil
 }
 
+// MarshalJSON TODO
 func (t Time) MarshalJSON() ([]byte, error) {
 	return []byte(t.Format(`"2006-01-02 15:04:05"`)), nil
 }
@@ -147,6 +149,7 @@ func Now() Time {
 
 var local = Now()
 
+// StringToTimeDurationHookFunc TODO
 func StringToTimeDurationHookFunc() mapstructure.DecodeHookFunc {
 	return func(
 		f reflect.Type,
@@ -172,6 +175,7 @@ func StringToTimeDurationHookFunc() mapstructure.DecodeHookFunc {
 	}
 }
 
+// ParseTime TODO
 func ParseTime(data interface{}) (time.Time, error) {
 	// Convert it by parsing
 	var parsed time.Time

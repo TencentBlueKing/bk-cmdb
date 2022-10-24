@@ -28,7 +28,7 @@ import (
 	"configcenter/src/storage/driver/redis"
 )
 
-// CoreServer the core server
+// CacheServer the core server
 type CacheServer struct {
 	Core    *backbone.Engine
 	Config  *options.Config

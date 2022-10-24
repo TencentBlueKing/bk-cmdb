@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package options TODO
 package options
 
 import (
@@ -21,10 +22,12 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// ServerOption TODO
 type ServerOption struct {
 	ServConf *config.CCAPIConfig
 }
 
+// Config TODO
 type Config struct {
 	ConfigMap map[string]string
 	Mongo     mongo.Config
@@ -33,6 +36,7 @@ type Config struct {
 	Auth iam.AuthConfig
 }
 
+// Ready TODO
 func (c *Config) Ready() bool {
 	if c == nil {
 		return false
@@ -43,6 +47,7 @@ func (c *Config) Ready() bool {
 	return true
 }
 
+// NewServerOption TODO
 func NewServerOption() *ServerOption {
 	s := ServerOption{
 		ServConf: config.NewCCAPIConfig(),
@@ -51,6 +56,7 @@ func NewServerOption() *ServerOption {
 	return &s
 }
 
+// AddFlags TODO
 func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.AddrPort, "addrport", "127.0.0.1:60021", "The ip address and port for the serve on")
 	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "127.0.0.1:2181", "hosts of register and discover server. e.g: 127.0.0.1:2181")

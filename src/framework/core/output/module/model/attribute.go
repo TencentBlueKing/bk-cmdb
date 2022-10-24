@@ -46,6 +46,7 @@ type attribute struct {
 	id int
 }
 
+// ToMapStr TODO
 func (cli *attribute) ToMapStr() types.MapStr {
 	return common.SetValueToMapStrByTags(cli)
 }
@@ -61,6 +62,7 @@ func (cli *attribute) search() ([]types.MapStr, error) {
 	return dataItems, err
 }
 
+// IsExists TODO
 func (cli *attribute) IsExists() (bool, error) {
 	items, err := cli.search()
 	if nil != err {
@@ -69,6 +71,8 @@ func (cli *attribute) IsExists() (bool, error) {
 
 	return 0 != len(items), nil
 }
+
+// Create TODO
 func (cli *attribute) Create() error {
 
 	id, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Attribute().CreateObjectAttribute(cli.ToMapStr())
@@ -78,6 +82,8 @@ func (cli *attribute) Create() error {
 	cli.id = id
 	return nil
 }
+
+// Update TODO
 func (cli *attribute) Update() error {
 
 	dataItems, err := cli.search()
@@ -118,6 +124,7 @@ func (cli *attribute) Update() error {
 	return nil
 }
 
+// Save TODO
 func (cli *attribute) Save() error {
 
 	if exists, err := cli.IsExists(); nil != err {
@@ -130,99 +137,127 @@ func (cli *attribute) Save() error {
 
 }
 
+// SetObjectID TODO
 func (cli *attribute) SetObjectID(objectID string) {
 	cli.ObjectID = objectID
 }
 
+// GetObjectID TODO
 func (cli *attribute) GetObjectID() string {
 	return cli.ObjectID
 }
 
+// SetID TODO
 func (cli *attribute) SetID(id string) {
 	cli.PropertyID = id
 }
 
+// GetRecordID TODO
 func (cli *attribute) GetRecordID() int {
 	return cli.id
 }
+
+// GetID TODO
 func (cli *attribute) GetID() string {
 	return cli.PropertyID
 }
 
+// SetName TODO
 func (cli *attribute) SetName(name string) {
 	cli.PropertyName = name
 }
 
+// GetName TODO
 func (cli *attribute) GetName() string {
 	return cli.PropertyName
 }
 
+// SetUnit TODO
 func (cli *attribute) SetUnit(unit string) {
 	cli.Unit = unit
 }
 
+// GetUnit TODO
 func (cli *attribute) GetUnit() string {
 	return cli.Unit
 }
 
+// SetPlaceholder TODO
 func (cli *attribute) SetPlaceholder(placeHolder string) {
 	cli.Placeholder = placeHolder
 }
 
+// GetPlaceholder TODO
 func (cli *attribute) GetPlaceholder() string {
 	return cli.Placeholder
 }
 
+// SetEditable TODO
 func (cli *attribute) SetEditable() {
 	cli.IsEditable = true
 }
 
+// GetEditable TODO
 func (cli *attribute) GetEditable() bool {
 	return cli.IsEditable
 }
 
+// SetNonEditable TODO
 func (cli *attribute) SetNonEditable() {
 	cli.IsEditable = false
 }
 
+// SetRequired TODO
 func (cli *attribute) SetRequired() {
 	cli.IsRequired = true
 }
 
+// SetNonRequired TODO
 func (cli *attribute) SetNonRequired() {
 	cli.IsRequired = false
 }
 
+// GetRequired TODO
 func (cli *attribute) GetRequired() bool {
 	return cli.IsRequired
 }
 
+// SetKey TODO
 func (cli *attribute) SetKey(isKey bool) {
 	cli.IsOnly = isKey
 }
+
+// GetKey TODO
 func (cli *attribute) GetKey() bool {
 	return cli.IsOnly
 }
 
+// SetOption TODO
 func (cli *attribute) SetOption(option interface{}) {
 	cli.Option = option
 }
 
+// GetOption TODO
 func (cli *attribute) GetOption() interface{} {
 	return cli.Option
 }
 
+// SetDescrition TODO
 func (cli *attribute) SetDescrition(des string) {
 	cli.Description = des
 }
 
+// GetDescription TODO
 func (cli *attribute) GetDescription() string {
 	return cli.Description
 }
 
+// SetType TODO
 func (cli *attribute) SetType(dataType FieldDataType) {
 	cli.PropertyType = string(dataType)
 }
+
+// GetType TODO
 func (cli *attribute) GetType() FieldDataType {
 	return FieldDataType(cli.PropertyType)
 }

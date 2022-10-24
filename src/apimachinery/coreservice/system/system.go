@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package system TODO
 package system
 
 import (
@@ -21,6 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SystemClientInterface TODO
 type SystemClientInterface interface {
 	GetUserConfig(ctx context.Context, h http.Header) (*metadata.ResponseSysUserConfigData, errors.CCErrorCoder)
 	SearchConfigAdmin(ctx context.Context, h http.Header) (*metadata.ConfigAdminResult, error)
@@ -29,6 +31,7 @@ type SystemClientInterface interface {
 		*metadata.BaseResp, error)
 }
 
+// NewSystemClientInterface TODO
 func NewSystemClientInterface(client rest.ClientInterface) SystemClientInterface {
 	return &system{client: client}
 }

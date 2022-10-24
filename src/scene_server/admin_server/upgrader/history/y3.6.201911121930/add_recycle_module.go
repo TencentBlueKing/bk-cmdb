@@ -24,11 +24,13 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// BizSimplify TODO
 type BizSimplify struct {
 	BKAppIDField   int64  `field:"bk_biz_id" bson:"bk_biz_id"`
 	BKAppNameField string `field:"bk_biz_name" bson:"bk_biz_name"`
 }
 
+// AddRecycleModule TODO
 func AddRecycleModule(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	defaultServiceCategoryID, err := getDefaultServiceCategoryID(ctx, db, conf)
 	if err != nil {

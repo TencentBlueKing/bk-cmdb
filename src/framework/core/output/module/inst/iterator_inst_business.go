@@ -14,7 +14,7 @@ package inst
 
 import (
 	"configcenter/src/framework/common"
-	//"configcenter/src/framework/logics/log"
+	// "configcenter/src/framework/logics/log"
 	"io"
 
 	"configcenter/src/framework/core/output/module/client"
@@ -35,6 +35,7 @@ type iteratorInstBusiness struct {
 	bufIdx      int
 }
 
+// NewIteratorInstBusiness TODO
 func NewIteratorInstBusiness(target model.Model, cond common.Condition) (BusinessIterator, error) {
 
 	iter := &iteratorInstBusiness{
@@ -57,6 +58,7 @@ func NewIteratorInstBusiness(target model.Model, cond common.Condition) (Busines
 
 }
 
+// Next TODO
 func (cli *iteratorInstBusiness) Next() (BusinessInterface, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
@@ -87,6 +89,7 @@ func (cli *iteratorInstBusiness) Next() (BusinessInterface, error) {
 	return returnItem, nil
 }
 
+// ForEach TODO
 func (cli *iteratorInstBusiness) ForEach(callbackItem func(item BusinessInterface) error) error {
 	for {
 

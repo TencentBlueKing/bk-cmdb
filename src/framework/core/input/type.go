@@ -93,13 +93,14 @@ type Manager interface {
 	// Run start the business cycle until the stop method is called.
 	Run(ctx context.Context, inputerCtx InputerContext)
 
-	// Stop
+	// Stop TODO
 	Stop() error
 }
 
 // Inputer is the interface that must be implemented by every Inputer.
 type Inputer interface {
 
+	// Name TODO
 	// Description the Inputer description.
 	// This information will be printed when the Inputer is abnormal, which is convenient for debugging.
 	Name() string

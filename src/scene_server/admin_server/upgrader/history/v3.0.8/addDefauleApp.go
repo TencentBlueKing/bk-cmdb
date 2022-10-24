@@ -40,7 +40,7 @@ func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	defaultBiz[common.BKMaintainersField] = admin
 	defaultBiz[common.BKProductPMField] = admin
 	defaultBiz[common.BKTimeZoneField] = "Asia/Shanghai"
-	defaultBiz[common.BKLanguageField] = "1" //中文
+	defaultBiz[common.BKLanguageField] = "1" // 中文
 	defaultBiz[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 	defaultBiz[common.BKOwnerIDField] = conf.OwnerID
 	defaultBiz[common.BKDefaultField] = common.DefaultAppFlag

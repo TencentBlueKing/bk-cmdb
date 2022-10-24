@@ -282,21 +282,19 @@ func adjustHostUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 			continue
 		}
 
-		cloudIDExists, ipExists := false, false
-		for _, key := range index.Keys {
-			switch key.Key {
-			case common.BKCloudIDField:
-				cloudIDExists = true
-			case common.BKHostInnerIPField, common.BKHostInnerIPv6Field:
-				ipExists = true
-			}
+		keyMap := make(map[string]struct{})
+		for _, v := range index.Keys {
+			keyMap[v.Key] = struct{}{}
 		}
 
-		if !cloudIDExists {
+		if _, exists := keyMap[common.BKCloudIDField]; !exists {
 			continue
 		}
 
-		if ipExists {
+		_, ipv4Exists := keyMap[common.BKHostInnerIPField]
+		_, ipv6Exists := keyMap[common.BKHostInnerIPv6Field]
+
+		if ipv4Exists || ipv6Exists {
 			err = db.Table(common.BKTableNameBaseHost).DropIndex(ctx, index.Name)
 			if err != nil {
 				blog.Errorf("drop index(%#v) failed, err: %v", index, err)

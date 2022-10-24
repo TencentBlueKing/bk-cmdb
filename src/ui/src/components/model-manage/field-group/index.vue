@@ -17,7 +17,7 @@
       'is-dragging': isDragging,
       'is-readonly': !updateAuth
     }"
-    v-bkloading="{ isLoading: $loading(), extCls: 'field-loading' }"
+    v-bkloading="{ isLoading: $loading(Object.values(requestIds)), extCls: 'field-loading' }"
   >
     <div class="field-options">
       <cmdb-auth :auth="authResources" @update-auth="handleReceiveAuth">
@@ -437,6 +437,10 @@
         configProperty: {
           show: false,
           selected: []
+        },
+        requestIds: {
+          properties: Symbol(),
+          propertyGroups: Symbol()
         }
       }
     },
@@ -444,6 +448,7 @@
       ...mapState('userCustom', ['globalUsercustom']),
       ...mapGetters(['supplierAccount']),
       ...mapGetters('objectModel', ['activeModel']),
+      ...mapGetters('objectMainLineModule', ['isMainLine']),
       isGlobalView() {
         const [topRoute] = this.$route.matched
         return topRoute ? topRoute.name !== MENU_BUSINESS : true
@@ -487,7 +492,7 @@
         return this.curModel.id || null
       },
       isMainLineModel() {
-        return ['bk_host_manage', 'bk_biz_topo', 'bk_organization'].includes(this.curModel.bk_classification_id)
+        return this.isMainLine(this.curModel)
       },
       authResources() {
         if (this.customObjId) { // 业务自定义字段
@@ -512,7 +517,7 @@
         return this.globalUsercustom[`${this.objId}_global_custom_table_columns`]
       },
       canEditSort() {
-        return !this.customObjId && this.curModel.bk_classification_id !== 'bk_biz_topo'
+        return !this.customObjId
       }
     },
     watch: {
@@ -656,7 +661,7 @@
           objId: this.objId,
           params: this.isGlobalView ? {} : { bk_biz_id: this.bizId },
           config: {
-            requestId: `get_searchGroup_${this.objId}`,
+            requestId: this.requestIds.propertyGroups,
             cancelPrevious: true
           }
         })
@@ -672,7 +677,7 @@
         return this.searchObjectAttribute({
           params,
           config: {
-            requestId: `post_searchObjectAttribute_${this.objId}`,
+            requestId: this.requestIds.properties,
             cancelPrevious: true
           }
         })
@@ -947,9 +952,8 @@
             }
           })
 
-          const properties = await this.getProperties()
-
-          this.init(properties, this.groups)
+          // 重新初始化字段及分组
+          this.resetData()
 
           this.$success(this.$t('修改成功'))
         } catch (error) {

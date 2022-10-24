@@ -78,6 +78,7 @@ func GetInstIDField(objType string) string {
 	}
 }
 
+// GetObjByType TODO
 func GetObjByType(objType string) string {
 	switch objType {
 	case BKInnerObjIDBizSet, BKInnerObjIDApp, BKInnerObjIDSet,
@@ -89,6 +90,7 @@ func GetObjByType(objType string) string {
 	}
 }
 
+// IsInnerModel TODO
 func IsInnerModel(objType string) bool {
 	return GetObjByType(objType) != BKInnerObjIDObject
 }

@@ -14,10 +14,12 @@ package run
 
 import "time"
 
+// Limiter TODO
 type Limiter struct {
 	limit chan struct{}
 }
 
+// NewStreamLimiter TODO
 func NewStreamLimiter(concurrent int) *Limiter {
 	if 0 == concurrent {
 		concurrent = 100
@@ -27,18 +29,22 @@ func NewStreamLimiter(concurrent int) *Limiter {
 	}
 }
 
+// IsEmpty TODO
 func (sl *Limiter) IsEmpty() bool {
 	return len(sl.limit) == 0
 }
 
+// Require TODO
 func (sl *Limiter) Require() {
 	sl.limit <- struct{}{}
 }
 
+// Release TODO
 func (sl *Limiter) Release() {
 	<-sl.limit
 }
 
+// Execute TODO
 // Warning: please use this func carefully.
 // for instance, when you use this func in a for loop, please
 // be sure that the f variable is concurrent secure.

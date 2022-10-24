@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package monitor TODO
 package monitor
 
 import (
@@ -25,6 +26,7 @@ import (
 	"configcenter/src/thirdparty/monitor/plugins"
 )
 
+// Monitor TODO
 type Monitor struct {
 	// queue is the plugin used to process the collected data
 	plugin plugins.Plugin
@@ -121,7 +123,7 @@ func InitMonitor() error {
 		blog.Errorf("init monitor failed,monitor.enableMonitor err: %v", err)
 		return errors.New("config monitor.enableMonitor is not found")
 	}
-	//如果不需要进行监控上报，那么后续没有必要再检查配置
+	// 如果不需要进行监控上报，那么后续没有必要再检查配置
 	if !config.MonitorCfg.EnableMonitor {
 		return nil
 	}

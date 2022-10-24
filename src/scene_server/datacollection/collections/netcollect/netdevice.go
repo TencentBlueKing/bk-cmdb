@@ -129,6 +129,7 @@ type CollectorBuild struct {
 	GoVersion   string `json:"go_version"`
 }
 
+// MockMessage TODO
 const MockMessage = `{
     "dataid": 1014,
     "type": "netdevicebeat",

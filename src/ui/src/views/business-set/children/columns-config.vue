@@ -31,7 +31,7 @@
 </template>
 
 <script>
-  import { defineComponent, computed, reactive, toRefs, watchEffect } from '@vue/composition-api'
+  import { defineComponent, computed, reactive, toRefs, watchEffect } from 'vue'
   import store from '@/store'
   import { getHeaderProperties, getHeaderPropertyName } from '@/utils/tools.js'
   import cmdbColumnsConfig from '@/components/columns-config/columns-config.vue'

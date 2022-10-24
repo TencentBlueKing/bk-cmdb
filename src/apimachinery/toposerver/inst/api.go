@@ -103,6 +103,7 @@ type instanceClient struct {
 	client rest.ClientInterface
 }
 
+// NewInstanceClient TODO
 func NewInstanceClient(client rest.ClientInterface) InstanceInterface {
 	return &instanceClient{
 		client: client,

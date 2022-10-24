@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package service TODO
 package service
 
 import (
@@ -36,6 +37,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// AuthService TODO
 type AuthService struct {
 	engine     *backbone.Engine
 	iamClient  client.Interface
@@ -43,6 +45,7 @@ type AuthService struct {
 	authorizer sdkauth.Authorizer
 }
 
+// NewAuthService TODO
 func NewAuthService(engine *backbone.Engine, iamClient client.Interface, lgc *logics.Logics, authorizer sdkauth.Authorizer) *AuthService {
 	return &AuthService{
 		engine:     engine,
@@ -148,6 +151,7 @@ func setSupplierID(req *http.Request) {
 	}
 }
 
+// WebService TODO
 func (s *AuthService) WebService() *restful.Container {
 	api := new(restful.WebService)
 	api.Path("/auth/v3")

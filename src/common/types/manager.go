@@ -31,6 +31,7 @@ func AddDiscoveryService(name ...string) {
 	}
 }
 
+// GetDiscoveryService TODO
 func GetDiscoveryService() map[string]struct{} {
 	// compatible 如果没配置,发现所有的服务
 	if len(needDiscoveryServiceName) == 0 {

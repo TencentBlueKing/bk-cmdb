@@ -220,6 +220,7 @@ func addObjectUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 	return nil
 }
 
+// Idgen TODO
 type Idgen struct {
 	ID         string `bson:"_id"`
 	SequenceID uint64 `bson:"SequenceID"`

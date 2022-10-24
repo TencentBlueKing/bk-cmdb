@@ -17,15 +17,23 @@ import (
 )
 
 const (
-	ClassificationFieldID        = "id"
-	ClassFieldClassificationID   = "bk_classification_id"
+	// ClassificationFieldID TODO
+	ClassificationFieldID = "id"
+	// ClassFieldClassificationID TODO
+	ClassFieldClassificationID = "bk_classification_id"
+	// ClassFieldClassificationName TODO
 	ClassFieldClassificationName = "bk_classification_name"
 )
 const (
-	ClassificationHostManageID    = "bk_host_manage"
-	ClassificationBizTopoID       = "bk_biz_topo"
-	ClassificationOrganizationID  = "bk_organization"
-	ClassificationNetworkID       = "bk_network"
+	// ClassificationHostManageID TODO
+	ClassificationHostManageID = "bk_host_manage"
+	// ClassificationBizTopoID TODO
+	ClassificationBizTopoID = "bk_biz_topo"
+	// ClassificationOrganizationID TODO
+	ClassificationOrganizationID = "bk_organization"
+	// ClassificationNetworkID TODO
+	ClassificationNetworkID = "bk_network"
+	// ClassificationUncategorizedID TODO
 	ClassificationUncategorizedID = "bk_uncategorized"
 )
 

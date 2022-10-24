@@ -395,12 +395,15 @@
       validteIdleHost() {
         const invalidList = this.table.selection.filter((item) => {
           const [module] = item.module
-          return module.default !== 1
+          // 非空闲机池
+          return module.default === 0
         }).map(item => item.host.bk_host_innerip)
+
         if (invalidList.length === this.table.selection.length) {
-          this.$warn(this.$t('主机不属于空闲机提示', { idleModule: this.$store.state.globalConfig.config.idlePool.idle }))
+          this.$warn(this.$t('主机不属于空闲机池提示', { idleSet: this.$store.state.globalConfig.config.set }))
           return false
         }
+
         return invalidList
       },
       handleDialogCancel() {
@@ -486,7 +489,7 @@
         try {
           const validList = this.table.selection.filter((item) => {
             const [module] = item.module
-            return module.default === 1
+            return module.default >= 1
           })
           await this.$store.dispatch('hostRelation/transferHostToResourceModule', {
             params: {
@@ -508,7 +511,7 @@
           const [targetModule] = modules
           const validList = this.table.selection.filter((item) => {
             const [module] = item.module
-            return module.default === 1
+            return module.default >= 1
           })
           await this.$http.post('hosts/modules/across/biz', {
             src_bk_biz_id: this.bizId,

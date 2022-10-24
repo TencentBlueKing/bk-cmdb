@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateHostApplyRule TODO
 func (p *hostApplyRule) CreateHostApplyRule(ctx context.Context, header http.Header, bizID int64, option metadata.CreateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
@@ -46,6 +47,7 @@ func (p *hostApplyRule) CreateHostApplyRule(ctx context.Context, header http.Hea
 	return ret.Data, nil
 }
 
+// UpdateHostApplyRule TODO
 func (p *hostApplyRule) UpdateHostApplyRule(ctx context.Context, header http.Header, bizID int64, ruleID int64, option metadata.UpdateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
@@ -71,6 +73,7 @@ func (p *hostApplyRule) UpdateHostApplyRule(ctx context.Context, header http.Hea
 	return ret.Data, nil
 }
 
+// DeleteHostApplyRule TODO
 func (p *hostApplyRule) DeleteHostApplyRule(ctx context.Context, header http.Header, bizID int64, option metadata.DeleteHostApplyRuleOption) errors.CCErrorCoder {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
@@ -95,6 +98,7 @@ func (p *hostApplyRule) DeleteHostApplyRule(ctx context.Context, header http.Hea
 	return nil
 }
 
+// GetHostApplyRule TODO
 func (p *hostApplyRule) GetHostApplyRule(ctx context.Context, header http.Header, bizID int64, ruleID int64) (metadata.HostApplyRule, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
@@ -147,6 +151,7 @@ func (p *hostApplyRule) ListHostApplyRule(ctx context.Context, header http.Heade
 	return ret.Data, nil
 }
 
+// BatchUpdateHostApplyRule TODO
 func (p *hostApplyRule) BatchUpdateHostApplyRule(ctx context.Context, header http.Header, bizID int64, option metadata.BatchCreateOrUpdateApplyRuleOption) (metadata.BatchCreateOrUpdateHostApplyRuleResult, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp
@@ -172,6 +177,7 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(ctx context.Context, header htt
 	return ret.Data, nil
 }
 
+// GenerateApplyPlan TODO
 func (p *hostApplyRule) GenerateApplyPlan(ctx context.Context, header http.Header, bizID int64,
 	option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder) {
 	ret := struct {
@@ -198,6 +204,7 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx context.Context, header http.Heade
 	return ret.Data, nil
 }
 
+// SearchRuleRelatedModules TODO
 func (p *hostApplyRule) SearchRuleRelatedModules(ctx context.Context, header http.Header, bizID int64, option metadata.SearchRuleRelatedModulesOption) ([]metadata.Module, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp
@@ -226,6 +233,7 @@ func (p *hostApplyRule) SearchRuleRelatedModules(ctx context.Context, header htt
 	return ret.Data, nil
 }
 
+// RunHostApplyOnHosts TODO
 func (p *hostApplyRule) RunHostApplyOnHosts(ctx context.Context, header http.Header, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp

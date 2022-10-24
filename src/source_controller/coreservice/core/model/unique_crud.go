@@ -223,6 +223,7 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 	return nil
 }
 
+// getUniqueProperties TODO
 // get properties via keys
 func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys []metadata.UniqueKey) (
 	[]metadata.Attribute, error) {
@@ -257,6 +258,7 @@ func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys 
 	return properties, nil
 }
 
+// recheckUniqueForExistsInstances TODO
 // for create or update a model instance unique check usage.
 // the must_check is true, must be check exactly, no matter the check filed is empty or not.
 // the must_check is false, only when all the filed is not empty, then it's check exactly, otherwise, skip this check.

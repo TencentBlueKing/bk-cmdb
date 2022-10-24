@@ -24,6 +24,7 @@ import (
 	"configcenter/src/thirdparty/esbserver"
 )
 
+// Logics TODO
 type Logics struct {
 	*backbone.Engine
 	esbServ     esbserver.EsbClientInterface
@@ -86,6 +87,7 @@ func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
 	return newLgc
 }
 
+// Logic TODO
 type Logic struct {
 	*backbone.Engine
 }

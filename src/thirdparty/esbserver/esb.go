@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// EsbClientInterface TODO
 type EsbClientInterface interface {
 	GseSrv() gse.GseClientInterface
 	User() user.UserClientInterface
@@ -72,6 +73,7 @@ func NewEsb(apiMachineryConfig *util.APIMachineryConfig, cfgChan chan esbutil.Es
 	return esb, nil
 }
 
+// GseSrv TODO
 func (e *esbsrv) GseSrv() gse.GseClientInterface {
 	e.RLock()
 	srv := e.gseSrv
@@ -85,6 +87,7 @@ func (e *esbsrv) GseSrv() gse.GseClientInterface {
 	return srv
 }
 
+// NodemanSrv TODO
 func (e *esbsrv) NodemanSrv() nodeman.NodeManClientInterface {
 	e.RLock()
 	srv := e.nodemanSrv
@@ -98,6 +101,7 @@ func (e *esbsrv) NodemanSrv() nodeman.NodeManClientInterface {
 	return srv
 }
 
+// IamSrv TODO
 func (e *esbsrv) IamSrv() iam.IamClientInterface {
 	e.RLock()
 	srv := e.iamSrv
@@ -111,10 +115,12 @@ func (e *esbsrv) IamSrv() iam.IamClientInterface {
 	return srv
 }
 
+// GetEsbConfigSrv TODO
 func (e *esbsrv) GetEsbConfigSrv() *esbutil.EsbConfigSrv {
 	return e.esbConfig
 }
 
+// User TODO
 func (e *esbsrv) User() user.UserClientInterface {
 	e.RLock()
 	srv := e.userSrv

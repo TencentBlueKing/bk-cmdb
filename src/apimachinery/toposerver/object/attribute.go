@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateObjectAtt TODO
 func (t *object) CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/create/objectattr"
@@ -33,6 +34,7 @@ func (t *object) CreateObjectAtt(ctx context.Context, h http.Header, obj *metada
 	return
 }
 
+// SelectObjectAttWithParams TODO
 func (t *object) SelectObjectAttWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/find/objectattr"
@@ -47,6 +49,7 @@ func (t *object) SelectObjectAttWithParams(ctx context.Context, h http.Header, d
 	return
 }
 
+// UpdateObjectAtt TODO
 func (t *object) UpdateObjectAtt(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/objectattr/%s"
@@ -61,6 +64,7 @@ func (t *object) UpdateObjectAtt(ctx context.Context, objID string, h http.Heade
 	return
 }
 
+// DeleteObjectAtt TODO
 func (t *object) DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/delete/objectattr/%s"

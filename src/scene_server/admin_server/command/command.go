@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package command TODO
 package command
 
 import (
@@ -65,7 +66,7 @@ func Parse(args []string) error {
 	}
 
 	// read config
-    if err := cc.SetMigrateFromFile(configPosition); err != nil {
+	if err := cc.SetMigrateFromFile(configPosition); err != nil {
 		return fmt.Errorf("parse config file error %s", err.Error())
 	}
 	mongoConfig, err := cc.Mongo("mongodb")

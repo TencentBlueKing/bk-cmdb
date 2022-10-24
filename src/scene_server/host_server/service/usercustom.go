@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// SaveUserCustom TODO
 func (s *Service) SaveUserCustom(ctx *rest.Contexts) {
 
 	params := make(map[string]interface{})
@@ -77,6 +78,7 @@ func (s *Service) SaveUserCustom(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// GetUserCustom TODO
 func (s *Service) GetUserCustom(ctx *rest.Contexts) {
 
 	result, err := s.CoreAPI.CoreService().Host().GetUserCustomByUser(ctx.Kit.Ctx, ctx.Kit.User, ctx.Kit.Header)

@@ -58,6 +58,7 @@ func (am *AuthManager) collectProcessesByIDs(ctx context.Context, header http.He
 	return processes, nil
 }
 
+// MakeResourcesByProcesses TODO
 func (am *AuthManager) MakeResourcesByProcesses(header http.Header, action meta.Action, businessID int64, processes ...ProcessSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, process := range processes {
@@ -77,6 +78,7 @@ func (am *AuthManager) MakeResourcesByProcesses(header http.Header, action meta.
 	return resources
 }
 
+// GenProcessNoPermissionResp TODO
 func (am *AuthManager) GenProcessNoPermissionResp(ctx context.Context, header http.Header, businessID int64) (*metadata.BaseResp, error) {
 	// process read authorization is skipped
 	resp := metadata.NewNoPermissionResp(nil)
@@ -95,6 +97,7 @@ func (am *AuthManager) extractBusinessIDFromProcesses(processes ...ProcessSimpli
 	return businessID, nil
 }
 
+// AuthorizeByProcesses TODO
 func (am *AuthManager) AuthorizeByProcesses(ctx context.Context, header http.Header, action meta.Action, processes ...ProcessSimplify) error {
 	if !am.Enabled() {
 		return nil
@@ -112,6 +115,7 @@ func (am *AuthManager) AuthorizeByProcesses(ctx context.Context, header http.Hea
 	return am.batchAuthorize(ctx, header, resources...)
 }
 
+// AuthorizeByProcessID TODO
 func (am *AuthManager) AuthorizeByProcessID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
 	if !am.Enabled() {
 		return nil

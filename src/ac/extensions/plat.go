@@ -57,6 +57,7 @@ func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header,
 	return plats, nil
 }
 
+// MakeResourcesByPlat TODO
 // be careful: plat is registered as a common instance in iam
 func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Action, plats ...PlatSimplify) ([]meta.ResourceAttribute, error) {
 
@@ -77,6 +78,7 @@ func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Actio
 	return resources, nil
 }
 
+// AuthorizeByPlat TODO
 func (am *AuthManager) AuthorizeByPlat(ctx context.Context, header http.Header, action meta.Action, plats ...PlatSimplify) error {
 	if !am.Enabled() {
 		return nil
@@ -94,6 +96,7 @@ func (am *AuthManager) AuthorizeByPlat(ctx context.Context, header http.Header, 
 	return am.batchAuthorize(ctx, header, resources...)
 }
 
+// AuthorizeByPlatIDs TODO
 func (am *AuthManager) AuthorizeByPlatIDs(ctx context.Context, header http.Header, action meta.Action, platIDs ...int64) error {
 	if !am.Enabled() {
 		return nil

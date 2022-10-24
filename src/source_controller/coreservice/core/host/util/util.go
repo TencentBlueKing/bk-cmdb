@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package util TODO
 package util
 
 import (
@@ -21,14 +22,16 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// DBExecQuery TODO
 type DBExecQuery struct {
 }
 
+// NewDBExecQuery TODO
 func NewDBExecQuery() *DBExecQuery {
 	return &DBExecQuery{}
 }
 
-// dbExecQuery get info from table with condition
+// ExecQuery get info from table with condition
 func (query DBExecQuery) ExecQuery(kit *rest.Kit, tableName string, fields []string, condMap mapstr.MapStr, result interface{}) error {
 	newCondMap := util.SetQueryOwner(condMap, kit.SupplierAccount)
 	dbFind := mongodb.Client().Table(tableName).Find(newCondMap)

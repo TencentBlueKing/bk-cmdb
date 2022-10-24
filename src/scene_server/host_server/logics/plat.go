@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// IsPlatExist TODO
 func (lgc *Logics) IsPlatExist(kit *rest.Kit, cond mapstr.MapStr) (bool, errors.CCError) {
 
 	query := &metadata.QueryCondition{

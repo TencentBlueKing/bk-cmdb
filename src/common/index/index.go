@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package index TODO
 package index
 
 import (
@@ -25,14 +26,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// InstanceIndexes TODO
 func InstanceIndexes() []types.Index {
 	return instanceDefaultIndexes
 }
 
+// InstanceAssociationIndexes TODO
 func InstanceAssociationIndexes() []types.Index {
 	return associationDefaultIndexes
 }
 
+// CCFieldTypeToDBType TODO
 func CCFieldTypeToDBType(typ string) string {
 	switch typ {
 	case common.FieldTypeSingleChar, common.FieldTypeEnum, common.FieldTypeDate, common.FieldTypeList:
@@ -45,21 +49,24 @@ func CCFieldTypeToDBType(typ string) string {
 	return ""
 }
 
+// GetUniqueIndexNameByID TODO
 func GetUniqueIndexNameByID(id uint64) string {
 	return fmt.Sprintf("%s%d", common.CCLogicUniqueIdxNamePrefix, id)
 }
 
-// 获取表中没有规范化前，所有索引的名字, map[collection name][]string{"索引名字"}
+// DeprecatedIndexName 获取表中没有规范化前，所有索引的名字, map[collection name][]string{"索引名字"}
 func DeprecatedIndexName() map[string][]string {
 
 	return collections.DeprecatedIndexName()
 }
 
+// TableIndexes TODO
 func TableIndexes() map[string][]types.Index {
 
 	return collections.Indexes()
 }
 
+// ToDBUniqueIndex TODO
 func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 	properties []metadata.Attribute) (types.Index, errors.CCErrorCoder) {
 	dbIndex := types.Index{
@@ -113,26 +120,26 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 				common.BKDBGT:   "",
 			}
 		}
+
 		dbIndex.PartialFilterExpression[attr.PropertyID] = map[string]interface{}{common.BKDBType: dbType}
 	}
 
 	// NOTICE: 主机内网IP+云区域唯一校验需要满足寻址方式为静态的条件，因为动态场景IP可变，更新不及时等情况可能出现重复，不能作为唯一标识
 	if objID == common.BKInnerObjIDHost && len(dbIndex.Keys) == 2 {
-		cloudIDExists, ipExists := false, false
-		for _, key := range dbIndex.Keys {
-			switch key.Key {
-			case common.BKCloudIDField:
-				cloudIDExists = true
-			case common.BKHostInnerIPField, common.BKHostInnerIPv6Field:
-				ipExists = true
-			}
+
+		keyMap := make(map[string]struct{})
+		for _, v := range dbIndex.Keys {
+			keyMap[v.Key] = struct{}{}
 		}
 
-		if !cloudIDExists {
+		if _, exists := keyMap[common.BKCloudIDField]; !exists {
 			return dbIndex, nil
 		}
 
-		if ipExists {
+		_, ipv4Exists := keyMap[common.BKHostInnerIPField]
+		_, ipv6Exists := keyMap[common.BKHostInnerIPv6Field]
+
+		if ipv4Exists || ipv6Exists {
 			dbIndex.PartialFilterExpression[common.BKAddressingField] = "0"
 		}
 	}

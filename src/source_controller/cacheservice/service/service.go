@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package service TODO
 package service
 
 import (
@@ -61,6 +62,7 @@ type cacheService struct {
 	cacheSet    *cache.ClientSet
 }
 
+// SetConfig TODO
 func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf, lang language.CCLanguageIf) error {
 
 	s.cfg = cfg
@@ -158,6 +160,7 @@ func (s *cacheService) WebService() *restful.Container {
 	return container
 }
 
+// Language TODO
 func (s *cacheService) Language(header http.Header) language.DefaultCCLanguageIf {
 	lang := util.GetLanguage(header)
 	l, exist := s.langFactory[common.LanguageType(lang)]

@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, del, reactive, ref, toRefs, watchEffect, getCurrentInstance, nextTick, h } from '@vue/composition-api'
+  import { computed, defineComponent, del, reactive, ref, toRefs, watchEffect, getCurrentInstance, nextTick, h } from 'vue'
   import { t } from '@/i18n'
   import router from '@/router/index.js'
   import store from '@/store'

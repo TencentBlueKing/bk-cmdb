@@ -30,10 +30,12 @@ import (
 	websvc "configcenter/src/web_server/service"
 )
 
+// WebServer TODO
 type WebServer struct {
 	Config options.Config
 }
 
+// Run TODO
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
@@ -164,7 +166,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 
 }
 
-//Stop the ccapi server
+// Stop the ccapi server
 func (ccWeb *WebServer) Stop() error {
 	return nil
 }

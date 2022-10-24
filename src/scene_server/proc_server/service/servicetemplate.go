@@ -32,6 +32,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// CreateServiceTemplate TODO
 func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 	option := new(metadata.CreateServiceTemplateOption)
 	if err := ctx.DecodeInto(option); err != nil {
@@ -162,6 +163,7 @@ func (ps *ProcServer) CreateServiceTemplateAllInfo(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.RspID{ID: templateID})
 }
 
+// GetServiceTemplate TODO
 func (ps *ProcServer) GetServiceTemplate(ctx *rest.Contexts) {
 	templateIDStr := ctx.Request.PathParameter(common.BKServiceTemplateIDField)
 	templateID, err := strconv.ParseInt(templateIDStr, 10, 64)
@@ -724,6 +726,8 @@ func (ps *ProcServer) DeleteHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 
 }
+
+// UpdateServiceTemplate TODO
 func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 	option := new(metadata.UpdateServiceTemplateOption)
 	if err := ctx.DecodeInto(option); err != nil {
@@ -949,6 +953,7 @@ func (ps *ProcServer) updateSvcTempAllProcTemps(kit *rest.Kit, id, bizID int64, 
 	return nil
 }
 
+// ListServiceTemplates TODO
 func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 	input := new(metadata.ListServiceTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -1058,6 +1063,7 @@ func (ps *ProcServer) FindServiceTemplateCountInfo(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// DeleteServiceTemplate TODO
 // a service template can be delete only when it is not be used any more,
 // which means that no process instance belongs to it.
 func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
@@ -1157,7 +1163,7 @@ func (ps *ProcServer) GetServiceTemplateSyncStatus(ctx *rest.Contexts) {
 	}
 }
 
-// SearchRuleRelatedServiceTemplate search rule related service templates
+// SearchRuleRelatedServiceTemplates search rule related service templates
 func (ps *ProcServer) SearchRuleRelatedServiceTemplates(ctx *rest.Contexts) {
 	requestBody := new(metadata.RuleRelatedServiceTemplateOption)
 	if err := ctx.DecodeInto(requestBody); err != nil {

@@ -29,7 +29,7 @@ type aesCrpytor struct {
 // NewAesEncrpytor 生成aesEncrpytor
 func NewAesEncrpytor(key string) *aesCrpytor {
 	return &aesCrpytor{
-		key:    key,
+		key: key,
 	}
 }
 
@@ -55,7 +55,7 @@ func (a *aesCrpytor) Encrypt(plainText string) (string, error) {
 	return base64.StdEncoding.EncodeToString(cryted), nil
 }
 
-//Decrypt AES解密（CBC模式）
+// Decrypt AES解密（CBC模式）
 func (a *aesCrpytor) Decrypt(cryptedText string) (string, error) {
 	cryptedByte, err := base64.StdEncoding.DecodeString(cryptedText)
 	if err != nil {

@@ -14,11 +14,11 @@ package inst
 
 import (
 	"configcenter/src/framework/common"
-	//"configcenter/src/framework/logics/log"
+	// "configcenter/src/framework/logics/log"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	//"fmt"
+	// "fmt"
 	"io"
 )
 
@@ -34,6 +34,7 @@ type iteratorInstSet struct {
 	bufIdx      int
 }
 
+// NewIteratorInstSet TODO
 func NewIteratorInstSet(target model.Model, cond common.Condition) (SetIterator, error) {
 
 	iter := &iteratorInstSet{
@@ -49,7 +50,7 @@ func NewIteratorInstSet(target model.Model, cond common.Condition) (SetIterator,
 	if nil != err {
 		return nil, err
 	}
-	//fmt.Println("set next", existItems, iter.cond.ToMapStr())
+	// fmt.Println("set next", existItems, iter.cond.ToMapStr())
 
 	iter.buffer = append(iter.buffer, existItems...)
 
@@ -57,6 +58,7 @@ func NewIteratorInstSet(target model.Model, cond common.Condition) (SetIterator,
 
 }
 
+// Next TODO
 func (cli *iteratorInstSet) Next() (SetInterface, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
@@ -87,6 +89,7 @@ func (cli *iteratorInstSet) Next() (SetInterface, error) {
 	return returnItem, nil
 }
 
+// ForEach TODO
 func (cli *iteratorInstSet) ForEach(callbackItem func(item SetInterface) error) error {
 	for {
 

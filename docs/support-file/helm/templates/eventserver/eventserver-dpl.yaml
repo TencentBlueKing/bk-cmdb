@@ -104,17 +104,17 @@ spec:
 
       {{- with .Values.eventserver.nodeSelector }}
       nodeSelector:
-      {{ toYaml . | indent 8 }}
+      {{ toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.eventserver.affinity }}
       affinity:
-        {{ toYaml . | indent 8 }}
+        {{ toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.eventserver.tolerations }}
       tolerations:
-        {{ toYaml . | indent 8 }}
+        {{ toYaml . | nindent 8 }}
       {{- end }}
 
 {{- end }}

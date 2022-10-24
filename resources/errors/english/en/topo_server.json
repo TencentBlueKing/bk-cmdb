@@ -136,6 +136,7 @@
 	"1101115": "forbidden delete built-in business set",
 	"1101116": "forbidden update built-in business set scope",
 	"1101117": "Failed to update module properties",
+	"1101118": "Create failed, duplicate business set name",
 
     "": "" 
 }

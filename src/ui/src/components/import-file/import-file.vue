@@ -52,7 +52,7 @@
   import useImport from './index'
   import useStep from './step'
   import useFile from './file'
-  import { computed } from '@vue/composition-api'
+  import { computed } from 'vue'
   export default {
     name: 'import-file',
     setup() {

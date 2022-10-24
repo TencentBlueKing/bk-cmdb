@@ -31,12 +31,12 @@
     <section class="header-info">
       <bk-popover class="info-item"
         theme="light header-info-popover"
-        trigger="click"
         animation="fade"
         placement="bottom-end"
         :arrow="false"
         :tippy-options="{
-          animateFill: false
+          animateFill: false,
+          hideOnClick: false
         }">
         <i class="question-icon icon-cc-default"></i>
         <template slot="content">
@@ -47,12 +47,12 @@
       </bk-popover>
       <bk-popover class="info-item"
         theme="light header-info-popover"
-        trigger="click"
         animation="fade"
         placement="bottom-end"
         :arrow="false"
         :tippy-options="{
-          animateFill: false
+          animateFill: false,
+          hideOnClick: false
         }">
         <span class="info-user">
           <span class="user-name">{{userName}}</span>

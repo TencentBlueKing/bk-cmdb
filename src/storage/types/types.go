@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package types TODO
 package types
 
 import (
@@ -22,8 +23,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// Document TODO
 type Document map[string]interface{}
 
+// Decode TODO
 func (d Document) Decode(result interface{}) error {
 
 	out, err := bson.Marshal(d)
@@ -38,6 +41,7 @@ func (d Document) Decode(result interface{}) error {
 
 }
 
+// Encode TODO
 func (d *Document) Encode(value interface{}) error {
 	if nil == value {
 		return nil
@@ -49,8 +53,10 @@ func (d *Document) Encode(value interface{}) error {
 	return bson.Unmarshal(out, d)
 }
 
+// Documents TODO
 type Documents []Document
 
+// Decode TODO
 func (d Documents) Decode(result interface{}) error {
 	resultv := reflect.ValueOf(result)
 	switch resultv.Elem().Kind() {
@@ -93,6 +99,7 @@ func (d Documents) Decode(result interface{}) error {
 	}
 }
 
+// Encode TODO
 func (d *Documents) Encode(value interface{}) error {
 	if nil == value {
 		return nil
@@ -176,17 +183,22 @@ func decodeBsonArray(inArr, outArr interface{}) error {
 }
 
 const (
-	CommandRDBOperation              = "RDB"
-	CommandMigrateOperation          = "DBMigrate"
+	// CommandRDBOperation TODO
+	CommandRDBOperation = "RDB"
+	// CommandMigrateOperation TODO
+	CommandMigrateOperation = "DBMigrate"
+	// CommandWatchTransactionOperation TODO
 	CommandWatchTransactionOperation = "WatchTransaction"
 )
 
+// Page TODO
 type Page struct {
 	Limit uint64 `json:"limit,omitempty" bson:"limit,omitempty"`
 	Start uint64 `json:"start,omitempty" bson:"start,omitempty"`
 	Sort  string `json:"sort,omitempty" bson:"sort,omitempty"`
 }
 
+// ParsePage TODO
 func ParsePage(origin interface{}) *Page {
 	if origin == nil {
 		return &Page{}
@@ -215,6 +227,7 @@ func ParsePage(origin interface{}) *Page {
 	return &result
 }
 
+// TransactionInfo TODO
 type TransactionInfo struct {
 	TxnID        string    `bson:"bk_txn_id"`     // 事务ID,uuid
 	RequestID    string    `bson:"bk_request_id"` // 请求ID,可选项
@@ -228,6 +241,7 @@ type TransactionInfo struct {
 	TxnNumber    string    // 事务Number
 }
 
+// TxStatus TODO
 type TxStatus int
 
 // TxStatus enumerations
@@ -238,6 +252,7 @@ const (
 	TxStatusException
 )
 
+// String 用于打印
 func (s TxStatus) String() string {
 	switch s {
 	case TxStatusOnProgress:

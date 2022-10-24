@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package watch TODO
 package watch
 
 import (
@@ -18,6 +19,7 @@ import (
 	"fmt"
 )
 
+// WatchEventOptions TODO
 type WatchEventOptions struct {
 	// event types you want to care, empty means all.
 	EventTypes []EventType `json:"bk_event_types"`
@@ -33,11 +35,13 @@ type WatchEventOptions struct {
 	Filter   WatchEventFilter `json:"bk_filter"`
 }
 
+// WatchEventFilter TODO
 type WatchEventFilter struct {
 	// SubResource the sub resource you want to watch, eg. object ID of the instance resource, watch all if not set
 	SubResource string `json:"bk_sub_resource,omitempty"`
 }
 
+// Validate TODO
 func (w *WatchEventOptions) Validate() error {
 	if len(w.EventTypes) != 0 {
 		for _, e := range w.EventTypes {
@@ -70,12 +74,14 @@ func (w *WatchEventOptions) Validate() error {
 	return nil
 }
 
+// WatchResp TODO
 type WatchResp struct {
 	// watched events or not
 	Watched bool                `json:"bk_watched"`
 	Events  []*WatchEventDetail `json:"bk_events"`
 }
 
+// WatchEventDetail TODO
 type WatchEventDetail struct {
 	Cursor    string     `json:"bk_cursor"`
 	Resource  CursorType `json:"bk_resource"`
@@ -91,6 +97,7 @@ type jsonWatchEventDetail struct {
 	Detail    json.RawMessage `json:"bk_detail"`
 }
 
+// UnmarshalJSON TODO
 func (w *WatchEventDetail) UnmarshalJSON(data []byte) error {
 	watchEventDetail := jsonWatchEventDetail{}
 	if err := json.Unmarshal(data, &watchEventDetail); err != nil {
@@ -115,16 +122,20 @@ func (w *WatchEventDetail) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// DetailInterface TODO
 type DetailInterface interface {
 	Name() string
 }
 
+// JsonString TODO
 type JsonString string
 
+// Name TODO
 func (j JsonString) Name() string {
 	return "JsonString"
 }
 
+// MarshalJSON TODO
 func (j JsonString) MarshalJSON() ([]byte, error) {
 	if j == "" {
 		j = "{}"

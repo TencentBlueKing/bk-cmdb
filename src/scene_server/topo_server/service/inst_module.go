@@ -13,7 +13,9 @@
 package service
 
 import (
+	"sort"
 	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -123,7 +125,7 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 	ctx.RespEntity(module)
 }
 
-// CheckIsBuiltInModule check if object is built-in object
+// checkIsBuiltInModule check if object is built-in object
 func (s *Service) checkIsBuiltInModule(kit *rest.Kit, moduleIDs ...int64) error {
 	// 检查是否时内置集群
 	input := &metadata.Condition{
@@ -699,6 +701,13 @@ func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
 		moduleRuleCount[item.ModuleID] += 1
 	}
 
+	// sort modules by name
+	sort.Slice(innerAppTopo.Module, func(i, j int) bool {
+		iInitials := strings.ToLower(util.GetInitials(innerAppTopo.Module[i].ModuleName))
+		jInitials := strings.ToLower(util.GetInitials(innerAppTopo.Module[j].ModuleName))
+		return iInitials < jInitials
+	})
+
 	set := mapstr.NewFromStruct(innerAppTopo, "field")
 	modules := make([]mapstr.MapStr, 0)
 	for _, module := range innerAppTopo.Module {
@@ -709,6 +718,7 @@ func (s *Service) GetInternalModuleWithStatistics(ctx *rest.Contexts) {
 		}
 		modules = append(modules, moduleItem)
 	}
+
 	set["module"] = modules
 	ctx.RespEntity(set)
 }

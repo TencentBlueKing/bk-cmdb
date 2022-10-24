@@ -22,8 +22,10 @@ type element struct {
 	Val interface{}
 }
 
+// KV TODO
 type KV element
 
+// ToMapStr TODO
 func (k *KV) ToMapStr() mapstr.MapStr {
 	return mapstr.MapStr{
 		k.Key: k.Val,
@@ -169,6 +171,7 @@ type Exists element
 
 var _ universalsql.ConditionElement = (*Exists)(nil)
 
+// ToMapStr TODO
 // Exists mongodb operator $exists
 func (e *Exists) ToMapStr() mapstr.MapStr {
 	return mapstr.MapStr{

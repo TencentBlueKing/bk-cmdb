@@ -25,6 +25,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// CreateInstNameIndex TODO
 func CreateInstNameIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	idx := types.Index{
 		Keys: bson.D{

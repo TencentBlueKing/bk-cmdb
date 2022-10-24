@@ -39,7 +39,7 @@ var deprecatedServiceTemplateIndexes = []types.Index{
 			{"id", 1},
 			{"bk_biz_id", 1},
 		},
-		Background: true, //1,
+		Background: true, // 1,
 	},
 	{
 		Name: "idx_bkBizID",

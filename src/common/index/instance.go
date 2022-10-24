@@ -68,7 +68,7 @@ var (
 	}
 )
 
-// 建表前需要先建立预定义主线模型的唯一索引
+// MainLineInstanceUniqueIndex 建表前需要先建立预定义主线模型的唯一索引
 func MainLineInstanceUniqueIndex() []types.Index {
 
 	return []types.Index{
@@ -88,7 +88,7 @@ func MainLineInstanceUniqueIndex() []types.Index {
 	}
 }
 
-// 建表前需要先建立预非主线模型的唯一索引
+// InstanceUniqueIndex 建表前需要先建立预非主线模型的唯一索引
 func InstanceUniqueIndex() []types.Index {
 
 	return []types.Index{

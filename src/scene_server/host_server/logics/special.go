@@ -180,7 +180,7 @@ func (s *special) bkSystemParameterConv(ctx context.Context, appName string, inp
 
 }
 
-// bksystemInstallAddHostInstance only add host instance. not add host and module relation
+// bkSystemInstallAddHostInstance only add host instance. not add host and module relation
 func (s *special) bkSystemInstallAddHostInstance(ctx context.Context, input *metadata.BkSystemInstallRequest) (int64,
 	errors.CCError) {
 
@@ -251,6 +251,7 @@ func (s *special) bkSystemGetInstallModuleID(ctx context.Context, appID int64, s
 	return moduleIDArr, nil
 }
 
+// bkSystemInstallModule TODO
 // bksystemInstallAddHostInstance only all host and module relation
 func (s *special) bkSystemInstallModule(ctx context.Context, appID, hostID int64, moduleIDArr []int64) errors.CCError {
 	input := &metadata.HostsModuleRelation{

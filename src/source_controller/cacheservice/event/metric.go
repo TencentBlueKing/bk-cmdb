@@ -20,6 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// InitialMetrics TODO
 func InitialMetrics(collection string, subSys string) *EventMetrics {
 	labels := prometheus.Labels{"collection": collection}
 
@@ -84,6 +85,7 @@ func InitialMetrics(collection string, subSys string) *EventMetrics {
 	return m
 }
 
+// EventMetrics TODO
 type EventMetrics struct {
 	// record the total event count be handled.
 	totalEventCount *prometheus.CounterVec
@@ -132,21 +134,25 @@ func (em *EventMetrics) CollectBasic(e *types.Event) {
 	em.eventLagDurations.With(prometheus.Labels{"action": string(e.OperationType)}).Observe(lags)
 }
 
+// CollectCycleDuration TODO
 // the total duration(seconds) of each event being handled
 func (em *EventMetrics) CollectCycleDuration(d time.Duration) {
 	em.cycleDurations.With(prometheus.Labels{}).Observe(d.Seconds())
 }
 
+// CollectRetryError TODO
 // collect retry operation for any reason
 func (em *EventMetrics) CollectRetryError() {
 	em.totalErrorCount.With(prometheus.Labels{"error_type": "retry"}).Inc()
 }
 
+// CollectRedisError TODO
 // collect redis operation related errors
 func (em *EventMetrics) CollectRedisError() {
 	em.totalErrorCount.With(prometheus.Labels{"error_type": "redis_command"}).Inc()
 }
 
+// CollectMongoError TODO
 // collect mongodb related errors, such as get info from table cc_DelArchive
 func (em *EventMetrics) CollectMongoError() {
 	em.totalErrorCount.With(prometheus.Labels{"error_type": "mongo_command"}).Inc()

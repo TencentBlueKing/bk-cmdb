@@ -73,7 +73,7 @@
 </template>
 
 <script>
-  import { ref, watch, toRef, computed, set, del } from '@vue/composition-api'
+  import { ref, watch, toRef, computed, set, del } from 'vue'
   import useStep from './step'
   import useImport from './index'
   import useFile from './file'

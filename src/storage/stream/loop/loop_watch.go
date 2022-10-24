@@ -22,6 +22,7 @@ import (
 	"configcenter/src/storage/stream/types"
 )
 
+// NewLoopWatch TODO
 func NewLoopWatch(streamW *event.Event, isMaster discovery.ServiceManageInterface) (*LoopsWatch, error) {
 	loops := &LoopsWatch{
 		streamWatch: streamW,
@@ -31,6 +32,7 @@ func NewLoopWatch(streamW *event.Event, isMaster discovery.ServiceManageInterfac
 	return loops, nil
 }
 
+// LoopsWatch TODO
 type LoopsWatch struct {
 	streamWatch *event.Event
 	isMaster    discovery.ServiceManageInterface
@@ -461,6 +463,7 @@ type retryHandler struct {
 	maxRetryCnt int
 }
 
+// canStillRetry TODO
 // check if this event can still retry
 func (r *retryHandler) canStillRetry() bool {
 	r.retryCounter += 1

@@ -763,7 +763,7 @@ var _ = Describe("host abnormal test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			responses["req_ba23073a86944d0cb6386a1b2a7341ed1"] = rsp
 
-			//create module rule
+			// create module rule
 			moduleID := util.JsonPathExtractInt(responses, "req_ba23073a86944d0cb6386a1b2a7341ed1",
 				"name:$.bk_module_id", "{.bk_module_id}")
 			attributeID := util.JsonPathExtractInt(responses, "req_269f039e70864ca29c0ca7bfce344ed5", "name:$.data.id",

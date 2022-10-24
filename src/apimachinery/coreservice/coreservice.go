@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package coreservice TODO
 package coreservice
 
 import (
@@ -38,6 +39,7 @@ import (
 	"configcenter/src/apimachinery/util"
 )
 
+// CoreServiceClientInterface TODO
 type CoreServiceClientInterface interface {
 	Instance() instance.InstanceClientInterface
 	Model() model.ModelClientInterface
@@ -60,6 +62,7 @@ type CoreServiceClientInterface interface {
 	Common() common.CommonInterface
 }
 
+// NewCoreServiceClient TODO
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
 	base := fmt.Sprintf("/api/%s", version)
 	return &coreService{
@@ -71,79 +74,98 @@ type coreService struct {
 	restCli rest.ClientInterface
 }
 
+// Instance TODO
 func (c *coreService) Instance() instance.InstanceClientInterface {
 	return instance.NewInstanceClientInterface(c.restCli)
 }
 
+// Model TODO
 func (c *coreService) Model() model.ModelClientInterface {
 	return model.NewModelClientInterface(c.restCli)
 }
 
+// Association TODO
 func (c *coreService) Association() association.AssociationClientInterface {
 	return association.NewAssociationClientInterface(c.restCli)
 }
 
+// Mainline TODO
 func (c *coreService) Mainline() mainline.MainlineClientInterface {
 	return mainline.NewMainlineClientInterface(c.restCli)
 }
 
+// Synchronize TODO
 func (c *coreService) Synchronize() synchronize.SynchronizeClientInterface {
 	return synchronize.NewSynchronizeClientInterface(c.restCli)
 }
 
+// Host TODO
 func (c *coreService) Host() host.HostClientInterface {
 	return host.NewHostClientInterface(c.restCli)
 }
 
+// Audit TODO
 func (c *coreService) Audit() auditlog.AuditClientInterface {
 	return auditlog.NewAuditClientInterface(c.restCli)
 }
 
+// Process TODO
 func (c *coreService) Process() process.ProcessInterface {
 	return process.NewProcessInterfaceClient(c.restCli)
 
 }
 
+// Operation TODO
 func (c *coreService) Operation() operation.OperationClientInterface {
 	return operation.NewOperationClientInterface(c.restCli)
 }
 
+// Label TODO
 func (c *coreService) Label() label.LabelInterface {
 	return label.NewLabelInterfaceClient(c.restCli)
 }
 
+// TopoGraphics TODO
 func (c *coreService) TopoGraphics() topographics.TopoGraphicsInterface {
 	return topographics.NewTopoGraphicsInterface(c.restCli)
 }
 
+// System TODO
 func (c *coreService) System() ccSystem.SystemClientInterface {
 	return ccSystem.NewSystemClientInterface(c.restCli)
 }
 
+// SetTemplate TODO
 func (c *coreService) SetTemplate() settemplate.SetTemplateInterface {
 	return settemplate.NewSetTemplateInterfaceClient(c.restCli)
 }
 
+// HostApplyRule TODO
 func (c *coreService) HostApplyRule() hostapplyrule.HostApplyRuleInterface {
 	return hostapplyrule.NewHostApplyRuleClient(c.restCli)
 }
 
+// Txn TODO
 func (c *coreService) Txn() transaction.Interface {
 	return transaction.NewTxn(c.restCli)
 }
 
+// Count TODO
 func (c *coreService) Count() count.CountClientInterface {
 	return count.NewCountClientInterface(c.restCli)
 }
 
+// Cloud TODO
 func (c *coreService) Cloud() cloud.CloudInterface {
 	return cloud.NewCloudInterfaceClient(c.restCli)
 }
 
+// Auth TODO
 func (c *coreService) Auth() auth.AuthClientInterface {
 	return auth.NewAuthClientInterface(c.restCli)
 }
 
+// Common TODO
 func (c *coreService) Common() common.CommonInterface {
 	return common.NewCommonInterfaceClient(c.restCli)
 }

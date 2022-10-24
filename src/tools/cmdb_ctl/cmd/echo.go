@@ -34,6 +34,7 @@ type echo struct {
 	jsonPretty bool
 }
 
+// NewEchoCommand TODO
 func NewEchoCommand() *cobra.Command {
 	conf := new(echo)
 

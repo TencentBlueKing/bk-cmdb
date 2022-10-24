@@ -46,6 +46,7 @@ type authConf struct {
 	logv         int32
 }
 
+// NewAuthCommand TODO
 func NewAuthCommand() *cobra.Command {
 	conf := new(authConf)
 

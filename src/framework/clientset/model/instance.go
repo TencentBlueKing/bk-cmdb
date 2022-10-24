@@ -19,6 +19,7 @@ import (
 	"configcenter/src/framework/common/rest"
 )
 
+// InstanceInterface TODO
 type InstanceInterface interface {
 }
 
@@ -26,6 +27,7 @@ type instClient struct {
 	client rest.ClientInterface
 }
 
+// CreateObjectInstance TODO
 func (s instClient) CreateObjectInstance(ctx *types.CreateSetCtx) (int64, error) {
 	resp := new(types.CreateInstanceResult)
 	subPath := fmt.Sprintf("/set/%d", ctx.SetID)
@@ -47,6 +49,7 @@ func (s instClient) CreateObjectInstance(ctx *types.CreateSetCtx) (int64, error)
 	return resp.Data.ID, nil
 }
 
+// DeleteObjectInstance TODO
 func (s instClient) DeleteObjectInstance(ctx *types.DeleteObjectCtx) error {
 	resp := new(types.Response)
 	subPath := fmt.Sprintf("/delete/instance/object/%s/inst/%d", ctx.ObjectID, ctx.InstanceID)
@@ -68,6 +71,7 @@ func (s instClient) DeleteObjectInstance(ctx *types.DeleteObjectCtx) error {
 	return nil
 }
 
+// UpdateObjectInstance TODO
 func (s instClient) UpdateObjectInstance(ctx *types.UpdateObjectCtx) error {
 	resp := new(types.Response)
 	subPath := fmt.Sprintf("/update/instance/object/%s/inst/%d", ctx.ObjectID, ctx.InstanceID)
@@ -89,6 +93,7 @@ func (s instClient) UpdateObjectInstance(ctx *types.UpdateObjectCtx) error {
 	return nil
 }
 
+// ListObjectInstance TODO
 func (s instClient) ListObjectInstance(ctx *types.ListInstanceCtx) (*types.ListInfo, error) {
 	resp := new(types.ListInstanceResult)
 	subPath := fmt.Sprintf("/inst/search/owener/%s/object/%s", ctx.Tenancy, ctx.ObjectID)

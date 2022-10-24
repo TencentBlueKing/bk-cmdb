@@ -17,17 +17,16 @@
 #ifndef _GSE_DATA_CONFIG_BKDATA_V1_H_
 #define _GSE_DATA_CONFIG_BKDATA_V1_H_
 
-#include <string>
-#include <vector>
-#include "json/json.h"
-#include "tools/atomic.h"
-#include "tools/time.h"
-#include "tools/strings.h"
 #include "log/log.h"
 #include "safe/lock.h"
-#include "runmode.h"
-namespace gse { 
-namespace dataserver {
+#include "tools/atomic.h"
+#include "tools/strings.h"
+#include "tools/time.h"
+#include "json/json.h"
+#include <string>
+#include <vector>
+namespace gse {
+namespace data {
 
 #define VERSION_DATAID 6696
 #define DATASERVER_FLOW_DATAID 238
@@ -35,67 +34,6 @@ namespace dataserver {
 #define COLLOCTOR_OP_TYPE_AGENT_FLOW 294
 #define DATASERVER_MONITOR_TAG 295
 #define DATASERVER_MONITOR_TAG_FLOW_DATAID 296
-
-
-enum StorageType
-{
-    UNKNOWN = 0,      // UNKONW
-    KAFKA_COMMON = 1, // sys:1, type:2
-    KAFKA_OP = 2,     // sys:1, type:2
-    // redis publish with sentinel
-    REDIS_SENTINEL_PUB = 3, // sys:3
-    REDIS_PUB = 4,          // sys:4
-    EXPORT_FILE = 5,        // only suport for channelid,
-    EXPORT_DSPROXY = 6,      // only suport for channelid
-    EXPORT_PULSAR = 7
-};
-
-class StorageConfigType
-{
-public:
-    int m_clusterIndex;
-    int m_storageType;
-    int m_port;
-    std::string m_masterName;
-    std::string m_host;
-    std::string m_passwd;
-    std::string m_token;
-
-    int m_maxKafkaMessageBytes;
-    int m_maxKafkaMaxQueue;
-
-    StorageConfigType() : m_host(""), m_passwd("")
-    {
-        m_clusterIndex = 0;
-        m_storageType = 0;
-        m_port = 0;
-        m_token = "";
-        m_maxKafkaMaxQueue = 0;
-        m_maxKafkaMessageBytes = 0;
-    }
-
-    StorageConfigType &operator=(const StorageConfigType &src)
-    {
-        m_clusterIndex = src.m_clusterIndex;
-        m_storageType = src.m_storageType;
-        m_port = src.m_port;
-        m_host = src.m_host;
-        m_passwd = src.m_passwd;
-        m_masterName = src.m_masterName;
-        m_token = src.m_token;
-        m_maxKafkaMessageBytes = src.m_maxKafkaMessageBytes;
-        m_maxKafkaMaxQueue = src.m_maxKafkaMaxQueue;
-        return *this;
-
-    }
-    StorageConfigType(const StorageConfigType &src)
-    {
-        *this = src;
-    }
-
-    std::string ToString();
-
-};
 
 /**
  *@brief DataID 对象定义
@@ -125,36 +63,6 @@ public:
         m_next = NULL;
     }
     std::string ToString();
-    std::string toTopicString()
-    {
-        if (m_storeSys == EXPORT_PULSAR)
-        {
-            //url::persistent://${tenant}/{namespace}/test_pulsar_data591
-            std::string pulsar_topic_name;
-            pulsar_topic_name.append(m_persistent);
-            pulsar_topic_name.append("://");
-            if (!m_tenant.empty())
-            {
-                pulsar_topic_name.append(m_tenant);
-                pulsar_topic_name.append("/");
-            }
-            if (!m_namespace.empty())
-            {
-                pulsar_topic_name.append(m_namespace);
-                pulsar_topic_name.append("/");
-            }
-            pulsar_topic_name.append(m_dataSet);
-            pulsar_topic_name.append(gse::tools::strings::ToString(m_bizId));
-            return pulsar_topic_name;
-        }
-        else
-        {
-            std::string pulsar_topic_name;
-            pulsar_topic_name.append(m_dataSet);
-            pulsar_topic_name.append(gse::tools::strings::ToString(m_bizId));
-            return pulsar_topic_name;
-        }
-    }
 
 public:
     inline int nextPartion()
@@ -283,10 +191,6 @@ typedef struct _BaseCfg
      * @brief 设置是否启动兼容模式，如果设置为true 则表示仅使用逻辑分区，服务器不会向区域+城市节点注册自身信息
      */
     bool m_onlyUseLogicalSetting;
-    /**
-     * @brief 服务器运行模式
-     */
-    DataServerRunMode m_runMode;
 
     /**
      * @brief 复合id
@@ -300,7 +204,7 @@ typedef struct _BaseCfg
     string m_listenIp;
     int m_listenPort;
 
-    //vector<Remote_Addr> m_servers;
+    // vector<Remote_Addr> m_servers;
     int m_svrNum;
     int m_workerNum;
     bool m_serverUseSsl;
@@ -348,14 +252,14 @@ typedef struct _BaseCfg
  * storage zk node format
  * [
  *     {
- *         "host":"10.0.0.1",
+ *         "host":"127.0.0.1",
  *         "port":9092,
  *         "passwd":"",
  *         "type":1 // StorageType
  *     }
  * ]
-*/
-int parseStorageNode(int clusterIndex, const std::string &nodeStr, std::vector<StorageConfigType> &storageConfigs);
+ */
+// int parseStorageNode(int clusterIndex, const std::string &nodeStr, std::vector<StorageConfigType> &storageConfigs);
 
 /*
 {
@@ -387,6 +291,6 @@ DataID *parseToDataID(const Json::Value &root);
  * */
 DataID *parseToDataID(const std::string &dataInfo);
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif

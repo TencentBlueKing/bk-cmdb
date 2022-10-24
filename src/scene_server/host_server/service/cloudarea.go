@@ -286,6 +286,7 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 
 }
 
+// DeletePlat TODO
 func (s *Service) DeletePlat(ctx *rest.Contexts) {
 
 	platID, convErr := strconv.ParseInt(ctx.Request.PathParameter(common.BKCloudIDField), 10, 64)
@@ -368,6 +369,7 @@ func (s *Service) DeletePlat(ctx *rest.Contexts) {
 
 }
 
+// UpdatePlat TODO
 func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 
 	// parse platID from url
@@ -462,6 +464,7 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// UpdateHostCloudAreaField TODO
 func (s *Service) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 	rid := ctx.Kit.Rid
 	// decode request body

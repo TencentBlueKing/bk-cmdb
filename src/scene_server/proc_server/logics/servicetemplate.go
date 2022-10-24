@@ -239,7 +239,7 @@ func (lgc *Logic) getSvcTempSyncStatus(kit *rest.Kit, svcTemp *metadata.ServiceT
 	return needSync, statuses, nil
 }
 
-// getSrvTemplateAttrIdAndValue 获取服务模板的属性id以及对应的属性值
+// getSrvTemplateAttrIdAndPropertyValue 获取服务模板的属性id以及对应的属性值
 func (lgc *Logic) getSrvTemplateAttrIdAndPropertyValue(kit *rest.Kit, bizID, serviceTemplateID int64) ([]int64,
 	map[int64]interface{}, errors.CCErrorCoder) {
 

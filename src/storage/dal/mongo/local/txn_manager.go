@@ -56,6 +56,7 @@ const (
 	WriteConflictType TxnErrorType = "2"
 )
 
+// TxnManager TODO
 // a transaction manager
 type TxnManager struct {
 	cache redis.Client
@@ -67,6 +68,7 @@ func (t *TxnManager) InitTxnManager(r redis.Client) error {
 	return nil
 }
 
+// GetTxnNumber TODO
 func (t *TxnManager) GetTxnNumber(sessionID string) (int64, error) {
 	key := sessionKey(sessionID).genKey()
 	v, err := t.cache.Get(context.Background(), key).Result()
@@ -101,6 +103,7 @@ func (t *TxnManager) GenTxnNumber(sessionID string, ttl time.Duration) (int64, e
 	return num, nil
 }
 
+// RemoveSessionKey remove transaction session key
 func (t *TxnManager) RemoveSessionKey(sessionID string) error {
 	key := sessionKey(sessionID).genKey()
 	return t.cache.Del(context.Background(), key).Err()
@@ -115,6 +118,7 @@ func (t *TxnManager) ReloadSession(sess mongo.Session, info *SessionInfo) (mongo
 	return sess, nil
 }
 
+// PrepareCommit prepare transaction commit
 func (t *TxnManager) PrepareCommit(cli *mongo.Client) (mongo.Session, error) {
 	// create a session client.
 	sess, err := cli.StartSession()
@@ -124,6 +128,7 @@ func (t *TxnManager) PrepareCommit(cli *mongo.Client) (mongo.Session, error) {
 	return sess, nil
 }
 
+// PrepareTransaction prepare transaction
 func (t *TxnManager) PrepareTransaction(cap *metadata.TxnCapable, cli *mongo.Client) (mongo.Session, error) {
 	// create a session client.
 	sess, err := cli.StartSession()
@@ -221,6 +226,7 @@ func parseTxnInfoFromCtx(txnCtx context.Context) (*metadata.TxnCapable, bool, er
 	return cap, true, nil
 }
 
+// AutoRunWithTxn auto run with transaction
 func (t *TxnManager) AutoRunWithTxn(ctx context.Context, cli *mongo.Client, cmd func(ctx context.Context) error) error {
 	cap, useTxn, err := parseTxnInfoFromCtx(ctx)
 	if err != nil {
@@ -284,6 +290,7 @@ func (t *TxnManager) GetTxnError(sessionID sessionKey) TxnErrorType {
 	return TxnErrorType(errorType)
 }
 
+// GenSessionID TODO
 func GenSessionID() (string, error) {
 	// mongodb driver used this as it's mongodb session id, and we use it too.
 	id, err := uuid.New()
@@ -293,6 +300,7 @@ func GenSessionID() (string, error) {
 	return base64.StdEncoding.EncodeToString(id[:]), nil
 }
 
+// GenTxnCableAndSetHeader TODO
 // generate a session id and set it to header.
 func GenTxnCableAndSetHeader(header http.Header, opts ...metadata.TxnOption) (*metadata.TxnCapable, error) {
 	sessionID, err := GenSessionID()

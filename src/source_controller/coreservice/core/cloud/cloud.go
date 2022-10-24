@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package cloud TODO
 package cloud
 
 import (
@@ -18,13 +19,13 @@ import (
 )
 
 type cloudOperation struct {
-	dbProxy  dal.RDB
+	dbProxy dal.RDB
 }
 
 // New create a new cloud manager instance
 func New(dbProxy dal.RDB) core.CloudOperation {
 	cloudOps := &cloudOperation{
-		dbProxy:  dbProxy,
+		dbProxy: dbProxy,
 	}
 	return cloudOps
 }

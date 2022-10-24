@@ -24,6 +24,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// SetTemplateSyncStatusMigrate TODO
 func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableNames := []string{"cc_SetTemplateSyncStatus", "cc_SetTemplateSyncHistory"}
 	for _, tableName := range tableNames {

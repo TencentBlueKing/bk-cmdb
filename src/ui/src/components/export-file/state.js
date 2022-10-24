@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { reactive, toRefs, set, del } from '@vue/composition-api'
+import { reactive, toRefs, set, del } from 'vue'
 import useClone from '@/hooks/utils/clone'
 const defaultState = {
   visible: false,

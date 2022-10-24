@@ -27,10 +27,13 @@ import (
 )
 
 const (
+	// AuditLogInstanceOpDetailModelIDField TODO
 	AuditLogInstanceOpDetailModelIDField = "operation_detail.bk_obj_id"
-	AuditLogResourceIDField              = "resource_id"
+	// AuditLogResourceIDField TODO
+	AuditLogResourceIDField = "resource_id"
 )
 
+// TimerFreshData TODO
 func (m *operationManager) TimerFreshData(kit *rest.Kit) error {
 	wg := &sync.WaitGroup{}
 	wg.Add(3)
@@ -98,6 +101,7 @@ func (m *operationManager) ModelInstCount(kit *rest.Kit, wg *sync.WaitGroup) err
 	return nil
 }
 
+// ModelInstChange TODO
 func (m *operationManager) ModelInstChange(kit *rest.Kit, wg *sync.WaitGroup) error {
 	defer wg.Done()
 
@@ -273,6 +277,7 @@ func (m *operationManager) BizHostCount(kit *rest.Kit) ([]metadata.StringIDCount
 	return ret, nil
 }
 
+// HostCloudChartData TODO
 func (m *operationManager) HostCloudChartData(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error) {
 	commonCount := make([]metadata.IntIDCount, 0)
 	groupField := fmt.Sprintf("$%s", inputParam.Field)
@@ -306,6 +311,7 @@ func (m *operationManager) HostCloudChartData(kit *rest.Kit, inputParam metadata
 	return respData, nil
 }
 
+// HostBizChartData TODO
 func (m *operationManager) HostBizChartData(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error) {
 	bizHost, err := m.BizHostCount(kit)
 	if err != nil {
@@ -316,6 +322,7 @@ func (m *operationManager) HostBizChartData(kit *rest.Kit, inputParam metadata.C
 	return bizHost, nil
 }
 
+// UpdateInnerChartData TODO
 func (m *operationManager) UpdateInnerChartData(kit *rest.Kit, reportType string, data interface{}) error {
 	chartData := metadata.ChartData{
 		ReportType: reportType,
@@ -337,7 +344,7 @@ func (m *operationManager) UpdateInnerChartData(kit *rest.Kit, reportType string
 	return nil
 }
 
-// StatisticOperationLog
+// StatisticOperationLog TODO
 // Note: 根据 bk_obj_id 分类统计模型实例操作次数，统计时间为前一天零点，到当天零点
 func (m *operationManager) StatisticOperationLog(kit *rest.Kit) (*metadata.StatisticInstOperation, error) {
 	zeroTime := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),

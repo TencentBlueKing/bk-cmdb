@@ -29,6 +29,7 @@ type modelAttributeGroup struct {
 	model *modelManager
 }
 
+// CreateModelAttributeGroup TODO
 func (g *modelAttributeGroup) CreateModelAttributeGroup(kit *rest.Kit, objID string, inputParam metadata.CreateModelAttributeGroup) (*metadata.CreateOneDataResult, error) {
 	dataResult := &metadata.CreateOneDataResult{}
 
@@ -68,6 +69,7 @@ func (g *modelAttributeGroup) CreateModelAttributeGroup(kit *rest.Kit, objID str
 	return dataResult, err
 }
 
+// SetModelAttributeGroup TODO
 func (g *modelAttributeGroup) SetModelAttributeGroup(kit *rest.Kit, objID string, inputParam metadata.SetModelAttributeGroup) (*metadata.SetDataResult, error) {
 
 	dataResult := &metadata.SetDataResult{
@@ -134,6 +136,7 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(kit *rest.Kit, objID string
 	return dataResult, nil
 }
 
+// UpdateModelAttributeGroup TODO
 func (g *modelAttributeGroup) UpdateModelAttributeGroup(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
 	if err := g.model.isValid(kit, objID); nil != err {
@@ -250,6 +253,7 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(kit *rest.Kit
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
+// SearchModelAttributeGroup TODO
 func (g *modelAttributeGroup) SearchModelAttributeGroup(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error) {
 
 	dataResult := &metadata.QueryModelAttributeGroupDataResult{
@@ -288,6 +292,7 @@ func (g *modelAttributeGroup) SearchModelAttributeGroup(kit *rest.Kit, objID str
 
 }
 
+// SearchModelAttributeGroupByCondition TODO
 func (g *modelAttributeGroup) SearchModelAttributeGroupByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error) {
 
 	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
@@ -312,6 +317,7 @@ func (g *modelAttributeGroup) SearchModelAttributeGroupByCondition(kit *rest.Kit
 
 }
 
+// DeleteModelAttributeGroupByCondition TODO
 // desperated only for old api
 func (g *modelAttributeGroup) DeleteModelAttributeGroupByCondition(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
@@ -348,6 +354,7 @@ func (g *modelAttributeGroup) DeleteModelAttributeGroupByCondition(kit *rest.Kit
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
+// DeleteModelAttributeGroup TODO
 func (g *modelAttributeGroup) DeleteModelAttributeGroup(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	if err := g.model.isValid(kit, objID); nil != err {

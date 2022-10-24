@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package metrics TODO
 package metrics
 
 import (
@@ -44,6 +45,7 @@ func Register() prometheus.Registerer {
 	return globalRegister
 }
 
+// Namespace TODO
 const Namespace = "cmdb"
 
 // labels
@@ -120,6 +122,7 @@ func (s *Service) Registry() prometheus.Registerer {
 	return s.registry
 }
 
+// ServeHTTP 用于HTTP服务
 func (s *Service) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	s.httpHandler.ServeHTTP(resp, req)
 }

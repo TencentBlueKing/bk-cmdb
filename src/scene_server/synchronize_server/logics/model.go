@@ -28,7 +28,7 @@ type FetchModel struct {
 	lgc           *Logics
 	syncConfig    *options.ConfigItem
 	baseCondition mapstr.MapStr
-	//ingoreAppID []int64
+	// ingoreAppID []int64
 }
 
 // NewFetchModel fetch instance struct

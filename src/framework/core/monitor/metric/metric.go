@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package metric TODO
 package metric
 
 import (
@@ -19,12 +20,14 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// Manager TODO
 type Manager struct {
 	ms []metric.Action
 }
 
 var _ Metric = &Manager{}
 
+// NewManager TODO
 func NewManager(opt *option.Options) Metric {
 	conf := metric.Config{
 		ModuleName:    opt.AppName,
@@ -49,7 +52,7 @@ func (m *Manager) Actions() []httpserver.Action {
 	return httpactions
 }
 
-// HealthMetric check netservice is health
+// healthMetric check netservice is health
 func healthMetric() metric.HealthMeta {
 	meta := metric.HealthMeta{IsHealthy: true}
 	return meta

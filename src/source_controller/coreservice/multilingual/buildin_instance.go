@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// BuildInInstanceNamePkg TODO
 var BuildInInstanceNamePkg = map[string]map[string][]string{
 	common.BKInnerObjIDModule: {
 		"1": {"inst_module_idle", common.BKModuleNameField},

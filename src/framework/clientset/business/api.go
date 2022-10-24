@@ -18,6 +18,7 @@ import (
 	types2 "configcenter/src/framework/core/types"
 )
 
+// Interface TODO
 type Interface interface {
 	CreateBusiness(info *types.CreateBusinessCtx) (types2.MapStr, error)
 	UpdateBusiness(info *types.UpdateBusinessCtx) error
@@ -25,6 +26,7 @@ type Interface interface {
 	ListBusiness(info *types.ListBusinessCtx) ([]types2.MapStr, error)
 }
 
+// NewBusinessClient TODO
 func NewBusinessClient(client rest.ClientInterface) Interface {
 	return &biz{
 		client: client,

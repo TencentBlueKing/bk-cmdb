@@ -26,6 +26,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// InitHostPropertyApplyDataModel TODO
 func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	// check attribute exist
 	moduleAttributeFilter := map[string]interface{}{

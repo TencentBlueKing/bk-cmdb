@@ -47,7 +47,7 @@
   import useFile from './file'
   import useImport from './index'
   import useStep from './step'
-  import { computed } from '@vue/composition-api'
+  import { computed } from 'vue'
   export default {
     name: 'import-state',
     setup() {

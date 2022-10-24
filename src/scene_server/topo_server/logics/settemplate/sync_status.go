@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// GetSets TODO
 func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int64) ([]metadata.SetInst,
 	errors.CCErrorCoder) {
 
@@ -64,7 +65,7 @@ func (st *setTemplate) GetSets(kit *rest.Kit, setTemplateID int64, setIDs []int6
 
 // isSyncRequired Note: If the parameter isInterrupt is true, it will return if a state to be synchronized is found.
 // At this time, the rest of the cluster state will be set to synchronized by default. If you need to return all pending
-//synchronization status state setId, you need to set this parameter to false.
+// synchronization status state setId, you need to set this parameter to false.
 func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID, setTemplateID int64, setIDs []int64,
 	setMap map[int64]mapstr.MapStr, isInterrupt bool, attrIdPropertyIdMap map[int64]string,
 	setTemplateAttrValueMap map[int64]interface{}) (map[int64]bool, errors.CCErrorCoder) {
@@ -131,7 +132,7 @@ func (st *setTemplate) isSyncRequired(kit *rest.Kit, bizID, setTemplateID int64,
 	return checkResult, nil
 }
 
-// diffModuleServiceTpl check different of modules with template in one set
+// diffModuleServiceTplAndAttrs check different of modules with template in one set
 func diffModuleServiceTplAndAttrs(serviceTplCnt, moduleCnt int64, serviceTemplates map[int64]metadata.ServiceTemplate,
 	modules []metadata.ModuleInst, attrIdPropertyIdMap map[int64]string, setMap mapstr.MapStr,
 	setTemplateAttrValueMap map[int64]interface{}) bool {
@@ -166,6 +167,7 @@ func diffModuleServiceTplAndAttrs(serviceTplCnt, moduleCnt int64, serviceTemplat
 	return false
 }
 
+// GetLatestSyncTaskDetail TODO
 func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit,
 	taskCond metadata.ListAPITaskDetail) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder) {
 
@@ -279,11 +281,11 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata
 	if cErr != nil {
 		return nil, cErr
 	}
-	if len(propertyIDs) == 0 {
-		return &metadata.ListAPITaskSyncStatusResult{Count: 0, Info: make([]metadata.APITaskSyncStatus, 0)}, nil
-	}
+
 	fields := []string{common.BKSetIDField}
-	fields = append(fields, propertyIDs...)
+	if len(propertyIDs) > 0 {
+		fields = append(fields, propertyIDs...)
+	}
 
 	sets, err := st.getSetMapStrByOption(kit, option, fields)
 	if err != nil {

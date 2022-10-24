@@ -13,14 +13,14 @@
 #ifndef _GSE_DATA_FLOW_H_
 #define _GSE_DATA_FLOW_H_
 
-#include <map>
 #include "channel/datachannel.h"
 #include "conf/dataconf.h"
+#include "ops/ops.h"
 #include "safe/lock.h"
-#include "opscollection/ops.h"
+#include <map>
 
-namespace gse { 
-namespace dataserver {
+namespace gse {
+namespace data {
 
 class DataFlow
 {
@@ -32,17 +32,7 @@ public:
     int Stop();
     void Join();
     void UpdateConf(DataFlowConf* pFlowConf);
-    // UpdateIDToStorage 用于获取给定的channelid 关联的存储信息，此处仅用于兼容V1版本的DS逻辑，在V2版本的后续迭代中需要优化配置传递的策略
     void UpdateIDToStorage(IDToStorage* ptrIDToStorage);
-    IDToStorage* GetIDToStorage();
-
-public:
-    inline void SetGseConf(DataProcessConfig& cfg)
-    {
-        m_gseCfg = cfg;
-    }
-
-protected:
 
 private:
     gse::safe::RWLock m_upConfLock;
@@ -50,13 +40,13 @@ private:
     std::map<std::string, DataChannel*> m_mapDataChannels;
 
 private:
-    IDToStorage*  m_ptrIDToStorage;
+    IDToStorage* m_ptrIDToStorage;
 
-    DataProcessConfig  m_gseCfg;
+    DataProcessConfig m_gseCfg;
 
-    OpsCollection *m_opsReport;
+    OpsCollection* m_opsReport;
 };
 
-}
-}
+} // namespace data
+} // namespace gse
 #endif

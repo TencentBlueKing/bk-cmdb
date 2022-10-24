@@ -502,7 +502,7 @@ func (s *Service) hasHost(ctx *rest.Contexts, bizID int64, setIDs, moduleIDS []i
 	return 0 != len(rsp.Info), nil
 }
 
-// 获取云同步任务有关联的所有资源池目录
+// GetResourceDirsInCloudSync 获取云同步任务有关联的所有资源池目录
 func (s *Service) GetResourceDirsInCloudSync(ctx *rest.Contexts) (map[int64]bool, error) {
 	option := &metadata.SearchCloudOption{
 		Page: metadata.BasePage{

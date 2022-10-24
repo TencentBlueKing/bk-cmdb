@@ -1,3 +1,4 @@
+// Package x18_10_30_01 TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -149,6 +150,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 	return nil
 }
 
+// Association TODO
 type Association struct {
 	metadata.Association `bson:",inline"`
 	ObjectAttID          string `bson:"bk_object_att_id"`

@@ -22,6 +22,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// UpdateSetDescriptionFieldType TODO
 func UpdateSetDescriptionFieldType(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	filter := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDSet,

@@ -30,6 +30,7 @@ import (
 	"github.com/rentiansheng/xlsx"
 )
 
+// GetImportNetProperty TODO
 func GetImportNetProperty(
 	header http.Header, defLang language.DefaultCCLanguageIf, f *xlsx.File) (map[int]map[string]interface{},
 	[]string, error) {
@@ -66,6 +67,7 @@ func BuildNetPropertyExcelFromData(ctx context.Context, defLang language.Default
 	return nil
 }
 
+// GetNetPropertyData TODO
 // get net property data to export
 func (lgc *Logics) GetNetPropertyData(header http.Header, netPropertyIDStr string) ([]mapstr.MapStr, error) {
 	rid := util.GetHTTPCCRequestID(header)
@@ -126,6 +128,7 @@ func BuildNetPropertyExcelTemplate(header http.Header, defLang language.DefaultC
 	return nil
 }
 
+// GetNetPropertyField TODO
 // get feild to import property or generate template
 func GetNetPropertyField(lang language.DefaultCCLanguageIf) map[string]Property {
 
@@ -153,6 +156,7 @@ func GetNetPropertyField(lang language.DefaultCCLanguageIf) map[string]Property 
 	}
 }
 
+// AddNetPropertyExtFields TODO
 // add extra feild to export property
 func AddNetPropertyExtFields(originField map[string]Property, lang language.DefaultCCLanguageIf) {
 

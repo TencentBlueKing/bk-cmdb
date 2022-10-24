@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateProcessInstanceRelation TODO
 func (s *coreService) CreateProcessInstanceRelation(ctx *rest.Contexts) {
 	relation := &metadata.ProcessInstanceRelation{}
 	if err := ctx.DecodeInto(relation); err != nil {
@@ -40,6 +41,7 @@ func (s *coreService) CreateProcessInstanceRelation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// CreateProcessInstanceRelations TODO
 func (s *coreService) CreateProcessInstanceRelations(ctx *rest.Contexts) {
 	relations := make([]*metadata.ProcessInstanceRelation, 0)
 	if err := ctx.DecodeInto(&relations); err != nil {
@@ -56,6 +58,7 @@ func (s *coreService) CreateProcessInstanceRelations(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// GetProcessInstanceRelation TODO
 func (s *coreService) GetProcessInstanceRelation(ctx *rest.Contexts) {
 	processInstanceIDStr := ctx.Request.PathParameter(common.BKProcIDField)
 	if len(processInstanceIDStr) == 0 {
@@ -80,6 +83,7 @@ func (s *coreService) GetProcessInstanceRelation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// ListProcessInstanceRelation TODO
 func (s *coreService) ListProcessInstanceRelation(ctx *rest.Contexts) {
 	// filter parameter
 	fp := metadata.ListProcessInstanceRelationOption{}
@@ -104,6 +108,7 @@ func (s *coreService) ListProcessInstanceRelation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateProcessInstanceRelation TODO
 func (s *coreService) UpdateProcessInstanceRelation(ctx *rest.Contexts) {
 	processInstanceIDStr := ctx.Request.PathParameter(common.BKProcIDField)
 	if len(processInstanceIDStr) == 0 {
@@ -135,6 +140,7 @@ func (s *coreService) UpdateProcessInstanceRelation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// DeleteProcessInstanceRelation TODO
 func (s *coreService) DeleteProcessInstanceRelation(ctx *rest.Contexts) {
 	option := metadata.DeleteProcessInstanceRelationOption{}
 	if err := ctx.DecodeInto(&option); err != nil {
@@ -151,6 +157,7 @@ func (s *coreService) DeleteProcessInstanceRelation(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// CreateProcessInstance TODO
 func (s *coreService) CreateProcessInstance(kit *rest.Kit, process *metadata.Process) (*metadata.Process, errors.CCErrorCoder) {
 	processBytes, err := json.Marshal(process)
 	if err != nil {
@@ -172,6 +179,7 @@ func (s *coreService) CreateProcessInstance(kit *rest.Kit, process *metadata.Pro
 	return process, nil
 }
 
+// CreateProcessInstances TODO
 func (s *coreService) CreateProcessInstances(kit *rest.Kit, processes []*metadata.Process) ([]*metadata.Process, errors.CCErrorCoder) {
 	processesBytes, err := json.Marshal(processes)
 	if err != nil {

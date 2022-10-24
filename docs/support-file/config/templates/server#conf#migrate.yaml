@@ -1,0 +1,16 @@
+# 注册中心
+registerServer:
+  addrs: __BK_CMDB_ZK_ADDR__
+
+# 指定configures的路径，通过这个路径找到其他的配置文件
+confs:
+  dir: __BK_HOME__/cmdb/server/conf
+# 指定errors的路径
+errors:
+  res: __BK_HOME__/cmdb/errors
+# 指定language的路径
+language:
+  res: __BK_HOME__/cmdb/language
+hostsnap:
+# 主机静态数据采集专用dataid
+  dataID: 1100010

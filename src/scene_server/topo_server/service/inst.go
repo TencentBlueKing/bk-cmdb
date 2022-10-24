@@ -14,6 +14,7 @@ package service
 
 import (
 	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -77,6 +78,7 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 	ctx.RespEntity(setInst)
 }
 
+// CreateManyInstance TODO
 func (s *Service) CreateManyInstance(ctx *rest.Contexts) {
 	data := new(metadata.CreateManyCommInst)
 	if err := ctx.DecodeInto(&data); err != nil {
@@ -162,15 +164,40 @@ func (s *Service) CreateInstsByImport(ctx *rest.Contexts) {
 		return
 	}
 
-	setInst, err := s.Logics.InstOperation().CreateInstBatch(ctx.Kit, objID, batchInfo)
-	if err != nil {
-		blog.Errorf("failed to create new object %s, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+	var setInst *inst.BatchResult
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		var err error
+		setInst, err = s.Logics.InstOperation().CreateInstBatch(ctx.Kit, objID, batchInfo)
+		if err != nil {
+			blog.Errorf("failed to create new object %s, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		// 临时方案
+		tmpErr := []string{}
+		if len(setInst.Errors) > 0 {
+			for _, err := range setInst.Errors{
+				if !strings.Contains(err, "未知或未能识别的异常") {
+					tmpErr = append(tmpErr, err)
+				}
+			}
+		}
+		if len(tmpErr) >= 1 {
+			setInst.Errors = tmpErr
+		} else {
+			setInst.Errors = []string{setInst.Errors[0]}
+		}
+		ctx.RespEntity(setInst)
+		return
 	}
 
 	ctx.RespEntity(setInst)
 }
 
+// DeleteInsts TODO
 func (s *Service) DeleteInsts(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
 
@@ -806,6 +833,7 @@ func (s *Service) SearchInstTopo(ctx *rest.Contexts) {
 	ctx.RespEntity(instItems)
 }
 
+// SearchInstAssociation TODO
 // Deprecated 2019-09-30 废弃接口
 func (s *Service) SearchInstAssociation(ctx *rest.Contexts) {
 
@@ -860,6 +888,7 @@ func (s *Service) SearchInstAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(rsp)
 }
 
+// SearchInstAssociationUI TODO
 func (s *Service) SearchInstAssociationUI(ctx *rest.Contexts) {
 
 	objID := ctx.Request.PathParameter(common.BKObjIDField)

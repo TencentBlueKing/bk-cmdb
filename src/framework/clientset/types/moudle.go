@@ -13,16 +13,18 @@
 package types
 
 import (
-    "configcenter/src/framework/core/types"
+	"configcenter/src/framework/core/types"
 )
 
+// CreateModuleCtx TODO
 type CreateModuleCtx struct {
-    BaseCtx
+	BaseCtx
 	BusinessID int64
 	SetID      int64
 	Module     types.MapStr
 }
 
+// CreateModuleResult TODO
 type CreateModuleResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
@@ -30,21 +32,24 @@ type CreateModuleResult struct {
 	} `json:"data"`
 }
 
+// DeleteModuleCtx TODO
 type DeleteModuleCtx struct {
-    BaseCtx
+	BaseCtx
 	BusinessID int64
 	SetID      int64
 	ModuleID   int64
 }
 
+// UpdateModuleCtx TODO
 type UpdateModuleCtx struct {
-    BaseCtx
+	BaseCtx
 	BusinessID int64
 	SetID      int64
 	ModuleID   int64
 	Module     types.MapStr
 }
 
+// ListModulesCtx TODO
 type ListModulesCtx struct {
 	BaseCtx
 	Tenancy    string
@@ -53,6 +58,7 @@ type ListModulesCtx struct {
 	Filter     Query
 }
 
+// ListModulesResult TODO
 type ListModulesResult struct {
 	BaseResp `json:",inline"`
 	Data     ListInfo

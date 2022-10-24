@@ -33,6 +33,7 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
+// AppResult TODO
 type AppResult struct {
 	Result  bool        `json:"result"`
 	Code    int         `json:"code"`
@@ -40,6 +41,7 @@ type AppResult struct {
 	Data    DataInfo    `json:"data"`
 }
 
+// DataInfo TODO
 type DataInfo struct {
 	Count int                      `json:"count"`
 	Info  []map[string]interface{} `json:"info"`
@@ -216,16 +218,10 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 			ApplicationID: appID,
 			HostIDArr:     iHostIDArr,
 		}
-		delResult, err := s.CoreAPI.CoreService().Host().DeleteHostFromSystem(ctx.Kit.Ctx, ctx.Kit.Header, input)
+		err = s.CoreAPI.CoreService().Host().DeleteHostFromSystem(ctx.Kit.Ctx, ctx.Kit.Header, input)
 		if err != nil {
-			blog.Error("DeleteHostBatch DeleteHost http do error. err:%s, input:%s, rid:%s", err.Error(), input,
-				ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !delResult.Result {
-			blog.Errorf("DeleteHostBatch DeleteHost http reply error. result: %#v, input:%#v, rid:%s", delResult,
-				input, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrHostDeleteFail)
+			blog.Error("delete host failed, input: %+v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
+			return err
 		}
 
 		// to save audit.
@@ -297,6 +293,7 @@ func (s *Service) GetHostInstanceProperties(ctx *rest.Contexts) {
 
 }
 
+// AddHost TODO
 // add host to host resource pool
 func (s *Service) AddHost(ctx *rest.Contexts) {
 	hostList := new(meta.HostList)
@@ -355,6 +352,7 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 	ctx.RespEntity(retData)
 }
 
+// AddHostByExcel TODO
 // add host come from excel to host resource pool
 func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 	hostList := new(meta.HostList)
@@ -408,6 +406,7 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 	ctx.RespEntity(retData)
 }
 
+// AddHostToResourcePool TODO
 // add host to resource pool, returns bk_host_id of the successfully added hosts
 func (s *Service) AddHostToResourcePool(ctx *rest.Contexts) {
 
@@ -438,6 +437,7 @@ func (s *Service) AddHostToResourcePool(ctx *rest.Contexts) {
 	ctx.RespEntity(retData)
 }
 
+// AddHostFromAgent TODO
 // Deprecated:
 func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 
@@ -501,6 +501,7 @@ func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 	ctx.RespEntity(success)
 }
 
+// SearchHost TODO
 func (s *Service) SearchHost(ctx *rest.Contexts) {
 
 	body := new(meta.HostCommonSearch)
@@ -529,6 +530,7 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 
 }
 
+// SearchHostWithAsstDetail TODO
 func (s *Service) SearchHostWithAsstDetail(ctx *rest.Contexts) {
 
 	body := new(meta.HostCommonSearch)
@@ -1467,52 +1469,6 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	ctx.RespEntity(retData)
 }
 
-// AddHostToBusinessIdle add host to business idle module
-func (s *Service) AddHostToBusinessIdle(ctx *rest.Contexts) {
-	input := new(meta.HostListParam)
-	if err := ctx.DecodeInto(input); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	rawErr := input.Validate()
-	if rawErr.ErrCode != 0 {
-		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
-		return
-	}
-
-	// get target biz's idle module ID
-	cond := mapstr.MapStr{
-		common.BKAppIDField:   input.ApplicationID,
-		common.BKDefaultField: common.DefaultResModuleFlag,
-	}
-	moduleID, _, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, cond)
-	if err != nil {
-		blog.Errorf("get idle module failed, input: %v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	var hostIDs []int64
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		hostIDs, err = s.Logic.AddHosts(ctx.Kit, input.ApplicationID, moduleID, input.HostList)
-		if err != nil {
-			blog.Errorf("add host failed, input: %v, err: %v, rid:%s", input.HostList, err, ctx.Kit.Rid)
-			return err
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
-	}
-
-	ctx.RespEntity(&meta.HostIDsResp{
-		HostIDs: hostIDs,
-	})
-}
-
 // CountHostCPU 查询业务下的主机CPU数量的特殊接口，给成本管理使用
 func (s *Service) CountHostCPU(ctx *rest.Contexts) {
 	req := new(meta.CountHostCPUReq)
@@ -1649,4 +1605,50 @@ func (s *Service) countBizHostCPU(kit *rest.Kit, bizID int64) (meta.BizHostCpuCo
 	}
 
 	return cnt, nil
+}
+
+// AddHostToBusinessIdle add host to business idle module
+func (s *Service) AddHostToBusinessIdle(ctx *rest.Contexts) {
+	input := new(meta.HostListParam)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := input.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// get target biz's idle module ID
+	cond := mapstr.MapStr{
+		common.BKAppIDField:   input.ApplicationID,
+		common.BKDefaultField: common.DefaultResModuleFlag,
+	}
+	moduleID, _, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, cond)
+	if err != nil {
+		blog.Errorf("get idle module failed, input: %v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	var hostIDs []int64
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		hostIDs, err = s.Logic.AddHosts(ctx.Kit, input.ApplicationID, moduleID, input.HostList)
+		if err != nil {
+			blog.Errorf("add host failed, input: %v, err: %v, rid:%s", input.HostList, err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(&meta.HostIDsResp{
+		HostIDs: hostIDs,
+	})
 }

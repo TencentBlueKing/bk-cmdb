@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package cloud TODO
 package cloud
 
 import (
@@ -21,7 +22,9 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CloudInterface TODO
 type CloudInterface interface {
+	// CreateAccount TODO
 	// cloud account
 	CreateAccount(ctx context.Context, h http.Header, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder)
 	SearchAccount(ctx context.Context, h http.Header, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder)
@@ -38,6 +41,7 @@ type CloudInterface interface {
 	DeleteDestroyedHostRelated(ctx context.Context, h http.Header, option *metadata.DeleteDestroyedHostRelatedOption) errors.CCErrorCoder
 }
 
+// NewCloudInterfaceClient TODO
 func NewCloudInterfaceClient(client rest.ClientInterface) CloudInterface {
 	return &cloud{client: client}
 }

@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// CreateOneAssociationKind TODO
 func (s *coreService) CreateOneAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.CreateAssociationKind{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -31,6 +32,7 @@ func (s *coreService) CreateOneAssociationKind(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// CreateManyAssociationKind TODO
 func (s *coreService) CreateManyAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.CreateManyAssociationKind{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -45,6 +47,7 @@ func (s *coreService) CreateManyAssociationKind(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SetOneAssociationKind TODO
 func (s *coreService) SetOneAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.SetAssociationKind{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -59,6 +62,7 @@ func (s *coreService) SetOneAssociationKind(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SetManyAssociationKind TODO
 func (s *coreService) SetManyAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.SetManyAssociationKind{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -73,6 +77,7 @@ func (s *coreService) SetManyAssociationKind(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateAssociationKind TODO
 func (s *coreService) UpdateAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.UpdateOption{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -87,6 +92,7 @@ func (s *coreService) UpdateAssociationKind(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// DeleteAssociationKind TODO
 func (s *coreService) DeleteAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -101,6 +107,7 @@ func (s *coreService) DeleteAssociationKind(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// CascadeDeleteAssociationKind TODO
 func (s *coreService) CascadeDeleteAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -115,6 +122,7 @@ func (s *coreService) CascadeDeleteAssociationKind(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchAssociationKind TODO
 func (s *coreService) SearchAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.QueryCondition{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -137,6 +145,7 @@ func (s *coreService) SearchAssociationKind(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// CreateModelAssociation TODO
 func (s *coreService) CreateModelAssociation(ctx *rest.Contexts) {
 	inputData := metadata.CreateModelAssociation{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -151,6 +160,7 @@ func (s *coreService) CreateModelAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// CreateMainlineModelAssociation TODO
 func (s *coreService) CreateMainlineModelAssociation(ctx *rest.Contexts) {
 	inputData := metadata.CreateModelAssociation{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -165,6 +175,7 @@ func (s *coreService) CreateMainlineModelAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SetModelAssociation TODO
 func (s *coreService) SetModelAssociation(ctx *rest.Contexts) {
 	inputData := metadata.SetModelAssociation{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -179,6 +190,7 @@ func (s *coreService) SetModelAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// UpdateModelAssociation TODO
 func (s *coreService) UpdateModelAssociation(ctx *rest.Contexts) {
 	inputData := metadata.UpdateOption{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -193,6 +205,7 @@ func (s *coreService) UpdateModelAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchModelAssociation TODO
 func (s *coreService) SearchModelAssociation(ctx *rest.Contexts) {
 	inputData := metadata.QueryCondition{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -207,6 +220,7 @@ func (s *coreService) SearchModelAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// DeleteModelAssociation TODO
 func (s *coreService) DeleteModelAssociation(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -221,6 +235,7 @@ func (s *coreService) DeleteModelAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// CascadeDeleteModelAssociation TODO
 func (s *coreService) CascadeDeleteModelAssociation(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -235,6 +250,7 @@ func (s *coreService) CascadeDeleteModelAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// CreateOneInstanceAssociation TODO
 func (s *coreService) CreateOneInstanceAssociation(ctx *rest.Contexts) {
 	inputData := metadata.CreateOneInstanceAssociation{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -249,6 +265,7 @@ func (s *coreService) CreateOneInstanceAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// CreateManyInstanceAssociation TODO
 func (s *coreService) CreateManyInstanceAssociation(ctx *rest.Contexts) {
 	inputData := metadata.CreateManyInstanceAssociation{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -263,6 +280,7 @@ func (s *coreService) CreateManyInstanceAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchInstanceAssociation TODO
 func (s *coreService) SearchInstanceAssociation(ctx *rest.Contexts) {
 	inputData := metadata.InstAsstQueryCondition{}
 	if err := ctx.DecodeInto(&inputData); nil != err {
@@ -297,6 +315,7 @@ func (s *coreService) CountInstanceAssociations(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// DeleteInstanceAssociation TODO
 func (s *coreService) DeleteInstanceAssociation(ctx *rest.Contexts) {
 	inputData := metadata.InstAsstDeleteOption{}
 	if err := ctx.DecodeInto(&inputData); nil != err {

@@ -15,7 +15,7 @@
 </template>
 
 <script>
-  import { defineComponent, computed, ref, watchEffect } from '@vue/composition-api'
+  import { defineComponent, computed, ref, watchEffect } from 'vue'
   import loading from '@/components/loading/index.vue'
   import { instanceCounts } from './use-instance-count.js'
 

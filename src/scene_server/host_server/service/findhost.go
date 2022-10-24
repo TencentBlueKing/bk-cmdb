@@ -875,6 +875,7 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 	ctx.RespEntity(hostTopos)
 }
 
+// ListHostDetailAndTopology TODO
 func (s *Service) ListHostDetailAndTopology(ctx *rest.Contexts) {
 	header := ctx.Kit.Header
 	rid := ctx.Kit.Rid
@@ -925,6 +926,7 @@ func (s *Service) ListHostDetailAndTopology(ctx *rest.Contexts) {
 	return
 }
 
+// CountTopoNodeHosts TODO
 func (s *Service) CountTopoNodeHosts(ctx *rest.Contexts) {
 
 	rid := ctx.Kit.Rid

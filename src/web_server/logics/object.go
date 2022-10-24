@@ -58,6 +58,7 @@ func (lgc *Logics) GetObjectData(objID string, header http.Header, modelBizID in
 
 }
 
+// GetPropertyFieldType TODO
 func GetPropertyFieldType(lang language.DefaultCCLanguageIf) map[string]string {
 	var fieldType = map[string]string{
 		"bk_property_id":         lang.Language("val_type_text"), // "文本",
@@ -75,6 +76,7 @@ func GetPropertyFieldType(lang language.DefaultCCLanguageIf) map[string]string {
 	return fieldType
 }
 
+// GetPropertyFieldDesc TODO
 func GetPropertyFieldDesc(lang language.DefaultCCLanguageIf) map[string]string {
 
 	var fields = map[string]string{
@@ -94,6 +96,7 @@ func GetPropertyFieldDesc(lang language.DefaultCCLanguageIf) map[string]string {
 	return fields
 }
 
+// ConvAttrOption TODO
 func ConvAttrOption(attrItems map[int]map[string]interface{}) {
 	for index, attr := range attrItems {
 

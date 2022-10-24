@@ -43,6 +43,7 @@ type filter struct {
 	ttlRangeSeconds [2]int
 }
 
+// Set TODO
 // only set the invalid ip which can not found in db.
 func (f *filter) Set(ip string, cloudID int64) {
 	key := fmt.Sprintf("%s:%d", ip, cloudID)
@@ -52,6 +53,7 @@ func (f *filter) Set(ip string, cloudID int64) {
 	f.lock.Unlock()
 }
 
+// Exist TODO
 // if exist, then do not use this ip to search in mongodb.
 func (f *filter) Exist(ip string, cloudID int64) bool {
 	key := fmt.Sprintf("%s:%d", ip, cloudID)

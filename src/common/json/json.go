@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package json TODO
 package json
 
 import (
@@ -25,26 +26,32 @@ var iteratorJson = jsoniter.Config{
 	UseNumber:              true,
 }.Froze()
 
+// MarshalToString TODO
 func MarshalToString(v interface{}) (string, error) {
 	return iteratorJson.MarshalToString(v)
 }
 
+// Marshal TODO
 func Marshal(v interface{}) ([]byte, error) {
 	return iteratorJson.Marshal(v)
 }
 
+// MarshalIndent TODO
 func MarshalIndent(v interface{}, prefix, indent string) ([]byte, error) {
 	return iteratorJson.MarshalIndent(v, prefix, indent)
 }
 
+// UnmarshalFromString TODO
 func UnmarshalFromString(str string, v interface{}) error {
 	return iteratorJson.UnmarshalFromString(str, v)
 }
 
+// Unmarshal TODO
 func Unmarshal(data []byte, v interface{}) error {
 	return iteratorJson.Unmarshal(data, v)
 }
 
+// UnmarshalArray TODO
 func UnmarshalArray(items []string, result interface{}) error {
 	strArrJSON := "[" + strings.Join(items, ",") + "]"
 	return iteratorJson.Unmarshal([]byte(strArrJSON), result)

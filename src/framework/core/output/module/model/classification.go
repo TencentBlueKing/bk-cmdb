@@ -30,6 +30,7 @@ type classification struct {
 	id int
 }
 
+// ToMapStr TODO
 func (cli *classification) ToMapStr() types.MapStr {
 	return common.SetValueToMapStrByTags(cli)
 }
@@ -41,6 +42,8 @@ func (cli *classification) search() ([]types.MapStr, error) {
 	// search all classifications by condition
 	return client.GetClient().CCV3(client.Params{}).Classification().SearchClassifications(cond)
 }
+
+// IsExists TODO
 func (cli *classification) IsExists() (bool, error) {
 	items, err := cli.search()
 	if nil != err {
@@ -50,6 +53,7 @@ func (cli *classification) IsExists() (bool, error) {
 	return 0 != len(items), nil
 }
 
+// Create TODO
 func (cli *classification) Create() error {
 
 	id, err := client.GetClient().CCV3(client.Params{}).Classification().CreateClassification(cli.ToMapStr())
@@ -60,6 +64,8 @@ func (cli *classification) Create() error {
 	cli.id = id
 	return nil
 }
+
+// Update TODO
 func (cli *classification) Update() error {
 
 	dataItems, err := cli.search()
@@ -87,6 +93,8 @@ func (cli *classification) Update() error {
 	}
 	return nil
 }
+
+// Save TODO
 func (cli *classification) Save() error {
 
 	if exists, err := cli.IsExists(); nil != err {
@@ -98,32 +106,42 @@ func (cli *classification) Save() error {
 	return cli.Create()
 }
 
+// GetRecordID TODO
 func (cli *classification) GetRecordID() int {
 	return cli.id
 }
+
+// GetID TODO
 func (cli *classification) GetID() string {
 	return cli.ClassificationID
 }
 
+// SetID TODO
 func (cli *classification) SetID(id string) {
 	cli.ClassificationID = id
 }
 
+// SetName TODO
 func (cli *classification) SetName(name string) {
 	cli.ClassificationName = name
 }
+
+// GetName TODO
 func (cli *classification) GetName() string {
 	return cli.ClassificationName
 }
 
+// SetIcon TODO
 func (cli *classification) SetIcon(iconName string) {
 	cli.ClassificationIcon = iconName
 }
 
+// GetIcon TODO
 func (cli *classification) GetIcon() string {
 	return cli.ClassificationIcon
 }
 
+// CreateModel TODO
 func (cli *classification) CreateModel() Model {
 	m := &model{}
 	m.SetID("obj_" + common.UUID())
@@ -132,11 +150,13 @@ func (cli *classification) CreateModel() Model {
 	return m
 }
 
+// FindModelsLikeName TODO
 func (cli *classification) FindModelsLikeName(supplierAccount string, modelName string) (Iterator, error) {
 	cond := common.CreateCondition().Field(ObjectName).Like(modelName)
 	return newModelIterator(supplierAccount, cond)
 }
 
+// FindModelsByCondition TODO
 func (cli *classification) FindModelsByCondition(supplierAccount string, cond common.Condition) (Iterator, error) {
 	return newModelIterator(supplierAccount, cond)
 }

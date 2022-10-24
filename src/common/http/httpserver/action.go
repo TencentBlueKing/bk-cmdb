@@ -16,7 +16,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
-//Action restful action struct
+// Action restful action struct
 type Action struct {
 	Verb          string               // Verb identifying the action ("GET", "POST", "WATCH", PROXY", etc).
 	Path          string               // The path of the action
@@ -25,6 +25,7 @@ type Action struct {
 	FilterHandler []restful.FilterFunction
 }
 
+// NewAction TODO
 func NewAction(verb, path string, params []*restful.Parameter, handler restful.RouteFunction, filters []restful.FilterFunction) *Action {
 	return &Action{
 		Verb:          verb,
@@ -35,10 +36,12 @@ func NewAction(verb, path string, params []*restful.Parameter, handler restful.R
 	}
 }
 
+// AddFilter TODO
 func (a *Action) AddFilter(f func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain)) {
 	a.FilterHandler = append(a.FilterHandler, f)
 }
 
+// GetFilter TODO
 func (a *Action) GetFilter() []restful.FilterFunction {
 	return a.FilterHandler
 }

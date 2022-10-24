@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { reactive, toRefs, watch } from '@vue/composition-api'
+import { reactive, toRefs, watch } from 'vue'
 
 export const pickQuery = (query = {}, include = [], exclude = []) => {
   let queryKeys = Object.keys(query)
