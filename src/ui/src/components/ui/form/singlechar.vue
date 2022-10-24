@@ -63,7 +63,6 @@
       },
       handleEnter(value) {
         this.$emit('enter', value)
-        this.$emit('confirmEdit')
       },
       handleBlur(value) {
         this.$emit('blur', value)

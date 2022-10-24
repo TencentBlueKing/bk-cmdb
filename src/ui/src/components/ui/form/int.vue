@@ -91,7 +91,6 @@
       },
       handleEnter() {
         this.$emit('enter', this.localValue)
-        this.$emit('confirmEdit')
       },
       focus() {
         this.$el.querySelector('input').focus()
