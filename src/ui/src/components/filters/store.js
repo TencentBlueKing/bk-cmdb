@@ -30,7 +30,7 @@ function getStorageHeader(type, key, properties) {
   const data = store.state.userCustom[type][key] || []
   const header = []
   data.forEach((propertyId) => {
-    const property = properties.find(property => property?.bk_property_id === propertyId)
+    const property = properties?.find(property => property?.bk_property_id === propertyId)
     property && header.push(property)
   })
   return header
@@ -734,7 +734,10 @@ export async function setupFilterStore(config = {}) {
     FilterStore.getProperties(),
     FilterStore.getPropertyGroups(),
   ])
-  await FilterStore.getContainerPropertyMapValue()
+
+  // 暂不支持
+  // await FilterStore.getContainerPropertyMapValue()
+
   FilterStore.setupIPQuery()
   FilterStore.setupPropertyQuery()
   FilterStore.setupNormalProperty()
