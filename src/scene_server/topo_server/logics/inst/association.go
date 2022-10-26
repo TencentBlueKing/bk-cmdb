@@ -327,7 +327,13 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit, request *meta
 		return nil, rawErr.ToCCError(kit.CCError)
 	}
 
-	cond := &metadata.QueryCondition{Condition: mapstr.MapStr{common.AssociationObjAsstIDField: request.ObjectAsstID}}
+	cond := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.AssociationObjAsstIDField: request.ObjectAsstID,
+		},
+		Fields: []string{common.AssociationKindIDField},
+		DisableCounter: true,
+	}
 	result, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		blog.Errorf("search object association with cond[%#v] failed, err: %v, rid: %s", cond, err, kit.Rid)
@@ -337,6 +343,11 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit, request *meta
 	if len(result.Info) == 0 {
 		blog.Errorf("can not find object association[%s]. rid: %s", request.ObjectAsstID, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrorTopoObjectAssociationNotExist)
+	}
+
+	if len(result.Info) != 1 {
+		blog.Errorf("find object association[%s] not unique, rid: %s", request.ObjectAsstID, kit.Rid)
+		return nil, fmt.Errorf("find object association[%s] not unique, check data valid", request.ObjectAsstID)
 	}
 
 	param := &metadata.CreateManyInstanceAssociation{}
