@@ -158,35 +158,9 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 		resultData.Merge(result.Data)
 	}
 
-	for _, sheet := range f.Sheets {
-		if sheet.Name != "association" {
-			continue
-		}
-
-		asstInfoMap, errMsg := GetAssociationExcelData(sheet, common.HostAddMethodExcelAssociationIndexOffset,
-			defLang)
-
-		if len(asstInfoMap) > 0 {
-			asstInfoMapInput := &metadata.RequestImportAssociation{
-				AssociationInfoMap:    asstInfoMap,
-				AsstObjectUniqueIDMap: asstObjectUniqueIDMap,
-				ObjectUniqueID:        objectUniqueID,
-			}
-			asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, objID,
-				asstInfoMapInput)
-			if asstResultErr != nil {
-				blog.Errorf("import %s association failed, err: %v, rid:%s", objID, asstResultErr, rid)
-				return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
-			}
-			errMsg = append(errMsg, asstResult.Data.ErrMsgMap...)
-			if errCode == 0 && !asstResult.Result {
-				errCode = asstResult.Code
-				err = defErr.New(asstResult.Code, asstResult.ErrMsg)
-			}
-		}
-
-		resultData.Set("asst_error", errMsg)
-	}
+	resp := &metadata.ResponseDataMapStr{Data: mapstr.New()}
+	resp = lgc.handleExcelAssociation(ctx, header, f, objID, rid, asstObjectUniqueIDMap, objectUniqueID, defLang, resp)
+	resultData.Merge(resp.Data)
 
 	return
 }
