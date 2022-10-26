@@ -404,29 +404,31 @@ const (
 
 	CCErrorTopoAssociationKindHasBeenUsed                     = 1101060
 	CCErrorTopoCreateMultipleInstancesForOneToManyAssociation = 1101061
-	CCErrTopoAppDeleteFailed                                  = 1101131
-	CCErrTopoAppUpdateFailed                                  = 1101132
-	CCErrTopoAppSearchFailed                                  = 1101133
-	CCErrTopoAppCreateFailed                                  = 1101134
-	CCErrTopoForbiddenToDeleteModelFailed                     = 1101135
-	CCErrTopoMainlineCreatFailed                              = 1101137
-	CCErrTopoMainlineDeleteFailed                             = 1101138
-	CCErrTopoMainlineSelectFailed                             = 1101139
-	CCErrTopoTopoSelectFailed                                 = 1101140
-	CCErrTopoDeleteMainLineObjectAndInstNameRepeat            = 1101149
-	CCErrHostNotAllowedToMutiBiz                              = 1101150
-	CCErrTopoGraphicsSearchFailed                             = 1101151
-	CCErrTopoGraphicsUpdateFailed                             = 1101152
-	CCErrTopoObjectUniqueCreateFailed                         = 1101160
-	CCErrTopoObjectUniqueUpdateFailed                         = 1101161
-	CCErrTopoObjectUniqueDeleteFailed                         = 1101162
-	CCErrTopoObjectUniqueSearchFailed                         = 1101163
-	CCErrTopoObjectPropertyNotFound                           = 1101164
-	CCErrTopoObjectPropertyUsedByUnique                       = 1101165
-	CCErrTopoObjectUniqueKeyKindInvalid                       = 1101166
-	CCErrTopoObjectUniquePresetCouldNotDelOrEdit              = 1101167
-	CCErrTopoObjectUniqueCanNotHasMultipleMustCheck           = 1101168
-	CCErrTopoObjectUniqueShouldHaveMoreThanOne                = 1101069
+	// the given association id not unique.
+	CCErrorTopoObjectAssociationNotUnique           = 1101062
+	CCErrTopoAppDeleteFailed                        = 1101131
+	CCErrTopoAppUpdateFailed                        = 1101132
+	CCErrTopoAppSearchFailed                        = 1101133
+	CCErrTopoAppCreateFailed                        = 1101134
+	CCErrTopoForbiddenToDeleteModelFailed           = 1101135
+	CCErrTopoMainlineCreatFailed                    = 1101137
+	CCErrTopoMainlineDeleteFailed                   = 1101138
+	CCErrTopoMainlineSelectFailed                   = 1101139
+	CCErrTopoTopoSelectFailed                       = 1101140
+	CCErrTopoDeleteMainLineObjectAndInstNameRepeat  = 1101149
+	CCErrHostNotAllowedToMutiBiz                    = 1101150
+	CCErrTopoGraphicsSearchFailed                   = 1101151
+	CCErrTopoGraphicsUpdateFailed                   = 1101152
+	CCErrTopoObjectUniqueCreateFailed               = 1101160
+	CCErrTopoObjectUniqueUpdateFailed               = 1101161
+	CCErrTopoObjectUniqueDeleteFailed               = 1101162
+	CCErrTopoObjectUniqueSearchFailed               = 1101163
+	CCErrTopoObjectPropertyNotFound                 = 1101164
+	CCErrTopoObjectPropertyUsedByUnique             = 1101165
+	CCErrTopoObjectUniqueKeyKindInvalid             = 1101166
+	CCErrTopoObjectUniquePresetCouldNotDelOrEdit    = 1101167
+	CCErrTopoObjectUniqueCanNotHasMultipleMustCheck = 1101168
+	CCErrTopoObjectUniqueShouldHaveMoreThanOne      = 1101069
 	// association kind has been apply to object
 	CCErrorTopoAssKindHasApplyToObject = 1101070
 	// pre definition association kind can not be delete

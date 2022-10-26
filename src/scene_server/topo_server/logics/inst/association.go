@@ -1,8 +1,6 @@
 package inst
 
 import (
-	"fmt"
-
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -269,9 +267,9 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 		return nil, kit.CCError.Error(common.CCErrorTopoObjectAssociationNotExist)
 	}
 
-	if len(result.Info) != 1 {
+	if len(result.Info) > 1 {
 		blog.Errorf("find object association[%s] not unique, rid: %s", request.ObjectAsstID, kit.Rid)
-		return nil, fmt.Errorf("find object association[%s] not unique, check data valid", request.ObjectAsstID)
+		return nil, kit.CCError.Error(common.CCErrorTopoObjectAssociationNotUnique)
 	}
 
 	if err := assoc.checkInstAsstMapping(kit, result.Info[0].ObjectID, result.Info[0].Mapping, request); err != nil {
@@ -345,9 +343,9 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit, request *meta
 		return nil, kit.CCError.Error(common.CCErrorTopoObjectAssociationNotExist)
 	}
 
-	if len(result.Info) != 1 {
+	if len(result.Info) > 1 {
 		blog.Errorf("find object association[%s] not unique, rid: %s", request.ObjectAsstID, kit.Rid)
-		return nil, fmt.Errorf("find object association[%s] not unique, check data valid", request.ObjectAsstID)
+		return nil, kit.CCError.Error(common.CCErrorTopoObjectAssociationNotUnique)
 	}
 
 	param := &metadata.CreateManyInstanceAssociation{}
