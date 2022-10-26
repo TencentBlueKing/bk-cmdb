@@ -249,6 +249,22 @@ func (c *commonInst) CreateManyInstance(kit *rest.Kit, objID string, data []maps
 	return resp, nil
 }
 
+// deleteDuplicateErr delete txn duplicate error
+func (c *commonInst) deleteDuplicateErr(colIdxErrMap map[int]string, errStr string) bool{
+	if len(colIdxErrMap) == 0 {
+		return true
+	}
+	var flag bool
+	for _, err := range colIdxErrMap {
+		if strings.Contains(err, errStr) {
+			flag = false
+			break
+		}
+		flag = true
+	}
+	return flag
+}
+
 // createInstBatch batch create instance by excel
 func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo,
 	idFieldName string) (*BatchResult, []int64, []int64, error){
@@ -257,80 +273,89 @@ func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *met
 	colIdxErrMap := map[int]string{}
 	colIdxList := make([]int, 0)
 	results := &BatchResult{}
-	for colIdx, colInput := range batchInfo.BatchInfo {
-		if colInput == nil {
-			// ignore empty excel line
-			continue
-		}
+	c.clientSet.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
+		for colIdx, colInput := range batchInfo.BatchInfo {
+			if colInput == nil {
+				// ignore empty excel line
+				continue
+			}
 
-		delete(colInput, "import_from")
+			delete(colInput, "import_from")
 
-		// 实例id 为空，表示要新建实例
-		// 实例ID已经赋值，更新数据.  (已经赋值, value not equal 0 or nil)
+			// 实例id 为空，表示要新建实例
+			// 实例ID已经赋值，更新数据.  (已经赋值, value not equal 0 or nil)
 
-		// 是否存在实例ID字段
-		instID, exist := colInput[idFieldName]
-		if exist && (instID == "" || instID == nil) {
-			exist = false
-		}
+			// 是否存在实例ID字段
+			instID, exist := colInput[idFieldName]
+			if exist && (instID == "" || instID == nil) {
+				exist = false
+			}
 
-		// 实例ID字段是否设置值
-		if exist {
-			instID, err := util.GetInt64ByInterface(colInput[idFieldName])
+			// 实例ID字段是否设置值
+			if exist {
+				instID, err := util.GetInt64ByInterface(colInput[idFieldName])
+				if err != nil {
+					if c.deleteDuplicateErr(colIdxErrMap, err.Error()) {
+						errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef(
+							"import_row_int_error_str", colIdx, err.Error())
+						colIdxList = append(colIdxList, int(colIdx))
+						colIdxErrMap[int(colIdx)] = errStr
+					}
+					continue
+				}
+
+				filter := mapstr.MapStr{idFieldName: instID}
+
+				// to update.
+				if err := c.UpdateInst(kit, filter, colInput, objID); err != nil {
+					blog.Errorf("failed to update the object(%s) inst data (%#v), err: %v, rid: %s", objID,
+						colInput, err, kit.Rid)
+					if c.deleteDuplicateErr(colIdxErrMap, err.Error()) {
+						errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef(
+							"import_row_int_error_str", colIdx, err.Error())
+						colIdxList = append(colIdxList, int(colIdx))
+						colIdxErrMap[int(colIdx)] = errStr
+					}
+					continue
+				}
+
+				updatedInstanceIDs = append(updatedInstanceIDs, instID)
+				results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
+				continue
+			}
+
+			colInput.Set(common.BKObjIDField, objID)
+			// call CoreService.CreateInstance
+			instCond := &metadata.CreateModelInstance{Data: colInput}
+			rsp, err := c.clientSet.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, objID, instCond)
 			if err != nil {
-				errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef(
-					"import_row_int_error_str", colIdx, err.Error())
-				colIdxList = append(colIdxList, int(colIdx))
-				colIdxErrMap[int(colIdx)] = errStr
+				blog.Errorf("failed to create object instance, err: %v, rid: %s", err, kit.Rid)
+				if c.deleteDuplicateErr(colIdxErrMap, err.Error()) {
+					errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef(
+						"import_row_int_error_str", colIdx, err)
+					colIdxList = append(colIdxList, int(colIdx))
+					colIdxErrMap[int(colIdx)] = errStr
+				}
 				continue
 			}
 
-			filter := mapstr.MapStr{idFieldName: instID}
-
-			// to update.
-			if err := c.UpdateInst(kit, filter, colInput, objID); err != nil {
-				blog.Errorf("failed to update the object(%s) inst data (%#v), err: %v, rid: %s", objID, colInput,
-					err, kit.Rid)
-				errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef(
-					"import_row_int_error_str", colIdx, err.Error())
-				colIdxList = append(colIdxList, int(colIdx))
-				colIdxErrMap[int(colIdx)] = errStr
-				continue
-			}
-
-			updatedInstanceIDs = append(updatedInstanceIDs, instID)
 			results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
-			continue
+
+			if rsp.Created.ID == 0 {
+				blog.Errorf("instances created success, but get id failed, err: %+v, rid: %s", err, kit.Rid)
+				continue
+			}
+
+			createdInstanceIDs = append(createdInstanceIDs, int64(rsp.Created.ID))
 		}
 
-		colInput.Set(common.BKObjIDField, objID)
-		// call CoreService.CreateInstance
-		instCond := &metadata.CreateModelInstance{Data: colInput}
-		rsp, err := c.clientSet.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, objID, instCond)
-		if err != nil {
-			blog.Errorf("failed to create object instance, err: %v, rid: %s", err, kit.Rid)
-			errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef(
-				"import_row_int_error_str", colIdx, err)
-			colIdxList = append(colIdxList, int(colIdx))
-			colIdxErrMap[int(colIdx)] = errStr
-			continue
+		// sort error
+		sort.Ints(colIdxList)
+		for colIdx := range colIdxList {
+			results.Errors = append(results.Errors, colIdxErrMap[colIdxList[colIdx]])
 		}
-
-		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
-
-		if rsp.Created.ID == 0 {
-			blog.Errorf("instances created success, but get id failed, err: %+v, rid: %s", err, kit.Rid)
-			continue
-		}
-
-		createdInstanceIDs = append(createdInstanceIDs, int64(rsp.Created.ID))
-	}
-
-	// sort error
-	sort.Ints(colIdxList)
-	for colIdx := range colIdxList {
-		results.Errors = append(results.Errors, colIdxErrMap[colIdxList[colIdx]])
-	}
+		return nil
+	})
 
 	return results, createdInstanceIDs, updatedInstanceIDs, nil
 }
@@ -384,6 +409,10 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, objID string, batchInfo *met
 	if err != nil {
 		blog.Errorf("create inst by export failed, err: %v, rid: %s", err, kit.Rid)
 		return results, err
+	}
+	if len(results.Errors) > 0 {
+		blog.Errorf("create inst by export failed, txn error, err: %v, rid: %s", results.Errors, kit.Rid)
+		return results, nil
 	}
 	// generate audit log of instance.
 	if len(createdInstanceIDs) > 0 {
