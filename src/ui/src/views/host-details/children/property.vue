@@ -85,6 +85,7 @@
                       v-bind="$tools.getValidateEvents(property)"
                       v-validate="$tools.getValidateRules(property)"
                       v-model.trim="editState.value"
+                      @enter="confirm"
                       :ref="`component-${property.bk_property_id}`">
                     </component>
                   </div>

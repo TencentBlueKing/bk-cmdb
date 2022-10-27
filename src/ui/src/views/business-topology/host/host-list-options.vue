@@ -163,7 +163,7 @@
       :properties="hostProperties"
       :selection="$parent.table.selection">
     </edit-multiple-host>
-    <cmdb-dialog v-model="dialog.show" v-bind="dialog.props" :height="650">
+    <cmdb-dialog :mask-close="false" v-model="dialog.show" v-bind="dialog.props" :height="650">
       <component
         :is="dialog.component"
         v-bind="dialog.componentProps"

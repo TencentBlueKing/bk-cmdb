@@ -18,14 +18,15 @@
     :title="title"
     :show-footer="false"
     :draggable="false"
+    :mask-close="true"
     @after-leave="handleHidden">
     <bk-table class="preview-table"
       ref="table"
       v-bkloading="{ isLoading: $loading() }"
       :pagination="table.pagination"
       :data="table.list"
-      height="400"
-      max-height="400"
+      height="536"
+      max-height="536"
       @page-change="handlePageChange"
       @page-limit-change="handlePageLimitChange"
       @sort-change="handleSortChange">
@@ -62,7 +63,9 @@
         properties: [],
         previewProperties: [],
         table: {
-          pagination: this.$tools.getDefaultPaginationConfig({}, false),
+          pagination: this.$tools.getDefaultPaginationConfig({
+            limit: 10, 'limit-list': [10, 50, 100, 500]
+          }, false),
           sort: '-create_time',
           list: []
         },

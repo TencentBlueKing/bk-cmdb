@@ -23,11 +23,11 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
-func (m *modelClassification) count(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
-	filter := util.SetModOwner(cond.ToMapStr(), kit.SupplierAccount)
+func (m *modelClassification) count(kit *rest.Kit, cond mapstr.MapStr) (cnt uint64, err error) {
+	filter := util.SetQueryOwner(cond, kit.SupplierAccount)
 	cnt, err = mongodb.Client().Table(common.BKTableNameObjClassification).Find(filter).Count(kit.Ctx)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute a database count operation on the table(%s) by the condition(%#v), error info is %s", kit.Rid, common.BKTableNameObjClassification, cond.ToMapStr(), err.Error())
+		blog.Errorf("execute a database count operation failed, cond: %#v, err: %v, rid: %s", cond, err, kit.Rid)
 		return 0, err
 	}
 	return cnt, err
