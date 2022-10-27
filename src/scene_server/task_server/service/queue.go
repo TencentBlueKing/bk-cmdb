@@ -22,7 +22,7 @@ import (
 	taskUtil "configcenter/src/apimachinery/taskserver/util"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
@@ -32,7 +32,7 @@ import (
 )
 
 var (
-	dbMaxRetry = 20
+	dbMaxRetry = 3
 )
 
 // TaskInfo TODO
@@ -95,6 +95,8 @@ func (tq *TaskQueue) Start() {
 }
 
 func (tq *TaskQueue) execute(ctx context.Context, task TaskInfo) {
+	blog.Infof("start execute task queue: %s", task.Name)
+
 	defer func() {
 		if fetalErr := recover(); fetalErr != nil {
 			blog.Errorf("err:%s, panic:%s", fetalErr, debug.Stack())
@@ -115,6 +117,7 @@ func (tq *TaskQueue) execute(ctx context.Context, task TaskInfo) {
 
 		isMaster := tq.service.Engine.ServiceManageInterface.IsMaster()
 		if !isMaster {
+			blog.Infof("execute task, but is not master, skip")
 			time.Sleep(time.Minute)
 			continue
 		}
@@ -141,6 +144,7 @@ func (tq *TaskQueue) execute(ctx context.Context, task TaskInfo) {
 
 			isMaster := tq.service.Engine.ServiceManageInterface.IsMaster()
 			if !isMaster {
+				blog.Infof("execute task %s, but is not master, skip", taskQueueInfo.TaskID)
 				time.Sleep(time.Minute)
 				continue
 			}
@@ -161,30 +165,38 @@ func (tq *TaskQueue) execute(ctx context.Context, task TaskInfo) {
 func (tq *TaskQueue) executeTaskQueueItem(ctx context.Context, taskInfo TaskInfo,
 	taskQueueInfo metadata.APITaskDetail) bool {
 
-	locked, err := tq.lockTask(ctx, taskQueueInfo.TaskID, taskInfo.LockTTL)
+	// set timeout and execute the task
+	ctx, cancel := context.WithTimeout(ctx, time.Minute*time.Duration(taskInfo.LockTTL))
+	defer cancel()
+
 	blog.Infof("start task %s", taskQueueInfo.TaskID)
+
+	// lock task to avoid conflict
+	locked, err := tq.lockTask(ctx, taskQueueInfo.TaskID, taskInfo.LockTTL)
 	if err != nil {
 		blog.Errorf("lock task failed, task name: %s, taskID: %s, err: %v", taskInfo.Name, taskQueueInfo.TaskID, err)
 		time.Sleep(time.Second)
 		return false
 	}
 	if !locked {
+		blog.Errorf("task(type %s, id: %s) is locked, return and retry later", taskInfo.Name, taskQueueInfo.TaskID)
 		return false
 	}
 
-	canExecute, err := tq.changeTaskToExecuting(ctx, taskQueueInfo.TaskID)
-	blog.Infof("change task %s to executing, can execute %v", taskQueueInfo.TaskID, canExecute)
-	if err != nil {
+	defer func() {
 		if err := tq.unLockTask(ctx, taskQueueInfo.TaskID); err != nil {
-			blog.Errorf("unlock failed, task type: %s, taskID: %s, err: %s", taskInfo.Name, taskQueueInfo.TaskID, err)
+			blog.Errorf("unlock failed, task type: %s, taskID: %s, err: %v", taskInfo.Name, taskQueueInfo.TaskID, err)
 		}
+	}()
+
+	canExecute, err := tq.changeTaskToExecuting(ctx, taskQueueInfo.TaskID)
+	if err != nil {
 		time.Sleep(time.Second)
 		return false
 	}
+
+	blog.Infof("change task %s to executing, can execute %v", taskQueueInfo.TaskID, canExecute)
 	if !canExecute {
-		if err := tq.unLockTask(ctx, taskQueueInfo.TaskID); err != nil {
-			blog.Errorf("unlock failed, task type: %s, taskID: %s, err: %s", taskInfo.Name, taskQueueInfo.TaskID, err)
-		}
 		return false
 	}
 
@@ -193,100 +205,151 @@ func (tq *TaskQueue) executeTaskQueueItem(ctx context.Context, taskInfo TaskInfo
 }
 
 func (tq *TaskQueue) executePush(ctx context.Context, taskInfo TaskInfo, taskQueue *metadata.APITaskDetail) {
-	blog.InfoJSON("start execute task, id: %s", taskQueue.TaskID)
-
 	header := logics.GetDBHTTPHeader(taskQueue.Header)
+	kit := rest.NewKitFromHeader(header, tq.service.CCErr)
+	kit.Ctx = ctx
+
+	blog.InfoJSON("start execute task, id: %s, rid: %s", taskQueue.TaskID, kit.Rid)
 
 	allSucc := true
 
 	for _, subTask := range taskQueue.Detail {
-
-		if subTask.Status == metadata.APITaskStatusSuccess {
-			continue
+		success, needReturn := tq.executeSubTask(kit, taskInfo, taskQueue.TaskID, &subTask)
+		if needReturn {
+			return
 		}
 
-		if subTask.Status != metadata.APITaskStatusNew && subTask.Status != metadata.APITaskStatusWaitExecute {
-			blog.Errorf("task status is not wait execute, task: %#v", taskQueue)
+		if !success {
 			allSucc = false
 			break
 		}
-
-		var resp *metadata.Response
-		var err error
-		for retry := int64(0); retry < taskInfo.Retry; retry++ {
-			if resp, err = tq.service.CoreAPI.TaskServer().Queue(taskInfo.Name).Post(ctx, header, taskInfo.Path,
-				subTask.Data); err != nil {
-				time.Sleep(time.Millisecond * 100)
-				blog.Errorf("execute task http request failed, err: %v, taskID: %s, path: %s, header: %#v, data: %#v",
-					err, taskQueue.TaskID, taskInfo.Path, header, subTask.Data)
-				continue
-			}
-			break
-		}
-
-		if err != nil {
-			ccErr := tq.service.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(taskQueue.Header)).
-				CCError(common.CCErrCommHTTPDoRequestFailed)
-			resp.Result = false
-			resp.Code = ccErr.GetCode()
-			resp.ErrMsg = ccErr.Error()
-		}
-
-		updateCond := mapstr.MapStr{"task_id": taskQueue.TaskID, "detail.sub_task_id": subTask.SubTaskID}
-		updateData := mapstr.New()
-
-		if err != nil || !resp.Result {
-			allSucc = false
-			updateData.Set("detail.$.status", metadata.APITAskStatusFail)
-			updateData.Set("status", metadata.APITAskStatusFail)
-		} else {
-			updateData.Set("detail.$.status", metadata.APITaskStatusSuccess)
-		}
-		updateData.Set("detail.$.response", resp)
-		updateData.Set(common.LastTimeField, time.Now())
-
-		for dbRetry := 0; dbRetry < dbMaxRetry; dbRetry++ {
-			dbErr := tq.service.DB.Table(common.BKTableNameAPITask).Update(ctx, updateCond, updateData)
-			if dbErr != nil {
-				blog.Errorf("update sub task resp failed, err: %v, cond: %#v, data: %#v", dbErr, updateCond, updateData)
-				time.Sleep(time.Second * 3)
-				continue
-			}
-			break
-		}
-
 	}
 
 	// 所有任务执行完成，修改整个任务状态
+	blog.Infof("execute task %s done, all subtask success: %v, rid: %s", taskQueue.TaskID, allSucc, kit.Rid)
+
 	updateCond := mapstr.MapStr{common.BKTaskIDField: taskQueue.TaskID}
-	updateData := mapstr.MapStr{common.LastTimeField: time.Now()}
+	var updateStatus metadata.APITaskStatus
 	if allSucc {
-		updateData.Set("status", metadata.APITaskStatusSuccess)
+		updateStatus = metadata.APITaskStatusSuccess
 	} else {
+		updateStatus = metadata.APITAskStatusFail
+	}
+
+	needReturn := retryWrapper(kit, dbMaxRetry, func() error {
+		if err := tq.service.Logics.UpdateTaskStatus(kit.Ctx, updateCond, updateStatus, kit.Rid); err != nil {
+			time.Sleep(time.Second * 3)
+			return err
+		}
+		return nil
+	})
+
+	if needReturn {
+		return
+	}
+
+	blog.Infof("successfully updated task %s status to %s, rid: %s", taskQueue.TaskID, updateStatus, kit.Rid)
+}
+
+// executeSubTask execute subtask, returns if it is successful and if the task needs return
+func (tq *TaskQueue) executeSubTask(kit *rest.Kit, taskInfo TaskInfo, taskID string,
+	subTask *metadata.APISubTaskDetail) (bool, bool) {
+
+	blog.Infof("start execute task(id: %s) subtask(id: %s)", taskID, subTask.SubTaskID)
+
+	if subTask.Status == metadata.APITaskStatusSuccess {
+		return true, false
+	}
+
+	if subTask.Status != metadata.APITaskStatusNew && subTask.Status != metadata.APITaskStatusWaitExecute {
+		blog.Errorf("task(id: %s) subtask(id: %s) status is wrong", taskID, subTask.SubTaskID)
+		return false, false
+	}
+
+	var resp *metadata.Response
+	var err error
+	needReturn := retryWrapper(kit, int(taskInfo.Retry), func() error {
+		if resp, err = tq.service.CoreAPI.TaskServer().Queue(taskInfo.Name).Post(kit.Ctx, kit.Header, taskInfo.Path,
+			subTask.Data); err != nil {
+			time.Sleep(time.Millisecond * 100)
+			blog.Errorf("execute task http request failed, err: %v, taskID: %s, path: %s, data: %#v, rid: %s",
+				err, taskID, taskInfo.Path, subTask.Data, kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if needReturn {
+		return false, true
+	}
+
+	if err != nil {
+		resp.Result = false
+		resp.Code = common.CCErrCommHTTPDoRequestFailed
+		resp.ErrMsg = kit.CCError.CCErrorf(common.CCErrCommHTTPDoRequestFailed).Error()
+	}
+
+	updateCond := mapstr.MapStr{"task_id": taskID, "detail.sub_task_id": subTask.SubTaskID}
+	updateData := mapstr.New()
+
+	if err != nil || !resp.Result {
+		updateData.Set("detail.$.status", metadata.APITAskStatusFail)
 		updateData.Set("status", metadata.APITAskStatusFail)
+	} else {
+		updateData.Set("detail.$.status", metadata.APITaskStatusSuccess)
+	}
+	updateData.Set("detail.$.response", resp)
+	updateData.Set(common.LastTimeField, time.Now())
+
+	needReturn = retryWrapper(kit, dbMaxRetry, func() error {
+		err := tq.service.DB.Table(common.BKTableNameAPITask).Update(kit.Ctx, updateCond, updateData)
+		if err != nil {
+			blog.Errorf("update sub task resp failed, err: %v, cond: %#v, data: %#v", err, updateCond, updateData)
+			time.Sleep(time.Second * 3)
+			return err
+		}
+		return nil
+	})
+
+	if needReturn {
+		return false, true
 	}
 
-	for dbRetry := 0; dbRetry < dbMaxRetry; dbRetry++ {
-		dbErr := tq.service.DB.Table(common.BKTableNameAPITask).Update(ctx, updateCond, updateData)
-		if dbErr != nil {
-			blog.Errorf("update task status failed, err: %v, cond: %#v, data: %#v", dbErr, updateCond, updateData)
-			time.Sleep(time.Second * 3)
-			continue
-		}
+	blog.Infof("finished executing task(id: %s) subtask(id: %s)", taskID, subTask.SubTaskID)
 
-		dbErr = tq.service.DB.Table(common.BKTableNameAPITaskSyncHistory).Update(ctx, updateCond, updateData)
-		if dbErr != nil {
-			blog.Errorf("update history status failed, err: %v, cond: %#v, data: %#v", dbErr, updateCond, updateData)
-			time.Sleep(time.Second * 3)
-			continue
-		}
-		break
+	// the subtask is not successful, returns the status after updating its response to end the task
+	if err != nil || !resp.Result {
+		return false, false
 	}
+
+	return true, false
+}
+
+// retryWrapper retry task execute step wrapper, returns if task is terminated.
+func retryWrapper(kit *rest.Kit, maxRetry int, handler func() error) bool {
+	for retry := 0; retry < maxRetry; retry++ {
+		select {
+		case <-kit.Ctx.Done():
+			blog.Errorf("context canceled when executing task, rid: %s", kit.Rid)
+			return true
+		default:
+			err := handler()
+			if err == nil {
+				return false
+			}
+		}
+	}
+
+	return false
+}
+
+func (tq *TaskQueue) taskLockKey(taskID string) string {
+	return fmt.Sprintf("%s:apiTask:%s", common.BKCacheKeyV3Prefix, taskID)
 }
 
 func (tq *TaskQueue) lockTask(ctx context.Context, taskID string, ttl int64) (bool, error) {
 
-	key := fmt.Sprintf("%s:apiTask:%s", common.BKCacheKeyV3Prefix, taskID)
+	key := tq.taskLockKey(taskID)
 	locked, err := tq.service.CacheDB.SetNX(ctx, key, time.Now(), time.Minute*time.Duration(ttl)).Result()
 	if err != nil {
 		blog.Errorf("lock task failed, err: %v, taskID: %s", err, taskID)
@@ -297,13 +360,24 @@ func (tq *TaskQueue) lockTask(ctx context.Context, taskID string, ttl int64) (bo
 
 func (tq *TaskQueue) unLockTask(ctx context.Context, taskID string) (err error) {
 
-	key := fmt.Sprintf("%s:apiTask:%s", common.BKCacheKeyV3Prefix, taskID)
+	key := tq.taskLockKey(taskID)
 	_, err = tq.service.CacheDB.Del(ctx, key).Result()
 	if err != nil {
 		blog.Errorf("unlock task failed, err: %v, taskID: %s", err, taskID)
 		return tq.service.CCErr.Error("zh-cn", common.CCErrTaskUnLockedTaskFail)
 	}
 	return nil
+}
+
+// isTaskLocked returns if task is locked.
+func (tq *TaskQueue) isTaskLocked(ctx context.Context, taskID string) (bool, error) {
+	key := tq.taskLockKey(taskID)
+	result, err := tq.service.CacheDB.Exists(ctx, key).Result()
+	if err != nil {
+		blog.Errorf("check if task %s is locked failed, err: %v", taskID, err)
+		return false, err
+	}
+	return result == 1, nil
 }
 
 func (tq *TaskQueue) getWaitExecute(ctx context.Context, name string) ([]metadata.APITaskDetail, error) {
@@ -370,6 +444,7 @@ func (tq *TaskQueue) compensate(ctx context.Context) {
 
 			isMaster := tq.service.Engine.ServiceManageInterface.IsMaster()
 			if !isMaster {
+				blog.Infof("compensate task, but is not master, skip")
 				continue
 			}
 			tq.compensateDBExecute(ctx)
@@ -377,17 +452,81 @@ func (tq *TaskQueue) compensate(ctx context.Context) {
 	}()
 }
 
+// compensateDBExecute compensate old executing task status, if it is not finished, put back to wait execute queue.
 func (tq *TaskQueue) compensateDBExecute(ctx context.Context) {
-	cond := condition.CreateCondition()
-	cond.Field(common.BKStatusField).In([]metadata.APITaskStatus{metadata.APITaskStatusExecute})
-	cond.Field(common.LastTimeField).Lt(time.Now().Add(-time.Minute * 20))
-	data := mapstr.MapStr{
-		"status":             metadata.APITaskStatusWaitExecute,
-		common.LastTimeField: time.Now(),
+	cond := mapstr.MapStr{
+		common.BKStatusField: mapstr.MapStr{
+			common.BKDBIN: []metadata.APITaskStatus{metadata.APITaskStatusExecute},
+		},
+		common.LastTimeField: mapstr.MapStr{
+			common.BKDBLT: time.Now().Add(-time.Minute * 20),
+		},
 	}
-	err := tq.service.DB.Table(common.BKTableNameAPITask).Update(ctx, cond, data)
-	if err != nil {
-		blog.ErrorJSON("update task to wait execute error:%s, cond:%s", err.Error(), cond)
+
+	for {
+		rid := util.GenerateRID()
+		blog.Infof("start compensate task, rid: %s", rid)
+
+		rows := make([]metadata.APITaskDetail, 0)
+		err := tq.service.DB.Table(common.BKTableNameAPITask).Find(cond).Sort("create_time").Limit(200).All(ctx, &rows)
+		if err != nil {
+			blog.ErrorJSON("get task to compensate failed, cond: %#v, err: %v, rid: %s", cond, err, rid)
+			return
+		}
+
+		if len(rows) == 0 {
+			return
+		}
+
+		// get all interrupted tasks that are not currently running, compensate their status
+		interruptedTaskIDs := make([]metadata.APITaskDetail, 0)
+		for _, row := range rows {
+			locked, err := tq.isTaskLocked(ctx, row.TaskID)
+			if err != nil {
+				blog.Errorf("compensate duplicate tasks failed, tasks: %#v, err: %v, rid: %s", err, rows, rid)
+				return
+			}
+
+			if locked {
+				blog.Infof("task %s is locked, skip, rid: %s", row.TaskID, rid)
+				continue
+			}
+			interruptedTaskIDs = append(interruptedTaskIDs, row)
+		}
+
+		blog.Infof("start compensate tasks(%+v) status, rid: %s", interruptedTaskIDs, rid)
+
+		unfinishedTaskIDs, err := tq.service.Logics.CompensateStatus(ctx, interruptedTaskIDs, rid)
+		if err != nil {
+			blog.Errorf("compensate duplicate tasks failed, tasks: %#v, err: %v, rid: %s", err, rows, rid)
+			return
+		}
+
+		if len(unfinishedTaskIDs) == 0 {
+			continue
+		}
+
+		blog.Infof("compensate tasks(%+v) status success, remaining: %+v, rid: %s", interruptedTaskIDs,
+			unfinishedTaskIDs, rid)
+
+		// put these not finished task into wait execute queue
+		updateCond := mapstr.MapStr{
+			common.BKTaskIDField: mapstr.MapStr{
+				common.BKDBIN: unfinishedTaskIDs,
+			},
+		}
+
+		data := mapstr.MapStr{
+			common.BKStatusField: metadata.APITaskStatusWaitExecute,
+			common.LastTimeField: time.Now(),
+		}
+		err = tq.service.DB.Table(common.BKTableNameAPITask).Update(ctx, updateCond, data)
+		if err != nil {
+			blog.Errorf("update task to wait execute failed, err: %v, cond: %+v, rid: %s", err, cond, rid)
+			return
+		}
+
+		blog.Infof("compensate tasks(%+v) to execute success, rid: %s", unfinishedTaskIDs, rid)
 	}
 }
 
