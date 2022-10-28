@@ -1,4 +1,3 @@
-// Package metadata TODO
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
  * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
@@ -10,6 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package metadata
 
 import "configcenter/src/common/mapstr"
@@ -28,14 +28,9 @@ type UpdatedOptionResult struct {
 	Data     UpdatedCount `json:"data" mapstructure:"data"`
 }
 
-// UpdatedAttrIndexResult  update attributes index result
-type UpdatedAttrIndexResult struct {
-	BaseResp `json:",inline"`
-	Data     *UpdateAttrIndexData `json:"data"`
-}
-
-// UpdateAttrIndexData TODO
-type UpdateAttrIndexData struct {
-	Info  []*UpdateAttributeIndex `json:"info"`
-	Count uint64                  `json:"count"`
+// UpdateAttrIndexInput update object attribute index input
+type UpdateAttrIndexInput struct {
+	BizID         int64  `json:"bk_biz_id"`
+	PropertyGroup string `json:"bk_property_group"`
+	PropertyIndex int64  `json:"bk_property_index"`
 }

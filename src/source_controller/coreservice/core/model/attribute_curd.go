@@ -856,39 +856,6 @@ func (m *modelAttribute) getLangObjID(kit *rest.Kit, objID string) string {
 	return langObjID
 }
 
-func (m *modelAttribute) buildUpdateAttrIndexReturn(kit *rest.Kit, objID, propertyGroup string) (*metadata.UpdateAttrIndexData, error) {
-	cond := mapstr.MapStr{
-		common.BKObjIDField:         objID,
-		common.BKPropertyGroupField: propertyGroup,
-	}
-	attrs := []metadata.Attribute{}
-	err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &attrs)
-	if nil != err {
-		blog.Errorf("buildUpdateIndexReturn failed, request(%s): database operation is failed, error info is %s", kit.Rid, err.Error())
-		return nil, err
-	}
-
-	count, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).Count(kit.Ctx)
-	if nil != err {
-		blog.Errorf("buildUpdateIndexReturn failed, request(%s): database operation is failed, error info is %s", kit.Rid, err.Error())
-		return nil, err
-	}
-	info := make([]*metadata.UpdateAttributeIndex, 0)
-	for _, attr := range attrs {
-		idIndex := &metadata.UpdateAttributeIndex{
-			Id:    attr.ID,
-			Index: attr.PropertyIndex,
-		}
-		info = append(info, idIndex)
-	}
-	result := &metadata.UpdateAttrIndexData{
-		Info:  info,
-		Count: count,
-	}
-
-	return result, nil
-}
-
 // GetAttrLastIndex TODO
 func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attribute) (int64, error) {
 	opt := make(map[string]interface{})

@@ -477,19 +477,34 @@ func (s *coreService) UpdateModelAttributes(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ModelOperation().UpdateModelAttributes(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	ctx.RespEntityWithError(s.core.ModelOperation().UpdateModelAttributes(
+		ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
-// UpdateModelAttributesIndex TODO
+// UpdateModelAttributesIndex update model attribute
 func (s *coreService) UpdateModelAttributesIndex(ctx *rest.Contexts) {
-
-	inputData := metadata.UpdateOption{}
-	if err := ctx.DecodeInto(&inputData); nil != err {
+	inputData := new(metadata.UpdateAttrIndexInput)
+	if err := ctx.DecodeInto(inputData); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ModelOperation().UpdateModelAttributesIndex(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+	idStr := ctx.Request.PathParameter("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		blog.Errorf("parse id from path params failed, err: %v, id: %s, rid: %s", err, idStr, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKFieldID))
+		return
+	}
+
+	err = s.core.ModelOperation().UpdateModelAttributeIndex(ctx.Kit, objID, id, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
 }
 
 // UpdateModelAttributesByCondition TODO
