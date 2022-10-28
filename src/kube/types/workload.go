@@ -20,7 +20,6 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
@@ -28,7 +27,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/filter"
-	"configcenter/src/kube/orm"
 	"configcenter/src/storage/dal/table"
 )
 
@@ -92,6 +90,7 @@ type WorkloadI interface {
 	ValidateUpdate() errors.RawErrorInfo
 	GetWorkloadBase() WorkloadBase
 	SetWorkloadBase(wl WorkloadBase)
+	BuildUpdateData(user string) (map[string]interface{}, error)
 }
 
 // WorkloadBase define the workload common struct, k8s workload attributes are placed in their respective structures,
@@ -103,25 +102,6 @@ type WorkloadBase struct {
 	SupplierAccount string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
-}
-
-// ValidateCreate validate create workload
-func (w *WorkloadBase) ValidateCreate() errors.RawErrorInfo {
-	if w.NamespaceID == 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{BKNamespaceIDField},
-		}
-	}
-
-	if w.Name == "" {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{common.BKFieldName},
-		}
-	}
-
-	return errors.RawErrorInfo{}
 }
 
 // LabelSelector a label selector is a label query over a set of resources.
@@ -155,18 +135,19 @@ type IntOrString struct {
 	StrVal string `json:"str_val" bson:"str_val"`
 }
 
-// WlCommonUpdate workload common update value and function
-type WlCommonUpdate struct {
-	IDs []int64 `json:"ids"`
+type jsonWlData struct {
+	Data json.RawMessage `json:"data"`
 }
 
-// GetIDs get update workload ids
-func (w *WlCommonUpdate) GetIDs() []int64 {
-	return w.IDs
+// WlUpdateReq defines the workload update request common operation.
+type WlUpdateReq struct {
+	Kind WorkloadType `json:"kind"`
+	IDs  []int64      `json:"ids"`
+	Info WorkloadI    `json:"info"`
 }
 
 // Validate validate WlCommonUpdate
-func (w *WlCommonUpdate) Validate() errors.RawErrorInfo {
+func (w *WlUpdateReq) Validate() errors.RawErrorInfo {
 	if len(w.IDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
@@ -180,202 +161,64 @@ func (w *WlCommonUpdate) Validate() errors.RawErrorInfo {
 			Args:    []interface{}{"data", WlUpdateLimit},
 		}
 	}
+
+	if w.Info == nil {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"info"},
+		}
+	}
+
+	if err := w.Info.ValidateUpdate(); err.ErrCode != 0 {
+		return err
+	}
+
 	return errors.RawErrorInfo{}
-}
-
-// BuildUpdateFilter build update filter
-func (w *WlCommonUpdate) BuildUpdateFilter(bizID int64, supplierAccount string) map[string]interface{} {
-	filter := map[string]interface{}{
-		common.BKAppIDField:   bizID,
-		common.BKOwnerIDField: supplierAccount,
-		common.BKFieldID: map[string]interface{}{
-			common.BKDBIN: w.IDs,
-		},
-	}
-	return filter
-}
-
-type jsonWlUpdateReq struct {
-	Data json.RawMessage `json:"data"`
-}
-
-// WlUpdateReq defines the workload update request common operation.
-type WlUpdateReq struct {
-	Kind WorkloadType    `json:"kind"`
-	Data []WlUpdateDataI `json:"data"`
-}
-
-// GetCount get workload update count
-func (wl *WlUpdateReq) GetCount() int {
-	count := 0
-	for _, data := range wl.Data {
-		count += len(data.GetIDs())
-	}
-	return count
 }
 
 // UnmarshalJSON unmarshal WlUpdateReq
 func (w *WlUpdateReq) UnmarshalJSON(data []byte) error {
 	kind := w.Kind
-	req := jsonWlUpdateReq{}
-	if err := json.Unmarshal(data, &req); err != nil {
+	var err error
+	if err = kind.Validate(); err != nil {
 		return err
 	}
 
-	if req.Data == nil {
+	req := new(jsonWlInfo)
+	if err = json.Unmarshal(data, req); err != nil {
+		return err
+	}
+
+	if len(req.Info) == 0 || len(req.IDs) == 0 {
 		return nil
 	}
 
-	if err := kind.Validate(); err != nil {
+	if err = json.Unmarshal(req.IDs, &w.IDs); err != nil {
 		return err
 	}
 
-	switch kind {
-	case KubeDeployment:
-		array := make([]*DeployUpdateData, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	case KubeStatefulSet:
-		array := make([]*StatefulSetUpdateData, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	case KubeDaemonSet:
-		array := make([]*DaemonSetUpdateData, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	case KubeGameDeployment:
-		array := make([]*GameDeployUpdateData, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	case KubeGameStatefulSet:
-		array := make([]*GameStatefulSetUpdateData, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	case KubeCronJob:
-		array := make([]*CronJobUpdateData, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	case KubeJob:
-		array := make([]*JobUpdateData, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	case KubePodWorkload:
-		array := make([]*PodsWorkloadUpdateData, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	default:
-		return fmt.Errorf("can not support this workload type: %v", kind)
+	w.Info, err = kind.NewInst()
+	if err != nil {
+		return err
 	}
+	if err = json.Unmarshal(req.Info, &w.Info); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-// BuildQueryCond build query workload condition
-func (w *WlUpdateReq) BuildQueryCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
-	ids := make([]int64, 0)
-	for _, data := range w.Data {
-		ids = append(ids, data.GetIDs()...)
-	}
-	cond := mapstr.MapStr{
-		common.BKAppIDField:      bizID,
-		common.BkSupplierAccount: supplierAccount,
-		common.BKFieldID:         mapstr.MapStr{common.BKDBIN: ids},
+// BuildCond build workload condition
+func (w *WlUpdateReq) BuildCond(bizID int64, hasBizID bool, supplierAccount string) (map[string]interface{}, error) {
+	cond := map[string]interface{}{
+		common.BKOwnerIDField: supplierAccount,
+		common.BKFieldID:      mapstr.MapStr{common.BKDBIN: w.IDs},
 	}
 
+	if hasBizID {
+		cond[common.BKAppIDField] = bizID
+	}
 	return cond, nil
-}
-
-// Validate validate workload update request data
-func (w *WlUpdateReq) Validate() errors.RawErrorInfo {
-	if len(w.Data) == 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"data"},
-		}
-	}
-
-	sum := 0
-	for _, data := range w.Data {
-		if err := data.Validate(); err.ErrCode != 0 {
-			return err
-		}
-
-		sum += len(data.GetIDs())
-		if sum > WlUpdateLimit {
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommXXExceedLimit,
-				Args:    []interface{}{"data", WlUpdateLimit},
-			}
-		}
-	}
-
-	return errors.RawErrorInfo{}
-}
-
-// WlUpdateDataI defines the workload update data common operation.
-type WlUpdateDataI interface {
-	Validate() errors.RawErrorInfo
-	GetIDs() []int64
-	BuildUpdateFilter(bizID int64, supplierAccount string) map[string]interface{}
-	BuildUpdateData(user string) (map[string]interface{}, error)
-}
-
-// WlUpdateData defines the workload update data common operation.
-type WlUpdateData struct {
-	WlCommonUpdate `json:",inline"`
-	Info           WorkloadBase `json:"info"`
-}
-
-// BuildUpdateData build workload update data
-func (w *WlUpdateData) BuildUpdateData(user string) (map[string]interface{}, error) {
-	now := time.Now().Unix()
-	opts := orm.NewFieldOptions().AddIgnoredFields(wlIgnoreField...)
-	updateData, err := orm.GetUpdateFieldsWithOption(w.Info, opts)
-	if err != nil {
-		return nil, err
-	}
-	updateData[common.LastTimeField] = now
-	updateData[common.ModifierField] = user
-	return updateData, err
 }
 
 // WlDeleteReq workload delete request
@@ -403,11 +246,14 @@ func (ns *WlDeleteReq) Validate() errors.RawErrorInfo {
 }
 
 // BuildCond build delete workload condition
-func (wl *WlDeleteReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
+func (wl *WlDeleteReq) BuildCond(bizID int64, hasBizID bool, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
-		common.BKAppIDField:      bizID,
 		common.BkSupplierAccount: supplierAccount,
 		common.BKFieldID:         mapstr.MapStr{common.BKDBIN: wl.IDs},
+	}
+
+	if hasBizID {
+		cond[common.BKAppIDField] = bizID
 	}
 	return cond, nil
 }
@@ -419,14 +265,16 @@ type WlDataResp struct {
 }
 
 type jsonWlInfo struct {
+	IDs  json.RawMessage `json:"ids"`
 	Info json.RawMessage `json:"info"`
 }
 
 // UnmarshalJSON unmarshal WlDataResp
+// NOCC:golint/fnsize(workload类型会不断增多)
 func (w *WlDataResp) UnmarshalJSON(data []byte) error {
 	kind := w.Kind
-	wlData := jsonWlInfo{}
-	if err := json.Unmarshal(data, &wlData); err != nil {
+	wlData := new(jsonWlInfo)
+	if err := json.Unmarshal(data, wlData); err != nil {
 		return err
 	}
 
@@ -523,10 +371,6 @@ type WlInstResp struct {
 	Data              WlDataResp `json:"data"`
 }
 
-type jsonWlData struct {
-	Data json.RawMessage `json:"data"`
-}
-
 // WlCreateReq create workload request
 type WlCreateReq struct {
 	Kind WorkloadType `json:"kind"`
@@ -534,6 +378,7 @@ type WlCreateReq struct {
 }
 
 // UnmarshalJSON unmarshal WlUpdateReq
+// NOCC:golint/fnsize(workload类型会不断增多)
 func (w *WlCreateReq) UnmarshalJSON(data []byte) error {
 	kind := w.Kind
 	req := new(jsonWlData)

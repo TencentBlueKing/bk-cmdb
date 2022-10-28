@@ -18,6 +18,7 @@
 package types
 
 import (
+	goErr "errors"
 	"reflect"
 	"time"
 
@@ -36,7 +37,7 @@ var StatefulSetFields = table.MergeFields(CommonSpecFieldsDescriptor, WorkLoadBa
 var StatefulSetSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
-	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: true, IsEditable: true},
+	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
 	{Field: StrategyTypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: MinReadySecondsField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
 	{Field: RollingUpdateStrategyField, Type: enumor.Object, IsRequired: false, IsEditable: true},
@@ -87,6 +88,37 @@ func (s *StatefulSet) SetWorkloadBase(wl WorkloadBase) {
 	s.WorkloadBase = wl
 }
 
+// ValidateCreate validate create workload
+func (w *StatefulSet) ValidateCreate() errors.RawErrorInfo {
+	if w == nil {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+		}
+	}
+
+	typeOfOption := reflect.TypeOf(*w)
+	valueOfOption := reflect.ValueOf(*w)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+		tag, flag := getFieldTag(typeOfOption, i)
+		if flag {
+			continue
+		}
+
+		if !StatefulSetFields.IsFieldRequiredByField(tag) {
+			continue
+		}
+
+		if err := isRequiredField(tag, valueOfOption, i); err != nil {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{tag},
+			}
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
 // ValidateUpdate validate update workload
 func (w *StatefulSet) ValidateUpdate() errors.RawErrorInfo {
 	if w == nil {
@@ -118,17 +150,15 @@ func (w *StatefulSet) ValidateUpdate() errors.RawErrorInfo {
 	return errors.RawErrorInfo{}
 }
 
-// StatefulSetUpdateData defines the statefulSet update data common operation.
-type StatefulSetUpdateData struct {
-	WlCommonUpdate `json:",inline"`
-	Info           StatefulSet `json:"info"`
-}
-
 // BuildUpdateData build statefulSet update data
-func (d *StatefulSetUpdateData) BuildUpdateData(user string) (map[string]interface{}, error) {
+func (w *StatefulSet) BuildUpdateData(user string) (map[string]interface{}, error) {
+	if w == nil {
+		return nil, goErr.New("update param is invalid")
+	}
+
 	now := time.Now().Unix()
 	opts := orm.NewFieldOptions().AddIgnoredFields(wlIgnoreField...)
-	updateData, err := orm.GetUpdateFieldsWithOption(d.Info, opts)
+	updateData, err := orm.GetUpdateFieldsWithOption(w, opts)
 	if err != nil {
 		return nil, err
 	}

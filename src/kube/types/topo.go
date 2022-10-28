@@ -75,11 +75,9 @@ type NodePath struct {
 
 // HostNodeRelation get host and node relation message
 type HostNodeRelation struct {
-	BizIDs              []int64
-	HostWithNode        map[int64][]Node
-	NodeIDWithBizID     map[int64]int64
-	NodeIDWithClusterID map[int64]int64
-	ClusterIDWithName   map[int64]string
+	BizIDs            []int64
+	HostWithNode      map[int64][]Node
+	ClusterIDWithName map[int64]string
 }
 
 // PodPathReq pod path request

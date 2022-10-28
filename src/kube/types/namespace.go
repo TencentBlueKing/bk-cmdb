@@ -99,17 +99,29 @@ type Namespace struct {
 
 // ValidateCreate validate create namespace
 func (ns *Namespace) ValidateCreate() errors.RawErrorInfo {
-	if ns.ClusterID == 0 {
+	if ns == nil {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{BKClusterIDFiled},
+			ErrCode: common.CCErrCommHTTPInputInvalid,
 		}
 	}
 
-	if ns.Name == "" {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{common.BKFieldName},
+	typeOfOption := reflect.TypeOf(*ns)
+	valueOfOption := reflect.ValueOf(*ns)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+		tag, flag := getFieldTag(typeOfOption, i)
+		if flag {
+			continue
+		}
+
+		if !NamespaceFields.IsFieldRequiredByField(tag) {
+			continue
+		}
+
+		if err := isRequiredField(tag, valueOfOption, i); err != nil {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{tag},
+			}
 		}
 	}
 
@@ -175,70 +187,14 @@ type ScopedResourceSelectorRequirement struct {
 	Values []string `json:"values" bson:"values"`
 }
 
-// NsUpdateReq update namespace request struct
+// NsUpdateReq update namespace request
 type NsUpdateReq struct {
-	Data []NsUpdateData `json:"data"`
-}
-
-// GetCount get namespace update count
-func (ns *NsUpdateReq) GetCount() int {
-	count := 0
-	for _, data := range ns.Data {
-		count += len(data.IDs)
-	}
-	return count
-}
-
-// Validate validate namespace update request data
-func (ns *NsUpdateReq) Validate() errors.RawErrorInfo {
-	if len(ns.Data) == 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"data"},
-		}
-	}
-
-	sum := 0
-	for _, data := range ns.Data {
-		if err := data.Validate(); err.ErrCode != 0 {
-			return err
-		}
-
-		sum += len(data.IDs)
-		if sum > NsUpdateLimit {
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommXXExceedLimit,
-				Args:    []interface{}{"data", NsUpdateLimit},
-			}
-		}
-	}
-
-	return errors.RawErrorInfo{}
-}
-
-// BuildQueryCond build query update namespace condition
-func (ns *NsUpdateReq) BuildQueryCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
-	ids := make([]int64, 0)
-	for _, data := range ns.Data {
-		ids = append(ids, data.IDs...)
-	}
-	cond := mapstr.MapStr{
-		common.BKAppIDField:      bizID,
-		common.BkSupplierAccount: supplierAccount,
-		common.BKFieldID:         mapstr.MapStr{common.BKDBIN: ids},
-	}
-
-	return cond, nil
-}
-
-// NsUpdateData update namespace struct
-type NsUpdateData struct {
 	IDs  []int64    `json:"ids"`
 	Info *Namespace `json:"info"`
 }
 
-// Validate validate namespace update data
-func (ns *NsUpdateData) Validate() errors.RawErrorInfo {
+// Validate validate update namespace request
+func (ns *NsUpdateReq) Validate() errors.RawErrorInfo {
 	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
@@ -253,28 +209,30 @@ func (ns *NsUpdateData) Validate() errors.RawErrorInfo {
 		}
 	}
 
+	if ns.Info == nil {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"info"},
+		}
+	}
+
 	if err := ns.Info.ValidateUpdate(); err.ErrCode != 0 {
 		return err
 	}
 	return errors.RawErrorInfo{}
 }
 
-// NsUnique namespace unique identification
-type NsUnique struct {
-	ClusterUID string `json:"cluster_uid" bson:"cluster_uid"`
-	Name       string `json:"name" bson:"name"`
-}
-
-// Validate validate NsUnique
-func (ns *NsUnique) Validate() errors.RawErrorInfo {
-	if ns.ClusterUID == "" || ns.Name == "" {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"uniques"},
-		}
+// BuildCond build update namespace condition
+func (ns *NsUpdateReq) BuildCond(bizID int64, hasBizID bool, supplierAccount string) (mapstr.MapStr, error) {
+	cond := mapstr.MapStr{
+		common.BkSupplierAccount: supplierAccount,
+		common.BKFieldID:         mapstr.MapStr{common.BKDBIN: ns.IDs},
 	}
 
-	return errors.RawErrorInfo{}
+	if hasBizID {
+		cond[common.BKAppIDField] = bizID
+	}
+	return cond, nil
 }
 
 // NsDeleteReq delete namespace request
@@ -302,11 +260,14 @@ func (ns *NsDeleteReq) Validate() errors.RawErrorInfo {
 }
 
 // BuildCond build delete namespace condition
-func (ns *NsDeleteReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
+func (ns *NsDeleteReq) BuildCond(bizID int64, hasBizID bool, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
-		common.BKAppIDField:      bizID,
 		common.BkSupplierAccount: supplierAccount,
 		common.BKFieldID:         mapstr.MapStr{common.BKDBIN: ns.IDs},
+	}
+
+	if hasBizID {
+		cond[common.BKAppIDField] = bizID
 	}
 	return cond, nil
 }

@@ -18,6 +18,7 @@
 package types
 
 import (
+	goErr "errors"
 	"reflect"
 	"time"
 
@@ -36,7 +37,7 @@ var PodsWorkloadFields = table.MergeFields(CommonSpecFieldsDescriptor, WorkLoadB
 var PodsWorkloadSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
-	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: true, IsEditable: true},
+	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
 	{Field: StrategyTypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: MinReadySecondsField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
 	{Field: RollingUpdateStrategyField, Type: enumor.Object, IsRequired: false, IsEditable: true},
@@ -59,6 +60,37 @@ func (p *PodsWorkload) GetWorkloadBase() WorkloadBase {
 // SetWorkloadBase set workload base
 func (p *PodsWorkload) SetWorkloadBase(wl WorkloadBase) {
 	p.WorkloadBase = wl
+}
+
+// ValidateCreate validate create workload
+func (w *PodsWorkload) ValidateCreate() errors.RawErrorInfo {
+	if w == nil {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+		}
+	}
+
+	typeOfOption := reflect.TypeOf(*w)
+	valueOfOption := reflect.ValueOf(*w)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+		tag, flag := getFieldTag(typeOfOption, i)
+		if flag {
+			continue
+		}
+
+		if !PodsWorkloadFields.IsFieldRequiredByField(tag) {
+			continue
+		}
+
+		if err := isRequiredField(tag, valueOfOption, i); err != nil {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{tag},
+			}
+		}
+	}
+
+	return errors.RawErrorInfo{}
 }
 
 // ValidateUpdate validate update workload
@@ -92,17 +124,15 @@ func (w *PodsWorkload) ValidateUpdate() errors.RawErrorInfo {
 	return errors.RawErrorInfo{}
 }
 
-// PodsWorkloadUpdateData defines the pods workload update data common operation.
-type PodsWorkloadUpdateData struct {
-	WlCommonUpdate `json:",inline"`
-	Info           PodsWorkload `json:"info"`
-}
-
 // BuildUpdateData build workload pods update data
-func (d *PodsWorkloadUpdateData) BuildUpdateData(user string) (map[string]interface{}, error) {
+func (w *PodsWorkload) BuildUpdateData(user string) (map[string]interface{}, error) {
+	if w == nil {
+		return nil, goErr.New("update param is invalid")
+	}
+
 	now := time.Now().Unix()
 	opts := orm.NewFieldOptions().AddIgnoredFields(wlIgnoreField...)
-	updateData, err := orm.GetUpdateFieldsWithOption(d.Info, opts)
+	updateData, err := orm.GetUpdateFieldsWithOption(w, opts)
 	if err != nil {
 		return nil, err
 	}

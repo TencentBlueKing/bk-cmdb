@@ -120,9 +120,10 @@ func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err := req.BuildQueryCond(bizID, ctx.Kit.SupplierAccount)
+	cond, err := req.BuildCond(0, false, ctx.Kit.SupplierAccount)
 	if err != nil {
-		blog.Errorf("update workload failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req.Data, err, ctx.Kit.Rid)
+		blog.Errorf("build workload condition failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -131,14 +132,21 @@ func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
 	}
 	workloads, err := s.listWorkload(ctx.Kit, query, kind)
 	if err != nil {
-		blog.Errorf("list workload failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req.Data, err, ctx.Kit.Rid)
+		blog.Errorf("list workload failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if len(workloads) != req.GetCount() {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
-		return
+	for _, workload := range workloads {
+		ids := make([]int64, 0)
+		if workload.GetWorkloadBase().BizID != bizID {
+			ids = append(ids, workload.GetWorkloadBase().ID)
+		}
+
+		if len(ids) != 0 {
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, ids))
+			return
+		}
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
@@ -148,9 +156,14 @@ func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
 			return err
 		}
 
-		// audit log.
 		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
+		updateFields, goErr := mapstr.Struct2Map(req.Info)
+		if goErr != nil {
+			blog.Errorf("update fields convert failed, err: %v, rid: %s", goErr, ctx.Kit.Rid)
+			return goErr
+		}
+		auditParam.WithUpdateFields(updateFields)
 		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, workloads, kind)
 		if err != nil {
 			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", workloads, err, ctx.Kit.Rid)
@@ -160,6 +173,7 @@ func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
 			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", workloads, err, ctx.Kit.Rid)
 			return err
 		}
+
 		return nil
 	})
 
@@ -197,7 +211,7 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err := req.BuildCond(bizID, ctx.Kit.SupplierAccount)
+	cond, err := req.BuildCond(0, false, ctx.Kit.SupplierAccount)
 	if err != nil {
 		blog.Errorf("delete workload failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -213,9 +227,16 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	if len(workloads) != len(req.IDs) {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
-		return
+	for _, workload := range workloads {
+		ids := make([]int64, 0)
+		if workload.GetWorkloadBase().BizID != bizID {
+			ids = append(ids, workload.GetWorkloadBase().ID)
+		}
+
+		if len(ids) != 0 {
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, ids))
+			return
+		}
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
