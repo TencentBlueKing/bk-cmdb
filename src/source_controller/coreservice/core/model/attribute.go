@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
 )
@@ -204,97 +205,73 @@ func (m *modelAttribute) UpdateModelAttributes(kit *rest.Kit, objID string, inpu
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
-// UpdateModelAttributesIndex TODO
-func (m *modelAttribute) UpdateModelAttributesIndex(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (result *metadata.UpdateAttrIndexData, err error) {
+// UpdateModelAttributeIndex update model attribute index
+func (m *modelAttribute) UpdateModelAttributeIndex(kit *rest.Kit, objID string, id int64,
+	input *metadata.UpdateAttrIndexInput) error {
 
-	// attributes exist check
-	cond := inputParam.Condition
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
-	exists, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).Count(kit.Ctx)
-	if nil != err {
-		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, condition: %v, err: %s", kit.Rid, inputParam.Condition, err.Error())
-		return result, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	// check if attribute exists
+	attrCond := mapstr.MapStr{
+		common.BKFieldID:    id,
+		common.BKObjIDField: objID,
+		common.BKAppIDField: input.BizID,
 	}
-	if exists <= 0 {
-		blog.Errorf("UpdateModelAttributesIndex failed, attributes not exist, condition: %v", inputParam.Condition)
-		return result, fmt.Errorf("UpdateModelAttributesIndex failed, attributes not exist, condition: %v", inputParam.Condition)
-	}
-
-	propertyGroupStr, err := inputParam.Data.String(common.BKPropertyGroupField)
+	attrCond = util.SetQueryOwner(attrCond, kit.SupplierAccount)
+	cnt, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(attrCond).Count(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("UpdateModelAttributesIndex failed, request(%s): mapstr convert string failed, condition: %v, err: %s", kit.Rid, inputParam.Condition, err.Error())
-		return result, err
+		blog.Errorf("check if attribute exists failed, err: %v, cond: %+v, rid: %s", err, attrCond, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
-	// check if bk_property_index has been used, if not, use it directly
-	condition := mapstr.MapStr{}
-	condition = util.SetQueryOwner(condition, kit.SupplierAccount)
-	condition[common.BKObjIDField] = objID
-	condition[common.BKPropertyGroupField] = inputParam.Data[common.BKPropertyGroupField]
-	condition[common.BKPropertyIndexField] = inputParam.Data[common.BKPropertyIndexField]
-	count, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(condition).Count(kit.Ctx)
-	if nil != err {
-		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", kit.Rid, err.Error())
-		return result, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+
+	if cnt == 0 {
+		blog.Errorf("attributes is not exist, condition: %+v, rid: %s", attrCond, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKFieldID)
 	}
-	if count <= 0 {
-		data := mapstr.MapStr{
-			common.BKPropertyIndexField: inputParam.Data[common.BKPropertyIndexField],
-			common.BKPropertyGroupField: inputParam.Data[common.BKPropertyGroupField],
-		}
-		err = mongodb.Client().Table(common.BKTableNameObjAttDes).Update(kit.Ctx, cond, data)
-		if nil != err {
-			blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", kit.Rid, err.Error())
-			return result, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+
+	// check if index is used by attribute in the same group of the same biz, if not, use it directly
+	indexCond := mapstr.MapStr{
+		common.BKObjIDField:         objID,
+		common.BKAppIDField:         input.BizID,
+		common.BKPropertyGroupField: input.PropertyGroup,
+		common.BKPropertyIndexField: input.PropertyIndex,
+	}
+	indexCond = util.SetQueryOwner(indexCond, kit.SupplierAccount)
+	count, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(indexCond).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("check if index is used failed, err: %v, cond: %+v, rid: %s", err, indexCond, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	// increase attributes index whose index is greater than the current index and is conflict with it
+	if count > 0 {
+		incCond := mapstr.MapStr{
+			common.BKObjIDField:         objID,
+			common.BKAppIDField:         input.BizID,
+			common.BKPropertyGroupField: input.PropertyGroup,
+			common.BKPropertyIndexField: mapstr.MapStr{common.BKDBGTE: input.PropertyIndex},
+			common.BKFieldID:            mapstr.MapStr{common.BKDBNE: id},
 		}
 
-		result, err := m.buildUpdateAttrIndexReturn(kit, objID, propertyGroupStr)
+		incData := mapstr.MapStr{common.BKPropertyIndexField: int64(1)}
+		err = mongodb.Client().Table(common.BKTableNameObjAttDes).UpdateMultiModel(kit.Ctx, incCond,
+			types.ModeUpdate{Op: "inc", Doc: incData})
 		if err != nil {
-			blog.Errorf("UpdateModelAttributesIndex, update index success, but build return data failed, rid: %s, err: %s", kit.Rid, err.Error())
-			return result, err
-		}
-
-		return result, nil
-	}
-
-	// get all properties which bk_property_index is larger than the current bk_property_index , exclude self
-	condition[common.BKPropertyIndexField] = mapstr.MapStr{"$gte": inputParam.Data[common.BKPropertyIndexField]}
-	condition["id"] = mapstr.MapStr{"$ne": inputParam.Condition["id"]}
-	resultAttrs := []metadata.Attribute{}
-	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(condition).All(kit.Ctx, &resultAttrs)
-	if nil != err {
-		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", kit.Rid, err.Error())
-		return result, kit.CCError.Error(common.CCErrCommDBSelectFailed)
-	}
-
-	for _, attr := range resultAttrs {
-		opt := mapstr.MapStr{}
-		opt["id"] = attr.ID
-		data := mapstr.MapStr{common.BKPropertyIndexField: attr.PropertyIndex + 1}
-		err = mongodb.Client().Table(common.BKTableNameObjAttDes).Update(kit.Ctx, opt, data)
-		if nil != err {
-			blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", kit.Rid, err.Error())
-			return result, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+			blog.Errorf("increase attributes index failed, err: %v, cond: %+v, rid: %s", err, incCond, kit.Rid)
+			return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 		}
 	}
 
-	// update bk_property_index now
+	// update attribute index now
 	data := mapstr.MapStr{
-		common.BKPropertyIndexField: inputParam.Data[common.BKPropertyIndexField],
-		common.BKPropertyGroupField: inputParam.Data[common.BKPropertyGroupField],
+		common.BKPropertyIndexField: input.PropertyIndex,
+		common.BKPropertyGroupField: input.PropertyGroup,
 	}
-	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Update(kit.Ctx, cond, data)
-	if nil != err {
-		blog.Errorf("UpdateModelAttributesIndex failed, request(%s): database operation is failed, error info is %s", kit.Rid, err.Error())
-		return result, kit.CCError.Error(common.CCErrCommDBSelectFailed)
-	}
-
-	result, err = m.buildUpdateAttrIndexReturn(kit, objID, propertyGroupStr)
+	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Update(kit.Ctx, attrCond, data)
 	if err != nil {
-		blog.Errorf("UpdateModelAttributesIndex, update index success, but build return data failed, rid: %s, err: %s", kit.Rid, err.Error())
-		return result, err
+		blog.Errorf("update attribute index failed, err: %v, cond: %+v, rid: %s", err, attrCond, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
-	return result, nil
+	return nil
 }
 
 // UpdateModelAttributesByCondition TODO

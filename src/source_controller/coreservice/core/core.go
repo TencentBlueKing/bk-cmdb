@@ -67,8 +67,7 @@ type ModelAttribute interface {
 	SetModelAttributes(kit *rest.Kit, objID string, inputParam metadata.SetModelAttributes) (*metadata.SetDataResult,
 		error)
 	UpdateModelAttributes(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
-	UpdateModelAttributesIndex(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (
-		*metadata.UpdateAttrIndexData, error)
+	UpdateModelAttributeIndex(kit *rest.Kit, objID string, id int64, input *metadata.UpdateAttrIndexInput) error
 	UpdateModelAttributesByCondition(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModelAttributes(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	SearchModelAttributes(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (
