@@ -695,7 +695,7 @@
         this.classificationsCollapseState[classification.id] = !this.classificationsCollapseState[classification.id]
       },
       handleModelDragStart() {
-        this.isDragging = true
+        this.isDragging = false
       },
       handleModelDragEnd() {
         this.isDragging = false
