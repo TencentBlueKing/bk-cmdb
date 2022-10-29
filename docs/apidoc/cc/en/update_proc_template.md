@@ -10,7 +10,7 @@ Update process template information
 
 | Field                 | Type      | Required	   | Description                 |
 |----------------------|------------|--------|-----------------------|
-| process_template_id            |  int  |no   | Process template ID|
+| process_template_id            |  int  |yes   | Process template ID|
 | process_property         |  object  |yes   | Process template field information to update|
 
 #### The fields where process_property can appear
