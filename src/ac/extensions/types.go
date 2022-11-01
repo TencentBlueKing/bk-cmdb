@@ -151,18 +151,6 @@ type BizSetSimplify struct {
 	BKBizSetNameField string `field:"bk_biz_set_name"`
 }
 
-// Parse load the data from mapstr attribute into BizSetSimplify struct
-func (bizSet *BizSetSimplify) Parse(data mapstr.MapStr) (*BizSetSimplify, error) {
-	bizSetID, err := util.GetInt64ByInterface(data[common.BKBizSetIDField])
-	if err != nil {
-		return nil, err
-	}
-	bizSet.BKBizSetIDField = bizSetID
-	bizSet.BKBizSetNameField = util.GetStrByInterface(data[common.BKBizSetNameField])
-
-	return bizSet, nil
-}
-
 // SetSimplify TODO
 type SetSimplify struct {
 	BKAppIDField   int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`

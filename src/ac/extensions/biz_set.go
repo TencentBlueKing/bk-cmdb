@@ -56,11 +56,13 @@ func (am *AuthManager) collectBizSetByIDs(ctx context.Context, header http.Heade
 	instances := make([]BizSetSimplify, 0)
 	for _, cls := range result.Info {
 		instance := BizSetSimplify{}
-		if _, err = instance.Parse(cls); err != nil {
-			blog.Errorf("parse biz set from db data failed, err: %v, rid: %s", err, rid)
-			return nil, fmt.Errorf("parse biz set from db data failed, err: %v", err)
+		bizSetID, err := util.GetInt64ByInterface(cls[common.BKBizSetIDField])
+		if err != nil {
+			blog.Errorf("get biz set id failed, err: %v, rid: %s", err, rid)
+			return nil, fmt.Errorf("get biz set id from result failed, err: %v", err)
 		}
-
+		instance.BKBizSetIDField = bizSetID
+		instance.BKBizSetNameField = util.GetStrByInterface(cls[common.BKBizSetNameField])
 		instances = append(instances, instance)
 	}
 	return instances, nil
