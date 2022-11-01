@@ -145,13 +145,10 @@ func (business *BusinessSimplify) Parse(data mapstr.MapStr) (*BusinessSimplify, 
 	return business, err
 }
 
-// BizSetSimplify TODO
+// BizSetSimplify biz set simplify
 type BizSetSimplify struct {
-	BKBizSetIDField   int64  `field:"bk_biz_set_id" json:"bk_biz_set_id" bson:"bk_biz_set_id"`
-	BKBizSetNameField string `field:"bk_biz_set_name" json:"bk_biz_set_name" bson:"bk_biz_set_name"`
-	BKOwnerIDField    string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
-	IsDefault         int64  `field:"default" json:"default" bson:"default"`
-	Maintainer        string `field:"bk_biz_maintainer" json:"bk_biz_maintainer" bson:"bk_biz_maintainer"`
+	BKBizSetIDField   int64  `field:"bk_biz_set_id"`
+	BKBizSetNameField string `field:"bk_biz_set_name"`
 }
 
 // Parse load the data from mapstr attribute into ObjectUnique instance
