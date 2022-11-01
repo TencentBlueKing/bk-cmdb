@@ -80,6 +80,15 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 	if headerRow+common.ExcelImportMaxRow < len(sheet.Rows) {
 		return ret, errors.New(defLang.Languagef("web_excel_import_too_much", common.ExcelImportMaxRow))
 	}
+
+	// valid excel three row is instance property fields
+	// indicating that the third line of the excel template was deleted
+	if len(sheet.Rows[headerRow-1].Cells) < 2 && isCheckHeader {
+		blog.Errorf("not found fields %s, err: %v, rid: %s", strings.Join(errCells, ","),
+			defLang.Language("web_import_field_not_found"), rid)
+		return ret, errors.New(defLang.Language("web_import_field_not_found"))
+	}
+
 	for index, name := range sheet.Rows[headerRow-1].Cells {
 		strName := name.Value
 		// skip the ignored cell field
@@ -109,9 +118,13 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 		}
 	}
 
+	// 当导入模型字段时，fields为空，跳过校验
+	if len(fields) == 0 {
+		return ret, nil
+	}
 	// 校验模型字段唯一标识和Excel表头字段唯一标识是否一致，如果不一致，提示无法导入，请修改为正确的唯一标识
 	for unique := range indexNameMap {
-		if unique == common.BKInstIDField || unique == common.BKHostIDField{
+		if unique == common.BKInstIDField || unique == common.BKHostIDField {
 			continue
 		}
 		if _, ok := fields[unique]; !ok {
@@ -119,16 +132,7 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 		}
 	}
 
-	// valid excel three row is instance property fields
-	// indicating that the third line of the excel template was deleted
-	if len(sheet.Rows[headerRow-1].Cells) < 2 && isCheckHeader {
-		blog.Errorf("not found fields %s, err: %v, rid: %s", strings.Join(errCells, ","),
-			defLang.Language("web_import_field_not_found"), rid)
-		return ret, errors.New(defLang.Language("web_import_field_not_found"))
-	}
-
 	return ret, nil
-
 }
 
 // setExcelRowDataByIndex insert  map[string]interface{}  to excel row by index,
