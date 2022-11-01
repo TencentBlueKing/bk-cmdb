@@ -1,7 +1,7 @@
 {
     "host_search_fail": "查询主机信息失败",
     "host_search_fail_with_errmsg": "查询主机信息失败,错误信息;%s",
-    "host_import_innerip_empty": "%d行内网ip为空",
+    "host_import_innerip_empty": "%d行内网ipv4和ipv6地址为空",
     "host_import_property_need_set": "%d行内网%s必填",
     "host_import_update_fail": "%d行%s更新失败%v",
     "host_import_add_fail": "%d行%s新加失败%s",

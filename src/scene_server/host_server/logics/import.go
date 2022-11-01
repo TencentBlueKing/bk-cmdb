@@ -209,11 +209,18 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 			continue
 		}
 
-		innerIP, isOk := host[common.BKHostInnerIPField].(string)
-		if isOk == false || "" == innerIP {
+		innerIPv4, isIPv4Ok := host[common.BKHostInnerIPField].(string)
+		innerIPv6, isIPv6Ok := host[common.BKHostInnerIPv6Field].(string)
+		if (!isIPv4Ok || innerIPv4 == "") && (!isIPv6Ok || innerIPv6 == "") {
 			errMsg = append(errMsg, ccLang.Languagef("host_import_innerip_empty", index))
 			continue
 		}
+		blog.Errorf("000000000")
+		//innerIP, isOk := host[common.BKHostInnerIPField].(string)
+		//if isOk == false || "" == innerIP {
+		//	errMsg = append(errMsg, ccLang.Languagef("host_import_innerip_empty", index))
+		//	continue
+		//}
 
 		// the bk_cloud_id is directly connected area
 		if _, exist := host[common.BKCloudIDField]; !exist {
@@ -224,7 +231,7 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
 		if err != nil {
 			errMsg = append(errMsg, ccLang.Languagef("import_host_cloudID_not_exist", index,
-				innerIP, util.GetStrByInterface(host[common.BKCloudIDField])))
+				innerIPv4, innerIPv6, util.GetStrByInterface(host[common.BKCloudIDField])))
 			continue
 		}
 
@@ -239,7 +246,8 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 				blog.Errorf("add host instance failed, err: %v, index: %d, bizID: %d, moduleID: %d, "+
 					"toInternalModule: %t, host: %v, rid: %s", err, index, appID, moduleID, toInternalModule, host,
 					kit.Rid)
-				errMsg = append(errMsg, ccLang.Languagef("host_import_add_fail", index, innerIP, err.Error()))
+				errMsg = append(errMsg, ccLang.Languagef("host_import_add_fail",
+					index, innerIPv4, innerIPv6, err.Error()))
 				return err
 			}
 			host[common.BKHostIDField] = intHostID
