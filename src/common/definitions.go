@@ -1167,6 +1167,7 @@ const (
 	HostOSTypeEnumAIX     = "3"
 	HostOSTypeEnumUNIX    = "4"
 	HostOSTypeEnumSolaris = "5"
+	HostOSTypeEnumHpUX    = "6"
 )
 
 // HostOSTypeName Host system enum and name association
@@ -1176,6 +1177,7 @@ var HostOSTypeName = map[string]string{
 	HostOSTypeEnumAIX:     "aix",
 	HostOSTypeEnumUNIX:    "unix",
 	HostOSTypeEnumSolaris: "solaris",
+	HostOSTypeEnumHpUX:    "hp-ux",
 }
 
 const (

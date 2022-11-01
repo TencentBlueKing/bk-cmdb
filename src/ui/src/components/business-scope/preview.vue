@@ -14,7 +14,7 @@
   <bk-dialog v-model="isShow"
     theme="primary"
     :width="840"
-    :mask-close="false"
+    :mask-close="true"
     :show-footer="false"
     header-position="left"
     :title="$t('业务集预览')">

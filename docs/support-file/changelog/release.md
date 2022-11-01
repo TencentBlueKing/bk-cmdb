@@ -1,6 +1,21 @@
 ## [Version: 3.10.x_feature-agent-id_alpha5] - 2022-10-24
 **新增功能**
 - 修改bkmonitor beat插件上报的agnetID tag为bk_agent_id
+## [Version: v3.10.22-alpha1] - 2022-10-27
+**新增功能**
+- 主机操作系统增加hp-unix类型
+
+**功能优化**
+- 对一些UI的体验问题进行了优化
+- 对taskserver服务异步任务相关逻辑进行了优化
+- 编译cmdb依赖的golang版本升级到1.17
+- 新增云主机时，如果有内网IP+云区域和业务均相同的主机，则更新该主机
+
+**缺陷修复**
+- 并发获取用户数据时，出现并发读写map导致webserver服务panic
+- 修复当supplierAccount不为0时，在内置模型分组下创建模型失败问题
+- 修复excel导入主机关联数据时，勾选部分模型出现报错问题
+- 批量创建关联关系接口缺少相关参数，导致创建成功后，cmdb页面无法展示
 
 ## [Version: v3.10.21] - 2022-09-28
 **修复功能**

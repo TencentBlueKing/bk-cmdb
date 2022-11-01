@@ -40,7 +40,7 @@
       <ul class="list suggestion-list">
         <li v-for="(item, index) in suggestion" :key="index"
           :title="item.title"
-          class="item"
+          :class="['item', { 'selected': selectResultIndex === index }]"
           @click="item.linkTo(item.source)">
           <span class="name">{{item.title}}</span>
           <span class="type">({{item.typeName}})</span>
@@ -105,7 +105,7 @@
       const forceHide = ref(false)
       let maxLengthPopover = null
 
-      const { result, getSearchResult } = useResult({ route, keyword })
+      const { result, getSearchResult, onkeydownResult, selectResultIndex } = useResult({ route, keyword })
 
       const handleFocus = () => {
         focusWithin.value = true
@@ -115,7 +115,15 @@
         focusWithin.value = false
       }
       const handleKeydown = (value, event) => {
-        onkeydown(event)
+        if (showHistory.value && !showSuggestion.value) {
+          onkeydown(event)
+          selectResultIndex.value = 0
+        } else if (!showHistory.value && showSuggestion.value) {
+          onkeydownResult(event)
+          if (event.code === 'Backspace') {
+            selectResultIndex.value = 0
+          }
+        }
       }
       const handleClear = () => {
         forceHide.value = true
@@ -191,7 +199,7 @@
       return {
         suggestion,
         showSuggestion,
-
+        selectResultIndex,
         selectIndex,
         showHistory,
         historyList,

@@ -122,37 +122,6 @@ func (s *Service) DeleteTask(ctx *rest.Contexts) {
 	ctx.RespEntity(common.CCSuccessStr)
 }
 
-// StatusToSuccess change the task which task_id in path status to success
-func (s *Service) StatusToSuccess(ctx *rest.Contexts) {
-	taskID := ctx.Request.PathParameter("task_id")
-	subTaskID := ctx.Request.PathParameter("sub_task_id")
-
-	err := s.Logics.ChangeStatusToSuccess(ctx.Kit, taskID, subTaskID)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	ctx.RespEntity(nil)
-}
-
-// StatusToFailure change the task which task_id in path status to failure
-func (s *Service) StatusToFailure(ctx *rest.Contexts) {
-	taskID := ctx.Request.PathParameter("task_id")
-	subTaskID := ctx.Request.PathParameter("sub_task_id")
-	input := &metadata.Response{}
-	if err := ctx.DecodeInto(input); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	err := s.Logics.ChangeStatusToFailure(ctx.Kit, taskID, subTaskID, input)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	ctx.RespEntity(nil)
-}
-
 // ListLatestSyncStatus list latest api task sync status
 func (s *Service) ListLatestSyncStatus(ctx *rest.Contexts) {
 	input := new(metadata.ListLatestSyncStatusRequest)
@@ -206,19 +175,31 @@ func (s *Service) TimerDeleteHistoryTask(ctx context.Context) {
 			continue
 		}
 		blog.Infof("delete redundancy task completed, time: %v, rid: %s", time.Now(), rid)
+
+		blog.Infof("begin delete redundancy task history, time: %v, rid: %s", time.Now(), rid)
+		err = s.deleteRedundancyTaskHistory(ctx, rid)
+		if err != nil {
+			blog.Errorf("delete redundancy task history failed, err: %v, rid: %s", err, rid)
+			continue
+		}
+		blog.Infof("delete redundancy task history completed, time: %v, rid: %s", time.Now(), rid)
 	}
+}
+
+type taskIDInfo struct {
+	TaskID string `bson:"task_id"`
 }
 
 // deleteRedundancyTask delete redundancy tasks from two month ago
 func (s *Service) deleteRedundancyTask(ctx context.Context, rid string) error {
-	for {
-		cond := map[string]interface{}{
-			common.LastTimeField: map[string]interface{}{
-				common.BKDBLT: time.Now().AddDate(0, -2, 0),
-			},
-		}
+	cond := map[string]interface{}{
+		common.LastTimeField: map[string]interface{}{
+			common.BKDBLT: time.Now().AddDate(0, -2, 0),
+		},
+	}
 
-		tasks := make([]metadata.APITaskDetail, 0)
+	for {
+		tasks := make([]taskIDInfo, 0)
 		err := s.DB.Table(common.BKTableNameAPITask).Find(cond).Fields(common.BKTaskIDField).Limit(100).All(ctx, &tasks)
 		if err != nil {
 			blog.Errorf("get one month ago tasks failed, err: %v, cond: %#v, rid: %s", err, cond, rid)
@@ -245,6 +226,47 @@ func (s *Service) deleteRedundancyTask(ctx context.Context, rid string) error {
 		}
 
 		blog.Infof("delete %d redundancy tasks successful, rid: %s", len(tasks), rid)
+		time.Sleep(time.Second * 20)
+	}
+}
+
+// deleteRedundancyTaskHistory delete redundancy task history from two month ago
+func (s *Service) deleteRedundancyTaskHistory(ctx context.Context, rid string) error {
+	cond := map[string]interface{}{
+		common.LastTimeField: map[string]interface{}{
+			common.BKDBLT: time.Now().AddDate(-1, 0, 0),
+		},
+	}
+
+	for {
+		tasks := make([]taskIDInfo, 0)
+		err := s.DB.Table(common.BKTableNameAPITaskSyncHistory).Find(cond).Fields(common.BKTaskIDField).Limit(100).
+			All(ctx, &tasks)
+		if err != nil {
+			blog.Errorf("get two month ago task history failed, err: %v, cond: %#v, rid: %s", err, cond, rid)
+			return err
+		}
+
+		if len(tasks) == 0 {
+			blog.Infof("found no redundancy task history, rid: %s", rid)
+			return nil
+		}
+
+		var taskIDs []string
+		for _, task := range tasks {
+			taskIDs = append(taskIDs, task.TaskID)
+		}
+
+		deleteCond := map[string]interface{}{
+			common.BKTaskIDField: map[string]interface{}{common.BKDBIN: taskIDs},
+		}
+
+		if err := s.DB.Table(common.BKTableNameAPITaskSyncHistory).Delete(ctx, deleteCond); err != nil {
+			blog.Errorf("delete redundancy task failed, err: %v, rid: %s", err, rid)
+			return err
+		}
+
+		blog.Infof("delete %d redundancy task history successful, rid: %s", len(tasks), rid)
 		time.Sleep(time.Second * 20)
 	}
 }

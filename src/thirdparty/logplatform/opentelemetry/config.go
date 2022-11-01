@@ -29,13 +29,13 @@ var (
 
 // OpenTelemetryConfig TODO
 type OpenTelemetryConfig struct {
-	// 表示是否开启日志平台openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
+	// 表示是否开启openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
 	enable bool
-	// 日志平台openTelemetry跟踪链功能的自定义上报服务地址
+	// openTelemetry跟踪链功能的自定义上报服务地址
 	endpoint string
-	// 日志平台openTelemetry跟踪链功能的上报data_id, 用于旧版的数据上报
+	// openTelemetry跟踪链功能的上报data_id, 用于旧版的数据上报
 	bkDataID int64
-	// 日志平台openTelemetry跟踪链功能的上报bk.data.token, 用于新版的数据上报
+	// openTelemetry跟踪链功能的上报bk.data.token, 用于新版的数据上报
 	bkDataToken string
 
 	tlsConf *tls.Config

@@ -186,15 +186,15 @@ cacheService:
   # 业务简要拓扑缓存的定时刷新时间，默认为15分钟，最小为2分钟。每次会将所有的业务的拓扑刷新一次到缓存中。
   briefTopologySyncIntervalMinutes: 15
 
-# 日志平台openTelemetry跟踪链接入相关配置
+# openTelemetry跟踪链接入相关配置
 openTelemetry:
-  # 表示是否开启日志平台openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
+  # 表示是否开启openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
   enable: false
-  # 日志平台openTelemetry跟踪链功能的自定义上报服务地址
+  # openTelemetry跟踪链功能的自定义上报服务地址
   endpoint:
-  # 日志平台openTelemetry跟踪链功能的上报data_id, 用于旧版的数据上报
+  # openTelemetry跟踪链功能的上报data_id, 用于旧版的数据上报
   bkDataID:
-  # 日志平台openTelemetry跟踪链功能的bk.data.token, 用于新版的数据上报
+  # openTelemetry跟踪链功能的bk.data.token, 用于新版的数据上报
   bkDataToken:
   # 连接日志平台tls配置
   tls:

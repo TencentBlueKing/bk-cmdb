@@ -16,7 +16,7 @@
     :maxlength="maxlength"
     :disabled="disabled"
     v-bind="$attrs"
-    v-model="localValue"
+    v-model.number="localValue"
     @blur="handleInput"
     @enter="handleEnter"
     @change="handleChange">

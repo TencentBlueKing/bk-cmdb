@@ -289,27 +289,29 @@ func (m *modelClassification) DeleteModelClassification(kit *rest.Kit, inputPara
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
-// SearchModelClassification TODO
-func (m *modelClassification) SearchModelClassification(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelClassificationDataResult, error) {
+// SearchModelClassification search model classification
+func (m *modelClassification) SearchModelClassification(kit *rest.Kit, inputParam metadata.QueryCondition) (
+	*metadata.QueryModelClassificationDataResult, error) {
 
 	dataResult := &metadata.QueryModelClassificationDataResult{
 		Info: []metadata.Classification{},
 	}
 	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", kit.Rid, inputParam.Condition, err.Error())
+		blog.Errorf("convert the condition from mapstr into condition object failed, cond: %v, err: %v, rid: %s",
+			inputParam.Condition, err, kit.Rid)
 		return dataResult, err
 	}
 
-	totalCount, err := m.count(kit, searchCond)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to get the count by the condition (%#v), error info is %s", kit.Rid, searchCond.ToMapStr(), err.Error())
+	totalCount, err := m.count(kit, searchCond.ToMapStr())
+	if err != nil {
+		blog.Errorf("get classification count failed, cond: %v, err: %v, rid: %s", searchCond.ToMapStr(), err, kit.Rid)
 		return dataResult, err
 	}
 
 	classificationItems, err := m.search(kit, searchCond)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to search some classifications by the condition (%#v), error info is %s", kit.Rid, searchCond.ToMapStr(), err.Error())
+	if err != nil {
+		blog.Errorf("search classifications failed, cond: %v, err: %v, rid: %s", searchCond.ToMapStr(), err, kit.Rid)
 		return dataResult, err
 	}
 
