@@ -13,6 +13,7 @@
 package extensions
 
 import (
+	"fmt"
 	"strconv"
 
 	"configcenter/src/ac"
@@ -151,15 +152,24 @@ type BizSetSimplify struct {
 	BKBizSetNameField string `field:"bk_biz_set_name"`
 }
 
-// Parse load the data from mapstr attribute into ObjectUnique instance
+// Parse load the data from mapstr attribute into BizSetSimplify struct
 func (bizSet *BizSetSimplify) Parse(data mapstr.MapStr) (*BizSetSimplify, error) {
-
-	err := mapstr.SetValueToStructByTags(bizSet, data)
-	if nil != err {
+	bizSetID, err := data.Int64(common.BKBizSetIDField)
+	if err != nil {
 		return nil, err
 	}
+	bizSet.BKBizSetIDField = bizSetID
 
-	return bizSet, err
+	bizSetName, exist := data.Get(common.BKBizSetNameField)
+	if exist {
+		val, ok := bizSetName.(string)
+		if !ok {
+			return nil, fmt.Errorf("get biz set name failed, bizSetName: %v", bizSetName)
+		}
+		bizSet.BKBizSetNameField = val
+	}
+
+	return bizSet, nil
 }
 
 // SetSimplify TODO
