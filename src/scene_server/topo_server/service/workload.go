@@ -144,6 +144,8 @@ func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
 		}
 
 		if len(ids) != 0 {
+			blog.Errorf("workload does not belong to this business, kind: %v, ids: %v, bizID: %s, rid: %s", kind, ids,
+				bizID, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, ids))
 			return
 		}
@@ -234,6 +236,8 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 		}
 
 		if len(ids) != 0 {
+			blog.Errorf("workload does not belong to this business, kind: %v, ids: %v, bizID: %s, rid: %s", kind, ids,
+				bizID, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, ids))
 			return
 		}

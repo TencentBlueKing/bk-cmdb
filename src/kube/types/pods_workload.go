@@ -18,13 +18,13 @@
 package types
 
 import (
-	goErr "errors"
+	"errors"
 	"reflect"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
-	"configcenter/src/common/errors"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/kube/orm"
 	"configcenter/src/storage/dal/table"
 )
@@ -63,9 +63,9 @@ func (p *PodsWorkload) SetWorkloadBase(wl WorkloadBase) {
 }
 
 // ValidateCreate validate create workload
-func (w *PodsWorkload) ValidateCreate() errors.RawErrorInfo {
+func (w *PodsWorkload) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommHTTPInputInvalid,
 		}
 	}
@@ -83,20 +83,20 @@ func (w *PodsWorkload) ValidateCreate() errors.RawErrorInfo {
 		}
 
 		if err := isRequiredField(tag, valueOfOption, i); err != nil {
-			return errors.RawErrorInfo{
+			return ccErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsIsInvalid,
 				Args:    []interface{}{tag},
 			}
 		}
 	}
 
-	return errors.RawErrorInfo{}
+	return ccErr.RawErrorInfo{}
 }
 
 // ValidateUpdate validate update workload
-func (w *PodsWorkload) ValidateUpdate() errors.RawErrorInfo {
+func (w *PodsWorkload) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommHTTPInputInvalid,
 		}
 	}
@@ -115,19 +115,19 @@ func (w *PodsWorkload) ValidateUpdate() errors.RawErrorInfo {
 
 		// get whether it is an editable field based on tag
 		if !PodsWorkloadFields.IsFieldEditableByField(tag) {
-			return errors.RawErrorInfo{
+			return ccErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsIsInvalid,
 				Args:    []interface{}{tag},
 			}
 		}
 	}
-	return errors.RawErrorInfo{}
+	return ccErr.RawErrorInfo{}
 }
 
 // BuildUpdateData build workload pods update data
 func (w *PodsWorkload) BuildUpdateData(user string) (map[string]interface{}, error) {
 	if w == nil {
-		return nil, goErr.New("update param is invalid")
+		return nil, errors.New("update param is invalid")
 	}
 
 	now := time.Now().Unix()

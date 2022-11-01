@@ -18,13 +18,13 @@
 package types
 
 import (
-	goErr "errors"
+	"errors"
 	"reflect"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
-	"configcenter/src/common/errors"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/kube/orm"
 	"configcenter/src/storage/dal/table"
 )
@@ -63,9 +63,9 @@ func (j *Job) SetWorkloadBase(wl WorkloadBase) {
 }
 
 // ValidateCreate validate create workload
-func (w *Job) ValidateCreate() errors.RawErrorInfo {
+func (w *Job) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommHTTPInputInvalid,
 		}
 	}
@@ -83,20 +83,20 @@ func (w *Job) ValidateCreate() errors.RawErrorInfo {
 		}
 
 		if err := isRequiredField(tag, valueOfOption, i); err != nil {
-			return errors.RawErrorInfo{
+			return ccErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsIsInvalid,
 				Args:    []interface{}{tag},
 			}
 		}
 	}
 
-	return errors.RawErrorInfo{}
+	return ccErr.RawErrorInfo{}
 }
 
 // ValidateUpdate validate update workload
-func (w *Job) ValidateUpdate() errors.RawErrorInfo {
+func (w *Job) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommHTTPInputInvalid,
 		}
 	}
@@ -115,19 +115,19 @@ func (w *Job) ValidateUpdate() errors.RawErrorInfo {
 
 		// get whether it is an editable field based on tag
 		if !JobFields.IsFieldEditableByField(tag) {
-			return errors.RawErrorInfo{
+			return ccErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsIsInvalid,
 				Args:    []interface{}{tag},
 			}
 		}
 	}
-	return errors.RawErrorInfo{}
+	return ccErr.RawErrorInfo{}
 }
 
 // BuildUpdateData build job update data
 func (w *Job) BuildUpdateData(user string) (map[string]interface{}, error) {
 	if w == nil {
-		return nil, goErr.New("update param is invalid")
+		return nil, errors.New("update param is invalid")
 	}
 
 	now := time.Now().Unix()

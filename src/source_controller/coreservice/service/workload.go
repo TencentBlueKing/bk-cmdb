@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/dal/table"
 	"configcenter/src/storage/driver/mongodb"
@@ -122,27 +123,19 @@ func (s *coreService) GetNamespaceSpec(kit *rest.Kit, bizID int64, nsIDs []int64
 		return nil, errors.New("namespaceIDs can not be empty")
 	}
 
-	ids := make([]int64, 0)
-	uniqueMap := make(map[int64]struct{})
-	for _, id := range nsIDs {
-		if _, ok := uniqueMap[id]; ok {
-			continue
-		}
-		ids = append(ids, id)
-		uniqueMap[id] = struct{}{}
-	}
-
+	nsIDs = util.IntArrayUnique(nsIDs)
 	filter := map[string]interface{}{
-		common.BKAppIDField:   bizID,
-		common.BKOwnerIDField: kit.SupplierAccount,
-		common.BKFieldID:      mapstr.MapStr{common.BKDBIN: ids},
+		common.BKAppIDField: bizID,
+		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: nsIDs},
 	}
+	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
+
 	field := []string{common.BKFieldID, common.BKFieldName, types.BKClusterIDFiled, types.ClusterUIDField}
 	namespaces := make([]types.Namespace, 0)
 	err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Find(filter).Fields(field...).
 		All(kit.Ctx, &namespaces)
 	if err != nil {
-		if mongodb.Client().IsNotFoundError(err) || len(ids) != len(namespaces) {
+		if mongodb.Client().IsNotFoundError(err) || len(nsIDs) != len(namespaces) {
 			blog.Errorf("can not find all namespace, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 		}

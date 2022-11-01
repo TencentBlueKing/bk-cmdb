@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
 )
@@ -188,13 +189,10 @@ func (w *WlUpdateReq) UnmarshalJSON(data []byte) error {
 	if err = json.Unmarshal(data, req); err != nil {
 		return err
 	}
+	w.IDs = req.IDs
 
-	if len(req.Info) == 0 || len(req.IDs) == 0 {
+	if len(req.Info) == 0 {
 		return nil
-	}
-
-	if err = json.Unmarshal(req.IDs, &w.IDs); err != nil {
-		return err
 	}
 
 	w.Info, err = kind.NewInst()
@@ -211,9 +209,9 @@ func (w *WlUpdateReq) UnmarshalJSON(data []byte) error {
 // BuildCond build workload condition
 func (w *WlUpdateReq) BuildCond(bizID int64, hasBizID bool, supplierAccount string) (map[string]interface{}, error) {
 	cond := map[string]interface{}{
-		common.BKOwnerIDField: supplierAccount,
-		common.BKFieldID:      mapstr.MapStr{common.BKDBIN: w.IDs},
+		common.BKFieldID: mapstr.MapStr{common.BKDBIN: w.IDs},
 	}
+	cond = util.SetModOwner(cond, supplierAccount)
 
 	if hasBizID {
 		cond[common.BKAppIDField] = bizID
@@ -248,9 +246,9 @@ func (ns *WlDeleteReq) Validate() errors.RawErrorInfo {
 // BuildCond build delete workload condition
 func (wl *WlDeleteReq) BuildCond(bizID int64, hasBizID bool, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
-		common.BkSupplierAccount: supplierAccount,
-		common.BKFieldID:         mapstr.MapStr{common.BKDBIN: wl.IDs},
+		common.BKFieldID: mapstr.MapStr{common.BKDBIN: wl.IDs},
 	}
+	cond = util.SetModOwner(cond, supplierAccount)
 
 	if hasBizID {
 		cond[common.BKAppIDField] = bizID
@@ -265,7 +263,7 @@ type WlDataResp struct {
 }
 
 type jsonWlInfo struct {
-	IDs  json.RawMessage `json:"ids"`
+	IDs  []int64         `json:"ids"`
 	Info json.RawMessage `json:"info"`
 }
 
@@ -555,9 +553,9 @@ func (wl *WlQueryReq) Validate(kind WorkloadType) errors.RawErrorInfo {
 // BuildCond build query workload condition
 func (wl *WlQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
-		common.BKAppIDField:      bizID,
-		common.BkSupplierAccount: supplierAccount,
+		common.BKAppIDField: bizID,
 	}
+	cond = util.SetQueryOwner(cond, supplierAccount)
 
 	if wl.ClusterID != 0 {
 		cond[BKClusterIDFiled] = wl.ClusterID

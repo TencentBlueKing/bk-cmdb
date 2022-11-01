@@ -18,7 +18,6 @@
 package service
 
 import (
-	"errors"
 	"strconv"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/orm"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/dal/table"
@@ -107,35 +107,27 @@ func (s *coreService) GetClusterSpec(kit *rest.Kit, bizID int64, clusterIDs []in
 
 	if bizID == 0 {
 		blog.Errorf("bizID can not be empty, rid: %s", kit.Rid)
-		return nil, errors.New("bizID can not be empty")
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
 	if len(clusterIDs) == 0 {
 		blog.Errorf("clusterIDs can not be empty, rid: %s", kit.Rid)
-		return nil, errors.New("clusterIDs can not be empty")
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.BKClusterIDFiled)
 	}
 
-	ids := make([]int64, 0)
-	uniqueMap := make(map[int64]struct{})
-	for _, clusterID := range clusterIDs {
-		if _, ok := uniqueMap[clusterID]; ok {
-			continue
-		}
-		ids = append(ids, clusterID)
-		uniqueMap[clusterID] = struct{}{}
-	}
-
+	clusterIDs = util.IntArrayUnique(clusterIDs)
 	filter := map[string]interface{}{
-		common.BKAppIDField:   bizID,
-		common.BKOwnerIDField: kit.SupplierAccount,
-		common.BKFieldID:      mapstr.MapStr{common.BKDBIN: ids},
+		common.BKAppIDField: bizID,
+		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: clusterIDs},
 	}
+	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
+
 	field := []string{common.BKFieldID, types.UidField}
 	clusters := make([]types.Cluster, 0)
 
 	err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(filter).Fields(field...).All(kit.Ctx, &clusters)
 	if err != nil {
-		if mongodb.Client().IsNotFoundError(err) || len(ids) != len(clusters) {
+		if mongodb.Client().IsNotFoundError(err) || len(clusterIDs) != len(clusters) {
 			blog.Errorf("can not find all cluster, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 		}

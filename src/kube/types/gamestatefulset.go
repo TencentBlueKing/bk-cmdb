@@ -18,13 +18,13 @@
 package types
 
 import (
-	goErr "errors"
+	"errors"
 	"reflect"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
-	"configcenter/src/common/errors"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/kube/orm"
 	"configcenter/src/storage/dal/table"
 )
@@ -108,9 +108,9 @@ func (g *GameStatefulSet) SetWorkloadBase(wl WorkloadBase) {
 }
 
 // ValidateCreate validate create workload
-func (w *GameStatefulSet) ValidateCreate() errors.RawErrorInfo {
+func (w *GameStatefulSet) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommHTTPInputInvalid,
 		}
 	}
@@ -128,20 +128,20 @@ func (w *GameStatefulSet) ValidateCreate() errors.RawErrorInfo {
 		}
 
 		if err := isRequiredField(tag, valueOfOption, i); err != nil {
-			return errors.RawErrorInfo{
+			return ccErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsIsInvalid,
 				Args:    []interface{}{tag},
 			}
 		}
 	}
 
-	return errors.RawErrorInfo{}
+	return ccErr.RawErrorInfo{}
 }
 
 // ValidateUpdate validate update workload
-func (w *GameStatefulSet) ValidateUpdate() errors.RawErrorInfo {
+func (w *GameStatefulSet) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommHTTPInputInvalid,
 		}
 	}
@@ -160,19 +160,19 @@ func (w *GameStatefulSet) ValidateUpdate() errors.RawErrorInfo {
 
 		// get whether it is an editable field based on tag
 		if !GameStatefulSetFields.IsFieldEditableByField(tag) {
-			return errors.RawErrorInfo{
+			return ccErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsIsInvalid,
 				Args:    []interface{}{tag},
 			}
 		}
 	}
-	return errors.RawErrorInfo{}
+	return ccErr.RawErrorInfo{}
 }
 
 // BuildUpdateData build gameStatefulSet update data
 func (w *GameStatefulSet) BuildUpdateData(user string) (map[string]interface{}, error) {
 	if w == nil {
-		return nil, goErr.New("update param is invalid")
+		return nil, errors.New("update param is invalid")
 	}
 
 	now := time.Now().Unix()

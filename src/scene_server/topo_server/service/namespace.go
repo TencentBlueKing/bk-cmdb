@@ -130,6 +130,8 @@ func (s *Service) UpdateNamespace(ctx *rest.Contexts) {
 		}
 
 		if len(ids) != 0 {
+			blog.Errorf("namespace does not belong to this business, ids: %v, bizID: %s, rid: %s", ids, bizID,
+				ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, ids))
 			return
 		}
@@ -213,6 +215,8 @@ func (s *Service) DeleteNamespace(ctx *rest.Contexts) {
 		}
 
 		if len(ids) != 0 {
+			blog.Errorf("namespace does not belong to this business, ids: %v, bizID: %s, rid: %s", ids, bizID,
+				ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, ids))
 			return
 		}

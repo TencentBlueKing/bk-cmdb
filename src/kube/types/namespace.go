@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
 )
@@ -225,9 +226,9 @@ func (ns *NsUpdateReq) Validate() errors.RawErrorInfo {
 // BuildCond build update namespace condition
 func (ns *NsUpdateReq) BuildCond(bizID int64, hasBizID bool, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
-		common.BkSupplierAccount: supplierAccount,
-		common.BKFieldID:         mapstr.MapStr{common.BKDBIN: ns.IDs},
+		common.BKFieldID: mapstr.MapStr{common.BKDBIN: ns.IDs},
 	}
+	cond = util.SetModOwner(cond, supplierAccount)
 
 	if hasBizID {
 		cond[common.BKAppIDField] = bizID
@@ -262,9 +263,9 @@ func (ns *NsDeleteReq) Validate() errors.RawErrorInfo {
 // BuildCond build delete namespace condition
 func (ns *NsDeleteReq) BuildCond(bizID int64, hasBizID bool, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
-		common.BkSupplierAccount: supplierAccount,
-		common.BKFieldID:         mapstr.MapStr{common.BKDBIN: ns.IDs},
+		common.BKFieldID: mapstr.MapStr{common.BKDBIN: ns.IDs},
 	}
+	cond = util.SetModOwner(cond, supplierAccount)
 
 	if hasBizID {
 		cond[common.BKAppIDField] = bizID
@@ -346,9 +347,9 @@ func (ns *NsQueryReq) Validate() errors.RawErrorInfo {
 // BuildCond build query namespace condition
 func (ns *NsQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
-		common.BKAppIDField:      bizID,
-		common.BkSupplierAccount: supplierAccount,
+		common.BKAppIDField: bizID,
 	}
+	cond = util.SetQueryOwner(cond, supplierAccount)
 
 	if ns.ClusterID != 0 {
 		cond[BKClusterIDFiled] = ns.ClusterID
