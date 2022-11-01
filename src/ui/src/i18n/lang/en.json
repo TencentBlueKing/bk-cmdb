@@ -1638,5 +1638,7 @@
     "模板里定义的字段，在实例中将不可修改": "Property defined in the template will not be modifiable in the instance",
     "批量同步集群模板": "Batch Sync Set Template",
     "批量同步模板": "Batch Sync Template",
-    "已是最新内容，无需同步": "Already up to date, no need to sync"
+    "已是最新内容，无需同步": "Already up to date, no need to sync",
+    "主机需在“空闲机池”下才允许转移至主机池": "The host(s) needs to be in the '{idleSet}'",
+    "主机需在“空闲机池”下才允许转移至其他业务": "The host(s) needs to be in the '{idleSet}'"
 }
