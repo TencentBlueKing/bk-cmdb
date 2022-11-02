@@ -145,6 +145,12 @@ func (business *BusinessSimplify) Parse(data mapstr.MapStr) (*BusinessSimplify, 
 	return business, err
 }
 
+// BizSetSimplify biz set simplify
+type BizSetSimplify struct {
+	BKBizSetIDField   int64  `field:"bk_biz_set_id"`
+	BKBizSetNameField string `field:"bk_biz_set_name"`
+}
+
 // SetSimplify TODO
 type SetSimplify struct {
 	BKAppIDField   int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`

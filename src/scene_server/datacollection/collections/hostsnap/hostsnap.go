@@ -594,6 +594,9 @@ func getHostInfoFromMsgV10(val *gjson.Result, innerIP, outerIP string) *hostDisc
 	case common.HostOSTypeName[common.HostOSTypeEnumSolaris]:
 		hostMsg.osname = hostMsg.platform
 		hostMsg.ostype = common.HostOSTypeEnumSolaris
+	case common.HostOSTypeName[common.HostOSTypeEnumHpUX]:
+		hostMsg.osname = hostMsg.platform
+		hostMsg.ostype = common.HostOSTypeEnumHpUX
 	default:
 		hostMsg.osname = fmt.Sprintf("%s", hostMsg.platform)
 	}
@@ -681,6 +684,9 @@ func getOsInfoFromMsg(val *gjson.Result, innerIP, outerIP string) *hostDiscoverM
 	case common.HostOSTypeName[common.HostOSTypeEnumSolaris]:
 		hostMsg.osname = hostMsg.platform
 		hostMsg.ostype = common.HostOSTypeEnumSolaris
+	case common.HostOSTypeName[common.HostOSTypeEnumHpUX]:
+		hostMsg.osname = hostMsg.platform
+		hostMsg.ostype = common.HostOSTypeEnumHpUX
 	default:
 		hostMsg.osname = fmt.Sprintf("%s", hostMsg.platform)
 	}

@@ -356,7 +356,7 @@
       class="bk-dialog-no-padding"
       :width="400"
       :show-footer="false"
-      :mask-close="false"
+      :mask-close="true"
       v-model="modelCreatedDialogVisible"
     >
       <div class="success-content">
@@ -703,15 +703,13 @@
       handleModelDragMove(event) {
         const draggedModel = event.draggedContext.element
         const targetGroupModels = event.relatedContext.list
-
-        const isTargetGroupEmpty = targetGroupModels.length === 0
-
-        if (isTargetGroupEmpty) return isTargetGroupEmpty
-
-        const isOtherGroup = !targetGroupModels
+        const { willInsertAfter } = event
+        const isSameGroup = targetGroupModels
           .some(model => model.bk_classification_id === draggedModel?.bk_classification_id)
-
-        return isOtherGroup || isTargetGroupEmpty
+        if (isSameGroup && willInsertAfter) {
+          return true
+        }
+        return !isSameGroup
       },
       handleModelDragAdd(event) {
         const { modelId } = event.item.dataset

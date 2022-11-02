@@ -61,11 +61,15 @@
             {{$t('业务模块')}}
           </cmdb-auth>
           <li :class="['bk-dropdown-item', { disabled: !isIdleSetModules }]" v-test-id="'transferResource'"
-            @click="handleTransfer($event, 'resource', !isIdleSetModules)">
+            @click="handleTransfer($event, 'resource', !isIdleSetModules)"
+            v-bk-tooltips.top-start="$t('主机需在“空闲机池”下才允许转移至主机池', { idleSet: $store.state.globalConfig.config.set })"
+            :disabled="isIdleSetModules">
             {{$t('主机池')}}
           </li>
           <li :class="['bk-dropdown-item', { disabled: !isIdleSetModules }]" v-test-id="'transferAcrossBusiness'"
-            @click="handleTransfer($event, 'acrossBusiness', !isIdleSetModules)">
+            @click="handleTransfer($event, 'acrossBusiness', !isIdleSetModules)"
+            v-bk-tooltips.top-start="$t('主机需在“空闲机池”下才允许转移至其他业务', { idleSet: $store.state.globalConfig.config.set })"
+            :disabled="isIdleSetModules">
             {{$t('其他业务')}}
           </li>
         </ul>
@@ -163,7 +167,7 @@
       :properties="hostProperties"
       :selection="$parent.table.selection">
     </edit-multiple-host>
-    <cmdb-dialog v-model="dialog.show" v-bind="dialog.props" :height="650">
+    <cmdb-dialog :mask-close="false" v-model="dialog.show" v-bind="dialog.props" :height="650">
       <component
         :is="dialog.component"
         v-bind="dialog.componentProps"

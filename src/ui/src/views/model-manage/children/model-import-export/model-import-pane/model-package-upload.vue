@@ -66,6 +66,7 @@
       <p class="upload-tips">{{t('仅支持上传来自蓝鲸配置平台专属导出的模型压缩包')}}</p>
     </div>
     <bk-dialog
+      :mask-close="false"
       header-position="left"
       :title="t('文件包解密确认')"
       :confirm-fn="confirmDecrypt"

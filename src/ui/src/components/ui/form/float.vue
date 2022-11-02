@@ -16,6 +16,7 @@
     :value="value"
     :disabled="disabled"
     :precision="precision"
+    v-model.number="localValue"
     v-bind="$attrs"
     @blur="handleInput"
     @enter="handleEnter"
