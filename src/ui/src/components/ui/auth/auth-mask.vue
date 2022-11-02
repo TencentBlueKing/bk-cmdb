@@ -14,15 +14,23 @@
   import { defineComponent } from 'vue'
 
   export default defineComponent({
+    name: 'cmdb-auth-mask',
     props: {
       auth: Object,
       authorized: Boolean,
       tag: {
         type: String,
         default: 'span'
-      }
+      },
+      ignore: Boolean
     },
     render(h) {
+      if (this.ignore) {
+        return this.$scopedSlots.default({
+          disabled: false
+        })
+      }
+
       return h(this.tag, {
         directives: [
           {
@@ -33,8 +41,12 @@
             }
           }
         ],
-        staticClass: 'auth-mask'
-      }, this.$slots.default)
+        staticClass: 'auth-mask',
+      }, [
+        this.$scopedSlots.default({
+          disabled: !this.authorized
+        })
+      ])
     }
   })
 </script>

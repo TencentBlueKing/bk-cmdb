@@ -10,17 +10,35 @@
  * limitations under the License.
  */
 
-import Meta from '@/router/meta'
-import { MENU_BUSINESS, MENU_BUSINESS_CUSTOM_QUERY } from '@/dictionary/menu-symbol'
+import store from '@/store'
+import CCWorker from '@/workers/ccworker.js'
+
+const iam = () => {
+  const models = store.getters['objectModelClassify/models']
+  if (!models) {
+    console.error('Failed to get model data')
+    return
+  }
+
+  // 所有需要预鉴权的模型id
+  const modelIds = models.filter(item => !item.bk_ishidden).map(item => item.id)
+
+  new CCWorker(new Worker(new URL('@/workers/iam.js', import.meta.url)), {
+    preverify(payload) {
+      store.commit('auth/setAuthedList', payload)
+    },
+    error(err) {
+      console.error(err)
+    }
+  }).dispatch('preverify', {
+    modelIds
+  })
+}
+
+const run = () => {
+  iam()
+}
 
 export default {
-  name: MENU_BUSINESS_CUSTOM_QUERY,
-  path: 'custom-query',
-  component: () => import('./index.vue'),
-  meta: new Meta({
-    owner: MENU_BUSINESS,
-    menu: {
-      i18n: '动态分组'
-    }
-  })
+  run
 }

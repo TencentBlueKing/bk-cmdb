@@ -33,22 +33,31 @@
         </transition>
       </div>
       <div class="menu-list">
-        <template v-for="(menu, index) in currentMenus">
-          <router-link class="menu-item is-link" tag="a" active-class="active" style="display: block;"
-            v-if="menu.hasOwnProperty('route')"
-            ref="menuLink"
-            :class="{
-              'is-relative-active': isRelativeActive(menu)
-            }"
-            :key="index"
-            :to="getMenuLink(menu)"
-            :title="$t(menu.i18n)">
-            <h3 class="menu-info clearfix">
-              <i :class="['menu-icon', menu.icon]"></i>
-              <span class="menu-name">{{$t(menu.i18n)}}</span>
-            </h3>
-          </router-link>
-        </template>
+        <cmdb-auth-mask
+          v-for="(menu, index) in currentMenus"
+          :key="index"
+          tag="div"
+          v-bind="getMenuAuthMaskProps(menu)">
+          <template #default="{ disabled }">
+            <router-link
+              tag="a"
+              active-class="active"
+              style="display: block;"
+              v-if="menu.hasOwnProperty('route')"
+              ref="menuLink"
+              :class="['menu-item', 'is-link', {
+                disabled,
+                'is-relative-active': isRelativeActive(menu)
+              }]"
+              :to="getMenuLink(menu)"
+              :title="$t(menu.i18n)">
+              <h3 class="menu-info clearfix">
+                <i :class="['menu-icon', menu.icon]"></i>
+                <span class="menu-name">{{$t(menu.i18n)}}</span>
+              </h3>
+            </router-link>
+          </template>
+        </cmdb-auth-mask>
       </div>
       <div class="nav-option">
         <i class="nav-stick icon icon-cc-nav-toggle"
@@ -233,6 +242,28 @@
           }
         }
         return menu.route
+      },
+      getMenuAuth(menu) {
+        console.log(menu)
+        return {
+          type: this.$OPERATION.U_MODEL
+        }
+      },
+      getMenuAuthMaskProps(menu) {
+        const props = {
+          ignore: true
+        }
+
+        if (menu?.route?.name === MENU_RESOURCE_INSTANCE) {
+          const model = this.models.find(model => model.bk_obj_id === menu?.route?.params?.objId)
+          const auth = { type: this.$OPERATION.R_INST, relation: [model.id] }
+          const authorized = this.isViewAuthed(auth)
+          props.ignore = false
+          props.auth = auth
+          props.authorized = authorized
+        }
+
+        return props
       },
       handleMouseEnter() {
         if (this.timer) {

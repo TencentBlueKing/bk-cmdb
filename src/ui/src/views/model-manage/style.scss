@@ -202,7 +202,12 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
   $modelItemWidth: 256px;
   $modelItemRadius: 2px;
   $modelItemHeight: 60px;
-  
+
+  .model-auth-mask {
+    display: flex;
+    width: 100%;
+  }
+
   .model-item {
     float: left;
     display: flex;
@@ -226,7 +231,7 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
     }
 
     @at-root .is-dragging &:hover {
-      box-shadow: 0px 2px 4px 0px rgba(25, 25, 41, 0.05);
+      box-shadow: 0px 20px 40px 0px rgba(239, 12, 12, 1);
     }
 
     &.is-builtin {
@@ -239,8 +244,13 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
         }
       }
 
-      &:hover .model-icon{
-        background-color: #fff;
+      &:hover {
+        .model-icon {
+          background-color: #fff;
+        }
+        .model-info {
+          background-color: #eff5ff;
+        }
       }
     }
 

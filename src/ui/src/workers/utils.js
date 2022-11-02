@@ -10,17 +10,36 @@
  * limitations under the License.
  */
 
-import Meta from '@/router/meta'
-import { MENU_BUSINESS, MENU_BUSINESS_CUSTOM_QUERY } from '@/dictionary/menu-symbol'
+import customHeaders from '@/api/custom-header.js'
 
-export default {
-  name: MENU_BUSINESS_CUSTOM_QUERY,
-  path: 'custom-query',
-  component: () => import('./index.vue'),
-  meta: new Meta({
-    owner: MENU_BUSINESS,
-    menu: {
-      i18n: '动态分组'
-    }
+export const postData = async (url, data = {}, config = {}) => {
+  const finalConfig = {
+    originalResponse: false,
+    transformData: true,
+    ...config
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    mode: 'cors',
+    credentials: 'include',
+    headers: customHeaders,
+    body: JSON.stringify(data)
   })
+
+  if (!response.ok) {
+    throw new Error('Network response was not OK')
+  }
+
+  if (finalConfig.originalResponse) {
+    return response
+  }
+
+  const result = await response.json()
+
+  if (finalConfig.transformData) {
+    return result?.data
+  }
+
+  return result
 }

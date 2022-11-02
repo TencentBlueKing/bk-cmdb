@@ -9,18 +9,18 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import xid from 'xid-js'
 
-import Meta from '@/router/meta'
-import { MENU_BUSINESS, MENU_BUSINESS_CUSTOM_QUERY } from '@/dictionary/menu-symbol'
+const TRACE_CHARS = 'abcdef0123456789'
+const randomString = (length, chars) => {
+  let result = ''
+  for (let i = length; i > 0; --i) result += chars[Math.random() * chars.length | 0]
+  return result
+}
 
 export default {
-  name: MENU_BUSINESS_CUSTOM_QUERY,
-  path: 'custom-query',
-  component: () => import('./index.vue'),
-  meta: new Meta({
-    owner: MENU_BUSINESS,
-    menu: {
-      i18n: '动态分组'
-    }
-  })
+  // opentelementry TraceID
+  traceparent: `00-${randomString(32, TRACE_CHARS)}-${randomString(16, TRACE_CHARS)}-01`,
+  // 请求ID
+  Cc_Request_Id: `cc0000${xid.next()}`
 }

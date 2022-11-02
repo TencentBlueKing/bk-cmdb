@@ -23,6 +23,7 @@ import { $error } from '@/magicbox'
 import i18n from '@/i18n'
 import { changeDocumentTitle } from '@/utils/change-document-title'
 import { OPERATION } from '@/dictionary/iam-auth'
+import workerTask from '@/setup/worker-task'
 
 import {
   before as businessBeforeInterceptor
@@ -187,8 +188,33 @@ function cancelRequest(app) {
   app.$http.cancelRequest(cancelId)
 }
 
-// eslint-disable-next-line no-unused-vars
-const checkViewAuthorize = async to => Promise.resolve()
+const checkViewAuthorize = async (to) => {
+  // owener判断已经发现无业务时
+  if (to.meta.view === 'permission') {
+    return false
+  }
+
+  // 使用就近原则向上回溯，找到路由的auth.view配置
+  const findViewAuth = (route) => {
+    if (!route) {
+      return
+    }
+    if (route?.meta?.auth?.view) {
+      return route.meta.auth.view
+    }
+    return findViewAuth(route?.parent)
+  }
+
+  const { matched } = to
+  const authView = findViewAuth(matched[matched.length - 1])
+
+  if (authView) {
+    const viewAuthData = typeof authView === 'function' ? authView(to, router.app) : authView
+    const authResult = await router.app.$store.dispatch('auth/getViewAuth', viewAuthData)
+    to.meta.view = authResult ? 'default' : 'permission'
+  }
+  return Promise.resolve()
+}
 
 const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
 
@@ -245,6 +271,7 @@ router.beforeEach((to, from, next) => {
         setLoading(true)
         setupStatus.preload = false
         await preload(router.app)
+        workerTask.run()
         setupValidator(router.app)
       }
 
@@ -273,7 +300,7 @@ router.beforeEach((to, from, next) => {
       /**
        * 检查是否有权限访问当前页面
        */
-      await checkViewAuthorize(to)
+      await checkViewAuthorize(to, router.app)
 
       /**
        * 执行路由配置中的before钩子

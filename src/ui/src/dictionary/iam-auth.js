@@ -166,6 +166,18 @@ export const IAM_ACTIONS = {
       resource_id: relationIds[0]
     })
   },
+  R_MODEL: {
+    id: 'view_sys_model',
+    name: ['模型查看', 'View Model'],
+    cmdb_action: 'model.view',
+    relation: [{
+      view: IAM_VIEWS.MODEL,
+      instances: [IAM_VIEWS.MODEL]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
+  },
 
   // 实例
   C_INST: {
@@ -173,6 +185,23 @@ export const IAM_ACTIONS = {
     fixedId: 'create_comobj',
     name: ['实例创建', 'Create Instance'],
     cmdb_action: ([modelId]) => ({ action: 'create', type: `comobj_${modelId}` }),
+    relation: [],
+    transform: (cmdbAction, relationIds = []) => {
+      const { action, type } = cmdbAction(relationIds)
+      const [modelId] = relationIds
+      const verifyMeta = {
+        resource_type: type,
+        action,
+        resource_id: modelId
+      }
+      return verifyMeta
+    }
+  },
+  R_INST: {
+    id: ([modelId]) => `view_comobj_${modelId}`,
+    fixedId: 'view_comobj',
+    name: ['实例查看', 'View Instance'],
+    cmdb_action: ([modelId]) => ({ action: 'view', type: `comobj_${modelId}` }),
     relation: [],
     transform: (cmdbAction, relationIds = []) => {
       const { action, type } = cmdbAction(relationIds)
@@ -265,6 +294,7 @@ export const IAM_ACTIONS = {
       return verifyMeta
     }
   },
+
   // 动态分组
   C_CUSTOM_QUERY: {
     id: 'create_biz_dynamic_query',

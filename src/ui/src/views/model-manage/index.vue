@@ -195,38 +195,43 @@
                 }"
                 @mouseenter="handleModelMouseEnterDebounce(model)"
               >
-                <div
-                  class="model-info"
-                  :class="{
-                    'no-instance-count': model.bk_ispaused || isNoInstanceModel(model.bk_obj_id)
-                  }"
-                  @click="handleModelClick(model, classification)"
-                >
-                  <div class="drag-icon"></div>
-                  <div class="model-icon">
-                    <i class="icon" :class="[model['bk_obj_icon']]"></i>
-                  </div>
-                  <div class="model-details">
-                    <p class="model-name" :title="model['bk_obj_name']">
-                      {{ model["bk_obj_name"] }}
-                    </p>
-                    <p class="model-id" :title="model['bk_obj_id']">
-                      {{ model["bk_obj_id"] }}
-                    </p>
-                  </div>
-                  <bk-checkbox
-                    v-model="modelSelectionState[model.bk_obj_id]"
-                    @change="handleModelSelectionChange(classification)"
-                    :disabled="isBuiltinModel(model)"
-                    v-bk-tooltips="{
-                      content: $t('内置模型不允许导出'),
-                      disabled: !isBuiltinModel(model)
+                <cmdb-auth-mask
+                  tag="div"
+                  class="model-auth-mask"
+                  v-bind="getViewAuthMaskProps(model)">
+                  <div
+                    class="model-info"
+                    :class="{
+                      'no-instance-count': model.bk_ispaused || isNoInstanceModel(model.bk_obj_id)
                     }"
-                    @click.stop.native
-                    class="model-checkbox"
+                    @click="handleModelClick(model, classification)"
                   >
-                  </bk-checkbox>
-                </div>
+                    <div class="drag-icon"></div>
+                    <div class="model-icon">
+                      <i class="icon" :class="[model['bk_obj_icon']]"></i>
+                    </div>
+                    <div class="model-details">
+                      <p class="model-name" :title="model['bk_obj_name']">
+                        {{ model["bk_obj_name"] }}
+                      </p>
+                      <p class="model-id" :title="model['bk_obj_id']">
+                        {{ model["bk_obj_id"] }}
+                      </p>
+                    </div>
+                    <bk-checkbox
+                      v-model="modelSelectionState[model.bk_obj_id]"
+                      @change="handleModelSelectionChange(classification)"
+                      :disabled="isBuiltinModel(model)"
+                      v-bk-tooltips="{
+                        content: $t('内置模型不允许导出'),
+                        disabled: !isBuiltinModel(model)
+                      }"
+                      @click.stop.native
+                      class="model-checkbox"
+                    >
+                    </bk-checkbox>
+                  </div>
+                </cmdb-auth-mask>
                 <div
                   v-if="!model.bk_ispaused && !isNoInstanceModel(model.bk_obj_id)"
                   class="model-instance-count"
@@ -711,6 +716,13 @@
       },
       toggleModelList(classification) {
         this.classificationsCollapseState[classification.id] = !this.classificationsCollapseState[classification.id]
+      },
+      getViewAuthMaskProps(model) {
+        const auth = { type: this.$OPERATION.R_INST, relation: [model.id] }
+        return {
+          auth,
+          authorized: this.isViewAuthed(auth)
+        }
       },
       handleModelDragStart() {
         this.isDragging = true
