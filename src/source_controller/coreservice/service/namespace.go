@@ -169,21 +169,19 @@ func (s *coreService) UpdateNamespace(ctx *rest.Contexts) {
 	}
 
 	// build filter
-	filter, err := req.BuildCond(bizID, true, ctx.Kit.SupplierAccount)
-	if err != nil {
-		blog.Errorf("build namespace condition failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err,
-			ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
+	filter := mapstr.MapStr{
+		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: req.IDs},
+		common.BKAppIDField: bizID,
 	}
+	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
 	now := time.Now().Unix()
-	req.Info.LastTime = now
-	req.Info.Modifier = ctx.Kit.User
+	req.Data.LastTime = now
+	req.Data.Modifier = ctx.Kit.User
 	// build update data
 	opts := orm.NewFieldOptions().AddIgnoredFields(common.BKFieldID, types.ClusterUIDField, common.BKFieldName)
-	updateData, err := orm.GetUpdateFieldsWithOption(req.Info, opts)
+	updateData, err := orm.GetUpdateFieldsWithOption(req.Data, opts)
 	if err != nil {
-		blog.Errorf("get update data failed, data: %v, err: %v, rid: %s", req.Info, err, ctx.Kit.Rid)
+		blog.Errorf("get update data failed, data: %v, err: %v, rid: %s", req.Data, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
 		return
 	}
@@ -220,12 +218,11 @@ func (s *coreService) DeleteNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	filter, err := req.BuildCond(bizID, true, ctx.Kit.SupplierAccount)
-	if err != nil {
-		blog.Errorf("delete namespace failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
+	filter := mapstr.MapStr{
+		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: req.IDs},
+		common.BKAppIDField: bizID,
 	}
+	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
 	if err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Delete(ctx.Kit.Ctx, filter); err != nil {
 		blog.Errorf("delete namespace failed, filter: %v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))

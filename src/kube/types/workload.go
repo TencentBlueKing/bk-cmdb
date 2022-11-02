@@ -137,6 +137,7 @@ type IntOrString struct {
 }
 
 type jsonWlData struct {
+	IDs  []int64         `json:"ids"`
 	Data json.RawMessage `json:"data"`
 }
 
@@ -144,7 +145,7 @@ type jsonWlData struct {
 type WlUpdateReq struct {
 	Kind WorkloadType `json:"kind"`
 	IDs  []int64      `json:"ids"`
-	Info WorkloadI    `json:"info"`
+	Data WorkloadI    `json:"data"`
 }
 
 // Validate validate WlCommonUpdate
@@ -163,14 +164,14 @@ func (w *WlUpdateReq) Validate() errors.RawErrorInfo {
 		}
 	}
 
-	if w.Info == nil {
+	if w.Data == nil {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"info"},
+			Args:    []interface{}{"data"},
 		}
 	}
 
-	if err := w.Info.ValidateUpdate(); err.ErrCode != 0 {
+	if err := w.Data.ValidateUpdate(); err.ErrCode != 0 {
 		return err
 	}
 
@@ -185,38 +186,25 @@ func (w *WlUpdateReq) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	req := new(jsonWlInfo)
+	req := new(jsonWlData)
 	if err = json.Unmarshal(data, req); err != nil {
 		return err
 	}
 	w.IDs = req.IDs
 
-	if len(req.Info) == 0 {
+	if len(req.Data) == 0 {
 		return nil
 	}
 
-	w.Info, err = kind.NewInst()
+	w.Data, err = kind.NewInst()
 	if err != nil {
 		return err
 	}
-	if err = json.Unmarshal(req.Info, &w.Info); err != nil {
+	if err = json.Unmarshal(req.Data, &w.Data); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-// BuildCond build workload condition
-func (w *WlUpdateReq) BuildCond(bizID int64, hasBizID bool, supplierAccount string) (map[string]interface{}, error) {
-	cond := map[string]interface{}{
-		common.BKFieldID: mapstr.MapStr{common.BKDBIN: w.IDs},
-	}
-	cond = util.SetModOwner(cond, supplierAccount)
-
-	if hasBizID {
-		cond[common.BKAppIDField] = bizID
-	}
-	return cond, nil
 }
 
 // WlDeleteReq workload delete request
@@ -243,19 +231,6 @@ func (ns *WlDeleteReq) Validate() errors.RawErrorInfo {
 	return errors.RawErrorInfo{}
 }
 
-// BuildCond build delete workload condition
-func (wl *WlDeleteReq) BuildCond(bizID int64, hasBizID bool, supplierAccount string) (mapstr.MapStr, error) {
-	cond := mapstr.MapStr{
-		common.BKFieldID: mapstr.MapStr{common.BKDBIN: wl.IDs},
-	}
-	cond = util.SetModOwner(cond, supplierAccount)
-
-	if hasBizID {
-		cond[common.BKAppIDField] = bizID
-	}
-	return cond, nil
-}
-
 // WlDataResp workload data
 type WlDataResp struct {
 	Kind WorkloadType `json:"kind"`
@@ -263,7 +238,6 @@ type WlDataResp struct {
 }
 
 type jsonWlInfo struct {
-	IDs  []int64         `json:"ids"`
 	Info json.RawMessage `json:"info"`
 }
 

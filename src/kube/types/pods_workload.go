@@ -19,7 +19,6 @@ package types
 
 import (
 	"errors"
-	"reflect"
 	"time"
 
 	"configcenter/src/common"
@@ -67,27 +66,12 @@ func (w *PodsWorkload) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"data"},
 		}
 	}
 
-	typeOfOption := reflect.TypeOf(*w)
-	valueOfOption := reflect.ValueOf(*w)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, i)
-		if flag {
-			continue
-		}
-
-		if !PodsWorkloadFields.IsFieldRequiredByField(tag) {
-			continue
-		}
-
-		if err := isRequiredField(tag, valueOfOption, i); err != nil {
-			return ccErr.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsIsInvalid,
-				Args:    []interface{}{tag},
-			}
-		}
+	if err := ValidateCreate(*w, PodsWorkloadFields); err.ErrCode != 0 {
+		return err
 	}
 
 	return ccErr.RawErrorInfo{}
@@ -98,29 +82,14 @@ func (w *PodsWorkload) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"data"},
 		}
 	}
 
-	typeOfOption := reflect.TypeOf(*w)
-	valueOfOption := reflect.ValueOf(*w)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, i)
-		if flag {
-			continue
-		}
-
-		if flag := isEditableField(tag, valueOfOption, i); flag {
-			continue
-		}
-
-		// get whether it is an editable field based on tag
-		if !PodsWorkloadFields.IsFieldEditableByField(tag) {
-			return ccErr.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsIsInvalid,
-				Args:    []interface{}{tag},
-			}
-		}
+	if err := ValidateUpdate(*w, PodsWorkloadFields); err.ErrCode != 0 {
+		return err
 	}
+
 	return ccErr.RawErrorInfo{}
 }
 

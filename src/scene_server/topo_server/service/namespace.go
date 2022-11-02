@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 )
 
@@ -105,14 +106,10 @@ func (s *Service) UpdateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err := req.BuildCond(0, false, ctx.Kit.SupplierAccount)
-	if err != nil {
-		blog.Errorf("build namespace condition failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err,
-			ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
+	cond := mapstr.MapStr{
+		common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
 	}
-
+	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	query := &metadata.QueryCondition{
 		Condition: cond,
 	}
@@ -146,7 +143,7 @@ func (s *Service) UpdateNamespace(ctx *rest.Contexts) {
 
 		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
-		updateFields, goErr := mapstr.Struct2Map(req.Info)
+		updateFields, goErr := mapstr.Struct2Map(req.Data)
 		if goErr != nil {
 			blog.Errorf("update fields convert failed, err: %v, rid: %s", goErr, ctx.Kit.Rid)
 			return goErr
@@ -192,12 +189,10 @@ func (s *Service) DeleteNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err := req.BuildCond(0, false, ctx.Kit.SupplierAccount)
-	if err != nil {
-		blog.Errorf("delete namespace failed, data: %v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
+	cond := mapstr.MapStr{
+		common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
 	}
+	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	query := &metadata.QueryCondition{
 		Condition: cond,
 	}

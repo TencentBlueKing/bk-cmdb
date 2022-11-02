@@ -18,8 +18,6 @@
 package types
 
 import (
-	"reflect"
-
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
 	"configcenter/src/common/errors"
@@ -98,68 +96,6 @@ type Namespace struct {
 	table.Revision `json:",inline" bson:",inline"`
 }
 
-// ValidateCreate validate create namespace
-func (ns *Namespace) ValidateCreate() errors.RawErrorInfo {
-	if ns == nil {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
-		}
-	}
-
-	typeOfOption := reflect.TypeOf(*ns)
-	valueOfOption := reflect.ValueOf(*ns)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, i)
-		if flag {
-			continue
-		}
-
-		if !NamespaceFields.IsFieldRequiredByField(tag) {
-			continue
-		}
-
-		if err := isRequiredField(tag, valueOfOption, i); err != nil {
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsIsInvalid,
-				Args:    []interface{}{tag},
-			}
-		}
-	}
-
-	return errors.RawErrorInfo{}
-}
-
-// ValidateUpdate validate update namespace
-func (ns *Namespace) ValidateUpdate() errors.RawErrorInfo {
-	if ns == nil {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
-		}
-	}
-
-	typeOfOption := reflect.TypeOf(*ns)
-	valueOfOption := reflect.ValueOf(*ns)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, i)
-		if flag {
-			continue
-		}
-
-		if flag := isEditableField(tag, valueOfOption, i); flag {
-			continue
-		}
-
-		// get whether it is an editable field based on tag
-		if !NamespaceFields.IsFieldEditableByField(tag) {
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsIsInvalid,
-				Args:    []interface{}{tag},
-			}
-		}
-	}
-	return errors.RawErrorInfo{}
-}
-
 // ResourceQuota defines the desired hard limits to enforce for Quota.
 type ResourceQuota struct {
 	Hard          map[string]string    `json:"hard" bson:"hard"`
@@ -191,7 +127,7 @@ type ScopedResourceSelectorRequirement struct {
 // NsUpdateReq update namespace request
 type NsUpdateReq struct {
 	IDs  []int64    `json:"ids"`
-	Info *Namespace `json:"info"`
+	Data *Namespace `json:"data"`
 }
 
 // Validate validate update namespace request
@@ -210,30 +146,17 @@ func (ns *NsUpdateReq) Validate() errors.RawErrorInfo {
 		}
 	}
 
-	if ns.Info == nil {
+	if ns.Data == nil {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"info"},
+			Args:    []interface{}{"data"},
 		}
 	}
 
-	if err := ns.Info.ValidateUpdate(); err.ErrCode != 0 {
+	if err := ValidateUpdate(*ns.Data, NamespaceFields); err.ErrCode != 0 {
 		return err
 	}
 	return errors.RawErrorInfo{}
-}
-
-// BuildCond build update namespace condition
-func (ns *NsUpdateReq) BuildCond(bizID int64, hasBizID bool, supplierAccount string) (mapstr.MapStr, error) {
-	cond := mapstr.MapStr{
-		common.BKFieldID: mapstr.MapStr{common.BKDBIN: ns.IDs},
-	}
-	cond = util.SetModOwner(cond, supplierAccount)
-
-	if hasBizID {
-		cond[common.BKAppIDField] = bizID
-	}
-	return cond, nil
 }
 
 // NsDeleteReq delete namespace request
@@ -260,19 +183,6 @@ func (ns *NsDeleteReq) Validate() errors.RawErrorInfo {
 	return errors.RawErrorInfo{}
 }
 
-// BuildCond build delete namespace condition
-func (ns *NsDeleteReq) BuildCond(bizID int64, hasBizID bool, supplierAccount string) (mapstr.MapStr, error) {
-	cond := mapstr.MapStr{
-		common.BKFieldID: mapstr.MapStr{common.BKDBIN: ns.IDs},
-	}
-	cond = util.SetModOwner(cond, supplierAccount)
-
-	if hasBizID {
-		cond[common.BKAppIDField] = bizID
-	}
-	return cond, nil
-}
-
 // NsCreateReq create namespace request
 type NsCreateReq struct {
 	Data []Namespace `json:"data"`
@@ -295,7 +205,7 @@ func (ns *NsCreateReq) Validate() errors.RawErrorInfo {
 	}
 
 	for _, data := range ns.Data {
-		if err := data.ValidateCreate(); err.ErrCode != 0 {
+		if err := ValidateCreate(data, NamespaceFields); err.ErrCode != 0 {
 			return err
 		}
 	}

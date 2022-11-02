@@ -219,7 +219,7 @@ var _ = Describe("workload test", func() {
 		}
 		updateOpt := types.WlUpdateReq{
 			IDs:  []int64{wlID},
-			Info: &wl,
+			Data: &wl,
 		}
 
 		err := kubeClient.UpdateWorkload(ctx, header, bizID, types.KubeDeployment, &updateOpt)

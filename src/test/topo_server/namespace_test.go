@@ -161,7 +161,7 @@ var _ = Describe("namespace test", func() {
 		}
 		updateOpt := types.NsUpdateReq{
 			IDs:  []int64{clusterID},
-			Info: ns,
+			Data: ns,
 		}
 
 		err := kubeClient.UpdateNamespace(ctx, header, bizID, &updateOpt)

@@ -186,17 +186,14 @@ func (s *coreService) UpdateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err := req.BuildCond(bizID, true, ctx.Kit.SupplierAccount)
-	if err != nil {
-		blog.Errorf("build workload condition failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err,
-			ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
+	cond := map[string]interface{}{
+		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: req.IDs},
+		common.BKAppIDField: bizID,
 	}
-
-	updateData, err := req.Info.BuildUpdateData(ctx.Kit.User)
+	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
+	updateData, err := req.Data.BuildUpdateData(ctx.Kit.User)
 	if err != nil {
-		blog.Errorf("get update data failed, kind: %s, info: %v, err: %v, rid: %s", kind, req.Info, err, ctx.Kit.Rid)
+		blog.Errorf("get update data failed, kind: %s, info: %v, err: %v, rid: %s", kind, req.Data, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
 		return
 	}
@@ -239,12 +236,11 @@ func (s *coreService) DeleteWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	filter, err := req.BuildCond(bizID, true, ctx.Kit.SupplierAccount)
-	if err != nil {
-		blog.Errorf("delete workload failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
+	filter := mapstr.MapStr{
+		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: req.IDs},
+		common.BKAppIDField: bizID,
 	}
+	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
 	if err := mongodb.Client().Table(table).Delete(ctx.Kit.Ctx, filter); err != nil {
 		blog.Errorf("delete workload failed, filter: %v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))
