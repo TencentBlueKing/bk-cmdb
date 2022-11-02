@@ -259,6 +259,8 @@ func (am *AuthManager) AuthorizeByInstanceID(ctx context.Context, header http.He
 		return am.AuthorizeBySetID(ctx, header, action, ids...)
 	case common.BKInnerObjIDApp:
 		return am.AuthorizeByBusinessID(ctx, header, action, ids...)
+	case common.BKInnerObjIDBizSet:
+		return am.AuthorizeByBizSetID(ctx, header, action, ids...)
 	}
 
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objID, ids...)

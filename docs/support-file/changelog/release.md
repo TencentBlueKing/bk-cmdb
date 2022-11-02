@@ -1,6 +1,12 @@
 ## [Version: 3.10.x_feature-agent-id_alpha5] - 2022-10-24
 **新增功能**
 - 修改bkmonitor beat插件上报的agnetID tag为bk_agent_id
+
+## [Version: v3.10.22-alpha2] - 2022-11-02
+**缺陷修复**
+- 修复通过excel表格导入业务集关联关系场景下失败问题
+- 修复当没有自定义层级时，调用查询主机及其对应topo接口报错问题
+
 ## [Version: v3.10.22-alpha1] - 2022-10-27
 **新增功能**
 - 主机操作系统增加hp-unix类型
