@@ -1220,11 +1220,10 @@ loop:
 		idField := common.GetInstIDField(root)
 		for _, children := range rootInstances {
 
-			childObj := reverseRankMap[root]
 			for _, one := range children {
-				childID, err := util.GetInt64ByInterface(one[common.GetInstIDField(childObj)])
+				childID, err := util.GetInt64ByInterface(one[common.GetInstIDField(root)])
 				if err != nil {
-					blog.Errorf("get %s instance id failed, inst: %v, err: %v, rid: %s", childObj, one, err, rid)
+					blog.Errorf("get %s instance id failed, inst: %v, err: %v, rid: %s", root, one, err, rid)
 					return nil, err
 				}
 				node := &metadata.HostTopoNode{
