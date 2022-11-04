@@ -125,7 +125,8 @@ const mutations = {
           bk_classification_type: '',
           bk_objects: [],
           bk_supplier_account: '',
-          id: 0
+          id: 0,
+          isNewClassify: true
         },
         ...classification
       })

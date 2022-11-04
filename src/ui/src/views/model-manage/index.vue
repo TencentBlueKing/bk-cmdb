@@ -131,17 +131,20 @@
     <div class="model-management-body">
       <ul
         class="group-list"
+        ref="model-content"
         :class="{
           'is-dragging': isDragging
         }"
       >
         <li
           class="group-item clearfix"
+          ref="classification"
           v-for="(classification, classIndex) in currentClassifications"
           :key="classIndex"
         >
           <div class="group-header clearfix">
             <collapse-group-title
+              :classification="classification"
               :dropdown-menu="!isModelSelectable"
               :collapse=" classificationsCollapseState[classification.id]"
               :title="`${classification.bk_classification_name} ( ${ classification.bk_objects.length} )`"
@@ -241,6 +244,18 @@
                 </div>
               </div>
             </draggable>
+          </bk-transition>
+          <bk-transition name="collapse" class="group-empty-model"
+            v-if="classification.bk_objects.length === 0"
+            v-show="!classificationsCollapseState[classification.id]">
+            <i
+              class="bk-icon icon-info-circle"
+            >
+              {{$t('该分组暂无模型，请')}}
+              <bk-button :text="true" title="primary" @click="showModelDialog(classification.bk_classification_id)">
+                {{$t('立即添加')}}
+              </bk-button>
+            </i>
           </bk-transition>
         </li>
       </ul>
@@ -978,7 +993,13 @@
             this.updateClassify({ ...params, ...{ id: res.id } })
             this.$success(this.$t('新建成功'))
           }
-          this.hideGroupDialog()
+          await this.hideGroupDialog()
+          this.modelSearchKey = ''
+          const classificationDomList = this.$refs.classification
+          const newGroupHeight = classificationDomList.at(-2).offsetHeight
+          const lastGroupHeight = classificationDomList.at(-1).offsetHeight
+          const scrollHeight = this.$refs['model-content'].offsetHeight - newGroupHeight - lastGroupHeight
+          document.getElementsByClassName('model-management-body')[0].scrollTop = scrollHeight
           this.modelSearchKey = ''
         } catch (error) {
           console.log(error)

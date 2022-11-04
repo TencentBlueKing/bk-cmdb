@@ -1638,5 +1638,6 @@
     "模板里定义的字段，在实例中将不可修改": "Property defined in the template will not be modifiable in the instance",
     "批量同步集群模板": "Batch Sync Set Template",
     "批量同步模板": "Batch Sync Template",
-    "已是最新内容，无需同步": "Already up to date, no need to sync"
+    "已是最新内容，无需同步": "Already up to date, no need to sync",
+    "该分组暂无模型，请": "This group has no model, please"
 }
