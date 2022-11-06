@@ -42,6 +42,7 @@ type Locker interface {
 type MLocker interface {
 	MLock(rid string, retrytimes int, expire time.Duration, values ...StrFormat) (locked bool, err error)
 	MUnlock() error
+	MPartialUnlock(keys []string) error
 }
 
 // NewLocker TODO
@@ -205,4 +206,26 @@ func (l *mlock) MUnlock() error {
 		return nil
 	}
 	return l.cache.Del(context.Background(), l.keys...).Err()
+}
+
+// MPartialUnlock to partially delete the lock of the key,
+// you need to ensure that the passed key is in the previously locked keys.
+func (l *mlock) MPartialUnlock(keys []string) error {
+
+	keysMap := make(map[string]struct{}, 0)
+	for _, key := range l.keys {
+		keysMap[key] = struct{}{}
+	}
+
+	for _, key := range keys {
+		if _, ok := keysMap[key]; !ok {
+			return fmt.Errorf("some key not in keys, key: %v, all keys: %v", key, l.keys)
+		}
+	}
+
+	if !l.needUnlock {
+		return nil
+	}
+
+	return l.cache.Del(context.Background(), keys...).Err()
 }
