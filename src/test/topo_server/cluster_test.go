@@ -147,7 +147,7 @@ var _ = Describe("kube cluster test", func() {
 
 			id, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
 			util.RegisterResponse(id)
-			Expect(err.Error()).Should(ContainSubstring("cannot be empty"))
+			Expect(err.Error()).Should(ContainSubstring("name"))
 		}()
 	})
 
@@ -180,7 +180,7 @@ var _ = Describe("kube cluster test", func() {
 			}
 			result, err := kubeClient.UpdateClusterFields(ctx, header, bizId, data)
 			util.RegisterResponse(result)
-			Expect(err.Error()).Should(ContainSubstring("non-editable field"))
+			Expect(err.Error()).Should(ContainSubstring("uid"))
 		}()
 
 		By("delete kube cluster")

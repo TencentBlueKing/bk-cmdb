@@ -210,7 +210,7 @@ var _ = Describe("kube cluster test", func() {
 			}
 			result, err := kubeClient.BatchCreateNode(ctx, header, bizId, createNode)
 			util.RegisterResponse(result)
-			Expect(err.Error()).Should(ContainSubstring("cannot be empty"))
+			Expect(err.Error()).Should(ContainSubstring("name"))
 		}()
 
 	})
@@ -242,7 +242,7 @@ var _ = Describe("kube cluster test", func() {
 			}
 			result, err := kubeClient.UpdateNodeFields(ctx, header, bizId, option)
 			util.RegisterResponse(result)
-			Expect(err.Error()).Should(ContainSubstring("non-editable field"))
+			Expect(err.Error()).Should(ContainSubstring("name"))
 		}()
 
 		By("search node by node name")
