@@ -134,14 +134,14 @@ const (
 // getFieldTag a variable with a non-null pointer gets the corresponding tag.
 // for example, it needs to be compatible when the tag is "name,omitempty"
 func getFieldTag(typeOfOption reflect.Type, tag string, i int) (string, bool) {
-	tagTmp := typeOfOption.Field(i).Tag.Get(tag)
-	//tagTmp := typeOfOption.Field(i).Tag.Get("json")
 
+	tagTmp := typeOfOption.Field(i).Tag.Get(tag)
 	tags := strings.Split(tagTmp, ",")
 
 	if tags[0] == "" {
 		return "", true
 	}
+
 	return tags[0], false
 }
 

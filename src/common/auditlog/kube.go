@@ -103,12 +103,12 @@ func (c *kubeAuditLog) GeneratePodAuditLog(param *generateAuditCommonParameter, 
 
 // kubeWorkloadData kube workload audit data struct, including workload type and its actual data
 type kubeWorkloadData struct {
-	Kind types.WorkloadType `json:"kind" bson:"kind"`
-	Data types.WorkloadI    `json:"data" bson:"data"`
+	Kind types.WorkloadType      `json:"kind" bson:"kind"`
+	Data types.WorkloadInterface `json:"data" bson:"data"`
 }
 
 // GenerateWorkloadAuditLog generate audit log of kube workload.
-func (c *kubeAuditLog) GenerateWorkloadAuditLog(param *generateAuditCommonParameter, data []types.WorkloadI,
+func (c *kubeAuditLog) GenerateWorkloadAuditLog(param *generateAuditCommonParameter, data []types.WorkloadInterface,
 	kind types.WorkloadType) ([]metadata.AuditLog, errors.CCErrorCoder) {
 
 	auditLogs := make([]metadata.AuditLog, len(data))

@@ -111,7 +111,7 @@ func (g *GameStatefulSet) SetWorkloadBase(wl WorkloadBase) {
 func (w *GameStatefulSet) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -127,7 +127,7 @@ func (w *GameStatefulSet) ValidateCreate() ccErr.RawErrorInfo {
 func (w *GameStatefulSet) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}

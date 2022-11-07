@@ -18,14 +18,15 @@
 package types
 
 import (
+	"errors"
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
-	"errors"
-	"fmt"
 )
 
 const (
@@ -102,7 +103,7 @@ func (option *Node) createValidate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -113,7 +114,7 @@ func (option *Node) createValidate() ccErr.RawErrorInfo {
 
 	if err := option.validateNodeIP(true); err != nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{err.Error()},
 		}
 	}
@@ -139,7 +140,7 @@ func (option *Node) updateValidate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"node information must be given"},
 		}
 	}
@@ -183,7 +184,7 @@ func (option *OneNodeCreateOption) validateCreate() ccErr.RawErrorInfo {
 
 	if option.ClusterID == 0 {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{BKClusterIDFiled},
 		}
 	}
@@ -210,14 +211,14 @@ func (option *CreateNodesOption) ValidateCreate() ccErr.RawErrorInfo {
 
 	if len(option.Nodes) == 0 {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{errors.New("param must be set")},
 		}
 	}
 
 	if len(option.Nodes) > maxCreateNodeNum {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args: []interface{}{fmt.Errorf("the number of nodes created at one time does not exceed %d",
 				maxCreateNodeNum)},
 		}
@@ -287,18 +288,18 @@ type UpdateNodeOption struct {
 	Data Node    `json:"data"`
 }
 
-// Validate check whether the request parameters for updating the node are legal.
-func (option *UpdateNodeOption) Validate() ccErr.RawErrorInfo {
+// UpdateValidate check whether the request parameters for updating the node are legal.
+func (option *UpdateNodeOption) UpdateValidate() ccErr.RawErrorInfo {
 
 	if len(option.IDs) == 0 {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"parameter cannot be empty"},
 		}
 	}
 	if len(option.IDs) > maxUpdateNodeNum {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args: []interface{}{fmt.Sprintf("the number of nodes to be updated at one time cannot exceed %d",
 				maxUpdateNodeNum)},
 		}
@@ -306,7 +307,7 @@ func (option *UpdateNodeOption) Validate() ccErr.RawErrorInfo {
 
 	if err := option.Data.validateNodeIP(false); err != nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args: []interface{}{fmt.Sprintf("the number of nodes to be updated at one time cannot exceed %d",
 				maxUpdateNodeNum)},
 		}

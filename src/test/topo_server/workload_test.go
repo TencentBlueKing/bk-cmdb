@@ -92,7 +92,7 @@ var _ = Describe("workload test", func() {
 			},
 			Name: nsName,
 		}
-		createOpt := types.NsCreateReq{
+		createOpt := types.NsCreateOption{
 			Data: []types.Namespace{ns},
 		}
 
@@ -152,8 +152,8 @@ var _ = Describe("workload test", func() {
 			StrategyType:          &strategyType,
 			RollingUpdateStrategy: &rollingUpdateStrategy,
 		}
-		createOpt := types.WlCreateReq{
-			Data: []types.WorkloadI{
+		createOpt := types.WlCreateOption{
+			Data: []types.WorkloadInterface{
 				&wl,
 			},
 		}
@@ -213,7 +213,7 @@ var _ = Describe("workload test", func() {
 			StrategyType:          &strategyType,
 			RollingUpdateStrategy: &rollingUpdateStrategy,
 		}
-		updateOpt := types.WlUpdateReq{
+		updateOpt := types.WlUpdateOption{
 			IDs:  []int64{wlID},
 			Data: &wl,
 		}
@@ -251,7 +251,7 @@ var _ = Describe("workload test", func() {
 			Limit: 10,
 		}
 		fields := []string{common.BKFieldID}
-		queryOpt := types.WlQueryReq{
+		queryOpt := types.WlQueryOption{
 			NamespaceSpec: types.NamespaceSpec{
 				ClusterSpec: types.ClusterSpec{
 					ClusterID: clusterID,
@@ -271,7 +271,7 @@ var _ = Describe("workload test", func() {
 		page = metadata.BasePage{
 			EnableCount: true,
 		}
-		queryOpt = types.WlQueryReq{
+		queryOpt = types.WlQueryOption{
 			NamespaceSpec: types.NamespaceSpec{
 				ClusterSpec: types.ClusterSpec{
 					ClusterID: clusterID,
@@ -287,7 +287,7 @@ var _ = Describe("workload test", func() {
 	})
 
 	It("delete workload", func() {
-		deleteOpt := types.WlDeleteReq{
+		deleteOpt := types.WlDeleteOption{
 			IDs: []int64{wlID},
 		}
 

@@ -386,7 +386,7 @@ func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := data.Validate(); err.ErrCode != 0 {
+	if err := data.UpdateValidate(); err.ErrCode != 0 {
 		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}

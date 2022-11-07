@@ -1665,7 +1665,7 @@ func (ps *parseStream) kube() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1688,7 +1688,7 @@ func (ps *parseStream) kube() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1711,7 +1711,7 @@ func (ps *parseStream) kube() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1734,7 +1734,7 @@ func (ps *parseStream) kube() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1757,7 +1757,7 @@ func (ps *parseStream) kube() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1808,7 +1808,7 @@ func (ps *parseStream) kube() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1832,7 +1832,7 @@ func (ps *parseStream) kube() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1856,7 +1856,7 @@ func (ps *parseStream) kube() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1879,7 +1879,7 @@ func (ps *parseStream) kube() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1901,7 +1901,7 @@ func (ps *parseStream) kube() *parseStream {
 		}
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business id %s, err: %v", ps.RequestCtx.Elements[4], err)
 			return ps
 		}
 

@@ -95,7 +95,7 @@ func (b *kube) getDeleteNodeInfo(kit *rest.Kit, ids []int64, bizID int64) ([]typ
 	return result.Data, nil
 }
 
-// BatchDeleteNode  batch delete nodes.
+// BatchDeleteNode batch delete node.
 func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.BatchDeleteNodeOption) error {
 
 	nodes, err := b.getDeleteNodeInfo(kit, option.IDs, bizID)
@@ -229,6 +229,10 @@ func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClu
 func (b *kube) isExistKubeResourceUnderCluster(kit *rest.Kit, option *types.DeleteClusterOption, bizID int64,
 	supplierAccount string) (bool, error) {
 
+	if len(option.IDs) > 0 {
+		return false, errors.New("ids must be set")
+	}
+
 	var (
 		wg       sync.WaitGroup
 		firstErr ccErr.CCErrorCoder
@@ -239,14 +243,12 @@ func (b *kube) isExistKubeResourceUnderCluster(kit *rest.Kit, option *types.Dele
 	tables = append(tables, workLoads...)
 
 	filter := make([]map[string]interface{}, 0)
-	if len(option.IDs) > 0 {
-		filter = []map[string]interface{}{
-			{
-				types.BKClusterIDFiled: map[string]interface{}{common.BKDBIN: option.IDs},
-				common.BKAppIDField:    bizID,
-				common.BKOwnerIDField:  supplierAccount,
-			},
-		}
+	filter = []map[string]interface{}{
+		{
+			types.BKClusterIDFiled: map[string]interface{}{common.BKDBIN: option.IDs},
+			common.BKAppIDField:    bizID,
+			common.BKOwnerIDField:  supplierAccount,
+		},
 	}
 
 	for _, table := range tables {
@@ -372,11 +374,14 @@ func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, biz
 // CreateCluster create container cluster
 func (b *kube) CreateCluster(kit *rest.Kit, data *types.Cluster, bizID int64) (int64, error) {
 
+	if data.Name == nil || data.Uid == nil {
+		return 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "cluster name or uid must be set")
+	}
+
 	filterName := map[string]interface{}{
 		common.BKFieldName:  *data.Name,
 		common.BKAppIDField: bizID,
 	}
-	util.SetQueryOwner(filterName, kit.SupplierAccount)
 
 	filterUid := map[string]interface{}{
 		common.BKFieldName:  *data.Uid,
@@ -387,6 +392,8 @@ func (b *kube) CreateCluster(kit *rest.Kit, data *types.Cluster, bizID int64) (i
 	cond := map[string]interface{}{
 		common.BKDBOR: []map[string]interface{}{filterName, filterUid},
 	}
+	util.SetQueryOwner(cond, kit.SupplierAccount)
+
 	counts, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 		types.BKTableNameBaseCluster, []map[string]interface{}{cond})
 	if err != nil {

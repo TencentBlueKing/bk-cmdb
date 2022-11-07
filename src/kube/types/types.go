@@ -130,7 +130,7 @@ func (t WorkloadType) Fields() (*table.Fields, error) {
 }
 
 // NewInst new a workload instance according to workload type
-func (t WorkloadType) NewInst() (WorkloadI, error) {
+func (t WorkloadType) NewInst() (WorkloadInterface, error) {
 	switch t {
 	case KubeDeployment:
 		return new(Deployment), nil

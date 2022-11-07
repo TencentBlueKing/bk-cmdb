@@ -141,7 +141,7 @@ var _ = Describe("pod test", func() {
 			},
 			Name: nsName,
 		}
-		createNsOpt := types.NsCreateReq{
+		createNsOpt := types.NsCreateOption{
 			Data: []types.Namespace{ns},
 		}
 
@@ -162,8 +162,8 @@ var _ = Describe("pod test", func() {
 				Name: wlName,
 			},
 		}
-		createWOpt := types.WlCreateReq{
-			Data: []types.WorkloadI{
+		createWOpt := types.WlCreateOption{
+			Data: []types.WorkloadInterface{
 				&wl,
 			},
 		}
@@ -274,7 +274,7 @@ var _ = Describe("pod test", func() {
 			Limit: 10,
 		}
 		fields := []string{common.BKFieldID}
-		queryOpt := types.PodQueryReq{
+		queryOpt := types.PodQueryOption{
 			WorkloadSpec: types.WorkloadSpec{
 				NamespaceSpec: types.NamespaceSpec{
 					ClusterSpec: types.ClusterSpec{
@@ -300,7 +300,7 @@ var _ = Describe("pod test", func() {
 		page = metadata.BasePage{
 			EnableCount: true,
 		}
-		queryOpt = types.PodQueryReq{
+		queryOpt = types.PodQueryOption{
 			WorkloadSpec: types.WorkloadSpec{
 				NamespaceSpec: types.NamespaceSpec{
 					ClusterSpec: types.ClusterSpec{
@@ -341,7 +341,7 @@ var _ = Describe("pod test", func() {
 			Limit: 10,
 		}
 		fields := []string{types.ContainerUIDField}
-		queryOpt := types.ContainerQueryReq{
+		queryOpt := types.ContainerQueryOption{
 			PodID:  podID,
 			Filter: filter,
 			Page:   page,
@@ -356,7 +356,7 @@ var _ = Describe("pod test", func() {
 		page = metadata.BasePage{
 			EnableCount: true,
 		}
-		queryOpt = types.ContainerQueryReq{
+		queryOpt = types.ContainerQueryOption{
 			PodID:  podID,
 			Filter: filter,
 			Page:   page,

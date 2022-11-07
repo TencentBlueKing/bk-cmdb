@@ -18,14 +18,15 @@
 package types
 
 import (
+	"errors"
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
-	"errors"
-	"fmt"
 )
 
 const (
@@ -122,12 +123,12 @@ func (option *DeleteClusterOption) Validate() error {
 	return nil
 }
 
-// CreateValidate check whether the parameters for creating a cluster are legal.
-func (option *Cluster) CreateValidate() ccErr.RawErrorInfo {
+// ValidateCreate check whether the parameters for creating a cluster are legal.
+func (option *Cluster) ValidateCreate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -139,12 +140,12 @@ func (option *Cluster) CreateValidate() ccErr.RawErrorInfo {
 	return ccErr.RawErrorInfo{}
 }
 
-// UpdateValidate verifying the validity of parameters for updating node scenarios
-func (option *Cluster) updateValidate() ccErr.RawErrorInfo {
+// validateUpdate verifying the validity of parameters for updating node scenarios
+func (option *Cluster) validateUpdate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"cluster information must be given"},
 		}
 	}
@@ -198,26 +199,26 @@ func (option *UpdateClusterOption) Validate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"cluster information must be given"},
 		}
 	}
 
 	if len(option.IDs) == 0 {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"the params for updating the cluster must be set"},
 		}
 	}
 	if len(option.IDs) > maxUpdateClusterNum {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args: []interface{}{fmt.Sprintf("the number of update clusters cannot exceed %d at a time",
 				maxUpdateClusterNum)},
 		}
 	}
 
-	if err := option.Data.updateValidate(); err.ErrCode != 0 {
+	if err := option.Data.validateUpdate(); err.ErrCode != 0 {
 		return err
 	}
 

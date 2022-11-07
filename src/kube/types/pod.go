@@ -83,8 +83,8 @@ const (
 	containerQueryLimit = 500
 )
 
-// PodQueryReq pod query request
-type PodQueryReq struct {
+// PodQueryOption pod query request
+type PodQueryOption struct {
 	WorkloadSpec `json:",inline" bson:",inline"`
 	HostID       int64              `json:"bk_host_id"`
 	NodeID       int64              `json:"bk_node_id"`
@@ -95,7 +95,7 @@ type PodQueryReq struct {
 }
 
 // Validate validate PodQueryReq
-func (p *PodQueryReq) Validate() ccErr.RawErrorInfo {
+func (p *PodQueryOption) Validate() ccErr.RawErrorInfo {
 	if (p.ClusterID != 0 || p.NamespaceID != 0 || p.Ref.ID != 0 || p.NodeID != 0) &&
 		(p.ClusterUID != "" || p.Namespace != "" || p.Ref.Name != "" || p.NodeName != "") {
 
@@ -131,7 +131,7 @@ func (p *PodQueryReq) Validate() ccErr.RawErrorInfo {
 }
 
 // BuildCond build query pod condition
-func (p *PodQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
+func (p *PodQueryOption) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
 		common.BKAppIDField:      bizID,
 		common.BkSupplierAccount: supplierAccount,
@@ -210,14 +210,14 @@ func (option *Pod) createValidate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"pod information must be set"},
 		}
 	}
 
 	if option.Name == nil || *option.Name == "" {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"pod name must be set"},
 		}
 	}
@@ -226,29 +226,6 @@ func (option *Pod) createValidate() ccErr.RawErrorInfo {
 		return err
 	}
 
-	// first get a list of required fields.
-	//requires := PodFields.RequiredFields()
-	//for _, required := range requires {
-	//	if !required {
-	//		continue
-	//	}
-	//	typeOfOption := reflect.TypeOf(*option)
-	//	valueOfOption := reflect.ValueOf(*option)
-	//	for i := 0; i < typeOfOption.NumField(); i++ {
-	//		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
-	//		if flag {
-	//			continue
-	//		}
-	//
-	//		if !PodFields.IsFieldRequiredByField(tag) {
-	//			continue
-	//		}
-	//
-	//		if err := isRequiredField(tag, valueOfOption, i); err != nil {
-	//			return err
-	//		}
-	//	}
-	//}
 	return ccErr.RawErrorInfo{}
 }
 
@@ -274,26 +251,26 @@ type Container struct {
 	table.Revision `json:",inline" bson:",inline"`
 }
 
-// createValidate validate the ContainerBaseFields
-func (option *Container) createValidate() ccErr.RawErrorInfo {
+// validateCreate validate the ContainerBaseFields
+func (option *Container) validateCreate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"container information must be set"},
 		}
 	}
 
 	if option.Name == nil || *option.Name == "" {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"container name must be set"},
 		}
 	}
 
 	if option.ContainerID == nil || *option.ContainerID == "" {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"container name must be set"},
 		}
 	}
@@ -356,7 +333,7 @@ func (option *CreatePodsOption) Validate() ccErr.RawErrorInfo {
 
 	if len(option.Data) == 0 {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{errors.New("params cannot be empty")},
 		}
 	}
@@ -366,7 +343,7 @@ func (option *CreatePodsOption) Validate() ccErr.RawErrorInfo {
 	}
 	if podsLen > createPodsLimit {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args: []interface{}{fmt.Errorf("the maximum number of pods created at one time cannot exceed %d",
 				createPodsLimit)},
 		}
@@ -376,13 +353,13 @@ func (option *CreatePodsOption) Validate() ccErr.RawErrorInfo {
 		for _, pod := range data.Pods {
 			if err := pod.Spec.validate(); err != nil {
 				return ccErr.RawErrorInfo{
-					ErrCode: common.CCErrCommHTTPInputInvalid,
+					ErrCode: common.CCErrCommParamsIsInvalid,
 					Args:    []interface{}{err.Error()},
 				}
 			}
 			if pod.HostID == 0 {
 				return ccErr.RawErrorInfo{
-					ErrCode: common.CCErrCommHTTPInputInvalid,
+					ErrCode: common.CCErrCommParamsIsInvalid,
 					Args:    []interface{}{errors.New("host id must be set")},
 				}
 			}
@@ -392,7 +369,7 @@ func (option *CreatePodsOption) Validate() ccErr.RawErrorInfo {
 			}
 
 			for _, container := range pod.Containers {
-				if err := container.createValidate(); err.ErrCode != 0 {
+				if err := container.validateCreate(); err.ErrCode != 0 {
 					return err
 				}
 			}
@@ -401,8 +378,8 @@ func (option *CreatePodsOption) Validate() ccErr.RawErrorInfo {
 	return ccErr.RawErrorInfo{}
 }
 
-// ContainerQueryReq container query request
-type ContainerQueryReq struct {
+// ContainerQueryOption container query request
+type ContainerQueryOption struct {
 	PodID  int64              `json:"bk_pod_id"`
 	Filter *filter.Expression `json:"filter"`
 	Fields []string           `json:"fields,omitempty"`
@@ -410,7 +387,7 @@ type ContainerQueryReq struct {
 }
 
 // Validate validate ContainerQueryReq
-func (p *ContainerQueryReq) Validate() ccErr.RawErrorInfo {
+func (p *ContainerQueryOption) Validate() ccErr.RawErrorInfo {
 	if p.PodID == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
@@ -437,7 +414,7 @@ func (p *ContainerQueryReq) Validate() ccErr.RawErrorInfo {
 }
 
 // BuildCond build query container condition
-func (p *ContainerQueryReq) BuildCond() (mapstr.MapStr, error) {
+func (p *ContainerQueryOption) BuildCond() (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
 		BKPodIDField: p.PodID,
 	}

@@ -116,7 +116,7 @@ var _ = Describe("namespace test", func() {
 			Labels:         &label,
 			ResourceQuotas: &resourceQuotas,
 		}
-		createOpt := types.NsCreateReq{
+		createOpt := types.NsCreateOption{
 			Data: []types.Namespace{ns},
 		}
 
@@ -155,7 +155,7 @@ var _ = Describe("namespace test", func() {
 			Labels:         &label,
 			ResourceQuotas: &resourceQuotas,
 		}
-		updateOpt := types.NsUpdateReq{
+		updateOpt := types.NsUpdateOption{
 			IDs:  []int64{clusterID},
 			Data: ns,
 		}
@@ -193,7 +193,7 @@ var _ = Describe("namespace test", func() {
 			Limit: 10,
 		}
 		fields := []string{common.BKFieldID}
-		queryOpt := types.NsQueryReq{
+		queryOpt := types.NsQueryOption{
 			ClusterSpec: types.ClusterSpec{
 				ClusterID: clusterID,
 			},
@@ -210,7 +210,7 @@ var _ = Describe("namespace test", func() {
 		page = metadata.BasePage{
 			EnableCount: true,
 		}
-		queryOpt = types.NsQueryReq{
+		queryOpt = types.NsQueryOption{
 			ClusterSpec: types.ClusterSpec{
 				ClusterID: clusterID,
 			},
@@ -224,7 +224,7 @@ var _ = Describe("namespace test", func() {
 	})
 
 	It("delete namespace", func() {
-		deleteOpt := types.NsDeleteReq{
+		deleteOpt := types.NsDeleteOption{
 			IDs: []int64{
 				namespaceID,
 			},

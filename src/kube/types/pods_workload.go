@@ -66,7 +66,7 @@ func (p *PodsWorkload) SetWorkloadBase(wl WorkloadBase) {
 func (w *PodsWorkload) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -82,7 +82,7 @@ func (w *PodsWorkload) ValidateCreate() ccErr.RawErrorInfo {
 func (w *PodsWorkload) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}

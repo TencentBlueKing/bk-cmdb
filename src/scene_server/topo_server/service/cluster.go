@@ -197,7 +197,7 @@ func (s *Service) CreateCluster(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	if err := data.CreateValidate(); err.ErrCode != 0 {
+	if err := data.ValidateCreate(); err.ErrCode != 0 {
 		blog.Errorf("validate create kube cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return

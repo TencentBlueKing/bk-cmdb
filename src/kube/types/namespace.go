@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
-	"reflect"
 )
 
 // NamespaceFields merge the fields of the namespace and the details corresponding to the fields together.
@@ -123,37 +122,6 @@ func (ns *Namespace) ValidateCreate() errors.RawErrorInfo {
 	return errors.RawErrorInfo{}
 }
 
-// ValidateUpdate validate update namespace
-func (ns *Namespace) ValidateUpdate() errors.RawErrorInfo {
-	if ns == nil {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
-		}
-	}
-
-	typeOfOption := reflect.TypeOf(*ns)
-	valueOfOption := reflect.ValueOf(*ns)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
-		if flag {
-			continue
-		}
-
-		if flag := isNotEditableField(tag, valueOfOption, i); flag {
-			continue
-		}
-
-		// get whether it is an editable field based on tag
-		if !NamespaceFields.IsFieldEditableByField(tag) {
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsIsInvalid,
-				Args:    []interface{}{tag},
-			}
-		}
-	}
-	return errors.RawErrorInfo{}
-}
-
 // ResourceQuota defines the desired hard limits to enforce for Quota.
 type ResourceQuota struct {
 	Hard          map[string]string    `json:"hard" bson:"hard"`
@@ -182,14 +150,14 @@ type ScopedResourceSelectorRequirement struct {
 	Values []string `json:"values" bson:"values"`
 }
 
-// NsUpdateReq update namespace request
-type NsUpdateReq struct {
+// NsUpdateOption update namespace request
+type NsUpdateOption struct {
 	IDs  []int64    `json:"ids"`
 	Data *Namespace `json:"data"`
 }
 
 // Validate validate update namespace request
-func (ns *NsUpdateReq) Validate() errors.RawErrorInfo {
+func (ns *NsUpdateOption) Validate() errors.RawErrorInfo {
 	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
@@ -217,13 +185,13 @@ func (ns *NsUpdateReq) Validate() errors.RawErrorInfo {
 	return errors.RawErrorInfo{}
 }
 
-// NsDeleteReq delete namespace request
-type NsDeleteReq struct {
+// NsDeleteOption delete namespace request
+type NsDeleteOption struct {
 	IDs []int64 `json:"ids"`
 }
 
 // Validate validate NsDeleteReq
-func (ns *NsDeleteReq) Validate() errors.RawErrorInfo {
+func (ns *NsDeleteOption) Validate() errors.RawErrorInfo {
 	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
@@ -241,13 +209,13 @@ func (ns *NsDeleteReq) Validate() errors.RawErrorInfo {
 	return errors.RawErrorInfo{}
 }
 
-// NsCreateReq create namespace request
-type NsCreateReq struct {
+// NsCreateOption create namespace request
+type NsCreateOption struct {
 	Data []Namespace `json:"data"`
 }
 
 // Validate validate NsCreateReq
-func (ns *NsCreateReq) Validate() errors.RawErrorInfo {
+func (ns *NsCreateOption) Validate() errors.RawErrorInfo {
 	if len(ns.Data) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
@@ -274,16 +242,11 @@ func (ns *NsCreateReq) Validate() errors.RawErrorInfo {
 // NsCreateResp create namespace response
 type NsCreateResp struct {
 	metadata.BaseResp `json:",inline"`
-	Data              NsCreateRespData `json:"data"`
+	Data              metadata.RspIDs `json:"data"`
 }
 
-// NsCreateRespData create namespace response data
-type NsCreateRespData struct {
-	IDs []int64 `json:"ids"`
-}
-
-// NsQueryReq namespace query request
-type NsQueryReq struct {
+// NsQueryOption namespace query request
+type NsQueryOption struct {
 	ClusterSpec `json:",inline" bson:",inline"`
 	Filter      *filter.Expression `json:"filter"`
 	Fields      []string           `json:"fields,omitempty"`
@@ -291,7 +254,7 @@ type NsQueryReq struct {
 }
 
 // Validate validate NsQueryReq
-func (ns *NsQueryReq) Validate() errors.RawErrorInfo {
+func (ns *NsQueryOption) Validate() errors.RawErrorInfo {
 	if ns.ClusterUID != "" && ns.ClusterID != 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrorTopoIdentificationIllegal,
@@ -317,7 +280,7 @@ func (ns *NsQueryReq) Validate() errors.RawErrorInfo {
 }
 
 // BuildCond build query namespace condition
-func (ns *NsQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
+func (ns *NsQueryOption) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}

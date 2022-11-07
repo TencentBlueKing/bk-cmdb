@@ -27,8 +27,8 @@ import (
 )
 
 // CreateNamespace create namespace
-func (k *kube) CreateNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsCreateReq) (
-	*types.NsCreateRespData, errors.CCErrorCoder) {
+func (k *kube) CreateNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsCreateOption) (
+	*metadata.RspIDs, errors.CCErrorCoder) {
 
 	result := new(types.NsCreateResp)
 
@@ -53,7 +53,7 @@ func (k *kube) CreateNamespace(ctx context.Context, header http.Header, bizID in
 
 // UpdateNamespace update namespace
 func (k *kube) UpdateNamespace(ctx context.Context, header http.Header, bizID int64,
-	option *types.NsUpdateReq) errors.CCErrorCoder {
+	option *types.NsUpdateOption) errors.CCErrorCoder {
 
 	result := new(metadata.BaseResp)
 
@@ -78,7 +78,7 @@ func (k *kube) UpdateNamespace(ctx context.Context, header http.Header, bizID in
 
 // DeleteNamespace delete namespace
 func (k *kube) DeleteNamespace(ctx context.Context, header http.Header, bizID int64,
-	option *types.NsDeleteReq) errors.CCErrorCoder {
+	option *types.NsDeleteOption) errors.CCErrorCoder {
 
 	result := new(metadata.BaseResp)
 
@@ -129,7 +129,7 @@ func (k *kube) ListNamespace(ctx context.Context, header http.Header, input *met
 
 // CreateWorkload create workload
 func (k *kube) CreateWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
-	option *types.WlCreateReq) (*types.WlCreateRespData, errors.CCErrorCoder) {
+	option *types.WlCreateOption) (*metadata.RspIDs, errors.CCErrorCoder) {
 
 	result := new(types.WlCreateResp)
 
@@ -154,7 +154,7 @@ func (k *kube) CreateWorkload(ctx context.Context, header http.Header, bizID int
 
 // UpdateWorkload update workload
 func (k *kube) UpdateWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
-	option *types.WlUpdateReq) errors.CCErrorCoder {
+	option *types.WlUpdateOption) errors.CCErrorCoder {
 
 	result := new(metadata.BaseResp)
 
@@ -179,7 +179,7 @@ func (k *kube) UpdateWorkload(ctx context.Context, header http.Header, bizID int
 
 // DeleteWorkload delete workload
 func (k *kube) DeleteWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
-	option *types.WlDeleteReq) errors.CCErrorCoder {
+	option *types.WlDeleteOption) errors.CCErrorCoder {
 
 	result := new(metadata.BaseResp)
 

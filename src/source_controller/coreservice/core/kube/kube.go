@@ -37,7 +37,7 @@ type kubeOperation struct {
 
 // New create a new model manager instance
 func New() core.KubeOperation {
-	kube := &kubeOperation{}
+	kube := new(kubeOperation)
 	return kube
 }
 
@@ -82,7 +82,7 @@ func validateNodeData(kit *rest.Kit, bizID int64, node types.OneNodeCreateOption
 func (p *kubeOperation) GetSysSpecInfoByCond(kit *rest.Kit, spec types.SpecSimpleInfo, bizID int64,
 	hostID int64) (*types.SysSpec, bool, ccErr.CCErrorCoder) {
 	// 通过workload kind 获取表名
-	tableName, err := types.GetCollectionWithObject(string(spec.Ref.Kind))
+	tableName, err := spec.Ref.Kind.Table()
 	if err != nil {
 		blog.Errorf("get collection failed, kind: %s, err: %v, rid: %s", spec.Ref.Kind, err, kit.Rid)
 		return nil, false, kit.CCError.CCError(common.CCErrCommParamsInvalid)
@@ -99,7 +99,7 @@ func (p *kubeOperation) GetSysSpecInfoByCond(kit *rest.Kit, spec types.SpecSimpl
 	kubeField := []string{types.ClusterUIDField, types.NamespaceField, types.KubeNameField}
 
 	workload := make([]map[string]interface{}, 0)
-	err = mongodb.Client().Table(tableName[0]).Find(filter).Fields(kubeField...).All(kit.Ctx, &workload)
+	err = mongodb.Client().Table(tableName).Find(filter).Fields(kubeField...).All(kit.Ctx, &workload)
 	if err != nil {
 		blog.Errorf("query host module config failed, err: %s, rid:%s", err, kit.Rid)
 		return nil, false, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -372,7 +372,7 @@ func (p *kubeOperation) CreateCluster(kit *rest.Kit, bizID int64, data *types.Cl
 
 	// it is necessary to judge whether there is duplicate data here,
 	// to prevent subsequent calls to coreservice directly and lack of verification.
-	if err := data.CreateValidate(); err.ErrCode != 0 {
+	if err := data.ValidateCreate(); err.ErrCode != 0 {
 		blog.Errorf("create cluster failed, data: %+v, err: %+v, rid: %s", data, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
 	}

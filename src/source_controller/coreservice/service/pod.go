@@ -243,3 +243,26 @@ func (s *coreService) DeletePods(ctx *rest.Contexts) {
 
 	ctx.RespEntity(nil)
 }
+
+// ListContainer list container
+func (s *coreService) ListContainer(ctx *rest.Contexts) {
+	input := new(metadata.QueryCondition)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	containers := make([]types.Container, 0)
+	err := mongodb.Client().Table(types.BKTableNameBaseContainer).Find(input.Condition).Start(uint64(input.Page.Start)).
+		Limit(uint64(input.Page.Limit)).
+		Sort(input.Page.Sort).
+		Fields(input.Fields...).All(ctx.Kit.Ctx, &containers)
+	if err != nil {
+		blog.Errorf("search container failed, cond: %v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result := &types.ContainerDataResp{Info: containers}
+	ctx.RespEntity(result)
+}
