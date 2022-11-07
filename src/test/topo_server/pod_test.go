@@ -260,6 +260,35 @@ var _ = Describe("pod test", func() {
 				Condition: filter.And,
 				Rules: []filter.RuleFactory{
 					&filter.AtomRule{
+						Field:    types.ClusterUIDField,
+						Operator: filter.Equal.Factory(),
+						Value:    clusterUID,
+					},
+					&filter.AtomRule{
+						Field:    types.NamespaceField,
+						Operator: filter.Equal.Factory(),
+						Value:    nsName,
+					},
+					&filter.AtomRule{
+						Field:    types.RefField,
+						Operator: filter.Object.Factory(),
+						Value: &filter.CombinedRule{
+							Condition: filter.And,
+							Rules: []filter.RuleFactory{
+								&filter.AtomRule{
+									Field:    types.KindField,
+									Operator: filter.Equal.Factory(),
+									Value:    wlKind,
+								},
+								&filter.AtomRule{
+									Field:    types.KubeNameField,
+									Operator: filter.Equal.Factory(),
+									Value:    wlName,
+								},
+							},
+						},
+					},
+					&filter.AtomRule{
 						Field:    common.BKFieldName,
 						Operator: filter.Equal.Factory(),
 						Value:    podName,
@@ -275,18 +304,6 @@ var _ = Describe("pod test", func() {
 		}
 		fields := []string{common.BKFieldID}
 		queryOpt := types.PodQueryOption{
-			WorkloadSpec: types.WorkloadSpec{
-				NamespaceSpec: types.NamespaceSpec{
-					ClusterSpec: types.ClusterSpec{
-						ClusterUID: clusterUID,
-					},
-					Namespace: nsName,
-				},
-				Ref: types.Reference{
-					Kind: types.WorkloadType(wlKind),
-					Name: wlName,
-				},
-			},
 			Filter: filter,
 			Page:   page,
 			Fields: fields,
@@ -301,18 +318,6 @@ var _ = Describe("pod test", func() {
 			EnableCount: true,
 		}
 		queryOpt = types.PodQueryOption{
-			WorkloadSpec: types.WorkloadSpec{
-				NamespaceSpec: types.NamespaceSpec{
-					ClusterSpec: types.ClusterSpec{
-						ClusterUID: clusterUID,
-					},
-					Namespace: nsName,
-				},
-				Ref: types.Reference{
-					Kind: types.WorkloadType(wlKind),
-					Name: wlName,
-				},
-			},
 			Filter: filter,
 			Page:   page,
 		}
@@ -331,6 +336,11 @@ var _ = Describe("pod test", func() {
 						Operator: filter.Equal.Factory(),
 						Value:    containerName,
 					},
+					&filter.AtomRule{
+						Field:    types.BKPodIDField,
+						Operator: filter.Equal.Factory(),
+						Value:    podID,
+					},
 				},
 			},
 		}
@@ -342,7 +352,6 @@ var _ = Describe("pod test", func() {
 		}
 		fields := []string{types.ContainerUIDField}
 		queryOpt := types.ContainerQueryOption{
-			PodID:  podID,
 			Filter: filter,
 			Page:   page,
 			Fields: fields,
@@ -357,7 +366,6 @@ var _ = Describe("pod test", func() {
 			EnableCount: true,
 		}
 		queryOpt = types.ContainerQueryOption{
-			PodID:  podID,
 			Filter: filter,
 			Page:   page,
 		}
