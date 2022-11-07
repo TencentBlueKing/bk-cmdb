@@ -230,6 +230,9 @@ const (
 	// CCIllegalRegularExpression the regular expression's type assertion failed
 	CCIllegalRegularExpression = 1199090
 
+	// CCErrCommParamsNotSetCreateTimeField field unique mark can not set create_time
+	CCErrCommParamsNotSetCreateTimeField = 1199091
+
 	// too many requests
 	CCErrTooManyRequestErr = 1199997
 

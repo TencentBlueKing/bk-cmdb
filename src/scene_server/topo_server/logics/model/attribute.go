@@ -93,6 +93,10 @@ func (a *attribute) IsValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 		}
 	}
 
+	if data.PropertyID == common.CreateTimeField {
+		return kit.CCError.Errorf(common.CCErrCommParamsNotSetCreateTimeField, metadata.AttributeFieldPropertyID)
+	}
+
 	if !isUpdate || data.PropertyName != "" {
 		if common.AttributeNameMaxLength < utf8.RuneCountInString(data.PropertyName) {
 			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
