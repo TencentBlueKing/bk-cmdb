@@ -21,6 +21,8 @@
 
 <script>
   import moment from 'moment'
+  import xss from 'xss'
+
   export default {
     name: 'TheFooter',
     props: {
@@ -51,7 +53,8 @@
     },
     methods: {
       parseMarkdownLink(markdown) {
-        return markdown.replace(/\[([^\]]+)\]\(([^)]+)\)/ig, '<a target="_blank" class="contact-link" href="$2">$1</a>')
+        return xss(markdown, { stripIgnoreTagBody: true })
+          ?.replace(/\[([^\]]+)\]\(([^)]+)\)/ig, '<a target="_blank" class="contact-link" href="$2">$1</a>')
       },
       /**
        * 转换时间变量
