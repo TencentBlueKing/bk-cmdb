@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 )
 
@@ -38,8 +39,8 @@ func (s *Service) CreateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.NsCreateReq{}
-	if err := ctx.DecodeInto(&req); err != nil {
+	req := new(types.NsCreateReq)
+	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -51,7 +52,7 @@ func (s *Service) CreateNamespace(ctx *rest.Contexts) {
 
 	var data *types.NsCreateRespData
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		data, err = s.Engine.CoreAPI.CoreService().Kube().CreateNamespace(ctx.Kit.Ctx, ctx.Kit.Header, bizID, &req)
+		data, err = s.Engine.CoreAPI.CoreService().Kube().CreateNamespace(ctx.Kit.Ctx, ctx.Kit.Header, bizID, req)
 		if err != nil {
 			blog.Errorf("create namespace failed, data: %v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
 			return err
@@ -94,8 +95,8 @@ func (s *Service) UpdateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.NsUpdateReq{}
-	if err := ctx.DecodeInto(&req); err != nil {
+	req := new(types.NsUpdateReq)
+	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -105,38 +106,49 @@ func (s *Service) UpdateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err := req.BuildQueryCond(bizID, ctx.Kit.SupplierAccount)
-	if err != nil {
-		blog.Errorf("update namespace failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req.Data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
+	cond := mapstr.MapStr{
+		common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
 	}
-
+	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	query := &metadata.QueryCondition{
 		Condition: cond,
 	}
 	namespaces, err := s.listNamespace(query, ctx.Kit)
 	if err != nil {
-		blog.Errorf("list namespace failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req.Data, err, ctx.Kit.Rid)
+		blog.Errorf("list namespace failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if len(namespaces) != req.GetCount() {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
-		return
+	for _, namespace := range namespaces {
+		ids := make([]int64, 0)
+		if namespace.BizID != bizID {
+			ids = append(ids, namespace.ID)
+		}
+
+		if len(ids) != 0 {
+			blog.Errorf("namespace does not belong to this business, ids: %v, bizID: %s, rid: %s", ids, bizID,
+				ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, ids))
+			return
+		}
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Engine.CoreAPI.CoreService().Kube().UpdateNamespace(ctx.Kit.Ctx, ctx.Kit.Header, bizID, &req)
+		err := s.Engine.CoreAPI.CoreService().Kube().UpdateNamespace(ctx.Kit.Ctx, ctx.Kit.Header, bizID, req)
 		if err != nil {
 			blog.Errorf("update namespace failed, data: %v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
 			return err
 		}
 
-		// audit log.
 		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
+		updateFields, goErr := mapstr.Struct2Map(req.Data)
+		if goErr != nil {
+			blog.Errorf("update fields convert failed, err: %v, rid: %s", goErr, ctx.Kit.Rid)
+			return goErr
+		}
+		auditParam.WithUpdateFields(updateFields)
 		auditLogs, err := audit.GenerateNamespaceAuditLog(auditParam, namespaces)
 		if err != nil {
 			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", namespaces, err, ctx.Kit.Rid)
@@ -177,13 +189,10 @@ func (s *Service) DeleteNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err := req.BuildCond(bizID, ctx.Kit.SupplierAccount)
-	if err != nil {
-		blog.Errorf("delete namespace failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
+	cond := mapstr.MapStr{
+		common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
 	}
-
+	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	query := &metadata.QueryCondition{
 		Condition: cond,
 	}
@@ -194,9 +203,18 @@ func (s *Service) DeleteNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	if len(namespaces) != len(req.IDs) {
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
-		return
+	for _, namespace := range namespaces {
+		ids := make([]int64, 0)
+		if namespace.BizID != bizID {
+			ids = append(ids, namespace.ID)
+		}
+
+		if len(ids) != 0 {
+			blog.Errorf("namespace does not belong to this business, ids: %v, bizID: %s, rid: %s", ids, bizID,
+				ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, ids))
+			return
+		}
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {

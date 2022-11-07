@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/dal/table"
 	"configcenter/src/storage/driver/mongodb"
@@ -66,21 +67,24 @@ func (s *coreService) CreateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
+	nsIDs := make([]int64, 0)
+	for _, data := range req.Data {
+		nsIDs = append(nsIDs, data.GetWorkloadBase().NamespaceID)
+	}
+	nsSpecs, err := s.GetNamespaceSpec(ctx.Kit, bizID, nsIDs)
+	if err != nil {
+		blog.Errorf("get namespace spec message failed, bizID: %s, namespaceIDs: %v, err: %v, rid: %s", bizID, nsIDs,
+			err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
 	respData := types.WlCreateRespData{
 		IDs: make([]int64, len(ids)),
 	}
 	for idx, data := range req.Data {
 		wlBase := data.GetWorkloadBase()
-		spec := wlBase.NamespaceSpec
-		spec.BizID = bizID
-		nsSpec, err := s.GetNamespaceSpec(ctx.Kit, &spec)
-		if err != nil {
-			blog.Errorf("get namespace spec message failed, data: %v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-		wlBase.NamespaceSpec = *nsSpec
-
+		wlBase.NamespaceSpec = nsSpecs[wlBase.NamespaceID]
 		id := int64(ids[idx])
 		wlBase.ID = id
 		respData.IDs[idx] = id
@@ -105,28 +109,34 @@ func (s *coreService) CreateWorkload(ctx *rest.Contexts) {
 	ctx.RespEntity(respData)
 }
 
-// GetNamespaceSpec get namespace spec
-func (s *coreService) GetNamespaceSpec(kit *rest.Kit, spec *types.NamespaceSpec) (*types.NamespaceSpec, error) {
-	if spec.BizID == 0 {
+// GetNamespaceInfo get namespace spec
+func (s *coreService) GetNamespaceSpec(kit *rest.Kit, bizID int64, nsIDs []int64) (map[int64]types.NamespaceSpec,
+	error) {
+
+	if bizID == 0 {
 		blog.Errorf("bizID can not be empty, rid: %s", kit.Rid)
 		return nil, errors.New("bizID can not be empty")
 	}
 
-	if spec.NamespaceID == 0 {
-		blog.Errorf("namespaceID can not be empty, rid: %s", kit.Rid)
-		return nil, errors.New("namespaceID can not be empty")
+	if len(nsIDs) == 0 {
+		blog.Errorf("namespaceIDs can not be empty, rid: %s", kit.Rid)
+		return nil, errors.New("namespaceIDs can not be empty")
 	}
 
+	nsIDs = util.IntArrayUnique(nsIDs)
 	filter := map[string]interface{}{
-		common.BKAppIDField:   spec.BizID,
-		common.BKOwnerIDField: kit.SupplierAccount,
-		common.BKFieldID:      spec.NamespaceID,
+		common.BKAppIDField: bizID,
+		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: nsIDs},
 	}
+	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
 
-	ns := types.Namespace{}
-	if err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Find(filter).One(kit.Ctx, &ns); err != nil {
-		if mongodb.Client().IsNotFoundError(err) {
-			blog.Errorf("can not find namespace, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+	field := []string{common.BKFieldID, common.BKFieldName, types.BKClusterIDFiled, types.ClusterUIDField}
+	namespaces := make([]types.Namespace, 0)
+	err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Find(filter).Fields(field...).
+		All(kit.Ctx, &namespaces)
+	if err != nil {
+		if mongodb.Client().IsNotFoundError(err) || len(nsIDs) != len(namespaces) {
+			blog.Errorf("can not find all namespace, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 		}
 
@@ -134,16 +144,19 @@ func (s *coreService) GetNamespaceSpec(kit *rest.Kit, spec *types.NamespaceSpec)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	result := types.NamespaceSpec{
-		ClusterSpec: types.ClusterSpec{
-			BizID:      ns.BizID,
-			ClusterID:  ns.ClusterID,
-			ClusterUID: ns.ClusterUID,
-		},
-		Namespace:   ns.Name,
-		NamespaceID: ns.ID,
+	nsSpecs := make(map[int64]types.NamespaceSpec)
+	for _, namespace := range namespaces {
+		nsSpecs[namespace.ID] = types.NamespaceSpec{
+			ClusterSpec: types.ClusterSpec{
+				BizID:      bizID,
+				ClusterID:  namespace.ClusterID,
+				ClusterUID: namespace.ClusterUID,
+			},
+			Namespace:   namespace.Name,
+			NamespaceID: namespace.ID,
+		}
 	}
-	return &result, nil
+	return nsSpecs, nil
 }
 
 // UpdateWorkload update workload
@@ -173,22 +186,24 @@ func (s *coreService) UpdateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	for _, data := range req.Data {
-		filter := data.BuildUpdateFilter(bizID, ctx.Kit.SupplierAccount)
-		updateData, err := data.BuildUpdateData(ctx.Kit.User)
-		if err != nil {
-			blog.Errorf("get update data failed, kind: %s, data: %v, err: %v, rid: %s", kind, data, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
-			return
-		}
+	cond := map[string]interface{}{
+		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: req.IDs},
+		common.BKAppIDField: bizID,
+	}
+	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
+	updateData, err := req.Data.BuildUpdateData(ctx.Kit.User)
+	if err != nil {
+		blog.Errorf("get update data failed, kind: %s, info: %v, err: %v, rid: %s", kind, req.Data, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
+		return
+	}
 
-		err = mongodb.Client().Table(table).Update(ctx.Kit.Ctx, filter, updateData)
-		if err != nil {
-			blog.Errorf("update workload failed, kind: %s, filter: %v, updateData: %v, err: %v, rid: %s", kind, filter,
-				updateData, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
-			return
-		}
+	err = mongodb.Client().Table(table).Update(ctx.Kit.Ctx, cond, updateData)
+	if err != nil {
+		blog.Errorf("update workload failed, kind: %s, filter: %v, updateData: %v, err: %v, rid: %s", kind, cond,
+			updateData, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
+		return
 	}
 
 	ctx.RespEntity(nil)
@@ -221,12 +236,11 @@ func (s *coreService) DeleteWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	filter, err := req.BuildCond(bizID, ctx.Kit.SupplierAccount)
-	if err != nil {
-		blog.Errorf("delete workload failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
+	filter := mapstr.MapStr{
+		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: req.IDs},
+		common.BKAppIDField: bizID,
 	}
+	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
 	if err := mongodb.Client().Table(table).Delete(ctx.Kit.Ctx, filter); err != nil {
 		blog.Errorf("delete workload failed, filter: %v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))

@@ -18,12 +18,12 @@
 package types
 
 import (
-	"reflect"
+	"errors"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
-	"configcenter/src/common/errors"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/kube/orm"
 	"configcenter/src/storage/dal/table"
 )
@@ -36,7 +36,7 @@ var JobFields = table.MergeFields(CommonSpecFieldsDescriptor, WorkLoadBaseFields
 var JobSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
-	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: true, IsEditable: true},
+	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
 	{Field: StrategyTypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: MinReadySecondsField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
 	{Field: RollingUpdateStrategyField, Type: enumor.Object, IsRequired: false, IsEditable: true},
@@ -61,48 +61,47 @@ func (j *Job) SetWorkloadBase(wl WorkloadBase) {
 	j.WorkloadBase = wl
 }
 
-// ValidateUpdate validate update workload
-func (w *Job) ValidateUpdate() errors.RawErrorInfo {
+// ValidateCreate validate create workload
+func (w *Job) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"data"},
 		}
 	}
 
-	typeOfOption := reflect.TypeOf(*w)
-	valueOfOption := reflect.ValueOf(*w)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, i)
-		if flag {
-			continue
-		}
-
-		if flag := isEditableField(tag, valueOfOption, i); flag {
-			continue
-		}
-
-		// get whether it is an editable field based on tag
-		if !JobFields.IsFieldEditableByField(tag) {
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsIsInvalid,
-				Args:    []interface{}{tag},
-			}
-		}
+	if err := ValidateCreate(*w, JobFields); err.ErrCode != 0 {
+		return err
 	}
-	return errors.RawErrorInfo{}
+
+	return ccErr.RawErrorInfo{}
 }
 
-// JobUpdateData defines the job update data common operation.
-type JobUpdateData struct {
-	WlCommonUpdate `json:",inline"`
-	Info           Job `json:"info"`
+// ValidateUpdate validate update workload
+func (w *Job) ValidateUpdate() ccErr.RawErrorInfo {
+	if w == nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"data"},
+		}
+	}
+
+	if err := ValidateUpdate(*w, JobFields); err.ErrCode != 0 {
+		return err
+	}
+
+	return ccErr.RawErrorInfo{}
 }
 
 // BuildUpdateData build job update data
-func (d *JobUpdateData) BuildUpdateData(user string) (map[string]interface{}, error) {
+func (w *Job) BuildUpdateData(user string) (map[string]interface{}, error) {
+	if w == nil {
+		return nil, errors.New("update param is invalid")
+	}
+
 	now := time.Now().Unix()
 	opts := orm.NewFieldOptions().AddIgnoredFields(wlIgnoreField...)
-	updateData, err := orm.GetUpdateFieldsWithOption(d.Info, opts)
+	updateData, err := orm.GetUpdateFieldsWithOption(w, opts)
 	if err != nil {
 		return nil, err
 	}

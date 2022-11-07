@@ -86,7 +86,7 @@ func (s *Service) AddHostFavourite(ctx *rest.Contexts) {
 		// check if the info string matches the required structure
 		err := json.Unmarshal([]byte(param.Info), &infoParam{})
 		if err != nil {
-			blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input: %+v, rid: %s", err, param.Info,
+			blog.Errorf("host favourite info unmarshal failed, err: %v, input: %+v, rid: %s", err, param.Info,
 				ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "info"))
 			return

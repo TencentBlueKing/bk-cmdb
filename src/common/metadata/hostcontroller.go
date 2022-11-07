@@ -94,13 +94,13 @@ type HostInfo struct {
 
 // ExtractHostIDs extract hostIDs
 func (h HostInfo) ExtractHostIDs() ([]int64, error) {
-	ids := make([]int64, 0)
-	for _, h := range h.Info {
+	ids := make([]int64, len(h.Info))
+	for idx, h := range h.Info {
 		id, err := h.Int64(common.BKHostIDField)
 		if err != nil {
 			return nil, err
 		}
-		ids = append(ids, id)
+		ids[idx] = id
 	}
 	return ids, nil
 }

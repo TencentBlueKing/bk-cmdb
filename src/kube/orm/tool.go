@@ -21,6 +21,8 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+
+	"configcenter/src/common/blog"
 )
 
 // GetUpdateFieldsWithOption get update fields with option, it will return fields with assigned values,
@@ -99,10 +101,12 @@ func getUpdateFields(v interface{}) (map[string]interface{}, error) {
 		}
 
 		if fieldVal.Kind() != reflect.Ptr {
+			blog.V(4).Infof("field is not pointer type, type: %v, field: %s, skip", fieldVal.Kind(), name)
 			continue
 		}
 
 		if fieldVal.IsNil() {
+			blog.V(4).Infof("field %s value is nil, skip", name)
 			continue
 		}
 

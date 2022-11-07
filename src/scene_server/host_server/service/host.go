@@ -1736,7 +1736,6 @@ func (s *Service) getHostIDsByKubeCond(kit *rest.Kit, req types.SearchHostReq) (
 }
 
 // getHostByKubeTopoFilter get hostIDs by k8s topo filter condition
-// this func can not find hostIDs only by bizID
 // this func can not find hostIDs only by bizID and clusterID because it find hostIDs dependent pod,
 // the host may belong to cluster but no pod on it.
 func (s *Service) getHostByKubeTopoFilter(kit *rest.Kit, req types.SearchHostReq) ([]int64, error) {
@@ -1826,7 +1825,7 @@ func (s *Service) getHostInFolder(kit *rest.Kit, bizID int64, clusterID int64) (
 	return hostIDs, nil
 }
 
-// getHostByNode get hostID by cluster or node
+// getHostByClusterOrNode get hostID by cluster or node
 // this func can not find hostIDs only by bizID condition
 func (s *Service) getHostByClusterOrNode(kit *rest.Kit, req types.SearchHostReq, hasHostIDCond bool, hostIDs []int64) (
 	[]int64, error) {

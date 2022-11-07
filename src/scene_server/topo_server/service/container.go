@@ -37,8 +37,8 @@ func (s *Service) ListContainer(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.ContainerQueryReq{}
-	if err := ctx.DecodeInto(&req); err != nil {
+	req := new(types.ContainerQueryReq)
+	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}

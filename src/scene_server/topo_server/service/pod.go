@@ -113,7 +113,6 @@ func (s *Service) buildPodPaths(kit *rest.Kit, bizName string, pods []types.Pod)
 		}
 		namespace := pod.NameSpace
 
-		//
 		if pod.Workload.Kind == "" {
 			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefKindField, kit.Rid)
 			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.RefKindField)
