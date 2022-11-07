@@ -23,8 +23,8 @@ import (
 	"testing"
 )
 
-// Spec spec struct which can be inline
-type Spec struct {
+// InlineSpec spec struct which can be inline
+type InlineSpec struct {
 	SpecIntVal  *int    `json:"spec_int_val" bson:"spec_int_val"`
 	SpecStrVal  *string `json:"spec_str_val" bson:"spec_str_val"`
 	SpecBoolVal *bool   `json:"spec_bool_val" bson:"spec_bool_val"`
@@ -38,7 +38,7 @@ type innerStruct struct {
 
 // cases test case struct
 type cases struct {
-	Spec        `json:",inline" bson:",inline"`
+	InlineSpec  `json:",inline" bson:",inline"`
 	IntVal      *int               `json:"int_val" bson:"int_val"`
 	NoPointVal  int                `json:"no_point_val" bson:"no_point_val"`
 	StrVal      *string            `json:"str_val" bson:"str_val"`
@@ -76,7 +76,7 @@ func TestGetUpdateFieldWithOption(t *testing.T) {
 		ArrayVal:    &arrayVal,
 		MapVal:      &mapVal,
 		InnerStruct: structVal,
-		Spec: Spec{
+		InlineSpec: InlineSpec{
 			SpecIntVal: &intVal,
 		},
 		IgnoreField: &ignoreFiled,

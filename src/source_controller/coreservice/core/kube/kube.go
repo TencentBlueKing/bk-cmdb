@@ -372,9 +372,9 @@ func (p *kubeOperation) CreateCluster(kit *rest.Kit, bizID int64, data *types.Cl
 
 	// it is necessary to judge whether there is duplicate data here,
 	// to prevent subsequent calls to coreservice directly and lack of verification.
-	if err := data.CreateValidate(); err != nil {
+	if err := data.CreateValidate(); err.ErrCode != 0 {
 		blog.Errorf("create cluster failed, data: %+v, err: %+v, rid: %s", data, err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error())
+		return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
 	}
 
 	if err := checkClusterInfoDuplicatedOrNot(kit, bizID, data); err != nil {

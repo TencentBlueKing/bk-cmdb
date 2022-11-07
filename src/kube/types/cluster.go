@@ -18,16 +18,14 @@
 package types
 
 import (
-	"errors"
-	"fmt"
-	"reflect"
-
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
+	"errors"
+	"fmt"
 )
 
 const (
@@ -125,57 +123,36 @@ func (option *DeleteClusterOption) Validate() error {
 }
 
 // CreateValidate check whether the parameters for creating a cluster are legal.
-func (option *Cluster) CreateValidate() error {
+func (option *Cluster) CreateValidate() ccErr.RawErrorInfo {
 
 	if option == nil {
-		return errors.New("cluster information must be given")
-	}
-
-	typeOfOption := reflect.TypeOf(*option)
-	valueOfOption := reflect.ValueOf(*option)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
-		if flag {
-			continue
-		}
-
-		if !ClusterFields.IsFieldRequiredByField(tag) {
-			continue
-		}
-
-		if err := isRequiredField(tag, valueOfOption, i); err != nil {
-			return err
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"data"},
 		}
 	}
-	return nil
+
+	if err := ValidateCreate(*option, ClusterFields); err.ErrCode != 0 {
+		return err
+	}
+
+	return ccErr.RawErrorInfo{}
 }
 
 // UpdateValidate verifying the validity of parameters for updating node scenarios
-func (option *Cluster) updateValidate() error {
+func (option *Cluster) updateValidate() ccErr.RawErrorInfo {
 
 	if option == nil {
-		return errors.New("cluster information must be given")
-	}
-
-	typeOfOption := reflect.TypeOf(*option)
-	valueOfOption := reflect.ValueOf(*option)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-
-		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
-		if flag {
-			continue
-		}
-
-		if flag := isNotEditableField(tag, valueOfOption, i); flag {
-			continue
-		}
-
-		// get whether it is an editable field based on tag
-		if !ClusterFields.IsFieldEditableByField(tag) {
-			return fmt.Errorf("field [%s] is a non-editable field", tag)
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"cluster information must be given"},
 		}
 	}
-	return nil
+
+	if err := ValidateUpdate(*option, ClusterFields); err.ErrCode != 0 {
+		return err
+	}
+	return ccErr.RawErrorInfo{}
 }
 
 // QueryClusterOption query cluster by query builder
@@ -217,22 +194,32 @@ type UpdateClusterOption struct {
 }
 
 // Validate validate the UpdateClusterOption
-func (option *UpdateClusterOption) Validate() error {
+func (option *UpdateClusterOption) Validate() ccErr.RawErrorInfo {
 
 	if option == nil {
-		return errors.New("cluster information must be given")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"cluster information must be given"},
+		}
 	}
 
 	if len(option.IDs) == 0 {
-		return errors.New("the params for updating the cluster must be set")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"the params for updating the cluster must be set"},
+		}
 	}
 	if len(option.IDs) > maxUpdateClusterNum {
-		return fmt.Errorf("the number of update clusters cannot exceed %d at a time", maxUpdateClusterNum)
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args: []interface{}{fmt.Sprintf("the number of update clusters cannot exceed %d at a time",
+				maxUpdateClusterNum)},
+		}
 	}
 
-	if err := option.Data.updateValidate(); err != nil {
+	if err := option.Data.updateValidate(); err.ErrCode != 0 {
 		return err
 	}
 
-	return nil
+	return ccErr.RawErrorInfo{}
 }

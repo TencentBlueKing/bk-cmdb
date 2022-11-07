@@ -18,14 +18,15 @@
 package service
 
 import (
-	"errors"
 	"strconv"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/orm"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/dal/table"
@@ -41,8 +42,8 @@ func (s *coreService) CreateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.NsCreateReq{}
-	if err := ctx.DecodeInto(&req); nil != err {
+	req := new(types.NsCreateReq)
+	if err := ctx.DecodeInto(req); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -59,23 +60,26 @@ func (s *coreService) CreateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
+	clusterIDs := make([]int64, 0)
+	for _, data := range req.Data {
+		clusterIDs = append(clusterIDs, data.ClusterID)
+	}
+
+	clusterSpecs, err := s.GetClusterSpec(ctx.Kit, bizID, clusterIDs)
+	if err != nil {
+		blog.Errorf("get cluster spec failed, bizID: %d, clusterIDs: %v, err: %v, rid: %s", bizID, clusterIDs, err,
+			ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
 	respData := types.NsCreateRespData{
 		IDs: make([]int64, len(ids)),
 	}
 	for idx, data := range req.Data {
-		spec := &types.ClusterSpec{
-			BizID:     bizID,
-			ClusterID: data.ClusterID,
-		}
-		spec, err := s.GetClusterSpec(ctx.Kit, spec)
-		if err != nil {
-			blog.Errorf("get cluster spec message failed, data: %v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
 		id := int64(ids[idx])
 		respData.IDs[idx] = id
-		data.ClusterSpec = *spec
+		data.ClusterSpec = clusterSpecs[data.ClusterID]
 		data.ID = id
 		now := time.Now().Unix()
 		data.Revision = table.Revision{
@@ -98,27 +102,33 @@ func (s *coreService) CreateNamespace(ctx *rest.Contexts) {
 }
 
 // GetClusterSpec get cluster spec
-func (s *coreService) GetClusterSpec(kit *rest.Kit, spec *types.ClusterSpec) (*types.ClusterSpec, error) {
-	if spec.BizID == 0 {
+func (s *coreService) GetClusterSpec(kit *rest.Kit, bizID int64, clusterIDs []int64) (map[int64]types.ClusterSpec,
+	error) {
+
+	if bizID == 0 {
 		blog.Errorf("bizID can not be empty, rid: %s", kit.Rid)
-		return nil, errors.New("bizID can not be empty")
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
-	if spec.ClusterID == 0 {
-		blog.Errorf("clusterID can not be empty at the same time, rid: %s", kit.Rid)
-		return nil, errors.New("clusterID can not be empty")
+	if len(clusterIDs) == 0 {
+		blog.Errorf("clusterIDs can not be empty, rid: %s", kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.BKClusterIDFiled)
 	}
 
+	clusterIDs = util.IntArrayUnique(clusterIDs)
 	filter := map[string]interface{}{
-		common.BKAppIDField:   spec.BizID,
-		common.BKOwnerIDField: kit.SupplierAccount,
-		common.BKFieldID:      spec.ClusterID,
+		common.BKAppIDField: bizID,
+		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: clusterIDs},
 	}
+	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
 
-	cluster := types.Cluster{}
-	if err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(filter).One(kit.Ctx, &cluster); err != nil {
-		if mongodb.Client().IsNotFoundError(err) {
-			blog.Errorf("can not find cluster, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+	field := []string{common.BKFieldID, types.UidField}
+	clusters := make([]types.Cluster, 0)
+
+	err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(filter).Fields(field...).All(kit.Ctx, &clusters)
+	if err != nil {
+		if mongodb.Client().IsNotFoundError(err) || len(clusterIDs) != len(clusters) {
+			blog.Errorf("can not find all cluster, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 		}
 
@@ -126,12 +136,16 @@ func (s *coreService) GetClusterSpec(kit *rest.Kit, spec *types.ClusterSpec) (*t
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	result := types.ClusterSpec{
-		BizID:      cluster.BizID,
-		ClusterID:  cluster.ID,
-		ClusterUID: *cluster.Uid,
+	specs := make(map[int64]types.ClusterSpec, len(clusters))
+	for _, cluster := range clusters {
+		specs[cluster.ID] = types.ClusterSpec{
+			BizID:      bizID,
+			ClusterID:  cluster.ID,
+			ClusterUID: *cluster.Uid,
+		}
 	}
-	return &result, nil
+
+	return specs, nil
 }
 
 // UpdateNamespace update namespace
@@ -143,8 +157,8 @@ func (s *coreService) UpdateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.NsUpdateReq{}
-	if err := ctx.DecodeInto(&req); nil != err {
+	req := new(types.NsUpdateReq)
+	if err := ctx.DecodeInto(req); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -155,34 +169,30 @@ func (s *coreService) UpdateNamespace(ctx *rest.Contexts) {
 	}
 
 	// build filter
-	for _, data := range req.Data {
-		filter := map[string]interface{}{
-			common.BKAppIDField:   bizID,
-			common.BKOwnerIDField: ctx.Kit.SupplierAccount,
-			common.BKFieldID: map[string]interface{}{
-				common.BKDBIN: data.IDs,
-			},
-		}
-		now := time.Now().Unix()
-		data.Info.LastTime = now
-		data.Info.Modifier = ctx.Kit.User
-		// build update data
-		opts := orm.NewFieldOptions().AddIgnoredFields(common.BKFieldID, types.ClusterUIDField, common.BKFieldName)
-		updateData, err := orm.GetUpdateFieldsWithOption(data.Info, opts)
-		if err != nil {
-			blog.Errorf("get update data failed, data: %v, err: %v, rid: %s", data.Info, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
-			return
-		}
+	filter := mapstr.MapStr{
+		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: req.IDs},
+		common.BKAppIDField: bizID,
+	}
+	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
+	now := time.Now().Unix()
+	req.Data.LastTime = now
+	req.Data.Modifier = ctx.Kit.User
+	// build update data
+	opts := orm.NewFieldOptions().AddIgnoredFields(common.BKFieldID, types.ClusterUIDField, common.BKFieldName)
+	updateData, err := orm.GetUpdateFieldsWithOption(req.Data, opts)
+	if err != nil {
+		blog.Errorf("get update data failed, data: %v, err: %v, rid: %s", req.Data, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
+		return
+	}
 
-		// update namespace
-		err = mongodb.Client().Table(types.BKTableNameBaseNamespace).Update(ctx.Kit.Ctx, filter, updateData)
-		if err != nil {
-			blog.Errorf("update namespace failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
-				err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
-			return
-		}
+	// update namespace
+	err = mongodb.Client().Table(types.BKTableNameBaseNamespace).Update(ctx.Kit.Ctx, filter, updateData)
+	if err != nil {
+		blog.Errorf("update namespace failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
+			err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
+		return
 	}
 
 	ctx.RespEntity(nil)
@@ -208,12 +218,11 @@ func (s *coreService) DeleteNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	filter, err := req.BuildCond(bizID, ctx.Kit.SupplierAccount)
-	if err != nil {
-		blog.Errorf("delete namespace failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
+	filter := mapstr.MapStr{
+		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: req.IDs},
+		common.BKAppIDField: bizID,
 	}
+	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
 	if err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Delete(ctx.Kit.Ctx, filter); err != nil {
 		blog.Errorf("delete namespace failed, filter: %v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))

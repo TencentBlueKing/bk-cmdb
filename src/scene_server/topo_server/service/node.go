@@ -65,9 +65,8 @@ func (s *Service) FindNodePathForHost(ctx *rest.Contexts) {
 		paths := make([]types.NodePath, 0)
 		uniqueMap := make(map[string]struct{})
 		for _, node := range nodes {
-			clusterID := relation.NodeIDWithClusterID[node.ID]
-			bizID := relation.NodeIDWithBizID[node.ID]
-
+			clusterID := node.ClusterID
+			bizID := node.BizID
 			unique := strconv.FormatInt(bizID, 10) + ":" + strconv.FormatInt(clusterID, 10)
 			if _, ok := uniqueMap[unique]; ok {
 				continue
@@ -112,14 +111,10 @@ func (s *Service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.Ho
 
 	bizIDs := make([]int64, 0)
 	hostWithNode := make(map[int64][]types.Node)
-	nodeIDWithBizID := make(map[int64]int64)
-	nodeIDWithClusterID := make(map[int64]int64)
 	clusterIDs := make([]int64, 0)
 	for _, node := range resp.Data {
 		bizIDs = append(bizIDs, node.BizID)
-		nodeIDWithBizID[node.ID] = node.BizID
 		hostWithNode[node.HostID] = append(hostWithNode[node.HostID], node)
-		nodeIDWithClusterID[node.ID] = node.ClusterID
 		clusterIDs = append(clusterIDs, node.ClusterID)
 	}
 
@@ -130,11 +125,9 @@ func (s *Service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.Ho
 	}
 
 	return &types.HostNodeRelation{
-		BizIDs:              bizIDs,
-		HostWithNode:        hostWithNode,
-		NodeIDWithBizID:     nodeIDWithBizID,
-		NodeIDWithClusterID: nodeIDWithClusterID,
-		ClusterIDWithName:   clusterIDWithName,
+		BizIDs:            bizIDs,
+		HostWithNode:      hostWithNode,
+		ClusterIDWithName: clusterIDWithName,
 	}, nil
 }
 
@@ -250,9 +243,9 @@ func (s *Service) BatchCreateNode(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := data.ValidateCreate(); err != nil {
+	if err := data.ValidateCreate(); err.ErrCode != 0 {
 		blog.Errorf("batch create nodes param verification failed, data: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
@@ -393,8 +386,8 @@ func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := data.Validate(); err != nil {
-		ctx.RespAutoError(err)
+	if err := data.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 

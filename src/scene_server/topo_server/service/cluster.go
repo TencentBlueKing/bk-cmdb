@@ -131,8 +131,8 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := data.Validate(); err != nil {
-		ctx.RespAutoError(err)
+	if err := data.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
@@ -197,9 +197,9 @@ func (s *Service) CreateCluster(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	if err := data.CreateValidate(); err != nil {
+	if err := data.CreateValidate(); err.ErrCode != 0 {
 		blog.Errorf("validate create kube cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 

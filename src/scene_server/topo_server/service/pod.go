@@ -223,9 +223,9 @@ func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := data.Validate(); err != nil {
+	if err := data.Validate(); err.ErrCode != 0 {
 		blog.Errorf("batch create pods param verification failed, data: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 

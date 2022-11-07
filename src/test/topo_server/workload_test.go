@@ -214,16 +214,8 @@ var _ = Describe("workload test", func() {
 			RollingUpdateStrategy: &rollingUpdateStrategy,
 		}
 		updateOpt := types.WlUpdateReq{
-			Data: []types.WlUpdateDataI{
-				&types.DeployUpdateData{
-					WlCommonUpdate: types.WlCommonUpdate{
-						IDs: []int64{
-							wlID,
-						},
-					},
-					Info: wl,
-				},
-			},
+			IDs:  []int64{wlID},
+			Data: &wl,
 		}
 
 		err := kubeClient.UpdateWorkload(ctx, header, bizID, types.KubeDeployment, &updateOpt)

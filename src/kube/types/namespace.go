@@ -18,15 +18,15 @@
 package types
 
 import (
-	"reflect"
-
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
+	"reflect"
 )
 
 // NamespaceFields merge the fields of the namespace and the details corresponding to the fields together.
@@ -182,70 +182,14 @@ type ScopedResourceSelectorRequirement struct {
 	Values []string `json:"values" bson:"values"`
 }
 
-// NsUpdateReq update namespace request struct
+// NsUpdateReq update namespace request
 type NsUpdateReq struct {
-	Data []NsUpdateData `json:"data"`
-}
-
-// GetCount get namespace update count
-func (ns *NsUpdateReq) GetCount() int {
-	count := 0
-	for _, data := range ns.Data {
-		count += len(data.IDs)
-	}
-	return count
-}
-
-// Validate validate namespace update request data
-func (ns *NsUpdateReq) Validate() errors.RawErrorInfo {
-	if len(ns.Data) == 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"data"},
-		}
-	}
-
-	sum := 0
-	for _, data := range ns.Data {
-		if err := data.Validate(); err.ErrCode != 0 {
-			return err
-		}
-
-		sum += len(data.IDs)
-		if sum > NsUpdateLimit {
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommXXExceedLimit,
-				Args:    []interface{}{"data", NsUpdateLimit},
-			}
-		}
-	}
-
-	return errors.RawErrorInfo{}
-}
-
-// BuildQueryCond build query update namespace condition
-func (ns *NsUpdateReq) BuildQueryCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
-	ids := make([]int64, 0)
-	for _, data := range ns.Data {
-		ids = append(ids, data.IDs...)
-	}
-	cond := mapstr.MapStr{
-		common.BKAppIDField:      bizID,
-		common.BkSupplierAccount: supplierAccount,
-		common.BKFieldID:         mapstr.MapStr{common.BKDBIN: ids},
-	}
-
-	return cond, nil
-}
-
-// NsUpdateData update namespace struct
-type NsUpdateData struct {
 	IDs  []int64    `json:"ids"`
-	Info *Namespace `json:"info"`
+	Data *Namespace `json:"data"`
 }
 
-// Validate validate namespace update data
-func (ns *NsUpdateData) Validate() errors.RawErrorInfo {
+// Validate validate update namespace request
+func (ns *NsUpdateReq) Validate() errors.RawErrorInfo {
 	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
@@ -260,27 +204,16 @@ func (ns *NsUpdateData) Validate() errors.RawErrorInfo {
 		}
 	}
 
-	if err := ns.Info.ValidateUpdate(); err.ErrCode != 0 {
-		return err
-	}
-	return errors.RawErrorInfo{}
-}
-
-// NsUnique namespace unique identification
-type NsUnique struct {
-	ClusterUID string `json:"cluster_uid" bson:"cluster_uid"`
-	Name       string `json:"name" bson:"name"`
-}
-
-// Validate validate NsUnique
-func (ns *NsUnique) Validate() errors.RawErrorInfo {
-	if ns.ClusterUID == "" || ns.Name == "" {
+	if ns.Data == nil {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"uniques"},
+			Args:    []interface{}{"data"},
 		}
 	}
 
+	if err := ValidateUpdate(*ns.Data, NamespaceFields); err.ErrCode != 0 {
+		return err
+	}
 	return errors.RawErrorInfo{}
 }
 
@@ -308,16 +241,6 @@ func (ns *NsDeleteReq) Validate() errors.RawErrorInfo {
 	return errors.RawErrorInfo{}
 }
 
-// BuildCond build delete namespace condition
-func (ns *NsDeleteReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
-	cond := mapstr.MapStr{
-		common.BKAppIDField:      bizID,
-		common.BkSupplierAccount: supplierAccount,
-		common.BKFieldID:         mapstr.MapStr{common.BKDBIN: ns.IDs},
-	}
-	return cond, nil
-}
-
 // NsCreateReq create namespace request
 type NsCreateReq struct {
 	Data []Namespace `json:"data"`
@@ -340,7 +263,7 @@ func (ns *NsCreateReq) Validate() errors.RawErrorInfo {
 	}
 
 	for _, data := range ns.Data {
-		if err := data.ValidateCreate(); err.ErrCode != 0 {
+		if err := ValidateCreate(data, NamespaceFields); err.ErrCode != 0 {
 			return err
 		}
 	}
@@ -396,9 +319,9 @@ func (ns *NsQueryReq) Validate() errors.RawErrorInfo {
 // BuildCond build query namespace condition
 func (ns *NsQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
-		common.BKAppIDField:      bizID,
-		common.BkSupplierAccount: supplierAccount,
+		common.BKAppIDField: bizID,
 	}
+	cond = util.SetQueryOwner(cond, supplierAccount)
 
 	if ns.ClusterID != 0 {
 		cond[BKClusterIDFiled] = ns.ClusterID

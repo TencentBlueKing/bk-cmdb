@@ -23,7 +23,10 @@ import (
 	"reflect"
 	"regexp"
 
+	"configcenter/src/common"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal/table"
 )
 
 // NumericSettings numeric type check parameter setting.
@@ -301,4 +304,87 @@ func convertInterfaceIntoMap(target interface{}, param MapObjectSettings, deep i
 		return fmt.Errorf("no support the kind(%s)", value.Kind())
 	}
 	return nil
+}
+
+// ValidateCreate validate create data struct
+// NOTE:
+// 1. data must be a value type, not a pointer.
+func ValidateCreate(data interface{}, field *table.Fields) ccErr.RawErrorInfo {
+	if data == nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"data"},
+		}
+	}
+
+	if field == nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"field"},
+		}
+	}
+
+	typeOfOption := reflect.TypeOf(data)
+	valueOfOption := reflect.ValueOf(data)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
+		if flag {
+			continue
+		}
+
+		if !field.IsFieldRequiredByField(tag) {
+			continue
+		}
+
+		if err := isRequiredField(tag, valueOfOption, i); err != nil {
+			return ccErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{tag},
+			}
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// ValidateUpdate validate update data struct
+// NOTE:
+// 1. data must be a value type, not a pointer.
+func ValidateUpdate(data interface{}, field *table.Fields) ccErr.RawErrorInfo {
+	if data == nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"data"},
+		}
+	}
+
+	if field == nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"field"},
+		}
+	}
+
+	typeOfOption := reflect.TypeOf(data)
+	valueOfOption := reflect.ValueOf(data)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
+		if flag {
+			continue
+		}
+
+		if flag := isNotEditableField(tag, valueOfOption, i); flag {
+			continue
+		}
+
+		// get whether it is an editable field based on tag
+		if !field.IsFieldEditableByField(tag) {
+			return ccErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{tag},
+			}
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
 }

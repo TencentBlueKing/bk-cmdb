@@ -18,16 +18,14 @@
 package types
 
 import (
-	"errors"
-	"fmt"
-	"reflect"
-
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
+	"errors"
+	"fmt"
 )
 
 const (
@@ -100,35 +98,26 @@ var IgnoredUpdateNodeFields = []string{common.BKFieldID, common.BKAppIDField, Cl
 	common.BKFieldName, common.BKOwnerIDField, BKClusterIDFiled, common.BKHostIDField, HasPodField}
 
 // createValidate validate the NodeBaseFields
-func (option *Node) createValidate() error {
+func (option *Node) createValidate() ccErr.RawErrorInfo {
 
 	if option == nil {
-		return errors.New("node information must be given")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"data"},
+		}
 	}
 
-	// get a list of required fields.
-	typeOfOption := reflect.TypeOf(*option)
-	valueOfOption := reflect.ValueOf(*option)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-
-		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
-		if flag {
-			continue
-		}
-
-		if !NodeFields.IsFieldRequiredByField(tag) {
-			continue
-		}
-
-		if err := isRequiredField(tag, valueOfOption, i); err != nil {
-			return err
-		}
+	if err := ValidateCreate(*option, NodeFields); err.ErrCode != 0 {
+		return err
 	}
 
 	if err := option.validateNodeIP(true); err != nil {
-		return err
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{err.Error()},
+		}
 	}
-	return nil
+	return ccErr.RawErrorInfo{}
 }
 
 func (option *Node) validateNodeIP(isCreate bool) error {
@@ -146,30 +135,19 @@ func (option *Node) validateNodeIP(isCreate bool) error {
 }
 
 // UpdateValidate verifying the validity of parameters for updating node scenarios
-func (option *Node) updateValidate() error {
+func (option *Node) updateValidate() ccErr.RawErrorInfo {
 
 	if option == nil {
-		return errors.New("node information must be given")
-	}
-
-	typeOfOption := reflect.TypeOf(*option)
-	valueOfOption := reflect.ValueOf(*option)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
-		if flag {
-			continue
-		}
-
-		if flag := isNotEditableField(tag, valueOfOption, i); flag {
-			continue
-		}
-
-		// get whether it is an editable field based on tag
-		if !NodeFields.IsFieldEditableByField(tag) {
-			return fmt.Errorf("field [%s] is a non-editable field", tag)
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"node information must be given"},
 		}
 	}
-	return nil
+
+	if err := ValidateUpdate(*option, NodeFields); err.ErrCode != 0 {
+		return err
+	}
+	return ccErr.RawErrorInfo{}
 }
 
 // BatchDeleteNodeOption delete nodes option.
@@ -201,15 +179,18 @@ type OneNodeCreateOption struct {
 }
 
 // validateCreate validate the OneNodeCreateOption
-func (option *OneNodeCreateOption) validateCreate() error {
+func (option *OneNodeCreateOption) validateCreate() ccErr.RawErrorInfo {
 
 	if option.ClusterID == 0 {
-		return errors.New("cluster id must be set")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{BKClusterIDFiled},
+		}
 	}
-	if err := option.createValidate(); err != nil {
+	if err := option.createValidate(); err.ErrCode != 0 {
 		return err
 	}
-	return nil
+	return ccErr.RawErrorInfo{}
 }
 
 // CreateNodesOption create node requests in batches.
@@ -225,22 +206,29 @@ type CreateNodesRsp struct {
 }
 
 // ValidateCreate validate the create nodes request
-func (option *CreateNodesOption) ValidateCreate() error {
+func (option *CreateNodesOption) ValidateCreate() ccErr.RawErrorInfo {
 
 	if len(option.Nodes) == 0 {
-		return errors.New("param must be set")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{errors.New("param must be set")},
+		}
 	}
 
 	if len(option.Nodes) > maxCreateNodeNum {
-		return fmt.Errorf("the number of nodes created at one time does not exceed %d", maxCreateNodeNum)
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args: []interface{}{fmt.Errorf("the number of nodes created at one time does not exceed %d",
+				maxCreateNodeNum)},
+		}
 	}
 
 	for _, node := range option.Nodes {
-		if err := node.validateCreate(); err != nil {
+		if err := node.validateCreate(); err.ErrCode != 0 {
 			return err
 		}
 	}
-	return nil
+	return ccErr.RawErrorInfo{}
 }
 
 // CreateNodesResult create node results in batches.
@@ -300,22 +288,33 @@ type UpdateNodeOption struct {
 }
 
 // Validate check whether the request parameters for updating the node are legal.
-func (option *UpdateNodeOption) Validate() error {
+func (option *UpdateNodeOption) Validate() ccErr.RawErrorInfo {
 
 	if len(option.IDs) == 0 {
-		return errors.New("parameter cannot be empty")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"parameter cannot be empty"},
+		}
 	}
 	if len(option.IDs) > maxUpdateNodeNum {
-		return fmt.Errorf("the number of nodes to be updated at one time cannot exceed %d", maxUpdateNodeNum)
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args: []interface{}{fmt.Sprintf("the number of nodes to be updated at one time cannot exceed %d",
+				maxUpdateNodeNum)},
+		}
 	}
 
 	if err := option.Data.validateNodeIP(false); err != nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args: []interface{}{fmt.Sprintf("the number of nodes to be updated at one time cannot exceed %d",
+				maxUpdateNodeNum)},
+		}
+	}
+	if err := option.Data.updateValidate(); err.ErrCode != 0 {
 		return err
 	}
-	if err := option.Data.updateValidate(); err != nil {
-		return err
-	}
-	return nil
+	return ccErr.RawErrorInfo{}
 }
 
 // NodeCond node condition for search host

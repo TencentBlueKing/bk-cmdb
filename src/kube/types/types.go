@@ -129,6 +129,38 @@ func (t WorkloadType) Fields() (*table.Fields, error) {
 	}
 }
 
+// NewInst new a workload instance according to workload type
+func (t WorkloadType) NewInst() (WorkloadI, error) {
+	switch t {
+	case KubeDeployment:
+		return new(Deployment), nil
+
+	case KubeStatefulSet:
+		return new(StatefulSet), nil
+
+	case KubeDaemonSet:
+		return new(DaemonSet), nil
+
+	case KubeGameDeployment:
+		return new(GameDeployment), nil
+
+	case KubeGameStatefulSet:
+		return new(GameStatefulSet), nil
+
+	case KubeCronJob:
+		return new(CronJob), nil
+
+	case KubeJob:
+		return new(Job), nil
+
+	case KubePodWorkload:
+		return new(PodsWorkload), nil
+
+	default:
+		return nil, fmt.Errorf("workload type %s is not supported", t)
+	}
+}
+
 const (
 	// KubeDeployment k8s deployment type
 	KubeDeployment WorkloadType = "deployment"
@@ -375,9 +407,6 @@ const (
 
 	// BKPodIDField pod unique id field in cc
 	BKPodIDField = "bk_pod_id"
-
-	// PodUIDField pod unique id field in third party platform
-	PodUIDField = "pod_uid"
 
 	// RefField pod relate workload field
 	RefField = "ref"

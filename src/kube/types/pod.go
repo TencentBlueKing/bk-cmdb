@@ -20,7 +20,6 @@ package types
 import (
 	"errors"
 	"fmt"
-	"reflect"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
@@ -207,40 +206,50 @@ type Pod struct {
 }
 
 // createValidate validate the PodBaseFields
-func (option *Pod) createValidate() error {
+func (option *Pod) createValidate() ccErr.RawErrorInfo {
 
 	if option == nil {
-		return errors.New("pod information must be set")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"pod information must be set"},
+		}
 	}
 
 	if option.Name == nil || *option.Name == "" {
-		return errors.New("pod name must be set")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"pod name must be set"},
+		}
+	}
+
+	if err := ValidateCreate(*option, PodFields); err.ErrCode != 0 {
+		return err
 	}
 
 	// first get a list of required fields.
-	requires := PodFields.RequiredFields()
-	for _, required := range requires {
-		if !required {
-			continue
-		}
-		typeOfOption := reflect.TypeOf(*option)
-		valueOfOption := reflect.ValueOf(*option)
-		for i := 0; i < typeOfOption.NumField(); i++ {
-			tag, flag := getFieldTag(typeOfOption, JsonTag, i)
-			if flag {
-				continue
-			}
-
-			if !PodFields.IsFieldRequiredByField(tag) {
-				continue
-			}
-
-			if err := isRequiredField(tag, valueOfOption, i); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+	//requires := PodFields.RequiredFields()
+	//for _, required := range requires {
+	//	if !required {
+	//		continue
+	//	}
+	//	typeOfOption := reflect.TypeOf(*option)
+	//	valueOfOption := reflect.ValueOf(*option)
+	//	for i := 0; i < typeOfOption.NumField(); i++ {
+	//		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
+	//		if flag {
+	//			continue
+	//		}
+	//
+	//		if !PodFields.IsFieldRequiredByField(tag) {
+	//			continue
+	//		}
+	//
+	//		if err := isRequiredField(tag, valueOfOption, i); err != nil {
+	//			return err
+	//		}
+	//	}
+	//}
+	return ccErr.RawErrorInfo{}
 }
 
 // Container container details
@@ -266,39 +275,34 @@ type Container struct {
 }
 
 // createValidate validate the ContainerBaseFields
-func (option *Container) createValidate() error {
+func (option *Container) createValidate() ccErr.RawErrorInfo {
 
 	if option == nil {
-		return errors.New("container information must be set")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"container information must be set"},
+		}
 	}
 
 	if option.Name == nil || *option.Name == "" {
-		return errors.New("container name must be set")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"container name must be set"},
+		}
 	}
 
 	if option.ContainerID == nil || *option.ContainerID == "" {
-		return errors.New("container name must be set")
-	}
-
-	typeOfOption := reflect.TypeOf(*option)
-	valueOfOption := reflect.ValueOf(*option)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-
-		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
-		if flag {
-			continue
-		}
-
-		if !ContainerFields.IsFieldRequiredByField(tag) {
-			continue
-		}
-
-		if err := isRequiredField(tag, valueOfOption, i); err != nil {
-			return err
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"container name must be set"},
 		}
 	}
 
-	return nil
+	if err := ValidateCreate(*option, ContainerFields); err.ErrCode != 0 {
+		return err
+	}
+
+	return ccErr.RawErrorInfo{}
 }
 
 // SysSpec the relationship information related to the container
@@ -348,40 +352,53 @@ type PodsInfoArray struct {
 }
 
 // Validate validate the CreatePodsOption
-func (option *CreatePodsOption) Validate() error {
+func (option *CreatePodsOption) Validate() ccErr.RawErrorInfo {
 
 	if len(option.Data) == 0 {
-		return errors.New("params cannot be empty")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{errors.New("params cannot be empty")},
+		}
 	}
 	var podsLen int
 	for _, data := range option.Data {
 		podsLen += len(data.Pods)
 	}
 	if podsLen > createPodsLimit {
-		return fmt.Errorf("the maximum number of pods created at one time cannot exceed %d", createPodsLimit)
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args: []interface{}{fmt.Errorf("the maximum number of pods created at one time cannot exceed %d",
+				createPodsLimit)},
+		}
 	}
 
 	for _, data := range option.Data {
 		for _, pod := range data.Pods {
 			if err := pod.Spec.validate(); err != nil {
-				return err
+				return ccErr.RawErrorInfo{
+					ErrCode: common.CCErrCommHTTPInputInvalid,
+					Args:    []interface{}{err.Error()},
+				}
 			}
 			if pod.HostID == 0 {
-				return errors.New("host id must be set")
+				return ccErr.RawErrorInfo{
+					ErrCode: common.CCErrCommHTTPInputInvalid,
+					Args:    []interface{}{errors.New("host id must be set")},
+				}
 			}
 
-			if err := pod.createValidate(); err != nil {
+			if err := pod.createValidate(); err.ErrCode != 0 {
 				return err
 			}
 
 			for _, container := range pod.Containers {
-				if err := container.createValidate(); err != nil {
+				if err := container.createValidate(); err.ErrCode != 0 {
 					return err
 				}
 			}
 		}
 	}
-	return nil
+	return ccErr.RawErrorInfo{}
 }
 
 // ContainerQueryReq container query request

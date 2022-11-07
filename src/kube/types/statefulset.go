@@ -18,12 +18,12 @@
 package types
 
 import (
-	"reflect"
+	"errors"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
-	"configcenter/src/common/errors"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/kube/orm"
 	"configcenter/src/storage/dal/table"
 )
@@ -37,7 +37,7 @@ var StatefulSetSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
-	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: true, IsEditable: true},
+	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
 	{Field: StrategyTypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: MinReadySecondsField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
 	{Field: RollingUpdateStrategyField, Type: enumor.Object, IsRequired: false, IsEditable: true},
@@ -88,48 +88,47 @@ func (s *StatefulSet) SetWorkloadBase(wl WorkloadBase) {
 	s.WorkloadBase = wl
 }
 
-// ValidateUpdate validate update workload
-func (w *StatefulSet) ValidateUpdate() errors.RawErrorInfo {
+// ValidateCreate validate create workload
+func (w *StatefulSet) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
-		return errors.RawErrorInfo{
+		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"data"},
 		}
 	}
 
-	typeOfOption := reflect.TypeOf(*w)
-	valueOfOption := reflect.ValueOf(*w)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
-		if flag {
-			continue
-		}
-
-		if flag := isNotEditableField(tag, valueOfOption, i); flag {
-			continue
-		}
-
-		// get whether it is an editable field based on tag
-		if !StatefulSetFields.IsFieldEditableByField(tag) {
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsIsInvalid,
-				Args:    []interface{}{tag},
-			}
-		}
+	if err := ValidateCreate(*w, StatefulSetFields); err.ErrCode != 0 {
+		return err
 	}
-	return errors.RawErrorInfo{}
+
+	return ccErr.RawErrorInfo{}
 }
 
-// StatefulSetUpdateData defines the statefulSet update data common operation.
-type StatefulSetUpdateData struct {
-	WlCommonUpdate `json:",inline"`
-	Info           StatefulSet `json:"info"`
+// ValidateUpdate validate update workload
+func (w *StatefulSet) ValidateUpdate() ccErr.RawErrorInfo {
+	if w == nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommHTTPInputInvalid,
+			Args:    []interface{}{"data"},
+		}
+	}
+
+	if err := ValidateUpdate(*w, StatefulSetFields); err.ErrCode != 0 {
+		return err
+	}
+
+	return ccErr.RawErrorInfo{}
 }
 
 // BuildUpdateData build statefulSet update data
-func (d *StatefulSetUpdateData) BuildUpdateData(user string) (map[string]interface{}, error) {
+func (w *StatefulSet) BuildUpdateData(user string) (map[string]interface{}, error) {
+	if w == nil {
+		return nil, errors.New("update param is invalid")
+	}
+
 	now := time.Now().Unix()
 	opts := orm.NewFieldOptions().AddIgnoredFields(wlIgnoreField...)
-	updateData, err := orm.GetUpdateFieldsWithOption(d.Info, opts)
+	updateData, err := orm.GetUpdateFieldsWithOption(w, opts)
 	if err != nil {
 		return nil, err
 	}
