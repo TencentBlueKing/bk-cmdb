@@ -234,9 +234,19 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 		if len(ids) != 0 {
 			blog.Errorf("workload does not belong to this business, kind: %v, ids: %v, bizID: %s, rid: %s", kind, ids,
 				bizID, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, ids))
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID))
 			return
 		}
+	}
+
+	hasRes, err := s.hasNextLevelResource(ctx.Kit, string(kind), bizID, req.IDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if hasRes {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID))
+		return
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
@@ -246,7 +256,6 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 			return err
 		}
 
-		// audit log.
 		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
 		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, workloads, kind)

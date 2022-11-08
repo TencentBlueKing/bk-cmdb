@@ -26,6 +26,7 @@ import (
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
 )
@@ -85,33 +86,13 @@ const (
 
 // PodQueryOption pod query request
 type PodQueryOption struct {
-	WorkloadSpec `json:",inline" bson:",inline"`
-	HostID       int64              `json:"bk_host_id"`
-	NodeID       int64              `json:"bk_node_id"`
-	NodeName     string             `json:"node_name"`
-	Filter       *filter.Expression `json:"filter"`
-	Fields       []string           `json:"fields,omitempty"`
-	Page         metadata.BasePage  `json:"page,omitempty"`
+	Filter *filter.Expression `json:"filter"`
+	Fields []string           `json:"fields,omitempty"`
+	Page   metadata.BasePage  `json:"page,omitempty"`
 }
 
 // Validate validate PodQueryReq
 func (p *PodQueryOption) Validate() ccErr.RawErrorInfo {
-	if (p.ClusterID != 0 || p.NamespaceID != 0 || p.Ref.ID != 0 || p.NodeID != 0) &&
-		(p.ClusterUID != "" || p.Namespace != "" || p.Ref.Name != "" || p.NodeName != "") {
-
-		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrorTopoIdentificationIllegal,
-		}
-	}
-
-	err := p.Ref.Kind.Validate()
-	if (p.Ref.Name != "" || p.Ref.ID != 0) && err != nil {
-		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{RefField},
-		}
-	}
-
 	if err := p.Page.ValidateWithEnableCount(false, podQueryLimit); err.ErrCode != 0 {
 		return err
 	}
@@ -133,49 +114,9 @@ func (p *PodQueryOption) Validate() ccErr.RawErrorInfo {
 // BuildCond build query pod condition
 func (p *PodQueryOption) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
-		common.BKAppIDField:      bizID,
-		common.BkSupplierAccount: supplierAccount,
+		common.BKAppIDField: bizID,
 	}
-
-	if p.ClusterID != 0 {
-		cond[BKClusterIDFiled] = p.ClusterID
-	}
-
-	if p.ClusterUID != "" {
-		cond[ClusterUIDField] = p.ClusterUID
-	}
-
-	if p.NamespaceID != 0 {
-		cond[BKNamespaceIDField] = p.NamespaceID
-	}
-
-	if p.Namespace != "" {
-		cond[NamespaceField] = p.Namespace
-	}
-
-	if p.Ref.Kind != "" {
-		cond[RefKindField] = p.Ref.Kind
-	}
-
-	if p.Ref.Name != "" {
-		cond[RefNameField] = p.Ref.Name
-	}
-
-	if p.Ref.ID != 0 {
-		cond[RefIDField] = p.Ref.ID
-	}
-
-	if p.HostID != 0 {
-		cond[common.BKHostIDField] = p.HostID
-	}
-
-	if p.NodeID != 0 {
-		cond[BKNodeIDField] = p.NodeID
-	}
-
-	if p.NodeName != "" {
-		cond[NodeField] = p.NodeName
-	}
+	cond = util.SetQueryOwner(cond, supplierAccount)
 
 	if p.Filter != nil {
 		filterCond, err := p.Filter.ToMgo()
@@ -380,7 +321,6 @@ func (option *CreatePodsOption) Validate() ccErr.RawErrorInfo {
 
 // ContainerQueryOption container query request
 type ContainerQueryOption struct {
-	PodID  int64              `json:"bk_pod_id"`
 	Filter *filter.Expression `json:"filter"`
 	Fields []string           `json:"fields,omitempty"`
 	Page   metadata.BasePage  `json:"page,omitempty"`
@@ -388,13 +328,6 @@ type ContainerQueryOption struct {
 
 // Validate validate ContainerQueryReq
 func (p *ContainerQueryOption) Validate() ccErr.RawErrorInfo {
-	if p.PodID == 0 {
-		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{BKPodIDField},
-		}
-	}
-
 	if err := p.Page.ValidateWithEnableCount(false, containerQueryLimit); err.ErrCode != 0 {
 		return err
 	}
@@ -414,10 +347,9 @@ func (p *ContainerQueryOption) Validate() ccErr.RawErrorInfo {
 }
 
 // BuildCond build query container condition
-func (p *ContainerQueryOption) BuildCond() (mapstr.MapStr, error) {
-	cond := mapstr.MapStr{
-		BKPodIDField: p.PodID,
-	}
+func (p *ContainerQueryOption) BuildCond(supplierAccount string) (mapstr.MapStr, error) {
+	cond := mapstr.MapStr{}
+	cond = util.SetQueryOwner(cond, supplierAccount)
 
 	if p.Filter != nil {
 		filterCond, err := p.Filter.ToMgo()

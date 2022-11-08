@@ -46,6 +46,7 @@ var WorkLoadSpecFieldsDescriptor = table.FieldsDescriptors{
 
 // WorkLoadRefDescriptor  the description used when other resources refer to the workload.
 var WorkLoadRefDescriptor = table.FieldsDescriptors{
+	{Field: RefField, Type: enumor.Object, IsRequired: true, IsEditable: false},
 	{Field: RefKindField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: RefIDField, Type: enumor.Numeric, IsRequired: false, IsEditable: false},
 	{Field: RefNameField, Type: enumor.String, IsRequired: false, IsEditable: false},
@@ -484,20 +485,13 @@ var wlIgnoreField = []string{
 
 // WlQueryOption workload query request
 type WlQueryOption struct {
-	NamespaceSpec `json:",inline" bson:",inline"`
-	Filter        *filter.Expression `json:"filter"`
-	Fields        []string           `json:"fields,omitempty"`
-	Page          metadata.BasePage  `json:"page,omitempty"`
+	Filter *filter.Expression `json:"filter"`
+	Fields []string           `json:"fields,omitempty"`
+	Page   metadata.BasePage  `json:"page,omitempty"`
 }
 
 // Validate validate WlQueryReq
 func (wl *WlQueryOption) Validate(kind WorkloadType) errors.RawErrorInfo {
-	if (wl.ClusterID != 0 || wl.NamespaceID != 0) && (wl.ClusterUID != "" && wl.Namespace != "") {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrorTopoIdentificationIllegal,
-		}
-	}
-
 	if err := wl.Page.ValidateWithEnableCount(false, WlQueryLimit); err.ErrCode != 0 {
 		return err
 	}
@@ -530,23 +524,6 @@ func (wl *WlQueryOption) BuildCond(bizID int64, supplierAccount string) (mapstr.
 		common.BKAppIDField: bizID,
 	}
 	cond = util.SetQueryOwner(cond, supplierAccount)
-
-	if wl.ClusterID != 0 {
-		cond[BKClusterIDFiled] = wl.ClusterID
-	}
-
-	if wl.ClusterUID != "" {
-		cond[ClusterUIDField] = wl.ClusterUID
-	}
-
-	if wl.NamespaceID != 0 {
-		cond[BKNamespaceIDField] = wl.NamespaceID
-	}
-
-	if wl.Namespace != "" {
-		cond[NamespaceField] = wl.Namespace
-	}
-
 	if wl.Filter != nil {
 		filterCond, err := wl.Filter.ToMgo()
 		if err != nil {

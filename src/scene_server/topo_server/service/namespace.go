@@ -217,6 +217,16 @@ func (s *Service) DeleteNamespace(ctx *rest.Contexts) {
 		}
 	}
 
+	hasRes, err := s.hasNextLevelResource(ctx.Kit, types.KubeNamespace, bizID, req.IDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if hasRes {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID))
+		return
+	}
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Engine.CoreAPI.CoreService().Kube().DeleteNamespace(ctx.Kit.Ctx, ctx.Kit.Header, bizID, req)
 		if err != nil {

@@ -170,6 +170,11 @@ var _ = Describe("namespace test", func() {
 				Condition: filter.And,
 				Rules: []filter.RuleFactory{
 					&filter.AtomRule{
+						Field:    types.BKClusterIDFiled,
+						Operator: filter.Equal.Factory(),
+						Value:    clusterID,
+					},
+					&filter.AtomRule{
 						Field:    common.BKFieldName,
 						Operator: filter.Equal.Factory(),
 						Value:    nsName,
@@ -194,9 +199,6 @@ var _ = Describe("namespace test", func() {
 		}
 		fields := []string{common.BKFieldID}
 		queryOpt := types.NsQueryOption{
-			ClusterSpec: types.ClusterSpec{
-				ClusterID: clusterID,
-			},
 			Filter: filter,
 			Page:   page,
 			Fields: fields,
@@ -211,9 +213,6 @@ var _ = Describe("namespace test", func() {
 			EnableCount: true,
 		}
 		queryOpt = types.NsQueryOption{
-			ClusterSpec: types.ClusterSpec{
-				ClusterID: clusterID,
-			},
 			Filter: filter,
 			Page:   page,
 		}

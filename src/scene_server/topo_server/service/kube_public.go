@@ -20,9 +20,11 @@ package service
 import (
 	"errors"
 	"strconv"
+	"sync"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -517,4 +519,71 @@ func (s *Service) FindResourceAttrs(ctx *rest.Contexts) {
 		}
 	}
 	ctx.RespEntity(result)
+}
+
+func (s *Service) hasNextLevelResource(kit *rest.Kit, kind string, bizID int64, ids []int64) (bool, error) {
+	var tables []string
+	filter := map[string]interface{}{
+		common.BKAppIDField: bizID,
+	}
+	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
+
+	switch kind {
+	case types.KubeCluster:
+		tables = []string{types.BKTableNameBaseNamespace, types.BKTableNameBaseNode, types.BKTableNameBasePod}
+		workLoads := types.GetWorkLoadTables()
+		tables = append(tables, workLoads...)
+		filter[types.BKClusterIDFiled] = map[string]interface{}{common.BKDBIN: ids}
+
+	case types.KubeNamespace:
+		tables = []string{types.BKTableNameBasePod}
+		workLoads := types.GetWorkLoadTables()
+		tables = append(tables, workLoads...)
+		filter[types.BKNamespaceIDField] = map[string]interface{}{common.BKDBIN: ids}
+
+	default:
+		tables = []string{types.BKTableNameBasePod}
+		if err := types.WorkloadType(kind).Validate(); err != nil {
+			return false, err
+		}
+
+		filter[types.RefKindField] = kind
+		filter[types.RefIDField] = map[string]interface{}{common.BKDBIN: ids}
+	}
+
+	var (
+		wg       sync.WaitGroup
+		firstErr ccErr.CCErrorCoder
+		hasRes   bool
+	)
+	for _, table := range tables {
+		wg.Add(1)
+		go func(table string, filter []map[string]interface{}) {
+			defer func() {
+				wg.Done()
+			}()
+
+			counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, table, filter)
+			if err != nil {
+				blog.Errorf("count resource failed, cond: %v, table: %s, err: %v, rid: %s", filter, table, err, kit.Rid)
+				firstErr = err
+				return
+			}
+
+			if counts[0] > 0 {
+				blog.Errorf("there are resources under the target that cannot be deleted, filter: %v, table: %s, "+
+					"rid: %s", filter, table, kit.Rid)
+				hasRes = true
+				return
+			}
+
+		}(table, []map[string]interface{}{filter})
+	}
+	wg.Wait()
+
+	if firstErr != nil {
+		return hasRes, firstErr
+	}
+
+	return hasRes, nil
 }

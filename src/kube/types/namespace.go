@@ -247,20 +247,13 @@ type NsCreateResp struct {
 
 // NsQueryOption namespace query request
 type NsQueryOption struct {
-	ClusterSpec `json:",inline" bson:",inline"`
-	Filter      *filter.Expression `json:"filter"`
-	Fields      []string           `json:"fields,omitempty"`
-	Page        metadata.BasePage  `json:"page,omitempty"`
+	Filter *filter.Expression `json:"filter"`
+	Fields []string           `json:"fields,omitempty"`
+	Page   metadata.BasePage  `json:"page,omitempty"`
 }
 
 // Validate validate NsQueryReq
 func (ns *NsQueryOption) Validate() errors.RawErrorInfo {
-	if ns.ClusterUID != "" && ns.ClusterID != 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrorTopoIdentificationIllegal,
-		}
-	}
-
 	if err := ns.Page.ValidateWithEnableCount(false, NsQueryLimit); err.ErrCode != 0 {
 		return err
 	}
@@ -285,13 +278,6 @@ func (ns *NsQueryOption) BuildCond(bizID int64, supplierAccount string) (mapstr.
 		common.BKAppIDField: bizID,
 	}
 	cond = util.SetQueryOwner(cond, supplierAccount)
-
-	if ns.ClusterID != 0 {
-		cond[BKClusterIDFiled] = ns.ClusterID
-	}
-	if ns.ClusterUID != "" {
-		cond[ClusterUIDField] = ns.ClusterUID
-	}
 
 	if ns.Filter != nil {
 		filterCond, err := ns.Filter.ToMgo()

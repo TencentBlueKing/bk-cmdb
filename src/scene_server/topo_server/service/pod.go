@@ -365,13 +365,6 @@ func (s *Service) DeletePods(ctx *rest.Contexts) {
 
 // ListContainer list container
 func (s *Service) ListContainer(ctx *rest.Contexts) {
-	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
-	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
-	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
-		return
-	}
-
 	req := new(types.ContainerQueryOption)
 	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
@@ -383,24 +376,7 @@ func (s *Service) ListContainer(ctx *rest.Contexts) {
 		return
 	}
 
-	cond := mapstr.MapStr{
-		common.BKAppIDField: bizID,
-		common.BKFieldID:    req.PodID,
-	}
-	counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
-		types.BKTableNameBasePod, []map[string]interface{}{cond})
-	if err != nil {
-		blog.Errorf("get pod failed, cond: %v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	if counts[0] != 1 {
-		blog.Errorf("get pod failed, count: %d, cond: %v, err: %v, rid: %s", counts[0], cond, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.BKPodIDField))
-		return
-	}
-
-	cond, err = req.BuildCond()
+	cond, err := req.BuildCond(ctx.Kit.SupplierAccount)
 	if err != nil {
 		blog.Errorf("build query container condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

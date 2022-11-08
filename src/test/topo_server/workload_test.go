@@ -228,6 +228,16 @@ var _ = Describe("workload test", func() {
 				Condition: filter.And,
 				Rules: []filter.RuleFactory{
 					&filter.AtomRule{
+						Field:    types.BKClusterIDFiled,
+						Operator: filter.Equal.Factory(),
+						Value:    clusterID,
+					},
+					&filter.AtomRule{
+						Field:    types.BKNamespaceIDField,
+						Operator: filter.Equal.Factory(),
+						Value:    namespaceID,
+					},
+					&filter.AtomRule{
 						Field:    common.BKFieldName,
 						Operator: filter.Equal.Factory(),
 						Value:    wlName,
@@ -252,12 +262,6 @@ var _ = Describe("workload test", func() {
 		}
 		fields := []string{common.BKFieldID}
 		queryOpt := types.WlQueryOption{
-			NamespaceSpec: types.NamespaceSpec{
-				ClusterSpec: types.ClusterSpec{
-					ClusterID: clusterID,
-				},
-				NamespaceID: namespaceID,
-			},
 			Filter: filter,
 			Page:   page,
 			Fields: fields,
@@ -272,12 +276,6 @@ var _ = Describe("workload test", func() {
 			EnableCount: true,
 		}
 		queryOpt = types.WlQueryOption{
-			NamespaceSpec: types.NamespaceSpec{
-				ClusterSpec: types.ClusterSpec{
-					ClusterID: clusterID,
-				},
-				NamespaceID: namespaceID,
-			},
 			Filter: filter,
 			Page:   page,
 		}
