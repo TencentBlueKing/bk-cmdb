@@ -81,7 +81,8 @@ func changeSetUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		}
 	}
 	if isCreateUniqueSetName {
-		if err := db.Table(tableName).CreateIndex(ctx, idxUniqueParentIDSetName); err != nil {
+		err = db.Table(tableName).CreateIndex(ctx, idxUniqueParentIDSetName)
+		if err != nil && !db.IsDuplicatedError(err) {
 			blog.ErrorJSON("create table(%s) index error. idx name: %s, index: %s, err: %s",
 				tableName, idxUniqueParentIDSetName.Name, idxUniqueParentIDSetName, err.Error())
 			if db.IsDuplicatedError(err) {

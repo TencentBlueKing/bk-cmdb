@@ -50,7 +50,7 @@ func addIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	}
 
 	err := db.Table(common.BKTableNameHostLock).CreateIndex(ctx, index)
-	if err != nil {
+	if err != nil && !db.IsDuplicatedError(err) {
 		blog.ErrorJSON("add index %s for table %s failed, err:%s", index, common.BKTableNameHostLock, err)
 		return err
 	}

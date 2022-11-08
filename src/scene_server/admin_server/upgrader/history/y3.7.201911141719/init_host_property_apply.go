@@ -144,7 +144,8 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 		},
 	}
 	for _, index := range indexes {
-		if err := db.Table(common.BKTableNameHostApplyRule).CreateIndex(ctx, index); err != nil {
+		err = db.Table(common.BKTableNameHostApplyRule).CreateIndex(ctx, index)
+		if err != nil && !db.IsDuplicatedError(err) {
 			blog.Errorf("InitHostPropertyApplyDataModel failed, add index failed, table: %s, index: %+v, err: %s", common.BKTableNameHostApplyRule, index, err.Error())
 			return fmt.Errorf("add index failed, table: %s, index: %s, err: %s", common.BKTableNameHostApplyRule, index.Name, err.Error())
 		}
