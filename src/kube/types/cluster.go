@@ -54,6 +54,18 @@ var ClusterBaseRefDescriptor = table.FieldsDescriptors{
 	{Field: BKClusterIDFiled, Type: enumor.Numeric, IsRequired: false, IsEditable: false},
 }
 
+// ClusterSpec describes the common attributes of cluster, it is used by the structure below it.
+type ClusterSpec struct {
+	// BizID business id in cc
+	BizID int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
+
+	// ClusterID cluster id in cc
+	ClusterID int64 `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
+
+	// ClusterUID cluster id in third party platform
+	ClusterUID string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
+}
+
 // Cluster container cluster table structure
 type Cluster struct {
 	// ID cluster auto-increment ID in cc
@@ -148,7 +160,7 @@ func (option *Cluster) validateUpdate() ccErr.RawErrorInfo {
 	if option == nil {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"cluster information must be given"},
+			Args:    []interface{}{"cluster"},
 		}
 	}
 
@@ -202,14 +214,14 @@ func (option *UpdateClusterOption) Validate() ccErr.RawErrorInfo {
 	if option == nil {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"cluster information must be given"},
+			Args:    []interface{}{"data"},
 		}
 	}
 
 	if len(option.IDs) == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"the params for updating the cluster must be set"},
+			Args:    []interface{}{"ids"},
 		}
 	}
 	if len(option.IDs) > maxUpdateClusterNum {

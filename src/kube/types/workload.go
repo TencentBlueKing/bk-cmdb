@@ -96,6 +96,25 @@ type WorkloadInterface interface {
 	BuildUpdateData(user string) (map[string]interface{}, error)
 }
 
+// Reference store pod-related workload related information
+type Reference struct {
+	// Kind workload kind
+	Kind WorkloadType `json:"kind" bson:"kind"`
+
+	// Name workload name
+	Name string `json:"name" bson:"name"`
+
+	// ID workload id in cc
+	ID int64 `json:"id" bson:"id"`
+}
+
+// WorkloadSpec describes the common attributes of workload,
+// it is used by the structure below it.
+type WorkloadSpec struct {
+	NamespaceSpec `json:",inline" bson:",inline"`
+	Ref           Reference `json:"ref" bson:"ref"`
+}
+
 // WorkloadBase define the workload common struct, k8s workload attributes are placed in their respective structures,
 // except for very public variables, please do not put them in.
 type WorkloadBase struct {

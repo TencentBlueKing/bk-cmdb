@@ -460,7 +460,7 @@ func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 func (s *Service) FindResourceAttrs(ctx *rest.Contexts) {
 
 	object := ctx.Request.PathParameter("object")
-	if !types.IsContainerTopoResource(object) {
+	if !types.IsKubeTopoResource(object) {
 		blog.Errorf("the param is invalid and does not belong to the kube object(%s)", object)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "object"))
 		return

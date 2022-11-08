@@ -18,15 +18,13 @@
 package types
 
 import (
-	"errors"
-	"fmt"
-
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
+	"errors"
 )
 
 const (
@@ -141,7 +139,7 @@ func (option *Node) updateValidate() ccErr.RawErrorInfo {
 	if option == nil {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"node information must be given"},
+			Args:    []interface{}{"data"},
 		}
 	}
 
@@ -298,27 +296,27 @@ func (option *UpdateNodeOption) UpdateValidate() ccErr.RawErrorInfo {
 	if len(option.IDs) == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"parameter cannot be empty"},
+			Args:    []interface{}{"ids"},
 		}
 	}
 	if len(option.IDs) > maxUpdateNodeNum {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommXXExceedLimit,
-			Args: []interface{}{fmt.Sprintf("the number of nodes to be updated at one time cannot exceed %d",
-				maxUpdateNodeNum)},
+			Args:    []interface{}{"ids", maxUpdateNodeNum},
 		}
+	}
+
+	if err := option.Data.updateValidate(); err.ErrCode != 0 {
+		return err
 	}
 
 	if err := option.Data.validateNodeIP(false); err != nil {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args: []interface{}{fmt.Sprintf("the number of nodes to be updated at one time cannot exceed %d",
-				maxUpdateNodeNum)},
+			Args:    []interface{}{"internal_ip or external_ip"},
 		}
 	}
-	if err := option.Data.updateValidate(); err.ErrCode != 0 {
-		return err
-	}
+
 	return ccErr.RawErrorInfo{}
 }
 

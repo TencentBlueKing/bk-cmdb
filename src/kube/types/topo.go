@@ -25,16 +25,20 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+const (
+	TopoCountMaxNum = 100
+)
+
 // HostPathOption find host path request
 type HostPathOption struct {
 	HostIDs []int64 `json:"ids"`
 }
 
-// Validate validate HostPathReq
+// Validate validate HostPathOption
 func (h *HostPathOption) Validate() ccErr.RawErrorInfo {
 	if len(h.HostIDs) == 0 {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"ids"},
 		}
 	}
@@ -89,7 +93,7 @@ type PodPathOption struct {
 func (p *PodPathOption) Validate() ccErr.RawErrorInfo {
 	if len(p.PodIDs) == 0 {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"ids"},
 		}
 	}
@@ -144,17 +148,24 @@ type KubeTopoCountOption struct {
 
 // Validate validate the KubeTopoCountOption
 func (option *KubeTopoCountOption) Validate() ccErr.RawErrorInfo {
-	if len(option.ResourceInfos) > 100 {
+
+	if len(option.ResourceInfos) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"resource_info"},
+		}
+	}
+	if len(option.ResourceInfos) > TopoCountMaxNum {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{errors.New("the requested array length exceeds the maximum value of 100")},
+			Args:    []interface{}{"resource_info", TopoCountMaxNum},
 		}
 	}
 	for _, info := range option.ResourceInfos {
 		if !IsKubeResourceKind(info.Kind) {
 			return ccErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsInvalid,
-				Args:    []interface{}{errors.New("non-container resource objects\n")},
+				Args:    []interface{}{"non-kube objects", info.Kind},
 			}
 		}
 	}
@@ -175,21 +186,21 @@ type KubeTopoPathOption struct {
 	Page           metadata.BasePage `json:"page"`
 }
 
-// Validate validate the KubeTopoPathReq
+// Validate validate the KubeTopoPathOption
 func (option *KubeTopoPathOption) Validate() ccErr.RawErrorInfo {
 
 	if option.ReferenceID == 0 {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{errors.New("bk_reference_id must be set")},
 		}
 	}
 
 	// is the resource type legal
-	if !IsContainerTopoResource(option.ReferenceObjID) {
+	if !IsKubeTopoResource(option.ReferenceObjID) {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{errors.New("bk_reference_obj_id is illegal")},
+			Args:    []interface{}{option.ReferenceObjID},
 		}
 	}
 

@@ -91,6 +91,17 @@ const (
 	NsQueryLimit = 500
 )
 
+// NamespaceSpec describes the common attributes of namespace, it is used by the structure below it.
+type NamespaceSpec struct {
+	ClusterSpec `json:",inline" bson:",inline"`
+
+	// NamespaceID namespace id in cc
+	NamespaceID int64 `json:"bk_namespace_id,omitempty" bson:"bk_namespace_id"`
+
+	// Namespace namespace name in third party platform
+	Namespace string `json:"namespace,omitempty" bson:"namespace"`
+}
+
 // Namespace define the namespace struct.
 type Namespace struct {
 	ClusterSpec     `json:",inline" bson:",inline"`
