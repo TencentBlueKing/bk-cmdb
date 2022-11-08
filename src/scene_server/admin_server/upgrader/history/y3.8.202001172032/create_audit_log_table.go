@@ -62,7 +62,7 @@ func addAuditLogTableIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		if exist {
 			continue
 		}
-		if err := db.Table(common.BKTableNameAuditLog).CreateIndex(ctx, idx); err != nil {
+		if err := db.Table(common.BKTableNameAuditLog).CreateIndex(ctx, idx); err != nil && !db.IsDuplicatedError(err) {
 			blog.ErrorJSON("create index to BKTableNameAuditLog error, err:%s, current index:%s, all create index:%s", err.Error(), idx, createIdxArr)
 			return err
 		}
