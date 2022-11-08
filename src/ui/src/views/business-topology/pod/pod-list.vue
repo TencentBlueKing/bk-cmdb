@@ -203,6 +203,10 @@
             start: table.pagination.limit * (table.pagination.current - 1),
             limit: table.pagination.limit,
             sort: table.sort
+          },
+          filter: {
+            condition: 'AND',
+            rules: []
           }
         }
 
@@ -215,19 +219,33 @@
         }
         const nodeType = getContainerNodeType(selectedNodeData.bk_obj_id)
 
-        // folder节点参数特殊处理
-        if (nodeType === CONTAINER_OBJECTS.FOLDER) {
-          params.folder = true
-          // folder父节点为cluster节点
-          params[fieldMap[CONTAINER_OBJECTS.CLUSTER]] = this.selectedNode.parent.data.bk_inst_id
-        } else if (nodeType === CONTAINER_OBJECTS.WORKLOAD) {
-          params.ref = {
-            id: selectedNodeData.bk_inst_id,
-            kind: selectedNodeData.bk_obj_id
-          }
-        } else {
+        if (nodeType === CONTAINER_OBJECTS.WORKLOAD) {
+          params.filter.rules.push({
+            field: 'ref',
+            operator: 'filter_object',
+            value: {
+              condition: 'AND',
+              rules: [
+                {
+                  field: 'id',
+                  operator: 'equal',
+                  value: selectedNodeData.bk_inst_id
+                },
+                {
+                  field: 'kind',
+                  operator: 'equal',
+                  value: selectedNodeData.bk_obj_id
+                }
+              ]
+            }
+          })
+        } else if (nodeType !== CONTAINER_OBJECTS.FOLDER) {
           // 添加节点的属性ID参数，如 bk_namespace_id
-          params[fieldMap[nodeType]] = selectedNodeData.bk_inst_id
+          params.filter.rules.push({
+            field: fieldMap[nodeType],
+            operator: 'equal',
+            value: selectedNodeData.bk_inst_id
+          })
         }
 
         const condition = {
@@ -240,10 +258,7 @@
         const { conditions } = transformGeneralModelCondition(condition, properties.value)
 
         if (conditions) {
-          params.filter = {
-            condition: 'AND',
-            rules: conditions.rules
-          }
+          params.filter.rules.push(...conditions.rules)
         }
 
         return params

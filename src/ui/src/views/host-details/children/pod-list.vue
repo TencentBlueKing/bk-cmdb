@@ -128,12 +128,21 @@
       const getSearchParams = () => {
         const params = {
           bk_biz_id: bizId.value,
-          bk_host_id: host.value.bk_host_id,
           fields: table.header.map(item => item.id),
           page: {
             start: table.pagination.limit * (table.pagination.current - 1),
             limit: table.pagination.limit,
             sort: table.sort
+          },
+          filter: {
+            condition: 'AND',
+            rules: [
+              {
+                field: 'bk_host_id',
+                operator: 'equal',
+                value: host.value.bk_host_id
+              }
+            ]
           }
         }
 
@@ -147,10 +156,7 @@
         const { conditions } = transformGeneralModelCondition(condition, properties.value)
 
         if (conditions) {
-          params.filter = {
-            condition: 'AND',
-            rules: conditions.rules
-          }
+          params.filter.rules.push(...conditions.rules)
         }
 
         return params

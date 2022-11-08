@@ -33,14 +33,20 @@ const find = async (params, config) => {
 const findById = async (id, podId, bizId, config = {}) => {
   try {
     const { info: [instance = null] } = await http.post(`findmany/kube/container/bk_biz_id/${bizId}`, enableCount({
-      bk_pod_id: podId,
       filter: {
         condition: 'AND',
-        rules: [{
-          field: ID_KEY,
-          operator: 'equal',
-          value: id
-        }]
+        rules: [
+          {
+            field: ID_KEY,
+            operator: 'equal',
+            value: id
+          },
+          {
+            field: 'bk_pod_id',
+            operator: 'equal',
+            value: podId
+          }
+        ]
       },
       page: onePageParams()
     }, false), config)
