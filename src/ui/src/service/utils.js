@@ -162,3 +162,44 @@ export const rollReqUseTotalCount = async (
 
   return results
 }
+
+// 通过分割指定的参数数据拆分请求
+export const rollReqByDataKey = async (
+  url,
+  params = {},
+  options = {},
+  config = {},
+  method = 'post',
+  getter
+) => {
+  const { limit = 1000, dataKey = 'ids' } = options
+
+  const results = []
+
+  let index = 0
+
+  // 循环组装得到所有的req
+  const reqs = []
+
+  while (index < params?.[dataKey]?.length) {
+    reqs.push(http[method](url, {
+      ...params,
+      [dataKey]: params?.[dataKey]?.slice(index, index + limit)
+    }, config))
+    index = index + limit
+  }
+
+  const all = await Promise.all(reqs)
+
+  if (getter) {
+    all.forEach((data) => {
+      results.push(getter(data))
+    })
+  } else {
+    all.forEach((data) => {
+      results.push(...data)
+    })
+  }
+
+  return results
+}

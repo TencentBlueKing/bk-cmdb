@@ -12,7 +12,7 @@
 
 import http from '@/api'
 import { normalizationTopo } from '@/service/container/transition.js'
-import { rollReqUseCount } from '../utils.js'
+import { rollReqUseCount, rollReqByDataKey } from '../utils.js'
 
 export const requestIds = {
   getTopology: Symbol('getTopology')
@@ -42,8 +42,8 @@ const getContainerTopo = async ({ bizId, params }, config) => {
 
 const getContainerTopoNodeStats = async ({ bizId, params }, config) => {
   const [hostStats, podStats] = await Promise.all([
-    http.post(`find/kube/${bizId}/topo_node/host/count`, params, config),
-    http.post(`find/kube/${bizId}/topo_node/pod/count`, params, config)
+    rollReqByDataKey(`find/kube/${bizId}/topo_node/host/count`, params, { limit: 100, dataKey: 'resource_info' }, config),
+    rollReqByDataKey(`find/kube/${bizId}/topo_node/pod/count`, params, { limit: 100, dataKey: 'resource_info' }, config)
   ])
 
   return {
