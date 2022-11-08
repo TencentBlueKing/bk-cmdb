@@ -30,7 +30,7 @@ import (
 
 const (
 	// MaxRulesDepth defines the maximum number of rules depth
-	MaxRulesDepth = uint(3)
+	MaxRulesDepth = uint(4)
 )
 
 // ExprOption defines how to validate an expression.

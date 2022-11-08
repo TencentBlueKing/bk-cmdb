@@ -229,7 +229,7 @@ func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClu
 func (b *kube) isExistKubeResourceUnderCluster(kit *rest.Kit, option *types.DeleteClusterOption, bizID int64,
 	supplierAccount string) (bool, error) {
 
-	if len(option.IDs) > 0 {
+	if len(option.IDs) == 0 {
 		return false, errors.New("ids must be set")
 	}
 
