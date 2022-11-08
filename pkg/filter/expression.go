@@ -30,7 +30,7 @@ import (
 
 const (
 	// MaxRulesDepth defines the maximum number of rules depth
-	MaxRulesDepth = uint(4)
+	MaxRulesDepth = uint(3)
 )
 
 // ExprOption defines how to validate an expression.
@@ -91,8 +91,8 @@ func (exp Expression) Validate(opt *ExprOption) error {
 		return errors.New("expression should not be nil")
 	}
 
-	if opt.MaxRulesDepth > MaxRulesDepth {
-		return fmt.Errorf("max rule depth exceeds maximum limit: %d", MaxRulesDepth)
+	if opt.MaxRulesDepth > opt.MaxRulesDepth {
+		return fmt.Errorf("max rule depth exceeds maximum limit: %d", opt.MaxRulesDepth)
 	}
 
 	return exp.RuleFactory.Validate(opt)

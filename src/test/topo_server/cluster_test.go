@@ -21,10 +21,10 @@ import (
 	"context"
 	"encoding/json"
 
+	"configcenter/pkg/filter"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	commonutil "configcenter/src/common/util"
-	"configcenter/src/filter"
 	"configcenter/src/kube/types"
 	"configcenter/src/test"
 	"configcenter/src/test/util"
