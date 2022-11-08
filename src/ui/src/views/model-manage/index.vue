@@ -131,7 +131,6 @@
     <div class="model-management-body">
       <ul
         class="group-list"
-        ref="model-content"
         :class="{
           'is-dragging': isDragging
         }"
@@ -248,14 +247,16 @@
           <bk-transition name="collapse" class="group-empty-model"
             v-if="classification.bk_objects.length === 0"
             v-show="!classificationsCollapseState[classification.id]">
-            <i
-              class="bk-icon icon-info-circle"
-            >
-              {{$t('该分组暂无模型，请')}}
-              <bk-button :text="true" title="primary" @click="showModelDialog(classification.bk_classification_id)">
-                {{$t('立即添加')}}
-              </bk-button>
-            </i>
+            <div>
+              <i class="bk-icon icon-info-circle"></i>
+              <i18n path="分组暂无模型提示">
+                <template #add>
+                  <bk-button :text="true" title="primary" @click="showModelDialog(classification.bk_classification_id)">
+                    {{$t('立即添加')}}
+                  </bk-button>
+                </template>
+              </i18n>
+            </div>
           </bk-transition>
         </li>
       </ul>
@@ -982,23 +983,19 @@
                 requestId: 'updateClassification'
               }
             })
-            this.updateClassify({ ...params, ...{ id: this.groupDialog.data.id } })
+            this.updateClassify({ ...params, ...{ id: this.groupDialog.data.id }, isNewClassify: false })
           } else {
             const res = await this.createClassification({
               params,
               config: { requestId: 'createClassification' }
             })
-            this.updateClassify({ ...params, ...{ id: res.id } })
+            this.updateClassify({ ...params, ...{ id: res.id }, isNewClassify: true })
             this.$success(this.$t('新建成功'))
           }
-          await this.hideGroupDialog()
+          this.hideGroupDialog()
           this.modelSearchKey = ''
-          const classificationDomList = this.$refs.classification
-          const newGroupHeight = classificationDomList.at(-2).offsetHeight
-          const lastGroupHeight = classificationDomList.at(-1).offsetHeight
-          const scrollHeight = this.$refs['model-content'].offsetHeight - newGroupHeight - lastGroupHeight
-          document.getElementsByClassName('model-management-body')[0].scrollTop = scrollHeight
-          this.modelSearchKey = ''
+          const classificationDomList = this.$refs.classification.at(-2)
+          classificationDomList.scrollIntoView()
         } catch (error) {
           console.log(error)
         }
