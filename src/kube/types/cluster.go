@@ -20,7 +20,6 @@ package types
 import (
 	"errors"
 	"fmt"
-	"reflect"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
@@ -48,8 +47,14 @@ var ClusterSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: NetworkTypeField, Type: enumor.Enum, IsRequired: false, IsEditable: true},
 	{Field: RegionField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: VpcField, Type: enumor.String, IsRequired: false, IsEditable: false},
-	{Field: NetworkField, Type: enumor.String, IsRequired: false, IsEditable: false},
+	{Field: NetworkField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: TypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
+}
+
+// ClusterBaseRefDescriptor the description used when other resources refer to the cluster.
+var ClusterBaseRefDescriptor = table.FieldsDescriptors{
+	{Field: ClusterUIDField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: BKClusterIDFiled, Type: enumor.Numeric, IsRequired: false, IsEditable: false},
 }
 
 // Cluster container cluster table structure
@@ -87,7 +92,7 @@ type Cluster struct {
 // IgnoredUpdateClusterFields update the fields that need to be ignored in the cluster scenario.
 var IgnoredUpdateClusterFields = []string{common.BKFieldID, common.BKOwnerIDField, BKBizIDField, ClusterUIDField}
 
-// CreateClusterResult create cluster result.
+// CreateClusterResult create cluster result for internal call.
 type CreateClusterResult struct {
 	metadata.BaseResp
 	Info *Cluster `json:"data"`
@@ -96,6 +101,12 @@ type CreateClusterResult struct {
 // DeleteClusterOption delete cluster result.
 type DeleteClusterOption struct {
 	IDs []int64 `json:"ids"`
+}
+
+// CreateClusterRsp create cluster result for external call.
+type CreateClusterRsp struct {
+	metadata.BaseResp
+	Data metadata.RspID `json:"data"`
 }
 
 // Validate validate the DeleteClusterOption
@@ -112,58 +123,37 @@ func (option *DeleteClusterOption) Validate() error {
 	return nil
 }
 
-// CreateValidate check whether the parameters for creating a cluster are legal.
-func (option *Cluster) CreateValidate() error {
+// ValidateCreate check whether the parameters for creating a cluster are legal.
+func (option *Cluster) ValidateCreate() ccErr.RawErrorInfo {
 
 	if option == nil {
-		return errors.New("cluster information must be given")
-	}
-
-	typeOfOption := reflect.TypeOf(*option)
-	valueOfOption := reflect.ValueOf(*option)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, i)
-		if flag {
-			continue
-		}
-
-		if !ClusterFields.IsFieldRequiredByField(tag) {
-			continue
-		}
-
-		if err := isRequiredField(tag, valueOfOption, i); err != nil {
-			return err
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"data"},
 		}
 	}
-	return nil
+
+	if err := ValidateCreate(*option, ClusterFields); err.ErrCode != 0 {
+		return err
+	}
+
+	return ccErr.RawErrorInfo{}
 }
 
-// UpdateValidate verifying the validity of parameters for updating node scenarios
-func (option *Cluster) updateValidate() error {
+// validateUpdate verifying the validity of parameters for updating node scenarios
+func (option *Cluster) validateUpdate() ccErr.RawErrorInfo {
 
 	if option == nil {
-		return errors.New("cluster information must be given")
-	}
-
-	typeOfOption := reflect.TypeOf(*option)
-	valueOfOption := reflect.ValueOf(*option)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-
-		tag, flag := getFieldTag(typeOfOption, i)
-		if flag {
-			continue
-		}
-
-		if flag := isEditableField(tag, valueOfOption, i); flag {
-			continue
-		}
-
-		// get whether it is an editable field based on tag
-		if !ClusterFields.IsFieldEditableByField(tag) {
-			return fmt.Errorf("field [%s] is a non-editable field", tag)
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"cluster information must be given"},
 		}
 	}
-	return nil
+
+	if err := ValidateUpdate(*option, ClusterFields); err.ErrCode != 0 {
+		return err
+	}
+	return ccErr.RawErrorInfo{}
 }
 
 // QueryClusterOption query cluster by query builder
@@ -198,39 +188,39 @@ type ResponseCluster struct {
 	Data []Cluster `json:"cluster"`
 }
 
-// OneUpdateCluster update individual cluster information.
-type OneUpdateCluster struct {
-	ID   int64   `json:"id"`
-	Data Cluster `json:"cluster"`
-}
-
 // UpdateClusterOption update cluster request。
 type UpdateClusterOption struct {
-	Clusters []OneUpdateCluster `json:"data"`
+	IDs  []int64 `json:"ids"`
+	Data Cluster `json:"data"`
 }
 
 // Validate validate the UpdateClusterOption
-func (option *UpdateClusterOption) Validate() error {
+func (option *UpdateClusterOption) Validate() ccErr.RawErrorInfo {
 
 	if option == nil {
-		return errors.New("cluster information must be given")
-	}
-
-	if len(option.Clusters) == 0 {
-		return errors.New("the params for updating the cluster must be set")
-	}
-	if len(option.Clusters) > maxUpdateClusterNum {
-		return fmt.Errorf("the number of update clusters cannot exceed %d at a time", maxUpdateClusterNum)
-	}
-
-	for _, one := range option.Clusters {
-		if one.ID == 0 {
-			return errors.New("id cannot be empty")
-		}
-		if err := one.Data.updateValidate(); err != nil {
-			return err
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"cluster information must be given"},
 		}
 	}
 
-	return nil
+	if len(option.IDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"the params for updating the cluster must be set"},
+		}
+	}
+	if len(option.IDs) > maxUpdateClusterNum {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args: []interface{}{fmt.Sprintf("the number of update clusters cannot exceed %d at a time",
+				maxUpdateClusterNum)},
+		}
+	}
+
+	if err := option.Data.validateUpdate(); err.ErrCode != 0 {
+		return err
+	}
+
+	return ccErr.RawErrorInfo{}
 }

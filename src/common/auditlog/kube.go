@@ -37,7 +37,7 @@ func (c *kubeAuditLog) GenerateClusterAuditLog(param *generateAuditCommonParamet
 	auditLogs := make([]metadata.AuditLog, len(data))
 
 	for index, d := range data {
-		log, err := c.generateAuditLog(param, metadata.KubeCluster, &d.ID, &d.BizID, d.Name, d)
+		log, err := c.generateAuditLog(param, metadata.KubeCluster, d.ID, d.BizID, d.Name, d)
 		if err != nil {
 			return nil, err
 		}
@@ -54,7 +54,7 @@ func (c *kubeAuditLog) GenerateNodeAuditLog(param *generateAuditCommonParameter,
 	auditLogs := make([]metadata.AuditLog, len(data))
 
 	for index, d := range data {
-		auditLog, err := c.generateAuditLog(param, metadata.KubeNode, &d.ID, &d.BizID, d.Name, d)
+		auditLog, err := c.generateAuditLog(param, metadata.KubeNode, d.ID, d.BizID, d.Name, d)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +71,7 @@ func (c *kubeAuditLog) GenerateNamespaceAuditLog(param *generateAuditCommonParam
 	auditLogs := make([]metadata.AuditLog, len(data))
 
 	for index, d := range data {
-		auditLog, err := c.generateAuditLog(param, metadata.KubeNamespace, &d.ID, &d.BizID, &d.Name, d)
+		auditLog, err := c.generateAuditLog(param, metadata.KubeNamespace, d.ID, d.BizID, &d.Name, d)
 		if err != nil {
 			return nil, err
 		}
@@ -88,7 +88,10 @@ func (c *kubeAuditLog) GeneratePodAuditLog(param *generateAuditCommonParameter, 
 	auditLogs := make([]metadata.AuditLog, len(data))
 
 	for index, d := range data {
-		auditLog, err := c.generateAuditLog(param, metadata.KubePod, &d.ID, &d.BizID, d.Name, d)
+		if d.Name == nil {
+			return nil, errors.New(common.CCErrCommParamsInvalid, "name must be set")
+		}
+		auditLog, err := c.generateAuditLog(param, metadata.KubePod, d.ID, d.BizID, d.Name, d)
 		if err != nil {
 			return nil, err
 		}
@@ -100,12 +103,12 @@ func (c *kubeAuditLog) GeneratePodAuditLog(param *generateAuditCommonParameter, 
 
 // kubeWorkloadData kube workload audit data struct, including workload type and its actual data
 type kubeWorkloadData struct {
-	Kind types.WorkloadType `json:"kind" bson:"kind"`
-	Data types.WorkloadI    `json:"data" bson:"data"`
+	Kind types.WorkloadType      `json:"kind" bson:"kind"`
+	Data types.WorkloadInterface `json:"data" bson:"data"`
 }
 
 // GenerateWorkloadAuditLog generate audit log of kube workload.
-func (c *kubeAuditLog) GenerateWorkloadAuditLog(param *generateAuditCommonParameter, data []types.WorkloadI,
+func (c *kubeAuditLog) GenerateWorkloadAuditLog(param *generateAuditCommonParameter, data []types.WorkloadInterface,
 	kind types.WorkloadType) ([]metadata.AuditLog, errors.CCErrorCoder) {
 
 	auditLogs := make([]metadata.AuditLog, len(data))
@@ -120,7 +123,7 @@ func (c *kubeAuditLog) GenerateWorkloadAuditLog(param *generateAuditCommonParame
 		id := wlBase.ID
 		bizID := wlBase.BizID
 		name := wlBase.Name
-		auditLog, err := c.generateAuditLog(param, metadata.KubeWorkload, &id, &bizID, &name, wl)
+		auditLog, err := c.generateAuditLog(param, metadata.KubeWorkload, id, bizID, &name, wl)
 		if err != nil {
 			return nil, err
 		}
@@ -131,9 +134,9 @@ func (c *kubeAuditLog) GenerateWorkloadAuditLog(param *generateAuditCommonParame
 }
 
 func (c *kubeAuditLog) generateAuditLog(param *generateAuditCommonParameter, typ metadata.ResourceType,
-	id, bizID *int64, name *string, data interface{}) (metadata.AuditLog, errors.CCErrorCoder) {
+	id, bizID int64, name *string, data interface{}) (metadata.AuditLog, errors.CCErrorCoder) {
 
-	if id == nil || bizID == nil || name == nil || data == nil {
+	if id == 0 || bizID == 0 || name == nil || data == nil {
 		return metadata.AuditLog{}, param.kit.CCError.CCError(common.CCErrAuditGenerateLogFailed)
 	}
 
@@ -150,8 +153,8 @@ func (c *kubeAuditLog) generateAuditLog(param *generateAuditCommonParameter, typ
 		AuditType:       metadata.KubeType,
 		ResourceType:    typ,
 		Action:          param.action,
-		BusinessID:      *bizID,
-		ResourceID:      *id,
+		BusinessID:      bizID,
+		ResourceID:      id,
 		OperateFrom:     param.operateFrom,
 		ResourceName:    *name,
 		OperationDetail: details,

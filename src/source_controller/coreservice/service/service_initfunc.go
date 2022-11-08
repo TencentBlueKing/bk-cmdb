@@ -90,51 +90,6 @@ func (s *coreService) initAttrUnique(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
-func (s *coreService) initContainerInstances(web *restful.WebService) {
-
-	utility := rest.NewRestUtility(rest.Config{
-		ErrorIf:  s.engine.CCErr,
-		Language: s.engine.Language,
-	})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/create/kube/cluster/{bk_biz_id}",
-		Handler: s.CreateCluster})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut,
-		Path:    "/updatemany/kube/cluster/{supplierAccount}/{bk_biz_id}",
-		Handler: s.BatchUpdateCluster})
-
-	utility.AddHandler(rest.Action{Verb: http.MethodPut,
-		Path:    "/updatemany/kube/node/{supplierAccount}/{bk_biz_id}",
-		Handler: s.BatchUpdateNode})
-
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
-		Path:    "/deletemany/kube/cluster/{bk_biz_id}",
-		Handler: s.BatchDeleteCluster})
-
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
-		Path:    "/deletemany/kube/node/{bk_biz_id}",
-		Handler: s.BatchDeleteNode})
-
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/createmany/kube/node/{bk_biz_id}",
-		Handler: s.BatchCreateNode})
-
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/createmany/kube/pod",
-		Handler: s.BatchCreatePod})
-
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/findmany/kube/cluster",
-		Handler: s.SearchClusters})
-
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/findmany/kube/node",
-		Handler: s.SearchNodes})
-
-	utility.AddToRestfulWebService(web)
-
-}
-
 func (s *coreService) initModelInstances(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.engine.CCErr,
@@ -439,7 +394,6 @@ func (s *coreService) initCommon(web *restful.WebService) {
 func (s *coreService) initService(web *restful.WebService) {
 	s.initModelClassification(web)
 	s.initModel(web)
-	s.initContainerInstances(web)
 	s.initAssociationKind(web)
 	s.initAttrUnique(web)
 	s.initModelAssociation(web)

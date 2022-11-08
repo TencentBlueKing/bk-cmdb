@@ -19,8 +19,8 @@ package kube
 
 import (
 	"errors"
+	"fmt"
 	"sync"
-	"sync/atomic"
 
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
@@ -29,7 +29,9 @@ import (
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 )
 
@@ -40,7 +42,6 @@ type KubeOperationInterface interface {
 	BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.BatchDeleteNodeOption) error
 	BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, bizID int64) ([]int64, error)
 	BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption) ([]int64, error)
-	SetProxy(inst KubeOperationInterface)
 }
 
 // NewClusterOperation create a business instance
@@ -58,37 +59,49 @@ type kube struct {
 	cluster     KubeOperationInterface
 }
 
-// SetProxy  SetProxy
-func (b *kube) SetProxy(cluster KubeOperationInterface) {
-	b.cluster = cluster
-}
-
-// BatchDeleteNode  batch delete nodes.
-func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.BatchDeleteNodeOption) error {
-
-	cond := map[string]interface{}{
-		types.BKBizIDField:    bizID,
-		types.BKIDField:       map[string]interface{}{common.BKDBIN: option.IDs},
-		common.BKOwnerIDField: kit.SupplierAccount,
-	}
+func (b *kube) getDeleteNodeInfo(kit *rest.Kit, ids []int64, bizID int64) ([]types.Node, error) {
 
 	query := &metadata.QueryCondition{
-		Condition: cond,
+		Condition: mapstr.MapStr{
+			common.BKFieldID: mapstr.MapStr{
+				common.BKDBIN: ids,
+			},
+		},
 		Page: metadata.BasePage{
-			Limit: len(option.IDs),
+			Limit: common.BKNoLimit,
 		},
 	}
 	result, err := b.clientSet.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
 	if err != nil {
-		blog.Errorf("search node failed, filter: %+v, err: %v, rid: %s", cond, err, kit.Rid)
+		blog.Errorf("search node failed, filter: %+v, err: %v, rid: %s", query, err, kit.Rid)
+		return nil, err
+	}
+
+	bizMap := make(map[int64]struct{})
+	for _, node := range result.Data {
+		bizMap[node.BizID] = struct{}{}
+	}
+
+	if len(bizMap) > 1 {
+		blog.Errorf("node ids exist in different businesses, filter: %+v, rid: %s", query, kit.Rid)
+		return nil, errors.New("node ids exist in different businesses")
+	}
+
+	if _, ok := bizMap[bizID]; !ok {
+		blog.Errorf("node ids not in biz %d, filter: %+v, rid: %s", bizID, query, kit.Rid)
+		return nil, fmt.Errorf("node ids not in biz %d", bizID)
+	}
+
+	return result.Data, nil
+}
+
+// BatchDeleteNode batch delete node.
+func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.BatchDeleteNodeOption) error {
+
+	nodes, err := b.getDeleteNodeInfo(kit, option.IDs, bizID)
+	if err != nil {
 		return err
 	}
-
-	if len(result.Data) != len(option.IDs) {
-		blog.Errorf("count nodes failed, option: %#v, err: %v, rid: %s", option, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrTopoInstDeleteFailed)
-	}
-
 	// 1、check whether these nodes exist, they must all exist before they can be deleted,
 	// otherwise an error will be returned.
 	podCond := []map[string]interface{}{
@@ -120,7 +133,7 @@ func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.BatchDe
 	// for audit log.
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
 	audit := auditlog.NewKubeAudit(b.clientSet.CoreService())
-	auditLog, err := audit.GenerateNodeAuditLog(generateAuditParameter, result.Data)
+	auditLog, err := audit.GenerateNodeAuditLog(generateAuditParameter, nodes)
 	if err != nil {
 		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -135,57 +148,71 @@ func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.BatchDe
 	return nil
 }
 
-// DeleteCluster delete cluster.
-func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption) error {
+func (b *kube) getDeleteClusterInfo(kit *rest.Kit, ids []int64, bizID int64) ([]types.Cluster, error) {
 
-	cond := map[string]interface{}{
-		types.BKIDField: map[string]interface{}{
-			common.BKDBIN: option.IDs,
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKFieldID: mapstr.MapStr{
+				common.BKDBIN: ids,
+			},
 		},
-		common.BKAppIDField:   bizID,
-		common.BKOwnerIDField: kit.SupplierAccount,
-	}
-
-	input := &metadata.QueryCondition{
-		Condition: cond,
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
 	}
-	result, err := b.clientSet.CoreService().Kube().SearchCluster(kit.Ctx, kit.Header, input)
+	result, err := b.clientSet.CoreService().Kube().SearchCluster(kit.Ctx, kit.Header, query)
 	if err != nil {
-		blog.Errorf("search cluster failed, input: %#v, err: %v, rid: %s", input, err, kit.Rid)
+		blog.Errorf("search cluster failed, filter: %+v, err: %v, rid: %s", query, err, kit.Rid)
+		return nil, err
+	}
+
+	bizMap := make(map[int64]struct{})
+	for _, node := range result.Data {
+		bizMap[node.BizID] = struct{}{}
+	}
+
+	if len(bizMap) != 1 {
+		blog.Errorf("cluster ids exist in different businesses, filter: %+v, rid: %s", query, kit.Rid)
+		return nil, errors.New("node ids exist in different businesses")
+	}
+
+	if _, ok := bizMap[bizID]; !ok {
+		blog.Errorf("cluster ids not in biz %d, filter: %+v, rid: %s", bizID, query, kit.Rid)
+		return nil, fmt.Errorf("cluster ids not in biz %d", bizID)
+	}
+
+	return result.Data, nil
+}
+
+// DeleteCluster delete cluster.
+func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption) error {
+
+	clusters, err := b.getDeleteClusterInfo(kit, option.IDs, bizID)
+	if err != nil {
 		return err
 	}
-
-	if len(result.Data) != len(option.IDs) {
-		blog.Errorf("the number of instances obtained is inconsistent with the param, cond: %#v, err: %v, rid: %s",
-			cond, err, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrTopoInstDeleteFailed)
-	}
-
 	// whether the associated resources under the cluster have been deleted. such as namespace, node, deployment, pod.
-	exist, cErr := b.isExistKubeResource(kit, option, bizID, kit.SupplierAccount)
+	exist, cErr := b.isExistKubeResourceUnderCluster(kit, option, bizID, kit.SupplierAccount)
 	if cErr != nil {
-		blog.Errorf("failed to obtain resources under the cluster, bizID: %d, cond: %+v, err: %v, rid: %s",
-			bizID, cond, cErr, kit.Rid)
+		blog.Errorf("failed to obtain resources under the cluster, bizID: %d, cluster IDs: %+v, err: %v, rid: %s",
+			bizID, option.IDs, cErr, kit.Rid)
 		return cErr
 	}
 	if exist {
-		blog.Errorf("the associated resources under the deleted cluster have not been deleted, cond: %+v, rid: %s",
-			cond, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrTopoInstDeleteFailed)
+		blog.Errorf("the associated resources under the deleted cluster haven't been deleted, clusterIDs: %+v, rid: %s",
+			option.IDs, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid)
 	}
 
 	if err := b.clientSet.CoreService().Kube().DeleteCluster(kit.Ctx, kit.Header, bizID, option); err != nil {
-		blog.Errorf("delete cluster failed, cond: %#v, err: %v, rid: %s", cond, err, kit.Rid)
+		blog.Errorf("delete cluster failed, cluster IDs: %#v, err: %v, rid: %s", option.IDs, err, kit.Rid)
 		return err
 	}
 
 	// for audit log.
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
 	audit := auditlog.NewKubeAudit(b.clientSet.CoreService())
-	auditLog, err := audit.GenerateClusterAuditLog(generateAuditParameter, result.Data)
+	auditLog, err := audit.GenerateClusterAuditLog(generateAuditParameter, clusters)
 	if err != nil {
 		blog.Errorf("generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -199,18 +226,30 @@ func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClu
 	return nil
 }
 
-func (b *kube) isExistKubeResource(kit *rest.Kit, option *types.DeleteClusterOption, bizID int64,
+func (b *kube) isExistKubeResourceUnderCluster(kit *rest.Kit, option *types.DeleteClusterOption, bizID int64,
 	supplierAccount string) (bool, error) {
+
+	if len(option.IDs) > 0 {
+		return false, errors.New("ids must be set")
+	}
 
 	var (
 		wg       sync.WaitGroup
 		firstErr ccErr.CCErrorCoder
-		num      int64
 	)
 
 	workLoads := types.GetWorkLoadTables()
 	tables := []string{types.BKTableNameBaseNamespace, types.BKTableNameBaseNode, types.BKTableNameBasePod}
 	tables = append(tables, workLoads...)
+
+	filter := make([]map[string]interface{}, 0)
+	filter = []map[string]interface{}{
+		{
+			types.BKClusterIDFiled: map[string]interface{}{common.BKDBIN: option.IDs},
+			common.BKAppIDField:    bizID,
+			common.BKOwnerIDField:  supplierAccount,
+		},
+	}
 
 	for _, table := range tables {
 		wg.Add(1)
@@ -219,23 +258,18 @@ func (b *kube) isExistKubeResource(kit *rest.Kit, option *types.DeleteClusterOpt
 				wg.Done()
 			}()
 
-			filter := make([]map[string]interface{}, 0)
-			if len(option.IDs) > 0 {
-				filter = []map[string]interface{}{
-					{
-						types.BKClusterIDFiled: map[string]interface{}{common.BKDBIN: option.IDs},
-						common.BKAppIDField:    bizID,
-						common.BKOwnerIDField:  supplierAccount,
-					},
-				}
-			}
 			counts, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, table, filter)
 			if err != nil {
 				blog.Errorf("count resource failed, cond: %#v, err: %v, rid: %s", filter, err, kit.Rid)
 				firstErr = err
 				return
 			}
-			atomic.AddInt64(&num, counts[0])
+			if counts[0] > 0 {
+				blog.Errorf("there are resources under the cluster that cannot be deleted, bizID %d, filter: %+v, "+
+					"table: %s, rid: %s", bizID, table, kit.Rid)
+				firstErr = kit.CCError.CCErrorf(common.CCErrCommParamsInvalid)
+				return
+			}
 
 		}(table, bizID, supplierAccount)
 	}
@@ -244,50 +278,13 @@ func (b *kube) isExistKubeResource(kit *rest.Kit, option *types.DeleteClusterOpt
 		return false, firstErr
 	}
 
-	if num > 0 {
-		return true, nil
-	}
 	return false, nil
 }
 
 // BatchCreatePod batch create pod.
 func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption) ([]int64, error) {
 
-	filters := make([]map[string]interface{}, 0)
-
-	for _, info := range data.Data {
-		for _, pod := range info.Pods {
-			filter := map[string]interface{}{
-				common.BKOwnerIDField: kit.SupplierAccount,
-				types.BKBizIDField:    info.BizID,
-			}
-			filter[types.BKClusterIDFiled] = *pod.Spec.ClusterID
-			filter[types.BKNamespaceIDField] = *pod.Spec.NamespaceID
-			filter[types.BKNodeIDField] = *pod.Spec.NodeID
-			filter[types.KubeNameField] = *pod.Name
-			filter[types.RefKindField] = pod.Spec.Ref.Kind
-			filter[types.RefIDField] = pod.Spec.Ref.ID
-			filters = append(filters, filter)
-		}
-	}
-
-	counts, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-		types.BKTableNameBasePod, filters)
-	if err != nil {
-		blog.Errorf("count cluster failed, cond: %#v, err: %v, rid: %s", filters, err, kit.Rid)
-		return nil, err
-	}
-
-	var podNum int64
-	for _, count := range counts {
-		podNum += count
-	}
-	if podNum > 0 {
-		blog.Errorf("some pod already exists and the creation fails, rid: %s", kit.Rid)
-		return nil, errors.New("some pod already exists and the creation fails")
-	}
-
-	//2、create pods and containers.
+	// create pods and containers.
 	result, err := b.clientSet.CoreService().Kube().BatchCreatePod(kit.Ctx, kit.Header, data)
 	if err != nil {
 		blog.Errorf("create pod failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
@@ -318,19 +315,18 @@ func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption) ([]in
 }
 
 // BatchCreateNode batch create node.
-func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, bizID int64) (
-	[]int64, error) {
+func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, bizID int64) ([]int64, error) {
 
-	names := make([]string, 0)
-
+	conds := make([]map[string]interface{}, 0)
 	for _, node := range data.Nodes {
-		names = append(names, *node.Name)
+		conds = append(conds, map[string]interface{}{
+			common.BKFieldName:     *node.Name,
+			types.BKClusterIDFiled: node.ClusterID,
+		})
 	}
 
 	cond := map[string]interface{}{
-		common.BKFieldName: map[string]interface{}{
-			common.BKDBIN: names,
-		},
+		common.BKDBOR:         conds,
 		common.BKAppIDField:   bizID,
 		common.BKOwnerIDField: kit.SupplierAccount,
 	}
@@ -376,22 +372,28 @@ func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, biz
 }
 
 // CreateCluster create container cluster
-func (b *kube) CreateCluster(kit *rest.Kit, data *types.Cluster, bizID int64) (
-	int64, error) {
+func (b *kube) CreateCluster(kit *rest.Kit, data *types.Cluster, bizID int64) (int64, error) {
 
-	cond := map[string]interface{}{common.BKDBOR: []map[string]interface{}{
-		{
-			common.BKFieldName:    *data.Name,
-			common.BKAppIDField:   bizID,
-			common.BKOwnerIDField: kit.SupplierAccount,
-		},
-		{
-			common.BKFieldName:    *data.Uid,
-			common.BKAppIDField:   bizID,
-			common.BKOwnerIDField: kit.SupplierAccount,
-		},
-	},
+	if data.Name == nil || data.Uid == nil {
+		return 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "cluster name or uid must be set")
 	}
+
+	filterName := map[string]interface{}{
+		common.BKFieldName:  *data.Name,
+		common.BKAppIDField: bizID,
+	}
+
+	filterUid := map[string]interface{}{
+		common.BKFieldName:  *data.Uid,
+		common.BKAppIDField: bizID,
+	}
+	util.SetQueryOwner(filterUid, kit.SupplierAccount)
+
+	cond := map[string]interface{}{
+		common.BKDBOR: []map[string]interface{}{filterName, filterUid},
+	}
+	util.SetQueryOwner(cond, kit.SupplierAccount)
+
 	counts, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 		types.BKTableNameBaseCluster, []map[string]interface{}{cond})
 	if err != nil {

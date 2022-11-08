@@ -39,7 +39,7 @@ func (s *Service) CreateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	req := new(types.NsCreateReq)
+	req := new(types.NsCreateOption)
 	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -50,7 +50,7 @@ func (s *Service) CreateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	var data *types.NsCreateRespData
+	var data *metadata.RspIDs
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		data, err = s.Engine.CoreAPI.CoreService().Kube().CreateNamespace(ctx.Kit.Ctx, ctx.Kit.Header, bizID, req)
 		if err != nil {
@@ -95,7 +95,7 @@ func (s *Service) UpdateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	req := new(types.NsUpdateReq)
+	req := new(types.NsUpdateOption)
 	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -178,8 +178,8 @@ func (s *Service) DeleteNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.NsDeleteReq{}
-	if err := ctx.DecodeInto(&req); err != nil {
+	req := new(types.NsDeleteOption)
+	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -218,7 +218,7 @@ func (s *Service) DeleteNamespace(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Engine.CoreAPI.CoreService().Kube().DeleteNamespace(ctx.Kit.Ctx, ctx.Kit.Header, bizID, &req)
+		err := s.Engine.CoreAPI.CoreService().Kube().DeleteNamespace(ctx.Kit.Ctx, ctx.Kit.Header, bizID, req)
 		if err != nil {
 			blog.Errorf("delete namespace failed, data: %v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
 			return err
@@ -267,8 +267,8 @@ func (s *Service) ListNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.NsQueryReq{}
-	if err := ctx.DecodeInto(&req); err != nil {
+	req := new(types.NsQueryOption)
+	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}

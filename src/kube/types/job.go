@@ -29,11 +29,12 @@ import (
 )
 
 // JobFields merge the fields of the Job and the details corresponding to the fields together.
-var JobFields = table.MergeFields(CommonSpecFieldsDescriptor, WorkLoadBaseFieldsDescriptor,
-	JobSpecFieldsDescriptor)
+var JobFields = table.MergeFields(CommonSpecFieldsDescriptor, NamespaceBaseRefDescriptor,
+	ClusterBaseRefDescriptor, JobSpecFieldsDescriptor)
 
 // JobSpecFieldsDescriptor Job spec's fields descriptors.
 var JobSpecFieldsDescriptor = table.FieldsDescriptors{
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
@@ -65,7 +66,7 @@ func (j *Job) SetWorkloadBase(wl WorkloadBase) {
 func (w *Job) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -81,7 +82,7 @@ func (w *Job) ValidateCreate() ccErr.RawErrorInfo {
 func (w *Job) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}

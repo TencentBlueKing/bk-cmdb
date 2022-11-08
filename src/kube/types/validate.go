@@ -327,7 +327,7 @@ func ValidateCreate(data interface{}, field *table.Fields) ccErr.RawErrorInfo {
 	typeOfOption := reflect.TypeOf(data)
 	valueOfOption := reflect.ValueOf(data)
 	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, i)
+		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
 		if flag {
 			continue
 		}
@@ -368,12 +368,12 @@ func ValidateUpdate(data interface{}, field *table.Fields) ccErr.RawErrorInfo {
 	typeOfOption := reflect.TypeOf(data)
 	valueOfOption := reflect.ValueOf(data)
 	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, i)
+		tag, flag := getFieldTag(typeOfOption, JsonTag, i)
 		if flag {
 			continue
 		}
 
-		if flag := isEditableField(tag, valueOfOption, i); flag {
+		if flag := isNotEditableField(tag, valueOfOption, i); flag {
 			continue
 		}
 

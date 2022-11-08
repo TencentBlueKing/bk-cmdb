@@ -18,6 +18,7 @@
 package service
 
 import (
+	"errors"
 	"strconv"
 
 	"configcenter/src/common"
@@ -26,6 +27,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 )
 
@@ -56,15 +58,15 @@ func (s *Service) SearchClusters(ctx *rest.Contexts) {
 	if searchCond.Filter != nil {
 		cond, rawErr := searchCond.Filter.ToMgo()
 		if rawErr != nil {
-			blog.Errorf("parse biz filter(%#v) failed, err: %v, rid: %s", searchCond.Filter, rawErr, ctx.Kit.Rid)
+			blog.Errorf("parse cluster filter(%#v) failed, err: %v, rid: %s", searchCond.Filter, rawErr, ctx.Kit.Rid)
 			ctx.RespAutoError(rawErr)
 			return
 		}
 		filter = cond
 	}
-	// 无论条件中是否有bk_biz_id、supplier_account,这里统一替换成url中的bk_biz_id 和kit中的supplier_account
+
+	util.SetQueryOwner(filter, ctx.Kit.SupplierAccount)
 	filter[types.BKBizIDField] = bizID
-	filter[types.BKSupplierAccountField] = ctx.Kit.SupplierAccount
 
 	// get the number of clusters
 	if searchCond.Page.EnableCount {
@@ -93,6 +95,33 @@ func (s *Service) SearchClusters(ctx *rest.Contexts) {
 	ctx.RespEntityWithCount(0, result.Data)
 }
 
+func (s *Service) getUpdateClustersInfo(kit *rest.Kit, bizID int64, clusterIDs []int64) ([]types.Cluster, error) {
+
+	cond := map[string]interface{}{
+		types.BKIDField:     map[string]interface{}{common.BKDBIN: clusterIDs},
+		common.BKAppIDField: bizID,
+	}
+	util.SetQueryOwner(cond, kit.SupplierAccount)
+
+	input := &metadata.QueryCondition{
+		Condition: cond,
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+	}
+
+	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchCluster(kit.Ctx, kit.Header, input)
+	if err != nil {
+		blog.Errorf("search cluster failed, input: %#v, err: %v, rid: %s", input, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(result.Data) != len(clusterIDs) {
+		blog.Errorf("the number of cluster obtained is inconsistent with the param, bizID: %d, ids: %#v, err: %v, "+
+			"rid: %s", bizID, clusterIDs, err, kit.Rid)
+		return nil, errors.New("the clusterIDs must all be under the given business")
+	}
+	return result.Data, nil
+}
+
 // UpdateClusterFields update cluster fields
 func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 
@@ -102,51 +131,26 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := data.Validate(); err != nil {
-		ctx.RespAutoError(err)
+	if err := data.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	clusterIDs := make([]int64, 0)
-	for _, cluster := range data.Clusters {
-		clusterIDs = append(clusterIDs, cluster.ID)
-	}
-
-	cond := map[string]interface{}{
-		types.BKIDField:       map[string]interface{}{common.BKDBIN: clusterIDs},
-		common.BKAppIDField:   bizID,
-		common.BKOwnerIDField: ctx.Kit.SupplierAccount,
-	}
-
-	input := &metadata.QueryCondition{
-		Condition: cond,
-		Page:      metadata.BasePage{Limit: common.BKNoLimit},
-	}
-
-	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchCluster(ctx.Kit.Ctx, ctx.Kit.Header, input)
+	clusters, err := s.getUpdateClustersInfo(ctx.Kit, bizID, data.IDs)
 	if err != nil {
-		blog.Errorf("search cluster failed, input: %#v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if len(result.Data) != len(clusterIDs) {
-		blog.Errorf("the number of instances obtained is inconsistent with the param, bizID: %d, ids: %#v, err: %v, "+
-			"rid: %s", bizID, clusterIDs, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrTopoInstUpdateFailed))
-		return
-	}
-
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Engine.CoreAPI.CoreService().Kube().UpdateClusterFields(ctx.Kit.Ctx, ctx.Kit.Header,
-			ctx.Kit.SupplierAccount, bizID, data)
+		err := s.Engine.CoreAPI.CoreService().Kube().UpdateClusterFields(ctx.Kit.Ctx, ctx.Kit.Header, bizID, data)
 		if err != nil {
 			blog.Errorf("create cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -155,10 +159,10 @@ func (s *Service) UpdateClusterFields(ctx *rest.Contexts) {
 		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
 		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
 
-		for id, cluster := range result.Data {
-			updateFields, err := mapstr.Struct2Map(data.Clusters[id].Data)
+		for _, cluster := range clusters {
+			updateFields, err := mapstr.Struct2Map(data.Data)
 			if err != nil {
-				blog.Errorf("update fields convert failed, data: %+v, err: %v, rid: %s", data.Clusters[id].Data,
+				blog.Errorf("update fields convert failed, data: %+v, err: %v, rid: %s", data.Data,
 					err, ctx.Kit.Rid)
 				return err
 			}
@@ -193,13 +197,13 @@ func (s *Service) CreateCluster(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	if err := data.CreateValidate(); err != nil {
-		blog.Errorf("validate create container cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+	if err := data.ValidateCreate(); err.ErrCode != 0 {
+		blog.Errorf("validate create kube cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -222,7 +226,7 @@ func (s *Service) CreateCluster(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(id)
+	ctx.RespEntity(metadata.RspID{ID: id})
 }
 
 // DeleteCluster delete cluster.

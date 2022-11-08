@@ -86,11 +86,6 @@ func (c *coreService) Model() model.ModelClientInterface {
 	return model.NewModelClientInterface(c.restCli)
 }
 
-// Container container related api client
-func (c *coreService) Container() kube.KubeClientInterface {
-	return kube.NewKubeClientInterface(c.restCli)
-}
-
 // Association TODO
 func (c *coreService) Association() association.AssociationClientInterface {
 	return association.NewAssociationClientInterface(c.restCli)

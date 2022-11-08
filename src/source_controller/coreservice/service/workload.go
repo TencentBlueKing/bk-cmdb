@@ -49,7 +49,7 @@ func (s *coreService) CreateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.WlCreateReq{Kind: kind}
+	req := types.WlCreateOption{Kind: kind}
 	if err := ctx.DecodeInto(&req); nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -79,7 +79,7 @@ func (s *coreService) CreateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	respData := types.WlCreateRespData{
+	respData := metadata.RspIDs{
 		IDs: make([]int64, len(ids)),
 	}
 	for idx, data := range req.Data {
@@ -175,7 +175,7 @@ func (s *coreService) UpdateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.WlUpdateReq{Kind: kind}
+	req := types.WlUpdateOption{Kind: kind}
 	if err := ctx.DecodeInto(&req); nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -225,8 +225,8 @@ func (s *coreService) DeleteWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.WlDeleteReq{}
-	if err := ctx.DecodeInto(&req); nil != err {
+	req := new(types.WlDeleteOption)
+	if err := ctx.DecodeInto(req); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}

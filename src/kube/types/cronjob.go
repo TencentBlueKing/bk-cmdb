@@ -29,11 +29,12 @@ import (
 )
 
 // CronJobFields merge the fields of the CronJob and the details corresponding to the fields together.
-var CronJobFields = table.MergeFields(CommonSpecFieldsDescriptor, WorkLoadBaseFieldsDescriptor,
-	CronJobSpecFieldsDescriptor)
+var CronJobFields = table.MergeFields(CommonSpecFieldsDescriptor, NamespaceBaseRefDescriptor,
+	ClusterBaseRefDescriptor, CronJobSpecFieldsDescriptor)
 
 // CronJobSpecFieldsDescriptor CronJob spec's fields descriptors.
 var CronJobSpecFieldsDescriptor = table.FieldsDescriptors{
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
@@ -65,7 +66,7 @@ func (c *CronJob) SetWorkloadBase(wl WorkloadBase) {
 func (w *CronJob) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -81,7 +82,7 @@ func (w *CronJob) ValidateCreate() ccErr.RawErrorInfo {
 func (w *CronJob) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}

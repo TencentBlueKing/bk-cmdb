@@ -31,14 +31,16 @@ import (
 type KubeClientInterface interface {
 
 	// CreateNamespace create namespace
-	CreateNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsCreateReq) (
-		*types.NsCreateRespData, errors.CCErrorCoder)
+	CreateNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsCreateOption) (
+		*metadata.RspIDs, errors.CCErrorCoder)
 
 	// UpdateNamespace update namespace
-	UpdateNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsUpdateReq) errors.CCErrorCoder
+	UpdateNamespace(ctx context.Context, header http.Header, bizID int64,
+		option *types.NsUpdateOption) errors.CCErrorCoder
 
 	// DeleteNamespace delete namespace
-	DeleteNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsDeleteReq) errors.CCErrorCoder
+	DeleteNamespace(ctx context.Context, header http.Header, bizID int64,
+		option *types.NsDeleteOption) errors.CCErrorCoder
 
 	// ListNamespace list namespace
 	ListNamespace(ctx context.Context, header http.Header, input *metadata.QueryCondition) (*types.NsDataResp,
@@ -46,15 +48,15 @@ type KubeClientInterface interface {
 
 	// CreateWorkload create workload
 	CreateWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
-		option *types.WlCreateReq) (*types.WlCreateRespData, errors.CCErrorCoder)
+		option *types.WlCreateOption) (*metadata.RspIDs, errors.CCErrorCoder)
 
 	// UpdateWorkload update workload
 	UpdateWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
-		option *types.WlUpdateReq) errors.CCErrorCoder
+		option *types.WlUpdateOption) errors.CCErrorCoder
 
 	// DeleteWorkload delete workload
 	DeleteWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
-		option *types.WlDeleteReq) errors.CCErrorCoder
+		option *types.WlDeleteOption) errors.CCErrorCoder
 
 	// ListWorkload list workload
 	ListWorkload(ctx context.Context, header http.Header, input *metadata.QueryCondition, kind types.WorkloadType) (
@@ -73,9 +75,9 @@ type KubeClientInterface interface {
 
 	CreateCluster(ctx context.Context, h http.Header, bizID int64, option *types.Cluster) (
 		*types.CreateClusterResult, errors.CCErrorCoder)
-	UpdateClusterFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
+	UpdateClusterFields(ctx context.Context, header http.Header, bizID int64,
 		data *types.UpdateClusterOption) errors.CCErrorCoder
-	UpdateNodeFields(ctx context.Context, header http.Header, supplierAccount string, bizID int64,
+	UpdateNodeFields(ctx context.Context, header http.Header, bizID int64,
 		data *types.UpdateNodeOption) errors.CCErrorCoder
 	SearchCluster(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
 		*types.ResponseCluster, errors.CCErrorCoder)

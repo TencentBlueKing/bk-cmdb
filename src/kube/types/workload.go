@@ -44,10 +44,11 @@ var WorkLoadSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: RollingUpdateStrategyField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 }
 
-// WorkLoadBaseFieldsDescriptor workLoad base fields descriptors.
-var WorkLoadBaseFieldsDescriptor = table.FieldsDescriptors{
-	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
-	{Field: NamespaceField, Type: enumor.String, IsRequired: true, IsEditable: false},
+// WorkLoadRefDescriptor  the description used when other resources refer to the workload.
+var WorkLoadRefDescriptor = table.FieldsDescriptors{
+	{Field: RefKindField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: RefIDField, Type: enumor.Numeric, IsRequired: false, IsEditable: false},
+	{Field: RefNameField, Type: enumor.String, IsRequired: false, IsEditable: false},
 }
 
 // LabelSelectorOperator a label selector operator is the set of operators that can be used in a selector requirement.
@@ -85,8 +86,8 @@ const (
 	StringType = 1
 )
 
-// WorkloadI defines the workload data common operation.
-type WorkloadI interface {
+// WorkloadInterface defines the workload data common operation.
+type WorkloadInterface interface {
 	ValidateCreate() errors.RawErrorInfo
 	ValidateUpdate() errors.RawErrorInfo
 	GetWorkloadBase() WorkloadBase
@@ -141,15 +142,15 @@ type jsonWlData struct {
 	Data json.RawMessage `json:"data"`
 }
 
-// WlUpdateReq defines the workload update request common operation.
-type WlUpdateReq struct {
-	Kind WorkloadType `json:"kind"`
-	IDs  []int64      `json:"ids"`
-	Data WorkloadI    `json:"data"`
+// WlUpdateOption defines the workload update request common operation.
+type WlUpdateOption struct {
+	Kind WorkloadType      `json:"kind"`
+	IDs  []int64           `json:"ids"`
+	Data WorkloadInterface `json:"data"`
 }
 
 // Validate validate WlCommonUpdate
-func (w *WlUpdateReq) Validate() errors.RawErrorInfo {
+func (w *WlUpdateOption) Validate() errors.RawErrorInfo {
 	if len(w.IDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
@@ -179,7 +180,7 @@ func (w *WlUpdateReq) Validate() errors.RawErrorInfo {
 }
 
 // UnmarshalJSON unmarshal WlUpdateReq
-func (w *WlUpdateReq) UnmarshalJSON(data []byte) error {
+func (w *WlUpdateOption) UnmarshalJSON(data []byte) error {
 	kind := w.Kind
 	var err error
 	if err = kind.Validate(); err != nil {
@@ -207,13 +208,13 @@ func (w *WlUpdateReq) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// WlDeleteReq workload delete request
-type WlDeleteReq struct {
+// WlDeleteOption workload delete request
+type WlDeleteOption struct {
 	IDs []int64 `json:"ids"`
 }
 
-// Validate validate WlDeleteReq
-func (ns *WlDeleteReq) Validate() errors.RawErrorInfo {
+// Validate validate WlDeleteOption
+func (ns *WlDeleteOption) Validate() errors.RawErrorInfo {
 	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
@@ -233,8 +234,8 @@ func (ns *WlDeleteReq) Validate() errors.RawErrorInfo {
 
 // WlDataResp workload data
 type WlDataResp struct {
-	Kind WorkloadType `json:"kind"`
-	Info []WorkloadI  `json:"info"`
+	Kind WorkloadType        `json:"kind"`
+	Info []WorkloadInterface `json:"info"`
 }
 
 type jsonWlInfo struct {
@@ -343,15 +344,15 @@ type WlInstResp struct {
 	Data              WlDataResp `json:"data"`
 }
 
-// WlCreateReq create workload request
-type WlCreateReq struct {
-	Kind WorkloadType `json:"kind"`
-	Data []WorkloadI  `json:"data"`
+// WlCreateOption create workload request
+type WlCreateOption struct {
+	Kind WorkloadType        `json:"kind"`
+	Data []WorkloadInterface `json:"data"`
 }
 
-// UnmarshalJSON unmarshal WlUpdateReq
+// UnmarshalJSON unmarshal WlCreateOption
 // NOCC:golint/fnsize(workload类型会不断增多)
-func (w *WlCreateReq) UnmarshalJSON(data []byte) error {
+func (w *WlCreateOption) UnmarshalJSON(data []byte) error {
 	kind := w.Kind
 	req := new(jsonWlData)
 	if err := json.Unmarshal(data, req); err != nil {
@@ -445,8 +446,8 @@ func (w *WlCreateReq) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Validate validate WlCreateReq
-func (ns *WlCreateReq) Validate() errors.RawErrorInfo {
+// Validate validate WlCreateOption
+func (ns *WlCreateOption) Validate() errors.RawErrorInfo {
 	if len(ns.Data) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
@@ -473,12 +474,7 @@ func (ns *WlCreateReq) Validate() errors.RawErrorInfo {
 // WlCreateResp create workload response
 type WlCreateResp struct {
 	metadata.BaseResp `json:",inline"`
-	Data              WlCreateRespData `json:"data"`
-}
-
-// WlCreateRespData create workload response data
-type WlCreateRespData struct {
-	IDs []int64 `json:"ids"`
+	Data              metadata.RspIDs `json:"data"`
 }
 
 var wlIgnoreField = []string{
@@ -486,8 +482,8 @@ var wlIgnoreField = []string{
 	common.BKFieldID, common.CreateTimeField,
 }
 
-// WlQueryReq workload query request
-type WlQueryReq struct {
+// WlQueryOption workload query request
+type WlQueryOption struct {
 	NamespaceSpec `json:",inline" bson:",inline"`
 	Filter        *filter.Expression `json:"filter"`
 	Fields        []string           `json:"fields,omitempty"`
@@ -495,7 +491,7 @@ type WlQueryReq struct {
 }
 
 // Validate validate WlQueryReq
-func (wl *WlQueryReq) Validate(kind WorkloadType) errors.RawErrorInfo {
+func (wl *WlQueryOption) Validate(kind WorkloadType) errors.RawErrorInfo {
 	if (wl.ClusterID != 0 || wl.NamespaceID != 0) && (wl.ClusterUID != "" && wl.Namespace != "") {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrorTopoIdentificationIllegal,
@@ -514,6 +510,10 @@ func (wl *WlQueryReq) Validate(kind WorkloadType) errors.RawErrorInfo {
 		}
 	}
 
+	if wl.Filter == nil {
+		return errors.RawErrorInfo{}
+	}
+
 	op := filter.NewDefaultExprOpt(fields.FieldsType())
 	if err := wl.Filter.Validate(op); err != nil {
 		return errors.RawErrorInfo{
@@ -525,7 +525,7 @@ func (wl *WlQueryReq) Validate(kind WorkloadType) errors.RawErrorInfo {
 }
 
 // BuildCond build query workload condition
-func (wl *WlQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
+func (wl *WlQueryOption) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}

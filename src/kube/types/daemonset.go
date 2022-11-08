@@ -29,11 +29,12 @@ import (
 )
 
 // DaemonSetFields merge the fields of the DaemonSet and the details corresponding to the fields together.
-var DaemonSetFields = table.MergeFields(CommonSpecFieldsDescriptor, WorkLoadBaseFieldsDescriptor,
-	DaemonSetSpecFieldsDescriptor)
+var DaemonSetFields = table.MergeFields(CommonSpecFieldsDescriptor, NamespaceBaseRefDescriptor,
+	ClusterBaseRefDescriptor, DaemonSetSpecFieldsDescriptor)
 
 // DaemonSetSpecFieldsDescriptor DaemonSet spec's fields descriptors.
 var DaemonSetSpecFieldsDescriptor = table.FieldsDescriptors{
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
@@ -92,7 +93,7 @@ func (d *DaemonSet) SetWorkloadBase(wl WorkloadBase) {
 func (w *DaemonSet) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -108,7 +109,7 @@ func (w *DaemonSet) ValidateCreate() ccErr.RawErrorInfo {
 func (w *DaemonSet) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 		}
 	}
 

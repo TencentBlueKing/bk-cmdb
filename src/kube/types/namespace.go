@@ -29,7 +29,8 @@ import (
 )
 
 // NamespaceFields merge the fields of the namespace and the details corresponding to the fields together.
-var NamespaceFields = table.MergeFields(CommonSpecFieldsDescriptor, BizIDDescriptor, NamespaceSpecFieldsDescriptor)
+var NamespaceFields = table.MergeFields(CommonSpecFieldsDescriptor, BizIDDescriptor,
+	ClusterBaseRefDescriptor, NamespaceSpecFieldsDescriptor)
 
 // NamespaceSpecFieldsDescriptor namespace spec's fields descriptors.
 var NamespaceSpecFieldsDescriptor = table.FieldsDescriptors{
@@ -37,6 +38,12 @@ var NamespaceSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: ClusterUIDField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: ResourceQuotasField, Type: enumor.Array, IsRequired: false, IsEditable: true},
+}
+
+// NamespaceBaseRefDescriptor the description used when other resources refer to the namespace.
+var NamespaceBaseRefDescriptor = table.FieldsDescriptors{
+	{Field: NamespaceField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: BKNamespaceIDField, Type: enumor.Numeric, IsRequired: false, IsEditable: false},
 }
 
 // ScopeSelectorOperator a scope selector operator is the set of operators
@@ -96,6 +103,25 @@ type Namespace struct {
 	table.Revision `json:",inline" bson:",inline"`
 }
 
+// ValidateCreate validate create namespace
+func (ns *Namespace) ValidateCreate() errors.RawErrorInfo {
+	if ns.ClusterID == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{BKClusterIDFiled},
+		}
+	}
+
+	if ns.Name == "" {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{common.BKFieldName},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
 // ResourceQuota defines the desired hard limits to enforce for Quota.
 type ResourceQuota struct {
 	Hard          map[string]string    `json:"hard" bson:"hard"`
@@ -124,14 +150,14 @@ type ScopedResourceSelectorRequirement struct {
 	Values []string `json:"values" bson:"values"`
 }
 
-// NsUpdateReq update namespace request
-type NsUpdateReq struct {
+// NsUpdateOption update namespace request
+type NsUpdateOption struct {
 	IDs  []int64    `json:"ids"`
 	Data *Namespace `json:"data"`
 }
 
 // Validate validate update namespace request
-func (ns *NsUpdateReq) Validate() errors.RawErrorInfo {
+func (ns *NsUpdateOption) Validate() errors.RawErrorInfo {
 	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
@@ -159,13 +185,13 @@ func (ns *NsUpdateReq) Validate() errors.RawErrorInfo {
 	return errors.RawErrorInfo{}
 }
 
-// NsDeleteReq delete namespace request
-type NsDeleteReq struct {
+// NsDeleteOption delete namespace request
+type NsDeleteOption struct {
 	IDs []int64 `json:"ids"`
 }
 
 // Validate validate NsDeleteReq
-func (ns *NsDeleteReq) Validate() errors.RawErrorInfo {
+func (ns *NsDeleteOption) Validate() errors.RawErrorInfo {
 	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
@@ -183,13 +209,13 @@ func (ns *NsDeleteReq) Validate() errors.RawErrorInfo {
 	return errors.RawErrorInfo{}
 }
 
-// NsCreateReq create namespace request
-type NsCreateReq struct {
+// NsCreateOption create namespace request
+type NsCreateOption struct {
 	Data []Namespace `json:"data"`
 }
 
 // Validate validate NsCreateReq
-func (ns *NsCreateReq) Validate() errors.RawErrorInfo {
+func (ns *NsCreateOption) Validate() errors.RawErrorInfo {
 	if len(ns.Data) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
@@ -216,16 +242,11 @@ func (ns *NsCreateReq) Validate() errors.RawErrorInfo {
 // NsCreateResp create namespace response
 type NsCreateResp struct {
 	metadata.BaseResp `json:",inline"`
-	Data              NsCreateRespData `json:"data"`
+	Data              metadata.RspIDs `json:"data"`
 }
 
-// NsCreateRespData create namespace response data
-type NsCreateRespData struct {
-	IDs []int64 `json:"ids"`
-}
-
-// NsQueryReq namespace query request
-type NsQueryReq struct {
+// NsQueryOption namespace query request
+type NsQueryOption struct {
 	ClusterSpec `json:",inline" bson:",inline"`
 	Filter      *filter.Expression `json:"filter"`
 	Fields      []string           `json:"fields,omitempty"`
@@ -233,7 +254,7 @@ type NsQueryReq struct {
 }
 
 // Validate validate NsQueryReq
-func (ns *NsQueryReq) Validate() errors.RawErrorInfo {
+func (ns *NsQueryOption) Validate() errors.RawErrorInfo {
 	if ns.ClusterUID != "" && ns.ClusterID != 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrorTopoIdentificationIllegal,
@@ -242,6 +263,10 @@ func (ns *NsQueryReq) Validate() errors.RawErrorInfo {
 
 	if err := ns.Page.ValidateWithEnableCount(false, NsQueryLimit); err.ErrCode != 0 {
 		return err
+	}
+
+	if ns.Filter == nil {
+		return errors.RawErrorInfo{}
 	}
 
 	op := filter.NewDefaultExprOpt(NamespaceFields.FieldsType())
@@ -255,7 +280,7 @@ func (ns *NsQueryReq) Validate() errors.RawErrorInfo {
 }
 
 // BuildCond build query namespace condition
-func (ns *NsQueryReq) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
+func (ns *NsQueryOption) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}

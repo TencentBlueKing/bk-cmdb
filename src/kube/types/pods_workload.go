@@ -29,11 +29,12 @@ import (
 )
 
 // PodsWorkloadFields merge the fields of the PodsWorkload and the details corresponding to the fields together.
-var PodsWorkloadFields = table.MergeFields(CommonSpecFieldsDescriptor, WorkLoadBaseFieldsDescriptor,
-	PodsWorkloadSpecFieldsDescriptor)
+var PodsWorkloadFields = table.MergeFields(CommonSpecFieldsDescriptor, NamespaceBaseRefDescriptor,
+	ClusterBaseRefDescriptor, PodsWorkloadSpecFieldsDescriptor)
 
 // PodsWorkloadSpecFieldsDescriptor PodsWorkload spec's fields descriptors.
 var PodsWorkloadSpecFieldsDescriptor = table.FieldsDescriptors{
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
@@ -65,7 +66,7 @@ func (p *PodsWorkload) SetWorkloadBase(wl WorkloadBase) {
 func (w *PodsWorkload) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -81,7 +82,7 @@ func (w *PodsWorkload) ValidateCreate() ccErr.RawErrorInfo {
 func (w *PodsWorkload) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}

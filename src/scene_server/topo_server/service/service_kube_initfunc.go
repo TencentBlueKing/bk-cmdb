@@ -31,45 +31,6 @@ func (s *Service) initKube(web *restful.WebService) {
 		Language: s.Engine.Language,
 	})
 
-	// namespace
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/kube/namespace/bk_biz_id/{bk_biz_id}",
-		Handler: s.CreateNamespace})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/kube/namespace/bk_biz_id/{bk_biz_id}",
-		Handler: s.UpdateNamespace})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/kube/namespace/bk_biz_id/{bk_biz_id}",
-		Handler: s.DeleteNamespace})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/kube/namespace/bk_biz_id/{bk_biz_id}",
-		Handler: s.ListNamespace})
-
-	// workload
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/kube/workload/{kind}/{bk_biz_id}",
-		Handler: s.CreateWorkload})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/kube/workload/{kind}/{bk_biz_id}",
-		Handler: s.UpdateWorkload})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/kube/workload/{kind}/{bk_biz_id}",
-		Handler: s.DeleteWorkload})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/kube/workload/{kind}/{bk_biz_id}",
-		Handler: s.ListWorkload})
-
-	// topo
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/kube/host_node_path",
-		Handler: s.FindNodePathForHost})
-
-	// pod
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/kube/pod_path/bk_biz_id/{bk_biz_id}",
-		Handler: s.FindPodPath})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/kube/pod/bk_biz_id/{bk_biz_id}",
-		Handler: s.ListPod})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/kube/pod", Handler: s.DeletePods})
-
-	// container
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/kube/container/bk_biz_id/{bk_biz_id}",
-		Handler: s.ListContainer})
-
-	utility.AddHandler(rest.Action{Verb: http.MethodGet,
-		Path:    "/find/kube/{object}/attributes",
-		Handler: s.FindResourceAttrs})
-
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/create/kube/cluster/bk_biz_id/{bk_biz_id}",
 		Handler: s.CreateCluster})
@@ -102,10 +63,29 @@ func (s *Service) initKube(web *restful.WebService) {
 		Path:    "/findmany/kube/node/bk_biz_id/{bk_biz_id}",
 		Handler: s.SearchNodes})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/createmany/kube/pod",
-		Handler: s.BatchCreatePod})
+	// namespace
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/kube/namespace/bk_biz_id/{bk_biz_id}",
+		Handler: s.CreateNamespace})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/kube/namespace/bk_biz_id/{bk_biz_id}",
+		Handler: s.UpdateNamespace})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/kube/namespace/bk_biz_id/{bk_biz_id}",
+		Handler: s.DeleteNamespace})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/kube/namespace/bk_biz_id/{bk_biz_id}",
+		Handler: s.ListNamespace})
 
+	// workload
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/kube/workload/{kind}/{bk_biz_id}",
+		Handler: s.CreateWorkload})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/kube/workload/{kind}/{bk_biz_id}",
+		Handler: s.UpdateWorkload})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/kube/workload/{kind}/{bk_biz_id}",
+		Handler: s.DeleteWorkload})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/kube/workload/{kind}/{bk_biz_id}",
+		Handler: s.ListWorkload})
+
+	// topo
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/kube/host_node_path",
+		Handler: s.FindNodePathForHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/find/kube/topo_path/bk_biz_id/{bk_biz_id}",
 		Handler: s.SearchKubeTopoPath})
@@ -113,6 +93,25 @@ func (s *Service) initKube(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/find/kube/{bk_biz_id}/topo_node/{type}/count",
 		Handler: s.CountKubeTopoHostsOrPods})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodGet,
+		Path:    "/find/kube/{object}/attributes",
+		Handler: s.FindResourceAttrs})
+
+	// pod
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/createmany/kube/pod",
+		Handler: s.BatchCreatePod})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/kube/pod_path/bk_biz_id/{bk_biz_id}",
+		Handler: s.FindPodPath})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/kube/pod/bk_biz_id/{bk_biz_id}",
+		Handler: s.ListPod})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/kube/pod", Handler: s.DeletePods})
+
+	// container
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/kube/container/bk_biz_id/{bk_biz_id}",
+		Handler: s.ListContainer})
 
 	utility.AddToRestfulWebService(web)
 }

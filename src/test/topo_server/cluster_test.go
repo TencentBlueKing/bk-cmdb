@@ -84,13 +84,9 @@ var _ = Describe("kube cluster test", func() {
 				Type:             &clusterType,
 			}
 
-			result, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
-
-			util.RegisterResponse(result)
+			id, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
+			util.RegisterResponse(id)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.Result).To(Equal(true))
-			id, cErr := commonutil.GetInt64ByInterface(result.Data)
-			Expect(cErr).NotTo(HaveOccurred())
 			clusterID = id
 		}()
 
@@ -120,12 +116,8 @@ var _ = Describe("kube cluster test", func() {
 				Type:             &clusterType,
 			}
 
-			result, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
+			id, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.Result).To(Equal(true))
-			id, cErr := commonutil.GetInt64ByInterface(result.Data)
-			Expect(cErr).NotTo(HaveOccurred())
-
 			clusterID2 = id
 		}()
 
@@ -153,10 +145,9 @@ var _ = Describe("kube cluster test", func() {
 				Type:             &clusterType,
 			}
 
-			result, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
-
-			util.RegisterResponse(result)
-			Expect(err.Error()).Should(ContainSubstring("cannot be empty"))
+			id, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
+			util.RegisterResponse(id)
+			Expect(err.Error()).Should(ContainSubstring("name"))
 		}()
 	})
 
@@ -166,13 +157,9 @@ var _ = Describe("kube cluster test", func() {
 		func() {
 			version := "0.2"
 			data := &types.UpdateClusterOption{
-				Clusters: []types.OneUpdateCluster{
-					{
-						ID: clusterID,
-						Data: types.Cluster{
-							Version: &version,
-						},
-					},
+				IDs: []int64{clusterID},
+				Data: types.Cluster{
+					Version: &version,
 				},
 			}
 			rsp, err := kubeClient.UpdateClusterFields(ctx, header, bizId, data)
@@ -186,18 +173,14 @@ var _ = Describe("kube cluster test", func() {
 		func() {
 			uid := "uid"
 			data := &types.UpdateClusterOption{
-				Clusters: []types.OneUpdateCluster{
-					{
-						ID: clusterID,
-						Data: types.Cluster{
-							Uid: &uid,
-						},
-					},
+				IDs: []int64{clusterID},
+				Data: types.Cluster{
+					Uid: &uid,
 				},
 			}
 			result, err := kubeClient.UpdateClusterFields(ctx, header, bizId, data)
 			util.RegisterResponse(result)
-			Expect(err.Error()).Should(ContainSubstring("non-editable field"))
+			Expect(err.Error()).Should(ContainSubstring("uid"))
 		}()
 
 		By("delete kube cluster")

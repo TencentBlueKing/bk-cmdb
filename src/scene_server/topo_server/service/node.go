@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 )
 
@@ -242,13 +243,13 @@ func (s *Service) BatchCreateNode(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := data.ValidateCreate(); err != nil {
+	if err := data.ValidateCreate(); err.ErrCode != 0 {
 		blog.Errorf("batch create nodes param verification failed, data: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -271,7 +272,7 @@ func (s *Service) BatchCreateNode(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(ids)
+	ctx.RespEntity(metadata.RspIDs{IDs: ids})
 }
 
 // SearchNodes query nodes based on user-specified criteria
@@ -311,14 +312,7 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 	// regardless of whether there is bk_biz_id or supplier_account in the condition,
 	// it is uniformly replaced with bk_biz_id in url and supplier_account in kit.
 	filter[types.BKBizIDField] = bizID
-	filter[types.BKSupplierAccountField] = ctx.Kit.SupplierAccount
-	if searchCond.HostID != 0 {
-		filter[common.BKHostIDField] = searchCond.HostID
-	}
-
-	if searchCond.ClusterID != 0 {
-		filter[types.BKClusterIDFiled] = searchCond.ClusterID
-	}
+	util.SetQueryOwner(filter, ctx.Kit.SupplierAccount)
 
 	// count biz in cluster enable count is set
 	if searchCond.Page.EnableCount {
@@ -347,6 +341,42 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 	ctx.RespEntityWithCount(0, result.Data)
 }
 
+func (s *Service) getUpdateNodeInfo(kit *rest.Kit, bizID int64, nodeIDs []int64) ([]types.Node, error) {
+
+	// duplicate nodeIDs are not allowed
+	nodeIDMap := make(map[int64]struct{})
+	for _, nodeID := range nodeIDs {
+		if _, ok := nodeIDMap[nodeID]; ok {
+			return nil, errors.New("duplicate value for nodeID parameter")
+		}
+		nodeIDMap[nodeID] = struct{}{}
+	}
+
+	cond := map[string]interface{}{
+		types.BKIDField:     map[string]interface{}{common.BKDBIN: nodeIDs},
+		common.BKAppIDField: bizID,
+	}
+	util.SetQueryOwner(cond, kit.SupplierAccount)
+
+	query := &metadata.QueryCondition{
+		Condition: cond,
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+	}
+
+	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("search node failed, filter: %+v, err: %v, rid: %s", query, err, kit.Rid)
+		//ctx.RespAutoError(err)
+		return nil, err
+	}
+	if len(nodeIDs) != len(result.Data) {
+		blog.Errorf("the number of node obtained is inconsistent with the param, bizID: %d, ids: %#v, err: %v, "+
+			"rid: %s", bizID, nodeIDs, err, kit.Rid)
+		return nil, errors.New("the nodeIDs must all be under the given business")
+	}
+	return result.Data, nil
+}
+
 // UpdateNodeFields update the node field.
 func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
 
@@ -355,80 +385,50 @@ func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	if err := data.Validate(); err != nil {
-		ctx.RespAutoError(err)
+
+	if err := data.UpdateValidate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
-	nodeIDs, nodeIDUpdateFields := make([]int64, 0), make(map[int64]types.Node)
-
-	for _, node := range data.Nodes {
-		nodeIDs = append(nodeIDs, node.NodeIDs...)
-		for _, id := range node.NodeIDs {
-			nodeIDUpdateFields[id] = node.Data
-		}
-	}
-
-	// duplicate nodeIDs are not allowed
-	nodeIDMap := make(map[int64]struct{})
-	for _, nodeID := range nodeIDs {
-		if _, ok := nodeIDMap[nodeID]; ok {
-			blog.Errorf("duplicate value for nodeID parameter, nodeID: %d, rid: %s", nodeID, ctx.Kit.Rid)
-			ctx.RespAutoError(errors.New("duplicate value for nodeID parameter"))
-			return
-		}
-		nodeIDMap[nodeID] = struct{}{}
-	}
-
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
 		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	query := &metadata.QueryCondition{
-		Condition: map[string]interface{}{
-			types.BKIDField:       map[string]interface{}{common.BKDBIN: nodeIDs},
-			common.BKAppIDField:   bizID,
-			common.BKOwnerIDField: ctx.Kit.SupplierAccount},
-		Page: metadata.BasePage{Limit: common.BKNoLimit},
-	}
-	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	nodes, err := s.getUpdateNodeInfo(ctx.Kit, bizID, data.IDs)
 	if err != nil {
-		blog.Errorf("search node failed, filter: %+v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		if err := s.Engine.CoreAPI.CoreService().Kube().UpdateNodeFields(ctx.Kit.Ctx, ctx.Kit.Header,
-			ctx.Kit.SupplierAccount, bizID, data); err != nil {
-			blog.Errorf("create cluster failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		if err := s.Engine.CoreAPI.CoreService().Kube().UpdateNodeFields(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
+			data); err != nil {
+			blog.Errorf("update node failed, data: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
 			return err
 		}
 
-		for _, node := range result.Data {
-			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
-			updateFields, err := mapstr.Struct2Map(nodeIDUpdateFields[node.ID])
-			if err != nil {
-				blog.Errorf("update fields convert failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-				return err
-			}
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
+		updateFields, err := mapstr.Struct2Map(data.Data)
+		if err != nil {
+			blog.Errorf("update fields convert failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
 
-			generateAuditParameter.WithUpdateFields(updateFields)
-			audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
-			auditLog, err := audit.GenerateNodeAuditLog(generateAuditParameter, result.Data)
-			if err != nil {
-				blog.Errorf("update node failed, generate audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-				return err
-			}
+		generateAuditParameter.WithUpdateFields(updateFields)
+		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
+		auditLog, err := audit.GenerateNodeAuditLog(generateAuditParameter, nodes)
+		if err != nil {
+			blog.Errorf("generate audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return err
+		}
 
-			err = audit.SaveAuditLog(ctx.Kit, auditLog...)
-			if err != nil {
-				blog.Errorf("update node failed, save audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-				return ctx.Kit.CCError.CCErrorf(common.CCErrAuditSaveLogFailed)
-			}
+		err = audit.SaveAuditLog(ctx.Kit, auditLog...)
+		if err != nil {
+			return ctx.Kit.CCError.CCErrorf(common.CCErrAuditSaveLogFailed)
 		}
 		return nil
 	})

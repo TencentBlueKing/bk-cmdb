@@ -42,7 +42,7 @@ func (s *coreService) CreateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	req := new(types.NsCreateReq)
+	req := new(types.NsCreateOption)
 	if err := ctx.DecodeInto(req); nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -73,7 +73,7 @@ func (s *coreService) CreateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	respData := types.NsCreateRespData{
+	respData := metadata.RspIDs{
 		IDs: make([]int64, len(ids)),
 	}
 	for idx, data := range req.Data {
@@ -157,7 +157,7 @@ func (s *coreService) UpdateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	req := new(types.NsUpdateReq)
+	req := new(types.NsUpdateOption)
 	if err := ctx.DecodeInto(req); nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -207,8 +207,8 @@ func (s *coreService) DeleteNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	req := &types.NsDeleteReq{}
-	if err := ctx.DecodeInto(&req); nil != err {
+	req := new(types.NsDeleteOption)
+	if err := ctx.DecodeInto(req); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}

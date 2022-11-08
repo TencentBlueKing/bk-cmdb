@@ -170,7 +170,7 @@ func validateFieldValue(v interface{}, typ enumor.FieldType) error {
 			return errors.New("value should be a string")
 		}
 
-	case enumor.Numeric:
+	case enumor.Numeric, enumor.Timestamp:
 		if !util.IsNumeric(v) {
 			return errors.New("value should be a numeric")
 		}

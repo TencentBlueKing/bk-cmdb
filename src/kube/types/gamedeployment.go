@@ -29,11 +29,12 @@ import (
 )
 
 // GameDeploymentFields merge the fields of the GameDeployment and the details corresponding to the fields together.
-var GameDeploymentFields = table.MergeFields(CommonSpecFieldsDescriptor, WorkLoadBaseFieldsDescriptor,
-	GameDeploymentSpecFieldsDescriptor)
+var GameDeploymentFields = table.MergeFields(CommonSpecFieldsDescriptor, NamespaceBaseRefDescriptor,
+	ClusterBaseRefDescriptor, GameDeploymentSpecFieldsDescriptor)
 
 // GameDeploymentSpecFieldsDescriptor GameDeployment spec's fields descriptors.
 var GameDeploymentSpecFieldsDescriptor = table.FieldsDescriptors{
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
@@ -103,7 +104,7 @@ func (g *GameDeployment) SetWorkloadBase(wl WorkloadBase) {
 func (w *GameDeployment) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -119,7 +120,7 @@ func (w *GameDeployment) ValidateCreate() ccErr.RawErrorInfo {
 func (w *GameDeployment) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}

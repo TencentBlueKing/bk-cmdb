@@ -42,7 +42,7 @@ func (ps *parseStream) topology() *parseStream {
 		fullTextSearch().
 		cloudArea().
 		businessSet().
-		container()
+		kube()
 
 	return ps
 }
@@ -1631,12 +1631,10 @@ var (
 	findPodRegexp     = regexp.MustCompile(`^/api/v3/findmany/kube/pod/bk_biz_id/([0-9]+)/?$`)
 
 	findContainerRegexp = regexp.MustCompile(`^/api/v3/findmany/kube/container/bk_biz_id/([0-9]+)/?$`)
-
-	findMapStrFieldValRegexp = regexp.MustCompile(`^/api/v3/find/kube/field/map_str_val/bk_biz_id/([0-9]+)/?$`)
 )
 
 // NOCC:golint/fnsize(整体属于 container 操作需要放在一起)
-func (ps *parseStream) container() *parseStream {
+func (ps *parseStream) kube() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
@@ -1667,7 +1665,7 @@ func (ps *parseStream) container() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1690,7 +1688,7 @@ func (ps *parseStream) container() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1713,7 +1711,7 @@ func (ps *parseStream) container() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1736,7 +1734,7 @@ func (ps *parseStream) container() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1759,7 +1757,7 @@ func (ps *parseStream) container() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1810,7 +1808,7 @@ func (ps *parseStream) container() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1834,7 +1832,7 @@ func (ps *parseStream) container() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1858,7 +1856,7 @@ func (ps *parseStream) container() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1881,7 +1879,7 @@ func (ps *parseStream) container() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1901,11 +1899,12 @@ func (ps *parseStream) container() *parseStream {
 			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
 			return ps
 		}
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
+			ps.err = fmt.Errorf("get invalid business id %s, err: %v", ps.RequestCtx.Elements[4], err)
 			return ps
 		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
@@ -2066,16 +2065,5 @@ func (ps *parseStream) container() *parseStream {
 		return ps
 	}
 
-	if ps.hitRegexp(findMapStrFieldValRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.KubeNode,
-					Action: meta.Find,
-				},
-			},
-		}
-		return ps
-	}
 	return ps
 }

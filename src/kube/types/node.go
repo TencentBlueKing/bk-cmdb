@@ -20,7 +20,6 @@ package types
 import (
 	"errors"
 	"fmt"
-	"reflect"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
@@ -33,10 +32,12 @@ import (
 const (
 	maxDeleteNodeNum = 100
 	maxCreateNodeNum = 100
+	maxUpdateNodeNum = 100
 )
 
 // NodeFields merge the fields of the cluster and the details corresponding to the fields together.
-var NodeFields = table.MergeFields(CommonSpecFieldsDescriptor, BizIDDescriptor, NodeSpecFieldsDescriptor)
+var NodeFields = table.MergeFields(CommonSpecFieldsDescriptor, BizIDDescriptor, HostIDDescriptor,
+	ClusterBaseRefDescriptor, NodeSpecFieldsDescriptor)
 
 // NodeSpecFieldsDescriptor node spec's fields descriptors.
 var NodeSpecFieldsDescriptor = table.FieldsDescriptors{
@@ -51,6 +52,12 @@ var NodeSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: RuntimeComponentField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: KubeProxyModeField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: PodCidrField, Type: enumor.String, IsRequired: false, IsEditable: true},
+}
+
+// NodeBaseRefDescriptor the description used when other resources refer to the node.
+var NodeBaseRefDescriptor = table.FieldsDescriptors{
+	{Field: NodeField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: BKNodeIDField, Type: enumor.Numeric, IsRequired: false, IsEditable: false},
 }
 
 // Node node structural description.
@@ -92,85 +99,56 @@ var IgnoredUpdateNodeFields = []string{common.BKFieldID, common.BKAppIDField, Cl
 	common.BKFieldName, common.BKOwnerIDField, BKClusterIDFiled, common.BKHostIDField, HasPodField}
 
 // createValidate validate the NodeBaseFields
-func (option *Node) createValidate() error {
+func (option *Node) createValidate() ccErr.RawErrorInfo {
 
 	if option == nil {
-		return errors.New("node information must be given")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"data"},
+		}
 	}
 
-	// get a list of required fields.
-	typeOfOption := reflect.TypeOf(*option)
-	valueOfOption := reflect.ValueOf(*option)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-
-		tag, flag := getFieldTag(typeOfOption, i)
-		if flag {
-			continue
-		}
-
-		if !NodeFields.IsFieldRequiredByField(tag) {
-			continue
-		}
-
-		if err := isRequiredField(tag, valueOfOption, i); err != nil {
-			return err
-		}
+	if err := ValidateCreate(*option, NodeFields); err.ErrCode != 0 {
+		return err
 	}
 
 	if err := option.validateNodeIP(true); err != nil {
-		return err
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{err.Error()},
+		}
 	}
-	return nil
+	return ccErr.RawErrorInfo{}
 }
 
 func (option *Node) validateNodeIP(isCreate bool) error {
-
-	var (
-		bExternalIP, bInternalIP bool
-	)
 
 	if isCreate && option.ExternalIP == nil && option.InternalIP == nil {
 		return errors.New("external_ip and internal_ip cannot be null at the same time")
 	}
 
-	if option.ExternalIP != nil && len(*option.ExternalIP) == 0 {
-		bExternalIP = true
-	}
-	if option.InternalIP != nil && len(*option.InternalIP) == 0 {
-		bInternalIP = true
+	if (option.ExternalIP != nil && len(*option.ExternalIP) == 0) &&
+		(option.InternalIP != nil && len(*option.InternalIP) == 0) {
+		return errors.New("the length of external_ip and internal_ip cannot be 0 at the same time")
 	}
 
-	if bExternalIP && bInternalIP {
-		return errors.New("external_ip and internal_ip cannot be null at the same time")
-	}
 	return nil
 }
 
 // UpdateValidate verifying the validity of parameters for updating node scenarios
-func (option *Node) updateValidate() error {
+func (option *Node) updateValidate() ccErr.RawErrorInfo {
 
 	if option == nil {
-		return errors.New("node information must be given")
-	}
-
-	typeOfOption := reflect.TypeOf(*option)
-	valueOfOption := reflect.ValueOf(*option)
-	for i := 0; i < typeOfOption.NumField(); i++ {
-		tag, flag := getFieldTag(typeOfOption, i)
-		if flag {
-			continue
-		}
-
-		if flag := isEditableField(tag, valueOfOption, i); flag {
-			continue
-		}
-
-		// get whether it is an editable field based on tag
-		if !NodeFields.IsFieldEditableByField(tag) {
-			return fmt.Errorf("field [%s] is a non-editable field", tag)
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"node information must be given"},
 		}
 	}
-	return nil
+
+	if err := ValidateUpdate(*option, NodeFields); err.ErrCode != 0 {
+		return err
+	}
+	return ccErr.RawErrorInfo{}
 }
 
 // BatchDeleteNodeOption delete nodes option.
@@ -202,15 +180,18 @@ type OneNodeCreateOption struct {
 }
 
 // validateCreate validate the OneNodeCreateOption
-func (option *OneNodeCreateOption) validateCreate() error {
+func (option *OneNodeCreateOption) validateCreate() ccErr.RawErrorInfo {
 
 	if option.ClusterID == 0 {
-		return errors.New("cluster id must be set")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{BKClusterIDFiled},
+		}
 	}
-	if err := option.createValidate(); err != nil {
+	if err := option.createValidate(); err.ErrCode != 0 {
 		return err
 	}
-	return nil
+	return ccErr.RawErrorInfo{}
 }
 
 // CreateNodesOption create node requests in batches.
@@ -218,23 +199,37 @@ type CreateNodesOption struct {
 	Nodes []OneNodeCreateOption `json:"data"`
 }
 
+// CreateNodesRsp create the response
+// message body of the node result to the user.
+type CreateNodesRsp struct {
+	metadata.BaseResp
+	Data metadata.RspIDs `json:"data"`
+}
+
 // ValidateCreate validate the create nodes request
-func (option *CreateNodesOption) ValidateCreate() error {
+func (option *CreateNodesOption) ValidateCreate() ccErr.RawErrorInfo {
 
 	if len(option.Nodes) == 0 {
-		return errors.New("param must be set")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{errors.New("param must be set")},
+		}
 	}
 
 	if len(option.Nodes) > maxCreateNodeNum {
-		return fmt.Errorf("the number of nodes created at one time does not exceed %d", maxCreateNodeNum)
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args: []interface{}{fmt.Errorf("the number of nodes created at one time does not exceed %d",
+				maxCreateNodeNum)},
+		}
 	}
 
 	for _, node := range option.Nodes {
-		if err := node.validateCreate(); err != nil {
+		if err := node.validateCreate(); err.ErrCode != 0 {
 			return err
 		}
 	}
-	return nil
+	return ccErr.RawErrorInfo{}
 }
 
 // CreateNodesResult create node results in batches.
@@ -245,11 +240,9 @@ type CreateNodesResult struct {
 
 // QueryNodeOption query node by query builder
 type QueryNodeOption struct {
-	Filter    *filter.Expression `json:"filter"`
-	ClusterID int64              `json:"bk_cluster_id"`
-	HostID    int64              `json:"bk_host_id"`
-	Page      metadata.BasePage  `json:"page"`
-	Fields    []string           `json:"fields"`
+	Filter *filter.Expression `json:"filter"`
+	Page   metadata.BasePage  `json:"page"`
+	Fields []string           `json:"fields"`
 }
 
 // Validate validate the param QueryNodeReq
@@ -291,42 +284,38 @@ type UpdateNodeInfo struct {
 
 // UpdateNodeOption update node field option
 type UpdateNodeOption struct {
-	Nodes []UpdateNodeInfo `json:"data"`
+	IDs  []int64 `json:"ids"`
+	Data Node    `json:"data"`
 }
 
-// Validate check whether the request parameters for updating the node are legal.
-func (option *UpdateNodeOption) Validate() error {
+// UpdateValidate check whether the request parameters for updating the node are legal.
+func (option *UpdateNodeOption) UpdateValidate() ccErr.RawErrorInfo {
 
-	if len(option.Nodes) == 0 {
-		return errors.New("parameter cannot be empty")
-	}
-
-	for _, node := range option.Nodes {
-		if len(node.NodeIDs) == 0 {
-			return errors.New("node_ids must be set")
-		}
-		if err := node.Data.validateNodeIP(false); err != nil {
-			return err
-		}
-		if err := node.Data.updateValidate(); err != nil {
-			return err
+	if len(option.IDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"parameter cannot be empty"},
 		}
 	}
-	return nil
-}
+	if len(option.IDs) > maxUpdateNodeNum {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args: []interface{}{fmt.Sprintf("the number of nodes to be updated at one time cannot exceed %d",
+				maxUpdateNodeNum)},
+		}
+	}
 
-// SearchHostReq search host request
-type SearchHostReq struct {
-	BizID       int64                    `json:"bk_biz_id"`
-	ClusterID   int64                    `json:"bk_cluster_id"`
-	Folder      bool                     `json:"folder"`
-	NamespaceID int64                    `json:"bk_namespace_id"`
-	WorkloadID  int64                    `json:"bk_workload_id"`
-	WlKind      WorkloadType             `json:"kind"`
-	NodeCond    *NodeCond                `json:"node_cond"`
-	Ip          metadata.IPInfo          `json:"ip"`
-	HostCond    metadata.SearchCondition `json:"host_condition"`
-	Page        metadata.BasePage        `json:"page"`
+	if err := option.Data.validateNodeIP(false); err != nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args: []interface{}{fmt.Sprintf("the number of nodes to be updated at one time cannot exceed %d",
+				maxUpdateNodeNum)},
+		}
+	}
+	if err := option.Data.updateValidate(); err.ErrCode != 0 {
+		return err
+	}
+	return ccErr.RawErrorInfo{}
 }
 
 // NodeCond node condition for search host

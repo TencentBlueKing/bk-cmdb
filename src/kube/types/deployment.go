@@ -29,11 +29,12 @@ import (
 )
 
 // DeploymentFields merge the fields of the Deployment and the details corresponding to the fields together.
-var DeploymentFields = table.MergeFields(CommonSpecFieldsDescriptor, WorkLoadBaseFieldsDescriptor,
-	DeploymentSpecFieldsDescriptor)
+var DeploymentFields = table.MergeFields(CommonSpecFieldsDescriptor, NamespaceBaseRefDescriptor,
+	ClusterBaseRefDescriptor, DeploymentSpecFieldsDescriptor)
 
 // DeploymentSpecFieldsDescriptor Deployment spec's fields descriptors.
 var DeploymentSpecFieldsDescriptor = table.FieldsDescriptors{
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
@@ -92,7 +93,7 @@ func (d *Deployment) SetWorkloadBase(wl WorkloadBase) {
 func (w *Deployment) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -108,7 +109,7 @@ func (w *Deployment) ValidateCreate() ccErr.RawErrorInfo {
 func (w *Deployment) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}

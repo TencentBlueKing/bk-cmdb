@@ -123,13 +123,9 @@ var _ = Describe("kube cluster test", func() {
 				Type:             &clusterType,
 			}
 
-			result, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
-
-			util.RegisterResponse(result)
+			id, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
+			util.RegisterResponse(id)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.Result).To(Equal(true))
-			id, cErr := commonutil.GetInt64ByInterface(result.Data)
-			Expect(cErr).NotTo(HaveOccurred())
 			clusterID = id
 		})
 	})
@@ -160,11 +156,7 @@ var _ = Describe("kube cluster test", func() {
 			result, err := kubeClient.BatchCreateNode(ctx, header, bizId, createNode)
 			util.RegisterResponse(result)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.Result).To(Equal(true))
-			j, _ := json.Marshal(result.Data)
-			var data []int64
-			json.Unmarshal(j, &data)
-			nodeID = data[0]
+			nodeID = result[0]
 		}()
 
 		By("create node")
@@ -192,11 +184,7 @@ var _ = Describe("kube cluster test", func() {
 			result, err := kubeClient.BatchCreateNode(ctx, header, bizId, createNode)
 			util.RegisterResponse(result)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.Result).To(Equal(true))
-			j, _ := json.Marshal(result.Data)
-			var data []int64
-			json.Unmarshal(j, &data)
-			nodeID2 = data[0]
+			nodeID2 = result[0]
 		}()
 
 		By("create node without name")
@@ -222,7 +210,7 @@ var _ = Describe("kube cluster test", func() {
 			}
 			result, err := kubeClient.BatchCreateNode(ctx, header, bizId, createNode)
 			util.RegisterResponse(result)
-			Expect(err.Error()).Should(ContainSubstring("cannot be empty"))
+			Expect(err.Error()).Should(ContainSubstring("name"))
 		}()
 
 	})
@@ -232,13 +220,9 @@ var _ = Describe("kube cluster test", func() {
 		func() {
 			internalIP := []string{"5.5.5.5", "6.6.6.6"}
 			createNode := &types.UpdateNodeOption{
-				Nodes: []types.UpdateNodeInfo{
-					{
-						NodeIDs: []int64{nodeID},
-						Data: types.Node{
-							InternalIP: &internalIP,
-						},
-					},
+				IDs: []int64{nodeID},
+				Data: types.Node{
+					InternalIP: &internalIP,
 				},
 			}
 			result, err := kubeClient.UpdateNodeFields(ctx, header, bizId, createNode)
@@ -251,18 +235,14 @@ var _ = Describe("kube cluster test", func() {
 		func() {
 			name := "nodetest"
 			option := &types.UpdateNodeOption{
-				Nodes: []types.UpdateNodeInfo{
-					{
-						NodeIDs: []int64{nodeID},
-						Data: types.Node{
-							Name: &name,
-						},
-					},
+				IDs: []int64{nodeID},
+				Data: types.Node{
+					Name: &name,
 				},
 			}
 			result, err := kubeClient.UpdateNodeFields(ctx, header, bizId, option)
 			util.RegisterResponse(result)
-			Expect(err.Error()).Should(ContainSubstring("non-editable field"))
+			Expect(err.Error()).Should(ContainSubstring("name"))
 		}()
 
 		By("search node by node name")

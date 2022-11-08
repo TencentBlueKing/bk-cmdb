@@ -46,7 +46,7 @@ func (s *Service) CreateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.WlCreateReq{Kind: kind}
+	req := types.WlCreateOption{Kind: kind}
 	if err := ctx.DecodeInto(&req); nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -57,7 +57,7 @@ func (s *Service) CreateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	var data *types.WlCreateRespData
+	var data *metadata.RspIDs
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		data, err = s.Engine.CoreAPI.CoreService().Kube().CreateWorkload(ctx.Kit.Ctx, ctx.Kit.Header, bizID, kind, &req)
 		if err != nil {
@@ -110,7 +110,7 @@ func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.WlUpdateReq{Kind: kind}
+	req := types.WlUpdateOption{Kind: kind}
 	if err := ctx.DecodeInto(&req); nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -200,8 +200,8 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.WlDeleteReq{}
-	if err := ctx.DecodeInto(&req); nil != err {
+	req := new(types.WlDeleteOption)
+	if err := ctx.DecodeInto(req); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -240,7 +240,7 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Engine.CoreAPI.CoreService().Kube().DeleteWorkload(ctx.Kit.Ctx, ctx.Kit.Header, bizID, kind, &req)
+		err := s.Engine.CoreAPI.CoreService().Kube().DeleteWorkload(ctx.Kit.Ctx, ctx.Kit.Header, bizID, kind, req)
 		if err != nil {
 			blog.Errorf("delete workload failed, data: %v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
 			return err
@@ -270,7 +270,7 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 }
 
 func (s *Service) listWorkload(kit *rest.Kit, query *metadata.QueryCondition, kind types.WorkloadType) (
-	[]types.WorkloadI, error) {
+	[]types.WorkloadInterface, error) {
 
 	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListWorkload(kit.Ctx, kit.Header, query, kind)
 	if err != nil {
@@ -297,8 +297,8 @@ func (s *Service) ListWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.WlQueryReq{}
-	if err := ctx.DecodeInto(&req); err != nil {
+	req := new(types.WlQueryOption)
+	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}

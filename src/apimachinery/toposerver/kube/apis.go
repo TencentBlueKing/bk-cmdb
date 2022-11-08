@@ -29,8 +29,7 @@ import (
 
 // KubeOperationInterface the kube implements the interface
 type KubeOperationInterface interface {
-	CreateCluster(ctx context.Context, h http.Header, bizID int64, option *types.Cluster) (
-		*metadata.Response, errors.CCErrorCoder)
+	CreateCluster(ctx context.Context, h http.Header, bizID int64, option *types.Cluster) (int64, errors.CCErrorCoder)
 	UpdateClusterFields(ctx context.Context, header http.Header, bizID int64,
 		data *types.UpdateClusterOption) (*metadata.Response, errors.CCErrorCoder)
 	SearchCluster(ctx context.Context, header http.Header, bizID int64, input *types.QueryClusterOption) (
@@ -40,50 +39,52 @@ type KubeOperationInterface interface {
 	BatchDeleteNode(ctx context.Context, header http.Header, bizID int64,
 		option *types.BatchDeleteNodeOption) (*metadata.Response, errors.CCErrorCoder)
 	BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
-		data *types.CreateNodesOption) (*metadata.Response, errors.CCErrorCoder)
+		data *types.CreateNodesOption) ([]int64, errors.CCErrorCoder)
 	UpdateNodeFields(ctx context.Context, header http.Header, bizID int64, data *types.UpdateNodeOption) (
 		*metadata.Response, errors.CCErrorCoder)
 	SearchNode(ctx context.Context, header http.Header, bizID int64, input *types.QueryNodeOption) (
 		*metadata.Response, errors.CCErrorCoder)
-	BatchCreatePod(ctx context.Context, header http.Header, data *types.CreatePodsOption) (
-		*metadata.Response, errors.CCErrorCoder)
 
 	// CreateNamespace create namespace
-	CreateNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsCreateReq) (
-		*types.NsCreateRespData, errors.CCErrorCoder)
+	CreateNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsCreateOption) (
+		*metadata.RspIDs, errors.CCErrorCoder)
 
 	// UpdateNamespace update namespace
-	UpdateNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsUpdateReq) errors.CCErrorCoder
+	UpdateNamespace(ctx context.Context, header http.Header, bizID int64,
+		option *types.NsUpdateOption) errors.CCErrorCoder
 
 	// DeleteNamespace delete namespace
-	DeleteNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsDeleteReq) errors.CCErrorCoder
+	DeleteNamespace(ctx context.Context, header http.Header, bizID int64,
+		option *types.NsDeleteOption) errors.CCErrorCoder
 
 	// ListNamespace list namespace
-	ListNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsQueryReq) (
+	ListNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsQueryOption) (
 		*metadata.InstDataInfo, errors.CCErrorCoder)
 
 	// CreateWorkload create workload
 	CreateWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
-		option *types.WlCreateReq) (*types.WlCreateRespData, errors.CCErrorCoder)
+		option *types.WlCreateOption) (*metadata.RspIDs, errors.CCErrorCoder)
 
 	// UpdateWorkload update workload
 	UpdateWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
-		option *types.WlUpdateReq) errors.CCErrorCoder
+		option *types.WlUpdateOption) errors.CCErrorCoder
 
 	// DeleteWorkload delete workload
 	DeleteWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
-		option *types.WlDeleteReq) errors.CCErrorCoder
+		option *types.WlDeleteOption) errors.CCErrorCoder
 
 	// ListWorkload list workload
 	ListWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
-		option *types.WlQueryReq) (*metadata.InstDataInfo, errors.CCErrorCoder)
+		option *types.WlQueryOption) (*metadata.InstDataInfo, errors.CCErrorCoder)
 
 	// ListPod list pod
-	ListPod(ctx context.Context, header http.Header, bizID int64, option *types.PodQueryReq) (
+	ListPod(ctx context.Context, header http.Header, bizID int64, option *types.PodQueryOption) (
 		*metadata.InstDataInfo, errors.CCErrorCoder)
 
+	BatchCreatePod(ctx context.Context, header http.Header, data *types.CreatePodsOption) ([]int64, errors.CCErrorCoder)
+
 	// ListContainer list container
-	ListContainer(ctx context.Context, header http.Header, bizID int64, option *types.ContainerQueryReq) (
+	ListContainer(ctx context.Context, header http.Header, bizID int64, option *types.ContainerQueryOption) (
 		*metadata.InstDataInfo, errors.CCErrorCoder)
 
 	// FindNodePathForHost find node path for host

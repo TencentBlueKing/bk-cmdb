@@ -14,7 +14,6 @@
 package service
 
 import (
-	"configcenter/src/source_controller/coreservice/core/kube"
 	"net/http"
 
 	"configcenter/src/common"
@@ -35,6 +34,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/host"
 	"configcenter/src/source_controller/coreservice/core/hostapplyrule"
 	"configcenter/src/source_controller/coreservice/core/instances"
+	"configcenter/src/source_controller/coreservice/core/kube"
 	"configcenter/src/source_controller/coreservice/core/label"
 	"configcenter/src/source_controller/coreservice/core/mainline"
 	"configcenter/src/source_controller/coreservice/core/model"

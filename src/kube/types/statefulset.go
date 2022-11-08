@@ -29,11 +29,12 @@ import (
 )
 
 // StatefulSetFields merge the fields of the StatefulSet and the details corresponding to the fields together.
-var StatefulSetFields = table.MergeFields(CommonSpecFieldsDescriptor, WorkLoadBaseFieldsDescriptor,
-	StatefulSetSpecFieldsDescriptor)
+var StatefulSetFields = table.MergeFields(CommonSpecFieldsDescriptor, NamespaceBaseRefDescriptor,
+	ClusterBaseRefDescriptor, StatefulSetSpecFieldsDescriptor)
 
 // StatefulSetSpecFieldsDescriptor StatefulSet spec's fields descriptors.
 var StatefulSetSpecFieldsDescriptor = table.FieldsDescriptors{
+	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: LabelsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: SelectorField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 	{Field: ReplicasField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
@@ -91,7 +92,7 @@ func (s *StatefulSet) SetWorkloadBase(wl WorkloadBase) {
 func (w *StatefulSet) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -107,7 +108,7 @@ func (w *StatefulSet) ValidateCreate() ccErr.RawErrorInfo {
 func (w *StatefulSet) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"data"},
 		}
 	}

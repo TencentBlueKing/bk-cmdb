@@ -18,17 +18,11 @@
 package table
 
 import (
-	"errors"
-
 	"configcenter/src/common/criteria/enumor"
 )
 
 // Fields table's fields details.
 type Fields struct {
-	// descriptors specific description of the field.
-	descriptors []FieldDescriptor
-	// fields defines all the table's fields.
-	fields []string
 	// fieldType the type corresponding to the field.
 	fieldType map[string]enumor.FieldType
 	// isEditable the type corresponding to the field.
@@ -43,11 +37,9 @@ type FieldsDescriptors []FieldDescriptor
 // MergeFields 对表字段的合并
 func MergeFields(all ...FieldsDescriptors) *Fields {
 	result := &Fields{
-		descriptors: make([]FieldDescriptor, 0),
-		fields:      make([]string, 0),
-		fieldType:   make(map[string]enumor.FieldType),
-		isEditable:  make(map[string]bool),
-		isRequired:  make(map[string]bool),
+		fieldType:  make(map[string]enumor.FieldType),
+		isEditable: make(map[string]bool),
+		isRequired: make(map[string]bool),
 	}
 
 	if len(all) == 0 {
@@ -55,10 +47,7 @@ func MergeFields(all ...FieldsDescriptors) *Fields {
 	}
 	for _, col := range all {
 		for _, f := range col {
-
-			result.descriptors = append(result.descriptors, f)
 			result.fieldType[f.Field] = f.Type
-			result.fields = append(result.fields, f.Field)
 			result.isEditable[f.Field] = f.IsEditable
 			result.isRequired[f.Field] = f.IsRequired
 		}
@@ -114,53 +103,6 @@ func (f Fields) IsFieldEditableByField(field string) bool {
 	return f.isEditable[field]
 }
 
-// OneFieldType returns the type corresponding to the specified field.
-func (f Fields) OneFieldType(field string) enumor.FieldType {
-	return f.fieldType[field]
-}
-
-// FieldsDescriptor returns table's all fields descriptor.
-func (f Fields) FieldsDescriptor() []FieldDescriptor {
-	return f.descriptors
-}
-
-// OneFieldDescriptor returns one field's descriptor.
-func (f Fields) OneFieldDescriptor(field string) FieldDescriptor {
-	if field == "" {
-		return FieldDescriptor{}
-	}
-
-	for idx := range f.descriptors {
-		if f.descriptors[idx].Field == field {
-			return f.descriptors[idx]
-		}
-	}
-	return FieldDescriptor{}
-}
-
-// Fields returns all the table's fields.
-func (f Fields) Fields() []string {
-	copied := make([]string, len(f.fields))
-	for idx := range f.fields {
-		copied[idx] = f.fields[idx]
-	}
-	return copied
-}
-
-// MergeFieldDescriptors merge all fields of a table together.
-func MergeFieldDescriptors(resources ...FieldsDescriptors) FieldsDescriptors {
-	if len(resources) == 0 {
-		return make([]FieldDescriptor, 0)
-	}
-
-	merged := make([]FieldDescriptor, 0)
-	for _, one := range resources {
-		merged = append(merged, one...)
-	}
-
-	return merged
-}
-
 // FieldDescriptor defines a table's field related information.
 type FieldDescriptor struct {
 	// Field is field's name.
@@ -183,34 +125,4 @@ type Revision struct {
 	Modifier   string `json:"modifier,omitempty" bson:"modifier"`
 	CreateTime int64  `json:"create_time,omitempty" bson:"create_time"`
 	LastTime   int64  `json:"last_time,omitempty" bson:"last_time"`
-}
-
-// ValidateCreate validation of parameters in the creation scene.
-func (r Revision) ValidateCreate() error {
-
-	if len(r.Creator) == 0 || len(r.Modifier) == 0 {
-		return errors.New("creator can not be empty")
-	}
-
-	if r.Creator != r.Modifier {
-		return errors.New("creator and Modifier need to be consistent\n")
-	}
-
-	if r.CreateTime == 0 {
-		return errors.New("create time must be set")
-	}
-
-	return nil
-}
-
-// ValidateUpdate validate revision when updated.
-func (r Revision) ValidateUpdate() error {
-	if len(r.Modifier) == 0 {
-		return errors.New("reviser can not be empty")
-	}
-
-	if len(r.Creator) != 0 {
-		return errors.New("creator can not be updated")
-	}
-	return nil
 }
