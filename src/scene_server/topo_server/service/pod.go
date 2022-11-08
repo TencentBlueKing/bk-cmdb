@@ -40,8 +40,8 @@ func (s *Service) FindPodPath(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.PodPathReq{}
-	if err := ctx.DecodeInto(&req); err != nil {
+	req := new(types.PodPathOption)
+	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}

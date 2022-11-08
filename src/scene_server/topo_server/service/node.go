@@ -34,7 +34,7 @@ import (
 
 // FindNodePathForHost find node path for host
 func (s *Service) FindNodePathForHost(ctx *rest.Contexts) {
-	req := types.HostPathReq{}
+	req := new(types.HostPathOption)
 	if err := ctx.DecodeInto(&req); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -204,8 +204,8 @@ func (s *Service) BatchDeleteNode(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := option.Validate(); err != nil {
-		ctx.RespAutoError(err)
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 

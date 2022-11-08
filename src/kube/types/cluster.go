@@ -18,9 +18,6 @@
 package types
 
 import (
-	"errors"
-	"fmt"
-
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
 	ccErr "configcenter/src/common/errors"
@@ -110,17 +107,22 @@ type CreateClusterRsp struct {
 }
 
 // Validate validate the DeleteClusterOption
-func (option *DeleteClusterOption) Validate() error {
+func (option *DeleteClusterOption) Validate() ccErr.RawErrorInfo {
 
 	if len(option.IDs) == 0 {
-		return errors.New("cluster ids must be set")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"ids"},
+		}
 	}
 
 	if len(option.IDs) > maxDeleteClusterNum {
-		return fmt.Errorf("the maximum number of clusters to be deleted is not allowed to exceed %d",
-			maxDeleteClusterNum)
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"ids", maxDeleteClusterNum},
+		}
 	}
-	return nil
+	return ccErr.RawErrorInfo{}
 }
 
 // ValidateCreate check whether the parameters for creating a cluster are legal.
@@ -128,7 +130,7 @@ func (option *Cluster) ValidateCreate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -145,7 +147,7 @@ func (option *Cluster) validateUpdate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"cluster information must be given"},
 		}
 	}
@@ -199,22 +201,21 @@ func (option *UpdateClusterOption) Validate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"cluster information must be given"},
 		}
 	}
 
 	if len(option.IDs) == 0 {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"the params for updating the cluster must be set"},
 		}
 	}
 	if len(option.IDs) > maxUpdateClusterNum {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args: []interface{}{fmt.Sprintf("the number of update clusters cannot exceed %d at a time",
-				maxUpdateClusterNum)},
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"ids", maxUpdateClusterNum},
 		}
 	}
 

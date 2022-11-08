@@ -103,7 +103,7 @@ func (option *Node) createValidate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -140,7 +140,7 @@ func (option *Node) updateValidate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"node information must be given"},
 		}
 	}
@@ -157,17 +157,22 @@ type BatchDeleteNodeOption struct {
 }
 
 // Validate validate the BatchDeleteNodeOption
-func (option *BatchDeleteNodeOption) Validate() error {
+func (option *BatchDeleteNodeOption) Validate() ccErr.RawErrorInfo {
 
 	if len(option.IDs) == 0 {
-		return errors.New("node ids must be set")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"ids"},
+		}
 	}
 
 	if len(option.IDs) > maxDeleteNodeNum {
-		return fmt.Errorf("the maximum number of nodes to be deleted is not allowed to exceed %d",
-			maxDeleteClusterNum)
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"ids", maxDeleteClusterNum},
+		}
 	}
-	return nil
+	return ccErr.RawErrorInfo{}
 }
 
 // OneNodeCreateOption node request parameter details.
@@ -184,7 +189,7 @@ func (option *OneNodeCreateOption) validateCreate() ccErr.RawErrorInfo {
 
 	if option.ClusterID == 0 {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{BKClusterIDFiled},
 		}
 	}
@@ -211,16 +216,15 @@ func (option *CreateNodesOption) ValidateCreate() ccErr.RawErrorInfo {
 
 	if len(option.Nodes) == 0 {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{errors.New("param must be set")},
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"data"},
 		}
 	}
 
 	if len(option.Nodes) > maxCreateNodeNum {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args: []interface{}{fmt.Errorf("the number of nodes created at one time does not exceed %d",
-				maxCreateNodeNum)},
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"data", maxCreateNodeNum},
 		}
 	}
 
@@ -293,13 +297,13 @@ func (option *UpdateNodeOption) UpdateValidate() ccErr.RawErrorInfo {
 
 	if len(option.IDs) == 0 {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"parameter cannot be empty"},
 		}
 	}
 	if len(option.IDs) > maxUpdateNodeNum {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommXXExceedLimit,
 			Args: []interface{}{fmt.Sprintf("the number of nodes to be updated at one time cannot exceed %d",
 				maxUpdateNodeNum)},
 		}
@@ -318,8 +322,8 @@ func (option *UpdateNodeOption) UpdateValidate() ccErr.RawErrorInfo {
 	return ccErr.RawErrorInfo{}
 }
 
-// NodeCond node condition for search host
-type NodeCond struct {
+// NodeCondition node condition for search host
+type NodeCondition struct {
 	Filter *filter.Expression `json:"filter"`
 	Fields []string           `json:"fields"`
 }

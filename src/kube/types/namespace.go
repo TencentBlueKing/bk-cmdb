@@ -114,7 +114,7 @@ func (ns *Namespace) ValidateCreate() errors.RawErrorInfo {
 
 	if ns.Name == "" {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{common.BKFieldName},
 		}
 	}
@@ -160,7 +160,7 @@ type NsUpdateOption struct {
 func (ns *NsUpdateOption) Validate() errors.RawErrorInfo {
 	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"ids"},
 		}
 	}
@@ -174,7 +174,7 @@ func (ns *NsUpdateOption) Validate() errors.RawErrorInfo {
 
 	if ns.Data == nil {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -194,7 +194,7 @@ type NsDeleteOption struct {
 func (ns *NsDeleteOption) Validate() errors.RawErrorInfo {
 	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"ids"},
 		}
 	}

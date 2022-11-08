@@ -88,11 +88,11 @@ type KubeOperationInterface interface {
 		*metadata.InstDataInfo, errors.CCErrorCoder)
 
 	// FindNodePathForHost find node path for host
-	FindNodePathForHost(ctx context.Context, header http.Header, option *types.HostPathReq) (
+	FindNodePathForHost(ctx context.Context, header http.Header, option *types.HostPathOption) (
 		*types.HostPathData, errors.CCErrorCoder)
 
 	// FindPodPath find pod path
-	FindPodPath(ctx context.Context, header http.Header, bizID int64, option *types.PodPathReq) (*types.PodPathData,
+	FindPodPath(ctx context.Context, header http.Header, bizID int64, option *types.PodPathOption) (*types.PodPathData,
 		errors.CCErrorCoder)
 }
 

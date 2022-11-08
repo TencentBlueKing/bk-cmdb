@@ -104,7 +104,7 @@ func (g *GameDeployment) SetWorkloadBase(wl WorkloadBase) {
 func (w *GameDeployment) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -120,7 +120,7 @@ func (w *GameDeployment) ValidateCreate() ccErr.RawErrorInfo {
 func (w *GameDeployment) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"data"},
 		}
 	}

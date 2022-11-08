@@ -176,7 +176,7 @@ func (s *coreService) UpdateWorkload(ctx *rest.Contexts) {
 	}
 
 	req := types.WlUpdateOption{Kind: kind}
-	if err := ctx.DecodeInto(&req); nil != err {
+	if err := ctx.DecodeInto(&req); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -190,7 +190,7 @@ func (s *coreService) UpdateWorkload(ctx *rest.Contexts) {
 		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: req.IDs},
 		common.BKAppIDField: bizID,
 	}
-	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
+	cond = util.SetQueryOwner(cond, ctx.Kit.SupplierAccount)
 	updateData, err := req.Data.BuildUpdateData(ctx.Kit.User)
 	if err != nil {
 		blog.Errorf("get update data failed, kind: %s, info: %v, err: %v, rid: %s", kind, req.Data, err, ctx.Kit.Rid)

@@ -488,7 +488,7 @@ func (st *Kube) ListContainer(ctx context.Context, header http.Header, bizID int
 }
 
 // FindNodePathForHost find node path for host
-func (st *Kube) FindNodePathForHost(ctx context.Context, header http.Header, option *types.HostPathReq) (
+func (st *Kube) FindNodePathForHost(ctx context.Context, header http.Header, option *types.HostPathOption) (
 	*types.HostPathData, errors.CCErrorCoder) {
 
 	result := new(types.HostPathResp)
@@ -513,7 +513,7 @@ func (st *Kube) FindNodePathForHost(ctx context.Context, header http.Header, opt
 }
 
 // FindPodPath find pod path
-func (st *Kube) FindPodPath(ctx context.Context, header http.Header, bizID int64, option *types.PodPathReq) (
+func (st *Kube) FindPodPath(ctx context.Context, header http.Header, bizID int64, option *types.PodPathOption) (
 	*types.PodPathData, errors.CCErrorCoder) {
 
 	result := new(types.PodPathResp)

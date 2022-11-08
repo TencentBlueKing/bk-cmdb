@@ -25,13 +25,13 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// HostPathReq find host path request
-type HostPathReq struct {
+// HostPathOption find host path request
+type HostPathOption struct {
 	HostIDs []int64 `json:"ids"`
 }
 
 // Validate validate HostPathReq
-func (h *HostPathReq) Validate() ccErr.RawErrorInfo {
+func (h *HostPathOption) Validate() ccErr.RawErrorInfo {
 	if len(h.HostIDs) == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
@@ -80,13 +80,13 @@ type HostNodeRelation struct {
 	ClusterIDWithName map[int64]string
 }
 
-// PodPathReq pod path request
-type PodPathReq struct {
+// PodPathOption pod path request
+type PodPathOption struct {
 	PodIDs []int64 `json:"ids"`
 }
 
 // Validate validate PodPathReq
-func (p *PodPathReq) Validate() ccErr.RawErrorInfo {
+func (p *PodPathOption) Validate() ccErr.RawErrorInfo {
 	if len(p.PodIDs) == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
@@ -212,15 +212,15 @@ type KubeTopoPathRsp struct {
 	Count int              `json:"count"`
 }
 
-// SearchHostReq search host request
-type SearchHostReq struct {
+// SearchHostOption search host request
+type SearchHostOption struct {
 	BizID       int64                    `json:"bk_biz_id"`
 	ClusterID   int64                    `json:"bk_cluster_id"`
 	Folder      bool                     `json:"folder"`
 	NamespaceID int64                    `json:"bk_namespace_id"`
 	WorkloadID  int64                    `json:"bk_workload_id"`
 	WlKind      WorkloadType             `json:"kind"`
-	NodeCond    *NodeCond                `json:"node_cond"`
+	NodeCond    *NodeCondition           `json:"node_cond"`
 	Ip          metadata.IPInfo          `json:"ip"`
 	HostCond    metadata.SearchCondition `json:"host_condition"`
 	Page        metadata.BasePage        `json:"page"`

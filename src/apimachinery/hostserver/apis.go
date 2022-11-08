@@ -698,7 +698,7 @@ func (hs *hostServer) FindCloudAreaHostCount(ctx context.Context, header http.He
 }
 
 // SearchHostWithKube search host with k8s condition
-func (hs *hostServer) SearchKubeHost(ctx context.Context, h http.Header, req types.SearchHostReq) (
+func (hs *hostServer) SearchKubeHost(ctx context.Context, h http.Header, req types.SearchHostOption) (
 	*metadata.SearchHost, errors.CCErrorCoder) {
 
 	result := new(metadata.SearchHostResult)

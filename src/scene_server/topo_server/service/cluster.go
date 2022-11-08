@@ -238,8 +238,8 @@ func (s *Service) DeleteCluster(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := option.Validate(); err != nil {
-		ctx.RespAutoError(err)
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)

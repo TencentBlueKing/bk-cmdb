@@ -367,7 +367,7 @@ var _ = Describe("pod test", func() {
 	})
 
 	It("find node path for host", func() {
-		req := types.HostPathReq{
+		req := types.HostPathOption{
 			HostIDs: []int64{
 				hostID1,
 			},
@@ -385,7 +385,7 @@ var _ = Describe("pod test", func() {
 
 	It("find pod path", func() {
 
-		req := types.PodPathReq{
+		req := types.PodPathOption{
 			PodIDs: []int64{podID},
 		}
 
@@ -404,7 +404,7 @@ var _ = Describe("pod test", func() {
 	})
 
 	It("find host with k8s condition", func() {
-		req := types.SearchHostReq{
+		req := types.SearchHostOption{
 			BizID:     bizID,
 			ClusterID: clusterID,
 		}
@@ -413,7 +413,7 @@ var _ = Describe("pod test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(result.Info)).To(Equal(2))
 
-		req = types.SearchHostReq{
+		req = types.SearchHostOption{
 			BizID:       bizID,
 			ClusterID:   clusterID,
 			NamespaceID: namespaceID,
@@ -424,7 +424,7 @@ var _ = Describe("pod test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(result.Info)).To(Equal(1))
 
-		req = types.SearchHostReq{
+		req = types.SearchHostOption{
 			BizID:     bizID,
 			ClusterID: clusterID,
 			Folder:    true,

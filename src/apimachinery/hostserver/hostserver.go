@@ -83,7 +83,7 @@ type HostServerClientInterface interface {
 	DeleteCloudArea(ctx context.Context, h http.Header, cloudID int64) (resp *metadata.Response, err error)
 	FindCloudAreaHostCount(ctx context.Context, header http.Header, option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error)
 	// SearchHostWithKube search host with k8s condition
-	SearchKubeHost(ctx context.Context, h http.Header, req types.SearchHostReq) (*metadata.SearchHost,
+	SearchKubeHost(ctx context.Context, h http.Header, req types.SearchHostOption) (*metadata.SearchHost,
 		errors.CCErrorCoder)
 	AddCloudHostToBiz(ctx context.Context, header http.Header, option *metadata.AddCloudHostToBizParam) (
 		*metadata.RspIDs, errors.CCErrorCoder)
