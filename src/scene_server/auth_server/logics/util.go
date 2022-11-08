@@ -168,8 +168,16 @@ func (lgc *Logics) getCloudNameMapByIDs(kit *rest.Kit, cloudIDs []int64) (map[in
 	return cloudMap, nil
 }
 
-func getHostDisplayName(innerIP string, cloudName string) string {
-	return innerIP + "(" + cloudName + ")"
+func getHostDisplayName(innerIP string, innerIPv6 string, cloudName string) string {
+	if innerIP == "" {
+		innerIP = "--"
+	}
+
+	if innerIPv6 == "" {
+		innerIPv6 = "--"
+	}
+
+	return innerIP + "/" + innerIPv6 + "(" + cloudName + ")"
 }
 
 // GetModelsIDNameMap get a map, key is id, value is bk_obj_name
