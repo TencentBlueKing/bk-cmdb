@@ -547,8 +547,8 @@
             const hostStat = hostStats.find(finder)
             const podStat = podStats.find(finder)
             this.$set(data, 'status', 'finished')
-            this.$set(data, 'host_count', hostStat.count)
-            this.$set(data, 'pod_count', podStat.count)
+            this.$set(data, 'host_count', hostStat?.count)
+            this.$set(data, 'pod_count', podStat?.count)
           })
         } catch (error) {
           console.error(error)

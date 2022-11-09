@@ -18,15 +18,16 @@
 package types
 
 import (
+	"errors"
+
+	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
-	"errors"
 )
 
 // PodFields merge the fields of the cluster and the details corresponding to the fields together.
@@ -100,6 +101,7 @@ func (p *PodQueryOption) Validate() ccErr.RawErrorInfo {
 	}
 
 	op := filter.NewDefaultExprOpt(PodFields.FieldsType())
+	op.MaxRulesDepth = 4
 	if err := p.Filter.Validate(op); err != nil {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,

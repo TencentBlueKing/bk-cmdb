@@ -18,13 +18,14 @@
 package types
 
 import (
+	"errors"
+
+	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	"configcenter/src/filter"
 	"configcenter/src/storage/dal/table"
-	"errors"
 )
 
 const (

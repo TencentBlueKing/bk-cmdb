@@ -66,7 +66,7 @@ const (
 	ConfigAdmin              ResourceType = "configAdmin"
 )
 
-// container related auth resource in CMDB
+// kube related auth resource in CMDB
 const (
 	// KubeCluster auth resource type in CMDB
 	KubeCluster ResourceType = "kube_cluster"

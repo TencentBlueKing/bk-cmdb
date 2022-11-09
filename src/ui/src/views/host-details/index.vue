@@ -173,7 +173,14 @@
         // 获取 Node 信息
         const { list } = await containerNodeService.find({
           bk_biz_id: this.business,
-          bk_host_id: this.id,
+          filter: {
+            condition: 'AND',
+            rules: [{
+              field: 'bk_host_id',
+              operator: 'equal',
+              value: this.id
+            }]
+          },
           page: maxPageParams()
         })
 
