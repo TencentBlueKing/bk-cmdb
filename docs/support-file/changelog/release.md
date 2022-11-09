@@ -1,3 +1,10 @@
+## [Version: 3.10.x_feature-agent-id_alpha6] - 2022-11-11
+**新增功能**
+- excel导入功能支持导入单个ipv6地址的主机
+
+**功能优化**
+- 对一些ipv6相关的UI的体验问题进行了优化
+
 ## [Version: 3.10.x_feature-agent-id_alpha5] - 2022-10-24
 **新增功能**
 - 修改bkmonitor beat插件上报的agnetID tag为bk_agent_id

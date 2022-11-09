@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_10_202205171709
+package y3_10_202211100949
 
 import (
 	"context"
@@ -28,6 +28,47 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 )
+
+// changeHostIpv4RequireAttr change the value of the isrequired attribute of the host bk_host_innerip to false.
+func changeHostIpv4RequireAttr(ctx context.Context, db dal.RDB) error {
+
+	// 1、get host bk_host_innerip property.
+	filter := map[string]interface{}{
+		common.BKObjIDField:      common.BKInnerObjIDHost,
+		common.BKPropertyIDField: "bk_host_innerip",
+	}
+
+	attrs := make([]attribute, 0)
+	err := db.Table(common.BKTableNameObjAttDes).Find(filter).All(ctx, &attrs)
+	if err != nil {
+		blog.Errorf("get bk_host_innerip attribute failed, filter: %v, err: %v", filter, err)
+		return err
+	}
+
+	if len(attrs) > 1 {
+		return errors.New("get multiple bk_host_innerip fields")
+	}
+
+	if len(attrs) == 0 {
+		return errors.New("no bk_host_innerip fields founded")
+	}
+
+	if !attrs[0].IsRequired {
+		blog.Infof("bk_host_innerip isrequired attribute is already false")
+		return nil
+	}
+	// 2、change the property value isrequired to false.
+	data := map[string]interface{}{
+		"isrequired": false,
+	}
+
+	if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, filter, data); err != nil {
+		blog.Errorf("change bk_host_innerip required attr to false failed, filter: %+v, data: %+v, err: %v",
+			filter, data, err)
+		return err
+	}
+	return nil
+}
 
 // addHostAddressingAttr add host addressing attribute
 func addHostAddressingAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
