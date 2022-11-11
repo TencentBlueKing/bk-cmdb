@@ -662,6 +662,9 @@ func (p *processOperation) ConstructServiceInstanceName(kit *rest.Kit, instanceI
 	process *metadata.Process) (string, errors.CCErrorCoder) {
 
 	serviceInstanceName := util.GetStrByInterface(host[common.BKHostInnerIPField])
+	if serviceInstanceName == "" {
+		serviceInstanceName = util.GetStrByInterface(host[common.BKHostInnerIPv6Field])
+	}
 
 	if process != nil {
 		if process.ProcessName != nil && len(*process.ProcessName) > 0 {
@@ -792,9 +795,11 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 	}
 
 	hosts := make([]metadata.HostMapStr, 0)
+	fields := []string{common.BKHostIDField, common.BKHostInnerIPField,
+		common.BKHostInnerIPv6Field, common.BKHostOuterIPField}
 	hostFilter := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
-	if err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(hostFilter).Fields(common.BKHostIDField,
-		common.BKHostInnerIPField, common.BKHostOuterIPField).All(kit.Ctx, &hosts); err != nil {
+	if err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(hostFilter).Fields(fields...).
+		All(kit.Ctx, &hosts); err != nil {
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
