@@ -41,7 +41,7 @@
       </batch-selection-column>
       <bk-table-column :label="$t('内网IP')">
         <template slot-scope="{ row }">
-          {{row.host.bk_host_innerip}}
+          {{row.host.bk_host_innerip || '--'}}
         </template>
       </bk-table-column>
       <bk-table-column :label="$t('云区域')" show-overflow-tooltip>

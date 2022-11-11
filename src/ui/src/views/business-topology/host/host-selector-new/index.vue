@@ -54,7 +54,7 @@
               <ul slot="content" class="host-list">
                 <li class="host-item" v-for="(row, index) in selected" :key="index">
                   <div class="ip">
-                    {{row.host.bk_host_innerip}}
+                    {{row.host.bk_host_innerip || '--'}}
                     <span class="repeat-tag" v-if="repeatSelected.includes(row)"
                       v-bk-tooltips="{ content: `${$t('云区域')}：${foreignkey(row.host.bk_cloud_id)}` }">
                       {{$t('IP重复')}}

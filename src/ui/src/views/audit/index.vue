@@ -227,14 +227,21 @@
         usefulCondition.condition = usefulSubCondition
 
         // 兼容resource_name为in/contains操作
-        if (usefulCondition.resource_name) {
-          const { fuzzy_query: fuzzy } = usefulCondition
+        if (usefulCondition.resource_name || usefulCondition.extend_resource_name) {
+          const {
+            fuzzy_query: fuzzy,
+            resource_name: resourceName,
+            extend_resource_name: extendResourceName
+          } = usefulCondition
+          const field = resourceName ? 'resource_name' : 'extend_resource_name'
+          const finalResourceName = resourceName || extendResourceName
+
           usefulSubCondition.push({
-            field: 'resource_name',
+            field,
             operator: fuzzy ? 'contains' : 'in',
-            value: fuzzy ? usefulCondition.resource_name : [usefulCondition.resource_name]
+            value: fuzzy ? finalResourceName : [finalResourceName]
           })
-          delete usefulCondition.resource_name
+          delete usefulCondition[field]
           delete usefulCondition.fuzzy_query
         }
 
