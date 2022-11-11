@@ -69,6 +69,7 @@
         </ul>
       </template>
     </bk-dropdown-menu>
+    <bk-tag v-if="classification?.isNewClassify" theme="success" radius="2px">新增</bk-tag>
   </div>
 </template>
 
@@ -118,6 +119,12 @@
       commands: {
         type: Array,
         default: () => []
+      },
+
+      // 分组列表数据
+      classification: {
+        type: Object,
+        default: () => {}
       }
     },
     setup(props) {

@@ -557,7 +557,8 @@
         if (res.result) {
           this.uploadResult.success = data.success
           this.$success(this.$t('导入成功'))
-          this.$refs.field && this.$refs.field.initFieldList()
+          this.$refs.field.resetData()
+          this.importField.show = false
         } else {
           this.uploadResult.insert_failed = data.insert_failed
           this.uploadResult.update_failed = data.update_failed
