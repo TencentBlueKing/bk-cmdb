@@ -37,7 +37,12 @@
             <bk-table-column type="selection" width="30" :selectable="getSelectable"></bk-table-column>
             <bk-table-column :label="$t('内网IP')">
               <template slot-scope="{ row }">
-                {{row.host.bk_host_innerip}}
+                {{row.host.bk_host_innerip || '--'}}
+              </template>
+            </bk-table-column>
+            <bk-table-column :label="$t('内网IPv6')">
+              <template slot-scope="{ row }">
+                {{row.host.bk_host_innerip_v6 || '--'}}
               </template>
             </bk-table-column>
             <bk-table-column :label="$t('云区域')" show-overflow-tooltip>
@@ -228,7 +233,8 @@
                 'bk_host_id',
                 'bk_host_innerip',
                 'bk_cloud_id',
-                'bk_host_outerip'
+                'bk_host_outerip',
+                'bk_host_innerip_v6'
               ],
               condition: []
             },
