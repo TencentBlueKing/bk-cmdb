@@ -286,7 +286,7 @@
         }
         const data = this.hosts.find(data => data.host.bk_host_id === instance.bk_host_id)
         if (data) {
-          return data.host.bk_host_innerip
+          return data.host.bk_host_innerip ? data.host.bk_host_innerip : data.host.bk_host_innerip_v6
         }
         return '--'
       },

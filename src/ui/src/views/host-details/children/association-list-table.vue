@@ -175,7 +175,11 @@
         return this.instanceIds.slice(start, start + this.pagination.size)
       },
       header() {
+        const innerIpv6 = this.properties.find(item => item.bk_property_id === 'bk_host_innerip_v6')
         const headerProperties = this.$tools.getDefaultHeaderProperties(this.properties)
+        if (innerIpv6) {
+          headerProperties.splice(1, 0, innerIpv6)
+        }
         const header = headerProperties.map(property => ({
           id: property.bk_property_id,
           name: this.$tools.getHeaderPropertyName(property),

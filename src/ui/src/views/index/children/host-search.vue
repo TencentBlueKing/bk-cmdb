@@ -35,6 +35,7 @@
           <i18n tag="p" path="检测到输入框中包含非标准IP格式字符串，请选择以XXX自动解析">
             <template #c1><span>&lt;{{$t('IP')}}&gt;</span></template>
             <template #c2><span>&lt;{{$t('固资编号')}}&gt;</span></template>
+            <template #c3><span>&lt;{{$t('IPv6')}}&gt;</span></template>
           </i18n>
           <div class="buttons">
             <bk-button theme="primary" size="small" outline v-test-id="'ipSearch'"
@@ -44,6 +45,10 @@
             <bk-button theme="primary" size="small" outline v-test-id="'assetSearch'"
               @click="handleSearch('asset')">
               {{$t('固资编号')}}
+            </bk-button>
+            <bk-button theme="primary" size="small" outline v-test-id="'ipv6Search'"
+              @click="handleSearch('ipv6')">
+              {{$t('IPv6')}}
             </bk-button>
           </div>
         </div>
@@ -143,12 +148,15 @@
 
         if (searchList.length) {
           const IPList = []
+          const IPv6List = []
           const IPWithCloudList = []
           const assetList = []
           const cloudIdSet = new Set()
           searchList.forEach((text) => {
             if (isIP(text, 4)) {
               IPList.push(text)
+            } else if (isIP(text, 6)) {
+              IPv6List.push(text)
             } else {
               const splitData = text.split(':')
               const [cloudId, ip] = splitData
@@ -161,8 +169,8 @@
             }
           })
           // console.log(IPList, IPWithCloudList, assetList, cloudIdSet, force)
-          // 判断是否存在IP、固资编号混合搜索
-          if (!force && (IPList.length || IPWithCloudList.length) && assetList.length) {
+          // 判断是否存在IP、IPv6、固资编号混合搜索
+          if (!force && (IPList.length || IPWithCloudList.length || IPv6List.length) && assetList.length) {
             this.$refs.popover.showHandler()
             return
           }
@@ -171,12 +179,16 @@
 
           const ipSearch = () => {
             // 无云区域与有云区域的混合搜索
-            if (IPList.length && IPWithCloudList.length) {
+            if (IPList.length && IPWithCloudList.length && IPv6List.length) {
               return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
             }
             // 纯IP搜索
             if (IPList.length) {
               return this.handleIPSearch(IPList)
+            }
+            // 纯IPv6搜索
+            if (IPv6List.length) {
+              return this.handleIPv6Search(IPv6List)
             }
             // 不同云区域+IP的混合搜索
             if (cloudIdSet.size > 1) {
@@ -192,7 +204,9 @@
           if (force === 'ip') {
             return ipSearch()
           }
-
+          if (force === 'ipv6') {
+            return ipSearch()
+          }
           // 纯固资编号搜索
           if (assetList.length) {
             return assetSearch()
@@ -216,6 +230,19 @@
           query: {
             scope: 'all',
             ip: QS.stringify(ip, { encode: false })
+          },
+          history: true
+        })
+      },
+      handleIPv6Search(list) {
+        const filter = {
+          'bk_host_innerip_v6.in': list.join(',')
+        }
+        this.$routerActions.redirect({
+          name: MENU_RESOURCE_HOST,
+          query: {
+            scope: 'all',
+            filter: QS.stringify(filter, { encode: false })
           },
           history: true
         })
