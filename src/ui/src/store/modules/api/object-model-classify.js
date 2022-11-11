@@ -109,7 +109,7 @@ const mutations = {
   setClassificationsObjects(state, classifications) {
     state.classifications = classifications
   },
-  updateClassify(state, classification, isNewClassify) {
+  updateClassify(state, classification) {
     // eslint-disable-next-line max-len
     const activeClassification = state.classifications.find(({ bk_classification_id: bkClassificationId }) => bkClassificationId === classification.bk_classification_id)
     if (activeClassification) {
@@ -126,7 +126,7 @@ const mutations = {
           bk_objects: [],
           bk_supplier_account: '',
           id: 0,
-          isNewClassify
+          isNewClassify: classification.isNewClassify
         },
         ...classification
       })

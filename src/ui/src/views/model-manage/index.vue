@@ -250,7 +250,7 @@
             <div>
               <i class="bk-icon icon-info-circle"></i>
               <i18n path="分组暂无模型提示">
-                <template #add>
+                <template #btn>
                   <bk-button :text="true" title="primary" @click="showModelDialog(classification.bk_classification_id)">
                     {{$t('立即添加')}}
                   </bk-button>
@@ -983,13 +983,13 @@
                 requestId: 'updateClassification'
               }
             })
-            this.updateClassify({ ...params, ...{ id: this.groupDialog.data.id }, isNewClassify: false })
+            this.updateClassify({ ...params, ...{ id: this.groupDialog.data.id, isNewClassify: false } })
           } else {
             const res = await this.createClassification({
               params,
               config: { requestId: 'createClassification' }
             })
-            this.updateClassify({ ...params, ...{ id: res.id }, isNewClassify: true })
+            this.updateClassify({ ...params, ...{ id: res.id, isNewClassify: true } })
             this.$success(this.$t('新建成功'))
           }
           this.hideGroupDialog()
