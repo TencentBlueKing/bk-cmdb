@@ -68,7 +68,6 @@ func getCustomFields(filterFields []string, customFields []string) []string {
 func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, isCheckHeader bool, defLang lang.DefaultCCLanguageIf) (map[int]string, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	// rowLen := len(sheet.Rows[headerRow-1].Cells)
 	var errCells []string
 	ret := make(map[int]string)
 	if headerRow > len(sheet.Rows) {
@@ -233,7 +232,6 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 	for k, v := range defFields {
 		result[k] = v
 	}
-
 	return result, nil
 
 }

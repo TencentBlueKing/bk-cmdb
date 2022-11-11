@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package y3_10_202205171709
+package y3_10_202211100949
 
 import (
 	"context"
@@ -21,31 +21,35 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.10.202205171709", upgrade)
+	upgrader.RegistUpgrader("y3.10.202211100949", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.10.202205171709")
+	blog.Infof("start execute y3.10.202211100949")
 
 	if err = addHostAddressingAttr(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.10.202205171709] add host addressing attribute failed, err: %v", err)
+		blog.Errorf("[upgrade y3.10.202211100949] add host addressing attribute failed, err: %v", err)
 		return err
 	}
 
 	if err = adjustHostUnique(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.10.202205171709] adjust host innerIP + cloudID unique failed, err: %v", err)
+		blog.Errorf("[upgrade y3.10.202211100949] adjust host innerIP + cloudID unique failed, err: %v", err)
 		return err
 	}
 
 	if err = adjustHostUniqueIndex(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.10.202205171709] adjust host innerIP + cloudID unique index failed, err: %v", err)
+		blog.Errorf("[upgrade y3.10.202211100949] adjust host innerIP + cloudID unique index failed, err: %v", err)
 		return err
 	}
 
 	if err = addProcessIpv6AttrOption(ctx, db, conf); err != nil {
-		blog.Errorf("[upgrade y3.10.202205171709] add process ipv6 attribute options failed, err: %v", err)
+		blog.Errorf("[upgrade y3.10.202211100949] add process ipv6 attribute options failed, err: %v", err)
 		return err
 	}
 
+	if err := changeHostIpv4RequireAttr(ctx, db); err != nil {
+		blog.Errorf("[upgrade y3.10.202211100949] change bk_host_innerip isrequired attribute failed, err: %v", err)
+		return err
+	}
 	return nil
 }
