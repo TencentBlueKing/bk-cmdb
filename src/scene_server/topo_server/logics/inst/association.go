@@ -162,6 +162,10 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 	for instObjID, instIDArr := range objIDInstIDMap {
 
 		idField := metadata.GetInstIDFieldByObjID(instObjID)
+		fields := []string{metadata.GetInstNameFieldName(instObjID), idField}
+		if instObjID == common.BKInnerObjIDHost {
+			fields = append(fields, common.BKHostInnerIPv6Field)
+		}
 		input := &metadata.QueryCondition{
 			Condition: mapstr.MapStr{
 				idField: mapstr.MapStr{common.BKDBIN: instIDArr},
@@ -170,7 +174,7 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 				Start: 0,
 				Limit: common.BKNoLimit,
 			},
-			Fields: []string{metadata.GetInstNameFieldName(instObjID), idField},
+			Fields: fields,
 		}
 		instResp, err := assoc.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, instObjID, input)
 		if err != nil {
@@ -253,7 +257,7 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 		Condition: mapstr.MapStr{
 			common.AssociationObjAsstIDField: request.ObjectAsstID,
 		},
-		Fields: []string{common.AssociationKindIDField},
+		Fields:         []string{common.AssociationKindIDField},
 		DisableCounter: true,
 	}
 	result, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
@@ -329,7 +333,7 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit, request *meta
 		Condition: mapstr.MapStr{
 			common.AssociationObjAsstIDField: request.ObjectAsstID,
 		},
-		Fields: []string{common.AssociationKindIDField},
+		Fields:         []string{common.AssociationKindIDField},
 		DisableCounter: true,
 	}
 	result, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
