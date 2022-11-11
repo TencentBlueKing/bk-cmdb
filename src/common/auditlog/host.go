@@ -63,13 +63,14 @@ func (h *hostAuditLog) generateAuditLog(parameter *generateAuditCommonParameter,
 		hostIDs[index] = hostID
 
 		auditLog := metadata.AuditLog{
-			AuditType:    metadata.HostType,
-			ResourceType: metadata.HostRes,
-			Action:       parameter.action,
-			BusinessID:   bizID,
-			ResourceID:   hostIDs[index],
-			ResourceName: util.GetStrByInterface(host[common.BKHostInnerIPField]),
-			OperateFrom:  parameter.operateFrom,
+			AuditType:          metadata.HostType,
+			ResourceType:       metadata.HostRes,
+			Action:             parameter.action,
+			BusinessID:         bizID,
+			ResourceID:         hostIDs[index],
+			ResourceName:       util.GetStrByInterface(host[common.BKHostInnerIPField]),
+			ExtendResourceName: util.GetStrByInterface(host[common.BKHostInnerIPv6Field]),
+			OperateFrom:        parameter.operateFrom,
 			OperationDetail: &metadata.InstanceOpDetail{
 				BasicOpDetail: metadata.BasicOpDetail{
 					Details: parameter.NewBasicContent(host),
