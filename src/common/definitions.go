@@ -473,6 +473,9 @@ const (
 	// BKResourceNameField the audit resource name field
 	BKResourceNameField = "resource_name"
 
+	// BKExtendResourceNameField the audit extend resource name field
+	BKExtendResourceNameField = "extend_resource_name"
+
 	// BKLabelField the audit resource name field
 	BKLabelField = "label"
 
