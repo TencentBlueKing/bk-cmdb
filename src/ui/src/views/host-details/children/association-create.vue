@@ -193,7 +193,6 @@
       instanceName() {
         const name = {
           bk_host_innerip: this.$t('内网IP'),
-          bk_host_innerip_v6: this.$t('内网IP'),
           bk_biz_name: this.$t('业务名'),
           bk_cloud_name: this.$t('云区域'),
           bk_module_name: this.$t('模块名'),
@@ -347,12 +346,17 @@
           id: this.instanceNameKey,
           name: this.instanceName,
           property: 'singlechar'
-        }, {
-          id: 'bk_host_innerip_v6',
-          name: this.$t('内网IPv6'),
-          property: 'singlechar'
         }]
-        if (propertyId && propertyId !== this.instanceNameKey && propertyId !== 'bk_host_innerip_v6') {
+
+        if (this.currentAsstObj === BUILTIN_MODELS.HOST) {
+          header.push({
+            id: 'bk_host_innerip_v6',
+            name: this.$t('内网IPv6'),
+            property: 'singlechar'
+          })
+        }
+
+        if (propertyId && !header.some(({ id }) => propertyId === id)) {
           const property = this.getProperty(propertyId) || {}
           header.push({
             id: propertyId,
