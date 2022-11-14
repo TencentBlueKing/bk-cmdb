@@ -793,6 +793,11 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 
 // setHit get highlight words.
 func (sr *SearchResult) setHit(ctx context.Context, searchHit *elastic.SearchHit, bkBizId, rawString string) {
+
+	if searchHit == nil {
+		return
+	}
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 	sourceTmp := make(map[string]interface{})
 
