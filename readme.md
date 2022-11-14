@@ -52,7 +52,7 @@
 
 ## Support
 - [wiki](https://github.com/Tencent/bk-cmdb/wiki)
-- [白皮书](https://docs.bk.tencent.com/cmdb/)
+- [白皮书](https://bk.tencent.com/docs/document/7.0/245/39686)
 - [蓝鲸论坛](https://bk.tencent.com/s-mart/community)
 - [蓝鲸 DevOps 在线视频教程](https://bk.tencent.com/s-mart/video/)
 - [蓝鲸社区版交流1群](https://jq.qq.com/?_wv=1027&k=5zk8F7G)
