@@ -26,7 +26,6 @@ import (
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/table"
 )
 
@@ -116,7 +115,6 @@ func (p *PodQueryOption) BuildCond(bizID int64, supplierAccount string) (mapstr.
 	cond := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}
-	cond = util.SetQueryOwner(cond, supplierAccount)
 
 	if p.Filter != nil {
 		filterCond, err := p.Filter.ToMgo()
@@ -348,7 +346,6 @@ func (p *ContainerQueryOption) Validate() ccErr.RawErrorInfo {
 // BuildCond build query container condition
 func (p *ContainerQueryOption) BuildCond(supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{}
-	cond = util.SetQueryOwner(cond, supplierAccount)
 
 	if p.Filter != nil {
 		filterCond, err := p.Filter.ToMgo()

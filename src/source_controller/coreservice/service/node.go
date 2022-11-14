@@ -18,7 +18,6 @@
 package service
 
 import (
-	"configcenter/src/common/util"
 	"strconv"
 
 	"configcenter/src/common"
@@ -26,6 +25,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/orm"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/driver/mongodb"
@@ -63,7 +63,7 @@ func (s *coreService) updateNodeField(kit *rest.Kit, nodeIDMap map[int64]struct{
 func (s *coreService) BatchCreateNode(ctx *rest.Contexts) {
 
 	inputData := new(types.CreateNodesOption)
-	if err := ctx.DecodeInto(inputData); nil != err {
+	if err := ctx.DecodeInto(inputData); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -81,14 +81,13 @@ func (s *coreService) BatchCreateNode(ctx *rest.Contexts) {
 // SearchNodes search nodes
 func (s *coreService) SearchNodes(ctx *rest.Contexts) {
 	input := new(metadata.QueryCondition)
-	if err := ctx.DecodeInto(input); nil != err {
+	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if input.Condition == nil {
-		input.Condition = mapstr.New()
-	}
+	util.SetQueryOwner(input.Condition, ctx.Kit.SupplierAccount)
+
 	nodes := make([]types.Node, 0)
 	err := mongodb.Client().Table(types.BKTableNameBaseNode).Find(input.Condition).
 		Start(uint64(input.Page.Start)).
@@ -128,7 +127,7 @@ func (s *coreService) BatchUpdateNode(ctx *rest.Contexts) {
 	filter[types.BKIDField] = map[string]interface{}{
 		common.BKDBIN: input.IDs,
 	}
-	util.SetQueryOwner(filter, ctx.Kit.SupplierAccount)
+	util.SetModOwner(filter, ctx.Kit.SupplierAccount)
 	opts := orm.NewFieldOptions().AddIgnoredFields(types.IgnoredUpdateNodeFields...)
 	updateData, err := orm.GetUpdateFieldsWithOption(input.Data, opts)
 	if err != nil {
@@ -160,25 +159,166 @@ func (s *coreService) BatchDeleteNode(ctx *rest.Contexts) {
 		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+	bizStr := ctx.Request.PathParameter("bk_biz_id")
+	bizID, err := strconv.ParseInt(bizStr, 10, 64)
 	if err != nil {
-		blog.Error("url parameter bk_biz_id not integer, bizID: %s, rid: %s", ctx.Request.PathParameter("bk_biz_id"),
-			ctx.Kit.Rid)
+		blog.Error("url parameter bk_biz_id not integer, bizID: %s, rid: %s", bizStr, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
 	}
 
+	// obtain the hostID of the deleted node and the corresponding business ID.
+	query := map[string]interface{}{
+		types.BKIDField:     map[string]interface{}{common.BKDBIN: option.IDs},
+		common.BKAppIDField: bizID,
+	}
+	util.SetQueryOwner(query, ctx.Kit.SupplierAccount)
+	nodes := make([]types.Node, 0)
+	if err := mongodb.Client().Table(types.BKTableNameBaseNode).Find(query).
+		Fields(common.BKHostIDField, common.BKAppIDField).All(ctx.Kit.Ctx, &nodes); err != nil {
+		blog.Errorf("query node failed, filter: %+v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	hostBizMap := make(map[int64]int64)
+	for _, node := range nodes {
+		hostBizMap[node.HostID] = node.BizID
+	}
+
+	// delete nodes.
 	filter := map[string]interface{}{
-		common.BKAppIDField:   bizID,
-		common.BKOwnerIDField: ctx.Kit.SupplierAccount,
+		common.BKAppIDField: bizID,
 		types.BKIDField: map[string]interface{}{
 			common.BKDBIN: option.IDs,
 		},
 	}
+	util.SetModOwner(filter, ctx.Kit.SupplierAccount)
 	if err := mongodb.Client().Table(types.BKTableNameBaseNode).Delete(ctx.Kit.Ctx, filter); err != nil {
 		blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
+
+	needTransferHost, err := s.getNeedToTansferHosts(ctx.Kit, bizID, hostBizMap)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := s.transferHostToIdleModule(ctx.Kit, needTransferHost); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
 	ctx.RespEntity(nil)
+}
+
+func (s *coreService) getNeedToTansferHosts(kit *rest.Kit, bizID int64, hostBizMap map[int64]int64) (
+	map[int64]int64, error) {
+
+	hostIDs := make([]int64, 0)
+	for id := range hostBizMap {
+		hostIDs = append(hostIDs, id)
+	}
+
+	query := map[string]interface{}{
+		types.BKIDField: map[string]interface{}{
+			common.BKDBIN: hostIDs,
+		},
+	}
+	util.SetQueryOwner(query, kit.SupplierAccount)
+	node := make([]types.Node, 0)
+	if err := mongodb.Client().Table(types.BKTableNameBaseNode).Find(query).Fields(common.BKHostIDField).
+		All(kit.Ctx, &node); err != nil {
+		blog.Errorf("query node failed, filter: %+v, err: %v, rid: %s", query, err, kit.Rid)
+		return nil, err
+	}
+	// exclude hosts that still have node.
+	for _, node := range node {
+		if _, ok := hostBizMap[node.HostID]; ok {
+			delete(hostBizMap, node.HostID)
+		}
+	}
+
+	topoHosIDs := make([]int64, 0)
+	for id := range hostBizMap {
+		topoHosIDs = append(topoHosIDs, id)
+	}
+
+	// get hosts that do not exist in the traditional topology.
+	// at this time, the obtained host does not exist in the kube
+	// topology or the traditional topology. You need to add this part
+	// of the host to the idle module where the biz is located.
+	filter := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: topoHosIDs,
+		},
+	}
+	relations := make([]metadata.ModuleHost, 0)
+	if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(filter).Fields(common.BKHostIDField).
+		All(kit.Ctx, &relations); err != nil {
+		blog.Errorf("find module host relation failed, filter: %s, err: %v, rid: %s", filter, err, kit.Rid)
+		return nil, err
+	}
+
+	for _, host := range relations {
+		if _, ok := hostBizMap[host.HostID]; ok {
+			delete(hostBizMap, host.HostID)
+		}
+	}
+	return hostBizMap, nil
+}
+
+func (s *coreService) transferHostToIdleModule(kit *rest.Kit, hostBizMap map[int64]int64) error {
+
+	// hosts that are not in the traditional topology need to be transferred to the corresponding idle module.
+	bizHostMap := make(map[int64][]int64)
+	bizIDs := make([]int64, 0)
+	for hostID, bizID := range hostBizMap {
+		bizHostMap[bizID] = append(bizHostMap[bizID], hostID)
+		bizIDs = append(bizIDs, bizID)
+	}
+
+	// obtain the module ID of the idle module of the business
+	cond := map[string]interface{}{
+		common.BKAppIDField: map[string]interface{}{
+			common.BKDBIN: bizIDs,
+		},
+		common.BKDefaultField: common.DefaultResModuleFlag,
+	}
+	modules := make([]mapstr.MapStr, 0)
+	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(cond).Fields(common.BKModuleIDField,
+		common.BKAppIDField).All(kit.Ctx, &modules)
+	if err != nil {
+		blog.Errorf("get module info failed. err: %v,cond: %+v, rid:%s", err, cond, kit.Rid)
+		return err
+	}
+
+	moduleBizMap := make(map[int64]int64)
+	for _, info := range modules {
+		bizID, err := util.GetInt64ByInterface(info[common.BKAppIDField])
+		if err != nil {
+			blog.Errorf("get biz id failed, err: %v,cond: %v, rid: %s", err, cond, kit.Rid)
+			return err
+		}
+		moduleID, err := util.GetInt64ByInterface(info[common.BKModuleIDField])
+		if err != nil {
+			blog.Errorf("get module id failed. err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
+			return err
+		}
+		moduleBizMap[bizID] = moduleID
+	}
+
+	for bizID, hostIDs := range bizHostMap {
+		inputData := &metadata.TransferHostToInnerModule{
+			ApplicationID: bizID,
+			HostID:        hostIDs,
+			ModuleID:      moduleBizMap[bizID],
+		}
+		err := s.core.HostOperation().TransferToInnerModule(kit, inputData)
+		if err != nil {
+			blog.Errorf("transfer host to default module failed. err: %s, rid: %s", err.Error(), kit.Rid)
+			return err
+		}
+	}
+	return nil
 }

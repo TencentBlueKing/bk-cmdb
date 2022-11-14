@@ -75,6 +75,10 @@ func (s *Service) FindPodPath(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+	if len(resp.Info) == 0 {
+		ctx.RespEntity(types.PodPathData{Info: []types.PodPath{}})
+		return
+	}
 
 	paths, err := s.buildPodPaths(ctx.Kit, bizName, resp.Info)
 	if err != nil {

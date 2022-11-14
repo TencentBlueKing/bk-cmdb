@@ -27,7 +27,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/table"
 )
 
@@ -542,7 +541,6 @@ func (wl *WlQueryOption) BuildCond(bizID int64, supplierAccount string) (mapstr.
 	cond := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}
-	cond = util.SetQueryOwner(cond, supplierAccount)
 	if wl.Filter != nil {
 		filterCond, err := wl.Filter.ToMgo()
 		if err != nil {

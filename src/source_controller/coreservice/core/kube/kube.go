@@ -47,7 +47,7 @@ func validateNodeData(kit *rest.Kit, bizID int64, node types.OneNodeCreateOption
 		common.BKAppIDField: bizID,
 		types.BKIDField:     node.ClusterID,
 	}
-	util.SetQueryOwner(clusterFilter, kit.SupplierAccount)
+	util.SetModOwner(clusterFilter, kit.SupplierAccount)
 
 	cnt, err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(clusterFilter).Count(kit.Ctx)
 	if err != nil {
@@ -63,7 +63,7 @@ func validateNodeData(kit *rest.Kit, bizID int64, node types.OneNodeCreateOption
 		common.BKAppIDField:  bizID,
 		common.BKHostIDField: node.HostID,
 	}
-	util.SetQueryOwner(filter, kit.SupplierAccount)
+	util.SetModOwner(filter, kit.SupplierAccount)
 
 	cnt, err = mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(filter).Count(kit.Ctx)
 	if err != nil {
@@ -94,7 +94,7 @@ func (p *kubeOperation) GetSysSpecInfoByCond(kit *rest.Kit, spec types.SpecSimpl
 		types.BKNamespaceIDField: spec.NamespaceID,
 		types.BKIDField:          spec.Ref.ID,
 	}
-	util.SetQueryOwner(filter, kit.SupplierAccount)
+	util.SetModOwner(filter, kit.SupplierAccount)
 
 	kubeField := []string{types.ClusterUIDField, types.NamespaceField, types.KubeNameField}
 
@@ -161,7 +161,7 @@ func (p *kubeOperation) getNodeInfo(kit *rest.Kit, spec types.SpecSimpleInfo, bi
 		types.BKClusterIDFiled: spec.ClusterID,
 		types.BKIDField:        spec.NodeID,
 	}
-	util.SetQueryOwner(nodeFilter, kit.SupplierAccount)
+	util.SetModOwner(nodeFilter, kit.SupplierAccount)
 
 	nodes := make([]map[string]interface{}, 0)
 	err := mongodb.Client().Table(types.BKTableNameBaseNode).Find(nodeFilter).
@@ -212,7 +212,7 @@ func (p *kubeOperation) getClusterInfo(kit *rest.Kit, bizID int64, data []types.
 		common.BKAppIDField: bizID,
 		types.BKIDField:     map[string]interface{}{common.BKDBIN: clusterIDs},
 	}
-	util.SetQueryOwner(clusterFilter, kit.SupplierAccount)
+	util.SetModOwner(clusterFilter, kit.SupplierAccount)
 
 	clusters := make([]types.Cluster, 0)
 	err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(clusterFilter).
@@ -243,7 +243,7 @@ func checkNodeInfoDuplicatedOrNot(kit *rest.Kit, bizID int64, data []types.OneNo
 			types.BKClusterIDFiled: nameClusterID[*node.Name],
 			types.KubeNameField:    *node.Name,
 		}
-		util.SetQueryOwner(filter, kit.SupplierAccount)
+		util.SetModOwner(filter, kit.SupplierAccount)
 		filters = append(filters, filter)
 	}
 
@@ -339,13 +339,13 @@ func checkClusterInfoDuplicatedOrNot(kit *rest.Kit, bizID int64, data *types.Clu
 		common.BKFieldName:  *data.Name,
 		common.BKAppIDField: bizID,
 	}
-	util.SetQueryOwner(filterName, kit.SupplierAccount)
+	util.SetModOwner(filterName, kit.SupplierAccount)
 
 	filterUid := map[string]interface{}{
 		common.BKFieldName:  *data.Uid,
 		common.BKAppIDField: bizID,
 	}
-	util.SetQueryOwner(filterUid, kit.SupplierAccount)
+	util.SetModOwner(filterUid, kit.SupplierAccount)
 
 	filter := map[string]interface{}{
 		common.BKDBOR: []map[string]interface{}{

@@ -18,6 +18,7 @@
 package service
 
 import (
+	"errors"
 	"time"
 
 	"configcenter/src/common"
@@ -25,41 +26,25 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/dal/table"
 	"configcenter/src/storage/driver/mongodb"
 )
 
-// BatchCreatePod batch create pods
-func (s *coreService) BatchCreatePod(ctx *rest.Contexts) {
-
-	inputData := new(types.CreatePodsOption)
-	if err := ctx.DecodeInto(inputData); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	var podsLen int
-	for _, info := range inputData.Data {
-		podsLen += len(info.Pods)
-	}
-	// generate pod ids field
-	ids, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, types.BKTableNameBasePod, podsLen)
-	if err != nil {
-		blog.Errorf("create pods failed, generate ids failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
+func (s *coreService) combinePodData(kit *rest.Kit, inputData *types.CreatePodsOption, ids []uint64) ([]types.Pod,
+	[]types.Container, map[int64]struct{}, error) {
 	pods, containers := make([]types.Pod, 0), make([]types.Container, 0)
 	now := time.Now().Unix()
-	var i int
 	nodeIDMap := make(map[int64]struct{})
+
+	var i int
+
 	for _, info := range inputData.Data {
 		for _, pod := range info.Pods {
-			podTmp, nodeID, err := s.combinationPodsInfo(ctx.Kit, pod, info.BizID, now, int64(ids[i]))
+			podTmp, nodeID, err := s.combinationPodsInfo(kit, pod, info.BizID, now, int64(ids[i]))
 			if err != nil {
-				ctx.RespAutoError(err)
-				return
+				return nil, nil, nil, err
 			}
 			// need to be compatible with scenarios where
 			// there is no container in the pod, so move it next time.
@@ -74,33 +59,68 @@ func (s *coreService) BatchCreatePod(ctx *rest.Contexts) {
 				continue
 			}
 			// generate pod ids field
-			cIDs, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, types.BKTableNameBaseContainer,
+			cIDs, err := mongodb.Client().NextSequences(kit.Ctx, types.BKTableNameBaseContainer,
 				len(pod.Containers))
 			if err != nil {
-				blog.Errorf("create container failed, generate ids failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
-				ctx.RespAutoError(err)
-				return
+				blog.Errorf("create container failed, generate ids failed, err: %+v, rid: %s", err, kit.Rid)
+				return nil, nil, nil, err
 			}
 
 			for id, container := range pod.Containers {
 				// due to the need to be compatible with the scenario where there is no container in the pod,
 				// the left and right bits of the array "ids" need to be obtained to obtain the podID that really
 				// needs redundancy.
-				data, err := s.combinationContainerInfo(ctx.Kit, int64(cIDs[id]), int64(ids[i-1]), now, container)
+				data, err := s.combinationContainerInfo(kit, int64(cIDs[id]), int64(ids[i-1]), now, container)
 				if err != nil {
-					ctx.RespAutoError(err)
-					return
+					return nil, nil, nil, err
 				}
 				containers = append(containers, data)
 			}
 		}
 	}
+	return pods, containers, nodeIDMap, nil
+}
+
+// BatchCreatePod batch create pods
+func (s *coreService) BatchCreatePod(ctx *rest.Contexts) {
+
+	inputData := new(types.CreatePodsOption)
+	if err := ctx.DecodeInto(inputData); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	var podsLen int
+	for _, info := range inputData.Data {
+		podsLen += len(info.Pods)
+	}
+	if podsLen == 0 {
+		ctx.RespAutoError(errors.New("no pods need created"))
+		return
+	}
+	// generate pod ids field
+	ids, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, types.BKTableNameBasePod, podsLen)
+	if err != nil {
+		blog.Errorf("create pods failed, generate ids failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	pods, containers, nodeIDMap, err := s.combinePodData(ctx.Kit, inputData, ids)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	if err := mongodb.Client().Table(types.BKTableNameBasePod).Insert(ctx.Kit.Ctx, pods); err != nil {
 		blog.Errorf("create pod failed, db insert failed, pods: %+v, err: %+v, rid: %s", pods, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-
+	if len(containers) == 0 {
+		ctx.RespEntityWithError(pods, nil)
+		return
+	}
 	err = mongodb.Client().Table(types.BKTableNameBaseContainer).Insert(ctx.Kit.Ctx, containers)
 	if err != nil {
 		blog.Errorf("create container failed, db insert failed, containers: %+v, err: %+v, rid: %s",
@@ -189,7 +209,7 @@ func (s *coreService) ListPod(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
+	util.SetQueryOwner(input.Condition, ctx.Kit.SupplierAccount)
 	pods := make([]types.Pod, 0)
 	err := mongodb.Client().Table(types.BKTableNameBasePod).Find(input.Condition).Start(uint64(input.Page.Start)).
 		Limit(uint64(input.Page.Limit)).
@@ -253,6 +273,7 @@ func (s *coreService) ListContainer(ctx *rest.Contexts) {
 	}
 
 	containers := make([]types.Container, 0)
+	util.SetQueryOwner(input.Condition, ctx.Kit.SupplierAccount)
 	err := mongodb.Client().Table(types.BKTableNameBaseContainer).Find(input.Condition).Start(uint64(input.Page.Start)).
 		Limit(uint64(input.Page.Limit)).
 		Sort(input.Page.Sort).

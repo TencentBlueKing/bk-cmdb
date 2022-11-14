@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/table"
 )
 
@@ -288,7 +287,6 @@ func (ns *NsQueryOption) BuildCond(bizID int64, supplierAccount string) (mapstr.
 	cond := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}
-	cond = util.SetQueryOwner(cond, supplierAccount)
 
 	if ns.Filter != nil {
 		filterCond, err := ns.Filter.ToMgo()
