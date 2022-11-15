@@ -1,3 +1,10 @@
+## [Version: 3.10.x_feature-agent-id_alpha7] - 2022-11-15
+**功能优化**
+- 对一些ipv6相关的UI的体验问题进行了优化
+
+**缺陷修复**
+- 修复了主页搜索ipv6地址的场景下跳转后筛选条件错误的问题
+
 ## [Version: 3.10.x_feature-agent-id_alpha6] - 2022-11-11
 **新增功能**
 - excel导入功能支持导入单个ipv6地址的主机
