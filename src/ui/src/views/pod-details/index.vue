@@ -123,7 +123,7 @@
             :readonly="true">
           </model-instance-property>
         </bk-tab-panel>
-        <bk-tab-panel name="containers" label="Containers">
+        <bk-tab-panel name="containers" label="Container(s)">
           <container-list v-if="active === 'containers'"></container-list>
         </bk-tab-panel>
       </bk-tab>
