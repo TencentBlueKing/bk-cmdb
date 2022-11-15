@@ -32,21 +32,17 @@
           {{$t('搜索')}}
         </bk-button>
         <div class="picking-popover-content" slot="content">
-          <i18n tag="p" path="检测到输入框中包含非标准IP格式字符串，请选择以XXX自动解析">
-            <template #c1><span>&lt;{{$t('IP')}}&gt;</span></template>
-            <template #c2><span>&lt;{{$t('固资编号')}}&gt;</span></template>
-            <template #c3><span>&lt;{{$t('IPv6')}}&gt;</span></template>
-          </i18n>
+          <p>{{$t('检测到输入框包含多种格式数据，请选择以哪个字段进行搜索：')}}</p>
           <div class="buttons">
-            <bk-button theme="primary" size="small" outline v-test-id="'ipSearch'"
+            <bk-button theme="primary" size="small" outline v-test-id="'ipSearch'" v-if="searchFlag.ipv4"
               @click="handleSearch('ip')">
               {{$t('IP')}}
             </bk-button>
-            <bk-button theme="primary" size="small" outline v-test-id="'assetSearch'"
+            <bk-button theme="primary" size="small" outline v-test-id="'assetSearch'" v-if="searchFlag.asset"
               @click="handleSearch('asset')">
               {{$t('固资编号')}}
             </bk-button>
-            <bk-button theme="primary" size="small" outline v-test-id="'ipv6Search'"
+            <bk-button theme="primary" size="small" outline v-test-id="'ipv6Search'" v-if="searchFlag.ipv6"
               @click="handleSearch('ipv6')">
               {{$t('IPv6')}}
             </bk-button>
@@ -91,6 +87,11 @@
           tippyOptions: {
             hideOnClick: true
           }
+        },
+        searchFlag: {
+          ipv4: false,
+          ipv6: false,
+          asset: false
         },
         request: {
           search: Symbol('search')
@@ -168,9 +169,15 @@
               }
             }
           })
-          // console.log(IPList, IPWithCloudList, assetList, cloudIdSet, force)
+          // console.log(IPList, IPv6List, IPWithCloudList, assetList, cloudIdSet, force)
+
+          this.searchFlag.ipv4 = IPList.length || IPWithCloudList.length
+          this.searchFlag.ipv6 = IPv6List.length > 0
+          this.searchFlag.asset = assetList.length > 0
+          const isMixSearch = Object.values(this.searchFlag).filter(x => x).length > 1
+
           // 判断是否存在IP、IPv6、固资编号混合搜索
-          if (!force && (IPList.length || IPWithCloudList.length || IPv6List.length) && assetList.length) {
+          if (!force && isMixSearch) {
             this.$refs.popover.showHandler()
             return
           }
@@ -186,15 +193,15 @@
             if (IPList.length) {
               return this.handleIPSearch(IPList)
             }
-            // 纯IPv6搜索
-            if (IPv6List.length) {
-              return this.handleIPv6Search(IPv6List)
-            }
             // 不同云区域+IP的混合搜索
             if (cloudIdSet.size > 1) {
               return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
             }
             this.handleIPWithCloudSearch(IPWithCloudList, cloudIdSet)
+          }
+
+          const ipv6Search = () => {
+            this.handleIPv6Search(IPv6List)
           }
 
           // 优先使用混合搜索下的选择
@@ -205,14 +212,19 @@
             return ipSearch()
           }
           if (force === 'ipv6') {
-            return ipSearch()
+            return ipv6Search()
           }
-          // 纯固资编号搜索
-          if (assetList.length) {
+
+          // 非混合搜索
+          if (this.searchFlag.asset) {
             return assetSearch()
           }
-          // IP系列搜索
-          ipSearch()
+          if (this.searchFlag.ipv4) {
+            return ipSearch()
+          }
+          if (this.searchFlag.ipv6) {
+            return ipv6Search()
+          }
         } else {
           this.searchContent = ''
           this.textareaDom && this.textareaDom.focus()
