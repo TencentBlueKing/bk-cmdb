@@ -82,8 +82,8 @@ func addHostAddressingAttr(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		IsEditable:    false,
 		IsPre:         true,
 		PropertyType:  common.FieldTypeEnum,
-		Option: []enumVal{{ID: "0", Name: "static", Type: "text", IsDefault: true},
-			{ID: "1", Name: "dynamic", Type: "text"}},
+		Option: []enumVal{{ID: "static", Name: "静态", Type: "text", IsDefault: true},
+			{ID: "dynamic", Name: "动态", Type: "text"}},
 		Description: "",
 		Creator:     common.CCSystemOperatorUserName,
 		CreateTime:  &now,
@@ -151,7 +151,7 @@ func addDefaultHostAddressingField(ctx context.Context, db dal.RDB, conf *upgrad
 		"bk_addressing": map[string]interface{}{common.BKDBExists: false},
 	}
 	updateData := map[string]interface{}{
-		"bk_addressing": "0",
+		"bk_addressing": "static",
 	}
 
 	for {
@@ -358,7 +358,7 @@ func adjustHostUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 			PartialFilterExpression: map[string]interface{}{
 				common.BKHostInnerIPField: map[string]string{common.BKDBType: "string"},
 				common.BKCloudIDField:     map[string]string{common.BKDBType: "number"},
-				common.BKAddressingField:  "0",
+				common.BKAddressingField:  "static",
 			},
 		},
 		{
@@ -372,7 +372,7 @@ func adjustHostUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 			PartialFilterExpression: map[string]interface{}{
 				common.BKHostInnerIPv6Field: map[string]string{common.BKDBType: "string"},
 				common.BKCloudIDField:       map[string]string{common.BKDBType: "number"},
-				common.BKAddressingField:    "0",
+				common.BKAddressingField:    "static",
 			},
 		},
 		{
