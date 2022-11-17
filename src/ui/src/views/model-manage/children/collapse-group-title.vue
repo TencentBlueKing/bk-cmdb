@@ -69,7 +69,7 @@
         </ul>
       </template>
     </bk-dropdown-menu>
-    <bk-tag v-if="classification?.isNewClassify" theme="success" radius="2px">新增</bk-tag>
+    <bk-tag v-if="classification.isNewClassify" theme="success" radius="2px">{{$t('新增')}}</bk-tag>
   </div>
 </template>
 
