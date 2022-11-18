@@ -41,8 +41,8 @@ type ListAgentStateData struct {
 
 // AsyncPushFileRequest use to push file to host request
 type AsyncPushFileRequest struct {
-	TimeoutSeconds int64   `json:"timeout_seconds"`
-	AutoMkdir      bool    `json:"auto_mkdir"`
+	TimeoutSeconds int64   `json:"timeout_seconds,omitempty"`
+	AutoMkdir      bool    `json:"auto_mkdir,omitempty"`
 	Tasks          []*Task `json:"tasks"`
 }
 
