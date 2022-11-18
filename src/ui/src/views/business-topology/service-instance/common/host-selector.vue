@@ -69,10 +69,10 @@
               </div>
               <ul slot="content" class="selected-host-list">
                 <li class="host-item" v-for="(row, index) in selected" :key="index">
-                  <div class="ip">
-                    {{row.host.bk_host_innerip}}
+                  <div class="ip" v-bk-overflow-tips="{ placement: 'left' }">
+                    {{row.host.bk_host_innerip || row.host.bk_host_innerip_v6 || '--'}}
                   </div>
-                  <i class="bk-icon icon-close-line" @click="handleRemove(row)"></i>
+                  <i class="bk-icon icon-close-line" @click.stop="handleRemove(row)"></i>
                 </li>
               </ul>
             </bk-collapse-item>
@@ -321,7 +321,7 @@
         })
       },
       handleCopyIp() {
-        const ipList = this.selected.map(item => item.host.bk_host_innerip)
+        const ipList = this.selected.map(item => item.host.bk_host_innerip || item.host.bk_host_innerip_v6)
         this.$copyText(ipList.join('\n')).then(() => {
           this.$success(this.$t('复制成功'))
         }, () => {
