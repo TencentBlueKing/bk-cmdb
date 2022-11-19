@@ -28,6 +28,9 @@ func GenerateActionGroups(objects []metadata.Object) []ActionGroup {
 func GenerateStaticActionGroups() []ActionGroup {
 	ActionGroups := make([]ActionGroup, 0)
 
+	// generate business set manage action groups, contains fulltext search related actions
+	ActionGroups = append(ActionGroups, genFulltextSearchServiceActionGroups()...)
+
 	// generate business set manage action groups, contains business set related actions
 	ActionGroups = append(ActionGroups, genBizSetManageActionGroups()...)
 
@@ -50,6 +53,20 @@ func GenerateStaticActionGroups() []ActionGroup {
 	ActionGroups = append(ActionGroups, genContainerManagementActionGroups()...)
 
 	return ActionGroups
+}
+
+func genFulltextSearchServiceActionGroups() []ActionGroup {
+	return []ActionGroup{
+		{
+			Name:   "检索服务",
+			NameEn: "Fulltext Search Service",
+			Actions: []ActionWithID{
+				{
+					ID: UseFulltextSearch,
+				},
+			},
+		},
+	}
 }
 
 func genBizSetManageActionGroups() []ActionGroup {
@@ -216,6 +233,9 @@ func genResourceManageActionGroups() []ActionGroup {
 					NameEn: "Host Pool",
 					Actions: []ActionWithID{
 						{
+							ID: ViewResourcePoolHost,
+						},
+						{
 							ID: CreateResourcePoolHost,
 						},
 						{
@@ -318,6 +338,9 @@ func genResourceManageActionGroups() []ActionGroup {
 					NameEn: "Cloud Area",
 					Actions: []ActionWithID{
 						{
+							ID: ViewCloudArea,
+						},
+						{
 							ID: CreateCloudArea,
 						},
 						{
@@ -413,6 +436,9 @@ func genModelManageActionGroups() []ActionGroup {
 					NameEn: "Model Relation",
 					Actions: []ActionWithID{
 						{
+							ID: ViewModelTopo,
+						},
+						{
 							ID: EditBusinessLayer,
 						},
 						{
@@ -424,6 +450,9 @@ func genModelManageActionGroups() []ActionGroup {
 					Name:   "模型",
 					NameEn: "Model",
 					Actions: []ActionWithID{
+						{
+							ID: ViewSysModel,
+						},
 						{
 							ID: CreateSysModel,
 						},
