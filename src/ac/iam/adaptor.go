@@ -662,8 +662,10 @@ func genDynamicInstanceSelections(objects []metadata.Object) []InstanceSelection
 }
 
 // genDynamicAction generate dynamic action
+// Note: view action must be in the first place
 func genDynamicAction(obj metadata.Object) []DynamicAction {
 	return []DynamicAction{
+		genDynamicViewAction(obj),
 		genDynamicCreateAction(obj),
 		genDynamicEditAction(obj),
 		genDynamicDeleteAction(obj),
@@ -673,6 +675,16 @@ func genDynamicAction(obj metadata.Object) []DynamicAction {
 // GenDynamicActionID generate dynamic ActionID
 func GenDynamicActionID(actionType ActionType, modelID int64) ActionID {
 	return ActionID(fmt.Sprintf("%s_%s%d", actionType, IAMSysInstTypePrefix, modelID))
+}
+
+// genDynamicViewAction generate dynamic view action
+func genDynamicViewAction(obj metadata.Object) DynamicAction {
+	return DynamicAction{
+		ActionID:     GenDynamicActionID(View, obj.ID),
+		ActionType:   View,
+		ActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "查看"),
+		ActionNameEN: fmt.Sprintf("%s %s %s", "view", obj.ObjectID, "instance"),
+	}
 }
 
 // genDynamicCreateAction generate dynamic create action
@@ -750,8 +762,21 @@ func genDynamicActions(objects []metadata.Object) []ResourceAction {
 		}
 
 		actions := genDynamicAction(obj)
+		var relatedActions []ActionID
 		for _, action := range actions {
 			switch action.ActionType {
+			case View:
+				resActions = append(resActions, ResourceAction{
+					ID:                   action.ActionID,
+					Name:                 action.ActionNameCN,
+					NameEn:               action.ActionNameEN,
+					Type:                 View,
+					RelatedActions:       nil,
+					Version:              1,
+					RelatedResourceTypes: relatedResource,
+				})
+				relatedActions = []ActionID{action.ActionID}
+
 			case Create:
 				resActions = append(resActions, ResourceAction{
 					ID:                   action.ActionID,
@@ -768,7 +793,7 @@ func genDynamicActions(objects []metadata.Object) []ResourceAction {
 					Name:                 action.ActionNameCN,
 					NameEn:               action.ActionNameEN,
 					Type:                 Edit,
-					RelatedActions:       nil,
+					RelatedActions:       relatedActions,
 					Version:              1,
 					RelatedResourceTypes: relatedResource,
 				})
@@ -780,7 +805,7 @@ func genDynamicActions(objects []metadata.Object) []ResourceAction {
 					NameEn:               action.ActionNameEN,
 					Type:                 Delete,
 					RelatedResourceTypes: relatedResource,
-					RelatedActions:       nil,
+					RelatedActions:       relatedActions,
 					Version:              1,
 				})
 			default:

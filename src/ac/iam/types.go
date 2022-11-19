@@ -364,6 +364,8 @@ const (
 	// EditBusinessHostApply TODO
 	EditBusinessHostApply ActionID = "edit_biz_host_apply"
 
+	// ViewResourcePoolHost view resource pool host
+	ViewResourcePoolHost ActionID = "view_resource_pool_host"
 	// CreateResourcePoolHost TODO
 	CreateResourcePoolHost ActionID = "create_resource_pool_host"
 	// EditResourcePoolHost TODO
@@ -411,6 +413,8 @@ const (
 	// DeleteProject delete project action id
 	DeleteProject ActionID = "delete_project"
 
+	// ViewCloudArea view cloud area
+	ViewCloudArea ActionID = "view_cloud_area"
 	// CreateCloudArea TODO
 	CreateCloudArea ActionID = "create_cloud_area"
 	// EditCloudArea TODO
@@ -436,6 +440,8 @@ const (
 	// FindCloudResourceTask TODO
 	FindCloudResourceTask ActionID = "find_cloud_resource_task"
 
+	// ViewSysModel view system model
+	ViewSysModel ActionID = "view_sys_model"
 	// CreateSysModel TODO
 	CreateSysModel ActionID = "create_sys_model"
 	// EditSysModel TODO
@@ -457,9 +463,10 @@ const (
 	// DeleteModelGroup TODO
 	DeleteModelGroup ActionID = "delete_model_group"
 
+	// ViewModelTopo view model topo
+	ViewModelTopo ActionID = "view_model_topo"
 	// EditBusinessLayer TODO
 	EditBusinessLayer ActionID = "edit_business_layer"
-
 	// EditModelTopologyView TODO
 	EditModelTopologyView ActionID = "edit_model_topology_view"
 
@@ -511,6 +518,9 @@ const (
 
 	// GlobalSettings TODO
 	GlobalSettings ActionID = "global_settings"
+
+	// UseFulltextSearch use fulltext search
+	UseFulltextSearch ActionID = "use_fulltext_search"
 
 	// Unsupported TODO
 	// Unknown is an action that can not be recognized
