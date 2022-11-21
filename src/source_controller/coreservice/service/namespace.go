@@ -117,8 +117,8 @@ func (s *coreService) GetClusterSpec(kit *rest.Kit, bizID int64, clusterIDs []in
 
 	clusterIDs = util.IntArrayUnique(clusterIDs)
 	filter := map[string]interface{}{
-		common.BKAppIDField: bizID,
-		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: clusterIDs},
+		//common.BKAppIDField: bizID,
+		common.BKFieldID: mapstr.MapStr{common.BKDBIN: clusterIDs},
 	}
 	util.SetModOwner(filter, kit.SupplierAccount)
 
@@ -136,6 +136,8 @@ func (s *coreService) GetClusterSpec(kit *rest.Kit, bizID int64, clusterIDs []in
 		return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 	}
 
+	// 1、这里得加一个校验，看一下cluster中获取的业务ID 和biz是否一致，如果不一致一定是cluster是共享集群。
+	// 2、可能需要增加一条记录，cluster1 biz1  biz2
 	specs := make(map[int64]types.ClusterSpec, len(clusters))
 	for _, cluster := range clusters {
 		specs[cluster.ID] = types.ClusterSpec{
@@ -239,7 +241,7 @@ func (s *coreService) ListNamespace(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
+	// 在这里需要看一下，如果有bizID这个参数，那么需要根据bizID这个参数获取一下关联业务ID，将关联业务ID也要增加到这个参数中
 	util.SetQueryOwner(input.Condition, ctx.Kit.SupplierAccount)
 	namespaces := make([]types.Namespace, 0)
 	err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Find(input.Condition).Start(uint64(input.Page.Start)).

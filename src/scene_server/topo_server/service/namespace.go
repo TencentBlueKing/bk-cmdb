@@ -125,6 +125,7 @@ func (s *Service) UpdateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
+	// 这里的校验需要改一下这个校验，就是这个bizID，需要改成的是如果url中的url和cluster中的bidID不一致，那么一定可以在关系表中找到一条关系记录
 	for _, namespace := range resp.Data {
 		ids := make([]int64, 0)
 		if namespace.BizID != bizID {
