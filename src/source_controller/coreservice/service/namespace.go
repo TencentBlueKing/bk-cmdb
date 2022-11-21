@@ -126,14 +126,14 @@ func (s *coreService) GetClusterSpec(kit *rest.Kit, bizID int64, clusterIDs []in
 	clusters := make([]types.Cluster, 0)
 
 	err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(filter).Fields(field...).All(kit.Ctx, &clusters)
-	if err != nil {
-		if mongodb.Client().IsNotFoundError(err) || len(clusterIDs) != len(clusters) {
-			blog.Errorf("can not find all cluster, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
-			return nil, kit.CCError.CCError(common.CCErrCommNotFound)
-		}
-
+	if err != nil && !mongodb.Client().IsNotFoundError(err) {
 		blog.Errorf("find cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	if len(clusterIDs) != len(clusters) {
+		blog.Errorf("can not find all cluster, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 	}
 
 	specs := make(map[int64]types.ClusterSpec, len(clusters))

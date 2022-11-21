@@ -134,14 +134,14 @@ func (s *coreService) GetNamespaceSpec(kit *rest.Kit, bizID int64, nsIDs []int64
 	namespaces := make([]types.Namespace, 0)
 	err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Find(filter).Fields(field...).
 		All(kit.Ctx, &namespaces)
-	if err != nil {
-		if mongodb.Client().IsNotFoundError(err) || len(nsIDs) != len(namespaces) {
-			blog.Errorf("can not find all namespace, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
-			return nil, kit.CCError.CCError(common.CCErrCommNotFound)
-		}
-
+	if err != nil && !mongodb.Client().IsNotFoundError(err) {
 		blog.Errorf("find namespace failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	if len(nsIDs) != len(namespaces) {
+		blog.Errorf("can not find all namespace, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 	}
 
 	nsSpecs := make(map[int64]types.NamespaceSpec)
