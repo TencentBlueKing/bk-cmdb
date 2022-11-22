@@ -291,10 +291,10 @@ const (
 	BKHostOuterIPField = "bk_host_outerip"
 
 	// BKAddressingStatic the host addressing is static
-	BKAddressingStatic = "0"
+	BKAddressingStatic = "static"
 
 	// BKAddressingDynamic the host addressing is dynamic
-	BKAddressingDynamic = "1"
+	BKAddressingDynamic = "dynamic"
 
 	// BKCloudInstIDField the cloud instance id field
 	BKCloudInstIDField = "bk_cloud_inst_id"
