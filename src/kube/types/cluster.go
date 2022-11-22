@@ -18,9 +18,6 @@
 package types
 
 import (
-	"errors"
-	"fmt"
-
 	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
@@ -55,6 +52,18 @@ var ClusterSpecFieldsDescriptor = table.FieldsDescriptors{
 var ClusterBaseRefDescriptor = table.FieldsDescriptors{
 	{Field: ClusterUIDField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: BKClusterIDFiled, Type: enumor.Numeric, IsRequired: false, IsEditable: false},
+}
+
+// ClusterSpec describes the common attributes of cluster, it is used by the structure below it.
+type ClusterSpec struct {
+	// BizID business id in cc
+	BizID int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
+
+	// ClusterID cluster id in cc
+	ClusterID int64 `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
+
+	// ClusterUID cluster id in third party platform
+	ClusterUID string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
 }
 
 // Cluster container cluster table structure
@@ -110,17 +119,22 @@ type CreateClusterRsp struct {
 }
 
 // Validate validate the DeleteClusterOption
-func (option *DeleteClusterOption) Validate() error {
+func (option *DeleteClusterOption) Validate() ccErr.RawErrorInfo {
 
 	if len(option.IDs) == 0 {
-		return errors.New("cluster ids must be set")
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"ids"},
+		}
 	}
 
 	if len(option.IDs) > maxDeleteClusterNum {
-		return fmt.Errorf("the maximum number of clusters to be deleted is not allowed to exceed %d",
-			maxDeleteClusterNum)
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"ids", maxDeleteClusterNum},
+		}
 	}
-	return nil
+	return ccErr.RawErrorInfo{}
 }
 
 // ValidateCreate check whether the parameters for creating a cluster are legal.
@@ -128,7 +142,7 @@ func (option *Cluster) ValidateCreate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -145,8 +159,8 @@ func (option *Cluster) validateUpdate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"cluster information must be given"},
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"cluster"},
 		}
 	}
 
@@ -199,22 +213,21 @@ func (option *UpdateClusterOption) Validate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"cluster information must be given"},
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"data"},
 		}
 	}
 
 	if len(option.IDs) == 0 {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"the params for updating the cluster must be set"},
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"ids"},
 		}
 	}
 	if len(option.IDs) > maxUpdateClusterNum {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args: []interface{}{fmt.Sprintf("the number of update clusters cannot exceed %d at a time",
-				maxUpdateClusterNum)},
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"ids", maxUpdateClusterNum},
 		}
 	}
 

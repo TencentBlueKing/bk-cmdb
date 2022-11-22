@@ -244,24 +244,23 @@ func (s *Service) getTopoHostNumber(ctx *rest.Contexts, resourceInfos []types.Ku
 	// 3、combine the hostID and business ID to check the modulehostconfig table,
 	// and the final number is the real number of hosts.
 	result := make([]types.KubeTopoCountRsp, 0)
-
 	for id, filter := range filters {
 		// determine whether this node is a folder If it is a folder, then you need to check the node table.
 		if resourceInfos[id].Kind == types.KubeFolder {
-			count, err := s.getHostIDsInNodeByCond(ctx.Kit, filter, bizID)
+			hostMap, err := s.getHostIDsInNodeByCond(ctx.Kit, bizID, filter)
 			if err != nil {
 				return nil, err
 			}
 			result = append(result, types.KubeTopoCountRsp{
 				Kind:  resourceInfos[id].Kind,
 				ID:    resourceInfos[id].ID,
-				Count: count,
+				Count: int64(len(hostMap)),
 			})
 			continue
 		}
 
 		// what counts here is the number of hosts in the pod table excluding folders.
-		count, err := s.getHostIDsInPodsByCond(ctx.Kit, filter, bizID)
+		hostMap, err := s.getHostIDsInPodsByCond(ctx.Kit, bizID, filter)
 		if err != nil {
 			return nil, err
 		}
@@ -276,49 +275,94 @@ func (s *Service) getTopoHostNumber(ctx *rest.Contexts, resourceInfos []types.Ku
 			result = append(result, types.KubeTopoCountRsp{
 				Kind:  util.GetStrByInterface(filter[types.RefKindField]),
 				ID:    id,
-				Count: count,
+				Count: int64(len(hostMap)),
 			})
 			continue
 		}
 
-		var (
-			folderHostCount int64
-		)
-		// for the calculation of the number of hosts under the cluster,
-		// it is necessary to add the number of hosts under the folder node under the cluster.
-		if clusterID, ok := filter[types.BKClusterIDFiled]; ok {
-			nodeFilter := mapstr.MapStr{
-				types.BKClusterIDFiled:       clusterID,
-				types.HasPodField:            false,
-				types.BKBizIDField:           bizID,
-				types.BKSupplierAccountField: ctx.Kit.SupplierAccount,
-			}
-			folderHostCount, err = s.getHostIDsInNodeByCond(ctx.Kit, nodeFilter, bizID)
-			if err != nil {
-				return nil, err
-			}
+		resultHostMap, err := s.getClusterNumFromFolder(ctx.Kit, bizID, filter)
+		if err != nil {
+			return nil, err
+		}
+
+		for id := range hostMap {
+			resultHostMap[id] = struct{}{}
 		}
 
 		result = append(result, types.KubeTopoCountRsp{
 			Kind:  resourceInfos[id].Kind,
 			ID:    resourceInfos[id].ID,
-			Count: count + folderHostCount,
+			Count: int64(len(resultHostMap)),
 		})
 	}
 	return result, nil
 }
 
-func (s *Service) getHostIDsInNodeByCond(kit *rest.Kit, cond mapstr.MapStr, bizID int64) (int64, error) {
+// getClusterNumFromFolder for the calculation of the number of hosts under the cluster,
+// it is necessary to add the number of hosts under the folder node under the cluster.
+func (s *Service) getClusterNumFromFolder(kit *rest.Kit, bizID int64, filter map[string]interface{}) (
+	map[int64]struct{}, error) {
+
+	result := make(map[int64]struct{})
+	clusterID, ok := filter[types.BKClusterIDFiled]
+	if !ok {
+		return result, nil
+	}
+
+	nodeFilter := mapstr.MapStr{
+		types.BKClusterIDFiled: clusterID,
+		types.HasPodField:      false,
+		types.BKBizIDField:     bizID,
+	}
+	result, err := s.getHostIDsInNodeByCond(kit, bizID, nodeFilter)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+func (s *Service) getDistinctHostMap(kit *rest.Kit, bizID int64, hostIDMap map[int64]struct{}) (
+	map[int64]struct{}, error) {
+
+	result := make(map[int64]struct{}, 0)
+	if len(hostIDMap) == 0 {
+		return result, nil
+	}
+
+	hostIDs := make([]int64, 0)
+	for id := range hostIDMap {
+		hostIDs = append(hostIDs, id)
+	}
+
+	relationReq := &metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		HostIDArr:     hostIDs,
+		Page:          metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:        []string{common.BKHostIDField},
+	}
+
+	hostRelations, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, relationReq)
+	if err != nil {
+		return nil, err
+	}
+	for _, info := range hostRelations.Info {
+		result[info.HostID] = struct{}{}
+	}
+	return result, nil
+}
+
+func (s *Service) getHostIDsInNodeByCond(kit *rest.Kit, bizID int64, cond mapstr.MapStr) (map[int64]struct{}, error) {
 
 	query := &metadata.QueryCondition{
-		Condition: cond,
-		Fields:    []string{common.BKHostIDField},
+		Condition:      cond,
+		Fields:         []string{common.BKHostIDField},
+		DisableCounter: true,
 	}
 
 	nodes, cErr := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
 	if cErr != nil {
 		blog.Errorf("find nodes failed, cond: %v, err: %v, rid: %s", query, cErr, kit.Rid)
-		return 0, cErr
+		return nil, cErr
 	}
 
 	hostIDMap := make(map[int64]struct{})
@@ -326,64 +370,37 @@ func (s *Service) getHostIDsInNodeByCond(kit *rest.Kit, cond mapstr.MapStr, bizI
 		hostIDMap[node.HostID] = struct{}{}
 	}
 
-	hostIDs := make([]int64, 0)
-	for id := range hostIDMap {
-		hostIDs = append(hostIDs, id)
-	}
-
-	countOp := []map[string]interface{}{{
-		common.BKAppIDField: bizID,
-		common.BKHostIDField: map[string]interface{}{
-			common.BKDBIN: hostIDs,
-		},
-	}}
-
-	rsp, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-		common.BKTableNameModuleHostConfig, countOp)
+	result, err := s.getDistinctHostMap(kit, bizID, hostIDMap)
 	if err != nil {
 		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, kit.Rid)
-		return 0, err
+		return nil, err
 	}
-
-	return rsp[0], nil
+	return result, nil
 }
 
-func (s *Service) getHostIDsInPodsByCond(kit *rest.Kit, cond mapstr.MapStr, bizID int64) (int64, error) {
+func (s *Service) getHostIDsInPodsByCond(kit *rest.Kit, bizID int64, cond mapstr.MapStr) (map[int64]struct{}, error) {
 
 	query := &metadata.QueryCondition{
-		Condition: cond,
-		Fields:    []string{common.BKHostIDField},
+		Condition:      cond,
+		Fields:         []string{common.BKHostIDField},
+		DisableCounter: true,
 	}
 	pods, cErr := s.Engine.CoreAPI.CoreService().Kube().ListPod(kit.Ctx, kit.Header, query)
 	if cErr != nil {
 		blog.Errorf("find pods failed, cond: %v, err: %v, rid: %s", query, cErr, kit.Rid)
-		return 0, cErr
+		return nil, cErr
 	}
 	hostIDMap := make(map[int64]struct{})
 	for _, pod := range pods.Info {
 		hostIDMap[pod.HostID] = struct{}{}
 	}
 
-	hostIDs := make([]int64, 0)
-	for id := range hostIDMap {
-		hostIDs = append(hostIDs, id)
-	}
-
-	countOp := []map[string]interface{}{{
-		common.BKAppIDField: bizID,
-		common.BKHostIDField: map[string]interface{}{
-			common.BKDBIN: hostIDs,
-		},
-	}}
-
-	rsp, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-		common.BKTableNameModuleHostConfig, countOp)
+	result, err := s.getDistinctHostMap(kit, bizID, hostIDMap)
 	if err != nil {
 		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, kit.Rid)
-		return 0, err
+		return nil, err
 	}
-
-	return rsp[0], nil
+	return result, nil
 }
 
 // SearchKubeTopoPath querying container topology paths.
@@ -460,7 +477,7 @@ func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 func (s *Service) FindResourceAttrs(ctx *rest.Contexts) {
 
 	object := ctx.Request.PathParameter("object")
-	if !types.IsContainerTopoResource(object) {
+	if !types.IsKubeTopoResource(object) {
 		blog.Errorf("the param is invalid and does not belong to the kube object(%s)", object)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "object"))
 		return
@@ -526,7 +543,6 @@ func (s *Service) hasNextLevelResource(kit *rest.Kit, kind string, bizID int64, 
 	filter := map[string]interface{}{
 		common.BKAppIDField: bizID,
 	}
-	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
 
 	switch kind {
 	case types.KubeCluster:

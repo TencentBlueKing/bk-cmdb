@@ -92,7 +92,7 @@ func (s *StatefulSet) SetWorkloadBase(wl WorkloadBase) {
 func (w *StatefulSet) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -108,7 +108,7 @@ func (w *StatefulSet) ValidateCreate() ccErr.RawErrorInfo {
 func (w *StatefulSet) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"data"},
 		}
 	}

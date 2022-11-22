@@ -27,7 +27,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 )
 
@@ -65,7 +64,6 @@ func (s *Service) SearchClusters(ctx *rest.Contexts) {
 		filter = cond
 	}
 
-	util.SetQueryOwner(filter, ctx.Kit.SupplierAccount)
 	filter[types.BKBizIDField] = bizID
 
 	// get the number of clusters
@@ -83,9 +81,10 @@ func (s *Service) SearchClusters(ctx *rest.Contexts) {
 	}
 
 	query := &metadata.QueryCondition{
-		Condition: filter,
-		Page:      searchCond.Page,
-		Fields:    searchCond.Fields,
+		Condition:      filter,
+		Page:           searchCond.Page,
+		Fields:         searchCond.Fields,
+		DisableCounter: true,
 	}
 	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchCluster(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
@@ -101,7 +100,6 @@ func (s *Service) getUpdateClustersInfo(kit *rest.Kit, bizID int64, clusterIDs [
 		types.BKIDField:     map[string]interface{}{common.BKDBIN: clusterIDs},
 		common.BKAppIDField: bizID,
 	}
-	util.SetQueryOwner(cond, kit.SupplierAccount)
 
 	input := &metadata.QueryCondition{
 		Condition: cond,
@@ -238,8 +236,8 @@ func (s *Service) DeleteCluster(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := option.Validate(); err != nil {
-		ctx.RespAutoError(err)
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)

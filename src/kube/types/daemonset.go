@@ -93,7 +93,7 @@ func (d *DaemonSet) SetWorkloadBase(wl WorkloadBase) {
 func (w *DaemonSet) ValidateCreate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -109,7 +109,7 @@ func (w *DaemonSet) ValidateCreate() ccErr.RawErrorInfo {
 func (w *DaemonSet) ValidateUpdate() ccErr.RawErrorInfo {
 	if w == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 		}
 	}
 

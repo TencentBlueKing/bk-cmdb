@@ -120,7 +120,7 @@ func (s *coreService) GetClusterSpec(kit *rest.Kit, bizID int64, clusterIDs []in
 		common.BKAppIDField: bizID,
 		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: clusterIDs},
 	}
-	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
+	util.SetModOwner(filter, kit.SupplierAccount)
 
 	field := []string{common.BKFieldID, types.UidField}
 	clusters := make([]types.Cluster, 0)
@@ -240,6 +240,7 @@ func (s *coreService) ListNamespace(ctx *rest.Contexts) {
 		return
 	}
 
+	util.SetQueryOwner(input.Condition, ctx.Kit.SupplierAccount)
 	namespaces := make([]types.Namespace, 0)
 	err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Find(input.Condition).Start(uint64(input.Page.Start)).
 		Limit(uint64(input.Page.Limit)).

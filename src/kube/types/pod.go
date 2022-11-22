@@ -19,7 +19,6 @@ package types
 
 import (
 	"errors"
-	"fmt"
 
 	"configcenter/pkg/filter"
 	"configcenter/src/common"
@@ -27,7 +26,6 @@ import (
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/table"
 )
 
@@ -91,7 +89,7 @@ type PodQueryOption struct {
 	Page   metadata.BasePage  `json:"page,omitempty"`
 }
 
-// Validate validate PodQueryReq
+// Validate validate PodQueryOption
 func (p *PodQueryOption) Validate() ccErr.RawErrorInfo {
 	if err := p.Page.ValidateWithEnableCount(false, podQueryLimit); err.ErrCode != 0 {
 		return err
@@ -117,7 +115,6 @@ func (p *PodQueryOption) BuildCond(bizID int64, supplierAccount string) (mapstr.
 	cond := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}
-	cond = util.SetQueryOwner(cond, supplierAccount)
 
 	if p.Filter != nil {
 		filterCond, err := p.Filter.ToMgo()
@@ -152,15 +149,15 @@ func (option *Pod) createValidate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"pod information must be set"},
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"pod"},
 		}
 	}
 
 	if option.Name == nil || *option.Name == "" {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"pod name must be set"},
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"pod name"},
 		}
 	}
 
@@ -198,22 +195,22 @@ func (option *Container) validateCreate() ccErr.RawErrorInfo {
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"container information must be set"},
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"container"},
 		}
 	}
 
 	if option.Name == nil || *option.Name == "" {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"container name must be set"},
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"container name"},
 		}
 	}
 
 	if option.ContainerID == nil || *option.ContainerID == "" {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{"container name must be set"},
+			Args:    []interface{}{"container_uid"},
 		}
 	}
 
@@ -252,11 +249,6 @@ type PodsInfo struct {
 	Containers []Container `json:"containers"`
 }
 
-// CreatePodsOption create pods option
-type CreatePodsOption struct {
-	Data []PodsInfoArray `json:"data"`
-}
-
 // CreatePodsRsp the response message
 // body of the created pod result to the user.
 type CreatePodsRsp struct {
@@ -270,13 +262,18 @@ type PodsInfoArray struct {
 	Pods  []PodsInfo `json:"pods"`
 }
 
+// CreatePodsOption create pods option
+type CreatePodsOption struct {
+	Data []PodsInfoArray `json:"data"`
+}
+
 // Validate validate the CreatePodsOption
 func (option *CreatePodsOption) Validate() ccErr.RawErrorInfo {
 
 	if len(option.Data) == 0 {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args:    []interface{}{errors.New("params cannot be empty")},
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{errors.New("data")},
 		}
 	}
 	var podsLen int
@@ -285,9 +282,8 @@ func (option *CreatePodsOption) Validate() ccErr.RawErrorInfo {
 	}
 	if podsLen > createPodsLimit {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
-			Args: []interface{}{fmt.Errorf("the maximum number of pods created at one time cannot exceed %d",
-				createPodsLimit)},
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"pods", createPodsLimit},
 		}
 	}
 
@@ -301,8 +297,8 @@ func (option *CreatePodsOption) Validate() ccErr.RawErrorInfo {
 			}
 			if pod.HostID == 0 {
 				return ccErr.RawErrorInfo{
-					ErrCode: common.CCErrCommParamsIsInvalid,
-					Args:    []interface{}{errors.New("host id must be set")},
+					ErrCode: common.CCErrCommParamsNeedSet,
+					Args:    []interface{}{errors.New("host id")},
 				}
 			}
 
@@ -327,7 +323,7 @@ type ContainerQueryOption struct {
 	Page   metadata.BasePage  `json:"page,omitempty"`
 }
 
-// Validate validate ContainerQueryReq
+// Validate validate ContainerQueryOption
 func (p *ContainerQueryOption) Validate() ccErr.RawErrorInfo {
 	if err := p.Page.ValidateWithEnableCount(false, containerQueryLimit); err.ErrCode != 0 {
 		return err
@@ -350,7 +346,6 @@ func (p *ContainerQueryOption) Validate() ccErr.RawErrorInfo {
 // BuildCond build query container condition
 func (p *ContainerQueryOption) BuildCond(supplierAccount string) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{}
-	cond = util.SetQueryOwner(cond, supplierAccount)
 
 	if p.Filter != nil {
 		filterCond, err := p.Filter.ToMgo()

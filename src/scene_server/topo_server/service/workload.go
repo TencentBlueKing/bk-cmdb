@@ -18,6 +18,7 @@
 package service
 
 import (
+	"errors"
 	"strconv"
 
 	"configcenter/src/common"
@@ -26,7 +27,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 )
 
@@ -47,7 +47,7 @@ func (s *Service) CreateWorkload(ctx *rest.Contexts) {
 	}
 
 	req := types.WlCreateOption{Kind: kind}
-	if err := ctx.DecodeInto(&req); nil != err {
+	if err := ctx.DecodeInto(&req); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -111,7 +111,7 @@ func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
 	}
 
 	req := types.WlUpdateOption{Kind: kind}
-	if err := ctx.DecodeInto(&req); nil != err {
+	if err := ctx.DecodeInto(&req); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -121,21 +121,21 @@ func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	cond := map[string]interface{}{
-		common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
-	}
-	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	query := &metadata.QueryCondition{
-		Condition: cond,
+		Condition: map[string]interface{}{common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs}},
 	}
-	workloads, err := s.listWorkload(ctx.Kit, query, kind)
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListWorkload(ctx.Kit.Ctx, ctx.Kit.Header, query, kind)
 	if err != nil {
 		blog.Errorf("list workload failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-
-	for _, workload := range workloads {
+	if len(resp.Info) == 0 {
+		blog.Errorf("no workload founded, bizID: %s, data: %v, rid: %s", bizID, req, ctx.Kit.Rid)
+		ctx.RespAutoError(errors.New("no workload founded"))
+		return
+	}
+	for _, workload := range resp.Info {
 		ids := make([]int64, 0)
 		if workload.GetWorkloadBase().BizID != bizID {
 			ids = append(ids, workload.GetWorkloadBase().ID)
@@ -164,13 +164,13 @@ func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
 			return goErr
 		}
 		auditParam.WithUpdateFields(updateFields)
-		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, workloads, kind)
+		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, resp.Info, kind)
 		if err != nil {
-			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", workloads, err, ctx.Kit.Rid)
+			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", resp.Info, err, ctx.Kit.Rid)
 			return err
 		}
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", workloads, err, ctx.Kit.Rid)
+			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", resp.Info, err, ctx.Kit.Rid)
 			return err
 		}
 
@@ -187,8 +187,7 @@ func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
 
 // DeleteWorkload delete workload
 func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
-	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
-	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
@@ -201,7 +200,7 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 	}
 
 	req := new(types.WlDeleteOption)
-	if err := ctx.DecodeInto(req); nil != err {
+	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -211,21 +210,21 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	cond := mapstr.MapStr{
-		common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
-	}
-	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	query := &metadata.QueryCondition{
-		Condition: cond,
+		Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs}},
 	}
-	workloads, err := s.listWorkload(ctx.Kit, query, kind)
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListWorkload(ctx.Kit.Ctx, ctx.Kit.Header, query, kind)
 	if err != nil {
 		blog.Errorf("list workload failed, bizID: %s, req: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-
-	for _, workload := range workloads {
+	if len(resp.Info) == 0 {
+		blog.Errorf("no workload founded, bizID: %s, data: %v, rid: %s", bizID, req, ctx.Kit.Rid)
+		ctx.RespAutoError(errors.New("no workload founded"))
+		return
+	}
+	for _, workload := range resp.Info {
 		ids := make([]int64, 0)
 		if workload.GetWorkloadBase().BizID != bizID {
 			ids = append(ids, workload.GetWorkloadBase().ID)
@@ -258,13 +257,13 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 
 		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
-		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, workloads, kind)
+		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, resp.Info, kind)
 		if err != nil {
-			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", workloads, err, ctx.Kit.Rid)
+			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", resp.Info, err, ctx.Kit.Rid)
 			return err
 		}
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", workloads, err, ctx.Kit.Rid)
+			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", resp.Info, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -276,18 +275,6 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
-}
-
-func (s *Service) listWorkload(kit *rest.Kit, query *metadata.QueryCondition, kind types.WorkloadType) (
-	[]types.WorkloadInterface, error) {
-
-	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListWorkload(kit.Ctx, kit.Header, query, kind)
-	if err != nil {
-		blog.Errorf("find workload failed, kind: %s, cond: %v, err: %v, rid: %s", kind, query, err, kit.Rid)
-		return nil, err
-	}
-
-	return resp.Info, nil
 }
 
 // ListWorkload list workload
@@ -346,18 +333,18 @@ func (s *Service) ListWorkload(ctx *rest.Contexts) {
 		Fields:    req.Fields,
 	}
 
-	workloads, err := s.listWorkload(ctx.Kit, query, kind)
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListWorkload(ctx.Kit.Ctx, ctx.Kit.Header, query, kind)
 	if err != nil {
 		blog.Errorf("list workload failed, bizID: %s, cond: %v, err: %v, rid: %s", bizID, query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if len(workloads) == 0 {
+	if len(resp.Info) == 0 {
 		ctx.RespEntityWithCount(0, []mapstr.MapStr{})
 		return
 	}
 
-	ctx.RespEntityWithCount(0, workloads)
+	ctx.RespEntityWithCount(0, resp.Info)
 
 }

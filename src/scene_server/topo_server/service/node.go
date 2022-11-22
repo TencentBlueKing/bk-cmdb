@@ -28,13 +28,12 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 )
 
 // FindNodePathForHost find node path for host
 func (s *Service) FindNodePathForHost(ctx *rest.Contexts) {
-	req := types.HostPathReq{}
+	req := new(types.HostPathOption)
 	if err := ctx.DecodeInto(&req); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -99,8 +98,9 @@ func (s *Service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.Ho
 		common.BKFieldID, common.BKAppIDField, types.BKClusterIDFiled, common.BKHostIDField,
 	}
 	query := &metadata.QueryCondition{
-		Condition: cond,
-		Fields:    fields,
+		Condition:      cond,
+		Fields:         fields,
+		DisableCounter: true,
 	}
 
 	resp, ccErr := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
@@ -108,7 +108,10 @@ func (s *Service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.Ho
 		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, ccErr, kit.Rid)
 		return nil, ccErr
 	}
-
+	if len(resp.Data) == 0 {
+		blog.Errorf("no node founded, cond: %v, err: %v, rid: %s", query, ccErr, kit.Rid)
+		return nil, errors.New("no node founded")
+	}
 	bizIDs := make([]int64, 0)
 	hostWithNode := make(map[int64][]types.Node)
 	clusterIDs := make([]int64, 0)
@@ -135,14 +138,19 @@ func (s *Service) getClusterIDWithName(kit *rest.Kit, clusterIDs []int64) (map[i
 	cond := mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: clusterIDs}}
 	fields := []string{common.BKFieldID, common.BKFieldName}
 	query := &metadata.QueryCondition{
-		Condition: cond,
-		Fields:    fields,
+		Condition:      cond,
+		Fields:         fields,
+		DisableCounter: true,
 	}
 
 	resp, ccErr := s.Engine.CoreAPI.CoreService().Kube().SearchCluster(kit.Ctx, kit.Header, query)
 	if ccErr != nil {
-		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, ccErr, kit.Rid)
+		blog.Errorf("find cluster failed, cond: %v, err: %v, rid: %s", query, ccErr, kit.Rid)
 		return nil, ccErr
+	}
+	if len(resp.Data) == 0 {
+		blog.Errorf("find node failed, cond: %v, rid: %s", query, kit.Rid)
+		return nil, errors.New("no cluster founded")
 	}
 
 	idWithName := make(map[int64]string)
@@ -204,8 +212,8 @@ func (s *Service) BatchDeleteNode(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := option.Validate(); err != nil {
-		ctx.RespAutoError(err)
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
@@ -312,7 +320,6 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 	// regardless of whether there is bk_biz_id or supplier_account in the condition,
 	// it is uniformly replaced with bk_biz_id in url and supplier_account in kit.
 	filter[types.BKBizIDField] = bizID
-	util.SetQueryOwner(filter, ctx.Kit.SupplierAccount)
 
 	// count biz in cluster enable count is set
 	if searchCond.Page.EnableCount {
@@ -329,9 +336,10 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 	}
 
 	query := &metadata.QueryCondition{
-		Condition: filter,
-		Page:      searchCond.Page,
-		Fields:    searchCond.Fields,
+		Condition:      filter,
+		Page:           searchCond.Page,
+		Fields:         searchCond.Fields,
+		DisableCounter: true,
 	}
 	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
@@ -356,11 +364,11 @@ func (s *Service) getUpdateNodeInfo(kit *rest.Kit, bizID int64, nodeIDs []int64)
 		types.BKIDField:     map[string]interface{}{common.BKDBIN: nodeIDs},
 		common.BKAppIDField: bizID,
 	}
-	util.SetQueryOwner(cond, kit.SupplierAccount)
 
 	query := &metadata.QueryCondition{
-		Condition: cond,
-		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+		Condition:      cond,
+		Page:           metadata.BasePage{Limit: common.BKNoLimit},
+		DisableCounter: true,
 	}
 
 	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)

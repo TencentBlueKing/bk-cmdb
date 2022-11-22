@@ -312,14 +312,14 @@ func convertInterfaceIntoMap(target interface{}, param MapObjectSettings, deep i
 func ValidateCreate(data interface{}, field *table.Fields) ccErr.RawErrorInfo {
 	if data == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"data"},
 		}
 	}
 
 	if field == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"field"},
 		}
 	}
@@ -353,14 +353,14 @@ func ValidateCreate(data interface{}, field *table.Fields) ccErr.RawErrorInfo {
 func ValidateUpdate(data interface{}, field *table.Fields) ccErr.RawErrorInfo {
 	if data == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"data"},
 		}
 	}
 
 	if field == nil {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPInputInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"field"},
 		}
 	}

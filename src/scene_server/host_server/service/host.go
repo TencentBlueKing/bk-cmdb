@@ -1613,8 +1613,8 @@ func (s *Service) countBizHostCPU(kit *rest.Kit, bizID int64) (meta.BizHostCpuCo
 
 // SearchHostWithKube search host with k8s condition
 func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
-	req := types.SearchHostReq{}
-	if err := ctx.DecodeInto(&req); err != nil {
+	req := new(types.SearchHostOption)
+	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -1699,7 +1699,7 @@ func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-func (s *Service) getHostIDsByKubeCond(kit *rest.Kit, req types.SearchHostReq) ([]int64, error) {
+func (s *Service) getHostIDsByKubeCond(kit *rest.Kit, req *types.SearchHostOption) ([]int64, error) {
 	// find hosIDs by k8s topo filter
 	var hostIDs []int64
 	var err error
@@ -1738,7 +1738,7 @@ func (s *Service) getHostIDsByKubeCond(kit *rest.Kit, req types.SearchHostReq) (
 // getHostByKubeTopoFilter get hostIDs by k8s topo filter condition
 // this func can not find hostIDs only by bizID and clusterID because it find hostIDs dependent pod,
 // the host may belong to cluster but no pod on it.
-func (s *Service) getHostByKubeTopoFilter(kit *rest.Kit, req types.SearchHostReq) ([]int64, error) {
+func (s *Service) getHostByKubeTopoFilter(kit *rest.Kit, req *types.SearchHostOption) ([]int64, error) {
 	if !req.Folder && req.NamespaceID == 0 && (req.WorkloadID == 0 || req.WlKind == "") {
 		return nil, nil
 	}
@@ -1827,8 +1827,8 @@ func (s *Service) getHostInFolder(kit *rest.Kit, bizID int64, clusterID int64) (
 
 // getHostByClusterOrNode get hostID by cluster or node
 // this func can not find hostIDs only by bizID condition
-func (s *Service) getHostByClusterOrNode(kit *rest.Kit, req types.SearchHostReq, hasHostIDCond bool, hostIDs []int64) (
-	[]int64, error) {
+func (s *Service) getHostByClusterOrNode(kit *rest.Kit, req *types.SearchHostOption, hasHostIDCond bool,
+	hostIDs []int64) ([]int64, error) {
 	var err error
 	cond := mapstr.MapStr{}
 	if req.NodeCond != nil && req.NodeCond.Filter != nil {
@@ -1872,7 +1872,8 @@ func (s *Service) getHostByClusterOrNode(kit *rest.Kit, req types.SearchHostReq,
 	return ids, nil
 }
 
-func (s *Service) buildResult(kit *rest.Kit, hosts []mapstr.MapStr, req types.SearchHostReq) ([]mapstr.MapStr, error) {
+func (s *Service) buildResult(kit *rest.Kit, hosts []mapstr.MapStr, req *types.SearchHostOption) (
+	[]mapstr.MapStr, error) {
 	cloudIDs := make([]int64, 0)
 	hostIDs := make([]int64, 0)
 	for _, host := range hosts {

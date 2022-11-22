@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/table"
 )
 
@@ -91,6 +90,17 @@ const (
 	NsQueryLimit = 500
 )
 
+// NamespaceSpec describes the common attributes of namespace, it is used by the structure below it.
+type NamespaceSpec struct {
+	ClusterSpec `json:",inline" bson:",inline"`
+
+	// NamespaceID namespace id in cc
+	NamespaceID int64 `json:"bk_namespace_id,omitempty" bson:"bk_namespace_id"`
+
+	// Namespace namespace name in third party platform
+	Namespace string `json:"namespace,omitempty" bson:"namespace"`
+}
+
 // Namespace define the namespace struct.
 type Namespace struct {
 	ClusterSpec     `json:",inline" bson:",inline"`
@@ -114,7 +124,7 @@ func (ns *Namespace) ValidateCreate() errors.RawErrorInfo {
 
 	if ns.Name == "" {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{common.BKFieldName},
 		}
 	}
@@ -160,7 +170,7 @@ type NsUpdateOption struct {
 func (ns *NsUpdateOption) Validate() errors.RawErrorInfo {
 	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"ids"},
 		}
 	}
@@ -174,7 +184,7 @@ func (ns *NsUpdateOption) Validate() errors.RawErrorInfo {
 
 	if ns.Data == nil {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"data"},
 		}
 	}
@@ -194,7 +204,7 @@ type NsDeleteOption struct {
 func (ns *NsDeleteOption) Validate() errors.RawErrorInfo {
 	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsIsInvalid,
+			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"ids"},
 		}
 	}
@@ -277,7 +287,6 @@ func (ns *NsQueryOption) BuildCond(bizID int64, supplierAccount string) (mapstr.
 	cond := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}
-	cond = util.SetQueryOwner(cond, supplierAccount)
 
 	if ns.Filter != nil {
 		filterCond, err := ns.Filter.ToMgo()

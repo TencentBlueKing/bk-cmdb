@@ -40,8 +40,8 @@ func (s *Service) FindPodPath(ctx *rest.Contexts) {
 		return
 	}
 
-	req := types.PodPathReq{}
-	if err := ctx.DecodeInto(&req); err != nil {
+	req := new(types.PodPathOption)
+	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -73,6 +73,10 @@ func (s *Service) FindPodPath(ctx *rest.Contexts) {
 	if err != nil {
 		blog.Errorf("find pod failed, cond: %v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
+		return
+	}
+	if len(resp.Info) == 0 {
+		ctx.RespEntity(types.PodPathData{Info: []types.PodPath{}})
 		return
 	}
 

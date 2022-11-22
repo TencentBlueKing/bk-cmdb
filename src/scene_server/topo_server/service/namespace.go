@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 )
 
@@ -106,21 +105,26 @@ func (s *Service) UpdateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	cond := mapstr.MapStr{
-		common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
-	}
-	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	query := &metadata.QueryCondition{
-		Condition: cond,
+		Condition: mapstr.MapStr{
+			common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
+		},
+		DisableCounter: true,
 	}
-	namespaces, err := s.listNamespace(query, ctx.Kit)
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListNamespace(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
-		blog.Errorf("list namespace failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
+		blog.Errorf("list namespace failed, bizID: %d, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	for _, namespace := range namespaces {
+	if len(resp.Data) == 0 {
+		blog.Errorf("no namespace founded, bizID: %d, query: %+v, rid: %s", bizID, query, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	for _, namespace := range resp.Data {
 		ids := make([]int64, 0)
 		if namespace.BizID != bizID {
 			ids = append(ids, namespace.ID)
@@ -149,13 +153,13 @@ func (s *Service) UpdateNamespace(ctx *rest.Contexts) {
 			return goErr
 		}
 		auditParam.WithUpdateFields(updateFields)
-		auditLogs, err := audit.GenerateNamespaceAuditLog(auditParam, namespaces)
+		auditLogs, err := audit.GenerateNamespaceAuditLog(auditParam, resp.Data)
 		if err != nil {
-			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", namespaces, err, ctx.Kit.Rid)
+			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", resp.Data, err, ctx.Kit.Rid)
 			return err
 		}
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", namespaces, err, ctx.Kit.Rid)
+			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", resp.Data, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -171,8 +175,8 @@ func (s *Service) UpdateNamespace(ctx *rest.Contexts) {
 
 // DeleteNamespace delete namespace
 func (s *Service) DeleteNamespace(ctx *rest.Contexts) {
-	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
-	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
@@ -189,28 +193,29 @@ func (s *Service) DeleteNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	cond := mapstr.MapStr{
-		common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
-	}
-	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	query := &metadata.QueryCondition{
-		Condition: cond,
+		Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs}},
 	}
-	namespaces, err := s.listNamespace(query, ctx.Kit)
+
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListNamespace(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
-		blog.Errorf("list namespace failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
+		blog.Errorf("list namespace failed, bizID: %d, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
+	if len(resp.Data) == 0 {
+		ctx.RespEntity(nil)
+		return
+	}
 
-	for _, namespace := range namespaces {
+	for _, namespace := range resp.Data {
 		ids := make([]int64, 0)
 		if namespace.BizID != bizID {
 			ids = append(ids, namespace.ID)
 		}
 
 		if len(ids) != 0 {
-			blog.Errorf("namespace does not belong to this business, ids: %v, bizID: %s, rid: %s", ids, bizID,
+			blog.Errorf("namespace does not belong to this business, ids: %v, bizID: %d, rid: %s", ids, bizID,
 				ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, ids))
 			return
@@ -237,13 +242,13 @@ func (s *Service) DeleteNamespace(ctx *rest.Contexts) {
 		// audit log.
 		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
-		auditLogs, err := audit.GenerateNamespaceAuditLog(auditParam, namespaces)
+		auditLogs, err := audit.GenerateNamespaceAuditLog(auditParam, resp.Data)
 		if err != nil {
-			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", namespaces, err, ctx.Kit.Rid)
+			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", resp.Data, err, ctx.Kit.Rid)
 			return err
 		}
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", namespaces, err, ctx.Kit.Rid)
+			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", resp.Data, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -255,17 +260,6 @@ func (s *Service) DeleteNamespace(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
-}
-
-func (s *Service) listNamespace(query *metadata.QueryCondition, kit *rest.Kit) ([]types.Namespace, error) {
-
-	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListNamespace(kit.Ctx, kit.Header, query)
-	if err != nil {
-		blog.Errorf("find namespace failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	return resp.Data, nil
 }
 
 // ListNamespace list namespace
@@ -316,13 +310,12 @@ func (s *Service) ListNamespace(ctx *rest.Contexts) {
 		Page:      req.Page,
 		Fields:    req.Fields,
 	}
-
-	namespaces, err := s.listNamespace(query, ctx.Kit)
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListNamespace(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		blog.Errorf("list namespace failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntityWithCount(0, namespaces)
+	ctx.RespEntityWithCount(0, resp.Data)
 }
