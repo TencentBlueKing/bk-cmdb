@@ -183,7 +183,8 @@
         return this.instanceIds.slice(start, start + this.pagination.size)
       },
       header() {
-        const headerProperties = this.$tools.getDefaultHeaderProperties(this.properties)
+        const fixedPropertyIds = this.targetObjId === BUILTIN_MODELS.HOST ? ['bk_host_innerip', 'bk_host_innerip_v6'] : []
+        const headerProperties = this.$tools.getHeaderProperties(this.properties, [], fixedPropertyIds)
         const header = headerProperties.map(property => ({
           id: property.bk_property_id,
           name: this.$tools.getHeaderPropertyName(property),

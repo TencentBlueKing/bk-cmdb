@@ -73,14 +73,13 @@ const findTopology = async ({
       }
     })
     const rootIdKey = getIdKey(currentModelId)
-    const rootNameKey = getNameKey(currentModelId)
     const rootInstance = (result.data.instance[currentModelId] || []).find(root => root[rootIdKey] === currentInstId)
     return {
       count: result.association_count,
       root: {
         bk_obj_id: currentModelId,
         bk_inst_id: currentInstId,
-        bk_inst_name: rootInstance ? rootInstance[rootNameKey] : currentInstName
+        bk_inst_name: rootInstance ? getInstanceName(rootInstance, currentModelId) : currentInstName
       },
       data
     }

@@ -177,7 +177,7 @@ func getHostDisplayName(innerIP string, innerIPv6 string, cloudName string) stri
 		innerIPv6 = "--"
 	}
 
-	return innerIP + "/" + innerIPv6 + "(" + cloudName + ")"
+	return innerIP + "|" + innerIPv6 + "(" + cloudName + ")"
 }
 
 // GetModelsIDNameMap get a map, key is id, value is bk_obj_name
