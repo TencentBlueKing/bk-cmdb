@@ -445,7 +445,9 @@ func (h *HostIdentifier) pushFileByV2Api(always bool, task []*gse.Task, header h
 	var err error
 	var resp *gse.AsyncPushFileResp
 	req := &gse.AsyncPushFileRequest{
-		Tasks: task,
+		Tasks:          task,
+		AutoMkdir:      true,
+		TimeoutSeconds: 1000,
 	}
 
 	for always || failCount < retryTimes {
