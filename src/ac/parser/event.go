@@ -32,7 +32,8 @@ func (ps *parseStream) eventRelated() *parseStream {
 
 	ps.watch().
 		syncHostIdentifier().
-		pushHostIdentifier()
+		pushHostIdentifier().
+		findHostIdentifierPushResult()
 	return ps
 }
 
@@ -100,8 +101,9 @@ func (ps *parseStream) watch() *parseStream {
 }
 
 const (
-	syncHostIdentifierPattern = "/api/v3/event/sync/host_identifier"
-	pushHostIdentifierPattern = "/api/v3/event/push/host_identifier"
+	syncHostIdentifierPattern           = "/api/v3/event/sync/host_identifier"
+	pushHostIdentifierPattern           = "/api/v3/event/push/host_identifier"
+	findHostIdentifierPushResultPattern = "/api/v3/event/find/host_identifier_push_result"
 )
 
 func (ps *parseStream) syncHostIdentifier() *parseStream {
@@ -129,6 +131,25 @@ func (ps *parseStream) pushHostIdentifier() *parseStream {
 	}
 
 	if ps.hitPattern(pushHostIdentifierPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	return ps
+}
+
+func (ps *parseStream) findHostIdentifierPushResult() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitPattern(findHostIdentifierPushResultPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
