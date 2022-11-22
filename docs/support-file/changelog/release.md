@@ -1,4 +1,4 @@
-## [Version: 3.10.x_feature-agent-id_alpha7] - 2022-11-15
+## [Version: 3.10.x-feature-agent-id-alpha7] - 2022-11-15
 **功能优化**
 - 对一些ipv6相关的UI的体验问题进行了优化
 
