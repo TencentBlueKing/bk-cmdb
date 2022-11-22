@@ -185,6 +185,15 @@ func (ia *importAssociation) importAssociation() {
 			if isExist {
 				continue
 			}
+			input := &metadata.CreateAssociationInstRequest{
+				ObjectAsstID: asstInfo.ObjectAsstID,
+				InstID: srcInstID,
+				AsstInstID: dstInstID,
+			}
+			if err := ia.checkInstAsstMapping(ia.kit, asstID.Mapping, input); err != nil {
+				ia.parseImportDataErr[idx] = err.Error()
+				continue
+			}
 
 			ia.addSrcAssociation(idx, asstID.AssociationName, srcInstID, dstInstID)
 		case metadata.ExcelAssociationOperateDelete:
@@ -476,6 +485,61 @@ func (ia *importAssociation) delSrcAssociation(idx int, cond condition.Condition
 		return
 	}
 
+}
+
+// checkInstAsstMapping use to check if instance association mapping correct, used by CreateInstanceAssociation
+func (ia *importAssociation) checkInstAsstMapping(kit *rest.Kit, mapping metadata.AssociationMapping,
+	input *metadata.CreateAssociationInstRequest) error {
+
+	switch mapping {
+	case metadata.OneToOneMapping:
+		// search instances belongs to this association.
+		queryFilter := []map[string]interface{}{
+			{
+				common.AssociationObjAsstIDField: input.ObjectAsstID,
+				common.BKInstIDField:             input.InstID,
+			},
+			{
+				common.AssociationObjAsstIDField: input.ObjectAsstID,
+				common.BKAsstInstIDField:         input.AsstInstID,
+			},
+		}
+
+		instCnt, err := ia.cli.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+			common.BKTableNameInstAsst, queryFilter)
+		if err != nil {
+			blog.Errorf("check instance with cond[%#v] failed, err: %v, rid: %s", queryFilter, err, kit.Rid)
+			return err
+		}
+
+		for _, cnt := range instCnt {
+			if cnt >= 1 {
+				return kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
+			}
+		}
+	case metadata.OneToManyMapping:
+		queryFilter := []map[string]interface{}{
+			{
+				common.AssociationObjAsstIDField: input.ObjectAsstID,
+				common.BKAsstInstIDField:         input.AsstInstID,
+			},
+		}
+		instCnt, err := ia.cli.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+			common.BKTableNameInstAsst, queryFilter)
+		if err != nil {
+			blog.Errorf("check instance with cond[%#v] failed, err: %v, rid: %s", queryFilter, err, kit.Rid)
+			return err
+		}
+
+		if instCnt[0] >= 1 {
+			return kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
+		}
+
+	default:
+		// after all the check, new association instance can be created.
+	}
+
+	return nil
 }
 
 func (ia *importAssociation) addSrcAssociation(idx int, asstFlag string, instID, assInstID int64) {
