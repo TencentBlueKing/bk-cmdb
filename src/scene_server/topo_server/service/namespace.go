@@ -18,7 +18,6 @@
 package service
 
 import (
-	"errors"
 	"strconv"
 
 	"configcenter/src/common"
@@ -205,8 +204,7 @@ func (s *Service) DeleteNamespace(ctx *rest.Contexts) {
 		return
 	}
 	if len(resp.Data) == 0 {
-		blog.Errorf("no namespace founded, bizID: %d, query: %+v, rid: %s", bizID, query, ctx.Kit.Rid)
-		ctx.RespAutoError(errors.New("no namespace founded"))
+		ctx.RespEntity(nil)
 		return
 	}
 

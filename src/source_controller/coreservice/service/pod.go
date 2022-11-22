@@ -118,7 +118,7 @@ func (s *coreService) BatchCreatePod(ctx *rest.Contexts) {
 		return
 	}
 	if len(containers) == 0 {
-		ctx.RespEntityWithError(pods, nil)
+		ctx.RespEntity(pods)
 		return
 	}
 	err = mongodb.Client().Table(types.BKTableNameBaseContainer).Insert(ctx.Kit.Ctx, containers)
@@ -133,7 +133,7 @@ func (s *coreService) BatchCreatePod(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntityWithError(pods, nil)
+	ctx.RespEntity(pods)
 }
 
 func (s *coreService) combinationPodsInfo(kit *rest.Kit, pod types.PodsInfo, bizID int64, now, id int64) (

@@ -204,7 +204,9 @@ func (s *coreService) BatchDeleteNode(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
+	if len(needTransferHost) == 0 {
+		ctx.RespEntity(nil)
+	}
 	if err := s.transferHostToIdleModule(ctx.Kit, needTransferHost); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -253,6 +255,8 @@ func (s *coreService) getNeedToTansferHosts(kit *rest.Kit, bizID int64, hostBizM
 			common.BKDBIN: topoHosIDs,
 		},
 	}
+	util.SetQueryOwner(filter, kit.SupplierAccount)
+
 	relations := make([]metadata.ModuleHost, 0)
 	if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(filter).Fields(common.BKHostIDField).
 		All(kit.Ctx, &relations); err != nil {
@@ -285,6 +289,7 @@ func (s *coreService) transferHostToIdleModule(kit *rest.Kit, hostBizMap map[int
 		},
 		common.BKDefaultField: common.DefaultResModuleFlag,
 	}
+	util.SetQueryOwner(cond, kit.SupplierAccount)
 	modules := make([]mapstr.MapStr, 0)
 	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(cond).Fields(common.BKModuleIDField,
 		common.BKAppIDField).All(kit.Ctx, &modules)
