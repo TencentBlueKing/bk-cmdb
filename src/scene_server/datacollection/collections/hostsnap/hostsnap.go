@@ -304,7 +304,6 @@ func (h *HostSnap) Analyze(msg *string, sourceType string) (bool, error) {
 		blog.Errorf("parse base info failed, msg: %s, err: %v, rid: %s", *msg, err, rid)
 		return false, err
 	}
-
 	host, err := h.getHostDetail(header, rid, agentID, *msg, sourceType, ipv4, cloudID)
 	if err != nil {
 		blog.Errorf("get host detail failed, agentID: %s, ips: %v, err: %v, rid: %s", agentID, ipv4, err, rid)
@@ -861,6 +860,7 @@ func printSetterInfo(hostMsg *hostDiscoverMsg, innerIP, outerIP string) {
 	}
 }
 
+// NOCC:golint/fnsize(解析操作需要放到一个函数中)
 func parseV10Setter(val *gjson.Result, innerIP, outerIP string, ipv4, ipv6 []string) (map[string]interface{}, string) {
 
 	hostMsg := getHostInfoFromMsgV10(val, innerIP, outerIP)
@@ -924,10 +924,16 @@ func parseV10Setter(val *gjson.Result, innerIP, outerIP string, ipv4, ipv6 []str
 
 	if len(ipv4) > 0 {
 		setter[common.BKHostInnerIPField] = strings.Join(ipv4, ",")
+		raw.WriteString(",")
+		raw.WriteString("\"bk_host_innerip\":")
+		raw.Write([]byte("\"" + strings.Join(ipv4, ",") + "\""))
 	}
 
 	if len(ipv6) > 0 {
 		setter[common.BKHostInnerIPv6Field] = strings.Join(ipv6, ",")
+		raw.WriteString(",")
+		raw.WriteString("\"bk_host_innerip_v6\":")
+		raw.Write([]byte("\"" + strings.Join(ipv6, ",") + "\""))
 	}
 
 	if outerIP == "" || hostMsg.hasOuterMAC {
@@ -1014,8 +1020,9 @@ func getIPsFromMsg(val *gjson.Result) ([]string, []string) {
 	ipv6Map := make(map[string]struct{})
 
 	rootIP := val.Get("ip").String()
+	rootIP = strings.TrimSpace(rootIP)
 	if rootIP != metadata.IPv4LoopBackIpPrefix && rootIP != metadata.IPv6LoopBackIp &&
-		net.ParseIP(rootIP) != nil {
+		strings.HasPrefix(rootIP, metadata.IPv6LinkLocalAddressPrefix) && net.ParseIP(rootIP) != nil {
 		if strings.Contains(rootIP, ":") {
 			ipv6Map[rootIP] = struct{}{}
 		} else {
@@ -1053,7 +1060,9 @@ func getIPsFromMsg(val *gjson.Result) ([]string, []string) {
 	for _, addrs := range interfaces {
 		for _, addr := range addrs.Array() {
 			ip := strings.Split(addr.String(), "/")[0]
-			if ip == metadata.IPv4LoopBackIpPrefix || ip == metadata.IPv6LoopBackIp {
+			ip = strings.TrimSpace(ip)
+			if ip == metadata.IPv4LoopBackIpPrefix || ip == metadata.IPv6LoopBackIp ||
+				strings.HasPrefix(ip, metadata.IPv6LinkLocalAddressPrefix) {
 				continue
 			}
 
