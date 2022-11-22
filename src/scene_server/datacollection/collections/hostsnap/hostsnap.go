@@ -198,8 +198,8 @@ func getBaseInfoFromCollectorsMsg(msg *string) (string, []string, []string, int6
 	cloudID := val.Get("cloudid").Int()
 
 	ipv4, ipv6 := getIPsFromMsg(&val)
-	if len(ipv4) == 0 {
-		return "", nil, nil, 0, gjson.Result{}, errors.New("msg has no ipv4 address")
+	if len(ipv4) == 0 && len(ipv6) == 0 {
+		return "", nil, nil, 0, gjson.Result{}, errors.New("msg has no ipv4 and ipv6 address")
 	}
 	return agentID, ipv4, ipv6, cloudID, val, nil
 }
@@ -1022,8 +1022,34 @@ func getIPsFromMsg(val *gjson.Result) ([]string, []string) {
 			ipv4Map[rootIP] = struct{}{}
 		}
 	}
+	// need to be compatible with the old and new versions of the format
+	// new format:
+	//  "net":{
+	//            "interface":[
+	//                {
+	//                    "addrs":["::1/64", "127.0.0.1/32"]
+	//                }
+	//            ]
+	//        }
 
-	interfaces := val.Get("data.net.interface.#.addrs.#.addr").Array()
+	//  old format:
+	//   "interface":[
+	//        {
+	//            "addrs":[
+	//                {
+	//                    "addr":"::1/128"
+	//                }
+	//            ]
+	//        }
+	//    ]
+
+	interfaces := make([]gjson.Result, 0)
+	if val.Get("data.apiVer").Exists() && val.Get("data.apiVer").String() >= "v1.0" {
+		interfaces = val.Get("data.net.interface.#.addrs").Array()
+	} else {
+		interfaces = val.Get("data.net.interface.#.addrs.#.addr").Array()
+	}
+
 	for _, addrs := range interfaces {
 		for _, addr := range addrs.Array() {
 			ip := strings.Split(addr.String(), "/")[0]
