@@ -403,7 +403,7 @@ func (b *kube) CreateCluster(kit *rest.Kit, data *types.Cluster, bizID int64) (i
 
 	result, err := b.clientSet.CoreService().Kube().CreateCluster(kit.Ctx, kit.Header, bizID, data)
 	if err != nil {
-		blog.Errorf("create business failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
+		blog.Errorf("create cluster failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
 		return 0, err
 	}
 
