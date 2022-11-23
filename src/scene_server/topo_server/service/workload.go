@@ -220,8 +220,7 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 		return
 	}
 	if len(resp.Info) == 0 {
-		blog.Errorf("no workload founded, bizID: %s, data: %v, rid: %s", bizID, req, ctx.Kit.Rid)
-		ctx.RespAutoError(errors.New("no workload founded"))
+		ctx.RespEntity(nil)
 		return
 	}
 	for _, workload := range resp.Info {
@@ -304,7 +303,7 @@ func (s *Service) ListWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err := req.BuildCond(bizID, ctx.Kit.SupplierAccount)
+	cond, err := req.BuildCond(bizID)
 	if err != nil {
 		blog.Errorf("build query workload condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

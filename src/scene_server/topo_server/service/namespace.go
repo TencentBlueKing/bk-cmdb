@@ -285,7 +285,7 @@ func (s *Service) ListNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err := req.BuildCond(bizID, ctx.Kit.SupplierAccount)
+	cond, err := req.BuildCond(bizID)
 	if err != nil {
 		blog.Errorf("build query namespace condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
