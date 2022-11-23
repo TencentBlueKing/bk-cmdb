@@ -38,7 +38,7 @@
 </template>
 
 <script>
-  import { ref, reactive, computed, defineComponent, onMounted } from '@vue/composition-api'
+  import { ref, reactive, computed, defineComponent, onMounted } from 'vue'
   import SaveButton from './save-button.vue'
   import store from '@/store'
   import { t } from '@/i18n'

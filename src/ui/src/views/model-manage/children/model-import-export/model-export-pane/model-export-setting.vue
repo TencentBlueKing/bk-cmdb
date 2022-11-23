@@ -57,7 +57,7 @@
 </template>
 
 <script>
-  import { defineComponent, ref, reactive, watch } from '@vue/composition-api'
+  import { defineComponent, ref, reactive, watch } from 'vue'
   import { t } from '@/i18n'
   import moment from 'moment'
 

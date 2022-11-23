@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, ref } from '@vue/composition-api'
+  import { computed, defineComponent, ref } from 'vue'
   import router from '@/router/index.js'
   import { t } from '@/i18n'
   import { $bkInfo } from '@/magicbox/index.js'
@@ -161,7 +161,7 @@
     <bk-dialog v-model="successDialogShow"
       width="520"
       :esc-close="false"
-      :mask-close="false"
+      :mask-close="true"
       :show-footer="false"
       :close-icon="false">
       <div class="update-alert-layout">

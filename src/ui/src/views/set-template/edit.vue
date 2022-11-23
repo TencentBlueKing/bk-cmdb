@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, ref } from '@vue/composition-api'
+  import { computed, defineComponent, ref } from 'vue'
   import router from '@/router/index.js'
   import routerActions from '@/router/actions'
   import ManagementForm from './children/management-form.vue'
@@ -153,7 +153,7 @@
     <bk-dialog v-model="successDialogShow"
       width="480"
       :esc-close="false"
-      :mask-close="false"
+      :mask-close="true"
       :show-footer="false"
       :close-icon="false">
       <div class="update-alert-layout">

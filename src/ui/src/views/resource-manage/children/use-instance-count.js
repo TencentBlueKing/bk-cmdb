@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { ref } from '@vue/composition-api'
+import { ref } from 'vue'
 import CombineRequest from '@/api/combine-request.js'
 
 // 每一片的大小（一次请求的最大实例个数）

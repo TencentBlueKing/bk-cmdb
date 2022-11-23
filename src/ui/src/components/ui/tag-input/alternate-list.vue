@@ -21,13 +21,15 @@
       @scroll="handleScroll">
       <template v-for="(tag, index) in matchedData">
         <template v-if="tag.hasOwnProperty('children')">
-          <li class="alternate-group" :key="index"
+          <li class="alternate-group"
+            :key="index"
             @click.stop
             @mousedown.left.stop="tagInput.handleGroupMousedown"
             @mouseup.left.stop="tagInput.handleGroupMouseup">
             {{`${tag.value || tag.text}(${tag.children.length})`}}
           </li>
-          <alternate-item v-for="(child, childIndex) in tag.children" :key="childIndex"
+          <alternate-item v-for="(child, childIndex) in tag.children"
+            :key="childIndex"
             ref="alternateItem"
             :index="getIndex(index, childIndex)"
             :tag-input="tagInput"
@@ -35,7 +37,8 @@
             :keyword="keyword">
           </alternate-item>
         </template>
-        <alternate-item v-else :key="index"
+        <alternate-item v-else
+          :key="index"
           ref="alternateItem"
           :tag-input="tagInput"
           :tag="tag"

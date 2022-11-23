@@ -85,7 +85,7 @@ export const IAM_VIEWS_INST_NAME = {
     return business.bk_biz_name
   },
   async [IAM_VIEWS.BIZ_SET](vm, id) {
-    const list = await businessSetService.getAuthorizedWithCache()
+    const { info: list = [] } = await businessSetService.getAll(requestConfigBase('biz_set'))
     const MODEL_ID_KEY = BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID
     const MODEL_NAME_KEY = BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME
     const businessSet = list.find(item => item[MODEL_ID_KEY] === Number(id))

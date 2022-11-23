@@ -10,8 +10,7 @@
  * limitations under the License.
  */
 
-import { reactive } from '@vue/composition-api'
-import Vue from 'vue'
+import Vue, { reactive } from 'vue'
 import contentComponent from './import'
 import store from '@/store'
 import i18n from '@/i18n'

@@ -12,6 +12,7 @@
 
 <template>
   <div class="dialog-wrapper"
+    @click.stop.prevent="closeDialog"
     v-transfer-dom
     v-show="showWrapper"
     :style="{
@@ -26,7 +27,7 @@
           <div class="dialog-header" v-if="showHeader" ref="header">
             <slot name="header"></slot>
           </div>
-          <div class="dialog-content">
+          <div class="dialog-content" ref="dialogContent">
             <slot></slot>
           </div>
           <div class="dialog-footer" v-if="showFooter" ref="footer">
@@ -132,6 +133,14 @@
       handleCloseDialog() {
         this.$emit('close')
         this.$emit('input', false)
+      },
+      closeDialog(event) {
+        const dom = this.$refs.dialogContent
+        if (dom) {
+          if (!dom.contains(event.target)) {
+            this.handleCloseDialog()
+          }
+        }
       }
     }
   }

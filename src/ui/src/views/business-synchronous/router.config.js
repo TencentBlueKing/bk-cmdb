@@ -36,7 +36,6 @@ export default [{
   meta: new Meta({
     owner: MENU_BUSINESS,
     menu: {
-      i18n: '同步模板',
       relative: MENU_BUSINESS_SERVICE_TEMPLATE
     },
     layout: {}

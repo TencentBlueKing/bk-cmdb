@@ -1153,6 +1153,7 @@ const (
 	HostOSTypeEnumAIX     = "3"
 	HostOSTypeEnumUNIX    = "4"
 	HostOSTypeEnumSolaris = "5"
+	HostOSTypeEnumHpUX    = "6"
 )
 
 const (

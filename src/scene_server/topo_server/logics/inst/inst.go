@@ -249,55 +249,13 @@ func (c *commonInst) CreateManyInstance(kit *rest.Kit, objID string, data []maps
 	return resp, nil
 }
 
-// CreateInstBatch batch create instance by excel
-func (c *commonInst) CreateInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo) (
-	*BatchResult, error) {
-
-	// forbidden create inner model instance with common api
-	if common.IsInnerModel(objID) {
-		blog.Errorf("create %s instance with common create api forbidden, rid: %s", objID, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
-
-	}
-
-	// forbidden create mainline instance with common api
-	filter := []map[string]interface{}{{
-		common.BKDBOR:                 []mapstr.MapStr{{common.BKObjIDField: objID}, {common.BKAsstObjIDField: objID}},
-		common.AssociationKindIDField: common.AssociationKindMainline,
-	}}
-	cnt, ccErr := c.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameObjAsst,
-		filter)
-	if ccErr != nil {
-		blog.Errorf("count object(%s) mainline association failed, err: %v, rid: %s", objID, ccErr, kit.Rid)
-		return nil, ccErr
-	}
-
-	if cnt[0] != 0 {
-		return nil, kit.CCError.CCError(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
-	}
-
-	if batchInfo.InputType != common.InputTypeExcel {
-		return &BatchResult{}, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "input_type")
-	}
-	if len(batchInfo.BatchInfo) == 0 {
-		return &BatchResult{}, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "BatchInfo")
-	}
-
-	// 1. 检查实例与URL参数指定的模型一致
-	for line, inst := range batchInfo.BatchInfo {
-		objectID, exist := inst[common.BKObjIDField]
-		if exist && objectID != objID {
-			blog.Errorf("create object[%s] instance batch failed, bk_obj_id field conflict with url field,"+
-				"rid: %s", objID, kit.Rid)
-			return nil, kit.CCError.Errorf(common.CCErrorTopoObjectInstanceObjIDFieldConflictWithURL, line)
-		}
-	}
-
+// createInstBatch batch create instance by excel
+func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo,
+	idFieldName string) (*BatchResult, []int64, []int64, error){
 	updatedInstanceIDs := make([]int64, 0)
 	createdInstanceIDs := make([]int64, 0)
 	colIdxErrMap := map[int]string{}
 	colIdxList := make([]int, 0)
-	idFieldName := metadata.GetInstIDFieldByObjID(objID)
 	results := &BatchResult{}
 	for colIdx, colInput := range batchInfo.BatchInfo {
 		if colInput == nil {
@@ -352,7 +310,7 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, objID string, batchInfo *met
 		if err != nil {
 			blog.Errorf("failed to create object instance, err: %v, rid: %s", err, kit.Rid)
 			errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef(
-				"import_row_int_error_str", colIdx, err.Error())
+				"import_row_int_error_str", colIdx, err)
 			colIdxList = append(colIdxList, int(colIdx))
 			colIdxErrMap[int(colIdx)] = errStr
 			continue
@@ -368,6 +326,65 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, objID string, batchInfo *met
 		createdInstanceIDs = append(createdInstanceIDs, int64(rsp.Created.ID))
 	}
 
+	// sort error
+	sort.Ints(colIdxList)
+	for colIdx := range colIdxList {
+		results.Errors = append(results.Errors, colIdxErrMap[colIdxList[colIdx]])
+	}
+
+	return results, createdInstanceIDs, updatedInstanceIDs, nil
+}
+
+// CreateInstBatch batch create instance by excel
+func (c *commonInst) CreateInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo) (
+	*BatchResult, error) {
+
+	// forbidden create inner model instance with common api
+	if common.IsInnerModel(objID) {
+		blog.Errorf("create %s instance with common create api forbidden, rid: %s", objID, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommForbiddenOperateInnerModelInstanceWithCommonAPI)
+
+	}
+
+	// forbidden create mainline instance with common api
+	filter := []map[string]interface{}{{
+		common.BKDBOR:                 []mapstr.MapStr{{common.BKObjIDField: objID}, {common.BKAsstObjIDField: objID}},
+		common.AssociationKindIDField: common.AssociationKindMainline,
+	}}
+	cnt, ccErr := c.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameObjAsst,
+		filter)
+	if ccErr != nil {
+		blog.Errorf("count object(%s) mainline association failed, err: %v, rid: %s", objID, ccErr, kit.Rid)
+		return nil, ccErr
+	}
+
+	if cnt[0] != 0 {
+		return nil, kit.CCError.CCError(common.CCErrCommForbiddenOperateMainlineInstanceWithCommonAPI)
+	}
+
+	if batchInfo.InputType != common.InputTypeExcel {
+		return &BatchResult{}, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "input_type")
+	}
+	if len(batchInfo.BatchInfo) == 0 {
+		return &BatchResult{}, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "BatchInfo")
+	}
+
+	// 1. 检查实例与URL参数指定的模型一致
+	for line, inst := range batchInfo.BatchInfo {
+		objectID, exist := inst[common.BKObjIDField]
+		if exist && objectID != objID {
+			blog.Errorf("create object[%s] instance batch failed, bk_obj_id field conflict with url field,"+
+				"rid: %s", objID, kit.Rid)
+			return nil, kit.CCError.Errorf(common.CCErrorTopoObjectInstanceObjIDFieldConflictWithURL, line)
+		}
+	}
+
+	idFieldName := metadata.GetInstIDFieldByObjID(objID)
+	results, createdInstanceIDs, updatedInstanceIDs, err := c.createInstBatch(kit, objID, batchInfo, idFieldName)
+	if err != nil {
+		blog.Errorf("create inst by export failed, err: %v, rid: %s", err, kit.Rid)
+		return results, err
+	}
 	// generate audit log of instance.
 	if len(createdInstanceIDs) > 0 {
 		cond := map[string]interface{}{
@@ -378,26 +395,20 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, objID string, batchInfo *met
 		auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, objID, cond)
 		if err != nil {
 			blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
-			return nil, err
+			return results, err
 		}
 
 		// save audit log.
 		err = audit.SaveAuditLog(kit, auditLog...)
 		if err != nil {
 			blog.Errorf("creat inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
-			return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+			return results, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 		}
 	}
 
 	results.SuccessCreated = createdInstanceIDs
 	results.SuccessUpdated = updatedInstanceIDs
 	sort.Strings(results.Success)
-
-	// sort error
-	sort.Ints(colIdxList)
-	for colIdx := range colIdxList {
-		results.Errors = append(results.Errors, colIdxErrMap[colIdxList[colIdx]])
-	}
 
 	return results, nil
 }

@@ -54,7 +54,7 @@
       </bk-table-column>
       <bk-table-column
         prop="resource_name"
-        :label="$t('操作实例')">
+        :label="$t('实例')">
       </bk-table-column>
       <bk-table-column
         :label="$t('操作描述')">
@@ -64,7 +64,7 @@
         width="160"
         sortable="custom"
         prop="operation_time"
-        :label="$t('操作时间')">
+        :label="$t('时间')">
         <template slot-scope="{ row }">{{$tools.formatTime(row.operation_time)}}</template>
       </bk-table-column>
       <bk-table-column

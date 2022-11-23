@@ -36,7 +36,7 @@
 </template>
 
 <script>
-  import { defineComponent, ref, watch } from '@vue/composition-api'
+  import { defineComponent, ref, watch } from 'vue'
   import DropdownOptionButton from '../dropdown-option-button.vue'
 
   export default defineComponent({

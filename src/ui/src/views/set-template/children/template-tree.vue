@@ -25,14 +25,14 @@
         @click="handleChildClick(service)">
         <i class="node-icon fl">{{moduleName[0]}}</i>
         <span class="child-options fr" v-if="mode !== 'view'">
-          <i class="options-view icon icon-cc-show" @click="handleViewService(service)"></i>
+          <bk-link class="action-link" @click="handleViewService(service)">查看详情</bk-link>
           <bk-popover v-if="serviceExistHost(service.id)">
-            <i class="options-delete icon icon-cc-tips-close disabled"></i>
+            <bk-link class="action-link disabled">删除</bk-link>
             <i18n path="该模块下有主机不可删除" tag="p" class="service-tips" slot="content">
               <template #link><span @click="handleGoTopoBusiness(service)">{{$t('跳转查看')}}</span></template>
             </i18n>
           </bk-popover>
-          <i v-else class="options-delete icon icon-cc-tips-close" @click="handleDeleteService(index)"></i>
+          <bk-link v-else class="action-link" @click="handleDeleteService(index)">删除</bk-link>
         </span>
         <span class="child-name">{{service.name}}</span>
       </li>
@@ -383,28 +383,19 @@
                 margin-right: 9px;
                 font-size: 0;
                 color: $iconColor;
-                .options-view {
-                    font-size: 18px;
-                    cursor: pointer;
-                    &:hover {
-                        color: $highlightColor;
-                    }
-                }
-                .options-delete {
-                    width: 24px;
-                    height: 24px;
-                    margin-left: 14px;
+                .action-link {
+                  margin: 0 4px;
+                  color: #c4c2ce;
+                  ::v-deep .bk-link-text {
                     font-size: 12px;
-                    text-align: center;
-                    line-height: 24px;
-                    cursor: pointer;
-                    &:hover {
-                        color: $highlightColor;
-                    }
-                    &.disabled:hover {
-                        color: $iconDisabledColor;
-                        cursor: not-allowed;
-                    }
+                  }
+
+                  &:not(.disabled):hover {
+                    color: $highlightColor;
+                  }
+                  &.disabled:hover {
+                    cursor: not-allowed;
+                  }
                 }
             }
         }

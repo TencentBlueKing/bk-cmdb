@@ -16,10 +16,13 @@
       <cmdb-auth
         v-show="!isContainerHost"
         class="option mr10"
+        v-bk-tooltips="{
+          disabled: isNormalModuleNode,
+          content: $t('仅能在业务模块下新增')
+        }"
         :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
         <bk-button theme="primary" slot-scope="{ disabled }" v-test-id="'addHost'"
           :disabled="disabled || !isNormalModuleNode"
-          :title="isNormalModuleNode ? '' : $t('仅能在业务模块下新增')"
           @click="handleAddHost">
           {{$t('新增')}}
         </bk-button>
@@ -63,11 +66,15 @@
             {{$t('业务模块')}}
           </cmdb-auth>
           <li :class="['bk-dropdown-item', { disabled: !isIdleSetModules }]" v-test-id="'transferResource'"
-            @click="handleTransfer($event, 'resource', !isIdleSetModules)">
+            @click="handleTransfer($event, 'resource', !isIdleSetModules)"
+            v-bk-tooltips.top-start="$t('主机需在“空闲机池”下才允许转移至主机池', { idleSet: $store.state.globalConfig.config.set })"
+            :disabled="isIdleSetModules">
             {{$t('主机池')}}
           </li>
           <li :class="['bk-dropdown-item', { disabled: !isIdleSetModules }]" v-test-id="'transferAcrossBusiness'"
-            @click="handleTransfer($event, 'acrossBusiness', !isIdleSetModules)">
+            @click="handleTransfer($event, 'acrossBusiness', !isIdleSetModules)"
+            v-bk-tooltips.top-start="$t('主机需在“空闲机池”下才允许转移至其他业务', { idleSet: $store.state.globalConfig.config.set })"
+            :disabled="isIdleSetModules">
             {{$t('其他业务')}}
           </li>
         </ul>
@@ -174,7 +181,7 @@
       :is-container-host="isContainerHost">
     </edit-multiple-host>
 
-    <cmdb-dialog v-model="dialog.show" v-bind="dialog.props" :height="650">
+    <cmdb-dialog :mask-close="false" v-model="dialog.show" v-bind="dialog.props" :height="650">
       <component
         :is="dialog.component"
         v-bind="dialog.componentProps"

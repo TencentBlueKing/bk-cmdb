@@ -129,7 +129,7 @@
         }
       },
       setBreadcrumbs() {
-        this.$store.commit('setTitle', this.$t('策略失效主机'))
+        this.$store.commit('setTitle', this.$t('未应用主机'))
       },
       handleApply() {
         this.$bkInfo({
