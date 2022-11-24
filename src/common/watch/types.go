@@ -75,6 +75,8 @@ type ChainNode struct {
 	InstanceID int64 `json:"inst_id,omitempty" bson:"inst_id,omitempty"`
 	// SubResource the sub resource if the watched resource, eg. the object ID of the instance resource
 	SubResource []string `json:"bk_sub_resource,omitempty" bson:"bk_sub_resource,omitempty"`
+	// SupplierAccount the supplier account of the chain node's related event resource.
+	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 // LastChainNodeData TODO

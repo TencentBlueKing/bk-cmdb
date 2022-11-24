@@ -128,7 +128,7 @@
   import { mapGetters, mapState } from 'vuex'
   import has from 'has'
   import propertyFormElement from '@/components/host-apply/property-form-element'
-  import { CONFIG_MODE } from '@/services/service-template/index.js'
+  import { CONFIG_MODE } from '@/service/service-template/index.js'
 
   export default {
     components: {

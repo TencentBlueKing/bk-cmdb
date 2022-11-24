@@ -47,27 +47,26 @@
           </bk-exception>
           <host-list v-show="!emptySet" :active="activeTab === 'hostList'" ref="hostList" v-test-id></host-list>
         </bk-tab-panel>
-        <bk-tab-panel name="serviceInstance" :label="$t('服务实例')">
-          <div class="non-business-module" v-if="!showServiceInstance">
-            <div class="tips">
-              <i class="bk-cc-icon icon-cc-tips"></i>
-              <span>{{$t('非业务模块，无服务实例，请选择业务模块查看')}}</span>
+
+        <bk-tab-panel
+          :name="isContainerNode ? 'podList' : 'serviceInstance'"
+          :label="$t(isContainerNode ? 'Pod列表' : '服务实例')">
+          <pod-list v-if="activeTab === 'podList'" v-test-id></pod-list>
+          <template v-else>
+            <div class="non-business-module" v-if="!showServiceInstance">
+              <div class="tips">
+                <i class="bk-cc-icon icon-cc-tips"></i>
+                <span>{{$t('非业务模块，无服务实例，请选择业务模块查看')}}</span>
+              </div>
             </div>
-          </div>
-          <service-instance-view v-else-if="activeTab === 'serviceInstance'" v-test-id></service-instance-view>
+            <service-instance-view v-else-if="activeTab === 'serviceInstance'" v-test-id></service-instance-view>
+          </template>
         </bk-tab-panel>
-        <bk-tab-panel name="nodeInfo" :label="$t('节点信息')">
-          <div class="default-node-info" v-if="!showNodeInfo">
-            <div class="info-item">
-              <label class="name">{{$t('ID')}}:</label>
-              <span class="value">{{nodeId}}</span>
-            </div>
-            <div class="info-item">
-              <label class="name">{{$t('节点名称')}}</label>
-              <span class="value">{{nodeName}}</span>
-            </div>
-          </div>
-          <service-node-info v-else :active="activeTab === 'nodeInfo'" ref="nodeInfo" v-test-id></service-node-info>
+
+        <bk-tab-panel name="nodeInfo" :label="$t('节点信息')" render-directive="if">
+          <simple-node-info v-if="isSimpleNodeInfo" />
+          <container-node-info v-else-if="isContainerNode" />
+          <service-node-info v-else :active="activeTab === 'nodeInfo'" />
         </bk-tab-panel>
       </bk-tab>
     </div>
@@ -78,17 +77,23 @@
 <script>
   import TopologyTree from './children/topology-tree.vue'
   import HostList from './host/host-list.vue'
+  import SimpleNodeInfo from './children/simple-node-info.vue'
   import ServiceNodeInfo from './children/service-node-info.vue'
+  import ContainerNodeInfo from './children/container-node-info.vue'
   import { mapGetters } from 'vuex'
   import Bus from '@/utils/bus.js'
   import RouterQuery from '@/router/query'
   import ServiceInstanceView from './service-instance/view'
+  import PodList from './pod/pod-list.vue'
   export default {
     components: {
       TopologyTree,
       HostList,
+      SimpleNodeInfo,
       ServiceNodeInfo,
-      ServiceInstanceView
+      ContainerNodeInfo,
+      ServiceInstanceView,
+      PodList
     },
     data() {
       return {
@@ -109,28 +114,27 @@
       showServiceInstance() {
         return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module' && this.selectedNode.data.default === 0
       },
-      showNodeInfo() {
-        return this.selectedNode && this.selectedNode.data.default === 0
-      },
-      nodeId() {
-        return this.selectedNode ? this.selectedNode.data.bk_inst_id : '--'
-      },
-      nodeName() {
-        return this.selectedNode && this.selectedNode.data.bk_inst_name
+      isSimpleNodeInfo() {
+        return this.selectedNode && (this.selectedNode.data.default !== 0 || this.selectedNode.data.is_folder)
       },
       emptySet() {
         return this.selectedNode && this.selectedNode.data.bk_obj_id === 'set'
           && this.selectedNode.children && !this.selectedNode.children.length
+      },
+      isContainerNode() {
+        return !!this.selectedNode?.data?.is_container
       }
     },
     watch: {
       activeTab(tab) {
         this.$nextTick(() => {
-          RouterQuery.set({
+          // 仅保留公用的参数重置路由
+          RouterQuery.setAll({
             tab,
-            _t: Date.now(),
-            page: '',
-            limit: ''
+            node: RouterQuery.get('node'),
+            topo_path: this.isContainerNode ? RouterQuery.get('topo_path') : undefined,
+            _f: RouterQuery.get('_f'),
+            _t: Date.now()
           })
         })
       },
@@ -255,21 +259,6 @@
             .bk-cc-icon {
                 font-size: 16px;
                 margin-top: -2px;
-            }
-        }
-    }
-    .default-node-info {
-        padding: 20px 0 20px 36px;
-        display: flex;
-        .info-item {
-            flex: auto;
-            max-width: 400px;
-            font-size: 14px;
-            .name {
-                color: #63656e;
-            }
-            .value {
-                color: #313238;
             }
         }
     }

@@ -183,7 +183,7 @@
   } from '@/dictionary/menu-symbol'
   import router from '@/router/index.js'
   import { formatTime } from '@/utils/tools.js'
-  import { CONFIG_MODE } from '@/services/service-template/index.js'
+  import { CONFIG_MODE } from '@/service/service-template/index.js'
   import propertyConfigTable from './property-config-table'
 
   export default defineComponent({

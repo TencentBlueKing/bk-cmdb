@@ -25,7 +25,7 @@ import (
 	"github.com/rs/xid"
 )
 
-// AddHostFavourite TODO
+// AddHostFavourite add host query favorite condition
 func (s *coreService) AddHostFavourite(ctx *rest.Contexts) {
 	user := ctx.Request.PathParameter("user")
 	paras := new(meta.FavouriteParms)
@@ -34,12 +34,19 @@ func (s *coreService) AddHostFavourite(ctx *rest.Contexts) {
 		return
 	}
 
+	if paras.Type != meta.Container && paras.Type != meta.Tradition {
+		blog.Errorf("host query favorite condition type is invalid, type: %s, rid: %s", paras.Type, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.HostFavoriteType))
+		return
+	}
+
 	// check duplicate
 	query := map[string]interface{}{
-		"user":                user,
-		"name":                paras.Name,
-		common.BKAppIDField:   paras.BizID,
-		common.BKOwnerIDField: ctx.Kit.SupplierAccount,
+		"user":                  user,
+		"name":                  paras.Name,
+		common.HostFavoriteType: paras.Type,
+		common.BKAppIDField:     paras.BizID,
+		common.BKOwnerIDField:   ctx.Kit.SupplierAccount,
 	}
 	rowCount, err := mongodb.Client().Table(common.BKTableNameHostFavorite).Find(query).Count(ctx.Kit.Ctx)
 	if err != nil {
@@ -61,6 +68,7 @@ func (s *coreService) AddHostFavourite(ctx *rest.Contexts) {
 		Name:        paras.Name,
 		Count:       1,
 		User:        user,
+		Type:        paras.Type,
 		QueryParams: paras.QueryParams,
 		OwnerID:     ctx.Kit.SupplierAccount,
 		CreateTime:  time.Now().UTC(),
@@ -187,7 +195,7 @@ func (s *coreService) DeleteHostFavouriteByID(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-// ListHostFavourites TODO
+// ListHostFavourites list host query favorite condition
 func (s *coreService) ListHostFavourites(ctx *rest.Contexts) {
 	dat := new(meta.ObjQueryInput)
 	if err := ctx.DecodeInto(dat); err != nil {
@@ -204,7 +212,8 @@ func (s *coreService) ListHostFavourites(ctx *rest.Contexts) {
 	condition[common.BKOwnerIDField] = ctx.Kit.SupplierAccount
 
 	// read fields and page
-	fieldArr := []string{"id", "info", "query_params", "name", "is_default", common.CreateTimeField, "count"}
+	fieldArr := []string{"id", "info", "query_params", "name", "is_default", common.CreateTimeField, "count",
+		common.HostFavoriteType}
 	if "" != dat.Fields {
 		fieldArr = strings.Split(dat.Fields, ",")
 	}
@@ -224,7 +233,8 @@ func (s *coreService) ListHostFavourites(ctx *rest.Contexts) {
 		return
 	}
 
-	if err = mongodb.Client().Table(common.BKTableNameHostFavorite).Find(condition).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).Sort(sort).All(ctx.Kit.Ctx, &resultData); err != nil {
+	if err = mongodb.Client().Table(common.BKTableNameHostFavorite).Find(condition).Fields(fieldArr...).
+		Start(uint64(skip)).Limit(uint64(limit)).Sort(sort).All(ctx.Kit.Ctx, &resultData); err != nil {
 		blog.Errorf("get host favorites failed,input:%+v error:%v, rid: %s", dat, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostFavouriteQueryFail))
 		return

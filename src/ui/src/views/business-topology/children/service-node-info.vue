@@ -118,8 +118,8 @@
   import NodeExtraInfo from './node-extra-info'
   import FormServiceCategory from './form-service-category'
   import instanceService from '@/service/instance/instance'
-  import serviceTemplateService from '@/services/service-template'
-  import setTemplateService from '@/services/set-template'
+  import serviceTemplateService from '@/service/service-template'
+  import setTemplateService from '@/service/set-template'
   import { MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS, MENU_BUSINESS_SET_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
 
   export default {

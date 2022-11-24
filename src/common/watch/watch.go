@@ -17,6 +17,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"configcenter/src/common/metadata"
 )
 
 // WatchEventOptions TODO
@@ -65,13 +67,19 @@ func (w *WatchEventOptions) Validate() error {
 
 	if len(w.Filter.SubResource) > 0 {
 		switch w.Resource {
-		case ObjectBase, MainlineInstance, InstAsst:
+		case ObjectBase, MainlineInstance, InstAsst, KubeWorkload:
 		default:
 			return fmt.Errorf("%s event cannot have sub resource", w.Resource)
 		}
 	}
 
 	return nil
+}
+
+// WatchEventResp watch event response
+type WatchEventResp struct {
+	metadata.BaseResp `json:",inline"`
+	Data              *WatchResp `json:"data"`
 }
 
 // WatchResp TODO

@@ -37,17 +37,12 @@ const store = new Vue({
     },
 
     isAllIdleModule() {
-      return this.hosts.every((host) => {
-        const [module] = host.module
-        return module.default === 1
-      })
+      // 容器主机不存在module
+      return this.hosts.every(host => host?.module?.[0]?.default === 1)
     },
 
     isAllIdleSet() {
-      return this.hosts.every((host) => {
-        const [module] = host.module
-        return module.default !== 0
-      })
+      return this.hosts.every(host => host?.module?.[0]?.default !== 0)
     },
 
     uniqueBusiness() {

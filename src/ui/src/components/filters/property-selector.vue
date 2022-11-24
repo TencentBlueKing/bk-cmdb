@@ -76,12 +76,29 @@
       ...mapGetters('objectModelClassify', ['getModelById']),
       propertyMap() {
         let modelPropertyMap = { ...FilterStore.modelPropertyMap }
+
         const ignoreHostProperties = ['bk_host_innerip', 'bk_host_outerip', '__bk_host_topology__']
-        // eslint-disable-next-line max-len
-        modelPropertyMap.host = modelPropertyMap.host.filter(property => !ignoreHostProperties.includes(property.bk_property_id))
-        if (!FilterStore.bizId) {
+        modelPropertyMap.host = modelPropertyMap.host
+          .filter(property => !ignoreHostProperties.includes(property.bk_property_id))
+
+        // 暂时不支持node对象map类型的字段
+        modelPropertyMap.node = modelPropertyMap.node
+          ?.filter(property => !['map'].includes(property.bk_property_type))
+
+        // 当前处于业务节点或者资源已分配主机视图，使用全量的字段(包括node)
+        if (FilterStore.isBizNode || FilterStore.isResourceAssigned) {
           return modelPropertyMap
         }
+
+        // 容器拓扑
+        if (FilterStore.isContainerTopo) {
+          return {
+            host: modelPropertyMap.host || [],
+            node: modelPropertyMap.node || [],
+          }
+        }
+
+        // 业务拓扑主机，不需要业务和Node模型字段
         modelPropertyMap = {
           host: modelPropertyMap.host || [],
           module: modelPropertyMap.module || [],
@@ -90,7 +107,7 @@
         return modelPropertyMap
       },
       groups() {
-        const sequence = ['host', 'module', 'set', 'biz']
+        const sequence = ['host', 'module', 'set', 'node', 'biz']
         return Object.keys(this.propertyMap).map((modelId) => {
           const model = this.getModelById(modelId) || {}
           return {

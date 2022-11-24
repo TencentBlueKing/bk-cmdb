@@ -17,6 +17,8 @@
 const path = require('path')
 const fs = require('fs')
 const parseArgs = require('minimist')
+const { fixRequestBody } = require('http-proxy-middleware')
+
 
 const config = {
   BUILD_TITLE: '',
@@ -91,7 +93,9 @@ const dev = {
   // https://vue-loader.vuejs.org/en/options.html#cachebusting
   cacheBusting: true,
 
-  cssSourceMap: true
+  cssSourceMap: true,
+
+  useMock: false
 }
 
 const customDevConfigPath = path.resolve(__dirname, `index.dev.${argv.env || 'ee'}.js`)
@@ -99,6 +103,25 @@ const isCustomDevConfigExist = fs.existsSync(customDevConfigPath)
 if (isCustomDevConfigExist) {
   const customDevConfig = require(customDevConfigPath)
   Object.assign(dev, customDevConfig)
+}
+
+if (argv.mock) {
+  // 将所有请求修改为/mock下
+  dev.config.API_URL = dev.config.API_URL.replace('/proxy/', '/mock/')
+
+  // 当devserver中的/mock未匹配时会使用此代理，此代理将/mock的请求代理回默认的/proxy
+  dev.proxyTable['/mock'] = {
+    // 使用默认proxy配置
+    ...dev.proxyTable['/proxy'],
+    // 此时地址都是/mock前缀，同样需要重写为''
+    pathRewrite: {
+      '^/mock': ''
+    },
+    // fix proxied POST requests when bodyParser is applied before this middleware
+    onProxyReq: fixRequestBody
+  }
+
+  dev.useMock = true
 }
 
 module.exports = {

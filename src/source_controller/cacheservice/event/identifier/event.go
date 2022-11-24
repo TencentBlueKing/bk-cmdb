@@ -114,9 +114,10 @@ func (f *hostIdentity) parseEvent(e *types.Event, id uint64, rid string) (*watch
 		ClusterTime: e.ClusterTime,
 		Oid:         e.Oid,
 		// redirect all the event type to update.
-		EventType: watch.ConvertOperateType(types.Update),
-		Token:     e.Token.Data,
-		Cursor:    cursor,
+		EventType:       watch.ConvertOperateType(types.Update),
+		Token:           e.Token.Data,
+		Cursor:          cursor,
+		SupplierAccount: f.key.SupplierAccount(e.DocBytes),
 	}
 
 	if instanceID := event.HostIdentityKey.InstanceID(e.DocBytes); instanceID > 0 {

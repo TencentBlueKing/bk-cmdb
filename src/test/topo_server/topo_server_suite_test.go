@@ -20,6 +20,9 @@ var instClient = topoServerClient.Instance()
 var asstClient = topoServerClient.Association()
 var objectClient = topoServerClient.Object()
 var serviceClient = clientSet.ProcServer().Service()
+var hostServerClient = test.GetClientSet().HostServer()
+
+var kubeClient = topoServerClient.Kube()
 
 func TestTopoServer(t *testing.T) {
 	RegisterFailHandler(util.Fail)

@@ -29,7 +29,8 @@ export default [{
     },
     layout: {},
     filterPropertyKey: 'resource_host_filter_properties',
-    customInstanceColumn: 'resource_host_table_column_config'
+    customInstanceColumn: 'resource_host_table_column_config',
+    customContainerInstanceColumn: 'resource_topology_container_table_column_config',
   }),
   children: [{
     name: MENU_RESOURCE_HOST_DETAILS,

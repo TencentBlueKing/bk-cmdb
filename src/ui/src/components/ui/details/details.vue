@@ -31,15 +31,8 @@
                   :title="property['bk_property_name']">{{property['bk_property_name']}}
                 </span>
                 <slot :name="property['bk_property_id']">
-                  <span class="property-value clearfix fl"
-                    v-if="property.unit"
-                    v-bk-overflow-tips>
-                    <span class="property-value-text fl">{{getValue(property)}}</span>
-                    <span class="property-value-unit fl" v-if="getValue(property) !== '--'">{{property.unit}}</span>
-                  </span>
                   <cmdb-property-value
-                    v-else
-                    v-bk-overflow-tips
+                    :is-show-overflow-tips="isShowOverflowTips(property)"
                     :class="'property-value fl'"
                     :value="inst[property.bk_property_id]"
                     :property="property">
@@ -80,7 +73,6 @@
 
 <script>
   import formMixins from '@/mixins/form'
-  import formatter from '@/filters/formatter.js'
   export default {
     name: 'cmdb-details',
     mixins: [formMixins],
@@ -140,16 +132,9 @@
       }
     },
     methods: {
-      handleToggleGroup(group) {
-        const groupId = group.bk_group_id
-        const collapse = !!this.groupState[groupId]
-        this.$set(this.groupState, groupId, !collapse)
-      },
-      getTitle(inst, property) {
-        return `${property.bk_property_name}: ${inst[property.bk_property_id] || '--'} ${property.unit}`
-      },
-      getValue(property) {
-        return formatter(this.inst[property.bk_property_id], property)
+      isShowOverflowTips(property) {
+        const complexTypes = ['map']
+        return !complexTypes.includes(property.bk_property_type)
       },
       handleEdit() {
         this.$emit('on-edit', this.inst)
