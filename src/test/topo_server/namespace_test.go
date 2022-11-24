@@ -65,6 +65,7 @@ var _ = Describe("namespace test", func() {
 		networkType := "underlay"
 		region := "shenzhen"
 		vpc := "vpc-q6awe02n"
+		environment := "prod"
 		network := []string{"1.1.1.0/21"}
 		clusterType := "public"
 		createCLuster := &types.Cluster{
@@ -74,6 +75,7 @@ var _ = Describe("namespace test", func() {
 			Xid:              &xid,
 			Version:          &version,
 			NetworkType:      &networkType,
+			Environment:      &environment,
 			Region:           &region,
 			Vpc:              &vpc,
 			NetWork:          &network,
