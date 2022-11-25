@@ -301,6 +301,9 @@ const (
 	// VpcField cluster vpc field
 	VpcField = "vpc"
 
+	// ClusterEnvironmentField cluster environment field
+	ClusterEnvironmentField = "environment"
+
 	// NetworkField cluster network field
 	NetworkField = "network"
 

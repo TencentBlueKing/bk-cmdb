@@ -401,6 +401,7 @@ func (p *kubeOperation) CreateCluster(kit *rest.Kit, bizID int64, data *types.Cl
 		NetworkType:      data.NetworkType,
 		Region:           data.Region,
 		Vpc:              data.Vpc,
+		Environment:      data.Environment,
 		NetWork:          data.NetWork,
 		Type:             data.Type,
 		Revision: table.Revision{

@@ -69,6 +69,7 @@ var _ = Describe("kube cluster test", func() {
 			networkType := "underlay"
 			region := "shenzhen"
 			vpc := "vpc-q6awe02n"
+			environment := "prod"
 			network := []string{"1.1.1.0/21"}
 			clusterType := "public"
 			createCLuster := &types.Cluster{
@@ -76,6 +77,7 @@ var _ = Describe("kube cluster test", func() {
 				SchedulingEngine: &schedulingEngine,
 				Uid:              &uid,
 				Xid:              &xid,
+				Environment:      &environment,
 				Version:          &version,
 				NetworkType:      &networkType,
 				Region:           &region,
@@ -99,6 +101,7 @@ var _ = Describe("kube cluster test", func() {
 			xid := "cls-hox2lkf21"
 			version := "0.11"
 			networkType := "underlay"
+			environment := "prod"
 			region := "shenzhen"
 			vpc := "vpc-q6awe02n"
 			network := []string{"1.1.1.0/21"}
@@ -109,6 +112,7 @@ var _ = Describe("kube cluster test", func() {
 				Uid:              &uid,
 				Xid:              &xid,
 				Version:          &version,
+				Environment:      &environment,
 				NetworkType:      &networkType,
 				Region:           &region,
 				Vpc:              &vpc,
@@ -131,6 +135,7 @@ var _ = Describe("kube cluster test", func() {
 			networkType := "underlay"
 			region := "shenzhen"
 			vpc := "vpc-q6awe02n"
+			environment := "prod"
 			network := []string{"1.1.1.0/21"}
 			clusterType := "public"
 			createCLuster := &types.Cluster{
@@ -138,6 +143,7 @@ var _ = Describe("kube cluster test", func() {
 				Uid:              &uid,
 				Xid:              &xid,
 				Version:          &version,
+				Environment:      &environment,
 				NetworkType:      &networkType,
 				Region:           &region,
 				Vpc:              &vpc,

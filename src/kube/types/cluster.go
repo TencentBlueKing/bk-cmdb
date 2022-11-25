@@ -41,6 +41,7 @@ var ClusterSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: UidField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: XidField, Type: enumor.String, IsRequired: false, IsEditable: false},
 	{Field: VersionField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: ClusterEnvironmentField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: NetworkTypeField, Type: enumor.Enum, IsRequired: false, IsEditable: true},
 	{Field: RegionField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: VpcField, Type: enumor.String, IsRequired: false, IsEditable: false},
@@ -90,6 +91,8 @@ type Cluster struct {
 	Region *string `json:"region,omitempty" bson:"region"`
 	// Vpc vpc network
 	Vpc *string `json:"vpc,omitempty" bson:"vpc"`
+	// Environment cluster environment
+	Environment *string `json:"environment,omitempty" bson:"environment"`
 	// NetWork global routing network address (container overlay network) For example: ["1.1.1.0/21"]
 	NetWork *[]string `json:"network,omitempty" bson:"network"`
 	// Type cluster network type, e.g. public clusters, private clusters, etc.
