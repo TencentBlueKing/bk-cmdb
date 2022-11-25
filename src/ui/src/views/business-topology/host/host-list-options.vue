@@ -147,6 +147,7 @@
             {{$t('导出选中')}}
           </li>
           <li :class="['bk-dropdown-item', { disabled: !count }]" @click="handleBatchExport($event)"
+            v-show="!isContainerHost"
             v-test-id="'batchExport'">
             {{$t('导出全部')}}
           </li>
