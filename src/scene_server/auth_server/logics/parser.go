@@ -376,6 +376,8 @@ func GetResourceIDField(resourceType iam.TypeID) string {
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory,
 		iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldID
+	case iam.Project:
+		return common.BKFieldID
 	// case iam.Set:
 	//	return common.BKSetIDField
 	// case iam.Module:
@@ -414,6 +416,8 @@ func GetResourceNameField(resourceType iam.TypeID) string {
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory,
 		iam.BizProcessServiceInstance, iam.BizSetTemplate:
 		return common.BKFieldName
+	case iam.Project:
+		return common.BKProjectNameField
 	// case iam.Set:
 	//	return common.BKSetNameField
 	// case iam.Module:

@@ -246,6 +246,8 @@ func IsInnerObject(objID string) bool {
 		return true
 	case common.BKInnerObjIDBizSet:
 		return true
+	case common.BKInnerObjIDProject:
+		return true
 	case common.BKInnerObjIDHost:
 		return true
 	case common.BKInnerObjIDModule:

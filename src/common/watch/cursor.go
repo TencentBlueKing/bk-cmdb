@@ -90,6 +90,8 @@ const (
 	BizSetRelation CursorType = "biz_set_relation"
 	// Plat cloud area event cursor type
 	Plat CursorType = "plat"
+	// Project project event cursor type
+	Project CursorType = "project"
 	// kube related cursor types
 	// KubeCluster cursor type
 	KubeCluster CursorType = "kube_cluster"
@@ -146,6 +148,8 @@ func (ct CursorType) ToInt() int {
 		return 20
 	case KubePod:
 		return 21
+	case Project:
+		return 22
 	default:
 		return -1
 	}
@@ -194,6 +198,8 @@ func (ct *CursorType) ParseInt(typ int) {
 		*ct = KubeWorkload
 	case 21:
 		*ct = KubePod
+	case 22:
+		*ct = Project
 	default:
 		*ct = UnknownType
 	}
@@ -203,7 +209,7 @@ func (ct *CursorType) ParseInt(typ int) {
 func ListCursorTypes() []CursorType {
 	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase, Process, ProcessInstanceRelation,
 		HostIdentifier, MainlineInstance, InstAsst, BizSet, BizSetRelation, Plat, KubeCluster, KubeNode, KubeNamespace,
-		KubeWorkload, KubePod}
+		KubeWorkload, KubePod, Project}
 }
 
 // Cursor is a self-defined token which is corresponding to the mongodb's resume token.
@@ -405,6 +411,8 @@ func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 		curType = KubeWorkload
 	case kubetypes.BKTableNameBasePod:
 		curType = KubePod
+	case common.BKTableNameBaseProject:
+		curType = Project
 	default:
 		blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.ID())
 		return "", fmt.Errorf("unsupported cursor type collection: %s", coll)

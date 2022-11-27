@@ -35,8 +35,17 @@ type modelAttribute struct {
 	language language.CCLanguageIf
 }
 
-// CreateModelAttributes TODO
-func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inputParam metadata.CreateModelAttributes) (dataResult *metadata.CreateManyDataResult, err error) {
+var forbiddenCreateAttrObjList = []string{
+	common.BKInnerObjIDProject,
+}
+
+// CreateModelAttributes create model attributes
+func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inputParam metadata.CreateModelAttributes) (
+	dataResult *metadata.CreateManyDataResult, err error) {
+
+	if util.InStrArr(forbiddenCreateAttrObjList, objID) {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField)
+	}
 
 	dataResult = &metadata.CreateManyDataResult{
 		CreateManyInfoResult: metadata.CreateManyInfoResult{

@@ -171,6 +171,52 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string,
 	return dataResult, nil
 }
 
+// BatchCreateModelInstance batch create model instance, if one of instances fails to create, an error is returned.
+func (m *instanceManager) BatchCreateModelInstance(kit *rest.Kit, objID string,
+	inputParam *metadata.BatchCreateModelInstOption) (*metadata.BatchCreateInstRespData, error) {
+
+	result := new(metadata.BatchCreateInstRespData)
+	if len(inputParam.Data) == 0 {
+		return result, nil
+	}
+
+	instValidators, err := m.getValidatorsFromInstances(kit, objID, inputParam.Data, common.ValidCreate)
+	if err != nil {
+		blog.Errorf("get inst(%#v) validators failed, err: %v, obj: %s, data: %v, rid: %s", err, objID, inputParam.Data,
+			kit.Rid)
+		return nil, err
+	}
+
+	for index, item := range inputParam.Data {
+		if item == nil {
+			blog.ErrorJSON("the model instance data can't be empty, input data: %s, rid: %s", inputParam.Data, kit.Rid)
+			return nil, kit.CCError.Errorf(common.CCErrCommInstDataNil, "modelInstance")
+		}
+		item.Set(common.BKOwnerIDField, kit.SupplierAccount)
+
+		validator := instValidators[index]
+		if validator == nil {
+			blog.Errorf("get validator failed, objID: %s, inst: %#v, rid: %s", objID, item, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound)
+		}
+		err = m.validCreateInstanceData(kit, objID, item, validator)
+		if err != nil {
+			blog.Errorf("valid create instance data(%#v) failed, err: %v, obj: %s, rid: %s", err, item, objID, kit.Rid)
+			return nil, err
+		}
+
+		id, err := m.save(kit, objID, item)
+		if err != nil {
+			blog.Errorf("create instance failed, err: %v, objID: %s, item: %#v, rid: %s", err, objID, item, kit.Rid)
+			return nil, err
+		}
+
+		result.IDs = append(result.IDs, int64(id))
+	}
+
+	return result, nil
+}
+
 // UpdateModelInstance update model instances
 func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (
 	*metadata.UpdatedCount, error) {

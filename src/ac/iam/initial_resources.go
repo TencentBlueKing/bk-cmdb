@@ -25,6 +25,7 @@ var (
 var ResourceTypeIDMap = map[TypeID]string{
 	Business:                 "业务",
 	BizSet:                   "业务集",
+	Project:                  "项目",
 	BusinessForHostTrans:     "业务主机",
 	SysCloudArea:             "云区域",
 	SysResourcePoolDirectory: "主机池目录",
@@ -258,6 +259,18 @@ func genPublicResources() []ResourceType {
 			NameEn:        "Business",
 			Description:   "业务列表",
 			DescriptionEn: "all the business in blueking cmdb.",
+			Parents:       nil,
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/resource",
+			},
+			Version: 1,
+		},
+		{
+			ID:            Project,
+			Name:          ResourceTypeIDMap[Project],
+			NameEn:        "Project",
+			Description:   "项目列表",
+			DescriptionEn: "all the project in blueking cmdb.",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
 				Path: "/auth/v3/find/resource",

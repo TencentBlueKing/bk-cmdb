@@ -129,6 +129,9 @@ const (
 	// BKInnerObjIDPlat the inner object
 	BKInnerObjIDPlat = "plat"
 
+	// BKInnerObjIDProject the inner object
+	BKInnerObjIDProject = "bk_project"
+
 	// BKInnerObjIDSwitch the inner object
 	BKInnerObjIDSwitch = "bk_switch"
 	// BKInnerObjIDRouter the inner object
@@ -727,6 +730,27 @@ const (
 
 	// BKCloudHostIdentifierField defines if the host is a cloud host that doesn't allow cross biz transfer
 	BKCloudHostIdentifierField = "bk_cloud_host_identifier"
+
+	// BKProjectIDField the project id field
+	BKProjectIDField = "bk_project_id"
+	// BKProjectNameField the project name field
+	BKProjectNameField = "bk_project_name"
+	// BKProjectCodeField the project code field
+	BKProjectCodeField = "bk_project_code"
+	// BKProjectDescField the project desc field
+	BKProjectDescField = "bk_project_desc"
+	// BKProjectTypeField the project type field
+	BKProjectTypeField = "bk_project_type"
+	// BKProjectSecLvlField the project sec lvl field
+	BKProjectSecLvlField = "bk_project_sec_lvl"
+	// BKProjectOwnerField the project owner field
+	BKProjectOwnerField = "bk_project_owner"
+	// BKProjectTeamField the project team field
+	BKProjectTeamField = "bk_project_team"
+	// BKProjectStatusField the project status field
+	BKProjectStatusField = "bk_status"
+	// BKProjectIconField the project icon field
+	BKProjectIconField = "bk_project_icon"
 )
 
 const (

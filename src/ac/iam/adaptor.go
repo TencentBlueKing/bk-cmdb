@@ -58,6 +58,8 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 		iamResourceType = Business
 	case meta.BizSet:
 		iamResourceType = BizSet
+	case meta.Project:
+		iamResourceType = Project
 	case meta.Model,
 		meta.ModelUnique,
 		meta.ModelAttributeGroup:
@@ -415,6 +417,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.WatchKubeNamespace:    WatchKubeNamespaceEvent,
 		meta.WatchKubeWorkload:     WatchKubeWorkloadEvent,
 		meta.WatchKubePod:          WatchKubePodEvent,
+		meta.WatchProject:          WatchProjectEvent,
 	},
 	meta.UserCustom: {
 		meta.Find:   Skip,
@@ -565,6 +568,12 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 	},
 	meta.KubeContainer: {
 		meta.Find: Skip,
+	},
+	meta.Project: {
+		meta.Find:   Skip,
+		meta.Update: EditProject,
+		meta.Delete: DeleteProject,
+		meta.Create: CreateProject,
 	},
 }
 

@@ -31,6 +31,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/model"
 	"configcenter/src/apimachinery/coreservice/operation"
 	"configcenter/src/apimachinery/coreservice/process"
+	"configcenter/src/apimachinery/coreservice/project"
 	"configcenter/src/apimachinery/coreservice/settemplate"
 	"configcenter/src/apimachinery/coreservice/synchronize"
 	ccSystem "configcenter/src/apimachinery/coreservice/system"
@@ -62,6 +63,7 @@ type CoreServiceClientInterface interface {
 	Auth() auth.AuthClientInterface
 	Common() common.CommonInterface
 	Kube() kube.KubeClientInterface
+	Project() project.ProjectClientInterface
 }
 
 // NewCoreServiceClient TODO
@@ -175,4 +177,9 @@ func (c *coreService) Common() common.CommonInterface {
 // Kube return the kube client
 func (c *coreService) Kube() kube.KubeClientInterface {
 	return kube.NewKubeClientInterface(c.restCli)
+}
+
+// Project return the project client
+func (c *coreService) Project() project.ProjectClientInterface {
+	return project.NewProjectClientInterface(c.restCli)
 }

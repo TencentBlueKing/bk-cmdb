@@ -204,6 +204,9 @@ func (ps *parseStream) getInstanceTypeByObject(objID string, ID int64) (meta.Res
 		return meta.Process, nil
 	case common.BKInnerObjIDBizSet:
 		return meta.BizSet, nil
+	case common.BKInnerObjIDProject:
+		return meta.Project, nil
+
 	}
 	isMainline, err := ps.isMainlineModel(objID)
 	if err != nil {
@@ -467,7 +470,7 @@ func (ps *parseStream) generateUpdateInstanceResource(model *metadata.Object, in
 			},
 			Layers: []meta.Item{{Type: meta.ResourcePoolDirectory, InstanceID: relationRes.Info[0].ModuleID}},
 		}, nil
-	case meta.Business, meta.BizSet, meta.CloudAreaInstance:
+	case meta.Business, meta.BizSet, meta.CloudAreaInstance, meta.Project:
 		return &meta.ResourceAttribute{
 			Basic: meta.Basic{
 				Type:       instanceType,
