@@ -1,6 +1,8 @@
 <script>
-  import { computed, defineComponent, reactive, ref, watch, watchEffect } from '@vue/composition-api'
+  import { computed, defineComponent, reactive, ref, watch, watchEffect, getCurrentInstance } from 'vue'
   import store from '@/store'
+  import { t } from '@/i18n'
+  import { $success, $error } from '@/magicbox/index.js'
   import routerActions from '@/router/actions'
   import tableMixin from '@/mixins/table'
   import { getDefaultPaginationConfig, getSort, getHeaderProperties, getHeaderPropertyName, getPropertyCopyValue } from '@/utils/tools.js'
@@ -16,7 +18,11 @@
     mounted() {
       this.disabledTableSettingDefaultBehavior()
     },
-    setup(props, { root }) {
+    setup() {
+      const $this = getCurrentInstance()
+
+      const tableRef = ref(null)
+
       const requestIds = {
         property: Symbol(),
         list: Symbol()
@@ -233,15 +239,16 @@
 
       const handleCopy = (column) => {
         const copyText = table.selection.map(row => getPropertyCopyValue(row[column.id], column.property))
-        root.$copyText(copyText.join('\n')).then(() => {
-          root.$success(root.$t('复制成功'))
+        $this.proxy.$copyText(copyText.join('\n')).then(() => {
+          $success(t('复制成功'))
         }, () => {
-          root.$error(root.$t('复制失败'))
+          $error(t('复制失败'))
         })
       }
 
       return {
         requestIds,
+        tableRef,
         table,
         filter,
         clipboardList,
@@ -280,7 +287,7 @@
 
     <bk-table class="list-table"
       v-bkloading="{ isLoading: $loading(Object.values(requestIds)) }"
-      ref="table"
+      ref="tableRef"
       :data="table.data"
       :pagination="table.pagination"
       :max-height="$APP.height - 325"

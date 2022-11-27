@@ -1,5 +1,5 @@
 <script>
-  import { computed, defineComponent, ref, watch, watchEffect } from '@vue/composition-api'
+  import { computed, defineComponent, ref, watch, watchEffect } from 'vue'
   import store from '@/store'
   import routerActions from '@/router/actions'
   import RouterQuery from '@/router/query'
@@ -20,16 +20,17 @@
       ModelInstanceProperty,
       ContainerList
     },
-    setup(props, { root }) {
+    setup() {
       const requestIds = {
         property: Symbol(),
         list: Symbol()
       }
 
+      const route = computed(() => RouterQuery.route)
       const active = ref(RouterQuery.get('tab', 'property'))
 
       const bizId = computed(() => store.getters['objectBiz/bizId'])
-      const podId = computed(() => parseInt(root.$route.params.podId, 10))
+      const podId = computed(() => parseInt(route.value.params.podId, 10))
 
       const properties = ref([])
       const propertyGroups = ref([])

@@ -1,3 +1,4 @@
+<!-- eslint-disable no-unused-vars -->
 <!--
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
@@ -11,9 +12,10 @@
 -->
 
 <script>
-  import { computed, defineComponent, ref, nextTick, onMounted, onBeforeUnmount, watch } from '@vue/composition-api'
+  import { computed, defineComponent, ref, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
   import throttle from 'lodash.throttle'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
+  import { $bkPopover } from '@/magicbox/index.js'
 
   export default defineComponent({
     name: 'cmdb-mapstring-value',
@@ -23,9 +25,10 @@
         default: () => ({})
       }
     },
-    setup(props, { root }) {
-      const $list = ref(null)
-      const $ellipsis = ref(null)
+    setup(props) {
+      const rootEl = ref(null)
+      const listEl = ref(null)
+      const ellipsisEl = ref(null)
 
       let tips = null
 
@@ -52,7 +55,7 @@
           return
         }
         nextTick(() => {
-          const items = Array.from($list.value.querySelectorAll('.tag-item'))
+          const items = Array.from(listEl.value.querySelectorAll('.tag-item'))
           const referenceItemIndex = items.findIndex((item, index) => {
             if (index === 0) {
               return false
@@ -70,22 +73,22 @@
       }
 
       const insertEllipsisTag = (reference) => {
-        $list.value.insertBefore($ellipsis.value, reference)
+        listEl.value.insertBefore(ellipsisEl.value, reference)
       }
 
       const doubleCheckEllipsisPosition = () => {
-        const ellipsis = $ellipsis.value
+        const ellipsis = ellipsisEl.value
         const previous = ellipsis.previousElementSibling
         if (previous && ellipsis.offsetTop !== previous.offsetTop) {
-          $list.value.insertBefore(ellipsis, previous)
+          listEl.value.insertBefore(ellipsis, previous)
         }
         setEllipsisTips()
       }
 
       const setEllipsisTips = () => {
-        const ellipsis = $ellipsis.value
+        const ellipsis = ellipsisEl.value
         const tips = getTipsInstance()
-        const tipsNode = $list.value.cloneNode(false)
+        const tipsNode = listEl.value.cloneNode(false)
         let loopItem = ellipsis
         while (loopItem) {
           const nextItem = loopItem.nextElementSibling
@@ -101,13 +104,13 @@
 
       const removeEllipsisTag = () => {
         try {
-          $list.value.removeChild($ellipsis.value)
+          listEl.value.removeChild(ellipsisEl.value)
         } catch (e) {}
       }
 
       const getTipsInstance = () => {
         if (!tips) {
-          tips = root.$bkPopover($ellipsis.value, {
+          tips = $bkPopover(ellipsisEl.value, {
             allowHTML: true,
             placement: 'top',
             arrow: true,
@@ -125,33 +128,36 @@
       const scheduleResize = throttle(handleResize, 300)
 
       onMounted(() => {
-        addResizeListener(root.$el, scheduleResize)
+        addResizeListener(rootEl.value, scheduleResize)
       })
 
       onBeforeUnmount(() => {
-        removeResizeListener(root.$el, scheduleResize)
+        removeResizeListener(rootEl.value, scheduleResize)
       })
 
       return {
         tags,
-        $list,
-        $ellipsis
+        rootEl,
+        listEl,
+        ellipsisEl
       }
     }
   })
 </script>
 
 <template>
-  <ul class="tag-list" ref="$list" v-if="tags.length">
-    <li class="tag-item"
-      v-for="(tag, index) in tags"
-      :key="index"
-      :title="tag">
-      {{tag}}
-    </li>
-    <li class="tag-item ellipsis" ref="$ellipsis" v-show="tags.length" @click.stop>...</li>
-  </ul>
-  <span class="tag-empty" v-else>--</span>
+  <div ref="rootEl">
+    <ul class="tag-list" ref="listEl" v-if="tags.length">
+      <li class="tag-item"
+        v-for="(tag, index) in tags"
+        :key="index"
+        :title="tag">
+        {{tag}}
+      </li>
+      <li class="tag-item ellipsis" ref="ellipsisEl" v-show="tags.length" @click.stop>...</li>
+    </ul>
+    <span class="tag-empty" v-else>--</span>
+  </div>
 </template>
 
 <style lang="scss" scoped>

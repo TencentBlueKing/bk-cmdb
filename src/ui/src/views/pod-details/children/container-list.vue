@@ -1,7 +1,10 @@
 <script>
-  import { computed, defineComponent, reactive, ref, watch, watchEffect } from '@vue/composition-api'
+  import { computed, defineComponent, reactive, ref, watch, watchEffect, getCurrentInstance } from 'vue'
   import store from '@/store'
+  import { t } from '@/i18n'
+  import { $success, $error } from '@/magicbox/index.js'
   import routerActions from '@/router/actions'
+  import RouterQuery from '@/router/query'
   import tableMixin from '@/mixins/table'
   import { getDefaultPaginationConfig, getSort, getHeaderProperties, getHeaderPropertyName, getPropertyCopyValue } from '@/utils/tools.js'
   import { transformGeneralModelCondition } from '@/components/filters/utils.js'
@@ -16,11 +19,17 @@
     mounted() {
       this.disabledTableSettingDefaultBehavior()
     },
-    setup(props, { root }) {
+    setup() {
+      const $this = getCurrentInstance()
+
+      const tableRef = ref(null)
+
       const requestIds = {
         property: Symbol(),
         list: Symbol()
       }
+
+      const route = computed(() => RouterQuery.route)
 
       const MODEL_ID_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.CONTAINER].ID
       const MODEL_NAME_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.CONTAINER].NAME
@@ -47,7 +56,7 @@
       const columnsConfigKey = 'pod_container_custom_table_columns'
 
       const bizId = computed(() => store.getters['objectBiz/bizId'])
-      const podId = computed(() => parseInt(root.$route.params.podId, 10))
+      const podId = computed(() => parseInt(route.value.params.podId, 10))
 
       const filter = reactive({
         field: MODEL_FULL_NAME_KEY,
@@ -232,15 +241,16 @@
 
       const handleCopy = (column) => {
         const copyText = table.selection.map(row => getPropertyCopyValue(row[column.id], column.property))
-        root.$copyText(copyText.join('\n')).then(() => {
-          root.$success(root.$t('复制成功'))
+        $this.proxy.$copyText(copyText.join('\n')).then(() => {
+          $success(t('复制成功'))
         }, () => {
-          root.$error(root.$t('复制失败'))
+          $error(t('复制失败'))
         })
       }
 
       return {
         requestIds,
+        tableRef,
         table,
         filter,
         clipboardList,
@@ -279,7 +289,7 @@
 
     <bk-table class="list-table"
       v-bkloading="{ isLoading: $loading(Object.values(requestIds)) }"
-      ref="table"
+      ref="tableRef"
       :data="table.data"
       :pagination="table.pagination"
       :max-height="$APP.height - 325"

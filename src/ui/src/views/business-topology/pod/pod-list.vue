@@ -11,7 +11,7 @@
 -->
 
 <script>
-  import { computed, defineComponent, reactive, ref, watch, watchEffect } from '@vue/composition-api'
+  import { computed, defineComponent, reactive, ref, watch, watchEffect } from 'vue'
   import store from '@/store'
   import RouterQuery from '@/router/query'
   import routerActions from '@/router/actions'
@@ -43,6 +43,8 @@
       const MODEL_ID_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].ID
       const MODEL_NAME_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].NAME
       const MODEL_FULL_NAME_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].FULL_NAME
+
+      const tableRef = ref(null)
 
       const table = reactive({
         data: [],
@@ -330,6 +332,7 @@
 
       return {
         requestIds,
+        tableRef,
         table,
         filter,
         handlePageChange,
@@ -352,7 +355,7 @@
     </pod-list-options>
     <bk-table class="pod-table"
       v-bkloading="{ isLoading: $loading(Object.values(requestIds)) }"
-      ref="table"
+      ref="tableRef"
       :data="table.data"
       :pagination="table.pagination"
       :max-height="$APP.height - 250"

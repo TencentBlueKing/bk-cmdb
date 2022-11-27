@@ -1,5 +1,5 @@
 <script>
-  import { computed, defineComponent } from '@vue/composition-api'
+  import { computed, defineComponent } from 'vue'
   import store from '@/store'
 
   export default defineComponent({
