@@ -11,7 +11,7 @@
 -->
 
 <script>
-  import { computed, defineComponent, ref, watchEffect } from '@vue/composition-api'
+  import { computed, defineComponent, ref, watchEffect } from 'vue'
   import has from 'has'
   import store from '@/store'
   import containerPropertyService from '@/service/container/property.js'

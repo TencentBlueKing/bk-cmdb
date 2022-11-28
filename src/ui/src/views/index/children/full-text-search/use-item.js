@@ -14,7 +14,7 @@ import { computed } from 'vue'
 import store from '@/store'
 import { t } from '@/i18n'
 import routerActions from '@/router/actions'
-import { $bkMessage } from '@/magicbox/index.js'
+import { $warn } from '@/magicbox/index.js'
 import {
   MENU_RESOURCE_INSTANCE_DETAILS,
   MENU_RESOURCE_BUSINESS_DETAILS,
@@ -102,10 +102,7 @@ export default function useItem(list) {
     const isPauserd = getModelById(source.bk_obj_id).bk_ispaused
 
     if (isPauserd) {
-      $bkMessage({
-        message: t('该模型已停用'),
-        theme: 'warning'
-      })
+      $warn(t('该模型已停用'))
       return
     }
 

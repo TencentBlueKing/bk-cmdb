@@ -11,7 +11,9 @@
 -->
 
 <script>
-  import { computed, defineComponent } from '@vue/composition-api'
+  import { computed, defineComponent, getCurrentInstance } from 'vue'
+  import { t } from '@/i18n'
+  import { $success, $error } from '@/magicbox/index.js'
   import RouterQuery from '@/router/query'
   import { getPropertyCopyValue } from '@/utils/tools.js'
 
@@ -30,7 +32,9 @@
         default: () => ({})
       }
     },
-    setup(props, { root }) {
+    setup(props) {
+      const $this = getCurrentInstance()
+
       const clipboardList = computed(() => props.tableHeader.slice())
 
       const hasSelection = computed(() => !!props.tableSelection?.length)
@@ -47,10 +51,10 @@
 
       const handleCopy = (column) => {
         const copyText = props.tableSelection.map(row => getPropertyCopyValue(row[column.id], column.property))
-        root.$copyText(copyText.join('\n')).then(() => {
-          root.$success(root.$t('复制成功'))
+        $this.proxy.$copyText(copyText.join('\n')).then(() => {
+          $success(t('复制成功'))
         }, () => {
-          root.$error(root.$t('复制失败'))
+          $error(t('复制失败'))
         })
       }
 
