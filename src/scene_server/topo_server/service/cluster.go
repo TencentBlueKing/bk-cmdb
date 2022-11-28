@@ -30,6 +30,47 @@ import (
 	"configcenter/src/kube/types"
 )
 
+// searchAsstBizIDWithBizID 此函数前端展示拓扑的时候，查询集群时不能调用此函数
+func (s *Service) searchAsstBizIDWithBizID(kit *rest.Kit, bizID int64) (int64, error) {
+
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKAppIDField: bizID,
+		},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Fields:         []string{types.BKAsstBizIDField},
+		DisableCounter: true,
+	}
+	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchNsClusterRelation(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("search ns cluster relation failed, bizID: %d, err: %v, rid: %s", bizID, err, kit.Rid)
+		return 0, err
+	}
+
+	if len(result.Data) == 0 {
+		return 0, nil
+	}
+
+	bizIDMap := make(map[int64]struct{})
+	for _, data := range result.Data {
+		bizIDMap[data.AsstBizID] = struct{}{}
+	}
+
+	if len(bizIDMap) > 1 {
+		blog.Errorf("multi ns cluster relation founded, bizID: %d, rid: %s", bizID, kit.Rid)
+		return 0, err
+	}
+
+	var asstBizID int64
+	for id := range bizIDMap {
+		asstBizID = id
+	}
+
+	return asstBizID, nil
+}
+
 // SearchClusters query based on user-specified criteria cluster
 func (s *Service) SearchClusters(ctx *rest.Contexts) {
 

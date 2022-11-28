@@ -39,7 +39,8 @@ func addKubeCollection(ctx context.Context, db dal.RDB) error {
 		kubetypes.BKTableNameBaseDaemonSet, kubetypes.BKTableNameBaseStatefulSet,
 		kubetypes.BKTableNameGameStatefulSet, kubetypes.BKTableNameGameDeployment,
 		kubetypes.BKTableNameBaseCronJob, kubetypes.BKTableNameBaseJob,
-		kubetypes.BKTableNameBasePodWorkload,
+		kubetypes.BKTableNameBasePodWorkload, kubetypes.BKTableNsClusterRelation,
+		kubetypes.BKTableNodeClusterRelation,
 	}
 
 	for _, collection := range collections {
@@ -81,6 +82,14 @@ func addKubeCollectionIndex(ctx context.Context, db dal.RDB) error {
 	}
 
 	if err := addContainerTableIndexes(ctx, db); err != nil {
+		return err
+	}
+
+	if err := addKubeNsRelationTableIndexes(ctx, db); err != nil {
+		return err
+	}
+
+	if err := addKubeNodeRelationTableIndexes(ctx, db); err != nil {
 		return err
 	}
 
@@ -129,6 +138,64 @@ func checkIfExistIndex(ctx context.Context, db dal.RDB, collection string, index
 			blog.Errorf("create index for %s table failed, index: %+v, err: %v", collection, index, err)
 			return err
 		}
+	}
+	return nil
+}
+
+func addKubeNsRelationTableIndexes(ctx context.Context, db dal.RDB) error {
+
+	indexes := []types.Index{
+		{
+			Name: common.CCLogicUniqueIdxNamePrefix + "namespace_id_cluster_id",
+			Keys: bson.D{
+				{kubetypes.BKNamespaceIDField, 1},
+				{kubetypes.BKClusterIDFiled, 1},
+			},
+			Background: true,
+			Unique:     true,
+		},
+		{
+			Name: common.CCLogicUniqueIdxNamePrefix + "namespace_id_cluster_uid",
+			Keys: bson.D{
+				{kubetypes.BKNamespaceIDField, 1},
+				{kubetypes.ClusterUIDField, 1},
+			},
+			Background: true,
+			Unique:     true,
+		},
+	}
+
+	if err := checkIfExistIndex(ctx, db, kubetypes.BKTableNsClusterRelation, indexes); err != nil {
+		return err
+	}
+	return nil
+}
+
+func addKubeNodeRelationTableIndexes(ctx context.Context, db dal.RDB) error {
+
+	indexes := []types.Index{
+		{
+			Name: common.CCLogicUniqueIdxNamePrefix + "node_id_cluster_id",
+			Keys: bson.D{
+				{kubetypes.BKNodeIDField, 1},
+				{kubetypes.BKClusterIDFiled, 1},
+			},
+			Background: true,
+			Unique:     true,
+		},
+		{
+			Name: common.CCLogicUniqueIdxNamePrefix + "node_id_cluster_uid",
+			Keys: bson.D{
+				{kubetypes.BKNodeIDField, 1},
+				{kubetypes.ClusterUIDField, 1},
+			},
+			Background: true,
+			Unique:     true,
+		},
+	}
+
+	if err := checkIfExistIndex(ctx, db, kubetypes.BKTableNodeClusterRelation, indexes); err != nil {
+		return err
 	}
 	return nil
 }

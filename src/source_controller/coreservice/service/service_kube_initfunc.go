@@ -46,6 +46,10 @@ func (s *coreService) initKube(web *restful.WebService) {
 		Path:    "/findmany/kube/cluster",
 		Handler: s.SearchClusters})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/findmany/kube/ns/relation",
+		Handler: s.SearchNsClusterRelation})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodPut,
 		Path:    "/updatemany/kube/node/{bk_biz_id}",
 		Handler: s.BatchUpdateNode})

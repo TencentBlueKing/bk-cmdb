@@ -56,6 +56,33 @@ func (s *coreService) SearchClusters(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// SearchNsClusterRelation search ns clusters relation in the shared cluster scenario.
+func (s *coreService) SearchNsClusterRelation(ctx *rest.Contexts) {
+
+	input := new(metadata.QueryCondition)
+	if err := ctx.DecodeInto(input); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	relations := make([]types.NsClusterRelation, 0)
+	util.SetQueryOwner(input.Condition, ctx.Kit.SupplierAccount)
+
+	err := mongodb.Client().Table(types.BKTableNsClusterRelation).Find(input.Condition).Start(uint64(input.Page.Start)).
+		Limit(uint64(input.Page.Limit)).
+		Sort(input.Page.Sort).
+		Fields(input.Fields...).All(ctx.Kit.Ctx, &relations)
+	if err != nil {
+		blog.Errorf("search ns and cluster relation failed, cond: %+v, err: %v, rid: %s", input.Condition,
+			err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+
+	result := &types.ResponseNsClusterRelation{Data: relations}
+
+	ctx.RespEntity(result)
+}
+
 // BatchUpdateCluster update cluster.
 func (s *coreService) BatchUpdateCluster(ctx *rest.Contexts) {
 

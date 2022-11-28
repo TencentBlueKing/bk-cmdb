@@ -59,11 +59,32 @@ type ClusterSpec struct {
 	// BizID business id in cc
 	BizID int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
 
+	// BizAsstID business asst id in cc
+	BizAsstID int64 `json:"bk_asst_biz_id,omitempty" bson:"bk_biz_asst_id"`
+
 	// ClusterID cluster id in cc
 	ClusterID int64 `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
 
 	// ClusterUID cluster id in third party platform
 	ClusterUID string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
+}
+
+// NsClusterRelation namespace relationship table in the shared cluster scenario
+type NsClusterRelation struct {
+	NamespaceID int64 `json:"bk_namespace_id,omitempty" bson:"bk_namespace_id"`
+	ClusterID   int64 `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
+	ClusterUID  int64 `json:"cluster_uid,omitempty" bson:"cluster_uid"`
+	BizID       int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
+	AsstBizID   int64 `json:"bk_asst_biz_id,omitempty" bson:"bk_asst_biz_id"`
+}
+
+// NodeClusterRelation node relationship table in the shared cluster scenario
+type NodeClusterRelation struct {
+	NodeID     int64 `json:"bk_node_id,omitempty" bson:"bk_node_id"`
+	ClusterID  int64 `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
+	ClusterUID int64 `json:"cluster_uid,omitempty" bson:"cluster_uid"`
+	BizID      int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
+	AsstBizID  int64 `json:"bk_asst_biz_id,omitempty" bson:"bk_asst_biz_id"`
 }
 
 // Cluster container cluster table structure
@@ -195,6 +216,11 @@ func (option *QueryClusterOption) Validate() ccErr.RawErrorInfo {
 		}
 	}
 	return ccErr.RawErrorInfo{}
+}
+
+// ResponseNsClusterRelation query the response of the cluster.
+type ResponseNsClusterRelation struct {
+	Data []NsClusterRelation `json:"data"`
 }
 
 // ResponseCluster query the response of the cluster.
