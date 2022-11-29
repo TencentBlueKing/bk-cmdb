@@ -143,7 +143,7 @@
         >
           <div class="group-header clearfix">
             <collapse-group-title
-              :classification="classification"
+              :is-new-classify="classification.isNewClassify"
               :dropdown-menu="!isModelSelectable"
               :collapse=" classificationsCollapseState[classification.id]"
               :title="`${classification.bk_classification_name} ( ${ classification.bk_objects.length} )`"

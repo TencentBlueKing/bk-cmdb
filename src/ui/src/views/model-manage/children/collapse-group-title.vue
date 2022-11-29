@@ -69,7 +69,7 @@
         </ul>
       </template>
     </bk-dropdown-menu>
-    <bk-tag v-if="classification.isNewClassify" theme="success" radius="2px">{{$t('新的')}}</bk-tag>
+    <bk-tag v-if="isNewClassify" theme="success" radius="2px">{{$t('新的')}}</bk-tag>
   </div>
 </template>
 
@@ -121,10 +121,10 @@
         default: () => []
       },
 
-      // 分组列表数据
-      classification: {
-        type: Object,
-        default: () => {}
+      // 是否是新建分组
+      isNewClassify: {
+        type: Boolean,
+        default: false
       }
     },
     setup(props) {
