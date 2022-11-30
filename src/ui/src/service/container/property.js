@@ -11,11 +11,13 @@
  */
 
 import http from '@/api'
+import i18n from '@/i18n/index.js'
 import { normalizationProperty } from '@/service/container/transition.js'
 import { CONTAINER_OBJECTS, CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container.js'
 import { rollReqUseTotalCount } from '@/service/utils'
+import { getPropertyName } from './common.js'
 
-function createIdProperty(objId) {
+function createIdProperty(objId, isPrependName) {
   const keyMap = {
     [CONTAINER_OBJECTS.CLUSTER]: CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.CLUSTER].ID,
     [CONTAINER_OBJECTS.NAMESPACE]: CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.NAMESPACE].ID,
@@ -25,11 +27,12 @@ function createIdProperty(objId) {
     [CONTAINER_OBJECTS.NODE]: CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.NODE].ID,
     [CONTAINER_OBJECTS.CONTAINER]: CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.CONTAINER].ID
   }
+  const propertyIdKey = keyMap[objId] || 'id'
   return {
     id: `${objId}_${keyMap[objId]}`,
     bk_obj_id: objId,
-    bk_property_id: keyMap[objId] || 'id',
-    bk_property_name: 'ID',
+    bk_property_id: propertyIdKey,
+    bk_property_name: isPrependName ? (getPropertyName(propertyIdKey, objId, i18n.locale) || 'ID') : 'ID',
     bk_property_index: -1,
     bk_property_type: 'int',
     isonly: true,
@@ -45,7 +48,7 @@ function createIdProperty(objId) {
 
 export const find = ({ objId, params }, config) => http.get(`find/kube/${objId}/attributes`, params, config)
 
-export const getMany = async ({ objId, params }, config, injectId = true) => {
+export const getMany = async ({ objId, params }, config, injectId = true, isPrependName = false) => {
   try {
     const list = await find({ objId, params }, config)
 
@@ -59,7 +62,7 @@ export const getMany = async ({ objId, params }, config, injectId = true) => {
       return properties
     }
 
-    properties.unshift(createIdProperty(objId))
+    properties.unshift(createIdProperty(objId, isPrependName))
     return properties
   } catch (error) {
     console.error(error)

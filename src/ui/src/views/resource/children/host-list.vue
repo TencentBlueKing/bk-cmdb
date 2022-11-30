@@ -15,7 +15,7 @@
     <host-list-options></host-list-options>
     <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
     <bk-table class="hosts-table"
-      ref="table"
+      ref="tableRef"
       v-bkloading="{ isLoading: $loading(Object.values(request)) }"
       :data="table.list"
       :pagination="table.pagination"
@@ -78,9 +78,7 @@
   import HostFilterTag from '@/components/filters/filter-tag'
   import FilterStore, { setupFilterStore } from '@/components/filters/store'
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
-  // import { CONTAINER_OBJECTS, CONTAINER_OBJECT_PROPERTY_KEYS } from '@/dictionary/container.js'
   import containerHostService from '@/service/container/host.js'
-  // import { getContainerNodeType } from '@/service/container/common.js'
 
   export default {
     components: {

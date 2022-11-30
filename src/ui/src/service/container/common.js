@@ -150,6 +150,10 @@ export const propertyNameI18n = {
     }
   },
   [CONTAINER_OBJECTS.NODE]: {
+    id: {
+      zh: '节点ID',
+      en: 'NodeID'
+    },
     name: {
       zh: '节点名称',
       en: 'Name'

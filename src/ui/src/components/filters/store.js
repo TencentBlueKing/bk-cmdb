@@ -581,7 +581,7 @@ const FilterStore = new Vue({
       }, {
         requestId: this.request.containerProperty,
         fromCache: true
-      })
+      }, true, true)
 
       const commonProperties = [...properties, ...nodeProperties]
 

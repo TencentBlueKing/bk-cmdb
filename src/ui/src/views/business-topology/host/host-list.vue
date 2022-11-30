@@ -15,7 +15,7 @@
     <host-list-options @transfer="handleTransfer" v-test-id></host-list-options>
     <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
     <bk-table class="host-table" v-test-id.businessHostAndService="'hostList'"
-      ref="table"
+      ref="tableRef"
       v-bkloading="{ isLoading: $loading(Object.values(request)) }"
       :data="table.data"
       :pagination="table.pagination"
@@ -653,7 +653,7 @@
         })
       },
       doLayoutTable() {
-        this.$refs.table.doLayout()
+        this.$refs?.table?.doLayout()
       }
     }
   }

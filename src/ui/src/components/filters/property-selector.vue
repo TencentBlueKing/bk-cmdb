@@ -85,9 +85,29 @@
         modelPropertyMap.node = modelPropertyMap.node
           ?.filter(property => !['map'].includes(property.bk_property_type))
 
-        // 当前处于业务节点或者资源已分配主机视图，使用全量的字段(包括node)
-        if (FilterStore.isBizNode || FilterStore.isResourceAssigned) {
+        const getPropertyMapExcludeBy = (exclude = []) => {
+          const excludes = !Array.isArray(exclude) ? [exclude] : exclude
+          const propertyMap = []
+          for (const [key, value] of Object.entries(modelPropertyMap)) {
+            if (!excludes.includes(key)) {
+              propertyMap[key] = value
+            }
+          }
+          return propertyMap
+        }
+
+        // 资源-主机视图
+        if (!FilterStore.bizId) {
+          // 非已分配
+          if (!FilterStore.isResourceAssigned) {
+            return getPropertyMapExcludeBy('node')
+          }
           return modelPropertyMap
+        }
+
+        // 当前处于业务节点，使用除业务外全量的字段(包括node)
+        if (FilterStore.isBizNode) {
+          return getPropertyMapExcludeBy('biz')
         }
 
         // 容器拓扑
