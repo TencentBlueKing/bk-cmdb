@@ -422,13 +422,15 @@ export function sortTopoTree(topoTree, compareKey, childrenKey) {
   }
 }
 
+export function isEmptyPropertyValue(originalValue) {
+  return originalValue === ''
+    || originalValue === null
+    || originalValue === undefined
+    || (Array.isArray(originalValue) && originalValue.length === 0)
+}
+
 export function getPropertyCopyValue(originalValue, propertyType) {
-  if (
-    originalValue === ''
-        || originalValue === null
-        || originalValue === undefined
-        || (Array.isArray(originalValue) && originalValue.length === 0)
-  ) {
+  if (isEmptyPropertyValue(originalValue)) {
     return '--'
   }
   const type = typeof propertyType === 'string' ? propertyType : propertyType.bk_property_type
@@ -453,7 +455,7 @@ export function getPropertyCopyValue(originalValue, propertyType) {
       for (const [key, val] of Object.entries(originalValue)) {
         pair.push(`${key}: ${val}`)
       }
-      value = pair.join(',')
+      value = pair.join('\n')
       break
     }
     default:
@@ -485,5 +487,6 @@ export default {
   getPageParams,
   localSort,
   sort,
-  getPropertyCopyValue
+  getPropertyCopyValue,
+  isEmptyPropertyValue
 }
