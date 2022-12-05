@@ -232,10 +232,23 @@
         }
       },
       getColumnMinWidth(property) {
-        if (property.bk_property_type === 'topology') {
-          return 200
+        let name = this.$tools.getHeaderPropertyName(property)
+        const modelId = property.bk_obj_id
+        if (modelId !== 'host') {
+          const model = this.getModelById(modelId)
+          name = `${name}(${model.bk_obj_name})`
         }
-        return 100
+
+        const preset = {}
+        if (property.bk_property_type === 'topology') {
+          preset[property.bk_property_id] = 200
+        }
+
+        return this.$tools.getHeaderPropertyMinWidth(property, {
+          name,
+          hasSort: this.isPropertySortable(property) ? 'custom' : false,
+          preset
+        })
       },
       isPropertySortable(property) {
         return property.bk_obj_id === 'host' && !['foreignkey', 'topology'].includes(property.bk_property_type)

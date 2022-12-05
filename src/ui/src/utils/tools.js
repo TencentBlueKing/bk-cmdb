@@ -13,6 +13,9 @@
 import moment from 'moment'
 import GET_VALUE from 'get-value'
 import has from 'has'
+import { CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container'
+import { BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants'
+import { PRESET_TABLE_HEADER_MIN_WIDTH } from '@/dictionary/table-header'
 
 /**
  * 获取实例中某个属性的展示值
@@ -249,10 +252,37 @@ export function getHeaderProperties(properties, customColumns, fixedPropertyIds 
 }
 
 export function getHeaderPropertyName(property) {
-  if (property.unit) {
+  if (!property.bk_property_name.endsWith(`(${property.unit})`) && property.unit) {
     return `${property.bk_property_name}(${property.unit})`
   }
   return property.bk_property_name
+}
+
+export function getHeaderPropertyMinWidth(property, options = {}) {
+  const { fontSize = 12, hasSort = false, offset = 30, name, preset = {} } = options
+
+  // 预设的固定宽度不需要计算直接使用
+  const presetMinWidth = { ...PRESET_TABLE_HEADER_MIN_WIDTH, ...preset }
+  if (presetMinWidth[property.bk_property_id]) {
+    return presetMinWidth[property.bk_property_id]
+  }
+
+  const content = name ?? getHeaderPropertyName(property)
+
+  // 字母数字和空白字符的个数
+  const letterCount = (content.match(/[\w\s\\(\\)]/g) ?? []).join('').length
+
+  const totalCount = content?.length ?? 0
+
+  // 分别按字母与非字母计算字符占用的总宽度
+  const contentWidth = ((totalCount - letterCount) * fontSize) + (letterCount * fontSize * 0.7)
+
+  const objKeyMap = { ...CONTAINER_OBJECT_INST_KEYS, ...BUILTIN_MODEL_PROPERTY_KEYS }
+  const baseWidth = (property.bk_property_id === objKeyMap[property.bk_obj_id]?.ID ?? 'bk_inst_id') ? 50 : contentWidth
+
+  const finalWidth = baseWidth + (hasSort ? 22 : 0) + offset
+
+  return Math.ceil(finalWidth)
 }
 
 /**
@@ -488,5 +518,6 @@ export default {
   localSort,
   sort,
   getPropertyCopyValue,
-  isEmptyPropertyValue
+  isEmptyPropertyValue,
+  getHeaderPropertyMinWidth
 }
