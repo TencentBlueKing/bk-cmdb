@@ -123,8 +123,12 @@ func (inst *instance) saveSynchronizeHostInstance(kit *rest.Kit) errors.CCError 
 	var dbParam synchronizeAdapterDBParameter
 	dbParam.tableName = common.BKTableNameBaseHost
 	dbParam.InstIDField = common.BKHostIDField
+	var err error
 	for _, info := range inst.base.syncData.InfoArray {
-		info.Info = metadata.ConvertHostSpecialStringToArray(info.Info)
+		info.Info, err = metadata.ConvertHostSpecialStringToArray(info.Info)
+		if err != nil {
+			return err
+		}
 	}
 	inst.base.saveSynchronize(kit, dbParam)
 	return nil

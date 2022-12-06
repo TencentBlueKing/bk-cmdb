@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
@@ -162,10 +163,17 @@ func (s *StringArrayToString) UnmarshalBSONValue(typo bsontype.Type, raw []byte)
 var HostSpecialFields = []string{common.BKHostInnerIPField, common.BKHostOuterIPField, common.BKOperatorField,
 	common.BKBakOperatorField, common.BKHostInnerIPv6Field, common.BKHostOuterIPv6Field}
 
+// HostIpv6Fields host needs to convert to full format ipv6 field, the field need to in HostSpecialFields
+var HostIpv6Fields = map[string]struct{}{
+	common.BKHostInnerIPv6Field: {},
+	common.BKHostOuterIPv6Field: {},
+}
+
 // ConvertHostSpecialStringToArray TODO
 // convert host ip and operator fields value from string to array
 // NOTICE: if host special value is empty, convert it to null to trespass the unique check, **do not change this logic**
-func ConvertHostSpecialStringToArray(host map[string]interface{}) map[string]interface{} {
+func ConvertHostSpecialStringToArray(host map[string]interface{}) (map[string]interface{}, error) {
+	var err error
 	for _, field := range HostSpecialFields {
 		value, ok := host[field]
 		if !ok {
@@ -177,13 +185,31 @@ func ConvertHostSpecialStringToArray(host map[string]interface{}) map[string]int
 			v = strings.Trim(v, ",")
 			if len(v) == 0 {
 				host[field] = nil
-			} else {
-				host[field] = strings.Split(v, ",")
+				continue
 			}
+			items := strings.Split(v, ",")
+			if _, ok := HostIpv6Fields[field]; !ok {
+				host[field] = items
+				continue
+			}
+			host[field], err = ConvertHostIpv6Val(items)
+			if err != nil {
+				return nil, err
+			}
+
 		case []string:
 			if len(v) == 0 {
 				host[field] = nil
+				continue
 			}
+			if _, ok := HostIpv6Fields[field]; !ok {
+				continue
+			}
+			host[field], err = ConvertHostIpv6Val(value.([]string))
+			if err != nil {
+				return nil, err
+			}
+
 		case []interface{}:
 			if len(v) == 0 {
 				host[field] = nil
@@ -195,5 +221,18 @@ func ConvertHostSpecialStringToArray(host map[string]interface{}) map[string]int
 			blog.Errorf("host %s type invalid, value %v", field, host[field])
 		}
 	}
-	return host
+	return host, nil
+}
+
+// ConvertHostIpv6Val convert host ipv6 value
+func ConvertHostIpv6Val(items []string) ([]string, error) {
+	var err error
+	for idx, val := range items {
+		items[idx], err = util.ConvertIPv6ToFullAddr(val)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return items, nil
 }
