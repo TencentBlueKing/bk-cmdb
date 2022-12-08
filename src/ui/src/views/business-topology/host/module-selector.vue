@@ -366,6 +366,7 @@
         max-height: calc(100% - 32px - 24px);
         padding: 0 0 0 12px;
         margin: 12px 0;
+        position: relative;
         @include scrollbar;
         .node-icon {
             display: block;
@@ -395,7 +396,9 @@
         .node-checkbox {
             width: 16px;
             height: 16px;
-            margin: 10px 17px 0 10px;
+            position: absolute;
+            left: 45px;
+            top: 10px;
             background: #FFF;
             border-radius: 50%;
             border: 1px solid #979BA5;

@@ -44,7 +44,7 @@
               }"
               :height="450"
               :node-height="36"
-              :show-checkbox="isShowCheckbox"
+              :show-checkbox="false"
               @node-click="handleNodeClick"
               @check-change="handleNodeCheck">
               <template slot-scope="{ node, data }">
@@ -52,7 +52,10 @@
                   v-if="data.default !== 0"
                   :class="getInternalNodeClass(node, data)">
                 </i>
-                <i v-else class="node-icon fl">{{data.bk_obj_name[0]}}</i>
+                <i v-else :class="['node-icon fl']">{{data.bk_obj_name[0]}}</i>
+                <span :class="['node-checkbox fr', { 'is-checked': checked.includes(node) }]"
+                  v-if=" data.bk_obj_id === 'module'">
+                </span>
                 <span class="node-name" :title="node.name">{{node.name}}</span>
               </template>
             </bk-big-tree>
@@ -263,7 +266,7 @@
         if (node.data.bk_obj_id !== 'module') {
           return false
         }
-        this.$refs.tree.setChecked(node.id, { checked: !node.checked, emitEvent: true })
+        this.checked = [node]
       },
       handleNodeCheck(checked, currentNode) {
         const currentChecked = []
@@ -293,9 +296,6 @@
       },
       handleNextStep() {
         this.$emit('confirm', this.checked, this.targetBizId)
-      },
-      isShowCheckbox(data) {
-        return data.bk_obj_id === 'module'
       }
     }
   }
@@ -379,6 +379,7 @@
         max-height: calc(100% - 32px - 24px);
         padding: 0 0 0 12px;
         margin: 12px 0;
+        position: relative;
         @include scrollbar;
         .node-icon {
             display: block;
@@ -408,7 +409,9 @@
         .node-checkbox {
             width: 16px;
             height: 16px;
-            margin: 10px 17px 0 10px;
+            position: absolute;
+            left: 45px;
+            top: 10px;
             background: #FFF;
             border-radius: 50%;
             border: 1px solid #979BA5;
