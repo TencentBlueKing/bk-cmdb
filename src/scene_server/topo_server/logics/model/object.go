@@ -45,6 +45,7 @@ type ObjectOperationInterface interface {
 	CreateObjectByImport(kit *rest.Kit, data []metadata.YamlObject) ([]metadata.Object, error)
 	// SearchObjectsWithTotalInfo search object with it's attribute and association
 	SearchObjectsWithTotalInfo(kit *rest.Kit, ids, excludedAsst []int64) (*metadata.TotalObjectInfo, error)
+	SetProxy(attr AttributeOperationInterface)
 }
 
 // NewObjectOperation create a new object operation instance
@@ -60,6 +61,12 @@ func NewObjectOperation(client apimachinery.ClientSetInterface,
 type object struct {
 	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
+	attr        AttributeOperationInterface
+}
+
+// SetProxy SetProxy
+func (o *object) SetProxy(attr AttributeOperationInterface) {
+	o.attr = attr
 }
 
 // IsObjectExist check whether objID is a real model's bk_obj_id field in backend
@@ -788,7 +795,18 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, attr []metadata.A
 			groupIndex += 1
 			createdGroup[item.PropertyGroupName] = struct{}{}
 		}
-
+		if item.PropertyType == common.FieldTypeEnumQuote {
+			ok, err := o.attr.ValidObjIDAndInstID(kit, objID, item.Option, kit.CCError)
+			if err != nil {
+				blog.Errorf("valid objID and instID in enum quote option failed, value: %+v, err: %v, rid: %s",
+					item.Option, err, kit.Rid)
+				return err
+			}
+			if ok {
+				blog.Errorf("objID not exist or is inner model, or inst not exist, rid: %s", kit.Rid)
+				return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
+			}
+		}
 		item.Creator = kit.User
 		attrs = append(attrs, item)
 	}

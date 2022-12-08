@@ -30,7 +30,7 @@ import (
 // ValidPropertyOption valid property field option
 func ValidPropertyOption(propertyType string, option interface{}, errProxy ccErr.DefaultCCErrorIf) error {
 	switch propertyType {
-	case common.FieldTypeEnum:
+	case common.FieldTypeEnum, common.FieldTypeEnumMulti:
 		return ValidFieldTypeEnumOption(option, errProxy)
 	case common.FieldTypeInt:
 		return ValidFieldTypeIntOption(option, errProxy)
@@ -44,12 +44,12 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy ccErr
 
 // ValidFieldTypeEnumOption validate enum field type's option
 func ValidFieldTypeEnumOption(option interface{}, errProxy ccErr.DefaultCCErrorIf) error {
-	if nil == option {
+	if option == nil {
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 	}
 
 	arrOption, ok := option.([]interface{})
-	if false == ok {
+	if !ok {
 		blog.Errorf(" option %v not enum option", option)
 		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 	}
@@ -60,7 +60,7 @@ func ValidFieldTypeEnumOption(option interface{}, errProxy ccErr.DefaultCCErrorI
 	}
 	for _, o := range arrOption {
 		mapOption, ok := o.(map[string]interface{})
-		if false == ok || mapOption == nil {
+		if !ok || mapOption == nil {
 			blog.Errorf(" option %v not enum option, enum option item must id and name", option)
 			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 		}

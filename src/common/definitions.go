@@ -869,6 +869,12 @@ const (
 	// FieldTypeEnum the enum field type
 	FieldTypeEnum string = "enum"
 
+	// FieldTypeEnumMulti the enum multi field type
+	FieldTypeEnumMulti string = "enummulti"
+
+	// FieldTypeEnumQuote the enum quote field type
+	FieldTypeEnumQuote string = "enumquote"
+
 	// FieldTypeDate the date field type
 	FieldTypeDate string = "date"
 

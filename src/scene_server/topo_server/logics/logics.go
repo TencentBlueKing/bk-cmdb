@@ -90,6 +90,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	setOperation.SetProxy(instOperation, moduleOperation)
 	moduleOperation.SetProxy(instOperation)
 	attributeOperation.SetProxy(groupOperation, objectOperation)
+	objectOperation.SetProxy(attributeOperation)
 	businessOperation.SetProxy(instOperation, moduleOperation, setOperation)
 	businessSetOperation.SetProxy(instOperation)
 	return &logics{

@@ -126,10 +126,9 @@ func (s *Service) ImportObject(c *gin.Context) {
 	}
 
 	logics.ConvAttrOption(attrItems)
-
-	params := map[string]interface{}{objID: map[string]interface{}{"attr": attrItems}}
-
-	result, err := s.CoreAPI.ApiServer().AddObjectBatch(ctx, c.Request.Header, params)
+	blog.Errorf("=======>attrItems:%+v", attrItems)
+	param := map[string]interface{}{objID: map[string]interface{}{"attr": attrItems}}
+	result, err := s.CoreAPI.ApiServer().AddObjectBatch(ctx, c.Request.Header, param)
 	if err != nil {
 		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed,
 			"").Error(), nil)

@@ -159,7 +159,7 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 		rawError = attribute.validInt(ctx, data, key)
 	case common.FieldTypeFloat:
 		rawError = attribute.validFloat(ctx, data, key)
-	case common.FieldTypeEnum:
+	case common.FieldTypeEnum, common.FieldTypeEnumMulti:
 		rawError = attribute.validEnum(ctx, data, key)
 	case common.FieldTypeDate:
 		rawError = attribute.validDate(ctx, data, key)

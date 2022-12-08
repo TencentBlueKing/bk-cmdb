@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -39,6 +40,7 @@ type AttributeOperationInterface interface {
 	CreateObjectBatch(kit *rest.Kit, data map[string]metadata.ImportObjectData) (mapstr.MapStr, error)
 	// FindObjectBatch find object to attributes mapping
 	FindObjectBatch(kit *rest.Kit, objIDs []string) (mapstr.MapStr, error)
+	ValidObjIDAndInstID(kit *rest.Kit, objID string, option interface{}, errProxy ccErr.DefaultCCErrorIf) (bool, error)
 	SetProxy(grp GroupOperationInterface, obj ObjectOperationInterface)
 }
 
@@ -66,8 +68,155 @@ func (a *attribute) SetProxy(grp GroupOperationInterface, obj ObjectOperationInt
 	a.obj = obj
 }
 
-// IsValid check is valid
-func (a *attribute) IsValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribute) error {
+// getEnumQuoteOption get enum quote field option bk_obj_id and bk_inst_id value
+func (a *attribute) getEnumQuoteOption(option interface{}, errProxy ccErr.DefaultCCErrorIf) (string, int, error) {
+	var objID string
+	var instID int
+	if option == nil {
+		return objID, instID, errProxy.Errorf(common.CCErrCommParamsLostField, "option")
+	}
+	arrOption, ok := option.([]interface{})
+	if !ok {
+		blog.Errorf("option %v not enum quote option", option)
+		return objID, instID, errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
+	}
+	if len(arrOption) > common.AttributeOptionArrayMaxLength {
+		blog.Errorf("option array length %d exceeds max length %d", len(arrOption),
+			common.AttributeOptionArrayMaxLength)
+		return objID, instID, errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option",
+			common.AttributeOptionArrayMaxLength)
+	}
+	for _, o := range arrOption {
+		mapOption, ok := o.(map[string]interface{})
+		if !ok || mapOption == nil {
+			blog.Errorf(" option %v not enum quote option, enum option quote item must bk_obj_id and bk_inst_id",
+				option)
+			return objID, instID, errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
+		}
+		objIDVal, objIDOk := mapOption["bk_obj_id"]
+		if !objIDOk || objIDVal == "" {
+			blog.Errorf("enum quote option bk_obj_id can't be empty", option)
+			return objID, instID, errProxy.Errorf(common.CCErrCommParamsNeedSet, "option bk_obj_id")
+		}
+		if objID, ok := objIDVal.(string); !ok {
+			blog.Errorf("objIDVal %v not string", objIDVal)
+			return objID, instID, errProxy.Errorf(common.CCErrCommParamsNeedString, "option bk_obj_id")
+		} else if common.AttributeOptionValueMaxLength < utf8.RuneCountInString(objID) {
+			blog.Errorf("option bk_obj_id %s length %d exceeds max length %d", objID,
+				utf8.RuneCountInString(objID), common.AttributeOptionValueMaxLength)
+			return objID, instID, errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option bk_obj_id",
+				common.AttributeOptionValueMaxLength)
+		}
+		instIDVal, instIDOk := mapOption["bk_inst_id"]
+		if !instIDOk || instIDVal == "" {
+			blog.Errorf("enum quote option bk_inst_id can't be empty", option)
+			return objID, instID, errProxy.Errorf(common.CCErrCommParamsNeedSet, "option bk_inst_id")
+		}
+		switch mapOption["type"] {
+		case "int":
+			if instID, ok := instIDVal.(int); !ok {
+				blog.Errorf("instIDVal %v not int", instIDVal)
+				return objID, instID, errProxy.Errorf(common.CCErrCommParamsNeedString, "option bk_inst_id")
+			}
+		default:
+			blog.Errorf("enum quote option type must be 'int', current: %v", mapOption["type"])
+			return objID, instID, errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option type")
+		}
+	}
+
+	return objID, instID, nil
+}
+
+// ValidObjIDAndInstID check obj is inner model and obj is exist, inst is exit
+func (a *attribute) ValidObjIDAndInstID(kit *rest.Kit, objID string, option interface{},
+	errProxy ccErr.DefaultCCErrorIf) (bool, error) {
+	quoteObjID, instID, err := a.getEnumQuoteOption(option, errProxy)
+	if err != nil {
+		blog.Errorf("get enum quote option value failed, err: %v", err)
+		return false, err
+	}
+	// check objID is exist
+	isObjExists, err := a.obj.IsObjectExist(kit, quoteObjID)
+	if err != nil {
+		blog.Errorf("check obj id is exist failed, err: %v, rid: %s", err, kit.Rid)
+		return false, err
+	}
+	if !isObjExists {
+		blog.Errorf("enum quote option bk_obj_id is not exist, rid: %s", kit.Rid)
+		return true, nil
+	}
+	// quote objID can not model self
+	if quoteObjID == objID {
+		blog.Errorf("enum quote model can not model self, rid: %s", kit.Rid)
+		return true, nil
+	}
+	// check objID is inner model
+	if common.SomeInnerModel(quoteObjID) {
+		return true, nil
+	}
+
+	// check objID is custom node model
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.AssociationKindIDField: common.AssociationKindMainline,
+		},
+	}
+	mainlineAsstRsp, err := a.clientSet.ApiServer().ReadModuleAssociation(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("search mainline association failed, err: %v, rid: %s", err, kit.Rid)
+		return false, err
+	}
+
+	mainlineObjectChildMap := make(map[string]string, 0)
+	for _, asst := range mainlineAsstRsp.Data.Info {
+		if asst.ObjectID == common.BKInnerObjIDHost {
+			continue
+		}
+		mainlineObjectChildMap[asst.AsstObjID] = asst.ObjectID
+	}
+
+	// get all mainline custom object id
+	objectIDs := make([]string, 0)
+	for objectID := common.BKInnerObjIDApp; len(objectID) != 0; objectID = mainlineObjectChildMap[objectID] {
+		if objectID == common.BKInnerObjIDApp || objectID == common.BKInnerObjIDSet ||
+			objectID == common.BKInnerObjIDModule {
+			continue
+		}
+		objectIDs = append(objectIDs, objectID)
+	}
+
+	for _, customObjID := range objectIDs {
+		if quoteObjID == customObjID {
+			return true, nil
+		}
+	}
+
+	// check inst is exist
+	input := &metadata.QueryCondition{
+		Fields: []string{common.BKInstIDField},
+		Condition: mapstr.MapStr{common.BKInstIDField: mapstr.MapStr{
+			common.BKDBIN: instID,
+		}},
+	}
+	resp, err := a.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, quoteObjID, input)
+	if err != nil {
+		blog.Errorf("get inst failed, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
+		return false, err
+	}
+	if resp.Count == 0 {
+		blog.Errorf("get inst failed, inst not exist, input: %+v, rid: %s", input, kit.Rid)
+		return true, nil
+	}
+	if resp.Count > 1 {
+		blog.Errorf("get inst failed, inst not unique, input: %+v, rid: %s", input, kit.Rid)
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// isValid check is valid
+func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribute) error {
 	if data.PropertyID == common.BKInstParentStr {
 		return nil
 	}
@@ -104,8 +253,21 @@ func (a *attribute) IsValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 	// check option validity for creation,
 	// update validation is in coreservice cause property type need to be obtained from db
 	if !isUpdate && a.isPropertyTypeIntEnumListSingleLong(data.PropertyType) {
-		if err := util.ValidPropertyOption(data.PropertyType, data.Option, kit.CCError); nil != err {
+		if err := util.ValidPropertyOption(data.PropertyType, data.Option, kit.CCError); err != nil {
 			return err
+		}
+	}
+
+	// check enum quote field option validity creation or update
+	if data.PropertyType == common.FieldTypeEnumQuote {
+		ok, err := a.ValidObjIDAndInstID(kit, data.ObjectID, data.Option, kit.CCError)
+		if err != nil {
+			blog.Errorf("vaild objID and instID is exist failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+		if ok {
+			blog.Errorf("objID not exist or is inner model, or inst not exist, rid: %s", kit.Rid)
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 		}
 	}
 
@@ -121,7 +283,7 @@ func (a *attribute) IsValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 // isPropertyTypeIntEnumListSingleLong check is property type in enum list single long
 func (a *attribute) isPropertyTypeIntEnumListSingleLong(propertyType string) bool {
 	switch propertyType {
-	case common.FieldTypeInt, common.FieldTypeEnum, common.FieldTypeList:
+	case common.FieldTypeInt, common.FieldTypeEnum, common.FieldTypeList, common.FieldTypeEnumMulti:
 		return true
 	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
 		return true
@@ -233,7 +395,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 		return nil, err
 	}
 
-	if err := a.IsValid(kit, false, data); err != nil {
+	if err := a.isValid(kit, false, data); err != nil {
 		return nil, err
 	}
 
@@ -365,7 +527,7 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 		return kit.CCError.CCError(common.CCErrCommParseDBFailed)
 	}
 
-	if err := a.IsValid(kit, true, attr); err != nil {
+	if err := a.isValid(kit, true, attr); err != nil {
 		return err
 	}
 
@@ -528,15 +690,14 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 			continue
 		}
 
-		if err := a.IsValid(kit, true, &attr); err != nil {
+		attr.OwnerID = kit.SupplierAccount
+		attr.ObjectID = objID
+		if err := a.isValid(kit, true, &attr); err != nil {
 			blog.Errorf("attribute(%#v) is invalid, rid: %s", attr, err, kit.Rid)
 			objRes.Errors = append(objRes.Errors, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
 			hasError = true
 			continue
 		}
-
-		attr.OwnerID = kit.SupplierAccount
-		attr.ObjectID = objID
 
 		if len(attr.PropertyGroupName) != 0 {
 			groupID, exists := grpNameIDMap[attr.PropertyGroupName]

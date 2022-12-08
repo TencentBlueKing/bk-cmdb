@@ -104,3 +104,13 @@ func IsInnerMainlineModel(objType string) bool {
 		return false
 	}
 }
+
+// SomeInnerModel enum quote field not contain some inner model TODO 容器相关的几个模型还未添加
+func SomeInnerModel(objType string) bool {
+	switch objType {
+	case BKInnerObjIDSet, BKInnerObjIDModule, BKInnerObjIDProc:
+		return true
+	default:
+		return false
+	}
+}
