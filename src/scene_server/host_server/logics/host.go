@@ -65,12 +65,7 @@ func (lgc *Logics) GetHostInstanceDetails(kit *rest.Kit, hostID int64) (map[stri
 	if len(hostInfo) == 0 {
 		return nil, "", nil
 	}
-	ip, ok := hostInfo[common.BKHostInnerIPField].(string)
-	if !ok {
-		blog.Errorf("GetHostInstanceDetails http response format error,convert bk_biz_id to int error, inst:%#v  input:%#v, rid:%s", hostInfo, hostID, kit.Rid)
-		return nil, "", kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", "not string")
-
-	}
+	ip := util.GetStrByInterface(hostInfo[common.BKHostInnerIPField])
 	return hostInfo, ip, nil
 }
 
@@ -91,7 +86,7 @@ func (lgc *Logics) GetHostRelations(kit *rest.Kit, input metadata.HostModuleRela
 func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, cloudID int64, host map[string]interface{},
 	isIncrement bool) errors.CCError {
 
-	isExist, err := lgc.IsPlatExist(kit, mapstr.MapStr{common.BKCloudIDField: cloudID})
+	isExist, err := lgc.IsPlatExist(kit, []int64{cloudID})
 	if nil != err {
 		return err
 	}

@@ -145,7 +145,7 @@ func (lgc *Logics) ListHostByPolicy(kit *rest.Kit, resourceType iam.TypeID, filt
 
 		instances[index] = types.InstanceResource{
 			ID: util.GetStrByInterface(host[common.BKHostIDField]),
-			DisplayName: getHostDisplayName(util.GetStrByInterface(host[common.BKHostInnerIPField]),
+			DisplayName: metadata.GetHostDisplayName(util.GetStrByInterface(host[common.BKHostInnerIPField]),
 				util.GetStrByInterface(host[common.BKHostInnerIPv6Field]), cloudMap[cloudID]),
 		}
 	}

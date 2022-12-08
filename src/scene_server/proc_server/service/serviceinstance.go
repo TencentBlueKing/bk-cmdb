@@ -1655,8 +1655,11 @@ func (ps *ProcServer) handleAddedServiceInsts(hostMap map[int64]map[string]inter
 		if _, exists := hostWithSrvInstMap[hostID]; exists {
 			continue
 		}
-
-		srvInstName := util.GetStrByInterface(hostMap[hostID][common.BKHostInnerIPField]) + srvInstNameSuffix
+		namePrefix := util.GetStrByInterface(hostMap[hostID][common.BKHostInnerIPField])
+		if namePrefix == "" {
+			namePrefix = util.GetStrByInterface(hostMap[hostID][common.BKHostInnerIPv6Field])
+		}
+		srvInstName := namePrefix + srvInstNameSuffix
 		added = append(added, metadata.ServiceInstancesInfo{
 			Name: srvInstName,
 		})

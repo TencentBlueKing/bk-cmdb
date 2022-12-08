@@ -611,7 +611,7 @@ func (p *processOperation) generateServiceInstanceName(kit *rest.Kit, instanceID
 		}
 		return "", kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
-	instanceName := host[common.BKHostInnerIPField].(string)
+	instanceName := util.GetStrByInterface(host[common.BKHostInnerIPField])
 
 	// get first process instance relation
 	relation := metadata.ProcessInstanceRelation{}
