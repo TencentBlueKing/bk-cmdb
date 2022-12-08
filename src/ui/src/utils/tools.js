@@ -187,7 +187,7 @@ export function getEnumOptions(properties, id) {
  * @return {Number} 优先级分数，越小优先级越高
  */
 export function getPropertyPriority(property) {
-  let priority = 0
+  let priority = property.bk_property_index ?? 0
   if (property.isonly) {
     priority = priority - 1
   }

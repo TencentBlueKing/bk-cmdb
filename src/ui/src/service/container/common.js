@@ -191,17 +191,17 @@ export const propertyNameI18n = {
       en: 'ContainerRuntime'
     },
     kube_proxy_mode: {
-      zh: 'Kube-proxy代理模式',
+      zh: 'Kube-proxy 代理模式',
       en: 'kubeProxy'
     },
     pod_cidr: {
-      zh: '节点Pod地址范围',
+      zh: '节点 Pod 地址范围',
       en: 'PodCIDR'
     }
   },
   [CONTAINER_OBJECTS.POD]: {
     name: {
-      zh: 'Pod名称',
+      zh: 'Pod 名称',
       en: 'Name'
     },
     namespace: {
@@ -209,19 +209,19 @@ export const propertyNameI18n = {
       en: 'Namespace'
     },
     priority: {
-      zh: 'Pod优先级',
+      zh: 'Pod 优先级',
       en: 'Priority'
     },
     labels: {
-      zh: 'Pod标签',
+      zh: 'Pod 标签',
       en: 'Labels'
     },
     ip: {
-      zh: 'Pod容器网络IP',
+      zh: 'Pod 容器网络IP',
       en: 'IP'
     },
     ips: {
-      zh: 'Pod容器网络IPs',
+      zh: 'Pod 容器网络IPs',
       en: 'IPs'
     },
     controlled_by: {
@@ -233,20 +233,32 @@ export const propertyNameI18n = {
       en: 'Container ID'
     },
     qos_class: {
-      zh: 'Pod服务质量',
+      zh: 'Pod 服务质量',
       en: 'QoSClass'
     },
     volumes: {
-      zh: 'Pod卷信息',
+      zh: 'Pod 卷信息',
       en: 'Volumes'
     },
     node_selectors: {
-      zh: '将Pod指派给节点',
+      zh: '将 Pod 指派给节点',
       en: 'Node-Selectors'
     },
     tolerations: {
-      zh: 'Pod污点',
+      zh: 'Pod 污点',
       en: 'Tolerations'
+    },
+    cluster_uid: {
+      zh: '所属 Cluster',
+      en: 'Cluster'
+    },
+    namespace: {
+      zh: '所属 Namespace',
+      en: 'Namespace'
+    },
+    ref: {
+      zh: '所属 Workload',
+      en: 'Workload'
     }
   },
   [CONTAINER_OBJECTS.CONTAINER]: {

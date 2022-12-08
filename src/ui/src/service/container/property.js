@@ -16,6 +16,7 @@ import { normalizationProperty } from '@/service/container/transition.js'
 import { CONTAINER_OBJECTS, CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container.js'
 import { rollReqUseTotalCount } from '@/service/utils'
 import { getPropertyName } from './common.js'
+import { defineProperty as defineModelProperty } from '@/components/filters/utils.js'
 
 function createIdProperty(objId, isPrependName) {
   const keyMap = {
@@ -98,8 +99,22 @@ export const getMapValue = async (params, total, config) => {
   return mergeResult
 }
 
+export const getPodTopoNodeProps = () => {
+  const propIds = ['cluster_uid', 'namespace', 'ref']
+  const objId = CONTAINER_OBJECTS.POD
+  return propIds.map(id => defineModelProperty({
+    id: `${objId}_${id}`,
+    bk_obj_id: objId,
+    bk_property_id: id,
+    bk_property_name: getPropertyName(id, objId, i18n.locale),
+    bk_property_index: 0,
+    bk_property_type: 'singlechar'
+  }))
+}
+
 export default {
   find,
   getMany,
-  getMapValue
+  getMapValue,
+  getPodTopoNodeProps
 }
