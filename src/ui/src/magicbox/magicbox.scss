@@ -116,21 +116,29 @@
 
 .bk-big-tree {
     position: relative;
-    .bk-big-tree-node:not(.has-link-line) {
-        height: 36px;
-        line-height: 36px;
-        &.is-selected {
-            .node-folder-icon {
-                color: #3a84ff;
+    .bk-big-tree-node {
+        &:not(.has-link-line) {
+            height: 36px;
+            line-height: 36px;
+            &.is-selected {
+                .node-folder-icon {
+                    color: #3a84ff;
+                }
+            }
+            .node-options {
+                padding-left: 10px;
             }
         }
-        .node-options {
-            padding-left: 10px;
+
+        &.has-link-line.is-leaf {
+            padding-left: 12px;
+        }
+
+        &:hover {
+            background-color: #F0F1F5;
         }
     }
-    .bk-big-tree-node.has-link-line.is-leaf {
-        padding-left: 12px;
-    }
+
     .bk-scroll-home {
         .bk-min-nav-slide.bk-nav-show {
             width: 6px;

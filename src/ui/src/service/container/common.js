@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { CONTAINER_OBJECTS, WORKLOAD_TYPES } from '@/dictionary/container'
+import { CONTAINER_OBJECTS, WORKLOAD_TYPES, CONTAINER_OBJECT_NAMES, WORKLOAD_OBJECT_NAMES } from '@/dictionary/container'
 import containerClusterService from '@/service/container/cluster'
 import containerNamespaceService from '@/service/container/namespace'
 import containerWorkloadService from '@/service/container/workload'
@@ -23,6 +23,11 @@ export const isFolder = type => type === CONTAINER_OBJECTS.FOLDER
 
 // 获取容器节点大类型
 export const getContainerNodeType = type => (isWorkload(type) ? CONTAINER_OBJECTS.WORKLOAD : type)
+
+// 获取容器节点的名称字符集合
+export const getContainerObjectNames = type => (
+  isWorkload(type) ? WORKLOAD_OBJECT_NAMES[type] : CONTAINER_OBJECT_NAMES[type]
+)
 
 // 与传统模型字段类型的映射，原则上在交互形态完全一致的情况下才可以转换
 export const typeMapping = {

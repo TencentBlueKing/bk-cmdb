@@ -178,7 +178,6 @@
       },
       isShowOverflowTips(property) {
         const complexTypes = ['map']
-        console.log(property)
         return !complexTypes.includes(property.bk_property_type)
       },
       getPlaceholder(property) {
