@@ -150,15 +150,15 @@
       const versionList = await this.getLogList()
       console.log(document.getElementsByClassName('bk-version-left'))
       this.currentVersion = versionList.find(item => item.is_current === true)?.version || ''
+      this.versionList = versionList.map(item => ({
+        title: item.version,
+        date: item.time
+      }))
       if (oldCurrentVersion !== this.currentVersion) {
         this.isShowChangeLogs = true
         this.removeVersionLogNode()
         localStorage.setItem('newVersion', this.currentVersion)
       }
-      this.versionList = versionList.map(item => ({
-        title: item.version,
-        date: item.time
-      }))
     },
     methods: {
       ...mapActions('changeLog', [
