@@ -70,14 +70,14 @@ type SearchCondition struct {
 func ParseHostParams(input []metadata.ConditionItem, output map[string]interface{}) error {
 	for _, i := range input {
 		switch i.Operator {
-		case common.BKDBEQ:
-			output[i.Field] = i.Value
-		case common.BKDBIN:
+		case common.BKDBEQ, common.BKDBNE:
+			output[i.Field] = metadata.ConvertIpv6ToFullWord(i.Field, i.Value)
+		case common.BKDBIN, common.BKDBNIN:
 			queryCondItem := make(map[string]interface{})
 			if i.Value == nil {
 				queryCondItem[i.Operator] = make([]interface{}, 0)
 			} else {
-				queryCondItem[i.Operator] = i.Value
+				queryCondItem[i.Operator] = metadata.ConvertIpv6ToFullWord(i.Field, i.Value)
 			}
 			output[i.Field] = queryCondItem
 		case common.BKDBLIKE:

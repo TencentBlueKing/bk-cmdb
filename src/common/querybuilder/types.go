@@ -14,6 +14,7 @@ package querybuilder
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 	"time"
 
@@ -254,6 +255,48 @@ func (r AtomRule) validateValue(option *RuleOption) error {
 	}
 }
 
+func testIpv6Addr(addr string) string {
+	return "0000:0000:0000:0000:0000:0000:0000:0009"
+}
+
+func ConvertIpv6ToFullWord(field string, value interface{}) interface{} {
+	if field != common.BKHostInnerIPv6Field && field != common.BKHostOuterIPv6Field {
+		return value
+	}
+	v := reflect.ValueOf(value)
+	var data interface{}
+	switch v.Kind() {
+	case reflect.String:
+		data = testIpv6Addr(value.(string))
+	case reflect.Array, reflect.Slice:
+		v := reflect.ValueOf(value)
+		length := v.Len()
+		if length == 0 {
+			return value
+		}
+
+		result := make([]interface{}, 0)
+		// each element in the array or slice should be of the same basic type.
+		for i := 0; i < length; i++ {
+			item := v.Index(i).Interface()
+
+			switch item.(type) {
+			case string:
+				v := testIpv6Addr(item.(string))
+				result = append(result, v)
+			default:
+				return value
+			}
+		}
+
+		data = result
+
+	default:
+		return value
+	}
+	return data
+}
+
 // ToMgo generate mongo filter from rule
 func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err error) {
 	if key, err := r.Validate(&RuleOption{NeedSameSliceElementType: true}); err != nil {
@@ -263,20 +306,24 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 	filter := make(map[string]interface{})
 	switch r.Operator {
 	case OperatorEqual:
+		value := ConvertIpv6ToFullWord(r.Field, r.Value)
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBEQ: r.Value,
+			common.BKDBEQ: value,
 		}
 	case OperatorNotEqual:
+		value := ConvertIpv6ToFullWord(r.Field, r.Value)
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBNE: r.Value,
+			common.BKDBNE: value,
 		}
 	case OperatorIn:
+		value := ConvertIpv6ToFullWord(r.Field, r.Value)
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBIN: r.Value,
+			common.BKDBIN: value,
 		}
 	case OperatorNotIn:
+		value := ConvertIpv6ToFullWord(r.Field, r.Value)
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBNIN: r.Value,
+			common.BKDBNIN: value,
 		}
 	case OperatorLess:
 		filter[r.Field] = map[string]interface{}{
