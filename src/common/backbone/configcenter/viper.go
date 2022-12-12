@@ -452,6 +452,32 @@ func Kafka(prefix string) (kafka.Config, error) {
 	}, nil
 }
 
+// ChangeLogPath return ChangeLogPath configuration information according to the prefix.
+func ChangeLogPath(prefix string) (map[string]string, error) {
+	confLock.RLock()
+	defer confLock.RUnlock()
+
+	var parser *viperParser
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		parser = getCommonParser()
+		if parser != nil {
+			break
+		}
+		blog.Warn("the configuration of common is not ready yet")
+		time.Sleep(time.Duration(1) * time.Second)
+	}
+
+	if parser == nil {
+		blog.Errorf("can't find changelog path configuration")
+		return nil, err.New("can't find changelog path configuration")
+	}
+
+	return map[string]string{
+		"ch": parser.getString(prefix + ".ch"),
+		"en": parser.getString(prefix + ".en"),
+	}, nil
+}
+
 // String return the string value of the configuration information according to the key.
 func String(key string) (string, error) {
 	confLock.RLock()

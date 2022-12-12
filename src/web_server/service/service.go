@@ -129,6 +129,10 @@ func (s *Service) WebService() *gin.Engine {
 	ws.GET("/healthz", s.Healthz)
 	ws.GET("/version", ginservice.Version)
 
+	// get changelog info
+	ws.POST("find/changelog/list", s.GetVersionList)
+	ws.POST("find/changelog/detail", s.GetVersionDetail)
+
 	// if no route, redirect to 404 page
 	ws.NoRoute(func(c *gin.Context) {
 		c.Redirect(302, "/#/404")

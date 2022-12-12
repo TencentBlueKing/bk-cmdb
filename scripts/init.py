@@ -491,6 +491,13 @@ kafka:
     user:
     password:
 
+# cmdb版本日志存放路径配置
+ChangeLogPath:
+  # 中文版版本日志存放路径
+  ch: ../changelog_user/ch
+  # 英文版版本日志存放路径
+  en: ../changelog_user/en
+
 # cmdb服务tls配置
 tls:
   # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
