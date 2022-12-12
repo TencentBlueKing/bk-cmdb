@@ -60,12 +60,15 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit,
 }
 
 func validCloudID(kit *rest.Kit, cloudID int64) errors.CCErrorCoder {
+	if err := hooks.ValidHostCloudIDHook(kit, cloudID); err != nil {
+		return err
+	}
 	cloudIDFiler := map[string]interface{}{
 		common.BKCloudIDField: cloudID,
 	}
 	count, err := mongodb.Client().Table(common.BKTableNameBasePlat).Find(cloudIDFiler).Count(kit.Ctx)
 	if err != nil {
-		blog.Errorf("find cloud area failed, option: %s, err: %v, rid: %s", cloudIDFiler, err, kit.Rid)
+		blog.Errorf("find cloud area failed, option: %v, err: %v, rid: %s", cloudIDFiler, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -95,7 +98,7 @@ func validHost(kit *rest.Kit, cloudID int64, hostIDs []int64) errors.CCErrorCode
 	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(hostFilter).Fields(fields...).
 		All(kit.Ctx, &hostSimplify)
 	if err != nil {
-		blog.Errorf("find host failed, option: %s, err: %v, rid: %s", hostFilter, err, kit.Rid)
+		blog.Errorf("find host failed, option: %v, err: %v, rid: %s", hostFilter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if len(hostIDs) != len(hostSimplify) {
@@ -116,29 +119,25 @@ func validHost(kit *rest.Kit, cloudID int64, hostIDs []int64) errors.CCErrorCode
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAddressingField)
 		}
 
-		ipv4, ok := item[common.BKHostInnerIPField].(string)
-		if err := hooks.ValidHostInnerIPv4Hook(kit, cloudID, ipv4); err != nil {
-			return err
-		}
-
 		if addressing != common.BKAddressingStatic {
 			continue
 		}
 
+		ipv4, ok := item[common.BKHostInnerIPField].(string)
 		if ok {
-			innerIPv4s = append(innerIPv4s, ipv4)
 			if _, ok := ipv4Map[ipv4]; ok {
 				return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKHostInnerIPField)
 			}
+			innerIPv4s = append(innerIPv4s, ipv4)
 			ipv4Map[ipv4] = struct{}{}
 		}
 
 		ipv6, ok := item[common.BKHostInnerIPv6Field].(string)
 		if ok {
-			innerIPv6s = append(innerIPv6s, ipv6)
 			if _, ok := ipv6Map[ipv6]; ok {
 				return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKHostInnerIPv6Field)
 			}
+			innerIPv6s = append(innerIPv6s, ipv6)
 			ipv6Map[ipv6] = struct{}{}
 		}
 	}
@@ -189,7 +188,7 @@ func validDuplicatedHostInDB(kit *rest.Kit, hostIDs []int64, cloudID int64, inne
 	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(dbHostFilter).Fields(fields...).
 		All(kit.Ctx, &duplicatedHosts)
 	if err != nil {
-		blog.Errorf("find host failed, option: %s, err: %v, rid: %s", dbHostFilter, err, kit.Rid)
+		blog.Errorf("find host failed, option: %v, err: %v, rid: %s", dbHostFilter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 

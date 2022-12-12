@@ -48,25 +48,24 @@ func (lgc *Logics) GetHostAttributes(kit *rest.Kit, bizMetaOpt mapstr.MapStr) ([
 	return result.Info, nil
 }
 
-// GetHostInstanceDetails TODO
-func (lgc *Logics) GetHostInstanceDetails(kit *rest.Kit, hostID int64) (map[string]interface{}, string, errors.CCError) {
+// GetHostInstanceDetails get host instance details
+func (lgc *Logics) GetHostInstanceDetails(kit *rest.Kit, hostID int64) (map[string]interface{}, errors.CCError) {
 	// get host details, pre data
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostByID(kit.Ctx, kit.Header, hostID)
 	if err != nil {
 		blog.Errorf("GetHostInstanceDetails http do error, err:%s, input:%+v, rid:%s", err.Error(), hostID, kit.Rid)
-		return nil, "", kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
 		blog.Errorf("GetHostInstanceDetails http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, hostID, kit.Rid)
-		return nil, "", kit.CCError.New(result.Code, result.ErrMsg)
+		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
 	hostInfo := result.Data
 	if len(hostInfo) == 0 {
-		return nil, "", nil
+		return nil, nil
 	}
-	ip := util.GetStrByInterface(hostInfo[common.BKHostInnerIPField])
-	return hostInfo, ip, nil
+	return hostInfo, nil
 }
 
 // GetHostRelations get hosts owned set, module info, where hosts must match condition specify by cond.
@@ -86,7 +85,7 @@ func (lgc *Logics) GetHostRelations(kit *rest.Kit, input metadata.HostModuleRela
 func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, cloudID int64, host map[string]interface{},
 	isIncrement bool) errors.CCError {
 
-	isExist, err := lgc.IsPlatExist(kit, []int64{cloudID})
+	isExist, err := lgc.IsPlatAllExist(kit, []int64{cloudID})
 	if nil != err {
 		return err
 	}

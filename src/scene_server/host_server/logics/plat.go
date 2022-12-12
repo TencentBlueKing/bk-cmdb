@@ -22,8 +22,8 @@ import (
 	"configcenter/src/common/util"
 )
 
-// IsPlatExist is plat exist
-func (lgc *Logics) IsPlatExist(kit *rest.Kit, cloudIDs []int64) (bool, errors.CCError) {
+// IsPlatAllExist is plat all exist
+func (lgc *Logics) IsPlatAllExist(kit *rest.Kit, cloudIDs []int64) (bool, errors.CCError) {
 	cloudIDs = util.IntArrayUnique(cloudIDs)
 	cond := mapstr.MapStr{
 		common.BKCloudIDField: map[string]interface{}{
@@ -32,6 +32,7 @@ func (lgc *Logics) IsPlatExist(kit *rest.Kit, cloudIDs []int64) (bool, errors.CC
 	}
 	query := &metadata.QueryCondition{
 		Condition: cond,
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 		Fields:    []string{common.BKCloudIDField},
 	}
 

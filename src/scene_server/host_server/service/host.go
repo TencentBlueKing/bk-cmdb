@@ -254,7 +254,7 @@ func (s *Service) GetHostInstanceProperties(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKHostIDField))
 		return
 	}
-	details, _, err := s.Logic.GetHostInstanceDetails(ctx.Kit, hostIDInt64)
+	details, err := s.Logic.GetHostInstanceDetails(ctx.Kit, hostIDInt64)
 	if err != nil {
 		blog.Errorf("get host details failed, err: %v,host:%s,rid:%s", err, hostID, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

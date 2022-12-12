@@ -358,7 +358,7 @@ func adjustHostUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 			PartialFilterExpression: map[string]interface{}{
 				common.BKHostInnerIPField: map[string]string{common.BKDBType: "string"},
 				common.BKCloudIDField:     map[string]string{common.BKDBType: "number"},
-				common.BKAddressingField:  common.BKAddressingStatic,
+				common.BKAddressingField:  "static",
 			},
 		},
 		{
@@ -372,7 +372,7 @@ func adjustHostUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 			PartialFilterExpression: map[string]interface{}{
 				common.BKHostInnerIPv6Field: map[string]string{common.BKDBType: "string"},
 				common.BKCloudIDField:       map[string]string{common.BKDBType: "number"},
-				common.BKAddressingField:    common.BKAddressingStatic,
+				common.BKAddressingField:    "static",
 			},
 		},
 		{

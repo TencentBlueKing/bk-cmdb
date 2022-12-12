@@ -483,7 +483,7 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 	// determine if the cloud area exists
 	// default cloud area must be exist
 	if cloudID != common.BKDefaultDirSubArea {
-		isExist, err := h.lgc.IsPlatExist(h.kit, []int64{cloudID})
+		isExist, err := h.lgc.IsPlatAllExist(h.kit, []int64{cloudID})
 		if nil != err {
 			return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, err.Error()))
 
@@ -709,12 +709,11 @@ func (lgc *Logics) checkHostAttr(kit *rest.Kit, hostInfos []mapstr.MapStr) error
 		if err != nil || cloudIDVal < 0 {
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
 		}
-		hostInfos[index][common.BKCloudIDField] = cloudIDVal
-		cloudIDs = append(cloudIDs, cloudIDVal)
-
-		if err := hooks.ValidHostInnerIPv4Hook(kit, cloudIDVal, innerIPv4); err != nil {
+		if err := hooks.ValidHostCloudIDHook(kit, cloudIDVal); err != nil {
 			return err
 		}
+		hostInfos[index][common.BKCloudIDField] = cloudIDVal
+		cloudIDs = append(cloudIDs, cloudIDVal)
 
 		address, ok := host[common.BKAddressingField].(string)
 		if !ok || (address != common.BKAddressingDynamic && address != common.BKAddressingStatic) {
@@ -724,7 +723,7 @@ func (lgc *Logics) checkHostAttr(kit *rest.Kit, hostInfos []mapstr.MapStr) error
 
 	// validate cloud ids
 	cloudIDs = util.IntArrayUnique(cloudIDs)
-	isExist, err := lgc.IsPlatExist(kit, cloudIDs)
+	isExist, err := lgc.IsPlatAllExist(kit, cloudIDs)
 	if err != nil {
 		return err
 	}
