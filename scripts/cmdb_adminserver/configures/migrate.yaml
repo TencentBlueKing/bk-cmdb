@@ -1,0 +1,20 @@
+# 配置中心
+configServer:
+  addrs: 127.0.0.1:2181
+  usr:
+  pwd:
+# 注册中心
+registerServer:
+  addrs: 127.0.0.1:2181
+  usr:
+  pwd:
+# 指定configures的路径，通过这个路径找到其他的配置文件
+confs:
+  dir: D:\cmdb\configcenter\scripts\cmdb_adminserver\configures
+# 指定errors的路径
+errors:
+  res: D:\cmdb\configcenter\resources\errors
+# 指定language的路径
+language:
+  res: D:\cmdb\configcenter\resources\language
+    

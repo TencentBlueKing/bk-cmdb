@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="74962d59-268c-4021-ac3b-d0ff83f8f82f" name="redhat7" url="http://192.168.1.10">
+        <fileTransfer accessType="SFTP" host="192.168.1.10" port="22" sshConfigId="8ba70663-4f2d-475a-9725-894b67cee0d8" sshConfig="root@192.168.1.10:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

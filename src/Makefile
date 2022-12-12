@@ -10,10 +10,10 @@ default:
 	@echo ""
 	@echo -e "\033[34mbuilding server... \033[0m"
 	@rm -rf "./ui/node_modules"
-	@cd  $(SCRIPT_DIR) && bash ./build.sh
-	@cd $(SCRIPT_DIR) && python ./generate.py -t '$(BIN_PATH)' -i '${IMAGE}' -o '$(BIN_PATH)/docker'
 	@mkdir $(BIN_PATH)/changelog_user/
 	@cp -R ${DOCS_DIR}/support-file/changelog_user/*  $(BIN_PATH)/changelog_user
+	@cd  $(SCRIPT_DIR) && bash ./build.sh
+	@cd $(SCRIPT_DIR) && python ./generate.py -t '$(BIN_PATH)' -i '${IMAGE}' -o '$(BIN_PATH)/docker'
 	@echo -e "\033[34mbuilding web... \033[0m"
 	@cd $(SOURCE_ROOT)/ui && bash ./build.sh ${NPM} ${BIN_PATH}
 
@@ -32,10 +32,10 @@ server:
 	@echo ""
 	@echo -e "\033[34mbuilding server... \033[0m"
 	@rm -rf "./ui/node_modules"
-	@cd  $(SCRIPT_DIR) &&  bash ./build.sh
-	@cd $(SCRIPT_DIR) && python ./generate.py -t '$(BIN_PATH)' -i '${IMAGE}' -o '$(BIN_PATH)/docker'
 	@mkdir $(BIN_PATH)/changelog_user/
 	@cp -R ${DOCS_DIR}/support-file/changelog_user/*  $(BIN_PATH)/changelog_user
+	@cd  $(SCRIPT_DIR) &&  bash ./build.sh
+	@cd $(SCRIPT_DIR) && python ./generate.py -t '$(BIN_PATH)' -i '${IMAGE}' -o '$(BIN_PATH)/docker'
 
 .PHONY:ui
 ui:

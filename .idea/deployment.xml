@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" serverName="redhat7" exclude=".svn;.cvs;.idea;.DS_Store;.hg;*.hprof;*.pyc" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="redhat7">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/root/configcenter" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/src/ui" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>

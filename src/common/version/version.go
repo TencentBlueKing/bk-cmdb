@@ -21,10 +21,10 @@ import (
 // CCTag show the git tag for this version
 // CCBuildTime show the compile time
 var (
-	CCVersion       = "17.03.28"
-	CCTag           = "2017-03-28 Release"
+	CCVersion       = "v3.10.21"
+	CCTag           = "2022-09-28 Release"
 	CCBRANCH        = ""
-	CCBuildTime     = "2017-03-28 19:50:00"
+	CCBuildTime     = "2022-09-28 19:50:00"
 	CCGitHash       = "unknown"
 	CCRunMode       = "product"   // product, test, dev
 	CCDistro        = "community" // enterprise, community
