@@ -11,63 +11,73 @@
 -->
 
 <template>
-  <header class="header-layout" v-test-id.global="'header'">
-    <div class="logo">
-      <router-link class="logo-link" to="/index">
-        {{$t('蓝鲸配置平台')}}
-      </router-link>
-    </div>
-    <nav class="header-nav" v-test-id.global="'headerNav'">
-      <router-link class="header-link"
-        v-for="nav in visibleMenu"
-        :to="getHeaderLink(nav)"
-        :key="nav.id"
-        :class="{
-          active: isLinkActive(nav)
-        }">
-        {{$t(nav.i18n)}}
-      </router-link>
-    </nav>
-    <section class="header-info">
-      <bk-popover class="info-item"
-        theme="light header-info-popover"
-        animation="fade"
-        placement="bottom-end"
-        :arrow="false"
-        :tippy-options="{
-          animateFill: false,
-          hideOnClick: false
-        }">
-        <i class="question-icon icon-cc-default"></i>
-        <template slot="content">
-          <a class="question-link" target="_blank" :href="helpDocUrl">{{$t('产品文档')}}</a>
-          <a class="question-link" target="_blank" href="https://bk.tencent.com/s-mart/community">{{$t('问题反馈')}}</a>
-          <a class="question-link" target="_blank" href="https://github.com/Tencent/bk-cmdb">{{$t('开源社区')}}</a>
-        </template>
-      </bk-popover>
-      <bk-popover class="info-item"
-        theme="light header-info-popover"
-        animation="fade"
-        placement="bottom-end"
-        :arrow="false"
-        :tippy-options="{
-          animateFill: false,
-          hideOnClick: false
-        }">
-        <span class="info-user">
-          <span class="user-name">{{userName}}</span>
-          <i class="user-icon bk-icon icon-angle-down"></i>
-        </span>
-        <template slot="content">
-          <a class="question-link" href="javascript:void(0)"
-            @click="handleLogout">
-            <i class="icon-cc-logout"></i>
-            {{$t('注销')}}
-          </a>
-        </template>
-      </bk-popover>
-    </section>
-  </header>
+  <div>
+    <header class="header-layout" v-test-id.global="'header'">
+      <div class="logo">
+        <router-link class="logo-link" to="/index">
+          {{$t('蓝鲸配置平台')}}
+        </router-link>
+      </div>
+      <nav class="header-nav" v-test-id.global="'headerNav'">
+        <router-link class="header-link"
+          v-for="nav in visibleMenu"
+          :to="getHeaderLink(nav)"
+          :key="nav.id"
+          :class="{
+            active: isLinkActive(nav)
+          }">
+          {{$t(nav.i18n)}}
+        </router-link>
+      </nav>
+      <section class="header-info">
+        <bk-popover class="info-item"
+          theme="light header-info-popover"
+          animation="fade"
+          placement="bottom-end"
+          ref="popover"
+          :arrow="false"
+          :tippy-options="{
+            animateFill: false,
+            hideOnClick: false
+          }">
+          <i class="question-icon icon-cc-default"></i>
+          <template slot="content">
+            <a class="question-link" target="_blank" :href="helpDocUrl">{{$t('产品文档')}}</a>
+            <a class="question-link" target="_blank" @click="handleChangeLog()"
+              style="cursor:pointer">{{$t('版本日志')}}</a>
+            <a class="question-link" target="_blank" href="https://bk.tencent.com/s-mart/community">{{$t('问题反馈')}}</a>
+            <a class="question-link" target="_blank" href="https://github.com/Tencent/bk-cmdb">{{$t('开源社区')}}</a>
+          </template>
+        </bk-popover>
+        <bk-popover class="info-item"
+          theme="light header-info-popover"
+          animation="fade"
+          placement="bottom-end"
+          :arrow="false"
+          :tippy-options="{
+            animateFill: false,
+            hideOnClick: false
+          }">
+          <span class="info-user">
+            <span class="user-name">{{userName}}</span>
+            <i class="user-icon bk-icon icon-angle-down"></i>
+          </span>
+          <template slot="content">
+            <a class="question-link" href="javascript:void(0)"
+              @click="handleLogout">
+              <i class="icon-cc-logout"></i>
+              {{$t('注销')}}
+            </a>
+          </template>
+        </bk-popover>
+      </section>
+    </header>
+    <versionLog
+      :current-version="currentVersion"
+      :version-list="versionList"
+      :show.sync="isShowChangeLogs">
+    </versionLog>
+  </div>
 </template>
 
 <script>
@@ -79,15 +89,23 @@
     MENU_BUSINESS_SET_TOPOLOGY,
     MENU_BUSINESS_HOST_AND_SERVICE
   } from '@/dictionary/menu-symbol'
-  import { mapGetters } from 'vuex'
+  import { mapGetters, mapActions } from 'vuex'
   import {
     getBizSetIdFromStorage,
     getBizSetRecentlyUsed
   } from '@/utils/business-set-helper.js'
+  import versionLog from '../version-log'
 
   export default {
+    components: {
+      versionLog
+    },
     data() {
-      return {}
+      return {
+        isShowChangeLogs: false,
+        versionList: [],
+        currentVersion: '',
+      }
     },
     computed: {
       ...mapGetters(['userName']),
@@ -100,7 +118,6 @@
           if (!has(menuItem, 'visibility')) {
             return true
           }
-
           if (typeof menuItem.visibility === 'function') {
             return menuItem.visibility(this)
           }
@@ -112,7 +129,23 @@
         return topRoute?.name === MENU_BUSINESS_SET || topRoute?.name === MENU_BUSINESS
       }
     },
+    async  mounted() {
+      const oldCurrentVersion = localStorage.getItem('newVersion')
+      const versionList = await this.getLogList()
+      this.versionList = versionList.map(item => ({
+        title: item.version,
+        date: item.time
+      }))
+      this.currentVersion = versionList.find(item => item.is_current === true)?.version || ''
+      if (oldCurrentVersion !== this.currentVersion) {
+        this.isShowChangeLogs = true
+        localStorage.setItem('newVersion', this.currentVersion)
+      }
+    },
     methods: {
+      ...mapActions('versionLog', [
+        'getLogList',
+      ]),
       isLinkActive(nav) {
         const { matched: [topRoute] } = this.$route
         if (!topRoute) {
@@ -140,6 +173,10 @@
         }).then((data) => {
           window.location.href = data.url
         })
+      },
+      handleChangeLog() {
+        this.isShowChangeLogs = true
+        this.$refs.popover.instance.hide()
       }
     }
   }
