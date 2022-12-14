@@ -23,91 +23,26 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/thirdparty/hooks"
 )
 
-// UpdateHostCloudAreaField TODO
-func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder {
-	rid := kit.Rid
-	context := kit.Ctx
+// UpdateHostCloudAreaField update host cloud area field
+func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit,
+	input metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder {
 
 	if len(input.HostIDs) == 0 {
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_host_ids")
 	}
 	input.HostIDs = util.IntArrayUnique(input.HostIDs)
 
-	// step1. validate bk_cloud_id
-	cloudIDFiler := map[string]interface{}{
-		common.BKCloudIDField: input.CloudID,
-	}
-	count, err := mongodb.Client().Table(common.BKTableNameBasePlat).Find(cloudIDFiler).Count(context)
-	if err != nil {
-		blog.ErrorJSON("UpdateHostCloudAreaField failed, db select failed, table: %s, option: %s, err: %s, rid: %s", common.BKTableNameBasePlat, cloudIDFiler, err.Error(), rid)
-		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-	if count == 0 {
-		blog.Errorf("UpdateHostCloudAreaField failed, bk_cloud_id invalid, bk_cloud_id: %d, rid: %s", input.CloudID, rid)
-		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
-	}
-	if count > 1 {
-		blog.Errorf("UpdateHostCloudAreaField failed, get multiple cloud area, bk_cloud_id: %d, rid: %s", input.CloudID, rid)
-		return kit.CCError.CCError(common.CCErrCommGetMultipleObject)
+	if err := validCloudID(kit, input.CloudID); err != nil {
+		return err
 	}
 
-	// step2. validate bk_host_ids
-	hostFilter := map[string]interface{}{
-		common.BKHostIDField: map[string]interface{}{
-			common.BKDBIN: input.HostIDs,
-		},
-	}
-	hostSimplify := make([]metadata.HostMapStr, 0)
-	fields := []string{common.BKHostInnerIPField, common.BKCloudIDField, common.BKHostIDField}
-	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(hostFilter).Fields(fields...).All(context, &hostSimplify); err != nil {
-		blog.ErrorJSON("UpdateHostCloudAreaField failed, db select failed, table: %s, option: %s, err: %s, rid: %s", common.BKTableNameBaseHost, hostFilter, err.Error(), rid)
-		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-	if len(input.HostIDs) != len(hostSimplify) {
-		blog.Errorf("UpdateHostCloudAreaField failed, maybe some hosts not found, hostIDs:%s, hosts:%s, rid:%s", input.HostIDs, hostSimplify, rid)
-		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
+	if err := validHost(kit, input.CloudID, input.HostIDs); err != nil {
+		return err
 	}
 
-	// step3. validate unique of bk_cloud_id + bk_host_innerip in input parameters
-	innerIPs := make([]string, 0)
-	for _, item := range hostSimplify {
-		innerIPs = append(innerIPs, item[common.BKHostInnerIPField].(string))
-	}
-	innerIPs = util.StrArrayUnique(innerIPs)
-	if len(input.HostIDs) != len(innerIPs) {
-		return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKHostInnerIPField)
-	}
-
-	// step4. validate unique of bk_cloud_id + bk_inner_ip in database
-	ipCond := make([]map[string]interface{}, len(innerIPs))
-	for index, innerIP := range innerIPs {
-		innerIPArr := strings.Split(innerIP, ",")
-		ipCond[index] = map[string]interface{}{
-			common.BKHostInnerIPField: map[string]interface{}{
-				common.BKDBIN: innerIPArr,
-			},
-		}
-	}
-	dbHostFilter := map[string]interface{}{
-		common.BKHostIDField: map[string]interface{}{
-			common.BKDBNIN: input.HostIDs,
-		},
-		common.BKCloudIDField: input.CloudID,
-		common.BKDBOR:         ipCond,
-	}
-	duplicatedHosts := make([]metadata.HostMapStr, 0)
-	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(dbHostFilter).Fields(fields...).All(context, &duplicatedHosts); err != nil {
-		blog.ErrorJSON("UpdateHostCloudAreaField failed, db select failed, table: %s, option: %s, err: %s, rid: %s", common.BKTableNameBaseHost, dbHostFilter, err.Error(), rid)
-		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-	if len(duplicatedHosts) > 0 {
-		blog.ErrorJSON("UpdateHostCloudAreaField failed, bk_cloud_id + bk_host_innerip duplicated, input: %s, duplicated hosts: %s, rid: %s", input, duplicatedHosts, rid)
-		return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKHostInnerIPField)
-	}
-
-	// step5. update hosts bk_cloud_id field
 	updateFilter := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{
 			common.BKDBIN: input.HostIDs,
@@ -116,10 +51,153 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit, input metadata.Up
 	updateDoc := map[string]interface{}{
 		common.BKCloudIDField: input.CloudID,
 	}
-	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Update(context, updateFilter, updateDoc); err != nil {
-		blog.ErrorJSON("UpdateHostCloudAreaField failed, db update failed, table: %s, filter: %s, doc: %s, err: %s, rid: %s", common.BKTableNameBaseHost, updateFilter, updateDoc, err.Error(), rid)
+	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Update(kit.Ctx, updateFilter, updateDoc); err != nil {
+		blog.Errorf("update host cloud area failed, filter: %v, doc: %v, err: %v, rid: %s", updateFilter, updateDoc,
+			err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
+	return nil
+}
+
+func validCloudID(kit *rest.Kit, cloudID int64) errors.CCErrorCoder {
+	if err := hooks.ValidHostCloudIDHook(kit, cloudID); err != nil {
+		return err
+	}
+	cloudIDFiler := map[string]interface{}{
+		common.BKCloudIDField: cloudID,
+	}
+	count, err := mongodb.Client().Table(common.BKTableNameBasePlat).Find(cloudIDFiler).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("find cloud area failed, option: %v, err: %v, rid: %s", cloudIDFiler, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	if count == 0 {
+		blog.Errorf("bk_cloud_id is invalid, bk_cloud_id: %d, rid: %s", cloudID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+	}
+	if count > 1 {
+		blog.Errorf("get multiple cloud area, bk_cloud_id: %d, rid: %s", cloudID, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommGetMultipleObject)
+	}
+
+	return nil
+}
+
+func validHost(kit *rest.Kit, cloudID int64, hostIDs []int64) errors.CCErrorCoder {
+	// step1. validate bk_host_ids is exist
+	hostFilter := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: hostIDs,
+		},
+	}
+	hostSimplify := make([]metadata.HostMapStr, 0)
+	fields := []string{common.BKHostInnerIPField, common.BKHostInnerIPv6Field, common.BKCloudIDField,
+		common.BKHostIDField, common.BKAddressingField}
+
+	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(hostFilter).Fields(fields...).
+		All(kit.Ctx, &hostSimplify)
+	if err != nil {
+		blog.Errorf("find host failed, option: %v, err: %v, rid: %s", hostFilter, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if len(hostIDs) != len(hostSimplify) {
+		blog.Errorf("some hosts not found, hostIDs: %v, hosts: %v, rid: %s", hostIDs, hostSimplify, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
+	}
+
+	// step2. validate when addressing is static,
+	// unique of bk_cloud_id + bk_host_innerip and bk_cloud_id + bk_host_innerip_v6
+	innerIPv4s := make([]string, 0)
+	ipv4Map := make(map[string]struct{})
+	innerIPv6s := make([]string, 0)
+	ipv6Map := make(map[string]struct{})
+	for _, item := range hostSimplify {
+		addressing, ok := item[common.BKAddressingField].(string)
+		if !ok {
+			blog.Errorf("host field is invalid, field: %s, host: %v, rid: %s", common.BKAddressingField, item, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAddressingField)
+		}
+
+		if addressing != common.BKAddressingStatic {
+			continue
+		}
+
+		ipv4, ok := item[common.BKHostInnerIPField].(string)
+		if ok {
+			if _, ok := ipv4Map[ipv4]; ok {
+				return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKHostInnerIPField)
+			}
+			innerIPv4s = append(innerIPv4s, ipv4)
+			ipv4Map[ipv4] = struct{}{}
+		}
+
+		ipv6, ok := item[common.BKHostInnerIPv6Field].(string)
+		if ok {
+			if _, ok := ipv6Map[ipv6]; ok {
+				return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKHostInnerIPv6Field)
+			}
+			innerIPv6s = append(innerIPv6s, ipv6)
+			ipv6Map[ipv6] = struct{}{}
+		}
+	}
+
+	// step3. validate when addressing is static,
+	// unique of bk_cloud_id + bk_inner_ip and bk_cloud_id + bk_host_innerip_v6 and in database
+	if err := validDuplicatedHostInDB(kit, hostIDs, cloudID, innerIPv4s, innerIPv6s); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validDuplicatedHostInDB(kit *rest.Kit, hostIDs []int64, cloudID int64, innerIPv4s []string,
+	innerIPv6s []string) errors.CCErrorCoder {
+
+	ipCond := make([]map[string]interface{}, len(innerIPv4s)+len(innerIPv6s))
+	for idx, ip := range innerIPv4s {
+		ipArr := strings.Split(ip, ",")
+		ipCond[idx] = map[string]interface{}{
+			common.BKHostInnerIPField: map[string]interface{}{
+				common.BKDBIN: ipArr,
+			},
+		}
+	}
+
+	for idx, ip := range innerIPv6s {
+		ipArr := strings.Split(ip, ",")
+		ipCond[idx+len(innerIPv4s)] = map[string]interface{}{
+			common.BKHostInnerIPv6Field: map[string]interface{}{
+				common.BKDBIN: ipArr,
+			},
+		}
+	}
+
+	dbHostFilter := map[string]interface{}{
+		common.BKAddressingField: common.BKAddressingStatic,
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBNIN: hostIDs,
+		},
+		common.BKCloudIDField: cloudID,
+		common.BKDBOR:         ipCond,
+	}
+	duplicatedHosts := make([]metadata.HostMapStr, 0)
+	fields := []string{common.BKHostInnerIPField, common.BKHostInnerIPv6Field, common.BKCloudIDField,
+		common.BKHostIDField, common.BKAddressingField}
+
+	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(dbHostFilter).Fields(fields...).
+		All(kit.Ctx, &duplicatedHosts)
+	if err != nil {
+		blog.Errorf("find host failed, option: %v, err: %v, rid: %s", dbHostFilter, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	if len(duplicatedHosts) > 0 {
+		blog.Errorf("duplicated hosts exits, option: %v, host: %v, rid: %s", dbHostFilter, duplicatedHosts, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem,
+			common.BKHostInnerIPField+" or "+common.BKHostInnerIPv6Field)
+	}
+
 	return nil
 }
 

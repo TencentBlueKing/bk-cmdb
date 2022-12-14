@@ -31,6 +31,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/framework/core/errors"
 	hutil "configcenter/src/scene_server/host_server/util"
+	"configcenter/src/thirdparty/hooks"
 )
 
 // AddHost TODO
@@ -482,7 +483,7 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 	// determine if the cloud area exists
 	// default cloud area must be exist
 	if cloudID != common.BKDefaultDirSubArea {
-		isExist, err := h.lgc.IsPlatExist(h.kit, mapstr.MapStr{common.BKCloudIDField: cloudID})
+		isExist, err := h.lgc.IsPlatAllExist(h.kit, []int64{cloudID})
 		if nil != err {
 			return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, err.Error()))
 
@@ -619,36 +620,16 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 
 // AddHosts add host to business module
 func (lgc *Logics) AddHosts(kit *rest.Kit, appID int64, moduleID int64, hostInfos []mapstr.MapStr) ([]int64, error) {
-
 	if moduleID == 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
 	if appID == 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
+
 	// check host attribute
-	for index, host := range hostInfos {
-		innerIPv4, isIPv4Ok := host[common.BKHostInnerIPField].(string)
-		innerIPv6, isIPv6Ok := host[common.BKHostInnerIPv6Field].(string)
-		if (!isIPv4Ok || innerIPv4 == "") && (!isIPv6Ok || innerIPv6 == "") {
-			return nil, kit.CCError.CCErrorf(common.CCErrCommAtLeastSetOneVal, common.BKHostInnerIPField,
-				common.BKHostInnerIPv6Field)
-		}
-
-		cloudID, ok := host[common.BKCloudIDField]
-		if !ok {
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
-		}
-		cloudIDVal, err := util.GetInt64ByInterface(cloudID)
-		if err != nil || cloudIDVal < 0 {
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
-		}
-		hostInfos[index][common.BKCloudIDField] = cloudIDVal
-
-		address, ok := host[common.BKAddressingField].(string)
-		if !ok || (address != common.BKAddressingDynamic && address != common.BKAddressingStatic) {
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAddressingField)
-		}
+	if err := lgc.checkHostAttr(kit, hostInfos); err != nil {
+		return nil, err
 	}
 
 	// create host instance
@@ -708,4 +689,47 @@ func (lgc *Logics) AddHosts(kit *rest.Kit, appID int64, moduleID int64, hostInfo
 	}
 
 	return hostIDs, nil
+}
+
+func (lgc *Logics) checkHostAttr(kit *rest.Kit, hostInfos []mapstr.MapStr) error {
+	cloudIDs := make([]int64, 0)
+	for index, host := range hostInfos {
+		innerIPv4, isIPv4Ok := host[common.BKHostInnerIPField].(string)
+		innerIPv6, isIPv6Ok := host[common.BKHostInnerIPv6Field].(string)
+		if (!isIPv4Ok || innerIPv4 == "") && (!isIPv6Ok || innerIPv6 == "") {
+			return kit.CCError.CCErrorf(common.CCErrCommAtLeastSetOneVal, common.BKHostInnerIPField,
+				common.BKHostInnerIPv6Field)
+		}
+
+		cloudID, ok := host[common.BKCloudIDField]
+		if !ok {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		}
+		cloudIDVal, err := util.GetInt64ByInterface(cloudID)
+		if err != nil || cloudIDVal < 0 {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		}
+		if err := hooks.ValidHostCloudIDHook(kit, cloudIDVal); err != nil {
+			return err
+		}
+		hostInfos[index][common.BKCloudIDField] = cloudIDVal
+		cloudIDs = append(cloudIDs, cloudIDVal)
+
+		address, ok := host[common.BKAddressingField].(string)
+		if !ok || (address != common.BKAddressingDynamic && address != common.BKAddressingStatic) {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAddressingField)
+		}
+	}
+
+	// validate cloud ids
+	cloudIDs = util.IntArrayUnique(cloudIDs)
+	isExist, err := lgc.IsPlatAllExist(kit, cloudIDs)
+	if err != nil {
+		return err
+	}
+	if !isExist {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+	}
+
+	return nil
 }
