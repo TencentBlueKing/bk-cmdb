@@ -283,6 +283,15 @@
             color: #3a84ff;
         }
     }
+    .exception-wrap {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .exception-wrap .exception-wrap-item {
+        margin: 10px;
+        height: 420px;
+        padding-top: 22px;
+    }
 </style>
 
 <style>
