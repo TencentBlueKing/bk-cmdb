@@ -14,6 +14,7 @@ package datasynchronize
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -127,6 +128,7 @@ func (inst *instance) saveSynchronizeHostInstance(kit *rest.Kit) errors.CCError 
 	for _, info := range inst.base.syncData.InfoArray {
 		info.Info, err = metadata.ConvertHostSpecialStringToArray(info.Info)
 		if err != nil {
+			blog.Errorf("convert host special string to array failed, err: %v, rid: %s", err, kit.Rid)
 			return err
 		}
 	}

@@ -232,7 +232,4 @@ const (
 
 	// IPv6LinkLocalAddressPrefix link local address
 	IPv6LinkLocalAddressPrefix = "fe80"
-
-	// ipv6 address is embedded with IPv4 address prefix
-	IPv6EmbeddedWithIPv4Prefix = "::ffff:"
 )

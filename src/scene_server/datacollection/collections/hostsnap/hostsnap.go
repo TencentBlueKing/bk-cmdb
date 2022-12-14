@@ -391,8 +391,7 @@ func (h *HostSnap) Analyze(msg *string, sourceType string) (bool, error) {
 
 func getIPv4AndIPv6UpdateData(addressing string, ipv4 []string, ipv6 []string) ([]string, []string, error) {
 	var err error
-	updateIPv4, updateIPv6 := make([]string, 0), make([]string, 0)
-
+	var updateIPv4, updateIPv6 []string
 	// in the dynamic ip scenario, innerIP needs to be updated
 	if addressing == common.BKAddressingDynamic {
 		updateIPv4 = ipv4
@@ -1037,8 +1036,7 @@ func getIPsFromMsg(val *gjson.Result) ([]string, []string) {
 
 	rootIP := val.Get("ip").String()
 	rootIP = strings.TrimSpace(rootIP)
-	rootIP, err := getIPv4IfEmbeddedInIPv6(rootIP)
-	if err != nil && rootIP != metadata.IPv4LoopBackIpPrefix && rootIP != metadata.IPv6LoopBackIp &&
+	if rootIP != metadata.IPv4LoopBackIpPrefix && rootIP != metadata.IPv6LoopBackIp &&
 		strings.HasPrefix(rootIP, metadata.IPv6LinkLocalAddressPrefix) && net.ParseIP(rootIP) != nil {
 		if strings.Contains(rootIP, ":") {
 			ipv6Map[rootIP] = struct{}{}
@@ -1083,10 +1081,13 @@ func getIPsFromMsg(val *gjson.Result) ([]string, []string) {
 				continue
 			}
 
-			ip, err := getIPv4IfEmbeddedInIPv6(ip)
-			if err != nil {
-				blog.Errorf("get ip failed: %v", err)
-				continue
+			var err error
+			if strings.Contains(ip, ":") {
+				ip, err = metadata.GetIPv4IfEmbeddedInIPv6(ip)
+				if err != nil {
+					blog.Errorf("get ip failed: %v", err)
+					continue
+				}
 			}
 
 			if net.ParseIP(ip) == nil {
@@ -1112,20 +1113,6 @@ func getIPsFromMsg(val *gjson.Result) ([]string, []string) {
 		ipv6List = append(ipv6List, ipv6)
 	}
 	return ipv4List, ipv6List
-}
-
-// getIPv4IfEmbeddedIPv6 get ipv4 address if it is embedded in ipv6 address, ::ffff:127.0.0.1 => 127.0.0.1
-func getIPv4IfEmbeddedInIPv6(address string) (string, error) {
-	if !strings.HasPrefix(address, metadata.IPv6EmbeddedWithIPv4Prefix) {
-		return address, nil
-	}
-
-	split := strings.Split(address, ":")
-	if len(split) != 4 || net.ParseIP(split[3]) == nil {
-		return "", fmt.Errorf("address is invalid: %s", address)
-	}
-
-	return split[3], nil
 }
 
 // saveHostsnap save host snapshot in redis

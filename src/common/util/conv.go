@@ -13,12 +13,9 @@
 package util
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
-	"net"
 	"reflect"
 	"strconv"
 	"strings"
@@ -360,49 +357,4 @@ func SliceInterfaceToBool(faceSlice []interface{}) ([]bool, error) {
 
 	}
 	return results, nil
-}
-
-// ConvertIpv6ToInt convert an ipv6 address to big int value
-func ConvertIpv6ToInt(ipv6 string) (*big.Int, error) {
-	ip := net.ParseIP(ipv6)
-	if ip == nil {
-		return nil, fmt.Errorf("invalid ipv6 address, data: %s", ipv6)
-	}
-	intVal := big.NewInt(0).SetBytes(ip)
-	return intVal, nil
-}
-
-// ConvertIPv6ToFullAddr convert an ipv6 address to a full ipv6 address
-func ConvertIPv6ToFullAddr(ipv6 string) (string, error) {
-	intVal, err := ConvertIpv6ToInt(ipv6)
-	if err != nil {
-		return "", err
-	}
-
-	b255 := new(big.Int).SetBytes([]byte{255})
-	buf := make([]byte, 2)
-	part := make([]string, 8)
-	pos := 0
-	tmpInt := new(big.Int)
-	var i uint
-	for i = 0; i < 16; i += 2 {
-		tmpInt.Rsh(intVal, 120-i*8).And(tmpInt, b255)
-		bytes := tmpInt.Bytes()
-		if len(bytes) > 0 {
-			buf[0] = bytes[0]
-		} else {
-			buf[0] = 0
-		}
-		tmpInt.Rsh(intVal, 120-(i+1)*8).And(tmpInt, b255)
-		bytes = tmpInt.Bytes()
-		if len(bytes) > 0 {
-			buf[1] = bytes[0]
-		} else {
-			buf[1] = 0
-		}
-		part[pos] = hex.EncodeToString(buf)
-		pos++
-	}
-
-	return strings.Join(part, ":"), nil
 }
