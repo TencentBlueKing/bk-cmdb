@@ -406,12 +406,12 @@
             @include ellipsis;
         }
         .node-checkbox {
-             width: 16px;
-             height: 16px;
-             margin: 10px 5px 0 10px;
-             background: #FFF;
-             border-radius: 50%;
-             border: 1px solid #979BA5;
+            width: 16px;
+            height: 16px;
+            margin: 10px 5px 0 10px;
+            background: #FFF;
+            border-radius: 50%;
+            border: 1px solid #979BA5;
             &.is-checked {
                 padding: 3px;
                 border-color: $primaryColor;
@@ -420,11 +420,11 @@
             }
         }
         .internal-node-icon{
-           width: 20px;
-             height: 20px;
-           line-height: 20px;
-             text-align: center;
-             margin: 8px 4px 8px 0;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            text-align: center;
+            margin: 8px 4px 8px 0;
         }
     }
 </style>
