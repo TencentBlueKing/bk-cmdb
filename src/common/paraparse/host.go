@@ -68,16 +68,23 @@ type SearchCondition struct {
 
 // ParseHostParams TODO
 func ParseHostParams(input []metadata.ConditionItem, output map[string]interface{}) error {
+	var err error
 	for _, i := range input {
 		switch i.Operator {
 		case common.BKDBEQ, common.BKDBNE:
-			output[i.Field] = metadata.ConvertIpv6ToFullWord(i.Field, i.Value)
+			output[i.Field], err = common.ConvertIpv6ToFullWord(i.Field, i.Value)
+			if err != nil {
+				return err
+			}
 		case common.BKDBIN, common.BKDBNIN:
 			queryCondItem := make(map[string]interface{})
 			if i.Value == nil {
 				queryCondItem[i.Operator] = make([]interface{}, 0)
 			} else {
-				queryCondItem[i.Operator] = metadata.ConvertIpv6ToFullWord(i.Field, i.Value)
+				queryCondItem[i.Operator], err = common.ConvertIpv6ToFullWord(i.Field, i.Value)
+				if err != nil {
+					return err
+				}
 			}
 			output[i.Field] = queryCondItem
 		case common.BKDBLIKE:
