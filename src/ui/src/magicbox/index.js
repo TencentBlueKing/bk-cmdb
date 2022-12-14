@@ -65,7 +65,7 @@ export const $warn = (message, delay = 3000) => magicbox.bkMessage({
 
 export const $bkInfo = magicbox.bkInfoBox
 
-export const $bkPopover = magicbox.bkPopover
+export const { $bkPopover } = Vue.prototype
 
 Vue.prototype.$error = $error
 Vue.prototype.$success = $success
