@@ -197,3 +197,16 @@ func ConvertHostSpecialStringToArray(host map[string]interface{}) map[string]int
 	}
 	return host
 }
+
+// GetHostDisplayName get host display name
+func GetHostDisplayName(innerIP string, innerIPv6 string, cloudName string) string {
+	if innerIP == "" {
+		innerIP = "--"
+	}
+
+	if innerIPv6 == "" {
+		innerIPv6 = "--"
+	}
+
+	return innerIP + "|" + innerIPv6 + "(" + cloudName + ")"
+}

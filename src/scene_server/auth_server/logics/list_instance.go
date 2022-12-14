@@ -346,7 +346,7 @@ func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page t
 		cloudID, _ := util.GetInt64ByInterface(host[common.BKCloudIDField])
 		instances = append(instances, types.InstanceResource{
 			ID: util.GetStrByInterface(host[common.BKHostIDField]),
-			DisplayName: getHostDisplayName(util.GetStrByInterface(host[common.BKHostInnerIPField]),
+			DisplayName: metadata.GetHostDisplayName(util.GetStrByInterface(host[common.BKHostInnerIPField]),
 				util.GetStrByInterface(host[common.BKHostInnerIPv6Field]), cloudMap[cloudID]),
 		})
 	}
@@ -449,7 +449,7 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 	for _, host := range hosts {
 		instances = append(instances, types.InstanceResource{
 			ID:          strconv.FormatInt(host.ID, 10),
-			DisplayName: getHostDisplayName(host.InnerIP, host.InnerIPv6, cloudMap[host.CloudID]),
+			DisplayName: metadata.GetHostDisplayName(host.InnerIP, host.InnerIPv6, cloudMap[host.CloudID]),
 		})
 	}
 

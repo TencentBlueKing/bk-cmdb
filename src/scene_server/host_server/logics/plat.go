@@ -19,25 +19,31 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
-// IsPlatExist TODO
-func (lgc *Logics) IsPlatExist(kit *rest.Kit, cond mapstr.MapStr) (bool, errors.CCError) {
-
+// IsPlatAllExist is plat all exist
+func (lgc *Logics) IsPlatAllExist(kit *rest.Kit, cloudIDs []int64) (bool, errors.CCError) {
+	cloudIDs = util.IntArrayUnique(cloudIDs)
+	cond := mapstr.MapStr{
+		common.BKCloudIDField: map[string]interface{}{
+			common.BKDBIN: cloudIDs,
+		},
+	}
 	query := &metadata.QueryCondition{
 		Condition: cond,
-		Page:      metadata.BasePage{Start: 0, Limit: 1},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 		Fields:    []string{common.BKCloudIDField},
 	}
 
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPlat,
 		query)
 	if err != nil {
-		blog.Errorf("IsPlatExist http do error, err:%s, cond:%#v,rid:%s", err.Error(), cond, kit.Rid)
+		blog.Errorf("find plat failed, cond: %v, err: %v, rid: %s", cond, err, kit.Rid)
 		return false, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if 1 == result.Count {
+	if result.Count == len(cloudIDs) {
 		return true, nil
 	}
 
