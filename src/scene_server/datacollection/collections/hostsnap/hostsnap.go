@@ -338,11 +338,11 @@ func (h *HostSnap) Analyze(msg *string, sourceType string) (bool, error) {
 		return false, nil
 	}
 
-	// in the dynamic ip scenario, innerIP needs to be updated
-	updateIPv4, updateIPv6 := make([]string, 0), make([]string, 0)
-
-	if elements[3].String() == common.BKAddressingDynamic {
-		updateIPv4, updateIPv6 = ipv4, ipv6
+	updateIPv4, updateIPv6, err := getIPv4AndIPv6UpdateData(elements[3].String(), ipv4, ipv6)
+	if err != nil {
+		blog.Errorf("get host ipv4 and ipv6 update data failed, agentID: %s, ipv4: %v, ipv6: %v, err: %v, rid: %s",
+			agentID, ipv4, ipv6, err, rid)
+		return false, err
 	}
 
 	outerIP := elements[2].String()
@@ -387,6 +387,21 @@ func (h *HostSnap) Analyze(msg *string, sourceType string) (bool, error) {
 		return true, txnErr
 	}
 	return false, nil
+}
+
+func getIPv4AndIPv6UpdateData(addressing string, ipv4 []string, ipv6 []string) ([]string, []string, error) {
+	var err error
+	var updateIPv4, updateIPv6 []string
+	// in the dynamic ip scenario, innerIP needs to be updated
+	if addressing == common.BKAddressingDynamic {
+		updateIPv4 = ipv4
+		updateIPv6, err = metadata.ConvertHostIpv6Val(ipv6)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return updateIPv4, updateIPv6, nil
 }
 
 type updateHostOption struct {
@@ -1064,6 +1079,15 @@ func getIPsFromMsg(val *gjson.Result) ([]string, []string) {
 			if ip == metadata.IPv4LoopBackIpPrefix || ip == metadata.IPv6LoopBackIp ||
 				strings.HasPrefix(ip, metadata.IPv6LinkLocalAddressPrefix) {
 				continue
+			}
+
+			var err error
+			if strings.Contains(ip, ":") {
+				ip, err = metadata.GetIPv4IfEmbeddedInIPv6(ip)
+				if err != nil {
+					blog.Errorf("get ip failed: %v", err)
+					continue
+				}
 			}
 
 			if net.ParseIP(ip) == nil {
