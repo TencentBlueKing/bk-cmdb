@@ -78,7 +78,7 @@ var (
 	esPipelineConcurrency = 50
 
 	// esQueryStringLengthLimit query_string length limit(utf-8).
-	esQueryStringLengthLimit = 32
+	esQueryStringLengthLimit = 50
 )
 
 // SearchResult fulltext search result.
