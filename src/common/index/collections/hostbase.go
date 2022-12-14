@@ -41,7 +41,7 @@ var commHostBaseIndexes = []types.Index{
 			common.BKHostInnerIPField: map[string]string{common.BKDBType: "string"},
 			common.BKCloudIDField:     map[string]string{common.BKDBType: "number"},
 			// only hosts with addressing = "static" must satisfy the uniqueness of inner ip + cloud id
-			common.BKAddressingField: "0",
+			common.BKAddressingField: common.BKAddressingStatic,
 		},
 	},
 	{
@@ -56,7 +56,7 @@ var commHostBaseIndexes = []types.Index{
 			common.BKHostInnerIPv6Field: map[string]string{common.BKDBType: "string"},
 			common.BKCloudIDField:       map[string]string{common.BKDBType: "number"},
 			// only hosts with addressing = "static" must satisfy the uniqueness of inner ipv6 + cloud id
-			common.BKAddressingField: "0",
+			common.BKAddressingField: common.BKAddressingStatic,
 		},
 	},
 	{

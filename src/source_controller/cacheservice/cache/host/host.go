@@ -208,7 +208,7 @@ func refreshHostDetailCache(rid string, host *hostBase) {
 		pipeline.Set(hostKey.AgentIDKey(host.agentID), host.hostID, ttl)
 	}
 
-	if host.addressType == common.BKAddressingStatic {
+	if host.addressType == common.BKAddressingStatic && host.ip != "" {
 		for _, ip := range strings.Split(host.ip, ",") {
 			pipeline.Set(hostKey.IPCloudIDKey(ip, host.cloudID), host.hostID, ttl)
 		}
@@ -247,12 +247,7 @@ func getHostDetailsFromMongoWithHostID(rid string, hostID int64) (*hostBase, err
 		return nil, err
 	}
 
-	ips, ok := host[common.BKHostInnerIPField].(string)
-	if !ok {
-		blog.Errorf("get host: %d data from mongodb for cache, but got invalid ip, host: %v,rid: %s", hostID, host, rid)
-		return nil, fmt.Errorf("invalid host: %d innerip", hostID)
-	}
-
+	ips := util.GetStrByInterface(host[common.BKHostInnerIPField])
 	agentID := ""
 	if host[common.BKAgentIDField] != nil {
 		id, ok := host[common.BKAgentIDField].(string)
@@ -315,12 +310,7 @@ func listHostDetailsFromMongoWithHostID(hostID []int64) (list []*hostBase, err e
 	}
 
 	for _, h := range host {
-		ips, ok := h[common.BKHostInnerIPField].(string)
-		if !ok {
-			blog.Errorf("get host: %v data from mongodb for cache, but got invalid ip, host: %v", hostID, h)
-			return nil, errors.New("invalid host innerip")
-		}
-
+		ips := util.GetStrByInterface(h[common.BKHostInnerIPField])
 		js, _ := json.Marshal(h)
 		ele := gjson.GetManyBytes(js, common.BKCloudIDField, common.BKHostIDField, common.BKAddressingField)
 		if !ele[0].Exists() {

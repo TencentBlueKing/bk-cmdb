@@ -253,7 +253,7 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 			}
 			ip := util.GetStrByInterface(host[common.BKHostInnerIPField])
 			ipv6 := util.GetStrByInterface(host[common.BKHostInnerIPv6Field])
-			host[types.NameField] = getHostDisplayName(ip, ipv6, cloudMap[cloudID])
+			host[types.NameField] = metadata.GetHostDisplayName(ip, ipv6, cloudMap[cloudID])
 		}
 
 		if needPath {

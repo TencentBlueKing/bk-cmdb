@@ -198,48 +198,15 @@ func ConvertHostSpecialStringToArray(host map[string]interface{}) map[string]int
 	return host
 }
 
-//func testIpv6Addr(addr string) string {
-//	blog.Errorf("000000000000 addr: %v", addr)
-//	return "0000:0000:0000:0000:0000:0000:0000:0001"
-//}
+// GetHostDisplayName get host display name
+func GetHostDisplayName(innerIP string, innerIPv6 string, cloudName string) string {
+	if innerIP == "" {
+		innerIP = "--"
+	}
 
-// ConvertIpv6ToFullWord convert IPv6 address to full notation. there are
-// abbreviations and full writing for ipv6. cc stores ipv6 addresses in
-// a complete format, so when querying, it is necessary to uniformly convert
-// the ipv6 address input by the user into a full writing for query.
-//func ConvertIpv6ToFullWord(field string, value interface{}) interface{} {
-//	if field != common.BKHostInnerIPv6Field && field != common.BKHostOuterIPv6Field {
-//		return value
-//	}
-//	v := reflect.ValueOf(value)
-//	var data interface{}
-//	switch v.Kind() {
-//	case reflect.String:
-//		data, err := common.ConvertIPv6ToFullAddr(value.(string))
-//
-//	case reflect.Array, reflect.Slice:
-//		v := reflect.ValueOf(value)
-//		length := v.Len()
-//		if length == 0 {
-//			return value
-//		}
-//
-//		result := make([]interface{}, 0)
-//		// each element in the array or slice should be of the same basic type.
-//		for i := 0; i < length; i++ {
-//			item := v.Index(i).Interface()
-//
-//			switch item.(type) {
-//			case string:
-//				v := testIpv6Addr(item.(string))
-//				result = append(result, v)
-//			default:
-//				return value
-//			}
-//		}
-//		data = result
-//	default:
-//		return value
-//	}
-//	return data
-//}
+	if innerIPv6 == "" {
+		innerIPv6 = "--"
+	}
+
+	return innerIP + "|" + innerIPv6 + "(" + cloudName + ")"
+}
