@@ -1247,7 +1247,8 @@ const (
 	BKBluekingMonitorPlugin = "blueking"
 
 	// HTTPCookieBKToken TODO
-	HTTPCookieBKToken = "bk_token"
+	HTTPCookieBKToken      = "bk_token"
+	HTTPCookieWrongBKToken = "wrong_bk_token"
 
 	// WEBSessionUinKey TODO
 	WEBSessionUinKey = "username"
