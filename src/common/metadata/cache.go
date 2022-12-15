@@ -12,8 +12,6 @@
 
 package metadata
 
-import "configcenter/src/common/watch"
-
 // SearchHostWithIP 通过IP查找host details请求参数
 type SearchHostWithInnerIPOption struct {
 	InnerIP string `json:"bk_host_innerip"`

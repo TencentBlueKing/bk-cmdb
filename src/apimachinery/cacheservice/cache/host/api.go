@@ -22,7 +22,7 @@ import (
 
 // Interface TODO
 type Interface interface {
-	SearchHostWithInnerIPForStatic(ctx context.Context, h http.Header, opt *metadata.SearchHostWithIP) (
+	SearchHostWithInnerIPForStatic(ctx context.Context, h http.Header, opt *metadata.SearchHostWithInnerIPOption) (
 		jsonString string, err error)
 	SearchHostWithAgentID(ctx context.Context, h http.Header, opt *metadata.SearchHostWithAgentID) (
 		jsonString string, err error)

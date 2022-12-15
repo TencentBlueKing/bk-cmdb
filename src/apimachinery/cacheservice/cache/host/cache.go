@@ -23,7 +23,8 @@ import (
 
 // SearchHostWithInnerIPForStatic Note: This function is only used to query the host through ip+cloud in the static IP
 // scenario of the host snapshot !!!
-func (b *baseCache) SearchHostWithInnerIPForStatic(ctx context.Context, h http.Header, opt *metadata.SearchHostWithIP) (
+func (b *baseCache) SearchHostWithInnerIPForStatic(ctx context.Context, h http.Header,
+	opt *metadata.SearchHostWithInnerIPOption) (
 	jsonString string, err error) {
 
 	resp, err := b.client.Post().
