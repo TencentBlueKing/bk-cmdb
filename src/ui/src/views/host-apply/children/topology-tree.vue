@@ -480,7 +480,7 @@
               text-align: center;
               margin: 8px 4px 8px 0;
               &.is-selected {
-                  color: #ffb400;
+                  color: #3a84ff;
               }
           }
           .info-content {

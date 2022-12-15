@@ -11,8 +11,13 @@
 -->
 
 <template>
-  <user-value :value="value" v-if="isUser"></user-value>
+  <user-value
+    :value="value"
+    ref="complexTypeComp"
+    v-if="isUser">
+  </user-value>
   <table-value
+    ref="complexTypeComp"
     :value="value"
     :show-on="showOn"
     :format-cell-value="formatCellValue"
@@ -21,11 +26,13 @@
   </table-value>
   <service-template-value
     v-else-if="isServiceTemplate"
+    ref="complexTypeComp"
     :value="value"
     display-type="info">
   </service-template-value>
   <mapstring-value
     v-else-if="isMapstring"
+    ref="complexTypeComp"
     :value="value">
   </mapstring-value>
   <component
@@ -192,6 +199,12 @@
 
         ORG_CACHES[cacheKey] = displayValue
         return displayValue
+      },
+      getCopyValue() {
+        if (this.$refs?.complexTypeComp) {
+          return this.$refs?.complexTypeComp?.getCopyValue?.()
+        }
+        return this.displayValue
       }
     }
   }

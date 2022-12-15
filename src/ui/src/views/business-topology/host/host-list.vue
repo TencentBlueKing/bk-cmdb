@@ -15,7 +15,7 @@
     <host-list-options @transfer="handleTransfer" v-test-id></host-list-options>
     <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
     <bk-table class="host-table" v-test-id.businessHostAndService="'hostList'"
-      ref="table"
+      ref="tableRef"
       v-bkloading="{ isLoading: $loading(Object.values(request)) }"
       :data="table.data"
       :pagination="table.pagination"
@@ -28,7 +28,7 @@
       <bk-table-column type="selection" width="50" align="center" fixed></bk-table-column>
       <bk-table-column v-for="column in tableHeader"
         :show-overflow-tooltip="column.bk_property_type !== 'map'"
-        :min-width="column.bk_property_id === 'bk_host_id' ? 80 : 120"
+        :min-width="getColumnMinWidth(column)"
         :key="column.bk_property_id"
         :sortable="getColumnSortable(column)"
         :prop="column.bk_property_id"
@@ -250,6 +250,15 @@
           content.push(suffix)
         }
         return this.$createElement('span', {}, content)
+      },
+      getColumnMinWidth(property) {
+        let name = this.$tools.getHeaderPropertyName(property)
+        const modelId = property.bk_obj_id
+        if (modelId !== 'host' && modelId !== CONTAINER_OBJECTS.NODE) {
+          const model = this.getModelById(modelId)
+          name = `${name}(${model.bk_obj_name})`
+        }
+        return this.$tools.getHeaderPropertyMinWidth(property, { name, hasSort: this.getColumnSortable(property) })
       },
       handlePageChange(current = 1) {
         RouterQuery.set({
@@ -653,7 +662,7 @@
         })
       },
       doLayoutTable() {
-        this.$refs.table.doLayout()
+        this.$refs?.table?.doLayout()
       }
     }
   }

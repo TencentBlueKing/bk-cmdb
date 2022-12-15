@@ -18,19 +18,27 @@
 </script>
 
 <template>
-  <div class="default-node-info">
-    <div class="info-item">
-      <label class="name">{{$t('ID')}}:</label>
-      <span class="value">{{nodeId}}</span>
-    </div>
-    <div class="info-item">
-      <label class="name">{{$t('节点名称')}}</label>
-      <span class="value">{{nodeName}}</span>
+  <div class="simple-node-info">
+    <bk-alert type="info" class="alert-tips" :title="$t('空Pod节点提示语')" closable></bk-alert>
+    <div class="default-node-info">
+      <div class="info-item">
+        <label class="name">{{$t('ID')}}:</label>
+        <span class="value">{{nodeId}}</span>
+      </div>
+      <div class="info-item">
+        <label class="name">{{$t('节点名称')}}</label>
+        <span class="value">{{nodeName}}</span>
+      </div>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
+.simple-node-info {
+  .alert-tips {
+    margin-top: 24px;
+  }
+}
 .default-node-info {
   padding: 20px 0 20px 36px;
   display: flex;

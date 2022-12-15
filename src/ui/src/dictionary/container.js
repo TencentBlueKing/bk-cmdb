@@ -83,6 +83,41 @@ export const WORKLOAD_TYPES = Object.freeze({
   PODS: 'pods'
 })
 
+export const WORKLOAD_OBJECT_NAMES = Object.freeze({
+  [WORKLOAD_TYPES.DEPLOYMENT]: {
+    FULL: 'Deployment',
+    SHORT: 'Dp'
+  },
+  [WORKLOAD_TYPES.STATEFUL_SET]: {
+    FULL: 'StatefulSet',
+    SHORT: 'Ss'
+  },
+  [WORKLOAD_TYPES.DAEMON_SET]: {
+    FULL: 'DaemonSet',
+    SHORT: 'Ds'
+  },
+  [WORKLOAD_TYPES.GAME_STATEFUL_SET]: {
+    FULL: 'Game StatefulSet',
+    SHORT: 'Gs'
+  },
+  [WORKLOAD_TYPES.GAME_DEPLOYMENT]: {
+    FULL: 'Game Deployments',
+    SHORT: 'Gd'
+  },
+  [WORKLOAD_TYPES.CRON_JOB]: {
+    FULL: 'CronJob',
+    SHORT: 'Cj'
+  },
+  [WORKLOAD_TYPES.JOB]: {
+    FULL: 'Job',
+    SHORT: 'J'
+  },
+  [WORKLOAD_TYPES.PODS]: {
+    FULL: 'Pod',
+    SHORT: 'P'
+  }
+})
+
 export const TOPO_MODE_KEYS = Object.freeze({
   CONTAINER: 'container',
   BIZ_NODE: 'bizNode',

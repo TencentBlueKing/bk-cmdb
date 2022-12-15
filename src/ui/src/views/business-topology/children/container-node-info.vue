@@ -87,6 +87,7 @@
     :properties="properties"
     :property-groups="propertyGroups"
     :inst="instance"
+    :show-copy="true"
     :show-options="false">
   </cmdb-details>
 </template>

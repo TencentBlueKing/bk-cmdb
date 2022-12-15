@@ -36,7 +36,7 @@
         :selected-rows="selected"
         @selection-change="handleSelectionChange"
         :data="displayList"
-        row-key="host.bk_host_innerip"
+        row-key="host.bk_host_id"
         reserve-selection>
       </batch-selection-column>
       <bk-table-column :label="$t('内网IP')">

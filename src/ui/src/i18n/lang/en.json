@@ -1651,5 +1651,9 @@
     "已是最新内容，无需同步": "Already up to date, no need to sync",
     "分组暂无模型提示": "This group has no model, please {btn}",
     "主机需在“空闲机池”下才允许转移至主机池": "The host(s) needs to be in the '{idleSet}'",
-    "主机需在“空闲机池”下才允许转移至其他业务": "The host(s) needs to be in the '{idleSet}'"
+    "主机需在“空闲机池”下才允许转移至其他业务": "The host(s) needs to be in the '{idleSet}'",
+    "空Pod节点提示语": "Cluster nodes without any Pod running on them are classified as \"Empty Pod Node(s)\"",
+    "无Pod运行的节点": "Node runs with no Pod",
+    "（模板创建）": "(By template)",
+    "（自定义创建）": "(By custom)"
 }
