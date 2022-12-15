@@ -25,7 +25,7 @@
   import ProcessTable from './process.vue'
   import PropertyConfigDetails from '@/components/property-config/details.vue'
   import useTemplateData, { templateDetailRequestId } from './use-template-data'
-  import serviceTemplateService from '@/services/service-template'
+  import serviceTemplateService from '@/service/service-template'
   import { MENU_BUSINESS_SERVICE_TEMPLATE_EDIT } from '@/dictionary/menu-symbol'
 
   export default defineComponent({

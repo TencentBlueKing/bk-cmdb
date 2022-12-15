@@ -14,17 +14,21 @@ package util
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
+	ccErr "configcenter/src/common/errors"
 )
 
 // ValidPropertyOption valid property field option
-func ValidPropertyOption(propertyType string, option interface{}, errProxy errors.DefaultCCErrorIf) error {
+func ValidPropertyOption(propertyType string, option interface{}, errProxy ccErr.DefaultCCErrorIf) error {
 	switch propertyType {
 	case common.FieldTypeEnum:
 		return ValidFieldTypeEnumOption(option, errProxy)
@@ -38,8 +42,8 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 	return nil
 }
 
-// ValidFieldTypeEnumOption TODO
-func ValidFieldTypeEnumOption(option interface{}, errProxy errors.DefaultCCErrorIf) error {
+// ValidFieldTypeEnumOption validate enum field type's option
+func ValidFieldTypeEnumOption(option interface{}, errProxy ccErr.DefaultCCErrorIf) error {
 	if nil == option {
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 	}
@@ -95,8 +99,8 @@ func ValidFieldTypeEnumOption(option interface{}, errProxy errors.DefaultCCError
 	return nil
 }
 
-// ValidFieldTypeIntOption TODO
-func ValidFieldTypeIntOption(option interface{}, errProxy errors.DefaultCCErrorIf) error {
+// ValidFieldTypeIntOption validate int field type's option
+func ValidFieldTypeIntOption(option interface{}, errProxy ccErr.DefaultCCErrorIf) error {
 	if nil == option {
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 	}
@@ -168,8 +172,8 @@ func ValidFieldTypeIntOption(option interface{}, errProxy errors.DefaultCCErrorI
 	return nil
 }
 
-// ValidFieldTypeListOption TODO
-func ValidFieldTypeListOption(option interface{}, errProxy errors.DefaultCCErrorIf) error {
+// ValidFieldTypeListOption validate list field type's option
+func ValidFieldTypeListOption(option interface{}, errProxy ccErr.DefaultCCErrorIf) error {
 	if nil == option {
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 	}
@@ -200,8 +204,8 @@ func ValidFieldTypeListOption(option interface{}, errProxy errors.DefaultCCError
 	return nil
 }
 
-// ValidFieldRegularExpressionOption TODO
-func ValidFieldRegularExpressionOption(option interface{}, errProxy errors.DefaultCCErrorIf) error {
+// ValidFieldRegularExpressionOption validate string field type's regex option
+func ValidFieldRegularExpressionOption(option interface{}, errProxy ccErr.DefaultCCErrorIf) error {
 	// check regular is legal
 	if option == nil {
 		return nil
@@ -267,10 +271,133 @@ func IsNumeric(val interface{}) bool {
 	return false
 }
 
+// IsBasicValue test if an interface is the basic supported golang type or not.
+func IsBasicValue(value interface{}) bool {
+	v := reflect.ValueOf(value)
+
+	switch v.Kind() {
+	case reflect.Bool,
+		reflect.Int,
+		reflect.Int8,
+		reflect.Int16,
+		reflect.Int32,
+		reflect.Int64,
+		reflect.Uint,
+		reflect.Uint8,
+		reflect.Uint16,
+		reflect.Uint32,
+		reflect.Uint64,
+		reflect.Float32,
+		reflect.Float64,
+		reflect.String:
+		return true
+	default:
+		return false
+	}
+}
+
+// ValidateStringType validate if the value is a string type
+func ValidateStringType(value interface{}) error {
+	if reflect.TypeOf(value).Kind() != reflect.String {
+		return fmt.Errorf("value(%+v) is not of string type", value)
+	}
+	return nil
+}
+
+// ValidateNotEmptyStringType validate if the value is a not empty string type
+func ValidateNotEmptyStringType(value interface{}) error {
+	strVal, ok := value.(string)
+	if !ok {
+		return fmt.Errorf("value(%+v) is not of string type", value)
+	}
+
+	if len(strVal) == 0 {
+		return errors.New("value is empty")
+	}
+	return nil
+}
+
+// ValidateDatetimeType validate if the value is a datetime type
+func ValidateDatetimeType(value interface{}) error {
+	// time type is supported
+	if _, ok := value.(time.Time); ok {
+		return nil
+	}
+
+	// timestamp type is supported
+	if IsNumeric(value) {
+		return nil
+	}
+
+	// string type with time format is supported
+	strVal, ok := value.(string)
+	if !ok {
+		return fmt.Errorf("value(%+v) is not of time type", value)
+	}
+
+	if _, ok := IsTime(strVal); ok {
+		return nil
+	}
+	return fmt.Errorf("value(%+v) is not of time type", value)
+}
+
+// ValidateSliceOfBasicType validate if the value is a slice of basic type
+func ValidateSliceOfBasicType(value interface{}, limit uint) error {
+	if value == nil {
+		return errors.New("value is nil")
+	}
+
+	switch reflect.TypeOf(value).Kind() {
+	case reflect.Array:
+	case reflect.Slice:
+	default:
+		return fmt.Errorf("value(%+v) is not of array type", value)
+	}
+
+	v := reflect.ValueOf(value)
+	length := v.Len()
+	if length == 0 {
+		return errors.New("value is empty")
+	}
+
+	if length > int(limit) {
+		return fmt.Errorf("elements length %d exceeds maximum %d", length, limit)
+	}
+
+	// each element in the array or slice should be of the same basic type.
+	var typ string
+	for i := 0; i < length; i++ {
+		item := v.Index(i).Interface()
+
+		var itemType string
+		switch item.(type) {
+		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, json.Number:
+			itemType = "numeric"
+		case bool:
+			itemType = "bool"
+		case string:
+			itemType = "string"
+		default:
+			return fmt.Errorf("array element index(%d) value(%+v) is not of basic type", i, item)
+		}
+
+		if i == 0 {
+			typ = itemType
+			continue
+		}
+
+		if typ != itemType {
+			return fmt.Errorf("array element index(%d) value(%+v) type is not %s", i, item, typ)
+		}
+	}
+
+	return nil
+}
+
 var mainlineNameRegexp = regexp.MustCompile(common.FieldTypeMainlineRegexp)
 
 // ValidTopoNameField validate business topology name, including set and service templates that may generate them
-func ValidTopoNameField(name string, nameField string, errProxy errors.DefaultCCErrorIf) (string, error) {
+func ValidTopoNameField(name string, nameField string, errProxy ccErr.DefaultCCErrorIf) (string, error) {
 	name = strings.Trim(name, " ")
 
 	if len(name) == 0 {
@@ -290,7 +417,7 @@ func ValidTopoNameField(name string, nameField string, errProxy errors.DefaultCC
 }
 
 // ValidMustSetStringField valid if the value is of string type and is not empty
-func ValidMustSetStringField(value interface{}, field string, errProxy errors.DefaultCCErrorIf) (string, error) {
+func ValidMustSetStringField(value interface{}, field string, errProxy ccErr.DefaultCCErrorIf) (string, error) {
 	switch val := value.(type) {
 	case string:
 		if len(val) == 0 {
@@ -303,7 +430,7 @@ func ValidMustSetStringField(value interface{}, field string, errProxy errors.De
 }
 
 // ValidModelIDField validate model related id field, like classification id, attribute id, group id...
-func ValidModelIDField(value interface{}, field string, errProxy errors.DefaultCCErrorIf) error {
+func ValidModelIDField(value interface{}, field string, errProxy ccErr.DefaultCCErrorIf) error {
 	strValue, err := ValidMustSetStringField(value, field, errProxy)
 	if err != nil {
 		return err
@@ -324,7 +451,7 @@ func ValidModelIDField(value interface{}, field string, errProxy errors.DefaultC
 }
 
 // ValidModelNameField validate model related name field, like classification name, attribute name, group name...
-func ValidModelNameField(value interface{}, field string, errProxy errors.DefaultCCErrorIf) error {
+func ValidModelNameField(value interface{}, field string, errProxy ccErr.DefaultCCErrorIf) error {
 	strValue, err := ValidMustSetStringField(value, field, errProxy)
 	if err != nil {
 		return err

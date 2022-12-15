@@ -61,12 +61,18 @@ func (s *Service) ListHostFavourites(ctx *rest.Contexts) {
 	ctx.RespEntity(result.Data)
 }
 
-// AddHostFavourite TODO
+// AddHostFavourite add host query favorite condition
 func (s *Service) AddHostFavourite(ctx *rest.Contexts) {
 
 	param := new(metadata.FavouriteParms)
 	if err := ctx.DecodeInto(&param); nil != err {
 		ctx.RespAutoError(err)
+		return
+	}
+
+	if param.Type != metadata.Container && param.Type != metadata.Tradition {
+		blog.Errorf("host query favorite condition type is invalid, type: %s, rid: %s", param.Type, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.HostFavoriteType))
 		return
 	}
 
@@ -80,7 +86,8 @@ func (s *Service) AddHostFavourite(ctx *rest.Contexts) {
 		// check if the info string matches the required structure
 		err := json.Unmarshal([]byte(param.Info), &infoParam{})
 		if err != nil {
-			blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), param.Info, ctx.Kit.Rid)
+			blog.Errorf("host favourite info unmarshal failed, err: %v, input: %+v, rid: %s", err, param.Info,
+				ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "info"))
 			return
 		}
@@ -88,7 +95,8 @@ func (s *Service) AddHostFavourite(ctx *rest.Contexts) {
 	if param.QueryParams != "" {
 		err := json.Unmarshal([]byte(param.QueryParams), &queryParams{})
 		if err != nil {
-			blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input:%+v, rid:%s", err.Error(), param.QueryParams, ctx.Kit.Rid)
+			blog.Errorf("AddHostFavourite info unmarshal failed, err: %v, input:%+v, rid:%s", err, param.QueryParams,
+				ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "query params"))
 			return
 		}
@@ -103,7 +111,8 @@ func (s *Service) AddHostFavourite(ctx *rest.Contexts) {
 			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if !result.Result {
-			blog.Errorf("AddHostFavourite http response error,err code:%d,err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, param, ctx.Kit.Rid)
+			blog.Errorf("http response error, err code: %d, err msg: %s, input: %+v, rid: %s", result.Code,
+				result.ErrMsg, param, ctx.Kit.Rid)
 			return result.CCError()
 		}
 		return nil

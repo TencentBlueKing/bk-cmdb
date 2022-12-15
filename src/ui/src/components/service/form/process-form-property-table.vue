@@ -17,34 +17,33 @@
       v-model="localValue"
       :options="options"
       :mode="mode">
-      <div class="process-table-content"
-        v-for="column in options"
-        slot-scope="rowProps"
-        :slot="column.bk_property_id"
-        :key="`row-${rowProps.index}-${column.bk_property_id}`">
-        <component class="content-value"
-          size="small"
-          font-size="small"
-          v-bind="$tools.getValidateEvents(column)"
-          v-validate="getRules(rowProps, column)"
-          :disabled="isLocked(rowProps)"
-          :data-vv-name="column.bk_property_id"
-          :data-vv-as="column.bk_property_name"
-          :data-vv-scope="column.bk_property_group || 'bind_info'"
-          :is="getComponentType(column)"
-          :options="column.option || []"
-          :placeholder="getPlaceholder(column)"
-          :value="localValue[rowProps.index][column.bk_property_id]"
-          :auto-select="false"
-          @input="handleColumnValueChange(rowProps, ...arguments)">
-        </component>
-        <process-form-append class="content-lock"
-          v-if="isLocked(rowProps)"
-          :property="column"
-          :service-template-id="serviceTemplateId"
-          :biz-id="bizId">
-        </process-form-append>
-      </div>
+      <template v-for="column in options" #[column.bk_property_id]="rowProps">
+        <div class="process-table-content"
+          :key="`row-${rowProps.index}-${column.bk_property_id}`">
+          <component class="content-value"
+            size="small"
+            font-size="small"
+            v-bind="$tools.getValidateEvents(column)"
+            v-validate="getRules(rowProps, column)"
+            :disabled="isLocked(rowProps)"
+            :data-vv-name="column.bk_property_id"
+            :data-vv-as="column.bk_property_name"
+            :data-vv-scope="column.bk_property_group || 'bind_info'"
+            :is="getComponentType(column)"
+            :options="column.option || []"
+            :placeholder="getPlaceholder(column)"
+            :value="localValue[rowProps.index][column.bk_property_id]"
+            :auto-select="false"
+            @input="handleColumnValueChange(rowProps, ...arguments)">
+          </component>
+          <process-form-append class="content-lock"
+            v-if="isLocked(rowProps)"
+            :property="column"
+            :service-template-id="serviceTemplateId"
+            :biz-id="bizId">
+          </process-form-append>
+        </div>
+      </template>
     </cmdb-form-table>
     <span class="form-error" v-if="validateMsg">{{validateMsg}}</span>
   </div>

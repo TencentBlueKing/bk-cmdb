@@ -101,7 +101,7 @@
   import { mapGetters } from 'vuex'
   import to from 'await-to-js'
   import ModuleInstance from './children/module-instance.vue'
-  import serviceTemplateService from '@/services/service-template'
+  import serviceTemplateService from '@/service/service-template'
 
   export default {
     name: 'BusinessSynchronous',

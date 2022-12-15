@@ -46,6 +46,8 @@
   import FilterStore from './store'
   import Utils from './utils'
   import { mapGetters } from 'vuex'
+  import { isContainerObject } from '@/service/container/common'
+
   export default {
     components: {
       OperatorSelector
@@ -126,13 +128,20 @@
         }
         const {
           bk_obj_id: modelId,
-          bk_property_id: propertyId
+          bk_property_id: propertyId,
+          bk_property_type: propertyType
         } = this.property
         const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
         const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
         if (isSetName || isModuleName) {
           return Object.assign(props, { bizId: FilterStore.bizId })
         }
+
+        // 容器对象标签属性，需要注入标签kv数据作为选项
+        if (isContainerObject(modelId) && propertyType === 'map') {
+          return Object.assign(props, { options: FilterStore.containerPropertyMapValue?.[modelId]?.[propertyId] })
+        }
+
         return props
       },
       resetCondition() {

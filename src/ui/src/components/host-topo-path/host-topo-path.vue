@@ -17,34 +17,34 @@
     </template>
     <template v-else>
       <span class="path" v-bk-overflow-tips>
-        {{getModulePath(modules[0])}}
+        {{topologyList[0] && topologyList[0].path}}
       </span>
       <template v-if="!isResourcePool">
         <i class="path-single-link icon-cc-share"
           v-if="isSingle"
-          @click="handleLinkToTopology(modules[0])">
+          @click="handleLinkToTopology(topologyList[0])">
         </i>
         <span v-else
           class="path-count"
           v-bk-tooltips="{
-            content: $refs.tooltipContent,
             interactive: true,
-            boundary: 'window'
+            boundary: 'window',
+            onShow: showTips
           }">
-          {{`+${modules.length - 1}`}}
+          {{`+${topologyList.length - 1}`}}
         </span>
       </template>
     </template>
-    <div v-if="!isSingle"
-      class="path-tooltip-content"
-      ref="tooltipContent">
-      <div class="path-tooltip-item"
-        v-for="moduleId in modules"
-        :key="moduleId">
-        <span class="path-tooltip-text" :title="getModulePath(moduleId)">{{getModulePath(moduleId)}}</span>
-        <i class="path-tooltip-link icon-cc-share"
-          @click="handleLinkToTopology(moduleId)">
-        </i>
+    <div v-if="!isSingle" style="display: none" ref="tooltipContent">
+      <div class="path-tooltip-content">
+        <div class="path-tooltip-item"
+          v-for="(item, index) in topologyList"
+          :key="`${item.id}_${index}`">
+          <span class="path-tooltip-text" :title="item.path">{{item.path}}</span>
+          <i class="path-tooltip-link icon-cc-share"
+            @click="handleLinkToTopology(item)">
+          </i>
+        </div>
       </div>
     </div>
   </div>
@@ -53,34 +53,45 @@
 <script>
   import proxy from './proxy'
   import { MENU_BUSINESS_HOST_AND_SERVICE } from '@/dictionary/menu-symbol'
+
   export default {
     name: 'cmdb-host-topo-path',
     props: {
       host: {
         type: Object,
         required: true
+      },
+      isContainerSearchMode: {
+        type: Boolean,
+        default: false
+      },
+      isResourceAssigned: {
+        type: Boolean,
+        default: false
       }
     },
     data() {
       return {
         pending: true,
-        nodes: []
+        paths: [],
+        topologyList: []
       }
     },
     computed: {
       bizId() {
-        const [biz] = this.host.biz
-        return biz.bk_biz_id
+        return this?.host?.biz?.[0]?.bk_biz_id
       },
       isResourcePool() {
-        const [biz] = this.host.biz
-        return biz.default === 1
+        return this?.host?.biz?.[0]?.default === 1
       },
       modules() {
-        return this.host.module.map(module => module.bk_module_id)
+        return this.host?.module?.map(module => module.bk_module_id)
+      },
+      hostId() {
+        return this.host?.host?.bk_host_id
       },
       isSingle() {
-        return this.modules.length === 1
+        return this.topologyList.length === 1
       }
     },
     watch: {
@@ -93,36 +104,57 @@
     },
     methods: {
       async searchPath() {
+        proxy.isContainerSearchMode = this.isContainerSearchMode
+        proxy.isResourceAssigned = this.isResourceAssigned
         try {
           this.pending = true
-          this.nodes = await proxy.search({
+          this.paths = await proxy.search({
             bk_biz_id: this.bizId,
-            modules: this.modules
+            modules: this.modules,
+            hostId: this.hostId
           })
         } catch (error) {
           console.error(error)
-          this.nodes = []
+          this.paths = {}
         } finally {
+          this.generateTopologyList()
           this.pending = false
-          this.$emit('path-ready', this.getFullModulePath())
+          this.$emit('path-ready', this.getFullPath())
         }
       },
-      getModulePath(moduleId) {
-        const node = this.nodes.find(node => node.topo_node.bk_inst_id === moduleId)
-        if (!node) {
-          return '--'
-        }
-        return node.topo_path.map(path => path.bk_inst_name).reverse()
-          .join(' / ')
+      generateTopologyList() {
+        const { container = [], normal = [] } = this.paths
+
+        const normalTopoPaths = normal.map((item) => {
+          const instId = item.topo_node.bk_inst_id
+          const paths = item.topo_path?.slice()?.reverse()
+          return {
+            id: instId,
+            path: paths?.map(node => node.bk_inst_name)
+              .join(' / ')
+          }
+        })
+
+        const containerTopoPaths = container.map(item => ({
+          id: item.bk_cluster_id,
+          path: `${item.biz_name} / ${item.cluster_name}`,
+          isContainer: true
+        }))
+
+        this.topologyList = [...normalTopoPaths, ...containerTopoPaths || []]
       },
-      getFullModulePath() {
-        return this.modules.map(moduleId => this.getModulePath(moduleId))
+      getFullPath() {
+        return this.topologyList.map(topo => topo.path)
       },
-      handleLinkToTopology(moduleId) {
+      showTips(inst) {
+        this.$refs.tooltipContent.style.display = 'block'
+        inst.setContent(this.$refs.tooltipContent)
+      },
+      handleLinkToTopology(topo) {
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_AND_SERVICE,
           query: {
-            node: `module-${moduleId}`
+            node: this.isContainerHost ? `cluster-${topo.id}` : `module-${topo.id}`
           },
           params: {
             bizId: this.bizId
@@ -176,10 +208,6 @@
             border-radius: 8px;
             white-space: nowrap;
             background-color: #dcdee5;
-        }
-        // 初始化时设置为隐藏，避免影响表格行高计算
-        .path-tooltip-content {
-            display: none;
         }
     }
     .path-tooltip-content {

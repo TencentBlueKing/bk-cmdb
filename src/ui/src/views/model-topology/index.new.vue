@@ -260,10 +260,12 @@
         })
       },
       localClassifications() {
-        return this.$tools.clone(this.classifications).map((classify) => {
-          classify.bk_objects = classify.bk_objects.filter(model => !model.bk_ishidden && !model.bk_ispaused)
-          return classify
-        })
+        return this.$tools.clone(this.classifications)
+          .filter(classify => !classify?.bk_ishidden)
+          .map((classify) => {
+            classify.bk_objects = classify.bk_objects.filter(model => !model.bk_ishidden && !model.bk_ispaused)
+            return classify
+          })
       },
       hideModels() {
         return this.usercustom[this.hideModelConfigKey] || {}

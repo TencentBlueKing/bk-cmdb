@@ -16,13 +16,12 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
 )
 
-// Watch TODO
+// Watch event
 func (e *eventServer) Watch(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (resp []*watch.WatchEventDetail, err error) {
-	response := new(metadata.WatchEventResp)
+	response := new(watch.WatchEventResp)
 	err = e.client.Post().
 		WithContext(ctx).
 		Body(opts).

@@ -33,6 +33,8 @@ func (s *Service) initAssociation(web *restful.WebService) {
 		Handler: s.SearchBriefBizTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/biz/brief_node_relation", Handler: s.GetBriefTopologyNodeRelation})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/host/topopath", Handler: s.SearchHostTopoPath})
+
 	utility.AddToRestfulWebService(web)
 }
 
@@ -297,4 +299,6 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initInternalTask(web)
 
 	s.initResourceDirectory(web)
+
+	s.initKube(web)
 }

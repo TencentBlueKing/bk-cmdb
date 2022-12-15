@@ -761,6 +761,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-cc-business-set:before {
 	content: "\e3a2";
 }
+.icon-summary-fill:before {
+	content: "\e3cb";
+}
 .icon-cc-lock-fill:before {
 	content: "\e3aa";
 }
@@ -824,22 +827,19 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-cc-model-host:before {
 	content: "\e3bc";
 }
-.icon-cc-model-container:before {
-	content: "\e3bd";
-}
-.icon-cc-model-pod:before {
+.icon-cc-pod:before {
 	content: "\e3c2";
 }
 .icon-cc-model-workload:before {
 	content: "\e3bf";
 }
-.icon-cc-model-namespace:before {
+.icon-cc-namespace:before {
 	content: "\e3c8";
 }
-.icon-cc-model-node:before {
+.icon-cc-container-node:before {
 	content: "\e3c1";
 }
-.icon-cc-model-container1:before {
+.icon-cc-container:before {
 	content: "\e3c3";
 }
 .icon-cc-chart-new:before {
@@ -859,4 +859,7 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .icon-cc-close-eye:before {
 	content: "\e3ca";
+}
+.icon-cc-pod-folder:before {
+	content: "\e3d2";
 }

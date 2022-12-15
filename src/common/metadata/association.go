@@ -821,3 +821,32 @@ func (asst *AssociationKindYaml) Validate() errors.RawErrorInfo {
 
 	return errors.RawErrorInfo{}
 }
+
+// HostTopoPathReq host topo path request
+type HostTopoPathReq struct {
+	HostIDs []int64 `json:"ids"`
+}
+
+// Validate validate HostTopoPathReq
+func (h *HostTopoPathReq) Validate() errors.RawErrorInfo {
+	if len(h.HostIDs) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"ids"},
+		}
+	}
+
+	if len(h.HostIDs) > common.BKMaxLimitSize {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"ids", common.BKMaxLimitSize},
+		}
+	}
+	return errors.RawErrorInfo{}
+}
+
+// HostTopoPath host topo path
+type HostTopoPath struct {
+	HostID int64                         `json:"id"`
+	Path   [][]*TopoInstanceNodeSimplify `json:"topo_path"`
+}

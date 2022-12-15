@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <blueking-user-selector type="info"
+  <blueking-user-selector ref="userSelector" type="info"
     v-if="localValue.length"
     :api="api"
     :value="localValue">
@@ -54,6 +54,11 @@
           }
           return []
         }
+      }
+    },
+    methods: {
+      getCopyValue() {
+        return this.$refs?.userSelector?.userInfo
       }
     }
   }

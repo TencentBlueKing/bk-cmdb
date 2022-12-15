@@ -16,7 +16,7 @@
     searchable
     multiple
     :popover-width="220"
-    :disabled="!loaded"
+    :disabled="loadingCollections"
     font-size="normal"
     v-model="selected"
     v-bk-tooltips="$t('已收藏的条件')"
@@ -95,7 +95,6 @@
     },
     data() {
       return {
-        loaded: false,
         allowClose: true,
         editState: {
           raw: null,
@@ -139,12 +138,11 @@
     },
     methods: {
       async loadCollections() {
-        if (this.loaded || this.loadingCollections) {
+        if (this.loadingCollections) {
           return false
         }
         try {
           await FilterStore.loadCollections()
-          this.loaded = true
           this.$nextTick(() => {
             this.$refs.selector.show()
           })
