@@ -16,7 +16,6 @@ package blueking
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gin-contrib/sessions"
 	"strings"
 	"time"
 
@@ -31,6 +30,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -63,12 +63,13 @@ type loginResult struct {
 type user struct{}
 
 // LoginUser user login
-func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo, loginSucc bool) {
+func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo,
+	loginSucc bool) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	session := sessions.Default(c)
 
 	bkTokens := getBkTokens(c)
-	if bkTokens == nil {
+	if len(bkTokens) == 0 {
 		blog.Infof("LoginUser failed, bk_token empty, rid: %s", rid)
 		return nil, false
 	}
@@ -80,22 +81,23 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	}
 
 	var resultData loginResult
+	httpCli := httpclient.NewHttpClient()
+	httpCli.SetTimeOut(30 * time.Second)
+
+	tlsConf, err := apiutil.NewTLSClientConfigFromConfig("webServer.site.paas.tls")
+	if err != nil {
+		blog.Errorf("get tls config error, err: %v, rid: %s", err, rid)
+		return nil, false
+	}
+
+	if err := m.setTLSConf(&tlsConf, httpCli, rid); err != nil {
+		blog.Errorf("set tls config error, err: %v, rid: %s", err, rid)
+		return nil, false
+	}
+
 	for _, bkToken := range bkTokens {
 		if bkToken == session.Get(common.HTTPCookieWrongBKToken) {
 			continue
-		}
-		httpCli := httpclient.NewHttpClient()
-		httpCli.SetTimeOut(30 * time.Second)
-
-		tlsConf, err := apiutil.NewTLSClientConfigFromConfig("webServer.site.paas.tls")
-		if err != nil {
-			blog.Errorf("get tls config error, err: %v, rid: %s", err, rid)
-			return nil, false
-		}
-
-		if err := m.setTLSConf(&tlsConf, httpCli, rid); err != nil {
-			blog.Errorf("set tls config error, err: %v, rid: %s", err, rid)
-			return nil, false
 		}
 
 		loginURL := checkUrl + bkToken
@@ -105,56 +107,63 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 			session.Set(common.HTTPCookieWrongBKToken, bkToken)
 			continue
 		}
-		blog.V(3).Infof("get user info cond %v, return: %s, rid: %s", string(loginURL), string(loginResultByteArr), rid)
+		blog.V(3).Infof("get user info url: %v, result: %s, rid: %s", loginURL, string(loginResultByteArr), rid)
 
 		err = json.Unmarshal(loginResultByteArr, &resultData)
 		if err != nil {
-			blog.Errorf("get user info json error: %v, rawData: %s, rid: %s", err, string(loginResultByteArr), rid)
+			blog.Errorf("fail to unmarshal data: %s, error: %v, rid: %s", string(loginResultByteArr), err, rid)
 			return nil, false
 		}
 
 		if !resultData.Result {
-			blog.Errorf("get user info return error , error code: %s, error message: %s, rid: %s", resultData.Code, resultData.Message, rid)
+			blog.Errorf("get user info return error , error code: %s, error message: %s, rid: %s", resultData.Code,
+				resultData.Message, rid)
 			session.Set(common.HTTPCookieWrongBKToken, bkToken)
 			continue
 		}
 
-		userDetail := resultData.Data
-		if len(userDetail.OwnerUin) == 0 {
-			userDetail.OwnerUin = common.BKDefaultOwnerID
-		}
-		user = &metadata.LoginUserInfo{
-			UserName: userDetail.UserName,
-			ChName:   userDetail.ChName,
-			Phone:    userDetail.Phone,
-			Email:    userDetail.Email,
-			Role:     userDetail.Role,
-			BkToken:  bkToken,
-			OnwerUin: userDetail.OwnerUin,
-			IsOwner:  false,
-			Language: userDetail.Language,
-		}
+		user = setUser(resultData, bkToken)
 		break
 	}
 	if user == nil {
-		blog.Errorf("get user info return error , error code: %s, error message: %s, rid: %s", resultData.Code, resultData.Message, rid)
 		return nil, false
 	}
 	return user, true
 }
 
-func getBkTokens(c *gin.Context) []string {
+// getBkTokens get the values of the bk_token in the cookie
+func getBkTokens(c *gin.Context) (bkTokens []string) {
 	cookies := c.Request.Cookies()
 	if len(cookies) == 0 {
-		return nil
+		return bkTokens
 	}
-	var bkTokens []string
 	for _, cookie := range cookies {
 		if cookie.Name == common.HTTPCookieBKToken {
 			bkTokens = append(bkTokens, cookie.Value)
 		}
 	}
 	return bkTokens
+}
+
+// setUser get userInfo from resultData
+func setUser(resultData loginResult, bkToken string) (user *metadata.LoginUserInfo) {
+	userDetail := resultData.Data
+	if len(userDetail.OwnerUin) == 0 {
+		userDetail.OwnerUin = common.BKDefaultOwnerID
+	}
+
+	user = &metadata.LoginUserInfo{
+		UserName: userDetail.UserName,
+		ChName:   userDetail.ChName,
+		Phone:    userDetail.Phone,
+		Email:    userDetail.Email,
+		Role:     userDetail.Role,
+		BkToken:  bkToken,
+		OnwerUin: userDetail.OwnerUin,
+		IsOwner:  false,
+		Language: userDetail.Language,
+	}
+	return user
 }
 
 // GetLoginUrl get login url
@@ -192,7 +201,8 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 }
 
 // GetUserList get user list
-func (m *user) GetUserList(c *gin.Context, params map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
+func (m *user) GetUserList(c *gin.Context, params map[string]string) ([]*metadata.LoginSystemUserInfo,
+	*errors.RawErrorInfo) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	query := c.Request.URL.Query()
 	for key, values := range query {
