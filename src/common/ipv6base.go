@@ -26,6 +26,19 @@ import (
 	"strings"
 )
 
+// ConvertHostIpv6Val convert host ipv6 value
+func ConvertHostIpv6Val(items []string) ([]string, error) {
+	var err error
+	for idx, val := range items {
+		items[idx], err = ConvertIPv6ToStandardFormat(val)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return items, nil
+}
+
 // convertIpv6ToInt convert an ipv6 address to big int value
 func convertIpv6ToInt(ipv6 string) (*big.Int, error) {
 	ip := net.ParseIP(ipv6)
@@ -36,8 +49,12 @@ func convertIpv6ToInt(ipv6 string) (*big.Int, error) {
 	return intVal, nil
 }
 
-// ConvertIPv6ToFullAddr convert an ipv6 address to a full ipv6 address
-func ConvertIPv6ToFullAddr(ipv6 string) (string, error) {
+// convertIPv6ToFullAddr convert an ipv6 address to a full ipv6 address
+func convertIPv6ToFullAddr(ipv6 string) (string, error) {
+	if !strings.Contains(ipv6, ":") {
+		return "", fmt.Errorf("address %s is not ipv6 address", ipv6)
+	}
+
 	intVal, err := convertIpv6ToInt(ipv6)
 	if err != nil {
 		return "", err
@@ -71,6 +88,78 @@ func ConvertIPv6ToFullAddr(ipv6 string) (string, error) {
 	return strings.Join(part, ":"), nil
 }
 
+// ConvertIPv6ToStandardFormat convert ipv6 address to standard format
+// :: => 0000:0000:0000:0000:0000:0000:0000:0000
+// ::127.0.0.1 => 0000:0000:0000:0000:0000:0000:127.0.0.1
+func ConvertIPv6ToStandardFormat(address string) (string, error) {
+	if ip := net.ParseIP(address); ip == nil {
+		return "", fmt.Errorf("address %s is invalid", address)
+	}
+
+	if !strings.Contains(address, ":") {
+		return "", fmt.Errorf("address %s is not ipv6 address", address)
+	}
+
+	ipv6FullAddr, err := convertIPv6ToFullAddr(address)
+	if err != nil {
+		return "", err
+	}
+
+	addrs := strings.Split(address, ":")
+	if !strings.Contains(addrs[len(addrs)-1], ".") {
+		return ipv6FullAddr, nil
+	}
+
+	if ip := net.ParseIP(addrs[len(addrs)-1]); ip == nil {
+		return "", fmt.Errorf("address %s is invalid", address)
+	}
+
+	ipv6FullAddrs := strings.Split(ipv6FullAddr, ":")
+	var result string
+	for i := 0; i <= len(ipv6FullAddrs)-3; i++ {
+		result += ipv6FullAddrs[i] + ":"
+	}
+	return result + addrs[len(addrs)-1], nil
+}
+
+// GetIPv4IfEmbeddedInIPv6 get ipv4 address if it is embedded in ipv6 address
+// ::ffff:127.0.0.1 => 127.0.0.1, ::127.0.0.1 => 127.0.0.1
+func GetIPv4IfEmbeddedInIPv6(address string) (string, error) {
+	if ip := net.ParseIP(address); ip == nil {
+		return "", fmt.Errorf("address %s is invalid", address)
+	}
+
+	if !strings.Contains(address, ":") {
+		return "", fmt.Errorf("address %s is not ipv6 address", address)
+	}
+
+	ipv6Addr, err := convertIPv6ToFullAddr(address)
+	if err != nil {
+		return "", err
+	}
+	ipv6Addrs := strings.Split(ipv6Addr, ":")
+	for i := 0; i <= len(ipv6Addrs)-3; i++ {
+		if i != len(ipv6Addrs)-3 && ipv6Addrs[i] != "0000" {
+			return address, nil
+		}
+
+		if i == len(ipv6Addrs)-3 && ipv6Addrs[i] != "0000" && ipv6Addrs[i] != "ffff" {
+			return address, nil
+		}
+	}
+
+	addrs := strings.Split(address, ":")
+	if !strings.Contains(addrs[len(addrs)-1], ".") {
+		return address, nil
+	}
+
+	if ip := net.ParseIP(addrs[len(addrs)-1]); ip == nil {
+		return "", fmt.Errorf("address %s is invalid", address)
+	}
+
+	return addrs[len(addrs)-1], nil
+}
+
 // ConvertIpv6ToFullWord convert the ipv6 field into a complete format.
 // for the converted scene at this time, there are only two types of value,
 // string and slice, because the operators involved in mongo can only be
@@ -85,7 +174,7 @@ func ConvertIpv6ToFullWord(field string, value interface{}) (interface{}, error)
 	var data interface{}
 	switch reflect.ValueOf(value).Kind() {
 	case reflect.String:
-		ip, err := ConvertIPv6ToFullAddr(value.(string))
+		ip, err := ConvertIPv6ToStandardFormat(value.(string))
 		if err != nil {
 			return nil, err
 		}
@@ -103,7 +192,7 @@ func ConvertIpv6ToFullWord(field string, value interface{}) (interface{}, error)
 			item := v.Index(i).Interface()
 			switch item.(type) {
 			case string:
-				v, err := ConvertIPv6ToFullAddr(item.(string))
+				v, err := ConvertIPv6ToStandardFormat(item.(string))
 				if err != nil {
 					return nil, err
 				}

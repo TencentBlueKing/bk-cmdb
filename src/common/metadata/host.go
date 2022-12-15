@@ -14,10 +14,7 @@ package metadata
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
-	"math/big"
-	"net"
 	"strings"
 
 	"configcenter/src/common"
@@ -193,7 +190,7 @@ func ConvertHostSpecialStringToArray(host map[string]interface{}) (map[string]in
 				host[field] = items
 				continue
 			}
-			host[field], err = ConvertHostIpv6Val(items)
+			host[field], err = common.ConvertHostIpv6Val(items)
 			if err != nil {
 				return nil, err
 			}
@@ -206,7 +203,7 @@ func ConvertHostSpecialStringToArray(host map[string]interface{}) (map[string]in
 			if _, ok := hostIpv6Fields[field]; !ok {
 				continue
 			}
-			host[field], err = ConvertHostIpv6Val(v)
+			host[field], err = common.ConvertHostIpv6Val(v)
 			if err != nil {
 				return nil, err
 			}
@@ -223,140 +220,6 @@ func ConvertHostSpecialStringToArray(host map[string]interface{}) (map[string]in
 		}
 	}
 	return host, nil
-}
-
-// ConvertHostIpv6Val convert host ipv6 value
-func ConvertHostIpv6Val(items []string) ([]string, error) {
-	var err error
-	for idx, val := range items {
-		items[idx], err = ConvertIPv6ToStandardFormat(val)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return items, nil
-}
-
-// convertIpv6ToInt convert an ipv6 address to big int value
-func convertIpv6ToInt(ipv6 string) (*big.Int, error) {
-	ip := net.ParseIP(ipv6)
-	if ip == nil {
-		return nil, fmt.Errorf("invalid ipv6 address, data: %s", ipv6)
-	}
-	intVal := big.NewInt(0).SetBytes(ip)
-	return intVal, nil
-}
-
-// convertIPv6ToFullAddr convert an ipv6 address to a full ipv6 address
-func convertIPv6ToFullAddr(ipv6 string) (string, error) {
-	if !strings.Contains(ipv6, ":") {
-		return "", fmt.Errorf("address %s is not ipv6 address", ipv6)
-	}
-
-	intVal, err := convertIpv6ToInt(ipv6)
-	if err != nil {
-		return "", err
-	}
-
-	b255 := new(big.Int).SetBytes([]byte{255})
-	buf := make([]byte, 2)
-	part := make([]string, 8)
-	pos := 0
-	tmpInt := new(big.Int)
-	var i uint
-	for i = 0; i < 16; i += 2 {
-		tmpInt.Rsh(intVal, 120-i*8).And(tmpInt, b255)
-		bytes := tmpInt.Bytes()
-		if len(bytes) > 0 {
-			buf[0] = bytes[0]
-		} else {
-			buf[0] = 0
-		}
-		tmpInt.Rsh(intVal, 120-(i+1)*8).And(tmpInt, b255)
-		bytes = tmpInt.Bytes()
-		if len(bytes) > 0 {
-			buf[1] = bytes[0]
-		} else {
-			buf[1] = 0
-		}
-		part[pos] = hex.EncodeToString(buf)
-		pos++
-	}
-
-	return strings.Join(part, ":"), nil
-}
-
-// ConvertIPv6ToStandardFormat convert ipv6 address to standard format
-// :: => 0000:0000:0000:0000:0000:0000:0000:0000
-// ::127.0.0.1 => 0000:0000:0000:0000:0000:0000:127.0.0.1
-func ConvertIPv6ToStandardFormat(address string) (string, error) {
-	if ip := net.ParseIP(address); ip == nil {
-		return "", fmt.Errorf("address %s is invalid", address)
-	}
-
-	if !strings.Contains(address, ":") {
-		return "", fmt.Errorf("address %s is not ipv6 address", address)
-	}
-
-	ipv6FullAddr, err := convertIPv6ToFullAddr(address)
-	if err != nil {
-		return "", err
-	}
-
-	addrs := strings.Split(address, ":")
-	if !strings.Contains(addrs[len(addrs)-1], ".") {
-		return ipv6FullAddr, nil
-	}
-
-	if ip := net.ParseIP(addrs[len(addrs)-1]); ip == nil {
-		return "", fmt.Errorf("address %s is invalid", address)
-	}
-
-	ipv6FullAddrs := strings.Split(ipv6FullAddr, ":")
-	var result string
-	for i := 0; i <= len(ipv6FullAddrs)-3; i++ {
-		result += ipv6FullAddrs[i] + ":"
-	}
-	return result + addrs[len(addrs)-1], nil
-}
-
-// GetIPv4IfEmbeddedInIPv6 get ipv4 address if it is embedded in ipv6 address
-// ::ffff:127.0.0.1 => 127.0.0.1, ::127.0.0.1 => 127.0.0.1
-func GetIPv4IfEmbeddedInIPv6(address string) (string, error) {
-	if ip := net.ParseIP(address); ip == nil {
-		return "", fmt.Errorf("address %s is invalid", address)
-	}
-
-	if !strings.Contains(address, ":") {
-		return "", fmt.Errorf("address %s is not ipv6 address", address)
-	}
-
-	ipv6Addr, err := convertIPv6ToFullAddr(address)
-	if err != nil {
-		return "", err
-	}
-	ipv6Addrs := strings.Split(ipv6Addr, ":")
-	for i := 0; i <= len(ipv6Addrs)-3; i++ {
-		if i != len(ipv6Addrs)-3 && ipv6Addrs[i] != "0000" {
-			return address, nil
-		}
-
-		if i == len(ipv6Addrs)-3 && ipv6Addrs[i] != "0000" && ipv6Addrs[i] != "ffff" {
-			return address, nil
-		}
-	}
-
-	addrs := strings.Split(address, ":")
-	if !strings.Contains(addrs[len(addrs)-1], ".") {
-		return address, nil
-	}
-
-	if ip := net.ParseIP(addrs[len(addrs)-1]); ip == nil {
-		return "", fmt.Errorf("address %s is invalid", address)
-	}
-
-	return addrs[len(addrs)-1], nil
 }
 
 // GetHostDisplayName get host display name

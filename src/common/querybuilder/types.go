@@ -265,7 +265,7 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 	case OperatorEqual:
 		value, err := common.ConvertIpv6ToFullWord(r.Field, r.Value)
 		if err != nil {
-			return nil, "convert failed", err
+			return nil, "convert ipv6 full word failed", err
 		}
 		filter[r.Field] = map[string]interface{}{
 			common.BKDBEQ: value,
@@ -273,7 +273,7 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 	case OperatorNotEqual:
 		value, err := common.ConvertIpv6ToFullWord(r.Field, r.Value)
 		if err != nil {
-			return nil, "convert failed", err
+			return nil, "convert ipv6 full word failed", err
 		}
 		filter[r.Field] = map[string]interface{}{
 			common.BKDBNE: value,
@@ -281,7 +281,7 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 	case OperatorIn:
 		value, err := common.ConvertIpv6ToFullWord(r.Field, r.Value)
 		if err != nil {
-			return nil, "convert failed", err
+			return nil, "convert ipv6 full word failed", err
 		}
 		filter[r.Field] = map[string]interface{}{
 			common.BKDBIN: value,
@@ -289,7 +289,7 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 	case OperatorNotIn:
 		value, err := common.ConvertIpv6ToFullWord(r.Field, r.Value)
 		if err != nil {
-			return nil, "convert failed", err
+			return nil, "convert ipv6 full word failed", err
 		}
 		filter[r.Field] = map[string]interface{}{
 			common.BKDBNIN: value,
