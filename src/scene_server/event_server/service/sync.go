@@ -32,7 +32,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-const hostIdentifierTaskKeyPrefix = "host_identifier:task:"
+const hostIdentifierTaskKeyPrefix = common.BKCacheKeyV3Prefix + "host_identifier:task:"
 
 // SyncHostIdentifier sync host identifier, add hostInfo message to redis fail host list
 func (s *Service) SyncHostIdentifier(ctx *rest.Contexts) {
