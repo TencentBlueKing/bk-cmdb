@@ -185,7 +185,7 @@ func (h *HostSnap) putDataIntoDelayQueue(rid, msg string) error {
 
 // getBaseInfoFromCollectorsMsg obtain basic information from the reported msg: agentID, ipv4, ipv6, cloudID, and the
 // entire parsed message body.
-func getBaseInfoFromCollectorsMsg(msg *string) (string, []string, []string, int64, gjson.Result, error) {
+func getBaseInfoFromCollectorsMsg(msg *string, rid string) (string, []string, []string, int64, gjson.Result, error) {
 
 	var data string
 	if !gjson.Get(*msg, "cloudid").Exists() {
@@ -197,7 +197,7 @@ func getBaseInfoFromCollectorsMsg(msg *string) (string, []string, []string, int6
 	agentID := gjson.Get(*msg, "bk_agent_id").String()
 	cloudID := val.Get("cloudid").Int()
 
-	ipv4, ipv6 := getIPsFromMsg(&val)
+	ipv4, ipv6 := getIPsFromMsg(&val, agentID, rid)
 	if len(ipv4) == 0 && len(ipv6) == 0 {
 		return "", nil, nil, 0, gjson.Result{}, errors.New("msg has no ipv4 and ipv6 address")
 	}
@@ -299,7 +299,7 @@ func (h *HostSnap) Analyze(msg *string, sourceType string) (bool, error) {
 
 	header, rid := newHeaderWithRid()
 
-	agentID, ipv4, ipv6, cloudID, val, err := getBaseInfoFromCollectorsMsg(msg)
+	agentID, ipv4, ipv6, cloudID, val, err := getBaseInfoFromCollectorsMsg(msg, rid)
 	if err != nil {
 		blog.Errorf("parse base info failed, msg: %s, err: %v, rid: %s", *msg, err, rid)
 		return false, err
@@ -395,7 +395,7 @@ func getIPv4AndIPv6UpdateData(addressing string, ipv4 []string, ipv6 []string) (
 	// in the dynamic ip scenario, innerIP needs to be updated
 	if addressing == common.BKAddressingDynamic {
 		updateIPv4 = ipv4
-		updateIPv6, err = metadata.ConvertHostIpv6Val(ipv6)
+		updateIPv6, err = common.ConvertHostIpv6Val(ipv6)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -1030,7 +1030,7 @@ func (h *HostSnap) getHostByVal(header http.Header, rid string, cloudID int64, i
 	return "", errors.New("can not find ip detail from cache")
 }
 
-func getIPsFromMsg(val *gjson.Result) ([]string, []string) {
+func getIPsFromMsg(val *gjson.Result, agentID string, rid string) ([]string, []string) {
 	ipv4Map := make(map[string]struct{})
 	ipv6Map := make(map[string]struct{})
 
@@ -1083,9 +1083,9 @@ func getIPsFromMsg(val *gjson.Result) ([]string, []string) {
 
 			var err error
 			if strings.Contains(ip, ":") {
-				ip, err = metadata.GetIPv4IfEmbeddedInIPv6(ip)
+				ip, err = common.GetIPv4IfEmbeddedInIPv6(ip)
 				if err != nil {
-					blog.Errorf("get ip failed: %v", err)
+					blog.Warnf("get ip failed, agentID: %v, addr: %v, err: %v", agentID, addr, err, rid)
 					continue
 				}
 			}
