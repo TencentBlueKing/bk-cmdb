@@ -70,6 +70,7 @@ var _ = Describe("user operation test", func() {
 				Info:        fmt.Sprintf("{\"bk_biz_id\":%v,\"exact_search\":true,\"bk_host_innerip\":true,\"bk_host_outerip\":true,\"ip_list\":[]}", bizId),
 				QueryParams: "[]",
 				Name:        "123",
+				Type:        metadata.Tradition,
 			}
 			rsp, err := hostServerClient.AddHostFavourite(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -82,6 +83,7 @@ var _ = Describe("user operation test", func() {
 			input := &metadata.FavouriteParms{
 				Info:        fmt.Sprintf("{\"bk_biz_id\":%v,\"exact_search\":true,\"bk_host_innerip\":true,\"bk_host_outerip\":true,\"ip_list\":[]}", bizId),
 				QueryParams: "[]",
+				Type:        metadata.Tradition,
 			}
 			rsp, err := hostServerClient.AddHostFavourite(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -94,6 +96,7 @@ var _ = Describe("user operation test", func() {
 				Info:        fmt.Sprintf("{\"bk_biz_id\":%v,\"exact_search\":true,\"bk_host_innerip\":true,\"bk_host_outerip\":true,\"ip_list\":[]}", bizId),
 				QueryParams: "[]",
 				Name:        "123",
+				Type:        metadata.Tradition,
 			}
 			rsp, err := hostServerClient.AddHostFavourite(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -106,6 +109,7 @@ var _ = Describe("user operation test", func() {
 				Info:        "abc",
 				QueryParams: "[]",
 				Name:        "1234",
+				Type:        metadata.Tradition,
 			}
 			rsp, err := hostServerClient.AddHostFavourite(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -118,6 +122,7 @@ var _ = Describe("user operation test", func() {
 				Info:        fmt.Sprintf("{\"bk_biz_id\":%v,\"exact_search\":true,\"bk_host_innerip\":true,\"bk_host_outerip\":true,\"ip_list\":[]}", bizId),
 				QueryParams: "abc",
 				Name:        "12345",
+				Type:        metadata.Tradition,
 			}
 			rsp, err := hostServerClient.AddHostFavourite(context.Background(), header, input)
 			util.RegisterResponse(rsp)
@@ -159,6 +164,7 @@ var _ = Describe("user operation test", func() {
 				QueryParams: "[]",
 				Name:        "1234",
 				Count:       2,
+				Type:        metadata.Tradition,
 			}
 			rsp, err := hostServerClient.UpdateHostFavouriteByID(context.Background(), favId, header, input)
 			util.RegisterResponse(rsp)
@@ -173,6 +179,7 @@ var _ = Describe("user operation test", func() {
 				QueryParams: "[]",
 				Name:        "1234",
 				Count:       2,
+				Type:        metadata.Tradition,
 			}
 			rsp, err := hostServerClient.UpdateHostFavouriteByID(context.Background(), "1000", header, input)
 			util.RegisterResponse(rsp)
@@ -186,6 +193,7 @@ var _ = Describe("user operation test", func() {
 				Info:        fmt.Sprintf("{\"bk_biz_id\":%v,\"exact_search\":true,\"bk_host_innerip\":true,\"bk_host_outerip\":true,\"ip_list\":[]}", bizId),
 				QueryParams: "[]",
 				Count:       2,
+				Type:        metadata.Tradition,
 			}
 			rsp, err := hostServerClient.UpdateHostFavouriteByID(context.Background(), favId, header, input)
 			util.RegisterResponse(rsp)
@@ -198,6 +206,7 @@ var _ = Describe("user operation test", func() {
 				Info:        "abc",
 				QueryParams: "[]",
 				Name:        "1234",
+				Type:        metadata.Tradition,
 			}
 			rsp, err := hostServerClient.UpdateHostFavouriteByID(context.Background(), favId, header, input)
 			util.RegisterResponse(rsp)
@@ -210,6 +219,7 @@ var _ = Describe("user operation test", func() {
 				Info:        fmt.Sprintf("{\"bk_biz_id\":%v,\"exact_search\":true,\"bk_host_innerip\":true,\"bk_host_outerip\":true,\"ip_list\":[]}", bizId),
 				QueryParams: "abc",
 				Name:        "12345",
+				Type:        metadata.Tradition,
 			}
 			rsp, err := hostServerClient.UpdateHostFavouriteByID(context.Background(), favId, header, input)
 			util.RegisterResponse(rsp)

@@ -143,7 +143,7 @@
         >
           <div class="group-header clearfix">
             <collapse-group-title
-              :classification="classification"
+              :is-new-classify="classification.isNewClassify"
               :dropdown-menu="!isModelSelectable"
               :collapse=" classificationsCollapseState[classification.id]"
               :title="`${classification.bk_classification_name} ( ${ classification.bk_objects.length} )`"
@@ -503,14 +503,16 @@
       ...mapGetters('objectModelClassify', ['classifications']),
       allClassifications() {
         const allClassifications = []
-        this.classifications.forEach((classification) => {
-          allClassifications.push({
-            ...classification,
-            bk_objects: classification.bk_objects
-              .filter(model => !model.bk_ishidden)
-              .sort((a, b) => a.bk_ispaused - b.bk_ispaused),
+        this.classifications
+          .filter(classification => !classification?.bk_ishidden)
+          .forEach((classification) => {
+            allClassifications.push({
+              ...classification,
+              bk_objects: classification.bk_objects
+                .filter(model => !model.bk_ishidden)
+                .sort((a, b) => a.bk_ispaused - b.bk_ispaused),
+            })
           })
-        })
         return allClassifications
       },
       enableClassifications() {
@@ -526,7 +528,7 @@
       disabledClassifications() {
         const disabledClassifications = []
 
-        this.classifications.forEach((classification) => {
+        this.allClassifications.forEach((classification) => {
           disabledClassifications.push({
             ...classification,
             bk_objects: classification.bk_objects.filter(model => model.bk_ispaused),

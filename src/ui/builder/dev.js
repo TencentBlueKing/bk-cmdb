@@ -21,9 +21,8 @@ const devServerConfig = require('./webpack/devserver')(config)
 
 const webpackConfig = require('./webpack')
 
-WebpackDevServer.addDevServerEntrypoints(webpackConfig, devServerConfig)
 const compiler = webpack(webpackConfig)
-const server = new WebpackDevServer(compiler, devServerConfig)
+const server = new WebpackDevServer(devServerConfig, compiler)
 
 compiler.hooks.done.tapAsync('done', (stats, callback) => {
   if (!stats.hasErrors()) {
@@ -33,8 +32,6 @@ compiler.hooks.done.tapAsync('done', (stats, callback) => {
   callback()
 })
 
-server.listen(devServerConfig.port, devServerConfig.host, (err) => {
-  if (err) {
-    return console.error(err)
-  }
+server.startCallback(() => {
+  console.log('Running')
 })

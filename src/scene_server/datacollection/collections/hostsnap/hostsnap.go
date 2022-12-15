@@ -1001,7 +1001,7 @@ func (h *HostSnap) getHostByVal(header http.Header, rid string, cloudID int64, i
 			continue
 		}
 
-		opt := &metadata.SearchHostWithIP{
+		opt := &metadata.SearchHostWithInnerIPOption{
 			InnerIP: ip,
 			CloudID: cloudID,
 			Fields:  reqireFields,

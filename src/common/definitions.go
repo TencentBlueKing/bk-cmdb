@@ -91,9 +91,8 @@ const (
 	// BKMaxSyncIdentifierLimit sync identifier max value
 	BKMaxSyncIdentifierLimit = 200
 
-	// BKMaxWriteOpLimit max limit of a write operation.
+	// BKMaxWriteOpLimit maximum limit of write operation.
 	BKMaxWriteOpLimit = 200
-
 	// BKWriteOpLimit default write operation limit
 	BKWriteOpLimit = 200
 )
@@ -1573,4 +1572,9 @@ const (
 const (
 	// DefaultResBusinessSetFlag the default resource business set flag
 	DefaultResBusinessSetFlag = 1
+)
+
+const (
+	// HostFavoriteType host query favorite condition type
+	HostFavoriteType = "type"
 )

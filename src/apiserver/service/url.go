@@ -67,6 +67,8 @@ var topoURLRegexp = regexp.MustCompile(fmt.Sprintf(
 	"^/api/v3/(%s)/(inst|object|objects|topo|biz|module|set|resource|biz_set)/.*$", verbs))
 var objectURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(object|biz|biz_set)$", verbs))
 
+var kubeURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/kube/.*$", verbs))
+
 // WithTopo parse topo api's url
 func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	topoRoot := "/topo/v3"
@@ -126,6 +128,8 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, topoRoot, true
 
 	case strings.Contains(string(*u), "/objectattgroupproperty"):
+		from, to, isHit = rootPath, topoRoot, true
+	case kubeURLRegexp.MatchString(string(*u)):
 		from, to, isHit = rootPath, topoRoot, true
 
 	// TODO remove it

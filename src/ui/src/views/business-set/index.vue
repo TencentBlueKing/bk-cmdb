@@ -62,7 +62,7 @@
         :key="column.id"
         :prop="column.id"
         :label="column.name"
-        min-width="80"
+        :min-width="$tools.getHeaderPropertyMinWidth(column.property, { hasSort: true })"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <cmdb-property-value

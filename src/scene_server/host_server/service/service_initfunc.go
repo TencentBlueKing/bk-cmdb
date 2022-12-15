@@ -128,6 +128,8 @@ func (s *Service) initHost(web *restful.WebService) {
 	// 查询业务下的主机CPU数量的特殊接口，给成本管理使用
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/count/cpu", Handler: s.CountHostCPU})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/kube/search",
+		Handler: s.SearchHostWithKube})
 	utility.AddToRestfulWebService(web)
 
 }

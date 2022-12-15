@@ -105,7 +105,7 @@
   import { mapGetters } from 'vuex'
   import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_SET_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
   import setInstance from './set-instance'
-  import setTemplateService from '@/services/set-template'
+  import setTemplateService from '@/service/set-template'
 
   export default {
     components: {

@@ -27,7 +27,7 @@
   import multiConfig from './children/multi-config'
   import singleConfig from './children/single-config'
   import { MENU_BUSINESS_HOST_APPLY_CONFIRM  } from '@/dictionary/menu-symbol'
-  import serviceTemplateService, { CONFIG_MODE } from '@/services/service-template/index.js'
+  import serviceTemplateService, { CONFIG_MODE } from '@/service/service-template/index.js'
 
   export default {
     components: {

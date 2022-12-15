@@ -126,3 +126,7 @@ export const MENU_RESOURCE_BUSINESS_SET_DETAILS = 'menu_resource_set_business_de
 
 // 业务(集)选择器中收藏key
 export const BUSINESS_SELECTOR_COLLECTION = 'business_selector_collection'
+
+// Pod
+export const MENU_POD_DETAILS = 'menu_pod_details'
+export const MENU_POD_CONTAINER_DETAILS = 'menu_pod_container_details'

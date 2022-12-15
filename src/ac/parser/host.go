@@ -373,6 +373,8 @@ const (
 
 	// 查询业务下的主机CPU数量的特殊接口，给成本管理使用
 	countHostCPUPattern = "/api/v3/host/count/cpu"
+
+	findHostsWithKubeCondPattern = "/api/v3/hosts/kube/search"
 )
 
 var (
@@ -947,6 +949,24 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
+	if ps.hitPattern(findHostsWithKubeCondPattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+
+		return ps
+	}
 	return ps
 }
 

@@ -36,7 +36,7 @@ func CreateObjectIDIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 		Background: false,
 	}
 
-	if err := db.Table(common.BKTableNameObjUnique).CreateIndex(ctx, idx); err != nil {
+	if err := db.Table(common.BKTableNameObjUnique).CreateIndex(ctx, idx); err != nil && !db.IsDuplicatedError(err) {
 		blog.Errorf("CreateObjectIDIndex failed, err: %+v", err)
 		return fmt.Errorf("CreateObjectIDIndex failed, err: %v", err)
 	}
