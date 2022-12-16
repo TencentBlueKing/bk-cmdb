@@ -30,7 +30,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -66,7 +65,6 @@ type user struct{}
 func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo,
 	loginSucc bool) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
-	session := sessions.Default(c)
 
 	bkTokens := getBkTokens(c)
 	if len(bkTokens) == 0 {
@@ -96,18 +94,13 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	}
 
 	for _, bkToken := range bkTokens {
-		if bkToken == session.Get(common.HTTPCookieWrongBKToken) {
-			continue
-		}
-
 		loginURL := checkUrl + bkToken
 		loginResultByteArr, err := httpCli.GET(loginURL, nil, nil)
 		if err != nil {
 			blog.Errorf("get user info return error: %v, rid: %s", err, rid)
-			session.Set(common.HTTPCookieWrongBKToken, bkToken)
 			continue
 		}
-		blog.V(3).Infof("get user info url: %v, result: %s, rid: %s", loginURL, string(loginResultByteArr), rid)
+		blog.V(3).Infof("get user info url: %s, result: %s, rid: %s", loginURL, string(loginResultByteArr), rid)
 
 		err = json.Unmarshal(loginResultByteArr, &resultData)
 		if err != nil {
@@ -116,9 +109,8 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 		}
 
 		if !resultData.Result {
-			blog.Errorf("get user info return error , error code: %s, error message: %s, rid: %s", resultData.Code,
+			blog.Errorf("get user info return error, error code: %s, error message: %s, rid: %s", resultData.Code,
 				resultData.Message, rid)
-			session.Set(common.HTTPCookieWrongBKToken, bkToken)
 			continue
 		}
 
@@ -137,9 +129,9 @@ func getBkTokens(c *gin.Context) (bkTokens []string) {
 	if len(cookies) == 0 {
 		return bkTokens
 	}
-	for _, cookie := range cookies {
-		if cookie.Name == common.HTTPCookieBKToken {
-			bkTokens = append(bkTokens, cookie.Value)
+	for i := len(cookies) - 1; i >= 0; i-- {
+		if cookies[i].Name == common.HTTPCookieBKToken {
+			bkTokens = append(bkTokens, cookies[i].Value)
 		}
 	}
 	return bkTokens
