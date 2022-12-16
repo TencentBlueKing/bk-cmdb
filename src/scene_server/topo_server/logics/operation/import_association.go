@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/topo_server/logics/inst"
 )
 
 // AssociationOperationInterface association operation methods
@@ -40,6 +41,8 @@ type AssociationOperationInterface interface {
 	// FindAssociationByObjectAssociationID find association by objid and asstid
 	FindAssociationByObjectAssociationID(kit *rest.Kit, objID string,
 		asstIDArr []string) ([]metadata.Association, errors.CCError)
+	// SetProxy proxy the interface
+	SetProxy(asst inst.AssociationOperationInterface)
 }
 
 // NewAssociationOperation create a new association operation instance
@@ -54,6 +57,12 @@ func NewAssociationOperation(client apimachinery.ClientSetInterface,
 type association struct {
 	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
+	asst        inst.AssociationOperationInterface
+}
+
+// SetProxy proxy the interface
+func (assoc *association) SetProxy(asst inst.AssociationOperationInterface) {
+	assoc.asst = asst
 }
 
 // ImportInstAssociation add instance association by excel
@@ -313,62 +322,6 @@ func (ia *importAssociation) getTargetIndexSrcDstInstID(idx int, asst *metadata.
 	return srcInstID, dstInstID, nil
 }
 
-// checkInstAsstMapping use to check if instance association mapping correct, used by CreateInstanceAssociation
-func (ia *importAssociation) checkInstAsstMapping(kit *rest.Kit, objID string, mapping metadata.AssociationMapping,
-	input *metadata.CreateAssociationInstRequest) error {
-
-	tableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
-	switch mapping {
-	case metadata.OneToOneMapping:
-		// search instances belongs to this association.
-		queryFilter := []map[string]interface{}{
-			{
-				common.AssociationObjAsstIDField: input.ObjectAsstID,
-				common.BKInstIDField:             input.InstID,
-			},
-			{
-				common.AssociationObjAsstIDField: input.ObjectAsstID,
-				common.BKAsstInstIDField:         input.AsstInstID,
-			},
-		}
-
-		instCnt, err := ia.cli.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, tableName,
-			queryFilter)
-		if err != nil {
-			blog.Errorf("check instance with cond[%#v] failed, err: %v, rid: %s", queryFilter, err, kit.Rid)
-			return err
-		}
-
-		for _, cnt := range instCnt {
-			if cnt >= 1 {
-				return kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
-			}
-		}
-	case metadata.OneToManyMapping:
-		queryFilter := []map[string]interface{}{
-			{
-				common.AssociationObjAsstIDField: input.ObjectAsstID,
-				common.BKAsstInstIDField:         input.AsstInstID,
-			},
-		}
-		instCnt, err := ia.cli.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, tableName,
-			queryFilter)
-		if err != nil {
-			blog.Errorf("check instance with cond[%#v] failed, err: %v, rid: %s", queryFilter, err, kit.Rid)
-			return err
-		}
-
-		if instCnt[0] >= 1 {
-			return kit.CCError.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
-		}
-
-	default:
-		// after all the check, new association instance can be created.
-	}
-
-	return nil
-}
-
 func (ia *importAssociation) checkExcelAssociationOperate(idx int, srcInstID, dstInstID int64,
 	asst *metadata.Association, asstInfo metadata.ExcelAssociation) bool {
 
@@ -393,10 +346,11 @@ func (ia *importAssociation) checkExcelAssociationOperate(idx int, srcInstID, ds
 
 		input := &metadata.CreateAssociationInstRequest{
 			ObjectAsstID: asstInfo.ObjectAsstID,
-			InstID: srcInstID,
-			AsstInstID: dstInstID,
+			InstID:       srcInstID,
+			AsstInstID:   dstInstID,
 		}
-		if err = ia.checkInstAsstMapping(ia.kit, ia.objID, asst.Mapping, input); err != nil {
+
+		if err = ia.cli.asst.CheckInstAsstMapping(ia.kit, ia.objID, asst.Mapping, input); err != nil {
 			ia.parseImportDataErr[idx] = err.Error()
 			return false
 		}
