@@ -243,7 +243,7 @@ func (b *kube) isExistKubeResourceUnderCluster(kit *rest.Kit, option *types.Dele
 	filter := make([]map[string]interface{}, 0)
 	filter = []map[string]interface{}{
 		{
-			types.BKClusterIDFiled: map[string]interface{}{common.BKDBIN: option.IDs},
+			types.BKClusterIDField: map[string]interface{}{common.BKDBIN: option.IDs},
 			common.BKAppIDField:    bizID,
 		},
 	}
@@ -318,7 +318,7 @@ func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, biz
 	for _, node := range data.Nodes {
 		conds = append(conds, map[string]interface{}{
 			common.BKFieldName:     *node.Name,
-			types.BKClusterIDFiled: node.ClusterID,
+			types.BKClusterIDField: node.ClusterID,
 		})
 	}
 
@@ -348,9 +348,8 @@ func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, biz
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 	audit := auditlog.NewKubeAudit(b.clientSet.CoreService())
 	auditLog, err := audit.GenerateNodeAuditLog(generateAuditParameter, result.Info)
-
 	if err != nil {
-		blog.Errorf(" creat nodes, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("create nodes, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 

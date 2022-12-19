@@ -63,16 +63,13 @@ var NodeBaseRefDescriptor = table.FieldsDescriptors{
 type Node struct {
 	// ID cluster auto-increment ID in cc
 	ID int64 `json:"id,omitempty" bson:"id"`
-	// BizID the business ID to which the cluster belongs
-	BizID int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
+
+	// ClusterSpec cluster-related information in the node
+	ClusterSpec `json:",inline" bson:",inline"`
 	// SupplierAccount the supplier account that this resource belongs to.
 	SupplierAccount string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 	// HostID the node ID to which the host belongs
 	HostID int64 `json:"bk_host_id,omitempty" bson:"bk_host_id"`
-	// ClusterID the node ID to which the cluster belongs
-	ClusterID int64 `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
-	// ClusterUID the node ID to which the cluster belongs
-	ClusterUID string `json:"cluster_uid,omitempty" bson:"cluster_uid"`
 
 	// HasPod this field indicates whether there is a pod in the node.
 	// if there is a pod, this field is true. If there is no pod, this
@@ -95,7 +92,7 @@ type Node struct {
 
 // IgnoredUpdateNodeFields  update fields that need to be ignored in node scenarios
 var IgnoredUpdateNodeFields = []string{common.BKFieldID, common.BKAppIDField, ClusterUIDField,
-	common.BKFieldName, common.BKOwnerIDField, BKClusterIDFiled, common.BKHostIDField, HasPodField}
+	common.BKFieldName, common.BKOwnerIDField, BKClusterIDField, common.BKHostIDField, HasPodField}
 
 // createValidate validate the NodeBaseFields
 func (option *Node) createValidate() ccErr.RawErrorInfo {
@@ -189,7 +186,7 @@ func (option *OneNodeCreateOption) validateCreate() ccErr.RawErrorInfo {
 	if option.ClusterID == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{BKClusterIDFiled},
+			Args:    []interface{}{BKClusterIDField},
 		}
 	}
 	if err := option.createValidate(); err.ErrCode != 0 {

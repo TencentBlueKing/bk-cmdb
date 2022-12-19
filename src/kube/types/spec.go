@@ -128,29 +128,6 @@ func isCommonField(field string) bool {
 	return false
 }
 
-// GetKubeSubTopoObject get the next-level topology resource object of the specified resource
-func GetKubeSubTopoObject(object string, id int64, bizID int64) (string, map[string]interface{}) {
-
-	switch object {
-	case KubeBusiness:
-		return KubeCluster, map[string]interface{}{
-			BKBizIDField: bizID,
-		}
-	case KubeCluster:
-		return KubeNamespace, map[string]interface{}{
-			BKClusterIDFiled: id,
-		}
-	case KubeNamespace:
-		return KubeWorkload, map[string]interface{}{
-			BKNamespaceIDField: id,
-		}
-	case KubeFolder, KubePod:
-		return "", nil
-	default:
-		return KubePod, map[string]interface{}{}
-	}
-}
-
 // GetWorkLoadTables get the table name of the full workload.
 func GetWorkLoadTables() []string {
 
@@ -303,7 +280,7 @@ func (option *SpecSimpleInfo) validate() error {
 		return errors.New("workload must be set")
 	}
 
-	if err := WorkloadType(option.Ref.Kind).Validate(); err != nil {
+	if err := option.Ref.Kind.Validate(); err != nil {
 		return errors.New("workload is illegal type")
 	}
 

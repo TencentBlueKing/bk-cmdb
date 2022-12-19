@@ -355,6 +355,33 @@ func (k *kube) BatchCreatePod(ctx context.Context, header http.Header,
 
 }
 
+// SearchNsClusterRelation search namespace cluster relation in the shared cluster scenario.
+func (k *kube) SearchNsClusterRelation(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
+	*types.ResponseNsClusterRelation, errors.CCErrorCoder) {
+	ret := struct {
+		metadata.BaseResp
+		Data types.ResponseNsClusterRelation `json:"data"`
+	}{}
+
+	subPath := "/findmany/kube/ns/relation"
+	err := k.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(&ret)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return nil, ret.CCError()
+	}
+
+	return &ret.Data, nil
+}
+
 // SearchCluster create cluster.
 func (k *kube) SearchCluster(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
 	*types.ResponseCluster, errors.CCErrorCoder) {

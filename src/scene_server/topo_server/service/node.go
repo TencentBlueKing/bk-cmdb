@@ -95,7 +95,7 @@ func (s *Service) FindNodePathForHost(ctx *rest.Contexts) {
 func (s *Service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.HostNodeRelation, error) {
 	cond := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDs}}
 	fields := []string{
-		common.BKFieldID, common.BKAppIDField, types.BKClusterIDFiled, common.BKHostIDField,
+		common.BKFieldID, common.BKAppIDField, types.BKClusterIDField, common.BKHostIDField,
 	}
 	query := &metadata.QueryCondition{
 		Condition:      cond,

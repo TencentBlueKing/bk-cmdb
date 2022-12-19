@@ -118,7 +118,7 @@ func (ns *Namespace) ValidateCreate() errors.RawErrorInfo {
 	if ns.ClusterID == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{BKClusterIDFiled},
+			Args:    []interface{}{BKClusterIDField},
 		}
 	}
 

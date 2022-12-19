@@ -61,13 +61,13 @@ var _ = Describe("workload test", func() {
 
 		clusterName := "cluster"
 		schedulingEngine := "k8s"
-		xid := "cls-hox2lkf2"
+		xid := "xid-011"
 		version := "0.1"
 		networkType := "underlay"
 		region := "shenzhen"
-		vpc := "vpc-q6awe02n"
+		vpc := "vpc-001"
 		network := []string{"1.1.1.0/21"}
-		clusterType := "public"
+		clusterType := types.ClusterShareTypeField
 		createCLuster := &types.Cluster{
 			Name:             &clusterName,
 			SchedulingEngine: &schedulingEngine,
@@ -228,7 +228,7 @@ var _ = Describe("workload test", func() {
 				Condition: filter.And,
 				Rules: []filter.RuleFactory{
 					&filter.AtomRule{
-						Field:    types.BKClusterIDFiled,
+						Field:    types.BKClusterIDField,
 						Operator: filter.Equal.Factory(),
 						Value:    clusterID,
 					},

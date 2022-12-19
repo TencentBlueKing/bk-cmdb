@@ -23,6 +23,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -70,10 +71,7 @@ func (s *coreService) combinePodData(kit *rest.Kit, inputData *types.CreatePodsO
 				// due to the need to be compatible with the scenario where there is no container in the pod,
 				// the left and right bits of the array "ids" need to be obtained to obtain the podID that really
 				// needs redundancy.
-				data, err := s.combinationContainerInfo(kit, int64(cIDs[id]), int64(ids[i-1]), now, container)
-				if err != nil {
-					return nil, nil, nil, err
-				}
+				data := s.combinationContainerInfo(kit, int64(cIDs[id]), int64(ids[i-1]), now, container)
 				containers = append(containers, data)
 			}
 		}
@@ -136,12 +134,166 @@ func (s *coreService) BatchCreatePod(ctx *rest.Contexts) {
 	ctx.RespEntity(pods)
 }
 
+func validateNsCluster(kit *rest.Kit, workload types.WorkloadBase, bizID int64) ccErr.CCErrorCoder {
+	if workload.BizID != bizID && workload.ClusterType != types.ClusterShareTypeField {
+		blog.Errorf("bizID(%d) in the request is inconsistent with the bizID(%d) in the cluster, "+
+			"and the cluster type must be a shared cluster, type is %s, rid: %s", bizID,
+			workload.BizID, workload.ClusterType, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed,
+			errors.New("cluster must be share type"))
+	}
+	// in the scenario where the bizID is inconsistent, the ns relationship table needs to be verified.
+	if workload.BizID != bizID && workload.ClusterType == types.ClusterShareTypeField {
+		countFilter := map[string]interface{}{
+			types.BKNamespaceIDField: workload.NamespaceID,
+			types.ClusterUIDField:    workload.ClusterUID,
+			common.BKAppIDField:      bizID,
+			types.BKAsstBizIDField:   workload.BizAsstID,
+		}
+		count, err := mongodb.Client().Table(types.BKTableNsClusterRelation).Find(countFilter).Count(kit.Ctx)
+		if err != nil {
+			blog.Errorf("query ns relation failed, filter: %+v, err: %+v, rid: %s", countFilter, err, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+		}
+
+		if count == 0 {
+			blog.Errorf("no ns relation founded, filter: %+v, rid: %s", count, countFilter, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed,
+				errors.New("no ns relation founded"))
+		}
+		if count > 1 {
+			blog.Errorf("query ns relation num(%d) error, filter: %+v, rid: %s", count, countFilter, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed,
+				errors.New("query to multiple relation data"))
+		}
+	}
+	return nil
+}
+
+// getSysSpecInfoByCond get the spec redundancy information required by the pod.
+func getSysSpecInfoByCond(kit *rest.Kit, spec types.SpecSimpleInfo, bizID int64,
+	hostID int64) (*types.SysSpec, bool, ccErr.CCErrorCoder) {
+	// 通过workload kind 获取表名
+	tableName, err := spec.Ref.Kind.Table()
+	if err != nil {
+		blog.Errorf("get collection failed, kind: %s, err: %v, rid: %s", spec.Ref.Kind, err, kit.Rid)
+		return nil, false, kit.CCError.CCError(common.CCErrCommParamsInvalid)
+	}
+
+	filter := map[string]interface{}{
+		common.BKAppIDField:      bizID,
+		types.BKClusterIDField:   spec.ClusterID,
+		types.BKNamespaceIDField: spec.NamespaceID,
+		types.BKIDField:          spec.Ref.ID,
+	}
+	util.SetModOwner(filter, kit.SupplierAccount)
+
+	fields := []string{types.ClusterUIDField, types.NamespaceField, types.KubeNameField, types.TypeField,
+		types.BKAsstBizIDField, common.BKAppIDField}
+
+	workload := make([]types.WorkloadBase, 0)
+
+	err = mongodb.Client().Table(tableName).Find(filter).Fields(fields...).All(kit.Ctx, &workload)
+	if err != nil {
+		blog.Errorf("query host module config failed, err: %s, rid:%s", err, kit.Rid)
+		return nil, false, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	if len(workload) != 1 {
+		blog.Errorf("workload gets the wrong amount, filter: %+v, num: %d, rid: %s", filter, len(workload), kit.Rid)
+		return nil, false, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed,
+			errors.New("workload gets the wrong num"))
+	}
+
+	if err := validateNsCluster(kit, workload[0], bizID); err != nil {
+		return nil, false, err
+	}
+	nodeName, hasPod, err := getNodeInfo(kit, spec, bizID, workload[0].BizID)
+	if err != nil {
+		return nil, false, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	return &types.SysSpec{
+		WorkloadSpec: types.WorkloadSpec{
+			NamespaceSpec: types.NamespaceSpec{
+				ClusterSpec: types.ClusterSpec{
+					BizID:      bizID,
+					ClusterUID: workload[0].ClusterUID,
+					ClusterID:  spec.ClusterID,
+					BizAsstID:  workload[0].BizAsstID,
+				},
+				Namespace:   workload[0].Namespace,
+				NamespaceID: spec.NamespaceID,
+			},
+			Ref: types.Reference{Kind: spec.Ref.Kind, Name: workload[0].Name, ID: spec.Ref.ID},
+		},
+		SupplierAccount: kit.SupplierAccount,
+		HostID:          hostID,
+		NodeID:          spec.NodeID,
+		Node:            nodeName,
+	}, hasPod, nil
+}
+
+func getNodeInfo(kit *rest.Kit, spec types.SpecSimpleInfo, bizID, clusterBizID int64) (string, bool, error) {
+
+	filter := map[string]interface{}{
+		common.BKAppIDField:    bizID,
+		common.BKOwnerIDField:  kit.SupplierAccount,
+		types.BKClusterIDField: spec.ClusterID,
+		types.BKIDField:        spec.NodeID,
+	}
+	util.SetModOwner(filter, kit.SupplierAccount)
+
+	nodes := make([]types.Node, 0)
+	fields := []string{types.KubeNameField, types.HasPodField, types.BKBizIDField, types.ClusterTypeField}
+	err := mongodb.Client().Table(types.BKTableNameBaseNode).Find(filter).
+		Fields(fields...).All(kit.Ctx, &nodes)
+	if err != nil {
+		blog.Errorf("query node failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
+		return "", false, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	if len(nodes) != 1 {
+		blog.Errorf("node gets the wrong amount, filter: %+v, num: %d, rid: %s", filter, len(nodes), kit.Rid)
+		return "", false, kit.CCError.CCError(common.CCErrCommGetMultipleObject)
+	}
+
+	if nodes[0].Name == nil || nodes[0].HasPod == nil {
+		blog.Errorf("query node failed, name or has pod is nil, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
+		return "", false, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if nodes[0].BizID != bizID && nodes[0].ClusterType != types.ClusterShareTypeField {
+		countFilter := map[string]interface{}{
+			types.BKNodeIDField:    nodes[0].ID,
+			types.BKClusterIDField: nodes[0].ClusterID,
+		}
+		count, err := mongodb.Client().Table(types.BKTableNodeClusterRelation).Find(countFilter).Count(kit.Ctx)
+		if err != nil {
+			blog.Errorf("query ns relation failed, filter: %+v, err: %+v, rid: %s", countFilter, err, kit.Rid)
+			return "", false, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+		}
+
+		if count == 0 {
+			blog.Errorf("no node relation founded, filter: %+v, rid: %s", countFilter, kit.Rid)
+			return "", false, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed,
+				errors.New("no ns relation founded"))
+		}
+		if count > 1 {
+			blog.Errorf("query node relation num(%d) error, filter: %+v, rid: %s", count, countFilter, kit.Rid)
+			return "", false, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed,
+				errors.New("query to multiple relation data"))
+		}
+	}
+	return *nodes[0].Name, *nodes[0].HasPod, nil
+}
+
 func (s *coreService) combinationPodsInfo(kit *rest.Kit, pod types.PodsInfo, bizID int64, now, id int64) (
 	types.Pod, int64, error) {
 
-	sysSpec, hasPod, ccErr := s.core.KubeOperation().GetSysSpecInfoByCond(kit, pod.Spec, bizID, pod.HostID)
-	if ccErr != nil {
-		return types.Pod{}, 0, ccErr
+	sysSpec, hasPod, err := getSysSpecInfoByCond(kit, pod.Spec, bizID, pod.HostID)
+
+	if err != nil {
+		return types.Pod{}, 0, err
 	}
 
 	podInfo := types.Pod{
@@ -172,8 +324,8 @@ func (s *coreService) combinationPodsInfo(kit *rest.Kit, pod types.PodsInfo, biz
 	return podInfo, nodeID, nil
 }
 
-func (s *coreService) combinationContainerInfo(kit *rest.Kit, containerID, podID, now int64, info types.Container) (
-	types.Container, error) {
+func (s *coreService) combinationContainerInfo(kit *rest.Kit, containerID, podID, now int64,
+	info types.Container) types.Container {
 
 	container := types.Container{
 		ID:              containerID,
@@ -199,7 +351,7 @@ func (s *coreService) combinationContainerInfo(kit *rest.Kit, containerID, podID
 		},
 	}
 
-	return container, nil
+	return container
 }
 
 // ListPod list pod

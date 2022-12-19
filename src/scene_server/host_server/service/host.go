@@ -1758,7 +1758,7 @@ func (s *Service) getHostByKubeTopoFilter(kit *rest.Kit, req *types.SearchHostOp
 	}
 
 	if req.ClusterID != 0 {
-		cond[types.BKClusterIDFiled] = req.ClusterID
+		cond[types.BKClusterIDField] = req.ClusterID
 	}
 
 	if req.NamespaceID != 0 {
@@ -1796,12 +1796,12 @@ func (s *Service) getHostInFolder(kit *rest.Kit, bizID int64, clusterID int64) (
 	}
 
 	if clusterID == 0 {
-		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, types.BKClusterIDFiled)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, types.BKClusterIDField)
 	}
 
 	cond := mapstr.MapStr{
 		common.BKAppIDField:    bizID,
-		types.BKClusterIDFiled: clusterID,
+		types.BKClusterIDField: clusterID,
 		types.HasPodField:      mapstr.MapStr{common.BKDBNE: true},
 	}
 
@@ -1845,7 +1845,7 @@ func (s *Service) getHostByClusterOrNode(kit *rest.Kit, req *types.SearchHostOpt
 	}
 
 	if req.ClusterID != 0 {
-		cond[types.BKClusterIDFiled] = req.ClusterID
+		cond[types.BKClusterIDField] = req.ClusterID
 	}
 
 	if hasHostIDCond {

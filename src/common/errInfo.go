@@ -852,6 +852,9 @@ const (
 	// CCErrCoreServiceCreateDBUniqueIndex 创建唯一索引失败,现有数据有重复值
 	CCErrCoreServiceCreateDBUniqueIndexDuplicateValue = 1113039
 
+	CCErrCoreServiceNsRelaitionExist   = 1113040
+	CCErrCoreServiceNodeRelaitionExist = 1113041
+
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
 	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %s does not

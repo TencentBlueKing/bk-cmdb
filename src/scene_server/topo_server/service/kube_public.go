@@ -19,6 +19,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 
@@ -60,8 +61,8 @@ func (s *Service) findKubeTopoPathInfo(kit *rest.Kit, option *types.KubeTopoPath
 				return result, err
 			}
 			for _, cluster := range clusters.Data {
-				if cluster.Name == nil {
-					blog.Errorf("cluster name is nil, cluster: %v, rid: %s", cluster, err, kit.Rid)
+				if cluster.Name == nil || cluster.ID == 0 {
+					blog.Errorf("cluster name is nil, cluster: %+v, rid: %s", cluster, err, kit.Rid)
 					return nil, errors.New("cluster name is nil")
 				}
 				result.Info = append(result.Info, types.KubeObjectInfo{
@@ -107,21 +108,21 @@ func (s *Service) findKubeTopoPathInfo(kit *rest.Kit, option *types.KubeTopoPath
 	return result, nil
 }
 
-func combinationConditions(infos []types.KubeResourceInfo, bizID int64) []map[string]interface{} {
+func combinationForHostConditions(infos []types.KubeResourceInfo, bizID int64) []map[string]interface{} {
 
 	filters := make([]map[string]interface{}, 0)
 	for _, info := range infos {
 		switch info.Kind {
 		case types.KubeFolder:
 			filters = append(filters, map[string]interface{}{
-				types.BKClusterIDFiled: info.ID,
+				types.BKClusterIDField: info.ID,
 				types.HasPodField:      false,
 				types.BKBizIDField:     bizID,
 			})
 
 		case types.KubeCluster:
 			filters = append(filters, map[string]interface{}{
-				types.BKClusterIDFiled: info.ID,
+				types.BKClusterIDField: info.ID,
 				types.BKBizIDField:     bizID,
 			})
 
@@ -141,13 +142,83 @@ func combinationConditions(infos []types.KubeResourceInfo, bizID int64) []map[st
 	return filters
 }
 
+func combinationForPodConditions(infos []types.KubeResourceInfo, bizID int64) []map[string]interface{} {
+
+	// shared cluster scenarios need to be considered when calculating the number of pods.
+	filters := make([]map[string]interface{}, 0)
+	for _, info := range infos {
+		switch info.Kind {
+		case types.KubeFolder:
+			filters = append(filters, map[string]interface{}{
+
+				common.BKDBOR: []map[string]interface{}{
+					{
+						types.BKBizIDField:     bizID,
+						types.BKClusterIDField: info.ID,
+						types.HasPodField:      false,
+					},
+					{
+						types.BKAsstBizIDField: bizID,
+						types.BKClusterIDField: info.ID,
+						types.HasPodField:      false,
+					},
+				},
+			})
+
+		case types.KubeCluster:
+			filters = append(filters, map[string]interface{}{
+				common.BKDBOR: []map[string]interface{}{
+					{
+						types.BKBizIDField:     bizID,
+						types.BKClusterIDField: info.ID,
+					},
+					{
+						types.BKAsstBizIDField: bizID,
+						types.BKClusterIDField: info.ID,
+					},
+				},
+			})
+
+		case types.KubeNamespace:
+			filters = append(filters, map[string]interface{}{
+				common.BKDBOR: []map[string]interface{}{
+					{
+						types.BKBizIDField:       bizID,
+						types.BKNamespaceIDField: info.ID,
+					},
+					{
+						types.BKAsstBizIDField:   bizID,
+						types.BKNamespaceIDField: info.ID,
+					},
+				},
+			})
+		default:
+			filters = append(filters, map[string]interface{}{
+
+				common.BKDBOR: []map[string]interface{}{
+					{
+						types.BKBizIDField: bizID,
+						types.RefIDField:   info.ID,
+						types.RefKindField: info.Kind,
+					},
+					{
+						types.BKAsstBizIDField: bizID,
+						types.RefIDField:       info.ID,
+						types.RefKindField:     info.Kind,
+					},
+				},
+			})
+		}
+	}
+	return filters
+}
+
 func (s *Service) countKubeHostOrPodsByCond(kit *rest.Kit, option *types.KubeTopoCountOption, bizID int64,
 	kind string) ([]types.KubeTopoCountRsp, error) {
 
-	filters := combinationConditions(option.ResourceInfos, bizID)
-
 	switch kind {
 	case types.KubeHostKind:
+		filters := combinationForHostConditions(option.ResourceInfos, bizID)
 		result, err := s.getTopoHostNumber(kit, option.ResourceInfos, filters, bizID)
 		if err != nil {
 			blog.Errorf("get host number failed, option: %+v, bizID: %d, err: %v, rid: %s", option, bizID, err)
@@ -155,7 +226,7 @@ func (s *Service) countKubeHostOrPodsByCond(kit *rest.Kit, option *types.KubeTop
 		}
 		return result, nil
 	case types.KubePodKind:
-
+		filters := combinationForPodConditions(option.ResourceInfos, bizID)
 		podFilters := make([]map[string]interface{}, 0)
 		resIDMap := make(map[int]struct{})
 		for id, filter := range filters {
@@ -335,13 +406,13 @@ func (s *Service) getClusterNumFromFolder(kit *rest.Kit, bizID int64, filter map
 	map[int64]struct{}, error) {
 
 	result := make(map[int64]struct{})
-	clusterID, ok := filter[types.BKClusterIDFiled]
+	clusterID, ok := filter[types.BKClusterIDField]
 	if !ok {
 		return result, nil
 	}
 
 	nodeFilter := mapstr.MapStr{
-		types.BKClusterIDFiled: clusterID,
+		types.BKClusterIDField: clusterID,
 		types.HasPodField:      false,
 		types.BKBizIDField:     bizID,
 	}
@@ -434,6 +505,83 @@ func (s *Service) getHostIDsInPodsByCond(kit *rest.Kit, bizID int64, cond mapstr
 	return result, nil
 }
 
+// searchAsstBizIDWithBizID 此函数前端展示拓扑的时候，查询集群时不能调用此函数!!!
+func (s *Service) searchAsstBizIDWithBizID(kit *rest.Kit, bizID int64) (int64, error) {
+
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKAppIDField: bizID,
+		},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Fields:         []string{types.BKAsstBizIDField},
+		DisableCounter: true,
+	}
+	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchNsClusterRelation(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("search ns cluster relation failed, bizID: %d, err: %v, rid: %s", bizID, err, kit.Rid)
+		return 0, err
+	}
+
+	if len(result.Data) == 0 {
+		return 0, nil
+	}
+
+	bizIDMap := make(map[int64]struct{})
+	for _, data := range result.Data {
+		bizIDMap[data.AsstBizID] = struct{}{}
+	}
+
+	if len(bizIDMap) > 1 {
+		blog.Errorf("multi ns cluster relation founded, bizID: %d, rid: %s", bizID, kit.Rid)
+		return 0, err
+	}
+
+	var asstBizID int64
+	for id := range bizIDMap {
+		asstBizID = id
+	}
+
+	return asstBizID, nil
+}
+
+// getKubeSubTopoObject get the next-level topology resource object of the specified resource
+func (s *Service) getKubeSubTopoObject(kit *rest.Kit, object string, id, bizID int64) (
+	string, map[string]interface{}, error) {
+
+	switch object {
+	case types.KubeBusiness:
+		bizList := make([]int64, 0)
+		bizList = append(bizList, bizID)
+		asstBizID, err := s.searchAsstBizIDWithBizID(kit, bizID)
+		if err != nil {
+			return "", nil, err
+		}
+
+		// compatible shared cluster information.
+		if asstBizID != 0 {
+			bizList = append(bizList, asstBizID)
+		}
+
+		return types.KubeCluster, map[string]interface{}{
+			types.BKBizIDField: map[string]interface{}{
+				common.BKDBIN: bizList,
+			},
+		}, nil
+	case types.KubeCluster:
+		return types.KubeNamespace, map[string]interface{}{
+			types.BKClusterIDField: id,
+		}, nil
+	case types.KubeNamespace:
+		return types.KubeWorkload, map[string]interface{}{
+			types.BKNamespaceIDField: id,
+		}, nil
+	default:
+		return "", nil, fmt.Errorf("object type err, type: %s", object)
+	}
+}
+
 // SearchKubeTopoPath querying container topology paths.
 func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 
@@ -458,12 +606,13 @@ func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 	}
 
 	// get the next level resource object.
-	subObject, filter := types.GetKubeSubTopoObject(option.ReferenceObjID, option.ReferenceID, bizID)
-	if filter == nil {
+	subObject, filter, err := s.getKubeSubTopoObject(ctx.Kit, option.ReferenceObjID, option.ReferenceID, bizID)
+	if err != nil {
 		blog.Errorf("failed to get subObject, option: %+v, err: %v, rid: %s", option, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsInvalid))
+		ctx.RespAutoError(err)
 		return
 	}
+
 	tableNames, err := types.GetCollectionWithObject(subObject)
 	if err != nil {
 		blog.Errorf("failed get tableName, subObject: %s, err: %v, rid: %s", subObject, err, ctx.Kit.Rid)
@@ -482,7 +631,8 @@ func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 				ctx.RespAutoError(err)
 				return
 			}
-			// for the next-level topology of the cluster, a folder needs to be added in addition to the namespace.
+			// for the next-level topology of the cluster,
+			// a folder needs to be added in addition to the namespace.
 			if tableName == types.BKTableNameBaseNamespace {
 				counts[0] += 1
 			}
@@ -579,7 +729,7 @@ func (s *Service) hasNextLevelResource(kit *rest.Kit, kind string, bizID int64, 
 		tables = []string{types.BKTableNameBaseNamespace, types.BKTableNameBaseNode, types.BKTableNameBasePod}
 		workLoads := types.GetWorkLoadTables()
 		tables = append(tables, workLoads...)
-		filter[types.BKClusterIDFiled] = map[string]interface{}{common.BKDBIN: ids}
+		filter[types.BKClusterIDField] = map[string]interface{}{common.BKDBIN: ids}
 
 	case types.KubeNamespace:
 		tables = []string{types.BKTableNameBasePod}

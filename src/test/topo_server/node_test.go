@@ -102,14 +102,14 @@ var _ = Describe("kube cluster test", func() {
 		It("create kube cluster", func() {
 			clusterName := "cluster"
 			schedulingEngine := "k8s"
-			uid := "BCS-K8S-25001"
-			xid := "cls-hox2lkf2"
+			uid := "BCS-xxx-xxx004"
+			xid := "xid-008"
 			version := "0.1"
 			networkType := "underlay"
 			region := "shenzhen"
-			vpc := "vpc-q6awe02n"
+			vpc := "vpc-002"
 			network := []string{"1.1.1.0/21"}
-			clusterType := "public"
+			clusterType := types.ClusterShareTypeField
 			createCLuster := &types.Cluster{
 				Name:             &clusterName,
 				SchedulingEngine: &schedulingEngine,

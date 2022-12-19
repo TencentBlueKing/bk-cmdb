@@ -59,15 +59,15 @@ var _ = Describe("namespace test", func() {
 
 		clusterName := "cluster"
 		schedulingEngine := "k8s"
-		uid := "BCS-K8S-25001"
-		xid := "cls-hox2lkf2"
+		uid := "BCS-xxx-xxx001"
+		xid := "xid-001"
 		version := "0.1"
 		networkType := "underlay"
 		region := "shenzhen"
-		vpc := "vpc-q6awe02n"
+		vpc := "vpc"
 		environment := "prod"
 		network := []string{"1.1.1.0/21"}
-		clusterType := "public"
+		clusterType := types.ClusterShareTypeField
 		createCLuster := &types.Cluster{
 			Name:             &clusterName,
 			SchedulingEngine: &schedulingEngine,
@@ -172,7 +172,7 @@ var _ = Describe("namespace test", func() {
 				Condition: filter.And,
 				Rules: []filter.RuleFactory{
 					&filter.AtomRule{
-						Field:    types.BKClusterIDFiled,
+						Field:    types.BKClusterIDField,
 						Operator: filter.Equal.Factory(),
 						Value:    clusterID,
 					},

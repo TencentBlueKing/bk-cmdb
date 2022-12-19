@@ -233,6 +233,12 @@ const (
 
 	// BKTableNameBaseContainer the table name of the Container
 	BKTableNameBaseContainer = "cc_ContainerBase"
+
+	// BKTableNsClusterRelation relationship table between namespace and cluster and business
+	BKTableNsClusterRelation = "cc_NsClusterRelationBase"
+
+	// BKTableNodeClusterRelation relationship table between node and cluster and business
+	BKTableNodeClusterRelation = "cc_NodeClusterRelationBase"
 )
 
 // common field names
@@ -266,6 +272,9 @@ const (
 	// BKBizIDField business id field
 	BKBizIDField = "bk_biz_id"
 
+	// BKAsstBizIDField asst business id field
+	BKAsstBizIDField = "bk_asst_biz_id"
+
 	// BKSupplierAccountField supplier account
 	BKSupplierAccountField = "bk_supplier_account"
 
@@ -280,11 +289,14 @@ const (
 
 	// LastTimeField the last time field
 	LastTimeField = "last_time"
-	// BKClusterIDFiled cluster unique id field in cc
-	BKClusterIDFiled = "bk_cluster_id"
+	// BKClusterIDField cluster unique id field in cc
+	BKClusterIDField = "bk_cluster_id"
 
 	// ClusterUIDField cluster unique id field in third party platform
 	ClusterUIDField = "cluster_uid"
+
+	// ClusterTypeField cluster unique id field in third party platform
+	ClusterTypeField = "cluster_type"
 
 	// XidField base cluster id field
 	XidField = "xid"
@@ -309,6 +321,10 @@ const (
 
 	// TypeField cluster type field
 	TypeField = "type"
+
+	// ClusterShareTypeField shared cluster type field
+	ClusterShareTypeField = "SHARED_CLUSTER"
+
 	// SchedulingEngineField scheduling engine
 	SchedulingEngineField = "scheduling_engine"
 

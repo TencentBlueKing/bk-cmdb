@@ -74,7 +74,7 @@ var commWorkLoadIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "biz_id_cluster_id",
 		Keys: bson.D{
 			{common.BKAppIDField, 1},
-			{kubetypes.BKClusterIDFiled, 1},
+			{kubetypes.BKClusterIDField, 1},
 			{common.BkSupplierAccount, 1},
 		},
 		Background: true,
@@ -151,7 +151,7 @@ var commPodIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "biz_id_cluster_id",
 		Keys: bson.D{
 			{common.BKAppIDField, 1},
-			{kubetypes.BKClusterIDFiled, 1},
+			{kubetypes.BKClusterIDField, 1},
 			{common.BkSupplierAccount, 1},
 		},
 		Background: true,
@@ -206,7 +206,7 @@ var commNamespaceIndexes = []types.Index{
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "bk_cluster_id_name",
 		Keys: bson.D{
-			{kubetypes.BKClusterIDFiled, 1},
+			{kubetypes.BKClusterIDField, 1},
 			{common.BKFieldName, 1},
 		},
 		Background: true,
@@ -225,7 +225,7 @@ var commNamespaceIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "biz_id_cluster_id",
 		Keys: bson.D{
 			{common.BKAppIDField, 1},
-			{kubetypes.BKClusterIDFiled, 1},
+			{kubetypes.BKClusterIDField, 1},
 			{common.BkSupplierAccount, 1},
 		},
 		Background: true,
@@ -253,7 +253,16 @@ var commNodeIndexes = []types.Index{
 	{
 		Name: common.CCLogicUniqueIdxNamePrefix + "bk_cluster_id_name",
 		Keys: bson.D{
-			{kubetypes.BKClusterIDFiled, 1},
+			{kubetypes.BKClusterIDField, 1},
+			{common.BKFieldName, 1},
+		},
+		Unique:     true,
+		Background: true,
+	},
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "cluster_uid_name",
+		Keys: bson.D{
+			{kubetypes.ClusterUIDField, 1},
 			{common.BKFieldName, 1},
 		},
 		Unique:     true,
@@ -272,7 +281,7 @@ var commNodeIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "biz_id_cluster_id",
 		Keys: bson.D{
 			{common.BKAppIDField, 1},
-			{kubetypes.BKClusterIDFiled, 1},
+			{kubetypes.BKClusterIDField, 1},
 			{common.BkSupplierAccount, 1},
 		},
 		Background: true,
@@ -308,7 +317,7 @@ var commClusterIndexes = []types.Index{
 		Unique:     true,
 	},
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + "uid",
+		Name: common.CCLogicUniqueIdxNamePrefix + "cluster_uid",
 		Keys: bson.D{
 			{kubetypes.UidField, 1},
 		},

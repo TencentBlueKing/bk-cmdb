@@ -497,7 +497,7 @@ type WlCreateResp struct {
 }
 
 var wlIgnoreField = []string{
-	common.BKAppIDField, BKClusterIDFiled, ClusterUIDField, BKNamespaceIDField, NamespaceField, common.BKFieldName,
+	common.BKAppIDField, BKClusterIDField, ClusterUIDField, BKNamespaceIDField, NamespaceField, common.BKFieldName,
 	common.BKFieldID, common.CreateTimeField,
 }
 

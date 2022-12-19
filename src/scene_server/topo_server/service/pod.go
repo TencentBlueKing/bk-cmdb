@@ -63,7 +63,7 @@ func (s *Service) FindPodPath(ctx *rest.Contexts) {
 		common.BKAppIDField: mapstr.MapStr{common.BKDBEQ: bizID},
 		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: req.PodIDs},
 	}
-	fields := []string{common.BKFieldID, types.BKClusterIDFiled, types.BKNamespaceIDField, types.NamespaceField,
+	fields := []string{common.BKFieldID, types.BKClusterIDField, types.BKNamespaceIDField, types.NamespaceField,
 		types.RefField}
 	query := &metadata.QueryCondition{
 		Condition: cond,
@@ -98,9 +98,9 @@ func (s *Service) buildPodPaths(kit *rest.Kit, bizName string, pods []types.Pod)
 		id := pod.ID
 
 		if pod.ClusterID == 0 {
-			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.BKClusterIDFiled,
+			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.BKClusterIDField,
 				kit.Rid)
-			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.BKClusterIDFiled)
+			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.BKClusterIDField)
 		}
 		clusterID := pod.ClusterID
 		clusterIDs = append(clusterIDs, clusterID)
@@ -238,7 +238,7 @@ func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
 		for _, pod := range info.Pods {
 			filter := map[string]interface{}{
 				types.BKBizIDField:       info.BizID,
-				types.BKClusterIDFiled:   pod.ClusterID,
+				types.BKClusterIDField:   pod.ClusterID,
 				types.BKNamespaceIDField: pod.NamespaceID,
 				types.BKNodeIDField:      pod.NodeID,
 				types.KubeNameField:      *pod.Name,

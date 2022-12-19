@@ -18,6 +18,7 @@
 package service
 
 import (
+	"errors"
 	"strconv"
 	"time"
 
@@ -35,8 +36,8 @@ import (
 
 // CreateNamespace create namespace
 func (s *coreService) CreateNamespace(ctx *rest.Contexts) {
-	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
-	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
@@ -76,6 +77,8 @@ func (s *coreService) CreateNamespace(ctx *rest.Contexts) {
 	respData := metadata.RspIDs{
 		IDs: make([]int64, len(ids)),
 	}
+	nsData, nsRelationData := make([]types.Namespace, 0), make([]types.NsClusterRelation, 0)
+
 	for idx, data := range req.Data {
 		id := int64(ids[idx])
 		respData.IDs[idx] = id
@@ -89,13 +92,36 @@ func (s *coreService) CreateNamespace(ctx *rest.Contexts) {
 			LastTime:   now,
 		}
 		data.SupplierAccount = ctx.Kit.SupplierAccount
+		nsData = append(nsData, data)
 
-		err = mongodb.Client().Table(types.BKTableNameBaseNamespace).Insert(ctx.Kit.Ctx, &data)
-		if err != nil {
-			blog.Errorf("add namespace failed, data: %v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
-			return
+		// in the shared cluster scenario, the relationship between the business cluster and the platform
+		// cluster needs to be inserted.
+		if data.ClusterSpec.BizID != bizID && data.ClusterSpec.ClusterType == types.ClusterShareTypeField {
+			nsRelationData = append(nsRelationData, types.NsClusterRelation{
+				BizID:       bizID,
+				AsstBizID:   data.ClusterSpec.BizID,
+				ClusterID:   data.ClusterSpec.ClusterID,
+				ClusterUID:  data.ClusterSpec.ClusterUID,
+				NamespaceID: id,
+			})
 		}
+	}
+
+	if err = mongodb.Client().Table(types.BKTableNameBaseNamespace).Insert(ctx.Kit.Ctx, nsData); err != nil {
+		blog.Errorf("insert namespaces failed, data: %v, err: %v, rid: %s", nsData, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
+		return
+	}
+
+	if len(nsRelationData) == 0 {
+		ctx.RespEntity(respData)
+		return
+	}
+
+	if err = mongodb.Client().Table(types.BKTableNsClusterRelation).Insert(ctx.Kit.Ctx, nsRelationData); err != nil {
+		blog.Errorf("add namespace failed, data: %v, err: %v, rid: %s", nsData, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
+		return
 	}
 
 	ctx.RespEntity(respData)
@@ -112,17 +138,16 @@ func (s *coreService) GetClusterSpec(kit *rest.Kit, bizID int64, clusterIDs []in
 
 	if len(clusterIDs) == 0 {
 		blog.Errorf("clusterIDs can not be empty, rid: %s", kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.BKClusterIDFiled)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.BKClusterIDField)
 	}
 
 	clusterIDs = util.IntArrayUnique(clusterIDs)
 	filter := map[string]interface{}{
-		common.BKAppIDField: bizID,
-		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: clusterIDs},
+		common.BKFieldID: mapstr.MapStr{common.BKDBIN: clusterIDs},
 	}
 	util.SetModOwner(filter, kit.SupplierAccount)
 
-	field := []string{common.BKFieldID, types.UidField}
+	field := []string{common.BKFieldID, types.UidField, types.TypeField, common.BKAppIDField}
 	clusters := make([]types.Cluster, 0)
 
 	err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(filter).Fields(field...).All(kit.Ctx, &clusters)
@@ -138,10 +163,25 @@ func (s *coreService) GetClusterSpec(kit *rest.Kit, bizID int64, clusterIDs []in
 
 	specs := make(map[int64]types.ClusterSpec, len(clusters))
 	for _, cluster := range clusters {
+		if cluster.Type == nil || cluster.Uid == nil {
+			blog.Errorf("cluster uid or type is nil, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed, errors.New("cluster uid or type is nil"))
+		}
+		// if the business ID in the cluster is inconsistent with the biz in the request,
+		// the cluster needs to be a shared cluster.
+		if (bizID != cluster.BizID) && (*cluster.Type != types.ClusterShareTypeField) {
+			blog.Errorf("bizID(%d) in the request is inconsistent with the bizID(%d) in the cluster, "+
+				"and the cluster type must be a shared cluster, type is %s, filter: %+v, err: %+v, rid: %s", bizID,
+				cluster.BizID, *cluster.Type, filter, err, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed, errors.New("cluster must be share type"))
+		}
+
 		specs[cluster.ID] = types.ClusterSpec{
-			BizID:      bizID,
-			ClusterID:  cluster.ID,
-			ClusterUID: *cluster.Uid,
+			BizID:       bizID,
+			BizAsstID:   cluster.BizID,
+			ClusterID:   cluster.ID,
+			ClusterUID:  *cluster.Uid,
+			ClusterType: *cluster.Type,
 		}
 	}
 
@@ -218,6 +258,25 @@ func (s *coreService) DeleteNamespace(ctx *rest.Contexts) {
 		return
 	}
 
+	queryFilter := mapstr.MapStr{
+		common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
+	}
+	util.SetQueryOwner(queryFilter, ctx.Kit.SupplierAccount)
+
+	namespaces := make([]types.Namespace, 0)
+	fields := []string{common.BKFieldID, types.BKClusterIDField, types.BKAsstBizIDField, types.BKBizIDField}
+	err = mongodb.Client().Table(types.BKTableNameBaseNamespace).Find(queryFilter).
+		Fields(fields...).All(ctx.Kit.Ctx, &namespaces)
+	if err != nil {
+		blog.Errorf("query namespace info failed, filter: %+v, err: %v, rid: %s", queryFilter, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+
+	if len(namespaces) == 0 {
+		ctx.RespEntity(nil)
+		return
+	}
 	filter := mapstr.MapStr{
 		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: req.IDs},
 		common.BKAppIDField: bizID,
@@ -229,6 +288,23 @@ func (s *coreService) DeleteNamespace(ctx *rest.Contexts) {
 		return
 	}
 
+	delConds := make([]map[string]interface{}, 0)
+	for _, namespace := range namespaces {
+		delConds = append(delConds, map[string]interface{}{
+			types.BKNamespaceIDField: namespace.ID,
+			types.BKAsstBizIDField:   namespace.BizAsstID,
+			types.BKBizIDField:       namespace.BizID,
+			types.BKClusterIDField:   namespace.ClusterID,
+		})
+	}
+
+	cond := map[string]interface{}{common.BKDBOR: delConds}
+	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
+	if err := mongodb.Client().Table(types.BKTableNsClusterRelation).Delete(ctx.Kit.Ctx, cond); err != nil {
+		blog.Errorf("delete ns relation failed, cond: %+v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))
+		return
+	}
 	ctx.RespEntity(nil)
 }
 

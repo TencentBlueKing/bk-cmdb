@@ -41,5 +41,6 @@
     "1113052": "the selected field combination duplicates with existing rules, please do not create redundant rules",
     "1113053": "association constraint mismatch",
     "1113039": "Failed to create unique index, value [%s] duplicated",
+    "1113040": "there is a node association table",
     "":""
 }

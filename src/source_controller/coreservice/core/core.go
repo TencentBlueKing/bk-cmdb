@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/selector"
-	"configcenter/src/kube/types"
 )
 
 // ModelAttributeGroup model attribute group methods definitions
@@ -119,14 +118,6 @@ type InstanceOperation interface {
 	DeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount,
 		error)
-}
-
-// KubeOperation crud operations on kube data.
-type KubeOperation interface {
-	CreateCluster(kit *rest.Kit, bizID int64, option *types.Cluster) (*types.Cluster, errors.CCErrorCoder)
-	BatchCreateNode(kit *rest.Kit, bizID int64, data []types.OneNodeCreateOption) ([]*types.Node, errors.CCErrorCoder)
-	GetSysSpecInfoByCond(kit *rest.Kit, spec types.SpecSimpleInfo, bizID int64,
-		hostID int64) (*types.SysSpec, bool, errors.CCErrorCoder)
 }
 
 // AssociationKind association kind methods
@@ -247,7 +238,6 @@ type StatisticOperation interface {
 type Core interface {
 	ModelOperation() ModelOperation
 	InstanceOperation() InstanceOperation
-	KubeOperation() KubeOperation
 	AssociationOperation() AssociationOperation
 	TopoOperation() TopoOperation
 	DataSynchronizeOperation() DataSynchronizeOperation
@@ -442,7 +432,6 @@ type CommonOperation interface {
 type core struct {
 	model           ModelOperation
 	instance        InstanceOperation
-	container       KubeOperation
 	association     AssociationOperation
 	dataSynchronize DataSynchronizeOperation
 	topo            TopoOperation
@@ -463,7 +452,7 @@ type core struct {
 func New(
 	model ModelOperation,
 	instance InstanceOperation,
-	container KubeOperation,
+	//container KubeOperation,
 	association AssociationOperation,
 	dataSynchronize DataSynchronizeOperation,
 	topo TopoOperation, host HostOperation,
@@ -479,10 +468,10 @@ func New(
 	common CommonOperation,
 ) Core {
 	return &core{
-		model:           model,
-		instance:        instance,
-		association:     association,
-		container:       container,
+		model:       model,
+		instance:    instance,
+		association: association,
+		//container:       container,
 		dataSynchronize: dataSynchronize,
 		topo:            topo,
 		host:            host,
@@ -507,11 +496,6 @@ func (m *core) ModelOperation() ModelOperation {
 // InstanceOperation TODO
 func (m *core) InstanceOperation() InstanceOperation {
 	return m.instance
-}
-
-// KubeOperation container related operations
-func (m *core) KubeOperation() KubeOperation {
-	return m.container
 }
 
 // AssociationOperation TODO

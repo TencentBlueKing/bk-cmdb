@@ -82,6 +82,8 @@ func (s *coreService) CreateWorkload(ctx *rest.Contexts) {
 	respData := metadata.RspIDs{
 		IDs: make([]int64, len(ids)),
 	}
+
+	wlArray := make([]types.WorkloadInterface, 0)
 	for idx, data := range req.Data {
 		wlBase := data.GetWorkloadBase()
 		wlBase.NamespaceSpec = nsSpecs[wlBase.NamespaceID]
@@ -98,18 +100,53 @@ func (s *coreService) CreateWorkload(ctx *rest.Contexts) {
 		wlBase.Revision = revision
 		wlBase.SupplierAccount = ctx.Kit.SupplierAccount
 		data.SetWorkloadBase(wlBase)
-		err = mongodb.Client().Table(tableName).Insert(ctx.Kit.Ctx, data)
-		if err != nil {
-			blog.Errorf("add workload failed, table: %s, data: %v, err: %v, rid: %s", tableName, data, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
-			return
-		}
+		wlArray = append(wlArray, data)
+
 	}
 
+	if err = mongodb.Client().Table(tableName).Insert(ctx.Kit.Ctx, wlArray); err != nil {
+		blog.Errorf("insert workloads failed, table: %s, data: %v, err: %v, rid: %s", tableName, wlArray, err,
+			ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
+		return
+	}
 	ctx.RespEntity(respData)
 }
 
-// GetNamespaceInfo get namespace spec
+func validateNsData(kit *rest.Kit, bizID int64, namespace types.Namespace) error {
+
+	if bizID != namespace.BizID && namespace.ClusterType != types.ClusterShareTypeField {
+		blog.Errorf("bizID(%d) in the request is inconsistent with the bizID(%d) in the cluster, and the cluster type "+
+			"must be a shared cluster, type is %s, rid: %s", bizID, namespace.BizID, namespace.ClusterType, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed, errors.New("cluster must be share type"))
+	}
+	// In the scenario where the bizID is inconsistent, the ns relationship table needs to be verified.
+	if bizID != namespace.BizID && namespace.ClusterType == types.ClusterShareTypeField {
+		countFilter := map[string]interface{}{
+			types.BKNamespaceIDField: namespace.ID,
+			types.BKClusterIDField:   namespace.ClusterID,
+		}
+		count, err := mongodb.Client().Table(types.BKTableNsClusterRelation).Find(countFilter).Count(kit.Ctx)
+		if err != nil {
+			blog.Errorf("query ns relation failed, filter: %+v, err: %v, rid: %s", countFilter, err, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+		}
+
+		if count == 0 {
+			blog.Errorf("no ns relation founded, filter: %+v, rid: %s", count, countFilter, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed,
+				errors.New("no ns relation founded"))
+		}
+		if count > 1 {
+			blog.Errorf("query ns relation num(%d) error, filter: %+v, rid: %s", count, countFilter, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed,
+				errors.New("query to multiple relation data"))
+		}
+	}
+	return nil
+}
+
+// GetNamespaceSpec get namespace spec
 func (s *coreService) GetNamespaceSpec(kit *rest.Kit, bizID int64, nsIDs []int64) (map[int64]types.NamespaceSpec,
 	error) {
 
@@ -130,7 +167,8 @@ func (s *coreService) GetNamespaceSpec(kit *rest.Kit, bizID int64, nsIDs []int64
 	}
 	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
 
-	field := []string{common.BKFieldID, common.BKFieldName, types.BKClusterIDFiled, types.ClusterUIDField}
+	field := []string{common.BKFieldID, common.BKFieldName, types.BKClusterIDField,
+		types.ClusterUIDField, common.BKAppIDField}
 	namespaces := make([]types.Namespace, 0)
 	err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Find(filter).Fields(field...).
 		All(kit.Ctx, &namespaces)
@@ -146,11 +184,16 @@ func (s *coreService) GetNamespaceSpec(kit *rest.Kit, bizID int64, nsIDs []int64
 
 	nsSpecs := make(map[int64]types.NamespaceSpec)
 	for _, namespace := range namespaces {
+		if err := validateNsData(kit, bizID, namespace); err != nil {
+			return nil, err
+		}
+
 		nsSpecs[namespace.ID] = types.NamespaceSpec{
 			ClusterSpec: types.ClusterSpec{
 				BizID:      bizID,
 				ClusterID:  namespace.ClusterID,
 				ClusterUID: namespace.ClusterUID,
+				BizAsstID:  namespace.BizAsstID,
 			},
 			Namespace:   namespace.Name,
 			NamespaceID: namespace.ID,

@@ -108,13 +108,13 @@ var _ = Describe("pod test", func() {
 		hostID2, err = commonutil.GetInt64ByInterface(data2[common.BKHostIDField])
 
 		schedulingEngine := "k8s"
-		xid := "cls-hox2lkf2"
+		xid := "xid-0014"
 		version := "0.1"
 		networkType := "underlay"
 		region := "shenzhen"
-		vpc := "vpc-q6awe02n"
+		vpc := "vpc-006"
 		network := []string{"1.1.1.0/21"}
-		clusterType := "public"
+		clusterType := types.ClusterShareTypeField
 		createCLuster := &types.Cluster{
 			Name:             &clusterName,
 			SchedulingEngine: &schedulingEngine,

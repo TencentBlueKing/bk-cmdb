@@ -34,7 +34,6 @@ import (
 	"configcenter/src/source_controller/coreservice/core/host"
 	"configcenter/src/source_controller/coreservice/core/hostapplyrule"
 	"configcenter/src/source_controller/coreservice/core/instances"
-	"configcenter/src/source_controller/coreservice/core/kube"
 	"configcenter/src/source_controller/coreservice/core/label"
 	"configcenter/src/source_controller/coreservice/core/mainline"
 	"configcenter/src/source_controller/coreservice/core/model"
@@ -110,7 +109,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 	s.core = core.New(
 		model.New(s, lang),
 		instance,
-		kube.New(),
+		//kube.New(),
 		association.New(s),
 		datasynchronize.New(s),
 		mainline.New(lang),

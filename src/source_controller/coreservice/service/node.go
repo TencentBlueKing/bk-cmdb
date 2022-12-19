@@ -18,15 +18,19 @@
 package service
 
 import (
+	"errors"
 	"strconv"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/kube/orm"
 	"configcenter/src/kube/types"
+	"configcenter/src/storage/dal/table"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -58,6 +62,154 @@ func (s *coreService) updateNodeField(kit *rest.Kit, nodeIDMap map[int64]struct{
 	return nil
 }
 
+func getClusterSpecInfo(kit *rest.Kit, bizID int64, data []types.OneNodeCreateOption) (
+	map[int64]types.ClusterSpec, ccErr.CCErrorCoder) {
+
+	clusterIDs := make([]int64, 0)
+	for _, info := range data {
+		clusterIDs = append(clusterIDs, info.ClusterID)
+	}
+
+	filter := map[string]interface{}{
+		common.BKAppIDField: bizID,
+		types.BKIDField:     map[string]interface{}{common.BKDBIN: clusterIDs},
+	}
+	util.SetModOwner(filter, kit.SupplierAccount)
+	clusters := make([]types.Cluster, 0)
+	fields := []string{types.UidField, types.BKIDField, types.TypeField, types.BKAsstBizIDField, common.BKAppIDField}
+	err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(filter).
+		Fields(fields...).All(kit.Ctx, &clusters)
+	if err != nil {
+		blog.Errorf("query cluster failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	if len(clusters) == 0 {
+		blog.Errorf("no cluster founded, filter: %+v,  rid:%s", filter, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound)
+	}
+
+	clusterMap := make(map[int64]types.ClusterSpec)
+	for _, cluster := range clusters {
+		if cluster.Uid == nil || cluster.Type == nil {
+			blog.Errorf("query cluster uid or type failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed, "cluster uid or type")
+		}
+		// 如果集群中的bizID与请求中的bizID不一致，那么此集群必定为共享集群
+		if cluster.BizID != bizID && *cluster.Type != types.ClusterShareTypeField {
+			blog.Errorf("bizID(%d) in the request is inconsistent with the bizID(%d) in the cluster, "+
+				"and the cluster type must be a shared cluster, type is %s, filter: %+v, err: %+v, rid: %s", bizID,
+				cluster.BizID, *cluster.Type, filter, err, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed, errors.New("cluster must be share type"))
+		}
+
+		clusterMap[cluster.ID] = types.ClusterSpec{
+			BizID:       bizID,
+			ClusterUID:  *cluster.Uid,
+			ClusterID:   cluster.ID,
+			ClusterType: *cluster.Type,
+			BizAsstID:   cluster.BizID,
+		}
+	}
+	return clusterMap, nil
+}
+
+// validateNodeData 目前的逻辑是node所在对应的host是一定需要在cc中的。
+func validateNodeData(kit *rest.Kit, bizID int64, hostIDs []int64) ccErr.CCErrorCoder {
+
+	cond := map[string]interface{}{
+		common.BKAppIDField: bizID,
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: hostIDs,
+		},
+	}
+	util.SetModOwner(cond, kit.SupplierAccount)
+	cnt, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx, common.BKHostIDField, cond)
+	if err != nil {
+		blog.Errorf("query host module config failed, err: %s, rid:%s", err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	hostIDNum, cntNum := len(hostIDs), len(cnt)
+	if cntNum != hostIDNum {
+		blog.Errorf("hostID num not as expected, filter: %+v, cnt: %d, hostIDs num: %+v, rid:%s", cond,
+			cntNum, hostIDNum, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommParamsIsInvalid)
+	}
+
+	return nil
+}
+
+// batchCreateNode create container node data in batches.
+func batchCreateNode(kit *rest.Kit, bizID int64, data []types.OneNodeCreateOption) (
+	[]types.Node, ccErr.CCErrorCoder) {
+
+	hostIDMap := make(map[int64]struct{})
+	for _, node := range data {
+		hostIDMap[node.HostID] = struct{}{}
+	}
+
+	hostIDs := make([]int64, 0)
+	for id := range hostIDMap {
+		hostIDs = append(hostIDs, id)
+	}
+
+	if err := validateNodeData(kit, bizID, hostIDs); err != nil {
+		return nil, err
+	}
+
+	clusterMap, cErr := getClusterSpecInfo(kit, bizID, data)
+	if cErr != nil {
+		return nil, cErr
+	}
+
+	// generate ids field
+	ids, err := mongodb.Client().NextSequences(kit.Ctx, types.BKTableNameBaseNode, len(data))
+	if err != nil {
+		blog.Errorf("create node failed, generate ids failed, err: %+v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
+	}
+
+	result := make([]types.Node, 0)
+	now := time.Now().Unix()
+	noPod := false
+
+	for idx, node := range data {
+		node := types.Node{
+			ID:               int64(ids[idx]),
+			ClusterSpec:      clusterMap[node.ClusterID],
+			HostID:           node.HostID,
+			Name:             node.Name,
+			Roles:            node.Roles,
+			Labels:           node.Labels,
+			Taints:           node.Taints,
+			Unschedulable:    node.Unschedulable,
+			InternalIP:       node.InternalIP,
+			ExternalIP:       node.ExternalIP,
+			HasPod:           &noPod,
+			HostName:         node.HostName,
+			RuntimeComponent: node.RuntimeComponent,
+			KubeProxyMode:    node.KubeProxyMode,
+			PodCidr:          node.PodCidr,
+			SupplierAccount:  kit.SupplierAccount,
+			Revision: table.Revision{
+				CreateTime: now,
+				LastTime:   now,
+				Creator:    kit.User,
+				Modifier:   kit.User,
+			},
+		}
+		result = append(result, node)
+	}
+
+	if err := mongodb.Client().Table(types.BKTableNameBaseNode).Insert(kit.Ctx, result); err != nil {
+		blog.Errorf("create nodes failed, db insert failed, node: %+v, err: %+v, rid: %s", result, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
+	}
+	blog.Errorf("000000000000000000000 result: %+v", result)
+	return result, nil
+}
+
 // BatchCreateNode batch create nodes
 func (s *coreService) BatchCreateNode(ctx *rest.Contexts) {
 
@@ -66,14 +218,16 @@ func (s *coreService) BatchCreateNode(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
+
+	bizStr := ctx.Request.PathParameter("bk_biz_id")
+	bizID, err := strconv.ParseInt(bizStr, 10, 64)
 	if err != nil {
-		blog.Error("url parameter bk_biz_id not integer, bizID: %s, rid: %s", ctx.Request.PathParameter("bk_biz_id"),
-			ctx.Kit.Rid)
+		blog.Error("url parameter bk_biz_id not integer, bizID: %s, rid: %s", bizStr, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
 	}
-	nodes, err := s.core.KubeOperation().BatchCreateNode(ctx.Kit, bizID, inputData.Nodes)
+	nodes, err := batchCreateNode(ctx.Kit, bizID, inputData.Nodes)
+
 	ctx.RespEntityWithError(nodes, err)
 }
 
@@ -158,6 +312,7 @@ func (s *coreService) BatchDeleteNode(ctx *rest.Contexts) {
 		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
+
 	bizStr := ctx.Request.PathParameter("bk_biz_id")
 	bizID, err := strconv.ParseInt(bizStr, 10, 64)
 	if err != nil {
@@ -173,8 +328,10 @@ func (s *coreService) BatchDeleteNode(ctx *rest.Contexts) {
 	}
 	util.SetQueryOwner(query, ctx.Kit.SupplierAccount)
 	nodes := make([]types.Node, 0)
+	fields := []string{common.BKFieldID, types.BKClusterIDField, types.BKAsstBizIDField, types.BKBizIDField}
+
 	if err := mongodb.Client().Table(types.BKTableNameBaseNode).Find(query).
-		Fields(common.BKHostIDField, common.BKAppIDField).All(ctx.Kit.Ctx, &nodes); err != nil {
+		Fields(fields...).All(ctx.Kit.Ctx, &nodes); err != nil {
 		blog.Errorf("query node failed, filter: %+v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -195,6 +352,24 @@ func (s *coreService) BatchDeleteNode(ctx *rest.Contexts) {
 	if err := mongodb.Client().Table(types.BKTableNameBaseNode).Delete(ctx.Kit.Ctx, filter); err != nil {
 		blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
+		return
+	}
+
+	delConds := make([]map[string]interface{}, 0)
+	for _, node := range nodes {
+		delConds = append(delConds, map[string]interface{}{
+			types.BKNamespaceIDField: node.ID,
+			types.BKAsstBizIDField:   node.BizAsstID,
+			types.BKBizIDField:       node.BizID,
+			types.BKClusterIDField:   node.ClusterID,
+		})
+	}
+
+	cond := map[string]interface{}{common.BKDBOR: delConds}
+	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
+	if err := mongodb.Client().Table(types.BKTableNodeClusterRelation).Delete(ctx.Kit.Ctx, cond); err != nil {
+		blog.Errorf("delete node relation failed, cond: %+v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))
 		return
 	}
 
