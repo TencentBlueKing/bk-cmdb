@@ -1,3 +1,7 @@
+## [Version: 3.10.x-feature-agent-id-alpha10] - 2022-12-20
+**功能优化**
+- 优化静态场景下通过excel表格导入重复ipv6地址的错误提示
+
 ## [Version: 3.10.x-feature-agent-id-alpha9] - 2022-12-15
 **新增功能**
 - cmdb对于ipv6地址统一转化为完整格式进行存储
