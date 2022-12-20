@@ -3,6 +3,7 @@
     "host_search_fail_with_errmsg": "Survey mainframe breathless, %s",
     "host_import_innerip_empty": "%d line inner ip empty",
     "host_import_innerip_v4_v6_empty": "%d line dynamic addressing inner ipv4 and ipv6 are both empty",
+    "host_import_innerip_v6_transfer_fail":"%d line failed to convert intranet ipv6 address to full ipv6 address",
     "host_import_innerip_v4_fail": "%d line static addressing ipv4 address already exists, import host failed",
     "host_import_innerip_v6_fail": "%d line static addressing ipv6 address already exists, import host failed",
     "host_import_property_need_set": "%d line network %s required",

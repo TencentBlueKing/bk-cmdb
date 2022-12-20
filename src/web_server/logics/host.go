@@ -524,6 +524,16 @@ func getIpField(host map[string]interface{}) (string, string, string) {
 	if (!v4Ok || innerIP == "") && (!v6Ok || innerIPv6 == "") {
 		return "host_import_innerip_v4_v6_empty", "", ""
 	}
+
+	// 存在ipv6地址的场景下需要将录入的ipv6地址转化为完整的ipv6地址
+	if v6Ok && innerIPv6 != "" {
+		ipv6, err := common.ConvertIPv6ToStandardFormat(innerIPv6)
+		if err != nil {
+			return "host_import_innerip_v6_transfer_fail", "", ""
+		}
+		innerIPv6 = ipv6
+	}
+
 	return "", innerIP, innerIPv6
 }
 
@@ -534,7 +544,7 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 
-	existentHosts, err := lgc.getExistHostsByInnerIPs(ctx, header, hostInfos)
+	existentV4Hosts, existentV6Hosts, err := lgc.getExistHostsByInnerIPs(ctx, header, hostInfos)
 	if err != nil {
 		blog.Errorf("CheckHostsAdded failed, getExistHostsByInnerIPs err:%s, rid:%s", err.Error(), rid)
 		return nil, err
@@ -571,27 +581,27 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 			continue
 		}
 
+		// in dynamic scenarios, there is no need to do duplication check of ip address.
+		if addressType == common.BKAddressingDynamic {
+			continue
+		}
+
 		errStr, innerIPv4, innerIPv6 := getIpField(host)
 		if errStr != "" {
 			errMsg = append(errMsg, ccLang.Languagef(errStr, index))
 			continue
 		}
 
-		// in dynamic scenarios, there is no need to do duplication check of ip address.
-		if addressType == common.BKAddressingDynamic {
-			continue
-		}
-
 		// check if the host ipv4 exist in db
 		key := generateHostCloudKey(innerIPv4, cloud)
-		if _, exist := existentHosts[key]; exist {
+		if _, exist := existentV4Hosts[key]; exist {
 			errMsg = append(errMsg, ccLang.Languagef("host_import_innerip_v4_fail", index))
 			continue
 		}
 
 		// check if the host ipv6 exist in db
 		keyV6 := generateHostCloudKey(innerIPv6, cloud)
-		if _, exist := existentHosts[keyV6]; exist {
+		if _, exist := existentV6Hosts[keyV6]; exist {
 			errMsg = append(errMsg, ccLang.Languagef("host_import_innerip_v6_fail", index))
 			continue
 		}
@@ -774,7 +784,7 @@ func generateHostCloudKey(ip, cloudID interface{}) string {
 
 // getExistHostsByInnerIPs get hosts that already in db(same bk_host_innerip host)
 func (lgc *Logics) getExistHostsByInnerIPs(ctx context.Context, header http.Header,
-	hostInfos map[int]map[string]interface{}) (map[string]bool, error) {
+	hostInfos map[int]map[string]interface{}) (map[string]struct{}, map[string]struct{}, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
@@ -791,7 +801,7 @@ func (lgc *Logics) getExistHostsByInnerIPs(ctx context.Context, header http.Head
 		}
 	}
 	if len(ipArr) == 0 && len(ipv6Arr) == 0 {
-		return make(map[string]bool), nil
+		return make(map[string]struct{}), make(map[string]struct{}), nil
 	}
 
 	// step2. query host info by innerIPs
@@ -828,33 +838,36 @@ func (lgc *Logics) getExistHostsByInnerIPs(ctx context.Context, header http.Head
 				Rules:     rules,
 			},
 		},
-		Fields: []string{
-			common.BKHostIDField,
-			common.BKHostInnerIPField,
-			common.BKHostInnerIPv6Field,
-			common.BKCloudIDField,
-		},
+		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField,
+			common.BKHostInnerIPv6Field, common.BKCloudIDField},
 	}
 	resp, err := lgc.CoreAPI.ApiServer().ListHostWithoutApp(ctx, header, option)
 	if err != nil {
 		blog.Errorf("list host without app err: %v, option: %d, rid: %s", err, option, rid)
-		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+		return nil, nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !resp.Result {
 		blog.Errorf("ListHostWithoutApp resp:%#v, option: %d, rid: %s", resp, option, rid)
-		return nil, resp.CCError()
+		return nil, nil, resp.CCError()
 	}
 
 	// step3. arrange data as a map, cloudKey: hostID
-	hostMap := make(map[string]bool, 0)
-	for _, host := range resp.Data.Info {
-		keyV4 := generateHostCloudKey(host[common.BKHostInnerIPField], host[common.BKCloudIDField])
-		keyV6 := generateHostCloudKey(host[common.BKHostInnerIPv6Field], host[common.BKCloudIDField])
-		hostMap[keyV4] = true
-		hostMap[keyV6] = true
-	}
+	hostV4Map, hostV6Map := make(map[string]struct{}, 0), make(map[string]struct{}, 0)
 
-	return hostMap, nil
+	for _, host := range resp.Data.Info {
+		ipv4 := util.GetStrByInterface(host[common.BKHostInnerIPField])
+		if ipv4 != "" {
+			keyV4 := generateHostCloudKey(ipv4, host[common.BKCloudIDField])
+			hostV4Map[keyV4] = struct{}{}
+		}
+
+		ipv6 := util.GetStrByInterface(host[common.BKHostInnerIPv6Field])
+		if ipv6 != "" {
+			keyV6 := generateHostCloudKey(ipv6, host[common.BKCloudIDField])
+			hostV6Map[keyV6] = struct{}{}
+		}
+	}
+	return hostV4Map, hostV6Map, nil
 }
 
 type excelSimpleHost struct {

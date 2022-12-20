@@ -3,6 +3,7 @@
     "host_search_fail_with_errmsg": "查询主机信息失败,错误信息;%s",
     "host_import_innerip_empty": "%d行内网ip为空",
     "host_import_innerip_v4_v6_empty": "%d行动态寻址方式内网ipv4和ipv6地址同时为空",
+    "host_import_innerip_v6_transfer_fail": "%d行内网ipv6地址转化成完整ipv6地址失败",
     "host_import_innerip_v4_fail": "%d行静态寻址方式ipv4地址已存在，导入主机失败",
     "host_import_innerip_v6_fail": "%d行静态寻址方式ipv6地址已存在，导入主机失败",
     "host_import_property_need_set": "%d行内网%s必填",
