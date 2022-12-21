@@ -580,19 +580,21 @@ const (
 	CCErrHostGetSnapshotBatch            = 1106024
 
 	// process controller 1107XXX
-	CCErrProcDeleteProc2Module   = 1107001
-	CCErrProcCreateProc2Module   = 1107002
-	CCErrProcSelectProc2Module   = 1107003
-	CCErrProcCreateProcConf      = 1107004
-	CCErrProcDeleteProcConf      = 1107005
-	CCErrProcGetProcConf         = 1107006
-	CCErrProcUpdateProcConf      = 1107007
-	CCErrProcCreateInstanceModel = 1107008
-	CCErrProcGetInstanceModel    = 1107009
-	CCErrProcDeleteInstanceModel = 1107010
-	CCErrProcDeleteProc2Template = 1107011
-	CCErrProcCreateProc2Template = 1107012
-	CCErrProcSelectProc2Template = 1107013
+	CCErrProcDeleteProc2Module      = 1107001
+	CCErrProcCreateProc2Module      = 1107002
+	CCErrProcSelectProc2Module      = 1107003
+	CCErrProcCreateProcConf         = 1107004
+	CCErrProcDeleteProcConf         = 1107005
+	CCErrProcGetProcConf            = 1107006
+	CCErrProcUpdateProcConf         = 1107007
+	CCErrProcCreateInstanceModel    = 1107008
+	CCErrProcGetInstanceModel       = 1107009
+	CCErrProcDeleteInstanceModel    = 1107010
+	CCErrProcDeleteProc2Template    = 1107011
+	CCErrProcCreateProc2Template    = 1107012
+	CCErrProcSelectProc2Template    = 1107013
+	CCErrProcBindInfoPortNotSet     = 1107014
+	CCErrProcBindInfoProtocolNotSet = 1107015
 
 	// process server 1108XXX
 	CCErrProcSearchDetailFaile          = 1108001
