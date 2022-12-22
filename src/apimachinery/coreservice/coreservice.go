@@ -25,6 +25,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/host"
 	"configcenter/src/apimachinery/coreservice/hostapplyrule"
 	"configcenter/src/apimachinery/coreservice/instance"
+	"configcenter/src/apimachinery/coreservice/kube"
 	"configcenter/src/apimachinery/coreservice/label"
 	"configcenter/src/apimachinery/coreservice/mainline"
 	"configcenter/src/apimachinery/coreservice/model"
@@ -60,6 +61,7 @@ type CoreServiceClientInterface interface {
 	Cloud() cloud.CloudInterface
 	Auth() auth.AuthClientInterface
 	Common() common.CommonInterface
+	Kube() kube.KubeClientInterface
 }
 
 // NewCoreServiceClient TODO
@@ -168,4 +170,9 @@ func (c *coreService) Auth() auth.AuthClientInterface {
 // Common TODO
 func (c *coreService) Common() common.CommonInterface {
 	return common.NewCommonInterfaceClient(c.restCli)
+}
+
+// Kube return the kube client
+func (c *coreService) Kube() kube.KubeClientInterface {
+	return kube.NewKubeClientInterface(c.restCli)
 }

@@ -93,7 +93,7 @@
     MENU_BUSINESS_HOST_APPLY_EDIT,
     MENU_BUSINESS_HOST_APPLY_RUN
   } from '@/dictionary/menu-symbol'
-  import { CONFIG_MODE } from '@/services/service-template/index.js'
+  import { CONFIG_MODE } from '@/service/service-template/index.js'
 
   export default {
     components: {

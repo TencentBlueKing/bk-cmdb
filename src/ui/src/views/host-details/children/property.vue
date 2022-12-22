@@ -28,7 +28,7 @@
             v-bk-overflow-tips
             v-if="property !== editState.property">
             <cmdb-property-value
-              :ref="`property-value-${property.bk_property_id}`"
+              :ref="`property-value-${property.id}`"
               :value="host[property.bk_property_id]"
               :property="property">
             </cmdb-property-value>
@@ -101,17 +101,42 @@
 
             <template v-if="host[property.bk_property_id] && property !== editState.property">
               <div class="copy-box">
-                <i class="property-copy icon-cc-details-copy" @click="handleCopy(property.bk_property_id)"></i>
+                <i class="property-copy icon-cc-details-copy" @click="handleCopy(property.id)"></i>
                 <transition name="fade">
                   <span class="copy-tips"
                     :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
-                    v-if="showCopyTips === property.bk_property_id">
+                    v-if="showCopyTips === property.id">
                     {{$t('复制成功')}}
                   </span>
                 </transition>
               </div>
             </template>
           </template>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 容器节点信息 -->
+    <div class="group"
+      v-for="(node, index) in containerNodes"
+      :key="`node_${index}`">
+      <h2 class="group-name">{{`${$t('容器节点信息')}(${index + 1})`}}</h2>
+      <ul class="property-list">
+        <li class="property-item"
+          v-for="property in containerNodeProperties"
+          :key="property.id"
+          :id="`property-item-${property.id}`">
+          <span class="property-name" v-bk-overflow-tips>
+            {{property.bk_property_name}}
+          </span>
+          <span :class="['property-value']">
+            <cmdb-property-value
+              :is-show-overflow-tips="true"
+              :ref="`property-value-${property.id}`"
+              :value="node[property.bk_property_id]"
+              :property="property">
+            </cmdb-property-value>
+          </span>
         </li>
       </ul>
     </div>
@@ -131,6 +156,16 @@
       }
     },
     mixins: [authMixin, readonlyMixin],
+    props: {
+      containerNodes: {
+        type: Array,
+        default: () => ([])
+      },
+      containerNodeProperties: {
+        type: Array,
+        default: () => ([])
+      }
+    },
     data() {
       return {
         editState: {
@@ -327,12 +362,7 @@
                 max-width: 286px;
                 font-size: 14px;
                 color: #313237;
-                overflow:hidden;
-                text-overflow:ellipsis;
                 word-break: break-all;
-                display: -webkit-box;
-                -webkit-line-clamp: 2;
-                -webkit-box-orient: vertical;
                 &.is-loading {
                     font-size: 0;
                     &:before {
@@ -346,6 +376,15 @@
                 }
                 .user-selector {
                     font-size: 14px !important;
+                }
+
+                .value-default-theme {
+                    width: 100%;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
                 }
             }
             .property-edit-btn {

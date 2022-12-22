@@ -275,6 +275,16 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
+	switch audit.AuditType {
+	case KubeType:
+		operationDetail := new(GenericOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+		return nil
+	}
+
 	switch audit.ResourceType {
 	case BusinessRes, BizSetRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes,
 		MainlineInstanceRes, ResourceDirRes:
@@ -337,6 +347,16 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 
 	if audit.Action == AuditTransferHostModule || audit.Action == AuditAssignHost || audit.Action == AuditUnassignHost {
 		operationDetail := new(HostTransferOpDetail)
+		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+		return nil
+	}
+
+	switch audit.AuditType {
+	case KubeType:
+		operationDetail := new(GenericOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
@@ -536,8 +556,7 @@ func (op *ServiceInstanceOpDetail) WithName() string {
 	return "ServiceInstanceOpDetail"
 }
 
-// BasicContent TODO
-// Content contains the details information with in a user's operation.
+// BasicContent contains the details information with in a user's operation.
 // Generally, works for business, model, model instance etc.
 type BasicContent struct {
 	// PreData the previous data before the deletion or updating operation
@@ -546,6 +565,20 @@ type BasicContent struct {
 	CurData map[string]interface{} `json:"cur_data" bson:"cur_data"`
 	// UpdateFields the data that user uses to update the pre data, might not be the actual changed data
 	UpdateFields map[string]interface{} `json:"update_fields" bson:"update_fields"`
+}
+
+// GenericOpDetail generic operation detail, including the operated data and the update fields for update operation
+// works for operation of structured data like pod, container etc.
+type GenericOpDetail struct {
+	// Data the operated data, which is previous data before delete or update, and current data after create operation
+	Data interface{} `json:"data" bson:"data"`
+	// UpdateFields the data that user uses to update the previous data, might not be the actual changed data
+	UpdateFields interface{} `json:"update_fields,omitempty'" bson:"update_fields,omitempty"`
+}
+
+// WithName returns the generic operation detail name
+func (op *GenericOpDetail) WithName() string {
+	return "GenericOpDetail"
 }
 
 // AuditType TODO
@@ -600,6 +633,9 @@ const (
 
 	// PlatFormSettingType is platform audit type
 	PlatFormSettingType AuditType = "platform_setting"
+
+	// KubeType is kube related audit type
+	KubeType AuditType = "kube"
 )
 
 // ResourceType TODO
@@ -677,6 +713,18 @@ const (
 
 	// PlatFormSettingRes platform related operation type
 	PlatFormSettingRes ResourceType = "platform_setting"
+
+	// kube related audit resource type
+	// KubeCluster kube cluster audit resource type
+	KubeCluster ResourceType = "kube_cluster"
+	// KubeNode kube node audit resource type
+	KubeNode ResourceType = "kube_node"
+	// KubeNamespace kube namespace audit resource type
+	KubeNamespace ResourceType = "kube_namespace"
+	// KubeWorkload kube workload audit resource type
+	KubeWorkload ResourceType = "kube_workload"
+	// KubePod kube pod audit resource type
+	KubePod ResourceType = "kube_pod"
 )
 
 // OperateFromType TODO
@@ -791,7 +839,7 @@ func GetAuditTypesByCategory(category string) []AuditType {
 	case "business":
 		return []AuditType{BusinessResourceType, DynamicGroupType}
 	case "resource":
-		return []AuditType{BusinessType, BizSetType, ModelInstanceType, CloudResourceType}
+		return []AuditType{BusinessType, BizSetType, ModelInstanceType, CloudResourceType, KubeType}
 	case "host":
 		return []AuditType{HostType}
 	case "other":

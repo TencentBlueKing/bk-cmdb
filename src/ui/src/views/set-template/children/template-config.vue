@@ -23,7 +23,7 @@
   import PropertyConfigDetails from '@/components/property-config/details.vue'
   import TemplateTree from './template-tree.vue'
   import useTemplateData from './use-template-data'
-  import setTemplateService from '@/services/set-template'
+  import setTemplateService from '@/service/set-template'
   import { MENU_BUSINESS_SET_TEMPLATE_EDIT } from '@/dictionary/menu-symbol'
 
   export default defineComponent({

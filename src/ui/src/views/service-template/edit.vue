@@ -18,7 +18,7 @@
   import routerActions from '@/router/actions'
   import ManagementForm from './children/management-form.vue'
   import store from '@/store'
-  import serviceTemplateService from '@/services/service-template'
+  import serviceTemplateService from '@/service/service-template'
   import { MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
 
   export default defineComponent({

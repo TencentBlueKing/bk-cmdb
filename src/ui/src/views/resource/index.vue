@@ -44,6 +44,7 @@
 </template>
 
 <script>
+  import FilterStore from '@/components/filters/store'
   import resourceDirectory from './children/directory.vue'
   import resourceHosts from './children/host-list.vue'
   import Bus from '@/utils/bus.js'
@@ -80,6 +81,14 @@
       handleTabChange(tab) {
         Bus.$emit('toggle-host-filter', false)
         Bus.$emit('reset-host-filter')
+
+        // 设置scope
+        FilterStore.setResourceScope(tab)
+
+        // 此时selected为上一个scope的，需要清空，在setupNormalProperty方法中会使用在设置条件时已保存的值
+        FilterStore.updateSelected([])
+        FilterStore.setupNormalProperty()
+
         RouterQuery.set({
           scope: isNaN(tab) ? tab : parseInt(tab, 10),
           ip: '',

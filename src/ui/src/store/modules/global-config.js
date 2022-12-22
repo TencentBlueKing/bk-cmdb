@@ -14,7 +14,7 @@
  * 全局配置数据模型，提供获取全局配置、更新全局配置的能力
  * 接口数据在这里做了适配 UI 的处理，后续服务接口有更新，直接在这里更新模型即可。
  */
-import { getCurrentConfig, getDefaultConfig, updateConfig, updateIdleSet, createIdleModule, updateIdleModule, deleteIdleModule } from '@/services/global-config'
+import { getCurrentConfig, getDefaultConfig, updateConfig, updateIdleSet, createIdleModule, updateIdleModule, deleteIdleModule } from '@/service/global-config'
 import to from 'await-to-js'
 import { Base64 } from 'js-base64'
 import { language } from '@/i18n'

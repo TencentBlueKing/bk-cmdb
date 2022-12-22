@@ -102,6 +102,7 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 		processRelated().
 		eventRelated().
 		cloudRelated().
+		kubeRelated().
 		// finalizer must be at the end of the check chains.
 		finalizer()
 

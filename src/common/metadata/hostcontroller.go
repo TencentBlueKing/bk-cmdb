@@ -15,6 +15,7 @@ package metadata
 import (
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 )
 
@@ -91,6 +92,19 @@ type HostInfo struct {
 	Info  []mapstr.MapStr `json:"info"`
 }
 
+// ExtractHostIDs extract hostIDs
+func (h HostInfo) ExtractHostIDs() ([]int64, error) {
+	ids := make([]int64, len(h.Info))
+	for idx, h := range h.Info {
+		id, err := h.Int64(common.BKHostIDField)
+		if err != nil {
+			return nil, err
+		}
+		ids[idx] = id
+	}
+	return ids, nil
+}
+
 // GetHostsResult TODO
 type GetHostsResult struct {
 	BaseResp `json:",inline"`
@@ -162,29 +176,41 @@ type GetUserCustomResult struct {
 	Data     map[string]interface{} `json:"data"`
 }
 
-// FavouriteParms TODO
+// FavouriteType host query favorite condition type
+type FavouriteType string
+
+const (
+	// Container container topo type about host query favorite condition
+	Container FavouriteType = "container"
+	// Tradition tradition topo type about host query favorite condition
+	Tradition FavouriteType = "tradition"
+)
+
+// FavouriteParms host query favorite condition parameter
 type FavouriteParms struct {
-	ID          string `json:"id,omitempty"`
-	Info        string `json:"info,omitempty"`
-	QueryParams string `json:"query_params,omitempty"`
-	Name        string `json:"name,omitempty"`
-	IsDefault   int    `json:"is_default,omitempty"`
-	Count       int    `json:"count,omitempty"`
-	BizID       int64  `json:"bk_biz_id"`
+	ID          string        `json:"id,omitempty"`
+	Info        string        `json:"info,omitempty"`
+	QueryParams string        `json:"query_params,omitempty"`
+	Name        string        `json:"name,omitempty"`
+	IsDefault   int           `json:"is_default,omitempty"`
+	Count       int           `json:"count,omitempty"`
+	BizID       int64         `json:"bk_biz_id"`
+	Type        FavouriteType `json:"type"`
 }
 
-// FavouriteMeta TODO
+// FavouriteMeta host query favorite condition metadata
 type FavouriteMeta struct {
-	BizID       int64     `json:"bk_biz_id" bson:"bk_biz_id"`
-	ID          string    `json:"id,omitempty" bson:"id,omitempty"`
-	Info        string    `json:"info,omitempty" bson:"info,omitempty"`
-	Name        string    `json:"name,omitempty" bson:"name,omitempty"`
-	Count       int       `json:"count,omitempty" bson:"count,omitempty"`
-	User        string    `json:"user,omitempty" bson:"user,omitempty"`
-	OwnerID     string    `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account,omitempty"`
-	QueryParams string    `json:"query_params,omitempty" bson:"query_params,omitempty"`
-	CreateTime  time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
-	UpdateTime  time.Time `json:"last_time,omitempty" bson:"last_time,omitempty"`
+	BizID       int64         `json:"bk_biz_id" bson:"bk_biz_id"`
+	ID          string        `json:"id,omitempty" bson:"id,omitempty"`
+	Info        string        `json:"info,omitempty" bson:"info,omitempty"`
+	Name        string        `json:"name,omitempty" bson:"name,omitempty"`
+	Count       int           `json:"count,omitempty" bson:"count,omitempty"`
+	User        string        `json:"user,omitempty" bson:"user,omitempty"`
+	OwnerID     string        `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account,omitempty"`
+	Type        FavouriteType `json:"type,omitempty" bson:"type,omitempty"`
+	QueryParams string        `json:"query_params,omitempty" bson:"query_params,omitempty"`
+	CreateTime  time.Time     `json:"create_time,omitempty" bson:"create_time,omitempty"`
+	UpdateTime  time.Time     `json:"last_time,omitempty" bson:"last_time,omitempty"`
 }
 
 // TransferHostToInnerModule transfer host to inner module eg:idle module ,fault module
