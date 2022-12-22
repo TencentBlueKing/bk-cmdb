@@ -248,19 +248,21 @@ func (lgc *Logics) getEnumQuoteIds(c context.Context, h http.Header, objID, rid 
 	enumQuoteNameList interface{}) ([]int64, error) {
 
 	input := &metadata.QueryCondition{DisableCounter: true}
-	if objID == common.BKInnerObjIDApp {
+	switch objID {
+	case common.BKInnerObjIDApp:
 		input.Fields = []string{common.BKAppIDField}
 		input.Condition = mapstr.MapStr{common.BKAppNameField: mapstr.MapStr{common.BKDBIN: enumQuoteNameList}}
-	} else if objID == common.BKInnerObjIDBizSet {
+	case common.BKInnerObjIDBizSet:
 		input.Fields = []string{common.BKBizSetIDField}
 		input.Condition = mapstr.MapStr{common.BKBizSetNameField: mapstr.MapStr{common.BKDBIN: enumQuoteNameList}}
-	} else if objID == common.BKInnerObjIDHost {
+	case common.BKInnerObjIDHost:
 		input.Fields = []string{common.BKHostIDField}
 		input.Condition = mapstr.MapStr{common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: enumQuoteNameList}}
-	} else {
+	default:
 		input.Fields = []string{common.BKInstIDField}
 		input.Condition = mapstr.MapStr{common.BKInstNameField: mapstr.MapStr{common.BKDBIN: enumQuoteNameList}}
 	}
+
 	resp, err := lgc.Engine.CoreAPI.ApiServer().ReadInstance(c, h, objID, input)
 	if err != nil {
 		blog.Errorf("get quote inst name list failed, err: %v, rid: %s", err, rid)
@@ -271,13 +273,14 @@ func (lgc *Logics) getEnumQuoteIds(c context.Context, h http.Header, objID, rid 
 	for _, info := range resp.Data.Info {
 		var err error
 		var enumQuoteID int64
-		if objID == common.BKInnerObjIDApp {
+		switch objID {
+		case common.BKInnerObjIDApp:
 			enumQuoteID, err = info.Int64(common.BKAppIDField)
-		} else if objID == common.BKInnerObjIDBizSet {
+		case common.BKInnerObjIDBizSet:
 			enumQuoteID, err = info.Int64(common.BKBizSetIDField)
-		} else if objID == common.BKInnerObjIDHost {
+		case common.BKInnerObjIDHost:
 			enumQuoteID, err = info.Int64(common.BKHostIDField)
-		} else {
+		default:
 			enumQuoteID, err = info.Int64(common.BKInstIDField)
 		}
 		if err != nil {

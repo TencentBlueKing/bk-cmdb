@@ -13,6 +13,11 @@
 package instances
 
 import (
+	stderr "errors"
+	"fmt"
+	"strings"
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -22,10 +27,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/hooks"
-	stderr "errors"
-	"fmt"
-	"strings"
-	"time"
 )
 
 var updateIgnoreKeys = []string{
@@ -206,9 +207,15 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		// 对引用类型做校验
 		if property.PropertyType == common.FieldTypeEnumQuote {
 			valEnumIDs := make([]int64, 0)
-			for _, valID := range val.([]interface{}) {
+			valIDs, ok := val.([]interface{})
+			if !ok {
+				blog.Errorf("convert val to interface slice failed, val type: %T, rid: %s", val, kit.Rid)
+				return fmt.Errorf("convert val to interface slice failed, val: %v", val)
+			}
+			for _, valID := range valIDs {
 				valEnumID, err := util.GetInt64ByInterface(valID)
 				if err != nil {
+					blog.Errorf("get valEnumID failed, valID type is %T, err: %v, rid: %s", valID, err, kit.Rid)
 					return err
 				}
 				valEnumIDs = append(valEnumIDs, valEnumID)
@@ -341,9 +348,15 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 		// 对引用类型做校验
 		if property.PropertyType == common.FieldTypeEnumQuote {
 			valEnumIDs := make([]int64, 0)
-			for _, valID := range val.([]interface{}) {
+			valIDs, ok := val.([]interface{})
+			if !ok {
+				blog.Errorf("convert val to interface slice failed, val type: %T, rid: %s", val, kit.Rid)
+				return fmt.Errorf("convert val to interface slice failed, val: %v", val)
+			}
+			for _, valID := range valIDs {
 				valEnumID, err := util.GetInt64ByInterface(valID)
 				if err != nil {
+					blog.Errorf("get valEnumID failed, valID type is %T, err: %v, rid: %s", valID, err, kit.Rid)
 					return err
 				}
 				valEnumIDs = append(valEnumIDs, valEnumID)
@@ -597,7 +610,8 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, option interface{}, enumQu
 	if len(objIDs) == 0 {
 		return fmt.Errorf("enum quote objID not exist")
 	}
-	if objIDs[0] == common.BKInnerObjIDHost {
+	switch objIDs[0] {
+	case common.BKInnerObjIDHost:
 		cond := map[string]interface{}{
 			common.BKHostIDField: map[string]interface{}{
 				common.BKDBIN: enumQuoteIDs,
@@ -609,11 +623,10 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, option interface{}, enumQu
 			return err
 		}
 		if len(enumQuoteIDs) != int(cnt) {
-			return fmt.Errorf("host not exist")
+			return fmt.Errorf("host not exist, rid: %s", kit.Rid)
 		}
 		return nil
-	}
-	if objIDs[0] == common.BKInnerObjIDApp {
+	case common.BKInnerObjIDApp:
 		cond := map[string]interface{}{
 			common.BKAppIDField: map[string]interface{}{
 				common.BKDBIN: enumQuoteIDs,
@@ -625,11 +638,10 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, option interface{}, enumQu
 			return err
 		}
 		if len(enumQuoteIDs) != int(cnt) {
-			return fmt.Errorf("host not exist")
+			return fmt.Errorf("biz not exist, rid: %s", kit.Rid)
 		}
 		return nil
-	}
-	if objIDs[0] == common.BKInnerObjIDBizSet {
+	case common.BKInnerObjIDBizSet:
 		cond := map[string]interface{}{
 			common.BKBizSetIDField: map[string]interface{}{
 				common.BKDBIN: enumQuoteIDs,
@@ -641,7 +653,7 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, option interface{}, enumQu
 			return err
 		}
 		if len(enumQuoteIDs) != int(cnt) {
-			return fmt.Errorf("host not exist")
+			return fmt.Errorf("biz set not exist, rid: %s", kit.Rid)
 		}
 		return nil
 	}
@@ -658,7 +670,7 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, option interface{}, enumQu
 		return err
 	}
 	if len(enumQuoteIDs) != int(cnt) {
-		return fmt.Errorf("inst not exist")
+		return fmt.Errorf("inst not exist, rid: %s", kit.Rid)
 	}
 	return nil
 }

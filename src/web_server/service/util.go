@@ -333,19 +333,21 @@ func (s *Service) getEnumQuoteInstNames(c *gin.Context, h http.Header, enumQuote
 	rid string) ([]string, error) {
 
 	input := &metadata.QueryCondition{DisableCounter: true}
-	if objID == common.BKInnerObjIDApp {
+	switch objID {
+	case common.BKInnerObjIDApp:
 		input.Fields = []string{common.BKAppNameField}
 		input.Condition = mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{common.BKDBIN: enumQuoteIDs}}
-	} else if objID == common.BKInnerObjIDBizSet {
+	case common.BKInnerObjIDBizSet:
 		input.Fields = []string{common.BKBizSetNameField}
 		input.Condition = mapstr.MapStr{common.BKBizSetIDField: mapstr.MapStr{common.BKDBIN: enumQuoteIDs}}
-	} else if objID == common.BKInnerObjIDHost {
+	case common.BKInnerObjIDHost:
 		input.Fields = []string{common.BKHostInnerIPField}
 		input.Condition = mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: enumQuoteIDs}}
-	} else {
+	default:
 		input.Fields = []string{common.BKInstNameField}
 		input.Condition = mapstr.MapStr{common.BKInstIDField: mapstr.MapStr{common.BKDBIN: enumQuoteIDs}}
 	}
+
 	resp, err := s.Engine.CoreAPI.ApiServer().ReadInstance(c, h, objID, input)
 	if err != nil {
 		blog.Errorf("get quote inst name list failed, err: %v, rid: %s", err, rid)
@@ -356,28 +358,29 @@ func (s *Service) getEnumQuoteInstNames(c *gin.Context, h http.Header, enumQuote
 	for _, info := range resp.Data.Info {
 		var ok bool
 		var enumQuoteName string
-		if objID == common.BKInnerObjIDApp {
+		switch objID {
+		case common.BKInnerObjIDApp:
 			if name, exist := info.Get(common.BKAppNameField); exist {
 				enumQuoteName, ok = name.(string)
 				if !ok {
 					enumQuoteName = ""
 				}
 			}
-		} else if objID == common.BKInnerObjIDBizSet {
+		case common.BKInnerObjIDBizSet:
 			if name, exist := info.Get(common.BKBizSetNameField); exist {
 				enumQuoteName, ok = name.(string)
 				if !ok {
 					enumQuoteName = ""
 				}
 			}
-		} else if objID == common.BKInnerObjIDHost {
+		case common.BKInnerObjIDHost:
 			if name, exist := info.Get(common.BKHostInnerIPField); exist {
 				enumQuoteName, ok = name.(string)
 				if !ok {
 					enumQuoteName = ""
 				}
 			}
-		} else {
+		default:
 			if name, exist := info.Get(common.BKInstNameField); exist {
 				enumQuoteName, ok = name.(string)
 				if !ok {

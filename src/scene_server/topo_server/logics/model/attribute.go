@@ -212,13 +212,17 @@ func (a *attribute) ValidObjIDAndInstID(kit *rest.Kit, objID string, option inte
 		input.Condition = mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{
 			common.BKDBIN: instIDs,
 		}}
+	} else {
+		input.Condition = mapstr.MapStr{common.BKInstIDField: mapstr.MapStr{
+			common.BKDBIN: instIDs,
+		}}
 	}
 	resp, err := a.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, quoteObjIDs[0], input)
 	if err != nil {
 		blog.Errorf("get inst failed, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
 		return false, err
 	}
-	if resp.Count == 0 {
+	if resp.Count == 0 || resp.Count != len(instIDs){
 		blog.Errorf("get inst failed, inst not exist, input: %+v, rid: %s", input, kit.Rid)
 		return true, nil
 	}

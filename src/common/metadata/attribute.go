@@ -396,7 +396,7 @@ func (attribute *Attribute) validEnumQuote(ctx context.Context, val interface{},
 	case []interface{}:
 	case bson.A:
 	default:
-		blog.Errorf("params should be type enum quote,but its type is %T, rid: %s", val, rid)
+		blog.Errorf("params should be type enum quote, but its type is %T, rid: %s", val, rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
@@ -1165,9 +1165,9 @@ type EnumQuoteOption []EnumQuoteVal
 
 // EnumQuoteVal enum quote option val
 type EnumQuoteVal struct {
-	ObjID  string `bson:"bk_obj_id"           json:"bk_obj_id"`
-	InstID int64  `bson:"bk_inst_id"         json:"bk_inst_id"`
-	Type   string `bson:"type"         json:"type"`
+	ObjID  string `bson:"bk_obj_id" json:"bk_obj_id"`
+	InstID int64  `bson:"bk_inst_id" json:"bk_inst_id"`
+	Type   string `bson:"type" json:"type"`
 }
 
 // ParseEnumQuoteOption convert val to []EnumQuoteVal
@@ -1183,17 +1183,17 @@ func ParseEnumQuoteOption(ctx context.Context, val interface{}) (EnumQuoteOption
 	case string:
 		err := json.Unmarshal([]byte(options), &enumQuoteOptions)
 		if nil != err {
-			blog.Errorf("ParseEnumQuoteOption err: %v, rid: %s", err, rid)
+			blog.Errorf("parse enum quote option failed, err: %v, rid: %s", err, rid)
 			return nil, err
 		}
 	case []interface{}:
 		if err := parseEnumQuoteOption(options, &enumQuoteOptions); err != nil {
-			blog.Errorf("parseEnumQuoteOption err: %v, rid: %s", err, rid)
+			blog.Errorf("parse enum quote option failed, err: %v, rid: %s", err, rid)
 			return nil, err
 		}
 	case bson.A:
 		if err := parseEnumQuoteOption(options, &enumQuoteOptions); err != nil {
-			blog.Errorf("parseEnumOption err: %v, rid: %s", err, rid)
+			blog.Errorf("parse enum quote option failed, err: %v, rid: %s", err, rid)
 			return nil, err
 		}
 	default:

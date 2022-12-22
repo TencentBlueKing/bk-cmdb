@@ -229,7 +229,7 @@ func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys 
 			case common.FieldTypeEnumMulti:
 				enumOptions, err := metadata.ParseEnumOption(ctx, field.Option)
 				if err != nil {
-					blog.Warnf("ParseEnumOption failed: %v, rid: %s", err, rid)
+					blog.Warnf("parse enum multi option failed, err: %v, rid: %s", err, rid)
 					valData[field.PropertyID] = nil
 					continue
 				}
@@ -251,7 +251,7 @@ func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys 
 			case common.FieldTypeEnumQuote:
 				enumQuoteOptions, err := metadata.ParseEnumQuoteOption(ctx, field.Option)
 				if err != nil {
-					blog.Warnf("parse enum quote option failed: %v, rid: %s", err, rid)
+					blog.Warnf("parse enum quote option failed, err: %v, rid: %s", err, rid)
 					valData[field.PropertyID] = nil
 					continue
 				}
