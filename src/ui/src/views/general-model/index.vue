@@ -118,7 +118,7 @@
       </bk-table-column>
       <bk-table-column v-for="column in table.header"
         sortable="custom"
-        min-width="80"
+        :min-width="$tools.getHeaderPropertyMinWidth(column.property, { hasSort: true })"
         :key="column.id"
         :prop="column.id"
         :label="column.name"

@@ -15,6 +15,7 @@ package index
 import (
 	"reflect"
 
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/types"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -75,7 +76,18 @@ func IndexEqual(toDBIndex, dbIndex types.Index) bool {
 		if !exists {
 			return false
 		}
-		if val != dbVal {
+
+		valInt, err := util.GetIntByInterface(val)
+		if err != nil {
+			return false
+		}
+
+		dbValInt, err := util.GetIntByInterface(dbVal)
+		if err != nil {
+			return false
+		}
+
+		if valInt != dbValInt {
 			return false
 		}
 	}

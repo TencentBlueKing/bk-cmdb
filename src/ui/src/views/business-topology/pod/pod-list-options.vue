@@ -50,7 +50,12 @@
       }
 
       const handleCopy = (column) => {
-        const copyText = props.tableSelection.map(row => getPropertyCopyValue(row[column.id], column.property))
+        const copyText = props.tableSelection.map((row) => {
+          if (column.id === 'ref') {
+            return row?.[column.id]?.name
+          }
+          return getPropertyCopyValue(row[column.id], column.property)
+        })
         $this.proxy.$copyText(copyText.join('\n')).then(() => {
           $success(t('复制成功'))
         }, () => {

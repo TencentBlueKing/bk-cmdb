@@ -38,7 +38,7 @@
       const instance = ref({})
       const topoPaths = ref([])
       const model = ref({
-        icon: 'icon-cc-default',
+        icon: 'icon-cc-container',
         name: CONTAINER_OBJECT_NAMES[CONTAINER_OBJECTS.CONTAINER].FULL
       })
 

@@ -301,7 +301,7 @@
       <bk-table-column type="selection" width="50" align="center" fixed></bk-table-column>
       <bk-table-column v-for="column in table.header"
         :show-overflow-tooltip="!['map'].includes(column.property.bk_property_type)"
-        :min-width="column.id === 'id' ? 80 : 120"
+        :min-width="$tools.getHeaderPropertyMinWidth(column.property, { hasSort: true })"
         :key="column.id"
         :sortable="'custom'"
         :prop="column.id"

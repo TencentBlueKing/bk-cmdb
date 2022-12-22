@@ -46,7 +46,7 @@
     <bk-dialog
       header-position="left"
       :draggable="false"
-      :mask-close="false"
+      :mask-close="dialog.name !== 'add'"
       :width="840"
       :title="dialog.title"
       v-model="dialog.visible"
@@ -62,9 +62,12 @@
       <template slot="footer">
         <div class="dialog-footer" v-if="dialog.name === 'add'">
           <div class="summary" v-if="serviceTemplateCount > 0">
-            <span class="stat">
-              已选<em class="num">{{selectedServiceCount}}</em>个
-            </span>
+            <i18n path="已选个数">
+              <template #count>
+                <span class="stat">
+                  <em class="num">{{selectedServiceCount}}</em>
+                </span></template>
+            </i18n>
             <bk-link class="to-template" theme="primary" icon="icon-cc-share" @click="handleLinkClick">
               {{$t('跳转服务模板')}}
             </bk-link>
