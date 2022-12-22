@@ -15,6 +15,7 @@ package logics
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -139,6 +140,13 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 		return resultData, common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
 			strings.Join(errMsg, ","))
 	}
+	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, modelBizID,
+		common.HostAddMethodExcelDefaultIndex)
+	insts, err = lgc.handleImportEnumQuoteInst(ctx, header, insts, fields, rid)
+	if err != nil {
+		blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
+		return
+	}
 
 	var resultErr error
 	result := &metadata.ResponseDataMapStr{}
@@ -163,4 +171,121 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 	resultData.Merge(resp.Data)
 
 	return
+}
+
+// handleImportEnumQuoteInst search inst detail and return a id-bk_inst_name map
+func (lgc *Logics) handleImportEnumQuoteInst(c context.Context, h http.Header, data map[int]map[string]interface{},
+	fields map[string]Property, rid string) (map[int]map[string]interface{}, error) {
+
+	for _, rowMap := range data {
+		for id, property := range fields {
+			switch property.PropertyType {
+			case common.FieldTypeEnumQuote:
+				enumQuoteNameList, exist := rowMap[id]
+				if !exist || enumQuoteNameList == nil {
+					continue
+				}
+
+				objIDs, err := GetEnumQuoteObjID(property.Option, rid)
+				if err != nil {
+					blog.Errorf("get enum quote option obj id failed, err: %s, rid: %s", err, rid)
+					return nil, err
+				}
+				if len(objIDs) == 0 {
+					return nil, fmt.Errorf("enum quote option model is null, rid: %s", rid)
+				}
+
+				enumQuoteIDs, err := lgc.getEnumQuoteIds(c, h, objIDs[0], rid, enumQuoteNameList)
+				if err != nil {
+					blog.Errorf("get enum quote id list failed, err: %v, rid: %s", err, rid)
+					return nil, err
+				}
+				rowMap[id] = enumQuoteIDs
+			}
+		}
+	}
+
+	return data, nil
+}
+
+// GetEnumQuoteObjID get enum quote field option bk_obj_id and bk_inst_id value
+func GetEnumQuoteObjID(option interface{}, rid string) ([]string, error) {
+	objIDs := make([]string, 0)
+	if option == nil {
+		return objIDs, fmt.Errorf("enum quote option is nil")
+	}
+	arrOption, ok := option.([]interface{})
+	if !ok {
+		blog.Errorf("option %v not enum quote option, rid: %s", option, rid)
+		return objIDs, fmt.Errorf("enum quote option is unvalid")
+	}
+
+	for _, o := range arrOption {
+		mapOption, ok := o.(map[string]interface{})
+		if !ok || mapOption == nil {
+			blog.Errorf("option %v not enum quote option, enum quote option item must bk_obj_id, rid: %s", option,
+				rid)
+			return objIDs, fmt.Errorf("convert option map[string]interface{} failed")
+		}
+		objIDVal, objIDOk := mapOption["bk_obj_id"]
+		if !objIDOk || objIDVal == "" {
+			blog.Errorf("enum quote option bk_obj_id can't be empty, rid: %s", option, rid)
+			return objIDs, fmt.Errorf("enum quote option bk_obj_id can't be empty")
+		}
+		objID, ok := objIDVal.(string)
+		if !ok {
+			blog.Errorf("objIDVal %v not string, rid: %s", objIDVal, rid)
+			return objIDs, fmt.Errorf("enum quote option bk_obj_id is not string")
+		}
+		objIDs = append(objIDs, objID)
+	}
+
+	return objIDs, nil
+}
+
+// getEnumQuoteIds search inst detail and return a inst id list
+func (lgc *Logics) getEnumQuoteIds(c context.Context, h http.Header, objID, rid string,
+	enumQuoteNameList interface{}) ([]int64, error) {
+
+	input := &metadata.QueryCondition{DisableCounter: true}
+	if objID == common.BKInnerObjIDApp {
+		input.Fields = []string{common.BKAppIDField}
+		input.Condition = mapstr.MapStr{common.BKAppNameField: mapstr.MapStr{common.BKDBIN: enumQuoteNameList}}
+	} else if objID == common.BKInnerObjIDBizSet {
+		input.Fields = []string{common.BKBizSetIDField}
+		input.Condition = mapstr.MapStr{common.BKBizSetNameField: mapstr.MapStr{common.BKDBIN: enumQuoteNameList}}
+	} else if objID == common.BKInnerObjIDHost {
+		input.Fields = []string{common.BKHostIDField}
+		input.Condition = mapstr.MapStr{common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: enumQuoteNameList}}
+	} else {
+		input.Fields = []string{common.BKInstIDField}
+		input.Condition = mapstr.MapStr{common.BKInstNameField: mapstr.MapStr{common.BKDBIN: enumQuoteNameList}}
+	}
+	resp, err := lgc.Engine.CoreAPI.ApiServer().ReadInstance(c, h, objID, input)
+	if err != nil {
+		blog.Errorf("get quote inst name list failed, err: %v, rid: %s", err, rid)
+		return nil, err
+	}
+
+	enumQuoteIDs := make([]int64, 0)
+	for _, info := range resp.Data.Info {
+		var err error
+		var enumQuoteID int64
+		if objID == common.BKInnerObjIDApp {
+			enumQuoteID, err = info.Int64(common.BKAppIDField)
+		} else if objID == common.BKInnerObjIDBizSet {
+			enumQuoteID, err = info.Int64(common.BKBizSetIDField)
+		} else if objID == common.BKInnerObjIDHost {
+			enumQuoteID, err = info.Int64(common.BKHostIDField)
+		} else {
+			enumQuoteID, err = info.Int64(common.BKInstIDField)
+		}
+		if err != nil {
+			blog.Errorf("get enum quote id failed, err: %v, rid: %s", err, rid)
+			continue
+		}
+		enumQuoteIDs = append(enumQuoteIDs, enumQuoteID)
+	}
+
+	return enumQuoteIDs, nil
 }

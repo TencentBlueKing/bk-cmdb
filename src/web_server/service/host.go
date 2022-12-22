@@ -200,6 +200,14 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
+	hostInfo, err = s.handleHostExportEnumQuoteInst(c, header, hostInfo, fields, rid)
+	if err != nil {
+		blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
+		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(
+			common.CCErrCommExcelTemplateFailed, objID).Error(), nil)))
+		return
+	}
+
 	usernameMap, propertyList, err := s.getUsernameMapWithPropertyList(c, objID, hostInfo)
 	if nil != err {
 		blog.Errorf("ExportHost failed, get username map and property list failed, err: %+v, rid: %s", err, rid)

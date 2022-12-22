@@ -116,11 +116,11 @@ func (s *Service) validateScopeFields(kit *rest.Kit, fieldInfo *metadata.BizSetS
 func propertyTypeEqualValidate(propertyType string, value interface{}) error {
 
 	switch propertyType {
-	case common.FieldTypeEnum:
+	case common.FieldTypeEnum, common.FieldTypeEnumMulti:
 		if reflect.TypeOf(value).Kind() != reflect.String {
 			return errors.New("enum type field must be string")
 		}
-	case common.FieldTypeOrganization:
+	case common.FieldTypeOrganization, common.FieldTypeEnumQuote:
 		if !util.IsNumeric(value) {
 			return errors.New("organization type field must be numeric")
 		}

@@ -126,7 +126,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 	}
 
 	logics.ConvAttrOption(attrItems)
-	blog.Errorf("=======>attrItems:%+v", attrItems)
+
 	param := map[string]interface{}{objID: map[string]interface{}{"attr": attrItems}}
 	result, err := s.CoreAPI.ApiServer().AddObjectBatch(ctx, c.Request.Header, param)
 	if err != nil {

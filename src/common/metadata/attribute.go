@@ -159,8 +159,12 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 		rawError = attribute.validInt(ctx, data, key)
 	case common.FieldTypeFloat:
 		rawError = attribute.validFloat(ctx, data, key)
-	case common.FieldTypeEnum, common.FieldTypeEnumMulti:
+	case common.FieldTypeEnum:
 		rawError = attribute.validEnum(ctx, data, key)
+	case common.FieldTypeEnumMulti:
+		rawError = attribute.validEnumMulti(ctx, data, key)
+	case common.FieldTypeEnumQuote:
+		rawError = attribute.validEnumQuote(ctx, data, key)
 	case common.FieldTypeDate:
 		rawError = attribute.validDate(ctx, data, key)
 	case common.FieldTypeTime:
@@ -300,7 +304,7 @@ func (attribute *Attribute) validEnum(ctx context.Context, val interface{}, key 
 	// validate within enum
 	enumOption, err := ParseEnumOption(ctx, attribute.Option)
 	if err != nil {
-		blog.Warnf("ParseEnumOption failed: %v, rid: %s", err, rid)
+		blog.Warnf("parse enum option failed, err: %v, rid: %s", err, rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
@@ -311,12 +315,94 @@ func (attribute *Attribute) validEnum(ctx context.Context, val interface{}, key 
 			return errors.RawErrorInfo{}
 		}
 	}
-	blog.V(3).Infof("params %s not valid, option %#v, raw option %#v, value: %#v, rid: %s", key, enumOption, attribute.Option, val, rid)
+	blog.V(3).Infof("params %s not valid, option %#v, raw option %#v, value: %#v, rid: %s", key, enumOption,
+		attribute.Option, val, rid)
 	blog.Errorf("params %s not valid , enum value: %#v, rid: %s", key, val, rid)
 	return errors.RawErrorInfo{
 		ErrCode: common.CCErrCommParamsInvalid,
 		Args:    []interface{}{key},
 	}
+}
+
+// validEnum valid object attribute that is enum multi type
+func (attribute *Attribute) validEnumMulti(ctx context.Context, val interface{},
+	key string) (rawError errors.RawErrorInfo) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	// validate require
+	if val == nil {
+		if attribute.IsRequired {
+			blog.Errorf("params can not be null, rid: %s", rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsNeedSet,
+				Args:    []interface{}{key},
+			}
+		}
+		return errors.RawErrorInfo{}
+	}
+
+	enumOption, err := ParseEnumOption(ctx, attribute.Option)
+	if err != nil {
+		blog.Warnf("parse enum option failed, err: %v, rid: %s", err, rid)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{key},
+		}
+	}
+	idVals := make([]string, 0)
+	for _, id := range val.([]interface{}) {
+		idVal, ok := id.(string)
+		if !ok {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{key},
+			}
+		}
+		idVals = append(idVals, idVal)
+	}
+	ids := make([]string, 0)
+	for _, option := range enumOption {
+		ids = append(ids, option.ID)
+	}
+	if len(util.StrArrDiff(idVals, ids)) == 0 {
+		return errors.RawErrorInfo{}
+	}
+
+	blog.V(3).Infof("params %s not valid, option %#v, raw option %#v, value: %#v, rid: %s", key, enumOption,
+		attribute.Option, val, rid)
+	blog.Errorf("params %s not valid , enum value: %#v, rid: %s", key, val, rid)
+	return errors.RawErrorInfo{
+		ErrCode: common.CCErrCommParamsInvalid,
+		Args:    []interface{}{key},
+	}
+}
+
+// validEnum valid object attribute that is enum quote type
+func (attribute *Attribute) validEnumQuote(ctx context.Context, val interface{},
+	key string) (rawError errors.RawErrorInfo) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	// validate require
+	if val == nil {
+		if attribute.IsRequired {
+			blog.Errorf("params can not be null, rid: %s", rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsNeedSet,
+				Args:    []interface{}{key},
+			}
+		}
+		return errors.RawErrorInfo{}
+	}
+
+	switch val.(type) {
+	case []interface{}:
+	case bson.A:
+	default:
+		blog.Errorf("params should be type enum quote,but its type is %T, rid: %s", val, rid)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{key},
+		}
+	}
+	return errors.RawErrorInfo{}
 }
 
 // validBool valid object attribute that is bool type
@@ -1067,6 +1153,80 @@ func parseEnumOption(options []interface{}, enumOptions *[]EnumVal) error {
 				return fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
 			}
 			*enumOptions = append(*enumOptions, enumOption)
+		} else {
+			return fmt.Errorf("unknow optionVal type: %#v", optionVal)
+		}
+	}
+	return nil
+}
+
+// EnumQuoteOption enum quote option
+type EnumQuoteOption []EnumQuoteVal
+
+// EnumQuoteVal enum quote option val
+type EnumQuoteVal struct {
+	ObjID  string `bson:"bk_obj_id"           json:"bk_obj_id"`
+	InstID int64  `bson:"bk_inst_id"         json:"bk_inst_id"`
+	Type   string `bson:"type"         json:"type"`
+}
+
+// ParseEnumQuoteOption convert val to []EnumQuoteVal
+func ParseEnumQuoteOption(ctx context.Context, val interface{}) (EnumQuoteOption, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	enumQuoteOptions := []EnumQuoteVal{}
+	if val == nil || val == "" {
+		return enumQuoteOptions, nil
+	}
+	switch options := val.(type) {
+	case []EnumQuoteVal:
+		return options, nil
+	case string:
+		err := json.Unmarshal([]byte(options), &enumQuoteOptions)
+		if nil != err {
+			blog.Errorf("ParseEnumQuoteOption err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+	case []interface{}:
+		if err := parseEnumQuoteOption(options, &enumQuoteOptions); err != nil {
+			blog.Errorf("parseEnumQuoteOption err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+	case bson.A:
+		if err := parseEnumQuoteOption(options, &enumQuoteOptions); err != nil {
+			blog.Errorf("parseEnumOption err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unknow val type: %#v", val)
+	}
+	return enumQuoteOptions, nil
+}
+
+// parseEnumQuoteOption set enum quote Options values from options
+func parseEnumQuoteOption(options []interface{}, enumQuoteOptions *[]EnumQuoteVal) error {
+	for _, optionVal := range options {
+		if option, ok := optionVal.(map[string]interface{}); ok {
+			enumQuoteOption := EnumQuoteVal{}
+			enumQuoteOption.ObjID = getString(option["bk_obj_id"])
+			if enumQuoteOption.ObjID == "" {
+				return fmt.Errorf("operation %#v objID empty or not string", option)
+			}
+			*enumQuoteOptions = append(*enumQuoteOptions, enumQuoteOption)
+		} else if option, ok := optionVal.(bson.M); ok {
+			enumQuoteOption := EnumQuoteVal{}
+			enumQuoteOption.ObjID = getString(option["bk_obj_id"])
+			if enumQuoteOption.ObjID == "" {
+				return fmt.Errorf("operation %#v objID empty or not string", option)
+			}
+			*enumQuoteOptions = append(*enumQuoteOptions, enumQuoteOption)
+		} else if option, ok := optionVal.(bson.D); ok {
+			opt := option.Map()
+			enumQuoteOption := EnumQuoteVal{}
+			enumQuoteOption.ObjID = getString(opt["bk_obj_id"])
+			if enumQuoteOption.ObjID == "" {
+				return fmt.Errorf("operation %#v objID empty or not string", option)
+			}
+			*enumQuoteOptions = append(*enumQuoteOptions, enumQuoteOption)
 		} else {
 			return fmt.Errorf("unknow optionVal type: %#v", optionVal)
 		}

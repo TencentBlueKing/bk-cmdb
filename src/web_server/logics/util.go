@@ -264,3 +264,38 @@ func replaceDepartmentFullName(rid string, rowMap mapstr.MapStr, org []metadata.
 
 	return rowMap, nil
 }
+
+// replaceEnumMultiName replace attribute enummulti's id by name in export excel
+func replaceEnumMultiName(rid string, rowMap mapstr.MapStr, fields map[string]Property) (mapstr.MapStr, error) {
+
+	for id, property := range fields {
+		enumMultiIDInterface, exist := rowMap[id]
+		if !exist || enumMultiIDInterface == nil {
+			continue
+		}
+
+		switch property.PropertyType {
+		case common.FieldTypeEnumMulti:
+			enumMultiIDList, ok := enumMultiIDInterface.([]interface{})
+			if !ok {
+				blog.Errorf("rowMap[%s] type to array failed, rowMap: %v, rowMap type: %T, rid: %s", property,
+					rowMap[id], rowMap[id], rid)
+				return nil, fmt.Errorf("convert variable rowMap[%s] type to int array failed", property)
+			}
+			enumMultiName := make([]string, 0)
+			for _, enumMultiID := range enumMultiIDList {
+				id, ok := enumMultiID.(string)
+				if !ok {
+					blog.Errorf("convert enumMultiID[%s] to string failed, type: %T, rid: %s", enumMultiID,
+						enumMultiID, rid)
+					return nil, fmt.Errorf("convert variable enumMultiID[%s] type to string failed", enumMultiID)
+				}
+				name := getEnumNameByID(id, property.Option.([]interface{}))
+				enumMultiName = append(enumMultiName, name)
+			}
+			rowMap[id] = strings.Join(enumMultiName, ",")
+		}
+	}
+
+	return rowMap, nil
+}

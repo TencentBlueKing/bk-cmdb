@@ -69,21 +69,21 @@ func (a *attribute) SetProxy(grp GroupOperationInterface, obj ObjectOperationInt
 }
 
 // getEnumQuoteOption get enum quote field option bk_obj_id and bk_inst_id value
-func (a *attribute) getEnumQuoteOption(option interface{}, errProxy ccErr.DefaultCCErrorIf) (string, int, error) {
-	var objID string
-	var instID int
+func (a *attribute) getEnumQuoteOption(option interface{}, errProxy ccErr.DefaultCCErrorIf) ([]string, []int64, error) {
+	objIDs := make([]string, 0)
+	instIDs :=  make([]int64, 0)
 	if option == nil {
-		return objID, instID, errProxy.Errorf(common.CCErrCommParamsLostField, "option")
+		return objIDs, instIDs, errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 	}
 	arrOption, ok := option.([]interface{})
 	if !ok {
 		blog.Errorf("option %v not enum quote option", option)
-		return objID, instID, errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
+		return objIDs, instIDs, errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 	}
 	if len(arrOption) > common.AttributeOptionArrayMaxLength {
 		blog.Errorf("option array length %d exceeds max length %d", len(arrOption),
 			common.AttributeOptionArrayMaxLength)
-		return objID, instID, errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option",
+		return objIDs, instIDs, errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option",
 			common.AttributeOptionArrayMaxLength)
 	}
 	for _, o := range arrOption {
@@ -91,52 +91,59 @@ func (a *attribute) getEnumQuoteOption(option interface{}, errProxy ccErr.Defaul
 		if !ok || mapOption == nil {
 			blog.Errorf(" option %v not enum quote option, enum option quote item must bk_obj_id and bk_inst_id",
 				option)
-			return objID, instID, errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
+			return objIDs, instIDs, errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 		}
 		objIDVal, objIDOk := mapOption["bk_obj_id"]
 		if !objIDOk || objIDVal == "" {
 			blog.Errorf("enum quote option bk_obj_id can't be empty", option)
-			return objID, instID, errProxy.Errorf(common.CCErrCommParamsNeedSet, "option bk_obj_id")
+			return objIDs, instIDs, errProxy.Errorf(common.CCErrCommParamsNeedSet, "option bk_obj_id")
 		}
-		if objID, ok := objIDVal.(string); !ok {
+		objID, ok := objIDVal.(string)
+		if !ok {
 			blog.Errorf("objIDVal %v not string", objIDVal)
-			return objID, instID, errProxy.Errorf(common.CCErrCommParamsNeedString, "option bk_obj_id")
+			return objIDs, instIDs, errProxy.Errorf(common.CCErrCommParamsNeedString, "option bk_obj_id")
 		} else if common.AttributeOptionValueMaxLength < utf8.RuneCountInString(objID) {
 			blog.Errorf("option bk_obj_id %s length %d exceeds max length %d", objID,
 				utf8.RuneCountInString(objID), common.AttributeOptionValueMaxLength)
-			return objID, instID, errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option bk_obj_id",
+			return objIDs, instIDs, errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option bk_obj_id",
 				common.AttributeOptionValueMaxLength)
 		}
+		objIDs = append(objIDs, objID)
 		instIDVal, instIDOk := mapOption["bk_inst_id"]
 		if !instIDOk || instIDVal == "" {
 			blog.Errorf("enum quote option bk_inst_id can't be empty", option)
-			return objID, instID, errProxy.Errorf(common.CCErrCommParamsNeedSet, "option bk_inst_id")
+			return objIDs, instIDs, errProxy.Errorf(common.CCErrCommParamsNeedSet, "option bk_inst_id")
 		}
 		switch mapOption["type"] {
 		case "int":
-			if instID, ok := instIDVal.(int); !ok {
-				blog.Errorf("instIDVal %v not int", instIDVal)
-				return objID, instID, errProxy.Errorf(common.CCErrCommParamsNeedString, "option bk_inst_id")
+			instID, err := util.GetInt64ByInterface(instIDVal)
+			if err != nil {
+				blog.Errorf("instID %v not int", instIDVal)
+				return objIDs, instIDs, errProxy.Errorf(common.CCErrCommParamsNeedInt, "option bk_inst_id")
 			}
+			instIDs = append(instIDs, instID)
 		default:
 			blog.Errorf("enum quote option type must be 'int', current: %v", mapOption["type"])
-			return objID, instID, errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option type")
+			return objIDs, instIDs, errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option type")
 		}
 	}
 
-	return objID, instID, nil
+	return objIDs, instIDs, nil
 }
 
 // ValidObjIDAndInstID check obj is inner model and obj is exist, inst is exit
 func (a *attribute) ValidObjIDAndInstID(kit *rest.Kit, objID string, option interface{},
 	errProxy ccErr.DefaultCCErrorIf) (bool, error) {
-	quoteObjID, instID, err := a.getEnumQuoteOption(option, errProxy)
+	quoteObjIDs, instIDs, err := a.getEnumQuoteOption(option, errProxy)
 	if err != nil {
 		blog.Errorf("get enum quote option value failed, err: %v", err)
 		return false, err
 	}
+	if len(quoteObjIDs) == 0 || len(instIDs) == 0 {
+		return true, nil
+	}
 	// check objID is exist
-	isObjExists, err := a.obj.IsObjectExist(kit, quoteObjID)
+	isObjExists, err := a.obj.IsObjectExist(kit, quoteObjIDs[0])
 	if err != nil {
 		blog.Errorf("check obj id is exist failed, err: %v, rid: %s", err, kit.Rid)
 		return false, err
@@ -146,12 +153,12 @@ func (a *attribute) ValidObjIDAndInstID(kit *rest.Kit, objID string, option inte
 		return true, nil
 	}
 	// quote objID can not model self
-	if quoteObjID == objID {
-		blog.Errorf("enum quote model can not model self, rid: %s", kit.Rid)
+	if quoteObjIDs[0] == objID {
+		blog.Errorf("enum quote model can not model self, objID: %s, rid: %s", objID, kit.Rid)
 		return true, nil
 	}
 	// check objID is inner model
-	if common.SomeInnerModel(quoteObjID) {
+	if common.SomeInnerModel(quoteObjIDs[0]) {
 		return true, nil
 	}
 
@@ -186,29 +193,33 @@ func (a *attribute) ValidObjIDAndInstID(kit *rest.Kit, objID string, option inte
 	}
 
 	for _, customObjID := range objectIDs {
-		if quoteObjID == customObjID {
+		if quoteObjIDs[0] == customObjID {
 			return true, nil
 		}
 	}
 
 	// check inst is exist
-	input := &metadata.QueryCondition{
-		Fields: []string{common.BKInstIDField},
-		Condition: mapstr.MapStr{common.BKInstIDField: mapstr.MapStr{
-			common.BKDBIN: instID,
-		}},
+	input := &metadata.QueryCondition{}
+	if quoteObjIDs[0] == common.BKInnerObjIDBizSet {
+		input.Condition = mapstr.MapStr{common.BKBizSetIDField: mapstr.MapStr{
+			common.BKDBIN: instIDs,
+		}}
+	} else if quoteObjIDs[0] == common.BKInnerObjIDApp {
+		input.Condition = mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{
+			common.BKDBIN: instIDs,
+		}}
+	} else if quoteObjIDs[0] == common.BKInnerObjIDHost {
+		input.Condition = mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{
+			common.BKDBIN: instIDs,
+		}}
 	}
-	resp, err := a.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, quoteObjID, input)
+	resp, err := a.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, quoteObjIDs[0], input)
 	if err != nil {
 		blog.Errorf("get inst failed, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
 		return false, err
 	}
 	if resp.Count == 0 {
 		blog.Errorf("get inst failed, inst not exist, input: %+v, rid: %s", input, kit.Rid)
-		return true, nil
-	}
-	if resp.Count > 1 {
-		blog.Errorf("get inst failed, inst not unique, input: %+v, rid: %s", input, kit.Rid)
 		return true, nil
 	}
 
@@ -693,7 +704,7 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 		attr.OwnerID = kit.SupplierAccount
 		attr.ObjectID = objID
 		if err := a.isValid(kit, true, &attr); err != nil {
-			blog.Errorf("attribute(%#v) is invalid, rid: %s", attr, err, kit.Rid)
+			blog.Errorf("attribute(%#v) is invalid, err: %v, rid: %s", attr, err, kit.Rid)
 			objRes.Errors = append(objRes.Errors, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
 			hasError = true
 			continue

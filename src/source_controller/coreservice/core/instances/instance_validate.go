@@ -13,10 +13,6 @@
 package instances
 
 import (
-	stderr "errors"
-	"strings"
-	"time"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -26,6 +22,10 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/hooks"
+	stderr "errors"
+	"fmt"
+	"strings"
+	"time"
 )
 
 var updateIgnoreKeys = []string{
@@ -203,6 +203,20 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 			blog.Errorf("validCreateInstanceData failed, key: %s, value: %s, err: %s, rid: %s", key, val, kit.CCError.Error(rawErr.ErrCode), kit.Rid)
 			return rawErr.ToCCError(kit.CCError)
 		}
+		// 对引用类型做校验
+		if property.PropertyType == common.FieldTypeEnumQuote {
+			valEnumIDs := make([]int64, 0)
+			for _, valID := range val.([]interface{}) {
+				valEnumID, err := util.GetInt64ByInterface(valID)
+				if err != nil {
+					return err
+				}
+				valEnumIDs = append(valEnumIDs, valEnumID)
+			}
+			if err := m.validInstIDs(kit, property.Option, valEnumIDs); err != nil {
+				return err
+			}
+		}
 	}
 
 	skip, err := hooks.IsSkipValidateHook(kit, objID, instanceData)
@@ -323,6 +337,20 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 			blog.ErrorJSON("validUpdateInstanceData failed, err: %s, val: %s, key:%s, rid: %s",
 				rawErr.ToCCError(kit.CCError), val, key, kit.Rid)
 			return rawErr.ToCCError(kit.CCError)
+		}
+		// 对引用类型做校验
+		if property.PropertyType == common.FieldTypeEnumQuote {
+			valEnumIDs := make([]int64, 0)
+			for _, valID := range val.([]interface{}) {
+				valEnumID, err := util.GetInt64ByInterface(valID)
+				if err != nil {
+					return err
+				}
+				valEnumIDs = append(valEnumIDs, valEnumID)
+			}
+			if err := m.validInstIDs(kit, property.Option, valEnumIDs); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -551,6 +579,86 @@ func (m *instanceManager) validBizIDs(kit *rest.Kit, bizIDs []int64) error {
 	if int(cnt) != len(uniqueBizIDs) {
 		blog.Errorf("instance biz ids(%+v) contains invalid biz, rid: %s", uniqueBizIDs, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField)
+	}
+	return nil
+}
+
+// valid enum quote inst id is exist
+func (m *instanceManager) validInstIDs(kit *rest.Kit, option interface{}, enumQuoteIDs []int64) error{
+	objIDs := make([]string, 0)
+	if option == nil {
+		return fmt.Errorf("option params is invalid")
+	}
+
+	arrOption, err := metadata.ParseEnumQuoteOption(kit.Ctx, option)
+	for _, o := range arrOption {
+		objIDs = append(objIDs, o.ObjID)
+	}
+	if len(objIDs) == 0 {
+		return fmt.Errorf("enum quote objID not exist")
+	}
+	if objIDs[0] == common.BKInnerObjIDHost {
+		cond := map[string]interface{}{
+			common.BKHostIDField: map[string]interface{}{
+				common.BKDBIN: enumQuoteIDs,
+			},
+		}
+		cnt, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(cond).Count(kit.Ctx)
+		if err != nil {
+			blog.Errorf("count host failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
+			return err
+		}
+		if len(enumQuoteIDs) != int(cnt) {
+			return fmt.Errorf("host not exist")
+		}
+		return nil
+	}
+	if objIDs[0] == common.BKInnerObjIDApp {
+		cond := map[string]interface{}{
+			common.BKAppIDField: map[string]interface{}{
+				common.BKDBIN: enumQuoteIDs,
+			},
+		}
+		cnt, err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(cond).Count(kit.Ctx)
+		if err != nil {
+			blog.Errorf("count biz failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
+			return err
+		}
+		if len(enumQuoteIDs) != int(cnt) {
+			return fmt.Errorf("host not exist")
+		}
+		return nil
+	}
+	if objIDs[0] == common.BKInnerObjIDBizSet {
+		cond := map[string]interface{}{
+			common.BKBizSetIDField: map[string]interface{}{
+				common.BKDBIN: enumQuoteIDs,
+			},
+		}
+		cnt, err := mongodb.Client().Table(common.BKTableNameBaseBizSet).Find(cond).Count(kit.Ctx)
+		if err != nil {
+			blog.Errorf("count biz set failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
+			return err
+		}
+		if len(enumQuoteIDs) != int(cnt) {
+			return fmt.Errorf("host not exist")
+		}
+		return nil
+	}
+
+	tableName := common.GetInstTableName(objIDs[0], kit.SupplierAccount)
+	cond := map[string]interface{}{
+		common.BKInstIDField: map[string]interface{}{
+			common.BKDBIN: enumQuoteIDs,
+		},
+	}
+	cnt, err := mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("count inst failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
+		return err
+	}
+	if len(enumQuoteIDs) != int(cnt) {
+		return fmt.Errorf("inst not exist")
 	}
 	return nil
 }
