@@ -1,4 +1,4 @@
-## [Version: 3.10.x-feature-agent-id-beta] - 2022-12-22
+## [Version: 3.10.x-feature-agent-id-beta1] - 2022-12-22
 **新增功能**
 - 修改bkmonitor beat插件上报的agnetID tag为bk_agent_id
 - excel导入功能支持导入单个ipv6地址的主机
