@@ -40,7 +40,7 @@ func addCloudIDIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 
 	for _, tableName := range tableNames {
 		err := db.Table(tableName).CreateIndex(ctx, index)
-		if err != nil {
+		if err != nil && !db.IsDuplicatedError(err) {
 			blog.ErrorJSON("add index %s for table %s failed, err:%s", index, tableName, err)
 			return err
 		}

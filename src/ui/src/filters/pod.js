@@ -10,14 +10,14 @@
  * limitations under the License.
  */
 
-export const processTableHeader = [
-  'bk_func_name',
-  'bk_process_name',
-  'bk_start_param_regex',
-  'bind_info'
-]
+export default function (item, propertyId) {
+  if (!propertyId) {
+    return null
+  }
 
-export const PRESET_TABLE_HEADER_MIN_WIDTH = Object.freeze({
-  bk_host_innerip: 120,
-  bk_cloud_id: 120
-})
+  // 读取pod的ref字段中的name，暂无其它展示场景，如之后有更丰富的场景可考虑将ref的展示拆分为独立的组件
+  if (propertyId === 'ref') {
+    return item?.[propertyId]?.name
+  }
+  return item?.[propertyId]
+}

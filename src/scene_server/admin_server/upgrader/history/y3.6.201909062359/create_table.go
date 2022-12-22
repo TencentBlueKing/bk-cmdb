@@ -65,7 +65,8 @@ func createSetTemplateTables(ctx context.Context, db dal.RDB, conf *upgrader.Con
 			Unique:     true,
 			Background: true,
 		}
-		if err := db.Table(common.BKTableNameSetTemplate).CreateIndex(ctx, index); err != nil {
+		err = db.Table(common.BKTableNameSetTemplate).CreateIndex(ctx, index)
+		if err != nil && !db.IsDuplicatedError(err) {
 			blog.ErrorJSON("add index for table: %s failed, index: %s, err:%s", common.BKTableNameSetTemplate, index, err.Error())
 			return err
 		}

@@ -15,7 +15,7 @@
     <host-list-options></host-list-options>
     <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
     <bk-table class="hosts-table"
-      ref="table"
+      ref="tableRef"
       v-bkloading="{ isLoading: $loading(Object.values(request)) }"
       :data="table.list"
       :pagination="table.pagination"
@@ -78,9 +78,7 @@
   import HostFilterTag from '@/components/filters/filter-tag'
   import FilterStore, { setupFilterStore } from '@/components/filters/store'
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
-  // import { CONTAINER_OBJECTS, CONTAINER_OBJECT_PROPERTY_KEYS } from '@/dictionary/container.js'
   import containerHostService from '@/service/container/host.js'
-  // import { getContainerNodeType } from '@/service/container/common.js'
 
   export default {
     components: {
@@ -234,10 +232,23 @@
         }
       },
       getColumnMinWidth(property) {
-        if (property.bk_property_type === 'topology') {
-          return 200
+        let name = this.$tools.getHeaderPropertyName(property)
+        const modelId = property.bk_obj_id
+        if (modelId !== 'host') {
+          const model = this.getModelById(modelId)
+          name = `${name}(${model.bk_obj_name})`
         }
-        return 100
+
+        const preset = {}
+        if (property.bk_property_type === 'topology') {
+          preset[property.bk_property_id] = 200
+        }
+
+        return this.$tools.getHeaderPropertyMinWidth(property, {
+          name,
+          hasSort: this.isPropertySortable(property) ? 'custom' : false,
+          preset
+        })
       },
       isPropertySortable(property) {
         return property.bk_obj_id === 'host' && !['foreignkey', 'topology'].includes(property.bk_property_type)

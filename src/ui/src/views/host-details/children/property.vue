@@ -137,6 +137,18 @@
               :property="property">
             </cmdb-property-value>
           </span>
+          <template v-if="!$tools.isEmptyPropertyValue(node[property.bk_property_id])">
+            <div class="copy-box">
+              <i class="property-copy icon-cc-details-copy" @click="handleCopy(property.id)"></i>
+              <transition name="fade">
+                <span class="copy-tips"
+                  :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
+                  v-if="showCopyTips === property.id">
+                  {{$t('复制成功')}}
+                </span>
+              </transition>
+            </div>
+          </template>
         </li>
       </ul>
     </div>
@@ -282,8 +294,8 @@
         this.editState.value = null
       },
       handleCopy(propertyId) {
-        const component = this.$refs[`property-value-${propertyId}`]
-        const copyText = component[0] ? component[0].$el.innerText : ''
+        const [component] = this.$refs[`property-value-${propertyId}`]
+        const copyText = component?.getCopyValue() ?? ''
         this.$copyText(copyText).then(() => {
           this.showCopyTips = propertyId
           const timer = setTimeout(() => {

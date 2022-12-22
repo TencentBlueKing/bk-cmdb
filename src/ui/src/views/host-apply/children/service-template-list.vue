@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="service-template-list" :style="{ '--height': `${$APP.height - 160 - 44}px` }" ref="$templateList">
+  <div class="service-template-list" :style="{ '--height': `${$APP.height - 160 - 44}px` }" ref="templateListEl">
     <div :class="['template-item', { selected: item.id === current.id, disabled: isNodeDisabled(item) }]"
       :title="isNodeDisabled(item) ? $t('暂无策略') : ''"
       v-for="item in displayList" :key="item.id"
@@ -56,7 +56,7 @@
       const bizId = store.getters['objectBiz/bizId']
       const getModelById = store.getters['objectModelClassify/getModelById']
 
-      const $templateList = ref(null)
+      const templateListEl = ref(null)
 
       const state = reactive({
         fullList: [],
@@ -145,7 +145,7 @@
       const isNodeDisabled = node => isDel.value && !node.host_apply_rule_count
 
       const scrollSelectedIntoView = () => {
-        $templateList.value?.querySelector('.template-item.selected')?.scrollIntoView()
+        templateListEl.value?.querySelector('.template-item.selected')?.scrollIntoView(false)
       }
 
       onActivated(() => {
@@ -238,7 +238,7 @@
         removeChecked,
         updateNodeStatus,
         handleClickItem,
-        $templateList
+        templateListEl
       }
     }
   })
@@ -267,7 +267,7 @@
       cursor: pointer;
 
       &:hover {
-        background: #f1f7ff;
+        background: #F0F1F5;
       }
 
       &.selected {

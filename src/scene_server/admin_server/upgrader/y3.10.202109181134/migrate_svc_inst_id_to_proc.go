@@ -217,7 +217,8 @@ func addProcUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 		if _, exists := existIndexMap[index.Name]; exists {
 			continue
 		}
-		if err := db.Table(common.BKTableNameBaseProcess).CreateIndex(ctx, index); err != nil {
+		err = db.Table(common.BKTableNameBaseProcess).CreateIndex(ctx, index)
+		if err != nil && !db.IsDuplicatedError(err) {
 			blog.Errorf("add process unique index(%#v) failed, err: %+v", index, err)
 			return err
 		}

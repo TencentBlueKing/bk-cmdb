@@ -34,6 +34,7 @@
       :properties="properties"
       :property-groups="propertyGroups"
       :inst="instance"
+      :show-copy="true"
       :show-options="false"
     >
       <node-extra-info slot="prepend" :instance="instance"></node-extra-info>
