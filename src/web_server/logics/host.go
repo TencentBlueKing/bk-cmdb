@@ -812,7 +812,7 @@ func (lgc *Logics) getExistHostsByInnerIPs(ctx context.Context, header http.Head
 	}
 	for _, innerIPv6 := range ipv6Arr {
 		innerIPv6Arr := strings.Split(innerIPv6, ",")
-		innerIPv6s = append(innerIPs, innerIPv6Arr...)
+		innerIPv6s = append(innerIPv6s, innerIPv6Arr...)
 	}
 
 	rules := make([]querybuilder.Rule, 0)
@@ -843,7 +843,7 @@ func (lgc *Logics) getExistHostsByInnerIPs(ctx context.Context, header http.Head
 	}
 	resp, err := lgc.CoreAPI.ApiServer().ListHostWithoutApp(ctx, header, option)
 	if err != nil {
-		blog.Errorf("list host without app err: %v, option: %d, rid: %s", err, option, rid)
+		blog.Errorf("list host without app failed, option: %+v, err: %v, rid: %s", option, err, rid)
 		return nil, nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !resp.Result {
