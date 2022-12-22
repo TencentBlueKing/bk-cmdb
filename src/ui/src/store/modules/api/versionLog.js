@@ -12,7 +12,6 @@
 
 import $http from '@/api'
 
-
 const actions = {
   getLogList(context, params) {
     return $http.post(`${window.API_HOST}find/changelog/list`, params)
@@ -20,7 +19,6 @@ const actions = {
   getLogDetail(context, params) {
     return $http.post(`${window.API_HOST}find/changelog/detail`, params)
   },
-
 }
 
 export default {

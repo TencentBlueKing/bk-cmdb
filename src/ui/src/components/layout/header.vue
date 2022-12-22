@@ -11,73 +11,71 @@
 -->
 
 <template>
-  <div>
-    <header class="header-layout" v-test-id.global="'header'">
-      <div class="logo">
-        <router-link class="logo-link" to="/index">
-          {{$t('蓝鲸配置平台')}}
-        </router-link>
-      </div>
-      <nav class="header-nav" v-test-id.global="'headerNav'">
-        <router-link class="header-link"
-          v-for="nav in visibleMenu"
-          :to="getHeaderLink(nav)"
-          :key="nav.id"
-          :class="{
-            active: isLinkActive(nav)
-          }">
-          {{$t(nav.i18n)}}
-        </router-link>
-      </nav>
-      <section class="header-info">
-        <bk-popover class="info-item"
-          theme="light header-info-popover"
-          animation="fade"
-          placement="bottom-end"
-          ref="popover"
-          :arrow="false"
-          :tippy-options="{
-            animateFill: false,
-            hideOnClick: false
-          }">
-          <i class="question-icon icon-cc-default"></i>
-          <template slot="content">
-            <a class="question-link" target="_blank" :href="helpDocUrl">{{$t('产品文档')}}</a>
-            <a class="question-link" target="_blank" @click="handleChangeLog()"
-              style="cursor:pointer">{{$t('版本日志')}}</a>
-            <a class="question-link" target="_blank" href="https://bk.tencent.com/s-mart/community">{{$t('问题反馈')}}</a>
-            <a class="question-link" target="_blank" href="https://github.com/Tencent/bk-cmdb">{{$t('开源社区')}}</a>
-          </template>
-        </bk-popover>
-        <bk-popover class="info-item"
-          theme="light header-info-popover"
-          animation="fade"
-          placement="bottom-end"
-          :arrow="false"
-          :tippy-options="{
-            animateFill: false,
-            hideOnClick: false
-          }">
-          <span class="info-user">
-            <span class="user-name">{{userName}}</span>
-            <i class="user-icon bk-icon icon-angle-down"></i>
-          </span>
-          <template slot="content">
-            <a class="question-link" href="javascript:void(0)"
-              @click="handleLogout">
-              <i class="icon-cc-logout"></i>
-              {{$t('注销')}}
-            </a>
-          </template>
-        </bk-popover>
-      </section>
-    </header>
+  <header class="header-layout" v-test-id.global="'header'">
+    <div class="logo">
+      <router-link class="logo-link" to="/index">
+        {{$t('蓝鲸配置平台')}}
+      </router-link>
+    </div>
+    <nav class="header-nav" v-test-id.global="'headerNav'">
+      <router-link class="header-link"
+        v-for="nav in visibleMenu"
+        :to="getHeaderLink(nav)"
+        :key="nav.id"
+        :class="{
+          active: isLinkActive(nav)
+        }">
+        {{$t(nav.i18n)}}
+      </router-link>
+    </nav>
+    <section class="header-info">
+      <bk-popover class="info-item"
+        theme="light header-info-popover"
+        animation="fade"
+        placement="bottom-end"
+        ref="popover"
+        :arrow="false"
+        :tippy-options="{
+          animateFill: false,
+          hideOnClick: false
+        }">
+        <i class="question-icon icon-cc-default"></i>
+        <template slot="content">
+          <a class="question-link" target="_blank" :href="helpDocUrl">{{$t('产品文档')}}</a>
+          <a class="question-link" target="_blank" @click="handleChangeLog()"
+            style="cursor:pointer">{{$t('版本日志')}}</a>
+          <a class="question-link" target="_blank" href="https://bk.tencent.com/s-mart/community">{{$t('问题反馈')}}</a>
+          <a class="question-link" target="_blank" href="https://github.com/Tencent/bk-cmdb">{{$t('开源社区')}}</a>
+        </template>
+      </bk-popover>
+      <bk-popover class="info-item"
+        theme="light header-info-popover"
+        animation="fade"
+        placement="bottom-end"
+        :arrow="false"
+        :tippy-options="{
+          animateFill: false,
+          hideOnClick: false
+        }">
+        <span class="info-user">
+          <span class="user-name">{{userName}}</span>
+          <i class="user-icon bk-icon icon-angle-down"></i>
+        </span>
+        <template slot="content">
+          <a class="question-link" href="javascript:void(0)"
+            @click="handleLogout">
+            <i class="icon-cc-logout"></i>
+            {{$t('注销')}}
+          </a>
+        </template>
+      </bk-popover>
+    </section>
     <versionLog
       :current-version="currentVersion"
       :version-list="versionList"
       :show.sync="isShowChangeLogs">
     </versionLog>
-  </div>
+  </header>
 </template>
 
 <script>
@@ -118,6 +116,7 @@
           if (!has(menuItem, 'visibility')) {
             return true
           }
+
           if (typeof menuItem.visibility === 'function') {
             return menuItem.visibility(this)
           }
@@ -183,121 +182,121 @@
 </script>
 
 <style lang="scss" scoped>
-    .header-layout {
-        position: relative;
-        display: flex;
-        height: 58px;
-        background-color: #182132;
-        z-index: 1002;
+.header-layout {
+  position: relative;
+  display: flex;
+  height: 58px;
+  background-color: #182132;
+  z-index: 1002;
+}
+.logo {
+  flex: 292px 0 0;
+  font-size: 0;
+  .logo-link {
+    display: inline-block;
+    vertical-align: middle;
+    height: 58px;
+    line-height: 58px;
+    margin-left: 23px;
+    padding-left: 38px;
+    color: #fff;
+    font-size: 16px;
+    background: url("../../assets/images/logo.svg") no-repeat 0 center;
+  }
+}
+.header-nav {
+  flex: 3;
+  font-size: 0;
+  white-space: nowrap;
+  .header-link {
+    display: inline-block;
+    vertical-align: middle;
+    height: 58px;
+    line-height: 58px;
+    padding: 0 25px;
+    color: #979ba5;
+    font-size: 14px;
+    &:hover {
+      background-color: rgba(49, 64, 94, 0.5);
+      color: #fff;
     }
-    .logo {
-        flex: 292px 0 0;
-        font-size: 0;
-        .logo-link {
-            display: inline-block;
-            vertical-align: middle;
-            height: 58px;
-            line-height: 58px;
-            margin-left: 23px;
-            padding-left: 38px;
-            color: #fff;
-            font-size: 16px;
-            background: url("../../assets/images/logo.svg") no-repeat 0 center;
-        }
+    &.router-link-active,
+    &.active {
+      background-color: rgba(49, 64, 94, 1);
+      color: #fff;
     }
-    .header-nav {
-        flex: 3;
-        font-size: 0;
-        white-space: nowrap;
-        .header-link {
-            display: inline-block;
-            vertical-align: middle;
-            height: 58px;
-            line-height: 58px;
-            padding: 0 25px;
-            color: #979BA5;
-            font-size: 14px;
-            &:hover {
-                background-color: rgba(49, 64, 94, .5);
-                color: #fff;
-            }
-            &.router-link-active,
-            &.active {
-                background-color: rgba(49, 64, 94, 1);
-                color: #fff;
-            }
-        }
+  }
+}
+.header-info {
+  flex: 1;
+  text-align: right;
+  white-space: nowrap;
+  @include middleBlockHack;
+}
+.info-item {
+  @include inlineBlock;
+  margin: 0 25px 0 0;
+  text-align: left;
+  font-size: 0;
+  cursor: pointer;
+  .tippy-active {
+    .bk-icon {
+      color: #fff;
     }
-    .header-info {
-        flex: 1;
-        text-align: right;
-        white-space: nowrap;
-        @include middleBlockHack;
+    .user-icon {
+      transform: rotate(-180deg);
     }
-    .info-item {
-        @include inlineBlock;
-        margin: 0 25px 0 0;
-        text-align: left;
-        font-size: 0;
-        cursor: pointer;
-        .tippy-active {
-            .bk-icon {
-                color: #fff;
-            }
-            .user-icon {
-                transform: rotate(-180deg);
-            }
-        }
-        .question-icon {
-            font-size: 16px;
-            color: #DCDEE5;
-            &:hover {
-                color: #fff;
-            }
-        }
-        .info-user {
-            font-size: 14px;
-            font-weight: bold;
-            color: #fff;
-            .user-name {
-                max-width: 150px;
-                @include inlineBlock;
-                @include ellipsis;
-            }
-            .user-icon {
-                margin-left: -4px;
-                transition: transform .2s linear;
-                font-size: 20px;
-                color: #fff;
-            }
-        }
+  }
+  .question-icon {
+    font-size: 16px;
+    color: #dcdee5;
+    &:hover {
+      color: #fff;
     }
-    .question-link {
-        display: block;
-        padding: 0 20px;
-        line-height: 40px;
-        font-size: 14px;
-        white-space: nowrap;
-        &:hover {
-            background-color: #f1f7ff;
-            color: #3a84ff;
-        }
+  }
+  .info-user {
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    .user-name {
+      max-width: 150px;
+      @include inlineBlock;
+      @include ellipsis;
     }
-    .exception-wrap {
-        display: flex;
-        flex-wrap: wrap;
+    .user-icon {
+      margin-left: -4px;
+      transition: transform 0.2s linear;
+      font-size: 20px;
+      color: #fff;
     }
-    .exception-wrap .exception-wrap-item {
-        margin: 10px;
-        height: 420px;
-        padding-top: 22px;
-    }
+  }
+}
+.question-link {
+  display: block;
+  padding: 0 20px;
+  line-height: 40px;
+  font-size: 14px;
+  white-space: nowrap;
+  &:hover {
+    background-color: #f1f7ff;
+    color: #3a84ff;
+  }
+}
+.exception-wrap {
+  display: flex;
+  flex-wrap: wrap;
+}
+.exception-wrap .exception-wrap-item {
+  margin: 10px;
+  height: 420px;
+  padding-top: 22px;
+}
 </style>
 
 <style>
-    .tippy-tooltip.header-info-popover-theme {
-        padding: 0 !important;
-        overflow: hidden;
-        border-radius: 2px !important;
-    }
+.tippy-tooltip.header-info-popover-theme {
+  padding: 0 !important;
+  overflow: hidden;
+  border-radius: 2px !important;
+}
 </style>
