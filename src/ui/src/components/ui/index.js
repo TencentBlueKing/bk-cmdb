@@ -54,6 +54,7 @@ import stickyLayout from './other/sticky-layout.vue'
 import permission from './permission/embed-permission.vue'
 import routerSubview from './other/router-subview.vue'
 import organization from './form/organization.vue'
+import organizationMulti from './form/organization-multi.vue'
 import propertyValue from './other/property-value.vue'
 import tagInput from './tag-input/tag-input.vue'
 const install = (Vue) => {
@@ -102,6 +103,7 @@ const install = (Vue) => {
     permission,
     routerSubview,
     organization,
+    organizationMulti,
     propertyValue,
     tagInput
   ]
@@ -155,6 +157,7 @@ export default {
   permission,
   routerSubview,
   organization,
+  organizationMulti,
   propertyValue,
   tagInput
 }
