@@ -34,7 +34,7 @@
             </cmdb-property-value>
           </span>
           <template v-if="!loadingState.includes(property)">
-            <template v-if="!isPropertyEditable(property)">
+            <template v-if="!readonly && !isPropertyEditable(property)">
               <i class="is-related property-edit icon-cc-edit"
                 v-bk-tooltips="{
                   content: $t('系统限定不可修改'),
@@ -48,7 +48,7 @@
                 }">
               </i>
             </template>
-            <template v-else>
+            <template v-else-if="!readonly">
               <cmdb-auth
                 style="margin: 8px 0 0 8px; font-size: 0;"
                 :auth="authData"
@@ -135,6 +135,10 @@
       resourceType: {
         type: String,
         default: ''
+      },
+      readonly: {
+        type: Boolean,
+        default: false
       }
     },
     data() {

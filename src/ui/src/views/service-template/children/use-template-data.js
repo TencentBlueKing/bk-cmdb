@@ -14,7 +14,7 @@ import store from '@/store'
 import cloneDeep from 'lodash/cloneDeep'
 import propertyService from '@/service/property/property.js'
 import propertyGroupService from '@/service/property/group.js'
-import serviceTemplateService from '@/services/service-template'
+import serviceTemplateService from '@/service/service-template'
 
 export const templateDetailRequestId = Symbol()
 

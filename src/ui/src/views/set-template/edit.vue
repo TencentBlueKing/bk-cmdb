@@ -16,7 +16,7 @@
   import routerActions from '@/router/actions'
   import ManagementForm from './children/management-form.vue'
   import store from '@/store'
-  import setTemplateService from '@/services/set-template'
+  import setTemplateService from '@/service/set-template'
   import { getTemplateSyncStatus } from './children/use-template-data.js'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,

@@ -86,7 +86,7 @@
     MENU_BUSINESS_HOST_APPLY
   } from '@/dictionary/menu-symbol'
   import { TASK_STATUS, setTask, getTask, removeTask  } from './task-helper.js'
-  import { CONFIG_MODE } from '@/services/service-template/index.js'
+  import { CONFIG_MODE } from '@/service/service-template/index.js'
 
   export default {
     components: {

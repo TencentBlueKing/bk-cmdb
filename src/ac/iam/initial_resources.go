@@ -35,6 +35,7 @@ var ResourceTypeIDMap = map[TypeID]string{
 	SysModelEvent:            "模型列表",
 	MainlineModelEvent:       "资源事件",
 	InstAsstEvent:            "实例关联事件",
+	KubeWorkloadEvent:        "容器工作负载事件",
 	// SysInstance:               "实例",
 	SysAssociationType:        "关联类型",
 	SysOperationStatistic:     "运营统计",
@@ -450,6 +451,17 @@ func genPublicResources() []ResourceType {
 			Description:   "实例关联事件",
 			DescriptionEn: "instance association event",
 			Parents:       nil,
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/resource",
+			},
+			Version: 1,
+		},
+		{
+			ID:            KubeWorkloadEvent,
+			Name:          ResourceTypeIDMap[KubeWorkloadEvent],
+			NameEn:        "Kube Workload Event",
+			Description:   "容器工作负载事件",
+			DescriptionEn: "kube workload event",
 			ProviderConfig: ResourceConfig{
 				Path: "/auth/v3/find/resource",
 			},

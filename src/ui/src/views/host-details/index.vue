@@ -15,6 +15,7 @@
     <div v-bkloading="{ isLoading: loading }" style="height: 100%;">
       <cmdb-host-info
         ref="info"
+        :is-container-host="isContainerHost"
         @info-toggle="setInfoHeight"
         @change="handleInfoChange">
       </cmdb-host-info>
@@ -25,10 +26,16 @@
           '--infoHeight': infoHeight
         }">
         <bk-tab-panel name="property" :label="$t('主机属性')">
-          <cmdb-host-property></cmdb-host-property>
+          <cmdb-host-property
+            :container-nodes="containerNodes"
+            :container-node-properties="containerNodeProperties">
+          </cmdb-host-property>
         </bk-tab-panel>
         <bk-tab-panel name="service" :label="$t('服务列表')" v-if="isBusinessHost">
           <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
+        </bk-tab-panel>
+        <bk-tab-panel name="pod" :label="$t('Pod列表')" v-if="isContainerHost">
+          <cmdb-pod-list v-if="active === 'pod'"></cmdb-pod-list>
         </bk-tab-panel>
         <bk-tab-panel name="association" :label="$t('关联')">
           <cmdb-host-association v-if="active === 'association'"></cmdb-host-association>
@@ -53,8 +60,13 @@
   import cmdbHostProperty from './children/property.vue'
   import cmdbAuditHistory from '@/components/model-instance/audit-history'
   import cmdbHostService from './children/service-list.vue'
+  import cmdbPodList from './children/pod-list.vue'
   import RouterQuery from '@/router/query'
   import { hostInfoProxy } from './service-proxy.js'
+  import containerNodeService from '@/service/container/node'
+  import containerPropertyService from '@/service/container/property.js'
+  import { maxPageParams } from '@/service/utils'
+  import { CONTAINER_OBJECTS } from '@/dictionary/container.js'
 
   export default {
     components: {
@@ -62,13 +74,19 @@
       cmdbHostAssociation,
       cmdbHostProperty,
       cmdbAuditHistory,
-      cmdbHostService
+      cmdbHostService,
+      cmdbPodList
     },
     data() {
       return {
         active: RouterQuery.get('tab', 'property'),
         infoHeight: '81px',
-        loading: true
+        containerNodes: [],
+        containerNodeProperties: [],
+        loading: true,
+        requestIds: {
+          containerNodeProperty: Symbol()
+        }
       }
     },
     computed: {
@@ -84,6 +102,9 @@
           return -1
         }
         return business
+      },
+      isContainerHost() {
+        return this.containerNodes.length > 0
       }
     },
     watch: {
@@ -120,7 +141,9 @@
           await Promise.all([
             this.getProperties(),
             this.getPropertyGroups(),
-            this.getHostInfo()
+            this.getHostInfo(),
+            this.getContainerNodeProperties(),
+            this.getContainerNodeInfo()
           ])
         } catch (error) {
           console.error(error)
@@ -141,6 +164,27 @@
           console.error(e)
           this.$store.commit('hostDetails/setHostInfo', null)
         }
+      },
+      async getContainerNodeInfo() {
+        if (this.business === -1) {
+          return
+        }
+
+        // 获取 Node 信息
+        const { list } = await containerNodeService.find({
+          bk_biz_id: this.business,
+          filter: {
+            condition: 'AND',
+            rules: [{
+              field: 'bk_host_id',
+              operator: 'equal',
+              value: this.id
+            }]
+          },
+          page: maxPageParams()
+        })
+
+        this.containerNodes = list || []
       },
       getSearchHostParams() {
         const hostCondition = {
@@ -187,6 +231,16 @@
           console.error(e)
           this.$store.commit('hostDetails/setHostPropertyGroups', [])
         }
+      },
+      async getContainerNodeProperties() {
+        const nodeProperties = await containerPropertyService.getMany({
+          objId: CONTAINER_OBJECTS.NODE
+        }, {
+          requestId: this.requestIds.containerNodeProperty,
+          fromCache: true
+        }, false)
+
+        this.containerNodeProperties = nodeProperties
       },
       setInfoHeight() {
         this.infoTimer && clearTimeout(this.infoTimer)

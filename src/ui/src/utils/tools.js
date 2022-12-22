@@ -448,6 +448,14 @@ export function getPropertyCopyValue(originalValue, propertyType) {
     case 'organization':
       value = originalValue.toString()
       break
+    case 'map': {
+      const pair = []
+      for (const [key, val] of Object.entries(originalValue)) {
+        pair.push(`${key}: ${val}`)
+      }
+      value = pair.join(',')
+      break
+    }
     default:
       value = originalValue
   }

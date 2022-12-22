@@ -14,12 +14,14 @@ package service
 
 import (
 	"fmt"
+	"strings"
 
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/auth_server/types"
 )
 
@@ -234,7 +236,8 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 	case iam.SysOperationStatistic, iam.SysAuditLog, iam.BizCustomField, iam.BizHostApply,
 		iam.BizTopology, iam.SysEventWatch, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance:
 		return types.ResourcePullMethod{}, nil
-
+	case iam.KubeWorkloadEvent:
+		return s.genKubeWorkloadEventMethod(kit)
 	default:
 		if iam.IsIAMSysInstance(resourceType) {
 			return types.ResourcePullMethod{
@@ -249,4 +252,94 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 		}
 		return types.ResourcePullMethod{}, fmt.Errorf("gen method failed: unsupported resource type: %s", resourceType)
 	}
+}
+
+// kubeWorkloadKinds kube workload kinds
+// TODO define this in kube types folder, and replace the kinds with actual ones, this is only an example
+var kubeWorkloadKinds = []string{"deployment", "statefulSet", "daemonSet"}
+
+// genKubeWorkloadEventMethod generate iam callback methods for iam.KubeWorkloadEvent resource type
+func (s *AuthService) genKubeWorkloadEventMethod(kit *rest.Kit) (types.ResourcePullMethod, error) {
+	return types.ResourcePullMethod{
+		ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
+			page types.Page) (*types.ListInstanceResult, error) {
+
+			limit := page.Limit
+			if limit > common.BKMaxPageSize && limit != common.BKNoLimit {
+				return nil, kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded)
+			}
+			if limit == 0 {
+				return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "page.limit")
+			}
+
+			// get kube workload kinds that matches the filter
+			kinds := kubeWorkloadKinds
+			if filter != nil {
+				if filter.Parent != nil {
+					return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
+				}
+
+				if len(filter.Keyword) != 0 {
+					kinds = make([]string, 0)
+					for _, kind := range kubeWorkloadKinds {
+						if strings.Contains(strings.ToLower(kind), strings.ToLower(filter.Keyword)) {
+							kinds = append(kinds, kind)
+						}
+					}
+				}
+			}
+
+			// generate iam instance resource by kube workload kinds, do pagination
+			kindsLen := int64(len(kinds))
+			if page.Offset >= kindsLen {
+				return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
+			}
+
+			end := page.Offset + limit
+			if end > kindsLen {
+				end = kindsLen
+			}
+
+			res := make([]types.InstanceResource, 0)
+			for _, kind := range kinds[page.Offset:end] {
+				res = append(res, types.InstanceResource{
+					ID:          kind,
+					DisplayName: kind,
+				})
+			}
+
+			return &types.ListInstanceResult{
+				Count:   kindsLen,
+				Results: res,
+			}, nil
+		},
+		FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
+			[]map[string]interface{}, error) {
+
+			// only support query name field, name field is the same with the id field
+			hasNameField := false
+			for _, attr := range filter.Attrs {
+				if attr == types.NameField {
+					hasNameField = true
+				}
+			}
+
+			if !hasNameField {
+				return make([]map[string]interface{}, 0), nil
+			}
+
+			res := make([]map[string]interface{}, 0)
+			for _, id := range filter.IDs {
+				if util.InStrArr(kubeWorkloadKinds, id) {
+					res = append(res, map[string]interface{}{types.NameField: id})
+				}
+			}
+
+			return res, nil
+		},
+		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
+			page types.Page) (*types.ListInstanceResult, error) {
+			return nil, fmt.Errorf("%s do not support %s", iam.KubeWorkloadEvent, types.ListInstanceByPolicyMethod)
+		},
+	}, nil
 }

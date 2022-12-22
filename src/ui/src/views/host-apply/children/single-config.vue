@@ -84,7 +84,7 @@
   import propertyConfigTable from './property-config-table'
   import serviceTemplateTips from './service-template-tips.vue'
   import { MENU_BUSINESS_HOST_APPLY_CONFIRM } from '@/dictionary/menu-symbol'
-  import { CONFIG_MODE } from '@/services/service-template/index.js'
+  import { CONFIG_MODE } from '@/service/service-template/index.js'
 
   export default {
     name: 'single-config',

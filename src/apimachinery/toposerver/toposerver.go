@@ -19,6 +19,7 @@ import (
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/toposerver/association"
 	"configcenter/src/apimachinery/toposerver/inst"
+	"configcenter/src/apimachinery/toposerver/kube"
 	"configcenter/src/apimachinery/toposerver/object"
 	"configcenter/src/apimachinery/toposerver/resourcedir"
 	"configcenter/src/apimachinery/toposerver/settemplate"
@@ -32,6 +33,7 @@ type TopoServerClientInterface interface {
 	Association() association.AssociationInterface
 	SetTemplate() settemplate.SetTemplateInterface
 	ResourceDirectory() resourcedir.ResourceDirectoryInterface
+	Kube() kube.KubeOperationInterface
 }
 
 // NewTopoServerClient TODO
@@ -49,6 +51,11 @@ type topoServer struct {
 // Instance TODO
 func (t *topoServer) Instance() inst.InstanceInterface {
 	return inst.NewInstanceClient(t.restCli)
+}
+
+// Kube container data related interface initialization.
+func (t *topoServer) Kube() kube.KubeOperationInterface {
+	return kube.NewKubeOperationInterface(t.restCli)
 }
 
 // Object TODO

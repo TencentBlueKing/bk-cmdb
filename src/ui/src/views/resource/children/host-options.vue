@@ -240,7 +240,7 @@
           bk_property_name: `${this.$t('云区域')}ID:IP`,
           bk_property_type: 'singlechar'
         })
-        const clipboardList = FilterStore.header.slice()
+        const clipboardList = this.$parent.tableHeader.slice()
         clipboardList.splice(1, 0, IPWithCloud)
         return clipboardList
       },
@@ -267,9 +267,16 @@
           handler: this.batchExportField,
           disabled: !this.table.pagination.count
         }]
+
         if (this.scope !== 1) {
           buttonConfig.splice(0, 1)
         }
+
+        // 已分配并且是容器搜索模式
+        if (this?.$parent?.isResourceAssigned && this?.$parent?.isContainerSearchMode) {
+          buttonConfig.splice(buttonConfig.length - 1, 1)
+        }
+
         return buttonConfig
       },
       saveAuth() {
