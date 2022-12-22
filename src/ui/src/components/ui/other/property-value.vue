@@ -28,7 +28,13 @@
     v-else-if="isMapstring"
     :value="value">
   </mapstring-value>
+  <enumquote-value
+    v-else-if="isEnumQuote"
+    :value="value"
+    :property="property">
+  </enumquote-value>
   <component
+    class="value-container"
     :is="tag"
     v-bind="attrs"
     v-bk-overflow-tips
@@ -36,6 +42,7 @@
     {{displayValue}}
   </component>
   <component
+    class="value-container"
     :is="tag"
     v-bind="attrs"
     v-else>
@@ -48,14 +55,19 @@
   import TableValue from './table-value'
   import ServiceTemplateValue from '@/components/search/service-template'
   import MapstringValue from './mapstring-value.vue'
+  import EnumquoteValue from './enumquote-value.vue'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+
   const ORG_CACHES = {}
+
   export default {
     name: 'cmdb-property-value',
     components: {
       UserValue,
       TableValue,
       ServiceTemplateValue,
-      MapstringValue
+      MapstringValue,
+      EnumquoteValue
     },
     props: {
       value: {
@@ -127,6 +139,9 @@
       },
       isMapstring() {
         return this.property.bk_property_type === 'map'
+      },
+      isEnumQuote() {
+        return this.property.bk_property_type === PROPERTY_TYPES.ENUMQUOTE
       }
     },
     watch: {
@@ -198,6 +213,9 @@
 </script>
 
 <style lang="scss" scoped>
+  .value-container {
+    display: block;
+  }
   .value-primary-theme {
     color: $primaryColor;
     cursor: pointer;

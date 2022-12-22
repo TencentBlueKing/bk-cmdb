@@ -25,9 +25,9 @@
             {{property.bk_property_name}}
           </span>
           <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
-            v-bk-overflow-tips
             v-if="property !== editState.property">
             <cmdb-property-value
+              :is-show-overflow-tips="isShowOverflowTips(property)"
               :ref="`property-value-${property.bk_property_id}`"
               :value="instState[property.bk_property_id]"
               :property="property">
@@ -120,6 +120,7 @@
   } from '@/dictionary/model-constants.js'
   import businessSetService from '@/service/business-set/index.js'
   import authMixin from './mixin-auth'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   export default {
     filters: {
       filterShowText(value, unit) {
@@ -180,6 +181,10 @@
       },
       isPropertyEditable(property) {
         return property.editable && !property.bk_isapi
+      },
+      isShowOverflowTips(property) {
+        const complexTypes = [PROPERTY_TYPES.MAP, PROPERTY_TYPES.ENUMQUOTE]
+        return !complexTypes.includes(property.bk_property_type)
       },
       setEditState(property) {
         const value = this.instState[property.bk_property_id]

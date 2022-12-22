@@ -47,7 +47,28 @@ const findOne = async ({ bk_obj_id: objId, bk_inst_id: instId, config }) => {
   }
 }
 
+const findByIds = async ({ bk_obj_id: objId, ids, config }) => {
+  try {
+    const { count = 0, info: list = [] } = await http.post(`search/instances/object/${objId}`, {
+      page: { start: 0, limit: ids.length },
+      fields: [],
+      conditions: {
+        condition: 'AND',
+        rules: [{
+          field: 'bk_inst_id',
+          operator: 'in',
+          value: ids
+        }]
+      }
+    }, config)
+    return { count, list }
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 export default {
   find,
-  findOne
+  findOne,
+  findByIds
 }

@@ -122,7 +122,7 @@
         :key="column.id"
         :prop="column.id"
         :label="column.name"
-        show-overflow-tooltip>
+        :show-overflow-tooltip="isShowOverflowTips(column.property)">
         <template slot-scope="{ row }">
           <cmdb-property-value
             :theme="column.id === 'bk_inst_id' ? 'primary' : 'default'"
@@ -225,6 +225,7 @@
   import instanceImportService from '@/service/instance/import'
   import instanceService from '@/service/instance/instance'
   import { resetConditionValue } from '@/components/filters/general-model-filter.js'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   const defaultFastSearch = () => ({
     field: 'bk_inst_name',
@@ -542,6 +543,9 @@
         } else if (operator === '$in') {
           // eslint-disable-next-line no-nested-ternary
           value = Array.isArray(value) ? value : !!value ? [value] : []
+          if (this.filterType === PROPERTY_TYPES.ENUMQUOTE) {
+            value = value.map(val => Number(val))
+          }
         } else if (operator === '$regex') {
           value = Array.isArray(value) ? (value[0] || '') : value
         } else if (Array.isArray(value)) {
@@ -964,6 +968,10 @@
       },
       resetFastSearch() {
         this.filter = defaultFastSearch()
+      },
+      isShowOverflowTips(property) {
+        const complexTypes = [PROPERTY_TYPES.MAP, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ORGANIZATION]
+        return !complexTypes.includes(property.bk_property_type)
       }
     }
   }

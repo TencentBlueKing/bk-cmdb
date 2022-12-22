@@ -30,6 +30,8 @@
 </template>
 
 <script>
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+
   export default {
     props: {
       isReadOnly: {
@@ -57,30 +59,32 @@
     data() {
       return {
         editableMap: [
-          'singlechar',
-          'int',
-          'float',
-          'enum',
-          'date',
-          'time',
-          'longchar',
-          'objuser',
-          'timezone',
-          'bool',
-          'list',
-          'organization'
+          PROPERTY_TYPES.SINGLECHAR,
+          PROPERTY_TYPES.INT,
+          PROPERTY_TYPES.FLOAT,
+          PROPERTY_TYPES.ENUM,
+          PROPERTY_TYPES.DATE,
+          PROPERTY_TYPES.TIME,
+          PROPERTY_TYPES.LONGCHAR,
+          PROPERTY_TYPES.OBJUSER,
+          PROPERTY_TYPES.TIMEZONE,
+          PROPERTY_TYPES.BOOL,
+          PROPERTY_TYPES.LIST,
+          PROPERTY_TYPES.ORGANIZATION,
+          PROPERTY_TYPES.ENUMMULTI,
+          PROPERTY_TYPES.ENUMQUOTE
         ],
         isrequiredMap: [
-          'singlechar',
-          'int',
-          'float',
-          'date',
-          'time',
-          'longchar',
-          'objuser',
-          'timezone',
-          'list',
-          'organization'
+          PROPERTY_TYPES.SINGLECHAR,
+          PROPERTY_TYPES.INT,
+          PROPERTY_TYPES.FLOAT,
+          PROPERTY_TYPES.DATE,
+          PROPERTY_TYPES.TIME,
+          PROPERTY_TYPES.LONGCHAR,
+          PROPERTY_TYPES.OBJUSER,
+          PROPERTY_TYPES.TIMEZONE,
+          PROPERTY_TYPES.LIST,
+          PROPERTY_TYPES.ORGANIZATION
         ],
         localValue: {
           editable: this.editable,

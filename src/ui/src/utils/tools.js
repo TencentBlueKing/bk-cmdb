@@ -13,6 +13,7 @@
 import moment from 'moment'
 import GET_VALUE from 'get-value'
 import has from 'has'
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
 /**
  * 获取实例中某个属性的展示值
@@ -48,13 +49,6 @@ export function getPropertyText(property, item) {
   return propertyValue.toString()
 }
 
-/**
- * 获取实例的真实值
- * @param {Array} properties - 模型属性
- * @param {Object} inst - 原始实例
- * @return {Object} 实例真实值
- */
-
 function getDefaultOptionValue(property) {
   const defaultOption = (property.option || []).find(option => option.is_default)
   if (defaultOption) {
@@ -63,6 +57,22 @@ function getDefaultOptionValue(property) {
   return ''
 }
 
+function getDefaultOptionMultiValue(property) {
+  const defaultOptions = (property.option || []).filter(option => option.is_default)
+  return defaultOptions.map(option => option.id)
+}
+
+function getDefaultOptionEnumQuoteValue(property) {
+  return (property.option || []).map(option => option.bk_inst_id)
+}
+
+/**
+ * 获取实例的真实值
+ * @param {Array} properties - 模型属性
+ * @param {Object} inst - 原始实例
+ * @param {Boolean} autoSelect - 是否查找默认值作为选中项
+ * @return {Object} 实例真实值
+ */
 export function getInstFormValues(properties, inst = {}, autoSelect = true) {
   const values = {}
   properties.forEach((property) => {
@@ -83,11 +93,17 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
         values[propertyId] = !!inst[propertyId]
       }
     } else if (['enum'].includes(propertyType)) {
-      // eslint-disable-next-line no-nested-ternary,max-len
-      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? getDefaultOptionValue(property) : '') : inst[propertyId]
+      const defaultValue = autoSelect ? getDefaultOptionValue(property) : ''
+      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
+    } else if ([PROPERTY_TYPES.ENUMMULTI].includes(propertyType)) {
+      const defaultValue = autoSelect ? getDefaultOptionMultiValue(property) : []
+      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
+    } else if ([PROPERTY_TYPES.ENUMQUOTE].includes(propertyType)) {
+      const defaultValue = autoSelect ? getDefaultOptionEnumQuoteValue(property) : []
+      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
     } else if (['timezone'].includes(propertyType)) {
-      // eslint-disable-next-line no-nested-ternary,max-len
-      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? 'Asia/Shanghai' : '') : inst[propertyId]
+      const defaultValue = autoSelect ? 'Asia/Shanghai' : ''
+      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
     } else if (['organization'].includes(propertyType)) {
       values[propertyId] = inst[propertyId] || null
     } else if (['table'].includes(propertyType)) {
@@ -105,6 +121,10 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
 
 export function isEmptyValue(value) {
   return value === '' || value === null || value === void 0
+}
+
+export function isNullish(value) {
+  return [null, undefined].includes(value)
 }
 
 export function formatValue(value, property) {
