@@ -47,7 +47,6 @@
 
   const getInitValue = () => (props.multiple ? (props.value || []) : (props.value || ''))
   const resetValue = () => (props.multiple ? [] : '')
-  const focus = () => selector?.value?.show?.()
 
   const localValue = computed({
     get() {
@@ -68,7 +67,7 @@
   const handleToggle = active => emit('toggle', active)
 
   defineExpose({
-    focus
+    focus: () => selector?.value?.show?.()
   })
 </script>
 

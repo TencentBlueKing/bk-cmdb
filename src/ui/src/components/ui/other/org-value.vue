@@ -12,8 +12,7 @@
 
 <script setup>
   import { computed, ref, watchEffect } from 'vue'
-  import routerActions from '@/router/actions'
-  import { getModelInstanceByIds, getModelInstanceDetailRoute } from '@/service/instance/common'
+  import store from '@/store'
   import Loading from '@/components/loading/index.vue'
   import FlexTag from '@/components/ui/flex-tag'
 
@@ -32,46 +31,50 @@
     getCopyValue: () => tagList.value.join('\n') || '--'
   })
 
-  const options = computed(() => props.property.option || [])
-  const instIds = computed(() => (props.value || []).map(id => Number(id)))
-  const modelId = computed(() => options.value?.[0]?.bk_obj_id)
-
   const list = ref([])
-  const requestId = Symbol()
+
+  const tagList = computed(() => list.value.map(item => item.full_name))
+
+  const requestId = computed(() => `get_department_id_${Array.isArray(props.value) ? props.value.join('_') : String(props.value)}`)
+
+  const getOrganization = async (value) => {
+    const res = await store.dispatch('organization/getDepartment', {
+      params: {
+        lookup_field: 'id',
+        exact_lookups: value.join(',')
+      },
+      fromCache: true,
+      requestId: requestId.value
+    })
+
+    return res?.results ?? []
+  }
+
   watchEffect(async () => {
-    if (!instIds.value.length) {
+    if (!props.value?.length) {
       list.value = []
       return
     }
-
     try {
-      const result = await getModelInstanceByIds(modelId.value, instIds.value, { requestId })
+      const result = await getOrganization(props.value)
       list.value = result
     } catch (error) {
       list.value = []
     }
   })
-
-  const tagList = computed(() => list.value.map(item => item.name))
-
-  const handleGoDetail = (index) => {
-    const item = list.value[index]
-    const route = getModelInstanceDetailRoute(item.modelId, item.id, item)
-    routerActions.open(route)
-  }
 </script>
 
 <template>
-  <div class="enumquote-value">
+  <div class="org-value">
     <loading :loading="$loading(requestId)">
       <div class="empty" v-if="!list.length">--</div>
-      <flex-tag v-else :is-link-style="true" :list="tagList" @click="handleGoDetail"></flex-tag>
+      <flex-tag v-else :list="tagList"></flex-tag>
     </loading>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.enumquote-value {
+.org-value {
   ::v-deep .loading {
     margin-top: 2px;
   }

@@ -161,7 +161,6 @@
         this.$emit('on-delete', this.inst)
       },
       handleCopy(propertyId) {
-        console.log(propertyId)
         const [component] = this.$refs[`property-value-${propertyId}`]
         const copyText = component?.getCopyValue() ?? ''
         this.$copyText(copyText).then(() => {

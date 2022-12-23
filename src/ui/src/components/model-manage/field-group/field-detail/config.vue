@@ -26,6 +26,10 @@
       <input type="checkbox" tabindex="-1" v-model="localValue.isrequired" :disabled="isReadOnly || ispre">
       <span class="cmdb-checkbox-text">{{$t('必填')}}</span>
     </label>
+    <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="isMultipleShow">
+      <input type="checkbox" tabindex="-1" v-model="localValue.multiple" :disabled="isReadOnly || ispre || isEditField">
+      <span class="cmdb-checkbox-text">{{$t('可多选')}}</span>
+    </label>
   </div>
 </template>
 
@@ -50,11 +54,19 @@
         type: Boolean,
         default: false
       },
+      multiple: {
+        type: Boolean,
+        default: false
+      },
       isMainLineModel: {
         type: Boolean,
         default: false
       },
-      ispre: Boolean
+      ispre: Boolean,
+      isEditField: {
+        type: Boolean,
+        default: false
+      }
     },
     data() {
       return {
@@ -74,7 +86,7 @@
           PROPERTY_TYPES.ENUMMULTI,
           PROPERTY_TYPES.ENUMQUOTE
         ],
-        isrequiredMap: [
+        isRequiredMap: [
           PROPERTY_TYPES.SINGLECHAR,
           PROPERTY_TYPES.INT,
           PROPERTY_TYPES.FLOAT,
@@ -86,9 +98,13 @@
           PROPERTY_TYPES.LIST,
           PROPERTY_TYPES.ORGANIZATION
         ],
+        isMultipleMap: [
+          PROPERTY_TYPES.ORGANIZATION
+        ],
         localValue: {
           editable: this.editable,
-          isrequired: this.isrequired
+          isrequired: this.isrequired,
+          multiple: this.multiple
         }
       }
     },
@@ -98,7 +114,10 @@
         return this.editableMap.indexOf(this.type) !== -1
       },
       isRequiredShow() {
-        return this.isrequiredMap.indexOf(this.type) !== -1
+        return this.isRequiredMap.indexOf(this.type) !== -1
+      },
+      isMultipleShow() {
+        return this.isMultipleMap.indexOf(this.type) !== -1
       },
       modelId() {
         return this.$route.params.modelId ?? this.customObjId
@@ -111,6 +130,9 @@
       isrequired(isrequired) {
         this.localValue.isrequired = isrequired
       },
+      multiple(multiple) {
+        this.localValue.multiple = multiple
+      },
       'localValue.editable'(editable) {
         this.$emit('update:editable', editable)
       },
@@ -119,6 +141,9 @@
           this.localValue.isonly = false
         }
         this.$emit('update:isrequired', isrequired)
+      },
+      'localValue.multiple'(multiple) {
+        this.$emit('update:multiple', multiple)
       }
     }
   }

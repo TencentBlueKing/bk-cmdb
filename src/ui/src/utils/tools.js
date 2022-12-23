@@ -514,6 +514,24 @@ export function getPropertyCopyValue(originalValue, propertyType) {
   return value
 }
 
+// 使用独立组件展示value的类型
+export function isUseComplexValueType(property) {
+  const types = [
+    PROPERTY_TYPES.OBJUSER,
+    PROPERTY_TYPES.TABLE,
+    PROPERTY_TYPES.SERVICE_TEMPLATE,
+    PROPERTY_TYPES.ORGANIZATION,
+    PROPERTY_TYPES.MAP,
+    PROPERTY_TYPES.ENUMQUOTE
+  ]
+  return types.includes(property.bk_property_type)
+}
+
+export function isShowOverflowTips(property) {
+  const otherTypes = [PROPERTY_TYPES.TOPOLOGY]
+  return !isUseComplexValueType(property) && !otherTypes.includes(property.bk_property_type)
+}
+
 export default {
   getProperty,
   getPropertyText,
@@ -539,5 +557,7 @@ export default {
   sort,
   getPropertyCopyValue,
   isEmptyPropertyValue,
-  getHeaderPropertyMinWidth
+  getHeaderPropertyMinWidth,
+  isShowOverflowTips,
+  isUseComplexValueType
 }

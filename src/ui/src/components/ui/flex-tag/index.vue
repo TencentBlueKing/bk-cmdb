@@ -165,6 +165,11 @@
     resizeObserver.unobserve(containerEl.value)
   })
 </script>
+<script>
+  export default {
+    name: 'flex-tag'
+  }
+</script>
 
 <template>
   <ul

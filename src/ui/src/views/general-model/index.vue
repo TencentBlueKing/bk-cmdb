@@ -122,7 +122,7 @@
         :key="column.id"
         :prop="column.id"
         :label="column.name"
-        :show-overflow-tooltip="isShowOverflowTips(column.property)">
+        :show-overflow-tooltip="$tools.isShowOverflowTips(column.property)">
         <template slot-scope="{ row }">
           <cmdb-property-value
             :theme="column.id === 'bk_inst_id' ? 'primary' : 'default'"
@@ -968,10 +968,6 @@
       },
       resetFastSearch() {
         this.filter = defaultFastSearch()
-      },
-      isShowOverflowTips(property) {
-        const complexTypes = [PROPERTY_TYPES.MAP, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ORGANIZATION]
-        return !complexTypes.includes(property.bk_property_type)
       }
     }
   }

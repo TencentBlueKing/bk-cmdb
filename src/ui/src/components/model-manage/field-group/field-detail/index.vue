@@ -96,8 +96,10 @@
           :is-read-only="isReadOnly"
           :is-main-line-model="isMainLineModel"
           :ispre="isEditField && field.ispre"
+          :is-edit-field="isEditField"
           :editable.sync="fieldInfo['editable']"
           :isrequired.sync="fieldInfo['isrequired']"
+          :multiple.sync="fieldInfo['multiple']"
         ></the-config>
         <!-- 添加key防止复用组件时内部状态错误 -->
         <component
@@ -217,6 +219,7 @@
           bk_property_type: PROPERTY_TYPES.SINGLECHAR,
           editable: true,
           isrequired: false,
+          multiple: false,
           option: ''
         },
         originalFieldInfo: {},
@@ -322,7 +325,7 @@
       ]),
       initData() {
         Object.keys(this.fieldInfo).forEach((key) => {
-          this.fieldInfo[key] = this.$tools.clone(this.field[key])
+          this.fieldInfo[key] = this.$tools.clone(this.field[key] ?? '')
         })
         this.originalFieldInfo = this.$tools.clone(this.fieldInfo)
       },
