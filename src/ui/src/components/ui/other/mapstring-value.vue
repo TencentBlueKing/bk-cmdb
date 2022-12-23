@@ -44,7 +44,7 @@
 
         const labels = []
         list.filter(item => item).forEach((item) => {
-          labels.push(...Object.keys(item).map(key => `${key} : ${item[key]}`))
+          labels.push(...Object.keys(item).map(key => `${key}: ${item[key]}`))
         })
         return labels
       })
@@ -135,11 +135,14 @@
         removeResizeListener(rootEl.value, scheduleResize)
       })
 
+      const getCopyValue = () => tags.value.join('\n')
+
       return {
         tags,
         rootEl,
         listEl,
-        ellipsisEl
+        ellipsisEl,
+        getCopyValue
       }
     }
   })

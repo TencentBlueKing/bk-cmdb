@@ -270,7 +270,7 @@ const FilterStore = new Vue({
       try {
         Object.keys(query).forEach((key) => {
           const [id, operator] = key.split('.')
-          const property = Utils.findProperty(id, this.properties, 'id')
+          const property = Utils.findProperty(id, this.properties)
           const value = query[key].toString().split(',')
           if (property && operator && value.length) {
             properties.push(property)
@@ -581,7 +581,7 @@ const FilterStore = new Vue({
       }, {
         requestId: this.request.containerProperty,
         fromCache: true
-      })
+      }, true, true)
 
       const commonProperties = [...properties, ...nodeProperties]
 

@@ -1079,6 +1079,7 @@ func prepareSetTemplateData() {
 			"language":          "1",
 		}
 		rsp, err := topoServerClient.Instance().CreateApp(ctx, common.BKDefaultOwnerID, header, data)
+		testutil.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.BaseResp.Result).To(Equal(true))
 		Expect(rsp.Data[common.BKAppIDField]).To(Not(Equal(int64(0))))
@@ -1094,6 +1095,7 @@ func prepareSetTemplateData() {
 			"name":              "root0",
 		}
 		rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
+		testutil.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
 			"Result": Equal(true),
@@ -1113,6 +1115,7 @@ func prepareSetTemplateData() {
 			"name":              "child0",
 		}
 		rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
+		testutil.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
 			"Result": Equal(true),
@@ -1132,6 +1135,7 @@ func prepareSetTemplateData() {
 			"service_category_id": categoryId,
 		}
 		rsp, err := procServerClient.Service().CreateServiceTemplate(ctx, header, data)
+		testutil.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
 			"Result": Equal(true),
@@ -1150,6 +1154,7 @@ func prepareSetTemplateData() {
 			"service_category_id": categoryId,
 		}
 		rsp, err := procServerClient.Service().CreateServiceTemplate(ctx, header, data)
+		testutil.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
 			"Result": Equal(true),
@@ -1168,6 +1173,7 @@ func prepareSetTemplateData() {
 			"service_category_id": categoryId,
 		}
 		rsp, err := procServerClient.Service().CreateServiceTemplate(ctx, header, data)
+		testutil.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.BaseResp).To(MatchFields(IgnoreExtras, Fields{
 			"Result": Equal(true),

@@ -210,8 +210,10 @@
         }
       },
       async getContainerTopoPaths() {
-        const { info: paths } = await containerHostService.getNodePath({ ids: [this.host.bk_host_id] })
-        this.containerTopoPaths = paths || []
+        const result = await containerHostService.getNodePath({ ids: [this.host.bk_host_id] }, {
+          globalError: false
+        })
+        this.containerTopoPaths = result?.info?.paths || []
       },
       viewAll() {
         this.showAll = !this.showAll

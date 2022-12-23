@@ -5,6 +5,9 @@
   import routerActions from '@/router/actions'
   import CmdbLoading from '@/components/loading/loading'
   import { MENU_BUSINESS_SET_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
+  import { CONTAINER_OBJECTS } from '@/dictionary/container'
+  import { getContainerObjectNames } from '@/service/container/common'
 
   export default defineComponent({
     components: {
@@ -26,19 +29,40 @@
     setup(props, { emit }) {
       const bizId = computed(() => store.getters['objectBiz/bizId'])
 
-      const nodeIconMap = {
-        1: 'icon-cc-host-free-pool',
-        2: 'icon-cc-host-breakdown',
-        default: 'icon-cc-host-free-pool'
+      const getInternalNodeClass = (data) => {
+        const nodeIconMap = {
+          1: 'icon-cc-host-free-pool',
+          2: 'icon-cc-host-breakdown',
+          default: 'icon-cc-host-free-pool'
+        }
+        return nodeIconMap[data.default] || nodeIconMap.default
       }
 
-      const getInternalNodeClass = (node, data) => {
-        const classNames = []
-        classNames.push(nodeIconMap[data.default] || nodeIconMap.default)
-        if (node.selected) {
-          classNames.push('is-selected')
+      const getNodeIconTips = (node, data) => {
+        const { bk_obj_id: objId, bk_obj_name: objName } = data
+
+        // 容器节点
+        if (data.is_container) {
+          // 大类型为workload
+          if (data.is_workload) {
+            return `${getContainerObjectNames(CONTAINER_OBJECTS.WORKLOAD).FULL} (${getContainerObjectNames(objId).FULL})`
+          }
+
+          const tipsMap = {
+            [CONTAINER_OBJECTS.CLUSTER]: getContainerObjectNames(objId).FULL,
+            [CONTAINER_OBJECTS.FOLDER]: t('无Pod运行的节点'),
+            [CONTAINER_OBJECTS.NAMESPACE]: getContainerObjectNames(objId).FULL
+          }
+          return tipsMap[objId]
         }
-        return classNames
+
+        // 传统节点
+        const tipsMap = {
+          [BUILTIN_MODELS.BUSINESS]: t('业务'),
+          [BUILTIN_MODELS.SET]: `${t('集群')}${isTemplate(node) ? t('（模板创建）') : t('（自定义创建）')}`,
+          [BUILTIN_MODELS.MODULE]: `${t('模块')}${isTemplate(node) ? t('（模板创建）') : t('（自定义创建）')}`,
+        }
+        return tipsMap[objId] || objName
       }
 
       const isTemplate = node => node.data.service_template_id || node.data.set_template_id
@@ -97,6 +121,7 @@
       return {
         bizId,
         getInternalNodeClass,
+        getNodeIconTips,
         isTemplate,
         isShowCreate,
         getSetNodeTips,
@@ -110,14 +135,17 @@
 
 <template>
   <div :class="['topology-tree-node', { 'is-container': node.data.is_container, 'is-selected': node.selected }]">
-    <i class="internal-node-icon"
-      v-if="data.default !== 0"
-      :class="getInternalNodeClass(node, data)">
-    </i>
-    <i v-else
-      :class="['node-icon', { 'is-selected': node.selected, 'is-template': isTemplate(node) }]">
-      {{data.icon_text || data.bk_obj_name[0]}}
-    </i>
+    <div
+      v-bk-tooltips.top.light="{ content: getNodeIconTips(node, data), disabled: data.default !== 0 }"
+      :class="['node-icon', {
+        'is-selected': node.selected,
+        'is-template': isTemplate(node),
+        'is-internal': data.default !== 0
+      }]">
+      <i v-if="data.is_folder" class="icon-cc-pod-folder"></i>
+      <i v-else-if="data.default !== 0" :class="getInternalNodeClass(data)"></i>
+      <span v-else>{{data.icon_text || data.bk_obj_name[0]}}</span>
+    </div>
 
     <span class="node-name" :title="node.name">{{node.name}}</span>
 
@@ -179,26 +207,17 @@
     }
   }
 
-  .internal-node-icon {
-    width: 20px;
-    height: 20px;
-    line-height: 20px;
-    text-align: center;
-    margin: 8px 4px 8px 0;
-    &.is-selected {
-      color: #FFB400;
-    }
-  }
-
   .node-icon {
+    display: flex;
     flex: none;
     width: 20px;
     height: 20px;
+    line-height: 20px;
+    align-items: center;
+    justify-content: center;
     margin: 8px 4px 8px 0;
     border-radius: 50%;
     background-color: #C4C6CC;
-    line-height: 1.666667;
-    text-align: center;
     font-size: 12px;
     font-style: normal;
     color: #FFF;
@@ -206,6 +225,21 @@
       background-color: #97aed6;
     }
     &.is-selected {
+      background-color: #3A84FF;
+      &.is-internal {
+        color: #3A84FF;
+      }
+    }
+    &.is-internal {
+      font-size: 14px;
+      color: #63656E;
+      background-color: unset;
+      &:hover {
+        background-color: unset;
+      }
+    }
+
+    &:hover {
       background-color: #3A84FF;
     }
   }

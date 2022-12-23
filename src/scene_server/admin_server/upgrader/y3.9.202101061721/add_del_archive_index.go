@@ -93,13 +93,13 @@ func addDelArchiveIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 	}
 
 	err = db.Table(common.BKTableNameDelArchive).CreateIndex(ctx, oidCollIndex)
-	if err != nil {
+	if err != nil && !db.IsDuplicatedError(err) {
 		blog.ErrorJSON("add index %s for del archive table failed, err: %s", oidCollIndex, err)
 		return err
 	}
 
 	err = db.Table(common.BKTableNameDelArchive).CreateIndex(ctx, collIndex)
-	if err != nil {
+	if err != nil && !db.IsDuplicatedError(err) {
 		blog.ErrorJSON("add index %s for del archive table failed, err: %s", collIndex, err)
 		return err
 	}

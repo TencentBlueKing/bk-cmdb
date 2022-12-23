@@ -420,7 +420,7 @@ export function getUniqueProperties(preset, dynamic) {
 }
 
 function getPropertyPriority(property) {
-  let priority = 0
+  let priority = property.bk_property_index ?? 0
   if (property.isonly) {
     priority = priority - 1
   }

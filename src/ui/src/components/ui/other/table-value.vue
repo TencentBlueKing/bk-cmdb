@@ -128,6 +128,7 @@
     .table-value {
         &.property-value {
             width: 100% !important;
+            max-width: 100% !important;
             padding: 0 !important;
         }
     }

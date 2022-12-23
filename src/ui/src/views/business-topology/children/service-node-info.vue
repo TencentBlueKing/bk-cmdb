@@ -30,6 +30,7 @@
       :properties="properties"
       :property-groups="propertyGroups"
       :inst="instance"
+      :show-copy="true"
       :show-options="modelId !== 'biz' && editable">
       <node-extra-info slot="prepend" :instance="instance"></node-extra-info>
       <template slot="details-options">
@@ -418,6 +419,7 @@
         const nodeNameProperty = properties.find(property => property.bk_property_id === this.nodeNamePropertyId)
         properties.unshift({
           ...nodeNameProperty,
+          id: Date.now(),
           bk_property_id: this.nodePrimaryPropertyId,
           bk_property_name: this.$t('ID'),
           editable: false

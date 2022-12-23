@@ -86,7 +86,7 @@ func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *upgrade
 				continue
 			}
 			err := db.Table(tableName).CreateIndex(ctx, index)
-			if err != nil {
+			if err != nil && !db.IsDuplicatedError(err) {
 				blog.ErrorJSON("add index %s for table %s failed, err:%s", index, tableName, err.Error())
 				return err
 			}

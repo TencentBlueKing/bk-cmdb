@@ -23,21 +23,34 @@
             :label="group['bk_group_name']"
             :collapse.sync="groupState[group['bk_group_id']]">
             <ul class="property-list clearfix">
-              <li :class="['property-item clearfix fl', { flex: flexProperties.includes(property['bk_property_id']) }]"
+              <li :class="['property-item fl', { flex: flexProperties.includes(property['bk_property_id']) }]"
                 v-for="property in $groupedProperties[groupIndex]"
                 :key="`${property['bk_obj_id']}-${property['bk_property_id']}`">
-                <span class="property-name fl"
+                <span class="property-name"
                   v-if="!invisibleNameProperties.includes(property['bk_property_id'])"
                   :title="property['bk_property_name']">{{property['bk_property_name']}}
                 </span>
                 <slot :name="property['bk_property_id']">
                   <cmdb-property-value
                     :is-show-overflow-tips="isShowOverflowTips(property)"
-                    :class="'property-value fl'"
+                    :class="'property-value'"
+                    :ref="`property-value-${property.id}`"
                     :value="inst[property.bk_property_id]"
                     :property="property">
                   </cmdb-property-value>
                 </slot>
+                <template v-if="showCopy && !$tools.isEmptyPropertyValue(inst[property.bk_property_id])">
+                  <div class="copy-box">
+                    <i class="property-copy icon-cc-details-copy" @click="handleCopy(property.id)"></i>
+                    <transition name="fade">
+                      <span class="copy-tips"
+                        :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
+                        v-if="showCopyTips === property.id">
+                        {{$t('复制成功')}}
+                      </span>
+                    </transition>
+                  </div>
+                </template>
               </li>
             </ul>
           </cmdb-collapse>
@@ -101,6 +114,10 @@
         type: Boolean,
         default: true
       },
+      showCopy: {
+        type: Boolean,
+        default: false
+      },
       editAuth: {
         type: Object,
         default: null
@@ -120,7 +137,8 @@
     },
     data() {
       return {
-        resizeEvent: null
+        resizeEvent: null,
+        showCopyTips: false
       }
     },
     computed: {
@@ -141,6 +159,20 @@
       },
       handleDelete() {
         this.$emit('on-delete', this.inst)
+      },
+      handleCopy(propertyId) {
+        console.log(propertyId)
+        const [component] = this.$refs[`property-value-${propertyId}`]
+        const copyText = component?.getCopyValue() ?? ''
+        this.$copyText(copyText).then(() => {
+          this.showCopyTips = propertyId
+          const timer = setTimeout(() => {
+            this.showCopyTips = false
+            clearTimeout(timer)
+          }, 200)
+        }, () => {
+          this.$error(this.$t('复制失败'))
+        })
       }
     }
   }
@@ -184,6 +216,14 @@
             margin: 12px 0 0;
             font-size: 14px;
             line-height: 26px;
+            display: flex;
+
+            &:hover {
+                .property-copy {
+                    display: inline-block;
+                }
+            }
+
             .property-name {
                 position: relative;
                 width: 35%;
@@ -191,14 +231,14 @@
                 color: #63656e;
                 text-align: right;
                 @include ellipsis;
-                &:after{
+                &:after {
                     content: ":";
                     position: absolute;
                     right: 10px;
                 }
             }
             .property-value {
-                width: 65%;
+                max-width: calc(65% - 24px);
                 padding: 0 15px 0 0;
                 color: #313238;
                 @include ellipsis;
@@ -212,6 +252,42 @@
                     width: 60px;
                     padding: 0 0 0 5px;
                     @include ellipsis;
+                }
+            }
+
+            .property-copy {
+                margin: 2px 0 0 2px;
+                color: #3c96ff;
+                cursor: pointer;
+                display: none;
+                font-size: 16px;
+            }
+            .copy-box {
+                position: relative;
+                font-size: 0;
+                .copy-tips {
+                    position: absolute;
+                    top: -22px;
+                    left: -18px;
+                    min-width: 70px;
+                    height: 26px;
+                    line-height: 26px;
+                    font-size: 12px;
+                    color: #ffffff;
+                    text-align: center;
+                    background-color: #9f9f9f;
+                    border-radius: 2px;
+                }
+                .fade-enter-active, .fade-leave-active {
+                    transition: all 0.5s;
+                }
+                .fade-enter {
+                    top: -14px;
+                    opacity: 0;
+                }
+                .fade-leave-to {
+                    top: -28px;
+                    opacity: 0;
                 }
             }
 

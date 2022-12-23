@@ -101,7 +101,7 @@
       ...mapGetters('objectModelClassify', ['getModelById']),
       ...mapGetters('businessHost', ['selectedNode']),
       tableHeader() {
-        return FilterStore.header
+        return FilterStore.header.filter(header => header)
       }
     },
     created() {

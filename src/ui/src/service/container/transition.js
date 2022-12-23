@@ -12,7 +12,7 @@
 
 import i18n from '@/i18n/index.js'
 import { CONTAINER_OBJECT_NAMES } from '@/dictionary/container'
-import { isWorkload, isFolder, getContainerNodeType, getPropertyType, getPropertyName } from './common.js'
+import { isWorkload, isFolder, getContainerNodeType, getPropertyType, getPropertyName, getContainerObjectNames } from './common.js'
 import Utils from '@/components/filters/utils.js'
 
 export const normalizationTopo = (topoList, refId) => {
@@ -30,9 +30,9 @@ export const normalizationTopo = (topoList, refId) => {
       bk_obj_name: CONTAINER_OBJECT_NAMES[type].FULL,
       default: 0,
       child: [],
-      icon_text: CONTAINER_OBJECT_NAMES[type].SHORT,
+      icon_text: getContainerObjectNames(kind).SHORT,
       is_container: true,
-      is_workload: isWorkload(item.kind),
+      is_workload: isWorkload(kind),
       is_folder: isFolder(type),
       // 上一级的id
       ref_id: refId
