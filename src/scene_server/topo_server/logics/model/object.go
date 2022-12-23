@@ -796,15 +796,10 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, attr []metadata.A
 			createdGroup[item.PropertyGroupName] = struct{}{}
 		}
 		if item.PropertyType == common.FieldTypeEnumQuote {
-			ok, err := o.attr.ValidObjIDAndInstID(kit, objID, item.Option, kit.CCError)
-			if err != nil {
-				blog.Errorf("valid objID and instID in enum quote option failed, value: %+v, err: %v, rid: %s",
+			if err := o.attr.ValidObjIDAndInstID(kit, objID, item.Option, item.IsMultiple); err != nil {
+				blog.Errorf("check enum quote option objID and instID failed, value: %+v, err: %v, rid: %s",
 					item.Option, err, kit.Rid)
 				return err
-			}
-			if ok {
-				blog.Errorf("objID not exist or is inner model, or inst not exist, rid: %s", kit.Rid)
-				return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 			}
 		}
 		item.Creator = kit.User
@@ -854,11 +849,21 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, attr []metadata.A
 		}
 	}
 
+	if err := o.saveCreateAttrAuditLog(kit, rspAttr.Created, attrs); err != nil {
+		blog.Errorf("save create object attr audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (o *object) saveCreateAttrAuditLog(kit *rest.Kit, rspAttrs []metadata.CreatedDataResult,
+	attrs []metadata.Attribute) error {
 	// generate audit log of model attribute.
 	audit := auditlog.NewObjectAttributeAuditLog(o.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 
-	for _, item := range rspAttr.Created {
+	for _, item := range rspAttrs {
 		attrs[item.OriginIndex].ID = int64(item.ID)
 		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, int64(item.ID), &attrs[item.OriginIndex])
 		if err != nil {
@@ -874,7 +879,6 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, attr []metadata.A
 			return err
 		}
 	}
-
 	return nil
 }
 

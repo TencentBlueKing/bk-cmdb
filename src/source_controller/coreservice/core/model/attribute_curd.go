@@ -706,6 +706,10 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		})
 	}
 
+	isMultiple, ok := data.Get(common.BKIsMultipleField)
+	if !ok {
+		return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
+	}
 	if option, exists := data.Get(metadata.AttributeFieldOption); exists {
 		propertyType := dbAttributeArr[0].PropertyType
 		for _, dbAttribute := range dbAttributeArr {
@@ -714,7 +718,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 				return kit.CCError.Errorf(common.CCErrCommParamsInvalid, "cond")
 			}
 		}
-		if err := util.ValidPropertyOption(propertyType, option, kit.CCError); err != nil {
+		if err := util.ValidPropertyOption(propertyType, option, isMultiple.(bool), kit.CCError); err != nil {
 			blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
 			return err
 		}

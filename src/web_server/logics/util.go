@@ -290,10 +290,15 @@ func replaceEnumMultiName(rid string, rowMap mapstr.MapStr, fields map[string]Pr
 						enumMultiID, rid)
 					return nil, fmt.Errorf("convert variable enumMultiID[%s] type to string failed", enumMultiID)
 				}
-				name := getEnumNameByID(id, property.Option.([]interface{}))
+				items, ok := property.Option.([]interface{})
+				if !ok {
+					blog.Errorf("convert option to []interface{} failed, type: %T, rid: %s", property.Option, rid)
+					return nil, fmt.Errorf("enum multi option param is invalid, option: %v", property.Option)
+				}
+				name := getEnumNameByID(id, items)
 				enumMultiName = append(enumMultiName, name)
 			}
-			rowMap[id] = strings.Join(enumMultiName, ",")
+			rowMap[id] = strings.Join(enumMultiName, "\n")
 		}
 	}
 

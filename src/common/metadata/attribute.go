@@ -102,6 +102,7 @@ type Attribute struct {
 	PropertyType      string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type" mapstructure:"bk_property_type"`
 	Option            interface{} `field:"option" json:"option" bson:"option" mapstructure:"option"`
 	Description       string      `field:"description" json:"description" bson:"description" mapstructure:"description"`
+	IsMultiple        bool        `field:"ismultiple" json:"ismultiple" bson:"ismultiple" mapstructure:"ismultiple"`
 	Creator           string      `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
 	CreateTime        *Time       `json:"create_time" bson:"create_time" mapstructure:"create_time"`
 	LastTime          *Time       `json:"last_time" bson:"last_time" mapstructure:"last_time"`
@@ -148,7 +149,8 @@ type HostObjAttDes struct {
 }
 
 // Validate TODO
-func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key string) errors.RawErrorInfo {
+	rawError := errors.RawErrorInfo{}
 	fieldType := attribute.PropertyType
 	switch fieldType {
 	case common.FieldTypeSingleChar:
@@ -202,7 +204,7 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 }
 
 // validTime valid object Attribute that is time type
-func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val || "" == val {
@@ -243,7 +245,7 @@ func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key 
 }
 
 // validDate valid object Attribute that is date type
-func (attribute *Attribute) validDate(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validDate(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val || "" == val {
 		if attribute.IsRequired {
@@ -277,7 +279,7 @@ func (attribute *Attribute) validDate(ctx context.Context, val interface{}, key 
 }
 
 // validEnum valid object attribute that is enum type
-func (attribute *Attribute) validEnum(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validEnum(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	// validate require
 	if nil == val {
@@ -325,8 +327,7 @@ func (attribute *Attribute) validEnum(ctx context.Context, val interface{}, key 
 }
 
 // validEnum valid object attribute that is enum multi type
-func (attribute *Attribute) validEnumMulti(ctx context.Context, val interface{},
-	key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validEnumMulti(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	// validate require
 	if val == nil {
@@ -342,14 +343,44 @@ func (attribute *Attribute) validEnumMulti(ctx context.Context, val interface{},
 
 	enumOption, err := ParseEnumOption(ctx, attribute.Option)
 	if err != nil {
-		blog.Warnf("parse enum option failed, err: %v, rid: %s", err, rid)
+		blog.Errorf("parse enum option failed, err: %v, rid: %s", err, rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
 		}
 	}
-	idVals := make([]string, 0)
-	for _, id := range val.([]interface{}) {
+
+	idMap := make(map[string]struct{}, 0)
+	for _, option := range enumOption {
+		idMap[option.ID] = struct{}{}
+	}
+
+	valIDs, ok := val.([]interface{})
+	if !ok {
+		blog.Errorf("convert val to interface slice failed, val type: %T", val)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{key},
+		}
+	}
+
+	if len(valIDs) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{key},
+		}
+	}
+
+	if !attribute.IsMultiple {
+		if len(valIDs) != 1 {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsNeedSingleChoice,
+				Args:    []interface{}{key},
+			}
+		}
+	}
+
+	for _, id := range valIDs {
 		idVal, ok := id.(string)
 		if !ok {
 			return errors.RawErrorInfo{
@@ -357,28 +388,21 @@ func (attribute *Attribute) validEnumMulti(ctx context.Context, val interface{},
 				Args:    []interface{}{key},
 			}
 		}
-		idVals = append(idVals, idVal)
-	}
-	ids := make([]string, 0)
-	for _, option := range enumOption {
-		ids = append(ids, option.ID)
-	}
-	if len(util.StrArrDiff(idVals, ids)) == 0 {
-		return errors.RawErrorInfo{}
+		if _, ok := idMap[idVal]; !ok {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{key},
+			}
+		}
 	}
 
 	blog.V(3).Infof("params %s not valid, option %#v, raw option %#v, value: %#v, rid: %s", key, enumOption,
 		attribute.Option, val, rid)
-	blog.Errorf("params %s not valid , enum value: %#v, rid: %s", key, val, rid)
-	return errors.RawErrorInfo{
-		ErrCode: common.CCErrCommParamsInvalid,
-		Args:    []interface{}{key},
-	}
+	return errors.RawErrorInfo{}
 }
 
 // validEnum valid object attribute that is enum quote type
-func (attribute *Attribute) validEnumQuote(ctx context.Context, val interface{},
-	key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validEnumQuote(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	// validate require
 	if val == nil {
@@ -406,7 +430,7 @@ func (attribute *Attribute) validEnumQuote(ctx context.Context, val interface{},
 }
 
 // validBool valid object attribute that is bool type
-func (attribute *Attribute) validBool(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validBool(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val {
 		if attribute.IsRequired {
@@ -434,7 +458,7 @@ func (attribute *Attribute) validBool(ctx context.Context, val interface{}, key 
 
 // validTimeZone TODO
 // valid char valid object attribute that is timezone type
-func (attribute *Attribute) validTimeZone(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validTimeZone(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val {
 		if attribute.IsRequired {
@@ -469,7 +493,7 @@ func (attribute *Attribute) validTimeZone(ctx context.Context, val interface{}, 
 }
 
 // validInt valid object attribute that is int type
-func (attribute *Attribute) validInt(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validInt(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val {
 		if attribute.IsRequired {
@@ -517,7 +541,7 @@ func (attribute *Attribute) validInt(ctx context.Context, val interface{}, key s
 }
 
 // validFloat valid object attribute that is float type
-func (attribute *Attribute) validFloat(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validFloat(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val {
 		if attribute.IsRequired {
@@ -565,7 +589,7 @@ func (attribute *Attribute) validFloat(ctx context.Context, val interface{}, key
 }
 
 // validLongChar valid object attribute that is long char type
-func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val || "" == val {
 		if attribute.IsRequired {
@@ -631,7 +655,7 @@ func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, 
 }
 
 // validChar valid object attribute that is char type
-func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val {
 		if attribute.IsRequired {
@@ -709,7 +733,7 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 }
 
 // validUser valid object attribute that is user type
-func (attribute *Attribute) validUser(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validUser(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val || "" == val {
 		if attribute.IsRequired {
@@ -766,8 +790,7 @@ func (attribute *Attribute) validUser(ctx context.Context, val interface{}, key 
 }
 
 // validObjectCondition valid object attribute that is user type
-func (attribute *Attribute) validObjectCondition(ctx context.Context, val interface{}, key string) (
-	rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validObjectCondition(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val || "" == val {
@@ -807,7 +830,7 @@ func (attribute *Attribute) validObjectCondition(ctx context.Context, val interf
 	return errors.RawErrorInfo{}
 }
 
-func (attribute *Attribute) validList(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validList(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestUserFromContext(ctx)
 
 	if nil == val {
@@ -865,7 +888,7 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 
 // validOrganization TODO
 // validBool valid object attribute that is bool type
-func (attribute *Attribute) validOrganization(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validOrganization(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if nil == val {
 		if attribute.IsRequired {
@@ -893,8 +916,7 @@ func (attribute *Attribute) validOrganization(ctx context.Context, val interface
 }
 
 // validTable valid object attribute that is table type
-func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key string) (
-	rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if val == nil {
@@ -1160,18 +1182,14 @@ func parseEnumOption(options []interface{}, enumOptions *[]EnumVal) error {
 	return nil
 }
 
-// EnumQuoteOption enum quote option
-type EnumQuoteOption []EnumQuoteVal
-
 // EnumQuoteVal enum quote option val
 type EnumQuoteVal struct {
 	ObjID  string `bson:"bk_obj_id" json:"bk_obj_id"`
 	InstID int64  `bson:"bk_inst_id" json:"bk_inst_id"`
-	Type   string `bson:"type" json:"type"`
 }
 
 // ParseEnumQuoteOption convert val to []EnumQuoteVal
-func ParseEnumQuoteOption(ctx context.Context, val interface{}) (EnumQuoteOption, error) {
+func ParseEnumQuoteOption(ctx context.Context, val interface{}) ([]EnumQuoteVal, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	enumQuoteOptions := []EnumQuoteVal{}
 	if val == nil || val == "" {
@@ -1205,29 +1223,30 @@ func ParseEnumQuoteOption(ctx context.Context, val interface{}) (EnumQuoteOption
 // parseEnumQuoteOption set enum quote Options values from options
 func parseEnumQuoteOption(options []interface{}, enumQuoteOptions *[]EnumQuoteVal) error {
 	for _, optionVal := range options {
-		if option, ok := optionVal.(map[string]interface{}); ok {
+		switch val := optionVal.(type) {
+		case map[string]interface{}:
 			enumQuoteOption := EnumQuoteVal{}
-			enumQuoteOption.ObjID = getString(option["bk_obj_id"])
+			enumQuoteOption.ObjID = getString(val["bk_obj_id"])
 			if enumQuoteOption.ObjID == "" {
-				return fmt.Errorf("operation %#v objID empty or not string", option)
+				return fmt.Errorf("operation %#v objID empty or not string", optionVal.(map[string]interface{}))
 			}
 			*enumQuoteOptions = append(*enumQuoteOptions, enumQuoteOption)
-		} else if option, ok := optionVal.(bson.M); ok {
+		case bson.M:
 			enumQuoteOption := EnumQuoteVal{}
-			enumQuoteOption.ObjID = getString(option["bk_obj_id"])
+			enumQuoteOption.ObjID = getString(val["bk_obj_id"])
 			if enumQuoteOption.ObjID == "" {
-				return fmt.Errorf("operation %#v objID empty or not string", option)
+				return fmt.Errorf("operation %#v objID empty or not string", optionVal.(bson.M))
 			}
 			*enumQuoteOptions = append(*enumQuoteOptions, enumQuoteOption)
-		} else if option, ok := optionVal.(bson.D); ok {
-			opt := option.Map()
+		case bson.D:
+			opt := val.Map()
 			enumQuoteOption := EnumQuoteVal{}
 			enumQuoteOption.ObjID = getString(opt["bk_obj_id"])
 			if enumQuoteOption.ObjID == "" {
-				return fmt.Errorf("operation %#v objID empty or not string", option)
+				return fmt.Errorf("operation %#v objID empty or not string", opt)
 			}
 			*enumQuoteOptions = append(*enumQuoteOptions, enumQuoteOption)
-		} else {
+		default:
 			return fmt.Errorf("unknow optionVal type: %#v", optionVal)
 		}
 	}
@@ -1434,7 +1453,7 @@ type SubAttribute struct {
 }
 
 // Validate TODO
-func (sa *SubAttribute) Validate(ctx context.Context, data interface{}, key string) (rawError errors.RawErrorInfo) {
+func (sa *SubAttribute) Validate(ctx context.Context, data interface{}, key string) errors.RawErrorInfo {
 	attr := Attribute{
 		PropertyID:   sa.PropertyID,
 		PropertyName: sa.PropertyName,

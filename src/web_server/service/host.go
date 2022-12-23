@@ -200,7 +200,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
-	hostInfo, err = s.handleHostExportEnumQuoteInst(c, header, hostInfo, fields, rid)
+	hostInfo, err = s.handleExportEnumQuoteInst(c, header, hostInfo, objID, fields, rid)
 	if err != nil {
 		blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
 		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(

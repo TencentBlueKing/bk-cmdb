@@ -177,31 +177,35 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 func (lgc *Logics) handleImportEnumQuoteInst(c context.Context, h http.Header, data map[int]map[string]interface{},
 	fields map[string]Property, rid string) (map[int]map[string]interface{}, error) {
 
+	enumQuoteFields := make(map[string]Property, 0)
+	for id, property := range fields {
+		if property.PropertyType == common.FieldTypeEnumQuote {
+			enumQuoteFields[id] = property
+		}
+	}
+	if len(enumQuoteFields) == 0 {
+		return data, nil
+	}
+
 	for _, rowMap := range data {
-		for id, property := range fields {
-			switch property.PropertyType {
-			case common.FieldTypeEnumQuote:
-				enumQuoteNameList, exist := rowMap[id]
-				if !exist || enumQuoteNameList == nil {
-					continue
-				}
-
-				objIDs, err := GetEnumQuoteObjID(property.Option, rid)
-				if err != nil {
-					blog.Errorf("get enum quote option obj id failed, err: %s, rid: %s", err, rid)
-					return nil, err
-				}
-				if len(objIDs) == 0 {
-					return nil, fmt.Errorf("enum quote option model is null, rid: %s", rid)
-				}
-
-				enumQuoteIDs, err := lgc.getEnumQuoteIds(c, h, objIDs[0], rid, enumQuoteNameList)
-				if err != nil {
-					blog.Errorf("get enum quote id list failed, err: %v, rid: %s", err, rid)
-					return nil, err
-				}
-				rowMap[id] = enumQuoteIDs
+		for id, property := range enumQuoteFields {
+			enumQuoteNameList, exist := rowMap[id]
+			if !exist || enumQuoteNameList == nil {
+				continue
 			}
+
+			quoteObjID, err := GetEnumQuoteObjID(property.Option, rid)
+			if err != nil {
+				blog.Errorf("get enum quote option obj id failed, err: %s, rid: %s", err, rid)
+				return nil, err
+			}
+
+			enumQuoteIDs, err := lgc.getEnumQuoteIds(c, h, quoteObjID, rid, enumQuoteNameList)
+			if err != nil {
+				blog.Errorf("get enum quote id list failed, err: %v, rid: %s", err, rid)
+				return nil, err
+			}
+			rowMap[id] = enumQuoteIDs
 		}
 	}
 
@@ -209,15 +213,15 @@ func (lgc *Logics) handleImportEnumQuoteInst(c context.Context, h http.Header, d
 }
 
 // GetEnumQuoteObjID get enum quote field option bk_obj_id and bk_inst_id value
-func GetEnumQuoteObjID(option interface{}, rid string) ([]string, error) {
-	objIDs := make([]string, 0)
+func GetEnumQuoteObjID(option interface{}, rid string) (string, error) {
+	var quoteObjID string
 	if option == nil {
-		return objIDs, fmt.Errorf("enum quote option is nil")
+		return quoteObjID, fmt.Errorf("enum quote option is nil")
 	}
 	arrOption, ok := option.([]interface{})
 	if !ok {
 		blog.Errorf("option %v not enum quote option, rid: %s", option, rid)
-		return objIDs, fmt.Errorf("enum quote option is unvalid")
+		return quoteObjID, fmt.Errorf("enum quote option is unvalid")
 	}
 
 	for _, o := range arrOption {
@@ -225,44 +229,40 @@ func GetEnumQuoteObjID(option interface{}, rid string) ([]string, error) {
 		if !ok || mapOption == nil {
 			blog.Errorf("option %v not enum quote option, enum quote option item must bk_obj_id, rid: %s", option,
 				rid)
-			return objIDs, fmt.Errorf("convert option map[string]interface{} failed")
+			return quoteObjID, fmt.Errorf("convert option map[string]interface{} failed")
 		}
 		objIDVal, objIDOk := mapOption["bk_obj_id"]
 		if !objIDOk || objIDVal == "" {
 			blog.Errorf("enum quote option bk_obj_id can't be empty, rid: %s", option, rid)
-			return objIDs, fmt.Errorf("enum quote option bk_obj_id can't be empty")
+			return quoteObjID, fmt.Errorf("enum quote option bk_obj_id can't be empty")
 		}
 		objID, ok := objIDVal.(string)
 		if !ok {
 			blog.Errorf("objIDVal %v not string, rid: %s", objIDVal, rid)
-			return objIDs, fmt.Errorf("enum quote option bk_obj_id is not string")
+			return quoteObjID, fmt.Errorf("enum quote option bk_obj_id is not string")
 		}
-		objIDs = append(objIDs, objID)
+
+		if quoteObjID == "" {
+			quoteObjID = objID
+		} else if quoteObjID != objID {
+			return quoteObjID, fmt.Errorf("enum quote objID not unique, objID: %s", objID)
+		}
 	}
 
-	return objIDs, nil
+	return quoteObjID, nil
 }
 
 // getEnumQuoteIds search inst detail and return a inst id list
 func (lgc *Logics) getEnumQuoteIds(c context.Context, h http.Header, objID, rid string,
 	enumQuoteNameList interface{}) ([]int64, error) {
 
-	input := &metadata.QueryCondition{DisableCounter: true}
-	switch objID {
-	case common.BKInnerObjIDApp:
-		input.Fields = []string{common.BKAppIDField}
-		input.Condition = mapstr.MapStr{common.BKAppNameField: mapstr.MapStr{common.BKDBIN: enumQuoteNameList}}
-	case common.BKInnerObjIDBizSet:
-		input.Fields = []string{common.BKBizSetIDField}
-		input.Condition = mapstr.MapStr{common.BKBizSetNameField: mapstr.MapStr{common.BKDBIN: enumQuoteNameList}}
-	case common.BKInnerObjIDHost:
-		input.Fields = []string{common.BKHostIDField}
-		input.Condition = mapstr.MapStr{common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: enumQuoteNameList}}
-	default:
-		input.Fields = []string{common.BKInstIDField}
-		input.Condition = mapstr.MapStr{common.BKInstNameField: mapstr.MapStr{common.BKDBIN: enumQuoteNameList}}
+	input := &metadata.QueryCondition{
+		Fields: []string{common.GetInstIDField(objID)},
+		Condition: mapstr.MapStr{
+			common.GetInstNameField(objID): mapstr.MapStr{common.BKDBIN: enumQuoteNameList},
+		},
+		DisableCounter: true,
 	}
-
 	resp, err := lgc.Engine.CoreAPI.ApiServer().ReadInstance(c, h, objID, input)
 	if err != nil {
 		blog.Errorf("get quote inst name list failed, err: %v, rid: %s", err, rid)
@@ -271,18 +271,7 @@ func (lgc *Logics) getEnumQuoteIds(c context.Context, h http.Header, objID, rid 
 
 	enumQuoteIDs := make([]int64, 0)
 	for _, info := range resp.Data.Info {
-		var err error
-		var enumQuoteID int64
-		switch objID {
-		case common.BKInnerObjIDApp:
-			enumQuoteID, err = info.Int64(common.BKAppIDField)
-		case common.BKInnerObjIDBizSet:
-			enumQuoteID, err = info.Int64(common.BKBizSetIDField)
-		case common.BKInnerObjIDHost:
-			enumQuoteID, err = info.Int64(common.BKHostIDField)
-		default:
-			enumQuoteID, err = info.Int64(common.BKInstIDField)
-		}
+		enumQuoteID, err := info.Int64(common.GetInstIDField(objID))
 		if err != nil {
 			blog.Errorf("get enum quote id failed, err: %v, rid: %s", err, rid)
 			continue

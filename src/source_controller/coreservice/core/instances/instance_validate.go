@@ -204,23 +204,10 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 			blog.Errorf("validCreateInstanceData failed, key: %s, value: %s, err: %s, rid: %s", key, val, kit.CCError.Error(rawErr.ErrCode), kit.Rid)
 			return rawErr.ToCCError(kit.CCError)
 		}
-		// 对引用类型做校验
+		// 在Validate里面没有对枚举引用的值进行校验，只是对其数据类型做了基本的校验，
+		// 因为对引用值是否存在校验需要查询数据库，所以放在Validate里面校验不太合适
 		if property.PropertyType == common.FieldTypeEnumQuote {
-			valEnumIDs := make([]int64, 0)
-			valIDs, ok := val.([]interface{})
-			if !ok {
-				blog.Errorf("convert val to interface slice failed, val type: %T, rid: %s", val, kit.Rid)
-				return fmt.Errorf("convert val to interface slice failed, val: %v", val)
-			}
-			for _, valID := range valIDs {
-				valEnumID, err := util.GetInt64ByInterface(valID)
-				if err != nil {
-					blog.Errorf("get valEnumID failed, valID type is %T, err: %v, rid: %s", valID, err, kit.Rid)
-					return err
-				}
-				valEnumIDs = append(valEnumIDs, valEnumID)
-			}
-			if err := m.validInstIDs(kit, property.Option, valEnumIDs); err != nil {
+			if err := m.validInstIDs(kit, property, val); err != nil {
 				return err
 			}
 		}
@@ -345,23 +332,10 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 				rawErr.ToCCError(kit.CCError), val, key, kit.Rid)
 			return rawErr.ToCCError(kit.CCError)
 		}
-		// 对引用类型做校验
+		// 在Validate里面没有对枚举引用的值进行校验，只是对其数据类型做了基本的校验，
+		// 因为对引用值是否存在校验需要查询数据库，所以放在Validate里面校验不太合适
 		if property.PropertyType == common.FieldTypeEnumQuote {
-			valEnumIDs := make([]int64, 0)
-			valIDs, ok := val.([]interface{})
-			if !ok {
-				blog.Errorf("convert val to interface slice failed, val type: %T, rid: %s", val, kit.Rid)
-				return fmt.Errorf("convert val to interface slice failed, val: %v", val)
-			}
-			for _, valID := range valIDs {
-				valEnumID, err := util.GetInt64ByInterface(valID)
-				if err != nil {
-					blog.Errorf("get valEnumID failed, valID type is %T, err: %v, rid: %s", valID, err, kit.Rid)
-					return err
-				}
-				valEnumIDs = append(valEnumIDs, valEnumID)
-			}
-			if err := m.validInstIDs(kit, property.Option, valEnumIDs); err != nil {
+			if err := m.validInstIDs(kit, property, val); err != nil {
 				return err
 			}
 		}
@@ -597,71 +571,66 @@ func (m *instanceManager) validBizIDs(kit *rest.Kit, bizIDs []int64) error {
 }
 
 // valid enum quote inst id is exist
-func (m *instanceManager) validInstIDs(kit *rest.Kit, option interface{}, enumQuoteIDs []int64) error{
-	objIDs := make([]string, 0)
-	if option == nil {
+func (m *instanceManager) validInstIDs(kit *rest.Kit, property metadata.Attribute, val interface{}) error {
+	if property.Option == nil {
 		return fmt.Errorf("option params is invalid")
 	}
 
-	arrOption, err := metadata.ParseEnumQuoteOption(kit.Ctx, option)
-	for _, o := range arrOption {
-		objIDs = append(objIDs, o.ObjID)
+	valIDs, ok := val.([]interface{})
+	if !ok {
+		blog.Errorf("convert val to interface slice failed, val type: %T, rid: %s", val, kit.Rid)
+		return fmt.Errorf("convert val to interface slice failed, val: %v", val)
 	}
-	if len(objIDs) == 0 {
-		return fmt.Errorf("enum quote objID not exist")
+	if len(valIDs) == 0 {
+		blog.Errorf("enum quote inst id is null, rid: %s", kit.Rid)
+		return fmt.Errorf("enum quote inst id is null, please set the correct value")
 	}
-	switch objIDs[0] {
-	case common.BKInnerObjIDHost:
-		cond := map[string]interface{}{
-			common.BKHostIDField: map[string]interface{}{
-				common.BKDBIN: enumQuoteIDs,
-			},
+	if !property.IsMultiple {
+		if len(valIDs) != 1 {
+			blog.Errorf("enum quote is single choice, but inst id is multiple, rid: %s", kit.Rid)
+			return kit.CCError.CCError(common.CCErrCommParamsNeedSingleChoice)
 		}
-		cnt, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(cond).Count(kit.Ctx)
-		if err != nil {
-			blog.Errorf("count host failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
-			return err
-		}
-		if len(enumQuoteIDs) != int(cnt) {
-			return fmt.Errorf("host not exist, rid: %s", kit.Rid)
-		}
-		return nil
-	case common.BKInnerObjIDApp:
-		cond := map[string]interface{}{
-			common.BKAppIDField: map[string]interface{}{
-				common.BKDBIN: enumQuoteIDs,
-			},
-		}
-		cnt, err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(cond).Count(kit.Ctx)
-		if err != nil {
-			blog.Errorf("count biz failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
-			return err
-		}
-		if len(enumQuoteIDs) != int(cnt) {
-			return fmt.Errorf("biz not exist, rid: %s", kit.Rid)
-		}
-		return nil
-	case common.BKInnerObjIDBizSet:
-		cond := map[string]interface{}{
-			common.BKBizSetIDField: map[string]interface{}{
-				common.BKDBIN: enumQuoteIDs,
-			},
-		}
-		cnt, err := mongodb.Client().Table(common.BKTableNameBaseBizSet).Find(cond).Count(kit.Ctx)
-		if err != nil {
-			blog.Errorf("count biz set failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
-			return err
-		}
-		if len(enumQuoteIDs) != int(cnt) {
-			return fmt.Errorf("biz set not exist, rid: %s", kit.Rid)
-		}
-		return nil
 	}
 
-	tableName := common.GetInstTableName(objIDs[0], kit.SupplierAccount)
+	valEnumIDMap := make(map[int64]interface{}, 0)
+	for _, valID := range valIDs {
+		valEnumID, err := util.GetInt64ByInterface(valID)
+		if err != nil {
+			blog.Errorf("get valEnumID failed, valID type is %T, err: %v, rid: %s", valID, err, kit.Rid)
+			return err
+		}
+
+		if valEnumID == 0 {
+			return fmt.Errorf("enum quote instID is %d, it is illegal", valEnumID)
+		}
+		valEnumIDMap[valEnumID] = struct{}{}
+	}
+
+	if len(valEnumIDMap) == 0 {
+		return fmt.Errorf("enum quote instID is null, valEnumIDMap: %v", valEnumIDMap)
+	}
+
+	arrOption, err := metadata.ParseEnumQuoteOption(kit.Ctx, property.Option)
+	if len(arrOption) == 0 {
+		return fmt.Errorf("parse enum quote option data, but is null")
+	}
+	var quoteObjID string
+	for _, o := range arrOption {
+		if quoteObjID == "" {
+			quoteObjID = o.ObjID
+		} else if quoteObjID != o.ObjID {
+			return fmt.Errorf("enum quote objID not unique, objID: %s", quoteObjID)
+		}
+	}
+
+	valEnumIDs := make([]int64, 0)
+	for valEnumID := range valEnumIDMap {
+		valEnumIDs = append(valEnumIDs, valEnumID)
+	}
+	tableName := common.GetInstTableName(quoteObjID, kit.SupplierAccount)
 	cond := map[string]interface{}{
-		common.BKInstIDField: map[string]interface{}{
-			common.BKDBIN: enumQuoteIDs,
+		common.GetInstIDField(quoteObjID): map[string]interface{}{
+			common.BKDBIN: valEnumIDs,
 		},
 	}
 	cnt, err := mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
@@ -669,8 +638,9 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, option interface{}, enumQu
 		blog.Errorf("count inst failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
 		return err
 	}
-	if len(enumQuoteIDs) != int(cnt) {
+	if len(valEnumIDs) != int(cnt) {
 		return fmt.Errorf("inst not exist, rid: %s", kit.Rid)
 	}
+
 	return nil
 }

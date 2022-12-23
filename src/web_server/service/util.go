@@ -218,110 +218,25 @@ func (s *Service) getDepartment(c *gin.Context, objID string) ([]metadata.Depart
 }
 
 // handleExportEnumQuoteInst search inst detail and return a id-bk_inst_name map
-func (s *Service) handleExportEnumQuoteInst(c *gin.Context, h http.Header, data []mapstr.MapStr,
+func (s *Service) handleExportEnumQuoteInst(c *gin.Context, h http.Header, data []mapstr.MapStr, objID string,
 	fields map[string]logics.Property, rid string) ([]mapstr.MapStr, error) {
 
 	for _, rowMap := range data {
-		for id, property := range fields {
-			switch property.PropertyType {
-			case common.FieldTypeEnumQuote:
-				enumQuoteIDInterface, exist := rowMap[id]
-				if !exist || enumQuoteIDInterface == nil {
-					continue
-				}
-				enumQuoteIDList, ok := enumQuoteIDInterface.([]interface{})
-				if !ok {
-					blog.Errorf("rowMap[%s] type to array failed, rowMap: %v, rowMap type: %T, rid: %s", property,
-						rowMap[id], rowMap[id], rid)
-					return nil, fmt.Errorf("convert variable rowMap[%s] type to int array failed, rid: %s",
-						property, rid)
-				}
-
-				enumQuoteIDs := make([]int64, 0)
-				for _, enumQuoteID := range enumQuoteIDList {
-					id, err := util.GetInt64ByInterface(enumQuoteID)
-					if err != nil {
-						blog.Errorf("convert enumQuoteID[%d] to int64 failed, type: %T, err: %v, rid: %s",
-							enumQuoteID, enumQuoteID, rid)
-						return nil, err
-					}
-					enumQuoteIDs = append(enumQuoteIDs, id)
-				}
-
-				objIDs, err := logics.GetEnumQuoteObjID(property.Option, rid)
-				if err != nil {
-					blog.Errorf("get enum quote option obj id failed, err: %s, rid: %s", err, rid)
-					return nil, fmt.Errorf("get enum quote option obj id failed, rid: %s", rid)
-				}
-				if len(objIDs) == 0 {
-					return nil, fmt.Errorf("enum quote option model is null, rid: %s", rid)
-				}
-				enumQuoteNames, err := s.getEnumQuoteInstNames(c, h, enumQuoteIDs, objIDs[0], rid)
-				if err != nil {
-					blog.Errorf("get enum quote inst names failed, err: %v, rid: %s", err, rid)
-					continue
-				}
-
-				rowMap[id] = strings.Join(enumQuoteNames, ",")
+		if objID == common.BKInnerObjIDHost {
+			hostData, err := mapstr.NewFromInterface(rowMap[common.BKInnerObjIDHost])
+			if err != nil {
+				blog.Errorf("get host data failed, hostData: %#v, err: %v, rid: %s", hostData, err, rid)
+				return nil, err
+			}
+			if err := s.getEnumQuoteInstNames(c, h, fields, rid, hostData); err != nil {
+				blog.Errorf("get enum quote inst name list failed, err: %v, rid: %s", err, rid)
+				return nil, err
 			}
 		}
-	}
 
-	return data, nil
-}
-
-// handleHostExportEnumQuoteInst search inst detail and return a id-bk_inst_name map
-func (s *Service) handleHostExportEnumQuoteInst(c *gin.Context, h http.Header, data []mapstr.MapStr,
-	fields map[string]logics.Property, rid string) ([]mapstr.MapStr, error) {
-
-	for _, hostData := range data {
-		rowMap, err := mapstr.NewFromInterface(hostData[common.BKInnerObjIDHost])
-		if err != nil {
-			blog.Errorf("get host data failed, hostData: %#v, err: %v, rid: %s", hostData, err, rid)
+		if err := s.getEnumQuoteInstNames(c, h, fields, rid, rowMap); err != nil {
+			blog.Errorf("get enum quote inst name list failed, err: %v, rid: %s", err, rid)
 			return nil, err
-		}
-		for id, property := range fields {
-			switch property.PropertyType {
-			case common.FieldTypeEnumQuote:
-				enumQuoteIDInterface, exist := rowMap[id]
-				if !exist || enumQuoteIDInterface == nil {
-					continue
-				}
-				enumQuoteIDList, ok := enumQuoteIDInterface.([]interface{})
-				if !ok {
-					blog.Errorf("rowMap[%s] type to array failed, rowMap: %v, rowMap type: %T, rid: %s", property,
-						rowMap[id], rowMap[id], rid)
-					return nil, fmt.Errorf("convert variable rowMap[%s] type to int array failed, rid: %s",
-						property, rid)
-				}
-
-				enumQuoteIDs := make([]int64, 0)
-				for _, enumQuoteID := range enumQuoteIDList {
-					id, err := util.GetInt64ByInterface(enumQuoteID)
-					if err != nil {
-						blog.Errorf("convert enumQuoteID[%d] to int64 failed, type: %T, err: %v, rid: %s",
-							enumQuoteID, enumQuoteID, rid)
-						return nil, err
-					}
-					enumQuoteIDs = append(enumQuoteIDs, id)
-				}
-
-				objIDs, err := logics.GetEnumQuoteObjID(property.Option, rid)
-				if err != nil {
-					blog.Errorf("get enum quote option obj id failed, err: %s, rid: %s", err, rid)
-					return nil, fmt.Errorf("get enum quote option obj id failed, rid: %s", rid)
-				}
-				if len(objIDs) == 0 {
-					return nil, fmt.Errorf("enum quote option model is null, rid: %s", rid)
-				}
-				enumQuoteNames, err := s.getEnumQuoteInstNames(c, h, enumQuoteIDs, objIDs[0], rid)
-				if err != nil {
-					blog.Errorf("get enum quote inst names failed, err: %v, rid: %s", err, rid)
-					continue
-				}
-
-				rowMap[id] = strings.Join(enumQuoteNames, ",")
-			}
 		}
 	}
 
@@ -329,66 +244,80 @@ func (s *Service) handleHostExportEnumQuoteInst(c *gin.Context, h http.Header, d
 }
 
 // getEnumQuoteInstNames search inst detail and return a bk_inst_name
-func (s *Service) getEnumQuoteInstNames(c *gin.Context, h http.Header, enumQuoteIDs []int64, objID,
-	rid string) ([]string, error) {
+func (s *Service) getEnumQuoteInstNames(c *gin.Context, h http.Header, fields map[string]logics.Property, rid string,
+	rowMap mapstr.MapStr) error {
 
-	input := &metadata.QueryCondition{DisableCounter: true}
-	switch objID {
-	case common.BKInnerObjIDApp:
-		input.Fields = []string{common.BKAppNameField}
-		input.Condition = mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{common.BKDBIN: enumQuoteIDs}}
-	case common.BKInnerObjIDBizSet:
-		input.Fields = []string{common.BKBizSetNameField}
-		input.Condition = mapstr.MapStr{common.BKBizSetIDField: mapstr.MapStr{common.BKDBIN: enumQuoteIDs}}
-	case common.BKInnerObjIDHost:
-		input.Fields = []string{common.BKHostInnerIPField}
-		input.Condition = mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: enumQuoteIDs}}
-	default:
-		input.Fields = []string{common.BKInstNameField}
-		input.Condition = mapstr.MapStr{common.BKInstIDField: mapstr.MapStr{common.BKDBIN: enumQuoteIDs}}
-	}
+	for id, property := range fields {
+		switch property.PropertyType {
+		case common.FieldTypeEnumQuote:
+			enumQuoteIDInterface, exist := rowMap[id]
+			if !exist || enumQuoteIDInterface == nil {
+				continue
+			}
+			enumQuoteIDList, ok := enumQuoteIDInterface.([]interface{})
+			if !ok {
+				blog.Errorf("rowMap[%s] type to array failed, rowMap: %v, rowMap type: %T, rid: %s", property,
+					rowMap[id], rowMap[id], rid)
+				return fmt.Errorf("convert variable rowMap[%s] type to int array failed", property)
+			}
 
-	resp, err := s.Engine.CoreAPI.ApiServer().ReadInstance(c, h, objID, input)
-	if err != nil {
-		blog.Errorf("get quote inst name list failed, err: %v, rid: %s", err, rid)
-		return nil, fmt.Errorf("get enum quote option model inst data failed, rid: %s", rid)
-	}
+			enumQuoteIDMap := make(map[int64]interface{}, 0)
+			for _, enumQuoteID := range enumQuoteIDList {
+				id, err := util.GetInt64ByInterface(enumQuoteID)
+				if err != nil {
+					blog.Errorf("convert enumQuoteID[%d] to int64 failed, type: %T, err: %v, rid: %s",
+						enumQuoteID, enumQuoteID, rid)
+					return err
+				}
 
-	enumQuoteNames := make([]string, 0)
-	for _, info := range resp.Data.Info {
-		var ok bool
-		var enumQuoteName string
-		switch objID {
-		case common.BKInnerObjIDApp:
-			if name, exist := info.Get(common.BKAppNameField); exist {
-				enumQuoteName, ok = name.(string)
-				if !ok {
-					enumQuoteName = ""
+				if id == 0 {
+					return fmt.Errorf("enum quote instID is %d, it is illegal", id)
 				}
+				enumQuoteIDMap[id] = struct{}{}
 			}
-		case common.BKInnerObjIDBizSet:
-			if name, exist := info.Get(common.BKBizSetNameField); exist {
-				enumQuoteName, ok = name.(string)
-				if !ok {
-					enumQuoteName = ""
+			if len(enumQuoteIDMap) == 0 {
+				continue
+			}
+
+			quoteObjID, err := logics.GetEnumQuoteObjID(property.Option, rid)
+			if err != nil {
+				blog.Errorf("get enum quote option obj id failed, err: %s, rid: %s", err, rid)
+				return fmt.Errorf("get enum quote option obj id failed, option: %v", property.Option)
+			}
+
+			enumQuoteIDs := make([]int64, 0)
+			for enumQuoteID := range enumQuoteIDMap {
+				enumQuoteIDs = append(enumQuoteIDs, enumQuoteID)
+			}
+			input := &metadata.QueryCondition{
+				Fields: []string{common.GetInstNameField(quoteObjID)},
+				Condition: mapstr.MapStr{
+					common.GetInstIDField(quoteObjID): mapstr.MapStr{common.BKDBIN: enumQuoteIDs},
+				},
+				DisableCounter: true,
+			}
+			resp, err := s.Engine.CoreAPI.ApiServer().ReadInstance(c, h, quoteObjID, input)
+			if err != nil {
+				blog.Errorf("get quote inst name list failed, input: %+v, err: %v, rid: %s", input, err, rid)
+				return err
+			}
+
+			enumQuoteNames := make([]string, 0)
+			for _, info := range resp.Data.Info {
+				var ok bool
+				var enumQuoteName string
+				if name, exist := info.Get(common.GetInstNameField(quoteObjID)); exist {
+					enumQuoteName, ok = name.(string)
+					if !ok {
+						enumQuoteName = ""
+					}
 				}
+				enumQuoteNames = append(enumQuoteNames, enumQuoteName)
 			}
-		case common.BKInnerObjIDHost:
-			if name, exist := info.Get(common.BKHostInnerIPField); exist {
-				enumQuoteName, ok = name.(string)
-				if !ok {
-					enumQuoteName = ""
-				}
-			}
-		default:
-			if name, exist := info.Get(common.BKInstNameField); exist {
-				enumQuoteName, ok = name.(string)
-				if !ok {
-					enumQuoteName = ""
-				}
-			}
+
+			rowMap[id] = strings.Join(enumQuoteNames, "\n")
 		}
-		enumQuoteNames = append(enumQuoteNames, enumQuoteName)
 	}
-	return enumQuoteNames, nil
+
+	return nil
 }

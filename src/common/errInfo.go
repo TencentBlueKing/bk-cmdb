@@ -63,6 +63,9 @@ const (
 	// CCErrCommParamsIsInvalid the parameter is invalid or nonexistent
 	CCErrCommParamsIsInvalid = 1199011
 
+	// CCErrCommFieldTypeNotSupportMultiple the parameter is not support multiple
+	CCErrCommFieldTypeNotSupportMultiple = 1199012
+
 	// CCErrCommParseDataFailed failed to read data from data field
 	CCErrCommParseDataFailed = 1199013
 
@@ -229,6 +232,10 @@ const (
 
 	// CCIllegalRegularExpression the regular expression's type assertion failed
 	CCIllegalRegularExpression = 1199090
+
+	// CCErrCommParamsNeedSingleChoice  field type status is single choice, need single value
+	// 该状态码只提供给支持可多选字段校验报错时使用，目前用户类型，枚举多选，枚举引用，组织类型校验可多选报错时可以使用
+	CCErrCommParamsNeedSingleChoice = 1199091
 
 	// too many requests
 	CCErrTooManyRequestErr = 1199997
