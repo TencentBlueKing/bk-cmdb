@@ -294,7 +294,7 @@ func (p *kubeOperation) BatchCreateNode(kit *rest.Kit, bizID int64, data []types
 
 	result := make([]*types.Node, 0)
 	now := time.Now().Unix()
-	noPod := false
+	hasPod := false
 
 	for idx, node := range data {
 		if err := validateNodeData(kit, bizID, node); err != nil {
@@ -313,7 +313,7 @@ func (p *kubeOperation) BatchCreateNode(kit *rest.Kit, bizID int64, data []types
 			Unschedulable:    node.Unschedulable,
 			InternalIP:       node.InternalIP,
 			ExternalIP:       node.ExternalIP,
-			HasPod:           &noPod,
+			HasPod:           &hasPod,
 			HostName:         node.HostName,
 			RuntimeComponent: node.RuntimeComponent,
 			KubeProxyMode:    node.KubeProxyMode,
