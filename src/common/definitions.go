@@ -636,6 +636,8 @@ const (
 
 	// BKIsOnlyField the isonly name field
 	BKIsOnlyField = "isonly"
+	// BKIsMultipleField the is multiple name field
+	BKIsMultipleField = "ismultiple"
 	// BKGseTaskIDField the gse taskid
 	BKGseTaskIDField = "task_id"
 	// BKTaskIDField the gse taskid
