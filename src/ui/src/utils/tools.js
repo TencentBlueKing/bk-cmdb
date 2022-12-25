@@ -13,6 +13,7 @@
 import moment from 'moment'
 import GET_VALUE from 'get-value'
 import has from 'has'
+import { t } from '@/i18n'
 import { CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container'
 import { BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants'
 import { PRESET_TABLE_HEADER_MIN_WIDTH } from '@/dictionary/table-header'
@@ -532,6 +533,23 @@ export function isShowOverflowTips(property) {
   return !isUseComplexValueType(property) && !otherTypes.includes(property.bk_property_type)
 }
 
+export function getPropertyPlaceholder(property) {
+  if (!property) {
+    return ''
+  }
+  const placeholderTxt = [
+    PROPERTY_TYPES.ENUM,
+    PROPERTY_TYPES.ENUMMULTI,
+    PROPERTY_TYPES.ENUMQUOTE,
+    PROPERTY_TYPES.ORGANIZATION,
+    PROPERTY_TYPES.LIST,
+    PROPERTY_TYPES.DATE,
+    PROPERTY_TYPES.TIME,
+    PROPERTY_TYPES.TIMEZONE
+  ].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+  return t(placeholderTxt, { name: property.bk_property_name })
+}
+
 export default {
   getProperty,
   getPropertyText,
@@ -559,5 +577,6 @@ export default {
   isEmptyPropertyValue,
   getHeaderPropertyMinWidth,
   isShowOverflowTips,
-  isUseComplexValueType
+  isUseComplexValueType,
+  getPropertyPlaceholder
 }

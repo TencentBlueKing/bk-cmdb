@@ -72,7 +72,7 @@
                     :options="property.option || []"
                     :data-vv-name="property.bk_property_id"
                     :data-vv-as="property.bk_property_name"
-                    :placeholder="getPlaceholder(property)"
+                    :placeholder="$tools.getPropertyPlaceholder(property)"
                     :auto-check="false"
                     :multiple="property.multiple"
                     v-bind="$tools.getValidateEvents(property)"

@@ -12,16 +12,15 @@
 
 <template>
   <div :class="[
-         'cmdb-organization',
-         size,
-         {
-           'is-focus': focused,
-           'is-disabled': disabled,
-           'is-readonly': readonly,
-           'is-unselected': unselected
-         }
-       ]"
-    :data-placeholder="placeholder">
+    'cmdb-organization',
+    size,
+    {
+      'is-focus': focused,
+      'is-disabled': disabled,
+      'is-readonly': readonly,
+      'is-unselected': unselected
+    }
+  ]">
     <bk-select
       class="selector"
       ref="select"
@@ -37,6 +36,7 @@
       :display-tag="true"
       :tag-fixed-height="false"
       :show-empty="false"
+      :placeholder="placeholder"
       :loading="$loading([searchRequestId])"
       @tab-remove="handleSelectTabRemove"
       @clear="handleClear">
@@ -57,7 +57,7 @@
   const props = defineProps({
     value: {
       type: [Array, String],
-      default: []
+      default: () => []
     },
     disabled: {
       type: Boolean,
@@ -66,7 +66,7 @@
     readonly: Boolean,
     multiple: {
       type: Boolean,
-      default: true
+      default: false
     },
     clearable: Boolean,
     size: String,
@@ -112,7 +112,16 @@
 
   const checked = computed({
     get() {
-      return props.value || []
+      if (this.multiple) {
+        if (this.value && !Array.isArray(this.value)) {
+          return [this.value]
+        }
+        return this.value || []
+      }
+      if (Array.isArray(this.value)) {
+        return this.value[0] || ''
+      }
+      return this.value || ''
     },
     set(value) {
       emit('on-checked', value)
