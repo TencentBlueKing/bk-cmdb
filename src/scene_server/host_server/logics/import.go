@@ -199,21 +199,22 @@ func getIpField(host map[string]interface{}) (string, string, string) {
 }
 
 // AddHostByExcel add host by import excel
-func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ownerID string,
-	hostInfos map[int64]map[string]interface{}) (successMsg, errMsg []string, err, txnErr error) {
+func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64,
+	hostInfos map[int64]map[string]interface{}) ([]string, []string, error) {
 
 	_, toInternalModule, err := lgc.GetModuleIDAndIsInternal(kit, appID, moduleID)
 	if err != nil {
 		blog.Errorf("get module id and is internal failed, appID: %d, moduleID: %d, err: %v, rid: %s", appID,
 			moduleID, err, kit.Rid)
-		return nil, nil, err, nil
+		return nil, nil, err
 	}
-	instance := NewImportInstance(kit, ownerID, lgc)
 
-	// for audit log
-	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
+	instance := NewImportInstance(kit, kit.SupplierAccount, lgc)
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
-	txnErr = lgc.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
+	errMsg := make([]string, 0)
+	successMsg := make([]string, 0)
+	hostInfoList := make([]mapstr.MapStr, 0)
+	txnErr := lgc.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 		for _, index := range util.SortedMapInt64Keys(hostInfos) {
 			host := hostInfos[index]
 			if host == nil {
@@ -252,31 +253,31 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 				return err
 			}
 			host[common.BKHostIDField] = intHostID
-
-			// to generate audit log.
-			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-			auditLog, err := audit.GenerateAuditLog(generateAuditParameter, appID, []mapstr.MapStr{host})
-			if err != nil {
-				blog.Errorf("generate host audit log failed after create host, hostID: %d, bizID: %d, err: %v, "+
-					"rid: %s", intHostID, appID, err, kit.Rid)
-				errMsg = append(errMsg, err.Error())
-				return err
-			}
+			hostInfoList = append(hostInfoList, host)
 
 			// add current host operate result to batch add result
 			successMsg = append(successMsg, strconv.FormatInt(index, 10))
-
-			// add audit log
-			if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
-				blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
-				errMsg = append(errMsg, kit.CCError.Error(common.CCErrAuditSaveLogFailed).Error())
-				return err
-			}
 		}
+
+		// to generate audit log.
+		audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, appID, hostInfoList)
+		if err != nil {
+			blog.Errorf("generate host audit log failed, bizID: %d, err: %v, rid: %s", appID, err, kit.Rid)
+			return err
+		}
+
+		// add audit log
+		if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
+			blog.Errorf("save host add audit log failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+
 		return nil
 	})
 
-	return successMsg, errMsg, nil, txnErr
+	return successMsg, errMsg, txnErr
 }
 
 // AddHostToResourcePool TODO
