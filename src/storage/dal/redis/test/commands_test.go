@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 )
 
 // these test cases extract from cases in following files at git commit bfb4c92
@@ -60,7 +60,7 @@ var _ = Describe("Commands", func() {
 		defer pubsub.Close()
 
 		{
-			msgi, err := pubsub.ReceiveTimeout(time.Second)
+			msgi, err := pubsub.ReceiveTimeout(context.Background(), time.Second)
 			Expect(err).NotTo(HaveOccurred())
 			subscr := msgi.(*redis.Subscription)
 			Expect(subscr.Kind).To(Equal("psubscribe"))
@@ -69,7 +69,7 @@ var _ = Describe("Commands", func() {
 		}
 
 		{
-			msgi, err := pubsub.ReceiveTimeout(time.Second)
+			msgi, err := pubsub.ReceiveTimeout(context.Background(), time.Second)
 			Expect(err.(net.Error).Timeout()).To(Equal(true))
 			Expect(msgi).To(BeNil())
 		}
@@ -78,10 +78,10 @@ var _ = Describe("Commands", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(n).To(Equal(int64(1)))
 
-		Expect(pubsub.PUnsubscribe("mychannel*")).NotTo(HaveOccurred())
+		Expect(pubsub.PUnsubscribe(context.Background(), "mychannel*")).NotTo(HaveOccurred())
 
 		{
-			msgi, err := pubsub.ReceiveTimeout(time.Second)
+			msgi, err := pubsub.ReceiveTimeout(context.Background(), time.Second)
 			Expect(err).NotTo(HaveOccurred())
 			subscr := msgi.(*redis.Message)
 			Expect(subscr.Channel).To(Equal("mychannel1"))
@@ -90,7 +90,7 @@ var _ = Describe("Commands", func() {
 		}
 
 		{
-			msgi, err := pubsub.ReceiveTimeout(time.Second)
+			msgi, err := pubsub.ReceiveTimeout(context.Background(), time.Second)
 			Expect(err).NotTo(HaveOccurred())
 			subscr := msgi.(*redis.Subscription)
 			Expect(subscr.Kind).To(Equal("punsubscribe"))
@@ -105,7 +105,7 @@ var _ = Describe("Commands", func() {
 		defer pubsub.Close()
 
 		{
-			msgi, err := pubsub.ReceiveTimeout(time.Second)
+			msgi, err := pubsub.ReceiveTimeout(context.Background(), time.Second)
 			Expect(err).NotTo(HaveOccurred())
 			subscr := msgi.(*redis.Subscription)
 			Expect(subscr.Kind).To(Equal("subscribe"))
@@ -114,7 +114,7 @@ var _ = Describe("Commands", func() {
 		}
 
 		{
-			msgi, err := pubsub.ReceiveTimeout(time.Second)
+			msgi, err := pubsub.ReceiveTimeout(context.Background(), time.Second)
 			Expect(err).NotTo(HaveOccurred())
 			subscr := msgi.(*redis.Subscription)
 			Expect(subscr.Kind).To(Equal("subscribe"))
@@ -123,7 +123,7 @@ var _ = Describe("Commands", func() {
 		}
 
 		{
-			msgi, err := pubsub.ReceiveTimeout(time.Second)
+			msgi, err := pubsub.ReceiveTimeout(context.Background(), time.Second)
 			Expect(err.(net.Error).Timeout()).To(Equal(true))
 			Expect(msgi).NotTo(HaveOccurred())
 		}
@@ -136,10 +136,10 @@ var _ = Describe("Commands", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(n).To(Equal(int64(1)))
 
-		Expect(pubsub.Unsubscribe("mychannel", "mychannel2")).NotTo(HaveOccurred())
+		Expect(pubsub.Unsubscribe(context.Background(), "mychannel", "mychannel2")).NotTo(HaveOccurred())
 
 		{
-			msgi, err := pubsub.ReceiveTimeout(time.Second)
+			msgi, err := pubsub.ReceiveTimeout(context.Background(), time.Second)
 			Expect(err).NotTo(HaveOccurred())
 			msg := msgi.(*redis.Message)
 			Expect(msg.Channel).To(Equal("mychannel"))
@@ -147,7 +147,7 @@ var _ = Describe("Commands", func() {
 		}
 
 		{
-			msgi, err := pubsub.ReceiveTimeout(time.Second)
+			msgi, err := pubsub.ReceiveTimeout(context.Background(), time.Second)
 			Expect(err).NotTo(HaveOccurred())
 			msg := msgi.(*redis.Message)
 			Expect(msg.Channel).To(Equal("mychannel2"))
@@ -155,7 +155,7 @@ var _ = Describe("Commands", func() {
 		}
 
 		{
-			msgi, err := pubsub.ReceiveTimeout(time.Second)
+			msgi, err := pubsub.ReceiveTimeout(context.Background(), time.Second)
 			Expect(err).NotTo(HaveOccurred())
 			subscr := msgi.(*redis.Subscription)
 			Expect(subscr.Kind).To(Equal("unsubscribe"))
@@ -164,7 +164,7 @@ var _ = Describe("Commands", func() {
 		}
 
 		{
-			msgi, err := pubsub.ReceiveTimeout(time.Second)
+			msgi, err := pubsub.ReceiveTimeout(context.Background(), time.Second)
 			Expect(err).NotTo(HaveOccurred())
 			subscr := msgi.(*redis.Subscription)
 			Expect(subscr.Kind).To(Equal("unsubscribe"))
@@ -175,10 +175,10 @@ var _ = Describe("Commands", func() {
 
 	It("should Pipeline", func() {
 		pipe := client.Pipeline()
-		ping := pipe.Ping()
-		set := pipe.Set("aaa", 99, 0)
-		get := pipe.Get("aaa")
-		_, err := pipe.Exec()
+		ping := pipe.Ping(context.Background())
+		set := pipe.Set(context.Background(), "aaa", 99, 0)
+		get := pipe.Get(context.Background(), "aaa")
+		_, err := pipe.Exec(context.Background())
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(ping.Err()).NotTo(HaveOccurred())

@@ -24,7 +24,7 @@ import (
 	ccRedis "configcenter/src/storage/dal/redis"
 	"configcenter/src/tools/cmdb_ctl/app/config"
 
-	rawRedis "github.com/go-redis/redis/v7"
+	rawRedis "github.com/go-redis/redis/v8"
 	"github.com/spf13/cobra"
 )
 
@@ -168,7 +168,7 @@ func (s *snapshotCheckService) checkHostSnapshot() error {
 	var receiveMsgErr error
 	go func() {
 		for len(stopChn) == 0 {
-			received, err := sub.ReceiveTimeout(time.Minute * 1)
+			received, err := sub.ReceiveTimeout(context.Background(), time.Minute*1)
 			if err != nil {
 				receiveMsgErr = fmt.Errorf("receive message from channel [%#v] in redis [%s] failed: %s", channelArr, redisConfig.Address, err.Error())
 				return

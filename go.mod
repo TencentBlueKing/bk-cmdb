@@ -17,7 +17,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/gin-contrib/sessions v0.0.4
 	github.com/gin-gonic/gin v1.7.7
-	github.com/go-redis/redis/v7 v7.4.1
+	github.com/go-redis/redis/v8 v8.11.0
 	github.com/go-zookeeper/zk v1.0.2
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/go-cmp v0.5.8
@@ -66,6 +66,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/eapache/go-resiliency v1.2.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect

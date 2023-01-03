@@ -31,7 +31,7 @@ import (
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream/types"
 
-	rawRedis "github.com/go-redis/redis/v7"
+	rawRedis "github.com/go-redis/redis/v8"
 	"github.com/tidwall/gjson"
 )
 
@@ -136,15 +136,15 @@ func (h *hostCache) onDelete(e *types.Event) {
 	pipe := redis.Client().Pipeline()
 	// delete cloud id and ip pair
 	for _, ip := range ips {
-		pipe.Del(h.key.IPCloudIDKey(ip.String(), cloudID))
+		pipe.Del(context.Background(), h.key.IPCloudIDKey(ip.String(), cloudID))
 	}
 
 	// delete host details
-	pipe.Del(h.key.HostDetailKey(hostID))
+	pipe.Del(context.Background(), h.key.HostDetailKey(hostID))
 	// remove host id from host id list.
-	pipe.ZRem(h.key.HostIDListKey(), hostID)
+	pipe.ZRem(context.Background(), h.key.HostIDListKey(), hostID)
 
-	_, err = pipe.Exec()
+	_, err = pipe.Exec(context.Background())
 	if err != nil {
 		blog.Errorf("received host delete event, oid: %s, but delete oid and detail failed, err: %v", e.Oid, err)
 		return
@@ -187,20 +187,20 @@ func refreshHostDetailCache(hostID int64, ips string, cloudID int64, hostDetail 
 	// a host can have multiple host inner ips
 	ttl := hostKey.WithRandomExpireSeconds()
 	for _, ip := range strings.Split(ips, ",") {
-		pipeline.Set(hostKey.IPCloudIDKey(ip, cloudID), hostID, ttl)
+		pipeline.Set(context.Background(), hostKey.IPCloudIDKey(ip, cloudID), hostID, ttl)
 	}
 
 	// update host details
-	pipeline.Set(hostKey.HostDetailKey(hostID), hostDetail, ttl)
+	pipeline.Set(context.Background(), hostKey.HostDetailKey(hostID), hostDetail, ttl)
 
 	// add host id to id list.
-	pipeline.ZAddNX(hostKey.HostIDListKey(), &rawRedis.Z{
+	pipeline.ZAddNX(context.Background(), hostKey.HostIDListKey(), &rawRedis.Z{
 		// set host id as it's score number
 		Score:  float64(hostID),
 		Member: hostID,
 	})
 
-	_, err = pipeline.Exec()
+	_, err = pipeline.Exec(context.Background())
 	if err != nil {
 		blog.Errorf("upsert host: %d, ip: %s cache, but upsert to redis failed, err: %v", hostID, ips, err)
 		return

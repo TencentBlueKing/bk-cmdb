@@ -1,6 +1,7 @@
 ## 实现方式
  - 通过对底层redis client的封装，实现接口Client来提供redis常用的一些操作
- - 当前封装的底层redis client是[go-redis](https://github.com/go-redis/redis/tree/v7)，git地址为<https://github.com/go-redis/redis/tree/v7>
+ - 当前封装的底层redis client是[go-redis](https://github.com/go-redis/redis/tree/v8)，git地址为<https://github.
+   com/go-redis/redis/tree/v8>
 
 ## 实现目的
 - 在底层redis client之上增加一层接口封装，该接口供上层调用，有利于代码的扩展性
@@ -18,7 +19,7 @@ import (
 
 	localRedis "configcenter/src/storage/dal/redis"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 )
 
 func main() {
@@ -51,9 +52,9 @@ func DBOps(cli localRedis.Client) {
 	key := "mykey"
 
 	pipe := cli.Pipeline()
-	pipe.Set("aaa", 99, 0)
-	pipe.Get("aaa")
-	vals, err := pipe.Exec()
+	pipe.Set(context.Background(), "aaa", 99, 0)
+	pipe.Get(context.Background(), "aaa")
+	vals, err := pipe.Exec(context.Background())
 	checkErr(err)
 	fmt.Println("Pipeline", vals)
 

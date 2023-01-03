@@ -26,7 +26,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
 
-	rawRedis "github.com/go-redis/redis/v7"
+	rawRedis "github.com/go-redis/redis/v8"
 )
 
 func (c *Client) tryRefreshHostDetail(hostID int64, ips string, cloudID int64, detail []byte) {
@@ -191,7 +191,7 @@ func (c *Client) refreshHostIDListCache(rid string) error {
 		pip := redis.Client().Pipeline()
 		// because the temp key is a random key, so we set a expire time so that it can be gc,
 		// but we will reset expire to unlimited when this key is renamed to a normal key.
-		pip.Expire(tempIDListKey, time.Duration(hostKey.HostIDListKeyExpireSeconds())*time.Second)
+		pip.Expire(context.Background(), tempIDListKey, time.Duration(hostKey.HostIDListKeyExpireSeconds())*time.Second)
 		for _, h := range stepID {
 			key := &rawRedis.Z{
 				// set zset score with host id, so we can sort with host id
@@ -200,11 +200,11 @@ func (c *Client) refreshHostIDListCache(rid string) error {
 				Member: h.ID,
 			}
 			// write to the temp key
-			pip.ZAdd(tempIDListKey, key)
+			pip.ZAdd(context.Background(), tempIDListKey, key)
 		}
 
 		// it cost about 600ms to zadd 100000 host id to redis from test case.
-		_, err := pip.Exec()
+		_, err := pip.Exec(context.Background())
 		if err != nil {
 			blog.Errorf("update host id list failed, err: %v, rid: %v", err, rid)
 			return err
@@ -220,16 +220,16 @@ func (c *Client) refreshHostIDListCache(rid string) error {
 	tempOldIDListKey := fmt.Sprintf("%s-old", tempIDListKey)
 	// rename id list key to temp old id list key so that we can delete later, avoiding the implicit del in rename
 	// which will block all the following redis operation
-	pipe.Rename(hostKey.HostIDListKey(), tempOldIDListKey)
+	pipe.Rename(context.Background(), hostKey.HostIDListKey(), tempOldIDListKey)
 	// rename temp key to real key
-	pipe.Rename(tempIDListKey, hostKey.HostIDListKey())
+	pipe.Rename(context.Background(), tempIDListKey, hostKey.HostIDListKey())
 	// reset id_list key's expire time to a new one.
-	pipe.Expire(hostKey.HostIDListKey(), 48*time.Hour)
+	pipe.Expire(context.Background(), hostKey.HostIDListKey(), 48*time.Hour)
 	// set expire key with unix time seconds now value.
-	pipe.Set(hostKey.HostIDListExpireKey(), time.Now().Unix(),
+	pipe.Set(context.Background(), hostKey.HostIDListExpireKey(), time.Now().Unix(),
 		time.Duration(hostKey.HostIDListKeyExpireSeconds())*time.Second)
 
-	if _, err := pipe.Exec(); err != nil {
+	if _, err := pipe.Exec(context.Background()); err != nil {
 		blog.Errorf("rename host id list key form %s to %s failed, err :%v, rid: %v", hostKey.HostIDListTempKey(),
 			hostKey.HostIDListKey(), err, rid)
 		return err
@@ -249,7 +249,7 @@ func (c *Client) refreshHostIDListCache(rid string) error {
 
 func (c *Client) deleteOldHostIDListKey(key string) error {
 	for {
-		cnt, err := redis.Client().ZRemRangeByRank(key, 0, listStep).Result()
+		cnt, err := redis.Client().ZRemRangeByRank(context.Background(), key, 0, listStep).Result()
 		if err != nil {
 			return err
 		}

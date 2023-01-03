@@ -18,7 +18,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 )
 
 // Config define redis config
@@ -61,8 +61,9 @@ func NewFromConfig(cfg Config) (Client, error) {
 			DB:               dbNum,
 			PoolSize:         cfg.MaxOpenConns,
 			SentinelPassword: cfg.SentinelPassword,
+			RouteRandomly:    true,
 		}
-		client = NewFailoverClient(option)
+		client = NewFailoverClusterClient(option)
 	}
 
 	err = client.Ping(context.Background()).Err()

@@ -8,7 +8,7 @@ import (
 
 	"configcenter/src/storage/dal/redis"
 
-	rawRedis "github.com/go-redis/redis/v7"
+	rawRedis "github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/require"
 )
 

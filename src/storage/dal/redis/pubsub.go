@@ -13,24 +13,25 @@
 package redis
 
 import (
+	"context"
 	"time"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 )
 
 // PubSub is the interface for redis Pub/Sub commands
 type PubSub interface {
-	Channel() <-chan *redis.Message
+	Channel(opts ...redis.ChannelOption) <-chan *redis.Message
 	ChannelSize(size int) <-chan *redis.Message
-	ChannelWithSubscriptions(size int) <-chan interface{}
+	ChannelWithSubscriptions(_ context.Context, size int) <-chan interface{}
 	Close() error
-	PSubscribe(patterns ...string) error
-	PUnsubscribe(patterns ...string) error
-	Ping(payload ...string) error
-	Receive() (interface{}, error)
-	ReceiveMessage() (*redis.Message, error)
-	ReceiveTimeout(timeout time.Duration) (interface{}, error)
+	PSubscribe(ctx context.Context, patterns ...string) error
+	PUnsubscribe(ctx context.Context, patterns ...string) error
+	Ping(ctx context.Context, payload ...string) error
+	Receive(ctx context.Context) (interface{}, error)
+	ReceiveMessage(ctx context.Context) (*redis.Message, error)
+	ReceiveTimeout(ctx context.Context, timeout time.Duration) (interface{}, error)
 	String() string
-	Subscribe(channels ...string) error
-	Unsubscribe(channels ...string) error
+	Subscribe(ctx context.Context, channels ...string) error
+	Unsubscribe(ctx context.Context, channels ...string) error
 }

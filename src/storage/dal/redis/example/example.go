@@ -19,7 +19,7 @@ import (
 
 	localRedis "configcenter/src/storage/dal/redis"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 )
 
 func main() {
@@ -40,7 +40,7 @@ func MyClient() {
 
 // MySentinelClient TODO
 func MySentinelClient() {
-	sentinelClient := localRedis.NewFailoverClient(&redis.FailoverOptions{
+	sentinelClient := localRedis.NewFailoverClusterClient(&redis.FailoverOptions{
 		MasterName:       "mymaster",
 		SentinelAddrs:    []string{"localhost:26379", "localhost:26380", "localhost:26381"},
 		SentinelPassword: "ss",
@@ -59,9 +59,9 @@ func DBOps(cli localRedis.Client) {
 	setKey := "mySetKey"
 
 	pipe := cli.Pipeline()
-	pipe.Set("aaa", 99, 0)
-	pipe.Get("aaa")
-	vals, err := pipe.Exec()
+	pipe.Set(context.Background(), "aaa", 99, 0)
+	pipe.Get(context.Background(), "aaa")
+	vals, err := pipe.Exec(context.Background())
 	checkErr(err)
 	fmt.Println("Pipeline", vals)
 
@@ -101,11 +101,11 @@ func DBOps(cli localRedis.Client) {
 		time.Sleep(time.Second)
 		cli.Publish(ctx, "channels", "hello,a subscribe test")
 	}()
-	msg, err := sub.ReceiveMessage()
+	msg, err := sub.ReceiveMessage(context.Background())
 	checkErr(err)
 	fmt.Println("ReceiveMessage:", msg)
 
-	err = sub.Unsubscribe("channels")
+	err = sub.Unsubscribe(context.Background(), "channels")
 	checkErr(err)
 
 	err = sub.Close()
