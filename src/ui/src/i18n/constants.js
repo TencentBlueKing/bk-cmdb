@@ -1,3 +1,4 @@
+
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
@@ -10,29 +11,23 @@
  * limitations under the License.
  */
 
-import { LANG_KEYS } from '../constants'
+export const LANG_COOKIE_NAME = 'blueking_language'
 
-// 通用
-import en from './en.json'
-import cn from './cn.json'
+export const LANG_KEYS = Object.freeze({
+  ZH_CN: 'zh_CN',
+  EN: 'en'
+})
 
-// 全局配置
-import globalConfigZhCN from '@/views/global-config/i18n/zh-CN.json'
-import globalConfigEn from '@/views/global-config/i18n/en.json'
-
-// 模型管理
-import modelManageZhCN from '@/views/model-manage/i18n/zh-CN.json'
-import modelManageEn from '@/views/model-manage/i18n/en.json'
-
-export default {
-  [LANG_KEYS.EN]: {
-    ...en,
-    ...globalConfigEn,
-    ...modelManageEn
+export const LANG_SET = Object.freeze([
+  {
+    id: LANG_KEYS.EN,
+    name: 'English',
+    icon: 'english'
   },
-  [LANG_KEYS.ZH_CN]: {
-    ...cn,
-    ...globalConfigZhCN,
-    ...modelManageZhCN
+  {
+    id: LANG_KEYS.ZH_CN,
+    alias: ['zh-cn'],
+    name: '中文',
+    icon: 'chinese'
   }
-}
+])

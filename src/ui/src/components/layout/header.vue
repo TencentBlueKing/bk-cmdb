@@ -31,6 +31,25 @@
     <section class="header-info">
       <bk-popover class="info-item"
         theme="light header-info-popover"
+        :arrow="false"
+        :tippy-options="{
+          animateFill: false,
+          hideOnClick: false
+        }">
+        <i :class="`bk-icon icon-${currentSysLang.icon} lang-icon`"></i>
+        <div slot="content">
+          <div
+            v-for="(lang, index) in sysLangs"
+            :key="index"
+            :class="['link-item', { active: $i18n.locale === lang.id }]"
+            @click="handleToggleLang(lang.id)">
+            <i :class="`bk-icon icon-${lang.icon} lang-icon`"></i>
+            <span>{{lang.name}}</span>
+          </div>
+        </div>
+      </bk-popover>
+      <bk-popover class="info-item"
+        theme="light header-info-popover"
         animation="fade"
         placement="bottom-end"
         :arrow="false"
@@ -40,9 +59,9 @@
         }">
         <i class="question-icon icon-cc-default"></i>
         <template slot="content">
-          <a class="question-link" target="_blank" :href="helpDocUrl">{{$t('产品文档')}}</a>
-          <a class="question-link" target="_blank" href="https://bk.tencent.com/s-mart/community">{{$t('问题反馈')}}</a>
-          <a class="question-link" target="_blank" href="https://github.com/Tencent/bk-cmdb">{{$t('开源社区')}}</a>
+          <a class="link-item" target="_blank" :href="helpDocUrl">{{$t('产品文档')}}</a>
+          <a class="link-item" target="_blank" href="https://bk.tencent.com/s-mart/community">{{$t('问题反馈')}}</a>
+          <a class="link-item" target="_blank" href="https://github.com/Tencent/bk-cmdb">{{$t('开源社区')}}</a>
         </template>
       </bk-popover>
       <bk-popover class="info-item"
@@ -59,7 +78,7 @@
           <i class="user-icon bk-icon icon-angle-down"></i>
         </span>
         <template slot="content">
-          <a class="question-link" href="javascript:void(0)"
+          <a class="link-item" href="javascript:void(0)"
             @click="handleLogout">
             <i class="icon-cc-logout"></i>
             {{$t('注销')}}
@@ -84,10 +103,14 @@
     getBizSetIdFromStorage,
     getBizSetRecentlyUsed
   } from '@/utils/business-set-helper.js'
+  import { changeLocale } from '@/i18n'
+  import { LANG_SET } from '@/i18n/constants'
 
   export default {
     data() {
-      return {}
+      return {
+        sysLangs: LANG_SET
+      }
     },
     computed: {
       ...mapGetters(['userName']),
@@ -110,6 +133,9 @@
       isBusinessView() {
         const { matched: [topRoute] } = this.$route
         return topRoute?.name === MENU_BUSINESS_SET || topRoute?.name === MENU_BUSINESS
+      },
+      currentSysLang() {
+        return this.sysLangs.find(lang => lang.id === this.$i18n.locale) || {}
       }
     },
     methods: {
@@ -133,6 +159,9 @@
           }
         }
         return link
+      },
+      handleToggleLang(locale) {
+        changeLocale(locale)
       },
       handleLogout() {
         this.$http.post(`${window.API_HOST}logout`, {
@@ -199,10 +228,13 @@
     }
     .info-item {
         @include inlineBlock;
-        margin: 0 25px 0 0;
+        margin: 0 20px 0 0;
         text-align: left;
         font-size: 0;
         cursor: pointer;
+        &:last-child {
+            margin-right: 24px;
+        }
         .tippy-active {
             .bk-icon {
                 color: #fff;
@@ -211,7 +243,8 @@
                 transform: rotate(-180deg);
             }
         }
-        .question-icon {
+        .question-icon,
+        .lang-icon {
             font-size: 16px;
             color: #DCDEE5;
             &:hover {
@@ -234,23 +267,39 @@
                 color: #fff;
             }
         }
-    }
-    .question-link {
-        display: block;
-        padding: 0 20px;
-        line-height: 40px;
-        font-size: 14px;
-        white-space: nowrap;
-        &:hover {
-            background-color: #f1f7ff;
-            color: #3a84ff;
+        .lang-icon {
+            font-size: 20px;
         }
+    }
+
+    .header-info-popover-theme {
+      .link-item {
+          display: flex;
+          padding: 0 20px;
+          height: 40px;
+          font-size: 14px;
+          white-space: nowrap;
+          align-items: center;
+          cursor: pointer;
+
+          &:hover,
+          &.active {
+              background-color: #f1f7ff;
+              color: #3a84ff;
+          }
+
+          .lang-icon {
+              font-size: 16px;
+              margin-right: 4px;
+          }
+      }
     }
 </style>
 
 <style>
     .tippy-tooltip.header-info-popover-theme {
-        padding: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
         overflow: hidden;
         border-radius: 2px !important;
     }
