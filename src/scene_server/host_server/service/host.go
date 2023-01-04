@@ -398,13 +398,13 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 	}
 
 	retData := make(map[string]interface{})
-	_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, ctx.Kit.SupplierAccount, hostList.HostInfo)
-	retData["success"] = success
-	retData["error"] = errRow
+	success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, hostList.HostInfo)
 	if err != nil {
-		blog.Errorf("add host failed, success: %v, errRow:%v, err: %v, hostList:%#v, rid:%s",
-			success, errRow, err, hostList, ctx.Kit.Rid)
-		ctx.RespEntityWithError(retData, ctx.Kit.CCError.CCError(common.CCErrHostCreateFail))
+		blog.Errorf("add host by excel failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		retData["success"] = success
+		retData["error"] = errRow
+		ctx.RespEntityWithError(retData, err)
+		return
 	}
 
 	ctx.RespEntity(retData)
