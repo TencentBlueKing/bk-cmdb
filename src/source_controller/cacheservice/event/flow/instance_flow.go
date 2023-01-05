@@ -224,7 +224,8 @@ func (f *InstanceFlow) doBatch(es []*types.Event) (retry bool) {
 
 			// if hit cursor conflict, the former cursor node's detail will be overwrite by the later one, so it
 			// is not needed to remove the overlapped cursor node's detail again.
-			pipe.Set(key.DetailKey(chainNode.Cursor), string(detailBytes), time.Duration(key.TTLSeconds())*time.Second)
+			pipe.Set(context.Background(), key.DetailKey(chainNode.Cursor), string(detailBytes),
+				time.Duration(key.TTLSeconds())*time.Second)
 		}
 
 		if hitConflict {
@@ -251,7 +252,7 @@ func (f *InstanceFlow) doBatch(es []*types.Event) (retry bool) {
 	lastTokenData[common.BKStartAtTimeField] = lastChainNode.ClusterTime
 
 	// store details at first, in case those watching cmdb events read chain when details are not inserted yet
-	if _, err := pipe.Exec(); err != nil {
+	if _, err := pipe.Exec(context.Background()); err != nil {
 		f.metrics.CollectRedisError()
 		blog.Errorf("run flow, but insert details for %s failed, oids: %+v, err: %v, rid: %s,", f.key.Collection(),
 			oids, err, rid)

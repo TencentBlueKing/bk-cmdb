@@ -130,10 +130,10 @@ func (l *mlock) MLock(rid string, retry int, expire time.Duration, keys ...StrFo
 			key := fmt.Sprintf("%s%s", common.BKCacheKeyV3Prefix, k)
 			uuid := xid.New().String()
 			l.keys = append(l.keys, key)
-			pipe.SetNX(key, uuid, 0)
-			pipe.Expire(key, expire)
+			pipe.SetNX(context.Background(), key, uuid, 0)
+			pipe.Expire(context.Background(), key, expire)
 		}
-		res, err := pipe.Exec()
+		res, err := pipe.Exec(context.Background())
 		if err != nil {
 			// exec error try it again
 			continue

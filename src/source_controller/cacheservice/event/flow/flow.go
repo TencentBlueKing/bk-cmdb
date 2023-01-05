@@ -241,7 +241,8 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 
 		// if hit cursor conflict, the former cursor node's detail will be overwrite by the later one, so it
 		// is not needed to remove the overlapped cursor node's detail again.
-		pipe.Set(f.key.DetailKey(chainNode.Cursor), string(detailBytes), time.Duration(f.key.TTLSeconds())*time.Second)
+		pipe.Set(context.Background(), f.key.DetailKey(chainNode.Cursor), string(detailBytes),
+			time.Duration(f.key.TTLSeconds())*time.Second)
 
 		// validate if the cursor already exists in the batch, this happens when the concurrency is very high.
 		// which will generate the same operation event with same cluster time, and generate with the same cursor
@@ -277,7 +278,7 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 	}
 
 	// store details at first, in case those watching cmdb events read chain when details are not inserted yet
-	if _, err := pipe.Exec(); err != nil {
+	if _, err := pipe.Exec(context.Background()); err != nil {
 		f.metrics.CollectRedisError()
 		blog.Errorf("run flow, but insert details for %s failed, oids: %+v, err: %v, rid: %s,", f.key.Collection(),
 			oids, err, rid)

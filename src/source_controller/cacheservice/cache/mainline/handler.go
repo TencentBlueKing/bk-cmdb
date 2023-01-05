@@ -51,9 +51,9 @@ func (t *tokenHandler) SetLastWatchToken(_ context.Context, token string) error 
 	}
 
 	pipe := t.rds.Pipeline()
-	pipe.Set(t.key.resumeTokenKey(), token, 0)
-	pipe.Set(t.key.resumeAtTimeKey(), string(atTime), 0)
-	_, err = pipe.Exec()
+	pipe.Set(context.Background(), t.key.resumeTokenKey(), token, 0)
+	pipe.Set(context.Background(), t.key.resumeAtTimeKey(), string(atTime), 0)
+	_, err = pipe.Exec(context.Background())
 	if err != nil {
 		return err
 	}
@@ -107,9 +107,9 @@ func (t *tokenHandler) resetWatchTokenWithTimestamp(startAtTime types.TimeStamp)
 	}
 
 	pipe := t.rds.Pipeline()
-	pipe.Set(t.key.resumeTokenKey(), "", 0)
-	pipe.Set(t.key.resumeAtTimeKey(), string(atTime), 0)
-	_, err = pipe.Exec()
+	pipe.Set(context.Background(), t.key.resumeTokenKey(), "", 0)
+	pipe.Set(context.Background(), t.key.resumeAtTimeKey(), string(atTime), 0)
+	_, err = pipe.Exec(context.Background())
 	if err != nil {
 		return err
 	}

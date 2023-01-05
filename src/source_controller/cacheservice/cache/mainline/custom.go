@@ -129,9 +129,9 @@ func (m *customLevel) reconcileCustomWatch(rid string, rank []string) error {
 			// delete resume token and start time at first, because it should not be reused.
 			key := newCustomKey(obj)
 			pipe := m.rds.Pipeline()
-			pipe.Del(key.resumeAtTimeKey())
-			pipe.Del(key.resumeTokenKey())
-			_, err := pipe.Exec()
+			pipe.Del(context.Background(), key.resumeAtTimeKey())
+			pipe.Del(context.Background(), key.resumeTokenKey())
+			_, err := pipe.Exec(context.Background())
 			if err != nil {
 				blog.Errorf("delete resume token and start time key failed, err: %v, rid: %s", err, key)
 				// try next round.

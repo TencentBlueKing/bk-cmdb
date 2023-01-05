@@ -91,9 +91,9 @@ func (t *TxnManager) GenTxnNumber(sessionID string, ttl time.Duration) (int64, e
 	}
 	// we increase by step 1, so that we can calculate how many transaction has already
 	// be executed in a same session.
-	pip.SetNX(key, 0, ttl).Result()
-	incrBy := pip.IncrBy(key, 1)
-	_, err := pip.Exec()
+	pip.SetNX(context.Background(), key, 0, ttl).Result()
+	incrBy := pip.IncrBy(context.Background(), key, 1)
+	_, err := pip.Exec(context.Background())
 	if err != nil {
 		return 0, err
 	}

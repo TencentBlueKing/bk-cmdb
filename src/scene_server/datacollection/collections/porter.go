@@ -267,12 +267,12 @@ func (p *SimplePorter) collectLoop() error {
 			// ReceiveMessage returns a Message or error ignoring Subscription or Pong
 			// messages. It automatically reconnects to Redis Server and resubscribes
 			// to topics in case of network errors.
-			newMsg, err := subChan.ReceiveMessage()
+			newMsg, err := subChan.ReceiveMessage(context.Background())
 			if err != nil {
 				blog.Errorf("SimplePorter[%s]| receive topics[%+v] message failed, %+v", p.name, p.topics, err)
 
 				// internal errors, unsubscribe and try to sub-recv again.
-				subChan.Unsubscribe(p.topics...)
+				subChan.Unsubscribe(context.Background(), p.topics...)
 				subChan.Close()
 				break
 			}

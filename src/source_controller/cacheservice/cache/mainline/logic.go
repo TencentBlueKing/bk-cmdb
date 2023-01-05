@@ -79,7 +79,7 @@ func (c *Client) listBusinessWithRefreshCache(ctx context.Context, ids []int64, 
 			return nil, err
 		}
 
-		pipe.Set(bizKey.detailKey(id), js, detailTTLDuration)
+		pipe.Set(context.Background(), bizKey.detailKey(id), js, detailTTLDuration)
 
 		all[idx] = string(js)
 		if len(fields) != 0 {
@@ -87,7 +87,7 @@ func (c *Client) listBusinessWithRefreshCache(ctx context.Context, ids []int64, 
 		}
 	}
 
-	_, err = pipe.Exec()
+	_, err = pipe.Exec(context.Background())
 	if err != nil {
 		blog.Errorf("update biz cache failed, err: %v, rid: %v", err, rid)
 		// do not return, cache will be refresh for the next round
@@ -126,7 +126,7 @@ func (c *Client) listModuleWithRefreshCache(ctx context.Context, ids []int64, fi
 			return nil, err
 		}
 
-		pipe.Set(moduleKey.detailKey(id), js, detailTTLDuration)
+		pipe.Set(context.Background(), moduleKey.detailKey(id), js, detailTTLDuration)
 
 		all[idx] = string(js)
 		if len(fields) != 0 {
@@ -134,7 +134,7 @@ func (c *Client) listModuleWithRefreshCache(ctx context.Context, ids []int64, fi
 		}
 	}
 
-	_, err = pipe.Exec()
+	_, err = pipe.Exec(context.Background())
 	if err != nil {
 		blog.Errorf("update module cache failed, err: %v, rid: %v", err, rid)
 		// do not return, cache will be refresh for the next round
@@ -173,7 +173,7 @@ func (c *Client) listSetWithRefreshCache(ctx context.Context, ids []int64, field
 			return nil, err
 		}
 
-		pipe.Set(setKey.detailKey(id), js, detailTTLDuration)
+		pipe.Set(context.Background(), setKey.detailKey(id), js, detailTTLDuration)
 
 		all[idx] = string(js)
 		if len(fields) != 0 {
@@ -181,7 +181,7 @@ func (c *Client) listSetWithRefreshCache(ctx context.Context, ids []int64, field
 		}
 	}
 
-	_, err = pipe.Exec()
+	_, err = pipe.Exec(context.Background())
 	if err != nil {
 		blog.Errorf("update set cache failed, err: %v, rid: %v", err, rid)
 		// do not return, cache will be refresh for the next round
@@ -333,10 +333,10 @@ func (c *Client) listCustomLevelDetailWithRefreshCache(ctx context.Context, key 
 			return nil, err
 		}
 
-		pipe.Set(key.detailKey(id), js, detailTTLDuration)
+		pipe.Set(context.Background(), key.detailKey(id), js, detailTTLDuration)
 	}
 
-	_, err = pipe.Exec()
+	_, err = pipe.Exec(context.Background())
 	if err != nil {
 		blog.Errorf("update custom object instance cache failed, err: %v, rid: %v", err, rid)
 		// do not return, cache will be refresh for the next round
