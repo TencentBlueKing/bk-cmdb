@@ -14,7 +14,7 @@ import $http from '@/api'
 
 const actions = {
   getLogList(context, params) {
-    return $http.post(`${window.API_HOST}find/changelog/list`, params)
+    return $http.post(`${window.API_HOST}findmany/changelog`, params)
   },
   getLogDetail(context, params) {
     return $http.post(`${window.API_HOST}find/changelog/detail`, params)
