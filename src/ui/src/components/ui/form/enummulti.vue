@@ -16,7 +16,7 @@
     :clearable="allowClear"
     :searchable="searchable"
     :disabled="disabled"
-    :multiple="multiple"
+    :multiple="true"
     :placeholder="placeholder"
     :font-size="fontSize"
     :popover-options="{
@@ -48,10 +48,6 @@
       disabled: {
         type: Boolean,
         default: false
-      },
-      multiple: {
-        type: Boolean,
-        default: true
       },
       allowClear: {
         type: Boolean,
@@ -88,10 +84,7 @@
           return this.value
         },
         set(value) {
-          let emitValue = value
-          if (value === '') {
-            emitValue = this.multiple ? [] : null
-          }
+          const emitValue = value || []
           this.$emit('input', emitValue)
           this.$emit('on-selected', emitValue)
         }
@@ -114,7 +107,7 @@
           const defaultOptions = (this.options || []).filter(option => option.is_default)
           return defaultOptions.map(option => option.id)
         }
-        return this.multiple ? [] : ''
+        return []
       },
       checkSelected() {
         const { selected } = this

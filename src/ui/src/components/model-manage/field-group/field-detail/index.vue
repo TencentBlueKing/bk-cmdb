@@ -303,6 +303,7 @@
               break
             case PROPERTY_TYPES.ENUMMULTI:
               this.fieldInfo.option = []
+              this.fieldInfo.multiple = true
               break
             default:
               this.fieldInfo.option = ''

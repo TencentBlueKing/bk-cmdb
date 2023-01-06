@@ -15,7 +15,7 @@
     searchable
     v-model="localValue"
     v-bind="$attrs"
-    :multiple="multiple"
+    :multiple="true"
     @clear="() => $emit('clear')"
     @toggle="handleToggle">
     <bk-option v-for="option in options"
@@ -42,9 +42,6 @@
       }
     },
     computed: {
-      multiple() {
-        return Array.isArray(this.value)
-      },
       localValue: {
         get() {
           return this.value
