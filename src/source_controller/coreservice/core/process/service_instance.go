@@ -179,7 +179,8 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 			relations := make([]*metadata.ProcessInstanceRelation, len(listProcTplResult.Info))
 			templateIDs := make([]int64, len(listProcTplResult.Info))
 			for idx, processTemplate := range listProcTplResult.Info {
-				processData, err := processTemplate.NewProcess(module.BizID, instance.ID, kit.SupplierAccount, host)
+				processData, err := processTemplate.NewProcess(kit.CCError, module.BizID, instance.ID, kit.SupplierAccount,
+					host)
 				if err != nil {
 					blog.ErrorJSON("create service instance, but generate process instance by template "+
 						"%s failed, err: %s, rid: %s", processTemplate, err, kit.Rid)
@@ -899,7 +900,7 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 			relations := make([]*metadata.ProcessInstanceRelation, len(processTemplates))
 			templateIDs := make([]int64, len(processTemplates))
 			for idx, processTemplate := range processTemplates {
-				processData, err := processTemplate.NewProcess(module.BizID, int64(id), kit.SupplierAccount, host)
+				processData, err := processTemplate.NewProcess(kit.CCError, module.BizID, int64(id), kit.SupplierAccount, host)
 				if err != nil {
 					blog.ErrorJSON("create service instance, but generate process instance by template "+
 						"%s failed, err: %s, rid: %s", processTemplate, err, kit.Rid)
