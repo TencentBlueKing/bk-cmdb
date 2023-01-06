@@ -363,6 +363,9 @@ func genResourceManageActionGroups() []ActionGroup {
 							ID: WatchBizSetEvent,
 						},
 						{
+							ID: WatchPlatEvent,
+						},
+						{
 							ID: WatchKubeClusterEvent,
 						},
 						{
