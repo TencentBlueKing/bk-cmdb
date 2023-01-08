@@ -39,10 +39,10 @@
 
   const emit = defineEmits(['input', 'change'])
 
-  const refModelId = computed(() => props.options.map(item => item.bk_obj_id)?.[0])
+  const refModelId = computed(() => props.options.map?.(item => item.bk_obj_id)?.[0])
   const refModelInstIds = computed({
     get() {
-      return props.value.map(val => Number(val))
+      return props.value?.map?.(val => Number(val)) ?? []
     },
     set(values) {
       emit('input', values)
@@ -59,7 +59,7 @@
       return
     }
     const result = await getModelInstanceByIds(refModelId.value, refModelInstIds.value)
-    infoValue.value = result?.map(item => item.name)?.join(' | ') || '--'
+    infoValue.value = result?.map?.(item => item.name)?.join(' | ') || '--'
   })
 </script>
 <script>

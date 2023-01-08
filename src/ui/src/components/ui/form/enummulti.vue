@@ -40,7 +40,7 @@
     name: 'cmdb-form-enummulti',
     props: {
       value: {
-        type: Array,
+        type: [Array, String],
         default() {
           return []
         }
