@@ -133,6 +133,10 @@ export function isNullish(value) {
 
 export function formatValue(value, property) {
   if (!(isEmptyValue(value) && property)) {
+    // 枚举引用和组织类型的字段保存时必须转换为数组，在作为form的值使用时如果是单选值不是数组格式在这里统一转换
+    if ([PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ORGANIZATION].includes(property?.bk_property_type)) {
+      return !Array.isArray(value) ? [value] : value
+    }
     return value
   }
   const type = property.bk_property_type

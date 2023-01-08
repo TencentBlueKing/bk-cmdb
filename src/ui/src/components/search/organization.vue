@@ -19,6 +19,7 @@
     v-else
     v-model="localValue"
     v-bind="$attrs"
+    :multiple="multiple"
     @clear="() => $emit('clear')"
     @toggle="handleToggle">
   </cmdb-form-organization>
@@ -36,7 +37,7 @@
     mixins: [activeMixin],
     props: {
       value: {
-        type: [Array, String],
+        type: [Array, String, Number],
         default: () => []
       },
       property: {

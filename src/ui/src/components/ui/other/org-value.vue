@@ -15,10 +15,11 @@
   import store from '@/store'
   import Loading from '@/components/loading/index.vue'
   import FlexTag from '@/components/ui/flex-tag'
+  import { isEmptyPropertyValue } from '@/utils/tools'
 
   const props = defineProps({
     value: {
-      type: [Array, String],
+      type: [Array, String, Number],
       default: () => ([])
     },
     property: {
@@ -41,7 +42,7 @@
     const res = await store.dispatch('organization/getDepartment', {
       params: {
         lookup_field: 'id',
-        exact_lookups: value.join(',')
+        exact_lookups: Array.isArray(value) ? value.join(',') : value
       },
       fromCache: true,
       requestId: requestId.value
@@ -51,7 +52,7 @@
   }
 
   watchEffect(async () => {
-    if (!props.value?.length) {
+    if (isEmptyPropertyValue(props.value)) {
       list.value = []
       return
     }

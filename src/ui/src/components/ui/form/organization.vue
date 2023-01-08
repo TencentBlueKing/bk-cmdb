@@ -53,10 +53,11 @@
   import { computed, ref } from 'vue'
   import { useStore } from '@/store'
   import debounce from 'lodash.debounce'
+  import { isEmptyPropertyValue } from '@/utils/tools'
 
   const props = defineProps({
     value: {
-      type: [Array, String],
+      type: [Array, String, Number],
       default: () => []
     },
     disabled: {
@@ -131,9 +132,9 @@
 
   const loadTree = async () => {
     const { data: topData } = await getLazyData()
-    const defaultChecked = checked.value
 
-    if (defaultChecked.length) {
+    if (!isEmptyPropertyValue(checked.value)) {
+      const defaultChecked = Array.isArray(checked.value) ? checked.value : [checked.value]
       const checkedRes = await getSearchData({
         lookup_field: 'id',
         exact_lookups: defaultChecked.join(','),

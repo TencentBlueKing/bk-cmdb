@@ -11,13 +11,13 @@
 -->
 
 <script setup>
-  import { computed, defineProps, ref, watch, watchEffect } from 'vue'
+  import { computed, defineProps, ref, watch } from 'vue'
   import debounce from 'lodash.debounce'
   import { getModelInstanceOptions } from '@/service/instance/common'
 
   const props = defineProps({
     value: {
-      type: [Array, String],
+      type: [Array, String, Number],
       default: ''
     },
     objId: String,
@@ -28,9 +28,8 @@
   })
   const emit = defineEmits(['input', 'toggle'])
 
-  watch(() => props.objId, () => {
-    localValue.value = resetValue()
-  })
+  const getInitValue = () => (props.multiple ? (props.value || []) : (props.value || ''))
+  const resetValue = () => (props.multiple ? [] : '')
 
   const list = ref([])
   const loading = ref(false)
@@ -45,9 +44,6 @@
 
   const remoteSearch = debounce(search, 200)
 
-  const getInitValue = () => (props.multiple ? (props.value || []) : (props.value || ''))
-  const resetValue = () => (props.multiple ? [] : '')
-
   const localValue = computed({
     get() {
       return getInitValue()
@@ -58,11 +54,17 @@
     }
   })
 
-  watchEffect(() => {
-    if (props.objId) {
+  watch(() => props.objId, (cur, prev) => {
+    if (cur && cur !== prev) {
       search()
     }
+
+    localValue.value = resetValue()
   })
+
+  if (props.objId) {
+    search()
+  }
 
   const handleToggle = active => emit('toggle', active)
 

@@ -16,10 +16,11 @@
   import { t } from '@/i18n'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
   import isEqual from 'lodash/isEqual'
+  import { isEmptyPropertyValue } from '@/utils/tools'
 
   const props = defineProps({
     value: {
-      type: [Array, String],
+      type: [Array, String, Number],
       default: ''
     },
     multiple: {
@@ -45,13 +46,17 @@
 
   const refModelInstIds = computed({
     get() {
-      if (props.value.length) {
+      if (!isEmptyPropertyValue(props.value)) {
+        if (!props.multiple) {
+          return Array.isArray(props.value) ? props.value[0] : props.value
+        }
         return props.value
       }
 
       // 自动选择时取出默认值
       if (props.autoSelect) {
-        return props.options.map(item => item.bk_inst_id)
+        const defaultValue = props.options.map(item => item.bk_inst_id)
+        return props.multiple ? defaultValue : defaultValue[0]
       }
 
       return props.multiple ? [] : ''
@@ -89,6 +94,7 @@
     :placeholder="$t('请选择xx', { name: $t('模型实例') })"
     :search-placeholder="searchPlaceholder"
     :display-tag="false"
+    :multiple="multiple"
     v-model="refModelInstIds">
   </model-instance-selector>
 </template>

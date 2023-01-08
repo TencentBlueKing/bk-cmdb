@@ -23,6 +23,10 @@
     value: {
       type: [Array, String],
       default: ''
+    },
+    multiple: {
+      type: Boolean,
+      default: true
     }
   })
 
@@ -31,19 +35,31 @@
   const excludeModelIds = [BUILTIN_MODELS.SET, BUILTIN_MODELS.MODULE]
 
   const refModelId = ref('')
-  const refModelInstIds = ref([])
+  const refModelInstIds = ref(props.multiple ? [] : '')
 
   const searchPlaceholder = computed(() => t('请输入xx', { name: t(refModelId.value === BUILTIN_MODELS.HOST ? 'IP' : '名称') }))
 
   watchEffect(() => {
-    if (props.value?.length) {
-      refModelId.value = props.value.map(item => item.bk_obj_id)?.[0]
-      refModelInstIds.value = props.value.map(item => item.bk_inst_id)
+    if (props.multiple) {
+      if (props.value?.length) {
+        refModelId.value = props.value.map(item => item.bk_obj_id)?.[0]
+        refModelInstIds.value = props.value.map(item => item.bk_inst_id)
+      } else {
+        refModelInstIds.value = []
+      }
+    } else {
+      if (props.value?.length) {
+        refModelId.value = props.value.map(item => item.bk_obj_id)?.[0]
+        refModelInstIds.value = props.value.map(item => item.bk_inst_id)?.[0]
+      } else {
+        refModelInstIds.value = ''
+      }
     }
   })
 
   const handleModelInstChange = (modelInstIds) => {
-    const option = modelInstIds.map(instId => ({
+    const instIds = Array.isArray(modelInstIds) ? modelInstIds : [modelInstIds]
+    const option = instIds.map(instId => ({
       bk_obj_id: refModelId.value,
       bk_inst_id: instId,
       type: 'int'
@@ -81,6 +97,7 @@
         :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('refModelInst') }]"
         :label="$t('默认值')">
         <model-instance-selector
+          :key="String(multiple)"
           class="model-instance-selector"
           name="refModelInst"
           v-validate="'required'"
@@ -88,6 +105,7 @@
           :placeholder="$t('请选择xx', { name: $t('模型实例') })"
           :search-placeholder="searchPlaceholder"
           :display-tag="true"
+          :multiple="multiple"
           v-model="refModelInstIds"
           @change="handleModelInstChange">
         </model-instance-selector>

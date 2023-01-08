@@ -99,7 +99,8 @@
           PROPERTY_TYPES.ORGANIZATION
         ],
         isMultipleMap: [
-          PROPERTY_TYPES.ORGANIZATION
+          PROPERTY_TYPES.ORGANIZATION,
+          PROPERTY_TYPES.ENUMQUOTE
         ],
         localValue: {
           editable: this.editable,

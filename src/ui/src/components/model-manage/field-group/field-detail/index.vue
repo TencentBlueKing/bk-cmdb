@@ -21,7 +21,7 @@
         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
           <bk-input type="text" class="cmdb-form-input"
             name="fieldId"
-            v-model.trim="fieldInfo['bk_property_id']"
+            v-model.trim="fieldInfo.bk_property_id"
             :placeholder="$t('请输入唯一标识')"
             :disabled="isEditField"
             v-validate="isEditField ? null : 'required|fieldId|reservedWord|length:128'">
@@ -39,7 +39,7 @@
           <bk-input type="text" class="cmdb-form-input"
             name="fieldName"
             :placeholder="$t('请输入字段名称')"
-            v-model.trim="fieldInfo['bk_property_name']"
+            v-model.trim="fieldInfo.bk_property_name"
             :disabled="isReadOnly || isSystemCreate || field.ispre"
             v-validate="'required|length:128'">
           </bk-input>
@@ -92,14 +92,14 @@
       </div>
       <div class="field-detail">
         <the-config
-          :type="fieldInfo['bk_property_type']"
+          :type="fieldInfo.bk_property_type"
           :is-read-only="isReadOnly"
           :is-main-line-model="isMainLineModel"
           :ispre="isEditField && field.ispre"
           :is-edit-field="isEditField"
-          :editable.sync="fieldInfo['editable']"
-          :isrequired.sync="fieldInfo['isrequired']"
-          :multiple.sync="fieldInfo['multiple']"
+          :editable.sync="fieldInfo.editable"
+          :isrequired.sync="fieldInfo.isrequired"
+          :multiple.sync="fieldInfo.multiple"
         ></the-config>
         <!-- 添加key防止复用组件时内部状态错误 -->
         <component
@@ -107,8 +107,8 @@
           v-if="isSettingComponentShow"
           :is-read-only="isReadOnly || field.ispre"
           :is="`the-field-${fieldType}`"
+          :multiple="fieldInfo.multiple"
           v-model="fieldInfo.option"
-          v-bind="settingCompProps"
           ref="component"
         ></component>
       </div>
@@ -266,14 +266,6 @@
         ]
         return types.indexOf(this.fieldInfo.bk_property_type) !== -1
       },
-      settingCompProps() {
-        const props = {}
-        const { bk_property_type: type } = this.fieldInfo
-        if (type === PROPERTY_TYPES.ENUMMULTI) {
-          props.multiple = true
-        }
-        return props
-      },
       changedValues() {
         const changedValues = {}
         Object.keys(this.fieldInfo).forEach((propertyId) => {
@@ -302,12 +294,27 @@
               }
               break
             case PROPERTY_TYPES.ENUMMULTI:
+            case PROPERTY_TYPES.ENUMQUOTE:
               this.fieldInfo.option = []
+              this.fieldInfo.multiple = true
+              break
+            case PROPERTY_TYPES.OBJUSER:
+              this.fieldInfo.option = ''
               this.fieldInfo.multiple = true
               break
             default:
               this.fieldInfo.option = ''
+              this.fieldInfo.multiple = false
           }
+        }
+      },
+      'fieldInfo.multiple'(multiple) {
+        if (this.isEditField) {
+          return
+        }
+        // 变更是否可多选配置项需要重置option
+        if (this.fieldInfo.bk_property_type === PROPERTY_TYPES.ENUMQUOTE) {
+          this.fieldInfo.option = multiple ? [] : ''
         }
       }
     },
