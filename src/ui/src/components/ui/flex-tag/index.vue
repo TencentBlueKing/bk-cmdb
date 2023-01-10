@@ -23,6 +23,10 @@
       type: Boolean,
       default: false
     },
+    isTextStyle: {
+      type: Boolean,
+      default: false
+    },
     maxWidth: {
       type: String,
       default: '400px'
@@ -173,7 +177,7 @@
 
 <template>
   <ul
-    :class="['flex-tag', { changing, 'is-link-style': isLinkStyle }]"
+    :class="['flex-tag', { changing, 'is-link-style': isLinkStyle, 'is-text-style': isTextStyle }]"
     ref="containerEl"
     :style="{
       '--fontSize': fontSize,
@@ -225,6 +229,26 @@
         }
 
         // 倒数第2个元素为tag-item的最后一个元素，倒数第1个元素为plus
+        &:nth-last-of-type(2),
+        &.is-pos {
+          &::after {
+            display: none;
+          }
+        }
+      }
+    }
+
+    &.is-text-style {
+      .tag-item {
+        background: none;
+        border-radius: 0;
+        padding: 0;
+
+        &::after {
+          content: '|';
+          color: #63656E;
+        }
+
         &:nth-last-of-type(2),
         &.is-pos {
           &::after {

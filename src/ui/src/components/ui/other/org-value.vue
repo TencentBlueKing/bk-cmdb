@@ -25,7 +25,8 @@
     property: {
       type: Object,
       default: () => ({})
-    }
+    },
+    showOn: String
   })
 
   defineExpose({
@@ -37,6 +38,8 @@
   const tagList = computed(() => list.value.map(item => item.full_name))
 
   const requestId = computed(() => `get_department_id_${Array.isArray(props.value) ? props.value.join('_') : String(props.value)}`)
+
+  const isTextStyle = computed(() => props.showOn === 'search')
 
   const getOrganization = async (value) => {
     const res = await store.dispatch('organization/getDepartment', {
@@ -69,7 +72,7 @@
   <div class="org-value">
     <loading :loading="$loading(requestId)">
       <div class="empty" v-if="!list.length">--</div>
-      <flex-tag v-else :list="tagList"></flex-tag>
+      <flex-tag v-else :list="tagList" :is-text-style="isTextStyle"></flex-tag>
     </loading>
   </div>
 </template>

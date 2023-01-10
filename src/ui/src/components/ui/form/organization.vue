@@ -39,7 +39,8 @@
       :placeholder="placeholder"
       :loading="$loading([searchRequestId])"
       @tab-remove="handleSelectTabRemove"
-      @clear="handleClear">
+      @clear="handleClear"
+      @toggle="handleToggle">
       <bk-big-tree
         ref="tree"
         v-bind="treeProps"
@@ -82,7 +83,7 @@
     formatter: Function
   })
 
-  const emit = defineEmits(['on-checked', 'input'])
+  const emit = defineEmits(['on-checked', 'input', 'toggle'])
 
   defineExpose({
     focus: () => select?.value?.show?.()
@@ -103,7 +104,7 @@
     showCheckbox: props.multiple,
     checkOnClick: !props.multiple,
     checkStrictly: false,
-    showLinkLine: true,
+    showLinkLine: false,
     enableTitleTip: true,
     expandOnClick: props.multiple,
     selectable: !props.multiple,
@@ -404,6 +405,10 @@
 
   const handleClear = () => {
     resetTree()
+  }
+
+  const handleToggle = (active) => {
+    emit('toggle', active)
   }
 
   loadTree()

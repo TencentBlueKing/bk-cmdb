@@ -12,8 +12,8 @@
 
 <template>
   <div class="search-value-container" v-if="displayType === 'info'">
-    <slot name="info-prepend"></slot>
-    <org-value :property="property" :value="localValue"></org-value>
+    <div class="prepend"><slot name="info-prepend"></slot></div>
+    <org-value :property="property" :value="localValue" show-on="search"></org-value>
   </div>
   <cmdb-form-organization
     v-else
@@ -46,7 +46,7 @@
       },
       multiple: {
         type: Boolean,
-        default: false
+        default: true
       },
       displayType: {
         type: String,
@@ -82,5 +82,8 @@
 <style lang="scss" scoped>
   .search-value-container {
     display: flex;
+    .prepend {
+      margin-right: 4px;
+    }
   }
 </style>

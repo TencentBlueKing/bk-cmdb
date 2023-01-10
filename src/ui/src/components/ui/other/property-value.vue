@@ -45,7 +45,9 @@
     v-else-if="property.bk_property_type === PROPERTY_TYPES.ORGANIZATION"
     ref="complexTypeComp"
     :value="value"
-    :property="property">
+    :property="property"
+    :show-on="showOn"
+    v-bind="$attrs">
   </org-value>
   <component
     class="value-container"
