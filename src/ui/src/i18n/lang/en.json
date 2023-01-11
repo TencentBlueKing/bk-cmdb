@@ -1655,5 +1655,12 @@
     "空Pod节点提示语": "Cluster nodes without any Pod running on them are classified as \"Empty Pod Node(s)\"",
     "无Pod运行的节点": "Node runs with no Pod",
     "（模板创建）": "(By template)",
-    "（自定义创建）": "(By custom)"
+    "（自定义创建）": "(By custom)",
+    "项目":"project",
+    "项目列表提示语": "No authorized business, you can {auth} or {create}",
+    "项目详情":"Project detail",
+    "批量修改项目":"Batch modify items",
+    "启用操作提示语":"Are you sure to enable? The 'Enable/Disable' states of the project may affect the logic of other app consumers, please proceed with caution!!!",
+    "停用操作提示语":"Are you sure to disable? The 'Enable/Disable' states of the project may affect the logic of other app consumers, please proceed with caution!!!",
+    "操作成功":"Operation succeeded"
 }
