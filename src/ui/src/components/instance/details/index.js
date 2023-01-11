@@ -29,6 +29,7 @@ const title = toRef(state, 'title')
 const modelOptions = computed(() => ({ bk_obj_id: state.bk_obj_id, bk_biz_id: state.bk_biz_id }))
 const instanceOptions = computed(() => ({ bk_inst_id: state.bk_inst_id, ...modelOptions.value }))
 const [{ properties, pending: propertyPending }] = useProperty(modelOptions)
+const filterProperties = computed(() => properties.value.filter(item => item.bk_property_id !== 'bk_project_icon'))
 const [{ groups, pending: groupPneding }] = useGroup(modelOptions)
 const [{ instance, pending: instancePending }] = useInstance(instanceOptions)
 const pending = usePending([propertyPending, groupPneding, instancePending], true)
@@ -55,7 +56,7 @@ const createDetails = () => {
             { ...{ directives } }
             show-options={ false }
             inst={ instance.value }
-            properties={ properties.value }
+            properties={ filterProperties.value }
             property-groups={ groups.value }>
           </cmdb-details>
         </bk-sideslider>

@@ -13,7 +13,10 @@
 <template>
   <div class="model-relation-wrapper">
     <div class="options">
-      <cmdb-auth :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }" @update-auth="handleReceiveAuth">
+      <cmdb-auth
+        v-if="isShowOptionBtn"
+        :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
+        @update-auth="handleReceiveAuth">
         <bk-button slot-scope="{ disabled }"
           class="create-btn"
           theme="primary"
@@ -104,6 +107,7 @@
 <script>
   import theRelationDetail from './relation-detail'
   import { mapGetters, mapActions } from 'vuex'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
   export default {
     components: {
       theRelationDetail
@@ -152,6 +156,9 @@
           return this.activeModel.bk_ispaused
         }
         return false
+      },
+      isShowOptionBtn() {
+        return !(BUILTIN_MODELS.PROJECT === this.$route.params.modelId)
       }
     },
     watch: {

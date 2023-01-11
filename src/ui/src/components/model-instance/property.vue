@@ -66,6 +66,7 @@
               <div class="property-form" v-if="property === editState.property">
                 <div :class="['form-component', property.bk_property_type]">
                   <component
+                    :multiple="multiple"
                     :is="`cmdb-form-${property.bk_property_type}`"
                     :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
                     :unit="property.unit"
@@ -141,6 +142,10 @@
       readonly: {
         type: Boolean,
         default: false
+      },
+      multiple: {
+        type: Boolean,
+        default: false
       }
     },
     data() {
@@ -159,7 +164,8 @@
       authData() {
         const auths = {
           [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS]]: this.INST_AUTH.U_BUSINESS,
-          [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS_SET]]: this.INST_AUTH.U_BUSINESS_SET
+          [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS_SET]]: this.INST_AUTH.U_BUSINESS_SET,
+          [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.PROJECT]]: this.INST_AUTH.U_PROJECT
         }
         return auths[this.resourceType] || this.INST_AUTH.U_INST
       }
@@ -172,6 +178,8 @@
     methods: {
       ...mapActions('objectCommonInst', ['updateInst']),
       ...mapActions('objectBiz', ['updateBusiness']),
+      ...mapActions('objectProject', ['batchUpdateProject']),
+
       setFocus(id, focus) {
         const item = this.$el.querySelector(id)
         focus ? item.classList.add('focus') : item.classList.remove('focus')
@@ -210,6 +218,9 @@
           this.loadingState.push(property)
           const values = { [property.bk_property_id]: this.$tools.formatValue(value, property) }
 
+          if (property.bk_property_type === 'enum') {
+            values[property.bk_property_id]  = values[property.bk_property_id].join()
+          }
           if (this.resourceType === BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS]) {
             await this.updateBusiness({
               bizId: this.instState.bk_biz_id,
@@ -223,6 +234,12 @@
                 bk_biz_set_attr: { ...values },
               }
             })
+          } else if (this.resourceType === BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.PROJECT]) {
+            const params = {
+              ids: [this.instState.id],
+              data: values
+            }
+            await this.batchUpdateProject(params)
           } else {
             await this.updateInst({
               objId: this.instState.bk_obj_id,
