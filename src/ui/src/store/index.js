@@ -67,6 +67,8 @@ import hostApply from './modules/api/host-apply'
 import resourceDirectory from './modules/api/resource-directory.js'
 import resource from './modules/api/resource.js'
 
+import objectProject from './modules/api/object-project'
+
 import organization from './modules/api/organization'
 
 import businessHost from './modules/view/business-host.js'
@@ -142,6 +144,7 @@ export default new Vuex.Store({
     cloudarea,
     organization,
     audit,
-    dynamicGroup
+    dynamicGroup,
+    objectProject
   }
 })

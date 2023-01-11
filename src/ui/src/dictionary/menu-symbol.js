@@ -72,7 +72,10 @@ export const MENU_RESOURCE_BUSINESS_DETAILS = 'menu_resource_business_details'
 export const MENU_RESOURCE_HOST = 'menu_resource_host'
 export const MENU_RESOURCE_INSTANCE = 'menu_resource_instance'
 export const MENU_RESOURCE_INSTANCE_DETAILS = 'menu_resource_instance_details'
+export const MENU_RESOURCE_PROJECT_DETAILS = 'menu_resource_project_details'
 
+// 项目
+export const MENU_RESOURCE_PROJECT = 'menu_resource_project'
 /**
  * 模型
  */
@@ -100,6 +103,7 @@ export const MENU_RESOURCE_COLLECTION = 'menu_resource_collection'
 export const MENU_RESOURCE_HOST_COLLECTION = 'menu_resource_host_collection'
 export const MENU_RESOURCE_BUSINESS_COLLECTION = 'menu_resource_business_collection'
 export const MENU_RESOURCE_BUSINESS_SET_COLLECTION = 'menu_resource_business_set_collection'
+export const MENU_RESOURCE_PROJECT_COLLECTION = 'menu_resource_project_collection'
 
 // 不同模式下不同资源的主机详情的id
 export const MENU_RESOURCE_HOST_DETAILS = 'menu_resource_host_details'
