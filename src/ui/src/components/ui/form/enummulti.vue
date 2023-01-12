@@ -16,7 +16,7 @@
     :clearable="allowClear"
     :searchable="searchable"
     :disabled="disabled"
-    :multiple="true"
+    :multiple="multiple"
     :placeholder="placeholder"
     :font-size="fontSize"
     :popover-options="{
@@ -35,6 +35,7 @@
 
 <script>
   import isEqual from 'lodash/isEqual'
+  import { isEmptyPropertyValue } from '@/utils/tools'
 
   export default {
     name: 'cmdb-form-enummulti',
@@ -48,6 +49,10 @@
       disabled: {
         type: Boolean,
         default: false
+      },
+      multiple: {
+        type: Boolean,
+        default: true
       },
       allowClear: {
         type: Boolean,
@@ -78,9 +83,14 @@
       },
       selected: {
         get() {
-          if (this.isEmpty(this.value)) {
+          if (isEmptyPropertyValue(this.value)) {
             return this.getDefaultValue()
           }
+
+          if (!this.multiple) {
+            return Array.isArray(this.value) ? this.value[0] : this.value
+          }
+
           return this.value
         },
         set(value) {
@@ -105,9 +115,11 @@
       getDefaultValue() {
         if (this.autoSelect) {
           const defaultOptions = (this.options || []).filter(option => option.is_default)
-          return defaultOptions.map(option => option.id)
+          const defaultValue = defaultOptions.map(option => option.id)
+          return this.multiple ? defaultValue : defaultValue[0]
         }
-        return []
+
+        return this.multiple ? [] : ''
       },
       checkSelected() {
         const { selected } = this

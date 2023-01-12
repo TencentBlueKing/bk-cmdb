@@ -100,7 +100,8 @@
         ],
         isMultipleMap: [
           PROPERTY_TYPES.ORGANIZATION,
-          PROPERTY_TYPES.ENUMQUOTE
+          PROPERTY_TYPES.ENUMQUOTE,
+          PROPERTY_TYPES.ENUMMULTI
         ],
         localValue: {
           editable: this.editable,

@@ -68,6 +68,7 @@
     <div class="default-setting">
       <p class="title mb10">{{$t('默认值设置')}}</p>
       <bk-select style="width: 100%;"
+        :key="String(multiple)"
         :clearable="false"
         :disabled="isReadOnly"
         :multiple="multiple"
@@ -161,6 +162,10 @@
           })
           this.$emit('input', this.enumList)
         }
+      },
+      multiple(val) {
+        // 多选变化时重置默认选中值
+        this.defaultValue = val ? [] : ''
       }
     },
     created() {

@@ -137,7 +137,7 @@
         return this.field.option
       },
       hasMultipleType() {
-        const types = [PROPERTY_TYPES.ORGANIZATION, PROPERTY_TYPES.ENUMQUOTE]
+        const types = [PROPERTY_TYPES.ORGANIZATION, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ENUMMULTI]
         return types.includes(this.type)
       }
     },
