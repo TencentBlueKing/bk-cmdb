@@ -48,7 +48,7 @@
         <div class="property-name">
           <span>{{$t('是否可多选')}}</span>：
         </div>
-        <span class="property-value">{{field.multiple ? $t('可多选') : $t('不可多选')}}</span>
+        <span class="property-value">{{field.ismultiple ? $t('可多选') : $t('不可多选')}}</span>
       </div>
       <div class="property-item" v-if="stringLikes.includes(field.bk_property_type)">
         <div class="property-name">

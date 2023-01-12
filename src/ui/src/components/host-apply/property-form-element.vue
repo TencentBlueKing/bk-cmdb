@@ -21,7 +21,7 @@
       :data-vv-as="property.bk_property_name"
       :placeholder="$tools.getPropertyPlaceholder(property)"
       :auto-check="false"
-      :multiple="property.multiple"
+      :multiple="property.ismultiple"
       :disabled="!property.host_apply_enabled || property.__extra__.ignore"
       v-bind="$tools.getValidateEvents(property)"
       v-validate="$tools.getValidateRules(property)"

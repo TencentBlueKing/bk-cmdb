@@ -40,7 +40,7 @@
             :disabled="disabled"
             :options="property.option || []"
             :auto-select="false"
-            :multiple="property.multiple"
+            :multiple="property.ismultiple"
             :value="localValue[rowProps.$index][property.bk_property_id]"
             @input="handleColumnValueChange(rowProps, ...arguments)">
           </component>

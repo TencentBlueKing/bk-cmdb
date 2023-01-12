@@ -99,7 +99,7 @@
           :is-edit-field="isEditField"
           :editable.sync="fieldInfo.editable"
           :isrequired.sync="fieldInfo.isrequired"
-          :multiple.sync="fieldInfo.multiple"
+          :multiple.sync="fieldInfo.ismultiple"
         ></the-config>
         <!-- 添加key防止复用组件时内部状态错误 -->
         <component
@@ -107,7 +107,7 @@
           v-if="isSettingComponentShow"
           :is-read-only="isReadOnly || field.ispre"
           :is="`the-field-${fieldType}`"
-          :multiple="fieldInfo.multiple"
+          :multiple="fieldInfo.ismultiple"
           v-model="fieldInfo.option"
           ref="component"
         ></component>
@@ -219,7 +219,7 @@
           bk_property_type: PROPERTY_TYPES.SINGLECHAR,
           editable: true,
           isrequired: false,
-          multiple: false,
+          ismultiple: false,
           option: ''
         },
         originalFieldInfo: {},
@@ -296,19 +296,19 @@
             case PROPERTY_TYPES.ENUMMULTI:
             case PROPERTY_TYPES.ENUMQUOTE:
               this.fieldInfo.option = []
-              this.fieldInfo.multiple = true
+              this.fieldInfo.ismultiple = true
               break
             case PROPERTY_TYPES.OBJUSER:
               this.fieldInfo.option = ''
-              this.fieldInfo.multiple = true
+              this.fieldInfo.ismultiple = true
               break
             default:
               this.fieldInfo.option = ''
-              this.fieldInfo.multiple = false
+              this.fieldInfo.ismultiple = false
           }
         }
       },
-      'fieldInfo.multiple'(multiple) {
+      'fieldInfo.ismultiple'(multiple) {
         if (this.isEditField) {
           return
         }

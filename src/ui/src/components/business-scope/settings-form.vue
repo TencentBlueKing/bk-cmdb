@@ -41,7 +41,7 @@
         :is="`cmdb-search-${rule.property.bk_property_type}`"
         :placeholder="getPlaceholder(rule.property)"
         :clearable="true"
-        :multiple="rule.property.multiple"
+        :multiple="rule.property.ismultiple"
         :disabled="disabled"
         v-bind="getBindProps(rule.property)"
         v-model="rule.value">

@@ -22,7 +22,7 @@
       :data-vv-as="property.bk_property_name"
       :placeholder="$tools.getPropertyPlaceholder(property)"
       :auto-check="autoCheck"
-      :multiple="property.multiple"
+      :multiple="property.ismultiple"
       :disabled="disabled"
       :size="size"
       :font-size="fontSize"

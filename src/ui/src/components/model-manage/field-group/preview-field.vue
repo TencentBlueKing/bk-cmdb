@@ -45,7 +45,7 @@
                         :placeholder="$tools.getPropertyPlaceholder(property)"
                         :unit="property['unit']"
                         :row="2"
-                        :multiple="property.multiple"
+                        :multiple="property.ismultiple"
                         :disabled="checkDisabled(property)"
                         :options="property.option || []"
                         :data-vv-name="property['bk_property_id']"

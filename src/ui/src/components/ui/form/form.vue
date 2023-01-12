@@ -52,7 +52,7 @@
                         :data-vv-as="property['bk_property_name']"
                         :placeholder="$tools.getPropertyPlaceholder(property)"
                         :auto-select="false"
-                        :multiple="property.multiple"
+                        :multiple="property.ismultiple"
                         v-bind="{ ...$attrs, ...$tools.getValidateEvents(property) }"
                         v-validate="getValidateRules(property)"
                         v-model.trim="values[property['bk_property_id']]">

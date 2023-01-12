@@ -54,7 +54,7 @@
                       :options="property.option || []"
                       :data-vv-name="property['bk_property_id']"
                       :auto-select="false"
-                      :multiple="property.multiple"
+                      :multiple="property.ismultiple"
                       :placeholder="$tools.getPropertyPlaceholder(property)"
                       v-bind="$tools.getValidateEvents(property)"
                       v-validate="getValidateRules(property)"
