@@ -17,7 +17,6 @@
       :active.sync="active">
       <bk-tab-panel name="property" :label="$t('属性')">
         <cmdb-property
-          :multiple="true"
           resource-type="project"
           :properties="properties"
           :property-groups="propertyGroups"

@@ -66,7 +66,6 @@
               <div class="property-form" v-if="property === editState.property">
                 <div :class="['form-component', property.bk_property_type]">
                   <component
-                    :multiple="multiple"
                     :is="`cmdb-form-${property.bk_property_type}`"
                     :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
                     :unit="property.unit"
@@ -74,6 +73,7 @@
                     :data-vv-name="property.bk_property_id"
                     :data-vv-as="property.bk_property_name"
                     :placeholder="getPlaceholder(property)"
+                    :multiple="getMultiple(property)"
                     :auto-check="false"
                     v-bind="$tools.getValidateEvents(property)"
                     v-validate="$tools.getValidateRules(property)"
@@ -192,6 +192,9 @@
         const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
       },
+      getMultiple(property) {
+        return  ['organization'].includes(property.bk_property_type)
+      },
       isPropertyEditable(property) {
         return property.editable && !property.bk_isapi
       },
@@ -218,9 +221,6 @@
           this.loadingState.push(property)
           const values = { [property.bk_property_id]: this.$tools.formatValue(value, property) }
 
-          if (property.bk_property_type === 'enum') {
-            values[property.bk_property_id]  = values[property.bk_property_id].join()
-          }
           if (this.resourceType === BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS]) {
             await this.updateBusiness({
               bizId: this.instState.bk_biz_id,

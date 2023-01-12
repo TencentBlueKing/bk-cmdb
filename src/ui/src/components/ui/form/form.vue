@@ -51,6 +51,7 @@
                         :data-vv-name="property['bk_property_id']"
                         :data-vv-as="property['bk_property_name']"
                         :placeholder="getPlaceholder(property)"
+                        :multiple="getMultiple(property)"
                         :auto-select="false"
                         v-bind="{ ...$attrs, ...$tools.getValidateEvents(property) }"
                         v-validate="getValidateRules(property)"
@@ -215,6 +216,9 @@
       getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
+      },
+      getMultiple(property) {
+        return  ['organization'].includes(property.bk_property_type)
       },
       getValidateRules(property) {
         const rules = this.$tools.getValidateRules(property)

@@ -39,7 +39,6 @@
           :placeholder="filterPlaceholder"
           :class="filterType"
           :fuzzy="true"
-          :multiple="true"
           v-bind="filterComponentProps"
           v-model="filter.value"
           @change="handleFilterValueChange"
