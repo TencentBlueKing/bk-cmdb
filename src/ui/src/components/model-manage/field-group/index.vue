@@ -199,7 +199,7 @@
           </bk-transition>
         </div>
         <div class="add-group">
-          <cmdb-auth @update-auth="handleReceiveAuth" :auth="authResources">
+          <cmdb-auth v-if="isShowOptionBtn" @update-auth="handleReceiveAuth" :auth="authResources">
             <bk-button slot-scope="{ disabled }"
               class="add-group-trigger"
               :text="true"
