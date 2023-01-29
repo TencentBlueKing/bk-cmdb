@@ -30,7 +30,7 @@
         sticky: true
       }"
       :searchable="true"
-      :multiple="multiple"
+      :multiple="localMultiple"
       v-model="checked"
       :remote-method="handleSearch"
       :display-tag="true"
@@ -100,21 +100,29 @@
   const store = useStore()
   const searchRequestId = Symbol('orgSearch')
 
+  const initValue = props.value
+  const localMultiple = computed(() => {
+    if (Array.isArray(initValue) && initValue.length > 1 && !props.multiple) {
+      return true
+    }
+    return props.multiple
+  })
+
   const treeProps = computed(() => ({
-    showCheckbox: props.multiple,
-    checkOnClick: !props.multiple,
+    showCheckbox: localMultiple.value,
+    checkOnClick: !localMultiple.value,
     checkStrictly: false,
     showLinkLine: false,
     enableTitleTip: true,
-    expandOnClick: props.multiple,
-    selectable: !props.multiple,
+    expandOnClick: localMultiple.value,
+    selectable: !localMultiple.value,
     lazyMethod,
     lazyDisabled
   }))
 
   const checked = computed({
     get() {
-      if (this.multiple) {
+      if (localMultiple.value) {
         if (this.value && !Array.isArray(this.value)) {
           return [this.value]
         }
@@ -127,6 +135,7 @@
     },
     set(value) {
       emit('on-checked', value)
+      emit('change', value)
       emit('input', value)
     }
   })
@@ -376,7 +385,7 @@
   }
 
   const handleTreeCheckChange = (ids, node) => {
-    if (props.multiple) {
+    if (localMultiple.value) {
       checked.value = [...ids]
     } else {
       checked.value = [node.id]

@@ -39,15 +39,24 @@
     }
   })
 
-  const emit = defineEmits(['input', 'change'])
+  const emit = defineEmits(['input', 'change', 'on-selected'])
   const instanceSelector = ref(null)
+
+  // 如果初始值是大于1个元素的数组但multiple为false，则设置选择组件的multipl为true，满足编辑时仍然展示原始值的需求
+  const initValue = props.value
+  const localMultiple = computed(() => {
+    if (Array.isArray(initValue) && initValue.length > 1 && !props.multiple) {
+      return true
+    }
+    return props.multiple
+  })
 
   const refModelId = computed(() => props.options.map(item => item.bk_obj_id)?.[0])
 
   const refModelInstIds = computed({
     get() {
       if (!isEmptyPropertyValue(props.value)) {
-        if (!props.multiple) {
+        if (!localMultiple.value) {
           return Array.isArray(props.value) ? props.value[0] : props.value
         }
         return props.value
@@ -56,14 +65,15 @@
       // 自动选择时取出默认值
       if (props.autoSelect) {
         const defaultValue = props.options.map(item => item.bk_inst_id)
-        return props.multiple ? defaultValue : defaultValue[0]
+        return localMultiple.value ? defaultValue : defaultValue[0]
       }
 
-      return props.multiple ? [] : ''
+      return localMultiple.value ? [] : ''
     },
     set(values) {
       emit('input', values)
       emit('change', values)
+      emit('on-selected', values)
     }
   })
 
@@ -94,7 +104,7 @@
     :placeholder="$t('请选择xx', { name: $t('模型实例') })"
     :search-placeholder="searchPlaceholder"
     :display-tag="false"
-    :multiple="multiple"
+    :multiple="localMultiple"
     v-model="refModelInstIds">
   </model-instance-selector>
 </template>

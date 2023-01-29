@@ -97,7 +97,11 @@
       class-name="table-cell-form-element">
       <template slot-scope="{ row }">
         <div class="form-element-content">
-          <property-form-element :property="row" @value-change="handlePropertyValueChange"></property-form-element>
+          <property-form-element
+            :property="row"
+            @value-change="handlePropertyValueChange"
+            @valid-change="handlePropertyValidChange">
+          </property-form-element>
         </div>
       </template>
     </bk-table-column>
@@ -318,6 +322,9 @@
       },
       handleDeletePropertyRule(property) {
         this.$emit('property-rule-delete', property)
+      },
+      handlePropertyValidChange() {
+        this.$emit('property-valid-change')
       },
       isShowOverflowTips(property) {
         const complexTypes = [PROPERTY_TYPES.MAP, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ORGANIZATION]

@@ -115,6 +115,7 @@
 
 <script>
   import { mapGetters, mapActions } from 'vuex'
+  import isEqual from 'lodash/isEqual'
   import formMixins from '@/mixins/form'
   import {
     BUILTIN_MODELS,
@@ -124,6 +125,7 @@
   import businessSetService from '@/service/business-set/index.js'
   import authMixin from './mixin-auth'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+
   export default {
     filters: {
       filterShowText(value, unit) {
@@ -207,7 +209,7 @@
           }
           this.exitForm()
           const oldValue = this.instState[property.bk_property_id]
-          if (oldValue === value) return
+          if (isEqual(oldValue, value)) return
 
           this.loadingState.push(property)
           const values = { [property.bk_property_id]: this.$tools.formatValue(value, property) }

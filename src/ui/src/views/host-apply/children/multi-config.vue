@@ -86,6 +86,7 @@
                 :rule-list="initRuleList"
                 :id-list="ids"
                 @property-value-change="handlePropertyValueChange"
+                @property-valid-change="handlePropertyValidChange"
                 @selection-change="handlePropertySelectionChange"
                 @property-remove="handlePropertyRemove">
               </property-config-table>
@@ -415,6 +416,9 @@
         this.delButtonDisabled = this.selectedPropertyRow.length <= 0
       },
       handlePropertyValueChange() {
+        this.toggleNextButtonDisabled()
+      },
+      handlePropertyValidChange() {
         this.toggleNextButtonDisabled()
       },
       handlePropertyRemove() {

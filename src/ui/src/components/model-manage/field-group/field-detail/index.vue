@@ -307,15 +307,6 @@
               this.fieldInfo.ismultiple = false
           }
         }
-      },
-      'fieldInfo.ismultiple'(multiple) {
-        if (this.isEditField) {
-          return
-        }
-        // 变更是否可多选配置项需要重置option
-        if (this.fieldInfo.bk_property_type === PROPERTY_TYPES.ENUMQUOTE) {
-          this.fieldInfo.option = multiple ? [] : ''
-        }
       }
     },
     created() {

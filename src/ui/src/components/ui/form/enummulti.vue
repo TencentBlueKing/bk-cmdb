@@ -16,7 +16,7 @@
     :clearable="allowClear"
     :searchable="searchable"
     :disabled="disabled"
-    :multiple="multiple"
+    :multiple="localMultiple"
     :placeholder="placeholder"
     :font-size="fontSize"
     :popover-options="{
@@ -77,9 +77,20 @@
         default: 'medium'
       }
     },
+    data() {
+      return {
+        initValue: this.value
+      }
+    },
     computed: {
       searchable() {
         return this.options.length > 7
+      },
+      localMultiple() {
+        if (Array.isArray(this.initValue) && this.initValue.length > 1 && !this.multiple) {
+          return true
+        }
+        return this.multiple
       },
       selected: {
         get() {
@@ -87,16 +98,16 @@
             return this.getDefaultValue()
           }
 
-          if (!this.multiple) {
+          if (!this.localMultiple) {
             return Array.isArray(this.value) ? this.value[0] : this.value
           }
 
           return this.value
         },
         set(value) {
-          const emitValue = value || []
-          this.$emit('input', emitValue)
-          this.$emit('on-selected', emitValue)
+          this.$emit('input', value)
+          this.$emit('on-selected', value)
+          this.$emit('change', value)
         }
       }
     },
@@ -116,10 +127,10 @@
         if (this.autoSelect) {
           const defaultOptions = (this.options || []).filter(option => option.is_default)
           const defaultValue = defaultOptions.map(option => option.id)
-          return this.multiple ? defaultValue : defaultValue[0]
+          return this.localMultiple ? defaultValue : defaultValue[0]
         }
 
-        return this.multiple ? [] : ''
+        return this.localMultiple ? [] : ''
       },
       checkSelected() {
         const { selected } = this

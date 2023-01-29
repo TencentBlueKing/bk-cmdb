@@ -133,8 +133,9 @@ export function isNullish(value) {
 
 export function formatValue(value, property) {
   if (!(isEmptyValue(value) && property)) {
-    // 枚举引用和组织类型的字段保存时必须转换为数组，在作为form的值使用时如果是单选值不是数组格式在这里统一转换
-    if ([PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ORGANIZATION].includes(property?.bk_property_type)) {
+    // 枚举引用/多选和组织类型的字段保存时必须转换为数组，在作为form的值使用时如果是单选值不是数组格式在这里统一转换
+    const arrayValueTypes = [PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.ORGANIZATION]
+    if (arrayValueTypes.includes(property?.bk_property_type)) {
       return !Array.isArray(value) ? [value] : value
     }
     return value
@@ -323,9 +324,10 @@ export function getValidateEvents(property) {
   const type = property.bk_property_type
   const isChar = ['singlechar', 'longchar'].includes(type)
   const hasRegular = !!property.option
-  if (isChar && hasRegular) {
+  const isSelectType = [PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ORGANIZATION].includes(type)
+  if ((isChar && hasRegular) || isSelectType) {
     return {
-      'data-vv-validate-on': 'blur|change'
+      'data-vv-validate-on': 'change|blur'
     }
   }
   return {}
@@ -344,11 +346,20 @@ export function getValidateRules(property) {
   const {
     bk_property_type: propertyType,
     option,
-    isrequired
+    isrequired,
+    ismultiple
   } = property
+
   if (isrequired) {
     rules.required = true
   }
+
+  const isSelectType = [
+    PROPERTY_TYPES.ENUMMULTI,
+    PROPERTY_TYPES.ENUMQUOTE,
+    PROPERTY_TYPES.ORGANIZATION
+  ].includes(propertyType)
+
   if (option) {
     if (['int', 'float'].includes(propertyType)) {
       if (has(option, 'min') && !['', null, undefined].includes(option.min)) {
@@ -370,7 +381,10 @@ export function getValidateRules(property) {
     rules.float = true
   } else if (propertyType === 'objuser') {
     rules.length = 2000
+  } else if (isSelectType) {
+    rules.maxSelectLength = ismultiple ? -1 : 1
   }
+
   return rules
 }
 

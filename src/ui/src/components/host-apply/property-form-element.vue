@@ -25,8 +25,7 @@
       :disabled="!property.host_apply_enabled || property.__extra__.ignore"
       v-bind="$tools.getValidateEvents(property)"
       v-validate="$tools.getValidateRules(property)"
-      v-model.trim="property.__extra__.value"
-    >
+      v-model.trim="property.__extra__.value">
     </component>
     <div class="form-error"
       v-if="errors.has(property.bk_property_id)">
@@ -51,6 +50,13 @@
         this.property.__extra__.valid = await this.$validator.validate()
         this.$emit('value-change', value)
       }
+    },
+    created() {
+      this.$nextTick(async () => {
+        // eslint-disable-next-line no-underscore-dangle
+        this.property.__extra__.valid = await this.$validator.validate()
+        this.$emit('valid-change')
+      })
     }
   }
 </script>

@@ -67,19 +67,24 @@
     </vue-draggable>
     <div class="default-setting">
       <p class="title mb10">{{$t('默认值设置')}}</p>
-      <bk-select style="width: 100%;"
-        :key="String(multiple)"
-        :clearable="false"
-        :disabled="isReadOnly"
-        :multiple="multiple"
-        v-model="defaultValue"
-        @change="handleSettingDefault">
-        <bk-option v-for="option in settingList"
-          :key="option.id"
-          :id="option.id"
-          :name="option.name">
-        </bk-option>
-      </bk-select>
+      <div class="cmdb-form-item" :class="{ 'is-error': errors.has('defaultValueSelect') }">
+        <bk-select style="width: 100%;"
+          :clearable="false"
+          :disabled="isReadOnly"
+          :multiple="true"
+          name="defaultValueSelect"
+          data-vv-validate-on="change"
+          v-validate.immediate="`maxSelectLength:${ multiple ? -1 : 1 }`"
+          v-model="defaultValue"
+          @change="handleSettingDefault">
+          <bk-option v-for="option in settingList"
+            :key="option.id"
+            :id="option.id"
+            :name="option.name">
+          </bk-option>
+        </bk-select>
+        <p class="form-error">{{errors.first('defaultValueSelect')}}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -130,23 +135,12 @@
         handler(value) {
           this.settingList = (value || []).filter(item => item.id && item.name)
 
-          if (this.multiple) {
-            // 无默认值选择第0项，有默认值则需要验证值是否存在（列表中可能将其删除）
-            if (!this.defaultValue.length) {
-              this.defaultValue = this.settingList.length ? [this.settingList[0].id] : []
-            } else {
-              this.defaultValue = this.settingList.filter(item => this.defaultValue.includes(item.id))
-                .map(item => item.id)
-            }
+          // 无默认值选择第0项，有默认值则需要验证值是否存在（列表中可能将其删除）
+          if (!this.defaultValue.length) {
+            this.defaultValue = this.settingList.length ? [this.settingList[0].id] : []
           } else {
-            if (!this.defaultValue.length) {
-              this.defaultValue = this.settingList.length ? this.settingList[0].id : ''
-            } else {
-              this.defaultValue = this.settingList.find(item => item.id === this.defaultValue)?.id ?? ''
-              if (this.settingList.length && !this.defaultValue) {
-                this.defaultValue = this.settingList[0].id
-              }
-            }
+            this.defaultValue = this.settingList.filter(item => this.defaultValue.includes(item.id))
+              .map(item => item.id)
           }
         }
       },
@@ -154,18 +148,14 @@
         // 检测选中值变化，需要修正is_default
         if (!isEqual(val, old)) {
           this.enumList.forEach((item) => {
-            if (this.multiple) {
-              item.is_default = val.includes(item.id)
-            } else {
-              item.is_default = val === item.id
-            }
+            item.is_default = val.includes(item.id)
           })
           this.$emit('input', this.enumList)
         }
       },
-      multiple(val) {
-        // 多选变化时重置默认选中值
-        this.defaultValue = val ? [] : ''
+      multiple() {
+        // 多选变化时校验默认值设置
+        this.$nextTick(async () => this.$validator.validate('defaultValueSelect'))
       }
     },
     created() {

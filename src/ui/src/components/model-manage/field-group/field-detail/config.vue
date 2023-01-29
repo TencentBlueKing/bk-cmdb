@@ -27,7 +27,7 @@
       <span class="cmdb-checkbox-text">{{$t('必填')}}</span>
     </label>
     <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="isMultipleShow">
-      <input type="checkbox" tabindex="-1" v-model="localValue.multiple" :disabled="isReadOnly || ispre || isEditField">
+      <input type="checkbox" tabindex="-1" v-model="localValue.multiple" :disabled="isReadOnly || ispre">
       <span class="cmdb-checkbox-text">{{$t('可多选')}}</span>
     </label>
   </div>

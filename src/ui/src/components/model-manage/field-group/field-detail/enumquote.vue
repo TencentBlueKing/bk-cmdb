@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { computed, ref, watchEffect } from 'vue'
+  import { computed, nextTick, ref, watch, watchEffect } from 'vue'
   import { t } from '@/i18n'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
@@ -32,6 +32,8 @@
 
   const emit = defineEmits(['input'])
 
+  const defaultValueSelectEl = ref(null)
+
   const excludeModelIds = [BUILTIN_MODELS.SET, BUILTIN_MODELS.MODULE]
 
   const refModelId = ref('')
@@ -40,22 +42,15 @@
   const searchPlaceholder = computed(() => t('请输入xx', { name: t(refModelId.value === BUILTIN_MODELS.HOST ? 'IP' : '名称') }))
 
   watchEffect(() => {
-    if (props.multiple) {
-      if (props.value?.length) {
-        refModelId.value = props.value.map(item => item.bk_obj_id)?.[0]
-        refModelInstIds.value = props.value.map(item => item.bk_inst_id)
-      } else {
-        refModelInstIds.value = []
-      }
+    if (props.value?.length) {
+      refModelId.value = props.value.map(item => item.bk_obj_id)?.[0]
+      refModelInstIds.value = props.value.map(item => item.bk_inst_id)
     } else {
-      if (props.value?.length) {
-        refModelId.value = props.value.map(item => item.bk_obj_id)?.[0]
-        refModelInstIds.value = props.value.map(item => item.bk_inst_id)?.[0]
-      } else {
-        refModelInstIds.value = ''
-      }
+      refModelInstIds.value = []
     }
   })
+
+  watch(() => props.multiple, () => nextTick(async () => defaultValueSelectEl.value.$validator.validate('refModelInst')))
 
   const handleModelInstChange = (modelInstIds) => {
     const instIds = Array.isArray(modelInstIds) ? modelInstIds : [modelInstIds]
@@ -97,15 +92,16 @@
         :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('refModelInst') }]"
         :label="$t('默认值')">
         <model-instance-selector
-          :key="String(multiple)"
+          ref="defaultValueSelectEl"
           class="model-instance-selector"
           name="refModelInst"
-          v-validate="'required'"
+          data-vv-validate-on="change"
+          v-validate="`required|maxSelectLength:${ multiple ? -1 : 1 }`"
           :obj-id="refModelId"
           :placeholder="$t('请选择xx', { name: $t('模型实例') })"
           :search-placeholder="searchPlaceholder"
           :display-tag="true"
-          :multiple="multiple"
+          :multiple="true"
           v-model="refModelInstIds"
           @change="handleModelInstChange">
         </model-instance-selector>
