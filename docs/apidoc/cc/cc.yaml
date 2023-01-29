@@ -1318,3 +1318,258 @@
   dest_path: /api/v3/deletemany/cloud_hosts
   dest_http_method: DELETE
   is_hidden: true
+
+- path: /v2/cc/create_kube_cluster/
+  name: create_kube_cluster
+  label: 创建容器集群
+  label_en: create kube cluster
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/create/kube/cluster/bk_biz_id/{bk_biz_id}
+  dest_http_method: POST
+  is_hidden: true
+
+- path: /v2/cc/batch_update_kube_cluster/
+  name: batch_update_kube_cluster
+  label: 批量更新容器集群信息
+  label_en: batch update kube cluster
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/updatemany/kube/cluster/bk_biz_id/{bk_biz_id}
+  dest_http_method: PUT
+  is_hidden: true
+
+- path: /v2/cc/batch_delete_kube_cluster/
+  name: batch_delete_kube_cluster
+  label: 批量删除容器集群
+  label_en: batch delete kube cluster
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/delete/kube/cluster/bk_biz_id/{bk_biz_id}
+  dest_http_method: DELETE
+  is_hidden: true
+
+- path: /v2/cc/list_kube_cluster/
+  name: list_kube_cluster
+  label: 查询容器集群
+  label_en: list kube cluster
+  suggest_method: POST
+  api_type: query
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/findmany/kube/cluster/bk_biz_id/{bk_biz_id}
+  dest_http_method: POST
+
+- path: /v2/cc/batch_create_kube_node/
+  name: batch_create_kube_node
+  label: 批量创建容器节点
+  label_en: batch create kube node
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/createmany/kube/node/bk_biz_id/{bk_biz_id}
+  dest_http_method: POST
+  is_hidden: true
+
+- path: /v2/cc/batch_update_kube_node/
+  name: batch_update_kube_node
+  label: 批量更新容器节点信息
+  label_en: batch update kube node
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/updatemany/kube/node/bk_biz_id/{bk_biz_id}
+  dest_http_method: PUT
+  is_hidden: true
+
+- path: /v2/cc/batch_delete_kube_node/
+  name: batch_delete_kube_node
+  label: 批量删除容器节点
+  label_en: batch delete kube node
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/deletemany/kube/node/bk_biz_id/{bk_biz_id}
+  dest_http_method: DELETE
+  is_hidden: true
+
+- path: /v2/cc/list_kube_node/
+  name: list_kube_node
+  label: 查询容器节点
+  label_en: list container node
+  suggest_method: POST
+  api_type: query
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/findmany/kube/node/bk_biz_id/{bk_biz_id}
+  dest_http_method: POST
+
+- path: /v2/cc/batch_create_kube_pod/
+  name: batch_create_kube_pod
+  label: 批量创建容器pod
+  label_en: batch create kube pod
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/createmany/kube/pod
+  dest_http_method: POST
+  is_hidden: true
+
+- path: /v2/cc/batch_delete_kube_pod/
+  name: batch_delete_kube_pod
+  label: 批量删除Pod
+  label_en: batch delete kube pod
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/deletemany/kube/pod
+  dest_http_method: DELETE
+  is_hidden: true
+
+- path: /v2/cc/list_kube_pod/
+  name: list_kube_pod
+  label: 查询Pod列表
+  label_en: list kube pod
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/findmany/kube/pod/bk_biz_id/{bk_biz_id}
+  dest_http_method: POST
+
+- path: /v2/cc/list_kube_container/
+  name: list_kube_container
+  label: 查询Container列表
+  label_en: list kube container
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/findmany/kube/container/bk_biz_id/{bk_biz_id}
+  dest_http_method: POST
+
+- path: /v2/cc/batch_create_kube_namespace/
+  name: batch_create_kube_namespace
+  label: 批量创建namespace
+  label_en: batch create namespace
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/createmany/kube/namespace/bk_biz_id/{bk_biz_id}
+  dest_http_method: POST
+  is_hidden: true
+
+- path: /v2/cc/batch_update_kube_namespace/
+  name: batch_update_kube_namespace
+  label: 批量更新namespace
+  label_en: batch update namespace
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/updatemany/kube/namespace/bk_biz_id/{bk_biz_id}
+  dest_http_method: PUT
+  is_hidden: true
+
+- path: /v2/cc/batch_delete_kube_namespace/
+  name: batch_delete_kube_namespace
+  label: 批量删除namespace
+  label_en: batch delete namespace
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/deletemany/kube/namespace/bk_biz_id/{bk_biz_id}
+  dest_http_method: DELETE
+  is_hidden: true
+
+- path: /v2/cc/list_kube_namespace/
+  name: list_kube_namespace
+  label: 查询namespace
+  label_en: list namespace
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/findmany/kube/namespace/bk_biz_id/{bk_biz_id}
+  dest_http_method: POST
+
+- path: /v2/cc/batch_create_kube_workload/
+  name: batch_create_kube_workload
+  label: 批量创建workload
+  label_en: batch create workload
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/createmany/kube/workload/{kind}/{bk_biz_id}
+  dest_http_method: POST
+  is_hidden: true
+
+- path: /v2/cc/batch_update_kube_workload/
+  name: batch_update_kube_workload
+  label: 批量更新workload
+  label_en: batch update workload
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/updatemany/kube/workload/{kind}/{bk_biz_id}
+  dest_http_method: PUT
+  is_hidden: true
+
+- path: /v2/cc/batch_delete_kube_workload/
+  name: batch_delete_kube_workload
+  label: 批量删除workload
+  label_en: batch delete workload
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/deletemany/kube/workload/{kind}/{bk_biz_id}
+  dest_http_method: DELETE
+  is_hidden: true
+
+- path: /v2/cc/list_kube_workload/
+  name: list_kube_workload
+  label: 查询workload
+  label_en: list workload
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/findmany/kube/workload/{kind}/{bk_biz_id}
+  dest_http_method: POST
+
+- path: /v2/cc/find_host_identifier_push_result/
+  name: find_host_identifier_push_result
+  label: 获取推送主机身份任务结果
+  label_en: find host identifier push result.
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/event/find/host_identifier_push_result
+  dest_http_method: POST
+  is_hidden: true
+
+- path: /v2/cc/add_host_to_business_idle/
+  name: add_host_to_business_idle
+  label: 添加主机到业务空闲机
+  label_en: add host to business idle module.
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/hosts/add/business_idle
+  dest_http_method: POST
+
+- path: /v2/cc/bind_host_agent/
+  name: bind_host_agent
+  label: 将agent绑定到主机上
+  label_en: bind agent to host
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/host/bind/agent
+  dest_http_method: POST
+
+- path: /v2/cc/unbind_host_agent/
+  name: unbind_host_agent
+  label: 将agent和主机解绑
+  label_en: unbind agent from host
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/host/unbind/agent
+  dest_http_method: POST
