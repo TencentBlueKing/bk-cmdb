@@ -135,6 +135,7 @@ func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attri
 	cond := []map[string]interface{}{{
 		common.BKObjIDField:           data.ObjectID,
 		common.BKPropertyGroupIDField: data.PropertyGroup,
+		common.BKAppIDField:           data.BizID,
 	}}
 
 	defCntRes, err := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
@@ -162,6 +163,7 @@ func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attri
 	bizDefaultGroupCond := []map[string]interface{}{{
 		common.BKObjIDField:           data.ObjectID,
 		common.BKPropertyGroupIDField: common.BKBizDefault,
+		common.BKAppIDField:           data.BizID,
 	}}
 
 	bizDefCntRes, err := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
