@@ -556,6 +556,7 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 					continue
 				}
 				attr.PropertyGroup = grp.Data.GroupID
+				grpNameIDMap[attr.PropertyGroupName] = grp.Data.GroupID
 			}
 		} else {
 			attr.PropertyGroup = NewGroupID(true)
