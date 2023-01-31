@@ -134,13 +134,13 @@ type HostToAppModule struct {
 	IsIncrement bool     `json:"is_increment"`
 }
 
-// HostCommonSearch TODO
+// HostCommonSearch the structure of the host common query condition
 type HostCommonSearch struct {
 	AppID     int64             `json:"bk_biz_id,omitempty"`
-	Ip        IPInfo            `json:"ip"`
+	Ipv4Ip    IPInfo            `json:"ip"`
+	Ipv6Ip    IPInfo            `json:"ipv6"`
 	Condition []SearchCondition `json:"condition"`
 	Page      BasePage          `json:"page"`
-	Pattern   string            `json:"pattern,omitempty"`
 }
 
 // SetCommonSearch TODO

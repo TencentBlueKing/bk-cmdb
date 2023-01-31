@@ -18,7 +18,6 @@ import (
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
 	"configcenter/src/kube/types"
 )
 
@@ -409,7 +408,8 @@ func (hs *hostServer) MoveSetHost2IdleModule(ctx context.Context, h http.Header,
 }
 
 // SearchHost TODO
-func (hs *hostServer) SearchHost(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
+func (hs *hostServer) SearchHost(ctx context.Context, h http.Header,
+	dat *metadata.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
 	resp = new(metadata.SearchHostResult)
 	subPath := "/hosts/search"
 
@@ -424,7 +424,8 @@ func (hs *hostServer) SearchHost(ctx context.Context, h http.Header, dat *params
 }
 
 // SearchHostWithAsstDetail TODO
-func (hs *hostServer) SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
+func (hs *hostServer) SearchHostWithAsstDetail(ctx context.Context, h http.Header,
+	dat *metadata.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
 	resp = new(metadata.SearchHostResult)
 	subPath := "/hosts/search/asstdetail"
 

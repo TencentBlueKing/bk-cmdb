@@ -514,6 +514,14 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 		return
 	}
 
+	searchByIpNum := len(body.Ipv4Ip.Data) + len(body.Ipv6Ip.Data)
+	if searchByIpNum > common.BKMaxLimitSize {
+		blog.Errorf("search host info at once exceeds max page size, number of queries: %d, rid: %s", searchByIpNum,
+			ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	host, err := s.Logic.SearchHost(ctx.Kit, body, false)
 	if err != nil {
@@ -1688,15 +1696,14 @@ func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
 		return
 	}
 
-	condition := make(map[string]interface{})
-	err = hostParse.ParseHostParams(cond, condition)
+	condition, err := hostParse.ParseHostParams(cond)
 	if err != nil {
 		blog.Errorf("parse host condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
 		return
 	}
 
-	err = hostParse.ParseHostIPParams(req.Ip, condition)
+	condition, err = hostParse.ParseHostIPParams(req.Ipv4Ip, req.Ipv6Ip, condition)
 	if err != nil {
 		blog.Errorf("parse host IP condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
