@@ -522,6 +522,7 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 
 	objRes := createObjectBatchObjResult{}
 	hasError := false
+	globalGroupIndex := int64(0)
 	for idx, attr := range attributes {
 		propID := attr.PropertyID
 		if propID == common.BKInstParentStr {
@@ -545,7 +546,7 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 			} else {
 				grp := metadata.CreateModelAttributeGroup{
 					Data: metadata.Group{GroupName: attr.PropertyGroupName, GroupID: NewGroupID(false), ObjectID: objID,
-						OwnerID: kit.SupplierAccount, BizID: attr.BizID,
+						OwnerID: kit.SupplierAccount, BizID: attr.BizID, GroupIndex: globalGroupIndex,
 					}}
 
 				_, err := a.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header, objID, grp)
@@ -557,6 +558,7 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 				}
 				attr.PropertyGroup = grp.Data.GroupID
 				grpNameIDMap[attr.PropertyGroupName] = grp.Data.GroupID
+				globalGroupIndex++
 			}
 		} else {
 			attr.PropertyGroup = NewGroupID(true)
