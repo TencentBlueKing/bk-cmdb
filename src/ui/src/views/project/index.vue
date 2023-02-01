@@ -230,6 +230,7 @@
   import {  MENU_RESOURCE_PROJECT_DETAILS  } from '@/dictionary/menu-symbol'
   import InstanceStatusColumn from './children/instance-status-column.vue'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+  import projectService from '@/service/project/search.js'
 
   export default {
     components: {
@@ -389,17 +390,16 @@
     },
     methods: {
       ...mapActions('objectModelFieldGroup', ['searchGroup']),
-      ...mapActions('objectProject', ['searchProject', 'createProject', 'batchUpdateProject']),
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
 
-      async   getTableData() {
+      async getTableData() {
         try {
-          const [{ count  }, { info }]  =  await Promise.all([
+          const [{ count }, { info }] =  await Promise.all([
             this.getProjectList('count', { cancelPrevious: true, globalPermission: false }),
             this.getProjectList('filed', { cancelPrevious: true, globalPermission: false })
           ])
           this.table.pagination.count = count
-          this.table.list   = info
+          this.table.list = info
           this.table.stuff.type = this.filter.value.toString().length ? 'search' : 'default'
           this.renderVisibleList()
         } catch (err) {
@@ -423,7 +423,7 @@
         const { conditions } = { ... Utils.transformGeneralModelCondition(condition, this.properties) }
         const params = { ...this.getSearchParams(type), filter: { ...conditions } }
         if (this.filter.value.length === 0)  delete params.filter
-        return this.searchProject({
+        return projectService.searchProject({
           params,
           config: Object.assign({ requestId: this.requestId.searchProject }, config)
         })
@@ -545,7 +545,7 @@
         this.$routerActions.redirect({
           name: MENU_RESOURCE_PROJECT_DETAILS,
           params: {
-            proId: row.id
+            projId: row.id
           },
           history: true
         })
@@ -586,7 +586,6 @@
       },
       handleSliderBeforeClose() {
         const { changedValues } = this.$refs.form
-
         this.addDoubleConfirm(changedValues, this.closeCreateSlider)
       },
       addDoubleConfirm(changedValues, confirmCallback) {
@@ -618,7 +617,7 @@
         return true
       },
       handleSave(values) {
-        this.createProject(values).then(() => {
+        projectService.createProject(values).then(() => {
           this.getTableData()
           this.closeCreateSlider()
           this.$success(this.$t('创建成功'))
@@ -632,7 +631,7 @@
           data: changedValues
         }
         this.batchUpdateSlider.loading = true
-        this.batchUpdateProject(params)
+        projectService.batchUpdateProject(params)
           .then(() => {
             this.$refs.batchSelectionColumn.clearSelection()
             this.batchUpdateSlider.show = false
@@ -685,9 +684,9 @@
       }
     }
   }
-  </script>
+</script>
 
-  <style lang="scss" scoped>
+<style lang="scss" scoped>
   .project-layout {
     padding: 15px 20px 0;
   }

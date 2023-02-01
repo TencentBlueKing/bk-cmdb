@@ -35,8 +35,8 @@
         <cmdb-audit-history v-if="active === 'history'"
           resource-type="project"
           :obj-id="objId"
-          :biz-id="proId"
-          :resource-id="proId">
+          :biz-id="projId"
+          :resource-id="projId">
         </cmdb-audit-history>
       </bk-tab-panel>
     </bk-tab>
@@ -49,6 +49,8 @@
   import cmdbAuditHistory from '@/components/model-instance/audit-history'
   import cmdbRelation from '@/components/model-instance/relation'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+  import projectService from '@/service/project/search.js'
+
   export default {
     components: {
       cmdbProperty,
@@ -67,15 +69,15 @@
     computed: {
       ...mapGetters(['supplierAccount', 'userName']),
       ...mapGetters('objectModelClassify', ['getModelById']),
-      proId() {
-        return parseInt(this.$route.params.proId, 10)
+      projId() {
+        return parseInt(this.$route.params.projId, 10)
       },
       model() {
         return this.getModelById(BUILTIN_MODELS.PROJECT) || {}
       }
     },
     watch: {
-      proId() {
+      projId() {
         this.getData()
       },
       objId() {
@@ -88,9 +90,7 @@
     methods: {
       ...mapActions('objectModelFieldGroup', ['searchGroup']),
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
-      ...mapActions('objectProject', [
-        'searchProject'
-      ]),
+
       setBreadcrumbs(inst) {
         this.$store.commit('setTitle', `${this.model.bk_obj_name}【${inst[0].bk_project_name}】`)
       },
@@ -117,7 +117,7 @@
               {
                 field: 'id',
                 operator: 'equal',
-                value: +this.$route.params.proId
+                value: +this.$route.params.projId
               }
             ]
           },
@@ -129,9 +129,9 @@
           }
         }
         try {
-          const inst = await this.searchProject({
+          const inst = await projectService.searchProject({
             params,
-            config: { requestId: `post_searchProjectById_${this.proId}`, cancelPrevious: true }
+            config: { requestId: `post_searchProjectById_${this.projId}`, cancelPrevious: true }
           })
           return inst.info
         } catch (e) {

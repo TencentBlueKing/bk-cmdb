@@ -73,7 +73,6 @@
                     :data-vv-name="property.bk_property_id"
                     :data-vv-as="property.bk_property_name"
                     :placeholder="getPlaceholder(property)"
-                    :multiple="getMultiple(property)"
                     :auto-check="false"
                     v-bind="$tools.getValidateEvents(property)"
                     v-validate="$tools.getValidateRules(property)"
@@ -122,6 +121,7 @@
     BUILTIN_MODEL_RESOURCE_TYPES
   } from '@/dictionary/model-constants.js'
   import businessSetService from '@/service/business-set/index.js'
+  import projectService from '@/service/project/search.js'
   import authMixin from './mixin-auth'
   export default {
     filters: {
@@ -140,10 +140,6 @@
         default: ''
       },
       readonly: {
-        type: Boolean,
-        default: false
-      },
-      multiple: {
         type: Boolean,
         default: false
       }
@@ -178,7 +174,6 @@
     methods: {
       ...mapActions('objectCommonInst', ['updateInst']),
       ...mapActions('objectBiz', ['updateBusiness']),
-      ...mapActions('objectProject', ['batchUpdateProject']),
 
       setFocus(id, focus) {
         const item = this.$el.querySelector(id)
@@ -191,9 +186,6 @@
       getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
-      },
-      getMultiple(property) {
-        return  ['organization'].includes(property.bk_property_type)
       },
       isPropertyEditable(property) {
         return property.editable && !property.bk_isapi
@@ -239,7 +231,7 @@
               ids: [this.instState.id],
               data: values
             }
-            await this.batchUpdateProject(params)
+            await  projectService.batchUpdateProject(params)
           } else {
             await this.updateInst({
               objId: this.instState.bk_obj_id,

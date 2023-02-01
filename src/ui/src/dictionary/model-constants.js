@@ -63,7 +63,7 @@ export const BUILTIN_MODEL_PROPERTY_KEYS = Object.freeze({
 export const BUILTIN_MODEL_ROUTEPARAMS_KEYS = Object.freeze({
   [BUILTIN_MODELS.BUSINESS]: 'bizId',
   [BUILTIN_MODELS.BUSINESS_SET]: 'bizSetId',
-  [BUILTIN_MODELS.PROJECT]: 'proId',
+  [BUILTIN_MODELS.PROJECT]: 'projId',
 })
 
 // 内置模型资源目录收藏中用到的Key

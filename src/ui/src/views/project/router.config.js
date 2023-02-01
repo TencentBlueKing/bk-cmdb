@@ -24,7 +24,7 @@ export default [{
   })
 }, {
   name: MENU_RESOURCE_PROJECT_DETAILS,
-  path: 'project/details/:proId',
+  path: 'project/details/:projId',
   component: () => import('./details.vue'),
   meta: new Meta({
     menu: {

@@ -160,7 +160,6 @@ export default function useItem(list) {
       history: true
     }
 
-
     if (newTab) {
       routerActions.open(to)
       return

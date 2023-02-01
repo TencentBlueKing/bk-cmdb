@@ -41,6 +41,39 @@ const findOne = async ({ id: id, config }) => {
   }
 }
 
+const searchProject = async ({ params, config }) => {
+  try {
+    return await http.post('/findmany/project', params, config)
+  } catch (error) {
+    console.error(error)
+    return null
+  }
+}
+
+const createProject = async (params) => {
+  try {
+    const data = {
+      data: [params]
+    }
+    return await http.post('/createmany/project', data)
+  } catch (error) {
+    console.error(error)
+    return null
+  }
+}
+
+const batchUpdateProject = async (params) => {
+  try {
+    return await http.put('/updatemany/project', params)
+  } catch (error) {
+    console.error(error)
+    return null
+  }
+}
+
 export default {
-  findOne
+  findOne,
+  searchProject,
+  createProject,
+  batchUpdateProject
 }

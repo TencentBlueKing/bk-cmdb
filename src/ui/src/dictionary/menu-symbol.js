@@ -72,10 +72,13 @@ export const MENU_RESOURCE_BUSINESS_DETAILS = 'menu_resource_business_details'
 export const MENU_RESOURCE_HOST = 'menu_resource_host'
 export const MENU_RESOURCE_INSTANCE = 'menu_resource_instance'
 export const MENU_RESOURCE_INSTANCE_DETAILS = 'menu_resource_instance_details'
+
+/**
+ * 项目
+ */
+export const MENU_RESOURCE_PROJECT = 'menu_resource_project'
 export const MENU_RESOURCE_PROJECT_DETAILS = 'menu_resource_project_details'
 
-// 项目
-export const MENU_RESOURCE_PROJECT = 'menu_resource_project'
 /**
  * 模型
  */

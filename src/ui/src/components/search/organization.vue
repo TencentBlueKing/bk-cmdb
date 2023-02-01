@@ -14,9 +14,7 @@
   <cmdb-form-organization
     v-model="localValue"
     v-bind="$attrs"
-    @clear="() => $emit('clear')"
-    @toggle="handleToggle"
-    :multiple="multiple">
+    @clear="() => $emit('clear')">
   </cmdb-form-organization>
 </template>
 
@@ -29,10 +27,6 @@
       value: {
         type: Array,
         default: () => ([])
-      },
-      multiple: {
-        type: Boolean,
-        default: false
       }
     },
     computed: {
