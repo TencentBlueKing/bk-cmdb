@@ -34,17 +34,13 @@
         <div class="picking-popover-content" slot="content">
           <p>{{$t('检测到输入框包含多种格式数据，请选择以哪个字段进行搜索：')}}</p>
           <div class="buttons">
-            <bk-button theme="primary" size="small" outline v-test-id="'ipSearch'" v-if="searchFlag.ipv4"
+            <bk-button theme="primary" size="small" outline v-test-id="'ipSearch'" v-if="searchFlag.ip"
               @click="handleSearch('ip')">
               {{$t('IP')}}
             </bk-button>
             <bk-button theme="primary" size="small" outline v-test-id="'assetSearch'" v-if="searchFlag.asset"
               @click="handleSearch('asset')">
               {{$t('固资编号')}}
-            </bk-button>
-            <bk-button theme="primary" size="small" outline v-test-id="'ipv6Search'" v-if="searchFlag.ipv6"
-              @click="handleSearch('ipv6')">
-              {{$t('IPv6')}}
             </bk-button>
           </div>
         </div>
@@ -57,8 +53,6 @@
 <script>
   import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
   import QS from 'qs'
-  import isIP from 'validator/es/lib/isIP'
-  import isInt from 'validator/es/lib/isInt'
   import FilterUtils from '@/components/filters/utils.js'
   import { HOME_HOST_SEARCH_CONTENT_STORE_KEY } from '@/dictionary/storage-keys.js'
 
@@ -89,8 +83,7 @@
           }
         },
         searchFlag: {
-          ipv4: false,
-          ipv6: false,
+          ip: false,
           asset: false
         },
         request: {
@@ -148,31 +141,13 @@
         window.sessionStorage.setItem(HOME_HOST_SEARCH_CONTENT_STORE_KEY, JSON.stringify(this.searchContent))
 
         if (searchList.length) {
-          const IPList = []
-          const IPv6List = []
-          const IPWithCloudList = []
-          const assetList = []
-          const cloudIdSet = new Set()
-          searchList.forEach((text) => {
-            if (isIP(text, 4)) {
-              IPList.push(text)
-            } else if (isIP(text, 6)) {
-              IPv6List.push(text)
-            } else {
-              const splitData = text.split(':')
-              const [cloudId, ip] = splitData
-              if (splitData.length === 2 && isInt(cloudId) && isIP(ip)) {
-                IPWithCloudList.push(text)
-                cloudIdSet.add(parseInt(cloudId, 10))
-              } else {
-                assetList.push(text)
-              }
-            }
-          })
-          // console.log(IPList, IPv6List, IPWithCloudList, assetList, cloudIdSet, force)
+          const IPs = FilterUtils.parseIP(searchList)
+          const { IPv4List, IPv4WithCloudList, IPv6List, IPv6WithCloudList, assetList, cloudIdSet } = IPs
 
-          this.searchFlag.ipv4 = IPList.length || IPWithCloudList.length
-          this.searchFlag.ipv6 = IPv6List.length > 0
+          this.searchFlag.ip = IPv4List.length
+            || IPv4WithCloudList.length
+            || IPv6List.length
+            || IPv6WithCloudList.length
           this.searchFlag.asset = assetList.length > 0
           const isMixSearch = Object.values(this.searchFlag).filter(x => x).length > 1
 
@@ -185,23 +160,12 @@
           const assetSearch = () => this.handleAssetSearch(assetList)
 
           const ipSearch = () => {
-            // 无云区域与有云区域的混合搜索
-            if (IPList.length && IPWithCloudList.length && IPv6List.length) {
-              return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
-            }
-            // 纯IP搜索
-            if (IPList.length) {
-              return this.handleIPSearch(IPList)
-            }
             // 不同云区域+IP的混合搜索
             if (cloudIdSet.size > 1) {
               return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
             }
-            this.handleIPWithCloudSearch(IPWithCloudList, cloudIdSet)
-          }
 
-          const ipv6Search = () => {
-            this.handleIPv6Search(IPv6List)
+            this.handleIPSearch(IPs)
           }
 
           // 优先使用混合搜索下的选择
@@ -211,68 +175,29 @@
           if (force === 'ip') {
             return ipSearch()
           }
-          if (force === 'ipv6') {
-            return ipv6Search()
-          }
 
           // 非混合搜索
           if (this.searchFlag.asset) {
             return assetSearch()
           }
-          if (this.searchFlag.ipv4) {
+          if (this.searchFlag.ip) {
             return ipSearch()
-          }
-          if (this.searchFlag.ipv6) {
-            return ipv6Search()
           }
         } else {
           this.searchContent = ''
           this.textareaDom && this.textareaDom.focus()
         }
       },
-      handleIPSearch(list) {
-        const ip = {
-          text: list.join('\n'),
-          inner: true,
-          outer: true,
-          exact: true
-        }
-        this.$routerActions.redirect({
-          name: MENU_RESOURCE_HOST,
-          query: {
-            scope: 'all',
-            ip: QS.stringify(ip, { encode: false })
-          },
-          history: true
-        })
-      },
-      handleIPv6Search(list) {
-        const filter = {
-          'bk_host_innerip_v6.in': list.join(',')
-        }
-        this.$routerActions.redirect({
-          name: MENU_RESOURCE_HOST,
-          query: {
-            scope: 'all',
-            filter: QS.stringify(filter, { encode: false })
-          },
-          history: true
-        })
-      },
-      handleIPWithCloudSearch(list, cloudSet) {
-        const IPList = list.map((text) => {
-          const [, ip] = text.split(':')
-          return ip
-        })
-        const ip = {
-          text: IPList.join('\n'),
-          inner: true,
-          outer: true,
-          exact: true
-        }
-        const filter = {
-          'bk_cloud_id.in': [cloudSet.values().next().value].join(',')
-        }
+      handleIPSearch(IPs) {
+        const IPList = [...IPs.IPv4List, ...IPs.IPv6List]
+        IPs.IPv4WithCloudList.forEach(([, ip]) => IPList.push(ip))
+        IPs.IPv6WithCloudList.forEach(([, ip]) => IPList.push(ip))
+
+        const ip = Object.assign(FilterUtils.getDefaultIP(), { text: IPList.join('\n') })
+
+        const cloudIds = [...IPs.cloudIdSet].filter(id => id !== '')
+        const filter = cloudIds.length ? { 'bk_cloud_id.in': cloudIds.join(',') } : {}
+
         this.$routerActions.redirect({
           name: MENU_RESOURCE_HOST,
           query: {

@@ -196,12 +196,7 @@
       return {
         isShow: false,
         withoutOperator: ['date', 'time', 'bool', 'service-template'],
-        IPCondition: {
-          text: '',
-          inner: true,
-          outer: true,
-          exact: true
-        },
+        IPCondition: Utils.getDefaultIP(),
         condition: {},
         selected: [],
         collectionForm: {
