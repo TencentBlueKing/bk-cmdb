@@ -218,7 +218,7 @@
   </div>
 </template>
 
-  <script>
+<script>
   import { translateAuth } from '@/setup/permission'
   import { mapState, mapActions, mapGetters } from 'vuex'
   import RouterQuery from '@/router/query'
@@ -230,7 +230,7 @@
   import {  MENU_RESOURCE_PROJECT_DETAILS  } from '@/dictionary/menu-symbol'
   import InstanceStatusColumn from './children/instance-status-column.vue'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
-  import projectService from '@/service/project/search.js'
+  import projectService from '@/service/project/index.js'
 
   export default {
     components: {
@@ -394,7 +394,7 @@
 
       async getTableData() {
         try {
-          const [{ count }, { info }] =  await Promise.all([
+          const [{ count }, { info }] = await Promise.all([
             this.getProjectList('count', { cancelPrevious: true, globalPermission: false }),
             this.getProjectList('filed', { cancelPrevious: true, globalPermission: false })
           ])
@@ -423,7 +423,7 @@
         const { conditions } = { ... Utils.transformGeneralModelCondition(condition, this.properties) }
         const params = { ...this.getSearchParams(type), filter: { ...conditions } }
         if (this.filter.value.length === 0)  delete params.filter
-        return projectService.searchProject({
+        return projectService.find({
           params,
           config: Object.assign({ requestId: this.requestId.searchProject }, config)
         })
@@ -617,7 +617,7 @@
         return true
       },
       handleSave(values) {
-        projectService.createProject(values).then(() => {
+        projectService.create(values).then(() => {
           this.getTableData()
           this.closeCreateSlider()
           this.$success(this.$t('创建成功'))
@@ -631,7 +631,7 @@
           data: changedValues
         }
         this.batchUpdateSlider.loading = true
-        projectService.batchUpdateProject(params)
+        projectService.update(params)
           .then(() => {
             this.$refs.batchSelectionColumn.clearSelection()
             this.batchUpdateSlider.show = false
@@ -665,7 +665,7 @@
             bk_status: status
           }
         }
-        this.batchUpdateProject(params).then(() => {
+        this.update(params).then(() => {
           this.$bkMessage({
             theme: 'success',
             message: this.$t('操作成功')

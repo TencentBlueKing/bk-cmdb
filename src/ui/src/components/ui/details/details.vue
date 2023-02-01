@@ -23,10 +23,10 @@
             :label="group['bk_group_name']"
             :collapse.sync="groupState[group['bk_group_id']]">
             <ul class="property-list clearfix">
-              <div v-for="property in $groupedProperties[groupIndex]"
-                :key="`${property['bk_obj_id']}-${property['bk_property_id']}`">
+              <template v-for="property in $groupedProperties[groupIndex]">
                 <li :class="['property-item fl', { flex: flexProperties.includes(property['bk_property_id']) }]"
-                  v-if="filterProjProperties.find(item => item.bk_property_id !== property['bk_property_id'])">
+                  v-if="filterProperties.find(item => item.bk_property_id !== property['bk_property_id'])"
+                  :key="`${property['bk_obj_id']}-${property['bk_property_id']}`">
                   <span class="property-name"
                     v-if="!invisibleNameProperties.includes(property['bk_property_id'])"
                     :title="property['bk_property_name']">{{property['bk_property_name']}}
@@ -53,7 +53,7 @@
                     </div>
                   </template>
                 </li>
-              </div>
+              </template>
             </ul>
           </cmdb-collapse>
         </div>
@@ -136,7 +136,7 @@
         type: Array,
         default: () => []
       },
-      filterProjProperties: {
+      filterProperties: {
         type: Array,
         default: () => []
       }

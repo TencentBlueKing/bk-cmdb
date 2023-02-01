@@ -12,7 +12,6 @@
 
 import http from '@/api'
 
-
 const findOne = async ({ id: id, config }) => {
   try {
     const { info } = await http.post('/findmany/project', {
@@ -41,7 +40,7 @@ const findOne = async ({ id: id, config }) => {
   }
 }
 
-const searchProject = async ({ params, config }) => {
+const find = async ({ params, config }) => {
   try {
     return await http.post('/findmany/project', params, config)
   } catch (error) {
@@ -50,7 +49,7 @@ const searchProject = async ({ params, config }) => {
   }
 }
 
-const createProject = async (params) => {
+const create = async (params) => {
   try {
     const data = {
       data: [params]
@@ -62,7 +61,7 @@ const createProject = async (params) => {
   }
 }
 
-const batchUpdateProject = async (params) => {
+const update = async (params) => {
   try {
     return await http.put('/updatemany/project', params)
   } catch (error) {
@@ -73,7 +72,7 @@ const batchUpdateProject = async (params) => {
 
 export default {
   findOne,
-  searchProject,
-  createProject,
-  batchUpdateProject
+  find,
+  create,
+  update
 }

@@ -15,7 +15,7 @@ import hostSearchService from '@/service/host/search'
 import businessSearchService from '@/service/business/search'
 import instanceSearchService from '@/service/instance/search'
 import businessSetService from '@/service/business-set/index.js'
-import projectSearchService from '@/service/project/search'
+import projectSearchService from '@/service/project/index.js'
 import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
 
 const getService = ({ bk_obj_id: objId }) => {

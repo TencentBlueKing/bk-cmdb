@@ -28,7 +28,7 @@ const visible = toRef(state, 'visible')
 const title = toRef(state, 'title')
 const modelOptions = computed(() => ({ bk_obj_id: state.bk_obj_id, bk_biz_id: state.bk_biz_id }))
 const instanceOptions = computed(() => ({ bk_inst_id: state.bk_inst_id, ...modelOptions.value }))
-const [{ properties, pending: propertyPending, filterProjProperties }] = useProperty(modelOptions)
+const [{ properties, pending: propertyPending, filterProperties }] = useProperty(modelOptions)
 const [{ groups, pending: groupPneding }] = useGroup(modelOptions)
 const [{ instance, pending: instancePending }] = useInstance(instanceOptions)
 const pending = usePending([propertyPending, groupPneding, instancePending], true)
@@ -57,7 +57,7 @@ const createDetails = () => {
             inst={ instance.value }
             properties={ properties.value }
             property-groups={ groups.value }
-            filterProjProperties={filterProjProperties.value}>
+            filterProperties={filterProperties.value}>
           </cmdb-details>
         </bk-sideslider>
       )

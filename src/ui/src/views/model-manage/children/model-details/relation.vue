@@ -158,7 +158,7 @@
         return false
       },
       isShowOptionBtn() {
-        return !(BUILTIN_MODELS.PROJECT === this.$route.params.modelId)
+        return BUILTIN_MODELS.PROJECT !== this.$route.params.modelId
       }
     },
     watch: {

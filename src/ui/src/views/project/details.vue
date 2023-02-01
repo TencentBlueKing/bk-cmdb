@@ -49,7 +49,7 @@
   import cmdbAuditHistory from '@/components/model-instance/audit-history'
   import cmdbRelation from '@/components/model-instance/relation'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
-  import projectService from '@/service/project/search.js'
+  import projectService from '@/service/project/index.js'
 
   export default {
     components: {
@@ -129,7 +129,7 @@
           }
         }
         try {
-          const inst = await projectService.searchProject({
+          const inst = await projectService.find({
             params,
             config: { requestId: `post_searchProjectById_${this.projId}`, cancelPrevious: true }
           })

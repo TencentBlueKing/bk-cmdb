@@ -121,7 +121,7 @@
     BUILTIN_MODEL_RESOURCE_TYPES
   } from '@/dictionary/model-constants.js'
   import businessSetService from '@/service/business-set/index.js'
-  import projectService from '@/service/project/search.js'
+  import projectService from '@/service/project/index.js'
   import authMixin from './mixin-auth'
   export default {
     filters: {
@@ -231,7 +231,7 @@
               ids: [this.instState.id],
               data: values
             }
-            await  projectService.batchUpdateProject(params)
+            await projectService.update(params)
           } else {
             await this.updateInst({
               objId: this.instState.bk_obj_id,

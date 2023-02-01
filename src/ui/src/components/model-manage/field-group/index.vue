@@ -521,7 +521,7 @@
         return !this.customObjId
       },
       isShowOptionBtn() {
-        return !(BUILTIN_MODELS.PROJECT === this.curModel.bk_obj_id)
+        return BUILTIN_MODELS.PROJECT !== this.$route.params.modelId
       }
     },
     watch: {
