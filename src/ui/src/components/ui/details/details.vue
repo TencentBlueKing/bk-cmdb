@@ -25,7 +25,7 @@
             <ul class="property-list clearfix">
               <template v-for="property in $groupedProperties[groupIndex]">
                 <li :class="['property-item fl', { flex: flexProperties.includes(property['bk_property_id']) }]"
-                  v-if="filterProperties.find(item => item.bk_property_id !== property['bk_property_id'])"
+                  v-if="!invisibleProperties.includes(property['bk_property_id'])"
                   :key="`${property['bk_obj_id']}-${property['bk_property_id']}`">
                   <span class="property-name"
                     v-if="!invisibleNameProperties.includes(property['bk_property_id'])"
@@ -136,7 +136,7 @@
         type: Array,
         default: () => []
       },
-      filterProperties: {
+      invisibleProperties: {
         type: Array,
         default: () => []
       }

@@ -16,7 +16,7 @@ import propertyService from '@/service/property/property'
 export default function (options = {}) {
   const state = reactive({
     properties: [],
-    filterProperties: [],
+    invisibleProperties: [],
     pending: false
   })
   const refresh = async (value) => {
@@ -24,7 +24,7 @@ export default function (options = {}) {
     state.pending = true
     state.properties = await propertyService.find(value)
     if (value.bk_obj_id === BUILTIN_MODELS.PROJECT) {
-      state.filterProperties = state.properties.filter(item => item.bk_property_id === 'bk_project_icon')
+      state.invisibleProperties = ['bk_project_icon']
     }
     state.pending = false
   }
