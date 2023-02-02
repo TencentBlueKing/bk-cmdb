@@ -11,14 +11,7 @@
 -->
 
 <template>
-  <span class="filter-tag" @click="handleClick"
-    v-bk-tooltips="{
-      disabled: value.length < 3,
-      content: value.join('<br>'),
-      interactive: false,
-      hideOnClick: false,
-      allowHTML: true
-    }">
+  <span class="filter-tag" @click="handleClick">
     <label class="tag-name">{{label}}</label>
     <span class="tag-colon">:</span>
     <span class="tag-value"
