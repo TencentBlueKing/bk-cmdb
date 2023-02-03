@@ -23,7 +23,7 @@ import sys
     @cp -f $(SCRIPT_DIR)/stop.sh $(BIN_PATH)/stop.sh
     @cp -f $(SCRIPT_DIR)/restart.sh $(BIN_PATH)/restart.sh
     @cp -f $(SCRIPT_DIR)/restart.sh $(BIN_PATH)/$(TARGET_NAME)/restart.sh
-    @sed -e 's/version_placeholer/${VERSION}/g' $(SCRIPT_DIR)/image.sh > $(BIN_PATH)/image.sh
+    @sed -e 's/version_placeholder/${VERSION}/g' $(SCRIPT_DIR)/image.sh > $(BIN_PATH)/image.sh
     @chmod +x  $(BIN_PATH)/$(TARGET_NAME)/*.sh
     @chmod +x  $(BIN_PATH)/$(TARGET_NAME)/*.py
     @chmod +x  $(BIN_PATH)/*.sh
@@ -106,10 +106,10 @@ if __name__ == "__main__":
     shutil.copy(os.path.join(script_dir, "refresh_config.sh"), os.path.join(bin_path, target_name, "refresh_config.sh"))
     shutil.copy(os.path.join(script_dir, "refresh_config.sh"), os.path.join(bin_path, "refresh_config.sh"))
 
-    # @sed -e 's/version_placeholer/${VERSION}/g' $(SCRIPT_DIR)/image.sh > $(BIN_PATH)/image.sh
+    # @sed -e 's/version_placeholder/${VERSION}/g' $(SCRIPT_DIR)/image.sh > $(BIN_PATH)/image.sh
     with open(os.path.join(script_dir, "image.sh"), "r") as f:
         data = f.read()
-        data = data.replace("version_placeholer", version)
+        data = data.replace("version_placeholder", version)
         with open(os.path.join(bin_path, "image.sh"), "w") as tf:
             tf.write(data)
 

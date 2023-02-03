@@ -65,7 +65,7 @@ GITHASH=${release} GITTAG=ocr-${release} VERSION=${release} make
 生成配置时需要用社区版的配置文件对应的配置参数重新生成配置，社区版CMDB的配置文件一般在目录 `${BKCE}/cmdb/server/conf/` 中。
 
 ```bash
-[root@VM_1_210_centos ~]# ll ${BKCE}cmdb/server/conf/
+[root@VM_1_210_centos ~]# ll ${BKCE}/cmdb/server/conf/
 total 44
 -rw-r--r-- 1 root root   0 Apr 17 21:00 apiserver.conf
 -rw-r--r-- 1 root root 188 Apr 17 21:00 auditcontroller.conf
