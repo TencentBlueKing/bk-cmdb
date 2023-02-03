@@ -151,5 +151,14 @@
     "bk_biz_set_obj_property_bk_biz_set_name": "name",
     "bk_biz_set_obj_property_bk_biz_set_desc": "description",
     "bk_biz_set_obj_property_bk_biz_maintainer": "ops",
+    "bk_project_property_bk_project_name": "name",
+    "bk_project_property_bk_project_code": "english name",
+    "bk_project_property_bk_project_desc": "description",
+    "bk_project_property_bk_project_type": "type",
+    "bk_project_property_bk_project_sec_lvl": "confidential level",
+    "bk_project_property_bk_project_owner": "owner",
+    "bk_project_property_bk_project_team": "team",
+    "bk_project_property_bk_status": "status",
+    "bk_project_property_bk_project_icon": "icon",
     "": ""
 }

@@ -51,16 +51,6 @@ func (m *associationModel) createModelAssociation(kit *rest.Kit, inputParam meta
 		return &metadata.CreateOneDataResult{}, err
 	}
 
-	if util.InStrArr(forbiddenCreateAssociationObjList, inputParam.Spec.ObjectID) {
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField)
-	}
-
-	if util.InStrArr(forbiddenCreateAssociationObjList, inputParam.Spec.AsstObjID) {
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKAsstObjIDField)
-	}
-
-	inputParam.Spec.OwnerID = kit.SupplierAccount
-
 	exists, err := m.isExistsAssociationID(kit, inputParam.Spec.AssociationName)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check whether the association ID (%s) is exists, error info is %s", kit.Rid, inputParam.Spec.AssociationName, err.Error())

@@ -39,8 +39,6 @@ type ProjectOperationInterface interface {
 	SetProxy(inst InstOperationInterface)
 	// CreateProject create project
 	CreateProject(kit *rest.Kit, data []mapstr.MapStr) ([]int64, error)
-	// UpdateProject update project
-	UpdateProject(kit *rest.Kit, filter mapstr.MapStr, data mapstr.MapStr) error
 }
 
 // NewProjectOperation create project instance
@@ -106,14 +104,4 @@ func (p *project) CreateProject(kit *rest.Kit, data []mapstr.MapStr) ([]int64, e
 	}
 
 	return resp.IDs, nil
-}
-
-// UpdateProject update project
-func (p *project) UpdateProject(kit *rest.Kit, filter mapstr.MapStr, data mapstr.MapStr) error {
-	err := p.inst.UpdateInst(kit, filter, data, common.BKInnerObjIDProject)
-	if err != nil {
-		blog.Errorf("update project failed, err: %v, filter: %v, data: %v, rid: %s", err, filter, data, kit.Rid)
-		return err
-	}
-	return nil
 }

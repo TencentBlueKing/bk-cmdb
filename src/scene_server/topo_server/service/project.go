@@ -79,9 +79,10 @@ func (s *Service) UpdateProject(ctx *rest.Contexts) {
 		common.BKFieldID: mapstr.MapStr{common.BKDBIN: opt.IDs},
 	}
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Logics.ProjectOperation().UpdateProject(ctx.Kit, projectFilter, opt.Data)
+		err := s.Logics.InstOperation().UpdateInst(ctx.Kit, projectFilter, opt.Data, common.BKInnerObjIDProject)
 		if err != nil {
-			blog.Errorf("update project failed, err: %v, opt: %v, rid: %s", err, opt, ctx.Kit.Rid)
+			blog.Errorf("update project failed, err: %v, filter: %v, data: %v, rid: %s", err, projectFilter, opt,
+				ctx.Kit.Rid)
 			return err
 		}
 		return nil

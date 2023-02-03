@@ -142,7 +142,7 @@ func (input *InstAuditQueryInput) Validate() errors.RawErrorInfo {
 	}
 
 	// 前端目前只允许查看主机、业务、业务集、项目、自定义模型的变更记录，因此在此限制objid不为上述模型时报错
-	// front-end only allow to see change record of host, biz, custom object
+	// front-end only allow to see change record of host, biz, biz set, project, custom object
 	if input.Condition.ObjID != common.BKInnerObjIDApp && input.Condition.ObjID != common.BKInnerObjIDHost &&
 		input.Condition.ObjID != common.BKInnerObjIDBizSet && input.Condition.ObjID != common.BKInnerObjIDProject {
 		return errors.RawErrorInfo{
@@ -1167,6 +1167,15 @@ var auditEnDict = []resourceTypeInfo{
 	{
 		ID:   BizSetRes,
 		Name: "Business Set",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ProjectRes,
+		Name: "Project",
 		Operations: []actionTypeInfo{
 			actionInfoEnMap[AuditCreate],
 			actionInfoEnMap[AuditUpdate],

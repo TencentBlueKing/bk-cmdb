@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_10_202301131544
+package y3_10_202302062350
 
 import (
 	"context"
@@ -34,7 +34,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-var dataRows = map[string]*Attribute{
+var dataRows = map[string]*attribute{
 	common.BKFieldID: {
 		ObjectID:      common.BKInnerObjIDProject,
 		PropertyID:    common.BKFieldID,
@@ -62,7 +62,7 @@ var dataRows = map[string]*Attribute{
 	common.BKProjectNameField: {
 		ObjectID:      common.BKInnerObjIDProject,
 		PropertyID:    common.BKProjectNameField,
-		PropertyName:  "项目名",
+		PropertyName:  "项目名称",
 		IsRequired:    true,
 		IsOnly:        true,
 		IsEditable:    true,
@@ -74,7 +74,7 @@ var dataRows = map[string]*Attribute{
 	common.BKProjectCodeField: {
 		ObjectID:      common.BKInnerObjIDProject,
 		PropertyID:    common.BKProjectCodeField,
-		PropertyName:  "项目代号",
+		PropertyName:  "项目英文名",
 		IsRequired:    true,
 		IsOnly:        true,
 		PropertyGroup: mCommon.BaseInfo,
@@ -136,6 +136,7 @@ var dataRows = map[string]*Attribute{
 		IsRequired:    true,
 		IsOnly:        false,
 		IsEditable:    true,
+		IsMultiple:    true,
 		PropertyGroup: mCommon.BaseInfo,
 		PropertyType:  common.FieldTypeUser,
 		Creator:       common.CCSystemOperatorUserName,
@@ -148,6 +149,7 @@ var dataRows = map[string]*Attribute{
 		IsRequired:    false,
 		IsOnly:        false,
 		IsEditable:    true,
+		IsMultiple:    true,
 		PropertyGroup: mCommon.BaseInfo,
 		PropertyType:  common.FieldTypeOrganization,
 		Creator:       common.CCSystemOperatorUserName,
@@ -186,13 +188,14 @@ func addProjectObjectRow(ctx context.Context, db dal.RDB, ownerID string) error 
 	filter := mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDProject}
 	model := new(metadata.Object)
 	err := db.Table(common.BKTableNameObjDes).Find(filter).
-		Fields(common.BKFieldID, common.BKObjNameField, common.CreatorField).One(ctx, model)
+		Fields(common.BKFieldID, common.BKObjIDField, common.BKObjNameField, common.CreatorField).One(ctx, model)
 	if err != nil && !db.IsNotFoundError(err) {
 		blog.Errorf("count project object failed, err: %v", err)
 		return err
 	}
 	if model.ID != 0 {
-		if model.ObjectName == "项目" && model.Creator == common.CCSystemOperatorUserName {
+		if model.ObjectID == common.BKInnerObjIDProject && model.ObjectName == "项目" &&
+			model.Creator == common.CCSystemOperatorUserName {
 			return nil
 		}
 		blog.Errorf("the model %s already exists, but does not conform to the specification, object name: %s, "+
@@ -359,7 +362,7 @@ func addProjectObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) er
 				if attr.PropertyName != data.PropertyName || attr.Creator != data.Creator {
 					blog.Errorf("the model project attribute %s already exists, but is illegal, name: %v, creator: %v",
 						attr.PropertyID, attr.PropertyName, attr.Creator)
-					return errors.New("model project attribute is invalid")
+					return fmt.Errorf("model project attribute %s is invalid", attr.PropertyID)
 				}
 			}
 		}
@@ -432,13 +435,18 @@ func addProjectTableIndexes(ctx context.Context, db dal.RDB) error {
 		existIdxMap[index.Name] = true
 	}
 
+	needAddIndexes := make([]types.Index, 0)
 	for _, index := range indexes {
 		if _, exist := existIdxMap[index.Name]; exist {
 			continue
 		}
-		err = db.Table(common.BKTableNameBaseProject).CreateIndex(ctx, index)
+		needAddIndexes = append(needAddIndexes, index)
+	}
+
+	if len(needAddIndexes) != 0 {
+		err = db.Table(common.BKTableNameBaseProject).BatchCreateIndexes(ctx, needAddIndexes)
 		if err != nil && !db.IsDuplicatedError(err) {
-			blog.Errorf("create index for project table failed, err: %v, index: %+v", err, index)
+			blog.Errorf("create index for project table failed, err: %v, index: %+v", err, needAddIndexes)
 			return err
 		}
 	}
@@ -473,8 +481,7 @@ func addProjectPropertyOption(ctx context.Context, db dal.RDB, conf *upgrader.Co
 	return nil
 }
 
-// Attribute attribute definition
-type Attribute struct {
+type attribute struct {
 	BizID             int64          `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	ID                int64          `field:"id" json:"id" bson:"id"`
 	OwnerID           string         `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
@@ -495,6 +502,7 @@ type Attribute struct {
 	IsAPI             bool           `field:"bk_isapi" json:"bk_isapi" bson:"bk_isapi"`
 	PropertyType      string         `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type"`
 	Option            interface{}    `field:"option" json:"option" bson:"option"`
+	IsMultiple        bool           `field:"ismultiple" json:"ismultiple" bson:"ismultiple"`
 	Description       string         `field:"description" json:"description" bson:"description"`
 	Creator           string         `field:"creator" json:"creator" bson:"creator"`
 	CreateTime        *metadata.Time `json:"create_time" bson:"create_time"`

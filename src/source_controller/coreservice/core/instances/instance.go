@@ -187,31 +187,33 @@ func (m *instanceManager) BatchCreateModelInstance(kit *rest.Kit, objID string,
 		return nil, err
 	}
 
-	for index, item := range inputParam.Data {
-		if item == nil {
+	for idx := range inputParam.Data {
+		if inputParam.Data[idx] == nil {
 			blog.ErrorJSON("the model instance data can't be empty, input data: %s, rid: %s", inputParam.Data, kit.Rid)
 			return nil, kit.CCError.Errorf(common.CCErrCommInstDataNil, "modelInstance")
 		}
-		item.Set(common.BKOwnerIDField, kit.SupplierAccount)
+		inputParam.Data[idx].Set(common.BKOwnerIDField, kit.SupplierAccount)
 
-		validator := instValidators[index]
+		validator := instValidators[idx]
 		if validator == nil {
-			blog.Errorf("get validator failed, objID: %s, inst: %#v, rid: %s", objID, item, kit.Rid)
+			blog.Errorf("get validator failed, objID: %s, inst: %#v, rid: %s", objID, inputParam.Data[idx], kit.Rid)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound)
 		}
-		err = m.validCreateInstanceData(kit, objID, item, validator)
+		err = m.validCreateInstanceData(kit, objID, inputParam.Data[idx], validator)
 		if err != nil {
-			blog.Errorf("valid create instance data(%#v) failed, err: %v, obj: %s, rid: %s", err, item, objID, kit.Rid)
+			blog.Errorf("valid create instance data(%#v) failed, err: %v, obj: %s, rid: %s", err, inputParam.Data[idx],
+				objID, kit.Rid)
 			return nil, err
 		}
+	}
 
-		id, err := m.save(kit, objID, item)
-		if err != nil {
-			blog.Errorf("create instance failed, err: %v, objID: %s, item: %#v, rid: %s", err, objID, item, kit.Rid)
-			return nil, err
-		}
-
-		result.IDs = append(result.IDs, int64(id))
+	ids, err := m.batchSave(kit, objID, inputParam.Data)
+	if err != nil {
+		return nil, err
+	}
+	result.IDs = make([]int64, len(ids))
+	for idx := range ids {
+		result.IDs[idx] = int64(ids[idx])
 	}
 
 	return result, nil
