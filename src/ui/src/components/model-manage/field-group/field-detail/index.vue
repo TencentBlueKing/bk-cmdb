@@ -299,6 +299,7 @@
               this.fieldInfo.ismultiple = true
               break
             case PROPERTY_TYPES.OBJUSER:
+            case PROPERTY_TYPES.ORGANIZATION:
               this.fieldInfo.option = ''
               this.fieldInfo.ismultiple = true
               break
