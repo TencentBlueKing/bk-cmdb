@@ -90,6 +90,10 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 		return err
 	}
 
+	if err := e.runPlat(context.Background()); err != nil {
+		blog.Errorf("run plat event flow failed, err: %v", err)
+	}
+
 	if err := e.runKubeCluster(context.Background()); err != nil {
 		blog.Errorf("run kube cluster event flow failed, err: %v", err)
 		return err
@@ -104,7 +108,7 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 		blog.Errorf("run kube namespace event flow failed, err: %v", err)
 		return err
 	}
-	
+
 	if err := e.runKubeWorkload(context.Background()); err != nil {
 		blog.Errorf("run kube workload event flow failed, err: %v", err)
 		return err
@@ -114,7 +118,6 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 		blog.Errorf("run kube pod event flow failed, err: %v", err)
 		return err
 	}
-
 	gc := &gc{
 		ccDB:     ccDB,
 		isMaster: isMaster,
@@ -252,6 +255,19 @@ func (e *Event) runInstAsst(ctx context.Context) error {
 func (e *Event) runBizSet(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.BizSetKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
+	}
+
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+}
+
+func (e *Event) runPlat(ctx context.Context) error {
+	opts := flowOptions{
+		key:         event.PlatKey,
 		watch:       e.watch,
 		watchDB:     e.watchDB,
 		ccDB:        e.ccDB,

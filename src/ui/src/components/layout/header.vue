@@ -31,6 +31,25 @@
     <section class="header-info">
       <bk-popover class="info-item"
         theme="light header-info-popover"
+        :arrow="false"
+        :tippy-options="{
+          animateFill: false,
+          hideOnClick: false
+        }">
+        <i :class="`bk-icon icon-${currentSysLang.icon} lang-icon`"></i>
+        <div slot="content">
+          <div
+            v-for="(lang, index) in sysLangs"
+            :key="index"
+            :class="['link-item', { active: $i18n.locale === lang.id }]"
+            @click="handleToggleLang(lang.id)">
+            <i :class="`bk-icon icon-${lang.icon} lang-icon`"></i>
+            <span>{{lang.name}}</span>
+          </div>
+        </div>
+      </bk-popover>
+      <bk-popover class="info-item"
+        theme="light header-info-popover"
         animation="fade"
         placement="bottom-end"
         ref="popover"
@@ -41,11 +60,10 @@
         }">
         <i class="question-icon icon-cc-default"></i>
         <template slot="content">
-          <a class="question-link" target="_blank" :href="helpDocUrl">{{$t('产品文档')}}</a>
-          <a class="question-link" target="_blank" @click="handleChangeLog()"
-            style="cursor:pointer">{{$t('版本日志')}}</a>
-          <a class="question-link" target="_blank" href="https://bk.tencent.com/s-mart/community">{{$t('问题反馈')}}</a>
-          <a class="question-link" target="_blank" href="https://github.com/Tencent/bk-cmdb">{{$t('开源社区')}}</a>
+          <a class="link-item" target="_blank" :href="helpDocUrl">{{$t('产品文档')}}</a>
+          <a class="link-item" target="_blank" @click="handleChangeLog()" style="cursor:pointer">{{$t('版本日志')}}</a>
+          <a class="link-item" target="_blank" href="https://bk.tencent.com/s-mart/community">{{$t('问题反馈')}}</a>
+          <a class="link-item" target="_blank" href="https://github.com/Tencent/bk-cmdb">{{$t('开源社区')}}</a>
         </template>
       </bk-popover>
       <bk-popover class="info-item"
@@ -62,7 +80,7 @@
           <i class="user-icon bk-icon icon-angle-down"></i>
         </span>
         <template slot="content">
-          <a class="question-link" href="javascript:void(0)"
+          <a class="link-item" href="javascript:void(0)"
             @click="handleLogout">
             <i class="icon-cc-logout"></i>
             {{$t('注销')}}
@@ -92,6 +110,8 @@
     getBizSetIdFromStorage,
     getBizSetRecentlyUsed
   } from '@/utils/business-set-helper.js'
+  import { changeLocale } from '@/i18n'
+  import { LANG_SET } from '@/i18n/constants'
   import versionLog from '../version-log'
 
   export default {
@@ -103,6 +123,7 @@
         isShowChangeLogs: false,
         versionList: [],
         currentVersion: '',
+        sysLangs: LANG_SET
       }
     },
     computed: {
@@ -126,6 +147,9 @@
       isBusinessView() {
         const { matched: [topRoute] } = this.$route
         return topRoute?.name === MENU_BUSINESS_SET || topRoute?.name === MENU_BUSINESS
+      },
+      currentSysLang() {
+        return this.sysLangs.find(lang => lang.id === this.$i18n.locale) || {}
       }
     },
     async  mounted() {
@@ -166,6 +190,9 @@
         }
         return link
       },
+      handleToggleLang(locale) {
+        changeLocale(locale)
+      },
       handleLogout() {
         this.$http.post(`${window.API_HOST}logout`, {
           http_scheme: window.location.protocol.replace(':', '')
@@ -182,121 +209,130 @@
 </script>
 
 <style lang="scss" scoped>
-.header-layout {
-  position: relative;
-  display: flex;
-  height: 58px;
-  background-color: #182132;
-  z-index: 1002;
-}
-.logo {
-  flex: 292px 0 0;
-  font-size: 0;
-  .logo-link {
-    display: inline-block;
-    vertical-align: middle;
+  .header-layout {
+    position: relative;
+    display: flex;
     height: 58px;
-    line-height: 58px;
-    margin-left: 23px;
-    padding-left: 38px;
-    color: #fff;
-    font-size: 16px;
-    background: url("../../assets/images/logo.svg") no-repeat 0 center;
+    background-color: #182132;
+    z-index: 1002;
   }
-}
-.header-nav {
-  flex: 3;
-  font-size: 0;
-  white-space: nowrap;
-  .header-link {
-    display: inline-block;
-    vertical-align: middle;
-    height: 58px;
-    line-height: 58px;
-    padding: 0 25px;
-    color: #979ba5;
-    font-size: 14px;
-    &:hover {
-      background-color: rgba(49, 64, 94, 0.5);
+  .logo {
+    flex: 292px 0 0;
+    font-size: 0;
+    .logo-link {
+      display: inline-block;
+      vertical-align: middle;
+      height: 58px;
+      line-height: 58px;
+      margin-left: 23px;
+      padding-left: 38px;
       color: #fff;
-    }
-    &.router-link-active,
-    &.active {
-      background-color: rgba(49, 64, 94, 1);
-      color: #fff;
+      font-size: 16px;
+      background: url("../../assets/images/logo.svg") no-repeat 0 center;
     }
   }
-}
-.header-info {
-  flex: 1;
-  text-align: right;
-  white-space: nowrap;
-  @include middleBlockHack;
-}
-.info-item {
-  @include inlineBlock;
-  margin: 0 25px 0 0;
-  text-align: left;
-  font-size: 0;
-  cursor: pointer;
-  .tippy-active {
-    .bk-icon {
-      color: #fff;
-    }
-    .user-icon {
-      transform: rotate(-180deg);
-    }
-  }
-  .question-icon {
-    font-size: 16px;
-    color: #dcdee5;
-    &:hover {
-      color: #fff;
+  .header-nav {
+      flex: 3;
+      font-size: 0;
+      white-space: nowrap;
+    .header-link {
+        display: inline-block;
+        vertical-align: middle;
+        height: 58px;
+        line-height: 58px;
+        padding: 0 25px;
+        color: #979ba5;
+        font-size: 14px;
+      &:hover {
+          background-color: rgba(49, 64, 94, 0.5);
+          color: #fff;
+      }
+      &.router-link-active,
+      &.active {
+          background-color: rgba(49, 64, 94, 1);
+          color: #fff;
+      }
     }
   }
-  .info-user {
-    font-size: 14px;
-    font-weight: bold;
-    color: #fff;
-    .user-name {
-      max-width: 150px;
+  .header-info {
+      flex: 1;
+      text-align: right;
+      white-space: nowrap;
+      @include middleBlockHack;
+  }
+  .info-item {
       @include inlineBlock;
-      @include ellipsis;
+      margin: 0 20px 0 0;
+      text-align: left;
+      font-size: 0;
+      cursor: pointer;
+    &:last-child {
+        margin-right: 24px;
     }
-    .user-icon {
-      margin-left: -4px;
-      transition: transform 0.2s linear;
-      font-size: 20px;
-      color: #fff;
+    .tippy-active {
+        .bk-icon {
+            color: #fff;
+        }
+        .user-icon {
+            transform: rotate(-180deg);
+        }
+    }
+    .question-icon,
+    .lang-icon {
+        font-size: 16px;
+        color: #DCDEE5;
+        &:hover {
+            color: #fff;
+        }
+    }
+    .info-user {
+        font-size: 14px;
+        font-weight: bold;
+        color: #fff;
+      .user-name {
+          max-width: 150px;
+          @include inlineBlock;
+          @include ellipsis;
+      }
+      .user-icon {
+          margin-left: -4px;
+          transition: transform .2s linear;
+          font-size: 20px;
+          color: #fff;
+      }
+    }
+    .lang-icon {
+        font-size: 20px;
     }
   }
-}
-.question-link {
-  display: block;
-  padding: 0 20px;
-  line-height: 40px;
-  font-size: 14px;
-  white-space: nowrap;
-  &:hover {
-    background-color: #f1f7ff;
-    color: #3a84ff;
-  }
-}
-.exception-wrap {
-  display: flex;
-  flex-wrap: wrap;
-}
-.exception-wrap .exception-wrap-item {
-  margin: 10px;
-  height: 420px;
-  padding-top: 22px;
-}
-</style>
+  .header-info-popover-theme {
+    .link-item {
+        display: flex;
+        padding: 0 20px;
+        height: 40px;
+        font-size: 14px;
+        white-space: nowrap;
+        align-items: center;
+        cursor: pointer;
 
+        &:hover,
+        &.active {
+            background-color: #f1f7ff;
+            color: #3a84ff;
+        }
+
+        .lang-icon {
+            font-size: 16px;
+            margin-right: 4px;
+        }
+    }
+  }
+</style>
 <style>
-.tippy-tooltip.header-info-popover-theme {
-  padding: 0 !important;
-  overflow: hidden;
-  border-radius: 2px !important;
-}
+  .tippy-tooltip.header-info-popover-theme {
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      overflow: hidden;
+      border-radius: 2px !important;
+  }
 </style>
