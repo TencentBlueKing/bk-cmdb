@@ -350,8 +350,9 @@ func (h *HostSnap) Analyze(msg *string, sourceType string) (bool, error) {
 	setter, raw := make(map[string]interface{}), ""
 
 	if val.Get("data.apiVer").String() >= "v1.0" {
-		setter, raw = parseV10Setter(&val, innerIP, outerIP, elements[5].String(), elements[6].String(),
-			elements[3].String(), updateIPv4, updateIPv6)
+		setter, raw = parseV10Setter(&val, &hostInfo{innerIPv4: innerIP, outerIPv4: outerIP,
+			innerIPv6: elements[5].String(), outerIPv6: elements[6].String(), addressing: elements[3].String(),
+			updateIPv4: updateIPv4, updateIPv6: updateIPv6})
 	} else {
 		setter, raw = parseSetter(&val, innerIP, outerIP)
 	}
@@ -376,12 +377,7 @@ func (h *HostSnap) Analyze(msg *string, sourceType string) (bool, error) {
 	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s "+
 		"to %s, rid: %s", hostID, innerIP, cloudID, host, raw, rid)
 
-	hostOption := updateHostOption{
-		setter:  setter,
-		host:    host,
-		innerIP: innerIP,
-		hostID:  hostID,
-		cloudID: cloudID}
+	hostOption := updateHostOption{setter: setter, host: host, innerIP: innerIP, hostID: hostID, cloudID: cloudID}
 
 	txnErr := h.updateHostWithColletorMsg(header, rid, hostOption)
 	if txnErr != nil {
@@ -574,8 +570,17 @@ type hostDiscoverMsg struct {
 	hasInnerMAC bool
 }
 
-func getHostInfoFromMsgV10(val *gjson.Result, innerIPv4, outerIPv4, innerIPv6, outerIPv6,
-	addressing string, ipv4, ipv6 []string) *hostDiscoverMsg {
+type hostInfo struct {
+	innerIPv4  string
+	outerIPv4  string
+	innerIPv6  string
+	outerIPv6  string
+	addressing string
+	updateIPv4 []string
+	updateIPv6 []string
+}
+
+func getHostInfoFromMsgV10(val *gjson.Result, host *hostInfo) *hostDiscoverMsg {
 
 	hostMsg := new(hostDiscoverMsg)
 
@@ -625,26 +630,29 @@ func getHostInfoFromMsgV10(val *gjson.Result, innerIPv4, outerIPv4, innerIPv6, o
 	// 动态寻址方式时：根据采集器上报上来的内网ipv4和ipv6地址，如果为ipv6单栈，那么就通过上报上来的内网ipv6地址，和当前主机的外网ipv6地址，找
 	// 到对应的内外网mac地址；否则使用采集器上报上来的内网ipv4地址，和当前主机的外网ipv4地址，找到对应的内外网mac地址。
 	var innerMACArr, outerMACArr []string
-	switch addressing {
+	switch host.addressing {
 	case common.BKAddressingStatic:
-		if innerIPv4 == "" && innerIPv6 != "" {
-			innerIPv6Arr := strings.Split(innerIPv6, ",")
-			outerIPv6Arr := strings.Split(outerIPv6, ",")
+		if host.innerIPv4 == "" && host.innerIPv6 != "" {
+			innerIPv6Arr := strings.Split(host.innerIPv6, ",")
+			outerIPv6Arr := strings.Split(host.outerIPv6, ",")
 			innerMACArr, outerMACArr = getMacAddr(val, innerIPv6Arr, outerIPv6Arr)
 		} else {
-			innerIPv4Arr := strings.Split(innerIPv4, ",")
-			outerIPv4Arr := strings.Split(outerIPv4, ",")
+			innerIPv4Arr := strings.Split(host.innerIPv4, ",")
+			outerIPv4Arr := strings.Split(host.outerIPv4, ",")
 			innerMACArr, outerMACArr = getMacAddr(val, innerIPv4Arr, outerIPv4Arr)
 		}
 
 	case common.BKAddressingDynamic:
-		if len(ipv4) == 0 && len(ipv6) != 0 {
-			outerIPv6Arr := strings.Split(outerIPv6, ",")
-			innerMACArr, outerMACArr = getMacAddr(val, ipv6, outerIPv6Arr)
+		if len(host.updateIPv4) == 0 && len(host.updateIPv6) != 0 {
+			outerIPv6Arr := strings.Split(host.outerIPv6, ",")
+			innerMACArr, outerMACArr = getMacAddr(val, host.updateIPv6, outerIPv6Arr)
 		} else {
-			outerIPv4Arr := strings.Split(outerIPv4, ",")
-			innerMACArr, outerMACArr = getMacAddr(val, ipv4, outerIPv4Arr)
+			outerIPv4Arr := strings.Split(host.outerIPv4, ",")
+			innerMACArr, outerMACArr = getMacAddr(val, host.updateIPv4, outerIPv4Arr)
 		}
+
+	default:
+		blog.Errorf("can not support this host addressing, host: %v", host)
 	}
 
 	if len(innerMACArr) != 0 {
@@ -659,7 +667,7 @@ func getHostInfoFromMsgV10(val *gjson.Result, innerIPv4, outerIPv4, innerIPv6, o
 
 	hostMsg.osbit = strings.TrimSpace(val.Get("data.system.sysType").String())
 
-	printSetterInfo(hostMsg, innerIPv4, outerIPv4)
+	printSetterInfo(hostMsg, host.innerIPv4, host.outerIPv4)
 	return hostMsg
 }
 
@@ -704,6 +712,9 @@ func getMacAddr(val *gjson.Result, innerIP, outerIP []string) ([]string, []strin
 				innerMAC := strings.TrimSpace(inter.Get("mac").String())
 				if len(innerMACArr[index]) == 0 {
 					innerMACArr[index] = innerMAC
+				} else {
+					blog.Errorf("innerIP has different mac address, use first mac address by default, ip: %s, "+
+						"mac: %s, other mac: %s", ip, innerMACArr[index], innerMAC)
 				}
 				continue
 			}
@@ -712,6 +723,9 @@ func getMacAddr(val *gjson.Result, innerIP, outerIP []string) ([]string, []strin
 				outerMAC := strings.TrimSpace(inter.Get("mac").String())
 				if len(outerMACArr[index]) == 0 {
 					outerMACArr[index] = outerMAC
+				} else {
+					blog.Errorf("outerIP has different mac address, use first mac address by default, ip: %s, "+
+						"mac: %s, other mac: %s", ip, outerMACArr[index], outerMAC)
 				}
 			}
 		}
@@ -936,10 +950,10 @@ func printSetterInfo(hostMsg *hostDiscoverMsg, innerIP, outerIP string) {
 }
 
 // NOCC:golint/fnsize(解析操作需要放到一个函数中)
-func parseV10Setter(val *gjson.Result, innerIP, outerIP, innerIPv6, outerIPv6, addressing string, ipv4, ipv6 []string) (
+func parseV10Setter(val *gjson.Result, host *hostInfo) (
 	map[string]interface{}, string) {
 
-	hostMsg := getHostInfoFromMsgV10(val, innerIP, outerIP, innerIPv6, outerIPv6, addressing, ipv4, ipv6)
+	hostMsg := getHostInfoFromMsgV10(val, host)
 	setter, raw := make(map[string]interface{}), strings.Builder{}
 	raw.WriteByte('{')
 
@@ -998,21 +1012,21 @@ func parseV10Setter(val *gjson.Result, innerIP, outerIP, innerIPv6, outerIPv6, a
 		raw.Write([]byte("\"" + hostMsg.hostname + "\""))
 	}
 
-	if len(ipv4) > 0 {
-		setter[common.BKHostInnerIPField] = strings.Join(ipv4, ",")
+	if len(host.updateIPv4) > 0 {
+		setter[common.BKHostInnerIPField] = strings.Join(host.updateIPv4, ",")
 		raw.WriteString(",")
 		raw.WriteString("\"bk_host_innerip\":")
-		raw.Write([]byte("\"" + strings.Join(ipv4, ",") + "\""))
+		raw.Write([]byte("\"" + strings.Join(host.updateIPv4, ",") + "\""))
 	}
 
-	if len(ipv6) > 0 {
-		setter[common.BKHostInnerIPv6Field] = strings.Join(ipv6, ",")
+	if len(host.updateIPv6) > 0 {
+		setter[common.BKHostInnerIPv6Field] = strings.Join(host.updateIPv6, ",")
 		raw.WriteString(",")
 		raw.WriteString("\"bk_host_innerip_v6\":")
-		raw.Write([]byte("\"" + strings.Join(ipv6, ",") + "\""))
+		raw.Write([]byte("\"" + strings.Join(host.updateIPv6, ",") + "\""))
 	}
 
-	if outerIP == "" || hostMsg.hasOuterMAC {
+	if host.outerIPv4 == "" || hostMsg.hasOuterMAC {
 		outerMAC := strings.Join(hostMsg.outerMACArr, ",")
 		setter["bk_outer_mac"] = outerMAC
 		raw.WriteString(",")
