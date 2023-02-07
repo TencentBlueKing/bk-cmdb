@@ -275,7 +275,7 @@ func ValidateKVObject(data interface{}, param MapObjectSettings, deep int) error
 			case reflect.Int8, reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64,
 				reflect.Float32, reflect.Float64:
 			default:
-				return errors.New("data type error")
+				return errors.New("data typeddddd error")
 			}
 		}
 	case reflect.Struct:
