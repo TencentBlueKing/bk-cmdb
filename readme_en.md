@@ -45,7 +45,7 @@ If you want to know more about the above features, please refer to the [Function
 
 ## Support
 - [Wiki (In Chinese)](https://github.com/Tencent/bk-cmdb/wiki) or ask for help
-- [White paper(In Chinese)](https://docs.bk.tencent.com/cmdb/)
+- [White paper(In Chinese)](https://bk.tencent.com/docs/document/7.0/245/39686)
 - [BK forum](https://bk.tencent.com/s-mart/community)
 - [BK DevOps online video tutorial(In Chinese)](https://bk.tencent.com/s-mart/video/)
 - Contact us, technical exchange QQ group：305496802
