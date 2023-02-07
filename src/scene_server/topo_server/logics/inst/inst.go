@@ -251,7 +251,7 @@ func (c *commonInst) CreateManyInstance(kit *rest.Kit, objID string, data []maps
 
 // createInstBatch batch create instance by excel
 func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo,
-	idFieldName string) (*BatchResult, []int64, []int64, error){
+	idFieldName string) (*BatchResult, []int64, []int64, error) {
 	updatedInstanceIDs := make([]int64, 0)
 	createdInstanceIDs := make([]int64, 0)
 	colIdxErrMap := map[int]string{}
@@ -588,7 +588,7 @@ func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, objID string,
 						objCondition.Operator == common.BKDBGTE {
 
 						// fix condition covered when do date range search action.
-						// ISSUE: https://github.com/Tencent/bk-cmdb/issues/5302
+						// ISSUE: https://github.com/TencentBlueKing/bk-cmdb/issues/5302
 						if _, isExist := instCond[objCondition.Field]; !isExist {
 							instCond[objCondition.Field] = make(map[string]interface{})
 						}

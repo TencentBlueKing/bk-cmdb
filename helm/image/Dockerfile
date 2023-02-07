@@ -10,7 +10,7 @@ RUN npm install yarn -g
 # usage: docker build --build-arg user=release-v3.6.3 .
 
 ARG branch=release-v3.6.3
-RUN mkdir -p /data/src/ && cd /data/src/ && git clone -b ${branch} --single-branch https://github.com/Tencent/bk-cmdb.git 
+RUN mkdir -p /data/src/ && cd /data/src/ && git clone -b ${branch} --single-branch https://github.com/TencentBlueKing/bk-cmdb.git
 RUN apt-get install nodejs
 
 # make server
