@@ -62,7 +62,7 @@
         :key="column.id"
         :prop="column.id"
         :label="column.name"
-        min-width="80"
+        :min-width="$tools.getHeaderPropertyMinWidth(column.property, { hasSort: true })"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <cmdb-property-value
@@ -151,7 +151,7 @@
 </template>
 
 <script>
-  import { computed, defineComponent, reactive, ref, watch, watchEffect } from '@vue/composition-api'
+  import { computed, defineComponent, reactive, ref, watch, watchEffect } from 'vue'
   import { t } from '@/i18n'
   import { OPERATION } from '@/dictionary/iam-auth'
   import { $bkInfo, $success, $error } from '@/magicbox/index.js'

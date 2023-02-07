@@ -60,7 +60,7 @@
 </template>
 
 <script>
-  import { defineComponent, computed, reactive, watchEffect, toRefs } from '@vue/composition-api'
+  import { defineComponent, computed, reactive, watchEffect, toRefs } from 'vue'
   import store from '@/store'
   import {
     BUILTIN_MODELS,
@@ -104,7 +104,7 @@
         objId: BUILTIN_MODELS.BUSINESS_SET,
         properties: [],
         propertyGroups: [],
-        active: query.tab || 'property'
+        active: query.value.tab || 'property'
       })
 
       watchEffect(async () => {

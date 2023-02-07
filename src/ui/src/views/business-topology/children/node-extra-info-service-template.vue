@@ -54,7 +54,7 @@
     data() {
       return {
         template: null,
-        autoApplyRule: null
+        serviceTemplateHostApplyEnabled: null
       }
     },
     computed: {
@@ -65,13 +65,16 @@
         const { objectBiz, bizSet } = this.$store.state
         return this.isBizSet ? bizSet.bizId : objectBiz.bizId
       },
+      moduleId() {
+        return this.selectedNode?.data?.bk_inst_id
+      },
       selectedNode() {
         return this.$store.state.businessHost.selectedNode
       },
       autoApplyEnable() {
         // 在不同版本的拓扑数据接口中，node节点中是否存在主机自动应用字段是不一致的
         // 所以，统一通过instance获取，保证数据获取的正确性
-        return this.instance.host_apply_enabled
+        return this.instance.host_apply_enabled || this.serviceTemplateHostApplyEnabled
       }
     },
     watch: {
@@ -85,6 +88,11 @@
     methods: {
       setInfo() {
         this.getServiceInfo()
+
+        // 使用了服务模板需要查看模块所属的服务模板是否开启了主机自动应用
+        if (this.instance.service_template_id) {
+          this.getModuleApplyStatusByTemplate()
+        }
       },
       async getServiceInfo() {
         const categories = await this.getServiceCategories()
@@ -96,6 +104,16 @@
           name: this.instance.service_template_id ? this.instance.bk_module_name : this.$t('无'),
           category: `${firstCategory.name || '--'} / ${secondCategory.name || '--'}`
         }
+      },
+      async getModuleApplyStatusByTemplate() {
+        const [moduleApplyStatus] = await this.$store.dispatch('hostApply/getModuleApplyStatusByTemplate', {
+          params: {
+            bk_biz_id: this.bizId,
+            bk_module_ids: [this.moduleId]
+          }
+        })
+
+        this.serviceTemplateHostApplyEnabled = moduleApplyStatus?.host_apply_enabled
       },
       async getServiceCategories() {
         try {
@@ -153,10 +171,11 @@
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_APPLY,
           params: {
-            bizId: this.bizId
+            bizId: this.bizId,
+            mode: 'module'
           },
           query: {
-            module: this.selectedNode.data.bk_inst_id
+            id: this.moduleId
           },
           history: true
         })

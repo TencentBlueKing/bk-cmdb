@@ -81,6 +81,7 @@
 	"1101059": "bk_inst_name %s is duplicate.",
 	"1101060": "association kind has already been used.",
 	"1101061": "The relationship is 1:n, and multiple source model instances cannot be associated at the same time.",
+	"1101062": "object association do not unique.",
 	"1101160": "create model unique constrains failed",
 	"1101161": "update model unique constrains failed",
 	"1101162": "delete model unique constrains failed",
@@ -136,6 +137,8 @@
 	"1101115": "forbidden delete built-in business set",
 	"1101116": "forbidden update built-in business set scope",
 	"1101117": "Failed to update module properties",
+	"1101118": "Create failed, duplicate business set name",
+	"1101119": "The topology identification is illegal, the unique identification of k8s and cc cannot be mixed",
 
     "": "" 
 }

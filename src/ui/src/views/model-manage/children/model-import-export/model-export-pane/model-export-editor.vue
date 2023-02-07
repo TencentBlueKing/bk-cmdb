@@ -86,7 +86,7 @@
 </template>
 <script>
   import { MENU_MODEL_DETAILS } from '@/dictionary/menu-symbol'
-  import { defineComponent, reactive, onMounted, ref, computed, watch } from '@vue/composition-api'
+  import { defineComponent, reactive, onMounted, ref, computed, watch } from 'vue'
   import { t } from '@/i18n'
   import cloneDeep from 'lodash/cloneDeep'
   import ModelSummary from '../model-summary.vue'

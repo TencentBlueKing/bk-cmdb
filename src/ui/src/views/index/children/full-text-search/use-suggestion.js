@@ -10,15 +10,15 @@
  * limitations under the License.
  */
 
-import { computed, watch, ref } from '@vue/composition-api'
+import { computed, watch, ref } from 'vue'
 import useItem from './use-item.js'
 
-export default function useSuggestion(state, root) {
+export default function useSuggestion(state) {
   const { result, showHistory, selectHistory, focusWithin, keyword, forceHide } = state
 
   const list = computed(() => (result.value.hits || []).slice(0, 8))
 
-  const { normalizationList: suggestion } = useItem(list, root)
+  const { normalizationList: suggestion } = useItem(list)
 
   const isShowHistory = computed(() => showHistory.value || selectHistory.value)
   const hasSuggestion = computed(() => suggestion.value.length > 0)

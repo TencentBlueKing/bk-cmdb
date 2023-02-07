@@ -99,8 +99,6 @@ func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[str
 		return usernameMap, nil
 	}
 
-	params := make(map[string]string)
-	params["fields"] = "username,display_name"
 	user := plugins.CurrentPlugin(c, s.Config.LoginVersion)
 
 	// 处理请求的用户数据，将用户拼接成不超过500字节的字符串进行用户数据的获取
@@ -122,6 +120,8 @@ func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[str
 			}()
 
 			lock.Lock()
+			params := make(map[string]string)
+			params["fields"] = "username,display_name"
 			params["exact_lookups"] = subStr
 			c.Request.Header = c.Request.Header.Clone()
 			lock.Unlock()
@@ -160,8 +160,9 @@ func (s *Service) getUserListStr(userList []string) []string {
 	userBuffer := bytes.Buffer{}
 	for _, user := range userList {
 		if userBuffer.Len()+len(user) > getUserMaxLength {
+			userBuffer.WriteString(user)
 			userStr := userBuffer.String()
-			userListStr = append(userListStr, userStr[:len(userStr)-1])
+			userListStr = append(userListStr, userStr)
 			userBuffer.Reset()
 			continue
 		}

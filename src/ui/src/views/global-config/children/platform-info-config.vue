@@ -55,14 +55,14 @@
       </bk-form-item>
     </bk-form>
 
-    <bk-dialog width="1240px" v-model="previewDialogVisible" :show-footer="false">
+    <bk-dialog width="1240px" v-model="previewDialogVisible" :show-footer="false" :mask-close="true">
       <TheFooter :preview-contact="footerForm.contact" :preview-copyright="footerForm.copyright"></TheFooter>
     </bk-dialog>
   </div>
 </template>
 
 <script>
-  import { ref, reactive, computed, defineComponent, onMounted } from '@vue/composition-api'
+  import { ref, reactive, computed, defineComponent, onMounted } from 'vue'
   import SaveButton from './save-button.vue'
   import TheFooter from '@/views/index/children/footer.vue'
   import store from '@/store'

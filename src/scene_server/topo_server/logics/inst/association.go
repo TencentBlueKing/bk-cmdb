@@ -47,7 +47,8 @@ type AssociationOperationInterface interface {
 	// TopoNodeHostAndSerInstCount get topo node host and service instance count
 	TopoNodeHostAndSerInstCount(kit *rest.Kit, input *metadata.HostAndSerInstCountOption) (
 		[]*metadata.TopoNodeHostAndSerInstCount, errors.CCError)
-
+	CheckInstAsstMapping(kit *rest.Kit, objID string, mapping metadata.AssociationMapping,
+		input *metadata.CreateAssociationInstRequest) error
 	// SetProxy proxy the interface
 	SetProxy(inst InstOperationInterface)
 }
@@ -190,8 +191,8 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 	return result, rsp.Count, nil
 }
 
-// checkInstAsstMapping use to check if instance association mapping correct, used by CreateInstanceAssociation
-func (assoc *association) checkInstAsstMapping(kit *rest.Kit, objID string, mapping metadata.AssociationMapping,
+// CheckInstAsstMapping use to check if instance association mapping correct, used by CreateInstanceAssociation
+func (assoc *association) CheckInstAsstMapping(kit *rest.Kit, objID string, mapping metadata.AssociationMapping,
 	input *metadata.CreateAssociationInstRequest) error {
 
 	tableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
@@ -249,7 +250,13 @@ func (assoc *association) checkInstAsstMapping(kit *rest.Kit, objID string, mapp
 func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *metadata.CreateAssociationInstRequest) (
 	*metadata.RspID, error) {
 
-	cond := &metadata.QueryCondition{Condition: mapstr.MapStr{common.AssociationObjAsstIDField: request.ObjectAsstID}}
+	cond := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.AssociationObjAsstIDField: request.ObjectAsstID,
+		},
+		Fields:         []string{common.AssociationKindIDField},
+		DisableCounter: true,
+	}
 	result, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		blog.Errorf("search object association with cond[%#v] failed, err: %v, rid: %s", cond, err, kit.Rid)
@@ -257,11 +264,16 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 	}
 
 	if len(result.Info) == 0 {
-		blog.Errorf("can not find object association[%s]. rid: %s", request.ObjectAsstID, kit.Rid)
+		blog.Errorf("can not find object association[%s], rid: %s", request.ObjectAsstID, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrorTopoObjectAssociationNotExist)
 	}
 
-	if err := assoc.checkInstAsstMapping(kit, result.Info[0].ObjectID, result.Info[0].Mapping, request); err != nil {
+	if len(result.Info) > 1 {
+		blog.Errorf("find object association[%s] not unique, rid: %s", request.ObjectAsstID, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrorTopoObjectAssociationNotUnique)
+	}
+
+	if err := assoc.CheckInstAsstMapping(kit, result.Info[0].ObjectID, result.Info[0].Mapping, request); err != nil {
 		blog.Errorf("check mapping failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
@@ -314,14 +326,38 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit, request *meta
 		return nil, rawErr.ToCCError(kit.CCError)
 	}
 
+	cond := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.AssociationObjAsstIDField: request.ObjectAsstID,
+		},
+		Fields:         []string{common.AssociationKindIDField},
+		DisableCounter: true,
+	}
+	result, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
+	if err != nil {
+		blog.Errorf("search object association with cond[%#v] failed, err: %v, rid: %s", cond, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(result.Info) == 0 {
+		blog.Errorf("can not find object association[%s]. rid: %s", request.ObjectAsstID, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrorTopoObjectAssociationNotExist)
+	}
+
+	if len(result.Info) > 1 {
+		blog.Errorf("find object association[%s] not unique, rid: %s", request.ObjectAsstID, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrorTopoObjectAssociationNotUnique)
+	}
+
 	param := &metadata.CreateManyInstanceAssociation{}
 	for _, item := range request.Details {
 		param.Datas = append(param.Datas, metadata.InstAsst{
-			InstID:       item.InstID,
-			ObjectID:     request.ObjectID,
-			AsstInstID:   item.AsstInstID,
-			AsstObjectID: request.AsstObjectID,
-			ObjectAsstID: request.ObjectAsstID,
+			InstID:            item.InstID,
+			ObjectID:          request.ObjectID,
+			AsstInstID:        item.AsstInstID,
+			AsstObjectID:      request.AsstObjectID,
+			ObjectAsstID:      request.ObjectAsstID,
+			AssociationKindID: result.Info[0].AsstKindID,
 		})
 	}
 

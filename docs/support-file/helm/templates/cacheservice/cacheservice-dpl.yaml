@@ -95,17 +95,17 @@ spec:
 
       {{- with .Values.cacheservice.nodeSelector }}
       nodeSelector:
-      {{ toYaml . | indent 8 }}
+      {{ toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.cacheservice.affinity }}
       affinity:
-        {{ toYaml . | indent 8 }}
+        {{ toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.cacheservice.tolerations }}
       tolerations:
-        {{ toYaml . | indent 8 }}
+        {{ toYaml . | nindent 8 }}
       {{- end }}
 
 {{- end }}

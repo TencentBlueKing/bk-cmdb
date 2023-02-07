@@ -1249,6 +1249,16 @@ common:
     ##
     login:
       version: skip-login
+    ## webserver common config changelogPath parameters
+    ## @param common.webServer.changelogPath.ch the Chinese changelog storage path
+    ## @param common.webServer.changelogPath.en the English changelog storage path
+    ##
+    # cmdb版本日志存放路径配置
+    changelogPath:
+      # 中文版版本日志存放路径
+      ch: /data/cmdb/cmdb_webserver/changelog_user/ch
+      # 英文版版本日志存放路径
+      en: /data/cmdb/cmdb_webserver/changelog_user/en
   ## monitor common config parameters
   ##
   monitor:
@@ -1297,17 +1307,23 @@ common:
   ##
   openTelemetry:
     ## @param common.openTelemetry.enable enable openTelemetry function
-    ## 表示是否开启日志平台openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
+    ## 表示是否开启openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
     ##
     enable: false
     ## @param common.openTelemetry.endpoint the address about tracking chain function
-    ## 日志平台openTelemetry跟踪链功能的自定义上报服务地址
+    ## openTelemetry跟踪链功能的自定义上报服务地址
     ##
     endpoint:
-    ## @param common.openTelemetry.bkDataID the bkDataID about tracking chain function
-    ## 日志平台openTelemetry跟踪链功能的上报data_id
+    ## @param common.openTelemetry.bkDataID the bkDataID about tracking chain function，
+    ## used for data reporting of the old version
+    ## openTelemetry跟踪链功能的上报data_id，用于旧版的数据上报
     ##
     bkDataID:
+    ## @param common.openTelemetry.bkDataToken the bk.data.token about tracking chain function
+    ## openTelemetry跟踪链功能的bk.data.token，用于新版的数据上报
+    ## used for data reporting of the new version
+    ##
+    bkDataToken:
     ## @param common.openTelemetry.tls.insecureSkipVerify openTelemetry insecureSkipVerify config
     ## @param common.openTelemetry.tls.certFile openTelemetry certFile
     ## @param common.openTelemetry.tls.keyFile openTelemetry keyFile

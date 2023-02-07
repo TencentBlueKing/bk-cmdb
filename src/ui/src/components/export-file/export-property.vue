@@ -46,7 +46,7 @@
 </template>
 
 <script>
-  import { ref, toRef, watch } from '@vue/composition-api'
+  import { ref, toRef, watch } from 'vue'
   import useFilter from '@/hooks/utils/filter'
   import useGroupProperty from '@/hooks/utils/group-property'
   import useProperty from '@/hooks/model/property'

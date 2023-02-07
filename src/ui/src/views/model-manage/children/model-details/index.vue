@@ -35,7 +35,7 @@
               </div>
             </template>
             <template v-else>
-              <div class="icon-box" style="cursor: default;">
+              <div class="icon-box" :class="{ 'is-builtin': activeModel.ispre }" style="cursor: default;">
                 <i class="icon" :class="activeModel.bk_obj_icon || 'icon-cc-default'"></i>
               </div>
             </template>
@@ -86,7 +86,7 @@
             </span>
           </div>
           <cmdb-auth class="restart-btn"
-            v-if="!isMainLine && activeModel.bk_ispaused"
+            v-if="!isMainLineModel && activeModel.bk_ispaused"
             :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
             <bk-button slot-scope="{ disabled }"
               theme="primary"
@@ -112,7 +112,7 @@
             </template>
             <template v-if="isShowOperationButton">
               <cmdb-auth class="label-btn"
-                v-if="!isMainLine && !activeModel['bk_ispaused']"
+                v-if="!isMainLineModel && !activeModel['bk_ispaused']"
                 v-bk-tooltips="$t('保留模型和相应实例，隐藏关联关系')"
                 :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
                 <bk-button slot-scope="{ disabled }"
@@ -267,7 +267,8 @@
         'supplierAccount',
         'userName'
       ]),
-      ...mapGetters('objectModel', ['isMainLine']),
+      ...mapGetters('objectMainLineModule', ['isMainLine']),
+      ...mapGetters('objectModelClassify', ['models', 'classifications']),
       activeModel: {
         get() {
           return this.$store.getters['objectModel/activeModel']
@@ -276,7 +277,9 @@
           this.setActiveModel(value)
         }
       },
-      ...mapGetters('objectModelClassify', ['models', 'classifications']),
+      isMainLineModel() {
+        return this.isMainLine(this.activeModel)
+      },
       isShowOperationButton() {
         return this.activeModel && !this.activeModel.ispre
       },
@@ -300,9 +303,7 @@
         return `${window.API_HOST}object/object/${this.activeModel.bk_obj_id}/import`
       },
       canBeImport() {
-        const cantImport = ['host', 'biz']
-        return !this.isMainLine
-          && !cantImport.includes(this.$route.params.modelId)
+        return !this.isMainLineModel
       },
       modelId() {
         const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
@@ -339,7 +340,8 @@
         'exportObjectAttribute'
       ]),
       ...mapActions('objectMainLineModule', [
-        'deleteMainlineObject'
+        'deleteMainlineObject',
+        'searchMainlineObject'
       ]),
       ...mapMutations('objectModel', [
         'setActiveModel'
@@ -511,7 +513,7 @@
         this.activeModel = { ...this.activeModel, ...{ bk_ispaused: ispaused } }
       },
       async deleteModel() {
-        if (this.isMainLine) {
+        if (this.isMainLineModel) {
           await this.deleteMainlineObject({
             bkObjId: this.activeModel.bk_obj_id,
             config: {
@@ -519,6 +521,9 @@
             }
           })
           this.$routerActions.back()
+
+          // 更新主线模型
+          this.searchMainlineObject()
         } else {
           await this.deleteObject({
             id: this.activeModel.id,
@@ -552,7 +557,8 @@
         if (res.result) {
           this.uploadResult.success = data.success
           this.$success(this.$t('导入成功'))
-          this.$refs.field && this.$refs.field.initFieldList()
+          this.$refs.field.resetData()
+          this.importField.show = false
         } else {
           this.uploadResult.insert_failed = data.insert_failed
           this.uploadResult.update_failed = data.update_failed
@@ -666,6 +672,12 @@
             font-size: 20px;
             color: $cmdbBorderFocusColor;
             cursor: pointer;
+
+            &.is-builtin {
+              background: #f5f7fa;
+              color: #798aad;
+            }
+
             &:hover {
                 .hover-text {
                     background: rgba(0, 0, 0, .5);

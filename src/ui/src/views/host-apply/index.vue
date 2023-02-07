@@ -63,7 +63,7 @@
     MENU_BUSINESS_HOST_APPLY_EDIT,
     MENU_BUSINESS_HOST_APPLY_CONFLICT
   } from '@/dictionary/menu-symbol'
-  import { CONFIG_MODE } from '@/services/service-template/index.js'
+  import { CONFIG_MODE } from '@/service/service-template/index.js'
   import configDetails from './children/details.vue'
 
   export default {
@@ -315,7 +315,10 @@
             mode: this.mode
           },
           query: {
-            id: this.targetId
+            id: this.targetId,
+            // 为统一UI交互全部使用batch模式
+            batch: 1,
+            action: 'batch-edit'
           },
           history: true
         })

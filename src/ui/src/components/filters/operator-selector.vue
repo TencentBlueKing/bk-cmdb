@@ -29,6 +29,8 @@
 
 <script>
   import Utils from './utils'
+  import { QUERY_OPERATOR, QUERY_OPERATOR_DESC } from '@/utils/query-builder-operator'
+
   export default {
     props: {
       value: {
@@ -37,7 +39,11 @@
       },
       property: {
         type: Object,
-        default: ({})
+        default: () => ({})
+      },
+      customTypeMap: {
+        type: Object,
+        default: () => ({})
       }
     },
     computed: {
@@ -52,17 +58,20 @@
         return listeners
       },
       options() {
-        const EQ = '$eq'
-        const NE = '$ne'
-        const IN = '$in'
-        const NIN = '$nin'
-        const LT = '$lt'
-        const GT = '$gt'
-        const LTE = '$lte'
-        const GTE = '$gte'
-        const RANGE = '$range' // 前端构造的操作符，真实数据中会拆分数据为gte, lte向后台传递
-        const LIKE = '$regex'
-        const typeMap = {
+        const {
+          EQ,
+          NE,
+          IN,
+          NIN,
+          LT,
+          GT,
+          LTE,
+          GTE,
+          RANGE,
+          LIKE
+        } = QUERY_OPERATOR
+
+        const defaultTypeMap = {
           bool: [EQ, NE],
           date: [GTE, LTE],
           enum: [IN, NIN],
@@ -77,27 +86,20 @@
           timezone: [IN, NIN],
           foreignkey: [IN, NIN],
           table: [IN, NIN],
-          'service-template': [IN]
+          'service-template': [IN],
+          array: [IN, NIN, LIKE],
+          object: [IN, NIN, LIKE],
+          map: [IN, NIN]
         }
-        const nameDescription = {
-          [EQ]: this.$t('等于'),
-          [NE]: this.$t('不等于'),
-          [LT]: this.$t('小于'),
-          [GT]: this.$t('大于'),
-          [IN]: this.$t('包含'),
-          [NIN]: this.$t('不包含'),
-          [RANGE]: this.$t('数值范围'),
-          [LTE]: this.$t('小于等于'),
-          [GTE]: this.$t('大于等于'),
-          [LIKE]: this.$t('模糊')
-        }
+
+        const typeMap = { ...defaultTypeMap, ...this.customTypeMap }
 
         const { bk_property_type: propertyType } = this.property
 
         return typeMap[propertyType].map(operator => ({
           id: operator,
           name: Utils.getOperatorSymbol(operator),
-          title: nameDescription[operator]
+          title: QUERY_OPERATOR_DESC[operator]
         }))
       },
       localValue: {

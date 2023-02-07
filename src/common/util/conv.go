@@ -85,7 +85,7 @@ func GetInt32ByInterface(a interface{}) (int32, error) {
 	return id, err
 }
 
-// GetInt64ByInterface get int64 by interface
+// GetInt64ByInterface parse interface to int64, **notice: string type is not allowed**
 func GetInt64ByInterface(a interface{}) (int64, error) {
 	var id int64 = 0
 	var err error
@@ -99,7 +99,7 @@ func GetInt64ByInterface(a interface{}) (int64, error) {
 	case int32:
 		id = int64(a.(int32))
 	case int64:
-		id = int64(a.(int64))
+		id = a.(int64)
 	case uint:
 		id = int64(a.(uint))
 	case uint8:

@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="service-template-list" :style="{ '--height': `${$APP.height - 160 - 44}px` }" ref="$templateList">
+  <div class="service-template-list" :style="{ '--height': `${$APP.height - 160 - 44}px` }" ref="templateListEl">
     <div :class="['template-item', { selected: item.id === current.id, disabled: isNodeDisabled(item) }]"
       :title="isNodeDisabled(item) ? $t('暂无策略') : ''"
       v-for="item in displayList" :key="item.id"
@@ -33,12 +33,12 @@
   </div>
 </template>
 <script>
-  import { defineComponent, reactive, toRefs, watch, watchEffect, set, del, onActivated, computed, onBeforeUnmount, nextTick, ref, onMounted } from '@vue/composition-api'
+  import { defineComponent, reactive, toRefs, watch, watchEffect, set, del, onActivated, computed, onBeforeUnmount, nextTick, ref, onMounted } from 'vue'
   import store from '@/store'
   import Bus from '@/utils/bus'
   import router from '@/router/index.js'
   import { sortTopoTree } from '@/utils/tools.js'
-  import serviceTemplateService from '@/services/service-template/index.js'
+  import serviceTemplateService from '@/service/service-template/index.js'
 
   export default defineComponent({
     props: {
@@ -56,7 +56,7 @@
       const bizId = store.getters['objectBiz/bizId']
       const getModelById = store.getters['objectModelClassify/getModelById']
 
-      const $templateList = ref(null)
+      const templateListEl = ref(null)
 
       const state = reactive({
         fullList: [],
@@ -80,15 +80,17 @@
         const current = targetId.value ? state.fullList.find(item => item.id === targetId.value) : state.fullList[0]
         state.current = current ?? {}
 
-        const counts = await store.dispatch('hostApply/getTemplateRuleCount', {
-          params: {
-            bk_biz_id: bizId,
-            service_template_ids: state.fullList.map(item => item.id)
-          }
-        })
-        state.displayList.forEach((node) => {
-          node.host_apply_rule_count = counts.find(item => item.service_template_id === node.id)?.count
-        })
+        if (state.fullList?.length) {
+          const counts = await store.dispatch('hostApply/getTemplateRuleCount', {
+            params: {
+              bk_biz_id: bizId,
+              service_template_ids: state.fullList.map(item => item.id)
+            }
+          })
+          state.displayList.forEach((node) => {
+            node.host_apply_rule_count = counts.find(item => item.service_template_id === node.id)?.count
+          })
+        }
       })
 
       const handleClickItem = (item) => {
@@ -143,7 +145,7 @@
       const isNodeDisabled = node => isDel.value && !node.host_apply_rule_count
 
       const scrollSelectedIntoView = () => {
-        $templateList.value?.querySelector('.template-item.selected')?.scrollIntoView()
+        templateListEl.value?.querySelector('.template-item.selected')?.scrollIntoView(false)
       }
 
       onActivated(() => {
@@ -236,7 +238,7 @@
         removeChecked,
         updateNodeStatus,
         handleClickItem,
-        $templateList
+        templateListEl
       }
     }
   })
@@ -265,7 +267,7 @@
       cursor: pointer;
 
       &:hover {
-        background: #f1f7ff;
+        background: #F0F1F5;
       }
 
       &.selected {

@@ -20,7 +20,7 @@
       show-overflow-tooltip>
       <template slot-scope="{ row }">
         <cmdb-property-value
-          v-bk-overflow-tips
+          :is-show-overflow-tips="true"
           :value="row[col['bk_property_id']]"
           :property="col">
         </cmdb-property-value>
@@ -128,6 +128,7 @@
     .table-value {
         &.property-value {
             width: 100% !important;
+            max-width: 100% !important;
             padding: 0 !important;
         }
     }

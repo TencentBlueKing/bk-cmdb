@@ -39,7 +39,7 @@
   import { mapGetters, mapActions } from 'vuex'
   import propertyConfirmTable from '@/components/host-apply/property-confirm-table'
   import { MENU_BUSINESS_HOST_APPLY_RUN } from '@/dictionary/menu-symbol'
-  import { CONFIG_MODE } from '@/services/service-template/index.js'
+  import { CONFIG_MODE } from '@/service/service-template/index.js'
 
   export default {
     components: {
@@ -129,7 +129,7 @@
         }
       },
       setBreadcrumbs() {
-        this.$store.commit('setTitle', this.$t('策略失效主机'))
+        this.$store.commit('setTitle', this.$t('未应用主机'))
       },
       handleApply() {
         this.$bkInfo({

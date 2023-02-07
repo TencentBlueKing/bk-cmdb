@@ -39,7 +39,7 @@
       v-bkloading="{ isLoading: $loading() }"
       :pagination="table.pagination"
       :data="table.list"
-      :col-border="true"
+      :col-border="false"
       :max-height="$APP.height - 210"
       @page-change="setCurrentPage"
       @page-limit-change="setCurrentLimit"
@@ -63,10 +63,11 @@
                 @click="updateAssociation(row[instanceIdKey], 'remove')">
                 {{$t('取消关联')}}
               </bk-link>
-              <bk-link href="javascript:void(0)" class="option-link is-associated"
+              <bk-link href="javascript:void(0)" class="option-link"
                 theme="primary"
+                @click="updateAssociation(row[instanceIdKey], 'remove')"
                 v-else-if="isAssociated(row)">
-                {{$t('已关联')}}
+                {{$t('取消关联')}}
               </bk-link>
               <bk-link href="javascript:void(0)" class="option-link" v-else
                 theme="primary"

@@ -470,3 +470,15 @@ func (kit *Kit) NewKit() *Kit {
 func (kit *Kit) NewHeader() http.Header {
 	return util.CCHeader(kit.Header)
 }
+
+// NewKitFromHeader generate a new kit from http header.
+func NewKitFromHeader(header http.Header, errorIf errors.CCErrorIf) *Kit {
+	return &Kit{
+		Rid:             util.GetHTTPCCRequestID(header),
+		Header:          header,
+		Ctx:             util.NewContextFromHTTPHeader(header),
+		CCError:         errorIf.CreateDefaultCCErrorIf(util.GetLanguage(header)),
+		User:            util.GetUser(header),
+		SupplierAccount: util.GetOwnerID(header),
+	}
+}

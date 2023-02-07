@@ -22,8 +22,10 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	kubetypes "configcenter/src/kube/types"
 	"configcenter/src/storage/stream/types"
 
+	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -86,6 +88,19 @@ const (
 	InstAsst CursorType = "inst_asst"
 	// BizSetRelation a mixed event type containing biz set & biz events, which are converted to their relation events
 	BizSetRelation CursorType = "biz_set_relation"
+	// Plat cloud area event cursor type
+	Plat CursorType = "plat"
+	// kube related cursor types
+	// KubeCluster cursor type
+	KubeCluster CursorType = "kube_cluster"
+	// KubeNode cursor type
+	KubeNode CursorType = "kube_node"
+	// KubeNamespace cursor type
+	KubeNamespace CursorType = "kube_namespace"
+	// KubeWorkload cursor type, including all workloads(e.g. deployment) with their type specified in sub-resource
+	KubeWorkload CursorType = "kube_workload"
+	// KubePod cursor type, its event detail is pod info with containers in it
+	KubePod CursorType = "kube_pod"
 )
 
 // ToInt TODO
@@ -119,6 +134,18 @@ func (ct CursorType) ToInt() int {
 		return 14
 	case BizSetRelation:
 		return 15
+	case Plat:
+		return 16
+	case KubeCluster:
+		return 17
+	case KubeNode:
+		return 18
+	case KubeNamespace:
+		return 19
+	case KubeWorkload:
+		return 20
+	case KubePod:
+		return 21
 	default:
 		return -1
 	}
@@ -155,6 +182,18 @@ func (ct *CursorType) ParseInt(typ int) {
 		*ct = BizSet
 	case 15:
 		*ct = BizSetRelation
+	case 16:
+		*ct = Plat
+	case 17:
+		*ct = KubeCluster
+	case 18:
+		*ct = KubeNode
+	case 19:
+		*ct = KubeNamespace
+	case 20:
+		*ct = KubeWorkload
+	case 21:
+		*ct = KubePod
 	default:
 		*ct = UnknownType
 	}
@@ -163,12 +202,8 @@ func (ct *CursorType) ParseInt(typ int) {
 // ListCursorTypes returns all support CursorTypes.
 func ListCursorTypes() []CursorType {
 	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase, Process, ProcessInstanceRelation,
-		HostIdentifier, MainlineInstance, InstAsst, BizSet, BizSetRelation}
-}
-
-// ListEventCallbackCursorTypes returns all support CursorTypes for event callback.
-func ListEventCallbackCursorTypes() []CursorType {
-	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase, Process, ProcessInstanceRelation}
+		HostIdentifier, MainlineInstance, InstAsst, BizSet, BizSetRelation, Plat, KubeCluster, KubeNode, KubeNamespace,
+		KubeWorkload, KubePod}
 }
 
 // Cursor is a self-defined token which is corresponding to the mongodb's resume token.
@@ -358,6 +393,18 @@ func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 		curType = InstAsst
 	case common.BKTableNameBaseBizSet:
 		curType = BizSet
+	case common.BKTableNameBasePlat:
+		curType = Plat
+	case kubetypes.BKTableNameBaseCluster:
+		curType = KubeCluster
+	case kubetypes.BKTableNameBaseNode:
+		curType = KubeNode
+	case kubetypes.BKTableNameBaseNamespace:
+		curType = KubeNamespace
+	case kubetypes.BKTableNameBaseWorkload:
+		curType = KubeWorkload
+	case kubetypes.BKTableNameBasePod:
+		curType = KubePod
 	default:
 		blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.ID())
 		return "", fmt.Errorf("unsupported cursor type collection: %s", coll)
@@ -370,13 +417,21 @@ func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 		Oper:        e.OperationType,
 	}
 
-	if curType == ObjectBase || curType == MainlineInstance || curType == InstAsst {
+	switch curType {
+	case ObjectBase, MainlineInstance, InstAsst:
 		if instID <= 0 {
 			return "", errors.New("invalid instance id")
 		}
 
 		// add unique key for common object instance.
 		hCursor.UniqKey = strconv.FormatInt(instID, 10)
+	case KubeWorkload:
+		if instID <= 0 {
+			return "", errors.New("invalid kube workload id")
+		}
+
+		// add unique key for kube workload, composed by workload type and id.
+		hCursor.UniqKey = fmt.Sprintf("%s:%d", gjson.GetBytes(e.DocBytes, kubetypes.KindField).String(), instID)
 	}
 
 	hCursorEncode, err := hCursor.Encode()

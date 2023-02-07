@@ -12,10 +12,10 @@
 
 /* eslint-disable no-unused-vars */
 import $http from '@/api'
+import { CONTAINER_OBJECTS, CONTAINER_OBJECT_NAMES } from '@/dictionary/container.js'
 
 const state = {
-  classifications: [],
-  invisibleClassifications: ['bk_host_manage', 'bk_biz_topo']
+  classifications: []
 }
 
 const getters = {
@@ -33,26 +33,7 @@ const getters = {
     })
     return models
   },
-  getModelById: (state, getters) => id => getters.models.find(model => model.bk_obj_id === id),
-  activeClassifications: (state) => {
-    const { classifications } = state
-    // 1.去掉停用模型
-    let activeClassifications = classifications.map((classification) => {
-      const activeClassification = { ...classification }
-      activeClassification.bk_objects = activeClassification.bk_objects.filter(model => !model.bk_ispaused)
-      return activeClassification
-    })
-    // 2.去掉无启用模型的分类和不显示的分类
-    activeClassifications = activeClassifications.filter((classification) => {
-      const {
-        bk_classification_id: bkClassificationId,
-        bk_objects: bkObjects
-      } = classification
-      // eslint-disable-next-line max-len
-      return !state.invisibleClassifications.includes(bkClassificationId) && Array.isArray(bkObjects) && bkObjects.length
-    })
-    return activeClassifications
-  }
+  getModelById: (state, getters) => id => getters.models.find(model => model.bk_obj_id === id)
 }
 
 const actions = {
@@ -115,6 +96,36 @@ const actions = {
      */
   searchClassificationsObjects({ commit, state, dispatch, rootGetters }, { params = {}, config }) {
     return $http.post('find/classificationobject', params, config).then((data) => {
+      const classification = data || []
+
+      // 注入容器分组和对象
+      const containerClassification = {
+        id: Date.now(),
+        bk_ishidden: true, // 在页面中不显示
+        bk_classification_icon: '',
+        bk_classification_id: 'bk_container',
+        bk_classification_name: '容器',
+        bk_classification_type: '',
+        bk_objects: []
+      }
+      Object.keys(CONTAINER_OBJECTS).forEach((objKey) => {
+        const objId = CONTAINER_OBJECTS[objKey]
+        containerClassification.bk_objects.push({
+          id: Date.now(),
+          bk_classification_id: 'bk_container',
+          bk_ishidden: true,
+          bk_ispaused: false,
+          ispre: false,
+          bk_obj_icon: 'icon-cc-default',
+          bk_obj_id: objId,
+          bk_obj_name: CONTAINER_OBJECT_NAMES[objId].FULL,
+          bk_supplier_account: '0',
+          position: ''
+        })
+      })
+
+      classification.push(containerClassification)
+
       commit('setClassificationsObjects', data)
       return data
     })
@@ -145,7 +156,8 @@ const mutations = {
           bk_classification_type: '',
           bk_objects: [],
           bk_supplier_account: '',
-          id: 0
+          id: 0,
+          isNewClassify: classification.isNewClassify
         },
         ...classification
       })

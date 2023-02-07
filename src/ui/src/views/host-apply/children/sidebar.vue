@@ -120,7 +120,7 @@
   import batchCheckPanel from './batch-check-panel.vue'
   import { MENU_BUSINESS_HOST_APPLY_EDIT } from '@/dictionary/menu-symbol'
   import { mapGetters } from 'vuex'
-  import { CONFIG_MODE } from '@/services/service-template/index.js'
+  import { CONFIG_MODE } from '@/service/service-template/index.js'
   export default {
     components: {
       searchSelectMix,

@@ -73,6 +73,7 @@
           v-model="moduleName"
           v-validate="'required|businessTopoInstNames|length:256'"
           data-vv-name="moduleName"
+          data-vv-validate-on="blur"
           key="moduleName"
           :placeholder="$t('请输入xx', { name: $t('模块名称') })"
           :disabled="!!withTemplate">
@@ -116,7 +117,7 @@
 
 <script>
   import has from 'has'
-  import serviceTemplateService from '@/services/service-template/index.js'
+  import serviceTemplateService from '@/service/service-template/index.js'
   import { MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
 
   export default {

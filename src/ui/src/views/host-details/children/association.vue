@@ -105,12 +105,11 @@
       },
       componentProps() {
         if (this.activeView === cmdbInstanceAssociation.name) {
-          const { host, biz: [biz] } = this.info
+          const { host } = this.info
           return {
             objId: 'host',
             instId: host.bk_host_id,
-            instName: host.bk_host_innerip,
-            bizId: biz.bk_biz_id
+            instName: host.bk_host_innerip
           }
         }
         return {}
@@ -142,7 +141,7 @@
         }
     }
     .options {
-        padding: 15px 0;
+        padding: 14px 0;
         font-size: 0;
         .options-button {
             height: 32px;

@@ -39,6 +39,10 @@ spec:
         volumeMounts:
           - name: configures
             mountPath: {{ .Values.monstache.configDir }}
+
+        {{- if .Values.monstache.resources }}
+        resources: {{ toYaml .Values.monstache.resources | nindent 10 }}
+        {{- end }}
       volumes:
         - name: configures
           configMap:

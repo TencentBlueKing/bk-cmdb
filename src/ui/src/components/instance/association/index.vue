@@ -29,7 +29,7 @@
   import useInstanceAssociation from '@/hooks/instance/association'
   import useAllAssocation from '@/hooks/association/all'
   import Graphics from './graphics'
-  import { computed, ref } from '@vue/composition-api'
+  import { computed, ref } from 'vue'
   import tippy from 'bk-magic-vue/lib/utils/tippy'
   export default {
     name: 'cmdb-instance-association',

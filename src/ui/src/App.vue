@@ -72,7 +72,7 @@
         const siteLoginUrl = this.$Site.login || ''
         const [loginBaseUrl] = siteLoginUrl.split('?')
         if (loginBaseUrl) {
-          return `${loginBaseUrl}plain`
+          return `${loginBaseUrl}plain/`
         }
         return ''
       }

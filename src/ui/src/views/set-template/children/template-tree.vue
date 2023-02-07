@@ -25,14 +25,14 @@
         @click="handleChildClick(service)">
         <i class="node-icon fl">{{moduleName[0]}}</i>
         <span class="child-options fr" v-if="mode !== 'view'">
-          <i class="options-view icon icon-cc-show" @click="handleViewService(service)"></i>
+          <bk-link class="action-link" @click="handleViewService(service)">查看详情</bk-link>
           <bk-popover v-if="serviceExistHost(service.id)">
-            <i class="options-delete icon icon-cc-tips-close disabled"></i>
+            <bk-link class="action-link disabled">删除</bk-link>
             <i18n path="该模块下有主机不可删除" tag="p" class="service-tips" slot="content">
               <template #link><span @click="handleGoTopoBusiness(service)">{{$t('跳转查看')}}</span></template>
             </i18n>
           </bk-popover>
-          <i v-else class="options-delete icon icon-cc-tips-close" @click="handleDeleteService(index)"></i>
+          <bk-link v-else class="action-link" @click="handleDeleteService(index)">删除</bk-link>
         </span>
         <span class="child-name">{{service.name}}</span>
       </li>
@@ -46,7 +46,7 @@
     <bk-dialog
       header-position="left"
       :draggable="false"
-      :mask-close="false"
+      :mask-close="dialog.name !== 'add'"
       :width="840"
       :title="dialog.title"
       v-model="dialog.visible"
@@ -62,9 +62,12 @@
       <template slot="footer">
         <div class="dialog-footer" v-if="dialog.name === 'add'">
           <div class="summary" v-if="serviceTemplateCount > 0">
-            <span class="stat">
-              已选<em class="num">{{selectedServiceCount}}</em>个
-            </span>
+            <i18n path="已选个数">
+              <template #count>
+                <span class="stat">
+                  <em class="num">{{selectedServiceCount}}</em>
+                </span></template>
+            </i18n>
             <bk-link class="to-template" theme="primary" icon="icon-cc-share" @click="handleLinkClick">
               {{$t('跳转服务模板')}}
             </bk-link>
@@ -383,28 +386,19 @@
                 margin-right: 9px;
                 font-size: 0;
                 color: $iconColor;
-                .options-view {
-                    font-size: 18px;
-                    cursor: pointer;
-                    &:hover {
-                        color: $highlightColor;
-                    }
-                }
-                .options-delete {
-                    width: 24px;
-                    height: 24px;
-                    margin-left: 14px;
+                .action-link {
+                  margin: 0 4px;
+                  color: #c4c2ce;
+                  ::v-deep .bk-link-text {
                     font-size: 12px;
-                    text-align: center;
-                    line-height: 24px;
-                    cursor: pointer;
-                    &:hover {
-                        color: $highlightColor;
-                    }
-                    &.disabled:hover {
-                        color: $iconDisabledColor;
-                        cursor: not-allowed;
-                    }
+                  }
+
+                  &:not(.disabled):hover {
+                    color: $highlightColor;
+                  }
+                  &.disabled:hover {
+                    cursor: not-allowed;
+                  }
                 }
             }
         }

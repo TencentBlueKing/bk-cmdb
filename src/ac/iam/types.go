@@ -214,6 +214,8 @@ const (
 	UserCustom TypeID = "usercustom"
 	// InstAsstEvent instance association resource for resource watch
 	InstAsstEvent TypeID = "inst_asst_event"
+	// KubeWorkloadEvent kube workload resource for resource watch
+	KubeWorkloadEvent TypeID = "kube_workload_event"
 
 	// SkipType TODO
 	// for resource type, which is not need to be authorized
@@ -480,6 +482,21 @@ const (
 	WatchInstAsstEvent ActionID = "watch_inst_asst_event"
 	// WatchBizSetEvent TODO
 	WatchBizSetEvent ActionID = "watch_biz_set_event"
+	// WatchPlatEvent watch cloud area event action id
+	WatchPlatEvent ActionID = "watch_plat_event"
+
+	// watch kube related event actions
+
+	// WatchKubeClusterEvent watch kube cluster event action id
+	WatchKubeClusterEvent ActionID = "watch_kube_cluster"
+	// WatchKubeNodeEvent watch kube node event action id
+	WatchKubeNodeEvent ActionID = "watch_kube_node"
+	// WatchKubeNamespaceEvent watch kube namespace event action id
+	WatchKubeNamespaceEvent ActionID = "watch_kube_namespace"
+	// WatchKubeWorkloadEvent watch kube workload event action id, authorized by workload type as sub-resource
+	WatchKubeWorkloadEvent ActionID = "watch_kube_workload"
+	// WatchKubePodEvent watch kube pod event action id, its event detail includes containers in it
+	WatchKubePodEvent ActionID = "watch_kube_pod"
 
 	// GlobalSettings TODO
 	GlobalSettings ActionID = "global_settings"
@@ -489,6 +506,51 @@ const (
 	Unsupported ActionID = "unsupported"
 	// Skip is an action that no need to auth
 	Skip ActionID = "skip"
+)
+
+// container related iam action id
+const (
+	// CreateContainerCluster iam action id
+	CreateContainerCluster ActionID = "create_container_cluster"
+
+	// EditContainerCluster iam action id
+	EditContainerCluster ActionID = "edit_container_cluster"
+
+	// DeleteContainerCluster iam action id
+	DeleteContainerCluster ActionID = "delete_container_cluster"
+
+	// CreateContainerNode iam action id
+	CreateContainerNode ActionID = "create_container_node"
+
+	// EditContainerNode iam action id
+	EditContainerNode ActionID = "edit_container_node"
+
+	// DeleteContainerNode iam action id
+	DeleteContainerNode ActionID = "delete_container_node"
+
+	// CreateContainerNamespace iam action id
+	CreateContainerNamespace ActionID = "create_container_namespace"
+
+	// EditContainerNamespace iam action id
+	EditContainerNamespace ActionID = "edit_container_namespace"
+
+	// DeleteContainerNamespace iam action id
+	DeleteContainerNamespace ActionID = "delete_container_namespace"
+
+	// CreateContainerWorkload iam action id, including create action of deployment, statefulSet, daemonSet ...
+	CreateContainerWorkload ActionID = "create_container_workload"
+
+	// EditContainerWorkload iam action id, including edit action of deployment, statefulSet, daemonSet ...
+	EditContainerWorkload ActionID = "edit_container_workload"
+
+	// DeleteContainerWorkload iam action id, including delete action of deployment, statefulSet, daemonSet ...
+	DeleteContainerWorkload ActionID = "delete_container_workload"
+
+	// CreateContainerPod iam action id
+	CreateContainerPod ActionID = "create_container_pod"
+
+	// DeleteContainerPod iam action id
+	DeleteContainerPod ActionID = "delete_container_pod"
 )
 
 const (
@@ -599,6 +661,8 @@ const (
 	SysModelEventSelection InstanceSelectionID = "sys_model_event"
 	// MainlineModelEventSelection TODO
 	MainlineModelEventSelection InstanceSelectionID = "mainline_model_event"
+	// KubeWorkloadEventSelection k8s workload event selection id
+	KubeWorkloadEventSelection InstanceSelectionID = "kube_workload_event"
 	// SysInstanceModelSelection TODO
 	SysInstanceModelSelection InstanceSelectionID = "sys_instance_model"
 	// SysAssociationTypeSelection TODO

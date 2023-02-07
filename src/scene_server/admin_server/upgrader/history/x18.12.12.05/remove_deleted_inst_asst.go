@@ -303,7 +303,7 @@ func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgra
 		if exist {
 			continue
 		}
-		if err := db.Table(bkTableNameInstAsst).CreateIndex(ctx, idx); err != nil {
+		if err := db.Table(bkTableNameInstAsst).CreateIndex(ctx, idx); err != nil && !db.IsDuplicatedError(err) {
 			blog.ErrorJSON("create index to cc_InstAsst error, err:%s, current index:%s, all create index:%s", err.Error(), idx, createIdxArr)
 			return err
 		}

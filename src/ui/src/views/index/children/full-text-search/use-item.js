@@ -10,7 +10,11 @@
  * limitations under the License.
  */
 
-import { computed } from '@vue/composition-api'
+import { computed } from 'vue'
+import store from '@/store'
+import { t } from '@/i18n'
+import routerActions from '@/router/actions'
+import { $warn } from '@/magicbox/index.js'
 import {
   MENU_RESOURCE_INSTANCE_DETAILS,
   MENU_RESOURCE_BUSINESS_DETAILS,
@@ -23,8 +27,8 @@ import {
 import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_MODEL_ROUTEPARAMS_KEYS } from '@/dictionary/model-constants'
 import { getPropertyText } from '@/utils/tools'
 
-export default function useItem(list, root) {
-  const getModelById = root.$store.getters['objectModelClassify/getModelById']
+export default function useItem(list) {
+  const getModelById = store.getters['objectModelClassify/getModelById']
   const getModelName = (source) => {
     const model = getModelById(source.bk_obj_id) || {}
     return model.bk_obj_name || ''
@@ -38,28 +42,28 @@ export default function useItem(list, root) {
       if (kind === 'instance' && key === BUILTIN_MODELS.HOST) {
         newItem.type = key
         newItem.title = Array.isArray(source.bk_host_innerip) ? source.bk_host_innerip.join(',') : source.bk_host_innerip
-        newItem.typeName = root.$t('主机')
+        newItem.typeName = t('主机')
         newItem.linkTo = handleGoResourceHost
       } else if (kind === 'instance' && key === BUILTIN_MODELS.BUSINESS) {
         newItem.type = key
         newItem.title = source.bk_biz_name
-        newItem.typeName = root.$t('业务')
+        newItem.typeName = t('业务')
         newItem.linkTo = handleGoBusiness
       } else if (kind === 'instance' && key === BUILTIN_MODELS.BUSINESS_SET) {
         newItem.type = key
         newItem.title = source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME]
-        newItem.typeName = root.$t('业务集')
+        newItem.typeName = t('业务集')
         newItem.comp = 'bizset'
         newItem.linkTo = handleGoBusinessSet
       } else if (kind === 'instance' && key === BUILTIN_MODELS.SET) {
         newItem.type = key
         newItem.title = source.bk_set_name
-        newItem.typeName = root.$t('集群')
+        newItem.typeName = t('集群')
         newItem.linkTo = source => handleGoTopo('set', source)
       } else if (kind === 'instance' && key === BUILTIN_MODELS.MODULE) {
         newItem.type = key
         newItem.title = source.bk_module_name
-        newItem.typeName = root.$t('模块')
+        newItem.typeName = t('模块')
         newItem.linkTo = source => handleGoTopo(BUILTIN_MODELS.MODULE, source)
       } else if (kind === 'instance') {
         newItem.type = kind
@@ -69,7 +73,7 @@ export default function useItem(list, root) {
       } else if (kind === 'model') {
         newItem.type = kind
         newItem.title = source.bk_obj_name
-        newItem.typeName = root.$t('模型')
+        newItem.typeName = t('模型')
         newItem.linkTo = handleGoModel
       }
       normalizationList.push(newItem)
@@ -88,26 +92,17 @@ export default function useItem(list, root) {
     }
 
     if (newTab) {
-      root.$routerActions.open(to)
+      routerActions.open(to)
       return
     }
 
-    root.$routerActions.redirect(to)
+    routerActions.redirect(to)
   }
   const handleGoInstace = (source, newTab = true) => {
-    const model = getModelById(source.bk_obj_id)
     const isPauserd = getModelById(source.bk_obj_id).bk_ispaused
-    if (model.bk_classification_id === 'bk_biz_topo') {
-      root.$bkMessage({
-        message: root.$t('主线模型无法查看'),
-        theme: 'warning'
-      })
-      return
-    } if (isPauserd) {
-      root.$bkMessage({
-        message: root.$t('该模型已停用'),
-        theme: 'warning'
-      })
+
+    if (isPauserd) {
+      $warn(t('该模型已停用'))
       return
     }
 
@@ -121,11 +116,11 @@ export default function useItem(list, root) {
     }
 
     if (newTab) {
-      root.$routerActions.open(to)
+      routerActions.open(to)
       return
     }
 
-    root.$routerActions.redirect(to)
+    routerActions.redirect(to)
   }
   const handleGoBusiness = (source, newTab = true) => {
     let to = {
@@ -143,11 +138,11 @@ export default function useItem(list, root) {
     }
 
     if (newTab) {
-      root.$routerActions.open(to)
+      routerActions.open(to)
       return
     }
 
-    root.$routerActions.redirect(to)
+    routerActions.redirect(to)
   }
   const handleGoBusinessSet = (source, newTab = true) => {
     const paramKey = BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.BUSINESS_SET]
@@ -159,11 +154,11 @@ export default function useItem(list, root) {
     }
 
     if (newTab) {
-      root.$routerActions.open(to)
+      routerActions.open(to)
       return
     }
 
-    root.$routerActions.redirect(to)
+    routerActions.redirect(to)
   }
   const handleGoModel = (model, newTab = true) => {
     const to = {
@@ -175,11 +170,11 @@ export default function useItem(list, root) {
     }
 
     if (newTab) {
-      root.$routerActions.open(to)
+      routerActions.open(to)
       return
     }
 
-    root.$routerActions.redirect()
+    routerActions.redirect()
   }
   const handleGoTopo = (key, source, newTab = true) => {
     const nodeMap = {
@@ -199,11 +194,11 @@ export default function useItem(list, root) {
     }
 
     if (newTab) {
-      root.$routerActions.open(to)
+      routerActions.open(to)
       return
     }
 
-    root.$routerActions.redirect(to)
+    routerActions.redirect(to)
   }
 
   return {

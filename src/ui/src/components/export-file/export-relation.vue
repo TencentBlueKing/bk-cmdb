@@ -68,7 +68,7 @@
 </template>
 
 <script>
-  import { computed, watch, toRef } from '@vue/composition-api'
+  import { computed, watch, toRef } from 'vue'
   import useState from './state'
   import useModelAssociation from '@/hooks/model/association'
   import useBatchUniqueCheck from '@/hooks/unique-check/batch'
@@ -156,7 +156,7 @@
       const setSelectionUniqueCheck = (relation) => {
         const [firstUniqueCheck] = relation.relation_unique_checks
         const preset = relation.relation_unique_checks.find(uniqueCheck => uniqueCheck.ispre) || firstUniqueCheck
-        setRelation(relation.relation_obj_id, preset.id)
+        setRelation(relation.relation_obj_id, preset?.id)
       }
       const handleSelect = (selection, relation) => {
         const selected = selection.includes(relation)

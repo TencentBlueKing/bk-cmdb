@@ -256,5 +256,16 @@ func GenerateStaticInstanceSelections() []InstanceSelection {
 				},
 			},
 		},
+		{
+			ID:     KubeWorkloadEventSelection,
+			Name:   "容器工作负载事件列表",
+			NameEn: "Kube Workload Event List",
+			ResourceTypeChain: []ResourceChain{
+				{
+					SystemID: SystemIDCMDB,
+					ID:       KubeWorkloadEvent,
+				},
+			},
+		},
 	}
 }

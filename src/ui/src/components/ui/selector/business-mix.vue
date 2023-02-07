@@ -37,7 +37,7 @@
             <span class="item-name">{{option.rawName}}</span>
             <span class="item-id">({{option.rawId}})</span>
           </div>
-          <i class="icon icon-cc-business-set" v-if="option.isBizSet"></i>
+          <i class="icon icon-cc-business-set" :title="$t('业务集')" v-if="option.isBizSet"></i>
           <i :class="['icon', 'bk-icon', 'collection', isCollected(option) ? 'icon-star-shape' : 'icon-star']"
             @click.prevent.stop="handleCollect(option)">
           </i>
@@ -62,7 +62,7 @@
 <script>
   import { mapGetters } from 'vuex'
   import businessSetService from '@/service/business-set/index.js'
-  import { verifyAuth } from '@/services/auth.js'
+  import { verifyAuth } from '@/service/auth.js'
   import { TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
   import AuthMask from '@/components/ui/auth/auth-mask.vue'
   import {
@@ -70,8 +70,6 @@
     MENU_RESOURCE_BUSINESS,
     MENU_RESOURCE_BUSINESS_SET
   } from '@/dictionary/menu-symbol'
-
-  const MAX_COLLECT_COUNT = 8
 
   export default {
     name: 'cmdb-business-mix-selector',
@@ -228,11 +226,6 @@
 
         let newCollection = []
         const isAdd = !this.collection.some(item => item === option.id)
-
-        if (isAdd && this.collection.length >= MAX_COLLECT_COUNT) {
-          this.$warn(this.$t('限制收藏个数提示', { max: MAX_COLLECT_COUNT }))
-          return
-        }
 
         if (isAdd) {
           newCollection = this.collection.concat(option.id)

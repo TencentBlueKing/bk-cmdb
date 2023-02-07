@@ -14,6 +14,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"strconv"
 	"strings"
@@ -29,7 +30,10 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
+	hostParse "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
+	"configcenter/src/kube/types"
+	"configcenter/src/scene_server/host_server/logics"
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
@@ -218,16 +222,10 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 			ApplicationID: appID,
 			HostIDArr:     iHostIDArr,
 		}
-		delResult, err := s.CoreAPI.CoreService().Host().DeleteHostFromSystem(ctx.Kit.Ctx, ctx.Kit.Header, input)
+		err = s.CoreAPI.CoreService().Host().DeleteHostFromSystem(ctx.Kit.Ctx, ctx.Kit.Header, input)
 		if err != nil {
-			blog.Error("DeleteHostBatch DeleteHost http do error. err:%s, input:%s, rid:%s", err.Error(), input,
-				ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !delResult.Result {
-			blog.Errorf("DeleteHostBatch DeleteHost http reply error. result: %#v, input:%#v, rid:%s", delResult,
-				input, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrHostDeleteFail)
+			blog.Error("delete host failed, input: %+v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
+			return err
 		}
 
 		// to save audit.
@@ -1611,4 +1609,403 @@ func (s *Service) countBizHostCPU(kit *rest.Kit, bizID int64) (meta.BizHostCpuCo
 	}
 
 	return cnt, nil
+}
+
+// SearchHostWithKube search host with k8s condition
+func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
+	req := new(types.SearchHostOption)
+	if err := ctx.DecodeInto(req); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	// 1. get hostIDs by k8s condition
+	hostIDs, err := s.getHostIDsByKubeCond(ctx.Kit, req)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if len(hostIDs) == 0 {
+		ctx.RespEntity(meta.HostInfo{
+			Count: 0,
+			Info:  []mapstr.MapStr{},
+		})
+		return
+	}
+
+	// 2. build host condition
+	cond, err := logics.MergeHostIDToCond(ctx.Kit, req.HostCond.Condition, hostIDs)
+	if err != nil {
+		blog.Errorf("merge hostIDs to host condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	condition := make(map[string]interface{})
+	err = hostParse.ParseHostParams(cond, condition)
+	if err != nil {
+		blog.Errorf("parse host condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
+		return
+	}
+
+	err = hostParse.ParseHostIPParams(req.Ip, condition)
+	if err != nil {
+		blog.Errorf("parse host IP condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
+		return
+	}
+
+	// 3. find host by condition
+	query := &meta.QueryInput{
+		Condition:     condition,
+		TimeCondition: req.HostCond.TimeCondition,
+		Start:         req.Page.Start,
+		Limit:         req.Page.Limit,
+		Sort:          req.Page.Sort,
+		Fields:        strings.Join(req.HostCond.Fields, ","),
+	}
+
+	result, err := s.CoreAPI.CoreService().Host().GetHosts(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	if err != nil {
+		blog.Errorf("get hosts failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// 4. check authorization
+	hostIDs, err = result.ExtractHostIDs()
+	if err != nil {
+		blog.Errorf("get hostIDs failed, info: %v, err: %v, rid: %s", result, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Find, hostIDs...); err != nil {
+		blog.Errorf("check host authorization failed, hostIDs: %+v, err: %+v, rid: %s", hostIDs, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
+		return
+	}
+
+	// 5. build response result
+	info, err := s.buildResult(ctx.Kit, result.Info, req)
+	if err != nil {
+		blog.Errorf("inset cloud message to hosts failed, hosts: %v, err: %v, rid: %s", result.Info, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	result.Info = info
+
+	ctx.RespEntity(result)
+}
+
+func (s *Service) getHostIDsByKubeCond(kit *rest.Kit, req *types.SearchHostOption) ([]int64, error) {
+	// find hosIDs by k8s topo filter
+	var hostIDs []int64
+	var err error
+	hasHostIDCond := false
+	if req.NamespaceID != 0 || (req.WorkloadID != 0 && req.WlKind != "") || req.Folder {
+		hasHostIDCond = true
+		hostIDs, err = s.getHostByKubeTopoFilter(kit, req)
+		if err != nil {
+			blog.Errorf("get hostID by k8s topo failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+	}
+
+	// it mean the no exist hostIDs, so we can not find hostID in the range of hostIDs based on node conditions
+	if hasHostIDCond && len(hostIDs) == 0 {
+		return nil, nil
+	}
+
+	// it mean that no condition, so we return the hostIDs
+	if (req.NodeCond == nil || req.NodeCond.Filter == nil) && req.ClusterID == 0 {
+		return hostIDs, nil
+	}
+
+	// find hostIDs by node or cluster filter
+	if (req.NodeCond != nil && req.NodeCond.Filter != nil) || req.ClusterID != 0 {
+		hostIDs, err = s.getHostByClusterOrNode(kit, req, hasHostIDCond, hostIDs)
+		if err != nil {
+			blog.Errorf("get hostID by node filter failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+	}
+
+	return hostIDs, nil
+}
+
+// getHostByKubeTopoFilter get hostIDs by k8s topo filter condition
+// this func can not find hostIDs only by bizID and clusterID because it find hostIDs dependent pod,
+// the host may belong to cluster but no pod on it.
+func (s *Service) getHostByKubeTopoFilter(kit *rest.Kit, req *types.SearchHostOption) ([]int64, error) {
+	if !req.Folder && req.NamespaceID == 0 && (req.WorkloadID == 0 || req.WlKind == "") {
+		return nil, nil
+	}
+
+	// it mean that want to find the host in folder
+	if req.Folder {
+		hostIDs, err := s.getHostInFolder(kit, req.BizID, req.ClusterID)
+		if err != nil {
+			return nil, err
+		}
+		return hostIDs, nil
+	}
+
+	cond := mapstr.MapStr{}
+	if req.BizID != 0 {
+		cond[common.BKAppIDField] = req.BizID
+	}
+
+	if req.ClusterID != 0 {
+		cond[types.BKClusterIDFiled] = req.ClusterID
+	}
+
+	if req.NamespaceID != 0 {
+		cond[types.BKNamespaceIDField] = req.NamespaceID
+	}
+
+	if req.WorkloadID != 0 && req.WlKind != "" {
+		cond[types.RefIDField] = req.WorkloadID
+		cond[types.RefKindField] = req.WlKind
+	}
+
+	fields := []string{common.BKHostIDField}
+	query := &meta.QueryCondition{
+		Condition: cond,
+		Fields:    fields,
+	}
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListPod(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("find pod failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
+		return nil, err
+	}
+
+	hostIDs := make([]int64, 0)
+	for _, pod := range resp.Info {
+		if pod.HostID != 0 {
+			hostIDs = append(hostIDs, pod.HostID)
+		}
+	}
+	return hostIDs, nil
+}
+
+func (s *Service) getHostInFolder(kit *rest.Kit, bizID int64, clusterID int64) ([]int64, error) {
+	if bizID == 0 {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField)
+	}
+
+	if clusterID == 0 {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, types.BKClusterIDFiled)
+	}
+
+	cond := mapstr.MapStr{
+		common.BKAppIDField:    bizID,
+		types.BKClusterIDFiled: clusterID,
+		types.HasPodField:      mapstr.MapStr{common.BKDBNE: true},
+	}
+
+	fields := []string{common.BKHostIDField}
+	query := &meta.QueryCondition{
+		Condition: cond,
+		Fields:    fields,
+	}
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
+		return nil, err
+	}
+	hostIDs := make([]int64, 0)
+	for _, node := range resp.Data {
+		if node.HostID != 0 {
+			hostIDs = append(hostIDs, node.HostID)
+		}
+	}
+
+	return hostIDs, nil
+}
+
+// getHostByClusterOrNode get hostID by cluster or node
+// this func can not find hostIDs only by bizID condition
+func (s *Service) getHostByClusterOrNode(kit *rest.Kit, req *types.SearchHostOption, hasHostIDCond bool,
+	hostIDs []int64) ([]int64, error) {
+	var err error
+	cond := mapstr.MapStr{}
+	if req.NodeCond != nil && req.NodeCond.Filter != nil {
+		cond, err = req.NodeCond.Filter.ToMgo()
+		if err != nil {
+			blog.Errorf("node filter to mongo condition failed: %v, err: %v, rid: %s", req.NodeCond.Filter, err,
+				kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "node_cond")
+		}
+	}
+
+	if req.BizID != 0 {
+		cond[common.BKAppIDField] = req.BizID
+	}
+
+	if req.ClusterID != 0 {
+		cond[types.BKClusterIDFiled] = req.ClusterID
+	}
+
+	if hasHostIDCond {
+		cond[common.BKHostIDField] = mapstr.MapStr{common.BKDBIN: hostIDs}
+	}
+
+	fields := []string{common.BKHostIDField}
+	query := &meta.QueryCondition{
+		Condition: cond,
+		Fields:    fields,
+	}
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
+		return nil, err
+	}
+	ids := make([]int64, 0)
+	for _, node := range resp.Data {
+		if node.HostID != 0 {
+			ids = append(ids, node.HostID)
+		}
+	}
+
+	return ids, nil
+}
+
+func (s *Service) buildResult(kit *rest.Kit, hosts []mapstr.MapStr, req *types.SearchHostOption) (
+	[]mapstr.MapStr, error) {
+	cloudIDs := make([]int64, 0)
+	hostIDs := make([]int64, 0)
+	for _, host := range hosts {
+		cloudID, err := host.Int64(common.BKCloudIDField)
+		if err != nil {
+			blog.Errorf("get host attribute failed, attr: %s, host: %v, err: %v, rid: %s", common.BKCloudIDField, host,
+				err, kit.Rid)
+			return nil, err
+		}
+		cloudIDs = append(cloudIDs, cloudID)
+		hostID, err := host.Int64(common.BKHostIDField)
+		if err != nil {
+			blog.Errorf("get host attribute failed, attr: %s, host: %v, err: %v, rid: %s", common.BKHostIDField, host,
+				err, kit.Rid)
+			return nil, err
+		}
+		hostIDs = append(hostIDs, hostID)
+	}
+
+	hosts, err := s.insetCloudMsg(kit, hosts, cloudIDs)
+	if err != nil {
+		blog.Errorf("inset cloud message to host failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	hostIDToNode := make(map[int64][]types.Node)
+	if req.NodeCond != nil && len(req.NodeCond.Fields) != 0 {
+		hostIDToNode, err = s.findNodeByHostIDs(kit, hostIDs, req.NodeCond.Fields)
+		if err != nil {
+			blog.Errorf("find node by hostIDs failed, hostIDs: %v, err: %v, rid: %s", hostIDs, err, kit.Rid)
+			return nil, err
+		}
+	}
+	result := make([]mapstr.MapStr, len(hosts))
+	for idx, host := range hosts {
+		result[idx] = make(mapstr.MapStr)
+		result[idx]["host"] = host
+		hostID, err := host.Int64(common.BKHostIDField)
+		if err != nil {
+			blog.Errorf("get host attribute failed, attr: %s, host: %v, err: %v, rid: %s", common.BKHostIDField, host,
+				err, kit.Rid)
+			return nil, err
+		}
+		result[idx]["node"] = hostIDToNode[hostID]
+	}
+	return result, nil
+}
+
+func (s *Service) findNodeByHostIDs(kit *rest.Kit, hostIDs []int64, fields []string) (map[int64][]types.Node, error) {
+	fields = append(fields, common.BKHostIDField)
+	cond := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDs}}
+	query := &meta.QueryCondition{
+		Condition: cond,
+		Fields:    fields,
+	}
+	resp, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
+		return nil, err
+	}
+
+	hostIDToNode := make(map[int64][]types.Node)
+	for _, node := range resp.Data {
+		if node.HostID == 0 {
+			continue
+		}
+
+		hostID := node.HostID
+		hostIDToNode[hostID] = append(hostIDToNode[hostID], node)
+	}
+
+	return hostIDToNode, nil
+}
+
+// insetCloudMsg inset cloud area message to host
+func (s *Service) insetCloudMsg(kit *rest.Kit, hosts []mapstr.MapStr, cloudIDs []int64) ([]mapstr.MapStr, error) {
+	if len(cloudIDs) == 0 || len(hosts) == 0 {
+		return hosts, nil
+	}
+
+	cond := &meta.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKCloudIDField: mapstr.MapStr{
+				common.BKDBIN: cloudIDs,
+			},
+		},
+		Fields: []string{common.BKCloudIDField, common.BKCloudNameField},
+	}
+	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDPlat,
+		cond)
+	if err != nil {
+		blog.Errorf("get cloud area failed, cond: %v, err: %v, rid: %s", cond, err, kit.Rid)
+		return nil, err
+	}
+	idWithName := make(map[int64]string)
+	for _, cloud := range result.Info {
+		id, err := cloud.Int64(common.BKCloudIDField)
+		if err != nil {
+			blog.Errorf("get cloud area attribute failed, attr: %s, cloud: %v, err: %v, rid: %s", common.BKCloudIDField,
+				cloud, err, kit.Rid)
+			return nil, err
+		}
+
+		name, err := cloud.String(common.BKCloudNameField)
+		if err != nil {
+			blog.Errorf("get cloud area attribute failed, attr: %s, cloud: %v, err: %v, rid: %s",
+				common.BKCloudNameField, cloud, err, kit.Rid)
+			return nil, err
+		}
+
+		idWithName[id] = name
+	}
+
+	for idx, host := range hosts {
+		id, err := host.Int64(common.BKCloudIDField)
+		if err != nil {
+			blog.Errorf("get host attribute failed, attr: %s, host: %v, err: %v, rid: %s", common.BKCloudIDField,
+				host, err, kit.Rid)
+			return nil, err
+		}
+
+		name, ok := idWithName[id]
+		if !ok {
+			return nil, fmt.Errorf("get cloud area attribute failed, id: %d, attr: %s", id, common.BKCloudNameField)
+		}
+
+		// 这里由于之前查询主机返回的结构是云区域数组，为了方便前端统一处理，和以前保持一致
+		hosts[idx][common.BKCloudIDField] = []mapstr.MapStr{{
+			common.BKInstIDField:   id,
+			common.BKInstNameField: name,
+		}}
+	}
+
+	return hosts, nil
 }

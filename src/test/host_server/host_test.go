@@ -1562,3 +1562,335 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 		Expect(hostID).To(Equal(result.Success[0].HostID))
 	})
 })
+
+var _ = Describe("cloud host test", func() {
+	ctx := context.Background()
+	var bizID, bizID1, setID, moduleID, hostID1, hostID2, cloudID int64
+
+	It("test preparation", func() {
+		By("create cloud area name = 'cloud_host_plat'", func() {
+			resp, err := hostServerClient.CreateCloudArea(context.Background(), header, map[string]interface{}{
+				"bk_cloud_name":   "cloud_host_plat",
+				"bk_status":       "1",
+				"bk_cloud_vendor": "1",
+				"bk_account_id":   2,
+				"creator":         "admin",
+			})
+			util.RegisterResponse(resp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Result).To(Equal(true))
+			cloudID = int64(resp.Data.Created.ID)
+		})
+
+		By("create business bk_biz_name = 'cloud_host_biz'", func() {
+			input := map[string]interface{}{
+				"life_cycle":        "2",
+				"language":          "1",
+				"bk_biz_maintainer": "admin",
+				"bk_biz_name":       "cloud_host_biz",
+				"time_zone":         "Africa/Accra",
+			}
+			rsp, err := apiServerClient.CreateBiz(ctx, "0", header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			bizID, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		By("create set", func() {
+			input := mapstr.MapStr{
+				"bk_set_name":       "cloud_host_set",
+				"bk_parent_id":      bizID,
+				"bk_biz_id":         bizID,
+				"bk_service_status": "1",
+				"bk_set_env":        "3",
+			}
+			rsp, err := instClient.CreateSet(ctx, bizID, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			var e error
+			setID, e = commonutil.GetInt64ByInterface(rsp["bk_set_id"])
+			Expect(e).NotTo(HaveOccurred())
+		})
+
+		By("create module", func() {
+			input := map[string]interface{}{
+				"bk_module_name":      "cloud_host_module",
+				"bk_parent_id":        setID,
+				"service_category_id": 2,
+			}
+			rsp, err := instClient.CreateModule(ctx, bizID, setID, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			var e error
+			moduleID, e = commonutil.GetInt64ByInterface(rsp["bk_module_id"])
+			Expect(e).NotTo(HaveOccurred())
+		})
+
+		By("create business bk_biz_name = 'trans_cloud_host_biz'", func() {
+			input := map[string]interface{}{
+				"life_cycle":        "2",
+				"language":          "1",
+				"bk_biz_maintainer": "admin",
+				"bk_biz_name":       "trans_cloud_host_biz",
+				"time_zone":         "Africa/Accra",
+			}
+			rsp, err := apiServerClient.CreateBiz(ctx, "0", header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			bizID1, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	It("add cloud host to biz idle module test", func() {
+		By("add cloud hosts to biz idle module", func() {
+			input := &metadata.AddCloudHostToBizParam{
+				BizID: bizID,
+				HostInfo: []mapstr.MapStr{
+					{
+						common.BKHostInnerIPField: "127.0.0.111",
+						common.BKCloudIDField:     cloudID,
+					},
+					{
+						common.BKHostInnerIPField: "127.0.0.112",
+						common.BKCloudIDField:     cloudID,
+					},
+				},
+			}
+
+			rsp, err := hostServerClient.AddCloudHostToBiz(ctx, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(rsp.IDs)).To(Equal(2))
+			hostID1, hostID2 = rsp.IDs[0], rsp.IDs[1]
+		})
+
+		By("check created cloud hosts", func() {
+			rsp, err := hostServerClient.SearchHost(ctx, header, &params.HostCommonSearch{
+				AppID: int(bizID),
+				Page:  params.PageInfo{Sort: common.BKHostInnerIPField},
+			})
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+
+			for _, data := range rsp.Data.Info {
+				host, ok := data["host"].(map[string]interface{})
+				Expect(ok).To(Equal(true))
+				hostID, err := commonutil.GetInt64ByInterface(host[common.BKHostIDField])
+				Expect(err).NotTo(HaveOccurred())
+				innerIP := commonutil.GetStrByInterface(host[common.BKHostInnerIPField])
+				Expect(hostID == hostID1 && innerIP == "127.0.0.111" || hostID == hostID2 && innerIP == "127.0.0.112").
+					To(Equal(true))
+			}
+		})
+
+		By("import cloud host to same biz again", func() {
+			input := &metadata.AddCloudHostToBizParam{
+				BizID: bizID,
+				HostInfo: []mapstr.MapStr{{
+					common.BKHostInnerIPField: "127.0.0.111",
+					common.BKCloudIDField:     cloudID,
+					common.BKHostNameField:    "127.0.0.111",
+				}},
+			}
+
+			rsp, err := hostServerClient.AddCloudHostToBiz(ctx, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+
+			searchRsp, e := hostServerClient.SearchHost(ctx, header, &params.HostCommonSearch{AppID: int(bizID)})
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(e).NotTo(HaveOccurred())
+			Expect(searchRsp.Result).To(Equal(true))
+
+			for _, data := range searchRsp.Data.Info {
+				host, ok := data["host"].(map[string]interface{})
+				Expect(ok).To(Equal(true))
+				hostID, err := commonutil.GetInt64ByInterface(host[common.BKHostIDField])
+				Expect(err).NotTo(HaveOccurred())
+				if hostID == hostID1 {
+					Expect(commonutil.GetStrByInterface(host[common.BKHostNameField])).To(Equal("127.0.0.111"))
+				}
+			}
+		})
+
+		By("transfer cloud host to resource pool", func() {
+			input := &metadata.DefaultModuleHostConfigParams{
+				ApplicationID: bizID1,
+				HostIDs:       []int64{hostID1},
+			}
+			rsp, err := hostServerClient.MoveHostToResourcePool(ctx, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		By("transfer cloud host to another biz", func() {
+			input := &metadata.TransferHostAcrossBusinessParameter{
+				SrcAppID: bizID,
+				DstAppID: bizID1,
+				HostID:   []int64{hostID1, hostID2},
+			}
+			err := hostServerClient.TransferHostAcrossBusiness(ctx, header, input)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("add cloud hosts to invalid biz", func() {
+			input := &metadata.AddCloudHostToBizParam{
+				BizID: 1000,
+				HostInfo: []mapstr.MapStr{
+					{
+						common.BKHostInnerIPField: "127.0.0.113",
+						common.BKCloudIDField:     cloudID,
+					},
+				},
+			}
+
+			rsp, err := hostServerClient.AddCloudHostToBiz(ctx, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("add cloud hosts with invalid host", func() {
+			input := &metadata.AddCloudHostToBizParam{
+				BizID: bizID,
+				HostInfo: []mapstr.MapStr{
+					{
+						common.BKHostInnerIPField: "127.0.0.114",
+						common.BKCloudIDField:     cloudID,
+					},
+					{
+						common.BKHostInnerIPField: "127.0.0.1144",
+						common.BKCloudIDField:     cloudID,
+					},
+				},
+			}
+
+			rsp, err := hostServerClient.AddCloudHostToBiz(ctx, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("add cloud hosts with duplicate host in different biz", func() {
+			input := &metadata.AddCloudHostToBizParam{
+				BizID: bizID1,
+				HostInfo: []mapstr.MapStr{{
+					common.BKHostInnerIPField: "127.0.0.111",
+					common.BKCloudIDField:     cloudID,
+				}},
+			}
+
+			rsp, err := hostServerClient.AddCloudHostToBiz(ctx, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("add cloud hosts with no biz", func() {
+			input := &metadata.AddCloudHostToBizParam{
+				HostInfo: []mapstr.MapStr{{
+					common.BKHostInnerIPField: "127.0.0.115",
+					common.BKCloudIDField:     cloudID,
+				}},
+			}
+
+			rsp, err := hostServerClient.AddCloudHostToBiz(ctx, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("add cloud hosts with no host", func() {
+			input := &metadata.AddCloudHostToBizParam{
+				BizID: bizID,
+			}
+
+			rsp, err := hostServerClient.AddCloudHostToBiz(ctx, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	It("delete cloud host from biz idle set test", func() {
+		By("delete cloud hosts from invalid biz", func() {
+			input := &metadata.DeleteCloudHostFromBizParam{
+				BizID:   bizID1,
+				HostIDs: []int64{hostID1},
+			}
+
+			err := hostServerClient.DeleteCloudHostFromBiz(ctx, header, input)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("delete cloud hosts with invalid host", func() {
+			input := &metadata.DeleteCloudHostFromBizParam{
+				BizID:   bizID,
+				HostIDs: []int64{hostId},
+			}
+
+			err := hostServerClient.DeleteCloudHostFromBiz(ctx, header, input)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).To(HaveOccurred())
+		})
+
+		By("transfer cloud host to biz module", func() {
+			input := map[string]interface{}{
+				"bk_biz_id": bizID,
+				"bk_host_id": []int64{
+					hostID1,
+				},
+				"bk_module_id": []int64{
+					moduleID,
+				},
+			}
+			rsp, err := hostServerClient.TransferHostModule(ctx, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
+		By("delete cloud hosts from biz module", func() {
+			input := &metadata.DefaultModuleHostConfigParams{
+				ApplicationID: bizID1,
+				HostIDs:       []int64{hostID1, hostID2},
+			}
+			rsp, err := hostServerClient.MoveHostToResourcePool(ctx, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(false))
+		})
+
+		By("transfer cloud host to idle set", func() {
+			input := &metadata.DefaultModuleHostConfigParams{
+				ApplicationID: bizID,
+				HostIDs:       []int64{hostID1},
+			}
+			rsp, err := hostServerClient.MoveHost2FaultModule(ctx, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
+		By("delete cloud hosts from idle set", func() {
+			input := &metadata.DeleteCloudHostFromBizParam{
+				BizID:   bizID,
+				HostIDs: []int64{hostID1, hostID2},
+			}
+			err := hostServerClient.DeleteCloudHostFromBiz(ctx, header, input)
+			util.RegisterResponseWithRid(err, header)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		By("check deleted cloud hosts", func() {
+			rsp, err := hostServerClient.SearchHost(ctx, header, &params.HostCommonSearch{AppID: int(bizID)})
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(0))
+		})
+	})
+})

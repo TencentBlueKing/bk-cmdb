@@ -36,7 +36,7 @@ func CreateInstNameIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 		Background: false,
 	}
 
-	if err := db.Table(common.BKTableNameBaseInst).CreateIndex(ctx, idx); err != nil {
+	if err := db.Table(common.BKTableNameBaseInst).CreateIndex(ctx, idx); err != nil && !db.IsDuplicatedError(err) {
 		blog.Errorf("CreateIndex failed, err: %+v", err)
 		return fmt.Errorf("CreateIndex failed, err: %v", err)
 	}

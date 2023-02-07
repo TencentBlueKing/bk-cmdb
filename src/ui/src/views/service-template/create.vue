@@ -11,14 +11,14 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, ref } from '@vue/composition-api'
+  import { computed, defineComponent, ref } from 'vue'
   import router from '@/router/index.js'
   import { t } from '@/i18n'
   import { $bkInfo } from '@/magicbox/index.js'
   import routerActions from '@/router/actions'
   import ManagementForm from './children/management-form.vue'
   import store from '@/store'
-  import serviceTemplateService from '@/services/service-template'
+  import serviceTemplateService from '@/service/service-template'
   import {
     MENU_BUSINESS_SERVICE_TEMPLATE,
     MENU_BUSINESS_SERVICE_TEMPLATE_CREATE,
@@ -161,7 +161,7 @@
     <bk-dialog v-model="successDialogShow"
       width="520"
       :esc-close="false"
-      :mask-close="false"
+      :mask-close="true"
       :show-footer="false"
       :close-icon="false">
       <div class="update-alert-layout">

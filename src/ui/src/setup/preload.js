@@ -11,8 +11,9 @@
  */
 
 import { getAuthorizedBusiness, getAuthorizedBusinessSet } from '@/router/business-interceptor.js'
-import { verifyAuth } from '@/services/auth.js'
+import { verifyAuth } from '@/service/auth.js'
 import store from '@/store'
+import $http from '@/api'
 
 const preloadConfig = {
   fromCache: false,
@@ -78,7 +79,22 @@ export const verifyPlatformManagementAuth = async () => {
   }
 }
 
+/**
+ * 获取主线模型，数据会写入store
+ */
+const getMainLineModels = async () => {
+  store.dispatch('objectMainLineModule/searchMainlineObject', {
+    config: {
+      ...preloadConfig,
+      requestId: 'getMainLineModels'
+    }
+  })
+}
+
 export default async function (app) {
+  // 设置全局请求头
+  $http.setHeader('HTTP_BLUEKING_SUPPLIER_ID', store.getters.supplierAccount)
+
   if (window.Site.authscheme === 'iam') {
     verifyPlatformManagementAuth()
   } else {
@@ -91,6 +107,8 @@ export default async function (app) {
 
   // 获取有访问权限的业务集
   getAuthorizedBusinessSet()
+
+  getMainLineModels()
 
   return Promise.all([
     getGlobalConfig(app),

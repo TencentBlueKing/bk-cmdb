@@ -61,7 +61,7 @@
 </template>
 
 <script>
-  import { defineComponent, reactive, toRef } from '@vue/composition-api'
+  import { defineComponent, reactive, toRef } from 'vue'
   import ModelSummary from './model-summary.vue'
 
   export default defineComponent({

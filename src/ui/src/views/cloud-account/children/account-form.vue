@@ -252,7 +252,10 @@
         this.form.bk_secret_key = this.fakeSecret
       },
       async handleTest() {
-        if (!this.isCreateMode && this.form.bk_secret_key === this.fakeSecret) {
+        if (!this.isCreateMode
+          && this.form.bk_secret_key === this.fakeSecret
+          && this.form.bk_secret_id === this.account.bk_secret_id
+        ) {
           this.useBackendTest()
         } else {
           this.useFrontendTest()

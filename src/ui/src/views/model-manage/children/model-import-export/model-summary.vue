@@ -23,7 +23,7 @@
   </div>
 </template>
 <script>
-  import { defineComponent, computed } from '@vue/composition-api'
+  import { defineComponent, computed } from 'vue'
 
   export default defineComponent({
     name: 'ModelSummary',

@@ -29,12 +29,14 @@ var (
 
 // OpenTelemetryConfig TODO
 type OpenTelemetryConfig struct {
-	// 表示是否开启日志平台openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
+	// 表示是否开启openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
 	enable bool
-	// 日志平台openTelemetry跟踪链功能的自定义上报服务地址
+	// openTelemetry跟踪链功能的自定义上报服务地址
 	endpoint string
-	// 日志平台openTelemetry跟踪链功能的上报data_id
+	// openTelemetry跟踪链功能的上报data_id, 用于旧版的数据上报
 	bkDataID int64
+	// openTelemetry跟踪链功能的上报bk.data.token, 用于新版的数据上报
+	bkDataToken string
 
 	tlsConf *tls.Config
 }
@@ -70,9 +72,22 @@ func InitOpenTelemetryConfig() error {
 		return fmt.Errorf("config openTelemetry.endpoint err: %v", err)
 	}
 
-	openTelemetryCfg.bkDataID, err = cc.Int64("openTelemetry.bkDataID")
-	if err != nil {
-		return fmt.Errorf("config openTelemetry.bkDataID err: %v", err)
+	if !cc.IsExist("openTelemetry.bkDataID") && !cc.IsExist("openTelemetry.bkDataToken") {
+		return errors.New("at least one of openTelemetry.bkDataID and openTelemetry.bkDataToken is set")
+	}
+
+	if cc.IsExist("openTelemetry.bkDataID") {
+		openTelemetryCfg.bkDataID, err = cc.Int64("openTelemetry.bkDataID")
+		if err != nil {
+			return fmt.Errorf("get config openTelemetry.bkDataID err: %v", err)
+		}
+	}
+
+	if cc.IsExist("openTelemetry.bkDataToken") {
+		openTelemetryCfg.bkDataToken, err = cc.String("openTelemetry.bkDataToken")
+		if err != nil {
+			return fmt.Errorf("get config openTelemetry.bkDataToken err: %v", err)
+		}
 	}
 
 	if !cc.IsExist("openTelemetry.tls.caFile") || !cc.IsExist("openTelemetry.tls.certFile") ||

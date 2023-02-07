@@ -16,8 +16,10 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
+	"configcenter/src/kube/types"
 )
 
 // DeleteHostBatch TODO
@@ -288,6 +290,32 @@ func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h http.Header,
 		Do().
 		Into(resp)
 	return
+}
+
+// TransferHostAcrossBusiness transfer hosts across biz
+func (hs *hostServer) TransferHostAcrossBusiness(ctx context.Context, header http.Header,
+	option *metadata.TransferHostAcrossBusinessParameter) errors.CCErrorCoder {
+
+	resp := new(metadata.CreateBatchResult)
+	subPath := "/hosts/modules/across/biz"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // AssignHostToApp TODO
@@ -667,4 +695,82 @@ func (hs *hostServer) FindCloudAreaHostCount(ctx context.Context, header http.He
 		Do().
 		Into(resp)
 	return
+}
+
+// SearchHostWithKube search host with k8s condition
+func (hs *hostServer) SearchKubeHost(ctx context.Context, h http.Header, req types.SearchHostOption) (
+	*metadata.SearchHost, errors.CCErrorCoder) {
+
+	result := new(metadata.SearchHostResult)
+	subPath := "/hosts/kube/search"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(result)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if ccErr := result.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return result.Data, nil
+}
+
+// AddCloudHostToBiz add cloud host to biz idle module
+func (hs *hostServer) AddCloudHostToBiz(ctx context.Context, h http.Header, opt *metadata.AddCloudHostToBizParam) (
+	*metadata.RspIDs, errors.CCErrorCoder) {
+
+	resp := new(metadata.CreateBatchResult)
+	subPath := "/createmany/cloud_hosts"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
+// DeleteCloudHostFromBiz delete cloud hosts from biz
+func (hs *hostServer) DeleteCloudHostFromBiz(ctx context.Context, header http.Header,
+	option *metadata.DeleteCloudHostFromBizParam) errors.CCErrorCoder {
+
+	resp := new(metadata.CreateBatchResult)
+	subPath := "/deletemany/cloud_hosts"
+
+	err := hs.client.Delete().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -15,9 +15,9 @@ package y3_9_202106291420
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/index"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
@@ -25,7 +25,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func addIndexex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func addIndexes(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 
 	indexes := map[string]types.Index{
 		"cc_ServiceInstance": {
@@ -41,32 +41,32 @@ func addIndexex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err err
 		},
 	}
 
-	for tableName, index := range indexes {
-
+	for tableName, idx := range indexes {
 		dbIndexes, err := db.Table(tableName).Indexes(ctx)
 		if err != nil {
 			blog.ErrorJSON("find collection(%s) index error. err: %s", tableName, err.Error())
 			return err
 		}
+
 		indexExist := false
 		for _, dbIndex := range dbIndexes {
-			if dbIndex.Name == index.Name {
-				blog.InfoJSON("start  collection(%s) equal db index(%s) logic index(%s)", tableName, dbIndex, index)
-				if reflect.DeepEqual(dbIndex.Keys, index.Keys) {
-					indexExist = true
-					continue
-				} else {
-					err := fmt.Errorf("collection(%s) index(%s) has exists, but keys not equal", tableName, index.Name)
-					blog.ErrorJSON("%s, db index: %s, logic index: %s", err.Error(), dbIndex, index)
-					return err
+			if dbIndex.Name == idx.Name {
+				if !index.IndexEqual(idx, dbIndex) {
+					blog.Errorf("index keys are not equal, db index: %+v, logic index: %+v", err, dbIndex, idx)
+					return fmt.Errorf("collection(%s) index(%s) exists, but keys not equal", tableName, idx.Name)
 				}
+				indexExist = true
+				break
 			}
 		}
-		if !indexExist {
-			if err := db.Table(tableName).CreateIndex(ctx, index); err != nil {
-				blog.ErrorJSON("collection(%s)  create index(%s) error. index: %s, err: %s", tableName, index.Name, index, err.Error())
-				return err
-			}
+
+		if indexExist {
+			continue
+		}
+
+		if err = db.Table(tableName).CreateIndex(ctx, idx); err != nil && !db.IsDuplicatedError(err) {
+			blog.Errorf("create %s index(%v) failed, err: %v", tableName, idx, err)
+			return err
 		}
 
 	}

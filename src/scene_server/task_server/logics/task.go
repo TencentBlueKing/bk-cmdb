@@ -13,6 +13,7 @@
 package logics
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"time"
@@ -49,13 +50,21 @@ func (lgc *Logics) Create(kit *rest.Kit, input *metadata.CreateTaskRequest) (met
 				metadata.APITaskStatusExecute},
 		},
 	}
-	cnt, err := lgc.db.Table(common.BKTableNameAPITask).Find(duplicateCond).Count(kit.Ctx)
+
+	duplicateTasks := make([]metadata.APITaskDetail, 0)
+	err := lgc.db.Table(common.BKTableNameAPITask).Find(duplicateCond).All(kit.Ctx, &duplicateTasks)
 	if err != nil {
 		blog.Errorf("get duplicate tasks failed, err: %v, cond: %#v, rid: %s", err, duplicateCond, kit.Rid)
 		return dbTask, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
-	if cnt > 0 {
+	duplicateTaskIDs, err := lgc.CompensateStatus(kit.Ctx, duplicateTasks, kit.Rid)
+	if err != nil {
+		blog.Errorf("compensate duplicate tasks failed, tasks: %#v, err: %v, rid: %s", err, duplicateTasks, kit.Rid)
+		return dbTask, err
+	}
+
+	if len(duplicateTaskIDs) > 0 {
 		return dbTask, kit.CCError.Errorf(common.CCErrTaskCreateConflict, input.InstID)
 	}
 
@@ -305,123 +314,6 @@ func (lgc *Logics) DeleteTask(kit *rest.Kit, taskCond *metadata.DeleteOption) er
 	return nil
 }
 
-// ChangeStatusToSuccess task status change to success
-func (lgc *Logics) ChangeStatusToSuccess(kit *rest.Kit, taskID, subTaskID string) error {
-
-	if taskID == "" {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "task_id")
-	}
-	if subTaskID == "" {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "sub_task_id")
-	}
-	return lgc.changeStatus(kit, taskID, subTaskID, metadata.APITaskStatusSuccess, nil)
-}
-
-// ChangeStatusToFailure change status to failure
-func (lgc *Logics) ChangeStatusToFailure(kit *rest.Kit, taskID, subTaskID string,
-	errResponse *metadata.Response) error {
-
-	if taskID == "" {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "task_id")
-	}
-	if subTaskID == "" {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "sub_task_id")
-	}
-	if errResponse == nil || errResponse.Code == 0 {
-		return kit.CCError.CCError(common.CCErrTaskErrResponseemptyFail)
-	}
-	return lgc.changeStatus(kit, taskID, subTaskID, metadata.APITAskStatusFail, errResponse)
-}
-
-func (lgc *Logics) changeStatus(kit *rest.Kit, taskID, subTaskID string, status metadata.APITaskStatus,
-	errResponse *metadata.Response) error {
-
-	condition := mapstr.MapStr{"task_id": taskID}
-
-	rows := make([]metadata.APITaskDetail, 0)
-	err := lgc.db.Table(common.BKTableNameAPITask).Find(condition).All(kit.Ctx, &rows)
-	if err != nil {
-		blog.Errorf("get task status failed, input: %#v, err: %v, rid:%s", condition, err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
-	}
-	if len(rows) == 0 {
-		blog.Errorf("get task status, input: %#v, task not found, rid: %s", condition, kit.Rid)
-		return kit.CCError.CCError(common.CCErrTaskNotFound)
-	}
-
-	existSubTask := false
-	canChangeStatus := false
-	for _, subTask := range rows[0].Detail {
-		if subTask.SubTaskID == subTaskID {
-			existSubTask = true
-			if (subTask.Status == metadata.APITaskStatusNew || subTask.Status == metadata.APITaskStatusExecute) &&
-				subTask.Status != status {
-				canChangeStatus = true
-			}
-			break
-		}
-	}
-	if !existSubTask {
-		return kit.CCError.CCError(common.CCErrTaskSubTaskNotFound)
-	}
-	if !canChangeStatus {
-		return kit.CCError.CCError(common.CCErrTaskStatusNotAllowChangeTo)
-	}
-
-	now := time.Now()
-	updateCondition := mapstr.MapStr{"task_id": taskID, "detail.sub_task_id": subTaskID}
-	updateData := mapstr.MapStr{"detail.$.status": status, common.LastTimeField: now}
-	needUpdateHistory := false
-	if status == metadata.APITAskStatusFail {
-		// 任务的一个子任务失败，则任务失败
-		updateData.Set("status", status)
-		updateData.Set("detail.$.response", errResponse)
-
-		needUpdateHistory = true
-	}
-	err = lgc.db.Table(common.BKTableNameAPITask).Update(kit.Ctx, updateCondition, updateData)
-	if err != nil {
-		blog.Errorf("change task status failed, data: %#v, err: %v, rid:%s", updateData, err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommDBUpdateFailed)
-	}
-
-	// 如果修改为执行成功。 判断是否所有的子项都成功。如果都成功，则任务完成
-	if status == metadata.APITaskStatusSuccess {
-		allSuccess := true
-		for _, subTask := range rows[0].Detail {
-			if subTask.SubTaskID != subTaskID && subTask.Status != metadata.APITaskStatusSuccess {
-				allSuccess = false
-				break
-			}
-		}
-		if allSuccess {
-			updateCondition := mapstr.New()
-			updateCondition.Set("task_id", taskID)
-			updateData := mapstr.New()
-			updateData.Set("status", metadata.APITaskStatusSuccess)
-			updateData.Set(common.LastTimeField, now)
-
-			needUpdateHistory = true
-
-			err = lgc.db.Table(common.BKTableNameAPITask).Update(kit.Ctx, updateCondition, updateData)
-			if err != nil {
-				blog.Errorf("change task status failed, data: %#v, err: %v, rid:%s", updateData, err, kit.Rid)
-				return kit.CCError.Error(common.CCErrCommDBUpdateFailed)
-			}
-		}
-	}
-
-	updateHistoryData := mapstr.MapStr{common.BKStatusField: status, common.LastTimeField: now}
-	if needUpdateHistory {
-		err = lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Update(kit.Ctx, updateCondition, updateHistoryData)
-		if err != nil {
-			blog.Errorf("change history task status(%#v) failed, err: %v, rid: %s", updateHistoryData, err, kit.Rid)
-			return kit.CCError.Error(common.CCErrCommDBUpdateFailed)
-		}
-	}
-	return nil
-}
-
 // GetDBHTTPHeader TODO
 func GetDBHTTPHeader(header http.Header) http.Header {
 
@@ -543,4 +435,76 @@ func (lgc *Logics) ListSyncStatusHistory(kit *rest.Kit, input *metadata.QueryCon
 	}
 
 	return result, nil
+}
+
+// CompensateStatus compensate status for tasks whose subtasks are all executed, returns not finished task ids.
+func (lgc *Logics) CompensateStatus(ctx context.Context, tasks []metadata.APITaskDetail, rid string) ([]string, error) {
+	var unfinishedTaskIDs, failedTaskIDs, successTaskIDs []string
+
+	for _, task := range tasks {
+		allSuccess := true
+		for _, subTask := range task.Detail {
+			if subTask.Status == metadata.APITAskStatusFail {
+				allSuccess = false
+				failedTaskIDs = append(failedTaskIDs, task.TaskID)
+				break
+			}
+
+			if subTask.Status != metadata.APITaskStatusSuccess {
+				allSuccess = false
+				unfinishedTaskIDs = append(unfinishedTaskIDs, task.TaskID)
+				break
+			}
+		}
+
+		if allSuccess {
+			successTaskIDs = append(successTaskIDs, task.TaskID)
+		}
+	}
+
+	if len(successTaskIDs) > 0 {
+		updateCond := mapstr.MapStr{
+			common.BKTaskIDField: mapstr.MapStr{common.BKDBIN: successTaskIDs},
+		}
+
+		if err := lgc.UpdateTaskStatus(ctx, updateCond, metadata.APITaskStatusSuccess, rid); err != nil {
+			return nil, err
+		}
+	}
+
+	if len(failedTaskIDs) > 0 {
+		updateCond := mapstr.MapStr{
+			common.BKTaskIDField: mapstr.MapStr{common.BKDBIN: failedTaskIDs},
+		}
+
+		if err := lgc.UpdateTaskStatus(ctx, updateCond, metadata.APITAskStatusFail, rid); err != nil {
+			return nil, err
+		}
+	}
+
+	return unfinishedTaskIDs, nil
+}
+
+// UpdateTaskStatus update finished task status, will update its corresponding history as well.
+func (lgc *Logics) UpdateTaskStatus(ctx context.Context, cond mapstr.MapStr, status metadata.APITaskStatus,
+	rid string) error {
+
+	updateData := mapstr.MapStr{
+		common.BKStatusField: status,
+		common.LastTimeField: time.Now(),
+	}
+
+	err := lgc.db.Table(common.BKTableNameAPITask).Update(ctx, cond, updateData)
+	if err != nil {
+		blog.Errorf("update task status failed, cond: %#v, data: %#v, err: %v, rid: %s", cond, updateData, err, rid)
+		return err
+	}
+
+	err = lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Update(ctx, cond, updateData)
+	if err != nil {
+		blog.Errorf("update task history status failed, cond: %#v, data: %#v, err: %v, rid: %s", cond, updateData, err, rid)
+		return err
+	}
+
+	return nil
 }

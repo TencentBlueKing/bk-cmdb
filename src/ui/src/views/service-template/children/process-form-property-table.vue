@@ -15,40 +15,39 @@
     v-bind="$attrs"
     v-model="localValue"
     :options="options">
-    <div class="process-table-content"
-      v-for="column in options"
-      slot-scope="rowProps"
-      :slot="column.bk_property_id"
-      :key="`row-${rowProps.index}-${column.bk_property_id}`"
-      :class="{ 'is-lock': isLocked(rowProps) }">
-      <component class="content-value"
-        size="small"
-        font-size="small"
-        v-bind="getEvents(column)"
-        v-validate="getRules(rowProps, column)"
-        :data-vv-name="column.bk_property_id"
-        :data-vv-as="column.bk_property_name"
-        :data-vv-scope="column.bk_property_group || 'bind_info'"
-        :is="getComponentType(column)"
-        :options="column.option || []"
-        :placeholder="getPlaceholder(column)"
-        :value="localValue[rowProps.index][column.bk_property_id]"
-        :auto-select="false"
-        @input="handleColumnValueChange(rowProps, ...arguments)">
-      </component>
-      <span class="property-lock-state"
-        v-bk-tooltips="{
-          placement: 'top',
-          interactive: false,
-          content: $t('进程模板加解锁提示语'),
-          delay: [100, 0]
-        }"
-        tabindex="-1"
-        @click="setLockState(rowProps)">
-        <i class="icon-cc-lock-fill" v-if="isLocked(rowProps)"></i>
-        <i class="icon-cc-lock-line" v-else></i>
-      </span>
-    </div>
+    <template v-for="column in options" #[column.bk_property_id]="rowProps">
+      <div class="process-table-content"
+        :key="`row-${rowProps.index}-${column.bk_property_id}`"
+        :class="{ 'is-lock': isLocked(rowProps) }">
+        <component class="content-value"
+          size="small"
+          font-size="small"
+          v-bind="getEvents(column)"
+          v-validate="getRules(rowProps, column)"
+          :data-vv-name="column.bk_property_id"
+          :data-vv-as="column.bk_property_name"
+          :data-vv-scope="column.bk_property_group || 'bind_info'"
+          :is="getComponentType(column)"
+          :options="column.option || []"
+          :placeholder="getPlaceholder(column)"
+          :value="localValue[rowProps.index][column.bk_property_id]"
+          :auto-select="false"
+          @input="handleColumnValueChange(rowProps, ...arguments)">
+        </component>
+        <span class="property-lock-state"
+          v-bk-tooltips="{
+            placement: 'top',
+            interactive: false,
+            content: $t('进程模板加解锁提示语'),
+            delay: [100, 0]
+          }"
+          tabindex="-1"
+          @click="setLockState(rowProps)">
+          <i class="icon-cc-lock-fill" v-if="isLocked(rowProps)"></i>
+          <i class="icon-cc-unlock-fill" v-else></i>
+        </span>
+      </div>
+    </template>
   </cmdb-form-table>
 </template>
 

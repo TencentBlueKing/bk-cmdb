@@ -101,6 +101,7 @@
   import { mapGetters } from 'vuex'
   import to from 'await-to-js'
   import ModuleInstance from './children/module-instance.vue'
+  import serviceTemplateService from '@/service/service-template'
 
   export default {
     name: 'BusinessSynchronous',
@@ -149,9 +150,10 @@
       await to(this.loadProperties())
       await to(this.loadTopoPath())
 
-      if (this.moduleIds?.length > 1) {
-        this.$store.commit('setTitle', this.$t('批量同步模板'))
-      }
+      const templateDetail = await serviceTemplateService.findById(this.templateId, { bk_biz_id: this.bizId })
+
+      const title = this.moduleIds?.length > 1 ? '批量同步模板' : '同步模板'
+      this.$store.commit('setTitle', `${this.$t(title)}【${templateDetail?.name}】`)
 
       // 默认展开第1个
       this.loadDiffByModule(this.moduleIds[0])

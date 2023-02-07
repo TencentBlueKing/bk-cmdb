@@ -69,11 +69,12 @@
         </ul>
       </template>
     </bk-dropdown-menu>
+    <bk-tag v-if="isNewClassify" theme="success" radius="2px">{{$t('新的')}}</bk-tag>
   </div>
 </template>
 
 <script>
-  import { defineComponent, computed, ref, toRef } from '@vue/composition-api'
+  import { defineComponent, computed, ref, toRef } from 'vue'
   import DropdownOptionButton from './dropdown-option-button.vue'
   import has from 'has'
 
@@ -118,6 +119,12 @@
       commands: {
         type: Array,
         default: () => []
+      },
+
+      // 是否是新建分组
+      isNewClassify: {
+        type: Boolean,
+        default: false
       }
     },
     setup(props) {

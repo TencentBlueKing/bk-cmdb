@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, PropType, ref, nextTick } from '@vue/composition-api'
+  import { computed, defineComponent, PropType, ref, nextTick } from 'vue'
   import PropertyFormElement from '@/components/ui/form/property-form-element.vue'
 
   interface IProperty {
@@ -130,7 +130,7 @@
     <!-- 详情态 -->
     <cmdb-property-value
       v-if="!isEditing"
-      v-bk-overflow-tips
+      :is-show-overflow-tips="true"
       :class="['property-value', { 'is-loading': loading }]"
       tag="div"
       :ref="`property-value-${property.bk_property_id}`"

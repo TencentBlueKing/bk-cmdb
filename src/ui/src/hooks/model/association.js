@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { ref, watch } from '@vue/composition-api'
+import { ref, watch } from 'vue'
 import modelAssociationService from '@/service/model/association'
 export default function (modelId) {
   const relations = ref([])

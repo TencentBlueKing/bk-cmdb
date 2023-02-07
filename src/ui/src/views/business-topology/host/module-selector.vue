@@ -39,14 +39,14 @@
             @node-click="handleNodeClick"
             @check-change="handleNodeCheck">
             <template slot-scope="{ node, data }">
+              <span :class="['node-checkbox fl', { 'is-checked': checked.includes(node) }]"
+                v-if="moduleType === 'idle' && data.bk_obj_id === 'module'">
+              </span>
               <i class="internal-node-icon fl"
                 v-if="data.default !== 0"
                 :class="getInternalNodeClass(node, data)">
               </i>
               <i v-else :class="['node-icon fl', { 'is-template': isTemplate(data) }]">{{data.bk_obj_name[0]}}</i>
-              <span :class="['node-checkbox fr', { 'is-checked': checked.includes(node) }]"
-                v-if="moduleType === 'idle' && data.bk_obj_id === 'module'">
-              </span>
               <span class="node-name" :title="node.name">{{node.name}}</span>
             </template>
           </bk-big-tree>
@@ -74,7 +74,6 @@
   import { mapGetters } from 'vuex'
   import debounce from 'lodash.debounce'
   import ModuleCheckedList from './module-checked-list.vue'
-  import { sortTopoTree } from '@/utils/tools'
   export default {
     name: 'cmdb-module-selector',
     components: {
@@ -177,7 +176,6 @@
           } else {
             data = await this.getBusinessModules()
           }
-          sortTopoTree(data, 'bk_inst_name', 'child')
           this.$refs.tree.setData(data)
           this.$refs.tree.setExpanded(this.getNodeId(data[0]))
           this.setDefaultChecked()
@@ -397,7 +395,7 @@
         .node-checkbox {
             width: 16px;
             height: 16px;
-            margin: 10px 17px 0 10px;
+            margin: 10px 5px 0 10px;
             background: #FFF;
             border-radius: 50%;
             border: 1px solid #979BA5;

@@ -541,7 +541,7 @@ func (lgc *Logics) transResourcesValidateDstModuleParams(kit *rest.Kit, moduleID
 	return nil
 }
 
-// transResourcesValidateHostRelations 1、判断所有主机是否在空闲机下面。2、判断主机与业务对应关系是否一致。
+// transResourcesValidateHostRelations 1、判断所有主机是否在空闲机池下面。2、判断主机与业务对应关系是否一致。
 func (lgc *Logics) transResourcesValidateHostRelations(kit *rest.Kit, transResources []metadata.TransferResourceParam,
 	hostIDs []int64) errors.CCError {
 
@@ -568,14 +568,12 @@ func (lgc *Logics) transResourcesValidateHostRelations(kit *rest.Kit, transResou
 		moduleIDs = append(moduleIDs, relation.ModuleID)
 	}
 
-	// 需要判断所有的原主机所属的模块是否均属于空闲机
+	// 需要判断所有的原主机所属的模块是否均属于空闲机池下
 	filter := []map[string]interface{}{{
 		common.BKModuleIDField: map[string]interface{}{
 			common.BKDBIN: moduleIDs,
 		},
-		common.BKDefaultField: map[string]interface{}{
-			common.BKDBNE: common.DefaultResModuleFlag,
-		},
+		common.BKDefaultField: common.NormalModuleFlag,
 	}}
 
 	counts, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameBaseModule,
@@ -697,13 +695,9 @@ func (lgc *Logics) DeleteHostFromBusiness(kit *rest.Kit, bizID int64, hostIDArr 
 		ApplicationID: bizID,
 		HostIDArr:     hostIDArr,
 	}
-	result, err := lgc.CoreAPI.CoreService().Host().DeleteHostFromSystem(kit.Ctx, kit.Header, input)
+	err = lgc.CoreAPI.CoreService().Host().DeleteHostFromSystem(kit.Ctx, kit.Header, input)
 	if err != nil {
-		blog.Errorf("delete host failed, err: %v, hostID: %#v,appID: %d, rid: %s", err, hostIDArr, bizID, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if err := result.CCError(); err != nil {
-		blog.Errorf("delete host failed, err: %v, hostID: %#v,appID: %d, rid: %s", err, hostIDArr, bizID, kit.Rid)
+		blog.Error("delete host failed, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
 		return nil, err
 	}
 
@@ -1226,11 +1220,10 @@ loop:
 		idField := common.GetInstIDField(root)
 		for _, children := range rootInstances {
 
-			childObj := reverseRankMap[root]
 			for _, one := range children {
-				childID, err := util.GetInt64ByInterface(one[common.GetInstIDField(childObj)])
+				childID, err := util.GetInt64ByInterface(one[common.GetInstIDField(root)])
 				if err != nil {
-					blog.Errorf("get %s instance id failed, inst: %v, err: %v, rid: %s", childObj, one, err, rid)
+					blog.Errorf("get %s instance id failed, inst: %v, err: %v, rid: %s", root, one, err, rid)
 					return nil, err
 				}
 				node := &metadata.HostTopoNode{

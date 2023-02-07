@@ -15,7 +15,7 @@
     <div class="status">
       <template v-if="pending">
         <img class="status-loading" src="../../assets/images/icon/loading.svg" alt="loading">
-        <p class="text">{{$t('数据导入中')}}</p>
+        <p class="text">{{$t('数据导出中')}}</p>
       </template>
       <template v-else-if="isFinished">
         <i class="status-success bk-icon icon-check-circle-shape"></i>
@@ -27,7 +27,7 @@
       </template>
       <template v-else-if="hasError">
         <i class="status-error bk-icon icon-close-circle-shape"></i>
-        <p class="text">{{$t('导入失败')}}</p>
+        <p class="text">{{$t('导出失败')}}</p>
         <div>
           <bk-button class="mt20 mr10" theme="default" @click="restart">{{$t('重试失败')}}</bk-button>
           <bk-button class="mt20" theme="default" @click="close">{{$t('关闭')}}</bk-button>
@@ -42,7 +42,7 @@
   import useTask from './task'
   import useState from './state'
   import exportTask from './export-task'
-  import { computed } from '@vue/composition-api'
+  import { computed } from 'vue'
   export default {
     name: 'export-status',
     components: {

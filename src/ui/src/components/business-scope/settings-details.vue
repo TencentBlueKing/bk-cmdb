@@ -38,7 +38,7 @@
 </template>
 
 <script>
-  import { defineComponent, watchEffect, watch, reactive, toRefs, ref, computed } from '@vue/composition-api'
+  import { defineComponent, watchEffect, watch, reactive, toRefs, ref, computed } from 'vue'
   import Utils from '@/components/filters/utils'
   import propertyService from '@/service/property/property.js'
   import businessService from '@/service/business/search.js'

@@ -13,7 +13,10 @@
 import store from '@/store'
 import i18n from '@/i18n'
 import isInt from 'validator/es/lib/isInt'
-import queryBuilderOperator from '@/utils/query-builder-operator'
+import queryBuilderOperator, { QUERY_OPERATOR, QUERY_OPERATOR_SYMBOL } from '@/utils/query-builder-operator'
+import isEmpty from 'lodash/isEmpty'
+import { BUILTIN_MODELS } from '@/dictionary/model-constants'
+import { CONTAINER_OBJECTS } from '@/dictionary/container'
 
 const getModelById = store.getters['objectModelClassify/getModelById']
 export function getLabel(property) {
@@ -59,10 +62,8 @@ export function getPlaceholder(property) {
  * @param {string} defaultData.value 默认值
  * @returns {object}
  */
-export function getDefaultData(property, defaultData = { operator: '$in', value: [] }) {
-  const EQ = '$eq'
-  const RANGE = '$range'
-  const IN = '$in'
+export function getDefaultData(property, defaultData = { operator: QUERY_OPERATOR.IN, value: [] }) {
+  const { EQ, RANGE, IN } = QUERY_OPERATOR
   const defaultMap = {
     singlechar: { operator: IN, value: [] },
     int: { operator: EQ, value: '' },
@@ -76,6 +77,9 @@ export function getDefaultData(property, defaultData = { operator: '$in', value:
     bool: { operator: EQ, value: '' },
     list: { operator: IN, value: [] },
     organization: { operator: IN, value: [] },
+    array: { operator: IN, value: [] },
+    map: { operator: IN, value: [] },
+    object: { operator: IN, value: [] }
   }
 
   return {
@@ -120,8 +124,11 @@ export function convertValue(value, operator, property) {
   return convertedValue[0]
 }
 
-export function findProperty(id, properties) {
-  const field = isInt(id) ? 'id' : 'bk_property_id'
+export function findProperty(id, properties, key) {
+  let field = isInt(id) ? 'id' : 'bk_property_id'
+  if (key) {
+    field = key
+  }
   return properties.find(property => property[field].toString() === id.toString())
 }
 
@@ -153,7 +160,7 @@ export function transformCondition(condition, properties, header) {
     object: createTimeCondition()
   }
   Object.keys(condition).forEach((id) => {
-    const property = findProperty(id, properties)
+    const property = findProperty(id, properties, 'id')
     const { operator, value } = condition[id]
     if (value === null || value === undefined || !value.toString().length) return
     // 时间类型的字段需要上升一层单独处理
@@ -209,7 +216,7 @@ export function transformGeneralModelCondition(condition, properties) {
   const timeCondition = { oper: 'and', rules: [] }
 
   for (let i = 0, id; id = conditionIds[i]; i++) {
-    const property = findProperty(id, properties)
+    const property = findProperty(id, properties, 'id')
     if (!property) {
       continue
     }
@@ -262,6 +269,37 @@ export function transformGeneralModelCondition(condition, properties) {
       continue
     }
 
+    if (property.bk_property_type === 'map') {
+      const tags = {}
+      value.forEach((val) => {
+        const [k, v] = val.split('=')
+        if (tags[k]) {
+          tags[k].push(v)
+        } else {
+          tags[k] = [v]
+        }
+      })
+
+      const rules = []
+      for (const [key, vals] of Object.entries(tags)) {
+        rules.push({
+          field: key,
+          operator: queryBuilderOperator(operator),
+          value: vals
+        })
+      }
+
+      conditions.rules.push({
+        field: property.bk_property_id,
+        operator: 'filter_object',
+        value: {
+          condition: 'OR',
+          rules
+        }
+      })
+      continue
+    }
+
     conditions.rules.push({
       field: property.bk_property_id,
       operator: queryBuilderOperator(operator),
@@ -272,6 +310,25 @@ export function transformGeneralModelCondition(condition, properties) {
   return {
     conditions: conditions.rules.length ? conditions : undefined, // 使用 undefined 以在传递时自动忽略
     time_condition: timeCondition.rules.length ? timeCondition : undefined
+  }
+}
+
+export function transformContainerCondition(condition, properties, header) {
+  const params = transformGeneralModelCondition(condition, properties)
+  return {
+    fields: header.map(property => property.bk_property_id),
+    condition: params?.conditions?.rules,
+    time_condition: params?.time_condition
+  }
+}
+
+export function transformContainerNodeCondition(condition, properties, header) {
+  const params = transformGeneralModelCondition(condition, properties)
+
+  // 容器节点属性暂时不会存在time_condition，所以这里只取conditions，之后如果存在，实现也会有变化
+  return {
+    fields: header.map(property => property.bk_property_id),
+    filter: params?.conditions
   }
 }
 
@@ -308,20 +365,8 @@ export function transformIP(raw) {
   return transformedIP
 }
 
-const operatorSymbolMap = {
-  $eq: '=',
-  $ne: '≠',
-  $in: '*=',
-  $nin: '*≠',
-  $gt: '>',
-  $lt: '<',
-  $gte: '≥',
-  $lte: '≤',
-  $regex: '~=',
-  $range: '≤ ≥'
-}
 export function getOperatorSymbol(operator) {
-  return operatorSymbolMap[operator]
+  return QUERY_OPERATOR_SYMBOL[operator]
 }
 
 export function getDefaultIP() {
@@ -352,15 +397,30 @@ export function defineProperty(definition) {
   }, definition)
 }
 
+export function definePropertyGroup(definition) {
+  return Object.assign({}, {
+    id: null,
+    bk_biz_id: 0,
+    bk_obj_id: null,
+    bk_group_id: 'default',
+    bk_group_index: -1,
+    bk_group_name: '基础信息',
+    bk_isdefault: true,
+    bk_supplier_account: '0',
+    is_collapse: false,
+    ispre: false
+  }, definition)
+}
+
 export function getUniqueProperties(preset, dynamic) {
   const unique = dynamic.filter(property => !preset.includes(property))
   const full = [...preset, ...unique]
-  const ids = [...new Set(full.map(property => property.id))]
-  return ids.map(id => full.find(property => property.id === id))
+  const ids = [...new Set(full.map(property => property?.id))]
+  return ids.map(id => full.find(property => property?.id === id))
 }
 
 function getPropertyPriority(property) {
-  let priority = 0
+  let priority = property.bk_property_index ?? 0
   if (property.isonly) {
     priority = priority - 1
   }
@@ -372,6 +432,31 @@ function getPropertyPriority(property) {
 export function getInitialProperties(properties) {
   // eslint-disable-next-line max-len
   return [...properties].sort((propertyA, propertyB) => getPropertyPriority(propertyA) - getPropertyPriority(propertyB)).slice(0, 6)
+}
+
+export function isEmptyCondition(value) {
+  return isEmpty(value)
+}
+
+export function hasNormalTopoField(selected, condition) {
+  const hasNormalTopoField = selected.some((prop) => {
+    const hasValue = !isEmptyCondition(condition?.[prop.id]?.value)
+    const normalTopoObjIds = [BUILTIN_MODELS.BUSINESS, BUILTIN_MODELS.SET, BUILTIN_MODELS.MODULE]
+    return normalTopoObjIds.includes(prop.bk_obj_id) && hasValue
+  })
+  return hasNormalTopoField
+}
+
+export function hasNodeField(selected, condition) {
+  const hasNodeField = selected.some((prop) => {
+    const hasValue = !isEmptyCondition(condition?.[prop.id]?.value)
+    return prop.bk_obj_id === CONTAINER_OBJECTS.NODE && hasValue
+  })
+  return hasNodeField
+}
+
+export function getSelectedHostIds(selected) {
+  return selected.map(({ host }) => host.bk_host_id)
 }
 
 export default {
@@ -391,5 +476,12 @@ export default {
   defineProperty,
   getUniqueProperties,
   getInitialProperties,
-  transformGeneralModelCondition
+  transformGeneralModelCondition,
+  transformContainerCondition,
+  transformContainerNodeCondition,
+  isEmptyCondition,
+  hasNormalTopoField,
+  hasNodeField,
+  getSelectedHostIds,
+  definePropertyGroup
 }

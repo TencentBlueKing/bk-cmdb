@@ -36,7 +36,9 @@
 </template>
 
 <script>
-  import { defineComponent, toRefs, computed, watchEffect, ref } from '@vue/composition-api'
+  import { defineComponent, toRefs, computed, watchEffect, ref } from 'vue'
+  import store from '@/store'
+  import { t } from '@/i18n'
   import { getText, getHighlightValue } from './use-item.js'
 
   export default defineComponent({
@@ -51,22 +53,21 @@
         default: () => ({})
       }
     },
-    setup(props, { root }) {
-      const { $store } = root
+    setup(props) {
       const { data, propertyMap } = toRefs(props)
 
       const objId = computed(() => data.value.source.bk_obj_id)
       const properties = computed(() => propertyMap.value[objId.value])
 
       const classificationName = computed(() => {
-        const classifications = $store.getters['objectModelClassify/classifications']
+        const classifications = store.getters['objectModelClassify/classifications']
         const id = data.value.source.bk_classification_id
         return (classifications.find(item => item.bk_classification_id === id) || {}).bk_classification_name
       })
 
       const propertyGroups = ref([])
       watchEffect(async () => {
-        propertyGroups.value = await $store.dispatch('objectModelFieldGroup/searchGroup', {
+        propertyGroups.value = await store.dispatch('objectModelFieldGroup/searchGroup', {
           objId: objId.value,
           config: {
             requestId: `get_searchGroup_${objId.value}`,
@@ -93,18 +94,18 @@
       })))
 
       const fieldTypeMap = {
-        singlechar: root.$t('短字符'),
-        int: root.$t('数字'),
-        float: root.$t('浮点'),
-        enum: root.$t('枚举'),
-        date: root.$t('日期'),
-        time: root.$t('时间'),
-        longchar: root.$t('长字符'),
-        objuser: root.$t('用户'),
-        timezone: root.$t('时区'),
+        singlechar: t('短字符'),
+        int: t('数字'),
+        float: t('浮点'),
+        enum: t('枚举'),
+        date: t('日期'),
+        time: t('时间'),
+        longchar: t('长字符'),
+        objuser: t('用户'),
+        timezone: t('时区'),
         bool: 'bool',
-        list: root.$t('列表'),
-        organization: root.$t('组织')
+        list: t('列表'),
+        organization: t('组织')
       }
 
       return {

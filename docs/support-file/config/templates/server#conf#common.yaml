@@ -11,7 +11,7 @@ es:
   pwd: __BK_CMDB_ES7_PASSWORD__
 
 # esb配置
-  esb:
+esb:
   addr: http://__BK_PAAS_PRIVATE_ADDR__
   appCode: __BK_CMDB_APP_CODE__
   appSecret: __BK_CMDB_APP_SECRET__
@@ -55,7 +55,7 @@ webServer:
     # paas的地址，给前端的人员选择器使用
     paasDomainUrl: http://__BK_PAAS_PRIVATE_ADDR__
     #帮助文档地址
-    helpDocUrl: https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品简介/Overview.md
+    helpDocUrl: __BK_HTTP_SCHEMA__://__BK_PAAS_PUBLIC_ADDR__/o/bk_docs_center/markdown/配置平台/产品白皮书/产品简介/Overview.md
     paas:
       # pass的tls相关配置
       tls:
@@ -81,6 +81,12 @@ webServer:
   login:
     # 使用的登录系统， skip-login 免登陆模式， blueking 默认登录模式， 使用蓝鲸登录
     version: blueking
+  #cmdb版本日志存放路径配置
+  changelogPath:
+    #中文版版本日志存放路径
+    ch: __BK_HOME__/cmdb/server/changelog_user/ch
+    #英文版版本日志存放路径
+    en: __BK_HOME__/cmdb/server/changelog_user/en
 
 # operation_server专属配置
 operationServer:
@@ -186,15 +192,15 @@ cacheService:
   # 业务简要拓扑缓存的定时刷新时间，默认为15分钟，最小为2分钟。每次会将所有的业务的拓扑刷新一次到缓存中。
   briefTopologySyncIntervalMinutes: 15
 
-# 日志平台openTelemetry跟踪链接入相关配置
+# openTelemetry跟踪链接入相关配置
 openTelemetry:
-  # 表示是否开启日志平台openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
+  # 表示是否开启openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
   enable: false
-  # 日志平台openTelemetry跟踪链功能的自定义上报服务地址
+  # openTelemetry跟踪链功能的自定义上报服务地址
   endpoint:
-  # 日志平台openTelemetry跟踪链功能的上报data_id, 用于旧版的数据上报
+  # openTelemetry跟踪链功能的上报data_id, 用于旧版的数据上报
   bkDataID:
-  # 日志平台openTelemetry跟踪链功能的bk.data.token, 用于新版的数据上报
+  # openTelemetry跟踪链功能的bk.data.token, 用于新版的数据上报
   bkDataToken:
   # 连接日志平台tls配置
   tls:

@@ -14,21 +14,12 @@ package flow
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/json"
-	types2 "configcenter/src/common/types"
-	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/stream/types"
-	"configcenter/src/thirdparty/monitor"
-	"configcenter/src/thirdparty/monitor/meta"
-
-	"github.com/tidwall/gjson"
 )
 
 func newInstAsstFlow(ctx context.Context, opts flowOptions, getDeleteEventDetails getDeleteEventDetailsFunc,
@@ -96,96 +87,4 @@ func (f *InstAsstFlow) RunFlow(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// parseInstAsstEvent parse instance association event into db chain nodes to store in db and details to store in redis
-func parseInstAsstEvent(key event.Key, e *types.Event, oidDetailMap map[oidCollKey][]byte, id uint64, rid string) (
-	*watch.ChainNode, []byte, bool, error) {
-
-	switch e.OperationType {
-	case types.Insert:
-		if err := key.Validate(e.DocBytes); err != nil {
-			blog.Errorf("run flow, received %s event, but got invalid event, doc: %s, oid: %s, err: %v, rid: %s",
-				key.Collection(), e.DocBytes, e.Oid, err, rid)
-			return nil, nil, false, nil
-		}
-	case types.Delete:
-		doc, exist := oidDetailMap[oidCollKey{oid: e.Oid, coll: e.Collection}]
-		if !exist {
-			blog.Errorf("run flow, received %s event, but delete doc[oid: %s] detail not exists, rid: %s",
-				key.Collection(), e.Oid, rid)
-			return nil, nil, false, nil
-		}
-		// update delete event detail doc bytes from del archive
-		e.DocBytes = doc
-
-		if err := key.Validate(doc); err != nil {
-			blog.Errorf("run flow, received %s event, but got invalid event, doc: %s, oid: %s, err: %v, rid: %s",
-				key.Collection(), e.DocBytes, e.Oid, err, rid)
-			return nil, nil, false, nil
-		}
-	case types.Invalidate:
-		blog.Errorf("loop flow, received invalid event operation type, doc: %s, rid: %s", e.DocBytes, rid)
-		return nil, nil, false, nil
-	case types.Drop:
-		blog.Errorf("loop flow, received drop collection event operation type, **delete object will send a drop "+
-			"instance association collection event, ignore it**. doc: %s, rid: %s", e.DocBytes, rid)
-		return nil, nil, false, nil
-	default:
-		blog.Errorf("loop flow, received invalid event op type: %s, doc: %s, rid: %s", e.OperationType, e.DocBytes, rid)
-		return nil, nil, false, nil
-	}
-
-	instAsstID := key.InstanceID(e.DocBytes)
-	if instAsstID == 0 {
-		blog.Errorf("loop flow, received invalid event id, doc: %s, rid: %s", e.DocBytes, rid)
-		return nil, nil, false, nil
-	}
-
-	// since instance association is saved in both source and target object inst asst table, one change will generate 2
-	// events, so we change the oid to id so that the cursor of them will be the same for deduplicate
-	oid := e.Oid
-	e.Oid = strconv.FormatInt(instAsstID, 10)
-	currentCursor, err := watch.GetEventCursor(key.Collection(), e, instAsstID)
-	if err != nil {
-		blog.Errorf("get %s event cursor failed, err: %v, oid: %s, rid: %s", key.Collection(), err, e.ID(), rid)
-
-		monitor.Collect(&meta.Alarm{
-			RequestID: rid,
-			Type:      meta.FlowFatalError,
-			Detail:    fmt.Sprintf("run event flow, but get invalid %s cursor, id: %d", key.Collection(), instAsstID),
-			Module:    types2.CC_MODULE_CACHESERVICE,
-			Dimension: map[string]string{"hit_invalid_cursor": "yes"},
-		})
-
-		return nil, nil, false, err
-	}
-
-	chainNode := &watch.ChainNode{
-		ID:          id,
-		Oid:         oid,
-		ClusterTime: e.ClusterTime,
-		EventType:   watch.ConvertOperateType(e.OperationType),
-		Token:       e.Token.Data,
-		Cursor:      currentCursor,
-		InstanceID:  instAsstID,
-	}
-
-	objID := gjson.GetBytes(e.DocBytes, common.BKObjIDField).String()
-	asstObjID := gjson.GetBytes(e.DocBytes, common.BKAsstObjIDField).String()
-	chainNode.SubResource = []string{objID, asstObjID}
-
-	detail := types.EventDetail{
-		Detail:        types.JsonString(e.DocBytes),
-		UpdatedFields: e.ChangeDesc.UpdatedFields,
-		RemovedFields: e.ChangeDesc.RemovedFields,
-	}
-	detailBytes, err := json.Marshal(detail)
-	if err != nil {
-		blog.Errorf("run flow, %s, marshal detail failed, detail: %+v, err: %v, oid: %s, rid: %s", key.Collection(),
-			detail, err, e.ID(), rid)
-		return nil, nil, false, err
-	}
-
-	return chainNode, detailBytes, false, nil
 }

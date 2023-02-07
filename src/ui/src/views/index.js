@@ -45,12 +45,15 @@ import businessSet from '@/views/business-set/router.config'
 import businessSetTopology from '@/views/business-set-topology/router.config.js'
 
 import statusPermission from '@/views/status/permission'
+import statusNonExistBusiness from '@/views/status/non-exist-business.vue'
 import statusError from '@/views/status/error'
 
 /**
  * 平台管理
  */
 import globalConfig from '@/views/global-config/router.config'
+
+import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
 
 const flatternViews = (views) => {
   const flatterned = []
@@ -68,8 +71,14 @@ export const injectStatusComponents = (views) => {
   views.forEach((view) => {
     view.components = {
       default: view.component,
-      permission: statusPermission,
       error: statusError
+    }
+
+    // 业务视图的permission是定制的，将无权限与业务不存在统一为一个无权限页面
+    if (view.meta?.owner === MENU_BUSINESS) {
+      view.components.permission = statusNonExistBusiness
+    } else {
+      view.components.permission = statusPermission
     }
   })
   return views

@@ -11,13 +11,13 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, ref } from '@vue/composition-api'
+  import { computed, defineComponent, ref } from 'vue'
   import { t } from '@/i18n'
   import { $bkInfo } from '@/magicbox/index.js'
   import routerActions from '@/router/actions'
   import ManagementForm from './children/management-form.vue'
   import store from '@/store'
-  import setTemplateService from '@/services/set-template'
+  import setTemplateService from '@/service/set-template'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_BUSINESS_SET_TEMPLATE

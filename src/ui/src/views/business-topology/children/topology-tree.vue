@@ -28,50 +28,16 @@
         nameKey: 'bk_inst_name',
         childrenKey: 'child'
       }"
+      :lazy-method="lazyGetChildrenNode"
+      :lazy-disabled="isLazyDisabledNode"
       @select-change="handleSelectChange"
       @expand-change="handleExpandChange">
-      <div :class="['node-info clearfix', { 'is-selected': node.selected }]" slot-scope="{ node, data }">
-        <i class="internal-node-icon fl"
-          v-if="data.default !== 0"
-          :class="getInternalNodeClass(node, data)">
-        </i>
-        <i v-else
-          :class="['node-icon fl', { 'is-selected': node.selected, 'is-template': isTemplate(node) }]">
-          {{data.bk_obj_name[0]}}
-        </i>
-        <cmdb-auth v-if="showCreate(node, data)"
-          class="info-create-trigger fr"
-          :auth="{ type: $OPERATION.C_TOPO, relation: [bizId] }">
-          <template slot-scope="{ disabled }">
-            <i v-if="isBlueKing && !editable"
-              class="node-button disabled-node-button"
-              v-bk-tooltips.top="{ content: $t('蓝鲸业务拓扑节点提示'), interactive: false }">
-              {{$t('新建')}}
-            </i>
-            <i v-else-if="data.set_template_id"
-              class="node-button disabled-node-button"
-              v-bk-tooltips.top="{
-                content: getSetNodeTips(node),
-                interactive: true,
-                onShow: handleSetNodeTipsToggle,
-                onHide: handleSetNodeTipsToggle
-              }">
-              {{$t('新建')}}
-            </i>
-            <bk-button v-else class="node-button" v-test-id="'createNode'"
-              theme="primary"
-              :disabled="disabled"
-              @click.stop="showCreateDialog(node)">
-              {{$t('新建')}}
-            </bk-button>
-          </template>
-        </cmdb-auth>
-        <cmdb-loading :class="['node-count fr', { 'is-selected': node.selected }]"
-          :loading="['pending', undefined].includes(data.status)">
-          {{getNodeCount(data)}}
-        </cmdb-loading>
-        <span class="node-name" :title="node.name">{{node.name}}</span>
-      </div>
+      <template #default="{ node, data }">
+        <topology-tree-node
+          v-bind="{ node, data, isBlueKing, editable, nodeCountType }"
+          @create="handleShowCreateDialog">
+        </topology-tree-node>
+      </template>
     </bk-big-tree>
     <bk-dialog class="bk-dialog-no-padding"
       v-model="createInfo.show"
@@ -117,18 +83,21 @@
   import RouterQuery from '@/router/query'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import FilterStore from '@/components/filters/store'
-  import CmdbLoading from '@/components/loading/loading'
-  import { sortTopoTree } from '@/utils/tools'
+  import TopologyTreeNode from './topology-tree-node.vue'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
-    MENU_BUSINESS_SET_TEMPLATE_DETAILS
   } from '@/dictionary/menu-symbol'
+  import topologyInstanceService from '@/service/topology/instance'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
+  import { isWorkload } from '@/service/container/common'
+  import { CONTAINER_OBJECTS } from '@/dictionary/container'
+
   export default {
     components: {
       CreateNode,
       CreateSet,
       CreateModule,
-      CmdbLoading
+      TopologyTreeNode
     },
     props: {
       active: {
@@ -142,11 +111,6 @@
         filter: RouterQuery.get('keyword', ''),
         handleFilter: () => ({}),
         nodeCountType: 'host_count',
-        nodeIconMap: {
-          1: 'icon-cc-host-free-pool',
-          2: 'icon-cc-host-breakdown',
-          default: 'icon-cc-host-free-pool'
-        },
         request: {
           instance: Symbol('instance'),
           internal: Symbol('internal'),
@@ -178,7 +142,9 @@
         handler(value) {
           const map = {
             hostList: 'host_count',
-            serviceInstance: 'service_instance_count'
+            serviceInstance: 'service_instance_count',
+            podList: 'pod_count',
+            nodeInfo: 'host_count'
           }
           if (Object.keys(map).includes(value)) {
             this.nodeCountType = map[value]
@@ -211,14 +177,18 @@
     methods: {
       async initTopology() {
         try {
-          const [topology, internal] = await Promise.all([
+          const [topology, internal, container] = await Promise.all([
             this.getInstanceTopology(),
-            this.getInternalTopology()
+            this.getInternalTopology(),
+            this.getContainerTopology()
           ])
-          sortTopoTree(topology, 'bk_inst_name', 'child')
-          sortTopoTree(internal.module, 'bk_module_name')
+
+          const { topo: containerTopo, leafIds: containerLeafIds } = container
+
           const root = topology[0] || {}
+
           const children = root.child || []
+
           const idlePool = {
             bk_obj_id: 'set',
             bk_inst_id: internal.bk_set_id,
@@ -233,8 +203,16 @@
             }))
           }
           children.unshift(idlePool)
+
+          // 容器拓扑追加至底部
+          children.push(...containerTopo)
+
           this.isBlueKing = root.bk_inst_name === '蓝鲸'
+
           this.$refs.tree.setData(topology)
+
+          containerLeafIds.forEach(id => this.$refs.tree.setExpanded(id))
+
           this.createWatcher()
         } catch (e) {
           console.error(e)
@@ -310,27 +288,175 @@
           }
         })
       },
+      async getContainerTopology() {
+        const topoPath = this.$route.query.topo_path
+        const topoPathQueue = topoPath?.split(',') || []
+
+        const leadPath = topoPathQueue?.[0]?.split('-')
+        const leadObj = leadPath?.[0]
+        const currentClusterId = leadPath?.[1]
+
+        // 容器拓扑的第1层级为cluster，先获取cluster拓扑
+        const clusterTopo = await topologyInstanceService.getContainerTopo({
+          bizId: this.bizId,
+          params: {
+            bk_reference_obj_id: BUILTIN_MODELS.BUSINESS,
+            bk_reference_id: this.bizId
+          }
+        })
+
+        let asyncTopoTreeData = null
+        let parentData = null
+        const leafIds = []
+
+        // 如果查询参数打头的不是cluster则认为不处于容器拓扑，直接返回第1层级的cluster拓扑即可
+        if (leadObj !== CONTAINER_OBJECTS.CLUSTER) {
+          return { topo: clusterTopo, leafIds }
+        }
+
+        // 遍历查询参数的拓扑路径，获取对应的节点数据，以还原拓扑
+        for (let i = 0; i < topoPathQueue.length; i++) {
+          const path = topoPathQueue[i]?.split('-')
+          const objId = path[0]
+          const instId = Number(path[1])
+
+          if (this.isContainerLeaf(objId) || objId === CONTAINER_OBJECTS.FOLDER) {
+            break
+          }
+
+          const data = await topologyInstanceService.getContainerTopo({
+            bizId: this.bizId,
+            params: {
+              bk_reference_obj_id: objId,
+              bk_reference_id: instId
+            }
+          })
+
+          // 加载第1个层级的时候，将数据赋予asyncTopoTreeData，因为此处为引用赋值，此后对data追加child时数据
+          if (!asyncTopoTreeData) {
+            asyncTopoTreeData = data
+          } else {
+            // 之后加载的每个层级，找到与之对应在的parent并添加为child
+            const foundNode = parentData.find(parent => parent.bk_inst_id === instId)
+            if (foundNode && data) {
+              foundNode.child = data
+            }
+          }
+
+          // 数据作为下一次的parent
+          parentData = data
+
+          // 记录所有的叶子节点id
+          if (data) {
+            const nodeIds = data
+              .filter(item => this.isContainerLeaf(item.bk_obj_id) || item.is_folder)
+              .map(item => this.getNodeId(item))
+            leafIds.push(...nodeIds)
+          }
+        }
+
+        // 找到当前的那个cluster，将异步获取的topo追加为child
+        const currentClusterTopo = clusterTopo.find(topo => topo.bk_inst_id === Number(currentClusterId))
+        if (currentClusterTopo) {
+          currentClusterTopo.child = asyncTopoTreeData
+        }
+
+        return { topo: clusterTopo, leafIds }
+      },
       getNodeId(data) {
+        // folder实际是不存在instid的，默认给了一个999，所以需要再加上上级id以确保节点id全局唯一
+        if (data.is_folder) {
+          return `${data.bk_obj_id}-${data.bk_inst_id}-${data.ref_id}`
+        }
+
         return `${data.bk_obj_id}-${data.bk_inst_id}`
       },
-      getInternalNodeClass(node, data) {
-        const clazz = []
-        clazz.push(this.nodeIconMap[data.default] || this.nodeIconMap.default)
-        if (node.selected) {
-          clazz.push('is-selected')
+      isContainerNode(node) {
+        return node.data.is_container
+      },
+      isContainerFolder(node) {
+        return node.data.is_folder
+      },
+      isLazyDisabledNode(node) {
+        return !this.isContainerNode(node)
+      },
+      isContainerLeaf(objId) {
+        return isWorkload(objId)
+      },
+      async lazyGetChildrenNode(node) {
+        if (this.isContainerLeaf(node.data.bk_obj_id) || this.isContainerFolder(node)) {
+          return {}
         }
-        return clazz
+
+        const topoList = await topologyInstanceService.getContainerTopo({
+          bizId: this.bizId,
+          params: {
+            bk_reference_obj_id: node.data.bk_obj_id,
+            bk_reference_id: node.data.bk_inst_id
+          }
+        })
+
+        // 指定哪些是叶子节点，叶子节点不会再显示展开的小箭头
+        const leafIds = topoList?.filter(item => item.is_workload || item.is_folder)?.map(item => this.getNodeId(item))
+
+        // 待数据添加为树节点后，设置节点对应的统计数据
+        setTimeout(() => {
+          this.setNodeCount([node, ...node.children])
+        }, 0)
+
+        return {
+          data: topoList,
+          leaf: leafIds
+        }
       },
       handleSelectChange(node) {
         this.$store.commit('businessHost/setSelectedNode', node)
         Bus.$emit('toggle-host-filter', false)
+
+        const oldId = this.$route.query.node
+        const oldTab = this.$route.query.tab
+        // 服务实例视图参数
+        const oldView = this.$route.query.view
+        const newId = node.id
+
+        let tab = oldTab
+        let view = oldView
+        if (node.data?.is_container && oldTab === 'serviceInstance') {
+          tab = ''
+          view = ''
+        }
+        if (!node.data?.is_container && oldTab === 'podList') {
+          tab = ''
+        }
+
         const query = {
-          node: node.id,
+          node: newId,
+          tab,
+          view,
           page: 1,
           _t: Date.now()
         }
+        if (this.isContainerNode(node)) {
+          query.topo_path = this.genTopoPathByNode(node).join(',')
+        } else {
+          query.topo_path = undefined
+        }
         RouterQuery.set(query)
-        this.initialized && FilterStore.setActiveCollection(null)
+
+        if (FilterStore.hasCondition && oldId !== newId) {
+          FilterStore.setActiveCollection(null)
+        }
+      },
+      genTopoPathByNode(node) {
+        const path = []
+        let currentNode = node
+
+        while (currentNode.parent) {
+          path.push(this.getNodeId(currentNode.data))
+          currentNode = currentNode.parent
+        }
+
+        return path.reverse()
       },
       handleDefaultExpand(node) {
         const nodes = []
@@ -345,15 +471,38 @@
         this.setNodeCount(nodes)
       },
       handleExpandChange(node) {
-        if (!node.expanded) return
+        if (!node.expanded || this.isContainerNode(node)) return
         this.setNodeCount([node, ...node.children])
       },
       async setNodeCount(targetNodes, force = false) {
         const nodes = force
           ? targetNodes
           : targetNodes.filter(({ data }) => !['pending', 'finished'].includes(data.status))
+
         if (!nodes.length) return
+
         nodes.forEach(({ data }) => this.$set(data, 'status', 'pending'))
+
+        const normalNodes = []
+        const containerNodes = []
+        nodes.forEach((node) => {
+          if (this.isContainerNode(node)) {
+            containerNodes.push(node)
+          } else {
+            normalNodes.push(node)
+          }
+        })
+
+        // targetNodes可能同时存在有传统节点和容器节点，仅当存在对应的节点时才去获取其统计数据
+        if (normalNodes.length) {
+          this.setNormalNodeCount(normalNodes)
+        }
+
+        if (containerNodes.length) {
+          this.setContainerNodeCount(containerNodes)
+        }
+      },
+      async setNormalNodeCount(nodes) {
         try {
           const result = await this.$store.dispatch('objectMainLineModule/getTopoStatistics', {
             bizId: this.bizId,
@@ -375,17 +524,38 @@
           })
         }
       },
-      getNodeCount(data) {
-        const count = data[this.nodeCountType]
-        if (typeof count === 'number') {
-          return count
+      async setContainerNodeCount(nodes) {
+        try {
+          const params = {
+            bizId: this.bizId,
+            params: {
+              resource_info: nodes.map(({ data }) => ({
+                kind: data.bk_obj_id,
+                // folder传递的是上级clusterid
+                id: data.is_folder ? data.ref_id : data.bk_inst_id
+              }))
+            }
+          }
+          const { hostStats, podStats } = await topologyInstanceService.getContainerTopoNodeStats(params)
+          nodes.forEach(({ data }) => {
+            const finder = (item) => {
+              if (data.is_folder) {
+                return item.kind === data.bk_obj_id && item.id === data.ref_id
+              }
+              return item.kind === data.bk_obj_id && item.id === data.bk_inst_id
+            }
+            const hostStat = hostStats.find(finder)
+            const podStat = podStats.find(finder)
+            this.$set(data, 'status', 'finished')
+            this.$set(data, 'host_count', hostStat?.count)
+            this.$set(data, 'pod_count', podStat?.count)
+          })
+        } catch (error) {
+          console.error(error)
+          nodes.forEach((node) => {
+            this.$set(node.data, 'status', 'error')
+          })
         }
-        return 0
-      },
-      showCreate(node, data) {
-        const isModule = data.bk_obj_id === 'module'
-        const isIdleSet = data.is_idle_set
-        return !isModule && !isIdleSet
       },
       async getBlueKingEditStatus() {
         try {
@@ -399,37 +569,7 @@
           this.editable = false
         }
       },
-      getSetNodeTips(node) {
-        const tips = document.createElement('div')
-        const span = document.createElement('span')
-        span.innerText = this.$t('需在集群模板中新建')
-        const link = document.createElement('a')
-        link.innerText = this.$t('立即跳转')
-        link.href = 'javascript:void(0)'
-        link.style.color = '#3a84ff'
-        link.addEventListener('click', () => {
-          this.$routerActions.redirect({
-            name: MENU_BUSINESS_SET_TEMPLATE_DETAILS,
-            params: {
-              templateId: node.data.set_template_id
-            },
-            history: true
-          })
-        })
-        tips.appendChild(span)
-        tips.appendChild(link)
-        return tips
-      },
-      handleSetNodeTipsToggle(tips) {
-        const element = tips.reference.parentElement
-        if (tips.state.isVisible) {
-          element.classList.remove('hovering')
-        } else {
-          element.classList.add('hovering')
-        }
-        return true
-      },
-      async showCreateDialog(node) {
+      async handleShowCreateDialog(node) {
         const nodeModel = this.topologyModels.find(data => data.bk_obj_id === node.data.bk_obj_id)
         const nextModelId = nodeModel.bk_next_obj
         this.createInfo.nextModelId = nextModelId
@@ -605,9 +745,6 @@
           bk_inst_name: data.bk_inst_name
         }
       },
-      isTemplate(node) {
-        return node.data.service_template_id || node.data.set_template_id
-      },
       async refreshCount({ hosts, target }) {
         const nodes = []
         if (target) {
@@ -657,97 +794,5 @@
         padding: 10px 0;
         margin-right: 2px;
         @include scrollbar-y(6px);
-        .node-icon {
-            display: block;
-            width: 20px;
-            height: 20px;
-            margin: 8px 4px 8px 0;
-            border-radius: 50%;
-            background-color: #C4C6CC;
-            line-height: 1.666667;
-            text-align: center;
-            font-size: 12px;
-            font-style: normal;
-            color: #FFF;
-            &.is-template {
-                background-color: #97aed6;
-            }
-            &.is-selected {
-                background-color: #3A84FF;
-            }
-        }
-        .node-name {
-            display: block;
-            height: 36px;
-            line-height: 36px;
-            overflow: hidden;
-            @include ellipsis;
-        }
-        .node-count {
-            padding: 0 5px;
-            margin: 9px 20px 9px 4px;
-            height: 18px;
-            line-height: 17px;
-            border-radius: 2px;
-            background-color: #f0f1f5;
-            color: #979ba5;
-            font-size: 12px;
-            text-align: center;
-            &.is-selected {
-                background-color: #a2c5fd;
-                color: #fff;
-            }
-            &.loading {
-              background-color: transparent;
-            }
-        }
-        .internal-node-icon{
-            width: 20px;
-            height: 20px;
-            line-height: 20px;
-            text-align: center;
-            margin: 8px 4px 8px 0;
-            &.is-selected {
-                color: #FFB400;
-            }
-        }
-    }
-    .node-info {
-        &:hover {
-            .info-create-trigger {
-                display: inline-block;
-                & ~ .node-count {
-                    display: none;
-                }
-            }
-        }
-        .info-create-trigger {
-            display: none;
-            font-size: 0;
-            &.hovering {
-                display: inline-block;
-                & ~ .node-count {
-                    display: none;
-                }
-            }
-        }
-        .node-button {
-            height: 24px;
-            padding: 0 6px;
-            margin: 0 20px 0 4px;
-            line-height: 22px;
-            border-radius: 4px;
-            font-size: 12px;
-            min-width: auto;
-            &.disabled-node-button {
-                @include inlineBlock;
-                line-height: 24px;
-                font-style: normal;
-                background-color: #dcdee5;
-                color: #ffffff;
-                outline: none;
-                cursor: not-allowed;
-            }
-        }
     }
 </style>

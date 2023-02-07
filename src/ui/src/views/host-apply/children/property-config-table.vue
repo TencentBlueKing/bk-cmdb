@@ -103,7 +103,7 @@
       v-if="!readonly"
       width="180"
       :label="$t('操作')"
-      :render-header="multiple ? (h, data) => renderColumnHeader(h, data, $t('忽略操作不影响原有配置')) : null">
+      :render-header="multiple ? (h, data) => renderColumnHeader(h, data, $t('忽略的字段在本次操作不会进行变更')) : null">
       <template slot-scope="{ row }">
         <bk-button theme="primary" text @click="handlePropertyRowDel(row)">
           <span v-if="multiple">{{$t(row.__extra__.ignore ? '恢复' : '忽略')}}</span>
@@ -128,7 +128,7 @@
   import { mapGetters, mapState } from 'vuex'
   import has from 'has'
   import propertyFormElement from '@/components/host-apply/property-form-element'
-  import { CONFIG_MODE } from '@/services/service-template/index.js'
+  import { CONFIG_MODE } from '@/service/service-template/index.js'
 
   export default {
     components: {
@@ -228,8 +228,13 @@
               const property = this.$tools.clone(findProperty)
               // 初始化值
               if (this.multiple) {
-                property.__extra__.ruleList = this.ruleList.filter(item => item.bk_attribute_id === property.id)
-                property.__extra__.value = this.getPropertyDefaultValue(property)
+                const rules = this.ruleList.filter(item => item.bk_attribute_id === property.id)
+                property.__extra__.ruleList = rules
+
+                // 配置值全部相同（未配置的在ruleList不存在即不参与判断）则初始化“修改后”的值为相同的那个配置值
+                const firstValue = rules?.[0]?.bk_property_value
+                const isSameValue = rules.every(rule => rule?.bk_property_value === firstValue)
+                property.__extra__.value = isSameValue ? firstValue : this.getPropertyDefaultValue(property)
               } else {
                 const rule = this.ruleList.find(item => item.bk_attribute_id === property.id) || {}
                 property.__extra__.ruleId = rule.id

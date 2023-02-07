@@ -15,7 +15,7 @@
     <host-list-options @transfer="handleTransfer" v-test-id></host-list-options>
     <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
     <bk-table class="host-table" v-test-id.businessHostAndService="'hostList'"
-      ref="table"
+      ref="tableRef"
       v-bkloading="{ isLoading: $loading(Object.values(request)) }"
       :data="table.data"
       :pagination="table.pagination"
@@ -27,8 +27,8 @@
       @header-click="handleHeaderClick">
       <bk-table-column type="selection" width="50" align="center" fixed></bk-table-column>
       <bk-table-column v-for="column in tableHeader"
-        show-overflow-tooltip
-        :min-width="column.bk_property_id === 'bk_host_id' ? 80 : 120"
+        :show-overflow-tooltip="column.bk_property_type !== 'map'"
+        :min-width="getColumnMinWidth(column)"
         :key="column.bk_property_id"
         :sortable="getColumnSortable(column)"
         :prop="column.bk_property_id"
@@ -66,6 +66,7 @@
   import AcrossBusinessModuleSelector from './across-business-module-selector.vue'
   import MoveToResourceConfirm from './move-to-resource-confirm.vue'
   import hostValueFilter from '@/filters/host'
+  import tableMixin from '@/mixins/table'
   import { mapGetters } from 'vuex'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
@@ -75,9 +76,14 @@
   import Bus from '@/utils/bus.js'
   import RouterQuery from '@/router/query'
   import HostFilterTag from '@/components/filters/filter-tag'
+  import FilterUtils from '@/components/filters/utils'
   import FilterStore, { setupFilterStore } from '@/components/filters/store'
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
   import { ONE_TO_ONE } from '@/dictionary/host-transfer-type.js'
+  import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
+  import { CONTAINER_OBJECTS, CONTAINER_OBJECT_PROPERTY_KEYS, TOPO_MODE_KEYS } from '@/dictionary/container.js'
+  import containerHostService from '@/service/container/host.js'
+  import { getContainerNodeType } from '@/service/container/common.js'
 
   export default {
     components: {
@@ -91,6 +97,7 @@
     filters: {
       hostValueFilter
     },
+    mixins: [tableMixin],
     props: {
       active: Boolean
     },
@@ -115,7 +122,8 @@
           moveToResource: Symbol('moveToResource'),
           moveToIdleModule: Symbol('moveToIdleModule')
         },
-        filtersTagHeight: 0
+        filtersTagHeight: 0,
+        tableHeader: []
       }
     },
     computed: {
@@ -126,17 +134,57 @@
         'selectedNode',
         'commonRequest'
       ]),
-      tableHeader() {
-        return FilterStore.header
+      isContainerNode() {
+        return !!this.selectedNode?.data?.is_container
+      },
+      isBizNode() {
+        return this.selectedNode?.data?.bk_obj_id === BUILTIN_MODELS.BUSINESS
+      },
+      topoMode() {
+        if (this.isContainerNode) {
+          return TOPO_MODE_KEYS.CONTAINER
+        }
+        if (this.isBizNode) {
+          return TOPO_MODE_KEYS.BIZ_NODE
+        }
+        return TOPO_MODE_KEYS.NORMAL
+      },
+      customInstanceColumnKey() {
+        if (this.isContainerHost) {
+          return this.$route.meta.customContainerInstanceColumn
+        }
+        return this.$route.meta.customInstanceColumn
+      },
+      isContainerSearchMode() {
+        return FilterStore.isContainerSearchMode
+      },
+      searchMode() {
+        return FilterStore.searchMode
+      },
+      isContainerHost() {
+        return this.isContainerSearchMode || this.isContainerNode
       }
     },
     watch: {
       $route() {
         this.initFilterStore()
+      },
+      topoMode(mode) {
+        FilterStore.setTopoMode(mode)
+
+        this.tableHeader = FilterStore.getHeader()
+        // 重置selection防止因数据结构不同导致获取数据错误
+        this.table.selection = []
+      },
+      searchMode() {
+        this.tableHeader = FilterStore.getHeader()
       }
     },
     created() {
+      FilterStore.setTopoMode(this.topoMode)
+
       this.initFilterStore()
+
       this.unwatchRouter = RouterQuery.watch('*', ({
         tab = 'hostList',
         node,
@@ -148,7 +196,10 @@
         }
         this.table.pagination.current = parseInt(page, 10)
         this.table.pagination.limit = parseInt(limit, 10)
-        tab === 'hostList' && node && this.selectedNode && this.getHostList()
+
+        if (tab === 'hostList' && node && this.selectedNode) {
+          this.getHostList()
+        }
       }, { throttle: 16, ignore: ['keyword'] })
     },
     mounted() {
@@ -167,24 +218,23 @@
       this.unwatchFilter()
     },
     methods: {
-      disabledTableSettingDefaultBehavior() {
-        setTimeout(() => {
-          const settingReference = this.$refs.table.$el.querySelector('.bk-table-column-setting .bk-tooltip-ref')
-          // eslint-disable-next-line no-underscore-dangle
-          settingReference && settingReference._tippy && settingReference._tippy.disable()
-        }, 1000)
-      },
-      initFilterStore() {
+      async initFilterStore() {
         const currentRouteName = this.$route.name
-        if (this.storageRouteName === currentRouteName) return
+        if (this.storageRouteName === currentRouteName || currentRouteName !== MENU_BUSINESS_HOST_AND_SERVICE) {
+          return
+        }
         this.storageRouteName = currentRouteName
-        setupFilterStore({
+
+        await setupFilterStore({
           bk_biz_id: this.bizId,
           header: {
             custom: this.$route.meta.customInstanceColumn,
+            customContainer: this.$route.meta.customContainerInstanceColumn,
             global: 'host_global_custom_table_columns'
           }
         })
+
+        this.tableHeader = FilterStore.getHeader()
       },
       getColumnSortable(column) {
         const isHostProperty = column.bk_obj_id === 'host'
@@ -194,12 +244,21 @@
       renderHeader(property) {
         const content = [this.$tools.getHeaderPropertyName(property)]
         const modelId = property.bk_obj_id
-        if (modelId !== 'host') {
+        if (modelId !== 'host' && modelId !== CONTAINER_OBJECTS.NODE) {
           const model = this.getModelById(modelId)
           const suffix = this.$createElement('span', { style: { color: '#979BA5', marginLeft: '4px' } }, [`(${model.bk_obj_name})`])
           content.push(suffix)
         }
         return this.$createElement('span', {}, content)
+      },
+      getColumnMinWidth(property) {
+        let name = this.$tools.getHeaderPropertyName(property)
+        const modelId = property.bk_obj_id
+        if (modelId !== 'host' && modelId !== CONTAINER_OBJECTS.NODE) {
+          const model = this.getModelById(modelId)
+          name = `${name}(${model.bk_obj_name})`
+        }
+        return this.$tools.getHeaderPropertyMinWidth(property, { name, hasSort: this.getColumnSortable(property) })
       },
       handlePageChange(current = 1) {
         RouterQuery.set({
@@ -240,21 +299,27 @@
         }
         ColumnsConfig.open({
           props: {
-            properties: FilterStore.properties.filter(property => property.bk_obj_id === 'host'
-              || (property.bk_obj_id === 'module' && property.bk_property_id === 'bk_module_name')
-              || (property.bk_obj_id === 'set' && property.bk_property_id === 'bk_set_name')),
+            properties: FilterStore.columnConfigProperties,
             selected: FilterStore.defaultHeader.map(property => property.bk_property_id),
-            disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
+            disabledColumns: FilterStore.fixedPropertyIds
           },
           handler: {
             apply: async (properties) => {
+              // 先清空表头，防止更新排序后未重新渲染
+              this.tableHeader = []
+
               await this.handleApplyColumnsConfig(properties)
-              FilterStore.setHeader(properties)
+
+              // 获取最新的表头，内部会读取到上方保存的配置
+              this.tableHeader = FilterStore.getHeader()
+
               FilterStore.dispatchSearch()
             },
             reset: async () => {
               await this.handleApplyColumnsConfig()
-              FilterStore.setHeader(FilterStore.defaultHeader)
+
+              this.tableHeader = FilterStore.getHeader()
+
               FilterStore.dispatchSearch()
             }
           }
@@ -262,21 +327,17 @@
       },
       handleApplyColumnsConfig(properties = []) {
         return this.$store.dispatch('userCustom/saveUsercustom', {
-          [this.$route.meta.customInstanceColumn]: properties.map(property => property.bk_property_id)
+          [this.customInstanceColumnKey]: properties.map(property => property.bk_property_id)
         })
       },
       async getHostList() {
         try {
           await this.commonRequest
           this.commonRequestFinished = true
-          const result = await this.$store.dispatch('hostSearch/searchHost', {
-            params: this.getParams(),
-            config: {
-              requestId: this.request.table,
-              cancelPrevious: true
-            }
-          })
-          this.table.data = result.info
+
+          const result = await this.getSearchRequest()
+
+          this.table.data = result.info || []
           this.table.pagination.count = result.count
         } catch (e) {
           console.error(e)
@@ -284,7 +345,30 @@
           this.table.pagination.count = 0
         }
       },
+      getSearchRequest() {
+        const params = this.getParams()
+        const config = {
+          requestId: this.request.table,
+          cancelPrevious: true
+        }
+
+        if (this.isContainerHost) {
+          return containerHostService.findAll(params, config)
+        }
+
+        return this.$store.dispatch('hostSearch/searchHost', { params, config })
+      },
       getParams() {
+        const type = this.topoMode
+        const paramsMap = {
+          normal: this.getNormalParams,
+          container: this.getContainerParams,
+          bizNode: this.getBizNodeParams
+        }
+
+        return paramsMap[type]()
+      },
+      getNormalParams() {
         const params = {
           ...FilterStore.getSearchParams(),
           page: {
@@ -307,6 +391,48 @@
         const modelCondition = params.condition.find(modelCondition => modelCondition.bk_obj_id === modelConditionId)
         modelCondition.condition.push(topoCondition)
         return params
+      },
+      getContainerParams() {
+        const params = {
+          ...FilterStore.getSearchParams(),
+          page: {
+            ...this.$tools.getPageParams(this.table.pagination),
+            sort: this.table.sort
+          }
+        }
+
+        const selectedNodeData = this.selectedNode.data
+
+        // 容器节点的属性ID
+        const fieldMap = {
+          [CONTAINER_OBJECTS.CLUSTER]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.CLUSTER].ID,
+          [CONTAINER_OBJECTS.FOLDER]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.FOLDER].ID,
+          [CONTAINER_OBJECTS.NAMESPACE]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.NAMESPACE].ID,
+          [CONTAINER_OBJECTS.WORKLOAD]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.WORKLOAD].ID,
+          [BUILTIN_MODELS.BUSINESS]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].ID,
+        }
+        const nodeType = getContainerNodeType(selectedNodeData.bk_obj_id)
+
+        // folder节点参数特殊处理
+        if (nodeType === CONTAINER_OBJECTS.FOLDER) {
+          params.folder = true
+          // folder父节点为cluster节点
+          params[fieldMap[CONTAINER_OBJECTS.CLUSTER]] = this.selectedNode.parent.data.bk_inst_id
+        } else {
+          // 添加节点的属性ID参数，如 bk_namespace_id
+          params[fieldMap[nodeType]] = selectedNodeData.bk_inst_id
+        }
+
+        // 节点的类型值，workload节点时为具体的类型，如 daemonSet
+        params.kind = selectedNodeData.bk_obj_id
+
+        return params
+      },
+      getBizNodeParams() {
+        if (this.isContainerSearchMode) {
+          return this.getContainerParams()
+        }
+        return this.getNormalParams()
       },
       handleTransfer(type) {
         const actionMap = {
@@ -395,12 +521,15 @@
       validteIdleHost() {
         const invalidList = this.table.selection.filter((item) => {
           const [module] = item.module
-          return module.default !== 1
+          // 非空闲机池
+          return module.default === 0
         }).map(item => item.host.bk_host_innerip)
+
         if (invalidList.length === this.table.selection.length) {
-          this.$warn(this.$t('主机不属于空闲机提示', { idleModule: this.$store.state.globalConfig.config.idlePool.idle }))
+          this.$warn(this.$t('主机不属于空闲机池提示', { idleSet: this.$store.state.globalConfig.config.set }))
           return false
         }
+
         return invalidList
       },
       handleDialogCancel() {
@@ -445,7 +574,7 @@
           // eslint-disable-next-line prefer-destructuring
           const internalModule = modules[0]
           await this.$http.post(`host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}`, {
-            bk_host_ids: this.table.selection.map(data => data.host.bk_host_id),
+            bk_host_ids: FilterUtils.getSelectedHostIds(this.table.selection),
             default_internal_module: internalModule.data.bk_inst_id,
             is_remove_from_all: true
           }, {
@@ -470,7 +599,7 @@
           sourceModel: this.selectedNode.data.bk_obj_id,
           sourceId: this.selectedNode.data.bk_inst_id,
           targetModules: modules.map(node => node.data.bk_inst_id).join(','),
-          resources: this.table.selection.map(item => item.host.bk_host_id).join(','),
+          resources: FilterUtils.getSelectedHostIds(this.table.selection)?.join(','),
           node: this.selectedNode.id
         }
         this.$routerActions.redirect({
@@ -486,7 +615,7 @@
         try {
           const validList = this.table.selection.filter((item) => {
             const [module] = item.module
-            return module.default === 1
+            return module.default >= 1
           })
           await this.$store.dispatch('hostRelation/transferHostToResourceModule', {
             params: {
@@ -508,7 +637,7 @@
           const [targetModule] = modules
           const validList = this.table.selection.filter((item) => {
             const [module] = item.module
-            return module.default === 1
+            return module.default >= 1
           })
           await this.$http.post('hosts/modules/across/biz', {
             src_bk_biz_id: this.bizId,
@@ -533,7 +662,7 @@
         })
       },
       doLayoutTable() {
-        this.$refs.table.doLayout()
+        this.$refs?.table?.doLayout()
       }
     }
   }

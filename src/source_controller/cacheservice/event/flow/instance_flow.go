@@ -197,7 +197,7 @@ func (f *InstanceFlow) doBatch(es []*types.Event) (retry bool) {
 			f.metrics.CollectBasic(e)
 
 			idIndex := oidIndexMap[e.Oid+e.Collection]
-			chainNode, detailBytes, retry, err := f.parseEvent(key, e, oidDetailMap, ids[idIndex], rid)
+			chainNode, detailBytes, retry, err := f.parseEvent(f.ccDB, key, e, oidDetailMap, ids[idIndex], rid)
 			if err != nil {
 				return retry
 			}

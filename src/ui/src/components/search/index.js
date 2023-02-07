@@ -28,6 +28,9 @@ import serviceTemplate from './service-template'
 import module from './module'
 import set from './set'
 import biz from './biz'
+import array from './array.vue'
+import object from './object.vue'
+import map from './map.vue'
 
 export default {
   install(Vue) {
@@ -49,7 +52,10 @@ export default {
       serviceTemplate,
       module,
       set,
-      biz
+      biz,
+      array,
+      object,
+      map
     ]
     components.forEach((component) => {
       Vue.component(component.name, component)

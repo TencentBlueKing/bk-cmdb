@@ -92,7 +92,7 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 		blog.ErrorJSON("update instance error. err: %s, objID: %s, instance: %s, cond: %s, rid: %s",
 			err.Error(), objID, data, cond, kit.Rid)
 		if mongodb.Client().IsDuplicatedError(err) {
-			return kit.CCError.CCError(common.CCErrCommDuplicateItem)
+			return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
 		}
 		return kit.CCError.Error(common.CCErrCommDBUpdateFailed)
 	}

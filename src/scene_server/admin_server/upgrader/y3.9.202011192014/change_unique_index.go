@@ -73,7 +73,8 @@ func changeUniqueIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (
 					tableName, idxUniqueGroupName, err.Error())
 				return err
 			}
-			if err := db.Table(tableName).CreateIndex(ctx, idxUniqueObjIDGroupName); err != nil {
+			err = db.Table(tableName).CreateIndex(ctx, idxUniqueObjIDGroupName)
+			if err != nil && !db.IsDuplicatedError(err) {
 				blog.ErrorJSON("create table(%s) index error. idx name: %s, index: %s, err: %s",
 					tableName, idxUniqueGroupName, idxUniqueObjIDGroupName, err.Error())
 				return err

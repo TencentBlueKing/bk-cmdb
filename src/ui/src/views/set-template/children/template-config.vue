@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, del, reactive, ref, toRefs, watchEffect, getCurrentInstance, nextTick, h } from '@vue/composition-api'
+  import { computed, defineComponent, del, reactive, ref, toRefs, watchEffect, getCurrentInstance, nextTick, h } from 'vue'
   import { t } from '@/i18n'
   import router from '@/router/index.js'
   import store from '@/store'
@@ -23,7 +23,7 @@
   import PropertyConfigDetails from '@/components/property-config/details.vue'
   import TemplateTree from './template-tree.vue'
   import useTemplateData from './use-template-data'
-  import setTemplateService from '@/services/set-template'
+  import setTemplateService from '@/service/set-template'
   import { MENU_BUSINESS_SET_TEMPLATE_EDIT } from '@/dictionary/menu-symbol'
 
   export default defineComponent({

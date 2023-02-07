@@ -46,6 +46,9 @@ func GenerateStaticActionGroups() []ActionGroup {
 	// generate global settings action groups, contains global settings related actions
 	ActionGroups = append(ActionGroups, genGlobalSettingsActionGroups()...)
 
+	// generate container management action groups, contains container related actions
+	ActionGroups = append(ActionGroups, genContainerManagementActionGroups()...)
+
 	return ActionGroups
 }
 
@@ -359,6 +362,24 @@ func genResourceManageActionGroups() []ActionGroup {
 						{
 							ID: WatchBizSetEvent,
 						},
+						{
+							ID: WatchPlatEvent,
+						},
+						{
+							ID: WatchKubeClusterEvent,
+						},
+						{
+							ID: WatchKubeNodeEvent,
+						},
+						{
+							ID: WatchKubeNamespaceEvent,
+						},
+						{
+							ID: WatchKubeWorkloadEvent,
+						},
+						{
+							ID: WatchKubePodEvent,
+						},
 					},
 				},
 			},
@@ -449,6 +470,85 @@ func GenModelInstanceManageActionGroups(objects []metadata.Object) []ActionGroup
 			Name:      "模型实例管理",
 			NameEn:    "Model instance Manage",
 			SubGroups: subGroups,
+		},
+	}
+}
+
+func genContainerManagementActionGroups() []ActionGroup {
+	return []ActionGroup{
+		{
+			Name:   "容器资源管理",
+			NameEn: "Container Management",
+			SubGroups: []ActionGroup{
+				{
+					Name:   "容器 Cluster",
+					NameEn: "Container Cluster",
+					Actions: []ActionWithID{
+						{
+							ID: CreateContainerCluster,
+						},
+						{
+							ID: EditContainerCluster,
+						},
+						{
+							ID: DeleteContainerCluster,
+						},
+					},
+				}, {
+					Name:   "容器 Node",
+					NameEn: "Container Node",
+					Actions: []ActionWithID{
+						{
+							ID: CreateContainerNode,
+						},
+						{
+							ID: EditContainerNode,
+						},
+						{
+							ID: DeleteContainerNode,
+						},
+					},
+				}, {
+					Name:   "容器命名空间",
+					NameEn: "Container Namespace",
+					Actions: []ActionWithID{
+						{
+							ID: CreateContainerNamespace,
+						},
+						{
+							ID: EditContainerNamespace,
+						},
+						{
+							ID: DeleteContainerNamespace,
+						},
+					},
+				}, {
+					Name:   "容器工作负载",
+					NameEn: "Container Workload",
+					Actions: []ActionWithID{
+						{
+							ID: CreateContainerWorkload,
+						},
+						{
+							ID: EditContainerWorkload,
+						},
+						{
+							ID: DeleteContainerWorkload,
+						},
+					},
+				}, {
+					Name:   "容器 Pod",
+					NameEn: "Container Pod",
+					Actions: []ActionWithID{
+						{
+							ID: CreateContainerPod,
+						},
+						{
+							ID: DeleteContainerPod,
+						},
+					},
+				},
+			},
 		},
 	}
 }

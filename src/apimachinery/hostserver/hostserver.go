@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-// Package hostserver TODO
+// Package hostserver host server api client
 package hostserver
 
 import (
@@ -20,8 +20,10 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
+	"configcenter/src/kube/types"
 )
 
 // HostServerClientInterface TODO
@@ -44,6 +46,8 @@ type HostServerClientInterface interface {
 
 	AddHostMultiAppModuleRelation(ctx context.Context, h http.Header, dat *metadata.CloudHostModuleParams) (resp *metadata.Response, err error)
 	TransferHostModule(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.Response, err error)
+	TransferHostAcrossBusiness(ctx context.Context, header http.Header,
+		option *metadata.TransferHostAcrossBusinessParameter) errors.CCErrorCoder
 
 	MoveHost2EmptyModule(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error)
 	MoveHost2FaultModule(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error)
@@ -78,6 +82,13 @@ type HostServerClientInterface interface {
 	SearchCloudArea(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.SearchResp, err error)
 	DeleteCloudArea(ctx context.Context, h http.Header, cloudID int64) (resp *metadata.Response, err error)
 	FindCloudAreaHostCount(ctx context.Context, header http.Header, option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error)
+	// SearchHostWithKube search host with k8s condition
+	SearchKubeHost(ctx context.Context, h http.Header, req types.SearchHostOption) (*metadata.SearchHost,
+		errors.CCErrorCoder)
+	AddCloudHostToBiz(ctx context.Context, header http.Header, option *metadata.AddCloudHostToBizParam) (
+		*metadata.RspIDs, errors.CCErrorCoder)
+	DeleteCloudHostFromBiz(ctx context.Context, header http.Header,
+		option *metadata.DeleteCloudHostFromBizParam) errors.CCErrorCoder
 }
 
 // NewHostServerClientInterface TODO
