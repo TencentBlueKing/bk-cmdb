@@ -552,7 +552,7 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 
 				_, err := a.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header, objID, grp)
 				if err != nil {
-					blog.Errorf("create attribute group[%#v] failed, err: %v, rid: %s", grp, err, kit.Rid)
+					blog.Errorf("create attribute group1[%#v] failed, err: %v, rid: %s", grp, err, kit.Rid)
 					objRes.Errors = append(objRes.Errors, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
 					hasError = true
 					continue
