@@ -55,7 +55,7 @@
 
 ### 4. Release包下载
 
-官方发布的 **Linux Release** 包下载地址见[这里](https://github.com/Tencent/bk-cmdb/releases)。如果你想自已编译，具体的编译方法见[这里](source_compile.md)。
+官方发布的 **Linux Release** 包下载地址见[这里](https://github.com/TencentBlueKing/bk-cmdb/releases)。如果你想自已编译，具体的编译方法见[这里](source_compile.md)。
 
 ### 5. 配置数据库
 

@@ -8,8 +8,8 @@ keywords:
 home: https://bk.tencent.com/
 icon: https://raw.githubusercontent.com/Tencent/bk-cmdb/master/docs/resource/img/BKCN.jpg
 sources:
-- https://github.com/Tencent/bk-cmdb
-- https://github.com/Tencent/bk-cmdb-helm
+- https://github.com/TencentBlueKing/bk-cmdb
+- https://github.com/TencentBlueKing/bk-cmdb-helm
 maintainers:
 - name: blueking
   email: blueking@tencent.com

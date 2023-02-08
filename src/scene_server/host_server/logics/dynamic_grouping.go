@@ -507,7 +507,7 @@ func (e *HostDynamicGroupExecutor) appendHostTopoConds() error {
 	}
 
 	// 合并两种根据host_id查询的condition
-	// 详情见issue: https://github.com/Tencent/bk-cmdb/issues/2461
+	// 详情见issue: https://github.com/TencentBlueKing/bk-cmdb/issues/2461
 	hostIDConditionExist := false
 	for idx, cond := range e.conds.hostCond.Condition {
 		if cond.Field != common.BKHostIDField {

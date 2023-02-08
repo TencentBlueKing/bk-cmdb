@@ -171,7 +171,7 @@
 
 ## [Version: 3.9.32] - 2021-09-13
 **新增功能**
-- 新增清理审计日志接口（接口使用方法可参考issue[#5603](https://github.com/Tencent/bk-cmdb/issues/5603)）
+- 新增清理审计日志接口（接口使用方法可参考issue[#5603](https://github.com/TencentBlueKing/bk-cmdb/issues/5603)）
 
 **功能优化**
 - taskserver清除一个月之前的冗余任务
@@ -467,7 +467,7 @@
 **功能优化**
 - 优化业务拓扑主机菜单的归类
 - 操作审计新增appcode与request id字段
-- 实例关联表和进程模版表增加索引（增加索引过程中出现的问题，处理方式可参考 issue [#5072](https://github.com/Tencent/bk-cmdb/issues/5072)）
+- 实例关联表和进程模版表增加索引（增加索引过程中出现的问题，处理方式可参考 issue [#5072](https://github.com/TencentBlueKing/bk-cmdb/issues/5072)）
 - 主线模型实例创建更新时，对bk_parent_id字段进行校验
 - 允许主机导出'录入方式'和'录入时间'字段
 - 主机更新时允许更新绑定了自动应用的字段
@@ -714,7 +714,7 @@
 **Note**
 该版本中新增了添加唯一索引的upgrader，若migrate脚本执行失败，需要处理完数据，确保数据正确后，再参考
 如下链接重新执行该upgrader，直到migrate能正常执行。
-链接：https://github.com/Tencent/bk-cmdb/issues/4757
+链接：https://github.com/TencentBlueKing/bk-cmdb/issues/4757
 
 **新增功能**
 - 操作系统类型设置为可编辑

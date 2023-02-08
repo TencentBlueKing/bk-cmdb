@@ -4,7 +4,7 @@
 
 ## Introduction
 
-This [Helm](https://github.com/kubernetes/helm) chart installs [bk-cmdb](https://github.com/Tencent/bk-cmdb) in a Kubernetes cluster. Welcome to [contribute](CONTRIBUTING.md) to Helm Chart for bk-cmdb.
+This [Helm](https://github.com/kubernetes/helm) chart installs [bk-cmdb](https://github.com/TencentBlueKing/bk-cmdb) in a Kubernetes cluster. Welcome to [contribute](CONTRIBUTING.md) to Helm Chart for bk-cmdb.
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ This [Helm](https://github.com/kubernetes/helm) chart installs [bk-cmdb](https:/
 Download bk-cmdb helm chart code.
 
 ```bash
-git clone https://github.com/Tencent/bk-cmdb-helm
+git clone https://github.com/TencentBlueKing/bk-cmdb-helm
 ```
 
 Checkout the branch.

@@ -829,7 +829,7 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 	}
 
 	// 合并两种涞源的根据 host_id 查询的 condition
-	// 详情见issue: https://github.com/Tencent/bk-cmdb/issues/2461
+	// 详情见issue: https://github.com/TencentBlueKing/bk-cmdb/issues/2461
 	hostIDConditionExist := false
 	for idx, cond := range sh.conds.hostCond.Condition {
 		if cond.Field != common.BKHostIDField {
