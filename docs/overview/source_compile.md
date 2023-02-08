@@ -12,7 +12,7 @@
 
 ``` shell
 cd $GOPATH/src
-git clone https://github.com/Tencent/bk-cmdb  configcenter
+git clone https://github.com/TencentBlueKing/bk-cmdb  configcenter
 ```
 
 **GOPATH 是使用Golang编写项目的根目录，配置GOPATH的示例如下:**

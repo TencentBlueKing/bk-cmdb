@@ -1035,7 +1035,7 @@ func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, objID string, asst
 						objCondition.Operator == common.BKDBGTE {
 
 						// fix condition covered when do date range search action.
-						// ISSUE: https://github.com/Tencent/bk-cmdb/issues/5302
+						// ISSUE: https://github.com/TencentBlueKing/bk-cmdb/issues/5302
 						if _, isExist := instCond[objCondition.Field]; !isExist {
 							instCond[objCondition.Field] = make(map[string]interface{})
 						}

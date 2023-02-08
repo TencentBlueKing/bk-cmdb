@@ -280,7 +280,7 @@ func (g *group) UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondi
 }
 
 // ExchangeObjectGroupIndex exchange the group index of two groups
-// related issue: https://github.com/Tencent/bk-cmdb/issues/5873
+// related issue: https://github.com/TencentBlueKing/bk-cmdb/issues/5873
 func (g *group) ExchangeObjectGroupIndex(kit *rest.Kit, ids []int64) error {
 
 	if len(ids) != 2 {
