@@ -363,6 +363,7 @@
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
   import { v4 as uuidv4 } from 'uuid'
   import CollapseGroupTitle from '@/views/model-manage/children/collapse-group-title.vue'
+  import { PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
 
   export default {
     name: 'FieldGroup',
@@ -389,20 +390,7 @@
         keyword: '',
         groupCollapseState: {},
         initGroupState: {},
-        fieldTypeMap: {
-          singlechar: this.$t('短字符'),
-          int: this.$t('数字'),
-          float: this.$t('浮点'),
-          enum: this.$t('枚举'),
-          date: this.$t('日期'),
-          time: this.$t('时间'),
-          longchar: this.$t('长字符'),
-          objuser: this.$t('用户'),
-          timezone: this.$t('时区'),
-          bool: 'bool',
-          list: this.$t('列表'),
-          organization: this.$t('组织')
-        },
+        fieldTypeMap: PROPERTY_TYPE_NAMES,
         dialog: {
           isShow: false,
           group: null,

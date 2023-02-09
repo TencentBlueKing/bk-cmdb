@@ -45,8 +45,14 @@
         :prop="column.id"
         :label="column.name"
         :class-name="index === 0 ? 'is-highlight' : ''"
-        show-overflow-tooltip>
-        <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
+        :show-overflow-tooltip="$tools.isShowOverflowTips(column.property)">
+        <template slot-scope="{ row }">
+          <cmdb-property-value
+            :show-unit="false"
+            :value="row[column.id]"
+            :property="column.property">
+          </cmdb-property-value>
+        </template>
       </bk-table-column>
       <bk-table-column v-if="!readonly" :label="$t('操作')">
         <template slot-scope="{ row }">
@@ -422,7 +428,10 @@
           this.confirm.instance.show()
         })
       },
-      async handleShowDetails(row) {
+      async handleShowDetails(row, event, column) {
+        if (this.header.findIndex(prop => prop.id === column.property) !== 0) {
+          return
+        }
         const showInstanceDetails = await import('@/components/instance/details')
         const nameMapping = {
           host: 'bk_host_innerip',

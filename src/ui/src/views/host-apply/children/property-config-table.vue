@@ -60,7 +60,7 @@
       v-if="multiple || readonly"
       :width="readonly ? null : 200"
       :label="$t('当前值')"
-      show-overflow-tooltip>
+      :show-overflow-tooltip="false">
       <template slot-scope="{ row }">
         <div v-if="multiple" :class="{ ignore: row.__extra__.ignore }">
           <template v-for="(id, index) in idList">
@@ -71,6 +71,7 @@
               :key="index"
               :value="getRuleValue(row.id, id)"
               :show-unit="false"
+              :is-show-overflow-tips="isShowOverflowTips(row)"
               :property="row">
             </cmdb-property-value>
           </template>
@@ -80,6 +81,7 @@
           <cmdb-property-value
             :class="['property-value', { disabled: !row.host_apply_enabled }]"
             :show-unit="false"
+            :is-show-overflow-tips="isShowOverflowTips(row)"
             :value="row.__extra__.value"
             :property="row">
           </cmdb-property-value>
@@ -95,7 +97,11 @@
       class-name="table-cell-form-element">
       <template slot-scope="{ row }">
         <div class="form-element-content">
-          <property-form-element :property="row" @value-change="handlePropertyValueChange"></property-form-element>
+          <property-form-element
+            :property="row"
+            @value-change="handlePropertyValueChange"
+            @valid-change="handlePropertyValidChange">
+          </property-form-element>
         </div>
       </template>
     </bk-table-column>
@@ -129,6 +135,7 @@
   import has from 'has'
   import propertyFormElement from '@/components/host-apply/property-form-element'
   import { CONFIG_MODE } from '@/service/service-template/index.js'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   export default {
     components: {
@@ -315,6 +322,13 @@
       },
       handleDeletePropertyRule(property) {
         this.$emit('property-rule-delete', property)
+      },
+      handlePropertyValidChange() {
+        this.$emit('property-valid-change')
+      },
+      isShowOverflowTips(property) {
+        const complexTypes = [PROPERTY_TYPES.MAP, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ORGANIZATION]
+        return !complexTypes.includes(property.bk_property_type)
       }
     }
   }
@@ -329,8 +343,6 @@
     .path-item,
     .value-item {
         padding: 1px 0;
-        height: 20px;
-        line-height: 20px;
         @include ellipsis;
     }
     .path-item {

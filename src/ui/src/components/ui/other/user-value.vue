@@ -58,7 +58,7 @@
     },
     methods: {
       getCopyValue() {
-        return this.$refs?.userSelector?.userInfo
+        return this.$refs?.userSelector?.userInfo || '--'
       }
     }
   }

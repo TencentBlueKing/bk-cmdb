@@ -81,7 +81,7 @@ import bizSet from './modules/biz-set.js'
 
 Vue.use(Vuex)
 
-export default new Vuex.Store({
+const store = new Vuex.Store({
   ...global,
   modules: {
     index,
@@ -147,3 +147,7 @@ export default new Vuex.Store({
     versionLog
   }
 })
+
+export const useStore = () => store
+
+export default store

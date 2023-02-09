@@ -13,6 +13,8 @@
 import bool from './bool'
 import date from './date'
 import enumComponent from './enum'
+import enummulti from './enummulti.vue'
+import enumquote from './enumquote.vue'
 import float from './float'
 import foreignkey from './foreignkey'
 import int from './int'
@@ -38,6 +40,8 @@ export default {
       bool,
       date,
       enumComponent,
+      enummulti,
+      enumquote,
       float,
       foreignkey,
       int,

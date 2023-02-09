@@ -219,6 +219,8 @@
   import FilterUtils from '@/components/filters/utils'
   import { update as updateHost } from '@/service/host/import'
   import RouterQuery from '@/router/query'
+  import { isUseComplexValueType } from '@/utils/tools'
+
   export default {
     components: {
       FilterCollection,
@@ -458,9 +460,15 @@
         showImport()
       },
       handleCopy(property) {
-        const copyText = this.selection.map((data) => {
+        const copyText = this.selection.map((data, index) => {
           const modelId = property.bk_obj_id
           const modelData = data[modelId]
+
+          if (isUseComplexValueType(property)) {
+            const value = this.$parent?.$refs?.[`table-cell-property-value-${property.bk_property_id}`]?.[index]?.getCopyValue()
+            return value
+          }
+
           if (property.id === this.IPWithCloudSymbol) {
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')

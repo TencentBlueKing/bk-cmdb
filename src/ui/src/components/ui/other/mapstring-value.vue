@@ -135,7 +135,7 @@
         removeResizeListener(rootEl.value, scheduleResize)
       })
 
-      const getCopyValue = () => tags.value.join('\n')
+      const getCopyValue = () => tags.value.join('\n') || '--'
 
       return {
         tags,

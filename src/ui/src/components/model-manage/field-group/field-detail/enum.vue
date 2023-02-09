@@ -67,23 +67,32 @@
     </vue-draggable>
     <div class="default-setting">
       <p class="title mb10">{{$t('默认值设置')}}</p>
-      <bk-select style="width: 100%;"
-        :clearable="false"
-        :disabled="isReadOnly"
-        v-model="defaultValue"
-        @change="handleSettingDefault">
-        <bk-option v-for="option in settingList"
-          :key="option.id"
-          :id="option.id"
-          :name="option.name">
-        </bk-option>
-      </bk-select>
+      <div class="cmdb-form-item" :class="{ 'is-error': errors.has('defaultValueSelect') }">
+        <bk-select style="width: 100%;"
+          :clearable="false"
+          :disabled="isReadOnly"
+          :multiple="true"
+          name="defaultValueSelect"
+          data-vv-validate-on="change"
+          v-validate.immediate="`maxSelectLength:${ multiple ? -1 : 1 }`"
+          v-model="defaultValue"
+          @change="handleSettingDefault">
+          <bk-option v-for="option in settingList"
+            :key="option.id"
+            :id="option.id"
+            :name="option.name">
+          </bk-option>
+        </bk-select>
+        <p class="form-error">{{errors.first('defaultValueSelect')}}</p>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
   import vueDraggable from 'vuedraggable'
+  import isEqual from 'lodash/isEqual'
+
   export default {
     components: {
       vueDraggable
@@ -96,14 +105,17 @@
       isReadOnly: {
         type: Boolean,
         default: false
+      },
+      multiple: {
+        type: Boolean,
+        default: false
       }
     },
     data() {
       return {
         enumList: [this.generateEnum()],
-        defaultIndex: 0,
         settingList: [],
-        defaultValue: '',
+        defaultValue: this.multiple ? [] : '',
         dragOptions: {
           animation: 300,
           disabled: false,
@@ -122,10 +134,28 @@
         deep: true,
         handler(value) {
           this.settingList = (value || []).filter(item => item.id && item.name)
-          if (this.settingList.length && this.defaultIndex > -1) {
-            this.defaultValue = this.settingList[this.defaultIndex].id
+
+          // 无默认值选择第0项，有默认值则需要验证值是否存在（列表中可能将其删除）
+          if (!this.defaultValue.length) {
+            this.defaultValue = this.settingList.length ? [this.settingList[0].id] : []
+          } else {
+            this.defaultValue = this.settingList.filter(item => this.defaultValue.includes(item.id))
+              .map(item => item.id)
           }
         }
+      },
+      defaultValue(val, old) {
+        // 检测选中值变化，需要修正is_default
+        if (!isEqual(val, old)) {
+          this.enumList.forEach((item) => {
+            item.is_default = val.includes(item.id)
+          })
+          this.$emit('input', this.enumList)
+        }
+      },
+      multiple() {
+        // 多选变化时校验默认值设置
+        this.$nextTick(async () => this.$validator.validate('defaultValueSelect'))
       }
     },
     created() {
@@ -151,11 +181,12 @@
         return nameList.join(',')
       },
       initValue() {
-        if (this.value === '') {
+        // 枚举多选默认值是空数组
+        if (this.value === '' || (Array.isArray(this.value) && !this.value.length)) {
           this.enumList = [this.generateEnum()]
         } else {
           this.enumList = this.value.map(data => ({ ...data, type: 'text' }))
-          this.defaultIndex = this.enumList.findIndex(({ is_default: isDefault }) => isDefault)
+          this.defaultValue = this.enumList.filter(item => item.is_default).map(item => item.id)
         }
       },
       handleInput() {
@@ -169,10 +200,6 @@
       },
       deleteEnum(index) {
         this.enumList.splice(index, 1)
-        if (this.defaultIndex === index) {
-          this.defaultIndex = 0
-          this.enumList[0].is_default = true
-        }
         this.handleInput()
       },
       generateEnum(settings = {}) {
@@ -188,14 +215,20 @@
         return this.$validator.validateAll()
       },
       handleSettingDefault(id) {
-        const itemIndex = this.enumList.findIndex(item => item.id === id)
-        if (itemIndex > -1) {
-          this.defaultIndex = itemIndex
+        if (this.multiple) {
           this.enumList.forEach((item) => {
-            item.is_default = item.id === id
+            item.is_default = id.includes(item.id)
           })
-
           this.$emit('input', this.enumList)
+        } else {
+          const itemIndex = this.enumList.findIndex(item => item.id === id)
+          if (itemIndex > -1) {
+            this.enumList.forEach((item) => {
+              item.is_default = item.id === id
+            })
+
+            this.$emit('input', this.enumList)
+          }
         }
       },
       handleDragEnd() {

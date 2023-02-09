@@ -1657,5 +1657,13 @@
     "空Pod节点提示语": "Cluster nodes without any Pod running on them are classified as \"Empty Pod Node(s)\"",
     "无Pod运行的节点": "Node runs with no Pod",
     "（模板创建）": "(By template)",
-    "（自定义创建）": "(By custom)"
+    "（自定义创建）": "(By custom)",
+    "枚举(多选)": "Enumeration(multiple)",
+    "枚举(引用)": "Enumeration(quote)",
+    "引用模型": "reference model",
+    "默认以实例名称作为枚举选项": "By default, the instance name is used as the enumeration option",
+    "模型实例": "model instance",
+    "可多选": "Multiple",
+    "是否可多选": "Multiple or not",
+    "不可多选": "Not multiple"
 }

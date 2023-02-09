@@ -26,10 +26,16 @@
       <input type="checkbox" tabindex="-1" v-model="localValue.isrequired" :disabled="isReadOnly || ispre">
       <span class="cmdb-checkbox-text">{{$t('必填')}}</span>
     </label>
+    <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="isMultipleShow">
+      <input type="checkbox" tabindex="-1" v-model="localValue.multiple" :disabled="isReadOnly || ispre">
+      <span class="cmdb-checkbox-text">{{$t('可多选')}}</span>
+    </label>
   </div>
 </template>
 
 <script>
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+
   export default {
     props: {
       isReadOnly: {
@@ -48,43 +54,59 @@
         type: Boolean,
         default: false
       },
+      multiple: {
+        type: Boolean,
+        default: false
+      },
       isMainLineModel: {
         type: Boolean,
         default: false
       },
-      ispre: Boolean
+      ispre: Boolean,
+      isEditField: {
+        type: Boolean,
+        default: false
+      }
     },
     data() {
       return {
         editableMap: [
-          'singlechar',
-          'int',
-          'float',
-          'enum',
-          'date',
-          'time',
-          'longchar',
-          'objuser',
-          'timezone',
-          'bool',
-          'list',
-          'organization'
+          PROPERTY_TYPES.SINGLECHAR,
+          PROPERTY_TYPES.INT,
+          PROPERTY_TYPES.FLOAT,
+          PROPERTY_TYPES.ENUM,
+          PROPERTY_TYPES.DATE,
+          PROPERTY_TYPES.TIME,
+          PROPERTY_TYPES.LONGCHAR,
+          PROPERTY_TYPES.OBJUSER,
+          PROPERTY_TYPES.TIMEZONE,
+          PROPERTY_TYPES.BOOL,
+          PROPERTY_TYPES.LIST,
+          PROPERTY_TYPES.ORGANIZATION,
+          PROPERTY_TYPES.ENUMMULTI,
+          PROPERTY_TYPES.ENUMQUOTE
         ],
-        isrequiredMap: [
-          'singlechar',
-          'int',
-          'float',
-          'date',
-          'time',
-          'longchar',
-          'objuser',
-          'timezone',
-          'list',
-          'organization'
+        isRequiredMap: [
+          PROPERTY_TYPES.SINGLECHAR,
+          PROPERTY_TYPES.INT,
+          PROPERTY_TYPES.FLOAT,
+          PROPERTY_TYPES.DATE,
+          PROPERTY_TYPES.TIME,
+          PROPERTY_TYPES.LONGCHAR,
+          PROPERTY_TYPES.OBJUSER,
+          PROPERTY_TYPES.TIMEZONE,
+          PROPERTY_TYPES.LIST,
+          PROPERTY_TYPES.ORGANIZATION
+        ],
+        isMultipleMap: [
+          PROPERTY_TYPES.ORGANIZATION,
+          PROPERTY_TYPES.ENUMQUOTE,
+          PROPERTY_TYPES.ENUMMULTI
         ],
         localValue: {
           editable: this.editable,
-          isrequired: this.isrequired
+          isrequired: this.isrequired,
+          multiple: this.multiple
         }
       }
     },
@@ -94,7 +116,10 @@
         return this.editableMap.indexOf(this.type) !== -1
       },
       isRequiredShow() {
-        return this.isrequiredMap.indexOf(this.type) !== -1
+        return this.isRequiredMap.indexOf(this.type) !== -1
+      },
+      isMultipleShow() {
+        return this.isMultipleMap.indexOf(this.type) !== -1
       },
       modelId() {
         return this.$route.params.modelId ?? this.customObjId
@@ -107,6 +132,9 @@
       isrequired(isrequired) {
         this.localValue.isrequired = isrequired
       },
+      multiple(multiple) {
+        this.localValue.multiple = multiple
+      },
       'localValue.editable'(editable) {
         this.$emit('update:editable', editable)
       },
@@ -115,6 +143,9 @@
           this.localValue.isonly = false
         }
         this.$emit('update:isrequired', isrequired)
+      },
+      'localValue.multiple'(multiple) {
+        this.$emit('update:multiple', multiple)
       }
     }
   }
