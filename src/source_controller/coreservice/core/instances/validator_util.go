@@ -210,22 +210,70 @@ func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys 
 					valData[field.PropertyID] = nil
 					continue
 				}
-				if len(enumOptions) > 0 {
-					var defaultOption *metadata.EnumVal
-					for _, k := range enumOptions {
-						if k.IsDefault {
-							defaultOption = &k
-							break
-						}
-					}
-					if nil != defaultOption {
-						valData[field.PropertyID] = defaultOption.ID
-					} else {
-						valData[field.PropertyID] = nil
-					}
-				} else {
+				if len(enumOptions) == 0 {
 					valData[field.PropertyID] = nil
+					break
 				}
+
+				var defaultOption *metadata.EnumVal
+				for _, k := range enumOptions {
+					if k.IsDefault {
+						defaultOption = &k
+						break
+					}
+				}
+				if defaultOption == nil {
+					valData[field.PropertyID] = nil
+					break
+				}
+
+				valData[field.PropertyID] = defaultOption.ID
+			case common.FieldTypeEnumMulti:
+				enumOptions, err := metadata.ParseEnumOption(ctx, field.Option)
+				if err != nil {
+					blog.Warnf("parse enum multi option failed, err: %v, rid: %s", err, rid)
+					valData[field.PropertyID] = nil
+					continue
+				}
+				if len(enumOptions) == 0 {
+					valData[field.PropertyID] = nil
+					break
+				}
+
+				defaultOptions := make([]string, 0)
+				for _, k := range enumOptions {
+					if k.IsDefault {
+						defaultOptions = append(defaultOptions, k.ID)
+					}
+				}
+				if len(defaultOptions) == 0 {
+					valData[field.PropertyID] = nil
+					break
+				}
+
+				valData[field.PropertyID] = defaultOptions
+			case common.FieldTypeEnumQuote:
+				enumQuoteOptions, err := metadata.ParseEnumQuoteOption(ctx, field.Option)
+				if err != nil {
+					blog.Warnf("parse enum quote option failed, err: %v, rid: %s", err, rid)
+					valData[field.PropertyID] = nil
+					continue
+				}
+				if len(enumQuoteOptions) == 0 {
+					valData[field.PropertyID] = nil
+					break
+				}
+
+				defaultOptions := make([]int64, 0)
+				for _, k := range enumQuoteOptions {
+					defaultOptions = append(defaultOptions, k.InstID)
+				}
+				if len(defaultOptions) == 0 {
+					valData[field.PropertyID] = nil
+					break
+				}
+
+				valData[field.PropertyID] = defaultOptions
 			case common.FieldTypeDate:
 				valData[field.PropertyID] = nil
 			case common.FieldTypeTime:

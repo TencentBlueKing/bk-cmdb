@@ -332,7 +332,8 @@ func getOneHostApplyPlan(kit *rest.Kit, attrRules map[int64][]metadata.HostApply
 			targetRules[0].PropertyValue = expectValue
 		}
 		rawErr := attribute.Validate(kit.Ctx, expectValue, propertyIDField)
-		if rawErr.ErrCode != 0 {
+		// 用户字段，枚举多选，枚举引用，组织字段目前支持可多选功能，当状态从多选修改为单选状态时，此时对存量数据做校验时会报错，此处忽略报错
+		if rawErr.ErrCode != 0 && rawErr.ErrCode != common.CCErrCommParamsNeedSingleChoice {
 			blog.Errorf("attribute validate failed, attribute: %s, firstValue: %s, propertyID: %s, err: %s, rid: %s",
 				attribute, expectValue, propertyIDField, rawErr, rid)
 			plan.ErrCode = rawErr.ToCCError(kit.CCError).GetCode()

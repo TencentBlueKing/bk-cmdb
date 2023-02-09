@@ -35,7 +35,7 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 	}
 
 	// 新建组织字段时，默认为多选，当api接口创建模型属性时，没有传ismultiple，默认置为true，支持多选
-	if ok := checkIsMultipleFieldExist(*attr); !ok {
+	if ok := checkJsonTagContainIsMultipleField(*attr); !ok {
 		if attr.PropertyType == common.FieldTypeOrganization {
 			isMultiple := true
 			attr.IsMultiple = &isMultiple
@@ -44,7 +44,6 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 			attr.IsMultiple = &isMultiple
 		}
 	}
-
 
 	// do not support add preset attribute by api
 	attr.IsPre = false
@@ -410,10 +409,10 @@ func (s *Service) getPropertyGroupName(ctx *rest.Contexts, attrs []metadata.Attr
 	return grpMap, nil
 }
 
+// checkJsonTagContainIsMultipleField verify whether the ismultiple field exists
 // 当创建组织字段属性时，前端的默认行为为多选，ismultiple参数为true. 为了和前端保持一致的动作，通过api接口创建时组织字段时，
 // 在用户没有传ismultiple字段时，需要默认给ismultiple置为true
-// checkIsMultipleFieldExist verify whether the ismultiple field exists
-func checkIsMultipleFieldExist(data interface{}) bool {
+func checkJsonTagContainIsMultipleField(data interface{}) bool {
 	typeOfOption := reflect.TypeOf(data)
 	valueOfOption := reflect.ValueOf(data)
 	for i := 0; i < typeOfOption.NumField(); i++ {

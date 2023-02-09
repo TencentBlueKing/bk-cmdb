@@ -218,8 +218,10 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 
 	if attribute.PropertyType != "" {
 		switch attribute.PropertyType {
-		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeEnum,
-			common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList:
+		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat,
+		common.FieldTypeEnum, common.FieldTypeEnumMulti, common.FieldTypeDate, common.FieldTypeTime,
+		common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool,
+		common.FieldTypeList, common.FieldTypeEnumQuote:
 		default:
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 		}
@@ -711,7 +713,12 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 				return kit.CCError.Errorf(common.CCErrCommParamsInvalid, "cond")
 			}
 		}
-		if err := util.ValidPropertyOption(propertyType, option, kit.CCError); err != nil {
+		isMultiple := dbAttributeArr[0].IsMultiple
+		if ismultiple, ok := data.Get(common.BKIsMultipleField); ok {
+			isMultiple = ismultiple.(*bool)
+		}
+
+		if err := util.ValidPropertyOption(propertyType, option, *isMultiple, kit.CCError); err != nil {
 			blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
 			return err
 		}

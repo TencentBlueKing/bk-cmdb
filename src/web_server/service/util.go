@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 
@@ -13,6 +14,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware/user/plugins"
 
 	"github.com/gin-gonic/gin"
@@ -214,4 +216,109 @@ func (s *Service) getDepartment(c *gin.Context, objID string) ([]metadata.Depart
 	}
 
 	return department.Results, propertyList, nil
+}
+
+// handleExportEnumQuoteInst search inst detail and return a id-bk_inst_name map
+func (s *Service) handleExportEnumQuoteInst(c *gin.Context, h http.Header, data []mapstr.MapStr, objID string,
+	fields map[string]logics.Property, rid string) ([]mapstr.MapStr, error) {
+
+	for _, rowMap := range data {
+		if objID == common.BKInnerObjIDHost {
+			hostData, err := mapstr.NewFromInterface(rowMap[common.BKInnerObjIDHost])
+			if err != nil {
+				blog.Errorf("get host data failed, hostData: %#v, err: %v, rid: %s", hostData, err, rid)
+				return nil, err
+			}
+			if err := s.getEnumQuoteInstNames(c, h, fields, rid, hostData); err != nil {
+				blog.Errorf("get enum quote inst name list failed, err: %v, rid: %s", err, rid)
+				return nil, err
+			}
+		}
+
+		if err := s.getEnumQuoteInstNames(c, h, fields, rid, rowMap); err != nil {
+			blog.Errorf("get enum quote inst name list failed, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+	}
+
+	return data, nil
+}
+
+// getEnumQuoteInstNames search inst detail and return a bk_inst_name
+func (s *Service) getEnumQuoteInstNames(c *gin.Context, h http.Header, fields map[string]logics.Property, rid string,
+	rowMap mapstr.MapStr) error {
+
+	for id, property := range fields {
+		switch property.PropertyType {
+		case common.FieldTypeEnumQuote:
+			enumQuoteIDInterface, exist := rowMap[id]
+			if !exist || enumQuoteIDInterface == nil {
+				continue
+			}
+			enumQuoteIDList, ok := enumQuoteIDInterface.([]interface{})
+			if !ok {
+				blog.Errorf("rowMap[%s] type to array failed, rowMap: %v, rowMap type: %T, rid: %s", property,
+					rowMap[id], rowMap[id], rid)
+				return fmt.Errorf("convert variable rowMap[%s] type to int array failed", property)
+			}
+
+			enumQuoteIDMap := make(map[int64]interface{}, 0)
+			for _, enumQuoteID := range enumQuoteIDList {
+				id, err := util.GetInt64ByInterface(enumQuoteID)
+				if err != nil {
+					blog.Errorf("convert enumQuoteID[%d] to int64 failed, type: %T, err: %v, rid: %s",
+						enumQuoteID, enumQuoteID, rid)
+					return err
+				}
+
+				if id == 0 {
+					return fmt.Errorf("enum quote instID is %d, it is illegal", id)
+				}
+				enumQuoteIDMap[id] = struct{}{}
+			}
+			if len(enumQuoteIDMap) == 0 {
+				continue
+			}
+
+			quoteObjID, err := logics.GetEnumQuoteObjID(property.Option, rid)
+			if err != nil {
+				blog.Errorf("get enum quote option obj id failed, err: %s, rid: %s", err, rid)
+				return fmt.Errorf("get enum quote option obj id failed, option: %v", property.Option)
+			}
+
+			enumQuoteIDs := make([]int64, 0)
+			for enumQuoteID := range enumQuoteIDMap {
+				enumQuoteIDs = append(enumQuoteIDs, enumQuoteID)
+			}
+			input := &metadata.QueryCondition{
+				Fields: []string{common.GetInstNameField(quoteObjID)},
+				Condition: mapstr.MapStr{
+					common.GetInstIDField(quoteObjID): mapstr.MapStr{common.BKDBIN: enumQuoteIDs},
+				},
+				DisableCounter: true,
+			}
+			resp, err := s.Engine.CoreAPI.ApiServer().ReadInstance(c, h, quoteObjID, input)
+			if err != nil {
+				blog.Errorf("get quote inst name list failed, input: %+v, err: %v, rid: %s", input, err, rid)
+				return err
+			}
+
+			enumQuoteNames := make([]string, 0)
+			for _, info := range resp.Data.Info {
+				var ok bool
+				var enumQuoteName string
+				if name, exist := info.Get(common.GetInstNameField(quoteObjID)); exist {
+					enumQuoteName, ok = name.(string)
+					if !ok {
+						enumQuoteName = ""
+					}
+				}
+				enumQuoteNames = append(enumQuoteNames, enumQuoteName)
+			}
+
+			rowMap[id] = strings.Join(enumQuoteNames, "\n")
+		}
+	}
+
+	return nil
 }
