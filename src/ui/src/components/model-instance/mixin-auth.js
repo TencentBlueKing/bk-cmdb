@@ -32,6 +32,10 @@ export default {
           type: this.$OPERATION.U_BUSINESS_SET,
           relation: [parseInt(params[BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.BUSINESS_SET]], 10)]
         },
+        U_PROJECT: {
+          type: this.$OPERATION.U_PROJECT,
+          relation: [parseInt(params[BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.PROJECT]], 10)]
+        },
         U_INST: {
           type: this.$OPERATION.U_INST,
           relation: [(this.getModelById(params.objId) || {}).id, parseInt(instId, 10)]

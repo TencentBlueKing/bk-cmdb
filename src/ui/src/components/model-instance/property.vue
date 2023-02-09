@@ -123,6 +123,7 @@
     BUILTIN_MODEL_RESOURCE_TYPES
   } from '@/dictionary/model-constants.js'
   import businessSetService from '@/service/business-set/index.js'
+  import projectService from '@/service/project/index.js'
   import authMixin from './mixin-auth'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
@@ -163,7 +164,8 @@
       authData() {
         const auths = {
           [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS]]: this.INST_AUTH.U_BUSINESS,
-          [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS_SET]]: this.INST_AUTH.U_BUSINESS_SET
+          [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS_SET]]: this.INST_AUTH.U_BUSINESS_SET,
+          [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.PROJECT]]: this.INST_AUTH.U_PROJECT
         }
         return auths[this.resourceType] || this.INST_AUTH.U_INST
       }
@@ -176,6 +178,7 @@
     methods: {
       ...mapActions('objectCommonInst', ['updateInst']),
       ...mapActions('objectBiz', ['updateBusiness']),
+
       setFocus(id, focus) {
         const item = this.$el.querySelector(id)
         focus ? item.classList.add('focus') : item.classList.remove('focus')
@@ -227,6 +230,12 @@
                 bk_biz_set_attr: { ...values },
               }
             })
+          } else if (this.resourceType === BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.PROJECT]) {
+            const params = {
+              ids: [this.instState.id],
+              data: values
+            }
+            await projectService.update(params)
           } else {
             await this.updateInst({
               objId: this.instState.bk_obj_id,

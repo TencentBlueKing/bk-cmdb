@@ -152,7 +152,7 @@
         return this.sysLangs.find(lang => lang.id === this.$i18n.locale) || {}
       }
     },
-    async  mounted() {
+    async mounted() {
       const oldCurrentVersion = localStorage.getItem('newVersion')
       const versionList = await this.getLogList()
       this.versionList = versionList.map(item => ({

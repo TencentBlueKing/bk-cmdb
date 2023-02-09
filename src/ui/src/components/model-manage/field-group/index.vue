@@ -20,13 +20,13 @@
     v-bkloading="{ isLoading: $loading(Object.values(requestIds)), extCls: 'field-loading' }"
   >
     <div class="field-options">
-      <cmdb-auth :auth="authResources" @update-auth="handleReceiveAuth">
+      <cmdb-auth v-if="isShowOptionBtn" :auth="authResources" @update-auth="handleReceiveAuth">
         <template #default="{ disabled }">
           <bk-button theme="primary" :disabled="disabled"
             @click="handleAddField(displayGroupedProperties[0])">{{$t('新建字段')}}</bk-button>
         </template>
       </cmdb-auth>
-      <cmdb-auth :auth="authResources" @update-auth="handleReceiveAuth">
+      <cmdb-auth v-if="isShowOptionBtn" :auth="authResources" @update-auth="handleReceiveAuth">
         <template #default="{ disabled }">
           <bk-button :disabled="disabled" @click="handleAddGroup">{{$t('新建分组')}}</bk-button>
         </template>
@@ -181,7 +181,7 @@
                 </template>
               </li>
               <li class="field-add fl" v-if="isEditable(group.info)">
-                <cmdb-auth @update-auth="handleReceiveAuth" :auth="authResources" tag="div">
+                <cmdb-auth v-if="isShowOptionBtn" @update-auth="handleReceiveAuth" :auth="authResources" tag="div">
                   <bk-button
                     slot-scope="{ disabled }"
                     class="field-add-btn"
@@ -199,7 +199,7 @@
           </bk-transition>
         </div>
         <div class="add-group">
-          <cmdb-auth @update-auth="handleReceiveAuth" :auth="authResources">
+          <cmdb-auth v-if="isShowOptionBtn" @update-auth="handleReceiveAuth" :auth="authResources">
             <bk-button slot-scope="{ disabled }"
               class="add-group-trigger"
               :text="true"
@@ -361,6 +361,7 @@
   import CmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
   import { mapGetters, mapActions, mapState } from 'vuex'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
   import { v4 as uuidv4 } from 'uuid'
   import CollapseGroupTitle from '@/views/model-manage/children/collapse-group-title.vue'
   import { PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
@@ -506,6 +507,9 @@
       },
       canEditSort() {
         return !this.customObjId
+      },
+      isShowOptionBtn() {
+        return BUILTIN_MODELS.PROJECT !== this.$route.params.modelId
       }
     },
     watch: {
