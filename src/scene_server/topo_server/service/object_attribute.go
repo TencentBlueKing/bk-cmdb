@@ -35,12 +35,16 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 	}
 
 	// 新建组织字段时，默认为多选，当api接口创建模型属性时，没有传ismultiple，默认置为true，支持多选
-	if attr.PropertyType == common.FieldTypeOrganization {
-		if ok := checkIsMultipleFieldExist(*attr); !ok {
+	if ok := checkIsMultipleFieldExist(*attr); !ok {
+		if attr.PropertyType == common.FieldTypeOrganization {
 			isMultiple := true
+			attr.IsMultiple = &isMultiple
+		} else {
+			isMultiple := false
 			attr.IsMultiple = &isMultiple
 		}
 	}
+
 
 	// do not support add preset attribute by api
 	attr.IsPre = false

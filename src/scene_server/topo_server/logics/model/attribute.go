@@ -72,8 +72,10 @@ func (a *attribute) IsValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 		return nil
 	}
 
-	if err := util.ValidPropertyTypeIsMultiple(data.PropertyType, *data.IsMultiple, kit.CCError); err != nil {
-		return err
+	if (isUpdate && data.IsMultiple != nil) || !isUpdate {
+		if err := util.ValidPropertyTypeIsMultiple(data.PropertyType, *data.IsMultiple, kit.CCError); err != nil {
+			return err
+		}
 	}
 
 	// 用户类型字段，在创建的时候默认是支持可多选的，而且这个字段是否可多选在页面是不可配置的,所以在创建的时候将值置为true
