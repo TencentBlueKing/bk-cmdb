@@ -47,6 +47,9 @@ var ClusterSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: VpcField, Type: enumor.String, IsRequired: false, IsEditable: false},
 	{Field: NetworkField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: TypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: ProjectNameField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: ProjectIDField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: ProjectCodeField, Type: enumor.String, IsRequired: false, IsEditable: true},
 }
 
 // ClusterBaseRefDescriptor the description used when other resources refer to the cluster.

@@ -3,7 +3,9 @@
     "1107002": "Failed to add process to module",
     "1107003": "The query process failed",
     "1107011": "delete process template bind failed",
-	"1107012": "create process template bind failed",
-	"1107013": "search process template bind failed",
+    "1107012": "create process template bind failed",
+    "1107013": "search process template bind failed",
+    "1107014": "service instance process bind info port is not set correctly, please check and try again",
+    "1107015": "service instance process bind info protocol is not set correctly, please check and try again",
     "": ""
 }

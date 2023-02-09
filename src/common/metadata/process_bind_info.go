@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+	cErr "configcenter/src/common/errors"
 	"configcenter/src/thirdparty/hooks/process"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -512,7 +513,8 @@ func (pbi *ProcPropertyBindInfo) DiffWithProcessTemplate(procBindInfoArr []ProcB
 }
 
 // NewProcBindInfo 通过模板生成进程的时候使用
-func (pbi ProcPropertyBindInfo) NewProcBindInfo(host map[string]interface{}) ([]ProcBindInfo, error) {
+func (pbi ProcPropertyBindInfo) NewProcBindInfo(cErr cErr.DefaultCCErrorIf,
+	host map[string]interface{}) ([]ProcBindInfo, error) {
 	var procBindInfoArr []ProcBindInfo
 
 	for _, row := range pbi.Value {
@@ -538,12 +540,12 @@ func (pbi ProcPropertyBindInfo) NewProcBindInfo(host map[string]interface{}) ([]
 		procBindInfo.Std.IP = &ip
 
 		if row.Std.Port.Value == nil || len(*row.Std.Port.Value) == 0 {
-			return nil, errors.New("process bind info port is not set or is empty")
+			return nil, cErr.CCError(common.CCErrProcBindInfoPortNotSet)
 		}
 		procBindInfo.Std.Port = row.Std.Port.Value
 
 		if row.Std.Protocol.Value == nil || len(*row.Std.Protocol.Value) == 0 {
-			return nil, errors.New("process bind info protocol is not set or is empty")
+			return nil, cErr.CCError(common.CCErrProcBindInfoProtocolNotSet)
 		}
 		protocol := string(*row.Std.Protocol.Value)
 		procBindInfo.Std.Protocol = &protocol

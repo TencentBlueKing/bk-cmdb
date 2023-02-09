@@ -311,6 +311,17 @@ const (
 	TypeField = "type"
 	// SchedulingEngineField scheduling engine
 	SchedulingEngineField = "scheduling_engine"
+
+	// todo: 后续项目的pr合入之后，需要统一定义
+
+	// ProjectNameField project name field
+	ProjectNameField = "bk_project_name"
+
+	// ProjectIDField project id field
+	ProjectIDField = "bk_project_id"
+
+	// ProjectCodeField project code field
+	ProjectCodeField = "bk_project_code"
 )
 
 // node field names

@@ -51,6 +51,13 @@ func (s *Service) FindNodePathForHost(ctx *rest.Contexts) {
 		return
 	}
 
+	if relation == nil {
+		ctx.RespEntity(types.HostPathData{
+			Info: []types.HostNodePath{},
+		})
+		return
+	}
+
 	bizIDWithName, err := s.getBizIDWithName(ctx.Kit, relation.BizIDs)
 	if err != nil {
 		blog.Errorf("get bizID with name failed, bizIDs: %v, err: %v, rid: %s", relation.BizIDs, err, ctx.Kit.Rid)
@@ -92,6 +99,8 @@ func (s *Service) FindNodePathForHost(ctx *rest.Contexts) {
 	})
 }
 
+// getHostNodeRelation To obtain the relationship between the host and node, it should be noted
+// that returning nil means that there is no node on the host, which is legal.
 func (s *Service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.HostNodeRelation, error) {
 	cond := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDs}}
 	fields := []string{
@@ -108,9 +117,9 @@ func (s *Service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.Ho
 		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, ccErr, kit.Rid)
 		return nil, ccErr
 	}
+	// If no relationship data can be found, return nil.
 	if len(resp.Data) == 0 {
-		blog.Errorf("no node founded, cond: %v, err: %v, rid: %s", query, ccErr, kit.Rid)
-		return nil, errors.New("no node founded")
+		return nil, nil
 	}
 	bizIDs := make([]int64, 0)
 	hostWithNode := make(map[int64][]types.Node)
