@@ -20,5 +20,5 @@ cp -r cmdb/{errors,language} dockerfile/adminserver/cmdb_adminserver/conf
 
 （4）执行docker build构建镜像
 
-注：其中webserver比较特殊，还需要将web目录拷贝到cmdb_webserver下，即与conf和二进制同级的目录下
+注：其中webserver比较特殊，还需要将web目录以及docs/support-file/changelog_user目录拷贝到cmdb_webserver下，即与conf和二进制同级的目录下
 

@@ -74,6 +74,7 @@ import resourceHost from './modules/view/resource-host.js'
 import cloudarea from './modules/api/cloudarea'
 import audit from './modules/api/audit.js'
 import dynamicGroup from './modules/api/dynamic-group'
+import versionLog from './modules/api/versionLog'
 
 import globalConfig from './modules/global-config.js'
 import bizSet from './modules/biz-set.js'
@@ -142,7 +143,8 @@ const store = new Vuex.Store({
     cloudarea,
     organization,
     audit,
-    dynamicGroup
+    dynamicGroup,
+    versionLog
   }
 })
 

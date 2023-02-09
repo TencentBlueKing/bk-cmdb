@@ -30,6 +30,7 @@ var (
 	CCDistro        = "community" // enterprise, community
 	CCDistroVersion = "9999.9999.9999"
 	ServiceName     = "unknown"
+	GoVersion       = "unknown"
 )
 
 // CCRunMode enumeration
@@ -65,6 +66,7 @@ GitHash     : %s
 RunMode     : %s
 Distribution: %s
 ServiceName : %s
-`, CCVersion, CCTag, CCBuildTime, CCGitHash, CCRunMode, CCDistro, ServiceName)
+GoVersion   : %s
+`, CCVersion, CCTag, CCBuildTime, CCGitHash, CCRunMode, CCDistro, ServiceName, GoVersion)
 	return version
 }

@@ -160,8 +160,9 @@ func (s *Service) getUserListStr(userList []string) []string {
 	userBuffer := bytes.Buffer{}
 	for _, user := range userList {
 		if userBuffer.Len()+len(user) > getUserMaxLength {
+			userBuffer.WriteString(user)
 			userStr := userBuffer.String()
-			userListStr = append(userListStr, userStr[:len(userStr)-1])
+			userListStr = append(userListStr, userStr)
 			userBuffer.Reset()
 			continue
 		}

@@ -125,10 +125,7 @@ func (lgc *Logics) GetSetIDByObjectCond(kit *rest.Kit, appID int64, objectCond [
 	// parse mainline object condition to get inst ids filter, only allows condition of 'bk_inst_id $eq value' form
 	var hasInstID bool
 	for _, i := range objectCond {
-		if i.Field != common.BKInstIDField {
-			continue
-		}
-		if i.Operator != common.BKDBEQ {
+		if i.Field != common.BKInstIDField || i.Operator != common.BKDBEQ {
 			continue
 		}
 
@@ -147,30 +144,43 @@ func (lgc *Logics) GetSetIDByObjectCond(kit *rest.Kit, appID int64, objectCond [
 	}
 
 	// get inst ids corresponding object to ids map and mainline child to parent map
-	instObjMap, err := lgc.CoreAPI.CoreService().Instance().GetInstanceObjectMapping(kit.Ctx, kit.Header, objectIDArr)
+	instObjMap, ccErr := lgc.CoreAPI.CoreService().Instance().GetInstanceObjectMapping(kit.Ctx, kit.Header, objectIDArr)
+	if ccErr != nil {
+		blog.Errorf("get instance mappings %v failed, err: %v, rid: %s", objectIDArr, ccErr, kit.Rid)
+		return nil, ccErr
+	}
+
+	mainlineMap, err := lgc.searchMainlineRelationMap(kit)
 	if err != nil {
-		blog.Errorf("get instance mappings %v failed, err: %v, rid: %s", objectIDArr, err, kit.Rid)
+		blog.Errorf("get mainline association failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
+	}
+	mainlineObj := make(map[string]struct{})
+	for _, obj := range mainlineMap {
+		mainlineObj[obj] = struct{}{}
 	}
 
 	objInstIDMap := make(map[string]int64)
 	for _, mapping := range instObjMap {
+		// if instance is not mainline model instance, skip
+		if _, ok := mainlineObj[mapping.ObjectID]; !ok {
+			continue
+		}
 		// returns no set ids if more than one inst id equal condition is set for one object
 		if _, exists := objInstIDMap[mapping.ObjectID]; exists {
 			return make([]int64, 0), nil
 		}
+
 		objInstIDMap[mapping.ObjectID] = mapping.ID
 	}
-
-	mainlineMap, ccErr := lgc.searchMainlineRelationMap(kit)
-	if err != nil {
-		blog.Errorf("get mainline association failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, ccErr
+	// an empty set ids is returned, if it is not judged, it will lead to an endless loop in the following logic.
+	if len(objInstIDMap) == 0 {
+		return make([]int64, 0), nil
 	}
 
 	// loop from the first mainline object under biz to set, filters out the set ids under the mainline instances
 	filter := make(map[string]interface{})
-	for object := mainlineMap[common.BKInnerObjIDApp]; ; object = mainlineMap[object] {
+	for object := mainlineMap[common.BKInnerObjIDApp]; object != ""; object = mainlineMap[object] {
 		instID, exists := objInstIDMap[object]
 		if len(filter) == 0 && !exists {
 			continue
@@ -200,6 +210,7 @@ func (lgc *Logics) GetSetIDByObjectCond(kit *rest.Kit, appID int64, objectCond [
 			common.BKParentIDField: mapstr.MapStr{common.BKDBIN: filteredIDs},
 		}
 	}
+	return make([]int64, 0), nil
 }
 
 // getObjectByParentID TODO

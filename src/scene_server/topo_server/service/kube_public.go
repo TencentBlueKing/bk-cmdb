@@ -107,80 +107,56 @@ func (s *Service) findKubeTopoPathInfo(kit *rest.Kit, option *types.KubeTopoPath
 	return result, nil
 }
 
-func combinationConditions(infos []types.KubeResourceInfo, bizID int64,
-	supplierAccount string) []map[string]interface{} {
+func combinationConditions(infos []types.KubeResourceInfo, bizID int64) []map[string]interface{} {
 
 	filters := make([]map[string]interface{}, 0)
 	for _, info := range infos {
 		switch info.Kind {
 		case types.KubeFolder:
 			filters = append(filters, map[string]interface{}{
-				types.BKClusterIDFiled:       info.ID,
-				types.HasPodField:            false,
-				types.BKBizIDField:           bizID,
-				types.BKSupplierAccountField: supplierAccount,
+				types.BKClusterIDFiled: info.ID,
+				types.HasPodField:      false,
+				types.BKBizIDField:     bizID,
 			})
 
 		case types.KubeCluster:
 			filters = append(filters, map[string]interface{}{
-				types.BKClusterIDFiled:       info.ID,
-				types.BKBizIDField:           bizID,
-				types.BKSupplierAccountField: supplierAccount,
+				types.BKClusterIDFiled: info.ID,
+				types.BKBizIDField:     bizID,
 			})
 
 		case types.KubeNamespace:
 			filters = append(filters, map[string]interface{}{
-				types.BKNamespaceIDField:     info.ID,
-				types.BKBizIDField:           bizID,
-				types.BKSupplierAccountField: supplierAccount,
+				types.BKNamespaceIDField: info.ID,
+				types.BKBizIDField:       bizID,
 			})
 		default:
 			filters = append(filters, map[string]interface{}{
-				types.RefIDField:             info.ID,
-				types.RefKindField:           info.Kind,
-				types.BKBizIDField:           bizID,
-				types.BKSupplierAccountField: supplierAccount,
+				types.RefIDField:   info.ID,
+				types.RefKindField: info.Kind,
+				types.BKBizIDField: bizID,
 			})
 		}
 	}
 	return filters
 }
 
-// CountKubeTopoHostsOrPods count the number of node pods or hosts
-func (s *Service) CountKubeTopoHostsOrPods(ctx *rest.Contexts) {
+func (s *Service) countKubeHostOrPodsByCond(kit *rest.Kit, option *types.KubeTopoCountOption, bizID int64,
+	kind string) ([]types.KubeTopoCountRsp, error) {
 
-	option := new(types.KubeTopoCountOption)
-	if err := ctx.DecodeInto(option); err != nil {
-		blog.Errorf("failed to parse the params, error: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
-		return
-	}
+	filters := combinationConditions(option.ResourceInfos, bizID)
 
-	kind := ctx.Request.PathParameter("type")
-	if kind != types.KubeHostKind && kind != types.KubePodKind {
-		blog.Errorf("failed to parse the params, error: %v, rid: %s", ctx.Kit.Rid)
-		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
-		return
-	}
+	switch kind {
+	case types.KubeHostKind:
+		result, err := s.getTopoHostNumber(kit, option.ResourceInfos, filters, bizID)
+		if err != nil {
+			blog.Errorf("get host number failed, option: %+v, bizID: %d, err: %v, rid: %s", option, bizID, err)
+			return nil, err
+		}
+		return result, nil
+	case types.KubePodKind:
 
-	if cErr := option.Validate(); cErr.ErrCode != 0 {
-		blog.Errorf("validate request failed, err: %v, rid: %s", cErr, ctx.Kit.Rid)
-		ctx.RespAutoError(cErr.ToCCError(ctx.Kit.CCError))
-		return
-	}
-
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
-	if err != nil {
-		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	filters := combinationConditions(option.ResourceInfos, bizID, ctx.Kit.SupplierAccount)
-	result := make([]types.KubeTopoCountRsp, 0)
-	if kind == types.KubePodKind {
 		podFilters := make([]map[string]interface{}, 0)
-
 		resIDMap := make(map[int]struct{})
 		for id, filter := range filters {
 			// if the filter contains the "has_pod" field, it indicates the folder node
@@ -190,18 +166,19 @@ func (s *Service) CountKubeTopoHostsOrPods(ctx *rest.Contexts) {
 			}
 			podFilters = append(podFilters, filter)
 		}
+		result := make([]types.KubeTopoCountRsp, 0)
+
 		// here it is explained that the node to be queried is a folder,
 		// then the number of pods must be 0.
 		if len(podFilters) == 0 {
-			ctx.RespEntity(result)
-			return
+			return result, nil
 		}
-		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
+
+		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 			types.BKTableNameBasePod, podFilters)
 		if err != nil {
-			blog.Errorf("count pod failed, cond: %#v, err: %v, rid: %s", podFilters, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
+			blog.Errorf("count pod failed, cond: %#v, err: %v, rid: %s", podFilters, err, kit.Rid)
+			return nil, err
 		}
 
 		var idx int
@@ -222,78 +199,132 @@ func (s *Service) CountKubeTopoHostsOrPods(ctx *rest.Contexts) {
 			})
 			idx++
 		}
+		return result, nil
 
-		ctx.RespEntity(result)
+	default:
+		return nil, errors.New("count type error")
+	}
+}
+
+// CountKubeTopoHostsOrPods count the number of node pods or hosts
+func (s *Service) CountKubeTopoHostsOrPods(ctx *rest.Contexts) {
+
+	option := new(types.KubeTopoCountOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		blog.Errorf("failed to parse the params, error: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespErrorCodeOnly(common.CCErrCommJSONUnmarshalFailed, "")
 		return
 	}
 
-	result, err = s.getTopoHostNumber(ctx, option.ResourceInfos, filters, bizID)
+	if cErr := option.Validate(); cErr.ErrCode != 0 {
+		blog.Errorf("validate request failed, err: %v, rid: %s", cErr, ctx.Kit.Rid)
+		ctx.RespAutoError(cErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	kind := ctx.Request.PathParameter("type")
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
+		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
+
+	result, err := s.countKubeHostOrPodsByCond(ctx.Kit, option, bizID, kind)
+	if err != nil {
+		blog.Errorf("failed to get(%s) number, bizID: %d, option: %+v, err: %v, rid: %s",
+			kind, bizID, option, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
 	ctx.RespEntity(result)
 }
 
-func (s *Service) getTopoHostNumber(ctx *rest.Contexts, resourceInfos []types.KubeResourceInfo,
+func (s *Service) getTopoHostNumber(kit *rest.Kit, resourceInfos []types.KubeResourceInfo,
 	filters []map[string]interface{}, bizID int64) ([]types.KubeTopoCountRsp, error) {
 
-	// obtaining a host requires the following steps:
-	// 1、get all hostIDs of the node.
-	// 2、deduplicate hostID.
-	// 3、combine the hostID and business ID to check the modulehostconfig table,
-	// and the final number is the real number of hosts.
-	result := make([]types.KubeTopoCountRsp, 0)
+	// obtaining a host requires the following steps: 1、get all hostIDs of the node. 2、deduplicate hostID. 3、combine
+	// the hostID and business ID to check the modulehostconfig table, and the final number is the real number of hosts.
+	var wg sync.WaitGroup
+	var lock sync.RWMutex
+	var firstErr error
+	pipeline, result := make(chan bool, 20), make([]types.KubeTopoCountRsp, 0)
+
 	for id, filter := range filters {
-		// determine whether this node is a folder If it is a folder, then you need to check the node table.
-		if resourceInfos[id].Kind == types.KubeFolder {
-			hostMap, err := s.getHostIDsInNodeByCond(ctx.Kit, bizID, filter)
-			if err != nil {
-				return nil, err
+		pipeline <- true
+		wg.Add(1)
+		go func(id int, filter map[string]interface{}) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+			// determine whether this node is a folder If it is a folder, then you need to check the node table.
+			if resourceInfos[id].Kind == types.KubeFolder {
+				hostMap, err := s.getHostIDsInNodeByCond(kit, bizID, filter)
+				if err != nil {
+					firstErr = err
+					return
+				}
+				lock.Lock()
+				result = append(result, types.KubeTopoCountRsp{
+					Kind:  resourceInfos[id].Kind,
+					ID:    resourceInfos[id].ID,
+					Count: int64(len(hostMap)),
+				})
+				lock.Unlock()
+				return
 			}
+
+			// what counts here is the number of hosts in the pod table excluding folders.
+			hostMap, err := s.getHostIDsInPodsByCond(kit, bizID, filter)
+			if err != nil {
+				firstErr = err
+				return
+			}
+
+			workloadType := types.WorkloadType(util.GetStrByInterface(filter[types.RefKindField]))
+			// the scenario dealt with here is the workload type calculation number.
+			if err := workloadType.Validate(); err == nil {
+				id, err := util.GetInt64ByInterface(filter[types.RefIDField])
+				if err != nil {
+					firstErr = err
+					return
+				}
+
+				lock.Lock()
+				result = append(result, types.KubeTopoCountRsp{
+					Kind:  util.GetStrByInterface(filter[types.RefKindField]),
+					ID:    id,
+					Count: int64(len(hostMap)),
+				})
+				lock.Unlock()
+				return
+			}
+
+			resultHostMap, err := s.getClusterNumFromFolder(kit, bizID, filter)
+			if err != nil {
+				firstErr = err
+				return
+			}
+
+			for id := range hostMap {
+				resultHostMap[id] = struct{}{}
+			}
+
+			lock.Lock()
 			result = append(result, types.KubeTopoCountRsp{
 				Kind:  resourceInfos[id].Kind,
 				ID:    resourceInfos[id].ID,
-				Count: int64(len(hostMap)),
+				Count: int64(len(resultHostMap)),
 			})
-			continue
-		}
+			lock.Unlock()
+		}(id, filter)
+	}
 
-		// what counts here is the number of hosts in the pod table excluding folders.
-		hostMap, err := s.getHostIDsInPodsByCond(ctx.Kit, bizID, filter)
-		if err != nil {
-			return nil, err
-		}
-
-		workloadType := types.WorkloadType(util.GetStrByInterface(filter[types.RefKindField]))
-		// the scenario dealt with here is the workload type calculation number.
-		if err := workloadType.Validate(); err == nil {
-			id, err := util.GetInt64ByInterface(filter[types.RefIDField])
-			if err != nil {
-				return nil, err
-			}
-			result = append(result, types.KubeTopoCountRsp{
-				Kind:  util.GetStrByInterface(filter[types.RefKindField]),
-				ID:    id,
-				Count: int64(len(hostMap)),
-			})
-			continue
-		}
-
-		resultHostMap, err := s.getClusterNumFromFolder(ctx.Kit, bizID, filter)
-		if err != nil {
-			return nil, err
-		}
-
-		for id := range hostMap {
-			resultHostMap[id] = struct{}{}
-		}
-
-		result = append(result, types.KubeTopoCountRsp{
-			Kind:  resourceInfos[id].Kind,
-			ID:    resourceInfos[id].ID,
-			Count: int64(len(resultHostMap)),
-		})
+	wg.Wait()
+	if firstErr != nil {
+		return nil, firstErr
 	}
 	return result, nil
 }
@@ -358,7 +389,6 @@ func (s *Service) getHostIDsInNodeByCond(kit *rest.Kit, bizID int64, cond mapstr
 		Fields:         []string{common.BKHostIDField},
 		DisableCounter: true,
 	}
-
 	nodes, cErr := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
 	if cErr != nil {
 		blog.Errorf("find nodes failed, cond: %v, err: %v, rid: %s", query, cErr, kit.Rid)
@@ -385,6 +415,7 @@ func (s *Service) getHostIDsInPodsByCond(kit *rest.Kit, bizID int64, cond mapstr
 		Fields:         []string{common.BKHostIDField},
 		DisableCounter: true,
 	}
+
 	pods, cErr := s.Engine.CoreAPI.CoreService().Kube().ListPod(kit.Ctx, kit.Header, query)
 	if cErr != nil {
 		blog.Errorf("find pods failed, cond: %v, err: %v, rid: %s", query, cErr, kit.Rid)
@@ -439,7 +470,6 @@ func (s *Service) SearchKubeTopoPath(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	filter[types.BKSupplierAccountField] = ctx.Kit.SupplierAccount
 
 	if option.Page.EnableCount {
 		var count int64

@@ -125,7 +125,7 @@
 - 查询主机及其对应topo增加自定义层级查询条件
 
 **兼容性**
-- 优化procserver中无长度限制或无分页的接口可能会造成性能问题，如用到该 [issue](https://github.com/Tencent/bk-cmdb/issues/5651) 中的接口，请按新的分页要求使用，否则接口调用会失败。
+- 优化procserver中无长度限制或无分页的接口可能会造成性能问题，如用到该 [issue](https://github.com/TencentBlueKing/bk-cmdb/issues/5651) 中的接口，请按新的分页要求使用，否则接口调用会失败。
 
 **功能优化**
 - 服务模板进程信息加解锁按钮提示文案优化
@@ -355,12 +355,12 @@
 
 ## [Version: 3.10.6] - 2021-10-11
 > 重要提示：
-> 1. 新版全文检索升级，请阅读[指引](https://github.com/Tencent/bk-cmdb/issues/5507)
-> 2. 业务拓扑调整，需要在升级完该版本后，利用小工具删除缓存数据，具体详情见issue[#5471](https://github.com/Tencent/bk-cmdb/issues/5471)）
+> 1. 新版全文检索升级，请阅读[指引](https://github.com/TencentBlueKing/bk-cmdb/issues/5507)
+> 2. 业务拓扑调整，需要在升级完该版本后，利用小工具删除缓存数据，具体详情见issue[#5471](https://github.com/TencentBlueKing/bk-cmdb/issues/5471)）
 > 3. 属性鉴权功能，请注意版本依赖：IAM SaaS` >= 1.4.15`，IAM 后台` >=1.7.7`。该版本涉及存量模型实例权限的迁移，如果权限较多执行init_db进行权限迁移的过程可能会持续一段时间，建议在执行权限迁移过程避免执行权限申请和实例操作。
 
 **新增功能**
-- 新增清理审计日志接口（接口使用方法可参考issue[#5603](https://github.com/Tencent/bk-cmdb/issues/5603)）
+- 新增清理审计日志接口（接口使用方法可参考issue[#5603](https://github.com/TencentBlueKing/bk-cmdb/issues/5603)）
 - 业务支持跨页批量编辑
 - 归档业务提供“彻底删除”能力
 
@@ -381,7 +381,7 @@
 - 查询有权限的实例列表功能优化
 - toposerver重构
 - 修改通用模型名称时，同步模型名到IAM
-- 业务拓扑缓存调整（注意：需要在升级完该版本后，利用小工具删除缓存数据，具体详情见issue[#5471](https://github.com/Tencent/bk-cmdb/issues/5471)）
+- 业务拓扑缓存调整（注意：需要在升级完该版本后，利用小工具删除缓存数据，具体详情见issue[#5471](https://github.com/TencentBlueKing/bk-cmdb/issues/5471)）
 - 属性鉴权功能中迁移存量模型实例的权限
 - 资源导出默认勾选上表头配置的属性列
 - 全文检索体验优化
@@ -527,11 +527,11 @@
 > 重要提示：
 > 1. v3.10版本为大版本升级，从低于v3.10的版本升级到v3.10版本时，需要**停服**升级，升级过程中会对现有的存量数据进行迁移，升级时间可能会比较长（取决于模型实例的数据量）。
 升级前需要用提供的小工具进行数据验证，验证后处理完数据才能进行正常的升级流程。
-> 2. 升级前，请仔细阅读这里的[指引](https://github.com/Tencent/bk-cmdb/issues/5308), 并按照指引中的内容进行升级的的梳理、准备工作。
+> 2. 升级前，请仔细阅读这里的[指引](https://github.com/TencentBlueKing/bk-cmdb/issues/5308), 并按照指引中的内容进行升级的的梳理、准备工作。
 > 3. `该版本仅为测试版本，不能用于正式环境。`
 
 **新增功能**
-- 新增了主机身份事件服务。同时调整了主机身份接口(search_hostidentifier)协议，简化协议内容，性能提升2个量级，具体详情见[这里](https://github.com/Tencent/bk-cmdb/issues/5183)。(注：该功能依赖GSE的版本, 目前未外发)。
+- 新增了主机身份事件服务。同时调整了主机身份接口(search_hostidentifier)协议，简化协议内容，性能提升2个量级，具体详情见[这里](https://github.com/TencentBlueKing/bk-cmdb/issues/5183)。(注：该功能依赖GSE的版本, 目前未外发)。
 - 新增支持模型实例事件服务功能。
 - 新增了一批模型实例查询与count相关的接口，解决老接口存在的性能问题。
 - 增加事件上报连通性检测以及升级gsecmdline命令
@@ -548,4 +548,4 @@
 - 下线了一批模型实例相关的接口，这些接口存在性能问题，由新上的接口替代。
 
 
-`新增、调整、下线的接口详情`详见[指引](https://github.com/Tencent/bk-cmdb/issues/5308)。
+`新增、调整、下线的接口详情`详见[指引](https://github.com/TencentBlueKing/bk-cmdb/issues/5308)。

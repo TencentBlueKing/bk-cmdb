@@ -88,7 +88,8 @@ const (
 	InstAsst CursorType = "inst_asst"
 	// BizSetRelation a mixed event type containing biz set & biz events, which are converted to their relation events
 	BizSetRelation CursorType = "biz_set_relation"
-
+	// Plat cloud area event cursor type
+	Plat CursorType = "plat"
 	// kube related cursor types
 	// KubeCluster cursor type
 	KubeCluster CursorType = "kube_cluster"
@@ -133,6 +134,8 @@ func (ct CursorType) ToInt() int {
 		return 14
 	case BizSetRelation:
 		return 15
+	case Plat:
+		return 16
 	case KubeCluster:
 		return 17
 	case KubeNode:
@@ -179,6 +182,8 @@ func (ct *CursorType) ParseInt(typ int) {
 		*ct = BizSet
 	case 15:
 		*ct = BizSetRelation
+	case 16:
+		*ct = Plat
 	case 17:
 		*ct = KubeCluster
 	case 18:
@@ -197,7 +202,7 @@ func (ct *CursorType) ParseInt(typ int) {
 // ListCursorTypes returns all support CursorTypes.
 func ListCursorTypes() []CursorType {
 	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase, Process, ProcessInstanceRelation,
-		HostIdentifier, MainlineInstance, InstAsst, BizSet, BizSetRelation, KubeCluster, KubeNode, KubeNamespace,
+		HostIdentifier, MainlineInstance, InstAsst, BizSet, BizSetRelation, Plat, KubeCluster, KubeNode, KubeNamespace,
 		KubeWorkload, KubePod}
 }
 
@@ -388,6 +393,8 @@ func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 		curType = InstAsst
 	case common.BKTableNameBaseBizSet:
 		curType = BizSet
+	case common.BKTableNameBasePlat:
+		curType = Plat
 	case kubetypes.BKTableNameBaseCluster:
 		curType = KubeCluster
 	case kubetypes.BKTableNameBaseNode:

@@ -320,6 +320,12 @@ webServer:
   login:
     #登录模式
     version: $loginVersion
+  #cmdb版本日志存放路径配置
+  changelogPath:
+    #中文版版本日志存放路径
+    ch: ../changelog_user/ch
+    #英文版版本日志存放路径
+    en: ../changelog_user/en
 
 # operation_server专属配置
 operationServer:

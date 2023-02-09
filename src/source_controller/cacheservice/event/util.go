@@ -52,6 +52,8 @@ func GetResourceKeyWithCursorType(res watch.CursorType) (Key, error) {
 		key = BizSetKey
 	case watch.BizSetRelation:
 		key = BizSetRelationKey
+	case watch.Plat:
+		key = PlatKey
 	case watch.KubeCluster:
 		key = KubeClusterKey
 	case watch.KubeNode:
