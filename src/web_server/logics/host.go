@@ -99,7 +99,7 @@ func (lgc *Logics) GetHostData(appID int64, hostIDArr []int64, hostFields []stri
 		if exportCond.Page.Limit <= 0 || exportCond.Page.Limit > common.BKMaxExportLimit {
 			return nil, errors.New(defLang.Languagef("export_page_limit_err", common.BKMaxExportLimit))
 		}
-		sHostCond["ip"] = exportCond.Ip
+		sHostCond["ip"] = exportCond.Ipv4Ip
 		sHostCond["page"] = exportCond.Page
 
 		// set host fields
