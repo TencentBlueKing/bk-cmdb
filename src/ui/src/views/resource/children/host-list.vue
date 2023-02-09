@@ -29,7 +29,7 @@
         class-name="bk-table-selection">
       </bk-table-column>
       <bk-table-column v-for="property in tableHeader"
-        :show-overflow-tooltip="property.bk_property_type !== 'topology'"
+        :show-overflow-tooltip="$tools.isShowOverflowTips(property)"
         :min-width="getColumnMinWidth(property)"
         :key="property.id"
         :sortable="isPropertySortable(property) ? 'custom' : false"
@@ -47,6 +47,7 @@
           </cmdb-host-topo-path>
           <cmdb-property-value
             v-else
+            :ref="getTableCellPropertyValueRefId(property)"
             :theme="['bk_host_id'].includes(property.bk_property_id) ? 'primary' : 'default'"
             :value="row | hostValueFilter(property.bk_obj_id, property.bk_property_id)"
             :show-unit="false"
@@ -249,6 +250,9 @@
           hasSort: this.isPropertySortable(property) ? 'custom' : false,
           preset
         })
+      },
+      getTableCellPropertyValueRefId(property) {
+        return this.$tools.isUseComplexValueType(property) ? `table-cell-property-value-${property.bk_property_id}` : null
       },
       isPropertySortable(property) {
         return property.bk_obj_id === 'host' && !['foreignkey', 'topology'].includes(property.bk_property_type)

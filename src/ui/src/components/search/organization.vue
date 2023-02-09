@@ -11,28 +11,64 @@
 -->
 
 <template>
+  <div class="search-value-container" v-if="displayType === 'info'">
+    <div class="prepend"><slot name="info-prepend"></slot></div>
+    <org-value :property="property" :value="localValue" show-on="search"></org-value>
+  </div>
   <cmdb-form-organization
+    v-else
     v-model="localValue"
     v-bind="$attrs"
-    @clear="() => $emit('clear')">
+    :multiple="multiple"
+    @clear="() => $emit('clear')"
+    @toggle="handleToggle">
   </cmdb-form-organization>
 </template>
 
 <script>
   import activeMixin from './mixins/active'
+  import orgValue from '@/components/ui/other/org-value.vue'
+
   export default {
     name: 'cmdb-search-organization',
+    components: {
+      orgValue
+    },
     mixins: [activeMixin],
     props: {
       value: {
-        type: Array,
-        default: () => ([])
+        type: [Array, String, Number],
+        default: () => []
+      },
+      property: {
+        type: Object,
+        default: () => ({})
+      },
+      multiple: {
+        type: Boolean,
+        default: true
+      },
+      displayType: {
+        type: String,
+        default: 'selector',
+        validator(type) {
+          return ['selector', 'info'].includes(type)
+        }
       }
     },
     computed: {
       localValue: {
         get() {
-          return this.value
+          if (this.multiple) {
+            if (this.value && !Array.isArray(this.value)) {
+              return [this.value]
+            }
+            return this.value || []
+          }
+          if (Array.isArray(this.value)) {
+            return this.value[0] || ''
+          }
+          return this.value || ''
         },
         set(value) {
           this.$emit('input', value)
@@ -42,3 +78,12 @@
     }
   }
 </script>
+
+<style lang="scss" scoped>
+  .search-value-container {
+    display: flex;
+    .prepend {
+      margin-right: 4px;
+    }
+  }
+</style>

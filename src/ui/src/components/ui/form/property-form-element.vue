@@ -20,8 +20,9 @@
       :options="property.option || []"
       :data-vv-name="property.bk_property_id"
       :data-vv-as="property.bk_property_name"
-      :placeholder="getPlaceholder(property)"
+      :placeholder="$tools.getPropertyPlaceholder(property)"
       :auto-check="autoCheck"
+      :multiple="property.ismultiple"
       :disabled="disabled"
       :size="size"
       :font-size="fontSize"
@@ -38,8 +39,6 @@
 </template>
 
 <script>
-  import Utils from '@/components/filters/utils'
-
   export default {
     props: {
       property: {
@@ -88,9 +87,6 @@
           rules.required = this.mustRequired
         }
         return rules
-      },
-      getPlaceholder(property) {
-        return Utils.getPlaceholder(property)
       },
       getMoreProps(property) {
         const validateEvents = this.$tools.getValidateEvents(property)
