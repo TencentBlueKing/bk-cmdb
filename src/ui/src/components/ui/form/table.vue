@@ -34,11 +34,13 @@
             :data-vv-name="property.bk_property_id"
             :data-vv-as="property.bk_property_name"
             :is="`cmdb-form-${property.bk_property_type}`"
+            :placeholder="$tools.getPropertyPlaceholder(property)"
             :unit="property.unit"
             :row="2"
             :disabled="disabled"
             :options="property.option || []"
             :auto-select="false"
+            :multiple="property.ismultiple"
             :value="localValue[rowProps.$index][property.bk_property_id]"
             @input="handleColumnValueChange(rowProps, ...arguments)">
           </component>

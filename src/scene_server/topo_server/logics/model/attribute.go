@@ -261,13 +261,16 @@ func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 		return nil
 	}
 
-	if err := util.ValidPropertyTypeIsMultiple(data.PropertyType, data.IsMultiple, kit.CCError); err != nil {
-		return err
+	if (isUpdate && data.IsMultiple != nil) || !isUpdate {
+		if err := util.ValidPropertyTypeIsMultiple(data.PropertyType, *data.IsMultiple, kit.CCError); err != nil {
+			return err
+		}
 	}
 
 	// 用户类型字段，在创建的时候默认是支持可多选的，而且这个字段是否可多选在页面是不可配置的,所以在创建的时候将值置为true
 	if data.PropertyType == common.FieldTypeUser && !isUpdate {
-		data.IsMultiple = true
+		isMultiple := true
+		data.IsMultiple = &isMultiple
 	}
 
 	// check if property type for creation is valid, can't update property type
@@ -302,14 +305,14 @@ func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 	// check option validity for creation,
 	// update validation is in coreservice cause property type need to be obtained from db
 	if !isUpdate && a.isPropertyTypeIntEnumListSingleLong(data.PropertyType) {
-		if err := util.ValidPropertyOption(data.PropertyType, data.Option, data.IsMultiple, kit.CCError); err != nil {
+		if err := util.ValidPropertyOption(data.PropertyType, data.Option, *data.IsMultiple, kit.CCError); err != nil {
 			return err
 		}
 	}
 
 	// check enum quote field option validity creation or update
-	if data.PropertyType == common.FieldTypeEnumQuote {
-		if err := a.ValidObjIDAndInstID(kit, data.ObjectID, data.Option, data.IsMultiple); err != nil {
+	if data.PropertyType == common.FieldTypeEnumQuote && data.IsMultiple != nil {
+		if err := a.ValidObjIDAndInstID(kit, data.ObjectID, data.Option, *data.IsMultiple); err != nil {
 			blog.Errorf("check objID and instID failed, err: %v, rid: %s", err, kit.Rid)
 			return err
 		}
@@ -341,6 +344,7 @@ func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attri
 	cond := []map[string]interface{}{{
 		common.BKObjIDField:           data.ObjectID,
 		common.BKPropertyGroupIDField: data.PropertyGroup,
+		common.BKAppIDField:           data.BizID,
 	}}
 
 	defCntRes, err := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
@@ -368,6 +372,7 @@ func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attri
 	bizDefaultGroupCond := []map[string]interface{}{{
 		common.BKObjIDField:           data.ObjectID,
 		common.BKPropertyGroupIDField: common.BKBizDefault,
+		common.BKAppIDField:           data.BizID,
 	}}
 
 	bizDefCntRes, err := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,

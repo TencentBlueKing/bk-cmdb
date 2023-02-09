@@ -27,7 +27,7 @@
       @header-click="handleHeaderClick">
       <bk-table-column type="selection" width="50" align="center" fixed></bk-table-column>
       <bk-table-column v-for="column in tableHeader"
-        :show-overflow-tooltip="column.bk_property_type !== 'map'"
+        :show-overflow-tooltip="$tools.isShowOverflowTips(column)"
         :min-width="getColumnMinWidth(column)"
         :key="column.bk_property_id"
         :sortable="getColumnSortable(column)"
@@ -36,6 +36,7 @@
         :render-header="() => renderHeader(column)">
         <template slot-scope="{ row }">
           <cmdb-property-value
+            :ref="getTableCellPropertyValueRefId(column)"
             :theme="column.bk_property_id === 'bk_host_id' ? 'primary' : 'default'"
             :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id)"
             :show-unit="false"
@@ -259,6 +260,9 @@
           name = `${name}(${model.bk_obj_name})`
         }
         return this.$tools.getHeaderPropertyMinWidth(property, { name, hasSort: this.getColumnSortable(property) })
+      },
+      getTableCellPropertyValueRefId(property) {
+        return this.$tools.isUseComplexValueType(property) ? `table-cell-property-value-${property.bk_property_id}` : null
       },
       handlePageChange(current = 1) {
         RouterQuery.set({

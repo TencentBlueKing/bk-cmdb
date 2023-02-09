@@ -180,7 +180,7 @@ func (s *Service) ListPod(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err := req.BuildCond(bizID, ctx.Kit.SupplierAccount)
+	cond, err := req.BuildCond(bizID)
 	if err != nil {
 		blog.Errorf("build query pod condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -237,7 +237,6 @@ func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
 	for _, info := range data.Data {
 		for _, pod := range info.Pods {
 			filter := map[string]interface{}{
-				common.BKOwnerIDField:    ctx.Kit.SupplierAccount,
 				types.BKBizIDField:       info.BizID,
 				types.BKClusterIDFiled:   pod.ClusterID,
 				types.BKNamespaceIDField: pod.NamespaceID,
@@ -380,7 +379,7 @@ func (s *Service) ListContainer(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err := req.BuildCond(ctx.Kit.SupplierAccount)
+	cond, err := req.BuildCond()
 	if err != nil {
 		blog.Errorf("build query container condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

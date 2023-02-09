@@ -190,7 +190,7 @@ func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClu
 		return err
 	}
 	// whether the associated resources under the cluster have been deleted. such as namespace, node, deployment, pod.
-	exist, cErr := b.isExistKubeResourceUnderCluster(kit, option, bizID, kit.SupplierAccount)
+	exist, cErr := b.isExistKubeResourceUnderCluster(kit, option, bizID)
 	if cErr != nil {
 		blog.Errorf("failed to obtain resources under the cluster, bizID: %d, cluster IDs: %+v, err: %v, rid: %s",
 			bizID, option.IDs, cErr, kit.Rid)
@@ -224,8 +224,8 @@ func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClu
 	return nil
 }
 
-func (b *kube) isExistKubeResourceUnderCluster(kit *rest.Kit, option *types.DeleteClusterOption, bizID int64,
-	supplierAccount string) (bool, error) {
+func (b *kube) isExistKubeResourceUnderCluster(kit *rest.Kit, option *types.DeleteClusterOption, bizID int64) (
+	bool, error) {
 
 	if len(option.IDs) == 0 {
 		return false, errors.New("ids must be set")
@@ -245,13 +245,12 @@ func (b *kube) isExistKubeResourceUnderCluster(kit *rest.Kit, option *types.Dele
 		{
 			types.BKClusterIDFiled: map[string]interface{}{common.BKDBIN: option.IDs},
 			common.BKAppIDField:    bizID,
-			common.BKOwnerIDField:  supplierAccount,
 		},
 	}
 
 	for _, table := range tables {
 		wg.Add(1)
-		go func(table string, bizID int64, supplierAccount string) {
+		go func(table string, bizID int64) {
 			defer func() {
 				wg.Done()
 			}()
@@ -269,7 +268,7 @@ func (b *kube) isExistKubeResourceUnderCluster(kit *rest.Kit, option *types.Dele
 				return
 			}
 
-		}(table, bizID, supplierAccount)
+		}(table, bizID)
 	}
 	wg.Wait()
 	if firstErr != nil {
@@ -324,9 +323,8 @@ func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, biz
 	}
 
 	cond := map[string]interface{}{
-		common.BKDBOR:         conds,
-		common.BKAppIDField:   bizID,
-		common.BKOwnerIDField: kit.SupplierAccount,
+		common.BKDBOR:       conds,
+		common.BKAppIDField: bizID,
 	}
 
 	counts, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,

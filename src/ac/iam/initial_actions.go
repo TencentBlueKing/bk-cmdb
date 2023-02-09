@@ -118,6 +118,7 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchMainlineInstanceEvent:          "自定义拓扑层级事件监听",
 	WatchInstAsstEvent:                  "实例关联事件监听",
 	WatchBizSetEvent:                    "业务集事件监听",
+	WatchPlatEvent:                      "云区域事件监听",
 	WatchKubeClusterEvent:               "容器集群事件监听",
 	WatchKubeNodeEvent:                  "容器节点事件监听",
 	WatchKubeNamespaceEvent:             "容器命名空间事件监听",
@@ -1258,6 +1259,14 @@ func genEventWatchActions() []ResourceAction {
 		ID:      WatchBizSetEvent,
 		Name:    ActionIDNameMap[WatchBizSetEvent],
 		NameEn:  "Business Set Event Listen",
+		Type:    View,
+		Version: 1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:      WatchPlatEvent,
+		Name:    ActionIDNameMap[WatchPlatEvent],
+		NameEn:  "Cloud Area Event Listen",
 		Type:    View,
 		Version: 1,
 	})

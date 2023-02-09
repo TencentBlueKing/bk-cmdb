@@ -283,7 +283,7 @@ func (ns *NsQueryOption) Validate() errors.RawErrorInfo {
 }
 
 // BuildCond build query namespace condition
-func (ns *NsQueryOption) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
+func (ns *NsQueryOption) BuildCond(bizID int64) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}

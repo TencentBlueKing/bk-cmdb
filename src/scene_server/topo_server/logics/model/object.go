@@ -796,7 +796,10 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, attr []metadata.A
 			createdGroup[item.PropertyGroupName] = struct{}{}
 		}
 		if item.PropertyType == common.FieldTypeEnumQuote {
-			if err := o.attr.ValidObjIDAndInstID(kit, objID, item.Option, item.IsMultiple); err != nil {
+			if item.IsMultiple == nil {
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
+			}
+			if err := o.attr.ValidObjIDAndInstID(kit, objID, item.Option, *item.IsMultiple); err != nil {
 				blog.Errorf("check enum quote option objID and instID failed, value: %+v, err: %v, rid: %s",
 					item.Option, err, kit.Rid)
 				return err

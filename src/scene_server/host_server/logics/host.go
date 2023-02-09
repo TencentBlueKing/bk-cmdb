@@ -1638,7 +1638,7 @@ func (lgc *Logics) ListServiceTemplateHostIDMap(kit *rest.Kit, ids []int64) ([]m
 }
 
 // ListHostTotalMainlineTopo search hosts with its' topo under business
-// related issue:https://github.com/Tencent/bk-cmdb/issues/5891
+// related issue:https://github.com/TencentBlueKing/bk-cmdb/issues/5891
 func (lgc *Logics) ListHostTotalMainlineTopo(kit *rest.Kit, bizID int64, params metadata.FindHostTotalTopo) (
 	[]*metadata.HostDetailWithTopo, error) {
 

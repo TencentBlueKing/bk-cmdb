@@ -17,6 +17,7 @@ import queryBuilderOperator, { QUERY_OPERATOR, QUERY_OPERATOR_SYMBOL } from '@/u
 import isEmpty from 'lodash/isEmpty'
 import { BUILTIN_MODELS } from '@/dictionary/model-constants'
 import { CONTAINER_OBJECTS } from '@/dictionary/container'
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
 const getModelById = store.getters['objectModelClassify/getModelById']
 export function getLabel(property) {
@@ -29,7 +30,7 @@ export function getBindProps(property) {
     return {}
   }
   const type = property.bk_property_type
-  if (['list', 'enum'].includes(type)) {
+  if (['list', 'enum', PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.ENUMQUOTE].includes(type)) {
     return {
       options: property.option || []
     }
@@ -107,7 +108,13 @@ export function convertValue(value, operator, property) {
   const { bk_property_type: type } = property
   let convertedValue = Array.isArray(value) ? value : [value]
   convertedValue = convertedValue.map((data) => {
-    if (['int', 'foreignkey', 'organization', 'service-template'].includes(type)) {
+    if ([
+      'int',
+      'foreignkey',
+      'organization',
+      'service-template',
+      PROPERTY_TYPES.ENUMQUOTE
+    ].includes(type)) {
       return parseInt(data, 10)
     }
     if (type === 'float') {
@@ -125,11 +132,17 @@ export function convertValue(value, operator, property) {
 }
 
 export function findProperty(id, properties, key) {
-  let field = isInt(id) ? 'id' : 'bk_property_id'
-  if (key) {
-    field = key
+  const field = isInt(id) ? 'id' : 'bk_property_id'
+
+  // 先按默认的规则找
+  let found = properties.find(property => property[field].toString() === id.toString())
+
+  // 找不到同时指定了key则再根据key再找一次，此处已无从考究是何时添加了key参数，固添加此逻辑
+  if (!found && key) {
+    found = properties.find(property => property[key].toString() === id.toString())
   }
-  return properties.find(property => property[field].toString() === id.toString())
+
+  return found
 }
 
 export function findPropertyByPropertyId(propertyId, properties, modelId) {

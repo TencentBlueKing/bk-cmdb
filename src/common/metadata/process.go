@@ -1188,8 +1188,8 @@ func IsAsDefaultValue(asDefaultValue *bool) bool {
 }
 
 // NewProcess generate a new process from process template
-func (pt *ProcessTemplate) NewProcess(bizID, svcInstID int64, supplierAccount string, host map[string]interface{}) (
-	*Process, error) {
+func (pt *ProcessTemplate) NewProcess(cErr cErr.DefaultCCErrorIf, bizID, svcInstID int64, supplierAccount string,
+	host map[string]interface{}) (*Process, error) {
 
 	now := time.Now()
 	processInstance := &Process{
@@ -1221,7 +1221,7 @@ func (pt *ProcessTemplate) NewProcess(bizID, svcInstID int64, supplierAccount st
 	processInstance.ServiceInstanceID = svcInstID
 
 	var err error
-	processInstance.BindInfo, err = property.BindInfo.NewProcBindInfo(host)
+	processInstance.BindInfo, err = property.BindInfo.NewProcBindInfo(cErr, host)
 	if err != nil {
 		return nil, err
 	}

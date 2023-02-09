@@ -72,8 +72,9 @@
                     :options="property.option || []"
                     :data-vv-name="property.bk_property_id"
                     :data-vv-as="property.bk_property_name"
-                    :placeholder="getPlaceholder(property)"
+                    :placeholder="$tools.getPropertyPlaceholder(property)"
                     :auto-check="false"
+                    :multiple="property.ismultiple"
                     v-bind="$tools.getValidateEvents(property)"
                     v-validate="$tools.getValidateRules(property)"
                     v-model.trim="editState.value"
@@ -114,6 +115,7 @@
 
 <script>
   import { mapGetters, mapActions } from 'vuex'
+  import isEqual from 'lodash/isEqual'
   import formMixins from '@/mixins/form'
   import {
     BUILTIN_MODELS,
@@ -122,6 +124,8 @@
   } from '@/dictionary/model-constants.js'
   import businessSetService from '@/service/business-set/index.js'
   import authMixin from './mixin-auth'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+
   export default {
     filters: {
       filterShowText(value, unit) {
@@ -176,16 +180,16 @@
         const item = this.$el.querySelector(id)
         focus ? item.classList.add('focus') : item.classList.remove('focus')
       },
-      isShowOverflowTips(property) {
-        const complexTypes = ['map']
-        return !complexTypes.includes(property.bk_property_type)
-      },
       getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
       },
       isPropertyEditable(property) {
         return property.editable && !property.bk_isapi
+      },
+      isShowOverflowTips(property) {
+        const complexTypes = [PROPERTY_TYPES.MAP, PROPERTY_TYPES.ENUMQUOTE]
+        return !complexTypes.includes(property.bk_property_type)
       },
       setEditState(property) {
         const value = this.instState[property.bk_property_id]
@@ -205,7 +209,7 @@
           }
           this.exitForm()
           const oldValue = this.instState[property.bk_property_id]
-          if (oldValue === value) return
+          if (isEqual(oldValue, value)) return
 
           this.loadingState.push(property)
           const values = { [property.bk_property_id]: this.$tools.formatValue(value, property) }

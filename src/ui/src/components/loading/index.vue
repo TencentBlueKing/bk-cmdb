@@ -12,7 +12,7 @@
 
 <template functional>
   <i class="loading" v-if="props.loading"></i>
-  <span v-else><slot></slot></span>
+  <div v-else><slot></slot></div>
 </template>
 
 <style lang="scss" scoped>

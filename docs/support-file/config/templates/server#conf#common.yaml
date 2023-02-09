@@ -81,6 +81,12 @@ webServer:
   login:
     # 使用的登录系统， skip-login 免登陆模式， blueking 默认登录模式， 使用蓝鲸登录
     version: blueking
+  #cmdb版本日志存放路径配置
+  changelogPath:
+    #中文版版本日志存放路径
+    ch: __BK_HOME__/cmdb/server/changelog_user/ch
+    #英文版版本日志存放路径
+    en: __BK_HOME__/cmdb/server/changelog_user/en
 
 # operation_server专属配置
 operationServer:

@@ -581,15 +581,18 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, property metadata.Attribut
 		blog.Errorf("convert val to interface slice failed, val type: %T, rid: %s", val, kit.Rid)
 		return fmt.Errorf("convert val to interface slice failed, val: %v", val)
 	}
+
 	if len(valIDs) == 0 {
 		blog.Errorf("enum quote inst id is null, rid: %s", kit.Rid)
 		return fmt.Errorf("enum quote inst id is null, please set the correct value")
 	}
-	if !property.IsMultiple {
-		if len(valIDs) != 1 {
-			blog.Errorf("enum quote is single choice, but inst id is multiple, rid: %s", kit.Rid)
-			return kit.CCError.CCError(common.CCErrCommParamsNeedSingleChoice)
-		}
+
+	if property.IsMultiple == nil {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
+	}
+	if !(*property.IsMultiple) && len(valIDs) != 1{
+		blog.Errorf("enum quote is single choice, but inst id is multiple, rid: %s", kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommParamsNeedSingleChoice)
 	}
 
 	valEnumIDMap := make(map[int64]interface{}, 0)

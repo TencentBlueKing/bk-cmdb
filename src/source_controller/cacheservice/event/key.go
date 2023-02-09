@@ -325,6 +325,30 @@ func GenBizSetRelationDetail(bizSetID int64, bizIDsStr string) string {
 	return fmt.Sprintf(`{"bk_biz_set_id":%d,"bk_biz_ids":[%s]}`, bizSetID, bizIDsStr)
 }
 
+var platFields = []string{common.BKCloudIDField, common.BKCloudNameField}
+
+// PlatKey cloud area event watch key
+var PlatKey = Key{
+	namespace:  watchCacheNamespace + common.BKInnerObjIDPlat,
+	collection: common.BKTableNameBasePlat,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, platFields...)
+		for idx := range platFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", platFields[idx])
+			}
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		return gjson.GetBytes(doc, common.BKCloudNameField).String()
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKCloudIDField).Int()
+	},
+}
+
 // kubeFields kube related resource id and name fields, used for validation
 var kubeFields = []string{common.BKFieldID, common.BKFieldName}
 

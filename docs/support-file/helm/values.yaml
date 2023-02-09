@@ -1249,6 +1249,16 @@ common:
     ##
     login:
       version: skip-login
+    ## webserver common config changelogPath parameters
+    ## @param common.webServer.changelogPath.ch the Chinese changelog storage path
+    ## @param common.webServer.changelogPath.en the English changelog storage path
+    ##
+    # cmdb版本日志存放路径配置
+    changelogPath:
+      # 中文版版本日志存放路径
+      ch: /data/cmdb/cmdb_webserver/changelog_user/ch
+      # 英文版版本日志存放路径
+      en: /data/cmdb/cmdb_webserver/changelog_user/en
   ## monitor common config parameters
   ##
   monitor:

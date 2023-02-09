@@ -196,6 +196,11 @@ type YamlHeader struct {
 	CreateTime int64 `json:"create_time" yaml:"create_time"`
 }
 
+// ChangelogDetailConfigOption changelog detail's config
+type ChangelogDetailConfigOption struct {
+	Version string `json:"version"`
+}
+
 // Validate validate yaml common field
 func (o *YamlHeader) Validate() errors.RawErrorInfo {
 	if o.ExpireTime == 0 {
