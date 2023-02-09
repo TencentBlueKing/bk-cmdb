@@ -93,6 +93,8 @@ func GetInstIDFieldByObjID(objID string) string {
 		return common.BKBizSetIDField
 	case common.BKInnerObjIDApp:
 		return common.BKAppIDField
+	case common.BKInnerObjIDProject:
+		return common.BKFieldID
 	case common.BKInnerObjIDSet:
 		return common.BKSetIDField
 	case common.BKInnerObjIDModule:
@@ -118,6 +120,8 @@ func GetInstNameFieldName(objID string) string {
 		return common.BKBizSetNameField
 	case common.BKInnerObjIDApp:
 		return common.BKAppNameField
+	case common.BKInnerObjIDProject:
+		return common.BKProjectNameField
 	case common.BKInnerObjIDSet:
 		return common.BKSetNameField
 	case common.BKInnerObjIDModule:
@@ -144,6 +148,8 @@ func (o *Object) GetObjectType() string {
 	case common.BKInnerObjIDBizSet:
 		return o.ObjectID
 	case common.BKInnerObjIDApp:
+		return o.ObjectID
+	case common.BKInnerObjIDProject:
 		return o.ObjectID
 	case common.BKInnerObjIDSet:
 		return o.ObjectID
@@ -176,6 +182,8 @@ func IsCommon(objID string) bool {
 	case common.BKInnerObjIDBizSet:
 		return false
 	case common.BKInnerObjIDApp:
+		return false
+	case common.BKInnerObjIDProject:
 		return false
 	case common.BKInnerObjIDSet:
 		return false

@@ -53,7 +53,6 @@ func (m *associationModel) save(kit *rest.Kit, assoParam *metadata.Association) 
 	}
 
 	assoParam.ID = int64(id)
-	assoParam.OwnerID = kit.SupplierAccount
 	err = mongodb.Client().Table(common.BKTableNameObjAsst).Insert(kit.Ctx, assoParam)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute database insert operation on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjAsst, err.Error())

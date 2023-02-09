@@ -171,6 +171,54 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string,
 	return dataResult, nil
 }
 
+// BatchCreateModelInstance batch create model instance, if one of instances fails to create, an error is returned.
+func (m *instanceManager) BatchCreateModelInstance(kit *rest.Kit, objID string,
+	inputParam *metadata.BatchCreateModelInstOption) (*metadata.BatchCreateInstRespData, error) {
+
+	result := new(metadata.BatchCreateInstRespData)
+	if len(inputParam.Data) == 0 {
+		return result, nil
+	}
+
+	instValidators, err := m.getValidatorsFromInstances(kit, objID, inputParam.Data, common.ValidCreate)
+	if err != nil {
+		blog.Errorf("get inst(%#v) validators failed, err: %v, obj: %s, data: %v, rid: %s", err, objID, inputParam.Data,
+			kit.Rid)
+		return nil, err
+	}
+
+	for idx := range inputParam.Data {
+		if inputParam.Data[idx] == nil {
+			blog.ErrorJSON("the model instance data can't be empty, input data: %s, rid: %s", inputParam.Data, kit.Rid)
+			return nil, kit.CCError.Errorf(common.CCErrCommInstDataNil, "modelInstance")
+		}
+		inputParam.Data[idx].Set(common.BKOwnerIDField, kit.SupplierAccount)
+
+		validator := instValidators[idx]
+		if validator == nil {
+			blog.Errorf("get validator failed, objID: %s, inst: %#v, rid: %s", objID, inputParam.Data[idx], kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound)
+		}
+		err = m.validCreateInstanceData(kit, objID, inputParam.Data[idx], validator)
+		if err != nil {
+			blog.Errorf("valid create instance data(%#v) failed, err: %v, obj: %s, rid: %s", err, inputParam.Data[idx],
+				objID, kit.Rid)
+			return nil, err
+		}
+	}
+
+	ids, err := m.batchSave(kit, objID, inputParam.Data)
+	if err != nil {
+		return nil, err
+	}
+	result.IDs = make([]int64, len(ids))
+	for idx := range ids {
+		result.IDs[idx] = int64(ids[idx])
+	}
+
+	return result, nil
+}
+
 // UpdateModelInstance update model instances
 func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (
 	*metadata.UpdatedCount, error) {

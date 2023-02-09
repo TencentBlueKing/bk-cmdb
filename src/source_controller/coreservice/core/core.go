@@ -112,6 +112,8 @@ type InstanceOperation interface {
 		*metadata.CreateOneDataResult, error)
 	CreateManyModelInstance(kit *rest.Kit, objID string, inputParam metadata.CreateManyModelInstance) (
 		*metadata.CreateManyDataResult, error)
+	BatchCreateModelInstance(kit *rest.Kit, objID string, inputParam *metadata.BatchCreateModelInstOption) (
+		*metadata.BatchCreateInstRespData, error)
 	UpdateModelInstance(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	SearchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
 	CountModelInstances(kit *rest.Kit, objID string, input *metadata.Condition) (

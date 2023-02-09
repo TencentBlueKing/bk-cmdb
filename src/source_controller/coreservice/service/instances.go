@@ -40,6 +40,18 @@ func (s *coreService) CreateManyModelInstances(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.InstanceOperation().CreateManyModelInstance(ctx.Kit, ctx.Request.PathParameter(common.BKObjIDField), inputData))
 }
 
+// BatchCreateModelInstances batch create model instance, if one of instances fails to create, an error is returned.
+func (s *coreService) BatchCreateModelInstances(ctx *rest.Contexts) {
+	inputData := new(metadata.BatchCreateModelInstOption)
+	if err := ctx.DecodeInto(inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	data, err := s.core.InstanceOperation().BatchCreateModelInstance(ctx.Kit,
+		ctx.Request.PathParameter(common.BKObjIDField), inputData)
+	ctx.RespEntityWithError(data, err)
+}
+
 // UpdateModelInstances TODO
 func (s *coreService) UpdateModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.UpdateOption{}

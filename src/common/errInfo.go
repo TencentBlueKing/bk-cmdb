@@ -501,6 +501,9 @@ const (
 	CCErrorBizSetNameDuplicated                       = 1101118
 	CCErrorTopoIdentificationIllegal                  = 1101119
 
+	CCErrorTopoObjForbiddenCreateAssociation           = 1101120
+	CCErrorTopoAssociatedObjForbiddenCreateAssociation = 1101121
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
