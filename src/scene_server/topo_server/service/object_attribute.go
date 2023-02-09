@@ -13,7 +13,9 @@
 package service
 
 import (
+	"reflect"
 	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -27,10 +29,22 @@ import (
 // CreateObjectAttribute create a new object attribute
 func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 	attr := new(metadata.Attribute)
-	if err := ctx.DecodeInto(&attr); err != nil {
+	if err := ctx.DecodeInto(attr); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	// 新建组织字段时，默认为多选，当api接口创建模型属性时，没有传ismultiple，默认置为true，支持多选
+	if ok := checkIsMultipleFieldExist(*attr); !ok {
+		if attr.PropertyType == common.FieldTypeOrganization {
+			isMultiple := true
+			attr.IsMultiple = &isMultiple
+		} else {
+			isMultiple := false
+			attr.IsMultiple = &isMultiple
+		}
+	}
+
 
 	// do not support add preset attribute by api
 	attr.IsPre = false
@@ -394,4 +408,29 @@ func (s *Service) getPropertyGroupName(ctx *rest.Contexts, attrs []metadata.Attr
 	}
 
 	return grpMap, nil
+}
+
+// 当创建组织字段属性时，前端的默认行为为多选，ismultiple参数为true. 为了和前端保持一致的动作，通过api接口创建时组织字段时，
+// 在用户没有传ismultiple字段时，需要默认给ismultiple置为true
+// checkIsMultipleFieldExist verify whether the ismultiple field exists
+func checkIsMultipleFieldExist(data interface{}) bool {
+	typeOfOption := reflect.TypeOf(data)
+	valueOfOption := reflect.ValueOf(data)
+	for i := 0; i < typeOfOption.NumField(); i++ {
+		tagTmp := typeOfOption.Field(i).Tag.Get("json")
+		tags := strings.Split(tagTmp, ",")
+
+		if tags[0] == "" {
+			continue
+		}
+
+		if tags[0] == common.BKIsMultipleField {
+			fieldValue := valueOfOption.Field(i)
+			if fieldValue.IsNil() {
+				return false
+			}
+		}
+	}
+
+	return true
 }

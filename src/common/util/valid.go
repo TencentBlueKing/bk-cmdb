@@ -462,3 +462,16 @@ func ValidModelNameField(value interface{}, field string, errProxy ccErr.Default
 	}
 	return nil
 }
+
+// ValidPropertyTypeIsMultiple valid object attr field type is multiple
+func ValidPropertyTypeIsMultiple(propertyType string, isMultiple bool, errProxy ccErr.DefaultCCErrorIf) error {
+	switch propertyType {
+	case common.FieldTypeSingleChar, common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeEnum,
+		common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeLongChar, common.FieldTypeTimeZone,
+		common.FieldTypeBool, common.FieldTypeList:
+		if isMultiple {
+			return errProxy.Errorf(common.CCErrCommFieldTypeNotSupportMultiple, propertyType)
+		}
+	}
+	return nil
+}

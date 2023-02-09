@@ -101,6 +101,7 @@ type Attribute struct {
 	IsAPI             bool        `field:"bk_isapi" json:"bk_isapi" bson:"bk_isapi" mapstructure:"bk_isapi"`
 	PropertyType      string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type" mapstructure:"bk_property_type"`
 	Option            interface{} `field:"option" json:"option" bson:"option" mapstructure:"option"`
+	IsMultiple        *bool       `field:"ismultiple" json:"ismultiple" bson:"ismultiple" mapstructure:"ismultiple"`
 	Description       string      `field:"description" json:"description" bson:"description" mapstructure:"description"`
 	Creator           string      `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
 	CreateTime        *Time       `json:"create_time" bson:"create_time" mapstructure:"create_time"`
@@ -198,10 +199,10 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 }
 
 // validTime valid object Attribute that is time type
-func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val || "" == val {
+	if val == nil || val == "" {
 		if attribute.IsRequired {
 			blog.Errorf("params can not be null, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -213,13 +214,12 @@ func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key 
 		return errors.RawErrorInfo{}
 	}
 
-	_, ok := val.(time.Time)
-	if ok {
+	if _, ok := val.(time.Time); ok {
 		return errors.RawErrorInfo{}
 	}
 
 	valStr, ok := val.(string)
-	if false == ok {
+	if !ok {
 		blog.Errorf("date can should be string, rid: %s", rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsShouldBeString,
@@ -227,21 +227,21 @@ func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key 
 		}
 	}
 
-	_, result := util.IsTime(valStr)
-	if !result {
+	if _, result := util.IsTime(valStr); !result {
 		blog.Errorf("params not valid, rid: %s", rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
 		}
 	}
+
 	return errors.RawErrorInfo{}
 }
 
 // validDate valid object Attribute that is date type
-func (attribute *Attribute) validDate(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validDate(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val || "" == val {
+	if val == nil || val == "" {
 		if attribute.IsRequired {
 			blog.Errorf("params can not be null, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -252,8 +252,9 @@ func (attribute *Attribute) validDate(ctx context.Context, val interface{}, key 
 		}
 		return errors.RawErrorInfo{}
 	}
+
 	valStr, ok := val.(string)
-	if false == ok {
+	if !ok {
 		blog.Errorf("date can should be string, rid: %s", rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsShouldBeString,
@@ -261,22 +262,23 @@ func (attribute *Attribute) validDate(ctx context.Context, val interface{}, key 
 		}
 
 	}
-	result := util.IsDate(valStr)
-	if !result {
+
+	if result := util.IsDate(valStr); !result {
 		blog.Errorf("params is not valid, rid: %s", rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
 		}
 	}
+
 	return errors.RawErrorInfo{}
 }
 
 // validEnum valid object attribute that is enum type
-func (attribute *Attribute) validEnum(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validEnum(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	// validate require
-	if nil == val {
+	if val == nil {
 		if attribute.IsRequired {
 			blog.Errorf("params can not be null, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -311,7 +313,8 @@ func (attribute *Attribute) validEnum(ctx context.Context, val interface{}, key 
 			return errors.RawErrorInfo{}
 		}
 	}
-	blog.V(3).Infof("params %s not valid, option %#v, raw option %#v, value: %#v, rid: %s", key, enumOption, attribute.Option, val, rid)
+	blog.V(3).Infof("params %s not valid, option %#v, raw option %#v, value: %#v, rid: %s", key, enumOption,
+		attribute.Option, val, rid)
 	blog.Errorf("params %s not valid , enum value: %#v, rid: %s", key, val, rid)
 	return errors.RawErrorInfo{
 		ErrCode: common.CCErrCommParamsInvalid,
@@ -320,9 +323,9 @@ func (attribute *Attribute) validEnum(ctx context.Context, val interface{}, key 
 }
 
 // validBool valid object attribute that is bool type
-func (attribute *Attribute) validBool(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validBool(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val {
+	if val == nil {
 		if attribute.IsRequired {
 			blog.Errorf("params can not be null, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -346,11 +349,10 @@ func (attribute *Attribute) validBool(ctx context.Context, val interface{}, key 
 	return errors.RawErrorInfo{}
 }
 
-// validTimeZone TODO
-// valid char valid object attribute that is timezone type
-func (attribute *Attribute) validTimeZone(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+// validTimeZone valid char valid object attribute that is timezone type
+func (attribute *Attribute) validTimeZone(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val {
+	if val == nil {
 		if attribute.IsRequired {
 			blog.Errorf("params can not be null, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -365,7 +367,7 @@ func (attribute *Attribute) validTimeZone(ctx context.Context, val interface{}, 
 	switch value := val.(type) {
 	case string:
 		isMatch := util.IsTimeZone(value)
-		if false == isMatch {
+		if !isMatch {
 			blog.Errorf("params should be timezone, rid: %s", rid)
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsNeedTimeZone,
@@ -379,13 +381,14 @@ func (attribute *Attribute) validTimeZone(ctx context.Context, val interface{}, 
 			Args:    []interface{}{key},
 		}
 	}
+
 	return errors.RawErrorInfo{}
 }
 
 // validInt valid object attribute that is int type
-func (attribute *Attribute) validInt(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validInt(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val {
+	if val == nil {
 		if attribute.IsRequired {
 			blog.Errorf("params can not be null, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -405,21 +408,21 @@ func (attribute *Attribute) validInt(ctx context.Context, val interface{}, key s
 		}
 	}
 
-	value, _ := util.GetInt64ByInterface(val)
-
 	intObjOption := ParseIntOption(ctx, attribute.Option)
-	if 0 == len(intObjOption.Min) || 0 == len(intObjOption.Max) {
+	if len(intObjOption.Min) == 0 || len(intObjOption.Max) == 0 {
 		return errors.RawErrorInfo{}
 	}
 
 	maxValue, err := strconv.ParseInt(intObjOption.Max, 10, 64)
-	if nil != err {
+	if err != nil {
 		maxValue = common.MaxInt64
 	}
 	minValue, err := strconv.ParseInt(intObjOption.Min, 10, 64)
-	if nil != err {
+	if err != nil {
 		minValue = common.MinInt64
 	}
+
+	value, _ := util.GetInt64ByInterface(val)
 	if value > maxValue || value < minValue {
 		blog.Errorf("params %s:%#v not valid, rid: %s", key, val, rid)
 		return errors.RawErrorInfo{
@@ -431,9 +434,9 @@ func (attribute *Attribute) validInt(ctx context.Context, val interface{}, key s
 }
 
 // validFloat valid object attribute that is float type
-func (attribute *Attribute) validFloat(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validFloat(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val {
+	if val == nil {
 		if attribute.IsRequired {
 			blog.Errorf("params can not be null, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -447,7 +450,7 @@ func (attribute *Attribute) validFloat(ctx context.Context, val interface{}, key
 
 	var value float64
 	value, err := util.GetFloat64ByInterface(val)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("params %s:%#v not float, rid: %s", key, val, rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,
@@ -456,18 +459,19 @@ func (attribute *Attribute) validFloat(ctx context.Context, val interface{}, key
 	}
 
 	intObjOption := parseFloatOption(ctx, attribute.Option)
-	if 0 == len(intObjOption.Min) || 0 == len(intObjOption.Max) {
+	if len(intObjOption.Min) == 0 || len(intObjOption.Max) == 0 {
 		return errors.RawErrorInfo{}
 	}
 
 	maxValue, err := strconv.ParseFloat(intObjOption.Max, 64)
-	if nil != err {
+	if err != nil {
 		maxValue = float64(common.MaxInt64)
 	}
 	minValue, err := strconv.ParseFloat(intObjOption.Min, 64)
-	if nil != err {
+	if err != nil {
 		minValue = float64(common.MinInt64)
 	}
+
 	if value > maxValue || value < minValue {
 		blog.Errorf("params %s:%#v not valid, rid: %s", key, val, rid)
 		return errors.RawErrorInfo{
@@ -479,9 +483,9 @@ func (attribute *Attribute) validFloat(ctx context.Context, val interface{}, key
 }
 
 // validLongChar valid object attribute that is long char type
-func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val || "" == val {
+	if val == nil || val == "" {
 		if attribute.IsRequired {
 			blog.Errorf("params in need, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -503,7 +507,7 @@ func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, 
 				Args:    []interface{}{key},
 			}
 		}
-		if 0 == len(value) {
+		if len(value) == 0 {
 			if attribute.IsRequired {
 				blog.Errorf("params can not be empty, rid: %s", rid)
 				return errors.RawErrorInfo{
@@ -519,8 +523,8 @@ func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, 
 			break
 		}
 		strReg, err := regexp.Compile(option)
-		if nil != err {
-			blog.Errorf(`regexp "%s" invalid, err: %s, rid:  %s`, option, err.Error(), rid)
+		if err != nil {
+			blog.Errorf(`regexp "%s" invalid, err: %v, rid: %s`, option, err, rid)
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsIsInvalid,
 				Args:    []interface{}{option},
@@ -545,9 +549,9 @@ func (attribute *Attribute) validLongChar(ctx context.Context, val interface{}, 
 }
 
 // validChar valid object attribute that is char type
-func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val {
+	if val == nil {
 		if attribute.IsRequired {
 			blog.Errorf("params in need, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -557,6 +561,7 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 		}
 		return errors.RawErrorInfo{}
 	}
+
 	switch value := val.(type) {
 	case string:
 		value = strings.TrimSpace(value)
@@ -567,7 +572,7 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 				Args:    []interface{}{key},
 			}
 		}
-		if 0 == len(value) {
+		if len(value) == 0 {
 			if attribute.IsRequired {
 				blog.Errorf("params can not be empty, rid: %s", rid)
 				return errors.RawErrorInfo{
@@ -580,7 +585,7 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 
 		if key == common.BKAppNameField || key == common.BKSetNameField || key == common.BKModuleNameField {
 			if strings.Contains(value, "##") {
-				blog.ErrorJSON("params %s contains TopoModuleName's split flag ##, rid: %s", value, rid)
+				blog.Errorf("params %s contains TopoModuleName's split flag ##, rid: %s", value, rid)
 				return errors.RawErrorInfo{
 					ErrCode: common.CCErrCommParamsInvalid,
 					Args:    []interface{}{value},
@@ -588,7 +593,7 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 			}
 		}
 
-		if "" == val {
+		if val == "" {
 			return errors.RawErrorInfo{}
 		}
 
@@ -597,8 +602,8 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 			break
 		}
 		strReg, err := regexp.Compile(option)
-		if nil != err {
-			blog.Errorf(`regexp "%s" invalid, err: %s, rid:  %s`, option, err.Error(), rid)
+		if err != nil {
+			blog.Errorf(`regexp "%s" invalid, err: %v, rid: %s`, option, err, rid)
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsIsInvalid,
 				Args:    []interface{}{option},
@@ -623,9 +628,9 @@ func (attribute *Attribute) validChar(ctx context.Context, val interface{}, key 
 }
 
 // validUser valid object attribute that is user type
-func (attribute *Attribute) validUser(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validUser(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val || "" == val {
+	if val == nil || val == "" {
 		if attribute.IsRequired {
 			blog.Errorf("params in need, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -648,7 +653,7 @@ func (attribute *Attribute) validUser(ctx context.Context, val interface{}, key 
 			}
 		}
 
-		if 0 == len(value) {
+		if len(value) == 0 {
 			if attribute.IsRequired {
 				blog.Errorf("params can not be empty, rid: %s", rid)
 				return errors.RawErrorInfo{
@@ -657,6 +662,20 @@ func (attribute *Attribute) validUser(ctx context.Context, val interface{}, key 
 				}
 			}
 			return errors.RawErrorInfo{}
+		}
+
+		if attribute.IsMultiple == nil {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsNeedSet,
+				Args:    []interface{}{key},
+			}
+		}
+
+		if !(*attribute.IsMultiple) && len(strings.Split(value, ",")) != 1 {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{key},
+			}
 		}
 
 		// regex check
@@ -680,11 +699,10 @@ func (attribute *Attribute) validUser(ctx context.Context, val interface{}, key 
 }
 
 // validObjectCondition valid object attribute that is user type
-func (attribute *Attribute) validObjectCondition(ctx context.Context, val interface{}, key string) (
-	rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validObjectCondition(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val || "" == val {
+	if val == nil || val == "" {
 		if attribute.IsRequired {
 			blog.Errorf("params in need, rid: %s", rid)
 			return errors.RawErrorInfo{
@@ -695,6 +713,7 @@ func (attribute *Attribute) validObjectCondition(ctx context.Context, val interf
 		}
 		return errors.RawErrorInfo{}
 	}
+
 	// 对于对象的校验只需要判断类型是否是map[string]interface和MapStr即可
 
 	switch reflect.TypeOf(val).Kind() {
@@ -703,7 +722,8 @@ func (attribute *Attribute) validObjectCondition(ctx context.Context, val interf
 		switch reflect.TypeOf(val).Elem().Kind() {
 		case reflect.Map:
 		default:
-			blog.Errorf("object type is error, must be map, type: %v, rid: %s", reflect.TypeOf(val).Elem().Kind(), rid)
+			blog.Errorf("object type is error, must be map, type: %v, rid: %s", reflect.TypeOf(val).Elem().Kind(),
+				rid)
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsInvalid,
 				Args:    []interface{}{key},
@@ -721,10 +741,10 @@ func (attribute *Attribute) validObjectCondition(ctx context.Context, val interf
 	return errors.RawErrorInfo{}
 }
 
-func (attribute *Attribute) validList(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validList(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestUserFromContext(ctx)
 
-	if nil == val {
+	if val == nil {
 		if attribute.IsRequired {
 			blog.Error("params can not be null, list field key: %s, rid: %s", key, rid)
 			return errors.RawErrorInfo{
@@ -750,7 +770,8 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 	case bson.A:
 		listOpt = listOption
 	default:
-		blog.Errorf("option %v invalid, not string type list option, but type %T", attribute.Option, attribute.Option)
+		blog.Errorf("option %v invalid, not string type list option, but type %T, rid: %s", attribute.Option,
+			attribute.Option, rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
@@ -760,7 +781,8 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 	for _, inVal := range listOpt {
 		inValStr, ok := inVal.(string)
 		if !ok {
-			blog.Errorf("inner list option convert to string  failed, params %s not valid , list field value: %#v", key, val)
+			blog.Errorf("inner list option convert to string failed, params %s not valid , list field value: %#v, " +
+				"rid: %s", key, val, rid)
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrParseAttrOptionListFailed,
 				Args:    []interface{}{key},
@@ -770,45 +792,84 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 			return errors.RawErrorInfo{}
 		}
 	}
-	blog.Errorf("params %s not valid, option %#v, raw option %#v, value: %#v", key, listOpt, attribute, val)
+	blog.Errorf("params %s not valid, option %#v, raw option %#v, value: %#v, rid: %s", key, listOpt, attribute,
+		val, rid)
 	return errors.RawErrorInfo{
 		ErrCode: common.CCErrCommParamsInvalid,
 		Args:    []interface{}{key},
 	}
 }
 
-// validOrganization TODO
-// validBool valid object attribute that is bool type
-func (attribute *Attribute) validOrganization(ctx context.Context, val interface{}, key string) (rawError errors.RawErrorInfo) {
+// validOrganization valid object attribute that is organization type
+func (attribute *Attribute) validOrganization(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	if nil == val {
+	if val == nil {
 		if attribute.IsRequired {
 			blog.Errorf("params can not be null, rid: %s", rid)
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsNeedSet,
-				Args:    []interface{}{key},
-			}
-
+			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{key}}
 		}
+
 		return errors.RawErrorInfo{}
 	}
 
-	switch val.(type) {
+	switch org := val.(type) {
 	case []interface{}:
+		if len(org) == 0 && attribute.IsRequired {
+			blog.Errorf("org is required, but is null, rid: %s", rid)
+			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
+		}
+
+		if len(org) == 0 {
+			return errors.RawErrorInfo{}
+		}
+
+		if attribute.IsMultiple == nil {
+			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{key}}
+		}
+
+		if !(*attribute.IsMultiple) && len(org) != 1 {
+			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
+		}
+
+		for _, orgID := range org {
+			if !util.IsNumeric(orgID) {
+				blog.Errorf("orgID params not int, type: %T, rid: %s", orgID, rid)
+				return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid, Args: []interface{}{key}}
+			}
+		}
 	case bson.A:
+		if len(org) == 0 && attribute.IsRequired {
+			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
+		}
+
+		if len(org) == 0 {
+			return errors.RawErrorInfo{}
+		}
+
+		if attribute.IsMultiple == nil {
+			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
+		}
+
+		if !(*attribute.IsMultiple) && len(org) != 1 {
+			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
+		}
+
+		for _, orgID := range org {
+			if !util.IsNumeric(orgID) {
+				blog.Errorf("orgID params not int, type: %T, rid: %s", orgID, rid)
+				return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid, Args: []interface{}{key}}
+			}
+		}
 	default:
 		blog.Errorf("params should be type organization,but its type is %T, rid: %s", val, rid)
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsInvalid,
-			Args:    []interface{}{key},
-		}
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
 	}
+
 	return errors.RawErrorInfo{}
 }
 
 // validTable valid object attribute that is table type
-func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key string) (
-	rawError errors.RawErrorInfo) {
+func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if val == nil {
@@ -842,7 +903,22 @@ func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key
 		subAttrMap[subAttr.PropertyID] = subAttr
 	}
 
-	var valMapArr []mapstr.MapStr
+	if err := attribute.validTableValue(ctx, val, subAttrMap, rid); err != nil {
+		blog.Errorf("check value type failed, err: %v, rid: %s", err, rid)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{key},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// validTableValue valid object attribute that is table type value
+func (attribute *Attribute) validTableValue(ctx context.Context, val interface{}, subAttrMap map[string]SubAttribute,
+	rid string) error {
+
+	valMapArr := make([]mapstr.MapStr, 0)
 	switch t := val.(type) {
 	case []interface{}:
 		valMapArr = make([]mapstr.MapStr, len(t))
@@ -855,7 +931,7 @@ func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key
 				valMap = v
 			default:
 				blog.Errorf("check value type failed, valMap: %#v, rid: %s", valMap, rid)
-				return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
+				return fmt.Errorf("check value type failed, valMap: %v", valMap)
 			}
 			valMapArr[index] = valMap
 		}
@@ -868,7 +944,7 @@ func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key
 		}
 	default:
 		blog.Errorf("check value type failed, val: %#v, rid: %s", val, rid)
-		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
+		return fmt.Errorf("check value type failed, val: %v", val)
 	}
 
 	for _, value := range valMapArr {
@@ -876,31 +952,26 @@ func (attribute *Attribute) validTable(ctx context.Context, val interface{}, key
 			validator, exist := subAttrMap[subKey]
 			if !exist {
 				blog.Errorf("extra field, subKey: %s, subValue: %v, rid: %s", subKey, subValue, rid)
-				return errors.RawErrorInfo{
-					ErrCode: common.CCErrCommParamsInvalid,
-					Args:    []interface{}{fmt.Sprintf("%s.%s", key, subKey)},
-				}
+				return fmt.Errorf("extra failed, subKey: %s, subValue: %v", subKey, subValue)
 			}
 			if rawError := validator.Validate(ctx, subValue, subKey); rawError.ErrCode != 0 {
-				blog.Errorf("validate sub-attr failed, key: %s, val: %v, err: %v, rid: %s", subKey, subValue, err, rid)
-				return errors.RawErrorInfo{
-					ErrCode: common.CCErrCommParamsInvalid,
-					Args:    []interface{}{fmt.Sprintf("%s.%s", key, subKey)},
-				}
+				blog.Errorf("validate sub-attr failed, key: %s, val: %v, rid: %s", subKey, subValue, rid)
+				return fmt.Errorf("validate sub-attr failed, key: %s, val: %v", subKey, subValue)
 			}
 		}
 	}
 
-	return errors.RawErrorInfo{}
+	return nil
 }
 
 // parseFloatOption  parse float data in option
 func parseFloatOption(ctx context.Context, val interface{}) FloatOption {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	floatOption := FloatOption{}
-	if nil == val || "" == val {
+	if val == nil || val == "" {
 		return floatOption
 	}
+
 	switch option := val.(type) {
 	case string:
 		floatOption.Min = gjson.Get(option, "min").Raw

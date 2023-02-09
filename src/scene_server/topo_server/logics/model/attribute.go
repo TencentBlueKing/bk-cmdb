@@ -72,6 +72,18 @@ func (a *attribute) IsValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 		return nil
 	}
 
+	if (isUpdate && data.IsMultiple != nil) || !isUpdate {
+		if err := util.ValidPropertyTypeIsMultiple(data.PropertyType, *data.IsMultiple, kit.CCError); err != nil {
+			return err
+		}
+	}
+
+	// 用户类型字段，在创建的时候默认是支持可多选的，而且这个字段是否可多选在页面是不可配置的,所以在创建的时候将值置为true
+	if data.PropertyType == common.FieldTypeUser && !isUpdate {
+		isMultiple := true
+		data.IsMultiple = &isMultiple
+	}
+
 	// check if property type for creation is valid, can't update property type
 	if !isUpdate && data.PropertyType == "" {
 		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
