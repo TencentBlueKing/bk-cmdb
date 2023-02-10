@@ -1,3 +1,15 @@
+## [Version: 3.10.x-feature-agent-id-alpha11] - 2023-02-10
+**新增功能**
+- 支持通过IPv6字段进行主机搜索
+- ipv6单栈场景下支持设备mac地址的上报更新
+- 导入主机场景需要支持事务
+
+**功能优化**
+- 主机高级搜索icon高亮与清空条件按钮字号大小优化
+
+**缺陷修复**
+- 修复IP搜索标签项出现两个tooltips的问题
+
 ## [Version: 3.10.x-feature-agent-id-beta1] - 2022-12-22
 **新增功能**
 - 修改bkmonitor beat插件上报的agnetID tag为bk_agent_id
