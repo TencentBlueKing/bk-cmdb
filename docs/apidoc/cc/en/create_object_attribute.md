@@ -25,7 +25,7 @@ Create model properties
 | bk_property_id        |  string     | yes     | The property ID of the model                                             |
 | bk_property_name      |  string     | yes     | Model attribute name, used to show                                     |
 | bk_property_type      |  string     | yes     | The defined attribute field is used to store the data type of the data, and the value range can be (singlechar,longchar,int,enum,date,time,objUser,singleasst,multiasst,timezone,bool)|
-| bk_asst_obj_id        |  string     | no     | This field must be set if there are other models associated with it, otherwise it is not required                                                                        |
+| ismultiple        |  bool     | no     | Whether multiple choices are allowed, where the field type is singlechar, longchar, int, float, enum, date, time, timezone, bool, and the list, temporarily does not support multiple choices. When creating an attribute, the field type is the above type, and the ismultiple parameter can not be passed. The default is false. If you pass true, you will be prompted that the type does not support multiple choices. enummulti, enumquote , user and organization fields support multiple choices, among which the user field and organization field are true by default |
 
 #### bk_property_type
 
@@ -38,10 +38,11 @@ Create model properties
 | date       | Date     |
 | time       | Time     |
 | objuser    | User     |
-| singleasst |Simple correlation   |
-| multiasst  |Multiple correlation   |
 | timezone   | Time zone     |
 | bool       | Bull     |
+| enummulti | Enumerate multiple |
+| enumquote | Enumeration References |
+| organization | Organization |
 
 ### Request Parameters Example
 
@@ -140,10 +141,9 @@ Create model properties
 | bk_property_id      |  string       | The property ID of the model                                               |
 | bk_property_name    |  string       | Model attribute name, used to show                                       |
 | bk_property_type    |  string       | The data type of the defined attribute field used to store the data (singlechar,longchar,int,enum,date,time,objUser,singleasst,multiasst,timezone,bool)|
-| bk_asst_obj_id      |  string       | This field must be set if there are other models associated with it, otherwise it is not required|
 | bk_biz_id           |  int          | Business id of business custom field                                       |
-| bk_asst_obj_id      |  string       | This field must be set if there are other models associated with it, otherwise it is not required|
 | bk_property_group_name           |  string          | Name of the field column                                       |
+| ismultiple | bool | Can multiple fields be selected |
 
 #### bk_property_type
 
@@ -156,7 +156,8 @@ Create model properties
 | date       | Date     |
 | time       | Time     |
 | objuser    | User     |
-| singleasst |Simple correlation   |
-| multiasst  |Multiple correlation   |
 | timezone   | Time zone     |
 | bool       | Bull     |
+| enummulti | Enumerate multiple |
+| enumquote | Enumeration References |
+| organization | Organization |

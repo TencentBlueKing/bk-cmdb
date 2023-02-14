@@ -713,9 +713,19 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 				return kit.CCError.Errorf(common.CCErrCommParamsInvalid, "cond")
 			}
 		}
+
+		// 属性更新时，如果没有传入ismultiple参数，则使用数据库中的ismultiple值进行校验，如果传了ismultiple参数，则使用更新时的参数
 		isMultiple := dbAttributeArr[0].IsMultiple
-		if ismultiple, ok := data.Get(common.BKIsMultipleField); ok {
-			isMultiple = ismultiple.(*bool)
+		if val, ok := data.Get(common.BKIsMultipleField); ok {
+			ismultiple, ok := val.(bool)
+			if !ok {
+				return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
+			}
+			isMultiple = &ismultiple
+		}
+
+		if isMultiple == nil {
+			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
 		}
 
 		if err := util.ValidPropertyOption(propertyType, option, *isMultiple, kit.CCError); err != nil {
