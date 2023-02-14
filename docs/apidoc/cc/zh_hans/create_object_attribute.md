@@ -106,7 +106,7 @@
 		"create_time": "2020-03-25 17:12:08",
 		"last_time": "2020-03-25 17:12:08",
 		"bk_property_group_name": "default",
-        "ismultiple": false
+        	"ismultiple": false
 	}
 }
 ```
