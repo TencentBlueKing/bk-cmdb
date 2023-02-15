@@ -743,7 +743,7 @@ export const IAM_ACTIONS = {
     })
   },
   R_PROJECT: {
-    id: 'find_project',
+    id: 'view_project',
     name: ['项目查询', 'Search Project'],
     cmdb_action: 'project.findMany',
     relation: [{

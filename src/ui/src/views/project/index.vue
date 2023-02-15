@@ -665,7 +665,7 @@
             bk_status: status
           }
         }
-        this.update(params).then(() => {
+        projectService.update(params).then(() => {
           this.$bkMessage({
             theme: 'success',
             message: this.$t('操作成功')
