@@ -122,24 +122,9 @@
 
       <cmdb-table-empty
         slot="empty"
+        :auth="{ type: $OPERATION.C_PROJECT }"
         :stuff="table.stuff"
-        :auth="{ type: $OPERATION.C_PROJECT }">
-        <i18n path="项目列表提示语" class="table-empty-tips">
-          <template #auth>
-            <bk-link theme="primary" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
-          </template>
-          <template #create>
-            <cmdb-auth :auth="{ type: $OPERATION.C_PROJECT }">
-              <bk-button slot-scope="{ disabled }" text
-                theme="primary"
-                class="text-btn"
-                :disabled="disabled"
-                @click="handleCreate">
-                {{$t('立即创建')}}
-              </bk-button>
-            </cmdb-auth>
-          </template>
-        </i18n>
+        @create="handleCreate">
       </cmdb-table-empty>
     </bk-table>
 
