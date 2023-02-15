@@ -312,11 +312,9 @@ func (h *HostIdentifier) getV2Task(events []*IdentifierEvent, statusMap map[stri
 		file := h.buildV2PushFile(event.RawEvent, agentID)
 		fList = append(fList, file)
 		hostInfos = append(hostInfos, &HostInfo{
-			HostID:       event.HostID,
-			CloudID:      event.CloudID,
-			BKAddressing: event.BKAddressing,
-			AgentID:      agentID,
-			HostInnerIP:  event.InnerIP,
+			HostID:      event.HostID,
+			CloudID:     event.CloudID,
+			HostInnerIP: event.InnerIP,
 		})
 	}
 
@@ -494,13 +492,10 @@ func (h *HostIdentifier) getV2OnStatusAgent(hosts []map[string]interface{}, stat
 		h.metric.agentStatusTotal.WithLabelValues("on").Inc()
 		hostIDs = append(hostIDs, hostID)
 		hostMap[hostID] = agentID
-		addressing := util.GetStrByInterface(hostInfo[common.BKAddressingField])
 		hostInfos = append(hostInfos, &HostInfo{
-			HostID:       hostID,
-			AgentID:      agentID,
-			BKAddressing: addressing,
-			HostInnerIP:  innerIP,
-			CloudID:      cloudID,
+			HostID:      hostID,
+			HostInnerIP: innerIP,
+			CloudID:     cloudID,
 		})
 	}
 

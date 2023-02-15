@@ -67,8 +67,8 @@ type HostInfo struct {
 	// true或者false，为true时，表示已经拿到该主机的推送结果，false时未拿到
 	HasResult bool `json:"has_result"`
 	// 对于1.0的agent为cloudID:innerIP, 对于2.0的agent，为bk_agent_id
-	AgentID      string `json:"bk_agent_id"`
-	BKAddressing string `json:"bk_addressing"`
+	AgentID      string `json:"bk_agent_id,omitempty"`
+	BKAddressing string `json:"bk_addressing,omitempty"`
 }
 
 // MarshalBinary marshal HostInfo struct
