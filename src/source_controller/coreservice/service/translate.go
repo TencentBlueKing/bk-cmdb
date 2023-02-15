@@ -35,6 +35,7 @@ var needTranslateObjMap = map[string]bool{
 	common.BKInnerObjIDBlance:   true,
 	common.BKInnerObjIDFirewall: true,
 	common.BKInnerObjIDBizSet:   true,
+	common.BKInnerObjIDProject:  true,
 }
 
 // TranslateObjectName TODO

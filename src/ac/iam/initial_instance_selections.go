@@ -47,6 +47,15 @@ func GenerateStaticInstanceSelections() []InstanceSelection {
 			}},
 		},
 		{
+			ID:     ProjectSelection,
+			Name:   "项目列表",
+			NameEn: "Project List",
+			ResourceTypeChain: []ResourceChain{{
+				SystemID: SystemIDCMDB,
+				ID:       Project,
+			}},
+		},
+		{
 			ID:     BusinessHostTransferSelection,
 			Name:   "业务主机选择",
 			NameEn: "Business",

@@ -35,7 +35,7 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 	}
 
 	// 新建组织字段时，默认为多选，当api接口创建模型属性时，没有传ismultiple，默认置为true，支持多选
-	if ok := checkIsMultipleFieldExist(*attr); !ok {
+	if ok := checkJsonTagContainIsMultipleField(*attr); !ok {
 		if attr.PropertyType == common.FieldTypeOrganization {
 			isMultiple := true
 			attr.IsMultiple = &isMultiple
@@ -44,7 +44,6 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 			attr.IsMultiple = &isMultiple
 		}
 	}
-
 
 	// do not support add preset attribute by api
 	attr.IsPre = false
@@ -270,30 +269,24 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 
 // UpdateObjectAttributeIndex update object attribute index
 func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); err != nil {
+	data := new(metadata.UpdateAttrIndexInput)
+	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	objID := ctx.Request.PathParameter(common.BKObjIDField)
 
-	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+	idStr := ctx.Request.PathParameter("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		blog.Errorf("failed to parse the id from path params, id: %s, err: %s , rid: %s",
-			ctx.Request.PathParameter("id"), err, ctx.Kit.Rid)
+		blog.Errorf("parse id from path params failed, err: %v, id: %s, rid: %s", err, idStr, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoPathParamPaserFailed))
 		return
 	}
 
-	var result *metadata.UpdateAttrIndexData
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var err error
-		input := metadata.UpdateOption{
-			Condition: mapstr.MapStr{common.BKFieldID: id},
-			Data:      data,
-		}
-		result, err = s.Engine.CoreAPI.CoreService().Model().UpdateModelAttrsIndex(ctx.Kit.Ctx, ctx.Kit.Header, objID,
-			&input)
+		err = s.Engine.CoreAPI.CoreService().Model().UpdateModelAttrIndex(ctx.Kit.Ctx, ctx.Kit.Header, objID,
+			id, data)
 		if err != nil {
 			blog.Errorf("update object attribute index failed, err: %v , rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -305,7 +298,7 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(result)
+	ctx.RespEntity(nil)
 }
 
 // ListHostModelAttribute list host model's attributes
@@ -410,10 +403,10 @@ func (s *Service) getPropertyGroupName(ctx *rest.Contexts, attrs []metadata.Attr
 	return grpMap, nil
 }
 
+// checkJsonTagContainIsMultipleField verify whether the ismultiple field exists
 // 当创建组织字段属性时，前端的默认行为为多选，ismultiple参数为true. 为了和前端保持一致的动作，通过api接口创建时组织字段时，
 // 在用户没有传ismultiple字段时，需要默认给ismultiple置为true
-// checkIsMultipleFieldExist verify whether the ismultiple field exists
-func checkIsMultipleFieldExist(data interface{}) bool {
+func checkJsonTagContainIsMultipleField(data interface{}) bool {
 	typeOfOption := reflect.TypeOf(data)
 	valueOfOption := reflect.ValueOf(data)
 	for i := 0; i < typeOfOption.NumField(); i++ {

@@ -146,5 +146,14 @@
     "bk_biz_set_obj_property_bk_biz_set_name": "业务集名",
     "bk_biz_set_obj_property_bk_biz_set_desc": "业务集描述",
     "bk_biz_set_obj_property_bk_biz_maintainer": "运维人员",
+    "bk_project_property_bk_project_name": "项目名称",
+    "bk_project_property_bk_project_code": "项目英文名",
+    "bk_project_property_bk_project_desc": "项目描述",
+    "bk_project_property_bk_project_type": "项目类型",
+    "bk_project_property_bk_project_sec_lvl": "保密级别",
+    "bk_project_property_bk_project_owner": "项目负责人",
+    "bk_project_property_bk_project_team": "所属团队",
+    "bk_project_property_bk_status": "项目状态",
+    "bk_project_property_bk_project_icon": "项目图标",
     "": ""
 }

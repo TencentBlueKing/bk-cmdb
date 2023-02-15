@@ -141,10 +141,10 @@ func (input *InstAuditQueryInput) Validate() errors.RawErrorInfo {
 		return errors.RawErrorInfo{}
 	}
 
-	// 前端目前只允许查看主机、业务、自定义模型的变更记录，因此在此限制objid不为host和biz时报错
-	// front-end only allow to see change record of host, biz, custom object
+	// 前端目前只允许查看主机、业务、业务集、项目、自定义模型的变更记录，因此在此限制objid不为上述模型时报错
+	// front-end only allow to see change record of host, biz, biz set, project, custom object
 	if input.Condition.ObjID != common.BKInnerObjIDApp && input.Condition.ObjID != common.BKInnerObjIDHost &&
-		input.Condition.ObjID != common.BKInnerObjIDBizSet {
+		input.Condition.ObjID != common.BKInnerObjIDBizSet && input.Condition.ObjID != common.BKInnerObjIDProject {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{common.BKObjIDField},
@@ -286,7 +286,7 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	}
 
 	switch audit.ResourceType {
-	case BusinessRes, BizSetRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes,
+	case BusinessRes, BizSetRes, ProjectRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes,
 		MainlineInstanceRes, ResourceDirRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -365,7 +365,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	}
 
 	switch audit.ResourceType {
-	case BusinessRes, BizSetRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes,
+	case BusinessRes, BizSetRes, ProjectRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes,
 		MainlineInstanceRes, ResourceDirRes:
 		operationDetail := new(InstanceOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -592,6 +592,9 @@ const (
 	// BizSetType represent operation audit of biz set itself
 	BizSetType AuditType = "biz_set"
 
+	// ProjectType represent operation audit of project itself
+	ProjectType AuditType = "project"
+
 	// BusinessResourceType TODO
 	// Business resource include resources as follows:
 	// - service template
@@ -646,6 +649,8 @@ const (
 	BusinessRes ResourceType = "business"
 	// BizSetRes TODO
 	BizSetRes ResourceType = "biz_set"
+	// ProjectRes project resource
+	ProjectRes ResourceType = "project"
 	// ServiceTemplateRes TODO
 	ServiceTemplateRes ResourceType = "service_template"
 	// SetTemplateRes TODO
@@ -786,6 +791,8 @@ func GetAuditTypeByObjID(objID string, isMainline bool) AuditType {
 		return BizSetType
 	case common.BKInnerObjIDApp:
 		return BusinessType
+	case common.BKInnerObjIDProject:
+		return ProjectType
 	case common.BKInnerObjIDSet:
 		return BusinessResourceType
 	case common.BKInnerObjIDModule:
@@ -813,6 +820,8 @@ func GetResourceTypeByObjID(objID string, isMainline bool) ResourceType {
 		return BizSetRes
 	case common.BKInnerObjIDApp:
 		return BusinessRes
+	case common.BKInnerObjIDProject:
+		return ProjectRes
 	case common.BKInnerObjIDSet:
 		return SetRes
 	case common.BKInnerObjIDModule:
@@ -839,7 +848,7 @@ func GetAuditTypesByCategory(category string) []AuditType {
 	case "business":
 		return []AuditType{BusinessResourceType, DynamicGroupType}
 	case "resource":
-		return []AuditType{BusinessType, BizSetType, ModelInstanceType, CloudResourceType, KubeType}
+		return []AuditType{BusinessType, BizSetType, ProjectType, ModelInstanceType, CloudResourceType, KubeType}
 	case "host":
 		return []AuditType{HostType}
 	case "other":
@@ -922,6 +931,15 @@ var auditDict = []resourceTypeInfo{
 	{
 		ID:   BizSetRes,
 		Name: "业务集",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ProjectRes,
+		Name: "项目",
 		Operations: []actionTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],
@@ -1149,6 +1167,15 @@ var auditEnDict = []resourceTypeInfo{
 	{
 		ID:   BizSetRes,
 		Name: "Business Set",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   ProjectRes,
+		Name: "Project",
 		Operations: []actionTypeInfo{
 			actionInfoEnMap[AuditCreate],
 			actionInfoEnMap[AuditUpdate],

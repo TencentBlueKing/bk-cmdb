@@ -82,6 +82,12 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 			return err
 		}
 
+		rowMap, err = replaceEnumMultiName(rid, rowMap, fields)
+		if err != nil {
+			blog.Errorf("rebuild enum multi failed, err: %v, rid: %s", err, rid)
+			return err
+		}
+
 		setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)
 
 		instIDArr = append(instIDArr, instID)
@@ -261,6 +267,12 @@ func (lgc *Logics) buildHostExcelData(handleHostDataParam *HandleHostDataParam) 
 			handleHostDataParam.OrgPropertyList, handleHostDataParam.CcLang)
 		if err != nil {
 			blog.Errorf("rebuild organization list failed, err: %v, rid: %s", err, handleHostDataParam.Rid)
+			return nil, err
+		}
+
+		rowMap, err = replaceEnumMultiName(handleHostDataParam.Rid, rowMap, handleHostDataParam.Fields)
+		if err != nil {
+			blog.Errorf("rebuild enum multi failed, err: %v, rid: %s", err, handleHostDataParam.Rid)
 			return nil, err
 		}
 
