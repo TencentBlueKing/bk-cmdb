@@ -272,9 +272,6 @@ func genResourceManageActionGroups() []ActionGroup {
 						{
 							ID: DeleteProject,
 						},
-						{
-							ID: ViewProject,
-						},
 					},
 				},
 				{
