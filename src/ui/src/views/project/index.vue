@@ -87,7 +87,7 @@
       </bk-table-column>
       <bk-table-column :label="$t('操作')" fixed="right">
         <template slot-scope="{ row }">
-          <cmdb-auth @click.native.stop :auth="{ type: $OPERATION.BUSINESS_ARCHIVE, relation: [row.id] }">
+          <cmdb-auth @click.native.stop :auth="{ type: $OPERATION.U_PROJECT }">
             <template slot-scope="{ disabled }">
               <bk-popconfirm
                 v-if="row.bk_status === 'disabled'"
@@ -125,9 +125,6 @@
         :stuff="table.stuff"
         :auth="{ type: $OPERATION.C_PROJECT }">
         <i18n path="项目列表提示语" class="table-empty-tips">
-          <template #auth>
-            <bk-link theme="primary" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
-          </template>
           <template #create>
             <cmdb-auth :auth="{ type: $OPERATION.C_PROJECT }">
               <bk-button slot-scope="{ disabled }" text
@@ -219,7 +216,6 @@
 </template>
 
 <script>
-  import { translateAuth } from '@/setup/permission'
   import { mapState, mapActions, mapGetters } from 'vuex'
   import RouterQuery from '@/router/query'
   import throttle from 'lodash.throttle'
@@ -645,18 +641,6 @@
           .finally(() => {
             this.batchUpdateSlider.loading = false
           })
-      },
-      async handleApplyPermission() {
-        try {
-          const permission = translateAuth({
-            type: this.$OPERATION.R_PROJECT,
-            relation: []
-          })
-          const url = await this.$store.dispatch('auth/getSkipUrl', { params: permission })
-          window.open(url)
-        } catch (e) {
-          console.error(e)
-        }
       },
       handleConfirm(status, row) {
         const params = {
