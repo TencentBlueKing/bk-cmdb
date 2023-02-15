@@ -194,69 +194,256 @@ func parseFloatOption(ctx context.Context, val interface{}) FloatOption {
 func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys []metadata.Attribute) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	for _, field := range propertys {
-		_, ok := valData[field.PropertyID]
-		if !ok {
+		if _, ok := valData[field.PropertyID]; !ok {
 			switch field.PropertyType {
 			case common.FieldTypeSingleChar, common.FieldTypeLongChar:
-				valData[field.PropertyID] = ""
-				if field.Default != nil {
-					valData[field.PropertyID] = field.Default
-				}
+				fillLostedStringFieldValue(valData, field, rid)
 			case common.FieldTypeEnum:
-				defaultOptions, err := getEnumOption(ctx, field.Option, rid)
-				if err != nil {
-					blog.Errorf("get enum option failed, err: %v, rid: %s", err, rid)
-					valData[field.PropertyID] = nil
-					continue
-				}
-				if len(defaultOptions) != 1 {
-					valData[field.PropertyID] = nil
-					continue
-				}
-				valData[field.PropertyID] = defaultOptions[0].ID
+				fillLostedEnumFieldValue(ctx, valData, field, rid)
 			case common.FieldTypeEnumMulti:
-				defaultOptions, err := getEnumOption(ctx, field.Option, rid)
-				if err != nil {
-					blog.Errorf("get enum option failed, err: %v, rid: %s", err, rid)
-					valData[field.PropertyID] = nil
-					continue
-				}
-				ids := make([]string, 0)
-				for _, k := range defaultOptions {
-					ids = append(ids, k.ID)
-				}
-				valData[field.PropertyID] = ids
+				fillLostedEnumMultiFieldValue(ctx, valData, field, rid)
 			case common.FieldTypeEnumQuote:
-				enumQuoteOptions, err := metadata.ParseEnumQuoteOption(ctx, field.Option)
-				if err != nil {
-					blog.Errorf("parse enum quote option failed, err: %v, rid: %s", err, rid)
-					valData[field.PropertyID] = nil
-					continue
-				}
-				if len(enumQuoteOptions) == 0 {
-					valData[field.PropertyID] = nil
-					continue
-				}
-				instIDs := make([]int64, 0)
-				for _, k := range enumQuoteOptions {
-					instIDs = append(instIDs, k.InstID)
-				}
-				valData[field.PropertyID] = instIDs
-			case common.FieldTypeDate, common.FieldTypeFloat, common.FieldTypeInt, common.FieldTypeTime,
-				common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeList:
-				valData[field.PropertyID] = nil
-				if field.Default != nil {
-					valData[field.PropertyID] = field.Default
-				}
+				fillLostedEnumQuoteFieldValue(ctx, valData, field, rid)
+			case common.FieldTypeDate:
+				fillLostedDateFieldValue(valData, field, rid)
+			case common.FieldTypeFloat:
+				fillLostedFloatFieldValue(valData, field, rid)
+			case common.FieldTypeInt:
+				fillLostedIntFieldValue(valData, field, rid)
+			case common.FieldTypeTime:
+				fillLostedTimeFieldValue(valData, field, rid)
+			case common.FieldTypeUser:
+				fillLostedUserFieldValue(valData, field, rid)
+			case common.FieldTypeOrganization:
+				fillLostedOrganizationFieldValue(valData, field, rid)
+			case common.FieldTypeTimeZone:
+				fillLostedTimeZoneFieldValue(valData, field, rid)
+			case common.FieldTypeList:
+				fillLostedListFieldValue(valData, field, rid)
 			case common.FieldTypeBool:
-				valData[field.PropertyID] = false
-				if field.Default != nil {
-					valData[field.PropertyID] = field.Default
-				}
+				fillLostedBoolFieldValue(valData, field, rid)
 			default:
 				valData[field.PropertyID] = nil
 			}
 		}
+	}
+}
+
+func fillLostedStringFieldValue(valData mapstr.MapStr, field metadata.Attribute, rid string) {
+	valData[field.PropertyID] = ""
+	if field.Default != nil {
+		defaultVal, ok := field.Default.(string)
+		if !ok {
+			blog.Errorf("single char default value not string, value: %+v, rid: %s", field.Default, rid)
+			return
+		}
+		valData[field.PropertyID] = defaultVal
+	}
+}
+
+func fillLostedEnumFieldValue(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute, rid string) {
+	defaultOptions, err := getEnumOption(ctx, field.Option, rid)
+	if err != nil {
+		blog.Errorf("get enum option failed, err: %v, rid: %s", err, rid)
+		valData[field.PropertyID] = nil
+		return
+	}
+	if len(defaultOptions) != 1 {
+		valData[field.PropertyID] = nil
+		return
+	}
+
+	valData[field.PropertyID] = defaultOptions[0].ID
+}
+
+func fillLostedEnumMultiFieldValue(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute, rid string) {
+	defaultOptions, err := getEnumOption(ctx, field.Option, rid)
+	if err != nil {
+		blog.Errorf("get enum option failed, err: %v, rid: %s", err, rid)
+		valData[field.PropertyID] = nil
+		return
+	}
+
+	ids := make([]string, 0)
+	for _, k := range defaultOptions {
+		ids = append(ids, k.ID)
+	}
+	if len(ids) == 0 {
+		valData[field.PropertyID] = nil
+		return
+	}
+
+	valData[field.PropertyID] = ids
+}
+
+func fillLostedEnumQuoteFieldValue(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute, rid string) {
+	enumQuoteOptions, err := metadata.ParseEnumQuoteOption(ctx, field.Option)
+	if err != nil {
+		blog.Errorf("parse enum quote option failed, err: %v, rid: %s", err, rid)
+		valData[field.PropertyID] = nil
+		return
+	}
+	if len(enumQuoteOptions) == 0 {
+		valData[field.PropertyID] = nil
+		return
+	}
+	instIDs := make([]int64, 0)
+	for _, k := range enumQuoteOptions {
+		instIDs = append(instIDs, k.InstID)
+	}
+	if len(instIDs) == 0 {
+		valData[field.PropertyID] = nil
+		return
+	}
+
+	valData[field.PropertyID] = instIDs
+}
+
+func fillLostedDateFieldValue(valData mapstr.MapStr, field metadata.Attribute, rid string) {
+	valData[field.PropertyID] = nil
+	if field.Default != nil {
+		defaultVal, ok := field.Default.(string)
+		if !ok {
+			blog.Errorf("date type field default value not string, value: %+v, rid: %s", field.Default, rid)
+			return
+		}
+
+		if ok := util.IsDate(defaultVal); !ok {
+			blog.Errorf("date type field default value format is err, rid: %s", rid)
+			return
+		}
+
+		valData[field.PropertyID] = defaultVal
+	}
+}
+
+func fillLostedFloatFieldValue(valData mapstr.MapStr, field metadata.Attribute, rid string) {
+	valData[field.PropertyID] = nil
+	if field.Default != nil {
+		defaultVal, err := util.GetFloat64ByInterface(field.Default)
+		if err != nil {
+			blog.Errorf("float type field default value is not number, value: %+v, rid: %s", field.Default, rid)
+			return
+		}
+
+		valData[field.PropertyID] = defaultVal
+	}
+}
+
+func fillLostedIntFieldValue(valData mapstr.MapStr, field metadata.Attribute, rid string) {
+	valData[field.PropertyID] = nil
+	if field.Default != nil {
+		defaultVal, err := util.GetInt64ByInterface(field.Default)
+		if err != nil {
+			blog.Errorf("int type field default value is not number, value: %+v, rid: %s", field.Default, rid)
+			return
+		}
+
+		valData[field.PropertyID] = defaultVal
+	}
+}
+
+func fillLostedTimeFieldValue(valData mapstr.MapStr, field metadata.Attribute, rid string) {
+	valData[field.PropertyID] = nil
+	if field.Default != nil {
+		defaultVal, ok := field.Default.(string)
+		if !ok {
+			blog.Errorf("time type field default value not string, value: %+v, rid: %s", field.Default, rid)
+			return
+		}
+
+		if _, ok := util.IsTime(defaultVal); !ok {
+			blog.Errorf("time type field default value format is err, rid: %s", rid)
+			return
+		}
+
+		valData[field.PropertyID] = defaultVal
+	}
+}
+
+func fillLostedUserFieldValue(valData mapstr.MapStr, field metadata.Attribute, rid string) {
+	valData[field.PropertyID] = nil
+	if field.Default != nil {
+		defaultVal, ok := field.Default.(string)
+		if !ok {
+			blog.Errorf("user type field default value not string, value: %+v, rid: %s", field.Default, rid)
+			return
+		}
+
+		valData[field.PropertyID] = defaultVal
+	}
+}
+
+func fillLostedOrganizationFieldValue(valData mapstr.MapStr, field metadata.Attribute, rid string) {
+	valData[field.PropertyID] = nil
+	if field.Default != nil {
+		defaultVal, ok := field.Default.([]interface{})
+		if !ok {
+			blog.Errorf("organization type field default value not array, val: %+v, rid: %s", field.Default, rid)
+			return
+		}
+
+		for _, orgID := range defaultVal {
+			if !util.IsNumeric(orgID) {
+				blog.Errorf("orgID params not int, type: %T, rid: %s", orgID, rid)
+				return
+			}
+		}
+
+		valData[field.PropertyID] = defaultVal
+	}
+}
+
+func fillLostedTimeZoneFieldValue(valData mapstr.MapStr, field metadata.Attribute, rid string) {
+	valData[field.PropertyID] = nil
+	if field.Default != nil {
+		defaultVal, ok := field.Default.(string)
+		if !ok {
+			blog.Errorf("time zone type field default value not string, value: %+v, rid: %s", field.Default, rid)
+			return
+		}
+
+		if ok := util.IsTimeZone(defaultVal); !ok {
+			blog.Errorf("time zone type field default value format is err, rid: %s", rid)
+			return
+		}
+
+		valData[field.PropertyID] = defaultVal
+	}
+}
+
+func fillLostedListFieldValue(valData mapstr.MapStr, field metadata.Attribute, rid string) {
+	valData[field.PropertyID] = nil
+	if field.Default != nil {
+		arrOption, ok := field.Option.([]interface{})
+		if !ok || len(arrOption) == 0 {
+			blog.Errorf("list type field default value not array, val: %+v, rid: %s", field.Default, rid)
+			return
+		}
+
+		defaultVal, err := util.GetInt64ByInterface(field.Default)
+		if err != nil {
+			blog.Errorf("list type field default value not int, val: %+v, rid: %s", field.Default, rid)
+			return
+		}
+		if defaultVal < 0 || defaultVal > int64(len(arrOption)) {
+			blog.Errorf("list type field default value invalid, rid: %s", rid)
+			return
+		}
+		valData[field.PropertyID] = defaultVal
+	}
+}
+
+func fillLostedBoolFieldValue(valData mapstr.MapStr, field metadata.Attribute, rid string) {
+	valData[field.PropertyID] = false
+	if field.Default != nil {
+		defaultVal, ok := field.Default.(bool)
+		if !ok {
+			blog.Errorf("bool type field default value not bool, val: %+v, rid: %s", field.Default, rid)
+			return
+		}
+
+		valData[field.PropertyID] = defaultVal
 	}
 }
 

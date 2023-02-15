@@ -1039,13 +1039,21 @@ func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) 
 
 // checkUpdate 删除不可以更新字段，检验字段是否重复， 返回更新的行数，错误
 func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (err error) {
+	attribute := metadata.Attribute{}
+	if err = data.MarshalJSONInto(&attribute); err != nil {
+		blog.Errorf("request(%s): MarshalJSONInto(%#v), error is %v", kit.Rid, data, err)
+		return err
+	}
+	if err = m.checkAttributeValidity(kit, attribute, true); err != nil {
+		return err
+	}
 
 	dbAttributeArr, err := m.search(kit, cond)
 	if err != nil {
-		blog.Errorf("request(%s): find nothing by the condition(%#v)  error(%s)", kit.Rid, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): find nothing by the condition(%#v)  error(%s)", kit.Rid, cond.ToMapStr(), err)
 		return err
 	}
-	if 0 == len(dbAttributeArr) {
+	if len(dbAttributeArr) == 0 {
 		blog.Errorf("request(%s): find nothing by the condition(%#v)", kit.Rid, cond.ToMapStr())
 		return nil
 	}
@@ -1053,7 +1061,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	// 更新的属性是否存在预定义字段。
 	hasIsPreProperty := false
 	for _, dbAttribute := range dbAttributeArr {
-		if dbAttribute.IsPre == true {
+		if dbAttribute.IsPre {
 			hasIsPreProperty = true
 			break
 		}
@@ -1077,7 +1085,8 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		propertyType := dbAttributeArr[0].PropertyType
 		for _, dbAttribute := range dbAttributeArr {
 			if dbAttribute.PropertyType != propertyType {
-				blog.ErrorJSON("update option, but property type not the same, db attributes: %s, rid:%s", dbAttributeArr, kit.Ctx)
+				blog.Errorf("update option, but property type not the same, db attributes: %s, rid:%s",
+					dbAttributeArr, kit.Ctx)
 				return kit.CCError.Errorf(common.CCErrCommParamsInvalid, "cond")
 			}
 		}
@@ -1100,12 +1109,6 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 			blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
 			return err
 		}
-	}
-
-	attribute := metadata.Attribute{}
-	if err = data.MarshalJSONInto(&attribute); err != nil {
-		blog.Errorf("request(%s): MarshalJSONInto(%#v), error is %v", kit.Rid, data, err)
-		return err
 	}
 
 	// 删除不可更新字段， 避免由于传入数据，修改字段
@@ -1142,10 +1145,6 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 			blog.Errorf("property group invalid, objIDs: %s have %d property groups, rid: %s", objIDs, cnt, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyGroup)
 		}
-	}
-
-	if err = m.checkAttributeValidity(kit, attribute, true); err != nil {
-		return err
 	}
 
 	for _, dbAttribute := range dbAttributeArr {
