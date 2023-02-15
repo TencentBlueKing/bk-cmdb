@@ -410,8 +410,6 @@ const (
 	EditProject ActionID = "edit_project"
 	// DeleteProject delete project action id
 	DeleteProject ActionID = "delete_project"
-	// ViewProject view project action id
-	ViewProject ActionID = "view_project"
 
 	// CreateCloudArea TODO
 	CreateCloudArea ActionID = "create_cloud_area"
