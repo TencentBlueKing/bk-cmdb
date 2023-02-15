@@ -1659,6 +1659,7 @@
     "（模板创建）": "(By template)",
     "（自定义创建）": "(By custom)",
     "项目": "project",
+    "项目列表提示语": "No authorized business, you can {auth} or {create}",
     "项目详情": "Project detail",
     "批量修改项目": "Batch modify items",
     "启用操作提示语": "Are you sure to enable? The 'Enable/Disable' states of the project may affect the logic of other app consumers, please proceed with caution!!!",
