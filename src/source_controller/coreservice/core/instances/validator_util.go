@@ -197,95 +197,62 @@ func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys 
 		_, ok := valData[field.PropertyID]
 		if !ok {
 			switch field.PropertyType {
-			case common.FieldTypeSingleChar:
+			case common.FieldTypeSingleChar, common.FieldTypeLongChar:
 				valData[field.PropertyID] = ""
-			case common.FieldTypeLongChar:
-				valData[field.PropertyID] = ""
-			case common.FieldTypeInt:
-				valData[field.PropertyID] = nil
+				if field.Default != nil {
+					valData[field.PropertyID] = field.Default
+				}
 			case common.FieldTypeEnum:
-				enumOptions, err := metadata.ParseEnumOption(ctx, field.Option)
+				defaultOptions, err := getEnumOption(ctx, field.Option, rid)
 				if err != nil {
-					blog.Warnf("ParseEnumOption failed: %v, rid: %s", err, rid)
+					blog.Errorf("get enum option failed, err: %v, rid: %s", err, rid)
 					valData[field.PropertyID] = nil
 					continue
 				}
-				if len(enumOptions) == 0 {
+				if len(defaultOptions) != 1 {
 					valData[field.PropertyID] = nil
-					break
+					continue
 				}
-
-				var defaultOption *metadata.EnumVal
-				for _, k := range enumOptions {
-					if k.IsDefault {
-						defaultOption = &k
-						break
-					}
-				}
-				if defaultOption == nil {
-					valData[field.PropertyID] = nil
-					break
-				}
-
-				valData[field.PropertyID] = defaultOption.ID
+				valData[field.PropertyID] = defaultOptions[0].ID
 			case common.FieldTypeEnumMulti:
-				enumOptions, err := metadata.ParseEnumOption(ctx, field.Option)
+				defaultOptions, err := getEnumOption(ctx, field.Option, rid)
 				if err != nil {
-					blog.Warnf("parse enum multi option failed, err: %v, rid: %s", err, rid)
+					blog.Errorf("get enum option failed, err: %v, rid: %s", err, rid)
 					valData[field.PropertyID] = nil
 					continue
 				}
-				if len(enumOptions) == 0 {
-					valData[field.PropertyID] = nil
-					break
+				ids := make([]string, 0)
+				for _, k := range defaultOptions {
+					ids = append(ids, k.ID)
 				}
-
-				defaultOptions := make([]string, 0)
-				for _, k := range enumOptions {
-					if k.IsDefault {
-						defaultOptions = append(defaultOptions, k.ID)
-					}
-				}
-				if len(defaultOptions) == 0 {
-					valData[field.PropertyID] = nil
-					break
-				}
-
-				valData[field.PropertyID] = defaultOptions
+				valData[field.PropertyID] = ids
 			case common.FieldTypeEnumQuote:
 				enumQuoteOptions, err := metadata.ParseEnumQuoteOption(ctx, field.Option)
 				if err != nil {
-					blog.Warnf("parse enum quote option failed, err: %v, rid: %s", err, rid)
+					blog.Errorf("parse enum quote option failed, err: %v, rid: %s", err, rid)
 					valData[field.PropertyID] = nil
 					continue
 				}
 				if len(enumQuoteOptions) == 0 {
 					valData[field.PropertyID] = nil
-					break
+					continue
 				}
-
-				defaultOptions := make([]int64, 0)
+				instIDs := make([]int64, 0)
 				for _, k := range enumQuoteOptions {
-					defaultOptions = append(defaultOptions, k.InstID)
+					instIDs = append(instIDs, k.InstID)
 				}
-				if len(defaultOptions) == 0 {
-					valData[field.PropertyID] = nil
-					break
+				valData[field.PropertyID] = instIDs
+			case common.FieldTypeDate, common.FieldTypeFloat, common.FieldTypeInt, common.FieldTypeTime,
+				common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeList:
+				valData[field.PropertyID] = nil
+				if field.Default != nil {
+					valData[field.PropertyID] = field.Default
 				}
-
-				valData[field.PropertyID] = defaultOptions
-			case common.FieldTypeDate:
-				valData[field.PropertyID] = nil
-			case common.FieldTypeTime:
-				valData[field.PropertyID] = nil
-			case common.FieldTypeUser:
-				valData[field.PropertyID] = nil
-			case common.FieldTypeOrganization:
-				valData[field.PropertyID] = nil
-			case common.FieldTypeTimeZone:
-				valData[field.PropertyID] = nil
 			case common.FieldTypeBool:
 				valData[field.PropertyID] = false
+				if field.Default != nil {
+					valData[field.PropertyID] = field.Default
+				}
 			default:
 				valData[field.PropertyID] = nil
 			}
@@ -293,6 +260,26 @@ func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys 
 	}
 }
 
-func isEmpty(value interface{}) bool {
-	return value == nil || value == ""
+func getEnumOption(ctx context.Context, val interface{}, rid string) ([]*metadata.EnumVal, error) {
+	enumOptions, err := metadata.ParseEnumOption(ctx, val)
+	if err != nil {
+		blog.Errorf("parse enum option failed, err: %v, rid: %s", err, rid)
+		return nil, err
+	}
+
+	if len(enumOptions) == 0 {
+		return nil, nil
+	}
+
+	defaultOptions := make([]*metadata.EnumVal, 0)
+	for _, k := range enumOptions {
+		if k.IsDefault {
+			defaultOptions = append(defaultOptions, &k)
+		}
+	}
+
+	if len(defaultOptions) == 0 {
+		return nil, nil
+	}
+	return defaultOptions, nil
 }

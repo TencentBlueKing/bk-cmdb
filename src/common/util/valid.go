@@ -128,14 +128,14 @@ func ValidFieldTypeEnumOption(option interface{}, isMultiple bool, errProxy ccEr
 	return nil
 }
 
-// ValidFieldTypeIntOption validate int field type's option
+// ValidFieldTypeIntOption validate int or float field type's option
 func ValidFieldTypeIntOption(option interface{}, errProxy ccErr.DefaultCCErrorIf) error {
-	if nil == option {
+	if option == nil {
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 	}
 
 	tmp, ok := option.(map[string]interface{})
-	if false == ok {
+	if !ok {
 		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 	}
 
@@ -203,17 +203,17 @@ func ValidFieldTypeIntOption(option interface{}, errProxy ccErr.DefaultCCErrorIf
 
 // ValidFieldTypeListOption validate list field type's option
 func ValidFieldTypeListOption(option interface{}, errProxy ccErr.DefaultCCErrorIf) error {
-	if nil == option {
+	if option == nil {
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 	}
 
 	arrOption, ok := option.([]interface{})
-	if false == ok {
-		blog.Errorf(" option %v not string type list option", option)
+	if !ok {
+		blog.Errorf("option %v not string type list option", option)
 		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 	}
 	if len(arrOption) > common.AttributeOptionArrayMaxLength {
-		blog.Errorf(" option array length %d exceeds max length %d", len(arrOption), common.AttributeOptionArrayMaxLength)
+		blog.Errorf("option array length %d exceeds max length %d", len(arrOption), common.AttributeOptionArrayMaxLength)
 		return errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option", common.AttributeOptionArrayMaxLength)
 	}
 
@@ -221,11 +221,11 @@ func ValidFieldTypeListOption(option interface{}, errProxy ccErr.DefaultCCErrorI
 		switch value := val.(type) {
 		case string: // 只可以是字符类型
 			if common.AttributeOptionValueMaxLength < utf8.RuneCountInString(value) {
-				blog.Errorf(" option value %s length %d exceeds max length %d", value, utf8.RuneCountInString(value), common.AttributeOptionValueMaxLength)
+				blog.Errorf("option value %s length %d exceeds max length %d", value, utf8.RuneCountInString(value), common.AttributeOptionValueMaxLength)
 				return errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option", common.AttributeOptionValueMaxLength)
 			}
 		default:
-			blog.Errorf(" option %v not string type list option", option)
+			blog.Errorf("option %v not string type list option", option)
 			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "list option need string type item")
 		}
 	}
@@ -331,6 +331,14 @@ func IsBasicValue(value interface{}) bool {
 func ValidateStringType(value interface{}) error {
 	if reflect.TypeOf(value).Kind() != reflect.String {
 		return fmt.Errorf("value(%+v) is not of string type", value)
+	}
+	return nil
+}
+
+// ValidateBoolType validate if the value is a bool type
+func ValidateBoolType(value interface{}) error {
+	if reflect.TypeOf(value).Kind() != reflect.Bool {
+		return fmt.Errorf("value(%+v) is not of bool type", value)
 	}
 	return nil
 }
