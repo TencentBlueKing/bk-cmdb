@@ -170,13 +170,14 @@ func (m *modelAttribute) checkAttributeMustNotEmpty(kit *rest.Kit, attribute met
 	return nil
 }
 
-func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadata.Attribute) error {
+func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error {
 	language := util.GetLanguage(kit.Header)
 	lang := m.language.CreateDefaultCCLanguageIf(language)
 	if attribute.PropertyID != "" {
 		attribute.PropertyID = strings.TrimSpace(attribute.PropertyID)
 		if common.AttributeIDMaxLength < utf8.RuneCountInString(attribute.PropertyID) {
-			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
+			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_bk_property_id"),
+				common.AttributeIDMaxLength)
 		}
 
 		if !SatisfyMongoFieldLimit(attribute.PropertyID) {
@@ -186,24 +187,28 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 
 		// check only preset attribute's property id can start with bk_ or _bk
 		if !attribute.IsPre {
-			if strings.HasPrefix(attribute.PropertyID, "bk_") || strings.HasPrefix(attribute.PropertyID, "_bk") {
+			if strings.HasPrefix(attribute.PropertyID, "bk_") ||
+				strings.HasPrefix(attribute.PropertyID, "_bk") {
 				return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
 			}
 		}
 	}
 
-	if attribute.PropertyName = strings.TrimSpace(attribute.PropertyName); common.AttributeNameMaxLength < utf8.RuneCountInString(attribute.PropertyName) {
-		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
+	if attribute.PropertyName = strings.TrimSpace(attribute.PropertyName); common.AttributeNameMaxLength <
+		utf8.RuneCountInString(attribute.PropertyName) {
+		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_bk_property_name"),
+			common.AttributeNameMaxLength)
 	}
 
 	if attribute.Placeholder != "" {
 		attribute.Placeholder = strings.TrimSpace(attribute.Placeholder)
 
 		if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(attribute.Placeholder) {
-			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_placeholder"), common.AttributePlaceHolderMaxLength)
+			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_placeholder"),
+				common.AttributePlaceHolderMaxLength)
 		}
 		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, attribute.Placeholder)
-		if nil != err || !match {
+		if err != nil || !match {
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPlaceHolder)
 
 		}
@@ -212,27 +217,390 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 	if attribute.Unit != "" {
 		attribute.Unit = strings.TrimSpace(attribute.Unit)
 		if common.AttributeUnitMaxLength < utf8.RuneCountInString(attribute.Unit) {
-			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_uint"), common.AttributeUnitMaxLength)
+			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_uint"),
+				common.AttributeUnitMaxLength)
 		}
 	}
 
 	if attribute.PropertyType != "" {
 		switch attribute.PropertyType {
 		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat,
-		common.FieldTypeEnum, common.FieldTypeEnumMulti, common.FieldTypeDate, common.FieldTypeTime,
-		common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool,
-		common.FieldTypeList, common.FieldTypeEnumQuote:
+			common.FieldTypeEnum, common.FieldTypeEnumMulti, common.FieldTypeDate, common.FieldTypeTime,
+			common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool,
+			common.FieldTypeList, common.FieldTypeEnumQuote:
 		default:
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 		}
 	}
 
-	if opt, ok := attribute.Option.(string); ok && opt != "" {
-		if common.AttributeOptionMaxLength < utf8.RuneCountInString(opt) {
-			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_option_regex"), common.AttributeOptionMaxLength)
+	if attribute.Default != nil {
+		if err := m.checkAttributeDefaultValue(kit, attribute, isUpdate); err != nil {
+			return err
 		}
 	}
 
+	if opt, ok := attribute.Option.(string); ok && opt != "" {
+		if common.AttributeOptionMaxLength < utf8.RuneCountInString(opt) {
+			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_option_regex"),
+				common.AttributeOptionMaxLength)
+		}
+	}
+
+	return nil
+}
+
+func (m *modelAttribute) checkAttributeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error {
+	switch attribute.PropertyType {
+	case common.FieldTypeEnum, common.FieldTypeEnumMulti, common.FieldTypeEnumQuote:
+	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
+		if err := m.checkStringTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+			return err
+		}
+	case common.FieldTypeInt:
+		if err := m.checkIntTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+			return err
+		}
+	case common.FieldTypeFloat:
+		if err := m.checkFloatTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+			return err
+		}
+	case common.FieldTypeDate:
+		if err := m.checkDateTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+			return err
+		}
+	case common.FieldTypeTime:
+		if err := m.checkTimeTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+			return err
+		}
+	case common.FieldTypeUser:
+		if err := m.checkUserTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+			return err
+		}
+	case common.FieldTypeOrganization:
+		if err := m.checkOrganizationTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+			return err
+		}
+	case common.FieldTypeTimeZone:
+		if err := m.checkTimeZoneTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+			return err
+		}
+	case common.FieldTypeBool:
+		if err := m.checkBoolTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+			return err
+		}
+	case common.FieldTypeList:
+		if err := m.checkListTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+			return err
+		}
+	default:
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
+	}
+
+	return nil
+}
+
+func (m *modelAttribute) checkStringTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error{
+	// 更新场景下，需要置空默认值，此时传递的参数为 default:"",无需再校验其合法性
+	if isUpdate {
+		if val, ok := attribute.Default.(string); ok {
+			if val == "" {
+				return nil
+			}
+		}
+	}
+
+	if err := util.ValidateStringType(attribute.Default); err != nil {
+		blog.Errorf("single char or long char default value not string, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+	optStr, ok := attribute.Option.(string)
+	if !ok {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "attribute.Option")
+	}
+
+	defaultStr, ok := attribute.Default.(string)
+	if !ok {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "attribute.default")
+	}
+
+	match, err := regexp.MatchString(optStr, defaultStr)
+	if err != nil || !match {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
+	}
+
+	return nil
+}
+
+func (m *modelAttribute) checkIntTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error {
+	if isUpdate {
+		if val, ok := attribute.Default.(string); ok {
+			if val == "" {
+				return nil
+			}
+		}
+	}
+	if ok := util.IsNumeric(attribute.Default); !ok {
+		blog.Errorf("int type default value not numeric, type: %T, rid: %s", attribute.Default, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
+	}
+	if attribute.Option == nil {
+		return nil
+	}
+
+	defaultVal, err := util.GetInt64ByInterface(attribute.Default)
+	if err != nil {
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedInt, "attribute.default")
+	}
+
+	tmp, ok := attribute.Option.(map[string]interface{})
+	if !ok {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "option")
+	}
+
+	min, ok := tmp["min"]
+	if !ok {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "min")
+	}
+	if ok := util.IsNumeric(min); ok {
+		minVal, err := util.GetInt64ByInterface(min)
+		if err != nil {
+			return kit.CCError.Errorf(common.CCErrCommParamsNeedInt, "attribute.Option.min")
+		}
+		if defaultVal < minVal {
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "int default value")
+		}
+	}
+
+	max, ok := tmp["max"]
+	if !ok {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "max")
+	}
+	if ok := util.IsNumeric(max); ok {
+		maxVal, err := util.GetInt64ByInterface(max)
+		if err != nil {
+			return kit.CCError.Errorf(common.CCErrCommParamsNeedInt, "attribute.Option.max")
+		}
+		if defaultVal > maxVal {
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "int default value")
+		}
+	}
+	return nil
+}
+
+func (m *modelAttribute) checkFloatTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error {
+	if isUpdate {
+		if val, ok := attribute.Default.(string); ok {
+			if val == "" {
+				return nil
+			}
+		}
+	}
+	if ok := util.IsNumeric(attribute.Default); !ok {
+		blog.Errorf("float type default value not numeric, type: %T, rid: %s", attribute.Default, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
+	}
+	if attribute.Option == nil {
+		return nil
+	}
+
+	defaultVal, err := util.GetFloat64ByInterface(attribute.Default)
+	if err != nil {
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedFloat, "attribute.default")
+	}
+
+	tmp, ok := attribute.Option.(map[string]interface{})
+	if !ok {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "option")
+	}
+	min, ok := tmp["min"]
+	if !ok {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "min")
+	}
+	if ok := util.IsNumeric(min); ok {
+		minVal, err := util.GetFloat64ByInterface(min)
+		if err != nil {
+			return kit.CCError.Errorf(common.CCErrCommParamsNeedFloat, "attribute.Option.min")
+		}
+		if defaultVal < minVal {
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "float default value")
+		}
+	}
+
+	max, ok := tmp["max"]
+	if !ok {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "max")
+	}
+	if ok := util.IsNumeric(max); ok {
+		maxVal, err := util.GetFloat64ByInterface(max)
+		if err != nil {
+			return kit.CCError.Errorf(common.CCErrCommParamsNeedFloat, "attribute.Option.max")
+		}
+		if defaultVal > maxVal {
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "float default value")
+		}
+	}
+	return nil
+}
+
+func (m *modelAttribute) checkListTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error {
+	if isUpdate {
+		if val, ok := attribute.Default.(string); ok {
+			if val == "" {
+				return nil
+			}
+		}
+	}
+	arrOption, ok := attribute.Option.([]interface{})
+	if !ok || len(arrOption) == 0 {
+		blog.Errorf("option %v not string type list option", attribute.Option)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "attribute.Option")
+	}
+
+	defaultVal, err := util.GetInt64ByInterface(attribute.Default)
+	if err != nil {
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedInt, "attribute.default")
+	}
+	if defaultVal < 0 || defaultVal > int64(len(arrOption)) {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "list default value")
+	}
+
+	return nil
+}
+
+func (m *modelAttribute) checkUserTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error {
+	if isUpdate {
+		if val, ok := attribute.Default.(string); ok {
+			if val == "" {
+				return nil
+			}
+		}
+	}
+	switch value := attribute.Default.(type) {
+	case string:
+		value = strings.TrimSpace(value)
+		if len(value) > common.FieldTypeUserLenChar {
+			blog.Errorf("params over length %d, rid: %s", common.FieldTypeUserLenChar, kit.Rid)
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
+		}
+
+		if len(value) == 0 {
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
+		}
+
+		// regex check
+		match := util.IsUser(value)
+		if !match {
+			blog.Errorf(`value "%s" not match regexp, rid: %s`, value, kit.Rid)
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
+		}
+	}
+	return nil
+}
+
+func (m *modelAttribute) checkOrganizationTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute,
+	isUpdate bool) error {
+	if isUpdate {
+		if val, ok := attribute.Default.(string); ok {
+			if val == "" {
+				return nil
+			}
+		}
+	}
+	switch org := attribute.Default.(type) {
+	case []interface{}:
+		if len(org) == 0 {
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
+		}
+
+		for _, orgID := range org {
+			if !util.IsNumeric(orgID) {
+				blog.Errorf("orgID params not int, type: %T, rid: %s", orgID, kit.Rid)
+				return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
+			}
+		}
+	}
+	return nil
+}
+
+func (m *modelAttribute) checkDateTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error{
+	if isUpdate {
+		if val, ok := attribute.Default.(string); ok {
+			if val == "" {
+				return nil
+			}
+		}
+	}
+
+	dateStr, ok := attribute.Default.(string)
+	if !ok {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
+	}
+
+	if ok := util.IsDate(dateStr); !ok {
+		blog.Errorf("date type default value not date format, type: %T, rid: %s", attribute.Default, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
+	}
+
+	return nil
+}
+
+func (m *modelAttribute) checkTimeTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error{
+	if isUpdate {
+		if val, ok := attribute.Default.(string); ok {
+			if val == "" {
+				return nil
+			}
+		}
+	}
+
+	timeStr, ok := attribute.Default.(string)
+	if !ok {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
+	}
+
+	if _, ok := util.IsTime(timeStr); !ok {
+		blog.Errorf("time type default value not time format, rid: %s", kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
+	}
+
+	return nil
+}
+
+func (m *modelAttribute) checkTimeZoneTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute,
+	isUpdate bool) error{
+	if isUpdate {
+		if val, ok := attribute.Default.(string); ok {
+			if val == "" {
+				return nil
+			}
+		}
+	}
+
+	timeZoneStr, ok := attribute.Default.(string)
+	if !ok {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
+	}
+
+	if ok := util.IsTimeZone(timeZoneStr); !ok {
+		blog.Errorf("time zone type default value not time zone format, rid: %s", kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
+	}
+
+	return nil
+}
+
+func (m *modelAttribute) checkBoolTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error{
+	if isUpdate {
+		if val, ok := attribute.Default.(string); ok {
+			if val == "" {
+				return nil
+			}
+		}
+	}
+	if err := util.ValidateBoolType(attribute.Default); err != nil {
+		blog.Errorf("bool type default value not bool, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
 	return nil
 }
 
@@ -656,7 +1024,7 @@ func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) 
 	if err := m.checkAttributeMustNotEmpty(kit, attribute); err != nil {
 		return err
 	}
-	if err := m.checkAttributeValidity(kit, attribute); err != nil {
+	if err := m.checkAttributeValidity(kit, attribute, false); err != nil {
 		return err
 	}
 
@@ -671,13 +1039,21 @@ func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) 
 
 // checkUpdate 删除不可以更新字段，检验字段是否重复， 返回更新的行数，错误
 func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (err error) {
+	attribute := metadata.Attribute{}
+	if err = data.MarshalJSONInto(&attribute); err != nil {
+		blog.Errorf("request(%s): MarshalJSONInto(%#v), error is %v", kit.Rid, data, err)
+		return err
+	}
+	if err = m.checkAttributeValidity(kit, attribute, true); err != nil {
+		return err
+	}
 
 	dbAttributeArr, err := m.search(kit, cond)
 	if err != nil {
-		blog.Errorf("request(%s): find nothing by the condition(%#v)  error(%s)", kit.Rid, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): find nothing by the condition(%#v)  error(%s)", kit.Rid, cond.ToMapStr(), err)
 		return err
 	}
-	if 0 == len(dbAttributeArr) {
+	if len(dbAttributeArr) == 0 {
 		blog.Errorf("request(%s): find nothing by the condition(%#v)", kit.Rid, cond.ToMapStr())
 		return nil
 	}
@@ -685,7 +1061,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	// 更新的属性是否存在预定义字段。
 	hasIsPreProperty := false
 	for _, dbAttribute := range dbAttributeArr {
-		if dbAttribute.IsPre == true {
+		if dbAttribute.IsPre {
 			hasIsPreProperty = true
 			break
 		}
@@ -709,7 +1085,8 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		propertyType := dbAttributeArr[0].PropertyType
 		for _, dbAttribute := range dbAttributeArr {
 			if dbAttribute.PropertyType != propertyType {
-				blog.ErrorJSON("update option, but property type not the same, db attributes: %s, rid:%s", dbAttributeArr, kit.Ctx)
+				blog.Errorf("update option, but property type not the same, db attributes: %s, rid:%s",
+					dbAttributeArr, kit.Ctx)
 				return kit.CCError.Errorf(common.CCErrCommParamsInvalid, "cond")
 			}
 		}
@@ -768,16 +1145,6 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 			blog.Errorf("property group invalid, objIDs: %s have %d property groups, rid: %s", objIDs, cnt, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyGroup)
 		}
-	}
-
-	attribute := metadata.Attribute{}
-	if err = data.MarshalJSONInto(&attribute); err != nil {
-		blog.Errorf("request(%s): MarshalJSONInto(%#v), error is %v", kit.Rid, data, err)
-		return err
-	}
-
-	if err = m.checkAttributeValidity(kit, attribute); err != nil {
-		return err
 	}
 
 	for _, dbAttribute := range dbAttributeArr {

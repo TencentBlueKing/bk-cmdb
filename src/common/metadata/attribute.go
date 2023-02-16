@@ -77,6 +77,7 @@ const (
 	AttributeFieldCreateTime = "create_time"
 	// AttributeFieldLastTime TODO
 	AttributeFieldLastTime = "last_time"
+	AttributeFieldDefault = "default"
 )
 
 // Attribute attribute metadata definition
@@ -101,6 +102,7 @@ type Attribute struct {
 	IsAPI             bool        `field:"bk_isapi" json:"bk_isapi" bson:"bk_isapi" mapstructure:"bk_isapi"`
 	PropertyType      string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type" mapstructure:"bk_property_type"`
 	Option            interface{} `field:"option" json:"option" bson:"option" mapstructure:"option"`
+	Default           interface{} `field:"default" json:"default,omitempty" bson:"default" mapstructure:"default"`
 	IsMultiple        *bool       `field:"ismultiple" json:"ismultiple,omitempty" bson:"ismultiple" mapstructure:"ismultiple"`
 	Description       string      `field:"description" json:"description" bson:"description" mapstructure:"description"`
 	Creator           string      `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
