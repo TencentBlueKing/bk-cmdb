@@ -29,7 +29,7 @@ import (
 // addObjAttrDesDefaultColumn add is default field to objAttrDes table.
 func addObjAttrDesDefaultColumn(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
-	err := db.Table(common.BKTableNameObjAttDes).AddColumn(ctx, common.BKDefaultFiled, "")
+	err := db.Table(common.BKTableNameObjAttDes).AddColumn(ctx, common.BKDefaultFiled, nil)
 	if err != nil {
 		blog.Errorf("add default column to objAttrDes failed, err: %v", err)
 		return err

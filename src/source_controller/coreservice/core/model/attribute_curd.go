@@ -234,7 +234,15 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 	}
 
 	if attribute.Default != nil {
-		if err := m.checkAttributeDefaultValue(kit, attribute, isUpdate); err != nil {
+		// 更新场景时，如果需要置空默认值，此时传递的参数为统一处理为default:""
+		if isUpdate {
+			if val, ok := attribute.Default.(string); ok {
+				if val == "" {
+					return nil
+				}
+			}
+		}
+		if err := m.checkAttributeDefaultValue(kit, attribute); err != nil {
 			return err
 		}
 	}
@@ -249,47 +257,47 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 	return nil
 }
 
-func (m *modelAttribute) checkAttributeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error {
+func (m *modelAttribute) checkAttributeDefaultValue (kit *rest.Kit, attribute metadata.Attribute) error {
 	switch attribute.PropertyType {
 	case common.FieldTypeEnum, common.FieldTypeEnumMulti, common.FieldTypeEnumQuote:
 	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
-		if err := m.checkStringTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+		if err := m.checkStringTypeDefaultValue(kit, attribute); err != nil {
 			return err
 		}
 	case common.FieldTypeInt:
-		if err := m.checkIntTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+		if err := m.checkIntTypeDefaultValue(kit, attribute); err != nil {
 			return err
 		}
 	case common.FieldTypeFloat:
-		if err := m.checkFloatTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+		if err := m.checkFloatTypeDefaultValue(kit, attribute); err != nil {
 			return err
 		}
 	case common.FieldTypeDate:
-		if err := m.checkDateTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+		if err := m.checkDateTypeDefaultValue(kit, attribute); err != nil {
 			return err
 		}
 	case common.FieldTypeTime:
-		if err := m.checkTimeTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+		if err := m.checkTimeTypeDefaultValue(kit, attribute); err != nil {
 			return err
 		}
 	case common.FieldTypeUser:
-		if err := m.checkUserTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+		if err := m.checkUserTypeDefaultValue(kit, attribute); err != nil {
 			return err
 		}
 	case common.FieldTypeOrganization:
-		if err := m.checkOrganizationTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+		if err := m.checkOrganizationTypeDefaultValue(kit, attribute); err != nil {
 			return err
 		}
 	case common.FieldTypeTimeZone:
-		if err := m.checkTimeZoneTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+		if err := m.checkTimeZoneTypeDefaultValue(kit, attribute); err != nil {
 			return err
 		}
 	case common.FieldTypeBool:
-		if err := m.checkBoolTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+		if err := m.checkBoolTypeDefaultValue(kit, attribute); err != nil {
 			return err
 		}
 	case common.FieldTypeList:
-		if err := m.checkListTypeDefaultValue(kit, attribute, isUpdate); err != nil {
+		if err := m.checkListTypeDefaultValue(kit, attribute); err != nil {
 			return err
 		}
 	default:
@@ -299,28 +307,23 @@ func (m *modelAttribute) checkAttributeDefaultValue (kit *rest.Kit, attribute me
 	return nil
 }
 
-func (m *modelAttribute) checkStringTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error{
-	// 更新场景下，需要置空默认值，此时传递的参数为 default:"",无需再校验其合法性
-	if isUpdate {
-		if val, ok := attribute.Default.(string); ok {
-			if val == "" {
-				return nil
-			}
-		}
-	}
-
+func (m *modelAttribute) checkStringTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute) error{
 	if err := util.ValidateStringType(attribute.Default); err != nil {
 		blog.Errorf("single char or long char default value not string, err: %v, rid: %s", err, kit.Rid)
 		return err
-	}
-	optStr, ok := attribute.Option.(string)
-	if !ok {
-		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "attribute.Option")
 	}
 
 	defaultStr, ok := attribute.Default.(string)
 	if !ok {
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "attribute.default")
+	}
+
+	if attribute.Option == nil {
+		return nil
+	}
+	optStr, ok := attribute.Option.(string)
+	if !ok {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "attribute.Option")
 	}
 
 	match, err := regexp.MatchString(optStr, defaultStr)
@@ -331,14 +334,7 @@ func (m *modelAttribute) checkStringTypeDefaultValue (kit *rest.Kit, attribute m
 	return nil
 }
 
-func (m *modelAttribute) checkIntTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error {
-	if isUpdate {
-		if val, ok := attribute.Default.(string); ok {
-			if val == "" {
-				return nil
-			}
-		}
-	}
+func (m *modelAttribute) checkIntTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute) error {
 	if ok := util.IsNumeric(attribute.Default); !ok {
 		blog.Errorf("int type default value not numeric, type: %T, rid: %s", attribute.Default, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
@@ -387,14 +383,7 @@ func (m *modelAttribute) checkIntTypeDefaultValue (kit *rest.Kit, attribute meta
 	return nil
 }
 
-func (m *modelAttribute) checkFloatTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error {
-	if isUpdate {
-		if val, ok := attribute.Default.(string); ok {
-			if val == "" {
-				return nil
-			}
-		}
-	}
+func (m *modelAttribute) checkFloatTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute) error {
 	if ok := util.IsNumeric(attribute.Default); !ok {
 		blog.Errorf("float type default value not numeric, type: %T, rid: %s", attribute.Default, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
@@ -442,39 +431,25 @@ func (m *modelAttribute) checkFloatTypeDefaultValue (kit *rest.Kit, attribute me
 	return nil
 }
 
-func (m *modelAttribute) checkListTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error {
-	if isUpdate {
-		if val, ok := attribute.Default.(string); ok {
-			if val == "" {
-				return nil
-			}
-		}
-	}
+func (m *modelAttribute) checkListTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute) error {
 	arrOption, ok := attribute.Option.([]interface{})
 	if !ok || len(arrOption) == 0 {
 		blog.Errorf("option %v not string type list option", attribute.Option)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "attribute.Option")
 	}
 
-	defaultVal, err := util.GetInt64ByInterface(attribute.Default)
-	if err != nil {
-		return kit.CCError.Errorf(common.CCErrCommParamsNeedInt, "attribute.default")
-	}
-	if defaultVal < 0 || defaultVal > int64(len(arrOption)) {
-		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "list default value")
-	}
-
-	return nil
-}
-
-func (m *modelAttribute) checkUserTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error {
-	if isUpdate {
-		if val, ok := attribute.Default.(string); ok {
-			if val == "" {
-				return nil
-			}
+	defaultVal := util.GetStrByInterface(attribute.Default)
+	for _, value := range arrOption {
+		val := util.GetStrByInterface(value)
+		if defaultVal == val {
+			return nil
 		}
 	}
+
+	return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "list default value")
+}
+
+func (m *modelAttribute) checkUserTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute) error {
 	switch value := attribute.Default.(type) {
 	case string:
 		value = strings.TrimSpace(value)
@@ -497,15 +472,7 @@ func (m *modelAttribute) checkUserTypeDefaultValue (kit *rest.Kit, attribute met
 	return nil
 }
 
-func (m *modelAttribute) checkOrganizationTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute,
-	isUpdate bool) error {
-	if isUpdate {
-		if val, ok := attribute.Default.(string); ok {
-			if val == "" {
-				return nil
-			}
-		}
-	}
+func (m *modelAttribute) checkOrganizationTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute) error {
 	switch org := attribute.Default.(type) {
 	case []interface{}:
 		if len(org) == 0 {
@@ -522,15 +489,7 @@ func (m *modelAttribute) checkOrganizationTypeDefaultValue (kit *rest.Kit, attri
 	return nil
 }
 
-func (m *modelAttribute) checkDateTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error{
-	if isUpdate {
-		if val, ok := attribute.Default.(string); ok {
-			if val == "" {
-				return nil
-			}
-		}
-	}
-
+func (m *modelAttribute) checkDateTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute) error{
 	dateStr, ok := attribute.Default.(string)
 	if !ok {
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
@@ -544,15 +503,7 @@ func (m *modelAttribute) checkDateTypeDefaultValue (kit *rest.Kit, attribute met
 	return nil
 }
 
-func (m *modelAttribute) checkTimeTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error{
-	if isUpdate {
-		if val, ok := attribute.Default.(string); ok {
-			if val == "" {
-				return nil
-			}
-		}
-	}
-
+func (m *modelAttribute) checkTimeTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute) error{
 	timeStr, ok := attribute.Default.(string)
 	if !ok {
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
@@ -566,16 +517,7 @@ func (m *modelAttribute) checkTimeTypeDefaultValue (kit *rest.Kit, attribute met
 	return nil
 }
 
-func (m *modelAttribute) checkTimeZoneTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute,
-	isUpdate bool) error{
-	if isUpdate {
-		if val, ok := attribute.Default.(string); ok {
-			if val == "" {
-				return nil
-			}
-		}
-	}
-
+func (m *modelAttribute) checkTimeZoneTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute) error{
 	timeZoneStr, ok := attribute.Default.(string)
 	if !ok {
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldDefault)
@@ -589,14 +531,7 @@ func (m *modelAttribute) checkTimeZoneTypeDefaultValue (kit *rest.Kit, attribute
 	return nil
 }
 
-func (m *modelAttribute) checkBoolTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute, isUpdate bool) error{
-	if isUpdate {
-		if val, ok := attribute.Default.(string); ok {
-			if val == "" {
-				return nil
-			}
-		}
-	}
+func (m *modelAttribute) checkBoolTypeDefaultValue (kit *rest.Kit, attribute metadata.Attribute) error{
 	if err := util.ValidateBoolType(attribute.Default); err != nil {
 		blog.Errorf("bool type default value not bool, err: %v, rid: %s", err, kit.Rid)
 		return err
