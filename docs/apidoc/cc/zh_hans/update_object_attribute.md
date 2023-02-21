@@ -22,6 +22,7 @@
 | unit              | string | 否   | 单位                                                         |
 | placeholder       | string | 否   | 占位符                                                       |
 | ismultiple        | bool   | 否   | 是否可多选，其中字段类型为短字符，长字符，数字，浮点，枚举，日期，时间，时区，布尔，列表暂时不支持可多选，在更新属性时，字段类型为上述类型时，不能将ismultiple更新为true，如果更新为true则会提示该类型暂不支持可多选。枚举多选，枚举引用，用户，组织字段支持可多选。 |
+| default           | object | 否   | 给属性添加默认值，更新的时候，default的值根据字段的实际类型进行传递，如果想要置空字段的默认值，需要传递default:null |
 
 #### bk_property_type
 
@@ -40,8 +41,9 @@
 | bool         | 布尔       |
 | organization | 组织       |
 
-
 ### 请求参数示例
+
+更新默认值场景
 
 ```python
 {
@@ -60,9 +62,59 @@
     "option":"{\"min\":\"1\",\"max\":\"4\"}",
     "bk_property_name":"aaa",
     "bk_property_type":"int",
-    "bk_asst_obj_id":"0"
+    "bk_asst_obj_id":"0",
+    "default":3
 }
 ```
+
+不更新默认值场景
+
+```python
+{
+    "bk_app_code": "esb_test",
+    "bk_app_secret": "xxx",
+    "bk_username": "xxx",
+    "bk_token": "xxx",
+    "id":1,
+    "description":"test",
+    "placeholder":"test",
+    "unit":"1",
+    "isonly":false,
+    "isreadonly":false,
+    "isrequired":false,
+    "bk_property_group":"default",
+    "option":"{\"min\":\"1\",\"max\":\"4\"}",
+    "bk_property_name":"aaa",
+    "bk_property_type":"int",
+    "bk_asst_obj_id":"0",
+}
+```
+
+置空默认值场景
+
+```python
+{
+    "bk_app_code": "esb_test",
+    "bk_app_secret": "xxx",
+    "bk_username": "xxx",
+    "bk_token": "xxx",
+    "id":1,
+    "description":"test",
+    "placeholder":"test",
+    "unit":"1",
+    "isonly":false,
+    "isreadonly":false,
+    "isrequired":false,
+    "bk_property_group":"default",
+    "option":"{\"min\":\"1\",\"max\":\"4\"}",
+    "bk_property_name":"aaa",
+    "bk_property_type":"int",
+    "bk_asst_obj_id":"0",
+    "default":null
+}
+```
+
+
 
 ### 返回结果示例
 

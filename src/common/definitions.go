@@ -641,6 +641,8 @@ const (
 	BKIsOnlyField = "isonly"
 	// BKIsMultipleField the is multiple name field
 	BKIsMultipleField = "ismultiple"
+	// BKDefaultFiled the is default name field
+	BKDefaultFiled = "default"
 	// BKGseTaskIDField the gse taskid
 	BKGseTaskIDField = "task_id"
 	// BKTaskIDField the gse taskid

@@ -153,7 +153,9 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 			return valid.errIf.Errorf(common.CCErrCommParamsNeedSet, key)
 		}
 	}
-	FillLostedFieldValue(kit.Ctx, instanceData, valid.propertySlice)
+	if err := FillLostFieldValue(kit.Ctx, instanceData, valid.propertySlice); err != nil {
+		return err
+	}
 
 	if err := m.validCloudID(kit, objID, instanceData); err != nil {
 		return err
@@ -583,8 +585,11 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, property metadata.Attribut
 	}
 
 	if len(valIDs) == 0 {
-		blog.Errorf("enum quote inst id is null, rid: %s", kit.Rid)
-		return fmt.Errorf("enum quote inst id is null, please set the correct value")
+		if property.IsRequired {
+			blog.Errorf("enum quote inst id is null, rid: %s", kit.Rid)
+			return fmt.Errorf("enum quote inst id is null, please set the correct value")
+		}
+		return nil
 	}
 
 	if property.IsMultiple == nil {

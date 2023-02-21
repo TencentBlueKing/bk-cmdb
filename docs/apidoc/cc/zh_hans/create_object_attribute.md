@@ -26,6 +26,7 @@
 | bk_property_name  | string | 是   | 模型属性名，用于展示                                         |
 | bk_property_type  | string | 是   | 定义的属性字段用于存储数据的数据类型,可取值范围（singlechar,longchar,int,enum,date,time,objuser,enummulti,enumquote,timezone,bool,organization) |
 | ismultiple        | bool   | 否   | 是否可多选，其中字段类型为短字符，长字符，数字，浮点，枚举，日期，时间，时区，布尔，列表暂时不支持可多选，在创建属性时，字段类型为上述类型可以不传ismultiple参数，默认为false，如果传true则会提示该类型暂不支持可多选。枚举多选，枚举引用，用户，组织字段支持可多选，其中用户字段，组织字段默认为true |
+| default           | object | 否   | 给属性字段添加默认值，default的值根据字段的实际类型进行传递，比如创建int类型字段，如果想要给该字段设置默认值，可以传default:5，如果是短字符类型，那么default:"aaa"，不想设置默认值则不传该字段 |
 
 #### bk_property_type
 
@@ -59,7 +60,7 @@
     "ispre": false,
     "isreadonly": false,
     "isrequired": false,
-    "option": {"min":"1","max":"2"},
+    "option": "^[0-9a-zA-Z_]{1,}$",// 如果是短字符类型则此处可以填写正则匹配规则
     "unit": "1",
     "placeholder": "test",
     "bk_property_group": "default",
@@ -68,7 +69,8 @@
     "bk_property_name": "cc_test",
     "bk_property_type": "singlechar",
     "bk_asst_obj_id": "test",
-    "ismultiple": false
+    "ismultiple": false,
+    "default":"aaaa"
 }
 ```
 
@@ -106,7 +108,8 @@
 		"create_time": "2020-03-25 17:12:08",
 		"last_time": "2020-03-25 17:12:08",
 		"bk_property_group_name": "default",
-        	"ismultiple": false
+        	"ismultiple": false,
+        	"default":"aaaa"
 	}
 }
 ```
@@ -146,6 +149,7 @@
 | bk_biz_id              | int    | 业务自定义字段的业务id                                       |
 | bk_property_group_name | string | 字段分栏的名字                                               |
 | ismultiple             | bool   | 字段是否支持可多选                                           |
+| default                | object | 属性默认值                                                   |
 
 #### bk_property_type
 

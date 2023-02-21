@@ -30,6 +30,7 @@ import (
 
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -77,6 +78,8 @@ const (
 	AttributeFieldCreateTime = "create_time"
 	// AttributeFieldLastTime TODO
 	AttributeFieldLastTime = "last_time"
+	// AttributeFieldDefault attribute default value field
+	AttributeFieldDefault = "default"
 )
 
 // Attribute attribute metadata definition
@@ -101,6 +104,7 @@ type Attribute struct {
 	IsAPI             bool        `field:"bk_isapi" json:"bk_isapi" bson:"bk_isapi" mapstructure:"bk_isapi"`
 	PropertyType      string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type" mapstructure:"bk_property_type"`
 	Option            interface{} `field:"option" json:"option" bson:"option" mapstructure:"option"`
+	Default           interface{} `field:"default" json:"default,omitempty" bson:"default" mapstructure:"default"`
 	IsMultiple        *bool       `field:"ismultiple" json:"ismultiple,omitempty" bson:"ismultiple" mapstructure:"ismultiple"`
 	Description       string      `field:"description" json:"description" bson:"description" mapstructure:"description"`
 	Creator           string      `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
@@ -223,16 +227,7 @@ func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key 
 		return errors.RawErrorInfo{}
 	}
 
-	valStr, ok := val.(string)
-	if !ok {
-		blog.Errorf("date can should be string, rid: %s", rid)
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsShouldBeString,
-			Args:    []interface{}{key},
-		}
-	}
-
-	if _, result := util.IsTime(valStr); !result {
+	if _, result := util.IsTime(val); !result {
 		blog.Errorf("params not valid, rid: %s", rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
@@ -258,17 +253,7 @@ func (attribute *Attribute) validDate(ctx context.Context, val interface{}, key 
 		return errors.RawErrorInfo{}
 	}
 
-	valStr, ok := val.(string)
-	if !ok {
-		blog.Errorf("date can should be string, rid: %s", rid)
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsShouldBeString,
-			Args:    []interface{}{key},
-		}
-
-	}
-
-	if result := util.IsDate(valStr); !result {
+	if result := util.IsDate(val); !result {
 		blog.Errorf("params is not valid, rid: %s", rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
@@ -478,17 +463,7 @@ func (attribute *Attribute) validTimeZone(ctx context.Context, val interface{}, 
 		return errors.RawErrorInfo{}
 	}
 
-	switch value := val.(type) {
-	case string:
-		isMatch := util.IsTimeZone(value)
-		if !isMatch {
-			blog.Errorf("params should be timezone, rid: %s", rid)
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsNeedTimeZone,
-				Args:    []interface{}{key},
-			}
-		}
-	default:
+	if ok := util.IsTimeZone(val); !ok {
 		blog.Errorf("params should be timezone, rid: %s", rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedTimeZone,
@@ -946,7 +921,7 @@ func (attribute *Attribute) validOrganization(ctx context.Context, val interface
 		}
 
 		for _, orgID := range org {
-			if !util.IsNumeric(orgID) {
+			if !util.IsInteger(orgID) {
 				blog.Errorf("orgID params not int, type: %T, rid: %s", orgID, rid)
 				return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid, Args: []interface{}{key}}
 			}
@@ -969,7 +944,7 @@ func (attribute *Attribute) validOrganization(ctx context.Context, val interface
 		}
 
 		for _, orgID := range org {
-			if !util.IsNumeric(orgID) {
+			if !util.IsInteger(orgID) {
 				blog.Errorf("orgID params not int, type: %T, rid: %s", orgID, rid)
 				return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid, Args: []interface{}{key}}
 			}
@@ -1286,7 +1261,7 @@ func ParseEnumQuoteOption(ctx context.Context, val interface{}) ([]EnumQuoteVal,
 			blog.Errorf("parse enum quote option failed, err: %v, rid: %s", err, rid)
 			return nil, err
 		}
-	case bson.A:
+	case primitive.A:
 		if err := parseEnumQuoteOption(options, &enumQuoteOptions); err != nil {
 			blog.Errorf("parse enum quote option failed, err: %v, rid: %s", err, rid)
 			return nil, err
@@ -1303,25 +1278,40 @@ func parseEnumQuoteOption(options []interface{}, enumQuoteOptions *[]EnumQuoteVa
 		switch val := optionVal.(type) {
 		case map[string]interface{}:
 			enumQuoteOption := EnumQuoteVal{}
-			enumQuoteOption.ObjID = getString(val["bk_obj_id"])
+			enumQuoteOption.ObjID = getString(val[common.BKObjIDField])
 			if enumQuoteOption.ObjID == "" {
 				return fmt.Errorf("operation %#v objID empty or not string", optionVal.(map[string]interface{}))
 			}
+			instID, err := util.GetInt64ByInterface(val[common.BKInstIDField])
+			if err != nil || instID == 0 {
+				return fmt.Errorf("inst id is illegal, err: %v", err)
+			}
+			enumQuoteOption.InstID = instID
 			*enumQuoteOptions = append(*enumQuoteOptions, enumQuoteOption)
 		case bson.M:
 			enumQuoteOption := EnumQuoteVal{}
-			enumQuoteOption.ObjID = getString(val["bk_obj_id"])
+			enumQuoteOption.ObjID = getString(val[common.BKObjIDField])
 			if enumQuoteOption.ObjID == "" {
 				return fmt.Errorf("operation %#v objID empty or not string", optionVal.(bson.M))
 			}
+			instID, err := util.GetInt64ByInterface(val[common.BKInstIDField])
+			if err != nil || instID == 0 {
+				return fmt.Errorf("inst id is illegal, err: %v", err)
+			}
+			enumQuoteOption.InstID = instID
 			*enumQuoteOptions = append(*enumQuoteOptions, enumQuoteOption)
 		case bson.D:
 			opt := val.Map()
 			enumQuoteOption := EnumQuoteVal{}
-			enumQuoteOption.ObjID = getString(opt["bk_obj_id"])
+			enumQuoteOption.ObjID = getString(opt[common.BKObjIDField])
 			if enumQuoteOption.ObjID == "" {
 				return fmt.Errorf("operation %#v objID empty or not string", opt)
 			}
+			instID, err := util.GetInt64ByInterface(opt[common.BKInstIDField])
+			if err != nil || instID == 0 {
+				return fmt.Errorf("inst id is illegal, err: %v", err)
+			}
+			enumQuoteOption.InstID = instID
 			*enumQuoteOptions = append(*enumQuoteOptions, enumQuoteOption)
 		default:
 			return fmt.Errorf("unknow optionVal type: %#v", optionVal)
