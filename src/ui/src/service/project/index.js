@@ -10,11 +10,11 @@
  * limitations under the License.
  */
 
-import http from '@/api'
+import $http from '@/api'
 
 const findOne = async ({ id: id, config }) => {
   try {
-    const { info } = await http.post('/findmany/project', {
+    const { info } = $http.post('/findmany/project', {
       filter: {
         condition: 'AND',
         rules: [
@@ -42,7 +42,7 @@ const findOne = async ({ id: id, config }) => {
 
 const find = async ({ params, config }) => {
   try {
-    return await http.post('/findmany/project', params, config)
+    return $http.post('/findmany/project', params, config)
   } catch (error) {
     console.error(error)
     return null
@@ -54,7 +54,7 @@ const create = async (params) => {
     const data = {
       data: [params]
     }
-    return await http.post('/createmany/project', data)
+    return $http.post('/createmany/project', data)
   } catch (error) {
     console.error(error)
     return null
@@ -63,7 +63,7 @@ const create = async (params) => {
 
 const update = async (params) => {
   try {
-    return await http.put('/updatemany/project', params)
+    return $http.put('/updatemany/project', params)
   } catch (error) {
     console.error(error)
     return null
