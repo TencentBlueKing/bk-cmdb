@@ -31,7 +31,6 @@
     "确定删除收藏条件": "Confirm to delete collection {name} ?",
     "管理员": "Admin",
     "普通用户": "User",
-    "注销": "Log Out",
     "业务": "Business",
     "已选N项": "{N} items selected",
     "已选N行": "{N} rows selected",
@@ -1672,5 +1671,6 @@
     "模型实例": "model instance",
     "可多选": "Multiple",
     "是否可多选": "Multiple or not",
-    "不可多选": "Not multiple"
+    "不可多选": "Not multiple",
+    "退出登录": "Log Out"
 }
