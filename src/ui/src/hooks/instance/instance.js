@@ -52,8 +52,13 @@ export default function (options) {
     state.pending = true
     const service = getService(value)
     const serviceOptions = getServiceOptions(value)
-    const instance = await service.findOne(serviceOptions)
-    state.instance = instance || {}
+    if (value.bk_obj_id === 'bk_project') {
+      const instance = await service.findOne(value.bk_inst_id)
+      state.instance = instance || {}
+    } else {
+      const instance = await service.findOne(serviceOptions)
+      state.instance = instance || {}
+    }
     state.pending = false
   }
   watch(() => (isRef(options) ? options.value : options), refresh, { immediate: true, deep: true })

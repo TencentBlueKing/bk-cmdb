@@ -12,7 +12,7 @@
 
 import http from '@/api'
 
-const findOne = async ({ id: id, config }) => {
+const findOne = async (id, config) => {
   try {
     const { info } = await http.post('/findmany/project', {
       filter: {
@@ -49,26 +49,9 @@ const find = async ({ params, config }) => {
   }
 }
 
-const create = async (params) => {
-  try {
-    const data = {
-      data: [params]
-    }
-    return await http.post('/createmany/project', data)
-  } catch (error) {
-    console.error(error)
-    return null
-  }
-}
+const create =  params => http.post('/createmany/project', params)
 
-const update = async (params) => {
-  try {
-    return await http.put('/updatemany/project', params)
-  } catch (error) {
-    console.error(error)
-    return null
-  }
-}
+const update =  params => http.put('/updatemany/project', params)
 
 export default {
   findOne,
