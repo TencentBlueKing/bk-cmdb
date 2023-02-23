@@ -11,6 +11,12 @@
  */
 
 import http from '@/api'
+
+import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
+import { enableCount } from '../utils.js'
+
+const MODEL_ID_KEY = BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].ID
+
 const findOne = async ({ id }, config) => {
   try {
     const { info } = await http.post('/findmany/project', {
@@ -49,6 +55,40 @@ const find = async ({ params, config }) => {
 }
 
 const create =  params => http.post('/createmany/project', params)
+const getMany = async (params, config) => {
+  try {
+    const [{ info: list = [] }, { count = 0 }] = await Promise.all([
+      http.post('findmany/project', enableCount(params, false), config),
+      http.post('findmany/project', enableCount(params, true), config)
+    ])
+    return { count: count || 0, list: list || [] }
+  } catch (error) {
+    console.error(error)
+    return Promise.reject(error)
+  }
+}
+
+const findByIds = async (ids, config = {}) => {
+  try {
+    const { count = 0, info: list = [] } = await http.post('findmany/project', enableCount({
+      filter: {
+        condition: 'AND',
+        rules: [{
+          field: MODEL_ID_KEY,
+          operator: 'in',
+          value: ids
+        }]
+      },
+      page: { start: 0, limit: ids.length }
+    }, false), config)
+
+    return { count, list }
+  } catch (error) {
+    console.error(error)
+    return null
+  }
+}
+
 
 const update =  params => http.put('/updatemany/project', params)
 
@@ -56,5 +96,7 @@ export default {
   findOne,
   find,
   create,
-  update
+  update,
+  findByIds,
+  getMany
 }

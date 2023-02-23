@@ -32,6 +32,7 @@
     "管理员": "Admin",
     "普通用户": "User",
     "注销": "Log Out",
+    "退出登录": "Log Out",
     "业务": "Business",
     "已选N项": "{N} items selected",
     "已选N行": "{N} rows selected",

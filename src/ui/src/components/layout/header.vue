@@ -82,8 +82,7 @@
         <template slot="content">
           <a class="link-item" href="javascript:void(0)"
             @click="handleLogout">
-            <i class="icon-cc-logout"></i>
-            {{$t('注销')}}
+            {{$t('退出登录')}}
           </a>
         </template>
       </bk-popover>

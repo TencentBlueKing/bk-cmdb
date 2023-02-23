@@ -11,8 +11,9 @@
 -->
 
 <script setup>
-  import { computed, nextTick, ref, watch, watchEffect } from 'vue'
+  import { computed, nextTick, ref, watch, watchEffect, inject } from 'vue'
   import { t } from '@/i18n'
+  import router from '@/router/index.js'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
@@ -32,14 +33,19 @@
 
   const emit = defineEmits(['input'])
 
-  const defaultValueSelectEl = ref(null)
+  const customObjId = inject('customObjId')
 
-  const excludeModelIds = [BUILTIN_MODELS.SET, BUILTIN_MODELS.MODULE]
+  const defaultValueSelectEl = ref(null)
 
   const refModelId = ref('')
   const refModelInstIds = ref(props.multiple ? [] : '')
 
   const searchPlaceholder = computed(() => t('请输入xx', { name: t(refModelId.value === BUILTIN_MODELS.HOST ? 'IP' : '名称') }))
+  const excludeModelIds = computed(() => ([
+    BUILTIN_MODELS.SET,
+    BUILTIN_MODELS.MODULE,
+    router.app.$route.params.modelId ?? customObjId
+  ]))
 
   watchEffect(() => {
     if (props.value?.length) {
