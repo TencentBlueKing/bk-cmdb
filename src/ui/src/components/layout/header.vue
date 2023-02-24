@@ -157,7 +157,7 @@
       this.versionList = versionList.map(item => ({
         title: item.version,
         date: item.time
-      }))
+      })).sort((a, b) => new Date(b.date).getTime()  - new Date(a.date).getTime())
       this.currentVersion = versionList.find(item => item.is_current === true)?.version || ''
       if (oldCurrentVersion !== this.currentVersion) {
         this.isShowChangeLogs = true
