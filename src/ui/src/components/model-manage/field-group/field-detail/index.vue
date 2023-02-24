@@ -111,6 +111,27 @@
           v-model="fieldInfo.option"
           ref="component"
         ></component>
+        <label class="form-label" style="display: block;
+            line-height: 36px;
+            font-size: 14px;" v-if="isDefaultComponentShow">
+          <span class="label-text">
+            {{$t('默认值')}}
+          </span>
+          <div class="cmdb-form-item" :class="{ 'is-error': errors.has('defalut') }">
+            <component
+              name="defalut"
+              :key="fieldInfo.bk_property_type"
+              :is-read-only="isReadOnly || field.ispre"
+              :is="`cmdb-form-${fieldInfo.bk_property_type}`"
+              :multiple="fieldInfo.ismultiple"
+              :options="fieldInfo.option || []"
+              v-model="fieldInfo.default"
+              v-validate="$tools.getValidateRules(fieldInfo)"
+              ref="component"
+            ></component>
+            <p class="form-error">{{errors.first('defalut')}}</p>
+          </div>
+        </label>
       </div>
       <label class="form-label" v-show="['int', 'float'].includes(fieldType)">
         <span class="label-text">
@@ -220,7 +241,8 @@
           editable: true,
           isrequired: false,
           ismultiple: false,
-          option: ''
+          option: '',
+          default: ''
         },
         originalFieldInfo: {},
         charMap: [PROPERTY_TYPES.SINGLECHAR, PROPERTY_TYPES.LONGCHAR]
@@ -266,6 +288,21 @@
         ]
         return types.indexOf(this.fieldInfo.bk_property_type) !== -1
       },
+      isDefaultComponentShow() {
+        const types = [
+          PROPERTY_TYPES.SINGLECHAR,
+          PROPERTY_TYPES.LONGCHAR,
+          PROPERTY_TYPES.INT,
+          PROPERTY_TYPES.FLOAT,
+          PROPERTY_TYPES.DATE,
+          PROPERTY_TYPES.TIME,
+          PROPERTY_TYPES.TIMEZONE,
+          PROPERTY_TYPES.OBJUSER,
+          PROPERTY_TYPES.ORGANIZATION,
+          PROPERTY_TYPES.LIST,
+        ]
+        return types.indexOf(this.fieldInfo.bk_property_type) !== -1
+      },
       changedValues() {
         const changedValues = {}
         Object.keys(this.fieldInfo).forEach((propertyId) => {
@@ -280,7 +317,24 @@
           return this.field.creator === 'cc_system'
         }
         return false
-      }
+      },
+      validate() {
+        const { bk_property_type: type } = this.fieldInfo
+        let validate
+        switch (type) {
+          case PROPERTY_TYPES.SINGLECHAR:
+          case PROPERTY_TYPES.LONGCHAR:
+            validate = `isRegular:${this.fieldInfo.option}`
+            break
+          case PROPERTY_TYPES.INT:
+          case PROPERTY_TYPES.FLOAT:
+            validate = 'enum'
+            break
+          default:
+            validate = ''
+        }
+        return validate
+      },
     },
     watch: {
       'fieldInfo.bk_property_type'(type) {
@@ -292,6 +346,7 @@
                 min: '',
                 max: ''
               }
+              this.fieldInfo.default = ''
               break
             case PROPERTY_TYPES.ENUMMULTI:
             case PROPERTY_TYPES.ENUMQUOTE:
@@ -304,6 +359,7 @@
               this.fieldInfo.ismultiple = true
               break
             default:
+              this.fieldInfo.default = ''
               this.fieldInfo.option = ''
               this.fieldInfo.ismultiple = false
           }
@@ -347,9 +403,10 @@
           return
         }
         let fieldId = null
-        if (this.fieldInfo.bk_property_type === 'int') {
+        if (this.fieldInfo.bk_property_type === 'int' || this.fieldInfo.bk_property_type === 'float') {
           this.fieldInfo.option.min = this.isNullOrUndefinedOrEmpty(this.fieldInfo.option.min) ? '' : Number(this.fieldInfo.option.min)
           this.fieldInfo.option.max = this.isNullOrUndefinedOrEmpty(this.fieldInfo.option.max) ? '' : Number(this.fieldInfo.option.max)
+          this.fieldInfo.default = this.isNullOrUndefinedOrEmpty(this.fieldInfo.default) ? '' : Number(this.fieldInfo.default)
         }
         if (this.isEditField) {
           const action = this.customObjId ? 'updateBizObjectAttribute' : 'updateObjectAttribute'
@@ -371,6 +428,7 @@
             this.$success(this.$t('修改成功'))
           })
         } else {
+          if (this.fieldInfo.default === '') delete this.fieldInfo.default
           const groupId = this.isGlobalView ? 'default' : 'bizdefault'
           const selectedGroup = this.groups.find(group => group.bk_group_id === this.fieldInfo.bk_property_group)
           const otherParams = {

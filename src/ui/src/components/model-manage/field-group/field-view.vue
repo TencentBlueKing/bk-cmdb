@@ -84,7 +84,7 @@
       </div>
       <div class="property-item enum-list" v-if="listLikes.includes(field.bk_property_type)">
         <div class="property-name">
-          <span>{{$t('枚举值')}}</span>：
+          <span>{{$t(title)}}</span>：
         </div>
         <div class="property-value">
           <template v-if="getEnumValue().length">
@@ -92,6 +92,21 @@
           </template>
           <span v-else>--</span>
         </div>
+      </div>
+      <div class="property-item enum-list"
+        v-if="!['enum','enummulti','enumquote','list'].includes(field.bk_property_type)">
+        <div class="property-name">
+          <span>{{$t('默认值')}}</span>：
+        </div>
+        <span v-if="!['organization'].includes(field.bk_property_type)"
+          class="property-value">{{defaultValue || '--'}}</span>
+        <org-value
+          v-else
+          class="property-value"
+          :value="defaultValue"
+          :property="field"
+          v-bind="$attrs">
+        </org-value>
       </div>
     </div>
     <template slot="footer" slot-scope="{ sticky }" v-if="canEdit">
@@ -105,7 +120,12 @@
 
 <script>
   import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
+  import orgValue from '@/components/ui/other/org-value.vue'
+
   export default {
+    components: {
+      orgValue
+    },
     props: {
       field: {
         type: Object,
@@ -139,6 +159,22 @@
       hasMultipleType() {
         const types = [PROPERTY_TYPES.ORGANIZATION, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ENUMMULTI]
         return types.includes(this.type)
+      },
+      defaultValue() {
+        const field = this.$tools.clone(this.field)
+        if (['list'].includes(this.type)) {
+          return this.field.default
+        }
+        if (['bool'].includes(this.type)) {
+          return field.default = field.option === false ? 'false' : field.option
+        }
+        return field.default
+      },
+      title() {
+        if (['list'].includes(this.type)) {
+          return '列表值'
+        }
+        return '枚举值'
       }
     },
     methods: {
@@ -152,6 +188,15 @@
                 return `${item.name}(${item.id}, ${this.$t('默认值')})`
               }
               return `${item.name}(${item.id})`
+            })
+            return arr
+          }
+          if (this.listLikes.includes(type)) {
+            const arr = value.map((item) => {
+              if (item === this.field.default) {
+                return `${item}(${this.$t('默认值')})`
+              }
+              return item
             })
             return arr
           }

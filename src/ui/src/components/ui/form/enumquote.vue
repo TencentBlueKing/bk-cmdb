@@ -31,6 +31,10 @@
       type: Boolean,
       default: true
     },
+    disabled: {
+      type: Boolean,
+      default: false
+    },
     options: {
       type: Array,
       default() {
@@ -104,6 +108,7 @@
     :placeholder="$t('请选择xx', { name: $t('模型实例') })"
     :search-placeholder="searchPlaceholder"
     :display-tag="false"
+    :disabled="disabled"
     :multiple="localMultiple"
     v-model="refModelInstIds">
   </model-instance-selector>
