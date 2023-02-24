@@ -82,14 +82,15 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
   properties.forEach((property) => {
     const propertyId = property.bk_property_id
     const propertyType = property.bk_property_type
+    const propertyDefault = property.default
     if (['singleasst', 'multiasst', 'foreignkey'].includes(propertyType)) {
       // const validAsst = (inst[propertyId] || []).filter(asstInst => asstInst.id !== '')
       // values[propertyId] = validAsst.map(asstInst => asstInst['bk_inst_id']).join(',')
     } else if (['date', 'time'].includes(propertyType)) {
       const formatedTime = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
-      values[propertyId] = formatedTime || null
+      values[propertyId] = propertyDefault || formatedTime || null
     } else if (['int', 'float'].includes(propertyType)) {
-      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? '' : inst[propertyId]
+      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? propertyDefault : inst[propertyId]
     } else if (['bool'].includes(propertyType)) {
       if ([null, undefined].includes(inst[propertyId]) && autoSelect) {
         values[propertyId] = typeof property.option === 'boolean' ? property.option : false
@@ -106,10 +107,10 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
       const defaultValue = autoSelect ? getDefaultOptionEnumQuoteValue(property) : []
       values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
     } else if (['timezone'].includes(propertyType)) {
-      const defaultValue = autoSelect ? 'Asia/Shanghai' : ''
+      const defaultValue = autoSelect ? propertyDefault : ''
       values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
     } else if (['organization'].includes(propertyType)) {
-      values[propertyId] = inst[propertyId] || null
+      values[propertyId] = propertyDefault || inst[propertyId] || null
     } else if (['table'].includes(propertyType)) {
       // table类型的字段编辑和展示目前仅在进程绑定信息被使用，如后期有扩展在其它场景form-table组件与此处都需要调整
       // 接口需要过滤掉不允许编辑及内置的字段
@@ -117,7 +118,7 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
       // eslint-disable-next-line max-len
       values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(tableColumns || [], row, autoSelect))
     } else {
-      values[propertyId] = has(inst, propertyId) ? inst[propertyId] : ''
+      values[propertyId] = has(inst, propertyId) ? inst[propertyId] : propertyDefault
     }
   })
   return { ...inst, ...values }

@@ -57,6 +57,13 @@
         this.property.__extra__.valid = await this.$validator.validate()
         this.$emit('valid-change')
       })
+      if (this.property?.default) {
+        // eslint-disable-next-line no-underscore-dangle
+        this.property.__extra__.value = this.property.default
+      } else if (this.property.bk_property_type === 'bool') {
+        // eslint-disable-next-line no-underscore-dangle
+        this.property.__extra__.value = this.property.option
+      }
     }
   }
 </script>
