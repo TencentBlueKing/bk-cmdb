@@ -601,7 +601,10 @@
         return true
       },
       handleSave(values) {
-        projectService.create(values).then(() => {
+        const data = {
+          data: [values]
+        }
+        projectService.create(data).then(() => {
           this.getTableData()
           this.closeCreateSlider()
           this.$success(this.$t('创建成功'))

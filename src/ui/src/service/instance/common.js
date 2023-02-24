@@ -14,12 +14,14 @@ import hostSearchService from '@/service/host/search'
 import businessSearchService from '@/service/business/search'
 import instanceSearchService from '@/service/instance/search'
 import businessSetService from '@/service/business-set/index.js'
+import projectSetService from '@/service/project/index.js'
 import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_MODEL_ROUTEPARAMS_KEYS } from '@/dictionary/model-constants.js'
 import {
   MENU_RESOURCE_INSTANCE_DETAILS,
   MENU_RESOURCE_BUSINESS_DETAILS,
   MENU_RESOURCE_BUSINESS_SET_DETAILS,
   MENU_RESOURCE_HOST_DETAILS,
+  MENU_RESOURCE_PROJECT_DETAILS,
   MENU_RESOURCE_BUSINESS_HISTORY
 } from '@/dictionary/menu-symbol'
 import { foreignkey as foreignkeyFormatter } from '@/filters/formatter.js'
@@ -27,19 +29,22 @@ import { foreignkey as foreignkeyFormatter } from '@/filters/formatter.js'
 const getService = modelId => ({
   [BUILTIN_MODELS.HOST]: hostSearchService,
   [BUILTIN_MODELS.BUSINESS]: businessSearchService,
-  [BUILTIN_MODELS.BUSINESS_SET]: businessSetService
+  [BUILTIN_MODELS.BUSINESS_SET]: businessSetService,
+  [BUILTIN_MODELS.PROJECT]: projectSetService
 }[modelId] || instanceSearchService)
 
 export const getIdKey = modelId => ({
   [BUILTIN_MODELS.HOST]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.HOST].ID,
   [BUILTIN_MODELS.BUSINESS]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].ID,
-  [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID
+  [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID,
+  [BUILTIN_MODELS.PROJECT]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].ID
 }[modelId] || 'bk_inst_id')
 
 export const getNameKey = modelId => ({
   [BUILTIN_MODELS.HOST]: 'bk_host_innerip',
   [BUILTIN_MODELS.BUSINESS]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].NAME,
-  [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME
+  [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME,
+  [BUILTIN_MODELS.PROJECT]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].NAME
 }[modelId] || 'bk_inst_name')
 
 export const getSearchByNameParams = (modelId, value, options = {}) => {
@@ -103,6 +108,18 @@ export const getSearchByNameParams = (modelId, value, options = {}) => {
           value
         }]
       } : undefined
+    },
+    [BUILTIN_MODELS.PROJECT]: {
+      fields: fieldParams,
+      page: pageParams,
+      filter: value ? {
+        condition: 'AND',
+        rules: [{
+          field: nameKey,
+          operator: 'contains',
+          value
+        }]
+      } : undefined
     }
   }
 
@@ -114,9 +131,14 @@ export const searchInstanceByName = async (modelId, name, options, config) => {
   const params = getSearchByNameParams(modelId, name, options)
 
   if (service.find) {
-    const request = modelId === BUILTIN_MODELS.BUSINESS_SET
-      ? service.find(params, config)
-      : service.find({ bk_obj_id: modelId, params, config })
+    let request = Promise.resolve([])
+    if (modelId === BUILTIN_MODELS.BUSINESS_SET) {
+      request = service.find(params, config)
+    } else if (modelId === BUILTIN_MODELS.PROJECT) {
+      request = service.getMany(params, config)
+    } else {
+      request = service.find({ bk_obj_id: modelId, params, config })
+    }
     const result = await request
     return result
   }
@@ -127,7 +149,7 @@ export const searchInstanceByIds = async (modelId, instIds, config) => {
   const service = getService(modelId)
 
   if (service.find) {
-    const request = modelId === BUILTIN_MODELS.BUSINESS_SET
+    const request = (modelId === BUILTIN_MODELS.BUSINESS_SET || modelId === BUILTIN_MODELS.PROJECT)
       ? service.findByIds(instIds, config)
       : service.findByIds({ bk_obj_id: modelId, ids: instIds, config })
     const result = await request
@@ -232,6 +254,15 @@ export const getModelInstanceDetailRoute = (modelId, instId, extra = {}, options
 
       return {
         name: MENU_RESOURCE_BUSINESS_SET_DETAILS,
+        params: { [paramKey]: instId },
+        history
+      }
+    },
+    [BUILTIN_MODELS.PROJECT]: (modelId, instId) => {
+      const paramKey = BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.PROJECT]
+
+      return {
+        name: MENU_RESOURCE_PROJECT_DETAILS,
         params: { [paramKey]: instId },
         history
       }
