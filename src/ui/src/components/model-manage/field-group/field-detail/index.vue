@@ -414,6 +414,9 @@
           if (!this.isGlobalView) {
             params.bk_biz_id = this.bizId
           }
+          if (this.fieldInfo.default === '' || (typeof this.fieldInfo.default === 'object' && this.fieldInfo.default.length === 0)) {
+            params.default = null
+          }
           await this[action]({
             bizId: this.bizId,
             id: this.field.id,
