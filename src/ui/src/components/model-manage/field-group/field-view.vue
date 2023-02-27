@@ -94,19 +94,26 @@
         </div>
       </div>
       <div class="property-item enum-list"
-        v-if="!['enum','enummulti','enumquote','list'].includes(field.bk_property_type)">
+        v-if="!['enum','enummulti','list'].includes(field.bk_property_type)">
         <div class="property-name">
           <span>{{$t('默认值')}}</span>：
         </div>
-        <span v-if="!['organization'].includes(field.bk_property_type)"
-          class="property-value">{{defaultValue || '--'}}</span>
         <org-value
-          v-else
+          v-if="['organization'].includes(field.bk_property_type)"
           class="property-value"
           :value="defaultValue"
           :property="field"
           v-bind="$attrs">
         </org-value>
+        <enumquote-value
+          v-else-if="['enumquote'].includes(field.bk_property_type)"
+          class="property-value"
+          :property="field"
+          :value="enumquoteOption"
+        >
+        </enumquote-value>
+        <span v-else
+          class="property-value">{{defaultValue || '--'}}</span>
       </div>
     </div>
     <template slot="footer" slot-scope="{ sticky }" v-if="canEdit">
@@ -121,10 +128,12 @@
 <script>
   import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
   import orgValue from '@/components/ui/other/org-value.vue'
+  import enumquoteValue from '@/components/ui/other/enumquote-value.vue'
 
   export default {
     components: {
-      orgValue
+      orgValue,
+      enumquoteValue
     },
     props: {
       field: {
@@ -175,6 +184,9 @@
           return '列表值'
         }
         return '枚举值'
+      },
+      enumquoteOption() {
+        return this.field.option.map(item => item.bk_inst_id)
       }
     },
     methods: {
