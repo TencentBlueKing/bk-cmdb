@@ -65,6 +65,7 @@ var ActionIDNameMap = map[ActionID]string{
 	EditBusinessTopology:                "业务拓扑编辑",
 	DeleteBusinessTopology:              "业务拓扑删除",
 	EditBusinessHostApply:               "主机自动应用编辑",
+	ViewResourcePoolHost:                "主机池主机查看",
 	CreateResourcePoolHost:              "主机池主机创建",
 	EditResourcePoolHost:                "主机池主机编辑",
 	DeleteResourcePoolHost:              "主机池主机删除",
@@ -83,6 +84,7 @@ var ActionIDNameMap = map[ActionID]string{
 	DeleteBizSet:                        "业务集删除",
 	ViewBizSet:                          "业务集查看",
 	AccessBizSet:                        "业务集访问",
+	ViewCloudArea:                       "云区域查看",
 	CreateCloudArea:                     "云区域创建",
 	EditCloudArea:                       "云区域编辑",
 	DeleteCloudArea:                     "云区域删除",
@@ -94,6 +96,7 @@ var ActionIDNameMap = map[ActionID]string{
 	EditCloudResourceTask:               "云资源任务编辑",
 	DeleteCloudResourceTask:             "云资源任务删除",
 	FindCloudResourceTask:               "云资源任务查询",
+	ViewSysModel:                        "模型查看",
 	CreateSysModel:                      "模型新建",
 	EditSysModel:                        "模型编辑",
 	DeleteSysModel:                      "模型删除",
@@ -103,6 +106,7 @@ var ActionIDNameMap = map[ActionID]string{
 	CreateModelGroup:                    "模型分组新建",
 	EditModelGroup:                      "模型分组编辑",
 	DeleteModelGroup:                    "模型分组删除",
+	ViewModelTopo:                       "模型拓扑查看",
 	EditBusinessLayer:                   "业务层级编辑",
 	EditModelTopologyView:               "模型拓扑视图编辑",
 	FindOperationStatistic:              "运营统计查询",
@@ -139,6 +143,7 @@ var ActionIDNameMap = map[ActionID]string{
 	DeleteContainerWorkload:             "容器工作负载删除",
 	CreateContainerPod:                  "容器Pod新建",
 	DeleteContainerPod:                  "容器Pod删除",
+	UseFulltextSearch:                   "全文检索",
 }
 
 // GenerateActions generate all the actions registered to IAM.
@@ -181,6 +186,7 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genKubeEventWatchActions()...)
 	resourceActionList = append(resourceActionList, genConfigAdminActions()...)
 	resourceActionList = append(resourceActionList, genContainerManagementActions()...)
+	resourceActionList = append(resourceActionList, genFulltextSearchActions()...)
 
 	return resourceActionList
 }
@@ -567,6 +573,16 @@ func genResourcePoolHostActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 
 	actions = append(actions, ResourceAction{
+		ID:                   ViewResourcePoolHost,
+		Name:                 ActionIDNameMap[ViewResourcePoolHost],
+		NameEn:               "View Resource Pool Hosts",
+		Type:                 View,
+		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
 		ID:                   CreateResourcePoolHost,
 		Name:                 ActionIDNameMap[CreateResourcePoolHost],
 		NameEn:               "Create Pool Hosts",
@@ -582,7 +598,7 @@ func genResourcePoolHostActions() []ResourceAction {
 		NameEn:               "Edit Pool Hosts",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewResourcePoolHost},
 		Version:              1,
 	})
 
@@ -592,7 +608,7 @@ func genResourcePoolHostActions() []ResourceAction {
 		NameEn:               "Delete Pool Hosts",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewResourcePoolHost},
 		Version:              1,
 	})
 
@@ -615,7 +631,7 @@ func genResourcePoolHostActions() []ResourceAction {
 		NameEn:               "Assigned Pool Hosts To Business",
 		Type:                 Edit,
 		RelatedResourceTypes: transferToBusinessRelatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewResourcePoolHost},
 		Version:              1,
 	})
 
@@ -626,7 +642,7 @@ func genResourcePoolHostActions() []ResourceAction {
 		NameEn:               "Assigned Pool Hosts To Directory",
 		Type:                 Edit,
 		RelatedResourceTypes: transferToDirectoryRelatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewResourcePoolHost},
 		Version:              1,
 	})
 
@@ -741,7 +757,7 @@ func genBizSetActions() []ResourceAction {
 		NameEn:               "Create Business Set",
 		Type:                 Create,
 		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewBizSet},
 		Version:              1,
 	})
 
@@ -807,6 +823,16 @@ func genCloudAreaActions() []ResourceAction {
 
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
+		ID:                   ViewCloudArea,
+		Name:                 ActionIDNameMap[ViewCloudArea],
+		NameEn:               "View Cloud Area",
+		Type:                 View,
+		RelatedResourceTypes: relatedResource,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
 		ID:                   CreateCloudArea,
 		Name:                 ActionIDNameMap[CreateCloudArea],
 		NameEn:               "Create Cloud Area",
@@ -822,7 +848,7 @@ func genCloudAreaActions() []ResourceAction {
 		NameEn:               "Edit Cloud Area",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewCloudArea},
 		Version:              1,
 	})
 
@@ -832,7 +858,7 @@ func genCloudAreaActions() []ResourceAction {
 		NameEn:               "Delete Cloud Area",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewCloudArea},
 		Version:              1,
 	})
 
@@ -980,6 +1006,16 @@ func genModelActions() []ResourceAction {
 
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
+		ID:                   ViewSysModel,
+		Name:                 ActionIDNameMap[ViewSysModel],
+		NameEn:               "View Model",
+		Type:                 View,
+		RelatedResourceTypes: relatedResource,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
 		ID:     CreateSysModel,
 		Name:   ActionIDNameMap[CreateSysModel],
 		NameEn: "Create Model",
@@ -1007,7 +1043,7 @@ func genModelActions() []ResourceAction {
 		NameEn:               "Edit Model",
 		Type:                 Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewSysModel},
 		Version:              1,
 	})
 
@@ -1017,7 +1053,7 @@ func genModelActions() []ResourceAction {
 		NameEn:               "Delete Model",
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewSysModel},
 		Version:              1,
 	})
 
@@ -1134,7 +1170,7 @@ func genBusinessLayerActions() []ResourceAction {
 		NameEn:               "Edit Business Level",
 		Type:                 Edit,
 		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewModelTopo},
 		Version:              1,
 	})
 	return actions
@@ -1143,12 +1179,20 @@ func genBusinessLayerActions() []ResourceAction {
 func genModelTopologyViewActions() []ResourceAction {
 	actions := make([]ResourceAction, 0)
 	actions = append(actions, ResourceAction{
+		ID:      ViewModelTopo,
+		Name:    ActionIDNameMap[ViewModelTopo],
+		NameEn:  "View Model Topo",
+		Type:    View,
+		Version: 1,
+	})
+
+	actions = append(actions, ResourceAction{
 		ID:                   EditModelTopologyView,
 		Name:                 ActionIDNameMap[EditModelTopologyView],
 		NameEn:               "Edit Model Topo View",
 		Type:                 Edit,
 		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewModelTopo},
 		Version:              1,
 	})
 	return actions
@@ -1544,4 +1588,16 @@ func genContainerPodActions() []ResourceAction {
 			Version: 1,
 		},
 	}
+}
+
+func genFulltextSearchActions() []ResourceAction {
+	actions := make([]ResourceAction, 0)
+	actions = append(actions, ResourceAction{
+		ID:      UseFulltextSearch,
+		Name:    ActionIDNameMap[UseFulltextSearch],
+		NameEn:  "Fulltext Search",
+		Type:    View,
+		Version: 1,
+	})
+	return actions
 }
