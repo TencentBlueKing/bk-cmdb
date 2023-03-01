@@ -14,10 +14,12 @@ package logics
 
 import (
 	"encoding/json"
+	sysErr "errors"
 	"fmt"
 	"strings"
 	"sync"
 
+	acMeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -310,6 +312,36 @@ func (lgc *Logics) GetAllHostIDByCond(kit *rest.Kit, cond metadata.HostModuleRel
 	return hostIDs, nil
 }
 
+// AuthorizeWithResourcePoolHost 当用户参数中没有传bizID场景下按照主机池主机查看权限进行鉴权
+func (lgc *Logics) AuthorizeWithResourcePoolHost(kit *rest.Kit) error {
+
+	user := acMeta.UserInfo{
+		UserName:        kit.User,
+		SupplierAccount: kit.SupplierAccount,
+	}
+
+	resources := []acMeta.ResourceAttribute{
+		{
+			Basic: acMeta.Basic{
+				Type:   acMeta.HostInstance,
+				Action: acMeta.ViewResourcePoolHost,
+			},
+		},
+	}
+
+	decisions, err := lgc.AuthManager.Authorizer.AuthorizeBatch(kit.Ctx, kit.Header, user, resources...)
+	for _, decision := range decisions {
+		if !decision.Authorized {
+			return sysErr.New("view resource pool host")
+		}
+	}
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetHostModuleRelation  query host and module relation,
 // condition key use appID, moduleID,setID,HostID
 func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond *metadata.HostModuleRelationRequest) (
@@ -333,6 +365,21 @@ func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond *metadata.HostModul
 
 	if len(cond.HostIDArr) > 500 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "bk_host_ids", 500)
+	}
+
+	if lgc.AuthManager.Enabled() {
+		if cond.ApplicationID > 0 {
+			if err := lgc.AuthManager.AuthorizeByInstanceID(kit.Ctx, kit.Header, acMeta.ViewBusinessResource,
+				common.BKInnerObjIDApp, cond.ApplicationID); err != nil {
+				blog.Errorf("authorize failed, bizID: %v, err: %v, rid: %s", cond.ApplicationID, err, kit.Rid)
+				return nil, kit.CCError.CCErrorf(common.CCErrCommCheckAuthorizeFailed, common.BKAppIDField)
+			}
+		} else {
+			if err := lgc.AuthorizeWithResourcePoolHost(kit); err != nil {
+				blog.Errorf("authFilter failed, authorized request failed, err: %v, rid: %s", err, kit.Rid)
+				return nil, kit.CCError.CCErrorf(common.CCErrCommCheckAuthorizeFailed, "view resource pool host")
+			}
+		}
 	}
 
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, cond)
@@ -872,14 +919,41 @@ func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostM
 	return hostInfoArr[0], hostID, nil
 }
 
+func arrangeBaseInfo(relations []metadata.ModuleHost) ([]int64, []int64, []int64, map[int64][]int64) {
+	bizList := make([]int64, 0)
+	moduleList := make([]int64, 0)
+	setList := make([]int64, 0)
+	hostModule := make(map[int64][]int64)
+	bizMap, moduleMap, setMap := make(map[int64]struct{}), make(map[int64]struct{}), make(map[int64]struct{})
+
+	for _, one := range relations {
+		bizMap[one.AppID] = struct{}{}
+		moduleMap[one.ModuleID] = struct{}{}
+		setMap[one.SetID] = struct{}{}
+		hostModule[one.HostID] = append(hostModule[one.HostID], one.ModuleID)
+	}
+	for id := range bizMap {
+		bizList = append(bizList, id)
+	}
+
+	for id := range moduleMap {
+		moduleList = append(moduleList, id)
+	}
+
+	for id := range setMap {
+		setList = append(setList, id)
+	}
+	return bizList, moduleList, setList, hostModule
+}
+
 // ArrangeHostDetailAndTopology arrange host's detail and it's topology node's info along with it.
 func (lgc *Logics) ArrangeHostDetailAndTopology(kit *rest.Kit, withBiz bool, hosts []map[string]interface{}) (
-	[]*metadata.HostDetailWithTopo, error) {
+	[]*metadata.HostDetailWithTopo, []int64, error) {
 
 	// get mainline topology rank data, it's the order to arrange the host's topology data.
 	rankMap, reverseRankMap, rank, err := lgc.getTopologyRank(kit)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// search all hosts' host module relations
@@ -888,7 +962,7 @@ func (lgc *Logics) ArrangeHostDetailAndTopology(kit *rest.Kit, withBiz bool, hos
 		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
 			blog.ErrorJSON("got invalid bk_host_id field in host: %s, rid: %s", host, kit.Rid)
-			return nil, err
+			return nil, nil, err
 		}
 		hostIDs = append(hostIDs, hostID)
 	}
@@ -898,24 +972,14 @@ func (lgc *Logics) ArrangeHostDetailAndTopology(kit *rest.Kit, withBiz bool, hos
 	relations, err := lgc.GetHostRelations(kit, relationCond)
 	if nil != err {
 		blog.ErrorJSON("read host module relation error: %s, input: %s, rid: %s", err, hosts, kit.Rid)
-		return nil, err
+		return nil, nil, err
 	}
-
-	bizList := make([]int64, 0)
-	moduleList := make([]int64, 0)
-	setList := make([]int64, 0)
-	hostModule := make(map[int64][]int64)
-	for _, one := range relations {
-		bizList = append(bizList, one.AppID)
-		setList = append(setList, one.SetID)
-		moduleList = append(moduleList, one.ModuleID)
-		hostModule[one.HostID] = append(hostModule[one.HostID], one.ModuleID)
-	}
+	bizList, moduleList, setList, hostModule := arrangeBaseInfo(relations)
 
 	// get all the inner object's details info
 	bizDetails, setDetails, moduleDetails, err := lgc.getInnerObjectDetails(kit, withBiz, bizList, moduleList, setList)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// now we get all the custom object's instances with set's parent instance id
@@ -955,7 +1019,7 @@ loop:
 			// get custom level instances details with parent instance id list.
 			customInst, err := lgc.getCustomObjectInstances(kit, one, parentsInst)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
 			// reset parent instances
@@ -969,7 +1033,7 @@ loop:
 				instID, err := util.GetInt64ByInterface(inst[common.BKInstIDField])
 				if err != nil {
 					blog.Errorf("get inst id from inst: %v failed, err: %v, rid: %s", inst, err, kit.Rid)
-					return nil, err
+					return nil, nil, err
 				}
 
 				// save the instances data with object and it's instances
@@ -990,7 +1054,7 @@ loop:
 		bizID, err := util.GetInt64ByInterface(biz[common.BKAppIDField])
 		if err != nil {
 			blog.Errorf("get biz id failed, biz: %v, err: %v, rid: %s", biz, err, kit.Rid)
-			return nil, err
+			return nil, nil, err
 		}
 		bizMap[bizID] = biz
 	}
@@ -999,7 +1063,7 @@ loop:
 		setID, err := util.GetInt64ByInterface(set[common.BKSetIDField])
 		if err != nil {
 			blog.Errorf("get set id failed, set: %v, err: %v, rid: %s", set, err, kit.Rid)
-			return nil, err
+			return nil, nil, err
 		}
 		setMap[setID] = set
 	}
@@ -1009,7 +1073,7 @@ loop:
 		modID, err := util.GetInt64ByInterface(mod[common.BKModuleIDField])
 		if err != nil {
 			blog.Errorf("get module id failed, module: %v, err: %v, rid: %s", mod, err, kit.Rid)
-			return nil, err
+			return nil, nil, err
 		}
 		moduleMap[modID] = mod
 	}
@@ -1021,7 +1085,7 @@ loop:
 		hostID, err := util.GetInt64ByInterface(one[common.BKHostIDField])
 		if err != nil {
 			blog.ErrorJSON("got invalid bk_host_id field in host: %s, rid: %s", one, kit.Rid)
-			return nil, err
+			return nil, nil, err
 		}
 
 		topo[idx] = &metadata.HostDetailWithTopo{Host: one}
@@ -1035,14 +1099,14 @@ loop:
 		children, err := lgc.arrangeParentTree(kit.Rid, rank, rankMap, reverseRankMap, withBiz, bizMap, setMap,
 			moduleMap, modules, customObjInstMap)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		topo[idx].Topo = children
 
 	}
 
-	return topo, nil
+	return topo, bizList, nil
 }
 
 // arrangeParentTree is to arrange the host's topology tree with the modules it belongs to.
@@ -1788,7 +1852,7 @@ func (lgc *Logics) getHostMainlineRelation(kit *rest.Kit, bizID int64, params me
 		return []*metadata.HostDetailWithTopo{}, nil
 	}
 
-	topo, err := lgc.ArrangeHostDetailAndTopology(kit, false, hosts.Info)
+	topo, _, err := lgc.ArrangeHostDetailAndTopology(kit, false, hosts.Info)
 	if err != nil {
 		blog.Errorf("arrange host detail and topology failed, err: %v, rid: %s", topo, kit.Rid)
 		return nil, err

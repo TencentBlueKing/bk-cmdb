@@ -273,6 +273,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.MoveHostToAnotherBizModule:     HostTransferAcrossBusiness,
 		meta.Find:                           Skip,
 		meta.FindMany:                       Skip,
+		meta.ViewResourcePoolHost:           ViewResourcePoolHost,
 	},
 	meta.ProcessServiceCategory: {
 		meta.Delete: DeleteBusinessServiceCategory,

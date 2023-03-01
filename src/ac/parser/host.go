@@ -324,7 +324,10 @@ const (
 
 	// used in sync framework.
 	// moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
-	findHostsWithConditionPattern  = "/api/v3/hosts/search"
+	findHostsWithConditionPattern = "/api/v3/findmany/hosts/search/with_biz"
+
+	// find host for home page, authorize by view resource pool host, **only for ui**
+	findHostsForHomePagePattern    = "/api/v3/findmany/hosts/search/without_biz"
 	findBizHostsWithoutAppPattern  = "/api/v3/hosts/list_hosts_without_app"
 	findResourcePoolHostsPattern   = "/api/v3/hosts/list_resource_pool_hosts"
 	findHostsDetailsPattern        = "/api/v3/hosts/search/asstdetail"
@@ -400,7 +403,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -419,7 +422,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -432,7 +435,7 @@ func (ps *parseStream) host() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -447,7 +450,7 @@ func (ps *parseStream) host() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.ViewResourcePoolHost,
 				},
 			},
 		}
@@ -467,7 +470,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -486,7 +489,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -506,7 +509,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -624,7 +627,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.ViewResourcePoolHost,
 				},
 			},
 		}
@@ -652,6 +655,26 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
+	// find hosts for home page with condition operation.
+	if ps.hitPattern(findHostsForHomePagePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.ViewResourcePoolHost,
+				},
+			},
+		}
+
+		return ps
+	}
+
 	// find hosts with condition operation.
 	if ps.hitPattern(findHostsWithConditionPattern, http.MethodPost) {
 		bizID, err := ps.parseBusinessID()
@@ -664,7 +687,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -703,7 +726,7 @@ func (ps *parseStream) host() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.ViewResourcePoolHost,
 				},
 			},
 		}
@@ -717,7 +740,7 @@ func (ps *parseStream) host() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -736,7 +759,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -756,7 +779,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -770,7 +793,7 @@ func (ps *parseStream) host() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -795,7 +818,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
