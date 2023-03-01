@@ -26,7 +26,7 @@
         <p class="form-error">{{errors.first('min')}}</p>
       </div>
     </div>
-    <div class="form-label" style="margin-bottom:15px">
+    <div class="form-label">
       <span class="label-text">{{$t('最大值')}}</span>
       <div class="cmdb-form-item" :class="{ 'is-error': errors.has('max') }">
         <bk-input type="text" class="cmdb-form-input"
@@ -107,6 +107,7 @@
     .form-label {
         &:last-child {
             margin: 0;
+            margin-bottom:15px;
         }
     }
 </style>

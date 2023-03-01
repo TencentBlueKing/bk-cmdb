@@ -84,11 +84,11 @@
       </div>
       <div class="property-item enum-list" v-if="listLikes.includes(field.bk_property_type)">
         <div class="property-name">
-          <span>{{$t(title)}}</span>：
+          <span>{{ ['list'].includes(this.type) ? $t('列表值') : $t('枚举值') }}</span>：
         </div>
         <div class="property-value">
-          <template v-if="getEnumValue().length">
-            <p v-for="(val, index) in getEnumValue()" :key="index">{{val}}</p>
+          <template v-if="getEnumValue.length">
+            <p v-for="(val, index) in getEnumValue" :key="index">{{val}}</p>
           </template>
           <span v-else>--</span>
         </div>
@@ -179,17 +179,9 @@
         }
         return field.default
       },
-      title() {
-        if (['list'].includes(this.type)) {
-          return '列表值'
-        }
-        return '枚举值'
-      },
       enumquoteOption() {
         return this.field.option.map(item => item.bk_inst_id)
-      }
-    },
-    methods: {
+      },
       getEnumValue() {
         const value = this.field.option
         const type = this.field.bk_property_type
@@ -214,7 +206,9 @@
           }
         }
         return value || []
-      },
+      }
+    },
+    methods: {
       handleEdit() {
         this.$emit('on-edit')
       },

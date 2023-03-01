@@ -103,6 +103,7 @@
         ></the-config>
         <!-- 添加key防止复用组件时内部状态错误 -->
         <component
+          class="cmdb-form-item"
           :key="fieldInfo.bk_property_type"
           v-if="isSettingComponentShow"
           :is-read-only="isReadOnly || field.ispre"
@@ -111,9 +112,7 @@
           v-model="fieldInfo.option"
           ref="component"
         ></component>
-        <label class="form-label" style="display: block;
-            line-height: 36px;
-            font-size: 14px;" v-if="isDefaultComponentShow">
+        <label class="form-label" v-if="isDefaultComponentShow">
           <span class="label-text">
             {{$t('默认值')}}
           </span>
@@ -186,6 +185,7 @@
   import { mapGetters, mapActions } from 'vuex'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
   import { PROPERTY_TYPES, PROPERTY_TYPE_LIST } from '@/dictionary/property-constants'
+  import { isEmptyPropertyValue } from '@/utils/tools'
 
   export default {
     components: {
@@ -301,7 +301,7 @@
           PROPERTY_TYPES.ORGANIZATION,
           PROPERTY_TYPES.LIST,
         ]
-        return types.indexOf(this.fieldInfo.bk_property_type) !== -1
+        return types.includes(this.fieldInfo.bk_property_type)
       },
       changedValues() {
         const changedValues = {}
@@ -317,24 +317,7 @@
           return this.field.creator === 'cc_system'
         }
         return false
-      },
-      validate() {
-        const { bk_property_type: type } = this.fieldInfo
-        let validate
-        switch (type) {
-          case PROPERTY_TYPES.SINGLECHAR:
-          case PROPERTY_TYPES.LONGCHAR:
-            validate = `isRegular:${this.fieldInfo.option}`
-            break
-          case PROPERTY_TYPES.INT:
-          case PROPERTY_TYPES.FLOAT:
-            validate = 'enum'
-            break
-          default:
-            validate = ''
-        }
-        return validate
-      },
+      }
     },
     watch: {
       'fieldInfo.bk_property_type'(type) {
@@ -414,7 +397,7 @@
           if (!this.isGlobalView) {
             params.bk_biz_id = this.bizId
           }
-          if (this.fieldInfo.default === '' || (typeof this.fieldInfo.default === 'object' && this.fieldInfo.default.length === 0)) {
+          if (isEmptyPropertyValue(this.fieldInfo.default)) {
             params.default = null
           }
           await this[action]({
@@ -431,7 +414,7 @@
             this.$success(this.$t('修改成功'))
           })
         } else {
-          if (this.fieldInfo.default === '') delete this.fieldInfo.default
+          if (isEmptyPropertyValue(this.fieldInfo.default))  Reflect.deleteProperty(this.fieldInfo, 'default')
           const groupId = this.isGlobalView ? 'default' : 'bizdefault'
           const selectedGroup = this.groups.find(group => group.bk_group_id === this.fieldInfo.bk_property_group)
           const otherParams = {

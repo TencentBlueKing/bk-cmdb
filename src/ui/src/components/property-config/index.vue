@@ -99,12 +99,11 @@
       watch(selectedList, (selectedList) => {
         const newConfig = {}
         selectedList.forEach((property) => {
-          if (property?.default) {
-            newConfig[property.id] = property.default
-          } else if (property.bk_property_type === 'bool') {
-            newConfig[property.id] = property.option
-          } else {
+          console.log(Object.keys(props.config)?.length)
+          if (Object.keys(props.config)?.length) {
             newConfig[property.id] = formatValue(propertyConfig.value[property.id], property)
+          } else {
+            newConfig[property.id] = property.bk_property_type === 'bool' ? property.option : property.default || ''
           }
         })
         propertyConfig.value = newConfig
