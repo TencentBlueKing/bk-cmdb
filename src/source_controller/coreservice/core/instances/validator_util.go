@@ -240,7 +240,7 @@ func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys 
 					break
 				}
 
-				defaultOptions := make([]string, 0)
+				defaultOptions := make([]interface{}, 0)
 				for _, k := range enumOptions {
 					if k.IsDefault {
 						defaultOptions = append(defaultOptions, k.ID)
@@ -264,7 +264,7 @@ func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys 
 					break
 				}
 
-				defaultOptions := make([]int64, 0)
+				defaultOptions := make([]interface{}, 0)
 				for _, k := range enumQuoteOptions {
 					defaultOptions = append(defaultOptions, k.InstID)
 				}
