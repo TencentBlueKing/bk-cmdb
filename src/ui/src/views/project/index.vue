@@ -122,7 +122,7 @@
 
       <cmdb-table-empty
         slot="empty"
-        :auth="{ type: $OPERATION.C_INST, relation: [model.id] }"
+        :auth="{ type: $OPERATION.C_PROJECT, relation: [model.id] }"
         :stuff="table.stuff"
         @create="handleCreate"
         @clear="handleClearFilter">
