@@ -120,7 +120,10 @@
         instanceType: 'resource_name',
         defaultCondition,
         condition: {
-          ...defaultCondition
+          ...defaultCondition,
+          condition: {
+            user: ['in', '']
+          }
         }
       }
     },

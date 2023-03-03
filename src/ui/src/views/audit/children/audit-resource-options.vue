@@ -171,7 +171,12 @@
         })
       },
       handleReset() {
-        this.condition = { ...this.defaultCondition }
+        this.condition = {
+          ...this.defaultCondition,
+          condition: {
+            user: ['in', '']
+          }
+        }
         this.handleSearch()
       }
     }
