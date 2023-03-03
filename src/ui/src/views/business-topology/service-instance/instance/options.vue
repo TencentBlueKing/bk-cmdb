@@ -122,6 +122,12 @@
     components: {
       ViewSwitcher
     },
+    props: {
+      clearFilterValue: {
+        type: Array,
+        default: () => []
+      }
+    },
     data() {
       return {
         selection: [],
@@ -186,6 +192,9 @@
             this.checkSyncStatus()
           }
         }
+      },
+      clearFilterValue() {
+        this.searchValue = []
       },
       searchMenuList() {
         this.$nextTick(() => {
@@ -410,6 +419,7 @@
       },
       handleSearch(filters) {
         const transformedFilters = []
+        this.$emit('clear', this.searchValue)
         filters.forEach((data) => {
           if (!data.values) {
             const nameIndex = transformedFilters.findIndex(filter => filter.id === 'name')

@@ -124,7 +124,8 @@
         slot="empty"
         :auth="{ type: $OPERATION.C_INST, relation: [model.id] }"
         :stuff="table.stuff"
-        @create="handleCreate">
+        @create="handleCreate"
+        @clear="handleClearFilter">
       </cmdb-table-empty>
     </bk-table>
 
@@ -656,6 +657,9 @@
       // 项目状态是否启用
       customizeContent(id) {
         return !['bk_status'].includes(id)
+      },
+      handleClearFilter() {
+        RouterQuery.clear()
       }
     }
   }

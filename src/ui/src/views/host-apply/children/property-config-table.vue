@@ -127,6 +127,10 @@
         </bk-button>
       </template>
     </bk-table-column>
+    <cmdb-table-empty
+      slot="empty"
+      :stuff="table.stuff">
+    </cmdb-table-empty>
   </bk-table>
 </template>
 <script>
@@ -183,6 +187,14 @@
         showMore: {
           max: 10,
           expanded: {}
+        },
+        table: {
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
+          }
         }
       }
     },

@@ -129,7 +129,6 @@
 
           this.table.pagination.current = parseInt(page, 10)
           this.table.pagination.limit = parseInt(limit, 10)
-
           if (tab === 'hostList' && node && this.selectedNode) {
             this.getHostList()
           }
@@ -300,7 +299,6 @@
       handleClearFilter() {
         this.table.stuff.type = 'default'
         this.$refs.filterTag.handleResetAll()
-        this.getHostList()
       },
       getExceptionType(value) {
         this.table.stuff.type = value

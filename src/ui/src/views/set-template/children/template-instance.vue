@@ -114,7 +114,7 @@
             </cmdb-auth>
           </template>
         </bk-table-column>
-        <cmdb-table-empty slot="empty" :stuff="table.stuff">
+        <cmdb-table-empty slot="empty" :stuff="table.stuff" @clear="handleClearFilter">
           <div>
             <i18n path="空集群模板实例提示" tag="div">
               <template #link>
@@ -502,6 +502,10 @@
             node: `set-${row.bk_set_id}`
           }
         })
+      },
+      handleClearFilter() {
+        this.filterName = ''
+        this.table.stuff.type = 'default'
       }
     }
   }

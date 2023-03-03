@@ -58,6 +58,12 @@
     components: {
       ViewSwitcher
     },
+    props: {
+      clearFilterValue: {
+        type: String,
+        default: ''
+      }
+    },
     data() {
       return {
         withTemplate: true,
@@ -77,6 +83,11 @@
       serviceTemplateId() {
         return this.selectedNode && this.selectedNode.data.service_template_id
       }
+    },
+    watch: {
+      clearFilterValue() {
+        this.searchValue = ''
+      },
     },
     created() {
       Bus.$on('process-selection-change', this.handleProcessSelectionChange)
@@ -133,6 +144,7 @@
         }
       },
       handleSearch() {
+        this.$emit('clear', this.searchValue)
         Bus.$emit('filter-list', this.searchValue)
       },
       handleExpandAllChange(expand) {

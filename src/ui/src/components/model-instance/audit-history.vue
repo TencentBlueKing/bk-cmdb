@@ -42,7 +42,7 @@
           {{$tools.formatTime(row['operation_time'])}}
         </template>
       </bk-table-column>
-      <cmdb-table-empty slot="empty" :stuff="table.stuff">{{$t('暂无数据')}}</cmdb-table-empty>
+      <cmdb-table-empty slot="empty" :stuff="table.stuff" @clear="handleClearFilter"></cmdb-table-empty>
     </bk-table>
   </div>
 </template>
@@ -80,7 +80,9 @@
         table: {
           stuff: {
             type: 'default',
-            payload: {}
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
           }
         },
         pagination: {
@@ -121,6 +123,7 @@
               globalPermission: false
             }
           })
+          this.table.stuff.type = this.condition.user ? 'search' : 'default'
           this.pagination.count = count
           this.history = info
         } catch ({ permission }) {
@@ -184,6 +187,10 @@
           bizId: this.bizId,
           objId: this.objId
         })
+      },
+      handleClearFilter() {
+        this.condition.user = ''
+        this.getHistory()
       }
     }
   }

@@ -681,8 +681,6 @@
       },
       handleClearFilter() {
         this.$refs.filterTag.handleResetAll()
-        // RouterQuery.clear()
-        this.getHostList()
         this.table.stuff.type = 'default'
       },
       getExceptionType(value) {

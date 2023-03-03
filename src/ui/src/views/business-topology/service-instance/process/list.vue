@@ -36,6 +36,11 @@
     <bk-table-column :label="$t('实例数量')">
       <template slot-scope="{ row }">{{row.process_ids.length}}</template>
     </bk-table-column>
+    <cmdb-table-empty
+      slot="empty"
+      :stuff="table.stuff"
+      @clear="handleClearFilter">
+    </cmdb-table-empty>
   </bk-table>
 </template>
 
@@ -48,6 +53,14 @@
     components: {
       ExpandList
     },
+    props: {
+      filterValue: {
+        type: String,
+        default() {
+          return ''
+        }
+      }
+    },
     data() {
       return {
         filter: '',
@@ -55,6 +68,14 @@
         pagination: this.$tools.getDefaultPaginationConfig(),
         request: {
           getProcessList: Symbol('getProcessList')
+        },
+        table: {
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            },
+          }
         }
       }
     },
@@ -110,6 +131,7 @@
           })
           this.list = info.map(item => ({ ...item, pending: true, reserved: [] }))
           this.pagination.count = count
+          this.table.stuff.type = this.filterValue ? 'search' : 'default'
         } catch (error) {
           this.list = []
           this.pagination.count = 0
@@ -157,6 +179,11 @@
       handleExpandResolved(row, list) {
         row.pending = false
         row.process_ids = list.map(process => process.process_id)
+      },
+      async handleClearFilter() {
+        this.$emit('clear', '')
+        await  this.getProcessList()
+        this.table.stuff.type = 'default'
       }
     }
   }

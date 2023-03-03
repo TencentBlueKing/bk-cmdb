@@ -64,6 +64,7 @@
           }])
         }
         this.value = ''
+        this.$emit('search', 'search')
       }
     }
   }

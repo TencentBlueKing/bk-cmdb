@@ -69,7 +69,8 @@
     <bk-table v-if="!instances.length" :data="[]" class="mb10">
       <cmdb-table-empty
         slot="empty"
-        :stuff="emptyStuff">
+        :stuff="emptyStuff"
+        @clear="handleFilterClear">
         <div class="empty-text">
           <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去业务拓扑添加')}}</span></p>
         </div>
@@ -141,19 +142,17 @@
         filter: [],
         instances: [],
         currentView: 'path',
-        historyLabels: {}
+        historyLabels: {},
+        emptyStuff: {
+          type: 'default',
+          payload: {}
+        }
       }
     },
     computed: {
       ...mapState('hostDetails', ['info']),
       host() {
         return this.info.host || {}
-      },
-      emptyStuff() {
-        return {
-          type: this.searchSelectData.length ? 'search' : 'default',
-          payload: {}
-        }
       }
     },
     watch: {
@@ -354,6 +353,7 @@
           })
           return
         }
+        this.emptyStuff.type = this.searchSelectData.length === 0 ? 'default' : 'search'
         this.handlePageChange(1)
       },
       handlePageChange(page) {
@@ -388,6 +388,10 @@
             ip: this.info.host.bk_host_innerip
           }
         })
+      },
+      handleFilterClear() {
+        this.searchSelectData = []
+        this.emptyStuff.type = 'default'
       }
     }
   }

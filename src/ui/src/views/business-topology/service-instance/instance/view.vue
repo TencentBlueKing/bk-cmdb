@@ -12,8 +12,12 @@
 
 <template>
   <section class="view-instance" v-test-id="'viewInst'">
-    <instance-options class="instance-options"></instance-options>
-    <instance-list class="instance-list"></instance-list>
+    <instance-options class="instance-options"
+      @clear="clearFilter"
+      :clear-filter-value="clearFilterValue"></instance-options>
+    <instance-list class="instance-list"
+      :filter-value="filterValue"
+      @clear="handleClearFilter"></instance-list>
   </section>
 </template>
 
@@ -30,7 +34,10 @@
       InstanceList
     },
     data() {
-      return {}
+      return {
+        filterValue: '',
+        clearFilterValue: null
+      }
     },
     created() {
       Bus.$on('delete-complete', this.refreshView)
@@ -46,6 +53,12 @@
         RouterQuery.set({
           _t: Date.now()
         })
+      },
+      clearFilter(value) {
+        this.filterValue = value
+      },
+      handleClearFilter(value) {
+        this.clearFilterValue = value
       }
     }
   }
