@@ -32,28 +32,34 @@
         </cmdb-classify-panel>
       </div>
     </div>
-    <no-search-results v-if="isEmpty && !globalLoading" :text="$t('搜不到相关资源')" />
+    <cmdb-other-empty
+      v-if="isEmpty && !globalLoading"
+      slot="empty"
+      :stuff="stuff"
+      @clear="handleClearFilter">
+    </cmdb-other-empty>
   </div>
 </template>
 
 <script>
   import { mapGetters } from 'vuex'
   import debounce from 'lodash.debounce'
-  import noSearchResults from '@/views/status/no-search-results.vue'
   import cmdbClassifyPanel from './children/classify-panel'
   import useInstanceCount from './children/use-instance-count.js'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
 
   export default {
     components: {
-      cmdbClassifyPanel,
-      noSearchResults
+      cmdbClassifyPanel
     },
     data() {
       return {
         filter: '',
         debounceFilter: null,
-        matchedModels: null
+        matchedModels: null,
+        stuff: {
+          type: 'search'
+        }
       }
     },
     computed: {
@@ -124,6 +130,9 @@
         // 16px 模型列表padding
         // 36 模型高度
         return 46 + 16 + (classify.bk_objects.length * 36)
+      },
+      handleClearFilter() {
+        this.filter = ''
       }
     }
   }
