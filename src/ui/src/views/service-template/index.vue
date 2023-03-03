@@ -155,6 +155,7 @@
         :stuff="table.stuff"
         :auth="{ type: $OPERATION.C_SERVICE_TEMPLATE, relation: [bizId] }"
         @create="handleCreate"
+        @clear="handleClearFilter"
       ></cmdb-table-empty>
     </bk-table>
   </div>
@@ -437,6 +438,13 @@
         this.$routerActions.redirect({
           name: MENU_BUSINESS_HOST_AND_SERVICE
         })
+      },
+      async handleClearFilter() {
+        this.filter.mainClassification = ''
+        this.filter.secondaryClassification = ''
+        this.filter.templateName = ''
+        await this.getServiceClassification()
+        await this.getTableData()
       }
     }
   }

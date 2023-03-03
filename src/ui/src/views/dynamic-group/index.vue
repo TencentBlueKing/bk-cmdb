@@ -100,7 +100,8 @@
           slot="empty"
           :stuff="table.stuff"
           :auth="{ type: $OPERATION.C_CUSTOM_QUERY, relation: [bizId] }"
-          @create="handleCreate">
+          @create="handleCreate"
+          @clear="handleClearFilter">
         </cmdb-table-empty>
       </bk-table>
     </div>
@@ -149,9 +150,7 @@
         this.filterTimer && clearTimeout(this.filterTimer)
         this.filterTimer = setTimeout(() => {
           RouterQuery.set({
-            page: 1,
             filter,
-            _t: Date.now()
           })
         }, 500)
       })
@@ -261,6 +260,10 @@
           sort: this.$tools.getSort(sort, '-last_time'),
           _t: Date.now()
         })
+      },
+      handleClearFilter() {
+        this.filter = ''
+        RouterQuery.clear()
       }
     }
   }

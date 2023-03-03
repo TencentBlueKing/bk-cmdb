@@ -12,7 +12,7 @@
 
 <template>
   <div class="list-layout">
-    <host-list-options v-test-id></host-list-options>
+    <host-list-options v-test-id @search="getExceptionType"></host-list-options>
 
     <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
 
@@ -48,6 +48,11 @@
         </template>
       </bk-table-column>
       <bk-table-column type="setting"></bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff"
+        @clear="handleClearFilter">
+      </cmdb-table-empty>
     </bk-table>
   </div>
 </template>
@@ -82,13 +87,18 @@
     },
     data() {
       this.BUILTIN_MODELS = BUILTIN_MODELS
-
       return {
         table: {
           data: [],
           selection: [],
           sort: 'bk_host_id',
-          pagination: this.$tools.getDefaultPaginationConfig()
+          pagination: this.$tools.getDefaultPaginationConfig(),
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
+          }
         },
         requestIds: {
           table: Symbol('table')
@@ -249,7 +259,7 @@
             requestId: this.requestIds.table,
             cancelPrevious: true
           })
-
+          this.table.stuff.type = this.$route.query.filter ? 'search' : 'default'
           this.table.data = result.info
           this.table.pagination.count = result.count
         } catch (e) {
@@ -286,6 +296,14 @@
       },
       doLayoutTable() {
         this.$refs.table.doLayout()
+      },
+      handleClearFilter() {
+        this.table.stuff.type = 'default'
+        this.$refs.filterTag.handleResetAll()
+        this.getHostList()
+      },
+      getExceptionType(value) {
+        this.table.stuff.type = value
       }
     }
   }

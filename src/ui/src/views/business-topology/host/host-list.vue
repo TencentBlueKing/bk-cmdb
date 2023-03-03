@@ -12,7 +12,7 @@
 
 <template>
   <div class="list-layout">
-    <host-list-options @transfer="handleTransfer" v-test-id></host-list-options>
+    <host-list-options @transfer="handleTransfer" v-test-id @search="getExceptionType"></host-list-options>
     <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
     <bk-table class="host-table" v-test-id.businessHostAndService="'hostList'"
       ref="tableRef"
@@ -47,6 +47,11 @@
         </template>
       </bk-table-column>
       <bk-table-column type="setting"></bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff"
+        @clear="handleClearFilter">
+      </cmdb-table-empty>
     </bk-table>
     <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="dialog.height">
       <component
@@ -109,7 +114,13 @@
           data: [],
           selection: [],
           sort: 'bk_host_id',
-          pagination: this.$tools.getDefaultPaginationConfig()
+          pagination: this.$tools.getDefaultPaginationConfig(),
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
+          }
         },
         dialog: {
           width: 830,
@@ -359,7 +370,7 @@
         if (this.isContainerHost) {
           return containerHostService.findAll(params, config)
         }
-
+        this.table.stuff.type = this.$route.query.filter ? 'search' : 'default'
         return this.$store.dispatch('hostSearch/searchHost', { params, config })
       },
       getParams() {
@@ -667,6 +678,16 @@
       },
       doLayoutTable() {
         this.$refs?.table?.doLayout()
+      },
+      handleClearFilter() {
+        this.$refs.filterTag.handleResetAll()
+        // RouterQuery.clear()
+        this.getHostList()
+        this.table.stuff.type = 'default'
+      },
+      getExceptionType(value) {
+        console.log(value)
+        this.table.stuff.type = value
       }
     }
   }

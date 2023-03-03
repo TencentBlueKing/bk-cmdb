@@ -91,7 +91,7 @@
             </cmdb-auth>
           </template>
         </bk-table-column>
-        <cmdb-table-empty slot="empty" :stuff="table.stuff">
+        <cmdb-table-empty slot="empty" :stuff="table.stuff" @clear="handleClearFilter">
           <div>
             <i18n path="空服务模板实例提示" tag="div">
               <template #link>
@@ -151,7 +151,6 @@
           backup: [],
           stuff: {
             type: 'default',
-            payload: {}
           },
           pagination: {
             current: 1,
@@ -417,6 +416,10 @@
       handlePageChange(page) {
         this.table.pagination.current = page
         this.renderVisibleList()
+      },
+      handleClearFilter() {
+        this.table.filter = ''
+        this.table.stuff.type = 'default'
       }
     }
   }

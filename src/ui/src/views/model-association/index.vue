@@ -105,6 +105,7 @@
         :stuff="table.stuff"
         :auth="{ type: $OPERATION.C_RELATION }"
         @create="createRelation"
+        @clear="handleClearFilter"
       ></cmdb-table-empty>
     </bk-table>
     <bk-sideslider
@@ -163,7 +164,8 @@
             }
           }
         },
-        sendSearchText: ''
+        sendSearchText: '',
+        isClearFilter: false
       }
     },
     computed: {
@@ -175,7 +177,7 @@
             sort: this.table.sort
           }
         }
-        if (this.sendSearchText.length) {
+        if (this.sendSearchText.length && !this.isClearFilter) {
           Object.assign(params, {
             condition: {
               bk_asst_name: {
@@ -215,6 +217,7 @@
           this.table.list = data.info
           this.searchUsageCount()
           this.table.pagination.count = data.count
+          this.isClearFilter = false
           this.$http.cancel('post_searchAssociationType')
         })
       },
@@ -305,6 +308,12 @@
         this.slider.isReadOnly = true
         this.slider.isEdit = true
         this.slider.isShow = true
+      },
+      handleClearFilter() {
+        this.searchText = ''
+        this.table.stuff.type = 'default'
+        this.isClearFilter = true
+        this.searchRelation()
       }
     }
   }
