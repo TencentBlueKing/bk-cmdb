@@ -46,6 +46,7 @@ import dialog from './dialog/dialog.vue'
 import auth from './auth/auth.vue'
 import authOption from './auth/auth-option.vue'
 import tableEmpty from './table-empty/table-empty.vue'
+import otherEmpty from './other-empty/other-empty.vue'
 import list from './form/list.vue'
 import table from './form/table.vue'
 import leaveConfirm from './dialog/leave-confirm.vue'
@@ -94,6 +95,7 @@ const install = (Vue) => {
     auth,
     authOption,
     tableEmpty,
+    otherEmpty,
     list,
     table,
     leaveConfirm,
@@ -147,6 +149,7 @@ export default {
   auth,
   authOption,
   tableEmpty,
+  otherEmpty,
   list,
   table,
   leaveConfirm,

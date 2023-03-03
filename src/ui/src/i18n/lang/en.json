@@ -1026,7 +1026,7 @@
     "已同步": "Synced",
     "集群拓扑": "Set topology",
     "模板集群名称": "Template set name",
-    "无服务模板提示": "There are no service templates, {link}",
+    "无服务模板提示": "There are no service templates, {skip}",
     "去添加服务模板": "Add service template",
     "确认删除xx集群模板": "Confirm to delete set template \"{name}\" ?",
     "确认删除选中的集群模板": "Confirm to delete selected set template(s)",
@@ -1673,5 +1673,9 @@
     "模型实例": "model instance",
     "可多选": "Multiple",
     "是否可多选": "Multiple or not",
-    "不可多选": "Not multiple"
+    "不可多选": "Not multiple",
+    "搜索为空提示语":"can try{filter}or{clear}",
+    "搜索结果为空":"search result is empty",
+    "调整关键词":"adjust keywords",
+    "任务":"assignment"
 }

@@ -52,9 +52,8 @@
         <template v-else>
           <div class="content" v-if="type === 'default'">
             <bk-exception type="empty" scene="part">
-              <p>{{ $t('暂无数据') }}</p>
               <div class="table-tips"></div>
-              <i18n path="您还未XXX" tag="div" v-if="!emptyText">
+              <i18n :path="path" tag="div" v-if="!emptyText">
                 <template #action><span>{{action}}</span></template>
                 <template #resource><span>{{resource}}</span></template>
                 <template #link>
@@ -69,12 +68,20 @@
                     </bk-button>
                   </cmdb-auth>
                 </template>
+                <template #skip>
+                  <a class="empty-link" href="javascript:void(0)" @click="$emit('skip')">{{skipText}}</a>
+                </template>
+
               </i18n>
             </bk-exception>
           </div>
-          <span v-else>
-            {{emptyText}}
-          </span>
+          <div class="content" v-else>
+            <slot name="permission">
+              <bk-exception type="empty" scene="part">
+                {{ defaultText }}
+              </bk-exception>
+            </slot>
+          </div>
         </template>
       </div>
     </div>
@@ -84,7 +91,7 @@
 <script>
   import permissionMixins from '@/mixins/permission'
   export default {
-    name: 'cmdb-table-empty',
+    name: 'cmdb-other-empty',
     mixins: [permissionMixins],
     props: {
       stuff: {
@@ -119,6 +126,15 @@
       },
       payload() {
         return this.stuff.payload
+      },
+      defaultText() {
+        return this.stuff.payload.defaultText
+      },
+      path() {
+        return this.stuff.payload.path
+      },
+      skipText() {
+        return this.stuff.payload.skipText
       }
     },
     watch: {
@@ -151,4 +167,7 @@
           margin-top: 15px;
         }
     }
+    .empty-link {
+         color: #3A84FF;
+     }
 </style>
