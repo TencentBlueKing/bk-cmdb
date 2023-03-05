@@ -92,48 +92,21 @@
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
 
       setBreadcrumbs(inst) {
-        this.$store.commit('setTitle', `${this.model.bk_obj_name}【${inst[0].bk_project_name}】`)
+        this.$store.commit('setTitle', `${this.model.bk_obj_name}【${inst.bk_project_name}】`)
       },
       async getData() {
+        const id = Number(this.$route.params.projId)
         try {
+          const config = { requestId: `post_searchProjectById_${this.projId}`, cancelPrevious: true }
           const [inst, properties, propertyGroups] = await Promise.all([
-            this.getInstInfo(),
+            projectService.findOne({ id }, config),
             this.getProperties(),
             this.getPropertyGroups()
           ])
-          this.inst = inst?.[0]
+          this.inst = inst
           this.properties = properties.filter(item => item.bk_property_id !== 'bk_project_icon')
           this.propertyGroups = propertyGroups
           this.setBreadcrumbs(inst)
-        } catch (e) {
-          console.error(e)
-        }
-      },
-      async getInstInfo() {
-        const params = {
-          filter: {
-            condition: 'AND',
-            rules: [
-              {
-                field: 'id',
-                operator: 'equal',
-                value: +this.$route.params.projId
-              }
-            ]
-          },
-          page: {
-            start: 0,
-            limit: 1,
-            sort: 'id',
-            enable_count: false
-          }
-        }
-        try {
-          const inst = await projectService.find({
-            params,
-            config: { requestId: `post_searchProjectById_${this.projId}`, cancelPrevious: true }
-          })
-          return inst.info
         } catch (e) {
           console.error(e)
         }

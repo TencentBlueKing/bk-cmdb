@@ -600,7 +600,7 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, property metadata.Attribut
 		return kit.CCError.CCError(common.CCErrCommParamsNeedSingleChoice)
 	}
 
-	valEnumIDMap := make(map[int64]interface{}, 0)
+	valEnumIDMap := make(map[int64]struct{}, 0)
 	for _, valID := range valIDs {
 		valEnumID, err := util.GetInt64ByInterface(valID)
 		if err != nil {
