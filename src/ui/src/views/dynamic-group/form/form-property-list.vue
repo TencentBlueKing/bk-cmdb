@@ -197,7 +197,7 @@
       },
       getNormalProps(property) {
         const type = property.bk_property_type
-        if (['list', 'enum'].includes(type)) {
+        if (['list', 'enum', 'enumquote', 'enummulti'].includes(type)) {
           return {
             options: property.option || []
           }
