@@ -1315,33 +1315,6 @@ func parseEnumQuoteOption(options []interface{}, enumQuoteOptions *[]EnumQuoteVa
 	return nil
 }
 
-// ParseFloatOption  parse float data in option
-func ParseFloatOption(ctx context.Context, val interface{}) FloatOption {
-	rid := util.ExtractRequestIDFromContext(ctx)
-	floatOption := FloatOption{}
-	if nil == val || "" == val {
-		return floatOption
-	}
-	switch option := val.(type) {
-	case string:
-		floatOption.Min = gjson.Get(option, "min").Raw
-		floatOption.Max = gjson.Get(option, "max").Raw
-	case map[string]interface{}:
-		floatOption.Min = getString(option["min"])
-		floatOption.Max = getString(option["max"])
-	case bson.M:
-		floatOption.Min = getString(option["min"])
-		floatOption.Max = getString(option["max"])
-	case bson.D:
-		opt := option.Map()
-		floatOption.Min = getString(opt["min"])
-		floatOption.Max = getString(opt["max"])
-	default:
-		blog.Warnf("unknow val type: %#v, rid: %s", val, rid)
-	}
-	return floatOption
-}
-
 // PrettyValue TODO
 func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (string, error) {
 	if val == nil {
@@ -1441,7 +1414,6 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 		blog.V(3).Infof("unexpected property type: %s", fieldType)
 		return fmt.Sprintf("%#v", val), nil
 	}
-	return "", nil
 }
 
 // HostApplyFieldMap TODO

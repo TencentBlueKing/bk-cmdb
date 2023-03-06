@@ -451,7 +451,7 @@ func IsNumeric(val interface{}) bool {
 // IsInteger judges if value is a integer
 func IsInteger(val interface{}) bool {
 	switch val.(type) {
-	case int, int8, int16, int32, int64:
+	case int, int8, int16, int32, int64, json.Number:
 		return true
 	}
 

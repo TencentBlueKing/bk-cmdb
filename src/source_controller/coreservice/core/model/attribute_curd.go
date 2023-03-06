@@ -254,8 +254,6 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 func (m *modelAttribute) checkAttributeDefaultValue(kit *rest.Kit, attribute metadata.Attribute,
 	propertyType string) error {
 	switch propertyType {
-	case common.FieldTypeEnum, common.FieldTypeEnumMulti, common.FieldTypeEnumQuote:
-		return fmt.Errorf("enum, enummulti, enumquote type default field is nil")
 	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
 		if err := util.ValidFieldTypeString(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
 			return err
@@ -298,6 +296,10 @@ func (m *modelAttribute) checkAttributeDefaultValue(kit *rest.Kit, attribute met
 			return err
 		}
 	default:
+		if propertyType == common.FieldTypeEnum || propertyType == common.FieldTypeEnumMulti ||
+			propertyType == common.FieldTypeEnumQuote {
+			return fmt.Errorf("enum, enummulti, enumquote type default field is nil")
+		}
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 	}
 
@@ -850,12 +852,6 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		}
 	}
 
-	// 先将bk_property_type字段的值取出，用于checkAttributeValidity里面给对应字段类型，校验其默认值
-	propertyType, ok := data[metadata.AttributeFieldPropertyType].(string)
-	if !ok {
-		return kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyType)
-	}
-
 	// 删除不可更新字段， 避免由于传入数据，修改字段
 	// TODO: 改成白名单方式
 	data.Remove(metadata.AttributeFieldPropertyID)
@@ -898,7 +894,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		return err
 	}
 
-	if err = m.checkAttributeValidity(kit, attribute, propertyType); err != nil {
+	if err = m.checkAttributeValidity(kit, attribute, dbAttributeArr[0].PropertyType); err != nil {
 		blog.Errorf("check attribute validity failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}

@@ -86,7 +86,7 @@
     "option":"{\"min\":\"1\",\"max\":\"4\"}",
     "bk_property_name":"aaa",
     "bk_property_type":"int",
-    "bk_asst_obj_id":"0",
+    "bk_asst_obj_id":"0"
 }
 ```
 

@@ -60,7 +60,7 @@
     "ispre": false,
     "isreadonly": false,
     "isrequired": false,
-    "option": "^[0-9a-zA-Z_]{1,}$",// 如果是短字符类型则此处可以填写正则匹配规则
+    "option": "^[0-9a-zA-Z_]{1,}$",
     "unit": "1",
     "placeholder": "test",
     "bk_property_group": "default",
