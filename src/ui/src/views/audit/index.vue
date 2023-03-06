@@ -54,6 +54,7 @@
       </bk-table-column>
       <bk-table-column
         prop="resource_name"
+        :show-overflow-tooltip="true"
         :label="$t('实例')">
       </bk-table-column>
       <bk-table-column

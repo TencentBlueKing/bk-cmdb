@@ -44,7 +44,7 @@
         @page-change="handlePageChange"
         @page-limit-change="handlePageLimitChange"
         @sort-change="handleSortChange">
-        <bk-table-column prop="name" :label="$t('查询名称')" sortable="custom" fixed>
+        <bk-table-column prop="name" :label="$t('查询名称')" sortable="custom" fixed show-overflow-tooltip>
           <span class="name-text" slot-scope="{ row }">{{row.name}}</span>
         </bk-table-column>
         <bk-table-column prop="id" label="ID" show-overflow-tooltip></bk-table-column>

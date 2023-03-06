@@ -72,7 +72,7 @@
         :prop="column.id"
         :label="column.name"
         :min-width="$tools.getHeaderPropertyMinWidth(column.property, { hasSort: true })"
-        show-overflow-tooltip>
+        :show-overflow-tooltip="$tools.isShowOverflowTips(column.property)">
         <template slot-scope="{ row }">
           <cmdb-property-value
             v-if="customizeContent(column.id)"
