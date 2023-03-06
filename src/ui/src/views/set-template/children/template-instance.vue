@@ -114,17 +114,12 @@
             </cmdb-auth>
           </template>
         </bk-table-column>
-        <cmdb-table-empty slot="empty" :stuff="table.stuff" @clear="handleClearFilter">
-          <div>
-            <i18n path="空集群模板实例提示" tag="div">
-              <template #link>
-                <bk-button style="font-size: 14px;" text @click="handleLinkServiceTopo">
-                  {{$t('业务拓扑')}}
-                </bk-button>
-              </template>
-            </i18n>
-          </div>
-        </cmdb-table-empty>
+        <cmdb-other-empty
+          slot="empty"
+          :stuff="table.stuff"
+          @clear="handleClearFilter"
+          @create="handleLinkServiceTopo">
+        </cmdb-other-empty>
       </bk-table>
     </div>
   </div>
@@ -179,7 +174,10 @@
         table: {
           stuff: {
             type: 'default',
-            payload: {}
+            payload: {
+              path: '空集群模板实例提示',
+              action: this.$t('业务拓扑')
+            }
           }
         },
         listSort: 'last_time',

@@ -67,14 +67,12 @@
       </service-instance-table>
     </div>
     <bk-table v-if="!instances.length" :data="[]" class="mb10">
-      <cmdb-table-empty
+      <cmdb-other-empty
         slot="empty"
         :stuff="emptyStuff"
+        @create="handleGoAddInstance"
         @clear="handleFilterClear">
-        <div class="empty-text">
-          <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去业务拓扑添加')}}</span></p>
-        </div>
-      </cmdb-table-empty>
+      </cmdb-other-empty>
     </bk-table>
     <bk-pagination v-if="instances.length"
       class="pagination"
@@ -145,7 +143,10 @@
         historyLabels: {},
         emptyStuff: {
           type: 'default',
-          payload: {}
+          payload: {
+            path: '无服务实例提示',
+            action: this.$t('去业务拓扑添加')
+          }
         }
       }
     },

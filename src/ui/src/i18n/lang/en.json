@@ -1677,5 +1677,6 @@
     "搜索为空提示语":"can try{filter}or{clear}",
     "搜索结果为空":"search result is empty",
     "调整关键词":"adjust keywords",
-    "任务":"assignment"
+    "任务":"assignment",
+    "无服务实例提示": "no service instance{link}"
 }

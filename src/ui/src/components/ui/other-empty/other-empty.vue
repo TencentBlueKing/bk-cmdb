@@ -64,7 +64,7 @@
                       slot-scope="{ disabled }"
                       :disabled="disabled"
                       @click="$emit('create')">
-                      {{$i18n.locale === 'en' ? `${action} now` : `立即${action}`}}
+                      {{action}}
                     </bk-button>
                   </cmdb-auth>
                 </template>

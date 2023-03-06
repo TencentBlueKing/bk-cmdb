@@ -37,7 +37,12 @@
             <bk-link :title="item.bk_biz_name" @click="handleClickName(item)">{{item.bk_biz_name}}</bk-link>
           </li>
         </ul>
-        <bk-exception :type="keyword ? 'search-empty' : 'empty'" scene="part" v-else></bk-exception>
+        <cmdb-other-empty
+          v-else
+          slot="empty"
+          :stuff="stuff"
+          @skip="handleLinkClick">
+        </cmdb-other-empty>
       </div>
       <div class="content-foot">
         <bk-pagination small
@@ -76,6 +81,12 @@
       }
     },
     setup(props, { emit }) {
+      const stuff = reactive({
+        type: 'empty',
+        payload: {
+          path: '无服务实例提示'
+        }
+      })
       const { show, mode, payload } = toRefs(props)
 
       const isShow = computed({
@@ -146,6 +157,7 @@
 
       const handleSearch = (value) => {
         keyword.value = value
+        stuff.type = value ? 'search' : 'default'
       }
 
       // 隐藏时重置值
@@ -164,6 +176,10 @@
           }
         })
       }
+      const handleClearFilter = () => {
+        keyword.value = ''
+        stuff.type = 'empty'
+      }
 
       return {
         isShow,
@@ -173,7 +189,9 @@
         pagination,
         businessList,
         handleSearch,
-        handleClickName
+        handleClickName,
+        handleClearFilter,
+        stuff
       }
     }
   })

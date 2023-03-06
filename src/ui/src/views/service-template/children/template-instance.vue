@@ -91,18 +91,12 @@
             </cmdb-auth>
           </template>
         </bk-table-column>
-        <cmdb-table-empty slot="empty" :stuff="table.stuff" @clear="handleClearFilter">
-          <div>
-            <i18n path="空服务模板实例提示" tag="div">
-              <template #link>
-                <bk-button style="font-size: 14px;" text
-                  @click="handleToCreatedInstance">
-                  {{$t('创建服务实例')}}
-                </bk-button>
-              </template>
-            </i18n>
-          </div>
-        </cmdb-table-empty>
+        <cmdb-other-empty
+          slot="empty"
+          :stuff="table.stuff"
+          @clear="handleClearFilter"
+          @create="handleToCreatedInstance">
+        </cmdb-other-empty>
       </bk-table>
     </div>
   </div>
@@ -151,6 +145,10 @@
           backup: [],
           stuff: {
             type: 'default',
+            payload: {
+              path: '空服务模板实例提示',
+              action: this.$t('创建服务实例')
+            }
           },
           pagination: {
             current: 1,
