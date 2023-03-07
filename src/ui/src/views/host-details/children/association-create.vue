@@ -79,6 +79,7 @@
           </cmdb-auth>
         </template>
       </bk-table-column>
+      <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
     </bk-table>
     <div class="confirm-tips" ref="confirmTips" v-show="confirm.id">
       <p class="tips-content">{{$t('更新确认')}}</p>
@@ -96,7 +97,7 @@
   import bus from '@/utils/bus.js'
   import { mapGetters, mapActions } from 'vuex'
   import authMixin from '../mixin-auth'
-  import instanceService from '@/service/instance/instance'
+  import _instanceService from '@/service/instance/instance'
   import instanceAssociationService from '@/service/instance/association'
   import businessSetService from '@/service/business-set/index.js'
   import queryBuilderOperator from '@/utils/query-builder-operator'
@@ -655,12 +656,15 @@
 
         return businessSetService.find(params, config)
       },
-      getObjInstance(objId, config) {
-        return instanceService.find({
-          bk_obj_id: objId,
-          params: this.getObjParams(),
-          config
+      getObjInstance(_objId, _config) {
+        return Promise.reject({
+          permission: 1
         })
+        // return instanceService.find({
+        //   bk_obj_id: objId,
+        //   params: this.getObjParams(),
+        //   config
+        // })
       },
       getObjParams() {
         const params = {

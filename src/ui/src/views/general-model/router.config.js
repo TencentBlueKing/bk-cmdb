@@ -36,6 +36,7 @@ export default [{
       view: (to, app) => {
         const modelId = to.params.objId
         const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
+        console.log({ type: OPERATION.R_INST, relation: [model.id] }, '{ type: OPERATION.R_INST, relation: [model.id] }')
         return ({ type: OPERATION.R_INST, relation: [model.id] })
       }
     }

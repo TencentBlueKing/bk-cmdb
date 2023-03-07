@@ -48,7 +48,7 @@
         show-overflow-tooltip>
         <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
       </bk-table-column>
-      <bk-table-column :label="$t('操作')">
+      <bk-table-column :label="$t('操作')" v-if="table.stuff.type !== 'permission'">
         <template slot-scope="{ row }">
           <cmdb-auth :auth="authResources">
             <bk-button slot-scope="{ disabled }"
@@ -77,6 +77,7 @@
   import bus from '@/utils/bus.js'
   import { mapGetters } from 'vuex'
   import authMixin from '../mixin-auth'
+  import { translateAuth } from '@/setup/permission'
   import instanceService from '@/service/instance/instance'
   import businessSetService from '@/service/business-set/index.js'
   import {
@@ -229,6 +230,15 @@
     },
     methods: {
       getData() {
+        // 备选方案，由前端预先鉴权
+        const viewAuth = { type: this.$OPERATION.R_INST, relation: [this.model.id] }
+        if (!this.isViewAuthed(viewAuth)) {
+          this.table.stuff = {
+            type: 'permission',
+            payload: { permission: translateAuth(viewAuth) }
+          }
+          return
+        }
         this.getProperties()
         this.getInstances()
       },
@@ -288,9 +298,13 @@
             this.getInstances()
           }
         } catch (e) {
-          console.warn(e)
-          this.list = []
-          this.pagination.count = 0
+          console.error(e)
+          if (e.permission) {
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission: e.permission }
+            }
+          }
         }
       },
       getHostInstances(config) {

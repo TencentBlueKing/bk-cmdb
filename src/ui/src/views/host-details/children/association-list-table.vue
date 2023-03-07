@@ -269,8 +269,12 @@
           }
         } catch (e) {
           console.error(e)
-          this.list = []
-          this.pagination.count = 0
+          if (e.permission) {
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission: e.permission }
+            }
+          }
         }
       },
       getHostInstances(config) {

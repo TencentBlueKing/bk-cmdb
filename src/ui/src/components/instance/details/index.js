@@ -51,13 +51,20 @@ const createDetails = () => {
           title={ title.value }
           transfer={ true }
           { ...{ on: { 'update:isShow': close } } }>
-          <cmdb-details slot="content"
-            { ...{ directives } }
-            show-options={ false }
-            inst={ instance.value }
-            properties={ properties.value }
-            property-groups={ groups.value }>
-          </cmdb-details>
+          <template slot="content">
+            {
+              false ? <cmdb-details
+                { ...{ directives } }
+                show-options={ false }
+                inst={ instance.value }
+                properties={ properties.value }
+                property-groups={ groups.value }>
+              </cmdb-details>
+              : <cmdb-permission
+                permission={1}>
+              </cmdb-permission>
+            }
+          </template>
         </bk-sideslider>
       )
     }

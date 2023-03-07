@@ -169,7 +169,7 @@ export const IAM_ACTIONS = {
   R_MODEL: {
     id: 'view_sys_model',
     name: ['模型查看', 'View Model'],
-    cmdb_action: 'model.view',
+    cmdb_action: 'model.find',
     relation: [{
       view: IAM_VIEWS.MODEL,
       instances: [IAM_VIEWS.MODEL]
@@ -198,10 +198,10 @@ export const IAM_ACTIONS = {
     }
   },
   R_INST: {
-    id: ([modelId]) => `view_comobj_${modelId}`,
-    fixedId: 'view_comobj',
+    id: ([modelId]) => `find_comobj_${modelId}`,
+    fixedId: 'find_comobj',
     name: ['实例查看', 'View Instance'],
-    cmdb_action: ([modelId]) => ({ action: 'view', type: `comobj_${modelId}` }),
+    cmdb_action: ([modelId]) => ({ action: 'find', type: `comobj_${modelId}` }),
     relation: [],
     transform: (cmdbAction, relationIds = []) => {
       const { action, type } = cmdbAction(relationIds)

@@ -189,11 +189,6 @@ function cancelRequest(app) {
 }
 
 const checkViewAuthorize = async (to) => {
-  // owener判断已经发现无业务时
-  if (to.meta.view === 'permission') {
-    return false
-  }
-
   // 使用就近原则向上回溯，找到路由的auth.view配置
   const findViewAuth = (route) => {
     if (!route) {
