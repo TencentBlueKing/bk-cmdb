@@ -290,18 +290,12 @@
       },
       isDefaultComponentShow() {
         const types = [
-          PROPERTY_TYPES.SINGLECHAR,
-          PROPERTY_TYPES.LONGCHAR,
-          PROPERTY_TYPES.INT,
-          PROPERTY_TYPES.FLOAT,
-          PROPERTY_TYPES.DATE,
-          PROPERTY_TYPES.TIME,
-          PROPERTY_TYPES.TIMEZONE,
-          PROPERTY_TYPES.OBJUSER,
-          PROPERTY_TYPES.ORGANIZATION,
-          PROPERTY_TYPES.LIST,
+          PROPERTY_TYPES.ENUM,
+          PROPERTY_TYPES.ENUMMULTI,
+          PROPERTY_TYPES.ENUMQUOTE,
+          PROPERTY_TYPES.BOOL
         ]
-        return types.includes(this.fieldInfo.bk_property_type)
+        return !types.includes(this.fieldInfo.bk_property_type)
       },
       changedValues() {
         const changedValues = {}
@@ -414,7 +408,9 @@
             this.$success(this.$t('修改成功'))
           })
         } else {
-          if (isEmptyPropertyValue(this.fieldInfo.default))  Reflect.deleteProperty(this.fieldInfo, 'default')
+          if (isEmptyPropertyValue(this.fieldInfo.default)) {
+            Reflect.deleteProperty(this.fieldInfo, 'default')
+          }
           const groupId = this.isGlobalView ? 'default' : 'bizdefault'
           const selectedGroup = this.groups.find(group => group.bk_group_id === this.fieldInfo.bk_property_group)
           const otherParams = {

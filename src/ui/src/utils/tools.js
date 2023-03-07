@@ -139,12 +139,7 @@ export function isNullish(value) {
 
 export function formatValue(value, property) {
   if (!(isEmptyValue(value) && property)) {
-    // 枚举引用/多选和组织类型的字段保存时必须转换为数组，在作为form的值使用时如果是单选值不是数组格式在这里统一转换
-    const arrayValueTypes = [PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.ORGANIZATION]
-    if (arrayValueTypes.includes(property?.bk_property_type)) {
-      return !Array.isArray(value) ? [value] : value
-    }
-    return value
+    return formatPropertyValue(value, property)
   }
   const type = property.bk_property_type
   let formattedValue = value
@@ -163,6 +158,21 @@ export function formatValue(value, property) {
       break
   }
   return formattedValue
+}
+
+export function getPropertyDefaultValue(property, value) {
+  const result = formatPropertyValue(value, property)
+  const defaultValue = [PROPERTY_TYPES.BOOL].includes(property.bk_property_type) ? property.option : property.default
+  return value === void 0 ? defaultValue : result
+}
+
+export function formatPropertyValue(value, property) {
+  // 枚举引用/多选和组织类型的字段保存时必须转换为数组，在作为form的值使用时如果是单选值不是数组格式在这里统一转换
+  const arrayValueTypes = [PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.ORGANIZATION]
+  if (arrayValueTypes.includes(property?.bk_property_type)) {
+    return !Array.isArray(value) ? [value] : value
+  }
+  return value
 }
 
 export function formatValues(values, properties) {
@@ -602,5 +612,6 @@ export default {
   getHeaderPropertyMinWidth,
   isShowOverflowTips,
   isUseComplexValueType,
-  getPropertyPlaceholder
+  getPropertyPlaceholder,
+  getPropertyDefaultValue
 }
