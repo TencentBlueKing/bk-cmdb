@@ -25,15 +25,18 @@
             v-model="condition[property.id].operator"
             @selected="handleOperatorChange(property, ...arguments)">
           </form-operator-selector>
-          <component class="item-value"
-            :is="getComponentType(property)"
-            :placeholder="getPlaceholder(property)"
-            :data-vv-name="property.bk_property_id"
-            :data-vv-as="property.bk_property_name"
-            v-bind="getBindProps(property)"
-            v-model="condition[property.id].value"
-            v-validate="'required'">
-          </component>
+          <div class="item-value">
+            <component
+              class="form-element"
+              :is="getComponentType(property)"
+              :placeholder="getPlaceholder(property)"
+              :data-vv-name="property.bk_property_id"
+              :data-vv-as="property.bk_property_name"
+              v-bind="getBindProps(property)"
+              v-model="condition[property.id].value"
+              v-validate="'required'">
+            </component>
+          </div>
           <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
         </div>
         <p class="form-error" v-if="errors.has(property.bk_property_id)">{{errors.first(property.bk_property_id)}}</p>
@@ -243,6 +246,11 @@
             .item-value {
                 flex: 1;
                 margin: 0 10px 0 0;
+                width: calc(100% - 150px);
+
+                .form-element {
+                  width: 100%;
+                }
             }
             .item-remove {
                 font-size: 20px;

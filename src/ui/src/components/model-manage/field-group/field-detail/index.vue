@@ -109,6 +109,7 @@
           :is="`the-field-${fieldType}`"
           :multiple="fieldInfo.ismultiple"
           v-model="fieldInfo.option"
+          :type="fieldInfo.bk_property_type"
           ref="component"
         ></component>
       </div>
