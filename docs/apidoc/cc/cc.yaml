@@ -1359,3 +1359,54 @@
   comp_codename: generic.v2.cc.cc_component
   dest_path: /api/v3/host/unbind/agent
   dest_http_method: POST
+
+- path: /v2/cc/batch_create_project/
+  name: batch_create_project
+  label: 批量创建项目
+  label_en: batch create project
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/createmany/project
+  dest_http_method: POST
+
+- path: /v2/cc/batch_update_project/
+  name: batch_update_project
+  label: 批量更新项目
+  label_en: batch update project
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/updatemany/project
+  dest_http_method: PUT
+
+- path: /v2/cc/batch_delete_project/
+  name: batch_delete_project
+  label: 批量删除项目
+  label_en: batch delete project
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/deletemany/project
+  dest_http_method: DELETE
+
+- path: /v2/cc/list_project/
+  name: list_project
+  label: 查询项目
+  label_en: list project
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/findmany/project
+  dest_http_method: POST
+
+- path: /v2/cc/update_project_id/
+  name: update_project_id
+  label: 更新项目id
+  label_en: update project id
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/update/project/bk_project_id
+  dest_http_method: PUT
+  is_hidden: true
