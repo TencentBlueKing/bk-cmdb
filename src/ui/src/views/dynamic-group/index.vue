@@ -143,7 +143,7 @@
         this.table.pagination.current = parseInt(page || this.table.pagination.current, 10)
         this.table.pagination.limit = parseInt(limit || this.table.pagination.limit, 10)
         this.table.sort = sort || this.table.sort
-        this.filter = filter || this.filter
+        this.filter = filter
         this.getList()
       }, { immediate: true })
       this.unwatchFilter = this.$watch(() => this.filter, (filter) => {
@@ -151,6 +151,8 @@
         this.filterTimer = setTimeout(() => {
           RouterQuery.set({
             filter,
+            page: 1,
+            _t: Date.now()
           })
         }, 500)
       })
@@ -180,7 +182,7 @@
           })
           this.table.list = info
           this.table.pagination.count = count
-          this.table.stuff.type = this.filter.length ? 'search' : 'default'
+          this.table.stuff.type = this.filter ? 'search' : 'default'
         } catch (error) {
           console.error(error)
           if (error.permission) {
@@ -262,7 +264,6 @@
         })
       },
       handleClearFilter() {
-        this.filter = ''
         RouterQuery.clear()
       }
     }

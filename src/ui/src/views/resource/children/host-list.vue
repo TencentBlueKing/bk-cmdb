@@ -455,7 +455,7 @@
         })
       },
       handleClearFilter() {
-        this.$refs.filterTag.handleResetAll()
+        FilterStore.resetAll()
         this.table.stuff.type = 'default'
       },
       getExceptionType(value) {

@@ -12,7 +12,7 @@
 
 <template>
   <div class="list-layout">
-    <host-list-options v-test-id @search="getExceptionType"></host-list-options>
+    <host-list-options v-test-id></host-list-options>
 
     <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
 
@@ -258,7 +258,7 @@
             requestId: this.requestIds.table,
             cancelPrevious: true
           })
-          this.table.stuff.type = this.$route.query.filter ? 'search' : 'default'
+          this.table.stuff.type = FilterStore.hasCondition ? 'search' : 'default'
           this.table.data = result.info
           this.table.pagination.count = result.count
         } catch (e) {
@@ -298,10 +298,7 @@
       },
       handleClearFilter() {
         this.table.stuff.type = 'default'
-        this.$refs.filterTag.handleResetAll()
-      },
-      getExceptionType(value) {
-        this.table.stuff.type = value
+        FilterStore.resetAll()
       }
     }
   }

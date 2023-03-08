@@ -164,8 +164,7 @@
             }
           }
         },
-        sendSearchText: '',
-        isClearFilter: false
+        sendSearchText: ''
       }
     },
     computed: {
@@ -177,7 +176,7 @@
             sort: this.table.sort
           }
         }
-        if (this.sendSearchText.length && !this.isClearFilter) {
+        if (this.sendSearchText.length) {
           Object.assign(params, {
             condition: {
               bk_asst_name: {
@@ -217,7 +216,6 @@
           this.table.list = data.info
           this.searchUsageCount()
           this.table.pagination.count = data.count
-          this.isClearFilter = false
           this.$http.cancel('post_searchAssociationType')
         })
       },
@@ -312,7 +310,6 @@
       handleClearFilter() {
         this.searchText = ''
         this.table.stuff.type = 'default'
-        this.isClearFilter = true
         this.searchRelation()
       }
     }

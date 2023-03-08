@@ -53,14 +53,6 @@
     components: {
       ExpandList
     },
-    props: {
-      filterValue: {
-        type: String,
-        default() {
-          return ''
-        }
-      }
-    },
     data() {
       return {
         filter: '',
@@ -131,7 +123,7 @@
           })
           this.list = info.map(item => ({ ...item, pending: true, reserved: [] }))
           this.pagination.count = count
-          this.table.stuff.type = this.filterValue ? 'search' : 'default'
+          this.table.stuff.type = this.filter ? 'search' : 'default'
         } catch (error) {
           this.list = []
           this.pagination.count = 0
@@ -181,9 +173,12 @@
         row.process_ids = list.map(process => process.process_id)
       },
       async handleClearFilter() {
-        this.$emit('clear', '')
         await  this.getProcessList()
         this.table.stuff.type = 'default'
+        console.log(this.filter)
+        Bus.$emit('filter-clear')
+
+        console.log(this.filter)
       }
     }
   }

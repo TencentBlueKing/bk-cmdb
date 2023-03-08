@@ -120,10 +120,7 @@
         instanceType: 'resource_name',
         defaultCondition,
         condition: {
-          ...defaultCondition,
-          condition: {
-            user: ['in', '']
-          }
+          ...defaultCondition
         }
       }
     },
@@ -157,7 +154,12 @@
         })
       },
       handleReset() {
-        this.condition = { ...this.defaultCondition }
+        this.condition = {
+          ...this.defaultCondition,
+          condition: {
+            user: ['in', '']
+          }
+        }
         this.handleSearch()
       }
     }

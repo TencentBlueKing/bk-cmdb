@@ -80,14 +80,6 @@
       ListCellOperation,
       ExpandList
     },
-    props: {
-      filterValue: {
-        type: Array,
-        default() {
-          return []
-        }
-      }
-    },
     data() {
       return {
         list: [],
@@ -192,7 +184,7 @@
           })
           this.list = info.map(data => ({ ...data, pending: true, editing: { name: false } }))
           this.pagination.count = count
-          this.table.stuff.type = this.filterValue.length === 0 ? 'default' : 'search'
+          this.table.stuff.type = this.filters.length === 0 ? 'default' : 'search'
         } catch (error) {
           this.list = []
           this.pagination.count = 0
@@ -292,9 +284,9 @@
         })
       },
       async handleClearFilter() {
-        this.$emit('clear', [])
-        await  this.getList()
+        await this.getList()
         this.table.stuff.type = 'default'
+        Bus.$emit('filter-clear')
       }
     }
   }

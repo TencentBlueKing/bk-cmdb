@@ -22,7 +22,7 @@
       </cmdb-clipboard-selector>
     </div>
     <div class="options options-right">
-      <filter-fast-search class="option-fast-search" v-test-id @search="searchFilter"></filter-fast-search>
+      <filter-fast-search class="option-fast-search" v-test-id></filter-fast-search>
       <filter-collection class="option-collection ml10" v-test-id></filter-collection>
       <icon-button class="option-filter ml10" v-test-id="'advancedSearch'"
         icon="icon-cc-funnel" v-bk-tooltips.top="$t('高级筛选')"
@@ -108,9 +108,6 @@
       },
       handleSetFilters() {
         FilterForm.show()
-      },
-      searchFilter(value) {
-        this.$emit('search', value)
       }
     }
   }

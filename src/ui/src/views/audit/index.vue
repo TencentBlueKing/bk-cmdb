@@ -303,8 +303,7 @@
         return operation ? operation.name : row.action
       },
       handleClearFilter() {
-        this.getAuditList()
-        this.$refs.component.handleReset('reset')
+        this.$refs.component.handleReset()
       }
     }
   }

@@ -12,7 +12,7 @@
 
 <template>
   <div class="list-layout">
-    <host-list-options @transfer="handleTransfer" v-test-id @search="getExceptionType"></host-list-options>
+    <host-list-options @transfer="handleTransfer" v-test-id></host-list-options>
     <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
     <bk-table class="host-table" v-test-id.businessHostAndService="'hostList'"
       ref="tableRef"
@@ -680,12 +680,8 @@
         this.$refs?.table?.doLayout()
       },
       handleClearFilter() {
-        this.$refs.filterTag.handleResetAll()
+        FilterStore.resetAll()
         this.table.stuff.type = 'default'
-      },
-      getExceptionType(value) {
-        console.log(value)
-        this.table.stuff.type = value
       }
     }
   }

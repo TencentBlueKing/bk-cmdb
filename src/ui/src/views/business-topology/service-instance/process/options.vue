@@ -58,12 +58,6 @@
     components: {
       ViewSwitcher
     },
-    props: {
-      clearFilterValue: {
-        type: String,
-        default: ''
-      }
-    },
     data() {
       return {
         withTemplate: true,
@@ -84,18 +78,15 @@
         return this.selectedNode && this.selectedNode.data.service_template_id
       }
     },
-    watch: {
-      clearFilterValue() {
-        this.searchValue = ''
-      },
-    },
     created() {
       Bus.$on('process-selection-change', this.handleProcessSelectionChange)
       Bus.$on('process-list-change', this.handleProcessListChange)
+      Bus.$on('filter-clear', this.filterClear)
     },
     beforeDestroy() {
       Bus.$off('process-selection-change', this.handleProcessSelectionChange)
       Bus.$off('process-list-change', this.handleProcessListChange)
+      Bus.$off('filter-clear', this.filterClear)
     },
     methods: {
       handleBatchEdit() {
@@ -157,6 +148,9 @@
           value: [],
           requestId: null
         }
+      },
+      filterClear() {
+        this.searchValue = ''
       }
     }
   }

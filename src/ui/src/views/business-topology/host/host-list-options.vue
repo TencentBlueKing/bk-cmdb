@@ -168,7 +168,7 @@
       </bk-dropdown-menu>
     </div>
     <div class="options options-right">
-      <filter-fast-search class="option-fast-search" v-test-id @search="searchFilter"></filter-fast-search>
+      <filter-fast-search class="option-fast-search" v-test-id ref="fastSearch"></filter-fast-search>
       <filter-collection class="option-collection ml10" v-test-id></filter-collection>
       <icon-button class="option-filter ml10" v-test-id="'advancedSearch'"
         icon="icon-cc-funnel" v-bk-tooltips.top="$t('高级筛选')"
@@ -519,9 +519,6 @@
       },
       getSelectedHostIds(selected) {
         return FilterUtils.getSelectedHostIds(selected, this.isContainerHost)
-      },
-      searchFilter(value) {
-        this.$emit('search', value)
       }
     }
   }

@@ -12,13 +12,9 @@
 
 <template>
   <section class="view-process" v-test-id="'viewProcess'">
-    <process-options
-      @clear="clearFilter"
-      :clear-filter-value="clearFilterValue">
+    <process-options>
     </process-options>
-    <process-list class="process-list"
-      :filter-value="filterValue"
-      @clear="handleClearFilter">
+    <process-list class="process-list">
     </process-list>
   </section>
 </template>
@@ -34,18 +30,6 @@
     },
     data() {
       return {
-        filterValue: '',
-        clearFilterValue: null
-      }
-    },
-    methods: {
-      clearFilter(value) {
-        console.log(value)
-        this.filterValue = value
-      },
-      handleClearFilter(value) {
-        console.log(value)
-        this.clearFilterValue = value
       }
     }
   }

@@ -40,8 +40,7 @@
 
   export default {
     props: {
-      mode: String,
-      setEmptyKeyword: Array
+      mode: String
     },
     data() {
       return {
@@ -81,11 +80,7 @@
           const selected = searchValue.some(value => value.id === option.id && value.name === option.name && value.type === option.type)
           option.disabled = selected
         })
-        this.$emit('search', searchValue)
         this.handleSearch()
-      },
-      setEmptyKeyword() {
-        this.searchValue = []
       }
     },
     created() {
@@ -197,6 +192,9 @@
           return this.currentMenu.children.filter(item => item.name.toLowerCase().indexOf(filter.toLowerCase()) > -1)
         }
         return []
+      },
+      setEmptyKeyword() {
+        this.searchValue = []
       }
     }
   }

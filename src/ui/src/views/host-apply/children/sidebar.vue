@@ -25,7 +25,7 @@
       </div>
       <div class="searchbar">
         <div class="search-select">
-          <search-select-mix :mode="configMode" :set-empty-keyword="setEmptyKeyword" />
+          <search-select-mix :mode="configMode" ref="searchSelect" />
         </div>
         <div class="action-menu" v-show="!actionMode">
           <bk-dropdown-menu
@@ -65,7 +65,6 @@
       </div>
       <KeepAlive>
         <component
-          @clearFilter="clearFilter"
           :is="configTree.is"
           ref="topologyTree"
           v-bind="configTree.props"
@@ -141,8 +140,7 @@
         checkedList: [],
         checkedTemplateList: [],
         showBatchDropdown: false,
-        CONFIG_MODE,
-        setEmptyKeyword: null
+        CONFIG_MODE
       }
     },
     computed: {
@@ -171,7 +169,8 @@
             },
             events: {
               selected: this.handleTreeSelected,
-              checked: this.handleTreeChecked
+              checked: this.handleTreeChecked,
+              clearFilter: this.handleclearFilter
             }
           },
           [CONFIG_MODE.TEMPLATE]: {
@@ -182,7 +181,8 @@
             },
             events: {
               selected: this.handleTreeSelected,
-              checked: this.handleTemplateChecked
+              checked: this.handleTemplateChecked,
+              clearFilter: this.handleclearFilter
             }
           }
         }
@@ -293,8 +293,8 @@
         this.actionMode = ''
         this.removeChecked()
       },
-      clearFilter(value) {
-        this.setEmptyKeyword = value
+      handleclearFilter() {
+        this.$refs.searchSelect.setEmptyKeyword()
       }
     }
   }
