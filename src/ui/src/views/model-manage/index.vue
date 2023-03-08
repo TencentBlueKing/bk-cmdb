@@ -260,13 +260,13 @@
           </bk-transition>
         </li>
       </ul>
-      <cmdb-other-empty
+      <cmdb-data-empty
         v-if="!currentClassifications.length"
         slot="empty"
-        :stuff="stuff"
+        :stuff="dataEmpty"
         @create="modelDialog.isShow = true"
         @clear="handleClearFilter">
-      </cmdb-other-empty>
+      </cmdb-data-empty>
     </div>
 
     <div class="model-management-footer" v-show="isModelSelectable">
@@ -498,7 +498,7 @@
 
         isTipsHidden: false, // 模型管理提示是否隐藏
 
-        stuff: {
+        dataEmpty: {
           type: 'default',
           payload: {
             defaultText: this.$t('暂无模型'),
@@ -618,7 +618,7 @@
 
         this.filterClassifications = searchResult.filter(item => item.bk_objects.length)
 
-        this.stuff.type = this.modelSearchKey ? 'search' : 'default'
+        this.dataEmpty.type = this.modelSearchKey ? 'search' : 'default'
       },
       modelType() {
         this.modelSearchKey = ''

@@ -67,12 +67,12 @@
       </service-instance-table>
     </div>
     <bk-table v-if="!instances.length" :data="[]" class="mb10">
-      <cmdb-other-empty
+      <cmdb-data-empty
         slot="empty"
         :stuff="emptyStuff"
         @create="handleGoAddInstance"
         @clear="handleFilterClear">
-      </cmdb-other-empty>
+      </cmdb-data-empty>
     </bk-table>
     <bk-pagination v-if="instances.length"
       class="pagination"

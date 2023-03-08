@@ -12,7 +12,6 @@
 
 <template>
   <blueking-user-selector ref="userSelector" type="info"
-    class="user-selector"
     v-if="localValue.length"
     :api="api"
     :value="localValue"

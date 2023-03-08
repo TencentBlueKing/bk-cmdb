@@ -14,10 +14,10 @@
   <div class="association-list" v-bkloading="{ isLoading: loading }">
     <div class="association-empty" v-if="!hasRelation">
       <div class="empty-content">
-        <cmdb-other-empty
+        <cmdb-data-empty
           slot="empty"
-          :stuff="stuff">
-        </cmdb-other-empty>
+          :stuff="dataEmpty">
+        </cmdb-data-empty>
       </div>
     </div>
     <template v-else>
@@ -35,10 +35,10 @@
     </template>
     <div class="association-empty" v-if="hasRelation && !hasRelationInstance">
       <div class="empty-content">
-        <cmdb-other-empty
+        <cmdb-data-empty
           slot="empty"
-          :stuff="stuff">
-        </cmdb-other-empty>
+          :stuff="dataEmpty">
+        </cmdb-data-empty>
       </div>
     </div>
   </div>
@@ -128,7 +128,7 @@
       resourceType() {
         return this.$parent.resourceType
       },
-      stuff() {
+      dataEmpty() {
         return {
           type: 'empty',
           payload: {

@@ -212,12 +212,12 @@
           </bk-button>
         </cmdb-auth>
       </div>
-      <cmdb-other-empty
+      <cmdb-data-empty
         v-if="!displayList.length && !$loading(Object.values(request))"
         slot="empty"
-        :stuff="stuff"
+        :stuff="dataEmpty"
         @clear="handleClearFilter">
-      </cmdb-other-empty>
+      </cmdb-data-empty>
     </div>
   </div>
 </template>
@@ -259,7 +259,7 @@
         },
         ignoreUpdateAuth: false,
         isMainAuthCompleted: false,
-        stuff: {
+        dataEmpty: {
           type: 'empty',
           payload: {
             action: this.$t('添加'),
@@ -277,7 +277,7 @@
       },
       keyword() {
         this.handleFilter()
-        if (this.keyword) this.stuff.type = 'search'
+        if (this.keyword) this.dataEmpty.type = 'search'
       }
     },
     created() {
@@ -477,7 +477,7 @@
       },
       handleClearFilter() {
         this.keyword = ''
-        this.stuff.type = 'empty'
+        this.dataEmpty.type = 'empty'
       }
     }
   }

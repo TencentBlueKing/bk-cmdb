@@ -91,12 +91,12 @@
             </cmdb-auth>
           </template>
         </bk-table-column>
-        <cmdb-other-empty
+        <cmdb-data-empty
           slot="empty"
           :stuff="table.stuff"
           @clear="handleClearFilter"
           @create="handleToCreatedInstance">
-        </cmdb-other-empty>
+        </cmdb-data-empty>
       </bk-table>
     </div>
   </div>

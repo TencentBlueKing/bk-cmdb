@@ -114,12 +114,12 @@
             </cmdb-auth>
           </template>
         </bk-table-column>
-        <cmdb-other-empty
+        <cmdb-data-empty
           slot="empty"
-          :stuff="table.stuff"
+          :stuff="dataEmpty.stuff"
           @clear="handleClearFilter"
           @create="handleLinkServiceTopo">
-        </cmdb-other-empty>
+        </cmdb-data-empty>
       </bk-table>
     </div>
   </div>
@@ -171,7 +171,7 @@
           current: 1,
           ...this.$tools.getDefaultPaginationConfig()
         },
-        table: {
+        dataEmpty: {
           stuff: {
             type: 'default',
             payload: {
@@ -383,7 +383,7 @@
         await this.getData()
 
         const searchStatus = this.statusFilter !== 'all' || !!this.filterName
-        this.table.stuff.type = event && searchStatus ? 'search' : 'default'
+        this.dataEmpty.stuff.type = event && searchStatus ? 'search' : 'default'
 
         if (this.list.length) {
           this.getSetInstancesWithTopo()
@@ -503,7 +503,7 @@
       },
       handleClearFilter() {
         this.filterName = ''
-        this.table.stuff.type = 'default'
+        this.dataEmpty.stuff.type = 'default'
       }
     }
   }

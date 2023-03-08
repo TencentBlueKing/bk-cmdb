@@ -1678,5 +1678,6 @@
     "搜索结果为空":"search result is empty",
     "调整关键词":"adjust keywords",
     "任务":"assignment",
-    "无服务实例提示": "no service instance{link}"
+    "无服务实例提示": "no service instance{link}",
+    "暂无业务": "no business temporarily"
 }

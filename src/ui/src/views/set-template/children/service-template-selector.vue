@@ -76,12 +76,12 @@
       </template>
       <li class="template-empty" v-else>
         <div class="empty-content">
-          <cmdb-other-empty
+          <cmdb-data-empty
             slot="empty"
-            :stuff="stuff"
+            :stuff="dataEmpty"
             @skip="handleLinkClick"
             @clear="handleClearFilter">
-          </cmdb-other-empty>
+          </cmdb-data-empty>
         </div>
       </li>
     </ul>
@@ -157,7 +157,7 @@
           secCategory: '',
           templateName: ''
         },
-        stuff: {
+        dataEmpty: {
           type: 'default',
           payload: {
             path: '无服务模板提示',
@@ -194,16 +194,16 @@
       'filter.primaryCategory'(id) {
         // 当前分类下的二级分类
         this.secCategoryList = this.categoryList.filter(item => item.bk_parent_id === id)
-        this.stuff.type = this.filter.primaryCategory ? 'search' : 'default'
+        this.dataEmpty.type = this.filter.primaryCategory ? 'search' : 'default'
         this.filter.secCategory = ''
         this.filterTemplate()
       },
       'filter.secCategory'() {
-        this.stuff.type = this.filter.primaryCategory || this.filter.secCategory ? 'search' : 'default'
+        this.dataEmpty.type = this.filter.primaryCategory || this.filter.secCategory ? 'search' : 'default'
         this.filterTemplate()
       },
       'filter.templateName'() {
-        this.stuff.type = this.filter.primaryCategory || this.filter.templateName ? 'search' : 'default'
+        this.dataEmpty.type = this.filter.primaryCategory || this.filter.templateName ? 'search' : 'default'
         this.filterTemplate()
       }
     },

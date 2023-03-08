@@ -32,12 +32,12 @@
         </cmdb-classify-panel>
       </div>
     </div>
-    <cmdb-other-empty
+    <cmdb-data-empty
       v-if="isEmpty && !globalLoading"
       slot="empty"
-      :stuff="stuff"
+      :stuff="dataEmpty"
       @clear="handleClearFilter">
-    </cmdb-other-empty>
+    </cmdb-data-empty>
   </div>
 </template>
 
@@ -57,7 +57,7 @@
         filter: '',
         debounceFilter: null,
         matchedModels: null,
-        stuff: {
+        dataEmpty: {
           type: 'search'
         }
       }
