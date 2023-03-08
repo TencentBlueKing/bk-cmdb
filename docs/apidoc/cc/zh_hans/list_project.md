@@ -1,24 +1,24 @@
 ### 功能描述
 
-查询namespace (版本：v3.10.23+，权限：无)
+查询项目(版本：v3.10.23+，权限：项目的查看权限)
 
 ### 请求参数
 
 {{ common_args_desc }}
+
 
 #### 接口参数
 - 通用字段：
 
 | 字段                       |  类型      | 必选   |  描述                                      |
 |----------------------------|------------|--------|--------------------------------------------|
-| bk_biz_id | int| 是 |业务id|
-| filter      | object  | 否   | namespace查询条件  |
+| filter      | object  | 否   | 查询条件  |
 | fields     | array  | 否     | 属性列表，控制返回结果里有哪些字段，能够加速接口请求和减少网络流量传输   |
 | page       | object | 是     | 分页信息 |
 
 #### filter 字段说明
 
-namespace的属性字段过滤规则，用于根据namespace的属性字段搜索数据。该参数支持以下两种过滤规则类型，其中组合过滤规则可以嵌套，且最多嵌套2层。具体支持的过滤规则类型如下：
+属性字段过滤规则，用于根据属性字段搜索数据。该参数支持以下两种过滤规则类型，其中组合过滤规则可以嵌套，且最多嵌套2层。具体支持的过滤规则类型如下：
 
 ##### 组合过滤规则
 
@@ -39,7 +39,7 @@ namespace的属性字段过滤规则，用于根据namespace的属性字段搜�
 | operator | string                        | 是   | 操作符，可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between | 
 | value    | 不同的field和operator对应不同的value格式 | 否   | 操作值                                                                                               |
 
-组装规则可参考: <https://github.com/Tencent/bk-cmdb/blob/master/src/pkg/filter/README.md>
+组装规则可参考: <https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md>
 
 #### page
 
@@ -59,29 +59,25 @@ namespace的属性字段过滤规则，用于根据namespace的属性字段搜�
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_biz_id": 3,
     "filter": {
         "condition": "AND",
         "rules": [
             {
-                "field": "bk_cluster_id",
+                "field": "id",
                 "operator": "equal",
                 "value": 1
             },
             {
-                "field": "name",
+                "field": "bk_status",
                 "operator": "equal",
-                "value": "test"
+                "value": "enable"
             }
         ]
     },
-    "fields": [
-        "name"
-    ],
     "page": {
         "start": 0,
         "limit": 10,
-        "sort": "name",
+        "sort": "id",
         "enable_count": false
     }
 }
@@ -93,19 +89,18 @@ namespace的属性字段过滤规则，用于根据namespace的属性字段搜�
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_biz_id": 3,
     "filter": {
         "condition": "AND",
         "rules": [
             {
-                "field": "bk_cluster_id",
+                "field": "id",
                 "operator": "equal",
                 "value": 1
             },
             {
-                "field": "name",
+                "field": "bk_status",
                 "operator": "equal",
-                "value": "test"
+                "value": "enable"
             }
         ]
     },
@@ -114,11 +109,9 @@ namespace的属性字段过滤规则，用于根据namespace的属性字段搜�
     }
 }
 ```
-
 ### 返回结果示例
 ### 详细信息接口响应
 ```json
-
 {
     "result": true,
     "code": 0,
@@ -126,7 +119,20 @@ namespace的属性字段过滤规则，用于根据namespace的属性字段搜�
         "count": 0,
         "info": [
             {	
-                "name": "test"
+               "id": 1,
+               "bk_project_id": "21bf9ef9be7c4d38a1d1f2uc0b44a8f2",
+               "bk_project_name": "test",
+               "bk_project_code": "test",
+               "bk_project_desc": "test project",
+               "bk_project_type": "mobile_game",
+               "bk_project_sec_lvl": "public",
+               "bk_project_owner": "admin",
+               "bk_project_team": [1, 2],
+               "bk_status": "enable",
+               "bk_project_icon": "https://127.0.0.1/file/png/11111",
+               "bk_supplier_account": "0",
+               "create_time": "2022-12-22T11:22:17.504+08:00",
+               "last_time": "2022-12-22T11:23:31.728+08:00"
             }
         ]
     },
@@ -145,7 +151,7 @@ namespace的属性字段过滤规则，用于根据namespace的属性字段搜�
     "message":"success",
     "permission":null,
     "data":{
-        "count":100,
+        "count":1,
         "info":[
         ]
     },
@@ -171,30 +177,19 @@ namespace的属性字段过滤规则，用于根据namespace的属性字段搜�
 | info  | array | 实际数据，仅返回fields里设置了的字段 |
 
 #### data.info
-| 字段  | 类型  | 描述         |
-| ----- | ----- | ------------ |
-|name | string  |命名空间名称|
-| labels| map  |标签|
-| resource_quotas| array  |命名空间CPU与内存的requests与limits|
-
-#### resource_quotas[0]
-| 字段  | 类型  | 描述         |
-| ----- | ----- | ------------ |
-|hard | object  |每个命名资源所需的硬限制|
-|scopes | array  |配额作用域,可选值为："Terminating"、"NotTerminating"、"BestEffort"、"NotBestEffort"、"PriorityClass"、"CrossNamespacePodAffinity"|
-|scope_selector | object  |作用域选择器|
-
-#### scope_selector
-| 字段  | 类型  | 描述         |
-| ----- | ----- | ------------ |
-|match_expressions | array  |匹配表达式|
-
-#### match_expressions[0]
-| 字段  | 类型  | 描述         |
-| ----- | ----- | ------------ |
-|scope_name | array  |配额作用域,可选值为："Terminating"、"NotTerminating"、"BestEffort"、"NotBestEffort"、"PriorityClass"、"CrossNamespacePodAffinity"|
-|operator | string  |选择器操作符，可选值为："In"、"NotIn"、"Exists"、"DoesNotExist"|
-|values | array |字符串数组，如果操作符为"In"或"NotIn",不能为空，如果为"Exists"或"DoesNotExist"，必须为空|
-
-**注意：**
-- 如果本次请求是查询详细信息那么count为0，如果查询的是数量，那么info为空
+| 字段                  | 类型  | 描述      |
+|---------------------| ----- | --------- |
+| id                  |  int     | 在cc中项目的唯一标识|
+| bk_project_id       |  string  | 项目id|
+| bk_project_name     |  string  | 项目名称|
+| bk_project_code     |  string  | 项目英文名|
+| bk_project_desc     |  string  | 项目描述|
+| bk_project_type     |  enum  | 项目类型，可选值："mobile_game"(手游)、"pc_game"(端游)、"web_game"(页游)、"platform_prod"(平台产品)、"support_prod"(支撑产品)、"other"(其他)|
+| bk_project_sec_lvl  | enum     | 保密级别，可选值："public"(公开)、"private"(私有)、"classified"(机密)|
+| bk_project_owner    |  string  | 项目负责人|
+| bk_project_team     | array    | 所属团队|
+| bk_project_icon     |  string  | 项目图标     |
+| bk_status           |  string  | 项目状态，可选值："enable"(启用)、"disabled"(未启用)|
+| bk_supplier_account | string   | 开发商账号 |
+| create_time         | string | 创建时间     |
+| last_time           | string | 更新时间     |

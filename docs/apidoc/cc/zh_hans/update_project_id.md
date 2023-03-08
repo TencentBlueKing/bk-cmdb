@@ -1,39 +1,35 @@
 ### 功能描述
 
-批量删除workload (版本：v3.10.23+，权限：容器工作负载删除)
+更新项目id，此接口为BCS进行项目数据迁移时的专用接口，其他平台请勿使用(版本：v3.10.23+，权限：项目的更新权限)
 
 ### 请求参数
 
 {{ common_args_desc }}
 
+
 #### 接口参数
 
-| 字段                       |  类型      | 必选   |  描述                                      |
-|----------------------------|------------|--------|--------------------------------------------|
-| bk_biz_id | int| 是 |业务id|
-|kind | string |是 |workload类型，目前支持的workload类型有deployment、daemonSet、statefulSet、gameStatefulSet、gameDeployment、cronJob、job、pods(放不通过workload而直接创建Pod)|
-| ids | array| 是 |要删除的workload在cc中的id唯一标识数组, 一次限制大小为200|
+| 字段                       | 类型     | 必选   | 描述                    |
+|----------------------------|--------|--------|-----------------------|
+| id | int    | 是 | project在cc中的id唯一标识    |
+| bk_project_id | string | 是 | bk_project_id需要更新的最终值 |
 
 ### 请求参数示例
 
 ```json
 {
-    "bk_app_code": "esb_test",
-    "bk_app_secret": "xxx",
-    "bk_username": "xxx",
-    "bk_token": "xxx",
-    "bk_biz_id": 3,
-    "kind": "deployment",
-    "ids": [
-        1
-     ]
+    "bk_app_code":"esb_test",
+    "bk_app_secret":"xxx",
+    "bk_username":"xxx",
+    "bk_token":"xxx",
+    "id": 1,
+    "bk_project_id": "21bf9ef9be7c4d38a1d1f2uc0b44a8f2"
 }
 ```
 
 ### 返回结果示例
 
 ```json
-
 {
     "result": true,
     "code": 0,
@@ -43,7 +39,6 @@
     "request_id": "87de106ab55549bfbcc46e47ecf5bcc7"
 }
 ```
-
 ### 返回结果参数说明
 #### response
 

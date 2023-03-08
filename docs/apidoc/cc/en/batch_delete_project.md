@@ -1,19 +1,19 @@
-### Function Description
+### Function description
 
-Batch delete namespace (version: v3.10.23+, auth: delete container namespace)
+batch delete project (version: v3.10.23+, permission: delete permission for project)
 
 ### Request parameters
 
 {{ common_args_desc }}
 
-#### Interface parameters
 
-| field | type | required | description |
-|----------------------------|------------|--------|--------------------------------------------|
-| bk_biz_id | int| Yes |business id|
-| ids | array| Yes |the namespace ids array to be deleted, limited to 200 at a time|
+#### Interface Parameters
 
-### Example request parameters
+| field | type | required | description                                                         |
+| ----------------------------|------------|----------|---------------------------------------------------------------------|
+| ids | array| yes      | an array of ids uniquely identified in cc, limited to 200 at a time |
+
+### Request parameter examples
 
 ```json
 {
@@ -21,17 +21,15 @@ Batch delete namespace (version: v3.10.23+, auth: delete container namespace)
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_biz_id": 3,
-    "ids": [
-        1
-     ]
+    "ids":[
+        1, 2, 3
+    ]
 }
 ```
 
 ### Return Result Example
 
 ```json
-
 {
     "result": true,
     "code": 0,
@@ -41,7 +39,6 @@ Batch delete namespace (version: v3.10.23+, auth: delete container namespace)
     "request_id": "87de106ab55549bfbcc46e47ecf5bcc7"
 }
 ```
-
 ### Return result parameter description
 #### response
 
