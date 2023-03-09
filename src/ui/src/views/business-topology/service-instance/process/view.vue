@@ -12,10 +12,8 @@
 
 <template>
   <section class="view-process" v-test-id="'viewProcess'">
-    <process-options>
-    </process-options>
-    <process-list class="process-list">
-    </process-list>
+    <process-options></process-options>
+    <process-list class="process-list"></process-list>
   </section>
 </template>
 

@@ -54,6 +54,7 @@
   import Bus from '../common/bus'
   import FormMultiple from '@/components/service/form/form-multiple.js'
   import { mapGetters } from 'vuex'
+  import RouterQuery from '@/router/query'
   export default {
     components: {
       ViewSwitcher
@@ -76,6 +77,16 @@
       ...mapGetters('businessHost', ['selectedNode']),
       serviceTemplateId() {
         return this.selectedNode && this.selectedNode.data.service_template_id
+      }
+    },
+    watch: {
+      selectedNode() {
+        this.searchValue = ''
+        RouterQuery.set({
+          node: this.selectedNode.id,
+          instanceName: ''
+        })
+        Bus.$emit('filter-change', this.searchValue)
       }
     },
     created() {
@@ -135,7 +146,6 @@
         }
       },
       handleSearch() {
-        this.$emit('clear', this.searchValue)
         Bus.$emit('filter-list', this.searchValue)
       },
       handleExpandAllChange(expand) {

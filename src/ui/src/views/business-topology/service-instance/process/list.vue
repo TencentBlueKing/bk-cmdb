@@ -92,14 +92,24 @@
       Bus.$on('expand-all-change', this.handleExpandAllChange)
       Bus.$on('update-reserve-selection', this.handleReserveSelectionChange)
       Bus.$on('filter-list', this.handleFilterList)
+      Bus.$on('filter-change', this.handleFilterChange)
     },
     beforeDestroy() {
       this.unwatch()
       Bus.$off('expand-all-change', this.handleExpandAllChange)
       Bus.$off('update-reserve-selection', this.handleReserveSelectionChange)
       Bus.$off('filter-list', this.handleFilterList)
+      Bus.$off('filter-change', this.handleFilterChange)
     },
     methods: {
+      handleFilterChange(filter) {
+        this.filter = filter
+        RouterQuery.set({
+          node: this.selectedNode.id,
+          page: 1,
+          _t: Date.now()
+        })
+      },
       handleFilterList(value) {
         this.filter = value
         RouterQuery.set({
@@ -175,10 +185,7 @@
       async handleClearFilter() {
         await  this.getProcessList()
         this.table.stuff.type = 'default'
-        console.log(this.filter)
         Bus.$emit('filter-clear')
-
-        console.log(this.filter)
       }
     }
   }

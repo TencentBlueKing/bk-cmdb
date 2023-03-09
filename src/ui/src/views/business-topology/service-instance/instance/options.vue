@@ -412,7 +412,6 @@
       },
       handleSearch(filters) {
         const transformedFilters = []
-        this.$emit('clear', this.searchValue)
         filters.forEach((data) => {
           if (!data.values) {
             const nameIndex = transformedFilters.findIndex(filter => filter.id === 'name')
