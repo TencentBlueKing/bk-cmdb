@@ -54,16 +54,22 @@
 
 <script>
   import AuditDetails from '@/components/audit-history/details.js'
+  import tools from '@/utils/tools'
+
+  const today = tools.formatTime(new Date(), 'YYYY-MM-DD')
+  const formatValue = () => ({
+    operation_time: [today, today],
+    resource_name: ''
+  })
+
   export default {
     data() {
-      const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
       return {
         dictionary: [],
         history: [],
         pagination: this.$tools.getDefaultPaginationConfig(),
         condition: {
-          operation_time: [today, today],
-          resource_name: '',
+          ...formatValue(),
           action: ['delete']
         },
         table: {
@@ -185,7 +191,9 @@
         })
       },
       handleClearFilter() {
-        this.condition.resource_name = ''
+        this.condition = {
+          ...formatValue()
+        }
         this.getHistory()
       }
     }

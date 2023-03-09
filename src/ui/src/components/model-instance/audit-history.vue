@@ -49,6 +49,14 @@
 
 <script>
   import AuditDetails from '@/components/audit-history/details.js'
+  import tools from '@/utils/tools'
+
+  const today = tools.formatTime(new Date(), 'YYYY-MM-DD')
+  const formatValue = () => ({
+    operation_time: [today, today],
+    user: ''
+  })
+
   export default {
     props: {
       objId: {
@@ -67,13 +75,11 @@
       }
     },
     data() {
-      const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
       return {
         history: [],
         dictionary: [],
         condition: {
-          operation_time: [today, today],
-          user: '',
+          ...formatValue(),
           resource_id: this.resourceId,
           resource_type: this.resourceType
         },
@@ -189,7 +195,9 @@
         })
       },
       handleClearFilter() {
-        this.condition.user = ''
+        this.condition = {
+          ...formatValue()
+        }
         this.getHistory()
       }
     }

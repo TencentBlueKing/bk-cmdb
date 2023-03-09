@@ -22,7 +22,7 @@
       </bk-tab-panel>
     </bk-tab>
     <div class="audit-options">
-      <component ref="component" :is="optionsComponent" @condition-change="handleConditionChange"></component>
+      <component ref="optionsComponent" :is="optionsComponent" @condition-change="handleConditionChange"></component>
     </div>
     <bk-table v-bkloading="{ isLoading: $loading(request.list) }"
       :data="table.list"
@@ -303,7 +303,7 @@
         return operation ? operation.name : row.action
       },
       handleClearFilter() {
-        this.$refs.component.handleReset()
+        this.$refs.optionsComponent.handleReset()
       }
     }
   }
