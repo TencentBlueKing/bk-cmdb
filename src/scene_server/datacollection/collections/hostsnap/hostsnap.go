@@ -411,6 +411,9 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	case "hp-ux":
 		osname = platform
 		ostype = common.HostOSTypeEnumHpUX
+	case "freebsd":
+		osname = platform
+		ostype = common.HostOSTypeEnumFreeBSD
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
@@ -606,6 +609,9 @@ func parseV10Setter(val *gjson.Result, innerIP, outerIP string) (map[string]inte
 	case "hp-ux":
 		osname = platform
 		ostype = common.HostOSTypeEnumHpUX
+	case "freebsd":
+		osname = platform
+		ostype = common.HostOSTypeEnumFreeBSD
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
