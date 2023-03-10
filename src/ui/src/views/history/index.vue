@@ -192,7 +192,8 @@
       },
       handleClearFilter() {
         this.condition = {
-          ...formatValue()
+          ...formatValue(),
+          action: ['delete']
         }
         this.getHistory()
       }

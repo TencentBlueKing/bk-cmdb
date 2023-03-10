@@ -196,7 +196,9 @@
       },
       handleClearFilter() {
         this.condition = {
-          ...formatValue()
+          ...formatValue(),
+          resource_id: this.resourceId,
+          resource_type: this.resourceType
         }
         this.getHistory()
       }
