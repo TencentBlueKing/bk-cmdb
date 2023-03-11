@@ -21,14 +21,14 @@ const actions = {
   config(state, payload) {
     state.config = payload
   },
-  async preverify({ config }, { modelIds }) {
+  async preverify({ config }, { modelIds, instanceModelIds }) {
     try {
       const authList = []
       modelIds.forEach((id) => {
-        authList.push(
-          { type: OPERATION.R_MODEL, relation: [id] },
-          { type: OPERATION.R_INST, relation: [id] }
-        )
+        authList.push({ type: OPERATION.R_MODEL, relation: [id] })
+      })
+      instanceModelIds.forEach((id) => {
+        authList.push({ type: OPERATION.R_INST, relation: [id] })
       })
 
       const resources = TRANSFORM_TO_INTERNAL(authList)

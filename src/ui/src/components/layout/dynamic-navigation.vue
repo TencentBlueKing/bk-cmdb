@@ -243,17 +243,14 @@
         }
         return menu.route
       },
-      getMenuAuth(menu) {
-        console.log(menu)
-        return {
-          type: this.$OPERATION.U_MODEL
-        }
-      },
       getMenuAuthMaskProps(menu) {
         const props = {
           ignore: true
         }
 
+        // 此处通过route.name将排除主机/业务/业务集
+        // 主机，将使用资源主机查看权限不在这里控制
+        // 业务/业务集模型已有实例查看权限并且在接口层面将数据过滤后返回
         if (menu?.route?.name === MENU_RESOURCE_INSTANCE) {
           const model = this.models.find(model => model.bk_obj_id === menu?.route?.params?.objId)
           const auth = { type: this.$OPERATION.R_INST, relation: [model.id] }

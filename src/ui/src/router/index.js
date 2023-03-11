@@ -190,24 +190,47 @@ function cancelRequest(app) {
 
 const checkViewAuthorize = async (to) => {
   // 使用就近原则向上回溯，找到路由的auth.view配置
-  const findViewAuth = (route) => {
+  const findViewAuth = (route, key) => {
     if (!route) {
       return
     }
-    if (route?.meta?.auth?.view) {
-      return route.meta.auth.view
+    if (route?.meta?.auth?.[key]) {
+      return route.meta.auth[key]
     }
-    return findViewAuth(route?.parent)
+    return findViewAuth(route?.parent, key)
+  }
+
+  const getViewAuthResult = (authView) => {
+    const viewAuthData = typeof authView === 'function' ? authView(to, router.app) : authView
+    return router.app.$store.dispatch('auth/getViewAuth', viewAuthData)
   }
 
   const { matched } = to
-  const authView = findViewAuth(matched[matched.length - 1])
+  const latestRoute = matched[matched.length - 1]
 
-  if (authView) {
-    const viewAuthData = typeof authView === 'function' ? authView(to, router.app) : authView
-    const authResult = await router.app.$store.dispatch('auth/getViewAuth', viewAuthData)
-    to.meta.view = authResult ? 'default' : 'permission'
+  const authSuperView = findViewAuth(latestRoute, 'superView')
+  const authView = findViewAuth(latestRoute, 'view')
+
+  // 存在superView和authView权限
+  if (authSuperView && authView) {
+    const authSuperViewResult = await getViewAuthResult(authSuperView)
+    const authViewResult = await getViewAuthResult(authView)
+
+    // 没有子权限，指定需要优先申请子权限
+    if (!authViewResult) {
+      to.meta.authKey = 'view'
+    } else if (!authSuperViewResult) {
+      to.meta.authKey = 'superView'
+    }
+
+    // 没有父权限时才拦截入口，无权限申请时根据authKey确定需要申请哪一个权限
+    // 没有子权限允许进入到页面，在页面中捕获接口无权限处理
+    to.meta.view = authSuperViewResult ? 'default' : 'permission'
+  } else if (authView) {
+    const authViewResult = await getViewAuthResult(authView)
+    to.meta.view = authViewResult ? 'default' : 'permission'
   }
+
   return Promise.resolve()
 }
 

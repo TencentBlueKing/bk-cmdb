@@ -12,6 +12,7 @@
 
 import store from '@/store'
 import CCWorker from '@/workers/ccworker.js'
+import { isViewAuthFreeModel, isViewAuthFreeModelInstance } from '@/service/auth'
 
 const iam = () => {
   const models = store.getters['objectModelClassify/models']
@@ -20,8 +21,21 @@ const iam = () => {
     return
   }
 
-  // 所有需要预鉴权的模型id
-  const modelIds = models.filter(item => !item.bk_ishidden).map(item => item.id)
+  // 所有需要预鉴权模型查看权限的模型id
+  const modelIds = []
+  // 所有需要预鉴权模型实例查看权限的模型id
+  const instanceModelIds = []
+
+  models.filter(item => !item.bk_ishidden)
+    .map(item => item.id)
+    .forEach((modelId) => {
+      if (!isViewAuthFreeModel({ id: modelId })) {
+        modelIds.push(modelId)
+      }
+      if (!isViewAuthFreeModelInstance({ id: modelId })) {
+        instanceModelIds.push(modelId)
+      }
+    })
 
   new CCWorker(new Worker(new URL('@/workers/iam.js', import.meta.url)), {
     preverify(payload) {
@@ -31,7 +45,8 @@ const iam = () => {
       console.error(err)
     }
   }).dispatch('preverify', {
-    modelIds
+    modelIds,
+    instanceModelIds
   })
 }
 

@@ -430,6 +430,7 @@
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS, UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants.js'
   import Bus from '@/utils/bus'
+  import { isViewAuthFreeModel } from '@/service/auth'
 
   export default {
     name: 'ModelManagement',
@@ -718,7 +719,13 @@
         this.classificationsCollapseState[classification.id] = !this.classificationsCollapseState[classification.id]
       },
       getViewAuthMaskProps(model) {
-        const auth = { type: this.$OPERATION.R_INST, relation: [model.id] }
+        if (isViewAuthFreeModel(model)) {
+          return {
+            ignore: true
+          }
+        }
+
+        const auth = { type: this.$OPERATION.R_MODEL, relation: [model.id] }
         return {
           auth,
           authorized: this.isViewAuthed(auth)

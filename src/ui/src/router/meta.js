@@ -25,10 +25,13 @@ export default class Meta {
       relative: null
     }, data.menu)
 
+    this.authKey = 'view'
+
     this.auth = Object.assign({
+      superView: null,
       view: null,
       operation: null,
-      permission: null
+      permission: null,
     }, data.auth)
 
     this.layout = Object.assign({
