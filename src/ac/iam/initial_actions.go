@@ -87,6 +87,7 @@ var ActionIDNameMap = map[ActionID]string{
 	CreateProject:                       "项目新建",
 	EditProject:                         "项目编辑",
 	DeleteProject:                       "项目删除",
+	ViewProject:                         "项目查看",
 	ViewCloudArea:                       "云区域查看",
 	CreateCloudArea:                     "云区域创建",
 	EditCloudArea:                       "云区域编辑",
@@ -582,7 +583,7 @@ func genResourcePoolHostActions() []ResourceAction {
 		Name:                 ActionIDNameMap[ViewResourcePoolHost],
 		NameEn:               "View Resource Pool Hosts",
 		Type:                 View,
-		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
+		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
 	})
@@ -836,7 +837,7 @@ func genProjectActions() []ResourceAction {
 		NameEn:               "Edit Project",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{projectResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewProject},
 		Version:              1,
 	})
 
@@ -845,6 +846,16 @@ func genProjectActions() []ResourceAction {
 		Name:                 ActionIDNameMap[DeleteProject],
 		NameEn:               "Delete Project",
 		Type:                 Delete,
+		RelatedResourceTypes: []RelateResourceType{projectResource},
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   ViewProject,
+		Name:                 ActionIDNameMap[ViewProject],
+		NameEn:               "View Project",
+		Type:                 View,
 		RelatedResourceTypes: []RelateResourceType{projectResource},
 		RelatedActions:       nil,
 		Version:              1,

@@ -83,6 +83,29 @@ func (s *Service) SearchObjectBatch(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	query := &metadata.QueryCondition{
+		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit},
+		Condition: mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: data.ObjIDs}},
+		Fields:    []string{common.BKFieldID},
+	}
+	modelResp, err := s.Engine.CoreAPI.CoreService().Model().ReadModel(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// authorize
+	authResources := make([]meta.ResourceAttribute, len(modelResp.Info))
+	for k, v := range modelResp.Info {
+		authResources[k] = meta.ResourceAttribute{Basic: meta.Basic{InstanceID: v.ID, Type: meta.Model,
+			Action: meta.FindMany}}
+	}
+	if authResp, authorized := s.AuthManager.Authorize(ctx.Kit, authResources...); !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	resp, err := s.Logics.AttributeOperation().FindObjectBatch(ctx.Kit, data.ObjIDs)
 	if err != nil {
 		ctx.RespAutoError(err)
@@ -152,6 +175,17 @@ func (s *Service) SearchObject(ctx *rest.Contexts) {
 	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModel(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		ctx.RespAutoError(err)
+		return
+	}
+
+	// authorize
+	authResources := make([]meta.ResourceAttribute, len(resp.Info))
+	for k, v := range resp.Info {
+		authResources[k] = meta.ResourceAttribute{Basic: meta.Basic{InstanceID: v.ID, Type: meta.Model,
+			Action: meta.Find}}
+	}
+	if authResp, authorized := s.AuthManager.Authorize(ctx.Kit, authResources...); !authorized {
+		ctx.RespNoAuth(authResp)
 		return
 	}
 	ctx.RespEntity(resp.Info)
@@ -298,6 +332,16 @@ func (s *Service) SearchModel(ctx *rest.Contexts) {
 		return
 	}
 
+	// authorize
+	authResources := make([]meta.ResourceAttribute, len(resp.Info))
+	for k, v := range resp.Info {
+		authResources[k] = meta.ResourceAttribute{Basic: meta.Basic{InstanceID: v.ID, Type: meta.Model,
+			Action: meta.Find}}
+	}
+	if authResp, authorized := s.AuthManager.Authorize(ctx.Kit, authResources...); !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
 	ctx.RespEntity(resp)
 }
 
@@ -409,6 +453,16 @@ func (s *Service) SearchObjectWithTotalInfo(ctx *rest.Contexts) {
 	resp, err := s.Logics.ObjectOperation().SearchObjectsWithTotalInfo(ctx.Kit, data.ObjectID, data.ExcludedAsstID)
 	if err != nil {
 		ctx.RespAutoError(err)
+		return
+	}
+
+	// authorize
+	authResources := make([]meta.ResourceAttribute, len(data.ObjectID))
+	for k, v := range data.ObjectID {
+		authResources[k] = meta.ResourceAttribute{Basic: meta.Basic{InstanceID: v, Type: meta.Model, Action: meta.Find}}
+	}
+	if authResp, authorized := s.AuthManager.Authorize(ctx.Kit, authResources...); !authorized {
+		ctx.RespNoAuth(authResp)
 		return
 	}
 	ctx.RespEntity(resp)

@@ -99,6 +99,8 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 		meta.KubeStatefulSet, meta.KubeDaemonSet, meta.KubeGameStatefulSet, meta.KubeGameDeployment, meta.KubeCronJob,
 		meta.KubeJob, meta.KubePodWorkload, meta.KubePod, meta.KubeContainer:
 		return make([]types.Resource, 0), nil
+	case meta.FulltextSearch:
+		return make([]types.Resource, 0), nil
 	default:
 		if IsCMDBSysInstance(a.Basic.Type) {
 			return genSysInstanceResource(act, rscType, a)

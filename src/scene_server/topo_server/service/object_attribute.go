@@ -135,6 +135,8 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 	attrInfos := make([]*metadata.ObjAttDes, 0)
+	unique := make(map[string]struct{}, 0)
+	objIDs := make([]string, 0)
 	for _, attr := range resp.Info {
 		attrInfo := &metadata.ObjAttDes{
 			Attribute: attr,
@@ -148,6 +150,21 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		}
 		attrInfo.PropertyGroupName = grpName
 		attrInfos = append(attrInfos, attrInfo)
+
+		if _, ok := unique[attr.ObjectID]; !ok {
+			objIDs = append(objIDs, attr.ObjectID)
+			unique[attr.ObjectID] = struct{}{}
+		}
+	}
+
+	authResp, authorized, err := s.hasFindModelAuth(ctx.Kit, objIDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
 	}
 
 	ctx.RespEntity(attrInfos)
@@ -303,6 +320,16 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 
 // ListHostModelAttribute list host model's attributes
 func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
+	authResp, authorized, err := s.hasFindModelAuth(ctx.Kit, []string{common.BKInnerObjIDHost})
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	dataWithModelBizID := MapStrWithModelBizID{}
 	if err := ctx.DecodeInto(&dataWithModelBizID); err != nil {
 		ctx.RespAutoError(err)
