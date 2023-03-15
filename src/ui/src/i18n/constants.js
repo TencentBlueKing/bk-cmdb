@@ -14,7 +14,7 @@
 export const LANG_COOKIE_NAME = 'blueking_language'
 
 export const LANG_KEYS = Object.freeze({
-  ZH_CN: 'zh_CN',
+  ZH_CN: 'zh-cn',
   EN: 'en'
 })
 
