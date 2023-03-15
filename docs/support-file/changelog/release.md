@@ -1,4 +1,4 @@
-## [Version: 3.10.x-feature-agent-id-alpha11] - 2023-02-10
+## [Version: 3.10.x-feature-agent-id-alpha12] - 2023-03-15
 **新增功能**
 - 支持通过IPv6字段进行主机搜索
 - ipv6单栈场景下支持设备mac地址的上报更新
