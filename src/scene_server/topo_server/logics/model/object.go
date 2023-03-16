@@ -592,6 +592,7 @@ func (o *object) isClassificationExist(kit *rest.Kit, clsID string) (bool, error
 func (o *object) createDefaultAttrs(kit *rest.Kit, isMainline bool, obj *metadata.Object,
 	groupData metadata.Group) ([]uint64, error) {
 
+	var isMultiple bool
 	attrs := make([]metadata.Attribute, 0)
 	attrs = append(attrs, metadata.Attribute{
 		ObjectID:          obj.ObjectID,
@@ -607,6 +608,7 @@ func (o *object) createDefaultAttrs(kit *rest.Kit, isMainline bool, obj *metadat
 		PropertyID:        common.GetInstNameField(obj.ObjectID),
 		PropertyName:      common.DefaultInstName,
 		OwnerID:           kit.SupplierAccount,
+		IsMultiple:        &isMultiple,
 	})
 
 	if isMainline {
@@ -625,6 +627,7 @@ func (o *object) createDefaultAttrs(kit *rest.Kit, isMainline bool, obj *metadat
 			PropertyID:        common.BKInstParentStr,
 			PropertyName:      common.BKInstParentStr,
 			OwnerID:           kit.SupplierAccount,
+			IsMultiple:        &isMultiple,
 		})
 	}
 
