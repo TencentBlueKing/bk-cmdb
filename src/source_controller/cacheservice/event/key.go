@@ -466,6 +466,30 @@ var KubePodKey = Key{
 	},
 }
 
+var projectFields = []string{common.BKFieldID, common.BKProjectNameField}
+
+// ProjectKey project event watch key
+var ProjectKey = Key{
+	namespace:  watchCacheNamespace + common.BKInnerObjIDProject,
+	collection: common.BKTableNameBaseProject,
+	ttlSeconds: 6 * 60 * 60,
+	validator: func(doc []byte) error {
+		fields := gjson.GetManyBytes(doc, projectFields...)
+		for idx := range projectFields {
+			if !fields[idx].Exists() {
+				return fmt.Errorf("field %s not exist", projectFields[idx])
+			}
+		}
+		return nil
+	},
+	instName: func(doc []byte) string {
+		return gjson.GetBytes(doc, common.BKProjectNameField).String()
+	},
+	instID: func(doc []byte) int64 {
+		return gjson.GetBytes(doc, common.BKFieldID).Int()
+	},
+}
+
 // Key TODO
 type Key struct {
 	namespace string

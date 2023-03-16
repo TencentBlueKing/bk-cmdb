@@ -280,6 +280,21 @@ func genResourceManageActionGroups() []ActionGroup {
 					},
 				},
 				{
+					Name:   "项目",
+					NameEn: "Project",
+					Actions: []ActionWithID{
+						{
+							ID: CreateProject,
+						},
+						{
+							ID: EditProject,
+						},
+						{
+							ID: DeleteProject,
+						},
+					},
+				},
+				{
 					Name:   "业务集",
 					NameEn: "BizSet",
 					Actions: []ActionWithID{
@@ -402,6 +417,9 @@ func genResourceManageActionGroups() []ActionGroup {
 						},
 						{
 							ID: WatchKubePodEvent,
+						},
+						{
+							ID: WatchProjectEvent,
 						},
 					},
 				},

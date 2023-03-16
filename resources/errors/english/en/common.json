@@ -11,6 +11,7 @@
     "1199009": "'%s' parameters must be integral",
     "1199010": "'%s' unassigned",
     "1199011": "'%s' the parameter is invalid or does not exist",
+    "1199012": "'%s' field type not support is multiple, please set the parameter false",
     "1199013": "Failed to read Data field data",
     "1199014": "duplicated instances exist, fields [%s] duplicated",
     "1199015": "Data out of bounds",
@@ -86,6 +87,7 @@
     "1199088": "Failed to operate Redis cache",
     "1199089": "the length of array %s is wrong, the length must be in range 1~%d",
     "1199090": "Regular expression's type assertion failed",
+    "1199091": "current field type status is single choice, please set reasonable data",
 
     "1109001": "save audit log failed",
     "1109002": "take audit log snapshot failed",

@@ -66,6 +66,7 @@
             'cloud_area',
             'cloud_account',
             'cloud_sync_task',
+            'project'
           ]),
           other: new Set([
             'model_group',

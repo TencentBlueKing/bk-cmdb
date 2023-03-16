@@ -85,6 +85,9 @@ var ActionIDNameMap = map[ActionID]string{
 	ViewBizSet:                          "业务集查看",
 	AccessBizSet:                        "业务集访问",
 	ViewCloudArea:                       "云区域查看",
+	CreateProject:                       "项目新建",
+	EditProject:                         "项目编辑",
+	DeleteProject:                       "项目删除",
 	CreateCloudArea:                     "云区域创建",
 	EditCloudArea:                       "云区域编辑",
 	DeleteCloudArea:                     "云区域删除",
@@ -128,6 +131,7 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchKubeNamespaceEvent:             "容器命名空间事件监听",
 	WatchKubeWorkloadEvent:              "容器工作负载事件监听",
 	WatchKubePodEvent:                   "容器Pod事件监听",
+	WatchProjectEvent:                   "项目事件监听",
 	GlobalSettings:                      "全局设置",
 	CreateContainerCluster:              "容器集群新建",
 	EditContainerCluster:                "容器集群编辑",
@@ -172,6 +176,7 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genResourcePoolDirectoryActions()...)
 	resourceActionList = append(resourceActionList, genBusinessActions()...)
 	resourceActionList = append(resourceActionList, genBizSetActions()...)
+	resourceActionList = append(resourceActionList, genProjectActions()...)
 	resourceActionList = append(resourceActionList, genCloudAreaActions()...)
 	resourceActionList = append(resourceActionList, genCloudAccountActions()...)
 	resourceActionList = append(resourceActionList, genCloudResourceTaskActions()...)
@@ -804,6 +809,50 @@ func genBizSetActions() []ResourceAction {
 	return actions
 }
 
+func genProjectActions() []ResourceAction {
+	projectResource := RelateResourceType{
+		SystemID: SystemIDCMDB,
+		ID:       Project,
+		InstanceSelections: []RelatedInstanceSelection{{
+			SystemID: SystemIDCMDB,
+			ID:       ProjectSelection,
+		}},
+	}
+
+	actions := make([]ResourceAction, 0)
+	actions = append(actions, ResourceAction{
+		ID:                   CreateProject,
+		Name:                 ActionIDNameMap[CreateProject],
+		NameEn:               "Create Project",
+		Type:                 Create,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   EditProject,
+		Name:                 ActionIDNameMap[EditProject],
+		NameEn:               "Edit Project",
+		Type:                 Edit,
+		RelatedResourceTypes: []RelateResourceType{projectResource},
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   DeleteProject,
+		Name:                 ActionIDNameMap[DeleteProject],
+		NameEn:               "Delete Project",
+		Type:                 Delete,
+		RelatedResourceTypes: []RelateResourceType{projectResource},
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	return actions
+}
+
 func genCloudAreaActions() []ResourceAction {
 	selection := []RelatedInstanceSelection{{
 		SystemID: SystemIDCMDB,
@@ -1311,6 +1360,14 @@ func genEventWatchActions() []ResourceAction {
 		ID:      WatchPlatEvent,
 		Name:    ActionIDNameMap[WatchPlatEvent],
 		NameEn:  "Cloud Area Event Listen",
+		Type:    View,
+		Version: 1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:      WatchProjectEvent,
+		Name:    ActionIDNameMap[WatchProjectEvent],
+		NameEn:  "Project Event Listen",
 		Type:    View,
 		Version: 1,
 	})

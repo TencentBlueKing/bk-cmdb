@@ -255,6 +255,20 @@ func buildAttrByPropertyType(rid, fieldName, cellValue string, rowIndex int, fie
 		if option, optionOk := field.Option.([]interface{}); optionOk {
 			result[fieldName] = getEnumIDByName(cellValue, option)
 		}
+	case common.FieldTypeEnumMulti:
+		option, optionOK := field.Option.([]interface{})
+		if !optionOK {
+			break
+		}
+		cellValueList := strings.Split(cellValue, "\n")
+		cellIDList := make([]string, 0)
+		for _, cellName := range cellValueList {
+			cellID := getEnumIDByName(cellName, option)
+			cellIDList = append(cellIDList, cellID)
+		}
+		result[fieldName] = cellIDList
+	case common.FieldTypeEnumQuote:
+		result[fieldName] = strings.Split(cellValue, "\n")
 	case common.FieldTypeInt:
 		// convertor int not err, set field value to correct type
 		if intVal, err := util.GetInt64ByInterface(result[fieldName]); err != nil {

@@ -43,7 +43,9 @@ export const IAM_VIEWS = {
   // 云账户列表
   CLOUD_ACCOUNT: 'sys_cloud_account',
   // 云发现任务
-  CLOUD_RESOURCE_TASK: 'sys_cloud_resource_task'
+  CLOUD_RESOURCE_TASK: 'sys_cloud_resource_task',
+  // 项目
+  PROJECT: 'project'
 }
 
 export const IAM_VIEWS_NAME = {
@@ -63,7 +65,8 @@ export const IAM_VIEWS_NAME = {
   [IAM_VIEWS.SET_TEMPLATE]: ['集群模板', 'Set Template'],
   [IAM_VIEWS.CLOUD_AREA]: ['云区域', 'Cloud Area'],
   [IAM_VIEWS.CLOUD_ACCOUNT]: ['云账户', 'Cloud Account'],
-  [IAM_VIEWS.CLOUD_RESOURCE_TASK]: ['云资源发现任务', 'Cloud Resource Task']
+  [IAM_VIEWS.CLOUD_RESOURCE_TASK]: ['云资源发现任务', 'Cloud Resource Task'],
+  [IAM_VIEWS.PROJECT]: ['项目', 'Project']
 }
 
 /**
@@ -715,6 +718,37 @@ export const IAM_ACTIONS = {
     relation: [{
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
+  },
+
+  // 项目
+  C_PROJECT: {
+    id: 'create_project',
+    name: ['项目创建', 'Create Project'],
+    cmdb_action: 'project.create'
+  },
+  U_PROJECT: {
+    id: 'edit_project',
+    name: ['项目编辑', 'Update Project'],
+    cmdb_action: 'project.update',
+    relation: [{
+      view: IAM_VIEWS.PROJECT,
+      instances: [IAM_VIEWS.PROJECT]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
+  },
+  R_PROJECT: {
+    id: 'view_project',
+    name: ['项目查询', 'Search Project'],
+    cmdb_action: 'project.findMany',
+    relation: [{
+      view: IAM_VIEWS.PROJECT,
+      instances: [IAM_VIEWS.PROJECT]
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
       resource_id: relationIds[0]

@@ -272,6 +272,22 @@ func (s *Service) initResourceDirectory(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+func (s *Service) initProject(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/project", Handler: s.CreateProject})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/project", Handler: s.UpdateProject})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/project", Handler: s.SearchProject})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/project", Handler: s.DeleteProject})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/project/bk_project_id",
+		Handler: s.UpdateProjectID})
+
+	utility.AddToRestfulWebService(web)
+}
+
 func (s *Service) initService(web *restful.WebService) {
 	s.initAssociation(web)
 	s.initAuditLog(web)
@@ -284,6 +300,7 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initObjectAttribute(web)
 	s.initObjectGroup(web)
 	s.initIdentifier(web)
+	s.initProject(web)
 
 	s.initBusinessObject(web)
 	s.initBusinessClassification(web)

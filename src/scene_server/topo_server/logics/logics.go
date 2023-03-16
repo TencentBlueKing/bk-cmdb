@@ -42,6 +42,7 @@ type Logics interface {
 	BusinessSetOperation() inst.BusinessSetOperationInterface
 	SetTemplateOperation() settemplate.SetTemplate
 	KubeOperation() kube.KubeOperationInterface
+	ProjectOperation() inst.ProjectOperationInterface
 }
 
 type logics struct {
@@ -61,6 +62,7 @@ type logics struct {
 	businessSet       inst.BusinessSetOperationInterface
 	setTemplate       settemplate.SetTemplate
 	kube              kube.KubeOperationInterface
+	project           inst.ProjectOperationInterface
 }
 
 // New create a logics manager
@@ -82,7 +84,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	businessSetOperation := inst.NewBusinessSetOperation(client, authManager)
 	kubeOperation := kube.NewClusterOperation(client, authManager)
 	setTemplate := settemplate.NewSetTemplate(client)
-
+	projectOperation := inst.NewProjectOperation(client, authManager)
 	instOperation.SetProxy(instAssociationOperation)
 	instAssociationOperation.SetProxy(instOperation)
 	associationOperation.SetProxy(objectOperation, instOperation, instAssociationOperation)
@@ -91,8 +93,10 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	setOperation.SetProxy(instOperation, moduleOperation)
 	moduleOperation.SetProxy(instOperation)
 	attributeOperation.SetProxy(groupOperation, objectOperation)
+	objectOperation.SetProxy(attributeOperation)
 	businessOperation.SetProxy(instOperation, moduleOperation, setOperation)
 	businessSetOperation.SetProxy(instOperation)
+	projectOperation.SetProxy(instOperation)
 	return &logics{
 		classification:    classificationOperation,
 		set:               setOperation,
@@ -110,6 +114,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		businessSet:       businessSetOperation,
 		setTemplate:       setTemplate,
 		kube:              kubeOperation,
+		project:           projectOperation,
 	}
 }
 
@@ -191,4 +196,9 @@ func (l *logics) KubeOperation() kube.KubeOperationInterface {
 // SetTemplateOperation set template operation
 func (l *logics) SetTemplateOperation() settemplate.SetTemplate {
 	return l.setTemplate
+}
+
+// ProjectOperation return a inst provide ProjectOperation
+func (l *logics) ProjectOperation() inst.ProjectOperationInterface {
+	return l.project
 }

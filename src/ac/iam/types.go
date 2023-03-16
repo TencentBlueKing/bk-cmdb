@@ -247,6 +247,8 @@ const (
 	BizSetTemplate TypeID = "biz_set_template"
 	// BizHostApply TODO
 	BizHostApply TypeID = "biz_host_apply"
+	// Project project type id
+	Project TypeID = "project"
 )
 
 // ResourceType TODO
@@ -406,6 +408,13 @@ const (
 
 	// ViewCloudArea view cloud area
 	ViewCloudArea ActionID = "view_cloud_area"
+	// CreateProject create project action id
+	CreateProject ActionID = "create_project"
+	// EditProject edit project action id
+	EditProject ActionID = "edit_project"
+	// DeleteProject delete project action id
+	DeleteProject ActionID = "delete_project"
+
 	// CreateCloudArea TODO
 	CreateCloudArea ActionID = "create_cloud_area"
 	// EditCloudArea TODO
@@ -491,6 +500,8 @@ const (
 	WatchBizSetEvent ActionID = "watch_biz_set_event"
 	// WatchPlatEvent watch cloud area event action id
 	WatchPlatEvent ActionID = "watch_plat_event"
+	// WatchProjectEvent watch project event action id
+	WatchProjectEvent ActionID = "watch_project_event"
 
 	// watch kube related event actions
 
@@ -653,6 +664,8 @@ const (
 	BusinessHostTransferSelection InstanceSelectionID = "business_host_transfer"
 	// BizSetSelection TODO
 	BizSetSelection InstanceSelectionID = "business_set_list"
+	//ProjectSelection project selection
+	ProjectSelection InstanceSelectionID = "project"
 	// BizHostInstanceSelection TODO
 	BizHostInstanceSelection InstanceSelectionID = "biz_host_instance"
 	// BizCustomQuerySelection TODO

@@ -322,6 +322,14 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 		return resp
 	}
 
+	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, modelBizID,
+		common.HostAddMethodExcelDefaultIndex)
+	hosts, err = lgc.handleImportEnumQuoteInst(ctx, header, hosts, fields, rid)
+	if err != nil {
+		blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
+		return resp
+	}
+
 	errMsg, err = lgc.CheckHostsAdded(ctx, header, hosts)
 	if err != nil {
 		blog.Errorf("check host added failed, err: %v, rid: %s", err, rid)
@@ -431,6 +439,14 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 	if len(errMsg) != 0 {
 		return returnByErrCode(defErr, common.CCErrWebFileContentFail, mapstr.MapStr{"error": errMsg},
 			strings.Join(errMsg, ","))
+	}
+
+	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, modelBizID,
+		common.HostAddMethodExcelDefaultIndex)
+	hosts, err = lgc.handleImportEnumQuoteInst(ctx, header, hosts, fields, rid)
+	if err != nil {
+		blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
+		return returnByErrCode(defErr, common.CCErrWebFileContentFail, nil, err.Error())
 	}
 
 	if opType == 1 {

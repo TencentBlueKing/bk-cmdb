@@ -28,10 +28,11 @@ import (
 )
 
 // ValidPropertyOption valid property field option
-func ValidPropertyOption(propertyType string, option interface{}, errProxy ccErr.DefaultCCErrorIf) error {
+func ValidPropertyOption(propertyType string, option interface{}, isMultiple bool,
+	errProxy ccErr.DefaultCCErrorIf) error {
 	switch propertyType {
-	case common.FieldTypeEnum:
-		return ValidFieldTypeEnumOption(option, errProxy)
+	case common.FieldTypeEnum, common.FieldTypeEnumMulti:
+		return ValidFieldTypeEnumOption(option, isMultiple, errProxy)
 	case common.FieldTypeInt:
 		return ValidFieldTypeIntOption(option, errProxy)
 	case common.FieldTypeList:
@@ -43,57 +44,85 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy ccErr
 }
 
 // ValidFieldTypeEnumOption validate enum field type's option
-func ValidFieldTypeEnumOption(option interface{}, errProxy ccErr.DefaultCCErrorIf) error {
-	if nil == option {
+func ValidFieldTypeEnumOption(option interface{}, isMultiple bool, errProxy ccErr.DefaultCCErrorIf) error {
+	if option == nil {
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 	}
 
 	arrOption, ok := option.([]interface{})
-	if false == ok {
-		blog.Errorf(" option %v not enum option", option)
+	if !ok {
+		blog.Errorf("option %v not enum option", option)
 		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 	}
 
 	if len(arrOption) > common.AttributeOptionArrayMaxLength {
-		blog.Errorf(" option array length %d exceeds max length %d", len(arrOption), common.AttributeOptionArrayMaxLength)
+		blog.Errorf("option array length %d exceeds max length %d", len(arrOption),
+			common.AttributeOptionArrayMaxLength)
 		return errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option", common.AttributeOptionArrayMaxLength)
 	}
+
+	var count int
 	for _, o := range arrOption {
 		mapOption, ok := o.(map[string]interface{})
-		if false == ok || mapOption == nil {
+		if !ok || mapOption == nil {
 			blog.Errorf(" option %v not enum option, enum option item must id and name", option)
 			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 		}
 		idVal, idOk := mapOption["id"]
 		if !idOk || idVal == "" {
-			blog.Errorf("enum option id can't be empty", option)
+			blog.Errorf("enum option id can't be empty, option: %+v", option)
 			return errProxy.Errorf(common.CCErrCommParamsNeedSet, "option id")
 		}
 		if idValStr, ok := idVal.(string); !ok {
 			blog.Errorf("idVal %v not string", idVal)
 			return errProxy.Errorf(common.CCErrCommParamsNeedString, "option id")
 		} else if common.AttributeOptionValueMaxLength < utf8.RuneCountInString(idValStr) {
-			blog.Errorf(" option id %s length %d exceeds max length %d", idValStr, utf8.RuneCountInString(idValStr), common.AttributeOptionValueMaxLength)
-			return errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option id", common.AttributeOptionValueMaxLength)
+			blog.Errorf(" option id %s length %d exceeds max length %d", idValStr, utf8.RuneCountInString(idValStr),
+				common.AttributeOptionValueMaxLength)
+			return errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option id",
+				common.AttributeOptionValueMaxLength)
 		}
+
 		nameVal, nameOk := mapOption["name"]
 		if !nameOk || nameVal == "" {
-			blog.Errorf("enum option name can't be empty", option)
+			blog.Errorf("enum option name can't be empty, option: %+v", option)
 			return errProxy.Errorf(common.CCErrCommParamsNeedSet, "option name")
 		}
+
+		isDefault, ok := mapOption["is_default"]
+		if !ok {
+			blog.Errorf("enum option is default can't be empty, option: %+v", option)
+			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option default")
+		}
+		isDefaultVal, ok := isDefault.(bool)
+		if !ok {
+			blog.Errorf("convert enum option is default to bool failed, option: %+v", option)
+			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option default")
+		}
+		if isDefaultVal {
+			count += 1
+		}
+
 		switch mapOption["type"] {
 		case "text":
 			if nameValStr, ok := nameVal.(string); !ok {
 				blog.Errorf(" nameVal %v not string", nameVal)
 				return errProxy.Errorf(common.CCErrCommParamsNeedString, "option name")
 			} else if common.AttributeOptionValueMaxLength < utf8.RuneCountInString(nameValStr) {
-				blog.Errorf(" option name %s length %d exceeds max length %d", nameValStr, utf8.RuneCountInString(nameValStr), common.AttributeOptionValueMaxLength)
-				return errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option name", common.AttributeOptionValueMaxLength)
+				blog.Errorf(" option name %s length %d exceeds max length %d", nameValStr,
+					utf8.RuneCountInString(nameValStr), common.AttributeOptionValueMaxLength)
+				return errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option name",
+					common.AttributeOptionValueMaxLength)
 			}
 		default:
 			blog.Errorf("enum option type must be 'text', current: %v", mapOption["type"])
 			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option type")
 		}
+	}
+
+	if !isMultiple && count != 1{
+		blog.Errorf("field type is single choice, but default value is multiple, count: %d", count)
+		return errProxy.CCError(common.CCErrCommParamsNeedSingleChoice)
 	}
 
 	return nil
@@ -245,6 +274,8 @@ func IsInnerObject(objID string) bool {
 	case common.BKInnerObjIDApp:
 		return true
 	case common.BKInnerObjIDBizSet:
+		return true
+	case common.BKInnerObjIDProject:
 		return true
 	case common.BKInnerObjIDHost:
 		return true
@@ -459,6 +490,19 @@ func ValidModelNameField(value interface{}, field string, errProxy ccErr.Default
 
 	if utf8.RuneCountInString(strValue) > common.AttributeNameMaxLength {
 		return errProxy.Errorf(common.CCErrCommValExceedMaxFailed, field, common.AttributeNameMaxLength)
+	}
+	return nil
+}
+
+// ValidPropertyTypeIsMultiple valid object attr field type is multiple
+func ValidPropertyTypeIsMultiple(propertyType string, isMultiple bool, errProxy ccErr.DefaultCCErrorIf) error {
+	switch propertyType {
+	case common.FieldTypeSingleChar, common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeEnum,
+		common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeLongChar, common.FieldTypeTimeZone,
+		common.FieldTypeBool, common.FieldTypeList:
+		if isMultiple {
+			return errProxy.Errorf(common.CCErrCommFieldTypeNotSupportMultiple, propertyType)
+		}
 	}
 	return nil
 }

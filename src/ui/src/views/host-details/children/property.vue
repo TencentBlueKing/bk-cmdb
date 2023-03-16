@@ -80,8 +80,9 @@
                       :options="property.option || []"
                       :data-vv-name="property.bk_property_id"
                       :data-vv-as="property.bk_property_name"
-                      :placeholder="getPlaceholder(property)"
+                      :placeholder="$tools.getPropertyPlaceholder(property)"
                       :auto-check="false"
+                      :multiple="property.ismultiple"
                       v-bind="$tools.getValidateEvents(property)"
                       v-validate="$tools.getValidateRules(property)"
                       v-model.trim="editState.value"
@@ -238,10 +239,6 @@
           this.hostRelatedRules = []
           console.error(e)
         }
-      },
-      getPlaceholder(property) {
-        const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
-        return this.$t(placeholderTxt, { name: property.bk_property_name })
       },
       isPropertyEditable(property) {
         const isSystemLimited = property.editable && !property.bk_isapi
