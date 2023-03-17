@@ -14,21 +14,30 @@
   <div class="form-label">
     <span class="label-text">{{$t('字段设置')}}</span>
     <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="isEditableShow">
-      <input type="checkbox" tabindex="-1" v-model="localValue.editable" :disabled="isReadOnly || ispre">
-      <span class="cmdb-checkbox-text">
-        {{$t('可编辑')}}
-      </span>
-      <i class="bk-cc-icon icon-cc-tips disabled-tips"
-        v-if="modelId === 'host'"
-        v-bk-tooltips="$t('主机属性设置为不可编辑状态后提示')"></i>
+      <bk-checkbox
+        v-model="localValue.editable"
+        :disabled="isReadOnly || ispre">
+        <span class="cmdb-checkbox-text" v-bk-tooltips="$t('不勾选“可编辑”，则创建实例时，初始化该字段值后不可再编辑')">
+          {{$t('可编辑')}}
+        </span>
+        <i class="bk-cc-icon icon-cc-tips disabled-tips"
+          v-if="modelId === 'host'"
+          v-bk-tooltips="$t('主机属性设置为不可编辑状态后提示')"></i>
+      </bk-checkbox>
     </label>
     <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="isRequiredShow && !isMainLineModel">
-      <input type="checkbox" tabindex="-1" v-model="localValue.isrequired" :disabled="isReadOnly || ispre">
-      <span class="cmdb-checkbox-text">{{$t('必填')}}</span>
+      <bk-checkbox
+        v-model="localValue.isrequired"
+        :disabled="isReadOnly || ispre">
+        <span class="cmdb-checkbox-text">{{$t('必填')}}</span>
+      </bk-checkbox>
     </label>
     <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="isMultipleShow">
-      <input type="checkbox" tabindex="-1" v-model="localValue.multiple" :disabled="isReadOnly || ispre">
-      <span class="cmdb-checkbox-text">{{$t('可多选')}}</span>
+      <bk-checkbox
+        v-model="localValue.multiple"
+        :disabled="isReadOnly || ispre">
+        <span class="cmdb-checkbox-text">{{$t('可多选')}}</span>
+      </bk-checkbox>
     </label>
   </div>
 </template>
