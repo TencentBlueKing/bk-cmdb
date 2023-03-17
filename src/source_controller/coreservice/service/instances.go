@@ -33,7 +33,7 @@ func (s *coreService) CreateOneModelInstance(ctx *rest.Contexts) {
 // CreateManyModelInstances TODO
 func (s *coreService) CreateManyModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.CreateManyModelInstance{}
-	if err := ctx.DecodeInto(&inputData); err !=nil  {
+	if err := ctx.DecodeInto(&inputData); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -85,7 +85,7 @@ func (s *coreService) SearchModelInstances(ctx *rest.Contexts) {
 	}
 
 	dataResult, err := s.core.InstanceOperation().SearchModelInstance(ctx.Kit, objectID, inputData)
-	if err !=nil  {
+	if err != nil {
 		ctx.RespEntityWithError(dataResult, err)
 		return
 	}
@@ -129,7 +129,7 @@ func (s *coreService) DeleteModelInstances(ctx *rest.Contexts) {
 // CascadeDeleteModelInstances TODO
 func (s *coreService) CascadeDeleteModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
-	if err := ctx.DecodeInto(&inputData); err !=nil  {
+	if err := ctx.DecodeInto(&inputData); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}

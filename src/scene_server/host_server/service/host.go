@@ -521,7 +521,6 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
 		return
 	}
-
 	ctx.RespEntity(host)
 }
 

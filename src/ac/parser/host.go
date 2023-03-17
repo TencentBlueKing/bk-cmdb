@@ -327,7 +327,7 @@ const (
 	findHostsWithConditionPattern = "/api/v3/findmany/hosts/search/with_biz"
 
 	// find host for home page, authorize by view resource pool host, **only for ui**
-	findHostsForHomePagePattern    = "/api/v3/findmany/hosts/search/without_biz"
+	findHostsWithoutBizPattern     = "/api/v3/findmany/hosts/search/without_biz"
 	findBizHostsWithoutAppPattern  = "/api/v3/hosts/list_hosts_without_app"
 	findResourcePoolHostsPattern   = "/api/v3/hosts/list_resource_pool_hosts"
 	findHostsDetailsPattern        = "/api/v3/hosts/search/asstdetail"
@@ -656,7 +656,7 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	// find hosts for home page with condition operation.
-	if ps.hitPattern(findHostsForHomePagePattern, http.MethodPost) {
+	if ps.hitPattern(findHostsWithoutBizPattern, http.MethodPost) {
 		bizID, err := ps.parseBusinessID()
 		if err != nil {
 			ps.err = err

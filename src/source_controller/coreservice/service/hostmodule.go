@@ -32,7 +32,7 @@ func (s *coreService) GetHostModulesIDs(ctx *rest.Contexts) {
 	condition := map[string]interface{}{common.BKAppIDField: dat.ApplicationID, common.BKHostIDField: dat.HostID}
 	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
 	moduleIDs, err := s.getModuleIDsByHostID(ctx.Kit, condition)
-	if err !=nil  {
+	if err != nil {
 		blog.Errorf("get host module id failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrGetModule))
 		return
@@ -46,7 +46,7 @@ func (s *coreService) getModuleIDsByHostID(kit *rest.Kit, moduleCond interface{}
 
 	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(moduleCond).Fields(common.BKModuleIDField).
 		All(kit.Ctx, &result)
-	if err !=nil  {
+	if err != nil {
 		blog.Errorf("get module id by host id failed, error: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}

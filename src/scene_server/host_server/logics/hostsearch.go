@@ -977,12 +977,14 @@ func (sh *searchHost) searchByAssociation() errors.CCError {
 func (sh *searchHost) tryParseAppID() {
 	// search appID by cond
 	if -1 != sh.hostSearchParam.AppID && 0 != sh.hostSearchParam.AppID {
-		sh.topoShowSection.app = true
 		sh.conds.appCond.Condition = append(sh.conds.appCond.Condition, metadata.ConditionItem{
 			Field:    common.BKAppIDField,
 			Operator: common.BKDBEQ,
 			Value:    sh.hostSearchParam.AppID,
 		})
+	}
+	if sh.hostSearchParam.AppID != 0 {
+		sh.topoShowSection.app = true
 	}
 }
 

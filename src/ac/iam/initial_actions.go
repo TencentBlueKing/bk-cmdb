@@ -583,11 +583,7 @@ func genResourcePoolHostActions() []ResourceAction {
 		Name:                 ActionIDNameMap[ViewResourcePoolHost],
 		NameEn:               "View Resource Pool Hosts",
 		Type:                 View,
-<<<<<<< HEAD
 		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
-=======
-		RelatedResourceTypes: nil,
->>>>>>> 323a26dca44c1354c52935141b25b9beb4b8c23e
 		RelatedActions:       nil,
 		Version:              1,
 	})
