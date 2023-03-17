@@ -46,7 +46,7 @@ func GetImportNetProperty(
 		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 
-	return GetExcelData(ctx, sheet, fields, nil, true, 0, defLang, nil)
+	return GetExcelData(ctx, sheet, fields, nil, true, 0, defLang)
 }
 
 // BuildNetPropertyExcelFromData build net property data for excel

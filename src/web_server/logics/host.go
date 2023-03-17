@@ -165,14 +165,7 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, req *http.Request, defLang lang.
 		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 
-	departmentMap, err := lgc.getDepartmentMap(req)
-	if err != nil {
-		blog.Errorf("get department failed, err: %v, rid: %s", err, util.GetHTTPCCRequestID(req.Header))
-		return nil, nil, err
-	}
-
-	return GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, 0, defLang,
-		departmentMap)
+	return GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, 0, defLang)
 }
 
 // ImportHosts import host info

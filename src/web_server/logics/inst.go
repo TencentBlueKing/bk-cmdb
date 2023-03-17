@@ -51,18 +51,11 @@ func (lgc *Logics) GetImportInsts(ctx context.Context, f *xlsx.File, objID strin
 		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 
-	departmentMap, err := lgc.getDepartmentMap(req)
-	if err != nil {
-		blog.Errorf("get department failed, err: %v, rid: %s", err, rid)
-		return nil, nil, err
-	}
-
 	if isInst {
-		return GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, headerRow,
-			defLang, departmentMap)
+		return GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true,
+		headerRow, defLang)
 	} else {
-		return GetRawExcelData(ctx, sheet, common.KvMap{"import_from": common.HostAddMethodExcel}, headerRow, defLang,
-			departmentMap)
+		return GetRawExcelData(ctx, sheet, common.KvMap{"import_from": common.HostAddMethodExcel}, headerRow, defLang)
 	}
 }
 

@@ -143,7 +143,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 			common.CCErrWebGetUsernameMapFail, objID).Error(), nil)))
 	}
 
-	org, orgPropertyList, err := s.getDepartment(c, objID)
+	org, orgPropertyList, err := s.getDepartment(c, objID, instInfo)
 	if err != nil {
 		blog.Errorf("get department map and property list failed, err: %+v, rid: %s", err, rid)
 		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetDepartmentMapFail, defErr.Errorf(

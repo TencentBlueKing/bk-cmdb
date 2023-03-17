@@ -224,6 +224,9 @@ func setExcelCellIgnored(sheet *xlsx.Sheet, style *xlsx.Style, row int, col int)
 func replaceDepartmentFullName(rid string, rowMap mapstr.MapStr, org []metadata.DepartmentItem, propertyList []string,
 	defLang language.DefaultCCLanguageIf) (mapstr.MapStr, error) {
 
+	if len(org) == 0 {
+		return rowMap, nil
+	}
 	orgMap := make(map[int64]string)
 	for _, item := range org {
 		orgMap[item.ID] = item.FullName
@@ -239,14 +242,15 @@ func replaceDepartmentFullName(rid string, rowMap mapstr.MapStr, org []metadata.
 		if !ok {
 			blog.Errorf("rowMap[%s] type to array failed, rowMap: %v, rowMap type: %T, rid: %s", property,
 				rowMap[property], rowMap[property], rid)
-			return nil, fmt.Errorf("convert variable rowMap[%s] type to int array failed", property)
+			continue
 		}
 
 		orgName := make([]string, 0)
 		for _, orgID := range orgIDList {
 			id, err := util.GetInt64ByInterface(orgID)
 			if err != nil {
-				blog.Errorf("convert orgID[%v] to int64 failed, type: %T, err: %v, rid: %s", orgID, orgID, err, rid)
+				blog.Errorf("convert orgID[%v] to int64 failed, type: %T, err: %v, rid: %s", orgID, orgID, err,
+					rid)
 				return nil, fmt.Errorf("convert variable orgID[%v] type to int64 failed", orgID)
 			}
 

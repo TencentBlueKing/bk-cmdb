@@ -13,7 +13,8 @@
 package logics
 
 import (
-	"net/http"
+	"bytes"
+	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/configcenter"
@@ -74,29 +75,65 @@ func (lgc *Logics) GetDepartmentProfile(c *gin.Context, config *options.Config) 
 	return &result.Data, nil
 }
 
-func (lgc *Logics) getDepartmentMap(req *http.Request) (map[int64]metadata.DepartmentItem, errors.CCErrorCoder) {
-	// if no esb config, return
-	if !configcenter.IsExist("webServer.esb.addr") {
-		return nil, nil
+// GetAllDepartment get department info from paas
+func (lgc *Logics) GetAllDepartment(c *gin.Context, config *options.Config, orgIDs []int64) (*metadata.DepartmentData,
+	errors.CCErrorCoder) {
+	if config.LoginVersion == common.BKOpenSourceLoginPluginVersion ||
+		config.LoginVersion == common.BKSkipLoginPluginVersion {
+		return &metadata.DepartmentData{}, nil
 	}
 
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(req.Header))
-	rid := commonutil.GetHTTPCCRequestID(req.Header)
+	header := c.Request.Header
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(header))
+	rid := commonutil.GetHTTPCCRequestID(header)
 
-	result, esbErr := esb.EsbClient().User().GetDepartment(req.Context(), req)
-	if esbErr != nil {
-		blog.Errorf("get department by esb client failed, http failed, err: %+v, rid: %s", esbErr, rid)
-		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !result.Result {
-		blog.Errorf("get department by esb client failed, result is false, err: %+v, rid: %s", result, rid)
-		return nil, errors.NewCCError(result.Code, result.Message)
+	orgIDList := lgc.getOrgListStr(orgIDs)
+	params := make(map[string]string, 0)
+	departments := &metadata.DepartmentData{}
+	for _, orgIDStr := range  orgIDList {
+		params["exact_lookups"] = orgIDStr
+		result, esbErr := esb.EsbClient().User().GetAllDepartment(c.Request.Context(), c.Request.Header, params)
+		if esbErr != nil {
+			blog.Errorf("get department by esb client failed, http failed, err: %+v, rid: %s", esbErr, rid)
+			return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if !result.Result {
+			blog.Errorf("get department by esb client failed, result is false, err: %+v, rid: %s", result, rid)
+			return nil, errors.NewCCError(result.Code, result.Message)
+		}
+		departments.Count += result.Data.Count
+		departments.Results = append(departments.Results, result.Data.Results...)
 	}
 
-	dpMap := make(map[int64]metadata.DepartmentItem)
-	for _, item := range result.Data.Results {
-		dpMap[item.ID] = item
+	return departments, nil
+}
+
+const getOrganizationMaxLength = 500
+
+// getOrgListStr get org list str
+func (lgc *Logics) getOrgListStr(orgIDList []int64) []string {
+	orgListStr := make([]string, 0)
+
+	orgBuffer := bytes.Buffer{}
+	for _, orgID := range orgIDList {
+		if orgBuffer.Len()+len(strconv.Itoa(int(orgID))) > getOrganizationMaxLength {
+			orgBuffer.WriteString(strconv.Itoa(int(orgID)))
+			orgStr := orgBuffer.String()
+			orgListStr = append(orgListStr, orgStr)
+			orgBuffer.Reset()
+			continue
+		}
+
+		orgBuffer.WriteString(strconv.Itoa(int(orgID)))
+		orgBuffer.WriteByte(',')
 	}
 
-	return dpMap, nil
+	if orgBuffer.Len() == 0 {
+		return []string{}
+	}
+
+	orgStr := orgBuffer.String()
+	orgListStr = append(orgListStr, orgStr[:len(orgStr)-1])
+
+	return orgListStr
 }

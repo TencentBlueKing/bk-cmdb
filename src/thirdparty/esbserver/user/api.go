@@ -122,6 +122,27 @@ func (p *user) GetDepartment(ctx context.Context, q *http.Request) (resp *metada
 	return
 }
 
+// GetAllDepartment get department from pass
+func (p *user) GetAllDepartment(ctx context.Context, h http.Header, params map[string]string) (
+	resp *metadata.EsbDepartmentResponse, err error) {
+
+	resp = &metadata.EsbDepartmentResponse{}
+	subPath := "/v2/usermanage/list_departments/"
+	h.Set("Accept", "application/json")
+
+	err = p.client.Get().
+		WithContext(ctx).
+		// 确保只使用分页查找，指定一个大page_size同样能达到不分页的效果
+		WithParams(params).
+		SubResourcef(subPath).
+		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
 // get department profile from pass
 func (p *user) GetDepartmentProfile(ctx context.Context, q *http.Request) (resp *metadata.EsbDepartmentProfileResponse, err error) {
 	resp = &metadata.EsbDepartmentProfileResponse{}

@@ -223,8 +223,8 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 }
 
 func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fields map[string]Property,
-	defFields common.KvMap, nameIndexMap map[int]string, defLang lang.DefaultCCLanguageIf,
-	department map[int64]metadata.DepartmentItem) (map[string]interface{}, []string) {
+	defFields common.KvMap, nameIndexMap map[int]string, defLang lang.DefaultCCLanguageIf) (map[string]interface{},
+	[]string) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	result := make(map[string]interface{})
@@ -272,8 +272,7 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 			continue
 		}
 
-		result, errMsg = buildAttrByPropertyType(rid, fieldName, cell.Value, rowIndex, field, result, department,
-			defLang, errMsg)
+		result, errMsg = buildAttrByPropertyType(rid, fieldName, cell.Value, rowIndex, field, result, defLang, errMsg)
 	}
 	if len(errMsg) != 0 {
 		return nil, errMsg
@@ -290,8 +289,7 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 }
 
 func buildAttrByPropertyType(rid, fieldName, cellValue string, rowIndex int, field Property,
-	result map[string]interface{}, department map[int64]metadata.DepartmentItem, defLang lang.DefaultCCLanguageIf,
-	errMsg []string) (map[string]interface{}, []string) {
+	result map[string]interface{}, defLang lang.DefaultCCLanguageIf, errMsg []string) (map[string]interface{}, []string) {
 
 	switch field.PropertyType {
 	case common.FieldTypeBool:
@@ -322,7 +320,34 @@ func buildAttrByPropertyType(rid, fieldName, cellValue string, rowIndex int, fie
 				result[fieldName], err, rid)
 		}
 	case common.FieldTypeOrganization:
-		result, errMsg = checkOrgnization(result, department, rowIndex, defLang, errMsg, fieldName, rid)
+		orgStr := util.GetStrByInterface(result[fieldName])
+		if len(orgStr) <= 0 {
+			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
+				defLang.Languagef("organization_type_invalid"))
+			break
+		}
+		orgItems := strings.Split(orgStr, ",")
+		org := make([]int64, len(orgItems))
+		for i, v := range orgItems {
+			var err error
+			orgID := orgBracketsRegexp.FindStringSubmatch(v)
+			if len(orgID) != 3 {
+				blog.Errorf("regular matching is empty, please enter the correct content, field: %s, value: %s, " +
+					"rid: %s", fieldName, result[fieldName], rid)
+				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
+					defLang.Languagef("organization_type_invalid"))
+				break
+			}
+
+			if org[i], err = strconv.ParseInt(orgID[1], 10, 64); err != nil {
+				blog.Errorf("get excel cell value error, field: %s, value: %s, err: %v, rid: %s", fieldName,
+					result[fieldName], "not a valid organization type", rid)
+				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
+					defLang.Languagef("organization_type_invalid"))
+				break
+			}
+		}
+		result[fieldName] = org
 	case common.FieldTypeUser:
 		// convert userNames,  eg: " admin(admin),xiaoming(小明 ),leo(li hong),  " => "admin,xiaoming,leo"
 		userNames := util.GetStrByInterface(result[fieldName])
@@ -338,68 +363,7 @@ func buildAttrByPropertyType(rid, fieldName, cellValue string, rowIndex int, fie
 	return result, errMsg
 }
 
-func checkOrgnization(result map[string]interface{}, department map[int64]metadata.DepartmentItem, rowIndex int,
-	defLang lang.DefaultCCLanguageIf, errMsg []string, fieldName, rid string) (map[string]interface{}, []string) {
-
-	if len(department) == 0 {
-		blog.Debug("no department in paas, rid: %s", rid)
-		errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
-			defLang.Languagef("nonexistent_org"))
-		return result, errMsg
-	}
-	// convert Organization,  eg: "[1]总公司,[2]分公司" => "1,2"
-	orgStr := util.GetStrByInterface(result[fieldName])
-	if len(orgStr) <= 0 {
-		blog.Debug("get excel cell value failed, field:%s, value:%s, err:%v, rid: %s", fieldName,
-			result[fieldName], "not a valid organization type", rid)
-		errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
-			defLang.Languagef("organization_type_invalid"))
-		return result, errMsg
-	}
-	orgItems := strings.Split(orgStr, ",")
-	org := make([]int64, len(orgItems))
-	for i, v := range orgItems {
-		var err error
-		orgID := orgBracketsRegexp.FindStringSubmatch(v)
-		if len(orgID) != 3 {
-			blog.Errorf("regular matching is empty, please enter the correct content, field: %s, value: %s, rid: %s",
-				fieldName, result[fieldName], rid)
-			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
-				defLang.Languagef("organization_type_invalid"))
-			break
-		}
-
-		if org[i], err = strconv.ParseInt(orgID[1], 10, 64); err != nil {
-			blog.Debug("get excel cell value error, field: %s, value: %s, err: %v, rid: %s", fieldName,
-				result[fieldName], "not a valid organization type", rid)
-			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
-				defLang.Languagef("organization_type_invalid"))
-			break
-		}
-
-		dp, exist := department[org[i]]
-		if !exist {
-			blog.Debug("get excel cell value error, field:%s, value:%s, err:%v, rid: %s", fieldName,
-				result[fieldName], "organization does not exist", rid)
-			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
-				defLang.Languagef("nonexistent_org"))
-			break
-		}
-
-		if dp.Name != orgID[2] && dp.FullName != orgID[2] {
-			blog.Debug("get excel cell value error, field:%s, value:%s, err:%v, rid: %s", fieldName,
-				result[fieldName], "organization name or full_name does not match", rid)
-			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
-				defLang.Languagef("organization_type_invalid"))
-			break
-		}
-	}
-	result[fieldName] = org
-
-	return result, errMsg
-}
-
-// ProductExcelHeader Excel文件头部，
+// productExcelHeader Excel文件头部，
 func productExcelHeader(ctx context.Context, fields map[string]Property, filter []string, xlsxFile *xlsx.File,
 	sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
 	rid := util.ExtractRequestIDFromContext(ctx)
