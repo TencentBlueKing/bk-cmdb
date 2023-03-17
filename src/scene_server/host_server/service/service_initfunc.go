@@ -116,8 +116,13 @@ func (s *Service) initHost(web *restful.WebService) {
 
 	// search host for front page, **only for ui**
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/findmany/hosts/search/without_biz",
-		Handler: s.SearchHostWithOutBiz})
+		Path:    "/findmany/hosts/search/resource",
+		Handler: s.SearchHostForResource})
+
+	// search host for front page, **only for ui**
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/findmany/hosts/search/noauth",
+		Handler: s.SearchHostWithNoAuth})
 
 	// search host by biz set, **only for ui**
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/biz_set/{bk_biz_set_id}",

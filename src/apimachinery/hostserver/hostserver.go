@@ -59,7 +59,11 @@ type HostServerClientInterface interface {
 	GetDefaultCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 	CloneHostProperty(ctx context.Context, h http.Header, dat *metadata.CloneHostPropertyParams) (resp *metadata.Response, err error)
 	MoveSetHost2IdleModule(ctx context.Context, h http.Header, dat *metadata.SetHostConfigParams) (resp *metadata.Response, err error)
-	SearchHost(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error)
+	SearchHostWithoutBiz(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (
+		resp *metadata.SearchHostResult, err error)
+	SearchHostWithBiz(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (
+		resp *metadata.SearchHostResult, err error)
+
 	SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error)
 	UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	UpdateHostPropertyBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)

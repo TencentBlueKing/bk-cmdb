@@ -505,7 +505,7 @@ func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 	ctx.RespEntity(success)
 }
 
-// SearchHost TODO
+// SearchHost host query by business condition.
 func (s *Service) SearchHost(ctx *rest.Contexts) {
 
 	body := new(meta.HostCommonSearch)
@@ -515,18 +515,21 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 	}
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	host, err := s.Logic.SearchHost(ctx.Kit, body, true)
-	if err != nil {
+	host, authRsp, err := s.Logic.SearchHost(ctx.Kit, body, true)
+	if err != nil && err != ac.NoAuthorizeError {
 		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
+		ctx.RespAutoError(err)
 		return
 	}
-
+	if err == ac.NoAuthorizeError {
+		ctx.RespNoAuth(authRsp)
+		return
+	}
 	ctx.RespEntity(host)
 }
 
-// SearchHostWithOutBiz host Search for the home hage
-func (s *Service) SearchHostWithOutBiz(ctx *rest.Contexts) {
+// SearchHostWithNoAuth host Search with no auth
+func (s *Service) SearchHostWithNoAuth(ctx *rest.Contexts) {
 
 	body := new(meta.HostCommonSearch)
 	if err := ctx.DecodeInto(&body); nil != err {
@@ -535,10 +538,29 @@ func (s *Service) SearchHostWithOutBiz(ctx *rest.Contexts) {
 	}
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	host, err := s.Logic.SearchHost(ctx.Kit, body, false)
+	host, _, err := s.Logic.SearchHost(ctx.Kit, body, false)
 	if err != nil {
 		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(host)
+}
+
+// SearchHostForResource host Search for the home hage
+func (s *Service) SearchHostForResource(ctx *rest.Contexts) {
+
+	body := new(meta.HostCommonSearch)
+	if err := ctx.DecodeInto(&body); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	host, err := s.Logic.SearchHostForResource(ctx.Kit, body)
+	if err != nil {
+		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -555,7 +577,7 @@ func (s *Service) SearchHostWithBizSet(ctx *rest.Contexts) {
 	}
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	host, err := s.Logic.SearchHost(ctx.Kit, body, false)
+	host, _, err := s.Logic.SearchHost(ctx.Kit, body, false)
 	if err != nil {
 		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
@@ -581,13 +603,12 @@ func (s *Service) SearchHostWithAsstDetail(ctx *rest.Contexts) {
 		return
 	}
 
-	host, err := s.Logic.SearchHost(ctx.Kit, body, false)
+	host, _, err := s.Logic.SearchHost(ctx.Kit, body, false)
 	if err != nil {
 		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-
 	ctx.RespEntity(host)
 }
 

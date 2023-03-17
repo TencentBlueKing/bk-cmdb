@@ -405,9 +405,6 @@ const (
 	ViewBizSet ActionID = "view_business_set"
 	// AccessBizSet TODO
 	AccessBizSet ActionID = "access_business_set"
-
-	// ViewCloudArea view cloud area
-	ViewCloudArea ActionID = "view_cloud_area"
 	// CreateProject create project action id
 	CreateProject ActionID = "create_project"
 	// EditProject edit project action id
