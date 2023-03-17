@@ -223,21 +223,21 @@ func (s *Service) UpdateModule(ctx *rest.Contexts) {
 	}
 
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("parse the biz id from path, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
 
 	setID, err := strconv.ParseInt(ctx.Request.PathParameter("set_id"), 10, 64)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("parse the set id from the path, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "set id"))
 		return
 	}
 
 	moduleID, err := strconv.ParseInt(ctx.Request.PathParameter("module_id"), 10, 64)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("parse the module id from the path, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "module id"))
 		return
