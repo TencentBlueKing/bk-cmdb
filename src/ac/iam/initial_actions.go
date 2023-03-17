@@ -84,10 +84,11 @@ var ActionIDNameMap = map[ActionID]string{
 	DeleteBizSet:                        "业务集删除",
 	ViewBizSet:                          "业务集查看",
 	AccessBizSet:                        "业务集访问",
-	ViewCloudArea:                       "云区域查看",
 	CreateProject:                       "项目新建",
 	EditProject:                         "项目编辑",
 	DeleteProject:                       "项目删除",
+	ViewProject:                         "项目查看",
+	ViewCloudArea:                       "云区域查看",
 	CreateCloudArea:                     "云区域创建",
 	EditCloudArea:                       "云区域编辑",
 	DeleteCloudArea:                     "云区域删除",
@@ -582,7 +583,11 @@ func genResourcePoolHostActions() []ResourceAction {
 		Name:                 ActionIDNameMap[ViewResourcePoolHost],
 		NameEn:               "View Resource Pool Hosts",
 		Type:                 View,
+<<<<<<< HEAD
 		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
+=======
+		RelatedResourceTypes: nil,
+>>>>>>> 323a26dca44c1354c52935141b25b9beb4b8c23e
 		RelatedActions:       nil,
 		Version:              1,
 	})
@@ -836,7 +841,7 @@ func genProjectActions() []ResourceAction {
 		NameEn:               "Edit Project",
 		Type:                 Edit,
 		RelatedResourceTypes: []RelateResourceType{projectResource},
-		RelatedActions:       nil,
+		RelatedActions:       []ActionID{ViewProject},
 		Version:              1,
 	})
 
@@ -845,6 +850,16 @@ func genProjectActions() []ResourceAction {
 		Name:                 ActionIDNameMap[DeleteProject],
 		NameEn:               "Delete Project",
 		Type:                 Delete,
+		RelatedResourceTypes: []RelateResourceType{projectResource},
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   ViewProject,
+		Name:                 ActionIDNameMap[ViewProject],
+		NameEn:               "View Project",
+		Type:                 View,
 		RelatedResourceTypes: []RelateResourceType{projectResource},
 		RelatedActions:       nil,
 		Version:              1,

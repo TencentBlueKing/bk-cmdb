@@ -126,6 +126,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 	case meta.KubeCluster, meta.KubeNode, meta.KubeNamespace, meta.KubeWorkload, meta.KubeDeployment,
 		meta.KubeStatefulSet, meta.KubeDaemonSet, meta.KubeGameStatefulSet, meta.KubeGameDeployment, meta.KubeCronJob,
 		meta.KubeJob, meta.KubePodWorkload, meta.KubePod, meta.KubeContainer:
+	case meta.FulltextSearch:
 	default:
 		if IsCMDBSysInstance(resourceType) {
 			iamResourceType = TypeID(resourceType)
@@ -199,7 +200,7 @@ func ConvertSysInstanceActionID(resourceType meta.ResourceType, action meta.Acti
 	case meta.Delete:
 		actionType = Delete
 	case meta.Find:
-		return Skip, nil
+		actionType = View
 	default:
 		return Unsupported, fmt.Errorf("unsupported action: %s", action)
 	}
@@ -215,15 +216,15 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Delete:   EditSysModel,
 		meta.Update:   EditSysModel,
 		meta.Create:   EditSysModel,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Find:     ViewSysModel,
+		meta.FindMany: ViewSysModel,
 	},
 	meta.ModelUnique: {
 		meta.Delete:   EditSysModel,
 		meta.Update:   EditSysModel,
 		meta.Create:   EditSysModel,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Find:     ViewSysModel,
+		meta.FindMany: ViewSysModel,
 	},
 	meta.Business: {
 		meta.Archive:              ArchiveBusiness,
@@ -253,8 +254,9 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Delete: EditBusinessLayer,
 	},
 	meta.ModelTopology: {
-		meta.Find:   EditModelTopologyView,
-		meta.Update: EditModelTopologyView,
+		meta.Find:              EditModelTopologyView,
+		meta.Update:            EditModelTopologyView,
+		meta.ModelTopologyView: ViewModelTopo,
 	},
 	meta.MainlineModelTopology: {
 		meta.Find: Skip,
@@ -369,8 +371,8 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Delete:   DeleteSysModel,
 		meta.Update:   EditSysModel,
 		meta.Create:   CreateSysModel,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Find:     ViewSysModel,
+		meta.FindMany: ViewSysModel,
 	},
 	meta.AssociationType: {
 		meta.Delete:   DeleteAssociationType,
@@ -427,8 +429,8 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Create: Skip,
 	},
 	meta.ModelAssociation: {
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Find:     ViewSysModel,
+		meta.FindMany: ViewSysModel,
 		meta.Update:   EditSysModel,
 		meta.Delete:   EditSysModel,
 		meta.Create:   EditSysModel,
@@ -440,7 +442,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Create: Skip,
 	},
 	meta.ModelAttribute: {
-		meta.Find:   Skip,
+		meta.Find:   ViewSysModel,
 		meta.Update: EditSysModel,
 		meta.Delete: DeleteSysModel,
 		meta.Create: CreateSysModel,
@@ -571,10 +573,13 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Find: Skip,
 	},
 	meta.Project: {
-		meta.Find:   Skip,
+		meta.Find:   ViewProject,
 		meta.Update: EditProject,
 		meta.Delete: DeleteProject,
 		meta.Create: CreateProject,
+	},
+	meta.FulltextSearch: {
+		meta.Find: UseFulltextSearch,
 	},
 }
 
