@@ -349,8 +349,8 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Delete:   DeleteCloudArea,
 		meta.Update:   EditCloudArea,
 		meta.Create:   CreateCloudArea,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Find:     ViewCloudArea,
+		meta.FindMany: ViewCloudArea,
 	},
 	meta.CloudAccount: {
 		meta.Delete:   DeleteCloudAccount,
