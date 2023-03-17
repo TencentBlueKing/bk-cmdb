@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -31,6 +32,64 @@ import (
 // this variable is used to accelerate the way to check if a business is resource pool
 // business or not.
 var resourcePoolBusinessID int64
+
+// Authorize cc auth resource, returns no permission response(only when not authorized) and if user is authorized
+func (am *AuthManager) Authorize(kit *rest.Kit, resources ...meta.ResourceAttribute) (
+	*metadata.BaseResp, bool) {
+
+	if !am.Enabled() {
+		return nil, true
+	}
+
+	blog.V(5).Infof("start authorize resources: %+v, rid: %s", resources, kit.Rid)
+
+	// authorize all auth resources
+	user := meta.UserInfo{
+		UserName:        kit.User,
+		SupplierAccount: kit.SupplierAccount,
+	}
+	decisions, err := am.Authorizer.AuthorizeBatch(kit.Ctx, kit.Header, user, resources...)
+	if err != nil {
+		blog.Errorf("authorize failed, resources: %+v, err: %v, rid: %s", resources, err, kit.Rid)
+		return &metadata.BaseResp{
+			Code:   common.CCErrCommCheckAuthorizeFailed,
+			ErrMsg: kit.CCError.Error(common.CCErrCommCheckAuthorizeFailed).Error(),
+			Result: false,
+		}, false
+	}
+
+	authorized := true
+	for _, decision := range decisions {
+		if !decision.Authorized {
+			authorized = false
+			break
+		}
+	}
+
+	if authorized {
+		return nil, true
+	}
+
+	// get permissions that user need to apply for this request
+	permission, err := am.Authorizer.GetPermissionToApply(kit.Ctx, kit.Header, resources)
+	if err != nil {
+		blog.Errorf("get permission to apply failed, resources: %+v, err: %v, rid: %s", resources, err, kit.Rid)
+		return &metadata.BaseResp{
+			Code:   common.CCErrCommCheckAuthorizeFailed,
+			ErrMsg: kit.CCError.Error(common.CCErrCommCheckAuthorizeFailed).Error(),
+			Result: false,
+		}, false
+	}
+
+	blog.Errorf("request is not authorized, need permission: %+v, err: %v, rid: %s", permission, err, kit.Rid)
+
+	return &metadata.BaseResp{
+		Code:        common.CCNoPermission,
+		ErrMsg:      kit.CCError.Error(common.CCErrCommAuthNotHavePermission).Error(),
+		Result:      false,
+		Permissions: permission,
+	}, false
+}
 
 // getResourcePoolBusinessID to get bizID of resource pool
 // this function is concurrent safe.
