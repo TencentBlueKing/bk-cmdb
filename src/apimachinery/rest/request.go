@@ -214,7 +214,7 @@ func (r *Request) Body(body interface{}) *Request {
 	}
 
 	data, err := json.Marshal(body)
-	if nil != err {
+	if err != nil {
 		r.err = err
 		r.body = []byte("")
 		return r
@@ -438,7 +438,7 @@ func (r *Result) Into(obj interface{}) error {
 
 	if 0 != len(r.Body) {
 		err := json.Unmarshal(r.Body, obj)
-		if nil != err {
+		if err != nil {
 			if r.StatusCode >= 300 {
 				return fmt.Errorf("http request err: %s", string(r.Body))
 			}

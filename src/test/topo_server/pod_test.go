@@ -97,7 +97,7 @@ var _ = Describe("pod test", func() {
 				Flag:  "bk_host_innerip|bk_host_outerip",
 			},
 		}
-		hostRep, err := hostServerClient.SearchHost(context.Background(), header, searchOpt)
+		hostRep, err := hostServerClient.SearchHostWithBiz(context.Background(), header, searchOpt)
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostRep.Result).To(Equal(true))

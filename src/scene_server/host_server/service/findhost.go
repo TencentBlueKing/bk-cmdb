@@ -13,10 +13,12 @@
 package service
 
 import (
+	sysErr "errors"
 	"fmt"
 	"sort"
 	"strconv"
 
+	acMeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -40,6 +42,15 @@ func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 	if bizID == 0 {
 		ctx.RespAutoError(defErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
+	}
+
+	if s.AuthManager.Enabled() {
+		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
+			common.BKInnerObjIDApp, bizID); err != nil {
+			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
 	}
 
 	body := new(meta.FindModuleHostRelationParameter)
@@ -165,6 +176,14 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 		return
 	}
 
+	if s.AuthManager.Enabled() {
+		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
+			common.BKInnerObjIDApp, bizID); err != nil {
+			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+	}
 	moduleCond := []meta.ConditionItem{
 		{
 			Field:    common.BKAppIDField,
@@ -298,6 +317,15 @@ func (s *Service) FindHostsBySetTemplates(ctx *rest.Contexts) {
 		return
 	}
 
+	if s.AuthManager.Enabled() {
+		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
+			common.BKInnerObjIDApp, bizID); err != nil {
+			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+	}
+
 	setCond := []meta.ConditionItem{
 		{
 			Field:    common.BKAppIDField,
@@ -368,6 +396,15 @@ func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
 		return
 	}
 
+	if s.AuthManager.Enabled() {
+		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
+			common.BKInnerObjIDApp, bizID); err != nil {
+			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+	}
+
 	// generate search condition, if node is not a set or a module, we need to traverse its child topo to the set level to get hosts by relation
 	distinctHostCond := &meta.DistinctHostIDByTopoRelationRequest{
 		ApplicationIDArr: []int64{bizID},
@@ -418,6 +455,12 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 
 	parameter := meta.ListHostsParameter{}
 	if err := ctx.DecodeInto(&parameter); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := s.Logic.AuthorizeWithResourcePoolHost(ctx.Kit); err != nil {
+		blog.Errorf("authFilter failed, authorized request failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -474,7 +517,15 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 		ctx.RespAutoError(ccErr)
 		return
 	}
+	if s.AuthManager.Enabled() {
+		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
+			common.BKInnerObjIDApp, bizID); err != nil {
+			blog.Errorf("authorize failed, bizID: %v, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
 
+			return
+		}
+	}
 	// do host search
 	hostResult, ccErr := s.listBizHosts(ctx, bizID, parameter)
 	if ccErr != nil {
@@ -516,6 +567,16 @@ func (s *Service) ListBizHosts(ctx *rest.Contexts) {
 		ctx.RespAutoError(ccErr)
 		return
 	}
+
+	if s.AuthManager.Enabled() {
+		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
+			common.BKInnerObjIDApp, bizID); err != nil {
+			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+	}
+
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	hostResult, ccErr := s.listBizHosts(ctx, bizID, parameter)
 	if ccErr != nil {
@@ -659,6 +720,15 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 	if bizID == 0 {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
+	}
+
+	if s.AuthManager.Enabled() {
+		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
+			common.BKInnerObjIDApp, bizID); err != nil {
+			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
 	}
 
 	parameter := &meta.ListBizHostsTopoParameter{}
@@ -875,7 +945,40 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 	ctx.RespEntity(hostTopos)
 }
 
-// ListHostDetailAndTopology TODO
+// authorizeWithNoBizID 当用户参数中没有传bizID场景下按照主机池主机查看权限进行鉴权
+func (s *Service) authorizeWithResourcePoolHost(kit *rest.Kit, withBiz bool) error {
+	if withBiz || !s.AuthManager.Enabled() {
+		return nil
+	}
+
+	user := acMeta.UserInfo{
+		UserName:        kit.User,
+		SupplierAccount: kit.SupplierAccount,
+	}
+
+	resources := []acMeta.ResourceAttribute{
+		{
+			Basic: acMeta.Basic{
+				Type:   acMeta.HostInstance,
+				Action: acMeta.ViewResourcePoolHost,
+			},
+		},
+	}
+
+	decisions, err := s.AuthManager.Authorizer.AuthorizeBatch(kit.Ctx, kit.Header, user, resources...)
+	for _, decision := range decisions {
+		if !decision.Authorized {
+			return sysErr.New("view resource pool host")
+		}
+	}
+	if err != nil {
+		blog.Errorf("authFilter failed, authorized request failed, err: %v, rid: %s", err, kit.Rid)
+		return sysErr.New("view resource pool host")
+	}
+	return nil
+}
+
+// ListHostDetailAndTopology obtain host details and corresponding topological relationships.
 func (s *Service) ListHostDetailAndTopology(ctx *rest.Contexts) {
 	header := ctx.Kit.Header
 	rid := ctx.Kit.Rid
@@ -891,6 +994,14 @@ func (s *Service) ListHostDetailAndTopology(ctx *rest.Contexts) {
 		blog.ErrorJSON("list host detail and topology, but validate option failed, option: %s, err: %s, rid:%s",
 			options, rawErr, ctx.Kit.Rid)
 		ctx.RespAutoError(defErr.CCErrorf(common.CCErrCommParamsInvalid, rawErr.Args))
+		return
+	}
+
+	// 此处鉴权的逻辑如下:
+	// 1、如果用户的参数中有BizID，那么通过bizID进行鉴权。
+	// 2、如果用户的参数中没有bizID,那么统一走主机池的主机查看权限进行鉴权。
+	if err := s.authorizeWithResourcePoolHost(ctx.Kit, options.WithBiz); err != nil {
+		ctx.RespAutoError(defErr.CCErrorf(common.CCErrCommCheckAuthorizeFailed))
 		return
 	}
 
@@ -915,13 +1026,21 @@ func (s *Service) ListHostDetailAndTopology(ctx *rest.Contexts) {
 		return
 	}
 
-	hostTopo, err := s.Logic.ArrangeHostDetailAndTopology(ctx.Kit, options.WithBiz, hosts.Info)
+	hostTopo, bizList, err := s.Logic.ArrangeHostDetailAndTopology(ctx.Kit, options.WithBiz, hosts.Info)
 	if err != nil {
 		blog.Errorf("arrange host detail and topology failed, err: %v, rid :%s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
+	if options.WithBiz && s.AuthManager.Enabled() {
+		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
+			common.BKInnerObjIDApp, bizList...); err != nil {
+			blog.Errorf("authorize failed, bizID: %v, err: %v, rid: %s", bizList, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+	}
 	ctx.RespEntityWithCount(int64(hosts.Count), hostTopo)
 	return
 }
@@ -1051,6 +1170,15 @@ func (s *Service) ListHostTotalMainlineTopo(ctx *rest.Contexts) {
 	if bizID == 0 {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
+	}
+	if s.AuthManager.Enabled() {
+		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
+			common.BKInnerObjIDApp, bizID); err != nil {
+			blog.Errorf("authorize failed, bizID: %v, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+
+			return
+		}
 	}
 	params := meta.FindHostTotalTopo{}
 	if err := ctx.DecodeInto(&params); err != nil {

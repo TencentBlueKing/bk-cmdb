@@ -87,7 +87,7 @@ var _ = Describe("kube cluster test", func() {
 					Sort: "bk_host_id",
 				},
 			}
-			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+			rsp, err := hostServerClient.SearchHostWithBiz(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))

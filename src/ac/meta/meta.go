@@ -129,7 +129,8 @@ const (
 	EmptyAction Action = "" // used for register resources
 	// SkipAction TODO
 	SkipAction Action = "skip"
-
+	// ViewResourcePoolHost TODO
+	ViewResourcePoolHost Action = "ViewResourcePoolHost"
 	// Execute TODO
 	Execute Action = "execute"
 	// DefaultHostApply TODO

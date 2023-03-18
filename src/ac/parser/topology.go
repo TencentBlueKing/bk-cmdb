@@ -1513,7 +1513,7 @@ func (ps *parseStream) cloudArea() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.CloudAreaInstance,
-					Action: meta.SkipAction,
+					Action: meta.FindMany,
 				},
 			},
 		}
@@ -1587,7 +1587,7 @@ func (ps *parseStream) cloudArea() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.CloudAreaInstance,
-					Action: meta.SkipAction,
+					Action: meta.Find,
 				},
 			},
 		}

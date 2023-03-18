@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 
+	acMeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -29,13 +30,30 @@ import (
 	"configcenter/src/common/util"
 )
 
-// SearchHost TODO
-func (lgc *Logics) SearchHost(kit *rest.Kit, data *metadata.HostCommonSearch, isDetail bool) (*metadata.SearchHost, error) {
+// SearchHost 通过业务信息查询主机 flag：true 走业务访问权限， false走主机池主机查看权限
+func (lgc *Logics) SearchHost(kit *rest.Kit, data *metadata.HostCommonSearch, flag bool) (
+	*metadata.SearchHost, error) {
 	searchHostInst := NewSearchHost(kit, lgc, data)
 	searchHostInst.ParseCondition()
 	retHostInfo := &metadata.SearchHost{
 		Info: make([]mapstr.MapStr, 0),
 	}
+
+	if flag {
+		// 对于业务访问场景，用户必须传业务属性字段
+		if !searchHostInst.GetTopologyBizFlag() {
+			return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
+		}
+		if err := searchHostInst.AuthorizeSearchHost(); err != nil {
+			return retHostInfo, err
+		}
+	} else {
+		// 当走主机池主机查看权限时，用户不允许传入业务属性字段
+		if searchHostInst.GetTopologyBizFlag() {
+			return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
+		}
+	}
+
 	err := searchHostInst.SearchHostByConds()
 	if err != nil {
 		return retHostInfo, err
@@ -133,7 +151,9 @@ type appLevelInfo struct {
 type searchHostInterface interface {
 	ParseCondition()
 	SearchHostByConds() errors.CCError
+	AuthorizeSearchHost() errors.CCError
 	FillTopologyData() ([]mapstr.MapStr, int, errors.CCError)
+	GetTopologyBizFlag() bool
 }
 
 // NewSearchHost TODO
@@ -183,6 +203,86 @@ func (sh *searchHost) ParseCondition() {
 
 }
 
+// AuthorizeSearchHost 鉴权逻辑是如果用户的请求条件中有业务信息按照业务信息进行鉴权。
+// 如果没有业务信息按照主机池的主机查询权限进行鉴权
+func (sh *searchHost) AuthorizeSearchHost() errors.CCError {
+
+	if !sh.lgc.AuthManager.Enabled() {
+		return nil
+	}
+
+	// 获取全量的bizIDs
+	bizMap, bizIDs := make(map[int64]struct{}), make([]int64, 0)
+	if sh.hostSearchParam.AppID > 0 {
+		bizMap[sh.hostSearchParam.AppID] = struct{}{}
+	}
+
+	bizNames := make([]string, 0)
+	bizNameMap := make(map[string]struct{})
+	if len(sh.conds.appCond.Condition) > 0 {
+		for _, cond := range sh.conds.appCond.Condition {
+			if cond.Field == common.BKAppIDField {
+				id, err := util.GetInt64ByInterface(cond.Value)
+				if err != nil {
+					return err
+				}
+				bizMap[id] = struct{}{}
+			}
+
+			if cond.Field == common.BKAppNameField {
+				name := util.GetStrByInterface(cond.Value)
+				if name == "" {
+					return sh.kit.CCError.Errorf(common.CCErrCommParamsValueInvalidError, common.BKAppNameField, "")
+				}
+				bizNameMap[name] = struct{}{}
+			}
+		}
+
+		if len(bizNameMap) > 0 {
+			for name := range bizNameMap {
+				bizNames = append(bizNames, name)
+			}
+
+			input := &metadata.QueryCondition{
+				Condition: map[string]interface{}{
+					common.BKAppNameField: map[string]interface{}{common.BKDBIN: bizNames},
+				},
+				Fields:         []string{common.BKAppIDField},
+				Page:           metadata.BasePage{Limit: common.BKNoLimit},
+				DisableCounter: true,
+			}
+
+			result, err := sh.lgc.CoreAPI.CoreService().Instance().ReadInstance(sh.kit.Ctx, sh.kit.Header,
+				common.BKInnerObjIDApp, input)
+			if err != nil {
+				blog.Errorf("get biz info failed, input: %+v, err: %v, rid: %s", input, err, sh.kit.Rid)
+				return sh.kit.CCError.Error(common.CCErrCommAuthorizeFailed)
+			}
+
+			for _, biz := range result.Info {
+				bizID, err := util.GetInt64ByInterface(biz[common.BKAppIDField])
+				if err != nil {
+					blog.Errorf("get biz id failed, biz: %v, err: %v, rid: %s", biz, err, sh.kit.Rid)
+					return err
+				}
+				bizMap[bizID] = struct{}{}
+			}
+		}
+	}
+
+	for id := range bizMap {
+		bizIDs = append(bizIDs, id)
+	}
+
+	if err := sh.lgc.AuthManager.AuthorizeByInstanceID(sh.kit.Ctx, sh.kit.Header, acMeta.ViewBusinessResource,
+		common.BKInnerObjIDApp, bizIDs...); err != nil {
+		blog.Errorf("authorize failed, bizID: %v, err: %v, rid: %s", bizIDs, err, sh.kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
 // SearchHostByConds TODO
 func (sh *searchHost) SearchHostByConds() errors.CCError {
 
@@ -203,6 +303,9 @@ func (sh *searchHost) SearchHostByConds() errors.CCError {
 
 	return nil
 
+}
+func (sh *searchHost) GetTopologyBizFlag() bool {
+	return sh.topoShowSection.app
 }
 
 // FillTopologyData TODO
@@ -879,6 +982,9 @@ func (sh *searchHost) tryParseAppID() {
 			Operator: common.BKDBEQ,
 			Value:    sh.hostSearchParam.AppID,
 		})
+	}
+	if sh.hostSearchParam.AppID != 0 {
+		sh.topoShowSection.app = true
 	}
 }
 

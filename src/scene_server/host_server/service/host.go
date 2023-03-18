@@ -112,7 +112,7 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 		}
 
 		rsp, err := s.CoreAPI.CoreService().Association().ReadInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, queryCond)
-		if nil != err {
+		if err != nil {
 			blog.ErrorJSON("DeleteHostBatch read host association do request failed , err: %s, rid: %s", err.Error(),
 				ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
@@ -515,6 +515,45 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 	}
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	host, err := s.Logic.SearchHost(ctx.Kit, body, true)
+	if err != nil {
+		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
+		return
+	}
+	ctx.RespEntity(host)
+}
+
+// SearchHostWithOutBiz host Search for the home hage
+func (s *Service) SearchHostWithOutBiz(ctx *rest.Contexts) {
+
+	body := new(meta.HostCommonSearch)
+	if err := ctx.DecodeInto(&body); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	host, err := s.Logic.SearchHost(ctx.Kit, body, false)
+	if err != nil {
+		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
+		return
+	}
+
+	ctx.RespEntity(host)
+}
+
+// SearchHostWithBizSet search host by biz set
+func (s *Service) SearchHostWithBizSet(ctx *rest.Contexts) {
+
+	body := new(meta.HostCommonSearch)
+	if err := ctx.DecodeInto(&body); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	host, err := s.Logic.SearchHost(ctx.Kit, body, false)
 	if err != nil {
 		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, ctx.Kit.Rid)
@@ -529,9 +568,7 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 		return
 	}
-
 	ctx.RespEntity(host)
-
 }
 
 // SearchHostWithAsstDetail TODO
@@ -543,7 +580,7 @@ func (s *Service) SearchHostWithAsstDetail(ctx *rest.Contexts) {
 		return
 	}
 
-	host, err := s.Logic.SearchHost(ctx.Kit, body, true)
+	host, err := s.Logic.SearchHost(ctx.Kit, body, false)
 	if err != nil {
 		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

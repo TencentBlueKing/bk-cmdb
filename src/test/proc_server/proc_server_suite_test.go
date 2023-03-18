@@ -79,7 +79,7 @@ var _ = BeforeSuite(func() {
 			input := &params.HostCommonSearch{
 				AppID: int(bizId),
 			}
-			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
+			rsp, err := hostServerClient.SearchHostWithBiz(context.Background(), header, input)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
