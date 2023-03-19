@@ -14,7 +14,7 @@
   <div class="verification-layout">
     <div class="options">
       <cmdb-auth class="inline-block-middle"
-        v-if="!isTopoModel"
+        v-if="!isTopoModel && isShowOptionBtn"
         :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
         @update-auth="handleReceiveAuth">
         <bk-button slot-scope="{ disabled }"
@@ -131,6 +131,9 @@
           return this.activeModel.bk_ispaused
         }
         return false
+      },
+      isShowOptionBtn() {
+        return BUILTIN_MODELS.PROJECT !== this.$route.params.modelId
       }
     },
     watch: {

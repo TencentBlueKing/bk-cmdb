@@ -581,7 +581,7 @@ func (p *processOperation) DeleteServiceInstance(kit *rest.Kit, serviceInstanceI
 
 // generateServiceInstanceName get service instance's name, format: `IP + first process name + first process port`
 // 可能应用场景：1. 查询服务实例时组装名称；2. 更新进程信息时根据组装名称直接更新到 `name` 字段
-// issue: https://github.com/Tencent/bk-cmdb/issues/2485
+// issue: https://github.com/TencentBlueKing/bk-cmdb/issues/2485
 func (p *processOperation) generateServiceInstanceName(kit *rest.Kit, instanceID int64) (string, errors.CCErrorCoder) {
 
 	// get instance

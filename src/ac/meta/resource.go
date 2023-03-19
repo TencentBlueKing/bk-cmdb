@@ -64,6 +64,8 @@ const (
 	CloudAccount             ResourceType = "cloudAccount"
 	CloudResourceTask        ResourceType = "cloudResourceTask"
 	ConfigAdmin              ResourceType = "configAdmin"
+	Project                  ResourceType = "project"
+	FulltextSearch           ResourceType = "fulltextSearch"
 )
 
 // kube related auth resource in CMDB

@@ -1,5 +1,5 @@
 # 提需求
-如果你在使用蓝鲸cmdb的过程中发现目前的版本还无法满足你的某些需求，欢迎[创建issue](https://github.com/Tencent/bk-cmdb/issues/new)
+如果你在使用蓝鲸cmdb的过程中发现目前的版本还无法满足你的某些需求，欢迎[创建issue](https://github.com/TencentBlueKing/bk-cmdb/issues/new)
 将你的需求反馈给我们。社区希望你的需求能够：
 - 具有普适的使用场景。
 - 在cmdb产品形态的适用范围内。

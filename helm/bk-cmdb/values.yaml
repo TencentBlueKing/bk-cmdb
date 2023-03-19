@@ -6,7 +6,7 @@ expose:
   tls:
     # Enable the tls or not. Note: if the type is "ingress" and the tls
     # is disabled, the port must be included in the command when pull/push
-    # images. Refer to https://github.com/Tencent/bk-cmdb/issues/
+    # images. Refer to https://github.com/TencentBlueKing/bk-cmdb/issues/
     # for the detail.
     enabled: false
     # Fill the name of secret if you want to use your own TLS certificate

@@ -37,7 +37,7 @@
     </div>
     <bk-table class="new-association-table"
       v-show="isShowPropertyFilter"
-      v-bkloading="{ isLoading: $loading() }"
+      v-bkloading="{ isLoading: $loading('get_relation_inst') }"
       :pagination="table.pagination"
       :data="table.list"
       :col-border="false"
@@ -49,8 +49,15 @@
         sortable="custom"
         :key="column.id"
         :prop="column.id"
-        :label="column.name">
-        <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
+        :label="column.name"
+        :show-overflow-tooltip="$tools.isShowOverflowTips(column.property)">
+        <template slot-scope="{ row }">
+          <cmdb-property-value
+            :show-unit="false"
+            :value="row[column.id]"
+            :property="column.property">
+          </cmdb-property-value>
+        </template>
       </bk-table-column>
       <bk-table-column :label="$t('操作')">
         <template slot-scope="{ row }">
@@ -107,6 +114,7 @@
     BUILTIN_MODEL_ROUTEPARAMS_KEYS
   } from '@/dictionary/model-constants.js'
   import Utils from '@/components/filters/utils'
+  import { isEmptyPropertyValue, formatValue } from '@/utils/tools'
 
   export default {
     name: 'cmdb-relation-create',
@@ -584,11 +592,11 @@
           { bk_obj_id: 'set', condition: [], fields: [] }
         ]
         const property = this.getProperty(this.filter.id)
-        if (this.filter.value !== '' && property) {
+        if (!isEmptyPropertyValue(this.filter.value) && property) {
           condition[0].condition.push({
             field: this.filter.id,
             operator: this.filter.operator,
-            value: this.filter.value
+            value: formatValue(this.filter.value, property)
           })
         }
         return condition
@@ -601,8 +609,9 @@
           fields: [],
           page: this.page
         }
-        if (this.filter.value !== '') {
-          params.condition[this.filter.id] = this.filter.value
+        const property = this.getProperty(this.filter.id)
+        if (!isEmptyPropertyValue(this.filter.value)) {
+          params.condition[this.filter.id] = formatValue(this.filter.value, property)
         }
         return this.searchBusiness({
           params,
@@ -616,9 +625,10 @@
         }
 
         const condition = {}
-        if (this.filter.value !== '') {
+        const property = this.getProperty(this.filter.id)
+        if (!isEmptyPropertyValue(this.filter.value)) {
           condition[this.filter.id] = {
-            value: this.filter.value,
+            value: formatValue(this.filter.value, property),
             operator: this.filter.operator
           }
         }
@@ -652,13 +662,13 @@
           fields: [],
         }
         const property = this.getProperty(this.filter.id)
-        if (this.filter.value !== '' && property) {
+        if (!isEmptyPropertyValue(this.filter.value) && property) {
           params.conditions = {
             condition: 'AND',
             rules: [{
               field: this.filter.id,
               operator: queryBuilderOperator(this.filter.operator),
-              value: this.filter.value
+              value: formatValue(this.filter.value, property)
             }]
           }
         }

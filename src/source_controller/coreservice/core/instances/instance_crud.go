@@ -27,6 +27,62 @@ import (
 	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
 
+func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr.MapStr) ([]uint64, error) {
+	instTableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	instIDFieldName := common.GetInstIDField(objID)
+	ids, err := mongodb.Client().NextSequences(kit.Ctx, instTableName, len(params))
+	if err != nil {
+		return nil, err
+	}
+	mappings := make([]mapstr.MapStr, 0)
+	ts := time.Now()
+
+	for idx := range params {
+		if objID == common.BKInnerObjIDHost {
+			params[idx] = metadata.ConvertHostSpecialStringToArray(params[idx])
+		}
+
+		// build new object instance data.
+		if !util.IsInnerObject(objID) {
+			params[idx][common.BKObjIDField] = objID
+		}
+		params[idx].Set(instIDFieldName, ids[idx])
+		params[idx].Set(common.BKOwnerIDField, kit.SupplierAccount)
+		params[idx].Set(common.CreateTimeField, ts)
+		params[idx].Set(common.LastTimeField, ts)
+
+		if !metadata.IsCommon(objID) {
+			continue
+		}
+		// build new object mapping data for inner object instance.
+		mapping := make(mapstr.MapStr, 0)
+		mapping[instIDFieldName] = ids[idx]
+		mapping[common.BKObjIDField] = objID
+		mapping[common.BkSupplierAccount] = kit.SupplierAccount
+
+		mappings = append(mappings, mapping)
+	}
+
+	if len(mappings) != 0 {
+		// save new object mappings data for inner object instance.
+		if err := instancemapping.Create(kit.Ctx, mappings); err != nil {
+			return nil, err
+		}
+	}
+
+	// save object instances.
+	err = mongodb.Client().Table(instTableName).Insert(kit.Ctx, params)
+	if err != nil {
+		blog.Errorf("save instances failed, rid: %s, err: %v, objID: %s, instances: %v", kit.Rid, err, objID, params)
+		if mongodb.Client().IsDuplicatedError(err) {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
+		}
+		return nil, err
+	}
+
+	return ids, nil
+}
+
 func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.MapStr) (uint64, error) {
 	if objID == common.BKInnerObjIDHost {
 		inputParam = metadata.ConvertHostSpecialStringToArray(inputParam)

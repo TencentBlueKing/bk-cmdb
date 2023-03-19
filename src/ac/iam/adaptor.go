@@ -58,6 +58,8 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 		iamResourceType = Business
 	case meta.BizSet:
 		iamResourceType = BizSet
+	case meta.Project:
+		iamResourceType = Project
 	case meta.Model,
 		meta.ModelUnique,
 		meta.ModelAttributeGroup:
@@ -124,6 +126,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 	case meta.KubeCluster, meta.KubeNode, meta.KubeNamespace, meta.KubeWorkload, meta.KubeDeployment,
 		meta.KubeStatefulSet, meta.KubeDaemonSet, meta.KubeGameStatefulSet, meta.KubeGameDeployment, meta.KubeCronJob,
 		meta.KubeJob, meta.KubePodWorkload, meta.KubePod, meta.KubeContainer:
+	case meta.FulltextSearch:
 	default:
 		if IsCMDBSysInstance(resourceType) {
 			iamResourceType = TypeID(resourceType)
@@ -197,7 +200,7 @@ func ConvertSysInstanceActionID(resourceType meta.ResourceType, action meta.Acti
 	case meta.Delete:
 		actionType = Delete
 	case meta.Find:
-		return Skip, nil
+		actionType = View
 	default:
 		return Unsupported, fmt.Errorf("unsupported action: %s", action)
 	}
@@ -213,15 +216,15 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Delete:   EditSysModel,
 		meta.Update:   EditSysModel,
 		meta.Create:   EditSysModel,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Find:     ViewSysModel,
+		meta.FindMany: ViewSysModel,
 	},
 	meta.ModelUnique: {
 		meta.Delete:   EditSysModel,
 		meta.Update:   EditSysModel,
 		meta.Create:   EditSysModel,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Find:     ViewSysModel,
+		meta.FindMany: ViewSysModel,
 	},
 	meta.Business: {
 		meta.Archive:              ArchiveBusiness,
@@ -251,8 +254,9 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Delete: EditBusinessLayer,
 	},
 	meta.ModelTopology: {
-		meta.Find:   EditModelTopologyView,
-		meta.Update: EditModelTopologyView,
+		meta.Find:              EditModelTopologyView,
+		meta.Update:            EditModelTopologyView,
+		meta.ModelTopologyView: ViewModelTopo,
 	},
 	meta.MainlineModelTopology: {
 		meta.Find: Skip,
@@ -273,6 +277,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.MoveHostToAnotherBizModule:     HostTransferAcrossBusiness,
 		meta.Find:                           Skip,
 		meta.FindMany:                       Skip,
+		meta.ViewResourcePoolHost:           ViewResourcePoolHost,
 	},
 	meta.ProcessServiceCategory: {
 		meta.Delete: DeleteBusinessServiceCategory,
@@ -346,8 +351,8 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Delete:   DeleteCloudArea,
 		meta.Update:   EditCloudArea,
 		meta.Create:   CreateCloudArea,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Find:     ViewCloudArea,
+		meta.FindMany: ViewCloudArea,
 	},
 	meta.CloudAccount: {
 		meta.Delete:   DeleteCloudAccount,
@@ -366,8 +371,8 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Delete:   DeleteSysModel,
 		meta.Update:   EditSysModel,
 		meta.Create:   CreateSysModel,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Find:     ViewSysModel,
+		meta.FindMany: ViewSysModel,
 	},
 	meta.AssociationType: {
 		meta.Delete:   DeleteAssociationType,
@@ -415,6 +420,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.WatchKubeNamespace:    WatchKubeNamespaceEvent,
 		meta.WatchKubeWorkload:     WatchKubeWorkloadEvent,
 		meta.WatchKubePod:          WatchKubePodEvent,
+		meta.WatchProject:          WatchProjectEvent,
 	},
 	meta.UserCustom: {
 		meta.Find:   Skip,
@@ -423,8 +429,8 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Create: Skip,
 	},
 	meta.ModelAssociation: {
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Find:     ViewSysModel,
+		meta.FindMany: ViewSysModel,
 		meta.Update:   EditSysModel,
 		meta.Delete:   EditSysModel,
 		meta.Create:   EditSysModel,
@@ -436,7 +442,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Create: Skip,
 	},
 	meta.ModelAttribute: {
-		meta.Find:   Skip,
+		meta.Find:   ViewSysModel,
 		meta.Update: EditSysModel,
 		meta.Delete: DeleteSysModel,
 		meta.Create: CreateSysModel,
@@ -566,6 +572,15 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 	meta.KubeContainer: {
 		meta.Find: Skip,
 	},
+	meta.Project: {
+		meta.Find:   ViewProject,
+		meta.Update: EditProject,
+		meta.Delete: DeleteProject,
+		meta.Create: CreateProject,
+	},
+	meta.FulltextSearch: {
+		meta.Find: UseFulltextSearch,
+	},
 }
 
 // ParseIamPathToAncestors TODO
@@ -653,8 +668,10 @@ func genDynamicInstanceSelections(objects []metadata.Object) []InstanceSelection
 }
 
 // genDynamicAction generate dynamic action
+// Note: view action must be in the first place
 func genDynamicAction(obj metadata.Object) []DynamicAction {
 	return []DynamicAction{
+		genDynamicViewAction(obj),
 		genDynamicCreateAction(obj),
 		genDynamicEditAction(obj),
 		genDynamicDeleteAction(obj),
@@ -664,6 +681,16 @@ func genDynamicAction(obj metadata.Object) []DynamicAction {
 // GenDynamicActionID generate dynamic ActionID
 func GenDynamicActionID(actionType ActionType, modelID int64) ActionID {
 	return ActionID(fmt.Sprintf("%s_%s%d", actionType, IAMSysInstTypePrefix, modelID))
+}
+
+// genDynamicViewAction generate dynamic view action
+func genDynamicViewAction(obj metadata.Object) DynamicAction {
+	return DynamicAction{
+		ActionID:     GenDynamicActionID(View, obj.ID),
+		ActionType:   View,
+		ActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "查看"),
+		ActionNameEN: fmt.Sprintf("%s %s %s", "view", obj.ObjectID, "instance"),
+	}
 }
 
 // genDynamicCreateAction generate dynamic create action
@@ -741,8 +768,21 @@ func genDynamicActions(objects []metadata.Object) []ResourceAction {
 		}
 
 		actions := genDynamicAction(obj)
+		var relatedActions []ActionID
 		for _, action := range actions {
 			switch action.ActionType {
+			case View:
+				resActions = append(resActions, ResourceAction{
+					ID:                   action.ActionID,
+					Name:                 action.ActionNameCN,
+					NameEn:               action.ActionNameEN,
+					Type:                 View,
+					RelatedActions:       nil,
+					Version:              1,
+					RelatedResourceTypes: relatedResource,
+				})
+				relatedActions = []ActionID{action.ActionID}
+
 			case Create:
 				resActions = append(resActions, ResourceAction{
 					ID:                   action.ActionID,
@@ -759,7 +799,7 @@ func genDynamicActions(objects []metadata.Object) []ResourceAction {
 					Name:                 action.ActionNameCN,
 					NameEn:               action.ActionNameEN,
 					Type:                 Edit,
-					RelatedActions:       nil,
+					RelatedActions:       relatedActions,
 					Version:              1,
 					RelatedResourceTypes: relatedResource,
 				})
@@ -771,7 +811,7 @@ func genDynamicActions(objects []metadata.Object) []ResourceAction {
 					NameEn:               action.ActionNameEN,
 					Type:                 Delete,
 					RelatedResourceTypes: relatedResource,
-					RelatedActions:       nil,
+					RelatedActions:       relatedActions,
 					Version:              1,
 				})
 			default:

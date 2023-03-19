@@ -339,8 +339,8 @@ func buildInstAuditCondition(ctx *rest.Contexts, query metadata.InstAuditConditi
 		cond[common.BKOperationDetailField+"."+"src_obj_id"] = query.ObjID
 	case metadata.ModelInstanceRes:
 		cond[common.BKOperationDetailField+"."+common.BKObjIDField] = query.ObjID
-	case metadata.BusinessRes, metadata.BizSetRes, metadata.HostRes:
-		// host, biz and biz set auditlog not need bk_obj_id or operation_detail to select
+	case metadata.BusinessRes, metadata.BizSetRes, metadata.ProjectRes, metadata.HostRes:
+		// host, biz, project and biz set auditlog not need bk_obj_id or operation_detail to select
 		break
 	default:
 		blog.Errorf("unsupported resource type %s when query with object id", query.ResourceType)

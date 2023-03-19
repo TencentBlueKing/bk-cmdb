@@ -31,7 +31,8 @@
       minHeight: {
         type: [Number, String]
       },
-      maxColumns: Number
+      maxColumns: Number,
+      fontSize: String
     },
     provide() {
       return {
@@ -64,7 +65,8 @@
       '--min-width': colMinWidth,
       '--max-width': colMaxWidth,
       '--min-height': rowMinHeight,
-      '--max-columns': maxColumns
+      '--max-columns': maxColumns,
+      '--font-size': fontSize
     }">
     <slot></slot>
   </div>

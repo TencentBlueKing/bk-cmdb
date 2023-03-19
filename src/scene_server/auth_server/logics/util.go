@@ -60,6 +60,8 @@ func getResourceTableName(resourceType iam.TypeID) string {
 		return common.BKTableNameServiceInstance
 	case iam.BizSetTemplate:
 		return common.BKTableNameSetTemplate
+	case iam.Project:
+		return common.BKTableNameBaseProject
 	// case iam.Set:
 	//	return common.BKTableNameBaseSet
 	// case iam.Module:
@@ -89,6 +91,8 @@ func getInstanceResourceObjID(resourceType iam.TypeID) string {
 		return common.BKInnerObjIDApp
 	case iam.BizSet:
 		return common.BKInnerObjIDBizSet
+	case iam.Project:
+		return common.BKInnerObjIDProject
 	// case iam.Set:
 	//	return common.BKInnerObjIDSet
 	// case iam.Module:

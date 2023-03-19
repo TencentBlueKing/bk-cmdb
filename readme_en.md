@@ -1,12 +1,12 @@
 ![](docs/resource/img/bk-cmdb-en.png)
 ---
-[![license](https://img.shields.io/badge/license-mit-brightgreen.svg?style=flat)](https://github.com/Tencent/bk-cmdb/blob/master/LICENSE.txt)
-[![Release Version](https://img.shields.io/badge/release-3.2.19-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/releases)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/pulls)
+[![license](https://img.shields.io/badge/license-mit-brightgreen.svg?style=flat)](https://github.com/TencentBlueKing/bk-cmdb/blob/master/LICENSE.txt)
+[![Release Version](https://img.shields.io/badge/release-3.2.19-brightgreen.svg)](https://github.com/TencentBlueKing/bk-cmdb/releases)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/TencentBlueKing/bk-cmdb/pulls)
 [![BK Pipelines Status](https://api.bkdevops.qq.com/process/api/external/pipelines/projects/cc/p-c02db56ac633447eb2e740b3fd0b6d2b/badge?X-DEVOPS-PROJECT-ID=cc)](http://api.bkdevops.qq.com/process/api-html/user/builds/projects/cc/pipelines/p-c02db56ac633447eb2e740b3fd0b6d2b/latestFinished?X-DEVOPS-PROJECT-ID=cc)
 
 > **Note**: The `master` branch may be in an *unstable or even broken state* during development.
-Please use [releases](https://github.com/tencent/bk-cmdb/releases) instead of the `master` branch in order to get stable binaries.
+Please use [releases](https://github.com/TencentBlueKing/bk-cmdb/releases) instead of the `master` branch in order to get stable binaries.
 
 BlueKing Configuration Management DataBase (bk-cmdb) is an enterprise level configuration management serivce database. 
 
@@ -44,7 +44,7 @@ If you want to know more about the above features, please refer to the [Function
 * [Changelog (In Chinese)](docs/support-file/changelog/release.md)
 
 ## Support
-- [Wiki (In Chinese)](https://github.com/Tencent/bk-cmdb/wiki) or ask for help
+- [Wiki (In Chinese)](https://github.com/TencentBlueKing/bk-cmdb/wiki) or ask for help
 - [White paper(In Chinese)](https://docs.bk.tencent.com/cmdb/)
 - [BK forum](https://bk.tencent.com/s-mart/community)
 - [BK DevOps online video tutorial(In Chinese)](https://bk.tencent.com/s-mart/video/)

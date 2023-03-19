@@ -55,8 +55,8 @@ type ModelClientInterface interface {
 		resp *metadata.SetOptionResult, err error)
 	UpdateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
 		*metadata.UpdatedCount, error)
-	UpdateModelAttrsIndex(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
-		*metadata.UpdateAttrIndexData, error)
+	UpdateModelAttrIndex(ctx context.Context, h http.Header, objID string, id int64,
+		input *metadata.UpdateAttrIndexInput) error
 	// UpdateModelAttrsByCondition TODO
 	// deprecated, only for old api
 	UpdateModelAttrsByCondition(ctx context.Context, h http.Header, input *metadata.UpdateOption) (

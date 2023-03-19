@@ -247,6 +247,8 @@ const (
 	BizSetTemplate TypeID = "biz_set_template"
 	// BizHostApply TODO
 	BizHostApply TypeID = "biz_host_apply"
+	// Project project type id
+	Project TypeID = "project"
 )
 
 // ResourceType TODO
@@ -362,6 +364,8 @@ const (
 	// EditBusinessHostApply TODO
 	EditBusinessHostApply ActionID = "edit_biz_host_apply"
 
+	// ViewResourcePoolHost view resource pool host
+	ViewResourcePoolHost ActionID = "view_resource_pool_host"
 	// CreateResourcePoolHost TODO
 	CreateResourcePoolHost ActionID = "create_resource_pool_host"
 	// EditResourcePoolHost TODO
@@ -401,7 +405,17 @@ const (
 	ViewBizSet ActionID = "view_business_set"
 	// AccessBizSet TODO
 	AccessBizSet ActionID = "access_business_set"
+	// CreateProject create project action id
+	CreateProject ActionID = "create_project"
+	// EditProject edit project action id
+	EditProject ActionID = "edit_project"
+	// DeleteProject delete project action id
+	DeleteProject ActionID = "delete_project"
+	// ViewProject view project action id
+	ViewProject ActionID = "view_project"
 
+	// ViewCloudArea view cloud area
+	ViewCloudArea ActionID = "view_cloud_area"
 	// CreateCloudArea TODO
 	CreateCloudArea ActionID = "create_cloud_area"
 	// EditCloudArea TODO
@@ -427,6 +441,8 @@ const (
 	// FindCloudResourceTask TODO
 	FindCloudResourceTask ActionID = "find_cloud_resource_task"
 
+	// ViewSysModel view system model
+	ViewSysModel ActionID = "view_sys_model"
 	// CreateSysModel TODO
 	CreateSysModel ActionID = "create_sys_model"
 	// EditSysModel TODO
@@ -448,9 +464,10 @@ const (
 	// DeleteModelGroup TODO
 	DeleteModelGroup ActionID = "delete_model_group"
 
+	// ViewModelTopo view model topo
+	ViewModelTopo ActionID = "view_model_topo"
 	// EditBusinessLayer TODO
 	EditBusinessLayer ActionID = "edit_business_layer"
-
 	// EditModelTopologyView TODO
 	EditModelTopologyView ActionID = "edit_model_topology_view"
 
@@ -484,6 +501,8 @@ const (
 	WatchBizSetEvent ActionID = "watch_biz_set_event"
 	// WatchPlatEvent watch cloud area event action id
 	WatchPlatEvent ActionID = "watch_plat_event"
+	// WatchProjectEvent watch project event action id
+	WatchProjectEvent ActionID = "watch_project_event"
 
 	// watch kube related event actions
 
@@ -500,6 +519,9 @@ const (
 
 	// GlobalSettings TODO
 	GlobalSettings ActionID = "global_settings"
+
+	// UseFulltextSearch use fulltext search
+	UseFulltextSearch ActionID = "use_fulltext_search"
 
 	// Unsupported TODO
 	// Unknown is an action that can not be recognized
@@ -643,6 +665,8 @@ const (
 	BusinessHostTransferSelection InstanceSelectionID = "business_host_transfer"
 	// BizSetSelection TODO
 	BizSetSelection InstanceSelectionID = "business_set_list"
+	//ProjectSelection project selection
+	ProjectSelection InstanceSelectionID = "project"
 	// BizHostInstanceSelection TODO
 	BizHostInstanceSelection InstanceSelectionID = "biz_host_instance"
 	// BizCustomQuerySelection TODO

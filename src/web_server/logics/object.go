@@ -111,13 +111,15 @@ func ConvAttrOption(attrItems map[int]map[string]interface{}) {
 			continue
 		}
 		fieldType, _ := attr[common.BKPropertyTypeField].(string)
-		if common.FieldTypeEnum != fieldType && common.FieldTypeInt != fieldType && common.FieldTypeList != fieldType {
+		if common.FieldTypeEnum != fieldType && common.FieldTypeInt != fieldType && common.
+			FieldTypeList != fieldType && common.FieldTypeEnumMulti != fieldType &&
+			common.FieldTypeEnumQuote != fieldType{
 			continue
 		}
 
 		var iOption interface{}
 		err := json.Unmarshal([]byte(option), &iOption)
-		if nil == err {
+		if err == nil {
 			attrItems[index][common.BKOptionField] = iOption
 		}
 	}

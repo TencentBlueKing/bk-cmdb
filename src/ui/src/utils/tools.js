@@ -13,9 +13,11 @@
 import moment from 'moment'
 import GET_VALUE from 'get-value'
 import has from 'has'
+import { t } from '@/i18n'
 import { CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container'
 import { BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants'
 import { PRESET_TABLE_HEADER_MIN_WIDTH } from '@/dictionary/table-header'
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
 /**
  * 获取实例中某个属性的展示值
@@ -51,13 +53,6 @@ export function getPropertyText(property, item) {
   return propertyValue.toString()
 }
 
-/**
- * 获取实例的真实值
- * @param {Array} properties - 模型属性
- * @param {Object} inst - 原始实例
- * @return {Object} 实例真实值
- */
-
 function getDefaultOptionValue(property) {
   const defaultOption = (property.option || []).find(option => option.is_default)
   if (defaultOption) {
@@ -66,6 +61,22 @@ function getDefaultOptionValue(property) {
   return ''
 }
 
+function getDefaultOptionMultiValue(property) {
+  const defaultOptions = (property.option || []).filter(option => option.is_default)
+  return defaultOptions.map(option => option.id)
+}
+
+function getDefaultOptionEnumQuoteValue(property) {
+  return (property.option || []).map(option => option.bk_inst_id)
+}
+
+/**
+ * 获取实例的真实值
+ * @param {Array} properties - 模型属性
+ * @param {Object} inst - 原始实例
+ * @param {Boolean} autoSelect - 是否查找默认值作为选中项
+ * @return {Object} 实例真实值
+ */
 export function getInstFormValues(properties, inst = {}, autoSelect = true) {
   const values = {}
   properties.forEach((property) => {
@@ -86,11 +97,17 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
         values[propertyId] = !!inst[propertyId]
       }
     } else if (['enum'].includes(propertyType)) {
-      // eslint-disable-next-line no-nested-ternary,max-len
-      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? getDefaultOptionValue(property) : '') : inst[propertyId]
+      const defaultValue = autoSelect ? getDefaultOptionValue(property) : ''
+      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
+    } else if ([PROPERTY_TYPES.ENUMMULTI].includes(propertyType)) {
+      const defaultValue = autoSelect ? getDefaultOptionMultiValue(property) : []
+      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
+    } else if ([PROPERTY_TYPES.ENUMQUOTE].includes(propertyType)) {
+      const defaultValue = autoSelect ? getDefaultOptionEnumQuoteValue(property) : []
+      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
     } else if (['timezone'].includes(propertyType)) {
-      // eslint-disable-next-line no-nested-ternary,max-len
-      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? 'Asia/Shanghai' : '') : inst[propertyId]
+      const defaultValue = autoSelect ? 'Asia/Shanghai' : ''
+      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
     } else if (['organization'].includes(propertyType)) {
       values[propertyId] = inst[propertyId] || null
     } else if (['table'].includes(propertyType)) {
@@ -110,8 +127,17 @@ export function isEmptyValue(value) {
   return value === '' || value === null || value === void 0
 }
 
+export function isNullish(value) {
+  return [null, undefined].includes(value)
+}
+
 export function formatValue(value, property) {
   if (!(isEmptyValue(value) && property)) {
+    // 枚举引用/多选和组织类型的字段保存时必须转换为数组，在作为form的值使用时如果是单选值不是数组格式在这里统一转换
+    const arrayValueTypes = [PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.ORGANIZATION]
+    if (arrayValueTypes.includes(property?.bk_property_type)) {
+      return !Array.isArray(value) ? [value] : value
+    }
     return value
   }
   const type = property.bk_property_type
@@ -298,9 +324,10 @@ export function getValidateEvents(property) {
   const type = property.bk_property_type
   const isChar = ['singlechar', 'longchar'].includes(type)
   const hasRegular = !!property.option
-  if (isChar && hasRegular) {
+  const isSelectType = [PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ORGANIZATION].includes(type)
+  if ((isChar && hasRegular) || isSelectType) {
     return {
-      'data-vv-validate-on': 'blur|change'
+      'data-vv-validate-on': 'change|blur'
     }
   }
   return {}
@@ -319,11 +346,20 @@ export function getValidateRules(property) {
   const {
     bk_property_type: propertyType,
     option,
-    isrequired
+    isrequired,
+    ismultiple
   } = property
+
   if (isrequired) {
     rules.required = true
   }
+
+  const isSelectType = [
+    PROPERTY_TYPES.ENUMMULTI,
+    PROPERTY_TYPES.ENUMQUOTE,
+    PROPERTY_TYPES.ORGANIZATION
+  ].includes(propertyType)
+
   if (option) {
     if (['int', 'float'].includes(propertyType)) {
       if (has(option, 'min') && !['', null, undefined].includes(option.min)) {
@@ -345,7 +381,10 @@ export function getValidateRules(property) {
     rules.float = true
   } else if (propertyType === 'objuser') {
     rules.length = 2000
+  } else if (isSelectType) {
+    rules.maxSelectLength = ismultiple ? -1 : 1
   }
+
   return rules
 }
 
@@ -494,6 +533,41 @@ export function getPropertyCopyValue(originalValue, propertyType) {
   return value
 }
 
+// 使用独立组件展示value的类型
+export function isUseComplexValueType(property) {
+  const types = [
+    PROPERTY_TYPES.OBJUSER,
+    PROPERTY_TYPES.TABLE,
+    PROPERTY_TYPES.SERVICE_TEMPLATE,
+    PROPERTY_TYPES.ORGANIZATION,
+    PROPERTY_TYPES.MAP,
+    PROPERTY_TYPES.ENUMQUOTE
+  ]
+  return types.includes(property.bk_property_type)
+}
+
+export function isShowOverflowTips(property) {
+  const otherTypes = [PROPERTY_TYPES.TOPOLOGY]
+  return !isUseComplexValueType(property) && !otherTypes.includes(property.bk_property_type)
+}
+
+export function getPropertyPlaceholder(property) {
+  if (!property) {
+    return ''
+  }
+  const placeholderTxt = [
+    PROPERTY_TYPES.ENUM,
+    PROPERTY_TYPES.ENUMMULTI,
+    PROPERTY_TYPES.ENUMQUOTE,
+    PROPERTY_TYPES.ORGANIZATION,
+    PROPERTY_TYPES.LIST,
+    PROPERTY_TYPES.DATE,
+    PROPERTY_TYPES.TIME,
+    PROPERTY_TYPES.TIMEZONE
+  ].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+  return t(placeholderTxt, { name: property.bk_property_name })
+}
+
 export default {
   getProperty,
   getPropertyText,
@@ -519,5 +593,8 @@ export default {
   sort,
   getPropertyCopyValue,
   isEmptyPropertyValue,
-  getHeaderPropertyMinWidth
+  getHeaderPropertyMinWidth,
+  isShowOverflowTips,
+  isUseComplexValueType,
+  getPropertyPlaceholder
 }

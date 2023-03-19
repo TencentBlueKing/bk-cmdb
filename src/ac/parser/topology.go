@@ -42,7 +42,8 @@ func (ps *parseStream) topology() *parseStream {
 		fullTextSearch().
 		cloudArea().
 		businessSet().
-		kube()
+		kube().
+		project()
 
 	return ps
 }
@@ -1406,7 +1407,7 @@ func (ps *parseStream) audit() *parseStream {
 			return ps
 		}
 
-		// authorize logic reference: https://github.com/Tencent/bk-cmdb/issues/5758
+		// authorize logic reference: https://github.com/TencentBlueKing/bk-cmdb/issues/5758
 		if isMainline {
 			if query.Condition.BizID == 0 {
 				ps.err = fmt.Errorf("bk_biz_id is invalid, rid: %s", ps.RequestCtx.Rid)
@@ -1512,7 +1513,7 @@ func (ps *parseStream) cloudArea() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.CloudAreaInstance,
-					Action: meta.SkipAction,
+					Action: meta.FindMany,
 				},
 			},
 		}
@@ -1586,7 +1587,7 @@ func (ps *parseStream) cloudArea() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.CloudAreaInstance,
-					Action: meta.SkipAction,
+					Action: meta.Find,
 				},
 			},
 		}
@@ -2065,5 +2066,138 @@ func (ps *parseStream) kube() *parseStream {
 		return ps
 	}
 
+	return ps
+}
+
+const (
+	createProjectPattern   = `/api/v3/createmany/project`
+	updateProjectPattern   = `/api/v3/updatemany/project`
+	findProjectPattern     = `/api/v3/findmany/project`
+	deleteProjectPattern   = `/api/v3/deletemany/project`
+	updateProjectIDPattern = `/api/v3/update/project/bk_project_id`
+)
+
+// NOCC:golint/fnsize(project操作需要放到一个函数中)
+func (ps *parseStream) project() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitPattern(createProjectPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Project,
+					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(updateProjectPattern, http.MethodPut) {
+		idsVal, err := ps.RequestCtx.getValueFromBody("ids")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ids := idsVal.Array()
+		if len(ids) == 0 {
+			ps.err = errors.New("ids is not set")
+			return ps
+		}
+
+		for _, id := range ids {
+			idIntVal := id.Int()
+			if idIntVal <= 0 {
+				ps.err = errors.New("invalid id")
+				return ps
+			}
+
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					Basic: meta.Basic{
+						Type:       meta.Project,
+						Action:     meta.Update,
+						InstanceID: idIntVal,
+					},
+				},
+			}
+		}
+		return ps
+	}
+
+	if ps.hitPattern(findProjectPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Project,
+					Action: meta.FindMany,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitPattern(deleteProjectPattern, http.MethodDelete) {
+		idsVal, err := ps.RequestCtx.getValueFromBody("ids")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ids := idsVal.Array()
+		if len(ids) == 0 {
+			ps.err = errors.New("ids is not set")
+			return ps
+		}
+
+		for _, id := range ids {
+			idIntVal := id.Int()
+			if idIntVal <= 0 {
+				ps.err = errors.New("invalid id")
+				return ps
+			}
+
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					Basic: meta.Basic{
+						Type:       meta.Project,
+						Action:     meta.Delete,
+						InstanceID: idIntVal,
+					},
+				},
+			}
+		}
+		return ps
+	}
+
+	if ps.hitPattern(updateProjectIDPattern, http.MethodPut) {
+		idVal, err := ps.RequestCtx.getValueFromBody("id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		id := idVal.Int()
+		if id <= 0 {
+			ps.err = errors.New("invalid id")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.Project,
+					Action:     meta.Update,
+					InstanceID: id,
+				},
+			},
+		}
+
+		return ps
+	}
 	return ps
 }

@@ -100,6 +100,17 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 		return
 	}
 
+	// authorize
+	authResp, authorized, err := s.hasFindModelAuth(ctx.Kit, []string{objID})
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	input := &metadata.QueryCondition{Condition: mapstr.MapStr{
 		common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objID},
 	}}
@@ -217,6 +228,25 @@ func (s *Service) SearchModuleAssociation(ctx *rest.Contexts) {
 		return
 	}
 
+	unique := make(map[string]struct{}, 0)
+	objIDs := make([]string, 0)
+	for _, model := range resp.Info {
+		if _, ok := unique[model.ObjectID]; !ok {
+			unique[model.ObjectID] = struct{}{}
+			objIDs = append(objIDs, model.ObjectID)
+		}
+	}
+	// authorize
+	authResp, authorized, err := s.hasFindModelAuth(ctx.Kit, objIDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	ctx.RespEntity(resp)
 }
 
@@ -229,6 +259,17 @@ func (s *Service) FindAssociationByObjectAssociationID(ctx *rest.Contexts) {
 	if err := ctx.DecodeInto(request); err != nil {
 		blog.Errorf("FindObjectByObjectAssociationID, json unmarshal error, err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, err.Error()))
+		return
+	}
+
+	// authorize
+	authResp, authorized, err := s.hasFindModelAuth(ctx.Kit, []string{objID})
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
 		return
 	}
 

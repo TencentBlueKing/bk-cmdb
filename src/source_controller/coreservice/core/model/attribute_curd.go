@@ -218,8 +218,10 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 
 	if attribute.PropertyType != "" {
 		switch attribute.PropertyType {
-		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeEnum,
-			common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList:
+		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat,
+		common.FieldTypeEnum, common.FieldTypeEnumMulti, common.FieldTypeDate, common.FieldTypeTime,
+		common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool,
+		common.FieldTypeList, common.FieldTypeEnumQuote:
 		default:
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 		}
@@ -689,12 +691,11 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		}
 	}
 
-	// 预定义字段，只能更新分组、分组内排序、名称、单位、提示语和option
+	// 预定义字段，只能更新分组、分组内排序、单位、提示语和option
 	if hasIsPreProperty {
 		_ = data.ForEach(func(key string, val interface{}) error {
 			if key != metadata.AttributeFieldPropertyGroup &&
 				key != metadata.AttributeFieldPropertyIndex &&
-				key != metadata.AttributeFieldPropertyName &&
 				key != metadata.AttributeFieldUnit &&
 				key != metadata.AttributeFieldPlaceHolder &&
 				key != metadata.AttributeFieldOption {
@@ -712,7 +713,22 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 				return kit.CCError.Errorf(common.CCErrCommParamsInvalid, "cond")
 			}
 		}
-		if err := util.ValidPropertyOption(propertyType, option, kit.CCError); err != nil {
+
+		// 属性更新时，如果没有传入ismultiple参数，则使用数据库中的ismultiple值进行校验，如果传了ismultiple参数，则使用更新时的参数
+		isMultiple := dbAttributeArr[0].IsMultiple
+		if val, ok := data.Get(common.BKIsMultipleField); ok {
+			ismultiple, ok := val.(bool)
+			if !ok {
+				return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
+			}
+			isMultiple = &ismultiple
+		}
+
+		if isMultiple == nil {
+			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
+		}
+
+		if err := util.ValidPropertyOption(propertyType, option, *isMultiple, kit.CCError); err != nil {
 			blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
 			return err
 		}
@@ -854,39 +870,6 @@ func (m *modelAttribute) getLangObjID(kit *rest.Kit, objID string) string {
 		langObjID = objID
 	}
 	return langObjID
-}
-
-func (m *modelAttribute) buildUpdateAttrIndexReturn(kit *rest.Kit, objID, propertyGroup string) (*metadata.UpdateAttrIndexData, error) {
-	cond := mapstr.MapStr{
-		common.BKObjIDField:         objID,
-		common.BKPropertyGroupField: propertyGroup,
-	}
-	attrs := []metadata.Attribute{}
-	err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &attrs)
-	if nil != err {
-		blog.Errorf("buildUpdateIndexReturn failed, request(%s): database operation is failed, error info is %s", kit.Rid, err.Error())
-		return nil, err
-	}
-
-	count, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).Count(kit.Ctx)
-	if nil != err {
-		blog.Errorf("buildUpdateIndexReturn failed, request(%s): database operation is failed, error info is %s", kit.Rid, err.Error())
-		return nil, err
-	}
-	info := make([]*metadata.UpdateAttributeIndex, 0)
-	for _, attr := range attrs {
-		idIndex := &metadata.UpdateAttributeIndex{
-			Id:    attr.ID,
-			Index: attr.PropertyIndex,
-		}
-		info = append(info, idIndex)
-	}
-	result := &metadata.UpdateAttrIndexData{
-		Info:  info,
-		Count: count,
-	}
-
-	return result, nil
 }
 
 // GetAttrLastIndex TODO

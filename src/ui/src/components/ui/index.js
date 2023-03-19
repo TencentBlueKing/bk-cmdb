@@ -30,6 +30,8 @@ import longchar from './form/longchar.vue'
 import singlechar from './form/singlechar.vue'
 import timezone from './form/timezone.vue'
 import enumeration from './form/enum.vue'
+import enummulti from './form/enummulti.vue'
+import enumquote from './form/enumquote.vue'
 import objuser from './form/user.vue'
 import resize from './other/resize.vue'
 import collapseTransition from './transition/collapse.js'
@@ -75,6 +77,8 @@ const install = (Vue) => {
     singlechar,
     timezone,
     enumeration,
+    enummulti,
+    enumquote,
     objuser,
     resize,
     collapseTransition,
@@ -128,6 +132,8 @@ export default {
   singlechar,
   timezone,
   enumeration,
+  enummulti,
+  enumquote,
   objuser,
   resize,
   collapseTransition,

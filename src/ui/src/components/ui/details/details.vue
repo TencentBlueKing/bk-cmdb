@@ -23,35 +23,37 @@
             :label="group['bk_group_name']"
             :collapse.sync="groupState[group['bk_group_id']]">
             <ul class="property-list clearfix">
-              <li :class="['property-item fl', { flex: flexProperties.includes(property['bk_property_id']) }]"
-                v-for="property in $groupedProperties[groupIndex]"
-                :key="`${property['bk_obj_id']}-${property['bk_property_id']}`">
-                <span class="property-name"
-                  v-if="!invisibleNameProperties.includes(property['bk_property_id'])"
-                  :title="property['bk_property_name']">{{property['bk_property_name']}}
-                </span>
-                <slot :name="property['bk_property_id']">
-                  <cmdb-property-value
-                    :is-show-overflow-tips="isShowOverflowTips(property)"
-                    :class="'property-value'"
-                    :ref="`property-value-${property.id}`"
-                    :value="inst[property.bk_property_id]"
-                    :property="property">
-                  </cmdb-property-value>
-                </slot>
-                <template v-if="showCopy && !$tools.isEmptyPropertyValue(inst[property.bk_property_id])">
-                  <div class="copy-box">
-                    <i class="property-copy icon-cc-details-copy" @click="handleCopy(property.id)"></i>
-                    <transition name="fade">
-                      <span class="copy-tips"
-                        :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
-                        v-if="showCopyTips === property.id">
-                        {{$t('复制成功')}}
-                      </span>
-                    </transition>
-                  </div>
-                </template>
-              </li>
+              <template v-for="property in $groupedProperties[groupIndex]">
+                <li :class="['property-item fl', { flex: flexProperties.includes(property['bk_property_id']) }]"
+                  v-if="!invisibleProperties.includes(property['bk_property_id'])"
+                  :key="`${property['bk_obj_id']}-${property['bk_property_id']}`">
+                  <span class="property-name"
+                    v-if="!invisibleNameProperties.includes(property['bk_property_id'])"
+                    :title="property['bk_property_name']">{{property['bk_property_name']}}
+                  </span>
+                  <slot :name="property['bk_property_id']">
+                    <cmdb-property-value
+                      :is-show-overflow-tips="isShowOverflowTips(property)"
+                      :class="'property-value'"
+                      :ref="`property-value-${property.id}`"
+                      :value="inst[property.bk_property_id]"
+                      :property="property">
+                    </cmdb-property-value>
+                  </slot>
+                  <template v-if="showCopy && !$tools.isEmptyPropertyValue(inst[property.bk_property_id])">
+                    <div class="copy-box">
+                      <i class="property-copy icon-cc-details-copy" @click="handleCopy(property.id)"></i>
+                      <transition name="fade">
+                        <span class="copy-tips"
+                          :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
+                          v-if="showCopyTips === property.id">
+                          {{$t('复制成功')}}
+                        </span>
+                      </transition>
+                    </div>
+                  </template>
+                </li>
+              </template>
             </ul>
           </cmdb-collapse>
         </div>
@@ -133,6 +135,10 @@
       invisibleNameProperties: {
         type: Array,
         default: () => []
+      },
+      invisibleProperties: {
+        type: Array,
+        default: () => []
       }
     },
     data() {
@@ -161,7 +167,6 @@
         this.$emit('on-delete', this.inst)
       },
       handleCopy(propertyId) {
-        console.log(propertyId)
         const [component] = this.$refs[`property-value-${propertyId}`]
         const copyText = component?.getCopyValue() ?? ''
         this.$copyText(copyText).then(() => {

@@ -21,7 +21,7 @@
         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
           <bk-input type="text" class="cmdb-form-input"
             name="fieldId"
-            v-model.trim="fieldInfo['bk_property_id']"
+            v-model.trim="fieldInfo.bk_property_id"
             :placeholder="$t('请输入唯一标识')"
             :disabled="isEditField"
             v-validate="isEditField ? null : 'required|fieldId|reservedWord|length:128'">
@@ -39,7 +39,7 @@
           <bk-input type="text" class="cmdb-form-input"
             name="fieldName"
             :placeholder="$t('请输入字段名称')"
-            v-model.trim="fieldInfo['bk_property_name']"
+            v-model.trim="fieldInfo.bk_property_name"
             :disabled="isReadOnly || isSystemCreate || field.ispre"
             v-validate="'required|length:128'">
           </bk-input>
@@ -92,18 +92,24 @@
       </div>
       <div class="field-detail">
         <the-config
-          :type="fieldInfo['bk_property_type']"
+          :type="fieldInfo.bk_property_type"
           :is-read-only="isReadOnly"
           :is-main-line-model="isMainLineModel"
           :ispre="isEditField && field.ispre"
-          :editable.sync="fieldInfo['editable']"
-          :isrequired.sync="fieldInfo['isrequired']"
+          :is-edit-field="isEditField"
+          :editable.sync="fieldInfo.editable"
+          :isrequired.sync="fieldInfo.isrequired"
+          :multiple.sync="fieldInfo.ismultiple"
         ></the-config>
+        <!-- 添加key防止复用组件时内部状态错误 -->
         <component
-          v-if="isComponentShow"
+          :key="fieldInfo.bk_property_type"
+          v-if="isSettingComponentShow"
           :is-read-only="isReadOnly || field.ispre"
           :is="`the-field-${fieldType}`"
+          :multiple="fieldInfo.ismultiple"
           v-model="fieldInfo.option"
+          :type="fieldInfo.bk_property_type"
           ref="component"
         ></component>
       </div>
@@ -128,7 +134,7 @@
             v-model.trim="fieldInfo['placeholder']"
             :disabled="isReadOnly"
             v-validate="'length:2000'">
-                    </textarea>
+          </textarea>
           <p class="form-error" v-if="errors.has('placeholder')">{{errors.first('placeholder')}}</p>
         </div>
       </div>
@@ -155,15 +161,19 @@
   import theFieldEnum from './enum'
   import theFieldList from './list'
   import theFieldBool from './bool'
+  import theFieldEnumquote from './enumquote.vue'
   import theConfig from './config'
   import { mapGetters, mapActions } from 'vuex'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+  import { PROPERTY_TYPES, PROPERTY_TYPE_LIST } from '@/dictionary/property-constants'
+
   export default {
     components: {
       theFieldChar,
       theFieldInt,
       theFieldFloat,
       theFieldEnum,
+      theFieldEnumquote,
       theFieldList,
       theFieldBool,
       theConfig
@@ -200,56 +210,21 @@
     },
     data() {
       return {
-        fieldTypeList: [{
-          id: 'singlechar',
-          name: this.$t('短字符')
-        }, {
-          id: 'int',
-          name: this.$t('数字')
-        }, {
-          id: 'float',
-          name: this.$t('浮点')
-        }, {
-          id: 'enum',
-          name: this.$t('枚举')
-        }, {
-          id: 'date',
-          name: this.$t('日期')
-        }, {
-          id: 'time',
-          name: this.$t('时间')
-        }, {
-          id: 'longchar',
-          name: this.$t('长字符')
-        }, {
-          id: 'objuser',
-          name: this.$t('用户')
-        }, {
-          id: 'timezone',
-          name: this.$t('时区')
-        }, {
-          id: 'bool',
-          name: 'bool'
-        }, {
-          id: 'list',
-          name: this.$t('列表')
-        }, {
-          id: 'organization',
-          name: this.$t('组织')
-        }],
+        fieldTypeList: PROPERTY_TYPE_LIST,
         fieldInfo: {
           bk_property_name: '',
           bk_property_id: '',
           bk_property_group: this.group.bk_group_id,
           unit: '',
           placeholder: '',
-          bk_property_type: 'singlechar',
+          bk_property_type: PROPERTY_TYPES.SINGLECHAR,
           editable: true,
           isrequired: false,
+          ismultiple: false,
           option: ''
         },
         originalFieldInfo: {},
-        charMap: ['singlechar', 'longchar']
+        charMap: [PROPERTY_TYPES.SINGLECHAR, PROPERTY_TYPES.LONGCHAR]
       }
     },
     provide() {
@@ -266,16 +241,31 @@
         return topRoute ? topRoute.name !== MENU_BUSINESS : true
       },
       fieldType() {
-        const {
-          bk_property_type: type
-        } = this.fieldInfo
-        if (this.charMap.indexOf(type) !== -1) {
-          return 'char'
+        let { bk_property_type: type } = this.fieldInfo
+        switch (type) {
+          case PROPERTY_TYPES.SINGLECHAR:
+          case PROPERTY_TYPES.LONGCHAR:
+            type = 'char'
+            break
+          case PROPERTY_TYPES.ENUMMULTI:
+            type = 'enum'
+            break
         }
         return type
       },
-      isComponentShow() {
-        return ['singlechar', 'longchar', 'enum', 'int', 'float', 'list', 'bool'].indexOf(this.fieldInfo.bk_property_type) !== -1
+      isSettingComponentShow() {
+        const types = [
+          PROPERTY_TYPES.SINGLECHAR,
+          PROPERTY_TYPES.LONGCHAR,
+          PROPERTY_TYPES.ENUM,
+          PROPERTY_TYPES.INT,
+          PROPERTY_TYPES.FLOAT,
+          PROPERTY_TYPES.LIST,
+          PROPERTY_TYPES.BOOL,
+          PROPERTY_TYPES.ENUMMULTI,
+          PROPERTY_TYPES.ENUMQUOTE
+        ]
+        return types.indexOf(this.fieldInfo.bk_property_type) !== -1
       },
       changedValues() {
         const changedValues = {}
@@ -304,8 +294,19 @@
                 max: ''
               }
               break
+            case PROPERTY_TYPES.ENUMMULTI:
+            case PROPERTY_TYPES.ENUMQUOTE:
+              this.fieldInfo.option = []
+              this.fieldInfo.ismultiple = true
+              break
+            case PROPERTY_TYPES.OBJUSER:
+            case PROPERTY_TYPES.ORGANIZATION:
+              this.fieldInfo.option = ''
+              this.fieldInfo.ismultiple = true
+              break
             default:
               this.fieldInfo.option = ''
+              this.fieldInfo.ismultiple = false
           }
         }
       }
@@ -325,7 +326,7 @@
       ]),
       initData() {
         Object.keys(this.fieldInfo).forEach((key) => {
-          this.fieldInfo[key] = this.$tools.clone(this.field[key])
+          this.fieldInfo[key] = this.$tools.clone(this.field[key] ?? '')
         })
         this.originalFieldInfo = this.$tools.clone(this.fieldInfo)
       },

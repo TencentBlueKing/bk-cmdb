@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -20,6 +21,13 @@ import (
 
 // SelectObjectTopoGraphics select object topo graphics
 func (s *Service) SelectObjectTopoGraphics(ctx *rest.Contexts) {
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: meta.Basic{Type: meta.ModelTopology, Action: meta.ModelTopologyView}}
+	if authResp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	resp, err := s.Logics.GraphicsOperation().SelectObjectTopoGraphics(ctx.Kit,
 		ctx.Request.PathParameter("scope_type"), ctx.Request.PathParameter("scope_id"))
 	if err != nil {
