@@ -38,6 +38,7 @@
       v-show="expanded"
       :data="list"
       :max-height="462"
+      empty-block-class-name="empty-block"
       :row-style="{ cursor: 'pointer' }"
       @row-click="handleShowDetails">
       <bk-table-column v-for="(column, index) in header"
@@ -48,7 +49,7 @@
         show-overflow-tooltip>
         <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
       </bk-table-column>
-      <bk-table-column v-if="!readonly" :label="$t('操作')">
+      <bk-table-column v-if="!readonly && table.stuff.type !== 'permission'" :label="$t('操作')">
         <template slot-scope="{ row }">
           <cmdb-auth :auth="HOST_AUTH.U_HOST">
             <bk-button slot-scope="{ disabled }"
@@ -211,12 +212,17 @@
             },
             config: {
               fromCache: true,
-              requestId: this.propertyRequest
+              requestId: this.propertyRequest,
+              globalPermission: false
             }
           })
         } catch (e) {
-          console.error(e)
-          this.properties = []
+          if (e.permission) {
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission: e.permission }
+            }
+          }
         }
       },
       async getInstances() {
@@ -263,12 +269,11 @@
           this.pagination.count = this.associationInstances?.length
 
           // 删除一整页后自动回退到上一页
-          if (this.pagination.count && !data[dataListKey].length) {
+          if (data.count && this.pagination.count && !data[dataListKey].length) {
             this.pagination.current -= 1
             this.getInstances()
           }
         } catch (e) {
-          console.error(e)
           if (e.permission) {
             this.table.stuff = {
               type: 'permission',
@@ -515,5 +520,10 @@
                 font-size: 12px;
             }
         }
+    }
+    .association-table {
+      :deep(.empty-block) {
+        width: 100% !important;
+      }
     }
 </style>

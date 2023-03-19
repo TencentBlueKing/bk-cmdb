@@ -11,6 +11,31 @@
  */
 
 import http from '@/api'
+import { BUILTIN_MODELS } from '@/dictionary/model-constants'
+import { transformHostSearchParams, localSort } from '@/utils/tools'
+
+const find = async ({ params, config }) => {
+  try {
+    const bizCond = params?.condition?.find(cond => cond.bk_obj_id === BUILTIN_MODELS.BUSINESS)
+    let url = 'findmany/hosts/search/without_biz'
+    if (bizCond?.condition?.length || params.bk_biz_id > 0) {
+      url = 'findmany/hosts/search/with_biz'
+    }
+
+    const data = http.post(url, transformHostSearchParams(params), config)
+
+    if (data?.info) {
+      data.info.forEach((host) => {
+        localSort(host.module, 'bk_module_name')
+        localSort(host.set, 'bk_set_name')
+      })
+    }
+
+    return data
+  } catch (error) {
+    Promise.reject(error)
+  }
+}
 
 const findOne = async ({ bk_host_id: hostId, bk_biz_id: bizId, config }) => {
   try {
@@ -39,6 +64,7 @@ const findOne = async ({ bk_host_id: hostId, bk_biz_id: bizId, config }) => {
 const getTopoPath = (data, config) => http.post('find/host/topopath', data, config)
 
 export default {
+  find,
   findOne,
   getTopoPath
 }

@@ -38,6 +38,7 @@
       v-show="expanded"
       :data="list"
       :max-height="462"
+      empty-block-class-name="empty-block"
       :row-style="{ cursor: 'pointer' }"
       @row-click="handleShowDetails">
       <bk-table-column v-for="(column, index) in header"
@@ -77,7 +78,7 @@
   import bus from '@/utils/bus.js'
   import { mapGetters } from 'vuex'
   import authMixin from '../mixin-auth'
-  import { translateAuth } from '@/setup/permission'
+  // import { translateAuth } from '@/setup/permission'
   import instanceService from '@/service/instance/instance'
   import businessSetService from '@/service/business-set/index.js'
   import {
@@ -230,15 +231,6 @@
     },
     methods: {
       getData() {
-        // 备选方案，由前端预先鉴权
-        const viewAuth = { type: this.$OPERATION.R_INST, relation: [this.model.id] }
-        if (!this.isViewAuthed(viewAuth)) {
-          this.table.stuff = {
-            type: 'permission',
-            payload: { permission: translateAuth(viewAuth) }
-          }
-          return
-        }
         this.getProperties()
         this.getInstances()
       },
@@ -250,12 +242,17 @@
             },
             config: {
               fromCache: true,
-              requestId: this.propertyRequest
+              requestId: this.propertyRequest,
+              globalPermission: false
             }
           })
         } catch (e) {
-          console.error(e)
-          this.properties = []
+          if (e.permission) {
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission: e.permission }
+            }
+          }
         }
       },
       async getInstances() {
@@ -293,12 +290,11 @@
           this.pagination.count = this.associationInstances?.length
 
           // 向前翻一页
-          if (this.pagination.count && !data[dataListKey].length) {
+          if (data.count && this.pagination.count && !data[dataListKey].length) {
             this.pagination.current -= 1
             this.getInstances()
           }
         } catch (e) {
-          console.error(e)
           if (e.permission) {
             this.table.stuff = {
               type: 'permission',
@@ -547,5 +543,11 @@
                 font-size: 12px;
             }
         }
+    }
+
+    .association-table {
+      :deep(.empty-block) {
+        width: 100% !important;
+      }
     }
 </style>

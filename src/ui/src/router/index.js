@@ -216,7 +216,7 @@ const checkViewAuthorize = async (to) => {
     const authSuperViewResult = await getViewAuthResult(authSuperView)
     const authViewResult = await getViewAuthResult(authView)
 
-    // 没有子权限，指定需要优先申请子权限
+    // 没有子权限，指定需要优先申请子权限，后期期望自动关联上父权限
     if (!authViewResult) {
       to.meta.authKey = 'view'
     } else if (!authSuperViewResult) {

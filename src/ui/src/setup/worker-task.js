@@ -11,29 +11,31 @@
  */
 
 import store from '@/store'
+import { OPERATION } from '@/dictionary/iam-auth'
 import CCWorker from '@/workers/ccworker.js'
 import { isViewAuthFreeModel, isViewAuthFreeModelInstance } from '@/service/auth'
 
 const iam = () => {
   const models = store.getters['objectModelClassify/models']
-  if (!models) {
-    console.error('Failed to get model data')
-    return
-  }
 
-  // 所有需要预鉴权模型查看权限的模型id
-  const modelIds = []
-  // 所有需要预鉴权模型实例查看权限的模型id
-  const instanceModelIds = []
+  const authList = [
+    { type: OPERATION.R_FULLTEXT_SEARCH },
+    { type: OPERATION.R_RESOURCE_HOST },
+    { type: OPERATION.R_MODEL_TOPOLOGY },
+    { type: OPERATION.R_CLOUD_AREA },
+  ]
 
   models.filter(item => !item.bk_ishidden)
     .map(item => item.id)
     .forEach((modelId) => {
+      // 需要预鉴权模型查看权限的模型
       if (!isViewAuthFreeModel({ id: modelId })) {
-        modelIds.push(modelId)
+        authList.push({ type: OPERATION.R_MODEL, relation: [modelId] })
       }
+
+      // 需要预鉴权模型实例查看权限的模型
       if (!isViewAuthFreeModelInstance({ id: modelId })) {
-        instanceModelIds.push(modelId)
+        authList.push({ type: OPERATION.R_INST, relation: [modelId] })
       }
     })
 
@@ -45,8 +47,7 @@ const iam = () => {
       console.error(err)
     }
   }).dispatch('preverify', {
-    modelIds,
-    instanceModelIds
+    authList
   })
 }
 

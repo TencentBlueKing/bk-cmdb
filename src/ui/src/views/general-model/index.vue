@@ -730,7 +730,6 @@
           this.table.pagination.count = count
           this.table.stuff.type = this.$route.query?.s?.length ? 'search' : 'default'
         } catch (err) {
-          console.error(err)
           if (err.permission) {
             this.table.stuff = {
               type: 'permission',

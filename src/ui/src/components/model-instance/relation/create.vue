@@ -22,7 +22,7 @@
         @on-selected="handleSelectObj">
       </cmdb-selector>
     </div>
-    <div class="association-filter clearfix">
+    <div class="association-filter clearfix" v-show="isShowPropertyFilter">
       <label class="filter-label fl">{{$t('条件筛选')}}</label>
       <div class="filter-group filter-group-property fl">
         <cmdb-relation-property-filter
@@ -36,6 +36,7 @@
       <bk-button theme="primary" class="btn-search fr" @click="search">{{$t('搜索')}}</bk-button>
     </div>
     <bk-table class="new-association-table"
+      v-show="isShowPropertyFilter"
       v-bkloading="{ isLoading: $loading() }"
       :pagination="table.pagination"
       :data="table.list"
@@ -164,7 +165,8 @@
         currentAsstObj: '',
         existInstAssociation: [],
         tempData: [],
-        hasChange: false
+        hasChange: false,
+        isShowPropertyFilter: true
       }
     },
     computed: {
@@ -337,10 +339,17 @@
           config: {
             requestId: `post_searchObjectAttribute_${this.currentAsstObj}`
           }
-        }).then((properties) => {
-          this.properties = properties
-          return properties
         })
+          .then((properties) => {
+            this.properties = properties
+            this.isShowPropertyFilter = true
+            return properties
+          })
+          .catch((err) => {
+            if (err.permission) {
+              this.isShowPropertyFilter = false
+            }
+          })
       },
       close() {
         this.$emit('on-new-relation-close')

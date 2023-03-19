@@ -48,6 +48,7 @@
   } from '@/dictionary/menu-symbol'
   import InstanceCount from './instance-count.vue'
   import { BUILTIN_MODELS, BUILTIN_MODEL_COLLECTION_KEYS, BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
+  import { isViewAuthFreeModelInstance } from '@/service/auth'
 
   export default {
     components: {
@@ -100,7 +101,7 @@
         return Object.values(BUILTIN_MODELS).includes(model.bk_obj_id)
       },
       getAuthMaskProps(model) {
-        if (has(BUILTIN_MODEL_RESOURCE_MENUS, model.bk_obj_id)) {
+        if (isViewAuthFreeModelInstance(model)) {
           return {
             ignore: true
           }

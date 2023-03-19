@@ -90,6 +90,13 @@ function basicTransform(cmdbAction, meta = {}) {
 
 // relation数组表示的是视图拓扑的定义
 export const IAM_ACTIONS = {
+  // 全文检索
+  R_FULLTEXT_SEARCH: {
+    id: 'use_fulltext_search',
+    name: ['全文检索', 'Full Text Search'],
+    cmdb_action: 'fulltextSearch.find'
+  },
+
   // 模型分组
   C_MODEL_GROUP: {
     id: 'create_model_group',
@@ -198,11 +205,19 @@ export const IAM_ACTIONS = {
     }
   },
   R_INST: {
-    id: ([modelId]) => `find_comobj_${modelId}`,
-    fixedId: 'find_comobj',
+    id: ([modelId]) => `view_comobj_${modelId}`,
+    fixedId: 'view_comobj',
     name: ['实例查看', 'View Instance'],
     cmdb_action: ([modelId]) => ({ action: 'find', type: `comobj_${modelId}` }),
-    relation: [],
+    relation: [{
+      view: (relation) => {
+        const [[levelOne]] = relation
+        if (Array.isArray(levelOne)) {
+          return `comobj_${[levelOne[0]]}`
+        }
+        return `comobj_${relation[0]}`
+      }
+    }],
     transform: (cmdbAction, relationIds = []) => {
       const { action, type } = cmdbAction(relationIds)
       const [modelId] = relationIds
@@ -527,6 +542,11 @@ export const IAM_ACTIONS = {
   },
 
   // 主机池主机
+  R_RESOURCE_HOST: {
+    id: 'view_resource_pool_host',
+    name: ['主机池主机查看', 'View Resource Pool Hosts'],
+    cmdb_action: 'hostInstance.find'
+  },
   C_RESOURCE_HOST: {
     id: 'create_resource_pool_host',
     name: ['主机池主机创建', 'Create Resource Pool Host'],
@@ -800,6 +820,12 @@ export const IAM_ACTIONS = {
     cmdb_action: 'auditlog.findMany'
   },
 
+  R_MODEL_TOPOLOGY: {
+    id: 'view_model_topo',
+    name: ['模型拓扑查看', 'View Model Topo'],
+    cmdb_action: 'modelTopology.modelTopologyView'
+  },
+
   // 拓扑层级新增
   SYSTEM_TOPOLOGY: {
     id: 'edit_business_layer',
@@ -1036,6 +1062,11 @@ export const IAM_ACTIONS = {
   },
 
   // 云区域
+  R_CLOUD_AREA: {
+    id: 'view_cloud_area',
+    name: ['云区域查看', 'View Cloud Area'],
+    cmdb_action: 'plat.find'
+  },
   C_CLOUD_AREA: {
     id: 'create_cloud_area',
     name: ['云区域创建', 'Create Cloud Area'],

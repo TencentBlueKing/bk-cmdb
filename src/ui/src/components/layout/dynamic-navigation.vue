@@ -82,6 +82,8 @@
     MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_RESOURCE,
     MENU_RESOURCE_INSTANCE,
+    MENU_RESOURCE_CLOUD_AREA,
+    MENU_MODEL_TOPOLOGY_NEW
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
 
@@ -251,13 +253,20 @@
         // 此处通过route.name将排除主机/业务/业务集
         // 主机，将使用资源主机查看权限不在这里控制
         // 业务/业务集模型已有实例查看权限并且在接口层面将数据过滤后返回
+        let auth = null
         if (menu?.route?.name === MENU_RESOURCE_INSTANCE) {
           const model = this.models.find(model => model.bk_obj_id === menu?.route?.params?.objId)
-          const auth = { type: this.$OPERATION.R_INST, relation: [model.id] }
-          const authorized = this.isViewAuthed(auth)
+          auth = { type: this.$OPERATION.R_INST, relation: [model.id] }
+        } else if (menu?.route?.name === MENU_RESOURCE_CLOUD_AREA) {
+          auth = { type: this.$OPERATION.R_CLOUD_AREA }
+        } else if (menu?.route?.name === MENU_MODEL_TOPOLOGY_NEW) {
+          auth = { type: this.$OPERATION.R_MODEL_TOPOLOGY }
+        }
+
+        if (auth) {
           props.ignore = false
           props.auth = auth
-          props.authorized = authorized
+          props.authorized = this.isViewAuthed(auth)
         }
 
         return props

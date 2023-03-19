@@ -37,8 +37,8 @@
     mixins: [permissionMixins],
     props: {
       permission: {
-        type: Array,
-        default: () => []
+        type: Object,
+        default: () => {}
       }
     }
   }
@@ -52,6 +52,14 @@
         .text-btn {
             font-size: 14px;
             height: auto;
+        }
+
+        :deep(.bk-exception-img) {
+          width: 280px;
+          height: auto;
+        }
+        :deep(.bk-exception-text) {
+          font-size: 14px;
         }
     }
 </style>

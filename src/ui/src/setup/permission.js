@@ -52,7 +52,7 @@ function mergeSameActions(actions) {
 
   actions.forEach((action) => {
     const viewMap = actionMap.get(action.id) || new Map()
-    action.related_resource_types.forEach(({ type, instances }) => {
+    action.related_resource_types.forEach(({ type, instances = [] }) => {
       const viewInstances = viewMap.get(type) || []
       viewInstances.push(...instances)
       viewMap.set(type, viewInstances)
@@ -70,11 +70,14 @@ function mergeSameActions(actions) {
     viewMap.forEach((viewInstances, viewType) => {
       // 将每个view下的实例去重，viewInstances中每一条实例的结构可能是 [inst] 或者 [inst, inst, ...]，所以必须要合并所有实例以确定其唯一性
       const instances = uniqBy(viewInstances, insts => insts?.reduce((acc, cur) => `${acc}/${cur?.id}_${cur?.type}`, ''))
-      relatedResourceTypes.push({
+      const data = {
         type: viewType,
-        system_id: SYSTEM_ID,
-        instances
-      })
+        system_id: SYSTEM_ID
+      }
+      if (instances?.length) {
+        data.instances = instances
+      }
+      relatedResourceTypes.push(data)
     })
     permission.actions.push({
       id: actionId,
@@ -101,23 +104,26 @@ export const translateAuth = (auth) => {
     definition.relation.forEach((viewDefinition, viewDefinitionIndex) => { // 第m个视图的定义n
       const { view, instances } = viewDefinition
       const relatedResource = {
-        type: typeof view === 'function' ? view(relation) : view,
-        instances: []
+        type: typeof view === 'function' ? view(relation) : view
       }
-      relation.forEach((resourceViewPaths) => { // 第x个资源对应的视图数组
-        const viewPathData = resourceViewPaths[viewDefinitionIndex] || [] // 取出第x个资源对应的第m个视图对应的拓扑路径ID数组
-        if (typeof instances === 'function') {
-          relatedResource.instances.push(instances(relation))
-        } else {
-          const viewFullPath = viewPathData.map((path, pathIndex) => ({ // 资源x的第m个视图对应的全路径拓扑对象
-            type: instances[pathIndex],
-            id: String(path)
-          }))
-          if (!relatedResource.instances.some(path => isEqual(path, viewFullPath))) {
-            relatedResource.instances.push(viewFullPath)
+
+      if (instances?.length) {
+        relatedResource.instances = []
+        relation.forEach((resourceViewPaths) => { // 第x个资源对应的视图数组
+          const viewPathData = resourceViewPaths[viewDefinitionIndex] || [] // 取出第x个资源对应的第m个视图对应的拓扑路径ID数组
+          if (typeof instances === 'function') {
+            relatedResource.instances.push(instances(relation))
+          } else {
+            const viewFullPath = viewPathData.map((path, pathIndex) => ({ // 资源x的第m个视图对应的全路径拓扑对象
+              type: instances[pathIndex],
+              id: String(path)
+            }))
+            if (!relatedResource.instances.some(path => isEqual(path, viewFullPath))) {
+              relatedResource.instances.push(viewFullPath)
+            }
           }
-        }
-      })
+        })
+      }
       action.related_resource_types.push(relatedResource)
     })
 

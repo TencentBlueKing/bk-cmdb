@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { OPERATION, TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
+import { TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
 import { postData } from './utils.js'
 
 const state = {
@@ -21,16 +21,8 @@ const actions = {
   config(state, payload) {
     state.config = payload
   },
-  async preverify({ config }, { modelIds, instanceModelIds }) {
+  async preverify({ config }, { authList }) {
     try {
-      const authList = []
-      modelIds.forEach((id) => {
-        authList.push({ type: OPERATION.R_MODEL, relation: [id] })
-      })
-      instanceModelIds.forEach((id) => {
-        authList.push({ type: OPERATION.R_INST, relation: [id] })
-      })
-
       const resources = TRANSFORM_TO_INTERNAL(authList)
       const result = await postData(`${config.API_PREFIX}/auth/verify`, { resources })
 

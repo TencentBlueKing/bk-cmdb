@@ -18,6 +18,7 @@ import store from '@/store'
 import { MENU_BUSINESS_SET } from '@/dictionary/menu-symbol.js'
 import { findProcessByServiceInstance } from '@/service/business-set/process-instance'
 import { findAggregationLabels, findServiceInstanceWithHost } from '@/service/business-set/service-instance'
+import hostSearchService from '@/service/host/search'
 import { HostService } from '@/service/business-set/host'
 import { findTopoPath } from '@/service/business-set/topology'
 
@@ -53,7 +54,7 @@ export const hostInfoProxy = (params, config) => {
     return HostService.findOne(bizSetId, params, config)
   }
 
-  return store.dispatch('hostSearch/searchHost', { params, config })
+  return hostSearchService.find({ params, config })
 }
 
 export const topoPathProxy = (bizId, params, config) => {

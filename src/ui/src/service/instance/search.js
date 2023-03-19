@@ -42,8 +42,7 @@ const findOne = async ({ bk_obj_id: objId, bk_inst_id: instId, config }) => {
     const [instance] = info || [null]
     return instance
   } catch (error) {
-    console.error(error)
-    return null
+    return Promise.reject(error)
   }
 }
 
