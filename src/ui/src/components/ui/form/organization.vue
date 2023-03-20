@@ -22,7 +22,7 @@
     }
   ]">
     <bk-select
-      class="selector"
+      :class="['selector',{ 'active-selector': isActive }]"
       ref="select"
       :popover-width="400"
       :scroll-height="400"
@@ -415,8 +415,10 @@
   const handleClear = () => {
     resetTree()
   }
+  const isActive = ref(false)
 
   const handleToggle = (active) => {
+    isActive.value = active
     emit('toggle', active)
   }
 
@@ -430,12 +432,16 @@
 </script>
 
 <style lang="scss" scoped>
-.cmdb-organization {
-  position: relative;
-  width: 100%;
-
-  .selector {
-    width: 100%;
-  }
-}
+    .cmdb-organization {
+        position: relative;
+        width: 100%;
+        height: 32px;
+        .selector {
+            width: 100%;
+          }
+        .active-selector{
+          position: absolute;
+            z-index: 2;
+        }
+    }
 </style>

@@ -190,7 +190,7 @@
         justify-content: space-between;
         .property-item {
             flex: 0 0 48%;
-            margin: 8px 0 0;
+            margin: 8px 0 16px 0;
             font-size: 12px;
             .property-name {
                 display: block;

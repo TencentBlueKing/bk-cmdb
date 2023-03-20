@@ -54,6 +54,8 @@
     }
   })
 
+  const isActive = ref(false)
+
   watch(() => props.objId, (cur, prev) => {
     if (cur && cur !== prev) {
       search()
@@ -66,7 +68,10 @@
     search()
   }
 
-  const handleToggle = active => emit('toggle', active)
+  const handleToggle = (active) => {
+    isActive.value = active
+    emit('toggle', active)
+  }
 
   defineExpose({
     focus: () => selector?.value?.show?.()
@@ -74,20 +79,39 @@
 </script>
 
 <template>
-  <bk-select
-    ref="selector"
-    v-bind="$attrs"
-    v-model="localValue"
-    searchable
-    :multiple="multiple"
-    :loading="loading"
-    :is-tag-width-limit="true"
-    :remote-method="remoteSearch"
-    @toggle="handleToggle">
-    <bk-option v-for="option in list"
-      :key="option.id"
-      :id="option.id"
-      :name="option.name">
-    </bk-option>
-  </bk-select>
+  <div class="cmdb-enumquote">
+    <bk-select
+      :class="['selector',{ 'active-selector': isActive }]"
+      ref="selector"
+      v-bind="$attrs"
+      v-model="localValue"
+      searchable
+      :multiple="multiple"
+      :loading="loading"
+      :is-tag-width-limit="true"
+      :remote-method="remoteSearch"
+      @toggle="handleToggle">
+      <bk-option v-for="option in list"
+        :key="option.id"
+        :id="option.id"
+        :name="option.name">
+      </bk-option>
+    </bk-select>
+  </div>
+
 </template>
+
+<style lang="scss" scoped>
+    .cmdb-enumquote {
+        position: relative;
+        width: 100%;
+        height: 32px;
+        .selector {
+            width: 100%;
+          }
+        .active-selector{
+          position: absolute;
+            z-index: 2;
+        }
+    }
+</style>
