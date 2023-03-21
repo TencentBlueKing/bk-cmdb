@@ -676,7 +676,7 @@ func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) 
 	// check name duplicate
 	if err := m.checkUnique(kit, true, attribute.ObjectID, attribute.PropertyID, attribute.PropertyName,
 		attribute.BizID); err != nil {
-		blog.Errorf("save attribute check unique input: %+v, err: %v, , rid: %s", attribute, err, kit.Rid)
+		blog.Errorf("save attribute check unique input: %+v, err: %v, rid: %s", attribute, err, kit.Rid)
 		return err
 	}
 
