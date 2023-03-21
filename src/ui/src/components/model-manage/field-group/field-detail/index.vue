@@ -457,6 +457,11 @@
         }
         .cmdb-form-item {
             width: 94% !important;
+            &.is-error {
+                /deep/ .bk-form-input {
+                    border-color: #ff5656;
+                }
+            }
         }
         .icon-cc-exclamation-tips {
             font-size: 18px;
