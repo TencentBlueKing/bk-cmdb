@@ -22,7 +22,7 @@
     }
   ]">
     <bk-select
-      :class="['selector',{ 'active-selector': isActive }]"
+      :class="['selector', { 'active': isActive }]"
       ref="select"
       :popover-width="400"
       :scroll-height="400"
@@ -438,10 +438,10 @@
         height: 32px;
         .selector {
             width: 100%;
+            &.active {
+                position: absolute;
+                z-index: 2;
+            }
           }
-        .active-selector{
-          position: absolute;
-            z-index: 2;
-        }
     }
 </style>

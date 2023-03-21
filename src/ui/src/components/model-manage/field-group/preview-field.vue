@@ -227,9 +227,6 @@
             .property-value {
                 font-size: 0;
                 position: relative;
-                // .form-component {
-                //   font-size: 12px;
-                // }
             }
         }
     }

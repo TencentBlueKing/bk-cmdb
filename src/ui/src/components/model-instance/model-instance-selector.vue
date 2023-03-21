@@ -79,9 +79,9 @@
 </script>
 
 <template>
-  <div class="cmdb-enumquote">
+  <div class="model-instance-selector">
     <bk-select
-      :class="['selector',{ 'active-selector': isActive }]"
+      :class="['selector', { 'active': isActive }]"
       ref="selector"
       v-bind="$attrs"
       v-model="localValue"
@@ -102,16 +102,16 @@
 </template>
 
 <style lang="scss" scoped>
-    .cmdb-enumquote {
+    .model-instance-selector {
         position: relative;
         width: 100%;
         height: 32px;
         .selector {
             width: 100%;
+            &.active {
+                position: absolute;
+                z-index: 2;
+            }
           }
-        .active-selector{
-          position: absolute;
-            z-index: 2;
-        }
     }
 </style>
