@@ -182,7 +182,8 @@ func (s *Service) getUserListStr(userList []string) []string {
 }
 
 // getDepartment search department detail and return a id-fullname map
-func (s *Service) getDepartment(c *gin.Context, objID string) ([]metadata.DepartmentItem, []string, error) {
+func (s *Service) getDepartment(c *gin.Context, objID string, infoList []mapstr.MapStr) ([]metadata.DepartmentItem,
+	[]string, error) {
 
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	cond := metadata.QueryCondition{
@@ -207,7 +208,42 @@ func (s *Service) getDepartment(c *gin.Context, objID string) ([]metadata.Depart
 		propertyList = append(propertyList, item.PropertyID)
 	}
 
-	department, err := s.Logics.GetDepartment(c, s.Config)
+	ok := true
+	orgIDList := make([]int64, 0)
+	for _, info := range infoList {
+		// 主机模型的info内容比inst模型的info内容多封装了一层，需要将内容提取出来。
+		if objID == common.BKInnerObjIDHost {
+			info, ok = info[common.BKInnerObjIDHost].(map[string]interface{})
+			if !ok {
+				blog.Errorf("failed to cast %s instance info from interface{} to map[string]interface{}, rid: %s",
+					objID, rid)
+				return nil, nil, fmt.Errorf("failed to cast %s instance info convert to map[string]interface{}",
+					objID)
+			}
+		}
+		for _, item := range attrRsp.Info {
+			if info[item.PropertyID] != nil {
+				orgIDs, ok := info[item.PropertyID].([]interface{})
+				if !ok {
+					return nil, nil, fmt.Errorf("org id list type not []interface{}, real type is %T",
+						info[item.PropertyID])
+				}
+				if len(orgIDs) == 0 {
+					continue
+				}
+				for _, orgID := range orgIDs {
+					id, err := util.GetInt64ByInterface(orgID)
+					if err != nil {
+						return nil, nil, err
+					}
+					orgIDList = append(orgIDList, id)
+				}
+			}
+		}
+	}
+
+	orgIDs := util.IntArrayUnique(orgIDList)
+	department, err := s.Logics.GetAllDepartment(c, s.Config, orgIDs)
 	if err != nil {
 		blog.Errorf("get department failed, err: %v, rid: %s", err, rid)
 		return nil, nil, err

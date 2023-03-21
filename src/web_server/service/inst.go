@@ -93,11 +93,9 @@ func (s *Service) ImportInst(c *gin.Context) {
 	dir := webCommon.ResourcePath + "/import/"
 	_, err = os.Stat(dir)
 	if err != nil {
-		if err != nil {
-			blog.Warnf("os.Stat failed, filename: %s, will retry with os.MkdirAll, err: %+v, rid: %s", dir, err, rid)
-		}
+		blog.Warnf("os.Stat failed, filename: %s, will retry with os.MkdirAll, err: %v, rid: %s", dir, err, rid)
 		if err := os.MkdirAll(dir, os.ModeDir|os.ModePerm); err != nil {
-			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
+			blog.Errorf("os.MkdirAll failed, filename: %s, err: %v, rid: %s", dir, err, rid)
 		}
 	}
 	filePath := fmt.Sprintf("%s/importinsts-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
@@ -191,7 +189,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 			common.CCErrWebGetUsernameMapFail, objID).Error(), nil)))
 	}
 
-	org, orgPropertyList, err := s.getDepartment(c, objID)
+	org, orgPropertyList, err := s.getDepartment(c, objID, instInfo)
 	if err != nil {
 		blog.Errorf("get department map and property list failed, err: %+v, rid: %s", err, rid)
 		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetDepartmentMapFail, defErr.Errorf(

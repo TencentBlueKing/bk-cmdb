@@ -34,10 +34,11 @@ func (lgc *Logics) GetImportInsts(ctx context.Context, f *xlsx.File, objID strin
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, modelBizID, common.HostAddMethodExcelDefaultIndex)
+	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, modelBizID,
+		common.HostAddMethodExcelDefaultIndex)
 
-	if nil != err {
-		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
+	if err != nil {
+		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err))
 	}
 	if len(f.Sheets) == 0 {
 		blog.Errorf("the excel file sheets is empty, rid: %s", rid)
@@ -49,18 +50,11 @@ func (lgc *Logics) GetImportInsts(ctx context.Context, f *xlsx.File, objID strin
 		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 
-	departmentMap, err := lgc.getDepartmentMap(ctx, header)
-	if err != nil {
-		blog.Errorf("get department failed, err: %v, rid: %s", err, rid)
-		return nil, nil, err
-	}
-
 	if isInst {
-		return GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, headerRow,
-			defLang, departmentMap)
+		return GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true,
+			headerRow, defLang)
 	} else {
-		return GetRawExcelData(ctx, sheet, common.KvMap{"import_from": common.HostAddMethodExcel}, headerRow, defLang,
-			departmentMap)
+		return GetRawExcelData(ctx, sheet, common.KvMap{"import_from": common.HostAddMethodExcel}, headerRow, defLang)
 	}
 }
 
