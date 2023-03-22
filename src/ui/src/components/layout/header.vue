@@ -51,7 +51,6 @@
       <bk-popover class="info-item"
         theme="light header-info-popover"
         animation="fade"
-        placement="bottom-end"
         ref="popover"
         :arrow="false"
         :tippy-options="{
@@ -157,7 +156,7 @@
       this.versionList = versionList.map(item => ({
         title: item.version,
         date: item.time
-      })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      })).sort((a, b) => b.title.localeCompare(a.title))
       this.currentVersion = versionList.find(item => item.is_current === true)?.version || ''
       if (oldCurrentVersion !== this.currentVersion) {
         this.isShowChangeLogs = true

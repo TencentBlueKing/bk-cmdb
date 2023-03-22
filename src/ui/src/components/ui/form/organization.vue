@@ -22,7 +22,7 @@
     }
   ]">
     <bk-select
-      class="selector"
+      :class="['selector', { 'active': isActive }]"
       ref="select"
       :popover-width="400"
       :scroll-height="400"
@@ -306,7 +306,7 @@
         id: item.id,
         name: item.name,
         level: ancestorLength,
-        full_name: item.full_name
+        full_name: item.full_name.split('/').join(' / ')
       }
       const ids = [curNode.id]
       const treeNode = {}
@@ -315,7 +315,7 @@
         ids.push(node.id)
         node.level = i
         node.children = [item.ancestors[i + 1] ? item.ancestors[i + 1] : curNode]
-        node.full_name = item.full_name.split('/', i + 1).join('/')
+        node.full_name = item.full_name.split('/', i + 1).join(' / ')
       }
 
       treeNode.ids = ids.reverse()
@@ -415,8 +415,10 @@
   const handleClear = () => {
     resetTree()
   }
+  const isActive = ref(false)
 
   const handleToggle = (active) => {
+    isActive.value = active
     emit('toggle', active)
   }
 
@@ -430,12 +432,16 @@
 </script>
 
 <style lang="scss" scoped>
-.cmdb-organization {
-  position: relative;
-  width: 100%;
-
-  .selector {
-    width: 100%;
-  }
-}
+    .cmdb-organization {
+        position: relative;
+        width: 100%;
+        height: 32px;
+        .selector {
+            width: 100%;
+            &.active {
+                position: absolute;
+                z-index: 2;
+            }
+          }
+    }
 </style>
