@@ -408,11 +408,11 @@ func (hs *hostServer) MoveSetHost2IdleModule(ctx context.Context, h http.Header,
 	return
 }
 
-// SearchHostWithoutBiz host query through business information
-func (hs *hostServer) SearchHostWithoutBiz(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (
+// SearchHostWithNoAuth host query through business information
+func (hs *hostServer) SearchHostWithNoAuth(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (
 	resp *metadata.SearchHostResult, err error) {
 	resp = new(metadata.SearchHostResult)
-	subPath := "findmany/hosts/search/without_biz"
+	subPath := "/findmany/hosts/search/noauth"
 
 	err = hs.client.Post().
 		WithContext(ctx).
@@ -428,7 +428,7 @@ func (hs *hostServer) SearchHostWithoutBiz(ctx context.Context, h http.Header, d
 func (hs *hostServer) SearchHostWithBiz(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (
 	resp *metadata.SearchHostResult, err error) {
 	resp = new(metadata.SearchHostResult)
-	subPath := "findmany/hosts/search/with_biz"
+	subPath := "/findmany/hosts/search/with_biz"
 
 	err = hs.client.Post().
 		WithContext(ctx).

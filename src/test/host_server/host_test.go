@@ -1332,7 +1332,7 @@ var _ = Describe("batch_update_host test", func() {
 				Sort: common.BKHostIDField,
 			},
 		}
-		searchRsp, err := hostServerClient.SearchHostWithoutBiz(context.Background(), header, searchInput)
+		searchRsp, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, searchInput)
 		util.RegisterResponse(searchRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
@@ -1368,7 +1368,7 @@ var _ = Describe("batch_update_host test", func() {
 		Expect(updateRsp.Result).To(Equal(true))
 
 		By("search updated host property")
-		searchRsp, err = hostServerClient.SearchHostWithoutBiz(context.Background(), header, searchInput)
+		searchRsp, err = hostServerClient.SearchHostWithNoAuth(context.Background(), header, searchInput)
 		util.RegisterResponse(searchRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
@@ -1407,7 +1407,7 @@ var _ = Describe("multiple ip host validation test", func() {
 				Sort: common.BKHostIDField,
 			},
 		}
-		searchRsp, err := hostServerClient.SearchHostWithoutBiz(context.Background(), header, searchInput)
+		searchRsp, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, searchInput)
 		util.RegisterResponse(searchRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
@@ -1475,7 +1475,7 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 		}
 
 		By("search hosts")
-		searchRsp, err := hostServerClient.SearchHostWithoutBiz(context.Background(), header,
+		searchRsp, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header,
 			&params.HostCommonSearch{})
 		util.RegisterResponse(searchRsp)
 		Expect(err).NotTo(HaveOccurred())
@@ -1515,7 +1515,7 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 		Expect(hostRsp.Result).To(Equal(false))
 
 		By("search hosts")
-		searchRsp, err = hostServerClient.SearchHostWithoutBiz(context.Background(), header, &params.HostCommonSearch{})
+		searchRsp, err = hostServerClient.SearchHostWithNoAuth(context.Background(), header, &params.HostCommonSearch{})
 		util.RegisterResponse(searchRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
@@ -1549,7 +1549,7 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 		Expect(result.Error[0].Index).To(Equal(1))
 
 		By("search hosts")
-		searchRsp, err = hostServerClient.SearchHostWithoutBiz(context.Background(), header, &params.HostCommonSearch{
+		searchRsp, err = hostServerClient.SearchHostWithNoAuth(context.Background(), header, &params.HostCommonSearch{
 			Page: params.PageInfo{
 				Sort: common.BKHostIDField,
 			},

@@ -59,7 +59,7 @@ type HostServerClientInterface interface {
 	GetDefaultCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 	CloneHostProperty(ctx context.Context, h http.Header, dat *metadata.CloneHostPropertyParams) (resp *metadata.Response, err error)
 	MoveSetHost2IdleModule(ctx context.Context, h http.Header, dat *metadata.SetHostConfigParams) (resp *metadata.Response, err error)
-	SearchHostWithoutBiz(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (
+	SearchHostWithNoAuth(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (
 		resp *metadata.SearchHostResult, err error)
 	SearchHostWithBiz(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (
 		resp *metadata.SearchHostResult, err error)
