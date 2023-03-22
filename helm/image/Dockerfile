@@ -1,8 +1,8 @@
-FROM golang:1.13.0
+FROM golang:1.16.0
 RUN apt-get update
 RUN apt-get install -y git python jq curl
 
-RUN curl -sL https://deb.nodesource.com/setup_13.x | bash -
+RUN curl -sL https://deb.nodesource.com/setup_18.x | bash -
 RUN apt-get update && apt-get install -y nodejs
 RUN npm install gulp -g
 RUN npm install yarn -g
@@ -14,7 +14,7 @@ RUN mkdir -p /data/src/ && cd /data/src/ && git clone -b ${branch} --single-bran
 RUN apt-get install nodejs
 
 # make server
-RUN cd /data/src/ && ls -al ./ && mv bk-cmdb configcenter && cd /data/src/configcenter/src/ && export GOPATH=/data/ && make server
+RUN cd /data/src/ && ls -al ./ && mv bk-cmdb configcenter && cd /data/src/configcenter/src/ && export GOPATH=/data/ && export GO111MODULE=off && make server
 
 # generate configurations
 RUN cd /data/src/configcenter/src/bin/build/*/ && ls -al . &&     python init.py  \
