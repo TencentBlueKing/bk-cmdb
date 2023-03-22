@@ -7,9 +7,9 @@ RUN apt-get update && apt-get install -y nodejs
 RUN npm install gulp -g
 RUN npm install yarn -g
 
-# usage: docker build --build-arg user=release-v3.6.3 .
+# usage: docker build --build-arg user=release-v3.10.18 .
 
-ARG branch=release-v3.6.3
+ARG branch=release-v3.10.18
 RUN mkdir -p /data/src/ && cd /data/src/ && git clone -b ${branch} --single-branch https://github.com/Tencent/bk-cmdb.git 
 RUN apt-get install nodejs
 
