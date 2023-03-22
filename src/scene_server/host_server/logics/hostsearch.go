@@ -230,21 +230,18 @@ func (sh *searchHost) ParseCondition() {
 
 }
 
-// AuthorizeSearchHost 此函数目前是按照业务的查询权限鉴权
+// AuthorizeSearchHost query the host according to the business access authority.
 func (sh *searchHost) AuthorizeSearchHost() (*metadata.BaseResp, bool) {
 
 	if !sh.lgc.AuthManager.Enabled() {
 		return nil, true
 	}
 
-	// 获取全量的bizIDs
 	bizMap, bizIDs := make(map[int64]struct{}), make([]int64, 0)
 	if sh.hostSearchParam.AppID > 0 {
 		bizMap[sh.hostSearchParam.AppID] = struct{}{}
 	}
 
-	//bizNames := make([]string, 0)
-	//bizNameMap := make(map[string]struct{})
 	bizCond := make(map[string]interface{})
 	if len(sh.conds.appCond.Condition) > 0 {
 		for _, cond := range sh.conds.appCond.Condition {
@@ -265,25 +262,9 @@ func (sh *searchHost) AuthorizeSearchHost() (*metadata.BaseResp, bool) {
 			bizCond[cond.Field] = map[string]interface{}{
 				cond.Operator: cond.Value,
 			}
-			blog.Errorf("0000000000000000 bizCond: %v", bizCond)
-			//if cond.Field == common.BKAppNameField {
-			//	name := util.GetStrByInterface(cond.Value)
-			//	if name == "" {
-			//		return &metadata.BaseResp{
-			//			Result: false,
-			//			Code:   common.CCErrCommParamsValueInvalidError,
-			//			ErrMsg: common.BKAppNameField,
-			//		}, false
-			//	}
-			//	bizNameMap[name] = struct{}{}
-			//}
 		}
 
 		if len(bizCond) > 0 {
-			//for name := range bizNameMap {
-			//	bizNames = append(bizNames, name)
-			//}
-			blog.Errorf("1111111111111111111 bizCond: %v", bizCond)
 
 			input := &metadata.QueryCondition{
 				Condition:      bizCond,
