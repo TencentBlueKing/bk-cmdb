@@ -358,6 +358,10 @@ input.cmdb-form-input {
 
 /* form-error -----------start----------- */
 
+.form-component {
+     --font-size: 12px !important
+}
+
 .form-component.error {
 
     input[name="date-select"],
