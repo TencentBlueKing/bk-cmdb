@@ -36,13 +36,11 @@ export default [{
       superView: (to, app) => {
         const modelId = to.params.objId
         const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
-        console.log({ type: OPERATION.R_MODEL, relation: [model.id] }, '{ type: OPERATION.R_MODEL, relation: [model.id] }')
         return ({ type: OPERATION.R_MODEL, relation: [model.id] })
       },
       view: (to, app) => {
         const modelId = to.params.objId
         const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
-        console.log({ type: OPERATION.R_INST, relation: [model.id] }, '{ type: OPERATION.R_INST, relation: [model.id] }')
         return ({ type: OPERATION.R_INST, relation: [model.id] })
       }
     }
@@ -60,7 +58,14 @@ export default [{
         const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
         return model && !model.bk_ispaused
       },
-      layout: {}
+      layout: {},
+      auth: {
+        view: (to, app) => {
+          const modelId = to.params.objId
+          const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
+          return ({ type: OPERATION.R_INST, relation: [model.id] })
+        }
+      }
     })
   }]
 }, {

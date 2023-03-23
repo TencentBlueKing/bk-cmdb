@@ -304,7 +304,7 @@
           return containerHostService.findAll(params, config)
         }
 
-        return hostSearchService.find({ params, config })
+        return hostSearchService.getResourceHosts({ params, config })
       },
       getParams() {
         const params = {

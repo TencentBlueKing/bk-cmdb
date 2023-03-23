@@ -118,6 +118,7 @@
   } from '@/dictionary/menu-symbol'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import { mapGetters } from 'vuex'
+  import hostSearchService from '@/service/host/search'
   export default {
     components: {
       [CreateServiceInstance.name]: CreateServiceInstance,
@@ -429,7 +430,7 @@
       },
       async getHostInfo() {
         try {
-          const result = await this.$store.dispatch('hostSearch/searchHost', {
+          const result = await hostSearchService.getBizHosts({
             params: this.getSearchHostParams(),
             config: {
               requestId: this.request.host

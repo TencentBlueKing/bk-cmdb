@@ -361,7 +361,7 @@
           return containerHostService.findAll(params, config)
         }
 
-        return hostSearchService.find({ params, config })
+        return hostSearchService.getBizHosts({ params, config })
       },
       getParams() {
         const type = this.topoMode

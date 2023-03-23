@@ -106,6 +106,7 @@
   import authMixin from '../mixin-auth'
   import instanceService from '@/service/instance/instance'
   import instanceAssociationService from '@/service/instance/association'
+  import hostSearchService from '@/service/host/search'
   import businessSetService from '@/service/business-set/index.js'
   import queryBuilderOperator from '@/utils/query-builder-operator'
   import {
@@ -293,7 +294,6 @@
       ]),
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
       ...mapActions('objectBiz', ['searchBusiness']),
-      ...mapActions('hostSearch', ['searchHost']),
       getInstanceAuth(row) {
         const auth = [this.authResources]
         switch (this.currentAsstObj) {
@@ -579,7 +579,7 @@
           },
           page: this.page
         }
-        return this.searchHost({
+        return hostSearchService.getHosts({
           params: hostParams,
           config
         })

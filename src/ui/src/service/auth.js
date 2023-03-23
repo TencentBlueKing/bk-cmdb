@@ -81,7 +81,7 @@ export const isViewAuthFreeModelInstance = (model) => {
     BUILTIN_MODELS.HOST,
     BUILTIN_MODELS.SET,
     BUILTIN_MODELS.MODULE,
-    'bk_project'
+    BUILTIN_MODELS.PROJECT
   ]
   const dataKey = model.bk_obj_id ? 'bk_obj_id' : 'id'
   let objId = model[dataKey]

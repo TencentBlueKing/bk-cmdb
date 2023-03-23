@@ -83,7 +83,9 @@
     MENU_RESOURCE,
     MENU_RESOURCE_INSTANCE,
     MENU_RESOURCE_CLOUD_AREA,
-    MENU_MODEL_TOPOLOGY_NEW
+    MENU_MODEL_TOPOLOGY_NEW,
+    MENU_RESOURCE_HOST,
+    MENU_RESOURCE_PROJECT
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
 
@@ -261,6 +263,10 @@
           auth = { type: this.$OPERATION.R_CLOUD_AREA }
         } else if (menu?.route?.name === MENU_MODEL_TOPOLOGY_NEW) {
           auth = { type: this.$OPERATION.R_MODEL_TOPOLOGY }
+        } else if (menu?.route?.name === MENU_RESOURCE_HOST) {
+          auth = { type: this.$OPERATION.R_RESOURCE_HOST }
+        } else if (menu?.route?.name === MENU_RESOURCE_PROJECT) {
+          auth = { type: this.$OPERATION.R_PROJECT }
         }
 
         if (auth) {

@@ -68,7 +68,7 @@
           </cmdb-auth>
         </template>
       </bk-table-column>
-      <cmdb-table-empty slot="empty" :stuff="table.stuff" :auth="permissionAuth"></cmdb-table-empty>
+      <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
     </bk-table>
     <div class="confirm-tips" ref="confirmTips" v-show="confirm.show">
       <p class="tips-content">{{$t('确认取消')}}</p>
@@ -84,14 +84,15 @@
   import bus from '@/utils/bus.js'
   import { mapGetters } from 'vuex'
   import authMixin from '../mixin-auth'
-  // import { translateAuth } from '@/setup/permission'
   import instanceService from '@/service/instance/instance'
+  import hostSearchService from '@/service/host/search'
   import businessSetService from '@/service/business-set/index.js'
   import {
     BUILTIN_MODELS,
     BUILTIN_MODEL_PROPERTY_KEYS,
     BUILTIN_MODEL_RESOURCE_TYPES
   } from '@/dictionary/model-constants.js'
+  import { translateAuth } from '@/setup/permission'
 
   export default {
     name: 'cmdb-relation-list-table',
@@ -149,14 +150,6 @@
       ...mapGetters('objectModelClassify', ['models', 'getModelById']),
       model() {
         return this.getModelById(this.targetObjId) || {}
-      },
-      permissionAuth() {
-        if (this.model.bk_obj_id === 'biz') {
-          return {
-            type: this.$OPERATION.R_BUSINESS
-          }
-        }
-        return null
       },
       title() {
         const desc = this.type === 'source' ? this.associationType.src_des : this.associationType.dest_des
@@ -240,6 +233,20 @@
         this.getProperties()
         this.getInstances()
       },
+      getModelPermission() {
+        const permissions = {
+          [BUILTIN_MODELS.BUSINESS]: {
+            type: this.$OPERATION.R_BUSINESS,
+            relation: []
+          },
+          [BUILTIN_MODELS.BUSINESS_SET]: {
+            type: this.$OPERATION.R_BUSINESS_SET,
+            relation: []
+          }
+        }
+
+        return translateAuth(permissions[this.targetObjId])
+      },
       async getProperties() {
         try {
           this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
@@ -300,6 +307,16 @@
             this.pagination.current -= 1
             this.getInstances()
           }
+
+          // 业务/业务集有自身的查看权限，当无权限时接口不会返回permission，此处通过存在关联实例但是未查询到数据判定为无权限
+          if ([BUILTIN_MODELS.BUSINESS, BUILTIN_MODELS.BUSINESS_SET].includes(this.targetObjId)
+            && this.associationInstances?.length > 0
+            && data.count === 0) {
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission: this.getModelPermission() }
+            }
+          }
         } catch (e) {
           if (e.permission) {
             this.table.stuff = {
@@ -321,7 +338,7 @@
           fields: [],
           condition: model === 'host' ? [hostCondition] : []
         }))
-        return this.$store.dispatch('hostSearch/searchHost', {
+        return hostSearchService.getHosts({
           params: {
             bk_biz_id: -1,
             condition,

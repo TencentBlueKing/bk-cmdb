@@ -101,6 +101,22 @@
         return Object.values(BUILTIN_MODELS).includes(model.bk_obj_id)
       },
       getAuthMaskProps(model) {
+        if (model?.bk_obj_id === BUILTIN_MODELS.HOST) {
+          const auth = { type: this.$OPERATION.R_RESOURCE_HOST }
+          return {
+            auth,
+            authorized: this.isViewAuthed(auth)
+          }
+        }
+
+        if (model?.bk_obj_id === BUILTIN_MODELS.PROJECT) {
+          const auth = { type: this.$OPERATION.R_PROJECT }
+          return {
+            auth,
+            authorized: this.isViewAuthed(auth)
+          }
+        }
+
         if (isViewAuthFreeModelInstance(model)) {
           return {
             ignore: true

@@ -107,6 +107,7 @@
   import instanceService from '@/service/instance/instance'
   import instanceAssociationService from '@/service/instance/association'
   import businessSetService from '@/service/business-set/index.js'
+  import hostSearchService from '@/service/host/search'
   import queryBuilderOperator from '@/utils/query-builder-operator'
   import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
   import Utils from '@/components/filters/utils'
@@ -270,7 +271,6 @@
       ]),
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
       ...mapActions('objectBiz', ['searchBusiness']),
-      ...mapActions('hostSearch', ['searchHost']),
       getInstanceAuth(row) {
         const auth = [this.HOST_AUTH.U_HOST]
         switch (this.currentAsstObj) {
@@ -604,7 +604,7 @@
           },
           page: this.page
         }
-        return this.searchHost({
+        return hostSearchService.getHosts({
           params: hostParams,
           config
         })

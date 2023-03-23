@@ -84,8 +84,10 @@
   import authMixin from '../mixin-auth'
   import instanceService from '@/service/instance/instance'
   import { readonlyMixin } from '../mixin-readonly'
+  import hostSearchService from '@/service/host/search'
   import businessSetService from '@/service/business-set/index.js'
   import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
+  import { translateAuth } from '@/setup/permission'
 
   export default {
     name: 'cmdb-host-association-list-table',
@@ -210,6 +212,20 @@
         this.getProperties()
         this.getInstances()
       },
+      getModelPermission() {
+        const permissions = {
+          [BUILTIN_MODELS.BUSINESS]: {
+            type: this.$OPERATION.R_BUSINESS,
+            relation: []
+          },
+          [BUILTIN_MODELS.BUSINESS_SET]: {
+            type: this.$OPERATION.R_BUSINESS_SET,
+            relation: []
+          }
+        }
+
+        return translateAuth(permissions[this.id])
+      },
       async getProperties() {
         try {
           this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
@@ -279,6 +295,15 @@
             this.pagination.current -= 1
             this.getInstances()
           }
+
+          if ([BUILTIN_MODELS.BUSINESS, BUILTIN_MODELS.BUSINESS_SET].includes(this.id)
+            && this.associationInstances?.length > 0
+            && data.count === 0) {
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission: this.getModelPermission() }
+            }
+          }
         } catch (e) {
           if (e.permission) {
             this.table.stuff = {
@@ -300,7 +325,7 @@
           fields: [],
           condition: model === 'host' ? [hostCondition] : []
         }))
-        return this.$store.dispatch('hostSearch/searchHost', {
+        return hostSearchService.getHosts({
           params: {
             bk_biz_id: -1,
             condition,

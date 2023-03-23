@@ -48,13 +48,16 @@ export const historyLabelProxy = (params, config) => {
   })
 }
 
-export const hostInfoProxy = (params, config) => {
+export const hostInfoProxy = (params, config, isFromResource = false) => {
   if (inBusinessSet()) {
     const { bizSetId } = store.state.bizSet
     return HostService.findOne(bizSetId, params, config)
   }
 
-  return hostSearchService.find({ params, config })
+  if (isFromResource) {
+    return hostSearchService.getResourceHosts({ params, config })
+  }
+  return hostSearchService.getBizHosts({ params, config })
 }
 
 export const topoPathProxy = (bizId, params, config) => {

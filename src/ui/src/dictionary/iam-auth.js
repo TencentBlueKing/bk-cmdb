@@ -795,14 +795,7 @@ export const IAM_ACTIONS = {
   R_PROJECT: {
     id: 'view_project',
     name: ['项目查询', 'Search Project'],
-    cmdb_action: 'project.findMany',
-    relation: [{
-      view: IAM_VIEWS.PROJECT,
-      instances: [IAM_VIEWS.PROJECT]
-    }],
-    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
-      resource_id: relationIds[0]
-    })
+    cmdb_action: 'project.find'
   },
 
   // 业务集

@@ -29,7 +29,6 @@ const getters = {
 
 const mutations = {
   setAuthedList(state, list) {
-    console.log(list, '--authedList')
     state.authedList = list
   }
 }
@@ -37,7 +36,6 @@ const mutations = {
 const actions = {
   // 仅用于查询view级别的权限，并且假定viewAuthData为单个权限（非数组）
   async getViewAuth({ getters }, viewAuthData) {
-    console.log(viewAuthData, 'viewAuthData')
     if (window.Site.authscheme !== 'iam') {
       return Promise.resolve(true)
     }

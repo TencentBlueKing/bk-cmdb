@@ -226,6 +226,12 @@ const checkViewAuthorize = async (to) => {
     // 没有父权限时才拦截入口，无权限申请时根据authKey确定需要申请哪一个权限
     // 没有子权限允许进入到页面，在页面中捕获接口无权限处理
     to.meta.view = authSuperViewResult ? 'default' : 'permission'
+
+    // 未同时配置superView（配置在父级），但希望校验子级配置的view权限
+    if (authSuperViewResult && !latestRoute.meta.auth.superView && !authViewResult) {
+      to.meta.authKey = 'view'
+      to.meta.view = 'permission'
+    }
   } else if (authView) {
     const authViewResult = await getViewAuthResult(authView)
     to.meta.view = authViewResult ? 'default' : 'permission'

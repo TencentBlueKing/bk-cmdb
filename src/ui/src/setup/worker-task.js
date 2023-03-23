@@ -23,6 +23,7 @@ const iam = () => {
     { type: OPERATION.R_RESOURCE_HOST },
     { type: OPERATION.R_MODEL_TOPOLOGY },
     { type: OPERATION.R_CLOUD_AREA },
+    { type: OPERATION.R_PROJECT },
   ]
 
   models.filter(item => !item.bk_ishidden)
