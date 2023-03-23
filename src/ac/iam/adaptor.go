@@ -275,9 +275,8 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Create:                         CreateResourcePoolHost,
 		meta.Delete:                         DeleteResourcePoolHost,
 		meta.MoveHostToAnotherBizModule:     HostTransferAcrossBusiness,
-		meta.Find:                           Skip,
-		meta.FindMany:                       Skip,
-		meta.ViewResourcePoolHost:           ViewResourcePoolHost,
+		meta.Find:                           ViewResourcePoolHost,
+		meta.FindMany:                       ViewResourcePoolHost,
 	},
 	meta.ProcessServiceCategory: {
 		meta.Delete: DeleteBusinessServiceCategory,

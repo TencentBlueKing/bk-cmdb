@@ -583,7 +583,7 @@ func genResourcePoolHostActions() []ResourceAction {
 		Name:                 ActionIDNameMap[ViewResourcePoolHost],
 		NameEn:               "View Resource Pool Hosts",
 		Type:                 View,
-		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
+		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
 	})
@@ -887,7 +887,7 @@ func genCloudAreaActions() []ResourceAction {
 		Name:                 ActionIDNameMap[ViewCloudArea],
 		NameEn:               "View Cloud Area",
 		Type:                 View,
-		RelatedResourceTypes: relatedResource,
+		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
 	})
