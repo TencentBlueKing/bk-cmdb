@@ -121,7 +121,16 @@ type FullTextSearchResp struct {
 	Hits []SearchResult `json:"hits"`
 
 	// Attributes model attributes
-	Attributes map[string]metadata.Attribute `json:"attributes"`
+	Attrs *AttrResult `json:"attrs"`
+}
+
+// AttrResult is fulltext search attributes results
+type AttrResult struct {
+	// Attributes model attributes
+	Attributes map[string][]metadata.Attribute `json:"attributes"`
+
+	// AttrGroups model attribute groups
+	AttrGroups map[string][]metadata.Group `json:"groups"`
 }
 
 // Page search page settings.
@@ -798,7 +807,7 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 	}
 	response.Hits = metadatas
 
-	response.Attributes, err = s.getObjAttrs(ctx.Kit, metadatas)
+	response.Attrs, err = s.getObjAttrs(ctx.Kit, metadatas)
 	if err != nil {
 		blog.Errorf("get object attributes failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoFullTextFindErr))
@@ -809,17 +818,26 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 	return
 }
 
-func (s *Service) getObjAttrs(kit *rest.Kit, hits []SearchResult) (map[string]metadata.Attribute, error) {
+func (s *Service) getObjAttrs(kit *rest.Kit, hits []SearchResult) (*AttrResult, error) {
 	objIDs := make([]string, 0)
 	uniqueMap := make(map[string]struct{})
+	objIDsForGroup := make([]string, 0)
+	uniqueMapForGroup := make(map[string]struct{})
+
 	for _, val := range hits {
-		if _, ok := uniqueMap[val.Key]; ok {
-			continue
+		if _, ok := uniqueMap[val.Key]; !ok {
+			uniqueMap[val.Key] = struct{}{}
+			objIDs = append(objIDs, val.Key)
 		}
-		uniqueMap[val.Key] = struct{}{}
-		objIDs = append(objIDs, val.Key)
+
+		_, ok := uniqueMapForGroup[val.Key]
+		if !ok && val.Kind == metadata.DataKindModel {
+			uniqueMapForGroup[val.Key] = struct{}{}
+			objIDsForGroup = append(objIDsForGroup, val.Key)
+		}
 	}
 
+	// find attributes
 	queryCond := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{
 			common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs},
@@ -833,12 +851,26 @@ func (s *Service) getObjAttrs(kit *rest.Kit, hits []SearchResult) (map[string]me
 		return nil, err
 	}
 
-	result := make(map[string]metadata.Attribute)
-	for _, obj := range resp.Info {
-		result[obj.ObjectID] = obj
+	attrs := make(map[string][]metadata.Attribute)
+	for _, attr := range resp.Info {
+		attrs[attr.ObjectID] = append(attrs[attr.ObjectID], attr)
 	}
 
-	return result, nil
+	// find attribute groups
+	groups := make(map[string][]metadata.Group)
+	for _, objID := range objIDsForGroup {
+		group, err := s.Logics.GroupOperation().FindGroupByObject(kit, objID, mapstr.MapStr{}, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		groups[objID] = group
+	}
+
+	return &AttrResult{
+		Attributes: attrs,
+		AttrGroups: groups,
+	}, nil
 }
 
 // setHit get highlight words.
