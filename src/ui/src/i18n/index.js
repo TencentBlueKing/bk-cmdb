@@ -35,7 +35,8 @@ const i18n = new VueI18n({
 })
 
 export const changeLocale = (locale) => {
-  Cookies.set(LANG_COOKIE_NAME, locale, {
+  const cookieValue = LANG_SET.find(lang => lang.id === locale)?.apiLocale || locale
+  Cookies.set(LANG_COOKIE_NAME, cookieValue, {
     expires: 365,
     domain: window.location.hostname.split('.').slice(-2)
       .join('.')

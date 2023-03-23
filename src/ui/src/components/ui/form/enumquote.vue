@@ -103,7 +103,7 @@
     :obj-id="refModelId"
     :placeholder="$t('请选择xx', { name: $t('模型实例') })"
     :search-placeholder="searchPlaceholder"
-    :display-tag="false"
+    :display-tag="true"
     :multiple="localMultiple"
     v-model="refModelInstIds">
   </model-instance-selector>
@@ -111,6 +111,6 @@
 
 <style lang="scss" scoped>
   .form-enumqoute-selector {
-    width: 100%;
+    width: 305px;
   }
 </style>
