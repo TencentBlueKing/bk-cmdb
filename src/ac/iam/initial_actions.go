@@ -856,7 +856,7 @@ func genProjectActions() []ResourceAction {
 		Name:                 ActionIDNameMap[ViewProject],
 		NameEn:               "View Project",
 		Type:                 View,
-		RelatedResourceTypes: []RelateResourceType{projectResource},
+		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
 	})
