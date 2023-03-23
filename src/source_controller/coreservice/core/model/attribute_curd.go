@@ -167,6 +167,20 @@ func (m *modelAttribute) checkAttributeMustNotEmpty(kit *rest.Kit, attribute met
 	if attribute.PropertyType == "" {
 		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
 	}
+	if attribute.IsMultiple == nil {
+		switch attribute.PropertyType {
+		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat,
+			common.FieldTypeEnum, common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeTimeZone,
+			common.FieldTypeBool, common.FieldTypeList:
+			isMultiple := false
+			attribute.IsMultiple = &isMultiple
+		case common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeEnumQuote, common.FieldTypeEnumMulti:
+			isMultiple := true
+			attribute.IsMultiple = &isMultiple
+		default:
+			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyType)
+		}
+	}
 	return nil
 }
 
@@ -219,9 +233,9 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 	if attribute.PropertyType != "" {
 		switch attribute.PropertyType {
 		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat,
-		common.FieldTypeEnum, common.FieldTypeEnumMulti, common.FieldTypeDate, common.FieldTypeTime,
-		common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool,
-		common.FieldTypeList, common.FieldTypeEnumQuote:
+			common.FieldTypeEnum, common.FieldTypeEnumMulti, common.FieldTypeDate, common.FieldTypeTime,
+			common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool,
+			common.FieldTypeList, common.FieldTypeEnumQuote:
 		default:
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 		}
@@ -645,7 +659,6 @@ func isBizObject(objectID string) bool {
 	}
 }
 
-// saveCheck TODO
 //  saveCheck 新加字段检查
 func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) error {
 
@@ -661,8 +674,9 @@ func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) 
 	}
 
 	// check name duplicate
-	if err := m.checkUnique(kit, true, attribute.ObjectID, attribute.PropertyID, attribute.PropertyName, attribute.BizID); err != nil {
-		blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, kit.Rid)
+	if err := m.checkUnique(kit, true, attribute.ObjectID, attribute.PropertyID, attribute.PropertyName,
+		attribute.BizID); err != nil {
+		blog.Errorf("save attribute check unique input: %+v, err: %v, rid: %s", attribute, err, kit.Rid)
 		return err
 	}
 
