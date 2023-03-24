@@ -99,6 +99,6 @@
 
 <style lang="scss" scoped>
     .form-timezone-selector{
-        width: 305px;
+      width: 100%;
     }
 </style>
