@@ -124,7 +124,7 @@ func checkExcelHeader(ctx context.Context, sheet *xlsx.Sheet, fields map[string]
 	}
 	// 校验模型字段唯一标识和Excel表头字段唯一标识是否一致，如果不一致，提示无法导入，请修改为正确的唯一标识
 	for unique := range indexNameMap {
-		if unique == common.BKInstIDField || unique == common.BKHostIDField || unique == ""{
+		if unique == common.BKInstIDField || unique == common.BKHostIDField || unique == "" {
 			continue
 		}
 		if _, ok := fields[unique]; !ok {
@@ -272,7 +272,7 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 			continue
 		}
 
-		result, errMsg = buildAttrByPropertyType(rid, fieldName, cell.Value, rowIndex, field, result, defLang, errMsg)
+		errMsg = buildAttrByPropertyType(rid, fieldName, cell.Value, rowIndex, field, result, defLang, errMsg)
 	}
 	if len(errMsg) != 0 {
 		return nil, errMsg
@@ -289,7 +289,7 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 }
 
 func buildAttrByPropertyType(rid, fieldName, cellValue string, rowIndex int, field Property,
-	result map[string]interface{}, defLang lang.DefaultCCLanguageIf, errMsg []string) (map[string]interface{}, []string) {
+	result map[string]interface{}, defLang lang.DefaultCCLanguageIf, errMsg []string) []string {
 
 	switch field.PropertyType {
 	case common.FieldTypeBool:
@@ -307,7 +307,7 @@ func buildAttrByPropertyType(rid, fieldName, cellValue string, rowIndex int, fie
 	case common.FieldTypeInt:
 		// convertor int not err, set field value to correct type
 		if intVal, err := util.GetInt64ByInterface(result[fieldName]); err != nil {
-			blog.Errorf("get excel cell value error, field:%s, value:%s, err: %v, rid: %s", fieldName,
+			blog.Errorf("get excel cell value error, field: %s, value: %s, err: %v, rid: %s", fieldName,
 				result[fieldName], err, rid)
 		} else {
 			result[fieldName] = intVal
@@ -316,38 +316,14 @@ func buildAttrByPropertyType(rid, fieldName, cellValue string, rowIndex int, fie
 		if floatVal, err := util.GetFloat64ByInterface(result[fieldName]); err == nil {
 			result[fieldName] = floatVal
 		} else {
-			blog.Errorf("get excel cell value failed, field:%s, value:%s, err:%v, rid: %s", fieldName,
+			blog.Errorf("get excel cell value failed, field: %s, value: %s, err: %v, rid: %s", fieldName,
 				result[fieldName], err, rid)
 		}
 	case common.FieldTypeOrganization:
-		orgStr := util.GetStrByInterface(result[fieldName])
-		if len(orgStr) <= 0 {
-			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
-				defLang.Languagef("organization_type_invalid"))
-			break
+		errMsg = parseOrganizationID(rid, fieldName, rowIndex, result, defLang, errMsg)
+		if len(errMsg) != 0 {
+			return errMsg
 		}
-		orgItems := strings.Split(orgStr, ",")
-		org := make([]int64, len(orgItems))
-		for i, v := range orgItems {
-			var err error
-			orgID := orgBracketsRegexp.FindStringSubmatch(v)
-			if len(orgID) != 3 {
-				blog.Errorf("regular matching is empty, please enter the correct content, field: %s, value: %s, " +
-					"rid: %s", fieldName, result[fieldName], rid)
-				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
-					defLang.Languagef("organization_type_invalid"))
-				break
-			}
-
-			if org[i], err = strconv.ParseInt(orgID[1], 10, 64); err != nil {
-				blog.Errorf("get excel cell value error, field: %s, value: %s, err: %v, rid: %s", fieldName,
-					result[fieldName], "not a valid organization type", rid)
-				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
-					defLang.Languagef("organization_type_invalid"))
-				break
-			}
-		}
-		result[fieldName] = org
 	case common.FieldTypeUser:
 		// convert userNames,  eg: " admin(admin),xiaoming(小明 ),leo(li hong),  " => "admin,xiaoming,leo"
 		userNames := util.GetStrByInterface(result[fieldName])
@@ -360,7 +336,42 @@ func buildAttrByPropertyType(rid, fieldName, cellValue string, rowIndex int, fie
 		}
 	}
 
-	return result, errMsg
+	return errMsg
+}
+
+// parseOrganizationID get org id from excel
+func parseOrganizationID(rid, fieldName string, rowIndex int, result map[string]interface{},
+	defLang lang.DefaultCCLanguageIf, errMsg []string) []string {
+	orgStr := util.GetStrByInterface(result[fieldName])
+	if len(orgStr) <= 0 {
+		errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
+			defLang.Languagef("organization_type_invalid"))
+		return errMsg
+	}
+
+	orgItems := strings.Split(orgStr, ",")
+	org := make([]int64, len(orgItems))
+	for i, v := range orgItems {
+		var err error
+		orgID := orgBracketsRegexp.FindStringSubmatch(v)
+		if len(orgID) != 3 {
+			blog.Errorf("regular matching is empty, please enter the correct content, field: %s, value: %s, "+
+				"rid: %s", fieldName, result[fieldName], rid)
+			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
+				defLang.Languagef("organization_type_invalid"))
+			return errMsg
+		}
+
+		if org[i], err = strconv.ParseInt(orgID[1], 10, 64); err != nil {
+			blog.Debug("get excel cell value error, field: %s, value: %s, err: %v, rid: %s", fieldName,
+				result[fieldName], "not a valid organization type", rid)
+			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, rowIndex+1)+
+				defLang.Languagef("organization_type_invalid"))
+			return errMsg
+		}
+	}
+	result[fieldName] = org
+	return nil
 }
 
 // productExcelHeader Excel文件头部，
