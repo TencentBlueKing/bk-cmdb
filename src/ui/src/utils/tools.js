@@ -458,9 +458,9 @@ export function versionSort(data, compareKey) {
     const arr1 = a[compareKey].split('.')
     const arr2 = b[compareKey].split('.')
     while (true) {
-      i = i + 1
       const s1 = arr1[i]
       const s2 = arr2[i]
+      i = i + 1
       if (s1 === undefined || s2 === undefined) {
         return arr2.length - arr1.length
       }
