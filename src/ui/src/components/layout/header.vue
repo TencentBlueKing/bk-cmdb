@@ -152,58 +152,12 @@
     },
     async mounted() {
       const oldCurrentVersion = localStorage.getItem('newVersion')
-      const versionList = [
-        {
-          version: 'v3.10.10',
-          time: '2022-02-21',
-          is_current: false
-        },
-        {
-          version: 'v3.10.23',
-          time: '2022-02-28',
-          is_current: false
-        },
-        {
-          version: 'v3.10.10',
-          time: '2022-02-28',
-          is_current: false
-        },
-        {
-          version: 'v3.10.13',
-          time: '2022-02-28',
-          is_current: false
-        },
-        {
-          version: 'v3.10.12',
-          time: '2022-02-28',
-          is_current: false
-        },
-        {
-          version: 'v3.10.2',
-          time: '2022-02-28',
-          is_current: false
-        },
-        {
-          version: 'v3.10.10',
-          time: '2022-02-22',
-          is_current: false
-        },
-      ]
-      this.versionList = versionList.map(item => ({
+      const versionList = await this.getLogList()
+      const formatData = versionList.map(item => ({
         title: item.version,
         date: item.time
-      })).sort((a, b) => {
-        if (b.date === a.date) {
-          const arr = a.title.split('.')
-          const brr = b.title.split('.')
-          for (let i = 0;i < arr.length;i++) {
-            if (arr[i] !== brr[i]) {
-              return  brr[i] - arr[i]
-            }
-          }
-        }
-        return new Date(b.date).getTime() - new Date(a.date).getTime()
-      })
+      }))
+      this.versionList = this.$tools.versionSort(formatData, 'title')
       this.currentVersion = versionList.find(item => item.is_current === true)?.version || ''
       if (oldCurrentVersion !== this.currentVersion) {
         this.isShowChangeLogs = true
