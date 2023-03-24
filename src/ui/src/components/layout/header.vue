@@ -152,28 +152,7 @@
     },
     async mounted() {
       const oldCurrentVersion = localStorage.getItem('newVersion')
-      const versionList = [
-        {
-          version: 'v3.10.19',
-          time: '2021-12-24',
-          is_current: false
-        },
-        {
-          version: 'v3.10.11',
-          time: '2022-02-28',
-          is_current: false
-        },
-        {
-          version: 'v3.10.12',
-          time: '2022-02-28',
-          is_current: false
-        },
-        {
-          version: 'v3.10.20',
-          time: '2022-02-28',
-          is_current: false
-        }
-      ]
+      const versionList = await this.getLogList()
       const formatData = versionList.map(item => ({
         title: item.version,
         date: item.time
