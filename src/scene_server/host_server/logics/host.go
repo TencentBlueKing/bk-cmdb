@@ -14,12 +14,10 @@ package logics
 
 import (
 	"encoding/json"
-	sysErr "errors"
 	"fmt"
 	"strings"
 	"sync"
 
-	acMeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -312,36 +310,6 @@ func (lgc *Logics) GetAllHostIDByCond(kit *rest.Kit, cond metadata.HostModuleRel
 	return hostIDs, nil
 }
 
-// AuthorizeWithResourcePoolHost 当用户参数中没有传bizID场景下按照主机池主机查看权限进行鉴权
-func (lgc *Logics) AuthorizeWithResourcePoolHost(kit *rest.Kit) error {
-
-	user := acMeta.UserInfo{
-		UserName:        kit.User,
-		SupplierAccount: kit.SupplierAccount,
-	}
-
-	resources := []acMeta.ResourceAttribute{
-		{
-			Basic: acMeta.Basic{
-				Type:   acMeta.HostInstance,
-				Action: acMeta.ViewResourcePoolHost,
-			},
-		},
-	}
-
-	decisions, err := lgc.AuthManager.Authorizer.AuthorizeBatch(kit.Ctx, kit.Header, user, resources...)
-	for _, decision := range decisions {
-		if !decision.Authorized {
-			return sysErr.New("view resource pool host")
-		}
-	}
-
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // GetHostModuleRelation  query host and module relation,
 // condition key use appID, moduleID,setID,HostID
 func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond *metadata.HostModuleRelationRequest) (
@@ -365,21 +333,6 @@ func (lgc *Logics) GetHostModuleRelation(kit *rest.Kit, cond *metadata.HostModul
 
 	if len(cond.HostIDArr) > 500 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "bk_host_ids", 500)
-	}
-
-	if lgc.AuthManager.Enabled() {
-		if cond.ApplicationID > 0 {
-			if err := lgc.AuthManager.AuthorizeByInstanceID(kit.Ctx, kit.Header, acMeta.ViewBusinessResource,
-				common.BKInnerObjIDApp, cond.ApplicationID); err != nil {
-				blog.Errorf("authorize failed, bizID: %v, err: %v, rid: %s", cond.ApplicationID, err, kit.Rid)
-				return nil, kit.CCError.CCErrorf(common.CCErrCommCheckAuthorizeFailed, common.BKAppIDField)
-			}
-		} else {
-			if err := lgc.AuthorizeWithResourcePoolHost(kit); err != nil {
-				blog.Errorf("authFilter failed, authorized request failed, err: %v, rid: %s", err, kit.Rid)
-				return nil, kit.CCError.CCErrorf(common.CCErrCommCheckAuthorizeFailed, "view resource pool host")
-			}
-		}
 	}
 
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, cond)
@@ -920,9 +873,7 @@ func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostM
 }
 
 func arrangeBaseInfo(relations []metadata.ModuleHost) ([]int64, []int64, []int64, map[int64][]int64) {
-	bizList := make([]int64, 0)
-	moduleList := make([]int64, 0)
-	setList := make([]int64, 0)
+
 	hostModule := make(map[int64][]int64)
 	bizMap, moduleMap, setMap := make(map[int64]struct{}), make(map[int64]struct{}), make(map[int64]struct{})
 
@@ -932,14 +883,18 @@ func arrangeBaseInfo(relations []metadata.ModuleHost) ([]int64, []int64, []int64
 		setMap[one.SetID] = struct{}{}
 		hostModule[one.HostID] = append(hostModule[one.HostID], one.ModuleID)
 	}
+
+	bizList := make([]int64, 0)
 	for id := range bizMap {
 		bizList = append(bizList, id)
 	}
 
+	moduleList := make([]int64, 0)
 	for id := range moduleMap {
 		moduleList = append(moduleList, id)
 	}
 
+	setList := make([]int64, 0)
 	for id := range setMap {
 		setList = append(setList, id)
 	}

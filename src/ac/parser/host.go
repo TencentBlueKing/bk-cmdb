@@ -322,9 +322,10 @@ const (
 	unLockHostPattern                     = "/api/v3/host/lock"
 	queryHostLockPattern                  = "/api/v3/host/lock/search"
 
-	// used in sync framework.
-	// moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
-	findHostsWithConditionPattern = "/api/v3/findmany/hosts/search/with_biz"
+	// findHostsWithBizPattern only for ui.
+	findHostsWithBizPattern = "/api/v3/findmany/hosts/search/with_biz"
+
+	// findHostsForResourcePattern only for ui.
 	findHostsForResourcePattern   = "/api/v3/findmany/hosts/search/resource"
 
 	// find host for connection relation, unauthenticated, **only for ui**
@@ -403,8 +404,8 @@ func (ps *parseStream) host() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
+					Type:   meta.Business,
+					Action: meta.ViewBusinessResource,
 				},
 			},
 		}
@@ -422,8 +423,8 @@ func (ps *parseStream) host() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
+					Type:   meta.Business,
+					Action: meta.ViewBusinessResource,
 				},
 			},
 		}
@@ -677,7 +678,7 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	// find hosts with condition operation.
-	if ps.hitPattern(findHostsWithConditionPattern, http.MethodPost) {
+	if ps.hitPattern(findHostsWithBizPattern, http.MethodPost) {
 		bizID, err := ps.parseBusinessID()
 		if err != nil {
 			ps.err = err
@@ -755,7 +756,7 @@ func (ps *parseStream) host() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
+					Action: meta.ViewResourcePoolHost,
 				},
 			},
 		}
@@ -808,7 +809,7 @@ func (ps *parseStream) host() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
+					Action: meta.ViewResourcePoolHost,
 				},
 			},
 		}

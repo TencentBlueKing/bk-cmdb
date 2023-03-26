@@ -13,7 +13,6 @@
 package service
 
 import (
-	sysErr "errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -42,15 +41,6 @@ func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 	if bizID == 0 {
 		ctx.RespAutoError(defErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
-	}
-
-	if s.AuthManager.Enabled() {
-		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
-			common.BKInnerObjIDApp, bizID); err != nil {
-			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
 	}
 
 	body := new(meta.FindModuleHostRelationParameter)
@@ -159,7 +149,7 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 
 	rawErr := option.Validate()
 	if rawErr.ErrCode != 0 {
-		blog.Errorf("FindHostsByServiceTemplates failed, Validate err: %v, option:%#v, rid:%s", rawErr.ToCCError(defErr).Error(), *option, ctx.Kit.Rid)
+		blog.Errorf("validate failed, option: %#v, err: %v, rid: %s", *option, rawErr.ToCCError(defErr), ctx.Kit.Rid)
 		ctx.RespAutoError(rawErr.ToCCError(defErr))
 		return
 	}
@@ -176,14 +166,6 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 		return
 	}
 
-	if s.AuthManager.Enabled() {
-		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
-			common.BKInnerObjIDApp, bizID); err != nil {
-			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-	}
 	moduleCond := []meta.ConditionItem{
 		{
 			Field:    common.BKAppIDField,
@@ -205,7 +187,7 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 	}
 	moduleIDArr, err := s.Logic.GetModuleIDByCond(ctx.Kit, meta.ConditionWithTime{Condition: moduleCond})
 	if err != nil {
-		blog.Errorf("FindHostsByServiceTemplates failed, GetModuleIDByCond err:%s, cond:%#v, rid:%s", err.Error(), moduleCond, ctx.Kit.Rid)
+		blog.Errorf("get module failed, cond: %#v, err: %v, rid: %s", moduleCond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -219,13 +201,15 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 		ModuleIDArr:      moduleIDArr,
 	}
 	searchHostCond := &meta.QueryCondition{
-		Fields: option.Fields,
-		Page:   option.Page,
+		Fields:         option.Fields,
+		Page:           option.Page,
+		DisableCounter: true,
 	}
 
 	result, err := s.findDistinctHostInfo(ctx, distinctHostCond, searchHostCond)
 	if err != nil {
-		blog.Errorf("FindHostsByServiceTemplates failed, findDistinctHostInfo err: %s, distinctHostCond:%#v, searchHostCond:%#v, rid:%s", err.Error(), *distinctHostCond, *searchHostCond, ctx.Kit.Rid)
+		blog.Errorf("find host info failed, distinct cond: %#v, search cond: %#v, err: %v, rid:%s",
+			*distinctHostCond, *searchHostCond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -459,12 +443,6 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := s.Logic.AuthorizeWithResourcePoolHost(ctx.Kit); err != nil {
-		blog.Errorf("authFilter failed, authorized request failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	filter := &meta.QueryCondition{
 		Fields: []string{common.BKAppIDField, common.BKAppNameField},
 		Page: meta.BasePage{
@@ -477,8 +455,7 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 	appResult, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, header, common.BKInnerObjIDApp,
 		filter)
 	if err != nil {
-		blog.Errorf("ListResourcePoolHosts failed, ReadInstance of default app failed, filter: %+v, err: %#v, "+
-			"rid:%s", filter, err, rid)
+		blog.Errorf("get default biz failed, filter: %+v, err: %v, rid:%s", filter, err, rid)
 		ccErr := defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 		ctx.RespAutoError(ccErr)
 		return
@@ -511,26 +488,16 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 	// get biz ID
 	bizID, err := util.GetInt64ByInterface(bizData[common.BKAppIDField])
 	if err != nil {
-		blog.ErrorJSON("ListResourcePoolHosts failed, parse app data failed, bizData: %s, err: %s, rid: %s", bizData,
-			err.Error(), rid)
+		blog.Errorf("parse app data failed, biz: %s, err: %v, rid: %s", bizData, err, rid)
 		ccErr := defErr.Error(common.CCErrCommParseDataFailed)
 		ctx.RespAutoError(ccErr)
 		return
 	}
-	if s.AuthManager.Enabled() {
-		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
-			common.BKInnerObjIDApp, bizID); err != nil {
-			blog.Errorf("authorize failed, bizID: %v, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
 
-			return
-		}
-	}
 	// do host search
 	hostResult, ccErr := s.listBizHosts(ctx, bizID, parameter)
 	if ccErr != nil {
-		blog.ErrorJSON("ListResourcePoolHosts failed, listBizHosts failed, bizID: %s, parameter: %s, err: %s, "+
-			"rid:%s", bizID, parameter, ccErr.Error(), rid)
+		blog.Errorf("listBizHosts failed, bizID: %s, parameter: %s, err: %v, rid:%s", bizID, parameter, ccErr, rid)
 		ctx.RespAutoError(ccErr)
 		return
 	}
@@ -945,39 +912,6 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 	ctx.RespEntity(hostTopos)
 }
 
-// authorizeWithNoBizID 当用户参数中没有传bizID场景下按照主机池主机查看权限进行鉴权
-func (s *Service) authorizeWithResourcePoolHost(kit *rest.Kit, withBiz bool) error {
-	if withBiz || !s.AuthManager.Enabled() {
-		return nil
-	}
-
-	user := acMeta.UserInfo{
-		UserName:        kit.User,
-		SupplierAccount: kit.SupplierAccount,
-	}
-
-	resources := []acMeta.ResourceAttribute{
-		{
-			Basic: acMeta.Basic{
-				Type:   acMeta.HostInstance,
-				Action: acMeta.ViewResourcePoolHost,
-			},
-		},
-	}
-
-	decisions, err := s.AuthManager.Authorizer.AuthorizeBatch(kit.Ctx, kit.Header, user, resources...)
-	for _, decision := range decisions {
-		if !decision.Authorized {
-			return sysErr.New("view resource pool host")
-		}
-	}
-	if err != nil {
-		blog.Errorf("authFilter failed, authorized request failed, err: %v, rid: %s", err, kit.Rid)
-		return sysErr.New("view resource pool host")
-	}
-	return nil
-}
-
 // ListHostDetailAndTopology obtain host details and corresponding topological relationships.
 func (s *Service) ListHostDetailAndTopology(ctx *rest.Contexts) {
 	header := ctx.Kit.Header
@@ -994,14 +928,6 @@ func (s *Service) ListHostDetailAndTopology(ctx *rest.Contexts) {
 		blog.ErrorJSON("list host detail and topology, but validate option failed, option: %s, err: %s, rid:%s",
 			options, rawErr, ctx.Kit.Rid)
 		ctx.RespAutoError(defErr.CCErrorf(common.CCErrCommParamsInvalid, rawErr.Args))
-		return
-	}
-
-	// 此处鉴权的逻辑如下:
-	// 1、如果用户的参数中有BizID，那么通过bizID进行鉴权。
-	// 2、如果用户的参数中没有bizID,那么统一走主机池的主机查看权限进行鉴权。
-	if err := s.authorizeWithResourcePoolHost(ctx.Kit, options.WithBiz); err != nil {
-		ctx.RespAutoError(defErr.CCErrorf(common.CCErrCommCheckAuthorizeFailed))
 		return
 	}
 
