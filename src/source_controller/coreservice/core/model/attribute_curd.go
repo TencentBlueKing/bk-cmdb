@@ -88,6 +88,10 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 		attribute.LastTime.Time = time.Now()
 	}
 
+	if err = m.saveCheck(kit, attribute); err != nil {
+		return 0, err
+	}
+
 	if attribute.IsMultiple == nil {
 		switch attribute.PropertyType {
 		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat,
@@ -101,10 +105,6 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 		default:
 			return 0, kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyType)
 		}
-	}
-
-	if err = m.saveCheck(kit, attribute); err != nil {
-		return 0, err
 	}
 
 	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Insert(kit.Ctx, attribute)
