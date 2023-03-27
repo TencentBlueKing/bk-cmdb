@@ -16,8 +16,8 @@
       <span class="classify-name-text">{{classify['bk_classification_name']}}</span>
     </h4>
     <div class="models-layout">
-      <div class="models-link" v-for="(model, index) in models"
-        :key="index"
+      <div class="models-link" v-for="(model) in models"
+        :key="model.bk_obj_id"
         :title="model['bk_obj_name']"
         @click="redirect(model)">
         <i :class="['model-icon','icon', model['bk_obj_icon'], { 'nonpre-mode': !model['ispre'] }]"></i>
