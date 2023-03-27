@@ -408,7 +408,7 @@ func (hs *hostServer) MoveSetHost2IdleModule(ctx context.Context, h http.Header,
 	return
 }
 
-// SearchHostWithNoAuth host query through business information
+// SearchHostWithNoAuth host query without auth.
 func (hs *hostServer) SearchHostWithNoAuth(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (
 	resp *metadata.SearchHostResult, err error) {
 	resp = new(metadata.SearchHostResult)
@@ -424,7 +424,7 @@ func (hs *hostServer) SearchHostWithNoAuth(ctx context.Context, h http.Header, d
 	return
 }
 
-// SearchHostWithBiz host query without business information
+// SearchHostWithBiz host search with business information
 func (hs *hostServer) SearchHostWithBiz(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (
 	resp *metadata.SearchHostResult, err error) {
 	resp = new(metadata.SearchHostResult)

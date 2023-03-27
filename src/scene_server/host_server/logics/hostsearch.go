@@ -237,7 +237,7 @@ func (sh *searchHost) AuthorizeSearchHost() (*metadata.BaseResp, bool) {
 		return nil, true
 	}
 
-	bizMap, bizIDs := make(map[int64]struct{}), make([]int64, 0)
+	bizMap:= make(map[int64]struct{})
 	if sh.hostSearchParam.AppID > 0 {
 		bizMap[sh.hostSearchParam.AppID] = struct{}{}
 	}
@@ -299,6 +299,7 @@ func (sh *searchHost) AuthorizeSearchHost() (*metadata.BaseResp, bool) {
 		}
 	}
 
+	bizIDs := make([]int64, 0)
 	for id := range bizMap {
 		bizIDs = append(bizIDs, id)
 	}
