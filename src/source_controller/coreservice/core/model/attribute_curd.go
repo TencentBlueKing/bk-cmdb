@@ -78,17 +78,18 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 	attribute.ID = int64(id)
 	attribute.OwnerID = kit.SupplierAccount
 
-	if nil == attribute.CreateTime {
+	if attribute.CreateTime == nil {
 		attribute.CreateTime = &metadata.Time{}
 		attribute.CreateTime.Time = time.Now()
 	}
 
-	if nil == attribute.LastTime {
+	if attribute.LastTime == nil {
 		attribute.LastTime = &metadata.Time{}
 		attribute.LastTime.Time = time.Now()
 	}
 
-	if err = m.saveCheck(kit, attribute); err != nil {
+	attribute, err = m.saveCheck(kit, attribute)
+	if err != nil {
 		return 0, err
 	}
 
@@ -157,15 +158,16 @@ func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, proper
 	return nil
 }
 
-func (m *modelAttribute) checkAttributeMustNotEmpty(kit *rest.Kit, attribute metadata.Attribute) error {
+func (m *modelAttribute) checkAttributeMustNotEmpty(kit *rest.Kit, attribute metadata.Attribute) (metadata.Attribute,
+	error) {
 	if attribute.PropertyID == "" {
-		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyID)
+		return attribute, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyID)
 	}
 	if attribute.PropertyName == "" {
-		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyName)
+		return attribute, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyName)
 	}
 	if attribute.PropertyType == "" {
-		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
+		return attribute, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
 	}
 	if attribute.IsMultiple == nil {
 		switch attribute.PropertyType {
@@ -178,10 +180,10 @@ func (m *modelAttribute) checkAttributeMustNotEmpty(kit *rest.Kit, attribute met
 			isMultiple := true
 			attribute.IsMultiple = &isMultiple
 		default:
-			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyType)
+			return attribute, kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyType)
 		}
 	}
-	return nil
+	return attribute, nil
 }
 
 func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadata.Attribute) error {
@@ -660,27 +662,28 @@ func isBizObject(objectID string) bool {
 }
 
 //  saveCheck 新加字段检查
-func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) error {
+func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) (metadata.Attribute, error) {
 
 	if err := m.checkAddField(kit, attribute); err != nil {
-		return err
+		return attribute, err
 	}
 
-	if err := m.checkAttributeMustNotEmpty(kit, attribute); err != nil {
-		return err
+	attribute, err := m.checkAttributeMustNotEmpty(kit, attribute)
+	if err != nil {
+		return attribute, err
 	}
 	if err := m.checkAttributeValidity(kit, attribute); err != nil {
-		return err
+		return attribute, err
 	}
 
 	// check name duplicate
 	if err := m.checkUnique(kit, true, attribute.ObjectID, attribute.PropertyID, attribute.PropertyName,
 		attribute.BizID); err != nil {
 		blog.Errorf("save attribute check unique input: %+v, err: %v, rid: %s", attribute, err, kit.Rid)
-		return err
+		return attribute, err
 	}
 
-	return nil
+	return attribute, nil
 }
 
 // checkUpdate 删除不可以更新字段，检验字段是否重复， 返回更新的行数，错误
