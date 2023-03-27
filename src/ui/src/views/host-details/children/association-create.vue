@@ -22,7 +22,7 @@
         @on-selected="handleSelectObj">
       </cmdb-selector>
     </div>
-    <div class="association-filter clearfix">
+    <div class="association-filter clearfix" v-show="isShowPropertyFilter">
       <label class="filter-label fl">{{$t('条件筛选')}}</label>
       <div class="filter-group filter-group-property fl">
         <cmdb-association-property-filter
@@ -36,6 +36,7 @@
       <bk-button theme="primary" class="btn-search fr" @click="search">{{$t('搜索')}}</bk-button>
     </div>
     <bk-table class="new-association-table"
+      v-show="isShowPropertyFilter"
       v-bkloading="{ isLoading: $loading('get_relation_inst') }"
       :pagination="table.pagination"
       :data="table.list"
@@ -85,6 +86,7 @@
           </cmdb-auth>
         </template>
       </bk-table-column>
+      <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
     </bk-table>
     <div class="confirm-tips" ref="confirmTips" v-show="confirm.id">
       <p class="tips-content">{{$t('更新确认')}}</p>
@@ -105,6 +107,7 @@
   import instanceService from '@/service/instance/instance'
   import instanceAssociationService from '@/service/instance/association'
   import businessSetService from '@/service/business-set/index.js'
+  import hostSearchService from '@/service/host/search'
   import queryBuilderOperator from '@/utils/query-builder-operator'
   import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
   import Utils from '@/components/filters/utils'
@@ -158,7 +161,8 @@
         currentAsstObj: '',
         existInstAssociation: [],
         tempData: [],
-        hasChange: false
+        hasChange: false,
+        isShowPropertyFilter: true
       }
     },
     computed: {
@@ -267,7 +271,6 @@
       ]),
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
       ...mapActions('objectBiz', ['searchBusiness']),
-      ...mapActions('hostSearch', ['searchHost']),
       getInstanceAuth(row) {
         const auth = [this.HOST_AUTH.U_HOST]
         switch (this.currentAsstObj) {
@@ -321,10 +324,17 @@
           config: {
             requestId: `post_searchObjectAttribute_${this.currentAsstObj}`
           }
-        }).then((properties) => {
-          this.properties = properties
-          return properties
         })
+          .then((properties) => {
+            this.properties = properties
+            this.isShowPropertyFilter = true
+            return properties
+          })
+          .catch((err) => {
+            if (err.permission) {
+              this.isShowPropertyFilter = false
+            }
+          })
       },
       close() {
         this.$emit('on-new-relation-close')
@@ -594,7 +604,7 @@
           },
           page: this.page
         }
-        return this.searchHost({
+        return hostSearchService.getHosts({
           params: hostParams,
           config
         })

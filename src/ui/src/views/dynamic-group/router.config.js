@@ -12,7 +12,6 @@
 
 import Meta from '@/router/meta'
 import { MENU_BUSINESS, MENU_BUSINESS_CUSTOM_QUERY } from '@/dictionary/menu-symbol'
-import { OPERATION } from '@/dictionary/iam-auth'
 
 export default {
   name: MENU_BUSINESS_CUSTOM_QUERY,
@@ -22,9 +21,6 @@ export default {
     owner: MENU_BUSINESS,
     menu: {
       i18n: '动态分组'
-    },
-    auth: {
-      view: to => ({ type: OPERATION.R_CUSTOM_QUERY, relation: [to.params.bizId] })
     }
   })
 }

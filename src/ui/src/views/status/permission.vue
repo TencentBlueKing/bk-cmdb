@@ -29,13 +29,20 @@
 </template>
 <script>
   import { translateAuth } from '@/setup/permission'
+
   export default {
     methods: {
       async handleApplyPermission() {
         try {
-          const { view, permission } = this.$route.meta.auth || {}
+          // authKey确定用哪个权限申请
+          const { authKey } = this.$route.meta
+
+          const { permission } = this.$route.meta.auth || {}
+          const view = this.$route.meta.auth[authKey]
+
+          const viewAuth = typeof view === 'function' ? view(this.$route, this) : view
           const skipUrl = await this.$store.dispatch('auth/getSkipUrl', {
-            params: view ? translateAuth(view) : permission,
+            params: view ? translateAuth(viewAuth) : permission,
             config: {
               requestId: 'getSkipUrl'
             }

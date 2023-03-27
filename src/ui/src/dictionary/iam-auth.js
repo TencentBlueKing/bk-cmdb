@@ -93,6 +93,13 @@ function basicTransform(cmdbAction, meta = {}) {
 
 // relation数组表示的是视图拓扑的定义
 export const IAM_ACTIONS = {
+  // 全文检索
+  R_FULLTEXT_SEARCH: {
+    id: 'use_fulltext_search',
+    name: ['全文检索', 'Full Text Search'],
+    cmdb_action: 'fulltextSearch.find'
+  },
+
   // 模型分组
   C_MODEL_GROUP: {
     id: 'create_model_group',
@@ -169,6 +176,18 @@ export const IAM_ACTIONS = {
       resource_id: relationIds[0]
     })
   },
+  R_MODEL: {
+    id: 'view_sys_model',
+    name: ['模型查看', 'View Model'],
+    cmdb_action: 'model.find',
+    relation: [{
+      view: IAM_VIEWS.MODEL,
+      instances: [IAM_VIEWS.MODEL]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
+  },
 
   // 实例
   C_INST: {
@@ -177,6 +196,31 @@ export const IAM_ACTIONS = {
     name: ['实例创建', 'Create Instance'],
     cmdb_action: ([modelId]) => ({ action: 'create', type: `comobj_${modelId}` }),
     relation: [],
+    transform: (cmdbAction, relationIds = []) => {
+      const { action, type } = cmdbAction(relationIds)
+      const [modelId] = relationIds
+      const verifyMeta = {
+        resource_type: type,
+        action,
+        resource_id: modelId
+      }
+      return verifyMeta
+    }
+  },
+  R_INST: {
+    id: ([modelId]) => `view_comobj_${modelId}`,
+    fixedId: 'view_comobj',
+    name: ['实例查看', 'View Instance'],
+    cmdb_action: ([modelId]) => ({ action: 'find', type: `comobj_${modelId}` }),
+    relation: [{
+      view: (relation) => {
+        const [[levelOne]] = relation
+        if (Array.isArray(levelOne)) {
+          return `comobj_${[levelOne[0]]}`
+        }
+        return `comobj_${relation[0]}`
+      }
+    }],
     transform: (cmdbAction, relationIds = []) => {
       const { action, type } = cmdbAction(relationIds)
       const [modelId] = relationIds
@@ -268,6 +312,7 @@ export const IAM_ACTIONS = {
       return verifyMeta
     }
   },
+
   // 动态分组
   C_CUSTOM_QUERY: {
     id: 'create_biz_dynamic_query',
@@ -500,6 +545,11 @@ export const IAM_ACTIONS = {
   },
 
   // 主机池主机
+  R_RESOURCE_HOST: {
+    id: 'view_resource_pool_host',
+    name: ['主机池主机查看', 'View Resource Pool Hosts'],
+    cmdb_action: 'hostInstance.find'
+  },
   C_RESOURCE_HOST: {
     id: 'create_resource_pool_host',
     name: ['主机池主机创建', 'Create Resource Pool Host'],
@@ -745,14 +795,7 @@ export const IAM_ACTIONS = {
   R_PROJECT: {
     id: 'view_project',
     name: ['项目查询', 'Search Project'],
-    cmdb_action: 'project.findMany',
-    relation: [{
-      view: IAM_VIEWS.PROJECT,
-      instances: [IAM_VIEWS.PROJECT]
-    }],
-    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
-      resource_id: relationIds[0]
-    })
+    cmdb_action: 'project.find'
   },
 
   // 业务集
@@ -802,6 +845,12 @@ export const IAM_ACTIONS = {
     id: 'find_audit_log',
     name: ['操作审计查询', 'Search Audit Logs'],
     cmdb_action: 'auditlog.findMany'
+  },
+
+  R_MODEL_TOPOLOGY: {
+    id: 'view_model_topo',
+    name: ['模型拓扑查看', 'View Model Topo'],
+    cmdb_action: 'modelTopology.modelTopologyView'
   },
 
   // 拓扑层级新增
@@ -1040,6 +1089,11 @@ export const IAM_ACTIONS = {
   },
 
   // 云区域
+  R_CLOUD_AREA: {
+    id: 'view_cloud_area',
+    name: ['云区域查看', 'View Cloud Area'],
+    cmdb_action: 'plat.find'
+  },
   C_CLOUD_AREA: {
     id: 'create_cloud_area',
     name: ['云区域创建', 'Create Cloud Area'],

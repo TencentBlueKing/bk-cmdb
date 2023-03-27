@@ -38,6 +38,7 @@
       v-show="expanded"
       :data="list"
       :max-height="462"
+      empty-block-class-name="empty-block"
       :row-style="{ cursor: 'pointer' }"
       @row-click="handleShowDetails">
       <bk-table-column v-for="(column, index) in header"
@@ -54,7 +55,7 @@
           </cmdb-property-value>
         </template>
       </bk-table-column>
-      <bk-table-column v-if="!readonly" :label="$t('操作')">
+      <bk-table-column v-if="!readonly && table.stuff.type !== 'permission'" :label="$t('操作')">
         <template slot-scope="{ row }">
           <cmdb-auth :auth="HOST_AUTH.U_HOST">
             <bk-button slot-scope="{ disabled }"
@@ -83,8 +84,10 @@
   import authMixin from '../mixin-auth'
   import instanceService from '@/service/instance/instance'
   import { readonlyMixin } from '../mixin-readonly'
+  import hostSearchService from '@/service/host/search'
   import businessSetService from '@/service/business-set/index.js'
   import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
+  import { translateAuth } from '@/setup/permission'
 
   export default {
     name: 'cmdb-host-association-list-table',
@@ -209,6 +212,20 @@
         this.getProperties()
         this.getInstances()
       },
+      getModelPermission() {
+        const permissions = {
+          [BUILTIN_MODELS.BUSINESS]: {
+            type: this.$OPERATION.R_BUSINESS,
+            relation: []
+          },
+          [BUILTIN_MODELS.BUSINESS_SET]: {
+            type: this.$OPERATION.R_BUSINESS_SET,
+            relation: []
+          }
+        }
+
+        return translateAuth(permissions[this.id])
+      },
       async getProperties() {
         try {
           this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
@@ -217,12 +234,17 @@
             },
             config: {
               fromCache: true,
-              requestId: this.propertyRequest
+              requestId: this.propertyRequest,
+              globalPermission: false
             }
           })
         } catch (e) {
-          console.error(e)
-          this.properties = []
+          if (e.permission) {
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission: e.permission }
+            }
+          }
         }
       },
       async getInstances() {
@@ -269,14 +291,26 @@
           this.pagination.count = this.associationInstances?.length
 
           // 删除一整页后自动回退到上一页
-          if (this.pagination.count && !data[dataListKey].length) {
+          if (data.count && this.pagination.count && !data[dataListKey].length) {
             this.pagination.current -= 1
             this.getInstances()
           }
+
+          if ([BUILTIN_MODELS.BUSINESS, BUILTIN_MODELS.BUSINESS_SET].includes(this.id)
+            && this.associationInstances?.length > 0
+            && data.count === 0) {
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission: this.getModelPermission() }
+            }
+          }
         } catch (e) {
-          console.error(e)
-          this.list = []
-          this.pagination.count = 0
+          if (e.permission) {
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission: e.permission }
+            }
+          }
         }
       },
       getHostInstances(config) {
@@ -291,7 +325,7 @@
           fields: [],
           condition: model === 'host' ? [hostCondition] : []
         }))
-        return this.$store.dispatch('hostSearch/searchHost', {
+        return hostSearchService.getHosts({
           params: {
             bk_biz_id: -1,
             condition,
@@ -520,5 +554,10 @@
                 font-size: 12px;
             }
         }
+    }
+    .association-table {
+      :deep(.empty-block) {
+        width: 100% !important;
+      }
     }
 </style>

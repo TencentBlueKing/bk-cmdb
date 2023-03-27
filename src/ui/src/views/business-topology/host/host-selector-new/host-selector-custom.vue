@@ -30,6 +30,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
+  import hostSearchService from '@/service/host/search'
   import HostTable from './host-table.vue'
   export default {
     components: {
@@ -69,7 +70,7 @@
         try {
           await this.validateList()
           if (this.validList.length) {
-            const { info } = await this.$store.dispatch('hostSearch/searchHost', {
+            const { info } = await hostSearchService.getBizHosts({
               params: this.getParams(),
               config: {
                 requestId: this.request.host

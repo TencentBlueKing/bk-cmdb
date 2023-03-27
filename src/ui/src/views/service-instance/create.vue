@@ -102,6 +102,7 @@
 </template>
 
 <script>
+  import hostSearchService from '@/service/host/search'
   import HostSelector from '@/views/business-topology/host/host-selector-new'
   import serviceInstanceTable from '@/components/service/instance-table.vue'
   import propertyConfirmTable from '@/components/host-apply/property-confirm-table'
@@ -264,7 +265,7 @@
       },
       getHostInfo() {
         const params = {
-          bk_biz_id: this.bk_biz_id,
+          bk_biz_id: this.bizId,
           ip: { data: [], exact: 0, flag: 'bk_host_innerip|bk_host_outerip' },
           page: {},
           condition: this.getDefaultSearchCondition()
@@ -275,7 +276,7 @@
           operator: '$in',
           value: this.resources
         })
-        return this.$store.dispatch('hostSearch/searchHost', {
+        return hostSearchService.getBizHosts({
           params,
           config: {
             requestId: this.request.hostInfo

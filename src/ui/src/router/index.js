@@ -23,6 +23,7 @@ import { $error } from '@/magicbox'
 import i18n from '@/i18n'
 import { changeDocumentTitle } from '@/utils/change-document-title'
 import { OPERATION } from '@/dictionary/iam-auth'
+import workerTask from '@/setup/worker-task'
 
 import {
   before as businessBeforeInterceptor
@@ -187,8 +188,57 @@ function cancelRequest(app) {
   app.$http.cancelRequest(cancelId)
 }
 
-// eslint-disable-next-line no-unused-vars
-const checkViewAuthorize = async to => Promise.resolve()
+const checkViewAuthorize = async (to) => {
+  // 使用就近原则向上回溯，找到路由的auth.view配置
+  const findViewAuth = (route, key) => {
+    if (!route) {
+      return
+    }
+    if (route?.meta?.auth?.[key]) {
+      return route.meta.auth[key]
+    }
+    return findViewAuth(route?.parent, key)
+  }
+
+  const getViewAuthResult = (authView) => {
+    const viewAuthData = typeof authView === 'function' ? authView(to, router.app) : authView
+    return router.app.$store.dispatch('auth/getViewAuth', viewAuthData)
+  }
+
+  const { matched } = to
+  const latestRoute = matched[matched.length - 1]
+
+  const authSuperView = findViewAuth(latestRoute, 'superView')
+  const authView = findViewAuth(latestRoute, 'view')
+
+  // 存在superView和authView权限
+  if (authSuperView && authView) {
+    const authSuperViewResult = await getViewAuthResult(authSuperView)
+    const authViewResult = await getViewAuthResult(authView)
+
+    // 没有子权限，指定需要优先申请子权限，后期期望自动关联上父权限
+    if (!authViewResult) {
+      to.meta.authKey = 'view'
+    } else if (!authSuperViewResult) {
+      to.meta.authKey = 'superView'
+    }
+
+    // 没有父权限时才拦截入口，无权限申请时根据authKey确定需要申请哪一个权限
+    // 没有子权限允许进入到页面，在页面中捕获接口无权限处理
+    to.meta.view = authSuperViewResult ? 'default' : 'permission'
+
+    // 未同时配置superView（配置在父级），但希望校验子级配置的view权限
+    if (authSuperViewResult && !latestRoute.meta.auth.superView && !authViewResult) {
+      to.meta.authKey = 'view'
+      to.meta.view = 'permission'
+    }
+  } else if (authView) {
+    const authViewResult = await getViewAuthResult(authView)
+    to.meta.view = authViewResult ? 'default' : 'permission'
+  }
+
+  return Promise.resolve()
+}
 
 const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
 
@@ -245,6 +295,7 @@ router.beforeEach((to, from, next) => {
         setLoading(true)
         setupStatus.preload = false
         await preload(router.app)
+        workerTask.run()
         setupValidator(router.app)
       }
 
@@ -273,7 +324,7 @@ router.beforeEach((to, from, next) => {
       /**
        * 检查是否有权限访问当前页面
        */
-      await checkViewAuthorize(to)
+      await checkViewAuthorize(to, router.app)
 
       /**
        * 执行路由配置中的before钩子

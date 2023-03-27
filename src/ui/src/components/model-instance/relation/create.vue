@@ -22,7 +22,7 @@
         @on-selected="handleSelectObj">
       </cmdb-selector>
     </div>
-    <div class="association-filter clearfix">
+    <div class="association-filter clearfix" v-show="isShowPropertyFilter">
       <label class="filter-label fl">{{$t('条件筛选')}}</label>
       <div class="filter-group filter-group-property fl">
         <cmdb-relation-property-filter
@@ -36,6 +36,7 @@
       <bk-button theme="primary" class="btn-search fr" @click="search">{{$t('搜索')}}</bk-button>
     </div>
     <bk-table class="new-association-table"
+      v-show="isShowPropertyFilter"
       v-bkloading="{ isLoading: $loading('get_relation_inst') }"
       :pagination="table.pagination"
       :data="table.list"
@@ -105,6 +106,7 @@
   import authMixin from '../mixin-auth'
   import instanceService from '@/service/instance/instance'
   import instanceAssociationService from '@/service/instance/association'
+  import hostSearchService from '@/service/host/search'
   import businessSetService from '@/service/business-set/index.js'
   import queryBuilderOperator from '@/utils/query-builder-operator'
   import {
@@ -172,7 +174,8 @@
         currentAsstObj: '',
         existInstAssociation: [],
         tempData: [],
-        hasChange: false
+        hasChange: false,
+        isShowPropertyFilter: true
       }
     },
     computed: {
@@ -291,7 +294,6 @@
       ]),
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
       ...mapActions('objectBiz', ['searchBusiness']),
-      ...mapActions('hostSearch', ['searchHost']),
       getInstanceAuth(row) {
         const auth = [this.authResources]
         switch (this.currentAsstObj) {
@@ -345,10 +347,17 @@
           config: {
             requestId: `post_searchObjectAttribute_${this.currentAsstObj}`
           }
-        }).then((properties) => {
-          this.properties = properties
-          return properties
         })
+          .then((properties) => {
+            this.properties = properties
+            this.isShowPropertyFilter = true
+            return properties
+          })
+          .catch((err) => {
+            if (err.permission) {
+              this.isShowPropertyFilter = false
+            }
+          })
       },
       close() {
         this.$emit('on-new-relation-close')
@@ -570,7 +579,7 @@
           },
           page: this.page
         }
-        return this.searchHost({
+        return hostSearchService.getHosts({
           params: hostParams,
           config
         })

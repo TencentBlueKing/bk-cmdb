@@ -11,10 +11,61 @@
  */
 
 import http from '@/api'
+import { transformHostSearchParams, localSort } from '@/utils/tools'
 
+const getSearchUrl = (type) => {
+  // 不同接口的权限不同
+  const urls = {
+    biz: 'findmany/hosts/search/with_biz',
+    resource: 'findmany/hosts/search/resource',
+    noauth: 'findmany/hosts/search/noauth'
+  }
+  return urls[type]
+}
+
+const getMany = async (type, { params, config }) => {
+  const url = getSearchUrl(type)
+  const data = http.post(url, transformHostSearchParams(params), config)
+
+  if (data?.info) {
+    data.info.forEach((host) => {
+      localSort(host.module, 'bk_module_name')
+      localSort(host.set, 'bk_set_name')
+    })
+  }
+
+  return data
+}
+
+const getBizHosts = ({ params, config }) => {
+  try {
+    return getMany('biz', { params, config })
+  } catch (error) {
+    Promise.reject(error)
+  }
+}
+
+const getResourceHosts = ({ params, config }) => {
+  try {
+    return getMany('resource', { params, config })
+  } catch (error) {
+    Promise.reject(error)
+  }
+}
+
+const getHosts = ({ params, config }) => {
+  try {
+    return getMany('noauth', { params, config })
+  } catch (error) {
+    Promise.reject(error)
+  }
+}
+
+// 在模型引用-根据名称(ip)查询主机使用
 const find = async ({ bk_biz_id: bizId, params, config }) => {
   try {
-    const { count = 0, info: list = [] } = await http.post('hosts/search', {
+    const url = getSearchUrl('noauth')
+    const { count = 0, info: list = [] } = await http.post(url, {
       bk_biz_id: bizId || -1,
       ...params
     }, config)
@@ -25,9 +76,11 @@ const find = async ({ bk_biz_id: bizId, params, config }) => {
   }
 }
 
+// 在模型关联-查询主机详情中使用
 const findOne = async ({ bk_host_id: hostId, bk_biz_id: bizId, config }) => {
   try {
-    const { info } = await http.post('hosts/search', {
+    const url = getSearchUrl('noauth')
+    const { info } = await http.post(url, {
       bk_biz_id: bizId || -1,
       condition: [
         { bk_obj_id: 'biz', condition: [], fields: [] },
@@ -49,10 +102,11 @@ const findOne = async ({ bk_host_id: hostId, bk_biz_id: bizId, config }) => {
   }
 }
 
-
+// 在模型引用-根据ids查询主机使用
 const findByIds = async ({ ids, bk_biz_id: bizId, config }) => {
   try {
-    const { count = 0, info: list = [] } = await http.post('hosts/search', {
+    const url = getSearchUrl('noauth')
+    const { count = 0, info: list = [] } = await http.post(url, {
       bk_biz_id: bizId || -1,
       condition: [
         { bk_obj_id: 'biz', condition: [], fields: [] },
@@ -78,5 +132,8 @@ export default {
   find,
   findOne,
   getTopoPath,
-  findByIds
+  findByIds,
+  getBizHosts,
+  getResourceHosts,
+  getHosts
 }

@@ -67,6 +67,7 @@
   import { mapGetters } from 'vuex'
   import MoveToIdleHost from './children/move-to-idle-host.vue'
   import HostAttrsAutoApply from './children/host-attrs-auto-apply.vue'
+  import hostSearchService from '@/service/host/search'
   export default {
     components: {
       [MoveToIdleHost.name]: MoveToIdleHost,
@@ -189,7 +190,7 @@
         tab.props.info = applyList.filter(item => item.conflicts?.length || item.update_fields?.length)
       },
       getHostInfo(hostIds) {
-        return this.$store.dispatch('hostSearch/searchHost', {
+        return hostSearchService.getBizHosts({
           params: this.getSearchHostParams(hostIds),
           config: {
             requestId: this.request.host

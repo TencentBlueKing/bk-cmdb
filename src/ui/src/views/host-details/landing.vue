@@ -24,6 +24,7 @@
 
 <script>
   import { MENU_BUSINESS_HOST_DETAILS, MENU_RESOURCE_HOST, MENU_RESOURCE_HOST_DETAILS } from '@/dictionary/menu-symbol'
+  import hostSearchService from '@/service/host/search'
   const BK_NO_LIMIT = 999999999
   export default {
     data() {
@@ -70,7 +71,7 @@
     methods: {
       async searchHost() {
         try {
-          const { info } = await this.$store.dispatch('hostSearch/searchHost', {
+          const { info } = await hostSearchService.getResourceHosts({
             params: this.params,
             config: {
               requestId: this.requestId
@@ -98,6 +99,9 @@
             name: MENU_RESOURCE_HOST_DETAILS,
             params: {
               id: host.bk_host_id
+            },
+            query: {
+              from: 'resource'
             }
           })
         } else {
@@ -106,6 +110,9 @@
             params: {
               bizId: biz[0].bk_biz_id,
               id: host.bk_host_id
+            },
+            query: {
+              from: 'resource'
             }
           })
         }

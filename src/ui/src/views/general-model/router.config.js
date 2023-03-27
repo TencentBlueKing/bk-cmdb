@@ -16,6 +16,7 @@ import {
   MENU_RESOURCE_MANAGEMENT,
   MENU_RESOURCE_INSTANCE_DETAILS
 } from '@/dictionary/menu-symbol'
+import { OPERATION } from '@/dictionary/iam-auth'
 
 export default [{
   name: MENU_RESOURCE_INSTANCE,
@@ -30,7 +31,19 @@ export default [{
       const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
       return model && !model.bk_ispaused
     },
-    layout: {}
+    layout: {},
+    auth: {
+      superView: (to, app) => {
+        const modelId = to.params.objId
+        const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
+        return ({ type: OPERATION.R_MODEL, relation: [model.id] })
+      },
+      view: (to, app) => {
+        const modelId = to.params.objId
+        const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
+        return ({ type: OPERATION.R_INST, relation: [model.id] })
+      }
+    }
   }),
   children: [{
     name: MENU_RESOURCE_INSTANCE_DETAILS,
@@ -45,7 +58,14 @@ export default [{
         const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
         return model && !model.bk_ispaused
       },
-      layout: {}
+      layout: {},
+      auth: {
+        view: (to, app) => {
+          const modelId = to.params.objId
+          const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
+          return ({ type: OPERATION.R_INST, relation: [model.id] })
+        }
+      }
     })
   }]
 }, {

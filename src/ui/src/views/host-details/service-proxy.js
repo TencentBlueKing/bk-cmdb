@@ -18,6 +18,7 @@ import store from '@/store'
 import { MENU_BUSINESS_SET } from '@/dictionary/menu-symbol.js'
 import { findProcessByServiceInstance } from '@/service/business-set/process-instance'
 import { findAggregationLabels, findServiceInstanceWithHost } from '@/service/business-set/service-instance'
+import hostSearchService from '@/service/host/search'
 import { HostService } from '@/service/business-set/host'
 import { findTopoPath } from '@/service/business-set/topology'
 
@@ -47,13 +48,16 @@ export const historyLabelProxy = (params, config) => {
   })
 }
 
-export const hostInfoProxy = (params, config) => {
+export const hostInfoProxy = (params, config, isFromResource = false) => {
   if (inBusinessSet()) {
     const { bizSetId } = store.state.bizSet
     return HostService.findOne(bizSetId, params, config)
   }
 
-  return store.dispatch('hostSearch/searchHost', { params, config })
+  if (isFromResource) {
+    return hostSearchService.getResourceHosts({ params, config })
+  }
+  return hostSearchService.getBizHosts({ params, config })
 }
 
 export const topoPathProxy = (bizId, params, config) => {

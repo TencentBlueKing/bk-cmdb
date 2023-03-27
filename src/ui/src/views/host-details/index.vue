@@ -105,6 +105,9 @@
       },
       isContainerHost() {
         return this.containerNodes.length > 0
+      },
+      isFromResource() {
+        return this.$route.query.from === 'resource'
       }
     },
     watch: {
@@ -153,7 +156,7 @@
       },
       async getHostInfo() {
         try {
-          const { info } = await hostInfoProxy(this.getSearchHostParams())
+          const { info } = await hostInfoProxy(this.getSearchHostParams(), {}, this.isFromResource)
 
           if (info.length) {
             this.$store.commit('hostDetails/setHostInfo', info[0])

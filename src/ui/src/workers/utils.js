@@ -10,35 +10,36 @@
  * limitations under the License.
  */
 
-export default class Meta {
-  constructor(data = {}) {
-    this.owner = ''
-    this.title = ''
-    this.available = true
-    Object.keys(data).forEach((key) => {
-      this[key] = data[key]
-    })
+import customHeaders from '@/api/custom-header.js'
 
-    this.menu = Object.assign({
-      i18n: '',
-      parent: null,
-      relative: null
-    }, data.menu)
-
-    this.authKey = 'view'
-
-    this.auth = Object.assign({
-      superView: null,
-      view: null,
-      operation: null,
-      permission: null,
-    }, data.auth)
-
-    this.layout = Object.assign({
-      breadcrumbs: true,
-      previous: null
-    }, data.layout)
-
-    this.view = 'default'
+export const postData = async (url, data = {}, config = {}) => {
+  const finalConfig = {
+    originalResponse: false,
+    transformData: true,
+    ...config
   }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    mode: 'cors',
+    credentials: 'include',
+    headers: customHeaders,
+    body: JSON.stringify(data)
+  })
+
+  if (!response.ok) {
+    throw new Error('Network response was not OK')
+  }
+
+  if (finalConfig.originalResponse) {
+    return response
+  }
+
+  const result = await response.json()
+
+  if (finalConfig.transformData) {
+    return result?.data
+  }
+
+  return result
 }

@@ -10,9 +10,12 @@
  * limitations under the License.
  */
 
+import { mapGetters } from 'vuex'
 import { OPERATION } from '@/dictionary/iam-auth'
+
 export default {
   computed: {
+    ...mapGetters('auth', ['isViewAuthed']),
     $OPERATION() {
       return Object.freeze(OPERATION)
     }

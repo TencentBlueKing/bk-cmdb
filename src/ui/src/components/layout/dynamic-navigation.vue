@@ -33,22 +33,31 @@
         </transition>
       </div>
       <div class="menu-list">
-        <template v-for="(menu, index) in currentMenus">
-          <router-link class="menu-item is-link" tag="a" active-class="active" style="display: block;"
-            v-if="menu.hasOwnProperty('route')"
-            ref="menuLink"
-            :class="{
-              'is-relative-active': isRelativeActive(menu)
-            }"
-            :key="index"
-            :to="getMenuLink(menu)"
-            :title="$t(menu.i18n)">
-            <h3 class="menu-info clearfix">
-              <i :class="['menu-icon', menu.icon]"></i>
-              <span class="menu-name">{{$t(menu.i18n)}}</span>
-            </h3>
-          </router-link>
-        </template>
+        <cmdb-auth-mask
+          v-for="(menu, index) in currentMenus"
+          :key="index"
+          tag="div"
+          v-bind="getMenuAuthMaskProps(menu)">
+          <template #default="{ disabled }">
+            <router-link
+              tag="a"
+              active-class="active"
+              style="display: block;"
+              v-if="menu.hasOwnProperty('route')"
+              ref="menuLink"
+              :class="['menu-item', 'is-link', {
+                disabled,
+                'is-relative-active': isRelativeActive(menu)
+              }]"
+              :to="getMenuLink(menu)"
+              :title="$t(menu.i18n)">
+              <h3 class="menu-info clearfix">
+                <i :class="['menu-icon', menu.icon]"></i>
+                <span class="menu-name">{{$t(menu.i18n)}}</span>
+              </h3>
+            </router-link>
+          </template>
+        </cmdb-auth-mask>
       </div>
       <div class="nav-option">
         <i class="nav-stick icon icon-cc-nav-toggle"
@@ -73,6 +82,10 @@
     MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_RESOURCE,
     MENU_RESOURCE_INSTANCE,
+    MENU_RESOURCE_CLOUD_AREA,
+    MENU_MODEL_TOPOLOGY_NEW,
+    MENU_RESOURCE_HOST,
+    MENU_RESOURCE_PROJECT
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
 
@@ -233,6 +246,36 @@
           }
         }
         return menu.route
+      },
+      getMenuAuthMaskProps(menu) {
+        const props = {
+          ignore: true
+        }
+
+        // 此处通过route.name将排除主机/业务/业务集
+        // 主机，将使用资源主机查看权限不在这里控制
+        // 业务/业务集模型已有实例查看权限并且在接口层面将数据过滤后返回
+        let auth = null
+        if (menu?.route?.name === MENU_RESOURCE_INSTANCE) {
+          const model = this.models.find(model => model.bk_obj_id === menu?.route?.params?.objId)
+          auth = { type: this.$OPERATION.R_INST, relation: [model.id] }
+        } else if (menu?.route?.name === MENU_RESOURCE_CLOUD_AREA) {
+          auth = { type: this.$OPERATION.R_CLOUD_AREA }
+        } else if (menu?.route?.name === MENU_MODEL_TOPOLOGY_NEW) {
+          auth = { type: this.$OPERATION.R_MODEL_TOPOLOGY }
+        } else if (menu?.route?.name === MENU_RESOURCE_HOST) {
+          auth = { type: this.$OPERATION.R_RESOURCE_HOST }
+        } else if (menu?.route?.name === MENU_RESOURCE_PROJECT) {
+          auth = { type: this.$OPERATION.R_PROJECT }
+        }
+
+        if (auth) {
+          props.ignore = false
+          props.auth = auth
+          props.authorized = this.isViewAuthed(auth)
+        }
+
+        return props
       },
       handleMouseEnter() {
         if (this.timer) {

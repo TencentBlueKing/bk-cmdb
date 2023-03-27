@@ -14,6 +14,7 @@ import { IAM_VIEWS } from '@/dictionary/iam-auth'
 import CombineRequest from '@/api/combine-request.js'
 import { foreignkey } from '@/filters/formatter.js'
 import instanceService from '@/service/instance/instance'
+import hostSearchService from '@/service/host/search'
 import businessSetService from '@/service/business-set/index.js'
 import {
   BUILTIN_MODELS,
@@ -115,7 +116,9 @@ export const IAM_VIEWS_INST_NAME = {
         })),
         ip: { flag: 'bk_host_innerip', exact: 1, data: [] }
       }
-      const { info } = await vm.$store.dispatch(action, {
+
+      // 这个的前置场景是主机的编辑，无论编辑的业务主机/资源池主机，在进入到操作入口时应该具体了入口权限，因此这里使用无需鉴权的查询
+      const { info } = await hostSearchService.getHosts({
         params,
         config: { ...requestConfigBase(`${action}${hostIdList.join('')}`) }
       })

@@ -9,36 +9,18 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import xid from 'xid-js'
 
-export default class Meta {
-  constructor(data = {}) {
-    this.owner = ''
-    this.title = ''
-    this.available = true
-    Object.keys(data).forEach((key) => {
-      this[key] = data[key]
-    })
+const TRACE_CHARS = 'abcdef0123456789'
+const randomString = (length, chars) => {
+  let result = ''
+  for (let i = length; i > 0; --i) result += chars[Math.random() * chars.length | 0]
+  return result
+}
 
-    this.menu = Object.assign({
-      i18n: '',
-      parent: null,
-      relative: null
-    }, data.menu)
-
-    this.authKey = 'view'
-
-    this.auth = Object.assign({
-      superView: null,
-      view: null,
-      operation: null,
-      permission: null,
-    }, data.auth)
-
-    this.layout = Object.assign({
-      breadcrumbs: true,
-      previous: null
-    }, data.layout)
-
-    this.view = 'default'
-  }
+export default {
+  // opentelementry TraceID
+  traceparent: `00-${randomString(32, TRACE_CHARS)}-${randomString(16, TRACE_CHARS)}-01`,
+  // 请求ID
+  Cc_Request_Id: `cc0000${xid.next()}`
 }

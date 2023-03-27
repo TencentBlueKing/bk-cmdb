@@ -12,20 +12,12 @@
 
 import Axios from 'axios'
 import md5 from 'md5'
-import xid from 'xid-js'
 import CachedPromise from './_cached-promise'
 import RequestQueue from './_request-queue'
-// eslint-disable-next-line
-import { $error, $warn } from '@/magicbox'
+import { $error } from '@/magicbox'
 import i18n, { language } from '@/i18n'
 import has from 'has'
-
-const TRACE_CHARS = 'abcdef0123456789'
-const randomString = (length, chars) => {
-  let result = ''
-  for (let i = length; i > 0; --i) result += chars[Math.random() * chars.length | 0]
-  return result
-}
+import customHeaders from './custom-header'
 
 // axios实例
 const axiosInstance = Axios.create({
@@ -40,10 +32,7 @@ axiosInstance.interceptors.request.use(
   (config) => {
     config.headers.common = {
       ...config.headers.common,
-      // opentelementry TraceID
-      traceparent: `00-${randomString(32, TRACE_CHARS)}-${randomString(16, TRACE_CHARS)}-01`,
-      // 请求ID
-      Cc_Request_Id: `cc0000${xid.next()}`
+      ...customHeaders
     }
     return config
   },
