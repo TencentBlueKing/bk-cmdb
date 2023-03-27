@@ -205,7 +205,8 @@ func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
 	for taskIdx := range detail.Detail {
 		subTaskDetail, ok := detail.Detail[taskIdx].Data.(map[string]interface{})
 		if !ok {
-			blog.Warnf("clearSetSyncTaskDetail expect map[string]interface{}, got unexpected type, data: %+v", detail.Detail[taskIdx].Data)
+			blog.Warnf("clearSetSyncTaskDetail expect map[string]interface{}, got unexpected type, data: %+v",
+				detail.Detail[taskIdx].Data)
 			detail.Detail[taskIdx].Data = nil
 		}
 		delete(subTaskDetail, "header")
