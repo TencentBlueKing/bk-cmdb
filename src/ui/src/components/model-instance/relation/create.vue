@@ -61,7 +61,7 @@
       </bk-table-column>
       <bk-table-column :label="$t('操作')">
         <template slot-scope="{ row }">
-          <cmdb-auth :auth="getInstanceAuth(row)">
+          <cmdb-auth :auth="getInstanceAuth(row)" :ignore-passed-auth="true">
             <template slot-scope="{ disabled }">
               <bk-link :disabled="disabled" href="javascript:void(0)" class="option-link" theme="primary"
                 v-if="tempData.includes(row[instanceIdKey])"

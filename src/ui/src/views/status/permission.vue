@@ -41,8 +41,20 @@
           const view = this.$route.meta.auth[authKey]
 
           const viewAuth = typeof view === 'function' ? view(this.$route, this) : view
+          const viewAuths = [viewAuth]
+
+          // 如果存在superView并且未鉴权通过，则需要一起申请
+          if (this.$route.meta.auth.superView) {
+            const { superView } = this.$route.meta.auth
+            const superAuth = typeof superView === 'function' ? superView(this.$route, this) : superView
+            const authSuperViewResult = await this.$store.dispatch('auth/getViewAuth', superAuth)
+            if (!authSuperViewResult) {
+              viewAuths.unshift(superAuth)
+            }
+          }
+
           const skipUrl = await this.$store.dispatch('auth/getSkipUrl', {
-            params: view ? translateAuth(viewAuth) : permission,
+            params: view ? translateAuth(viewAuths) : permission,
             config: {
               requestId: 'getSkipUrl'
             }
