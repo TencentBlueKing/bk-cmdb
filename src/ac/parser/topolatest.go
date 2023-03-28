@@ -557,6 +557,8 @@ var (
 
 	searchInstanceAssociationsRegexp = regexp.MustCompile(`^/api/v3/search/instance_associations/object/[^\s/]+/?$`)
 	countInstanceAssociationsRegexp  = regexp.MustCompile(`^/api/v3/count/instance_associations/object/[^\s/]+/?$`)
+
+	findObjectInstanceAssociationWithBizIDRegexp = regexp.MustCompile(`^/api/v3/find/instassociation/biz/([0-9]+)/?$`)
 )
 
 func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
@@ -566,6 +568,18 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// find instance's association operation.
 	if ps.hitPattern(findObjectInstanceAssociationLatestPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find instance's association with bizID operation.
+	if ps.hitRegexp(findObjectInstanceAssociationWithBizIDRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{

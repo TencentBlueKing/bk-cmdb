@@ -165,6 +165,8 @@ func (s *Service) initBusinessAssociation(web *restful.WebService) {
 		Handler: s.SearchModuleAssociation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/object/{bk_obj_id}/inst/detail",
 		Handler: s.SearchInstAssociationAndInstDetail})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/biz/{bk_biz_id}",
+		Handler: s.SearchAssociationInstWithBizID})
 
 	// topo search methods
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/object/{bk_obj_id}", Handler: s.SearchInstByAssociation})

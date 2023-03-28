@@ -1364,3 +1364,57 @@ func (s *Service) SearchHostTopoPath(ctx *rest.Contexts) {
 
 	ctx.RespEntity(result)
 }
+
+// SearchAssociationInstWithBizID search instance association with bizID
+func (s *Service) SearchAssociationInstWithBizID(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	if bizID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	if s.AuthManager.Enabled() {
+		if err := s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, meta.ViewBusinessResource,
+			common.BKInnerObjIDApp, bizID); err != nil {
+			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+	}
+
+	request := &metadata.SearchAssociationInstRequest{}
+	if err := ctx.DecodeInto(request); err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, err.Error()))
+		return
+	}
+
+	if len(request.ObjID) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField))
+		return
+	}
+
+	// 目前只支持查询主机实例关联
+	if request.ObjID != common.BKInnerObjIDHost {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField))
+		return
+	}
+
+	cond := &metadata.InstAsstQueryCondition{
+		Cond:  metadata.QueryCondition{Condition: request.Condition},
+		ObjID: request.ObjID,
+	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	ret, err := s.Engine.CoreAPI.CoreService().Association().ReadInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(ret.Info)
+}
