@@ -751,6 +751,11 @@ const (
 	BKProjectStatusField = "bk_status"
 	// BKProjectIconField the project icon field
 	BKProjectIconField = "bk_project_icon"
+
+	// BKSrcModelField source model field in model relationship table.
+	BKSrcModelField = "src_model"
+	// BKDestModelField destination model field in the model relationship table.
+	BKDestModelField = "dest_model"
 )
 
 const (

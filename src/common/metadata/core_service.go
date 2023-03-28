@@ -775,3 +775,15 @@ type BatchCreateInstRespData struct {
 type BatchCreateModelInstOption struct {
 	Data []mapstr.MapStr `json:"data"`
 }
+
+// ModelQuoteRelation model relationship table information.
+type ModelQuoteRelation struct {
+	// DestModel derived model
+	DestModel string `json:"dest_model" bson:"dest_model"`
+	// SrcModel source model, such as a tabular model
+	SrcModel string `json:"src_model" bson:"src_model"`
+	// PropertyID model attribute id
+	PropertyID string `json:"bk_property_id" bson:"bk_property_id"`
+	// SupplierAccount supplier account
+	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+}

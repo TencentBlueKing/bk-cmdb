@@ -43,6 +43,9 @@ const (
 	BKTableNameBaseApp    = "cc_ApplicationBase"
 	BKTableNameBaseBizSet = "cc_BizSetBase"
 
+	// BKTableNameModelQuoteRelation model reference relationship table name.
+	BKTableNameModelQuoteRelation = "cc_ModelQuoteRelation"
+
 	BKTableNameBaseProject = "cc_ProjectBase"
 	BKTableNameBaseHost    = "cc_HostBase"
 	BKTableNameBaseModule  = "cc_ModuleBase"
