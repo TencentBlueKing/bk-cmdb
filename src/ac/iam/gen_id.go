@@ -342,7 +342,7 @@ func genPlat(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Res
 		Attribute: nil,
 	}
 
-	if act == CreateCloudArea {
+	if act == CreateCloudArea || act == ViewCloudArea {
 		return make([]types.Resource, 0), nil
 	}
 
@@ -731,7 +731,8 @@ func genSysInstanceResource(act ActionID, typ TypeID, att *meta.ResourceAttribut
 	}
 
 	// create action do not related to instance authorize
-	if att.Action == meta.Create || att.Action == meta.CreateMany {
+	if att.Action == meta.Create || att.Action == meta.CreateMany || att.Action == meta.FindMany ||
+		att.Action == meta.Find {
 		return make([]types.Resource, 0), nil
 	}
 

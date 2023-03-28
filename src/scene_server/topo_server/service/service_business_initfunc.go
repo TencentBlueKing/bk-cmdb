@@ -143,6 +143,8 @@ func (s *Service) initBusinessAssociation(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/associationtype", Handler: s.CreateAssociationType})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/associationtype/{id}", Handler: s.UpdateAssociationType})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/associationtype/{id}", Handler: s.DeleteAssociationType})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/topoassociationtype",
+		Handler: s.CountAssocWithAssocKindList})
 
 	// object association methods
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectassociation", Handler: s.SearchObjectAssociation})

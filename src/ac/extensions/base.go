@@ -59,11 +59,14 @@ func (am *AuthManager) Authorize(kit *rest.Kit, resources ...meta.ResourceAttrib
 	}
 
 	authorized := true
-	for _, decision := range decisions {
-		if !decision.Authorized {
-			authorized = false
-			break
+	permissionRes := make([]meta.ResourceAttribute, 0)
+	for idx, decision := range decisions {
+		if decision.Authorized {
+			continue
 		}
+
+		permissionRes = append(permissionRes, resources[idx])
+		authorized = false
 	}
 
 	if authorized {
@@ -71,7 +74,7 @@ func (am *AuthManager) Authorize(kit *rest.Kit, resources ...meta.ResourceAttrib
 	}
 
 	// get permissions that user need to apply for this request
-	permission, err := am.Authorizer.GetPermissionToApply(kit.Ctx, kit.Header, resources)
+	permission, err := am.Authorizer.GetPermissionToApply(kit.Ctx, kit.Header, permissionRes)
 	if err != nil {
 		blog.Errorf("get permission to apply failed, resources: %+v, err: %v, rid: %s", resources, err, kit.Rid)
 		return &metadata.BaseResp{

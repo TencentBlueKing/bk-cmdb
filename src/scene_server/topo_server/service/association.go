@@ -605,6 +605,36 @@ func (s *Service) SearchObjectAssocWithAssocKindList(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
+// CountAssocWithAssocKindList count association by association kind
+func (s *Service) CountAssocWithAssocKindList(ctx *rest.Contexts) {
+
+	ids := new(metadata.AssociationKindIDs)
+	if err := ctx.DecodeInto(ids); err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsInvalid))
+		return
+	}
+
+	assocKindList, err := s.Logics.AssociationOperation().SearchObjectAssocWithAssocKindList(ctx.Kit, ids.AsstIDs)
+	if nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	assoMap := make(map[string]int, len(assocKindList.Associations))
+	for _, asso := range assocKindList.Associations {
+		assoMap[asso.AssociationKindID] = len(asso.Associations)
+	}
+
+	resp := new(metadata.AssociationCountList)
+	for _, id := range ids.AsstIDs {
+		resp.Associations = append(resp.Associations, metadata.AssociationCount{
+			AssociationKindID: id,
+			Count:             assoMap[id],
+		})
+	}
+
+	ctx.RespEntity(resp)
+}
+
 // CreateAssociationType create association kind
 func (s *Service) CreateAssociationType(ctx *rest.Contexts) {
 	request := &metadata.AssociationKind{}

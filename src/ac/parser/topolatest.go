@@ -284,9 +284,10 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 }
 
 const (
-	findObjectAssociationLatestPattern                    = "/api/v3/find/objectassociation"
-	createObjectAssociationLatestPattern                  = "/api/v3/create/objectassociation"
-	findObjectAssociationWithAssociationKindLatestPattern = "/api/v3/find/topoassociationtype"
+	findObjectAssociationLatestPattern                     = "/api/v3/find/objectassociation"
+	createObjectAssociationLatestPattern                   = "/api/v3/create/objectassociation"
+	findObjectAssociationWithAssociationKindLatestPattern  = "/api/v3/find/topoassociationtype"
+	countObjectAssociationWithAssociationKindLatestPattern = "/api/v3/count/topoassociationtype"
 )
 
 var (
@@ -486,6 +487,19 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelAssociation,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// count object association with a association kind list.
+	if ps.hitPattern(countObjectAssociationWithAssociationKindLatestPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAssociation,
 					Action: meta.SkipAction,

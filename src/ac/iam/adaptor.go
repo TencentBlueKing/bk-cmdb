@@ -777,8 +777,8 @@ func genDynamicActions(objects []metadata.Object) []ResourceAction {
 					NameEn:               action.ActionNameEN,
 					Type:                 View,
 					RelatedActions:       nil,
+					RelatedResourceTypes: nil,
 					Version:              1,
-					RelatedResourceTypes: relatedResource,
 				})
 				relatedActions = []ActionID{action.ActionID}
 
