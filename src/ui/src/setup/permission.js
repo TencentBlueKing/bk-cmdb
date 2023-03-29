@@ -11,7 +11,7 @@
  */
 
 import cursor from '@/directives/cursor'
-import { IAM_ACTIONS } from '@/dictionary/iam-auth'
+import { IAM_ACTIONS, OPERATION } from '@/dictionary/iam-auth'
 import { $error } from '@/magicbox'
 import isEqual from 'lodash/isEqual'
 import uniqBy from 'lodash/uniqBy'
@@ -132,11 +132,39 @@ export const translateAuth = (auth) => {
   return mergeSameActions(actions)
 }
 
+function filterPassedAuth(auth, authResults) {
+  const authList = Array.isArray(auth) ? auth : [auth]
+  return authList.filter(({ type, relation = [] }) => {
+    // 通用模型编辑
+    if (OPERATION.U_INST === type) {
+      return authResults.filter(item => item.resource_type.startsWith('comobj_')).some((item) => {
+        const modelId = item.resource_type?.split('_')?.[1]
+        return item.resource_id === relation?.[1] && Number(modelId) === relation?.[0] && !item?.is_pass
+      })
+    }
+
+    // 业务主机或资源池主机编辑
+    if (OPERATION.U_HOST === type || OPERATION.U_RESOURCE_HOST === type) {
+      return authResults.some(item => item.resource_id === relation?.[1] && !item?.is_pass)
+    }
+
+    return true
+  })
+}
+
 cursor.setOptions({
   globalCallback: (options) => {
-    const permission = translateAuth(options.auth)
+    const { authResults, ignorePassedAuth, callbackUrl } = options
+
+    // 根据配置去除有权限的auth，在此处去除比在permission中去除会更简单
+    let newAuth = options.auth
+    if (ignorePassedAuth) {
+      newAuth = filterPassedAuth(options.auth, authResults)
+    }
+    const permission = translateAuth(newAuth)
+
     const { permissionModal } = window
-    permissionModal && permissionModal.show(permission, options.authResults)
+    permissionModal && permissionModal.show(permission, authResults, callbackUrl)
   },
   x: 16,
   y: 8

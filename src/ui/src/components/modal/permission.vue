@@ -43,7 +43,8 @@
         isModalShow: false,
         permission: {
           actions: []
-        }
+        },
+        callbackUrl: ''
       }
     },
     watch: {
@@ -56,9 +57,10 @@
       }
     },
     methods: {
-      show(permission, authResults) {
+      show(permission, authResults, callbackUrl = '') {
         this.permission = this.getPermission(permission, authResults)
         this.applied = false
+        this.callbackUrl = callbackUrl
         this.isModalShow = true
       },
       onCloseDialog() {
@@ -71,7 +73,11 @@
         } catch (error) {}
       },
       handleRefresh() {
-        window.location.reload()
+        if (this.callbackUrl) {
+          window.location.replace(this.callbackUrl)
+        } else {
+          window.location.reload()
+        }
       },
       getPermission(permission, authResults) {
         if (!authResults) {

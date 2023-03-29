@@ -212,15 +212,7 @@ export const IAM_ACTIONS = {
     fixedId: 'view_comobj',
     name: ['实例查看', 'View Instance'],
     cmdb_action: ([modelId]) => ({ action: 'find', type: `comobj_${modelId}` }),
-    relation: [{
-      view: (relation) => {
-        const [[levelOne]] = relation
-        if (Array.isArray(levelOne)) {
-          return `comobj_${[levelOne[0]]}`
-        }
-        return `comobj_${relation[0]}`
-      }
-    }],
+    relation: [],
     transform: (cmdbAction, relationIds = []) => {
       const { action, type } = cmdbAction(relationIds)
       const [modelId] = relationIds

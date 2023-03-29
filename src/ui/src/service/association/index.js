@@ -21,9 +21,39 @@ export const find = async (params = {}) => {
   }
 }
 
+export const getAssociationCount = async ({ params = {}, config }) => {
+  try {
+    const result = await http.post('count/topoassociationtype', params, config)
+    return result
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export const getInstAssociation = async ({ params = {}, config }) => {
+  try {
+    const result = await http.post('find/instassociation', params, config)
+    return result
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export const getInstAssociationWithBiz = async ({ bizId, params = {}, config }) => {
+  try {
+    const result = await http.post(`find/instassociation/biz/${bizId}`, params, config)
+    return result
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 export const findAll = () => find()
 
 export default {
   find,
-  findAll
+  findAll,
+  getAssociationCount,
+  getInstAssociation,
+  getInstAssociationWithBiz
 }

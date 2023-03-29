@@ -17,6 +17,7 @@
       active: !isAuthorized,
       auth: auth,
       authResults,
+      ignorePassedAuth,
       onclick
     }"
     :class="{ disabled }"
@@ -39,6 +40,7 @@
         type: String,
         default: 'span'
       },
+      ignorePassedAuth: Boolean,
       onclick: Function
     },
     data() {

@@ -13,7 +13,7 @@
 import isEqual from 'lodash/isEqual'
 import $http from '@/api'
 import { TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
-import { isViewAuthFreeModel, isViewAuthFreeModelInstance } from '@/service/auth'
+import { isViewAuthFreeModel } from '@/service/auth'
 
 const state = {
   authedList: []
@@ -41,10 +41,6 @@ const actions = {
     }
 
     if (viewAuthData.type === 'R_MODEL' && isViewAuthFreeModel({ id: viewAuthData.relation[0] })) {
-      return Promise.resolve(true)
-    }
-
-    if (viewAuthData.type === 'R_INST' && isViewAuthFreeModelInstance({ id: viewAuthData.relation[0] })) {
       return Promise.resolve(true)
     }
 

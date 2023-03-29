@@ -16,25 +16,20 @@
       <span class="classify-name-text">{{classify['bk_classification_name']}}</span>
     </h4>
     <div class="models-layout">
-      <cmdb-auth-mask
-        v-for="(model, index) in models"
+      <div class="models-link" v-for="(model, index) in models"
         :key="index"
-        tag="div"
-        v-bind="getAuthMaskProps(model)">
-        <div class="models-link"
-          :title="model['bk_obj_name']"
-          @click="redirect(model)">
-          <i :class="['model-icon','icon', model['bk_obj_icon'], { 'nonpre-mode': !model['ispre'] }]"></i>
-          <span class="model-name">{{model['bk_obj_name']}}</span>
-          <i class="model-star bk-icon"
-            :class="[isCollected(model) ? 'icon-star-shape' : 'icon-star']"
-            @click.prevent.stop="toggleCustomNavigation(model)">
-          </i>
-          <div class="model-instance-count">
-            <instance-count :obj-id="model.bk_obj_id" />
-          </div>
+        :title="model['bk_obj_name']"
+        @click="redirect(model)">
+        <i :class="['model-icon','icon', model['bk_obj_icon'], { 'nonpre-mode': !model['ispre'] }]"></i>
+        <span class="model-name">{{model['bk_obj_name']}}</span>
+        <i class="model-star bk-icon"
+          :class="[isCollected(model) ? 'icon-star-shape' : 'icon-star']"
+          @click.prevent.stop="toggleCustomNavigation(model)">
+        </i>
+        <div class="model-instance-count">
+          <instance-count :obj-id="model.bk_obj_id" />
         </div>
-      </cmdb-auth-mask>
+      </div>
     </div>
   </div>
 </template>
@@ -48,7 +43,6 @@
   } from '@/dictionary/menu-symbol'
   import InstanceCount from './instance-count.vue'
   import { BUILTIN_MODELS, BUILTIN_MODEL_COLLECTION_KEYS, BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
-  import { isViewAuthFreeModelInstance } from '@/service/auth'
 
   export default {
     components: {
@@ -99,35 +93,6 @@
       },
       isBuiltinModel(model) {
         return Object.values(BUILTIN_MODELS).includes(model.bk_obj_id)
-      },
-      getAuthMaskProps(model) {
-        if (model?.bk_obj_id === BUILTIN_MODELS.HOST) {
-          const auth = { type: this.$OPERATION.R_RESOURCE_HOST }
-          return {
-            auth,
-            authorized: this.isViewAuthed(auth)
-          }
-        }
-
-        if (model?.bk_obj_id === BUILTIN_MODELS.PROJECT) {
-          const auth = { type: this.$OPERATION.R_PROJECT }
-          return {
-            auth,
-            authorized: this.isViewAuthed(auth)
-          }
-        }
-
-        if (isViewAuthFreeModelInstance(model)) {
-          return {
-            ignore: true
-          }
-        }
-
-        const auth = { type: this.$OPERATION.R_INST, relation: [model.id] }
-        return {
-          auth,
-          authorized: this.isViewAuthed(auth)
-        }
       },
       toggleCustomNavigation(model) {
         if (this.isBuiltinModel(model)) {

@@ -203,11 +203,6 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
   $modelItemRadius: 2px;
   $modelItemHeight: 60px;
 
-  .model-auth-mask {
-    display: flex;
-    width: 100%;
-  }
-
   .model-item {
     float: left;
     display: flex;

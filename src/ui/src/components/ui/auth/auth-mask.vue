@@ -22,7 +22,8 @@
         type: String,
         default: 'span'
       },
-      ignore: Boolean
+      ignore: Boolean,
+      callbackUrl: String
     },
     render(h) {
       if (this.ignore) {
@@ -37,7 +38,8 @@
             name: 'cursor',
             value: {
               auth: this.auth,
-              active: !this.authorized
+              active: !this.authorized,
+              callbackUrl: this.callbackUrl
             }
           }
         ],

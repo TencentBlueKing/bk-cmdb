@@ -133,6 +133,8 @@
 <script>
   import theRelation from './_detail'
   import { mapActions } from 'vuex'
+  import associationService from '@/service/association'
+
   export default {
     components: {
       theRelation
@@ -193,8 +195,7 @@
     methods: {
       ...mapActions('objectAssociation', [
         'searchAssociationType',
-        'deleteAssociationType',
-        'searchAssociationListWithAssociationKindList'
+        'deleteAssociationType'
       ]),
       searchRelation(fromClick) {
         if (fromClick) {
@@ -221,16 +222,14 @@
       async searchUsageCount() {
         const asstIds = []
         this.table.list.forEach(({ bk_asst_id: asstId }) => asstIds.push(asstId))
-        const res = await this.searchAssociationListWithAssociationKindList({
+        const res = await associationService.getAssociationCount({
           params: {
             asst_ids: asstIds
           }
         })
         this.table.list.forEach((item) => {
-          const asst = res.associations.find(({ bk_asst_id: asstId }) => asstId === item.bk_asst_id)
-          if (asst) {
-            this.$set(item, 'count', asst.assts.length)
-          }
+          const asst = res?.associations?.find(({ bk_asst_id: asstId }) => asstId === item.bk_asst_id)
+          this.$set(item, 'count', asst ? asst.count : '--')
         })
         this.table.list.splice()
       },

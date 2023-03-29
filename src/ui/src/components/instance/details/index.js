@@ -53,17 +53,18 @@ const createDetails = () => {
           { ...{ on: { 'update:isShow': close } } }>
           <template slot="content">
             {
-              (!instanceError.value?.permission) ? <cmdb-details
-                { ...{ directives } }
-                show-options={ false }
-                inst={ instance.value }
-                properties={ properties.value }
-                property-groups={ groups.value }
-                invisibleProperties={invisibleProperties.value}>
-              </cmdb-details>
-              : <cmdb-permission style={{ paddingTop: '120px' }}
-                permission={instanceError.value.permission}>
-              </cmdb-permission>
+              (!instanceError.value?.permission)
+                ? <cmdb-details
+                  { ...{ directives } }
+                  show-options={ false }
+                  inst={ instance.value }
+                  properties={ properties.value }
+                  property-groups={ groups.value }
+                  invisibleProperties={invisibleProperties.value}>
+                </cmdb-details>
+                : <cmdb-permission style={{ paddingTop: '120px' }}
+                  permission={instanceError.value.permission}>
+                </cmdb-permission>
             }
           </template>
         </bk-sideslider>
