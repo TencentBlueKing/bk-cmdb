@@ -78,14 +78,29 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 	attribute.ID = int64(id)
 	attribute.OwnerID = kit.SupplierAccount
 
-	if nil == attribute.CreateTime {
+	if attribute.CreateTime == nil {
 		attribute.CreateTime = &metadata.Time{}
 		attribute.CreateTime.Time = time.Now()
 	}
 
-	if nil == attribute.LastTime {
+	if attribute.LastTime == nil {
 		attribute.LastTime = &metadata.Time{}
 		attribute.LastTime.Time = time.Now()
+	}
+
+	if attribute.IsMultiple == nil {
+		switch attribute.PropertyType {
+		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat,
+			common.FieldTypeEnum, common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeTimeZone,
+			common.FieldTypeBool, common.FieldTypeList:
+			isMultiple := false
+			attribute.IsMultiple = &isMultiple
+		case common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeEnumQuote, common.FieldTypeEnumMulti:
+			isMultiple := true
+			attribute.IsMultiple = &isMultiple
+		default:
+			return 0, kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyType)
+		}
 	}
 
 	if err = m.saveCheck(kit, attribute); err != nil {
@@ -167,20 +182,7 @@ func (m *modelAttribute) checkAttributeMustNotEmpty(kit *rest.Kit, attribute met
 	if attribute.PropertyType == "" {
 		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
 	}
-	if attribute.IsMultiple == nil {
-		switch attribute.PropertyType {
-		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat,
-			common.FieldTypeEnum, common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeTimeZone,
-			common.FieldTypeBool, common.FieldTypeList:
-			isMultiple := false
-			attribute.IsMultiple = &isMultiple
-		case common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeEnumQuote, common.FieldTypeEnumMulti:
-			isMultiple := true
-			attribute.IsMultiple = &isMultiple
-		default:
-			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyType)
-		}
-	}
+
 	return nil
 }
 
