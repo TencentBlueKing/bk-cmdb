@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_10_202302062350
+package y3_10_202303272150
 
 import (
 	"context"
@@ -37,12 +37,14 @@ func addModelQuoteRelationCollection(ctx context.Context, db dal.RDB) error {
 		return err
 	}
 
-	if !exists {
-		if err := db.CreateTable(ctx, common.BKTableNameModelQuoteRelation); err != nil {
-			return err
-		}
+	if exists {
 		return nil
 	}
+
+	if err := db.CreateTable(ctx, common.BKTableNameModelQuoteRelation); err != nil {
+		return err
+	}
+
 	return nil
 }
 
