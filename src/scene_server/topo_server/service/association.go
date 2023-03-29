@@ -605,6 +605,36 @@ func (s *Service) SearchObjectAssocWithAssocKindList(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
+// CountAssocWithAssocKindList count association by association kind
+func (s *Service) CountAssocWithAssocKindList(ctx *rest.Contexts) {
+
+	ids := new(metadata.AssociationKindIDs)
+	if err := ctx.DecodeInto(ids); err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsInvalid))
+		return
+	}
+
+	assocKindList, err := s.Logics.AssociationOperation().SearchObjectAssocWithAssocKindList(ctx.Kit, ids.AsstIDs)
+	if nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	assoMap := make(map[string]int, len(assocKindList.Associations))
+	for _, asso := range assocKindList.Associations {
+		assoMap[asso.AssociationKindID] = len(asso.Associations)
+	}
+
+	resp := new(metadata.AssociationCountList)
+	for _, id := range ids.AsstIDs {
+		resp.Associations = append(resp.Associations, metadata.AssociationCount{
+			AssociationKindID: id,
+			Count:             assoMap[id],
+		})
+	}
+
+	ctx.RespEntity(resp)
+}
+
 // CreateAssociationType create association kind
 func (s *Service) CreateAssociationType(ctx *rest.Contexts) {
 	request := &metadata.AssociationKind{}
@@ -1333,4 +1363,58 @@ func (s *Service) SearchHostTopoPath(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(result)
+}
+
+// SearchAssociationInstWithBizID search instance association with bizID
+func (s *Service) SearchAssociationInstWithBizID(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	if bizID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	if s.AuthManager.Enabled() {
+		if err := s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, meta.ViewBusinessResource,
+			common.BKInnerObjIDApp, bizID); err != nil {
+			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+	}
+
+	request := &metadata.SearchAssociationInstRequest{}
+	if err := ctx.DecodeInto(request); err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, err.Error()))
+		return
+	}
+
+	if len(request.ObjID) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField))
+		return
+	}
+
+	// 目前只支持查询主机实例关联
+	if request.ObjID != common.BKInnerObjIDHost {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField))
+		return
+	}
+
+	cond := &metadata.InstAsstQueryCondition{
+		Cond:  metadata.QueryCondition{Condition: request.Condition},
+		ObjID: request.ObjID,
+	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	ret, err := s.Engine.CoreAPI.CoreService().Association().ReadInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(ret.Info)
 }

@@ -284,9 +284,10 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 }
 
 const (
-	findObjectAssociationLatestPattern                    = "/api/v3/find/objectassociation"
-	createObjectAssociationLatestPattern                  = "/api/v3/create/objectassociation"
-	findObjectAssociationWithAssociationKindLatestPattern = "/api/v3/find/topoassociationtype"
+	findObjectAssociationLatestPattern                     = "/api/v3/find/objectassociation"
+	createObjectAssociationLatestPattern                   = "/api/v3/create/objectassociation"
+	findObjectAssociationWithAssociationKindLatestPattern  = "/api/v3/find/topoassociationtype"
+	countObjectAssociationWithAssociationKindLatestPattern = "/api/v3/count/topoassociationtype"
 )
 
 var (
@@ -495,6 +496,19 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 		return ps
 	}
 
+	// count object association with a association kind list.
+	if ps.hitPattern(countObjectAssociationWithAssociationKindLatestPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelAssociation,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
 	// excel 导入关联关系专用接口, 跳过鉴权
 	if ps.hitRegexp(findAssociationByObjectAssociationIDLatestRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -543,6 +557,8 @@ var (
 
 	searchInstanceAssociationsRegexp = regexp.MustCompile(`^/api/v3/search/instance_associations/object/[^\s/]+/?$`)
 	countInstanceAssociationsRegexp  = regexp.MustCompile(`^/api/v3/count/instance_associations/object/[^\s/]+/?$`)
+
+	findObjectInstanceAssociationWithBizIDRegexp = regexp.MustCompile(`^/api/v3/find/instassociation/biz/([0-9]+)/?$`)
 )
 
 func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
@@ -552,6 +568,18 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// find instance's association operation.
 	if ps.hitPattern(findObjectInstanceAssociationLatestPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find instance's association with bizID operation.
+	if ps.hitRegexp(findObjectInstanceAssociationWithBizIDRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
