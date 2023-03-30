@@ -26,6 +26,7 @@ Create model properties
 | bk_property_name      |  string     | yes     | Model attribute name, used to show                                     |
 | bk_property_type      |  string     | yes     | The defined attribute field is used to store the data type of the data, and the value range can be (singlechar,longchar,int,enum,date,time,objUser,singleasst,multiasst,timezone,bool)|
 | ismultiple        |  bool     | no     | Whether multiple choices are allowed, where the field type is singlechar, longchar, int, float, enum, date, time, timezone, bool, and the list, temporarily does not support multiple choices. When creating an attribute, the field type is the above type, and the ismultiple parameter can not be passed. The default is false. If you pass true, you will be prompted that the type does not support multiple choices. enummulti, enumquote , user and organization fields support multiple choices, among which the user field and organization field are true by default |
+| default | object | no | Add a default value to the attribute field. The default value is passed according to the actual type of the field. For example, create an int type field. If you want to set the default value for this field, you can pass default: 5. If it is a short character type, then  default: "aaa". If you do not want to set the default value, you can not pass this field |
 
 #### bk_property_type
 
@@ -59,7 +60,7 @@ Create model properties
     "ispre": false,
     "isreadonly": false,
     "isrequired": false,
-    "option": {"min":"1","max":"2"},
+    "option": "^[0-9a-zA-Z_]{1,}$", 
     "unit": "1",
     "placeholder": "test",
     "bk_property_group": "default",
@@ -67,7 +68,8 @@ Create model properties
     "bk_property_id": "cc_test",
     "bk_property_name": "cc_test",
     "bk_property_type": "singlechar",
-    "bk_asst_obj_id": "test"
+    "bk_asst_obj_id": "test",
+    "default":"aaaa"
 }
 ```
 
@@ -104,7 +106,8 @@ Create model properties
 		"creator": "user",
 		"create_time": "2020-03-25 17:12:08",
 		"last_time": "2020-03-25 17:12:08",
-		"bk_property_group_name": "default"
+		"bk_property_group_name": "default",
+        	"default":"aaaa"
 	}
 }
 ```
@@ -144,6 +147,7 @@ Create model properties
 | bk_biz_id           |  int          | Business id of business custom field                                       |
 | bk_property_group_name           |  string          | Name of the field column                                       |
 | ismultiple | bool | Can multiple fields be selected |
+| default | object | attribute default vaule |
 
 #### bk_property_type
 
