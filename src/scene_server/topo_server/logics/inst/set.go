@@ -94,7 +94,7 @@ func (s *set) getSetTemplate(kit *rest.Kit, data mapstr.MapStr, bizID int64) (me
 	st, err := s.clientSet.CoreService().SetTemplate().GetSetTemplate(kit.Ctx, kit.Header, bizID, setTemplateID)
 	if err != nil {
 		blog.Errorf("get set template failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID,
-			setTemplateID, kit.Rid)
+			setTemplateID, err, kit.Rid)
 		return setTemplate, err
 	}
 

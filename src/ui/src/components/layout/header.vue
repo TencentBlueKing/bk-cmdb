@@ -51,7 +51,6 @@
       <bk-popover class="info-item"
         theme="light header-info-popover"
         animation="fade"
-        placement="bottom-end"
         ref="popover"
         :arrow="false"
         :tippy-options="{
@@ -154,10 +153,11 @@
     async mounted() {
       const oldCurrentVersion = localStorage.getItem('newVersion')
       const versionList = await this.getLogList()
-      this.versionList = versionList.map(item => ({
+      const formatData = versionList.map(item => ({
         title: item.version,
         date: item.time
-      })).sort((a, b) => new Date(b.date).getTime()  - new Date(a.date).getTime())
+      }))
+      this.versionList = this.$tools.versionSort(formatData, 'title')
       this.currentVersion = versionList.find(item => item.is_current === true)?.version || ''
       if (oldCurrentVersion !== this.currentVersion) {
         this.isShowChangeLogs = true

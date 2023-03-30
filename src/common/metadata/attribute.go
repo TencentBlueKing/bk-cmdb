@@ -30,6 +30,7 @@ import (
 
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -895,7 +896,7 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 	for _, inVal := range listOpt {
 		inValStr, ok := inVal.(string)
 		if !ok {
-			blog.Errorf("inner list option convert to string failed, params %s not valid , list field value: %#v, " +
+			blog.Errorf("inner list option convert to string failed, params %s not valid , list field value: %#v, "+
 				"rid: %s", key, val, rid)
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrParseAttrOptionListFailed,
@@ -1286,7 +1287,7 @@ func ParseEnumQuoteOption(ctx context.Context, val interface{}) ([]EnumQuoteVal,
 			blog.Errorf("parse enum quote option failed, err: %v, rid: %s", err, rid)
 			return nil, err
 		}
-	case bson.A:
+	case primitive.A:
 		if err := parseEnumQuoteOption(options, &enumQuoteOptions); err != nil {
 			blog.Errorf("parse enum quote option failed, err: %v, rid: %s", err, rid)
 			return nil, err
@@ -1297,32 +1298,42 @@ func ParseEnumQuoteOption(ctx context.Context, val interface{}) ([]EnumQuoteVal,
 	return enumQuoteOptions, nil
 }
 
+// getEnumQuoteOptions get enum quote option value
+func getEnumQuoteOptions(val map[string]interface{}, enumQuoteOptions *[]EnumQuoteVal) error {
+	enumQuoteOption := EnumQuoteVal{}
+	enumQuoteOption.ObjID = getString(val[common.BKObjIDField])
+	if enumQuoteOption.ObjID == "" {
+		return fmt.Errorf("operation %#v objID empty or not string", val)
+	}
+	instID, err := util.GetInt64ByInterface(val[common.BKInstIDField])
+	if err != nil {
+		return err
+	}
+	if instID == 0 {
+		return fmt.Errorf("inst id is illegal, inst id cannot be 0")
+	}
+	enumQuoteOption.InstID = instID
+	*enumQuoteOptions = append(*enumQuoteOptions, enumQuoteOption)
+	return nil
+}
+
 // parseEnumQuoteOption set enum quote Options values from options
 func parseEnumQuoteOption(options []interface{}, enumQuoteOptions *[]EnumQuoteVal) error {
 	for _, optionVal := range options {
 		switch val := optionVal.(type) {
 		case map[string]interface{}:
-			enumQuoteOption := EnumQuoteVal{}
-			enumQuoteOption.ObjID = getString(val["bk_obj_id"])
-			if enumQuoteOption.ObjID == "" {
-				return fmt.Errorf("operation %#v objID empty or not string", optionVal.(map[string]interface{}))
+			if err := getEnumQuoteOptions(val, enumQuoteOptions); err != nil {
+				return err
 			}
-			*enumQuoteOptions = append(*enumQuoteOptions, enumQuoteOption)
 		case bson.M:
-			enumQuoteOption := EnumQuoteVal{}
-			enumQuoteOption.ObjID = getString(val["bk_obj_id"])
-			if enumQuoteOption.ObjID == "" {
-				return fmt.Errorf("operation %#v objID empty or not string", optionVal.(bson.M))
+			if err := getEnumQuoteOptions(val, enumQuoteOptions); err != nil {
+				return err
 			}
-			*enumQuoteOptions = append(*enumQuoteOptions, enumQuoteOption)
 		case bson.D:
 			opt := val.Map()
-			enumQuoteOption := EnumQuoteVal{}
-			enumQuoteOption.ObjID = getString(opt["bk_obj_id"])
-			if enumQuoteOption.ObjID == "" {
-				return fmt.Errorf("operation %#v objID empty or not string", opt)
+			if err := getEnumQuoteOptions(opt, enumQuoteOptions); err != nil {
+				return err
 			}
-			*enumQuoteOptions = append(*enumQuoteOptions, enumQuoteOption)
 		default:
 			return fmt.Errorf("unknow optionVal type: %#v", optionVal)
 		}
