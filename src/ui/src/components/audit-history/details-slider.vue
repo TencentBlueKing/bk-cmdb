@@ -84,13 +84,14 @@
           'set',
           'mainline_instance',
           'model_instance',
-          'cloud_area'
+          'cloud_area',
+          'project'
         ]
 
         let isTableViewTarget = tableViewTargets.includes(this.details.resource_type)
 
         // 如果拥有模型实例，则需要判断模型是否还存在
-        if (this.details?.operation_detail?.bk_obj_id) {
+        if (isTableViewTarget && this.details?.operation_detail?.bk_obj_id) {
           isTableViewTarget = this.isModelExisted()
         }
 

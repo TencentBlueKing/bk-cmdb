@@ -147,6 +147,6 @@
 
 <style lang="scss" scoped>
     .form-enummulti-selector {
-        width: 305px;
+        width: 100%;
     }
 </style>

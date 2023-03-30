@@ -187,7 +187,7 @@
     // hack将默认tree.setData注册给select的选项中的name替换为full_name，子级被选中时要显示完全名称
     const replaceOptionName = (nodes) => {
       nodes.forEach((node) => {
-        select.value.optionsMap[node.id].name = node.full_name
+        select.value.optionsMap[node.id].name = node.full_name.split('/').join(' / ')
         if (node.children) {
           replaceOptionName(node.children)
         }
@@ -238,7 +238,7 @@
     data.forEach((node) => {
       select.value.registerOption({
         id: node.id,
-        name: node.full_name,
+        name: node.full_name.split('/').join(' / '),
         disabled: false,
         unmatched: false,
         isHighlight: false
