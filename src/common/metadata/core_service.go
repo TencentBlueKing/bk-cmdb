@@ -788,7 +788,19 @@ type ModelQuoteRelation struct {
 	// PropertyID model attribute id
 	PropertyID string `json:"bk_property_id" bson:"bk_property_id"`
 	// Type the specific type of model such as the table
-	Type string `json:"type" bson:"type"`
+	Type common.ModelQuoteType `json:"type" bson:"type"`
 	// SupplierAccount supplier account
 	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
+
+// ListModelQuoteRelRes list model quote relationship table result.
+type ListModelQuoteRelRes struct {
+	Count uint64               `json:"count"`
+	Info  []ModelQuoteRelation `json:"info"`
+}
+
+// ListModelQuoteRelResp list model quote relationship table response.
+type ListModelQuoteRelResp struct {
+	BaseResp `json:",inline"`
+	Data     *ListModelQuoteRelRes `json:"data"`
 }

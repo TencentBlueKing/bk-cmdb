@@ -414,6 +414,22 @@ func (s *coreService) initProject(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+func (s *coreService) initModelQuote(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/list/model/quote/relation",
+		Handler: s.ListModelQuoteRelation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/model/quote/relation",
+		Handler: s.CreateModelQuoteRelation})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/model/quote/relation",
+		Handler: s.DeleteModelQuoteRelation})
+
+	utility.AddToRestfulWebService(web)
+}
+
 func (s *coreService) initService(web *restful.WebService) {
 	s.initModelClassification(web)
 	s.initModel(web)
@@ -440,4 +456,5 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initCommon(web)
 	s.initKube(web)
 	s.initProject(web)
+	s.initModelQuote(web)
 }
