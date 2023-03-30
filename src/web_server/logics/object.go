@@ -58,7 +58,7 @@ func (lgc *Logics) GetObjectData(objID string, header http.Header, modelBizID in
 
 }
 
-// GetPropertyFieldType TODO
+// GetPropertyFieldType get property field type
 func GetPropertyFieldType(lang language.DefaultCCLanguageIf) map[string]string {
 	var fieldType = map[string]string{
 		"bk_property_id":         lang.Language("val_type_text"), // "文本",
@@ -72,11 +72,13 @@ func GetPropertyFieldType(lang language.DefaultCCLanguageIf) map[string]string {
 		"editable":               lang.Language("val_type_bool"), // "布尔",
 		"isrequired":             lang.Language("val_type_bool"), // "布尔",
 		"isreadonly":             lang.Language("val_type_bool"), // "布尔",
+		"isonly":                 lang.Language("val_type_bool"), // "布尔",
+		"ismultiple":             lang.Language("val_type_bool"), // "布尔",
 	}
 	return fieldType
 }
 
-// GetPropertyFieldDesc TODO
+// GetPropertyFieldDesc get property field desc
 func GetPropertyFieldDesc(lang language.DefaultCCLanguageIf) map[string]string {
 
 	var fields = map[string]string{
@@ -91,6 +93,8 @@ func GetPropertyFieldDesc(lang language.DefaultCCLanguageIf) map[string]string {
 		"editable":               lang.Language("is_editable"),                // "是否可编辑",
 		"isrequired":             lang.Language("property_is_required"),       // "是否必填",
 		"isreadonly":             lang.Language("property_is_readonly"),       // "是否只读",
+		"isonly":                 lang.Language("property_is_only"),           // "字段值是否唯一",
+		"ismultiple":             lang.Language("property_is_multiple"),       // "字段是否可多选",
 	}
 
 	return fields
@@ -113,7 +117,7 @@ func ConvAttrOption(attrItems map[int]map[string]interface{}) {
 		fieldType, _ := attr[common.BKPropertyTypeField].(string)
 		if common.FieldTypeEnum != fieldType && common.FieldTypeInt != fieldType && common.
 			FieldTypeList != fieldType && common.FieldTypeEnumMulti != fieldType &&
-			common.FieldTypeEnumQuote != fieldType{
+			common.FieldTypeEnumQuote != fieldType {
 			continue
 		}
 
