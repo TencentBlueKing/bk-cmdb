@@ -71,7 +71,7 @@
         <bk-select style="width: 100%;"
           :clearable="false"
           :disabled="isReadOnly"
-          :multiple="true"
+          :multiple="isDefaultCompMultiple"
           name="defaultValueSelect"
           data-vv-validate-on="change"
           v-validate.immediate="`maxSelectLength:${ multiple ? -1 : 1 }`"
@@ -92,6 +92,7 @@
 <script>
   import vueDraggable from 'vuedraggable'
   import isEqual from 'lodash/isEqual'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   export default {
     components: {
@@ -109,7 +110,8 @@
       multiple: {
         type: Boolean,
         default: false
-      }
+      },
+      type: String
     },
     data() {
       return {
@@ -124,6 +126,12 @@
           ghostClass: 'ghost'
         },
         order: 1
+      }
+    },
+    computed: {
+      isDefaultCompMultiple() {
+        // 通过类型指定默认值组件是否可多选，用于与可多选配置区分开
+        return this.type === PROPERTY_TYPES.ENUMMULTI
       }
     },
     watch: {

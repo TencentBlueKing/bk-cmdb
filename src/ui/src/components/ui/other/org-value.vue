@@ -35,7 +35,7 @@
 
   const list = ref([])
 
-  const tagList = computed(() => list.value.map(item => item.full_name))
+  const tagList = computed(() => list.value.map(item => item.full_name.split('/').join(' / ')))
 
   const requestId = computed(() => `get_department_id_${Array.isArray(props.value) ? props.value.join('_') : String(props.value)}`)
 

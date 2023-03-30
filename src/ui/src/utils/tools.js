@@ -452,6 +452,24 @@ export function sort(data, compareKey) {
   return [...data].sort((A, B) => A[compareKey] - B[compareKey])
 }
 
+export function versionSort(data, compareKey) {
+  return data.sort((a, b) => {
+    let i = 0
+    const arr1 = a[compareKey].split('.')
+    const arr2 = b[compareKey].split('.')
+    while (true) {
+      const s1 = arr1[i]
+      const s2 = arr2[i]
+      i = i + 1
+      if (s1 === undefined || s2 === undefined) {
+        return arr2.length - arr1.length
+      }
+      if (s1 === s2) continue
+      return s2 - s1
+    }
+  })
+}
+
 /**
  * 递归对拓扑树进行自然排序
  * @param {array} topoTree 拓扑
@@ -596,5 +614,6 @@ export default {
   getHeaderPropertyMinWidth,
   isShowOverflowTips,
   isUseComplexValueType,
-  getPropertyPlaceholder
+  getPropertyPlaceholder,
+  versionSort
 }

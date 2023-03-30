@@ -28,7 +28,7 @@
           </bk-input>
           <p class="form-error" :title="errors.first('fieldId')">{{errors.first('fieldId')}}</p>
         </div>
-        <i class="icon-cc-exclamation-tips" tabindex="-1" v-bk-tooltips="$t('模型字段唯一标识提示语')"></i>
+        <bk-icon class="icon-tips" type="info-circle-shape" v-bk-tooltips="$t('模型字段唯一标识提示语')" />
       </label>
       <label class="form-label">
         <span class="label-text">
@@ -109,6 +109,7 @@
           :is="`the-field-${fieldType}`"
           :multiple="fieldInfo.ismultiple"
           v-model="fieldInfo.option"
+          :type="fieldInfo.bk_property_type"
           ref="component"
         ></component>
       </div>
@@ -437,6 +438,11 @@
             color: $cmdbBorderColor;
             padding-left: 5px;
         }
+        .icon-tips {
+            font-size: 18px !important;
+            color: rgb(152,155,165);
+            padding-left: 5px;
+        }
         .field-detail {
             width: 94%;
             margin-bottom: 20px;
@@ -456,6 +462,11 @@
         }
         .cmdb-form-item {
             width: 94% !important;
+            &.is-error {
+                /deep/ .bk-form-input {
+                    border-color: #ff5656;
+                }
+            }
         }
         .icon-cc-exclamation-tips {
             font-size: 18px;

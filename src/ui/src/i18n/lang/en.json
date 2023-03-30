@@ -350,7 +350,7 @@
     "双向": "Two-way",
     "新建层级": "New level",
     "模型字段": "Fields",
-    "模型关联": "Associations",
+    "模型关联": "Associate",
     "新建字段": "New field",
     "字段类型": "Field type",
     "创建时间": "Create time",
@@ -555,7 +555,7 @@
     "未分配主机": "Unassigned Hosts",
     "请勿选择已分配主机": "Please do not select assigned host",
     "快速查询": "Quick Search",
-    "导入提示": "Drag a file here or {clickUpload}{breakRow}You can only upload {allowType} files up to {maxSize}",
+    "导入提示": "Drag a file here or click to upload{breakRow}You can only upload {allowType} files up to {maxSize}",
     "点击上传": "click upload",
     "下载模板": "Download Template",
     "隐藏属性": "Hidden Properties",
@@ -1494,8 +1494,8 @@
     "确认彻底删除该业务？": "Are you sure compeletly delete the business?",
     "一旦被清除，将无法再恢复，请谨慎操作！": "Once cleared, it will not be restored, so please proceed with caution!",
     "导入更新提示": "You need to export the instances and complete the modification before import",
-    "导入文件大小提示": "Xlsx files within 20m",
-    "导入文件拖拽提示": "Drag the file here or {clickUpload}",
+    "导入文件大小提示": "An xlsx file within 20MB",
+    "导入文件拖拽提示": "Drag the file into here or click to upload",
     "是否导入关联的模型实例": "Import the associated model instance",
     "数据导入中": "Importing, please wait...",
     "数据导出中": "Exporting, please wait...",
@@ -1679,5 +1679,6 @@
     "调整关键词":"adjust keywords",
     "任务":"assignment",
     "无服务实例提示": "no service instance{link}",
-    "暂无业务": "no business temporarily"
+    "暂无业务": "no business temporarily",
+    "不勾选“可编辑”，则创建实例时，初始化该字段值后不可再编辑":"If 'Editable' is not checked, the field value cannot be edited after initialization when creating an instance"
 }

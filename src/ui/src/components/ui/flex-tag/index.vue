@@ -119,7 +119,12 @@
       const fragment = document.createDocumentFragment()
       contentEl.classList.add('flex-tag-tips-content')
       contentEl.style.setProperty('--fontSize', props.fontSize)
-      tags.value.forEach((text, index) => {
+
+      let tipTags = tags.value.slice(0)
+      if (props.isLinkStyle || props.isTextStyle) {
+        tipTags = tags.value.slice(tags.value.length - ellipsisCount.value)
+      }
+      tipTags.forEach((text, index) => {
         const itemEl = document.createElement('div')
         itemEl.classList.add('flex-tag-tips-item')
         if (props.isLinkStyle) {
@@ -129,6 +134,7 @@
         itemEl.textContent = text
         fragment.appendChild(itemEl)
       })
+
       contentEl.appendChild(fragment)
       tooltips.setContent(contentEl)
     } else {
@@ -229,10 +235,14 @@
         }
 
         // 倒数第2个元素为tag-item的最后一个元素，倒数第1个元素为plus
-        &:nth-last-of-type(2),
-        &.is-pos {
+        &:nth-last-of-type(2) {
           &::after {
             display: none;
+          }
+        }
+        &.is-pos {
+          &::after {
+            content: '...';
           }
         }
       }
@@ -249,10 +259,14 @@
           color: #63656E;
         }
 
-        &:nth-last-of-type(2),
-        &.is-pos {
+        &:nth-last-of-type(2) {
           &::after {
             display: none;
+          }
+        }
+        &.is-pos {
+          &::after {
+            content: '...';
           }
         }
       }
