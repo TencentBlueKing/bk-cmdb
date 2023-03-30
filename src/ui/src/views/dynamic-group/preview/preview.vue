@@ -45,6 +45,10 @@
           </cmdb-property-value>
         </template>
       </bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff">
+      </cmdb-table-empty>
     </bk-table>
   </bk-dialog>
 </template>
@@ -67,7 +71,13 @@
             limit: 10, 'limit-list': [10, 50, 100, 500]
           }, false),
           sort: '-create_time',
-          list: []
+          list: [],
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
+          }
         },
         isShow: false
       }

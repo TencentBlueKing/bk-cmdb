@@ -15,25 +15,34 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_10_202302151737
+package y3_10_202303301611
 
 import (
 	"context"
 
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-// addObjAttrDesDefaultColumn add is default field to objAttrDes table.
-func addObjAttrDesDefaultColumn(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func init() {
+	upgrader.RegistUpgrader("y3.10.202303301611", upgrade)
+}
 
-	err := db.Table(common.BKTableNameObjAttDes).AddColumn(ctx, common.BKDefaultFiled, nil)
-	if err != nil {
-		blog.Errorf("add default column to objAttrDes failed, err: %v", err)
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	blog.Infof("start execute y3.10.202303301611")
+
+	if err = updateProcessIpv6AttrOption(ctx, db); err != nil {
+		blog.Errorf("upgrade y3.10.202303301611 update process ipv6 attr option failed, err: %v", err)
 		return err
 	}
 
+	if err = updateHostIPv6AttrOption(ctx, db); err != nil {
+		blog.Errorf("upgrade y3.10.202303301611 update host_outerip_v6  and host_innerip_v6 attr option failed, " +
+			"err: %v", err)
+		return err
+	}
+
+	blog.Infof("upgrade y3.10.202303301611 success")
 	return nil
 }

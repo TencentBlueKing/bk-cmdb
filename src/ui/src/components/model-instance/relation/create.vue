@@ -26,6 +26,7 @@
       <label class="filter-label fl">{{$t('条件筛选')}}</label>
       <div class="filter-group filter-group-property fl">
         <cmdb-relation-property-filter
+          ref="filterComponent"
           :obj-id="currentAsstObj"
           :exclude-type="['foreignkey', 'time']"
           @on-property-selected="handlePropertySelected"
@@ -84,7 +85,8 @@
       <cmdb-table-empty
         slot="empty"
         :stuff="table.stuff"
-        :auth="tableDataAuth">
+        :auth="tableDataAuth"
+        @clear="handleClearFilter">
       </cmdb-table-empty>
     </bk-table>
     <div class="confirm-tips" ref="confirmTips" v-show="confirm.id">
@@ -106,7 +108,6 @@
   import instanceService from '@/service/instance/instance'
   import instanceAssociationService from '@/service/instance/association'
   import businessSetService from '@/service/business-set/index.js'
-  import queryBuilderOperator from '@/utils/query-builder-operator'
   import {
     BUILTIN_MODELS,
     BUILTIN_MODEL_PROPERTY_KEYS,
@@ -159,8 +160,10 @@
           },
           sort: '',
           stuff: {
-            type: 'search',
-            payload: {}
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
           }
         },
         confirm: {
@@ -546,7 +549,7 @@
             promise = this.getObjInstance(objId, config)
         }
         promise.then((data) => {
-          this.table.stuff.type = 'search'
+          this.table.stuff.type = !isEmptyPropertyValue(this.filter.value) ? 'search' : 'default'
           this.setTableList(data, objId)
         }).catch((e) => {
           console.error(e)
@@ -653,16 +656,17 @@
           fields: [],
         }
         const property = this.getProperty(this.filter.id)
-        if (!isEmptyPropertyValue(this.filter.value) && property) {
-          params.conditions = {
-            condition: 'AND',
-            rules: [{
-              field: this.filter.id,
-              operator: queryBuilderOperator(this.filter.operator),
-              value: formatValue(this.filter.value, property)
-            }]
+        const condition = {}
+
+        if (!isEmptyPropertyValue(this.filter.value)) {
+          condition[this.filter.id] = {
+            value: formatValue(this.filter.value, property),
+            operator: this.filter.operator
           }
         }
+        // eslint-disable-next-line max-len
+        const { conditions } = Utils.transformGeneralModelCondition(condition, this.properties) || {}
+        params.conditions = conditions
         return params
       },
       setTableList(data, asstObjId) {
@@ -688,7 +692,13 @@
         this.filter.operator = value
       },
       handleValueChange(value) {
+        this.table.stuff.type = 'default'
         this.filter.value = value
+      },
+      handleClearFilter() {
+        this.filter.value = ''
+        this.$refs.filterComponent.clearFilter()
+        this.getInstance()
       }
     }
   }

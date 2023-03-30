@@ -105,6 +105,7 @@
         :stuff="table.stuff"
         :auth="{ type: $OPERATION.C_RELATION }"
         @create="createRelation"
+        @clear="handleClearFilter"
       ></cmdb-table-empty>
     </bk-table>
     <bk-sideslider
@@ -305,6 +306,11 @@
         this.slider.isReadOnly = true
         this.slider.isEdit = true
         this.slider.isShow = true
+      },
+      handleClearFilter() {
+        this.searchText = ''
+        this.table.stuff.type = 'default'
+        this.searchRelation()
       }
     }
   }
