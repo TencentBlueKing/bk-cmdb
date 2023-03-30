@@ -1188,6 +1188,7 @@ const (
 	HostOSTypeEnumUNIX    = "4"
 	HostOSTypeEnumSolaris = "5"
 	HostOSTypeEnumHpUX    = "6"
+	HostOSTypeEnumFreeBSD = "7"
 )
 
 const (

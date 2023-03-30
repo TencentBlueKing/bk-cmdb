@@ -112,7 +112,7 @@ func (s *Service) DeleteHostBatchFromResourcePool(ctx *rest.Contexts) {
 		}
 
 		rsp, err := s.CoreAPI.CoreService().Association().ReadInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, queryCond)
-		if nil != err {
+		if err != nil {
 			blog.ErrorJSON("DeleteHostBatch read host association do request failed , err: %s, rid: %s", err.Error(),
 				ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))

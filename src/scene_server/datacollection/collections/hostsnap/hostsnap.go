@@ -376,8 +376,9 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	}
 	var disk uint64
 	for _, disktotal := range val.Get("data.disk.usage.#.total").Array() {
-		disk += disktotal.Uint() >> 10 >> 10 >> 10
+		disk += disktotal.Uint()
 	}
+	disk = disk >> 10 >> 10 >> 10
 	var mem = val.Get("data.mem.meminfo.total").Uint()
 	var hostname = val.Get("data.system.info.hostname").String()
 	hostname = strings.TrimSpace(hostname)
@@ -411,6 +412,9 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	case "hp-ux":
 		osname = platform
 		ostype = common.HostOSTypeEnumHpUX
+	case "freebsd":
+		osname = platform
+		ostype = common.HostOSTypeEnumFreeBSD
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
@@ -606,6 +610,9 @@ func parseV10Setter(val *gjson.Result, innerIP, outerIP string) (map[string]inte
 	case "hp-ux":
 		osname = platform
 		ostype = common.HostOSTypeEnumHpUX
+	case "freebsd":
+		osname = platform
+		ostype = common.HostOSTypeEnumFreeBSD
 	default:
 		osname = fmt.Sprintf("%s", platform)
 	}
