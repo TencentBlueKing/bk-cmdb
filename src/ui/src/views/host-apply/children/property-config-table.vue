@@ -136,6 +136,7 @@
   import propertyFormElement from '@/components/host-apply/property-form-element'
   import { CONFIG_MODE } from '@/service/service-template/index.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { getPropertyDefaultValue } from '@/utils/tools.js'
 
   export default {
     components: {
@@ -237,15 +238,18 @@
               if (this.multiple) {
                 const rules = this.ruleList.filter(item => item.bk_attribute_id === property.id)
                 property.__extra__.ruleList = rules
-
-                // 配置值全部相同（未配置的在ruleList不存在即不参与判断）则初始化“修改后”的值为相同的那个配置值
-                const firstValue = rules?.[0]?.bk_property_value
-                const isSameValue = rules.every(rule => rule?.bk_property_value === firstValue)
-                property.__extra__.value = isSameValue ? firstValue : this.getPropertyDefaultValue(property)
+                if (rules?.length) {
+                  // 配置值全部相同（未配置的在ruleList不存在即不参与判断）则初始化“修改后”的值为相同的那个配置值
+                  const firstValue = rules?.[0]?.bk_property_value
+                  const isSameValue = rules.every(rule => rule?.bk_property_value === firstValue)
+                  property.__extra__.value = isSameValue ? firstValue : getPropertyDefaultValue(property)
+                } else {
+                  property.__extra__.value = getPropertyDefaultValue(property)
+                }
               } else {
                 const rule = this.ruleList.find(item => item.bk_attribute_id === property.id) || {}
                 property.__extra__.ruleId = rule.id
-                property.__extra__.value = has(rule, 'bk_property_value') ? rule.bk_property_value : this.getPropertyDefaultValue(property)
+                property.__extra__.value = has(rule, 'bk_property_value') ? rule.bk_property_value : getPropertyDefaultValue(property)
               }
               this.propertyRuleList.push(property)
             }
@@ -277,13 +281,6 @@
           return (this.ruleList.find(rule => rule.bk_attribute_id === attrId && rule.bk_module_id === targetId) || {}).bk_property_value || ''
         }
         return (this.ruleList.find(rule => rule.bk_attribute_id === attrId && rule.service_template_id === targetId) || {}).bk_property_value || ''
-      },
-      getPropertyDefaultValue(property) {
-        let value = ''
-        if (property.bk_property_type === 'bool') {
-          value = false
-        }
-        return value
       },
       reset() {
         if (!this.hasRuleDraft) {

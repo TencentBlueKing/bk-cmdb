@@ -88,10 +88,10 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
       // values[propertyId] = validAsst.map(asstInst => asstInst['bk_inst_id']).join(',')
     } else if (['date', 'time'].includes(propertyType)) {
       const formatedTime = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
-      const  value = isEdit(inst) ? formatedTime : propertyDefault
+      const  value = has(inst, propertyId) ? formatedTime : propertyDefault
       values[propertyId] = value || null
     } else if (['int', 'float'].includes(propertyType)) {
-      const  value = isEdit(inst) ? inst[propertyId] : propertyDefault
+      const  value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
       values[propertyId] = value || ''
     } else if (['bool'].includes(propertyType)) {
       if ([null, undefined].includes(inst[propertyId]) && autoSelect) {
@@ -112,7 +112,7 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
       const defaultValue = autoSelect ? propertyDefault : ''
       values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
     } else if (['organization'].includes(propertyType)) {
-      const  value = isEdit(inst) ? inst[propertyId] : propertyDefault
+      const  value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
       values[propertyId] = value || null
     } else if (['table'].includes(propertyType)) {
       // table类型的字段编辑和展示目前仅在进程绑定信息被使用，如后期有扩展在其它场景form-table组件与此处都需要调整
@@ -121,9 +121,8 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
       // eslint-disable-next-line max-len
       values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(tableColumns || [], row, autoSelect))
     } else {
-      const  value = isEdit(inst) ? inst[propertyId] : propertyDefault
-      console.log(has(inst, propertyId))
-      values[propertyId] = has(inst, propertyId) ? ''  : value
+      const  value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
+      values[propertyId] = value || ''
     }
   })
   return { ...inst, ...values }
@@ -137,18 +136,10 @@ export function isNullish(value) {
   return [null, undefined].includes(value)
 }
 
-export function isEdit(inst) {
-  return Object.keys(inst).length !== 0
-}
 
 export function formatValue(value, property) {
   if (!(isEmptyValue(value) && property)) {
-    // 枚举引用/多选和组织类型的字段保存时必须转换为数组，在作为form的值使用时如果是单选值不是数组格式在这里统一转换
-    const arrayValueTypes = [PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.ORGANIZATION]
-    if (arrayValueTypes.includes(property?.bk_property_type)) {
-      return !Array.isArray(value) ? [value] : value
-    }
-    return value
+    return formatPropertyValue(value, property)
   }
   const type = property.bk_property_type
   let formattedValue = value
@@ -167,6 +158,22 @@ export function formatValue(value, property) {
       break
   }
   return formattedValue
+}
+
+export function getPropertyDefaultValue(property, value) {
+  const propertyValue = formatPropertyValue(value, property)
+  const defaultValue = [PROPERTY_TYPES.BOOL].includes(property.bk_property_type) ? property.option : property.default
+  // undefined 认为没有传递属性值，与 null 等假值明确区分开
+  return value === undefined ? defaultValue : propertyValue
+}
+
+export function formatPropertyValue(value, property) {
+  // 枚举引用/多选和组织类型的字段保存时必须转换为数组，在作为form的值使用时如果是单选值不是数组格式在这里统一转换
+  const arrayValueTypes = [PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.ORGANIZATION]
+  if (arrayValueTypes.includes(property?.bk_property_type)) {
+    return !Array.isArray(value) ? [value] : value
+  }
+  return value
 }
 
 export function formatValues(values, properties) {
@@ -606,5 +613,6 @@ export default {
   getHeaderPropertyMinWidth,
   isShowOverflowTips,
   isUseComplexValueType,
-  getPropertyPlaceholder
+  getPropertyPlaceholder,
+  getPropertyDefaultValue
 }
