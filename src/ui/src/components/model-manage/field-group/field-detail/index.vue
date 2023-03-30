@@ -18,7 +18,8 @@
           {{$t('唯一标识')}}
           <span class="color-danger">*</span>
         </span>
-        <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
+        <div v-bk-tooltips.top.light.click="$t('模型字段唯一标识提示语')"
+          class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
           <bk-input type="text" class="cmdb-form-input"
             name="fieldId"
             v-model.trim="fieldInfo.bk_property_id"
@@ -28,7 +29,6 @@
           </bk-input>
           <p class="form-error" :title="errors.first('fieldId')">{{errors.first('fieldId')}}</p>
         </div>
-        <bk-icon class="icon-tips" type="info-circle-shape" v-bk-tooltips="$t('模型字段唯一标识提示语')" />
       </label>
       <label class="form-label">
         <span class="label-text">
@@ -128,13 +128,16 @@
       <div class="form-label">
         <span class="label-text">{{$t('用户提示')}}</span>
         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('placeholder') }">
-          <textarea
+          <bk-input
             class="raw"
+            :rows="3"
+            :maxlength="100"
             name="placeholder"
+            :type="'textarea'"
             v-model.trim="fieldInfo['placeholder']"
             :disabled="isReadOnly"
             v-validate="'length:2000'">
-          </textarea>
+          </bk-input>
           <p class="form-error" v-if="errors.has('placeholder')">{{errors.first('placeholder')}}</p>
         </div>
       </div>
@@ -438,16 +441,11 @@
             color: $cmdbBorderColor;
             padding-left: 5px;
         }
-        .icon-tips {
-            font-size: 18px !important;
-            color: rgb(152,155,165);
-            padding-left: 5px;
-        }
         .field-detail {
-            width: 94%;
+            width: 100%;
             margin-bottom: 20px;
             padding: 20px;
-            background: #f3f8ff;
+            background: #F5F7FB;
             .form-label:last-child {
                 margin: 0;
             }
@@ -461,7 +459,7 @@
             }
         }
         .cmdb-form-item {
-            width: 94% !important;
+            width: 100%;
             &.is-error {
                 /deep/ .bk-form-input {
                     border-color: #ff5656;
@@ -474,9 +472,14 @@
             margin-left: 10px;
         }
         .btn-group {
-            padding: 10px 20px;
+            padding: 8px 24px;
+
             &.is-sticky {
                 border-top: 1px solid #dcdee5;
+            }
+            .bk-button{
+                width: 88px;
+                height: 32px;
             }
         }
     }
