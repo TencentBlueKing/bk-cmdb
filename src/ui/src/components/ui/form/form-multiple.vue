@@ -183,7 +183,7 @@
     },
     methods: {
       initValues() {
-        this.values = this.$tools.getInstFormValues(this.properties, {}, true)
+        this.values = this.$tools.getInstFormValues(this.properties, {}, false)
         this.refrenceValues = this.$tools.clone(this.values)
       },
       initEditableStatus() {
