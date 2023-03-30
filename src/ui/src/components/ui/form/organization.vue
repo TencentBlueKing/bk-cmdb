@@ -31,6 +31,7 @@
       }"
       :searchable="true"
       :multiple="localMultiple"
+      font-size="normal"
       v-model="checked"
       :remote-method="handleSearch"
       :display-tag="true"

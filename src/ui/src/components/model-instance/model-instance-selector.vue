@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { computed, defineProps, ref, watch } from 'vue'
+  import { defineProps, ref, watch } from 'vue'
   import debounce from 'lodash.debounce'
   import { getModelInstanceOptions } from '@/service/instance/common'
 
@@ -38,21 +38,14 @@
   const search = async (keyword) => {
     loading.value = true
     const results = await getModelInstanceOptions(props.objId, keyword, props.value, { page: { limit: 50 } })
+    localValue.value = getInitValue()
     list.value = results
     loading.value = false
   }
 
   const remoteSearch = debounce(search, 200)
 
-  const localValue = computed({
-    get() {
-      return getInitValue()
-    },
-    set(values) {
-      emit('input', values)
-      emit('change', values)
-    }
-  })
+  const localValue = ref([])
 
   const isActive = ref(false)
 
@@ -64,6 +57,12 @@
     localValue.value = resetValue()
   })
 
+  watch(() => localValue.value, (cur) => {
+    if (cur.length === 0) {
+      localValue.value = getInitValue()
+    }
+  })
+
   if (props.objId) {
     search()
   }
@@ -71,6 +70,11 @@
   const handleToggle = (active) => {
     isActive.value = active
     emit('toggle', active)
+  }
+
+  const handleChange = (values) => {
+    emit('input', values)
+    emit('change', values)
   }
 
   defineExpose({
@@ -87,10 +91,12 @@
       v-model="localValue"
       searchable
       :multiple="multiple"
+      font-size="normal"
       :loading="loading"
       :is-tag-width-limit="true"
       :remote-method="remoteSearch"
-      @toggle="handleToggle">
+      @toggle="handleToggle"
+      @change="handleChange">
       <bk-option v-for="option in list"
         :key="option.id"
         :id="option.id"
