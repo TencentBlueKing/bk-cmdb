@@ -50,6 +50,7 @@ var sortFields = []string{
 	"isrequired",
 	"isreadonly",
 	"isonly",
+	"ismultiple",
 }
 
 // ImportObject import object attribute

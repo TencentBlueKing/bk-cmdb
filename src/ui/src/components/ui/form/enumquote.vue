@@ -111,6 +111,6 @@
 
 <style lang="scss" scoped>
   .form-enumqoute-selector {
-    width: 305px;
+    width: 100%;
   }
 </style>

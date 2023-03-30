@@ -227,6 +227,7 @@
             .property-value {
                 font-size: 0;
                 position: relative;
+                width: 303px;
             }
         }
     }
