@@ -11,13 +11,13 @@
 -->
 
 <template>
-  <div :class="['table-stuff', type]">
+  <div :class="['data-stuff', type]">
     <div class="content" v-if="type === 'search'">
       <bk-exception type="search-empty" scene="part">
         <p>{{ $t('搜索结果为空') }}</p>
-        <div class="table-tips">
+        <div class="data-tips">
           <i18n class="operation-text" path="搜索为空提示语">
-            <template #filter><span style="margin: 0 3px">{{$t('调整关键词')}}</span></template>
+            <template #filter><span class="search-text">{{$t('调整关键词')}}</span></template>
             <template #clear>
               <bk-button class="text-btn" theme="primary" text style="margin-left: 3px" @click="$emit('clear')">
                 {{$t('清空筛选条件')}}
@@ -52,9 +52,8 @@
         <template v-else>
           <div class="content" v-if="type === 'default'">
             <bk-exception type="empty" scene="part">
-              <p>{{ $t('暂无数据') }}</p>
-              <div class="table-tips"></div>
-              <i18n path="您还未XXX" tag="div" v-if="!emptyText">
+              <div class="data-tips"></div>
+              <i18n :path="path" tag="div" v-if="!emptyText">
                 <template #action><span>{{action}}</span></template>
                 <template #resource><span>{{resource}}</span></template>
                 <template #link>
@@ -65,16 +64,24 @@
                       slot-scope="{ disabled }"
                       :disabled="disabled"
                       @click="$emit('create')">
-                      {{$i18n.locale === 'en' ? `${action} now` : `立即${action}`}}
+                      {{action}}
                     </bk-button>
                   </cmdb-auth>
                 </template>
+                <template #skip>
+                  <a class="empty-link" href="javascript:void(0)" @click="$emit('skip')">{{skipText}}</a>
+                </template>
+
               </i18n>
             </bk-exception>
           </div>
-          <span v-else>
-            {{emptyText}}
-          </span>
+          <div class="content" v-else>
+            <slot name="permission">
+              <bk-exception type="empty" scene="part">
+                {{ defaultText }}
+              </bk-exception>
+            </slot>
+          </div>
         </template>
       </div>
     </div>
@@ -84,7 +91,7 @@
 <script>
   import permissionMixins from '@/mixins/permission'
   export default {
-    name: 'cmdb-table-empty',
+    name: 'cmdb-data-empty',
     mixins: [permissionMixins],
     props: {
       stuff: {
@@ -119,6 +126,15 @@
       },
       payload() {
         return this.stuff.payload
+      },
+      defaultText() {
+        return this.stuff.payload.defaultText
+      },
+      path() {
+        return this.stuff.payload.path
+      },
+      skipText() {
+        return this.stuff.payload.skipText
       }
     },
     watch: {
@@ -137,7 +153,7 @@
 </script>
 
 <style lang="scss" scoped>
-    .table-stuff {
+    .data-stuff {
         color: #63656e;
         font-size: 14px;
         .img-empty {
@@ -147,8 +163,14 @@
             font-size: 14px;
             height: auto;
         }
-        .table-tips{
+        .search-text{
+          margin: 0 3px;
+        }
+        .data-tips{
           margin-top: 15px;
         }
     }
+    .empty-link {
+         color: #3A84FF;
+     }
 </style>

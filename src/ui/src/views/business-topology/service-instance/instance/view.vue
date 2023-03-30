@@ -30,7 +30,8 @@
       InstanceList
     },
     data() {
-      return {}
+      return {
+      }
     },
     created() {
       Bus.$on('delete-complete', this.refreshView)
