@@ -22,7 +22,7 @@
     }
   ]">
     <bk-select
-      class="selector"
+      :class="['selector', { 'active': isActive }]"
       ref="select"
       :popover-width="400"
       :scroll-height="400"
@@ -187,7 +187,7 @@
     // hack将默认tree.setData注册给select的选项中的name替换为full_name，子级被选中时要显示完全名称
     const replaceOptionName = (nodes) => {
       nodes.forEach((node) => {
-        select.value.optionsMap[node.id].name = node.full_name
+        select.value.optionsMap[node.id].name = node.full_name.split('/').join(' / ')
         if (node.children) {
           replaceOptionName(node.children)
         }
@@ -238,7 +238,7 @@
     data.forEach((node) => {
       select.value.registerOption({
         id: node.id,
-        name: node.full_name,
+        name: node.full_name.split('/').join(' / '),
         disabled: false,
         unmatched: false,
         isHighlight: false
@@ -306,7 +306,7 @@
         id: item.id,
         name: item.name,
         level: ancestorLength,
-        full_name: item.full_name
+        full_name: item.full_name.split('/').join(' / ')
       }
       const ids = [curNode.id]
       const treeNode = {}
@@ -315,7 +315,7 @@
         ids.push(node.id)
         node.level = i
         node.children = [item.ancestors[i + 1] ? item.ancestors[i + 1] : curNode]
-        node.full_name = item.full_name.split('/', i + 1).join('/')
+        node.full_name = item.full_name.split('/', i + 1).join(' / ')
       }
 
       treeNode.ids = ids.reverse()
@@ -415,8 +415,10 @@
   const handleClear = () => {
     resetTree()
   }
+  const isActive = ref(false)
 
   const handleToggle = (active) => {
+    isActive.value = active
     emit('toggle', active)
   }
 
@@ -430,12 +432,16 @@
 </script>
 
 <style lang="scss" scoped>
-.cmdb-organization {
-  position: relative;
-  width: 100%;
-
-  .selector {
-    width: 100%;
-  }
-}
+    .cmdb-organization {
+        position: relative;
+        width: 100%;
+        height: 32px;
+        .selector {
+            width: 100%;
+            &.active {
+                position: absolute;
+                z-index: 2;
+            }
+          }
+    }
 </style>

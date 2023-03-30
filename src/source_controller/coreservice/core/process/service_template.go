@@ -304,9 +304,13 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 }
 
 // ListServiceTemplates TODO
-func (p *processOperation) ListServiceTemplates(kit *rest.Kit, option metadata.ListServiceTemplateOption) (*metadata.MultipleServiceTemplate, errors.CCErrorCoder) {
-	filter := map[string]interface{}{
-		common.BKAppIDField: option.BusinessID,
+func (p *processOperation) ListServiceTemplates(kit *rest.Kit, option metadata.ListServiceTemplateOption) (
+	*metadata.MultipleServiceTemplate, errors.CCErrorCoder) {
+
+	filter := map[string]interface{}{}
+	
+	if option.BusinessID != 0 {
+		filter[common.BKAppIDField] = option.BusinessID
 	}
 
 	// filter with matching any sub category

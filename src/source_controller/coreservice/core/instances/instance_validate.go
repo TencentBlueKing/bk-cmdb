@@ -583,8 +583,11 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, property metadata.Attribut
 	}
 
 	if len(valIDs) == 0 {
-		blog.Errorf("enum quote inst id is null, rid: %s", kit.Rid)
-		return fmt.Errorf("enum quote inst id is null, please set the correct value")
+		if property.IsRequired {
+			blog.Errorf("enum quote inst id is null, rid: %s", kit.Rid)
+			return fmt.Errorf("enum quote inst id is null, please set the correct value")
+		}
+		return nil
 	}
 
 	if property.IsMultiple == nil {
@@ -595,7 +598,7 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, property metadata.Attribut
 		return kit.CCError.CCError(common.CCErrCommParamsNeedSingleChoice)
 	}
 
-	valEnumIDMap := make(map[int64]interface{}, 0)
+	valEnumIDMap := make(map[int64]struct{}, 0)
 	for _, valID := range valIDs {
 		valEnumID, err := util.GetInt64ByInterface(valID)
 		if err != nil {

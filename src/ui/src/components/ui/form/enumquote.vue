@@ -107,8 +107,7 @@
     :obj-id="refModelId"
     :placeholder="$t('请选择xx', { name: $t('模型实例') })"
     :search-placeholder="searchPlaceholder"
-    :display-tag="false"
-    :disabled="disabled"
+    :display-tag="true"
     :multiple="localMultiple"
     v-model="refModelInstIds">
   </model-instance-selector>
