@@ -1589,3 +1589,10 @@ const (
 	// HostFavoriteType host query favorite condition type
 	HostFavoriteType = "type"
 )
+
+// ModelQuoteType model quote type.
+type ModelQuoteType string
+
+const (
+	Table ModelQuoteType = "table"
+)

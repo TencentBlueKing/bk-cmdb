@@ -51,12 +51,6 @@ func addModelQuoteRelationCollection(ctx context.Context, db dal.RDB) error {
 func addModelQuoteRelationIndex(ctx context.Context, db dal.RDB) error {
 	indexes := []types.Index{
 		{
-			Name:       common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
-			Keys:       bson.D{{common.BKFieldID, 1}},
-			Background: true,
-			Unique:     true,
-		},
-		{
 			Name: common.CCLogicIndexNamePrefix + "dest_model_src_model",
 			Keys: bson.D{
 				{common.BKDestModelField, 1},
