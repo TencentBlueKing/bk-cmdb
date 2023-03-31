@@ -129,12 +129,6 @@ func (s *Service) migrateOldVersionDataID(header http.Header, user string, defEr
 		return err
 	}
 
-	oldChannel, err := s.generateGseConfigChannel(streamToID, oldDataID, rid, oldVersion)
-	if err != nil {
-		blog.Errorf("generate gse channel failed, err: %v, stream to id: %d, rid: %s", err, streamToID, rid)
-		return err
-	}
-
 	// get already registered channel by host snap data id from gse, if not found, register it with its stream to
 	commonOperation := metadata.GseConfigOperation{
 		OperatorName: user,
@@ -152,25 +146,27 @@ func (s *Service) migrateOldVersionDataID(header http.Header, user string, defEr
 		blog.Errorf("query gse channel failed, ** skip this error for not exist case **, err: %v, rid: %s", err, rid)
 	}
 
-	// if old data id has channels, we need to check if they are registered by cc or by other system like bk-monitor
-	var existsPlatName metadata.GseConfigPlatName
+	oldChannel, err := s.generateGseConfigChannel(streamToID, oldDataID, rid, oldVersion)
+	if err != nil {
+		blog.Errorf("generate gse channel failed, err: %v, stream to id: %d, rid: %s", err, streamToID, rid)
+		return err
+	}
+
 	if isDataIDExists {
-		var exist bool
-		exist, existsPlatName, err = s.isOldDataIDChannelExist(channels, streamToID, rid)
+		// if old data id has channels, we need to check if they are registered by cc or by other system like bk-monitor
+		exist, platName, err := s.isOldDataIDChannelExist(channels, streamToID, rid)
 		if err != nil {
 			return err
 		}
 		if exist {
 			return nil
 		}
-	}
 
-	// update the exist data id's corresponding channel, add the route to it
-	if isDataIDExists {
+		// update the exist data id's corresponding channel, add the route to it
 		params := &metadata.GseConfigUpdateRouteParams{
 			Condition: metadata.GseConfigRouteCondition{
 				ChannelID: oldDataID,
-				PlatName:  existsPlatName,
+				PlatName:  platName,
 			},
 			Operation: metadata.GseConfigOperation{
 				OperatorName: user,
@@ -181,7 +177,7 @@ func (s *Service) migrateOldVersionDataID(header http.Header, user string, defEr
 			},
 		}
 
-		err := esb.EsbClient().GseSrv().ConfigUpdateRoute(s.ctx, header, params)
+		err = esb.EsbClient().GseSrv().ConfigUpdateRoute(s.ctx, header, params)
 		if err != nil {
 			blog.Errorf("update old data id route to gse failed, err: %v, params: %#v, rid: %s", err, params, rid)
 			return &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
@@ -204,10 +200,10 @@ func (s *Service) isOldDataIDChannelExist(channels []metadata.GseConfigChannel, 
 		return false, "", err
 	}
 
-	var existsPlatName metadata.GseConfigPlatName
+	var platName metadata.GseConfigPlatName
 	// check if channel name is snapshot+snap biz id to confirm if it is registered by cc, skip in this situation
 	for _, channel := range channels {
-		existsPlatName = channel.Metadata.PlatName
+		platName = channel.Metadata.PlatName
 		for _, route := range channel.Route {
 			if route.StreamTo.Redis == nil {
 				continue
@@ -220,12 +216,12 @@ func (s *Service) isOldDataIDChannelExist(channels []metadata.GseConfigChannel, 
 			if route.StreamTo.Redis.ChannelName == fmt.Sprintf("snapshot%d", bizID) ||
 				(route.StreamTo.Redis.BizID == bizID && route.StreamTo.Redis.DataSet == "snapshot") {
 				blog.Infof("old gse data id is already exist, skip registering it, rid: %s", rid)
-				return true, existsPlatName, nil
+				return true, platName, nil
 			}
 		}
 	}
 
-	return false, existsPlatName, nil
+	return false, platName, nil
 }
 
 // generateGseConfigStreamTo generate host snap stream to config by snap redis config
