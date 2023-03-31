@@ -56,7 +56,7 @@
         </div>
         <span class="property-value">{{option || '--'}}</span>
       </div>
-      <template v-else-if="['int', 'float'].includes(field.bk_property_type)">
+      <template v-else-if="numberLikes.includes(field.bk_property_type)">
         <div class="property-item">
           <div class="property-name">
             <span>{{$t('最小值')}}</span>：
@@ -84,14 +84,28 @@
       </div>
       <div class="property-item enum-list" v-if="listLikes.includes(field.bk_property_type)">
         <div class="property-name">
-          <span>{{$t('枚举值')}}</span>：
+          <span>{{ ['list'].includes(this.type) ? $t('列表值') : $t('枚举值') }}</span>：
         </div>
         <div class="property-value">
-          <template v-if="getEnumValue().length">
-            <p v-for="(val, index) in getEnumValue()" :key="index">{{val}}</p>
+          <template v-if="getEnumValue.length">
+            <p v-for="(val, index) in getEnumValue" :key="index">{{val}}</p>
           </template>
           <span v-else>--</span>
         </div>
+      </div>
+      <div class="property-item enum-list"
+        v-if="!listLikes.includes(field.bk_property_type)">
+        <div class="property-name">
+          <span>{{$t('默认值')}}</span>：
+        </div>
+        <cmdb-property-value
+          class="property-value"
+          v-if="['organization','enumquote'].includes(field.bk_property_type)"
+          :value="defaultValue"
+          :property="field">
+        </cmdb-property-value>
+        <span v-else
+          class="property-value">{{defaultValue || '--'}}</span>
       </div>
     </div>
     <template slot="footer" slot-scope="{ sticky }" v-if="canEdit">
@@ -105,6 +119,7 @@
 
 <script>
   import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
+
   export default {
     props: {
       field: {
@@ -116,7 +131,7 @@
     data() {
       return {
         fieldTypeMap: PROPERTY_TYPE_NAMES,
-        mumberLikes: [PROPERTY_TYPES.INT, PROPERTY_TYPES.FLOAT],
+        numberLikes: [PROPERTY_TYPES.INT, PROPERTY_TYPES.FLOAT],
         stringLikes: [PROPERTY_TYPES.SINGLECHAR, PROPERTY_TYPES.LONGCHAR],
         listLikes: [PROPERTY_TYPES.ENUM, PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.LIST],
         enumLikes: [PROPERTY_TYPES.ENUM, PROPERTY_TYPES.ENUMMULTI],
@@ -128,7 +143,7 @@
         return this.field.bk_property_type
       },
       option() {
-        if (this.mumberLikes.includes(this.type)) {
+        if (this.numberLikes.includes(this.type)) {
           return this.field.option || { min: null, max: null }
         }
         if (this.listLikes.includes(this.type)) {
@@ -139,9 +154,13 @@
       hasMultipleType() {
         const types = [PROPERTY_TYPES.ORGANIZATION, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ENUMMULTI]
         return types.includes(this.type)
-      }
-    },
-    methods: {
+      },
+      defaultValue() {
+        if ([PROPERTY_TYPES.ENUMQUOTE].includes(this.type)) {
+          return  this.field.option.map(item => item.bk_inst_id)
+        }
+        return  this.$tools.getPropertyDefaultValue(this.field)
+      },
       getEnumValue() {
         const value = this.field.option
         const type = this.field.bk_property_type
@@ -155,9 +174,20 @@
             })
             return arr
           }
+          if (this.listLikes.includes(type)) {
+            const arr = value.map((item) => {
+              if (item === this.field.default) {
+                return `${item}(${this.$t('默认值')})`
+              }
+              return item
+            })
+            return arr
+          }
         }
         return value || []
-      },
+      }
+    },
+    methods: {
       handleEdit() {
         this.$emit('on-edit')
       },
