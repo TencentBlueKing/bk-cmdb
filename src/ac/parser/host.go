@@ -326,7 +326,7 @@ const (
 	findHostsWithBizPattern = "/api/v3/findmany/hosts/search/with_biz"
 
 	// findHostsForResourcePattern only for ui.
-	findHostsForResourcePattern   = "/api/v3/findmany/hosts/search/resource"
+	findHostsForResourcePattern = "/api/v3/findmany/hosts/search/resource"
 
 	// find host for connection relation, unauthenticated, **only for ui**
 	findHostsWithoutBizPattern     = "/api/v3/findmany/hosts/search/noauth"
@@ -452,7 +452,7 @@ func (ps *parseStream) host() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.ViewResourcePoolHost,
+					Action: meta.FindMany,
 				},
 			},
 		}
@@ -629,7 +629,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.ViewResourcePoolHost,
+					Action: meta.FindMany,
 				},
 			},
 		}
@@ -742,7 +742,7 @@ func (ps *parseStream) host() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.ViewResourcePoolHost,
+					Action: meta.FindMany,
 				},
 			},
 		}
@@ -756,7 +756,7 @@ func (ps *parseStream) host() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.ViewResourcePoolHost,
+					Action: meta.FindMany,
 				},
 			},
 		}
@@ -809,7 +809,7 @@ func (ps *parseStream) host() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.ViewResourcePoolHost,
+					Action: meta.FindMany,
 				},
 			},
 		}
