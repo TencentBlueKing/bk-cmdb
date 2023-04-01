@@ -131,32 +131,9 @@ func (s *Service) preprocessAddCloudHostParam(kit *rest.Kit, input *metadata.Add
 func (s *Service) classifyHosts(kit *rest.Kit, hosts []mapstr.MapStr) ([]mapstr.MapStr, map[int]int,
 	map[int64]updateCloudHostParams, error) {
 
-	// get the host ids that are already added, generate host innerIP+cloudID to host info map
-	hostCond := make([]mapstr.MapStr, len(hosts))
-	hostMap := make(map[string]classifyHostParams)
-	for idx, host := range hosts {
-		cloudAreaID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
-		if err != nil {
-			blog.Error("host(%#v) cloud id field is invalid, err: %v, rid: %s", host, err, kit.Rid)
-			return nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKCloudIDField)
-		}
-
-		innerIP := util.GetStrByInterface(host[common.BKHostInnerIPField])
-		if len(innerIP) == 0 {
-			blog.Error("host(%#v) inner ip field is empty, rid: %s", host, kit.Rid)
-			return nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKHostInnerIPField)
-		}
-		innerIPArr := strings.Split(innerIP, ",")
-
-		hostCond[idx] = mapstr.MapStr{
-			common.BKCloudIDField:     cloudAreaID,
-			common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: innerIPArr},
-		}
-
-		hostMap[uniqueHostKey(cloudAreaID, innerIPArr)] = classifyHostParams{
-			host:  host,
-			index: idx,
-		}
+	hostCond, hostMap, err := genExistHostParams(kit, hosts)
+	if err != nil {
+		return nil, nil, nil, err
 	}
 
 	query := &metadata.QueryCondition{
@@ -172,47 +149,190 @@ func (s *Service) classifyHosts(kit *rest.Kit, hosts []mapstr.MapStr) ([]mapstr.
 	// cross compare new hosts and exist hosts to classify hosts into need create and need update
 	updateParamMap := make(map[int64]updateCloudHostParams)
 	for _, existHost := range res.Info {
-		cloudAreaID, err := util.GetInt64ByInterface(existHost[common.BKCloudIDField])
+		err = crossCompareCloudHost(kit, existHost, hostMap, updateParamMap)
 		if err != nil {
-			blog.Error("exist host(%#v) cloud id field is invalid, err: %v, rid: %s", existHost, err, kit.Rid)
-			return nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKCloudIDField)
+			return nil, nil, nil, err
 		}
-
-		hostID, err := util.GetInt64ByInterface(existHost[common.BKHostIDField])
-		if err != nil {
-			blog.Error("exist host(%#v) id field is invalid, err: %v, rid: %s", existHost, err, kit.Rid)
-			return nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
-		}
-
-		innerIP := util.GetStrByInterface(existHost[common.BKHostInnerIPField])
-		innerIPArr := strings.Split(innerIP, ",")
-
-		hostKey := uniqueHostKey(cloudAreaID, innerIPArr)
-
-		updateData, exists := hostMap[hostKey]
-		if !exists {
-			blog.Error("exist host(%#v) has no matching update data, rid: %s", existHost, kit.Rid)
-			return nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "host_info")
-		}
-
-		updateParamMap[hostID] = updateCloudHostParams{
-			currentHost: existHost,
-			updateHost:  updateData.host,
-			index:       updateData.index,
-		}
-		delete(hostMap, hostKey)
 	}
 
 	needCreateHosts := make([]mapstr.MapStr, 0)
 	createIndexMap := make(map[int]int)
 	idx := 0
 	for _, hostInfo := range hostMap {
+		parsedHost, err := parseCloudHostInfo(kit, hostInfo.host)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		hostKeys := genCloudHostKeys(parsedHost)
+		for _, key := range hostKeys {
+			delete(hostMap, key)
+		}
+
 		needCreateHosts = append(needCreateHosts, hostInfo.host)
 		createIndexMap[hostInfo.index] = idx
 		idx++
 	}
 
 	return needCreateHosts, createIndexMap, updateParamMap, nil
+}
+
+// genExistHostParams generate query exists host condition & host unique key to host info map for update classification.
+func genExistHostParams(kit *rest.Kit, hosts []mapstr.MapStr) ([]mapstr.MapStr, map[string]classifyHostParams, error) {
+	hostCond := make([]mapstr.MapStr, 0)
+	hostMap := make(map[string]classifyHostParams)
+	for idx, host := range hosts {
+		cloudHost, err := parseCloudHostInfo(kit, host)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// gen exist host params by cloud vendor and cloud inst id
+		if len(cloudHost.CloudVendor) == 0 {
+			blog.Error("host(%#v) cloud vendor field is empty, rid: %s", host, kit.Rid)
+			return nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKCloudVendor)
+		}
+
+		if len(cloudHost.CloudInstID) == 0 {
+			blog.Error("host(%#v) cloud inst id field is empty, rid: %s", host, kit.Rid)
+			return nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKCloudInstIDField)
+		}
+
+		hostCond = append(hostCond, mapstr.MapStr{
+			common.BKCloudVendor:      cloudHost.CloudVendor,
+			common.BKCloudInstIDField: cloudHost.CloudInstID,
+		})
+
+		hostParams := classifyHostParams{host: host, index: idx}
+		hostMap[uniqueCloudHostKey(cloudHost.CloudVendor, cloudHost.CloudInstID)] = hostParams
+
+		// gen exist host params by cloud id and inner ip
+		if len(cloudHost.InnerIP) > 0 {
+			hostCond = append(hostCond, mapstr.MapStr{
+				common.BKCloudIDField:     cloudHost.CloudID,
+				common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: cloudHost.InnerIP},
+			})
+
+			hostMap[uniqueHostKey(cloudHost.CloudID, cloudHost.InnerIP)] = hostParams
+		}
+
+		// gen exist host params by cloud id and inner ipv6
+		if len(cloudHost.InnerIPv6) > 0 {
+			hostCond = append(hostCond, mapstr.MapStr{
+				common.BKCloudIDField:       cloudHost.CloudID,
+				common.BKHostInnerIPv6Field: mapstr.MapStr{common.BKDBIN: cloudHost.InnerIPv6},
+			})
+
+			hostMap[uniqueHostKey(cloudHost.CloudID, cloudHost.InnerIPv6)] = hostParams
+		}
+	}
+
+	return hostCond, hostMap, nil
+}
+
+// genCloudHostKeys generate cloud host keys.
+func genCloudHostKeys(host *cloudHostInfo) []string {
+	keys := make([]string, 0)
+	if len(host.CloudVendor) > 0 && len(host.CloudInstID) > 0 {
+		keys = append(keys, uniqueCloudHostKey(host.CloudVendor, host.CloudInstID))
+	}
+
+	if len(host.InnerIP) > 0 {
+		keys = append(keys, uniqueHostKey(host.CloudID, host.InnerIP))
+	}
+
+	if len(host.InnerIPv6) > 0 {
+		keys = append(keys, uniqueHostKey(host.CloudID, host.InnerIPv6))
+	}
+
+	return keys
+}
+
+func crossCompareCloudHost(kit *rest.Kit, existHost mapstr.MapStr, hostMap map[string]classifyHostParams,
+	updateParamMap map[int64]updateCloudHostParams) error {
+
+	parsedExistHost, err := parseCloudHostInfo(kit, existHost)
+	if err != nil {
+		return err
+	}
+
+	keys := genCloudHostKeys(parsedExistHost)
+	for _, key := range keys {
+		updateData, exists := hostMap[key]
+		if !exists {
+			continue
+		}
+
+		updateParamMap[parsedExistHost.HostID] = updateCloudHostParams{
+			currentHost: existHost,
+			updateHost:  updateData.host,
+			index:       updateData.index,
+		}
+
+		parsedUpdateHost, err := parseCloudHostInfo(kit, updateData.host)
+		if err != nil {
+			return err
+		}
+		updateKeys := genCloudHostKeys(parsedUpdateHost)
+		for _, updateKey := range updateKeys {
+			delete(hostMap, updateKey)
+		}
+		return nil
+	}
+
+	blog.Error("exist host(%#v) has no matching update data, rid: %s", existHost, kit.Rid)
+	return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "host_info")
+}
+
+type cloudHostInfo struct {
+	HostID      int64    `json:"bk_host_id"`
+	CloudID     int64    `json:"bk_cloud_id"`
+	InnerIP     []string `json:"bk_host_innerip"`
+	InnerIPv6   []string `json:"bk_host_innerip_v6"`
+	CloudVendor string   `json:"bk_cloud_vendor"`
+	CloudInstID string   `json:"bk_cloud_inst_id"`
+}
+
+func parseCloudHostInfo(kit *rest.Kit, host map[string]interface{}) (*cloudHostInfo, error) {
+	cloudHost := &cloudHostInfo{
+		CloudVendor: util.GetStrByInterface(host[common.BKCloudVendor]),
+		CloudInstID: util.GetStrByInterface(host[common.BKCloudInstIDField]),
+	}
+
+	cloudAreaID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
+	if err != nil {
+		blog.Error("host(%#v) cloud id field is invalid, err: %v, rid: %s", host, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKCloudIDField)
+	}
+	if cloudAreaID == 0 {
+		blog.Error("host(%#v) cloud id field is empty, rid: %s", host, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKCloudIDField)
+	}
+	cloudHost.CloudID = cloudAreaID
+
+	strHostID, exists := host[common.BKHostIDField]
+	if exists {
+		cloudHost.HostID, err = util.GetInt64ByInterface(strHostID)
+		if err != nil {
+			blog.Error("host(%#v) id field is invalid, err: %v, rid: %s", host, err, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
+		}
+	}
+
+	innerIP := util.GetStrByInterface(host[common.BKHostInnerIPField])
+	innerIPv6 := util.GetStrByInterface(host[common.BKHostInnerIPv6Field])
+	if len(innerIP) == 0 && len(innerIPv6) == 0 {
+		blog.Error("host(%#v) inner ip field is empty, rid: %s", host, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKHostInnerIPField)
+	}
+
+	cloudHost.InnerIP = strings.Split(innerIP, ",")
+	cloudHost.InnerIPv6 = strings.Split(innerIPv6, ",")
+
+	return cloudHost, nil
+}
+
+func uniqueCloudHostKey(vendor string, instID string) string {
+	return fmt.Sprintf("%s-%s", vendor, instID)
 }
 
 func uniqueHostKey(cloudID int64, innerIP []string) string {

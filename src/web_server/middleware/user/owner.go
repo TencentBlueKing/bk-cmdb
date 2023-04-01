@@ -170,6 +170,6 @@ func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, er
 	fields := result.Data
 
 	ret := map[string]interface{}{}
-	validator.FillLostedFieldValue(context.Background(), ret, fields)
+	validator.FillLostFieldValue(context.Background(), ret, fields)
 	return ret, nil, nil
 }

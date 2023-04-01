@@ -222,7 +222,7 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 
 func (lgc *Logics) handleAsstInfoMap(ctx context.Context, header http.Header, objID string,
 	asstInfoMap map[int]metadata.ExcelAssociation, asstObjectUniqueIDMap map[string]int64,
-	rid string) (map[int]metadata.ExcelAssociation, error){
+	rid string) (map[int]metadata.ExcelAssociation, error) {
 
 	var associationFlag []string
 	for _, info := range asstInfoMap {
@@ -256,7 +256,7 @@ func (lgc *Logics) handleAsstInfoMap(ctx context.Context, header http.Header, ob
 
 func (lgc *Logics) handleExcelAssociation(ctx context.Context, h http.Header, f *xlsx.File, objID string, rid string,
 	asstObjectUniqueIDMap map[string]int64, objectUniqueID int64, defLang lang.DefaultCCLanguageIf,
-	resp *metadata.ResponseDataMapStr) *metadata.ResponseDataMapStr{
+	resp *metadata.ResponseDataMapStr) *metadata.ResponseDataMapStr {
 	// if sheet name is 'association', the sheet is association data to be import
 	for _, sheet := range f.Sheets {
 		if sheet.Name != "association" {
@@ -288,12 +288,12 @@ func (lgc *Logics) handleExcelAssociation(ctx context.Context, h http.Header, f 
 			return resp
 		}
 
-		assoErrMsg = append(assoErrMsg, asstResult.Data.ErrMsgMap...)
-		if resp.Result && !asstResult.Result {
-			resp.BaseResp = asstResult.BaseResp
-		}
+		resp.BaseResp = asstResult.BaseResp
 
-		resp.Data.Set("asst_error", assoErrMsg)
+		if len(asstResult.Data.ErrMsgMap) > 0 {
+			assoErrMsg = append(assoErrMsg, asstResult.Data.ErrMsgMap...)
+			resp.Data.Set("error", assoErrMsg)
+		}
 		return resp
 	}
 
