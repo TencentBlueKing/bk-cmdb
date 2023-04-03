@@ -21,6 +21,7 @@ import (
 	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	ccErr "configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 )
 
 // CommonFilterOption common filter option.
@@ -80,6 +81,25 @@ func (c *CommonQueryOption) Validate(opt ...*filter.ExprOption) ccErr.RawErrorIn
 
 	if err := c.CommonFilterOption.Validate(opt...); err.ErrCode != 0 {
 		return err
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// CommonUpdateOption common update option.
+type CommonUpdateOption struct {
+	CommonFilterOption `json:",inline"`
+	Data               mapstr.MapStr `json:"data"`
+}
+
+// Validate common update option.
+func (c *CommonUpdateOption) Validate(opt ...*filter.ExprOption) ccErr.RawErrorInfo {
+	if err := c.CommonFilterOption.Validate(opt...); err.ErrCode != 0 {
+		return err
+	}
+
+	if len(c.Data) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"data"}}
 	}
 
 	return ccErr.RawErrorInfo{}

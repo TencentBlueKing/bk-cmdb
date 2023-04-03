@@ -19,16 +19,25 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
 // Interface defines model quote apis.
 type Interface interface {
-	// ListModelQuoteRelation list model instances num.
-	ListModelQuoteRelation(ctx context.Context, h http.Header, req *metadata.CommonQueryOption) (
+	ListModelQuoteRelation(ctx context.Context, h http.Header, opt *metadata.CommonQueryOption) (
 		*metadata.ListModelQuoteRelRes, errors.CCErrorCoder)
 	CreateModelQuoteRelation(ctx context.Context, h http.Header, data []metadata.ModelQuoteRelation) errors.CCErrorCoder
-	DeleteModelQuoteRelation(ctx context.Context, h http.Header, req *metadata.CommonFilterOption) errors.CCErrorCoder
+	DeleteModelQuoteRelation(ctx context.Context, h http.Header, opt *metadata.CommonFilterOption) errors.CCErrorCoder
+
+	BatchCreateQuotedInstance(ctx context.Context, h http.Header, objID string, data []mapstr.MapStr) (
+		[]uint64, errors.CCErrorCoder)
+	ListQuotedInstance(ctx context.Context, h http.Header, objID string, opt *metadata.CommonQueryOption) (
+		*metadata.InstDataInfo, errors.CCErrorCoder)
+	BatchUpdateQuotedInstance(ctx context.Context, h http.Header, objID string,
+		opt *metadata.CommonUpdateOption) errors.CCErrorCoder
+	BatchDeleteQuotedInstance(ctx context.Context, h http.Header, objID string,
+		opt *metadata.CommonFilterOption) errors.CCErrorCoder
 }
 
 // New model quote api client.
