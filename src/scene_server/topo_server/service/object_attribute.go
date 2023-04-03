@@ -203,7 +203,7 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 	cond.Field(metadata.AttributeFieldID).Eq(id)
 
 	listRuleOption := metadata.ListHostApplyRuleOption{
-		ModuleIDs: []int64{id},
+		AttributeIDs: []int64{id},
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
