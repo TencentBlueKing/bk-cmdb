@@ -1401,12 +1401,12 @@ $modelHighlightColor: #3c96ff;
   }
 }
 .group-dialog-footer {
-  .bk-button + .bk-button{
+  .bk-button + .bk-button {
     margin-left: 10px;
   }
 }
-.sides-slider{
-  /deep/.slider-main{
+.sides-slider {
+  :deep .slider-main {
     padding:20px 40px;
   }
 }
