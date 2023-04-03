@@ -9,6 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package user
 
 import (
@@ -19,7 +20,7 @@ import (
 	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
-// Deprecated
+// GetAllUsers get all users from user manager
 func (p *user) GetAllUsers(ctx context.Context, h http.Header) (resp *metadata.EsbUserListResponse, err error) {
 	resp = &metadata.EsbUserListResponse{}
 	subPath := "/v2/usermanage/get_all_users/"
@@ -36,6 +37,7 @@ func (p *user) GetAllUsers(ctx context.Context, h http.Header) (resp *metadata.E
 	return
 }
 
+// ListUsers get user list from user manager
 func (p *user) ListUsers(ctx context.Context, h http.Header, params map[string]string) (resp *metadata.EsbListUserResponse, err error) {
 	// response demo
 	/*
@@ -99,7 +101,8 @@ func (p *user) ListUsers(ctx context.Context, h http.Header, params map[string]s
 	return
 }
 
-// get department from pass
+// GetDepartment This function is used for front-end non paged fuzzy query of organizational data in user management.
+// The parameters are included in the url
 func (p *user) GetDepartment(ctx context.Context, q *http.Request) (resp *metadata.EsbDepartmentResponse, err error) {
 	resp = &metadata.EsbDepartmentResponse{}
 	subPath := "/v2/usermanage/list_departments/"
@@ -122,7 +125,8 @@ func (p *user) GetDepartment(ctx context.Context, q *http.Request) (resp *metada
 	return
 }
 
-// GetAllDepartment get department from pass
+// GetAllDepartment This function is used for backend paging to accurately pull organizational data from user manager,
+// without url parameters
 func (p *user) GetAllDepartment(ctx context.Context, h http.Header, params map[string]string) (
 	resp *metadata.EsbDepartmentResponse, err error) {
 
@@ -143,7 +147,7 @@ func (p *user) GetAllDepartment(ctx context.Context, h http.Header, params map[s
 	return
 }
 
-// get department profile from pass
+// GetDepartmentProfile get department profile from user manager
 func (p *user) GetDepartmentProfile(ctx context.Context, q *http.Request) (resp *metadata.EsbDepartmentProfileResponse, err error) {
 	resp = &metadata.EsbDepartmentProfileResponse{}
 	subPath := "/v2/usermanage/list_department_profiles/"

@@ -14,7 +14,9 @@ package logics
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
+	"sync"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/configcenter"
@@ -88,21 +90,47 @@ func (lgc *Logics) GetAllDepartment(c *gin.Context, config *options.Config, orgI
 	rid := commonutil.GetHTTPCCRequestID(header)
 
 	orgIDList := lgc.getOrgListStr(orgIDs)
-	params := make(map[string]string, 0)
 	departments := &metadata.DepartmentData{}
-	for _, orgIDStr := range  orgIDList {
-		params["exact_lookups"] = orgIDStr
-		result, esbErr := esb.EsbClient().User().GetAllDepartment(c.Request.Context(), c.Request.Header, params)
-		if esbErr != nil {
-			blog.Errorf("get department by esb client failed, http failed, err: %+v, rid: %s", esbErr, rid)
-			return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !result.Result {
-			blog.Errorf("get department by esb client failed, result is false, err: %+v, rid: %s", result, rid)
-			return nil, errors.NewCCError(result.Code, result.Message)
-		}
-		departments.Count += result.Data.Count
-		departments.Results = append(departments.Results, result.Data.Results...)
+	var wg sync.WaitGroup
+	var lock sync.RWMutex
+	var firstErr error
+	pipeline := make(chan bool, 10)
+
+	for _, subStr := range orgIDList {
+		pipeline <- true
+		wg.Add(1)
+		go func(subStr string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			params := make(map[string]string)
+			params["exact_lookups"] = subStr
+			result, esbErr := esb.EsbClient().User().GetAllDepartment(c.Request.Context(), c.Request.Header, params)
+			if esbErr != nil {
+				firstErr = esbErr
+				blog.Errorf("get department by esb client failed, http failed, params: %+v, err: %v, rid: %s",
+					params, esbErr, rid)
+				return
+			}
+			if !result.Result {
+				blog.Errorf("get department by esb client failed, result is false, params: %+v, rid: %s", params,
+					rid)
+				firstErr = fmt.Errorf("get department by esb failed, result is false, params: %v", params)
+				return
+			}
+
+			lock.Lock()
+			departments.Count += result.Data.Count
+			departments.Results = append(departments.Results, result.Data.Results...)
+			lock.Unlock()
+		}(subStr)
+	}
+	wg.Wait()
+
+	if firstErr != nil {
+		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	return departments, nil
@@ -116,15 +144,15 @@ func (lgc *Logics) getOrgListStr(orgIDList []int64) []string {
 
 	orgBuffer := bytes.Buffer{}
 	for _, orgID := range orgIDList {
-		if orgBuffer.Len()+len(strconv.Itoa(int(orgID))) > getOrganizationMaxLength {
-			orgBuffer.WriteString(strconv.Itoa(int(orgID)))
+		if orgBuffer.Len()+len(strconv.FormatInt(orgID, 10)) > getOrganizationMaxLength {
+			orgBuffer.WriteString(strconv.FormatInt(orgID, 10))
 			orgStr := orgBuffer.String()
 			orgListStr = append(orgListStr, orgStr)
 			orgBuffer.Reset()
 			continue
 		}
 
-		orgBuffer.WriteString(strconv.Itoa(int(orgID)))
+		orgBuffer.WriteString(strconv.FormatInt(orgID, 10))
 		orgBuffer.WriteByte(',')
 	}
 

@@ -272,7 +272,7 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 			continue
 		}
 
-		errMsg = buildAttrByPropertyType(rid, fieldName, cell.Value, rowIndex, field, result, defLang, errMsg)
+		result, errMsg = buildAttrByPropertyType(rid, fieldName, cell.Value, rowIndex, field, result, defLang, errMsg)
 	}
 	if len(errMsg) != 0 {
 		return nil, errMsg
@@ -289,7 +289,8 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 }
 
 func buildAttrByPropertyType(rid, fieldName, cellValue string, rowIndex int, field Property,
-	result map[string]interface{}, defLang lang.DefaultCCLanguageIf, errMsg []string) []string {
+	result map[string]interface{}, defLang lang.DefaultCCLanguageIf, errMsg []string) (map[string]interface{},
+	[]string) {
 
 	switch field.PropertyType {
 	case common.FieldTypeBool:
@@ -322,7 +323,7 @@ func buildAttrByPropertyType(rid, fieldName, cellValue string, rowIndex int, fie
 	case common.FieldTypeOrganization:
 		errMsg = parseOrganizationID(rid, fieldName, rowIndex, result, defLang, errMsg)
 		if len(errMsg) != 0 {
-			return errMsg
+			return nil, errMsg
 		}
 	case common.FieldTypeUser:
 		// convert userNames,  eg: " admin(admin),xiaoming(小明 ),leo(li hong),  " => "admin,xiaoming,leo"
@@ -336,10 +337,10 @@ func buildAttrByPropertyType(rid, fieldName, cellValue string, rowIndex int, fie
 		}
 	}
 
-	return errMsg
+	return result, errMsg
 }
 
-// parseOrganizationID get org id from excel
+// parseOrganizationID parse organization id from excel
 func parseOrganizationID(rid, fieldName string, rowIndex int, result map[string]interface{},
 	defLang lang.DefaultCCLanguageIf, errMsg []string) []string {
 	orgStr := util.GetStrByInterface(result[fieldName])

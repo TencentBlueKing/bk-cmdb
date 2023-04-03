@@ -242,7 +242,7 @@ func replaceDepartmentFullName(rid string, rowMap mapstr.MapStr, org []metadata.
 		if !ok {
 			blog.Errorf("rowMap[%s] type to array failed, rowMap: %v, rowMap type: %T, rid: %s", property,
 				rowMap[property], rowMap[property], rid)
-			continue
+			return nil, fmt.Errorf("convert variable rowMap[%s] type to int array failed", property)
 		}
 
 		orgName := make([]string, 0)

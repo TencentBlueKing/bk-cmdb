@@ -160,8 +160,9 @@ func (s *Service) getUserListStr(userList []string) []string {
 	userBuffer := bytes.Buffer{}
 	for _, user := range userList {
 		if userBuffer.Len()+len(user) > getUserMaxLength {
+			userBuffer.WriteString(user)
 			userStr := userBuffer.String()
-			userListStr = append(userListStr, userStr[:len(userStr)-1])
+			userListStr = append(userListStr, userStr)
 			userBuffer.Reset()
 			continue
 		}
@@ -226,11 +227,11 @@ func (s *Service) getDepartment(c *gin.Context, objID string, infoList []mapstr.
 			}
 		}
 		for _, item := range attrRsp.Data.Info {
-			propertyList = append(propertyList, item.PropertyID)
 			if info[item.PropertyID] != nil {
 				orgIDs, ok := info[item.PropertyID].([]interface{})
 				if !ok {
-					return nil, nil, nil
+					return nil, nil, fmt.Errorf("org id list type not []interface{}, real type is %T",
+						info[item.PropertyID])
 				}
 				if len(orgIDs) == 0 {
 					continue
@@ -238,7 +239,7 @@ func (s *Service) getDepartment(c *gin.Context, objID string, infoList []mapstr.
 				for _, orgID := range orgIDs {
 					id, err := util.GetInt64ByInterface(orgID)
 					if err != nil {
-						continue
+						return nil, nil, err
 					}
 					orgIDList = append(orgIDList, id)
 				}
