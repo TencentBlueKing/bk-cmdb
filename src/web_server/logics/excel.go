@@ -530,10 +530,8 @@ func AddDownExcelHttpHeader(c *gin.Context, name string) {
 
 // GetExcelData excel数据，一个kv结构，key行数（excel中的行数），value内容
 func GetExcelData(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Property, defFields common.KvMap,
-	isCheckHeader bool, firstRow int, defLang lang.DefaultCCLanguageIf, department map[int64]metadata.DepartmentItem) (
-	map[int]map[string]interface{}, []string, error) {
-
-	var err error
+	isCheckHeader bool, firstRow int, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, []string,
+	error) {
 	nameIndexMap, err := checkExcelHeader(ctx, sheet, fields, isCheckHeader, defLang)
 	if err != nil {
 		return nil, nil, err
@@ -547,7 +545,7 @@ func GetExcelData(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Prop
 	rowCnt := len(sheet.Rows)
 	for ; index < rowCnt; index++ {
 		row := sheet.Rows[index]
-		host, getErr := getDataFromByExcelRow(ctx, row, index, fields, defFields, nameIndexMap, defLang, department)
+		host, getErr := getDataFromByExcelRow(ctx, row, index, fields, defFields, nameIndexMap, defLang)
 		if len(getErr) != 0 {
 			errMsg = append(errMsg, getErr...)
 			continue
@@ -561,17 +559,13 @@ func GetExcelData(ctx context.Context, sheet *xlsx.Sheet, fields map[string]Prop
 	}
 
 	return hosts, nil, nil
-
 }
 
 // GetRawExcelData excel数据，一个kv结构，key行数（excel中的行数），value内容
 func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.KvMap, firstRow int,
-	defLang lang.DefaultCCLanguageIf, department map[int64]metadata.DepartmentItem) (map[int]map[string]interface{},
-	[]string, error) {
-
-	var err error
+	defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, []string, error) {
 	nameIndexMap, err := checkExcelHeader(ctx, sheet, nil, false, defLang)
-	if nil != err {
+	if err != nil {
 		return nil, nil, err
 	}
 	hosts := make(map[int]map[string]interface{})
@@ -583,7 +577,7 @@ func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.Kv
 	rowCnt := len(sheet.Rows)
 	for ; index < rowCnt; index++ {
 		row := sheet.Rows[index]
-		host, getErr := getDataFromByExcelRow(ctx, row, index, nil, defFields, nameIndexMap, defLang, department)
+		host, getErr := getDataFromByExcelRow(ctx, row, index, nil, defFields, nameIndexMap, defLang)
 		if getErr != nil {
 			errMsg = append(errMsg, getErr...)
 			continue
@@ -599,7 +593,6 @@ func GetRawExcelData(ctx context.Context, sheet *xlsx.Sheet, defFields common.Kv
 	}
 
 	return hosts, nil, nil
-
 }
 
 // GetAssociationExcelData read sheet of association data from excel
