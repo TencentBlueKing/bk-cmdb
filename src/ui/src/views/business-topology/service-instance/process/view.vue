@@ -27,7 +27,8 @@
       ProcessList
     },
     data() {
-      return {}
+      return {
+      }
     }
   }
 </script>

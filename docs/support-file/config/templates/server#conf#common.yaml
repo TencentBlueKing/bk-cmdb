@@ -242,7 +242,7 @@ eventServer:
       # 下发主机身份文件路径
       filePath: __BK_GSE_SYNCDATA_WINDOWS_HOSTID_DIR__
       # 下发主机身份文件所有者
-      fileOwner: "root"
+      fileOwner: "SYSTEM"
       # 下发主机身份文件权限值
       filePrivilege: 644
 

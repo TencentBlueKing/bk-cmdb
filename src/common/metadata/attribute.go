@@ -78,6 +78,8 @@ const (
 	AttributeFieldCreateTime = "create_time"
 	// AttributeFieldLastTime TODO
 	AttributeFieldLastTime = "last_time"
+	// AttributeFieldDefault attribute default value field
+	AttributeFieldDefault = "default"
 )
 
 // Attribute attribute metadata definition
@@ -102,6 +104,7 @@ type Attribute struct {
 	IsAPI             bool        `field:"bk_isapi" json:"bk_isapi" bson:"bk_isapi" mapstructure:"bk_isapi"`
 	PropertyType      string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type" mapstructure:"bk_property_type"`
 	Option            interface{} `field:"option" json:"option" bson:"option" mapstructure:"option"`
+	Default           interface{} `field:"default" json:"default,omitempty" bson:"default" mapstructure:"default"`
 	IsMultiple        *bool       `field:"ismultiple" json:"ismultiple,omitempty" bson:"ismultiple" mapstructure:"ismultiple"`
 	Description       string      `field:"description" json:"description" bson:"description" mapstructure:"description"`
 	Creator           string      `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
@@ -224,16 +227,7 @@ func (attribute *Attribute) validTime(ctx context.Context, val interface{}, key 
 		return errors.RawErrorInfo{}
 	}
 
-	valStr, ok := val.(string)
-	if !ok {
-		blog.Errorf("date can should be string, rid: %s", rid)
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsShouldBeString,
-			Args:    []interface{}{key},
-		}
-	}
-
-	if _, result := util.IsTime(valStr); !result {
+	if _, result := util.IsTime(val); !result {
 		blog.Errorf("params not valid, rid: %s", rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
@@ -259,17 +253,7 @@ func (attribute *Attribute) validDate(ctx context.Context, val interface{}, key 
 		return errors.RawErrorInfo{}
 	}
 
-	valStr, ok := val.(string)
-	if !ok {
-		blog.Errorf("date can should be string, rid: %s", rid)
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsShouldBeString,
-			Args:    []interface{}{key},
-		}
-
-	}
-
-	if result := util.IsDate(valStr); !result {
+	if result := util.IsDate(val); !result {
 		blog.Errorf("params is not valid, rid: %s", rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
@@ -479,17 +463,7 @@ func (attribute *Attribute) validTimeZone(ctx context.Context, val interface{}, 
 		return errors.RawErrorInfo{}
 	}
 
-	switch value := val.(type) {
-	case string:
-		isMatch := util.IsTimeZone(value)
-		if !isMatch {
-			blog.Errorf("params should be timezone, rid: %s", rid)
-			return errors.RawErrorInfo{
-				ErrCode: common.CCErrCommParamsNeedTimeZone,
-				Args:    []interface{}{key},
-			}
-		}
-	default:
+	if ok := util.IsTimeZone(val); !ok {
 		blog.Errorf("params should be timezone, rid: %s", rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedTimeZone,
@@ -947,7 +921,7 @@ func (attribute *Attribute) validOrganization(ctx context.Context, val interface
 		}
 
 		for _, orgID := range org {
-			if !util.IsNumeric(orgID) {
+			if !util.IsInteger(orgID) {
 				blog.Errorf("orgID params not int, type: %T, rid: %s", orgID, rid)
 				return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid, Args: []interface{}{key}}
 			}
@@ -970,7 +944,7 @@ func (attribute *Attribute) validOrganization(ctx context.Context, val interface
 		}
 
 		for _, orgID := range org {
-			if !util.IsNumeric(orgID) {
+			if !util.IsInteger(orgID) {
 				blog.Errorf("orgID params not int, type: %T, rid: %s", orgID, rid)
 				return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid, Args: []interface{}{key}}
 			}
@@ -1310,7 +1284,7 @@ func getEnumQuoteOptions(val map[string]interface{}, enumQuoteOptions *[]EnumQuo
 		return err
 	}
 	if instID == 0 {
-		return fmt.Errorf("inst id is illegal, inst id cannot be 0")
+		return fmt.Errorf("inst id cannot be 0")
 	}
 	enumQuoteOption.InstID = instID
 	*enumQuoteOptions = append(*enumQuoteOptions, enumQuoteOption)
@@ -1339,33 +1313,6 @@ func parseEnumQuoteOption(options []interface{}, enumQuoteOptions *[]EnumQuoteVa
 		}
 	}
 	return nil
-}
-
-// ParseFloatOption  parse float data in option
-func ParseFloatOption(ctx context.Context, val interface{}) FloatOption {
-	rid := util.ExtractRequestIDFromContext(ctx)
-	floatOption := FloatOption{}
-	if nil == val || "" == val {
-		return floatOption
-	}
-	switch option := val.(type) {
-	case string:
-		floatOption.Min = gjson.Get(option, "min").Raw
-		floatOption.Max = gjson.Get(option, "max").Raw
-	case map[string]interface{}:
-		floatOption.Min = getString(option["min"])
-		floatOption.Max = getString(option["max"])
-	case bson.M:
-		floatOption.Min = getString(option["min"])
-		floatOption.Max = getString(option["max"])
-	case bson.D:
-		opt := option.Map()
-		floatOption.Min = getString(opt["min"])
-		floatOption.Max = getString(opt["max"])
-	default:
-		blog.Warnf("unknow val type: %#v, rid: %s", val, rid)
-	}
-	return floatOption
 }
 
 // PrettyValue TODO
@@ -1467,7 +1414,6 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 		blog.V(3).Infof("unexpected property type: %s", fieldType)
 		return fmt.Sprintf("%#v", val), nil
 	}
-	return "", nil
 }
 
 // HostApplyFieldMap TODO

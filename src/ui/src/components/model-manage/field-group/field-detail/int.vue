@@ -107,6 +107,7 @@
     .form-label {
         &:last-child {
             margin: 0;
+            margin-bottom: 15px;
         }
     }
 </style>
