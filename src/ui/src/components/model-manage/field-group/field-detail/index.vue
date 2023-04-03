@@ -29,7 +29,6 @@
           </bk-input>
           <p class="form-error" :title="errors.first('fieldId')">{{errors.first('fieldId')}}</p>
         </div>
-        <bk-icon class="icon-tips" type="info-circle-shape" v-bk-tooltips="$t('模型字段唯一标识提示语')" />
       </label>
       <label class="form-label">
         <span class="label-text">
@@ -480,11 +479,6 @@
         .icon-info-circle {
             font-size: 18px;
             color: $cmdbBorderColor;
-            padding-left: 5px;
-        }
-        .icon-tips {
-            font-size: 18px !important;
-            color: rgb(152,155,165);
             padding-left: 5px;
         }
         .field-detail {
