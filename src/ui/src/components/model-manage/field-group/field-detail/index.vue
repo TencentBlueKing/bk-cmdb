@@ -38,14 +38,13 @@
         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldName') }">
           <bk-input type="text" class="cmdb-form-input"
             name="fieldName"
-            :placeholder="$t('请输入字段名称')"
+            :placeholder="$t('国际化时将会自动翻译，不可修改')"
             v-model.trim="fieldInfo.bk_property_name"
             :disabled="isReadOnly || isSystemCreate || field.ispre"
             v-validate="'required|length:128'">
           </bk-input>
           <p class="form-error">{{errors.first('fieldName')}}</p>
         </div>
-        <i class="icon-cc-exclamation-tips" v-if="isSystemCreate" tabindex="-1" v-bk-tooltips="$t('国际化配置翻译，不可修改')"></i>
       </label>
       <div class="form-label">
         <span class="label-text">
