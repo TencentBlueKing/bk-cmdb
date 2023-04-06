@@ -305,8 +305,8 @@ func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 	// check option validity for creation,
 	// update validation is in coreservice cause property type need to be obtained from db
 	if !isUpdate && a.isPropertyTypeIntEnumListSingleLong(data.PropertyType) {
-		if err := util.ValidPropertyOption(data.PropertyType, data.Option, *data.IsMultiple,
-			data.Default, kit.Rid, kit.CCError); err != nil {
+		if err := util.ValidPropertyOption(data.PropertyType, data.Option, *data.IsMultiple, data.Default,
+			kit.CCError); err != nil {
 			return err
 		}
 	}

@@ -271,15 +271,15 @@ func (m *modelAttribute) checkAttributeDefaultValue(kit *rest.Kit, attribute met
 	propertyType string) error {
 	switch propertyType {
 	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
-		if err := util.ValidFieldTypeString(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
+		if err := util.ValidFieldTypeString(attribute.Option, attribute.Default, kit.CCError); err != nil {
 			return err
 		}
 	case common.FieldTypeInt:
-		if err := util.ValidFieldTypeInt(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
+		if err := util.ValidFieldTypeInt(attribute.Option, attribute.Default, kit.CCError); err != nil {
 			return err
 		}
 	case common.FieldTypeFloat:
-		if err := util.ValidFieldTypeFloat(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
+		if err := util.ValidFieldTypeFloat(attribute.Option, attribute.Default, kit.CCError); err != nil {
 			return err
 		}
 	case common.FieldTypeDate:
@@ -308,7 +308,7 @@ func (m *modelAttribute) checkAttributeDefaultValue(kit *rest.Kit, attribute met
 			return err
 		}
 	case common.FieldTypeList:
-		if err := util.ValidFieldTypeList(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
+		if err := util.ValidFieldTypeList(attribute.Option, attribute.Default, kit.CCError); err != nil {
 			return err
 		}
 	default:
@@ -861,7 +861,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
 		}
 
-		if err := util.ValidPropertyOption(propertyType, option, *isMultiple, data[common.BKDefaultFiled], kit.Rid,
+		if err := util.ValidPropertyOption(propertyType, option, *isMultiple, data[common.BKDefaultFiled],
 			kit.CCError); err != nil {
 			blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
 			return err

@@ -529,12 +529,10 @@ func handleField(field Property, handleFieldParam *HandleFieldParam) {
 		handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeNumeric)
 	case common.FieldTypeEnum:
 		optionArr, ok := field.Option.([]interface{})
-
 		if ok {
-
 			enumSheet, err := handleFieldParam.File.AddSheet(field.Name)
 			if err != nil {
-				blog.Errorf("add enum sheet failed, err: %s, rid: %s", err, handleFieldParam.Rid)
+				blog.Errorf("add enum sheet failed, err: %v, rid: %s", err, handleFieldParam.Rid)
 			}
 
 			for _, enum := range getEnumNames(optionArr) {
@@ -542,13 +540,23 @@ func handleField(field Property, handleFieldParam *HandleFieldParam) {
 			}
 			dd := xlsx.NewXlsxCellDataValidation(true, true, true)
 			if err := dd.SetInFileList(field.Name, 0, 0, 0, len(optionArr)-1); err != nil {
-				blog.Errorf("SetDropList failed, err: %+v, rid: %s", err, handleFieldParam.Rid)
+				blog.Errorf("SetDropList failed, err: %v, rid: %s", err, handleFieldParam.Rid)
 			}
 			handleFieldParam.Sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
-
 		}
 		handleFieldParam.Sheet.Col(index).SetType(xlsx.CellTypeString)
+	case common.FieldTypeEnumMulti:
+		optionArr, ok := field.Option.([]interface{})
+		if ok {
+			enumSheet, err := handleFieldParam.File.AddSheet(field.Name)
+			if err != nil {
+				blog.Errorf("add enum sheet failed, err: %v, rid: %s", err, handleFieldParam.Rid)
+			}
 
+			for _, enum := range getEnumNames(optionArr) {
+				enumSheet.AddRow().AddCell().SetString(enum)
+			}
+		}
 	case common.FieldTypeBool:
 		dd := xlsx.NewXlsxCellDataValidation(true, true, true)
 		if err := dd.SetDropList([]string{fieldTypeBoolTrue, fieldTypeBoolFalse}); err != nil {
