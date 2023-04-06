@@ -104,7 +104,7 @@
         emit('confirm', changed)
       }
 
-      const clickOutSideMiddleware = event => !event.path.some(node => node.className === 'bk-picker-panel-body-wrapper')
+      const clickOutSideMiddleware = event => !event?.path?.some?.(node => node.className === 'bk-picker-panel-body-wrapper')
 
       const handleClickOutSide = () => {
         if (isEditing.value) {

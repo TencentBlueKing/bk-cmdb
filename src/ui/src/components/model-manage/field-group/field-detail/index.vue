@@ -185,6 +185,7 @@
   import theFieldList from './list'
   import theFieldBool from './bool'
   import theFieldEnumquote from './enumquote.vue'
+  import theFieldInnerTable from './inner-table/index.vue'
   import theConfig from './config'
   import { mapGetters, mapActions } from 'vuex'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
@@ -200,7 +201,8 @@
       theFieldEnumquote,
       theFieldList,
       theFieldBool,
-      theConfig
+      theConfig,
+      theFieldInnerTable
     },
     props: {
       field: {
@@ -241,7 +243,7 @@
           bk_property_group: this.group.bk_group_id,
           unit: '',
           placeholder: '',
-          bk_property_type: PROPERTY_TYPES.SINGLECHAR,
+          bk_property_type: PROPERTY_TYPES.INNER_TABLE,
           editable: true,
           isrequired: false,
           ismultiple: false,
@@ -288,7 +290,8 @@
           PROPERTY_TYPES.LIST,
           PROPERTY_TYPES.BOOL,
           PROPERTY_TYPES.ENUMMULTI,
-          PROPERTY_TYPES.ENUMQUOTE
+          PROPERTY_TYPES.ENUMQUOTE,
+          PROPERTY_TYPES.INNER_TABLE
         ]
         return types.indexOf(this.fieldInfo.bk_property_type) !== -1
       },
@@ -297,7 +300,8 @@
           PROPERTY_TYPES.ENUM,
           PROPERTY_TYPES.ENUMMULTI,
           PROPERTY_TYPES.ENUMQUOTE,
-          PROPERTY_TYPES.BOOL
+          PROPERTY_TYPES.BOOL,
+          PROPERTY_TYPES.INNER_TABLE
         ]
         return !types.includes(this.fieldInfo.bk_property_type)
       },

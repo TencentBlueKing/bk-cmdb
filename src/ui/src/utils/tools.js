@@ -302,7 +302,7 @@ export function getHeaderPropertyName(property) {
 }
 
 export function getHeaderPropertyMinWidth(property, options = {}) {
-  const { fontSize = 12, hasSort = false, offset = 30, name, preset = {} } = options
+  const { fontSize = 12, hasSort = false, offset = 30, name, min = 0, preset = {} } = options
 
   // 预设的固定宽度不需要计算直接使用
   const presetMinWidth = { ...PRESET_TABLE_HEADER_MIN_WIDTH, ...preset }
@@ -325,7 +325,7 @@ export function getHeaderPropertyMinWidth(property, options = {}) {
 
   const finalWidth = baseWidth + (hasSort ? 22 : 0) + offset
 
-  return Math.ceil(finalWidth)
+  return Math.ceil(Math.max(finalWidth, min))
 }
 
 /**
