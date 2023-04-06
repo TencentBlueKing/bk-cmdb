@@ -874,7 +874,7 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 	}
 
 	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Update, hostIDs...); err != nil {
-		if err != nil && err != ac.NoAuthorizeError {
+		if err != ac.NoAuthorizeError {
 			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid: %s", hostIDs, err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 			return

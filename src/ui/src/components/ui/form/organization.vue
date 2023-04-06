@@ -31,9 +31,11 @@
       }"
       :searchable="true"
       :multiple="localMultiple"
+      font-size="normal"
       v-model="checked"
       :remote-method="handleSearch"
       :display-tag="true"
+      :disabled="disabled"
       :tag-fixed-height="false"
       :show-empty="false"
       :placeholder="placeholder"
@@ -90,7 +92,6 @@
   })
 
   const focused = ref(false)
-  const disabled = ref(false)
   const readonly = ref(true)
   const unselected = ref(false)
 

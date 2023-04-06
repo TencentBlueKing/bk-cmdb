@@ -14,9 +14,10 @@
   <div class="association-list" v-bkloading="{ isLoading: loading }">
     <div class="association-empty" v-if="!hasAssociation">
       <div class="empty-content">
-        <i class="bk-icon icon-empty">
-        </i>
-        <span>{{$t('暂无关联关系')}}</span>
+        <cmdb-data-empty
+          slot="empty"
+          :stuff="dataEmpty">
+        </cmdb-data-empty>
       </div>
     </div>
     <template v-else>
@@ -112,6 +113,15 @@
       isBusinessEntry() {
         // 业务主机与主机池主机及主机池业务主机三者是相互独立的
         return this.$route.name === MENU_BUSINESS_HOST_DETAILS
+      },
+      dataEmpty() {
+        return {
+          type: 'empty',
+          payload: {
+            emptyText: this.$t('bk.table.emptyText'),
+            defaultText: this.$t('暂无关联关系')
+          }
+        }
       }
     },
     watch: {

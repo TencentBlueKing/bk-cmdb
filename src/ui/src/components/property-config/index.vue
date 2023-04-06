@@ -12,7 +12,7 @@
 
 <script lang="ts">
   import { defineComponent, ref, toRef, toRefs, PropType, watch } from 'vue'
-  import { formatValue } from '@/utils/tools.js'
+  import { getPropertyDefaultValue } from '@/utils/tools.js'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
   import PropertyFormElement from '@/components/ui/form/property-form-element.vue'
@@ -99,7 +99,7 @@
       watch(selectedList, (selectedList) => {
         const newConfig = {}
         selectedList.forEach((property) => {
-          newConfig[property.id] = formatValue(propertyConfig.value[property.id], property)
+          newConfig[property.id] = getPropertyDefaultValue(property, propertyConfig.value[property.id])
         })
         propertyConfig.value = newConfig
       })

@@ -148,7 +148,8 @@
         slot="empty"
         :auth="{ type: $OPERATION.C_INST, relation: [model.id] }"
         :stuff="table.stuff"
-        @create="handleCreate">
+        @create="handleCreate"
+        @clear="handleClearFilter">
       </cmdb-table-empty>
     </bk-table>
     <bk-sideslider
@@ -730,9 +731,10 @@
               _t: Date.now()
             })
           }
+          const { filter, filter_adv: filterAdv } = this.$route.query
+          this.table.stuff.type = (filter && filter.length > 0) || filterAdv ? 'search' : 'default'
           this.table.list = info
           this.table.pagination.count = count
-          this.table.stuff.type = this.$route.query?.s?.length ? 'search' : 'default'
         } catch (err) {
           if (err.permission) {
             this.table.stuff = {
@@ -971,6 +973,10 @@
       },
       resetFastSearch() {
         this.filter = defaultFastSearch()
+      },
+      handleClearFilter() {
+        this.$refs.filterTag.handleResetAll()
+        this.table.stuff.type = 'default'
       }
     }
   }

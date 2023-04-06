@@ -62,9 +62,17 @@ func IsNumChar(sInput string) bool {
 	return numCharRegexp.MatchString(sInput)
 }
 
-// IsDate 是否日期
-func IsDate(sInput string) bool {
-	return dateRegexp.MatchString(sInput)
+// IsDate 是否是日期类型
+func IsDate(sInput interface{}) bool {
+	switch val := sInput.(type) {
+	case string:
+		if len(val) == 0 {
+			return false
+		}
+		return dateRegexp.MatchString(val)
+	default:
+		return false
+	}
 }
 
 // DateTimeFieldType TODO
@@ -78,29 +86,41 @@ const (
 	invalidDateTimeType  DateTimeFieldType = "invalid"
 )
 
-// IsTime 是否时间
-func IsTime(sInput string) (DateTimeFieldType, bool) {
-	if dateTimeRegexp.MatchString(sInput) {
-		return timeWithoutLocationType, true
+// IsTime 是否是时间类型
+func IsTime(sInput interface{}) (DateTimeFieldType, bool) {
+	switch val := sInput.(type) {
+	case string:
+		if dateTimeRegexp.MatchString(val) {
+			return timeWithoutLocationType, true
+		}
+		if timeWithLocationRegexp.MatchString(val) {
+			return timeWithLocationType, true
+		}
+		return invalidDateTimeType, false
+	default:
+		return invalidDateTimeType, false
 	}
-	if timeWithLocationRegexp.MatchString(sInput) {
-		return timeWithLocationType, true
-	}
-	return invalidDateTimeType, false
 }
 
-// IsTimeZone 是否时区
-func IsTimeZone(sInput string) bool {
-	return timeZoneRegexp.MatchString(sInput)
+// IsTimeZone 是否是时区类型
+func IsTimeZone(sInput interface{}) bool {
+	switch val := sInput.(type) {
+	case string:
+		if len(val) == 0 {
+			return false
+		}
+		return timeZoneRegexp.MatchString(val)
+	default:
+		return false
+	}
 }
 
-// IsUser 是否用户
+// IsUser 是否是用户类型
 func IsUser(sInput string) bool {
 	return userRegexp.MatchString(sInput)
 }
 
-// Str2Time TODO
-// str2time
+// Str2Time string convert to time type
 func Str2Time(timeStr string, timeType DateTimeFieldType) time.Time {
 	var layout string
 	switch timeType {

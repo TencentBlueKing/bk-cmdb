@@ -18,7 +18,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-
 	"strconv"
 
 	"configcenter/src/common/blog"

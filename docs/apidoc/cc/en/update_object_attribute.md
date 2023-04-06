@@ -22,6 +22,7 @@ Update object model properties
 | unit                |  string  |no     | Unit                                    |
 | placeholder         |  string  |no     | Placeholder                                  |
 | ismultiple |  bool  |no     | Whether multiple choices are allowed, where the field type is singlechar, longchar, int, float, enum, date, time, timezone, bool, and the list, temporarily does not support multiple choices. When creating an attribute, the field type is the above type, and the ismultiple parameter can not be passed. The default is false. If you pass true, you will be prompted that the type does not support multiple choices. enummulti, enumquote , user and organization fields support multiple choices, among which the user field and organization field are true by default |
+| default | object |no | Add a default value to the attribute. When updating, the default value is passed according to the actual type of the field. If you want to set the default value of the empty field, you need to pass default: null |
 
 #### bk_property_type
 
@@ -40,8 +41,33 @@ Update object model properties
 | bool       | Bull     |
 | organization | Organization |
 
-
 ### Request Parameters Example
+
+Update Default Value Scenario
+
+```python
+{
+    "bk_app_code": "esb_test",
+    "bk_app_secret": "xxx",
+    "bk_username": "xxx",
+    "bk_token": "xxx",
+    "id":1,
+    "description":"test",
+    "placeholder":"test",
+    "unit":"1",
+    "isonly":false,
+    "isreadonly":false,
+    "isrequired":false,
+    "bk_property_group":"default",
+    "option":"{\"min\":\"1\",\"max\":\"4\"}",
+    "bk_property_name":"aaa",
+    "bk_property_type":"int",
+    "bk_asst_obj_id":"0",
+    "default":3
+}
+```
+
+Do not update default value scenarios
 
 ```python
 {
@@ -63,6 +89,32 @@ Update object model properties
     "bk_asst_obj_id":"0"
 }
 ```
+
+Empty default value scenario
+
+```python
+{
+    "bk_app_code": "esb_test",
+    "bk_app_secret": "xxx",
+    "bk_username": "xxx",
+    "bk_token": "xxx",
+    "id":1,
+    "description":"test",
+    "placeholder":"test",
+    "unit":"1",
+    "isonly":false,
+    "isreadonly":false,
+    "isrequired":false,
+    "bk_property_group":"default",
+    "option":"{\"min\":\"1\",\"max\":\"4\"}",
+    "bk_property_name":"aaa",
+    "bk_property_type":"int",
+    "bk_asst_obj_id":"0",
+    "default":null
+}
+```
+
+
 
 ### Return Result Example
 
