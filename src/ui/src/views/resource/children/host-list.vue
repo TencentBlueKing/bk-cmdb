@@ -12,7 +12,7 @@
 
 <template>
   <div class="resource-layout">
-    <host-list-options></host-list-options>
+    <host-list-options @search="getExceptionType"></host-list-options>
     <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
     <bk-table class="hosts-table"
       ref="tableRef"
@@ -58,7 +58,7 @@
         </template>
       </bk-table-column>
       <bk-table-column type="setting"></bk-table-column>
-      <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
+      <cmdb-table-empty slot="empty" :stuff="table.stuff" @clear="handleClearFilter"></cmdb-table-empty>
     </bk-table>
   </div>
 </template>
@@ -268,7 +268,7 @@
         }
         return this.$createElement('span', {}, content)
       },
-      async getHostList(event) {
+      async getHostList() {
         try {
           const { count, info } = await this.getSearchRequest()
 
@@ -285,7 +285,7 @@
 
           this.table.pagination.count = count
           this.table.list = info
-          this.table.stuff.type = event ? 'search' : 'default'
+          this.table.stuff.type = this.$route.query.filter ? 'search' : 'default'
         } catch (error) {
           this.table.pagination.count = 0
           this.table.checked = []
@@ -454,6 +454,13 @@
         return this.$store.dispatch('userCustom/saveUsercustom', {
           [this.customInstanceColumnKey]: properties.map(property => property.bk_property_id)
         })
+      },
+      handleClearFilter() {
+        FilterStore.resetAll()
+        this.table.stuff.type = 'default'
+      },
+      getExceptionType(value) {
+        this.table.stuff.type = value
       }
     }
   }

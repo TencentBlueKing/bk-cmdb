@@ -65,7 +65,7 @@
       </cmdb-button-group>
     </div>
     <div class="options-right">
-      <filter-fast-search class="option-fast-search"></filter-fast-search>
+      <filter-fast-search class="option-fast-search" @search="searchFilter"></filter-fast-search>
       <icon-button class="option-filter ml10" icon="icon-cc-funnel"
         v-bk-tooltips.top="$t('高级筛选')"
         @click="handleSetFilters">
@@ -746,6 +746,9 @@
           success: () => RouterQuery.set({ _t: Date.now() })
         })
         showImport()
+      },
+      searchFilter(value) {
+        this.$emit('search', value)
       }
     }
   }

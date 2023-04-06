@@ -1384,7 +1384,7 @@ common:
         ## @param common.eventServer.hostIdentifier.windows.fileOwner host identifier windows file owner
         ## 下发主机身份文件所有者
         ##
-        fileOwner: "root"
+        fileOwner: "SYSTEM"
         ## @param common.eventServer.hostIdentifier.windows.filePrivilege host identifier windows file privilege
         ## 下发主机身份文件权限值
         ##

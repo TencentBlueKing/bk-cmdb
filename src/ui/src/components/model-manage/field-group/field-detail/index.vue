@@ -18,7 +18,8 @@
           {{$t('唯一标识')}}
           <span class="color-danger">*</span>
         </span>
-        <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
+        <div v-bk-tooltips.top.light.click="$t('模型字段唯一标识提示语')"
+          class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
           <bk-input type="text" class="cmdb-form-input"
             name="fieldId"
             v-model.trim="fieldInfo.bk_property_id"
@@ -28,7 +29,6 @@
           </bk-input>
           <p class="form-error" :title="errors.first('fieldId')">{{errors.first('fieldId')}}</p>
         </div>
-        <bk-icon class="icon-tips" type="info-circle-shape" v-bk-tooltips="$t('模型字段唯一标识提示语')" />
       </label>
       <label class="form-label">
         <span class="label-text">
@@ -103,6 +103,7 @@
         ></the-config>
         <!-- 添加key防止复用组件时内部状态错误 -->
         <component
+          class="cmdb-form-item"
           :key="fieldInfo.bk_property_type"
           v-if="isSettingComponentShow"
           :is-read-only="isReadOnly || field.ispre"
@@ -112,6 +113,25 @@
           :type="fieldInfo.bk_property_type"
           ref="component"
         ></component>
+        <label class="form-label" v-if="isDefaultComponentShow">
+          <span class="label-text">
+            {{$t('默认值')}}
+          </span>
+          <div class="cmdb-form-item" :class="{ 'is-error': errors.has('defalut') }">
+            <component
+              name="defalut"
+              :key="fieldInfo.bk_property_type"
+              :is-read-only="isReadOnly || field.ispre"
+              :is="`cmdb-form-${fieldInfo.bk_property_type}`"
+              :multiple="fieldInfo.ismultiple"
+              :options="fieldInfo.option || []"
+              v-model="fieldInfo.default"
+              v-validate="$tools.getValidateRules(fieldInfo)"
+              ref="component"
+            ></component>
+            <p class="form-error">{{errors.first('defalut')}}</p>
+          </div>
+        </label>
       </div>
       <label class="form-label" v-show="['int', 'float'].includes(fieldType)">
         <span class="label-text">
@@ -128,13 +148,16 @@
       <div class="form-label">
         <span class="label-text">{{$t('用户提示')}}</span>
         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('placeholder') }">
-          <textarea
+          <bk-input
             class="raw"
+            :rows="3"
+            :maxlength="100"
             name="placeholder"
+            :type="'textarea'"
             v-model.trim="fieldInfo['placeholder']"
             :disabled="isReadOnly"
             v-validate="'length:2000'">
-          </textarea>
+          </bk-input>
           <p class="form-error" v-if="errors.has('placeholder')">{{errors.first('placeholder')}}</p>
         </div>
       </div>
@@ -166,6 +189,7 @@
   import { mapGetters, mapActions } from 'vuex'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
   import { PROPERTY_TYPES, PROPERTY_TYPE_LIST } from '@/dictionary/property-constants'
+  import { isEmptyPropertyValue } from '@/utils/tools'
 
   export default {
     components: {
@@ -221,7 +245,8 @@
           editable: true,
           isrequired: false,
           ismultiple: false,
-          option: ''
+          option: '',
+          default: ''
         },
         originalFieldInfo: {},
         charMap: [PROPERTY_TYPES.SINGLECHAR, PROPERTY_TYPES.LONGCHAR]
@@ -267,6 +292,15 @@
         ]
         return types.indexOf(this.fieldInfo.bk_property_type) !== -1
       },
+      isDefaultComponentShow() {
+        const types = [
+          PROPERTY_TYPES.ENUM,
+          PROPERTY_TYPES.ENUMMULTI,
+          PROPERTY_TYPES.ENUMQUOTE,
+          PROPERTY_TYPES.BOOL
+        ]
+        return !types.includes(this.fieldInfo.bk_property_type)
+      },
       changedValues() {
         const changedValues = {}
         Object.keys(this.fieldInfo).forEach((propertyId) => {
@@ -293,6 +327,7 @@
                 min: '',
                 max: ''
               }
+              this.fieldInfo.default = ''
               break
             case PROPERTY_TYPES.ENUMMULTI:
             case PROPERTY_TYPES.ENUMQUOTE:
@@ -305,6 +340,7 @@
               this.fieldInfo.ismultiple = true
               break
             default:
+              this.fieldInfo.default = ''
               this.fieldInfo.option = ''
               this.fieldInfo.ismultiple = false
           }
@@ -348,15 +384,19 @@
           return
         }
         let fieldId = null
-        if (this.fieldInfo.bk_property_type === 'int') {
+        if (this.fieldInfo.bk_property_type === 'int' || this.fieldInfo.bk_property_type === 'float') {
           this.fieldInfo.option.min = this.isNullOrUndefinedOrEmpty(this.fieldInfo.option.min) ? '' : Number(this.fieldInfo.option.min)
           this.fieldInfo.option.max = this.isNullOrUndefinedOrEmpty(this.fieldInfo.option.max) ? '' : Number(this.fieldInfo.option.max)
+          this.fieldInfo.default = this.isNullOrUndefinedOrEmpty(this.fieldInfo.default) ? '' : Number(this.fieldInfo.default)
         }
         if (this.isEditField) {
           const action = this.customObjId ? 'updateBizObjectAttribute' : 'updateObjectAttribute'
           const params = this.field.ispre ? this.getPreFieldUpdateParams() : this.fieldInfo
           if (!this.isGlobalView) {
             params.bk_biz_id = this.bizId
+          }
+          if (isEmptyPropertyValue(this.fieldInfo.default)) {
+            params.default = null
           }
           await this[action]({
             bizId: this.bizId,
@@ -372,6 +412,9 @@
             this.$success(this.$t('修改成功'))
           })
         } else {
+          if (isEmptyPropertyValue(this.fieldInfo.default)) {
+            Reflect.deleteProperty(this.fieldInfo, 'default')
+          }
           const groupId = this.isGlobalView ? 'default' : 'bizdefault'
           const selectedGroup = this.groups.find(group => group.bk_group_id === this.fieldInfo.bk_property_group)
           const otherParams = {
@@ -438,16 +481,11 @@
             color: $cmdbBorderColor;
             padding-left: 5px;
         }
-        .icon-tips {
-            font-size: 18px !important;
-            color: rgb(152,155,165);
-            padding-left: 5px;
-        }
         .field-detail {
-            width: 94%;
+            width: 100%;
             margin-bottom: 20px;
             padding: 20px;
-            background: #f3f8ff;
+            background: #F5F7FB;
             .form-label:last-child {
                 margin: 0;
             }
@@ -461,7 +499,7 @@
             }
         }
         .cmdb-form-item {
-            width: 94% !important;
+            width: 100%;
             &.is-error {
                 /deep/ .bk-form-input {
                     border-color: #ff5656;
@@ -474,9 +512,13 @@
             margin-left: 10px;
         }
         .btn-group {
-            padding: 10px 20px;
+            padding: 8px 24px;
             &.is-sticky {
                 border-top: 1px solid #dcdee5;
+            }
+            .bk-button{
+                width: 88px;
+                height: 32px;
             }
         }
     }

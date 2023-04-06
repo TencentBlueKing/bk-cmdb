@@ -74,9 +74,11 @@
           default: ['$eq', '$ne'],
           singlechar: ['$regex', '$eq', '$ne'],
           longchar: ['$regex', '$eq', '$ne'],
-          objuser: ['$regex', '$eq', '$ne'],
+          objuser: ['$in', '$nin'],
           singleasst: ['$regex', '$eq', '$ne'],
           multiasst: ['$regex', '$eq', '$ne'],
+          list: ['$in', '$nin'],
+          timezone: ['$in', '$nin'],
           enummulti: [QUERY_OPERATOR.IN, QUERY_OPERATOR.NIN],
           enumquote: [QUERY_OPERATOR.IN, QUERY_OPERATOR.NIN],
           organization: [QUERY_OPERATOR.IN, QUERY_OPERATOR.NIN]
@@ -165,6 +167,9 @@
       },
       handleOperatorSelected(value, data) {
         this.$emit('on-operator-selected', value, data)
+      },
+      clearFilter() {
+        this.localSelected.value = ''
       }
     }
   }

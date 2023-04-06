@@ -120,6 +120,12 @@
           </loading>
         </template>
       </bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff"
+        :auth="{ type: $OPERATION.C_CUSTOM_QUERY, relation: [bizId] }"
+        @clear="handleClearFilter">
+      </cmdb-table-empty>
     </bk-table>
   </div>
 </template>
@@ -149,7 +155,15 @@
         },
         scheduleSearch: throttle(this.handlePageChange, 800, { leading: false, trailing: true }),
         debounceUpdateName: debounce(this.handleUpdateName, 100, { leading: true, trailing: false }),
-        rowInEdit: null
+        rowInEdit: null,
+        table: {
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
+          }
+        }
       }
     },
     watch: {
@@ -254,6 +268,7 @@
             params.condition.bk_cloud_name = this.filter
             params.is_fuzzy = true
           }
+          this.table.stuff.type = this.filter ? 'search' : 'default'
           const data = await this.$store.dispatch('cloud/area/findMany', {
             params,
             config: {
@@ -341,6 +356,10 @@
             this.$warn(this.$t('未配置节点管理地址'))
           }
         }
+      },
+      handleClearFilter() {
+        this.filter = ''
+        this.getData()
       }
     }
   }

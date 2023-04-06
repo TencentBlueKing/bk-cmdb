@@ -72,7 +72,7 @@
         :prop="column.id"
         :label="column.name"
         :min-width="$tools.getHeaderPropertyMinWidth(column.property, { hasSort: true })"
-        show-overflow-tooltip>
+        :show-overflow-tooltip="$tools.isShowOverflowTips(column.property)">
         <template slot-scope="{ row }">
           <cmdb-property-value
             v-if="customizeContent(column.id)"
@@ -124,7 +124,8 @@
         slot="empty"
         :auth="{ type: $OPERATION.C_PROJECT, relation: [model.id] }"
         :stuff="table.stuff"
-        @create="handleCreate">
+        @create="handleCreate"
+        @clear="handleClearFilter">
       </cmdb-table-empty>
     </bk-table>
 
@@ -656,6 +657,9 @@
       // 项目状态是否启用
       customizeContent(id) {
         return !['bk_status'].includes(id)
+      },
+      handleClearFilter() {
+        RouterQuery.clear()
       }
     }
   }

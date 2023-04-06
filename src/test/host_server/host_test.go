@@ -1654,10 +1654,14 @@ var _ = Describe("cloud host test", func() {
 					{
 						common.BKHostInnerIPField: "127.0.0.111",
 						common.BKCloudIDField:     cloudID,
+						common.BKCloudVendor:      "1",
+						common.BKCloudInstIDField: "000000001",
 					},
 					{
 						common.BKHostInnerIPField: "127.0.0.112",
 						common.BKCloudIDField:     cloudID,
+						common.BKCloudVendor:      "2",
+						common.BKCloudInstIDField: "000000002",
 					},
 				},
 			}
@@ -1695,7 +1699,9 @@ var _ = Describe("cloud host test", func() {
 				HostInfo: []mapstr.MapStr{{
 					common.BKHostInnerIPField: "127.0.0.111",
 					common.BKCloudIDField:     cloudID,
-					common.BKHostNameField:    "127.0.0.111",
+					common.BKHostNameField:    "127.0.0.123",
+					common.BKCloudVendor:      "1",
+					common.BKCloudInstIDField: "000000001",
 				}},
 			}
 
@@ -1714,7 +1720,7 @@ var _ = Describe("cloud host test", func() {
 				hostID, err := commonutil.GetInt64ByInterface(host[common.BKHostIDField])
 				Expect(err).NotTo(HaveOccurred())
 				if hostID == hostID1 {
-					Expect(commonutil.GetStrByInterface(host[common.BKHostNameField])).To(Equal("127.0.0.111"))
+					Expect(commonutil.GetStrByInterface(host[common.BKHostNameField])).To(Equal("127.0.0.123"))
 				}
 			}
 		})
@@ -1764,6 +1770,8 @@ var _ = Describe("cloud host test", func() {
 					{
 						common.BKHostInnerIPField: "127.0.0.114",
 						common.BKCloudIDField:     cloudID,
+						common.BKCloudVendor:      "1",
+						common.BKCloudInstIDField: "000000001",
 					},
 					{
 						common.BKHostInnerIPField: "127.0.0.1144",
@@ -1783,6 +1791,8 @@ var _ = Describe("cloud host test", func() {
 				HostInfo: []mapstr.MapStr{{
 					common.BKHostInnerIPField: "127.0.0.111",
 					common.BKCloudIDField:     cloudID,
+					common.BKCloudVendor:      "1",
+					common.BKCloudInstIDField: "000000001",
 				}},
 			}
 
@@ -1796,6 +1806,8 @@ var _ = Describe("cloud host test", func() {
 				HostInfo: []mapstr.MapStr{{
 					common.BKHostInnerIPField: "127.0.0.115",
 					common.BKCloudIDField:     cloudID,
+					common.BKCloudVendor:      "1",
+					common.BKCloudInstIDField: "000000001",
 				}},
 			}
 

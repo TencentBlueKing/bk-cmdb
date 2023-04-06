@@ -260,10 +260,13 @@
           </bk-transition>
         </li>
       </ul>
-      <no-search-results
+      <cmdb-data-empty
         v-if="!currentClassifications.length"
-        :text="$t('搜不到相关模型')"
-      />
+        slot="empty"
+        :stuff="dataEmpty"
+        @create="modelDialog.isShow = true"
+        @clear="handleClearFilter">
+      </cmdb-data-empty>
     </div>
 
     <div class="model-management-footer" v-show="isModelSelectable">
@@ -412,7 +415,6 @@
   import has from 'has'
   import theCreateModel from '@/components/model-manage/_create-model'
   import cmdbLoading from '@/components/loading/index.vue'
-  import noSearchResults from '@/views/status/no-search-results.vue'
   import CollapseGroupTitle from './children/collapse-group-title.vue'
   import { mapGetters, mapMutations, mapActions } from 'vuex'
   import debounce from 'lodash.debounce'
@@ -439,7 +441,6 @@
     },
     components: {
       theCreateModel,
-      noSearchResults,
       cmdbLoading,
       CollapseGroupTitle,
       Draggable,
@@ -495,7 +496,16 @@
          */
         importPaneVisible: false, // 导入面板是否显示
 
-        isTipsHidden: false // 模型管理提示是否隐藏
+        isTipsHidden: false, // 模型管理提示是否隐藏
+
+        dataEmpty: {
+          type: 'default',
+          payload: {
+            defaultText: this.$t('暂无模型'),
+            path: '暂无相关xxx',
+            resource: this.$t('模型'),
+          }
+        }
       }
     },
     computed: {
@@ -607,6 +617,8 @@
         }
 
         this.filterClassifications = searchResult.filter(item => item.bk_objects.length)
+
+        this.dataEmpty.type = this.modelSearchKey ? 'search' : 'default'
       },
       modelType() {
         this.modelSearchKey = ''
@@ -1058,6 +1070,9 @@
         } catch (error) {
           console.log(error)
         }
+      },
+      handleClearFilter() {
+        this.modelSearchKey = ''
       }
     },
   }

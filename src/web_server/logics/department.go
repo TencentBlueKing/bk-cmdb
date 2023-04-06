@@ -13,11 +13,12 @@
 package logics
 
 import (
-	"context"
-	"net/http"
+	"bytes"
+	"fmt"
+	"strconv"
+	"sync"
 
 	"configcenter/src/common"
-	"configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
@@ -75,36 +76,90 @@ func (lgc *Logics) GetDepartmentProfile(c *gin.Context, config *options.Config) 
 	return &result.Data, nil
 }
 
-func (lgc *Logics) getDepartmentMap(ctx context.Context, header http.Header) (map[int64]metadata.DepartmentItem,
+// GetAllDepartment get department info from paas
+func (lgc *Logics) GetAllDepartment(c *gin.Context, config *options.Config, orgIDs []int64) (*metadata.DepartmentData,
 	errors.CCErrorCoder) {
-
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(header))
-	rid := commonutil.GetHTTPCCRequestID(header)
-	dpMap := make(map[int64]metadata.DepartmentItem)
-
-	loginVersion, err := configcenter.String("webServer.login.version")
-	if err != nil {
-		blog.Errorf("get config webServer.login.version failed, err: %v, rid: %s", err, rid)
-		return nil, defErr.CCErrorf(common.CCErrCommConfMissItem, "webServer.login.version")
+	if config.LoginVersion == common.BKOpenSourceLoginPluginVersion ||
+		config.LoginVersion == common.BKSkipLoginPluginVersion {
+		return &metadata.DepartmentData{}, nil
 	}
 
-	if loginVersion == common.BKOpenSourceLoginPluginVersion || loginVersion == common.BKSkipLoginPluginVersion {
-		return dpMap, nil
-	}
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(c.Request.Header))
+	rid := commonutil.GetHTTPCCRequestID(c.Request.Header)
 
-	result, esbErr := esb.EsbClient().User().GetDepartment(ctx, header, nil)
-	if esbErr != nil {
-		blog.Errorf("get department by esb client failed, http failed, err: %+v, rid: %s", esbErr, rid)
+	orgIDList := lgc.getOrgListStr(orgIDs)
+	departments := &metadata.DepartmentData{}
+	var wg sync.WaitGroup
+	var lock sync.RWMutex
+	var firstErr error
+	pipeline := make(chan bool, 10)
+
+	for _, subStr := range orgIDList {
+		pipeline <- true
+		wg.Add(1)
+		go func(subStr string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			params := make(map[string]string)
+			params["exact_lookups"] = subStr
+			result, esbErr := esb.EsbClient().User().GetAllDepartment(c.Request.Context(), c.Request.Header, params)
+			if esbErr != nil {
+				firstErr = esbErr
+				blog.Errorf("get department by esb client failed, http failed, params: %+v, err: %v, rid: %s",
+					params, esbErr, rid)
+				return
+			}
+			if !result.Result {
+				blog.Errorf("get department by esb client failed, result is false, params: %+v, rid: %s", params,
+					rid)
+				firstErr = fmt.Errorf("get department by esb failed, result is false, params: %v", params)
+				return
+			}
+
+			lock.Lock()
+			departments.Count += result.Data.Count
+			departments.Results = append(departments.Results, result.Data.Results...)
+			lock.Unlock()
+		}(subStr)
+	}
+	wg.Wait()
+
+	if firstErr != nil {
 		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("get department by esb client failed, result is false, err: %+v, rid: %s", result, rid)
-		return nil, errors.NewCCError(result.Code, result.Message)
+
+	return departments, nil
+}
+
+const getOrganizationMaxLength = 500
+
+// getOrgListStr get org list str
+func (lgc *Logics) getOrgListStr(orgIDList []int64) []string {
+	orgListStr := make([]string, 0)
+
+	orgBuffer := bytes.Buffer{}
+	for _, orgID := range orgIDList {
+		if orgBuffer.Len()+len(strconv.FormatInt(orgID, 10)) > getOrganizationMaxLength {
+			orgBuffer.WriteString(strconv.FormatInt(orgID, 10))
+			orgStr := orgBuffer.String()
+			orgListStr = append(orgListStr, orgStr)
+			orgBuffer.Reset()
+			continue
+		}
+
+		orgBuffer.WriteString(strconv.FormatInt(orgID, 10))
+		orgBuffer.WriteByte(',')
 	}
 
-	for _, item := range result.Data.Results {
-		dpMap[item.ID] = item
+	if orgBuffer.Len() == 0 {
+		return []string{}
 	}
 
-	return dpMap, nil
+	orgStr := orgBuffer.String()
+	orgListStr = append(orgListStr, orgStr[:len(orgStr)-1])
+
+	return orgListStr
 }

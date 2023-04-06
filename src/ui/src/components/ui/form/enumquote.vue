@@ -31,6 +31,10 @@
       type: Boolean,
       default: true
     },
+    disabled: {
+      type: Boolean,
+      default: false
+    },
     options: {
       type: Array,
       default() {

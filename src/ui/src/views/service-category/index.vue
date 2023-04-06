@@ -212,10 +212,12 @@
           </bk-button>
         </cmdb-auth>
       </div>
-      <bk-exception v-show="!displayList.length && !$loading(Object.values(request))"
-        type="search-empty"
-        scene="part">
-      </bk-exception>
+      <cmdb-data-empty
+        v-if="!displayList.length && !$loading(Object.values(request))"
+        slot="empty"
+        :stuff="dataEmpty"
+        @clear="handleClearFilter">
+      </cmdb-data-empty>
     </div>
   </div>
 </template>
@@ -256,7 +258,14 @@
           category: Symbol('category')
         },
         ignoreUpdateAuth: false,
-        isMainAuthCompleted: false
+        isMainAuthCompleted: false,
+        dataEmpty: {
+          type: 'empty',
+          payload: {
+            action: this.$t('添加'),
+            defaultText: this.$t('暂无服务分类')
+          }
+        }
       }
     },
     computed: {
@@ -268,6 +277,7 @@
       },
       keyword() {
         this.handleFilter()
+        if (this.keyword) this.dataEmpty.type = 'search'
       }
     },
     created() {
@@ -464,6 +474,10 @@
       handleCloseAddChild() {
         this.addChildStatus = null
         this.categoryName = ''
+      },
+      handleClearFilter() {
+        this.keyword = ''
+        this.dataEmpty.type = 'empty'
       }
     }
   }

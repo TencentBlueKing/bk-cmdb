@@ -153,7 +153,9 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 			return valid.errIf.Errorf(common.CCErrCommParamsNeedSet, key)
 		}
 	}
-	FillLostedFieldValue(kit.Ctx, instanceData, valid.propertySlice)
+	if err := FillLostFieldValue(kit.Ctx, instanceData, valid.propertySlice); err != nil {
+		return err
+	}
 
 	if err := m.validCloudID(kit, objID, instanceData); err != nil {
 		return err
