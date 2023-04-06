@@ -274,6 +274,31 @@ func (m *model) DeleteModelCascade(ctx context.Context, h http.Header, modelID i
 	return &resp.Data, err
 }
 
+// DeleteTableModelCascade delete table object, attrs, group
+func (m *model) DeleteTableModelCascade(ctx context.Context, h http.Header, modelID int64) (
+	*metadata.DeletedCount, error) {
+
+	resp := new(metadata.DeletedOptionResult)
+	subPath := "/delete/table/model/%d/cascade"
+
+	err := m.client.Delete().
+		WithContext(ctx).
+		SubResourcef(subPath, modelID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, err
+}
+
 // ReadModelWithAttribute TODO
 func (m *model) ReadModelWithAttribute(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelWithAttributeResult, err error) {
 	resp = new(metadata.ReadModelWithAttributeResult)

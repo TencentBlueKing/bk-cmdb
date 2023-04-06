@@ -183,6 +183,43 @@ func (m *modelManager) cascadeDelete(kit *rest.Kit, objIDs []string) (uint64, er
 	return cnt, nil
 }
 
+// cascadeDeleteTable delete the fields of the tabular model, grouping. model etc.
+func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, objIDs []string) (uint64, error) {
+	cond := mongo.NewCondition()
+	cond.Element(mongo.Field(common.BKObjIDField).In(objIDs))
+	condMap := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
+
+	// delete model property group.
+	if err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Delete(kit.Ctx, condMap); err != nil {
+		blog.Errorf("delete model attribute group failed, err: %v, cond: %+v, rid: %s", err, condMap, kit.Rid)
+		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	// delete model property attribute.
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Delete(kit.Ctx, condMap); err != nil {
+		blog.Errorf("delete model attribute failed, err: %v, cond: %+v, rid: %s", err, condMap, kit.Rid)
+		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	// delete table model quote relation.
+	filter := mongo.NewCondition()
+	filter.Element(mongo.Field(common.BKDestModelField).In(objIDs))
+	filterMap := util.SetQueryOwner(filter.ToMapStr(), kit.SupplierAccount)
+	if err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Delete(kit.Ctx, filterMap); err != nil {
+		blog.Errorf("delete model quote relations failed, err: %v, filter: %+v, rid: %v", err, filterMap, kit.Rid)
+		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	// delete table model.
+	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, condMap)
+	if err != nil {
+		blog.Errorf("delete model failed, err: %v, cond: %+v, rid: %s", err, condMap, kit.Rid)
+		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	return cnt, nil
+}
+
 // createObjectShardingTables creates new collections for new model,
 // which create new object instance and association collections, and fix missing indexes.
 func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string, isMainLine bool) error {

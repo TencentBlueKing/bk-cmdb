@@ -33,6 +33,8 @@ type ObjectOperationInterface interface {
 	CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr) (*metadata.Object, error)
 	// DeleteObject delete model by query condition
 	DeleteObject(kit *rest.Kit, cond mapstr.MapStr, needCheckInst bool) (*metadata.Object, error)
+	// DeleteTableObject delete table model by query condition
+	DeleteTableObject(kit *rest.Kit, cond mapstr.MapStr) (*metadata.Object, error)
 	// FindObjectTopo search object topo by condition
 	FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.ObjectTopo, error)
 	// FindSingleObject find a object by objectID
@@ -265,6 +267,55 @@ func (o *object) DeleteObject(kit *rest.Kit, cond mapstr.MapStr, needCheckInst b
 	if err = audit.SaveAuditLog(kit, *auditLog); err != nil {
 		blog.Errorf("delete object %s success, save audit log failed, err: %v, rid: %s", obj.ObjectName, err,
 			kit.Rid)
+		return nil, err
+	}
+
+	return &obj, nil
+}
+
+// DeleteTableObject delete model by query condition
+func (o *object) DeleteTableObject(kit *rest.Kit, cond mapstr.MapStr) (*metadata.Object, error) {
+
+	// get model by conditon
+	query := &metadata.QueryCondition{
+		Condition:      cond,
+		DisableCounter: true,
+	}
+
+	objs, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("failed to find objects by query(%#v), err: %v, rid: %s", query, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(objs.Info) == 0 {
+		blog.V(3).Infof("object not found, cond: %+v, rid: %s", cond, kit.Rid)
+		return nil, nil
+	}
+
+	if len(objs.Info) > 1 {
+		return nil, kit.CCError.CCError(common.CCErrCommGetMultipleObject)
+	}
+
+	obj := objs.Info[0]
+	// DeleteTableModelCascade 将会删除表格模型/模型属性/属性分组
+	_, err = o.clientSet.CoreService().Model().DeleteTableModelCascade(kit.Ctx, kit.Header, obj.ID)
+	if err != nil {
+		blog.Errorf("delete the object by the id(%d) failed, err: %v, rid: %s", obj.ID, err, kit.Rid)
+		return nil, err
+	}
+
+	// save audit log.
+	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.ID, &obj)
+	if err != nil {
+		blog.Errorf("generate audit log failed, obj name: %s, err: %v, rid: %s", obj.ObjectName, err, kit.Rid)
+		return nil, err
+	}
+
+	if err = audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("save audit log failed, err: %v, rid: %s", obj.ObjectName, err, kit.Rid)
 		return nil, err
 	}
 

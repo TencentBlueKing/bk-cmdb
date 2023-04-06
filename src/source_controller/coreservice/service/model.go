@@ -179,6 +179,17 @@ func (s *coreService) CascadeDeleteModel(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.ModelOperation().CascadeDeleteModel(ctx.Kit, id))
 }
 
+// CascadeDeleteTableModel delete table model related resources in a cascading manner.
+func (s *coreService) CascadeDeleteTableModel(ctx *rest.Contexts) {
+	idStr := ctx.Request.PathParameter(common.BKFieldID)
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID))
+		return
+	}
+	ctx.RespEntityWithError(s.core.ModelOperation().CascadeDeleteTableModel(ctx.Kit, id))
+}
+
 // SearchModel TODO
 func (s *coreService) SearchModel(ctx *rest.Contexts) {
 	inputData := metadata.QueryCondition{}

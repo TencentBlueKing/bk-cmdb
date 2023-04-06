@@ -414,7 +414,8 @@ func (m *modelAttribute) searchReturnMapStr(kit *rest.Kit, cond universalsql.Con
 func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
 
 	resultAttrs := make([]metadata.Attribute, 0)
-	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKObjIDField, common.BKAppIDField}
+	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKPropertyTypeField,
+		common.BKObjIDField, common.BKAppIDField}
 
 	condMap := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
 	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(condMap).Fields(fields...).All(kit.Ctx, &resultAttrs)
@@ -430,9 +431,11 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition) (cnt
 
 	objIDArrMap := make(map[string][]int64, 0)
 	for _, attr := range resultAttrs {
+		if attr.PropertyType == common.FieldTypeInnerTable {
+			continue
+		}
 		objIDArrMap[attr.ObjectID] = append(objIDArrMap[attr.ObjectID], attr.ID)
 	}
-
 	if err := m.cleanAttributeFieldInInstances(kit.Ctx, kit.SupplierAccount, resultAttrs); err != nil {
 		blog.Errorf("delete object attributes with cond: %v, but delete these attribute in instance failed, "+
 			"err: %v, rid: %s", condMap, err, kit.Rid)
@@ -482,6 +485,10 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 
 	// TODO: now, we only support set, module, host model's biz attribute clean operation.
 	for _, attr := range attrs {
+		if attr.PropertyType == common.FieldTypeInnerTable {
+			continue
+		}
+
 		biz := attr.BizID
 		if biz != 0 {
 			if !isBizObject(attr.ObjectID) {
@@ -502,7 +509,9 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 			hostApplyFields[biz] = append(hostApplyFields[biz], attr.ID)
 		}
 	}
-
+	if len(objectFields) == 0 {
+		return nil
+	}
 	// delete these attribute's fields in the model instance
 	var hitError error
 	wg := sync.WaitGroup{}
@@ -642,6 +651,9 @@ func (m *modelAttribute) cleanAttrTemplateRelation(ctx context.Context, ownerID 
 
 	attrMap := make(map[string][]int64)
 	for _, attr := range attrs {
+		if attr.PropertyType == common.FieldTypeInnerTable {
+			continue
+		}
 		attrMap[attr.ObjectID] = append(attrMap[attr.ObjectID], attr.ID)
 	}
 

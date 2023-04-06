@@ -42,6 +42,7 @@ type ModelClientInterface interface {
 	UpdateModel(ctx context.Context, h http.Header, input *metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModel(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult,
 		err error)
+	DeleteTableModelCascade(ctx context.Context, h http.Header, modelID int64) (*metadata.DeletedCount, error)
 	DeleteModelCascade(ctx context.Context, h http.Header, modelID int64) (*metadata.DeletedCount, error)
 	ReadModelWithAttribute(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
 		resp *metadata.ReadModelWithAttributeResult, err error)
