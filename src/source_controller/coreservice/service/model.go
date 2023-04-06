@@ -133,6 +133,16 @@ func (s *coreService) CreateModel(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.ModelOperation().CreateModel(ctx.Kit, inputData))
 }
 
+// CreateInnerTableModel create inner table model
+func (s *coreService) CreateInnerTableModel(ctx *rest.Contexts) {
+	inputData := metadata.CreateModel{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntityWithError(s.core.ModelOperation().CreateInnerTableModel(ctx.Kit, inputData))
+}
+
 // SetModel TODO
 func (s *coreService) SetModel(ctx *rest.Contexts) {
 	inputData := metadata.SetModel{}
@@ -455,6 +465,23 @@ func (s *coreService) CreateModelAttributes(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntityWithError(s.core.ModelOperation().CreateModelAttributes(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+}
+
+// CreateTableModelAttributes create a table attribute field for the model.
+func (s *coreService) CreateTableModelAttributes(ctx *rest.Contexts) {
+	inputData := metadata.CreateModelAttributes{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	result, err := s.core.ModelOperation().CreateTableModelAttributes(ctx.Kit, objID, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(result)
+
 }
 
 // SetModelAttributes TODO

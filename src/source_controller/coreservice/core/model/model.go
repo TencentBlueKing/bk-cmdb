@@ -55,6 +55,85 @@ func New(dependent OperationDependences, language language.CCLanguageIf) core.Mo
 	return coreMgr
 }
 
+// CreateInnerTableModel create a new inner table model
+func (m *modelManager) CreateInnerTableModel(kit *rest.Kit, inputParam metadata.CreateModel) (
+	*metadata.CreateOneDataResult, error) {
+
+	locker := lock.NewLocker(redis.Client())
+	redisKey := lock.GetLockKey(lock.CreateModelFormat, inputParam.Spec.ObjectID)
+
+	locked, err := locker.Lock(redisKey, time.Second*35)
+	defer locker.Unlock()
+	if err != nil {
+		blog.Errorf("get create table model lock failed, err: %v, input: %v, rid: %s", err, inputParam, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommRedisOPErr)
+	}
+	if !locked {
+		blog.Errorf("create table model have same task in progress, input: %v, rid:%s", inputParam, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr,
+			fmt.Sprintf("create table object(%s)", inputParam.Spec.ObjectID))
+	}
+	blog.V(5).Infof("create table model redis lock info, key: %s, bl: %v, err: %v, rid: %s",
+		redisKey, locked, err, kit.Rid)
+
+	// check the model attributes value
+	if len(inputParam.Spec.ObjectID) == 0 {
+		blog.Errorf("table model object %s is not set, rid: %s", inputParam.Spec.ObjectID, kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
+	}
+
+	// check the model if it is exists
+	condCheckModelMap := util.SetModOwner(make(map[string]interface{}), kit.SupplierAccount)
+	condCheckModel, _ := mongo.NewConditionFromMapStr(condCheckModelMap)
+	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
+	_, exists, err := m.isExists(kit, condCheckModel)
+	if nil != err {
+		blog.Errorf("failed to check whether the table model (%s) is exists, err: %v, rid: %s",
+			inputParam.Spec.ObjectID, err, kit.Rid)
+		return nil, err
+	}
+	if exists {
+		blog.Warnf("failed to create a table model, model (%s) is already exists, rid: %s ",
+			inputParam.Spec.ObjectID, kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectID)
+	}
+
+	// check for duplicate model names
+	modelNameUniqueFilter := map[string]interface{}{
+		common.BKObjNameField: inputParam.Spec.ObjectName,
+	}
+	sameNameCount, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("get model count failed, name: %s, err: %v, rid: %s", inputParam.Spec.ObjectName, err, kit.Rid)
+		return nil, err
+	}
+	if sameNameCount > 0 {
+		blog.Warnf("create model failed, field `%s` duplicated, rid: %s", inputParam.Spec.ObjectName, kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectName)
+	}
+
+	// create new table model after checking base information and sharding table operation.
+	inputParam.Spec.OwnerID = kit.SupplierAccount
+	id, err := m.save(kit, &inputParam.Spec)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to save the model (%#v), err: %v", kit.Rid, inputParam.Spec, err)
+		return nil, err
+	}
+
+	// create initial phase model attributes.
+	if len(inputParam.Attributes) != 0 {
+		_, err = m.modelAttribute.CreateTableModelAttributes(kit, inputParam.Spec.ObjectID,
+			metadata.CreateModelAttributes{Attributes: inputParam.Attributes})
+		if nil != err {
+			blog.Errorf("it is failed to create some attributes (%#v) for the model (%s), err: %v, rid: %s",
+				inputParam.Attributes, inputParam.Spec.ObjectID, err, kit.Rid)
+			return nil, err
+		}
+	}
+
+	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, nil
+}
+
 // CreateModel create a new model
 func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error) {
 

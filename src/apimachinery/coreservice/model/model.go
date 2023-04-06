@@ -37,6 +37,8 @@ type ModelClientInterface interface {
 		error)
 	ReadModelClassification(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
 		*metadata.QueryModelClassificationDataResult, error)
+	CreateInnerTableModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (
+		*metadata.CreateOneDataResult, error)
 	CreateModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (*metadata.CreateOneDataResult, error)
 	SetModel(ctx context.Context, h http.Header, input *metadata.SetModel) (resp *metadata.SetOptionResult, err error)
 	UpdateModel(ctx context.Context, h http.Header, input *metadata.UpdateOption) (*metadata.UpdatedCount, error)
@@ -50,6 +52,8 @@ type ModelClientInterface interface {
 	ReadModel(ctx context.Context, h http.Header, input *metadata.QueryCondition) (*metadata.QueryModelDataResult,
 		error)
 	CreateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelAttributes) (
+		*metadata.CreateManyDataResult, error)
+	CreateTableModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelAttributes) (
 		*metadata.CreateManyDataResult, error)
 	SetModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.SetModelAttributes) (
 		resp *metadata.SetOptionResult, err error)

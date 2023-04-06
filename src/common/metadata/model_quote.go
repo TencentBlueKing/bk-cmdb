@@ -168,3 +168,13 @@ func (c *ListQuotedInstOption) Validate() errors.RawErrorInfo {
 
 	return errors.RawErrorInfo{}
 }
+
+// GenerateModelQuoteObjID generate the obj id referenced by the model.
+func GenerateModelQuoteObjID(srcModel, propertyID string) string {
+	return "bk_" + srcModel + "#" + propertyID
+}
+
+// GenerateModelQuoteObjName generate the obj name referenced by the model.
+func GenerateModelQuoteObjName(srcModel, propertyName string) string {
+	return "bk_" + srcModel + "#" + propertyName
+}

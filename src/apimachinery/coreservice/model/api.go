@@ -169,6 +169,32 @@ func (m *model) ReadModelClassification(ctx context.Context, h http.Header, inpu
 	return &resp.Data, nil
 }
 
+// CreateInnerTableModel create object for inner table
+func (m *model) CreateInnerTableModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (
+	*metadata.CreateOneDataResult, error) {
+
+	resp := new(metadata.CreatedOneOptionResult)
+	subPath := "/create/inner_table/model"
+
+	err := m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
 // CreateModel create object
 func (m *model) CreateModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (
 	*metadata.CreateOneDataResult, error) {
@@ -321,6 +347,32 @@ func (m *model) CreateModelAttrs(ctx context.Context, h http.Header, objID strin
 
 	resp := new(metadata.CreatedManyOptionResult)
 	subPath := "/create/model/%s/attributes"
+
+	err := m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
+// CreateTableModelAttrs create object attrs
+func (m *model) CreateTableModelAttrs(ctx context.Context, h http.Header, objID string,
+	input *metadata.CreateModelAttributes) (*metadata.CreateManyDataResult, error) {
+
+	resp := new(metadata.CreatedManyOptionResult)
+	subPath := "/create/table/model/%s/attributes"
 
 	err := m.client.Post().
 		WithContext(ctx).

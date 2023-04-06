@@ -65,6 +65,8 @@ type ModelClassification interface {
 type ModelAttribute interface {
 	CreateModelAttributes(kit *rest.Kit, objID string, inputParam metadata.CreateModelAttributes) (
 		*metadata.CreateManyDataResult, error)
+	CreateTableModelAttributes(kit *rest.Kit, objID string, inputParam metadata.CreateModelAttributes) (
+		*metadata.CreateManyDataResult, error)
 	SetModelAttributes(kit *rest.Kit, objID string, inputParam metadata.SetModelAttributes) (*metadata.SetDataResult,
 		error)
 	UpdateModelAttributes(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
@@ -94,6 +96,7 @@ type ModelOperation interface {
 	ModelAttribute
 	ModelAttrUnique
 
+	CreateInnerTableModel(kit *rest.Kit, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error)
 	CreateModel(kit *rest.Kit, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error)
 	SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*metadata.SetDataResult, error)
 	UpdateModel(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
