@@ -26,6 +26,10 @@
     headers: {
       type: Array,
       default: () => []
+    },
+    readonly: {
+      type: Boolean,
+      default: false
     }
   })
 
@@ -190,7 +194,7 @@
           </property-form-element>
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('操作')" width="90" fixed="right">
+      <bk-table-column :label="$t('操作')" width="90" fixed="right" v-if="!props.readonly">
         <template #default="{ $index }">
           <div class="operation-cell">
             <template v-if="$index !== editState.index">
@@ -212,9 +216,9 @@
           </div>
         </template>
       </bk-table-column>
-      <template #empty><icon-text-button :text="$t('新增')" @click="handleClickAdd" /></template>
+      <template #empty v-if="!props.readonly"><icon-text-button :text="$t('新增')" @click="handleClickAdd" /></template>
     </bk-table>
-    <div class="table-append" v-if="list.length > 0">
+    <div class="table-append" v-if="list.length > 0 && !props.readonly">
       <icon-text-button
         :text="$t('新增')"
         @click="handleClickAdd"

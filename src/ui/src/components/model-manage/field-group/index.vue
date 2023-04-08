@@ -312,6 +312,7 @@
         :is-main-line-model="isMainLineModel"
         :is-read-only="isReadOnly"
         :is-edit-field="slider.isEditField"
+        :properties="properties"
         :field="slider.curField"
         :group="slider.curGroup"
         :groups="groupedProperties.map(item => item.info)"

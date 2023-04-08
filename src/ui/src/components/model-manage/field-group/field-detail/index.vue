@@ -240,14 +240,13 @@
     },
     data() {
       return {
-        fieldTypeList: PROPERTY_TYPE_LIST,
         fieldInfo: {
           bk_property_name: '',
           bk_property_id: '',
           bk_property_group: this.group.bk_group_id,
           unit: '',
           placeholder: '',
-          bk_property_type: PROPERTY_TYPES.INNER_TABLE,
+          bk_property_type: PROPERTY_TYPES.SINGLECHAR,
           editable: true,
           isrequired: false,
           ismultiple: false,
@@ -270,6 +269,12 @@
       isGlobalView() {
         const [topRoute] = this.$route.matched
         return topRoute ? topRoute.name !== MENU_BUSINESS : true
+      },
+      fieldTypeList() {
+        if (this.customObjId) {
+          return PROPERTY_TYPE_LIST.filter(item => item.id !== PROPERTY_TYPES.INNER_TABLE)
+        }
+        return PROPERTY_TYPE_LIST
       },
       fieldType() {
         let { bk_property_type: type } = this.fieldInfo
