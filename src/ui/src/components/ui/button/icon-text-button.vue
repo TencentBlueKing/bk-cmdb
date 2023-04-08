@@ -16,13 +16,27 @@
       type: String,
       default: 'plus'
     },
-    text: String
+    text: String,
+    disabled: Boolean,
+    disabledTips: String
   })
   const emit = defineEmits(['click'])
+
+  const handleClick = () => {
+    if (props.disabled) {
+      return false
+    }
+    emit('click')
+  }
 </script>
 
 <template>
-  <div class="icon-text-button" @click="emit('click')">
+  <div :class="['icon-text-button', { 'disabled': props.disabled }]"
+    @click="handleClick"
+    v-bk-tooltips="{
+      disabled: !props.disabled || !props.disabledTips,
+      content: props.disabledTips
+    }">
     <bk-icon :type="props.icon" />{{ props.text }}
   </div>
 </template>
@@ -35,6 +49,10 @@
     align-items: center;
     .icon-plus {
       font-size: 20px !important;
+    }
+
+    &.disabled {
+      color: $textDisabledColor;
     }
   }
 </style>

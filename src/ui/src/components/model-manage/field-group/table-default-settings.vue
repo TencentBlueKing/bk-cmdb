@@ -11,23 +11,67 @@
 -->
 
 <script setup>
-  import { reactive, ref } from 'vue'
+  import { nextTick, reactive, ref, watch, set, watchEffect } from 'vue'
+  import has from 'has'
+  import cloneDeep from 'lodash/cloneDeep'
   import IconTextButton from '@/components/ui/button/icon-text-button.vue'
   import PropertyFormElement from '@/components/ui/form/property-form-element.vue'
-  import { getPropertyDefaultValue, isShowOverflowTips } from '@/utils/tools.js'
+  import { getPropertyDefaultValue, isShowOverflowTips, isEmptyPropertyValue } from '@/utils/tools.js'
 
   const props = defineProps({
+    defaults: {
+      type: Array,
+      default: () => []
+    },
     headers: {
       type: Array,
       default: () => []
     }
   })
 
+  const emit = defineEmits(['update'])
+
   const list = ref([])
+
   const editState = reactive({
-    rowIndex: null,
+    index: null,
+    row: {}
   })
+
   const propertyFormEl = ref(null)
+  const tableRef = ref(null)
+  const refreshKey = ref(Date.now())
+
+  watchEffect(() => {
+    list.value = cloneDeep(props.defaults || [])
+  })
+
+  const updateValue = () => {
+    emit('update', list.value)
+  }
+
+  watch(() => props.headers, (headers) => {
+    refreshKey.value = Date.now()
+
+    headers.forEach((header) => {
+      list.value.forEach((row) => {
+        // 不存在的字段先补齐（先创建了行后添加的表头）
+        if (!has(row, header.bk_property_id)) {
+          row[header.bk_property_id] = getPropertyDefaultValue(header)
+        }
+
+        // 刷新默认值（开始默认值为空后来变更了）
+        for (const [key, value] of Object.entries(row)) {
+          const prop = headers.find(header => header.bk_property_id === key)
+          if (prop) {
+            row[key] = getPropertyDefaultValue(prop, isEmptyPropertyValue(value) ? undefined : value)
+          }
+        }
+      })
+    })
+
+    updateValue()
+  }, { deep: true })
 
   const newRowData = () => {
     const data = {}
@@ -39,7 +83,7 @@
 
   const validateAll = async () => {
     // 获得每一个表单元素的校验方法
-    const validates = propertyFormEl.value || []
+    const validates = (propertyFormEl.value || [])
       .map(formElement => formElement.$validator.validateAll())
 
     if (validates.length) {
@@ -50,42 +94,84 @@
     return true
   }
 
+  const exitEdit = () => {
+    editState.index = null
+    editState.row = {}
+  }
+  const enterEdit = (index) => {
+    editState.index = index
+    editState.row = cloneDeep(list.value[index])
+    nextTick(() => {
+      const component = propertyFormEl.value?.[0].$refs[`component-${props.headers[0].bk_property_id}`]
+      component?.focus?.()
+    })
+  }
+  const updateRow = (index) => {
+    set(list.value, index, cloneDeep(editState.row))
+  }
+
   const handleClickEdit = (index) => {
-    console.log('handleClickEdit', index)
-    editState.rowIndex = index
+    enterEdit(index)
   }
   const handleClickRemove = (index) => {
-    console.log('handleClickRemove', index)
+    list.value.splice(index, 1)
+    updateValue()
   }
-  const handleClickAdd = () => {
-    validateAll()
+  const handleClickAdd = async () => {
+    if (!await validateAll()) {
+      return
+    }
     const length = list.value.push(newRowData())
-    editState.rowIndex = length - 1
+
+    enterEdit(length - 1)
   }
-  const handleChange = (value, property) => {
-    console.log(value, property, '--change')
-    // emit('change', property, value)
+
+  const handleConfirm = async (index) => {
+    if (!await validateAll()) {
+      return
+    }
+    updateRow(index)
+    exitEdit()
+
+    updateValue()
+  }
+  const handleCancel = () => {
+    exitEdit()
+  }
+
+  const clickOutsideMiddleware = (event) => {
+    const path = event.composedPath ? event.composedPath() : event.path
+    return !path?.some?.(node => node.className === 'tippy-popper')
+  }
+  const handleClickOutside = () => {
+    exitEdit()
   }
 </script>
 
 <template>
-  <div class="table-default-settings">
+  <div class="table-default-settings" v-click-outside="{
+    handler: handleClickOutside,
+    middleware: clickOutsideMiddleware
+  }">
     <bk-table
+      :key="refreshKey"
+      ref="tableRef"
       class="settings-table"
       :data="list"
       :outer-border="false"
       :header-border="false"
+      :row-auto-height="true"
       :max-height="344">
       <bk-table-column
         v-for="prop in props.headers"
         :key="prop.bk_property_id"
         :label="prop.bk_property_name"
         :prop="prop.bk_property_id"
-        :min-width="$tools.getHeaderPropertyMinWidth(prop, { min: 90 })"
+        :min-width="$tools.getHeaderPropertyMinWidth(prop, { min: 120 })"
         :show-overflow-tooltip="true">
         <template #default="{ row, $index }">
           <cmdb-property-value
-            v-if="$index !== editState.rowIndex"
+            v-if="$index !== editState.index"
             :is-show-overflow-tips="isShowOverflowTips(prop)"
             :class="'property-value'"
             :value="row[prop.bk_property_id]"
@@ -93,29 +179,35 @@
           </cmdb-property-value>
           <property-form-element
             v-else
+            class="detault-form-el"
             ref="propertyFormEl"
             :property="prop"
             :size="'small'"
             :font-size="'normal'"
-            v-model="row[prop.bk_property_id]"
-            @change="handleChange">
+            :row="1"
+            error-display-type="tooltips"
+            v-model="editState.row[prop.bk_property_id]">
           </property-form-element>
         </template>
       </bk-table-column>
       <bk-table-column :label="$t('操作')" width="90" fixed="right">
         <template #default="{ $index }">
           <div class="operation-cell">
-            <template v-if="$index !== editState.rowIndex">
-              <i :title="$t('编辑')"
-                class="icon-cc-edit-shape action-button edit-button"
-                @click="handleClickEdit($index)"></i>
-              <bk-icon :title="$t('移除')" type="delete"
-                class="action-button del-button"
-                @click="handleClickRemove($index)" />
+            <template v-if="$index !== editState.index">
+              <bk-button text theme="primary"
+                class="action-button"
+                @click="handleClickEdit($index)">{{$t('编辑')}}</bk-button>
+              <bk-button text theme="primary"
+                class="action-button"
+                @click="handleClickRemove($index)">{{$t('删除')}}</bk-button>
             </template>
             <template v-else>
-              <bk-button text theme="primary">确定</bk-button>
-              <bk-button text theme="primary">取消</bk-button>
+              <bk-button text theme="primary"
+                class="action-button"
+                @click="handleConfirm($index)">确定</bk-button>
+              <bk-button text theme="primary"
+                class="action-button"
+                @click="handleCancel">取消</bk-button>
             </template>
           </div>
         </template>
@@ -123,7 +215,11 @@
       <template #empty><icon-text-button :text="$t('新增')" @click="handleClickAdd" /></template>
     </bk-table>
     <div class="table-append" v-if="list.length > 0">
-      <icon-text-button :text="$t('新增')" @click="handleClickAdd" />
+      <icon-text-button
+        :text="$t('新增')"
+        @click="handleClickAdd"
+        :disabled="editState.index !== null || list.length === 50"
+        :disabled-tips="editState.index !== null ? $t('请先完成编辑') : $t('最多添加50行')" />
     </div>
   </div>
 </template>
@@ -132,14 +228,15 @@
   .settings-table {
     .operation-cell {
       .action-button {
-        cursor: pointer;
-
-        &:hover {
-          color: $primaryColor;
-        }
         & + .action-button {
-          margin-left: 8px;
+          margin-left: 4px;
         }
+      }
+    }
+
+    .detault-form-el {
+      :deep(.form-error) {
+        position: static;
       }
     }
   }

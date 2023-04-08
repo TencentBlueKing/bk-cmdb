@@ -81,3 +81,9 @@ export const camelize = cached((str, separator = '-') => {
   const camelizeRE = new RegExp(`${separator}(\\w)`, 'g')
   return str.replace(camelizeRE, (_, c) => (c ? c.toUpperCase() : ''))
 })
+
+export const swapItem = (arr, fromIndex, toIndex) => {
+  // eslint-disable-next-line prefer-destructuring
+  arr[toIndex] = arr.splice(fromIndex, 1, arr[toIndex])[0]
+  return arr
+}

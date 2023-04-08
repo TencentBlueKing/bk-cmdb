@@ -58,7 +58,7 @@
 
   onMounted(() => {
     setTimeout(() => {
-      selector?.value?.$refs.bkSelectTag.calcOverflow()
+      selector?.value?.$refs.bkSelectTag?.calcOverflow()
     }, 100)
   })
 

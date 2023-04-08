@@ -11,9 +11,11 @@
 -->
 
 <script setup>
-  import { reactive, ref, watchEffect, set, watch } from 'vue'
+  import { reactive, ref, watchEffect, set, getCurrentInstance, nextTick } from 'vue'
   import { t } from '@/i18n'
-  import { PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
+  import { $error } from '@/magicbox/index.js'
+  import { swapItem } from '@/utils/util'
+  import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
   import IconTextButton from '@/components/ui/button/icon-text-button.vue'
@@ -26,6 +28,10 @@
       default: () => ({})
     }
   })
+
+  const emit = defineEmits(['input'])
+
+  const currentInstance = getCurrentInstance().proxy
 
   const settingsModelState = reactive({
     isShow: false,
@@ -53,9 +59,21 @@
   const defaults = ref([])
 
   watchEffect(() => {
-    headers.value = props.value?.header ? props.value.header.slice() : []
-    defaults.value = props.value?.default ? props.value.default?.slice() : []
+    // 这里不用处理数据引用问题，因为在上层已经clone过
+    headers.value = props.value?.header || []
+    defaults.value = props.value?.default || []
   })
+
+  const updateValue = () => {
+    emit('input', {
+      header: headers.value,
+      default: defaults.value
+    })
+
+    nextTick(() => {
+      currentInstance.$validator.validateAll()
+    })
+  }
 
   const handleClickAddField = () => {
     settingsModelState.isShow = true
@@ -70,24 +88,56 @@
   }
   const handleClickRemoveField = (index) => {
     headers.value.splice(index, 1)
+
+    updateValue()
   }
-  const handleClickUpField = (_row) => {
+  const handleClickUpField = (index) => {
+    if (index === 0) {
+      return
+    }
+    swapItem(headers.value, index, index - 1)
+
+    updateValue()
   }
-  const handleClickDownField = (_row) => {
+  const handleClickDownField = (index) => {
+    if (index === headers.value.length - 1) {
+      return
+    }
+    swapItem(headers.value, index, index + 1)
+
+    updateValue()
   }
   const handleAddField = (data) => {
+    const { bk_property_id: id, bk_property_type: type } = data
+
+    if (headers.value.some(item => item.bk_property_id === id)) {
+      $error(t('字段ID已经存在'))
+      return
+    }
+    if (type === PROPERTY_TYPES.LONGCHAR
+      && headers.value.filter(item => item.bk_property_type === PROPERTY_TYPES.LONGCHAR).length === 2) {
+      $error(t('最多只能添加2个长字符类型'))
+      return
+    }
+
     headers.value.push(data)
     settingsModelState.isShow = false
+
+    updateValue()
   }
   const handleSaveField = (data) => {
     const newData = { ...headers.value[settingsModelState.editDataIndex], ...data }
     set(headers.value, settingsModelState.editDataIndex, newData)
     settingsModelState.isShow = false
-  }
 
-  watch(headers, (headers) => {
-    console.log('watch headers', headers)
-  }, { deep: true })
+    updateValue()
+  }
+  const handleUpdateDefaults = (data) => {
+    emit('input', {
+      header: headers.value,
+      default: data
+    })
+  }
 </script>
 
 <template>
@@ -95,14 +145,20 @@
     <grid-item
       direction="column"
       required
-      :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('refModel') }]">
+      :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('headers') }]">
       <template #label>
         <div class="label-inner">
           <span class="label-text">{{ $t('表头字段设置') }}</span>
-          <i18n path="共N个字段" class="count">
+          <i18n path="共N个字段" class="count" v-show="headers.length > 0">
             <template #count><em class="num">{{headers.length}}</em></template>
           </i18n>
         </div>
+        <input
+          v-validate="'required|min_value:1'"
+          v-model="headers.length"
+          name="headers"
+          data-vv-validate-on="change"
+          type="hidden">
       </template>
       <bk-table
         class="table-header-settings"
@@ -122,30 +178,37 @@
           </template>
         </bk-table-column>
         <bk-table-column :label="$t('操作')" min-width="90">
-          <template #default="{ row, $index }">
+          <template #default="{ $index }">
             <div class="operation-cell">
               <i :title="$t('编辑')"
                 class="icon-cc-edit-shape action-button edit-button"
                 @click="handleClickEditField($index)"></i>
               <bk-icon :title="$t('移除')" type="delete"
-                class="action-button del-button"
+                :class="['action-button', 'del-button']"
                 @click="handleClickRemoveField($index)" />
               <bk-icon :title="$t('上移')" type="arrows-up"
-                class="action-button up-button"
-                @click="handleClickUpField(row)" />
+                :class="['action-button', 'up-button', { disabled: $index === 0 }]"
+                @click="handleClickUpField($index)" />
               <bk-icon :title="$t('下移')" type="arrows-down"
-                class="action-button down-button"
-                @click="handleClickDownField(row)" />
+                :class="['action-button', 'down-button', { disabled: $index === headers.length - 1 }]"
+                @click="handleClickDownField($index)" />
             </div>
           </template>
         </bk-table-column>
         <template #empty><icon-text-button :text="$t('添加新字段')" @click="handleClickAddField" /></template>
         <template #append v-if="headers.length > 0">
           <div class="table-append">
-            <icon-text-button :text="$t('添加新字段')" @click="handleClickAddField" />
+            <icon-text-button
+              :text="$t('添加新字段')"
+              @click="handleClickAddField"
+              :disabled="headers.length === 10"
+              :disabled-tips="$t('最多添加10个字段')" />
           </div>
         </template>
       </bk-table>
+      <template #append>
+        <div class="form-error" v-if="errors.has('headers')">{{$t('请设置表头字段')}}</div>
+      </template>
     </grid-item>
     <grid-item
       direction="column"
@@ -153,7 +216,9 @@
       :label="$t('默认值')">
       <table-default-settings
         v-if="headers.length > 0"
-        :headers="headers" />
+        :headers="headers"
+        :defaults="defaults"
+        @update="handleUpdateDefaults" />
       <template #append v-if="!headers.length">
         <span class="header-empty-tips">{{ $t('请先添加表头字段') }}</span>
       </template>
@@ -199,6 +264,11 @@
         }
         & + .action-button {
           margin-left: 8px;
+        }
+
+        &.disabled {
+          color: $textDisabledColor;
+          cursor: not-allowed;
         }
       }
     }

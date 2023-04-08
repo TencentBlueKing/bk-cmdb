@@ -11,7 +11,10 @@
 -->
 
 <template>
-  <div :class="['property-form-element', 'cmdb-form-item', { 'is-error': errors.has(property.bk_property_id) }]">
+  <div :class="['property-form-element', 'cmdb-form-item', {
+    'is-error': errors.has(property.bk_property_id),
+    'is-tooltips': errorDisplayType === 'tooltips'
+  }]">
     <component
       :ref="`component-${property.bk_property_id}`"
       :is="`cmdb-form-${property.bk_property_type}`"
@@ -31,14 +34,22 @@
       v-on="events"
       v-model.trim="localValue">
     </component>
-    <div class="form-error"
-      v-if="errors.has(property.bk_property_id)">
-      {{errors.first(property.bk_property_id)}}
-    </div>
+    <template v-if="errors.has(property.bk_property_id)">
+      <i
+        class="bk-icon icon-exclamation-circle-shape tooltips-icon"
+        v-bk-tooltips.top-end="{ content: errors.first(property.bk_property_id) }"
+        :style="{ right: `${tipsIconOffset}px` }"
+        v-if="errorDisplayType === 'tooltips'">
+      </i>
+      <div class="form-error" v-else>
+        {{errors.first(property.bk_property_id)}}
+      </div>
+    </template>
   </div>
 </template>
 
 <script>
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   export default {
     props: {
       property: {
@@ -67,7 +78,15 @@
         default: () => ({})
       },
       size: String,
-      fontSize: String
+      fontSize: String,
+      errorDisplayType: {
+        type: String,
+        default: 'normal'
+      },
+      tipsIconOffset: {
+        type: Number,
+        default: 8
+      }
     },
     computed: {
       localValue: {
@@ -91,13 +110,13 @@
       getMoreProps(property) {
         const validateEvents = this.$tools.getValidateEvents(property)
         const otherProps = {}
-        if (['int', 'float'].includes(property.bk_property_type)) {
+        if ([PROPERTY_TYPES.INT, PROPERTY_TYPES.FLOAT].includes(property.bk_property_type)) {
           otherProps.inputType = 'number'
         }
         if (this.mustRequired === true) {
           otherProps.clearable = false
         }
-        return { ...validateEvents, ...otherProps }
+        return { ...validateEvents, ...otherProps, ...this.$attrs }
       }
     }
   }
@@ -107,6 +126,7 @@
   .property-form-element {
     // 重置 .cmdb-form-item display
     display: block;
+    position: relative;
 
     .form-element-item {
       &.cmdb-search-input {
@@ -114,6 +134,17 @@
           position: relative;
         }
       }
+    }
+
+    .tooltips-icon {
+      position: absolute;
+      z-index: 10;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: $dangerColor;
+      cursor: pointer;
+      font-size: 16px;
     }
   }
 </style>

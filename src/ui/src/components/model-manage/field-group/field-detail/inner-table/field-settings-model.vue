@@ -66,7 +66,7 @@
       PROPERTY_TYPES.LONGCHAR,
       PROPERTY_TYPES.INT,
       PROPERTY_TYPES.FLOAT,
-      PROPERTY_TYPES.ENUM,
+      PROPERTY_TYPES.ENUMMULTI,
       PROPERTY_TYPES.BOOL
     ]
     return PROPERTY_TYPE_LIST.filter(item => availableTypes.includes(item.id))
@@ -78,18 +78,20 @@
       [PROPERTY_TYPES.LONGCHAR]: TheFieldChar,
       [PROPERTY_TYPES.INT]: TheFieldInt,
       [PROPERTY_TYPES.FLOAT]: TheFieldFloat,
-      [PROPERTY_TYPES.ENUM]: TheFieldEnum,
+      [PROPERTY_TYPES.ENUMMULTI]: TheFieldEnum,
       [PROPERTY_TYPES.BOOL]: TheFieldBool
     }
     return comps[settings.bk_property_type]
   })
 
   const isRequiredShow = computed(() => (
-    ![PROPERTY_TYPES.BOOL, PROPERTY_TYPES.ENUM].includes(settings.bk_property_type)
+    ![PROPERTY_TYPES.BOOL, PROPERTY_TYPES.ENUMMULTI].includes(settings.bk_property_type)
   ))
 
-  const isDefaultShow = computed(() => ![PROPERTY_TYPES.ENUM, PROPERTY_TYPES.BOOL].includes(settings.bk_property_type))
+  const isDefaultShow = computed(() => ![PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.BOOL]
+    .includes(settings.bk_property_type))
   const isUnitShow = computed(() => [PROPERTY_TYPES.INT, PROPERTY_TYPES.FLOAT].includes(settings.bk_property_type))
+  const isMultipleShow = computed(() => [PROPERTY_TYPES.ENUMMULTI].includes(settings.bk_property_type))
 
   watch(isShow, (isShow) => {
     if (isShow) {
@@ -100,24 +102,29 @@
       Object.keys(defaultData).forEach((key) => {
         settings[key] = defaultData[key]
       })
-      console.log(settings, '---watch after settings', props.formData)
     }
   })
 
   watch(() => settings.bk_property_type, (type) => {
-    switch (type) {
-      case PROPERTY_TYPES.INT:
-      case PROPERTY_TYPES.FLOAT:
-        settings.option = {
-          min: '',
-          max: ''
-        }
-        settings.default = ''
-        break
-      default:
-        settings.default = ''
-        settings.option = ''
-        settings.ismultiple = false
+    if (!props.isEdit) {
+      switch (type) {
+        case PROPERTY_TYPES.INT:
+        case PROPERTY_TYPES.FLOAT:
+          settings.option = {
+            min: '',
+            max: ''
+          }
+          settings.default = ''
+          break
+        case PROPERTY_TYPES.ENUMMULTI:
+          settings.option = []
+          settings.ismultiple = true
+          break
+        default:
+          settings.default = ''
+          settings.option = ''
+          settings.ismultiple = false
+      }
     }
   })
 
@@ -128,7 +135,6 @@
     if (instance.$refs.component) {
       validate.push(instance.$refs.component.$validator.validateAll())
     }
-    console.log(validate, '--xxxx')
     const results = await Promise.all(validate)
     return results.every(result => result)
   }
@@ -144,14 +150,15 @@
 <template>
   <bk-dialog
     v-model="isShow"
-    width="640"
+    width="670"
+    render-directive="if"
     :title="$t('字段设置')"
     header-position="left"
     :mask-close="false"
     :auto-close="false"
     @confirm="handleConfirm">
     <div class="content-layout">
-      <grid-layout mode="form" :gap="36" :font-size="'14px'" :max-columns="2">
+      <grid-layout mode="form" :gap="24" :font-size="'14px'" :max-columns="2">
         <grid-item
           direction="column"
           required
@@ -159,7 +166,7 @@
           :label="$t('字段ID')">
           <bk-input
             name="propertyId"
-            v-validate="'required'"
+            v-validate="props.isEdit ? null : 'required|fieldId|reservedWord|length:128'"
             :disabled="props.isEdit"
             v-model="settings.bk_property_id">
           </bk-input>
@@ -174,7 +181,7 @@
           :label="$t('字段名称')">
           <bk-input
             name="propertyName"
-            v-validate="'required'"
+            v-validate="'required|length:128'"
             v-model="settings.bk_property_name">
           </bk-input>
           <template #append>
@@ -213,10 +220,16 @@
             v-model="settings.isrequired">
             {{$t('必填')}}
           </bk-checkbox>
+          <bk-checkbox
+            class="ml10"
+            v-if="isMultipleShow"
+            v-model="settings.ismultiple">
+            {{$t('可多选')}}
+          </bk-checkbox>
         </grid-item>
       </grid-layout>
 
-      <grid-layout class="field-option-container" mode="form" :gap="36" :font-size="'14px'" :max-columns="1">
+      <grid-layout class="field-option-container" mode="form" :gap="24" :font-size="'14px'" :max-columns="1">
         <component
           :key="settings.bk_property_type"
           :is="optionComp"
@@ -282,7 +295,7 @@
 <style lang="scss" scoped>
   .content-layout {
     max-height: 340px;
-    padding: 0 24px;
+    padding: 0 12px;
     @include scrollbar-y;
   }
 

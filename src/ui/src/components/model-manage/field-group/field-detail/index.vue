@@ -205,6 +205,10 @@
       theFieldInnerTable
     },
     props: {
+      properties: {
+        type: Array,
+        required: true
+      },
       field: {
         type: Object
       },
@@ -343,6 +347,11 @@
               this.fieldInfo.option = ''
               this.fieldInfo.ismultiple = true
               break
+            case PROPERTY_TYPES.INNER_TABLE:
+              this.fieldInfo.option = {
+                header: [],
+                default: []
+              }
             default:
               this.fieldInfo.default = ''
               this.fieldInfo.option = ''
@@ -387,6 +396,12 @@
         if (!await this.validateValue()) {
           return
         }
+
+        if (this.properties.filter(property => property.bk_property_type === PROPERTY_TYPES.INNER_TABLE).length === 5) {
+          this.$error('最多只能添加5个表格字段')
+          return
+        }
+
         let fieldId = null
         if (this.fieldInfo.bk_property_type === 'int' || this.fieldInfo.bk_property_type === 'float') {
           this.fieldInfo.option.min = this.isNullOrUndefinedOrEmpty(this.fieldInfo.option.min) ? '' : Number(this.fieldInfo.option.min)
