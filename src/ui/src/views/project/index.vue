@@ -32,7 +32,7 @@
         <cmdb-property-selector
           class="filter-selector fl"
           v-model="filter.field"
-          :properties="properties">
+          :properties="fastSearchProperties">
         </cmdb-property-selector>
         <component class="filter-value fl"
           :is="`cmdb-search-${filterType}`"
@@ -216,6 +216,7 @@
   import InstanceStatusColumn from './children/instance-status-column.vue'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
   import projectService from '@/service/project/index.js'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   export default {
     components: {
@@ -315,6 +316,9 @@
           return { type: this.$OPERATION.C_PROJECT }
         }
         return null
+      },
+      fastSearchProperties() {
+        return this.properties.filter(item => item.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
       }
     },
     watch: {

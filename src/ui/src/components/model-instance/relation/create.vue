@@ -28,7 +28,7 @@
         <cmdb-relation-property-filter
           ref="filterComponent"
           :obj-id="currentAsstObj"
-          :exclude-type="['foreignkey', 'time']"
+          :exclude-type="excludePropertyFilterTypes"
           @on-property-selected="handlePropertySelected"
           @on-operator-selected="handleOperatorSelected"
           @on-value-change="handleValueChange">
@@ -115,6 +115,7 @@
   } from '@/dictionary/model-constants.js'
   import Utils from '@/components/filters/utils'
   import { isEmptyPropertyValue, formatValue } from '@/utils/tools'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   export default {
     name: 'cmdb-relation-create',
@@ -175,7 +176,8 @@
         currentAsstObj: '',
         existInstAssociation: [],
         tempData: [],
-        hasChange: false
+        hasChange: false,
+        excludePropertyFilterTypes: [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.TIME, PROPERTY_TYPES.FOREIGNKEY]
       }
     },
     computed: {
