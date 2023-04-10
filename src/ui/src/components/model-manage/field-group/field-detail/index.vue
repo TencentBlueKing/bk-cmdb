@@ -110,6 +110,7 @@
           :is="`the-field-${fieldType}`"
           :multiple="fieldInfo.ismultiple"
           v-model="fieldInfo.option"
+          :is-edit-field="isEditField"
           :type="fieldInfo.bk_property_type"
           ref="component"
         ></component>
@@ -185,7 +186,7 @@
   import theFieldList from './list'
   import theFieldBool from './bool'
   import theFieldEnumquote from './enumquote.vue'
-  import theFieldInnerTable from './inner-table/index.vue'
+  import theFieldInnertable from './inner-table/index.vue'
   import theConfig from './config'
   import { mapGetters, mapActions } from 'vuex'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
@@ -202,7 +203,7 @@
       theFieldList,
       theFieldBool,
       theConfig,
-      theFieldInnerTable
+      theFieldInnertable
     },
     props: {
       properties: {

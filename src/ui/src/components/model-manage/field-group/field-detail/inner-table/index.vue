@@ -15,6 +15,7 @@
   import { t } from '@/i18n'
   import { $error } from '@/magicbox/index.js'
   import { swapItem } from '@/utils/util'
+  import { isEmptyPropertyValue } from '@/utils/tools'
   import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
@@ -26,6 +27,10 @@
     value: {
       type: [Object, String],
       default: () => ({})
+    },
+    isEditField: {
+      type: Boolean,
+      default: false
     }
   })
 
@@ -65,6 +70,20 @@
   })
 
   const updateValue = () => {
+    headers.value.forEach((header) => {
+      // 转换成数字格式
+      if ([PROPERTY_TYPES.INT, PROPERTY_TYPES.FLOAT].includes(header.bk_property_type)) {
+        header.option.min = isEmptyPropertyValue(header.option.min) ? '' : Number(header.option.min)
+        header.option.max = isEmptyPropertyValue(header.option.max) ? '' : Number(header.option.max)
+      }
+
+      // default字段处理
+      if (props.isEditField) {
+        header.default = isEmptyPropertyValue(header.default) ? null : header.default
+      } else if (isEmptyPropertyValue(header.default)) {
+        Reflect.deleteProperty(header, 'default')
+      }
+    })
     emit('input', {
       header: headers.value,
       default: defaults.value

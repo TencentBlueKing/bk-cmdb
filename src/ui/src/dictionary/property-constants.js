@@ -32,7 +32,7 @@ export const PROPERTY_TYPES = Object.freeze({
   SERVICE_TEMPLATE: 'service-template',
   TOPOLOGY: 'topology',
   FOREIGNKEY: 'foreignkey',
-  INNER_TABLE: 'inner-table'
+  INNER_TABLE: 'innertable'
 })
 
 export const PROPERTY_TYPE_NAMES = Object.freeze({

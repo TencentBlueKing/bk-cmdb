@@ -222,8 +222,8 @@
       <icon-text-button
         :text="$t('新增')"
         @click="handleClickAdd"
-        :disabled="editState.index !== null || list.length === 50"
-        :disabled-tips="editState.index !== null ? $t('请先完成编辑') : $t('最多添加50行')" />
+        :disabled="list.length === 50"
+        :disabled-tips="$t('最多添加50行')" />
     </div>
   </div>
 </template>
