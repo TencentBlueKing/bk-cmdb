@@ -14,6 +14,9 @@
   import { computed, defineProps, ref, watch, onMounted } from 'vue'
   import debounce from 'lodash.debounce'
   import { getModelInstanceOptions } from '@/service/instance/common'
+  import { t } from '@/i18n'
+  import store from '@/store'
+  import { OPERATION } from '@/dictionary/iam-auth'
 
   const props = defineProps({
     value: {
@@ -34,10 +37,26 @@
   const list = ref([])
   const loading = ref(false)
   const selector = ref(null)
+  const placeholder = ref('')
+  const auth = ref({})
+  const disabled = ref(false)
 
   const search = async (keyword) => {
     loading.value = true
-    const results = await getModelInstanceOptions(props.objId, keyword, props.value, { page: { limit: 50 } })
+    const results = await getModelInstanceOptions(
+      props.objId, keyword, props.value,
+      { page: { limit: 50 } },
+      { globalPermission: false }
+    )
+    if (results.length === 0) {
+      placeholder.value = t('该字段暂无权限配置，点击申请权限')
+      localValue.value = props.multiple ? [] : ''
+      disabled.value = true
+    } else {
+      placeholder.value = t('请选择模型实例')
+      localValue.value = getInitValue()
+      disabled.value = false
+    }
     list.value = results
     loading.value = false
   }
@@ -60,10 +79,12 @@
     setTimeout(() => {
       selector?.value?.$refs.bkSelectTag.calcOverflow()
     }, 100)
+    auth.value = getAuth(props.objId)
   })
 
   watch(() => props.objId, (cur, prev) => {
     if (cur && cur !== prev) {
+      auth.value = getAuth(cur)
       search()
     }
 
@@ -79,32 +100,41 @@
     emit('toggle', active)
   }
 
+  const getAuth = (objId) => {
+    const relationModel = store.getters['objectModelClassify/getModelById'](objId)
+    return { type: OPERATION.R_INST, relation: [relationModel.id] }
+  }
+
   defineExpose({
     focus: () => selector?.value?.show?.()
   })
 </script>
 
 <template>
-  <div class="model-instance-selector">
-    <bk-select
-      :class="['selector', { 'active': isActive }]"
-      ref="selector"
-      v-bind="$attrs"
-      v-model="localValue"
-      searchable
-      :multiple="multiple"
-      font-size="normal"
-      :loading="loading"
-      :is-tag-width-limit="true"
-      :remote-method="remoteSearch"
-      @toggle="handleToggle">
-      <bk-option v-for="option in list"
-        :key="option.id"
-        :id="option.id"
-        :name="option.name">
-      </bk-option>
-    </bk-select>
-  </div>
+  <cmdb-auth-mask :auth="auth" :authorized="!disabled">
+    <div class="model-instance-selector">
+      <bk-select
+        :class="['selector', { 'active': isActive }]"
+        ref="selector"
+        v-bind="$attrs"
+        v-model="localValue"
+        searchable
+        :multiple="multiple"
+        :placeholder="placeholder"
+        :disabled="disabled"
+        font-size="normal"
+        :loading="loading"
+        :is-tag-width-limit="true"
+        :remote-method="remoteSearch"
+        @toggle="handleToggle">
+        <bk-option v-for="option in list"
+          :key="option.id"
+          :id="option.id"
+          :name="option.name">
+        </bk-option>
+      </bk-select>
+    </div>
+  </cmdb-auth-mask>
 
 </template>
 

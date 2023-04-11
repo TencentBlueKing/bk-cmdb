@@ -1680,5 +1680,7 @@
     "任务":"assignment",
     "无服务实例提示": "no service instance{link}",
     "暂无业务": "no business temporarily",
-    "不勾选“可编辑”，则创建实例时，初始化该字段值后不可再编辑":"If 'Editable' is not checked, the field value cannot be edited after initialization when creating an instance"
+    "不勾选“可编辑”，则创建实例时，初始化该字段值后不可再编辑":"If 'Editable' is not checked, the field value cannot be edited after initialization when creating an instance",
+    "该字段无权限配置":"This field does not have permission configuration",
+    "请选择模型实例":"Please select a model instance"
 }
