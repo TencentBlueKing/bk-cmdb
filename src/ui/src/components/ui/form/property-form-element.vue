@@ -26,6 +26,7 @@
       :disabled="disabled"
       :size="size"
       :font-size="fontSize"
+      :row="row"
       v-bind="getMoreProps(property)"
       v-validate="getValidateRules(property)"
       v-on="events"
@@ -66,6 +67,10 @@
         type: Object,
         default: () => ({})
       },
+      row: {
+        type: Number,
+        default: 3
+      },
       size: String,
       fontSize: String
     },
@@ -98,6 +103,9 @@
           otherProps.clearable = false
         }
         return { ...validateEvents, ...otherProps }
+      },
+      focus() {
+        this.$refs[`component-${this.property.bk_property_id}`]?.focus()
       }
     }
   }
