@@ -27,6 +27,8 @@ import (
 	ccErr "configcenter/src/common/errors"
 )
 
+// TODO 解析options的方式和 src/common/metadata/attribute.go 里的 ParseXxxOption 合并为一套，现在这两个地方的解析方式不太一样
+
 // ValidPropertyOption valid property field option
 func ValidPropertyOption(propertyType string, option interface{}, isMultiple bool, defaultVal interface{}, rid string,
 	errProxy ccErr.DefaultCCErrorIf) error {
@@ -136,82 +138,65 @@ func ValidFieldTypeInt(option, defaultVal interface{}, rid string, errProxy ccEr
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 	}
 
-	tmp, ok := option.(map[string]interface{})
+	optMap, ok := option.(map[string]interface{})
 	if !ok {
 		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 	}
 
-	{
-		// min
-		min, ok := tmp["min"]
-		maxVal := 99999999999 // default
-		minVal := -9999999999 // default
-		err := errProxy.Error(common.CCErrCommParamsNeedInt)
+	// validate maximum & minimum option
+	minVal, err := parseIntOptionValue(optMap, "min", -9999999999)
+	if err != nil {
+		blog.Errorf("parse min value failed, err: %v, opt: %+v, rid: %d", err, optMap, rid)
+		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option.min")
+	}
 
-		isPass := false
-		if ok {
-			switch d := min.(type) {
-			case string:
-				if len(d) == 0 {
-					isPass = true
-				}
-				if len(d) > 11 {
-					return errProxy.Errorf(common.CCErrCommOverLimit, "option.min")
-				}
-			}
+	maxVal, err := parseIntOptionValue(optMap, "max", 99999999999)
+	if err != nil {
+		blog.Errorf("parse max value failed, err: %v, opt: %+v, rid: %d", err, optMap, rid)
+		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option.min")
+	}
 
-			if !isPass {
-				if ok := IsNumeric(min); !ok {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
-				}
-				minVal, err = GetIntByInterface(min)
-				if err != nil {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
-				}
-			}
-		}
+	if minVal > maxVal {
+		blog.Errorf("option min value %d is greater than max value %d, rid: %s", minVal, maxVal, rid)
+		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
+	}
 
-		// max
-		max, ok := tmp["max"]
-		if ok {
-			isPass := false
-			switch d := max.(type) {
-			case string:
-				if len(d) == 0 {
-					isPass = true
-				}
-				if len(d) > 11 {
-					return errProxy.Errorf(common.CCErrCommOverLimit, "option.max")
-				}
-			}
-			if !isPass {
-				if ok := IsNumeric(max); !ok {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
-				}
-				maxVal, err = GetIntByInterface(max)
-				if nil != err {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
-				}
-			}
-		}
-
-		if minVal > maxVal {
-			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option.max")
-		}
-		if defaultVal == nil {
-			return nil
-		}
-		defaultValue, err := GetIntByInterface(defaultVal)
-		if err != nil {
-			blog.Errorf("int type field default value is wrong, rid: %s", rid)
-			return err
-		}
-		if defaultValue < minVal || defaultValue > maxVal {
-			return fmt.Errorf("int type field default value over limit")
-		}
+	// validate default value
+	if defaultVal == nil {
+		return nil
+	}
+	defaultValue, err := GetIntByInterface(defaultVal)
+	if err != nil {
+		blog.Errorf("int type field default value is wrong, rid: %s", rid)
+		return err
+	}
+	if defaultValue < minVal || defaultValue > maxVal {
+		return fmt.Errorf("int type field default value over limit")
 	}
 
 	return nil
+}
+
+func parseIntOptionValue(optMap map[string]interface{}, field string, defaultVal int) (int, error) {
+	val, ok := optMap[field]
+	if !ok {
+		return defaultVal, nil
+	}
+
+	switch strVal := val.(type) {
+	case string:
+		if len(strVal) == 0 {
+			return defaultVal, nil
+		}
+
+		return 0, fmt.Errorf("int option %s value %s is of string type", field, val)
+	}
+
+	if !IsNumeric(val) {
+		return 0, fmt.Errorf("int option %s value %+v is not numeric", field, val)
+	}
+
+	return GetIntByInterface(val)
 }
 
 // ValidFieldTypeFloat validate int or float field type's option default value
@@ -220,81 +205,68 @@ func ValidFieldTypeFloat(option, defaultVal interface{}, rid string, errProxy cc
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 	}
 
-	tmp, ok := option.(map[string]interface{})
+	optMap, ok := option.(map[string]interface{})
 	if !ok {
+		blog.Errorf("option type %s is invalid, opt: %+v, rid: %s", reflect.TypeOf(option), option, rid)
 		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 	}
 
-	{
-		// min
-		min, ok := tmp["min"]
-		maxVal := float64(common.MaxInt64) // default
-		minVal := float64(common.MinInt64) // default
-		err := errProxy.Error(common.CCErrCommParamsNeedInt)
-
-		isPass := false
-		if ok {
-			switch d := min.(type) {
-			case string:
-				if len(d) == 0 {
-					isPass = true
-				}
-				if len(d) > 11 {
-					return errProxy.Errorf(common.CCErrCommOverLimit, "option.min")
-				}
-			}
-
-			if !isPass {
-				if ok := IsNumeric(min); !ok {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
-				}
-				minVal, err = GetFloat64ByInterface(min)
-				if err != nil {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
-				}
-			}
-		}
-
-		// max
-		max, ok := tmp["max"]
-		if ok {
-			isPass := false
-			switch d := max.(type) {
-			case string:
-				if len(d) == 0 {
-					isPass = true
-				}
-				if len(d) > 11 {
-					return errProxy.Errorf(common.CCErrCommOverLimit, "option.max")
-				}
-			}
-			if !isPass {
-				if ok := IsNumeric(max); !ok {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
-				}
-				maxVal, err = GetFloat64ByInterface(max)
-				if nil != err {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
-				}
-			}
-		}
-
-		if minVal > maxVal {
-			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option.max")
-		}
-		if defaultVal == nil {
-			return nil
-		}
-		defaultValue, err := GetFloat64ByInterface(defaultVal)
-		if err != nil {
-			blog.Errorf("float type field default value is wrong, rid: %s", rid)
-			return err
-		}
-		if defaultValue < minVal || defaultValue > maxVal {
-			return fmt.Errorf("float type field default value over limit")
-		}
+	// validate maximum & minimum option
+	minVal, err := parseFloatOptionValue(optMap, "min", float64(common.MinInt64))
+	if err != nil {
+		blog.Errorf("parse min value failed, err: %v, opt: %+v, rid: %d", err, optMap, rid)
+		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option.min")
 	}
+
+	maxVal, err := parseFloatOptionValue(optMap, "max", float64(common.MaxInt64))
+	if err != nil {
+		blog.Errorf("parse max value failed, err: %v, opt: %+v, rid: %d", err, optMap, rid)
+		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option.min")
+	}
+
+	if minVal > maxVal {
+		blog.Errorf("option min value %d is greater than max value %d, rid: %s", minVal, maxVal, rid)
+		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
+	}
+
+	// validate default value
+	if defaultVal == nil {
+		return nil
+	}
+
+	defaultValue, err := GetFloat64ByInterface(defaultVal)
+	if err != nil {
+		blog.Errorf("float type field default value is wrong, rid: %s", rid)
+		return err
+	}
+
+	if defaultValue < minVal || defaultValue > maxVal {
+		return fmt.Errorf("float type field default value over limit")
+	}
+
 	return nil
+}
+
+func parseFloatOptionValue(optMap map[string]interface{}, field string, defaultVal float64) (float64, error) {
+	val, ok := optMap[field]
+	if !ok {
+		return defaultVal, nil
+	}
+
+	switch strVal := val.(type) {
+	case string:
+		if len(strVal) == 0 {
+			return defaultVal, nil
+		}
+
+		return 0, fmt.Errorf("float option %s value %s is of string type", field, val)
+	}
+
+	if !IsNumeric(val) {
+		return 0, fmt.Errorf("float option %s value %+v is not numeric", field, val)
+	}
+
+	return GetFloat64ByInterface(val)
 }
 
 // ValidFieldTypeList validate list field type's option and default value
