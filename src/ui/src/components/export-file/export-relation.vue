@@ -68,7 +68,7 @@
 </template>
 
 <script>
-  import { computed, watch, toRef } from 'vue'
+  import { computed, watch, toRef, ref, nextTick } from 'vue'
   import useState from './state'
   import useModelAssociation from '@/hooks/model/association'
   import useBatchUniqueCheck from '@/hooks/unique-check/batch'
@@ -76,6 +76,10 @@
   import useProperty from '@/hooks/model/property'
   import usePending from '@/hooks/utils/pending'
   import { mapGetters } from 'vuex'
+  import store from '@/store'
+  import { OPERATION } from '@/dictionary/iam-auth'
+  import { translateAuth } from '@/setup/permission'
+
   export default {
     name: 'export-relation',
     setup(props, setupContext) {
@@ -83,8 +87,12 @@
       const objectUniqueId = toRef(state, 'object_unique_id')
       const currentModelId = toRef(state, 'bk_obj_id')
       const selectedRelations = toRef(state, 'relations')
+      const table = ref(null)
       // 获取当前模型的唯一校验，用于导出的参数object_unique_id
-      const [{ uniqueChecks: modelUniqueChecks, pending: modelUniquePending }] = useUniqueCheck(currentModelId)
+      const [{ uniqueChecks: modelUniqueChecks, pending: modelUniquePending }] = useUniqueCheck(
+        currentModelId,
+        { globalPermission: false }
+      )
 
       // 获取当前模型的关联关系
       const [{ relations, pending: relationPending }] = useModelAssociation(currentModelId)
@@ -109,10 +117,13 @@
         modelSet.add(currentModelId.value)
         return { bk_obj_id: { $in: Array.from(modelSet) } }
       })
-      const [{ properties, pending: propertyPending }] = useProperty(propertyOptions)
+      const [{ properties, pending: propertyPending }] = useProperty(propertyOptions, { globalPermission: false })
 
       // 加载关联模型的唯一校验
-      const [{ uniqueChecks: relationUniqueChecks, pending: uniqueCheckPending }] = useBatchUniqueCheck(relationModels)
+      const [{ uniqueChecks: relationUniqueChecks, pending: uniqueCheckPending }] = useBatchUniqueCheck(
+        relationModels,
+        { globalPermission: false }
+      )
 
       // 组合关联模型与唯一校验
       const uniqueRelations = computed(() => {
@@ -162,11 +173,42 @@
         const selected = selection.includes(relation)
         if (selected) {
           setSelectionUniqueCheck(relation)
+          const relationModel = store.getters['objectModelClassify/getModelById'](relation.relation_obj_id)
+          // 内置模型查看权限默认开放，无需鉴权
+          if ([1, 2, 3, 4, 243].includes(relationModel.id)) return
+          const auth = { type: OPERATION.R_MODEL, relation: [relationModel.id] }
+          const isView = store.getters['auth/isViewAuthed'](auth)
+          if (!isView) {
+            const permission = translateAuth(auth)
+            const { permissionModal } = window
+            permissionModal && permissionModal.show(permission)
+            nextTick(() => {
+              table.value.toggleRowSelection(relation, false)
+            })
+          }
         } else {
           removeRelation(relation.relation_obj_id)
         }
       }
       const handleSelectAll = (selection) => {
+        const permissionList = []
+        selection.forEach((item) => {
+          const relationModel = store.getters['objectModelClassify/getModelById'](item.relation_obj_id)
+          // 内置模型查看权限默认开放，无需鉴权
+          if ([1, 2, 3, 4, 243].includes(relationModel.id)) return
+          const auth = { type: OPERATION.R_MODEL, relation: [relationModel.id] }
+          const isView = store.getters['auth/isViewAuthed'](auth)
+          if (!isView) {
+            const permission = translateAuth(auth)
+            permissionList.push(...permission?.actions[0]?.related_resource_types[0]?.instances)
+            permission.actions[0].related_resource_types[0].instances = permissionList
+            const { permissionModal } = window
+            permissionModal && permissionModal.show(permission)
+            nextTick(() => {
+              table.value.clearSelection()
+            })
+          }
+        })
         if (!selection.length) {
           clearSelectedUniqueCheck(false)
         } else {
@@ -194,7 +236,8 @@
         handleSelect,
         handleSelectAll,
         handleUniqueCheckChange,
-        modelUniqueChecks
+        modelUniqueChecks,
+        table
       }
     },
     computed: {
