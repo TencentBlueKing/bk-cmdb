@@ -51,7 +51,11 @@ type ClientSetInterface interface {
 
 // NewApiMachinery TODO
 func NewApiMachinery(c *util.APIMachineryConfig, discover discovery.DiscoveryInterface) (ClientSetInterface, error) {
-	client, err := util.NewClient(c.TLSConfig)
+	extraConf := make([]util.ExtraClientConfig, 0)
+	if c.ExtraConf != nil {
+		extraConf = append(extraConf, *c.ExtraConf)
+	}
+	client, err := util.NewClient(c.TLSConfig, extraConf...)
 	if err != nil {
 		return nil, err
 	}

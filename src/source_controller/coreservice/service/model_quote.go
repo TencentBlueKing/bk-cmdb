@@ -60,8 +60,8 @@ func (s *coreService) ListModelQuoteRelation(cts *rest.Contexts) {
 	}
 
 	relations := make([]metadata.ModelQuoteRelation, 0)
-	err = mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(filter).Fields(req.Fields...).
-		All(cts.Kit.Ctx, &relations)
+	err = mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(filter).Start(uint64(req.Page.Start)).
+		Limit(uint64(req.Page.Limit)).Fields(req.Fields...).All(cts.Kit.Ctx, &relations)
 	if err != nil {
 		blog.Errorf("list model quote relations failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
 		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
