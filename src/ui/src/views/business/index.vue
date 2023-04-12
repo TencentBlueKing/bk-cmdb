@@ -53,7 +53,7 @@
         <cmdb-property-selector
           class="filter-selector fl"
           v-model="filter.field"
-          :properties="properties">
+          :properties="fastSearchProperties">
         </cmdb-property-selector>
         <component class="filter-value fl"
           :is="`cmdb-search-${filterType}`"
@@ -236,6 +236,7 @@
   import Utils from '@/components/filters/utils'
   import throttle from 'lodash.throttle'
   import BatchSelectionColumn from '@/components/batch-selection-column'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   export default {
     components: {
       cmdbColumnsConfig,
@@ -336,6 +337,9 @@
       },
       filterComponentProps() {
         return Utils.getBindProps(this.filterProperty)
+      },
+      fastSearchProperties() {
+        return this.properties.filter(item => item.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
       }
     },
     watch: {

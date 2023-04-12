@@ -35,9 +35,15 @@
             v-for="property in group.children"
             :key="property.bk_property_id">
             <bk-checkbox class="property-checkbox"
+              :disabled="disabledProperties[group.id].includes(property.bk_property_id)"
               :checked="isChecked(property)"
               @change="handleToggleProperty(property, ...arguments)">
-              {{property.bk_property_name}}
+              <span v-bk-tooltips.top-start="{
+                disabled: !disabledProperties[group.id].includes(property.bk_property_id),
+                content: $t('该字段不支持搜索')
+              }">
+                {{property.bk_property_name}}
+              </span>
             </bk-checkbox>
           </li>
         </ul>
@@ -62,6 +68,7 @@
   import { mapGetters } from 'vuex'
   import FilterStore from './store'
   import throttle from 'lodash.throttle'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   export default {
     data() {
       return {
@@ -137,6 +144,15 @@
           }
         })
           .sort((groupA, groupB) => sequence.indexOf(groupA.id) - sequence.indexOf(groupB.id))
+      },
+      disabledProperties() {
+        const disabledPropertyMap = {}
+        this.groups.forEach((group) => {
+          disabledPropertyMap[group.id] = group.children
+            .filter(item => item.bk_property_type === PROPERTY_TYPES.INNER_TABLE)
+            .map(item => item.bk_property_id)
+        })
+        return disabledPropertyMap
       }
     },
     watch: {

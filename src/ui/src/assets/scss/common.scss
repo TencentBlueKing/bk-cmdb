@@ -111,6 +111,35 @@ div.cmdb-form-item {
         input.cmdb-form-input {
             border-color: $cmdbDangerColor;
         }
+        &.is-tooltips {
+            input[type="text"],
+            input[type="password"],
+            input[type="number"],
+            input[type="url"],
+            textarea,
+            select {
+                border-color: $cmdbDangerColor;
+                color: $cmdbDangerColor;
+            }
+
+            .bk-textarea-wrapper {
+                border-color: $cmdbDangerColor;
+            }
+
+            .bk-tag-selector .bk-tag-input {
+                border-color: $cmdbDangerColor;
+            }
+
+            .bk-form-tip {
+                .bk-tip-text {
+                    color: $cmdbDangerColor;
+                }
+            }
+
+            .bk-select {
+                border-color: $cmdbDangerColor;
+            }
+        }
 
         .form-error {
             position: absolute;

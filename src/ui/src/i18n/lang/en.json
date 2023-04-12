@@ -1668,6 +1668,7 @@
     "操作成功": "Operation succeeded",
     "枚举(多选)": "Enumeration(multiple)",
     "枚举(引用)": "Enumeration(quote)",
+    "表格": "Table",
     "引用模型": "reference model",
     "默认以实例名称作为枚举选项": "By default, the instance name is used as the enumeration option",
     "模型实例": "model instance",
@@ -1680,5 +1681,6 @@
     "任务":"assignment",
     "无服务实例提示": "no service instance{link}",
     "暂无业务": "no business temporarily",
-    "不勾选“可编辑”，则创建实例时，初始化该字段值后不可再编辑":"If 'Editable' is not checked, the field value cannot be edited after initialization when creating an instance"
+    "不勾选“可编辑”，则创建实例时，初始化该字段值后不可再编辑":"If 'Editable' is not checked, the field value cannot be edited after initialization when creating an instance",
+    "共N个字段": "A total of {count} fields"
 }

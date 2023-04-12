@@ -56,7 +56,7 @@ const actions = {
      * @return {promises} promises 对象
      */
   getStaticDimeObj({ commit, state, dispatch }, { params, config }) {
-    return $http.post('find/objectattr', params, config)
+    return $http.post('find/objectattr/web', params, config)
   },
 
   /**

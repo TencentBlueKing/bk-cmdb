@@ -110,6 +110,7 @@
           :is="`the-field-${fieldType}`"
           :multiple="fieldInfo.ismultiple"
           v-model="fieldInfo.option"
+          :is-edit-field="isEditField"
           :type="fieldInfo.bk_property_type"
           ref="component"
         ></component>
@@ -185,6 +186,7 @@
   import theFieldList from './list'
   import theFieldBool from './bool'
   import theFieldEnumquote from './enumquote.vue'
+  import theFieldInnertable from './inner-table/index.vue'
   import theConfig from './config'
   import { mapGetters, mapActions } from 'vuex'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
@@ -200,9 +202,14 @@
       theFieldEnumquote,
       theFieldList,
       theFieldBool,
-      theConfig
+      theConfig,
+      theFieldInnertable
     },
     props: {
+      properties: {
+        type: Array,
+        required: true
+      },
       field: {
         type: Object
       },
@@ -234,7 +241,6 @@
     },
     data() {
       return {
-        fieldTypeList: PROPERTY_TYPE_LIST,
         fieldInfo: {
           bk_property_name: '',
           bk_property_id: '',
@@ -265,6 +271,12 @@
         const [topRoute] = this.$route.matched
         return topRoute ? topRoute.name !== MENU_BUSINESS : true
       },
+      fieldTypeList() {
+        if (this.customObjId) {
+          return PROPERTY_TYPE_LIST.filter(item => item.id !== PROPERTY_TYPES.INNER_TABLE)
+        }
+        return PROPERTY_TYPE_LIST
+      },
       fieldType() {
         let { bk_property_type: type } = this.fieldInfo
         switch (type) {
@@ -288,7 +300,8 @@
           PROPERTY_TYPES.LIST,
           PROPERTY_TYPES.BOOL,
           PROPERTY_TYPES.ENUMMULTI,
-          PROPERTY_TYPES.ENUMQUOTE
+          PROPERTY_TYPES.ENUMQUOTE,
+          PROPERTY_TYPES.INNER_TABLE
         ]
         return types.indexOf(this.fieldInfo.bk_property_type) !== -1
       },
@@ -297,7 +310,8 @@
           PROPERTY_TYPES.ENUM,
           PROPERTY_TYPES.ENUMMULTI,
           PROPERTY_TYPES.ENUMQUOTE,
-          PROPERTY_TYPES.BOOL
+          PROPERTY_TYPES.BOOL,
+          PROPERTY_TYPES.INNER_TABLE
         ]
         return !types.includes(this.fieldInfo.bk_property_type)
       },
@@ -339,6 +353,11 @@
               this.fieldInfo.option = ''
               this.fieldInfo.ismultiple = true
               break
+            case PROPERTY_TYPES.INNER_TABLE:
+              this.fieldInfo.option = {
+                header: [],
+                default: []
+              }
             default:
               this.fieldInfo.default = ''
               this.fieldInfo.option = ''
@@ -383,6 +402,12 @@
         if (!await this.validateValue()) {
           return
         }
+
+        if (this.properties.filter(property => property.bk_property_type === PROPERTY_TYPES.INNER_TABLE).length === 5) {
+          this.$error('最多只能添加5个表格字段')
+          return
+        }
+
         let fieldId = null
         if (this.fieldInfo.bk_property_type === 'int' || this.fieldInfo.bk_property_type === 'float') {
           this.fieldInfo.option.min = this.isNullOrUndefinedOrEmpty(this.fieldInfo.option.min) ? '' : Number(this.fieldInfo.option.min)
