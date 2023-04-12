@@ -41,6 +41,7 @@
                     <slot :name="property.bk_property_id">
                       <table-default-settings
                         v-if="isTableType(property)"
+                        :preview="true"
                         :headers="property.option.header"
                         :defaults="property.option.default" />
                       <component class="form-component" v-else

@@ -659,7 +659,9 @@
         }))
       },
       updateFilter(properties = []) {
-        const availableProperties = properties.filter(property => property.bk_obj_id === this.objId)
+        const availableProperties = properties
+          .filter(property => property.bk_obj_id === this.objId
+            && property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
         availableProperties.forEach((property) => {
           // eslint-disable-next-line max-len
           const exist = this.filterSelected.findIndex(item => item.bk_property_id === property.bk_property_id) !== -1

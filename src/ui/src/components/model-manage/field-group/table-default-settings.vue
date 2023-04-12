@@ -30,6 +30,10 @@
     readonly: {
       type: Boolean,
       default: false
+    },
+    preview: {
+      type: Boolean,
+      default: false
     }
   })
 
@@ -153,7 +157,7 @@
 </script>
 
 <template>
-  <div class="table-default-settings" v-click-outside="{
+  <div :class="['table-default-settings', { preview: props.preview }]" v-click-outside="{
     handler: handleClickOutside,
     middleware: clickOutsideMiddleware
   }">
@@ -162,7 +166,7 @@
       ref="tableRef"
       class="settings-table"
       :data="list"
-      :outer-border="false"
+      :outer-border="props.preview"
       :header-border="false"
       :row-auto-height="true"
       :max-height="344">
@@ -229,6 +233,15 @@
 </template>
 
 <style lang="scss" scoped>
+  .table-default-settings {
+    &.preview {
+      .table-append {
+        border: 1px solid #dfe0e5;
+        border-top: none;
+      }
+    }
+  }
+
   .settings-table {
     .operation-cell {
       .action-button {
@@ -245,7 +258,7 @@
     }
   }
   .table-append {
-    padding: 12px;
+    padding: 10px;
     background: #fff;
     font-size: 12px;
   }

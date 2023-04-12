@@ -181,7 +181,7 @@
 
           Object.keys(this.propertyMap).forEach((objId) => {
             this.disabledPropertyMap[objId] = this.propertyMap[objId]
-              .filter(item => item.bk_property_type === PROPERTY_TYPES.ENUM)
+              .filter(item => item.bk_property_type === PROPERTY_TYPES.INNER_TABLE)
               .map(item => item.bk_property_id)
           })
         } catch (error) {
