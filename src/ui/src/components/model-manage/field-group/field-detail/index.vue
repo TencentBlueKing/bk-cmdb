@@ -234,7 +234,6 @@
     },
     data() {
       return {
-        fieldTypeList: PROPERTY_TYPE_LIST,
         fieldInfo: {
           bk_property_name: '',
           bk_property_id: '',
@@ -315,6 +314,10 @@
           return this.field.creator === 'cc_system'
         }
         return false
+      },
+      fieldTypeList() {
+        const createFieldList = PROPERTY_TYPE_LIST.filter(item => item.id !== PROPERTY_TYPES.ENUMQUOTE)
+        return this.isEditField ? PROPERTY_TYPE_LIST : createFieldList
       }
     },
     watch: {
