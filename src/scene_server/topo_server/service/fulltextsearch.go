@@ -414,7 +414,9 @@ func (r *FullTextSearchReq) GenerateESQuery() (elastic.Query, []string, []*FullT
 		}
 
 		// assign sub aggregation conditions and field.
-		boolQuery.Must(elastic.NewQueryStringQuery(r.QueryString).Field(metadata.IndexPropertyKeywords))
+		boolQuery.Must(elastic.NewQueryStringQuery(r.QueryString).
+			Field(metadata.IndexPropertyKeywords).
+			Field(fmt.Sprintf("%s.*.*.%s", metadata.TablePropertyName, metadata.IndexPropertyTypeKeyword)))
 		subCountQueries = append(subCountQueries, &FullTextSearchESQuery{Query: boolQuery, Condition: condFilter})
 	}
 
@@ -828,6 +830,8 @@ func (sr *SearchResult) dealHighlight(source map[string]interface{}, highlight e
 
 	inputKey := strings.ToLower(rawString)
 
+	tables := make([]string, 0)
+
 	for key, values := range highlight {
 
 		if key == metadata.IndexPropertyBKObjID {
@@ -846,6 +850,19 @@ func (sr *SearchResult) dealHighlight(source map[string]interface{}, highlight e
 				delete(highlight, key)
 			}
 		} else {
+
+			if strings.HasPrefix(key, metadata.TablePropertyName) {
+				split := strings.Split(key, ".")
+				if len(split) != 4 {
+					blog.Warnf("invalid highlight key: %s", key)
+					continue
+				}
+				propertyID := split[1]
+				tables = append(tables, propertyID)
+				delete(highlight, key)
+				continue
+			}
+
 			// we don't need highlight with meta_bk_obj_id and meta_bk_biz_id, just like <em>meta_bk_obj_id</em>,
 			// <em>meta_bk_biz_id</em>. Replace it <em>meta_bk_obj_id</em> be bk_obj_id (do not need <em>)
 			for i := range values {
@@ -859,6 +876,7 @@ func (sr *SearchResult) dealHighlight(source map[string]interface{}, highlight e
 			}
 		}
 	}
+	highlight[metadata.TablePropertyName] = util.StrArrayUnique(tables)
 	sr.Highlight = highlight
 	return
 }

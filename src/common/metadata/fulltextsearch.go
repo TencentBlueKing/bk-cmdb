@@ -62,6 +62,9 @@ const (
 
 	// IndexPropertyTypeText es index property type text.
 	IndexPropertyTypeText = "text"
+
+	// IndexPropertyTypeObject es index property type object.
+	IndexPropertyTypeObject = "object"
 )
 
 // elastic index properties.
@@ -92,6 +95,12 @@ const (
 
 	// IndexPropertyKeywords es index property for metadata keywords.
 	IndexPropertyKeywords = "keywords"
+
+	// TablePropertyName table property name.
+	TablePropertyName = "tables"
+
+	// TableProperType table property type.
+	TablePropertyType = "inner_table"
 )
 
 // ignore  resource pool

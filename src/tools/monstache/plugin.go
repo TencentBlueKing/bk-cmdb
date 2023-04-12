@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -53,14 +54,16 @@ const (
 
 const (
 	// default metaId
-	nullMetaId      = "0"
-	mongoMetaId     = "_id"
-	mongoOptionId   = "id"
-	mongoOptionName = "name"
-	mongoEnum       = "enum"
-	mongoDatabase   = "cmdb"
-	configPath      = "./etc/extra.toml"
-	commonObject    = "common"
+	nullMetaId        = "0"
+	mongoMetaId       = "_id"
+	mongoOptionId     = "id"
+	mongoOptionName   = "name"
+	mongoEnum         = "enum"
+	mongoDatabase     = "cmdb"
+	configPath        = "./etc/extra.toml"
+	commonObject      = "common"
+	deleteTableScript = "ctx._source.tables.%s.remove('%s')"
+	updateTableScript = `if(!ctx._source.containsKey('tables')){ctx._source['tables']=[:];}if(!ctx._source.tables.containsKey('%s')){ctx._source.tables['%s']=[:];}ctx._source.tables.%s['%s']=[%s]`
 )
 
 // elastic indexes.
@@ -73,6 +76,11 @@ var (
 	indexModel          *meta.ESIndex
 	indexObjectInstance *meta.ESIndex
 	indexList           []*meta.ESIndex
+)
+
+// table properties.
+var (
+	tableProperties string
 )
 
 type extraConfig struct {
@@ -287,6 +295,17 @@ func init() {
 	indexObjInstMetadata := newESIndexMetadata(config)
 	indexObjectInstance = meta.NewESIndex(meta.IndexNameObjectInstance, indexVersionObjectInstance, indexObjInstMetadata)
 	indexList = append(indexList, indexObjectInstance)
+
+	// init table properties
+	mappings := meta.ESIndexMetaMappings{Properties: make(map[string]meta.ESIndexMetaMappingsProperty)}
+	mappings.Properties[meta.TablePropertyName] = meta.ESIndexMetaMappingsProperty{
+		PropertyType: meta.IndexPropertyTypeObject,
+	}
+	marshal, err := ccjson.MarshalToString(mappings)
+	if err != nil {
+		panic(err)
+	}
+	tableProperties = marshal
 
 	log.Println("bk-cmdb elastic monstache plugin initialize successfully")
 }
@@ -681,6 +700,7 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 
 	// query model attribute.
 	modelAttrs := make([]map[string]interface{}, 0)
+	tableAttrs := make([]map[string]interface{}, 0)
 
 	modelAttrsCursor, err := input.MongoClient.Database(input.Database).Collection(common.BKTableNameObjAttDes).
 		Find(context.Background(), bson.D{{common.BKObjIDField, objectID}})
@@ -695,6 +715,10 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 	// all attributes with model metadata is ONE elastic document.
 	for _, attribute := range modelAttrs {
 		// data Cleaning
+		if attribute[common.BKPropertyTypeField] == meta.TablePropertyType {
+			tableAttrs = append(tableAttrs, attribute)
+			continue
+		}
 		attr := originalDataCleaning(attribute, common.BKTableNameObjAttDes)
 		jsonDoc, err := ccjson.MarshalToString(attr)
 		if err != nil {
@@ -718,6 +742,10 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 		meta.IndexPropertyBKSupplierAccount: oId,
 		meta.IndexPropertyBKBizID:           bizId,
 		meta.IndexPropertyKeywords:          compressKeywords(keywords),
+	}
+	err = updateModelTableProperties(document, tableAttrs)
+	if err != nil {
+		return fmt.Errorf("update model table properties failed, err: %v", err)
 	}
 	output.ID = idEs
 	output.Document = document
@@ -822,6 +850,21 @@ func Init(input *monstachemap.InitPluginInput) error {
 		if err != nil {
 			return fmt.Errorf("create elastic index[%s] alias failed, %v", index.Name(), err)
 		}
+
+		//  add table properties if not exist
+		exist, err = isTablePropertyFieldExist(index, input)
+		if err != nil {
+			return fmt.Errorf("check table properties index[%s] failed, %v", index.Name(), err)
+		}
+		if !exist {
+			_, err = input.ElasticClient.PutMapping().
+				BodyString(tableProperties).
+				Index(index.Name()).
+				Do(context.Background())
+			if err != nil {
+				return fmt.Errorf("add table properties index[%s] failed, %v", index.Name(), err)
+			}
+		}
 	}
 
 	log.Println("initialize elastic indexes successfully")
@@ -861,6 +904,7 @@ func Map(input *monstachemap.MapperPluginInput) (*monstachemap.MapperPluginOutpu
 	}
 
 	output := new(monstachemap.MapperPluginOutput)
+	output.Skip = true
 	switch input.Collection {
 	case common.BKTableNameBaseBizSet:
 		if err := indexingBizSet(input, output); err != nil {
@@ -899,9 +943,21 @@ func Map(input *monstachemap.MapperPluginInput) (*monstachemap.MapperPluginOutpu
 			return output, nil
 		}
 
+		// if collection is a table inst collection
+		if IsTableInstCollection(input.Collection) {
+			if err := indexingTableInst(input, output); err != nil {
+				return nil, err
+			}
+			return output, nil
+		}
+
 		if err := indexingObjectInstance(input, output); err != nil {
 			return nil, err
 		}
+	}
+
+	if err := UpsertEsDoc(input, output); err != nil {
+		log.Printf("upsert es doc failed, err: %v", err)
 	}
 
 	return output, nil
@@ -912,43 +968,375 @@ func Map(input *monstachemap.MapperPluginInput) (*monstachemap.MapperPluginOutpu
 // including the Elasticsearch bulk processor) in the input and allows you to handle complex event processing scenarios
 func Process(input *monstachemap.ProcessPluginInput) error {
 	req := elastic.NewBulkDeleteRequest()
-	metaId := input.Document[mongoMetaId]
-	documentID, ok := metaId.(primitive.ObjectID)
-	if !ok {
-		return errors.New("missing document metadata id")
+
+	objectID, index, err := getEsIdFromDoc(input.Document, input.Collection)
+	if err != nil {
+		log.Printf("get es id failed, err: %v", err)
+		return err
 	}
 
-	var index, objectID string
-	objectID = documentID.Hex()
 	if input.Operation == "d" {
-		switch input.Collection {
-		case common.BKTableNameBaseBizSet:
-			objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDBizSet)
-			index = fmt.Sprintf("%s_%s", meta.IndexNameBizSet, indexVersionBizSet)
-		case common.BKTableNameBaseApp:
-			objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDApp)
-			index = fmt.Sprintf("%s_%s", meta.IndexNameBiz, indexVersionBiz)
-		case common.BKTableNameBaseSet:
-			objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDSet)
-			index = fmt.Sprintf("%s_%s", meta.IndexNameSet, indexVersionSet)
-		case common.BKTableNameBaseModule:
-			objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDModule)
-			index = fmt.Sprintf("%s_%s", meta.IndexNameModule, indexVersionModule)
-		case common.BKTableNameBaseHost:
-			objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDHost)
-			index = fmt.Sprintf("%s_%s", meta.IndexNameHost, indexVersionHost)
-		case common.BKTableNameObjDes, common.BKTableNameObjAttDes:
-			objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDObject)
-			index = fmt.Sprintf("%s_%s", meta.IndexNameModel, indexVersionModel)
-		default:
-			objectID = fmt.Sprintf("%s:%s", objectID, commonObject)
-			index = fmt.Sprintf("%s_%s", meta.IndexNameObjectInstance, indexVersionObjectInstance)
+		if IsTableInstCollection(input.Collection) {
+			return indexingDeletedTableInst(&input.MapperPluginInput)
 		}
-
 		req.Id(objectID)
 		req.Index(index)
 		input.ElasticBulkProcessor.Add(req)
 	}
 
 	return nil
+}
+
+// isTablePropertyFieldExist check if the collection is a table property instance collection.
+func isTablePropertyFieldExist(index *meta.ESIndex, input *monstachemap.InitPluginInput) (bool, error) {
+	do, err := input.ElasticClient.GetFieldMapping().
+		Index(index.Name()).
+		Field(meta.TablePropertyName).
+		Do(context.Background())
+	if err != nil {
+		return false, err
+	}
+	for _, v := range do {
+		mappings := v.(map[string]interface{})["mappings"].(map[string]interface{})
+		return len(mappings) != 0, nil
+	}
+	return false, nil
+}
+
+// getTablePropertyIdAndObjId get table propertyId and objId from collection name.
+func getTablePropertyIdAndObjId(collection string) (string, string) {
+	regex := regexp.MustCompile(`cc_ObjectBase_(.*)_pub_bk_(.*)#(.*)`)
+	if regex.MatchString(collection) {
+		matches := regex.FindStringSubmatch(collection)
+		return matches[3], matches[2]
+	}
+	return "", ""
+}
+
+// getMongoCollectionByObjID get mongo collection name by objID.
+func getMongoCollectionByObjID(objID string, supplierAccount string) string {
+	var collection string
+	switch objID {
+	case common.BKInnerObjIDBizSet:
+		collection = common.BKInnerObjIDBizSet
+	case common.BKInnerObjIDHost:
+		collection = common.BKTableNameBaseHost
+	case common.BKInnerObjIDApp:
+		collection = common.BKTableNameBaseApp
+	case common.BKInnerObjIDSet:
+		collection = common.BKTableNameBaseSet
+	case common.BKInnerObjIDModule:
+		collection = common.BKTableNameBaseModule
+	default:
+		collection = common.GetObjectInstTableName(objID, supplierAccount)
+	}
+	return collection
+}
+
+// UpdateTablePropertyEsDoc update table property es doc.
+func UpdateTablePropertyEsDoc(input *monstachemap.MapperPluginInput, index, instId, propertyId, tableId string, keywords []string) (bool, error) {
+	for i, s := range keywords {
+		keywords[i] = fmt.Sprintf(`'%s'`, s)
+	}
+	keywordStr := strings.Join(keywords, ",")
+
+	do, err := input.ElasticClient.UpdateByQuery(index).
+		ProceedOnVersionConflict().
+		Query(elastic.NewMatchQuery(meta.IndexPropertyID, instId)).
+		Script(elastic.NewScriptInline(fmt.Sprintf(updateTableScript, propertyId, propertyId, propertyId, tableId, keywordStr))).
+		Do(context.Background())
+	if err != nil {
+		return false, err
+	}
+	return do.Total == 1, nil
+}
+
+// deleteTablePropertyEsDoc delete table property instance from es.
+func deleteTablePropertyEsDoc(input *monstachemap.MapperPluginInput, index, instId, propertyId, tableId string) error {
+	_, err := input.ElasticClient.UpdateByQuery(index).
+		ProceedOnVersionConflict().
+		Query(elastic.NewMatchQuery(meta.IndexPropertyID, instId)).
+		Script(elastic.NewScriptInline(fmt.Sprintf(deleteTableScript, propertyId, tableId))).
+		Do(context.Background())
+	if err != nil {
+		log.Printf("update document failed, err: %v", err)
+		return err
+	}
+	return nil
+}
+
+// UpsertEsDoc upsert document to elastic.
+func UpsertEsDoc(input *monstachemap.MapperPluginInput, output *monstachemap.MapperPluginOutput) error {
+	_, err := input.ElasticClient.Update().
+		Index(output.Index).
+		DocAsUpsert(true).
+		RetryOnConflict(10).
+		Doc(output.Document).
+		Id(output.ID).
+		Do(context.Background())
+	if err != nil {
+		log.Printf("upsert es document failed, err: %v", err)
+		return err
+	}
+	return nil
+}
+
+// getDeletedTablePropertyInst get deleted table property instance.
+func getDeletedTablePropertyInst(input *monstachemap.MapperPluginInput) (map[string]interface{}, error) {
+	doc := make(map[string]interface{})
+	metaId := input.Document[mongoMetaId]
+	documentID, ok := metaId.(primitive.ObjectID)
+	if !ok {
+		return nil, errors.New("missing document metadata id")
+	}
+	oid := documentID.Hex()
+	err := input.MongoClient.
+		Database(mongoDatabase).
+		Collection(common.BKTableNameDelArchive).FindOne(context.Background(), bson.D{
+		{"oid", oid},
+		{"coll", input.Collection},
+	}).Decode(&doc)
+	if err != nil {
+		return nil, err
+	}
+	detail, ok := doc["detail"]
+	if !ok {
+		return nil, fmt.Errorf("detail not found")
+	}
+	document, ok := detail.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("detail is invalid")
+	}
+	return document, nil
+}
+
+// indexingDeletedTableInst index deleted table property instance.
+func indexingDeletedTableInst(input *monstachemap.MapperPluginInput) error {
+	doc, err := getDeletedTablePropertyInst(input)
+	if err != nil {
+		log.Printf("get deleted table property instance failed, err: %v", err)
+		return err
+	}
+	tableId, err := getMetaIdToStr(doc[common.BKFieldID])
+	if err != nil {
+		return fmt.Errorf("missing: %s, err: %v", common.BKOwnerIDField, err)
+	}
+	instIdStr, err := getMetaIdToStr(doc[common.BKInstIDField])
+	if err != nil {
+		return fmt.Errorf("missing: %s, err: %v", common.BKInstIDField, err)
+	}
+
+	propertyId, objId := getTablePropertyIdAndObjId(input.Collection)
+	index := getEsIndexByObjId(objId)
+	err = deleteTablePropertyEsDoc(input, index, instIdStr, propertyId, tableId)
+	if err != nil {
+		log.Printf("delete table property es document failed, err: %v", err)
+		return err
+	}
+	return nil
+}
+
+// indexingTableInst indexing the table property instance.
+func indexingTableInst(input *monstachemap.MapperPluginInput, output *monstachemap.MapperPluginOutput) error {
+	tableId, err := getMetaIdToStr(input.Document[common.BKFieldID])
+	if err != nil {
+		return fmt.Errorf("missing: %s, err: %v", common.BKOwnerIDField, err)
+	}
+	account, err := getMetaIdToStr(input.Document[common.BKOwnerIDField])
+	if err != nil {
+		return fmt.Errorf("missing: %s, err: %v", common.BKOwnerIDField, err)
+	}
+	instIdStr, err := getMetaIdToStr(input.Document[common.BKInstIDField])
+	if err != nil {
+		return fmt.Errorf("missing: %s, err: %v", common.BKInstIDField, err)
+	}
+	instId, err := util.GetInt64ByInterface(instIdStr)
+	if err != nil {
+		log.Printf("get inst id failed, err: %v", err)
+	}
+
+	if instId == 0 {
+		return nil
+	}
+
+	propertyId, objId := getTablePropertyIdAndObjId(input.Collection)
+	index := getEsIndexByObjId(objId)
+
+	document, keywords, err := analysisTableDocument(propertyId, tableId, input.Document)
+	if err != nil {
+		log.Printf("analysis table document failed, err: %v", err)
+		return err
+	}
+
+	// 直接更新 es文档
+	succeed, err := UpdateTablePropertyEsDoc(input, index, instIdStr, propertyId, tableId, keywords)
+	if err != nil {
+		log.Printf("update table property es doc failed, err: %v", err)
+		return err
+	}
+
+	// 更新败降级处理，查询实例数据，如果es文档不存在，直接创建es文档
+	if !succeed {
+		collection := getMongoCollectionByObjID(objId, account)
+		idType := getDocumentIdType(collection)
+		id, err := getEsIDByMongoID(input, collection, idType, instId)
+		if err != nil {
+			log.Printf("get es id failed, err: %v", err)
+			return err
+		}
+		output.ID = id
+		output.Document = document
+		output.Index = index
+		err = UpsertEsDoc(input, output)
+		if err != nil {
+			log.Printf("upsert es document failed, err: %v", err)
+			return err
+		}
+	}
+	return nil
+}
+
+// getEsIDByMongoID get the es id by mongo document id.
+// 如果mongo的实例数据不存在，说明是脏数据，直接返回错误。
+func getEsIDByMongoID(input *monstachemap.MapperPluginInput, collection, idType string, id int64) (string, error) {
+	doc := make(map[string]interface{}, 0)
+	err := input.MongoClient.Database(mongoDatabase).
+		Collection(collection).
+		FindOne(context.Background(), bson.D{{idType, id}}).Decode(&doc)
+	if err != nil {
+		log.Printf("get document failed, collection: %v, idType: %v, id: %v, err: %v", collection, idType, id, err)
+		return "", err
+	}
+	objectID, _, err := getEsIdFromDoc(doc, collection)
+	if err != nil {
+		log.Printf("get es id failed, err: %v", err)
+		return "", err
+	}
+	return objectID, nil
+}
+
+// analysisTableDocument analysis the table property document.
+func analysisTableDocument(propertyId, tableId string, originDoc map[string]interface{}) (map[string]interface{}, []string, error) {
+	document := make(map[string]interface{})
+	keywords := make([]string, 0)
+	originDoc = baseDataCleaning(originDoc)
+	delete(originDoc, mongoOptionId)
+	delete(originDoc, common.BKInstIDField)
+	jsonDoc, err := ccjson.MarshalToString(originDoc)
+	if err != nil {
+		return nil, keywords, err
+	}
+	keywords = append(keywords, analysisJSONKeywords(gjson.Parse(jsonDoc))...)
+	document[meta.TablePropertyName] = map[string]interface{}{
+		propertyId: map[string]interface{}{
+			tableId: keywords,
+		},
+	}
+	return document, keywords, nil
+}
+
+// IsTableInstCollection check if the collection is table inst collection.
+func IsTableInstCollection(c string) bool {
+	regex := regexp.MustCompile(`cc_ObjectBase_(.*)_pub_bk_(.*)#(.*)`)
+	return regex.MatchString(c)
+}
+
+// updateModelTableProperties update model table property.
+func updateModelTableProperties(document map[string]interface{}, attrs []map[string]interface{}) error {
+	if len(attrs) == 0 {
+		return nil
+	}
+	tableProperties := make(map[string]interface{})
+	for _, attribute := range attrs {
+		propertyID, err := getMetaIdToStr(attribute[common.BKPropertyIDField])
+		if err != nil {
+			log.Printf("get property id failed, err: %v", err)
+			continue
+		}
+		doc := make(map[string]interface{}, 0)
+		doc[common.BKPropertyIDField] = document[common.BKPropertyIDField]
+		doc[common.BKPropertyNameField] = document[common.BKPropertyNameField]
+		tableProperties[propertyID] = map[string]interface{}{
+			"0": doc,
+		}
+	}
+	document[meta.TablePropertyName] = tableProperties
+	return nil
+}
+
+// getDocumentIdType get the document id type.
+func getDocumentIdType(collection string) string {
+	var idType string
+	// analysis collection document id.
+	switch collection {
+	case common.BKTableNameBaseBizSet:
+		idType = common.BKBizSetIDField
+	case common.BKTableNameBaseApp:
+		idType = common.BKAppIDField
+	case common.BKTableNameBaseSet:
+		idType = common.BKSetIDField
+	case common.BKTableNameBaseModule:
+		idType = common.BKModuleIDField
+	case common.BKTableNameBaseHost:
+		idType = common.BKHostIDField
+	default:
+		idType = common.BKInstIDField
+	}
+	return idType
+}
+
+// getEsIndexByObjId get the es index by object id.
+func getEsIndexByObjId(objId string) string {
+	var index string
+	switch objId {
+	case common.BKInnerObjIDBizSet:
+		index = fmt.Sprintf("%s_%s", meta.IndexNameBizSet, indexVersionBizSet)
+	case common.BKInnerObjIDApp:
+		index = fmt.Sprintf("%s_%s", meta.IndexNameBiz, indexVersionBiz)
+	case common.BKInnerObjIDSet:
+		index = fmt.Sprintf("%s_%s", meta.IndexNameSet, indexVersionSet)
+	case common.BKInnerObjIDModule:
+		index = fmt.Sprintf("%s_%s", meta.IndexNameModule, indexVersionModule)
+	case common.BKInnerObjIDHost:
+		index = fmt.Sprintf("%s_%s", meta.IndexNameHost, indexVersionHost)
+	default:
+		index = fmt.Sprintf("%s_%s", meta.IndexNameObjectInstance, indexVersionObjectInstance)
+	}
+	return index
+}
+
+// getEsIdFromDoc get the es id from mongo document.
+func getEsIdFromDoc(doc map[string]interface{}, collection string) (string, string, error) {
+	metaID := doc[mongoMetaId]
+	documentID, ok := metaID.(primitive.ObjectID)
+	if !ok {
+		return "", "", errors.New("missing document metadata id")
+	}
+	var objectID, index string
+	objectID = documentID.Hex()
+	switch collection {
+	case common.BKTableNameBaseBizSet:
+		objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDBizSet)
+		index = fmt.Sprintf("%s_%s", meta.IndexNameBizSet, indexVersionBizSet)
+	case common.BKTableNameBaseApp:
+		objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDApp)
+		index = fmt.Sprintf("%s_%s", meta.IndexNameBiz, indexVersionBiz)
+	case common.BKTableNameBaseSet:
+		objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDSet)
+		index = fmt.Sprintf("%s_%s", meta.IndexNameSet, indexVersionSet)
+	case common.BKTableNameBaseModule:
+		objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDModule)
+		index = fmt.Sprintf("%s_%s", meta.IndexNameModule, indexVersionModule)
+	case common.BKTableNameBaseHost:
+		objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDHost)
+		index = fmt.Sprintf("%s_%s", meta.IndexNameHost, indexVersionHost)
+		index = fmt.Sprintf("%s_%s", meta.IndexNameHost, indexVersionHost)
+	case common.BKTableNameObjDes, common.BKTableNameObjAttDes:
+		objectID = fmt.Sprintf("%s:%s", objectID, common.BKInnerObjIDObject)
+		index = fmt.Sprintf("%s_%s", meta.IndexNameModel, indexVersionModel)
+	default:
+		objectID = fmt.Sprintf("%s:%s", objectID, commonObject)
+		index = fmt.Sprintf("%s_%s", meta.IndexNameObjectInstance, indexVersionObjectInstance)
+	}
+	return objectID, index, nil
 }
