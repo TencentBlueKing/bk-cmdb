@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 
 	"github.com/rentiansheng/xlsx"
 )
@@ -294,7 +295,7 @@ func buildAttrByPropertyType(rid, fieldName, cellValue string, rowIndex int, fie
 		userNames = strings.Trim(strings.Trim(userNames, " "), ",")
 		result[fieldName] = userNames
 	default:
-		if util.IsStrProperty(field.PropertyType) {
+		if valid.IsStrProperty(field.PropertyType) {
 			result[fieldName] = strings.TrimSpace(cellValue)
 		}
 	}

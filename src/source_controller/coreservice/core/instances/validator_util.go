@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
@@ -466,7 +467,7 @@ func fillLostBoolFieldValue(valData mapstr.MapStr, field metadata.Attribute) err
 		return nil
 	}
 
-	if err := util.ValidateBoolType(field.Default); err != nil {
+	if err := valid.ValidateBoolType(field.Default); err != nil {
 		return err
 	}
 
