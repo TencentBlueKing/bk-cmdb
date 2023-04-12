@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 )
 
 // ObjectOperationInterface object operation methods
@@ -544,7 +545,7 @@ func (o *object) isValid(kit *rest.Kit, isUpdate bool, data mapstr.MapStr) (*met
 	}
 
 	if !isUpdate || data.Exists(metadata.ModelFieldObjectID) {
-		if err := util.ValidModelIDField(data[metadata.ModelFieldObjectID],
+		if err := valid.ValidModelIDField(data[metadata.ModelFieldObjectID],
 			metadata.ModelFieldObjectID, kit.CCError); err != nil {
 			blog.Errorf("failed to valid the object id(%s), rid: %s", metadata.ModelFieldObjectID, kit.Rid)
 			return nil, err
@@ -552,7 +553,7 @@ func (o *object) isValid(kit *rest.Kit, isUpdate bool, data mapstr.MapStr) (*met
 	}
 
 	if !isUpdate || data.Exists(metadata.ModelFieldObjectName) {
-		if err := util.ValidModelNameField(data[metadata.ModelFieldObjectName],
+		if err := valid.ValidModelNameField(data[metadata.ModelFieldObjectName],
 			metadata.ModelFieldObjectName, kit.CCError); err != nil {
 			blog.Errorf("failed to valid the object name(%s), rid: %s", metadata.ModelFieldObjectName, kit.Rid)
 			return nil, kit.CCError.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectName+" "+err.Error())

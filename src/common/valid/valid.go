@@ -1,16 +1,21 @@
 /*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Tencent is pleased to support the open source community by making
+ * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
+ * Copyright (C) 2017 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ * We undertake not to change the open source license (MIT license) applicable
+ * to the current version of the project delivered to anyone in the future.
  */
 
-package util
+package valid
 
 import (
 	"encoding/json"
@@ -25,6 +30,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
+	"configcenter/src/common/util"
 )
 
 // TODO 解析options的方式和 src/common/metadata/attribute.go 里的 ParseXxxOption 合并为一套，现在这两个地方的解析方式不太一样
@@ -165,7 +171,7 @@ func ValidFieldTypeInt(option, defaultVal interface{}, rid string, errProxy ccEr
 	if defaultVal == nil {
 		return nil
 	}
-	defaultValue, err := GetIntByInterface(defaultVal)
+	defaultValue, err := util.GetIntByInterface(defaultVal)
 	if err != nil {
 		blog.Errorf("int type field default value is wrong, rid: %s", rid)
 		return err
@@ -192,11 +198,11 @@ func parseIntOptionValue(optMap map[string]interface{}, field string, defaultVal
 		return 0, fmt.Errorf("int option %s value %s is of string type", field, val)
 	}
 
-	if !IsNumeric(val) {
+	if !util.IsNumeric(val) {
 		return 0, fmt.Errorf("int option %s value %+v is not numeric", field, val)
 	}
 
-	return GetIntByInterface(val)
+	return util.GetIntByInterface(val)
 }
 
 // ValidFieldTypeFloat validate int or float field type's option default value
@@ -234,7 +240,7 @@ func ValidFieldTypeFloat(option, defaultVal interface{}, rid string, errProxy cc
 		return nil
 	}
 
-	defaultValue, err := GetFloat64ByInterface(defaultVal)
+	defaultValue, err := util.GetFloat64ByInterface(defaultVal)
 	if err != nil {
 		blog.Errorf("float type field default value is wrong, rid: %s", rid)
 		return err
@@ -262,11 +268,11 @@ func parseFloatOptionValue(optMap map[string]interface{}, field string, defaultV
 		return 0, fmt.Errorf("float option %s value %s is of string type", field, val)
 	}
 
-	if !IsNumeric(val) {
+	if !util.IsNumeric(val) {
 		return 0, fmt.Errorf("float option %s value %+v is not numeric", field, val)
 	}
 
-	return GetFloat64ByInterface(val)
+	return util.GetFloat64ByInterface(val)
 }
 
 // ValidFieldTypeList validate list field type's option and default value
@@ -309,7 +315,7 @@ func ValidFieldTypeList(option, defaultVal interface{}, rid string, errProxy ccE
 		return nil
 	}
 
-	listDefaultVal := GetStrByInterface(defaultVal)
+	listDefaultVal := util.GetStrByInterface(defaultVal)
 	for _, value := range valueList {
 		if listDefaultVal == value {
 			return nil
@@ -410,51 +416,6 @@ func IsInnerObject(objID string) bool {
 	return false
 }
 
-// IsNumeric judges if value is a number
-func IsNumeric(val interface{}) bool {
-	switch val.(type) {
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, json.Number:
-		return true
-	}
-
-	return false
-}
-
-// IsInteger judges if value is a integer
-func IsInteger(val interface{}) bool {
-	switch val.(type) {
-	case int, int8, int16, int32, int64, json.Number:
-		return true
-	}
-
-	return false
-}
-
-// IsBasicValue test if an interface is the basic supported golang type or not.
-func IsBasicValue(value interface{}) bool {
-	v := reflect.ValueOf(value)
-
-	switch v.Kind() {
-	case reflect.Bool,
-		reflect.Int,
-		reflect.Int8,
-		reflect.Int16,
-		reflect.Int32,
-		reflect.Int64,
-		reflect.Uint,
-		reflect.Uint8,
-		reflect.Uint16,
-		reflect.Uint32,
-		reflect.Uint64,
-		reflect.Float32,
-		reflect.Float64,
-		reflect.String:
-		return true
-	default:
-		return false
-	}
-}
-
 // ValidateStringType validate if the value is a string type
 func ValidateStringType(value interface{}) error {
 	if reflect.TypeOf(value).Kind() != reflect.String {
@@ -492,12 +453,12 @@ func ValidateDatetimeType(value interface{}) error {
 	}
 
 	// timestamp type is supported
-	if IsNumeric(value) {
+	if util.IsNumeric(value) {
 		return nil
 	}
 
 	// string type with time format is supported
-	if _, ok := IsTime(value); ok {
+	if _, ok := util.IsTime(value); ok {
 		return nil
 	}
 	return fmt.Errorf("value(%+v) is not of time type", value)

@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/criteria/enumor"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -181,7 +182,7 @@ func validateFieldValue(v interface{}, typ enumor.FieldType) error {
 		}
 
 	case enumor.Time:
-		if err := util.ValidateDatetimeType(v); err != nil {
+		if err := valid.ValidateDatetimeType(v); err != nil {
 			return err
 		}
 
