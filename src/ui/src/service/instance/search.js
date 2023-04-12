@@ -21,7 +21,7 @@ const find = async ({ bk_obj_id: objId, params, config }) => {
     return { count, info: info || [] }
   } catch (error) {
     console.error(error)
-    return { count: 0, info: [] }
+    return Promise.reject(error)
   }
 }
 

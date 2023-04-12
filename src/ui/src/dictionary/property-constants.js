@@ -26,7 +26,7 @@ export const PROPERTY_TYPES = Object.freeze({
   LIST: 'list',
   ORGANIZATION: 'organization',
   ENUMMULTI: 'enummulti',
-  // ENUMQUOTE: 'enumquote',
+  ENUMQUOTE: 'enumquote',
   MAP: 'map',
   TABLE: 'table',
   SERVICE_TEMPLATE: 'service-template',
@@ -46,8 +46,8 @@ export const PROPERTY_TYPE_NAMES = Object.freeze({
   [PROPERTY_TYPES.BOOL]: t('bool'),
   [PROPERTY_TYPES.LIST]: t('列表'),
   [PROPERTY_TYPES.ORGANIZATION]: t('组织'),
-  [PROPERTY_TYPES.ENUMMULTI]: t('枚举(多选)')
-  // [PROPERTY_TYPES.ENUMQUOTE]: t('枚举(引用)')
+  [PROPERTY_TYPES.ENUMMULTI]: t('枚举(多选)'),
+  [PROPERTY_TYPES.ENUMQUOTE]: t('枚举(引用)')
 })
 
 export const PROPERTY_TYPE_LIST = [
@@ -71,10 +71,10 @@ export const PROPERTY_TYPE_LIST = [
     id: PROPERTY_TYPES.ENUMMULTI,
     name: PROPERTY_TYPE_NAMES[PROPERTY_TYPES.ENUMMULTI]
   },
-  // {
-  //   id: PROPERTY_TYPES.ENUMQUOTE,
-  //   name: PROPERTY_TYPE_NAMES[PROPERTY_TYPES.ENUMQUOTE]
-  // },
+  {
+    id: PROPERTY_TYPES.ENUMQUOTE,
+    name: PROPERTY_TYPE_NAMES[PROPERTY_TYPES.ENUMQUOTE]
+  },
   {
     id: PROPERTY_TYPES.DATE,
     name: PROPERTY_TYPE_NAMES[PROPERTY_TYPES.DATE]

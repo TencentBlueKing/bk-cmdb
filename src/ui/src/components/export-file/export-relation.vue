@@ -32,7 +32,7 @@
         </div>
       </div>
       <bk-table class="relation-table"
-        ref="table"
+        ref="tableRef"
         :outer-border="false"
         :max-height="$APP.height - 280"
         :data="computedRelations"
@@ -79,6 +79,7 @@
   import store from '@/store'
   import { OPERATION } from '@/dictionary/iam-auth'
   import { translateAuth } from '@/setup/permission'
+  import { isViewAuthFreeModel } from '@/service/auth'
 
   export default {
     name: 'export-relation',
@@ -87,7 +88,7 @@
       const objectUniqueId = toRef(state, 'object_unique_id')
       const currentModelId = toRef(state, 'bk_obj_id')
       const selectedRelations = toRef(state, 'relations')
-      const table = ref(null)
+      const tableRef = ref(null)
       // 获取当前模型的唯一校验，用于导出的参数object_unique_id
       const [{ uniqueChecks: modelUniqueChecks, pending: modelUniquePending }] = useUniqueCheck(
         currentModelId,
@@ -153,7 +154,7 @@
         state.object_unique_id.value = modelUniqueCheck?.id
       }
       const clearSelectedUniqueCheck = (clearSelf = true) => {
-        setupContext.refs.table.clearSelection() // 这种方式在Vue3.0中不可使用
+        setupContext.refs.tableRef.clearSelection() // 这种方式在Vue3.0中不可使用
         clearSelf && (state.object_unique_id.value = '')
         computedRelations.value.forEach((relation) => {
           removeRelation(relation.relation_obj_id)
@@ -174,8 +175,8 @@
         if (selected) {
           setSelectionUniqueCheck(relation)
           const relationModel = store.getters['objectModelClassify/getModelById'](relation.relation_obj_id)
-          // 内置模型查看权限默认开放，无需鉴权
-          if ([1, 2, 3, 4, 243].includes(relationModel.id)) return
+          // 过滤掉免鉴权模型
+          if (isViewAuthFreeModel({ id: relationModel.id })) return
           const auth = { type: OPERATION.R_MODEL, relation: [relationModel.id] }
           const isView = store.getters['auth/isViewAuthed'](auth)
           if (!isView) {
@@ -183,7 +184,7 @@
             const { permissionModal } = window
             permissionModal && permissionModal.show(permission)
             nextTick(() => {
-              table.value.toggleRowSelection(relation, false)
+              tableRef.value.toggleRowSelection(relation, false)
             })
           }
         } else {
@@ -191,21 +192,23 @@
         }
       }
       const handleSelectAll = (selection) => {
-        const permissionList = []
-        selection.forEach((item) => {
+        const authList = []
+        // 过滤掉免鉴权模型
+        const filterSelection = selection.filter((item) => {
           const relationModel = store.getters['objectModelClassify/getModelById'](item.relation_obj_id)
-          // 内置模型查看权限默认开放，无需鉴权
-          if ([1, 2, 3, 4, 243].includes(relationModel.id)) return
+          return !isViewAuthFreeModel({ id: relationModel.id })
+        })
+        filterSelection.forEach((item) => {
+          const relationModel = store.getters['objectModelClassify/getModelById'](item.relation_obj_id)
           const auth = { type: OPERATION.R_MODEL, relation: [relationModel.id] }
           const isView = store.getters['auth/isViewAuthed'](auth)
           if (!isView) {
-            const permission = translateAuth(auth)
-            permissionList.push(...permission?.actions[0]?.related_resource_types[0]?.instances)
-            permission.actions[0].related_resource_types[0].instances = permissionList
+            authList.push(auth)
+            const permission = translateAuth(authList)
             const { permissionModal } = window
             permissionModal && permissionModal.show(permission)
             nextTick(() => {
-              table.value.clearSelection()
+              tableRef.value.clearSelection()
             })
           }
         })
@@ -237,7 +240,7 @@
         handleSelectAll,
         handleUniqueCheckChange,
         modelUniqueChecks,
-        table
+        tableRef
       }
     },
     computed: {
@@ -269,7 +272,7 @@
         }).join(' + ')
       },
       isUniqueCheckDisabled(row) {
-        return !this.$refs.table.selection.includes(row)
+        return !this.$refs.tableRef.selection.includes(row)
       }
     }
   }

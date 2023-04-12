@@ -43,22 +43,24 @@
 
   const search = async (keyword) => {
     loading.value = true
-    const results = await getModelInstanceOptions(
-      props.objId, keyword, props.value,
-      { page: { limit: 50 } },
-      { globalPermission: false }
-    )
-    if (results.length === 0) {
-      placeholder.value = t('该字段暂无权限配置，点击申请权限')
-      localValue.value = props.multiple ? [] : ''
-      disabled.value = true
-    } else {
+    try {
+      const results = await getModelInstanceOptions(
+        props.objId, keyword, props.value,
+        { page: { limit: 50 } },
+        { globalPermission: false }
+      )
       placeholder.value = t('请选择模型实例')
       localValue.value = getInitValue()
       disabled.value = false
+      list.value = results
+      loading.value = false
+    } catch ({ permission }) {
+      if (permission) {
+        localValue.value = resetValue()
+        disabled.value = true
+      }
+      loading.value = false
     }
-    list.value = results
-    loading.value = false
   }
 
   const remoteSearch = debounce(search, 200)
@@ -111,31 +113,33 @@
 </script>
 
 <template>
-  <cmdb-auth-mask :auth="auth" :authorized="!disabled">
-    <div class="model-instance-selector">
-      <bk-select
-        :class="['selector', { 'active': isActive }]"
-        ref="selector"
-        v-bind="$attrs"
-        v-model="localValue"
-        searchable
-        :multiple="multiple"
-        :placeholder="placeholder"
-        :disabled="disabled"
-        font-size="normal"
-        :loading="loading"
-        :is-tag-width-limit="true"
-        :remote-method="remoteSearch"
-        @toggle="handleToggle">
-        <bk-option v-for="option in list"
-          :key="option.id"
-          :id="option.id"
-          :name="option.name">
-        </bk-option>
-      </bk-select>
-    </div>
-  </cmdb-auth-mask>
-
+  <div class="model-instance-selector">
+    <bk-select
+      :class="['selector', { 'active': isActive }]"
+      ref="selector"
+      v-bind="$attrs"
+      v-model="localValue"
+      searchable
+      :multiple="multiple"
+      :placeholder="placeholder"
+      :disabled="disabled"
+      font-size="normal"
+      :loading="loading"
+      :is-tag-width-limit="true"
+      :remote-method="remoteSearch"
+      @toggle="handleToggle">
+      <bk-option v-for="option in list"
+        :key="option.id"
+        :id="option.id"
+        :name="option.name">
+      </bk-option>
+      <template v-if="disabled" slot="trigger">
+        <cmdb-auth-mask class="auth-mask" :auth="auth" :authorized="!disabled">
+          <p class="auth-tips">{{t('该字段暂无权限配置，点击申请权限')}}</p>
+        </cmdb-auth-mask>
+      </template>
+    </bk-select>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -150,5 +154,10 @@
                 z-index: 2;
             }
           }
+        .auth-tips{
+          font-size: 12px;
+          color: #c4c6cc;
+          padding: 0 10px;
+        }
     }
 </style>
