@@ -57,6 +57,7 @@ import routerSubview from './other/router-subview.vue'
 import organization from './form/organization.vue'
 import propertyValue from './other/property-value.vue'
 import tagInput from './tag-input/tag-input.vue'
+import innertable from './form/inner-table/index.vue'
 const install = (Vue) => {
   const components = [
     businessSelector,
@@ -105,7 +106,8 @@ const install = (Vue) => {
     routerSubview,
     organization,
     propertyValue,
-    tagInput
+    tagInput,
+    innertable
   ]
   components.forEach((component) => {
     Vue.component(component.name, component)

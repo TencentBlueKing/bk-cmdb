@@ -30,7 +30,8 @@ export const PROPERTY_TYPES = Object.freeze({
   MAP: 'map',
   TABLE: 'table',
   SERVICE_TEMPLATE: 'service-template',
-  TOPOLOGY: 'topology'
+  TOPOLOGY: 'topology',
+  INNERTABLE: 'innertable'
 })
 
 export const PROPERTY_TYPE_NAMES = Object.freeze({
