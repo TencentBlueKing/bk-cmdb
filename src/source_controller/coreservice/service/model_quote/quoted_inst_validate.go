@@ -182,3 +182,37 @@ func getLostFieldDefaultValue(kit *rest.Kit, attr metadata.Attribute) interface{
 
 	return nil
 }
+
+func validateUpdateQuotedInst(kit *rest.Kit, objID string, instance mapstr.MapStr) error {
+	_, attrMap, err := getQuoteAttributes(kit, objID)
+	if err != nil {
+		return err
+	}
+
+	for key, val := range instance {
+		if key == common.BKInstIDField || key == common.BKFieldID {
+			delete(instance, key)
+			continue
+		}
+
+		attr, ok := attrMap[key]
+		if !ok || !attr.IsEditable {
+			delete(instance, key)
+			continue
+		}
+
+		if str, ok := val.(string); ok {
+			val = strings.TrimSpace(str)
+			instance[key] = val
+		}
+
+		rawErr := attr.Validate(kit.Ctx, val, key)
+		if rawErr.ErrCode != 0 {
+			err := rawErr.ToCCError(kit.CCError)
+			blog.Errorf("validate %s inst failed, err: %v, key: %s, val: %v, rid: %s", objID, err, key, val, kit.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
