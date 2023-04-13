@@ -539,7 +539,40 @@ func (s *coreService) DeleteModelAttribute(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.ModelOperation().DeleteModelAttributes(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
-// SearchModelAttributesByCondition TODO
+// SearchModelAttrsWithTableByCondition querying model properties containing table types
+// NOTICE: include table attributes
+func (s *coreService) SearchModelAttrsWithTableByCondition(ctx *rest.Contexts) {
+
+	inputData := metadata.QueryCondition{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result, err := s.core.ModelOperation().SearchModelAttrsWithTableByCondition(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespEntityWithError(result, err)
+		return
+	}
+
+	// translate
+	lang := s.Language(ctx.Kit.Header)
+	for index := range result.Info {
+		if result.Info[index].IsPre || needTranslateObjMap[result.Info[index].ObjectID] {
+			result.Info[index].PropertyName = s.TranslatePropertyName(lang, &result.Info[index])
+			result.Info[index].Placeholder = s.TranslatePlaceholder(lang, &result.Info[index])
+			if result.Info[index].PropertyType == common.FieldTypeEnumMulti {
+				result.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &result.Info[index],
+					result.Info[index].Option)
+			}
+		}
+	}
+
+	ctx.RespEntity(result)
+}
+
+// SearchModelAttributesByCondition query for model attributes that do not contain table types
+// NOTICE: exclude table attributes
 func (s *coreService) SearchModelAttributesByCondition(ctx *rest.Contexts) {
 
 	inputData := metadata.QueryCondition{}

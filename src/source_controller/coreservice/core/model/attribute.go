@@ -109,7 +109,7 @@ func (m *modelAttribute) CreateTableModelAttributes(kit *rest.Kit, objID string,
 			continue
 		}
 		id, err := m.saveTableAttr(kit, attr)
-		if nil != err {
+		if err != nil {
 			blog.Errorf("failed to save the table attribute(%#v), err: %v, rid: %s", attr, err, kit.Rid)
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
@@ -140,7 +140,7 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 		},
 	}
 
-	if err := m.model.isValid(kit, objID); nil != err {
+	if err := m.model.isValid(kit, objID); err != nil {
 		blog.Errorf("CreateModelAttributes failed, validate model(%s) failed, err: %s, rid: %s", objID, err.Error(), kit.Rid)
 		return dataResult, err
 	}
@@ -182,7 +182,7 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 		attr.OwnerID = kit.SupplierAccount
 		_, exists, err := m.isExists(kit, attr.ObjectID, attr.PropertyID, attr.BizID)
 		blog.V(5).Infof("CreateModelAttributes isExists info. property id:%s, bizID:%#v, exit:%v, rid:%s", attr.PropertyID, attr.BizID, exists, kit.Rid)
-		if nil != err {
+		if err != nil {
 			blog.Errorf("CreateModelAttributes failed, attribute field propertyID(%s) exists, err: %s, rid: %s", attr.PropertyID, err.Error(), kit.Rid)
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
@@ -196,7 +196,7 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 			continue
 		}
 		id, err := m.save(kit, attr)
-		if nil != err {
+		if err != nil {
 			blog.Errorf("CreateModelAttributes failed, failed to save the attribute(%#v), err: %s, rid: %s", attr, err.Error(), kit.Rid)
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
@@ -220,7 +220,7 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputPa
 		Exceptions: []metadata.ExceptionResult{},
 	}
 
-	if err := m.model.isValid(kit, objID); nil != err {
+	if err := m.model.isValid(kit, objID); err != nil {
 		return dataResult, err
 	}
 
@@ -236,7 +236,7 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputPa
 	for attrIdx, attr := range inputParam.Attributes {
 
 		existsAttr, exists, err := m.isExists(kit, attr.ObjectID, attr.PropertyID, attr.BizID)
-		if nil != err {
+		if err != nil {
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
 		}
@@ -247,7 +247,7 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputPa
 			cond.Element(&mongo.Eq{Key: metadata.AttributeFieldID, Val: existsAttr.ID})
 
 			_, err := m.update(kit, mapstr.NewFromStruct(attr, "field"), cond)
-			if nil != err {
+			if err != nil {
 				blog.Errorf("SetModelAttributes failed, failed to update the attribute(%#v) by the condition(%#v), err: %s, rid: %s", attr, cond.ToMapStr(), err.Error(), kit.Rid)
 				addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 				continue
@@ -259,7 +259,7 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputPa
 			continue
 		}
 		id, err := m.save(kit, attr)
-		if nil != err {
+		if err != nil {
 			blog.Errorf("SetModelAttributes failed, failed to save the attribute(%#v), err: %s, rid: %s", attr, err.Error(), kit.Rid)
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
@@ -284,13 +284,13 @@ func (m *modelAttribute) UpdateModelAttributes(kit *rest.Kit, objID string, inpu
 	}
 
 	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
-	if nil != err {
+	if err != nil {
 		blog.Errorf("UpdateModelAttributes failed, failed to convert mapstr(%#v) into a condition object, err: %s, rid: %s", inputParam.Condition, err.Error(), kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
 
 	cnt, err := m.update(kit, inputParam.Data, cond)
-	if nil != err {
+	if err != nil {
 		blog.ErrorJSON("UpdateModelAttributes failed, update attributes failed, model:%s, attributes:%s, condition: %s, err: %s, rid: %s", inputParam.Data, objID, cond, err.Error(), kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
@@ -371,13 +371,13 @@ func (m *modelAttribute) UpdateModelAttributeIndex(kit *rest.Kit, objID string, 
 func (m *modelAttribute) UpdateModelAttributesByCondition(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
 	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
-	if nil != err {
+	if err != nil {
 		blog.Errorf("UpdateModelAttributesByCondition failed, failed to convert mapstr(%#v) into a condition object, err: %s, rid: %s", inputParam.Condition, err.Error(), kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
 
 	cnt, err := m.update(kit, inputParam.Data, cond)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("UpdateModelAttributesByCondition failed, failed to update fields (%#v) by condition(%#v), err: %s, rid: %s", inputParam.Data, cond.ToMapStr(), err.Error(), kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
@@ -394,7 +394,7 @@ func (m *modelAttribute) DeleteModelAttributes(kit *rest.Kit, objID string, inpu
 	}
 
 	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
-	if nil != err {
+	if err != nil {
 		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", kit.Rid, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
@@ -428,22 +428,54 @@ func (m *modelAttribute) SearchModelAttributes(kit *rest.Kit, objID string, inpu
 	}, nil
 }
 
-// SearchModelAttributesByCondition TODO
-func (m *modelAttribute) SearchModelAttributesByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
+// SearchModelAttributesByCondition query for model attributes that do not contain table types
+func (m *modelAttribute) SearchModelAttributesByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (
+	*metadata.QueryModelAttributeDataResult, error) {
 
 	dataResult := &metadata.QueryModelAttributeDataResult{
 		Info: []metadata.Attribute{},
 	}
-
+	// NOTICE: exclude table attributes
+	inputParam.Condition = map[string]interface{}{
+		common.BKDBAND: []map[string]interface{}{
+			inputParam.Condition,
+			{
+				common.BKPropertyTypeField: mapstr.MapStr{
+					common.BKDBNE: common.FieldTypeInnerTable,
+				},
+			},
+		},
+	}
 	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
 
 	attrResult, err := m.searchWithSort(kit, inputParam)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to search the attributes of the model(%+v), error info is %s", kit.Rid, inputParam, err.Error())
+	if err != nil {
+		blog.Errorf("failed to search the attributes of the model(%+v), err: %v, rid", inputParam, err, kit.Rid)
 		return &metadata.QueryModelAttributeDataResult{}, err
 	}
 
 	dataResult.Count = int64(len(attrResult))
 	dataResult.Info = attrResult
+	return dataResult, nil
+}
+
+// SearchModelAttrsWithTableByCondition query includes table field model properties.
+func (m *modelAttribute) SearchModelAttrsWithTableByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (
+	*metadata.QueryModelAttributeDataResult, error) {
+
+	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
+
+	dataResult := &metadata.QueryModelAttributeDataResult{
+		Info: []metadata.Attribute{},
+	}
+	attrs, err := m.searchWithSort(kit, inputParam)
+	if err != nil {
+		blog.Errorf("failed to search the attrs with table of the model(%+v), err: %v, rid: %s",
+			inputParam, err, kit.Rid)
+		return dataResult, err
+	}
+
+	dataResult.Count = int64(len(attrs))
+	dataResult.Info = attrs
 	return dataResult, nil
 }

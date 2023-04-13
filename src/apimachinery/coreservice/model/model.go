@@ -63,6 +63,8 @@ type ModelClientInterface interface {
 	// deprecated, only for old api
 	UpdateModelAttrsByCondition(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
 		*metadata.UpdatedCount, error)
+	ReadModelAttrsWithTableByCondition(ctx context.Context, h http.Header, bizID int64, input *metadata.QueryCondition) (
+		*metadata.QueryModelAttributeDataResult, error)
 	DeleteModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (
 		resp *metadata.DeletedOptionResult, err error)
 	ReadModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (

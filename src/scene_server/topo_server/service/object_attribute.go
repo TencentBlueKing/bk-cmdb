@@ -162,6 +162,81 @@ func parseRequestBizID(ctx *rest.Contexts) (int64, error) {
 	return bizID, nil
 }
 
+// SearchObjectAttributeForWeb search form field attributes provided to the front end.
+func (s *Service) SearchObjectAttributeForWeb(ctx *rest.Contexts) {
+
+	option := new(MapStrWithModelBizID)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	kit := ctx.Kit
+
+	data := option.Data
+	util.AddModelBizIDCondition(data, option.ModelBizID)
+	data[metadata.AttributeFieldIsSystem] = false
+	data[metadata.AttributeFieldIsAPI] = false
+
+	basePage := metadata.BasePage{}
+	if data.Exists(metadata.PageName) {
+		page, err := data.MapStr(metadata.PageName)
+		if err != nil {
+			blog.Errorf("page info convert to mapstr failed, err: %v, rid: %s", err, kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		if err := mapstruct.Decode2Struct(page, &basePage); err != nil {
+			blog.Errorf("page info convert to struct failed, page: %v, err: %v, rid: %s", page, err, kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		data.Remove(metadata.PageName)
+	}
+
+	cond := &metadata.QueryCondition{
+		Condition:      data,
+		Page:           basePage,
+		DisableCounter: true,
+	}
+
+	attrs := make([]*metadata.ObjAttDes, 0)
+	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrsWithTableByCondition(kit.Ctx, kit.Header,
+		option.ModelBizID, cond)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(resp.Info) == 0 {
+		ctx.RespEntity(attrs)
+		return
+	}
+
+	grpMap, err := s.getPropertyGroupName(kit, resp.Info, option.ModelBizID)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	for _, attr := range resp.Info {
+		attrInfo := &metadata.ObjAttDes{
+			Attribute: attr,
+		}
+		grpName, ok := grpMap[attr.PropertyGroup]
+		if !ok {
+			blog.Errorf("failed to get property group name, attr: %+v, propertyGroup: %v, rid: %s",
+				attr, attr.PropertyGroup, kit.Rid)
+			ctx.RespAutoError(kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKPropertyNameField))
+			return
+		}
+		attrInfo.PropertyGroupName = grpName
+		attrs = append(attrs, attrInfo)
+	}
+
+	ctx.RespEntity(attrs)
+}
+
 // SearchObjectAttribute search the object attributes
 func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 	dataWithModelBizID := MapStrWithModelBizID{}
@@ -195,12 +270,12 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		Page:      basePage,
 	}
 	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(ctx.Kit.Ctx, ctx.Kit.Header, queryCond)
-	if nil != err {
+	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	grpMap, err := s.getPropertyGroupName(ctx, resp.Info, dataWithModelBizID.ModelBizID)
+	grpMap, err := s.getPropertyGroupName(ctx.Kit, resp.Info, dataWithModelBizID.ModelBizID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -412,7 +487,7 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 		return
 	}
 
-	grpMap, err := s.getPropertyGroupName(ctx, result.Info, dataWithModelBizID.ModelBizID)
+	grpMap, err := s.getPropertyGroupName(ctx.Kit, result.Info, dataWithModelBizID.ModelBizID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -439,7 +514,7 @@ func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
 	ctx.RespEntity(hostAttributes)
 }
 
-func (s *Service) getPropertyGroupName(ctx *rest.Contexts, attrs []metadata.Attribute,
+func (s *Service) getPropertyGroupName(kit *rest.Kit, attrs []metadata.Attribute,
 	modelBizID int64) (map[string]string, error) {
 	if len(attrs) == 0 {
 		return make(map[string]string), nil
@@ -460,9 +535,9 @@ func (s *Service) getPropertyGroupName(ctx *rest.Contexts, attrs []metadata.Attr
 		Condition:      grpCond,
 		DisableCounter: true,
 	}
-	rsp, err := s.Engine.CoreAPI.CoreService().Model().ReadAttributeGroupByCondition(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	rsp, err := s.Engine.CoreAPI.CoreService().Model().ReadAttributeGroupByCondition(kit.Ctx, kit.Header, cond)
 	if err != nil {
-		blog.Errorf("failed to get attr group, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("failed to get attr group, err: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, err
 	}
 

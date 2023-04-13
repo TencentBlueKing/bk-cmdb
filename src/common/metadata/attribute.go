@@ -1426,8 +1426,7 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 	}
 }
 
-// ValidTableDefaultAttr legality judgment of the default field of the form field.
-// todo: 合入最新代码后可能需要调整且需要移到valid文件夹
+// ValidTableDefaultAttr judging the legitimacy of the basic type in the form field.
 func (attribute *Attribute) ValidTableDefaultAttr(ctx context.Context, val interface{}) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if attribute == nil {
@@ -1452,7 +1451,7 @@ func (attribute *Attribute) ValidTableDefaultAttr(ctx context.Context, val inter
 	case common.FieldTypeBool:
 		return attribute.validBool(ctx, val, attribute.PropertyID)
 	default:
-		blog.Errorf("type error, type: %v, rid: %s", attribute.PropertyType, rid)
+		blog.Errorf("type error, type: %s, rid: %s", attribute.PropertyType, rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{attribute.PropertyType},
