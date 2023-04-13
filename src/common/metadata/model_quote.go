@@ -23,6 +23,14 @@ import (
 	"configcenter/src/common/mapstr"
 )
 
+const (
+	// HiddenType added model classification type "hidden"
+	// for internal hidden models
+	HiddenType = "hidden"
+	// modelQuoteSpecifier special connector used to generate Model Quote ObjID
+	modelQuoteSpecifier = "#"
+)
+
 // ModelQuoteRelation model relationship table information.
 // For example, the disk table field on the host is a table type,
 // then DestModel is bk_host_disk, SrcModel is host, PropertyID is
@@ -171,10 +179,10 @@ func (c *ListQuotedInstOption) Validate() errors.RawErrorInfo {
 
 // GenerateModelQuoteObjID generate the obj id referenced by the model.
 func GenerateModelQuoteObjID(srcModel, propertyID string) string {
-	return "bk_" + srcModel + "#" + propertyID
+	return "bk_" + srcModel + modelQuoteSpecifier + propertyID
 }
 
 // GenerateModelQuoteObjName generate the obj name referenced by the model.
 func GenerateModelQuoteObjName(srcModel, propertyName string) string {
-	return "bk_" + srcModel + "#" + propertyName
+	return "bk_" + srcModel + modelQuoteSpecifier + propertyName
 }

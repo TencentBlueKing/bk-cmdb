@@ -24,14 +24,13 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
-
-const hiddenType = "hidden"
 
 func addModelQuoteRelationCollection(ctx context.Context, db dal.RDB) error {
 
@@ -52,7 +51,7 @@ func addModelQuoteRelationCollection(ctx context.Context, db dal.RDB) error {
 	return nil
 }
 
-func addHiddenClassification(ctx context.Context, db dal.RDB) error {
+func addHiddenClassification(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	result := make([]metadata.Classification, 0)
 	filter := map[string]interface{}{
@@ -86,8 +85,8 @@ func addHiddenClassification(ctx context.Context, db dal.RDB) error {
 
 	classification := metadata.Classification{
 		ID:                 int64(id),
-		OwnerID:            "0",
-		ClassificationType: hiddenType,
+		OwnerID:            conf.OwnerID,
+		ClassificationType: metadata.HiddenType,
 		ClassificationID:   "bk_table_classification",
 		ClassificationName: "表格分类",
 	}

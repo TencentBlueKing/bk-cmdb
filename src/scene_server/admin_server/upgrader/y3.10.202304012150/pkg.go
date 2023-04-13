@@ -42,7 +42,7 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		return err
 	}
 
-	if err = addHiddenClassification(ctx, db); err != nil {
+	if err = addHiddenClassification(ctx, db, conf); err != nil {
 		blog.Errorf("upgrade y3.10.202304012150 add hidden table classification failed, err: %v", err)
 		return err
 	}
