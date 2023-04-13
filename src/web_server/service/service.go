@@ -133,6 +133,9 @@ func (s *Service) WebService() *gin.Engine {
 	ws.GET("/healthz", s.Healthz)
 	ws.GET("/version", ginservice.Version)
 
+	// table instance, only for ui, should be removed later
+	s.initModelQuote(ws)
+
 	// if no route, redirect to 404 page
 	ws.NoRoute(func(c *gin.Context) {
 		c.Redirect(302, "/#/404")

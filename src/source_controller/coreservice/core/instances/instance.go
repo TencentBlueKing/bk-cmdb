@@ -71,6 +71,13 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 		return nil, err
 	}
 
+	tableData := mapstr.New()
+	for key, val := range inputParam.Data {
+		if validator.properties[key].PropertyType == common.FieldTypeInnerTable {
+			tableData[key] = val
+		}
+	}
+
 	err = m.validCreateInstanceData(kit, objID, inputParam.Data, validator)
 	if nil != err {
 		blog.Errorf("CreateModelInstance failed, validCreateInstanceData error:%v, objID:%s, data:%#v, rid:%s", err, objID, inputParam.Data, rid)
@@ -81,6 +88,11 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 	if err != nil {
 		blog.ErrorJSON("CreateModelInstance failed, save error:%v, objID:%s, data:%s, rid:%s",
 			err, objID, inputParam.Data, kit.Rid)
+		return nil, err
+	}
+
+	// attach the instance with the quoted instances
+	if err = m.dependent.AttachQuotedInst(kit, objID, id, tableData); err != nil {
 		return nil, err
 	}
 
