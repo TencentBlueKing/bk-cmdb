@@ -18,7 +18,7 @@ import (
 
 // SetQueryOwner returns condition that in default ownerID and request ownerID
 func SetQueryOwner(condition map[string]interface{}, ownerID string) map[string]interface{} {
-	if nil == condition {
+	if condition == nil {
 		condition = make(map[string]interface{})
 	}
 	if ownerID == common.BKSuperOwnerID {

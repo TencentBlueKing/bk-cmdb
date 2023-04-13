@@ -447,6 +447,34 @@ func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metada
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
+// CascadeDeleteTableModel delete tabular models in a cascading manner
+func (m *modelManager) CascadeDeleteTableModel(kit *rest.Kit, intput metadata.DeleteTableOption) error {
+	// NOTE: just single model cascade delete action now.
+	condMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
+	cond, _ := mongo.NewConditionFromMapStr(condMap)
+	cond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: intput.ObjID})
+
+	// NOTE: the func logics supports cascade delete models in batch mode.
+	// You can change the condition to index many models.
+	models, err := m.search(kit, cond)
+	if err != nil {
+		blog.Errorf("search target models failed, cond: %s, err: %v, rid: %s", cond.ToMapStr(), err, kit.Rid)
+		return err
+	}
+
+	if len(models) == 0 {
+		return nil
+	}
+
+	// cascade delete.
+	if err := m.cascadeDeleteTable(kit, intput); err != nil {
+		blog.Errorf("cascade delete model failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
 // SearchModel TODO
 func (m *modelManager) SearchModel(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error) {
 

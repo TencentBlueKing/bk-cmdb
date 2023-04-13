@@ -37,7 +37,7 @@ import (
 type AttributeOperationInterface interface {
 	CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error)
 	CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error)
-	DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, modelBizID int64) error
+	DeleteObjectAttribute(kit *rest.Kit, attrItems []metadata.Attribute) error
 	UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error
 	// CreateObjectBatch upsert object attributes
 	CreateObjectBatch(kit *rest.Kit, data map[string]metadata.ImportObjectData) (mapstr.MapStr, error)
@@ -772,30 +772,17 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 }
 
 // DeleteObjectAttribute delete object attribute
-func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, modelBizID int64) error {
-	util.AddModelBizIDCondition(cond, modelBizID)
-	queryCond := &metadata.QueryCondition{
-		Condition: cond,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-	attrItems, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, queryCond)
-	if err != nil {
-		blog.Errorf("failed to find the attributes by the cond(%v), err: %v, rid: %s", cond, err, kit.Rid)
-		return err
-	}
-
-	if len(attrItems.Info) == 0 {
-		blog.Errorf("not find the attributes by the cond(%v), rid: %s", cond, kit.Rid)
-		return nil
-	}
+func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, attrItems []metadata.Attribute) error {
 
 	auditLogArr := make([]metadata.AuditLog, 0)
 	attrIDMap := make(map[string][]int64, 0)
 	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
-	for _, attrItem := range attrItems.Info {
+	for _, attrItem := range attrItems {
+		if attrItem.PropertyType == common.FieldTypeInnerTable {
+			blog.Errorf("property is error, attrItem: %+v, rid: %s", attrItem, kit.Rid)
+			return kit.CCError.New(common.CCErrTopoObjectSelectFailed, common.BKPropertyTypeField)
+		}
 		// generate audit log of model attribute.
 		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, attrItem.ID, &attrItem)
 		if err != nil {

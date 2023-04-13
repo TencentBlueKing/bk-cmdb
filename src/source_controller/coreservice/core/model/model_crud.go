@@ -183,6 +183,56 @@ func (m *modelManager) cascadeDelete(kit *rest.Kit, objIDs []string) (uint64, er
 	return cnt, nil
 }
 
+// cascadeDeleteTable delete the fields of the tabular model, grouping. model etc.
+func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTableOption) error {
+
+	obj := metadata.GenerateModelQuoteObjID(input.ObjID, input.PropertyID)
+
+	// delete model property attribute.
+	modelDesCond := mapstr.MapStr{
+		common.BKFieldID: input.ID,
+	}
+	modelDesCond = util.SetQueryOwner(modelDesCond, kit.SupplierAccount)
+
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Delete(kit.Ctx, modelDesCond); err != nil {
+		blog.Errorf("delete model attribute failed, err: %v, cond: %+v, rid: %s", err, modelDesCond, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	// delete table model quote relation.
+	filter := mapstr.MapStr{
+		common.BKDestModelField:  obj,
+		common.BKSrcModelField:   input.ObjID,
+		common.BKPropertyIDField: input.PropertyID,
+	}
+	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
+
+	if err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Delete(kit.Ctx, filter); err != nil {
+		blog.Errorf("delete model quote relations failed, err: %v, filter: %+v, rid: %v", err, filter, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	cond := mapstr.MapStr{
+		common.BKObjIDField: obj,
+	}
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+
+	// delete model property group.
+	if err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Delete(kit.Ctx, cond); err != nil {
+		blog.Errorf("delete model attribute group failed, err: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	// delete table model.
+	_, err := mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, cond)
+	if err != nil {
+		blog.Errorf("delete model failed, err: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	return nil
+}
+
 // createObjectShardingTables creates new collections for new model,
 // which create new object instance and association collections, and fix missing indexes.
 func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string, isMainLine bool) error {
