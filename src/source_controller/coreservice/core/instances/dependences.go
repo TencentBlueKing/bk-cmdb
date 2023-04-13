@@ -37,6 +37,9 @@ type OperationDependences interface {
 	// SearchUnique search unique attribute
 	SearchUnique(kit *rest.Kit, objID string) (uniqueAttr []metadata.ObjectUnique, err error)
 
+	// DeleteQuotedInst delete quoted instances by source instance ids
+	DeleteQuotedInst(kit *rest.Kit, objID string, instIDs []int64) error
+
 	// AttachQuotedInst attach quoted instances with source instance
 	AttachQuotedInst(kit *rest.Kit, objID string, instID uint64, data mapstr.MapStr) error
 }

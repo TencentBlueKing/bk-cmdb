@@ -445,6 +445,9 @@ func (s *coreService) initModelQuote(web *restful.WebService) {
 		Handler: modelquote.ListQuotedInstance})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/quoted/model/{bk_obj_id}/instance",
 		Handler: modelquote.BatchUpdateQuotedInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/quoted/model/{bk_obj_id}/instance",
+		Handler: modelquote.BatchDeleteQuotedInstance})
+
 	utility.AddToRestfulWebService(web)
 }
 
