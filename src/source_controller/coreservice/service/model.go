@@ -133,6 +133,16 @@ func (s *coreService) CreateModel(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.ModelOperation().CreateModel(ctx.Kit, inputData))
 }
 
+// CreateTableModel create inner table model
+func (s *coreService) CreateTableModel(ctx *rest.Contexts) {
+	inputData := metadata.CreateModel{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntityWithError(s.core.ModelOperation().CreateTableModel(ctx.Kit, inputData))
+}
+
 // SetModel TODO
 func (s *coreService) SetModel(ctx *rest.Contexts) {
 	inputData := metadata.SetModel{}

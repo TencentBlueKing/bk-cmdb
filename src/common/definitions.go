@@ -934,6 +934,10 @@ const (
 	// FieldTypeTable the table type, inner type.
 	FieldTypeTable string = "table"
 
+	// FieldTypeInnerTable the table type, the type
+	// used for table fields in model reference scenarios
+	FieldTypeInnerTable string = "innertable"
+
 	// FieldTypeOrganization the organization field type
 	FieldTypeOrganization string = "organization"
 

@@ -37,6 +37,8 @@ type ModelClientInterface interface {
 		error)
 	ReadModelClassification(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
 		*metadata.QueryModelClassificationDataResult, error)
+	CreateTableModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (
+		*metadata.CreateOneDataResult, error)
 	CreateModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (*metadata.CreateOneDataResult, error)
 	SetModel(ctx context.Context, h http.Header, input *metadata.SetModel) (resp *metadata.SetOptionResult, err error)
 	UpdateModel(ctx context.Context, h http.Header, input *metadata.UpdateOption) (*metadata.UpdatedCount, error)
