@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package extensions defines extensional utilities for auth
 package extensions
 
 import (
@@ -157,7 +158,7 @@ func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header, r
 	return nil
 }
 
-// Enabled TODO
+// Enabled returns if authorization is enabled
 func (am *AuthManager) Enabled() bool {
 	return auth.EnableAuthorize()
 }
