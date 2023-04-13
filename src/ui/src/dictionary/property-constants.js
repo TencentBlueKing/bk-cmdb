@@ -26,7 +26,7 @@ export const PROPERTY_TYPES = Object.freeze({
   LIST: 'list',
   ORGANIZATION: 'organization',
   ENUMMULTI: 'enummulti',
-  // ENUMQUOTE: 'enumquote',
+  ENUMQUOTE: 'enumquote',
   MAP: 'map',
   TABLE: 'table',
   SERVICE_TEMPLATE: 'service-template',

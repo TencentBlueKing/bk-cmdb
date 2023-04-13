@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
@@ -38,8 +39,8 @@ type IntOption struct {
 
 // FloatOption float option
 type FloatOption struct {
-	Min string `bson:"min" json:"min"`
-	Max string `bson:"max" json:"max"`
+	Min float64 `bson:"min" json:"min"`
+	Max float64 `bson:"max" json:"max"`
 }
 
 func getString(val interface{}) string {
@@ -99,26 +100,66 @@ func parseIntOption(val interface{}) (IntOption, error) {
 
 // parseFloatOption  parse float data in option
 func parseFloatOption(val interface{}) (FloatOption, error) {
-	floatOption := FloatOption{}
-	if nil == val || "" == val {
-		return floatOption, fmt.Errorf("float type field option is null")
+	if val == nil || val == "" {
+		return FloatOption{}, fmt.Errorf("float type field option is null")
 	}
+
+	var optMap map[string]interface{}
+
 	switch option := val.(type) {
 	case string:
-		floatOption.Min = gjson.Get(option, "min").Raw
-		floatOption.Max = gjson.Get(option, "max").Raw
+		return parseFloatOptionMaxMin(gjson.Get(option, "max").Raw, gjson.Get(option, "min").Raw)
 	case map[string]interface{}:
-		floatOption.Min = getString(option["min"])
-		floatOption.Max = getString(option["max"])
+		optMap = option
 	case bson.M:
-		floatOption.Min = getString(option["min"])
-		floatOption.Max = getString(option["max"])
+		optMap = option
 	case bson.D:
-		opt := option.Map()
-		floatOption.Min = getString(opt["min"])
-		floatOption.Max = getString(opt["max"])
+		optMap = option.Map()
 	default:
-		return floatOption, fmt.Errorf("unknow val type: %T", val)
+		return FloatOption{}, fmt.Errorf("unknow val type: %T", val)
+	}
+
+	return parseFloatOptionMaxMin(optMap["max"], optMap["min"])
+}
+
+func parseFloatOptionMaxMin(maxVal, minVal interface{}) (FloatOption, error) {
+	floatOption := FloatOption{
+		Min: float64(common.MinInt64),
+		Max: float64(common.MaxInt64),
+	}
+
+	switch max := maxVal.(type) {
+	case string:
+		if len(max) != 0 && max != `""` {
+			maxValue, err := strconv.ParseFloat(max, 64)
+			if err != nil {
+				return FloatOption{}, fmt.Errorf("parse max option %+v failed, err: %v", max, err)
+			}
+			floatOption.Max = maxValue
+		}
+	default:
+		maxValue, err := util.GetFloat64ByInterface(max)
+		if err != nil {
+			return FloatOption{}, fmt.Errorf("parse max option %+v failed, err: %v", max, err)
+		}
+		floatOption.Max = maxValue
+	}
+
+	switch min := minVal.(type) {
+	case string:
+		if len(min) != 0 && min != `""` {
+			minValue, err := strconv.ParseFloat(min, 64)
+			if err != nil {
+				return FloatOption{}, fmt.Errorf("parse min option %+v failed, err: %v", min, err)
+			}
+			floatOption.Max = minValue
+		}
+	default:
+		minValue, err := util.GetFloat64ByInterface(min)
+		if err != nil {
+			return FloatOption{}, fmt.Errorf("parse min option %+v failed, err: %v", min, err)
+		}
+		floatOption.Min = minValue
 	}
 	return floatOption, nil
 }
@@ -208,7 +249,7 @@ func fillLostStringFieldValue(valData mapstr.MapStr, field metadata.Attribute) e
 		return fmt.Errorf("single char regular verification rules is illegal, value: %v", field.Option)
 	}
 	if len(option) == 0 {
-		return  nil
+		return nil
 	}
 
 	match, err := regexp.MatchString(option, defaultVal)
@@ -305,28 +346,16 @@ func fillLostFloatFieldValue(valData mapstr.MapStr, field metadata.Attribute) er
 
 	defaultVal, err := util.GetFloat64ByInterface(field.Default)
 	if err != nil {
-		return err
+		return fmt.Errorf("parse %s default value %+v failed, err: %v", field.PropertyID, field.Default, err)
 	}
 
-	intObjOption, err := parseFloatOption(field.Option)
+	floatOption, err := parseFloatOption(field.Option)
 	if err != nil {
-		return err
-	}
-	if len(intObjOption.Min) == 0 || len(intObjOption.Max) == 0 {
-		return fmt.Errorf("float type field max or min value is wrong")
+		return fmt.Errorf("parse %s option %+v failed, err: %v", field.PropertyID, field.Option, err)
 	}
 
-	maxValue, err := strconv.ParseFloat(intObjOption.Max, 64)
-	if err != nil {
-		maxValue = float64(common.MaxInt64)
-	}
-	minValue, err := strconv.ParseFloat(intObjOption.Min, 64)
-	if err != nil {
-		minValue = float64(common.MinInt64)
-	}
-
-	if defaultVal > maxValue || defaultVal < minValue {
-		return fmt.Errorf("float type field default value is illegal, value: %v", field.Default)
+	if defaultVal > floatOption.Max || defaultVal < floatOption.Min {
+		return fmt.Errorf("%s default value %v is illegal", field.PropertyID, defaultVal)
 	}
 
 	valData[field.PropertyID] = defaultVal
@@ -410,7 +439,7 @@ func fillLostOrganizationFieldValue(valData mapstr.MapStr, field metadata.Attrib
 
 	defaultVal, ok := field.Default.([]interface{})
 	if !ok {
-		return  fmt.Errorf("organization type field default value not array, type: %T", field.Default)
+		return fmt.Errorf("organization type field default value not array, type: %T", field.Default)
 	}
 
 	for _, orgID := range defaultVal {
@@ -466,7 +495,7 @@ func fillLostBoolFieldValue(valData mapstr.MapStr, field metadata.Attribute) err
 		return nil
 	}
 
-	if err := util.ValidateBoolType(field.Default); err != nil {
+	if err := valid.ValidateBoolType(field.Default); err != nil {
 		return err
 	}
 
