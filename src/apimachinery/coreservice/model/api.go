@@ -169,6 +169,32 @@ func (m *model) ReadModelClassification(ctx context.Context, h http.Header, inpu
 	return &resp.Data, nil
 }
 
+// CreateTableModel create object for inner table
+func (m *model) CreateTableModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (
+	*metadata.CreateOneDataResult, error) {
+
+	resp := new(metadata.CreatedOneOptionResult)
+	subPath := "/create/table/model"
+
+	err := m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
 // CreateModel create object
 func (m *model) CreateModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (
 	*metadata.CreateOneDataResult, error) {

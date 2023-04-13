@@ -95,6 +95,7 @@ type ModelOperation interface {
 	ModelAttrUnique
 
 	CreateModel(kit *rest.Kit, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error)
+	CreateTableModel(kit *rest.Kit, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error)
 	SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*metadata.SetDataResult, error)
 	UpdateModel(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)

@@ -34,6 +34,18 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 
+	// if the attribute created here is a table attribute field,
+	// it needs to go through a separate process.
+	if attr.PropertyType == common.FieldTypeInnerTable {
+		attrs, err := s.createTableAttribute(ctx, attr)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+		ctx.RespEntity(attrs)
+		return
+	}
+
 	// 新建组织字段时，默认为多选，当api接口创建模型属性时，没有传ismultiple，默认置为true，支持多选
 	if ok := checkJsonTagContainIsMultipleField(*attr); !ok {
 		if attr.PropertyType == common.FieldTypeOrganization {
@@ -89,6 +101,62 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(attrInfo)
+}
+
+func (s *Service) createTableAttribute(ctx *rest.Contexts, attr *metadata.Attribute) (*metadata.ObjAttDes, error) {
+
+	bizID, err := parseRequestBizID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	isBizCustomField := false
+	if bizID > 0 {
+		attr.BizID = bizID
+		isBizCustomField = true
+	}
+
+	attrInfo := new(metadata.ObjAttDes)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		attribute, err := s.Logics.AttributeOperation().CreateTableObjectAttribute(ctx.Kit, attr)
+		if err != nil {
+			return err
+		}
+
+		if attribute == nil {
+			return err
+		}
+		attrInfo.Attribute = *attribute
+		attrInfo.PropertyGroupName = attribute.PropertyGroupName
+
+		if isBizCustomField {
+			attrInfo.BizID = attr.BizID
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		return nil, txnErr
+	}
+	return attrInfo, nil
+}
+
+func parseRequestBizID(ctx *rest.Contexts) (int64, error) {
+	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+	if bizIDStr == "" {
+		return 0, nil
+	}
+
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("create biz custom field, but parse biz ID failed, error: %v, rid: %s", err, ctx.Kit.Rid)
+		return 0, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+	if bizID == 0 {
+		blog.Errorf("create biz custom field, but biz ID is 0, rid: %s", ctx.Kit.Rid)
+		return 0, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+	return bizID, nil
 }
 
 // SearchObjectAttribute search the object attributes

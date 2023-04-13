@@ -44,6 +44,9 @@ func (s *coreService) initModel(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model", Handler: s.CreateModel})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/create/table/model",
+		Handler: s.CreateTableModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/model", Handler: s.SetModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model", Handler: s.UpdateModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model", Handler: s.DeleteModel})

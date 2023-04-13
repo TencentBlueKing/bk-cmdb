@@ -82,6 +82,16 @@ const (
 	AttributeFieldDefault = "default"
 )
 
+const (
+	// TableLongCharMaxNum the maximum number of long
+	// characters supported by a form field.
+	TableLongCharMaxNum = 2
+	// TableHeaderMaxNum the maximum length of the table header field.
+	TableHeaderMaxNum = 8
+	// TableDefaultMaxLines the maximum length of the table default lines.
+	TableDefaultMaxLines = 10
+)
+
 // Attribute attribute metadata definition
 type Attribute struct {
 	BizID             int64       `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
@@ -1416,6 +1426,40 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 	}
 }
 
+// ValidTableDefaultAttr legality judgment of the default field of the form field.
+// todo: 合入最新代码后可能需要调整且需要移到valid文件夹
+func (attribute *Attribute) ValidTableDefaultAttr(ctx context.Context, val interface{}) errors.RawErrorInfo {
+	rid := util.ExtractRequestIDFromContext(ctx)
+	if attribute == nil {
+		blog.Errorf("the key of the default value is illegal and not in the header list, rid: %s", rid)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"default key"},
+		}
+	}
+
+	switch attribute.PropertyType {
+	case common.FieldTypeInt:
+		return attribute.validInt(ctx, val, attribute.PropertyID)
+	case common.FieldTypeFloat:
+		return attribute.validFloat(ctx, val, attribute.PropertyID)
+	case common.FieldTypeSingleChar:
+		return attribute.validChar(ctx, val, attribute.PropertyID)
+	case common.FieldTypeLongChar:
+		return attribute.validLongChar(ctx, val, attribute.PropertyID)
+	case common.FieldTypeEnumMulti:
+		return attribute.validEnumMulti(ctx, []interface{}{val}, attribute.PropertyID)
+	case common.FieldTypeBool:
+		return attribute.validBool(ctx, val, attribute.PropertyID)
+	default:
+		blog.Errorf("type error, type: %v, rid: %s", attribute.PropertyType, rid)
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsInvalid,
+			Args:    []interface{}{attribute.PropertyType},
+		}
+	}
+}
+
 // HostApplyFieldMap TODO
 var HostApplyFieldMap = map[string]bool{
 	common.BKOperatorField:        true,
@@ -1592,3 +1636,21 @@ type AttributesOption struct {
 
 // ListOptions TODO
 type ListOptions []string
+
+// TableAttributesOption the option of the form field, including the header and the default value.
+type TableAttributesOption struct {
+	Header  []Attribute              `json:"header" bson:"header" mapstructure:"header"`
+	Default []map[string]interface{} `json:"default" bson:"default" mapstructure:"default"`
+}
+
+// ValidTableFieldBaseType determine the basic type supported by the form field.
+func ValidTableFieldBaseType(fieldType string) bool {
+
+	switch fieldType {
+	case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeBool,
+		common.FieldTypeEnumMulti, common.FieldTypeFloat, common.FieldTypeInt:
+		return true
+	default:
+		return false
+	}
+}
