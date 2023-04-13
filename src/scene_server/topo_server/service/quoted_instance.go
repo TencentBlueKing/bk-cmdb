@@ -227,6 +227,82 @@ func (s *Service) BatchUpdateQuotedInstance(cts *rest.Contexts) {
 	}
 	cts.RespEntity(nil)
 }
+
+// BatchDeleteQuotedInstance batch delete quoted instances.
+func (s *Service) BatchDeleteQuotedInstance(cts *rest.Contexts) {
+	opt := new(metadata.BatchDeleteQuotedInstOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	if err := opt.Validate(); err.ErrCode != 0 {
+		cts.RespAutoError(err.ToCCError(cts.Kit.CCError))
+		return
+	}
+
+	// get quoted object id
+	objID, err := s.Logics.ModelQuoteOperation().GetQuotedObjID(cts.Kit, opt.ObjID, opt.PropertyID)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	filterOpt := metadata.CommonFilterOption{
+		Filter: filtertools.GenAtomFilter(common.BKFieldID, filter.In, opt.IDs),
+	}
+
+	// get quoted instance info for audit and authorization
+	listOpt := &metadata.CommonQueryOption{
+		CommonFilterOption: filterOpt,
+		Page:               metadata.BasePage{Limit: common.BKMaxPageSize},
+	}
+	listRes, err := s.Engine.CoreAPI.CoreService().ModelQuote().ListQuotedInstance(cts.Kit.Ctx, cts.Kit.Header, objID,
+		listOpt)
+	if err != nil {
+		blog.Errorf("list quoted instance failed, err: %v, opt: %+v, rid: %s", err, listOpt, cts.Kit.Rid)
+		cts.RespAutoError(err)
+		return
+	}
+
+	// authorize, ** right now use source instance update action to authorize, change it when confirmed **
+	if err = s.authorizeQuotedInstance(cts.Kit, objID, listRes.Info); err != nil {
+		return
+	}
+
+	// generate audit logs
+	audit := auditlog.NewQuotedInstAuditLog(s.Engine.CoreAPI.CoreService())
+	genAuditParams := auditlog.NewGenerateAuditCommonParameter(cts.Kit, metadata.AuditDelete)
+	auditLogs, ccErr := audit.GenerateAuditLog(genAuditParams, objID, opt.ObjID, opt.PropertyID, listRes.Info)
+	if ccErr != nil {
+		cts.RespAutoError(ccErr)
+		return
+	}
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(cts.Kit.Ctx, cts.Kit.Header, func() error {
+		// delete quoted instances
+		if err := s.Engine.CoreAPI.CoreService().ModelQuote().BatchDeleteQuotedInstance(cts.Kit.Ctx, cts.Kit.Header,
+			objID, &filterOpt); err != nil {
+			blog.Errorf("delete quoted instances failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return err
+		}
+
+		// save audit logs
+		err = audit.SaveAuditLog(cts.Kit, auditLogs...)
+		if err != nil {
+			return cts.Kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		cts.RespAutoError(txnErr)
+		return
+	}
+	cts.RespEntity(nil)
+}
+
 func (s *Service) authorizeQuotedInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) error {
 	instIDs := make([]int64, 0)
 	for _, info := range data {

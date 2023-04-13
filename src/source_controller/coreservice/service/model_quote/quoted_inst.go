@@ -182,3 +182,41 @@ func BatchUpdateQuotedInstance(cts *rest.Contexts) {
 
 	cts.RespEntity(nil)
 }
+
+// BatchDeleteQuotedInstance batch delete quoted instances.
+func BatchDeleteQuotedInstance(cts *rest.Contexts) {
+	opt := new(metadata.CommonFilterOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		cts.RespAutoError(rawErr.ToCCError(cts.Kit.CCError))
+		return
+	}
+
+	objID := cts.Request.PathParameter(common.BKObjIDField)
+	if len(objID) == 0 {
+		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField))
+		return
+	}
+	table := common.GetInstTableName(objID, cts.Kit.SupplierAccount)
+
+	filter, err := opt.ToMgo()
+	if err != nil {
+		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
+		return
+	}
+
+	filter = util.SetModOwner(filter, cts.Kit.SupplierAccount)
+
+	err = mongodb.Client().Table(table).Delete(cts.Kit.Ctx, filter)
+	if err != nil {
+		blog.Errorf("delete quoted instances failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
+		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))
+		return
+	}
+
+	cts.RespEntity(nil)
+}

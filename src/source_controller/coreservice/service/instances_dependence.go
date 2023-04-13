@@ -161,6 +161,37 @@ func (s *coreService) UpdateModelInstance(kit *rest.Kit, objID string, param met
 	return s.core.InstanceOperation().UpdateModelInstance(kit, objID, param)
 }
 
+// DeleteQuotedInst delete quote instances by source instance ids
+func (s *coreService) DeleteQuotedInst(kit *rest.Kit, objID string, instIDs []int64) error {
+	if len(objID) == 0 || len(instIDs) == 0 {
+		return nil
+	}
+
+	quoteRelCond := mapstr.MapStr{common.BKSrcModelField: objID}
+	quoteRelations := make([]metadata.ModelQuoteRelation, 0)
+
+	err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(quoteRelCond).
+		Fields(common.BKDestModelField).All(kit.Ctx, &quoteRelations)
+	if err != nil {
+		blog.Errorf("get quoted relations failed, err: %v, source object: %s, rid: %s", err, objID, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	for _, rel := range quoteRelations {
+		tableName := common.GetInstTableName(rel.DestModel, kit.SupplierAccount)
+		delCond := mapstr.MapStr{common.BKInstIDField: mapstr.MapStr{common.BKDBIN: instIDs}}
+		delCond = util.SetModOwner(delCond, kit.SupplierAccount)
+
+		err = mongodb.Client().Table(tableName).Delete(kit.Ctx, delCond)
+		if err != nil {
+			blog.Errorf("delete quoted instances failed, err: %v, inst ids: %+v, rid: %s", err, instIDs, kit.Rid)
+			return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
+		}
+	}
+
+	return nil
+}
+
 // AttachQuotedInst attach quoted instances with source instance
 func (s *coreService) AttachQuotedInst(kit *rest.Kit, objID string, instID uint64, data mapstr.MapStr) error {
 	quoteRelCond := mapstr.MapStr{common.BKSrcModelField: objID}

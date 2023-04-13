@@ -568,7 +568,7 @@ func (m *instanceManager) CountModelInstances(kit *rest.Kit,
 
 // DeleteModelInstance TODO
 func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
-	instIDs := []int64{}
+	instIDs := make([]int64, 0)
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	instIDFieldName := common.GetInstIDField(objID)
 
@@ -585,9 +585,7 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 		if nil != err {
 			return nil, err
 		}
-		if metadata.IsCommon(objID) {
-			instIDs = append(instIDs, instID)
-		}
+		instIDs = append(instIDs, instID)
 
 		exists, err := m.dependent.IsInstAsstExist(kit, objID, uint64(instID))
 		if nil != err {
@@ -614,12 +612,17 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 		}
 	}
 
+	// delete these instances' quoted instances
+	if err = m.dependent.DeleteQuotedInst(kit, objID, instIDs); err != nil {
+		return nil, err
+	}
+
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
 }
 
 // CascadeDeleteModelInstance TODO
 func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
-	instIDs := []int64{}
+	instIDs := make([]int64, 0)
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	instIDFieldName := common.GetInstIDField(objID)
 
@@ -634,9 +637,7 @@ func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string
 		if nil != err {
 			return &metadata.DeletedCount{}, err
 		}
-		if metadata.IsCommon(objID) {
-			instIDs = append(instIDs, instID)
-		}
+		instIDs = append(instIDs, instID)
 
 		err = m.dependent.DeleteInstAsst(kit, objID, uint64(instID))
 		if nil != err {
@@ -658,6 +659,11 @@ func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string
 				objID, err.Error(), instIDs, kit.Rid)
 			return nil, err
 		}
+	}
+
+	// delete these instances' quoted instances
+	if err = m.dependent.DeleteQuotedInst(kit, objID, instIDs); err != nil {
+		return nil, err
 	}
 
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
