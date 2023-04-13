@@ -504,7 +504,8 @@ func (m *modelAttribute) searchReturnMapStr(kit *rest.Kit, cond universalsql.Con
 func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
 
 	resultAttrs := make([]metadata.Attribute, 0)
-	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKObjIDField, common.BKAppIDField}
+	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKPropertyTypeField,
+		common.BKObjIDField, common.BKAppIDField}
 
 	condMap := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
 	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(condMap).Fields(fields...).All(kit.Ctx, &resultAttrs)
@@ -520,17 +521,21 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition) (cnt
 
 	objIDArrMap := make(map[string][]int64, 0)
 	for _, attr := range resultAttrs {
+		if attr.PropertyType == common.FieldTypeInnerTable {
+			blog.Errorf("property is error, attrItem: %+v, rid: %s", attr, kit.Rid)
+			return 0, kit.CCError.New(common.CCErrTopoObjectSelectFailed, common.BKPropertyTypeField)
+		}
 		objIDArrMap[attr.ObjectID] = append(objIDArrMap[attr.ObjectID], attr.ID)
 	}
 
-	if err := m.cleanAttributeFieldInInstances(kit.Ctx, kit.SupplierAccount, resultAttrs); err != nil {
+	if err := m.cleanAttributeFieldInInstances(kit, resultAttrs); err != nil {
 		blog.Errorf("delete object attributes with cond: %v, but delete these attribute in instance failed, "+
 			"err: %v, rid: %s", condMap, err, kit.Rid)
 		return 0, err
 	}
 
 	// delete template attribute when delete model attribute
-	if err := m.cleanAttrTemplateRelation(kit.Ctx, kit.SupplierAccount, resultAttrs); err != nil {
+	if err := m.cleanAttrTemplateRelation(kit, resultAttrs); err != nil {
 		blog.Errorf("delete the relation between attributes and templates failed, attr: %v, err: %v, rid: %s",
 			resultAttrs, err, kit.Rid)
 		return 0, err
@@ -561,36 +566,14 @@ type bizObjectFields struct {
 	fields []string
 }
 
-// cleanAttributeFieldInInstances TODO
-// remove attribute filed in this object's instances
-func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, ownerID string, attrs []metadata.Attribute) error {
+// cleanAttributeFieldInInstances remove attribute filed in this object's instances
+func (m *modelAttribute) cleanAttributeFieldInInstances(kit *rest.Kit, attrs []metadata.Attribute) error {
 	// this operation may take a long time, do not use transaction
-	ctx = context.Background()
+	kit.Ctx = context.Background()
 
-	objectFields := make(map[string][]bizObjectFields, 0)
-	hostApplyFields := make(map[int64][]int64)
-
-	// TODO: now, we only support set, module, host model's biz attribute clean operation.
-	for _, attr := range attrs {
-		biz := attr.BizID
-		if biz != 0 {
-			if !isBizObject(attr.ObjectID) {
-				return fmt.Errorf("unsupported object %s's clean instance field operation", attr.ObjectID)
-			}
-		}
-
-		_, exist := objectFields[attr.ObjectID]
-		if !exist {
-			objectFields[attr.ObjectID] = make([]bizObjectFields, 0)
-		}
-		objectFields[attr.ObjectID] = append(objectFields[attr.ObjectID], bizObjectFields{
-			bizID:  biz,
-			fields: []string{attr.PropertyID},
-		})
-
-		if attr.ObjectID == common.BKInnerObjIDHost {
-			hostApplyFields[biz] = append(hostApplyFields[biz], attr.ID)
-		}
+	objectFields, hostApplyFields, err := m.getObjAndHostApplyFields(kit, attrs)
+	if err != nil {
+		return err
 	}
 
 	// delete these attribute's fields in the model instance
@@ -614,9 +597,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 				}
 			}
 
-			cond := map[string]interface{}{
-				common.BKDBOR: existConds,
-			}
+			cond := map[string]interface{}{common.BKDBOR: existConds}
 
 			if objField.bizID > 0 {
 				if !isBizObject(object) {
@@ -624,7 +605,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 				}
 
 				if object == common.BKInnerObjIDHost {
-					if err := m.cleanHostAttributeField(ctx, ownerID, objField); err != nil {
+					if err := m.cleanHostAttributeField(kit.Ctx, kit.SupplierAccount, objField); err != nil {
 						return err
 					}
 					continue
@@ -638,7 +619,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 							bizID:  0,
 							fields: fields,
 						}
-						if err := m.cleanHostAttributeField(ctx, ownerID, ele); err != nil {
+						if err := m.cleanHostAttributeField(kit.Ctx, kit.SupplierAccount, ele); err != nil {
 							return err
 						}
 						continue
@@ -648,59 +629,15 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 				}
 			}
 
-			cond = util.SetQueryOwner(cond, ownerID)
+			cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 
-			collectionName := common.GetInstTableName(object, ownerID)
+			collectionName := common.GetInstTableName(object, kit.SupplierAccount)
 			wg.Add(1)
 			go func(collName string, filter types.Filter, fields []string) {
 				defer wg.Done()
+				hitError = m.dropColumns(kit, object, collName, filter, fields)
 
-				instCount, err := mongodb.Client().Table(collName).Find(filter).Count(ctx)
-				if err != nil {
-					blog.Error("count instances with the attribute to delete failed, table: %s, cond: %v, fields: %v, err: %v", collectionName, filter, fields, err)
-					hitError = err
-					return
-				}
-
-				instIDField := common.GetInstIDField(object)
-				for start := uint64(0); start < instCount; start += pageSize {
-					insts := make([]map[string]interface{}, 0)
-					err := mongodb.Client().Table(collName).Find(filter).Start(0).Limit(pageSize).Fields(instIDField).All(ctx, &insts)
-					if err != nil {
-						blog.Error("get instance ids with the attribute to delete failed, table: %s, cond: %v, fields: %v, err: %v", collectionName, filter, fields, err)
-						hitError = err
-						return
-					}
-
-					if len(insts) == 0 {
-						return
-					}
-
-					instIDs := make([]int64, len(insts))
-					for index, inst := range insts {
-						instID, err := util.GetInt64ByInterface(inst[instIDField])
-						if err != nil {
-							blog.Error("get instance id failed, inst: %+v, err: %v", inst, err)
-							hitError = err
-							return
-						}
-						instIDs[index] = instID
-					}
-
-					instFilter := map[string]interface{}{
-						instIDField: map[string]interface{}{
-							common.BKDBIN: instIDs,
-						},
-					}
-
-					if err := mongodb.Client().Table(collName).DropColumns(ctx, instFilter, fields); err != nil {
-						blog.Error("delete object's attribute from instance failed, table: %s, cond: %v, fields: %v, err: %v", collectionName, instFilter, fields, err)
-						hitError = err
-						return
-					}
-				}
 			}(collectionName, cond, fields)
-
 		}
 	}
 	// wait for all the public object routine is done.
@@ -716,15 +653,95 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 	}
 
 	// step 3: clean host apply fields
-	if err := m.cleanHostApplyField(ctx, ownerID, hostApplyFields); err != nil {
+	if err := m.cleanHostApplyField(kit.Ctx, kit.SupplierAccount, hostApplyFields); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *modelAttribute) cleanAttrTemplateRelation(ctx context.Context, ownerID string,
-	attrs []metadata.Attribute) error {
+// getObjAndHostApplyFields TODO: now, we only support set, module, host model's biz attribute clean operation.
+func (m *modelAttribute) getObjAndHostApplyFields(kit *rest.Kit, attrs []metadata.Attribute) (
+	map[string][]bizObjectFields, map[int64][]int64, error) {
+	objectFields := make(map[string][]bizObjectFields, 0)
+	hostApplyFields := make(map[int64][]int64)
+	for _, attr := range attrs {
+		if attr.PropertyType == common.FieldTypeInnerTable {
+			blog.Errorf("property is error, attrItem: %+v, rid: %s", attr, kit.Rid)
+			return nil, nil, kit.CCError.New(common.CCErrTopoObjectSelectFailed, common.BKPropertyTypeField)
+		}
+		biz := attr.BizID
+		if biz != 0 {
+			if !isBizObject(attr.ObjectID) {
+				return nil, nil, fmt.Errorf("unsupported object %s's clean instance field operation", attr.ObjectID)
+			}
+		}
+
+		_, exist := objectFields[attr.ObjectID]
+		if !exist {
+			objectFields[attr.ObjectID] = make([]bizObjectFields, 0)
+		}
+		objectFields[attr.ObjectID] = append(objectFields[attr.ObjectID], bizObjectFields{
+			bizID:  biz,
+			fields: []string{attr.PropertyID},
+		})
+
+		if attr.ObjectID == common.BKInnerObjIDHost {
+			hostApplyFields[biz] = append(hostApplyFields[biz], attr.ID)
+		}
+	}
+	return objectFields, hostApplyFields, nil
+}
+
+func (m *modelAttribute) dropColumns(kit *rest.Kit, object, collName string, filter types.Filter,
+	fields []string) error {
+	instCount, err := mongodb.Client().Table(collName).Find(filter).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("count instances with the attribute to delete failed, table: %s, cond: %v, fields: %v, err: %v, "+
+			"rid: %s", collName, filter, fields, err, kit.Rid)
+		return err
+	}
+
+	instIDField := common.GetInstIDField(object)
+	for start := uint64(0); start < instCount; start += pageSize {
+		insts := make([]map[string]interface{}, 0)
+		err := mongodb.Client().Table(collName).Find(filter).Start(0).Limit(pageSize).Fields(instIDField).
+			All(kit.Ctx, &insts)
+		if err != nil {
+			blog.Errorf("get instance ids with the attr to delete failed, table: %s, cond: %v, fields: %v, err: %v, "+
+				"rid: %s", collName, filter, fields, err, kit.Rid)
+			return err
+		}
+
+		if len(insts) == 0 {
+			return nil
+		}
+
+		instIDs := make([]int64, len(insts))
+		for index, inst := range insts {
+			instID, err := util.GetInt64ByInterface(inst[instIDField])
+			if err != nil {
+				blog.Errorf("get instance id failed, inst: %+v, err: %v, rid: %s", inst, err, kit.Rid)
+				return err
+			}
+			instIDs[index] = instID
+		}
+
+		instFilter := map[string]interface{}{
+			instIDField: map[string]interface{}{
+				common.BKDBIN: instIDs,
+			},
+		}
+
+		if err := mongodb.Client().Table(collName).DropColumns(kit.Ctx, instFilter, fields); err != nil {
+			blog.Error("delete object's attribute from instance failed, table: %s, cond: %v, fields: %v, err: %v, "+
+				"rid: %s", collName, instFilter, fields, err, kit.Rid)
+			return err
+		}
+	}
+	return nil
+}
+func (m *modelAttribute) cleanAttrTemplateRelation(kit *rest.Kit, attrs []metadata.Attribute) error {
 
 	if len(attrs) == 0 {
 		return nil
@@ -732,6 +749,10 @@ func (m *modelAttribute) cleanAttrTemplateRelation(ctx context.Context, ownerID 
 
 	attrMap := make(map[string][]int64)
 	for _, attr := range attrs {
+		if attr.PropertyType == common.FieldTypeInnerTable {
+			blog.Errorf("property is error, attrItem: %+v, rid: %s", attr, kit.Rid)
+			return kit.CCError.New(common.CCErrTopoObjectSelectFailed, common.BKPropertyTypeField)
+		}
 		attrMap[attr.ObjectID] = append(attrMap[attr.ObjectID], attr.ID)
 	}
 
@@ -739,15 +760,15 @@ func (m *modelAttribute) cleanAttrTemplateRelation(ctx context.Context, ownerID 
 		cond := mapstr.MapStr{
 			common.BKAttributeIDField: mapstr.MapStr{common.BKDBIN: attrIDs},
 		}
-		cond = util.SetQueryOwner(cond, ownerID)
+		cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 		switch objID {
 		case common.BKInnerObjIDSet:
-			if err := mongodb.Client().Table(common.BKTableNameSetTemplateAttr).Delete(ctx, cond); err != nil {
+			if err := mongodb.Client().Table(common.BKTableNameSetTemplateAttr).Delete(kit.Ctx, cond); err != nil {
 				return err
 			}
 
 		case common.BKInnerObjIDModule:
-			if err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Delete(ctx, cond); err != nil {
+			if err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Delete(kit.Ctx, cond); err != nil {
 				return err
 			}
 		}
