@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -79,4 +80,56 @@ func BatchCreateQuotedInstance(cts *rest.Contexts) {
 	}
 
 	cts.RespEntity(metadata.BatchCreateResult{IDs: ids})
+}
+
+// ListQuotedInstance list quoted instances.
+func ListQuotedInstance(cts *rest.Contexts) {
+	opt := new(metadata.CommonQueryOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		cts.RespAutoError(rawErr.ToCCError(cts.Kit.CCError))
+		return
+	}
+
+	objID := cts.Request.PathParameter(common.BKObjIDField)
+	if len(objID) == 0 {
+		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField))
+		return
+	}
+	table := common.GetInstTableName(objID, cts.Kit.SupplierAccount)
+
+	filter, err := opt.ToMgo()
+	if err != nil {
+		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
+		return
+	}
+
+	filter = util.SetModOwner(filter, cts.Kit.SupplierAccount)
+
+	if opt.Page.EnableCount {
+		count, err := mongodb.Client().Table(table).Find(filter).Count(cts.Kit.Ctx)
+		if err != nil {
+			blog.Errorf("count quoted instances failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
+			cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+			return
+		}
+
+		cts.RespEntity(metadata.InstDataInfo{Count: int(count)})
+		return
+	}
+
+	instances := make([]mapstr.MapStr, 0)
+	err = mongodb.Client().Table(table).Find(filter).Start(uint64(opt.Page.Start)).Limit(uint64(opt.Page.Limit)).
+		Fields(opt.Fields...).All(cts.Kit.Ctx, &instances)
+	if err != nil {
+		blog.Errorf("list quoted instances failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
+		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+
+	cts.RespEntity(metadata.InstDataInfo{Info: instances})
 }

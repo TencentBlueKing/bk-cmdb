@@ -110,3 +110,37 @@ func (s *Service) BatchCreateQuotedInstance(cts *rest.Contexts) {
 	}
 	cts.RespEntity(res)
 }
+
+// ListQuotedInstance list quoted instances.
+func (s *Service) ListQuotedInstance(cts *rest.Contexts) {
+	opt := new(metadata.ListQuotedInstOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		cts.RespAutoError(rawErr.ToCCError(cts.Kit.CCError))
+		return
+	}
+
+	// skip find authorize, ** add it when confirmed **
+
+	// get quoted object id
+	objID, err := s.Logics.ModelQuoteOperation().GetQuotedObjID(cts.Kit, opt.ObjID, opt.PropertyID)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	// list quoted instances
+	res, err := s.Engine.CoreAPI.CoreService().ModelQuote().ListQuotedInstance(cts.Kit.Ctx, cts.Kit.Header, objID,
+		&opt.CommonQueryOption)
+	if err != nil {
+		blog.Errorf("list quoted instances failed, err: %v, req: %+v, rid: %s", err, opt, cts.Kit.Rid)
+		cts.RespAutoError(err)
+		return
+	}
+
+	cts.RespEntity(res)
+}
