@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
-	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -343,7 +342,7 @@ func (a *attribute) getTableAttrHeaderDetail(kit *rest.Kit, header []metadata.At
 				a.lang.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language(
 					"model_attr_bk_property_name"), common.AttributeNameMaxLength)
 		}
-		err = validTableTypeOption(header[index].PropertyType, header[index].Option, header[index].Default,
+		err = valid.ValidTableFieldOption(header[index].PropertyType, header[index].Option, header[index].Default,
 			header[index].IsMultiple, kit.CCError)
 		if err != nil {
 			return nil, err
@@ -351,31 +350,6 @@ func (a *attribute) getTableAttrHeaderDetail(kit *rest.Kit, header []metadata.At
 		propertyAttr[header[index].PropertyID] = &header[index]
 	}
 	return propertyAttr, nil
-}
-
-// ToDo：临时判断，合入最新代码之后需要调整
-func validTableTypeOption(propertyType string, option, defaultValue interface{}, isMultiple *bool,
-	errProxy ccErr.DefaultCCErrorIf) error {
-	bFalse := false
-	if isMultiple == nil {
-		isMultiple = &bFalse
-	}
-
-	switch propertyType {
-	case common.FieldTypeInt:
-		return util.ValidFieldTypeInt(option, defaultValue, "", errProxy)
-	case common.FieldTypeEnumMulti:
-		return util.ValidFieldTypeEnumOption(option, *isMultiple, "", errProxy)
-	case common.FieldTypeLongChar, common.FieldTypeSingleChar:
-		return util.ValidFieldTypeString(option, defaultValue, "", errProxy)
-	case common.FieldTypeFloat:
-		return util.ValidFieldTypeFloat(option, defaultValue, "", errProxy)
-	case common.FieldTypeBool:
-		// todo
-	default:
-		return fmt.Errorf("property type(%#v) is error", propertyType)
-	}
-	return nil
 }
 
 // ValidTableAttrDefaultValue attr: key is property_id, value is the corresponding header content.
