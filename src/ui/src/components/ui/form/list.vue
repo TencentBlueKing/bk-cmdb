@@ -24,10 +24,10 @@
     }"
     v-bind="$attrs"
     ref="selector">
-    <bk-option v-for="(option, index) in options"
-      :key="index"
-      :id="option"
-      :name="option">
+    <bk-option v-for="option in options"
+      :key="option.value"
+      :id="option.value"
+      :name="option.name">
     </bk-option>
   </bk-select>
 </template>
@@ -81,11 +81,12 @@
     },
     watch: {
       value(value) {
-        this.selected = value
+        this.selected = this.options.find(item => item.name === value).value
       },
       selected(selected) {
-        this.$emit('input', selected)
-        this.$emit('on-selected', selected)
+        const selectValue = this.options.find(item => item.value === selected).name
+        this.$emit('input', selectValue)
+        this.$emit('on-selected', selectValue)
       }
     },
     created() {
@@ -95,7 +96,7 @@
       initValue() {
         try {
           if (this.autoSelect && (!this.value || (this.multiple && !this.value.length))) {
-            this.selected = this.multiple ? [this.options[0]] : (this.options[0] || '')
+            this.selected = this.multiple ? [this.options[0].value] : (this.options[0].value || '')
           } else {
             this.selected = this.value
           }

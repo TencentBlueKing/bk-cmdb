@@ -56,6 +56,7 @@
 
 <script>
   import vueDraggable from 'vuedraggable'
+  import { v4 as uuidv4 } from 'uuid'
   export default {
     components: {
       vueDraggable
@@ -72,7 +73,7 @@
     },
     data() {
       return {
-        list: [{ name: '' }],
+        list: [{ name: '', value: '' }],
         dragOptions: {
           animation: 300,
           disabled: false,
@@ -103,22 +104,21 @@
       },
       initValue() {
         if (this.value === '') {
-          this.list = [{ name: '' }]
+          this.list = [{ name: '', value: uuidv4()  }]
         } else {
-          this.list = this.value.map(name => ({ name }))
+          this.list = this.value
         }
       },
       handleInput() {
         this.$nextTick(async () => {
           const res = await this.$validator.validateAll()
           if (res) {
-            const list = this.list.map(item => item.name)
-            this.$emit('input', list)
+            this.$emit('input', this.formatList(this.list))
           }
         })
       },
       addList(index) {
-        this.list.push({ name: '' })
+        this.list.push({ name: '', value: uuidv4() })
         this.$nextTick(() => {
           this.$refs[`name${index + 1}`] && this.$refs[`name${index + 1}`][0].focus()
         })
@@ -131,15 +131,19 @@
         return this.$validator.validateAll()
       },
       handleDragEnd() {
-        const list = this.list.map(item => item.name)
-        this.$emit('input', list)
+        this.$emit('input', this.formatList(this.list))
       },
       handleSort() {
         this.order = this.order * -1
         this.list.sort((A, B) => A.name.localeCompare(B.name, 'zh-Hans-CN', { sensitivity: 'accent' }) * this.order)
 
-        const list = this.list.map(item => item.name)
-        this.$emit('input', list)
+        this.$emit('input', this.formatList(this.list))
+      },
+      formatList(list) {
+        return list.map((item, index) => ({
+          name: item.name,
+          value: index
+        }))
       }
     }
   }
@@ -161,7 +165,9 @@
             &:not(:first-child) {
                 margin-top: 16px;
             }
-
+            &:last-child {
+                margin-bottom: 10px;
+            }
             &::before {
                 content: '';
                 position: absolute;
