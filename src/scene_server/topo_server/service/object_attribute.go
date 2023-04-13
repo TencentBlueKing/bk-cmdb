@@ -13,6 +13,7 @@
 package service
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -82,10 +83,12 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		attribute, err := s.Logics.AttributeOperation().CreateObjectAttribute(ctx.Kit, attr)
 		if err != nil {
+			blog.Errorf("create model attribute failed, attr: %+v, err: %v, rid: %s", attr, err, ctx.Kit.Rid)
 			return err
 		}
 		if attribute == nil {
-			return err
+			blog.Errorf("return the created model attribute is empty, attr: %+v, rid: %s", attr, ctx.Kit.Rid)
+			return fmt.Errorf("created model attribute is empty, attr: %v", attr)
 		}
 		attrInfo.Attribute = *attribute
 		attrInfo.PropertyGroupName = attribute.PropertyGroupName
