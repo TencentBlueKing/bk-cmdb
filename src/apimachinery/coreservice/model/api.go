@@ -470,6 +470,32 @@ func (m *model) UpdateModelAttrsByCondition(ctx context.Context, h http.Header, 
 	return &resp.Data, nil
 }
 
+// UpdateTableModelAttrsByCondition update table object table attrs by condition
+func (m *model) UpdateTableModelAttrsByCondition(ctx context.Context, h http.Header,
+	input *metadata.UpdateTableOption) error {
+
+	resp := new(metadata.UpdatedOptionResult)
+	subPath := "/update/table/model/attributes"
+
+	err := m.client.Put().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // SetModelAttrs TODO
 func (m *model) SetModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.SetModelAttributes) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)

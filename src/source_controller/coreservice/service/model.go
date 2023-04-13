@@ -493,6 +493,23 @@ func (s *coreService) SetModelAttributes(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.ModelOperation().SetModelAttributes(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
+// UpdateTableModelAttrByCondition update properties of form fields based on conditions.
+func (s *coreService) UpdateTableModelAttrByCondition(ctx *rest.Contexts) {
+
+	inputData := metadata.UpdateTableOption{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	err := s.core.ModelOperation().UpdateTableModelAttributes(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+	return
+}
+
 // UpdateModelAttributes TODO
 func (s *coreService) UpdateModelAttributes(ctx *rest.Contexts) {
 

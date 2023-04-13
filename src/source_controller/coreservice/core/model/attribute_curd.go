@@ -931,7 +931,154 @@ func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) 
 	return nil
 }
 
-// checkUpdate 删除不可以更新字段，检验字段是否重复， 返回更新的行数，错误
+// checkTableAttrUpdate delete the field that cannot be updated, check whether the field is repeated
+func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
+	cond universalsql.Condition) (err error) {
+
+	dbAttributeArr, err := m.search(kit, cond)
+	if err != nil {
+		blog.Errorf("find nothing by the condition: %+v, err: %v, rid: %s", cond.ToMapStr(), err, kit.Rid)
+		return err
+	}
+	if len(dbAttributeArr) == 0 {
+		blog.Errorf("find nothing by the condition(%#v), rid: %s", cond.ToMapStr(), kit.Rid)
+		return nil
+	}
+
+	// is there a predefined field for the updated attribute
+	hasIsPreProperty := false
+	for _, dbAttribute := range dbAttributeArr {
+		if dbAttribute.IsPre {
+			hasIsPreProperty = true
+			break
+		}
+	}
+
+	// 预定义字段，只能更新分组、分组内排序、单位、提示语和option
+	if hasIsPreProperty {
+		_ = data.ForEach(func(key string, val interface{}) error {
+			if key != metadata.AttributeFieldPropertyGroup &&
+				key != metadata.AttributeFieldPropertyIndex &&
+				key != metadata.AttributeFieldUnit &&
+				key != metadata.AttributeFieldPlaceHolder &&
+				key != metadata.AttributeFieldOption {
+				data.Remove(key)
+			}
+			return nil
+		})
+	}
+
+	if err := checkAttrOption(kit, data, dbAttributeArr); err != nil {
+		return err
+	}
+
+	// 删除不可更新字段， 避免由于传入数据，修改字段
+	data.Remove(metadata.AttributeFieldPropertyID)
+	data.Remove(metadata.AttributeFieldSupplierAccount)
+	data.Remove(metadata.AttributeFieldPropertyType)
+	data.Remove(metadata.AttributeFieldCreateTime)
+	data.Remove(metadata.AttributeFieldIsPre)
+	data.Set(metadata.AttributeFieldLastTime, time.Now())
+
+	if err = checkPropertyGroup(kit, data, dbAttributeArr); err != nil {
+		return err
+	}
+
+	attr := metadata.Attribute{}
+	if err = data.MarshalJSONInto(&attr); err != nil {
+		blog.Errorf("marshal json into attribute failed, data: %+v, err: %v, rid: %s", data, err, kit.Rid)
+		return err
+	}
+	if err = m.checkTableAttributeValidity(kit, attr); err != nil {
+		blog.Errorf("check attribute validity failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+	for _, dbAttr := range dbAttributeArr {
+		err = m.checkUnique(kit, false, dbAttr.ObjectID, dbAttr.PropertyID, attr.PropertyName, attr.BizID)
+		if err != nil {
+			blog.Errorf("save attribute check unique err: %v, input: %+v, rid: %s", err, attr, kit.Rid)
+			return err
+		}
+		if err = m.checkChangeField(kit, dbAttr, data); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func checkAttrOption(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []metadata.Attribute) error {
+	option, exists := data.Get(metadata.AttributeFieldOption)
+	if !exists {
+		return nil
+	}
+	propertyType := dbAttributeArr[0].PropertyType
+	for _, dbAttribute := range dbAttributeArr {
+		if dbAttribute.PropertyType != propertyType {
+			blog.Errorf("update option, but property type not the same, db attributes: %s, rid:%s",
+				dbAttributeArr, kit.Ctx)
+			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, "cond")
+		}
+	}
+
+	// 属性更新时，如果没有传入ismultiple参数，则使用数据库中的ismultiple值进行校验，如果传了ismultiple参数，则使用更新时的参数
+	isMultiple := dbAttributeArr[0].IsMultiple
+	if val, ok := data.Get(common.BKIsMultipleField); ok {
+		ismultiple, ok := val.(bool)
+		if !ok {
+			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
+		}
+		isMultiple = &ismultiple
+	}
+
+	if isMultiple == nil {
+		return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
+	}
+
+	if err := valid.ValidPropertyOption(propertyType, option, *isMultiple, data[common.BKDefaultFiled], kit.Rid,
+		kit.CCError); err != nil {
+		blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
+		return err
+	}
+
+	return nil
+}
+
+func checkPropertyGroup(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []metadata.Attribute) error {
+
+	grp, exists := data.Get(metadata.AttributeFieldPropertyGroup)
+	if !exists {
+		return nil
+	}
+
+	// check if property group exists in object
+	objIDs := make([]string, 0)
+	for _, dbAttribute := range dbAttributeArr {
+		objIDs = append(objIDs, dbAttribute.ObjectID)
+	}
+	objIDs = util.StrArrayUnique(objIDs)
+	cond := map[string]interface{}{
+		common.BKObjIDField: map[string]interface{}{
+			common.BKDBIN: objIDs,
+		},
+	}
+	if grp != "" {
+		cond[common.BKPropertyGroupIDField] = grp
+	}
+
+	cnt, err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Find(cond).Count(kit.Ctx)
+	if err != nil {
+		blog.ErrorJSON("property group count failed, err: %s, condition: %s, rid: %s", err, cond, kit.Rid)
+		return err
+	}
+	if cnt != uint64(len(objIDs)) {
+		blog.Errorf("property group invalid, objIDs: %s have %d property groups, rid: %s", objIDs, cnt, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyGroup)
+	}
+	return nil
+}
+
+// checkUpdate delete the field that cannot be updated, check whether the field is repeated
 func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (err error) {
 
 	dbAttributeArr, err := m.search(kit, cond)
@@ -944,7 +1091,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		return nil
 	}
 
-	// 更新的属性是否存在预定义字段。
+	// is there a predefined field for the updated attribute。
 	hasIsPreProperty := false
 	for _, dbAttribute := range dbAttributeArr {
 		if dbAttribute.IsPre {

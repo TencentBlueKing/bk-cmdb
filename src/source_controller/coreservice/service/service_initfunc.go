@@ -74,6 +74,9 @@ func (s *coreService) initModel(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model/{bk_obj_id}/attributes", Handler: s.CreateModelAttributes})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/model/{bk_obj_id}/attributes", Handler: s.SetModelAttributes})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model/{bk_obj_id}/attributes", Handler: s.UpdateModelAttributes})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path:    "/update/table/model/attributes",
+		Handler: s.UpdateTableModelAttrByCondition})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/model/{bk_obj_id}/attribute/{id}/index",
 		Handler: s.UpdateModelAttributesIndex})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model/attributes", Handler: s.UpdateModelAttributesByCondition})
