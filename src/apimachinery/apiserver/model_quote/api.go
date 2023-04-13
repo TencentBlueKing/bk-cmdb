@@ -24,6 +24,7 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -37,6 +38,8 @@ type Interface interface {
 		opt *metadata.BatchUpdateQuotedInstOption) errors.CCErrorCoder
 	BatchDeleteQuotedInstance(ctx context.Context, h http.Header,
 		opt *metadata.BatchDeleteQuotedInstOption) errors.CCErrorCoder
+
+	GetObjectAttrWithTable(ctx context.Context, h http.Header, params mapstr.MapStr) ([]metadata.Attribute, error)
 }
 
 // New model quote api client.

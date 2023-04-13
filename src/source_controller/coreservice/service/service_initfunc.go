@@ -16,6 +16,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common/http/rest"
+	modelquote "configcenter/src/source_controller/coreservice/service/model_quote"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -429,6 +430,7 @@ func (s *coreService) initModelQuote(web *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
+	// model quote relation
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/list/model/quote/relation",
 		Handler: s.ListModelQuoteRelation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/model/quote/relation",
@@ -436,6 +438,9 @@ func (s *coreService) initModelQuote(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/model/quote/relation",
 		Handler: s.DeleteModelQuoteRelation})
 
+	// quoted instance
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/quoted/model/{bk_obj_id}/instance",
+		Handler: modelquote.BatchCreateQuotedInstance})
 	utility.AddToRestfulWebService(web)
 }
 
