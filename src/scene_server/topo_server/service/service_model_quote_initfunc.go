@@ -35,5 +35,7 @@ func (s *Service) initModelQuote(web *restful.WebService) {
 		Handler: s.BatchCreateQuotedInstance})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/quoted/instance",
 		Handler: s.ListQuotedInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/quoted/instance",
+		Handler: s.BatchUpdateQuotedInstance})
 	utility.AddToRestfulWebService(web)
 }

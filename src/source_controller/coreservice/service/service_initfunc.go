@@ -443,6 +443,8 @@ func (s *coreService) initModelQuote(web *restful.WebService) {
 		Handler: modelquote.BatchCreateQuotedInstance})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/quoted/model/{bk_obj_id}/instance",
 		Handler: modelquote.ListQuotedInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/quoted/model/{bk_obj_id}/instance",
+		Handler: modelquote.BatchUpdateQuotedInstance})
 	utility.AddToRestfulWebService(web)
 }
 

@@ -133,3 +133,52 @@ func ListQuotedInstance(cts *rest.Contexts) {
 
 	cts.RespEntity(metadata.InstDataInfo{Info: instances})
 }
+
+// BatchUpdateQuotedInstance batch update quoted instances.
+func BatchUpdateQuotedInstance(cts *rest.Contexts) {
+	opt := new(metadata.CommonUpdateOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		cts.RespAutoError(rawErr.ToCCError(cts.Kit.CCError))
+		return
+	}
+
+	objID := cts.Request.PathParameter(common.BKObjIDField)
+	if len(objID) == 0 {
+		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField))
+		return
+	}
+
+	if err := validateUpdateQuotedInst(cts.Kit, objID, opt.Data); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	table := common.GetInstTableName(objID, cts.Kit.SupplierAccount)
+
+	filter, err := opt.ToMgo()
+	if err != nil {
+		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
+		return
+	}
+
+	filter = util.SetModOwner(filter, cts.Kit.SupplierAccount)
+
+	opt.Data.Set(common.LastTimeField, time.Now())
+	err = mongodb.Client().Table(table).Update(cts.Kit.Ctx, filter, opt.Data)
+	if err != nil {
+		blog.Errorf("list quoted instances failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
+		if mongodb.Client().IsDuplicatedError(err) {
+			cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err)))
+			return
+		}
+		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
+		return
+	}
+
+	cts.RespEntity(nil)
+}
