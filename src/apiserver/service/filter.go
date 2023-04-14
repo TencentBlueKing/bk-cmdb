@@ -155,6 +155,11 @@ func (s *service) BizFilterChan(req *restful.Request, resp *restful.Response, ch
 	s.urlFilterChan(req, resp, chain, s.discovery.TopoServer(), rootPath+"/biz", "/topo/v3/app")
 }
 
+// HostFilterChan host server api filter chan
+func (s *service) HostFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	s.urlFilterChan(req, resp, chain, s.discovery.HostServer(), rootPath, "/host/v3")
+}
+
 // urlFilterChan url filter chan, modify the request to dispatch it to specific sever
 func (s *service) urlFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain,
 	discovery discovery.Interface, prevRoot, root string) {

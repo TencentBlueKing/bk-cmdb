@@ -13,6 +13,7 @@
 package service
 
 import (
+	acMeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -200,6 +201,14 @@ func (s *Service) GetHostRelationsWithMainlineTopoInstance(ctx *rest.Contexts) {
 		blog.Errorf("find host relations with topo failed, option: %#v, err: %+v, rid: %s", *option, rawErr,
 			ctx.Kit.Rid)
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acMeta.ResourceAttribute{Basic: acMeta.Basic{Type: acMeta.HostInstance, Action: acMeta.Find},
+		BusinessID: option.Business}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
