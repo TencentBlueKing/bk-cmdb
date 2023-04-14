@@ -842,7 +842,7 @@ func (a *attribute) getTableAttrOptionFromDB(kit *rest.Kit, attID, bizID int64) 
 		return nil, "", kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	dbAttrsOp, err := parseTableAttrOption(resp.Info[0].Option)
+	dbAttrsOp, err := metadata.ParseTableAttrOption(resp.Info[0].Option)
 	if err != nil {
 		blog.Errorf("get attribute option failed, error: %v, option: %v, rid: %s", err, kit.Rid)
 		return nil, "", err
@@ -957,7 +957,7 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 
 	updateDataStruct, createDataStruct := *attr, *attr
 
-	curAttrsOp, err := parseTableAttrOption(attr.Option)
+	curAttrsOp, err := metadata.ParseTableAttrOption(attr.Option)
 	if err != nil {
 		blog.Errorf("decode attr option failed, bizID: %d, err: %v, rid: %s", modelBizID, err, kit.Rid)
 		return err
