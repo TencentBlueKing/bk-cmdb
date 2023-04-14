@@ -271,12 +271,6 @@
         const [topRoute] = this.$route.matched
         return topRoute ? topRoute.name !== MENU_BUSINESS : true
       },
-      fieldTypeList() {
-        if (this.customObjId) {
-          return PROPERTY_TYPE_LIST.filter(item => item.id !== PROPERTY_TYPES.INNER_TABLE)
-        }
-        return PROPERTY_TYPE_LIST
-      },
       fieldType() {
         let { bk_property_type: type } = this.fieldInfo
         switch (type) {
@@ -331,6 +325,12 @@
         return false
       },
       fieldTypeList() {
+        if (this.customObjId) {
+          const disabledTypes = this.isEditField
+            ? [PROPERTY_TYPES.INNER_TABLE]
+            : [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.ENUMQUOTE]
+          return PROPERTY_TYPE_LIST.filter(item => !disabledTypes.includes(item.id))
+        }
         const createFieldList = PROPERTY_TYPE_LIST.filter(item => item.id !== PROPERTY_TYPES.ENUMQUOTE)
         return this.isEditField ? PROPERTY_TYPE_LIST : createFieldList
       }

@@ -219,6 +219,11 @@
             word-break: break-all;
             margin-bottom: 6px;
             margin-right: 16px;
+
+            .table-value {
+              display: flex;
+              align-items: center;
+            }
           }
           &:hover {
             color: #313238;
