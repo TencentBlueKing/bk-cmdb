@@ -13,7 +13,6 @@
 package model
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -266,7 +265,7 @@ func (a *attribute) validTableAttributes(kit *rest.Kit, option interface{}) erro
 		return errors.New("option params is invalid")
 	}
 
-	tableOption, err := parseTableAttrOption(option)
+	tableOption, err := metadata.ParseTableAttrOption(option)
 	if err != nil {
 		blog.Errorf("get attribute option failed, error: %v, option: %v, rid: %s", err, kit.Rid)
 		return err
@@ -374,19 +373,6 @@ func (a *attribute) ValidTableAttrDefaultValue(kit *rest.Kit, defaultValue []map
 		}
 	}
 	return nil
-}
-
-func parseTableAttrOption(option interface{}) (*metadata.TableAttributesOption, error) {
-	marshaledOptions, err := json.Marshal(option)
-	if err != nil {
-		return nil, err
-	}
-
-	result := new(metadata.TableAttributesOption)
-	if err := json.Unmarshal(marshaledOptions, result); err != nil {
-		return nil, err
-	}
-	return result, nil
 }
 
 // isValid check is valid

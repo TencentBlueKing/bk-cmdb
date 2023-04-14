@@ -34,7 +34,7 @@ import (
 
 	"github.com/alexmullins/zip"
 	"github.com/gin-gonic/gin"
-	"github.com/rentiansheng/xlsx"
+	"github.com/tealeg/xlsx/v3"
 )
 
 var sortFields = []string{
@@ -71,13 +71,6 @@ func (s *Service) ImportObject(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
-	if err != nil {
-		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed,
-			defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
-		c.String(http.StatusOK, string(msg))
-		return
-	}
 
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/import/"
@@ -107,7 +100,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		return
 	}
 
-	attrItems, errMsg, err := s.Logics.GetImportInsts(ctx, f, objID, c.Request.Header, 3, false, defLang, modelBizID)
+	attrItems, errMsg, err := s.Logics.GetImportAttr(ctx, f, objID, 3, defLang)
 	if len(attrItems) == 0 {
 		var msg string
 		if err != nil {

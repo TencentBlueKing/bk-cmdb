@@ -13,6 +13,8 @@
 package metadata
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
@@ -310,4 +312,42 @@ type updateCondition struct {
 type OpCondition struct {
 	Delete deleteCondition   `json:"delete"`
 	Update []updateCondition `json:"update"`
+}
+
+// TableData table data
+type TableData struct {
+	ModelData        map[string][]mapstr.MapStr
+	ModelPropertyRel map[string]string
+	SrcModel         string
+}
+
+// GetTableData get table data, it will delete origin data table value
+func GetTableData(originData map[string]interface{}, relRes []ModelQuoteRelation) (*TableData, error) {
+
+	modelData := make(map[string][]mapstr.MapStr)
+	modelPropertyRel := make(map[string]string)
+	for _, relation := range relRes {
+		data, ok := originData[relation.PropertyID]
+		if !ok {
+			continue
+		}
+		table, err := mapstr.GetMapStrArrByInterface(data)
+		if err != nil {
+			return nil, fmt.Errorf("table data %s is invalid, err: %v", relation.PropertyID, err)
+		}
+
+		modelData[relation.DestModel] = table
+		modelPropertyRel[relation.DestModel] = relation.PropertyID
+		delete(originData, relation.PropertyID)
+	}
+
+	if len(modelData) != 0 {
+		return &TableData{
+			ModelData:        modelData,
+			ModelPropertyRel: modelPropertyRel,
+			SrcModel:         relRes[0].SrcModel,
+		}, nil
+	}
+
+	return nil, nil
 }

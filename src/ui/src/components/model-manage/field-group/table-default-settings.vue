@@ -173,7 +173,7 @@
       <bk-table-column
         v-for="prop in props.headers"
         :key="prop.bk_property_id"
-        :label="prop.bk_property_name"
+        :label="$tools.getHeaderPropertyName(prop)"
         :prop="prop.bk_property_id"
         :min-width="$tools.getHeaderPropertyMinWidth(prop, { min: 120 })"
         :show-overflow-tooltip="true">

@@ -226,3 +226,43 @@ func (o *YamlHeader) Validate() errors.RawErrorInfo {
 
 	return errors.RawErrorInfo{}
 }
+
+// ExcelExportHostInput excel export host input
+type ExcelExportHostInput struct {
+	// 导出的主机字段
+	CustomFields []string `json:"export_custom_fields"`
+	// 指定需要导出的主机ID, 设置本参数后， ExportCond限定条件无效
+	HostIDArr []int64 `json:"bk_host_ids"`
+	// 需要导出主机业务id
+	AppID int64 `json:"bk_biz_id"`
+	// 导出主机查询参数,就是search host 主机参数
+	ExportCond HostCommonSearch `json:"export_condition"`
+
+	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
+	AssociationCond map[string]int64 `json:"association_condition"`
+	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
+	// 自关联的时候，规定左边对象使用到的唯一索引
+	ObjectUniqueID int64 `json:"object_unique_id"`
+}
+
+// ExcelImportAddHostInput excel import add host input
+type ExcelImportAddHostInput struct {
+	ModuleID int64 `json:"bk_module_id"`
+	OpType   int64 `json:"op"`
+	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
+	AssociationCond map[string]int64 `json:"association_condition"`
+	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
+	// 自关联的时候，规定左边对象使用到的唯一索引
+	ObjectUniqueID int64 `json:"object_unique_id"`
+}
+
+// ExcelImportUpdateHostInput excel import update host input
+type ExcelImportUpdateHostInput struct {
+	BizID  int64 `json:"bk_biz_id"`
+	OpType int64 `json:"op"`
+	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
+	AssociationCond map[string]int64 `json:"association_condition"`
+	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
+	// 自关联的时候，规定左边对象使用到的唯一索引
+	ObjectUniqueID int64 `json:"object_unique_id"`
+}

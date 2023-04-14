@@ -120,6 +120,9 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
       const tableColumns = property.option?.filter(property => property.editable && !property.bk_isapi)
       // eslint-disable-next-line max-len
       values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(tableColumns || [], row, autoSelect))
+    } else if (propertyType === PROPERTY_TYPES.INNER_TABLE) {
+      const defaultValue = property.option.default || []
+      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
     } else {
       const  value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
       values[propertyId] = value || ''

@@ -202,6 +202,8 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 	case common.FieldTypeTable:
 		// TODO what validation should do on these types
 		rawError = attribute.validTable(ctx, data, key)
+	case common.FieldTypeInnerTable:
+		rawError = attribute.validInnerTable(ctx, data, key)
 	default:
 		rawError = errors.RawErrorInfo{
 			ErrCode: common.CCErrCommUnexpectedFieldType,
@@ -1063,6 +1065,40 @@ func (attribute *Attribute) validTableValue(ctx context.Context, val interface{}
 	return nil
 }
 
+func (attribute *Attribute) validInnerTable(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
+	if val == nil {
+		return errors.RawErrorInfo{}
+	}
+
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	switch t := val.(type) {
+	case []interface{}:
+		if len(t) == 0 {
+			if attribute.IsRequired {
+				blog.Errorf("required inner table attribute %s value can not be empty, rid: %s", key, rid)
+				return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{key}}
+			}
+			return errors.RawErrorInfo{}
+		}
+
+		if len(t) > 50 {
+			blog.Errorf("inner table attribute %s value length %d exceeds maximum, rid: %s", key, len(t), rid)
+			return errors.RawErrorInfo{ErrCode: common.CCErrArrayLengthWrong, Args: []interface{}{key, 50}}
+		}
+
+		_, err := util.SliceInterfaceToInt64(t)
+		if err != nil {
+			blog.Errorf("parse inner table value to int64 array failed, err: %v, type: %T, rid: %s", err, val, rid)
+			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
+		}
+	default:
+		blog.Errorf("params should be of inner table type, but its type is %T, rid: %s", val, rid)
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
+	}
+	return errors.RawErrorInfo{}
+}
+
 // parseFloatOption  parse float data in option
 func parseFloatOption(ctx context.Context, val interface{}) FloatOption {
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -1457,6 +1493,20 @@ func (attribute *Attribute) ValidTableDefaultAttr(ctx context.Context, val inter
 			Args:    []interface{}{attribute.PropertyType},
 		}
 	}
+}
+
+// ParseTableAttrOption parse table attribute options.
+func ParseTableAttrOption(option interface{}) (*TableAttributesOption, error) {
+	marshaledOptions, err := json.Marshal(option)
+	if err != nil {
+		return nil, err
+	}
+
+	result := new(TableAttributesOption)
+	if err := json.Unmarshal(marshaledOptions, result); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // HostApplyFieldMap TODO

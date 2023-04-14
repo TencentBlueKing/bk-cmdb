@@ -11,14 +11,14 @@
 -->
 
 <template>
-  <bk-dropdown-menu trigger="click" :disabled="disabled" font-size="medium">
+  <bk-dropdown-menu trigger="click" :position-fixed="true" :disabled="disabled" font-size="medium">
     <bk-button class="clipboard-trigger" theme="default" slot="dropdown-trigger" v-test-id="'copy'"
       :disabled="disabled">
       {{$t('复制')}}
       <i class="bk-icon icon-angle-down"></i>
     </bk-button>
     <ul class="clipboard-list" slot="dropdown-content" v-test-id="'copy'">
-      <li v-for="(item, index) in list"
+      <li v-for="(item, index) in availableList"
         class="clipboard-item"
         :key="index"
         @click="handleClick(item)">
@@ -29,6 +29,7 @@
 </template>
 
 <script>
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   export default {
     name: 'cmdb-clipboard-selector',
     props: {
@@ -49,6 +50,11 @@
       labelKey: {
         type: String,
         default: 'name'
+      }
+    },
+    computed: {
+      availableList() {
+        return this.list.filter(item => item.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
       }
     },
     methods: {

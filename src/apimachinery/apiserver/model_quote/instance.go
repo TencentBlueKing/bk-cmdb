@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -123,4 +124,29 @@ func (q quote) BatchDeleteQuotedInstance(ctx context.Context, h http.Header,
 	}
 
 	return nil
+}
+
+// GetObjectAttrWithTable get object attribute with table
+func (q quote) GetObjectAttrWithTable(ctx context.Context, h http.Header, params mapstr.MapStr) ([]metadata.Attribute,
+	error) {
+
+	resp := new(metadata.ObjectAttrResult)
+
+	err := q.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef("/find/objectattr/web").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
 }
