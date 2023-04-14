@@ -21,6 +21,7 @@
           :properties="properties"
           :property-groups="propertyGroups"
           @after-update="handleAfterUpdate"
+          :obj-id="objId"
           :inst="inst">
         </cmdb-property>
       </bk-tab-panel>

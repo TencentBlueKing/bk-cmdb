@@ -129,6 +129,8 @@
             :show-unit="false"
             :value="row[column.id]"
             :property="column.property"
+            :instance="row"
+            show-on="cell"
             @click.native.stop="handleValueClick(row, column)">
           </cmdb-property-value>
         </template>

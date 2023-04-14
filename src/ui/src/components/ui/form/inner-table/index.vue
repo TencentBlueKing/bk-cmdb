@@ -1,47 +1,55 @@
 <template>
-  <div class="cmdb-form-inner-table">
-    <div class="inner-table-wrapper" v-bkloading="{ isLoading }">
-      <InnerTable
+  <div class="cmdb-form-innertable">
+    <div class="innertable-container" v-bkloading="{ isLoading }">
+      <data-row
+        type="list"
         :property="property"
         :readonly="readonly"
         :obj-id="objId"
         :instance-id="instanceId"
         :immediate="immediate"
-        v-model="tableData" />
-      <div :class="[{ 'add-row-btn': !showInnerTable }, 'add-row']" v-if="!readonly">
-        <InnerTable
+        :auth="auth"
+        v-model="tableData"
+        :adding="isShowAddRow"
+        @add="handleClickAdd" />
+      <div class="row-add" v-show="isShowAddRow">
+        <data-row
+          type="add"
           :property="property"
           :show-header="false"
-          :default-edit-row-index="0"
-          :value="[{}]"
+          :value="defaultRowData"
           :obj-id="objId"
           :instance-id="instanceId"
           :immediate="immediate"
-          v-if="showInnerTable"
+          :auth="auth"
+          :adding="isShowAddRow"
           @save="handleAddRow"
           @cancel="handleCancelAdd" />
-        <bk-button text size="small" v-else @click="showInnerTable = true">
-          <span class="text-18px"><i class="bk-icon icon-plus"></i></span>
-          {{ $t('新增') }}
-        </bk-button>
+      </div>
+      <div class="row-append" v-if="!isShowAddRow && tableData.length > 0 && !readonly">
+        <icon-text-button
+          :text="$t('新增')"
+          @click="handleClickAdd"
+          :disabled="tableData.length === 50"
+          :disabled-tips="$t('最多添加50行')" />
       </div>
     </div>
     <i class="title-copy icon-cc-details-copy" v-show="showCopyBtn" @click="handleCopyTable"></i>
   </div>
 </template>
-<script lang="ts" setup>
-  /* eslint-disable camelcase */
-  import { getCurrentInstance, onBeforeMount, PropType, ref, watch } from 'vue'
+<script setup>
+  import { getCurrentInstance, ref, watch } from 'vue'
   import { t } from '@/i18n'
-  import { clone } from '@/utils/tools'
+  import { clone, getPropertyDefaultValue } from '@/utils/tools'
   import { $success, $error } from '@/magicbox/index.js'
-  import InnerTable, { IProperty } from './inner-table.vue'
-  import { actions } from '@/store/modules/api/table-instance'
+  import IconTextButton from '@/components/ui/button/icon-text-button.vue'
+  import DataRow from './data-row.vue'
+  import instanceTableService from '@/service/instance/table'
 
   const { proxy } = getCurrentInstance()
   const props = defineProps({
     property: {
-      type: Object as PropType<IProperty>,
+      type: Object,
       default: () => ({}),
       required: true
     },
@@ -58,10 +66,7 @@
     // 模型ID
     objId: {
       type: String,
-      default: '',
-      validator(value: string) {
-        return !value || ['host', 'biz_set', 'biz', 'module'].includes(value)
-      }
+      default: ''
     },
     // 实例ID（编辑的时候需要）
     instanceId: {
@@ -71,10 +76,26 @@
     // 是否立即保存
     immediate: {
       type: Boolean,
-      default: false
+      default: true
     },
+    auth: {
+      type: [Object, Array],
+      default: () => ({})
+    }
   })
   const emit = defineEmits(['input'])
+
+  const defaultRowData = ref([])
+  const newRowData = () => {
+    const data = {}
+    const header = props.property?.option?.header || []
+    header.forEach((prop) => {
+      data[prop.bk_property_id] = getPropertyDefaultValue(prop)
+    })
+    return data
+  }
+
+  const isShowAddRow = ref(false)
 
   const tableData = ref(clone(props.value))
   const watchOnce = watch(() => props.value, (value) => {
@@ -87,13 +108,16 @@
   })
 
   // 添加数据
-  const showInnerTable = ref(false)
+  const exitAdd = () => {
+    isShowAddRow.value = false
+  }
+
   const handleAddRow = (row) => {
-    tableData.value.unshift(row)
-    handleCancelAdd()
+    tableData.value.push(row)
+    exitAdd()
   }
   const handleCancelAdd = () => {
-    showInnerTable.value = false
+    exitAdd()
   }
 
   // 复制表格数据
@@ -116,61 +140,59 @@
     }
 
     isLoading.value = true
-    const { info = [] } = await actions.findmanyQuotedInstance(null, {
-      params: {
-        bk_obj_id: props.objId,
-        bk_property_id: props.property.bk_property_id,
-        filter: {
-          condition: 'OR',
-          rules: [{
-            field: 'bk_inst_id',
-            operator: 'equal',
-            value: props.instanceId
-          }]
-        },
-        page: {
-          limit: 50,
-          start: 0
-        }
+    const { info = [] } = await instanceTableService.find({
+      bk_obj_id: props.objId,
+      bk_property_id: props.property.bk_property_id,
+      filter: {
+        condition: 'OR',
+        rules: [{
+          field: 'bk_inst_id',
+          operator: 'equal',
+          value: props.instanceId
+        }]
+      },
+      page: {
+        limit: 50,
+        start: 0
       }
     })
     tableData.value = info
     isLoading.value = false
   }
 
-  onBeforeMount(() => {
-    handleGetInstanceData()
-  })
+  const handleClickAdd = () => {
+    defaultRowData.value = [newRowData()]
+    isShowAddRow.value = true
+  }
+
+  watch(() => props.instanceId, handleGetInstanceData, { immediate: true })
 </script>
-<script lang="ts">
+<script>
   export default {
     name: 'cmdb-form-innertable'
   }
 </script>
 <style lang="scss" scoped>
-.cmdb-form-inner-table {
+.cmdb-form-innertable {
   position: relative;
   display: flex;
+  width: 100%;
 }
-.inner-table-wrapper {
-  max-width: 1200px;
-  flex: 1;
-  margin-right: 12px;
+.innertable-container {
+  width: 100%;
 }
-.add-row {
+.row-add {
   margin-top: -1px;
-  &-btn {
-    display: flex;
-    align-items: center;
-    height: 42px;
-    border: 1px solid #dfe0e5;
-    &:hover {
-      background-color: #f0f1f5;
-    }
-  }
 }
-.text-18px {
-  font-size: 18px;
+.row-append {
+  border: 1px solid #dfe0e5;
+  border-top: none;
+  padding: 10px;
+  background: #fff;
+  font-size: 12px;
+  &:hover {
+    background-color: #f0f1f5;
+  }
 }
 
 .icon-cc-details-copy {
