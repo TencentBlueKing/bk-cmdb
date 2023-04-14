@@ -25,8 +25,22 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
-	"github.com/rentiansheng/xlsx"
+	"github.com/tealeg/xlsx/v3"
 )
+
+// ExcelDataRange excel data range
+type ExcelDataRange struct {
+	Start int `json:"start"`
+	End   int `json:"end"`
+}
+
+// HeaderTable excel header about table type
+type HeaderTable struct {
+	Start        int                 `json:"start"`
+	End          int                 `json:"end"`
+	NameIndexMap map[int]string      `json:"name_index_map"`
+	Field        map[string]Property `json:"field"`
+}
 
 // Property object fields
 type Property struct {
@@ -41,6 +55,17 @@ type Property struct {
 	NotObjPropery bool // Not an attribute of the object, indicating that the field to be exported is needed for export,
 	AsstObjID     string
 	NotExport     bool
+	Length        int // 这个属性需要占用多少列excel
+	NotEditable   bool
+}
+
+// ImportExcelPreData import excel pre data
+type ImportExcelPreData struct {
+	Fields       map[string]Property
+	NameIndexMap map[int]string
+	DataRange    []ExcelDataRange
+	TableMap     map[string]HeaderTable
+	Sheet        *xlsx.Sheet
 }
 
 // HandleFieldParam 处理Excel表格字段入参
@@ -75,6 +100,7 @@ type HandleHostDataParam struct {
 	ObjID             string
 	ObjIDs            []string
 	Fields            map[string]Property
+	RowCount          int // 主机需要占用多少行excel
 }
 
 // HandleHostParam 处理主机数据入参
@@ -208,8 +234,19 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID i
 				continue
 			}
 			field.ExcelColIndex = index
-			index++
+			if field.PropertyType == common.FieldTypeInnerTable {
+				option, err := metadata.ParseTableAttrOption(field.Option)
+				if err != nil {
+					return nil, err
+				}
+				index += len(option.Header)
+				field.Length = len(option.Header)
+				fields = append(fields, field)
+				continue
+			}
+			field.Length = 1
 			fields = append(fields, field)
+			index++
 		}
 	}
 
@@ -220,8 +257,20 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID i
 				continue
 			}
 			field.ExcelColIndex = index
-			index++
+			if field.PropertyType == common.FieldTypeInnerTable {
+				option, err := metadata.ParseTableAttrOption(field.Option)
+				if err != nil {
+					return nil, err
+				}
+				index += len(option.Header)
+				field.Length = len(option.Header)
+				fields = append(fields, field)
+				continue
+			}
+			field.Length = 1
 			fields = append(fields, field)
+			index++
+
 		}
 	}
 	return fields, nil
@@ -308,6 +357,7 @@ func addSystemField(fields map[string]Property, objID string, defLang lang.Defau
 		PropertyType:  common.FieldTypeInt,
 		Group:         "defalut",
 		ExcelColIndex: index,
+		Length:        1,
 	}
 
 	switch objID {

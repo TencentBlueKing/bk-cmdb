@@ -1316,7 +1316,7 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	}
 
 	if hostList.HostInfo == nil {
-		blog.Errorf("UpdateImportHosts, but host info is nil.input:%+v,rid:%s", hostList, ctx.Kit.Rid)
+		blog.Errorf("host info is nil, input: %+v, rid: %s", hostList, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsNeedSet))
 		return
 	}
@@ -1358,10 +1358,7 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	}
 
 	if len(hostIDArr) == 0 {
-		ctx.RespEntity(map[string]interface{}{
-			"error":   errMsg,
-			"success": []string{},
-		})
+		ctx.RespEntity(map[string]interface{}{"error": errMsg, "success": []string{}})
 		return
 	}
 
@@ -1386,91 +1383,16 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 		return
 	}
 
-	// audit interface of host audit log.
-	audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
-	auditContexts := make([]meta.AuditLog, 0)
-
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		hostCond := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDArr}}
-		hostInfoArr, err := s.Logic.GetHostInfoByConds(ctx.Kit, hostCond)
-		if err != nil {
-			blog.Errorf("get hosts failed, err: %v, condition: %#v, rid: %s", err, hostCond, ctx.Kit.Rid)
-			return err
-		}
-
-		hostMap := make(map[int64]mapstr.MapStr)
-		for _, host := range hostInfoArr {
-			hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
-			if err != nil {
-				blog.Errorf("parse host id failed, err: %v, host: %#v, rid: %s", err, host, ctx.Kit.Rid)
-				return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
-			}
-			hostMap[hostID] = host
-		}
-
-		hostRelations, rawErr := s.Logic.GetHostRelations(ctx.Kit, meta.HostModuleRelationRequest{HostIDArr: hostIDArr,
-			Fields: []string{common.BKAppIDField, common.BKHostIDField}})
-		if rawErr != nil {
-			blog.Errorf("get host relations failed, err: %v, hostIDs: %+v, rid: %s", err, hostIDArr, ctx.Kit.Rid)
-			return rawErr
-		}
-
-		hostBizMap := make(map[int64]int64)
-		for _, relation := range hostRelations {
-			hostBizMap[relation.HostID] = relation.AppID
-		}
-
-		ccLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(ctx.Kit.Header))
-		for _, index := range util.SortedMapInt64Keys(hosts) {
-			host := hosts[index]
-			delete(host, common.BKHostIDField)
-			intHostID := indexHostIDMap[index]
-
-			// generate audit log.
-			genAuditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(host)
-			auditLog, err := audit.GenerateAuditLog(genAuditParam, hostBizMap[intHostID],
-				[]mapstr.MapStr{hostMap[intHostID]})
-			if err != nil {
-				blog.Errorf("generate host audit log failed, hostID: %d, err: %v, rid: %s", intHostID, err, ctx.Kit.Rid)
-				errMsg = append(errMsg, err.Error())
-				continue
-			}
-
-			// to update data.
-			opt := &meta.UpdateOption{
-				Condition: mapstr.MapStr{common.BKHostIDField: intHostID},
-				Data:      mapstr.NewFromMap(host),
-			}
-			_, err = s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
-				common.BKInnerObjIDHost, opt)
-			if err != nil {
-				blog.ErrorJSON("UpdateImportHosts UpdateInstance http do error, err: %v,input:%+v,param:%+v,rid:%s",
-					err, hostList.HostInfo, opt, ctx.Kit.Rid)
-				errMsg = append(errMsg, ccLang.Languagef("import_host_update_fail", index, err.Error()))
-				continue
-			}
-
-			successMsg = append(successMsg, strconv.FormatInt(index, 10))
-			auditContexts = append(auditContexts, auditLog...)
-		}
-
-		// save audit log.
-		if err := audit.SaveAuditLog(ctx.Kit, auditContexts...); err != nil {
-			blog.Errorf("success update host, but add host[%v] audit failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return err
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
+	successData, errData, err := s.Logic.UpdateHostByExcel(ctx.Kit, hosts, hostIDArr, indexHostIDMap)
+	if err != nil {
+		blog.Errorf("update host by excel failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
-	retData := map[string]interface{}{
-		"error":   errMsg,
-		"success": successMsg,
-	}
-	ctx.RespEntity(retData)
+	successMsg = append(successMsg, successData...)
+	errMsg = append(errMsg, errData...)
+
+	ctx.RespEntity(map[string]interface{}{"error": errMsg, "success": successMsg})
 }
 
 // CountHostCPU 查询业务下的主机CPU数量的特殊接口，给成本管理使用
