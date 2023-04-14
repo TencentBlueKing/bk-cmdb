@@ -288,8 +288,9 @@
     </bk-dialog>
 
     <bk-sideslider
+      class="sides-slider"
       v-transfer-dom
-      :width="540"
+      :width="640"
       :title="slider.title"
       :is-show.sync="slider.isShow"
       :before-close="slider.beforeClose"
@@ -311,6 +312,7 @@
         :is-main-line-model="isMainLineModel"
         :is-read-only="isReadOnly"
         :is-edit-field="slider.isEditField"
+        :properties="properties"
         :field="slider.curField"
         :group="slider.curGroup"
         :groups="groupedProperties.map(item => item.info)"
@@ -1400,8 +1402,13 @@ $modelHighlightColor: #3c96ff;
   }
 }
 .group-dialog-footer {
-  .bk-button + .bk-button{
+  .bk-button + .bk-button {
     margin-left: 10px;
+  }
+}
+.sides-slider{
+  :deep(.slider-main) {
+    padding:20px 40px;
   }
 }
 </style>

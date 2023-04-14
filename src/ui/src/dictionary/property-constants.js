@@ -30,7 +30,9 @@ export const PROPERTY_TYPES = Object.freeze({
   MAP: 'map',
   TABLE: 'table',
   SERVICE_TEMPLATE: 'service-template',
-  TOPOLOGY: 'topology'
+  TOPOLOGY: 'topology',
+  FOREIGNKEY: 'foreignkey',
+  INNER_TABLE: 'innertable'
 })
 
 export const PROPERTY_TYPE_NAMES = Object.freeze({
@@ -47,7 +49,8 @@ export const PROPERTY_TYPE_NAMES = Object.freeze({
   [PROPERTY_TYPES.LIST]: t('列表'),
   [PROPERTY_TYPES.ORGANIZATION]: t('组织'),
   [PROPERTY_TYPES.ENUMMULTI]: t('枚举(多选)'),
-  [PROPERTY_TYPES.ENUMQUOTE]: t('枚举(引用)')
+  // [PROPERTY_TYPES.ENUMQUOTE]: t('枚举(引用)'),
+  [PROPERTY_TYPES.INNER_TABLE]: t('表格')
 })
 
 export const PROPERTY_TYPE_LIST = [
@@ -71,9 +74,13 @@ export const PROPERTY_TYPE_LIST = [
     id: PROPERTY_TYPES.ENUMMULTI,
     name: PROPERTY_TYPE_NAMES[PROPERTY_TYPES.ENUMMULTI]
   },
+  // {
+  //   id: PROPERTY_TYPES.ENUMQUOTE,
+  //   name: PROPERTY_TYPE_NAMES[PROPERTY_TYPES.ENUMQUOTE]
+  // },
   {
-    id: PROPERTY_TYPES.ENUMQUOTE,
-    name: PROPERTY_TYPE_NAMES[PROPERTY_TYPES.ENUMQUOTE]
+    id: PROPERTY_TYPES.INNER_TABLE,
+    name: PROPERTY_TYPE_NAMES[PROPERTY_TYPES.INNER_TABLE]
   },
   {
     id: PROPERTY_TYPES.DATE,

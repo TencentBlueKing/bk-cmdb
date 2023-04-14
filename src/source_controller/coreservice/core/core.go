@@ -75,6 +75,8 @@ type ModelAttribute interface {
 		*metadata.QueryModelAttributeDataResult, error)
 	SearchModelAttributesByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (
 		*metadata.QueryModelAttributeDataResult, error)
+	SearchModelAttrsWithTableByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (
+		*metadata.QueryModelAttributeDataResult, error)
 }
 
 // ModelAttrUnique model attribute  unique methods definitions
@@ -95,10 +97,12 @@ type ModelOperation interface {
 	ModelAttrUnique
 
 	CreateModel(kit *rest.Kit, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error)
+	CreateTableModel(kit *rest.Kit, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error)
 	SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*metadata.SetDataResult, error)
 	UpdateModel(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metadata.DeletedCount, error)
+	CascadeDeleteTableModel(kit *rest.Kit, input metadata.DeleteTableOption) error
 	SearchModel(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error)
 	SearchModelWithAttribute(kit *rest.Kit, inputParam metadata.QueryCondition) (
 		*metadata.QueryModelWithAttributeDataResult, error)

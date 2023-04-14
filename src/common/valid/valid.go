@@ -1,16 +1,21 @@
 /*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Tencent is pleased to support the open source community by making
+ * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
+ * Copyright (C) 2017 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ * We undertake not to change the open source license (MIT license) applicable
+ * to the current version of the project delivered to anyone in the future.
  */
 
-package util
+package valid
 
 import (
 	"encoding/json"
@@ -25,7 +30,10 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
+	"configcenter/src/common/util"
 )
+
+// TODO 解析options的方式和 src/common/metadata/attribute.go 里的 ParseXxxOption 合并为一套，现在这两个地方的解析方式不太一样
 
 // ValidPropertyOption valid property field option
 func ValidPropertyOption(propertyType string, option interface{}, isMultiple bool, defaultVal interface{}, rid string,
@@ -136,82 +144,65 @@ func ValidFieldTypeInt(option, defaultVal interface{}, rid string, errProxy ccEr
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 	}
 
-	tmp, ok := option.(map[string]interface{})
+	optMap, ok := option.(map[string]interface{})
 	if !ok {
 		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 	}
 
-	{
-		// min
-		min, ok := tmp["min"]
-		maxVal := 99999999999 // default
-		minVal := -9999999999 // default
-		err := errProxy.Error(common.CCErrCommParamsNeedInt)
+	// validate maximum & minimum option
+	minVal, err := parseIntOptionValue(optMap, "min", -9999999999)
+	if err != nil {
+		blog.Errorf("parse min value failed, err: %v, opt: %+v, rid: %d", err, optMap, rid)
+		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option.min")
+	}
 
-		isPass := false
-		if ok {
-			switch d := min.(type) {
-			case string:
-				if len(d) == 0 {
-					isPass = true
-				}
-				if len(d) > 11 {
-					return errProxy.Errorf(common.CCErrCommOverLimit, "option.min")
-				}
-			}
+	maxVal, err := parseIntOptionValue(optMap, "max", 99999999999)
+	if err != nil {
+		blog.Errorf("parse max value failed, err: %v, opt: %+v, rid: %d", err, optMap, rid)
+		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option.min")
+	}
 
-			if !isPass {
-				if ok := IsNumeric(min); !ok {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
-				}
-				minVal, err = GetIntByInterface(min)
-				if err != nil {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
-				}
-			}
-		}
+	if minVal > maxVal {
+		blog.Errorf("option min value %d is greater than max value %d, rid: %s", minVal, maxVal, rid)
+		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
+	}
 
-		// max
-		max, ok := tmp["max"]
-		if ok {
-			isPass := false
-			switch d := max.(type) {
-			case string:
-				if len(d) == 0 {
-					isPass = true
-				}
-				if len(d) > 11 {
-					return errProxy.Errorf(common.CCErrCommOverLimit, "option.max")
-				}
-			}
-			if !isPass {
-				if ok := IsNumeric(max); !ok {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
-				}
-				maxVal, err = GetIntByInterface(max)
-				if nil != err {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
-				}
-			}
-		}
-
-		if minVal > maxVal {
-			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option.max")
-		}
-		if defaultVal == nil {
-			return nil
-		}
-		defaultValue, err := GetIntByInterface(defaultVal)
-		if err != nil {
-			blog.Errorf("int type field default value is wrong, rid: %s", rid)
-			return err
-		}
-		if defaultValue < minVal || defaultValue > maxVal {
-			return fmt.Errorf("int type field default value over limit")
-		}
+	// validate default value
+	if defaultVal == nil {
+		return nil
+	}
+	defaultValue, err := util.GetIntByInterface(defaultVal)
+	if err != nil {
+		blog.Errorf("int type field default value is wrong, rid: %s", rid)
+		return err
+	}
+	if defaultValue < minVal || defaultValue > maxVal {
+		return fmt.Errorf("int type field default value over limit")
 	}
 
 	return nil
+}
+
+func parseIntOptionValue(optMap map[string]interface{}, field string, defaultVal int) (int, error) {
+	val, ok := optMap[field]
+	if !ok {
+		return defaultVal, nil
+	}
+
+	switch strVal := val.(type) {
+	case string:
+		if len(strVal) == 0 {
+			return defaultVal, nil
+		}
+
+		return 0, fmt.Errorf("int option %s value %s is of string type", field, val)
+	}
+
+	if !util.IsNumeric(val) {
+		return 0, fmt.Errorf("int option %s value %+v is not numeric", field, val)
+	}
+
+	return util.GetIntByInterface(val)
 }
 
 // ValidFieldTypeFloat validate int or float field type's option default value
@@ -220,81 +211,68 @@ func ValidFieldTypeFloat(option, defaultVal interface{}, rid string, errProxy cc
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 	}
 
-	tmp, ok := option.(map[string]interface{})
+	optMap, ok := option.(map[string]interface{})
 	if !ok {
+		blog.Errorf("option type %s is invalid, opt: %+v, rid: %s", reflect.TypeOf(option), option, rid)
 		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 	}
 
-	{
-		// min
-		min, ok := tmp["min"]
-		maxVal := float64(common.MaxInt64) // default
-		minVal := float64(common.MinInt64) // default
-		err := errProxy.Error(common.CCErrCommParamsNeedInt)
-
-		isPass := false
-		if ok {
-			switch d := min.(type) {
-			case string:
-				if len(d) == 0 {
-					isPass = true
-				}
-				if len(d) > 11 {
-					return errProxy.Errorf(common.CCErrCommOverLimit, "option.min")
-				}
-			}
-
-			if !isPass {
-				if ok := IsNumeric(min); !ok {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
-				}
-				minVal, err = GetFloat64ByInterface(min)
-				if err != nil {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.min")
-				}
-			}
-		}
-
-		// max
-		max, ok := tmp["max"]
-		if ok {
-			isPass := false
-			switch d := max.(type) {
-			case string:
-				if len(d) == 0 {
-					isPass = true
-				}
-				if len(d) > 11 {
-					return errProxy.Errorf(common.CCErrCommOverLimit, "option.max")
-				}
-			}
-			if !isPass {
-				if ok := IsNumeric(max); !ok {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
-				}
-				maxVal, err = GetFloat64ByInterface(max)
-				if nil != err {
-					return errProxy.Errorf(common.CCErrCommParamsNeedInt, "option.max")
-				}
-			}
-		}
-
-		if minVal > maxVal {
-			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option.max")
-		}
-		if defaultVal == nil {
-			return nil
-		}
-		defaultValue, err := GetFloat64ByInterface(defaultVal)
-		if err != nil {
-			blog.Errorf("float type field default value is wrong, rid: %s", rid)
-			return err
-		}
-		if defaultValue < minVal || defaultValue > maxVal {
-			return fmt.Errorf("float type field default value over limit")
-		}
+	// validate maximum & minimum option
+	minVal, err := parseFloatOptionValue(optMap, "min", float64(common.MinInt64))
+	if err != nil {
+		blog.Errorf("parse min value failed, err: %v, opt: %+v, rid: %d", err, optMap, rid)
+		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option.min")
 	}
+
+	maxVal, err := parseFloatOptionValue(optMap, "max", float64(common.MaxInt64))
+	if err != nil {
+		blog.Errorf("parse max value failed, err: %v, opt: %+v, rid: %d", err, optMap, rid)
+		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option.min")
+	}
+
+	if minVal > maxVal {
+		blog.Errorf("option min value %d is greater than max value %d, rid: %s", minVal, maxVal, rid)
+		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
+	}
+
+	// validate default value
+	if defaultVal == nil {
+		return nil
+	}
+
+	defaultValue, err := util.GetFloat64ByInterface(defaultVal)
+	if err != nil {
+		blog.Errorf("float type field default value is wrong, rid: %s", rid)
+		return err
+	}
+
+	if defaultValue < minVal || defaultValue > maxVal {
+		return fmt.Errorf("float type field default value over limit")
+	}
+
 	return nil
+}
+
+func parseFloatOptionValue(optMap map[string]interface{}, field string, defaultVal float64) (float64, error) {
+	val, ok := optMap[field]
+	if !ok {
+		return defaultVal, nil
+	}
+
+	switch strVal := val.(type) {
+	case string:
+		if len(strVal) == 0 {
+			return defaultVal, nil
+		}
+
+		return 0, fmt.Errorf("float option %s value %s is of string type", field, val)
+	}
+
+	if !util.IsNumeric(val) {
+		return 0, fmt.Errorf("float option %s value %+v is not numeric", field, val)
+	}
+
+	return util.GetFloat64ByInterface(val)
 }
 
 // ValidFieldTypeList validate list field type's option and default value
@@ -337,7 +315,7 @@ func ValidFieldTypeList(option, defaultVal interface{}, rid string, errProxy ccE
 		return nil
 	}
 
-	listDefaultVal := GetStrByInterface(defaultVal)
+	listDefaultVal := util.GetStrByInterface(defaultVal)
 	for _, value := range valueList {
 		if listDefaultVal == value {
 			return nil
@@ -438,51 +416,6 @@ func IsInnerObject(objID string) bool {
 	return false
 }
 
-// IsNumeric judges if value is a number
-func IsNumeric(val interface{}) bool {
-	switch val.(type) {
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, json.Number:
-		return true
-	}
-
-	return false
-}
-
-// IsInteger judges if value is a integer
-func IsInteger(val interface{}) bool {
-	switch val.(type) {
-	case int, int8, int16, int32, int64, json.Number:
-		return true
-	}
-
-	return false
-}
-
-// IsBasicValue test if an interface is the basic supported golang type or not.
-func IsBasicValue(value interface{}) bool {
-	v := reflect.ValueOf(value)
-
-	switch v.Kind() {
-	case reflect.Bool,
-		reflect.Int,
-		reflect.Int8,
-		reflect.Int16,
-		reflect.Int32,
-		reflect.Int64,
-		reflect.Uint,
-		reflect.Uint8,
-		reflect.Uint16,
-		reflect.Uint32,
-		reflect.Uint64,
-		reflect.Float32,
-		reflect.Float64,
-		reflect.String:
-		return true
-	default:
-		return false
-	}
-}
-
 // ValidateStringType validate if the value is a string type
 func ValidateStringType(value interface{}) error {
 	if reflect.TypeOf(value).Kind() != reflect.String {
@@ -520,12 +453,12 @@ func ValidateDatetimeType(value interface{}) error {
 	}
 
 	// timestamp type is supported
-	if IsNumeric(value) {
+	if util.IsNumeric(value) {
 		return nil
 	}
 
 	// string type with time format is supported
-	if _, ok := IsTime(value); ok {
+	if _, ok := util.IsTime(value); ok {
 		return nil
 	}
 	return fmt.Errorf("value(%+v) is not of time type", value)
@@ -664,4 +597,28 @@ func ValidPropertyTypeIsMultiple(propertyType string, isMultiple bool, errProxy 
 		}
 	}
 	return nil
+}
+
+// ValidTableFieldOption judging the legitimacy of the basic type of the form field
+func ValidTableFieldOption(propertyType string, option, defaultValue interface{}, isMultiple *bool,
+	errProxy ccErr.DefaultCCErrorIf) error {
+	bFalse := false
+	if isMultiple == nil {
+		isMultiple = &bFalse
+	}
+
+	switch propertyType {
+	case common.FieldTypeInt:
+		return ValidFieldTypeInt(option, defaultValue, "", errProxy)
+	case common.FieldTypeEnumMulti:
+		return ValidFieldTypeEnumOption(option, *isMultiple, "", errProxy)
+	case common.FieldTypeLongChar, common.FieldTypeSingleChar:
+		return ValidFieldTypeString(option, defaultValue, "", errProxy)
+	case common.FieldTypeFloat:
+		return ValidFieldTypeFloat(option, defaultValue, "", errProxy)
+	case common.FieldTypeBool:
+		return ValidateBoolType(option)
+	default:
+		return fmt.Errorf("type(%s) is not among the underlying types supported by the table field", propertyType)
+	}
 }

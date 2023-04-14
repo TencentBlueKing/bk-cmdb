@@ -29,7 +29,7 @@ import (
 	"configcenter/src/web_server/logics"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rentiansheng/xlsx"
+	"github.com/tealeg/xlsx/v3"
 )
 
 type excelExportInstInput struct {
@@ -93,11 +93,9 @@ func (s *Service) ImportInst(c *gin.Context) {
 	dir := webCommon.ResourcePath + "/import/"
 	_, err = os.Stat(dir)
 	if err != nil {
-		if err != nil {
-			blog.Warnf("os.Stat failed, filename: %s, will retry with os.MkdirAll, err: %+v, rid: %s", dir, err, rid)
-		}
+		blog.Warnf("os.Stat failed, filename: %s, will retry with os.MkdirAll, err: %v, rid: %s", dir, err, rid)
 		if err := os.MkdirAll(dir, os.ModeDir|os.ModePerm); err != nil {
-			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
+			blog.Errorf("os.MkdirAll failed, filename: %s, err: %v, rid: %s", dir, err, rid)
 		}
 	}
 	filePath := fmt.Sprintf("%s/importinsts-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
@@ -113,7 +111,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 			blog.Errorf("os.Remove failed, filename: %s, err: %+v, rid: %s", filePath, err, rid)
 		}
 	}()
-	f, err := xlsx.OpenFile(filePath)
+	f, err := xlsx.OpenFile(filePath, xlsx.UseDiskVCellStore)
 	if err != nil {
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail,
 			err.Error()).Error(), nil)
@@ -147,7 +145,6 @@ func (s *Service) ExportInst(c *gin.Context) {
 	input := &excelExportInstInput{}
 	if err := c.BindJSON(input); err != nil {
 		blog.ErrorJSON("Unmarshal input error. input: %s, err: %s, rid: %s", c.Keys, err.Error(), rid)
-
 		ccErr := defErr.CCError(common.CCErrCommJSONUnmarshalFailed)
 		result := metadata.ResponseDataMapStr{
 			BaseResp: metadata.BaseResp{
@@ -159,12 +156,14 @@ func (s *Service) ExportInst(c *gin.Context) {
 		c.JSON(http.StatusOK, result)
 		return
 	}
+	if len(input.InstIDArr) > common.BKInstMaxExportLimit {
+		c.String(http.StatusInternalServerError, fmt.Sprintf("bk_inst_ids exceed max length: %d",
+			common.BKInstMaxExportLimit))
+		return
+	}
 
-	// ownerID := c.Param(common.BKOwnerIDField)
 	objID := c.Param(common.BKObjIDField)
-
 	modelBizID := input.AppID
-
 	instInfo, err := s.Logics.GetInstData(objID, input.InstIDArr, pheader)
 	if err != nil {
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail,
@@ -183,7 +182,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 			common.CCErrCommExcelTemplateFailed, objID).Error(), nil)))
 		return
 	}
-	instInfo, err = s.handleExportEnumQuoteInst(c, pheader, instInfo, objID, fields, rid)
+	instInfo, err = s.Logics.HandleExportEnumQuoteInst(c, pheader, instInfo, objID, fields, rid)
 	if err != nil {
 		blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
 		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(
@@ -191,23 +190,30 @@ func (s *Service) ExportInst(c *gin.Context) {
 		return
 	}
 
-	usernameMap, propertyList, err := s.getUsernameMapWithPropertyList(c, objID, instInfo)
+	usernameMap, propertyList, err := s.Logics.GetUsernameMapWithPropertyList(c, objID, instInfo, s.Config)
 	if err != nil {
 		blog.Errorf("ExportInst failed, get username map and property list failed, err: %+v, rid: %s", err, rid)
 		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetUsernameMapFail, defErr.Errorf(
 			common.CCErrWebGetUsernameMapFail, objID).Error(), nil)))
 	}
 
-	org, orgPropertyList, err := s.getDepartment(c, objID)
+	org, orgPropertyList, err := s.Logics.GetDepartmentDetail(c, objID, s.Config, instInfo)
 	if err != nil {
 		blog.Errorf("get department map and property list failed, err: %+v, rid: %s", err, rid)
 		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetDepartmentMapFail, defErr.Errorf(
 			common.CCErrWebGetDepartmentMapFail, err.Error()).Error(), nil)))
 	}
 
-	file := xlsx.NewFile()
+	instInfo, rowCountArr, err := s.Logics.BuildDataWithTable(objID, instInfo, fields, pheader)
+	if err != nil {
+		blog.Errorf("build data with table failed, err: %v, rid: %s", err, rid)
+		c.String(http.StatusInternalServerError, fmt.Sprintf("build data with table failed, err: %+v", err))
+		return
+	}
+
+	file := xlsx.NewFile(xlsx.UseDiskVCellStore)
 	err = s.Logics.BuildExcelFromData(ctx, objID, fields, nil, instInfo, file, pheader, modelBizID, usernameMap,
-		propertyList, org, orgPropertyList, input.AssociationCond, input.ObjectUniqueID)
+		propertyList, org, orgPropertyList, input.AssociationCond, input.ObjectUniqueID, rowCountArr)
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s, rid: %s", objID, err.Error(), rid)
 		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(
@@ -224,7 +230,12 @@ func (s *Service) ExportInst(c *gin.Context) {
 	}
 
 	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano()))
-	logics.ProductExcelCommentSheet(ctx, file, defLang)
+	if err := logics.ProductExcelCommentSheet(ctx, file, defLang); err != nil {
+		blog.Errorf("export instance failed, err: %v, rid: %s", err, rid)
+		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(
+			common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)))
+		return
+	}
 	if err = file.Save(dirFileName); err != nil {
 		blog.Errorf("ExportInst save file error:%s, rid: %s", err.Error(), rid)
 		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(
@@ -232,8 +243,14 @@ func (s *Service) ExportInst(c *gin.Context) {
 		return
 	}
 	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_export_inst_%s.xlsx", objID))
-	c.File(dirFileName)
-	if err := os.Remove(dirFileName); err != nil {
-		blog.Errorf("remove file %s failed, err: %+v, rid: %s", dirFileName, err, rid)
+	if err := s.writeFile(c, dirFileName, rid); err != nil {
+		c.String(http.StatusInternalServerError, fmt.Sprintf("write exported file failed, err: %+v", err))
+		return
 	}
+
+	defer func(dirFileName string, rid string) {
+		if err := os.Remove(dirFileName); err != nil {
+			blog.Errorf("remove file %s failed, err: %+v, rid: %s", dirFileName, err, rid)
+		}
+	}(dirFileName, rid)
 }

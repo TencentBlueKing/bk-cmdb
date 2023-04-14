@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/hooks"
 )
@@ -213,6 +214,11 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 				return err
 			}
 		}
+
+		// remove inner table value
+		if property.PropertyType == common.FieldTypeInnerTable {
+			delete(instanceData, property.PropertyID)
+		}
 	}
 
 	skip, err := hooks.IsSkipValidateHook(kit, objID, instanceData)
@@ -324,6 +330,13 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 			delete(updateData, key)
 			continue
 		}
+
+		// right now inner table should be updated as quoted instance, cannot update in source instance
+		if property.PropertyType == common.FieldTypeInnerTable {
+			delete(updateData, key)
+			continue
+		}
+
 		if value, ok := val.(string); ok {
 			val = strings.TrimSpace(value)
 			updateData[key] = val
@@ -399,7 +412,7 @@ func (m *instanceManager) validMainlineInstanceData(kit *rest.Kit, objID string,
 			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedString, nameField)
 		}
 
-		name, err := util.ValidTopoNameField(name, nameField, kit.CCError)
+		name, err := valid.ValidTopoNameField(name, nameField, kit.CCError)
 		if err != nil {
 			return err
 		}
@@ -595,7 +608,7 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, property metadata.Attribut
 	if property.IsMultiple == nil {
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
 	}
-	if !(*property.IsMultiple) && len(valIDs) != 1{
+	if !(*property.IsMultiple) && len(valIDs) != 1 {
 		blog.Errorf("enum quote is single choice, but inst id is multiple, rid: %s", kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommParamsNeedSingleChoice)
 	}

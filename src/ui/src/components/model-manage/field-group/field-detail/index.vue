@@ -18,7 +18,8 @@
           {{$t('唯一标识')}}
           <span class="color-danger">*</span>
         </span>
-        <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
+        <div v-bk-tooltips.top.light.click="$t('模型字段唯一标识提示语')"
+          class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
           <bk-input type="text" class="cmdb-form-input"
             name="fieldId"
             v-model.trim="fieldInfo.bk_property_id"
@@ -28,7 +29,6 @@
           </bk-input>
           <p class="form-error" :title="errors.first('fieldId')">{{errors.first('fieldId')}}</p>
         </div>
-        <bk-icon class="icon-tips" type="info-circle-shape" v-bk-tooltips="$t('模型字段唯一标识提示语')" />
       </label>
       <label class="form-label">
         <span class="label-text">
@@ -110,6 +110,7 @@
           :is="`the-field-${fieldType}`"
           :multiple="fieldInfo.ismultiple"
           v-model="fieldInfo.option"
+          :is-edit-field="isEditField"
           :type="fieldInfo.bk_property_type"
           ref="component"
         ></component>
@@ -148,13 +149,16 @@
       <div class="form-label">
         <span class="label-text">{{$t('用户提示')}}</span>
         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('placeholder') }">
-          <textarea
+          <bk-input
             class="raw"
+            :rows="3"
+            :maxlength="100"
             name="placeholder"
+            :type="'textarea'"
             v-model.trim="fieldInfo['placeholder']"
             :disabled="isReadOnly"
             v-validate="'length:2000'">
-          </textarea>
+          </bk-input>
           <p class="form-error" v-if="errors.has('placeholder')">{{errors.first('placeholder')}}</p>
         </div>
       </div>
@@ -182,6 +186,7 @@
   import theFieldList from './list'
   import theFieldBool from './bool'
   import theFieldEnumquote from './enumquote.vue'
+  import theFieldInnertable from './inner-table/index.vue'
   import theConfig from './config'
   import { mapGetters, mapActions } from 'vuex'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
@@ -197,9 +202,14 @@
       theFieldEnumquote,
       theFieldList,
       theFieldBool,
-      theConfig
+      theConfig,
+      theFieldInnertable
     },
     props: {
+      properties: {
+        type: Array,
+        required: true
+      },
       field: {
         type: Object
       },
@@ -231,7 +241,6 @@
     },
     data() {
       return {
-        fieldTypeList: PROPERTY_TYPE_LIST,
         fieldInfo: {
           bk_property_name: '',
           bk_property_id: '',
@@ -285,7 +294,8 @@
           PROPERTY_TYPES.LIST,
           PROPERTY_TYPES.BOOL,
           PROPERTY_TYPES.ENUMMULTI,
-          PROPERTY_TYPES.ENUMQUOTE
+          PROPERTY_TYPES.ENUMQUOTE,
+          PROPERTY_TYPES.INNER_TABLE
         ]
         return types.indexOf(this.fieldInfo.bk_property_type) !== -1
       },
@@ -294,7 +304,8 @@
           PROPERTY_TYPES.ENUM,
           PROPERTY_TYPES.ENUMMULTI,
           PROPERTY_TYPES.ENUMQUOTE,
-          PROPERTY_TYPES.BOOL
+          PROPERTY_TYPES.BOOL,
+          PROPERTY_TYPES.INNER_TABLE
         ]
         return !types.includes(this.fieldInfo.bk_property_type)
       },
@@ -312,6 +323,16 @@
           return this.field.creator === 'cc_system'
         }
         return false
+      },
+      fieldTypeList() {
+        if (this.customObjId) {
+          const disabledTypes = this.isEditField
+            ? [PROPERTY_TYPES.INNER_TABLE]
+            : [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.ENUMQUOTE]
+          return PROPERTY_TYPE_LIST.filter(item => !disabledTypes.includes(item.id))
+        }
+        const createFieldList = PROPERTY_TYPE_LIST.filter(item => item.id !== PROPERTY_TYPES.ENUMQUOTE)
+        return this.isEditField ? PROPERTY_TYPE_LIST : createFieldList
       }
     },
     watch: {
@@ -336,6 +357,11 @@
               this.fieldInfo.option = ''
               this.fieldInfo.ismultiple = true
               break
+            case PROPERTY_TYPES.INNER_TABLE:
+              this.fieldInfo.option = {
+                header: [],
+                default: []
+              }
             default:
               this.fieldInfo.default = ''
               this.fieldInfo.option = ''
@@ -380,6 +406,12 @@
         if (!await this.validateValue()) {
           return
         }
+
+        if (this.properties.filter(property => property.bk_property_type === PROPERTY_TYPES.INNER_TABLE).length === 5) {
+          this.$error('最多只能添加5个表格字段')
+          return
+        }
+
         let fieldId = null
         if (this.fieldInfo.bk_property_type === 'int' || this.fieldInfo.bk_property_type === 'float') {
           this.fieldInfo.option.min = this.isNullOrUndefinedOrEmpty(this.fieldInfo.option.min) ? '' : Number(this.fieldInfo.option.min)
@@ -478,16 +510,11 @@
             color: $cmdbBorderColor;
             padding-left: 5px;
         }
-        .icon-tips {
-            font-size: 18px !important;
-            color: rgb(152,155,165);
-            padding-left: 5px;
-        }
         .field-detail {
-            width: 94%;
+            width: 100%;
             margin-bottom: 20px;
             padding: 20px;
-            background: #f3f8ff;
+            background: #F5F7FB;
             .form-label:last-child {
                 margin: 0;
             }
@@ -501,7 +528,7 @@
             }
         }
         .cmdb-form-item {
-            width: 94% !important;
+            width: 100%;
             &.is-error {
                 /deep/ .bk-form-input {
                     border-color: #ff5656;
@@ -514,9 +541,13 @@
             margin-left: 10px;
         }
         .btn-group {
-            padding: 10px 20px;
+            padding: 8px 24px;
             &.is-sticky {
                 border-top: 1px solid #dcdee5;
+            }
+            .bk-button{
+                width: 88px;
+                height: 32px;
             }
         }
     }

@@ -10,4 +10,12 @@
  * limitations under the License.
  */
 
+export {}
+
 declare const NODE_ENV: string
+
+declare global {
+  interface Window {
+    [key: string]: any;
+  }
+}

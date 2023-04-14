@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 
+	modelquote "configcenter/src/apimachinery/apiserver/model_quote"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
@@ -31,6 +32,7 @@ import (
 // ApiServerClientInterface TODO
 type ApiServerClientInterface interface {
 	Client() rest.ClientInterface
+	ModelQuote() modelquote.Interface
 
 	AddDefaultApp(ctx context.Context, h http.Header, ownerID string, params mapstr.MapStr) (resp *metadata.Response, err error)
 	SearchDefaultApp(ctx context.Context, h http.Header, ownerID string) (resp *metadata.QueryInstResult, err error)
@@ -105,4 +107,9 @@ func NewApiServerClientInterface(c *util.Capability, version string) ApiServerCl
 
 type apiServer struct {
 	client rest.ClientInterface
+}
+
+// ModelQuote return the model quote client
+func (a *apiServer) ModelQuote() modelquote.Interface {
+	return modelquote.New(a.client)
 }

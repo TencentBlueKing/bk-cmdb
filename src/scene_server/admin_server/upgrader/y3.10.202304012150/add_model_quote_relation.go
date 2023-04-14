@@ -23,8 +23,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
+	"configcenter/src/storage/driver/mongodb"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -33,7 +36,7 @@ func addModelQuoteRelationCollection(ctx context.Context, db dal.RDB) error {
 
 	exists, err := db.HasTable(ctx, common.BKTableNameModelQuoteRelation)
 	if err != nil {
-		blog.Errorf("check if table %s exists failed, err: %v, rid: %s", common.BKTableNameModelQuoteRelation, err)
+		blog.Errorf("check if table %s exists failed, err: %v", common.BKTableNameModelQuoteRelation, err)
 		return err
 	}
 
@@ -45,6 +48,52 @@ func addModelQuoteRelationCollection(ctx context.Context, db dal.RDB) error {
 		return err
 	}
 
+	return nil
+}
+
+func addHiddenClassification(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+
+	result := make([]metadata.Classification, 0)
+	filter := map[string]interface{}{
+		common.BKDBOR: []map[string]interface{}{
+			{
+				metadata.ClassFieldClassificationID: "bk_table_classification",
+			},
+			{
+				metadata.ClassFieldClassificationName: "表格分类",
+			},
+		},
+	}
+
+	err := db.Table(common.BKTableNameObjClassification).Find(filter).All(ctx, &result)
+	if err != nil && !db.IsNotFoundError(err) {
+		blog.Errorf("find obj classification failed, err: %v", err)
+		return err
+	}
+	if len(result) > 0 {
+		blog.Errorf("model category with the same id or name already exists in the system, "+
+			"please upgrade after processing, result: %v", result)
+		return errors.New("classification conflict")
+	}
+
+	id, err := mongodb.Client().NextSequence(ctx, common.BKTableNameObjClassification)
+	if err != nil {
+		blog.Errorf("it is failed to create a new sequence id on the table(%s) of the database, error %v",
+			common.BKTableNameObjClassification, err)
+		return err
+	}
+
+	classification := metadata.Classification{
+		ID:                 int64(id),
+		OwnerID:            conf.OwnerID,
+		ClassificationType: metadata.HiddenType,
+		ClassificationID:   "bk_table_classification",
+		ClassificationName: "表格分类",
+	}
+
+	if err := db.Table(common.BKTableNameObjClassification).Insert(ctx, classification); err != nil {
+		blog.Errorf("insert hidden classification failed err: %v", err)
+	}
 	return nil
 }
 

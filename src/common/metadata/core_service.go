@@ -775,32 +775,3 @@ type BatchCreateInstRespData struct {
 type BatchCreateModelInstOption struct {
 	Data []mapstr.MapStr `json:"data"`
 }
-
-// ModelQuoteRelation model relationship table information.
-// For example, the disk table field on the host is a table type,
-// then DestModel is bk_host_disk, SrcModel is host, PropertyID is
-// disk, Type is table.
-type ModelQuoteRelation struct {
-	// DestModel derived model
-	DestModel string `json:"dest_model" bson:"dest_model"`
-	// SrcModel source model, such as a tabular model
-	SrcModel string `json:"src_model" bson:"src_model"`
-	// PropertyID model attribute id
-	PropertyID string `json:"bk_property_id" bson:"bk_property_id"`
-	// Type the specific type of model such as the table
-	Type common.ModelQuoteType `json:"type" bson:"type"`
-	// SupplierAccount supplier account
-	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
-}
-
-// ListModelQuoteRelRes list model quote relationship table result.
-type ListModelQuoteRelRes struct {
-	Count uint64               `json:"count"`
-	Info  []ModelQuoteRelation `json:"info"`
-}
-
-// ListModelQuoteRelResp list model quote relationship table response.
-type ListModelQuoteRelResp struct {
-	BaseResp `json:",inline"`
-	Data     *ListModelQuoteRelRes `json:"data"`
-}

@@ -62,7 +62,10 @@ const (
 	BKAuditLogPageLimit = 200
 
 	// BKMaxExportLimit the limit to export
-	BKMaxExportLimit = 10000
+	BKMaxExportLimit = 100
+
+	// BKInstMaxExportLimit the limit to instance export
+	BKInstMaxExportLimit = 1000
 
 	// BKMaxOnceExportLimit the limit once to export
 	BKMaxOnceExportLimit = 30000
@@ -934,6 +937,10 @@ const (
 	// FieldTypeTable the table type, inner type.
 	FieldTypeTable string = "table"
 
+	// FieldTypeInnerTable the table type, the type
+	// used for table fields in model reference scenarios
+	FieldTypeInnerTable string = "innertable"
+
 	// FieldTypeOrganization the organization field type
 	FieldTypeOrganization string = "organization"
 
@@ -972,8 +979,8 @@ const (
 	// HostAddMethodAPI add api method
 	HostAddMethodAPI = "3"
 
-	// HostAddMethodExcelIndexOffset the height of the table header
-	HostAddMethodExcelIndexOffset = 3
+	// AddExcelDataIndexOffset the index of the add excel data
+	AddExcelDataIndexOffset = 6
 
 	// HostAddMethodExcelAssociationIndexOffset TODO
 	HostAddMethodExcelAssociationIndexOffset = 2
@@ -1004,6 +1011,8 @@ const (
 	ExcelHeaderFirstColumnColor = "fee9da"
 	// ExcelFirstColumnCellColor dark gray
 	ExcelFirstColumnCellColor = "fabf8f"
+	// ExcelTableHeaderColor excel table header color
+	ExcelTableHeaderColor = "d1e0b6"
 
 	// ExcelAsstPrimaryKeySplitChar split char
 	ExcelAsstPrimaryKeySplitChar = ","
@@ -1023,11 +1032,17 @@ const (
 
 	// ExcelFirstColumnFieldName export excel first column for tips
 	ExcelFirstColumnFieldName = "field_name"
-	// ExcelFirstColumnFieldType TODO
+	// ExcelFirstColumnFieldType excel first column type field
 	ExcelFirstColumnFieldType = "field_type"
-	// ExcelFirstColumnFieldID TODO
+	// ExcelFirstColumnFieldID excel first column id field
 	ExcelFirstColumnFieldID = "field_id"
-	// ExcelFirstColumnInstData TODO
+	// ExcelFirstColumnTableFieldName excel first column table name filed
+	ExcelFirstColumnTableFieldName = "table_field_name"
+	// ExcelFirstColumnFieldType excel first column table type field
+	ExcelFirstColumnTableFieldType = "table_field_type"
+	// ExcelFirstColumnFieldID excel first column table id field
+	ExcelFirstColumnTableFieldID = "table_field_id"
+	// ExcelFirstColumnInstData excel first column instance data field
 	ExcelFirstColumnInstData = "inst_data"
 
 	// ExcelFirstColumnAssociationAttribute TODO

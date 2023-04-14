@@ -4,11 +4,11 @@
 	"field_type_int": "数字",
 	"field_type_float": "浮点",
 	"field_type_enum": "枚举",
+	"field_type_enummulti": "枚举(多选)",
+	"field_type_enumquote": "枚举(引用)",
 	"field_type_date": "日期",
 	"field_type_time": "时间",
 	"field_type_objuser": "用户",
-	"field_type_singleasst": "单关联",
-	"field_type_multiasst": "多关联",
 	"field_type_timezone": "时区",
 	"field_type_bool": "布尔",
 	"field_type_bool_true": "是",
@@ -17,6 +17,9 @@
 	"field_name": "字段名(请勿编辑)",
 	"field_type": "字段类型(请勿编辑)",
 	"field_id": "字段标识(请勿编辑)",
+	"table_field_name": "表格字段名(请勿编辑)",
+	"table_field_type": "表格字段类型(请勿编辑)",
+	"table_field_id": "表格字段标识(请勿编辑)",
 	"inst_data": "实例数据"
 
 }

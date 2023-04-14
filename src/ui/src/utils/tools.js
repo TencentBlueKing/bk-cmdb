@@ -120,6 +120,9 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
       const tableColumns = property.option?.filter(property => property.editable && !property.bk_isapi)
       // eslint-disable-next-line max-len
       values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(tableColumns || [], row, autoSelect))
+    } else if (propertyType === PROPERTY_TYPES.INNER_TABLE) {
+      const defaultValue = property.option.default || []
+      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
     } else {
       const  value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
       values[propertyId] = value || ''
@@ -162,7 +165,7 @@ export function formatValue(value, property) {
 
 export function getPropertyDefaultValue(property, value) {
   const propertyValue = formatPropertyValue(value, property)
-  const defaultValue = [PROPERTY_TYPES.BOOL].includes(property.bk_property_type) ? property.option : property.default
+  const defaultValue = getInstFormValues([property])?.[property.bk_property_id]
   // undefined 认为没有传递属性值，与 null 等假值明确区分开
   return value === undefined ? defaultValue : propertyValue
 }
@@ -302,7 +305,7 @@ export function getHeaderPropertyName(property) {
 }
 
 export function getHeaderPropertyMinWidth(property, options = {}) {
-  const { fontSize = 12, hasSort = false, offset = 30, name, preset = {} } = options
+  const { fontSize = 12, hasSort = false, offset = 30, name, min = 0, preset = {} } = options
 
   // 预设的固定宽度不需要计算直接使用
   const presetMinWidth = { ...PRESET_TABLE_HEADER_MIN_WIDTH, ...preset }
@@ -325,7 +328,7 @@ export function getHeaderPropertyMinWidth(property, options = {}) {
 
   const finalWidth = baseWidth + (hasSort ? 22 : 0) + offset
 
-  return Math.ceil(finalWidth)
+  return Math.ceil(Math.max(finalWidth, min))
 }
 
 /**

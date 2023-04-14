@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 	"configcenter/src/thirdparty/hooks/process"
 )
 
@@ -1094,7 +1095,7 @@ type ServiceTemplate struct {
 
 // Validate TODO
 func (st *ServiceTemplate) Validate(errProxy cErr.DefaultCCErrorIf) (field string, err error) {
-	st.Name, err = util.ValidTopoNameField(st.Name, "name", errProxy)
+	st.Name, err = valid.ValidTopoNameField(st.Name, "name", errProxy)
 	if err != nil {
 		return "name", err
 	}

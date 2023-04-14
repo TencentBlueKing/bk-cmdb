@@ -70,7 +70,7 @@
           <span class="property-value">{{option.max || (option.max === 0 ? 0 : '--')}}</span>
         </div>
       </template>
-      <div class="property-item">
+      <div class="property-item" v-if="numberLikes.includes(field.bk_property_type)">
         <div class="property-name">
           <span>{{$t('单位')}}</span>：
         </div>
@@ -81,6 +81,48 @@
           <span>{{$t('用户提示')}}</span>：
         </div>
         <span class="property-value">{{field.placeholder || '--'}}</span>
+      </div>
+      <div class="property-item full-width" v-if="isTableType">
+        <div class="property-name">
+          <span>{{$t('表头字段设置')}}</span>：
+        </div>
+        <div class="property-value mt10">
+          <bk-table
+            :data="option.header"
+            :outer-border="true"
+            :header-border="false">
+            <bk-table-column
+              :label="$t('字段ID')"
+              prop="bk_property_id"
+              :show-overflow-tooltip="true" />
+            <bk-table-column
+              :label="$t('字段名称')"
+              prop="bk_property_name"
+              :show-overflow-tooltip="true" />
+            <bk-table-column
+              :label="$t('字段类型')"
+              prop="bk_property_type"
+              :show-overflow-tooltip="true">
+              <template #default="{ row }">
+                {{ fieldTypeMap[row.bk_property_type] }}
+              </template>
+            </bk-table-column>
+          </bk-table>
+        </div>
+      </div>
+      <div class="property-item full-width" v-if="isTableType">
+        <div class="property-name">
+          <span>{{$t('默认值')}}</span>：
+        </div>
+        <div class="property-value mt10">
+          <table-default-settings
+            v-if="option.header.length > 0"
+            :readonly="true"
+            :preview="true"
+            :headers="option.header"
+            :defaults="option.default" />
+          <span v-else>--</span>
+        </div>
       </div>
       <div class="property-item enum-list" v-if="listLikes.includes(field.bk_property_type)">
         <div class="property-name">
@@ -93,8 +135,7 @@
           <span v-else>--</span>
         </div>
       </div>
-      <div class="property-item enum-list"
-        v-if="!listLikes.includes(field.bk_property_type)">
+      <div class="property-item enum-list" v-else-if="!isTableType">
         <div class="property-name">
           <span>{{$t('默认值')}}</span>：
         </div>
@@ -119,8 +160,12 @@
 
 <script>
   import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
+  import TableDefaultSettings from './table-default-settings.vue'
 
   export default {
+    components: {
+      TableDefaultSettings
+    },
     props: {
       field: {
         type: Object,
@@ -149,11 +194,20 @@
         if (this.listLikes.includes(this.type)) {
           return this.field.option || []
         }
+        if (this.isTableType) {
+          return this.field.option || {
+            header: [],
+            default: []
+          }
+        }
         return this.field.option
       },
       hasMultipleType() {
         const types = [PROPERTY_TYPES.ORGANIZATION, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ENUMMULTI]
         return types.includes(this.type)
+      },
+      isTableType() {
+        return this.type === PROPERTY_TYPES.INNER_TABLE
       },
       defaultValue() {
         if ([PROPERTY_TYPES.ENUMQUOTE].includes(this.type)) {
@@ -212,13 +266,19 @@
         .property-item {
             min-width: 48%;
             padding-top: 20px;
-            &.enum-list {
+            &.enum-list,
+            &.full-width {
                 flex: 100%;
                 .property-name,
                 .property-value {
                     display: inline-block;
                     vertical-align: top;
                 }
+            }
+            &.full-width {
+              .property-value {
+                display: block;
+              }
             }
         }
         .property-name {

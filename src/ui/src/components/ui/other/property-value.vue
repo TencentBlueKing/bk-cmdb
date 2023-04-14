@@ -49,6 +49,15 @@
     :show-on="showOn"
     v-bind="$attrs">
   </org-value>
+  <inner-table-value
+    v-else-if="property.bk_property_type === PROPERTY_TYPES.INNER_TABLE"
+    ref="complexTypeComp"
+    :value="value"
+    :property="property"
+    :show-on="showOn"
+    :instance="instance"
+    v-bind="$attrs">
+  </inner-table-value>
   <component
     class="value-container"
     :is="tag"
@@ -73,6 +82,7 @@
   import MapstringValue from './mapstring-value.vue'
   import EnumquoteValue from './enumquote-value.vue'
   import OrgValue from './org-value.vue'
+  import InnerTableValue from './inner-table-value.vue'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { isUseComplexValueType } from '@/utils/tools'
 
@@ -84,7 +94,8 @@
       ServiceTemplateValue,
       MapstringValue,
       EnumquoteValue,
-      OrgValue
+      OrgValue,
+      InnerTableValue
     },
     props: {
       value: {
@@ -127,7 +138,11 @@
       },
       formatCellValue: Function,
       multiple: Boolean,
-      isShowOverflowTips: Boolean
+      isShowOverflowTips: Boolean,
+      instance: {
+        type: Object,
+        default: () => ({})
+      }
     },
     data() {
       return {

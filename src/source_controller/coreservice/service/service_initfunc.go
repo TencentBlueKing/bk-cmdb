@@ -16,6 +16,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common/http/rest"
+	modelquote "configcenter/src/source_controller/coreservice/service/model_quote"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -44,10 +45,17 @@ func (s *coreService) initModel(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model", Handler: s.CreateModel})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/create/table/model",
+		Handler: s.CreateTableModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/model", Handler: s.SetModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model", Handler: s.UpdateModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model", Handler: s.DeleteModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{id}/cascade", Handler: s.CascadeDeleteModel})
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodDelete,
+		Path:    "/delete/table/model/cascade",
+		Handler: s.CascadeDeleteTableModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model", Handler: s.SearchModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model/with/attribute", Handler: s.SearchModelWithAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/read/model/statistics", Handler: s.GetModelStatistics})
@@ -73,7 +81,9 @@ func (s *coreService) initModel(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/attributes", Handler: s.DeleteModelAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model/{bk_obj_id}/attributes", Handler: s.SearchModelAttributes})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model/attributes", Handler: s.SearchModelAttributesByCondition})
-
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/read/{bk_biz_id}/model/attributes/with_table",
+		Handler: s.SearchModelAttrsWithTableByCondition})
 	utility.AddToRestfulWebService(web)
 }
 
@@ -420,12 +430,23 @@ func (s *coreService) initModelQuote(web *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
+	// model quote relation
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/list/model/quote/relation",
 		Handler: s.ListModelQuoteRelation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/model/quote/relation",
 		Handler: s.CreateModelQuoteRelation})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/model/quote/relation",
 		Handler: s.DeleteModelQuoteRelation})
+
+	// quoted instance
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/quoted/model/{bk_obj_id}/instance",
+		Handler: modelquote.BatchCreateQuotedInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/quoted/model/{bk_obj_id}/instance",
+		Handler: modelquote.ListQuotedInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/quoted/model/{bk_obj_id}/instance",
+		Handler: modelquote.BatchUpdateQuotedInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/quoted/model/{bk_obj_id}/instance",
+		Handler: modelquote.BatchDeleteQuotedInstance})
 
 	utility.AddToRestfulWebService(web)
 }

@@ -40,7 +40,7 @@ function createIdProperty(objId) {
 
 export const find = async (params, config, injectId = false) => {
   try {
-    const properties = await http.post('find/objectattr', params, config)
+    const properties = await http.post('find/objectattr/web', params, config)
 
     if (!injectId) {
       return properties

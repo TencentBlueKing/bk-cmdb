@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { computed, defineProps, ref, watch } from 'vue'
+  import { computed, defineProps, ref, watch, onMounted } from 'vue'
   import debounce from 'lodash.debounce'
   import { getModelInstanceOptions } from '@/service/instance/common'
 
@@ -56,6 +56,12 @@
 
   const isActive = ref(false)
 
+  onMounted(() => {
+    setTimeout(() => {
+      selector?.value?.$refs.bkSelectTag?.calcOverflow()
+    }, 100)
+  })
+
   watch(() => props.objId, (cur, prev) => {
     if (cur && cur !== prev) {
       search()
@@ -87,6 +93,7 @@
       v-model="localValue"
       searchable
       :multiple="multiple"
+      font-size="normal"
       :loading="loading"
       :is-tag-width-limit="true"
       :remote-method="remoteSearch"

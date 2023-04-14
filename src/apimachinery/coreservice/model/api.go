@@ -169,6 +169,32 @@ func (m *model) ReadModelClassification(ctx context.Context, h http.Header, inpu
 	return &resp.Data, nil
 }
 
+// CreateTableModel create object for inner table
+func (m *model) CreateTableModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (
+	*metadata.CreateOneDataResult, error) {
+
+	resp := new(metadata.CreatedOneOptionResult)
+	subPath := "/create/table/model"
+
+	err := m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
 // CreateModel create object
 func (m *model) CreateModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (
 	*metadata.CreateOneDataResult, error) {
@@ -272,6 +298,31 @@ func (m *model) DeleteModelCascade(ctx context.Context, h http.Header, modelID i
 	}
 
 	return &resp.Data, err
+}
+
+// DeleteTableModelCascade delete table object, attrs, group
+func (m *model) DeleteTableModelCascade(ctx context.Context, h http.Header, input *metadata.DeleteTableOption) error {
+
+	resp := new(metadata.DeletedOptionResult)
+	subPath := "/delete/table/model/cascade"
+
+	err := m.client.Delete().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return err
+	}
+
+	return err
 }
 
 // ReadModelWithAttribute TODO
@@ -486,6 +537,33 @@ func (m *model) ReadModelAttrByCondition(ctx context.Context, h http.Header, inp
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
+// ReadModelAttrsWithTableByCondition search object attrs by condition for web
+// NOTICE: include table attributes
+func (m *model) ReadModelAttrsWithTableByCondition(ctx context.Context, h http.Header, bizID int64,
+	input *metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
+
+	resp := new(metadata.ReadModelAttrResult)
+	subPath := "/read/%d/model/attributes/with_table"
+
+	err := m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, bizID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

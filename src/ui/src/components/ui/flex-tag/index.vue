@@ -96,7 +96,7 @@
       let posItem = null
 
       for (const item of tagWidthList) {
-        accWidth = accWidth + item.width + gapWidth.value
+        accWidth = accWidth + item.width + gapWidth.value + 12
         if (accWidth > containerClientWidth) {
           posItem = item
           ellipsisCount.value = tags.value.length - item.index
@@ -109,6 +109,7 @@
         containerEl.value.insertBefore(plusEl.value, posItem.el)
         plusEl.value.classList.add('show')
         if (plusEl.value.previousSibling) {
+          tagItems.forEach(item => item.classList.remove('is-pos'))
           plusEl.value.previousSibling.classList.add('is-pos')
         }
       }
