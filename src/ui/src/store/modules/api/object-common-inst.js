@@ -46,7 +46,7 @@ const actions = {
      * @return {promises} promises 对象
      */
   updateInst({ commit, state, dispatch, rootGetters }, { objId, instId, params, config }) {
-    return $http.put(`update/instance/object/${objId}/inst/${instId}`, params, config)
+    return $http.put(`${window.API_HOST}table/update/instance/object/${objId}/inst/${instId}`, params, config)
   },
 
   /**
