@@ -14,6 +14,7 @@
 package service
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"configcenter/src/common/webservice/restfulservice"
@@ -33,6 +35,8 @@ import (
 	"configcenter/src/source_controller/cacheservice/event/identifier"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/driver/redis"
 	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
@@ -131,7 +135,77 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		return err
 	}
 
+	if err := s.SetModelQuoteRelToRedis(); err != nil {
+		blog.Errorf("set model quote relation to redis failed, err: %v", err)
+		return err
+	}
+
 	return nil
+}
+
+func (s *cacheService) SetModelQuoteRelToRedis() error {
+	var firstErr error
+	go func() {
+		for {
+			modelQuoteRel := make([]mapstr.MapStr, 0)
+			if err := mongodb.Client().Table("cc_ModelQuoteRelation").Find(nil).All(context.TODO(),
+				&modelQuoteRel); err != nil {
+				blog.Errorf("get model quote relation data failed, err: %v", err)
+				firstErr = err
+				return
+			}
+			if len(modelQuoteRel) == 0 {
+				continue
+			}
+
+			pipe := redis.Client().Pipeline()
+			destModelObjIDs := make([]string, 0)
+			for _, quoteRel := range modelQuoteRel {
+				srcModelObjID, exist := quoteRel.Get("src_model")
+				if !exist {
+					blog.Warn("table field src model not exist")
+					continue
+				}
+				srcModelObjIDStr := util.GetStrByInterface(srcModelObjID)
+				if srcModelObjIDStr == "" {
+					blog.Warn("table field src model obj id is null")
+					continue
+				}
+				destModelObjID, exist := quoteRel.Get("dest_model")
+				if !exist {
+					blog.Warn("table field dest model not exist")
+					continue
+				}
+				destModelObjIDStr := util.GetStrByInterface(destModelObjID)
+				if destModelObjIDStr == "" {
+					blog.Warn("table field dest model obj id is null")
+					continue
+				}
+				destModelObjIDs = append(destModelObjIDs, destModelObjIDStr)
+				pipe.HSet("cc:v3:model_quote_relation", destModelObjIDStr, srcModelObjIDStr)
+			}
+
+			keys, err := redis.Client().HKeys(context.TODO(), "cc:v3:model_quote_relation").Result()
+			if err != nil {
+				continue
+			}
+
+			for _, key := range keys {
+				if ok := util.InStrArr(destModelObjIDs, key); !ok {
+					pipe.HDel("cc:v3:model_quote_relation", key)
+				}
+			}
+
+			if _, err := pipe.Exec(); err != nil {
+				blog.Errorf("set model quote relation to redis failed, err: %v", err)
+				firstErr = err
+				return
+			}
+			time.Sleep(time.Minute * 10)
+		}
+	}()
+
+	return firstErr
 }
 
 // WebService the web service
