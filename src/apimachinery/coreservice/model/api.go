@@ -892,3 +892,28 @@ func (m *model) CreateModelTables(ctx context.Context, h http.Header,
 
 	return nil
 }
+
+// CreateTableModelTables create tabular model instance table
+func (m *model) CreateTableModelTables(ctx context.Context, h http.Header,
+	input *metadata.CreateModelTable) (err error) {
+
+	resp := new(metadata.Response)
+	subPath := "/create/table/model/tables"
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -704,3 +704,13 @@ func (s *coreService) CreateModelTables(ctx *rest.Contexts) {
 	}
 	ctx.RespEntityWithError(nil, s.core.ModelOperation().CreateModelTables(ctx.Kit, inputData))
 }
+
+// CreateTableModelTables create table model table
+func (s *coreService) CreateTableModelTables(ctx *rest.Contexts) {
+	inputData := metadata.CreateModelTable{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntityWithError(nil, s.core.ModelOperation().CreateTableModelTables(ctx.Kit, inputData))
+}
