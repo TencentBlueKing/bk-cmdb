@@ -25,7 +25,7 @@
             {{property.bk_property_name}}
           </span>
           <!-- 非表格字段 -->
-          <template v-if="property.bk_property_type !== PROPERTY_TYPES.INNERTABLE">
+          <template v-if="property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE">
             <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
               v-bk-overflow-tips
               v-if="property !== editState.property">
@@ -121,7 +121,7 @@
             <cmdb-form-innertable
               class="form-component-innertable"
               :property="property"
-              obj-id="host"
+              :obj-id="objId"
               :instance-id="host.bk_host_id"
               :ref="`component-${property.bk_property_id}`" />
           </template>
@@ -174,6 +174,7 @@
   import authMixin from '../mixin-auth'
   import { readonlyMixin } from '../mixin-readonly'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
   export default {
     name: 'cmdb-host-property',
     filters: {
@@ -194,6 +195,7 @@
     },
     data() {
       return {
+        objId: BUILTIN_MODELS.HOST,
         editState: {
           property: null,
           value: null
@@ -368,8 +370,12 @@
             &.innertable {
               flex: 0 0 100%;
               max-width: 100%;
+              .property-name {
+                flex: none;
+              }
               .form-component-innertable {
-                flex: 1;
+                flex: none;
+                width: calc(100% - 260px);
                 margin-top: 6px;
               }
             }

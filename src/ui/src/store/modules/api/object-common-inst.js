@@ -33,7 +33,7 @@ const actions = {
      * @return {promises} promises 对象
      */
   createInst({ commit, state, dispatch, rootGetters }, { objId, params, config }) {
-    return $http.post(`create/instance/object/${objId}`, params, config)
+    return $http.post(`${window.API_HOST}table/create/instance/object/${objId}`, params, config)
   },
 
   /**

@@ -11,6 +11,8 @@
  */
 
 import has from 'has'
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+
 export default {
   props: {
     properties: {
@@ -72,6 +74,12 @@ export default {
         }
         return property.bk_property_group === group.bk_group_id
       }))
+    },
+    $tableTypeProperties() {
+      return this.properties.filter(property => property.bk_property_type === PROPERTY_TYPES.INNER_TABLE)
+    },
+    $tableTypePropertyIds() {
+      return this.$tableTypeProperties.map(property => property.bk_property_id)
     }
   },
   data() {

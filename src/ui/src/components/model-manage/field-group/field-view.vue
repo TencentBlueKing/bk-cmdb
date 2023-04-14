@@ -86,10 +86,10 @@
         <div class="property-name">
           <span>{{$t('表头字段设置')}}</span>：
         </div>
-        <div class="property-value">
+        <div class="property-value mt10">
           <bk-table
             :data="option.header"
-            :outer-border="false"
+            :outer-border="true"
             :header-border="false">
             <bk-table-column
               :label="$t('字段ID')"
@@ -114,10 +114,11 @@
         <div class="property-name">
           <span>{{$t('默认值')}}</span>：
         </div>
-        <div class="property-value">
+        <div class="property-value mt10">
           <table-default-settings
             v-if="option.header.length > 0"
             :readonly="true"
+            :preview="true"
             :headers="option.header"
             :defaults="option.default" />
           <span v-else>--</span>

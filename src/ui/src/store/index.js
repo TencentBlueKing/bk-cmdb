@@ -78,7 +78,6 @@ import versionLog from './modules/api/version-log'
 
 import globalConfig from './modules/global-config.js'
 import bizSet from './modules/biz-set.js'
-import tableInstance from './modules/api/table-instance'
 
 Vue.use(Vuex)
 
@@ -145,8 +144,7 @@ const store = new Vuex.Store({
     organization,
     audit,
     dynamicGroup,
-    versionLog,
-    tableInstance
+    versionLog
   }
 })
 

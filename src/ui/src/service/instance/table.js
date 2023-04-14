@@ -10,12 +10,20 @@
  * limitations under the License.
  */
 
-export {}
+import http from '@/api'
 
-declare const NODE_ENV: string
+const create = (params, config) => http.post('createmany/quoted/instance', params, config).then(() => true)
+  .catch(() => false)
 
-declare global {
-  interface Window {
-    [key: string]: any;
-  }
+const update = (params, config) => http.put('updatemany/quoted/instance', params, config)
+
+const deletemany = (params, config) => http.delete('deletemany/quoted/instance', { ...config, data: params })
+
+const find = (params, config) => http.post('findmany/quoted/instance', params, config)
+
+export default {
+  create,
+  update,
+  deletemany,
+  find
 }
