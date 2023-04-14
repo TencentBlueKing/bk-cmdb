@@ -807,7 +807,6 @@ func handleField(field Property, handleFieldParam *HandleFieldParam) error {
 	handleFieldParam.Sheet.SetColWidth(index+1, index+field.Length, width)
 	fieldTypeName, skip := getPropertyTypeAliasName(field.PropertyType, handleFieldParam.DefLang)
 	if skip || field.NotExport {
-		// 不需要用户输入的类型continue
 		hidden := true
 		handleFieldParam.Sheet.Col(index).Hidden = &hidden
 		return nil
@@ -815,7 +814,6 @@ func handleField(field Property, handleFieldParam *HandleFieldParam) error {
 	isRequire := ""
 
 	if field.IsRequire {
-		// "(必填)"
 		isRequire = handleFieldParam.DefLang.Language("web_excel_header_required")
 	}
 	if util.Contains(handleFieldParam.Filter, field.ID) {
@@ -874,7 +872,10 @@ func handleField(field Property, handleFieldParam *HandleFieldParam) error {
 	case common.FieldTypeEnum:
 		handleFieldTypeEnum(handleFieldParam, index, &field)
 	case common.FieldTypeEnumMulti:
-		handleFieldTypeEnumMulti(handleFieldParam, &field)
+		optionArr, ok := field.Option.([]interface{})
+		if ok {
+			handleFieldTypeEnumMulti(handleFieldParam, optionArr, field.Name)
+		}
 	case common.FieldTypeBool:
 		handleFieldTypeBool(handleFieldParam, index)
 	case common.FieldTypeInnerTable:
@@ -920,17 +921,14 @@ func handleFieldTypeEnum(handleFieldParam *HandleFieldParam, index int, field *P
 	handleFieldParam.Sheet.SetType(index+1, index+1, xlsx.CellTypeString)
 }
 
-func handleFieldTypeEnumMulti(handleFieldParam *HandleFieldParam, field *Property) {
-	optionArr, ok := field.Option.([]interface{})
-	if ok {
-		enumSheet, err := handleFieldParam.File.AddSheet(field.Name)
-		if err != nil {
-			blog.Errorf("add enum sheet failed, err: %v, rid: %s", err, handleFieldParam.Rid)
-		}
+func handleFieldTypeEnumMulti(handleFieldParam *HandleFieldParam, optionArr []interface{}, name string) {
+	enumSheet, err := handleFieldParam.File.AddSheet(name)
+	if err != nil {
+		blog.Errorf("add enum sheet failed, err: %v, rid: %s", err, handleFieldParam.Rid)
+	}
 
-		for _, enum := range getEnumNames(optionArr) {
-			enumSheet.AddRow().AddCell().SetString(enum)
-		}
+	for _, enum := range getEnumNames(optionArr) {
+		enumSheet.AddRow().AddCell().SetString(enum)
 	}
 }
 
@@ -983,7 +981,10 @@ func handleFieldTypeTable(handleFieldParam *HandleFieldParam, index int, field *
 		case common.FieldTypeFloat:
 			handleFieldTypeFloat(handleFieldParam, index)
 		case common.FieldTypeEnumMulti:
-			handleFieldTypeEnumMulti(handleFieldParam, field)
+			optionArr, ok := attr.Option.([]interface{})
+			if ok {
+				handleFieldTypeEnumMulti(handleFieldParam, optionArr, field.Name+"##"+attr.PropertyName)
+			}
 		case common.FieldTypeBool:
 			handleFieldTypeBool(handleFieldParam, index)
 		default:
