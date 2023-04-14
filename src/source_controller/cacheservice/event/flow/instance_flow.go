@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -75,6 +76,11 @@ func (f *InstanceFlow) syncMainlineObjectMap() {
 		f.mainlineObjectMap.Set(mainlineObjectMap)
 		blog.V(5).Infof("run object instance watch, sync mainline object map done, map: %+v", f.mainlineObjectMap.Get())
 	}
+}
+
+type mapStrWithOid struct {
+	Oid    primitive.ObjectID     `bson:"_id"`
+	MapStr map[string]interface{} `bson:",inline"`
 }
 
 type mainlineObjectMap struct {
@@ -181,7 +187,12 @@ func (f *InstanceFlow) doBatch(es []*types.Event) (retry bool) {
 		return retry
 	}
 
-	eventMap, oidIndexMap, aggregationEvents := f.classifyEvents(es, oidDetailMap, rid)
+	eventMap, oidIndexMap, aggregationEvents, err := f.classifyEvents(es, oidDetailMap, rid)
+	if err != nil {
+		blog.Errorf("get aggregation inst events failed, err: %v, rid: %s", err, rid)
+		return false
+	}
+
 	eventLen := len(aggregationEvents)
 	if eventLen == 0 {
 		return false
@@ -299,14 +310,18 @@ func (f *InstanceFlow) getMainlineObjectMap(ctx context.Context) (map[string]str
 
 // classifyEvents classify events by their related key's collection
 func (f *InstanceFlow) classifyEvents(es []*types.Event, oidDetailMap map[oidCollKey][]byte, rid string) (
-	map[string][]*types.Event, map[string]int, []*types.Event) {
+	map[string][]*types.Event, map[string]int, []*types.Event, error) {
 
 	mainlineColl := event.MainlineInstanceKey.Collection()
 	commonColl := f.key.Collection()
 
-	aggregationInstEvents := f.convertTableInstEvent(es)
+	aggregationInstEvents, err := f.convertTableInstEvent(es, rid)
+	if err != nil {
+		blog.Errorf("get aggregation inst events failed, err: %v, rid: %s", err, rid)
+		return nil, nil, nil, err
+	}
 	if len(aggregationInstEvents) == 0 {
-		return nil, nil, nil
+		return nil, nil, nil, err
 	}
 
 	eventMap := make(map[string][]*types.Event)
@@ -338,146 +353,133 @@ func (f *InstanceFlow) classifyEvents(es []*types.Event, oidDetailMap map[oidCol
 		eventMap[commonColl] = append(eventMap[commonColl], e)
 	}
 
-	return eventMap, oidIndexMap, aggregationInstEvents
+	return eventMap, oidIndexMap, aggregationInstEvents, nil
 }
 
 // convertTableInstEvent convert table inst event to inst event
-func (f *InstanceFlow) convertTableInstEvent(es []*types.Event) []*types.Event {
+// 当收到所有的事件后，通过集合名称来获取objID，然后通过objID查询模型引用表cc_ModelQuoteRelation，判断当前事件是否为表格实例事件
+// 取出表格实例事件中父模型的实例id，构造父模型objID->instID的map，然后去重实例id，查询源模型实例数据，构造源模型实例的更新事件
+// 其中通过记录index->event的map，来保证表格实例事件聚合后，当前批次所有事件的时序性，表格实例事件聚合成一个源模型实例，使用最后的一个event
+func (f *InstanceFlow) convertTableInstEvent(es []*types.Event, rid string) ([]*types.Event, error) {
 	if len(es) == 0 {
-		return es
+		return es, nil
 	}
 
-	notContainTableInstEvents := make([]*types.Event, 0)
-	srcObjIDEventsMap := make(map[string][]*types.Event, 0)
+	notContainTableInstEventsMap := make(map[int]*types.Event, 0)
 	srcObjIDInstIDsMap := make(map[string][]int64, 0)
-	for _, e := range es {
-		prefix := fmt.Sprintf("%s%s_%s_", common.BKObjectInstShardingTablePrefix, gjson.Get(string(e.DocBytes),
-			common.BkSupplierAccount), common.TableSpecifierPublic)
-		srcObjID, err := redis.Client().HGet(context.Background(), "cc:v3:model_quote_relation",
-			e.Collection[len(prefix):]).Result()
+	instIDEventMap := make(map[int64]*types.Event)
+	instIDIndexMap := make(map[int64]int, 0)
+	for index, e := range es {
+		objID, err := common.GetInstObjIDByTableName(e.Collection, gjson.Get(string(e.DocBytes),
+			common.BkSupplierAccount).Str)
 		if err != nil {
-			modelQuoteRel := make([]mapstr.MapStr, 0)
-			queryCond := mapstr.MapStr{
-				"dest_model": e.Collection[len(prefix):],
-			}
-			err = f.ccDB.Table("cc_ModelQuoteRelation").Find(queryCond).All(context.TODO(), &modelQuoteRel)
-			if err != nil {
-				blog.Errorf("get model quote relation failed, err: %v", err)
-				continue
-			}
-			if len(modelQuoteRel) != 1 {
-				continue
-			}
-			srcModelObjID, exist := modelQuoteRel[0].Get("src_model")
-			if !exist {
-				notContainTableInstEvents = append(notContainTableInstEvents, e)
-				continue
-			}
-			srcModelObjIDStr := util.GetStrByInterface(srcModelObjID)
-			if srcModelObjIDStr == "" {
-				continue
-			}
-			destModelObjID, exist := modelQuoteRel[0].Get("dest_model")
-			if !exist {
-				continue
-			}
-			destModelObjIDStr := util.GetStrByInterface(destModelObjID)
-			if destModelObjIDStr == "" {
-				continue
-			}
-			srcObjID = srcModelObjIDStr
-			redis.Client().HSet(context.TODO(), "cc:v3:model_quote_relation", destModelObjIDStr, srcModelObjIDStr)
+			blog.Errorf("collection name is illegal, err: %v, rid: %s", err, rid)
+			return nil, err
 		}
-		if srcObjID == "" {
-			blog.Errorf("src model obj id is invalid, srcObjID: %s", srcObjID)
+
+		modelQuoteRel := make([]metadata.ModelQuoteRelation, 0)
+		queryCond := mapstr.MapStr{
+			common.BKDestModelField: objID,
+		}
+		err = f.ccDB.Table(common.BKTableNameModelQuoteRelation).Find(queryCond).All(context.TODO(), &modelQuoteRel)
+		if err != nil {
+			blog.Errorf("get model quote relation failed, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+		if len(modelQuoteRel) == 0 {
+			notContainTableInstEventsMap[index] = e
 			continue
 		}
-
-		if _, ok := srcObjIDEventsMap[srcObjID]; !ok {
-			events := make([]*types.Event, 0)
-			srcObjIDEventsMap[srcObjID] = append(events, e)
+		if len(modelQuoteRel) != 1 {
+			return nil, fmt.Errorf("model quote relation not unique, rel: %v", modelQuoteRel)
 		}
-		srcObjIDEventsMap[srcObjID] = append(srcObjIDEventsMap[srcObjID], e)
 
-		if _, ok := srcObjIDInstIDsMap[srcObjID]; !ok {
-			instIDs := make([]int64, 0)
-			srcObjIDInstIDsMap[srcObjID] = append(instIDs, gjson.Get(string(e.DocBytes), common.BKInstIDField).Int())
+		if modelQuoteRel[0].SrcModel == "" {
+			return nil, fmt.Errorf("src model objID is illegal, rel: %v", modelQuoteRel)
 		}
-		srcObjIDInstIDsMap[srcObjID] = append(srcObjIDInstIDsMap[srcObjID], gjson.Get(string(e.DocBytes),
-			common.BKInstIDField).Int())
+
+		if modelQuoteRel[0].PropertyID == "" {
+			return nil, fmt.Errorf("table field property id is illegal, rel: %v", modelQuoteRel)
+		}
+
+		srcObjID := modelQuoteRel[0].SrcModel
+		instID := gjson.Get(string(e.DocBytes), common.BKInstIDField).Int()
+		srcObjIDInstIDsMap[srcObjID] = append(srcObjIDInstIDsMap[srcObjID], instID)
+
+		instIDIndexMap[instID] = index
+		instIDEventMap[instID] = e
 	}
 
-	return f.convertToInstEvents(notContainTableInstEvents, srcObjIDEventsMap, srcObjIDInstIDsMap)
+	return f.convertToInstEvents(notContainTableInstEventsMap, srcObjIDInstIDsMap, instIDEventMap, instIDIndexMap, rid)
 }
 
-func (f *InstanceFlow) convertToInstEvents(es []*types.Event, srcObjIDEventsMap map[string][]*types.Event,
-	srcObjIDInstIDsMap map[string][]int64) []*types.Event {
-	for objID, evts := range srcObjIDEventsMap {
-		if len(evts) == 0 {
-			continue
-		}
-
-		instIDs := srcObjIDInstIDsMap[objID]
+func (f *InstanceFlow) convertToInstEvents(es map[int]*types.Event, srcObjIDInstIDsMap map[string][]int64,
+	instIDEventMap map[int64]*types.Event, instIDIndexMap map[int64]int, rid string) ([]*types.Event, error) {
+	for objID, instIDs := range srcObjIDInstIDsMap {
 		if len(instIDs) == 0 {
 			continue
 		}
 
-		tableName := common.GetInstTableName(objID, gjson.Get(string(evts[0].DocBytes), common.BkSupplierAccount).Str)
+		tableName := common.GetInstTableName(objID, gjson.Get(string(instIDEventMap[instIDs[0]].DocBytes),
+			common.BkSupplierAccount).Str)
 		filter := mapstr.MapStr{
 			common.GetInstIDField(objID): mapstr.MapStr{
 				common.BKDBIN: util.IntArrayUnique(instIDs),
 			},
 		}
 		findOpts := dbtypes.NewFindOpts().SetWithObjectID(true)
-		insts := make([]map[string]interface{}, 0)
+		insts := make([]mapStrWithOid, 0)
 		err := f.ccDB.Table(tableName).Find(filter, findOpts).All(context.TODO(), &insts)
 		if err != nil {
-			blog.Errorf("get src model inst failed, err: %v", err)
-			continue
+			blog.Errorf("get src model inst failed, err: %v, rid: %s", err, rid)
+			return nil, err
 		}
 
 		for _, inst := range insts {
-			oid, ok := inst["_id"]
-			if !ok {
-				blog.Errorf("parse inst oid failed, oid: %+v", inst["_id"])
-				continue
-			}
-
-			oidStr, ok := oid.(string)
-			if !ok {
-				objectID, ok := oid.(primitive.ObjectID)
-				if !ok {
-					blog.Errorf("parse detail oid failed, oid: %+v", oid)
-					continue
-				}
-				oidStr = objectID.Hex()
-			}
-
-			doc, err := json.Marshal(inst)
+			doc, err := json.Marshal(inst.MapStr)
 			if err != nil {
-				blog.Errorf("marshal inst to byte failed, err: %v", err)
+				blog.Errorf("marshal inst to byte failed, err: %v, rid: %s", err, rid)
 				continue
 			}
 
-			es = append(es, &types.Event{
-				Oid:           oidStr,
-				Document:      inst,
+			instID, err := util.GetInt64ByInterface(inst.MapStr[common.GetInstIDField(objID)])
+			if err != nil {
+				blog.Errorf("get inst id failed, err: %v, rid: %s", err, rid)
+				return nil, err
+			}
+
+			instEvent := &types.Event{
+				Oid:           inst.Oid.Hex(),
+				Document:      inst.MapStr,
 				DocBytes:      doc,
 				OperationType: "update",
 				Collection:    tableName,
 				ClusterTime: types.TimeStamp{
-					Sec:  evts[0].ClusterTime.Sec,
-					Nano: evts[0].ClusterTime.Nano,
+					Sec:  instIDEventMap[instID].ClusterTime.Sec,
+					Nano: instIDEventMap[instID].ClusterTime.Nano,
 				},
-				Token: evts[0].Token,
+				Token: instIDEventMap[instID].Token,
 				ChangeDesc: &types.ChangeDescription{
 					UpdatedFields: make(map[string]interface{}, 0),
 					RemovedFields: make([]string, 0),
 				},
-			})
+			}
+
+			es[instIDIndexMap[instID]] = instEvent
 		}
 	}
-	return es
+
+	keys := make([]int, 0)
+	for key := range es {
+		keys = append(keys, key)
+	}
+	sort.Sort(sort.IntSlice(keys))
+
+	aggregationInstEvents := make([]*types.Event, 0)
+	for _, v := range keys {
+		aggregationInstEvents = append(aggregationInstEvents, es[v])
+	}
+	return aggregationInstEvents, nil
 }
 
 func (f *InstanceFlow) doInsertEvents(chainNodesMap map[string][]*watch.ChainNode, lastTokenData map[string]interface{},
