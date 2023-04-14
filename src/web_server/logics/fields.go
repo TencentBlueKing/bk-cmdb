@@ -276,7 +276,9 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID i
 	return fields, nil
 }
 
-func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, conds mapstr.MapStr, modelBizID int64) ([]Property, error) {
+func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, conds mapstr.MapStr, modelBizID int64) (
+	[]Property, error) {
+
 	rid := util.GetHTTPCCRequestID(header)
 
 	condition := mapstr.MapStr{
@@ -290,19 +292,16 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 	}
 	condition.Merge(conds)
 
-	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectAttr(context.Background(), header, condition)
-	if nil != err {
-		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s, error:%s ,rid:%s", objID, conds, err.Error(), rid)
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if !result.Result {
-		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s,  http reply info,error code:%d, error msg:%s ,rid:%s", objID, conds, result.Code, result.ErrMsg, rid)
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(result.Code, result.ErrMsg)
+	result, err := lgc.Engine.CoreAPI.ApiServer().ModelQuote().GetObjectAttrWithTable(context.Background(), header,
+		condition)
+	if err != nil {
+		blog.Errorf("get object fields failed, objID: %s, input: %v, err: %v ,rid: %s", objID, conds, err, rid)
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).
+			Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	ret := []Property{}
-	for _, attr := range result.Data {
+	for _, attr := range result {
 		ret = append(ret, Property{
 			ID:            attr.PropertyID,
 			Name:          attr.PropertyName,
