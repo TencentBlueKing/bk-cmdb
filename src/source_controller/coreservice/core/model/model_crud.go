@@ -233,6 +233,21 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 	return nil
 }
 
+// createTableObjectShardingTables creates new collections for new table model,
+// which create new object instance and association collections, and fix missing indexes.
+func (m *modelManager) createTableObjectShardingTables(kit *rest.Kit, objID string) error {
+	// collection names.
+	instTableName := common.GetObjectInstTableName(objID, kit.SupplierAccount)
+	// collections indexes.
+	instTableIndexes := dbindex.TableInstanceIndexes()
+	// create object instance table.
+	err := m.createShardingTable(kit, instTableName, instTableIndexes)
+	if err != nil {
+		return fmt.Errorf("create object instance sharding table, %+v", err)
+	}
+	return nil
+}
+
 // createObjectShardingTables creates new collections for new model,
 // which create new object instance and association collections, and fix missing indexes.
 func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string, isMainLine bool) error {

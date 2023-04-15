@@ -108,6 +108,7 @@ type ModelOperation interface {
 	SearchModelWithAttribute(kit *rest.Kit, inputParam metadata.QueryCondition) (
 		*metadata.QueryModelWithAttributeDataResult, error)
 	CreateModelTables(kit *rest.Kit, inputParam metadata.CreateModelTable) error
+	CreateTableModelTables(kit *rest.Kit, inputParam metadata.CreateModelTable) error
 }
 
 // InstanceOperation instance methods

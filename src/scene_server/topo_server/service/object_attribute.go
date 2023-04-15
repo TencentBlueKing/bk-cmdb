@@ -119,6 +119,11 @@ func (s *Service) createTableAttribute(ctx *rest.Contexts, attr *metadata.Attrib
 		isBizCustomField = true
 	}
 
+	if err := s.createTableObjectTable(ctx, attr.ObjectID, attr.PropertyID); err != nil {
+		blog.Errorf("create table object table failed, attr: %+v, err: %v, rid: %s", *attr, err, ctx.Kit.Rid)
+		return nil, err
+	}
+
 	attrInfo := new(metadata.ObjAttDes)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		attribute, err := s.Logics.AttributeOperation().CreateTableObjectAttribute(ctx.Kit, attr)

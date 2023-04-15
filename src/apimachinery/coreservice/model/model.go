@@ -101,6 +101,7 @@ type ModelClientInterface interface {
 	DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (*metadata.DeletedCount, error)
 	ReadModelAttrUnique(ctx context.Context, h http.Header, inputParam metadata.QueryCondition) (
 		*metadata.QueryUniqueResult, error)
+	CreateTableModelTables(ctx context.Context, h http.Header, input *metadata.CreateModelTable) (err error)
 
 	CreateModelTables(ctx context.Context, h http.Header, input *metadata.CreateModelTable) (err error)
 }
