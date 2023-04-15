@@ -338,6 +338,26 @@ func setTableCellValue(val interface{}, sheet *xlsx.Sheet, rowIndex int, propert
 				setIntCellValue(cell, val)
 			case common.FieldTypeFloat:
 				setFloatCellValue(cell, val)
+			case common.FieldTypeEnumMulti:
+				items, ok := attr.Option.([]interface{})
+				if !ok {
+					return fmt.Errorf("enum multiple option param is invalid, option: %v", property.Option)
+				}
+				enumArr, ok := val.([]interface{})
+				if !ok {
+					return fmt.Errorf("convert enum multiple type value failed, val: %v", val)
+				}
+				enumMultiName := make([]string, 0)
+				for _, enumID := range enumArr {
+					id, ok := enumID.(string)
+					if !ok {
+						return fmt.Errorf("convert enum multiple id [%v] to string failed", enumID)
+					}
+					name := getEnumNameByID(id, items)
+					enumMultiName = append(enumMultiName, name)
+				}
+				val = strings.Join(enumMultiName, "\n")
+				setDefaultCellValue(cell, val)
 			default:
 				setDefaultCellValue(cell, val)
 			}
@@ -368,14 +388,12 @@ func getDataFromExcel(ctx context.Context, preData *ImportExcelPreData, start, e
 
 	data, getErr := getDataFromByExcelRow(ctx, row, start, preData.Fields, defFields, preData.NameIndexMap, 1,
 		row.GetCellCount(), defLang)
-	if end-start > 1 {
-		var errMsg []string
-		data, errMsg, err = buildDataWithTable(ctx, data, preData.Sheet, start, end, preData.TableMap, defLang)
-		if err != nil {
-			return nil, nil, err
-		}
-		getErr = append(getErr, errMsg...)
+	var errMsg []string
+	data, errMsg, err = buildDataWithTable(ctx, data, preData.Sheet, start, end, preData.TableMap, defLang)
+	if err != nil {
+		return nil, nil, err
 	}
+	getErr = append(getErr, errMsg...)
 	return data, getErr, nil
 }
 
