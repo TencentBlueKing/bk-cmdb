@@ -119,6 +119,11 @@ func (s *Service) createTableAttribute(ctx *rest.Contexts, attr *metadata.Attrib
 		isBizCustomField = true
 	}
 
+	if err := s.createTableObjectTable(ctx, attr.ObjectID, attr.PropertyID); err != nil {
+		blog.Errorf("create table object table failed, attr: %+v, err: %v, rid: %s", *attr, err, ctx.Kit.Rid)
+		return nil, err
+	}
+
 	attrInfo := new(metadata.ObjAttDes)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		attribute, err := s.Logics.AttributeOperation().CreateTableObjectAttribute(ctx.Kit, attr)
@@ -306,38 +311,23 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
+	// adapt input path param with bk_biz_id and attr id.
+	id, bizID, err := getAttrIDAndBizID(ctx)
 	if err != nil {
-		blog.Errorf("failed to parse the path params id: %s, err: %s, rid: %s", ctx.Request.PathParameter("id"),
-			err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	// adapt input path param with bk_biz_id
-	var bizID int64
-	if bizIDStr := ctx.Request.PathParameter(common.BKAppIDField); bizIDStr != "" {
-		bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
-		bizID, err = strconv.ParseInt(bizIDStr, 10, 64)
-		if err != nil {
-			blog.Errorf("create biz custom field, but parse biz ID failed, error: %s, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+	// table field updates need to go through a separate process.
+	if util.GetStrByInterface(data[common.BKPropertyTypeField]) == common.FieldTypeInnerTable {
+		if err := s.updateObjectTableAttribute(ctx, id, bizID, data); err != nil {
+			ctx.RespAutoError(err)
 			return
 		}
-		if bizID == 0 {
-			blog.Errorf("create biz custom field, but biz ID is 0, rid: %s", ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
-			return
-		}
+		ctx.RespEntity(nil)
+		return
 	}
-	// TODO: why does remove this????
-	data.Remove(metadata.BKMetadata)
-	data.Remove(common.BKAppIDField)
-
-	// UpdateObjectAttribute should not update bk_property_index、bk_property_group
-	data.Remove(common.BKPropertyIndexField)
-	data.Remove(common.BKPropertyGroupField)
-
+	data = removeImmutableFields(data)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Logics.AttributeOperation().UpdateObjectAttribute(ctx.Kit, data, id, bizID)
 		if err != nil {
@@ -351,6 +341,60 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(nil)
+}
+
+// updateObjectTableAttribute update the table object attribute
+func (s *Service) updateObjectTableAttribute(ctx *rest.Contexts, id, bizID int64, data mapstr.MapStr) error {
+
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := s.Logics.AttributeOperation().UpdateTableObjectAttr(ctx.Kit, data, id, bizID)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		return txnErr
+	}
+	return nil
+}
+
+func removeImmutableFields(data mapstr.MapStr) mapstr.MapStr {
+	// TODO: why does remove this????
+	data.Remove(metadata.BKMetadata)
+	data.Remove(common.BKAppIDField)
+
+	// UpdateObjectAttribute should not update bk_property_index、bk_property_group
+	data.Remove(common.BKPropertyIndexField)
+	data.Remove(common.BKPropertyGroupField)
+	return data
+}
+
+func getAttrIDAndBizID(ctx *rest.Contexts) (int64, int64, error) {
+
+	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse the path params id: %s, err: %s, rid: %s", ctx.Request.PathParameter("id"),
+			err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return 0, 0, err
+	}
+	// adapt input path param with bk_biz_id
+	var bizID int64
+	if bizIDStr := ctx.Request.PathParameter(common.BKAppIDField); bizIDStr != "" {
+		bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
+		bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+		if err != nil {
+			blog.Errorf("create biz custom field, but parse biz ID failed, error: %s, rid: %s", err, ctx.Kit.Rid)
+			return 0, 0, err
+		}
+		if bizID == 0 {
+			blog.Errorf("create biz custom field, but biz ID is 0, rid: %s", ctx.Kit.Rid)
+			return 0, 0, err
+		}
+	}
+	return id, bizID, nil
 }
 
 // DeleteObjectAttribute delete the object attribute

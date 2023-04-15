@@ -23,7 +23,9 @@ import (
 	"configcenter/src/common/language"
 	"configcenter/src/common/lock"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/types"
@@ -383,6 +385,142 @@ func (m *modelAttribute) UpdateModelAttributesByCondition(kit *rest.Kit, inputPa
 	}
 
 	return &metadata.UpdatedCount{Count: cnt}, nil
+}
+
+func removeUnchangeableFields(data mapstr.MapStr) mapstr.MapStr {
+
+	data.Remove(metadata.BKMetadata)
+	data.Remove(common.BKAppIDField)
+
+	// UpdateObjectAttribute should not update bk_property_index、bk_property_group
+	data.Remove(common.BKPropertyIndexField)
+	data.Remove(common.BKPropertyGroupField)
+	data.Remove(common.BKFieldID)
+	return data
+}
+
+func assignmentUnchangeableFields(data mapstr.MapStr, dbAttr metadata.Attribute) mapstr.MapStr {
+
+	data[common.BKAppIDField] = dbAttr.BizID
+	data[common.BKPropertyIndexField] = dbAttr.PropertyIndex
+	data[common.BKPropertyGroupField] = dbAttr.PropertyGroup
+	data[common.BKFieldID] = dbAttr.ID
+	data[common.BKObjIDField] = dbAttr.ObjectID
+	return data
+}
+
+// UpdateTableModelAttributes update the attribute content of the form field
+func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam metadata.UpdateTableOption) error {
+	inputParamCond := util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount)
+
+	filter := metadata.QueryCondition{Condition: inputParamCond}
+	attrs, err := m.searchWithSort(kit, filter)
+	if err != nil {
+		blog.Errorf("failed to search the attrs of the model(%+v), err: %s, rid: %s", inputParam, err, kit.Rid)
+		return err
+	}
+
+	length := len(attrs)
+	if length == 0 || length > 1 {
+		blog.Errorf("attrs of the model length(%d) error, filter: %+v, err: %s, rid: %s", filter, length, err, kit.Rid)
+		return err
+	}
+
+	if len(inputParam.CreateData.Data) > 0 {
+		if err := m.model.isValid(kit, inputParam.CreateData.ObjID); err != nil {
+			blog.Errorf("validate model(%s) failed, err: %v, rid: %s", inputParam.CreateData.ObjID, err, kit.Rid)
+			return err
+		}
+		for _, attr := range inputParam.CreateData.Data {
+			if attr.IsPre {
+				if attr.PropertyID == common.BKInstNameField {
+					lang := m.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+					attr.PropertyName = util.FirstNotEmptyString(lang.Language("common_property_"+attr.PropertyID),
+						attr.PropertyName, attr.PropertyID)
+				}
+			}
+
+			attr.OwnerID = kit.SupplierAccount
+			_, exists, err := m.isExists(kit, attr.ObjectID, attr.PropertyID, attr.BizID)
+			blog.V(5).Infof("table model attributes, property id: %s, bizID: %d, exists: %v, rid: %s", attr.PropertyID,
+				attr.BizID, exists, kit.Rid)
+			if err != nil {
+				blog.Errorf("create model attr failed, propertyID(%s), err: %s, rid: %s", attr.PropertyID, err, kit.Rid)
+				continue
+			}
+
+			if exists {
+				continue
+			}
+			if err = m.saveTableAttrCheck(kit, attr); err != nil {
+				return err
+			}
+		}
+
+		// inputParam.UpdateData 中的option 转化成header default
+		hOp, ok := inputParam.UpdateData["option"].(map[string]interface{})
+		if !ok {
+			return err
+		}
+		header := new(metadata.TableAttributesOption)
+		if err := mapstruct.Decode2Struct(hOp, header); err != nil {
+			return err
+		}
+
+		for _, data := range inputParam.CreateData.Data {
+			d, ok := data.Option.(map[string]interface{})
+			if !ok {
+				return err
+			}
+			dataTbale := new(metadata.TableAttributesOption)
+			if err := mapstruct.Decode2Struct(d, dataTbale); err != nil {
+				return err
+			}
+
+			header.Header = append(header.Header, dataTbale.Header...)
+
+		}
+		inputParam.UpdateData[metadata.AttributeFieldOption] = header
+	}
+	inputParam.UpdateData = removeUnchangeableFields(inputParam.UpdateData)
+
+	inputParam.UpdateData = assignmentUnchangeableFields(inputParam.UpdateData, attrs[0])
+
+	cond, err := mongo.NewConditionFromMapStr(inputParamCond)
+	if err != nil {
+		blog.Errorf("failed to convert mapstr(%#v) into a condition object, err: %v, rid: %s",
+			inputParam.Condition, err, kit.Rid)
+		return err
+	}
+
+	if err := m.updateTableAttr(kit, inputParam.UpdateData, cond); err != nil {
+		blog.Errorf("failed to update fields (%#v) by condition(%#v), err: %v, rid: %s",
+			inputParam.UpdateData, cond.ToMapStr(), err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (m *modelAttribute) updateTableAttr(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) error {
+
+	if len(data) == 0 {
+		return nil
+	}
+
+	err := m.checkTableAttrUpdate(kit, data, cond)
+	if err != nil {
+		blog.Errorf("checkUpdate error. data: %+v, cond: %+v, err: %v, rid:%s", data, cond, err, kit.Rid)
+		return err
+	}
+
+	_, err = mongodb.Client().Table(common.BKTableNameObjAttDes).UpdateMany(kit.Ctx, cond.ToMapStr(), data)
+	if err != nil {
+		blog.Errorf("database operation is failed, error: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return err
 }
 
 // DeleteModelAttributes TODO

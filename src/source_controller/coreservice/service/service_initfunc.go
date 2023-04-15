@@ -60,6 +60,9 @@ func (s *coreService) initModel(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model/with/attribute", Handler: s.SearchModelWithAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/read/model/statistics", Handler: s.GetModelStatistics})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model/tables", Handler: s.CreateModelTables})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/create/table/model/tables",
+		Handler: s.CreateTableModelTables})
 
 	// init model attribute groups methods
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model/{bk_obj_id}/group", Handler: s.CreateModelAttributeGroup})
@@ -75,6 +78,9 @@ func (s *coreService) initModel(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model/{bk_obj_id}/attributes", Handler: s.CreateModelAttributes})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/model/{bk_obj_id}/attributes", Handler: s.SetModelAttributes})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model/{bk_obj_id}/attributes", Handler: s.UpdateModelAttributes})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path:    "/update/table/model/attributes",
+		Handler: s.UpdateTableModelAttrByCondition})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/model/{bk_obj_id}/attribute/{id}/index",
 		Handler: s.UpdateModelAttributesIndex})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model/attributes", Handler: s.UpdateModelAttributesByCondition})

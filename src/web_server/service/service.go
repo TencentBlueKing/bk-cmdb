@@ -112,12 +112,6 @@ func (s *Service) WebService() *gin.Engine {
 
 	ws.GET("/", s.Index)
 
-	ws.POST("/netdevice/import", s.ImportNetDevice)
-	ws.POST("/netdevice/export", s.ExportNetDevice)
-	ws.GET("/netcollect/importtemplate/netdevice", s.BuildDownLoadNetDeviceExcelTemplate)
-	ws.POST("/netproperty/import", s.ImportNetProperty)
-	ws.POST("/netproperty/export", s.ExportNetProperty)
-	ws.GET("/netcollect/importtemplate/netproperty", s.BuildDownLoadNetPropertyExcelTemplate)
 	ws.POST("/object/count", s.GetObjectInstanceCount)
 
 	ws.POST("/regular/verify_regular_express", s.VerifyRegularExpress)

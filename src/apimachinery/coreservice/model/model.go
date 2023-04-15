@@ -64,6 +64,7 @@ type ModelClientInterface interface {
 	// deprecated, only for old api
 	UpdateModelAttrsByCondition(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
 		*metadata.UpdatedCount, error)
+	UpdateTableModelAttrsByCondition(ctx context.Context, h http.Header, input *metadata.UpdateTableOption) error
 	ReadModelAttrsWithTableByCondition(ctx context.Context, h http.Header, bizID int64, input *metadata.QueryCondition) (
 		*metadata.QueryModelAttributeDataResult, error)
 	DeleteModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (
@@ -100,6 +101,7 @@ type ModelClientInterface interface {
 	DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (*metadata.DeletedCount, error)
 	ReadModelAttrUnique(ctx context.Context, h http.Header, inputParam metadata.QueryCondition) (
 		*metadata.QueryUniqueResult, error)
+	CreateTableModelTables(ctx context.Context, h http.Header, input *metadata.CreateModelTable) (err error)
 
 	CreateModelTables(ctx context.Context, h http.Header, input *metadata.CreateModelTable) (err error)
 }
