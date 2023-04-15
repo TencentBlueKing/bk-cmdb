@@ -24,6 +24,7 @@
         <div class="table-value" v-else>
           <span>{{getHighlightValue(property.bk_property_name, data)}}：</span>
           <i class="bk-cmdb-icon icon-cc-table" />
+          <span class="matched-tag" v-if="isMatchedTableValue(property)">命中</span>
         </div>
       </div>
     </div>
@@ -52,11 +53,14 @@
 
       const properties = computed(() => propertyMap.value[data.value.source.bk_obj_id])
 
+      const isMatchedTableValue = property => data.value?.highlight?.tables?.includes(property.bk_property_id)
+
       return {
         PROPERTY_TYPES,
         properties,
         getText,
-        getHighlightValue
+        getHighlightValue,
+        isMatchedTableValue
       }
     }
   })
