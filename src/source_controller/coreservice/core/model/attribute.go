@@ -426,8 +426,6 @@ func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam me
 		return err
 	}
 
-	inputParam.UpdateData = removeUnchangeableFields(inputParam.UpdateData)
-
 	if len(inputParam.CreateData.Data) > 0 {
 		if err := m.model.isValid(kit, inputParam.CreateData.ObjID); err != nil {
 			blog.Errorf("validate model(%s) failed, err: %v, rid: %s", inputParam.CreateData.ObjID, err, kit.Rid)
@@ -480,11 +478,11 @@ func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam me
 			}
 
 			header.Header = append(header.Header, dataTbale.Header...)
-			header.Default = append(header.Default, dataTbale.Default...)
 
 		}
-		inputParam.UpdateData["option"] = header
+		inputParam.UpdateData[metadata.AttributeFieldOption] = header
 	}
+	inputParam.UpdateData = removeUnchangeableFields(inputParam.UpdateData)
 
 	inputParam.UpdateData = assignmentUnchangeableFields(inputParam.UpdateData, attrs[0])
 

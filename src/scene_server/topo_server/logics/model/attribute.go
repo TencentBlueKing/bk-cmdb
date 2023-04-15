@@ -855,18 +855,20 @@ func calcTableOptionDiffDefault(kit *rest.Kit, curAttrsOp, dbAttrsOp *metadata.T
 	// according to this map, it is judged whether it is an operation
 	// to delete the table header in the update scene.
 	curHeaderPropertyIDMap := make(map[string]metadata.Attribute)
+	createAttrMap := make(map[string]metadata.Attribute)
+
 	updated := new(metadata.TableAttributesOption)
-	for _, attr := range curAttrsOp.Header {
-		curHeaderPropertyIDMap[attr.PropertyID] = attr
+	for _, header := range curAttrsOp.Header {
+		// determine whether the underlying type is legal
+		if !metadata.ValidTableFieldBaseType(header.PropertyType) {
+			return nil, nil, nil, fmt.Errorf("table header type is invalid, type : %v", header.PropertyType)
+		}
+		curHeaderPropertyIDMap[header.PropertyID] = header
+		header.ObjectID = metadata.GenerateModelQuoteObjID(objID, header.PropertyID)
+		createAttrMap[header.PropertyID] = header
 	}
 
 	deletePropertyIDs := make([]string, 0)
-
-	createAttrMap := make(map[string]metadata.Attribute)
-	for _, value := range curAttrsOp.Header {
-		value.ObjectID = metadata.GenerateModelQuoteObjID(objID, value.PropertyID)
-		createAttrMap[value.PropertyID] = value
-	}
 
 	for idx := range dbAttrsOp.Header {
 		value, ok := curHeaderPropertyIDMap[dbAttrsOp.Header[idx].PropertyID]
@@ -880,33 +882,20 @@ func calcTableOptionDiffDefault(kit *rest.Kit, curAttrsOp, dbAttrsOp *metadata.T
 		value.ObjectID = metadata.GenerateModelQuoteObjID(objID, dbAttrsOp.Header[idx].PropertyID)
 		value.PropertyGroup = dbAttrsOp.Header[idx].PropertyGroup
 		updated.Header = append(updated.Header, value)
-
-		if len(curAttrsOp.Default) == 0 {
-			delete(createAttrMap, dbAttrsOp.Header[idx].PropertyID)
-			continue
-		}
-
-		// handle the default value corresponding to the table
-		// header in the update scenario.
-		for id := range curAttrsOp.Default {
-			v, ok := curAttrsOp.Default[id][dbAttrsOp.Header[idx].PropertyID]
-			if !ok {
-				continue
-			}
-			updated.Default = append(updated.Default, map[string]interface{}{
-				dbAttrsOp.Header[idx].PropertyID: v,
-			})
-		}
-
 		// delete the update part, so that the remaining data in
 		// curAttrsOp needs to be newly created.
 		delete(createAttrMap, dbAttrsOp.Header[idx].PropertyID)
-		if len(curAttrsOp.Default) == 0 {
-			continue
+	}
+
+	for id := range curAttrsOp.Default {
+		for v := range curAttrsOp.Default[id] {
+			if _, ok := curHeaderPropertyIDMap[v]; !ok {
+				return nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "default")
+			}
 		}
-		for _, attr := range curAttrsOp.Default {
-			delete(attr, dbAttrsOp.Header[idx].PropertyID)
-		}
+		// since the default value is directly verified through attributes,
+		// the default value is placed in the update part as a whole.
+		updated.Default = append(updated.Default, curAttrsOp.Default[id])
 	}
 
 	header := make([]metadata.Attribute, 0)
@@ -914,30 +903,12 @@ func calcTableOptionDiffDefault(kit *rest.Kit, curAttrsOp, dbAttrsOp *metadata.T
 		header = append(header, v)
 	}
 
+	// the header here is the new header part
 	curAttrsOp.Header = header
 	if len(curAttrsOp.Header)+len(updated.Header) > metadata.TableHeaderMaxNum {
 		return nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "table header num")
 	}
 
-	curHeaderProperty, dbHeaderProperty := make(map[string]struct{}), make(map[string]metadata.Attribute)
-	for _, property := range curAttrsOp.Header {
-		curHeaderProperty[property.PropertyID] = struct{}{}
-	}
-
-	for _, dbHeader := range dbAttrsOp.Header {
-		dbHeaderProperty[dbHeader.PropertyID] = dbHeader
-	}
-
-	// the full amount of data needs to be transmitted.
-	// if the Default value does not have a corresponding
-	// header, an error needs to be reported.
-	for _, value := range curAttrsOp.Default {
-		for k := range value {
-			if _, ok := curHeaderProperty[k]; !ok {
-				return nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "table header")
-			}
-		}
-	}
 	return curAttrsOp, updated, deletePropertyIDs, nil
 }
 
@@ -974,23 +945,24 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 		return err
 	}
 
-	updatedHeader := make(map[string]*metadata.Attribute)
+	// for the verification header, it should be verified separately,
+	// because some headers are newly created and some headers are updated.
+	// different scenarios correspond to different content that needs to be verified.
+	// for checking the default value, you can check it as a whole, because you only
+	// need to check whether the default value conforms to the attribute of the header.
+	// the checksum operation of the default value is uniformly placed in the default
+	// field of the option in the update
+	headerMap := make(map[string]*metadata.Attribute)
 	for _, header := range updated.Header {
-		updatedHeader[header.PropertyID] = &header
+		headerMap[header.PropertyID] = &header
 	}
 
-	if len(created.Header) > 0 && len(created.Default) > 0 {
-		result := make(map[string]*metadata.Attribute)
-		for _, header := range created.Header {
-			result[header.PropertyID] = &header
-		}
-		if err := a.ValidTableAttrDefaultValue(kit, created.Default, result); err != nil {
-			return err
-		}
+	for _, header := range created.Header {
+		headerMap[header.PropertyID] = &header
 	}
 
 	// updated this part is to be updated
-	if err := a.ValidTableAttrDefaultValue(kit, updated.Default, updatedHeader); err != nil {
+	if err := a.ValidTableAttrDefaultValue(kit, updated.Default, headerMap); err != nil {
 		return err
 	}
 
@@ -1015,6 +987,7 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 			ObjID: objID,
 		}
 	}
+
 	if len(updateData) > 0 {
 		input.UpdateData = updateData
 	}
