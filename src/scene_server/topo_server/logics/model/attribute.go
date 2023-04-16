@@ -940,7 +940,7 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 	}
 
 	// to update. here, the two parts need to be processed separately, and the underlying verification is different.
-	created, updated, deleted, err := calcTableOptionDiffDefault(kit, curAttrsOp, dbAttrsOp, objID)
+	created, updated, _, err := calcTableOptionDiffDefault(kit, curAttrsOp, dbAttrsOp, objID)
 	if err != nil {
 		return err
 	}
@@ -1001,9 +1001,6 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 		return err
 	}
 
-	if len(deleted) > 0 {
-		//todo: 调用删除实例的表头接口
-	}
 	return nil
 }
 

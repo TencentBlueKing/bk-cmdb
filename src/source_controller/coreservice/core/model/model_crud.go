@@ -188,6 +188,14 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 
 	obj := metadata.GenerateModelQuoteObjID(input.ObjID, input.PropertyID)
 
+	// delete quoted instance table
+	instTable := common.GetInstTableName(obj, kit.SupplierAccount)
+	err := mongodb.Client().DropTable(kit.Ctx, instTable)
+	if err != nil {
+		blog.Errorf("drop instance table failed, err: %v, table: %s, rid: %s", err, instTable, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBDeleteFailed)
+	}
+
 	// delete model property attribute.
 	modelDesCond := mapstr.MapStr{
 		common.BKFieldID: input.ID,
@@ -224,7 +232,7 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 	}
 
 	// delete table model.
-	_, err := mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, cond)
+	_, err = mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, cond)
 	if err != nil {
 		blog.Errorf("delete model failed, err: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
