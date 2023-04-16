@@ -890,6 +890,7 @@ func calcTableOptionDiffDefault(kit *rest.Kit, curAttrsOp, dbAttrsOp *metadata.T
 	for id := range curAttrsOp.Default {
 		for v := range curAttrsOp.Default[id] {
 			if _, ok := curHeaderPropertyIDMap[v]; !ok {
+				blog.Errorf("the default value tag: (%v) is not in the header, rid: %s", v, kit.Rid)
 				return nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "default")
 			}
 		}
@@ -953,12 +954,12 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 	// the checksum operation of the default value is uniformly placed in the default
 	// field of the option in the update
 	headerMap := make(map[string]*metadata.Attribute)
-	for _, header := range updated.Header {
-		headerMap[header.PropertyID] = &header
+	for idx := range updated.Header {
+		headerMap[updated.Header[idx].PropertyID] = &updated.Header[idx]
 	}
 
-	for _, header := range created.Header {
-		headerMap[header.PropertyID] = &header
+	for idx := range created.Header {
+		headerMap[created.Header[idx].PropertyID] = &created.Header[idx]
 	}
 
 	// updated this part is to be updated
