@@ -96,18 +96,20 @@ func (s *Service) CreateInstanceWithTable(objID string) gin.HandlerFunc {
 				}
 
 				// create table instances
-				tableOpt := &metadata.BatchCreateQuotedInstOption{
-					ObjID:      objID,
-					PropertyID: attr.PropertyID,
-					Data:       attrVal,
-				}
-				ids, err := s.CoreAPI.ApiServer().ModelQuote().BatchCreateQuotedInstance(kit.Ctx, kit.Header, tableOpt)
-				if err != nil {
-					return err
-				}
+				if len(attrVal) > 0 {
+					tableOpt := &metadata.BatchCreateQuotedInstOption{
+						ObjID:      objID,
+						PropertyID: attr.PropertyID,
+						Data:       attrVal,
+					}
+					ids, err := s.CoreAPI.ApiServer().ModelQuote().BatchCreateQuotedInstance(kit.Ctx, kit.Header, tableOpt)
+					if err != nil {
+						return err
+					}
 
-				// set table instance ids to attach instance
-				data[attr.PropertyID] = ids
+					// set table instance ids to attach instance
+					data[attr.PropertyID] = ids
+				}
 			}
 
 			// proxy request to api server
