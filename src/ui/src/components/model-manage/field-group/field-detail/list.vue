@@ -51,6 +51,26 @@
         </bk-button>
       </li>
     </vue-draggable>
+    <div class="default-setting">
+      <p class="title mb10">{{$t('默认值设置')}}</p>
+      <div class="cmdb-form-item" :class="{ 'is-error': errors.has('defaultValueSelect') }">
+        <bk-select style="width: 100%;"
+          :clearable="true"
+          :disabled="isReadOnly"
+          name="defaultValueSelect"
+          data-vv-validate-on="change"
+          v-validate.immediate="`maxSelectLength:1`"
+          v-model="defaultListValue"
+          @change="handleSettingDefault">
+          <bk-option v-for="option in settingList"
+            :key="option.id"
+            :id="option.id"
+            :name="option.name">
+          </bk-option>
+        </bk-select>
+        <p class="form-error">{{errors.first('defaultValueSelect')}}</p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -68,11 +88,17 @@
       isReadOnly: {
         type: Boolean,
         default: false
+      },
+      defaultValue: {
+        type: String,
+        default: ''
       }
     },
     data() {
       return {
         list: [{ name: '' }],
+        settingList: [],
+        defaultListValue: '',
         dragOptions: {
           animation: 300,
           disabled: false,
@@ -86,10 +112,24 @@
     watch: {
       value() {
         this.initValue()
+      },
+      list: {
+        deep: true,
+        handler(value) {
+          this.settingList = (value || []).filter(val => val.name).map((item, index) => ({
+            id: index,
+            name: item.name
+          }))
+        }
       }
     },
     created() {
       this.initValue()
+    },
+    mounted() {
+      if (this.defaultValue) {
+        this.defaultListValue = this.list.findIndex(item => item.name === this.defaultValue)
+      }
     },
     methods: {
       getOtherName(index) {
@@ -154,6 +194,7 @@
             display: flex;
             align-items: center;
             position: relative;
+            margin-bottom: 16px;
             padding: 2px 2px 2px 28px;
             font-size: 0;
             cursor: move;
