@@ -38,14 +38,13 @@
         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldName') }">
           <bk-input type="text" class="cmdb-form-input"
             name="fieldName"
-            :placeholder="$t('请输入字段名称')"
+            :placeholder="isSystemCreate ? $t('请输入名称，国际化时将会自动翻译，不可修改') : $t('请输入字段名称')"
             v-model.trim="fieldInfo.bk_property_name"
             :disabled="isReadOnly || isSystemCreate || field.ispre"
             v-validate="'required|length:128'">
           </bk-input>
           <p class="form-error">{{errors.first('fieldName')}}</p>
         </div>
-        <i class="icon-cc-exclamation-tips" v-if="isSystemCreate" tabindex="-1" v-bk-tooltips="$t('国际化配置翻译，不可修改')"></i>
       </label>
       <div class="form-label">
         <span class="label-text">
@@ -111,13 +110,14 @@
           :multiple="fieldInfo.ismultiple"
           v-model="fieldInfo.option"
           :type="fieldInfo.bk_property_type"
+          :default-value.sync="fieldInfo.default"
           ref="component"
         ></component>
         <label class="form-label" v-if="isDefaultComponentShow">
           <span class="label-text">
             {{$t('默认值')}}
           </span>
-          <div class="cmdb-form-item" :class="{ 'is-error': errors.has('defalut') }">
+          <div class="cmdb-form-item">
             <component
               name="defalut"
               :key="fieldInfo.bk_property_type"
@@ -125,11 +125,11 @@
               :is="`cmdb-form-${fieldInfo.bk_property_type}`"
               :multiple="fieldInfo.ismultiple"
               :options="fieldInfo.option || []"
+              :disabled="isReadOnly || isSystemCreate || field.ispre"
               v-model="fieldInfo.default"
-              v-validate="$tools.getValidateRules(fieldInfo)"
+              v-validate="getValidateRules(fieldInfo)"
               ref="component"
             ></component>
-            <p class="form-error">{{errors.first('defalut')}}</p>
           </div>
         </label>
       </div>
@@ -296,6 +296,7 @@
           PROPERTY_TYPES.ENUM,
           PROPERTY_TYPES.ENUMMULTI,
           PROPERTY_TYPES.ENUMQUOTE,
+          PROPERTY_TYPES.LIST,
           PROPERTY_TYPES.BOOL
         ]
         return !types.includes(this.fieldInfo.bk_property_type)
@@ -339,6 +340,7 @@
               break
             case PROPERTY_TYPES.OBJUSER:
             case PROPERTY_TYPES.ORGANIZATION:
+              this.fieldInfo.default = ''
               this.fieldInfo.option = ''
               this.fieldInfo.ismultiple = true
               break
@@ -458,6 +460,11 @@
       },
       cancel() {
         this.$emit('cancel')
+      },
+      getValidateRules(fieldInfo) {
+        const rules =  this.$tools.getValidateRules(fieldInfo)
+        Reflect.deleteProperty(rules, 'required')
+        return rules
       }
     }
   }
