@@ -33,11 +33,23 @@ func (s *coreService) CreateOneModelInstance(ctx *rest.Contexts) {
 // CreateManyModelInstances TODO
 func (s *coreService) CreateManyModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.CreateManyModelInstance{}
-	if err := ctx.DecodeInto(&inputData); nil != err {
+	if err := ctx.DecodeInto(&inputData); err !=nil  {
 		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntityWithError(s.core.InstanceOperation().CreateManyModelInstance(ctx.Kit, ctx.Request.PathParameter(common.BKObjIDField), inputData))
+}
+
+// BatchCreateModelInstances batch create model instance, if one of instances fails to create, an error is returned.
+func (s *coreService) BatchCreateModelInstances(ctx *rest.Contexts) {
+	inputData := new(metadata.BatchCreateModelInstOption)
+	if err := ctx.DecodeInto(inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	data, err := s.core.InstanceOperation().BatchCreateModelInstance(ctx.Kit,
+		ctx.Request.PathParameter(common.BKObjIDField), inputData)
+	ctx.RespEntityWithError(data, err)
 }
 
 // UpdateModelInstances TODO
@@ -73,7 +85,7 @@ func (s *coreService) SearchModelInstances(ctx *rest.Contexts) {
 	}
 
 	dataResult, err := s.core.InstanceOperation().SearchModelInstance(ctx.Kit, objectID, inputData)
-	if nil != err {
+	if err !=nil  {
 		ctx.RespEntityWithError(dataResult, err)
 		return
 	}
@@ -117,7 +129,7 @@ func (s *coreService) DeleteModelInstances(ctx *rest.Contexts) {
 // CascadeDeleteModelInstances TODO
 func (s *coreService) CascadeDeleteModelInstances(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
-	if err := ctx.DecodeInto(&inputData); nil != err {
+	if err := ctx.DecodeInto(&inputData); err !=nil  {
 		ctx.RespAutoError(err)
 		return
 	}

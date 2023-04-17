@@ -98,7 +98,7 @@
           <div class="btn-group">
             <template v-if="canBeImport">
               <cmdb-auth tag="label" class="label-btn"
-                v-if="tab.active === 'field'"
+                v-if="tab.active === 'field' && hideImport"
                 :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
                 :class="{ 'disabled': isReadOnly }"
                 @click="handleImportField">
@@ -223,7 +223,7 @@
     MENU_MODEL_MANAGEMENT,
     MENU_RESOURCE_INSTANCE
   } from '@/dictionary/menu-symbol'
-  import { BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
+  import { BUILTIN_MODEL_RESOURCE_MENUS, BUILTIN_MODELS } from '@/dictionary/model-constants.js'
   import EditableField from './editable-field.vue'
 
   export default {
@@ -314,6 +314,10 @@
         const noInstanceModelIds = ['set', 'module']
         return noInstanceModelIds.includes(this.activeModel.bk_obj_id)
       },
+      hideImport() {
+        // 项目模型中隐藏导入按钮
+        return this.$route.params.modelId !== BUILTIN_MODELS.PROJECT
+      }
     },
     watch: {
       '$route.params.modelId'() {

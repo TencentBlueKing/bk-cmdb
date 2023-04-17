@@ -18,15 +18,17 @@ GITTAG?=$(shell git describe --all --tags --exact-match 2>/dev/null | awk -F '/'
 VERSION?=$(shell git symbolic-ref -q --short HEAD || git describe --all --tags --exact-match 2>/dev/null | awk -F '-' '{print $$NF}')
 ISDEBUG?=false
 CCDistro?=community
+GOVERSION?=$(shell go version | awk '{print $$3F}')
 ifeq ($(ISDEBUG),true)
 	GOBUILD_FLAGS = -ldflags "-X configcenter/src/common/version.CCRunMode=dev -X\
 	configcenter/src/common/version.CCVersion=${VERSION} -X configcenter/src/common/version.CCBuildTime=${BUILDTIME} -X\
 	configcenter/src/common/version.CCGitHash=${GITHASH} -X configcenter/src/common/version.CCTag=${GITTAG} -X\
-	configcenter/src/common/version.CCDistro=${CCDistro}"
+	configcenter/src/common/version.CCDistro=${CCDistro} -X configcenter/src/common/version.GoVersion=${GOVERSION}"
 else
 	GOBUILD_FLAGS = -ldflags "-X configcenter/src/common/version.CCVersion=${VERSION} -X\
 	configcenter/src/common/version.CCBuildTime=${BUILDTIME} -X configcenter/src/common/version.CCGitHash=${GITHASH} -X\
-	configcenter/src/common/version.CCTag=${GITTAG} -X configcenter/src/common/version.CCDistro=${CCDistro}"
+	configcenter/src/common/version.CCTag=${GITTAG} -X configcenter/src/common/version.CCDistro=${CCDistro} -X\
+	configcenter/src/common/version.GoVersion=${GOVERSION}"
 endif
 
 DOCS_DIR?=$(PROJECT_PATH)/docs

@@ -103,7 +103,7 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 			},
 		}, nil
 
-	case iam.SysModelGroup, iam.SysCloudAccount, iam.SysCloudResourceTask, iam.InstAsstEvent, iam.BizSet:
+	case iam.SysModelGroup, iam.SysCloudAccount, iam.SysCloudResourceTask, iam.InstAsstEvent, iam.BizSet, iam.Project:
 		return types.ResourcePullMethod{
 			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
 				page types.Page) (*types.ListInstanceResult, error) {

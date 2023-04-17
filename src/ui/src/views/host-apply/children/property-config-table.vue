@@ -60,7 +60,7 @@
       v-if="multiple || readonly"
       :width="readonly ? null : 200"
       :label="$t('当前值')"
-      show-overflow-tooltip>
+      :show-overflow-tooltip="false">
       <template slot-scope="{ row }">
         <div v-if="multiple" :class="{ ignore: row.__extra__.ignore }">
           <template v-for="(id, index) in idList">
@@ -71,6 +71,7 @@
               :key="index"
               :value="getRuleValue(row.id, id)"
               :show-unit="false"
+              :is-show-overflow-tips="isShowOverflowTips(row)"
               :property="row">
             </cmdb-property-value>
           </template>
@@ -80,6 +81,7 @@
           <cmdb-property-value
             :class="['property-value', { disabled: !row.host_apply_enabled }]"
             :show-unit="false"
+            :is-show-overflow-tips="isShowOverflowTips(row)"
             :value="row.__extra__.value"
             :property="row">
           </cmdb-property-value>
@@ -95,7 +97,11 @@
       class-name="table-cell-form-element">
       <template slot-scope="{ row }">
         <div class="form-element-content">
-          <property-form-element :property="row" @value-change="handlePropertyValueChange"></property-form-element>
+          <property-form-element
+            :property="row"
+            @value-change="handlePropertyValueChange"
+            @valid-change="handlePropertyValidChange">
+          </property-form-element>
         </div>
       </template>
     </bk-table-column>
@@ -121,6 +127,10 @@
         </bk-button>
       </template>
     </bk-table-column>
+    <cmdb-table-empty
+      slot="empty"
+      :stuff="table.stuff">
+    </cmdb-table-empty>
   </bk-table>
 </template>
 <script>
@@ -129,6 +139,8 @@
   import has from 'has'
   import propertyFormElement from '@/components/host-apply/property-form-element'
   import { CONFIG_MODE } from '@/service/service-template/index.js'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { getPropertyDefaultValue } from '@/utils/tools.js'
 
   export default {
     components: {
@@ -176,6 +188,14 @@
         showMore: {
           max: 10,
           expanded: {}
+        },
+        table: {
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
+          }
         }
       }
     },
@@ -230,15 +250,18 @@
               if (this.multiple) {
                 const rules = this.ruleList.filter(item => item.bk_attribute_id === property.id)
                 property.__extra__.ruleList = rules
-
-                // 配置值全部相同（未配置的在ruleList不存在即不参与判断）则初始化“修改后”的值为相同的那个配置值
-                const firstValue = rules?.[0]?.bk_property_value
-                const isSameValue = rules.every(rule => rule?.bk_property_value === firstValue)
-                property.__extra__.value = isSameValue ? firstValue : this.getPropertyDefaultValue(property)
+                if (rules?.length) {
+                  // 配置值全部相同（未配置的在ruleList不存在即不参与判断）则初始化“修改后”的值为相同的那个配置值
+                  const firstValue = rules?.[0]?.bk_property_value
+                  const isSameValue = rules.every(rule => rule?.bk_property_value === firstValue)
+                  property.__extra__.value = isSameValue ? firstValue : getPropertyDefaultValue(property)
+                } else {
+                  property.__extra__.value = getPropertyDefaultValue(property)
+                }
               } else {
                 const rule = this.ruleList.find(item => item.bk_attribute_id === property.id) || {}
                 property.__extra__.ruleId = rule.id
-                property.__extra__.value = has(rule, 'bk_property_value') ? rule.bk_property_value : this.getPropertyDefaultValue(property)
+                property.__extra__.value = has(rule, 'bk_property_value') ? rule.bk_property_value : getPropertyDefaultValue(property)
               }
               this.propertyRuleList.push(property)
             }
@@ -270,13 +293,6 @@
           return (this.ruleList.find(rule => rule.bk_attribute_id === attrId && rule.bk_module_id === targetId) || {}).bk_property_value || ''
         }
         return (this.ruleList.find(rule => rule.bk_attribute_id === attrId && rule.service_template_id === targetId) || {}).bk_property_value || ''
-      },
-      getPropertyDefaultValue(property) {
-        let value = ''
-        if (property.bk_property_type === 'bool') {
-          value = false
-        }
-        return value
       },
       reset() {
         if (!this.hasRuleDraft) {
@@ -315,6 +331,13 @@
       },
       handleDeletePropertyRule(property) {
         this.$emit('property-rule-delete', property)
+      },
+      handlePropertyValidChange() {
+        this.$emit('property-valid-change')
+      },
+      isShowOverflowTips(property) {
+        const complexTypes = [PROPERTY_TYPES.MAP, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ORGANIZATION]
+        return !complexTypes.includes(property.bk_property_type)
       }
     }
   }
@@ -329,8 +352,6 @@
     .path-item,
     .value-item {
         padding: 1px 0;
-        height: 20px;
-        line-height: 20px;
         @include ellipsis;
     }
     .path-item {

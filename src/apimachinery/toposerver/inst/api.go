@@ -97,6 +97,23 @@ type InstanceInterface interface {
 	// SearchBusinessSet search business set
 	SearchBusinessSet(ctx context.Context, h http.Header, opt *metadata.QueryBusinessSetRequest) (
 		*metadata.InstResult, errors.CCErrorCoder)
+
+	// CreateProject create project
+	CreateProject(ctx context.Context, h http.Header, opt *metadata.CreateProjectOption) (*metadata.ProjectDataResp,
+		errors.CCErrorCoder)
+
+	// UpdateProject update project
+	UpdateProject(ctx context.Context, h http.Header, opt *metadata.UpdateProjectOption) errors.CCErrorCoder
+
+	// SearchProject search project
+	SearchProject(ctx context.Context, h http.Header, opt *metadata.SearchProjectOption) (*metadata.InstResult,
+		errors.CCErrorCoder)
+
+	// DeleteProject delete project
+	DeleteProject(ctx context.Context, h http.Header, opt *metadata.DeleteProjectOption) errors.CCErrorCoder
+
+	// UpdateProjectID update project bk_project_id
+	UpdateProjectID(ctx context.Context, h http.Header, opt *metadata.UpdateProjectIDOption) errors.CCErrorCoder
 }
 
 type instanceClient struct {

@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 	"configcenter/src/thirdparty/hooks/process"
 )
 
@@ -1144,7 +1145,7 @@ type ServiceTemplate struct {
 
 // Validate TODO
 func (st *ServiceTemplate) Validate(errProxy cErr.DefaultCCErrorIf) (field string, err error) {
-	st.Name, err = util.ValidTopoNameField(st.Name, "name", errProxy)
+	st.Name, err = valid.ValidTopoNameField(st.Name, "name", errProxy)
 	if err != nil {
 		return "name", err
 	}
@@ -1238,8 +1239,8 @@ func IsAsDefaultValue(asDefaultValue *bool) bool {
 }
 
 // NewProcess generate a new process from process template
-func (pt *ProcessTemplate) NewProcess(bizID, svcInstID int64, supplierAccount string, host map[string]interface{}) (
-	*Process, error) {
+func (pt *ProcessTemplate) NewProcess(cErr cErr.DefaultCCErrorIf, bizID, svcInstID int64, supplierAccount string,
+	host map[string]interface{}) (*Process, error) {
 
 	now := time.Now()
 	processInstance := &Process{
@@ -1271,7 +1272,7 @@ func (pt *ProcessTemplate) NewProcess(bizID, svcInstID int64, supplierAccount st
 	processInstance.ServiceInstanceID = svcInstID
 
 	var err error
-	processInstance.BindInfo, err = property.BindInfo.NewProcBindInfo(host)
+	processInstance.BindInfo, err = property.BindInfo.NewProcBindInfo(cErr, host)
 	if err != nil {
 		return nil, err
 	}

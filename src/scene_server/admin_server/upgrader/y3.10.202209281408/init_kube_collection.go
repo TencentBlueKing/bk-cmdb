@@ -152,6 +152,14 @@ func addContainerTableIndexes(ctx context.Context, db dal.RDB) error {
 			Background: true,
 			Unique:     true,
 		},
+		{
+			Name: common.CCLogicIndexNamePrefix + "pod_id",
+			Keys: bson.D{
+				{kubetypes.BKPodIDField, 1},
+				{common.BkSupplierAccount, 1},
+			},
+			Background: true,
+		},
 	}
 
 	if err := checkIfExistIndex(ctx, db, kubetypes.BKTableNameBaseContainer, indexes); err != nil {
@@ -182,25 +190,49 @@ func addPodTableIndexes(ctx context.Context, db dal.RDB) error {
 			Unique:     true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "reference_name_reference_kind",
+			Name: common.CCLogicIndexNamePrefix + "biz_id_reference_name_reference_kind",
 			Keys: bson.D{
+				{common.BKAppIDField, 1},
 				{kubetypes.RefNameField, 1},
 				{kubetypes.RefKindField, 1},
+				{common.BkSupplierAccount, 1},
+			},
+			Background: true,
+		},
+		{
+			Name: common.CCLogicIndexNamePrefix + "biz_id_cluster_id",
+			Keys: bson.D{
+				{common.BKAppIDField, 1},
+				{kubetypes.BKClusterIDFiled, 1},
+				{common.BkSupplierAccount, 1},
+			},
+			Background: true,
+		},
+		{
+			Name: common.CCLogicIndexNamePrefix + "biz_id_namespace_id",
+			Keys: bson.D{
+				{common.BKAppIDField, 1},
+				{kubetypes.BKNamespaceIDField, 1},
+				{common.BkSupplierAccount, 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "reference_id_reference_kind",
 			Keys: bson.D{
+				{common.BKAppIDField, 1},
 				{kubetypes.RefIDField, 1},
 				{kubetypes.RefKindField, 1},
+				{common.BkSupplierAccount, 1},
 			},
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "name",
+			Name: common.CCLogicIndexNamePrefix + "biz_id_name",
 			Keys: bson.D{
+				{common.BKAppIDField, 1},
 				{common.BKFieldName, 1},
+				{common.BkSupplierAccount, 1},
 			},
 			Background: true,
 		},
@@ -208,6 +240,7 @@ func addPodTableIndexes(ctx context.Context, db dal.RDB) error {
 			Name: common.CCLogicIndexNamePrefix + "bk_host_id",
 			Keys: bson.D{
 				{common.BKHostIDField, 1},
+				{common.BkSupplierAccount, 1},
 			},
 			Background: true,
 		},
@@ -240,23 +273,29 @@ func addWorkLoadTableIndexes(ctx context.Context, db dal.RDB, workLoadKind strin
 			Unique:     true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + kubetypes.ClusterUIDField,
+			Name: common.CCLogicIndexNamePrefix + "biz_id_cluster_uid",
 			Keys: bson.D{
+				{common.BKAppIDField, 1},
 				{kubetypes.ClusterUIDField, 1},
+				{common.BkSupplierAccount, 1},
 			},
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + kubetypes.BKClusterIDFiled,
+			Name: common.CCLogicIndexNamePrefix + "biz_id_cluster_id",
 			Keys: bson.D{
+				{common.BKAppIDField, 1},
 				{kubetypes.BKClusterIDFiled, 1},
+				{common.BkSupplierAccount, 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "name",
 			Keys: bson.D{
+				{common.BKAppIDField, 1},
 				{common.BKFieldName, 1},
+				{common.BkSupplierAccount, 1},
 			},
 			Background: true,
 		},
@@ -288,23 +327,29 @@ func addNamespaceTableIndexes(ctx context.Context, db dal.RDB) error {
 			Unique:     true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + kubetypes.ClusterUIDField,
+			Name: common.CCLogicIndexNamePrefix + "biz_id_cluster_uid",
 			Keys: bson.D{
+				{common.BKAppIDField, 1},
 				{kubetypes.ClusterUIDField, 1},
+				{common.BkSupplierAccount, 1},
 			},
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + kubetypes.BKClusterIDFiled,
+			Name: common.CCLogicIndexNamePrefix + "biz_id_cluster_id",
 			Keys: bson.D{
+				{common.BKAppIDField, 1},
 				{kubetypes.BKClusterIDFiled, 1},
+				{common.BkSupplierAccount, 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "name",
 			Keys: bson.D{
+				{common.BKAppIDField, 1},
 				{common.BKFieldName, 1},
+				{common.BkSupplierAccount, 1},
 			},
 			Background: true,
 		},
@@ -326,18 +371,27 @@ func addClusterTableIndexes(ctx context.Context, db dal.RDB) error {
 			Unique:     true,
 		},
 		{
-			Name: common.CCLogicUniqueIdxNamePrefix + "bk_biz_id_uid",
+			Name: common.CCLogicUniqueIdxNamePrefix + "uid",
 			Keys: bson.D{
-				{common.BKAppIDField, 1},
 				{kubetypes.UidField, 1},
 			},
 			Background: true,
 			Unique:     true,
 		},
 		{
+			Name: common.CCLogicUniqueIdxNamePrefix + "bk_biz_id_name",
+			Keys: bson.D{
+				{common.BKAppIDField, 1},
+				{common.BKFieldName, 1},
+				{common.BkSupplierAccount, 1},
+			},
+			Background: true,
+		},
+		{
 			Name: common.CCLogicIndexNamePrefix + common.BKAppIDField,
 			Keys: bson.D{
 				{common.BKAppIDField, 1},
+				{common.BkSupplierAccount, 1},
 			},
 			Background: true,
 		},
@@ -345,6 +399,7 @@ func addClusterTableIndexes(ctx context.Context, db dal.RDB) error {
 			Name: common.CCLogicIndexNamePrefix + "xid",
 			Keys: bson.D{
 				{kubetypes.XidField, 1},
+				{common.BkSupplierAccount, 1},
 			},
 			Background: true,
 		},
@@ -377,23 +432,38 @@ func addNodeTableIndexes(ctx context.Context, db dal.RDB) error {
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "cluster_uid",
+			Name: common.CCLogicIndexNamePrefix + "biz_id_cluster_uid",
 			Keys: bson.D{
+				{common.BKAppIDField, 1},
 				{kubetypes.ClusterUIDField, 1},
+				{common.BkSupplierAccount, 1},
 			},
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "bk_cluster_id",
+			Name: common.CCLogicIndexNamePrefix + "biz_id_cluster_id",
 			Keys: bson.D{
+				{common.BKAppIDField, 1},
 				{kubetypes.BKClusterIDFiled, 1},
+				{common.BkSupplierAccount, 1},
 			},
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "bk_host_id",
+			Name: common.CCLogicIndexNamePrefix + "biz_id_host_id",
 			Keys: bson.D{
+				{common.BKAppIDField, 1},
 				{common.BKHostIDField, 1},
+				{common.BkSupplierAccount, 1},
+			},
+			Background: true,
+		},
+		{
+			Name: common.CCLogicIndexNamePrefix + "biz_id_name",
+			Keys: bson.D{
+				{common.BKAppIDField, 1},
+				{common.BKFieldName, 1},
+				{common.BkSupplierAccount, 1},
 			},
 			Background: true,
 		},
@@ -402,6 +472,5 @@ func addNodeTableIndexes(ctx context.Context, db dal.RDB) error {
 	if err := checkIfExistIndex(ctx, db, kubetypes.BKTableNameBaseNode, indexes); err != nil {
 		return err
 	}
-
 	return nil
 }

@@ -63,6 +63,9 @@ const (
 	// CCErrCommParamsIsInvalid the parameter is invalid or nonexistent
 	CCErrCommParamsIsInvalid = 1199011
 
+	// CCErrCommFieldTypeNotSupportMultiple the parameter is not support multiple
+	CCErrCommFieldTypeNotSupportMultiple = 1199012
+
 	// CCErrCommParseDataFailed failed to read data from data field
 	CCErrCommParseDataFailed = 1199013
 
@@ -232,6 +235,9 @@ const (
 
 	// CCErrCommAtLeastSetOneVal at least set one value
 	CCErrCommAtLeastSetOneVal = 1199091
+	// CCErrCommParamsNeedSingleChoice  field type status is single choice, need single value
+	// 该状态码只提供给支持可多选字段校验报错时使用，目前用户类型，枚举多选，枚举引用，组织类型校验可多选报错时可以使用
+	CCErrCommParamsNeedSingleChoice = 1199092
 
 	// too many requests
 	CCErrTooManyRequestErr = 1199997
@@ -501,6 +507,9 @@ const (
 	CCErrorBizSetNameDuplicated                       = 1101118
 	CCErrorTopoIdentificationIllegal                  = 1101119
 
+	CCErrorTopoObjForbiddenCreateAssociation           = 1101120
+	CCErrorTopoAssociatedObjForbiddenCreateAssociation = 1101121
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
@@ -583,19 +592,21 @@ const (
 	CCErrHostGetSnapshotBatch            = 1106024
 
 	// process controller 1107XXX
-	CCErrProcDeleteProc2Module   = 1107001
-	CCErrProcCreateProc2Module   = 1107002
-	CCErrProcSelectProc2Module   = 1107003
-	CCErrProcCreateProcConf      = 1107004
-	CCErrProcDeleteProcConf      = 1107005
-	CCErrProcGetProcConf         = 1107006
-	CCErrProcUpdateProcConf      = 1107007
-	CCErrProcCreateInstanceModel = 1107008
-	CCErrProcGetInstanceModel    = 1107009
-	CCErrProcDeleteInstanceModel = 1107010
-	CCErrProcDeleteProc2Template = 1107011
-	CCErrProcCreateProc2Template = 1107012
-	CCErrProcSelectProc2Template = 1107013
+	CCErrProcDeleteProc2Module      = 1107001
+	CCErrProcCreateProc2Module      = 1107002
+	CCErrProcSelectProc2Module      = 1107003
+	CCErrProcCreateProcConf         = 1107004
+	CCErrProcDeleteProcConf         = 1107005
+	CCErrProcGetProcConf            = 1107006
+	CCErrProcUpdateProcConf         = 1107007
+	CCErrProcCreateInstanceModel    = 1107008
+	CCErrProcGetInstanceModel       = 1107009
+	CCErrProcDeleteInstanceModel    = 1107010
+	CCErrProcDeleteProc2Template    = 1107011
+	CCErrProcCreateProc2Template    = 1107012
+	CCErrProcSelectProc2Template    = 1107013
+	CCErrProcBindInfoPortNotSet     = 1107014
+	CCErrProcBindInfoProtocolNotSet = 1107015
 
 	// process server 1108XXX
 	CCErrProcSearchDetailFaile          = 1108001

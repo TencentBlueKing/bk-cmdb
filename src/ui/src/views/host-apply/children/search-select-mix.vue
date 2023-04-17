@@ -192,6 +192,9 @@
           return this.currentMenu.children.filter(item => item.name.toLowerCase().indexOf(filter.toLowerCase()) > -1)
         }
         return []
+      },
+      setEmptyKeyword() {
+        this.searchValue = []
       }
     }
   }

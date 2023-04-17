@@ -42,8 +42,10 @@
                       <component class="form-component"
                         :is="`cmdb-form-${property['bk_property_type']}`"
                         :class="{ error: errors.has(property['bk_property_id']) }"
+                        :placeholder="$tools.getPropertyPlaceholder(property)"
                         :unit="property['unit']"
                         :row="2"
+                        :multiple="property.ismultiple"
                         :disabled="checkDisabled(property)"
                         :options="property.option || []"
                         :data-vv-name="property['bk_property_id']"
@@ -188,7 +190,7 @@
         justify-content: space-between;
         .property-item {
             flex: 0 0 48%;
-            margin: 8px 0 0;
+            margin: 8px 0 16px 0;
             font-size: 12px;
             .property-name {
                 display: block;
@@ -203,7 +205,7 @@
                 max-width: calc(100% - 20px);
                 padding: 0 10px 0 0;
                 vertical-align: middle;
-                font-size: 12px;
+                font-size: 14px;
                 @include ellipsis;
                 &.required:after {
                     position: absolute;
@@ -225,9 +227,7 @@
             .property-value {
                 font-size: 0;
                 position: relative;
-                .form-component {
-                    font-size: 14px;
-                }
+                width: 303px;
             }
         }
     }

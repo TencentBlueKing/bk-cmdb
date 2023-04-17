@@ -90,6 +90,10 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 		return err
 	}
 
+	if err := e.runPlat(context.Background()); err != nil {
+		blog.Errorf("run plat event flow failed, err: %v", err)
+	}
+
 	if err := e.runKubeCluster(context.Background()); err != nil {
 		blog.Errorf("run kube cluster event flow failed, err: %v", err)
 		return err
@@ -104,7 +108,7 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 		blog.Errorf("run kube namespace event flow failed, err: %v", err)
 		return err
 	}
-	
+
 	if err := e.runKubeWorkload(context.Background()); err != nil {
 		blog.Errorf("run kube workload event flow failed, err: %v", err)
 		return err
@@ -113,6 +117,10 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 	if err := e.runKubePod(context.Background()); err != nil {
 		blog.Errorf("run kube pod event flow failed, err: %v", err)
 		return err
+	}
+
+	if err := e.runProject(context.Background()); err != nil {
+		blog.Errorf("run project event flow failed, err: %v", err)
 	}
 
 	gc := &gc{
@@ -262,6 +270,19 @@ func (e *Event) runBizSet(ctx context.Context) error {
 	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }
 
+func (e *Event) runPlat(ctx context.Context) error {
+	opts := flowOptions{
+		key:         event.PlatKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
+	}
+
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+}
+
 func (e *Event) runKubeCluster(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.KubeClusterKey,
@@ -325,4 +346,17 @@ func (e *Event) runKubePod(ctx context.Context) error {
 	}
 
 	return newFlow(ctx, opts, getDeleteEventDetails, parsePodEvent)
+}
+
+func (e *Event) runProject(ctx context.Context) error {
+	opts := flowOptions{
+		key:         event.ProjectKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
+	}
+
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }

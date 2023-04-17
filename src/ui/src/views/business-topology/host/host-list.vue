@@ -27,7 +27,7 @@
       @header-click="handleHeaderClick">
       <bk-table-column type="selection" width="50" align="center" fixed></bk-table-column>
       <bk-table-column v-for="column in tableHeader"
-        :show-overflow-tooltip="column.bk_property_type !== 'map'"
+        :show-overflow-tooltip="$tools.isShowOverflowTips(column)"
         :min-width="getColumnMinWidth(column)"
         :key="column.bk_property_id"
         :sortable="getColumnSortable(column)"
@@ -36,6 +36,7 @@
         :render-header="() => renderHeader(column)">
         <template slot-scope="{ row }">
           <cmdb-property-value
+            :ref="getTableCellPropertyValueRefId(column)"
             :theme="column.bk_property_id === 'bk_host_id' ? 'primary' : 'default'"
             :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id)"
             :show-unit="false"
@@ -46,6 +47,11 @@
         </template>
       </bk-table-column>
       <bk-table-column type="setting"></bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff"
+        @clear="handleClearFilter">
+      </cmdb-table-empty>
     </bk-table>
     <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="dialog.height">
       <component
@@ -108,7 +114,13 @@
           data: [],
           selection: [],
           sort: 'bk_host_id',
-          pagination: this.$tools.getDefaultPaginationConfig()
+          pagination: this.$tools.getDefaultPaginationConfig(),
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
+          }
         },
         dialog: {
           width: 830,
@@ -260,6 +272,9 @@
         }
         return this.$tools.getHeaderPropertyMinWidth(property, { name, hasSort: this.getColumnSortable(property) })
       },
+      getTableCellPropertyValueRefId(property) {
+        return this.$tools.isUseComplexValueType(property) ? `table-cell-property-value-${property.bk_property_id}` : null
+      },
       handlePageChange(current = 1) {
         RouterQuery.set({
           page: current,
@@ -355,7 +370,7 @@
         if (this.isContainerHost) {
           return containerHostService.findAll(params, config)
         }
-
+        this.table.stuff.type = this.$route.query.filter ? 'search' : 'default'
         return this.$store.dispatch('hostSearch/searchHost', { params, config })
       },
       getParams() {
@@ -663,6 +678,10 @@
       },
       doLayoutTable() {
         this.$refs?.table?.doLayout()
+      },
+      handleClearFilter() {
+        FilterStore.resetAll()
+        this.table.stuff.type = 'default'
       }
     }
   }

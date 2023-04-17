@@ -58,7 +58,7 @@ func (lgc *Logics) GetObjectData(objID string, header http.Header, modelBizID in
 
 }
 
-// GetPropertyFieldType TODO
+// GetPropertyFieldType get property field type
 func GetPropertyFieldType(lang language.DefaultCCLanguageIf) map[string]string {
 	var fieldType = map[string]string{
 		"bk_property_id":         lang.Language("val_type_text"), // "文本",
@@ -72,11 +72,14 @@ func GetPropertyFieldType(lang language.DefaultCCLanguageIf) map[string]string {
 		"editable":               lang.Language("val_type_bool"), // "布尔",
 		"isrequired":             lang.Language("val_type_bool"), // "布尔",
 		"isreadonly":             lang.Language("val_type_bool"), // "布尔",
+		"isonly":                 lang.Language("val_type_bool"), // "布尔",
+		"ismultiple":             lang.Language("val_type_bool"), // "布尔",
+		"default":                lang.Language("val_type_text"), // "文本",
 	}
 	return fieldType
 }
 
-// GetPropertyFieldDesc TODO
+// GetPropertyFieldDesc get property field desc
 func GetPropertyFieldDesc(lang language.DefaultCCLanguageIf) map[string]string {
 
 	var fields = map[string]string{
@@ -91,36 +94,68 @@ func GetPropertyFieldDesc(lang language.DefaultCCLanguageIf) map[string]string {
 		"editable":               lang.Language("is_editable"),                // "是否可编辑",
 		"isrequired":             lang.Language("property_is_required"),       // "是否必填",
 		"isreadonly":             lang.Language("property_is_readonly"),       // "是否只读",
+		"isonly":                 lang.Language("property_is_only"),           // "字段值是否唯一",
+		"ismultiple":             lang.Language("property_is_multiple"),       // "字段是否可多选",
+		"default":                lang.Language("property_default"),           // "默认值",
 	}
 
 	return fields
 }
 
-// ConvAttrOption TODO
-func ConvAttrOption(attrItems map[int]map[string]interface{}) {
+// ConvAttr convert attribute in excel to cmdb attributes
+func ConvAttr(attrItems map[int]map[string]interface{}) {
 	for index, attr := range attrItems {
-
-		option, ok := attr[common.BKOptionField].(string)
-		if false == ok {
+		fieldType, ok := attr[common.BKPropertyTypeField].(string)
+		if !ok {
 			continue
 		}
 
-		if "\"\"" == option {
-			option = ""
-			attrItems[index][common.BKOptionField] = option
-			continue
-		}
-		fieldType, _ := attr[common.BKPropertyTypeField].(string)
-		if common.FieldTypeEnum != fieldType && common.FieldTypeInt != fieldType && common.FieldTypeList != fieldType {
-			continue
+		val, ok := attr[common.BKOptionField].(string)
+		if ok && val == "\"\"" {
+			attrItems[index][common.BKOptionField] = ""
 		}
 
-		var iOption interface{}
-		err := json.Unmarshal([]byte(option), &iOption)
-		if nil == err {
-			attrItems[index][common.BKOptionField] = iOption
+		switch fieldType {
+		case common.FieldTypeEnum, common.FieldTypeList, common.FieldTypeEnumMulti, common.FieldTypeEnumQuote:
+			var iOption interface{}
+			attrItems[index] = unmarshalAttrStrVal(attrItems[index], common.BKOptionField, iOption)
+		case common.FieldTypeInt:
+			iOption := make(map[string]interface{})
+			attrItems[index] = unmarshalAttrStrVal(attrItems[index], common.BKOptionField, iOption)
+
+			var iDefault int64
+			attrItems[index] = unmarshalAttrStrVal(attrItems[index], common.BKDefaultFiled, iDefault)
+		case common.FieldTypeFloat:
+			iOption := make(map[string]interface{})
+			attrItems[index] = unmarshalAttrStrVal(attrItems[index], common.BKOptionField, iOption)
+
+			var iDefault float64
+			attrItems[index] = unmarshalAttrStrVal(attrItems[index], common.BKDefaultFiled, iDefault)
+		case common.FieldTypeOrganization:
+			iDefault := make([]interface{}, 0)
+			attrItems[index] = unmarshalAttrStrVal(attrItems[index], common.BKDefaultFiled, iDefault)
 		}
 	}
+}
+
+func unmarshalAttrStrVal(attr map[string]interface{}, field string, value interface{}) map[string]interface{} {
+	val, ok := attr[field].(string)
+	if !ok {
+		return attr
+	}
+
+	if val == "\"\"" {
+		attr[field] = value
+		return attr
+	}
+
+	err := json.Unmarshal([]byte(val), &value)
+	if err != nil {
+		return attr
+	}
+
+	attr[field] = value
+	return attr
 }
 
 // GetObjectCount search object count

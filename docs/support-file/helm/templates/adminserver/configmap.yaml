@@ -84,6 +84,12 @@ data:
       login:
         # 使用的登录系统， skip-login 免登陆模式， blueking 默认登录模式， 使用蓝鲸登录, oa 使用公司oa进行登陆
         version: {{ .Values.common.webServer.login.version }}
+      #cmdb版本日志存放路径配置
+      changelogPath:
+        #中文版版本日志存放路径
+        ch: {{ .Values.common.webServer.changelogPath.ch }}
+        #英文版版本日志存放路径
+        en: {{ .Values.common.webServer.changelogPath.en }}
     # operation_server专属配置
     operationServer:
       timer:

@@ -15,6 +15,7 @@ package logics
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -34,10 +35,11 @@ func (lgc *Logics) GetImportInsts(ctx context.Context, f *xlsx.File, objID strin
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, modelBizID, common.HostAddMethodExcelDefaultIndex)
+	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, modelBizID,
+		common.HostAddMethodExcelDefaultIndex)
 
-	if nil != err {
-		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
+	if err != nil {
+		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err))
 	}
 	if len(f.Sheets) == 0 {
 		blog.Errorf("the excel file sheets is empty, rid: %s", rid)
@@ -49,18 +51,11 @@ func (lgc *Logics) GetImportInsts(ctx context.Context, f *xlsx.File, objID strin
 		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 
-	departmentMap, err := lgc.getDepartmentMap(ctx, header)
-	if err != nil {
-		blog.Errorf("get department failed, err: %v, rid: %s", err, rid)
-		return nil, nil, err
-	}
-
 	if isInst {
-		return GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, headerRow,
-			defLang, departmentMap)
+		return GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true,
+			headerRow, defLang)
 	} else {
-		return GetRawExcelData(ctx, sheet, common.KvMap{"import_from": common.HostAddMethodExcel}, headerRow, defLang,
-			departmentMap)
+		return GetRawExcelData(ctx, sheet, common.KvMap{"import_from": common.HostAddMethodExcel}, headerRow, defLang)
 	}
 }
 
@@ -139,6 +134,13 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 		return resultData, common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
 			strings.Join(errMsg, ","))
 	}
+	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, modelBizID,
+		common.HostAddMethodExcelDefaultIndex)
+	insts, err = lgc.handleImportEnumQuoteInst(ctx, header, insts, fields, rid)
+	if err != nil {
+		blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
+		return
+	}
 
 	var resultErr error
 	result := &metadata.ResponseDataMapStr{}
@@ -163,4 +165,113 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 	resultData.Merge(resp.Data)
 
 	return
+}
+
+// handleImportEnumQuoteInst search inst detail and return a id-bk_inst_name map
+func (lgc *Logics) handleImportEnumQuoteInst(c context.Context, h http.Header, data map[int]map[string]interface{},
+	fields map[string]Property, rid string) (map[int]map[string]interface{}, error) {
+
+	enumQuoteFields := make(map[string]Property, 0)
+	for id, property := range fields {
+		if property.PropertyType == common.FieldTypeEnumQuote {
+			enumQuoteFields[id] = property
+		}
+	}
+	if len(enumQuoteFields) == 0 {
+		return data, nil
+	}
+
+	for _, rowMap := range data {
+		for id, property := range enumQuoteFields {
+			enumQuoteNameList, exist := rowMap[id]
+			if !exist || enumQuoteNameList == nil {
+				continue
+			}
+
+			quoteObjID, err := GetEnumQuoteObjID(property.Option, rid)
+			if err != nil {
+				blog.Errorf("get enum quote option obj id failed, err: %s, rid: %s", err, rid)
+				return nil, err
+			}
+
+			enumQuoteIDs, err := lgc.getEnumQuoteIds(c, h, quoteObjID, rid, enumQuoteNameList)
+			if err != nil {
+				blog.Errorf("get enum quote id list failed, err: %v, rid: %s", err, rid)
+				return nil, err
+			}
+			rowMap[id] = enumQuoteIDs
+		}
+	}
+
+	return data, nil
+}
+
+// GetEnumQuoteObjID get enum quote field option bk_obj_id and bk_inst_id value
+func GetEnumQuoteObjID(option interface{}, rid string) (string, error) {
+	var quoteObjID string
+	if option == nil {
+		return quoteObjID, fmt.Errorf("enum quote option is nil")
+	}
+	arrOption, ok := option.([]interface{})
+	if !ok {
+		blog.Errorf("option %v not enum quote option, rid: %s", option, rid)
+		return quoteObjID, fmt.Errorf("enum quote option is unvalid")
+	}
+
+	for _, o := range arrOption {
+		mapOption, ok := o.(map[string]interface{})
+		if !ok || mapOption == nil {
+			blog.Errorf("option %v not enum quote option, enum quote option item must bk_obj_id, rid: %s", option,
+				rid)
+			return quoteObjID, fmt.Errorf("convert option map[string]interface{} failed")
+		}
+		objIDVal, objIDOk := mapOption["bk_obj_id"]
+		if !objIDOk || objIDVal == "" {
+			blog.Errorf("enum quote option bk_obj_id can't be empty, rid: %s", option, rid)
+			return quoteObjID, fmt.Errorf("enum quote option bk_obj_id can't be empty")
+		}
+		objID, ok := objIDVal.(string)
+		if !ok {
+			blog.Errorf("objIDVal %v not string, rid: %s", objIDVal, rid)
+			return quoteObjID, fmt.Errorf("enum quote option bk_obj_id is not string")
+		}
+
+		if quoteObjID == "" {
+			quoteObjID = objID
+		} else if quoteObjID != objID {
+			return quoteObjID, fmt.Errorf("enum quote objID not unique, objID: %s", objID)
+		}
+	}
+
+	return quoteObjID, nil
+}
+
+// getEnumQuoteIds search inst detail and return a inst id list
+func (lgc *Logics) getEnumQuoteIds(c context.Context, h http.Header, objID, rid string,
+	enumQuoteNameList interface{}) ([]int64, error) {
+
+	input := &metadata.QueryCondition{
+		Fields: []string{common.GetInstIDField(objID)},
+		Condition: mapstr.MapStr{
+			common.GetInstNameField(objID): mapstr.MapStr{common.BKDBIN: enumQuoteNameList},
+		},
+		DisableCounter: true,
+	}
+	resp, err := lgc.Engine.CoreAPI.ApiServer().ReadInstance(c, h, objID, input)
+	if err != nil {
+		blog.Errorf("get quote inst name list failed, err: %v, rid: %s", err, rid)
+		return nil, err
+	}
+
+	enumQuoteIDs := make([]int64, 0)
+	for _, info := range resp.Data.Info {
+		enumQuoteID, err := info.Int64(common.GetInstIDField(objID))
+		if err != nil {
+			blog.Errorf("get enum quote id failed, err: %v, rid: %s", err, rid)
+			continue
+		}
+		enumQuoteIDs = append(enumQuoteIDs, enumQuoteID)
+	}
+
+	return enumQuoteIDs, nil
 }

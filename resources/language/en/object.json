@@ -1,15 +1,16 @@
 {
-    "object_host": "host",
-    "object_biz": "business",
-    "object_set": "set",
-    "object_module": "module",
-    "object_process": "process",
-    "object_plat": "plat",
+    "object_host": "Host",
+    "object_biz": "Business",
+    "object_set": "Set",
+    "object_module": "Module",
+    "object_process": "Process",
+    "object_plat": "Plat",
 
-    "object_bk_switch": "switch",
-    "object_bk_router": "router",
-    "object_bk_load_balance": "load balance",
-    "object_bk_firewall": "firewall",
-    "object_bk_biz_set_obj": "business set",
+    "object_bk_switch": "Switch",
+    "object_bk_router": "Router",
+    "object_bk_load_balance": "Load Balance",
+    "object_bk_firewall": "Firewall",
+    "object_bk_biz_set_obj": "Business set",
+    "object_bk_project": "Project",
     "": ""
 }

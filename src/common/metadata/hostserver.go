@@ -920,13 +920,6 @@ type HostTransferPlan struct {
 	HostApplyPlan           OneHostApplyPlan `field:"host_apply_plan" json:"host_apply_plan" mapstructure:"host_apply_plan"`
 }
 
-// HostTransferResult transfer host result, contains the transfer status and message
-type HostTransferResult struct {
-	HostID  int64  `json:"bk_host_id"`
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
 // RemoveFromModuleInfo TODO
 type RemoveFromModuleInfo struct {
 	ModuleID         int64             `field:"bk_module_id" json:"bk_module_id"`

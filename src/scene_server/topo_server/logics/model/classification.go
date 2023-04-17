@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 )
 
 // ClassificationOperationInterface classification operation methods
@@ -271,14 +272,14 @@ func (c *classification) isValid(kit *rest.Kit, isUpdate bool, data mapstr.MapSt
 	}
 
 	if !isUpdate || data.Exists(metadata.ClassFieldClassificationID) {
-		if err := util.ValidModelIDField(data[metadata.ClassFieldClassificationID],
+		if err := valid.ValidModelIDField(data[metadata.ClassFieldClassificationID],
 			metadata.ClassFieldClassificationID, kit.CCError); err != nil {
 			return nil, err
 		}
 	}
 
 	if !isUpdate || data.Exists(metadata.ClassFieldClassificationName) {
-		if err := util.ValidModelNameField(data[metadata.ClassFieldClassificationName],
+		if err := valid.ValidModelNameField(data[metadata.ClassFieldClassificationName],
 			metadata.ClassFieldClassificationName, kit.CCError); err != nil {
 			return nil, err
 		}

@@ -12,7 +12,7 @@
 
 ### 架构设计
 
-* [点击这里](https://github.com/Tencent/bk-cmdb/blob/master/docs/overview/architecture.md)
+* [点击这里](https://github.com/TencentBlueKing/bk-cmdb/blob/master/docs/overview/architecture.md)
 
 ## 部署
 

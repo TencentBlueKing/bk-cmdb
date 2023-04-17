@@ -63,7 +63,7 @@ var ContainerSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: ContainerUIDField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: ImageField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: PortsField, Type: enumor.String, IsRequired: false, IsEditable: true},
-	{Field: HostPortsField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: HostPortsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 	{Field: ArgsField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: StartedField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
 	{Field: RequestsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
@@ -111,7 +111,7 @@ func (p *PodQueryOption) Validate() ccErr.RawErrorInfo {
 }
 
 // BuildCond build query pod condition
-func (p *PodQueryOption) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
+func (p *PodQueryOption) BuildCond(bizID int64) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}
@@ -344,7 +344,7 @@ func (p *ContainerQueryOption) Validate() ccErr.RawErrorInfo {
 }
 
 // BuildCond build query container condition
-func (p *ContainerQueryOption) BuildCond(supplierAccount string) (mapstr.MapStr, error) {
+func (p *ContainerQueryOption) BuildCond() (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{}
 
 	if p.Filter != nil {

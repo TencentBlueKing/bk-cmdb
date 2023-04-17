@@ -74,6 +74,32 @@ func (inst *instance) CreateManyInstance(ctx context.Context, h http.Header, obj
 	return &resp.Data, nil
 }
 
+// BatchCreateInstance batch create instance, if one of instances fails to create, an error is returned.
+func (inst *instance) BatchCreateInstance(ctx context.Context, h http.Header, objID string,
+	input *metadata.BatchCreateModelInstOption) (*metadata.BatchCreateInstRespData, errors.CCErrorCoder) {
+
+	resp := new(metadata.BatchCreateInstResp)
+	subPath := "/batch/create/model/%s/instance"
+
+	err := inst.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
 // SetManyInstance TODO
 func (inst *instance) SetManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.SetManyModelInstance) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)

@@ -13,6 +13,8 @@
 package util
 
 import (
+	"encoding/json"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -62,9 +64,17 @@ func IsNumChar(sInput string) bool {
 	return numCharRegexp.MatchString(sInput)
 }
 
-// IsDate 是否日期
-func IsDate(sInput string) bool {
-	return dateRegexp.MatchString(sInput)
+// IsDate 是否是日期类型
+func IsDate(sInput interface{}) bool {
+	switch val := sInput.(type) {
+	case string:
+		if len(val) == 0 {
+			return false
+		}
+		return dateRegexp.MatchString(val)
+	default:
+		return false
+	}
 }
 
 // DateTimeFieldType TODO
@@ -78,29 +88,41 @@ const (
 	invalidDateTimeType  DateTimeFieldType = "invalid"
 )
 
-// IsTime 是否时间
-func IsTime(sInput string) (DateTimeFieldType, bool) {
-	if dateTimeRegexp.MatchString(sInput) {
-		return timeWithoutLocationType, true
+// IsTime 是否是时间类型
+func IsTime(sInput interface{}) (DateTimeFieldType, bool) {
+	switch val := sInput.(type) {
+	case string:
+		if dateTimeRegexp.MatchString(val) {
+			return timeWithoutLocationType, true
+		}
+		if timeWithLocationRegexp.MatchString(val) {
+			return timeWithLocationType, true
+		}
+		return invalidDateTimeType, false
+	default:
+		return invalidDateTimeType, false
 	}
-	if timeWithLocationRegexp.MatchString(sInput) {
-		return timeWithLocationType, true
-	}
-	return invalidDateTimeType, false
 }
 
-// IsTimeZone 是否时区
-func IsTimeZone(sInput string) bool {
-	return timeZoneRegexp.MatchString(sInput)
+// IsTimeZone 是否是时区类型
+func IsTimeZone(sInput interface{}) bool {
+	switch val := sInput.(type) {
+	case string:
+		if len(val) == 0 {
+			return false
+		}
+		return timeZoneRegexp.MatchString(val)
+	default:
+		return false
+	}
 }
 
-// IsUser 是否用户
+// IsUser 是否是用户类型
 func IsUser(sInput string) bool {
 	return userRegexp.MatchString(sInput)
 }
 
-// Str2Time TODO
-// str2time
+// Str2Time string convert to time type
 func Str2Time(timeStr string, timeType DateTimeFieldType) time.Time {
 	var layout string
 	switch timeType {
@@ -129,18 +151,53 @@ func FirstNotEmptyString(strs ...string) string {
 	return ""
 }
 
-// ContainsAnyString TODO
-func ContainsAnyString(s string, subs ...string) bool {
-	for index := range subs {
-		if strings.Contains(s, subs[index]) {
-			return true
-		}
-	}
-	return false
-}
-
 // Normalize to trim space of the str and get it's upper format
 // for example, Normalize(" hello world") ==> "HELLO WORLD"
 func Normalize(str string) string {
 	return strings.ToUpper(strings.TrimSpace(str))
+}
+
+// IsNumeric judges if value is a number
+func IsNumeric(val interface{}) bool {
+	switch val.(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, json.Number:
+		return true
+	}
+
+	return false
+}
+
+// IsInteger judges if value is a integer
+func IsInteger(val interface{}) bool {
+	switch val.(type) {
+	case int, int8, int16, int32, int64, json.Number:
+		return true
+	}
+
+	return false
+}
+
+// IsBasicValue test if an interface is the basic supported golang type or not.
+func IsBasicValue(value interface{}) bool {
+	v := reflect.ValueOf(value)
+
+	switch v.Kind() {
+	case reflect.Bool,
+		reflect.Int,
+		reflect.Int8,
+		reflect.Int16,
+		reflect.Int32,
+		reflect.Int64,
+		reflect.Uint,
+		reflect.Uint8,
+		reflect.Uint16,
+		reflect.Uint32,
+		reflect.Uint64,
+		reflect.Float32,
+		reflect.Float64,
+		reflect.String:
+		return true
+	default:
+		return false
+	}
 }

@@ -367,30 +367,30 @@ func (m *model) UpdateModelAttrs(ctx context.Context, h http.Header, objID strin
 	return &resp.Data, nil
 }
 
-// UpdateModelAttrsIndex update object attrs index
-func (m *model) UpdateModelAttrsIndex(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
-	*metadata.UpdateAttrIndexData, error) {
+// UpdateModelAttrIndex update object attribute index
+func (m *model) UpdateModelAttrIndex(ctx context.Context, h http.Header, objID string, id int64,
+	input *metadata.UpdateAttrIndexInput) error {
 
-	resp := new(metadata.UpdatedAttrIndexResult)
-	subPath := "/update/model/%s/attributes/index"
+	resp := new(metadata.BaseResp)
+	subPath := "/update/model/%s/attribute/%d/index"
 
 	err := m.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResourcef(subPath, objID).
+		SubResourcef(subPath, objID, id).
 		WithHeaders(h).
 		Do().
 		Into(resp)
 
 	if err != nil {
-		return nil, errors.CCHttpError
+		return errors.CCHttpError
 	}
 
 	if err = resp.CCError(); err != nil {
-		return nil, err
+		return err
 	}
 
-	return resp.Data, nil
+	return nil
 }
 
 // UpdateModelAttrsByCondition update object attrs by condition

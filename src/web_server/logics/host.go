@@ -127,12 +127,12 @@ func (lgc *Logics) GetHostData(appID int64, hostIDArr []int64, hostFields []stri
 	return result.Data.Info, nil
 }
 
-// GetImportHosts get import hosts
-// return inst array data, errmsg collection, error
+// GetImportHosts get import hosts, return inst array data, errmsg collection, error
 func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
 	modelBizID int64) (map[int]map[string]interface{}, []string, error) {
 
 	ctx := util.NewContextFromHTTPHeader(header)
+	rid := util.GetHTTPCCRequestID(header)
 	if len(f.Sheets) == 0 {
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
@@ -140,30 +140,24 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, modelBizID,
 		common.HostAddMethodExcelDefaultIndex)
 
-	if nil != err {
-		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
+	if err != nil {
+		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err))
 	}
 
 	sheet := f.Sheets[0]
-	if nil == sheet {
+	if sheet == nil {
 		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
-	}
-
-	departmentMap, err := lgc.getDepartmentMap(ctx, header)
-	if err != nil {
-		blog.Errorf("get department failed, err: %v, rid: %s", err, util.GetHTTPCCRequestID(header))
-		return nil, nil, err
 	}
 
 	_, cloudMap, err := lgc.getCloudArea(ctx, header)
 	if err != nil {
-		blog.Errorf("get cloud area id name map failed, err: %v, rid: %s", err, util.GetHTTPCCRequestID(header))
+		blog.Errorf("get cloud area id name map failed, err: %v, rid: %s", err, rid)
 		return nil, nil, err
 	}
 	hostsInfo, errMsg, err := GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel},
-		true, 0, defLang, departmentMap)
+		true, 0, defLang)
 	if err != nil {
-		blog.Errorf("get host excel data failed, err: %v, rid: %s", err, util.GetHTTPCCRequestID(header))
+		blog.Errorf("get host excel data failed, err: %v, rid: %s", err, rid)
 		return nil, errMsg, err
 	}
 
@@ -179,8 +173,8 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 		}
 
 		if _, ok := cloudMap[cloudStr]; !ok {
-			blog.Errorf("check cloud area data failed, cloud area name %s of line %d doesn't exist, rid: %s", cloudStr,
-				index, util.GetHTTPCCRequestID(header))
+			blog.Errorf("check cloud area data failed, cloud area name %s of line %d doesn't exist, rid: %s",
+				cloudStr, index, rid)
 			errMsg = append(errMsg, defLang.Languagef("import_host_cloudID_not_exist", index,
 				hostsInfo[index][common.BKHostInnerIPField], cloudStr))
 			return nil, errMsg, nil
@@ -293,12 +287,12 @@ func (lgc *Logics) handleExcelAssociation(ctx context.Context, h http.Header, f 
 			return resp
 		}
 
-		assoErrMsg = append(assoErrMsg, asstResult.Data.ErrMsgMap...)
-		if resp.Result && !asstResult.Result {
-			resp.BaseResp = asstResult.BaseResp
-		}
+		resp.BaseResp = asstResult.BaseResp
 
-		resp.Data.Set("asst_error", assoErrMsg)
+		if len(asstResult.Data.ErrMsgMap) > 0 {
+			assoErrMsg = append(assoErrMsg, asstResult.Data.ErrMsgMap...)
+			resp.Data.Set("error", assoErrMsg)
+		}
 		return resp
 	}
 
@@ -326,6 +320,15 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 		resp.Data.Set("error", errMsg)
 		return resp
 	}
+
+	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, modelBizID,
+		common.HostAddMethodExcelDefaultIndex)
+	hosts, err = lgc.handleImportEnumQuoteInst(ctx, header, hosts, fields, rid)
+	if err != nil {
+		blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
+		return resp
+	}
+
 	errMsg, err = lgc.CheckHostsAdded(ctx, header, hosts)
 	if err != nil {
 		blog.Errorf("check host added failed, err: %v, rid: %s", err, rid)
@@ -435,6 +438,14 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 	if len(errMsg) != 0 {
 		return returnByErrCode(defErr, common.CCErrWebFileContentFail, mapstr.MapStr{"error": errMsg},
 			strings.Join(errMsg, ","))
+	}
+
+	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, modelBizID,
+		common.HostAddMethodExcelDefaultIndex)
+	hosts, err = lgc.handleImportEnumQuoteInst(ctx, header, hosts, fields, rid)
+	if err != nil {
+		blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
+		return returnByErrCode(defErr, common.CCErrWebFileContentFail, nil, err.Error())
 	}
 
 	if opType == 1 {

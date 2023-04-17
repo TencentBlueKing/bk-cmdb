@@ -12,7 +12,7 @@
 
 <template>
   <div class="resource-layout">
-    <host-list-options></host-list-options>
+    <host-list-options @search="getExceptionType"></host-list-options>
     <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
     <bk-table class="hosts-table"
       ref="tableRef"
@@ -29,7 +29,7 @@
         class-name="bk-table-selection">
       </bk-table-column>
       <bk-table-column v-for="property in tableHeader"
-        :show-overflow-tooltip="property.bk_property_type !== 'topology'"
+        :show-overflow-tooltip="$tools.isShowOverflowTips(property)"
         :min-width="getColumnMinWidth(property)"
         :key="property.id"
         :sortable="isPropertySortable(property) ? 'custom' : false"
@@ -47,6 +47,7 @@
           </cmdb-host-topo-path>
           <cmdb-property-value
             v-else
+            :ref="getTableCellPropertyValueRefId(property)"
             :theme="['bk_host_id'].includes(property.bk_property_id) ? 'primary' : 'default'"
             :value="row | hostValueFilter(property.bk_obj_id, property.bk_property_id)"
             :show-unit="false"
@@ -57,7 +58,7 @@
         </template>
       </bk-table-column>
       <bk-table-column type="setting"></bk-table-column>
-      <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
+      <cmdb-table-empty slot="empty" :stuff="table.stuff" @clear="handleClearFilter"></cmdb-table-empty>
     </bk-table>
   </div>
 </template>
@@ -250,6 +251,9 @@
           preset
         })
       },
+      getTableCellPropertyValueRefId(property) {
+        return this.$tools.isUseComplexValueType(property) ? `table-cell-property-value-${property.bk_property_id}` : null
+      },
       isPropertySortable(property) {
         return property.bk_obj_id === 'host' && !['foreignkey', 'topology'].includes(property.bk_property_type)
       },
@@ -263,7 +267,7 @@
         }
         return this.$createElement('span', {}, content)
       },
-      async getHostList(event) {
+      async getHostList() {
         try {
           const { count, info } = await this.getSearchRequest()
 
@@ -280,7 +284,7 @@
 
           this.table.pagination.count = count
           this.table.list = info
-          this.table.stuff.type = event ? 'search' : 'default'
+          this.table.stuff.type = this.$route.query.filter ? 'search' : 'default'
         } catch (error) {
           this.table.pagination.count = 0
           this.table.checked = []
@@ -449,6 +453,13 @@
         return this.$store.dispatch('userCustom/saveUsercustom', {
           [this.customInstanceColumnKey]: properties.map(property => property.bk_property_id)
         })
+      },
+      handleClearFilter() {
+        FilterStore.resetAll()
+        this.table.stuff.type = 'default'
+      },
+      getExceptionType(value) {
+        this.table.stuff.type = value
       }
     }
   }

@@ -16,7 +16,7 @@ go env -w GO111MODULE="auto"
 ## 源码下载
 
 ``` shell
-git clone https://github.com/Tencent/bk-cmdb configcenter
+git clone https://github.com/TencentBlueKing/bk-cmdb configcenter
 ```
 
 ## 下载项目所需依赖

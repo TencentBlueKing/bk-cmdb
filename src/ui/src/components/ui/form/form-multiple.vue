@@ -54,7 +54,8 @@
                       :options="property.option || []"
                       :data-vv-name="property['bk_property_id']"
                       :auto-select="false"
-                      :placeholder="getPlaceholder(property)"
+                      :multiple="property.ismultiple"
+                      :placeholder="$tools.getPropertyPlaceholder(property)"
                       v-bind="$tools.getValidateEvents(property)"
                       v-validate="getValidateRules(property)"
                       v-model.trim="values[property['bk_property_id']]">

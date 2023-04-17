@@ -88,7 +88,10 @@ const (
 	InstAsst CursorType = "inst_asst"
 	// BizSetRelation a mixed event type containing biz set & biz events, which are converted to their relation events
 	BizSetRelation CursorType = "biz_set_relation"
-
+	// Plat cloud area event cursor type
+	Plat CursorType = "plat"
+	// Project project event cursor type
+	Project CursorType = "project"
 	// kube related cursor types
 	// KubeCluster cursor type
 	KubeCluster CursorType = "kube_cluster"
@@ -133,6 +136,8 @@ func (ct CursorType) ToInt() int {
 		return 14
 	case BizSetRelation:
 		return 15
+	case Plat:
+		return 16
 	case KubeCluster:
 		return 17
 	case KubeNode:
@@ -143,6 +148,8 @@ func (ct CursorType) ToInt() int {
 		return 20
 	case KubePod:
 		return 21
+	case Project:
+		return 22
 	default:
 		return -1
 	}
@@ -179,6 +186,8 @@ func (ct *CursorType) ParseInt(typ int) {
 		*ct = BizSet
 	case 15:
 		*ct = BizSetRelation
+	case 16:
+		*ct = Plat
 	case 17:
 		*ct = KubeCluster
 	case 18:
@@ -189,6 +198,8 @@ func (ct *CursorType) ParseInt(typ int) {
 		*ct = KubeWorkload
 	case 21:
 		*ct = KubePod
+	case 22:
+		*ct = Project
 	default:
 		*ct = UnknownType
 	}
@@ -197,8 +208,8 @@ func (ct *CursorType) ParseInt(typ int) {
 // ListCursorTypes returns all support CursorTypes.
 func ListCursorTypes() []CursorType {
 	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase, Process, ProcessInstanceRelation,
-		HostIdentifier, MainlineInstance, InstAsst, BizSet, BizSetRelation, KubeCluster, KubeNode, KubeNamespace,
-		KubeWorkload, KubePod}
+		HostIdentifier, MainlineInstance, InstAsst, BizSet, BizSetRelation, Plat, KubeCluster, KubeNode, KubeNamespace,
+		KubeWorkload, KubePod, Project}
 }
 
 // Cursor is a self-defined token which is corresponding to the mongodb's resume token.
@@ -388,6 +399,8 @@ func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 		curType = InstAsst
 	case common.BKTableNameBaseBizSet:
 		curType = BizSet
+	case common.BKTableNameBasePlat:
+		curType = Plat
 	case kubetypes.BKTableNameBaseCluster:
 		curType = KubeCluster
 	case kubetypes.BKTableNameBaseNode:
@@ -398,6 +411,8 @@ func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 		curType = KubeWorkload
 	case kubetypes.BKTableNameBasePod:
 		curType = KubePod
+	case common.BKTableNameBaseProject:
+		curType = Project
 	default:
 		blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.ID())
 		return "", fmt.Errorf("unsupported cursor type collection: %s", coll)

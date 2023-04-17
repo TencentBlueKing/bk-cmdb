@@ -67,13 +67,12 @@
       </service-instance-table>
     </div>
     <bk-table v-if="!instances.length" :data="[]" class="mb10">
-      <cmdb-table-empty
+      <cmdb-data-empty
         slot="empty"
-        :stuff="emptyStuff">
-        <div class="empty-text">
-          <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去业务拓扑添加')}}</span></p>
-        </div>
-      </cmdb-table-empty>
+        :stuff="emptyStuff"
+        @create="handleGoAddInstance"
+        @clear="handleFilterClear">
+      </cmdb-data-empty>
     </bk-table>
     <bk-pagination v-if="instances.length"
       class="pagination"
@@ -141,19 +140,20 @@
         filter: [],
         instances: [],
         currentView: 'path',
-        historyLabels: {}
+        historyLabels: {},
+        emptyStuff: {
+          type: 'default',
+          payload: {
+            path: '无服务实例提示',
+            action: this.$t('去业务拓扑添加')
+          }
+        }
       }
     },
     computed: {
       ...mapState('hostDetails', ['info']),
       host() {
         return this.info.host || {}
-      },
-      emptyStuff() {
-        return {
-          type: this.searchSelectData.length ? 'search' : 'default',
-          payload: {}
-        }
       }
     },
     watch: {
@@ -354,6 +354,7 @@
           })
           return
         }
+        this.emptyStuff.type = this.searchSelectData.length === 0 ? 'default' : 'search'
         this.handlePageChange(1)
       },
       handlePageChange(page) {
@@ -388,6 +389,10 @@
             ip: this.info.host.bk_host_innerip
           }
         })
+      },
+      handleFilterClear() {
+        this.searchSelectData = []
+        this.emptyStuff.type = 'default'
       }
     }
   }

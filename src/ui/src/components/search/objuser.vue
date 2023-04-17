@@ -34,7 +34,7 @@
     computed: {
       localValue: {
         get() {
-          return this.value.join(',')
+          return this.value ? this.value.join(',') : ''
         },
         set(value) {
           const values = value.split(',')

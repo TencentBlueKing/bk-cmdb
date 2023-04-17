@@ -129,6 +129,9 @@ const (
 	// BKInnerObjIDPlat the inner object
 	BKInnerObjIDPlat = "plat"
 
+	// BKInnerObjIDProject the inner object
+	BKInnerObjIDProject = "bk_project"
+
 	// BKInnerObjIDSwitch the inner object
 	BKInnerObjIDSwitch = "bk_switch"
 	// BKInnerObjIDRouter the inner object
@@ -645,6 +648,10 @@ const (
 
 	// BKIsOnlyField the isonly name field
 	BKIsOnlyField = "isonly"
+	// BKIsMultipleField the is multiple name field
+	BKIsMultipleField = "ismultiple"
+	// BKDefaultFiled the is default name field
+	BKDefaultFiled = "default"
 	// BKGseTaskIDField the gse taskid
 	BKGseTaskIDField = "task_id"
 	// BKTaskIDField the gse taskid
@@ -737,6 +744,26 @@ const (
 
 	// BKAddressingField the addressing field, defines the host addressing type
 	BKAddressingField = "bk_addressing"
+	// BKProjectIDField the project id field
+	BKProjectIDField = "bk_project_id"
+	// BKProjectNameField the project name field
+	BKProjectNameField = "bk_project_name"
+	// BKProjectCodeField the project code field
+	BKProjectCodeField = "bk_project_code"
+	// BKProjectDescField the project desc field
+	BKProjectDescField = "bk_project_desc"
+	// BKProjectTypeField the project type field
+	BKProjectTypeField = "bk_project_type"
+	// BKProjectSecLvlField the project sec lvl field
+	BKProjectSecLvlField = "bk_project_sec_lvl"
+	// BKProjectOwnerField the project owner field
+	BKProjectOwnerField = "bk_project_owner"
+	// BKProjectTeamField the project team field
+	BKProjectTeamField = "bk_project_team"
+	// BKProjectStatusField the project status field
+	BKProjectStatusField = "bk_status"
+	// BKProjectIconField the project icon field
+	BKProjectIconField = "bk_project_icon"
 )
 
 const (
@@ -880,6 +907,12 @@ const (
 
 	// FieldTypeEnum the enum field type
 	FieldTypeEnum string = "enum"
+
+	// FieldTypeEnumMulti the enum multi field type
+	FieldTypeEnumMulti string = "enummulti"
+
+	// FieldTypeEnumQuote the enum quote field type
+	FieldTypeEnumQuote string = "enumquote"
 
 	// FieldTypeDate the date field type
 	FieldTypeDate string = "date"
@@ -1170,6 +1203,7 @@ const (
 	HostOSTypeEnumUNIX    = "4"
 	HostOSTypeEnumSolaris = "5"
 	HostOSTypeEnumHpUX    = "6"
+	HostOSTypeEnumFreeBSD = "7"
 )
 
 // HostOSTypeName Host system enum and name association
@@ -1180,6 +1214,7 @@ var HostOSTypeName = map[string]string{
 	HostOSTypeEnumUNIX:    "unix",
 	HostOSTypeEnumSolaris: "solaris",
 	HostOSTypeEnumHpUX:    "hp-ux",
+	HostOSTypeEnumFreeBSD: "freebsd",
 }
 
 const (

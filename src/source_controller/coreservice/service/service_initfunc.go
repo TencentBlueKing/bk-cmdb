@@ -67,7 +67,8 @@ func (s *coreService) initModel(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model/{bk_obj_id}/attributes", Handler: s.CreateModelAttributes})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/model/{bk_obj_id}/attributes", Handler: s.SetModelAttributes})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model/{bk_obj_id}/attributes", Handler: s.UpdateModelAttributes})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/model/{bk_obj_id}/attributes/index", Handler: s.UpdateModelAttributesIndex})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/model/{bk_obj_id}/attribute/{id}/index",
+		Handler: s.UpdateModelAttributesIndex})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model/attributes", Handler: s.UpdateModelAttributesByCondition})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/attributes", Handler: s.DeleteModelAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model/{bk_obj_id}/attributes", Handler: s.SearchModelAttributes})
@@ -96,14 +97,24 @@ func (s *coreService) initModelInstances(web *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model/{bk_obj_id}/instance", Handler: s.CreateOneModelInstance})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/model/{bk_obj_id}/instance", Handler: s.CreateManyModelInstances})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model/{bk_obj_id}/instance", Handler: s.UpdateModelInstances})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model/{bk_obj_id}/instances", Handler: s.SearchModelInstances})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/model/{bk_obj_id}/instances", Handler: s.CountModelInstances})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/instance", Handler: s.DeleteModelInstances})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/instance/cascade", Handler: s.CascadeDeleteModelInstances})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/get/instance/object/mapping", Handler: s.GetInstanceObjectMapping})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model/{bk_obj_id}/instance",
+		Handler: s.CreateOneModelInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/model/{bk_obj_id}/instance",
+		Handler: s.CreateManyModelInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/batch/create/model/{bk_obj_id}/instance",
+		Handler: s.BatchCreateModelInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model/{bk_obj_id}/instance",
+		Handler: s.UpdateModelInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model/{bk_obj_id}/instances",
+		Handler: s.SearchModelInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/model/{bk_obj_id}/instances",
+		Handler: s.CountModelInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/instance",
+		Handler: s.DeleteModelInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/instance/cascade",
+		Handler: s.CascadeDeleteModelInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/get/instance/object/mapping",
+		Handler: s.GetInstanceObjectMapping})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -391,6 +402,18 @@ func (s *coreService) initCommon(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+func (s *coreService) initProject(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/project/bk_project_id",
+		Handler: s.UpdateProjectID})
+
+	utility.AddToRestfulWebService(web)
+}
+
 func (s *coreService) initService(web *restful.WebService) {
 	s.initModelClassification(web)
 	s.initModel(web)
@@ -416,4 +439,5 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initAuth(web)
 	s.initCommon(web)
 	s.initKube(web)
+	s.initProject(web)
 }

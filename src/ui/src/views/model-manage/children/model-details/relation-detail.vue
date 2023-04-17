@@ -176,6 +176,7 @@
 
 <script>
   import { mapGetters, mapActions } from 'vuex'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
   export default {
     props: {
       relation: {
@@ -270,7 +271,7 @@
           if (classify.bk_objects.length) {
             const objects = []
             classify.bk_objects.forEach((model) => {
-              if (!model.bk_ishidden) {
+              if (!model.bk_ishidden && model.bk_obj_id !== BUILTIN_MODELS.PROJECT) {
                 objects.push(model)
               }
             })

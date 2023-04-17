@@ -52,6 +52,8 @@ func GetResourceKeyWithCursorType(res watch.CursorType) (Key, error) {
 		key = BizSetKey
 	case watch.BizSetRelation:
 		key = BizSetRelationKey
+	case watch.Plat:
+		key = PlatKey
 	case watch.KubeCluster:
 		key = KubeClusterKey
 	case watch.KubeNode:
@@ -62,6 +64,8 @@ func GetResourceKeyWithCursorType(res watch.CursorType) (Key, error) {
 		key = KubeWorkloadKey
 	case watch.KubePod:
 		key = KubePodKey
+	case watch.Project:
+		key = ProjectKey
 	default:
 		return key, fmt.Errorf("unsupported cursor type %s", res)
 	}

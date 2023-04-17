@@ -201,6 +201,14 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
+	hostInfo, err = s.handleExportEnumQuoteInst(c, header, hostInfo, objID, fields, rid)
+	if err != nil {
+		blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
+		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(
+			common.CCErrCommExcelTemplateFailed, objID).Error(), nil)))
+		return
+	}
+
 	usernameMap, propertyList, err := s.getUsernameMapWithPropertyList(c, objID, hostInfo)
 	if nil != err {
 		blog.Errorf("ExportHost failed, get username map and property list failed, err: %+v, rid: %s", err, rid)
@@ -210,7 +218,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
-	org, orgPropertyList, err := s.getDepartment(c, objID)
+	org, orgPropertyList, err := s.getDepartment(c, objID, hostInfo)
 	if err != nil {
 		blog.Errorf("get department map and property list failed, err: %+v, rid: %s", err, rid)
 		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetDepartmentMapFail,

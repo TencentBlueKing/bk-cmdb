@@ -14,14 +14,15 @@ package instances
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"regexp"
+	"strconv"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
@@ -32,14 +33,14 @@ type EnumOption []EnumVal
 
 // IntOption integer option
 type IntOption struct {
-	Min string `bson:"min" json:"min"`
-	Max string `bson:"max" json:"max"`
+	Min int64 `bson:"min" json:"min"`
+	Max int64 `bson:"max" json:"max"`
 }
 
 // FloatOption float option
 type FloatOption struct {
-	Min string `bson:"min" json:"min"`
-	Max string `bson:"max" json:"max"`
+	Min float64 `bson:"min" json:"min"`
+	Max float64 `bson:"max" json:"max"`
 }
 
 func getString(val interface{}) string {
@@ -50,16 +51,6 @@ func getString(val interface{}) string {
 		return ret
 	}
 	return ""
-}
-
-func getBool(val interface{}) bool {
-	if val == nil {
-		return false
-	}
-	if ret, ok := val.(bool); ok {
-		return ret
-	}
-	return false
 }
 
 // GetDefault returns EnumOption's default value
@@ -80,171 +71,485 @@ type EnumVal struct {
 	IsDefault bool   `bson:"is_default"   json:"is_default"`
 }
 
-// ParseEnumOption convert val to []EnumVal
-func ParseEnumOption(ctx context.Context, val interface{}) (EnumOption, error) {
-	rid := util.ExtractRequestIDFromContext(ctx)
-	enumOptions := []EnumVal{}
-	if nil == val || "" == val {
-		return enumOptions, nil
-	}
-	switch options := val.(type) {
-	case []EnumVal:
-		return options, nil
-	case string:
-		err := json.Unmarshal([]byte(options), &enumOptions)
-		if nil != err {
-			blog.Errorf("ParseEnumOption error : %s, rid: %s", err.Error(), rid)
-			return nil, err
-		}
-	case []interface{}:
-		for _, optionVal := range options {
-			if option, ok := optionVal.(map[string]interface{}); ok {
-				enumOption := EnumVal{}
-				enumOption.ID = getString(option["id"])
-				enumOption.Name = getString(option["name"])
-				enumOption.Type = getString(option["type"])
-				enumOption.IsDefault = getBool(option["is_default"])
-				enumOptions = append(enumOptions, enumOption)
-			} else {
-				return nil, fmt.Errorf("unknow val type: %#v", val)
-			}
-		}
-	case bson.A:
-		for _, optionVal := range options {
-			if option, ok := optionVal.(map[string]interface{}); ok {
-				enumOption := EnumVal{}
-				enumOption.ID = getString(option["id"])
-				enumOption.Name = getString(option["name"])
-				enumOption.Type = getString(option["type"])
-				enumOption.IsDefault = getBool(option["is_default"])
-				enumOptions = append(enumOptions, enumOption)
-			} else if option, ok := optionVal.(bson.D); ok {
-				opt := option.Map()
-				enumOption := EnumVal{}
-				enumOption.ID = getString(opt["id"])
-				enumOption.Name = getString(opt["name"])
-				enumOption.Type = getString(opt["type"])
-				enumOption.IsDefault = getBool(opt["is_default"])
-				enumOptions = append(enumOptions, enumOption)
-			} else {
-				return nil, fmt.Errorf("unknow val type: %#v", val)
-			}
-		}
-	default:
-		return nil, fmt.Errorf("unknow val type: %#v", val)
-	}
-	return enumOptions, nil
-}
-
 // parseIntOption  parse int data in option
-func parseIntOption(ctx context.Context, val interface{}) IntOption {
-	rid := util.ExtractRequestIDFromContext(ctx)
-	intOption := IntOption{}
-	if nil == val || "" == val {
-		return intOption
+func parseIntOption(val interface{}) (IntOption, error) {
+	if val == nil || val == "" {
+		return IntOption{}, fmt.Errorf("int type field option is null")
 	}
+
+	var optMap map[string]interface{}
+
 	switch option := val.(type) {
 	case string:
-		intOption.Min = gjson.Get(option, "min").Raw
-		intOption.Max = gjson.Get(option, "max").Raw
+		return parseIntOptionMaxMin(gjson.Get(option, "max").Raw, gjson.Get(option, "min").Raw)
 	case map[string]interface{}:
-		intOption.Min = getString(option["min"])
-		intOption.Max = getString(option["max"])
+		optMap = option
 	case bson.M:
-		intOption.Min = getString(option["min"])
-		intOption.Max = getString(option["max"])
+		optMap = option
 	case bson.D:
-		opt := option.Map()
-		intOption.Min = getString(opt["min"])
-		intOption.Max = getString(opt["max"])
+		optMap = option.Map()
 	default:
-		blog.Warnf("unknow val type: %#v, rid: %s", val, rid)
+		return IntOption{}, fmt.Errorf("unknow val type: %T", val)
 	}
-	return intOption
+
+	return parseIntOptionMaxMin(optMap["max"], optMap["min"])
+}
+
+func parseIntOptionMaxMin(maxVal, minVal interface{}) (IntOption, error) {
+	intOption := IntOption{
+		Min: common.MinInt64,
+		Max: common.MaxInt64,
+	}
+
+	switch max := maxVal.(type) {
+	case string:
+		if len(max) != 0 && max != `""` {
+			maxValue, err := strconv.ParseInt(max, 10, 64)
+			if err != nil {
+				return IntOption{}, fmt.Errorf("parse max option %+v failed, err: %v", max, err)
+			}
+			intOption.Max = maxValue
+		}
+	default:
+		maxValue, err := util.GetInt64ByInterface(max)
+		if err != nil {
+			return IntOption{}, fmt.Errorf("parse max option %+v failed, err: %v", max, err)
+		}
+		intOption.Max = maxValue
+	}
+
+	switch min := minVal.(type) {
+	case string:
+		if len(min) != 0 && min != `""` {
+			minValue, err := strconv.ParseInt(min, 10, 64)
+			if err != nil {
+				return IntOption{}, fmt.Errorf("parse min option %+v failed, err: %v", min, err)
+			}
+			intOption.Max = minValue
+		}
+	default:
+		minValue, err := util.GetInt64ByInterface(min)
+		if err != nil {
+			return IntOption{}, fmt.Errorf("parse min option %+v failed, err: %v", min, err)
+		}
+		intOption.Min = minValue
+	}
+	return intOption, nil
 }
 
 // parseFloatOption  parse float data in option
-func parseFloatOption(ctx context.Context, val interface{}) FloatOption {
-	rid := util.ExtractRequestIDFromContext(ctx)
-	floatOption := FloatOption{}
-	if nil == val || "" == val {
-		return floatOption
+func parseFloatOption(val interface{}) (FloatOption, error) {
+	if val == nil || val == "" {
+		return FloatOption{}, fmt.Errorf("float type field option is null")
 	}
+
+	var optMap map[string]interface{}
+
 	switch option := val.(type) {
 	case string:
-		floatOption.Min = gjson.Get(option, "min").Raw
-		floatOption.Max = gjson.Get(option, "max").Raw
+		return parseFloatOptionMaxMin(gjson.Get(option, "max").Raw, gjson.Get(option, "min").Raw)
 	case map[string]interface{}:
-		floatOption.Min = getString(option["min"])
-		floatOption.Max = getString(option["max"])
+		optMap = option
 	case bson.M:
-		floatOption.Min = getString(option["min"])
-		floatOption.Max = getString(option["max"])
+		optMap = option
 	case bson.D:
-		opt := option.Map()
-		floatOption.Min = getString(opt["min"])
-		floatOption.Max = getString(opt["max"])
+		optMap = option.Map()
 	default:
-		blog.Warnf("unknow val type: %#v, rid: %s", val, rid)
+		return FloatOption{}, fmt.Errorf("unknow val type: %T", val)
 	}
-	return floatOption
+
+	return parseFloatOptionMaxMin(optMap["max"], optMap["min"])
 }
 
-// FillLostedFieldValue fill the value in inst map data
-func FillLostedFieldValue(ctx context.Context, valData mapstr.MapStr, propertys []metadata.Attribute) {
-	rid := util.ExtractRequestIDFromContext(ctx)
+func parseFloatOptionMaxMin(maxVal, minVal interface{}) (FloatOption, error) {
+	floatOption := FloatOption{
+		Min: float64(common.MinInt64),
+		Max: float64(common.MaxInt64),
+	}
+
+	switch max := maxVal.(type) {
+	case string:
+		if len(max) != 0 && max != `""` {
+			maxValue, err := strconv.ParseFloat(max, 64)
+			if err != nil {
+				return FloatOption{}, fmt.Errorf("parse max option %+v failed, err: %v", max, err)
+			}
+			floatOption.Max = maxValue
+		}
+	default:
+		maxValue, err := util.GetFloat64ByInterface(max)
+		if err != nil {
+			return FloatOption{}, fmt.Errorf("parse max option %+v failed, err: %v", max, err)
+		}
+		floatOption.Max = maxValue
+	}
+
+	switch min := minVal.(type) {
+	case string:
+		if len(min) != 0 && min != `""` {
+			minValue, err := strconv.ParseFloat(min, 64)
+			if err != nil {
+				return FloatOption{}, fmt.Errorf("parse min option %+v failed, err: %v", min, err)
+			}
+			floatOption.Max = minValue
+		}
+	default:
+		minValue, err := util.GetFloat64ByInterface(min)
+		if err != nil {
+			return FloatOption{}, fmt.Errorf("parse min option %+v failed, err: %v", min, err)
+		}
+		floatOption.Min = minValue
+	}
+	return floatOption, nil
+}
+
+// FillLostFieldValue fill the value in inst map data
+func FillLostFieldValue(ctx context.Context, valData mapstr.MapStr, propertys []metadata.Attribute) error {
 	for _, field := range propertys {
-		_, ok := valData[field.PropertyID]
-		if !ok {
+		if _, ok := valData[field.PropertyID]; !ok {
 			switch field.PropertyType {
-			case common.FieldTypeSingleChar:
-				valData[field.PropertyID] = ""
-			case common.FieldTypeLongChar:
-				valData[field.PropertyID] = ""
-			case common.FieldTypeInt:
-				valData[field.PropertyID] = nil
-			case common.FieldTypeEnum:
-				enumOptions, err := metadata.ParseEnumOption(ctx, field.Option)
-				if err != nil {
-					blog.Warnf("ParseEnumOption failed: %v, rid: %s", err, rid)
-					valData[field.PropertyID] = nil
-					continue
+			case common.FieldTypeSingleChar, common.FieldTypeLongChar:
+				if err := fillLostStringFieldValue(valData, field); err != nil {
+					return err
 				}
-				if len(enumOptions) > 0 {
-					var defaultOption *metadata.EnumVal
-					for _, k := range enumOptions {
-						if k.IsDefault {
-							defaultOption = &k
-							break
-						}
-					}
-					if nil != defaultOption {
-						valData[field.PropertyID] = defaultOption.ID
-					} else {
-						valData[field.PropertyID] = nil
-					}
-				} else {
-					valData[field.PropertyID] = nil
+			case common.FieldTypeEnum:
+				if err := fillLostEnumFieldValue(ctx, valData, field); err != nil {
+					return err
+				}
+			case common.FieldTypeEnumMulti:
+				if err := fillLostEnumMultiFieldValue(ctx, valData, field); err != nil {
+					return err
+				}
+			case common.FieldTypeEnumQuote:
+				if err := fillLostEnumQuoteFieldValue(ctx, valData, field); err != nil {
+					return err
 				}
 			case common.FieldTypeDate:
-				valData[field.PropertyID] = nil
+				if err := fillLostDateFieldValue(valData, field); err != nil {
+					return err
+				}
+			case common.FieldTypeFloat:
+				if err := fillLostFloatFieldValue(valData, field); err != nil {
+					return err
+				}
+			case common.FieldTypeInt:
+				if err := fillLostIntFieldValue(valData, field); err != nil {
+					return err
+				}
 			case common.FieldTypeTime:
-				valData[field.PropertyID] = nil
+				if err := fillLostTimeFieldValue(valData, field); err != nil {
+					return err
+				}
 			case common.FieldTypeUser:
-				valData[field.PropertyID] = nil
+				if err := fillLostUserFieldValue(valData, field); err != nil {
+					return err
+				}
 			case common.FieldTypeOrganization:
-				valData[field.PropertyID] = nil
+				if err := fillLostOrganizationFieldValue(valData, field); err != nil {
+					return err
+				}
 			case common.FieldTypeTimeZone:
-				valData[field.PropertyID] = nil
+				if err := fillLostTimeZoneFieldValue(valData, field); err != nil {
+					return err
+				}
+			case common.FieldTypeList:
+				if err := fillLostListFieldValue(valData, field); err != nil {
+					return err
+				}
 			case common.FieldTypeBool:
-				valData[field.PropertyID] = false
+				if err := fillLostBoolFieldValue(valData, field); err != nil {
+					return err
+				}
 			default:
 				valData[field.PropertyID] = nil
 			}
 		}
 	}
+	return nil
 }
 
-func isEmpty(value interface{}) bool {
-	return value == nil || value == ""
+func fillLostStringFieldValue(valData mapstr.MapStr, field metadata.Attribute) error {
+	valData[field.PropertyID] = ""
+	if field.Default == nil {
+		return nil
+	}
+
+	defaultVal, ok := field.Default.(string)
+	if !ok {
+		return fmt.Errorf("single char default value not string, value: %v", field.Default)
+	}
+
+	if len(defaultVal) == 0 {
+		return nil
+	}
+
+	option, ok := field.Option.(string)
+	if !ok {
+		return fmt.Errorf("single char regular verification rules is illegal, value: %v", field.Option)
+	}
+	if len(option) == 0 {
+		return nil
+	}
+
+	match, err := regexp.MatchString(option, defaultVal)
+	if err != nil || !match {
+		return fmt.Errorf("the current string does not conform to regular verification rules")
+	}
+	valData[field.PropertyID] = defaultVal
+	return nil
+}
+
+func fillLostEnumFieldValue(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute) error {
+	valData[field.PropertyID] = nil
+	defaultOptions, err := getEnumOption(ctx, field.Option)
+	if err != nil {
+		return err
+	}
+
+	if defaultOptions == nil {
+		return nil
+	}
+
+	if len(defaultOptions) == 1 {
+		valData[field.PropertyID] = defaultOptions[0].ID
+		return nil
+	}
+
+	return fmt.Errorf("there are multiple default values for enum fields, value: %v", field.Option)
+}
+
+func fillLostEnumMultiFieldValue(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute) error {
+	valData[field.PropertyID] = nil
+	defaultOptions, err := getEnumOption(ctx, field.Option)
+	if err != nil {
+		return err
+	}
+
+	if defaultOptions == nil {
+		return nil
+	}
+
+	ids := make([]interface{}, 0)
+	for _, k := range defaultOptions {
+		ids = append(ids, k.ID)
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+
+	valData[field.PropertyID] = ids
+	return nil
+}
+
+func fillLostEnumQuoteFieldValue(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute) error {
+	valData[field.PropertyID] = nil
+	enumQuoteOptions, err := metadata.ParseEnumQuoteOption(ctx, field.Option)
+	if err != nil {
+		return err
+	}
+	if len(enumQuoteOptions) == 0 {
+		return nil
+	}
+
+	instIDs := make([]interface{}, 0)
+	for _, k := range enumQuoteOptions {
+		instIDs = append(instIDs, k.InstID)
+	}
+	if len(instIDs) == 0 {
+		return nil
+	}
+
+	valData[field.PropertyID] = instIDs
+	return nil
+}
+
+func fillLostDateFieldValue(valData mapstr.MapStr, field metadata.Attribute) error {
+	valData[field.PropertyID] = nil
+	if field.Default == nil {
+		return nil
+	}
+
+	if ok := util.IsDate(field.Default); !ok {
+		return fmt.Errorf("date type field default value format is err, defaultVal: %v", field.Default)
+	}
+
+	valData[field.PropertyID] = field.Default
+	return nil
+}
+
+func fillLostFloatFieldValue(valData mapstr.MapStr, field metadata.Attribute) error {
+	valData[field.PropertyID] = nil
+	if field.Default == nil {
+		return nil
+	}
+
+	defaultVal, err := util.GetFloat64ByInterface(field.Default)
+	if err != nil {
+		return fmt.Errorf("parse %s default value %+v failed, err: %v", field.PropertyID, field.Default, err)
+	}
+
+	floatOption, err := parseFloatOption(field.Option)
+	if err != nil {
+		return fmt.Errorf("parse %s option %+v failed, err: %v", field.PropertyID, field.Option, err)
+	}
+
+	if defaultVal > floatOption.Max || defaultVal < floatOption.Min {
+		return fmt.Errorf("%s default value %v is illegal", field.PropertyID, defaultVal)
+	}
+
+	valData[field.PropertyID] = defaultVal
+	return nil
+}
+
+func fillLostIntFieldValue(valData mapstr.MapStr, field metadata.Attribute) error {
+	valData[field.PropertyID] = nil
+	if field.Default == nil {
+		return nil
+	}
+
+	defaultVal, err := util.GetInt64ByInterface(field.Default)
+	if err != nil {
+		return fmt.Errorf("parse %s default value %+v failed, err: %v", field.PropertyID, field.Default, err)
+	}
+
+	intOption, err := parseIntOption(field.Option)
+	if err != nil {
+		return fmt.Errorf("parse %s option %+v failed, err: %v", field.PropertyID, field.Option, err)
+	}
+
+	if defaultVal > intOption.Max || defaultVal < intOption.Min {
+		return fmt.Errorf("%s default value %v is illegal", field.PropertyID, defaultVal)
+	}
+
+	valData[field.PropertyID] = defaultVal
+	return nil
+}
+
+func fillLostTimeFieldValue(valData mapstr.MapStr, field metadata.Attribute) error {
+	valData[field.PropertyID] = nil
+	if field.Default == nil {
+		return nil
+	}
+
+	if _, ok := util.IsTime(field.Default); !ok {
+		return fmt.Errorf("time type field default value format is err, defaultVal: %v", field.Default)
+	}
+
+	valData[field.PropertyID] = field.Default
+	return nil
+}
+
+func fillLostUserFieldValue(valData mapstr.MapStr, field metadata.Attribute) error {
+	valData[field.PropertyID] = nil
+	if field.Default == nil {
+		return nil
+	}
+
+	defaultVal, ok := field.Default.(string)
+	if !ok {
+		return fmt.Errorf("user type field default value not string, value: %v", field.Default)
+	}
+
+	if ok := util.IsUser(defaultVal); !ok {
+		return fmt.Errorf("user type field default value not user type, value: %s", defaultVal)
+	}
+
+	valData[field.PropertyID] = defaultVal
+	return nil
+}
+
+func fillLostOrganizationFieldValue(valData mapstr.MapStr, field metadata.Attribute) error {
+	valData[field.PropertyID] = nil
+	if field.Default == nil {
+		return nil
+	}
+
+	defaultVal, ok := field.Default.([]interface{})
+	if !ok {
+		return fmt.Errorf("organization type field default value not array, type: %T", field.Default)
+	}
+
+	for _, orgID := range defaultVal {
+		if !util.IsInteger(orgID) {
+			return fmt.Errorf("orgID params not int, type: %T", orgID)
+		}
+	}
+
+	valData[field.PropertyID] = defaultVal
+	return nil
+}
+
+func fillLostTimeZoneFieldValue(valData mapstr.MapStr, field metadata.Attribute) error {
+	valData[field.PropertyID] = nil
+	if field.Default == nil {
+		return nil
+	}
+
+	if ok := util.IsTimeZone(field.Default); !ok {
+		return fmt.Errorf("the default value of time zone type is not in time zone format %v", field.Default)
+	}
+
+	valData[field.PropertyID] = field.Default
+	return nil
+}
+
+func fillLostListFieldValue(valData mapstr.MapStr, field metadata.Attribute) error {
+	valData[field.PropertyID] = nil
+	if field.Default == nil {
+		return nil
+	}
+
+	arrOption, ok := field.Option.([]interface{})
+	if !ok || len(arrOption) == 0 {
+		return fmt.Errorf("list type field option is null, option: %v", field.Option)
+	}
+
+	defaultVal := util.GetStrByInterface(field.Default)
+	for _, value := range arrOption {
+		val := util.GetStrByInterface(value)
+		if defaultVal == val {
+			valData[field.PropertyID] = defaultVal
+			return nil
+		}
+	}
+
+	return fmt.Errorf("list type default value is error, default value: %v", field.Default)
+}
+
+func fillLostBoolFieldValue(valData mapstr.MapStr, field metadata.Attribute) error {
+	valData[field.PropertyID] = false
+	if field.Default == nil {
+		return nil
+	}
+
+	if err := valid.ValidateBoolType(field.Default); err != nil {
+		return err
+	}
+
+	valData[field.PropertyID] = field.Default
+	return nil
+}
+
+func getEnumOption(ctx context.Context, val interface{}) ([]metadata.EnumVal, error) {
+	enumOptions, err := metadata.ParseEnumOption(ctx, val)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(enumOptions) == 0 {
+		return nil, nil
+	}
+
+	defaultOptions := make([]metadata.EnumVal, 0)
+	for _, k := range enumOptions {
+		if k.IsDefault {
+			defaultOptions = append(defaultOptions, k)
+		}
+	}
+
+	if len(defaultOptions) == 0 {
+		return nil, nil
+	}
+
+	return defaultOptions, nil
 }

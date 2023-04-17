@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 )
 
 // GetHostAttributes TODO
@@ -168,7 +169,7 @@ func (lgc *Logics) addHost(kit *rest.Kit, appID int64, host map[string]interface
 	for _, field := range defaultFields {
 		_, ok := host[field.PropertyID]
 		if !ok {
-			if true == util.IsStrProperty(field.PropertyType) {
+			if true == valid.IsStrProperty(field.PropertyType) {
 				host[field.PropertyID] = ""
 			} else {
 				host[field.PropertyID] = nil
@@ -1633,7 +1634,7 @@ func (lgc *Logics) ListServiceTemplateHostIDMap(kit *rest.Kit, ids []int64) ([]m
 }
 
 // ListHostTotalMainlineTopo search hosts with its' topo under business
-// related issue:https://github.com/Tencent/bk-cmdb/issues/5891
+// related issue:https://github.com/TencentBlueKing/bk-cmdb/issues/5891
 func (lgc *Logics) ListHostTotalMainlineTopo(kit *rest.Kit, bizID int64, params metadata.FindHostTotalTopo) (
 	[]*metadata.HostDetailWithTopo, error) {
 

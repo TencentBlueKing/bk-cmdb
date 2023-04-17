@@ -65,7 +65,7 @@
       </cmdb-button-group>
     </div>
     <div class="options-right">
-      <filter-fast-search class="option-fast-search"></filter-fast-search>
+      <filter-fast-search class="option-fast-search" @search="searchFilter"></filter-fast-search>
       <icon-button class="option-filter ml10" icon="icon-cc-funnel"
         v-bk-tooltips.top="$t('高级筛选')"
         @click="handleSetFilters">
@@ -166,6 +166,7 @@
   import FilterStore from '@/components/filters/store'
   import FilterUtils from '@/components/filters/utils'
   import hostImportService from '@/service/host/import'
+  import { isUseComplexValueType } from '@/utils/tools'
   const CUSTOM_STICKY_KEY = 'sticky-directory'
 
   export default {
@@ -528,9 +529,15 @@
         }
       },
       handleCopy(property) {
-        const copyText = this.table.selection.map((data) => {
+        const copyText = this.table.selection.map((data, index) => {
           const modelId = property.bk_obj_id
           const modelData = data[modelId]
+
+          if (isUseComplexValueType(property)) {
+            const value = this.$parent?.$refs?.[`table-cell-property-value-${property.bk_property_id}`]?.[index]?.getCopyValue()
+            return value
+          }
+
           if (property.id === this.IPWithCloudSymbol) {
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
@@ -739,6 +746,9 @@
           success: () => RouterQuery.set({ _t: Date.now() })
         })
         showImport()
+      },
+      searchFilter(value) {
+        this.$emit('search', value)
       }
     }
   }
