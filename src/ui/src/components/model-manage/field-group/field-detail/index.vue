@@ -110,9 +110,8 @@
           :multiple="fieldInfo.ismultiple"
           v-model="fieldInfo.option"
           :type="fieldInfo.bk_property_type"
-          :default-value="fieldInfo.default"
+          :default-value.sync="fieldInfo.default"
           ref="component"
-          @getDefaultValue="getDefaultValue"
         ></component>
         <label class="form-label" v-if="isDefaultComponentShow">
           <span class="label-text">
@@ -461,9 +460,6 @@
       },
       cancel() {
         this.$emit('cancel')
-      },
-      getDefaultValue(value) {
-        this.fieldInfo.default = value
       },
       getValidateRules(fieldInfo) {
         const rules =  this.$tools.getValidateRules(fieldInfo)

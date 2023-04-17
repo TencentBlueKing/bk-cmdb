@@ -59,7 +59,6 @@
           :disabled="isReadOnly"
           name="defaultValueSelect"
           data-vv-validate-on="change"
-          v-validate.immediate="`maxSelectLength:1`"
           v-model="defaultListValue"
           @change="handleSettingDefault">
           <bk-option v-for="option in settingList"
@@ -180,6 +179,10 @@
 
         const list = this.list.map(item => item.name)
         this.$emit('input', list)
+      },
+      handleSettingDefault(id) {
+        const defaultValue =  id ? this.settingList.find(item => item.id === id).name : ''
+        this.$emit('update:defaultValue', defaultValue)
       }
     }
   }
