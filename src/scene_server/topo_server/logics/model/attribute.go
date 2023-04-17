@@ -271,7 +271,7 @@ func (a *attribute) validTableAttributes(kit *rest.Kit, option interface{}) erro
 		return err
 	}
 
-	headerAttrMap, err := a.getTableAttrHeaderDetail(kit, tableOption.Header)
+	headerAttrMap, err := a.validAndGetTableAttrHeaderDetail(kit, tableOption.Header)
 	if err != nil {
 		return err
 	}
@@ -284,15 +284,15 @@ func (a *attribute) validTableAttributes(kit *rest.Kit, option interface{}) erro
 
 // getTableAttrHeaderDetail in the creation and update scenarios,
 // the full amount of header content needs to be passed.
-func (a *attribute) getTableAttrHeaderDetail(kit *rest.Kit, header []metadata.Attribute) (
+func (a *attribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header []metadata.Attribute) (
 	map[string]*metadata.Attribute, error) {
 
 	if len(header) == 0 {
-		return nil, errors.New("table header must be set")
+		return nil, kit.CCError.Errorf(common.CCErrorTopoTableFieldsMustSetHeader)
 	}
 
 	if len(header) > metadata.TableHeaderMaxNum {
-		return nil, fmt.Errorf("the header field length of the table cannot exceed %d", metadata.TableHeaderMaxNum)
+		return nil, kit.CCError.Errorf(common.CCErrorTopoHeaderOfTableExceedAllowed, metadata.TableHeaderMaxNum)
 	}
 
 	propertyAttr := make(map[string]*metadata.Attribute)
@@ -300,7 +300,7 @@ func (a *attribute) getTableAttrHeaderDetail(kit *rest.Kit, header []metadata.At
 	for index := range header {
 		// determine whether the underlying type is legal
 		if !metadata.ValidTableFieldBaseType(header[index].PropertyType) {
-			return nil, fmt.Errorf("table header type is invalid, type : %v", header[index].PropertyType)
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, header[index].PropertyType)
 		}
 		// the number of long characters in the basic type of the table
 		// field type cannot exceed the maximum value supported by the system.
@@ -308,8 +308,8 @@ func (a *attribute) getTableAttrHeaderDetail(kit *rest.Kit, header []metadata.At
 			longCharNum++
 		}
 		if longCharNum > metadata.TableLongCharMaxNum {
-			return nil, fmt.Errorf("exceeds the maximum number(%d) of long characters supported by the table"+
-				" field header", metadata.TableLongCharMaxNum)
+			return nil, kit.CCError.Errorf(common.CCErrorTopoHeaderOfTableLongCharExceedAllowed,
+				metadata.TableLongCharMaxNum)
 		}
 		// check if property type for creation is valid, can't update property type
 		if header[index].PropertyType == "" {
@@ -913,6 +913,28 @@ func calcTableOptionDiffDefault(kit *rest.Kit, curAttrsOp, dbAttrsOp *metadata.T
 	return curAttrsOp, updated, deletePropertyIDs, nil
 }
 
+// validUpdateHeader 判断更新场景下的header是否合法
+func (a *attribute) validUpdateHeader(kit *rest.Kit, createHeader, updateHeader []metadata.Attribute) error {
+	if len(createHeader) == 0 && len(updateHeader) == 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "table header")
+	}
+
+	allHeader := make([]metadata.Attribute, 0)
+
+	if len(createHeader) > 0 {
+		allHeader = append(allHeader, createHeader...)
+	}
+	if len(updateHeader) > 0 {
+		allHeader = append(allHeader, updateHeader...)
+	}
+
+	_, err := a.validAndGetTableAttrHeaderDetail(kit, allHeader)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // UpdateTableObjectAttr update object table attribute
 func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, attID, modelBizID int64) error {
 
@@ -946,20 +968,25 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 		return err
 	}
 
-	// for the verification header, it should be verified separately,
-	// because some headers are newly created and some headers are updated.
-	// different scenarios correspond to different content that needs to be verified.
-	// for checking the default value, you can check it as a whole, because you only
-	// need to check whether the default value conforms to the attribute of the header.
-	// the checksum operation of the default value is uniformly placed in the default
-	// field of the option in the update
-	headerMap := make(map[string]*metadata.Attribute)
-	for idx := range updated.Header {
-		headerMap[updated.Header[idx].PropertyID] = &updated.Header[idx]
+	if err := a.validUpdateHeader(kit, created.Header, updated.Header); err != nil {
+		blog.Errorf("update header illegal, create header: %+v, update header: %+v, err: %v, rid: %s", created.Header,
+			updated.Header, err, kit.Rid)
+		return err
 	}
+
+	// for the verification header, it should be verified separately, because some headers are newly created
+	// and some headers are updated. different scenarios correspond to different content that needs to be verified.
+	// for checking the default value, you can check it as a whole, because you only need to check whether the
+	// default value conforms to the attribute of the header. the checksum operation of the default value is
+	// uniformly placed in the default field of the option in the update.
+	headerMap := make(map[string]*metadata.Attribute)
 
 	for idx := range created.Header {
 		headerMap[created.Header[idx].PropertyID] = &created.Header[idx]
+	}
+
+	for idx := range updated.Header {
+		headerMap[updated.Header[idx].PropertyID] = &updated.Header[idx]
 	}
 
 	// updated this part is to be updated
@@ -974,11 +1001,12 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 		return err
 	}
 
-	condUpdate := mapstr.MapStr{common.BKFieldID: attID}
-	util.AddModelBizIDCondition(condUpdate, modelBizID)
 	if len(created.Header) == 0 && len(updateData) == 0 {
 		return nil
 	}
+
+	condUpdate := mapstr.MapStr{common.BKFieldID: attID}
+	util.AddModelBizIDCondition(condUpdate, modelBizID)
 	input := metadata.UpdateTableOption{Condition: condUpdate}
 	createDataStruct.Option = created
 

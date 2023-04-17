@@ -507,6 +507,9 @@ const (
 
 	CCErrorTopoObjForbiddenCreateAssociation           = 1101120
 	CCErrorTopoAssociatedObjForbiddenCreateAssociation = 1101121
+	CCErrorTopoHeaderOfTableExceedAllowed              = 1101122
+	CCErrorTopoTableFieldsMustSetHeader                = 1101123
+	CCErrorTopoHeaderOfTableLongCharExceedAllowed      = 1101124
 
 	// object controller 1102XXX
 

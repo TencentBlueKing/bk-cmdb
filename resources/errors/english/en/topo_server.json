@@ -141,5 +141,8 @@
 	"1101119": "The topology identification is illegal, the unique identification of k8s and cc cannot be mixed",
 	"1101120": "model %s forbids the creation of association relationships",
 	"1101121": "the associated model %s forbids the creation of association relationships",
-    "": "" 
+	"1101122": "the header length of the table field cannot exceed %d lines",
+	"1101123": "table fields must set the header",
+	"1101124": "table fields support up to %d long characters",
+	"": ""
 }
