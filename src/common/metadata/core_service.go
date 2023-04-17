@@ -759,3 +759,19 @@ type SetTemplateAttributeResult struct {
 	BaseResp `json:",inline"`
 	Data     *SetTempAttrData `json:"data"`
 }
+
+// BatchCreateInstResp batch create instance response
+type BatchCreateInstResp struct {
+	BaseResp `json:",inline"`
+	Data     BatchCreateInstRespData `json:"data"`
+}
+
+// BatchCreateInstRespData batch create instance response data
+type BatchCreateInstRespData struct {
+	IDs []int64 `json:"ids"`
+}
+
+// BatchCreateModelInstOption batch create model instance
+type BatchCreateModelInstOption struct {
+	Data []mapstr.MapStr `json:"data"`
+}

@@ -537,7 +537,7 @@ func (wl *WlQueryOption) Validate(kind WorkloadType) errors.RawErrorInfo {
 }
 
 // BuildCond build query workload condition
-func (wl *WlQueryOption) BuildCond(bizID int64, supplierAccount string) (mapstr.MapStr, error) {
+func (wl *WlQueryOption) BuildCond(bizID int64) (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}

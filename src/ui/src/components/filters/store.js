@@ -709,7 +709,6 @@ const FilterStore = new Vue({
       return Promise.resolve()
     },
     async updateUserBehavior(properties) {
-      // console.log(this.userBehaviorKey, 'this.userBehaviorKeythis.userBehaviorKey')
       await store.dispatch('userCustom/saveUsercustom', {
         [this.userBehaviorKey]: properties.map(property => [property.bk_property_id, property.bk_obj_id])
       })

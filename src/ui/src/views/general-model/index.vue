@@ -122,7 +122,7 @@
         :key="column.id"
         :prop="column.id"
         :label="column.name"
-        show-overflow-tooltip>
+        :show-overflow-tooltip="$tools.isShowOverflowTips(column.property)">
         <template slot-scope="{ row }">
           <cmdb-property-value
             :theme="column.id === 'bk_inst_id' ? 'primary' : 'default'"
@@ -148,7 +148,8 @@
         slot="empty"
         :auth="{ type: $OPERATION.C_INST, relation: [model.id] }"
         :stuff="table.stuff"
-        @create="handleCreate">
+        @create="handleCreate"
+        @clear="handleClearFilter">
       </cmdb-table-empty>
     </bk-table>
     <bk-sideslider
@@ -225,6 +226,7 @@
   import instanceImportService from '@/service/instance/import'
   import instanceService from '@/service/instance/instance'
   import { resetConditionValue } from '@/components/filters/general-model-filter.js'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   const defaultFastSearch = () => ({
     field: 'bk_inst_name',
@@ -542,6 +544,9 @@
         } else if (operator === '$in') {
           // eslint-disable-next-line no-nested-ternary
           value = Array.isArray(value) ? value : !!value ? [value] : []
+          if (this.filterType === PROPERTY_TYPES.ENUMQUOTE) {
+            value = value.map(val => Number(val))
+          }
         } else if (operator === '$regex') {
           value = Array.isArray(value) ? (value[0] || '') : value
         } else if (Array.isArray(value)) {
@@ -722,9 +727,10 @@
               _t: Date.now()
             })
           }
+          const { filter, filter_adv: filterAdv } = this.$route.query
+          this.table.stuff.type = (filter && filter.length > 0) || filterAdv ? 'search' : 'default'
           this.table.list = info
           this.table.pagination.count = count
-          this.table.stuff.type = this.$route.query?.s?.length ? 'search' : 'default'
         } catch (err) {
           console.error(err)
           if (err.permission) {
@@ -964,6 +970,10 @@
       },
       resetFastSearch() {
         this.filter = defaultFastSearch()
+      },
+      handleClearFilter() {
+        this.$refs.filterTag.handleResetAll()
+        this.table.stuff.type = 'default'
       }
     }
   }

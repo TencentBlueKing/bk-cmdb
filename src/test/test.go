@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/adminserver"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
@@ -24,6 +25,7 @@ import (
 )
 
 var clientSet apimachinery.ClientSetInterface
+var adminClient adminserver.AdminServerClientInterface
 var tConfig TestConfig
 var reportUrl string
 var reportDir string
@@ -91,6 +93,16 @@ func init() {
 	}
 	clientSet, err = apimachinery.NewApiMachinery(c, disc)
 	Expect(err).Should(BeNil())
+
+	// initialize admin-server client set, because migrate needs a longer timeout
+	adminApiConfig := &util.APIMachineryConfig{
+		QPS:       20000,
+		Burst:     10000,
+		ExtraConf: &util.ExtraClientConfig{ResponseHeaderTimeout: 5 * time.Minute},
+	}
+	adminClientSet, err := apimachinery.NewApiMachinery(adminApiConfig, disc)
+	Expect(err).Should(BeNil())
+	adminClient = adminClientSet.AdminServer()
 	// wait for get the apiserver address.
 	time.Sleep(1 * time.Second)
 	fmt.Println("**** initialize clientSet success ***")
@@ -118,7 +130,7 @@ func GetHeader() http.Header {
 // ClearDatabase TODO
 func ClearDatabase() {
 	fmt.Println("********Clear Database*************")
-	// clientSet.AdminServer().ClearDatabase(context.Background(), GetHeader())
+
 	mongoConfig := local.MongoConf{
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
 		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
@@ -130,11 +142,15 @@ func ClearDatabase() {
 	tables, err := db.ListTables(context.Background())
 	Expect(err).Should(BeNil())
 	for _, tableName := range tables {
-		db.DropTable(context.Background(), tableName)
+		err = db.DropTable(context.Background(), tableName)
+		Expect(err).Should(BeNil())
 	}
-	db.Close()
-	clientSet.AdminServer().Migrate(context.Background(), "0", "community", GetHeader())
-	clientSet.AdminServer().RunSyncDBIndex(context.Background(), GetHeader())
+	_ = db.Close()
+
+	err = adminClient.Migrate(context.Background(), "0", "community", GetHeader())
+	Expect(err).Should(BeNil())
+	err = adminClient.RunSyncDBIndex(context.Background(), GetHeader())
+	Expect(err).Should(BeNil())
 }
 
 // GetReportUrl TODO

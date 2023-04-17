@@ -65,6 +65,7 @@
   import { OPERATION } from '@/dictionary/iam-auth'
   import { $success } from '@/magicbox/index.js'
   import Utils from '@/components/filters/utils'
+  import { formatValue } from '@/utils/tools'
   import queryBuilderOperator from '@/utils/query-builder-operator'
   import businessScopeSettingsForm from '@/components/business-scope/settings-form.vue'
   import businessScopePreview from '@/components/business-scope/preview.vue'
@@ -198,7 +199,7 @@
           rules.push({
             field,
             operator: queryBuilderOperator(operator),
-            value
+            value: formatValue(value, property)
           })
         }
 

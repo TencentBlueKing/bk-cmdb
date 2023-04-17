@@ -181,7 +181,8 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 			relations := make([]*metadata.ProcessInstanceRelation, len(listProcTplResult.Info))
 			templateIDs := make([]int64, len(listProcTplResult.Info))
 			for idx, processTemplate := range listProcTplResult.Info {
-				processData, err := processTemplate.NewProcess(module.BizID, instance.ID, kit.SupplierAccount, host)
+				processData, err := processTemplate.NewProcess(kit.CCError, module.BizID, instance.ID, kit.SupplierAccount,
+					host)
 				if err != nil {
 					blog.ErrorJSON("create service instance, but generate process instance by template "+
 						"%s failed, err: %s, rid: %s", processTemplate, err, kit.Rid)
@@ -582,7 +583,7 @@ func (p *processOperation) DeleteServiceInstance(kit *rest.Kit, serviceInstanceI
 
 // generateServiceInstanceName get service instance's name, format: `IP + first process name + first process port`
 // 可能应用场景：1. 查询服务实例时组装名称；2. 更新进程信息时根据组装名称直接更新到 `name` 字段
-// issue: https://github.com/Tencent/bk-cmdb/issues/2485
+// issue: https://github.com/TencentBlueKing/bk-cmdb/issues/2485
 func (p *processOperation) generateServiceInstanceName(kit *rest.Kit, instanceID int64) (string, errors.CCErrorCoder) {
 
 	// get instance
@@ -906,7 +907,7 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 			relations := make([]*metadata.ProcessInstanceRelation, len(processTemplates))
 			templateIDs := make([]int64, len(processTemplates))
 			for idx, processTemplate := range processTemplates {
-				processData, err := processTemplate.NewProcess(module.BizID, int64(id), kit.SupplierAccount, host)
+				processData, err := processTemplate.NewProcess(kit.CCError, module.BizID, int64(id), kit.SupplierAccount, host)
 				if err != nil {
 					blog.ErrorJSON("create service instance, but generate process instance by template "+
 						"%s failed, err: %s, rid: %s", processTemplate, err, kit.Rid)

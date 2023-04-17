@@ -3,7 +3,7 @@
 - 仅支持查询相应数据类型所支持的字段，且用于查询的值和字段类型需要匹配，防止使用错误的参数进行查询返回无数据造成误解。如主机只可以用主机的字段进行查询，且主机名只能用string类型查询，使用其它字段或不匹配的类型进行查询会报错
 - 支持查询的字段类型包括基本类型（数值/bool值/字符串/时间）和复杂结构（数组和对象）
 - 支持字段查询参数的组合，如多个字段的查询条件的 `与` 、 `或` 关系和查询嵌套结构体的字段等
-- 兼容之前版本的 [querybuilder查询参数](https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md) ，便于后续迁移
+- 兼容之前版本的 [querybuilder查询参数](https://github.com/TencentBlueKing/bk-cmdb/blob/master/src/common/querybuilder/README.md) ，便于后续迁移
 
 ## 格式
 通用查询条件为数据的属性字段过滤规则的组合，用于根据属性字段搜索数据。该参数为以下两种过滤规则类型，可以嵌套。具体支持的过滤规则如下：

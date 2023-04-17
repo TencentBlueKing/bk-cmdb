@@ -175,6 +175,10 @@ const (
 	WatchInstAsst Action = "inst_asst"
 	// WatchBizSet TODO
 	WatchBizSet Action = "biz_set"
+	// WatchPlat watch cloud area event cc action
+	WatchPlat Action = "plat"
+	// WatchProject watch project event cc action
+	WatchProject Action = "project"
 
 	// kube related event watch cc actions
 

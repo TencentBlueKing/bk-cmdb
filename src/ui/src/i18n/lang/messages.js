@@ -10,6 +10,8 @@
  * limitations under the License.
  */
 
+import { LANG_KEYS } from '../constants'
+
 // 通用
 import en from './en.json'
 import cn from './cn.json'
@@ -23,12 +25,12 @@ import modelManageZhCN from '@/views/model-manage/i18n/zh-CN.json'
 import modelManageEn from '@/views/model-manage/i18n/en.json'
 
 export default {
-  en: {
+  [LANG_KEYS.EN]: {
     ...en,
     ...globalConfigEn,
     ...modelManageEn
   },
-  zh_CN: {
+  [LANG_KEYS.ZH_CN]: {
     ...cn,
     ...globalConfigZhCN,
     ...modelManageZhCN

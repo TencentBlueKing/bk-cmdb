@@ -33,6 +33,16 @@ const buildInVaidationRules = {
       return stringLength(value) <= length
     }
   },
+  maxSelectLength: (value, [length]) => {
+    const maxlength = Number(length)
+    if (!Array.isArray(value)) {
+      return true
+    }
+    if (maxlength === -1) {
+      return true
+    }
+    return value?.length <= maxlength
+  },
   repeat: {
     validate: (value, otherValue) => otherValue.findIndex(item => item === value) === -1
   },
@@ -108,6 +118,7 @@ const dictionary = {
     messages: {
       regex: field => `请输入合法的${field}`,
       length: (field, [maxLength]) => `请输入${maxLength}个字符以内的内容`,
+      maxSelectLength: (field, [length]) => `最多选择 ${length} 项`,
       required: () => '该字段是必填项',
       http: () => '请输入以http(s)://开头的URL',
       isBigger: () => '必须大于最小值',
@@ -139,6 +150,7 @@ const dictionary = {
     messages: {
       regex: () => 'Please enter a valid $ {field}',
       length: (field, [maxLength]) => `Content length max than ${maxLength}`,
+      maxSelectLength: (field, [length]) => `Only select at most ${length} items`,
       required: () => 'This field is required',
       http: () => 'Please enter a URL beginning with http(s)://',
       isBigger: () => 'Must be greater than the minimum',

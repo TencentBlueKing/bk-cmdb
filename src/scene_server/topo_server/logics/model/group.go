@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 
 	"github.com/rs/xid"
 )
@@ -73,7 +74,7 @@ func (g *group) CreateObjectGroup(kit *rest.Kit, data *metadata.Group) (*metadat
 		blog.Errorf("failed to valid the group id(%s), rid: %s", metadata.GroupFieldGroupID, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.GroupFieldGroupID)
 	}
-	if err := util.ValidModelNameField(data.GroupName, metadata.GroupFieldGroupName, kit.CCError); err != nil {
+	if err := valid.ValidModelNameField(data.GroupName, metadata.GroupFieldGroupName, kit.CCError); err != nil {
 		blog.Errorf("failed to valid the group name(%s), rid: %s", metadata.GroupFieldGroupName, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.GroupFieldGroupName)
 	}
@@ -188,7 +189,7 @@ func (g *group) FindGroupByObject(kit *rest.Kit, objID string, cond mapstr.MapSt
 func (g *group) UpdateObjectGroup(kit *rest.Kit, cond *metadata.UpdateGroupCondition) error {
 
 	if cond.Data.Name != nil && len(*cond.Data.Name) != 0 {
-		if err := util.ValidModelNameField(*cond.Data.Name, metadata.GroupFieldGroupName, kit.CCError); err != nil {
+		if err := valid.ValidModelNameField(*cond.Data.Name, metadata.GroupFieldGroupName, kit.CCError); err != nil {
 			blog.Errorf("failed to valid the group name(%s), rid: %s", cond.Data.Name, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.GroupFieldGroupName)
 		}
@@ -336,7 +337,7 @@ func NewGroupID(isDefault bool) string {
 }
 
 // ExchangeObjectGroupIndex exchange the group index of two groups
-// related issue: https://github.com/Tencent/bk-cmdb/issues/5873
+// related issue: https://github.com/TencentBlueKing/bk-cmdb/issues/5873
 func (g *group) ExchangeObjectGroupIndex(kit *rest.Kit, ids []int64) error {
 
 	if len(ids) != 2 {

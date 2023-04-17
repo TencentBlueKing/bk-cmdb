@@ -424,6 +424,10 @@ func getBasicDataType(propertyType string) (interface{}, error) {
 		return 0, nil
 	case common.FieldTypeEnum:
 		return "", nil
+	case common.FieldTypeEnumMulti:
+		return []string{}, nil
+	case common.FieldTypeEnumQuote:
+		return []int64{}, nil
 	case common.FieldTypeDate:
 		return "", nil
 	case common.FieldTypeTime:

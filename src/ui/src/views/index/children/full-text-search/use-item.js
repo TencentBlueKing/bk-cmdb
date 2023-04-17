@@ -22,7 +22,8 @@ import {
   MENU_RESOURCE_HOST_DETAILS,
   MENU_RESOURCE_BUSINESS_HISTORY,
   MENU_MODEL_DETAILS,
-  MENU_BUSINESS_HOST_AND_SERVICE
+  MENU_BUSINESS_HOST_AND_SERVICE,
+  MENU_RESOURCE_PROJECT_DETAILS
 } from '@/dictionary/menu-symbol'
 import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_MODEL_ROUTEPARAMS_KEYS } from '@/dictionary/model-constants'
 import { getPropertyText } from '@/utils/tools'
@@ -50,6 +51,12 @@ export default function useItem(list) {
         newItem.title = source.bk_biz_name
         newItem.typeName = t('业务')
         newItem.linkTo = handleGoBusiness
+      } else if (kind === 'instance' && key === BUILTIN_MODELS.PROJECT) {
+        newItem.type = key
+        newItem.title = source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].NAME]
+        newItem.typeName = t('项目')
+        newItem.comp = 'project'
+        newItem.linkTo = handleGoProject
       } else if (kind === 'instance' && key === BUILTIN_MODELS.BUSINESS_SET) {
         newItem.type = key
         newItem.title = source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME]
@@ -136,6 +143,22 @@ export default function useItem(list) {
         params: { bizName: source.bk_biz_name },
         history: true
       }
+    }
+
+    if (newTab) {
+      routerActions.open(to)
+      return
+    }
+
+    routerActions.redirect(to)
+  }
+  const handleGoProject = (source, newTab = true) => {
+    const paramKey = BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.PROJECT]
+    const paramVal = source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].ID]
+    const to = {
+      name: MENU_RESOURCE_PROJECT_DETAILS,
+      params: { [paramKey]: paramVal },
+      history: true
     }
 
     if (newTab) {

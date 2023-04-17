@@ -98,6 +98,7 @@
         :stuff="table.stuff"
         :auth="{ type: $OPERATION.C_SET_TEMPLATE, relation: [bizId] }"
         @create="handleCreate"
+        @clear="handleFilterClear"
       ></cmdb-table-empty>
     </bk-table>
   </div>
@@ -263,6 +264,11 @@
         this.$routerActions.redirect({
           name: MENU_BUSINESS_SERVICE_TEMPLATE
         })
+      },
+      handleFilterClear() {
+        this.searchName = ''
+        this.table.stuff.type = 'default'
+        this.getSetTemplates()
       }
     }
   }

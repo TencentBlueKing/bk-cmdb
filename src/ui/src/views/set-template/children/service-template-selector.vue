@@ -76,12 +76,12 @@
       </template>
       <li class="template-empty" v-else>
         <div class="empty-content">
-          <img class="empty-image" src="../../../assets/images/empty-content.png">
-          <i18n class="empty-tips" path="无服务模板提示">
-            <template #link>
-              <a class="empty-link" href="javascript:void(0)" @click="handleLinkClick">{{$t('去添加服务模板')}}</a>
-            </template>
-          </i18n>
+          <cmdb-data-empty
+            slot="empty"
+            :stuff="dataEmpty"
+            @skip="handleLinkClick"
+            @clear="handleClearFilter">
+          </cmdb-data-empty>
         </div>
       </li>
     </ul>
@@ -156,6 +156,13 @@
           primaryCategory: '',
           secCategory: '',
           templateName: ''
+        },
+        dataEmpty: {
+          type: 'default',
+          payload: {
+            path: '无服务模板提示',
+            skipText: this.$t('去添加服务模板'),
+          }
         }
       }
     },
@@ -187,17 +194,16 @@
       'filter.primaryCategory'(id) {
         // 当前分类下的二级分类
         this.secCategoryList = this.categoryList.filter(item => item.bk_parent_id === id)
-
-        if (!id) {
-          this.filter.secCategory = ''
-        }
-
+        this.dataEmpty.type = this.filter.primaryCategory ? 'search' : 'default'
+        this.filter.secCategory = ''
         this.filterTemplate()
       },
       'filter.secCategory'() {
+        this.dataEmpty.type = this.filter.primaryCategory || this.filter.secCategory ? 'search' : 'default'
         this.filterTemplate()
       },
       'filter.templateName'() {
+        this.dataEmpty.type = this.filter.primaryCategory || this.filter.templateName ? 'search' : 'default'
         this.filterTemplate()
       }
     },
@@ -350,6 +356,11 @@
             this.localSelected = []
           }
         }
+      },
+      handleClearFilter() {
+        this.filter.primaryCategory = ''
+        this.filter.secCategory = ''
+        this.filter.templateName = ''
       }
     }
   }

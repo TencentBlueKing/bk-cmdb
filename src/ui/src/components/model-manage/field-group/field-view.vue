@@ -44,13 +44,19 @@
         </div>
         <span class="property-value">{{field.isrequired ? $t('必填') : $t('非必填')}}</span>
       </div>
-      <div class="property-item" v-if="['singlechar', 'longchar'].includes(field.bk_property_type)">
+      <div class="property-item" v-if="hasMultipleType">
+        <div class="property-name">
+          <span>{{$t('是否可多选')}}</span>：
+        </div>
+        <span class="property-value">{{field.ismultiple ? $t('可多选') : $t('不可多选')}}</span>
+      </div>
+      <div class="property-item" v-if="stringLikes.includes(field.bk_property_type)">
         <div class="property-name">
           <span>{{$t('正则校验')}}</span>：
         </div>
         <span class="property-value">{{option || '--'}}</span>
       </div>
-      <template v-else-if="['int', 'float'].includes(field.bk_property_type)">
+      <template v-else-if="numberLikes.includes(field.bk_property_type)">
         <div class="property-item">
           <div class="property-name">
             <span>{{$t('最小值')}}</span>：
@@ -76,11 +82,30 @@
         </div>
         <span class="property-value">{{field.placeholder || '--'}}</span>
       </div>
-      <div class="property-item enum-list" v-if="['enum', 'list'].includes(field.bk_property_type)">
+      <div class="property-item enum-list" v-if="listLikes.includes(field.bk_property_type)">
         <div class="property-name">
-          <span>{{$t('枚举值')}}</span>：
+          <span>{{ ['list'].includes(this.type) ? $t('列表值') : $t('枚举值') }}</span>：
         </div>
-        <span class="property-value" v-html="getEnumValue()"></span>
+        <div class="property-value">
+          <template v-if="getEnumValue.length">
+            <p v-for="(val, index) in getEnumValue" :key="index">{{val}}</p>
+          </template>
+          <span v-else>--</span>
+        </div>
+      </div>
+      <div class="property-item enum-list"
+        v-if="!listLikes.includes(field.bk_property_type)">
+        <div class="property-name">
+          <span>{{$t('默认值')}}</span>：
+        </div>
+        <cmdb-property-value
+          class="property-value"
+          v-if="['organization','enumquote'].includes(field.bk_property_type)"
+          :value="defaultValue"
+          :property="field">
+        </cmdb-property-value>
+        <span v-else
+          class="property-value">{{defaultValue || '--'}}</span>
       </div>
     </div>
     <template slot="footer" slot-scope="{ sticky }" v-if="canEdit">
@@ -93,6 +118,8 @@
 </template>
 
 <script>
+  import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
+
   export default {
     props: {
       field: {
@@ -103,20 +130,11 @@
     },
     data() {
       return {
-        fieldTypeMap: {
-          singlechar: this.$t('短字符'),
-          int: this.$t('数字'),
-          float: this.$t('浮点'),
-          enum: this.$t('枚举'),
-          date: this.$t('日期'),
-          time: this.$t('时间'),
-          longchar: this.$t('长字符'),
-          objuser: this.$t('用户'),
-          timezone: this.$t('时区'),
-          bool: 'bool',
-          list: this.$t('列表'),
-          organization: this.$t('组织')
-        },
+        fieldTypeMap: PROPERTY_TYPE_NAMES,
+        numberLikes: [PROPERTY_TYPES.INT, PROPERTY_TYPES.FLOAT],
+        stringLikes: [PROPERTY_TYPES.SINGLECHAR, PROPERTY_TYPES.LONGCHAR],
+        listLikes: [PROPERTY_TYPES.ENUM, PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.LIST],
+        enumLikes: [PROPERTY_TYPES.ENUM, PROPERTY_TYPES.ENUMMULTI],
         scrollbar: false
       }
     },
@@ -125,34 +143,51 @@
         return this.field.bk_property_type
       },
       option() {
-        if (['int', 'float'].includes(this.type)) {
+        if (this.numberLikes.includes(this.type)) {
           return this.field.option || { min: null, max: null }
         }
-        if (['enum', 'list'].includes(this.type)) {
+        if (this.listLikes.includes(this.type)) {
           return this.field.option || []
         }
         return this.field.option
-      }
-    },
-    methods: {
+      },
+      hasMultipleType() {
+        const types = [PROPERTY_TYPES.ORGANIZATION, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ENUMMULTI]
+        return types.includes(this.type)
+      },
+      defaultValue() {
+        if ([PROPERTY_TYPES.ENUMQUOTE].includes(this.type)) {
+          return  this.field.option.map(item => item.bk_inst_id)
+        }
+        return  this.$tools.getPropertyDefaultValue(this.field)
+      },
       getEnumValue() {
         const value = this.field.option
         const type = this.field.bk_property_type
         if (Array.isArray(value)) {
-          if (type === 'enum') {
+          if (this.enumLikes.includes(type)) {
             const arr = value.map((item) => {
               if (item.is_default) {
                 return `${item.name}(${item.id}, ${this.$t('默认值')})`
               }
               return `${item.name}(${item.id})`
             })
-            return arr.length ? arr.join('<br>') : '--'
-          } if (type === 'list') {
-            return value.length ? value.join('<br>') : '--'
+            return arr
+          }
+          if (this.listLikes.includes(type)) {
+            const arr = value.map((item) => {
+              if (item === this.field.default) {
+                return `${item}(${this.$t('默认值')})`
+              }
+              return item
+            })
+            return arr
           }
         }
-        return '--'
-      },
+        return value || []
+      }
+    },
+    methods: {
       handleEdit() {
         this.$emit('on-edit')
       },

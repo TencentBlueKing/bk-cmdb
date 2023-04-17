@@ -14,9 +14,10 @@
   <div class="association-list" v-bkloading="{ isLoading: loading }">
     <div class="association-empty" v-if="!hasAssociation">
       <div class="empty-content">
-        <i class="bk-icon icon-empty">
-        </i>
-        <span>{{$t('暂无关联关系')}}</span>
+        <cmdb-data-empty
+          slot="empty"
+          :stuff="dataEmpty">
+        </cmdb-data-empty>
       </div>
     </div>
     <template v-else>
@@ -103,6 +104,15 @@
           'getSourceAssociation',
           'getTargetAssociation'
         ])
+      },
+      dataEmpty() {
+        return {
+          type: 'empty',
+          payload: {
+            emptyText: this.$t('bk.table.emptyText'),
+            defaultText: this.$t('暂无关联关系')
+          }
+        }
       }
     },
     watch: {

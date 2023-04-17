@@ -50,6 +50,8 @@ var sortFields = []string{
 	"isrequired",
 	"isreadonly",
 	"isonly",
+	"ismultiple",
+	"default",
 }
 
 // ImportObject import object attribute
@@ -125,11 +127,10 @@ func (s *Service) ImportObject(c *gin.Context) {
 		return
 	}
 
-	logics.ConvAttrOption(attrItems)
+	logics.ConvAttr(attrItems)
 
-	params := map[string]interface{}{objID: map[string]interface{}{"attr": attrItems}}
-
-	result, err := s.CoreAPI.ApiServer().AddObjectBatch(ctx, c.Request.Header, params)
+	param := map[string]interface{}{objID: map[string]interface{}{"attr": attrItems}}
+	result, err := s.CoreAPI.ApiServer().AddObjectBatch(ctx, c.Request.Header, param)
 	if err != nil {
 		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed,
 			"").Error(), nil)
@@ -208,11 +209,19 @@ func setExcelRow(ctx context.Context, row *xlsx.Row, item interface{}) *xlsx.Row
 			case common.BKOptionField:
 
 				bOptions, err := json.Marshal(t)
-				if nil != err {
-					blog.Errorf("option format error:%v, rid: %s", t, rid)
+				if err != nil {
+					blog.Errorf("option format failed, err: %v, rid: %s", err, rid)
 					cell.SetValue("error info:" + err.Error())
 				} else {
 					cell.SetString(string(bOptions))
+				}
+			case common.BKDefaultFiled:
+				bDef, err := json.Marshal(t)
+				if err != nil {
+					blog.Errorf("default value format failed, err: %v, rid: %s", err, rid)
+					cell.SetValue("error info:" + err.Error())
+				} else {
+					cell.SetString(string(bDef))
 				}
 
 			default:

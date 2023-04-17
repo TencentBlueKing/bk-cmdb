@@ -30,6 +30,7 @@ var (
 	CCDistro        = "community" // enterprise, community
 	CCDistroVersion = "9999.9999.9999"
 	ServiceName     = "unknown"
+	GoVersion       = "unknown"
 )
 
 // CCRunMode enumeration
@@ -46,11 +47,6 @@ var (
 	CCDistrCommunity = "community"
 )
 
-var (
-	// CanCreateSetModuleWithoutTemplate means whether user can create set and module without template
-	CanCreateSetModuleWithoutTemplate = true
-)
-
 // ShowVersion is the default handler which match the --version flag
 func ShowVersion() {
 	fmt.Printf("%s", GetVersion())
@@ -65,6 +61,7 @@ GitHash     : %s
 RunMode     : %s
 Distribution: %s
 ServiceName : %s
-`, CCVersion, CCTag, CCBuildTime, CCGitHash, CCRunMode, CCDistro, ServiceName)
+GoVersion   : %s
+`, CCVersion, CCTag, CCBuildTime, CCGitHash, CCRunMode, CCDistro, ServiceName, GoVersion)
 	return version
 }

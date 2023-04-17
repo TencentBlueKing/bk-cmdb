@@ -223,7 +223,6 @@ func setExcelCellIgnored(sheet *xlsx.Sheet, style *xlsx.Style, row int, col int)
 // replaceDepartmentFullName replace attribute organization's id by fullname in export excel
 func replaceDepartmentFullName(rid string, rowMap mapstr.MapStr, org []metadata.DepartmentItem, propertyList []string,
 	defLang language.DefaultCCLanguageIf) (mapstr.MapStr, error) {
-
 	orgMap := make(map[int64]string)
 	for _, item := range org {
 		orgMap[item.ID] = item.FullName
@@ -246,13 +245,13 @@ func replaceDepartmentFullName(rid string, rowMap mapstr.MapStr, org []metadata.
 		for _, orgID := range orgIDList {
 			id, err := util.GetInt64ByInterface(orgID)
 			if err != nil {
-				blog.Errorf("convert orgID[%v] to int64 failed, type: %T, err: %v, rid: %s", orgID, orgID, err, rid)
+				blog.Errorf("convert orgID to int64 failed, type: %T, err: %v, rid: %s", orgID, err, rid)
 				return nil, fmt.Errorf("convert variable orgID[%v] type to int64 failed", orgID)
 			}
 
 			name, exist := orgMap[id]
 			if !exist {
-				blog.Errorf("orgnization[%d] does no exist, rid: %s", id, rid)
+				blog.Errorf("organization[%d] does no exist, rid: %s", id, rid)
 				orgName = append(orgName, fmt.Sprintf("[%d]%s", id, defLang.Language("nonexistent_org")))
 				continue
 			}
@@ -260,6 +259,46 @@ func replaceDepartmentFullName(rid string, rowMap mapstr.MapStr, org []metadata.
 			orgName = append(orgName, fmt.Sprintf("[%d]%s", id, name))
 		}
 		rowMap[property] = strings.Join(orgName, ",")
+	}
+
+	return rowMap, nil
+}
+
+// replaceEnumMultiName replace attribute enummulti's id by name in export excel
+func replaceEnumMultiName(rid string, rowMap mapstr.MapStr, fields map[string]Property) (mapstr.MapStr, error) {
+
+	for id, property := range fields {
+		enumMultiIDInterface, exist := rowMap[id]
+		if !exist || enumMultiIDInterface == nil {
+			continue
+		}
+
+		switch property.PropertyType {
+		case common.FieldTypeEnumMulti:
+			enumMultiIDList, ok := enumMultiIDInterface.([]interface{})
+			if !ok {
+				blog.Errorf("rowMap[%s] type to array failed, rowMap: %v, rowMap type: %T, rid: %s", property,
+					rowMap[id], rowMap[id], rid)
+				return nil, fmt.Errorf("convert variable rowMap[%s] type to int array failed", property)
+			}
+			enumMultiName := make([]string, 0)
+			for _, enumMultiID := range enumMultiIDList {
+				id, ok := enumMultiID.(string)
+				if !ok {
+					blog.Errorf("convert enumMultiID[%s] to string failed, type: %T, rid: %s", enumMultiID,
+						enumMultiID, rid)
+					return nil, fmt.Errorf("convert variable enumMultiID[%s] type to string failed", enumMultiID)
+				}
+				items, ok := property.Option.([]interface{})
+				if !ok {
+					blog.Errorf("convert option to []interface{} failed, type: %T, rid: %s", property.Option, rid)
+					return nil, fmt.Errorf("enum multi option param is invalid, option: %v", property.Option)
+				}
+				name := getEnumNameByID(id, items)
+				enumMultiName = append(enumMultiName, name)
+			}
+			rowMap[id] = strings.Join(enumMultiName, "\n")
+		}
 	}
 
 	return rowMap, nil

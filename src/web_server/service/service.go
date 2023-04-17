@@ -125,6 +125,10 @@ func (s *Service) WebService() *gin.Engine {
 
 	ws.Any("/proxy/:method/:target/*target_url", s.ProxyRequest)
 
+	// get changelog info
+	ws.POST("findmany/changelog", s.GetVersionList)
+	ws.POST("find/changelog/detail", s.GetVersionDetail)
+
 	// common api
 	ws.GET("/healthz", s.Healthz)
 	ws.GET("/version", ginservice.Version)

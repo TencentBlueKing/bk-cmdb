@@ -37,7 +37,12 @@
             <bk-link :title="item.bk_biz_name" @click="handleClickName(item)">{{item.bk_biz_name}}</bk-link>
           </li>
         </ul>
-        <bk-exception :type="keyword ? 'search-empty' : 'empty'" scene="part" v-else></bk-exception>
+        <cmdb-data-empty
+          v-else
+          slot="empty"
+          :stuff="dataEmpty"
+          @clear="handleClearFilter">
+        </cmdb-data-empty>
       </div>
       <div class="content-foot">
         <bk-pagination small
@@ -56,6 +61,7 @@
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
   import businessSetService from '@/service/business-set/index.js'
   import routerActions from '@/router/actions'
+  import { t } from '@/i18n'
 
   export default defineComponent({
     props: {
@@ -76,6 +82,12 @@
       }
     },
     setup(props, { emit }) {
+      const dataEmpty = reactive({
+        type: 'empty',
+        payload: {
+          defaultText: t('暂无业务')
+        }
+      })
       const { show, mode, payload } = toRefs(props)
 
       const isShow = computed({
@@ -146,6 +158,7 @@
 
       const handleSearch = (value) => {
         keyword.value = value
+        dataEmpty.type = value ? 'search' : 'empty'
       }
 
       // 隐藏时重置值
@@ -164,6 +177,10 @@
           }
         })
       }
+      const handleClearFilter = () => {
+        keyword.value = ''
+        dataEmpty.type = 'empty'
+      }
 
       return {
         isShow,
@@ -173,7 +190,9 @@
         pagination,
         businessList,
         handleSearch,
-        handleClickName
+        handleClickName,
+        handleClearFilter,
+        dataEmpty
       }
     }
   })

@@ -14,6 +14,7 @@ package inst
 
 import (
 	"bytes"
+	"fmt"
 	"reflect"
 
 	"configcenter/src/apimachinery"
@@ -25,7 +26,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/common/version"
 )
 
 // SetOperationInterface set operation methods
@@ -94,8 +94,14 @@ func (s *set) getSetTemplate(kit *rest.Kit, data mapstr.MapStr, bizID int64) (me
 	st, err := s.clientSet.CoreService().SetTemplate().GetSetTemplate(kit.Ctx, kit.Header, bizID, setTemplateID)
 	if err != nil {
 		blog.Errorf("get set template failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID,
-			setTemplateID, kit.Rid)
+			setTemplateID, err, kit.Rid)
 		return setTemplate, err
+	}
+
+	if st.ID == common.SetTemplateIDNotSet {
+		blog.Errorf("set template not exist, bizID: %d, setTemplateID: %d, rid: %s", bizID, setTemplateID,
+			kit.Rid)
+		return setTemplate, fmt.Errorf("set template not exist, setTemplateID: %d", setTemplateID)
 	}
 
 	return st, nil
@@ -104,6 +110,7 @@ func (s *set) getSetTemplate(kit *rest.Kit, data mapstr.MapStr, bizID int64) (me
 // CreateSet create a new set
 func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (mapstr.MapStr, error) {
 	data.Set(common.BKAppIDField, bizID)
+	data.Remove(common.MetadataField)
 
 	if !data.Exists(common.BKDefaultField) {
 		data.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
@@ -120,19 +127,16 @@ func (s *set) CreateSet(kit *rest.Kit, bizID int64, data mapstr.MapStr) (mapstr.
 		return nil, err
 	}
 
+	data.Set(common.BKSetTemplateIDField, 0)
 	// if need create set using set template
-	if setTemplate.ID == common.SetTemplateIDNotSet && !version.CanCreateSetModuleWithoutTemplate && defaultVal == 0 {
-		blog.Errorf("service template not exist, can not create set, rid: %s", kit.Rid)
-		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "set_template_id can not be 0")
-	}
-
-	data.Set(common.BKSetTemplateIDField, setTemplate.ID)
-	data.Remove(common.MetadataField)
-
-	// if set template has attributes, initialize set using these attributes
-	data, err = s.initSetWithSetTemplate(kit, bizID, setTemplate.ID, data)
-	if err != nil {
-		return nil, err
+	if setTemplate.ID != common.SetTemplateIDNotSet && defaultVal == 0 {
+		data.Set(common.BKSetTemplateIDField, setTemplate.ID)
+		// if set template has attributes, initialize set using these attributes
+		data, err = s.initSetWithSetTemplate(kit, bizID, setTemplate.ID, data)
+		if err != nil {
+			blog.Errorf("init set attr by set template failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
 	}
 
 	setInstance, err := s.inst.CreateInst(kit, common.BKInnerObjIDSet, data)

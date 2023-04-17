@@ -17,7 +17,8 @@ import $http from '@/api'
 function createIdProperty(objId) {
   const keyMap = {
     biz: 'bk_biz_id',
-    host: 'bk_host_id'
+    host: 'bk_host_id',
+    bk_project: 'id'
   }
   return {
     id: Date.now(),

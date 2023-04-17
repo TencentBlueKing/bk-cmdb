@@ -28,6 +28,9 @@ type InstanceClientInterface interface {
 		*metadata.CreateOneDataResult, error)
 	CreateManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.CreateManyModelInstance) (
 		*metadata.CreateManyDataResult, errors.CCErrorCoder)
+	// BatchCreateInstance batch create instance, if one of instances fails to create, an error is returned.
+	BatchCreateInstance(ctx context.Context, h http.Header, objID string, input *metadata.BatchCreateModelInstOption) (
+		*metadata.BatchCreateInstRespData, errors.CCErrorCoder)
 	SetManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.SetManyModelInstance) (
 		resp *metadata.SetOptionResult, err error)
 	UpdateInstance(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (

@@ -81,6 +81,24 @@
   import AuditUserSelector from './audit-user-selector'
   import AuditBusinessSelector from '@/components/audit-history/audit-business-selector'
   import RouterQuery from '@/router/query'
+  import tools from '@/utils/tools'
+
+  const today = tools.formatTime(new Date(), 'YYYY-MM-DD')
+  const defaultCondition = () => ({
+    bk_biz_id: '',
+    resource_type: 'host',
+    action: [],
+    operation_time: [today, today],
+    resource_id: '',
+    resource_name: '',
+    extend_resource_name: '',
+    category: 'host',
+    fuzzy_query: false,
+    condition: {
+      user: ['in', '']
+    }
+  })
+
   export default {
     name: 'audit-host-options',
     components: {
@@ -89,26 +107,10 @@
       AuditBusinessSelector
     },
     data() {
-      const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
-      const defaultCondition = {
-        bk_biz_id: '',
-        resource_type: 'host',
-        action: [],
-        operation_time: [today, today],
-        resource_id: '',
-        resource_name: '',
-        extend_resource_name: '',
-        category: 'host',
-        fuzzy_query: false,
-        condition: {
-          user: ['in', '']
-        }
-      }
       return {
         instanceType: 'resource_name',
-        defaultCondition,
         condition: {
-          ...defaultCondition
+          ...defaultCondition()
         }
       }
     },
@@ -143,7 +145,7 @@
         })
       },
       handleReset() {
-        this.condition = { ...this.defaultCondition }
+        this.condition = defaultCondition()
         this.handleSearch()
       }
     }
