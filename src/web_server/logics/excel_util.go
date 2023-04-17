@@ -326,7 +326,7 @@ func setTableCellValue(val interface{}, sheet *xlsx.Sheet, rowIndex int, propert
 	}
 	for tableIdx, data := range table {
 		for idx, attr := range option.Header {
-			val := data[attr.PropertyID]
+			val, exist := data[attr.PropertyID]
 			cell, err := sheet.Cell(rowIndex+tableIdx, property.ExcelColIndex+idx)
 			if err != nil {
 				return err
@@ -339,6 +339,9 @@ func setTableCellValue(val interface{}, sheet *xlsx.Sheet, rowIndex int, propert
 			case common.FieldTypeFloat:
 				setFloatCellValue(cell, val)
 			case common.FieldTypeEnumMulti:
+				if !exist || val == nil {
+					continue
+				}
 				items, ok := attr.Option.([]interface{})
 				if !ok {
 					return fmt.Errorf("enum multiple option param is invalid, option: %v", property.Option)
