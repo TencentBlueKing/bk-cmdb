@@ -749,6 +749,7 @@ func getOsInfoFromMsg(val *gjson.Result, innerIP, outerIP string) *hostDiscoverM
 	for _, disktotal := range val.Get("data.disk.usage.#.total").Array() {
 		hostMsg.disk += disktotal.Uint() >> 10 >> 10 >> 10
 	}
+
 	hostMsg.mem = val.Get("data.mem.meminfo.total").Uint()
 	hostMsg.hostname = strings.TrimSpace(val.Get("data.system.info.hostname").String())
 	hostMsg.ostype = strings.TrimSpace(val.Get("data.system.info.os").String())
@@ -784,21 +785,14 @@ func getOsInfoFromMsg(val *gjson.Result, innerIP, outerIP string) *hostDiscoverM
 	default:
 		hostMsg.osname = fmt.Sprintf("%s", hostMsg.platform)
 	}
+
 	hostMsg.version = strings.TrimSpace(hostMsg.version)
 	hostMsg.osname = strings.TrimSpace(hostMsg.osname)
 
-	innerIPArr := strings.Split(innerIP, ",")
-	innerIPMap := make(map[string]int)
-	for index, ip := range innerIPArr {
-		innerIPMap[ip] = index
-	}
+	innerIPMap, outerIPMap, innerLen, outerLen := getIpAddrs(innerIP, outerIP)
 
-	outerIPArr := strings.Split(outerIP, ",")
-	outerIPMap := make(map[string]int)
-	for index, ip := range outerIPArr {
-		outerIPMap[ip] = index
-	}
-	hostMsg.outerMACArr, hostMsg.innerMACArr = make([]string, len(outerIPArr)), make([]string, len(innerIPArr))
+	hostMsg.outerMACArr, hostMsg.innerMACArr = make([]string, outerLen), make([]string, innerLen)
+
 	for _, inter := range val.Get("data.net.interface").Array() {
 		for _, addr := range inter.Get("addrs.#.addr").Array() {
 			splitAddr := strings.Split(addr.String(), "/")
@@ -827,6 +821,21 @@ func getOsInfoFromMsg(val *gjson.Result, innerIP, outerIP string) *hostDiscoverM
 
 	printSetterInfo(hostMsg, innerIP, outerIP)
 	return hostMsg
+}
+
+func getIpAddrs(innerIP, outerIP string) (map[string]int, map[string]int, int, int) {
+	innerIPArr := strings.Split(innerIP, ",")
+	innerIPMap := make(map[string]int)
+	for index, ip := range innerIPArr {
+		innerIPMap[ip] = index
+	}
+
+	outerIPArr := strings.Split(outerIP, ",")
+	outerIPMap := make(map[string]int)
+	for index, ip := range outerIPArr {
+		outerIPMap[ip] = index
+	}
+	return innerIPMap, outerIPMap, len(innerIPMap), len(outerIPMap)
 }
 
 func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interface{}, string) {

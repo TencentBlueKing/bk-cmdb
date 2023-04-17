@@ -40,7 +40,11 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 
 	for idx := range params {
 		if objID == common.BKInnerObjIDHost {
-			params[idx] = metadata.ConvertHostSpecialStringToArray(params[idx])
+			params[idx], err = metadata.ConvertHostSpecialStringToArray(params[idx])
+			if err != nil {
+				blog.Errorf("convert host special string to array failed, err: %v, rid: %s", err, kit.Rid)
+				return nil, err
+			}
 		}
 
 		// build new object instance data.
