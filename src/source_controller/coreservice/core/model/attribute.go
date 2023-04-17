@@ -488,14 +488,80 @@ func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam me
 
 	cond, err := mongo.NewConditionFromMapStr(inputParamCond)
 	if err != nil {
-		blog.Errorf("failed to convert mapstr(%#v) into a condition object, err: %v, rid: %s",
-			inputParam.Condition, err, kit.Rid)
+		blog.Errorf("parse condition failed, err: %v, cond: %+v, rid: %s", err, inputParam.Condition, kit.Rid)
+		return err
+	}
+
+	if err = m.unsetTableInstAttr(kit, inputParam.UpdateData, attrs[0]); err != nil {
 		return err
 	}
 
 	if err := m.updateTableAttr(kit, inputParam.UpdateData, cond); err != nil {
 		blog.Errorf("failed to update fields (%#v) by condition(%#v), err: %v, rid: %s",
 			inputParam.UpdateData, cond.ToMapStr(), err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// unsetTableInstAttr unset instance attributes
+func (m *modelAttribute) unsetTableInstAttr(kit *rest.Kit, data mapstr.MapStr, attr metadata.Attribute) error {
+	// get deleted attributes
+	attrOpt, err := metadata.ParseTableAttrOption(attr.Option)
+	if err != nil {
+		blog.Errorf("parse attribute option failed, err: %v, option: %+v, rid: %s", err, attr.Option, kit.Rid)
+		return err
+	}
+
+	dataOpt, err := metadata.ParseTableAttrOption(data[common.BKOptionField])
+	if err != nil {
+		blog.Errorf("parse data option failed, err: %v， data: %+v, rid: %s", err, data, kit.Rid)
+		return err
+	}
+
+	dataMap := make(map[string]struct{})
+	for _, attr := range dataOpt.Header {
+		dataMap[attr.PropertyID] = struct{}{}
+	}
+
+	deletedAttr := make([]string, 0)
+	for _, attr := range attrOpt.Header {
+		if _, exists := dataMap[attr.PropertyID]; !exists {
+			deletedAttr = append(deletedAttr, attr.PropertyID)
+		}
+	}
+
+	if len(deletedAttr) == 0 {
+		return nil
+	}
+
+	// get quoted relation
+	quoteCond := mapstr.MapStr{
+		common.BKSrcModelField:   attr.ObjectID,
+		common.BKPropertyIDField: attr.PropertyID,
+	}
+
+	quoteRel := new(metadata.ModelQuoteRelation)
+	err = mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(quoteCond).One(kit.Ctx, &quoteRel)
+	if err != nil {
+		blog.Errorf("get model quote relations failed, err: %v, filter: %+v, rid: %v", err, quoteCond, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	// drop instance columns
+	instTable := common.GetInstTableName(quoteRel.DestModel, kit.SupplierAccount)
+
+	existCond := make([]map[string]interface{}, len(deletedAttr))
+	for index, field := range deletedAttr {
+		existCond[index] = map[string]interface{}{
+			field: map[string]interface{}{common.BKDBExists: true},
+		}
+	}
+	instCond := util.SetModOwner(mapstr.MapStr{common.BKDBOR: existCond}, kit.SupplierAccount)
+
+	if err = m.dropColumns(kit, quoteRel.DestModel, instTable, instCond, deletedAttr); err != nil {
+		blog.Errorf("drop instance table attributes failed, err: %v, attr: %+v, rid: %s", err, deletedAttr, kit.Rid)
 		return err
 	}
 
