@@ -59,7 +59,6 @@
           :disabled="isReadOnly"
           name="defaultValueSelect"
           data-vv-validate-on="change"
-          v-validate.immediate="`maxSelectLength:1`"
           v-model="defaultListValue"
           @change="handleSettingDefault">
           <bk-option v-for="option in settingList"
@@ -76,6 +75,7 @@
 
 <script>
   import vueDraggable from 'vuedraggable'
+  import { v4 as uuidv4 } from 'uuid'
   export default {
     components: {
       vueDraggable
@@ -116,20 +116,18 @@
       list: {
         deep: true,
         handler(value) {
-          this.settingList = (value || []).filter(val => val.name).map((item, index) => ({
-            id: index,
+          this.settingList = (value || []).filter(val => val.name).map(item => ({
+            id: uuidv4(),
             name: item.name
           }))
+          if (this.defaultValue) {
+            this.defaultListValue = this.settingList.find(item => item.name === this.defaultValue).id
+          }
         }
       }
     },
     created() {
       this.initValue()
-    },
-    mounted() {
-      if (this.defaultValue) {
-        this.defaultListValue = this.list.findIndex(item => item.name === this.defaultValue)
-      }
     },
     methods: {
       getOtherName(index) {
@@ -165,6 +163,7 @@
       },
       deleteList(index) {
         this.list.splice(index, 1)
+        this.defaultListValue = ''
         this.handleInput()
       },
       validate() {
@@ -180,6 +179,10 @@
 
         const list = this.list.map(item => item.name)
         this.$emit('input', list)
+      },
+      handleSettingDefault(id) {
+        const defaultValue =  id ? this.settingList.find(item => item.id === id).name : ''
+        this.$emit('update:defaultValue', defaultValue)
       }
     }
   }
