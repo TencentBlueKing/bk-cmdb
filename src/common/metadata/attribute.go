@@ -1462,7 +1462,7 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 	}
 }
 
-// ValidTableDefaultAttr judging the legitimacy of the basic type in the form field.
+// ValidTableDefaultAttr judging the legitimacy of the basic type in the table field.
 func (attribute *Attribute) ValidTableDefaultAttr(ctx context.Context, val interface{}) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	if attribute == nil {
@@ -1483,7 +1483,7 @@ func (attribute *Attribute) ValidTableDefaultAttr(ctx context.Context, val inter
 	case common.FieldTypeLongChar:
 		return attribute.validLongChar(ctx, val, attribute.PropertyID)
 	case common.FieldTypeEnumMulti:
-		return attribute.validEnumMulti(ctx, []interface{}{val}, attribute.PropertyID)
+		return attribute.validEnumMulti(ctx, val, attribute.PropertyID)
 	case common.FieldTypeBool:
 		return attribute.validBool(ctx, val, attribute.PropertyID)
 	default:
