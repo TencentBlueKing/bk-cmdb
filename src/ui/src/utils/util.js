@@ -87,3 +87,9 @@ export const swapItem = (arr, fromIndex, toIndex) => {
   arr[toIndex] = arr.splice(fromIndex, 1, arr[toIndex])[0]
   return arr
 }
+
+export const escapeRegexChar = (str) => {
+  // eslint-disable-next-line no-useless-escape
+  const escapeCharRE = /([\*\.\?\+\$\^\[\]\(\)\{\}\|\\\/])/g
+  return str.replace(escapeCharRE, '\\$1')
+}
