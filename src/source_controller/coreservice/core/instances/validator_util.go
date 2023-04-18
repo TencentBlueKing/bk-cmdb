@@ -33,8 +33,8 @@ type EnumOption []EnumVal
 
 // IntOption integer option
 type IntOption struct {
-	Min string `bson:"min" json:"min"`
-	Max string `bson:"max" json:"max"`
+	Min int64 `bson:"min" json:"min"`
+	Max int64 `bson:"max" json:"max"`
 }
 
 // FloatOption float option
@@ -73,28 +73,67 @@ type EnumVal struct {
 
 // parseIntOption  parse int data in option
 func parseIntOption(val interface{}) (IntOption, error) {
-	intOption := IntOption{}
 	if val == nil || val == "" {
-		return intOption, fmt.Errorf("int type field option is null")
-	}
-	switch option := val.(type) {
-	case string:
-		intOption.Min = gjson.Get(option, "min").Raw
-		intOption.Max = gjson.Get(option, "max").Raw
-	case map[string]interface{}:
-		intOption.Min = getString(option["min"])
-		intOption.Max = getString(option["max"])
-	case bson.M:
-		intOption.Min = getString(option["min"])
-		intOption.Max = getString(option["max"])
-	case bson.D:
-		opt := option.Map()
-		intOption.Min = getString(opt["min"])
-		intOption.Max = getString(opt["max"])
-	default:
-		return intOption, fmt.Errorf("unknow val type: %T", val)
+		return IntOption{}, fmt.Errorf("int type field option is null")
 	}
 
+	var optMap map[string]interface{}
+
+	switch option := val.(type) {
+	case string:
+		return parseIntOptionMaxMin(gjson.Get(option, "max").Raw, gjson.Get(option, "min").Raw)
+	case map[string]interface{}:
+		optMap = option
+	case bson.M:
+		optMap = option
+	case bson.D:
+		optMap = option.Map()
+	default:
+		return IntOption{}, fmt.Errorf("unknow val type: %T", val)
+	}
+
+	return parseIntOptionMaxMin(optMap["max"], optMap["min"])
+}
+
+func parseIntOptionMaxMin(maxVal, minVal interface{}) (IntOption, error) {
+	intOption := IntOption{
+		Min: common.MinInt64,
+		Max: common.MaxInt64,
+	}
+
+	switch max := maxVal.(type) {
+	case string:
+		if len(max) != 0 && max != `""` {
+			maxValue, err := strconv.ParseInt(max, 10, 64)
+			if err != nil {
+				return IntOption{}, fmt.Errorf("parse max option %+v failed, err: %v", max, err)
+			}
+			intOption.Max = maxValue
+		}
+	default:
+		maxValue, err := util.GetInt64ByInterface(max)
+		if err != nil {
+			return IntOption{}, fmt.Errorf("parse max option %+v failed, err: %v", max, err)
+		}
+		intOption.Max = maxValue
+	}
+
+	switch min := minVal.(type) {
+	case string:
+		if len(min) != 0 && min != `""` {
+			minValue, err := strconv.ParseInt(min, 10, 64)
+			if err != nil {
+				return IntOption{}, fmt.Errorf("parse min option %+v failed, err: %v", min, err)
+			}
+			intOption.Max = minValue
+		}
+	default:
+		minValue, err := util.GetInt64ByInterface(min)
+		if err != nil {
+			return IntOption{}, fmt.Errorf("parse min option %+v failed, err: %v", min, err)
+		}
+		intOption.Min = minValue
+	}
 	return intOption, nil
 }
 
@@ -370,28 +409,16 @@ func fillLostIntFieldValue(valData mapstr.MapStr, field metadata.Attribute) erro
 
 	defaultVal, err := util.GetInt64ByInterface(field.Default)
 	if err != nil {
-		return err
+		return fmt.Errorf("parse %s default value %+v failed, err: %v", field.PropertyID, field.Default, err)
 	}
 
-	intObjOption, err := parseIntOption(field.Option)
+	intOption, err := parseIntOption(field.Option)
 	if err != nil {
-		return err
-	}
-	if len(intObjOption.Min) == 0 || len(intObjOption.Max) == 0 {
-		return fmt.Errorf("int type field max or min value is wrong")
+		return fmt.Errorf("parse %s option %+v failed, err: %v", field.PropertyID, field.Option, err)
 	}
 
-	maxValue, err := strconv.ParseInt(intObjOption.Max, 10, 64)
-	if err != nil {
-		maxValue = common.MaxInt64
-	}
-	minValue, err := strconv.ParseInt(intObjOption.Min, 10, 64)
-	if err != nil {
-		minValue = common.MinInt64
-	}
-
-	if defaultVal > maxValue || defaultVal < minValue {
-		return fmt.Errorf("int type field default value is illegal, value: %v", field.Default)
+	if defaultVal > intOption.Max || defaultVal < intOption.Min {
+		return fmt.Errorf("%s default value %v is illegal", field.PropertyID, defaultVal)
 	}
 
 	valData[field.PropertyID] = defaultVal
