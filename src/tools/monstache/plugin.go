@@ -973,6 +973,7 @@ func Map(input *monstachemap.MapperPluginInput) (*monstachemap.MapperPluginOutpu
 			if err := indexingTableInst(input, output); err != nil {
 				return nil, err
 			}
+			output.Skip = true
 			return output, nil
 		}
 
@@ -1000,7 +1001,7 @@ func Process(input *monstachemap.ProcessPluginInput) error {
 
 	if input.Operation == "d" {
 		if IsTableInstCollection(input.Collection) {
-			return indexingDeletedTableInst(input, objectID)
+			return indexingDeletedTableInst(input)
 		}
 		req.Id(objectID)
 		req.Index(index)
@@ -1114,7 +1115,12 @@ func UpsertEsDoc(input *monstachemap.MapperPluginInput, output *monstachemap.Map
 }
 
 // indexingDeletedTableInst index deleted table property instance.
-func indexingDeletedTableInst(input *monstachemap.ProcessPluginInput, tableId string) error {
+func indexingDeletedTableInst(input *monstachemap.ProcessPluginInput) error {
+	documentID, ok := input.Document[mongoMetaId].(primitive.ObjectID)
+	if !ok {
+		return errors.New("missing document metadata id")
+	}
+	tableId := documentID.Hex()
 	propertyId, objId := getTablePropertyIdAndObjId(input.Collection)
 	if propertyId == "" || objId == "" {
 		return fmt.Errorf("invalid table property collection: %s", input.Collection)
@@ -1142,10 +1148,13 @@ func indexingTableInst(input *monstachemap.MapperPluginInput, output *monstachem
 	if instId == 0 {
 		return nil
 	}
-	tableId, err := getMetaIdToStr(input.Document[mongoMetaId])
-	if err != nil {
-		return fmt.Errorf("missing: %s, err: %v", mongoMetaId, err)
+
+	documentID, ok := input.Document[mongoMetaId].(primitive.ObjectID)
+	if !ok {
+		return errors.New("missing document metadata id")
 	}
+	tableId := documentID.Hex()
+
 	account, err := getMetaIdToStr(input.Document[common.BKOwnerIDField])
 	if err != nil {
 		return fmt.Errorf("missing: %s, err: %v", common.BKOwnerIDField, err)
