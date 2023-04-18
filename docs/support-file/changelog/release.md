@@ -1,3 +1,7 @@
+## [Version: 3.10.x-feature-agent-id-alpha13] - 2023-04-18
+**新增功能**
+- 将最新v3.10.23和v3.10.24版本功能合入feature-agent-id分支
+
 ## [Version: 3.10.x-feature-agent-id-alpha12] - 2023-03-15
 **新增功能**
 - 支持通过IPv6字段进行主机搜索
