@@ -1140,6 +1140,15 @@ type createObjectBatchObjResult struct {
 	Error string `json:"error,omitempty"`
 }
 
+type upsertResult int64
+
+const (
+	success upsertResult = iota
+	undefinedFail
+	insertFail
+	updateFail
+)
+
 // CreateObjectBatch this method doesn't act as it's name, it create or update model's attributes indeed.
 // it only operate on model already exist, that is to say no new model will be created.
 func (a *attribute) CreateObjectBatch(kit *rest.Kit, inputDataMap map[string]metadata.ImportObjectData) (mapstr.MapStr,
@@ -1250,49 +1259,76 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 			attr.PropertyGroup = NewGroupID(true)
 		}
 
-		// check if attribute exists, if exists, update these attributes, otherwise, create the attribute
-		attrCond := mapstr.MapStr{metadata.AttributeFieldObjectID: objID, metadata.AttributeFieldPropertyID: propID}
-		util.AddModelBizIDCondition(attrCond, attr.BizID)
-
-		attrCnt, err := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-			common.BKTableNameObjAttDes, []map[string]interface{}{attrCond})
-		if err != nil {
-			blog.Errorf("count attribute failed, err: %v, cond: %#v, rid: %s", err, attrCond, kit.Rid)
-			objRes.Errors = append(objRes.Errors, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
+		if result, err := a.upsertObjectAttr(kit, objID, &attr); err != nil {
+			switch result {
+			case undefinedFail:
+				objRes.Errors = append(objRes.Errors, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
+			case insertFail:
+				objRes.InsertFailed = append(objRes.InsertFailed, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
+			case updateFail:
+				objRes.UpdateFailed = append(objRes.UpdateFailed, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
+			}
 			hasError = true
 			continue
-		}
-
-		if attrCnt[0] == 0 {
-			// create attribute
-			createAttrOpt := &metadata.CreateModelAttributes{Attributes: []metadata.Attribute{attr}}
-			_, err := a.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header, objID, createAttrOpt)
-			if err != nil {
-				blog.Errorf("create attribute(%#v) failed, ObjID: %s, err: %v, rid: %s", attr, objID, err, kit.Rid)
-				objRes.InsertFailed = append(objRes.InsertFailed, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
-				hasError = true
-				continue
-			}
-		} else {
-			// update attribute
-			updateData := attr.ToMapStr()
-			updateData.Remove(metadata.AttributeFieldPropertyID)
-			updateData.Remove(metadata.AttributeFieldObjectID)
-			updateData.Remove(metadata.AttributeFieldID)
-			updateAttrOpt := metadata.UpdateOption{Condition: attrCond, Data: updateData}
-			_, err := a.clientSet.CoreService().Model().UpdateModelAttrs(kit.Ctx, kit.Header, objID, &updateAttrOpt)
-			if err != nil {
-				blog.Errorf("failed to update module attr, err: %s, rid: %s", err, kit.Rid)
-				objRes.UpdateFailed = append(objRes.UpdateFailed, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
-				hasError = true
-				continue
-			}
 		}
 
 		objRes.Success = append(objRes.Success, rowInfo{Row: idx, PropID: attr.PropertyID})
 	}
 
 	return objRes, hasError
+}
+
+func (a *attribute) upsertObjectAttr(kit *rest.Kit, objID string, attr *metadata.Attribute) (upsertResult, error) {
+	// check if attribute exists, if exists, update these attributes, otherwise, create the attribute
+	cond := mapstr.MapStr{metadata.AttributeFieldObjectID: objID, metadata.AttributeFieldPropertyID: attr.PropertyID}
+	util.AddModelBizIDCondition(cond, attr.BizID)
+	queryCond := &metadata.QueryCondition{Condition: cond}
+	result, err := a.clientSet.CoreService().Model().ReadModelAttrsWithTableByCondition(kit.Ctx, kit.Header, attr.BizID,
+		queryCond)
+	if err != nil {
+		blog.Errorf("find attribute failed, err: %v, cond: %#v, rid: %s", err, queryCond, kit.Rid)
+		return undefinedFail, err
+	}
+
+	if len(result.Info) == 0 {
+		// create attribute
+		if attr.PropertyType == common.FieldTypeInnerTable {
+			if _, err := a.CreateTableObjectAttribute(kit, attr); err != nil {
+				blog.Errorf("create attribute(%#v) failed, ObjID: %s, err: %v, rid: %s", attr, objID, err, kit.Rid)
+				return insertFail, err
+			}
+			return success, nil
+		}
+
+		createAttrOpt := &metadata.CreateModelAttributes{Attributes: []metadata.Attribute{*attr}}
+		_, err := a.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header, objID, createAttrOpt)
+		if err != nil {
+			blog.Errorf("create attribute(%#v) failed, ObjID: %s, err: %v, rid: %s", attr, objID, err, kit.Rid)
+			return insertFail, err
+		}
+		return success, nil
+	}
+
+	// update attribute
+	updateData := attr.ToMapStr()
+	if attr.PropertyType == common.FieldTypeInnerTable {
+		if err := a.UpdateTableObjectAttr(kit, updateData, result.Info[0].ID, attr.BizID); err != nil {
+			blog.Errorf("failed to update module attr, err: %s, rid: %s", err, kit.Rid)
+			return updateFail, err
+		}
+		return success, nil
+	}
+
+	updateData.Remove(metadata.AttributeFieldPropertyID)
+	updateData.Remove(metadata.AttributeFieldObjectID)
+	updateData.Remove(metadata.AttributeFieldID)
+	updateAttrOpt := metadata.UpdateOption{Condition: cond, Data: updateData}
+	_, err = a.clientSet.CoreService().Model().UpdateModelAttrs(kit.Ctx, kit.Header, objID, &updateAttrOpt)
+	if err != nil {
+		blog.Errorf("failed to update module attr, err: %s, rid: %s", err, kit.Rid)
+		return updateFail, err
+	}
+	return success, nil
 }
 
 // FindObjectBatch find object to attribute mapping batch
