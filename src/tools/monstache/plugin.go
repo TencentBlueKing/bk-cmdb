@@ -71,8 +71,9 @@ const (
 	// 例： 删除disk表格中实例_id为1的行 {"field": "tables.disk.1"}
 	deleteTableQueryScript = "tables.%s.%s"
 	// deleteTableScript 表格实例删除脚本，
-	// 例：删除disk表格中实例_id为1的行 ctx._source.tables.disk.remove('1')
-	deleteTableScript = "ctx._source.tables.%s.remove('%s')"
+	// 例：删除disk表格中实例_id为1的行 ctx._source.tables.disk.remove('1')，如果删除后表格为空则删除表格字段
+	deleteTableScript = `ctx._source.tables.%s.remove('%s');
+                         if (ctx._source.tables.%s.size()==0) {ctx._source.tables.remove('%s')}`
 	// updateTableScript 表格实例更新脚本（如果tables字段和表格字段不存在则先创建再更新）
 	// 例：更新disk表格中实例_id为1的行的keyword为xxx ctx._source.tables.disk['1'] = ["xxx"]
 	updateTableScript = `if(!ctx._source.containsKey('tables')){ctx._source['tables']=[:];}
@@ -1095,7 +1096,7 @@ func deleteTablePropertyEsDoc(input *monstachemap.ProcessPluginInput, index, pro
 	_, err := input.ElasticClient.UpdateByQuery(index).
 		ProceedOnVersionConflict().
 		Query(elastic.NewExistsQuery(fmt.Sprintf(deleteTableQueryScript, propertyId, tableId))).
-		Script(elastic.NewScriptInline(fmt.Sprintf(deleteTableScript, propertyId, tableId))).
+		Script(elastic.NewScriptInline(fmt.Sprintf(deleteTableScript, propertyId, tableId, propertyId, propertyId))).
 		Do(context.Background())
 	if err != nil {
 		log.Printf("update document failed, err: %v", err)
@@ -1160,6 +1161,7 @@ func indexingTableInst(input *monstachemap.MapperPluginInput, output *monstachem
 		return fmt.Errorf("missing: %s, err: %v", common.BKOwnerIDField, err)
 	}
 
+	// todo 后续需要通过引用表
 	propertyId, objId := getTablePropertyIdAndObjId(input.Collection)
 	if propertyId == "" || objId == "" {
 		return fmt.Errorf("invalid table property collection: %s", input.Collection)
@@ -1280,6 +1282,10 @@ func updateModelTableProperties(document map[string]interface{}, attrs []map[str
 		option, err := meta.ParseTableAttrOption(attribute[common.BKOptionField])
 		if err != nil {
 			log.Printf("parse option failed, %+v, %v", attribute, err)
+			continue
+		}
+		if len(option.Header) == 0 {
+			log.Printf("table header is empty, attribute: %+v", attribute)
 			continue
 		}
 		for _, header := range option.Header {
