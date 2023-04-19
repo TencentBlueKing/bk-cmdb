@@ -11,9 +11,8 @@
 -->
 
 <script setup>
-  import { reactive, ref, watchEffect, set, getCurrentInstance, nextTick } from 'vue'
+  import { reactive, ref, watchEffect, set, getCurrentInstance, nextTick, provide } from 'vue'
   import { t } from '@/i18n'
-  import { $error } from '@/magicbox/index.js'
   import { swapItem } from '@/utils/util'
   import { isEmptyPropertyValue } from '@/utils/tools'
   import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
@@ -127,18 +126,6 @@
     updateValue()
   }
   const handleAddField = (data) => {
-    const { bk_property_id: id, bk_property_type: type } = data
-
-    if (headers.value.some(item => item.bk_property_id === id)) {
-      $error(t('字段ID已经存在'))
-      return
-    }
-    if (type === PROPERTY_TYPES.LONGCHAR
-      && headers.value.filter(item => item.bk_property_type === PROPERTY_TYPES.LONGCHAR).length === 2) {
-      $error(t('最多只能添加2个长字符类型'))
-      return
-    }
-
     headers.value.push(data)
     settingsModelState.isShow = false
 
@@ -157,6 +144,8 @@
       default: data
     })
   }
+
+  provide('headers', headers)
 </script>
 
 <template>
@@ -220,8 +209,8 @@
             <icon-text-button
               :text="$t('添加新字段')"
               @click="handleClickAddField"
-              :disabled="headers.length === 10"
-              :disabled-tips="$t('最多添加10个字段')" />
+              :disabled="headers.length === 8"
+              :disabled-tips="$t('最多添加8个字段')" />
           </div>
         </template>
       </bk-table>
@@ -246,6 +235,7 @@
     <field-settings-model
       v-model="settingsModelState.isShow"
       :is-edit="settingsModelState.isEdit"
+      :is-edit-field="isEditField"
       :form-data="settingsModelState.formData"
       @save="handleSaveField"
       @add="handleAddField">

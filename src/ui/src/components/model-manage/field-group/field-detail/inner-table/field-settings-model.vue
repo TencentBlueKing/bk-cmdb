@@ -12,7 +12,9 @@
 -->
 
 <script setup>
-  import { computed, reactive, watch, getCurrentInstance } from 'vue'
+  import { computed, reactive, watch, getCurrentInstance, inject } from 'vue'
+  import { Validator } from 'vee-validate'
+  import { t } from '@/i18n'
   import { PROPERTY_TYPES, PROPERTY_TYPE_LIST } from '@/dictionary/property-constants'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
@@ -22,6 +24,16 @@
   import TheFieldEnum from '../enum'
   import TheFieldBool from '../bool'
 
+  Validator.extend('maxLongcahr', {
+    validate: (value) => {
+      if (value !== PROPERTY_TYPES.LONGCHAR) {
+        return true
+      }
+      return existingTypes.value.filter(type => type === PROPERTY_TYPES.LONGCHAR).length < 2
+    },
+    getMessage: () => t('最多只能添加2个长字符类型')
+  })
+
   const props = defineProps({
     value: {
       type: Boolean
@@ -29,11 +41,19 @@
     formData: {
       type: Object
     },
-    isEdit: Boolean
+    // 内部表头编辑
+    isEdit: Boolean,
+    // 外部编辑整个字段
+    isEditField: {
+      type: Boolean,
+      default: false
+    }
   })
 
   const emit = defineEmits(['input', 'save', 'add'])
   const instance = getCurrentInstance().proxy
+
+  const headers = inject('headers')
 
   const defaultSettings = () => ({
     bk_property_id: '',
@@ -93,6 +113,25 @@
   const isUnitShow = computed(() => [PROPERTY_TYPES.INT, PROPERTY_TYPES.FLOAT].includes(settings.bk_property_type))
   const isMultipleShow = computed(() => [PROPERTY_TYPES.ENUMMULTI].includes(settings.bk_property_type))
 
+  const existingIds = computed(() => {
+    if (props.isEdit) {
+      // 编辑时排除当前id
+      return headers.value
+        .filter(item => item.bk_property_id !== props.formData.bk_property_id)
+        .map(item => item.bk_property_id)
+        .join(',')
+    }
+    return headers.value.map(item => item.bk_property_id).join(',')
+  })
+  const existingTypes = computed(() => {
+    if (props.isEdit) {
+      return headers.value
+        .filter(item => item.bk_property_type !== props.formData.bk_property_type)
+        .map(item => item.bk_property_type)
+    }
+    return headers.value.map(item => item.bk_property_type)
+  })
+
   watch(isShow, (isShow) => {
     if (isShow) {
       const defaultData = {
@@ -106,7 +145,7 @@
   })
 
   watch(() => settings.bk_property_type, (type) => {
-    if (!props.isEdit) {
+    if (!props.isEditField) {
       switch (type) {
         case PROPERTY_TYPES.INT:
         case PROPERTY_TYPES.FLOAT:
@@ -166,8 +205,9 @@
           :label="$t('字段ID')">
           <bk-input
             name="propertyId"
-            v-validate="props.isEdit ? null : 'required|fieldId|reservedWord|length:128'"
-            :disabled="props.isEdit"
+            :data-vv-as="$t('字段ID')"
+            v-validate="`required|fieldId|reservedWord|length:128|excluded:${existingIds}`"
+            :disabled="props.isEditField && props.isEdit"
             v-model="settings.bk_property_id">
           </bk-input>
           <template #append>
@@ -191,20 +231,28 @@
         <grid-item
           direction="column"
           required
-          :class="['cmdb-form-item', 'form-item']"
+          :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('propertyType') }]"
           :label="$t('字段类型')">
           <bk-select
+            name="propertyType"
             class="bk-select-full-width"
             searchable
             :clearable="false"
             v-model="settings.bk_property_type"
-            :disabled="props.isEdit">
+            v-validate="'maxLongcahr'"
+            :popover-options="{
+              appendTo: 'parent'
+            }"
+            :disabled="props.isEditField && props.isEdit">
             <bk-option v-for="(option, index) in typeList"
               :key="index"
               :id="option.id"
               :name="option.name">
             </bk-option>
           </bk-select>
+          <template #append>
+            <div class="form-error" v-if="errors.has('propertyType')">{{errors.first('propertyType')}}</div>
+          </template>
         </grid-item>
         <grid-item
           direction="column"
@@ -229,7 +277,7 @@
         </grid-item>
       </grid-layout>
 
-      <grid-layout class="field-option-container" mode="form" :gap="24" :font-size="'14px'" :max-columns="1">
+      <grid-layout class="field-option-container" mode="form" :gap="0" :font-size="'14px'" :max-columns="1">
         <component
           :key="settings.bk_property_type"
           :is="optionComp"
@@ -238,28 +286,27 @@
           :type="settings.bk_property_type"
           ref="component">
         </component>
+        <div class="form-label" v-if="isDefaultShow">
+          <span class="label-text">
+            {{$t('默认值')}}
+          </span>
+          <div :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('defalut') }]">
+            <component
+              name="defalut"
+              :key="settings.bk_property_type"
+              :is="`cmdb-form-${settings.bk_property_type}`"
+              :multiple="settings.ismultiple"
+              :options="settings.option || []"
+              v-model="settings.default"
+              v-validate="$tools.getValidateRules(settings)"
+              ref="component">
+            </component>
+            <div class="form-error" v-if="errors.has('defalut')">{{errors.first('defalut')}}</div>
+          </div>
+        </div>
       </grid-layout>
 
       <grid-layout mode="form" :gap="24" :font-size="'14px'" :max-columns="1">
-        <grid-item
-          v-if="isDefaultShow"
-          direction="column"
-          :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('defalut') }]"
-          :label="$t('默认值')">
-          <component
-            name="defalut"
-            :key="settings.bk_property_type"
-            :is="`cmdb-form-${settings.bk_property_type}`"
-            :multiple="settings.ismultiple"
-            :options="settings.option || []"
-            v-model="settings.default"
-            v-validate="$tools.getValidateRules(settings)"
-            ref="component">
-          </component>
-          <template #append>
-            <div class="form-error" v-if="errors.has('defalut')">{{errors.first('defalut')}}</div>
-          </template>
-        </grid-item>
         <grid-item
           v-show="isUnitShow"
           direction="column"
@@ -305,6 +352,10 @@
     margin-top: 20px;
     padding: 16px;
     background: #F5F7FB;
+
+    :deep(.form-label) {
+      margin-bottom: 15px;
+    }
 
     :deep(.label-text) {
       position: relative;
