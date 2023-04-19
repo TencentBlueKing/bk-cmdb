@@ -552,6 +552,32 @@ func (m *model) ReadModelAttr(ctx context.Context, h http.Header, objID string, 
 	return &resp.Data, nil
 }
 
+// ReadModelAttrWithTableByCondition search object attrs with table by condition
+func (m *model) ReadModelAttrWithTableByCondition(ctx context.Context, h http.Header, bizID int64,
+	input *metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
+
+	resp := new(metadata.ReadModelAttrResult)
+	subPath := "/read/%d/model/attributes/with_table"
+
+	err := m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, bizID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
 // ReadModelAttrByCondition search object attrs by condition
 func (m *model) ReadModelAttrByCondition(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
 	*metadata.QueryModelAttributeDataResult, error) {

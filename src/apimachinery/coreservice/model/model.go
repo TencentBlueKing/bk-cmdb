@@ -75,6 +75,9 @@ type ModelClientInterface interface {
 	// deprecated, only for old api
 	ReadModelAttrByCondition(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
 		*metadata.QueryModelAttributeDataResult, error)
+
+	ReadModelAttrWithTableByCondition(ctx context.Context, h http.Header, bizID int64, input *metadata.QueryCondition) (
+		*metadata.QueryModelAttributeDataResult, error)
 	GetModelStatistics(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 
 	ReadAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.QueryCondition) (

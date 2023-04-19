@@ -95,10 +95,15 @@ func (m *modelAttribute) saveTableAttr(kit *rest.Kit, attribute metadata.Attribu
 	}
 
 	if err = m.saveTableAttrCheck(kit, attribute); err != nil {
+		blog.Errorf("save table attr failed, attribute: %v, err: %v, rid: %s", attribute, err, kit.Rid)
 		return 0, err
 	}
-	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Insert(kit.Ctx, attribute)
-	return id, err
+	if err = mongodb.Client().Table(common.BKTableNameObjAttDes).Insert(kit.Ctx, attribute); err != nil {
+		blog.Errorf("save table attr failed, attr: %v, err: %v, rid: %s", attribute, err, kit.Rid)
+		return id, err
+	}
+
+	return id, nil
 }
 
 func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id uint64, err error) {
@@ -251,12 +256,23 @@ func (m *modelAttribute) checkTableAttributeValidity(kit *rest.Kit, attribute me
 		}
 
 		if !SatisfyMongoFieldLimit(attribute.PropertyID) {
+			blog.Errorf("attribute property id:(%s) not satisfy mongo field limit, rid: %s",
+				attribute.PropertyID, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
+		}
+
+		// check only preset attribute's property id can start with bk_ or _bk
+		if !attribute.IsPre {
+			if strings.HasPrefix(attribute.PropertyID, "bk_") ||
+				strings.HasPrefix(attribute.PropertyID, "_bk") {
+				return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
+			}
 		}
 	}
 
 	attribute.PropertyName = strings.TrimSpace(attribute.PropertyName)
 	if common.AttributeNameMaxLength < utf8.RuneCountInString(attribute.PropertyName) {
+		blog.Errorf("attribute property name is exceed max limit:(%d), rid: %s", common.AttributeNameMaxLength, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_bk_property_name"),
 			common.AttributeNameMaxLength)
 	}
@@ -271,6 +287,159 @@ func (m *modelAttribute) checkTableAttributeValidity(kit *rest.Kit, attribute me
 		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, attribute.Placeholder)
 		if nil != err || !match {
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPlaceHolder)
+		}
+	}
+
+	if attribute.Unit != "" {
+		attribute.Unit = strings.TrimSpace(attribute.Unit)
+		if common.AttributeUnitMaxLength < utf8.RuneCountInString(attribute.Unit) {
+			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_uint"),
+				common.AttributeUnitMaxLength)
+		}
+	}
+
+	if attribute.PropertyType != common.FieldTypeInnerTable {
+		blog.Errorf("attr property type is error, property is : %s", attribute.PropertyType, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
+	}
+
+	tableOption, err := metadata.ParseTableAttrOption(attribute.Option)
+	if err != nil {
+		blog.Errorf("get attribute option failed, error: %v, option: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if len(tableOption.Header) == 0 {
+		blog.Errorf("table attribute option invalid, header is nil, tableOption: %+v, rid: %s", tableOption, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrorTopoTableFieldsMustSetHeader)
+	}
+
+	headerMap := make(map[string]metadata.Attribute)
+	for _, header := range tableOption.Header {
+		headerMap[header.PropertyID] = header
+	}
+
+	if err := m.checkTableAttrHeader(kit, attribute.PropertyID, attribute.ObjectID, tableOption); err != nil {
+		blog.Errorf("check table attribute failed, tableOption: %+v, err: %v, rid: %s", tableOption, err, kit.Rid)
+		return err
+	}
+	return nil
+}
+
+func (m *modelAttribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header []metadata.Attribute) (
+	map[string]*metadata.Attribute, error) {
+
+	if len(header) == 0 {
+		return nil, kit.CCError.Errorf(common.CCErrorTopoTableFieldsMustSetHeader)
+	}
+
+	if len(header) > metadata.TableHeaderMaxNum {
+		return nil, kit.CCError.Errorf(common.CCErrorTopoHeaderOfTableExceedAllowed, metadata.TableHeaderMaxNum)
+	}
+
+	propertyAttr := make(map[string]*metadata.Attribute)
+	var longCharNum int
+	for index := range header {
+		// determine whether the underlying type is legal
+		if !metadata.ValidTableFieldBaseType(header[index].PropertyType) {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, header[index].PropertyType)
+		}
+		// the number of long characters in the basic type of the table
+		// field type cannot exceed the maximum value supported by the system.
+		if header[index].PropertyType == common.FieldTypeLongChar {
+			longCharNum++
+		}
+		if longCharNum > metadata.TableLongCharMaxNum {
+			return nil, kit.CCError.Errorf(common.CCErrorTopoHeaderOfTableLongCharExceedAllowed,
+				metadata.TableLongCharMaxNum)
+		}
+		// check if property type for creation is valid, can't update property type
+		if header[index].PropertyType == "" {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
+		}
+
+		if header[index].PropertyID == "" {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyID)
+		}
+
+		if common.AttributeIDMaxLength < utf8.RuneCountInString(header[index].PropertyID) {
+			return nil, kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, common.AttributeIDMaxLength)
+		}
+
+		match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, header[index].PropertyID)
+		if err != nil {
+			return nil, err
+		}
+
+		if !match {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, header[index].PropertyID)
+		}
+		if header[index].PropertyName == "" {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyName)
+		}
+		if common.AttributeNameMaxLength < utf8.RuneCountInString(header[index].PropertyName) {
+			return nil, kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, common.AttributeNameMaxLength)
+		}
+		err = valid.ValidTableFieldOption(header[index].PropertyType, header[index].Option, header[index].Default,
+			header[index].IsMultiple, kit.CCError)
+		if err != nil {
+			return nil, err
+		}
+		propertyAttr[header[index].PropertyID] = &header[index]
+	}
+	return propertyAttr, nil
+}
+
+func (m *modelAttribute) checkTableAttrHeader(kit *rest.Kit, propertyID, objectID string,
+	tableOption *metadata.TableAttributesOption) error {
+
+	if len(tableOption.Header) == 0 {
+		blog.Errorf("table attribute option invalid, header is nil, tableOption: %+v, rid: %s", tableOption, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrorTopoTableFieldsMustSetHeader)
+	}
+
+	headerMap, err := m.validAndGetTableAttrHeaderDetail(kit, tableOption.Header)
+	if err != nil {
+		blog.Errorf("failed to valid the header of the table, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	// 这里还得获取一下数据库中的内容 因为可能这个header只是新加的，在更新场景下还得把以前的header内容拿出来 没有加进来
+	input := mapstr.MapStr{
+		common.BKPropertyIDField:   propertyID,
+		common.BKObjIDField:        objectID,
+		common.BKPropertyTypeField: common.FieldTypeInnerTable,
+	}
+	attrResult, err := m.newSearch(kit, input)
+	if err != nil {
+		blog.Errorf("failed to search the attributes of the model, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
+		return err
+	}
+
+	if len(attrResult) != 1 {
+		blog.Errorf("failed to search the attributes of the model, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
+		return err
+	}
+
+	op, err := metadata.ParseTableAttrOption(attrResult[0].Option)
+	if err != nil {
+		blog.Errorf("get attribute option failed, error: %v, option: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+	for index := range op.Header {
+		if _, ok := headerMap[op.Header[index].PropertyID]; !ok {
+			headerMap[op.Header[index].PropertyID] = &op.Header[index]
+		}
+	}
+
+	if tableOption.Default != nil {
+		for _, value := range tableOption.Default {
+			for k, v := range value {
+				if err := m.checkTableAttributeDefaultValue(kit, headerMap[k].Option, v,
+					headerMap[k].PropertyType); err != nil {
+					return err
+				}
+			}
 		}
 	}
 	return nil
@@ -352,6 +521,41 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_option_regex"),
 				common.AttributeOptionMaxLength)
 		}
+	}
+
+	return nil
+}
+
+func (m *modelAttribute) checkTableAttributeDefaultValue(kit *rest.Kit, option, defautValue interface{},
+	propertyType string) error {
+	switch propertyType {
+	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
+		if err := valid.ValidFieldTypeString(option, defautValue, kit.Rid, kit.CCError); err != nil {
+			return err
+		}
+	case common.FieldTypeInt:
+		if err := valid.ValidFieldTypeInt(option, defautValue, kit.Rid, kit.CCError); err != nil {
+			return err
+		}
+	case common.FieldTypeFloat:
+		if err := valid.ValidFieldTypeFloat(option, defautValue, kit.Rid, kit.CCError); err != nil {
+			return err
+		}
+	case common.FieldTypeBool:
+		if err := valid.ValidateBoolType(defautValue); err != nil {
+			blog.Errorf("bool type default value not bool, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+	case common.FieldTypeEnumMulti:
+		// 默认值相关的检查都是按照最宽松的进行校验
+		if err := valid.ValidFieldTypeEnumOption(option, true, kit.Rid, kit.CCError); err != nil {
+			blog.Errorf("enum multi type default value not enum multi, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+
+	default:
+		blog.Errorf("property type is error, propertyType: %v, rid: %s", propertyType, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 	}
 
 	return nil
@@ -972,14 +1176,6 @@ func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
 		return err
 	}
 
-	// 删除不可更新字段， 避免由于传入数据，修改字段
-	data.Remove(metadata.AttributeFieldPropertyID)
-	data.Remove(metadata.AttributeFieldSupplierAccount)
-	data.Remove(metadata.AttributeFieldPropertyType)
-	data.Remove(metadata.AttributeFieldCreateTime)
-	data.Remove(metadata.AttributeFieldIsPre)
-	data.Set(metadata.AttributeFieldLastTime, time.Now())
-
 	if err = checkPropertyGroup(kit, data, dbAttributeArr); err != nil {
 		return err
 	}
@@ -1004,6 +1200,13 @@ func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
 		}
 	}
 
+	// 删除不可更新字段， 避免由于传入数据，修改字段
+	data.Remove(metadata.AttributeFieldPropertyID)
+	data.Remove(metadata.AttributeFieldSupplierAccount)
+	data.Remove(metadata.AttributeFieldPropertyType)
+	data.Remove(metadata.AttributeFieldCreateTime)
+	data.Remove(metadata.AttributeFieldIsPre)
+	data.Set(metadata.AttributeFieldLastTime, time.Now())
 	return err
 }
 
