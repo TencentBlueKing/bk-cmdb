@@ -602,6 +602,11 @@ func (s *Service) BatchImportObject(c *gin.Context) {
 		return
 	}
 
+	if len(cond.Object) == 0 {
+		c.JSON(http.StatusOK, metadata.Response{BaseResp: metadata.BaseResp{Result: true, ErrMsg: "success"}})
+		return
+	}
+
 	objInfo := metadata.ImportObjects{Objects: cond.Object, Asst: cond.Asst}
 	if _, err := s.Engine.CoreAPI.ApiServer().CreateManyObject(ctx, c.Request.Header, objInfo); err != nil {
 		blog.Errorf("create many object failed, err: %v, rid: %s", err, rid)
