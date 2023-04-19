@@ -11,28 +11,30 @@
       :label="$tools.getHeaderPropertyName(prop)"
       :min-width="$tools.getHeaderPropertyMinWidth(prop, { min: 120 })">
       <template #default="{ row, $index }">
+        <!-- 只读模式 -->
+        <cmdb-property-value
+          v-if="!editState.index.includes($index)"
+          :value="row[prop.bk_property_id]"
+          :show-unit="false"
+          :property="prop"
+          :is-show-overflow-tips="$tools.isShowOverflowTips(prop)" />
         <!-- 编辑模式 -->
         <property-form-element
-          ref="propertyFormEl"
+          v-else
+          :class="['detault-form-el', prop.bk_property_type]"
+          :ref="`property-form-el-${$index}`"
           :property="prop"
           :size="'small'"
           :font-size="'normal'"
           :row="1"
           error-display-type="tooltips"
-          v-model.trim="row[prop.bk_property_id]"
-          v-if="editRowIndex === $index || isAddType" />
-        <!-- 只读模式 -->
-        <cmdb-property-value
-          :value="row[prop.bk_property_id]"
-          :show-unit="false"
-          :property="prop"
-          v-else />
+          v-model="editState.row[$index][prop.bk_property_id]" />
       </template>
     </bk-table-column>
     <bk-table-column :label="$t('操作')" width="120" fixed="right" v-if="!readonly">
-      <template #default="{ row, $index }">
-        <template v-if="editRowIndex === $index || isAddType">
-          <bk-button text @click="handleSaveRow(row, $index)">{{ $t(immediate ? '保存' : '确定') }}</bk-button>
+      <template #default="{ $index }">
+        <template v-if="editState.index.includes($index)">
+          <bk-button text @click="handleSaveRow($index)">{{ $t(immediate ? '保存' : '确定') }}</bk-button>
           <bk-button text class="ml10" @click="handleCancelEdit($index)">{{ $t('取消') }}</bk-button>
         </template>
         <template v-else>
@@ -77,6 +79,8 @@
     <template #empty v-if="!readonly">
       <template v-if="!editable">
         <icon-text-button
+          class="table-empty-add-button"
+          ref="tableEmptyAddButtonRef"
           :text="$t('新增')"
           :disabled="true"
           :disabled-tips="$t('系统限定不可修改')"
@@ -86,6 +90,8 @@
         <cmdb-auth :auth="auth">
           <template #default="{ disabled }">
             <icon-text-button
+              class="table-empty-add-button"
+              ref="tableEmptyAddButtonRef"
               :text="$t('新增')"
               :disabled="disabled"
               @click="handleClickAdd" />
@@ -97,9 +103,9 @@
 </template>
 <script setup>
   import { $bkInfo } from '@/magicbox'
-  import { nextTick, ref, set, watch, computed } from 'vue'
+  import { nextTick, ref, set, watch, reactive, computed, getCurrentInstance, onMounted } from 'vue'
   import { t } from '@/i18n'
-  import { clone } from '@/utils/tools'
+  import cloneDeep from 'lodash/cloneDeep'
   import PropertyFormElement from '../property-form-element.vue'
   import IconTextButton from '@/components/ui/button/icon-text-button.vue'
   import { $success } from '@/magicbox/index.js'
@@ -154,52 +160,75 @@
   })
   const emit = defineEmits(['input', 'cancel', 'save', 'delete', 'add'])
 
+  const instacne = getCurrentInstance().proxy
+
   const header = computed(() => props.property?.option?.header || [])
 
   const isAddType = computed(() => props.type === 'add')
 
-  const propertyFormEl = ref(null)
   const isLoading = ref(false)
-  const tableData = ref(clone(props.value))
+  const tableEmptyAddButtonRef = ref(null)
+  const tableData = ref(cloneDeep(props.value))
   watch(() => props.value, (value) => {
-    tableData.value = clone(value)
+    tableData.value = cloneDeep(value)
   }, { deep: true })
 
-  const editRowIndex = ref(-1)
+  const editState = reactive({
+    index: [],
+    row: {}
+  })
 
   const editable = computed(() => props.property.editable && !props.property.bk_isapi)
 
-  watch(() => props.adding, (adding) => {
-    if (adding) {
-      if (props.type === 'list') {
-        set(tableData.value, editRowIndex.value, clone(props.value[editRowIndex.value] || {}))// 还原初始值
-        editRowIndex.value = -1
-      }
+  const scrollAddButton = () => {
+    if (tableEmptyAddButtonRef.value) {
+      tableEmptyAddButtonRef.value.$el?.closest('.bk-table-empty-text')?.scrollIntoView?.()
+    }
+  }
 
+  watch(() => props.adding, (adding) => {
+    // 进入新增状态
+    if (adding && isAddType.value) {
+      // 默认只有一行，索引为0
+      const index = 0
+      editState.index.push(index)
+      set(editState.row, index, cloneDeep(tableData.value[index] || {}))
       focus()
+    } else {
+      nextTick(scrollAddButton)
     }
   })
   // 聚焦第一个输入框
-  const focus = () => {
+  const focus = (index = 0) => {
     nextTick(() => {
-      const component = propertyFormEl.value?.[0]?.$refs?.[`component-${header.value?.[0].bk_property_id}`]
+      const component = instacne.$refs[`property-form-el-${index}`]?.[0]?.$refs?.[`component-${header.value?.[0].bk_property_id}`]
       component?.focus?.()
     })
   }
 
+  const exitEdit = (index) => {
+    const dataIndex = editState.index.findIndex(i => i === index)
+    if (dataIndex !== -1) {
+      editState.index.splice(dataIndex, 1)
+      set(editState.row, index, {})
+    }
+  }
+
   // 编辑
   const handleEditRow = async (index) => {
-    handleCancelEdit(editRowIndex.value)// 取消上一次的编辑
-    editRowIndex.value = index
-    focus()
+    editState.index.push(index)
+    set(editState.row, index, cloneDeep(tableData.value[index]))
+    focus(index)
   }
 
   // 取消编辑
   const handleCancelEdit = (index) => {
-    if (index <= -1) return
-    set(tableData.value, index, clone(props.value[index] || {}))// 还原初始值
-    editRowIndex.value = -1
+    exitEdit(index)
     emit('cancel', tableData.value)
+
+    if (isAddType.value) {
+      tableData.value.splice(index, 1)
+    }
   }
 
   // 删除
@@ -207,11 +236,15 @@
     const row = tableData.value.splice(index, 1)
     emit('input', tableData.value)
     emit('delete', row)
+
+    if (tableData.value.length === 0) {
+      nextTick(scrollAddButton)
+    }
   }
 
-  const validateAll = async () => {
+  const validateAll = async (index) => {
     // 获得每一个表单元素的校验方法
-    const validates = (propertyFormEl.value || [])
+    const validates = (instacne.$refs[`property-form-el-${index}`] || [])
       .map(formElement => formElement.$validator.validateAll())
 
     if (validates.length) {
@@ -250,15 +283,17 @@
   }
 
   // 保存
-  const saveRow = (row) => {
-    editRowIndex.value = -1
+  const saveRow = (row, index) => {
+    set(tableData.value, index, row)
     emit('input', tableData.value)
     emit('save', row)
   }
-  const handleSaveRow = async (row) => {
-    if (!await validateAll()) {
+  const handleSaveRow = async (index) => {
+    if (!await validateAll(index)) {
       return
     }
+
+    const row = cloneDeep(editState.row[index])
 
     if (props.immediate) {
       isLoading.value = true
@@ -282,18 +317,24 @@
       try {
         await req
         $success(t('操作成功'))
-        saveRow(row)
+        saveRow(row, index)
+        exitEdit(index)
       } finally {
         isLoading.value = false
       }
     } else {
-      saveRow(row)
+      saveRow(row, index)
+      exitEdit(index)
     }
   }
 
   const handleClickAdd = () => {
     emit('add')
   }
+
+  onMounted(() => {
+    nextTick(scrollAddButton)
+  })
 </script>
 
 <style lang="scss" scoped>
@@ -301,6 +342,44 @@
   &.is-on-empty-add {
     :deep(.bk-table-empty-block) {
       display: none;
+    }
+  }
+
+  .table-empty-add-button {
+    // 避免遮挡
+    position: relative;
+    z-index: 1;
+  }
+
+  &:focus-within {
+    &.bk-table-scrollable-x,
+    &.bk-table-scrollable-y {
+      overflow: auto !important;
+      :deep(.bk-table-body-wrapper) {
+        overflow: auto !important;
+      }
+    }
+
+    overflow: visible !important;
+    :deep(.bk-table-body-wrapper) {
+      overflow: visible !important;
+    }
+  }
+
+  .detault-form-el {
+    &:focus-within {
+      &.longchar {
+        position: absolute;
+        left: -1px;
+        top: 2px;
+        z-index: 1;
+        :deep(.bk-form-textarea) {
+          min-height: 90px !important;
+        }
+        :deep(.control-icon) {
+          display: none;
+        }
+      }
     }
   }
 }

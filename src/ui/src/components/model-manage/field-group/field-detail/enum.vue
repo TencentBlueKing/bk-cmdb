@@ -69,11 +69,15 @@
       <p class="title mb10">{{$t('默认值设置')}}</p>
       <div class="cmdb-form-item" :class="{ 'is-error': errors.has('defaultValueSelect') }">
         <bk-select style="width: 100%;"
+          :scroll-height="150"
           :clearable="false"
           :disabled="isReadOnly"
           :multiple="isDefaultCompMultiple"
           name="defaultValueSelect"
           data-vv-validate-on="change"
+          :popover-options="{
+            appendTo: 'parent'
+          }"
           v-validate.immediate="`maxSelectLength:${ multiple ? -1 : 1 }`"
           v-model="defaultValue"
           @change="handleSettingDefault">

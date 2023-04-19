@@ -107,7 +107,6 @@
     emit('input', tableData.value)
   })
 
-  // 添加数据
   const exitAdd = () => {
     isShowAddRow.value = false
   }
