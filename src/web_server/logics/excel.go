@@ -185,7 +185,7 @@ func (lgc *Logics) BuildHostExcelFromData(c *gin.Context, objID string, fields m
 		}
 
 		if len(hostInfo) == 0 {
-			continue
+			return nil
 		}
 
 		hostInfo, err = lgc.HandleExportEnumQuoteInst(c, header, hostInfo, objID, fields, rid)
