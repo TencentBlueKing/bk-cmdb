@@ -107,7 +107,7 @@ type Attribute struct {
 	Placeholder       string      `field:"placeholder" json:"placeholder" bson:"placeholder" mapstructure:"placeholder"`
 	IsEditable        bool        `field:"editable" json:"editable" bson:"editable" mapstructure:"editable"`
 	IsPre             bool        `field:"ispre" json:"ispre" bson:"ispre" mapstructure:"ispre"`
-	IsRequired        bool        `field:"isrequired" json:"isrequired" bson:"isrequired" mapstructure:"ispre"`
+	IsRequired        bool        `field:"isrequired" json:"isrequired" bson:"isrequired" mapstructure:"isrequired"`
 	IsReadOnly        bool        `field:"isreadonly" json:"isreadonly" bson:"isreadonly" mapstructure:"isreadonly"`
 	IsOnly            bool        `field:"isonly" json:"isonly" bson:"isonly" mapstructure:"isonly"`
 	IsSystem          bool        `field:"bk_issystem" json:"bk_issystem" bson:"bk_issystem" mapstructure:"bk_issystem"`
@@ -363,6 +363,7 @@ func (attribute *Attribute) validEnumMulti(ctx context.Context, val interface{},
 	}
 
 	if len(valIDs) == 0 && attribute.IsRequired {
+		blog.Errorf("data must be set, rid: %s", rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
 			Args:    []interface{}{key},
@@ -374,25 +375,28 @@ func (attribute *Attribute) validEnumMulti(ctx context.Context, val interface{},
 	}
 
 	if attribute.IsMultiple == nil {
+		blog.Errorf("multi flag must be set, rid: %s", rid)
 		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{key}}
 	}
 
 	if !(*attribute.IsMultiple) && len(valIDs) != 1 {
+		blog.Errorf("multiple values are not allowed, valIDs: %+v, rid: %s", valIDs, rid)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSingleChoice,
 			Args:    []interface{}{key},
 		}
 	}
-
 	for _, id := range valIDs {
 		idVal, ok := id.(string)
 		if !ok {
+			blog.Errorf("data must be string id: %v, rid: %s", id, rid)
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsInvalid,
 				Args:    []interface{}{key},
 			}
 		}
 		if _, ok := idMap[idVal]; !ok {
+			blog.Errorf("value entered must be in the enumerated list，id: %s, rid: %s", id, rid)
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsInvalid,
 				Args:    []interface{}{key},
