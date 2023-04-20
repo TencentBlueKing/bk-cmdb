@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/hooks"
 )
@@ -399,7 +400,7 @@ func (m *instanceManager) validMainlineInstanceData(kit *rest.Kit, objID string,
 			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedString, nameField)
 		}
 
-		name, err := util.ValidTopoNameField(name, nameField, kit.CCError)
+		name, err := valid.ValidTopoNameField(name, nameField, kit.CCError)
 		if err != nil {
 			return err
 		}
