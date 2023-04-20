@@ -65,6 +65,7 @@
                         :obj-id="objId"
                         :instance-id="instanceId"
                         :immediate="false"
+                        :disabled="checkDisabled(property)"
                         :auth="saveAuth"
                         v-model.trim="values[property['bk_property_id']]" />
                       <form-append :type="type" :property="property" :render="renderAppend"></form-append>

@@ -16,6 +16,7 @@
   import { Validator } from 'vee-validate'
   import { t } from '@/i18n'
   import { PROPERTY_TYPES, PROPERTY_TYPE_LIST } from '@/dictionary/property-constants'
+  import { getValidateRules } from '@/utils/tools'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
   import TheFieldChar from '../char'
@@ -178,6 +179,12 @@
     return results.every(result => result)
   }
 
+  const getDefaultValueValidateRules = (property) => {
+    const rules = getValidateRules(property)
+    Reflect.deleteProperty(rules, 'required')
+    return rules
+  }
+
   const handleConfirm = async () => {
     if (!await validateValue()) {
       return
@@ -298,7 +305,7 @@
               :multiple="settings.ismultiple"
               :options="settings.option || []"
               v-model="settings.default"
-              v-validate="$tools.getValidateRules(settings)"
+              v-validate="getDefaultValueValidateRules(settings)"
               ref="component">
             </component>
             <div class="form-error" v-if="errors.has('defalut')">{{errors.first('defalut')}}</div>
