@@ -282,7 +282,7 @@ func (a *attribute) validTableAttributes(kit *rest.Kit, option interface{}) erro
 	return nil
 }
 
-// getTableAttrHeaderDetail in the creation and update scenarios,
+// validAndGetTableAttrHeaderDetail in the creation and update scenarios,
 // the full amount of header content needs to be passed.
 func (a *attribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header []metadata.Attribute) (
 	map[string]*metadata.Attribute, error) {
@@ -965,6 +965,8 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 	// to update. here, the two parts need to be processed separately, and the underlying verification is different.
 	created, updated, _, err := calcTableOptionDiffDefault(kit, curAttrsOp, dbAttrsOp, objID)
 	if err != nil {
+		blog.Errorf("calc table option header failed, objID: %s, curAttrsOp: %+v, dbAttrsOp: %+v, err: %v, rid: %s",
+			objID, curAttrsOp, dbAttrsOp, err, kit.Rid)
 		return err
 	}
 
@@ -991,6 +993,7 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 
 	// updated this part is to be updated
 	if err := a.ValidTableAttrDefaultValue(kit, updated.Default, headerMap); err != nil {
+		blog.Errorf("valid table attr default failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
@@ -998,9 +1001,9 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 	updateDataStruct.ObjectID = objID
 	updateData, err := mapstruct.Struct2Map(updateDataStruct)
 	if err != nil {
+		blog.Errorf("struct to map failed: data: %+v, err: %v, rid: %s", updateDataStruct, err, kit.Rid)
 		return err
 	}
-
 	if len(created.Header) == 0 && len(updateData) == 0 {
 		return nil
 	}
@@ -1011,10 +1014,7 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 	createDataStruct.Option = created
 
 	if len(created.Header) > 0 {
-		input.CreateData = metadata.CreatePartDataOption{
-			Data:  []metadata.Attribute{createDataStruct},
-			ObjID: objID,
-		}
+		input.CreateData = metadata.CreatePartDataOption{Data: []metadata.Attribute{createDataStruct}, ObjID: objID}
 	}
 
 	if len(updateData) > 0 {
