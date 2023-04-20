@@ -907,7 +907,7 @@ func calcTableOptionDiffDefault(kit *rest.Kit, curAttrsOp, dbAttrsOp *metadata.T
 	// the header here is the new header part
 	curAttrsOp.Header = header
 	if len(curAttrsOp.Header)+len(updated.Header) > metadata.TableHeaderMaxNum {
-		return nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "table header num")
+		return nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommOverLimit, "table header num")
 	}
 
 	return curAttrsOp, updated, deletePropertyIDs, nil
