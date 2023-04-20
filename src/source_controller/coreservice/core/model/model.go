@@ -59,6 +59,17 @@ func New(dependent OperationDependences, language language.CCLanguageIf) core.Mo
 func (m *modelManager) CreateTableModel(kit *rest.Kit, inputParam metadata.CreateModel) (
 	*metadata.CreateOneDataResult, error) {
 
+	// check the model attributes value
+	if len(inputParam.Spec.ObjectID) == 0 {
+		blog.Errorf("table model object %s is not set, rid: %s", inputParam.Spec.ObjectID, kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
+	}
+
+	if len(inputParam.Attributes) == 0 {
+		blog.Errorf("table model attr is not set, rid: %s", kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "attribute")
+	}
+
 	locker := lock.NewLocker(redis.Client())
 	redisKey := lock.GetLockKey(lock.CreateModelFormat, inputParam.Spec.ObjectID)
 
@@ -68,18 +79,15 @@ func (m *modelManager) CreateTableModel(kit *rest.Kit, inputParam metadata.Creat
 		blog.Errorf("get create table model lock failed, err: %v, input: %v, rid: %s", err, inputParam, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommRedisOPErr)
 	}
+
 	if !locked {
 		blog.Errorf("create table model have same task in progress, input: %v, rid:%s", inputParam, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr,
 			fmt.Sprintf("create table object(%s)", inputParam.Spec.ObjectID))
 	}
+
 	blog.V(5).Infof("create table model redis lock info, key: %s, bl: %v, err: %v, rid: %s",
 		redisKey, locked, err, kit.Rid)
-	// check the model attributes value
-	if len(inputParam.Spec.ObjectID) == 0 {
-		blog.Errorf("table model object %s is not set, rid: %s", inputParam.Spec.ObjectID, kit.Rid)
-		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
-	}
 
 	originObjID := inputParam.Spec.ObjectID
 	inputParam.Spec.ObjectID = metadata.GenerateModelQuoteObjID(inputParam.Spec.ObjectID,
@@ -447,7 +455,7 @@ func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metada
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
-// CascadeDeleteTableModel delete tabular models in a cascading manner
+// CascadeDeleteTableModel delete table models in a cascading manner
 func (m *modelManager) CascadeDeleteTableModel(kit *rest.Kit, intput metadata.DeleteTableOption) error {
 	// NOTE: just single model cascade delete action now.
 	condMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
@@ -466,7 +474,7 @@ func (m *modelManager) CascadeDeleteTableModel(kit *rest.Kit, intput metadata.De
 		return nil
 	}
 
-	// cascade delete.
+	// cascade delete table related resources.
 	if err := m.cascadeDeleteTable(kit, intput); err != nil {
 		blog.Errorf("cascade delete model failed, err: %v, rid: %s", err, kit.Rid)
 		return err

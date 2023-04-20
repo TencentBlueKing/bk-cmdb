@@ -311,15 +311,10 @@ func (m *modelAttribute) checkTableAttributeValidity(kit *rest.Kit, attribute me
 
 	if len(tableOption.Header) == 0 {
 		blog.Errorf("table attribute option invalid, header is nil, tableOption: %+v, rid: %s", tableOption, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrorTopoTableFieldsMustSetHeader)
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "table header")
 	}
 
-	headerMap := make(map[string]metadata.Attribute)
-	for _, header := range tableOption.Header {
-		headerMap[header.PropertyID] = header
-	}
-
-	if err := m.checkTableAttrHeader(kit, attribute.PropertyID, attribute.ObjectID, tableOption); err != nil {
+	if err := m.checkTableAttr(kit, attribute.PropertyID, attribute.ObjectID, tableOption); err != nil {
 		blog.Errorf("check table attribute failed, tableOption: %+v, err: %v, rid: %s", tableOption, err, kit.Rid)
 		return err
 	}
@@ -330,11 +325,11 @@ func (m *modelAttribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header 
 	map[string]*metadata.Attribute, error) {
 
 	if len(header) == 0 {
-		return nil, kit.CCError.Errorf(common.CCErrorTopoTableFieldsMustSetHeader)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "table header")
 	}
 
 	if len(header) > metadata.TableHeaderMaxNum {
-		return nil, kit.CCError.Errorf(common.CCErrorTopoHeaderOfTableExceedAllowed, metadata.TableHeaderMaxNum)
+		return nil, kit.CCError.Errorf(common.CCErrCommXXExceedLimit, "table header", metadata.TableHeaderMaxNum)
 	}
 
 	propertyAttr := make(map[string]*metadata.Attribute)
@@ -350,9 +345,10 @@ func (m *modelAttribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header 
 			longCharNum++
 		}
 		if longCharNum > metadata.TableLongCharMaxNum {
-			return nil, kit.CCError.Errorf(common.CCErrorTopoHeaderOfTableLongCharExceedAllowed,
+			return nil, kit.CCError.Errorf(common.CCErrCommXXExceedLimit, "table header long char",
 				metadata.TableLongCharMaxNum)
 		}
+
 		// check if property type for creation is valid, can't update property type
 		if header[index].PropertyType == "" {
 			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
@@ -391,12 +387,12 @@ func (m *modelAttribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header 
 	return propertyAttr, nil
 }
 
-func (m *modelAttribute) checkTableAttrHeader(kit *rest.Kit, propertyID, objectID string,
+func (m *modelAttribute) checkTableAttr(kit *rest.Kit, propertyID, objectID string,
 	tableOption *metadata.TableAttributesOption) error {
 
 	if len(tableOption.Header) == 0 {
 		blog.Errorf("table attribute option invalid, header is nil, tableOption: %+v, rid: %s", tableOption, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrorTopoTableFieldsMustSetHeader)
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "table header")
 	}
 
 	headerMap, err := m.validAndGetTableAttrHeaderDetail(kit, tableOption.Header)
@@ -413,7 +409,7 @@ func (m *modelAttribute) checkTableAttrHeader(kit *rest.Kit, propertyID, objectI
 	}
 	attrResult, err := m.newSearch(kit, input)
 	if err != nil {
-		blog.Errorf("failed to search the attributes of the model, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
+		blog.Errorf("failed to search the attr of the model, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
 		return err
 	}
 
@@ -530,6 +526,7 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 
 func (m *modelAttribute) checkTableAttributeDefaultValue(kit *rest.Kit, option, defautValue interface{},
 	propertyType string) error {
+
 	switch propertyType {
 	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
 		if err := valid.ValidFieldTypeString(option, defautValue, kit.Rid, kit.CCError); err != nil {
@@ -554,7 +551,6 @@ func (m *modelAttribute) checkTableAttributeDefaultValue(kit *rest.Kit, option, 
 			blog.Errorf("enum multi type default value not enum multi, err: %v, rid: %s", err, kit.Rid)
 			return err
 		}
-
 	default:
 		blog.Errorf("property type is error, propertyType: %v, rid: %s", propertyType, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
@@ -947,6 +943,7 @@ func (m *modelAttribute) dropColumns(kit *rest.Kit, object, collName string, fil
 	}
 	return nil
 }
+
 func (m *modelAttribute) cleanAttrTemplateRelation(kit *rest.Kit, attrs []metadata.Attribute) error {
 
 	if len(attrs) == 0 {
@@ -1102,14 +1099,6 @@ func (m *modelAttribute) saveTableAttrCheck(kit *rest.Kit, attribute metadata.At
 	if err := m.checkTableAttributeValidity(kit, attribute); err != nil {
 		return err
 	}
-
-	// check name duplicate
-	if err := m.checkUnique(kit, true, attribute.ObjectID, attribute.PropertyID, attribute.PropertyName,
-		attribute.BizID); err != nil {
-		blog.Errorf("save attribute check unique input: %+v, err: %v, rid: %s", attribute, err, kit.Rid)
-		return err
-	}
-
 	return nil
 }
 
@@ -1191,12 +1180,8 @@ func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
 		blog.Errorf("check attribute validity failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
+
 	for _, dbAttr := range dbAttributeArr {
-		err = m.checkUnique(kit, false, dbAttr.ObjectID, dbAttr.PropertyID, attr.PropertyName, attr.BizID)
-		if err != nil {
-			blog.Errorf("save attribute check unique err: %v, input: %+v, rid: %s", err, attr, kit.Rid)
-			return err
-		}
 		if err = m.checkChangeField(kit, dbAttr, data); err != nil {
 			return err
 		}

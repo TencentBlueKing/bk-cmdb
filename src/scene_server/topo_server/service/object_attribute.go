@@ -170,55 +170,26 @@ func parseRequestBizID(ctx *rest.Contexts) (int64, error) {
 // SearchObjectAttributeForWeb search form field attributes provided to the front end.
 func (s *Service) SearchObjectAttributeForWeb(ctx *rest.Contexts) {
 
-	option := new(MapStrWithModelBizID)
-	if err := ctx.DecodeInto(option); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	kit := ctx.Kit
-
-	data := option.Data
-	util.AddModelBizIDCondition(data, option.ModelBizID)
-	data[metadata.AttributeFieldIsSystem] = false
-	data[metadata.AttributeFieldIsAPI] = false
-
-	basePage := metadata.BasePage{}
-	if data.Exists(metadata.PageName) {
-		page, err := data.MapStr(metadata.PageName)
-		if err != nil {
-			blog.Errorf("page info convert to mapstr failed, err: %v, rid: %s", err, kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-		if err := mapstruct.Decode2Struct(page, &basePage); err != nil {
-			blog.Errorf("page info convert to struct failed, page: %v, err: %v, rid: %s", page, err, kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-		data.Remove(metadata.PageName)
-	}
-
-	cond := &metadata.QueryCondition{
-		Condition:      data,
-		Page:           basePage,
-		DisableCounter: true,
-	}
-
-	attrs := make([]*metadata.ObjAttDes, 0)
-	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrsWithTableByCondition(kit.Ctx, kit.Header,
-		option.ModelBizID, cond)
+	queryCond, modelBizID, err := combinationSearchObjectAttrCond(ctx)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
+	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrsWithTableByCondition(ctx.Kit.Ctx, ctx.Kit.Header,
+		modelBizID, queryCond)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	attrs := make([]*metadata.ObjAttDes, 0)
 	if len(resp.Info) == 0 {
 		ctx.RespEntity(attrs)
 		return
 	}
 
-	grpMap, err := s.getPropertyGroupName(kit, resp.Info, option.ModelBizID)
+	grpMap, err := s.getPropertyGroupName(ctx.Kit, resp.Info, modelBizID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -231,8 +202,8 @@ func (s *Service) SearchObjectAttributeForWeb(ctx *rest.Contexts) {
 		grpName, ok := grpMap[attr.PropertyGroup]
 		if !ok {
 			blog.Errorf("failed to get property group name, attr: %+v, propertyGroup: %v, rid: %s",
-				attr, attr.PropertyGroup, kit.Rid)
-			ctx.RespAutoError(kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKPropertyNameField))
+				attr, attr.PropertyGroup, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKPropertyNameField))
 			return
 		}
 		attrInfo.PropertyGroupName = grpName
@@ -242,15 +213,13 @@ func (s *Service) SearchObjectAttributeForWeb(ctx *rest.Contexts) {
 	ctx.RespEntity(attrs)
 }
 
-// SearchObjectAttribute search the object attributes
-func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
-	dataWithModelBizID := MapStrWithModelBizID{}
-	if err := ctx.DecodeInto(&dataWithModelBizID); err != nil {
-		ctx.RespAutoError(err)
-		return
+func combinationSearchObjectAttrCond(ctx *rest.Contexts) (*metadata.QueryCondition, int64, error) {
+	option := new(MapStrWithModelBizID)
+	if err := ctx.DecodeInto(&option); err != nil {
+		return nil, 0, err
 	}
-	data := dataWithModelBizID.Data
-	util.AddModelBizIDCondition(data, dataWithModelBizID.ModelBizID)
+	data := option.Data
+	util.AddModelBizIDCondition(data, option.ModelBizID)
 	data[metadata.AttributeFieldIsSystem] = false
 	data[metadata.AttributeFieldIsAPI] = false
 
@@ -259,28 +228,39 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		page, err := data.MapStr(metadata.PageName)
 		if err != nil {
 			blog.Errorf("page info convert to mapstr failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
+			return nil, 0, err
 		}
 		if err := mapstruct.Decode2Struct(page, &basePage); err != nil {
 			blog.Errorf("page info convert to struct failed, page: %v, err: %v, rid: %s", page, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
+			return nil, 0, err
 		}
 		data.Remove(metadata.PageName)
 	}
 
 	queryCond := &metadata.QueryCondition{
-		Condition: data,
-		Page:      basePage,
+		Condition:      data,
+		Page:           basePage,
+		DisableCounter: true,
 	}
+	return queryCond, option.ModelBizID, nil
+}
+
+// SearchObjectAttribute search the object attributes
+func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
+
+	queryCond, modelBizID, err := combinationSearchObjectAttrCond(ctx)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(ctx.Kit.Ctx, ctx.Kit.Header, queryCond)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	grpMap, err := s.getPropertyGroupName(ctx.Kit, resp.Info, dataWithModelBizID.ModelBizID)
+	grpMap, err := s.getPropertyGroupName(ctx.Kit, resp.Info, modelBizID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -375,9 +355,8 @@ func getAttrIDAndBizID(ctx *rest.Contexts) (int64, int64, error) {
 
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
 	if err != nil {
-		blog.Errorf("failed to parse the path params id: %s, err: %s, rid: %s", ctx.Request.PathParameter("id"),
+		blog.Errorf("failed to parse the path params id: %s, err: %v, rid: %s", ctx.Request.PathParameter("id"),
 			err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
 		return 0, 0, err
 	}
 	// adapt input path param with bk_biz_id
@@ -386,7 +365,7 @@ func getAttrIDAndBizID(ctx *rest.Contexts) (int64, int64, error) {
 		bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 		bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 		if err != nil {
-			blog.Errorf("create biz custom field, but parse biz ID failed, error: %s, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("create biz custom field, but parse biz ID failed, error: %v, rid: %s", err, ctx.Kit.Rid)
 			return 0, 0, err
 		}
 		if bizID == 0 {

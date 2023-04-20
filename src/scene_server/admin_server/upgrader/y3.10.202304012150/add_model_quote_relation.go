@@ -103,6 +103,22 @@ func addModelQuoteRelationIndex(ctx context.Context, db dal.RDB) error {
 			Name: common.CCLogicIndexNamePrefix + "dest_model_src_model",
 			Keys: bson.D{
 				{common.BKDestModelField, 1},
+				{common.BKOwnerIDField, 1},
+			},
+			Background: true,
+		},
+		{
+			Name: common.CCLogicIndexNamePrefix + "dest_model_src_model",
+			Keys: bson.D{
+				{common.BKSrcModelField, 1},
+				{common.BKPropertyIDField, 1},
+				{common.BKOwnerIDField, 1},
+			},
+			Background: true,
+		},
+		{
+			Name: common.CCLogicIndexNamePrefix + "dest_model_src_model",
+			Keys: bson.D{
 				{common.BKSrcModelField, 1},
 				{common.BKOwnerIDField, 1},
 			},

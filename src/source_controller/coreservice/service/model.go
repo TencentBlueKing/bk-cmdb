@@ -593,7 +593,7 @@ func (s *coreService) SearchModelAttrsWithTableByCondition(ctx *rest.Contexts) {
 		if result.Info[index].IsPre || needTranslateObjMap[result.Info[index].ObjectID] {
 			result.Info[index].PropertyName = s.TranslatePropertyName(lang, &result.Info[index])
 			result.Info[index].Placeholder = s.TranslatePlaceholder(lang, &result.Info[index])
-			if result.Info[index].PropertyType == common.FieldTypeEnumMulti {
+			if result.Info[index].PropertyType == common.FieldTypeEnum {
 				result.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &result.Info[index],
 					result.Info[index].Option)
 			}

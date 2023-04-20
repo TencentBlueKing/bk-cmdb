@@ -34,7 +34,7 @@ func (m *modelManager) CreateModelTables(kit *rest.Kit, inputParam metadata.Crea
 func (m *modelManager) CreateTableModelTables(kit *rest.Kit, inputParam metadata.CreateModelTable) error {
 	for _, objID := range inputParam.ObjectIDs {
 		if err := m.createTableObjectShardingTables(kit, objID); err != nil {
-			blog.Errorf("create module table error. err: %v, objID: %s, rid: %s", err, objID, kit.Rid)
+			blog.Errorf("create table module error, err: %v, objID: %s, rid: %s", err, objID, kit.Rid)
 			return err
 		}
 	}
