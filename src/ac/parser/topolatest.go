@@ -2436,7 +2436,13 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 
-		attr, err := ps.getModelAttribute(mapstr.MapStr{common.BKFieldID: attrID})
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		attr, err := ps.getModelAttribute(bizID, mapstr.MapStr{common.BKFieldID: attrID})
 		if err != nil {
 			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
 			return ps
@@ -2481,7 +2487,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 
-		attr, err := ps.getModelAttribute(mapstr.MapStr{common.BKFieldID: attrID})
+		attr, err := ps.getModelAttribute(0, mapstr.MapStr{common.BKFieldID: attrID})
 		if err != nil {
 			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
 			return ps
@@ -2526,7 +2532,13 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 
-		attr, err := ps.getModelAttribute(mapstr.MapStr{common.BKFieldID: attrID})
+		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		attr, err := ps.getModelAttribute(bizID, mapstr.MapStr{common.BKFieldID: attrID})
 		if err != nil {
 			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
 			return ps
