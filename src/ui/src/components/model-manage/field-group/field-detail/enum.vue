@@ -15,7 +15,7 @@
     <div class="toolbar">
       <p class="title">{{$t('枚举值')}}</p>
       <i
-        v-bk-tooltips.top-start="$t('按照0-9a-z排序')"
+        v-bk-tooltips.top-start="$t('通过枚举项的值按照0-9，a-z排序')"
         :class="['sort-icon', `icon-cc-sort-${order > 0 ? 'up' : 'down'}`]"
         @click="handleSort">
       </i>
