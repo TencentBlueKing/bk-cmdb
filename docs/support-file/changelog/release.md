@@ -1,3 +1,7 @@
+## [Version: v3.10.24-feature-table-alpha1] - 2023-04-20
+**新增功能**
+- 新增支持表格字段功能
+
 ## [Version: v3.10.24-feature-table-alpha1] - 2023-04-15
 **新增功能**
 - 新增支持表格字段功能
