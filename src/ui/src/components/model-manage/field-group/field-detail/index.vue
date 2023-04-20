@@ -89,7 +89,7 @@
           </bk-select>
         </div>
       </div>
-      <div class="field-detail">
+      <div class="field-detail" v-show="!['foreignkey'].includes(fieldType)">
         <the-config
           :type="fieldInfo.bk_property_type"
           :is-read-only="isReadOnly"
@@ -118,7 +118,7 @@
           <span class="label-text">
             {{$t('默认值')}}
           </span>
-          <div class="cmdb-form-item">
+          <div class="cmdb-form-item" :class="{ 'is-error': errors.has('defalut') }">
             <component
               name="defalut"
               :key="fieldInfo.bk_property_type"
@@ -131,6 +131,7 @@
               v-validate="getValidateRules(fieldInfo)"
               ref="component"
             ></component>
+            <p class="form-error">{{errors.first('defalut')}}</p>
           </div>
         </label>
       </div>
@@ -328,11 +329,12 @@
       fieldTypeList() {
         if (this.customObjId) {
           const disabledTypes = this.isEditField
-            ? [PROPERTY_TYPES.INNER_TABLE]
-            : [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.ENUMQUOTE]
+            ? [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.FOREIGNKEY]
+            : [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.FOREIGNKEY, PROPERTY_TYPES.ENUMQUOTE]
           return PROPERTY_TYPE_LIST.filter(item => !disabledTypes.includes(item.id))
         }
-        const createFieldList = PROPERTY_TYPE_LIST.filter(item => item.id !== PROPERTY_TYPES.ENUMQUOTE)
+        // eslint-disable-next-line max-len
+        const createFieldList = PROPERTY_TYPE_LIST.filter(item => ![PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.FOREIGNKEY].includes(item.id))
         return this.isEditField ? PROPERTY_TYPE_LIST : createFieldList
       }
     },
