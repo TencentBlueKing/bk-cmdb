@@ -211,7 +211,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 		return
 	}
 
-	file := xlsx.NewFile(xlsx.UseDiskVCellStore)
+	file := xlsx.NewFile()
 	err = s.Logics.BuildExcelFromData(ctx, objID, fields, nil, instInfo, file, pheader, modelBizID, usernameMap,
 		propertyList, org, orgPropertyList, input.AssociationCond, input.ObjectUniqueID, rowCountArr)
 	if nil != err {

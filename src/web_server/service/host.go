@@ -162,7 +162,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
-	file := xlsx.NewFile(xlsx.UseDiskVCellStore)
+	file := xlsx.NewFile()
 	err = s.Logics.BuildHostExcelFromData(c, objID, fields, nil, file, header, objectName, objIDs, input, s.Config)
 	if nil != err {
 		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err,

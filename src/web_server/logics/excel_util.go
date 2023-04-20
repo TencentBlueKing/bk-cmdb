@@ -251,16 +251,23 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 		if property.NotExport {
 			continue
 		}
+
+		if property.NotEditable {
+			for i := rowIndex; i < rowIndex+rowCount; i++ {
+				cell, err := sheet.Cell(i, property.ExcelColIndex)
+				if err != nil {
+					return err
+				}
+				cell.SetStyle(style)
+			}
+		}
+
 		cell, err := sheet.Cell(rowIndex, property.ExcelColIndex)
 		if err != nil {
 			return err
 		}
 		if property.PropertyType != common.FieldTypeInnerTable && rowCount > 1 {
 			cell.Merge(0, rowCount-1)
-		}
-
-		if property.NotEditable {
-			cell.SetStyle(style)
 		}
 
 		val, ok := rowMap[id]
