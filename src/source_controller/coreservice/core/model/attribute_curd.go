@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -271,15 +272,15 @@ func (m *modelAttribute) checkAttributeDefaultValue(kit *rest.Kit, attribute met
 	propertyType string) error {
 	switch propertyType {
 	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
-		if err := util.ValidFieldTypeString(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
+		if err := valid.ValidFieldTypeString(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
 			return err
 		}
 	case common.FieldTypeInt:
-		if err := util.ValidFieldTypeInt(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
+		if err := valid.ValidFieldTypeInt(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
 			return err
 		}
 	case common.FieldTypeFloat:
-		if err := util.ValidFieldTypeFloat(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
+		if err := valid.ValidFieldTypeFloat(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
 			return err
 		}
 	case common.FieldTypeDate:
@@ -303,12 +304,12 @@ func (m *modelAttribute) checkAttributeDefaultValue(kit *rest.Kit, attribute met
 			return fmt.Errorf("time zone default value is not time zone type, type: %T", attribute.Default)
 		}
 	case common.FieldTypeBool:
-		if err := util.ValidateBoolType(attribute.Default); err != nil {
+		if err := valid.ValidateBoolType(attribute.Default); err != nil {
 			blog.Errorf("bool type default value not bool, err: %v, rid: %s", err, kit.Rid)
 			return err
 		}
 	case common.FieldTypeList:
-		if err := util.ValidFieldTypeList(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
+		if err := valid.ValidFieldTypeList(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
 			return err
 		}
 	default:
@@ -861,7 +862,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
 		}
 
-		if err := util.ValidPropertyOption(propertyType, option, *isMultiple, data[common.BKDefaultFiled], kit.Rid,
+		if err := valid.ValidPropertyOption(propertyType, option, *isMultiple, data[common.BKDefaultFiled], kit.Rid,
 			kit.CCError); err != nil {
 			blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
 			return err

@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/criteria/enumor"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 )
 
 var opFactory map[OpFactory]Operator
@@ -359,7 +360,7 @@ func (o InOp) ValidateValue(v interface{}, opt *ExprOption) error {
 		return errors.New("validate option must be set")
 	}
 
-	err := util.ValidateSliceOfBasicType(v, opt.MaxInLimit)
+	err := valid.ValidateSliceOfBasicType(v, opt.MaxInLimit)
 	if err != nil {
 		return fmt.Errorf("in operator's value is invalid, err: %v", err)
 	}
@@ -392,7 +393,7 @@ func (o NotInOp) ValidateValue(v interface{}, opt *ExprOption) error {
 		return errors.New("validate option must be set")
 	}
 
-	err := util.ValidateSliceOfBasicType(v, opt.MaxNotInLimit)
+	err := valid.ValidateSliceOfBasicType(v, opt.MaxNotInLimit)
 	if err != nil {
 		return fmt.Errorf("nin operator's value is invalid, err: %v", err)
 	}
@@ -529,7 +530,7 @@ func (o DatetimeLessOp) Name() OpType {
 
 // ValidateValue validate datetime less than operator value
 func (o DatetimeLessOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateDatetimeType(v)
+	err := valid.ValidateDatetimeType(v)
 	if err != nil {
 		return fmt.Errorf("datetime less than operator's value is invalid, err: %v", err)
 	}
@@ -562,7 +563,7 @@ func (o DatetimeLessOrEqualOp) Name() OpType {
 
 // ValidateValue validate datetime less than or equal operator value
 func (o DatetimeLessOrEqualOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateDatetimeType(v)
+	err := valid.ValidateDatetimeType(v)
 	if err != nil {
 		return fmt.Errorf("datetime less than or equal operator's value is invalid, err: %v", err)
 	}
@@ -595,7 +596,7 @@ func (o DatetimeGreaterOp) Name() OpType {
 
 // ValidateValue validate datetime greater than operator value
 func (o DatetimeGreaterOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateDatetimeType(v)
+	err := valid.ValidateDatetimeType(v)
 	if err != nil {
 		return fmt.Errorf("datetime greater than operator's value is invalid, err: %v", err)
 	}
@@ -629,7 +630,7 @@ func (o DatetimeGreaterOrEqualOp) Name() OpType {
 
 // ValidateValue validate datetime greater than or equal operator value
 func (o DatetimeGreaterOrEqualOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateDatetimeType(v)
+	err := valid.ValidateDatetimeType(v)
 	if err != nil {
 		return fmt.Errorf("datetime greater than or equal operator's value is invalid, err: %v", err)
 	}
@@ -662,7 +663,7 @@ func (o BeginsWithOp) Name() OpType {
 
 // ValidateValue validate begins with operator's value
 func (o BeginsWithOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateNotEmptyStringType(v)
+	err := valid.ValidateNotEmptyStringType(v)
 	if err != nil {
 		return fmt.Errorf("begins with operator's value is invalid, err: %v", err)
 	}
@@ -693,7 +694,7 @@ func (o BeginsWithInsensitiveOp) Name() OpType {
 
 // ValidateValue validate begins with insensitive operator's value
 func (o BeginsWithInsensitiveOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateNotEmptyStringType(v)
+	err := valid.ValidateNotEmptyStringType(v)
 	if err != nil {
 		return fmt.Errorf("begins with insensitive operator's value is invalid, err: %v", err)
 	}
@@ -725,7 +726,7 @@ func (o NotBeginsWithOp) Name() OpType {
 
 // ValidateValue validate not begins with operator's value
 func (o NotBeginsWithOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateNotEmptyStringType(v)
+	err := valid.ValidateNotEmptyStringType(v)
 	if err != nil {
 		return fmt.Errorf("not begins with operator's value is invalid, err: %v", err)
 	}
@@ -756,7 +757,7 @@ func (o NotBeginsWithInsensitiveOp) Name() OpType {
 
 // ValidateValue validate not begins with insensitive operator's value
 func (o NotBeginsWithInsensitiveOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateNotEmptyStringType(v)
+	err := valid.ValidateNotEmptyStringType(v)
 	if err != nil {
 		return fmt.Errorf("not begins with insensitive operator's value is invalid, err: %v", err)
 	}
@@ -790,7 +791,7 @@ func (o ContainsOp) Name() OpType {
 
 // ValidateValue validate contains operator's value
 func (o ContainsOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateNotEmptyStringType(v)
+	err := valid.ValidateNotEmptyStringType(v)
 	if err != nil {
 		return fmt.Errorf("contains operator's value is invalid, err: %v", err)
 	}
@@ -822,7 +823,7 @@ func (o ContainsSensitiveOp) Name() OpType {
 
 // ValidateValue validate contains sensitive operator's value
 func (o ContainsSensitiveOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateNotEmptyStringType(v)
+	err := valid.ValidateNotEmptyStringType(v)
 	if err != nil {
 		return fmt.Errorf("contains sensitive operator's value is invalid, err: %v", err)
 	}
@@ -853,7 +854,7 @@ func (o NotContainsOp) Name() OpType {
 
 // ValidateValue validate not contains operator's value
 func (o NotContainsOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateNotEmptyStringType(v)
+	err := valid.ValidateNotEmptyStringType(v)
 	if err != nil {
 		return fmt.Errorf("not contains operator's value is invalid, err: %v", err)
 	}
@@ -884,7 +885,7 @@ func (o NotContainsInsensitiveOp) Name() OpType {
 
 // ValidateValue validate not contains insensitive operator's value
 func (o NotContainsInsensitiveOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateNotEmptyStringType(v)
+	err := valid.ValidateNotEmptyStringType(v)
 	if err != nil {
 		return fmt.Errorf("not contains insensitive operator's value is invalid, err: %v", err)
 	}
@@ -918,7 +919,7 @@ func (o EndsWithOp) Name() OpType {
 
 // ValidateValue validate ends with operator's value
 func (o EndsWithOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateNotEmptyStringType(v)
+	err := valid.ValidateNotEmptyStringType(v)
 	if err != nil {
 		return fmt.Errorf("ends with operator's value is invalid, err: %v", err)
 	}
@@ -949,7 +950,7 @@ func (o EndsWithInsensitiveOp) Name() OpType {
 
 // ValidateValue validate ends with insensitive operator's value
 func (o EndsWithInsensitiveOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateNotEmptyStringType(v)
+	err := valid.ValidateNotEmptyStringType(v)
 	if err != nil {
 		return fmt.Errorf("ends with insensitive operator's value is invalid, err: %v", err)
 	}
@@ -981,7 +982,7 @@ func (o NotEndsWithOp) Name() OpType {
 
 // ValidateValue validate not ends with operator's value
 func (o NotEndsWithOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateNotEmptyStringType(v)
+	err := valid.ValidateNotEmptyStringType(v)
 	if err != nil {
 		return fmt.Errorf("not ends with operator's value is invalid, err: %v", err)
 	}
@@ -1012,7 +1013,7 @@ func (o NotEndsWithInsensitiveOp) Name() OpType {
 
 // ValidateValue validate not ends with insensitive operator's value
 func (o NotEndsWithInsensitiveOp) ValidateValue(v interface{}, opt *ExprOption) error {
-	err := util.ValidateNotEmptyStringType(v)
+	err := valid.ValidateNotEmptyStringType(v)
 	if err != nil {
 		return fmt.Errorf("not ends with insensitive operator's value is invalid, err: %v", err)
 	}

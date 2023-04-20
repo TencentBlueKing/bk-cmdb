@@ -51,6 +51,7 @@ var sortFields = []string{
 	"isreadonly",
 	"isonly",
 	"ismultiple",
+	"default",
 }
 
 // ImportObject import object attribute
@@ -126,7 +127,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		return
 	}
 
-	logics.ConvAttrOption(attrItems)
+	logics.ConvAttr(attrItems)
 
 	param := map[string]interface{}{objID: map[string]interface{}{"attr": attrItems}}
 	result, err := s.CoreAPI.ApiServer().AddObjectBatch(ctx, c.Request.Header, param)
@@ -208,11 +209,19 @@ func setExcelRow(ctx context.Context, row *xlsx.Row, item interface{}) *xlsx.Row
 			case common.BKOptionField:
 
 				bOptions, err := json.Marshal(t)
-				if nil != err {
-					blog.Errorf("option format error:%v, rid: %s", t, rid)
+				if err != nil {
+					blog.Errorf("option format failed, err: %v, rid: %s", err, rid)
 					cell.SetValue("error info:" + err.Error())
 				} else {
 					cell.SetString(string(bOptions))
+				}
+			case common.BKDefaultFiled:
+				bDef, err := json.Marshal(t)
+				if err != nil {
+					blog.Errorf("default value format failed, err: %v, rid: %s", err, rid)
+					cell.SetValue("error info:" + err.Error())
+				} else {
+					cell.SetString(string(bDef))
 				}
 
 			default:
@@ -590,6 +599,11 @@ func (s *Service) BatchImportObject(c *gin.Context) {
 		blog.Errorf("unmarshal body to json failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, err.Error(), nil)
 		_, _ = c.Writer.Write([]byte(msg))
+		return
+	}
+
+	if len(cond.Object) == 0 {
+		c.JSON(http.StatusOK, metadata.Response{BaseResp: metadata.BaseResp{Result: true, ErrMsg: "success"}})
 		return
 	}
 
