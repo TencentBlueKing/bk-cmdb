@@ -70,6 +70,15 @@
   watch(() => props.headers, (headers) => {
     refreshKey.value = Date.now()
 
+    // 从数据中去掉header中已经删除的列
+    list.value.forEach((row) => {
+      Object.keys(row).forEach((key) => {
+        if (!headers.some(header => header.bk_property_id === key)) {
+          Reflect.deleteProperty(row, key)
+        }
+      })
+    })
+
     headers.forEach((header) => {
       list.value.forEach((row) => {
         // 不存在的字段先补齐（先创建了行后添加的表头）

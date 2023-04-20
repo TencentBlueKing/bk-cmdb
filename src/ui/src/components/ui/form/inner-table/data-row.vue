@@ -38,17 +38,19 @@
           <bk-button text class="ml10" @click="handleCancelEdit($index)">{{ $t('取消') }}</bk-button>
         </template>
         <template v-else>
-          <template v-if="!editable">
+          <template v-if="disabled">
             <bk-button text
               @click="handleEditRow($index)">
-              <span v-bk-tooltips="{ disabled: editable, content: $t('系统限定不可修改') }">{{ $t('编辑') }}</span>
+              <span v-bk-tooltips="{ disabled: !disabled, allowHtml: true, content: disabledTips }">
+                {{ $t('编辑') }}
+              </span>
             </bk-button>
           </template>
           <template v-else>
             <cmdb-auth :auth="auth">
-              <template #default="{ disabled }">
+              <template #default="authProps">
                 <bk-button text
-                  :disabled="disabled"
+                  :disabled="authProps.disabled"
                   @click="handleEditRow($index)">
                   {{ $t('编辑') }}
                 </bk-button>
@@ -56,17 +58,19 @@
             </cmdb-auth>
           </template>
 
-          <template v-if="!editable">
+          <template v-if="disabled">
             <bk-button text class="ml10"
               @click="handleDeleteRow($index)">
-              <span v-bk-tooltips="{ disabled: editable, content: $t('系统限定不可修改') }">{{ $t('删除') }}</span>
+              <span v-bk-tooltips="{ disabled: !disabled, allowHtml: true, content: disabledTips }">
+                {{ $t('删除') }}
+              </span>
             </bk-button>
           </template>
           <template v-else>
             <cmdb-auth :auth="auth">
-              <template #default="{ disabled }">
+              <template #default="authProps">
                 <bk-button text class="ml10"
-                  :disabled="disabled"
+                  :disabled="authProps.disabled"
                   @click="handleDeleteRow($index)">
                   {{ $t('删除') }}
                 </bk-button>
@@ -77,23 +81,23 @@
       </template>
     </bk-table-column>
     <template #empty v-if="!readonly">
-      <template v-if="!editable">
+      <template v-if="disabled">
         <icon-text-button
           class="table-empty-add-button"
           ref="tableEmptyAddButtonRef"
           :text="$t('新增')"
           :disabled="true"
-          :disabled-tips="$t('系统限定不可修改')"
+          :disabled-tips="disabledTips"
           @click="handleClickAdd" />
       </template>
       <template v-else>
         <cmdb-auth :auth="auth">
-          <template #default="{ disabled }">
+          <template #default="authProps">
             <icon-text-button
               class="table-empty-add-button"
               ref="tableEmptyAddButtonRef"
               :text="$t('新增')"
-              :disabled="disabled"
+              :disabled="authProps.disabled"
               @click="handleClickAdd" />
           </template>
         </cmdb-auth>
@@ -125,6 +129,13 @@
     value: {
       type: Array,
       default: () => []
+    },
+    disabled: {
+      type: Boolean,
+      default: false
+    },
+    disabledTips: {
+      type: String
     },
     // 只读没有操作入口
     readonly: {
@@ -177,8 +188,6 @@
     index: [],
     row: {}
   })
-
-  const editable = computed(() => props.property.editable && !props.property.bk_isapi)
 
   const scrollAddButton = () => {
     if (tableEmptyAddButtonRef.value) {

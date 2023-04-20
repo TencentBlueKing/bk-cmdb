@@ -111,6 +111,7 @@
           <template v-else>
             <cmdb-form-innertable
               class="form-component-innertable"
+              :disabled="!isPropertyEditable(property)"
               :property="property"
               :obj-id="objId"
               :instance-id="instanceId"

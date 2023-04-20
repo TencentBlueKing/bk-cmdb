@@ -411,7 +411,10 @@
           return
         }
 
-        if (this.properties.filter(property => property.bk_property_type === PROPERTY_TYPES.INNER_TABLE).length === 5) {
+        const tableTypeCount = this.properties
+          .filter(property => property.bk_property_type === PROPERTY_TYPES.INNER_TABLE).length
+        const isTableType = this.fieldInfo.bk_property_type === PROPERTY_TYPES.INNER_TABLE
+        if (!this.isEditField && isTableType && tableTypeCount >= 5) {
           this.$error('最多只能添加5个表格字段')
           return
         }

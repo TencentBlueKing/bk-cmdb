@@ -5,6 +5,8 @@
         type="list"
         :property="property"
         :readonly="readonly"
+        :disabled="disabled"
+        :disabled-tips="disabledTips"
         :obj-id="objId"
         :instance-id="instanceId"
         :immediate="immediate"
@@ -16,6 +18,9 @@
         <data-row
           type="add"
           :property="property"
+          :readonly="readonly"
+          :disabled="disabled"
+          :disabled-tips="disabledTips"
           :show-header="false"
           :value="defaultRowData"
           :obj-id="objId"
@@ -30,15 +35,15 @@
         <icon-text-button
           :text="$t('新增')"
           @click="handleClickAdd"
-          :disabled="tableData.length === 50"
-          :disabled-tips="$t('最多添加50行')" />
+          :disabled="maxRowDisabled || disabled"
+          :disabled-tips="maxRowDisabled ? $t('最多添加50行') : disabledTips" />
       </div>
     </div>
     <i class="title-copy icon-cc-details-copy" v-show="showCopyBtn" @click="handleCopyTable"></i>
   </div>
 </template>
 <script setup>
-  import { getCurrentInstance, ref, watch } from 'vue'
+  import { computed, getCurrentInstance, ref, watch } from 'vue'
   import { t } from '@/i18n'
   import { clone, getPropertyDefaultValue } from '@/utils/tools'
   import { $success, $error } from '@/magicbox/index.js'
@@ -57,6 +62,13 @@
     value: {
       type: Array,
       default: () => []
+    },
+    disabled: {
+      type: Boolean,
+      default: false
+    },
+    disabledTips: {
+      type: String
     },
     // 只读模式
     readonly: {
@@ -106,6 +118,8 @@
   watch(tableData, () => {
     emit('input', tableData.value)
   })
+
+  const maxRowDisabled = computed(() => tableData.value.length === 50)
 
   const exitAdd = () => {
     isShowAddRow.value = false
