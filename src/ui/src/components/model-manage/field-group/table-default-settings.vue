@@ -11,12 +11,12 @@
 -->
 
 <script setup>
-  import { nextTick, reactive, ref, watch, set, watchEffect } from 'vue'
+  import { nextTick, reactive, ref, watch, set, watchEffect, getCurrentInstance } from 'vue'
   import has from 'has'
   import cloneDeep from 'lodash/cloneDeep'
   import IconTextButton from '@/components/ui/button/icon-text-button.vue'
   import PropertyFormElement from '@/components/ui/form/property-form-element.vue'
-  import { getPropertyDefaultValue, isShowOverflowTips, isEmptyPropertyValue } from '@/utils/tools.js'
+  import { getPropertyDefaultValue, isShowOverflowTips, getPropertyDefaultEmptyValue } from '@/utils/tools.js'
 
   const props = defineProps({
     defaults: {
@@ -39,16 +39,25 @@
 
   const emit = defineEmits(['update'])
 
+  const instacne = getCurrentInstance().proxy
+
   const list = ref([])
 
   const editState = reactive({
-    index: null,
+    index: [],
     row: {}
   })
 
-  const propertyFormEl = ref(null)
   const tableRef = ref(null)
+  const tableEmptyAddButtonRef = ref(null)
   const refreshKey = ref(Date.now())
+  const addIndex = ref(-1)
+
+  const scrollAddButton = () => {
+    if (tableEmptyAddButtonRef.value) {
+      tableEmptyAddButtonRef.value.$el?.closest('.bk-table-empty-text')?.scrollIntoView?.()
+    }
+  }
 
   watchEffect(() => {
     list.value = cloneDeep(props.defaults || [])
@@ -61,24 +70,27 @@
   watch(() => props.headers, (headers) => {
     refreshKey.value = Date.now()
 
+    // 从数据中去掉header中已经删除的列
+    list.value.forEach((row) => {
+      Object.keys(row).forEach((key) => {
+        if (!headers.some(header => header.bk_property_id === key)) {
+          Reflect.deleteProperty(row, key)
+        }
+      })
+    })
+
     headers.forEach((header) => {
       list.value.forEach((row) => {
         // 不存在的字段先补齐（先创建了行后添加的表头）
         if (!has(row, header.bk_property_id)) {
-          row[header.bk_property_id] = getPropertyDefaultValue(header)
-        }
-
-        // 刷新默认值（开始默认值为空后来变更了）
-        for (const [key, value] of Object.entries(row)) {
-          const prop = headers.find(header => header.bk_property_id === key)
-          if (prop) {
-            row[key] = getPropertyDefaultValue(prop, isEmptyPropertyValue(value) ? undefined : value)
-          }
+          row[header.bk_property_id] = getPropertyDefaultEmptyValue(header)
         }
       })
     })
 
     updateValue()
+
+    nextTick(scrollAddButton)
   }, { deep: true })
 
   const newRowData = () => {
@@ -89,9 +101,9 @@
     return data
   }
 
-  const validateAll = async () => {
+  const validateAll = async (index) => {
     // 获得每一个表单元素的校验方法
-    const validates = (propertyFormEl.value || [])
+    const validates = (instacne.$refs[`property-form-el-${index}`] || [])
       .map(formElement => formElement.$validator.validateAll())
 
     if (validates.length) {
@@ -102,20 +114,23 @@
     return true
   }
 
-  const exitEdit = () => {
-    editState.index = null
-    editState.row = {}
+  const exitEdit = (index) => {
+    const dataIndex = editState.index.findIndex(i => i === index)
+    if (dataIndex !== -1) {
+      editState.index.splice(dataIndex, 1)
+      set(editState.row, index, {})
+    }
   }
   const enterEdit = (index) => {
-    editState.index = index
-    editState.row = cloneDeep(list.value[index])
+    editState.index.push(index)
+    set(editState.row, index, cloneDeep(list.value[index]))
     nextTick(() => {
-      const component = propertyFormEl.value?.[0].$refs[`component-${props.headers[0].bk_property_id}`]
+      const component = instacne.$refs[`property-form-el-${index}`]?.[0].$refs[`component-${props.headers[0].bk_property_id}`]
       component?.focus?.()
     })
   }
   const updateRow = (index) => {
-    set(list.value, index, cloneDeep(editState.row))
+    set(list.value, index, cloneDeep(editState.row[index]))
   }
 
   const handleClickEdit = (index) => {
@@ -124,43 +139,43 @@
   const handleClickRemove = (index) => {
     list.value.splice(index, 1)
     updateValue()
+
+    if (list.value.length === 0) {
+      nextTick(scrollAddButton)
+    }
   }
   const handleClickAdd = async () => {
-    if (!await validateAll()) {
-      return
-    }
     const length = list.value.push(newRowData())
 
     enterEdit(length - 1)
+    addIndex.value = length - 1
   }
 
   const handleConfirm = async (index) => {
-    if (!await validateAll()) {
+    if (!await validateAll(index)) {
       return
     }
     updateRow(index)
-    exitEdit()
+    exitEdit(index)
 
     updateValue()
   }
-  const handleCancel = () => {
-    exitEdit()
-  }
+  const handleCancel = (index) => {
+    exitEdit(index)
 
-  const clickOutsideMiddleware = (event) => {
-    const path = event.composedPath ? event.composedPath() : event.path
-    return !path?.some?.(node => node.className === 'tippy-popper')
-  }
-  const handleClickOutside = () => {
-    exitEdit()
+    if (index === addIndex.value) {
+      list.value.splice(addIndex.value, 1)
+      addIndex.value = -1
+
+      if (list.value.length === 0) {
+        nextTick(scrollAddButton)
+      }
+    }
   }
 </script>
 
 <template>
-  <div :class="['table-default-settings', { preview: props.preview }]" v-click-outside="{
-    handler: handleClickOutside,
-    middleware: clickOutsideMiddleware
-  }">
+  <div :class="['table-default-settings', { preview: props.preview }]">
     <bk-table
       :key="refreshKey"
       ref="tableRef"
@@ -175,11 +190,10 @@
         :key="prop.bk_property_id"
         :label="$tools.getHeaderPropertyName(prop)"
         :prop="prop.bk_property_id"
-        :min-width="$tools.getHeaderPropertyMinWidth(prop, { min: 120 })"
-        :show-overflow-tooltip="true">
+        :min-width="$tools.getHeaderPropertyMinWidth(prop, { min: 120 })">
         <template #default="{ row, $index }">
           <cmdb-property-value
-            v-if="$index !== editState.index"
+            v-if="!editState.index.includes($index)"
             :is-show-overflow-tips="isShowOverflowTips(prop)"
             :class="'property-value'"
             :value="row[prop.bk_property_id]"
@@ -187,21 +201,21 @@
           </cmdb-property-value>
           <property-form-element
             v-else
-            class="detault-form-el"
-            ref="propertyFormEl"
+            :class="['detault-form-el', prop.bk_property_type]"
+            :ref="`property-form-el-${$index}`"
             :property="prop"
             :size="'small'"
             :font-size="'normal'"
             :row="1"
             error-display-type="tooltips"
-            v-model="editState.row[prop.bk_property_id]">
+            v-model="editState.row[$index][prop.bk_property_id]">
           </property-form-element>
         </template>
       </bk-table-column>
       <bk-table-column :label="$t('操作')" width="90" fixed="right" v-if="!props.readonly">
         <template #default="{ $index }">
           <div class="operation-cell">
-            <template v-if="$index !== editState.index">
+            <template v-if="!editState.index.includes($index)">
               <bk-button text theme="primary"
                 class="action-button"
                 @click="handleClickEdit($index)">{{$t('编辑')}}</bk-button>
@@ -215,14 +229,20 @@
                 @click="handleConfirm($index)">确定</bk-button>
               <bk-button text theme="primary"
                 class="action-button"
-                @click="handleCancel">取消</bk-button>
+                @click="handleCancel($index)">取消</bk-button>
             </template>
           </div>
         </template>
       </bk-table-column>
-      <template #empty v-if="!props.readonly"><icon-text-button :text="$t('新增')" @click="handleClickAdd" /></template>
+      <template #empty v-if="!props.readonly">
+        <icon-text-button
+          ref="tableEmptyAddButtonRef"
+          class="table-empty-add-button"
+          :text="$t('新增')"
+          @click="handleClickAdd" />
+      </template>
     </bk-table>
-    <div class="table-append" v-if="list.length > 0 && !props.readonly">
+    <div class="table-append" v-if="list.length > 0 && !props.readonly && addIndex === -1">
       <icon-text-button
         :text="$t('新增')"
         @click="handleClickAdd"
@@ -240,9 +260,29 @@
         border-top: none;
       }
     }
+
+    .table-empty-add-button {
+      // 避免遮挡
+      position: relative;
+      z-index: 1;
+    }
   }
 
   .settings-table {
+    &:focus-within {
+      &.bk-table-scrollable-x,
+      &.bk-table-scrollable-y {
+        overflow: auto !important;
+        :deep(.bk-table-body-wrapper) {
+          overflow: auto !important;
+        }
+      }
+
+      overflow: visible !important;
+      :deep(.bk-table-body-wrapper) {
+        overflow: visible !important;
+      }
+    }
     .operation-cell {
       .action-button {
         & + .action-button {
@@ -252,8 +292,20 @@
     }
 
     .detault-form-el {
-      :deep(.form-error) {
-        position: static;
+      &:focus-within {
+
+        &.longchar {
+          position: absolute;
+          left: -1px;
+          top: 2px;
+          z-index: 1;
+          :deep(.bk-form-textarea) {
+            min-height: 90px !important;
+          }
+          :deep(.control-icon) {
+            display: none;
+          }
+        }
       }
     }
   }

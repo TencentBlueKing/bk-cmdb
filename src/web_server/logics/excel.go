@@ -161,6 +161,7 @@ func (lgc *Logics) BuildHostExcelFromData(c *gin.Context, objID string, fields m
 	}
 
 	if err := productHostExcelHeader(ctx, fields, filter, xlsxFile, sheet, ccLang, objNames, cloudAreaArr); err != nil {
+		blog.Errorf("product host excel header failed, err: %v, rid: %s", err, rid)
 		return err
 	}
 
@@ -183,6 +184,10 @@ func (lgc *Logics) BuildHostExcelFromData(c *gin.Context, objID string, fields m
 			return err
 		}
 
+		if len(hostInfo) == 0 {
+			break
+		}
+
 		hostInfo, err = lgc.HandleExportEnumQuoteInst(c, header, hostInfo, objID, fields, rid)
 		if err != nil {
 			blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
@@ -203,6 +208,7 @@ func (lgc *Logics) BuildHostExcelFromData(c *gin.Context, objID string, fields m
 
 		hostInfo, rowCountArr, err := lgc.BuildDataWithTable(common.BKInnerObjIDHost, hostInfo, fields, header)
 		if err != nil {
+			blog.ErrorJSON("get data with table field data failed, hostInfo: %s, err: %s, rid: %s", hostInfo, err, rid)
 			return err
 		}
 
@@ -700,9 +706,11 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 	}
 	asstList, err := lgc.getObjectAssociation(ctx, header, objID, modelBizID)
 	if err != nil {
+		blog.Errorf("get object association failed, err: %v, rid: %s", err, rid)
 		return err
 	}
 	if err := productExcelAssociationHeader(ctx, asstSheet, defLang, 0, asstList); err != nil {
+		blog.Errorf("product excel association header failed, err: %v, rid: %s", err, rid)
 		return err
 	}
 
@@ -715,10 +723,12 @@ func (lgc *Logics) BuildExcelTemplate(ctx context.Context, objID, filename strin
 		}
 		err = productHostExcelHeader(ctx, fields, filterFields, file, sheet, defLang, nil, cloudAreaName)
 		if err != nil {
+			blog.Errorf("product host excel header failed, err: %v, rid: %s", err, rid)
 			return err
 		}
 	} else {
 		if err := productExcelHeader(ctx, fields, filterFields, file, sheet, defLang); err != nil {
+			blog.Errorf("product excel header failed, err: %v, rid: %s", err, rid)
 			return err
 		}
 	}

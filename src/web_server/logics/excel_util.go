@@ -69,6 +69,7 @@ func getCustomFields(filterFields []string, customFields []string) []string {
 func (lgc *Logics) getImportExcelPreData(objID string, header http.Header, f *xlsx.File,
 	defLang lang.DefaultCCLanguageIf, bizID int64) (*ImportExcelPreData, error) {
 
+	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	if len(f.Sheets) == 0 {
 		return nil, defErr.Errorf(common.CCErrWebFileContentFail, defLang.Language("web_excel_content_empty"))
@@ -79,23 +80,31 @@ func (lgc *Logics) getImportExcelPreData(objID string, header http.Header, f *xl
 		return nil, defErr.Errorf(common.CCErrWebFileContentFail, defLang.Language("web_excel_sheet_not_found"))
 	}
 
+	// 获取模型字段信息
 	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, bizID, common.HostAddMethodExcelDefaultIndex)
 	if err != nil {
+		blog.Errorf("get object fields failed, err: %v, rid: %s", err, rid)
 		return nil, err
 	}
 
+	// 检查excel表头，得到模型每一个字段从excel哪一列开始，并返回列号与字段id的映射map
 	nameIndexMap, err := checkExcelHeader(sheet, fields, tableNameFieldIndex, defLang)
 	if err != nil {
+		blog.Errorf("check excel header failed, err: %v, rid: %s", err, rid)
 		return nil, err
 	}
 
+	// 获取每一条数据，得到它从哪一行开始，哪一行结束
 	dataRange, err := lgc.getCount(sheet, common.AddExcelDataIndexOffset, fields, defLang)
 	if err != nil {
+		blog.Errorf("get data range failed, err: %v, rid: %s", err, rid)
 		return nil, err
 	}
 
+	// 获取表格字段以及表格字段里的属性在excel中的列的位置，字段的所占列的启始位置，以及将表格字段里的属性构造出property
 	tableMap, err := lgc.getTableMap(fields, sheet)
 	if err != nil {
+		blog.Errorf("get table map failed, err: %v, rid: %s", err, rid)
 		return nil, err
 	}
 
@@ -242,16 +251,23 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 		if property.NotExport {
 			continue
 		}
+
+		if property.NotEditable {
+			for i := rowIndex; i < rowIndex+rowCount; i++ {
+				cell, err := sheet.Cell(i, property.ExcelColIndex)
+				if err != nil {
+					return err
+				}
+				cell.SetStyle(style)
+			}
+		}
+
 		cell, err := sheet.Cell(rowIndex, property.ExcelColIndex)
 		if err != nil {
 			return err
 		}
 		if property.PropertyType != common.FieldTypeInnerTable && rowCount > 1 {
 			cell.Merge(0, rowCount-1)
-		}
-
-		if property.NotEditable {
-			cell.SetStyle(style)
 		}
 
 		val, ok := rowMap[id]
@@ -281,16 +297,24 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 
 func setEnumCellValue(cell *xlsx.Cell, val interface{}, option interface{}) {
 	arrVal, ok := option.([]interface{})
-	strEnumID, enumIDOk := val.(string)
-	if ok && enumIDOk {
-		cellVal := getEnumNameByID(strEnumID, arrVal)
-		cell.SetString(cellVal)
+	if !ok {
+		blog.Errorf("option type is invalid, option: %v", option)
+		return
 	}
+	strEnumID, enumIDOk := val.(string)
+	if !enumIDOk {
+		blog.Errorf("val type is invalid, val: %v", val)
+		return
+	}
+
+	cellVal := getEnumNameByID(strEnumID, arrVal)
+	cell.SetString(cellVal)
 }
 
 func setBoolCellValue(cell *xlsx.Cell, val interface{}) {
 	bl, ok := val.(bool)
 	if !ok {
+		blog.Errorf("value type is not boolean, val: %s", val)
 		return
 	}
 	if bl {
@@ -303,16 +327,20 @@ func setBoolCellValue(cell *xlsx.Cell, val interface{}) {
 
 func setIntCellValue(cell *xlsx.Cell, val interface{}) {
 	intVal, err := util.GetInt64ByInterface(val)
-	if err == nil {
-		cell.SetInt64(intVal)
+	if err != nil {
+		blog.Errorf("val type is not int64, val: %v", val)
+		return
 	}
+	cell.SetInt64(intVal)
 }
 
 func setFloatCellValue(cell *xlsx.Cell, val interface{}) {
 	floatVal, err := util.GetFloat64ByInterface(val)
-	if err == nil {
-		cell.SetFloat(floatVal)
+	if err != nil {
+		blog.Errorf("val type is not float64, val: %v", val)
+		return
 	}
+	cell.SetFloat(floatVal)
 }
 
 func setTableCellValue(val interface{}, sheet *xlsx.Sheet, rowIndex int, property Property) error {
@@ -668,14 +696,14 @@ func productHostExcelHeader(ctx context.Context, fields map[string]Property, fil
 	width := float64(24)
 	sheet.SetColWidth(1, 1, width)
 	// 字典中的值为国际化之后的"业务拓扑"和"业务名"，"集群"，”模块“，用来做判断，命中即变化相应的cell颜色。
-	bizTopoMap := map[string]int{
-		defLang.Language("web_ext_field_topo"):        1,
-		defLang.Language("biz_property_bk_biz_name"):  1,
-		defLang.Language("web_ext_field_module_name"): 1,
-		defLang.Language("web_ext_field_set_name"):    1,
+	bizTopoMap := map[string]struct{}{
+		defLang.Language("web_ext_field_topo"):        {},
+		defLang.Language("biz_property_bk_biz_name"):  {},
+		defLang.Language("web_ext_field_module_name"): {},
+		defLang.Language("web_ext_field_set_name"):    {},
 	}
 	for _, name := range objName {
-		bizTopoMap[name] = 1
+		bizTopoMap[name] = struct{}{}
 	}
 
 	firstColFields := []string{common.ExcelFirstColumnFieldName, common.ExcelFirstColumnFieldType,
@@ -713,7 +741,7 @@ func productHostExcelHeader(ctx context.Context, fields map[string]Property, fil
 }
 
 func handleHostField(field Property, handleFieldParam *HandleFieldParam, cloudAreaName []string,
-	bizTopoMap map[string]int) error {
+	bizTopoMap map[string]struct{}) error {
 
 	isRequire := ""
 	if field.IsRequire {

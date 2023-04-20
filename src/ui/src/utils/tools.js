@@ -606,6 +606,10 @@ export function getPropertyPlaceholder(property) {
   return t(placeholderTxt, { name: property.bk_property_name })
 }
 
+export function getPropertyDefaultEmptyValue(_property) {
+  return ''
+}
+
 export default {
   getProperty,
   getPropertyText,

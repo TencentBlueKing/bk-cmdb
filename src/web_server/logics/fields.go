@@ -215,65 +215,60 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID i
 	}
 
 	fields := make([]Property, 0)
-	noUniqueFields := make([]Property, 0)
-	noRequiredFields := make([]Property, 0)
+	requiredFieldMap := make(map[string][]Property)
+	noRequiredFieldMap := make(map[string][]Property)
 
-	// 第一步，选出唯一校验字段；
+	// 构造必填字段和非必填字段所在分组的map
 	for _, field := range sortedFields {
-		noUniqueFields = append(noUniqueFields, field)
+		if field.IsRequire {
+			requiredFieldMap[field.Group] = append(requiredFieldMap[field.Group], field)
+			continue
+		}
+		noRequiredFieldMap[field.Group] = append(noRequiredFieldMap[field.Group], field)
 	}
 
-	// 第二步，根据字段分组，对必填字段排序；并选出非必填字段
-	for _, group := range groups {
-		for _, field := range noUniqueFields {
-			if field.Group != group.ID {
-				continue
-			}
-			if field.IsRequire != true {
-				noRequiredFields = append(noRequiredFields, field)
-				continue
-			}
-			field.ExcelColIndex = index
-			if field.PropertyType == common.FieldTypeInnerTable {
-				option, err := metadata.ParseTableAttrOption(field.Option)
-				if err != nil {
-					return nil, err
-				}
-				index += len(option.Header)
-				field.Length = len(option.Header)
-				fields = append(fields, field)
-				continue
-			}
-			field.Length = 1
-			fields = append(fields, field)
-			index++
-		}
+	// 第二步，根据字段分组，对必填字段排序
+	requiredFields, index, err := setFieldsIndex(groups, requiredFieldMap, index)
+	if err != nil {
+		return nil, err
 	}
+	fields = append(fields, requiredFields...)
 
 	// 第三步，根据字段分组，用必填字段使用的index，继续对非必填字段进行排序
-	for _, group := range groups {
-		for _, field := range noRequiredFields {
-			if field.Group != group.ID {
-				continue
-			}
-			field.ExcelColIndex = index
-			if field.PropertyType == common.FieldTypeInnerTable {
-				option, err := metadata.ParseTableAttrOption(field.Option)
-				if err != nil {
-					return nil, err
-				}
-				index += len(option.Header)
-				field.Length = len(option.Header)
-				fields = append(fields, field)
-				continue
-			}
-			field.Length = 1
-			fields = append(fields, field)
-			index++
+	noRequiredFields, index, err := setFieldsIndex(groups, noRequiredFieldMap, index)
+	if err != nil {
+		return nil, err
+	}
 
+	fields = append(fields, noRequiredFields...)
+	return fields, nil
+}
+
+func setFieldsIndex(groups []PropertyGroup, fieldsGroupMap map[string][]Property, index int) ([]Property, int, error) {
+	result := make([]Property, 0)
+	for _, group := range groups {
+		fields, ok := fieldsGroupMap[group.ID]
+		if ok {
+			for _, field := range fields {
+				field.ExcelColIndex = index
+				if field.PropertyType == common.FieldTypeInnerTable {
+					option, err := metadata.ParseTableAttrOption(field.Option)
+					if err != nil {
+						return nil, 0, err
+					}
+					index += len(option.Header)
+					field.Length = len(option.Header)
+					result = append(result, field)
+					continue
+				}
+				field.Length = 1
+				result = append(result, field)
+				index++
+			}
 		}
 	}
-	return fields, nil
+
+	return result, index, nil
 }
 
 func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, conds mapstr.MapStr, modelBizID int64) (

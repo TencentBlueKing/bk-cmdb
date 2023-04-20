@@ -35,7 +35,8 @@
     @click="handleClick"
     v-bk-tooltips="{
       disabled: !props.disabled || !props.disabledTips,
-      content: props.disabledTips
+      content: props.disabledTips,
+      allowHtml: true
     }">
     <bk-icon :type="props.icon" />{{ props.text }}
   </div>

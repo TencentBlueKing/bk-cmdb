@@ -377,12 +377,13 @@ func (m *modelAttribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header 
 		if header[index].PropertyName == "" {
 			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyName)
 		}
+
 		if common.AttributeNameMaxLength < utf8.RuneCountInString(header[index].PropertyName) {
 			return nil, kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, common.AttributeNameMaxLength)
 		}
-		err = valid.ValidTableFieldOption(header[index].PropertyType, header[index].Option, header[index].Default,
-			header[index].IsMultiple, kit.CCError)
-		if err != nil {
+
+		if err := valid.ValidTableFieldOption(header[index].PropertyType, header[index].Option, header[index].Default,
+			header[index].IsMultiple, kit.CCError); err != nil {
 			return nil, err
 		}
 		propertyAttr[header[index].PropertyID] = &header[index]
@@ -426,6 +427,7 @@ func (m *modelAttribute) checkTableAttrHeader(kit *rest.Kit, propertyID, objectI
 		blog.Errorf("get attribute option failed, error: %v, option: %v, rid: %s", err, kit.Rid)
 		return err
 	}
+
 	for index := range op.Header {
 		if _, ok := headerMap[op.Header[index].PropertyID]; !ok {
 			headerMap[op.Header[index].PropertyID] = &op.Header[index]

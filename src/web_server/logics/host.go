@@ -53,8 +53,8 @@ func (lgc *Logics) GetHostData(appID int64, hostIDArr []int64, hostFields []stri
 	// hostIDStr has the higher priority
 	if len(hostIDArr) != 0 {
 
-		if len(hostIDArr) > common.BKMaxExportLimit {
-			return nil, errors.New(defLang.Languagef("host_id_len_err", common.BKMaxExportLimit))
+		if len(hostIDArr) > common.BKInstMaxExportLimit {
+			return nil, errors.New(defLang.Languagef("host_id_len_err", common.BKInstMaxExportLimit))
 		}
 		condArr := make([]interface{}, 0)
 
@@ -97,11 +97,10 @@ func (lgc *Logics) GetHostData(appID int64, hostIDArr []int64, hostFields []stri
 
 		sHostCond["condition"] = condArr
 	} else {
-		if exportCond.Page.Limit <= 0 || exportCond.Page.Limit > common.BKMaxExportLimit {
-			return nil, errors.New(defLang.Languagef("export_page_limit_err", common.BKMaxExportLimit))
+		if exportCond.Page.Limit <= 0 || exportCond.Page.Limit > common.BKInstMaxExportLimit {
+			return nil, errors.New(defLang.Languagef("export_page_limit_err", common.BKInstMaxExportLimit))
 		}
 		sHostCond["ip"] = exportCond.Ip
-		sHostCond["page"] = exportCond.Page
 
 		// set host fields
 		if len(hostFields) > 0 {
@@ -113,7 +112,7 @@ func (lgc *Logics) GetHostData(appID int64, hostIDArr []int64, hostFields []stri
 		}
 		sHostCond["condition"] = exportCond.Condition
 	}
-
+	sHostCond["page"] = exportCond.Page
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetHostData(context.Background(), header, sHostCond)
 	if nil != err {
 		blog.Errorf("GetHostData failed, search condition: %+v, err: %+v, rid: %s", sHostCond, err, rid)

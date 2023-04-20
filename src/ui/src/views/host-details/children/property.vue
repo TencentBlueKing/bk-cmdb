@@ -24,6 +24,14 @@
           <span class="property-name" v-bk-overflow-tips>
             {{property.bk_property_name}}
           </span>
+          <span :id="`rule-${property.id}`" v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
+            <i18n path="已配置属性自动应用提示" v-if="hasRelatedRules(property)">
+              <template #link>
+                <bk-button text @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
+              </template>
+            </i18n>
+            <span v-else>{{$t('系统限定不可修改')}}</span>
+          </span>
           <!-- 非表格字段 -->
           <template v-if="property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE">
             <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
@@ -38,14 +46,6 @@
             <template v-if="!loadingState.includes(property)">
               <template v-if="!readonly">
                 <template v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
-                  <span :id="`rule-${property.id}`">
-                    <i18n path="已配置属性自动应用提示" v-if="hasRelatedRules(property)">
-                      <template #link>
-                        <bk-button text @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
-                      </template>
-                    </i18n>
-                    <span v-else>{{$t('系统限定不可修改')}}</span>
-                  </span>
                   <i class="is-related property-edit icon-cc-edit"
                     v-bk-tooltips="{
                       allowHtml: true,
@@ -120,6 +120,8 @@
           <template v-else>
             <cmdb-form-innertable
               class="form-component-innertable"
+              :disabled="hasRelatedRules(property) || !isPropertyEditable(property)"
+              :disabled-tips="`#rule-${property.id}`"
               :property="property"
               :obj-id="objId"
               :instance-id="host.bk_host_id"
