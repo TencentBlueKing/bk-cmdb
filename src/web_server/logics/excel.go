@@ -776,7 +776,7 @@ func GetExcelData(ctx context.Context, preData *ImportExcelPreData, start, end i
 			continue
 		}
 		if len(host) != 0 {
-			hosts[i] = host
+			hosts[preData.DataRange[i].Start+1] = host
 		}
 	}
 
