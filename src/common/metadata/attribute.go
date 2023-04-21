@@ -1127,10 +1127,18 @@ func getString(val interface{}) string {
 	if val == nil {
 		return ""
 	}
-	if ret, ok := val.(string); ok {
+	switch ret := val.(type) {
+	case string:
 		return ret
+	default:
+		if util.IsNumeric(val) {
+			// compatible for int & float, need to merge with src/common/valid
+			js, _ := json.Marshal(ret)
+			return string(js)
+		}
+
+		return ""
 	}
-	return ""
 }
 
 func getBool(val interface{}) bool {
