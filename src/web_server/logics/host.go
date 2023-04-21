@@ -326,7 +326,7 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 			continue
 		}
 
-		errMsg, err = lgc.CheckHostsAdded(ctx, header, host, preData.DataRange)
+		errMsg, err = lgc.CheckHostsAdded(ctx, header, host)
 		if err != nil {
 			blog.Errorf("check host added failed, err: %v, rid: %s", err, rid)
 			errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, err.Error()))
@@ -481,7 +481,7 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 			continue
 		}
 
-		errMsg, err = lgc.CheckHostsUpdated(ctx, header, host, modelBizID, preData.DataRange)
+		errMsg, err = lgc.CheckHostsUpdated(ctx, header, host, modelBizID)
 		if err != nil {
 			blog.Errorf("check hosts updated failed, err: %v, rid: %s", err, rid)
 			errMsgs = append(errMsgs, defLang.Languagef("import_update_data_fail", rowNum, err.Error()))
@@ -563,8 +563,8 @@ func returnByErrCode(defErr ccErrrors.DefaultCCErrorIf, errCode int, data mapstr
 }
 
 // CheckHostsAdded check the hosts to be added
-func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{},
-	dataRange []ExcelDataRange) (errMsg []string, err error) {
+func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}) (
+	errMsg []string, err error) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
@@ -576,7 +576,6 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 	}
 
 	for _, index := range util.SortedMapIntKeys(hostInfos) {
-		rowNum := dataRange[index].Start + 1
 		host := hostInfos[index]
 		if host == nil {
 			continue
@@ -584,25 +583,25 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 
 		innerIP, ok := host[common.BKHostInnerIPField].(string)
 		if !ok || innerIP == "" {
-			errMsg = append(errMsg, ccLang.Languagef("host_import_innerip_empty"))
+			errMsg = append(errMsg, ccLang.Languagef("host_import_innerip_empty", index))
 			continue
 		}
 
 		if _, ok := host[common.BKHostIDField]; ok {
-			errMsg = append(errMsg, ccLang.Languagef("import_host_no_need_hostID", rowNum))
+			errMsg = append(errMsg, ccLang.Languagef("import_host_no_need_hostID", index))
 			continue
 		}
 
 		cloud, ok := host[common.BKCloudIDField]
 		if !ok {
-			errMsg = append(errMsg, ccLang.Languagef("import_host_not_provide_cloudID", rowNum))
+			errMsg = append(errMsg, ccLang.Languagef("import_host_not_provide_cloudID", index))
 			continue
 		}
 
 		// check if the host exist in db
 		key := generateHostCloudKey(innerIP, cloud)
 		if _, exist := existentHosts[key]; exist {
-			errMsg = append(errMsg, ccLang.Languagef("import_host_exist_error", rowNum, common.BKDefaultDirSubArea,
+			errMsg = append(errMsg, ccLang.Languagef("import_host_exist_error", index, common.BKDefaultDirSubArea,
 				innerIP))
 			continue
 		}
@@ -613,7 +612,7 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 
 // CheckHostsUpdated check the hosts to be updated
 func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{},
-	modelBizID int64, dataRange []ExcelDataRange) (errMsg []string, err error) {
+	modelBizID int64) (errMsg []string, err error) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
@@ -640,7 +639,6 @@ func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, ho
 	}
 
 	for _, index := range util.SortedMapIntKeys(hostInfos) {
-		rowNum := dataRange[index].Start + 1
 		host := hostInfos[index]
 		if host == nil {
 			continue
@@ -649,32 +647,32 @@ func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, ho
 		hostID, ok := host[common.BKHostIDField]
 		if !ok {
 			blog.Errorf("bk_host_id field doesn't exist, innerIp: %v, rid: %v", host[common.BKHostInnerIPField], rid)
-			errMsg = append(errMsg, ccLang.Languagef("import_update_host_miss_hostID", rowNum))
+			errMsg = append(errMsg, ccLang.Languagef("import_update_host_miss_hostID", index))
 			continue
 		}
 		hostIDVal, err := util.GetInt64ByInterface(hostID)
 		if err != nil {
-			errMsg = append(errMsg, ccLang.Languagef("import_update_host_hostID_not_int", rowNum))
+			errMsg = append(errMsg, ccLang.Languagef("import_update_host_hostID_not_int", index))
 			continue
 		}
 
 		// check if the host exist in db
 		ip, exist := existentHost[hostIDVal]
 		if !exist {
-			errMsg = append(errMsg, ccLang.Languagef("import_host_no_exist_error", rowNum, hostIDVal))
+			errMsg = append(errMsg, ccLang.Languagef("import_host_no_exist_error", index, hostIDVal))
 			continue
 		}
 
 		// check if the host innerIP and hostID is consistent
 		excelIP := util.GetStrByInterface(host[common.BKHostInnerIPField])
 		if ip != excelIP {
-			errMsg = append(errMsg, ccLang.Languagef("import_host_ip_not_consistent", rowNum, excelIP, hostIDVal, ip))
+			errMsg = append(errMsg, ccLang.Languagef("import_host_ip_not_consistent", index, excelIP, hostIDVal, ip))
 			continue
 		}
 
 		// check if the hostID and bizID is consistent
 		if hostBizMap[hostIDVal] != modelBizID {
-			errMsg = append(errMsg, ccLang.Languagef("import_hostID_bizID_not_consistent", rowNum, excelIP))
+			errMsg = append(errMsg, ccLang.Languagef("import_hostID_bizID_not_consistent", index, excelIP))
 			continue
 		}
 	}

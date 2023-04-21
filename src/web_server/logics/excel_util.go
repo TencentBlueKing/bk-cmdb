@@ -1026,18 +1026,18 @@ func handleFieldTypeTable(handleFieldParam *HandleFieldParam, index int, field *
 
 		switch attr.PropertyType {
 		case common.FieldTypeInt:
-			handleFieldTypeInt(handleFieldParam, index)
+			handleFieldTypeInt(handleFieldParam, index+idx)
 		case common.FieldTypeFloat:
-			handleFieldTypeFloat(handleFieldParam, index)
+			handleFieldTypeFloat(handleFieldParam, index+idx)
 		case common.FieldTypeEnumMulti:
 			optionArr, ok := attr.Option.([]interface{})
 			if ok {
 				handleFieldTypeEnumMulti(handleFieldParam, optionArr, field.Name+"##"+attr.PropertyName)
 			}
 		case common.FieldTypeBool:
-			handleFieldTypeBool(handleFieldParam, index)
+			handleFieldTypeBool(handleFieldParam, index+idx)
 		default:
-			handleFieldTypeDefault(handleFieldParam, index)
+			handleFieldTypeDefault(handleFieldParam, index+idx)
 		}
 	}
 
