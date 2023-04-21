@@ -27,6 +27,10 @@
     multiple: {
       type: Boolean,
       default: true
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   })
   const emit = defineEmits(['input', 'toggle'])
@@ -38,8 +42,8 @@
   const loading = ref(false)
   const selector = ref(null)
   const placeholder = ref('')
-  const auth = ref({})
-  const disabled = ref(false)
+  const isNoauth = ref(false)
+  const isReadonly = ref(false)
 
   const search = async (keyword) => {
     loading.value = true
@@ -51,13 +55,15 @@
       )
       placeholder.value = t('请选择模型实例')
       localValue.value = getInitValue()
-      disabled.value = false
+      isNoauth.value = false
+      isReadonly.value = false
       list.value = results
       loading.value = false
     } catch ({ permission }) {
       if (permission) {
         localValue.value = resetValue()
-        disabled.value = true
+        isNoauth.value = true
+        isReadonly.value = true
       }
       loading.value = false
     }
@@ -81,12 +87,10 @@
     setTimeout(() => {
       selector?.value?.$refs.bkSelectTag.calcOverflow()
     }, 100)
-    auth.value = getAuth(props.objId)
   })
 
   watch(() => props.objId, (cur, prev) => {
     if (cur && cur !== prev) {
-      auth.value = getAuth(cur)
       search()
     }
 
@@ -101,11 +105,10 @@
     isActive.value = active
     emit('toggle', active)
   }
-
-  const getAuth = (objId) => {
-    const relationModel = store.getters['objectModelClassify/getModelById'](objId)
+  const auth = computed(() => {
+    const relationModel = store.getters['objectModelClassify/getModelById'](props.objId)
     return { type: OPERATION.R_INST, relation: [relationModel.id] }
-  }
+  })
 
   defineExpose({
     focus: () => selector?.value?.show?.()
@@ -127,14 +130,15 @@
       :loading="loading"
       :is-tag-width-limit="true"
       :remote-method="remoteSearch"
+      :readonly="isReadonly"
       @toggle="handleToggle">
       <bk-option v-for="option in list"
         :key="option.id"
         :id="option.id"
         :name="option.name">
       </bk-option>
-      <template v-if="disabled" slot="trigger">
-        <cmdb-auth-mask class="auth-mask" :auth="auth" :authorized="!disabled">
+      <template v-if="isNoauth" slot="trigger">
+        <cmdb-auth-mask class="auth-mask" :auth="auth" :authorized="!isNoauth">
           <p class="auth-tips">{{t('该字段暂无权限配置，点击申请权限')}}</p>
         </cmdb-auth-mask>
       </template>
@@ -155,9 +159,11 @@
             }
           }
         .auth-tips{
-          font-size: 12px;
-          color: #c4c6cc;
-          padding: 0 10px;
+            font-size: 12px;
+            color: #c4c6cc;
+            padding: 0 10px;
+            background-color: #fafbfd;
+            border-color: #dcdee5;
         }
     }
 </style>

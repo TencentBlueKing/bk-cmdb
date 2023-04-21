@@ -83,7 +83,7 @@
 
   export default {
     name: 'export-relation',
-    setup(props, setupContext) {
+    setup() {
       const [state, { setRelation, removeRelation }] = useState()
       const objectUniqueId = toRef(state, 'object_unique_id')
       const currentModelId = toRef(state, 'bk_obj_id')
@@ -154,7 +154,7 @@
         state.object_unique_id.value = modelUniqueCheck?.id
       }
       const clearSelectedUniqueCheck = (clearSelf = true) => {
-        setupContext.refs.tableRef.clearSelection() // 这种方式在Vue3.0中不可使用
+        tableRef.value.clearSelection()
         clearSelf && (state.object_unique_id.value = '')
         computedRelations.value.forEach((relation) => {
           removeRelation(relation.relation_obj_id)
