@@ -66,7 +66,7 @@
       '--max-width': colMaxWidth,
       '--min-height': rowMinHeight,
       '--max-columns': maxColumns,
-      '--font-size': fontSize
+      '--grid-item-font-size': fontSize
     }">
     <slot></slot>
   </div>

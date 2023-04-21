@@ -146,7 +146,7 @@
   })
 
   watch(() => settings.bk_property_type, (type) => {
-    if (!props.isEditField) {
+    if (!props.isEditField || !props.isEdit) {
       switch (type) {
         case PROPERTY_TYPES.INT:
         case PROPERTY_TYPES.FLOAT:
@@ -172,11 +172,11 @@
     const validate = [
       instance.$validator.validateAll()
     ]
-    if (instance.$refs.component) {
-      validate.push(instance.$refs.component.$validator.validateAll())
+    if (instance.$refs.componentOption) {
+      validate.push(instance.$refs.componentOption.$validator.validateAll())
     }
     const results = await Promise.all(validate)
-    return results.every(result => result)
+    return results
   }
 
   const getDefaultValueValidateRules = (property) => {
@@ -186,7 +186,20 @@
   }
 
   const handleConfirm = async () => {
-    if (!await validateValue()) {
+    const results = await validateValue()
+    if (!results.every(result => result)) {
+      const comps = [
+        instance.$refs.componentBase,
+        instance.$refs.componentOption,
+      ]
+      const index = results.findIndex(item => item === false)
+      comps[index]?.$el?.scrollIntoView()
+      // 确定是否为默认值校验不通过
+      if (index === 0) {
+        if (!await instance.$validator.validate('defalut')) {
+          instance.$refs.componentDefault?.$el?.scrollIntoView()
+        }
+      }
       return
     }
     emit(props.isEdit ? 'save' : 'add', { ...settings })
@@ -204,7 +217,7 @@
     :auto-close="false"
     @confirm="handleConfirm">
     <div class="content-layout">
-      <grid-layout mode="form" :gap="24" :font-size="'14px'" :max-columns="2">
+      <grid-layout mode="form" :gap="24" :font-size="'14px'" :max-columns="2" ref="componentBase">
         <grid-item
           direction="column"
           required
@@ -291,7 +304,7 @@
           :multiple="settings.ismultiple"
           v-model="settings.option"
           :type="settings.bk_property_type"
-          ref="component">
+          ref="componentOption">
         </component>
         <div class="form-label" v-if="isDefaultShow">
           <span class="label-text">
@@ -306,7 +319,7 @@
               :options="settings.option || []"
               v-model="settings.default"
               v-validate="getDefaultValueValidateRules(settings)"
-              ref="component">
+              ref="componentDefault">
             </component>
             <div class="form-error" v-if="errors.has('defalut')">{{errors.first('defalut')}}</div>
           </div>

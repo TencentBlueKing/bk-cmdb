@@ -145,7 +145,17 @@
       enumList: {
         deep: true,
         handler(value) {
-          this.settingList = (value || []).filter(item => item.id && item.name)
+          // 重复的选项不允许加入的选择列表
+          const enumList = []
+          if (value.length) {
+            enumList.push(value[0])
+            value.forEach((data) => {
+              if (!enumList.some(item => item.id === data.id || item.name === data.name)) {
+                enumList.push(data)
+              }
+            })
+          }
+          this.settingList = enumList.filter(item => item.id && item.name)
 
           // 无默认值选择第0项，有默认值则需要验证值是否存在（列表中可能将其删除）
           if (!this.defaultValue.length) {
@@ -197,7 +207,7 @@
         if (this.value === '' || (Array.isArray(this.value) && !this.value.length)) {
           this.enumList = [this.generateEnum()]
         } else {
-          this.enumList = this.value.map(data => ({ ...data, type: 'text' }))
+          this.enumList = this.value.map(data => (this.generateEnum(data)))
           this.defaultValue = this.enumList.filter(item => item.is_default).map(item => item.id)
         }
       },

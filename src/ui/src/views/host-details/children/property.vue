@@ -125,6 +125,7 @@
               :property="property"
               :obj-id="objId"
               :instance-id="host.bk_host_id"
+              :auth="HOST_AUTH.U_HOST"
               :ref="`component-${property.bk_property_id}`" />
           </template>
         </li>
