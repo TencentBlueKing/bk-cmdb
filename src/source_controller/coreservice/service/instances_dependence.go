@@ -194,6 +194,10 @@ func (s *coreService) DeleteQuotedInst(kit *rest.Kit, objID string, instIDs []in
 
 // AttachQuotedInst attach quoted instances with source instance
 func (s *coreService) AttachQuotedInst(kit *rest.Kit, objID string, instID uint64, data mapstr.MapStr) error {
+	if len(data) == 0 {
+		return nil
+	}
+
 	quoteRelCond := mapstr.MapStr{common.BKSrcModelField: objID}
 	quoteRelations := make([]metadata.ModelQuoteRelation, 0)
 

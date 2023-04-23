@@ -30,7 +30,7 @@ type quotedInstAuditLog struct {
 	audit
 }
 
-// GenerateAuditLog generate audit log of cloud account, if data is nil, will auto get data by accountID.
+// GenerateAuditLog generate audit log of quoted instance.
 func (h *quotedInstAuditLog) GenerateAuditLog(params *generateAuditCommonParameter, objID, srcObjID, attrID string,
 	data []mapstr.MapStr) ([]metadata.AuditLog, error) {
 

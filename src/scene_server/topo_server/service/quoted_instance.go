@@ -56,17 +56,23 @@ func (s *Service) BatchCreateQuotedInstance(cts *rest.Contexts) {
 			cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKInstIDField))
 			return
 		}
+
+		if instID == 0 {
+			continue
+		}
 		instIDs = append(instIDs, instID)
 	}
 
-	instIDs = util.IntArrayUnique(instIDs)
+	if len(instIDs) > 0 {
+		instIDs = util.IntArrayUnique(instIDs)
 
-	uAuthErr := s.AuthManager.AuthorizeByInstanceID(cts.Kit.Ctx, cts.Kit.Header, meta.Update, opt.ObjID, instIDs...)
-	cAuthErr := s.AuthManager.AuthorizeByInstanceID(cts.Kit.Ctx, cts.Kit.Header, meta.Create, opt.ObjID, instIDs...)
-	if uAuthErr != nil && cAuthErr != nil {
-		blog.Errorf("authorize failed, create err: %v, update err: %v, rid: %s", cAuthErr, uAuthErr, cts.Kit.Rid)
-		cts.RespAutoError(uAuthErr)
-		return
+		uAuthErr := s.AuthManager.AuthorizeByInstanceID(cts.Kit.Ctx, cts.Kit.Header, meta.Update, opt.ObjID, instIDs...)
+		cAuthErr := s.AuthManager.AuthorizeByInstanceID(cts.Kit.Ctx, cts.Kit.Header, meta.Create, opt.ObjID, instIDs...)
+		if uAuthErr != nil && cAuthErr != nil {
+			blog.Errorf("authorize failed, create err: %v, update err: %v, rid: %s", cAuthErr, uAuthErr, cts.Kit.Rid)
+			cts.RespAutoError(uAuthErr)
+			return
+		}
 	}
 
 	// get quoted object id
