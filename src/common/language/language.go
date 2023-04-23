@@ -92,6 +92,7 @@ func LoadLanguageResourceFromDir(dir string) (map[string]LanguageMap, error) {
 
 		// will not check language validity, subject to language package file
 		for key, val := range res {
+			blog.ErrorJSON("00000000000 key: %s, language[0]: %s", key, language[0])
 			if _, ok := langMap[language[0]][key]; ok && key != "" {
 				fmt.Printf("the language code[%s] repeated\n", key)
 			}
