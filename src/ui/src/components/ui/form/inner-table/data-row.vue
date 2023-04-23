@@ -110,6 +110,7 @@
   import { nextTick, ref, set, watch, reactive, computed, getCurrentInstance, onMounted } from 'vue'
   import { t } from '@/i18n'
   import cloneDeep from 'lodash/cloneDeep'
+  import { formatValues } from '@/utils/tools'
   import PropertyFormElement from '../property-form-element.vue'
   import IconTextButton from '@/components/ui/button/icon-text-button.vue'
   import { $success } from '@/magicbox/index.js'
@@ -191,7 +192,11 @@
 
   const scrollAddButton = () => {
     if (tableEmptyAddButtonRef.value) {
-      tableEmptyAddButtonRef.value.$el?.closest('.bk-table-empty-text')?.scrollIntoView?.()
+      const emptyTextEl = tableEmptyAddButtonRef.value.$el?.closest('.bk-table-empty-text')
+      const emptyTextWidth = emptyTextEl.offsetWidth
+      if (emptyTextEl?.offsetParent) {
+        emptyTextEl.offsetParent.scrollLeft = (emptyTextEl.parentElement.offsetWidth - emptyTextWidth) / 2
+      }
     }
   }
 
@@ -303,6 +308,7 @@
     }
 
     const row = cloneDeep(editState.row[index])
+    const values = formatValues(row, header.value)
 
     if (props.immediate) {
       isLoading.value = true
@@ -315,12 +321,12 @@
         req = instanceTableService.update({
           ...baseParams,
           ids: [row.id],
-          data: row
+          data: values
         })
       } else {
         req = instanceTableService.create({
           ...baseParams,
-          data: [{ ...row, bk_inst_id: props.instanceId }]
+          data: [{ ...values, bk_inst_id: props.instanceId }]
         })
       }
       try {

@@ -115,6 +115,7 @@
               :property="property"
               :obj-id="objId"
               :instance-id="instanceId"
+              :auth="authData"
               :ref="`component-${property.bk_property_id}`" />
           </template>
         </li>

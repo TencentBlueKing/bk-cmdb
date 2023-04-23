@@ -12,8 +12,7 @@
 
 import http from '@/api'
 
-const create = (params, config) => http.post('createmany/quoted/instance', params, config).then(() => true)
-  .catch(() => false)
+const create = (params, config) => http.post('createmany/quoted/instance', params, config)
 
 const update = (params, config) => http.put('updatemany/quoted/instance', params, config)
 
