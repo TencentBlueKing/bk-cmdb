@@ -404,8 +404,6 @@ func (attribute *Attribute) validEnumMulti(ctx context.Context, val interface{},
 		}
 	}
 
-	blog.V(3).Infof("params %s not valid, option %#v, raw option %#v, value: %#v, rid: %s", key, enumOption,
-		attribute.Option, val, rid)
 	return errors.RawErrorInfo{}
 }
 

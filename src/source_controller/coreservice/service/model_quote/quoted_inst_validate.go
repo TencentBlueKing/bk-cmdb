@@ -117,12 +117,8 @@ func validateCreateQuotedInst(kit *rest.Kit, objID string, instance mapstr.MapSt
 	var srcInstID int64
 
 	for key, val := range instance {
-		if key == common.BKInstIDField {
-			if _, exists := instance[common.BKInstIDField]; !exists {
-				instance[common.BKInstIDField] = 0
-				continue
-			}
 
+		if key == common.BKInstIDField {
 			instIDVal, err := util.GetInt64ByInterface(val)
 			if err != nil {
 				blog.Errorf("source instance id is not int64, err: %v, val: %v, rid: %s", err, val, kit.Rid)
@@ -163,6 +159,10 @@ func validateCreateQuotedInst(kit *rest.Kit, objID string, instance mapstr.MapSt
 		}
 
 		instance[attrID] = getLostFieldDefaultValue(kit, attribute)
+	}
+
+	if _, exists := instance[common.BKInstIDField]; !exists {
+		instance[common.BKInstIDField] = 0
 	}
 
 	return srcInstID, nil
