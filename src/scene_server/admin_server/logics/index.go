@@ -278,15 +278,15 @@ func (dt *dbTable) syncIndexesToDB(ctx context.Context, tableName string,
 
 }
 
-// GetQuotedObjID get quoted object id by source object id & property id
-func (dt *dbTable) getQuotedWithDestModel(ctx context.Context, destModel string) (uint64, error) {
+// countQuotedWithDestModel count quoted object id by dest_model.
+func (dt *dbTable) countQuotedWithDestModel(ctx context.Context, destModel string) (uint64, error) {
 
 	cond := map[string]interface{}{
 		common.BKDestModelField: destModel,
 	}
 	count, err := dt.db.Table(common.BKTableNameModelQuoteRelation).Find(cond).Count(ctx)
 	if err != nil {
-		blog.Errorf("get quoted object count failed, cond: %+v, err: %v, rid: %s", cond, err, dt.rid)
+		blog.Errorf("count quoted object failed, cond: %+v, err: %v, rid: %s", cond, err, dt.rid)
 		return 0, err
 	}
 
@@ -317,7 +317,8 @@ func (dt *dbTable) findSyncIndexesLogicUnique(ctx context.Context) (map[string][
 		// 内置模型不需要简表
 		if !obj.IsPre {
 			tbIndexes[instTable] = append(index.InstanceIndexes(), uniques...)
-			count, err := dt.getQuotedWithDestModel(ctx, obj.ObjectID)
+			// if there is a table instance table, an index needs to be created.
+			count, err := dt.countQuotedWithDestModel(ctx, obj.ObjectID)
 			if err != nil {
 				return nil, err
 			}
@@ -428,7 +429,8 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 		}
 
 		objIndexes := append(index.InstanceIndexes(), uniques...)
-		count, err := dt.getQuotedWithDestModel(ctx, obj.ObjectID)
+		// if there is a table instance table, an index needs to be created.
+		count, err := dt.countQuotedWithDestModel(ctx, obj.ObjectID)
 		if err != nil {
 			return err
 		}

@@ -13,7 +13,6 @@
 package model
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"unicode/utf8"
@@ -262,12 +261,12 @@ func (a *attribute) ValidObjIDAndInstID(kit *rest.Kit, objID string, option inte
 func (a *attribute) validTableAttributes(kit *rest.Kit, option interface{}) error {
 
 	if option == nil {
-		return errors.New("option params is invalid")
+		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "option")
 	}
 
 	tableOption, err := metadata.ParseTableAttrOption(option)
 	if err != nil {
-		blog.Errorf("get attribute option failed, error: %v, option: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("get attribute option failed, option: %+v, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
@@ -282,19 +281,18 @@ func (a *attribute) validTableAttributes(kit *rest.Kit, option interface{}) erro
 	return nil
 }
 
-// validAndGetTableAttrHeaderDetail in the creation and update scenarios,
-// the full amount of header content needs to be passed.
+// validAndGetTableAttrHeaderDetail in the creation and update scenarios, the full amount of header
+// content needs to be passed.
 func (a *attribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header []metadata.Attribute) (
 	map[string]*metadata.Attribute, error) {
 
 	if len(header) == 0 {
-		return nil, kit.CCError.Errorf(common.CCErrorTopoTableFieldsMustSetHeader)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "table header")
 	}
 
 	if len(header) > metadata.TableHeaderMaxNum {
-		return nil, kit.CCError.Errorf(common.CCErrorTopoHeaderOfTableExceedAllowed, metadata.TableHeaderMaxNum)
+		return nil, kit.CCError.Errorf(common.CCErrCommXXExceedLimit, "table header", metadata.TableHeaderMaxNum)
 	}
-
 	propertyAttr := make(map[string]*metadata.Attribute)
 	var longCharNum int
 	for index := range header {
@@ -308,9 +306,9 @@ func (a *attribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header []met
 			longCharNum++
 		}
 		if longCharNum > metadata.TableLongCharMaxNum {
-			return nil, kit.CCError.Errorf(common.CCErrorTopoHeaderOfTableLongCharExceedAllowed,
-				metadata.TableLongCharMaxNum)
+			return nil, kit.CCError.Errorf(common.CCErrCommXXExceedLimit, "table header", metadata.TableLongCharMaxNum)
 		}
+
 		// check if property type for creation is valid, can't update property type
 		if header[index].PropertyType == "" {
 			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
@@ -334,19 +332,17 @@ func (a *attribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header []met
 		if !match {
 			return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, header[index].PropertyID)
 		}
+
 		if header[index].PropertyName == "" {
 			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyName)
 		}
+
 		if common.AttributeNameMaxLength < utf8.RuneCountInString(header[index].PropertyName) {
 			return nil, kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
 				a.lang.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language(
 					"model_attr_bk_property_name"), common.AttributeNameMaxLength)
 		}
-		err = valid.ValidTableFieldOption(header[index].PropertyType, header[index].Option, header[index].Default,
-			header[index].IsMultiple, kit.CCError)
-		if err != nil {
-			return nil, err
-		}
+
 		propertyAttr[header[index].PropertyID] = &header[index]
 	}
 	return propertyAttr, nil
@@ -360,8 +356,7 @@ func (a *attribute) ValidTableAttrDefaultValue(kit *rest.Kit, defaultValue []map
 		return nil
 	}
 	if len(defaultValue) > metadata.TableDefaultMaxLines {
-		return fmt.Errorf("the number of rows of the default value in the table attribute exceeds the maximum "+
-			"value(%v) supported by the system", metadata.TableDefaultMaxLines)
+		return kit.CCError.Errorf(common.CCErrCommXXExceedLimit, "table.default.limit", metadata.TableDefaultMaxLines)
 	}
 	// judge the legality of each field of the default
 	// value according to the attributes of the header.
@@ -649,17 +644,20 @@ func (a *attribute) CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Att
 }
 
 func (a *attribute) createModelQuoteRelation(kit *rest.Kit, objectID, propertyID string) error {
+
 	relation := metadata.ModelQuoteRelation{
 		DestModel:  metadata.GenerateModelQuoteObjID(objectID, propertyID),
 		SrcModel:   objectID,
 		PropertyID: propertyID,
 		Type:       common.ModelQuoteType(common.FieldTypeInnerTable),
 	}
+
 	if cErr := a.clientSet.CoreService().ModelQuote().CreateModelQuoteRelation(kit.Ctx, kit.Header,
 		[]metadata.ModelQuoteRelation{relation}); cErr != nil {
 		blog.Errorf("created quote relation failed, relation: %#v, err: %v, rid: %s", relation, cErr, kit.Rid)
-		return kit.CCError.CCError(common.CCErrTopoObjectAttributeCreateFailed)
+		return cErr
 	}
+
 	return nil
 }
 
@@ -811,13 +809,10 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, attrItems []metadata.At
 
 func (a *attribute) getTableAttrOptionFromDB(kit *rest.Kit, attID, bizID int64) (
 	*metadata.TableAttributesOption, string, error) {
+
 	cond := &metadata.QueryCondition{
-		Condition: mapstr.MapStr{
-			common.BKFieldID: attID,
-		},
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
+		Condition:      mapstr.MapStr{common.BKFieldID: attID},
+		Page:           metadata.BasePage{Limit: common.BKNoLimit},
 		DisableCounter: true,
 	}
 	resp, err := a.clientSet.CoreService().Model().ReadModelAttrsWithTableByCondition(kit.Ctx, kit.Header, bizID, cond)
@@ -907,7 +902,8 @@ func calcTableOptionDiffDefault(kit *rest.Kit, curAttrsOp, dbAttrsOp *metadata.T
 	// the header here is the new header part
 	curAttrsOp.Header = header
 	if len(curAttrsOp.Header)+len(updated.Header) > metadata.TableHeaderMaxNum {
-		return nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "table header num")
+		return nil, nil, nil, kit.CCError.Errorf(common.CCErrCommXXExceedLimit, "table header",
+			metadata.TableHeaderMaxNum)
 	}
 
 	return curAttrsOp, updated, deletePropertyIDs, nil
@@ -940,8 +936,8 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 
 	attr := new(metadata.Attribute)
 	if err := mapstruct.Decode2Struct(data, attr); err != nil {
-		blog.Errorf("unmarshal mapstr data into attr failed, attr: %s, err: %s, rid: %s", attr, err, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommParseDBFailed)
+		blog.Errorf("unmarshal mapstr data into attr failed, attr: %s, err: %v, rid: %s", attr, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed, "data")
 	}
 
 	propertyID := util.GetStrByInterface(data[common.BKPropertyIDField])
@@ -1022,7 +1018,7 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 	}
 	err = a.clientSet.CoreService().Model().UpdateTableModelAttrsByCondition(kit.Ctx, kit.Header, &input)
 	if err != nil {
-		blog.Errorf("failed to update model attr, err: %s, rid: %s", err, kit.Rid)
+		blog.Errorf("failed to update model attr, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 

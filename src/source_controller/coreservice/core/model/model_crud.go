@@ -197,26 +197,26 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 	}
 
 	// delete model property attribute.
-	modelDesCond := mapstr.MapStr{
+	modelDelCond := mapstr.MapStr{
 		common.BKFieldID: input.ID,
 	}
-	modelDesCond = util.SetQueryOwner(modelDesCond, kit.SupplierAccount)
+	modelDelCond = util.SetQueryOwner(modelDelCond, kit.SupplierAccount)
 
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Delete(kit.Ctx, modelDesCond); err != nil {
-		blog.Errorf("delete model attribute failed, err: %v, cond: %+v, rid: %s", err, modelDesCond, kit.Rid)
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Delete(kit.Ctx, modelDelCond); err != nil {
+		blog.Errorf("delete model attribute failed, err: %v, cond: %+v, rid: %s", err, modelDelCond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
 	// delete table model quote relation.
-	filter := mapstr.MapStr{
+	quoteCond := mapstr.MapStr{
 		common.BKDestModelField:  obj,
 		common.BKSrcModelField:   input.ObjID,
 		common.BKPropertyIDField: input.PropertyID,
 	}
-	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
+	quoteCond = util.SetQueryOwner(quoteCond, kit.SupplierAccount)
 
-	if err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Delete(kit.Ctx, filter); err != nil {
-		blog.Errorf("delete model quote relations failed, err: %v, filter: %+v, rid: %v", err, filter, kit.Rid)
+	if err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Delete(kit.Ctx, quoteCond); err != nil {
+		blog.Errorf("delete model quote relations failed, err: %v, filter: %+v, rid: %v", err, quoteCond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
@@ -244,11 +244,11 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 // createTableObjectShardingTables creates new collections for new table model,
 // which create new object instance and association collections, and fix missing indexes.
 func (m *modelManager) createTableObjectShardingTables(kit *rest.Kit, objID string) error {
-	// collection names.
+	// table collection names.
 	instTableName := common.GetObjectInstTableName(objID, kit.SupplierAccount)
-	// collections indexes.
+	// table collections indexes.
 	instTableIndexes := dbindex.TableInstanceIndexes()
-	// create object instance table.
+	// create table object instance collection.
 	err := m.createShardingTable(kit, instTableName, instTableIndexes)
 	if err != nil {
 		return fmt.Errorf("create object instance sharding table, %+v", err)

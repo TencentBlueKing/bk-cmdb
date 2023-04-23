@@ -78,12 +78,14 @@ func (m *modelAttribute) CreateTableModelAttributes(kit *rest.Kit, objID string,
 			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommRedisOPErr), &attr)
 			continue
 		}
+
 		if !locked {
 			blog.Errorf("create model have same task in progress. input: %v, rid: %s", inputParam, kit.Rid)
 			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr,
 				fmt.Sprintf("create table object(%s) attribute(%s)", attr.ObjectID, attr.PropertyName)), &attr)
 			continue
 		}
+
 		if attr.IsPre {
 			if attr.PropertyID == common.BKInstNameField {
 				lang := m.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
@@ -91,6 +93,7 @@ func (m *modelAttribute) CreateTableModelAttributes(kit *rest.Kit, objID string,
 					attr.PropertyName, attr.PropertyID)
 			}
 		}
+
 		attr.ObjectID = objID
 		attr.OwnerID = kit.SupplierAccount
 		_, exists, err := m.isExists(kit, attr.ObjectID, attr.PropertyID, attr.BizID)
@@ -110,6 +113,7 @@ func (m *modelAttribute) CreateTableModelAttributes(kit *rest.Kit, objID string,
 				})
 			continue
 		}
+
 		id, err := m.saveTableAttr(kit, attr)
 		if err != nil {
 			blog.Errorf("failed to save the table attribute(%#v), err: %v, rid: %s", attr, err, kit.Rid)
@@ -122,7 +126,6 @@ func (m *modelAttribute) CreateTableModelAttributes(kit *rest.Kit, objID string,
 				ID:          id,
 			})
 	}
-
 	return dataResult, nil
 }
 
@@ -387,18 +390,6 @@ func (m *modelAttribute) UpdateModelAttributesByCondition(kit *rest.Kit, inputPa
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
-func removeUnchangeableFields(data mapstr.MapStr) mapstr.MapStr {
-
-	data.Remove(metadata.BKMetadata)
-	data.Remove(common.BKAppIDField)
-
-	// UpdateObjectAttribute should not update bk_property_index、bk_property_group
-	data.Remove(common.BKPropertyIndexField)
-	data.Remove(common.BKPropertyGroupField)
-	data.Remove(common.BKFieldID)
-	return data
-}
-
 func assignmentUnchangeableFields(data mapstr.MapStr, dbAttr metadata.Attribute) mapstr.MapStr {
 
 	data[common.BKAppIDField] = dbAttr.BizID
@@ -482,7 +473,6 @@ func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam me
 		}
 		inputParam.UpdateData[metadata.AttributeFieldOption] = header
 	}
-	inputParam.UpdateData = removeUnchangeableFields(inputParam.UpdateData)
 
 	inputParam.UpdateData = assignmentUnchangeableFields(inputParam.UpdateData, attrs[0])
 
@@ -541,6 +531,7 @@ func (m *modelAttribute) unsetTableInstAttr(kit *rest.Kit, data mapstr.MapStr, a
 		common.BKSrcModelField:   attr.ObjectID,
 		common.BKPropertyIDField: attr.PropertyID,
 	}
+	quoteCond = util.SetQueryOwner(quoteCond, kit.SupplierAccount)
 
 	quoteRel := new(metadata.ModelQuoteRelation)
 	err = mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(quoteCond).One(kit.Ctx, &quoteRel)

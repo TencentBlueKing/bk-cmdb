@@ -427,6 +427,9 @@ const (
 	// BKClassificationIDField the classification id field
 	BKClassificationIDField = "bk_classification_id"
 
+	// BKClassificationTypeField the classification type field
+	BKClassificationTypeField = "bk_classification_type"
+
 	// BKClassificationNameField the classification name field
 	BKClassificationNameField = "bk_classification_name"
 
