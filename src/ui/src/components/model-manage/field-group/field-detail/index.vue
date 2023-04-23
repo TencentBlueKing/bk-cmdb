@@ -329,7 +329,7 @@
       fieldTypeList() {
         if (this.customObjId) {
           const disabledTypes = this.isEditField
-            ? [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.FOREIGNKEY]
+            ? [PROPERTY_TYPES.INNER_TABLE]
             : [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.FOREIGNKEY, PROPERTY_TYPES.ENUMQUOTE]
           return PROPERTY_TYPE_LIST.filter(item => !disabledTypes.includes(item.id))
         }
