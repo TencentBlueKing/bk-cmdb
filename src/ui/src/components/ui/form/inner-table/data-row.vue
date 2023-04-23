@@ -297,10 +297,10 @@
   }
 
   // 保存
-  const saveRow = (row, index) => {
-    set(tableData.value, index, row)
+  const saveRow = (rowValues, index) => {
+    set(tableData.value, index, rowValues)
     emit('input', tableData.value)
-    emit('save', row)
+    emit('save', rowValues)
   }
   const handleSaveRow = async (index) => {
     if (!await validateAll(index)) {
@@ -332,13 +332,13 @@
       try {
         await req
         $success(t('操作成功'))
-        saveRow(row, index)
+        saveRow(values, index)
         exitEdit(index)
       } finally {
         isLoading.value = false
       }
     } else {
-      saveRow(row, index)
+      saveRow(values, index)
       exitEdit(index)
     }
   }
