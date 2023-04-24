@@ -1563,7 +1563,10 @@ func CheckAllowHostApplyOnField(field *Attribute) bool {
 	if !field.IsEditable {
 		return false
 	}
-
+	// 屏蔽表格字段
+	if field.PropertyType == common.FieldTypeInnerTable {
+		return false
+	}
 	if allow, exist := HostApplyFieldMap[field.PropertyID]; exist == true {
 		return allow
 	}
