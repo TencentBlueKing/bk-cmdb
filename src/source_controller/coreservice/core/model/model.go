@@ -92,7 +92,7 @@ func (m *modelManager) CreateTableModel(kit *rest.Kit, inputParam metadata.Creat
 	originObjID := inputParam.Spec.ObjectID
 	inputParam.Spec.ObjectID = metadata.GenerateModelQuoteObjID(inputParam.Spec.ObjectID,
 		inputParam.Attributes[0].PropertyID)
-	inputParam.Spec.ObjectName = metadata.GenerateModelQuoteObjID(inputParam.Spec.ObjectName,
+	inputParam.Spec.ObjectName = metadata.GenerateModelQuoteObjID(inputParam.Spec.ObjectID,
 		inputParam.Attributes[0].PropertyID)
 
 	// check the model if it is exists
@@ -106,7 +106,7 @@ func (m *modelManager) CreateTableModel(kit *rest.Kit, inputParam metadata.Creat
 		return nil, err
 	}
 	if exists {
-		blog.Warnf("failed to create a table model, model (%s) is already exists, rid: %s ",
+		blog.Errorf("failed to create a table model, model (%s) is already exists, rid: %s ",
 			inputParam.Spec.ObjectID, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectID)
 	}
