@@ -32,11 +32,15 @@
           @cancel="handleCancelAdd" />
       </div>
       <div class="row-append" v-if="!isShowAddRow && tableData.length > 0 && !readonly">
-        <icon-text-button
-          :text="$t('新增')"
-          @click="handleClickAdd"
-          :disabled="maxRowDisabled || disabled"
-          :disabled-tips="maxRowDisabled ? $t('最多添加50行') : disabledTips" />
+        <cmdb-auth :auth="auth">
+          <template #default="authProps">
+            <icon-text-button
+              :text="$t('新增')"
+              @click="handleClickAdd"
+              :disabled="maxRowDisabled || disabled || authProps.disabled"
+              :disabled-tips="authProps.disabled ? '' : (maxRowDisabled ? $t('最多添加50行') : disabledTips)" />
+          </template>
+        </cmdb-auth>
       </div>
     </div>
     <i class="title-copy icon-cc-details-copy" v-show="showCopyBtn" @click="handleCopyTable"></i>

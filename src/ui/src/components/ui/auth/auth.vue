@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <component class="auth-box"
+  <component :class="['auth-box', { disabled, verified }]"
     :is="tag"
     v-cursor="{
       active: !isAuthorized,
@@ -19,7 +19,6 @@
       authResults,
       onclick
     }"
-    :class="{ disabled }"
     @click="handleClick">
     <slot :disabled="disabled"></slot>
   </component>
@@ -47,6 +46,7 @@
         authMetas: null,
         isAuthorized: false,
         disabled: true,
+        verified: false,
         useIAM: this.$Site.authscheme === 'iam'
       }
     },
@@ -84,6 +84,9 @@
         } else {
           isPass = authResults.every(result => result.is_pass)
         }
+
+        this.verified = true
+
         this.authResults = authResults
         this.authMetas = authMetas
         this.isAuthorized = isPass
@@ -103,5 +106,10 @@
 <style lang="scss" scoped>
     .auth-box {
         display: inline-block;
+        pointer-events: none;
+
+        &.verified {
+          pointer-events: auto;
+        }
     }
 </style>
