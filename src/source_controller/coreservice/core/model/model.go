@@ -93,7 +93,7 @@ func (m *modelManager) CreateTableModel(kit *rest.Kit, inputParam metadata.Creat
 	inputParam.Spec.ObjectID = metadata.GenerateModelQuoteObjID(inputParam.Spec.ObjectID,
 		inputParam.Attributes[0].PropertyID)
 	inputParam.Spec.ObjectName = metadata.GenerateModelQuoteObjID(inputParam.Spec.ObjectID,
-		inputParam.Attributes[0].PropertyID)
+		inputParam.Attributes[0].PropertyName)
 
 	// check the model if it is exists
 	condCheckModelMap := util.SetModOwner(make(map[string]interface{}), kit.SupplierAccount)
