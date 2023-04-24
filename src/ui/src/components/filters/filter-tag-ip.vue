@@ -22,8 +22,7 @@
   >
     <label class="tag-name">{{label}}</label>
     <span class="tag-colon">:</span>
-    <span class="tag-value"
-      v-bk-overflow-tips="tipsConfig">{{displayText}}</span>
+    <span class="tag-value">{{displayText}}</span>
     <i class="tag-delete bk-icon icon-close" @mouseenter.prevent.stop @click.stop="handleRemove"></i>
   </span>
 </template>
@@ -33,16 +32,6 @@
   import Utils from './utils'
   import FilterForm from './filter-form.js'
   export default {
-    data() {
-      return {
-        tipsConfig: {
-          triggerTarget: null,
-          interactive: false,
-          hideOnClick: false,
-          allowHTML: true
-        }
-      }
-    },
     computed: {
       label() {
         const { inner, outer, exact } = FilterStore.IP
@@ -63,9 +52,6 @@
         }
         return this.value.join(' | ')
       }
-    },
-    mounted() {
-      this.tipsConfig.triggerTarget = this.$el
     },
     methods: {
       handleClick() {
@@ -103,7 +89,7 @@
             padding-right: 5px;
         }
         .tag-value {
-            max-width: 220px;
+            max-width: 255px;
             color: #313238;
             @include ellipsis;
         }
