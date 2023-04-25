@@ -50,7 +50,7 @@
             <bk-checkbox class="mr20" v-model="IPCondition.outer" @change="handleIPOptionChange('inner', ...arguments)">
               {{$t('外网IP')}}
             </bk-checkbox>
-            <bk-checkbox v-model="IPCondition.exact">{{$t('精确')}}</bk-checkbox>
+            <bk-checkbox v-bk-tooltips.top="$t('ipv6暂不支持模糊搜索')" v-model="IPCondition.exact">{{$t('精确')}}</bk-checkbox>
           </div>
         </bk-form-item>
         <bk-form-item class="filter-item"
