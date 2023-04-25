@@ -341,8 +341,6 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 		// remove unchangeable fields
 		delete(host, common.BKHostIDField)
 
-		// use new transaction, need a new header
-		kit.Header = kit.NewHeader()
 		_ = lgc.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 			tableData, err := metadata.GetTableData(host, relRes)
 			if err != nil {

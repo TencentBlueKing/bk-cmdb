@@ -335,17 +335,22 @@ func (c *commonInst) updateInstByExcel(kit *rest.Kit, objID string, tableData *m
 		return fmt.Errorf("instance: %d does not exist", instID)
 	}
 
-	if err := c.UpdateInst(kit, mapstr.MapStr{common.BKInstIDField: instID}, inst, objID); err != nil {
-		blog.Errorf("failed to update the object(%s) inst data (%#v), err: %v, rid: %s", objID, inst, err, kit.Rid)
-		return err
-	}
-
 	// update instance table field type data
 	if tableData != nil {
-		if err := c.updateTableData(kit, tableData, instID); err != nil {
+		properties, err := c.updateTableData(kit, tableData, instID)
+		if err != nil {
 			blog.ErrorJSON("update table data failed, data: %s, err: %s, rid: %s", inst, err, kit.Rid)
 			return err
 		}
+
+		for property, ids := range properties {
+			inst.Set(property, ids)
+		}
+	}
+
+	if err := c.UpdateInst(kit, mapstr.MapStr{common.BKInstIDField: instID}, inst, objID); err != nil {
+		blog.Errorf("failed to update the object(%s) inst data (%#v), err: %v, rid: %s", objID, inst, err, kit.Rid)
+		return err
 	}
 
 	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
@@ -362,6 +367,19 @@ func (c *commonInst) updateInstByExcel(kit *rest.Kit, objID string, tableData *m
 func (c *commonInst) createInstByExcel(kit *rest.Kit, objID string, tableData *metadata.TableData,
 	inst mapstr.MapStr) error {
 
+	// add host table field type data
+	if tableData != nil {
+		properties, err := c.addTableData(kit, tableData, 0)
+		if err != nil {
+			blog.ErrorJSON("add table data failed, data: %s, err: %s, rid: %s", tableData, err, kit.Rid)
+			return err
+		}
+
+		for property, ids := range properties {
+			inst.Set(property, ids)
+		}
+	}
+
 	inst.Set(common.BKObjIDField, objID)
 	instCond := &metadata.CreateModelInstance{Data: inst}
 	rsp, err := c.clientSet.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, objID, instCond)
@@ -370,14 +388,6 @@ func (c *commonInst) createInstByExcel(kit *rest.Kit, objID string, tableData *m
 		return err
 	}
 	inst[common.BKInstIDField] = rsp.Created.ID
-
-	// add host table field type data
-	if tableData != nil {
-		if err := c.addTableData(kit, tableData, int64(rsp.Created.ID)); err != nil {
-			blog.ErrorJSON("add table data failed, data: %s, err: %s, rid: %s", inst, err, kit.Rid)
-			return err
-		}
-	}
 
 	// to generate audit log.
 	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
@@ -429,44 +439,49 @@ func (c *commonInst) getObjRelationDestMsg(kit *rest.Kit, objID string) ([]metad
 }
 
 // TODO 与hostserver的addTableData方法重复，后续重构处理
-func (c *commonInst) addTableData(kit *rest.Kit, tableData *metadata.TableData, id int64) error {
+func (c *commonInst) addTableData(kit *rest.Kit, tableData *metadata.TableData, id int64) (map[string][]uint64, error) {
 	audit := auditlog.NewQuotedInstAuditLog(c.clientSet.CoreService())
 	genAuditParams := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 	var auditLogs []metadata.AuditLog
+	result := make(map[string][]uint64)
 	for destModel, table := range tableData.ModelData {
-		for idx := range table {
-			table[idx].Set(common.BKInstIDField, id)
+		if id != 0 {
+			for idx := range table {
+				table[idx].Set(common.BKInstIDField, id)
+			}
 		}
-
 		ids, err := c.clientSet.CoreService().ModelQuote().BatchCreateQuotedInstance(kit.Ctx, kit.Header, destModel,
 			table)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
+		propertyID := tableData.ModelPropertyRel[destModel]
 		// generate and save audit logs
 		for i := range table {
 			table[i][common.BKFieldID] = ids[i]
+			result[propertyID] = append(result[propertyID], ids[i])
 		}
 
-		auditLog, ccErr := audit.GenerateAuditLog(genAuditParams, destModel, tableData.SrcModel,
-			tableData.ModelPropertyRel[destModel], table)
+		auditLog, ccErr := audit.GenerateAuditLog(genAuditParams, destModel, tableData.SrcModel, propertyID, table)
 		if ccErr != nil {
-			return ccErr
+			return nil, ccErr
 		}
 		auditLogs = append(auditLogs, auditLog...)
 	}
 
 	if err := audit.SaveAuditLog(kit, auditLogs...); err != nil {
-		return kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 
-	return nil
+	return result, nil
 }
 
 // TODO 与hostserver的updateTableData方法重复，后续重构处理
 // updateTableData update table data
-func (c *commonInst) updateTableData(kit *rest.Kit, tableData *metadata.TableData, id int64) error {
+func (c *commonInst) updateTableData(kit *rest.Kit, tableData *metadata.TableData, id int64) (
+	map[string][]uint64, error) {
+
 	audit := auditlog.NewQuotedInstAuditLog(c.clientSet.CoreService())
 	genAuditParams := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
 	filterOpt := metadata.CommonFilterOption{
@@ -482,35 +497,36 @@ func (c *commonInst) updateTableData(kit *rest.Kit, tableData *metadata.TableDat
 		listRes, err := c.clientSet.CoreService().ModelQuote().ListQuotedInstance(kit.Ctx, kit.Header, destModel,
 			listOpt)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		err = c.clientSet.CoreService().ModelQuote().BatchDeleteQuotedInstance(kit.Ctx, kit.Header, destModel,
 			&filterOpt)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		auditLog, ccErr := audit.GenerateAuditLog(genAuditParams, destModel, tableData.SrcModel,
 			tableData.ModelPropertyRel[destModel], listRes.Info)
 		if ccErr != nil {
-			return err
+			return nil, err
 		}
 
 		auditLogs = append(auditLogs, auditLog...)
 	}
 
 	// save audit logs
-	err := audit.SaveAuditLog(kit, auditLogs...)
+	ccErr := audit.SaveAuditLog(kit, auditLogs...)
+	if ccErr != nil {
+		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	}
+
+	properties, err := c.addTableData(kit, tableData, id)
 	if err != nil {
-		return kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+		return nil, err
 	}
 
-	if err := c.addTableData(kit, tableData, id); err != nil {
-		return err
-	}
-
-	return nil
+	return properties, nil
 }
 
 // CreateInstBatch batch create instance by excel
