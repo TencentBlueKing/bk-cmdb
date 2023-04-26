@@ -1,3 +1,6 @@
+## [Version: v3.10.24-feature-table-alpha5] - 2023-04-26
+- 修复验收会体验问题
+
 ## [Version: v3.10.24-feature-table-beta1] - 2023-04-24
 **新增功能**
 - 新增支持表格字段功能
