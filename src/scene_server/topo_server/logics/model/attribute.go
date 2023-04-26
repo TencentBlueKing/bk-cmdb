@@ -363,6 +363,7 @@ func (a *attribute) ValidTableAttrDefaultValue(kit *rest.Kit, defaultValue []map
 	// value according to the attributes of the header.
 	for _, value := range defaultValue {
 		for k, v := range value {
+			attr[k].IsRequired = false
 			if err := attr[k].ValidTableDefaultAttr(kit.Ctx, v); err.ErrCode != 0 {
 				return err.ToCCError(kit.CCError)
 			}
