@@ -62,6 +62,20 @@
     "host_property_bk_isp_name_enum_1": "电信",
     "host_property_bk_isp_name_enum_2": "联通",
     "host_property_bk_isp_name_enum_3": "移动",
+
+    "bk_project_property_bk_project_type_enum_mobile_game": "手游",
+    "bk_project_property_bk_project_type_enum_pc_game": "端游",
+    "bk_project_property_bk_project_type_enum_web_game": "页游",
+    "bk_project_property_bk_project_type_enum_platform_prod": "平台产品",
+    "bk_project_property_bk_project_type_enum_support_prod": "支撑产品",
+    "bk_project_property_bk_project_type_enum_other": "其它",
+
+    "bk_project_property_bk_status_enum_enable": "启用",
+    "bk_project_property_bk_status_enum_disabled": "未启用",
+
+    "bk_project_property_bk_project_sec_lvl_enum_public": "公开",
+    "bk_project_property_bk_project_sec_lvl_enum_private": "私有",
+    "bk_project_property_bk_project_sec_lvl_enum_classified": "机密",
   
     "": ""
 }
