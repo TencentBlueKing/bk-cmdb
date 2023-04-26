@@ -84,7 +84,7 @@
       </div>
       <div class="property-item full-width" v-if="isTableType">
         <div class="property-name">
-          <span>{{$t('表头字段设置')}}</span>
+          <span>{{$t('表格列设置')}}</span>
         </div>
         <div class="property-value mt10">
           <bk-table

@@ -47,15 +47,15 @@
   const columns = [
     {
       id: 'bk_property_id',
-      label: t('字段ID'),
+      label: t('列ID'),
     },
     {
       id: 'bk_property_name',
-      label: t('字段名称'),
+      label: t('列名称'),
     },
     {
       id: 'bk_property_type',
-      label: t('字段类型'),
+      label: t('列类型'),
     }
   ]
 
@@ -156,8 +156,8 @@
       :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('headers') }]">
       <template #label>
         <div class="label-inner">
-          <span class="label-text">{{ $t('表头字段设置') }}</span>
-          <i18n path="共N个字段" class="count" v-show="headers.length > 0">
+          <span class="label-text">{{ $t('表格列设置') }}</span>
+          <i18n path="共N列" class="count" v-show="headers.length > 0">
             <template #count><em class="num">{{headers.length}}</em></template>
           </i18n>
         </div>
@@ -203,14 +203,14 @@
             </div>
           </template>
         </bk-table-column>
-        <template #empty><icon-text-button :text="$t('添加新字段')" @click="handleClickAddField" /></template>
+        <template #empty><icon-text-button :text="$t('添加新列')" @click="handleClickAddField" /></template>
         <template #append v-if="headers.length > 0">
           <div class="table-append">
             <icon-text-button
-              :text="$t('添加新字段')"
+              :text="$t('添加新列')"
               @click="handleClickAddField"
               :disabled="headers.length === 8"
-              :disabled-tips="$t('最多添加8个字段')" />
+              :disabled-tips="$t('最多添加8列')" />
           </div>
         </template>
       </bk-table>
@@ -228,7 +228,7 @@
         :defaults="defaults"
         @update="handleUpdateDefaults" />
       <template #append v-if="!headers.length">
-        <span class="header-empty-tips">{{ $t('请先添加表头字段') }}</span>
+        <span class="header-empty-tips">{{ $t('请先添加表格列') }}</span>
       </template>
     </grid-item>
 

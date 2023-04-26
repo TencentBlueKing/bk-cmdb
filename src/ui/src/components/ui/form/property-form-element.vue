@@ -12,9 +12,10 @@
 
 <template>
   <div :class="['property-form-element', 'cmdb-form-item', {
-    'is-error': errors.has(property.bk_property_id),
-    'is-tooltips': errorDisplayType === 'tooltips'
-  }]">
+         'is-error': errors.has(property.bk_property_id),
+         'is-tooltips': errorDisplayType === 'tooltips'
+       }]"
+    v-bk-tooltips="{ disabled: !disabled, content: disabledTips }">
     <component
       :ref="`component-${property.bk_property_id}`"
       :is="`cmdb-form-${property.bk_property_type}`"
@@ -91,6 +92,10 @@
       tipsIconOffset: {
         type: Number,
         default: 8
+      },
+      disabledTips: {
+        type: String,
+        default: ''
       }
     },
     computed: {

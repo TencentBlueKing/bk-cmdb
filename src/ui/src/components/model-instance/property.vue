@@ -111,7 +111,9 @@
           <template v-else>
             <cmdb-form-innertable
               class="form-component-innertable"
+              :mode="'update'"
               :disabled="!isPropertyEditable(property)"
+              :disabled-tips="$t('系统限定不可修改')"
               :property="property"
               :obj-id="objId"
               :instance-id="instanceId"

@@ -72,6 +72,7 @@
             data: this.auth
           })
         } else {
+          this.verified = true
           this.disabled = false
           this.isAuthorized = true
           this.$emit('update-auth', true)

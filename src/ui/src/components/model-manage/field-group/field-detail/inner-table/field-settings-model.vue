@@ -211,7 +211,7 @@
     v-model="isShow"
     width="670"
     render-directive="if"
-    :title="$t('字段设置')"
+    :title="$t('表格列设置')"
     header-position="left"
     :mask-close="false"
     :auto-close="false"
@@ -222,10 +222,10 @@
           direction="column"
           required
           :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('propertyId') }]"
-          :label="$t('字段ID')">
+          :label="$t('列ID')">
           <bk-input
             name="propertyId"
-            :data-vv-as="$t('字段ID')"
+            :data-vv-as="$t('列ID')"
             v-validate="`required|fieldId|reservedWord|length:128|excluded:${existingIds}`"
             :disabled="props.isEditField && props.isEdit"
             v-model="settings.bk_property_id">
@@ -238,7 +238,7 @@
           direction="column"
           required
           :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('propertyName') }]"
-          :label="$t('字段名称')">
+          :label="$t('列名称')">
           <bk-input
             name="propertyName"
             v-validate="'required|length:128'"
@@ -252,7 +252,7 @@
           direction="column"
           required
           :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('propertyType') }]"
-          :label="$t('字段类型')">
+          :label="$t('列类型')">
           <bk-select
             name="propertyType"
             class="bk-select-full-width"
@@ -277,16 +277,16 @@
         <grid-item
           direction="column"
           :class="['cmdb-form-item', 'form-item']"
-          :label="$t('字段属性')">
+          :label="$t('列属性')">
           <bk-checkbox
             v-model="settings.editable">
-            {{$t('可编辑')}}
+            {{$t('当前列允许编辑')}}
           </bk-checkbox>
           <bk-checkbox
             class="ml10"
             v-if="isRequiredShow"
             v-model="settings.isrequired">
-            {{$t('必填')}}
+            {{$t('当前列的值必填')}}
           </bk-checkbox>
           <bk-checkbox
             class="ml10"
@@ -307,9 +307,9 @@
           ref="componentOption">
         </component>
         <div class="form-label" v-if="isDefaultShow">
-          <span class="label-text">
-            {{$t('默认值')}}
-          </span>
+          <div class="label-text">
+            <span class="g-has-dashed-tooltips" v-bk-tooltips="$t('表格字段列默认值提示语')">{{$t('列默认值')}}</span>
+          </div>
           <div :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('defalut') }]">
             <component
               name="defalut"

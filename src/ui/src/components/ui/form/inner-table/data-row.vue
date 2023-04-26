@@ -24,6 +24,8 @@
           :class="['detault-form-el', prop.bk_property_type]"
           :ref="`property-form-el-${$index}`"
           :property="prop"
+          :disabled="checkDisabled(prop)"
+          :disabled-tips="$t('系统限定不可修改')"
           :size="'small'"
           :font-size="'normal'"
           :row="1"
@@ -31,7 +33,7 @@
           v-model="editState.row[$index][prop.bk_property_id]" />
       </template>
     </bk-table-column>
-    <bk-table-column :label="$t('操作')" width="120" fixed="right" v-if="!readonly">
+    <bk-table-column :label="$t('操作')" width="130" fixed="right" v-if="!readonly">
       <template #default="{ $index }">
         <template v-if="editState.index.includes($index)">
           <bk-button text @click="handleSaveRow($index)">{{ $t(immediate ? '保存' : '确定') }}</bk-button>
@@ -40,6 +42,7 @@
         <template v-else>
           <template v-if="disabled">
             <bk-button text
+              :disabled="disabled"
               @click="handleEditRow($index)">
               <span v-bk-tooltips="{ disabled: !disabled, allowHtml: true, content: disabledTips }">
                 {{ $t('编辑') }}
@@ -60,6 +63,7 @@
 
           <template v-if="disabled">
             <bk-button text class="ml10"
+              :disabled="disabled"
               @click="handleDeleteRow($index)">
               <span v-bk-tooltips="{ disabled: !disabled, allowHtml: true, content: disabledTips }">
                 {{ $t('删除') }}
@@ -168,6 +172,10 @@
     adding: {
       type: Boolean,
       default: false
+    },
+    mode: {
+      type: String,
+      default: 'create'
     }
   })
   const emit = defineEmits(['input', 'cancel', 'save', 'delete', 'add'])
@@ -198,6 +206,13 @@
         emptyTextEl.offsetParent.scrollLeft = (emptyTextEl.parentElement.offsetWidth - emptyTextWidth) / 2
       }
     }
+  }
+
+  const checkDisabled = (property) => {
+    if (props.mode === 'create') {
+      return false
+    }
+    return !property.editable
   }
 
   watch(() => props.adding, (adding) => {

@@ -414,3 +414,9 @@ input.cmdb-form-input {
     background-size: 12px 16px;
     background-image: url("../images/lock.svg");
 }
+
+.g-has-dashed-tooltips {
+    border-bottom: 1px dashed #979ba5;
+    cursor: pointer;
+    padding-bottom: .125em;
+}
