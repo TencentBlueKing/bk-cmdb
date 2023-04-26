@@ -15,6 +15,7 @@ package model
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"unicode/utf8"
 
 	"configcenter/src/ac/extensions"
@@ -1245,7 +1246,14 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 
 	objRes := createObjectBatchObjResult{}
 	hasError := false
-	for idx, attr := range attributes {
+	ids := make([]int64, 0)
+	for id := range attributes {
+		ids = append(ids, id)
+	}
+	sort.Sort(util.Int64Slice(ids))
+
+	for _, idx := range ids {
+		attr := attributes[idx]
 		propID := attr.PropertyID
 		if propID == common.BKInstParentStr {
 			continue
