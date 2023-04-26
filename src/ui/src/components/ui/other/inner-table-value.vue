@@ -66,6 +66,7 @@
       :mask-close="true"
       :show-footer="false">
       <cmdb-form-innertable
+        :mode="'info'"
         :property="property"
         :obj-id="objId"
         :instance-id="instanceId"

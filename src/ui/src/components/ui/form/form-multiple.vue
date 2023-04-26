@@ -66,6 +66,7 @@
                       v-model.trim="values[property['bk_property_id']]">
                     </component>
                     <cmdb-form-innertable v-else
+                      :mode="'update'"
                       :property="property"
                       :immediate="false"
                       :readonly="true"

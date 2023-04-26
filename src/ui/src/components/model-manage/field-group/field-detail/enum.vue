@@ -69,6 +69,7 @@
       <p class="title mb10">{{$t('默认值设置')}}</p>
       <div class="cmdb-form-item" :class="{ 'is-error': errors.has('defaultValueSelect') }">
         <bk-select style="width: 100%;"
+          :key="defaultCompKey"
           :scroll-height="150"
           :clearable="false"
           :disabled="isReadOnly"
@@ -78,7 +79,7 @@
           :popover-options="{
             appendTo: 'parent'
           }"
-          v-validate.immediate="`maxSelectLength:${ multiple ? -1 : 1 }`"
+          v-validate="`maxSelectLength:${ multiple ? -1 : 1 }`"
           v-model="defaultValue"
           @change="handleSettingDefault">
           <bk-option v-for="option in settingList"
@@ -129,7 +130,8 @@
           preventOnFilter: false,
           ghostClass: 'ghost'
         },
-        order: 1
+        order: 1,
+        defaultCompKey: null
       }
     },
     computed: {
@@ -145,6 +147,9 @@
       enumList: {
         deep: true,
         handler(value) {
+          // 解决在id或name全部清空的情况下，重新填写的name在下拉框中显示的为上一次name值
+          this.defaultCompKey = Date.now()
+
           // 重复的选项不允许加入的选择列表
           const enumList = []
           if (value.length) {
@@ -159,10 +164,21 @@
 
           // 无默认值选择第0项，有默认值则需要验证值是否存在（列表中可能将其删除）
           if (!this.defaultValue.length) {
-            this.defaultValue = this.settingList.length ? [this.settingList[0].id] : []
+            if (this.isDefaultCompMultiple) {
+              this.defaultValue = this.settingList.length ? [this.settingList[0].id] : []
+            } else {
+              this.defaultValue = this.settingList.length ? this.settingList[0].id : ''
+            }
           } else {
-            this.defaultValue = this.settingList.filter(item => this.defaultValue.includes(item.id))
-              .map(item => item.id)
+            if (this.isDefaultCompMultiple) {
+              this.defaultValue = this.settingList.length
+                ? this.settingList.filter(item => this.defaultValue.includes(item.id)).map(item => item.id)
+                : []
+            } else {
+              this.defaultValue = this.settingList.length
+                ? this.settingList.find(item => this.defaultValue === item.id)?.id ?? ''
+                : ''
+            }
           }
         }
       },
@@ -208,7 +224,8 @@
           this.enumList = [this.generateEnum()]
         } else {
           this.enumList = this.value.map(data => (this.generateEnum(data)))
-          this.defaultValue = this.enumList.filter(item => item.is_default).map(item => item.id)
+          const defaultValues = this.enumList.filter(item => item.is_default).map(item => item.id)
+          this.defaultValue = this.isDefaultCompMultiple ? defaultValues : defaultValues[0]
         }
       },
       handleInput() {

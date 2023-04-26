@@ -152,6 +152,7 @@ export function formatValue(value, property) {
     case 'float':
     case 'list':
     case 'time':
+    case PROPERTY_TYPES.ENUMMULTI:
       formattedValue = null
       break
     case 'bool':

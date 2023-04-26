@@ -3,6 +3,7 @@
     <div class="innertable-container" v-bkloading="{ isLoading }">
       <data-row
         type="list"
+        :mode="mode"
         :property="property"
         :readonly="readonly"
         :disabled="disabled"
@@ -17,6 +18,7 @@
       <div class="row-add" v-show="isShowAddRow">
         <data-row
           type="add"
+          :mode="mode"
           :property="property"
           :readonly="readonly"
           :disabled="disabled"
@@ -72,7 +74,8 @@
       default: false
     },
     disabledTips: {
-      type: String
+      type: String,
+      default: ''
     },
     // 只读模式
     readonly: {
@@ -97,6 +100,11 @@
     auth: {
       type: [Object, Array],
       default: () => ({})
+    },
+    // 新建或编辑或详情模式 update | info
+    mode: {
+      type: String,
+      default: 'create'
     }
   })
   const emit = defineEmits(['input'])

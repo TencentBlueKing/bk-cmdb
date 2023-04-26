@@ -16,7 +16,7 @@
   import cloneDeep from 'lodash/cloneDeep'
   import IconTextButton from '@/components/ui/button/icon-text-button.vue'
   import PropertyFormElement from '@/components/ui/form/property-form-element.vue'
-  import { getPropertyDefaultValue, isShowOverflowTips, getPropertyDefaultEmptyValue } from '@/utils/tools.js'
+  import { getPropertyDefaultValue, isShowOverflowTips, getPropertyDefaultEmptyValue, formatValues } from '@/utils/tools.js'
 
   const props = defineProps({
     defaults: {
@@ -64,7 +64,8 @@
   })
 
   const updateValue = () => {
-    emit('update', list.value)
+    const formattedList = list.value.map(row => formatValues(row, props.headers))
+    emit('update', formattedList)
   }
 
   watch(() => props.headers, (headers) => {
@@ -83,6 +84,7 @@
       list.value.forEach((row) => {
         // 不存在的字段先补齐（先创建了行后添加的表头）
         if (!has(row, header.bk_property_id)) {
+          // 这里按需求初始化的是默认空值，而非表头的默认值
           row[header.bk_property_id] = getPropertyDefaultEmptyValue(header)
         }
       })
@@ -119,6 +121,11 @@
     if (dataIndex !== -1) {
       editState.index.splice(dataIndex, 1)
       set(editState.row, index, {})
+    }
+
+    // 退出“新增一行”
+    if (index === addIndex.value) {
+      addIndex.value = -1
     }
   }
   const enterEdit = (index) => {
@@ -161,16 +168,14 @@
     updateValue()
   }
   const handleCancel = (index) => {
-    exitEdit(index)
-
+    // 取消的是新增的那一行
     if (index === addIndex.value) {
       list.value.splice(addIndex.value, 1)
-      addIndex.value = -1
-
       if (list.value.length === 0) {
         nextTick(scrollAddButton)
       }
     }
+    exitEdit(index)
   }
 </script>
 
@@ -207,12 +212,13 @@
             :size="'small'"
             :font-size="'normal'"
             :row="1"
+            :must-required="false"
             error-display-type="tooltips"
             v-model="editState.row[$index][prop.bk_property_id]">
           </property-form-element>
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('操作')" width="90" fixed="right" v-if="!props.readonly">
+      <bk-table-column :label="$t('操作')" width="130" fixed="right" v-if="!props.readonly">
         <template #default="{ $index }">
           <div class="operation-cell">
             <template v-if="!editState.index.includes($index)">
@@ -226,10 +232,10 @@
             <template v-else>
               <bk-button text theme="primary"
                 class="action-button"
-                @click="handleConfirm($index)">确定</bk-button>
+                @click="handleConfirm($index)">{{$t('确定')}}</bk-button>
               <bk-button text theme="primary"
                 class="action-button"
-                @click="handleCancel($index)">取消</bk-button>
+                @click="handleCancel($index)">{{$t('取消')}}</bk-button>
             </template>
           </div>
         </template>

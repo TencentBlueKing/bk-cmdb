@@ -123,6 +123,7 @@
               :disabled="hasRelatedRules(property) || !isPropertyEditable(property)"
               :disabled-tips="`#rule-${property.id}`"
               :property="property"
+              :mode="'update'"
               :obj-id="objId"
               :instance-id="host.bk_host_id"
               :auth="HOST_AUTH.U_HOST"

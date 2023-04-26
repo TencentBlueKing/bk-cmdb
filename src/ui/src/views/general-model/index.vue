@@ -967,7 +967,7 @@
       },
       updateFilterTagHeight() {
         setTimeout(() => {
-          const el = this.$refs.filterTag.$el
+          const el = this.$refs?.filterTag?.$el
           if (el?.getBoundingClientRect) {
             this.filterTagHeight = el.getBoundingClientRect().height
           } else {

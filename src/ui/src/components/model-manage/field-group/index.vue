@@ -532,6 +532,9 @@
       this.groups = groups
       this.init(properties, groups)
     },
+    beforeDestroy() {
+      this.slider.isShow = false
+    },
     methods: {
       ...mapActions('objectModelFieldGroup', [
         'searchGroup',
@@ -1082,7 +1085,7 @@
       handleGroupDragEnd() {
         this.isDragging = false
       },
-    },
+    }
   }
 </script>
 
