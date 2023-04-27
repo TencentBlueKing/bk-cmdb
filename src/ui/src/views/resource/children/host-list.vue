@@ -257,7 +257,7 @@
         return this.$tools.isUseComplexValueType(property) ? `table-cell-property-value-${property.bk_property_id}` : null
       },
       isPropertySortable(property) {
-        return property.bk_obj_id === 'host' && !['foreignkey', 'topology'].includes(property.bk_property_type)
+        return this.$tools.isPropertySortable(property)
       },
       renderHeader(property) {
         const content = [this.$tools.getHeaderPropertyName(property)]
