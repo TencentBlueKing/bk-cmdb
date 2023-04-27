@@ -105,7 +105,7 @@
         immediate: true,
         handler(objId) {
           const model = this.$store.getters['objectModelClassify/getModelById'](objId) || {}
-          this.$store.commit('setTitle', `${model.bk_obj_name}${this.$t('删除历史')}`)
+          this.$store.commit('setTitle', `${model.bk_obj_name} ${this.$t('删除历史')}`)
         }
       }
     },

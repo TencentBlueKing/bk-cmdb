@@ -125,7 +125,7 @@
           stuff: {
             type: 'default',
             payload: {
-              resource: this.$t('云账号')
+              resource: this.$t('云账户')
             }
           }
         }
@@ -202,7 +202,7 @@
             try {
               await this.$store.dispatch('cloud/account/delete', { id: row.bk_account_id })
               infoInstance.buttonLoading = true
-              this.$success('删除成功')
+              this.$success(this.$t('删除成功'))
               this.getData()
               return true
             } catch (e) {
