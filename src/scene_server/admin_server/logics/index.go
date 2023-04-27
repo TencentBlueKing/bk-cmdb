@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	types2 "configcenter/src/common/types"
 	"configcenter/src/common/util"
+	"configcenter/src/common/version"
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
@@ -70,6 +71,14 @@ func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB,
 	options options.Config) {
 
 	rid := util.GenerateRID()
+
+	// do not sync db table index if this admin-server is for ci,
+	// because suite test contains clear database operations that collides with this task
+	if version.CCRunMode == version.CCRunModeForCI {
+		blog.Infof("run mode is for ci, skip sync db table index task, rid: %s", rid)
+		return
+	}
+
 	for dbReady := false; !dbReady; {
 		// 等待数据库初始化
 		if !dbReady {
