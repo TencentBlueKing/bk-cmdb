@@ -117,8 +117,8 @@
         class-name="bk-table-selection">
       </bk-table-column>
       <bk-table-column v-for="column in table.header"
-        sortable="custom"
-        :min-width="$tools.getHeaderPropertyMinWidth(column.property, { hasSort: true })"
+        :sortable="getColumnSortable(column.property) ? 'custom' : false"
+        :min-width="$tools.getHeaderPropertyMinWidth(column.property, { hasSort: getColumnSortable(column.property) })"
         :key="column.id"
         :prop="column.id"
         :label="column.name"
@@ -981,6 +981,9 @@
       handleClearFilter() {
         this.$refs.filterTag.handleResetAll()
         this.table.stuff.type = 'default'
+      },
+      getColumnSortable(property) {
+        return this.$tools.isPropertySortable(property) ? 'custom' : false
       }
     }
   }

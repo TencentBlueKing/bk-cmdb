@@ -288,6 +288,7 @@
     </bk-dialog>
 
     <bk-sideslider
+      ref="sidesliderComp"
       class="sides-slider"
       v-transfer-dom
       :width="640"
@@ -323,6 +324,7 @@
     </bk-sideslider>
 
     <bk-sideslider
+      ref="sidesliderComp"
       v-transfer-dom
       :width="676"
       :title="$t('字段预览')"
@@ -335,6 +337,7 @@
     </bk-sideslider>
 
     <bk-sideslider
+      ref="sidesliderComp"
       v-transfer-dom
       :is-show.sync="configProperty.show"
       :width="676"
@@ -533,7 +536,8 @@
       this.init(properties, groups)
     },
     beforeDestroy() {
-      this.slider.isShow = false
+      // 通过isShow=false在划开页面时仍然会出现未关闭的情况，因此直接调用组件内部方法关闭
+      this.$refs?.sidesliderComp?.handleClose?.()
     },
     methods: {
       ...mapActions('objectModelFieldGroup', [
@@ -1000,6 +1004,7 @@
                 this.displayGroupedProperties[index].properties.splice(fieldIndex, 1)
                 this.handleSliderHidden()
                 this.$success(this.$t('删除成功'))
+                this.resetData()
               }
             } catch (error) {
               console.log(error)

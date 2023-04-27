@@ -58,7 +58,7 @@
       @page-limit-change="handleSizeChange"
       @page-change="handlePageChange">
       <bk-table-column v-for="column in table.header"
-        sortable="custom"
+        :sortable="getColumnSortable(column.property) ? 'custom' : false"
         :key="column.id"
         :prop="column.id"
         :label="column.name"
@@ -170,7 +170,7 @@
   import RouterQuery from '@/router/query'
   import routerActions from '@/router/actions'
   import Utils from '@/components/filters/utils'
-  import { getDefaultPaginationConfig, getSort } from '@/utils/tools.js'
+  import { getDefaultPaginationConfig, getSort, isPropertySortable } from '@/utils/tools.js'
   import applyPermission from '@/utils/apply-permission.js'
   import businessSetService from '@/service/business-set/index.js'
   import propertyService from '@/service/property/property.js'
@@ -356,6 +356,8 @@
         return value
       }
 
+      const getColumnSortable = property => (isPropertySortable(property) ? 'custom' : false)
+
       // 切换条件字段时初始化字段对应的默认值
       const handleFilterFieldChange = () => updateFilter()
 
@@ -518,7 +520,8 @@
         handleSaveSuccess,
         handleUpdateHeader,
         handleFilterFieldChange,
-        handleClearFilter
+        handleClearFilter,
+        getColumnSortable
       }
     }
   })
