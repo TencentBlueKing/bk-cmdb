@@ -25,5 +25,7 @@ declare module 'vue/types/vue' {
     $validate: any
     errors: any
     $loading: (id: string | symbol | string[] | symbol[]) => boolean
+    $tools: any
+    $copyText: (txt: string) => Promise<any>
   }
 }

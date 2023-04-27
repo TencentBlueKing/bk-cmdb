@@ -207,7 +207,20 @@ func (c *classification) getClassificationObjects(kit *rest.Kit, classifications
 
 // FindClassification search classification
 func (c *classification) FindClassification(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Classification, error) {
-	input := &metadata.QueryCondition{Condition: cond}
+
+	input := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKDBAND: []map[string]interface{}{
+				cond,
+				{
+					common.BKClassificationTypeField: mapstr.MapStr{
+						common.BKDBNE: metadata.HiddenType,
+					},
+				},
+			},
+		},
+		DisableCounter: true,
+	}
 	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, input)
 	if err != nil {
 		blog.ErrorJSON("find classification failed, err: %s, cond: %s, rid: %s", err, cond, kit.Rid)

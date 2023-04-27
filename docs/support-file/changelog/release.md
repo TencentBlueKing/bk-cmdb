@@ -1,6 +1,8 @@
-## [Version: 3.10.x-feature-agent-id-alpha13] - 2023-04-18
+## [Version: 3.10.x-feature-agent-id-alpha14] - 2023-04-26
 **新增功能**
-- 将最新v3.10.23和v3.10.24版本功能合入feature-agent-id分支
+- 新增属性默认值功能
+- 新增枚举多选功能
+- 新增支持表格字段功能
 
 ## [Version: v3.10.24] - 2023-04-20
 **新增功能**

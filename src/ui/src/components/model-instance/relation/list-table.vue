@@ -50,7 +50,9 @@
           <cmdb-property-value
             :show-unit="false"
             :value="row[column.id]"
-            :property="column.property">
+            :property="column.property"
+            :instance="row"
+            show-on="cell">
           </cmdb-property-value>
         </template>
       </bk-table-column>

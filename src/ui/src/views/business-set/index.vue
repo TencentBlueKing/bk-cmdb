@@ -33,7 +33,7 @@
         <cmdb-property-selector
           class="filter-selector fl"
           v-model="filter.field"
-          :properties="properties"
+          :properties="fastSearchProperties"
           @change="handleFilterFieldChange">
         </cmdb-property-selector>
         <component class="filter-value fl"
@@ -70,6 +70,8 @@
             :value="row[column.id]"
             :show-unit="false"
             :property="column.property"
+            :instance="row"
+            show-on="cell"
             @click.native.stop="handleValueClick(row, column)">
           </cmdb-property-value>
         </template>
@@ -174,6 +176,7 @@
   import propertyService from '@/service/property/property.js'
   import propertyGroupService from '@/service/property/group.js'
   import { MENU_RESOURCE_BUSINESS_SET_DETAILS } from '@/dictionary/menu-symbol.js'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   export default defineComponent({
     components: {
@@ -315,6 +318,9 @@
       const filterType = computed(() => filterProperty.value?.bk_property_type ?? 'singlechar')
       const filterPlaceholder = computed(() => Utils.getPlaceholder(filterProperty.value))
       const filterComponentProps = computed(() => Utils.getBindProps(filterProperty.value))
+
+      const fastSearchProperties = computed(() => properties.value
+        .filter(property => property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE))
 
       // 更新filter数据，无值状态时则使用默认数据初始化
       const updateFilter = (field, value = '', operator = '') => {
@@ -487,6 +493,7 @@
       return  {
         properties,
         propertyGroups,
+        fastSearchProperties,
         filterType,
         filterPlaceholder,
         filterComponentProps,

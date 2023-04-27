@@ -53,6 +53,8 @@
             :show-unit="false"
             :property="property"
             :multiple="property.bk_obj_id !== 'host'"
+            :instance="row"
+            show-on="cell"
             @click.native.stop="handleValueClick(row, property)">
           </cmdb-property-value>
         </template>

@@ -316,6 +316,12 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
+	case QuotedInst:
+		operationDetail := new(QuotedInstOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
 	default:
 		operationDetail := new(BasicOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -392,6 +398,12 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		auditLog.OperationDetail = operationDetail
 	case ServiceInstanceRes:
 		operationDetail := new(ServiceInstanceOpDetail)
+		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+	case QuotedInst:
+		operationDetail := new(QuotedInstOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
@@ -563,6 +575,19 @@ func (op *ServiceInstanceOpDetail) WithName() string {
 	return "ServiceInstanceOpDetail"
 }
 
+// QuotedInstOpDetail quoted instance operation detail
+type QuotedInstOpDetail struct {
+	BasicOpDetail `bson:",inline"`
+	ObjID         string `json:"bk_obj_id" bson:"bk_obj_id"`
+	SrcObjID      string `json:"src_obj_id" bson:"src_obj_id"`
+	AttrID        string `json:"bk_property_id" bson:"bk_property_id"`
+}
+
+// WithName returns operation detail name.
+func (op *QuotedInstOpDetail) WithName() string {
+	return "QuotedInstOpDetail"
+}
+
 // BasicContent contains the details information with in a user's operation.
 // Generally, works for business, model, model instance etc.
 type BasicContent struct {
@@ -646,6 +671,9 @@ const (
 
 	// KubeType is kube related audit type
 	KubeType AuditType = "kube"
+
+	// QuotedInstType is quoted instance related audit type
+	QuotedInstType AuditType = "quoted_inst"
 )
 
 // ResourceType TODO
@@ -737,6 +765,9 @@ const (
 	KubeWorkload ResourceType = "kube_workload"
 	// KubePod kube pod audit resource type
 	KubePod ResourceType = "kube_pod"
+
+	// QuotedInst is quoted instance related audit resource type
+	QuotedInst ResourceType = "quoted_inst"
 )
 
 // OperateFromType TODO

@@ -77,7 +77,7 @@
       <div class="options-filter clearfix fr">
         <cmdb-property-selector class="filter-selector"
           v-model="filter.field"
-          :properties="properties"
+          :properties="fastSearchProperties"
           :loading="$loading([request.properties, request.groups])">
         </cmdb-property-selector>
         <component class="filter-value"
@@ -129,6 +129,8 @@
             :show-unit="false"
             :value="row[column.id]"
             :property="column.property"
+            :instance="row"
+            show-on="cell"
             @click.native.stop="handleValueClick(row, column)">
           </cmdb-property-value>
         </template>
@@ -362,6 +364,9 @@
       },
       isMainLineModel() {
         return this.isMainLine(this.model)
+      },
+      fastSearchProperties() {
+        return this.properties.filter(item => item.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
       }
     },
     watch: {
@@ -656,7 +661,9 @@
         }))
       },
       updateFilter(properties = []) {
-        const availableProperties = properties.filter(property => property.bk_obj_id === this.objId)
+        const availableProperties = properties
+          .filter(property => property.bk_obj_id === this.objId
+            && property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
         availableProperties.forEach((property) => {
           // eslint-disable-next-line max-len
           const exist = this.filterSelected.findIndex(item => item.bk_property_id === property.bk_property_id) !== -1
@@ -960,7 +967,7 @@
       },
       updateFilterTagHeight() {
         setTimeout(() => {
-          const el = this.$refs.filterTag.$el
+          const el = this.$refs?.filterTag?.$el
           if (el?.getBoundingClientRect) {
             this.filterTagHeight = el.getBoundingClientRect().height
           } else {
