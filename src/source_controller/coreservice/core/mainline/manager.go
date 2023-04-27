@@ -98,6 +98,7 @@ func (im *InstanceMainline) LoadSetInstances(ctx context.Context, header http.He
 		blog.Errorf("get set instances by business:%d failed, %+v, cond: %#v, rid: %s", im.bkBizID, err, filter, rid)
 		return fmt.Errorf("get set instances by business:%d failed, %+v", im.bkBizID, err)
 	}
+	multilingual.TranslateInstanceName(im.lang, common.BKInnerObjIDSet, im.setInstances)
 	blog.V(5).Infof("get set instances by business:%d result: %+v, cond: %#v, rid: %s", im.bkBizID, im.setInstances, filter, rid)
 	return nil
 }
@@ -176,6 +177,7 @@ func (im *InstanceMainline) ConstructBizTopoInstance(ctx context.Context, header
 		blog.Errorf("get business instances by business:%d failed, err: %+v, cond: %#v, rid: %s", im.bkBizID, err, rid)
 		return fmt.Errorf("get business instances by business:%d failed, err: %+v", im.bkBizID, err)
 	}
+	multilingual.TranslateInstanceName(im.lang, common.BKInnerObjIDApp, []mapstr.MapStr{im.businessInstance})
 	blog.V(5).Infof("SearchMainlineInstanceTopo businessInstances: %+v, rid: %s", im.businessInstance, rid)
 	bizTopoInstance.InstanceName = util.GetStrByInterface(im.businessInstance[common.BKAppNameField])
 	if withDetail {
