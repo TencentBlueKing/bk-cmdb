@@ -201,6 +201,19 @@
               </li>
             </ul>
           </div>
+          <div class="upload-details-fail" v-if="uploadResult.errors && uploadResult.errors.length">
+            <div class="upload-details-fail-title">
+              <i class="bk-icon icon-close-circle-shape"></i>
+              <span>{{$t('上传失败列表')}}({{uploadResult.errors.length}})</span>
+            </div>
+            <ul ref="failList" class="upload-details-fail-list">
+              <li
+                v-for="(fail, index) in uploadResult.errors"
+                :title="$t('第N行字段错误信息', { N: fail.row, field: fail.bk_property_id, info: fail.info })"
+                :key="index">{{$t('第N行字段错误信息', { N: fail.row, field: fail.bk_property_id, info: fail.info })}}
+              </li>
+            </ul>
+          </div>
         </div>
       </cmdb-import>
     </bk-sideslider>
@@ -253,6 +266,7 @@
         },
         uploadResult: {
           success: null,
+          errors: null,
           insert_failed: null,
           update_failed: null
         },
@@ -564,6 +578,7 @@
           this.$refs.field.resetData()
           this.importField.show = false
         } else {
+          this.uploadResult.errors = data.errors
           this.uploadResult.insert_failed = data.insert_failed
           this.uploadResult.update_failed = data.update_failed
         }
@@ -571,6 +586,7 @@
       handleSliderHide() {
         this.uploadResult = {
           success: null,
+          errors: null,
           insert_failed: null,
           update_failed: null
         }

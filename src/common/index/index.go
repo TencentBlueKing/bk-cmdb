@@ -31,6 +31,11 @@ func InstanceIndexes() []types.Index {
 	return instanceDefaultIndexes
 }
 
+// TableInstanceIndexes table instance index
+func TableInstanceIndexes() []types.Index {
+	return tableInstanceDefaultIndexes
+}
+
 // InstanceAssociationIndexes TODO
 func InstanceAssociationIndexes() []types.Index {
 	return associationDefaultIndexes

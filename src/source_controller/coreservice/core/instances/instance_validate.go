@@ -214,6 +214,11 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 				return err
 			}
 		}
+
+		// remove inner table value
+		if property.PropertyType == common.FieldTypeInnerTable {
+			delete(instanceData, property.PropertyID)
+		}
 	}
 
 	skip, err := hooks.IsSkipValidateHook(kit, objID, instanceData)
@@ -329,6 +334,13 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 			delete(updateData, key)
 			continue
 		}
+
+		// right now inner table should be updated as quoted instance, cannot update in source instance
+		if property.PropertyType == common.FieldTypeInnerTable {
+			delete(updateData, key)
+			continue
+		}
+
 		if value, ok := val.(string); ok {
 			val = strings.TrimSpace(value)
 			updateData[key] = val

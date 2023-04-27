@@ -43,6 +43,9 @@ const (
 	BKTableNameBaseApp    = "cc_ApplicationBase"
 	BKTableNameBaseBizSet = "cc_BizSetBase"
 
+	// BKTableNameModelQuoteRelation model reference relationship table name.
+	BKTableNameModelQuoteRelation = "cc_ModelQuoteRelation"
+
 	BKTableNameBaseProject = "cc_ProjectBase"
 	BKTableNameBaseHost    = "cc_HostBase"
 	BKTableNameBaseModule  = "cc_ModuleBase"
@@ -184,6 +187,18 @@ func GetObjectInstTableName(objID, supplierAccount string) string {
 	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstShardingTablePrefix, supplierAccount, TableSpecifierPublic, objID)
 }
 
+// GetObjectInstObjIDByTableName return the object id
+// example: cc_ObjectBase_{supplierAccount}_{Specifier}_{ObjectID}, such as 'cc_ObjectBase_0_pub_switch',return switch.
+func GetObjectInstObjIDByTableName(collectionName, supplierAccount string) (string, error) {
+	prefix := fmt.Sprintf("%s%s_", BKObjectInstShardingTablePrefix, supplierAccount)
+	suffix := strings.TrimPrefix(collectionName, prefix)
+	suffixSlice := strings.Split(suffix, "_")
+	if len(suffixSlice) <= 1 {
+		return "", fmt.Errorf("collection name is error, collection name: %s", collectionName)
+	}
+	return strings.Join(suffixSlice[1:], "_"), nil
+}
+
 // GetObjectInstAsstTableName return the object instance association table name in sharding mode base on
 // the object ID. Format: cc_InstAsst_{supplierAccount}_{Specifier}_{ObjectID}, such as 'cc_InstAsst_0_pub_switch'.
 func GetObjectInstAsstTableName(objID, supplierAccount string) string {
@@ -232,5 +247,29 @@ func GetInstTableName(objID, supplierAccount string) string {
 		return BKTableNameBasePlat
 	default:
 		return GetObjectInstTableName(objID, supplierAccount)
+	}
+}
+
+// GetInstObjIDByTableName get objID by table name
+func GetInstObjIDByTableName(collectionName, supplierAccount string) (string, error) {
+	switch collectionName {
+	case BKTableNameBaseApp:
+		return BKInnerObjIDApp, nil
+	case BKTableNameBaseBizSet:
+		return BKInnerObjIDBizSet, nil
+	case BKTableNameBaseProject:
+		return BKInnerObjIDProject, nil
+	case BKTableNameBaseSet:
+		return BKInnerObjIDSet, nil
+	case BKTableNameBaseModule:
+		return BKInnerObjIDModule, nil
+	case BKTableNameBaseHost:
+		return BKInnerObjIDHost, nil
+	case BKTableNameBaseProcess:
+		return BKInnerObjIDProc, nil
+	case BKTableNameBasePlat:
+		return BKInnerObjIDPlat, nil
+	default:
+		return GetObjectInstObjIDByTableName(collectionName, supplierAccount)
 	}
 }

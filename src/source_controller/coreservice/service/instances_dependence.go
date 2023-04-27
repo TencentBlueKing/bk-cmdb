@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 // IsInstAsstExist used to check if the  instances  asst exist
@@ -158,4 +159,89 @@ func (s *coreService) SearchUnique(kit *rest.Kit, objID string) (uniqueAttr []me
 // UpdateModelInstance TODO
 func (s *coreService) UpdateModelInstance(kit *rest.Kit, objID string, param metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 	return s.core.InstanceOperation().UpdateModelInstance(kit, objID, param)
+}
+
+// DeleteQuotedInst delete quote instances by source instance ids
+func (s *coreService) DeleteQuotedInst(kit *rest.Kit, objID string, instIDs []int64) error {
+	if len(objID) == 0 || len(instIDs) == 0 {
+		return nil
+	}
+
+	quoteRelCond := mapstr.MapStr{common.BKSrcModelField: objID}
+	quoteRelations := make([]metadata.ModelQuoteRelation, 0)
+
+	err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(quoteRelCond).
+		Fields(common.BKDestModelField).All(kit.Ctx, &quoteRelations)
+	if err != nil {
+		blog.Errorf("get quoted relations failed, err: %v, source object: %s, rid: %s", err, objID, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	for _, rel := range quoteRelations {
+		tableName := common.GetInstTableName(rel.DestModel, kit.SupplierAccount)
+		delCond := mapstr.MapStr{common.BKInstIDField: mapstr.MapStr{common.BKDBIN: instIDs}}
+		delCond = util.SetModOwner(delCond, kit.SupplierAccount)
+
+		err = mongodb.Client().Table(tableName).Delete(kit.Ctx, delCond)
+		if err != nil {
+			blog.Errorf("delete quoted instances failed, err: %v, inst ids: %+v, rid: %s", err, instIDs, kit.Rid)
+			return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
+		}
+	}
+
+	return nil
+}
+
+// AttachQuotedInst attach quoted instances with source instance
+func (s *coreService) AttachQuotedInst(kit *rest.Kit, objID string, instID uint64, data mapstr.MapStr) error {
+	if len(data) == 0 {
+		return nil
+	}
+
+	quoteRelCond := mapstr.MapStr{common.BKSrcModelField: objID}
+	quoteRelations := make([]metadata.ModelQuoteRelation, 0)
+
+	err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(quoteRelCond).
+		Fields(common.BKPropertyIDField, common.BKDestModelField).All(kit.Ctx, &quoteRelations)
+	if err != nil {
+		blog.Errorf("get quoted relations failed, err: %v, source object: %s, rid: %s", err, objID, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	for _, rel := range quoteRelations {
+		tableName := common.GetInstTableName(rel.DestModel, kit.SupplierAccount)
+
+		val, exists := data[rel.PropertyID]
+		if !exists {
+			continue
+		}
+
+		arrVal := util.ConvertToInterfaceSlice(val)
+		arrVal = util.ArrayUnique(arrVal)
+
+		// check if all quoted instances exists
+		cond := mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: arrVal},
+			common.BKInstIDField: mapstr.MapStr{common.BKDBEQ: 0}}
+		cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+
+		cnt, err := mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
+		if err != nil {
+			blog.Errorf("count quoted instances failed, err: %v, ids: %+v, rid: %s", err, arrVal, kit.Rid)
+			return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		}
+		if int(cnt) != len(arrVal) {
+			blog.Errorf("some quoted instances not exists, ids: %+v, rid: %s", arrVal, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, rel.PropertyID)
+		}
+
+		// attach quoted instances
+		attachData := mapstr.MapStr{common.BKInstIDField: instID}
+		err = mongodb.Client().Table(tableName).Update(kit.Ctx, cond, attachData)
+		if err != nil {
+			blog.Errorf("attach quoted inst failed, err: %v, ids: %+v, inst: %d, rid: %s", err, arrVal, instID, kit.Rid)
+			return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+		}
+	}
+
+	return nil
 }

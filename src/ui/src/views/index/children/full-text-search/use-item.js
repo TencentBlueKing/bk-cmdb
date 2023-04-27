@@ -27,6 +27,7 @@ import {
 } from '@/dictionary/menu-symbol'
 import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_MODEL_ROUTEPARAMS_KEYS } from '@/dictionary/model-constants'
 import { getPropertyText } from '@/utils/tools'
+import { escapeRegexChar } from '@/utils/util'
 
 export default function useItem(list) {
   const getModelById = store.getters['objectModelClassify/getModelById']
@@ -253,7 +254,7 @@ export const getHighlightValue = (value, data) => {
       continue
     }
 
-    const re = new RegExp(words[1])
+    const re = new RegExp(escapeRegexChar(words[1]))
     if (re.test(value)) {
       matched = keyword
       break

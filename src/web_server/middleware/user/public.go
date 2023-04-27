@@ -47,7 +47,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 		isMultiOwner = true
 	}
 
-	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
+	user := plugins.CurrentPlugin(m.config.LoginVersion)
 	userInfo, loginSuccess = user.LoginUser(c, m.config.ConfigMap, isMultiOwner)
 
 	if !loginSuccess {
@@ -104,13 +104,13 @@ func (m *publicUser) GetLoginUrl(c *gin.Context) string {
 		}
 	}
 
-	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
+	user := plugins.CurrentPlugin(m.config.LoginVersion)
 	return user.GetLoginUrl(c, m.config.ConfigMap, params)
 
 }
 
 // GetUserList TODO
 func (m *publicUser) GetUserList(c *gin.Context) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
-	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
+	user := plugins.CurrentPlugin(m.config.LoginVersion)
 	return user.GetUserList(c, m.config.ConfigMap)
 }

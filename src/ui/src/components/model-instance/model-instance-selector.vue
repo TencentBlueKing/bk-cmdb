@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { computed, defineProps, ref, watch, onMounted } from 'vue'
+  import { computed, ref, watch, onMounted } from 'vue'
   import debounce from 'lodash.debounce'
   import { getModelInstanceOptions } from '@/service/instance/common'
 
@@ -58,7 +58,7 @@
 
   onMounted(() => {
     setTimeout(() => {
-      selector?.value?.$refs.bkSelectTag.calcOverflow()
+      selector?.value?.$refs.bkSelectTag?.calcOverflow()
     }, 100)
   })
 
