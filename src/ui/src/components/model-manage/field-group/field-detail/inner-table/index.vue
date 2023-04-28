@@ -223,12 +223,12 @@
       :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('refModelInst') }]"
       :label="$t('默认值')">
       <table-default-settings
-        v-if="headers.length > 0"
+        v-show="headers.length > 0"
         :headers="headers"
         :defaults="defaults"
         @update="handleUpdateDefaults" />
-      <template #append v-if="!headers.length">
-        <span class="header-empty-tips">{{ $t('请先添加表格列') }}</span>
+      <template #append>
+        <span v-show="!headers.length" class="header-empty-tips">{{ $t('请先添加表格列') }}</span>
       </template>
     </grid-item>
 
