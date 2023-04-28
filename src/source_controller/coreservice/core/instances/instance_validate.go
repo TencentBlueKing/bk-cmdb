@@ -214,6 +214,11 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 				return err
 			}
 		}
+
+		// remove inner table value
+		if property.PropertyType == common.FieldTypeInnerTable {
+			delete(instanceData, property.PropertyID)
+		}
 	}
 
 	skip, err := hooks.IsSkipValidateHook(kit, objID, instanceData)
@@ -325,6 +330,13 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 			delete(updateData, key)
 			continue
 		}
+
+		// right now inner table should be updated as quoted instance, cannot update in source instance
+		if property.PropertyType == common.FieldTypeInnerTable {
+			delete(updateData, key)
+			continue
+		}
+
 		if value, ok := val.(string); ok {
 			val = strings.TrimSpace(value)
 			updateData[key] = val
@@ -596,7 +608,7 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, property metadata.Attribut
 	if property.IsMultiple == nil {
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
 	}
-	if !(*property.IsMultiple) && len(valIDs) != 1{
+	if !(*property.IsMultiple) && len(valIDs) != 1 {
 		blog.Errorf("enum quote is single choice, but inst id is multiple, rid: %s", kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommParamsNeedSingleChoice)
 	}
