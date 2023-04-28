@@ -479,7 +479,7 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 		mtc.collectOperDuration(c.collName, insertOper, time.Since(start))
 	}()
 
-	rows := util.ConverToInterfaceSlice(docs)
+	rows := util.ConvertToInterfaceSlice(docs)
 
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).InsertMany(ctx, rows)

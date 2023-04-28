@@ -32,12 +32,12 @@ Vue.use(magicbox, {
     quickClose: true,
     width: 800
   },
-  'bk-input': {
-    fontSize: 'medium'
-  },
-  'bk-select': {
-    fontSize: 'medium'
-  },
+  // 'bk-input': {
+  //   fontSize: 'medium'
+  // },
+  // 'bk-select': {
+  //   fontSize: 'medium'
+  // },
   'bk-big-tree': {
     useDefaultEmpty: true
   },

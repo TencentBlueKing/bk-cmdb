@@ -20,7 +20,8 @@
           :resource-type="resourceType"
           :properties="properties"
           :property-groups="propertyGroups"
-          :inst="inst">
+          :inst="inst"
+          :obj-id="objId">
           <template #append>
             <div class="group business-scope-group">
               <div class="group-title">{{$t('资源定义范围')}}</div>

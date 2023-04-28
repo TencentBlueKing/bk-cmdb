@@ -219,6 +219,21 @@
             word-break: break-all;
             margin-bottom: 6px;
             margin-right: 16px;
+
+            .table-value {
+              display: flex;
+              align-items: center;
+
+              .matched-tag {
+                font-size: 12px;
+                background-color: #3a84ff1a;
+                border-color: rgba(58, 132, 255, .3);
+                color: #3a84ff;
+                padding: 2px 4px;
+                margin-left: 2px;
+                transform: scale(0.875);
+              }
+            }
           }
           &:hover {
             color: #313238;

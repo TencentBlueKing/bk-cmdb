@@ -62,6 +62,10 @@ const (
 
 	// IndexPropertyTypeText es index property type text.
 	IndexPropertyTypeText = "text"
+
+	// IndexPropertyTypeObject es index property type object.
+	// NOTE: 使用场景：表格字段 例如： "tables": { "type": "object" }
+	IndexPropertyTypeObject = "object"
 )
 
 // elastic index properties.
@@ -92,6 +96,9 @@ const (
 
 	// IndexPropertyKeywords es index property for metadata keywords.
 	IndexPropertyKeywords = "keywords"
+
+	// TablePropertyName table property name.
+	TablePropertyName = "tables"
 )
 
 // ignore  resource pool

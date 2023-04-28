@@ -61,6 +61,8 @@
 </template>
 
 <script>
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+
   export default {
     props: {
       ruleList: {
@@ -81,8 +83,19 @@
       return {
         ruleType: 'single',
         rules: '',
-        singleRuleTypes: Object.freeze(['singlechar', 'int', 'float']),
-        unionRuleTypes: Object.freeze(['singlechar', 'int', 'float', 'enum', 'date', 'list']),
+        singleRuleTypes: Object.freeze([
+          PROPERTY_TYPES.SINGLECHAR,
+          PROPERTY_TYPES.INT,
+          PROPERTY_TYPES.FLOAT
+        ]),
+        unionRuleTypes: Object.freeze([
+          PROPERTY_TYPES.SINGLECHAR,
+          PROPERTY_TYPES.INT,
+          PROPERTY_TYPES.FLOAT,
+          PROPERTY_TYPES.ENUM,
+          PROPERTY_TYPES.DATE,
+          PROPERTY_TYPES.LIST
+        ]),
         validateResult: null,
         SET_TYPE: Object.freeze({
           subset: Symbol('subset'),

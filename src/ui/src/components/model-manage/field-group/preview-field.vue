@@ -22,7 +22,7 @@
             :collapse.sync="groupState[group['bk_group_id']]">
             <ul class="property-list">
               <template v-for="(property, propertyIndex) in groupedProperties[groupIndex]">
-                <li class="property-item"
+                <li :class="['property-item', { 'full-width': isTableType(property) }]"
                   v-if="checkEditable(property)"
                   :key="propertyIndex">
                   <div class="property-name">
@@ -39,7 +39,12 @@
                   </div>
                   <div class="property-value clearfix">
                     <slot :name="property.bk_property_id">
-                      <component class="form-component"
+                      <table-default-settings
+                        v-if="isTableType(property)"
+                        :preview="true"
+                        :headers="property.option.header"
+                        :defaults="property.option.default" />
+                      <component class="form-component" v-else
                         :is="`cmdb-form-${property['bk_property_type']}`"
                         :class="{ error: errors.has(property['bk_property_id']) }"
                         :placeholder="$tools.getPropertyPlaceholder(property)"
@@ -72,7 +77,13 @@
 
 <script>
   import formMixins from '@/mixins/form'
+  import TableDefaultSettings from './table-default-settings.vue'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+
   export default {
+    components: {
+      TableDefaultSettings
+    },
     mixins: [formMixins],
     props: {
       inst: {
@@ -152,6 +163,9 @@
       getValidateRules(property) {
         return this.$tools.getValidateRules(property)
       },
+      isTableType(property) {
+        return property.bk_property_type === PROPERTY_TYPES.INNER_TABLE
+      },
       uncollapseGroup() {
         this.errors.items.forEach((item) => {
           const property = this.properties.find(property => property.bk_property_id === item.field)
@@ -228,6 +242,14 @@
                 font-size: 0;
                 position: relative;
                 width: 303px;
+            }
+
+            &.full-width {
+              flex: 0 0 100%;
+              width: 100%;
+              .property-value {
+                width: 100%;
+              }
             }
         }
     }

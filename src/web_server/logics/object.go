@@ -116,7 +116,8 @@ func ConvAttr(attrItems map[int]map[string]interface{}) {
 		}
 
 		switch fieldType {
-		case common.FieldTypeEnum, common.FieldTypeList, common.FieldTypeEnumMulti, common.FieldTypeEnumQuote:
+		case common.FieldTypeEnum, common.FieldTypeList, common.FieldTypeEnumMulti, common.FieldTypeEnumQuote,
+			common.FieldTypeInnerTable:
 			var iOption interface{}
 			attrItems[index] = unmarshalAttrStrVal(attrItems[index], common.BKOptionField, iOption)
 		case common.FieldTypeInt:

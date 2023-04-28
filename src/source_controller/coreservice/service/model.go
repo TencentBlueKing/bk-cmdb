@@ -133,6 +133,16 @@ func (s *coreService) CreateModel(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.ModelOperation().CreateModel(ctx.Kit, inputData))
 }
 
+// CreateTableModel create inner table model
+func (s *coreService) CreateTableModel(ctx *rest.Contexts) {
+	inputData := metadata.CreateModel{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntityWithError(s.core.ModelOperation().CreateTableModel(ctx.Kit, inputData))
+}
+
 // SetModel TODO
 func (s *coreService) SetModel(ctx *rest.Contexts) {
 	inputData := metadata.SetModel{}
@@ -177,6 +187,21 @@ func (s *coreService) CascadeDeleteModel(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntityWithError(s.core.ModelOperation().CascadeDeleteModel(ctx.Kit, id))
+}
+
+// CascadeDeleteTableModel delete table model related resources in a cascading manner.
+func (s *coreService) CascadeDeleteTableModel(ctx *rest.Contexts) {
+	inputData := metadata.DeleteTableOption{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := s.core.ModelOperation().CascadeDeleteTableModel(ctx.Kit, inputData); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+
 }
 
 // SearchModel TODO
@@ -468,6 +493,23 @@ func (s *coreService) SetModelAttributes(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.ModelOperation().SetModelAttributes(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
+// UpdateTableModelAttrByCondition update properties of form fields based on conditions.
+func (s *coreService) UpdateTableModelAttrByCondition(ctx *rest.Contexts) {
+
+	inputData := metadata.UpdateTableOption{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	err := s.core.ModelOperation().UpdateTableModelAttributes(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+	return
+}
+
 // UpdateModelAttributes TODO
 func (s *coreService) UpdateModelAttributes(ctx *rest.Contexts) {
 
@@ -529,7 +571,40 @@ func (s *coreService) DeleteModelAttribute(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.ModelOperation().DeleteModelAttributes(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
-// SearchModelAttributesByCondition TODO
+// SearchModelAttrsWithTableByCondition querying model properties containing table types
+// NOTICE: include table attributes
+func (s *coreService) SearchModelAttrsWithTableByCondition(ctx *rest.Contexts) {
+
+	inputData := metadata.QueryCondition{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result, err := s.core.ModelOperation().SearchModelAttrsWithTableByCondition(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespEntityWithError(result, err)
+		return
+	}
+
+	// translate
+	lang := s.Language(ctx.Kit.Header)
+	for index := range result.Info {
+		if result.Info[index].IsPre || needTranslateObjMap[result.Info[index].ObjectID] {
+			result.Info[index].PropertyName = s.TranslatePropertyName(lang, &result.Info[index])
+			result.Info[index].Placeholder = s.TranslatePlaceholder(lang, &result.Info[index])
+			if result.Info[index].PropertyType == common.FieldTypeEnum {
+				result.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &result.Info[index],
+					result.Info[index].Option)
+			}
+		}
+	}
+
+	ctx.RespEntity(result)
+}
+
+// SearchModelAttributesByCondition query for model attributes that do not contain table types
+// NOTICE: exclude table attributes
 func (s *coreService) SearchModelAttributesByCondition(ctx *rest.Contexts) {
 
 	inputData := metadata.QueryCondition{}
@@ -645,4 +720,14 @@ func (s *coreService) CreateModelTables(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntityWithError(nil, s.core.ModelOperation().CreateModelTables(ctx.Kit, inputData))
+}
+
+// CreateTableModelTables create table model table
+func (s *coreService) CreateTableModelTables(ctx *rest.Contexts) {
+	inputData := metadata.CreateModelTable{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntityWithError(nil, s.core.ModelOperation().CreateTableModelTables(ctx.Kit, inputData))
 }
