@@ -246,6 +246,7 @@
 
             &.full-width {
               flex: 0 0 100%;
+              width: 100%;
               .property-value {
                 width: 100%;
               }

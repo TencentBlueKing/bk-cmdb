@@ -123,7 +123,7 @@ func addClassifications(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 
 func addPropertyGroupData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tablename := common.BKTableNamePropertyGroup
-	blog.Errorf("add data for  %s table ", tablename)
+	blog.Infof("add data for %s table", tablename)
 	rows := getPropertyGroupData(conf.OwnerID)
 	for _, row := range rows {
 		if _, _, err := upgrader.Upsert(ctx, db, tablename, row, "id", []string{common.BKObjIDField, "bk_group_id"}, []string{"id"}); err != nil {

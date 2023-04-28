@@ -263,7 +263,7 @@
             :popover-options="{
               appendTo: 'parent'
             }"
-            :disabled="props.isEditField && props.isEdit">
+            :disabled="props.isEdit">
             <bk-option v-for="(option, index) in typeList"
               :key="index"
               :id="option.id"
@@ -276,20 +276,23 @@
         </grid-item>
         <grid-item
           direction="column"
-          :class="['cmdb-form-item', 'form-item']"
+          :class="['cmdb-form-item', 'form-item', 'checkbox-options']"
           :label="$t('列属性')">
           <bk-checkbox
+            class="checkbox"
             v-model="settings.editable">
-            {{$t('当前列允许编辑')}}
+            <span class="g-has-dashed-tooltips" v-bk-tooltips="$t('字段设置可编辑提示语')">
+              {{$t('当前列允许编辑')}}
+            </span>
           </bk-checkbox>
           <bk-checkbox
-            class="ml10"
+            class="ml10 checkbox"
             v-if="isRequiredShow"
             v-model="settings.isrequired">
             {{$t('当前列的值必填')}}
           </bk-checkbox>
           <bk-checkbox
-            class="ml10"
+            class="ml10 checkbox"
             v-if="isMultipleShow"
             v-model="settings.ismultiple">
             {{$t('可多选')}}
@@ -337,23 +340,6 @@
             :placeholder="$t('请输入单位')">
           </bk-input>
         </grid-item>
-        <grid-item
-          direction="column"
-          :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('placeholder') }]"
-          :label="$t('用户提示')">
-          <bk-input
-            class="raw"
-            :rows="3"
-            :maxlength="100"
-            name="placeholder"
-            :type="'textarea'"
-            v-model.trim="settings.placeholder"
-            v-validate="'length:2000'">
-          </bk-input>
-          <template #append>
-            <div class="form-error" v-if="errors.has('placeholder')">{{errors.first('placeholder')}}</div>
-          </template>
-        </grid-item>
       </grid-layout>
     </div>
   </bk-dialog>
@@ -361,7 +347,7 @@
 
 <style lang="scss" scoped>
   .content-layout {
-    max-height: 340px;
+    height: 340px;
     padding: 0 12px;
     @include scrollbar-y;
   }
@@ -384,6 +370,14 @@
       line-height: 36px;
       font-size: 14px;
       @include ellipsis;
+    }
+  }
+
+  .checkbox-options {
+    margin-bottom: 10px;
+    .checkbox {
+      height: 24px;
+      line-height: 24px;
     }
   }
 </style>
