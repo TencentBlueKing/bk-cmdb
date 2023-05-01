@@ -1222,6 +1222,11 @@ export const IAM_ACTIONS = {
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
       resource_id: relationIds[0]
     })
+  },
+  C_FIELD_TEMPLATE: {
+    id: 'create_field_template',
+    name: ['字段组合模板创建', 'Create Field Template'],
+    cmdb_action: 'fieldFemplate.create'
   }
 }
 

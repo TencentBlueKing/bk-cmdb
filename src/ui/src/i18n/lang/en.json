@@ -1711,5 +1711,6 @@
     "已彻底删除":"completely deleted",
     "清空筛选条件":"clear filter",
     "查看详情":"view details",
-    "编辑成功":"Edited successfully"
+    "编辑成功":"Edited successfully",
+    "字段组合模板功能提示": "Field template: the combination field of the model, which can be quickly referenced in the model"
 }
