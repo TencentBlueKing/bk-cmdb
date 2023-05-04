@@ -1025,25 +1025,7 @@
         }
       },
       handleSliderBeforeClose() {
-        const hasChanged = Object.keys(this.$refs.fieldForm.changedValues).length
-        if (hasChanged) {
-          return new Promise((resolve) => {
-            this.$bkInfo({
-              title: this.$t('确认退出'),
-              subTitle: this.$t('退出会导致未保存信息丢失'),
-              extCls: 'bk-dialog-sub-header-center',
-              confirmFn: () => {
-                this.handleBackView()
-                resolve(true)
-              },
-              cancelFn: () => {
-                resolve(false)
-              }
-            })
-          })
-        }
-        this.handleBackView()
-        return true
+        return this.$refs.fieldForm.beforeClose(this.handleBackView)
       },
       handleSliderHidden() {
         this.slider.isShow = false
