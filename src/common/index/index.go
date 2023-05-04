@@ -145,7 +145,7 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 		_, ipv6Exists := keyMap[common.BKHostInnerIPv6Field]
 
 		if ipv4Exists || ipv6Exists {
-			dbIndex.PartialFilterExpression[common.BKAddressingField] = "0"
+			dbIndex.PartialFilterExpression[common.BKAddressingField] = common.BKAddressingStatic
 		}
 	}
 
