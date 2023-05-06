@@ -42,6 +42,8 @@
             :show-unit="false"
             :property="column"
             :multiple="column.bk_obj_id !== 'host'"
+            :instance="row"
+            show-on="cell"
             @click.native.stop="handleValueClick(row, column)">
           </cmdb-property-value>
         </template>
@@ -249,9 +251,7 @@
         this.tableHeader = FilterStore.getHeader()
       },
       getColumnSortable(column) {
-        const isHostProperty = column.bk_obj_id === 'host'
-        const isForeignKey = column.bk_property_type === 'foreignkey'
-        return (isHostProperty && !isForeignKey) ? 'custom' : false
+        return this.$tools.isPropertySortable(column) ? 'custom' : false
       },
       renderHeader(property) {
         const content = [this.$tools.getHeaderPropertyName(property)]
@@ -270,7 +270,10 @@
           const model = this.getModelById(modelId)
           name = `${name}(${model.bk_obj_name})`
         }
-        return this.$tools.getHeaderPropertyMinWidth(property, { name, hasSort: this.getColumnSortable(property) })
+        return this.$tools.getHeaderPropertyMinWidth(property, {
+          name,
+          hasSort: this.$tools.isPropertySortable(property)
+        })
       },
       getTableCellPropertyValueRefId(property) {
         return this.$tools.isUseComplexValueType(property) ? `table-cell-property-value-${property.bk_property_id}` : null

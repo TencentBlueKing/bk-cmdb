@@ -68,6 +68,7 @@
         :properties="properties"
         :property-groups="propertyGroups"
         :disabled-properties="disabledProperties"
+        :obj-id="modelId"
         :inst="instance"
         :type="type"
         :save-auth="{ type: $OPERATION.U_TOPO, relation: [business] }"

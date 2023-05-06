@@ -20,12 +20,10 @@ import (
 
 	// register plugins
 	_ "configcenter/src/web_server/middleware/user/plugins/register"
-
-	"github.com/gin-gonic/gin"
 )
 
 // CurrentPlugin get current login plugin
-func CurrentPlugin(c *gin.Context, version string) metadata.LoginUserPluginInerface {
+func CurrentPlugin(version string) metadata.LoginUserPluginInerface {
 	if "" == version {
 		version = common.BKBluekingLoginPluginVersion
 	}

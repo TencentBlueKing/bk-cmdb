@@ -36,8 +36,14 @@
             :key="property.id"
             :title="property.bk_property_name"
             :checked="isChecked(property)"
+            :disabled="disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id)"
             @change="handleChange(property, ...arguments)">
-            {{property.bk_property_name}}
+            <span v-bk-tooltips.top-start="{
+              disabled: !disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id),
+              content: $t('该字段不支持配置')
+            }">
+              {{property.bk_property_name}}
+            </span>
           </bk-checkbox>
         </div>
       </div>
@@ -64,7 +70,8 @@
         isShow: false,
         filter: '',
         localSelected: [...this.selected],
-        matchedPropertyMap: this.dynamicGroupForm.propertyMap
+        matchedPropertyMap: this.dynamicGroupForm.propertyMap,
+        disabledPropertyMap: this.dynamicGroupForm.disabledPropertyMap
       }
     },
     computed: {
@@ -104,11 +111,11 @@
         }
       },
       isShowGroup(model) {
-        return !!this.matchedPropertyMap[model.bk_obj_id].length
+        return !!this.matchedPropertyMap?.[model.bk_obj_id]?.length
       },
       isShowProperty(property) {
         const modelId = property.bk_obj_id
-        return this.matchedPropertyMap[modelId].some(target => target === property)
+        return this.matchedPropertyMap?.[modelId]?.some(target => target === property)
       },
       isChecked(property) {
         return this.localSelected.some(target => target.id === property.id)

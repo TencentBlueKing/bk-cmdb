@@ -14,22 +14,28 @@ package flow
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	types2 "configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
+	dbtypes "configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/redis"
 	"configcenter/src/storage/stream/types"
 	"configcenter/src/thirdparty/monitor"
 	"configcenter/src/thirdparty/monitor/meta"
 
 	"github.com/tidwall/gjson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -70,6 +76,11 @@ func (f *InstanceFlow) syncMainlineObjectMap() {
 		f.mainlineObjectMap.Set(mainlineObjectMap)
 		blog.V(5).Infof("run object instance watch, sync mainline object map done, map: %+v", f.mainlineObjectMap.Get())
 	}
+}
+
+type mapStrWithOid struct {
+	Oid    primitive.ObjectID     `bson:"_id"`
+	MapStr map[string]interface{} `bson:",inline"`
 }
 
 type mainlineObjectMap struct {
@@ -151,8 +162,7 @@ func (f *InstanceFlow) RunFlow(ctx context.Context) error {
 }
 
 func (f *InstanceFlow) doBatch(es []*types.Event) (retry bool) {
-	eventLen := len(es)
-	if eventLen == 0 {
+	if len(es) == 0 {
 		return false
 	}
 
@@ -177,13 +187,23 @@ func (f *InstanceFlow) doBatch(es []*types.Event) (retry bool) {
 		return retry
 	}
 
+	eventMap, oidIndexMap, aggregationEvents, err := f.classifyEvents(es, oidDetailMap, rid)
+	if err != nil {
+		blog.Errorf("get aggregation inst events failed, err: %v, rid: %s", err, rid)
+		return false
+	}
+
+	eventLen := len(aggregationEvents)
+	if eventLen == 0 {
+		return false
+	}
+
 	ids, err := f.watchDB.NextSequences(context.Background(), f.key.Collection(), eventLen)
 	if err != nil {
 		blog.Errorf("get %s event ids failed, err: %v, rid: %s", f.key.Collection(), err, rid)
 		return true
 	}
 
-	eventMap, oidIndexMap := f.classifyEvents(es, oidDetailMap, rid)
 	pipe := redis.Client().Pipeline()
 	oids := make([]string, 0)
 	chainNodesMap := make(map[string][]*watch.ChainNode)
@@ -233,8 +253,8 @@ func (f *InstanceFlow) doBatch(es []*types.Event) (retry bool) {
 	}
 
 	lastTokenData := map[string]interface{}{
-		common.BKTokenField:       es[eventLen-1].Token.Data,
-		common.BKStartAtTimeField: es[eventLen-1].ClusterTime,
+		common.BKTokenField:       aggregationEvents[eventLen-1].Token.Data,
+		common.BKStartAtTimeField: aggregationEvents[eventLen-1].ClusterTime,
 	}
 
 	// if all events are invalid, set last token to the last events' token, do not need to retry for the invalid ones
@@ -290,14 +310,23 @@ func (f *InstanceFlow) getMainlineObjectMap(ctx context.Context) (map[string]str
 
 // classifyEvents classify events by their related key's collection
 func (f *InstanceFlow) classifyEvents(es []*types.Event, oidDetailMap map[oidCollKey][]byte, rid string) (
-	map[string][]*types.Event, map[string]int) {
+	map[string][]*types.Event, map[string]int, []*types.Event, error) {
 
 	mainlineColl := event.MainlineInstanceKey.Collection()
 	commonColl := f.key.Collection()
 
+	aggregationInstEvents, err := f.convertTableInstEvent(es, rid)
+	if err != nil {
+		blog.Errorf("get aggregation inst events failed, err: %v, rid: %s", err, rid)
+		return nil, nil, nil, err
+	}
+	if len(aggregationInstEvents) == 0 {
+		return nil, nil, nil, err
+	}
+
 	eventMap := make(map[string][]*types.Event)
 	oidIndexMap := make(map[string]int)
-	for index, e := range es {
+	for index, e := range aggregationInstEvents {
 		oidIndexMap[e.Oid+e.Collection] = index
 
 		if e.OperationType == types.Delete {
@@ -324,7 +353,133 @@ func (f *InstanceFlow) classifyEvents(es []*types.Event, oidDetailMap map[oidCol
 		eventMap[commonColl] = append(eventMap[commonColl], e)
 	}
 
-	return eventMap, oidIndexMap
+	return eventMap, oidIndexMap, aggregationInstEvents, nil
+}
+
+// convertTableInstEvent convert table inst event to inst event
+// 当收到所有的事件后，通过集合名称来获取objID，然后通过objID查询模型引用表cc_ModelQuoteRelation，判断当前事件是否为表格实例事件
+// 取出表格实例事件中父模型的实例id，构造父模型objID->instID的map，然后去重实例id，查询源模型实例数据，构造源模型实例的更新事件
+// 其中通过记录index->event的map，来保证表格实例事件聚合后，当前批次所有事件的时序性，表格实例事件聚合成一个源模型实例，使用最后的一个event
+func (f *InstanceFlow) convertTableInstEvent(es []*types.Event, rid string) ([]*types.Event, error) {
+	if len(es) == 0 {
+		return es, nil
+	}
+
+	notContainTableInstEventsMap := make(map[int]*types.Event, 0)
+	srcObjIDInstIDsMap := make(map[string][]int64, 0)
+	instIDEventMap := make(map[int64]*types.Event)
+	instIDIndexMap := make(map[int64]int, 0)
+	for index, e := range es {
+		objID, err := common.GetInstObjIDByTableName(e.Collection, gjson.Get(string(e.DocBytes),
+			common.BkSupplierAccount).Str)
+		if err != nil {
+			blog.Errorf("collection name is illegal, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+
+		modelQuoteRel := make([]metadata.ModelQuoteRelation, 0)
+		queryCond := mapstr.MapStr{
+			common.BKDestModelField: objID,
+		}
+		err = f.ccDB.Table(common.BKTableNameModelQuoteRelation).Find(queryCond).All(context.TODO(), &modelQuoteRel)
+		if err != nil {
+			blog.Errorf("get model quote relation failed, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+		if len(modelQuoteRel) == 0 {
+			notContainTableInstEventsMap[index] = e
+			continue
+		}
+		if len(modelQuoteRel) != 1 {
+			return nil, fmt.Errorf("model quote relation not unique, rel: %v", modelQuoteRel)
+		}
+
+		if modelQuoteRel[0].SrcModel == "" {
+			return nil, fmt.Errorf("src model objID is illegal, rel: %v", modelQuoteRel)
+		}
+
+		if modelQuoteRel[0].PropertyID == "" {
+			return nil, fmt.Errorf("table field property id is illegal, rel: %v", modelQuoteRel)
+		}
+
+		srcObjID := modelQuoteRel[0].SrcModel
+		instID := gjson.Get(string(e.DocBytes), common.BKInstIDField).Int()
+		srcObjIDInstIDsMap[srcObjID] = append(srcObjIDInstIDsMap[srcObjID], instID)
+
+		instIDIndexMap[instID] = index
+		instIDEventMap[instID] = e
+	}
+
+	return f.convertToInstEvents(notContainTableInstEventsMap, srcObjIDInstIDsMap, instIDEventMap, instIDIndexMap, rid)
+}
+
+func (f *InstanceFlow) convertToInstEvents(es map[int]*types.Event, srcObjIDInstIDsMap map[string][]int64,
+	instIDEventMap map[int64]*types.Event, instIDIndexMap map[int64]int, rid string) ([]*types.Event, error) {
+	for objID, instIDs := range srcObjIDInstIDsMap {
+		if len(instIDs) == 0 {
+			continue
+		}
+
+		tableName := common.GetInstTableName(objID, gjson.Get(string(instIDEventMap[instIDs[0]].DocBytes),
+			common.BkSupplierAccount).Str)
+		filter := mapstr.MapStr{
+			common.GetInstIDField(objID): mapstr.MapStr{
+				common.BKDBIN: util.IntArrayUnique(instIDs),
+			},
+		}
+		findOpts := dbtypes.NewFindOpts().SetWithObjectID(true)
+		insts := make([]mapStrWithOid, 0)
+		err := f.ccDB.Table(tableName).Find(filter, findOpts).All(context.TODO(), &insts)
+		if err != nil {
+			blog.Errorf("get src model inst failed, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+
+		for _, inst := range insts {
+			doc, err := json.Marshal(inst.MapStr)
+			if err != nil {
+				blog.Errorf("marshal inst to byte failed, err: %v, rid: %s", err, rid)
+				continue
+			}
+
+			instID, err := util.GetInt64ByInterface(inst.MapStr[common.GetInstIDField(objID)])
+			if err != nil {
+				blog.Errorf("get inst id failed, err: %v, rid: %s", err, rid)
+				return nil, err
+			}
+
+			instEvent := &types.Event{
+				Oid:           inst.Oid.Hex(),
+				Document:      inst.MapStr,
+				DocBytes:      doc,
+				OperationType: "update",
+				Collection:    tableName,
+				ClusterTime: types.TimeStamp{
+					Sec:  instIDEventMap[instID].ClusterTime.Sec,
+					Nano: instIDEventMap[instID].ClusterTime.Nano,
+				},
+				Token: instIDEventMap[instID].Token,
+				ChangeDesc: &types.ChangeDescription{
+					UpdatedFields: make(map[string]interface{}, 0),
+					RemovedFields: make([]string, 0),
+				},
+			}
+
+			es[instIDIndexMap[instID]] = instEvent
+		}
+	}
+
+	keys := make([]int, 0)
+	for key := range es {
+		keys = append(keys, key)
+	}
+	sort.Sort(sort.IntSlice(keys))
+
+	aggregationInstEvents := make([]*types.Event, 0)
+	for _, v := range keys {
+		aggregationInstEvents = append(aggregationInstEvents, es[v])
+	}
+	return aggregationInstEvents, nil
 }
 
 func (f *InstanceFlow) doInsertEvents(chainNodesMap map[string][]*watch.ChainNode, lastTokenData map[string]interface{},

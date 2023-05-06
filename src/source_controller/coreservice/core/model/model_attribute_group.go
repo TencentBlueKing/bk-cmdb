@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 var _ core.ModelAttributeGroup = nil
@@ -61,8 +62,13 @@ func (g *modelAttributeGroup) CreateModelAttributeGroup(kit *rest.Kit, objID str
 		return dataResult, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupName)
 	}
 	id, err := g.save(kit, inputParam.Data)
-	if nil != err {
-		blog.Errorf("request(%s): it is to failed to create a new model attribute group (%#v), error info is %s", kit.Rid, inputParam.Data, err.Error())
+	if err != nil {
+		blog.Errorf("failed to create a new model attribute group, data: %v, err: %v, rid: %s", inputParam.Data, err,
+			kit.Rid)
+		if mongodb.Client().IsDuplicatedError(err) {
+			dupErr := kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
+			return nil, dupErr
+		}
 		return dataResult, err
 	}
 	dataResult.Created.ID = id

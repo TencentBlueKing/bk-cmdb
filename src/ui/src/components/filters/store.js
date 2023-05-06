@@ -565,7 +565,7 @@ const FilterStore = new Vue({
       return this.components[name]
     },
     async getProperties() {
-      const properties = await api.post('find/objectattr', {
+      const properties = await api.post('find/objectattr/web', {
         bk_biz_id: this.bizId,
         bk_obj_id: {
           $in: ['host', 'module', 'set', 'biz']

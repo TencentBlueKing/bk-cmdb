@@ -35,6 +35,8 @@ const (
 	ClassificationNetworkID = "bk_network"
 	// ClassificationUncategorizedID TODO
 	ClassificationUncategorizedID = "bk_uncategorized"
+	// ClassificationTableID built-in table classification
+	ClassificationTableID = "bk_table_classification"
 )
 
 // Model group classification initialization value

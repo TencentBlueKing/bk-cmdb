@@ -92,10 +92,10 @@ func (ps *parseStream) searchModels(cond mapstr.MapStr) ([]metadata.Object, erro
 	return model.Info, nil
 }
 
-func (ps *parseStream) getModelAttribute(cond mapstr.MapStr) ([]metadata.Attribute, error) {
+func (ps *parseStream) getModelAttribute(bizID int64, cond mapstr.MapStr) ([]metadata.Attribute, error) {
 
-	attr, err := ps.engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(),
-		ps.RequestCtx.Header, &metadata.QueryCondition{Condition: cond})
+	attr, err := ps.engine.CoreAPI.CoreService().Model().ReadModelAttrsWithTableByCondition(context.Background(),
+		ps.RequestCtx.Header, bizID, &metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		return nil, err
 	}

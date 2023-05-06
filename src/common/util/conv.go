@@ -246,8 +246,8 @@ func GetStrValsFromArrMapInterfaceByKey(arrI []interface{}, key string) []string
 	return ret
 }
 
-// ConverToInterfaceSlice TODO
-func ConverToInterfaceSlice(value interface{}) []interface{} {
+// ConvertToInterfaceSlice convert value to interface slice
+func ConvertToInterfaceSlice(value interface{}) []interface{} {
 	rflVal := reflect.ValueOf(value)
 	for rflVal.CanAddr() {
 		rflVal = rflVal.Elem()

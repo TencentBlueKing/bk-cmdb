@@ -56,6 +56,8 @@
 </template>
 
 <script>
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+
   export default {
     props: {
       visible: {
@@ -108,7 +110,7 @@
         return this.localSelected.some(target => target.id === property.id)
       },
       isDisabled(property) {
-        return !property?.editable
+        return !property?.editable || property.bk_property_type === PROPERTY_TYPES.INNER_TABLE
       },
       handleChangeChecked(property, checked) {
         if (checked) {
