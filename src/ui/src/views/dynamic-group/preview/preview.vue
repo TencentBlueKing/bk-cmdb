@@ -55,6 +55,8 @@
 
 <script>
   import { mapGetters } from 'vuex'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
+
   export default {
     props: {
       id: {
@@ -134,8 +136,14 @@
       async setPreviewProperties() {
         try {
           const previewProperties = await this.$tools.getDefaultHeaderProperties(this.properties)
-          const innerIpv6 = this.properties.find(item => item.bk_property_id === 'bk_host_innerip_v6')
-          previewProperties.splice(1, 0, innerIpv6)
+
+          if (this.details.bk_obj_id === BUILTIN_MODELS.HOST) {
+            const innerIPv6 = this.properties.find(item => item.bk_property_id === 'bk_host_innerip_v6')
+            if (innerIPv6) {
+              previewProperties.splice(1, 0, innerIPv6)
+            }
+          }
+
           this.previewProperties = Object.freeze(previewProperties)
         } catch (error) {
           console.error(error)
@@ -147,7 +155,7 @@
             bizId: this.bizId,
             id: this.id,
             params: {
-              fields: [...this.previewFields, 'bk_host_innerip_v6'],
+              fields: this.previewFields,
               page: {
                 ...this.$tools.getPageParams(this.table.pagination),
                 sort: this.table.sort
