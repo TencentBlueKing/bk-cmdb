@@ -212,13 +212,14 @@
           </bk-button>
         </cmdb-auth>
       </div>
-      <cmdb-data-empty
-        v-if="!displayList.length && !$loading(Object.values(request))"
-        slot="empty"
-        :stuff="dataEmpty"
-        @clear="handleClearFilter">
-      </cmdb-data-empty>
     </div>
+    <cmdb-data-empty
+      class="empty-content"
+      v-if="!displayList.length && !$loading(Object.values(request))"
+      slot="empty"
+      :stuff="dataEmpty"
+      @clear="handleClearFilter">
+    </cmdb-data-empty>
   </div>
 </template>
 
@@ -774,7 +775,13 @@
                 width: 260px;
             }
         }
-    }
+        .empty-content{
+            position: absolute;
+            top:50%;
+            left:50%;
+            transform: translate(-50%,-50%);
+        }
+      }
     .menu-operational {
         display: none;
         padding: 6px 0;

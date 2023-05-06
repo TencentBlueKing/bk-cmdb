@@ -38,7 +38,7 @@
       @page-limit-change="handleSizeChange"
       @row-click="handleRowClick">
       <bk-table-column prop="resource_id" label="ID"></bk-table-column>
-      <bk-table-column prop="resource_name" :label="isHost ? 'IP' : $t('资源')"></bk-table-column>
+      <bk-table-column prop="resource_name" :label="isHost ? 'IP' : $t('资源')" show-overflow-tooltip></bk-table-column>
       <bk-table-column prop="operation_time" :label="$t('更新时间')">
         <template slot-scope="{ row }">{{$tools.formatTime(row.operation_time)}}</template>
       </bk-table-column>
