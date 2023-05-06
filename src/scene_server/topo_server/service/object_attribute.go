@@ -363,7 +363,7 @@ func getAttrIDAndBizID(ctx *rest.Contexts) (int64, int64, error) {
 	var bizID int64
 	if bizIDStr := ctx.Request.PathParameter(common.BKAppIDField); bizIDStr != "" {
 		bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
-		bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+		bizID, err = strconv.ParseInt(bizIDStr, 10, 64)
 		if err != nil {
 			blog.Errorf("create biz custom field, but parse biz ID failed, error: %v, rid: %s", err, ctx.Kit.Rid)
 			return 0, 0, err
