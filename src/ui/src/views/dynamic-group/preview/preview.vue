@@ -20,6 +20,9 @@
     :draggable="false"
     :mask-close="true"
     @after-leave="handleHidden">
+    <template slot="header">
+      <div :title="title" class="title-text">{{ title }} </div>
+    </template>
     <bk-table class="preview-table"
       ref="table"
       v-bkloading="{ isLoading: $loading() }"
@@ -235,5 +238,15 @@
                 color: #63656e;
             }
         }
+    }
+    .title-text{
+        display: inline-block;
+        width: 100%;
+        font-size: 20px;
+        color: #313238;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin: 0;
     }
 </style>

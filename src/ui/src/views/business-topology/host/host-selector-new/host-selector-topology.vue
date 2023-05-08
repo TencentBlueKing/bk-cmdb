@@ -40,9 +40,12 @@
               </div>
             </div>
           </div>
-          <div class="search-result-empty" v-else>
-            <span class="text">{{$t('暂无数据')}}</span>
-          </div>
+          <cmdb-data-empty
+            v-else
+            slot="empty"
+            :stuff="dataEmpty"
+            @clear="handleClearFilter">
+          </cmdb-data-empty>
         </div>
         <div class="tree-wrapper">
           <bk-big-tree ref="tree" class="tree"
@@ -127,7 +130,10 @@
           limit: 500,
           count: 0,
         },
-        currentNode: {}
+        currentNode: {},
+        dataEmpty: {
+          type: 'search'
+        }
       }
     },
     computed: {
@@ -369,6 +375,9 @@
           })
         }
       },
+      handleClearFilter() {
+        this.filter.keyword = ''
+      }
     }
   }
 </script>
@@ -554,15 +563,6 @@
                 .checkbox {
                     padding: 4px;
                 }
-            }
-        }
-
-        .search-result-empty {
-            padding: 20px 0;
-            text-align: center;
-            .text {
-                font-size: 12px;
-                color: #63656e;
             }
         }
     }

@@ -241,7 +241,7 @@
             try {
               await this.$store.dispatch('cloud/area/delete', { id: row.bk_cloud_id })
               infoInstance.buttonLoading = true
-              this.$success('删除成功')
+              this.$success(this.$t('删除成功'))
               this.getData()
               return true
             } catch (e) {
