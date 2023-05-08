@@ -211,6 +211,12 @@
           </cmdb-auth>
         </div>
       </draggable>
+      <cmdb-data-empty
+        v-if="displayGroupedProperties.length === 0"
+        slot="empty"
+        :stuff="dataEmpty"
+        @clear="handleClearFilter">
+      </cmdb-data-empty>
     </div>
 
     <bk-dialog class="bk-dialog-no-padding"
@@ -435,6 +441,9 @@
         requestIds: {
           properties: Symbol(),
           propertyGroups: Symbol()
+        },
+        dataEmpty: {
+          type: 'search',
         }
       }
     },
@@ -1072,6 +1081,9 @@
       handleGroupDragEnd() {
         this.isDragging = false
       },
+      handleClearFilter() {
+        this.keyword = ''
+      }
     }
   }
 </script>

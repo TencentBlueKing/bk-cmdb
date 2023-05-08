@@ -287,6 +287,10 @@
           this.table.pagination.count = count
           this.table.list = info
           this.table.stuff.type = this.$route.query.filter ? 'search' : 'default'
+          const params = this.getParams()
+          if (params.ip.data.length > 0) {
+            this.table.stuff.type = 'search'
+          }
         } catch (error) {
           this.table.pagination.count = 0
           this.table.checked = []

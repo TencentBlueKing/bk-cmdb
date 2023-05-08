@@ -374,6 +374,9 @@
           return containerHostService.findAll(params, config)
         }
         this.table.stuff.type = this.$route.query.filter ? 'search' : 'default'
+        if (params.ip.data.length > 0) {
+          this.table.stuff.type = 'search'
+        }
         return this.$store.dispatch('hostSearch/searchHost', { params, config })
       },
       getParams() {

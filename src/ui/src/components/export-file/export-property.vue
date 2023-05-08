@@ -41,7 +41,10 @@
         </li>
       </ul>
     </div>
-    <bk-exception type="search-empty" scene="part" v-show="!matchedProperties.length"></bk-exception>
+    <cmdb-data-empty
+      v-show="!matchedProperties.length"
+      :stuff="dataEmpty"
+      @clear="handleClearFilter"></cmdb-data-empty>
   </div>
 </template>
 
@@ -111,6 +114,17 @@
       const isSelected = property => selection.value.includes(property)
       const isAllSelected = properties => properties.every(property => selection.value.includes(property))
 
+      const dataEmpty = ref({
+        type: 'search',
+        payload: {
+          defaultText: ''
+        }
+      })
+
+      const handleClearFilter = () => {
+        keyword.value = ''
+      }
+
       return {
         keyword,
         matchedProperties,
@@ -121,7 +135,9 @@
         setAllSelection,
         isAllSelected,
         isPreset,
-        pending
+        pending,
+        dataEmpty,
+        handleClearFilter
       }
     }
   }

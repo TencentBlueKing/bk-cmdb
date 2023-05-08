@@ -1701,5 +1701,6 @@
     "当前列的值必填": "Required",
     "最多添加50行": "Allow up to 50 rows to be added",
     "请先添加表格列": "Please add table header first",
-    "表格字段列默认值提示语": "When adding a row of table values, the value filled by default in the current column"
+    "表格字段列默认值提示语": "When adding a row of table values, the value filled by default in the current column",
+    "清空筛选条件":"clear filter criteria"
 }

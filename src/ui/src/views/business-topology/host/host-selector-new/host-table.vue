@@ -47,6 +47,11 @@
       <bk-table-column :label="$t('云区域')" show-overflow-tooltip>
         <template slot-scope="{ row }">{{row.host.bk_cloud_id | foreignkey}}</template>
       </bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff"
+        @clear="handleClearFilter">
+      </cmdb-table-empty>
     </bk-table>
     <bk-pagination
       v-if="pagination"
@@ -94,6 +99,14 @@
           current: 1,
           limit: 500,
           count: 0
+        },
+        table: {
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
+          }
         }
       }
     },
@@ -140,6 +153,7 @@
         } else {
           this.displayList = this.list
         }
+        this.table.stuff.type = this.keyword ? 'search' : 'default'
       },
       handleLimitChange() {
         this.innerPagination.current = 1
@@ -154,6 +168,10 @@
 
         this.$emit('update:pagination', val)
         this.$emit('pagination-change', val)
+      },
+      handleClearFilter() {
+        this.keyword = ''
+        this.filterHost()
       }
     }
   }
