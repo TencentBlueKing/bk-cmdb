@@ -12,21 +12,22 @@
 
 <template>
   <cmdb-sticky-layout>
-    <bk-form class="info-form clearfix" :label-width="85">
-      <bk-form-item class="form-item clearfix fl" :label="$t('任务名称')">
+    <bk-form class="info-form clearfix">
+      <bk-form-item class="form-item clearfix fl" :label="$t('任务名称')" :label-width="$i18n.locale === 'en' ? 85 : 85">
         <span class="form-value">{{task.bk_task_name}}</span>
       </bk-form-item>
-      <bk-form-item class="form-item clearfix fl" :label="$t('账户名称')">
+      <bk-form-item class="form-item clearfix fl" :label="$t('账户名称')" :label-width="$i18n.locale === 'en' ? 115 : 85">
         <task-account-selector class="form-value"
           display="info" :value="task.bk_account_id">
         </task-account-selector>
       </bk-form-item>
-      <bk-form-item class="form-item clearfix fl" :label="$t('资源类型')">
+      <bk-form-item class="form-item clearfix fl" :label="$t('资源类型')" :label-width="$i18n.locale === 'en' ? 115 : 85">
         <task-resource-selector class="form-value"
           display="info" :value="task.bk_resource_type">
         </task-resource-selector>
       </bk-form-item>
-      <bk-form-item class="form-item clearfix" :label="$t('云区域设定')"></bk-form-item>
+      <bk-form-item class="form-item clearfix" :label="$t('云区域设定')" :label-width="$i18n.locale === 'en' ? 145 : 85">
+      </bk-form-item>
     </bk-form>
     <div class="info-table">
       <bk-table :data="task.bk_sync_vpcs" :row-class-name="getRowClass">

@@ -193,6 +193,7 @@
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
   import { PROPERTY_TYPES, PROPERTY_TYPE_LIST } from '@/dictionary/property-constants'
   import { isEmptyPropertyValue } from '@/utils/tools'
+  import useSideslider from '@/hooks/use-sideslider'
 
   export default {
     components: {
@@ -379,6 +380,9 @@
       if (this.isEditField) {
         this.initData()
       }
+
+      const { beforeClose } = useSideslider(this.fieldInfo)
+      this.beforeClose = beforeClose
     },
     methods: {
       ...mapActions('objectModelProperty', [

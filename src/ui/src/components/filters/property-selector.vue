@@ -48,6 +48,9 @@
           </li>
         </ul>
       </div>
+      <cmdb-data-empty v-if="renderGroups.length === 0" class="empty-content" slot="empty"
+        :stuff="dataEmpty"
+        @clear="handleClearFilter"></cmdb-data-empty>
     </section>
     <footer class="footer" slot="footer">
       <i18n class="selected-count"
@@ -76,7 +79,13 @@
         isShow: false,
         selected: [...FilterStore.selected],
         throttleFilter: throttle(this.handleFilter, 500, { leading: false }),
-        renderGroups: []
+        renderGroups: [],
+        dataEmpty: {
+          type: 'empty',
+          payload: {
+            defaultText: this.$t('暂无数据')
+          }
+        }
       }
     },
     computed: {
@@ -158,7 +167,8 @@
     watch: {
       filter: {
         immediate: true,
-        handler() {
+        handler(value) {
+          this.dataEmpty.type = value ? 'search' : 'empty'
           this.throttleFilter()
         }
       }
@@ -209,6 +219,9 @@
       },
       close() {
         this.isShow = false
+      },
+      handleClearFilter() {
+        this.filter = ''
       }
     }
   }
@@ -233,6 +246,13 @@
         margin: 0 -24px -24px 0;
         height: 350px;
         @include scrollbar-y;
+        position: relative;
+        .empty-content{
+            position: absolute;
+            top:50%;
+            left:50%;
+            transform: translate(-50%,-50%);
+        }
     }
     .group {
         margin-top: 15px;
