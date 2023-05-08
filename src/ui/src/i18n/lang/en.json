@@ -1328,7 +1328,7 @@
     "云资源": "cloud resource",
     "云资源发现提示语": "Create cloud host task to automatic discovery and synchronization new host or attribute changed host to resource pool",
     "云资源发现": "Cloud resource discover",
-    "云账户": "cloud account",
+    "云账户": "Cloud account",
     "账户类型": "Account type",
     "账户名称": "Account name",
     "账户详情": "Account details",
@@ -1702,5 +1702,8 @@
     "最多添加50行": "Allow up to 50 rows to be added",
     "请先添加表格列": "Please add table header first",
     "表格字段列默认值提示语": "When adding a row of table values, the value filled by default in the current column",
-    "清空筛选条件":"clear filter criteria"
+    "已彻底删除":"completely deleted",
+    "清空筛选条件":"clear filter",
+    "查看详情":"view details",
+    "编辑成功":"Edited successfully"
 }
