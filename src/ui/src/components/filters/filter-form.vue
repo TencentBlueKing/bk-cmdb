@@ -247,7 +247,8 @@
             }
           })
           this.condition = newCondition
-          this.selected = [...this.storageSelected]
+          const filterCondition = ['bk_host_innerip_v6', 'bk_host_outerip_v6']
+          this.selected = [...this.storageSelected].filter(item => !filterCondition.includes(item.bk_property_id))
         }
       },
       storageIPCondition: {
