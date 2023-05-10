@@ -18,7 +18,6 @@ import (
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
 	"configcenter/src/kube/types"
 )
 
@@ -409,7 +408,8 @@ func (hs *hostServer) MoveSetHost2IdleModule(ctx context.Context, h http.Header,
 }
 
 // SearchHost TODO
-func (hs *hostServer) SearchHost(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
+func (hs *hostServer) SearchHost(ctx context.Context, h http.Header,
+	dat *metadata.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
 	resp = new(metadata.SearchHostResult)
 	subPath := "/hosts/search"
 
@@ -424,7 +424,8 @@ func (hs *hostServer) SearchHost(ctx context.Context, h http.Header, dat *params
 }
 
 // SearchHostWithAsstDetail TODO
-func (hs *hostServer) SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
+func (hs *hostServer) SearchHostWithAsstDetail(ctx context.Context, h http.Header,
+	dat *metadata.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
 	resp = new(metadata.SearchHostResult)
 	subPath := "/hosts/search/asstdetail"
 
@@ -772,5 +773,53 @@ func (hs *hostServer) DeleteCloudHostFromBiz(ctx context.Context, header http.He
 		return err
 	}
 
+	return nil
+}
+
+// BindAgent bind agent to host
+func (hs *hostServer) BindAgent(ctx context.Context, h http.Header,
+	params *metadata.BindAgentParam) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/host/bind/agent"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+	return nil
+}
+
+// UnbindAgent unbind agent to host
+func (hs *hostServer) UnbindAgent(ctx context.Context, h http.Header,
+	params *metadata.UnbindAgentParam) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/host/unbind/agent"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
 	return nil
 }

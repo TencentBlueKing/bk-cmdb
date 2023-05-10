@@ -26,16 +26,34 @@ import (
 	"configcenter/src/source_controller/cacheservice/event"
 )
 
-// SearchHostWithInnerIPInCache TODO
+// SearchHostWithInnerIPInCache This function is only used to query the host through ip+cloud in the static IP scenario
+// of the host snapshot !!!
 func (s *cacheService) SearchHostWithInnerIPInCache(ctx *rest.Contexts) {
 	opt := new(metadata.SearchHostWithInnerIPOption)
 	if err := ctx.DecodeInto(&opt); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
-	host, err := s.cacheSet.Host.GetHostWithInnerIP(ctx.Kit.Ctx, opt)
+	host, err := s.cacheSet.Host.GetHostWithInnerIPForStatic(ctx.Kit.Ctx, opt)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search host with inner ip in cache, but get host failed, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search host with inner ip in cache, but get host"+
+			" failed, err: %v", err)
+		return
+	}
+	ctx.RespString(&host)
+}
+
+// SearchHostWithAgentIDInCache This function is only used to query host information based on agentID in the host
+// snapshot scenario !!!
+func (s *cacheService) SearchHostWithAgentIDInCache(ctx *rest.Contexts) {
+	opt := new(metadata.SearchHostWithAgentID)
+	if err := ctx.DecodeInto(&opt); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	host, err := s.cacheSet.Host.GetHostWithAgentID(ctx.Kit.Ctx, opt)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "no host with agentID be founded, err: %v", err)
 		return
 	}
 	ctx.RespString(&host)

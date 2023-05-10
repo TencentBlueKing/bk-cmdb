@@ -42,8 +42,9 @@ export default function useItem(list) {
       const { key, kind, source } = item
       const newItem = { ...item }
       if (kind === 'instance' && key === BUILTIN_MODELS.HOST) {
+        const ip = source.bk_host_innerip || source.bk_host_innerip_v6
         newItem.type = key
-        newItem.title = Array.isArray(source.bk_host_innerip) ? source.bk_host_innerip.join(',') : source.bk_host_innerip
+        newItem.title = Array.isArray(ip) ? ip.join(',') : ip
         newItem.typeName = t('主机')
         newItem.linkTo = handleGoResourceHost
       } else if (kind === 'instance' && key === BUILTIN_MODELS.BUSINESS) {

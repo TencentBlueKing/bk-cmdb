@@ -31,6 +31,8 @@
 <script>
   import { mapGetters } from 'vuex'
   import HostTable from './host-table.vue'
+  import isIP from 'validator/es/lib/isIP'
+
   export default {
     components: {
       HostTable
@@ -67,20 +69,20 @@
       },
       async handleConfirm() {
         try {
-          await this.validateList()
+          this.validateList()
           if (this.validList.length) {
-            const { info } = await this.$store.dispatch('hostSearch/searchHost', {
-              params: this.getParams(),
-              config: {
-                requestId: this.request.host
-              }
+            const results = await Promise.all(this.getReqs())
+            const list = []
+            results.forEach(({ info }) => {
+              list.push(...info)
             })
             const unexistList = this.validList.filter((ip) => {
-              const exist = info.some(target => target.host.bk_host_innerip === ip)
+              const exist = list.some(target => target.host.bk_host_innerip === ip
+                || target.host.bk_host_innerip_v6 === ip)
               return !exist
             })
-            // eslint-disable-next-line max-len
-            const newHostList = info.filter(({ host }) => !this.hostList.some(target => target.host.bk_host_id === host.bk_host_id))
+            const newHostList = list.filter(({ host }) => !this.hostList
+              .some(target => target.host.bk_host_id === host.bk_host_id))
             this.hostList.push(...newHostList)
             this.invalidList.push(...unexistList)
           }
@@ -89,32 +91,69 @@
           console.error(e)
         }
       },
-      async validateList() {
+      validateList() {
         const list = [...new Set(this.value.split('\n').map(ip => ip.trim())
           .filter(ip => ip.length))]
-        const validateQueue = []
-        list.forEach((ip) => {
-          validateQueue.push(this.$validator.verify(ip, 'ip'))
-        })
-        const results = await Promise.all(validateQueue)
-        const validList = []
         const invalidList = []
-        results.forEach(({ valid }, index) => {
-          if (valid) {
-            validList.push(list[index])
+        const validList = []
+        list.forEach((text) => {
+          if (isIP(text)) {
+            validList.push(text)
           } else {
-            invalidList.push(list[index])
+            invalidList.push(text)
           }
         })
         this.validList = validList
         this.invalidList = invalidList
       },
-      getParams() {
-        return {
+      getReqs() {
+        const IPList = []
+        const IPv6List = []
+        this.validList.forEach((ip) => {
+          if (isIP(ip, 4)) {
+            IPList.push(ip)
+          }
+          if (isIP(ip, 6)) {
+            IPv6List.push(ip)
+          }
+        })
+
+        const defaultParams = () => ({
           bk_biz_id: this.bizId,
-          condition: this.getDefaultSearchCondition(),
-          ip: { data: this.validList, exact: 1, flag: 'bk_host_innerip' }
+          condition: this.getDefaultSearchCondition()
+        })
+
+        const reqs = []
+
+        if (IPList.length) {
+          const params = defaultParams()
+          params.ip = { data: IPList, exact: 1, flag: 'bk_host_innerip' }
+          reqs.push(this.$store.dispatch('hostSearch/searchHost', {
+            params,
+            config: {
+              requestId: this.request.host
+            }
+          }))
         }
+
+        if (IPv6List.length) {
+          const params = defaultParams()
+          const hostCond = params.condition.find(item => item.bk_obj_id === 'host')
+          hostCond.condition = [{
+            field: 'bk_host_innerip_v6',
+            operator: '$in',
+            value: IPv6List
+          }]
+          reqs.push(this.$store.dispatch('hostSearch/searchHost', {
+            params,
+            config: {
+              requestId: this.request.host
+            }
+          }))
+        }
+
+
+        return reqs
       },
       handleHostSelectChange(data) {
         this.$emit('select-change', data)

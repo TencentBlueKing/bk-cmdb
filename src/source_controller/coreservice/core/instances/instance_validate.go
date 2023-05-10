@@ -236,16 +236,20 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		return err
 	}
 
-	// module instance's name must coincide with template
-	if objID == common.BKInnerObjIDModule {
+	switch objID {
+	case common.BKInnerObjIDModule:
+		// module instance's name must coincide with template
 		if err := m.validateModuleCreate(kit, instanceData, valid); err != nil {
-			if blog.V(9) {
-				blog.InfoJSON("validateModuleCreate failed, module: %s, err: %s, rid: %s", instanceData, err, kit.Rid)
-			}
+			blog.Errorf("validate create module failed, module: %v, err: %v, rid: %s", instanceData, err, kit.Rid)
+			return err
+		}
+
+	case common.BKInnerObjIDHost:
+		if err := m.validateHostCreate(kit, instanceData, valid); err != nil {
+			blog.Errorf("validate create host failed, host: %v, err: %v, rid: %s", instanceData, err, kit.Rid)
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -581,6 +585,18 @@ func (m *instanceManager) validBizIDs(kit *rest.Kit, bizIDs []int64) error {
 	if int(cnt) != len(uniqueBizIDs) {
 		blog.Errorf("instance biz ids(%+v) contains invalid biz, rid: %s", uniqueBizIDs, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField)
+	}
+	return nil
+}
+
+func (m *instanceManager) validateHostCreate(kit *rest.Kit, instanceData mapstr.MapStr, valid *validator) error {
+	// at least one of bk_host_innerip and bk_host_innerip_v6 attribute needs to be passed, because can not validate in
+	// db, validate it here
+	innerIPv4, ipv4Exist := instanceData[common.BKHostInnerIPField]
+	innerIPv6, ipv6Exist := instanceData[common.BKHostInnerIPv6Field]
+	if (!ipv4Exist || innerIPv4 == "") && (!ipv6Exist || innerIPv6 == "") {
+		return valid.errIf.Errorf(common.CCErrCommAtLeastSetOneVal, common.BKHostInnerIPField,
+			common.BKHostInnerIPv6Field)
 	}
 	return nil
 }

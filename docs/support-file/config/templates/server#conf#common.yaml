@@ -221,6 +221,9 @@ eventServer:
   hostIdentifier:
     # 是否开始下发主机身份功能, 有两个值，true和false，当处于true时，开启下发主机身份功能，false时，关闭该功能
     startUp: true
+    # 可选值为v1或v2, v1表示采用的是使用thrift方式连接gse，需要配置gse.apiServer和gse.taskServer
+    # v2表示使用的是apigw接口与gse交互，此接口在gse2.0提供，需要配置gse.apiGW
+    version: __BK_GSE_AGENT_VERSION__
     # 每隔多少个小时进行一次全量主机身份批量的同步操作，整数值，单位为小时，注：刚启动服务时，会等一个周期后再进行全量同步操作
     batchSyncIntervalHours: 6
     # 用于设置推送主机身份请求gse的taskServer能力，起到限流的作用。qps的默认值为200, 代表每秒最多推送的主机数量，burst的默认值为200
@@ -248,6 +251,23 @@ eventServer:
 
 # 直接调用gse服务相关配置
 gse:
+  # 调用gse的apigw接口相关配置
+  apiGW:
+    address: __BK_API_GATEWAY_GSE_URL__
+    appCode: __BK_CMDB_APP_CODE__
+    appSecret: __BK_CMDB_APP_SECRET__
+    username: admin
+    tls:
+      # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+      insecureSkipVerify:
+      # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+      certFile:
+      # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+      keyFile:
+      # CA证书的路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+      caFile:
+      # 用于解密根据RFC1423加密的证书密钥的PEM块
+      password:
   # 调用gse的apiServer服务时相关配置
   apiServer:
     # 此配置为数组类型，可配置连接gse的apiServer的多个host:port格式的值，去建立连接

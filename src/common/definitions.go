@@ -295,6 +295,12 @@ const (
 	// BKHostOuterIPField the host outerip field
 	BKHostOuterIPField = "bk_host_outerip"
 
+	// BKAddressingStatic the host addressing is static
+	BKAddressingStatic = "static"
+
+	// BKAddressingDynamic the host addressing is dynamic
+	BKAddressingDynamic = "dynamic"
+
 	// BKCloudInstIDField the cloud instance id field
 	BKCloudInstIDField = "bk_cloud_inst_id"
 
@@ -474,6 +480,9 @@ const (
 
 	// BKResourceNameField the audit resource name field
 	BKResourceNameField = "resource_name"
+
+	// BKExtendResourceNameField the audit extend resource name field
+	BKExtendResourceNameField = "extend_resource_name"
 
 	// BKLabelField the audit resource name field
 	BKLabelField = "label"
@@ -739,6 +748,8 @@ const (
 	// BKCloudHostIdentifierField defines if the host is a cloud host that doesn't allow cross biz transfer
 	BKCloudHostIdentifierField = "bk_cloud_host_identifier"
 
+	// BKAddressingField the addressing field, defines the host addressing type
+	BKAddressingField = "bk_addressing"
 	// BKProjectIDField the project id field
 	BKProjectIDField = "bk_project_id"
 	// BKProjectNameField the project name field
@@ -1110,6 +1121,10 @@ const (
 const (
 	EventCacheEventIDKey = BKCacheKeyV3Prefix + "event:inst_id"
 	RedisSnapKeyPrefix   = BKCacheKeyV3Prefix + "snapshot:"
+
+	// RedisHostSnapMsgDelayQueue the monitor reports data, and queries the name of the key placed in the delay queue in
+	// the case of host failure.
+	RedisHostSnapMsgDelayQueue = BKCacheKeyV3Prefix + "host_snap:delay_queue"
 )
 const (
 	// RedisSentinelMode redis mode is sentinel
@@ -1213,6 +1228,17 @@ const (
 	HostOSTypeEnumHpUX    = "6"
 	HostOSTypeEnumFreeBSD = "7"
 )
+
+// HostOSTypeName Host system enum and name association
+var HostOSTypeName = map[string]string{
+	HostOSTypeEnumLinux:   "linux",
+	HostOSTypeEnumWindows: "windows",
+	HostOSTypeEnumAIX:     "aix",
+	HostOSTypeEnumUNIX:    "unix",
+	HostOSTypeEnumSolaris: "solaris",
+	HostOSTypeEnumHpUX:    "hp-ux",
+	HostOSTypeEnumFreeBSD: "freebsd",
+}
 
 const (
 	// MaxProcessPrio TODO

@@ -100,7 +100,8 @@ func (lgc *Logics) GetHostData(appID int64, hostIDArr []int64, hostFields []stri
 		if exportCond.Page.Limit <= 0 || exportCond.Page.Limit > common.BKInstMaxExportLimit {
 			return nil, errors.New(defLang.Languagef("export_page_limit_err", common.BKInstMaxExportLimit))
 		}
-		sHostCond["ip"] = exportCond.Ip
+		sHostCond["ip"] = exportCond.Ipv4Ip
+		sHostCond["page"] = exportCond.Page
 
 		// set host fields
 		if len(hostFields) > 0 {
@@ -153,6 +154,11 @@ func (lgc *Logics) GetImportHosts(header http.Header, defLang lang.DefaultCCLang
 			cloudStr = util.GetStrByInterface(hostsInfo[index][common.BKCloudIDField])
 		}
 
+		addressType := common.BKAddressingStatic
+		if _, ok := hostsInfo[index][common.BKAddressingField]; ok {
+			addressType = util.GetStrByInterface(hostsInfo[index][common.BKAddressingField])
+		}
+
 		if _, ok := cloudMap[cloudStr]; !ok {
 			blog.Errorf("check cloud area data failed, cloud area name %s of line %d doesn't exist, rid: %s",
 				cloudStr, index, rid)
@@ -162,6 +168,7 @@ func (lgc *Logics) GetImportHosts(header http.Header, defLang lang.DefaultCCLang
 		}
 
 		hostsInfo[index][common.BKCloudIDField] = cloudMap[cloudStr]
+		hostsInfo[index][common.BKAddressingField] = addressType
 	}
 
 	return hostsInfo, errMsg, nil
@@ -562,6 +569,27 @@ func returnByErrCode(defErr ccErrrors.DefaultCCErrorIf, errCode int, data mapstr
 	}
 }
 
+// getIpField get ipv4 and ipv6 address, ipv4 and ipv6 address cannot be null at the same time.
+func getIpField(host map[string]interface{}) (string, string, string) {
+
+	innerIP, v4Ok := host[common.BKHostInnerIPField].(string)
+	innerIPv6, v6Ok := host[common.BKHostInnerIPv6Field].(string)
+	if (!v4Ok || innerIP == "") && (!v6Ok || innerIPv6 == "") {
+		return "host_import_innerip_v4_v6_empty", "", ""
+	}
+
+	// 存在ipv6地址的场景下需要将录入的ipv6地址转化为完整的ipv6地址
+	if v6Ok && innerIPv6 != "" {
+		ipv6, err := common.ConvertIPv6ToStandardFormat(innerIPv6)
+		if err != nil {
+			return "host_import_innerip_v6_transfer_fail", "", ""
+		}
+		innerIPv6 = ipv6
+	}
+
+	return "", innerIP, innerIPv6
+}
+
 // CheckHostsAdded check the hosts to be added
 func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}) (
 	errMsg []string, err error) {
@@ -569,7 +597,7 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 
-	existentHosts, err := lgc.getExistHostsByInnerIPs(ctx, header, hostInfos)
+	existentV4Hosts, existentV6Hosts, err := lgc.getExistHostsByInnerIPs(ctx, header, hostInfos)
 	if err != nil {
 		blog.Errorf("CheckHostsAdded failed, getExistHostsByInnerIPs err:%s, rid:%s", err.Error(), rid)
 		return nil, err
@@ -581,28 +609,53 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 			continue
 		}
 
-		innerIP, ok := host[common.BKHostInnerIPField].(string)
-		if !ok || innerIP == "" {
-			errMsg = append(errMsg, ccLang.Languagef("host_import_innerip_empty", index))
-			continue
-		}
-
 		if _, ok := host[common.BKHostIDField]; ok {
 			errMsg = append(errMsg, ccLang.Languagef("import_host_no_need_hostID", index))
 			continue
 		}
-
+		if _, ok := host[common.BKAgentIDField]; ok {
+			errMsg = append(errMsg, ccLang.Languagef("import_host_no_need_agentID", index))
+			continue
+		}
 		cloud, ok := host[common.BKCloudIDField]
 		if !ok {
 			errMsg = append(errMsg, ccLang.Languagef("import_host_not_provide_cloudID", index))
 			continue
 		}
 
-		// check if the host exist in db
-		key := generateHostCloudKey(innerIP, cloud)
-		if _, exist := existentHosts[key]; exist {
-			errMsg = append(errMsg, ccLang.Languagef("import_host_exist_error", index, common.BKDefaultDirSubArea,
-				innerIP))
+		addressType, ok := host[common.BKAddressingField].(string)
+		if !ok {
+			errMsg = append(errMsg, ccLang.Languagef("import_host_not_provide_addressing", index))
+			continue
+		}
+
+		if addressType != common.BKAddressingStatic && addressType != common.BKAddressingDynamic {
+			errMsg = append(errMsg, ccLang.Languagef("import_host_illegal_addressing", index))
+			continue
+		}
+
+		// in dynamic scenarios, there is no need to do duplication check of ip address.
+		if addressType == common.BKAddressingDynamic {
+			continue
+		}
+
+		errStr, innerIPv4, innerIPv6 := getIpField(host)
+		if errStr != "" {
+			errMsg = append(errMsg, ccLang.Languagef(errStr, index))
+			continue
+		}
+
+		// check if the host ipv4 exist in db
+		key := generateHostCloudKey(innerIPv4, cloud)
+		if _, exist := existentV4Hosts[key]; exist {
+			errMsg = append(errMsg, ccLang.Languagef("host_import_innerip_v4_fail", index))
+			continue
+		}
+
+		// check if the host ipv6 exist in db
+		keyV6 := generateHostCloudKey(innerIPv6, cloud)
+		if _, exist := existentV6Hosts[keyV6]; exist {
+			errMsg = append(errMsg, ccLang.Languagef("host_import_innerip_v6_fail", index))
 			continue
 		}
 	}
@@ -646,7 +699,8 @@ func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, ho
 
 		hostID, ok := host[common.BKHostIDField]
 		if !ok {
-			blog.Errorf("bk_host_id field doesn't exist, innerIp: %v, rid: %v", host[common.BKHostInnerIPField], rid)
+			blog.Errorf("bk_host_id field doesn't exist, innerIpv4: %v, innerIpv6: %v, rid: %v",
+				host[common.BKHostInnerIPField], host[common.BKHostInnerIPv6Field], rid)
 			errMsg = append(errMsg, ccLang.Languagef("import_update_host_miss_hostID", index))
 			continue
 		}
@@ -657,8 +711,10 @@ func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, ho
 		}
 
 		// check if the host exist in db
-		ip, exist := existentHost[hostIDVal]
-		if !exist {
+		ip := existentHost[hostIDVal].Ip
+		ipv6 := existentHost[hostIDVal].Ipv6
+		agentID := existentHost[hostIDVal].AgentID
+		if ip == "" && ipv6 == "" && agentID == "" {
 			errMsg = append(errMsg, ccLang.Languagef("import_host_no_exist_error", index, hostIDVal))
 			continue
 		}
@@ -666,13 +722,30 @@ func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, ho
 		// check if the host innerIP and hostID is consistent
 		excelIP := util.GetStrByInterface(host[common.BKHostInnerIPField])
 		if ip != excelIP {
-			errMsg = append(errMsg, ccLang.Languagef("import_host_ip_not_consistent", index, excelIP, hostIDVal, ip))
+			errMsg = append(errMsg, ccLang.Languagef("import_host_ip_not_consistent", index, excelIP,
+				hostIDVal, ip))
+			continue
+		}
+
+		// check if the host innerIPv6 and hostID is consistent
+		excelIPv6 := util.GetStrByInterface(host[common.BKHostInnerIPv6Field])
+		if ipv6 != excelIPv6 {
+			errMsg = append(errMsg, ccLang.Languagef("import_host_ipv6_not_consistent", index, excelIPv6,
+				hostIDVal, ipv6))
+			continue
+		}
+
+		// check if the host agentID and hostID is consistent
+		excelAgentID := util.GetStrByInterface(host[common.BKAgentIDField])
+		if agentID != excelAgentID {
+			errMsg = append(errMsg, ccLang.Languagef("import_host_agentID_not_consistent", index, excelAgentID,
+				hostIDVal, agentID))
 			continue
 		}
 
 		// check if the hostID and bizID is consistent
 		if hostBizMap[hostIDVal] != modelBizID {
-			errMsg = append(errMsg, ccLang.Languagef("import_hostID_bizID_not_consistent", index, excelIP))
+			errMsg = append(errMsg, ccLang.Languagef("import_hostID_bizID_not_consistent", index, excelIP, excelIPv6))
 			continue
 		}
 	}
@@ -764,35 +837,52 @@ func generateHostCloudKey(ip, cloudID interface{}) string {
 }
 
 // getExistHostsByInnerIPs get hosts that already in db(same bk_host_innerip host)
-// return: map[hostKey]bool
-func (lgc *Logics) getExistHostsByInnerIPs(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}) (map[string]bool, error) {
+func (lgc *Logics) getExistHostsByInnerIPs(ctx context.Context, header http.Header,
+	hostInfos map[int]map[string]interface{}) (map[string]struct{}, map[string]struct{}, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
 	// step1. extract all innerIP from hostInfos
-	var ipArr []string
+	ipArr, ipv6Arr := make([]string, 0), make([]string, 0)
 	for _, host := range hostInfos {
 		innerIP, ok := host[common.BKHostInnerIPField].(string)
-		if ok && "" != innerIP {
+		if ok && innerIP != "" {
 			ipArr = append(ipArr, innerIP)
 		}
+		innerIPv6, ok := host[common.BKHostInnerIPv6Field].(string)
+		if ok && innerIPv6 != "" {
+			ipv6Arr = append(ipv6Arr, innerIPv6)
+		}
 	}
-	if len(ipArr) == 0 {
-		return make(map[string]bool), nil
+	if len(ipArr) == 0 && len(ipv6Arr) == 0 {
+		return make(map[string]struct{}), make(map[string]struct{}), nil
 	}
 
 	// step2. query host info by innerIPs
-	innerIPs := make([]string, 0)
+	innerIPs, innerIPv6s := make([]string, 0), make([]string, 0)
 	for _, innerIP := range ipArr {
 		innerIPArr := strings.Split(innerIP, ",")
 		innerIPs = append(innerIPs, innerIPArr...)
 	}
-	rules := []querybuilder.Rule{
-		querybuilder.AtomRule{
+	for _, innerIPv6 := range ipv6Arr {
+		innerIPv6Arr := strings.Split(innerIPv6, ",")
+		innerIPv6s = append(innerIPv6s, innerIPv6Arr...)
+	}
+
+	rules := make([]querybuilder.Rule, 0)
+	if len(innerIPs) > 0 {
+		rules = append(rules, querybuilder.AtomRule{
 			Field:    common.BKHostInnerIPField,
 			Operator: querybuilder.OperatorIn,
 			Value:    innerIPs,
-		},
+		})
+	}
+	if len(innerIPv6s) > 0 {
+		rules = append(rules, querybuilder.AtomRule{
+			Field:    common.BKHostInnerIPv6Field,
+			Operator: querybuilder.OperatorIn,
+			Value:    innerIPv6s,
+		})
 	}
 
 	option := metadata.ListHostsWithNoBizParameter{
@@ -802,35 +892,49 @@ func (lgc *Logics) getExistHostsByInnerIPs(ctx context.Context, header http.Head
 				Rules:     rules,
 			},
 		},
-		Fields: []string{
-			common.BKHostIDField,
-			common.BKHostInnerIPField,
-			common.BKCloudIDField,
-		},
+		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField,
+			common.BKHostInnerIPv6Field, common.BKCloudIDField},
 	}
 	resp, err := lgc.CoreAPI.ApiServer().ListHostWithoutApp(ctx, header, option)
 	if err != nil {
-		blog.Errorf(" getExistHostsByInnerIPs failed, ListHostWithoutApp err:%v, option: %d, rid: %s", err, option, rid)
-		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("list host without app failed, option: %+v, err: %v, rid: %s", option, err, rid)
+		return nil, nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !resp.Result {
-		blog.Errorf(" getExistHostsByInnerIPs failed, ListHostWithoutApp resp:%#v, option: %d, rid: %s", resp, option, rid)
-		return nil, resp.CCError()
+		blog.Errorf("ListHostWithoutApp resp:%#v, option: %d, rid: %s", resp, option, rid)
+		return nil, nil, resp.CCError()
 	}
 
 	// step3. arrange data as a map, cloudKey: hostID
-	hostMap := make(map[string]bool, 0)
-	for _, host := range resp.Data.Info {
-		key := generateHostCloudKey(host[common.BKHostInnerIPField], host[common.BKCloudIDField])
-		hostMap[key] = true
-	}
+	hostV4Map, hostV6Map := make(map[string]struct{}, 0), make(map[string]struct{}, 0)
 
-	return hostMap, nil
+	for _, host := range resp.Data.Info {
+		ipv4 := util.GetStrByInterface(host[common.BKHostInnerIPField])
+		if ipv4 != "" {
+			keyV4 := generateHostCloudKey(ipv4, host[common.BKCloudIDField])
+			hostV4Map[keyV4] = struct{}{}
+		}
+
+		ipv6 := util.GetStrByInterface(host[common.BKHostInnerIPv6Field])
+		if ipv6 != "" {
+			keyV6 := generateHostCloudKey(ipv6, host[common.BKCloudIDField])
+			hostV6Map[keyV6] = struct{}{}
+		}
+	}
+	return hostV4Map, hostV6Map, nil
+}
+
+type excelSimpleHost struct {
+	Ip      string
+	Ipv6    string
+	AgentID string
 }
 
 // getExistHostsByHostIDs get hosts that already in db(same bk_host_id host)
 // return: map[hostID]innerIP
-func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}) (map[int64]string, error) {
+func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Header,
+	hostInfos map[int]map[string]interface{}) (map[int64]excelSimpleHost, error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
@@ -845,7 +949,7 @@ func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Heade
 	}
 
 	if len(hostIDs) == 0 {
-		return make(map[int64]string), nil
+		return make(map[int64]excelSimpleHost), nil
 	}
 
 	// step2. query host info by hostIDs
@@ -867,6 +971,8 @@ func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Heade
 		Fields: []string{
 			common.BKHostIDField,
 			common.BKHostInnerIPField,
+			common.BKHostInnerIPv6Field,
+			common.BKAgentIDField,
 		},
 	}
 	resp, err := lgc.CoreAPI.ApiServer().ListHostWithoutApp(ctx, header, option)
@@ -880,11 +986,16 @@ func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Heade
 	}
 
 	// step3. arrange data as a map, cloudKey: hostID
-	hostMap := make(map[int64]string, 0)
+	hostMap := make(map[int64]excelSimpleHost, 0)
 	for _, host := range resp.Data.Info {
 		if hostID, ok := host[common.BKHostIDField]; ok {
 			if hostIDVal, err := util.GetInt64ByInterface(hostID); err == nil {
-				hostMap[hostIDVal] = util.GetStrByInterface(host[common.BKHostInnerIPField])
+				hostMap[hostIDVal] = excelSimpleHost{
+					Ip:      util.GetStrByInterface(host[common.BKHostInnerIPField]),
+					Ipv6:    util.GetStrByInterface(host[common.BKHostInnerIPv6Field]),
+					AgentID: util.GetStrByInterface(host[common.BKAgentIDField]),
+				}
+
 			}
 		}
 	}

@@ -93,7 +93,7 @@
       propertyMap() {
         let modelPropertyMap = { ...FilterStore.modelPropertyMap }
 
-        const ignoreHostProperties = ['bk_host_innerip', 'bk_host_outerip', '__bk_host_topology__']
+        const ignoreHostProperties = ['bk_host_innerip', 'bk_host_outerip', '__bk_host_topology__', 'bk_host_innerip_v6', 'bk_host_outerip_v6']
         modelPropertyMap.host = modelPropertyMap.host
           .filter(property => !ignoreHostProperties.includes(property.bk_property_id))
 

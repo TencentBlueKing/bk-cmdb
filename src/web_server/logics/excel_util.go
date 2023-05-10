@@ -533,7 +533,6 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 	for k, v := range defFields {
 		result[k] = v
 	}
-
 	return result, nil
 }
 

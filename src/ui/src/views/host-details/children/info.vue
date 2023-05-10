@@ -141,7 +141,7 @@
       },
       hostIp() {
         if (Object.keys(this.host).length) {
-          const hostList = this.host.bk_host_innerip.split(',')
+          const hostList = this.host.bk_host_innerip ? this.host.bk_host_innerip.split(',') : this.host.bk_host_innerip_v6.split(',')
           const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
           return host
         }
