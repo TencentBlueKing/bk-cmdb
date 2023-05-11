@@ -27,7 +27,7 @@
       <bk-table-column :label="$t('内网IP')" prop="host.bk_host_innerip"
         class-name="is-highlight" show-overflow-tooltip>
       </bk-table-column>
-      <bk-table-column :label="$t('云区域')" show-overflow-tooltip>
+      <bk-table-column :label="$t('管控区域')" show-overflow-tooltip>
         <template slot-scope="{ row }">
           {{getCloudName(row.host.bk_cloud_id)}}
         </template>

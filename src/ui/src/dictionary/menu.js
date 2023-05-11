@@ -131,7 +131,7 @@ const menus = [{
     route: getMenuRoute(resourceViews, MENU_RESOURCE_MANAGEMENT)
   }, {
     id: MENU_RESOURCE_CLOUD_AREA,
-    i18n: '云区域',
+    i18n: '管控区域',
     icon: 'icon-cc-network-segment',
     route: getMenuRoute(resourceViews, MENU_RESOURCE_CLOUD_AREA, 'resource')
   }, {
