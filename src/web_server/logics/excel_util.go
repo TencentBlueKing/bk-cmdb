@@ -132,7 +132,7 @@ func checkExcelHeader(sheet *xlsx.Sheet, fields map[string]Property, index int, 
 	}
 	for i := 0; i < row.GetCellCount(); i++ {
 		cell := row.GetCell(i)
-		strName := cell.Value
+		strName := cell.String()
 		// skip the ignored cell field
 		if strName == common.ExcelCellIgnoreValue {
 			continue
@@ -473,7 +473,7 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 	for i := start; i < end; i++ {
 		cell := row.GetCell(i)
 		fieldName, ok := nameIndexMap[i]
-		if !ok || strings.Trim(fieldName, "") == "" || cell.Value == "" {
+		if !ok || strings.Trim(fieldName, "") == "" || cell.String() == "" {
 			continue
 		}
 
@@ -522,7 +522,7 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 		if !hasField {
 			continue
 		}
-		result, errMsg = buildAttrByPropertyType(rid, fieldName, cell.Value, rowIndex, field, result, defLang, errMsg)
+		result, errMsg = buildAttrByPropertyType(rid, fieldName, cell.String(), rowIndex, field, result, defLang, errMsg)
 	}
 	if len(errMsg) != 0 {
 		return nil, errMsg
