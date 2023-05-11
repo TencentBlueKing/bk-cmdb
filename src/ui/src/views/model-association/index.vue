@@ -299,7 +299,7 @@
       handleClearFilter() {
         this.searchText = ''
         this.table.stuff.type = 'default'
-        this.searchRelation()
+        this.searchRelation(true)
       }
     }
   }

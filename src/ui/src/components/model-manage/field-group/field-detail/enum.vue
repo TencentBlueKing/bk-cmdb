@@ -163,7 +163,7 @@
           this.settingList = enumList.filter(item => item.id && item.name)
 
           // 无默认值选择第0项，有默认值则需要验证值是否存在（列表中可能将其删除）
-          if (!this.defaultValue.length) {
+          if (!this.defaultValue?.length) {
             if (this.isDefaultCompMultiple) {
               this.defaultValue = this.settingList.length ? [this.settingList[0].id] : []
             } else {
@@ -184,7 +184,7 @@
       },
       defaultValue(val, old) {
         // 检测选中值变化，需要修正is_default
-        if (!isEqual(val, old)) {
+        if (val && !isEqual(val, old)) {
           this.enumList.forEach((item) => {
             item.is_default = val.includes(item.id)
           })
