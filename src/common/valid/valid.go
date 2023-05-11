@@ -598,3 +598,27 @@ func ValidPropertyTypeIsMultiple(propertyType string, isMultiple bool, errProxy 
 	}
 	return nil
 }
+
+// ValidTableFieldOption judging the legitimacy of the basic type of the form field
+func ValidTableFieldOption(propertyType string, option, defaultValue interface{}, isMultiple *bool,
+	errProxy ccErr.DefaultCCErrorIf) error {
+	bFalse := false
+	if isMultiple == nil {
+		isMultiple = &bFalse
+	}
+
+	switch propertyType {
+	case common.FieldTypeInt:
+		return ValidFieldTypeInt(option, defaultValue, "", errProxy)
+	case common.FieldTypeEnumMulti:
+		return ValidFieldTypeEnumOption(option, *isMultiple, "", errProxy)
+	case common.FieldTypeLongChar, common.FieldTypeSingleChar:
+		return ValidFieldTypeString(option, defaultValue, "", errProxy)
+	case common.FieldTypeFloat:
+		return ValidFieldTypeFloat(option, defaultValue, "", errProxy)
+	case common.FieldTypeBool:
+		return ValidateBoolType(option)
+	default:
+		return fmt.Errorf("type(%s) is not among the underlying types supported by the table field", propertyType)
+	}
+}

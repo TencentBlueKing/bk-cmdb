@@ -93,7 +93,8 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 	count := -1
 	for offset := 0; count == -1 || offset < count; offset += common.BKMaxRecordsAtOnce {
 		cond := metadata.QueryCondition{
-			Fields:    []string{common.BKHostIDField, common.BKHostNameField, common.BKHostInnerIPField},
+			Fields: []string{common.BKHostIDField, common.BKHostNameField, common.BKHostInnerIPField,
+				common.BKHostInnerIPv6Field, common.BKCloudIDField},
 			Condition: condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs).ToMapStr(),
 			Page: metadata.BasePage{
 				Sort:  "",
@@ -112,8 +113,10 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 	return am.constructHostFromSearchResult(ctx, header, hosts)
 }
 
-// MakeResourcesByHosts TODO
-func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) ([]meta.ResourceAttribute, error) {
+// MakeResourcesByHosts make resources by host
+func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Header, action meta.Action,
+	hosts ...HostSimplify) ([]meta.ResourceAttribute, error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	businessIDs := make([]int64, 0)
@@ -130,9 +133,10 @@ func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Hea
 	for _, host := range hosts {
 		resource := meta.ResourceAttribute{
 			Basic: meta.Basic{
-				Action:     action,
-				Type:       meta.HostInstance,
-				Name:       host.BKHostInnerIPField,
+				Action: action,
+				Type:   meta.HostInstance,
+				Name: metadata.GetHostDisplayName(host.BKHostInnerIPField, host.BKHostInnerIPv6Field,
+					strconv.FormatInt(host.BKCloudID, 10)),
 				InstanceID: host.BKHostIDField,
 			},
 			SupplierAccount: util.GetOwnerID(header),

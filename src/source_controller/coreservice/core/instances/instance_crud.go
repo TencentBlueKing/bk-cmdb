@@ -40,7 +40,11 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 
 	for idx := range params {
 		if objID == common.BKInnerObjIDHost {
-			params[idx] = metadata.ConvertHostSpecialStringToArray(params[idx])
+			params[idx], err = metadata.ConvertHostSpecialStringToArray(params[idx])
+			if err != nil {
+				blog.Errorf("convert host special string to array failed, err: %v, rid: %s", err, kit.Rid)
+				return nil, err
+			}
 		}
 
 		// build new object instance data.
@@ -86,7 +90,11 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 
 func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.MapStr) (uint64, error) {
 	if objID == common.BKInnerObjIDHost {
-		inputParam = metadata.ConvertHostSpecialStringToArray(inputParam)
+		var err error
+		inputParam, err = metadata.ConvertHostSpecialStringToArray(inputParam)
+		if err != nil {
+			return 0, err
+		}
 	}
 
 	instTableName := common.GetInstTableName(objID, kit.SupplierAccount)
@@ -135,7 +143,11 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 
 func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr, cond mapstr.MapStr) errors.CCError {
 	if objID == common.BKInnerObjIDHost {
-		data = metadata.ConvertHostSpecialStringToArray(data)
+		var err error
+		data, err = metadata.ConvertHostSpecialStringToArray(data)
+		if err != nil {
+			return err
+		}
 	}
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	if !valid.IsInnerObject(objID) {

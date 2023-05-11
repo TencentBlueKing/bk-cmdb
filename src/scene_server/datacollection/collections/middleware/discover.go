@@ -72,7 +72,7 @@ func (d *Discover) Mock() string {
 }
 
 // Analyze analyze discover data
-func (d *Discover) Analyze(msg *string) (bool, error) {
+func (d *Discover) Analyze(msg *string, sourceType string) (bool, error) {
 	err := d.UpdateOrCreateInst(msg)
 	if err != nil {
 		return false, fmt.Errorf("create inst err: %v, raw: %s", err, msg)

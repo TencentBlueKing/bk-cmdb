@@ -221,7 +221,7 @@
               await this.$store.dispatch('cloud/resource/deleteTask', {
                 id: row.bk_task_id
               })
-              this.$success('删除成功')
+              this.$success(this.$t('删除成功'))
               this.getData()
               return true
             } catch (e) {

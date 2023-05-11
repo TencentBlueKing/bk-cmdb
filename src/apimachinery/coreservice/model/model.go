@@ -37,12 +37,15 @@ type ModelClientInterface interface {
 		error)
 	ReadModelClassification(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
 		*metadata.QueryModelClassificationDataResult, error)
+	CreateTableModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (
+		*metadata.CreateOneDataResult, error)
 	CreateModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (*metadata.CreateOneDataResult, error)
 	SetModel(ctx context.Context, h http.Header, input *metadata.SetModel) (resp *metadata.SetOptionResult, err error)
 	UpdateModel(ctx context.Context, h http.Header, input *metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModel(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult,
 		err error)
 	DeleteModelCascade(ctx context.Context, h http.Header, modelID int64) (*metadata.DeletedCount, error)
+	DeleteTableModelCascade(ctx context.Context, h http.Header, input *metadata.DeleteTableOption) error
 	ReadModelWithAttribute(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
 		resp *metadata.ReadModelWithAttributeResult, err error)
 	// ReadModel TODO
@@ -61,6 +64,9 @@ type ModelClientInterface interface {
 	// deprecated, only for old api
 	UpdateModelAttrsByCondition(ctx context.Context, h http.Header, input *metadata.UpdateOption) (
 		*metadata.UpdatedCount, error)
+	UpdateTableModelAttrsByCondition(ctx context.Context, h http.Header, input *metadata.UpdateTableOption) error
+	ReadModelAttrsWithTableByCondition(ctx context.Context, h http.Header, bizID int64,
+		input *metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error)
 	DeleteModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (
 		resp *metadata.DeletedOptionResult, err error)
 	ReadModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (
@@ -95,6 +101,7 @@ type ModelClientInterface interface {
 	DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (*metadata.DeletedCount, error)
 	ReadModelAttrUnique(ctx context.Context, h http.Header, inputParam metadata.QueryCondition) (
 		*metadata.QueryUniqueResult, error)
+	CreateTableModelTables(ctx context.Context, h http.Header, input *metadata.CreateModelTable) (err error)
 
 	CreateModelTables(ctx context.Context, h http.Header, input *metadata.CreateModelTable) (err error)
 }

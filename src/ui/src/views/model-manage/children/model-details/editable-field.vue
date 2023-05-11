@@ -184,7 +184,10 @@
       }
 
       // 针对 bk-select 的特殊处理，避免点击下拉区域时触发失焦退出编辑
-      const clickOutSideMiddleware = event => !event.path.some(node => node.className === 'bk-select-dropdown-content')
+      const clickOutSideMiddleware = (event) => {
+        const path = event.composedPath ? event.composedPath() : event.path
+        return !path?.some?.(node => node.className === 'bk-select-dropdown-content')
+      }
 
       const handleClickOutSide = () => {
         if (isEditing.value) {

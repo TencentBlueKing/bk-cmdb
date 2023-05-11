@@ -146,9 +146,11 @@ func (e *Event) setCursor(cursor string, rid string) {
 
 // IdentifierEvent host identifier event
 type IdentifierEvent struct {
-	HostID   int64  `json:"bk_host_id" bson:"bk_host_id"`
-	CloudID  int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
-	InnerIP  string `json:"bk_host_innerip" bson:"bk_host_innerip"`
-	OSType   string `json:"bk_os_type" bson:"bk_os_type"`
-	RawEvent string `json:"raw_event" bson:"raw_event"`
+	HostID       int64  `json:"bk_host_id" bson:"bk_host_id"`
+	CloudID      int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	InnerIP      string `json:"bk_host_innerip" bson:"bk_host_innerip"`
+	OSType       string `json:"bk_os_type" bson:"bk_os_type"`
+	RawEvent     string `json:"raw_event" bson:"raw_event"`
+	AgentID      string `json:"bk_agent_id" bson:"bk_agent_id"`
+	BKAddressing string `json:"bk_addressing" bson:"bk_addressing"`
 }

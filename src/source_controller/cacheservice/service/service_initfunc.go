@@ -30,6 +30,12 @@ func (s *cacheService) initCache(web *restful.WebService) {
 		Path:    "/find/cache/host/with_inner_ip",
 		Handler: s.SearchHostWithInnerIPInCache,
 	})
+	// Note: onlg for datacollection api!!!
+	utility.AddHandler(rest.Action{
+		Verb:    http.MethodPost,
+		Path:    "/find/cache/host/with_agent_id",
+		Handler: s.SearchHostWithAgentIDInCache,
+	})
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodPost,
 		Path:    "/find/cache/host/with_host_id",

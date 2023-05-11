@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
 	processhook "configcenter/src/thirdparty/hooks/process"
 )
 
@@ -512,17 +513,6 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 		// set field value as nil
 		for _, field := range clearFields {
 			processData[field] = nil
-		}
-
-		processInfo := new(metadata.Process)
-		if err := mapstr.DecodeFromMapStr(&processInfo, processData); err != nil {
-			blog.ErrorJSON("parse update process data failed, data: %s, err: %v, rid: %s", processData, err, rid)
-			return nil, ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
-		}
-
-		if err := ps.validateProcessInstance(ctx.Kit, processInfo); err != nil {
-			blog.ErrorJSON("validate update process failed, err: %s, data: %s, rid: %s", err, processInfo, rid)
-			return nil, err
 		}
 		processDataMap[process.ProcessID] = processData
 	}
