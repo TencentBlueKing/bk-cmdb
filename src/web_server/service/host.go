@@ -378,7 +378,7 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 		c.JSON(http.StatusOK, result)
 		return
 	}
-	type Host struct {
+	type hostBase struct {
 		HostID    int64  `json:"bk_host_id"`
 		HostName  string `json:"bk_host_name"`
 		InnerIP   string `json:"bk_host_innerip"`
@@ -386,7 +386,7 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 		OuterIP   string `json:"bk_host_outerip"`
 		OuterIPv6 string `json:"bk_host_outerip_v6"`
 	}
-	host := Host{}
+	host := hostBase{}
 	raw := resp.Data.Info[0]
 	if err := mapstr.DecodeFromMapStr(&host, raw); err != nil {
 		msg := fmt.Sprintf("decode response data into host failed, raw: %+v, err: %+v, rid: %s", raw, err, rid)
