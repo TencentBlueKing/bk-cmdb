@@ -447,7 +447,7 @@
 
 - path: /v2/cc/search_cloud_area/
   name: search_cloud_area
-  label: 查询云区域
+  label: 查询管控区域
   label_en: Query cloud area
   suggest_method: POST
   api_type: query
@@ -457,7 +457,7 @@
 
 - path: /v2/cc/create_cloud_area/
   name: create_cloud_area
-  label: 创建云区域
+  label: 创建管控区域
   label_en: create a cloud area
   suggest_method: POST
   api_type: operate
@@ -467,7 +467,7 @@
 
 - path: /v2/cc/update_cloud_area/
   name: update_cloud_area
-  label: 更新云区域
+  label: 更新管控区域
   label_en: update cloud area
   suggest_method: POST
   api_type: operate
@@ -477,7 +477,7 @@
 
 - path: /v2/cc/delete_cloud_area/
   name: delete_cloud_area
-  label: 删除云区域
+  label: 删除管控区域
   label_en: delete cloud area
   suggest_method: POST
   api_type: operate
@@ -799,7 +799,7 @@
 
 - path: /v2/cc/update_host_cloud_area_field/
   name: update_host_cloud_area_field
-  label: 更新主机的云区域字段
+  label: 更新主机的管控区域字段
   label_en: update host's cloud area field (bk_cloud_id)
   suggest_method: POST
   api_type: query
