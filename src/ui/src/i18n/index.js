@@ -15,7 +15,6 @@ import VueI18n from 'vue-i18n'
 import Cookies from 'js-cookie'
 import messages from './lang/messages'
 import { LANG_COOKIE_NAME, LANG_KEYS, LANG_SET } from './constants'
-import { setLocale as setMagicboxLocale } from '@/magicbox'
 
 Vue.use(VueI18n)
 
@@ -35,18 +34,14 @@ const i18n = new VueI18n({
 })
 
 export const changeLocale = (locale) => {
+  Cookies.remove('blueking_language', { path: '' })
   const cookieValue = LANG_SET.find(lang => lang.id === locale)?.apiLocale || locale
   Cookies.set(LANG_COOKIE_NAME, cookieValue, {
-    expires: 365,
-    domain: window.location.hostname.split('.').slice(-3)
-      .join('.')
+    expires: 3600,
+    domain: window.location.hostname.replace(/^.*(\.[^.]+\.[^.]+)$/, '$1'),
   })
 
-  document.body.setAttribute('lang', locale)
-
-  setMagicboxLocale(locale)
-
-  i18n.locale = locale
+  window.location.reload()
 }
 
 export const language = locale

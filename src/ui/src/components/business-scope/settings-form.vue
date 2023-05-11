@@ -64,6 +64,7 @@
   import cmdbPropertySelector from '@/components/property-selector'
   import propertyService from '@/service/property/property.js'
   import businessService from '@/service/business/search.js'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   export default defineComponent({
     components: {
@@ -122,7 +123,7 @@
         ])
         loading.property = false
 
-        const allowedPropertyTypes = ['organization', 'enum']
+        const allowedPropertyTypes = [PROPERTY_TYPES.ORGANIZATION, PROPERTY_TYPES.ENUM]
         properties.value = businessProperties.filter(item => allowedPropertyTypes.includes(item.bk_property_type))
         allBusiness.value = businessList
       })

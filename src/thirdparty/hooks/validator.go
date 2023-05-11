@@ -56,3 +56,8 @@ func ValidBizSetPropertyHook(kit *rest.Kit, fieldInfo *metadata.BizSetScopeParam
 	propertyID interface{}) (bool, error) {
 	return false, nil
 }
+
+// ValidHostCloudIDHook valid host cloud id hook
+func ValidHostCloudIDHook(kit *rest.Kit, cloudID int64) errors.CCErrorCoder {
+	return nil
+}

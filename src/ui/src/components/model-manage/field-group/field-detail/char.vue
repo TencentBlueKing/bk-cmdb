@@ -13,7 +13,8 @@
 <template>
   <div class="form-label cmdb-form-item" :class="{ 'is-error': errors.has('option') }">
     <span class="label-text">{{$t('正则校验')}}</span>
-    <textarea
+    <bk-input
+      type="textarea"
       class="raw"
       name="option"
       v-model="localValue"
@@ -21,7 +22,7 @@
       data-vv-validate-on="blur"
       v-validate="'remoteRegular'"
       @input="handleInput">
-    </textarea>
+    </bk-input>
     <p class="form-error">{{errors.first('option')}}</p>
   </div>
 </template>

@@ -497,7 +497,12 @@ const FilterStore = new Vue({
       const params = {
         bk_biz_id: this.bizId, // undefined会被忽略
         ip: {
-          data: transformedIP.data,
+          data: transformedIP.data.ipv4,
+          exact: this.IP.exact ? 1 : 0,
+          flag: flag.join('|')
+        },
+        ipv6: {
+          data: transformedIP.data.ipv6,
           exact: this.IP.exact ? 1 : 0,
           flag: flag.join('|')
         }
@@ -565,7 +570,7 @@ const FilterStore = new Vue({
       return this.components[name]
     },
     async getProperties() {
-      const properties = await api.post('find/objectattr', {
+      const properties = await api.post('find/objectattr/web', {
         bk_biz_id: this.bizId,
         bk_obj_id: {
           $in: ['host', 'module', 'set', 'biz']

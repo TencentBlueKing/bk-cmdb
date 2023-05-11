@@ -259,6 +259,9 @@ func genResourceManageActionGroups() []ActionGroup {
 						{
 							ID: DeleteResourcePoolDirectory,
 						},
+						{
+							ID: ManageHostAgentID,
+						},
 					},
 				},
 				{

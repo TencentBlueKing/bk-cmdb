@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"configcenter/src/common/mapstr"
-	params "configcenter/src/common/paraparse"
+	"configcenter/src/common/metadata"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
 	"configcenter/src/test/reporter"
@@ -76,8 +76,8 @@ var _ = BeforeSuite(func() {
 		})
 
 		Describe("search host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
 			}
 			rsp, err := hostServerClient.SearchHostWithBiz(context.Background(), header, input)
 			util.RegisterResponse(rsp)

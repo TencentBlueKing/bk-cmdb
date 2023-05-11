@@ -163,9 +163,8 @@ func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr
 
 	_, err := lgc.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
-		blog.ErrorJSON("UpdateProcessInstance failed, UpdateInstance http request failed, option: %s, err: %s, "+
-			"rid: %s", option, err.Error(), kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("update process instance failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
+		return err
 	}
 
 	return nil
@@ -600,8 +599,9 @@ func (lgc *Logic) GetHostIPMapByID(kit *rest.Kit, hostIDs []int64) (map[int64]ma
 	errors.CCErrorCoder) {
 	hostReq := metadata.QueryInput{
 		Condition: map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}},
-		Fields:    common.BKHostIDField + "," + common.BKHostInnerIPField + "," + common.BKHostOuterIPField,
-		Limit:     common.BKNoLimit,
+		Fields: common.BKHostIDField + "," + common.BKHostInnerIPField + "," + common.BKHostOuterIPField + "," +
+			common.BKHostInnerIPv6Field + "," + common.BKHostOuterIPv6Field,
+		Limit: common.BKNoLimit,
 	}
 
 	hostRes, err := lgc.CoreAPI.CoreService().Host().GetHosts(kit.Ctx, kit.Header, &hostReq)

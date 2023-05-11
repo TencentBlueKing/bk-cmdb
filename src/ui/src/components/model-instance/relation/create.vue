@@ -28,7 +28,7 @@
         <cmdb-relation-property-filter
           ref="filterComponent"
           :obj-id="currentAsstObj"
-          :exclude-type="['foreignkey', 'time']"
+          :exclude-type="excludePropertyFilterTypes"
           @on-property-selected="handlePropertySelected"
           @on-operator-selected="handleOperatorSelected"
           @on-value-change="handleValueChange">
@@ -117,6 +117,7 @@
   } from '@/dictionary/model-constants.js'
   import Utils from '@/components/filters/utils'
   import { isEmptyPropertyValue, formatValue } from '@/utils/tools'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   export default {
     name: 'cmdb-relation-create',
@@ -178,7 +179,8 @@
         existInstAssociation: [],
         tempData: [],
         hasChange: false,
-        isShowPropertyFilter: true
+        isShowPropertyFilter: true,
+        excludePropertyFilterTypes: [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.TIME, PROPERTY_TYPES.FOREIGNKEY]
       }
     },
     computed: {
@@ -390,7 +392,16 @@
           name: this.instanceName,
           property: 'singlechar'
         }]
-        if (propertyId && propertyId !== this.instanceNameKey) {
+
+        if (this.currentAsstObj === BUILTIN_MODELS.HOST) {
+          header.push({
+            id: 'bk_host_innerip_v6',
+            name: this.$t('内网IPv6'),
+            property: 'singlechar'
+          })
+        }
+
+        if (propertyId && !header.some(({ id }) => propertyId === id)) {
           const property = this.getProperty(propertyId) || {}
           header.push({
             id: propertyId,

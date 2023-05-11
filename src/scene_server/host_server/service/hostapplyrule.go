@@ -722,7 +722,7 @@ func (s *Service) ExecModuleHostApplyRule(ctx *rest.Contexts) {
 			common.BKInnerObjIDModule, op)
 		if err != nil {
 			blog.Errorf("update instance of module failed, option: %s, err: %v, rid: %s", op, err, rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return err
 		}
 		rulesOption := make([]metadata.CreateOrUpdateApplyRuleOption, 0)
 		for _, rule := range planReq.AdditionalRules {

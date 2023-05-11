@@ -21,6 +21,7 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initTransfer(web)
 	s.initDynamicGroup(web)
 	s.initUsercustom(web)
+	s.initAgent(web)
 	s.initCloudHost(web)
 
 }
@@ -123,6 +124,9 @@ func (s *Service) initHost(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/findmany/hosts/search/noauth",
 		Handler: s.SearchHostWithNoAuth})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/add/business_idle",
+		Handler: s.AddHostToBusinessIdle})
 
 	// search host by biz set, **only for ui**
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/biz_set/{bk_biz_set_id}",
@@ -343,6 +347,19 @@ func (s *Service) initUsercustom(web *restful.WebService) {
 
 	utility.AddToRestfulWebService(web)
 
+}
+
+func (s *Service) initAgent(web *restful.WebService) {
+
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/bind/agent", Handler: s.BindAgent})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/unbind/agent", Handler: s.UnbindAgent})
+
+	utility.AddToRestfulWebService(web)
 }
 
 // initCloudHost init cloud host related api, **dedicated for cloud host management, do not use them for other use**

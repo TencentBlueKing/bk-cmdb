@@ -355,6 +355,7 @@ func (e *HostDynamicGroupExecutor) searchByPlatCondition() error {
 	return nil
 }
 
+// searchByHostConds search base on host conditions.
 func (e *HostDynamicGroupExecutor) searchByHostConds() error {
 	if e.isNotFound {
 		return nil
@@ -376,12 +377,7 @@ func (e *HostDynamicGroupExecutor) searchByHostConds() error {
 		e.conds.hostCond.Fields = append(e.conds.hostCond.Fields, common.BKHostIDField, common.BKCloudIDField)
 	}
 
-	condition := make(map[string]interface{})
-	err = hostParse.ParseHostParams(e.conds.hostCond.Condition, condition)
-	if err != nil {
-		return err
-	}
-	err = hostParse.ParseHostIPParams(e.params.Ip, condition)
+	condition, err := hostParse.ParseHostParams(e.conds.hostCond.Condition)
 	if err != nil {
 		return err
 	}
@@ -428,78 +424,20 @@ func (e *HostDynamicGroupExecutor) searchByHostConds() error {
 	return nil
 }
 
+// appendHostTopoConds add topology conditions
 func (e *HostDynamicGroupExecutor) appendHostTopoConds() error {
-	var moduleHostConfig metadata.DistinctHostIDByTopoRelationRequest
-	isAddHostID := false
-
-	if len(e.idArr.moduleHostConfig.setIDArr) > 0 {
-		moduleHostConfig.SetIDArr = e.idArr.moduleHostConfig.setIDArr
-		isAddHostID = true
-	}
-	if len(e.idArr.moduleHostConfig.moduleIDArr) > 0 {
-		moduleHostConfig.ModuleIDArr = e.idArr.moduleHostConfig.moduleIDArr
-		isAddHostID = true
-	}
-	if len(e.conds.objectCondMap) > 0 {
-		moduleHostConfig.HostIDArr = e.idArr.moduleHostConfig.asstHostIDArr
-		isAddHostID = true
-	}
-	if len(e.idArr.moduleHostConfig.appIDArr) > 0 {
-		moduleHostConfig.ApplicationIDArr = e.idArr.moduleHostConfig.appIDArr
-		isAddHostID = true
-	}
-
+	moduleHostConfig, isAddHostID := e.getModuleHostConfig()
 	if !isAddHostID {
 		// no module host config condition level.
 		return nil
 	}
 
-	var hostIDs []int64
-
-	respHostIDs, err := e.lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(e.ctx, e.kit.Header,
-		&moduleHostConfig)
+	hostIDs, err := e.getHostIDs(moduleHostConfig)
 	if err != nil {
-		blog.Errorf("get hosts failed, err: %v, rid: %s", err, e.ccRid)
 		return err
 	}
-
-	e.total = len(respHostIDs)
-
-	// 当有根据主机实例内容查询的时候的时候，无法在程序中完成分页
-	hasHostCond := false
-	if len(e.params.Ip.Data) > 0 || len(e.conds.hostCond.Condition) > 0 || e.conds.hostCond.TimeCondition != nil {
-		hasHostCond = true
-	}
-
-	if !hasHostCond && e.params.Page.Limit > 0 {
-		start := e.params.Page.Start
-		limit := start + e.params.Page.Limit
-
-		uniqHostIDCnt := len(respHostIDs)
-		if start < 0 {
-			start = 0
-		}
-		if start >= uniqHostIDCnt {
-			e.isNotFound = true
-			return nil
-		}
-
-		allHostIDs := respHostIDs
-		sort.Slice(allHostIDs, func(i, j int) bool { return allHostIDs[i] < allHostIDs[j] })
-
-		if uniqHostIDCnt <= limit {
-			hostIDs = allHostIDs[start:]
-		} else {
-			hostIDs = allHostIDs[start:limit]
-		}
-
-		e.needPaged = true
-	} else {
-		if len(respHostIDs) == 0 {
-			e.isNotFound = true
-			return nil
-		}
-		hostIDs = respHostIDs
+	if len(hostIDs) == 0 {
+		return nil
 	}
 
 	// 合并两种根据host_id查询的condition
@@ -562,6 +500,84 @@ func (e *HostDynamicGroupExecutor) appendHostTopoConds() error {
 	}
 
 	return nil
+}
+
+// getModuleHostConfig init module host config
+func (e *HostDynamicGroupExecutor) getModuleHostConfig() (metadata.DistinctHostIDByTopoRelationRequest, bool) {
+	var moduleHostConfig metadata.DistinctHostIDByTopoRelationRequest
+	isAddHostID := false
+
+	if len(e.idArr.moduleHostConfig.setIDArr) > 0 {
+		moduleHostConfig.SetIDArr = e.idArr.moduleHostConfig.setIDArr
+		isAddHostID = true
+	}
+	if len(e.idArr.moduleHostConfig.moduleIDArr) > 0 {
+		moduleHostConfig.ModuleIDArr = e.idArr.moduleHostConfig.moduleIDArr
+		isAddHostID = true
+	}
+	if len(e.conds.objectCondMap) > 0 {
+		moduleHostConfig.HostIDArr = e.idArr.moduleHostConfig.asstHostIDArr
+		isAddHostID = true
+	}
+	if len(e.idArr.moduleHostConfig.appIDArr) > 0 {
+		moduleHostConfig.ApplicationIDArr = e.idArr.moduleHostConfig.appIDArr
+		isAddHostID = true
+	}
+	return moduleHostConfig, isAddHostID
+}
+
+// getHostIDs get the host id list according to moduleHostConfig
+func (e *HostDynamicGroupExecutor) getHostIDs(moduleHostConfig metadata.DistinctHostIDByTopoRelationRequest) (
+	[]int64, error) {
+	hostIDs := make([]int64, 0)
+
+	respHostIDs, err := e.lgc.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(e.ctx, e.kit.Header,
+		&moduleHostConfig)
+	if err != nil {
+		blog.Errorf("get hosts failed, err: %v, rid: %s", err, e.ccRid)
+		return hostIDs, err
+	}
+
+	e.total = len(respHostIDs)
+
+	// 当有根据主机实例内容查询的时候的时候，无法在程序中完成分页
+	hasHostCond := false
+	if len(e.params.Ipv4Ip.Data) > 0 || len(e.params.Ipv6Ip.Data) > 0 || len(e.conds.hostCond.Condition) > 0 ||
+		e.conds.hostCond.TimeCondition != nil {
+		hasHostCond = true
+	}
+
+	if !hasHostCond && e.params.Page.Limit > 0 {
+		start := e.params.Page.Start
+		limit := start + e.params.Page.Limit
+
+		uniqHostIDCnt := len(respHostIDs)
+		if start < 0 {
+			start = 0
+		}
+		if start >= uniqHostIDCnt {
+			e.isNotFound = true
+			return hostIDs, nil
+		}
+
+		allHostIDs := respHostIDs
+		sort.Slice(allHostIDs, func(i, j int) bool { return allHostIDs[i] < allHostIDs[j] })
+
+		if uniqHostIDCnt <= limit {
+			hostIDs = allHostIDs[start:]
+		} else {
+			hostIDs = allHostIDs[start:limit]
+		}
+
+		e.needPaged = true
+		return hostIDs, nil
+	}
+	if len(respHostIDs) == 0 {
+		e.isNotFound = true
+		return hostIDs, nil
+	}
+	hostIDs = respHostIDs
+	return hostIDs, nil
 }
 
 func (e *HostDynamicGroupExecutor) buildSearchResult() ([]mapstr.MapStr, int) {

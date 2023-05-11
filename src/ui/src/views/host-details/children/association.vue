@@ -109,7 +109,7 @@
           return {
             objId: 'host',
             instId: host.bk_host_id,
-            instName: host.bk_host_innerip
+            instName: host.bk_host_innerip || host.bk_host_innerip_v6
           }
         }
         return {}

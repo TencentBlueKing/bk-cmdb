@@ -551,7 +551,7 @@ func (h *host) UpdateHostCloudAreaField(ctx context.Context, header http.Header,
 		return errors.CCHttpError
 	}
 
-	if ccErr := result.CCError(); err != nil {
+	if ccErr := result.CCError(); ccErr != nil {
 		return ccErr
 	}
 
@@ -591,7 +591,7 @@ func (h *host) TransferHostResourceDirectory(ctx context.Context, header http.He
 		return errors.CCHttpError
 	}
 
-	if ccErr := result.CCError(); err != nil {
+	if ccErr := result.CCError(); ccErr != nil {
 		return ccErr
 	}
 

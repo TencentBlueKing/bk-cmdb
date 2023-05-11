@@ -86,6 +86,11 @@
     created() {
       this.initOptions()
     },
+    mounted() {
+      Bus.$on('host-apply-clear-search', (value) => {
+        this.searchValue = value
+      })
+    },
     methods: {
       async initOptions() {
         const availableProperties = this.configPropertyList.filter(property => property.host_apply_enabled)

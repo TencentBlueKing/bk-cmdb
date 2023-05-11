@@ -117,7 +117,7 @@ func (inst *instance) SetManyInstance(ctx context.Context, h http.Header, objID 
 
 // UpdateInstance update instance
 func (inst *instance) UpdateInstance(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
-	*metadata.UpdatedCount, error) {
+	*metadata.UpdatedCount, errors.CCErrorCoder) {
 
 	resp := new(metadata.UpdatedOptionResult)
 	subPath := "/update/model/%s/instance"
@@ -134,7 +134,7 @@ func (inst *instance) UpdateInstance(ctx context.Context, h http.Header, objID s
 		return nil, errors.CCHttpError
 	}
 
-	if err = resp.CCError(); err != nil {
+	if err := resp.CCError(); err != nil {
 		return nil, err
 	}
 

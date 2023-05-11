@@ -24,7 +24,9 @@
             :collapse.sync="groupState[group['bk_group_id']]">
             <ul class="property-list clearfix">
               <template v-for="property in $groupedProperties[groupIndex]">
-                <li :class="['property-item fl', { flex: flexProperties.includes(property['bk_property_id']) }]"
+                <li :class="['property-item fl', property.bk_property_type, {
+                      flex: flexProperties.includes(property['bk_property_id'])
+                    }]"
                   v-if="!invisibleProperties.includes(property['bk_property_id'])"
                   :key="`${property['bk_obj_id']}-${property['bk_property_id']}`">
                   <span class="property-name"
@@ -37,10 +39,13 @@
                       :class="'property-value'"
                       :ref="`property-value-${property.id}`"
                       :value="inst[property.bk_property_id]"
+                      :instance="inst"
                       :property="property">
                     </cmdb-property-value>
                   </slot>
-                  <template v-if="showCopy && !$tools.isEmptyPropertyValue(inst[property.bk_property_id])">
+                  <template v-if="showCopy
+                    && !$tools.isEmptyPropertyValue(inst[property.bk_property_id])
+                    && property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE">
                     <div class="copy-box">
                       <i class="property-copy icon-cc-details-copy" @click="handleCopy(property.id)"></i>
                       <transition name="fade">
@@ -88,6 +93,8 @@
 
 <script>
   import formMixins from '@/mixins/form'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+
   export default {
     name: 'cmdb-details',
     mixins: [formMixins],
@@ -144,7 +151,8 @@
     data() {
       return {
         resizeEvent: null,
-        showCopyTips: false
+        showCopyTips: false,
+        PROPERTY_TYPES
       }
     },
     computed: {
@@ -231,7 +239,8 @@
 
             .property-name {
                 position: relative;
-                width: 35%;
+                flex: none;
+                width: 140px;
                 padding: 0 16px 0 0;
                 color: #63656e;
                 text-align: right;
@@ -243,7 +252,7 @@
                 }
             }
             .property-value {
-                max-width: calc(65% - 24px);
+                max-width: calc(100% - 140px - 24px);
                 padding: 0 15px 0 0;
                 color: #313238;
                 @include ellipsis;
@@ -296,11 +305,17 @@
                 }
             }
 
-            &.flex {
+            &.flex,
+            &.innertable {
                 display: flex;
                 width: 100%;
                 max-width: unset;
                 padding-right: 15px;
+
+                .property-value {
+                  width: calc(100% - 140px);
+                  max-width: 1200px;
+                }
             }
         }
     }
