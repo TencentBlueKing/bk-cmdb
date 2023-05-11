@@ -13,9 +13,9 @@
 import http from '@/api'
 import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
 
-export const find = async (modelId) => {
+export const find = async (modelId, config) => {
   try {
-    const result = await http.post(`find/objectunique/object/${modelId}`)
+    const result = await http.post(`find/objectunique/object/${modelId}`, [], config)
     return result
   } catch (error) {
     console.error(error)
@@ -23,7 +23,7 @@ export const find = async (modelId) => {
   }
 }
 
-export const findMany = async models => Promise.all(models.map(modelId => find(modelId)))
+export const findMany = async (models, config) => Promise.all(models.map(modelId => find(modelId, config)))
 
 export const findBizSet = () => find(BUILTIN_MODELS.BUSINESS_SET)
 

@@ -32,7 +32,7 @@
         </div>
       </div>
       <bk-table class="relation-table"
-        ref="table"
+        ref="tableRef"
         :outer-border="false"
         :max-height="$APP.height - 280"
         :data="computedRelations"
@@ -68,7 +68,7 @@
 </template>
 
 <script>
-  import { computed, watch, toRef } from 'vue'
+  import { computed, watch, toRef, ref, nextTick } from 'vue'
   import useState from './state'
   import useModelAssociation from '@/hooks/model/association'
   import useBatchUniqueCheck from '@/hooks/unique-check/batch'
@@ -76,15 +76,24 @@
   import useProperty from '@/hooks/model/property'
   import usePending from '@/hooks/utils/pending'
   import { mapGetters } from 'vuex'
+  import store from '@/store'
+  import { OPERATION } from '@/dictionary/iam-auth'
+  import { translateAuth } from '@/setup/permission'
+  import { isViewAuthFreeModel } from '@/service/auth'
+
   export default {
     name: 'export-relation',
-    setup(props, setupContext) {
+    setup() {
       const [state, { setRelation, removeRelation }] = useState()
       const objectUniqueId = toRef(state, 'object_unique_id')
       const currentModelId = toRef(state, 'bk_obj_id')
       const selectedRelations = toRef(state, 'relations')
+      const tableRef = ref(null)
       // 获取当前模型的唯一校验，用于导出的参数object_unique_id
-      const [{ uniqueChecks: modelUniqueChecks, pending: modelUniquePending }] = useUniqueCheck(currentModelId)
+      const [{ uniqueChecks: modelUniqueChecks, pending: modelUniquePending }] = useUniqueCheck(
+        currentModelId,
+        { globalPermission: false }
+      )
 
       // 获取当前模型的关联关系
       const [{ relations, pending: relationPending }] = useModelAssociation(currentModelId)
@@ -109,10 +118,13 @@
         modelSet.add(currentModelId.value)
         return { bk_obj_id: { $in: Array.from(modelSet) } }
       })
-      const [{ properties, pending: propertyPending }] = useProperty(propertyOptions)
+      const [{ properties, pending: propertyPending }] = useProperty(propertyOptions, { globalPermission: false })
 
       // 加载关联模型的唯一校验
-      const [{ uniqueChecks: relationUniqueChecks, pending: uniqueCheckPending }] = useBatchUniqueCheck(relationModels)
+      const [{ uniqueChecks: relationUniqueChecks, pending: uniqueCheckPending }] = useBatchUniqueCheck(
+        relationModels,
+        { globalPermission: false }
+      )
 
       // 组合关联模型与唯一校验
       const uniqueRelations = computed(() => {
@@ -142,7 +154,7 @@
         state.object_unique_id.value = modelUniqueCheck?.id
       }
       const clearSelectedUniqueCheck = (clearSelf = true) => {
-        setupContext.refs.table.clearSelection() // 这种方式在Vue3.0中不可使用
+        tableRef.value.clearSelection()
         clearSelf && (state.object_unique_id.value = '')
         computedRelations.value.forEach((relation) => {
           removeRelation(relation.relation_obj_id)
@@ -162,11 +174,44 @@
         const selected = selection.includes(relation)
         if (selected) {
           setSelectionUniqueCheck(relation)
+          const relationModel = store.getters['objectModelClassify/getModelById'](relation.relation_obj_id)
+          // 过滤掉免鉴权模型
+          if (isViewAuthFreeModel({ id: relationModel.id })) return
+          const auth = { type: OPERATION.R_MODEL, relation: [relationModel.id] }
+          const isView = store.getters['auth/isViewAuthed'](auth)
+          if (!isView) {
+            const permission = translateAuth(auth)
+            const { permissionModal } = window
+            permissionModal && permissionModal.show(permission)
+            nextTick(() => {
+              tableRef.value.toggleRowSelection(relation, false)
+            })
+          }
         } else {
           removeRelation(relation.relation_obj_id)
         }
       }
       const handleSelectAll = (selection) => {
+        const authList = []
+        // 过滤掉免鉴权模型
+        const filterSelection = selection.filter((item) => {
+          const relationModel = store.getters['objectModelClassify/getModelById'](item.relation_obj_id)
+          return !isViewAuthFreeModel({ id: relationModel.id })
+        })
+        filterSelection.forEach((item) => {
+          const relationModel = store.getters['objectModelClassify/getModelById'](item.relation_obj_id)
+          const auth = { type: OPERATION.R_MODEL, relation: [relationModel.id] }
+          const isView = store.getters['auth/isViewAuthed'](auth)
+          if (!isView) {
+            authList.push(auth)
+            const permission = translateAuth(authList)
+            const { permissionModal } = window
+            permissionModal && permissionModal.show(permission)
+            nextTick(() => {
+              tableRef.value.clearSelection()
+            })
+          }
+        })
         if (!selection.length) {
           clearSelectedUniqueCheck(false)
         } else {
@@ -194,7 +239,8 @@
         handleSelect,
         handleSelectAll,
         handleUniqueCheckChange,
-        modelUniqueChecks
+        modelUniqueChecks,
+        tableRef
       }
     },
     computed: {
@@ -226,7 +272,7 @@
         }).join(' + ')
       },
       isUniqueCheckDisabled(row) {
-        return !this.$refs.table.selection.includes(row)
+        return !this.$refs.tableRef.selection.includes(row)
       }
     }
   }

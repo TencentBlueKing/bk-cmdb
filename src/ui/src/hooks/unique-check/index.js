@@ -12,13 +12,13 @@
 
 import { ref, watch } from 'vue'
 import uniqueCheckService from '@/service/unique-check'
-export default function (modelId) {
+export default function (modelId, config) {
   const uniqueChecks = ref([])
   const pending = ref(false)
   const refresh = async (value) => {
     if (!value.length) return
     pending.value = true
-    uniqueChecks.value = await uniqueCheckService.find(value)
+    uniqueChecks.value = await uniqueCheckService.find(value, config)
     pending.value = false
   }
   watch(modelId, refresh, { immediate: true })
