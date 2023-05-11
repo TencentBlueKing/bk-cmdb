@@ -16,10 +16,10 @@
       v-transfer-dom
       :is-show.sync="isShow"
       :title="title"
-      :quick-close="false"
       :width="800"
       :before-close="handleSliderBeforeClose">
       <cmdb-form slot="content" v-if="isShow"
+        ref="form"
         :properties="properties"
         :property-groups="propertyGroups"
         :inst="formData"
@@ -39,6 +39,7 @@
                 <div class="property-value" v-bk-tooltips="{ content: $t('内置业务集不可编辑'), disabled: !isBuiltin }">
                   <business-scope-settings-form
                     class="form-component"
+                    ref="formComponent"
                     :disabled="isBuiltin"
                     :data="scopeSettingsFormData"
                     @change="handleScopeSettingsChange" />
@@ -65,7 +66,7 @@
   import { OPERATION } from '@/dictionary/iam-auth'
   import { $success } from '@/magicbox/index.js'
   import Utils from '@/components/filters/utils'
-  import { formatValue } from '@/utils/tools'
+  import { formatValue, isSilderDataChanged } from '@/utils/tools'
   import queryBuilderOperator from '@/utils/query-builder-operator'
   import businessScopeSettingsForm from '@/components/business-scope/settings-form.vue'
   import businessScopePreview from '@/components/business-scope/preview.vue'
@@ -102,6 +103,10 @@
         show: isShow,
         data: formData
       } = toRefs(props)
+
+      const form = ref()
+      const formComponent = ref()
+
 
       const getModelById = store.getters['objectModelClassify/getModelById']
       const model = computed(() => getModelById(BUILTIN_MODELS.BUSINESS_SET) || {})
@@ -245,6 +250,16 @@
       }
 
       const handleSliderBeforeClose = () => {
+        const { values, refrenceValues } = form.value
+        const { selectedBusiness, localSelectedBusiness } = formComponent.value
+        const changedValues = isSilderDataChanged(values, refrenceValues)
+        const changedSelectValues = isSilderDataChanged(selectedBusiness, localSelectedBusiness)
+        if (Object.keys(changedValues).length || Object.keys(changedSelectValues).length) {
+          form.value.setChanged(true)
+          return form.value.beforeClose(() => {
+            emit('update:show', false)
+          })
+        }
         emit('update:show', false)
       }
 
@@ -272,7 +287,9 @@
         handleScopeSettingsChange,
         handleSliderBeforeClose,
         previewProps,
-        handlePreview
+        handlePreview,
+        form,
+        formComponent
       }
     }
   })

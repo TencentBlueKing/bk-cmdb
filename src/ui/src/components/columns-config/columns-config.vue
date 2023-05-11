@@ -68,6 +68,8 @@
 
 <script>
   import vueDraggable from 'vuedraggable'
+  import useSideslider from '@/hooks/use-sideslider'
+  import { isSilderDataChanged } from '@/utils/tools.js'
   export default {
     name: 'cmdb-columns-config',
     components: {
@@ -167,6 +169,9 @@
     },
     created() {
       this.initLocalSelected()
+      const { beforeClose, setChanged } = useSideslider(this.changedValues)
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
     },
     methods: {
       initLocalSelected() {
@@ -215,6 +220,12 @@
             this.$emit('reset')
           }
         })
+      },
+      leftChangedValues() {
+        return isSilderDataChanged(this.localSelected, this.selected)
+      },
+      rightChangedValues() {
+        return isSilderDataChanged(this.selected, this.localSelected)
       }
     }
   }

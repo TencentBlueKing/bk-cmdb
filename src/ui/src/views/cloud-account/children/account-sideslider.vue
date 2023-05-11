@@ -15,7 +15,8 @@
     :is-show.sync="isShow"
     :title="title"
     :width="540"
-    @hidden="handleHidden">
+    @hidden="handleHidden"
+    :before-close="handleSliderBeforeClose">
     <component slot="content" ref="component"
       :is="component"
       :container="this"
@@ -55,6 +56,20 @@
         this.isShow = false
       },
       handleHidden() {
+        this.component = null
+        this.componentProps = {}
+      },
+      handleSliderBeforeClose() {
+        const $form = this.$refs.component
+        const { changeValue } = $form
+        if (!changeValue) {
+          return this.hide()
+        }
+        if (Object.keys(changeValue()).length) {
+          $form.setChanged(true)
+          return $form.beforeClose(this.handleHidden)
+        }
+        this.isShow = false
         this.component = null
         this.componentProps = {}
       }

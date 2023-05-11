@@ -18,6 +18,7 @@ import { CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container'
 import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants'
 import { PRESET_TABLE_HEADER_MIN_WIDTH } from '@/dictionary/table-header'
 import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+import isEqual from 'lodash/isEqual'
 
 /**
  * 获取实例中某个属性的展示值
@@ -618,6 +619,19 @@ export function isPropertySortable(property) {
   }
 
   return ![PROPERTY_TYPES.INNER_TABLE].includes(property.bk_property_type)
+}
+
+// 判断侧滑框数据是否改变
+export function isSilderDataChanged(localSelected, selected) {
+  console.log(localSelected, selected)
+  // eslint-disable-next-line no-unused-vars
+  const values = {}
+  Object.keys(localSelected).forEach((key) => {
+    if (!isEqual(localSelected[key], selected[key])) {
+      values[key] = localSelected[key]
+    }
+  })
+  return values
 }
 
 export default {

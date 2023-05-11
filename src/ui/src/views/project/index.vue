@@ -189,15 +189,17 @@
       :is-show.sync="columnsConfig.show"
       :width="600"
       :title="$t('列表显示属性配置')"
+      :before-close="handleColumnsConfigSliderBeforeClose"
     >
       <cmdb-columns-config
         slot="content"
         v-if="columnsConfig.show"
+        ref="cmdbColumnsConfig"
         :properties="properties"
         :selected="columnsConfig.selected"
         :disabled-columns="columnsConfig.disabledColumns"
         @on-apply="handleApplayColumnsConfig"
-        @on-cancel="columnsConfig.show = false"
+        @on-cancel="handleColumnsConfigSliderBeforeClose"
         @on-reset="handleResetColumnsConfig">
       </cmdb-columns-config>
     </bk-sideslider>
@@ -567,33 +569,19 @@
         }
       },
       handleBatchUpdateSliderBeforeClose() {
-        const { changedValues } = this.$refs.batchUpdateForm
-
-        this.addDoubleConfirm(changedValues, () => {
+        this.addDoubleConfirm(this.$refs.batchUpdateForm, () => {
           this.batchUpdateSlider.show = false
         })
       },
       handleSliderBeforeClose() {
-        const { changedValues } = this.$refs.form
-        this.addDoubleConfirm(changedValues, this.closeCreateSlider)
+        this.addDoubleConfirm(this.$refs.form, this.closeCreateSlider)
       },
-      addDoubleConfirm(changedValues, confirmCallback) {
+      addDoubleConfirm(ref, confirmCallback) {
+        const { changedValues } = ref
         if (this.tab.active === 'attribute') {
           if (Object.keys(changedValues).length) {
-            return new Promise((resolve) => {
-              this.$bkInfo({
-                title: this.$t('确认退出'),
-                subTitle: this.$t('退出会导致未保存信息丢失'),
-                extCls: 'bk-dialog-sub-header-center',
-                confirmFn: () => {
-                  resolve(true)
-                  confirmCallback && confirmCallback()
-                },
-                cancelFn: () => {
-                  resolve(false)
-                }
-              })
-            })
+            ref.setChanged(true)
+            return ref.beforeClose(confirmCallback)
           }
 
           confirmCallback && confirmCallback()
@@ -604,6 +592,17 @@
         confirmCallback && confirmCallback()
 
         return true
+      },
+      handleColumnsConfigSliderBeforeClose() {
+        const refColumns = this.$refs.cmdbColumnsConfig
+        const { leftChangedValues, rightChangedValues } = refColumns
+        if (Object.keys(leftChangedValues()).length || Object.keys(rightChangedValues()).length) {
+          refColumns.setChanged(true)
+          return refColumns.beforeClose(() => {
+            this.columnsConfig.show = false
+          })
+        }
+        this.columnsConfig.show = false
       },
       handleSave(values) {
         const data = {
