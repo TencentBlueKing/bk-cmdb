@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package service
+package kube
 
 import (
 	"strconv"
@@ -34,7 +34,7 @@ import (
 )
 
 // CreateNamespace create namespace
-func (s *coreService) CreateNamespace(ctx *rest.Contexts) {
+func (s *service) CreateNamespace(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 	if err != nil {
@@ -102,7 +102,7 @@ func (s *coreService) CreateNamespace(ctx *rest.Contexts) {
 }
 
 // GetClusterSpec get cluster spec
-func (s *coreService) GetClusterSpec(kit *rest.Kit, bizID int64, clusterIDs []int64) (map[int64]types.ClusterSpec,
+func (s *service) GetClusterSpec(kit *rest.Kit, bizID int64, clusterIDs []int64) (map[int64]types.ClusterSpec,
 	error) {
 
 	if bizID == 0 {
@@ -149,7 +149,7 @@ func (s *coreService) GetClusterSpec(kit *rest.Kit, bizID int64, clusterIDs []in
 }
 
 // UpdateNamespace update namespace
-func (s *coreService) UpdateNamespace(ctx *rest.Contexts) {
+func (s *service) UpdateNamespace(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 	if err != nil {
@@ -199,7 +199,7 @@ func (s *coreService) UpdateNamespace(ctx *rest.Contexts) {
 }
 
 // DeleteNamespace delete namespace
-func (s *coreService) DeleteNamespace(ctx *rest.Contexts) {
+func (s *service) DeleteNamespace(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 	if err != nil {
@@ -233,7 +233,7 @@ func (s *coreService) DeleteNamespace(ctx *rest.Contexts) {
 }
 
 // ListNamespace list namespace
-func (s *coreService) ListNamespace(ctx *rest.Contexts) {
+func (s *service) ListNamespace(ctx *rest.Contexts) {
 	input := new(metadata.QueryCondition)
 	if err := ctx.DecodeInto(input); nil != err {
 		ctx.RespAutoError(err)

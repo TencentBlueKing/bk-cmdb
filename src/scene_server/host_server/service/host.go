@@ -525,7 +525,7 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 	}
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	host, err := s.Logic.SearchHost(ctx.Kit, body, false)
+	host, err := s.Logic.SearchHost(ctx.Kit, body)
 	if err != nil {
 		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
@@ -553,7 +553,7 @@ func (s *Service) SearchHostWithAsstDetail(ctx *rest.Contexts) {
 		return
 	}
 
-	host, err := s.Logic.SearchHost(ctx.Kit, body, true)
+	host, err := s.Logic.SearchHost(ctx.Kit, body)
 	if err != nil {
 		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -888,8 +888,9 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	if 0 == len(appInfo) {
-		blog.Errorf("host sync app %d not found, reply:%+v,input:%+v,rid:%s", hostList.ApplicationID, appInfo, hostList, ctx.Kit.Rid)
+	if len(appInfo) == 0 {
+		blog.Errorf("host sync app %d not found, reply: %+v, input: %+v, rid: %s", hostList.ApplicationID,
+			appInfo, hostList, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoGetAppFailed))
 		return
 	}

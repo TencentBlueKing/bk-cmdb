@@ -30,7 +30,7 @@ import (
 )
 
 // SearchHost TODO
-func (lgc *Logics) SearchHost(kit *rest.Kit, data *metadata.HostCommonSearch, isDetail bool) (*metadata.SearchHost, error) {
+func (lgc *Logics) SearchHost(kit *rest.Kit, data *metadata.HostCommonSearch) (*metadata.SearchHost, error) {
 	searchHostInst := NewSearchHost(kit, lgc, data)
 	searchHostInst.ParseCondition()
 	retHostInfo := &metadata.SearchHost{
