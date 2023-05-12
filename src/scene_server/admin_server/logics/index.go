@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	types2 "configcenter/src/common/types"
 	"configcenter/src/common/util"
+	"configcenter/src/common/version"
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
@@ -70,6 +71,14 @@ func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB,
 	options options.Config) {
 
 	rid := util.GenerateRID()
+
+	// do not sync db table index if this admin-server is for ci,
+	// because suite test contains clear database operations that collides with this task
+	if version.CCRunMode == version.CCRunModeForCI {
+		blog.Infof("run mode is for ci, skip sync db table index task, rid: %s", rid)
+		return
+	}
+
 	for dbReady := false; !dbReady; {
 		// 等待数据库初始化
 		if !dbReady {
@@ -278,6 +287,21 @@ func (dt *dbTable) syncIndexesToDB(ctx context.Context, tableName string,
 
 }
 
+// countQuotedWithDestModel count quoted object id by dest_model.
+func (dt *dbTable) countQuotedWithDestModel(ctx context.Context, destModel string) (uint64, error) {
+
+	cond := map[string]interface{}{
+		common.BKDestModelField: destModel,
+	}
+	count, err := dt.db.Table(common.BKTableNameModelQuoteRelation).Find(cond).Count(ctx)
+	if err != nil {
+		blog.Errorf("count quoted object failed, cond: %+v, err: %v, rid: %s", cond, err, dt.rid)
+		return 0, err
+	}
+
+	return count, nil
+}
+
 func (dt *dbTable) findSyncIndexesLogicUnique(ctx context.Context) (map[string][]types.Index, error) {
 	objs := make([]metadata.Object, 0)
 	if err := dt.db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKObjIDField,
@@ -302,6 +326,15 @@ func (dt *dbTable) findSyncIndexesLogicUnique(ctx context.Context) (map[string][
 		// 内置模型不需要简表
 		if !obj.IsPre {
 			tbIndexes[instTable] = append(index.InstanceIndexes(), uniques...)
+			// if there is a table instance table, an index needs to be created.
+			count, err := dt.countQuotedWithDestModel(ctx, obj.ObjectID)
+			if err != nil {
+				return nil, err
+			}
+			if count > 0 {
+				tbIndexes[instTable] = append(index.TableInstanceIndexes(), uniques...)
+			}
+
 		} else {
 			tb := ""
 			switch obj.ObjectID {
@@ -405,30 +438,16 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 		}
 
 		objIndexes := append(index.InstanceIndexes(), uniques...)
-		// 内置模型不需要简表
-		if !obj.IsPre {
-			// 判断模型实例表是否存在, 不存在新建
-			if _, exist := modelDBTableNameMap[instTable]; !exist {
-				if err := dt.db.CreateTable(ctx, instTable); err != nil {
-					// TODO: 需要报警，但是不影响后需逻辑继续执行下一个
-					blog.Errorf("create table(%s) error. err: %s, rid: %s", instTable, err.Error(), dt.rid)
-					// NOTICE: 索引有专门的任务处理
-					monitor.Collect(&meta.Alarm{
-						RequestID: dt.rid,
-						Type:      meta.MongoDDLFatalError,
-						Detail:    fmt.Sprintf("create %s collection failed", instTable),
-						Module:    types2.CC_MODULE_MIGRATE,
-						Dimension: map[string]string{"hit_create_collection": "yes"},
-					})
-				}
-				dt.createIndexes(ctx, instTable, objIndexes)
-			} else {
-				if err := dt.syncIndexesToDB(ctx, instTable, objIndexes, nil); err != nil {
-					blog.Errorf("sync table(%s) definition index to table error. err: %s, rid: %s",
-						instTable, err.Error(), dt.rid)
-				}
-			}
+		// if there is a table instance table, an index needs to be created.
+		count, err := dt.countQuotedWithDestModel(ctx, obj.ObjectID)
+		if err != nil {
+			return err
 		}
+		if count > 0 {
+			objIndexes = append(index.TableInstanceIndexes(), uniques...)
+		}
+
+		dt.createTable(ctx, obj, modelDBTableNameMap, instTable, objIndexes)
 
 		// 判断模型实例关联关系表是否存在， 不存在新建
 		if _, exist := modelDBTableNameMap[instAsstTable]; !exist {
@@ -462,6 +481,38 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 
 	}
 	return nil
+}
+
+func (dt *dbTable) createTable(ctx context.Context, obj metadata.Object, modelDBTableNameMap map[string]struct{},
+	instTable string, objIndexes []types.Index) {
+
+	// 内置模型不需要建表
+	if obj.IsPre {
+		return
+	}
+
+	// 判断模型实例表是否存在, 不存在新建
+	if _, exist := modelDBTableNameMap[instTable]; !exist {
+		if err := dt.db.CreateTable(ctx, instTable); err != nil {
+			// TODO: 需要报警，但是不影响后需逻辑继续执行下一个
+			blog.Errorf("create table(%s) error. err: %s, rid: %s", instTable, err.Error(), dt.rid)
+			// NOTICE: 索引有专门的任务处理
+			monitor.Collect(&meta.Alarm{
+				RequestID: dt.rid,
+				Type:      meta.MongoDDLFatalError,
+				Detail:    fmt.Sprintf("create %s collection failed", instTable),
+				Module:    types2.CC_MODULE_MIGRATE,
+				Dimension: map[string]string{"hit_create_collection": "yes"},
+			})
+		}
+		dt.createIndexes(ctx, instTable, objIndexes)
+	} else {
+		if err := dt.syncIndexesToDB(ctx, instTable, objIndexes, nil); err != nil {
+			blog.Errorf("sync table(%s) definition index to table error. err: %s, rid: %s",
+				instTable, err.Error(), dt.rid)
+		}
+	}
+	return
 }
 
 func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap map[string]struct{}) error {

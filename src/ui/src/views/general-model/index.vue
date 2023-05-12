@@ -77,7 +77,7 @@
       <div class="options-filter clearfix fr">
         <cmdb-property-selector class="filter-selector"
           v-model="filter.field"
-          :properties="properties"
+          :properties="fastSearchProperties"
           :loading="$loading([request.properties, request.groups])">
         </cmdb-property-selector>
         <component class="filter-value"
@@ -117,8 +117,8 @@
         class-name="bk-table-selection">
       </bk-table-column>
       <bk-table-column v-for="column in table.header"
-        sortable="custom"
-        :min-width="$tools.getHeaderPropertyMinWidth(column.property, { hasSort: true })"
+        :sortable="getColumnSortable(column.property) ? 'custom' : false"
+        :min-width="$tools.getHeaderPropertyMinWidth(column.property, { hasSort: getColumnSortable(column.property) })"
         :key="column.id"
         :prop="column.id"
         :label="column.name"
@@ -129,6 +129,8 @@
             :show-unit="false"
             :value="row[column.id]"
             :property="column.property"
+            :instance="row"
+            show-on="cell"
             @click.native.stop="handleValueClick(row, column)">
           </cmdb-property-value>
         </template>
@@ -362,6 +364,9 @@
       },
       isMainLineModel() {
         return this.isMainLine(this.model)
+      },
+      fastSearchProperties() {
+        return this.properties.filter(item => item.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
       }
     },
     watch: {
@@ -660,7 +665,9 @@
         }))
       },
       updateFilter(properties = []) {
-        const availableProperties = properties.filter(property => property.bk_obj_id === this.objId)
+        const availableProperties = properties
+          .filter(property => property.bk_obj_id === this.objId
+            && property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
         availableProperties.forEach((property) => {
           // eslint-disable-next-line max-len
           const exist = this.filterSelected.findIndex(item => item.bk_property_id === property.bk_property_id) !== -1
@@ -963,7 +970,7 @@
       },
       updateFilterTagHeight() {
         setTimeout(() => {
-          const el = this.$refs.filterTag.$el
+          const el = this.$refs?.filterTag?.$el
           if (el?.getBoundingClientRect) {
             this.filterTagHeight = el.getBoundingClientRect().height
           } else {
@@ -977,6 +984,9 @@
       handleClearFilter() {
         this.$refs.filterTag.handleResetAll()
         this.table.stuff.type = 'default'
+      },
+      getColumnSortable(property) {
+        return this.$tools.isPropertySortable(property) ? 'custom' : false
       }
     }
   }

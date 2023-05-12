@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"configcenter/src/common"
@@ -28,7 +29,7 @@ import (
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 
-	"github.com/rentiansheng/xlsx"
+	"github.com/tealeg/xlsx/v3"
 )
 
 // GetHostData get host data from excel
@@ -52,8 +53,8 @@ func (lgc *Logics) GetHostData(appID int64, hostIDArr []int64, hostFields []stri
 	// hostIDStr has the higher priority
 	if len(hostIDArr) != 0 {
 
-		if len(hostIDArr) > common.BKMaxExportLimit {
-			return nil, errors.New(defLang.Languagef("host_id_len_err", common.BKMaxExportLimit))
+		if len(hostIDArr) > common.BKInstMaxExportLimit {
+			return nil, errors.New(defLang.Languagef("host_id_len_err", common.BKInstMaxExportLimit))
 		}
 		condArr := make([]interface{}, 0)
 
@@ -96,10 +97,10 @@ func (lgc *Logics) GetHostData(appID int64, hostIDArr []int64, hostFields []stri
 
 		sHostCond["condition"] = condArr
 	} else {
-		if exportCond.Page.Limit <= 0 || exportCond.Page.Limit > common.BKMaxExportLimit {
-			return nil, errors.New(defLang.Languagef("export_page_limit_err", common.BKMaxExportLimit))
+		if exportCond.Page.Limit <= 0 || exportCond.Page.Limit > common.BKInstMaxExportLimit {
+			return nil, errors.New(defLang.Languagef("export_page_limit_err", common.BKInstMaxExportLimit))
 		}
-		sHostCond["ip"] = exportCond.Ip
+		sHostCond["ip"] = exportCond.Ipv4Ip
 		sHostCond["page"] = exportCond.Page
 
 		// set host fields
@@ -112,7 +113,7 @@ func (lgc *Logics) GetHostData(appID int64, hostIDArr []int64, hostFields []stri
 		}
 		sHostCond["condition"] = exportCond.Condition
 	}
-
+	sHostCond["page"] = exportCond.Page
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetHostData(context.Background(), header, sHostCond)
 	if nil != err {
 		blog.Errorf("GetHostData failed, search condition: %+v, err: %+v, rid: %s", sHostCond, err, rid)
@@ -128,26 +129,11 @@ func (lgc *Logics) GetHostData(appID int64, hostIDArr []int64, hostFields []stri
 }
 
 // GetImportHosts get import hosts, return inst array data, errmsg collection, error
-func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
-	modelBizID int64) (map[int]map[string]interface{}, []string, error) {
+func (lgc *Logics) GetImportHosts(header http.Header, defLang lang.DefaultCCLanguageIf, preData *ImportExcelPreData,
+	start, end int) (map[int]map[string]interface{}, []string, error) {
 
 	ctx := util.NewContextFromHTTPHeader(header)
 	rid := util.GetHTTPCCRequestID(header)
-	if len(f.Sheets) == 0 {
-		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
-	}
-
-	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, modelBizID,
-		common.HostAddMethodExcelDefaultIndex)
-
-	if err != nil {
-		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err))
-	}
-
-	sheet := f.Sheets[0]
-	if sheet == nil {
-		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
-	}
 
 	_, cloudMap, err := lgc.getCloudArea(ctx, header)
 	if err != nil {
@@ -155,8 +141,8 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 		return nil, nil, err
 	}
 
-	hostsInfo, errMsg, err := GetExcelData(ctx, sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel},
-		true, 0, defLang)
+	hostsInfo, errMsg, err := GetExcelData(ctx, preData, start, end,
+		common.KvMap{"import_from": common.HostAddMethodExcel}, defLang)
 	if err != nil {
 		blog.Errorf("get host excel data failed, err: %v, rid: %s", err, rid)
 		return nil, errMsg, err
@@ -168,6 +154,11 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 			cloudStr = util.GetStrByInterface(hostsInfo[index][common.BKCloudIDField])
 		}
 
+		addressType := common.BKAddressingStatic
+		if _, ok := hostsInfo[index][common.BKAddressingField]; ok {
+			addressType = util.GetStrByInterface(hostsInfo[index][common.BKAddressingField])
+		}
+
 		if _, ok := cloudMap[cloudStr]; !ok {
 			blog.Errorf("check cloud area data failed, cloud area name %s of line %d doesn't exist, rid: %s",
 				cloudStr, index, rid)
@@ -177,6 +168,7 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 		}
 
 		hostsInfo[index][common.BKCloudIDField] = cloudMap[cloudStr]
+		hostsInfo[index][common.BKAddressingField] = addressType
 	}
 
 	return hostsInfo, errMsg, nil
@@ -257,8 +249,17 @@ func (lgc *Logics) handleExcelAssociation(ctx context.Context, h http.Header, f 
 			continue
 		}
 
-		asstMap, assoErrMsg := GetAssociationExcelData(sheet, common.HostAddMethodExcelAssociationIndexOffset, defLang)
-		asstMap, err := lgc.handleAsstInfoMap(ctx, h, objID, asstMap, asstObjectUniqueIDMap, rid)
+		asstMap, assoErrMsg, err := GetAssociationExcelData(sheet, common.HostAddMethodExcelAssociationIndexOffset,
+			defLang)
+		if err != nil {
+			blog.Errorf("get association excel data failed, err: %v, rid: %s", err, rid)
+			resp.Code = common.CCErrCommHTTPDoRequestFailed
+			resp.ErrMsg = lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(h)).Errorf(common.
+				CCErrCommHTTPDoRequestFailed).Error()
+			return resp
+		}
+
+		asstMap, err = lgc.handleAsstInfoMap(ctx, h, objID, asstMap, asstObjectUniqueIDMap, rid)
 		if err != nil {
 			blog.Errorf("handle asst info map failed, err: %v, rid: %s", err, rid)
 			return resp
@@ -302,60 +303,74 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	resp := &metadata.ResponseDataMapStr{Data: mapstr.New()}
 
-	hosts, errMsg, err := lgc.GetImportHosts(f, header, defLang, modelBizID)
+	preData, err := lgc.getImportExcelPreData(common.BKInnerObjIDHost, header, f, defLang, modelBizID)
 	if err != nil {
 		blog.Errorf("get import hosts failed, err: %v, rid: %s", err, rid)
 		resp.Code = common.CCErrWebFileContentFail
 		resp.ErrMsg = defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error()
 		return resp
 	}
-	if len(errMsg) > 0 {
-		resp.Code = common.CCErrWebFileContentFail
-		resp.ErrMsg = defErr.Errorf(common.CCErrWebFileContentFail, "").Error()
-		resp.Data.Set("error", errMsg)
-		return resp
-	}
 
-	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, modelBizID,
-		common.HostAddMethodExcelDefaultIndex)
-	hosts, err = lgc.handleImportEnumQuoteInst(ctx, header, hosts, fields, rid)
-	if err != nil {
-		blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
-		return resp
-	}
+	var successMsgs []string
+	var errMsgs []string
+	for i := 0; i < len(preData.DataRange); i++ {
+		rowNum := preData.DataRange[i].Start + 1
+		host, errMsg, err := lgc.GetImportHosts(header, defLang, preData, i, i+1)
+		if err != nil {
+			blog.Errorf("get import hosts failed, err: %v, rid: %s", err, rid)
+			errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, err.Error()))
+			continue
+		}
+		if len(errMsg) > 0 {
+			errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, errMsg[0]))
+			continue
+		}
 
-	errMsg, err = lgc.CheckHostsAdded(ctx, header, hosts)
-	if err != nil {
-		blog.Errorf("check host added failed, err: %v, rid: %s", err, rid)
-		resp.Code = common.CCErrWebHostCheckFail
-		resp.ErrMsg = defErr.Errorf(common.CCErrWebHostCheckFail, err.Error()).Error()
-		return resp
-	}
-	if len(errMsg) > 0 {
-		resp.Code = common.CCErrWebHostCheckFail
-		resp.ErrMsg = defErr.Errorf(common.CCErrWebHostCheckFail, "").Error()
-		resp.Data.Set("error", errMsg)
-		return resp
-	}
+		host, err = lgc.handleImportEnumQuoteInst(ctx, header, host, preData.Fields, rid)
+		if err != nil {
+			blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
+			errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, err.Error()))
+			continue
+		}
 
-	if len(hosts) > 0 {
+		errMsg, err = lgc.CheckHostsAdded(ctx, header, host)
+		if err != nil {
+			blog.Errorf("check host added failed, err: %v, rid: %s", err, rid)
+			errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, err.Error()))
+			continue
+		}
+		if len(errMsg) > 0 {
+			errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, errMsg[0]))
+			continue
+		}
+
+		if len(host) == 0 {
+			continue
+		}
+
 		params := map[string]interface{}{
-			"host_info":            hosts,
+			"host_info":            host,
 			"input_type":           common.InputTypeExcel,
 			common.BKModuleIDField: moduleID,
 		}
-		result, resultErr := lgc.CoreAPI.ApiServer().AddHostByExcel(context.Background(), header, params)
-		if resultErr != nil {
-			blog.Errorf("add host info failed, err: %v, rid: %s", resultErr, rid)
-			resp.Code = common.CCErrCommHTTPDoRequestFailed
-			resp.ErrMsg = defErr.Errorf(common.CCErrCommHTTPDoRequestFailed).Error()
-			return resp
+		result, err := lgc.CoreAPI.ApiServer().AddHostByExcel(context.Background(), header, params)
+		if err != nil {
+			errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, err.Error()))
+			continue
 		}
 
-		resp = result
+		errData, exist := result.Data.Get("error")
+		if exist && errData != nil {
+			errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, errData))
+			continue
+		}
+
+		successMsgs = append(successMsgs, strconv.Itoa(rowNum))
 	}
 
-	if len(f.Sheets) <= 2 || len(asstObjectUniqueIDMap) == 0 {
+	resp.Data["success"] = successMsgs
+	resp.Data["error"] = errMsgs
+	if len(f.Sheets) <= 2 || len(asstObjectUniqueIDMap) == 0 || len(errMsgs) != 0 {
 		resp.Result = true
 		return resp
 	}
@@ -373,7 +388,12 @@ func (lgc *Logics) importStatisticsAssociation(ctx context.Context, header http.
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// if len(f.Sheets) >= 2, the second sheet is association data to be import
-	asstNameArr, asstInfoMap := StatisticsAssociation(sheet, common.HostAddMethodExcelAssociationIndexOffset)
+	asstNameArr, asstInfoMap, err := StatisticsAssociation(sheet, common.HostAddMethodExcelAssociationIndexOffset)
+	if err != nil {
+		blog.ErrorJSON("ger statistics association failed, err: %s, objID: %s, input: %s, rid: %s",
+			err.Error(), objID, sheet, rid)
+		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
 	if len(asstInfoMap) == 0 {
 		return nil, nil
 	}
@@ -419,32 +439,14 @@ func (lgc *Logics) importStatisticsAssociation(ctx context.Context, header http.
 }
 
 // UpdateHosts update excel import hosts
+// NOCC:golint/fnsize(后续重构处理)
 func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
 	modelBizID, opType int64, asstObjectUniqueIDMap map[string]int64, objectUniqueID int64) *metadata.ResponseDataMapStr {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
-	hosts, errMsg, err := lgc.GetImportHosts(f, header, defLang, modelBizID)
-	if err != nil {
-		blog.Errorf("ImportHost get import hosts from excel err, error:%s, rid: %s", err.Error(), rid)
-		return returnByErrCode(defErr, common.CCErrWebFileContentFail, nil, err.Error())
-	}
-	if len(errMsg) != 0 {
-		return returnByErrCode(defErr, common.CCErrWebFileContentFail, mapstr.MapStr{"error": errMsg},
-			strings.Join(errMsg, ","))
-	}
-
-	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, modelBizID,
-		common.HostAddMethodExcelDefaultIndex)
-	hosts, err = lgc.handleImportEnumQuoteInst(ctx, header, hosts, fields, rid)
-	if err != nil {
-		blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
-		return returnByErrCode(defErr, common.CCErrWebFileContentFail, nil, err.Error())
-	}
-
 	if opType == 1 {
-
 		if _, exist := f.Sheet["association"]; !exist {
 			return returnByErrCode(defErr, 0, mapstr.MapStr{"association": mapstr.New()}, "")
 		}
@@ -458,38 +460,83 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 		return returnByErrCode(defErr, 0, mapstr.MapStr{"association": statisAsstInfo}, "")
 	}
 
-	errMsg, err = lgc.CheckHostsUpdated(ctx, header, hosts, modelBizID)
+	preData, err := lgc.getImportExcelPreData(common.BKInnerObjIDHost, header, f, defLang, modelBizID)
 	if err != nil {
-		blog.Errorf("ImportHosts failed,  CheckHostsAdded error:%s, rid: %s", err.Error(), rid)
-		return returnByErrCode(defErr, common.CCErrWebHostCheckFail, nil, err.Error())
-	}
-	if len(errMsg) > 0 {
-		return returnByErrCode(defErr, common.CCErrWebHostCheckFail, mapstr.MapStr{"error": errMsg}, "")
+		return returnByErrCode(defErr, common.CCErrWebFileContentFail, nil, err.Error())
 	}
 
-	var resultErr error
 	result := returnByErrCode(defErr, 0, mapstr.New(), "")
-	if len(hosts) != 0 {
+	var successMsgs []string
+	var errMsgs []string
+	for i := 0; i < len(preData.DataRange); i++ {
+		rowNum := preData.DataRange[i].Start + 1
+		host, errMsg, err := lgc.GetImportHosts(header, defLang, preData, i, i+1)
+		if err != nil {
+			blog.Errorf("get import hosts from excel err, error:%s, rid: %s", err.Error(), rid)
+			errMsgs = append(errMsgs, defLang.Languagef("import_update_data_fail", rowNum, err.Error()))
+			continue
+		}
+		if len(errMsg) != 0 {
+			errMsgs = append(errMsgs, defLang.Languagef("import_update_data_fail", rowNum, errMsgs[0]))
+			continue
+		}
+
+		host, err = lgc.handleImportEnumQuoteInst(ctx, header, host, preData.Fields, rid)
+		if err != nil {
+			blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
+			errMsgs = append(errMsgs, defLang.Languagef("import_update_data_fail", rowNum, err.Error()))
+			continue
+		}
+
+		errMsg, err = lgc.CheckHostsUpdated(ctx, header, host, modelBizID)
+		if err != nil {
+			blog.Errorf("check hosts updated failed, err: %v, rid: %s", err, rid)
+			errMsgs = append(errMsgs, defLang.Languagef("import_update_data_fail", rowNum, err.Error()))
+			continue
+		}
+		if len(errMsg) > 0 {
+			errMsgs = append(errMsgs, defLang.Languagef("import_update_data_fail", rowNum, errMsg[0]))
+			continue
+		}
+
+		if len(host) == 0 {
+			continue
+		}
+
 		params := map[string]interface{}{
-			"host_info":  hosts,
+			"host_info":  host,
 			"input_type": common.InputTypeExcel,
 		}
-		result, resultErr = lgc.CoreAPI.ApiServer().UpdateHost(context.Background(), header, params)
-		if resultErr != nil {
-			blog.Errorf("UpdateHosts update host http request  error:%s, rid:%s", resultErr.Error(),
-				util.GetHTTPCCRequestID(header))
+		result, err := lgc.CoreAPI.ApiServer().UpdateHost(context.Background(), header, params)
+		if err != nil {
+			blog.Errorf("update host http request  error: %v, rid: %s", err, util.GetHTTPCCRequestID(header))
 			return returnByErrCode(defErr, common.CCErrCommHTTPDoRequestFailed, nil, "")
 		}
+
+		errData, exist := result.Data.Get("error")
+		if exist && errData != nil {
+			errMsgs = append(errMsgs, defLang.Languagef("import_update_data_fail", rowNum, errData))
+			continue
+		}
+
+		successMsgs = append(successMsgs, strconv.Itoa(rowNum))
 	}
 
-	if len(asstObjectUniqueIDMap) == 0 && objectUniqueID == 0 {
+	result.Data["success"] = successMsgs
+	result.Data["error"] = errMsgs
+	if (len(asstObjectUniqueIDMap) == 0 && objectUniqueID == 0) || len(errMsgs) != 0 {
 		return result
 	}
 
 	if _, exist := f.Sheet["association"]; !exist {
 		return result
 	}
-	if len(f.Sheet["association"].Rows[common.HostAddMethodExcelAssociationIndexOffset].Cells) < 2 {
+	row, err := f.Sheet["association"].Row(common.HostAddMethodExcelAssociationIndexOffset)
+	if err != nil {
+		blog.Errorf("get sheet association failed, err: %v, rid: %s", err, util.GetHTTPCCRequestID(header))
+		return returnByErrCode(defErr, common.CCErrCommHTTPDoRequestFailed, nil, err.Error())
+	}
+	if row.GetCellCount() < 2 {
 		return result
 	}
 
@@ -522,6 +569,27 @@ func returnByErrCode(defErr ccErrrors.DefaultCCErrorIf, errCode int, data mapstr
 	}
 }
 
+// getIpField get ipv4 and ipv6 address, ipv4 and ipv6 address cannot be null at the same time.
+func getIpField(host map[string]interface{}) (string, string, string) {
+
+	innerIP, v4Ok := host[common.BKHostInnerIPField].(string)
+	innerIPv6, v6Ok := host[common.BKHostInnerIPv6Field].(string)
+	if (!v4Ok || innerIP == "") && (!v6Ok || innerIPv6 == "") {
+		return "host_import_innerip_v4_v6_empty", "", ""
+	}
+
+	// 存在ipv6地址的场景下需要将录入的ipv6地址转化为完整的ipv6地址
+	if v6Ok && innerIPv6 != "" {
+		ipv6, err := common.ConvertIPv6ToStandardFormat(innerIPv6)
+		if err != nil {
+			return "host_import_innerip_v6_transfer_fail", "", ""
+		}
+		innerIPv6 = ipv6
+	}
+
+	return "", innerIP, innerIPv6
+}
+
 // CheckHostsAdded check the hosts to be added
 func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}) (
 	errMsg []string, err error) {
@@ -529,7 +597,7 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 
-	existentHosts, err := lgc.getExistHostsByInnerIPs(ctx, header, hostInfos)
+	existentV4Hosts, existentV6Hosts, err := lgc.getExistHostsByInnerIPs(ctx, header, hostInfos)
 	if err != nil {
 		blog.Errorf("CheckHostsAdded failed, getExistHostsByInnerIPs err:%s, rid:%s", err.Error(), rid)
 		return nil, err
@@ -541,28 +609,53 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 			continue
 		}
 
-		innerIP, ok := host[common.BKHostInnerIPField].(string)
-		if !ok || innerIP == "" {
-			errMsg = append(errMsg, ccLang.Languagef("host_import_innerip_empty", index))
-			continue
-		}
-
 		if _, ok := host[common.BKHostIDField]; ok {
 			errMsg = append(errMsg, ccLang.Languagef("import_host_no_need_hostID", index))
 			continue
 		}
-
+		if _, ok := host[common.BKAgentIDField]; ok {
+			errMsg = append(errMsg, ccLang.Languagef("import_host_no_need_agentID", index))
+			continue
+		}
 		cloud, ok := host[common.BKCloudIDField]
 		if !ok {
 			errMsg = append(errMsg, ccLang.Languagef("import_host_not_provide_cloudID", index))
 			continue
 		}
 
-		// check if the host exist in db
-		key := generateHostCloudKey(innerIP, cloud)
-		if _, exist := existentHosts[key]; exist {
-			errMsg = append(errMsg, ccLang.Languagef("import_host_exist_error", index, common.BKDefaultDirSubArea,
-				innerIP))
+		addressType, ok := host[common.BKAddressingField].(string)
+		if !ok {
+			errMsg = append(errMsg, ccLang.Languagef("import_host_not_provide_addressing", index))
+			continue
+		}
+
+		if addressType != common.BKAddressingStatic && addressType != common.BKAddressingDynamic {
+			errMsg = append(errMsg, ccLang.Languagef("import_host_illegal_addressing", index))
+			continue
+		}
+
+		// in dynamic scenarios, there is no need to do duplication check of ip address.
+		if addressType == common.BKAddressingDynamic {
+			continue
+		}
+
+		errStr, innerIPv4, innerIPv6 := getIpField(host)
+		if errStr != "" {
+			errMsg = append(errMsg, ccLang.Languagef(errStr, index))
+			continue
+		}
+
+		// check if the host ipv4 exist in db
+		key := generateHostCloudKey(innerIPv4, cloud)
+		if _, exist := existentV4Hosts[key]; exist {
+			errMsg = append(errMsg, ccLang.Languagef("host_import_innerip_v4_fail", index))
+			continue
+		}
+
+		// check if the host ipv6 exist in db
+		keyV6 := generateHostCloudKey(innerIPv6, cloud)
+		if _, exist := existentV6Hosts[keyV6]; exist {
+			errMsg = append(errMsg, ccLang.Languagef("host_import_innerip_v6_fail", index))
 			continue
 		}
 	}
@@ -571,7 +664,9 @@ func (lgc *Logics) CheckHostsAdded(ctx context.Context, header http.Header, host
 }
 
 // CheckHostsUpdated check the hosts to be updated
-func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}, modelBizID int64) (errMsg []string, err error) {
+func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{},
+	modelBizID int64) (errMsg []string, err error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 
@@ -604,7 +699,8 @@ func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, ho
 
 		hostID, ok := host[common.BKHostIDField]
 		if !ok {
-			blog.Errorf("CheckHostsUpdated failed, because bk_host_id field doesn't exist, innerIp: %v, rid: %v", host[common.BKHostInnerIPField], rid)
+			blog.Errorf("bk_host_id field doesn't exist, innerIpv4: %v, innerIpv6: %v, rid: %v",
+				host[common.BKHostInnerIPField], host[common.BKHostInnerIPv6Field], rid)
 			errMsg = append(errMsg, ccLang.Languagef("import_update_host_miss_hostID", index))
 			continue
 		}
@@ -615,8 +711,10 @@ func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, ho
 		}
 
 		// check if the host exist in db
-		ip, exist := existentHost[hostIDVal]
-		if !exist {
+		ip := existentHost[hostIDVal].Ip
+		ipv6 := existentHost[hostIDVal].Ipv6
+		agentID := existentHost[hostIDVal].AgentID
+		if ip == "" && ipv6 == "" && agentID == "" {
 			errMsg = append(errMsg, ccLang.Languagef("import_host_no_exist_error", index, hostIDVal))
 			continue
 		}
@@ -624,13 +722,30 @@ func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, ho
 		// check if the host innerIP and hostID is consistent
 		excelIP := util.GetStrByInterface(host[common.BKHostInnerIPField])
 		if ip != excelIP {
-			errMsg = append(errMsg, ccLang.Languagef("import_host_ip_not_consistent", index, excelIP, hostIDVal, ip))
+			errMsg = append(errMsg, ccLang.Languagef("import_host_ip_not_consistent", index, excelIP,
+				hostIDVal, ip))
+			continue
+		}
+
+		// check if the host innerIPv6 and hostID is consistent
+		excelIPv6 := util.GetStrByInterface(host[common.BKHostInnerIPv6Field])
+		if ipv6 != excelIPv6 {
+			errMsg = append(errMsg, ccLang.Languagef("import_host_ipv6_not_consistent", index, excelIPv6,
+				hostIDVal, ipv6))
+			continue
+		}
+
+		// check if the host agentID and hostID is consistent
+		excelAgentID := util.GetStrByInterface(host[common.BKAgentIDField])
+		if agentID != excelAgentID {
+			errMsg = append(errMsg, ccLang.Languagef("import_host_agentID_not_consistent", index, excelAgentID,
+				hostIDVal, agentID))
 			continue
 		}
 
 		// check if the hostID and bizID is consistent
 		if hostBizMap[hostIDVal] != modelBizID {
-			errMsg = append(errMsg, ccLang.Languagef("import_hostID_bizID_not_consistent", index, excelIP))
+			errMsg = append(errMsg, ccLang.Languagef("import_hostID_bizID_not_consistent", index, excelIP, excelIPv6))
 			continue
 		}
 	}
@@ -722,35 +837,52 @@ func generateHostCloudKey(ip, cloudID interface{}) string {
 }
 
 // getExistHostsByInnerIPs get hosts that already in db(same bk_host_innerip host)
-// return: map[hostKey]bool
-func (lgc *Logics) getExistHostsByInnerIPs(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}) (map[string]bool, error) {
+func (lgc *Logics) getExistHostsByInnerIPs(ctx context.Context, header http.Header,
+	hostInfos map[int]map[string]interface{}) (map[string]struct{}, map[string]struct{}, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
 	// step1. extract all innerIP from hostInfos
-	var ipArr []string
+	ipArr, ipv6Arr := make([]string, 0), make([]string, 0)
 	for _, host := range hostInfos {
 		innerIP, ok := host[common.BKHostInnerIPField].(string)
-		if ok && "" != innerIP {
+		if ok && innerIP != "" {
 			ipArr = append(ipArr, innerIP)
 		}
+		innerIPv6, ok := host[common.BKHostInnerIPv6Field].(string)
+		if ok && innerIPv6 != "" {
+			ipv6Arr = append(ipv6Arr, innerIPv6)
+		}
 	}
-	if len(ipArr) == 0 {
-		return make(map[string]bool), nil
+	if len(ipArr) == 0 && len(ipv6Arr) == 0 {
+		return make(map[string]struct{}), make(map[string]struct{}), nil
 	}
 
 	// step2. query host info by innerIPs
-	innerIPs := make([]string, 0)
+	innerIPs, innerIPv6s := make([]string, 0), make([]string, 0)
 	for _, innerIP := range ipArr {
 		innerIPArr := strings.Split(innerIP, ",")
 		innerIPs = append(innerIPs, innerIPArr...)
 	}
-	rules := []querybuilder.Rule{
-		querybuilder.AtomRule{
+	for _, innerIPv6 := range ipv6Arr {
+		innerIPv6Arr := strings.Split(innerIPv6, ",")
+		innerIPv6s = append(innerIPv6s, innerIPv6Arr...)
+	}
+
+	rules := make([]querybuilder.Rule, 0)
+	if len(innerIPs) > 0 {
+		rules = append(rules, querybuilder.AtomRule{
 			Field:    common.BKHostInnerIPField,
 			Operator: querybuilder.OperatorIn,
 			Value:    innerIPs,
-		},
+		})
+	}
+	if len(innerIPv6s) > 0 {
+		rules = append(rules, querybuilder.AtomRule{
+			Field:    common.BKHostInnerIPv6Field,
+			Operator: querybuilder.OperatorIn,
+			Value:    innerIPv6s,
+		})
 	}
 
 	option := metadata.ListHostsWithNoBizParameter{
@@ -760,35 +892,49 @@ func (lgc *Logics) getExistHostsByInnerIPs(ctx context.Context, header http.Head
 				Rules:     rules,
 			},
 		},
-		Fields: []string{
-			common.BKHostIDField,
-			common.BKHostInnerIPField,
-			common.BKCloudIDField,
-		},
+		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField,
+			common.BKHostInnerIPv6Field, common.BKCloudIDField},
 	}
 	resp, err := lgc.CoreAPI.ApiServer().ListHostWithoutApp(ctx, header, option)
 	if err != nil {
-		blog.Errorf(" getExistHostsByInnerIPs failed, ListHostWithoutApp err:%v, option: %d, rid: %s", err, option, rid)
-		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("list host without app failed, option: %+v, err: %v, rid: %s", option, err, rid)
+		return nil, nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !resp.Result {
-		blog.Errorf(" getExistHostsByInnerIPs failed, ListHostWithoutApp resp:%#v, option: %d, rid: %s", resp, option, rid)
-		return nil, resp.CCError()
+		blog.Errorf("ListHostWithoutApp resp:%#v, option: %d, rid: %s", resp, option, rid)
+		return nil, nil, resp.CCError()
 	}
 
 	// step3. arrange data as a map, cloudKey: hostID
-	hostMap := make(map[string]bool, 0)
-	for _, host := range resp.Data.Info {
-		key := generateHostCloudKey(host[common.BKHostInnerIPField], host[common.BKCloudIDField])
-		hostMap[key] = true
-	}
+	hostV4Map, hostV6Map := make(map[string]struct{}, 0), make(map[string]struct{}, 0)
 
-	return hostMap, nil
+	for _, host := range resp.Data.Info {
+		ipv4 := util.GetStrByInterface(host[common.BKHostInnerIPField])
+		if ipv4 != "" {
+			keyV4 := generateHostCloudKey(ipv4, host[common.BKCloudIDField])
+			hostV4Map[keyV4] = struct{}{}
+		}
+
+		ipv6 := util.GetStrByInterface(host[common.BKHostInnerIPv6Field])
+		if ipv6 != "" {
+			keyV6 := generateHostCloudKey(ipv6, host[common.BKCloudIDField])
+			hostV6Map[keyV6] = struct{}{}
+		}
+	}
+	return hostV4Map, hostV6Map, nil
+}
+
+type excelSimpleHost struct {
+	Ip      string
+	Ipv6    string
+	AgentID string
 }
 
 // getExistHostsByHostIDs get hosts that already in db(same bk_host_id host)
 // return: map[hostID]innerIP
-func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}) (map[int64]string, error) {
+func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Header,
+	hostInfos map[int]map[string]interface{}) (map[int64]excelSimpleHost, error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
@@ -803,7 +949,7 @@ func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Heade
 	}
 
 	if len(hostIDs) == 0 {
-		return make(map[int64]string), nil
+		return make(map[int64]excelSimpleHost), nil
 	}
 
 	// step2. query host info by hostIDs
@@ -825,6 +971,8 @@ func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Heade
 		Fields: []string{
 			common.BKHostIDField,
 			common.BKHostInnerIPField,
+			common.BKHostInnerIPv6Field,
+			common.BKAgentIDField,
 		},
 	}
 	resp, err := lgc.CoreAPI.ApiServer().ListHostWithoutApp(ctx, header, option)
@@ -838,11 +986,16 @@ func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Heade
 	}
 
 	// step3. arrange data as a map, cloudKey: hostID
-	hostMap := make(map[int64]string, 0)
+	hostMap := make(map[int64]excelSimpleHost, 0)
 	for _, host := range resp.Data.Info {
 		if hostID, ok := host[common.BKHostIDField]; ok {
 			if hostIDVal, err := util.GetInt64ByInterface(hostID); err == nil {
-				hostMap[hostIDVal] = util.GetStrByInterface(host[common.BKHostInnerIPField])
+				hostMap[hostIDVal] = excelSimpleHost{
+					Ip:      util.GetStrByInterface(host[common.BKHostInnerIPField]),
+					Ipv6:    util.GetStrByInterface(host[common.BKHostInnerIPv6Field]),
+					AgentID: util.GetStrByInterface(host[common.BKAgentIDField]),
+				}
+
 			}
 		}
 	}
@@ -906,4 +1059,316 @@ func (lgc *Logics) getCloudArea(ctx context.Context, header http.Header) ([]stri
 	}
 
 	return cloudAreaArr, cloudAreaMap, nil
+}
+
+// handleHostInfo handle host info to export host
+func (lgc *Logics) handleHostInfo(ctx context.Context, header http.Header, fields map[string]Property, objIDs []string,
+	input *metadata.ExcelExportHostInput) ([]mapstr.MapStr, error) {
+
+	rid := util.GetHTTPCCRequestID(header)
+	defLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
+
+	hostFields := make([]string, 0)
+	for _, property := range fields {
+		hostFields = append(hostFields, property.ID)
+	}
+
+	hostInfo, err := lgc.GetHostData(input.AppID, input.HostIDArr, hostFields, input.ExportCond, header, defLang)
+	if err != nil {
+		blog.Errorf("get host info failed, err: %v, rid: %s", err, rid)
+		return nil, err
+	}
+
+	if len(hostInfo) == 0 {
+		blog.Errorf("not find host, host id: %v, cond: %#v, rid: %s", input.HostIDArr, input.ExportCond, rid)
+		return nil, nil
+	}
+
+	if err := lgc.handleModule(hostInfo, rid); err != nil {
+		blog.Errorf("add module name to host failed, err: %v, rid: %s", err, rid)
+		return nil, err
+	}
+	setDIs, hostSetMap, err := lgc.handleSet(hostInfo, rid)
+	if err != nil {
+		blog.Errorf("add set name to host failed, err: %v, rid: %s", err, rid)
+		return nil, err
+	}
+
+	if len(objIDs) > 0 {
+		setParentIDs, setCustomMap, err := lgc.getSetParentID(ctx, header, setDIs, rid)
+		if err != nil {
+			blog.Errorf("get set parent id and host set rel map failed, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+
+		err = lgc.handleCustomData(ctx, header, hostInfo, objIDs, rid, setParentIDs, setCustomMap, hostSetMap)
+		if err != nil {
+			blog.Errorf("get custom parent id and host custom rel map failed, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+	}
+
+	return hostInfo, nil
+}
+
+// handleModule 处理module数据
+func (lgc *Logics) handleModule(hostInfo []mapstr.MapStr, rid string) error {
+	// 统计host与module关系
+	for _, data := range hostInfo {
+		moduleMap, exist := data[common.BKInnerObjIDModule].([]interface{})
+		if !exist {
+			blog.Errorf("get module map data from host data failed, not exist, data: %#v, rid: %s", data, rid)
+			return fmt.Errorf("from host data get module map, not exist, rid: %s", rid)
+		}
+
+		moduleNameMap := make(map[string]int)
+		for idx, module := range moduleMap {
+			rowMap, err := mapstr.NewFromInterface(module)
+			if err != nil {
+				blog.Errorf("get module data from host data failed, err: %v, rid: %s", err, rid)
+				return err
+			}
+
+			moduleName, err := rowMap.String(common.BKModuleNameField)
+			if err != nil {
+				blog.Errorf("get module name from host data failed, err: %v, rid: %s", err, rid)
+				return fmt.Errorf("from host data get module name, not exist, rid: %s", rid)
+			}
+			moduleNameMap[moduleName] = idx
+		}
+
+		var moduleStr string
+		for moduleName := range moduleNameMap {
+			if moduleStr == "" {
+				moduleStr = moduleName
+			} else {
+				moduleStr += "," + moduleName
+			}
+		}
+		data.Set("modules", moduleStr)
+	}
+
+	return nil
+}
+
+// handleSet 处理set数据
+func (lgc *Logics) handleSet(hostInfo []mapstr.MapStr, rid string) ([]int64, map[int64][]int64, error) {
+	// 统计host与set关系
+	hostSetMap := make(map[int64][]int64, 0)
+	setIDs := make([]int64, 0)
+	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+	res, err := lgc.CoreAPI.CoreService().System().SearchPlatformSetting(context.Background(), header)
+	if err != nil {
+		return nil, nil, err
+	}
+	conf := res.Data
+
+	for _, data := range hostInfo {
+		setMap, exist := data[common.BKInnerObjIDSet].([]interface{})
+		if !exist {
+			blog.Errorf("get set map data from host data, not exist, data: %#v, rid: %s", data, rid)
+			return nil, nil, fmt.Errorf("from host data get set map, not exist, rid: %s", rid)
+		}
+
+		rowMap, err := mapstr.NewFromInterface(data[common.BKInnerObjIDHost])
+		if err != nil {
+			blog.Errorf("get host map data failed, hostData: %#v, err: %v, rid: %s", data, err, rid)
+			return nil, nil, err
+		}
+
+		hostID, err := rowMap.Int64(common.BKHostIDField)
+		if err != nil {
+			blog.Errorf("get host id failed, host id: %s, err: %v, rid: %s", hostID, err, rid)
+			return nil, nil, nil
+		}
+
+		setNameMap := make(map[string]int)
+		setSubIDs := make([]int64, 0)
+		for idx, set := range setMap {
+			rowMap, err := mapstr.NewFromInterface(set)
+			if err != nil {
+				blog.Errorf("get set data from host data failed, err: %v, rid: %s", err, rid)
+				return nil, nil, err
+			}
+
+			setName, err := rowMap.String(common.BKSetNameField)
+			if err != nil {
+				blog.Errorf("get set name from host data failed, err: %v, rid: %s", err, rid)
+				return nil, nil, fmt.Errorf("from host data get set name, not exist, rid: %s", rid)
+			}
+			setNameMap[setName] = idx
+
+			setID, err := rowMap.Int64(common.BKSetIDField)
+			if err != nil {
+				blog.Errorf("get set id from host data failed, err: %v, rid: %s", err, rid)
+				return nil, nil, err
+			}
+
+			if setName != string(conf.BuiltInSetName) {
+				setIDs = append(setIDs, setID)
+				setSubIDs = append(setSubIDs, setID)
+			}
+		}
+
+		hostSetMap[hostID] = setSubIDs
+
+		var setStr string
+		for setName := range setNameMap {
+			if setStr == "" {
+				setStr = setName
+			} else {
+				setStr += "," + setName
+			}
+		}
+		data.Set("sets", setStr)
+	}
+
+	return setIDs, hostSetMap, nil
+}
+
+// getSetParentID get set parent id and set custom rel map
+func (lgc *Logics) getSetParentID(ctx context.Context, header http.Header, setIDs []int64, rid string) ([]int64,
+	map[int64]int64, error) {
+	// 获取set数据，统计set parent id
+	querySet := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKSetIDField: mapstr.MapStr{
+				common.BKDBIN: setIDs,
+			},
+		},
+		Fields: []string{common.BKSetIDField, common.BKInstParentStr, common.BKSetNameField},
+	}
+
+	sets, err := lgc.Engine.CoreAPI.ApiServer().ReadInstance(ctx, header, common.BKInnerObjIDSet, querySet)
+	if err != nil {
+		blog.Errorf("get set data failed, cond: %#v, err: %v,rid:%s", querySet, err, rid)
+		return nil, nil, err
+	}
+	if !sets.Result {
+		blog.Errorf("get sets failed, err code: %d, err msg: %s, rid: %s", sets.Code, sets.ErrMsg, rid)
+		return nil, nil, fmt.Errorf("get sets failed, err msg: %s", sets.ErrMsg)
+	}
+
+	setParentIDs := make([]int64, 0)
+	setCustomMap := make(map[int64]int64, 0)
+	for _, set := range sets.Data.Info {
+		parentID, err := set.Int64(common.BKInstParentStr)
+		if err != nil {
+			blog.Errorf("get set parent id failed, err: %v, rid: %s", err, rid)
+			return nil, nil, err
+		}
+		setParentIDs = append(setParentIDs, parentID)
+
+		setID, err := set.Int64(common.BKSetIDField)
+		if err != nil {
+			blog.Errorf("get set id failed, err: %v, rid: %s", err, rid)
+			return nil, nil, err
+		}
+		setCustomMap[setID] = parentID
+	}
+
+	return setParentIDs, setCustomMap, nil
+}
+
+// handleCustomData 处理自定义成层级数据
+func (lgc *Logics) handleCustomData(ctx context.Context, header http.Header, hostInfo []mapstr.MapStr, objIDs []string,
+	rid string, parentIDs []int64, setCustomMap map[int64]int64, hostSetMap map[int64][]int64) error {
+	instIdParentIDMap := make(map[int64]int64, 0)
+	instIdNameMap := make(map[int64]string, 0)
+	var err error
+	for _, objID := range objIDs {
+		parentIDs, instIdParentIDMap, instIdNameMap, err = lgc.getCustomData(ctx, header, parentIDs, objID, rid)
+		if err != nil {
+			blog.Errorf("get custom data failed, cond: %#v, err: %v, rid: %s", parentIDs, err, rid)
+			return err
+		}
+
+		hostCustomMap := make(map[int64][]int64, 0)
+		hostCustomNameMap := make(map[int64]string, 0)
+		for hostID, setIDs := range hostSetMap {
+			customNameMap := make(map[string]int, 0)
+			for idx, setID := range setIDs {
+				customNameMap[instIdNameMap[setCustomMap[setID]]] = idx
+				hostCustomMap[hostID] = append(hostCustomMap[hostID], setCustomMap[setID])
+			}
+
+			customStr := ""
+			for customName := range customNameMap {
+				if customStr == "" {
+					customStr = customName
+				} else {
+					customStr += "," + customName
+				}
+			}
+
+			hostCustomNameMap[hostID] = customStr
+		}
+
+		for _, data := range hostInfo {
+			rowMap, err := mapstr.NewFromInterface(data[common.BKInnerObjIDHost])
+			if err != nil {
+				blog.Errorf("get host map data failed, hostData: %#v, err: %v, rid: %s", data, err, rid)
+				return err
+			}
+
+			hostID, err := rowMap.Int64(common.BKHostIDField)
+			if err != nil {
+				blog.Errorf("get host id failed, host id: %s, err: %v, rid: %s", hostID, err, rid)
+				return err
+			}
+
+			data[objID] = hostCustomNameMap[hostID]
+		}
+
+		setCustomMap = instIdParentIDMap
+		hostSetMap = hostCustomMap
+	}
+
+	return nil
+}
+
+func (lgc *Logics) getCustomData(ctx context.Context, header http.Header, instIDs []int64, objID, rid string) ([]int64,
+	map[int64]int64, map[int64]string, error) {
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKInstIDField: mapstr.MapStr{
+				common.BKDBIN: instIDs,
+			},
+		},
+		Fields: []string{common.BKInstIDField, common.BKInstNameField, common.BKInstParentStr},
+	}
+
+	insts, err := lgc.Engine.CoreAPI.ApiServer().ReadInstance(ctx, header, objID, query)
+	if err != nil {
+		blog.Errorf("get custom level inst data failed, query cond: %#v, err: %v, rid: %s", query, err, rid)
+		return nil, nil, nil, err
+	}
+
+	parentIDs := make([]int64, 0)
+	instIdParentIdMap := make(map[int64]int64, 0)
+	instIdNameMap := make(map[int64]string, 0)
+	for _, inst := range insts.Data.Info {
+		parentID, err := inst.Int64(common.BKParentIDField)
+		if err != nil {
+			blog.Errorf("get inst parent id failed, err: %v, rid: %s", err, rid)
+			return nil, nil, nil, err
+		}
+		parentIDs = append(parentIDs, parentID)
+
+		instID, err := inst.Int64(common.BKInstIDField)
+		if err != nil {
+			blog.Errorf("get inst id failed, err: %v, rid: %s", err, rid)
+			return nil, nil, nil, err
+		}
+		instIdParentIdMap[instID] = parentID
+
+		instName, err := inst.String(common.BKInstNameField)
+		if err != nil {
+			blog.Errorf("get inst name failed, err: %v, rid: %s", err, rid)
+			return nil, nil, nil, err
+		}
+		instIdNameMap[instID] = instName
+	}
+
+	return parentIDs, instIdParentIdMap, instIdNameMap, nil
 }

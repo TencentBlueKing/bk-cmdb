@@ -17,7 +17,7 @@
         <bk-input class="search-input"
           ref="searchInput"
           autocomplete="off"
-          maxlength="32"
+          maxlength="1024"
           clearable
           :placeholder="$t('请输入关键字，点击或回车搜索')"
           v-model.trim="keyword"
@@ -156,7 +156,7 @@
       }
 
       const handleInput = (value) => {
-        if (value.length <= 32) {
+        if (value.length <= 1024) {
           maxLengthPopover && maxLengthPopover.hide()
           getSearchResult()
           return
@@ -164,7 +164,7 @@
         if (!maxLengthPopover) {
           maxLengthPopover = $bkPopover(searchInput.value.$el, {
             theme: 'dark search-input-max-length',
-            content: t('最大支持搜索32个字符'),
+            content: t('最大支持搜索1024个字符'),
             zIndex: 9999,
             trigger: 'manual',
             boundary: 'window',

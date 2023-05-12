@@ -35,13 +35,22 @@
             v-for="property in group.children"
             :key="property.bk_property_id">
             <bk-checkbox class="property-checkbox"
+              :disabled="disabledProperties[group.id].includes(property.bk_property_id)"
               :checked="isChecked(property)"
               @change="handleToggleProperty(property, ...arguments)">
-              {{property.bk_property_name}}
+              <span v-bk-tooltips.top-start="{
+                disabled: !disabledProperties[group.id].includes(property.bk_property_id),
+                content: $t('该字段不支持搜索')
+              }">
+                {{property.bk_property_name}}
+              </span>
             </bk-checkbox>
           </li>
         </ul>
       </div>
+      <cmdb-data-empty v-if="renderGroups.length === 0" class="empty-content" slot="empty"
+        :stuff="dataEmpty"
+        @clear="handleClearFilter"></cmdb-data-empty>
     </section>
     <footer class="footer" slot="footer">
       <i18n class="selected-count"
@@ -62,6 +71,7 @@
   import { mapGetters } from 'vuex'
   import FilterStore from './store'
   import throttle from 'lodash.throttle'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   export default {
     data() {
       return {
@@ -69,7 +79,13 @@
         isShow: false,
         selected: [...FilterStore.selected],
         throttleFilter: throttle(this.handleFilter, 500, { leading: false }),
-        renderGroups: []
+        renderGroups: [],
+        dataEmpty: {
+          type: 'empty',
+          payload: {
+            defaultText: this.$t('暂无数据')
+          }
+        }
       }
     },
     computed: {
@@ -77,7 +93,7 @@
       propertyMap() {
         let modelPropertyMap = { ...FilterStore.modelPropertyMap }
 
-        const ignoreHostProperties = ['bk_host_innerip', 'bk_host_outerip', '__bk_host_topology__']
+        const ignoreHostProperties = ['bk_host_innerip', 'bk_host_outerip', '__bk_host_topology__', 'bk_host_innerip_v6', 'bk_host_outerip_v6']
         modelPropertyMap.host = modelPropertyMap.host
           .filter(property => !ignoreHostProperties.includes(property.bk_property_id))
 
@@ -137,12 +153,22 @@
           }
         })
           .sort((groupA, groupB) => sequence.indexOf(groupA.id) - sequence.indexOf(groupB.id))
+      },
+      disabledProperties() {
+        const disabledPropertyMap = {}
+        this.groups.forEach((group) => {
+          disabledPropertyMap[group.id] = group.children
+            .filter(item => item.bk_property_type === PROPERTY_TYPES.INNER_TABLE)
+            .map(item => item.bk_property_id)
+        })
+        return disabledPropertyMap
       }
     },
     watch: {
       filter: {
         immediate: true,
-        handler() {
+        handler(value) {
+          this.dataEmpty.type = value ? 'search' : 'empty'
           this.throttleFilter()
         }
       }
@@ -193,6 +219,9 @@
       },
       close() {
         this.isShow = false
+      },
+      handleClearFilter() {
+        this.filter = ''
       }
     }
   }
@@ -217,6 +246,13 @@
         margin: 0 -24px -24px 0;
         height: 350px;
         @include scrollbar-y;
+        position: relative;
+        .empty-content{
+            position: absolute;
+            top:50%;
+            left:50%;
+            transform: translate(-50%,-50%);
+        }
     }
     .group {
         margin-top: 15px;

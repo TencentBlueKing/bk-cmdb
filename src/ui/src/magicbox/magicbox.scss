@@ -241,3 +241,15 @@
         height: unset;
     }
 }
+
+// fix无外边框表格右侧固定时多出1px间隙的问题
+.bk-table {
+    .bk-table-fixed-right {
+        right: 0;
+    }
+    &.bk-table-outer-border {
+        .bk-table-fixed-right {
+            right: 1px;
+        }
+    }
+}

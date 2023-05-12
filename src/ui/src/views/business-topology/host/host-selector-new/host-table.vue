@@ -30,7 +30,7 @@
       @row-click="handleRowClick"
     >
       <batch-selection-column
-        width="60"
+        width="50"
         :cross-page="false"
         ref="batchSelectionColumn"
         :selected-rows="selected"
@@ -39,14 +39,24 @@
         row-key="host.bk_host_id"
         reserve-selection>
       </batch-selection-column>
-      <bk-table-column :label="$t('内网IP')">
+      <bk-table-column width="110" :label="$t('内网IP')" show-overflow-tooltip>
         <template slot-scope="{ row }">
-          {{row.host.bk_host_innerip}}
+          {{row.host.bk_host_innerip || '--'}}
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('云区域')" show-overflow-tooltip>
+      <bk-table-column :label="$t('内网IPv6')" show-overflow-tooltip>
+        <template slot-scope="{ row }">
+          {{row.host.bk_host_innerip_v6 || '--'}}
+        </template>
+      </bk-table-column>
+      <bk-table-column width="150" :label="$t('云区域')" show-overflow-tooltip>
         <template slot-scope="{ row }">{{row.host.bk_cloud_id | foreignkey}}</template>
       </bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff"
+        @clear="handleClearFilter">
+      </cmdb-table-empty>
     </bk-table>
     <bk-pagination
       v-if="pagination"
@@ -94,12 +104,20 @@
           current: 1,
           limit: 500,
           count: 0
+        },
+        table: {
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
+          }
         }
       }
     },
     computed: {
       tableMaxHeight() {
-        return this.pagination ? 360 : 400
+        return this.pagination ? 460 : 500
       },
     },
     watch: {
@@ -140,6 +158,7 @@
         } else {
           this.displayList = this.list
         }
+        this.table.stuff.type = this.keyword ? 'search' : 'default'
       },
       handleLimitChange() {
         this.innerPagination.current = 1
@@ -154,6 +173,10 @@
 
         this.$emit('update:pagination', val)
         this.$emit('pagination-change', val)
+      },
+      handleClearFilter() {
+        this.keyword = ''
+        this.filterHost()
       }
     }
   }

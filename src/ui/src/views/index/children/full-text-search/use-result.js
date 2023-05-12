@@ -89,7 +89,7 @@ export default function useResult(state) {
 
   const suggestionState = {
     result,
-    keyword
+    keyword: queryKeyword
   }
   const { suggestion } = useSuggestion(suggestionState)
 

@@ -34,7 +34,7 @@ type InstanceClientInterface interface {
 	SetManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.SetManyModelInstance) (
 		resp *metadata.SetOptionResult, err error)
 	UpdateInstance(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
-		*metadata.UpdatedCount, error)
+		*metadata.UpdatedCount, errors.CCErrorCoder)
 	ReadInstance(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (
 		*metadata.InstDataInfo, error)
 	DeleteInstance(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (

@@ -28,8 +28,6 @@ import (
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/sync/hostidentifier"
-
-	"github.com/tidwall/gjson"
 )
 
 const hostIdentifierTaskKeyPrefix = common.BKCacheKeyV3Prefix + "host_identifier:task:"
@@ -83,28 +81,33 @@ func (s *Service) SyncHostIdentifier(ctx *rest.Contexts) {
 	}
 	for retry && time.Now().Unix() < endTime {
 		retry = false
-		resultMap, err := s.SyncData.GetTaskExecutionResultMap(task)
+		resultMap, err := s.SyncData.GetTaskExecutionResultMap(task, ctx.Kit.Header, ctx.Kit.Rid)
 		if err != nil {
+			blog.Errorf("get task result error, taskID: %s, err: %v, rid: %s", task.TaskID, err, ctx.Kit.Rid)
 			ctx.RespEntityWithError(result, err)
 			return
 		}
 
 		// 该任务包含的主机没有拿到全部的结果
 		if len(task.HostInfos) != len(resultMap) {
+			retry = true
 			continue
 		}
 
 		failIDs := make([]int64, 0)
 		successIDs := make([]int64, 0)
 		for _, hostInfo := range task.HostInfos {
-			key := hostidentifier.HostKey(strconv.FormatInt(hostInfo.CloudID, 10), hostInfo.HostInnerIP)
-			code := gjson.Get(resultMap[key], "error_code").Int()
-			if code == common.CCSuccess {
+			key := hostInfo.AgentID
+			if key == "" {
+				key = hostidentifier.HostKey(strconv.FormatInt(hostInfo.CloudID, 10), hostInfo.HostInnerIP)
+			}
+			code, exist := resultMap[key]
+			if exist && code == common.CCSuccess {
 				successIDs = append(successIDs, hostInfo.HostID)
 				continue
 			}
 
-			if code == hostidentifier.Handling {
+			if !exist || code == hostidentifier.Handling {
 				retry = true
 			}
 
@@ -164,7 +167,8 @@ func (s *Service) getHostBusinessIDs(kit *rest.Kit, hostIDs []int64) ([]int64, e
 
 func (s *Service) getHostInfo(kit *rest.Kit, hostIDs []int64) (*metadata.ListHostResult, error) {
 	options := &metadata.ListHosts{
-		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField},
+		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField,
+			common.BKAddressingField, common.BKAgentIDField},
 		HostPropertyFilter: &querybuilder.QueryFilter{
 			Rule: querybuilder.CombinedRule{
 				Condition: querybuilder.ConditionAnd,
@@ -374,8 +378,9 @@ func (s *Service) GetHostIdentifierPushResult(ctx *rest.Contexts) {
 		return
 	}
 
-	resultMap, err := s.SyncData.GetTaskExecutionResultMap(task)
+	resultMap, err := s.SyncData.GetTaskExecutionResultMap(task, ctx.Kit.Header, ctx.Kit.Rid)
 	if err != nil {
+		blog.Errorf("get task result error, taskID: %s, err: %v, rid: %s", task.TaskID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -396,9 +401,11 @@ func (s *Service) GetHostIdentifierPushResult(ctx *rest.Contexts) {
 	successIDs := make([]int64, 0)
 	pendingIDs := make([]int64, 0)
 	for _, hostInfo := range task.HostInfos {
-		key := hostidentifier.HostKey(strconv.FormatInt(hostInfo.CloudID, 10), hostInfo.HostInnerIP)
-		result, exist := resultMap[key]
-		code := gjson.Get(result, "error_code").Int()
+		key := hostInfo.AgentID
+		if key == "" {
+			key = hostidentifier.HostKey(strconv.FormatInt(hostInfo.CloudID, 10), hostInfo.HostInnerIP)
+		}
+		code, exist := resultMap[key]
 		if !exist || code == hostidentifier.Handling {
 			pendingIDs = append(pendingIDs, hostInfo.HostID)
 			continue

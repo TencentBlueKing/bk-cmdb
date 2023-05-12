@@ -50,7 +50,7 @@
             <bk-checkbox class="mr20" v-model="IPCondition.outer" @change="handleIPOptionChange('inner', ...arguments)">
               {{$t('外网IP')}}
             </bk-checkbox>
-            <bk-checkbox v-model="IPCondition.exact">{{$t('精确')}}</bk-checkbox>
+            <bk-checkbox v-bk-tooltips.top="$t('ipv6暂不支持模糊搜索')" v-model="IPCondition.exact">{{$t('精确')}}</bk-checkbox>
           </div>
         </bk-form-item>
         <bk-form-item class="filter-item"
@@ -196,12 +196,7 @@
       return {
         isShow: false,
         withoutOperator: ['date', 'time', 'bool', 'service-template'],
-        IPCondition: {
-          text: '',
-          inner: true,
-          outer: true,
-          exact: true
-        },
+        IPCondition: Utils.getDefaultIP(),
         condition: {},
         selected: [],
         collectionForm: {
@@ -252,7 +247,8 @@
             }
           })
           this.condition = newCondition
-          this.selected = [...this.storageSelected]
+          const filterCondition = ['bk_host_innerip_v6', 'bk_host_outerip_v6']
+          this.selected = [...this.storageSelected].filter(item => !filterCondition.includes(item.bk_property_id))
         }
       },
       storageIPCondition: {

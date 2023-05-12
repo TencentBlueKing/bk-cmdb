@@ -109,7 +109,7 @@
 
       const submitting = ref(false)
       const isEdit = computed(() => Boolean(formData.value.bk_biz_set_id))
-      const title = computed(() => (isEdit.value ? t('编辑') : `${t('创建')}${model.value.bk_obj_name}`))
+      const title = computed(() => (isEdit.value ? t('编辑') : `${t('创建')} ${model.value.bk_obj_name}`))
 
       const isBuiltin = computed(() => formData.value?.default === 1)
 

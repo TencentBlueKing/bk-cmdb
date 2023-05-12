@@ -258,7 +258,7 @@ func (s *Service) GetHostInstanceProperties(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKHostIDField))
 		return
 	}
-	details, _, err := s.Logic.GetHostInstanceDetails(ctx.Kit, hostIDInt64)
+	details, err := s.Logic.GetHostInstanceDetails(ctx.Kit, hostIDInt64)
 	if err != nil {
 		blog.Errorf("get host details failed, err: %v,host:%s,rid:%s", err, hostID, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -398,13 +398,15 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 	}
 
 	retData := make(map[string]interface{})
-	_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, ctx.Kit.SupplierAccount, hostList.HostInfo)
+	_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, ctx.Kit.SupplierAccount,
+		hostList.HostInfo)
 	retData["success"] = success
 	retData["error"] = errRow
 	if err != nil {
-		blog.Errorf("add host failed, success: %v, errRow:%v, err: %v, hostList:%#v, rid:%s",
-			success, errRow, err, hostList, ctx.Kit.Rid)
+		blog.Errorf("add host failed, success: %v, errRow: %v, err: %v, hostList: %#v, rid: %s", success, errRow, err,
+			hostList, ctx.Kit.Rid)
 		ctx.RespEntityWithError(retData, ctx.Kit.CCError.CCError(common.CCErrHostCreateFail))
+		return
 	}
 
 	ctx.RespEntity(retData)
@@ -511,6 +513,14 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 	body := new(meta.HostCommonSearch)
 	if err := ctx.DecodeInto(&body); nil != err {
 		ctx.RespAutoError(err)
+		return
+	}
+
+	searchByIpNum := len(body.Ipv4Ip.Data) + len(body.Ipv6Ip.Data)
+	if searchByIpNum > common.BKMaxLimitSize {
+		blog.Errorf("search host info at once exceeds max page size, number of queries: %d, rid: %s", searchByIpNum,
+			ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
 		return
 	}
 
@@ -697,7 +707,7 @@ func (s *Service) UpdateHostBatch(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v, input: %+v, param: %+v, rid: %s",
 				err, data, opt, ctx.Kit.Rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return err
 		}
 
 		// save audit log.
@@ -938,7 +948,8 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 		return
 	}
 	if 0 == len(appInfo) {
-		blog.Errorf("host sync app %d not found, reply:%+v,input:%+v,rid:%s", hostList.ApplicationID, appInfo, hostList, ctx.Kit.Rid)
+		blog.Errorf("host sync app %d not found, reply:%+v, input:%+v, rid:%s", hostList.ApplicationID, appInfo,
+			hostList, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoGetAppFailed))
 		return
 	}
@@ -972,7 +983,8 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeCreateHost(ctx.Kit.Ctx, ctx.Kit.Header, hostList.ApplicationID); err != nil {
-		blog.Errorf("check add hosts authorization failed, business: %d, err: %v, rid: %s", hostList.ApplicationID, err, ctx.Kit.Rid)
+		blog.Errorf("check add hosts authorization failed, business: %d, err: %v, rid: %s",
+			hostList.ApplicationID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 		return
 	}
@@ -1375,7 +1387,7 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	}
 
 	if hostList.HostInfo == nil {
-		blog.Errorf("UpdateImportHosts, but host info is nil.input:%+v,rid:%s", hostList, ctx.Kit.Rid)
+		blog.Errorf("host info is nil, input: %+v, rid: %s", hostList, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsNeedSet))
 		return
 	}
@@ -1417,10 +1429,7 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	}
 
 	if len(hostIDArr) == 0 {
-		ctx.RespEntity(map[string]interface{}{
-			"error":   errMsg,
-			"success": []string{},
-		})
+		ctx.RespEntity(map[string]interface{}{"error": errMsg, "success": []string{}})
 		return
 	}
 
@@ -1445,91 +1454,16 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 		return
 	}
 
-	// audit interface of host audit log.
-	audit := auditlog.NewHostAudit(s.CoreAPI.CoreService())
-	auditContexts := make([]meta.AuditLog, 0)
-
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		hostCond := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDArr}}
-		hostInfoArr, err := s.Logic.GetHostInfoByConds(ctx.Kit, hostCond)
-		if err != nil {
-			blog.Errorf("get hosts failed, err: %v, condition: %#v, rid: %s", err, hostCond, ctx.Kit.Rid)
-			return err
-		}
-
-		hostMap := make(map[int64]mapstr.MapStr)
-		for _, host := range hostInfoArr {
-			hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
-			if err != nil {
-				blog.Errorf("parse host id failed, err: %v, host: %#v, rid: %s", err, host, ctx.Kit.Rid)
-				return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
-			}
-			hostMap[hostID] = host
-		}
-
-		hostRelations, rawErr := s.Logic.GetHostRelations(ctx.Kit, meta.HostModuleRelationRequest{HostIDArr: hostIDArr,
-			Fields: []string{common.BKAppIDField, common.BKHostIDField}})
-		if rawErr != nil {
-			blog.Errorf("get host relations failed, err: %v, hostIDs: %+v, rid: %s", err, hostIDArr, ctx.Kit.Rid)
-			return rawErr
-		}
-
-		hostBizMap := make(map[int64]int64)
-		for _, relation := range hostRelations {
-			hostBizMap[relation.HostID] = relation.AppID
-		}
-
-		ccLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(ctx.Kit.Header))
-		for _, index := range util.SortedMapInt64Keys(hosts) {
-			host := hosts[index]
-			delete(host, common.BKHostIDField)
-			intHostID := indexHostIDMap[index]
-
-			// generate audit log.
-			genAuditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(host)
-			auditLog, err := audit.GenerateAuditLog(genAuditParam, hostBizMap[intHostID],
-				[]mapstr.MapStr{hostMap[intHostID]})
-			if err != nil {
-				blog.Errorf("generate host audit log failed, hostID: %d, err: %v, rid: %s", intHostID, err, ctx.Kit.Rid)
-				errMsg = append(errMsg, err.Error())
-				continue
-			}
-
-			// to update data.
-			opt := &meta.UpdateOption{
-				Condition: mapstr.MapStr{common.BKHostIDField: intHostID},
-				Data:      mapstr.NewFromMap(host),
-			}
-			_, err = s.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
-				common.BKInnerObjIDHost, opt)
-			if err != nil {
-				blog.ErrorJSON("UpdateImportHosts UpdateInstance http do error, err: %v,input:%+v,param:%+v,rid:%s",
-					err, hostList.HostInfo, opt, ctx.Kit.Rid)
-				errMsg = append(errMsg, ccLang.Languagef("import_host_update_fail", index, err.Error()))
-				continue
-			}
-
-			successMsg = append(successMsg, strconv.FormatInt(index, 10))
-			auditContexts = append(auditContexts, auditLog...)
-		}
-
-		// save audit log.
-		if err := audit.SaveAuditLog(ctx.Kit, auditContexts...); err != nil {
-			blog.Errorf("success update host, but add host[%v] audit failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			return err
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
+	successData, errData, err := s.Logic.UpdateHostByExcel(ctx.Kit, hosts, hostIDArr, indexHostIDMap)
+	if err != nil {
+		blog.Errorf("update host by excel failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
-	retData := map[string]interface{}{
-		"error":   errMsg,
-		"success": successMsg,
-	}
-	ctx.RespEntity(retData)
+	successMsg = append(successMsg, successData...)
+	errMsg = append(errMsg, errData...)
+
+	ctx.RespEntity(map[string]interface{}{"error": errMsg, "success": successMsg})
 }
 
 // CountHostCPU 查询业务下的主机CPU数量的特殊接口，给成本管理使用
@@ -1670,6 +1604,52 @@ func (s *Service) countBizHostCPU(kit *rest.Kit, bizID int64) (meta.BizHostCpuCo
 	return cnt, nil
 }
 
+// AddHostToBusinessIdle add host to business idle module
+func (s *Service) AddHostToBusinessIdle(ctx *rest.Contexts) {
+	input := new(meta.HostListParam)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	rawErr := input.Validate()
+	if rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// get target biz's idle module ID
+	cond := mapstr.MapStr{
+		common.BKAppIDField:   input.ApplicationID,
+		common.BKDefaultField: common.DefaultResModuleFlag,
+	}
+	moduleID, _, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, cond)
+	if err != nil {
+		blog.Errorf("get idle module failed, input: %v, err: %v, rid: %s", input, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	var hostIDs []int64
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		hostIDs, err = s.Logic.AddHosts(ctx.Kit, input.ApplicationID, moduleID, input.HostList)
+		if err != nil {
+			blog.Errorf("add host failed, input: %v, err: %v, rid:%s", input.HostList, err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(&meta.HostIDsResp{
+		HostIDs: hostIDs,
+	})
+}
+
 // SearchHostWithKube search host with k8s condition
 func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
 	req := new(types.SearchHostOption)
@@ -1701,15 +1681,14 @@ func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
 		return
 	}
 
-	condition := make(map[string]interface{})
-	err = hostParse.ParseHostParams(cond, condition)
+	condition, err := hostParse.ParseHostParams(cond)
 	if err != nil {
 		blog.Errorf("parse host condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
 		return
 	}
 
-	err = hostParse.ParseHostIPParams(req.Ip, condition)
+	condition, err = hostParse.ParseHostIPParams(req.Ipv4Ip, req.Ipv6Ip, condition)
 	if err != nil {
 		blog.Errorf("parse host IP condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
