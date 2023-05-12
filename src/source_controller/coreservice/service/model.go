@@ -683,7 +683,14 @@ func (s *coreService) CreateModelAttrUnique(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ModelOperation().CreateModelAttrUnique(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputDatas))
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	res, err := s.core.ModelOperation().CreateModelAttrUnique(ctx.Kit, objID, inputDatas)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(res)
 }
 
 // UpdateModelAttrUnique TODO
@@ -693,12 +700,21 @@ func (s *coreService) UpdateModelAttrUnique(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	id, err := strconv.ParseUint(ctx.Request.PathParameter("id"), 10, 64)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "id"))
 		return
 	}
-	ctx.RespEntityWithError(s.core.ModelOperation().UpdateModelAttrUnique(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), id, inputDatas))
+
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	res, err := s.core.ModelOperation().UpdateModelAttrUnique(ctx.Kit, objID, id, inputDatas)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(res)
 }
 
 // DeleteModelAttrUnique TODO
