@@ -46,7 +46,7 @@
           <p class="form-error">{{errors.first('fieldName')}}</p>
         </div>
       </label>
-      <div class="form-label">
+      <div class="form-label" v-if="!isSettingScene">
         <span class="label-text">
           {{$t('字段分组')}}
           <span class="color-danger">*</span>
@@ -163,13 +163,15 @@
           <p class="form-error" v-if="errors.has('placeholder')">{{errors.first('placeholder')}}</p>
         </div>
       </div>
+      <slot name="append"></slot>
     </div>
     <template slot="footer" slot-scope="{ sticky }">
       <div class="btn-group" :class="{ 'is-sticky': sticky }">
         <bk-button theme="primary"
           :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])"
           @click="saveField">
-          {{isEditField ? $t('保存') : $t('提交')}}
+          <span v-if="!isSettingScene">{{isEditField ? $t('保存') : $t('提交')}}</span>
+          <span v-else>{{ $t('确定') }}</span>
         </bk-button>
         <bk-button theme="default" @click="cancel">
           {{$t('取消')}}
@@ -210,7 +212,7 @@
     props: {
       properties: {
         type: Array,
-        required: true
+        required: false
       },
       field: {
         type: Object
@@ -239,6 +241,10 @@
       propertyIndex: {
         type: Number,
         default: 0
+      },
+      scene: {
+        type: String,
+        default: 'manage' // setting表示配置流程
       }
     },
     data() {
@@ -337,6 +343,9 @@
         // eslint-disable-next-line max-len
         const createFieldList = PROPERTY_TYPE_LIST.filter(item => ![PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.FOREIGNKEY].includes(item.id))
         return this.isEditField ? PROPERTY_TYPE_LIST : createFieldList
+      },
+      isSettingScene() {
+        return this.scene === 'setting'
       }
     },
     watch: {
@@ -429,6 +438,13 @@
           this.fieldInfo.option.max = this.isNullOrUndefinedOrEmpty(this.fieldInfo.option.max) ? '' : Number(this.fieldInfo.option.max)
           this.fieldInfo.default = this.isNullOrUndefinedOrEmpty(this.fieldInfo.default) ? '' : Number(this.fieldInfo.default)
         }
+
+        // 配置流程直接抛出事件并退出，在流程中自行处理
+        if (this.isSettingScene) {
+          this.$emit('confirm', this.fieldInfo)
+          return
+        }
+
         if (this.isEditField) {
           const action = this.customObjId ? 'updateBizObjectAttribute' : 'updateObjectAttribute'
           const params = this.field.ispre ? this.getPreFieldUpdateParams() : this.fieldInfo
@@ -513,7 +529,7 @@
         .slider-main {
             max-height: calc(100% - 52px);
             @include scrollbar-y;
-            padding: 20px 20px 0;
+            padding: 20px 40px;
         }
         .slider-content {
             /deep/ textarea[disabled] {
@@ -567,4 +583,7 @@
             }
         }
     }
+</style>
+<style lang="scss">
+@import '@/assets/scss/model-manage.scss';
 </style>

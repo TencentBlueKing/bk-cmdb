@@ -1,6 +1,5 @@
 <!--
- * Tencent
-  components: { topSteps },is pleased to support the open source community by making 蓝鲸 available.
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,12 +16,19 @@
   import {
     MENU_MODEL_FIELD_TEMPLATE_CREATE_BASIC
   } from '@/dictionary/menu-symbol'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import TopSteps from './children/top-steps.vue'
   import FieldManage from './children/field-manage.vue'
 
   const nextButtonDisabled = ref(false)
 
-  const fieldData = ref([])
+  const fieldData = ref([
+    {
+      bk_property_id: 'inst_name',
+      bk_property_name: '实例名称',
+      bk_property_type: PROPERTY_TYPES.SINGLECHAR
+    }
+  ])
   const uniqueData = ref([])
 
   const handlePrevStep = () => {
@@ -39,7 +45,7 @@
 <template>
   <cmdb-sticky-layout class="cmdb-config-sticky-layout">
     <template #header="{ sticky }">
-      <top-steps width="45%" :current="2" :class="{ 'is-sticky': sticky }"></top-steps>
+      <top-steps width="360px" :current="2" :class="{ 'is-sticky': sticky }"></top-steps>
     </template>
     <field-manage :field-list="fieldData" :unique-list="uniqueData"></field-manage>
     <template #footer="{ sticky }">
@@ -72,3 +78,15 @@
     </template>
   </cmdb-sticky-layout>
 </template>
+
+<style lang="scss" scoped>
+  .layout-footer {
+    padding: 0;
+    margin-left: 108px;
+
+    &.is-sticky {
+      margin-left: 0;
+      justify-content: center;
+    }
+  }
+</style>

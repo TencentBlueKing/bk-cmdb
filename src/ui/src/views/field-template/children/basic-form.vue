@@ -1,6 +1,5 @@
 <!--
- * Tencent
-  components: { topSteps },is pleased to support the open source community by making 蓝鲸 available.
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -30,12 +29,28 @@
 </script>
 
 <template>
-  <bk-form :label-width="200" :model="formData">
-    <bk-form-item label="模板名称" :required="true" :property="'name'">
-      <bk-input v-model="formData.name"></bk-input>
-    </bk-form-item>
-    <bk-form-item label="描述">
-      <bk-input type="textarea" v-model="formData.desc" placeholder="请输入描述"></bk-input>
-    </bk-form-item>
-  </bk-form>
+  <div class="basic-form">
+    <bk-form :label-width="140" :model="formData">
+      <bk-form-item label="模板名称" :required="true" :property="'name'"
+        class="cmdb-form-item" :class="{ 'is-error': errors.has('name') }">
+        <bk-input v-validate="'required|length:256'" name="name" v-model="formData.name"></bk-input>
+        <p class="form-error" v-if="errors.has('name')">{{errors.first('name')}}</p>
+      </bk-form-item>
+      <bk-form-item label="描述"
+        class="cmdb-form-item" :class="{ 'is-error': errors.has('desc') }">
+        <bk-input type="textarea" name="desc" v-validate="'length:2000'"
+          v-model="formData.desc" placeholder="请输入描述"></bk-input>
+        <p class="form-error" v-if="errors.has('desc')">{{errors.first('desc')}}</p>
+      </bk-form-item>
+    </bk-form>
+  </div>
 </template>
+
+<style lang="scss" scoped>
+  .basic-form {
+    width: 628px;
+    margin: 64px auto 12px;
+    position: relative;
+    left: -36px;
+  }
+</style>

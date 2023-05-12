@@ -11,31 +11,36 @@
 -->
 
 <script setup>
-  // import { reactive } from 'vue'
+  import FieldCard from './field-card.vue'
+
   const props = defineProps({
-    modelList: {
+    fieldList: {
       type: Array,
       default: () => ([])
     }
   })
 
-  console.log(props)
+  const emit = defineEmits(['click-field'])
 
+  const handleClickField = (field) => {
+    emit('click-field', field)
+  }
 </script>
 
 <template>
-  <div class="bind-model">
-    <bk-resize-layout :collapsible="true" style="height: 500px;">
-      <div slot="aside">
-        model list
-      </div>
-      <div slot="main">main</div>
-    </bk-resize-layout>
+  <div class="field-grid">
+    <slot name="field-card" v-for="(field, index) in props.fieldList" :field="field">
+      <field-card :key="index" :field="field" @click-field="handleClickField"></field-card>
+    </slot>
   </div>
 </template>
 
 <style lang="scss" scoped>
-  .bind-model {
-    height: 100%;
-  }
+.field-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  width: 100%;
+  align-content: flex-start;
+}
 </style>

@@ -1,6 +1,5 @@
 <!--
- * Tencent
-  components: { topSteps },is pleased to support the open source community by making 蓝鲸 available.
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -41,7 +40,7 @@
 <template>
   <cmdb-sticky-layout class="cmdb-config-sticky-layout">
     <template #header="{ sticky }">
-      <top-steps width="45%" :class="{ 'is-sticky': sticky }"></top-steps>
+      <top-steps width="360px" :class="{ 'is-sticky': sticky }"></top-steps>
     </template>
     <basic-form :data="basicData" ref="basicFormRef"></basic-form>
     <template #footer="{ sticky }">
@@ -61,3 +60,20 @@
     </template>
   </cmdb-sticky-layout>
 </template>
+
+<style lang="scss" scoped>
+  .layout-footer {
+    width: 628px;
+    margin: 0 auto;
+    padding: 0 0 0 140px;
+    position: relative;
+    left: -36px;
+
+    &.is-sticky {
+      width: 100%;
+      left: 0;
+      padding: 0;
+      justify-content: center;
+    }
+  }
+</style>
