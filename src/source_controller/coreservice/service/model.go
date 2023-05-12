@@ -117,7 +117,7 @@ func (s *coreService) SearchModelClassification(ctx *rest.Contexts) {
 	for index := range dataResult.Info {
 		result := dataResult.Info[index]
 		if defaultIDMap[result.ClassificationID] && result.ClassificationName == nameMap[result.ClassificationID] {
-			result.ClassificationName = s.TranslateClassificationName(lang, &result)
+			dataResult.Info[index].ClassificationName = s.TranslateClassificationName(lang, &result)
 		}
 	}
 	ctx.RespEntity(dataResult)
