@@ -948,7 +948,8 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 		return
 	}
 	if 0 == len(appInfo) {
-		blog.Errorf("host sync app %d not found, reply:%+v,input:%+v,rid:%s", hostList.ApplicationID, appInfo, hostList, ctx.Kit.Rid)
+		blog.Errorf("host sync app %d not found, reply:%+v, input:%+v, rid:%s", hostList.ApplicationID, appInfo,
+			hostList, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoGetAppFailed))
 		return
 	}
@@ -982,7 +983,8 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeCreateHost(ctx.Kit.Ctx, ctx.Kit.Header, hostList.ApplicationID); err != nil {
-		blog.Errorf("check add hosts authorization failed, business: %d, err: %v, rid: %s", hostList.ApplicationID, err, ctx.Kit.Rid)
+		blog.Errorf("check add hosts authorization failed, business: %d, err: %v, rid: %s",
+			hostList.ApplicationID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 		return
 	}

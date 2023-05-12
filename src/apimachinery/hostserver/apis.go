@@ -472,7 +472,8 @@ func (hs *hostServer) UpdateHostBatch(ctx context.Context, h http.Header, dat in
 }
 
 // UpdateHostPropertyBatch TODO
-func (hs *hostServer) UpdateHostPropertyBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (hs *hostServer) UpdateHostPropertyBatch(ctx context.Context, h http.Header, data map[string]interface{}) (
+	resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/property/batch"
 
@@ -701,7 +702,8 @@ func (hs *hostServer) DeleteCloudArea(ctx context.Context, h http.Header, cloudI
 }
 
 // FindCloudAreaHostCount TODO
-func (hs *hostServer) FindCloudAreaHostCount(ctx context.Context, header http.Header, option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error) {
+func (hs *hostServer) FindCloudAreaHostCount(ctx context.Context, header http.Header,
+	option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error) {
 	resp = new(metadata.CloudAreaHostCountResult)
 	subPath := "/findmany/cloudarea/hostcount"
 

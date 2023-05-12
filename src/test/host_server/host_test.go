@@ -1475,7 +1475,7 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 
 		By("search hosts")
 		searchRsp, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header,
-			&params.HostCommonSearch{})
+			&metadata.HostCommonSearch{})
 		util.RegisterResponse(searchRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
@@ -1514,7 +1514,8 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 		Expect(hostRsp.Result).To(Equal(false))
 
 		By("search hosts")
-		searchRsp, err = hostServerClient.SearchHostWithNoAuth(context.Background(), header, &params.HostCommonSearch{})
+		searchRsp, err = hostServerClient.SearchHostWithNoAuth(context.Background(), header,
+			&metadata.HostCommonSearch{})
 		util.RegisterResponse(searchRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
@@ -1548,8 +1549,8 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 		Expect(result.Error[0].Index).To(Equal(1))
 
 		By("search hosts")
-		searchRsp, err = hostServerClient.SearchHostWithNoAuth(context.Background(), header, &params.HostCommonSearch{
-			Page: params.PageInfo{
+		searchRsp, err = hostServerClient.SearchHostWithNoAuth(context.Background(), header, &metadata.HostCommonSearch{
+			Page: metadata.BasePage{
 				Sort: common.BKHostIDField,
 			},
 		})
@@ -1589,7 +1590,7 @@ var _ = Describe("bind & unbind host agent test", func() {
 		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
 
 		By("get host ids")
-		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, &metadata.HostCommonSearch{
+		searchRsp, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, &metadata.HostCommonSearch{
 			Page: metadata.BasePage{Sort: common.BKHostIDField},
 		})
 		util.RegisterResponseWithRid(searchRsp, header)
@@ -1617,7 +1618,7 @@ var _ = Describe("bind & unbind host agent test", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("check if agent id is bound to host")
-		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, hostParam)
+		searchRsp, err = hostServerClient.SearchHostWithNoAuth(context.Background(), header, hostParam)
 		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
@@ -1652,7 +1653,7 @@ var _ = Describe("bind & unbind host agent test", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("check if agent id is updated to host")
-		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, hostParam)
+		searchRsp, err = hostServerClient.SearchHostWithNoAuth(context.Background(), header, hostParam)
 		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
@@ -1715,7 +1716,7 @@ var _ = Describe("bind & unbind host agent test", func() {
 		Expect(err).To(HaveOccurred())
 
 		By("check if agent id is still bound to host")
-		searchRsp, rawErr := hostServerClient.SearchHost(context.Background(), header, hostParam)
+		searchRsp, rawErr := hostServerClient.SearchHostWithNoAuth(context.Background(), header, hostParam)
 		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(rawErr).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
@@ -1738,7 +1739,7 @@ var _ = Describe("bind & unbind host agent test", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("check if agent id is not bound to host")
-		searchRsp, rawErr = hostServerClient.SearchHost(context.Background(), header, hostParam)
+		searchRsp, rawErr = hostServerClient.SearchHostWithNoAuth(context.Background(), header, hostParam)
 		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(rawErr).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
@@ -1865,9 +1866,9 @@ var _ = Describe("cloud host test", func() {
 		})
 
 		By("check created cloud hosts", func() {
-			rsp, err := hostServerClient.SearchHostWithBiz(ctx, header, &params.HostCommonSearch{
-				AppID: int(bizID),
-				Page:  params.PageInfo{Sort: common.BKHostInnerIPField},
+			rsp, err := hostServerClient.SearchHostWithBiz(ctx, header, &metadata.HostCommonSearch{
+				AppID: int64(bizID),
+				Page:  metadata.BasePage{Sort: common.BKHostInnerIPField},
 			})
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
@@ -1900,7 +1901,7 @@ var _ = Describe("cloud host test", func() {
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 
-			searchRsp, e := hostServerClient.SearchHostWithBiz(ctx, header, &params.HostCommonSearch{AppID: int(bizID)})
+			searchRsp, e := hostServerClient.SearchHostWithBiz(ctx, header, &metadata.HostCommonSearch{AppID: bizID})
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(e).NotTo(HaveOccurred())
 			Expect(searchRsp.Result).To(Equal(true))
@@ -2090,7 +2091,7 @@ var _ = Describe("cloud host test", func() {
 		})
 
 		By("check deleted cloud hosts", func() {
-			rsp, err := hostServerClient.SearchHostWithBiz(ctx, header, &params.HostCommonSearch{AppID: int(bizID)})
+			rsp, err := hostServerClient.SearchHostWithBiz(ctx, header, &metadata.HostCommonSearch{AppID: bizID})
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
