@@ -163,7 +163,7 @@
           type: 'default',
           payload: {
             path: '无服务模板提示',
-            skipText: this.$t('去添加服务模板'),
+            emptyLinkText: this.$t('去添加服务模板'),
           }
         }
       }

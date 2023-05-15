@@ -69,9 +69,8 @@
                   </cmdb-auth>
                 </template>
                 <template #empty-link>
-                  <a class="empty-link" href="javascript:void(0)" @click="$emit('empty-link')">{{skipText}}</a>
+                  <a class="empty-link" href="javascript:void(0)" @click="$emit('empty-link')">{{emptyLinkText}}</a>
                 </template>
-
               </i18n>
             </bk-exception>
           </div>
@@ -133,8 +132,8 @@
       path() {
         return this.stuff.payload.path
       },
-      skipText() {
-        return this.stuff.payload.skipText
+      emptyLinkText() {
+        return this.stuff.payload.emptyLinkText
       }
     },
     watch: {
@@ -144,10 +143,6 @@
         },
         deep: true
       }
-    },
-    mounted() {
-    },
-    methods: {
     }
   }
 </script>

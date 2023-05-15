@@ -77,7 +77,7 @@
   display: grid;
   gap: var(--gap, 24px);
   grid-template-columns: repeat(var(--max-columns, auto-fill), minmax(var(--min-width, 200px), var(--max-width, 1fr)));
-  grid-auto-rows: minmax(var(--min-height, 32px), max-content);
-  // grid-auto-rows: min(max-content, max(auto, var(--min-height, 32px)));
+  // grid-auto-rows: minmax(var(--min-height, 32px), max-content);
+  grid-auto-rows: min(max-content, max(auto, var(--min-height, 32px)));
 }
 </style>
