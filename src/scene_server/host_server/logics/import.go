@@ -33,6 +33,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/framework/core/errors"
 	hutil "configcenter/src/scene_server/host_server/util"
+	"configcenter/src/thirdparty/hooks"
 )
 
 // AddHost TODO
@@ -188,6 +189,17 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 	return hostIDs, successMsg, updateErrMsg, errMsg, nil
 }
 
+// getIpField get ipv4 and ipv6 address, ipv4 and ipv6 address cannot be null at the same time.
+func getIpField(host map[string]interface{}) (string, string, string) {
+
+	innerIP, v4Ok := host[common.BKHostInnerIPField].(string)
+	innerIPv6, v6Ok := host[common.BKHostInnerIPv6Field].(string)
+	if (!v4Ok || innerIP == "") && (!v6Ok || innerIPv6 == "") {
+		return "host_import_innerip_v4_v6_empty", "", ""
+	}
+	return "", innerIP, innerIPv6
+}
+
 // UpdateHostByExcel update host by excel
 // NOCC:golint/fnsize(后续重构，和实例合在一起)
 func (lgc *Logics) UpdateHostByExcel(kit *rest.Kit, hosts map[int64]map[string]interface{}, hostIDArr []int64,
@@ -319,9 +331,9 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 			continue
 		}
 
-		innerIP, isOk := host[common.BKHostInnerIPField].(string)
-		if isOk == false || "" == innerIP {
-			errMsg = append(errMsg, ccLang.Languagef("host_import_innerip_empty", index))
+		errStr, innerIP, innerIPv6 := getIpField(host)
+		if errStr != "" {
+			errMsg = append(errMsg, ccLang.Languagef(errStr, index))
 			continue
 		}
 
@@ -334,7 +346,7 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
 		if err != nil {
 			errMsg = append(errMsg, ccLang.Languagef("import_host_cloudID_not_exist", index,
-				innerIP, util.GetStrByInterface(host[common.BKCloudIDField])))
+				innerIP+"/"+innerIPv6, util.GetStrByInterface(host[common.BKCloudIDField])))
 			continue
 		}
 
@@ -344,7 +356,8 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 		_ = lgc.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 			tableData, err := metadata.GetTableData(host, relRes)
 			if err != nil {
-				errMsg = append(errMsg, ccLang.Languagef("host_import_add_fail", index, innerIP, err.Error()))
+				errMsg = append(errMsg, ccLang.Languagef("host_import_add_fail", index, innerIP+"/"+innerIPv6,
+					err.Error()))
 				return err
 			}
 
@@ -353,7 +366,8 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 				blog.Errorf("add host instance failed, err: %v, index: %d, bizID: %d, moduleID: %d, "+
 					"toInternalModule: %t, host: %v, rid: %s", err, index, appID, moduleID, toInternalModule, host,
 					kit.Rid)
-				errMsg = append(errMsg, ccLang.Languagef("host_import_add_fail", index, innerIP, err.Error()))
+				errMsg = append(errMsg, ccLang.Languagef("host_import_add_fail", index, innerIP+"/"+innerIPv6,
+					err.Error()))
 				return err
 			}
 			host[common.BKHostIDField] = intHostID
@@ -362,7 +376,8 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 			if tableData != nil {
 				if err := lgc.addTableData(kit, tableData, intHostID); err != nil {
 					blog.ErrorJSON("add table data failed, data: %s, err: %s, rid: %s", host, err, kit.Rid)
-					errMsg = append(errMsg, ccLang.Languagef("host_import_add_fail", index, innerIP, err.Error()))
+					errMsg = append(errMsg, ccLang.Languagef("host_import_add_fail", index, innerIP+"/"+innerIPv6,
+						err.Error()))
 					return err
 				}
 			}
@@ -708,7 +723,7 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 	// determine if the cloud area exists
 	// default cloud area must be exist
 	if cloudID != common.BKDefaultDirSubArea {
-		isExist, err := h.lgc.IsPlatExist(h.kit, mapstr.MapStr{common.BKCloudIDField: cloudID})
+		isExist, err := h.lgc.IsPlatAllExist(h.kit, []int64{cloudID})
 		if nil != err {
 			return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, err.Error()))
 
@@ -841,4 +856,120 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 	}
 
 	return hostMap, hostIDMap, nil
+}
+
+// AddHosts add host to business module
+func (lgc *Logics) AddHosts(kit *rest.Kit, appID int64, moduleID int64, hostInfos []mapstr.MapStr) ([]int64, error) {
+	if moduleID == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+	}
+	if appID == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	// check host attribute
+	if err := lgc.checkHostAttr(kit, hostInfos); err != nil {
+		return nil, err
+	}
+
+	// create host instance
+	input := &metadata.CreateManyModelInstance{
+		Datas: hostInfos,
+	}
+	result, err := lgc.CoreAPI.CoreService().Instance().CreateManyInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost,
+		input)
+	if err != nil {
+		blog.Errorf("create host instance failed, input: %v, err: %v, rid: %s", input, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(result.Repeated) > 0 {
+		blog.Errorf("host data repeated, input: %v, result: %v, rid: %s", hostInfos, result, kit.Rid)
+		errMsg := util.GetStrByInterface(result.Repeated[0].Data["err_msg"])
+		return nil, ccErr.NewCCError(common.CCErrCommDuplicateItem, errMsg)
+	}
+
+	if len(result.Exceptions) > 0 {
+		blog.Errorf("create host failed, input: %v, result: %v, rid: %s", hostInfos, result, kit.Rid)
+		return nil, kit.CCError.CCErrorf(int(result.Exceptions[0].Code), result.Exceptions[0].Message)
+	}
+
+	hostIDs := make([]int64, 0)
+	for index, item := range result.Created {
+		hostInfos[index][common.BKHostIDField] = int64(item.ID)
+		hostIDs = append(hostIDs, int64(item.ID))
+	}
+
+	// create host module relation
+	opt := &metadata.TransferHostToInnerModule{
+		ApplicationID: appID,
+		ModuleID:      moduleID,
+		HostID:        hostIDs,
+	}
+	_, err = lgc.CoreAPI.CoreService().Host().TransferToInnerModule(kit.Ctx, kit.Header, opt)
+	if err != nil {
+		blog.Errorf("add host relation failed, input: %v, err: %v, rid: %s", opt, err, kit.Rid)
+		return nil, err
+	}
+
+	// to generate audit log
+	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, logErr := audit.GenerateAuditLog(generateAuditParameter, appID, hostInfos)
+	if logErr != nil {
+		blog.Errorf("generate host audit log failed after create host, input: %v, bizID: %d, err: %v, rid: %s",
+			hostInfos, appID, err, kit.Rid)
+		return nil, logErr
+	}
+
+	// to save audit log.
+	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
+		blog.Errorf("add host success, but save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, fmt.Errorf("add host success, but save audit log failed, err: %v", err)
+	}
+
+	return hostIDs, nil
+}
+
+func (lgc *Logics) checkHostAttr(kit *rest.Kit, hostInfos []mapstr.MapStr) error {
+	cloudIDs := make([]int64, 0)
+	for index, host := range hostInfos {
+		innerIPv4, isIPv4Ok := host[common.BKHostInnerIPField].(string)
+		innerIPv6, isIPv6Ok := host[common.BKHostInnerIPv6Field].(string)
+		if (!isIPv4Ok || innerIPv4 == "") && (!isIPv6Ok || innerIPv6 == "") {
+			return kit.CCError.CCErrorf(common.CCErrCommAtLeastSetOneVal, common.BKHostInnerIPField,
+				common.BKHostInnerIPv6Field)
+		}
+
+		cloudID, ok := host[common.BKCloudIDField]
+		if !ok {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		}
+		cloudIDVal, err := util.GetInt64ByInterface(cloudID)
+		if err != nil || cloudIDVal < 0 {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+		}
+		if err := hooks.ValidHostCloudIDHook(kit, cloudIDVal); err != nil {
+			return err
+		}
+		hostInfos[index][common.BKCloudIDField] = cloudIDVal
+		cloudIDs = append(cloudIDs, cloudIDVal)
+
+		address, ok := host[common.BKAddressingField].(string)
+		if !ok || (address != common.BKAddressingDynamic && address != common.BKAddressingStatic) {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAddressingField)
+		}
+	}
+
+	// validate cloud ids
+	cloudIDs = util.IntArrayUnique(cloudIDs)
+	isExist, err := lgc.IsPlatAllExist(kit, cloudIDs)
+	if err != nil {
+		return err
+	}
+	if !isExist {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+	}
+
+	return nil
 }

@@ -129,6 +129,7 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchKubePodEvent:                   "容器Pod事件监听",
 	WatchProjectEvent:                   "项目事件监听",
 	GlobalSettings:                      "全局设置",
+	ManageHostAgentID:                   "主机AgentID管理",
 	CreateContainerCluster:              "容器集群新建",
 	EditContainerCluster:                "容器集群编辑",
 	DeleteContainerCluster:              "容器集群删除",
@@ -633,6 +634,14 @@ func genResourcePoolHostActions() []ResourceAction {
 		RelatedResourceTypes: transferToDirectoryRelatedResource,
 		RelatedActions:       nil,
 		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:      ManageHostAgentID,
+		Name:    ActionIDNameMap[ManageHostAgentID],
+		NameEn:  "Manage Host AgentID",
+		Type:    Edit,
+		Version: 1,
 	})
 
 	return actions

@@ -144,6 +144,7 @@ const (
 	AddHostToResourcePool Action = "addHostToResourcePool"
 	// MoveBizHostFromModuleToResPool TODO
 	MoveBizHostFromModuleToResPool Action = "moveHostFromModuleToResPool"
+	ManageHostAgentID              Action = "manageHostAgentID"
 	// MoveHostToAnotherBizModule TODO
 	MoveHostToAnotherBizModule Action = "moveHostToAnotherBizModule"
 

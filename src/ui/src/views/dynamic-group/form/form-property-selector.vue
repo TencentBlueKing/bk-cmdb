@@ -47,6 +47,9 @@
           </bk-checkbox>
         </div>
       </div>
+      <cmdb-data-empty v-if="isShowEmpty" slot="empty"
+        :stuff="dataEmpty"
+        @clear="handleClearFilter"></cmdb-data-empty>
     </div>
     <div class="property-selector-footer" slot="footer">
       <bk-button class="mr10" theme="primary" @click="handleConfirm">{{$t('确定')}}</bk-button>
@@ -71,7 +74,13 @@
         filter: '',
         localSelected: [...this.selected],
         matchedPropertyMap: this.dynamicGroupForm.propertyMap,
-        disabledPropertyMap: this.dynamicGroupForm.disabledPropertyMap
+        disabledPropertyMap: this.dynamicGroupForm.disabledPropertyMap,
+        dataEmpty: {
+          type: 'empty',
+          payload: {
+            defaultText: this.$t('暂无数据')
+          }
+        }
       }
     },
     computed: {
@@ -86,12 +95,18 @@
       },
       propertyMap() {
         return this.dynamicGroupForm.propertyMap
+      },
+      isShowEmpty() {
+        return this.matchedPropertyMap.host.length === 0
+          && this.matchedPropertyMap.module.length === 0
+          && this.matchedPropertyMap.set.length === 0
       }
     },
     watch: {
       filter(filter) {
         this.filterTimer && clearTimeout(this.filterTimer)
         this.filterTimer = setTimeout(() => this.handleFilter(filter), 500)
+        this.dataEmpty.type = filter ? 'search' : 'empty'
       }
     },
     methods: {
@@ -140,6 +155,9 @@
       },
       hanldeHidden() {
         this.$emit('close')
+      },
+      handleClearFilter() {
+        this.filter = ''
       }
     }
   }

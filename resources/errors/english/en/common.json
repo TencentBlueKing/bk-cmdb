@@ -87,7 +87,8 @@
     "1199088": "Failed to operate Redis cache",
     "1199089": "the length of array %s is wrong, the length must be in range 1~%d",
     "1199090": "Regular expression's type assertion failed",
-    "1199091": "current field type status is single choice, please set reasonable data",
+    "1199091": "at least one of %s and %s must be set",
+    "1199092": "current field type status is single choice, please set reasonable data",
 
     "1109001": "save audit log failed",
     "1109002": "take audit log snapshot failed",

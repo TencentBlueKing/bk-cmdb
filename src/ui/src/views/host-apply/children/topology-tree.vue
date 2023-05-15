@@ -29,6 +29,7 @@
       :before-select="beforeSelect"
       :before-check="beforeCheck"
       :filter-method="filterMethod"
+      :enable-title-tip="true"
       @select-change="handleSelectChange"
       @check-change="handleCheckChange"
       @expand-change="handleExpandChange">

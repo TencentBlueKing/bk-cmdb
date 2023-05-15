@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
+	"configcenter/src/thirdparty/hooks/process"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
 
@@ -344,9 +345,18 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 				},
 			},
 		},
-		Fields: []string{common.BKHostIDField, common.BKHostNameField, common.BKHostInnerIPField,
-			common.BKHostOuterIPField},
-		Page: metadata.BasePage{Limit: 1},
+		Fields: []string{
+			common.BKHostIDField,
+			common.BKHostNameField,
+			common.BKHostInnerIPField,
+			common.BKHostOuterIPField,
+			common.BKHostInnerIPv6Field,
+			common.BKHostOuterIPv6Field,
+		},
+		Page: metadata.BasePage{
+			Start: 0,
+			Limit: 1,
+		},
 	}
 	resp, err := s.CoreAPI.ApiServer().ListHostWithoutApp(ctx, c.Request.Header, option)
 	if err != nil {
@@ -368,8 +378,15 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 		c.JSON(http.StatusOK, result)
 		return
 	}
-
-	host := Host{}
+	type hostBase struct {
+		HostID    int64  `json:"bk_host_id"`
+		HostName  string `json:"bk_host_name"`
+		InnerIP   string `json:"bk_host_innerip"`
+		InnerIPv6 string `json:"bk_host_innerip_v6"`
+		OuterIP   string `json:"bk_host_outerip"`
+		OuterIPv6 string `json:"bk_host_outerip_v6"`
+	}
+	host := hostBase{}
 	raw := resp.Data.Info[0]
 	if err := mapstr.DecodeFromMapStr(&host, raw); err != nil {
 		msg := fmt.Sprintf("decode response data into host failed, raw: %+v, err: %+v, rid: %s", raw, err, rid)
@@ -389,6 +406,19 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 	if len(host.OuterIP) > 0 {
 		ipOptions = append(ipOptions, host.OuterIP)
 	}
+
+	// add process ipv6 options if needed
+	if process.NeedIPv6OptionsHook() {
+		ipOptions = append(ipOptions, "::1")
+		ipOptions = append(ipOptions, "::")
+		if len(host.InnerIPv6) > 0 {
+			ipOptions = append(ipOptions, host.InnerIPv6)
+		}
+		if len(host.OuterIPv6) > 0 {
+			ipOptions = append(ipOptions, host.OuterIPv6)
+		}
+	}
+
 	result := metadata.ResponseDataMapStr{
 		BaseResp: metadata.BaseResp{Result: true, Code: 0},
 		Data: map[string]interface{}{

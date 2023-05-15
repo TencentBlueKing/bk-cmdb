@@ -263,20 +263,36 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 	filter := make(map[string]interface{})
 	switch r.Operator {
 	case OperatorEqual:
+		value, err := common.ConvertIpv6ToFullWord(r.Field, r.Value)
+		if err != nil {
+			return nil, "convert ipv6 full word failed", err
+		}
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBEQ: r.Value,
+			common.BKDBEQ: value,
 		}
 	case OperatorNotEqual:
+		value, err := common.ConvertIpv6ToFullWord(r.Field, r.Value)
+		if err != nil {
+			return nil, "convert ipv6 full word failed", err
+		}
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBNE: r.Value,
+			common.BKDBNE: value,
 		}
 	case OperatorIn:
+		value, err := common.ConvertIpv6ToFullWord(r.Field, r.Value)
+		if err != nil {
+			return nil, "convert ipv6 full word failed", err
+		}
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBIN: r.Value,
+			common.BKDBIN: value,
 		}
 	case OperatorNotIn:
+		value, err := common.ConvertIpv6ToFullWord(r.Field, r.Value)
+		if err != nil {
+			return nil, "convert ipv6 full word failed", err
+		}
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBNIN: r.Value,
+			common.BKDBNIN: value,
 		}
 	case OperatorLess:
 		filter[r.Field] = map[string]interface{}{

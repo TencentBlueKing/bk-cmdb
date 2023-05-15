@@ -106,6 +106,8 @@ type HostIdentifier struct {
 	SupplierAccount string                      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	HostIdentModule map[string]*HostIdentModule `json:"associations" bson:"associations"`
 	Process         []HostIdentProcess          `json:"process" bson:"process"`
+	AgentID         string                      `json:"bk_agent_id" bson:"bk_agent_id"`
+	BKAddressing    string                      `json:"bk_addressing" bson:"bk_addressing"`
 }
 
 // HostIdentProcess TODO

@@ -383,7 +383,16 @@
           name: this.instanceName,
           property: 'singlechar'
         }]
-        if (propertyId && propertyId !== this.instanceNameKey) {
+
+        if (this.currentAsstObj === BUILTIN_MODELS.HOST) {
+          header.push({
+            id: 'bk_host_innerip_v6',
+            name: this.$t('内网IPv6'),
+            property: 'singlechar'
+          })
+        }
+
+        if (propertyId && !header.some(({ id }) => propertyId === id)) {
           const property = this.getProperty(propertyId) || {}
           header.push({
             id: propertyId,

@@ -352,8 +352,7 @@
         }
     }
     .property-list {
-        width: 1208px;
-        margin: 25px 0 0 0;
+        margin: 24px 0 0 0;
         color: #63656e;
         display: flex;
         flex-wrap: wrap;
@@ -385,7 +384,7 @@
             }
             .property-name {
                 position: relative;
-                width: 260px;
+                width: 160px;
                 line-height: 32px;
                 padding: 0 16px 0 36px;
                 font-size: 14px;
@@ -400,7 +399,7 @@
             }
             .property-value {
                 margin: 6px 0 0 4px;
-                max-width: 286px;
+                max-width: calc(100% - 160px - 60px);
                 font-size: 14px;
                 color: #313237;
                 word-break: break-all;
@@ -544,5 +543,19 @@
                 vertical-align: top;
             }
         }
+    }
+
+    @media (min-width: 1600px) {
+      .property-list {
+        .property-item {
+          .property-name {
+            width: 260px;
+          }
+
+          .property-value {
+            max-width: calc(100% - 260px - 60px);
+          }
+        }
+      }
     }
 </style>

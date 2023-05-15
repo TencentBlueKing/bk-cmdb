@@ -497,7 +497,12 @@ const FilterStore = new Vue({
       const params = {
         bk_biz_id: this.bizId, // undefined会被忽略
         ip: {
-          data: transformedIP.data,
+          data: transformedIP.data.ipv4,
+          exact: this.IP.exact ? 1 : 0,
+          flag: flag.join('|')
+        },
+        ipv6: {
+          data: transformedIP.data.ipv6,
           exact: this.IP.exact ? 1 : 0,
           flag: flag.join('|')
         }

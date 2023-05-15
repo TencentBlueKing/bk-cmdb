@@ -14,6 +14,8 @@ package redis
 
 import (
 	"time"
+
+	"github.com/go-redis/redis/v7"
 )
 
 // baseResult is the base result for redis commands
@@ -125,4 +127,11 @@ type ScanResult interface {
 	baseResult
 	Val() (keys []string, cursor uint64)
 	Result() (keys []string, cursor uint64, err error)
+}
+
+// ZSliceResult is the string slice result for redis commands
+type ZSliceResult interface {
+	baseResult
+	Val() []redis.Z
+	Result() ([]redis.Z, error)
 }

@@ -15,6 +15,8 @@ package redis
 import (
 	"context"
 	"time"
+
+	"github.com/go-redis/redis/v7"
 )
 
 // Commands is the interface for redis commands
@@ -66,4 +68,7 @@ type Commands interface {
 	Discard(ctx context.Context, pipe Pipeliner) error
 	BLPop(ctx context.Context, timeout time.Duration, keys ...string) StringSliceResult
 	ZRemRangeByRank(key string, start, stop int64) IntResult
+	ZRem(ctx context.Context, key string, members ...interface{}) IntResult
+	ZRangeWithScores(ctx context.Context, key string, start, stop int64) ZSliceResult
+	ZAdd(ctx context.Context, key string, members ...*redis.Z) IntResult
 }

@@ -284,3 +284,18 @@ func (c *client) BLPop(ctx context.Context, timeout time.Duration, keys ...strin
 func (c *client) ZRemRangeByRank(key string, start, stop int64) IntResult {
 	return c.cli.ZRemRangeByRank(key, start, stop)
 }
+
+// ZAdd add elements operation to redis sorted set.
+func (c *client) ZAdd(ctx context.Context, key string, members ...*redis.Z) IntResult {
+	return c.cli.ZAdd(key, members...)
+}
+
+// ZRem delete elements operation of redis sorted set.
+func (c *client) ZRem(ctx context.Context, key string, members ...interface{}) IntResult {
+	return c.cli.ZRem(key, members...)
+}
+
+// ZRangeWithScores returns the members in the specified range of the sorted set through the index range.
+func (c *client) ZRangeWithScores(ctx context.Context, key string, start, stop int64) ZSliceResult {
+	return c.cli.ZRangeWithScores(key, start, stop)
+}

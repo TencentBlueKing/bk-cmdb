@@ -551,8 +551,8 @@
           props.displayNodes = [`${this.$route.query.sourceModel}-${this.$route.query.sourceId}`]
         }
         this.dialog.props = props
-        this.dialog.width = 1110
-        this.dialog.height = 650
+        this.dialog.width = 1280
+        this.dialog.height = 750
         this.dialog.component = HostSelector.name
         this.dialog.show = true
       },

@@ -24,7 +24,6 @@ import (
 	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/kube/types"
 	"configcenter/src/test"
@@ -89,9 +88,9 @@ var _ = Describe("pod test", func() {
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true), rsp.ToString())
-		searchOpt := &params.HostCommonSearch{
-			AppID: int(bizID),
-			Ip: params.IPInfo{
+		searchOpt := &metadata.HostCommonSearch{
+			AppID: bizID,
+			Ipv4Ip: metadata.IPInfo{
 				Data:  []string{"127.0.0.1", "127.0.0.2"},
 				Exact: 1,
 				Flag:  "bk_host_innerip|bk_host_outerip",

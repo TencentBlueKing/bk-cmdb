@@ -95,6 +95,7 @@
     "process_property_pid_file": "PID filepath",
     "process_property_auto_start": "Autostart",
     "process_property_auto_time_gap": "Autostart period",
+    "process_property_bk_start_check_secs": "Startup check time",
     "process_property_bk_start_param_regex": "Startup parameter",
     "process_property_service_category_id": "Service Category",
     "process_property_service_template_id": "Service Template",
