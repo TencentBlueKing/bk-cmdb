@@ -33,7 +33,8 @@ func (s *Service) initAssociation(web *restful.WebService) {
 		Handler: s.SearchObjectByClassificationID})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/tree/brief/biz/{bk_biz_id}",
 		Handler: s.SearchBriefBizTopo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/biz/brief_node_relation", Handler: s.GetBriefTopologyNodeRelation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/biz/brief_node_relation",
+		Handler: s.GetBriefTopologyNodeRelation})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/host/topopath", Handler: s.SearchHostTopoPath})
 
