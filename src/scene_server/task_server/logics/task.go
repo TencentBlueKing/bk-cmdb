@@ -339,13 +339,15 @@ func getStrTaskID(prefix string) string {
 }
 
 // ListLatestSyncStatus list latest api task sync status
-func (lgc *Logics) ListLatestSyncStatus(kit *rest.Kit, input *metadata.ListLatestSyncStatusRequest) (
+func (lgc *Logics) ListLatestSyncStatus(kit *rest.Kit, input *metadata.ListLatestSyncStatusRequest, group string) (
 	[]metadata.APITaskSyncStatus, error) {
 
+	groupItem := "$" + group
+	blog.ErrorJSON("0000000000 groupItem: %s", groupItem)
 	aggrCond := []map[string]interface{}{
 		{common.BKDBSort: map[string]interface{}{common.CreateTimeField: -1}},
 		{common.BKDBGroup: map[string]interface{}{
-			"_id": "$bk_inst_id",
+			"_id": groupItem,
 			"doc": map[string]interface{}{"$first": "$$ROOT"},
 		}},
 		{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$doc"}},

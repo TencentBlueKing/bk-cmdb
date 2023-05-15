@@ -110,7 +110,7 @@ const (
 	// BKTableNameMainlineInstance is a virtual collection name which represent for mainline instance events
 	BKTableNameMainlineInstance = "cc_MainlineInstance"
 
-	// field template tables
+	// BKTableNameFieldTemplate field template tables
 	BKTableNameFieldTemplate            = "cc_FieldTemplate"
 	BKTableNameObjAttDesTemplate        = "cc_ObjAttDesTemplate"
 	BKTableNameObjectUniqueTemplate     = "cc_ObjectUniqueTemplate"

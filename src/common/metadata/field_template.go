@@ -17,6 +17,11 @@
 
 package metadata
 
+import (
+	"configcenter/src/common"
+	ccErr "configcenter/src/common/errors"
+)
+
 // FieldTemplate field template definition
 type FieldTemplate struct {
 	ID          int64  `json:"id" bson:"id"`
@@ -98,4 +103,56 @@ type FieldTemplateInfo struct {
 type ListFieldTemplateResp struct {
 	BaseResp `json:",inline"`
 	Data     FieldTemplateInfo `json:"data"`
+}
+
+// FieldTemplateBindObjOpt field template binding model option
+type FieldTemplateBindObjOpt struct {
+	ID        int64    `json:"id" bson:"id"`
+	ObjectIDs []string `json:"bk_obj_ids" bson:"bk_obj_ids"`
+}
+
+// Validate field template binding model request parameter validation function
+func (option *FieldTemplateBindObjOpt) Validate() ccErr.RawErrorInfo {
+	if option.ID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"id"},
+		}
+	}
+	if len(option.ObjectIDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_obj_ids"},
+		}
+	}
+	if len(option.ObjectIDs) > common.BKMaxLimitSize {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"bk_obj_ids", common.BKMaxLimitSize},
+		}
+	}
+	return ccErr.RawErrorInfo{}
+}
+
+// FieldTemplateUnBindObjOpt field template unbinding model option
+type FieldTemplateUnBindObjOpt struct {
+	ID       int64  `json:"id" bson:"id"`
+	ObjectID string `json:"bk_obj_id" bson:"bk_obj_id"`
+}
+
+// Validate field template unbinding model request parameter validation function
+func (option *FieldTemplateUnBindObjOpt) Validate() ccErr.RawErrorInfo {
+	if option.ID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"id"},
+		}
+	}
+	if option.ObjectID == "" {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+	return ccErr.RawErrorInfo{}
 }

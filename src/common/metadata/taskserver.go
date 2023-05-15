@@ -13,6 +13,8 @@
 package metadata
 
 import (
+	"configcenter/src/common"
+	ccErr "configcenter/src/common/errors"
 	"net/http"
 	"time"
 
@@ -27,6 +29,9 @@ type CreateTaskRequest struct {
 	// bk_inst_id 实例id，该任务关联的实例id
 	InstID int64 `json:"bk_inst_id"`
 
+	// Extra 用于和InstID配合使用唯一确定一个任务。例如在TaskType为 SyncFieldTemplateTaskFlag场景
+	Extra interface{} `json:"extra,omitempty" bson:"extra"`
+
 	Data []interface{} `json:"data"`
 }
 
@@ -38,6 +43,9 @@ type APITaskDetail struct {
 	TaskType string `json:"task_type,omitempty" bson:"task_type"`
 	// InstID 实例id，该任务关联的实例id
 	InstID int64 `json:"bk_inst_id,omitempty" bson:"bk_inst_id"`
+	// ExtraRelatedField 用于通过一个实例ID字段不能区分任务的场景。
+	// 例如: TaskType为 SyncFieldTemplateTaskFlag 需要通过bk_field_template_id和bk_obj_id两个参数才能确定唯一任务
+	Extra interface{} `json:"extra,omitempty" bson:"extra"`
 	// User 任务创建者
 	User string `json:"user,omitempty" bson:"user"`
 	// Header 请求的 http header
@@ -69,6 +77,9 @@ type APITaskSyncStatus struct {
 	TaskType string `json:"task_type,omitempty" bson:"task_type"`
 	// InstID 实例id，该任务关联的实例id
 	InstID int64 `json:"bk_inst_id,omitempty" bson:"bk_inst_id"`
+	// ExtraRelatedField 用于通过一个实例ID字段不能区分任务的场景。
+	// 例如: TaskType为 SyncFieldTemplateTaskFlag 需要通过bk_field_template_id和bk_obj_id两个参数才能确定唯一任务
+	Extra interface{} `json:"extra,omitempty" bson:"extra"`
 	// Status 任务执行状态
 	Status APITaskStatus `json:"status,omitempty" bson:"status"`
 	// Creator 任务创建者
@@ -125,6 +136,11 @@ const (
 
 	// APITAskStatusNeedSync only used for instance with all tasks finished but actual status is not finished
 	APITAskStatusNeedSync APITaskStatus = "need_sync"
+)
+const (
+	// APITaskExtraField the extra field is used
+	// in conjunction with instID to identify the uniqueness of the task.
+	APITaskExtraField = "extra"
 )
 
 // ListAPITaskRequest TODO
@@ -208,4 +224,39 @@ type ListSyncStatusHistoryResponse struct {
 type ListAPITaskSyncStatusResult struct {
 	Count int64               `json:"count"`
 	Info  []APITaskSyncStatus `json:"info"`
+}
+
+// ListFieldTmpltTaskStatusOption get the task status request of the specified template ID and object
+type ListFieldTmpltTaskStatusOption struct {
+	ID        int64    `json:"id"`
+	ObjectIDs []string `json:"bk_obj_ids"`
+}
+
+// Validate judging the legality of parameters
+func (option *ListFieldTmpltTaskStatusOption) Validate() ccErr.RawErrorInfo {
+	if option.ID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKFieldID},
+		}
+	}
+	if len(option.ObjectIDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_obj_ids"},
+		}
+	}
+	if len(option.ObjectIDs) > common.BKMaxLimitSize {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"bk_obj_ids", common.BKMaxLimitSize},
+		}
+	}
+	return ccErr.RawErrorInfo{}
+}
+
+// ListFieldTmpltTaskStatusResult specifies the task status of the template ID and object
+type ListFieldTmpltTaskStatusResult struct {
+	ObjectID string `json:"bk_obj_id"`
+	Status   string `json:"status"`
 }

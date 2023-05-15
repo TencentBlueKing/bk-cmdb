@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/mapstr"
 	"context"
 	"time"
 
@@ -130,7 +131,7 @@ func (s *Service) ListLatestSyncStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	infos, err := s.Logics.ListLatestSyncStatus(ctx.Kit, input)
+	infos, err := s.Logics.ListLatestSyncStatus(ctx.Kit, input, common.BKInstIDField)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -151,6 +152,40 @@ func (s *Service) ListSyncStatusHistory(ctx *rest.Contexts) {
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
+	}
+
+	ctx.RespEntity(infos)
+}
+
+// ListFieldTemplateTasksStatus query task status by field template ID and objID
+func (s *Service) ListFieldTemplateTasksStatus(ctx *rest.Contexts) {
+	input := new(metadata.ListFieldTmpltTaskStatusOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	query := &metadata.ListLatestSyncStatusRequest{
+		Condition: mapstr.MapStr{
+			common.BKInstIDField: input.ID,
+			metadata.APITaskExtraField: mapstr.MapStr{
+				common.BKDBIN: input.ObjectIDs,
+			},
+			common.BKTaskTypeField: common.SyncFieldTemplateTaskFlag,
+		},
+		Fields: []string{metadata.APITaskExtraField, "status"},
+	}
+	infos, err := s.Logics.ListLatestSyncStatus(ctx.Kit, query, metadata.APITaskExtraField)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	result := make([]metadata.ListFieldTmpltTaskStatusResult, 0)
+	for _, info := range infos {
+		result = append(result, metadata.ListFieldTmpltTaskStatusResult{
+			ObjectID: util.GetStrByInterface(info.Extra),
+			Status:   string(info.Status),
+		})
 	}
 
 	ctx.RespEntity(infos)

@@ -674,6 +674,9 @@ const (
 
 	// QuotedInstType is quoted instance related audit type
 	QuotedInstType AuditType = "quoted_inst"
+
+	// FieldTemplateType is field template audit type
+	FieldTemplateType AuditType = "field_template"
 )
 
 // ResourceType TODO
@@ -768,6 +771,9 @@ const (
 
 	// QuotedInst is quoted instance related audit resource type
 	QuotedInst ResourceType = "quoted_inst"
+
+	// FieldTemplateRes is quoted instance related audit resource type
+	FieldTemplateRes ResourceType = "field_template"
 )
 
 // OperateFromType TODO
@@ -890,7 +896,8 @@ func GetAuditTypesByCategory(category string) []AuditType {
 	case "host":
 		return []AuditType{HostType}
 	case "other":
-		return []AuditType{ModelType, AssociationKindType, EventPushType, DynamicGroupType, PlatFormSettingType}
+		return []AuditType{ModelType, AssociationKindType, EventPushType, DynamicGroupType, PlatFormSettingType,
+			FieldTemplateType}
 	}
 	return []AuditType{}
 }
@@ -1087,6 +1094,15 @@ var auditDict = []resourceTypeInfo{
 	{
 		ID:   PlatFormSettingRes,
 		Name: "平台管理",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   FieldTemplateRes,
+		Name: "字段模版",
 		Operations: []actionTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],
@@ -1323,6 +1339,15 @@ var auditEnDict = []resourceTypeInfo{
 	{
 		ID:   PlatFormSettingRes,
 		Name: "Platform Management",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   FieldTemplateRes,
+		Name: "Field Template",
 		Operations: []actionTypeInfo{
 			actionInfoEnMap[AuditCreate],
 			actionInfoEnMap[AuditUpdate],

@@ -995,22 +995,3 @@ func (s *Service) FindInsts(ctx *rest.Contexts) {
 
 	ctx.RespEntity(sets)
 }
-
-// FindFieldTemplateByObject 根据objectID 查看涉及到的字段组合模板
-func (s *Service) FindFieldTemplateByObject(ctx *rest.Contexts) {
-	data := new(metadata.QueryFieldTemplateByObjOption)
-	if err := ctx.DecodeInto(data); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	// 直接调用coreservice的接口
-	//sets, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, objID, data)
-	//if err != nil {
-	//	blog.Errorf("failed to get inst, obj id: %s, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
-	//	ctx.RespAutoError(err)
-	//	return
-	//}
-
-	ctx.RespEntity(sets)
-}
