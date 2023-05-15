@@ -16,6 +16,8 @@ import (
 	"net/http"
 
 	"configcenter/src/common/http/rest"
+	"configcenter/src/scene_server/topo_server/service/capability"
+	fieldtmpl "configcenter/src/scene_server/topo_server/service/field_template"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -289,6 +291,13 @@ func (s *Service) initProject(web *restful.WebService) {
 }
 
 func (s *Service) initService(web *restful.WebService) {
+	c := &capability.Capability{
+		Utility:     rest.NewRestUtility(rest.Config{ErrorIf: s.Engine.CCErr, Language: s.Engine.Language}),
+		Logics:      s.Logics,
+		AuthManager: s.AuthManager,
+		ClientSet:   s.Engine.CoreAPI,
+	}
+
 	s.initAssociation(web)
 	s.initAuditLog(web)
 	s.initBusiness(web)
@@ -320,4 +329,8 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initKube(web)
 
 	s.initModelQuote(web)
+
+	fieldtmpl.InitFieldTemplate(c)
+
+	c.Utility.AddToRestfulWebService(web)
 }

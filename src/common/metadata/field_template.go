@@ -87,3 +87,15 @@ type ObjFieldTemplateRelation struct {
 	TemplateID int64  `json:"bk_template_id" bson:"bk_template_id"`
 	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
+
+// FieldTemplateInfo field template info for list apis
+type FieldTemplateInfo struct {
+	Count uint64          `json:"count"`
+	Info  []FieldTemplate `json:"info"`
+}
+
+// ListFieldTemplateResp list field template response
+type ListFieldTemplateResp struct {
+	BaseResp `json:",inline"`
+	Data     FieldTemplateInfo `json:"data"`
+}
