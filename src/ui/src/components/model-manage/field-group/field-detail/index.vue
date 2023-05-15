@@ -212,7 +212,7 @@
     props: {
       properties: {
         type: Array,
-        required: false
+        default: () => []
       },
       field: {
         type: Object
@@ -441,7 +441,7 @@
 
         // 配置流程直接抛出事件并退出，在流程中自行处理
         if (this.isSettingScene) {
-          this.$emit('confirm', this.fieldInfo)
+          this.$emit('confirm', this.fieldInfo, this.field.id)
           return
         }
 

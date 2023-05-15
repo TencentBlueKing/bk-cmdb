@@ -24,12 +24,20 @@
 
   const fieldData = ref([
     {
+      id: 1,
       bk_property_id: 'inst_name',
       bk_property_name: '实例名称',
       bk_property_type: PROPERTY_TYPES.SINGLECHAR
     }
   ])
   const uniqueData = ref([])
+
+  const handleFieldUpdate = (data) => {
+    console.log(data, 'final fields')
+  }
+  const handleUniqueUpdate = (data) => {
+    console.log(data, 'final uniques')
+  }
 
   const handlePrevStep = () => {
     routerActions.redirect({
@@ -47,7 +55,12 @@
     <template #header="{ sticky }">
       <top-steps width="360px" :current="2" :class="{ 'is-sticky': sticky }"></top-steps>
     </template>
-    <field-manage :field-list="fieldData" :unique-list="uniqueData"></field-manage>
+    <field-manage
+      :field-list="fieldData"
+      :unique-list="uniqueData"
+      @update-field="handleFieldUpdate"
+      @update-unique="handleUniqueUpdate">
+    </field-manage>
     <template #footer="{ sticky }">
       <div :class="['layout-footer', { 'is-sticky': sticky }]">
         <cmdb-auth :auth="{ type: $OPERATION.C_FIELD_TEMPLATE }">

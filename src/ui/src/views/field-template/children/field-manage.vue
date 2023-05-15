@@ -11,11 +11,16 @@
 -->
 
 <script setup>
-  import { reactive, ref } from 'vue'
+  import { reactive, ref, watchEffect, set, nextTick } from 'vue'
+  import cloneDeep from 'lodash/cloneDeep'
+  import { v4 as uuidv4 } from 'uuid'
   import { t } from '@/i18n'
   import { $bkInfo } from '@/magicbox'
+  import GridLayout from '@/components/ui/other/grid-layout.vue'
+  import GridItem from '@/components/ui/other/grid-item.vue'
   import FieldGrid from '@/components/model-manage/field-grid.vue'
   import FieldSettingForm from '@/components/model-manage/field-group/field-detail/index.vue'
+  import UniqueManage from './unique-manage.vue'
 
   const props = defineProps({
     fieldList: {
@@ -28,7 +33,18 @@
     }
   })
 
+  const emit = defineEmits(['update-field', 'update-unique'])
+
+  const fieldLocalList = ref([])
+  const uniqueLocalList = ref([])
   const settingFormComp = ref(null)
+  const uniqueManageComp = ref(null)
+
+  const uniqueSettings = reactive({
+    enabled: false,
+    type: 'single',
+    option: []
+  })
 
   const slider = reactive({
     title: '',
@@ -36,6 +52,11 @@
     beforeClose: null,
     view: '',
     isEditField: false
+  })
+
+  watchEffect(() => {
+    fieldLocalList.value = cloneDeep(props.fieldList || [])
+    uniqueLocalList.value = cloneDeep(props.uniqueList || [])
   })
 
   console.log(props)
@@ -49,6 +70,7 @@
     slider.view = 'settingForm'
   }
   const handleEditField = (field) => {
+    console.log(field)
     slider.title = t('编辑字段')
     slider.isEditField = true
     slider.curField = field
@@ -58,7 +80,41 @@
   }
   const handleImportField = () => {}
 
-  const handleFieldSave = () => {}
+  const syncField = () => {
+    emit('update-field', fieldLocalList.value)
+  }
+  const appendField = (data) => {
+    fieldLocalList.value.push({
+      // 在页面中创建的数据，此id键与后台数据有意保持一致为了简化在更新查找时的逻辑
+      id: uuidv4(),
+      ...data
+    })
+  }
+  const updateField = (data, id) => {
+    const fieldIndex = fieldLocalList.value.findIndex(field => field.id === id)
+    if (~fieldIndex) {
+      set(fieldLocalList.value, fieldIndex, { id, ...data })
+    }
+  }
+  const handleFieldSave = (data, id) => {
+    if (id) {
+      updateField(data, id)
+    } else {
+      appendField(data)
+    }
+
+    syncField()
+
+    sliderClose()
+  }
+
+  const handleUniqueTypeChange = (type) => {
+    if (type === 'union') {
+      nextTick(() => {
+        uniqueManageComp.value?.$el?.scrollIntoView?.()
+      })
+    }
+  }
 
   const sliderClose = () => {
     slider.isShow = false
@@ -124,7 +180,7 @@
         </bk-button>
       </div>
     </div>
-    <field-grid :field-list="fieldList" @click-field="handleEditField" />
+    <field-grid :field-list="fieldLocalList" @click-field="handleEditField" />
 
     <bk-sideslider
       ref="sidesliderComp"
@@ -143,10 +199,28 @@
           :is-read-only="false"
           :is-edit-field="slider.isEditField"
           :field="slider.curField"
-          @save="handleFieldSave"
+          @confirm="handleFieldSave"
           @cancel="handleSliderBeforeClose">
           <template #append>
-            <div>设置为唯一校验</div>
+            <grid-layout class="mt20" mode="form" :gap="24" :font-size="'14px'" :max-columns="1">
+              <grid-item :label="$t('设置为唯一校验')">
+                <bk-switcher v-model="uniqueSettings.enabled" theme="primary"></bk-switcher>
+              </grid-item>
+              <grid-item required :label="$t('校验类型')">
+                <bk-radio-group v-model="uniqueSettings.type" @change="handleUniqueTypeChange">
+                  <bk-radio-button value="single">{{$t('单独唯一')}}</bk-radio-button>
+                  <bk-radio-button value="union">{{$t('联合唯一')}}</bk-radio-button>
+                </bk-radio-group>
+              </grid-item>
+            </grid-layout>
+            <grid-layout v-if="uniqueSettings.type === 'union'"
+              class="unique-option-container"
+              mode="form"
+              :gap="0"
+              :font-size="'14px'"
+              :max-columns="1">
+              <unique-manage :field="slider.curField" ref="uniqueManageComp"></unique-manage>
+            </grid-layout>
           </template>
         </field-setting-form>
       </template>
@@ -188,5 +262,13 @@
         }
       }
     }
+  }
+
+  .unique-option-container {
+    width: 100%;
+    margin-bottom: 20px;
+    margin-top: 20px;
+    padding: 16px;
+    background: #F5F7FB;
   }
 </style>
