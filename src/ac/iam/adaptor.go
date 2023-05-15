@@ -126,6 +126,8 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 	case meta.KubeCluster, meta.KubeNode, meta.KubeNamespace, meta.KubeWorkload, meta.KubeDeployment,
 		meta.KubeStatefulSet, meta.KubeDaemonSet, meta.KubeGameStatefulSet, meta.KubeGameDeployment, meta.KubeCronJob,
 		meta.KubeJob, meta.KubePodWorkload, meta.KubePod, meta.KubeContainer:
+	case meta.FieldTemplate:
+		iamResourceType = FieldGroupingTemplate
 	default:
 		if IsCMDBSysInstance(resourceType) {
 			iamResourceType = TypeID(resourceType)
@@ -575,6 +577,12 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Update: EditProject,
 		meta.Delete: DeleteProject,
 		meta.Create: CreateProject,
+	},
+	meta.FieldTemplate: {
+		meta.Create: CreateFieldGroupingTemplate,
+		meta.Find:   ViewFieldGroupingTemplate,
+		meta.Update: EditFieldGroupingTemplate,
+		meta.Delete: DeleteFieldGroupingTemplate,
 	},
 }
 
