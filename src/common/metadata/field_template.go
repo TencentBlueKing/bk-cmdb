@@ -87,3 +87,8 @@ type ObjFieldTemplateRelation struct {
 	TemplateID int64  `json:"bk_template_id" bson:"bk_template_id"`
 	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
+
+// QueryFieldTemplateByObjOption query field template brief information option
+type QueryFieldTemplateByObjOption struct {
+	ObjID string `json:"bk_obj_id" bson:"bk_obj_id"`
+}

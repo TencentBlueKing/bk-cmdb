@@ -265,5 +265,9 @@ func (s *Service) initBusinessInst(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/instances/object/{bk_obj_id}",
 		Handler: s.CountObjectInstances})
 
+	// todo: 临时放到这里，后续需要调整位置
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/by_object",
+		Handler: s.FindFieldTemplateByObject})
+
 	utility.AddToRestfulWebService(web)
 }
