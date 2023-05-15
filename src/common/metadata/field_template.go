@@ -88,7 +88,14 @@ type ObjFieldTemplateRelation struct {
 	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
-// QueryFieldTemplateByObjOption query field template brief information option
-type QueryFieldTemplateByObjOption struct {
-	ObjID string `json:"bk_obj_id" bson:"bk_obj_id"`
+// FieldTemplateInfo field template info for list apis
+type FieldTemplateInfo struct {
+	Count uint64          `json:"count"`
+	Info  []FieldTemplate `json:"info"`
+}
+
+// ListFieldTemplateResp list field template response
+type ListFieldTemplateResp struct {
+	BaseResp `json:",inline"`
+	Data     FieldTemplateInfo `json:"data"`
 }

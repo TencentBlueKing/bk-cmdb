@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common/http/rest"
 	"configcenter/src/source_controller/coreservice/service/capability"
+	fieldtmpl "configcenter/src/source_controller/coreservice/service/field_template"
 	"configcenter/src/source_controller/coreservice/service/kube"
 	modelquote "configcenter/src/source_controller/coreservice/service/model_quote"
 
@@ -570,6 +571,7 @@ func (s *coreService) initService(web *restful.WebService) {
 	kube.InitKube(c)
 	s.initProject(web)
 	s.initModelQuote(web)
+	fieldtmpl.InitFieldTemplate(c)
 
 	c.Utility.AddToRestfulWebService(web)
 }
