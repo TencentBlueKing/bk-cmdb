@@ -1028,7 +1028,7 @@
     "已同步": "Synced",
     "集群拓扑": "Set topology",
     "模板集群名称": "Template set name",
-    "无服务模板提示": "There are no service templates, {skip}",
+    "无服务模板提示": "There are no service templates, {empty-link}",
     "去添加服务模板": "Add service template",
     "确认删除xx集群模板": "Confirm to delete set template \"{name}\" ?",
     "确认删除选中的集群模板": "Confirm to delete selected set template(s)",

@@ -68,8 +68,8 @@
                     </bk-button>
                   </cmdb-auth>
                 </template>
-                <template #skip>
-                  <a class="empty-link" href="javascript:void(0)" @click="$emit('skip')">{{skipText}}</a>
+                <template #empty-link>
+                  <a class="empty-link" href="javascript:void(0)" @click="$emit('empty-link')">{{skipText}}</a>
                 </template>
 
               </i18n>
@@ -108,7 +108,7 @@
     },
     data() {
       return {
-        permission: this.stuff.payload.permission
+        permission: this.stuff.payload?.permission || ''
       }
     },
     computed: {

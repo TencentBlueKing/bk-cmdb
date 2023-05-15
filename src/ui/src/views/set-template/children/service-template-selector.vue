@@ -81,7 +81,7 @@
           <cmdb-data-empty
             slot="empty"
             :stuff="dataEmpty"
-            @skip="handleLinkClick"
+            @empty-link="handleLinkClick"
             @clear="handleClearFilter">
           </cmdb-data-empty>
         </div>
