@@ -45,7 +45,7 @@
 </template>
 
 <script>
-  import { computed, defineComponent, reactive, watch } from 'vue'
+  import { computed, defineComponent, reactive, watch, ref } from 'vue'
   import routerActions from '@/router/actions'
   import RouterQuery from '@/router/query'
   import NoSearchResults from '@/views/status/no-search-results.vue'
