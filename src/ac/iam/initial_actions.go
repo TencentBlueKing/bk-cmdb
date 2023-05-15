@@ -144,6 +144,10 @@ var ActionIDNameMap = map[ActionID]string{
 	DeleteContainerWorkload:             "容器工作负载删除",
 	CreateContainerPod:                  "容器Pod新建",
 	DeleteContainerPod:                  "容器Pod删除",
+	CreateFieldGroupingTemplate:         "字段组合模板新建",
+	ViewFieldGroupingTemplate:           "字段组合模板查看",
+	EditFieldGroupingTemplate:           "字段组合模板编辑",
+	DeleteFieldGroupingTemplate:         "字段组合模板删除",
 }
 
 // GenerateActions generate all the actions registered to IAM.
@@ -187,6 +191,7 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genKubeEventWatchActions()...)
 	resourceActionList = append(resourceActionList, genConfigAdminActions()...)
 	resourceActionList = append(resourceActionList, genContainerManagementActions()...)
+	resourceActionList = append(resourceActionList, genFieldGroupingTemplateActions()...)
 
 	return resourceActionList
 }
@@ -1608,6 +1613,53 @@ func genContainerPodActions() []ResourceAction {
 			NameEn:  "Delete Container Pod",
 			Type:    Delete,
 			Version: 1,
+		},
+	}
+}
+
+func genFieldGroupingTemplateActions() []ResourceAction {
+	templateResource := RelateResourceType{
+		SystemID: SystemIDCMDB,
+		ID:       FieldGroupingTemplate,
+		InstanceSelections: []RelatedInstanceSelection{{
+			SystemID: SystemIDCMDB,
+			ID:       FieldGroupingTemplateSelection,
+		}},
+	}
+
+	return []ResourceAction{
+		{
+			ID:      CreateFieldGroupingTemplate,
+			Name:    ActionIDNameMap[CreateFieldGroupingTemplate],
+			NameEn:  "Create Field Grouping Template",
+			Type:    Create,
+			Version: 1,
+		},
+		{
+			ID:                   ViewFieldGroupingTemplate,
+			Name:                 ActionIDNameMap[ViewFieldGroupingTemplate],
+			NameEn:               "View Field Grouping Template",
+			Type:                 View,
+			RelatedResourceTypes: []RelateResourceType{templateResource},
+			Version:              1,
+		},
+		{
+			ID:                   EditFieldGroupingTemplate,
+			Name:                 ActionIDNameMap[EditFieldGroupingTemplate],
+			NameEn:               "Edit Field Grouping Template",
+			Type:                 Edit,
+			RelatedResourceTypes: []RelateResourceType{templateResource},
+			RelatedActions:       []ActionID{ViewFieldGroupingTemplate},
+			Version:              1,
+		},
+		{
+			ID:                   DeleteFieldGroupingTemplate,
+			Name:                 ActionIDNameMap[DeleteFieldGroupingTemplate],
+			NameEn:               "Delete Field Grouping Template",
+			Type:                 Delete,
+			RelatedResourceTypes: []RelateResourceType{templateResource},
+			RelatedActions:       []ActionID{ViewFieldGroupingTemplate},
+			Version:              1,
 		},
 	}
 }
