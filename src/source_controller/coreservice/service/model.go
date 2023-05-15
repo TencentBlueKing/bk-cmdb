@@ -229,7 +229,7 @@ func (s *coreService) SearchModel(ctx *rest.Contexts) {
 	ctx.RespEntity(dataResult)
 }
 
-// SearchModelWithAttribute TODO
+// SearchModelWithAttribute search model with attribute
 func (s *coreService) SearchModelWithAttribute(ctx *rest.Contexts) {
 
 	inputData := metadata.QueryCondition{}
@@ -251,11 +251,16 @@ func (s *coreService) SearchModelWithAttribute(ctx *rest.Contexts) {
 			dataResult.Info[modelIdx].Spec.ObjectName = s.TranslateObjectName(lang, &dataResult.Info[modelIdx].Spec)
 		}
 		for attributeIdx := range dataResult.Info[modelIdx].Attributes {
-			if dataResult.Info[modelIdx].Attributes[attributeIdx].IsPre || dataResult.Info[modelIdx].Spec.IsPre || needTranslateObjMap[dataResult.Info[modelIdx].Spec.ObjectID] {
-				dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
-				dataResult.Info[modelIdx].Attributes[attributeIdx].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
+			if dataResult.Info[modelIdx].Attributes[attributeIdx].IsPre || dataResult.Info[modelIdx].Spec.IsPre ||
+				needTranslateObjMap[dataResult.Info[modelIdx].Spec.ObjectID] {
+				dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName =
+					s.TranslatePropertyName(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
+				dataResult.Info[modelIdx].Attributes[attributeIdx].Placeholder =
+					s.TranslatePlaceholder(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
 				if dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType == common.FieldTypeEnum {
-					dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[modelIdx].Attributes[attributeIdx].Option)
+					dataResult.Info[modelIdx].Attributes[attributeIdx].Option =
+						s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[modelIdx].Attributes[attributeIdx],
+							dataResult.Info[modelIdx].Attributes[attributeIdx].Option)
 				}
 			}
 		}
