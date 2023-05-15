@@ -1643,3 +1643,8 @@ type ModelQuoteType string
 const (
 	Table ModelQuoteType = "table"
 )
+
+const (
+	// BKTemplateID template id field
+	BKTemplateID = "bk_template_id"
+)

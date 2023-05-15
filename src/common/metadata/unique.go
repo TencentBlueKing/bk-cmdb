@@ -22,12 +22,13 @@ import (
 
 // ObjectUnique TODO
 type ObjectUnique struct {
-	ID       uint64      `json:"id" bson:"id"`
-	ObjID    string      `json:"bk_obj_id" bson:"bk_obj_id"`
-	Keys     []UniqueKey `json:"keys" bson:"keys"`
-	Ispre    bool        `json:"ispre" bson:"ispre"`
-	OwnerID  string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	LastTime Time        `json:"last_time" bson:"last_time"`
+	ID         uint64      `json:"id" bson:"id"`
+	TemplateID int64       `json:"bk_template_id" bson:"bk_template_id"`
+	ObjID      string      `json:"bk_obj_id" bson:"bk_obj_id"`
+	Keys       []UniqueKey `json:"keys" bson:"keys"`
+	Ispre      bool        `json:"ispre" bson:"ispre"`
+	OwnerID    string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	LastTime   Time        `json:"last_time" bson:"last_time"`
 }
 
 // Parse load the data from mapstr attribute into ObjectUnique instance
