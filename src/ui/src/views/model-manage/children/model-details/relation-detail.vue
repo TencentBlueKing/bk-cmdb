@@ -177,6 +177,7 @@
 <script>
   import { mapGetters, mapActions } from 'vuex'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+  import useSideslider from '@/hooks/use-sideslider'
   export default {
     props: {
       relation: {
@@ -322,6 +323,8 @@
       this.$nextTick(() => {
         this.originRelationInfo = this.$tools.clone(this.relationInfo)
       })
+      const { beforeClose } = useSideslider(this.relationInfo)
+      this.beforeClose = beforeClose
     },
     methods: {
       ...mapActions('objectAssociation', [

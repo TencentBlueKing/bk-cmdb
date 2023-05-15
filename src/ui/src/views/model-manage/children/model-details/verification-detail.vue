@@ -62,6 +62,7 @@
 
 <script>
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import useSideslider from '@/hooks/use-sideslider'
 
   export default {
     props: {
@@ -161,6 +162,9 @@
     },
     created() {
       this.setupInitialRules()
+      const { beforeClose, setChanged } = useSideslider(this.submitRules)
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
     },
     methods: {
       /**
