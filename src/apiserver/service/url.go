@@ -65,7 +65,8 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 
 var topoURLRegexp = regexp.MustCompile(fmt.Sprintf(
 	"^/api/v3/(%s)/(inst|object|objects|topo|biz|module|set|resource|biz_set|project|field_template)/.*$", verbs))
-var objectURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(object|biz|biz_set|project)$", verbs))
+var objectURLRegexp = regexp.MustCompile(fmt.Sprintf(
+	"^/api/v3/(%s)/(object|biz|biz_set|project|field_template)$", verbs))
 
 var kubeURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/kube/.*$", verbs))
 

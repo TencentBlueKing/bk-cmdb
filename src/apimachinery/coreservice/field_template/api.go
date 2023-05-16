@@ -26,6 +26,8 @@ import (
 type Interface interface {
 	ListFieldTemplate(ctx context.Context, h http.Header, opt *metadata.CommonQueryOption) (
 		*metadata.FieldTemplateInfo, errors.CCErrorCoder)
+	ListFieldTemplateAttr(ctx context.Context, h http.Header, opt *metadata.CommonQueryOption) (
+		*metadata.FieldTemplateAttrInfo, errors.CCErrorCoder)
 }
 
 // New field template api client.

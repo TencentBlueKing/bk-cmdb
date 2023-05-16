@@ -17,6 +17,11 @@
 
 package metadata
 
+import (
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
+)
+
 // FieldTemplate field template definition
 type FieldTemplate struct {
 	ID          int64  `json:"id" bson:"id"`
@@ -97,4 +102,40 @@ type FieldTemplateInfo struct {
 type ListFieldTemplateResp struct {
 	BaseResp `json:",inline"`
 	Data     FieldTemplateInfo `json:"data"`
+}
+
+// ListFieldTmplAttrOption list field template attribute option
+type ListFieldTmplAttrOption struct {
+	TemplateID        int64 `json:"bk_template_id"`
+	CommonQueryOption `json:",inline"`
+}
+
+// Validate list field template attribute option
+func (l *ListFieldTmplAttrOption) Validate() errors.RawErrorInfo {
+	if l.TemplateID == 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKTemplateID}}
+	}
+
+	// set limit to unlimited if not set, compatible for searching all attributes, attributes amount won't be large
+	if !l.Page.EnableCount && l.Page.Limit == 0 {
+		l.Page.Limit = common.BKNoLimit
+	}
+
+	if rawErr := l.CommonQueryOption.Validate(); rawErr.ErrCode != 0 {
+		return rawErr
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// FieldTemplateAttrInfo field template attribute info for list apis
+type FieldTemplateAttrInfo struct {
+	Count uint64              `json:"count"`
+	Info  []FieldTemplateAttr `json:"info"`
+}
+
+// ListFieldTemplateAttrResp list field template attribute response
+type ListFieldTemplateAttrResp struct {
+	BaseResp `json:",inline"`
+	Data     FieldTemplateAttrInfo `json:"data"`
 }

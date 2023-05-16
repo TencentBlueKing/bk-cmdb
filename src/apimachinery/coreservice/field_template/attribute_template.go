@@ -18,28 +18,34 @@
 package fieldtmpl
 
 import (
+	"context"
 	"net/http"
 
-	"configcenter/src/common/http/rest"
-	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/source_controller/coreservice/service/capability"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 )
 
-type service struct {
-	core core.Core
-}
+// ListFieldTemplateAttr list field template attributes
+func (t template) ListFieldTemplateAttr(ctx context.Context, h http.Header, opt *metadata.CommonQueryOption) (
+	*metadata.FieldTemplateAttrInfo, errors.CCErrorCoder) {
 
-// InitFieldTemplate init field template service
-func InitFieldTemplate(c *capability.Capability) {
-	s := &service{
-		core: c.Core,
+	resp := new(metadata.ListFieldTemplateAttrResp)
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/findmany/field_template/attribute").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
 	}
 
-	// field template
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template",
-		Handler: s.ListFieldTemplate})
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
 
-	// field template attribute
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/attribute",
-		Handler: s.ListFieldTemplateAttr})
+	return &resp.Data, nil
 }
