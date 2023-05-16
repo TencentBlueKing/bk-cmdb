@@ -112,28 +112,28 @@
     },
     computed: {
       type() {
-        return this.stuff.type
+        return this.stuff?.type || ''
       },
       action() {
         return this.stuff.payload.action || this.$t('创建')
       },
       resource() {
-        return this.stuff.payload.resource
+        return this.stuff.payload?.resource || ''
       },
       emptyText() {
-        return this.stuff.payload.emptyText
+        return this.stuff.payload?.emptyText || ''
       },
       payload() {
-        return this.stuff.payload
+        return this.stuff?.payload || ''
       },
       defaultText() {
-        return this.stuff.payload.defaultText
+        return this.stuff.payload?.defaultText || ''
       },
       path() {
-        return this.stuff.payload.path
+        return this.stuff.payload?.path || ''
       },
       emptyLinkText() {
-        return this.stuff.payload.emptyLinkText
+        return this.stuff.payload?.emptyLinkText || ''
       }
     },
     watch: {
