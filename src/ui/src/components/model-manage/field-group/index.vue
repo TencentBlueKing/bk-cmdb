@@ -1146,9 +1146,6 @@ $modelHighlightColor: #3c96ff;
 }
 
 .field-list {
-  $ghostBorderColor: #dcdee5;
-  $ghostBackgroundColor:#f5f7fa;
-
   margin-top: 7px;
   font-size: 14px;
   position: relative;
@@ -1206,12 +1203,12 @@ $modelHighlightColor: #3c96ff;
       }
     }
     &-ghost {
-      background-color: $ghostBackgroundColor !important;
-      border: 1px dashed $ghostBorderColor;
+      background-color: #f5f7fa !important;
+      border: 1px dashed #dcdee5;
 
       &:hover {
-        border-color: $ghostBorderColor;
-        background-color: $ghostBackgroundColor;
+        border-color: #dcdee5;
+        background-color: #f5f7fa;
         box-shadow: none;
       }
 
