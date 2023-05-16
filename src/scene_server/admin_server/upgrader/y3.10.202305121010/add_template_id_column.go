@@ -31,7 +31,7 @@ import (
 func addTemplateIDColumnAndIndex(ctx context.Context, db dal.RDB) error {
 	collections := []string{common.BKTableNameObjAttDes, common.BKTableNameObjUnique}
 	index := types.Index{
-		Name: common.CCLogicIndexNamePrefix + common.BKTemplateID,
+		Name: common.CCLogicIndexNamePrefix + "bkTemplateID_bkSupplierAccount",
 		Keys: bson.D{
 			{
 				common.BKTemplateID, 1,
@@ -49,7 +49,7 @@ func addTemplateIDColumnAndIndex(ctx context.Context, db dal.RDB) error {
 			return err
 		}
 
-		if err := db.Table(collection).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
+		if err := addIndexIfNotExist(ctx, db, collection, []types.Index{index}); err != nil {
 			blog.Errorf("add index failed, table: %s, index: %+v, err: %v", collection, index, err)
 			return err
 		}

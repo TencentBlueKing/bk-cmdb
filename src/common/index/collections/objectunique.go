@@ -31,7 +31,7 @@ func init() {
 
 var commObjectUniqueIndexes = []types.Index{
 	{
-		Name: common.CCLogicIndexNamePrefix + common.BKTemplateID,
+		Name: common.CCLogicIndexNamePrefix + "bkTemplateID_bkSupplierAccount",
 		Keys: bson.D{
 			{
 				common.BKTemplateID, 1,

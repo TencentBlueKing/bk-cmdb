@@ -25,38 +25,42 @@ import (
 )
 
 func init() {
-	registerIndexes(common.BKTableNameObjFieldTemplateRelation, commObjFieldTemplateRelationIndexes)
+	registerIndexes(common.BKTableNameModelQuoteRelation, commModelQuoteRelationIndexes)
 }
 
-var commObjFieldTemplateRelationIndexes = []types.Index{
+var commModelQuoteRelationIndexes = []types.Index{
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
+		Name: common.CCLogicIndexNamePrefix + "destModel_bkSupplierAccount",
 		Keys: bson.D{
 			{
-				common.BKFieldID, 1,
+				common.BKDestModelField, 1,
+			},
+			{
+				common.BKOwnerIDField, 1,
 			},
 		},
 		Background: true,
-		Unique:     true,
 	},
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + "bkTemplateID_bkObjID",
+		Name: common.CCLogicIndexNamePrefix + "srcModel_bkPropertyID_bkSupplierAccount",
 		Keys: bson.D{
 			{
-				common.BKTemplateID, 1,
+				common.BKSrcModelField, 1,
 			},
 			{
-				common.BKObjIDField, 1,
+				common.BKPropertyIDField, 1,
+			},
+			{
+				common.BKOwnerIDField, 1,
 			},
 		},
 		Background: true,
-		Unique:     true,
 	},
 	{
-		Name: common.CCLogicIndexNamePrefix + "bkObjID_bkSupplierAccount",
+		Name: common.CCLogicIndexNamePrefix + "srcModel_bkSupplierAccount",
 		Keys: bson.D{
 			{
-				common.BKObjIDField, 1,
+				common.BKSrcModelField, 1,
 			},
 			{
 				common.BKOwnerIDField, 1,

@@ -165,7 +165,7 @@ func addObjectUniqueTemplateIndexes(ctx context.Context, db dal.RDB) error {
 			Unique:     true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + common.BKTemplateID,
+			Name: common.CCLogicIndexNamePrefix + "bkTemplateID_bkSupplierAccount",
 			Keys: bson.D{
 				{
 					common.BKTemplateID, 1,
@@ -211,7 +211,7 @@ func addObjFieldTemplateRelationIndexes(ctx context.Context, db dal.RDB) error {
 			Unique:     true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + common.BKObjIDField,
+			Name: common.CCLogicIndexNamePrefix + "bkObjID_bkSupplierAccount",
 			Keys: bson.D{
 				{
 					common.BKObjIDField, 1,
@@ -238,13 +238,13 @@ func addIndexIfNotExist(ctx context.Context, db dal.RDB, collection string, inde
 		return err
 	}
 
-	existIdxMap := make(map[string]bool)
+	existIdxMap := make(map[string]struct{})
 	for _, index := range existIndexArr {
 		// skip the default "_id" index for the database
 		if index.Name == "_id_" {
 			continue
 		}
-		existIdxMap[index.Name] = true
+		existIdxMap[index.Name] = struct{}{}
 	}
 
 	needAddIndexes := make([]types.Index, 0)
@@ -255,12 +255,14 @@ func addIndexIfNotExist(ctx context.Context, db dal.RDB, collection string, inde
 		needAddIndexes = append(needAddIndexes, index)
 	}
 
-	if len(needAddIndexes) != 0 {
-		err = db.Table(collection).BatchCreateIndexes(ctx, needAddIndexes)
-		if err != nil && !db.IsDuplicatedError(err) {
-			blog.Errorf("create index failed, table: %s, index: %+v, err: %v", collection, needAddIndexes, err)
-			return err
-		}
+	if len(needAddIndexes) == 0 {
+		return nil
+	}
+
+	err = db.Table(collection).BatchCreateIndexes(ctx, needAddIndexes)
+	if err != nil && !db.IsDuplicatedError(err) {
+		blog.Errorf("create index failed, table: %s, index: %+v, err: %v", collection, needAddIndexes, err)
+		return err
 	}
 
 	return nil

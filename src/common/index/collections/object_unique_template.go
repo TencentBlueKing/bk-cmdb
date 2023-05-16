@@ -40,7 +40,7 @@ var commObjectUniqueTemplateIndexes = []types.Index{
 		Unique:     true,
 	},
 	{
-		Name: common.CCLogicIndexNamePrefix + common.BKTemplateID,
+		Name: common.CCLogicIndexNamePrefix + "bkTemplateID_bkSupplierAccount",
 		Keys: bson.D{
 			{
 				common.BKTemplateID, 1,
