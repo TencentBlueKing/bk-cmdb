@@ -20,6 +20,7 @@ package fieldtmpl
 import (
 	"net/http"
 
+	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/scene_server/topo_server/logics"
@@ -29,6 +30,7 @@ import (
 type service struct {
 	clientSet apimachinery.ClientSetInterface
 	logics    logics.Logics
+	auth      *extensions.AuthManager
 }
 
 // InitFieldTemplate init field template service
@@ -36,6 +38,7 @@ func InitFieldTemplate(c *capability.Capability) {
 	s := &service{
 		clientSet: c.ClientSet,
 		logics:    c.Logics,
+		auth:      c.AuthManager,
 	}
 
 	// field template
@@ -50,4 +53,7 @@ func InitFieldTemplate(c *capability.Capability) {
 
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/field_template/unbind/object",
 		Handler: s.FieldTemplateUnBindObject})
+	// field template attribute
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/attribute",
+		Handler: s.ListFieldTemplateAttr})
 }

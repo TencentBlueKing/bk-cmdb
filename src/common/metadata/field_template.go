@@ -87,7 +87,6 @@ type FieldTemplateUnique struct {
 
 // ObjFieldTemplateRelation the relationship between model and field template definition
 type ObjFieldTemplateRelation struct {
-	ID         int64  `json:"id" bson:"id"`
 	ObjectID   string `json:"bk_obj_id" bson:"bk_obj_id"`
 	TemplateID int64  `json:"bk_template_id" bson:"bk_template_id"`
 	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
@@ -155,4 +154,40 @@ func (option *FieldTemplateUnBindObjOpt) Validate() ccErr.RawErrorInfo {
 		}
 	}
 	return ccErr.RawErrorInfo{}
+}
+
+// ListFieldTmplAttrOption list field template attribute option
+type ListFieldTmplAttrOption struct {
+	TemplateID        int64 `json:"bk_template_id"`
+	CommonQueryOption `json:",inline"`
+}
+
+// Validate list field template attribute option
+func (l *ListFieldTmplAttrOption) Validate() ccErr.RawErrorInfo {
+	if l.TemplateID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKTemplateID}}
+	}
+
+	// set limit to unlimited if not set, compatible for searching all attributes, attributes amount won't be large
+	if !l.Page.EnableCount && l.Page.Limit == 0 {
+		l.Page.Limit = common.BKNoLimit
+	}
+
+	if rawErr := l.CommonQueryOption.Validate(); rawErr.ErrCode != 0 {
+		return rawErr
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// FieldTemplateAttrInfo field template attribute info for list apis
+type FieldTemplateAttrInfo struct {
+	Count uint64              `json:"count"`
+	Info  []FieldTemplateAttr `json:"info"`
+}
+
+// ListFieldTemplateAttrResp list field template attribute response
+type ListFieldTemplateAttrResp struct {
+	BaseResp `json:",inline"`
+	Data     FieldTemplateAttrInfo `json:"data"`
 }

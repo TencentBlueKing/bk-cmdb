@@ -44,4 +44,8 @@ func InitFieldTemplate(c *capability.Capability) {
 		Handler: s.FieldTemplateUnBindObject})
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "find/field_template/tasks_status",
 		Handler: s.FindFieldTemplateTasksStatus})
+
+	// field template attribute
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/attribute",
+		Handler: s.ListFieldTemplateAttr})
 }

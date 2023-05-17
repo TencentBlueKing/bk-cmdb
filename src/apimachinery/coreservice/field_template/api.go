@@ -30,6 +30,8 @@ type Interface interface {
 		opt *metadata.FieldTemplateBindObjOpt) errors.CCErrorCoder
 	FieldTemplateUnBindObject(ctx context.Context, h http.Header,
 		opt *metadata.FieldTemplateUnBindObjOpt) errors.CCErrorCoder
+	ListFieldTemplateAttr(ctx context.Context, h http.Header, opt *metadata.CommonQueryOption) (
+		*metadata.FieldTemplateAttrInfo, errors.CCErrorCoder)
 }
 
 // New field template api client.
