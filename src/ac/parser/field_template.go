@@ -24,128 +24,6 @@ import (
 	"configcenter/src/ac/meta"
 )
 
-//
-//func (ps *parseStream) fieldTemplate1() *parseStream {
-//	if ps.shouldReturn() {
-//		return ps
-//	}
-//
-//	if ps.hitRegexp(findFieldTemplateRegexp, http.MethodGet) {
-//		if len(ps.RequestCtx.Elements) != 5 {
-//			ps.err = errors.New("find field template failed, got invalid url")
-//			return ps
-//		}
-//		ps.Attribute.Resources = []meta.ResourceAttribute{
-//			{
-//				// todo: 待后续调整
-//				Basic: meta.Basic{
-//					// Type:   ,
-//					Action: meta.SkipAction,
-//				},
-//			},
-//		}
-//	}
-//
-//	// 字段模版绑定模型的操作
-//	if ps.hitPattern(fieldTemplateBindObjPattern, http.MethodPost) {
-//
-//		val, err := ps.RequestCtx.getValueFromBody(common.BKFieldID)
-//		if err != nil {
-//			ps.err = err
-//			return ps
-//		}
-//		// todo：待补充字段组合模版的编辑权限
-//		// 获取字段模版ID
-//		// id := val.Int()
-//
-//		val, err = ps.RequestCtx.getValueFromBody("bk_obj_ids")
-//		if err != nil {
-//			ps.err = err
-//			return ps
-//		}
-//
-//		models := val.Array()
-//		modelObjs := make([]string, 0)
-//		for _, modelID := range models {
-//			idStr := modelID.String()
-//			if idStr == "" {
-//				ps.err = errors.New("invalid process template id")
-//				return ps
-//			}
-//			modelObjs = append(modelObjs, idStr)
-//		}
-//		cond := mapstr.MapStr{
-//			common.BKObjIDField: mapstr.MapStr{
-//				common.BKDBIN: modelObjs,
-//			},
-//		}
-//		res, err := ps.searchModels(cond)
-//		if err != nil {
-//			ps.err = err
-//			return ps
-//		}
-//		if len(res) == 0 {
-//			ps.err = fmt.Errorf("model [%+v] not found", cond)
-//			return ps
-//		}
-//
-//		for _, model := range res {
-//			ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
-//				Basic: meta.Basic{
-//					Type:   meta.Model,
-//					Action: meta.Update,
-//				},
-//				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-//			})
-//		}
-//
-//		return ps
-//	}
-//
-//	// 字段模版解除绑定模型的操作
-//	if ps.hitPattern(fieldTemplateUnBindObjPattern, http.MethodPost) {
-//		val, err := ps.RequestCtx.getValueFromBody(common.BKObjIDField)
-//		if err != nil {
-//			ps.err = err
-//			return ps
-//		}
-//		obj := val.String()
-//		if obj == "" {
-//			ps.err = errors.New("obj must be set")
-//			return ps
-//		}
-//
-//		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: obj})
-//		if err != nil {
-//			ps.err = err
-//			return ps
-//		}
-//		ps.Attribute.Resources = []meta.ResourceAttribute{
-//			{
-//				Basic: meta.Basic{
-//					Type:       meta.Model,
-//					Action:     meta.Update,
-//					InstanceID: model.ID,
-//				},
-//			},
-//		}
-//	}
-//
-//	// 字段模版解除绑定模型的操作
-//	if ps.hitPattern(findFieldTemplateTasksStatusPattern, http.MethodPost) {
-//		ps.Attribute.Resources = []meta.ResourceAttribute{
-//			{
-//				Basic: meta.Basic{
-//					//Type:       meta.Model,
-//					Action: meta.SkipAction,
-//				},
-//			},
-//		}
-//	}
-//
-//	return ps
-//}
-
 // FieldTemplateAuthConfigs field template related auth configs, skip all, authorize in topo-server.
 var FieldTemplateAuthConfigs = []AuthConfig{
 	{
@@ -199,28 +77,28 @@ var FieldTemplateAuthConfigs = []AuthConfig{
 	},
 	{
 		Name:           "QueryFieldTemplateBriefInformation",
-		Description:    "查询字段模版简要信息",
+		Description:    "查询字段组合模版简要信息",
 		Regex:          regexp.MustCompile(`^/api/v3/find/field_template/[0-9]+/?$`),
 		HTTPMethod:     http.MethodGet,
 		ResourceAction: meta.SkipAction,
 	},
 	{
 		Name:           "FieldTemplateBindingModel",
-		Description:    "字段模版绑定模型",
-		Pattern:        "/api/v3/field_template/bind/object",
+		Description:    "字段组合模版绑定模型",
+		Pattern:        "/api/v3/update/field_template/bind/object",
 		HTTPMethod:     http.MethodPost,
 		ResourceAction: meta.SkipAction,
 	},
 	{
 		Name:           "FieldTemplateUnBindingModel",
-		Description:    "字段模版解除绑定模型",
-		Pattern:        "/api/v3/field_template/unbind/object",
+		Description:    "字段组合模版解除绑定模型",
+		Pattern:        "/api/v3/update/field_template/unbind/object",
 		HTTPMethod:     http.MethodPost,
 		ResourceAction: meta.SkipAction,
 	},
 	{
 		Name:           "FieldTemplateUnBindingModel",
-		Description:    "查询字段模版任务状态",
+		Description:    "查询字段组合模版任务状态",
 		Pattern:        "/api/v3/task/find/field_template/tasks_status",
 		HTTPMethod:     http.MethodGet,
 		ResourceAction: meta.SkipAction,

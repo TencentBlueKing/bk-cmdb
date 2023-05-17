@@ -68,6 +68,7 @@ const (
 	deletePlatformSettingModulePattern  = `/api/v3/topo/delete/biz/extra_moudle`
 )
 
+// NOCC:golint/fnsize(设计如此)
 func (ps *parseStream) business() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -651,6 +652,7 @@ const (
 	findHostTopoPath              = "/api/v3/find/host/topopath"
 )
 
+// NOCC:golint/fnsize(设计如此)
 func (ps *parseStream) mainline() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -665,7 +667,8 @@ func (ps *parseStream) mainline() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find mainline idle and fault module, but got invalid business id %s", ps.RequestCtx.Elements[5])
+			ps.err = fmt.Errorf("find mainline idle and fault module, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -836,6 +839,7 @@ var (
 	findModuleByServiceTemplateRegexp = regexp.MustCompile(`^/api/v3/module/bk_biz_id/(?P<bk_biz_id>[0-9]+)/service_template_id/(?P<service_template_id>[0-9]+)/?$`)
 )
 
+// NOCC:golint/fnsize(设计如此)
 func (ps *parseStream) objectModule() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -1151,6 +1155,7 @@ var (
 	findSetBatchRegexp   = regexp.MustCompile(`^/api/v3/findmany/set/bk_biz_id/[0-9]+/?$`)
 )
 
+// NOCC:golint/fnsize(设计如此)
 func (ps *parseStream) objectSet() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -1349,6 +1354,7 @@ var (
 	searchInstAudit   = `/api/v3/find/inst_audit`
 )
 
+// NOCC:golint/fnsize(设计如此)
 func (ps *parseStream) audit() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -1504,6 +1510,7 @@ var (
 	deleteCloudAreaRegexp = regexp.MustCompile(`^/api/v3/delete/cloudarea/[0-9]+/?$`)
 )
 
+// NOCC:golint/fnsize(设计如此)
 func (ps *parseStream) cloudArea() *parseStream {
 	if ps.shouldReturn() {
 		return ps

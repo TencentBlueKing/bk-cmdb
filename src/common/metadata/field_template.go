@@ -106,8 +106,8 @@ type ListFieldTemplateResp struct {
 
 // FieldTemplateBindObjOpt field template binding model option
 type FieldTemplateBindObjOpt struct {
-	ID        int64    `json:"id" bson:"id"`
-	ObjectIDs []string `json:"bk_obj_ids" bson:"bk_obj_ids"`
+	ID        int64    `json:"id"`
+	ObjectIDs []string `json:"bk_obj_ids"`
 }
 
 // Validate field template binding model request parameter validation function
@@ -135,8 +135,8 @@ func (option *FieldTemplateBindObjOpt) Validate() ccErr.RawErrorInfo {
 
 // FieldTemplateUnBindObjOpt field template unbinding model option
 type FieldTemplateUnBindObjOpt struct {
-	ID       int64  `json:"id" bson:"id"`
-	ObjectID string `json:"bk_obj_id" bson:"bk_obj_id"`
+	ID       int64  `json:"id"`
+	ObjectID string `json:"bk_obj_id"`
 }
 
 // Validate field template unbinding model request parameter validation function

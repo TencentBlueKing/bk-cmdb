@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
+	"fmt"
 )
 
 // ListFieldTemplate list field templates.
@@ -72,7 +73,7 @@ func (s *service) ListFieldTemplate(cts *rest.Contexts) {
 	cts.RespEntity(metadata.FieldTemplateInfo{Info: fieldTemplates})
 }
 
-func getFieldTemplatesUnSupportedModels(kit *rest.Kit) (map[string]struct{}, error) {
+func getFieldTemplateUnSupportedBoundModels(kit *rest.Kit) (map[string]struct{}, error) {
 
 	// 1、query the mainline model
 	result := make([]metadata.Association, 0)
@@ -80,11 +81,13 @@ func getFieldTemplatesUnSupportedModels(kit *rest.Kit) (map[string]struct{}, err
 		common.AssociationKindIDField: common.AssociationKindMainline,
 	}
 	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+
 	if err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(cond).Fields(common.BKObjIDField).
 		All(kit.Ctx, &result); err != nil {
 		blog.Errorf("search mainline failed cond: %+v, err: %s, rid: %s", cond, err, kit.Rid)
 		return nil, err
 	}
+
 	// 2、get a list of models that do not support binding field composition templates
 	objID := make(map[string]struct{})
 	for _, data := range result {
@@ -97,13 +100,16 @@ func getFieldTemplatesUnSupportedModels(kit *rest.Kit) (map[string]struct{}, err
 }
 
 func (s *service) validateTemplateID(kit *rest.Kit, id int64) error {
-	// 判断templateID 是否合法
-	cond := mapstr.MapStr{common.BKFieldID: id}
+
+	cond := mapstr.MapStr{
+		common.BKFieldID: id,
+	}
 	cnt, err := mongodb.Client().Table(common.BKTableNameFieldTemplate).Find(cond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("count field template failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
+
 	if cnt == 0 {
 		blog.Errorf("no field template founded, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommNotFound)
@@ -111,6 +117,24 @@ func (s *service) validateTemplateID(kit *rest.Kit, id int64) error {
 	if cnt > 1 {
 		blog.Errorf("multi field template founded, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommGetMultipleObject)
+	}
+	return nil
+}
+
+func (s *service) isObjIDsExists(kit *rest.Kit, objIDs []string) error {
+
+	filter := mapstr.MapStr{
+		common.BKObjIDField: mapstr.MapStr{
+			common.BKDBIN: objIDs,
+		},
+	}
+	count, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(filter).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("mongodb count failed, table: %s, err: %+v, rid: %s", common.BKTableNameObjDes, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	if int(count) != len(objIDs) {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_obj_ids")
 	}
 	return nil
 }
@@ -125,13 +149,19 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 	}
 	kit := ctx.Kit
 
-	// 判断templateID 是否合法
+	// determine whether the templateID is legal
 	if err := s.validateTemplateID(kit, opt.ID); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	objIDMap, err := getFieldTemplatesUnSupportedModels(ctx.Kit)
+	objIDs := util.StrArrayUnique(opt.ObjectIDs)
+	if err := s.isObjIDsExists(kit, objIDs); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	objIDMap, err := getFieldTemplateUnSupportedBoundModels(kit)
 	if err != nil {
 		blog.Errorf("multi field template founded, cond: %+v, rid: %s", err, kit.Rid)
 		ctx.RespAutoError(kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -139,8 +169,8 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 	}
 
 	rows := make([]metadata.ObjFieldTemplateRelation, 0)
-	for _, objID := range opt.ObjectIDs {
-		// 判断objectID是否合法
+	for _, objID := range objIDs {
+		// determine whether the objectID is legal
 		if _, ok := objIDMap[objID]; ok || objID == "" {
 			blog.Errorf("object(%s) is not allowed to bind field template, rid: %s", objID, kit.Rid)
 			ctx.RespAutoError(kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
@@ -161,11 +191,71 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-func (s *service) dealProcessRunningTasks() error {
-	// 1、获取任务
-	// 2、如果有运行中的任务直接返回报错
-	// 3、如果有排队中的任务清楚掉任务
+func (s *service) dealProcessRunningTasks(kit *rest.Kit, option *metadata.FieldTemplateUnBindObjOpt) error {
 
+	// 1、get the status of the task
+	cond := mapstr.MapStr{
+		common.BKInstIDField:       option.ID,
+		metadata.APITaskExtraField: option.ObjectID,
+		common.BKStatusField: mapstr.MapStr{
+			common.BKDBIN: []metadata.APITaskStatus{
+				metadata.APITaskStatusExecute, metadata.APITaskStatusWaitExecute,
+				metadata.APITaskStatusNew},
+		},
+	}
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+
+	result := make([]metadata.APITaskSyncStatus, 0)
+	if err := mongodb.Client().Table(common.BKTableNameAPITaskSyncHistory).Find(cond).
+		Fields(common.BKStatusField, common.BKCloudSyncTaskID).
+		All(kit.Ctx, &result); err != nil {
+		blog.Errorf("search mainline failed cond: %+v, err: %s, rid: %s", cond, err, kit.Rid)
+		return err
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+
+	// 2、the possible task status scenarios are: one is executing,
+	// one is waiting or new, but there will be no more than two tasks.
+	if len(result) > 2 {
+		blog.Errorf("task num incorrect, template ID: %d, objID: %s, rid: %s", option.ID, option.ObjectID, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommGetMultipleObject,
+			fmt.Sprintf("template ID: %d, objID: %s", option.ID, option.ObjectID))
+	}
+
+	// 3、if there is a running task, return an error directly.
+	var taskID string
+	for _, info := range result {
+		if info.Status == metadata.APITaskStatusExecute {
+			blog.Errorf("unbinding failed, sync task(%s) is running, template ID: %d, objID: %s, rid: %d")
+			return kit.CCError.Errorf(common.CCErrTaskCreateConflict,
+				fmt.Sprintf("template ID: %d, objID: %s", option.ID, option.ObjectID))
+		}
+		taskID = info.TaskID
+	}
+
+	// 4、if there is a queued task that needs to be cleared.
+	delCond := mapstr.MapStr{
+		common.BKTaskIDField: taskID,
+		common.BKStatusField: mapstr.MapStr{
+			common.BKDBIN: []metadata.APITaskStatus{metadata.APITaskStatusWaitExecute, metadata.APITaskStatusNew},
+		},
+	}
+	cnt, err := mongodb.Client().Table(common.BKTableNameAPITask).DeleteMany(kit.Ctx, delCond)
+	if err != nil {
+		blog.Errorf("delete task failed, cond: %#v, err: %v, rid: %s", delCond, err, kit.Rid)
+		return err
+	}
+
+	// 5、if the return value is 0, the possible reason is that the task status becomes
+	// executing when deleting, and an error can be returned at this time.
+	if cnt == 0 {
+		blog.Errorf("unbinding failed, task status change to executing, cond: %+v, rid: %s", delCond, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrTaskCreateConflict,
+			fmt.Sprintf("template ID: %d, objID: %s", option.ID, option.ObjectID))
+	}
 	return nil
 }
 
@@ -177,27 +267,32 @@ func (s *service) FieldTemplateUnBindObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	kit := ctx.Kit
+
 	// 1、judging the legitimacy of parameters
-	if err := s.validateTemplateID(kit, opt.ID); err != nil {
+	if err := s.validateTemplateID(ctx.Kit, opt.ID); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	objIDMap, err := getFieldTemplatesUnSupportedModels(ctx.Kit)
+	if err := s.isObjIDsExists(ctx.Kit, []string{opt.ObjectID}); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	objIDMap, err := getFieldTemplateUnSupportedBoundModels(ctx.Kit)
 	if err != nil {
-		blog.Errorf("multi field template founded, cond: %+v, rid: %s", err, kit.Rid)
-		ctx.RespAutoError(kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		blog.Errorf("multi field template founded, cond: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return
 	}
 	if _, ok := objIDMap[opt.ObjectID]; ok || opt.ObjectID == "" {
-		blog.Errorf("object(%s) is not allowed to bind field template, rid: %s", opt.ObjectID, kit.Rid)
-		ctx.RespAutoError(kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
+		blog.Errorf("object(%s) is not allowed to bind field template, rid: %s", opt.ObjectID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsIsInvalid))
 		return
 	}
 
 	// 2、process tasks in task
-	if err := s.dealProcessRunningTasks(); err != nil {
+	if err := s.dealProcessRunningTasks(ctx.Kit, opt); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -207,16 +302,11 @@ func (s *service) FieldTemplateUnBindObject(ctx *rest.Contexts) {
 		common.BKTemplateID: opt.ID,
 		common.BKObjIDField: opt.ObjectID,
 	}
-	cond = util.SetModOwner(cond, kit.SupplierAccount)
-	if err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Delete(kit.Ctx, cond); err != nil {
-		blog.Errorf("delete obj field template failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
+	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
+	if err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Delete(ctx.Kit.Ctx, cond); err != nil {
+		blog.Errorf("delete obj field template failed, cond: %+v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
-}
-
-// FindFieldTemplateTasksStatus 查找指定字段模版下的各个模型同步任务状态.
-func (s *service) FindFieldTemplateTasksStatus(ctx *rest.Contexts) {
-
 }

@@ -55,7 +55,7 @@ func (t *template) FieldTemplateBindObject(ctx context.Context, h http.Header,
 	opt *metadata.FieldTemplateBindObjOpt) errors.CCErrorCoder {
 
 	resp := new(metadata.Response)
-	subPath := "/field_template/bind/object"
+	subPath := "/update/field_template/bind/object"
 
 	err := t.client.Post().
 		WithContext(ctx).
@@ -77,7 +77,7 @@ func (t *template) FieldTemplateUnBindObject(ctx context.Context, h http.Header,
 	opt *metadata.FieldTemplateUnBindObjOpt) errors.CCErrorCoder {
 
 	resp := new(metadata.Response)
-	subPath := "/field_template/unbind/object"
+	subPath := "/update/field_template/unbind/object"
 
 	err := t.client.Post().
 		WithContext(ctx).

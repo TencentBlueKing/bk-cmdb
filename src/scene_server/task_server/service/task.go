@@ -13,13 +13,13 @@
 package service
 
 import (
-	"configcenter/src/common/mapstr"
 	"context"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -131,7 +131,7 @@ func (s *Service) ListLatestSyncStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	infos, err := s.Logics.ListLatestSyncStatus(ctx.Kit, input, common.BKInstIDField)
+	infos, err := s.Logics.ListLatestSyncStatus(ctx.Kit, input)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -158,6 +158,10 @@ func (s *Service) ListSyncStatusHistory(ctx *rest.Contexts) {
 }
 
 // ListFieldTemplateTasksStatus query task status by field template ID and objID
+// get the status of all related tasks in reverse order of the time they were created,
+// if there are "in progress" tasks. Prioritize returning a status of "in progress".
+// if there is no "in progress" task status, return the latest task status, which may
+// be "successful", "failed" or "queuing", etc.
 func (s *Service) ListFieldTemplateTasksStatus(ctx *rest.Contexts) {
 	input := new(metadata.ListFieldTmpltTaskStatusOption)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -165,30 +169,46 @@ func (s *Service) ListFieldTemplateTasksStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	query := &metadata.ListLatestSyncStatusRequest{
+	objIDs := util.StrArrayUnique(input.ObjectIDs)
+	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{
 			common.BKInstIDField: input.ID,
 			metadata.APITaskExtraField: mapstr.MapStr{
-				common.BKDBIN: input.ObjectIDs,
+				common.BKDBIN: objIDs,
 			},
 			common.BKTaskTypeField: common.SyncFieldTemplateTaskFlag,
 		},
-		Fields: []string{metadata.APITaskExtraField, "status"},
+		Fields: []string{metadata.APITaskExtraField, common.BKStatusField},
+		Page: metadata.BasePage{
+			Sort:  "-" + common.CreateTimeField,
+			Limit: common.BKNoLimit,
+		},
 	}
-	infos, err := s.Logics.ListLatestSyncStatus(ctx.Kit, query, metadata.APITaskExtraField)
+	infos, err := s.Logics.ListSyncStatusHistory(ctx.Kit, query)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	objStatusMap := make(map[string]string)
+	for _, info := range infos.Info {
+		obj := util.GetStrByInterface(info.Extra)
+		_, ok := objStatusMap[obj]
+		if ok && string(info.Status) != string(metadata.APITaskStatusExecute) {
+			continue
+		}
+		objStatusMap[obj] = string(info.Status)
+	}
+
 	result := make([]metadata.ListFieldTmpltTaskStatusResult, 0)
-	for _, info := range infos {
+	for obj, status := range objStatusMap {
 		result = append(result, metadata.ListFieldTmpltTaskStatusResult{
-			ObjectID: util.GetStrByInterface(info.Extra),
-			Status:   string(info.Status),
+			ObjectID: obj,
+			Status:   status,
 		})
 	}
 
-	ctx.RespEntity(infos)
+	ctx.RespEntity(result)
 }
 
 // TimerDeleteHistoryTask delete api task history message

@@ -38,12 +38,10 @@ func InitFieldTemplate(c *capability.Capability) {
 	// field template
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template",
 		Handler: s.ListFieldTemplate})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/field_template/bind/object",
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/field_template/bind/object",
 		Handler: s.FieldTemplateBindObject})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/field_template/unbind/object",
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/field_template/unbind/object",
 		Handler: s.FieldTemplateUnBindObject})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "find/field_template/tasks_status",
-		Handler: s.FindFieldTemplateTasksStatus})
 
 	// field template attribute
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/attribute",

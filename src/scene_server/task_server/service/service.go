@@ -89,7 +89,7 @@ func (s *Service) addAPIService(web *restful.WebService) {
 		Handler: s.ListSyncStatusHistory})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "" +
 		"/task/find/field_template/tasks_status",
-		Handler: s.ListSyncStatusHistory})
+		Handler: s.ListFieldTemplateTasksStatus})
 
 	utility.AddToRestfulWebService(web)
 

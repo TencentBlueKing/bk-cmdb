@@ -18,6 +18,8 @@
 package fieldtmpl
 
 import (
+	"strconv"
+
 	"configcenter/pkg/filter"
 	filtertools "configcenter/pkg/tools/filter"
 	"configcenter/src/common"
@@ -26,7 +28,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"strconv"
+	"configcenter/src/common/util"
 )
 
 // ListFieldTemplate list field templates.
@@ -80,7 +82,7 @@ func (s *service) FindFieldTemplateByID(ctx *rest.Contexts) {
 		},
 	}
 
-	// list field templates
+	// list field template by id
 	res, err := s.clientSet.CoreService().FieldTemplate().ListFieldTemplate(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		blog.Errorf("list field templates failed, req: %+v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
@@ -95,14 +97,15 @@ func (s *service) FindFieldTemplateByID(ctx *rest.Contexts) {
 	}
 
 	if len(res.Info) == 0 {
-		blog.Errorf("no field template found, req: %+v, rid: %s", query, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommNotFound))
+		ctx.RespEntity(nil)
 		return
 	}
 	ctx.RespEntity(res.Info[0])
 }
 
-func (s *service) getFieldTemplatesUnSupportedModels(kit *rest.Kit, objIDs []string) ccErr.CCErrorCoder {
+// isObjsSupportedBindingFieldTemplate currently only supports "host" in the mainline model
+func (s *service) isObjsSupportedBindingFieldTemplate(kit *rest.Kit, objIDs []string) ccErr.CCErrorCoder {
+
 	cond := mapstr.MapStr{
 		common.AssociationKindIDField: common.AssociationKindMainline,
 	}
@@ -111,28 +114,49 @@ func (s *service) getFieldTemplatesUnSupportedModels(kit *rest.Kit, objIDs []str
 		Fields:         []string{common.BKObjIDField},
 		DisableCounter: true,
 	}
+
 	asst, err := s.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, queryCond)
 	if err != nil {
 		blog.Errorf("query mainline object failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
+
 	if len(asst.Info) == 0 {
 		blog.Errorf("no mainline object founded, cond: %+v, rid: %s", cond, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommNotFound)
 	}
+
 	objIDMap := make(map[string]struct{})
 	for _, data := range asst.Info {
-		if data.ObjectID == common.HostApplyEnabledField {
+		if data.ObjectID == common.BKInnerObjIDHost {
 			continue
 		}
 		objIDMap[data.ObjectID] = struct{}{}
 	}
+
 	for _, obj := range objIDs {
 		if _, ok := objIDMap[obj]; ok || obj == "" {
-			blog.Errorf("object(%s) is not allowed to bind field template, cond: %+v, err: %v, rid: %s",
+			blog.Errorf("object(%s) is not allowed to bind field template, cond: %+v, err: %v, rid: %s", obj,
 				cond, err, kit.Rid)
-			return kit.CCError.CCError(common.CCErrCommParamsIsInvalid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, obj)
 		}
+	}
+
+	// determine whether these objIDs exist
+	objCond := mapstr.MapStr{
+		common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs},
+	}
+
+	counts, cErr := s.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameObjDes, []map[string]interface{}{objCond})
+	if cErr != nil {
+		blog.Errorf("get obj count failed, cond: %+v, err: %v, rid: %s", objCond, cErr, kit.Rid)
+		return cErr
+	}
+
+	if len(counts) != 1 || int(counts[0]) != len(objIDs) {
+		blog.Errorf("obj ids are invalid, input: %+v, rid: %s", objCond, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_obj_ids")
 	}
 	return nil
 }
@@ -150,15 +174,21 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
-
-	// 判断模型列表是否合法 主线中只能是 host
-	if err := s.getFieldTemplatesUnSupportedModels(ctx.Kit, opt.ObjectIDs); err != nil {
+	objIDs := make([]string, 0)
+	objIDs = util.StrArrayUnique(opt.ObjectIDs)
+	if err := s.isObjsSupportedBindingFieldTemplate(ctx.Kit, objIDs); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
+	option := &metadata.FieldTemplateBindObjOpt{
+		ID:        opt.ID,
+		ObjectIDs: objIDs,
+	}
+
+	// todo:待补充鉴权日志
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateBindObject(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateBindObject(ctx.Kit.Ctx, ctx.Kit.Header, option)
 		if err != nil {
 			blog.Errorf("update object attribute index failed, err: %v , rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -187,11 +217,11 @@ func (s *service) FieldTemplateUnBindObject(ctx *rest.Contexts) {
 		return
 	}
 
-	// 判断模型列表是否合法 主线中只能是 host
-	if err := s.getFieldTemplatesUnSupportedModels(ctx.Kit, []string{opt.ObjectID}); err != nil {
+	if err := s.isObjsSupportedBindingFieldTemplate(ctx.Kit, []string{opt.ObjectID}); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
+	// todo:待补充鉴权日志
 
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateUnBindObject(ctx.Kit.Ctx, ctx.Kit.Header, opt)

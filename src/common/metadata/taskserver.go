@@ -13,11 +13,11 @@
 package metadata
 
 import (
-	"configcenter/src/common"
-	ccErr "configcenter/src/common/errors"
 	"net/http"
 	"time"
 
+	"configcenter/src/common"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 )
 
@@ -29,7 +29,8 @@ type CreateTaskRequest struct {
 	// bk_inst_id 实例id，该任务关联的实例id
 	InstID int64 `json:"bk_inst_id"`
 
-	// Extra 用于和InstID配合使用唯一确定一个任务。例如在TaskType为 SyncFieldTemplateTaskFlag场景
+	// Extra used in conjunction with InstID to uniquely identify
+	// a task. currently used in scenarios where taskType is SyncFieldTemplateTaskFlag
 	Extra interface{} `json:"extra,omitempty" bson:"extra"`
 
 	Data []interface{} `json:"data"`
@@ -43,8 +44,10 @@ type APITaskDetail struct {
 	TaskType string `json:"task_type,omitempty" bson:"task_type"`
 	// InstID 实例id，该任务关联的实例id
 	InstID int64 `json:"bk_inst_id,omitempty" bson:"bk_inst_id"`
-	// ExtraRelatedField 用于通过一个实例ID字段不能区分任务的场景。
-	// 例如: TaskType为 SyncFieldTemplateTaskFlag 需要通过bk_field_template_id和bk_obj_id两个参数才能确定唯一任务
+	// ExtraRelatedField used in scenarios where tasks cannot
+	// be distinguished by an instance ID field. for example:
+	// if TaskType is SyncFieldTemplateTaskFlag, two parameters
+	// bk_field_template_id and bk_obj_id are required to determine the unique task.
 	Extra interface{} `json:"extra,omitempty" bson:"extra"`
 	// User 任务创建者
 	User string `json:"user,omitempty" bson:"user"`
@@ -77,8 +80,10 @@ type APITaskSyncStatus struct {
 	TaskType string `json:"task_type,omitempty" bson:"task_type"`
 	// InstID 实例id，该任务关联的实例id
 	InstID int64 `json:"bk_inst_id,omitempty" bson:"bk_inst_id"`
-	// ExtraRelatedField 用于通过一个实例ID字段不能区分任务的场景。
-	// 例如: TaskType为 SyncFieldTemplateTaskFlag 需要通过bk_field_template_id和bk_obj_id两个参数才能确定唯一任务
+	// ExtraRelatedField used in scenarios where tasks cannot be
+	// distinguished by an instance ID field. for example: if the
+	// taskType is SyncFieldTemplateTaskFlag, two parameters bk_template_id
+	// and bk_obj_id are required to determine the unique task
 	Extra interface{} `json:"extra,omitempty" bson:"extra"`
 	// Status 任务执行状态
 	Status APITaskStatus `json:"status,omitempty" bson:"status"`

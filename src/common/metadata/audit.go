@@ -1102,7 +1102,7 @@ var auditDict = []resourceTypeInfo{
 	},
 	{
 		ID:   FieldTemplateRes,
-		Name: "字段模版",
+		Name: "字段组合模版",
 		Operations: []actionTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],
@@ -1347,7 +1347,7 @@ var auditEnDict = []resourceTypeInfo{
 	},
 	{
 		ID:   FieldTemplateRes,
-		Name: "Field Template",
+		Name: "Field Grouping Template",
 		Operations: []actionTypeInfo{
 			actionInfoEnMap[AuditCreate],
 			actionInfoEnMap[AuditUpdate],
