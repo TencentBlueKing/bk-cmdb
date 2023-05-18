@@ -19,6 +19,7 @@ package fieldtmpl
 
 import (
 	"fmt"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -311,4 +312,52 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(nil)
+}
+
+// CreateFieldTemplate create field template.
+func (s *service) CreateFieldTemplate(ctx *rest.Contexts) {
+	template := new(metadata.FieldTemplate)
+	if err := ctx.DecodeInto(template); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := template.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	id, err := mongodb.Client().NextSequence(ctx.Kit.Ctx, common.BKTableNameFieldTemplate)
+	if err != nil {
+		blog.Errorf("get sequence id on the table (%s) failed, err: %v, rid: %s", common.BKTableNameFieldTemplate, err,
+			ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error()))
+		return
+	}
+
+	template.ID = int64(id)
+	template.OwnerID = ctx.Kit.SupplierAccount
+	template.Creator = ctx.Kit.User
+	template.Modifier = ctx.Kit.User
+	now := time.Now()
+	template.CreateTime = &metadata.Time{Time: now}
+	template.LastTime = &metadata.Time{Time: now}
+
+	if err := template.Validate(); err.ErrCode != 0 {
+		blog.Errorf("field template is invalid, data: %v, err: %v, rid: %s", template, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	if err = mongodb.Client().Table(common.BKTableNameFieldTemplate).Insert(ctx.Kit.Ctx, template); err != nil {
+		blog.Errorf("save field template failed, data: %v, err: %v, rid: %s", template, err, ctx.Kit.Rid)
+		if mongodb.Client().IsDuplicatedError(err) {
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err)))
+			return
+		}
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
+		return
+	}
+
+	ctx.RespEntity(metadata.RspID{ID: int64(id)})
 }

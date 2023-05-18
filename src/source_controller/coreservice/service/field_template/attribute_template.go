@@ -18,11 +18,15 @@
 package fieldtmpl
 
 import (
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
+	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -69,4 +73,66 @@ func (s *service) ListFieldTemplateAttr(cts *rest.Contexts) {
 	}
 
 	cts.RespEntity(metadata.FieldTemplateAttrInfo{Info: attrTemplates})
+}
+
+// CreateFieldTemplateAttrs create field template attributes.
+func (s *service) CreateFieldTemplateAttrs(ctx *rest.Contexts) {
+	attrs := make([]metadata.FieldTemplateAttr, 0)
+	if err := ctx.DecodeInto(&attrs); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ids, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, common.BKTableNameObjAttDesTemplate, len(attrs))
+	if err != nil {
+		blog.Errorf("get sequence id on the table (%s) failed, err: %v, rid: %s", common.BKTableNameObjAttDesTemplate,
+			err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error()))
+		return
+	}
+
+	result := make([]int64, len(ids))
+	now := time.Now()
+	for idx := range attrs {
+		attrs[idx].ID = int64(ids[idx])
+		attrs[idx].OwnerID = ctx.Kit.SupplierAccount
+		attrs[idx].Creator = ctx.Kit.User
+		attrs[idx].Modifier = ctx.Kit.User
+		attrs[idx].CreateTime = &metadata.Time{Time: now}
+		attrs[idx].LastTime = &metadata.Time{Time: now}
+
+		if err := attrs[idx].Validate(); err.ErrCode != 0 {
+			blog.Errorf("field template attribute is invalid, data: %v, err: %v, rid: %s", attrs[idx], err, ctx.Kit.Rid)
+			ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+			return
+		}
+
+		err := valid.ValidPropertyOption(attrs[idx].PropertyType, attrs[idx].Option, attrs[idx].IsMultiple,
+			attrs[idx].Default, ctx.Kit.Rid, ctx.Kit.CCError)
+		if err != nil {
+			blog.Errorf("validate field template attribute option failed, data: %v, err: %v, rid: %s", attrs[idx], err,
+				ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+
+		if !model.SatisfyMongoFieldLimit(attrs[idx].PropertyID) {
+			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKPropertyIDField))
+			return
+		}
+
+		result[idx] = int64(ids[idx])
+	}
+
+	if err = mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Insert(ctx.Kit.Ctx, attrs); err != nil {
+		blog.Errorf("save field template attribute failed, data: %v, err: %v, rid: %s", attrs, err, ctx.Kit.Rid)
+		if mongodb.Client().IsDuplicatedError(err) {
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err)))
+			return
+		}
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
+		return
+	}
+
+	ctx.RespEntity(metadata.RspIDs{IDs: result})
 }

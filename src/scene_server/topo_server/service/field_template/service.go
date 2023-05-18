@@ -44,6 +44,8 @@ func InitFieldTemplate(c *capability.Capability) {
 	// field template
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template",
 		Handler: s.ListFieldTemplate})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/field_template",
+		Handler: s.CreateFieldTemplate})
 
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/field_template/{id}",
 		Handler: s.FindFieldTemplateByID})
@@ -56,4 +58,8 @@ func InitFieldTemplate(c *capability.Capability) {
 	// field template attribute
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/attribute",
 		Handler: s.ListFieldTemplateAttr})
+
+	// field template unique
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/unique",
+		Handler: s.ListFieldTemplateUnique})
 }

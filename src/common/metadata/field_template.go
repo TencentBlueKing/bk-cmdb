@@ -18,6 +18,10 @@
 package metadata
 
 import (
+	"regexp"
+	"strings"
+	"unicode/utf8"
+
 	"configcenter/src/common"
 	ccErr "configcenter/src/common/errors"
 )
@@ -32,6 +36,30 @@ type FieldTemplate struct {
 	Modifier    string `json:"modifier" bson:"modifier"`
 	CreateTime  *Time  `json:"create_time" bson:"create_time"`
 	LastTime    *Time  `json:"last_time" bson:"last_time"`
+}
+
+const (
+	fieldTemplateNameMaxLen = 15
+	fieldTemplateDesMaxLen  = 100
+)
+
+// Validate validate FieldTemplate
+func (f *FieldTemplate) Validate() ccErr.RawErrorInfo {
+	if len(f.Name) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKFieldName}}
+	}
+
+	if utf8.RuneCountInString(f.Name) > fieldTemplateNameMaxLen {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommValExceedMaxFailed,
+			Args: []interface{}{common.BKFieldName, fieldTemplateNameMaxLen}}
+	}
+
+	if utf8.RuneCountInString(f.Name) > fieldTemplateDesMaxLen {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommValExceedMaxFailed,
+			Args: []interface{}{common.BKDescriptionField, fieldTemplateDesMaxLen}}
+	}
+
+	return ccErr.RawErrorInfo{}
 }
 
 // FieldTemplateAttr field template attribute definition
@@ -55,6 +83,118 @@ type FieldTemplateAttr struct {
 	LastTime     *Time           `json:"last_time" bson:"last_time"`
 }
 
+// Validate validate FieldTemplateAttr
+func (f *FieldTemplateAttr) Validate() ccErr.RawErrorInfo {
+	if f.TemplateID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKTemplateID}}
+	}
+
+	if err := f.validatePropertyID(); err.ErrCode != 0 {
+		return err
+	}
+
+	if err := f.validateType(); err.ErrCode != 0 {
+		return err
+	}
+
+	if err := f.validateName(); err.ErrCode != 0 {
+		return err
+	}
+
+	f.Unit = strings.TrimSpace(f.Unit)
+	if f.Unit != "" && common.AttributeUnitMaxLength < utf8.RuneCountInString(f.Unit) {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommValExceedMaxFailed,
+			Args: []interface{}{AttributeFieldUnit, common.AttributeUnitMaxLength}}
+	}
+
+	if err := f.validatePlaceholder(); err.ErrCode != 0 {
+		return err
+	}
+
+	// because there will be a package import cycle problem,
+	// validate option is in src/source_controller/coreservice/core/model/field_template.go file,
+	// call valid.ValidPropertyOption func
+
+	return ccErr.RawErrorInfo{}
+}
+
+func (f *FieldTemplateAttr) validatePropertyID() ccErr.RawErrorInfo {
+	if f.PropertyID == "" {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet,
+			Args: []interface{}{common.BKPropertyIDField}}
+	}
+
+	if utf8.RuneCountInString(f.PropertyID) > common.AttributeIDMaxLength {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommValExceedMaxFailed,
+			Args: []interface{}{common.BKPropertyIDField, common.AttributeIDMaxLength}}
+	}
+
+	match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, f.PropertyID)
+	if err != nil || !match {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid,
+			Args: []interface{}{common.BKPropertyIDField}}
+	}
+
+	if strings.HasPrefix(f.PropertyID, "bk_") || strings.HasPrefix(f.PropertyID, "_bk") {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid,
+			Args: []interface{}{common.BKPropertyIDField}}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+func (f *FieldTemplateAttr) validateType() ccErr.RawErrorInfo {
+	if f.PropertyType == "" {
+		return ccErr.RawErrorInfo{}
+	}
+
+	switch f.PropertyType {
+	case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat,
+		common.FieldTypeEnumMulti, common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeUser,
+		common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList,
+		common.FieldTypeEnumQuote:
+
+	default:
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid,
+			Args: []interface{}{AttributeFieldPropertyType}}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+func (f *FieldTemplateAttr) validateName() ccErr.RawErrorInfo {
+	if f.PropertyName == "" {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet,
+			Args: []interface{}{common.BKPropertyNameField}}
+	}
+
+	if common.AttributeNameMaxLength < utf8.RuneCountInString(f.PropertyName) {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommValExceedMaxFailed,
+			Args: []interface{}{common.BKPropertyNameField, common.AttributeNameMaxLength}}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+func (f *FieldTemplateAttr) validatePlaceholder() ccErr.RawErrorInfo {
+	f.Placeholder.Value = strings.TrimSpace(f.Placeholder.Value)
+
+	if f.Placeholder.Value != "" {
+		if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(f.Placeholder.Value) {
+			return ccErr.RawErrorInfo{ErrCode: common.CCErrCommValExceedMaxFailed,
+				Args: []interface{}{AttributeFieldPlaceHolder, common.AttributePlaceHolderMaxLength}}
+		}
+
+		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, f.Placeholder.Value)
+		if err != nil || !match {
+			return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid,
+				Args: []interface{}{AttributeFieldPlaceHolder}}
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
 // AttrEditable field template attribute editable definition
 type AttrEditable struct {
 	Lock  bool `json:"lock" bson:"lock"`
@@ -73,16 +213,57 @@ type AttrPlaceholder struct {
 	Value string `json:"value" bson:"value"`
 }
 
+// FieldTmplUniqueCommonField field template unique common field definition
+type FieldTmplUniqueCommonField struct {
+	ID         int64  `json:"id" bson:"id"`
+	TemplateID int64  `json:"bk_template_id" bson:"bk_template_id"`
+	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Creator    string `json:"creator" bson:"creator"`
+	Modifier   string `json:"modifier" bson:"modifier"`
+	CreateTime *Time  `json:"create_time" bson:"create_time"`
+	LastTime   *Time  `json:"last_time" bson:"last_time"`
+}
+
 // FieldTemplateUnique field template unique definition
 type FieldTemplateUnique struct {
-	ID         int64   `json:"id" bson:"id"`
-	TemplateID int64   `json:"bk_template_id" bson:"bk_template_id"`
-	Keys       []int64 `json:"keys" bson:"keys"`
-	OwnerID    string  `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	Creator    string  `json:"creator" bson:"creator"`
-	Modifier   string  `json:"modifier" bson:"modifier"`
-	CreateTime *Time   `json:"create_time" bson:"create_time"`
-	LastTime   *Time   `json:"last_time" bson:"last_time"`
+	FieldTmplUniqueCommonField `json:",inline" bson:",inline"`
+	Keys                       []int64 `json:"keys" bson:"keys"`
+}
+
+// Validate validate FieldTemplateUnique
+func (f *FieldTemplateUnique) Validate() ccErr.RawErrorInfo {
+	if f.TemplateID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKTemplateID}}
+	}
+
+	if len(f.Keys) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet,
+			Args: []interface{}{common.BKObjectUniqueKeys}}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// Convert convert FieldTemplateUnique to FieldTmplUniqueOption struct
+func (c *FieldTemplateUnique) Convert(idToPropertyIDMap map[int64]string) (*FieldTmplUniqueOption,
+	ccErr.RawErrorInfo) {
+
+	propertyIDs := make([]string, len(c.Keys))
+	for idx, key := range c.Keys {
+		propertyID, exist := idToPropertyIDMap[key]
+		if !exist {
+			return nil, ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid,
+				Args: []interface{}{common.BKObjectUniqueKeys}}
+		}
+
+		propertyIDs[idx] = propertyID
+	}
+
+	unique := new(FieldTmplUniqueOption)
+	unique.FieldTmplUniqueCommonField = c.FieldTmplUniqueCommonField
+	unique.Keys = propertyIDs
+
+	return unique, ccErr.RawErrorInfo{}
 }
 
 // ObjFieldTemplateRelation the relationship between model and field template definition
@@ -190,4 +371,103 @@ type FieldTemplateAttrInfo struct {
 type ListFieldTemplateAttrResp struct {
 	BaseResp `json:",inline"`
 	Data     FieldTemplateAttrInfo `json:"data"`
+}
+
+// CreateFieldTmplOption create field template option
+type CreateFieldTmplOption struct {
+	FieldTemplate
+	Attributes []FieldTemplateAttr     `json:"attributes"`
+	Uniques    []FieldTmplUniqueOption `json:"uniques"`
+}
+
+const (
+	filedTemplateAttrMaxCount   = 20
+	filedTemplateUniqueMaxCount = 5
+)
+
+// Validate validate create field template option
+func (c *CreateFieldTmplOption) Validate() ccErr.RawErrorInfo {
+	if err := c.FieldTemplate.Validate(); err.ErrCode != 0 {
+		return err
+	}
+
+	if len(c.Attributes) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{"attributes"}}
+	}
+
+	if len(c.Attributes) > filedTemplateAttrMaxCount {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit,
+			Args: []interface{}{"attributes", filedTemplateAttrMaxCount}}
+	}
+
+	if len(c.Uniques) > filedTemplateUniqueMaxCount {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit,
+			Args: []interface{}{"uniques", filedTemplateAttrMaxCount}}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// FieldTmplUniqueOption create field template unique option
+type FieldTmplUniqueOption struct {
+	FieldTmplUniqueCommonField `json:",inline" bson:",inline"`
+	Keys                       []string `json:"keys" bson:"keys"`
+}
+
+// Convert convert FieldTmplUniqueOption to FieldTemplateUnique struct
+func (c *FieldTmplUniqueOption) Convert(propertyIDToIDMap map[string]int64) (*FieldTemplateUnique,
+	ccErr.RawErrorInfo) {
+
+	ids := make([]int64, len(c.Keys))
+	for idx, key := range c.Keys {
+		id, exist := propertyIDToIDMap[key]
+		if !exist {
+			return nil, ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid,
+				Args: []interface{}{common.BKObjectUniqueKeys}}
+		}
+
+		ids[idx] = id
+	}
+
+	unique := new(FieldTemplateUnique)
+	unique.FieldTmplUniqueCommonField = c.FieldTmplUniqueCommonField
+	unique.Keys = ids
+
+	return unique, ccErr.RawErrorInfo{}
+}
+
+// ListFieldTmplUniqueOption list field template unique option
+type ListFieldTmplUniqueOption struct {
+	TemplateID        int64 `json:"bk_template_id"`
+	CommonQueryOption `json:",inline"`
+}
+
+// Validate list field template unique option
+func (l *ListFieldTmplUniqueOption) Validate() ccErr.RawErrorInfo {
+	if l.TemplateID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKTemplateID}}
+	}
+
+	// set limit to unlimited if not set, compatible for searching all uniques, uniques amount won't be large
+	if !l.Page.EnableCount && l.Page.Limit == 0 {
+		l.Page.Limit = common.BKNoLimit
+	}
+
+	if rawErr := l.CommonQueryOption.Validate(); rawErr.ErrCode != 0 {
+		return rawErr
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// FieldTemplateUniqueInfo field template unique info for list apis
+type FieldTemplateUniqueInfo struct {
+	Count uint64                `json:"count"`
+	Info  []FieldTemplateUnique `json:"info"`
+}
+
+// ListFieldTmplUniqueResp list field template unique response
+type ListFieldTmplUniqueResp struct {
+	BaseResp `json:",inline"`
+	Data     FieldTemplateUniqueInfo `json:"data"`
 }

@@ -25,16 +25,16 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// ListFieldTemplateAttr list field template attributes
-func (t template) ListFieldTemplateAttr(ctx context.Context, h http.Header, opt *metadata.CommonQueryOption) (
-	*metadata.FieldTemplateAttrInfo, errors.CCErrorCoder) {
+// ListFieldTemplateUnique list field template uniques
+func (t template) ListFieldTemplateUnique(ctx context.Context, h http.Header, opt *metadata.CommonQueryOption) (
+	*metadata.FieldTemplateUniqueInfo, errors.CCErrorCoder) {
 
-	resp := new(metadata.ListFieldTemplateAttrResp)
+	resp := new(metadata.ListFieldTmplUniqueResp)
 
 	err := t.client.Post().
 		WithContext(ctx).
 		Body(opt).
-		SubResourcef("/findmany/field_template/attribute").
+		SubResourcef("/findmany/field_template/unique").
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -50,8 +50,8 @@ func (t template) ListFieldTemplateAttr(ctx context.Context, h http.Header, opt 
 	return &resp.Data, nil
 }
 
-// CreateFieldTemplateAttrs create field template attributes
-func (t template) CreateFieldTemplateAttrs(ctx context.Context, h http.Header, opt []metadata.FieldTemplateAttr) (
+// CreateFieldTemplateUniques create field template uniques
+func (t template) CreateFieldTemplateUniques(ctx context.Context, h http.Header, opt []metadata.FieldTemplateUnique) (
 	*metadata.RspIDs, errors.CCErrorCoder) {
 
 	resp := new(metadata.CreateBatchResult)
@@ -59,7 +59,7 @@ func (t template) CreateFieldTemplateAttrs(ctx context.Context, h http.Header, o
 	err := t.client.Post().
 		WithContext(ctx).
 		Body(opt).
-		SubResourcef("/createmany/field_template/attribute").
+		SubResourcef("/createmany/field_template/unique").
 		WithHeaders(h).
 		Do().
 		Into(resp)
