@@ -17,7 +17,7 @@ import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common/language"
-	"configcenter/src/scene_server/topo_server/logics/field_template"
+	fieldtemplate "configcenter/src/scene_server/topo_server/logics/field_template"
 	"configcenter/src/scene_server/topo_server/logics/inst"
 	"configcenter/src/scene_server/topo_server/logics/kube"
 	"configcenter/src/scene_server/topo_server/logics/model"
@@ -46,7 +46,7 @@ type Logics interface {
 	KubeOperation() kube.KubeOperationInterface
 	ProjectOperation() inst.ProjectOperationInterface
 	ModelQuoteOperation() modelquote.ModelQuoteOperation
-	FieldTemplateOperation() field_template.FieldTemplateOperation
+	FieldTemplateOperation() fieldtemplate.FieldTemplateOperation
 }
 
 type logics struct {
@@ -68,7 +68,7 @@ type logics struct {
 	kube              kube.KubeOperationInterface
 	project           inst.ProjectOperationInterface
 	modelQuote        modelquote.ModelQuoteOperation
-	fieldTemplate     field_template.FieldTemplateOperation
+	fieldTemplate     fieldtemplate.FieldTemplateOperation
 }
 
 // New create a logics manager
@@ -122,7 +122,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		kube:              kubeOperation,
 		project:           projectOperation,
 		modelQuote:        modelquote.NewModelQuoteOperation(client),
-		fieldTemplate:     field_template.NewFieldTemplateOperation(client),
+		fieldTemplate:     fieldtemplate.NewFieldTemplateOperation(client),
 	}
 }
 
@@ -217,6 +217,6 @@ func (l *logics) ModelQuoteOperation() modelquote.ModelQuoteOperation {
 }
 
 // FieldTemplateOperation return an instance providing field template operations
-func (l *logics) FieldTemplateOperation() field_template.FieldTemplateOperation {
+func (l *logics) FieldTemplateOperation() fieldtemplate.FieldTemplateOperation {
 	return l.fieldTemplate
 }

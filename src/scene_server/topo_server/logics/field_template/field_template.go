@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package field_template
+package fieldtemplate
 
 import (
 	"configcenter/src/apimachinery"
