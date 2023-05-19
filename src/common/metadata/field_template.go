@@ -133,14 +133,14 @@ func (option *FieldTemplateBindObjOpt) Validate() ccErr.RawErrorInfo {
 	return ccErr.RawErrorInfo{}
 }
 
-// FieldTemplateUnBindObjOpt field template unbinding model option
-type FieldTemplateUnBindObjOpt struct {
+// FieldTemplateUnbindObjOpt field template unbinding model option
+type FieldTemplateUnbindObjOpt struct {
 	ID       int64  `json:"id"`
 	ObjectID string `json:"bk_obj_id"`
 }
 
 // Validate field template unbinding model request parameter validation function
-func (option *FieldTemplateUnBindObjOpt) Validate() ccErr.RawErrorInfo {
+func (option *FieldTemplateUnbindObjOpt) Validate() ccErr.RawErrorInfo {
 	if option.ID == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,

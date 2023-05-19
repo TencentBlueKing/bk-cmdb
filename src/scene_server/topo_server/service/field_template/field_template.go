@@ -103,43 +103,27 @@ func (s *service) FindFieldTemplateByID(ctx *rest.Contexts) {
 	ctx.RespEntity(res.Info[0])
 }
 
-// isObjsSupportedBindingFieldTemplate currently only supports "host" in the mainline model
-func (s *service) isObjsSupportedBindingFieldTemplate(kit *rest.Kit, objIDs []string) ccErr.CCErrorCoder {
+// canObjsBindFieldTemplate currently only supports "host" in the mainline model
+func (s *service) canObjsBindFieldTemplate(kit *rest.Kit, objIDs []string) ccErr.CCErrorCoder {
 
 	cond := mapstr.MapStr{
 		common.AssociationKindIDField: common.AssociationKindMainline,
-	}
-	queryCond := &metadata.QueryCondition{
-		Condition:      cond,
-		Fields:         []string{common.BKObjIDField},
-		DisableCounter: true,
+		common.BKDBAND: []mapstr.MapStr{
+			{common.BKObjIDField: mapstr.MapStr{common.BKDBNE: common.BKInnerObjIDHost}},
+			{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}},
+		},
 	}
 
-	asst, err := s.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, queryCond)
+	counts, err := s.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameObjAsst, []map[string]interface{}{cond})
 	if err != nil {
-		blog.Errorf("query mainline object failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+		blog.Errorf("get mainline obj count failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
+		return err
 	}
 
-	if len(asst.Info) == 0 {
-		blog.Errorf("no mainline object founded, cond: %+v, rid: %s", cond, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommNotFound)
-	}
-
-	objIDMap := make(map[string]struct{})
-	for _, data := range asst.Info {
-		if data.ObjectID == common.BKInnerObjIDHost {
-			continue
-		}
-		objIDMap[data.ObjectID] = struct{}{}
-	}
-
-	for _, obj := range objIDs {
-		if _, ok := objIDMap[obj]; ok || obj == "" {
-			blog.Errorf("object(%s) is not allowed to bind field template, cond: %+v, err: %v, rid: %s", obj,
-				cond, err, kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, obj)
-		}
+	if len(counts) != 1 || int(counts[0]) > 0 {
+		blog.Errorf("obj ids are invalid, cond: %+v, rid: %s", cond, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_obj_ids")
 	}
 
 	// determine whether these objIDs exist
@@ -147,11 +131,11 @@ func (s *service) isObjsSupportedBindingFieldTemplate(kit *rest.Kit, objIDs []st
 		common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs},
 	}
 
-	counts, cErr := s.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+	counts, err = s.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 		common.BKTableNameObjDes, []map[string]interface{}{objCond})
-	if cErr != nil {
-		blog.Errorf("get obj count failed, cond: %+v, err: %v, rid: %s", objCond, cErr, kit.Rid)
-		return cErr
+	if err != nil {
+		blog.Errorf("get objs count failed, cond: %+v, err: %v, rid: %s", objCond, err, kit.Rid)
+		return err
 	}
 
 	if len(counts) != 1 || int(counts[0]) != len(objIDs) {
@@ -176,7 +160,7 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 	}
 	objIDs := make([]string, 0)
 	objIDs = util.StrArrayUnique(opt.ObjectIDs)
-	if err := s.isObjsSupportedBindingFieldTemplate(ctx.Kit, objIDs); err != nil {
+	if err := s.canObjsBindFieldTemplate(ctx.Kit, objIDs); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -190,7 +174,7 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateBindObject(ctx.Kit.Ctx, ctx.Kit.Header, option)
 		if err != nil {
-			blog.Errorf("update object attribute index failed, err: %v , rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("field template bind model failed, err: %v , rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 		// todo:开启事务记录审计日志
@@ -204,9 +188,9 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-// FieldTemplateUnBindObject field template binding model
-func (s *service) FieldTemplateUnBindObject(ctx *rest.Contexts) {
-	opt := new(metadata.FieldTemplateUnBindObjOpt)
+// FieldTemplateUnbindObject field template binding model
+func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
+	opt := new(metadata.FieldTemplateUnbindObjOpt)
 	if err := ctx.DecodeInto(opt); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -217,16 +201,16 @@ func (s *service) FieldTemplateUnBindObject(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := s.isObjsSupportedBindingFieldTemplate(ctx.Kit, []string{opt.ObjectID}); err != nil {
+	if err := s.canObjsBindFieldTemplate(ctx.Kit, []string{opt.ObjectID}); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 	// todo:待补充鉴权日志
 
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateUnBindObject(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateUnbindObject(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 		if err != nil {
-			blog.Errorf("update object attribute index failed, err: %v , rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("field template unbind model failed, err: %v , rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 		// todo:开启事务记录审计日志

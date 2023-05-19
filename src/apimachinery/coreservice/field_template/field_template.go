@@ -72,9 +72,9 @@ func (t *template) FieldTemplateBindObject(ctx context.Context, h http.Header,
 	return resp.CCError()
 }
 
-// FieldTemplateUnBindObject field template binding model
-func (t *template) FieldTemplateUnBindObject(ctx context.Context, h http.Header,
-	opt *metadata.FieldTemplateUnBindObjOpt) errors.CCErrorCoder {
+// FieldTemplateUnbindObject field template binding model
+func (t *template) FieldTemplateUnbindObject(ctx context.Context, h http.Header,
+	opt *metadata.FieldTemplateUnbindObjOpt) errors.CCErrorCoder {
 
 	resp := new(metadata.Response)
 	subPath := "/update/field_template/unbind/object"

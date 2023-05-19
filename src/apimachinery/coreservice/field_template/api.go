@@ -28,8 +28,8 @@ type Interface interface {
 		*metadata.FieldTemplateInfo, errors.CCErrorCoder)
 	FieldTemplateBindObject(ctx context.Context, h http.Header,
 		opt *metadata.FieldTemplateBindObjOpt) errors.CCErrorCoder
-	FieldTemplateUnBindObject(ctx context.Context, h http.Header,
-		opt *metadata.FieldTemplateUnBindObjOpt) errors.CCErrorCoder
+	FieldTemplateUnbindObject(ctx context.Context, h http.Header,
+		opt *metadata.FieldTemplateUnbindObjOpt) errors.CCErrorCoder
 	ListFieldTemplateAttr(ctx context.Context, h http.Header, opt *metadata.CommonQueryOption) (
 		*metadata.FieldTemplateAttrInfo, errors.CCErrorCoder)
 }

@@ -43,8 +43,7 @@ func (ps *parseStream) topology() *parseStream {
 		cloudArea().
 		businessSet().
 		kube().
-		project().
-		fieldTemplate()
+		project()
 
 	return ps
 }

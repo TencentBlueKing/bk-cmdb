@@ -169,29 +169,28 @@ func (s *Service) ListFieldTemplateTasksStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	objIDs := util.StrArrayUnique(input.ObjectIDs)
-	query := &metadata.QueryCondition{
-		Condition: mapstr.MapStr{
-			common.BKInstIDField: input.ID,
-			metadata.APITaskExtraField: mapstr.MapStr{
-				common.BKDBIN: objIDs,
-			},
-			common.BKTaskTypeField: common.SyncFieldTemplateTaskFlag,
-		},
-		Fields: []string{metadata.APITaskExtraField, common.BKStatusField},
-		Page: metadata.BasePage{
-			Sort:  "-" + common.CreateTimeField,
-			Limit: common.BKNoLimit,
-		},
+	if rawErr := input.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
 	}
-	infos, err := s.Logics.ListSyncStatusHistory(ctx.Kit, query)
+
+	objIDs := util.StrArrayUnique(input.ObjectIDs)
+	query := mapstr.MapStr{
+		common.BKInstIDField: input.ID,
+		metadata.APITaskExtraField: mapstr.MapStr{
+			common.BKDBIN: objIDs,
+		},
+		common.BKTaskTypeField: common.SyncFieldTemplateTaskFlag,
+	}
+
+	infos, err := s.Logics.ListFieldTemplateSyncStatus(ctx.Kit, query)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	objStatusMap := make(map[string]string)
-	for _, info := range infos.Info {
+	for _, info := range infos {
 		obj := util.GetStrByInterface(info.Extra)
 		_, ok := objStatusMap[obj]
 		if ok && string(info.Status) != string(metadata.APITaskStatusExecute) {

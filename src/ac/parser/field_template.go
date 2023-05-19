@@ -90,14 +90,14 @@ var FieldTemplateAuthConfigs = []AuthConfig{
 		ResourceAction: meta.SkipAction,
 	},
 	{
-		Name:           "FieldTemplateUnBindingModel",
+		Name:           "FieldTemplateUnbindingModel",
 		Description:    "字段组合模版解除绑定模型",
 		Pattern:        "/api/v3/update/field_template/unbind/object",
 		HTTPMethod:     http.MethodPost,
 		ResourceAction: meta.SkipAction,
 	},
 	{
-		Name:           "FieldTemplateUnBindingModel",
+		Name:           "FieldTemplateUnbindingModel",
 		Description:    "查询字段组合模版任务状态",
 		Pattern:        "/api/v3/task/find/field_template/tasks_status",
 		HTTPMethod:     http.MethodGet,

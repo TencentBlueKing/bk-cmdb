@@ -44,7 +44,7 @@ type APITaskDetail struct {
 	TaskType string `json:"task_type,omitempty" bson:"task_type"`
 	// InstID 实例id，该任务关联的实例id
 	InstID int64 `json:"bk_inst_id,omitempty" bson:"bk_inst_id"`
-	// ExtraRelatedField used in scenarios where tasks cannot
+	// Extra used in scenarios where tasks cannot
 	// be distinguished by an instance ID field. for example:
 	// if TaskType is SyncFieldTemplateTaskFlag, two parameters
 	// bk_field_template_id and bk_obj_id are required to determine the unique task.
@@ -80,7 +80,7 @@ type APITaskSyncStatus struct {
 	TaskType string `json:"task_type,omitempty" bson:"task_type"`
 	// InstID 实例id，该任务关联的实例id
 	InstID int64 `json:"bk_inst_id,omitempty" bson:"bk_inst_id"`
-	// ExtraRelatedField used in scenarios where tasks cannot be
+	// Extra used in scenarios where tasks cannot be
 	// distinguished by an instance ID field. for example: if the
 	// taskType is SyncFieldTemplateTaskFlag, two parameters bk_template_id
 	// and bk_obj_id are required to determine the unique task
