@@ -104,13 +104,13 @@ func (s *service) FindFieldTemplateByID(ctx *rest.Contexts) {
 }
 
 // canObjsBindFieldTemplate currently only supports "host" in the mainline model
-func (s *service) canObjsBindFieldTemplate(kit *rest.Kit, objIDs []string) ccErr.CCErrorCoder {
+func (s *service) canObjsBindFieldTemplate(kit *rest.Kit, objIDs []int64) ccErr.CCErrorCoder {
 
 	cond := mapstr.MapStr{
 		common.AssociationKindIDField: common.AssociationKindMainline,
 		common.BKDBAND: []mapstr.MapStr{
 			{common.BKObjIDField: mapstr.MapStr{common.BKDBNE: common.BKInnerObjIDHost}},
-			{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}},
+			{common.BKFieldID: mapstr.MapStr{common.BKDBIN: objIDs}},
 		},
 	}
 
@@ -158,8 +158,8 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
-	objIDs := make([]string, 0)
-	objIDs = util.StrArrayUnique(opt.ObjectIDs)
+	objIDs := make([]int64, 0)
+	objIDs = util.IntArrayUnique(opt.ObjectIDs)
 	if err := s.canObjsBindFieldTemplate(ctx.Kit, objIDs); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -201,7 +201,7 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := s.canObjsBindFieldTemplate(ctx.Kit, []string{opt.ObjectID}); err != nil {
+	if err := s.canObjsBindFieldTemplate(ctx.Kit, []int64{opt.ObjectID}); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}

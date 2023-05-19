@@ -74,13 +74,13 @@ func (s *service) ListFieldTemplate(cts *rest.Contexts) {
 	cts.RespEntity(metadata.FieldTemplateInfo{Info: fieldTemplates})
 }
 
-func canModelBindingFieldTemplate(kit *rest.Kit, objIDs []string) error {
+func canModelBindingFieldTemplate(kit *rest.Kit, objIDs []int64) error {
 
 	cond := mapstr.MapStr{
 		common.AssociationKindIDField: common.AssociationKindMainline,
 		common.BKDBAND: []mapstr.MapStr{
 			{common.BKObjIDField: mapstr.MapStr{common.BKDBNE: common.BKInnerObjIDHost}},
-			{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}},
+			{common.BKFieldID: mapstr.MapStr{common.BKDBIN: objIDs}},
 		},
 	}
 	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
@@ -119,17 +119,17 @@ func (s *service) validateTemplateID(kit *rest.Kit, id int64) error {
 	return nil
 }
 
-func (s *service) isObjIDsExists(kit *rest.Kit, objIDs []string) error {
+func (s *service) isObjIDsExists(kit *rest.Kit, ids []int64) error {
 
-	for _, objID := range objIDs {
-		if objID == "" {
+	for _, objID := range ids {
+		if objID == 0 {
 			return kit.CCError.CCError(common.CCErrCommParamsIsInvalid)
 		}
 	}
 
 	filter := mapstr.MapStr{
-		common.BKObjIDField: mapstr.MapStr{
-			common.BKDBIN: objIDs,
+		common.BKFieldID: mapstr.MapStr{
+			common.BKDBIN: ids,
 		},
 	}
 	count, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(filter).Count(kit.Ctx)
@@ -137,7 +137,7 @@ func (s *service) isObjIDsExists(kit *rest.Kit, objIDs []string) error {
 		blog.Errorf("mongodb count failed, table: %s, err: %+v, rid: %s", common.BKTableNameObjDes, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
-	if int(count) != len(objIDs) {
+	if int(count) != len(ids) {
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_obj_ids")
 	}
 	return nil
@@ -159,7 +159,7 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 		return
 	}
 
-	objIDs := util.StrArrayUnique(opt.ObjectIDs)
+	objIDs := util.IntArrayUnique(opt.ObjectIDs)
 	if err := s.isObjIDsExists(kit, objIDs); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -264,12 +264,12 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := s.isObjIDsExists(kit, []string{opt.ObjectID}); err != nil {
+	if err := s.isObjIDsExists(kit, []int64{opt.ObjectID}); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	err := canModelBindingFieldTemplate(kit, []string{opt.ObjectID})
+	err := canModelBindingFieldTemplate(kit, []int64{opt.ObjectID})
 	if err != nil {
 		blog.Errorf("multi field template founded, cond: %+v, rid: %s", err, kit.Rid)
 		ctx.RespAutoError(err)
