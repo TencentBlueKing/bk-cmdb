@@ -87,7 +87,7 @@ type FieldTemplateUnique struct {
 
 // ObjFieldTemplateRelation the relationship between model and field template definition
 type ObjFieldTemplateRelation struct {
-	ObjectID   string `json:"bk_obj_id" bson:"bk_obj_id"`
+	ObjectID   int64  `json:"object_id" bson:"object_id"`
 	TemplateID int64  `json:"bk_template_id" bson:"bk_template_id"`
 	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }

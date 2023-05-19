@@ -775,6 +775,9 @@ const (
 	BKSrcModelField = "src_model"
 	// BKDestModelField destination model field in the model relationship table.
 	BKDestModelField = "dest_model"
+
+	// ObjectIDField the object id field, it is an int type field and is used to associate with the model
+	ObjectIDField = "object_id"
 )
 
 const (
