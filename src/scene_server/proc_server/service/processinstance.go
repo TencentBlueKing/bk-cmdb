@@ -1243,55 +1243,41 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, processIDs []int64,
 	processDetailMap map[int64]interface{}, totalCnt int64) {
 
-	// objID array
-	srvinstArr := make([]int64, 0)
-	hostArr := make([]int64, 0)
-	moduleArr := make([]int64, 0)
-	setArr := make([]int64, 0)
+	srvInstArr, hostArr, moduleArr := make([]int64, 0), make([]int64, 0), make([]int64, 0)
 
-	// procID => objID map
-	procSrvinstMap := make(map[int64]int64)
-	procTemplateMap := make(map[int64]int64)
-	procHostMap := make(map[int64]int64)
-	srvinstModuleMap := make(map[int64]int64)
-	moduleSetMap := make(map[int64]int64)
+	procSrvInstMap, procTemplateMap := make(map[int64]int64), make(map[int64]int64)
 
-	// objID => objDetail map
-	srvinstDetailMap := make(map[int64]metadata.ServiceInstanceDetailOfP)
-	hostDetailMap := make(map[int64]metadata.HostDetailOfP)
-	moduleDetailMap := make(map[int64]metadata.ModuleDetailOfP)
-	setDetailMap := make(map[int64]metadata.SetDetailOfP)
+	procHostMap, srvInstModuleMap := make(map[int64]int64), make(map[int64]int64)
+
+	srvInstDetailMap := make(map[int64]metadata.ServiceInstanceDetailOfP)
 
 	// get ID of serviceInstance, host, processTemplate and their process relation map
-	listRelationOption := &metadata.ListProcessInstanceRelationOption{
+	op := &metadata.ListProcessInstanceRelationOption{
 		BusinessID: bizID,
 		ProcessIDs: processIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
+		Page:       metadata.BasePage{Limit: common.BKNoLimit},
 	}
-	relations, ccErr := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header,
-		listRelationOption)
+	relations, ccErr := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, op)
 	if ccErr != nil {
-		ctx.RespWithError(ccErr, ccErr.GetCode(), "ListProcessInstanceRelation failed, option: %+v, err: %+v",
-			listRelationOption, ccErr)
+		ctx.RespWithError(ccErr, ccErr.GetCode(), "option: %+v, err: %v", op, ccErr)
 		return
 	}
 
 	for _, relation := range relations.Info {
-		srvinstArr = append(srvinstArr, relation.ServiceInstanceID)
+		srvInstArr = append(srvInstArr, relation.ServiceInstanceID)
 		hostArr = append(hostArr, relation.HostID)
-		procSrvinstMap[relation.ProcessID] = relation.ServiceInstanceID
+		procSrvInstMap[relation.ProcessID] = relation.ServiceInstanceID
 		procTemplateMap[relation.ProcessID] = relation.ProcessTemplateID
 		procHostMap[relation.ProcessID] = relation.HostID
 		procTemplateMap[relation.ProcessID] = relation.ProcessTemplateID
 	}
-	srvinstArr = util.IntArrayUnique(srvinstArr)
+
+	srvInstArr = util.IntArrayUnique(srvInstArr)
 
 	// service instance detail
 	instOpt := &metadata.ListServiceInstanceOption{
 		BusinessID:         bizID,
-		ServiceInstanceIDs: srvinstArr,
+		ServiceInstanceIDs: srvInstArr,
 	}
 	instances, ccErr := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, instOpt)
 	if ccErr != nil {
@@ -1300,41 +1286,92 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 	}
 
 	for _, inst := range instances.Info {
-		srvinstDetailMap[inst.ID] = metadata.ServiceInstanceDetailOfP{
+		srvInstDetailMap[inst.ID] = metadata.ServiceInstanceDetailOfP{
 			ID:   inst.ID,
 			Name: inst.Name,
 		}
-		srvinstModuleMap[inst.ID] = inst.ModuleID
+		srvInstModuleMap[inst.ID] = inst.ModuleID
 		moduleArr = append(moduleArr, inst.ModuleID)
 	}
+
+	hostDetailMap, moduleDetailMap, moduleSetMap, setArr, err := ps.getHostAndModuleInfo(ctx.Kit, bizID,
+		moduleArr, hostArr)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	setDetailMap, err := ps.getSetInfo(ctx.Kit, bizID, setArr)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	// construct the final result
+	ret := make([]metadata.ListProcessRelatedInfoResult, len(processIDs))
+
+	for idx, processID := range processIDs {
+
+		srvInstID := procSrvInstMap[processID]
+		moduleID := srvInstModuleMap[srvInstID]
+		setID := moduleSetMap[moduleID]
+
+		hostDetail := hostDetailMap[procHostMap[processID]]
+		srvInstDetail := srvInstDetailMap[srvInstID]
+		moduleDetail := moduleDetailMap[moduleID]
+		setDetail := setDetailMap[setID]
+
+		info := metadata.ListProcessRelatedInfoResult{
+			Set:             setDetail,
+			Module:          moduleDetail,
+			Host:            hostDetail,
+			ServiceInstance: srvInstDetail,
+			ProcessTemplate: metadata.ProcessTemplateDetailOfP{ID: procTemplateMap[processID]},
+			Process:         processDetailMap[processID],
+		}
+		ret[idx] = info
+	}
+
+	ctx.RespEntityWithCount(totalCnt, ret)
+}
+
+func (ps *ProcServer) getHostAndModuleInfo(kit *rest.Kit, bizID int64, moduleArr, hostArr []int64) (
+	map[int64]metadata.HostDetailOfP, map[int64]metadata.ModuleDetailOfP, map[int64]int64, []int64, error) {
+
 	moduleArr = util.IntArrayUnique(moduleArr)
+
+	hostDetailMap := make(map[int64]metadata.HostDetailOfP)
 
 	// host detail
 	hostParam := &metadata.QueryCondition{
-		Fields: []string{common.BKHostIDField, common.BKCloudIDField, common.BKHostInnerIPField},
-		Condition: map[string]interface{}{common.BKHostIDField: map[string]interface{}{
-			common.BKDBIN: hostArr,
-		},
+		Fields: []string{common.BKHostIDField, common.BKCloudIDField, common.BKHostInnerIPField,
+			common.BKHostInnerIPv6Field, common.BKAddressingField},
+		Condition: map[string]interface{}{
+			common.BKHostIDField: map[string]interface{}{
+				common.BKDBIN: hostArr,
+			},
 		},
 	}
 
-	hostResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+	hostResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
 		common.BKInnerObjIDHost, hostParam)
-	if nil != err {
-		blog.Errorf("ListProcessRelatedInfo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s",
-			*hostParam, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
-		return
+	if err != nil {
+		blog.Errorf("ListProcessRelatedInfo failed, param: %v, err: %v, rid:%s", *hostParam, err, kit.Rid)
+		return nil, nil, nil, nil, err
 	}
 
 	for _, host := range hostResult.Info {
 		hostID, _ := host.Int64(common.BKHostIDField)
 		cloudID, _ := host.Int64(common.BKCloudIDField)
 		innerIP, _ := host.String(common.BKHostInnerIPField)
+		innerIPv6, _ := host.String(common.BKHostInnerIPv6Field)
+		addressing, _ := host.String(common.BKAddressingField)
+
 		hostDetailMap[hostID] = metadata.HostDetailOfP{
-			HostID:  hostID,
-			CloudID: cloudID,
-			InnerIP: innerIP,
+			HostID:     hostID,
+			CloudID:    cloudID,
+			InnerIP:    innerIP,
+			InnerIPv6:  innerIPv6,
+			Addressing: addressing,
 		}
 	}
 
@@ -1349,14 +1386,17 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 		},
 	}
 
-	moduleResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+	moduleResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
 		common.BKInnerObjIDModule, moduleParam)
 	if nil != err {
 		blog.Errorf("ListProcessRelatedInfo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s",
-			*moduleParam, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
-		return
+			*moduleParam, err, kit.Rid)
+		return nil, nil, nil, nil, err
 	}
+
+	moduleDetailMap := make(map[int64]metadata.ModuleDetailOfP)
+	moduleSetMap := make(map[int64]int64)
+	setArr := make([]int64, 0)
 
 	for _, module := range moduleResult.Info {
 		moduleID, _ := module.Int64(common.BKModuleIDField)
@@ -1365,16 +1405,18 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 			ModuleID:   moduleID,
 			ModuleName: moduleName,
 		}
-
 		setID, _ := module.Int64(common.BKSetIDField)
 		moduleSetMap[moduleID] = setID
 		setArr = append(setArr, setID)
-
 	}
-	setArr = util.IntArrayUnique(setArr)
+	return hostDetailMap, moduleDetailMap, moduleSetMap, setArr, nil
+}
 
+func (ps *ProcServer) getSetInfo(kit *rest.Kit, bizID int64, setArr []int64) (map[int64]metadata.SetDetailOfP, error) {
+
+	setArr = util.IntArrayUnique(setArr)
 	// set detail
-	setParam := &metadata.QueryCondition{
+	cond := &metadata.QueryCondition{
 		Fields: []string{common.BKSetIDField, common.BKSetNameField, common.BKSetEnvField},
 		Condition: map[string]interface{}{
 			common.BKAppIDField: bizID,
@@ -1384,16 +1426,14 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 		},
 	}
 
-	setResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
-		common.BKInnerObjIDSet, setParam)
-	if nil != err {
-		blog.Errorf("ListProcessRelatedInfo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s",
-			*setParam, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
-		return
+	result, err := ps.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, cond)
+	if err != nil {
+		blog.Errorf("ListProcessRelatedInfo failed, param: %v, err: %v, rid:%s", *cond, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	for _, set := range setResult.Info {
+	setDetailMap := make(map[int64]metadata.SetDetailOfP)
+	for _, set := range result.Info {
 		setID, _ := set.Int64(common.BKSetIDField)
 		setName, _ := set.String(common.BKSetNameField)
 		setEnv, _ := set.String(common.BKSetEnvField)
@@ -1403,35 +1443,7 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 			SetEnv:  setEnv,
 		}
 	}
-
-	// construct the final result
-	ret := make([]metadata.ListProcessRelatedInfoResult, len(processIDs))
-
-	for idx, processID := range processIDs {
-
-		srvinstID := procSrvinstMap[processID]
-		moduleID := srvinstModuleMap[srvinstID]
-		setID := moduleSetMap[moduleID]
-
-		hostDetail := hostDetailMap[procHostMap[processID]]
-		srvinstDetail := srvinstDetailMap[srvinstID]
-		moduleDetail := moduleDetailMap[moduleID]
-		setDetail := setDetailMap[setID]
-
-		info := metadata.ListProcessRelatedInfoResult{
-			Set:             setDetail,
-			Module:          moduleDetail,
-			Host:            hostDetail,
-			ServiceInstance: srvinstDetail,
-			ProcessTemplate: metadata.ProcessTemplateDetailOfP{
-				ID: procTemplateMap[processID],
-			},
-			Process: processDetailMap[processID],
-		}
-		ret[idx] = info
-	}
-
-	ctx.RespEntityWithCount(totalCnt, ret)
+	return setDetailMap, nil
 }
 
 // ListProcessInstancesDetailsByIDs get process instances details and relation by their ids
@@ -1442,16 +1454,13 @@ func (ps *ProcServer) ListProcessInstancesDetailsByIDs(ctx *rest.Contexts) {
 		return
 	}
 
-	rawErr := input.Validate()
-	if rawErr.ErrCode != 0 {
+	if rawErr := input.Validate(); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
 	filter := map[string]interface{}{
-		common.BKProcessIDField: map[string]interface{}{
-			common.BKDBIN: input.ProcessIDs,
-		},
+		common.BKProcessIDField: map[string]interface{}{common.BKDBIN: input.ProcessIDs},
 	}
 	reqParam := &metadata.QueryCondition{
 		Condition: filter,
@@ -1460,36 +1469,30 @@ func (ps *ProcServer) ListProcessInstancesDetailsByIDs(ctx *rest.Contexts) {
 	processResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 		common.BKInnerObjIDProc, reqParam)
 	if nil != err {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "ListProcessInstancesDetailsByIDs failed, "+
-			"reqParam: %#v, err: %+v", reqParam, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "reqParam: %#v, err: %+v", reqParam, err)
 		return
 	}
 
-	processIDPropertyMap := map[int64]mapstr.MapStr{}
-	sortedprocessIDs := make([]int64, 0)
+	processIDPropertyMap, sortedprocessIDs := map[int64]mapstr.MapStr{}, make([]int64, 0)
+
 	for _, process := range processResult.Info {
 		processID, err := process.Int64(common.BKProcessIDField)
 		if err != nil {
-			ctx.RespWithError(err, common.CCErrCommParseDataFailed, "ListProcessInstancesDetailsByIDs failed, "+
-				"process: %#v, err: %+v", process, err)
+			ctx.RespWithError(err, common.CCErrCommParseDataFailed, "process: %#v, err: %+v", process, err)
 			return
 		}
 		processIDPropertyMap[processID] = process
 		sortedprocessIDs = append(sortedprocessIDs, processID)
 	}
 
-	listRelationOption := &metadata.ListProcessInstanceRelationOption{
+	op := &metadata.ListProcessInstanceRelationOption{
 		BusinessID: input.BizID,
 		ProcessIDs: sortedprocessIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
+		Page:       metadata.BasePage{Limit: common.BKNoLimit},
 	}
-	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header,
-		listRelationOption)
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, op)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceRelationFailed,
-			"ListProcessInstancesDetailsByIDs failed, list option: %+v, err: %+v", listRelationOption, err)
+		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceRelationFailed, "option: %+v, err: %+v", op, err)
 		return
 	}
 
@@ -1503,15 +1506,12 @@ func (ps *ProcServer) ListProcessInstancesDetailsByIDs(ctx *rest.Contexts) {
 	option := &metadata.ListServiceInstanceOption{
 		BusinessID:         input.BizID,
 		ServiceInstanceIDs: serviceInstanceIDs,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
+		Page:               metadata.BasePage{Limit: common.BKNoLimit},
 	}
 	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 		option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "ListProcessInstancesDetailsByIDs failed, "+
-			"option: %#v, err: %v", option, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "option: %#v, err: %v", option, err)
 		return
 	}
 	serviceInstanceIDNames := make(map[int64]string)
@@ -1529,7 +1529,6 @@ func (ps *ProcServer) ListProcessInstancesDetailsByIDs(ctx *rest.Contexts) {
 		if exist {
 			processDetail.Relation = relation
 			processDetail.ServiceInstanceName = serviceInstanceIDNames[relation.ServiceInstanceID]
-
 		}
 		processInstanceList = append(processInstanceList, processDetail)
 	}
@@ -1583,15 +1582,8 @@ func (ps *ProcServer) ListProcessInstancesDetails(ctx *rest.Contexts) {
 	ctx.RespEntity(processResult.Info)
 }
 
-// UnbindServiceTemplateOnModuleEnable TODO
-var UnbindServiceTemplateOnModuleEnable = true
-
 // RemoveTemplateBindingOnModule TODO
 func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
-	if UnbindServiceTemplateOnModuleEnable {
-		ctx.RespErrorCodeOnly(common.CCErrProcUnbindModuleServiceTemplateDisabled, "unbind service template from module disabled")
-		return
-	}
 
 	input := new(metadata.RemoveTemplateBindingOnModuleOption)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -1601,19 +1593,20 @@ func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
 
 	module, err := ps.getModule(ctx.Kit, input.ModuleID)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrTopoGetModuleFailed, "create service instance failed, get module failed, moduleID: %d, err: %v", input.ModuleID, err)
+		ctx.RespWithError(err, common.CCErrTopoGetModuleFailed, "moduleID: %d, err: %v", input.ModuleID, err)
 		return
 	}
 	if module.BizID != input.BizID {
 		err := ctx.Kit.CCError.CCError(common.CCErrCommNotFound)
-		ctx.RespWithError(err, common.CCErrCommNotFound, "create service instance failed, get module failed, moduleID: %d, err: %v", input.ModuleID, err)
+		ctx.RespWithError(err, common.CCErrCommNotFound, "moduleID: %d, err: %v", input.ModuleID, err)
 		return
 	}
 
 	var response *metadata.RemoveTemplateBoundOnModuleResult
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		response, err = ps.CoreAPI.CoreService().Process().RemoveTemplateBindingOnModule(ctx.Kit.Ctx, ctx.Kit.Header, input.ModuleID)
+		response, err = ps.CoreAPI.CoreService().Process().RemoveTemplateBindingOnModule(ctx.Kit.Ctx, ctx.Kit.Header,
+			input.ModuleID)
 		if err != nil {
 			blog.Errorf("remove template binding on module failed, parse business id failed, err: %+v", err)
 			return ctx.Kit.CCError.CCError(common.CCErrProcRemoveTemplateBindingOnModule)
