@@ -74,7 +74,7 @@ func (s *service) ListFieldTemplate(cts *rest.Contexts) {
 	cts.RespEntity(metadata.FieldTemplateInfo{Info: fieldTemplates})
 }
 
-func canModelBindingFieldTemplate(kit *rest.Kit, objIDs []int64) error {
+func canObjBindingFieldTemplate(kit *rest.Kit, objIDs []int64) error {
 
 	cond := mapstr.MapStr{
 		common.AssociationKindIDField: common.AssociationKindMainline,
@@ -165,7 +165,7 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 		return
 	}
 
-	err := canModelBindingFieldTemplate(kit, objIDs)
+	err := canObjBindingFieldTemplate(kit, objIDs)
 	if err != nil {
 		blog.Errorf("multi field template founded, cond: %+v, rid: %s", err, kit.Rid)
 		ctx.RespAutoError(kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -269,7 +269,7 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 		return
 	}
 
-	err := canModelBindingFieldTemplate(kit, []int64{opt.ObjectID})
+	err := canObjBindingFieldTemplate(kit, []int64{opt.ObjectID})
 	if err != nil {
 		blog.Errorf("multi field template founded, cond: %+v, rid: %s", err, kit.Rid)
 		ctx.RespAutoError(err)

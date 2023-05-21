@@ -104,43 +104,67 @@ func (s *service) FindFieldTemplateByID(ctx *rest.Contexts) {
 }
 
 // canObjsBindFieldTemplate currently only supports "host" in the mainline model
-func (s *service) canObjsBindFieldTemplate(kit *rest.Kit, objIDs []int64) ccErr.CCErrorCoder {
+func (s *service) canObjsBindFieldTemplate(kit *rest.Kit, ids []int64) ccErr.CCErrorCoder {
+
+	// 获取"host"模型的id
+	// get model by conditon
+	query := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKObjIDField: common.BKInnerObjIDHost,
+		},
+		DisableCounter: true,
+		Fields:         []string{common.BKFieldID},
+	}
+
+	obj, err := s.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("failed to find host by query(%#v), err: %v, rid: %s", query, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommNotFound, err.Error())
+	}
+	if len(obj.Info) == 0 {
+		blog.Errorf("failed to find host by query(%#v),  rid: %s", query, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommNotFound)
+	}
+	if len(obj.Info) > 1 {
+		blog.Errorf("failed to find host by query(%#v), err: %v, rid: %s", query, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommGetMultipleObject)
+	}
 
 	cond := mapstr.MapStr{
 		common.AssociationKindIDField: common.AssociationKindMainline,
 		common.BKDBAND: []mapstr.MapStr{
-			{common.BKObjIDField: mapstr.MapStr{common.BKDBNE: common.BKInnerObjIDHost}},
-			{common.BKFieldID: mapstr.MapStr{common.BKDBIN: objIDs}},
+			{common.BKFieldID: mapstr.MapStr{common.BKDBNE: obj.Info[0].ID}},
+			{common.BKFieldID: mapstr.MapStr{common.BKDBIN: ids}},
 		},
 	}
 
-	counts, err := s.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+	counts, ccErr := s.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 		common.BKTableNameObjAsst, []map[string]interface{}{cond})
-	if err != nil {
+	if ccErr != nil {
 		blog.Errorf("get mainline obj count failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
-		return err
+		return ccErr
 	}
 
 	if len(counts) != 1 || int(counts[0]) > 0 {
 		blog.Errorf("obj ids are invalid, cond: %+v, rid: %s", cond, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_obj_ids")
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "object_ids")
 	}
 
 	// determine whether these objIDs exist
 	objCond := mapstr.MapStr{
-		common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs},
+		common.BKFieldID: mapstr.MapStr{common.BKDBIN: ids},
 	}
 
-	counts, err = s.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+	counts, ccErr = s.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 		common.BKTableNameObjDes, []map[string]interface{}{objCond})
-	if err != nil {
+	if ccErr != nil {
 		blog.Errorf("get objs count failed, cond: %+v, err: %v, rid: %s", objCond, err, kit.Rid)
-		return err
+		return ccErr
 	}
 
-	if len(counts) != 1 || int(counts[0]) != len(objIDs) {
+	if len(counts) != 1 || int(counts[0]) != len(ids) {
 		blog.Errorf("obj ids are invalid, input: %+v, rid: %s", objCond, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_obj_ids")
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "object_ids")
 	}
 	return nil
 }
