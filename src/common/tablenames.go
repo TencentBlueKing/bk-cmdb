@@ -111,9 +111,15 @@ const (
 	BKTableNameMainlineInstance = "cc_MainlineInstance"
 
 	// BKTableNameFieldTemplate  field template table
-	BKTableNameFieldTemplate            = "cc_FieldTemplate"
-	BKTableNameObjAttDesTemplate        = "cc_ObjAttDesTemplate"
-	BKTableNameObjectUniqueTemplate     = "cc_ObjectUniqueTemplate"
+	BKTableNameFieldTemplate = "cc_FieldTemplate"
+
+	// BKTableNameObjAttDesTemplate  field template  attribute description table
+	BKTableNameObjAttDesTemplate = "cc_ObjAttDesTemplate"
+
+	// BKTableNameObjectUniqueTemplate  field template unique checklist table
+	BKTableNameObjectUniqueTemplate = "cc_ObjectUniqueTemplate"
+
+	// BKTableNameObjFieldTemplateRelation  object and field template relationship table
 	BKTableNameObjFieldTemplateRelation = "cc_ObjFieldTemplateRelation"
 )
 

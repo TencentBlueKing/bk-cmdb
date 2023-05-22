@@ -47,7 +47,7 @@ type APITaskDetail struct {
 	// Extra used in scenarios where tasks cannot
 	// be distinguished by an instance ID field. for example:
 	// if TaskType is SyncFieldTemplateTaskFlag, two parameters
-	// bk_field_template_id and bk_obj_id are required to determine the unique task.
+	// bk_field_template_id and object_id are required to determine the unique task.
 	Extra interface{} `json:"extra,omitempty" bson:"extra"`
 	// User 任务创建者
 	User string `json:"user,omitempty" bson:"user"`
@@ -83,7 +83,7 @@ type APITaskSyncStatus struct {
 	// Extra used in scenarios where tasks cannot be
 	// distinguished by an instance ID field. for example: if the
 	// taskType is SyncFieldTemplateTaskFlag, two parameters bk_template_id
-	// and bk_obj_id are required to determine the unique task
+	// and object_id are required to determine the unique task
 	Extra interface{} `json:"extra,omitempty" bson:"extra"`
 	// Status 任务执行状态
 	Status APITaskStatus `json:"status,omitempty" bson:"status"`
@@ -233,8 +233,8 @@ type ListAPITaskSyncStatusResult struct {
 
 // ListFieldTmpltTaskStatusOption get the task status request of the specified template ID and object
 type ListFieldTmpltTaskStatusOption struct {
-	ID        int64    `json:"id"`
-	ObjectIDs []string `json:"bk_obj_ids"`
+	ID        int64   `json:"id"`
+	ObjectIDs []int64 `json:"object_ids"`
 }
 
 // Validate judging the legality of parameters
@@ -248,13 +248,13 @@ func (option *ListFieldTmpltTaskStatusOption) Validate() ccErr.RawErrorInfo {
 	if len(option.ObjectIDs) == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"bk_obj_ids"},
+			Args:    []interface{}{"object_ids"},
 		}
 	}
 	if len(option.ObjectIDs) > common.BKMaxLimitSize {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommXXExceedLimit,
-			Args:    []interface{}{"bk_obj_ids", common.BKMaxLimitSize},
+			Args:    []interface{}{"object_ids", common.BKMaxLimitSize},
 		}
 	}
 	return ccErr.RawErrorInfo{}
@@ -262,6 +262,6 @@ func (option *ListFieldTmpltTaskStatusOption) Validate() ccErr.RawErrorInfo {
 
 // ListFieldTmpltTaskStatusResult specifies the task status of the template ID and object
 type ListFieldTmpltTaskStatusResult struct {
-	ObjectID string `json:"bk_obj_id"`
+	ObjectID int64  `json:"object_id"`
 	Status   string `json:"status"`
 }

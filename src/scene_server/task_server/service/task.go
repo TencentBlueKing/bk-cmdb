@@ -157,7 +157,7 @@ func (s *Service) ListSyncStatusHistory(ctx *rest.Contexts) {
 	ctx.RespEntity(infos)
 }
 
-// ListFieldTemplateTasksStatus query task status by field template ID and objID
+// ListFieldTemplateTasksStatus query task status by field template ID and object id
 // get the status of all related tasks in reverse order of the time they were created,
 // if there are "in progress" tasks. Prioritize returning a status of "in progress".
 // if there is no "in progress" task status, return the latest task status, which may
@@ -174,7 +174,7 @@ func (s *Service) ListFieldTemplateTasksStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	objIDs := util.StrArrayUnique(input.ObjectIDs)
+	objIDs := util.IntArrayUnique(input.ObjectIDs)
 	query := mapstr.MapStr{
 		common.BKInstIDField: input.ID,
 		metadata.APITaskExtraField: mapstr.MapStr{
@@ -189,9 +189,14 @@ func (s *Service) ListFieldTemplateTasksStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	objStatusMap := make(map[string]string)
+	objStatusMap := make(map[int64]string)
 	for _, info := range infos {
-		obj := util.GetStrByInterface(info.Extra)
+		obj, err := util.GetInt64ByInterface(info.Extra)
+		if err != nil {
+			blog.Errorf("get instance id failed, obj: %+v, err: %v", obj, err)
+			ctx.RespAutoError(err)
+			return
+		}
 		_, ok := objStatusMap[obj]
 		if ok && string(info.Status) != string(metadata.APITaskStatusExecute) {
 			continue
