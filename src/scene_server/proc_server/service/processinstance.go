@@ -1243,25 +1243,20 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, processIDs []int64,
 	processDetailMap map[int64]interface{}, totalCnt int64) {
 
-	srvInstArr, hostArr, moduleArr := make([]int64, 0), make([]int64, 0), make([]int64, 0)
-
-	procSrvInstMap, procTemplateMap := make(map[int64]int64), make(map[int64]int64)
-
-	procHostMap, srvInstModuleMap := make(map[int64]int64), make(map[int64]int64)
-
-	srvInstDetailMap := make(map[int64]metadata.ServiceInstanceDetailOfP)
-
 	// get ID of serviceInstance, host, processTemplate and their process relation map
 	op := &metadata.ListProcessInstanceRelationOption{
-		BusinessID: bizID,
-		ProcessIDs: processIDs,
-		Page:       metadata.BasePage{Limit: common.BKNoLimit},
+		BusinessID: bizID, ProcessIDs: processIDs,
+		Page: metadata.BasePage{Limit: common.BKNoLimit},
 	}
 	relations, ccErr := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, op)
 	if ccErr != nil {
 		ctx.RespWithError(ccErr, ccErr.GetCode(), "option: %+v, err: %v", op, ccErr)
 		return
 	}
+
+	srvInstArr, hostArr := make([]int64, 0), make([]int64, 0)
+	procSrvInstMap, procTemplateMap := make(map[int64]int64), make(map[int64]int64)
+	procHostMap := make(map[int64]int64)
 
 	for _, relation := range relations.Info {
 		srvInstArr = append(srvInstArr, relation.ServiceInstanceID)
@@ -1275,15 +1270,15 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 	srvInstArr = util.IntArrayUnique(srvInstArr)
 
 	// service instance detail
-	instOpt := &metadata.ListServiceInstanceOption{
-		BusinessID:         bizID,
-		ServiceInstanceIDs: srvInstArr,
-	}
+	instOpt := &metadata.ListServiceInstanceOption{BusinessID: bizID, ServiceInstanceIDs: srvInstArr}
 	instances, ccErr := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, instOpt)
 	if ccErr != nil {
 		ctx.RespWithError(ccErr, ccErr.GetCode(), "ListServiceInstance failed, instOpt:%#v, err: %v", instOpt, ccErr)
 		return
 	}
+
+	srvInstDetailMap, moduleArr := make(map[int64]metadata.ServiceInstanceDetailOfP), make([]int64, 0)
+	srvInstModuleMap := make(map[int64]int64)
 
 	for _, inst := range instances.Info {
 		srvInstDetailMap[inst.ID] = metadata.ServiceInstanceDetailOfP{
@@ -1294,8 +1289,13 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 		moduleArr = append(moduleArr, inst.ModuleID)
 	}
 
-	hostDetailMap, moduleDetailMap, moduleSetMap, setArr, err := ps.getHostAndModuleInfo(ctx.Kit, bizID,
-		moduleArr, hostArr)
+	hostInfo := hostSimpleInfo{
+		bizID:     bizID,
+		moduleArr: moduleArr,
+		hostArr:   hostArr,
+	}
+
+	hostDetailMap, moduleDetailMap, moduleSetMap, setArr, err := ps.getHostAndModuleInfo(ctx.Kit, hostInfo)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -1334,37 +1334,51 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 	ctx.RespEntityWithCount(totalCnt, ret)
 }
 
-func (ps *ProcServer) getHostAndModuleInfo(kit *rest.Kit, bizID int64, moduleArr, hostArr []int64) (
-	map[int64]metadata.HostDetailOfP, map[int64]metadata.ModuleDetailOfP, map[int64]int64, []int64, error) {
+type hostSimpleInfo struct {
+	bizID     int64
+	moduleArr []int64
+	hostArr   []int64
+}
 
-	moduleArr = util.IntArrayUnique(moduleArr)
+func (ps *ProcServer) getHostDetailMap(kit *rest.Kit, hostInfo []mapstr.MapStr) (
+	map[int64]metadata.HostDetailOfP, error) {
 
 	hostDetailMap := make(map[int64]metadata.HostDetailOfP)
 
-	// host detail
-	hostParam := &metadata.QueryCondition{
-		Fields: []string{common.BKHostIDField, common.BKCloudIDField, common.BKHostInnerIPField,
-			common.BKHostInnerIPv6Field, common.BKAddressingField},
-		Condition: map[string]interface{}{
-			common.BKHostIDField: map[string]interface{}{
-				common.BKDBIN: hostArr,
-			},
-		},
-	}
-
-	hostResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
-		common.BKInnerObjIDHost, hostParam)
-	if err != nil {
-		blog.Errorf("ListProcessRelatedInfo failed, param: %v, err: %v, rid:%s", *hostParam, err, kit.Rid)
-		return nil, nil, nil, nil, err
-	}
-
-	for _, host := range hostResult.Info {
-		hostID, _ := host.Int64(common.BKHostIDField)
-		cloudID, _ := host.Int64(common.BKCloudIDField)
-		innerIP, _ := host.String(common.BKHostInnerIPField)
-		innerIPv6, _ := host.String(common.BKHostInnerIPv6Field)
-		addressing, _ := host.String(common.BKAddressingField)
+	for _, host := range hostInfo {
+		hostID, err := host.Int64(common.BKHostIDField)
+		if err != nil {
+			blog.Errorf("get host id failed, data: %v, err: %v, rid: %s", host[common.BKHostIDField], err, kit.Rid)
+			return nil, err
+		}
+		cloudID, err := host.Int64(common.BKCloudIDField)
+		if err != nil {
+			blog.Errorf("get cloud id failed, data: %v, err: %v, rid: %s", host[common.BKCloudIDField], err, kit.Rid)
+			return nil, err
+		}
+		innerIP, err := host.String(common.BKHostInnerIPField)
+		if err != nil {
+			blog.Errorf("get inner ip failed, data: %v, err: %v, rid: %s", host[common.BKHostInnerIPField],
+				err, kit.Rid)
+			return nil, err
+		}
+		innerIPv6, err := host.String(common.BKHostInnerIPv6Field)
+		if err != nil {
+			blog.Errorf("get inner ipv6 failed, host: %v, err: %v, rid: %s", host[common.BKHostInnerIPv6Field],
+				err, kit.Rid)
+			return nil, err
+		}
+		addressing, err := host.String(common.BKAddressingField)
+		if err != nil {
+			blog.Errorf("get addressing type failed, data: %v, err: %v, rid: %s", host[common.BKAddressingField],
+				err, kit.Rid)
+			return nil, err
+		}
+		agentID, err := host.String(common.BKAgentIDField)
+		if err != nil {
+			blog.Errorf("get agent id failed, data: %v, err: %v, rid: %s", host[common.BKAgentIDField], err, kit.Rid)
+			return nil, err
+		}
 
 		hostDetailMap[hostID] = metadata.HostDetailOfP{
 			HostID:     hostID,
@@ -1372,17 +1386,47 @@ func (ps *ProcServer) getHostAndModuleInfo(kit *rest.Kit, bizID int64, moduleArr
 			InnerIP:    innerIP,
 			InnerIPv6:  innerIPv6,
 			Addressing: addressing,
+			AgentID:    agentID,
 		}
+	}
+	return hostDetailMap, nil
+}
+
+func (ps *ProcServer) getHostAndModuleInfo(kit *rest.Kit, info hostSimpleInfo) (
+	map[int64]metadata.HostDetailOfP, map[int64]metadata.ModuleDetailOfP, map[int64]int64, []int64, error) {
+
+	info.moduleArr = util.IntArrayUnique(info.moduleArr)
+
+	// host detail
+	hostParam := &metadata.QueryCondition{
+		Fields: []string{common.BKHostIDField, common.BKCloudIDField, common.BKHostInnerIPField,
+			common.BKHostInnerIPv6Field, common.BKAddressingField},
+		Condition: map[string]interface{}{
+			common.BKHostIDField: map[string]interface{}{
+				common.BKDBIN: info.hostArr,
+			},
+		},
+	}
+
+	hostResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
+		common.BKInnerObjIDHost, hostParam)
+	if err != nil {
+		blog.Errorf("ListProcessRelatedInfo failed, param: %v, err: %v, rid: %s", *hostParam, err, kit.Rid)
+		return nil, nil, nil, nil, err
+	}
+
+	hostDetailMap, err := ps.getHostDetailMap(kit, hostResult.Info)
+	if err != nil {
+		blog.Errorf("get host detail failed, param: %v, err: %v, rid: %s", *hostParam, err, kit.Rid)
+		return nil, nil, nil, nil, err
 	}
 
 	// module detail
 	moduleParam := &metadata.QueryCondition{
 		Fields: []string{common.BKModuleIDField, common.BKModuleNameField, common.BKSetIDField},
 		Condition: map[string]interface{}{
-			common.BKAppIDField: bizID,
-			common.BKModuleIDField: map[string]interface{}{
-				common.BKDBIN: moduleArr,
-			},
+			common.BKAppIDField:    info.bizID,
+			common.BKModuleIDField: map[string]interface{}{common.BKDBIN: info.moduleArr},
 		},
 	}
 
@@ -1428,7 +1472,7 @@ func (ps *ProcServer) getSetInfo(kit *rest.Kit, bizID int64, setArr []int64) (ma
 
 	result, err := ps.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet, cond)
 	if err != nil {
-		blog.Errorf("ListProcessRelatedInfo failed, param: %v, err: %v, rid:%s", *cond, err, kit.Rid)
+		blog.Errorf("ListProcessRelatedInfo failed, param: %v, err: %v, rid: %s", *cond, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 

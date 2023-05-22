@@ -756,6 +756,7 @@ type HostDetailOfP struct {
 	InnerIP    string `json:"bk_host_innerip"`
 	InnerIPv6  string `json:"bk_host_innerip_v6"`
 	Addressing string `json:"bk_addressing"`
+	AgentID    string `json:"bk_agent_id"`
 }
 
 // ServiceInstanceDetailOfP TODO
