@@ -15,6 +15,7 @@ package topology
 import (
 	"context"
 	"errors"
+	"sort"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/configcenter"
@@ -52,7 +53,9 @@ func (t *Topology) genBusinessTopology(ctx context.Context, biz int64) (*BizBrie
 
 // getBusinessTopology construct a business's fully Topology data, separated with inner set and
 // other common nodes
-func (t *Topology) getBusinessTopology(ctx context.Context, biz int64, supplierAccount string) ([]*Node, []*Node, error) {
+func (t *Topology) getBusinessTopology(ctx context.Context, biz int64, supplierAccount string) ([]*Node, []*Node,
+	error) {
+
 	rid := ctx.Value(common.ContextRequestIDField)
 
 	// read from secondary in mongodb cluster.
@@ -107,9 +110,9 @@ func (t *Topology) getBusinessTopology(ctx context.Context, biz int64, supplierA
 	return inner, previousNodes[biz], nil
 }
 
-// genCustomNodes generate custom object's instance node with it's parent map
-func (t *Topology) genCustomNodes(ctx context.Context, biz int64, object, supplierAccount string, previousNodes map[int64][]*Node) (
-	map[int64][]*Node, error) {
+// genCustomNodes generate custom object's instance node with its parent map
+func (t *Topology) genCustomNodes(ctx context.Context, biz int64, object, supplierAccount string,
+	previousNodes map[int64][]*Node) (map[int64][]*Node, error) {
 
 	if previousNodes == nil {
 		previousNodes = make(map[int64][]*Node)
@@ -141,12 +144,18 @@ func (t *Topology) genCustomNodes(ctx context.Context, biz int64, object, suppli
 		})
 	}
 
+	for _, nodes := range customParentMap {
+		sortNodes(nodes)
+	}
+
 	return customParentMap, nil
 
 }
 
 // listCustomInstance list a biz's custom object's all instances
-func (t *Topology) listCustomInstance(ctx context.Context, biz int64, object, supplierAccount string) ([]*customBase, error) {
+func (t *Topology) listCustomInstance(ctx context.Context, biz int64, object, supplierAccount string) (
+	[]*customBase, error) {
+
 	filter := mapstr.MapStr{common.BKAppIDField: biz, "bk_obj_id": object}
 	all := make([]*customBase, 0)
 	start := uint64(0)
@@ -221,6 +230,14 @@ func (t *Topology) genSetNodes(ctx context.Context, biz int64) (idle map[int64][
 		})
 	}
 
+	for _, nodes := range idleSetNodes {
+		sortNodes(nodes)
+	}
+
+	for _, nodes := range normalSetParentMap {
+		sortNodes(nodes)
+	}
+
 	return idleSetNodes, normalSetParentMap, nil
 
 }
@@ -280,6 +297,10 @@ func (t *Topology) genModulesNodes(ctx context.Context, biz int64) (map[int64][]
 			Default:  &module.Default,
 			SubNodes: nil,
 		})
+	}
+
+	for _, nodes := range moduleParentMap {
+		sortNodes(nodes)
 	}
 
 	return moduleParentMap, nil
@@ -390,4 +411,11 @@ func getBreifTopoCacheRefreshMinutes() int {
 	}
 
 	return duration
+}
+
+// sortNodes sort nodes by name
+func sortNodes(nodes []*Node) {
+	sort.Slice(nodes, func(i, j int) bool {
+		return nodes[i].Name < nodes[j].Name
+	})
 }
