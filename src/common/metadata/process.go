@@ -1092,7 +1092,8 @@ func (sc *ServiceCategory) Validate() (field string, err error) {
 		return "name", errors.New("name can't be empty")
 	}
 	if common.ServiceCategoryMaxLength < utf8.RuneCountInString(sc.Name) {
-		return "name", fmt.Errorf("name too long, input: %d > max: %d", utf8.RuneCountInString(sc.Name), common.ServiceCategoryMaxLength)
+		return "name", fmt.Errorf("name too long, input: %d > max: %d", utf8.RuneCountInString(sc.Name),
+			common.ServiceCategoryMaxLength)
 	}
 	match, err := regexp.MatchString(common.FieldTypeServiceCategoryRegexp, sc.Name)
 	if nil != err {

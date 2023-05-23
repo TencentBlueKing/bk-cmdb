@@ -110,10 +110,16 @@ const (
 	// BKTableNameMainlineInstance is a virtual collection name which represent for mainline instance events
 	BKTableNameMainlineInstance = "cc_MainlineInstance"
 
-	// field template tables
-	BKTableNameFieldTemplate            = "cc_FieldTemplate"
-	BKTableNameObjAttDesTemplate        = "cc_ObjAttDesTemplate"
-	BKTableNameObjectUniqueTemplate     = "cc_ObjectUniqueTemplate"
+	// BKTableNameFieldTemplate  field template table
+	BKTableNameFieldTemplate = "cc_FieldTemplate"
+
+	// BKTableNameObjAttDesTemplate  field template  attribute description table
+	BKTableNameObjAttDesTemplate = "cc_ObjAttDesTemplate"
+
+	// BKTableNameObjectUniqueTemplate  field template unique checklist table
+	BKTableNameObjectUniqueTemplate = "cc_ObjectUniqueTemplate"
+
+	// BKTableNameObjFieldTemplateRelation  object and field template relationship table
 	BKTableNameObjFieldTemplateRelation = "cc_ObjFieldTemplateRelation"
 )
 

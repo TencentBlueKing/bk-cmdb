@@ -251,6 +251,9 @@ const (
 
 	// BKDBLimit the db operator to limit return number of doc
 	BKDBLimit = "$limit"
+
+	// BKDBUnwind used to split values contained in an array field into separate doc
+	BKDBUnwind = "$unwind"
 )
 
 const (
@@ -1551,7 +1554,8 @@ const (
 	SyncSetTaskFlag = "set_template_sync"
 	// SyncModuleTaskFlag TODO
 	SyncModuleTaskFlag = "service_template_sync"
-
+	// SyncFieldTemplateTaskFlag field template synchronization task flag
+	SyncFieldTemplateTaskFlag = "field_template_sync"
 	// SyncModuleHostApplyTaskFlag module dimension host auto-apply async task flag.
 	SyncModuleHostApplyTaskFlag = "module_host_apply_sync"
 	// SyncServiceTemplateHostApplyTaskFlag  service template dimension host auto-apply async task flag.

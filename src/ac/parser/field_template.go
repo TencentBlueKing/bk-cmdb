@@ -19,6 +19,7 @@ package parser
 
 import (
 	"net/http"
+	"regexp"
 
 	"configcenter/src/ac/meta"
 )
@@ -71,6 +72,34 @@ var FieldTemplateAuthConfigs = []AuthConfig{
 		Name:           "CompareFieldTemplateUnique",
 		Description:    "对比字段模板和模型中的唯一校验",
 		Pattern:        "/api/v3/find/field_template/unique/difference",
+		HTTPMethod:     http.MethodPost,
+		ResourceAction: meta.SkipAction,
+	},
+	{
+		Name:           "QueryFieldTemplateBriefInformation",
+		Description:    "查询字段组合模版简要信息",
+		Regex:          regexp.MustCompile(`^/api/v3/find/field_template/[0-9]+/?$`),
+		HTTPMethod:     http.MethodGet,
+		ResourceAction: meta.SkipAction,
+	},
+	{
+		Name:           "FieldTemplateBindingModel",
+		Description:    "字段组合模版绑定模型",
+		Pattern:        "/api/v3/update/field_template/bind/object",
+		HTTPMethod:     http.MethodPost,
+		ResourceAction: meta.SkipAction,
+	},
+	{
+		Name:           "FieldTemplateUnbindingModel",
+		Description:    "字段组合模版解除绑定模型",
+		Pattern:        "/api/v3/update/field_template/unbind/object",
+		HTTPMethod:     http.MethodPost,
+		ResourceAction: meta.SkipAction,
+	},
+	{
+		Name:           "FieldTemplateUnbindingModel",
+		Description:    "查询字段组合模版任务状态",
+		Pattern:        "/api/v3/task/find/field_template/tasks_status",
 		HTTPMethod:     http.MethodPost,
 		ResourceAction: meta.SkipAction,
 	},

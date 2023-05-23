@@ -71,6 +71,7 @@ var objectURLRegexp = regexp.MustCompile(fmt.Sprintf(
 var kubeURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/kube/.*$", verbs))
 
 // WithTopo parse topo api's url
+// NOCC:golint/fnsize(设计如此)
 func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	topoRoot := "/topo/v3"
 	from, to := rootPath, topoRoot

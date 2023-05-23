@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 
 	"github.com/rs/xid"
 )
@@ -350,6 +351,7 @@ func (lgc *Logics) ListLatestSyncStatus(kit *rest.Kit, input *metadata.ListLates
 		}},
 		{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$doc"}},
 	}
+	input.Condition = util.SetQueryOwner(input.Condition, kit.SupplierAccount)
 
 	var err error
 	if input.TimeCondition != nil {
@@ -382,6 +384,40 @@ func (lgc *Logics) ListLatestSyncStatus(kit *rest.Kit, input *metadata.ListLates
 	return result, nil
 }
 
+// ListFieldTemplateSyncStatus this function is used in the field template scenario
+// to obtain the latest two task statuses of the specified model ID
+func (lgc *Logics) ListFieldTemplateSyncStatus(kit *rest.Kit, input mapstr.MapStr) (
+	[]metadata.APITaskSyncStatus, error) {
+
+	aggrCond := []map[string]interface{}{
+		{common.BKDBSort: map[string]interface{}{metadata.APITaskExtraField: 1, common.CreateTimeField: -1}},
+		{common.BKDBGroup: map[string]interface{}{
+			"_id":  "$extra",
+			"docs": map[string]interface{}{common.BKDBPush: "$$ROOT"},
+		}},
+		{common.BKDBProject: map[string]interface{}{
+			"_id": 1,
+			"docs": map[string]interface{}{
+				"$slice": []interface{}{
+					"$docs", 2,
+				},
+			},
+		}},
+		{common.BKDBUnwind: "$docs"},
+		{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$docs"}},
+	}
+
+	input = util.SetQueryOwner(input, kit.SupplierAccount)
+	aggrCond = append([]map[string]interface{}{{common.BKDBMatch: input}}, aggrCond...)
+
+	result := make([]metadata.APITaskSyncStatus, 0)
+	if err := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).AggregateAll(kit.Ctx, aggrCond, &result); err != nil {
+		blog.Errorf("list sync status failed, cond: %#v, err: %v, rid: %v", aggrCond, err, kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
 // ListSyncStatusHistory list api task sync status history
 func (lgc *Logics) ListSyncStatusHistory(kit *rest.Kit, input *metadata.QueryCondition) (
 	*metadata.ListAPITaskSyncStatusResult, error) {
@@ -395,6 +431,7 @@ func (lgc *Logics) ListSyncStatusHistory(kit *rest.Kit, input *metadata.QueryCon
 		}
 	}
 
+	input.Condition = util.SetQueryOwner(input.Condition, kit.SupplierAccount)
 	dbQuery := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Find(input.Condition)
 
 	if input.Page.Start != 0 {

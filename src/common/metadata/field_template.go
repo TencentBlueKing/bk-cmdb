@@ -19,7 +19,7 @@ package metadata
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/errors"
+	ccErr "configcenter/src/common/errors"
 )
 
 // FieldTemplate field template definition
@@ -104,6 +104,58 @@ type ListFieldTemplateResp struct {
 	Data     FieldTemplateInfo `json:"data"`
 }
 
+// FieldTemplateBindObjOpt field template binding model option
+type FieldTemplateBindObjOpt struct {
+	ID        int64   `json:"bk_template_id"`
+	ObjectIDs []int64 `json:"object_ids"`
+}
+
+// Validate field template binding model request parameter validation function
+func (option *FieldTemplateBindObjOpt) Validate() ccErr.RawErrorInfo {
+	if option.ID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+	if len(option.ObjectIDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"object_ids"},
+		}
+	}
+	if len(option.ObjectIDs) > common.BKMaxLimitSize {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"object_ids", common.BKMaxLimitSize},
+		}
+	}
+	return ccErr.RawErrorInfo{}
+}
+
+// FieldTemplateUnbindObjOpt field template unbinding model option
+type FieldTemplateUnbindObjOpt struct {
+	ID       int64 `json:"bk_template_id"`
+	ObjectID int64 `json:"object_id"`
+}
+
+// Validate field template unbinding model request parameter validation function
+func (option *FieldTemplateUnbindObjOpt) Validate() ccErr.RawErrorInfo {
+	if option.ID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+	if option.ObjectID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"object_id"},
+		}
+	}
+	return ccErr.RawErrorInfo{}
+}
+
 // ListFieldTmplAttrOption list field template attribute option
 type ListFieldTmplAttrOption struct {
 	TemplateID        int64 `json:"bk_template_id"`
@@ -111,9 +163,9 @@ type ListFieldTmplAttrOption struct {
 }
 
 // Validate list field template attribute option
-func (l *ListFieldTmplAttrOption) Validate() errors.RawErrorInfo {
+func (l *ListFieldTmplAttrOption) Validate() ccErr.RawErrorInfo {
 	if l.TemplateID == 0 {
-		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKTemplateID}}
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKTemplateID}}
 	}
 
 	// set limit to unlimited if not set, compatible for searching all attributes, attributes amount won't be large
@@ -125,7 +177,7 @@ func (l *ListFieldTmplAttrOption) Validate() errors.RawErrorInfo {
 		return rawErr
 	}
 
-	return errors.RawErrorInfo{}
+	return ccErr.RawErrorInfo{}
 }
 
 // FieldTemplateAttrInfo field template attribute info for list apis

@@ -49,3 +49,47 @@ func (t template) ListFieldTemplate(ctx context.Context, h http.Header, opt *met
 
 	return &resp.Data, nil
 }
+
+// FieldTemplateBindObject field template binding model
+func (t *template) FieldTemplateBindObject(ctx context.Context, h http.Header,
+	opt *metadata.FieldTemplateBindObjOpt) errors.CCErrorCoder {
+
+	resp := new(metadata.Response)
+	subPath := "/update/field_template/bind/object"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	return resp.CCError()
+}
+
+// FieldTemplateUnbindObject field template binding model
+func (t *template) FieldTemplateUnbindObject(ctx context.Context, h http.Header,
+	opt *metadata.FieldTemplateUnbindObjOpt) errors.CCErrorCoder {
+
+	resp := new(metadata.Response)
+	subPath := "/update/field_template/unbind/object"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	return resp.CCError()
+}

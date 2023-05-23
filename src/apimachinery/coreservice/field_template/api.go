@@ -26,6 +26,10 @@ import (
 type Interface interface {
 	ListFieldTemplate(ctx context.Context, h http.Header, opt *metadata.CommonQueryOption) (
 		*metadata.FieldTemplateInfo, errors.CCErrorCoder)
+	FieldTemplateBindObject(ctx context.Context, h http.Header,
+		opt *metadata.FieldTemplateBindObjOpt) errors.CCErrorCoder
+	FieldTemplateUnbindObject(ctx context.Context, h http.Header,
+		opt *metadata.FieldTemplateUnbindObjOpt) errors.CCErrorCoder
 	ListFieldTemplateAttr(ctx context.Context, h http.Header, opt *metadata.CommonQueryOption) (
 		*metadata.FieldTemplateAttrInfo, errors.CCErrorCoder)
 }
