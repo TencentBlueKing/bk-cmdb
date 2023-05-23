@@ -70,7 +70,7 @@ The condition parameter is all the fields defined by the model corresponding to 
         "info": [
             {
                 "bk_inst_id": 0,
-                "bk_inst_name": "default area",
+                "bk_inst_name": "Default Area",
                 "bk_supplier_account": "123456789"
             }
         ]

@@ -157,7 +157,7 @@ func GenerateStaticInstanceSelections() []InstanceSelection {
 		},
 		{
 			ID:     SysCloudAreaSelection,
-			Name:   "云区域列表",
+			Name:   "管控区域列表",
 			NameEn: "Cloud Area List",
 			ResourceTypeChain: []ResourceChain{
 				{

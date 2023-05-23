@@ -106,23 +106,30 @@ func (s *Service) initHost(web *restful.WebService) {
 		Language: s.Engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/hosts/batch", Handler: s.DeleteHostBatchFromResourcePool})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/hosts/{bk_supplier_account}/{bk_host_id}", Handler: s.GetHostInstanceProperties})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path: "/hosts/batch", Handler: s.DeleteHostBatchFromResourcePool})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet,
+		Path: "/hosts/{bk_supplier_account}/{bk_host_id}", Handler: s.GetHostInstanceProperties})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/add", Handler: s.AddHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/excel/add", Handler: s.AddHostByExcel})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/add/resource", Handler: s.AddHostToResourcePool})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/hosts/add/resource", Handler: s.AddHostToResourcePool})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/add/business_idle",
 		Handler: s.AddHostToBusinessIdle})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/search", Handler: s.SearchHost})
 	// search host by biz set, **only for ui**
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/biz_set/{bk_biz_set_id}",
 		Handler: s.SearchHost})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/search/asstdetail", Handler: s.SearchHostWithAsstDetail})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/hosts/search/asstdetail", Handler: s.SearchHostWithAsstDetail})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/batch", Handler: s.UpdateHostBatch})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/property/batch", Handler: s.UpdateHostPropertyBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path: "/hosts/property/batch", Handler: s.UpdateHostPropertyBatch})
 	// TODO: Deprecated, delete this api, used in framework
-	// utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/sync/new/host", Handler: s.NewHostSyncAppTopo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/idle/set", Handler: s.MoveSetHost2IdleModule})
+	// utility.AddHandler(rest.Action{Verb: http.MethodPost,
+	// Path: "/hosts/sync/new/host", Handler: s.NewHostSyncAppTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/hosts/modules/idle/set", Handler: s.MoveSetHost2IdleModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/property/clone", Handler: s.CloneHostProperty})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/update", Handler: s.UpdateImportHosts})
 	// 查询业务下的主机CPU数量的特殊接口，给成本管理使用
