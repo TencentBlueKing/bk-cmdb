@@ -275,8 +275,8 @@ gse:
       - __BK_GSE_CACHE_APISERVER_HOST__:__BK_GSE_CACHE_APISERVER_PORT__
       # 证书相关信息
     insecureSkipVerify: true
-    certFile: __BK_HOME__/cert/platform.cert
-    keyFile: __BK_HOME__/cert/platform.key
+    certFile: __BK_HOME__/cert/gse_esb_api_client.crt
+    keyFile: __BK_HOME__/cert/gse_esb_api_client.key
     caFile: __BK_HOME__/cert/gseca.crt
     password:
   # 调用gse的taskServer服务时相关配置
@@ -286,8 +286,8 @@ gse:
       - __BK_GSE_TASKSERVER_HOST__:__BK_GSE_TASK_PORT__
     # 证书相关信息
     insecureSkipVerify: true
-    certFile: __BK_HOME__/cert/platform.cert
-    keyFile: __BK_HOME__/cert/platform.key
+    certFile: __BK_HOME__/cert/gse_esb_api_client.crt
+    keyFile: __BK_HOME__/cert/gse_esb_api_client.key
     caFile: __BK_HOME__/cert/gseca.crt
     password:
 

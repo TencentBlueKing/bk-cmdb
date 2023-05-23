@@ -26,12 +26,12 @@
           display="info" :value="task.bk_resource_type">
         </task-resource-selector>
       </bk-form-item>
-      <bk-form-item class="form-item clearfix" :label="$t('云区域设定')" :label-width="$i18n.locale === 'en' ? 145 : 85">
+      <bk-form-item class="form-item clearfix" :label="$t('管控区域设定')" :label-width="$i18n.locale === 'en' ? 145 : 85">
       </bk-form-item>
     </bk-form>
     <div class="info-table">
       <bk-table :data="task.bk_sync_vpcs" :row-class-name="getRowClass">
-        <bk-table-column :label="$t('云区域')" prop="bk_cloud_id" width="150">
+        <bk-table-column :label="$t('管控区域')" prop="bk_cloud_id" width="150">
           <template slot-scope="{ row }">
             <div class="info-cloud-area">
               <task-cloud-area-input display="info" :id="row.bk_cloud_id"></task-cloud-area-input>

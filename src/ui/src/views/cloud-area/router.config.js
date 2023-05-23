@@ -18,7 +18,7 @@ export default {
   component: () => import('./index.vue'),
   meta: new Meta({
     menu: {
-      i18n: '云区域'
+      i18n: '管控区域'
     },
     auth: {
       view: null

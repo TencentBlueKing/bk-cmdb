@@ -72,7 +72,7 @@
       }
     },
     created() {
-      // 为0时是默认云区域，无地域信息
+      // 为0时是默认管控区域，无地域信息
       this.account && this.getRegions()
     },
     methods: {

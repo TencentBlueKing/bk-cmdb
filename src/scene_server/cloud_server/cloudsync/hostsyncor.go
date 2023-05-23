@@ -89,7 +89,7 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 			}
 		}
 
-		// 查询vpc对应的云区域并更新云主机资源信息里的云区域id
+		// 查询vpc对应的管控区域并更新云主机资源信息里的云区域id
 		err = h.addCLoudId(accountConf, hostResource)
 		if err != nil {
 			blog.Errorf("addCLoudId fail, taskid:%d, err:%s, rid:%s", task.TaskID, err.Error(),

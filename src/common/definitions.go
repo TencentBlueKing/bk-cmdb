@@ -854,8 +854,8 @@ const DefaultAppFlag int = 1
 // DefaultAppName the default app name
 const DefaultAppName string = "资源池"
 
-// DefaultCloudName TODO
-const DefaultCloudName string = "default area"
+// DefaultCloudName default area
+const DefaultCloudName string = "Default Area"
 
 // DefaultInstName TODO
 const DefaultInstName string = "实例名"
