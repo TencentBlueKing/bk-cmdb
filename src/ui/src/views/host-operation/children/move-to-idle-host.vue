@@ -36,7 +36,7 @@
       <bk-table-column :label="$t('IP')" prop="bk_host_innerip" show-overflow-tooltip>
         <template slot-scope="{ row }">{{getHostValue(row, 'bk_host_innerip') | singlechar}}</template>
       </bk-table-column>
-      <bk-table-column :label="$t('云区域')" prop="bk_cloud_id" show-overflow-tooltip>
+      <bk-table-column :label="$t('管控区域')" prop="bk_cloud_id" show-overflow-tooltip>
         <template slot-scope="{ row }">{{getHostValue(row, 'bk_cloud_id') | foreignkey}}</template>
       </bk-table-column>
     </bk-table>

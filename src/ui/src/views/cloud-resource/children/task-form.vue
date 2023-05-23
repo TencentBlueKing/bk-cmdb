@@ -54,7 +54,7 @@
       </bk-form-item>
     </bk-form>
     <bk-form class="form-layout" form-type="inline" :label-width="300" v-if="form.bk_account_id">
-      <bk-form-item class="form-item" :label="$t('云区域设定')" required>
+      <bk-form-item class="form-item" :label="$t('管控区域设定')" required>
         <bk-button @click="handleAddVPC">{{$t('添加VPC')}}</bk-button>
         <input type="hidden" v-validate="'min_value:1'" :value="selectedVPC.length" name="vpc-count">
         <p class="form-error" v-if="errors.has('vpc-count')">{{$t('请至少选择一个VPC')}}</p>
