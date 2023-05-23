@@ -123,6 +123,7 @@
   import RouterQuery from '@/router/query'
   import useSideslider from '@/hooks/use-sideslider'
   import isEqual from 'lodash/isEqual'
+
   const DEFAULT_FORM = {
     bk_account_name: '',
     bk_cloud_vendor: '',

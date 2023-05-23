@@ -1085,6 +1085,7 @@
       },
       handleClearFilter() {
         this.keyword = ''
+      },
       handleColumnsConfigSliderBeforeClose() {
         const refColumns = this.$refs.cmdbColumnsConfig
         const { columnsChangedValues } = refColumns

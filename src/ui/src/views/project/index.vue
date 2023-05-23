@@ -576,12 +576,12 @@
       handleSliderBeforeClose() {
         this.addDoubleConfirm(this.$refs.form, this.closeCreateSlider)
       },
-      addDoubleConfirm(ref, confirmCallback) {
-        const { changedValues } = ref
+      addDoubleConfirm(componentRef, confirmCallback) {
+        const { changedValues } = componentRef
         if (this.tab.active === 'attribute') {
           if (Object.keys(changedValues).length) {
-            ref.setChanged(true)
-            return ref.beforeClose(confirmCallback)
+            componentRef.setChanged(true)
+            return componentRef.beforeClose(confirmCallback)
           }
 
           confirmCallback && confirmCallback()

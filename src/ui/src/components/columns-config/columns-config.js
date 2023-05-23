@@ -38,7 +38,7 @@ export default {
             title: i18n.t('列表显示属性配置'),
             width: 600,
             isShow: this.isShow,
-            'before-close': () => {
+            beforeClose: () => {
               const refColumns = this.$refs.cmdbColumnsConfig
               const { columnsChangedValues } = refColumns
               if (columnsChangedValues()) {

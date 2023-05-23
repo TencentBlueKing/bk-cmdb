@@ -19,7 +19,7 @@
       :width="800"
       :before-close="handleSliderBeforeClose">
       <cmdb-form slot="content" v-if="isShow"
-        ref="form"
+        ref="formRef"
         :properties="properties"
         :property-groups="propertyGroups"
         :inst="formData"
@@ -39,7 +39,7 @@
                 <div class="property-value" v-bk-tooltips="{ content: $t('内置业务集不可编辑'), disabled: !isBuiltin }">
                   <business-scope-settings-form
                     class="form-component"
-                    ref="formComponent"
+                    ref="businessSetFormRef"
                     :disabled="isBuiltin"
                     :data="scopeSettingsFormData"
                     @change="handleScopeSettingsChange" />
@@ -104,8 +104,8 @@
         data: formData
       } = toRefs(props)
 
-      const form = ref()
-      const formComponent = ref()
+      const formRef = ref(null)
+      const businessSetFormRef = ref(null)
 
       const getModelById = store.getters['objectModelClassify/getModelById']
       const model = computed(() => getModelById(BUILTIN_MODELS.BUSINESS_SET) || {})
@@ -249,13 +249,13 @@
       }
 
       const handleSliderBeforeClose = () => {
-        const { values, refrenceValues } = form.value
-        const { selectedBusiness, localSelectedBusiness } = formComponent.value
+        const { values, refrenceValues } = formRef.value
+        const { selectedBusiness, localSelectedBusiness } = businessSetFormRef.value
         const changedValues = !isEqual(values, refrenceValues)
         const changedSelectValues = !isEqual(selectedBusiness, localSelectedBusiness)
         if (changedValues || changedSelectValues) {
-          form.value.setChanged(true)
-          return form.value.beforeClose(() => {
+          formRef.value.setChanged(true)
+          return formRef.value.beforeClose(() => {
             emit('update:show', false)
           })
         }
@@ -287,8 +287,8 @@
         handleSliderBeforeClose,
         previewProps,
         handlePreview,
-        form,
-        formComponent
+        formRef,
+        businessSetFormRef
       }
     }
   })

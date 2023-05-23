@@ -32,6 +32,7 @@
   import TaskDetailsHistory from './task-details-history.vue'
   import TaskForm from './task-form.vue'
   import useSideslider from '@/hooks/use-sideslider'
+
   export default {
     name: 'task-details',
     components: {
