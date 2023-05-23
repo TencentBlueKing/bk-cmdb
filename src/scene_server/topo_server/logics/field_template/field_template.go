@@ -53,7 +53,7 @@ func (f *fieldTemplate) CreateFieldTemplate(kit *rest.Kit, opt *metadata.CreateF
 	for idx := range opt.Attributes {
 		opt.Attributes[idx].TemplateID = res.ID
 	}
-	attrIDs, err := f.clientSet.CoreService().FieldTemplate().CreateFieldTemplateAttrs(kit.Ctx, kit.Header,
+	attrIDs, err := f.clientSet.CoreService().FieldTemplate().CreateFieldTemplateAttrs(kit.Ctx, kit.Header, res.ID,
 		opt.Attributes)
 	if err != nil {
 		blog.Errorf("create field template attributes failed, err: %v, data: %v, rid: %s", err, opt.Attributes, kit.Rid)
@@ -63,6 +63,10 @@ func (f *fieldTemplate) CreateFieldTemplate(kit *rest.Kit, opt *metadata.CreateF
 	propertyIDToIDMap := make(map[string]int64)
 	for idx, attr := range opt.Attributes {
 		propertyIDToIDMap[attr.PropertyID] = attrIDs.IDs[idx]
+	}
+
+	if len(opt.Uniques) == 0 {
+		return res, nil
 	}
 
 	uniques := make([]metadata.FieldTemplateUnique, len(opt.Uniques))
@@ -76,7 +80,7 @@ func (f *fieldTemplate) CreateFieldTemplate(kit *rest.Kit, opt *metadata.CreateF
 		uniques[idx] = *unique
 	}
 
-	_, err = f.clientSet.CoreService().FieldTemplate().CreateFieldTemplateUniques(kit.Ctx, kit.Header, uniques)
+	_, err = f.clientSet.CoreService().FieldTemplate().CreateFieldTemplateUniques(kit.Ctx, kit.Header, res.ID, uniques)
 	if err != nil {
 		blog.Errorf("create field template uniques failed, err: %v, data: %v, rid: %s", err, uniques, kit.Rid)
 		return nil, err

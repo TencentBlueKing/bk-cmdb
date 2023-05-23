@@ -54,7 +54,7 @@ func (f *FieldTemplate) Validate() ccErr.RawErrorInfo {
 			Args: []interface{}{common.BKFieldName, fieldTemplateNameMaxLen}}
 	}
 
-	if utf8.RuneCountInString(f.Name) > fieldTemplateDesMaxLen {
+	if utf8.RuneCountInString(f.Description) > fieldTemplateDesMaxLen {
 		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommValExceedMaxFailed,
 			Args: []interface{}{common.BKDescriptionField, fieldTemplateDesMaxLen}}
 	}
@@ -119,6 +119,8 @@ func (f *FieldTemplateAttr) Validate() ccErr.RawErrorInfo {
 }
 
 func (f *FieldTemplateAttr) validatePropertyID() ccErr.RawErrorInfo {
+	f.PropertyID = strings.TrimSpace(f.PropertyID)
+
 	if f.PropertyID == "" {
 		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet,
 			Args: []interface{}{common.BKPropertyIDField}}
@@ -144,6 +146,8 @@ func (f *FieldTemplateAttr) validatePropertyID() ccErr.RawErrorInfo {
 }
 
 func (f *FieldTemplateAttr) validateType() ccErr.RawErrorInfo {
+	f.PropertyType = strings.TrimSpace(f.PropertyType)
+
 	if f.PropertyType == "" {
 		return ccErr.RawErrorInfo{}
 	}
@@ -151,8 +155,7 @@ func (f *FieldTemplateAttr) validateType() ccErr.RawErrorInfo {
 	switch f.PropertyType {
 	case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat,
 		common.FieldTypeEnumMulti, common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeUser,
-		common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList,
-		common.FieldTypeEnumQuote:
+		common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList:
 
 	default:
 		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid,
@@ -163,6 +166,8 @@ func (f *FieldTemplateAttr) validateType() ccErr.RawErrorInfo {
 }
 
 func (f *FieldTemplateAttr) validateName() ccErr.RawErrorInfo {
+	f.PropertyName = strings.TrimSpace(f.PropertyName)
+
 	if f.PropertyName == "" {
 		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet,
 			Args: []interface{}{common.BKPropertyNameField}}
@@ -239,6 +244,13 @@ func (f *FieldTemplateUnique) Validate() ccErr.RawErrorInfo {
 	if len(f.Keys) == 0 {
 		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet,
 			Args: []interface{}{common.BKObjectUniqueKeys}}
+	}
+
+	for _, key := range f.Keys {
+		if key == 0 {
+			return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid,
+				Args: []interface{}{common.BKObjectUniqueKeys}}
+		}
 	}
 
 	return ccErr.RawErrorInfo{}
@@ -375,14 +387,14 @@ type ListFieldTemplateAttrResp struct {
 
 // CreateFieldTmplOption create field template option
 type CreateFieldTmplOption struct {
-	FieldTemplate
-	Attributes []FieldTemplateAttr     `json:"attributes"`
-	Uniques    []FieldTmplUniqueOption `json:"uniques"`
+	FieldTemplate `json:",inline"`
+	Attributes    []FieldTemplateAttr     `json:"attributes"`
+	Uniques       []FieldTmplUniqueOption `json:"uniques"`
 }
 
 const (
-	filedTemplateAttrMaxCount   = 20
-	filedTemplateUniqueMaxCount = 5
+	FieldTemplateAttrMaxCount   = 20
+	FieldTemplateUniqueMaxCount = 5
 )
 
 // Validate validate create field template option
@@ -395,14 +407,14 @@ func (c *CreateFieldTmplOption) Validate() ccErr.RawErrorInfo {
 		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{"attributes"}}
 	}
 
-	if len(c.Attributes) > filedTemplateAttrMaxCount {
+	if len(c.Attributes) > FieldTemplateAttrMaxCount {
 		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit,
-			Args: []interface{}{"attributes", filedTemplateAttrMaxCount}}
+			Args: []interface{}{"attributes", FieldTemplateAttrMaxCount}}
 	}
 
-	if len(c.Uniques) > filedTemplateUniqueMaxCount {
+	if len(c.Uniques) > FieldTemplateUniqueMaxCount {
 		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit,
-			Args: []interface{}{"uniques", filedTemplateAttrMaxCount}}
+			Args: []interface{}{"uniques", FieldTemplateAttrMaxCount}}
 	}
 
 	return ccErr.RawErrorInfo{}

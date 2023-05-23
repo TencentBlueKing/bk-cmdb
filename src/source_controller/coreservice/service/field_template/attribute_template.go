@@ -18,6 +18,7 @@
 package fieldtmpl
 
 import (
+	"strconv"
 	"time"
 
 	"configcenter/src/common"
@@ -83,6 +84,22 @@ func (s *service) CreateFieldTemplateAttrs(ctx *rest.Contexts) {
 		return
 	}
 
+	if len(attrs) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, "attributes"))
+		return
+	}
+
+	templateID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKTemplateID), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse %s, err: %v, rid: %s", common.BKTemplateID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKTemplateID))
+		return
+	}
+	if templateID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKTemplateID))
+		return
+	}
+
 	ids, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, common.BKTableNameObjAttDesTemplate, len(attrs))
 	if err != nil {
 		blog.Errorf("get sequence id on the table (%s) failed, err: %v, rid: %s", common.BKTableNameObjAttDesTemplate,
@@ -100,6 +117,13 @@ func (s *service) CreateFieldTemplateAttrs(ctx *rest.Contexts) {
 		attrs[idx].Modifier = ctx.Kit.User
 		attrs[idx].CreateTime = &metadata.Time{Time: now}
 		attrs[idx].LastTime = &metadata.Time{Time: now}
+
+		if attrs[idx].TemplateID != templateID {
+			blog.Errorf("attribute template id is invalid, data: %v, template id: %d, rid: %s", attrs[idx], templateID,
+				ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, "attributes"))
+			return
+		}
 
 		if err := attrs[idx].Validate(); err.ErrCode != 0 {
 			blog.Errorf("field template attribute is invalid, data: %v, err: %v, rid: %s", attrs[idx], err, ctx.Kit.Rid)

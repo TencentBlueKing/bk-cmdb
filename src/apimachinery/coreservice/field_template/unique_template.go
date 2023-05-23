@@ -51,15 +51,15 @@ func (t template) ListFieldTemplateUnique(ctx context.Context, h http.Header, op
 }
 
 // CreateFieldTemplateUniques create field template uniques
-func (t template) CreateFieldTemplateUniques(ctx context.Context, h http.Header, opt []metadata.FieldTemplateUnique) (
-	*metadata.RspIDs, errors.CCErrorCoder) {
+func (t template) CreateFieldTemplateUniques(ctx context.Context, h http.Header, templateID int64,
+	opt []metadata.FieldTemplateUnique) (*metadata.RspIDs, errors.CCErrorCoder) {
 
 	resp := new(metadata.CreateBatchResult)
 
 	err := t.client.Post().
 		WithContext(ctx).
 		Body(opt).
-		SubResourcef("/createmany/field_template/unique").
+		SubResourcef("/createmany/field_template/%d/unique", templateID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

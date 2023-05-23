@@ -18,6 +18,7 @@
 package fieldtmpl
 
 import (
+	"strconv"
 	"time"
 
 	"configcenter/src/common"
@@ -36,7 +37,23 @@ func (s *service) CreateFieldTemplateUniques(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := s.checkUniques(ctx.Kit, uniques); err != nil {
+	if len(uniques) == 0 {
+		ctx.RespEntity(metadata.RspIDs{IDs: make([]int64, 0)})
+		return
+	}
+
+	templateID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKTemplateID), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse %s, err: %v, rid: %s", common.BKTemplateID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKTemplateID))
+		return
+	}
+	if templateID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKTemplateID))
+		return
+	}
+
+	if err := s.checkUniques(ctx.Kit, uniques, templateID); err != nil {
 		blog.Errorf("check field template uniques failed, uniques: %v, err: %v, rid: %s", uniques, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -76,10 +93,21 @@ func (s *service) CreateFieldTemplateUniques(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.RspIDs{IDs: result})
 }
 
-func (s *service) checkUniques(kit *rest.Kit, uniques []metadata.FieldTemplateUnique) error {
-	templateIDs := make([]int64, 0)
-	templateIDMap := make(map[int64]struct{})
+// checkUniques check if same unique rule has existed. issue #5240
+// the method parameter uniques need to be checked with each other, and be checked with the uniques in db.
+func (s *service) checkUniques(kit *rest.Kit, uniques []metadata.FieldTemplateUnique, templateID int64) error {
+	if len(uniques) == 0 {
+		return nil
+	}
+
+	attrIDs := make([]int64, 0)
 	for idx, unique := range uniques {
+		if unique.TemplateID != templateID {
+			blog.Errorf("unique template id is invalid, data: %v, template id: %d, rid: %s", unique, templateID,
+				kit.Rid)
+			return kit.CCError.New(common.CCErrCommParamsInvalid, "uniques")
+		}
+
 		if err := unique.Validate(); err.ErrCode != 0 {
 			return err.ToCCError(kit.CCError)
 		}
@@ -88,15 +116,21 @@ func (s *service) checkUniques(kit *rest.Kit, uniques []metadata.FieldTemplateUn
 			return err
 		}
 
-		if _, exist := templateIDMap[unique.TemplateID]; !exist {
-			templateIDs = append(templateIDs, unique.TemplateID)
-			templateIDMap[unique.TemplateID] = struct{}{}
-		}
+		attrIDs = append(attrIDs, unique.Keys...)
 	}
 
-	existedUniques, err := s.findUniqueByTemplateIDs(kit, templateIDs)
+	attrIDs = util.IntArrayUnique(attrIDs)
+	exist, err := s.isTemplateAttrsExist(kit, attrIDs)
 	if err != nil {
-		blog.Errorf("find uniques by template ids failed, ids: %v, err: %v, rid: %s", templateIDs, err, kit.Rid)
+		return err
+	}
+	if !exist {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjectUniqueKeys)
+	}
+
+	existedUniques, err := s.findUniqueByTemplateID(kit, templateID)
+	if err != nil {
+		blog.Errorf("find uniques by template id failed, id: %v, err: %v, rid: %s", templateID, err, kit.Rid)
 		return err
 	}
 
@@ -117,23 +151,16 @@ func (s *service) checkKeys(kit *rest.Kit, target metadata.FieldTemplateUnique,
 	keysMap := make(map[int64]struct{})
 	for _, key := range target.Keys {
 		if _, exists := keysMap[key]; exists {
+			blog.Errorf("unique key is invalid, unique: %v, rid: %s", target, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjectUniqueKeys)
 		}
 
 		keysMap[key] = struct{}{}
 	}
 
-	exist, err := s.isTemplateAttrsExist(kit, target.Keys)
-	if err != nil {
-		return err
-	}
-	if !exist {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjectUniqueKeys)
-	}
-
 	for idx, comparator := range comparators {
 		if idx == skipIdx || target.TemplateID != comparator.TemplateID ||
-			(target.TemplateID != 0 && target.ID == comparator.ID) {
+			(target.ID != 0 && target.ID == comparator.ID) {
 			continue
 		}
 
@@ -145,6 +172,7 @@ func (s *service) checkKeys(kit *rest.Kit, target metadata.FieldTemplateUnique,
 		}
 
 		if len(keysMap) == cnt || (len(keysMap) > len(comparator.Keys) && len(comparator.Keys) == cnt) {
+			blog.Errorf("unique key is invalid, unique: %v, rid: %s", target, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjectUniqueKeys)
 		}
 	}
@@ -167,9 +195,9 @@ func (s *service) isTemplateAttrsExist(kit *rest.Kit, ids []int64) (bool, error)
 	return int(cnt) == len(ids), nil
 }
 
-func (s *service) findUniqueByTemplateIDs(kit *rest.Kit, ids []int64) ([]metadata.FieldTemplateUnique, error) {
+func (s *service) findUniqueByTemplateID(kit *rest.Kit, id int64) ([]metadata.FieldTemplateUnique, error) {
 	cond := map[string]interface{}{
-		common.BKTemplateID: map[string]interface{}{common.BKDBIN: ids},
+		common.BKTemplateID: id,
 	}
 	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	uniques := make([]metadata.FieldTemplateUnique, 0)

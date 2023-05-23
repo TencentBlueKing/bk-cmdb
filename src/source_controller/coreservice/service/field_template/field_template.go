@@ -343,12 +343,6 @@ func (s *service) CreateFieldTemplate(ctx *rest.Contexts) {
 	template.CreateTime = &metadata.Time{Time: now}
 	template.LastTime = &metadata.Time{Time: now}
 
-	if err := template.Validate(); err.ErrCode != 0 {
-		blog.Errorf("field template is invalid, data: %v, err: %v, rid: %s", template, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
-		return
-	}
-
 	if err = mongodb.Client().Table(common.BKTableNameFieldTemplate).Insert(ctx.Kit.Ctx, template); err != nil {
 		blog.Errorf("save field template failed, data: %v, err: %v, rid: %s", template, err, ctx.Kit.Rid)
 		if mongodb.Client().IsDuplicatedError(err) {

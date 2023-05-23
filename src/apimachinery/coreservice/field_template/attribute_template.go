@@ -51,7 +51,9 @@ func (t template) ListFieldTemplateAttr(ctx context.Context, h http.Header, opt 
 }
 
 // CreateFieldTemplateAttrs create field template attributes
-func (t template) CreateFieldTemplateAttrs(ctx context.Context, h http.Header, opt []metadata.FieldTemplateAttr) (
+func (t template) CreateFieldTemplateAttrs(ctx context.Context, h http.Header, templateID int64,
+	opt []metadata.FieldTemplateAttr) (
+
 	*metadata.RspIDs, errors.CCErrorCoder) {
 
 	resp := new(metadata.CreateBatchResult)
@@ -59,7 +61,7 @@ func (t template) CreateFieldTemplateAttrs(ctx context.Context, h http.Header, o
 	err := t.client.Post().
 		WithContext(ctx).
 		Body(opt).
-		SubResourcef("/createmany/field_template/attribute").
+		SubResourcef("/createmany/field_template/%d/attribute", templateID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
