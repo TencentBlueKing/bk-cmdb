@@ -18,6 +18,7 @@
 package y3_10_202305151505
 
 import (
+	"configcenter/src/scene_server/admin_server/upgrader"
 	"context"
 
 	"configcenter/src/common"
@@ -39,12 +40,16 @@ func updateBKCloudWord(ctx context.Context, db dal.RDB) error {
 	return nil
 }
 
-func updateDefaultArea(ctx context.Context, db dal.RDB) error {
+func updateDefaultArea(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
-	err := db.Table(common.BKTableNameBasePlat).Update(ctx,
-		map[string]interface{}{common.BKCloudIDField: 0},
-		map[string]interface{}{common.BKCloudNameField: common.DefaultCloudName})
-	if err != nil {
+	cond := map[string]interface{}{
+		common.BKCloudNameField: "default area",
+	}
+
+	data := map[string]interface{}{
+		common.BKCloudNameField: "Default Area",
+	}
+	if err := db.Table(common.BKTableNameBasePlat).Update(ctx, cond, data); err != nil {
 		blog.Errorf("update default area failed, err: %v", err)
 		return err
 	}

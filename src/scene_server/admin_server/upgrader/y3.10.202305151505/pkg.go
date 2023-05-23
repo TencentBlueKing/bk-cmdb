@@ -37,7 +37,7 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		return err
 	}
 
-	if err = updateDefaultArea(ctx, db); err != nil {
+	if err = updateDefaultArea(ctx, db, conf); err != nil {
 		blog.Errorf("upgrade y3.10.202305151505 update default area failed, err: %v", err)
 		return err
 	}

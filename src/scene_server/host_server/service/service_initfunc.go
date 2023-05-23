@@ -261,7 +261,8 @@ func (s *Service) initSpecial(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/install/bk", Handler: s.BKSystemInstall})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/system/config/user_config/blueking_modify", Handler: s.FindSystemUserConfigBKSwitch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/system/config/user_config/blueking_modify", Handler: s.FindSystemUserConfigBKSwitch})
 
 	utility.AddToRestfulWebService(web)
 
@@ -274,7 +275,9 @@ func (s *Service) initTransfer(web *restful.WebService) {
 		Language: s.Engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/", Handler: s.TransferHostWithAutoClearServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/",
+		Handler: s.TransferHostWithAutoClearServiceInstance})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/preview/",
 		Handler: s.TransferHostWithAutoClearServiceInstancePreview})
