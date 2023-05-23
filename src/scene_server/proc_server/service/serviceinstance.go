@@ -382,7 +382,7 @@ func (ps *ProcServer) SearchHostWithNoServiceInstance(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.SearchHostWithNoSvcInstOutput{HostIDs: hostIDs})
 }
 
-// SearchServiceInstancesInModuleWeb TODO
+// SearchServiceInstancesInModuleWeb search service instances in module for web
 func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	input := new(metadata.GetServiceInstanceInModuleInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -398,15 +398,21 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	bizID := input.BizID
 	option := &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
-		ModuleIDs:  []int64{input.ModuleID},
 		Page:       input.Page,
 		SearchKey:  input.SearchKey,
 		Selectors:  input.Selectors,
 		HostIDs:    input.HostIDs,
 	}
-	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
+
+	if input.ModuleID != 0 {
+		option.ModuleIDs = []int64{input.ModuleID}
+	}
+
+	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d failed, err: %v", input.ModuleID, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d "+
+			"failed, err: %v", input.ModuleID, err)
 		return
 	}
 
@@ -421,9 +427,11 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 			Limit: common.BKNoLimit,
 		},
 	}
-	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, listRelationOption)
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header,
+		listRelationOption)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance relations failed, list option: %+v, err: %v", listRelationOption, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance relations failed, "+
+			"list option: %+v, err: %v", listRelationOption, err)
 		return
 	}
 
@@ -441,7 +449,8 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	for _, instance := range serviceInstanceResult.Info {
 		item, err := mapstr.Struct2Map(instance)
 		if err != nil {
-			blog.ErrorJSON("SearchServiceInstancesInModuleWeb failed, Struct2Map failed, serviceInstance: %s, err: %s, rid: %s", instance, err.Error(), ctx.Kit.Rid)
+			blog.ErrorJSON("SearchServiceInstancesInModuleWeb failed, Struct2Map failed, serviceInstance: %s, "+
+				"err: %s, rid: %s", instance, err.Error(), ctx.Kit.Rid)
 			ccErr := ctx.Kit.CCError.CCError(common.CCErrCommParseDBFailed)
 			ctx.RespAutoError(ccErr)
 			return
