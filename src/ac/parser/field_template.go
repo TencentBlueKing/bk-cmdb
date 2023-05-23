@@ -100,7 +100,7 @@ var FieldTemplateAuthConfigs = []AuthConfig{
 		Name:           "FieldTemplateUnbindingModel",
 		Description:    "查询字段组合模版任务状态",
 		Pattern:        "/api/v3/task/find/field_template/tasks_status",
-		HTTPMethod:     http.MethodGet,
+		HTTPMethod:     http.MethodPost,
 		ResourceAction: meta.SkipAction,
 	},
 }

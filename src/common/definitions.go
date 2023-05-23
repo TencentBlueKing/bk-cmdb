@@ -252,11 +252,8 @@ const (
 	// BKDBLimit the db operator to limit return number of doc
 	BKDBLimit = "$limit"
 
-	// BKDBUnwind the db operator to limit return number of doc
+	// BKDBUnwind used to split values contained in an array field into separate doc
 	BKDBUnwind = "$unwind"
-
-	// BKDBSlice the db operator to limit return number of doc
-	BKDBSlice = "$slice"
 )
 
 const (

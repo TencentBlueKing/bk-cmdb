@@ -140,21 +140,21 @@ func (s *service) getObjectByIDs(kit *rest.Kit, ids []int64) ([]string, error) {
 			common.BKDBIN: ids,
 		},
 	}
-	associations := make([]metadata.Association, 0)
+	objs := make([]metadata.Object, 0)
 
 	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(filter).Fields(common.BKObjIDField).
-		All(kit.Ctx, &associations); err != nil {
+		All(kit.Ctx, &objs); err != nil {
 		blog.Errorf("mongodb count failed, table: %s, err: %v, rid: %s", common.BKTableNameObjDes, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
-	if len(associations) == 0 {
+	if len(objs) == 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound, "object_ids")
 	}
 
 	objIDs := make([]string, 0)
-	for _, association := range associations {
-		objIDs = append(objIDs, association.ObjectID)
+	for _, obj := range objs {
+		objIDs = append(objIDs, obj.ObjectID)
 	}
 
 	return objIDs, nil

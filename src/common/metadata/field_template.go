@@ -106,7 +106,7 @@ type ListFieldTemplateResp struct {
 
 // FieldTemplateBindObjOpt field template binding model option
 type FieldTemplateBindObjOpt struct {
-	ID        int64   `json:"template_id"`
+	ID        int64   `json:"bk_template_id"`
 	ObjectIDs []int64 `json:"object_ids"`
 }
 
@@ -115,7 +115,7 @@ func (option *FieldTemplateBindObjOpt) Validate() ccErr.RawErrorInfo {
 	if option.ID == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"template_id"},
+			Args:    []interface{}{common.BKTemplateID},
 		}
 	}
 	if len(option.ObjectIDs) == 0 {
@@ -135,7 +135,7 @@ func (option *FieldTemplateBindObjOpt) Validate() ccErr.RawErrorInfo {
 
 // FieldTemplateUnbindObjOpt field template unbinding model option
 type FieldTemplateUnbindObjOpt struct {
-	ID       int64 `json:"template_id"`
+	ID       int64 `json:"bk_template_id"`
 	ObjectID int64 `json:"object_id"`
 }
 
@@ -144,7 +144,7 @@ func (option *FieldTemplateUnbindObjOpt) Validate() ccErr.RawErrorInfo {
 	if option.ID == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"template_id"},
+			Args:    []interface{}{common.BKTemplateID},
 		}
 	}
 	if option.ObjectID == 0 {

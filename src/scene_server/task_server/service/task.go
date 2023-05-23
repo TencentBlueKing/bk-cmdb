@@ -193,7 +193,7 @@ func (s *Service) ListFieldTemplateTasksStatus(ctx *rest.Contexts) {
 	for _, info := range infos {
 		obj, err := util.GetInt64ByInterface(info.Extra)
 		if err != nil {
-			blog.Errorf("get instance id failed, obj: %+v, err: %v", obj, err)
+			blog.Errorf("get instance id failed, obj: %+v, err: %v, rid: %s", obj, err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}

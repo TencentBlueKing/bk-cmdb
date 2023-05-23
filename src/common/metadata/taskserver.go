@@ -233,7 +233,7 @@ type ListAPITaskSyncStatusResult struct {
 
 // ListFieldTmpltTaskStatusOption get the task status request of the specified template ID and object
 type ListFieldTmpltTaskStatusOption struct {
-	ID        int64   `json:"id"`
+	ID        int64   `json:"bk_template_id"`
 	ObjectIDs []int64 `json:"object_ids"`
 }
 
@@ -242,7 +242,7 @@ func (option *ListFieldTmpltTaskStatusOption) Validate() ccErr.RawErrorInfo {
 	if option.ID == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{common.BKFieldID},
+			Args:    []interface{}{common.BKTemplateID},
 		}
 	}
 	if len(option.ObjectIDs) == 0 {
