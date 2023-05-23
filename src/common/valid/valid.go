@@ -49,6 +49,8 @@ func ValidPropertyOption(propertyType string, option interface{}, isMultiple boo
 		return ValidFieldTypeList(option, defaultVal, rid, errProxy)
 	case common.FieldTypeLongChar, common.FieldTypeSingleChar:
 		return ValidFieldTypeString(option, defaultVal, rid, errProxy)
+	case common.FieldTypeBool:
+		return ValidateBoolType(option)
 	}
 	return nil
 }

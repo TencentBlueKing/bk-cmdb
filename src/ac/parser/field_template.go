@@ -103,6 +103,41 @@ var FieldTemplateAuthConfigs = []AuthConfig{
 		HTTPMethod:     http.MethodPost,
 		ResourceAction: meta.SkipAction,
 	},
+	{
+		Name:           "ListFieldTemplateUnique",
+		Description:    "查询字段模板唯一校验列表",
+		Pattern:        "/api/v3/findmany/field_template/unique",
+		HTTPMethod:     http.MethodPost,
+		ResourceAction: meta.SkipAction,
+	},
+	{
+		Name:           "CreateFieldTemplate",
+		Description:    "创建字段模版",
+		Pattern:        "/api/v3/create/field_template",
+		HTTPMethod:     http.MethodPost,
+		ResourceAction: meta.SkipAction,
+	},
+	{
+		Name:           "UpdateFieldTemplate",
+		Description:    "更新字段模版",
+		Pattern:        "/api/v3/update/field_template",
+		HTTPMethod:     http.MethodPut,
+		ResourceAction: meta.SkipAction,
+	},
+	{
+		Name:           "DeleteFieldTemplate",
+		Description:    "删除字段模版",
+		Pattern:        "/api/v3/delete/field_template",
+		HTTPMethod:     http.MethodDelete,
+		ResourceAction: meta.SkipAction,
+	},
+	{
+		Name:           "CloneFieldTemplate",
+		Description:    "克隆字段模版",
+		Pattern:        "/api/v3/create/field_template/clone",
+		HTTPMethod:     http.MethodPost,
+		ResourceAction: meta.SkipAction,
+	},
 }
 
 func (ps *parseStream) fieldTemplate() *parseStream {

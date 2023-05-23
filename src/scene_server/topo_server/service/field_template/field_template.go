@@ -18,6 +18,7 @@
 package fieldtmpl
 
 import (
+	"configcenter/src/ac/meta"
 	"strconv"
 
 	"configcenter/pkg/filter"
@@ -245,4 +246,43 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(nil)
+}
+
+// CreateFieldTemplate create field template(contains field template brief information, attributes and uniques)
+func (s *service) CreateFieldTemplate(ctx *rest.Contexts) {
+	opt := new(metadata.CreateFieldTmplOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := opt.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	if authResp, authorized := s.auth.Authorize(ctx.Kit, meta.ResourceAttribute{Basic: meta.Basic{
+		Type: meta.FieldTemplate, Action: meta.Create}}); !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
+	var res *metadata.RspID
+	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		var err error
+		res, err = s.logics.FieldTemplateOperation().CreateFieldTemplate(ctx.Kit, opt)
+		if err != nil {
+			blog.Errorf("create field template failed, opt: %v, err: %v, rid: %s", opt, err, ctx.Kit.Rid)
+			return err
+		}
+
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(res)
 }

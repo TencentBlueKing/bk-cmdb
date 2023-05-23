@@ -93,3 +93,28 @@ func (t *template) FieldTemplateUnbindObject(ctx context.Context, h http.Header,
 
 	return resp.CCError()
 }
+
+// CreateFieldTemplate create field template
+func (t template) CreateFieldTemplate(ctx context.Context, h http.Header, opt *metadata.FieldTemplate) (
+	*metadata.RspID, errors.CCErrorCoder) {
+
+	resp := new(metadata.CreateResult)
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/create/field_template").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}

@@ -32,6 +32,14 @@ type Interface interface {
 		opt *metadata.FieldTemplateUnbindObjOpt) errors.CCErrorCoder
 	ListFieldTemplateAttr(ctx context.Context, h http.Header, opt *metadata.CommonQueryOption) (
 		*metadata.FieldTemplateAttrInfo, errors.CCErrorCoder)
+	ListFieldTemplateUnique(ctx context.Context, h http.Header, opt *metadata.CommonQueryOption) (
+		*metadata.FieldTemplateUniqueInfo, errors.CCErrorCoder)
+	CreateFieldTemplate(ctx context.Context, h http.Header, opt *metadata.FieldTemplate) (*metadata.RspID,
+		errors.CCErrorCoder)
+	CreateFieldTemplateAttrs(ctx context.Context, h http.Header, templateID int64, opt []metadata.FieldTemplateAttr) (
+		*metadata.RspIDs, errors.CCErrorCoder)
+	CreateFieldTemplateUniques(ctx context.Context, h http.Header, templateID int64,
+		opt []metadata.FieldTemplateUnique) (*metadata.RspIDs, errors.CCErrorCoder)
 }
 
 // New field template api client.
