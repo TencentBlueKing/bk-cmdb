@@ -247,6 +247,8 @@
                 flex: 1;
                 margin: 0 10px 0 0;
                 width: calc(100% - 150px);
+                display: flex;
+                align-items: center;
 
                 .form-element {
                   width: 100%;
