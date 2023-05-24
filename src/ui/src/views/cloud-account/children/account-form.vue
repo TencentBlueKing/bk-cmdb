@@ -121,6 +121,9 @@
   import { mapGetters } from 'vuex'
   import { CLOUD_AREA_PROPERTIES } from '@/dictionary/request-symbol'
   import RouterQuery from '@/router/query'
+  import useSideslider from '@/hooks/use-sideslider'
+  import isEqual from 'lodash/isEqual'
+
   const DEFAULT_FORM = {
     bk_account_name: '',
     bk_cloud_vendor: '',
@@ -217,6 +220,9 @@
           connected: true
         }
       }
+      const { beforeClose, setChanged } = useSideslider(this.form)
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
     },
     methods: {
       async getCloudAreaProperties() {
@@ -396,6 +402,14 @@
         } else {
           this.$warn('No link provided')
         }
+      },
+      changeValue() {
+        if (this.mode === 'create') {
+          return !isEqual(this.form, DEFAULT_FORM)
+        }
+        const originForm = {}
+        Object.keys(DEFAULT_FORM).forEach(key => originForm[key] = this.account[key])
+        return !isEqual(this.form, originForm)
       }
     }
   }

@@ -15,7 +15,8 @@
     :is-show.sync="isShow"
     :title="title"
     :width="900"
-    @hidden="handleHidden">
+    @hidden="handleHidden"
+    :before-close="handleSliderBeforeClose">
     <component slot="content" ref="component"
       class="slider-content"
       :is="component"
@@ -58,6 +59,20 @@
       },
       handleHidden() {
         this.component = null
+      },
+      handleSliderBeforeClose() {
+        const $form = this.$refs.component
+        const { changedValues, changedVpcValues, isCreateMode } = $form
+        if (!isCreateMode) {
+          if (!changedValues() && !changedVpcValues()) {
+            return this.hide()
+          }
+        }
+        if (changedValues() || changedVpcValues()) {
+          $form.setChanged(true)
+          return $form.beforeClose(this.handleHidden)
+        }
+        this.hide()
       }
     }
   }
