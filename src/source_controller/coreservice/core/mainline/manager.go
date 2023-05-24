@@ -300,7 +300,8 @@ func (im *InstanceMainline) OrganizeMainlineInstance(ctx context.Context, withDe
 }
 
 // CheckAndFillingMissingModels TODO
-func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, header http.Header, withDetail bool) error {
+func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, header http.Header,
+	withDetail bool) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	supplierAccount := util.GetOwnerID(header)
 
@@ -324,9 +325,9 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, he
 			continue
 		}
 		blog.Warnf("get parent of %+v with key=%s failed, not Found, rid: %s", topoInstance, parentKey, rid)
-		// There is a bug in legacy code that business before mainline model be created in cc_ObjectBase table has no bk_biz_id field
-		// and therefore find parentInstance failed.
-		// In this case current algorithm degenerate in to o(n) query cost.
+		// There is a bug in legacy code that business before mainline model be created in cc_ObjectBase table has
+		// no bk_biz_id field and therefore find parentInstance failed. in this case current algorithm
+		// degenerate in to o(n) query cost.
 
 		filter := map[string]interface{}{
 			common.BKInstIDField: topoInstance.ParentInstanceID,
