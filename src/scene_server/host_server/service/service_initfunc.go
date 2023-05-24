@@ -159,8 +159,7 @@ func (s *Service) initHostapplyrule(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodGet,
 		Path: "/find/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}/", Handler: s.GetHostApplyRule})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}",
 		Handler: s.ListHostApplyRule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/createmany/host_apply_rule/bk_biz_id/{bk_biz_id}/batch_create_or_update",
@@ -261,8 +260,8 @@ func (s *Service) initSpecial(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/install/bk", Handler: s.BKSystemInstall})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path: "/system/config/user_config/blueking_modify", Handler: s.FindSystemUserConfigBKSwitch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/system/config/user_config/blueking_modify",
+		Handler: s.FindSystemUserConfigBKSwitch})
 
 	utility.AddToRestfulWebService(web)
 
