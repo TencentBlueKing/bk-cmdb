@@ -122,7 +122,7 @@
         const done = () => {
           stop()
           currentStepIndex.value += 1
-          emit('stepsChange', currentStepIndex.value)
+          emit('steps-change', currentStepIndex.value)
         }
 
         isLoading.value = true

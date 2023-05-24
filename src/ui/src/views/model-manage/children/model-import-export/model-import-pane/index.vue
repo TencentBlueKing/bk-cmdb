@@ -12,7 +12,7 @@
 
 <template>
   <div class="model-import-pane">
-    <step-pane @cancel="cancelImport" :steps="importSteps" @stepsChange="stepsChange">
+    <step-pane @cancel="cancelImport" :steps="importSteps" @steps-change="stepsChange">
       <template #default="{ currentStepIndex }">
         <div class="step-container" v-show="currentStepIndex === 1">
           <user-notice>
