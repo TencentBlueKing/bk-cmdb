@@ -62,4 +62,8 @@ func InitFieldTemplate(c *capability.Capability) {
 	// field template unique
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/unique",
 		Handler: s.ListFieldTemplateUnique})
+
+	// field template sync to object
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/unique",
+		Handler: s.ListFieldTemplateUnique})
 }

@@ -18,12 +18,13 @@
 package fieldtmpl
 
 import (
-	"configcenter/src/ac/meta"
 	"strconv"
 
 	"configcenter/pkg/filter"
 	filtertools "configcenter/pkg/tools/filter"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -194,14 +195,29 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 		ObjectIDs: objIDs,
 	}
 
-	// todo:待补充鉴权日志
+	audit := auditlog.NewObjectAuditLog(s.clientSet.CoreService())
+
+	parameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
+	auditLogs, err := audit.GenerateAuditLogForBindingFieldTemplate(parameter, objIDs, opt.ID)
+	if err != nil {
+		blog.Errorf("generate audit log failed before update object, objName: %s, err: %v, rid: %s",
+			opt.ObjectIDs, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// todo:待补充鉴权
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateBindObject(ctx.Kit.Ctx, ctx.Kit.Header, option)
 		if err != nil {
 			blog.Errorf("field template bind model failed, err: %v , rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
-		// todo:开启事务记录审计日志
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
+			blog.Errorf("save audit log failed, cond: %+v, err: %v, rid: %s", opt, err, ctx.Kit.Rid)
+			return err
+		}
 		return nil
 	})
 
@@ -229,15 +245,29 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	// todo:待补充鉴权日志
+
+	// todo:待补充鉴权
+	audit := auditlog.NewObjectAuditLog(s.clientSet.CoreService())
+
+	parameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
+	auditLogs, err := audit.GenerateAuditLogForBindingFieldTemplate(parameter, []int64{opt.ObjectID}, opt.ID)
+	if err != nil {
+		blog.Errorf("generate audit log failed , object id: %d, err: %v, rid: %s", opt.ObjectID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
 
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateUnbindObject(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 		if err != nil {
-			blog.Errorf("field template unbind model failed, err: %v , rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("field template unbind model failed, cond: %+v, err: %v , rid: %s", opt, err, ctx.Kit.Rid)
 			return err
 		}
-		// todo:开启事务记录审计日志
+		// save audit log.
+		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
+			blog.Errorf("save audit log failed, cond: %+v, err: %v, rid: %s", opt, err, ctx.Kit.Rid)
+			return err
+		}
 		return nil
 	})
 
