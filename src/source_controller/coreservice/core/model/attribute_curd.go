@@ -703,7 +703,9 @@ func (m *modelAttribute) searchReturnMapStr(kit *rest.Kit, cond universalsql.Con
 	return resultAttrs, err
 }
 
-func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
+// delete delete the model scene isMode is true, no need to check whether
+// the isFromMode field inherits from the field template
+func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition, isFromMode bool) (cnt uint64, err error) {
 
 	resultAttrs := make([]metadata.Attribute, 0)
 	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKPropertyTypeField,
@@ -726,6 +728,10 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition) (cnt
 		if attr.PropertyType == common.FieldTypeInnerTable {
 			blog.Errorf("property is error, attrItem: %+v, rid: %s", attr, kit.Rid)
 			return 0, kit.CCError.New(common.CCErrTopoObjectSelectFailed, common.BKPropertyTypeField)
+		}
+
+		if !isFromMode && attr.TemplateID != 0 {
+			return 0, kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteAttr, attr.ID, attr.TemplateID)
 		}
 		objIDArrMap[attr.ObjectID] = append(objIDArrMap[attr.ObjectID], attr.ID)
 	}
@@ -1176,6 +1182,11 @@ func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
 		blog.Errorf("marshal json into attribute failed, data: %+v, err: %v, rid: %s", data, err, kit.Rid)
 		return err
 	}
+
+	if err = checkAttrTemplateID(kit, data, attr.ID); err != nil {
+		return err
+	}
+
 	if err = m.checkTableAttributeValidity(kit, attr); err != nil {
 		blog.Errorf("check attribute validity failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -1193,8 +1204,29 @@ func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
 	data.Remove(metadata.AttributeFieldPropertyType)
 	data.Remove(metadata.AttributeFieldCreateTime)
 	data.Remove(metadata.AttributeFieldIsPre)
+	data.Remove(common.BKTemplateID)
+
 	data.Set(metadata.AttributeFieldLastTime, time.Now())
 	return err
+}
+
+func checkAttrTemplateID(kit *rest.Kit, data mapstr.MapStr, attrID int64) error {
+	templateID, exists := data.Get(common.BKTemplateID)
+	if !exists {
+		return nil
+	}
+
+	tID, err := util.GetInt64ByInterface(templateID)
+	if err != nil {
+		blog.Errorf("convert int64 failed, templateID: %v, err: %v, rid: %s", templateID, err, kit.Rid)
+		return err
+	}
+
+	if tID != 0 {
+		blog.Errorf("templateID field is invalid, templateID: %v, rid: %s", templateID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteAttr, attrID, tID)
+	}
+	return nil
 }
 
 func checkAttrOption(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []metadata.Attribute) error {
@@ -1239,6 +1271,10 @@ func checkPropertyGroup(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []meta
 	grp, exists := data.Get(metadata.AttributeFieldPropertyGroup)
 	if !exists {
 		return nil
+	}
+
+	if grp == "" {
+		data.Remove(metadata.AttributeFieldPropertyGroup)
 	}
 
 	// check if property group exists in object
@@ -1304,35 +1340,12 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		})
 	}
 
-	if option, exists := data.Get(metadata.AttributeFieldOption); exists {
-		propertyType := dbAttributeArr[0].PropertyType
-		for _, dbAttribute := range dbAttributeArr {
-			if dbAttribute.PropertyType != propertyType {
-				blog.Errorf("update option, but property type not the same, db attributes: %s, rid:%s",
-					dbAttributeArr, kit.Ctx)
-				return kit.CCError.Errorf(common.CCErrCommParamsInvalid, "cond")
-			}
-		}
+	if err := checkAttrOption(kit, data, dbAttributeArr); err != nil {
+		return err
+	}
 
-		// 属性更新时，如果没有传入ismultiple参数，则使用数据库中的ismultiple值进行校验，如果传了ismultiple参数，则使用更新时的参数
-		isMultiple := dbAttributeArr[0].IsMultiple
-		if val, ok := data.Get(common.BKIsMultipleField); ok {
-			ismultiple, ok := val.(bool)
-			if !ok {
-				return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
-			}
-			isMultiple = &ismultiple
-		}
-
-		if isMultiple == nil {
-			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
-		}
-
-		if err := valid.ValidPropertyOption(propertyType, option, *isMultiple, data[common.BKDefaultFiled], kit.Rid,
-			kit.CCError); err != nil {
-			blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
-			return err
-		}
+	if err = checkPropertyGroup(kit, data, dbAttributeArr); err != nil {
+		return err
 	}
 
 	// 删除不可更新字段， 避免由于传入数据，修改字段
@@ -1342,38 +1355,17 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	data.Remove(metadata.AttributeFieldPropertyType)
 	data.Remove(metadata.AttributeFieldCreateTime)
 	data.Remove(metadata.AttributeFieldIsPre)
-	data.Set(metadata.AttributeFieldLastTime, time.Now())
+	data.Remove(common.BKTemplateID)
 
-	if grp, exists := data.Get(metadata.AttributeFieldPropertyGroup); exists {
-		if grp == "" {
-			data.Remove(metadata.AttributeFieldPropertyGroup)
-		}
-		// check if property group exists in object
-		objIDs := make([]string, 0)
-		for _, dbAttribute := range dbAttributeArr {
-			objIDs = append(objIDs, dbAttribute.ObjectID)
-		}
-		objIDs = util.StrArrayUnique(objIDs)
-		cond := map[string]interface{}{
-			common.BKObjIDField: map[string]interface{}{
-				common.BKDBIN: objIDs,
-			},
-			common.BKPropertyGroupIDField: grp,
-		}
-		cnt, err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Find(cond).Count(kit.Ctx)
-		if err != nil {
-			blog.ErrorJSON("property group count failed, err: %s, condition: %s, rid: %s", err, cond, kit.Rid)
-			return err
-		}
-		if cnt != uint64(len(objIDs)) {
-			blog.Errorf("property group invalid, objIDs: %s have %d property groups, rid: %s", objIDs, cnt, kit.Rid)
-			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyGroup)
-		}
-	}
+	data.Set(metadata.AttributeFieldLastTime, time.Now())
 
 	attribute := metadata.Attribute{}
 	if err = data.MarshalJSONInto(&attribute); err != nil {
 		blog.Errorf("marshal json into attribute failed, data: %+v, err: %v, rid: %s", data, err, kit.Rid)
+		return err
+	}
+
+	if err = checkAttrTemplateID(kit, data, attribute.ID); err != nil {
 		return err
 	}
 
@@ -1383,9 +1375,10 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	}
 
 	for _, dbAttribute := range dbAttributeArr {
-		err = m.checkUnique(kit, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName, attribute.BizID)
+		err = m.checkUnique(kit, false, dbAttribute.ObjectID, dbAttribute.PropertyID,
+			attribute.PropertyName, attribute.BizID)
 		if err != nil {
-			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, kit.Rid)
+			blog.Errorf("save attribute check unique attribute: %+v, err: %v, rid:%s", attribute, err, kit.Rid)
 			return err
 		}
 		if err = m.checkChangeField(kit, dbAttribute, data); err != nil {
@@ -1394,7 +1387,6 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	}
 
 	return err
-
 }
 
 // checkAttributeInUnique 检查属性是否存在唯一校验中  objIDPropertyIDArr  属性的bk_obj_id和表中ID的集合

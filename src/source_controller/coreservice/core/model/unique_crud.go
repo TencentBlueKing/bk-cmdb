@@ -119,7 +119,8 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 	return id, nil
 }
 
-func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id uint64, data metadata.UpdateModelAttrUnique) error {
+func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id uint64,
+	data metadata.UpdateModelAttrUnique) error {
 
 	unique := data.Data
 	unique.LastTime = metadata.Now()
@@ -140,20 +141,21 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 	}
 
 	properties, err := m.getUniqueProperties(kit, objID, unique.Keys)
-	if nil != err {
-		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, unique, err, kit.Rid)
+	if err != nil {
+		blog.Errorf("get unique properties failed, objID: %s, unique %+v, err: %s, rid: %s", objID,
+			unique, err, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "keys")
 	}
 
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(id)
+	filter := cond.ToMapStr()
 	cond.Field(common.BKObjIDField).Eq(objID)
-	condMap := util.SetModOwner(cond.ToMapStr(), kit.SupplierAccount)
+	condMap := util.SetModOwner(filter, kit.SupplierAccount)
 
 	oldUnique := metadata.ObjectUnique{}
-	err = mongodb.Client().Table(common.BKTableNameObjUnique).Find(condMap).One(kit.Ctx, &oldUnique)
-	if nil != err {
-		blog.Errorf("[UpdateObjectUnique] find error: %s, raw: %#v, rid: %s", err, cond.ToMapStr(), kit.Rid)
+	if err = mongodb.Client().Table(common.BKTableNameObjUnique).Find(condMap).One(kit.Ctx, &oldUnique); err != nil {
+		blog.Errorf("find unique error, cond: %#v, err: %v, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
 
@@ -161,9 +163,14 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 		blog.Errorf("[UpdateObjectUnique] could not update preset constrain: %+v %v, rid: %s", oldUnique, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)
 	}
+	// todo: 现在这里拦住，后续再同步的时候可能进行修改
+	if oldUnique.TemplateID != 0 {
+		blog.Errorf("the unique index [%d] is inherited from the template [%d] and cannot be deleted, rid: %s",
+			id, oldUnique.TemplateID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteIndex, id, oldUnique.TemplateID)
+	}
 
-	err = mongodb.Client().Table(common.BKTableNameObjUnique).Update(kit.Ctx, cond.ToMapStr(), &unique)
-	if nil != err {
+	if err = mongodb.Client().Table(common.BKTableNameObjUnique).Update(kit.Ctx, filter, &unique); err != nil {
 		blog.Errorf("[UpdateObjectUnique] Update error: %s, raw: %#v, rid: %s", err, &unique, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
@@ -178,36 +185,42 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 
 func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id uint64) error {
 	cond := condition.CreateCondition()
+
 	cond.Field(common.BKFieldID).Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
-	condMap := util.SetModOwner(cond.ToMapStr(), kit.SupplierAccount)
+	fCond := cond.ToMapStr()
+	condMap := util.SetModOwner(fCond, kit.SupplierAccount)
 
 	unique := metadata.ObjectUnique{}
 	err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(condMap).One(kit.Ctx, &unique)
 	if nil != err {
-		blog.Errorf("[DeleteObjectUnique] find error: %s, raw: %#v, rid: %s", err, cond.ToMapStr(), kit.Rid)
+		blog.Errorf("find unique index raw: %#v, err: %v, rid: %s", err, fCond, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
 
 	if unique.Ispre {
-		blog.Errorf("[DeleteObjectUnique] could not delete preset constrain: %+v, %v, rid: %s", unique, err, kit.Rid)
+		blog.Errorf("could not delete preset constrain: %+v, err: %v, rid: %s", unique, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)
 	}
 
 	exist, err := m.checkUniqueRequireExist(kit, objID, []uint64{id})
 	if err != nil {
-		blog.ErrorJSON("deleteModelAttrUnique check unique require err:%s, cond:%s, rid:%s", err.Error(), cond.ToMapStr(), kit.Rid)
+		blog.Errorf("check unique require, cond: %v, err: %v, rid: %s", fCond, err, kit.Rid)
 		return err
 	}
 	if !exist {
-		blog.ErrorJSON("deleteModelAttrUnique check unique require result. not found other require unique, cond:%s, rid:%s", cond.ToMapStr(), kit.Rid)
+		blog.Errorf("check unique require result. not found other require unique, cond: %v, rid: %s", fCond, kit.Rid)
 		return kit.CCError.CCError(common.CCErrTopoObjectUniqueShouldHaveMoreThanOne)
 	}
 
-	fCond := cond.ToMapStr()
+	if unique.TemplateID != 0 {
+		blog.Errorf("index is inherited from the template and cannot be deleted: unique: %+v, rid: %s", unique, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteIndex, id, unique.TemplateID)
+	}
+
 	err = mongodb.Client().Table(common.BKTableNameObjUnique).Delete(kit.Ctx, fCond)
 	if nil != err {
-		blog.Errorf("[DeleteObjectUnique] Delete error: %s, raw: %#v, rid: %s", err, fCond, kit.Rid)
+		blog.Errorf("delete object unique error, raw: %#v, err: %v, rid: %s", fCond, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
 
@@ -216,8 +229,7 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 	objInstTable := common.GetInstTableName(objID, kit.SupplierAccount)
 	// 删除失败，忽略即可以,后需会有任务补偿
 	if err := mongodb.Table(objInstTable).DropIndex(context.Background(), indexName); err != nil {
-		blog.WarnJSON("[DeleteObjectUnique] Delete db unique index error, err: %s, index name: %s, rid: %s",
-			err.Error(), indexName, kit.Rid)
+		blog.Warnf("[delete db unique index error, index name: %s, err: %v, rid: %s", indexName, err, kit.Rid)
 	}
 
 	return nil

@@ -173,6 +173,16 @@ func (s *Service) DeleteObjectUnique(ctx *rest.Contexts) {
 		return
 	}
 
+	for _, unique := range uniques.Info {
+		if unique.ID == id && unique.TemplateID != 0 {
+			blog.Errorf("the unique index [%d] is inherited from the template [%d] and cannot be deleted, rid: %s",
+				id, unique.TemplateID, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteIndex, id,
+				unique.TemplateID))
+			return
+		}
+	}
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		_, err := s.Engine.CoreAPI.CoreService().Model().DeleteModelAttrUnique(ctx.Kit.Ctx, ctx.Kit.Header, objectID,
 			id)

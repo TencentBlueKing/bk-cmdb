@@ -509,6 +509,9 @@ const (
 
 	CCErrorTopoObjForbiddenCreateAssociation           = 1101120
 	CCErrorTopoAssociatedObjForbiddenCreateAssociation = 1101121
+	CCErrorTopoFieldTemplateForbiddenDeleteAttr        = 1101122
+	CCErrorTopoFieldTemplateForbiddenDeleteIndex       = 1101123
+	CCErrorTopoFieldTemplateForbiddenPauseModel        = 1101124
 
 	// object controller 1102XXX
 
@@ -899,6 +902,7 @@ const (
 	CCErrTaskUnLockedTaskFail     = 1117006
 	CCErrTaskListTaskFail         = 1117007
 	CCErrTaskCreateConflict       = 1117008
+	CCErrTaskDeleteConflict       = 1117009
 
 	// cloud_server 1118xxx
 	// CCErrCloudVendorNotSupport cloud vendor not support

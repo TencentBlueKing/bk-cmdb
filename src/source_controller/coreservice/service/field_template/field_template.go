@@ -206,66 +206,6 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-func (s *service) dealProcessRunningTasks(kit *rest.Kit, option *metadata.FieldTemplateUnbindObjOpt) error {
-
-	// 1、get the status of the task
-	cond := mapstr.MapStr{
-		common.BKInstIDField:       option.ID,
-		metadata.APITaskExtraField: option.ObjectID,
-		common.BKStatusField: mapstr.MapStr{
-			common.BKDBIN: []metadata.APITaskStatus{
-				metadata.APITaskStatusExecute, metadata.APITaskStatusWaitExecute,
-				metadata.APITaskStatusNew},
-		},
-	}
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
-
-	result := make([]metadata.APITaskSyncStatus, 0)
-	if err := mongodb.Client().Table(common.BKTableNameAPITaskSyncHistory).Find(cond).
-		Fields(common.BKStatusField, common.BKCloudSyncTaskID).
-		All(kit.Ctx, &result); err != nil {
-		blog.Errorf("search mainline failed cond: %+v, err: %s, rid: %s", cond, err, kit.Rid)
-		return err
-	}
-
-	if len(result) == 0 {
-		return nil
-	}
-
-	// 2、the possible task status scenarios are: one is executing,
-	// one is waiting or new, but there will be no more than two tasks.
-	if len(result) > 2 {
-		blog.Errorf("task num incorrect, template ID: %d, objID: %s, rid: %s", option.ID, option.ObjectID, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrCommGetMultipleObject,
-			fmt.Sprintf("template ID: %d, objID: %s", option.ID, option.ObjectID))
-	}
-
-	// 3、if there is a running task, return an error directly.
-	var taskID string
-	for _, info := range result {
-		if info.Status == metadata.APITaskStatusExecute {
-			blog.Errorf("unbinding failed, sync task(%s) is running, template ID: %d, objID: %s, rid: %d")
-			return kit.CCError.Errorf(common.CCErrTaskCreateConflict,
-				fmt.Sprintf("template ID: %d, objID: %s", option.ID, option.ObjectID))
-		}
-		taskID = info.TaskID
-	}
-
-	// 4、if there is a queued task that needs to be cleared.
-	delCond := mapstr.MapStr{
-		common.BKTaskIDField: taskID,
-		common.BKStatusField: mapstr.MapStr{
-			common.BKDBIN: []metadata.APITaskStatus{metadata.APITaskStatusWaitExecute, metadata.APITaskStatusNew},
-		},
-	}
-	err := mongodb.Client().Table(common.BKTableNameAPITask).Delete(kit.Ctx, delCond)
-	if err != nil {
-		blog.Errorf("delete task failed, cond: %#v, err: %v, rid: %s", delCond, err, kit.Rid)
-		return err
-	}
-	return nil
-}
-
 // FieldTemplateUnbindObject field template unbind model.
 func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 
@@ -289,13 +229,13 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 	}
 
 	if err := canObjBindingFieldTemplate(kit, objIDs); err != nil {
-		blog.Errorf("multi field template founded, cond: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("validate failed, objIDs: %+v, err: %v, rid: %s", objIDs, err, kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
 	// 2、process tasks in task
-	if err := s.dealProcessRunningTasks(kit, opt); err != nil {
+	if err := dealProcessRunningTasks(kit, []int64{opt.ID}, opt.ObjectID); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -307,11 +247,74 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 	}
 	cond = util.SetModOwner(cond, kit.SupplierAccount)
 	if err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Delete(kit.Ctx, cond); err != nil {
-		blog.Errorf("delete obj field template failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
+		blog.Errorf("delete obj field template relation failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
+}
+
+func dealProcessRunningTasks(kit *rest.Kit, ids []int64, objectID int64) error {
+
+	// 1、get the status of the task
+	cond := mapstr.MapStr{
+		common.BKInstIDField: mapstr.MapStr{
+			common.BKDBIN: ids,
+		},
+		metadata.APITaskExtraField: objectID,
+		common.BKStatusField: mapstr.MapStr{
+			common.BKDBIN: []metadata.APITaskStatus{
+				metadata.APITaskStatusExecute, metadata.APITaskStatusWaitExecute,
+				metadata.APITaskStatusNew},
+		},
+	}
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+
+	result := make([]metadata.APITaskSyncStatus, 0)
+	if err := mongodb.Client().Table(common.BKTableNameAPITaskSyncHistory).Find(cond).
+		Fields(common.BKStatusField, common.BKTaskIDField).
+		All(kit.Ctx, &result); err != nil {
+		blog.Errorf("search task failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
+		return err
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+
+	// 2、the possible task status scenarios are: one is executing,
+	// one is waiting or new, but there will be no more than two tasks.
+	if len(result) > metadata.MaxFieldTemplateTaskNum {
+		blog.Errorf("task num incorrect, template IDs: %v, objID: %d, rid: %s", ids, objectID, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommGetMultipleObject,
+			fmt.Sprintf("template IDs: %v, objID: %d", ids, objectID))
+	}
+
+	// 3、if there is a running task, return an error directly.
+	var taskID string
+	for _, info := range result {
+		if info.Status == metadata.APITaskStatusExecute {
+			blog.Errorf("unbinding failed, sync task(%s) is running, template ID: %v, objID: %d, rid: %d", info.TaskID,
+				ids, objectID, kit.Rid)
+			return kit.CCError.Errorf(common.CCErrTaskDeleteConflict,
+				fmt.Sprintf("template IDs: %v, objID: %d", ids, objectID))
+		}
+		taskID = info.TaskID
+	}
+
+	// 4、if there is a queued task that needs to be cleared.
+	delCond := mapstr.MapStr{
+		common.BKTaskIDField: taskID,
+		common.BKStatusField: mapstr.MapStr{
+			common.BKDBIN: []metadata.APITaskStatus{metadata.APITaskStatusWaitExecute, metadata.APITaskStatusNew},
+		},
+	}
+	err := mongodb.Client().Table(common.BKTableNameAPITask).Delete(kit.Ctx, delCond)
+	if err != nil {
+		blog.Errorf("delete task failed, cond: %#v, err: %v, rid: %s", delCond, err, kit.Rid)
+		return err
+	}
+	return nil
 }
 
 // CreateFieldTemplate create field template.

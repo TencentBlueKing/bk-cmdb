@@ -146,36 +146,42 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 	}
 
 	if err := m.model.isValid(kit, objID); err != nil {
-		blog.Errorf("CreateModelAttributes failed, validate model(%s) failed, err: %s, rid: %s", objID, err.Error(), kit.Rid)
+		blog.Errorf("CreateModelAttributes failed, validate model(%s) failed, err: %v, rid: %s", objID, err, kit.Rid)
 		return dataResult, err
 	}
 
 	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, attr *metadata.Attribute) {
-		dataResult.CreateManyInfoResult.Exceptions = append(dataResult.CreateManyInfoResult.Exceptions, metadata.ExceptionResult{
-			OriginIndex: idx,
-			Message:     err.Error(),
-			Code:        int64(err.GetCode()),
-			Data:        attr,
-		})
+		dataResult.CreateManyInfoResult.Exceptions = append(dataResult.CreateManyInfoResult.Exceptions,
+			metadata.ExceptionResult{OriginIndex: idx,
+				Message: err.Error(),
+				Code:    int64(err.GetCode()),
+				Data:    attr,
+			})
 	}
 
 	for attrIdx, attr := range inputParam.Attributes {
-		// fmt.Sprintf("coreservice:create:model:%s:attr:%s", objID, attr.PropertyID)
 		redisKey := lock.GetLockKey(lock.CreateModuleAttrFormat, objID, attr.PropertyID)
 
 		locker := lock.NewLocker(redis.Client())
 		locked, err := locker.Lock(redisKey, time.Second*35)
 		defer locker.Unlock()
 		if err != nil {
-			blog.ErrorJSON("create model error. get create look error. err:%s, input:%s, rid:%s", err.Error(), inputParam, kit.Rid)
+			blog.Errorf("get create look error. err: %v, input: %s, rid: %s", err, inputParam, kit.Rid)
 			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommRedisOPErr), &attr)
 			continue
 		}
 		if !locked {
-			blog.ErrorJSON("create model have same task in progress. input:%s, rid:%s", inputParam, kit.Rid)
-			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr, fmt.Sprintf("create object(%s) attribute(%s)", attr.ObjectID, attr.PropertyName)), &attr)
+			blog.Errorf("create model have same task in progress. input: %v, rid: %s", inputParam, kit.Rid)
+			msg := fmt.Sprintf("create object(%s) attribute(%s)", attr.ObjectID, attr.PropertyName)
+			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr, msg), &attr)
 			continue
 		}
+
+		if attr.TemplateID != 0 {
+			blog.Errorf("the template id field is invalid, attr: %+v, rid: %s", attr, kit.Rid)
+			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+		}
+
 		if attr.IsPre {
 			if attr.PropertyID == common.BKInstNameField {
 				language := util.GetLanguage(kit.Header)
@@ -194,23 +200,23 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 		}
 
 		if exists {
-			dataResult.CreateManyInfoResult.Repeated = append(dataResult.CreateManyInfoResult.Repeated, metadata.RepeatedDataResult{
-				OriginIndex: int64(attrIdx),
-				Data:        mapstr.NewFromStruct(attr, "field"),
-			})
+			dataResult.CreateManyInfoResult.Repeated = append(dataResult.CreateManyInfoResult.Repeated,
+				metadata.RepeatedDataResult{OriginIndex: int64(attrIdx),
+					Data: mapstr.NewFromStruct(attr, "field"),
+				})
 			continue
 		}
 		id, err := m.save(kit, attr)
 		if err != nil {
-			blog.Errorf("CreateModelAttributes failed, failed to save the attribute(%#v), err: %s, rid: %s", attr, err.Error(), kit.Rid)
+			blog.Errorf("failed to save the attribute(%#v), err: %v, rid: %s", attr, err, kit.Rid)
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
 		}
 
-		dataResult.CreateManyInfoResult.Created = append(dataResult.CreateManyInfoResult.Created, metadata.CreatedDataResult{
-			OriginIndex: int64(attrIdx),
-			ID:          id,
-		})
+		dataResult.CreateManyInfoResult.Created = append(dataResult.CreateManyInfoResult.Created,
+			metadata.CreatedDataResult{OriginIndex: int64(attrIdx),
+				ID: id,
+			})
 	}
 
 	return dataResult, nil
@@ -290,7 +296,7 @@ func (m *modelAttribute) UpdateModelAttributes(kit *rest.Kit, objID string, inpu
 
 	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
 	if err != nil {
-		blog.Errorf("UpdateModelAttributes failed, failed to convert mapstr(%#v) into a condition object, err: %s, rid: %s", inputParam.Condition, err.Error(), kit.Rid)
+		blog.Errorf("failed to convert condition, input: %+v, err: %v, rid: %s", inputParam.Condition, err, kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
 
@@ -373,17 +379,19 @@ func (m *modelAttribute) UpdateModelAttributeIndex(kit *rest.Kit, objID string, 
 }
 
 // UpdateModelAttributesByCondition TODO
-func (m *modelAttribute) UpdateModelAttributesByCondition(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
+func (m *modelAttribute) UpdateModelAttributesByCondition(kit *rest.Kit, inputParam metadata.UpdateOption) (
+	*metadata.UpdatedCount, error) {
 
 	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
 	if err != nil {
-		blog.Errorf("UpdateModelAttributesByCondition failed, failed to convert mapstr(%#v) into a condition object, err: %s, rid: %s", inputParam.Condition, err.Error(), kit.Rid)
+		blog.Errorf("failed to convert condition, input: %+v, err: %v, rid: %s", inputParam.Condition, err, kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
 
 	cnt, err := m.update(kit, inputParam.Data, cond)
 	if err != nil {
-		blog.Errorf("UpdateModelAttributesByCondition failed, failed to update fields (%#v) by condition(%#v), err: %s, rid: %s", inputParam.Data, cond.ToMapStr(), err.Error(), kit.Rid)
+		blog.Errorf("failed to update fields (%#v) by condition(%#v), err: %v, rid: %s", inputParam.Data,
+			cond.ToMapStr(), err, kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
 
@@ -595,7 +603,7 @@ func (m *modelAttribute) DeleteModelAttributes(kit *rest.Kit, objID string, inpu
 	}
 
 	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: kit.SupplierAccount})
-	cnt, err := m.delete(kit, cond)
+	cnt, err := m.delete(kit, cond, false)
 	return &metadata.DeletedCount{Count: cnt}, err
 }
 
