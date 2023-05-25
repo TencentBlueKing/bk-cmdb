@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 
+	fieldtmpl "configcenter/src/apimachinery/apiserver/field_template"
 	modelquote "configcenter/src/apimachinery/apiserver/model_quote"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
@@ -33,6 +34,7 @@ import (
 type ApiServerClientInterface interface {
 	Client() rest.ClientInterface
 	ModelQuote() modelquote.Interface
+	FieldTemplate() fieldtmpl.Interface
 
 	AddDefaultApp(ctx context.Context, h http.Header, ownerID string, params mapstr.MapStr) (resp *metadata.Response, err error)
 	SearchDefaultApp(ctx context.Context, h http.Header, ownerID string) (resp *metadata.QueryInstResult, err error)
@@ -76,8 +78,8 @@ type ApiServerClientInterface interface {
 
 	ReadModuleAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.
 		SearchAsstModelResp, err error)
-	ReadModel(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelResult,
-		err error)
+	ReadModel(ctx context.Context, h http.Header, input *metadata.QueryCondition) (*metadata.QueryModelDataResult,
+		errors.CCErrorCoder)
 	ReadInstance(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (resp *metadata.
 		QueryConditionResult, err error)
 	SearchObjectUnique(ctx context.Context, objID string, h http.Header) (resp *metadata.SearchUniqueResult, err error)
@@ -112,4 +114,9 @@ type apiServer struct {
 // ModelQuote return the model quote client
 func (a *apiServer) ModelQuote() modelquote.Interface {
 	return modelquote.New(a.client)
+}
+
+// FieldTemplate return the field template client
+func (a *apiServer) FieldTemplate() fieldtmpl.Interface {
+	return fieldtmpl.New(a.client)
 }

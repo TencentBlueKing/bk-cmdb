@@ -20,6 +20,7 @@ import (
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
@@ -497,12 +498,13 @@ func (a *apiServer) ReadModuleAssociation(ctx context.Context, h http.Header,
 }
 
 // ReadModel read object model data by obj id
-func (a *apiServer) ReadModel(ctx context.Context, h http.Header, cond *metadata.QueryCondition) (resp *metadata.
-	ReadModelResult, err error) {
-	resp = new(metadata.ReadModelResult)
+func (a *apiServer) ReadModel(ctx context.Context, h http.Header, cond *metadata.QueryCondition) (
+	*metadata.QueryModelDataResult, ccErr.CCErrorCoder) {
+
+	resp := new(metadata.ReadModelResult)
 	subPath := "/find/object/model"
 
-	err = a.client.Post().
+	err := a.client.Post().
 		WithContext(ctx).
 		Body(cond).
 		SubResourcef(subPath).
@@ -510,7 +512,15 @@ func (a *apiServer) ReadModel(ctx context.Context, h http.Header, cond *metadata
 		Do().
 		Into(resp)
 
-	return
+	if err != nil {
+		return nil, ccErr.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 // ReadInstance read instance by obj id and condition
