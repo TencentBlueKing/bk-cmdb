@@ -1226,7 +1226,7 @@ export const IAM_ACTIONS = {
   C_FIELD_TEMPLATE: {
     id: 'create_field_template',
     name: ['字段组合模板创建', 'Create Field Template'],
-    cmdb_action: 'fieldFemplate.create'
+    cmdb_action: 'fieldTemplate.create'
   }
 }
 

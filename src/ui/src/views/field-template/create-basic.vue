@@ -11,7 +11,8 @@
 -->
 
 <script setup>
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
+  import { useStore } from '@/store'
   import routerActions from '@/router/actions'
   import {
     MENU_MODEL_FIELD_TEMPLATE_CREATE_FIELD_SETTINGS
@@ -19,16 +20,22 @@
   import TopSteps from './children/top-steps.vue'
   import BasicForm from './children/basic-form.vue'
 
+  const store = useStore()
+
   const nextButtonDisabled = ref(false)
   const basicFormRef = ref(null)
 
-  const basicData = ref({
+  const basicDefaultData = {
     name: '',
-    desc: ''
-  })
+    description: ''
+  }
+
+  const templateDraft = computed(() => store.getters['fieldTemplate/templateDraft'])
+  const basicData = computed(() => ({ ...basicDefaultData, ...templateDraft.value.basic }))
 
   const handleNextStep = () => {
-    console.log(basicData, basicFormRef.value.formData)
+    const { formData } = basicFormRef.value
+    store.commit('fieldTemplate/setTemplateDraft', { basic: formData })
     routerActions.redirect({
       name: MENU_MODEL_FIELD_TEMPLATE_CREATE_FIELD_SETTINGS,
       history: true

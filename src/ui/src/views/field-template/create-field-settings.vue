@@ -11,41 +11,68 @@
 -->
 
 <script setup>
-  import { ref } from 'vue'
+  import { computed, reactive } from 'vue'
+  import { useStore } from '@/store'
   import routerActions from '@/router/actions'
   import {
     MENU_MODEL_FIELD_TEMPLATE_CREATE_BASIC
   } from '@/dictionary/menu-symbol'
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import fieldTemplateService from '@/service/field-template'
   import TopSteps from './children/top-steps.vue'
   import FieldManage from './children/field-manage.vue'
+  import { wrapData, normalizeFieldData, normalizeUniqueData } from './children/use-field'
 
-  const nextButtonDisabled = ref(false)
+  const store = useStore()
 
-  const fieldData = ref([
-    {
-      id: 1,
-      bk_property_id: 'inst_name',
-      bk_property_name: '实例名称',
-      bk_property_type: PROPERTY_TYPES.SINGLECHAR
-    }
-  ])
-  const uniqueData = ref([])
+  const templateDraft = computed(() => store.getters['fieldTemplate/templateDraft'])
+  const fieldData = computed(() => templateDraft.value.fieldList)
+  const uniqueData = computed(() => templateDraft.value.uniqueList)
+  const basicData = computed(() => templateDraft.value.basic)
 
+  const requestIds = {
+    submit: Symbol('submit')
+  }
+
+  const templateData = computed(() => ({
+    basic: basicData.value,
+    fieldList: settingData.fieldList ? settingData.fieldList : fieldData.value,
+    uniqueList: settingData.uniqueList ? settingData.uniqueList : uniqueData.value
+  }))
+
+  const submitButtonDisabled = computed(() => !templateData.value.basic?.name?.length
+    || !templateData.value.fieldList?.length)
+
+  const settingData = reactive({
+    fieldList: null,
+    uniqueList: null
+  })
   const handleFieldUpdate = (data) => {
-    console.log(data, 'final fields')
+    settingData.fieldList = data.map(wrapData)
   }
   const handleUniqueUpdate = (data) => {
-    console.log(data, 'final uniques')
+    settingData.uniqueList = data
   }
 
   const handlePrevStep = () => {
+    console.log(templateData.value, 'templateData.value')
+    store.commit('fieldTemplate/setTemplateDraft', {
+      fieldList: templateData.value.fieldList,
+      uniqueList: templateData.value.uniqueList
+    })
     routerActions.redirect({
       name: MENU_MODEL_FIELD_TEMPLATE_CREATE_BASIC,
       history: true
     })
   }
-  const handleSubmit = () => {}
+  const handleSubmit = async () => {
+    const submitData = {
+      ...templateData.value.basic,
+      attributes: normalizeFieldData(templateData.value.fieldList),
+      uniques: normalizeUniqueData(templateData.value.uniqueList, templateData.value.fieldList)
+    }
+
+    await fieldTemplateService.create(submitData, { requestId: requestIds.submit })
+  }
   const handleCancel = () => {}
   const handlePreview = () => {}
 </script>
@@ -58,6 +85,7 @@
     <field-manage
       :field-list="fieldData"
       :unique-list="uniqueData"
+      :is-create-mode="true"
       @update-field="handleFieldUpdate"
       @update-unique="handleUniqueUpdate">
     </field-manage>
@@ -66,7 +94,7 @@
         <cmdb-auth :auth="{ type: $OPERATION.C_FIELD_TEMPLATE }">
           <template #default="{ disabled }">
             <bk-button
-              :disabled="nextButtonDisabled || disabled"
+              :disabled="disabled"
               @click="handlePrevStep">
               {{$t('上一步')}}
             </bk-button>
@@ -76,7 +104,8 @@
           <template #default="{ disabled }">
             <bk-button
               theme="primary"
-              :disabled="nextButtonDisabled || disabled"
+              :disabled="submitButtonDisabled || disabled"
+              :loading="$loading(requestIds.submit)"
               @click="handleSubmit">
               {{$t('提交')}}
             </bk-button>

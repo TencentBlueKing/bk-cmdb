@@ -19,6 +19,7 @@
     MENU_MODEL_FIELD_TEMPLATE_EDIT,
     MENU_MODEL_FIELD_TEMPLATE_BIND
   } from '@/dictionary/menu-symbol'
+  // import fieldTemplateService from '@/service/field-template'
 
   const searchOptions = [
     {
@@ -35,6 +36,10 @@
     }
   ]
   const searchQuery = ref([])
+
+  // const getTemplateList = () => {
+  //   fieldTemplateService.find()
+  // }
 
   const handleCreate = () => {
     routerActions.redirect({

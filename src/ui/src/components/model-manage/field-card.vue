@@ -11,16 +11,44 @@
 -->
 
 <script setup>
+  import { UNIUQE_TYPES } from '@/dictionary/model-constants'
+
   const props = defineProps({
     field: {
       type: Object
+    },
+    fieldIndex: {
+      type: Number
+    },
+    sortable: {
+      type: Boolean,
+      default: true
+    },
+    deletable: {
+      type: Boolean,
+      default: true
+    },
+    fieldUnique: {
+      type: Object,
+      default: () => ({
+        list: [],
+        type: ''
+      })
     }
   })
 
   console.log(props)
   const emit = defineEmits(['click-field'])
 
-  const handleClickRemove = () => {}
+  const getUniqueRuleContent = (uniqueList) => {
+    const content = []
+    uniqueList.forEach(item => content.push(item.names.join(', ')))
+    return content.join('<br />')
+  }
+
+  const handleClickRemove = (field) => {
+    emit('remove-field', field)
+  }
 
   const handleClickField = (field) => {
     emit('click-field', field)
@@ -28,8 +56,8 @@
 </script>
 
 <template>
-  <div class="field-card" @click="handleClickField(field)">
-    <span class="drag-icon"></span>
+  <div :class="['field-card', { sortable }]" @click="handleClickField(field)">
+    <span class="drag-icon" v-if="sortable"></span>
     <div class="field-icon">
       <i class="icon-cc icon-duanzifu"></i>
     </div>
@@ -37,19 +65,39 @@
       <div class="field-name-area">
         <span class="field-name" :title="field.bk_property_name">{{ field.bk_property_name }}</span>
         <span class="field-required">*</span>
-        <i class="bk-icon icon-exclamation-circle-shape conflict-icon"></i>
+        <slot name="flag-append"></slot>
+        <!-- <i class="bk-icon icon-exclamation-circle-shape conflict-icon"></i> -->
       </div>
       <div class="field-id-area">
         <span class="field-id">{{ field.bk_property_id }}</span>
       </div>
     </div>
-    <div class="tags">
-      <!-- <span class="tag unique"><em class="tag-text">单独唯一</em></span> -->
-      <span class="tag unique union"><em class="tag-text">联合唯一</em></span>
-      <span class="tag template"><em class="tag-text">模板</em></span>
+    <div class="tags" v-if="$slots['tag-append'] || fieldUnique.list.length">
+      <span class="tag unique" v-if="fieldUnique.type === UNIUQE_TYPES.SINGLE">
+        <em class="tag-text">{{$t('单独唯一')}}</em>
+      </span>
+      <span class="tag unique union" v-else v-bk-tooltips="{
+        content: getUniqueRuleContent(fieldUnique.list)
+      }">
+        <em class="tag-text">{{$t('联合唯一')}}</em>
+      </span>
+      <slot name="tag-append"></slot>
+      <!-- <span class="tag template"><em class="tag-text">模板</em></span> -->
     </div>
-    <bk-icon :title="$t('移除')" type="delete" class="del-icon"
-      @click="handleClickRemove()" />
+    <div class="field-action" @click.stop>
+      <bk-button
+        v-if="deletable"
+        class="field-button"
+        :text="true"
+        :disabled="fieldUnique.list.length > 0"
+        @click.stop="handleClickRemove(field, fieldIndex)">
+        <bk-icon class="field-button-icon" type="delete" v-bk-tooltips="{
+          disabled: !fieldUnique.list.length,
+          content: $t('不允许删除在唯一校验中的字段')
+        }" />
+      </bk-button>
+      <slot name="action-append" v-bind="{ field, fieldIndex }"></slot>
+    </div>
   </div>
 </template>
 
@@ -63,9 +111,13 @@
     background: #FFFFFF;
     box-shadow: 0 2px 4px 0 #1919290d;
     border-radius: 2px;
-    padding: 0 12px 0 0;
+    padding: 0 12px 0 12px;
     user-select: none;
     cursor: pointer;
+
+    &.sortable {
+      padding: 0 12px 0 0;
+    }
 
     .field-icon {
       color: #989CA8;
@@ -150,9 +202,18 @@
       margin: 0 4px;
     }
 
-    .del-icon {
+    .field-button {
       visibility: hidden;
-      cursor: pointer;
+      color: #63656e;
+      &:hover {
+        color: #3a84ff;
+      }
+      .field-button-icon {
+        font-size: 14px;
+      }
+      &.is-disabled {
+        color: #c4c6cc;
+      }
     }
 
     .conflict-icon {
@@ -166,7 +227,7 @@
       .drag-icon {
         visibility: visible;
       }
-      .del-icon {
+      .field-button {
         visibility: visible;
       }
     }

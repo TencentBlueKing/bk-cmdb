@@ -1712,5 +1712,10 @@
     "清空筛选条件":"clear filter",
     "查看详情":"view details",
     "编辑成功":"Edited successfully",
-    "字段组合模板功能提示": "Field template: the combination field of the model, which can be quickly referenced in the model"
+    "字段组合模板功能提示": "Field template: the combination field of the model, which can be quickly referenced in the model",
+    "字段组合模板加解锁提示语": "Lock: can only be modified in the template;<br>Unlock: can be modified in the model, after the template is changed, it will not be synchronized;",
+    "需先设置唯一标识和名称，再进行唯一校验的设置": "You need to set the ID and name first, and then set the unique verification",
+    "请选择导入的字段：": "Please select import fields: ",
+    "不允许删除在唯一校验中的字段": "It is not allowed to delete fields in the unique check",
+    "取消字段唯一校验确认提示语": "After the unique verification is canceled, the unique verification rules related to this field will be deleted after submission. Confirm whether to continue?"
 }

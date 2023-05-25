@@ -37,10 +37,10 @@
         <p class="form-error" v-if="errors.has('name')">{{errors.first('name')}}</p>
       </bk-form-item>
       <bk-form-item label="描述"
-        class="cmdb-form-item" :class="{ 'is-error': errors.has('desc') }">
-        <bk-input type="textarea" name="desc" v-validate="'length:2000'"
-          v-model="formData.desc" placeholder="请输入描述"></bk-input>
-        <p class="form-error" v-if="errors.has('desc')">{{errors.first('desc')}}</p>
+        class="cmdb-form-item" :class="{ 'is-error': errors.has('description') }">
+        <bk-input type="textarea" name="description" v-validate="'length:2000'"
+          v-model="formData.description" placeholder="请输入描述"></bk-input>
+        <p class="form-error" v-if="errors.has('description')">{{errors.first('description')}}</p>
       </bk-form-item>
     </bk-form>
   </div>
