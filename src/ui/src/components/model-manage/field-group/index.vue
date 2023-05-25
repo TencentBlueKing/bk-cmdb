@@ -1088,8 +1088,11 @@
       },
       handleColumnsConfigSliderBeforeClose() {
         const refColumns = this.$refs.cmdbColumnsConfig
+        if (!refColumns) {
+          return
+        }
         const { columnsChangedValues } = refColumns
-        if (columnsChangedValues()) {
+        if (columnsChangedValues?.()) {
           refColumns.setChanged(true)
           return refColumns.beforeClose(() => {
             this.configProperty.show = false
