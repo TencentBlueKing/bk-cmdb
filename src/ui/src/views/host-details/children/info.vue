@@ -148,7 +148,7 @@
         return ''
       },
       cloudArea() {
-        return (this.host.bk_cloud_id || []).map(cloud => `${this.$t('云区域')}：${cloud.bk_inst_name} (ID：${cloud.bk_inst_id})`).join('\n')
+        return (this.host.bk_cloud_id || []).map(cloud => `${this.$t('管控区域')}：${cloud.bk_inst_name} (ID：${cloud.bk_inst_id})`).join('\n')
       },
       topologyList() {
         const modules = this.info.module || []

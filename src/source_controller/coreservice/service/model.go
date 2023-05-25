@@ -117,7 +117,7 @@ func (s *coreService) SearchModelClassification(ctx *rest.Contexts) {
 	for index := range dataResult.Info {
 		result := dataResult.Info[index]
 		if defaultIDMap[result.ClassificationID] && result.ClassificationName == nameMap[result.ClassificationID] {
-			result.ClassificationName = s.TranslateClassificationName(lang, &result)
+			dataResult.Info[index].ClassificationName = s.TranslateClassificationName(lang, &result)
 		}
 	}
 	ctx.RespEntity(dataResult)
@@ -254,7 +254,8 @@ func (s *coreService) SearchModelWithAttribute(ctx *rest.Contexts) {
 			if dataResult.Info[modelIdx].Attributes[attributeIdx].IsPre || dataResult.Info[modelIdx].Spec.IsPre || needTranslateObjMap[dataResult.Info[modelIdx].Spec.ObjectID] {
 				dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
 				dataResult.Info[modelIdx].Attributes[attributeIdx].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
-				if dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType == common.FieldTypeEnum {
+				switch dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType {
+				case common.FieldTypeEnum, common.FieldTypeEnumMulti:
 					dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[modelIdx].Attributes[attributeIdx].Option)
 				}
 			}
@@ -593,7 +594,8 @@ func (s *coreService) SearchModelAttrsWithTableByCondition(ctx *rest.Contexts) {
 		if result.Info[index].IsPre || needTranslateObjMap[result.Info[index].ObjectID] {
 			result.Info[index].PropertyName = s.TranslatePropertyName(lang, &result.Info[index])
 			result.Info[index].Placeholder = s.TranslatePlaceholder(lang, &result.Info[index])
-			if result.Info[index].PropertyType == common.FieldTypeEnum {
+			switch result.Info[index].PropertyType {
+			case common.FieldTypeEnum, common.FieldTypeEnumMulti:
 				result.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &result.Info[index],
 					result.Info[index].Option)
 			}
@@ -625,7 +627,8 @@ func (s *coreService) SearchModelAttributesByCondition(ctx *rest.Contexts) {
 		if dataResult.Info[index].IsPre || needTranslateObjMap[dataResult.Info[index].ObjectID] {
 			dataResult.Info[index].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[index])
 			dataResult.Info[index].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[index])
-			if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
+			switch dataResult.Info[index].PropertyType {
+			case common.FieldTypeEnum, common.FieldTypeEnumMulti:
 				dataResult.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[index], dataResult.Info[index].Option)
 			}
 		}
@@ -655,7 +658,8 @@ func (s *coreService) SearchModelAttributes(ctx *rest.Contexts) {
 		if dataResult.Info[index].IsPre || needTranslateObjMap[dataResult.Info[index].ObjectID] {
 			dataResult.Info[index].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[index])
 			dataResult.Info[index].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[index])
-			if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
+			switch dataResult.Info[index].PropertyType {
+			case common.FieldTypeEnum, common.FieldTypeEnumMulti:
 				dataResult.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[index], dataResult.Info[index].Option)
 			}
 		}

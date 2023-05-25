@@ -347,15 +347,17 @@
       v-transfer-dom
       :is-show.sync="configProperty.show"
       :width="676"
-      :title="$t('实例表格字段排序设置')">
+      :title="$t('实例表格字段排序设置')"
+      :before-close="handleColumnsConfigSliderBeforeClose">
       <cmdb-columns-config slot="content"
+        ref="cmdbColumnsConfig"
         v-if="configProperty.show"
         :properties="properties"
         :selected="configProperty.selected"
         :disabled-columns="disabledConfig"
         :show-reset="false"
         :confirm-text="$t('确定')"
-        @on-cancel="configProperty.show = false"
+        @on-cancel="handleColumnsConfigSliderBeforeClose"
         @on-apply="handleApplyConfig">
       </cmdb-columns-config>
     </bk-sideslider>
@@ -1083,6 +1085,17 @@
       },
       handleClearFilter() {
         this.keyword = ''
+      },
+      handleColumnsConfigSliderBeforeClose() {
+        const refColumns = this.$refs.cmdbColumnsConfig
+        const { columnsChangedValues } = refColumns
+        if (columnsChangedValues()) {
+          refColumns.setChanged(true)
+          return refColumns.beforeClose(() => {
+            this.configProperty.show = false
+          })
+        }
+        this.configProperty.show = false
       }
     }
   }
@@ -1146,9 +1159,6 @@ $modelHighlightColor: #3c96ff;
 }
 
 .field-list {
-  $ghostBorderColor: #dcdee5;
-  $ghostBackgroundColor:#f5f7fa;
-
   margin-top: 7px;
   font-size: 14px;
   position: relative;
@@ -1206,12 +1216,12 @@ $modelHighlightColor: #3c96ff;
       }
     }
     &-ghost {
-      background-color: $ghostBackgroundColor !important;
-      border: 1px dashed $ghostBorderColor;
+      background-color: #f5f7fa !important;
+      border: 1px dashed #dcdee5;
 
       &:hover {
-        border-color: $ghostBorderColor;
-        background-color: $ghostBackgroundColor;
+        border-color: #dcdee5;
+        background-color: #f5f7fa;
         box-shadow: none;
       }
 

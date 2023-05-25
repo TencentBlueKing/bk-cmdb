@@ -12,7 +12,7 @@
 
 <template>
   <div class="model-import-pane">
-    <step-pane @cancel="cancelImport" :steps="importSteps">
+    <step-pane @cancel="cancelImport" :steps="importSteps" @steps-change="stepsChange">
       <template #default="{ currentStepIndex }">
         <div class="step-container" v-show="currentStepIndex === 1">
           <user-notice>
@@ -23,7 +23,8 @@
           <model-package-upload @unzip="handlePkgUnzip"></model-package-upload>
         </div>
         <div class="step-container" v-show="currentStepIndex === 3">
-          <model-import-editor :data="importData" v-model="confirmedImportData"></model-import-editor>
+          <model-import-editor :data="importData" v-model="confirmedImportData" ref="importEditor">
+          </model-import-editor>
         </div>
         <div class="step-container" v-show="currentStepIndex === 4">
           <model-import-result :data="importResult"></model-import-result>
@@ -50,6 +51,7 @@
     components: { UserNotice, StepPane, ModelPackageUpload, ModelImportEditor, ModelImportResult },
     setup(props, ctx) {
       const importData = ref({}) // 从文件导入的数据
+      const importEditor = ref(null)
       const confirmedImportData = ref({
         confirmedModels: [],
         confirmedRelationTypes: []
@@ -114,6 +116,12 @@
         { title: t('开始导入'), icon: 4, nextButtonVisible: false }
       ]
 
+      const stepsChange = (step) => {
+        if (step === 3) {
+          importEditor.value.emitValue()
+        }
+      }
+
       return {
         importResult,
         importSteps,
@@ -122,7 +130,9 @@
         cancelImport,
         doneImport,
         handlePkgUnzip,
-        t
+        t,
+        importEditor,
+        stepsChange
       }
     }
   })

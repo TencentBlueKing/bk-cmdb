@@ -403,7 +403,6 @@
       handleDeleteCategory(id, type, index) {
         this.$bkInfo({
           title: this.$t('确认删除分类'),
-          zIndex: 999,
           confirmFn: async () => {
             await this.deleteServiceCategory({
               params: {

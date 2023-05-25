@@ -16,10 +16,11 @@
     :width="515"
     :title="title"
     :is-show.sync="isShow"
-    :before-close="beforeClose"
+    :before-close="handleSliderBeforeClose"
     @hidden="handleHidden">
     <bk-form slot="content"
       class="dynamic-group-form"
+      ref="form"
       form-type="vertical"
       v-bkloading="{ isLoading: $loading([request.mainline, request.property, request.details]) }">
       <bk-form-item :label="$t('业务')" required>
@@ -87,6 +88,8 @@
   import FormTarget from './form-target.vue'
   import RouterQuery from '@/router/query'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import useSideslider from '@/hooks/use-sideslider'
+  import isEqual from 'lodash/isEqual'
   export default {
     components: {
       FormPropertyList,
@@ -109,7 +112,12 @@
           name: '',
           bk_obj_id: 'host'
         },
+        originFormData: {
+          bk_obj_id: 'host',
+          name: '',
+        },
         selectedProperties: [],
+        originProperties: [],
         request: Object.freeze({
           mainline: Symbol('mainline'),
           property: Symbol('property'),
@@ -145,6 +153,9 @@
       if (this.id) {
         this.getDetails()
       }
+      const { beforeClose, setChanged } = useSideslider(this.relationInfo)
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
     },
     methods: {
       async getMainLineModels() {
@@ -217,6 +228,8 @@
             }
           })
           const transformedDetails = this.transformDetails(details)
+          this.originFormData.name = transformedDetails.name
+          this.originFormData.bk_obj_id = transformedDetails.bk_obj_id
           this.formData.name = transformedDetails.name
           this.formData.bk_obj_id = transformedDetails.bk_obj_id
           this.details = transformedDetails
@@ -303,6 +316,7 @@
           })
         })
         this.selectedProperties = properties
+        this.originProperties = properties
       },
       handleModelChange() {
         this.selectedProperties = []
@@ -436,8 +450,17 @@
       show() {
         this.isShow = true
       },
-      beforeClose() {
-        return true
+      handleSliderBeforeClose() {
+        const changedValues = !isEqual(this.formData, this.originFormData)
+        const changedProperties =  !isEqual(this.selectedProperties, this.originProperties)
+        if (changedValues || changedProperties) {
+          this.setChanged(true)
+          this.beforeClose(() => {
+            this.isShow = false
+          })
+        } else {
+          return true
+        }
       },
       handleHidden() {
         this.$emit('close')

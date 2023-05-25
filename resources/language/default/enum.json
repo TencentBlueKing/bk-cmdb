@@ -44,6 +44,20 @@
 
     "plat_property_bk_cloud_vendor_enum_1": "亚马逊云",
     "plat_property_bk_cloud_vendor_enum_2": "腾讯云",
+    "plat_property_bk_cloud_vendor_enum_3": "GCP",
+    "plat_property_bk_cloud_vendor_enum_4": "微软云",
+    "plat_property_bk_cloud_vendor_enum_5": "企业私有云",
+    "plat_property_bk_cloud_vendor_enum_6": "雨花石云",
+    "plat_property_bk_cloud_vendor_enum_7": "Oracle云",
+    "plat_property_bk_cloud_vendor_enum_8": "IBM云",
+    "plat_property_bk_cloud_vendor_enum_9": "阿里云",
+    "plat_property_bk_cloud_vendor_enum_10": "中国电信",
+    "plat_property_bk_cloud_vendor_enum_11": "优云",
+    "plat_property_bk_cloud_vendor_enum_12": "美团云",
+    "plat_property_bk_cloud_vendor_enum_13": "金山云",
+    "plat_property_bk_cloud_vendor_enum_14": "百度云",
+    "plat_property_bk_cloud_vendor_enum_15": "华为云",
+    "plat_property_bk_cloud_vendor_enum_16": "首都云",
 
     "plat_property_bk_status_enum_1": "正常",
     "plat_property_bk_status_enum_2": "异常",
@@ -57,11 +71,39 @@
 
     "host_property_bk_cloud_vendor_enum_1" : "亚马逊云",
     "host_property_bk_cloud_vendor_enum_2" : "腾讯云",
+    "host_property_bk_cloud_vendor_enum_3": "GCP",
+    "host_property_bk_cloud_vendor_enum_4": "微软云",
+    "host_property_bk_cloud_vendor_enum_5": "企业私有云",
+    "host_property_bk_cloud_vendor_enum_6": "雨花石云",
+    "host_property_bk_cloud_vendor_enum_7": "Oracle云",
+    "host_property_bk_cloud_vendor_enum_8": "IBM云",
+    "host_property_bk_cloud_vendor_enum_9": "阿里云",
+    "host_property_bk_cloud_vendor_enum_10": "中国电信",
+    "host_property_bk_cloud_vendor_enum_11": "优云",
+    "host_property_bk_cloud_vendor_enum_12": "美团云",
+    "host_property_bk_cloud_vendor_enum_13": "金山云",
+    "host_property_bk_cloud_vendor_enum_14": "百度云",
+    "host_property_bk_cloud_vendor_enum_15": "华为云",
+    "host_property_bk_cloud_vendor_enum_16": "首都云",
 
     "host_property_bk_isp_name_enum_0": "其它",
     "host_property_bk_isp_name_enum_1": "电信",
     "host_property_bk_isp_name_enum_2": "联通",
     "host_property_bk_isp_name_enum_3": "移动",
-  
+
+    "bk_project_property_bk_project_type_enum_mobile_game": "手游",
+    "bk_project_property_bk_project_type_enum_pc_game": "端游",
+    "bk_project_property_bk_project_type_enum_web_game": "页游",
+    "bk_project_property_bk_project_type_enum_platform_prod": "平台产品",
+    "bk_project_property_bk_project_type_enum_support_prod": "支撑产品",
+    "bk_project_property_bk_project_type_enum_other": "其它",
+
+    "bk_project_property_bk_status_enum_enable": "启用",
+    "bk_project_property_bk_status_enum_disabled": "未启用",
+
+    "bk_project_property_bk_project_sec_lvl_enum_public": "公开",
+    "bk_project_property_bk_project_sec_lvl_enum_private": "私有",
+    "bk_project_property_bk_project_sec_lvl_enum_classified": "机密",
+
     "": ""
 }

@@ -288,20 +288,10 @@
       handleSliderBeforeClose() {
         const hasChanged = Object.keys(this.$refs.relationForm.changedValues).length
         if (hasChanged) {
-          return new Promise((resolve) => {
-            this.$bkInfo({
-              title: this.$t('确认退出'),
-              subTitle: this.$t('退出会导致未保存信息丢失'),
-              extCls: 'bk-dialog-sub-header-center',
-              confirmFn: () => {
-                this.slider.isShow = false
-                resolve(true)
-              },
-              cancelFn: () => {
-                resolve(false)
-              }
-            })
-          })
+          const confirmFn = () => {
+            this.slider.isShow = false
+          }
+          return this.$refs.relationForm.beforeClose(confirmFn)
         }
         this.slider.isShow = false
         return true

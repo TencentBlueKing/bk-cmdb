@@ -71,6 +71,8 @@
 
 <script>
   import vueDraggable from 'vuedraggable'
+  import useSideslider from '@/hooks/use-sideslider'
+  import isEqual from 'lodash/isEqual'
   export default {
     name: 'cmdb-columns-config',
     components: {
@@ -179,6 +181,9 @@
     },
     created() {
       this.initLocalSelected()
+      const { beforeClose, setChanged } = useSideslider(this.localSelected)
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
     },
     methods: {
       initLocalSelected() {
@@ -230,7 +235,10 @@
       },
       handleClearFilter() {
         this.filter = ''
-      }
+      },
+      columnsChangedValues() {
+        return !isEqual(this.localSelected, this.selected)
+      },
     }
   }
 </script>
