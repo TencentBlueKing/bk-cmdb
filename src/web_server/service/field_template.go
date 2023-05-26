@@ -163,7 +163,7 @@ func (s *Service) CountFieldTemplateAttr(c *gin.Context) {
 	countInfos := make([]metadata.FieldTmplResCount, len(opt.TemplateIDs))
 
 	var wg sync.WaitGroup
-	var lock sync.RWMutex
+	var lock sync.Mutex
 	var firstErr errors.CCErrorCoder
 	pipeline := make(chan struct{}, 10)
 
