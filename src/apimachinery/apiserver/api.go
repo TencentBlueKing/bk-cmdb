@@ -30,7 +30,8 @@ func (a *apiServer) Client() rest.ClientInterface {
 }
 
 // AddDefaultApp TODO
-func (a *apiServer) AddDefaultApp(ctx context.Context, h http.Header, ownerID string, params mapstr.MapStr) (resp *metadata.Response, err error) {
+func (a *apiServer) AddDefaultApp(ctx context.Context, h http.Header, ownerID string,
+	params mapstr.MapStr) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "biz/default/%s"
 
@@ -45,7 +46,8 @@ func (a *apiServer) AddDefaultApp(ctx context.Context, h http.Header, ownerID st
 }
 
 // SearchDefaultApp TODO
-func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header, ownerID string) (resp *metadata.QueryInstResult, err error) {
+func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header,
+	ownerID string) (resp *metadata.QueryInstResult, err error) {
 	resp = new(metadata.QueryInstResult)
 	subPath := "biz/default/%s/search"
 
@@ -60,7 +62,8 @@ func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header, ownerID
 }
 
 // GetObjectData TODO
-func (a *apiServer) GetObjectData(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ObjectAttrBatchResult, err error) {
+func (a *apiServer) GetObjectData(ctx context.Context, h http.Header,
+	params mapstr.MapStr) (resp *metadata.ObjectAttrBatchResult, err error) {
 	resp = new(metadata.ObjectAttrBatchResult)
 	subPath := "/findmany/object"
 
@@ -101,7 +104,8 @@ func (a *apiServer) SearchObjectWithTotalInfo(ctx context.Context, h http.Header
 }
 
 // GetInstDetail TODO
-func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
+func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, objID string,
+	params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
 
 	resp = new(metadata.QueryInstResult)
 	subPath := "/find/instance/object/%s"
@@ -131,7 +135,8 @@ func (a *apiServer) GetInstUniqueFields(ctx context.Context, h http.Header, objI
 }
 
 // CreateObjectAtt TODO
-func (a *apiServer) CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response, err error) {
+func (a *apiServer) CreateObjectAtt(ctx context.Context, h http.Header,
+	obj *metadata.ObjAttDes) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/create/objectattr"
 
@@ -146,7 +151,8 @@ func (a *apiServer) CreateObjectAtt(ctx context.Context, h http.Header, obj *met
 }
 
 // UpdateObjectAtt TODO
-func (a *apiServer) UpdateObjectAtt(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (a *apiServer) UpdateObjectAtt(ctx context.Context, objID string, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/objectattr/%s"
 	err = a.client.Put().
@@ -160,7 +166,8 @@ func (a *apiServer) UpdateObjectAtt(ctx context.Context, objID string, h http.He
 }
 
 // DeleteObjectAtt TODO
-func (a *apiServer) DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error) {
+func (a *apiServer) DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *metadata.Response,
+	err error) {
 	resp = new(metadata.Response)
 	subPath := "/delete/objectattr/%s"
 
@@ -175,7 +182,8 @@ func (a *apiServer) DeleteObjectAtt(ctx context.Context, objID string, h http.He
 }
 
 // GetObjectAttr TODO
-func (a *apiServer) GetObjectAttr(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ObjectAttrResult, err error) {
+func (a *apiServer) GetObjectAttr(ctx context.Context, h http.Header,
+	params mapstr.MapStr) (resp *metadata.ObjectAttrResult, err error) {
 
 	resp = new(metadata.ObjectAttrResult)
 	subPath := "/find/objectattr"
@@ -191,7 +199,8 @@ func (a *apiServer) GetObjectAttr(ctx context.Context, h http.Header, params map
 }
 
 // GetHostData TODO
-func (a *apiServer) GetHostData(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
+func (a *apiServer) GetHostData(ctx context.Context, h http.Header,
+	params mapstr.MapStr) (resp *metadata.QueryInstResult, err error) {
 
 	resp = new(metadata.QueryInstResult)
 	subPath := "hosts/search/asstdetail"
@@ -207,7 +216,8 @@ func (a *apiServer) GetHostData(ctx context.Context, h http.Header, params mapst
 }
 
 // GetObjectGroup TODO
-func (a *apiServer) GetObjectGroup(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.ObjectAttrGroupResult, err error) {
+func (a *apiServer) GetObjectGroup(ctx context.Context, h http.Header, ownerID, objID string,
+	params mapstr.MapStr) (resp *metadata.ObjectAttrGroupResult, err error) {
 
 	resp = new(metadata.ObjectAttrGroupResult)
 	subPath := "/find/objectattgroup/object/%s"
@@ -222,7 +232,8 @@ func (a *apiServer) GetObjectGroup(ctx context.Context, h http.Header, ownerID, 
 }
 
 // AddHost TODO
-func (a *apiServer) AddHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
+func (a *apiServer) AddHost(ctx context.Context, h http.Header,
+	params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
 
 	resp = new(metadata.ResponseDataMapStr)
 	subPath := "hosts/add"
@@ -238,7 +249,8 @@ func (a *apiServer) AddHost(ctx context.Context, h http.Header, params mapstr.Ma
 }
 
 // AddHostByExcel TODO
-func (a *apiServer) AddHostByExcel(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
+func (a *apiServer) AddHostByExcel(ctx context.Context, h http.Header,
+	params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
 
 	resp = new(metadata.ResponseDataMapStr)
 	subPath := "hosts/excel/add"
@@ -254,7 +266,8 @@ func (a *apiServer) AddHostByExcel(ctx context.Context, h http.Header, params ma
 }
 
 // UpdateHost TODO
-func (a *apiServer) UpdateHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
+func (a *apiServer) UpdateHost(ctx context.Context, h http.Header,
+	params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
 
 	resp = new(metadata.ResponseDataMapStr)
 	subPath := "hosts/update"
@@ -270,7 +283,8 @@ func (a *apiServer) UpdateHost(ctx context.Context, h http.Header, params mapstr
 }
 
 // GetHostModuleRelation TODO
-func (a *apiServer) GetHostModuleRelation(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.HostModuleResp, err error) {
+func (a *apiServer) GetHostModuleRelation(ctx context.Context, h http.Header,
+	params mapstr.MapStr) (resp *metadata.HostModuleResp, err error) {
 
 	resp = new(metadata.HostModuleResp)
 	subPath := "/hosts/modules/read"
@@ -286,7 +300,8 @@ func (a *apiServer) GetHostModuleRelation(ctx context.Context, h http.Header, pa
 }
 
 // AddInst TODO
-func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
+func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID string,
+	params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
 
 	resp = new(metadata.ResponseDataMapStr)
 	subPath := "/create/instance/object/%s"
@@ -324,7 +339,8 @@ func (a *apiServer) AddInstByImport(ctx context.Context, h http.Header, ownerID,
 }
 
 // AddObjectBatch TODO
-func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response, err error) {
+func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response,
+	err error) {
 	resp = new(metadata.Response)
 	subPath := "/createmany/object"
 
@@ -339,7 +355,8 @@ func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, params ma
 }
 
 // SearchAssociationInst TODO
-func (a *apiServer) SearchAssociationInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
+func (a *apiServer) SearchAssociationInst(ctx context.Context, h http.Header,
+	request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
 	resp = new(metadata.SearchAssociationInstResult)
 	subPath := "/find/instassociation"
 
@@ -355,7 +372,8 @@ func (a *apiServer) SearchAssociationInst(ctx context.Context, h http.Header, re
 }
 
 // ImportAssociation TODO
-func (a *apiServer) ImportAssociation(ctx context.Context, h http.Header, objID string, input *metadata.RequestImportAssociation) (resp *metadata.ResponeImportAssociation, err error) {
+func (a *apiServer) ImportAssociation(ctx context.Context, h http.Header, objID string,
+	input *metadata.RequestImportAssociation) (resp *metadata.ResponeImportAssociation, err error) {
 	resp = new(metadata.ResponeImportAssociation)
 	subPath := "/import/instassociation/%s"
 
@@ -371,7 +389,8 @@ func (a *apiServer) ImportAssociation(ctx context.Context, h http.Header, objID 
 }
 
 // GetUserAuthorizedBusinessList TODO
-func (a *apiServer) GetUserAuthorizedBusinessList(ctx context.Context, h http.Header, user string) (*metadata.InstDataInfo, error) {
+func (a *apiServer) GetUserAuthorizedBusinessList(ctx context.Context, h http.Header,
+	user string) (*metadata.InstDataInfo, error) {
 	h.Add(common.BKHTTPHeaderUser, user)
 	subPath := "/auth/business-list"
 	resp := new(metadata.ResponseInstData)
@@ -395,7 +414,8 @@ func (a *apiServer) GetUserAuthorizedBusinessList(ctx context.Context, h http.He
 }
 
 // SearchNetCollectDevice TODO
-func (a *apiServer) SearchNetCollectDevice(ctx context.Context, h http.Header, cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
+func (a *apiServer) SearchNetCollectDevice(ctx context.Context, h http.Header,
+	cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
 	resp = new(metadata.ResponseInstData)
 
 	subPath := "/collector/netcollect/device/action/search"
@@ -412,7 +432,8 @@ func (a *apiServer) SearchNetCollectDevice(ctx context.Context, h http.Header, c
 }
 
 // SearchNetDeviceProperty TODO
-func (a *apiServer) SearchNetDeviceProperty(ctx context.Context, h http.Header, cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
+func (a *apiServer) SearchNetDeviceProperty(ctx context.Context, h http.Header,
+	cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
 	resp = new(metadata.ResponseInstData)
 
 	subPath := "collector/netcollect/property/action/search"
@@ -429,7 +450,8 @@ func (a *apiServer) SearchNetDeviceProperty(ctx context.Context, h http.Header, 
 }
 
 // SearchNetCollectDeviceBatch TODO
-func (a *apiServer) SearchNetCollectDeviceBatch(ctx context.Context, h http.Header, cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error) {
+func (a *apiServer) SearchNetCollectDeviceBatch(ctx context.Context, h http.Header,
+	cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error) {
 	resp = new(metadata.ResponseInstData)
 
 	subPath := "collector/netcollect/device/action/batch"
@@ -446,7 +468,8 @@ func (a *apiServer) SearchNetCollectDeviceBatch(ctx context.Context, h http.Head
 }
 
 // SearchNetDevicePropertyBatch TODO
-func (a *apiServer) SearchNetDevicePropertyBatch(ctx context.Context, h http.Header, cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error) {
+func (a *apiServer) SearchNetDevicePropertyBatch(ctx context.Context, h http.Header,
+	cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error) {
 	resp = new(metadata.ResponseInstData)
 
 	subPath := "/collector/netcollect/property/action/batch"
@@ -463,7 +486,8 @@ func (a *apiServer) SearchNetDevicePropertyBatch(ctx context.Context, h http.Hea
 }
 
 // ListHostWithoutApp TODO
-func (a *apiServer) ListHostWithoutApp(ctx context.Context, h http.Header, option metadata.ListHostsWithNoBizParameter) (resp *metadata.ListHostWithoutAppResponse, err error) {
+func (a *apiServer) ListHostWithoutApp(ctx context.Context, h http.Header,
+	option metadata.ListHostsWithNoBizParameter) (resp *metadata.ListHostWithoutAppResponse, err error) {
 	resp = new(metadata.ListHostWithoutAppResponse)
 
 	subPath := "/hosts/list_hosts_without_app"

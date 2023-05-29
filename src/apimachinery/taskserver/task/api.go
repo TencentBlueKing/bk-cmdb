@@ -29,7 +29,8 @@ type TaskClientInterface interface {
 
 	CreateBatch(c context.Context, h http.Header, tasks []metadata.CreateTaskRequest) ([]metadata.APITaskDetail, error)
 
-	ListTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskRequest) (resp *metadata.ListAPITaskResponse, err error)
+	ListTask(ctx context.Context, header http.Header, name string,
+		data *metadata.ListAPITaskRequest) (resp *metadata.ListAPITaskResponse, err error)
 
 	ListLatestTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskLatestRequest) (
 		[]metadata.APITaskDetail, errors.CCErrorCoder)

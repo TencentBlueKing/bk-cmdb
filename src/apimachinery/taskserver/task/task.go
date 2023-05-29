@@ -74,7 +74,8 @@ func (t *task) CreateBatch(ctx context.Context, header http.Header, tasks []meta
 }
 
 // ListTask TODO
-func (t *task) ListTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskRequest) (resp *metadata.ListAPITaskResponse, err error) {
+func (t *task) ListTask(ctx context.Context, header http.Header, name string,
+	data *metadata.ListAPITaskRequest) (resp *metadata.ListAPITaskResponse, err error) {
 	resp = new(metadata.ListAPITaskResponse)
 	subPath := "/task/findmany/list/%s"
 
@@ -112,7 +113,8 @@ func (t *task) ListLatestTask(ctx context.Context, header http.Header, name stri
 }
 
 // TaskDetail TODO
-func (t *task) TaskDetail(ctx context.Context, header http.Header, taskID string) (resp *metadata.TaskDetailResponse, err error) {
+func (t *task) TaskDetail(ctx context.Context, header http.Header, taskID string) (resp *metadata.TaskDetailResponse,
+	err error) {
 	resp = new(metadata.TaskDetailResponse)
 	subPath := "/task/findone/detail/%s"
 
