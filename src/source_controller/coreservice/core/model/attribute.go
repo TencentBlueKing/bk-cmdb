@@ -217,7 +217,8 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 }
 
 // SetModelAttributes TODO
-func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputParam metadata.SetModelAttributes) (dataResult *metadata.SetDataResult, err error) {
+func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputParam metadata.SetModelAttributes) (
+	dataResult *metadata.SetDataResult, err error) {
 
 	dataResult = &metadata.SetDataResult{
 		Created:    []metadata.CreatedDataResult{},
@@ -290,13 +291,15 @@ func (m *modelAttribute) UpdateModelAttributes(kit *rest.Kit, objID string, inpu
 
 	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
 	if err != nil {
-		blog.Errorf("UpdateModelAttributes failed, failed to convert mapstr(%#v) into a condition object, err: %s, rid: %s", inputParam.Condition, err.Error(), kit.Rid)
+		blog.Errorf("UpdateModelAttributes failed, failed to convert mapstr(%#v) into a condition object, err: %v, "+
+			"rid: %s", inputParam.Condition, err, kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
 
 	cnt, err := m.update(kit, inputParam.Data, cond)
 	if err != nil {
-		blog.ErrorJSON("UpdateModelAttributes failed, update attributes failed, model:%s, attributes:%s, condition: %s, err: %s, rid: %s", inputParam.Data, objID, cond, err.Error(), kit.Rid)
+		blog.Errorf("UpdateModelAttributes failed, update attributes failed, model:%s, attributes:%s, condition: %s, "+
+			"err: %v, rid: %s", inputParam.Data, objID, cond, err, kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
 
