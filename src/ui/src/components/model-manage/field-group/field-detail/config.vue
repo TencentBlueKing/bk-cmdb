@@ -12,45 +12,44 @@
 
 <template>
   <div class="form-label">
-    <span class="label-text">{{$t('字段设置')}}</span>
     <div class="checkbox-options">
-      <label v-if="isEditableShow">
+      <flex-row gap="2px" v-if="isEditableShow">
         <bk-checkbox
           class="checkbox"
           v-model="localValue.editable"
           :disabled="isReadOnly || ispre">
           <span class="g-has-dashed-tooltips" v-bk-tooltips="$t('字段设置可编辑提示语')">
-            {{$t('可编辑')}}
+            {{$t('在实例中可编辑')}}
           </span>
           <i class="bk-cc-icon icon-cc-tips disabled-tips"
             v-if="modelId === 'host'"
             v-bk-tooltips="$t('主机属性设置为不可编辑状态后提示')"></i>
         </bk-checkbox>
-      </label>
-      <label class="ml30" v-if="isRequiredShow && !isMainLineModel">
+        <lock-button v-if="isSettingScene" :tips="$t('字段组合模板加解锁提示语')" v-model="editableLockLocal" />
+      </flex-row>
+      <flex-row gap="2px" class="mt20" v-if="isRequiredShow && !isMainLineModel">
         <bk-checkbox
           class="checkbox"
           v-model="localValue.isrequired"
           :disabled="isReadOnly || ispre">
-          <span>{{$t('必填')}}</span>
+          <span>{{$t('设置为必填项')}}</span>
         </bk-checkbox>
-      </label>
-      <label class="ml30" v-if="isMultipleShow">
-        <bk-checkbox
-          class="checkbox"
-          v-model="localValue.multiple"
-          :disabled="isReadOnly || ispre">
-          <span>{{$t('可多选')}}</span>
-        </bk-checkbox>
-      </label>
+        <lock-button v-if="isSettingScene" :tips="$t('字段组合模板加解锁提示语')" v-model="isrequiredLockLocal" />
+      </flex-row>
     </div>
   </div>
 </template>
 
 <script>
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import LockButton from '@/components/ui/button/lock-button.vue'
+  import FlexRow from '@/components/ui/other/flex-row.vue'
 
   export default {
+    components: {
+      LockButton,
+      FlexRow
+    },
     props: {
       isReadOnly: {
         type: Boolean,
@@ -68,16 +67,20 @@
         type: Boolean,
         default: false
       },
-      multiple: {
-        type: Boolean,
-        default: false
-      },
       isMainLineModel: {
         type: Boolean,
         default: false
       },
       ispre: Boolean,
       isEditField: {
+        type: Boolean,
+        default: false
+      },
+      isrequiredLock: {
+        type: Boolean,
+        default: false
+      },
+      editableLock: {
         type: Boolean,
         default: false
       }
@@ -114,19 +117,17 @@
           PROPERTY_TYPES.ORGANIZATION,
           PROPERTY_TYPES.INNER_TABLE
         ],
-        isMultipleMap: [
-          PROPERTY_TYPES.ORGANIZATION,
-          PROPERTY_TYPES.ENUMQUOTE,
-          PROPERTY_TYPES.ENUMMULTI
-        ],
         localValue: {
           editable: this.editable,
-          isrequired: this.isrequired,
-          multiple: this.multiple
+          isrequired: this.isrequired
         }
       }
     },
-    inject: ['customObjId'], // 来源于自定义字段编辑
+    inject: [
+      // 来源于自定义字段编辑
+      'customObjId',
+      'isSettingScene'
+    ],
     computed: {
       isEditableShow() {
         return this.editableMap.indexOf(this.type) !== -1
@@ -134,11 +135,24 @@
       isRequiredShow() {
         return this.isRequiredMap.indexOf(this.type) !== -1
       },
-      isMultipleShow() {
-        return this.isMultipleMap.indexOf(this.type) !== -1
-      },
       modelId() {
         return this.$route.params.modelId ?? this.customObjId
+      },
+      isrequiredLockLocal: {
+        get() {
+          return this.isrequiredLock
+        },
+        set(val) {
+          this.$emit('update:isrequiredLock', val)
+        }
+      },
+      editableLockLocal: {
+        get() {
+          return this.editableLock
+        },
+        set(val) {
+          this.$emit('update:editableLock', val)
+        }
       }
     },
     watch: {
@@ -148,9 +162,6 @@
       isrequired(isrequired) {
         this.localValue.isrequired = isrequired
       },
-      multiple(multiple) {
-        this.localValue.multiple = multiple
-      },
       'localValue.editable'(editable) {
         this.$emit('update:editable', editable)
       },
@@ -159,9 +170,6 @@
           this.localValue.isonly = false
         }
         this.$emit('update:isrequired', isrequired)
-      },
-      'localValue.multiple'(multiple) {
-        this.$emit('update:multiple', multiple)
       }
     }
   }
