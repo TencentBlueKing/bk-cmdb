@@ -128,7 +128,8 @@ func (p *setTemplate) GetSetTemplate(ctx context.Context, header http.Header, bi
 }
 
 // ListSetTemplate TODO
-func (p *setTemplate) ListSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateOption) (*metadata.MultipleSetTemplateResult, errors.CCErrorCoder) {
+func (p *setTemplate) ListSetTemplate(ctx context.Context, header http.Header, bizID int64,
+	option metadata.ListSetTemplateOption) (*metadata.MultipleSetTemplateResult, errors.CCErrorCoder) {
 	ret := metadata.ListSetTemplateResult{}
 	subPath := "/findmany/topo/set_template/bk_biz_id/%d/"
 

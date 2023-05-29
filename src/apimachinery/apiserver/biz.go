@@ -38,7 +38,8 @@ func (a *apiServer) CreateBiz(ctx context.Context, ownerID string, h http.Header
 }
 
 // UpdateBiz TODO
-func (a *apiServer) UpdateBiz(ctx context.Context, ownerID string, bizID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (a *apiServer) UpdateBiz(ctx context.Context, ownerID string, bizID string, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/biz/%s/%s"
 	err = a.client.Put().

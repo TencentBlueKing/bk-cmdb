@@ -1,3 +1,7 @@
+## [Version: v3.10.27-alpha2] - 2023-05-29
+**新增功能**
+- 接口list_process_releated_info新增支持返回agentID信息功能
+
 ## [Version: v3.10.27-alpha1] - 2023-05-25
 **新增功能**
 - 接口list_process_releated_info新增支持返回ipv6地址信息功能

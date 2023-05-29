@@ -75,6 +75,7 @@ func (ps *ProcServer) WebService() *restful.Container {
 	return container
 }
 
+// NOCC:golint/fnsize(整体操作需要放在一起)
 func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  ps.Engine.CCErr,
@@ -92,7 +93,8 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_template", Handler: ps.CreateServiceTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_template/all_info",
 		Handler: ps.CreateServiceTemplateAllInfo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_template", Handler: ps.UpdateServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path: "/update/proc/service_template", Handler: ps.UpdateServiceTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_template/all_info",
 		Handler: ps.UpdateServiceTemplateAllInfo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut,
@@ -135,9 +137,12 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	// process template
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/proc_template", Handler: ps.CreateProcessTemplateBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/proc_template", Handler: ps.UpdateProcessTemplate})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/proc_template", Handler: ps.DeleteProcessTemplateBatch})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/proc/proc_template/id/{processTemplateID}", Handler: ps.GetProcessTemplate})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/proc_template", Handler: ps.ListProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path: "/deletemany/proc/proc_template", Handler: ps.DeleteProcessTemplateBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/find/proc/proc_template/id/{processTemplateID}", Handler: ps.GetProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/findmany/proc/proc_template", Handler: ps.ListProcessTemplate})
 
 	// service instance
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance", Handler: ps.CreateServiceInstances})
@@ -185,11 +190,14 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_related_info/biz/{bk_biz_id}", Handler: ps.ListProcessRelatedInfo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_instance/name_ids", Handler: ps.ListProcessInstancesNameIDsInModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_instance/detail/by_ids", Handler: ps.ListProcessInstancesDetailsByIDs})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_instance/detail/biz/{bk_biz_id}", Handler: ps.ListProcessInstancesDetails})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/process_instance/by_ids", Handler: ps.UpdateProcessInstancesByIDs})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/findmany/proc/process_instance/detail/biz/{bk_biz_id}", Handler: ps.ListProcessInstancesDetails})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path: "/update/proc/process_instance/by_ids", Handler: ps.UpdateProcessInstancesByIDs})
 
 	// module
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/template_binding_on_module", Handler: ps.RemoveTemplateBindingOnModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path: "/delete/proc/template_binding_on_module", Handler: ps.RemoveTemplateBindingOnModule})
 
 	// task
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/service_instance/task",

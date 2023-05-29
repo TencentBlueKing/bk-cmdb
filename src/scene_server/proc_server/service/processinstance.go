@@ -1399,7 +1399,7 @@ func (ps *ProcServer) getHostAndModuleInfo(kit *rest.Kit, info hostSimpleInfo) (
 
 	// host detail
 	hostParam := &metadata.QueryCondition{
-		Fields: []string{common.BKHostIDField, common.BKCloudIDField, common.BKHostInnerIPField,
+		Fields: []string{common.BKHostIDField, common.BKCloudIDField, common.BKHostInnerIPField, common.BKAgentIDField,
 			common.BKHostInnerIPv6Field, common.BKAddressingField},
 		Condition: map[string]interface{}{
 			common.BKHostIDField: map[string]interface{}{

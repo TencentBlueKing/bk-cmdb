@@ -56,8 +56,10 @@ type HostServerClientInterface interface {
 	SaveUserCustom(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetUserCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 	GetDefaultCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
-	CloneHostProperty(ctx context.Context, h http.Header, dat *metadata.CloneHostPropertyParams) (resp *metadata.Response, err error)
-	MoveSetHost2IdleModule(ctx context.Context, h http.Header, dat *metadata.SetHostConfigParams) (resp *metadata.Response, err error)
+	CloneHostProperty(ctx context.Context, h http.Header, dat *metadata.CloneHostPropertyParams) (
+		resp *metadata.Response, err error)
+	MoveSetHost2IdleModule(ctx context.Context, h http.Header, dat *metadata.SetHostConfigParams) (
+		resp *metadata.Response, err error)
 	SearchHost(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (resp *metadata.SearchHostResult,
 		err error)
 	SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (resp *metadata.
@@ -77,7 +79,8 @@ type HostServerClientInterface interface {
 	HostSearch(ctx context.Context, h http.Header, params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error)
 	ListBizHostsTopo(ctx context.Context, h http.Header, bizID int64, params *metadata.ListHostsWithNoBizParameter) (resp *metadata.SuccessResponse, err error)
 
-	CreateCloudArea(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error)
+	CreateCloudArea(ctx context.Context, h http.Header, data map[string]interface{}) (
+		resp *metadata.CreatedOneOptionResult, err error)
 	CreateManyCloudArea(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.CreateManyCloudAreaResult, err error)
 	UpdateCloudArea(ctx context.Context, h http.Header, cloudID int64, data map[string]interface{}) (resp *metadata.Response, err error)
 	SearchCloudArea(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.SearchResp, err error)

@@ -116,7 +116,8 @@ func (p *process) ListProcessInstancesNameIDsInModule(ctx context.Context, h htt
 }
 
 // ListProcessInstancesDetailsByIDs TODO
-func (p *process) ListProcessInstancesDetailsByIDs(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (p *process) ListProcessInstancesDetailsByIDs(ctx context.Context, h http.Header, data map[string]interface{}) (
+	resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/findmany/proc/process_instance/detail/by_ids"
 
