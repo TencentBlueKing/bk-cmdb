@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { defineExpose, ref } from 'vue'
+  import { defineExpose, ref, watch } from 'vue'
   import cloneDeep from 'lodash/cloneDeep'
 
   const props = defineProps({
@@ -22,6 +22,9 @@
   })
 
   const formData = ref(cloneDeep(props.data))
+  watch(() => props.data, (data) => {
+    formData.value = cloneDeep(data)
+  }, { deep: true })
 
   defineExpose({
     formData
@@ -38,7 +41,7 @@
       </bk-form-item>
       <bk-form-item label="描述"
         class="cmdb-form-item" :class="{ 'is-error': errors.has('description') }">
-        <bk-input type="textarea" name="description" v-validate="'length:2000'"
+        <bk-input type="textarea" :rows="4" name="description" v-validate="'length:2000'"
           v-model="formData.description" placeholder="请输入描述"></bk-input>
         <p class="form-error" v-if="errors.has('description')">{{errors.first('description')}}</p>
       </bk-form-item>

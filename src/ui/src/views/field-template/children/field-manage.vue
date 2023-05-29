@@ -11,11 +11,11 @@
 -->
 
 <script setup>
-  import { reactive, ref, watchEffect, set, nextTick, computed } from 'vue'
+  import { reactive, ref, watchEffect, set, nextTick, computed, toRefs } from 'vue'
   import cloneDeep from 'lodash/cloneDeep'
   import { v4 as uuidv4 } from 'uuid'
   import { t } from '@/i18n'
-  import { $bkInfo } from '@/magicbox'
+  import { $bkInfo, $error } from '@/magicbox'
   import { swapItem } from '@/utils/util'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
@@ -26,7 +26,7 @@
   import { UNIUQE_TYPES } from '@/dictionary/model-constants'
   import UniqueManage from './unique-manage.vue'
   import ModelFieldSelector from './model-field-selector.vue'
-  import useField, { unwrapData, excludeFieldType } from './use-field'
+  import useField, { unwrapData, excludeFieldType, isFieldExist } from './use-field'
   import useUnique from './use-unique'
 
   const props = defineProps({
@@ -38,6 +38,10 @@
       type: Array,
       default: () => ([])
     },
+    beforeFieldList: {
+      type: Array,
+      default: () => ([])
+    },
     isCreateMode: {
       type: Boolean,
       default: false
@@ -45,6 +49,8 @@
   })
 
   const emit = defineEmits(['update-field', 'update-unique'])
+
+  const { beforeFieldList: oldFieldList } = toRefs(props)
 
   const sliderViews = {
     SETTING_FORM: 'settingForm',
@@ -59,7 +65,7 @@
   const uniqueTypeComp = ref(null)
 
   // use方法中参数默认必须是Ref类型
-  const { fieldStatus } = useField(props.fieldList, fieldLocalList)
+  const { fieldStatus } = useField(oldFieldList, fieldLocalList)
   const { getUniqueByField, clearUniqueByField } =  useUnique(uniqueLocalList)
 
   const slider = reactive({
@@ -88,6 +94,11 @@
 
   // 只有字段属性的列表
   const pureFieldList = computed(() => fieldLocalList.value.map(item => item.field))
+
+  // 本次删除的字段列表
+  const removedFieldList = computed(() => oldFieldList.value
+    .filter(item => fieldStatus.value[item.id].removed)
+    .map(unwrapData))
 
   const handleAddField = () => {
     slider.title = t('新建字段')
@@ -201,6 +212,10 @@
   }
 
   const handleFieldSave = (id, fieldData, extraData) => {
+    if (!id && isFieldExist(fieldData, fieldLocalList.value)) {
+      $error(t('字段已在模板中存在，无法添加'))
+      return
+    }
     // 校验“唯一校验”
     const validateUniqueResult = uniqueManageComp.value?.validateAll?.()
 
@@ -286,6 +301,17 @@
     swapItem(fieldLocalList.value, oldIndex, newIndex)
 
     syncField()
+  }
+
+  const handleRecover = (removedField) => {
+    if (isFieldExist(removedField, fieldLocalList.value)) {
+      $error(t('字段已在模板中存在，无法恢复'))
+      return
+    }
+    const oriField = oldFieldList.value.find(item => item.id === removedField.id)
+    // Reflect.deleteProperty(oriField, 'id')
+    const { field, extra } = unwrapData(oriField)
+    appendField(field, extra)
   }
 
   let promiseResolver = null
@@ -374,14 +400,50 @@
       @sort-change="handleSortChange">
       <template #field-card="{ field, itemClass }">
         <field-card
-          :class="itemClass"
+          :class="[itemClass, 'field-card-container']"
           :field="field.field"
           :field-unique="getFieldUnique(field.field)"
           @click-field="handleEditField"
           @remove-field="handleRemoveField">
+          <template #flag-append v-if="!isCreateMode">
+            <div class="flag-append" v-if="fieldStatus[field.field.id].new || fieldStatus[field.field.id].changed">
+              <span class="flag-tag new" v-if="fieldStatus[field.field.id].new">
+                <em class="tag-text">{{$t('新增')}}</em>
+              </span>
+              <span class="flag-tag changed" v-else-if="fieldStatus[field.field.id].changed">
+                <em class="tag-text">{{$t('更新')}}</em>
+              </span>
+            </div>
+          </template>
         </field-card>
       </template>
     </field-grid>
+
+    <div class="removed-container" v-if="removedFieldList.length">
+      <div class="removed-title">本次删除的字段（{{removedFieldList.length}}）</div>
+      <field-grid
+        :field-list="removedFieldList"
+        :disabled-sort="true">
+        <template #field-card="{ field, itemClass }">
+          <field-card
+            :class="[itemClass, 'field-card-container', 'removed']"
+            :field="field.field"
+            :field-unique="getFieldUnique(field.field)"
+            :deletable="false">
+            <template #flag-append>
+              <div class="flag-append">
+                <span class="flag-tag changed">
+                  <em class="tag-text">{{$t('删除')}}</em>
+                </span>
+              </div>
+            </template>
+            <template #action-append="{ field: removedField }">
+              <bk-link theme="primary" class="recover-link" @click="handleRecover(removedField)">{{$t('恢复')}}</bk-link>
+            </template>
+          </field-card>
+        </template>
+      </field-grid>
+    </div>
 
     <bk-sideslider
       ref="sidesliderComp"
@@ -524,6 +586,76 @@
       :deep(.bk-radio-button-text) {
         width: 100%;
       }
+    }
+  }
+
+  .field-card-container {
+    .flag-append {
+      margin-left: 2px;
+    }
+    .flag-tag {
+      background: #E4FAF0;
+      border-radius: 2px;
+      padding: 1px 2px;
+      height: 16px;
+      line-height: 16px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      position: relative;
+      top: -2px;
+
+      .tag-text {
+        display: block;
+        font-size: 12px;
+        font-style: normal;
+        transform: scale(.875);
+      }
+      &.new {
+        color: #14A568;
+        background: #E4FAF0;
+      }
+      &.changed {
+        color: #FF9C01;
+        background: #FFF3E1;
+      }
+      &.removed {
+        color: #EA3636;
+        background: #FCE9E8;
+      }
+    }
+
+    .recover-link {
+      visibility: hidden;
+      :deep(.bk-link-text) {
+        font-size: 12px;
+      }
+    }
+
+    &:hover {
+      .recover-link {
+        visibility: visible;
+      }
+    }
+
+    &.removed {
+      opacity: 0.5;
+
+      :deep(.field-name) {
+        text-decoration: line-through;
+      }
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+
+  .removed-container {
+    margin-top: 24px;
+    .removed-title {
+      font-size: 12px;
+      margin-bottom: 16px;
     }
   }
 </style>

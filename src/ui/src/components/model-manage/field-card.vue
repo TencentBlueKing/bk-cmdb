@@ -167,6 +167,9 @@
         padding: 1px 2px;
         height: 16px;
         line-height: 16px;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
 
         .tag-text {
           display: block;

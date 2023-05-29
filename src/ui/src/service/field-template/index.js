@@ -11,6 +11,7 @@
  */
 
 import http from '@/api'
+import { enableCount, rollReqUseCount } from '../utils.js'
 
 // 创建模板
 const create = (data, config) => http.post('create/field_template', data, config)
@@ -18,19 +19,51 @@ const create = (data, config) => http.post('create/field_template', data, config
 // 更新模板
 const update = (data, config) => http.put('update/field_template', data, config)
 
+// 更新模板基础信息
+const updateBaseInfo = (data, config) => http.put('update/field_template/info', data, config)
+
 // 查询模板列表
-const find = (data, config) => http.post(`${window.API_HOST}findmany/field_template`, data, config)
+const find = async (params, config) => {
+  const api = `${window.API_HOST}findmany/field_template`
+  try {
+    const [{ info: list = [] }, { count = 0 }] = await Promise.all([
+      http.post(api, enableCount(params, false), config),
+      http.post(api, enableCount(params, true), config)
+    ])
+    return { count: count || 0, list: list || [] }
+  } catch (error) {
+    console.error(error)
+    return Promise.reject(error)
+  }
+}
 
-// 删除属性配置
-const deleteProperty = (data, config = {}) => http.delete('delete/topo/set_template/attribute', { ...config, data })
+// 查询模板字段数量
+const getFieldCount = (data, config) => http.post(`${window.API_HOST}findmany/field_template/attribute/count`, data, config)
 
-// 查询属性配置
-const findProperty = (data, config) => http.post('findmany/topo/set_template/attribute', data, config)
+// 查询模板绑定的模型数量
+const getModelCount = (data, config) => http.post(`${window.API_HOST}findmany/field_template/object/count`, data, config)
+
+// 查询模板简要信息
+const findById = (id, config = {}) => http.get(`find/field_template/${id}`, config)
+
+// 查询模板字段
+const getFieldList = (data, config) => http.post('findmany/field_template/attribute', data, config)
+
+// 查询模板唯一校验
+const getUniqueList = (data, config) => http.post('findmany/field_template/unique', data, config)
+
+// 查询模板绑定的模型
+const getBindModel = (params, config) => rollReqUseCount('findmany/object/by_field_template', params, { limit: 100 }, config)
 
 export default {
   create,
   update,
+  updateBaseInfo,
   find,
-  deleteProperty,
-  findProperty
+  getFieldCount,
+  getModelCount,
+  findById,
+  getFieldList,
+  getUniqueList,
+  getBindModel
 }

@@ -33,7 +33,10 @@
   const templateDraft = computed(() => store.getters['fieldTemplate/templateDraft'])
   const basicData = computed(() => ({ ...basicDefaultData, ...templateDraft.value.basic }))
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
+    if (!await basicFormRef.value.$validator.validateAll()) {
+      return
+    }
     const { formData } = basicFormRef.value
     store.commit('fieldTemplate/setTemplateDraft', { basic: formData })
     routerActions.redirect({
@@ -42,6 +45,16 @@
     })
   }
   const handleCancel = () => {}
+</script>
+<script>
+  export default {
+    beforeRouteLeave(to, from, next) {
+      if (![MENU_MODEL_FIELD_TEMPLATE_CREATE_FIELD_SETTINGS].includes(to.name)) {
+        this.$store.commit('fieldTemplate/clearTemplateDraft')
+      }
+      next()
+    }
+  }
 </script>
 
 <template>

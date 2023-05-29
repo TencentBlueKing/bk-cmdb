@@ -25,8 +25,8 @@
   const store = useStore()
 
   const templateDraft = computed(() => store.getters['fieldTemplate/templateDraft'])
-  const fieldData = computed(() => templateDraft.value.fieldList)
-  const uniqueData = computed(() => templateDraft.value.uniqueList)
+  const fieldData = computed(() => templateDraft.value.fieldList || [])
+  const uniqueData = computed(() => templateDraft.value.uniqueList || [])
   const basicData = computed(() => templateDraft.value.basic)
 
   const requestIds = {
@@ -35,8 +35,8 @@
 
   const templateData = computed(() => ({
     basic: basicData.value,
-    fieldList: settingData.fieldList ? settingData.fieldList : fieldData.value,
-    uniqueList: settingData.uniqueList ? settingData.uniqueList : uniqueData.value
+    fieldList: settingData.fieldList ?? fieldData.value,
+    uniqueList: settingData.uniqueList ?? uniqueData.value
   }))
 
   const submitButtonDisabled = computed(() => !templateData.value.basic?.name?.length
@@ -54,7 +54,6 @@
   }
 
   const handlePrevStep = () => {
-    console.log(templateData.value, 'templateData.value')
     store.commit('fieldTemplate/setTemplateDraft', {
       fieldList: templateData.value.fieldList,
       uniqueList: templateData.value.uniqueList
@@ -75,6 +74,16 @@
   }
   const handleCancel = () => {}
   const handlePreview = () => {}
+</script>
+<script>
+  export default {
+    beforeRouteLeave(to, from, next) {
+      if (![MENU_MODEL_FIELD_TEMPLATE_CREATE_BASIC].includes(to.name)) {
+        this.$store.commit('fieldTemplate/clearTemplateDraft')
+      }
+      next()
+    }
+  }
 </script>
 
 <template>

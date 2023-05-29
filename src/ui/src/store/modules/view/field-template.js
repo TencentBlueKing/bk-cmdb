@@ -10,12 +10,15 @@
  * limitations under the License.
  */
 
+const defaultTemplateDraft = () => ({
+  basic: {},
+  fieldList: null,
+  uniqueList: null
+})
+
 const state = {
-  templateDraft: {
-    basic: {},
-    fieldList: [],
-    uniqueList: []
-  }
+  // 草稿数据，属性与唯一校验格式与接口参数一致
+  templateDraft: defaultTemplateDraft()
 }
 
 const getters = {
@@ -25,6 +28,9 @@ const getters = {
 const mutations = {
   setTemplateDraft(state, templateDraft) {
     state.templateDraft = Object.assign(state.templateDraft, templateDraft)
+  },
+  clearTemplateDraft(state) {
+    state.templateDraft = defaultTemplateDraft()
   }
 }
 

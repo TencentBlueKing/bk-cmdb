@@ -11,24 +11,30 @@
  */
 
 import { computed } from 'vue'
+import isEqual from 'lodash/isEqual'
 import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
-export default function useField(fieldList, fieldListLocal) {
+export default function useField(beforeFieldList, fieldListLocal) {
   const fieldStatus = computed(() => {
     const fieldStatus = {}
-    fieldListLocal.value.forEach(({ field }) => {
+    fieldListLocal.value.forEach((data) => {
+      const { field } = data
       fieldStatus[field.id] = {
         new: false,
         changed: false
       }
 
       // 在接口数据中找不到，表示为新增
-      if (!fieldList.find(item => item.id === field.id)) {
+      const matched = beforeFieldList.value.find(item => item.id === field.id)
+      if (!matched) {
         fieldStatus[field.id].new = true
+      } else { // 能找到，需要检查是否有变化
+        fieldStatus[field.id].changed = !isEqual(normalizeFieldData([matched]), normalizeFieldData([wrapData(data)]))
       }
     })
 
-    fieldList.forEach((field) => {
+    // 判断是否删除，从接口数据中查找
+    beforeFieldList.value.forEach((field) => {
       if (!fieldStatus[field.id]) {
         fieldStatus[field.id] = {
           removed: false
@@ -98,9 +104,10 @@ export const wrapData = (data) => {
   return settingData
 }
 
-export const normalizeFieldData = (fieldData, isCreate = true) => {
+export const normalizeFieldData = (fieldData, isCreate = true, fieldStatus) => {
   const fieldList = []
   const defaultData = {
+    id: '',
     bk_property_id: '',
     bk_property_name: '',
     bk_property_type: '',
@@ -137,6 +144,11 @@ export const normalizeFieldData = (fieldData, isCreate = true) => {
 
     if (isCreate) {
       Reflect.deleteProperty(field, 'id')
+    } else {
+      // 编辑流程，需要关注状态
+      if (fieldStatus?.value?.[field.id]?.new) {
+        Reflect.deleteProperty(field, 'id')
+      }
     }
 
     fieldList.push(field)
@@ -162,3 +174,8 @@ export const normalizeUniqueData = (uniqueData, fieldData, isCreate = true) => {
 
   return uniqueList
 }
+
+export const isFieldSame = (field1, field2) => field1.bk_property_id === field2.bk_property_id
+  || field1.bk_property_name === field2.bk_property_name
+
+export const isFieldExist = (field, fieldList) => fieldList.some(item => isFieldSame(item.field, field))
