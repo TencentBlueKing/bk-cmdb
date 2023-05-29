@@ -15,33 +15,45 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package fieldtemplate
+// Package fieldtmpl defines field template logics.
+package fieldtmpl
 
 import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/logics/model"
 )
 
 // FieldTemplateOperation field template operation methods
 type FieldTemplateOperation interface {
 	CreateFieldTemplate(kit *rest.Kit, opt *metadata.CreateFieldTmplOption) (*metadata.RspID, error)
+	CompareFieldTemplateAttr(kit *rest.Kit, opt *metadata.CompareFieldTmplAttrOption, forUI bool) (
+		*metadata.CompareFieldTmplAttrsRes, error)
+	CompareFieldTemplateUnique(kit *rest.Kit, opt *metadata.CompareFieldTmplUniqueOption, forUI bool) (
+		*metadata.CompareFieldTmplUniquesRes, error)
 }
 
-// NewFieldTemplateOperation create a new field quote operation instance
-func NewFieldTemplateOperation(client apimachinery.ClientSetInterface) FieldTemplateOperation {
-	return &fieldTemplate{
-		clientSet: client,
+// NewFieldTemplateOperation create a new field template operation instance
+func NewFieldTemplateOperation(client apimachinery.ClientSetInterface,
+	asst model.AssociationOperationInterface) FieldTemplateOperation {
+
+	return &template{
+		clientSet:  client,
+		asst:       asst,
+		comparator: &comparator{clientSet: client, asst: asst},
 	}
 }
 
-type fieldTemplate struct {
-	clientSet apimachinery.ClientSetInterface
+type template struct {
+	clientSet  apimachinery.ClientSetInterface
+	asst       model.AssociationOperationInterface
+	comparator *comparator
 }
 
 // CreateFieldTemplate create field template(contains field template brief information, attributes and uniques)
-func (f *fieldTemplate) CreateFieldTemplate(kit *rest.Kit, opt *metadata.CreateFieldTmplOption) (
+func (f *template) CreateFieldTemplate(kit *rest.Kit, opt *metadata.CreateFieldTmplOption) (
 	*metadata.RspID, error) {
 
 	res, err := f.clientSet.CoreService().FieldTemplate().CreateFieldTemplate(kit.Ctx, kit.Header, &opt.FieldTemplate)

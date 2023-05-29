@@ -509,6 +509,8 @@ const (
 
 	CCErrorTopoObjForbiddenCreateAssociation           = 1101120
 	CCErrorTopoAssociatedObjForbiddenCreateAssociation = 1101121
+	CCErrTopoFieldTemplateAttrConflict                 = 1101122
+	CCErrTopoFieldTemplateUniqueConflict               = 1101123
 
 	// object controller 1102XXX
 
