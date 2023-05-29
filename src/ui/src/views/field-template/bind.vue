@@ -11,29 +11,62 @@
 -->
 
 <script setup>
+  import { computed } from 'vue'
+  import { useRoute } from '@/router/index'
   import BindModel from './children/bind-model.vue'
+
+  const route = useRoute()
+
+  const templateId = computed(() => Number(route.params.id))
 
   const handleCancel = () => {}
   const handleSubmit = () => {}
 </script>
 
 <template>
-  <cmdb-sticky-layout class="cmdb-config-sticky-layout">
-    <bind-model></bind-model>
-    <template #footer="{ sticky }">
-      <div :class="['layout-footer', { 'is-sticky': sticky }]">
-        <cmdb-auth :auth="{ type: $OPERATION.C_FIELD_TEMPLATE }">
-          <template #default="{ disabled }">
-            <bk-button
-              theme="primary"
-              :disabled="disabled"
-              @click="handleSubmit">
-              {{$t('提交')}}
-            </bk-button>
-          </template>
-        </cmdb-auth>
-        <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-      </div>
-    </template>
-  </cmdb-sticky-layout>
+  <div class="bind">
+    <bind-model :height="`${$APP.height - 111 - 52}px`"></bind-model>
+    <div class="bind-footer">
+      <cmdb-auth :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }">
+        <template #default="{ disabled }">
+          <bk-button
+            theme="primary"
+            :disabled="disabled"
+            @click="handleSubmit">
+            {{$t('提交')}}
+          </bk-button>
+        </template>
+      </cmdb-auth>
+      <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
+    </div>
+  </div>
 </template>
+
+<style lang="scss" scoped>
+  .bind-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    padding: 0 20px;
+    background-color: #fff;
+    border-top: 1px solid $borderColor;
+
+    .bk-button {
+      min-width: 86px;
+
+      & + .bk-button {
+        margin-left: 8px;
+      }
+      & + .auth-box {
+          margin-left: 8px;
+      }
+    }
+    .auth-box {
+      & + .bk-button,
+      & + .auth-box {
+          margin-left: 8px;
+      }
+    }
+  }
+</style>

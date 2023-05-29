@@ -11,37 +11,22 @@
 -->
 
 <script setup>
-  // import { reactive } from 'vue'
-  const props = defineProps({
-    modelList: {
-      type: Array,
-      default: () => ([])
-    },
-    height: String
-  })
-
-  console.log(props)
-
+  // const props = defineProps({
+  // })
 </script>
 
 <template>
-  <div class="bind-model">
-    <div></div>
-    <bk-resize-layout :collapsible="true" :border="false" :style="{ height }">
-      <div slot="aside" class="aside">
-        model list
-      </div>
-      <div slot="main">main</div>
-    </bk-resize-layout>
+  <div class="sync-results">
+    模板编辑成功，正在同步至模型中...
   </div>
 </template>
 
 <style lang="scss" scoped>
-  .bind-model {
-
-    .aside {
-      height: 100%;
-      background: #fff;
-    }
+  .sync-results {
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    min-height: 420px;
+    background: #fff;
   }
 </style>
