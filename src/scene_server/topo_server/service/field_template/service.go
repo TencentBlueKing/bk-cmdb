@@ -76,6 +76,6 @@ func InitFieldTemplate(c *capability.Capability) {
 
 	// field template task
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/field_template/object/task",
-		Handler: s.ListObjByFieldTmpl})
+		Handler: s.SyncFieldTemplateToObjectTask})
 
 }
