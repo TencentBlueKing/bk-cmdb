@@ -71,3 +71,52 @@ func (s *service) ListFieldTemplateUnique(ctx *rest.Contexts) {
 
 	ctx.RespEntity(res)
 }
+
+// SyncFieldTemplateInfoToObjects synchronize the field combination template information to the corresponding model
+func (s *service) SyncFieldTemplateInfoToObjects(ctx *rest.Contexts) {
+
+	opt := new(metadata.FieldTemplateSyncOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+	tasks := make([]metadata.CreateTaskRequest, 0)
+	for _, objID := range opt.ObjectIDs {
+
+		tasks = append(tasks, metadata.CreateTaskRequest{
+			TaskType: common.SyncFieldTemplateTaskFlag,
+			InstID:   opt.TemplateID,
+			Extra:    objID,
+			Data: []interface{}{metadata.SyncObjectTask{
+				TemplateID: opt.TemplateID,
+				ObjectID:   objID,
+			}},
+		})
+	}
+
+	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		taskRes, err := s.clientSet.TaskServer().Task().CreateBatch(ctx.Kit.Ctx, ctx.Kit.Header, tasks)
+		if err != nil {
+			blog.Errorf("create field template sync task(%#v) failed, err: %v, rid: %s", tasks, err, ctx.Kit.Rid)
+			return err
+		}
+		blog.V(4).Infof("successfully created field template sync task: %#v, rid: %s", taskRes, ctx.Kit.Rid)
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+func (s *service) DispatchTaskForTemplateToObj() {
+
+}

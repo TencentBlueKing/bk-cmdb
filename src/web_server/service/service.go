@@ -130,6 +130,9 @@ func (s *Service) WebService() *gin.Engine {
 	// table instance, only for ui, should be removed later
 	s.initModelQuote(ws)
 
+	// field template, only for ui
+	s.initFieldTemplate(ws)
+
 	// if no route, redirect to 404 page
 	ws.NoRoute(func(c *gin.Context) {
 		c.Redirect(302, "/#/404")

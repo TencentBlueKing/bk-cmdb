@@ -74,3 +74,8 @@ func (t template) CreateFieldTemplateUniques(ctx context.Context, h http.Header,
 
 	return &resp.Data, nil
 }
+func (t *template) SyncFieldTemplateInfoToObjects(ctx context.Context, h http.Header, templateID int64,
+	objectIDs []int64) errors.CCErrorCoder {
+
+	return nil
+}

@@ -64,6 +64,18 @@ func InitFieldTemplate(c *capability.Capability) {
 		Handler: s.ListFieldTemplateUnique})
 
 	// field template sync to object
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/unique",
-		Handler: s.ListFieldTemplateUnique})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/topo/field_template/sync",
+		Handler: s.SyncFieldTemplateInfoToObjects})
+	// field template relation
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/object/relation",
+		Handler: s.ListObjFieldTmplRel})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/by_object",
+		Handler: s.ListFieldTmplByObj})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/object/by_field_template",
+		Handler: s.ListObjByFieldTmpl})
+
+	// field template task
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/field_template/object/task",
+		Handler: s.ListObjByFieldTmpl})
+
 }

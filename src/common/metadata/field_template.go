@@ -483,3 +483,128 @@ type ListFieldTmplUniqueResp struct {
 	BaseResp `json:",inline"`
 	Data     FieldTemplateUniqueInfo `json:"data"`
 }
+
+// ListObjFieldTmplRelOption list field template and object relation option
+type ListObjFieldTmplRelOption struct {
+	TemplateIDs []int64 `json:"bk_template_ids"`
+	ObjectIDs   []int64 `json:"object_ids"`
+}
+
+// Validate list field template and object relation option
+func (l *ListObjFieldTmplRelOption) Validate() ccErr.RawErrorInfo {
+	if len(l.TemplateIDs) == 0 && len(l.ObjectIDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_template_ids and object_ids"},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// ObjFieldTmplRelInfo field template and object relation info for list apis
+type ObjFieldTmplRelInfo struct {
+	Count uint64                     `json:"count"`
+	Info  []ObjFieldTemplateRelation `json:"info"`
+}
+
+// ListObjFieldTmplRelResp list field template and object relation response
+type ListObjFieldTmplRelResp struct {
+	BaseResp `json:",inline"`
+	Data     ObjFieldTmplRelInfo `json:"data"`
+}
+
+// ListFieldTmplByObjOption list field template by related object option
+type ListFieldTmplByObjOption struct {
+	ObjectID int64 `json:"object_id"`
+}
+
+// Validate list field template by related object option
+func (l *ListFieldTmplByObjOption) Validate() ccErr.RawErrorInfo {
+	if l.ObjectID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.ObjectIDField},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// ListObjByFieldTmplOption list object by related field template option
+type ListObjByFieldTmplOption struct {
+	TemplateID        int64 `json:"bk_template_id"`
+	CommonQueryOption `json:",inline"`
+}
+
+// Validate list object by related field template option
+func (l *ListObjByFieldTmplOption) Validate() ccErr.RawErrorInfo {
+	if l.TemplateID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+
+	if rawErr := l.CommonQueryOption.Validate(); rawErr.ErrCode != 0 {
+		return rawErr
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// FieldTemplateSyncOption synchronization of field combination templates to model requests
+type FieldTemplateSyncOption struct {
+	TemplateID int64   `json:"bk_template_id"`
+	ObjectIDs  []int64 `json:"object_ids"`
+}
+
+// Validate list object by related field template option
+func (op *FieldTemplateSyncOption) Validate() ccErr.RawErrorInfo {
+	if op.TemplateID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+
+	if len(op.ObjectIDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"object_ids"},
+		}
+	}
+
+	for _, objID := range op.ObjectIDs {
+		if objID == 0 {
+			return ccErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{common.ObjectIDField},
+			}
+		}
+	}
+	return ccErr.RawErrorInfo{}
+}
+
+// SyncObjectTask synchronize field combination template information to model request
+type SyncObjectTask struct {
+	TemplateID int64 `json:"bk_template_id"`
+	ObjectID   int64 `json:"object_id"`
+}
+
+// Validate check of SyncObjectTask.
+func (option *SyncObjectTask) Validate() ccErr.RawErrorInfo {
+	if option.TemplateID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+	if option.ObjectID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{common.ObjectIDField},
+		}
+	}
+	return ccErr.RawErrorInfo{}
+}

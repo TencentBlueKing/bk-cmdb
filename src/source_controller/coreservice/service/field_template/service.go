@@ -56,4 +56,8 @@ func InitFieldTemplate(c *capability.Capability) {
 		Handler: s.ListFieldTemplateUnique})
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/field_template/{bk_template_id}/unique",
 		Handler: s.CreateFieldTemplateUniques})
+
+	// field template relation
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/object/relation",
+		Handler: s.ListObjFieldTmplRel})
 }
