@@ -636,7 +636,7 @@ func (l *CompareFieldTmplUniqueOption) Validate() ccErr.RawErrorInfo {
 	if l.ObjectID == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{common.BKObjIDField},
+			Args:    []interface{}{common.ObjectIDField},
 		}
 	}
 

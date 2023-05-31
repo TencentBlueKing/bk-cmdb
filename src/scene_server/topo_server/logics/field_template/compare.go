@@ -32,8 +32,8 @@ type comparator struct {
 	asst      model.AssociationOperationInterface
 }
 
-// validateObject validate object, do not allow field template to bind mainline object(except for host)
-func (c *comparator) validateObject(kit *rest.Kit, objectID int64) (string, error) {
+// getObjIDAndValidate validate object, do not allow field template to bind mainline object(except for host)
+func (c *comparator) getObjIDAndValidate(kit *rest.Kit, objectID int64) (string, error) {
 	objCond := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{common.BKFieldID: objectID},
 		Fields:    []string{common.BKObjIDField},

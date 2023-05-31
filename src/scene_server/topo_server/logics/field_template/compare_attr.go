@@ -43,7 +43,7 @@ func (t *template) CompareFieldTemplateAttr(kit *rest.Kit, opt *metadata.Compare
 	*metadata.CompareFieldTmplAttrsRes, error) {
 
 	// check compare options that is not related to object attribute
-	objID, err := t.comparator.validateObject(kit, opt.ObjectID)
+	objID, err := t.comparator.getObjIDAndValidate(kit, opt.ObjectID)
 	if err != nil {
 		return nil, err
 	}
