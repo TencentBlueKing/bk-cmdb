@@ -310,20 +310,20 @@ func (s *service) getTemplateAttrByID(kit *rest.Kit, id int64, fields []string) 
 	}
 
 	if len(res.Info) == 0 {
-		blog.Errorf("no template attributes founded, template id: %d, rid: %s", err, id, kit.Rid)
-		return []metadata.FieldTemplateAttr{}, kit.CCError.CCError(common.CCErrCommParamsInvalid)
+		blog.Errorf("no template attributes founded, template id: %d, rid: %s", id, kit.Rid)
+		return []metadata.FieldTemplateAttr{}, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKTemplateID)
 	}
 
 	return res.Info, nil
 }
 
 // tmplAttrConvertObjAttr template attributes are converted to attributes on the model.
-func tmplAttrConvertObjAttr(id int64, user, objID string, attr metadata.FieldTemplateAttr,
+func tmplAttrConvertObjAttr(user, objID string, attr metadata.FieldTemplateAttr,
 	time metadata.Time) *metadata.Attribute {
 
 	return &metadata.Attribute{
 		ObjectID:     objID,
-		TemplateID:   id,
+		TemplateID:   attr.ID,
 		PropertyID:   attr.PropertyID,
 		Placeholder:  attr.Placeholder.Value,
 		OwnerID:      attr.OwnerID,
@@ -342,8 +342,11 @@ func tmplAttrConvertObjAttr(id int64, user, objID string, attr metadata.FieldTem
 
 }
 
-// getFieldTemplateUniqueByID 由于存在数据库中的模版唯一校验keys是属性的自增ID，而在新建唯一索引的场景是没有自增ID的，
-// 所以为了兼容此场景，比较函数的请求统一为propertyID，此函数的作用是将数据库中的自增ID转化为propertyID。
+// getFieldTemplateUniqueByID the unique verification keys of the template in the database
+// are the self-incrementing IDs of the corresponding template properties, but there is no
+// self-incrementing ID in the scene of creating a unique index. In order to be compatible
+// with this scenario, the request of the comparison function is unified as propertyID. The
+// function of this function is to The auto-increment ID in the database is converted to propertyID.
 func (s *service) getFieldTemplateUniqueByID(kit *rest.Kit, op *metadata.SyncObjectTask) (
 	*metadata.CompareFieldTmplUniqueOption, error) {
 
@@ -361,17 +364,17 @@ func (s *service) getFieldTemplateUniqueByID(kit *rest.Kit, op *metadata.SyncObj
 		blog.Errorf("list field template uniques failed, err: %v, id: %+v, rid: %s", err, op.TemplateID, kit.Rid)
 		return nil, err
 	}
-	blog.ErrorJSON("8888888888888888 res: %s", res)
-	// 表示本模版上没有配置唯一索引
-	if len(res.Info) == 0 {
-		return nil, nil
-	}
 
 	result := new(metadata.CompareFieldTmplUniqueOption)
 
 	result.TemplateID = op.TemplateID
 	result.ObjectID = op.ObjectID
 	result.Uniques = make([]metadata.FieldTmplUniqueForUpdate, len(res.Info))
+
+	// indicates that no unique index is configured on this template
+	if len(res.Info) == 0 {
+		return result, nil
+	}
 
 	attrs, err := s.getTemplateAttrByID(kit, op.TemplateID, []string{common.BKFieldID, common.BKPropertyIDField})
 	if err != nil {
@@ -388,7 +391,7 @@ func (s *service) getFieldTemplateUniqueByID(kit *rest.Kit, op *metadata.SyncObj
 		for _, key := range res.Info[index].Keys {
 			propertyID, ok := attrIDProMap[key]
 			if !ok {
-				blog.Errorf("property id not found, id: %d, rid: %s", key, kit.Rid)
+				blog.Errorf("property id not found, attr id: %s,object id: %d, rid: %s", key, op.ObjectID, kit.Rid)
 				return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound, common.BKPropertyIDField)
 			}
 			propertyIDs = append(propertyIDs, propertyID)
@@ -397,10 +400,11 @@ func (s *service) getFieldTemplateUniqueByID(kit *rest.Kit, op *metadata.SyncObj
 		result.Uniques[index].ID = res.Info[index].ID
 		propertyIDs = []string{}
 	}
-	blog.ErrorJSON("666666666666666666 result: %s", result)
 	return result, nil
 }
 
+// tmplUniqueConvertObjUnique the unique verification of the template is converted
+// into the unique verification format of the model.
 func (s *service) tmplUniqueConvertObjUnique(kit *rest.Kit, objID string,
 	tmplUnique metadata.FieldTmplUniqueForUpdate) (metadata.ObjectUnique, error) {
 
@@ -417,19 +421,17 @@ func (s *service) tmplUniqueConvertObjUnique(kit *rest.Kit, objID string,
 		blog.Errorf("failed to read model attribute, cond: %+v, err: %v, rid: %s", cond.Condition, err, kit.Rid)
 		return metadata.ObjectUnique{}, err
 	}
-	blog.ErrorJSON("1111111111111111 unique: %s", cond.Condition)
 
 	if len(result.Info) != len(tmplUnique.Keys) {
 		blog.Errorf("the number of model attrs fetched is not as expected, num: %d, keys: %+v, rid: %s",
 			len(result.Info), tmplUnique.Keys, kit.Rid)
 	}
 
-	// object上的索引keys保存的是object上的属性自增ID
+	// the index keys on the model save the attribute auto-increment ID on the object
 	attrIDProMap := make(map[string]int64)
 	for _, data := range result.Info {
-		attrIDProMap[data.PropertyType] = data.ID
+		attrIDProMap[data.PropertyID] = data.ID
 	}
-	blog.ErrorJSON("2222222222222222 attrIDProMap: %s", attrIDProMap)
 
 	unique := metadata.ObjectUnique{}
 	for _, key := range tmplUnique.Keys {
@@ -439,16 +441,17 @@ func (s *service) tmplUniqueConvertObjUnique(kit *rest.Kit, objID string,
 		})
 	}
 
-	// 模型上的模版ID 指的是对应（相同property）模版属性上的自增ID
+	// bk_template_id on the model refers to the auto-increment ID on
+	// the corresponding (same propertyID) template attribute
 	unique.TemplateID = tmplUnique.ID
 	unique.ObjID = objID
-	unique.LastTime = metadata.Now()
 	unique.OwnerID = kit.SupplierAccount
-	blog.ErrorJSON("0000000000000 unique: %s", unique)
 	return unique, nil
 }
 
-// preprocessTmplUnique 处理经过对比之后的索引，返回两组结果，一个是需要新增的索引内容，一个是需要更新的索引内容。
+// preprocessTmplUnique process the unique verification after comparison, and return two sets of results,
+// one is the unique verification content that needs to be added, and the other is the unique verification
+// content that needs to be updated.
 func (s *service) preprocessTmplUnique(kit *rest.Kit, objectID string, input *metadata.CompareFieldTmplUniqueOption,
 	tUnique *metadata.CompareFieldTmplUniquesRes) ([]metadata.ObjectUnique, []metadata.ObjectUnique, error) {
 
@@ -468,7 +471,6 @@ func (s *service) preprocessTmplUnique(kit *rest.Kit, objectID string, input *me
 	updateUniques := make([]metadata.ObjectUnique, 0)
 	if len(tUnique.Create) > 0 {
 		for _, data := range tUnique.Create {
-			// 将这个索引转化成object的索引
 			createUnique, err := s.tmplUniqueConvertObjUnique(kit, objectID, input.Uniques[data.Index])
 			if err != nil {
 				return nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, objectID)
@@ -479,14 +481,11 @@ func (s *service) preprocessTmplUnique(kit *rest.Kit, objectID string, input *me
 
 	if len(tUnique.Update) > 0 {
 		for id := range tUnique.Update {
-			// -1 表示本索引从模版中删除，对于模型侧就是解除绑定关系
+			// -1 means that this index is deleted from the template,
+			// and for the model side, it means unbinding
 			if tUnique.Update[id].Index == -1 {
-				input.Uniques[id].ID = 0
-				unique, err := s.tmplUniqueConvertObjUnique(kit, objectID, input.Uniques[id])
-				if err != nil {
-					return nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, objectID)
-				}
-				updateUniques = append(updateUniques, unique)
+				tUnique.Update[id].Data.TemplateID = 0
+				updateUniques = append(updateUniques, *tUnique.Update[id].Data)
 				continue
 			}
 			updateUniques = append(updateUniques, *tUnique.Update[id].Data)
@@ -498,13 +497,14 @@ func (s *service) preprocessTmplUnique(kit *rest.Kit, objectID string, input *me
 func (s *service) getCreateAndUpdateAttr(kit *rest.Kit, option *metadata.SyncObjectTask, objectID string) (
 	[]*metadata.Attribute, []metadata.CompareOneFieldTmplAttrRes, error) {
 
-	// 1、获取字段模版中的全量字段内容
+	// 1、get the full content of the field template
 	tmplAttrs, ccErr := s.getTemplateAttrByID(kit, option.TemplateID, []string{})
 	if ccErr != nil {
 		return nil, nil, ccErr
 	}
 
-	// 校验字段和索引的合法性直接调用backend接口获取需要同步的模版字段内容
+	// verify the validity of field attributes and obtain
+	// the contents of template fields that need to be synchronized
 	opt := &metadata.CompareFieldTmplAttrOption{
 		TemplateID: option.TemplateID,
 		ObjectID:   option.ObjectID,
@@ -521,11 +521,10 @@ func (s *service) getCreateAndUpdateAttr(kit *rest.Kit, option *metadata.SyncObj
 	if len(result.Create) > 0 {
 		now := metadata.Now()
 		for _, attr := range result.Create {
-			objAttr := tmplAttrConvertObjAttr(option.TemplateID, kit.User, objectID, tmplAttrs[attr.Index], now)
+			objAttr := tmplAttrConvertObjAttr(kit.User, objectID, tmplAttrs[attr.Index], now)
 			createAttr = append(createAttr, objAttr)
 		}
 	}
-
 	return createAttr, result.Update, nil
 }
 
@@ -536,11 +535,6 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 		return err
 	}
 
-	if len(createAttr) == 0 && len(updateAttr) == 0 {
-		blog.Warnf("no difference between templates and models, opt: %+v, rid: %s", option, kit.Rid)
-		return nil
-	}
-
 	uniqueOp, err := s.getFieldTemplateUniqueByID(kit, option)
 	if err != nil {
 		return err
@@ -548,24 +542,14 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 
 	createUniques, updateUniques := make([]metadata.ObjectUnique, 0), make([]metadata.ObjectUnique, 0)
 
-	if uniqueOp != nil {
-		res, err := s.logics.FieldTemplateOperation().CompareFieldTemplateUnique(kit, uniqueOp, false)
-		if err != nil {
-			blog.Errorf("get field template unique failed, cond: %+v, err: %v, rid: %s", uniqueOp, err, kit.Rid)
-			return err
-		}
-		blog.ErrorJSON("qqqqqqqqqqqqqqqqqqq res: %s", res)
-		create, update, err := s.preprocessTmplUnique(kit, objectID, uniqueOp, res)
-		if err != nil {
-			blog.Errorf("get object unique failed, object: %+v, unique: %+v, err: %v, rid: %s", objectID,
-				uniqueOp.Uniques, err, kit.Rid)
-			return err
-		}
-		createUniques, updateUniques = create, update
+	res, err := s.logics.FieldTemplateOperation().CompareFieldTemplateUnique(kit, uniqueOp, false)
+	if err != nil {
+		blog.Errorf("get field template unique failed, cond: %+v, err: %v, rid: %s", uniqueOp, err, kit.Rid)
+		return err
 	}
 
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
-		// 创建属性
+		// 1、create model properties
 		if len(createAttr) > 0 {
 			if err := s.logics.AttributeOperation().BatchCreateObjectAttr(kit, objectID, createAttr); err != nil {
 				blog.Errorf("create model attribute failed, attr: %+v, err: %v, rid: %s", createAttr, err, kit.Rid)
@@ -573,7 +557,8 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 			}
 
 		}
-		// 更新属性
+
+		// 2、update model properties
 		if len(updateAttr) > 0 {
 			for _, attr := range updateAttr {
 				err := s.logics.AttributeOperation().UpdateObjectAttribute(kit, attr.UpdateData, attr.Data.ID, 0)
@@ -582,7 +567,19 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 				}
 			}
 		}
+		// note: be sure to process the unique check after the attributes are processed,
+		// and the order cannot be reversed
 
+		// 3、unique validation for preprocessed template synchronization
+		create, update, err := s.preprocessTmplUnique(kit, objectID, uniqueOp, res)
+		if err != nil {
+			blog.Errorf("get object unique failed, object: %+v, unique: %+v, err: %v, rid: %s", objectID,
+				uniqueOp.Uniques, err, kit.Rid)
+			return err
+		}
+		createUniques, updateUniques = create, update
+
+		// 4、create a unique check for the model
 		if len(createUniques) > 0 {
 			for _, unique := range createUniques {
 				op := metadata.CreateModelAttrUnique{Data: unique}
@@ -595,10 +592,18 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 			return nil
 		}
 
+		// 5、update the unique validation of the model
 		if len(updateUniques) > 0 {
 			for _, unique := range updateUniques {
-				op := metadata.CreateModelAttrUnique{Data: unique}
-				_, err := s.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header, objectID, op)
+				input := metadata.UpdateUniqueRequest{
+					TemplateID: unique.TemplateID,
+					Keys:       unique.Keys,
+					LastTime:   metadata.Now(),
+				}
+
+				op := metadata.UpdateModelAttrUnique{Data: input}
+				_, err := s.clientSet.CoreService().Model().UpdateModelAttrUnique(kit.Ctx, kit.Header,
+					objectID, unique.ID, op)
 				if err != nil {
 					blog.Errorf("create unique failed, raw: %#v, err: %v, rid: %s", unique, err, kit.Rid)
 					return err
@@ -613,9 +618,3 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 	}
 	return nil
 }
-
-// 3、将需要更新的字段属性内容通过objectID和propertyID 进行更新
-// 4、对于字段模板的删除场景，转化为将templateID置为0
-// 5、获取需要同步的索引内容，即创建唯一索引并设置templateID
-// 6、通过对比获取到索引的创建和更新
-// 8、注意需要重新赋值一直更新的时间和更新人员

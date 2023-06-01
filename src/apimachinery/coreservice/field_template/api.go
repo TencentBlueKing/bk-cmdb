@@ -42,8 +42,6 @@ type Interface interface {
 		opt []metadata.FieldTemplateUnique) (*metadata.RspIDs, errors.CCErrorCoder)
 	ListObjFieldTmplRel(ctx context.Context, h http.Header, opt *metadata.CommonQueryOption) (
 		*metadata.ObjFieldTmplRelInfo, errors.CCErrorCoder)
-	SyncFieldTemplateInfoToObjects(ctx context.Context, h http.Header, templateID int64,
-		objectIDs []int64) errors.CCErrorCoder
 }
 
 // New field template api client.

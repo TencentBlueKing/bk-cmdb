@@ -85,9 +85,9 @@ func (s *service) SyncFieldTemplateInfoToObjects(ctx *rest.Contexts) {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
+
 	tasks := make([]metadata.CreateTaskRequest, 0)
 	for _, objID := range opt.ObjectIDs {
-
 		tasks = append(tasks, metadata.CreateTaskRequest{
 			TaskType: common.SyncFieldTemplateTaskFlag,
 			InstID:   opt.TemplateID,
@@ -115,8 +115,4 @@ func (s *service) SyncFieldTemplateInfoToObjects(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
-}
-
-func (s *service) DispatchTaskForTemplateToObj() {
-
 }

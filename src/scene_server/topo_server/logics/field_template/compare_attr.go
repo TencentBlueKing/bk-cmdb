@@ -428,7 +428,6 @@ func (c *comparator) compareUpdatedAttr(kit *rest.Kit, tmplAttr *metadata.FieldT
 			blog.Errorf("template id mismatch, attribute: %+v, template: %+v, rid: %s", attr, tmplAttr, kit.Rid)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKTemplateID)
 		}
-
 		updateData[common.BKTemplateID] = tmplAttr.ID
 	}
 
