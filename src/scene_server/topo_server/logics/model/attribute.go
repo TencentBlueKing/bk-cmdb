@@ -667,8 +667,8 @@ func (a *attribute) createModelQuoteRelation(kit *rest.Kit, objectID, propertyID
 func (a *attribute) preCheckObjectAttr(kit *rest.Kit, objID string, data *metadata.Attribute) error {
 
 	if data.ObjectID != objID {
-		blog.Errorf("attr objID is invalid, object: %+v, obj id: %s, rid: %d.", data, objID, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommParamsInvalid)
+		blog.Errorf("attr object id is invalid, object: %+v, obj id: %s, rid: %s", data, objID, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsInvalid, objID)
 	}
 
 	if data.IsOnly {
@@ -682,7 +682,7 @@ func (a *attribute) preCheckObjectAttr(kit *rest.Kit, objID string, data *metada
 	// check if the object is mainline object, if yes. then user can not create required attribute.
 	yes, err := a.isMainlineModel(kit, data.ObjectID)
 	if err != nil {
-		blog.Errorf("not allow to add required attribute to mainline object: %+v, rid: %d.", data, kit.Rid)
+		blog.Errorf("not allow to add required attribute to mainline object: %+v, rid: %s", data, kit.Rid)
 		return err
 	}
 
@@ -695,13 +695,14 @@ func (a *attribute) preCheckObjectAttr(kit *rest.Kit, objID string, data *metada
 	if err != nil {
 		return err
 	}
+
 	if !exist {
 		blog.Errorf("obj id is not exist, obj id: %s, rid: %s", data.ObjectID, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField)
 	}
 
 	if err = a.checkAttributeGroupExist(kit, data); err != nil {
-		blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
+		blog.Errorf("failed to create the default group, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
@@ -719,8 +720,6 @@ func (a *attribute) BatchCreateObjectAttr(kit *rest.Kit, objID string, attrs []*
 		if err := a.preCheckObjectAttr(kit, objID, data); err != nil {
 			return err
 		}
-
-		data.OwnerID = kit.SupplierAccount
 		objAttrs = append(objAttrs, *data)
 	}
 
@@ -779,7 +778,7 @@ func (a *attribute) BatchCreateObjectAttr(kit *rest.Kit, objID string, attrs []*
 
 	// save audit log.
 	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
-		blog.Errorf("save audit log after creating attr %s failed, err: %v, rid: %s", ids, err, kit.Rid)
+		blog.Errorf("save audit log failed, attr ids: %v, err: %v, rid: %s", ids, err, kit.Rid)
 		return err
 	}
 
@@ -799,7 +798,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 	// check if the object is mainline object, if yes. then user can not create required attribute.
 	yes, err := a.isMainlineModel(kit, data.ObjectID)
 	if err != nil {
-		blog.Errorf("not allow to add required attribute to mainline object: %+v, rid: %d.", data, kit.Rid)
+		blog.Errorf("not allow to add required attribute to mainline object: %+v, rid: %s", data, kit.Rid)
 		return nil, err
 	}
 

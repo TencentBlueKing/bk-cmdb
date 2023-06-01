@@ -78,4 +78,9 @@ func InitFieldTemplate(c *capability.Capability) {
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/field_template/object/task",
 		Handler: s.SyncFieldTemplateToObjectTask})
 
+	// compare field template with object
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/attribute/difference",
+		Handler: s.CompareFieldTemplateAttr})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/unique/difference",
+		Handler: s.CompareFieldTemplateUnique})
 }

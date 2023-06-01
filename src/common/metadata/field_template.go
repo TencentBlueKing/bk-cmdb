@@ -568,7 +568,6 @@ func (op *FieldTemplateSyncOption) Validate() ccErr.RawErrorInfo {
 			Args:    []interface{}{common.BKTemplateID},
 		}
 	}
-
 	if len(op.ObjectIDs) == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
@@ -584,6 +583,39 @@ func (op *FieldTemplateSyncOption) Validate() ccErr.RawErrorInfo {
 			}
 		}
 	}
+	return ccErr.RawErrorInfo{}
+}
+
+// CompareFieldTmplAttrOption compare field template attribute with object option
+type CompareFieldTmplAttrOption struct {
+	TemplateID int64               `json:"bk_template_id"`
+	ObjectID   int64               `json:"object_id"`
+	Attrs      []FieldTemplateAttr `json:"attributes"`
+}
+
+// Validate compare field template attribute with object option
+func (l *CompareFieldTmplAttrOption) Validate() ccErr.RawErrorInfo {
+	if l.TemplateID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+
+	if l.ObjectID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if len(l.Attrs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"attributes"},
+		}
+	}
+
 	return ccErr.RawErrorInfo{}
 }
 
@@ -645,6 +677,25 @@ type FieldTmplUniqueForUpdate struct {
 	// some related attributes may not be created yet, so we can only use property id for keys
 	// field template attr with the same property id can not be recreated, so property id can uniques identify an attr
 	Keys []string `json:"keys"`
+}
+
+// Validate compare field template unique with object option
+func (l *CompareFieldTmplUniqueOption) Validate() ccErr.RawErrorInfo {
+	if l.TemplateID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+
+	if l.ObjectID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.ObjectIDField},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
 }
 
 // CompareFieldTmplUniquesRes compare field template uniques with object result
