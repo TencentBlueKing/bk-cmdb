@@ -122,7 +122,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		kube:              kubeOperation,
 		project:           projectOperation,
 		modelQuote:        modelquote.NewModelQuoteOperation(client),
-		fieldTemplate:     fieldtemplate.NewFieldTemplateOperation(client),
+		fieldTemplate:     fieldtemplate.NewFieldTemplateOperation(client, associationOperation),
 	}
 }
 
