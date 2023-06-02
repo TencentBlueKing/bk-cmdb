@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
@@ -246,7 +247,7 @@ func (s *service) ListFieldTemplateUnique(ctx *rest.Contexts) {
 
 	uniques := make([]metadata.FieldTemplateUnique, 0)
 	err = mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(filter).Start(uint64(opt.Page.Start)).
-		Limit(uint64(opt.Page.Limit)).Fields(opt.Fields...).All(ctx.Kit.Ctx, &uniques)
+		Limit(uint64(opt.Page.Limit)).Sort(opt.Page.Sort).Fields(opt.Fields...).All(ctx.Kit.Ctx, &uniques)
 	if err != nil {
 		blog.Errorf("list field template uniques failed, err: %v, filter: %+v, rid: %v", err, filter, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -254,4 +255,130 @@ func (s *service) ListFieldTemplateUnique(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(metadata.FieldTemplateUniqueInfo{Info: uniques})
+}
+
+// DeleteFieldTemplateUniques delete field template uniques
+func (s *service) DeleteFieldTemplateUniques(ctx *rest.Contexts) {
+	opt := new(metadata.DeleteOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	templateID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKTemplateID), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse %s, err: %v, rid: %s", common.BKTemplateID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKTemplateID))
+		return
+	}
+
+	cond := util.SetModOwner(opt.Condition, ctx.Kit.SupplierAccount)
+	cond[common.BKTemplateID] = templateID
+
+	if err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Delete(ctx.Kit.Ctx, cond); err != nil {
+		blog.Errorf("delete field template uniques failed, cond: %v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+// UpdateFieldTemplateUniques update field template uniques
+func (s *service) UpdateFieldTemplateUniques(ctx *rest.Contexts) {
+	uniques := make([]metadata.FieldTemplateUnique, 0)
+	if err := ctx.DecodeInto(&uniques); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(uniques) == 0 {
+		ctx.RespEntity(nil)
+		return
+	}
+
+	templateID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKTemplateID), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse %s, err: %v, rid: %s", common.BKTemplateID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKTemplateID))
+		return
+	}
+	if templateID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKTemplateID))
+		return
+	}
+
+	ids := make([]int64, 0)
+	for _, unique := range uniques {
+		if unique.ID == 0 {
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKFieldID))
+			return
+		}
+
+		ids = append(ids, unique.ID)
+	}
+	if len(ids) == 0 {
+		ctx.RespEntity(nil)
+		return
+	}
+
+	cond := mapstr.MapStr{
+		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: ids},
+		common.BKTemplateID: templateID,
+	}
+	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
+	dbTmplUniques := make([]metadata.FieldTemplateUnique, 0)
+	err = mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(cond).All(ctx.Kit.Ctx, &dbTmplUniques)
+	if err != nil {
+		blog.Errorf("list field template uniques failed, filter: %+v, err: %v, rid: %v", cond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+
+	dbUniqueMap := make(map[int64]metadata.FieldTemplateUnique)
+	for _, dbUnique := range dbTmplUniques {
+		dbUniqueMap[dbUnique.ID] = dbUnique
+	}
+
+	for idx := range uniques {
+		dbUnique := dbUniqueMap[uniques[idx].ID]
+		uniques[idx].OwnerID = dbUnique.OwnerID
+		uniques[idx].Creator = dbUnique.Creator
+		uniques[idx].CreateTime = dbUnique.CreateTime
+	}
+
+	if err := s.updateFieldTemplateUniques(ctx.Kit, templateID, uniques); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+func (s *service) updateFieldTemplateUniques(kit *rest.Kit, templateID int64,
+	uniques []metadata.FieldTemplateUnique) error {
+
+	if err := s.checkUniques(kit, uniques, templateID); err != nil {
+		blog.Errorf("check field template unique failed, unique: %v, err: %v, rid: %s", uniques, err, kit.Rid)
+		return err
+	}
+
+	for _, unique := range uniques {
+		now := time.Now()
+		unique.Modifier = kit.User
+		unique.LastTime = &metadata.Time{Time: now}
+
+		cond := mapstr.MapStr{
+			common.BKFieldID:    unique.ID,
+			common.BKTemplateID: templateID,
+		}
+
+		err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Update(kit.Ctx, cond, unique)
+		if err != nil {
+			blog.Errorf("update field template unique failed, data: %v, err: %v, rid: %s", unique, err, kit.Rid)
+			return err
+		}
+	}
+
+	return nil
 }

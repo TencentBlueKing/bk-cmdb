@@ -19,9 +19,14 @@
 package fieldtmpl
 
 import (
+	"configcenter/pkg/filter"
+	filtertools "configcenter/pkg/tools/filter"
 	"configcenter/src/apimachinery"
+	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/logics/model"
 )
@@ -33,6 +38,10 @@ type FieldTemplateOperation interface {
 		*metadata.CompareFieldTmplAttrsRes, error)
 	CompareFieldTemplateUnique(kit *rest.Kit, opt *metadata.CompareFieldTmplUniqueOption, forUI bool) (
 		*metadata.CompareFieldTmplUniquesRes, error)
+	DeleteFieldTemplate(kit *rest.Kit, id int64) error
+	DeleteFieldTemplateAttr(kit *rest.Kit, templateID int64, attrIDs []int64) error
+	DeleteFieldTemplateUnique(kit *rest.Kit, templateID int64, uniques []int64) error
+	UpdateFieldTemplateInfo(kit *rest.Kit, template *metadata.FieldTemplate) error
 }
 
 // NewFieldTemplateOperation create a new field template operation instance
@@ -56,20 +65,21 @@ type template struct {
 func (f *template) CreateFieldTemplate(kit *rest.Kit, opt *metadata.CreateFieldTmplOption) (
 	*metadata.RspID, error) {
 
-	res, err := f.clientSet.CoreService().FieldTemplate().CreateFieldTemplate(kit.Ctx, kit.Header, &opt.FieldTemplate)
-	if err != nil {
-		blog.Errorf("create field template failed, err: %v, data: %v, rid: %s", err, opt, kit.Rid)
-		return nil, err
+	res, ccErr := f.clientSet.CoreService().FieldTemplate().CreateFieldTemplate(kit.Ctx, kit.Header, &opt.FieldTemplate)
+	if ccErr != nil {
+		blog.Errorf("create field template failed, err: %v, data: %v, rid: %s", ccErr, opt, kit.Rid)
+		return nil, ccErr
 	}
 
 	for idx := range opt.Attributes {
 		opt.Attributes[idx].TemplateID = res.ID
 	}
-	attrIDs, err := f.clientSet.CoreService().FieldTemplate().CreateFieldTemplateAttrs(kit.Ctx, kit.Header, res.ID,
+	attrIDs, ccErr := f.clientSet.CoreService().FieldTemplate().CreateFieldTemplateAttrs(kit.Ctx, kit.Header, res.ID,
 		opt.Attributes)
-	if err != nil {
-		blog.Errorf("create field template attributes failed, err: %v, data: %v, rid: %s", err, opt.Attributes, kit.Rid)
-		return nil, err
+	if ccErr != nil {
+		blog.Errorf("create field template attributes failed, err: %v, data: %v, rid: %s", ccErr, opt.Attributes,
+			kit.Rid)
+		return nil, ccErr
 	}
 
 	propertyIDToIDMap := make(map[string]int64)
@@ -92,13 +102,244 @@ func (f *template) CreateFieldTemplate(kit *rest.Kit, opt *metadata.CreateFieldT
 		uniques[idx] = *unique
 	}
 
-	_, err = f.clientSet.CoreService().FieldTemplate().CreateFieldTemplateUniques(kit.Ctx, kit.Header, res.ID, uniques)
+	uniqueIDs, ccErr := f.clientSet.CoreService().FieldTemplate().CreateFieldTemplateUniques(kit.Ctx, kit.Header,
+		res.ID, uniques)
+	if ccErr != nil {
+		blog.Errorf("create field template uniques failed, err: %v, data: %v, rid: %s", ccErr, uniques, kit.Rid)
+		return nil, ccErr
+	}
+
+	// generate and save audit log
+	audit := auditlog.NewFieldTmplAuditLog(f.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLogs := make([]metadata.AuditLog, 0)
+
+	tmplLog, err := audit.GenerateFieldTmplAuditLog(generateAuditParameter, res.ID, nil)
 	if err != nil {
-		blog.Errorf("create field template uniques failed, err: %v, data: %v, rid: %s", err, uniques, kit.Rid)
+		blog.Errorf("generate field template audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+	auditLogs = append(auditLogs, *tmplLog)
+
+	attrLogs, err := audit.GenerateFieldTmplAttrAuditLog(generateAuditParameter, attrIDs.IDs, nil)
+	if err != nil {
+		blog.Errorf("generate field template attribute audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+	auditLogs = append(auditLogs, attrLogs...)
+
+	uniqueLogs, err := audit.GenerateFieldTmplUniqueAuditLog(generateAuditParameter, uniqueIDs.IDs, nil)
+	if err != nil {
+		blog.Errorf("generate field template attribute audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+	auditLogs = append(auditLogs, uniqueLogs...)
+
+	if err := audit.SaveAuditLog(kit, auditLogs...); err != nil {
+		blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
-	// todo 添加审计
-
 	return res, nil
+}
+
+// DeleteFieldTemplate delete field template
+func (f *template) DeleteFieldTemplate(kit *rest.Kit, id int64) error {
+	query := &metadata.CommonQueryOption{
+		CommonFilterOption: metadata.CommonFilterOption{
+			Filter: filtertools.GenAtomFilter(common.BKFieldID, filter.Equal, id),
+		},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+
+	res, ccErr := f.clientSet.CoreService().FieldTemplate().ListFieldTemplate(kit.Ctx, kit.Header, query)
+	if ccErr != nil {
+		blog.Errorf("find field template failed, opt: %+v, err: %v, rid: %s", query, ccErr, kit.Rid)
+		return ccErr
+	}
+
+	if len(res.Info) > 1 {
+		blog.Errorf("multiple field templates found, opt: %+v, rid: %s", query, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject)
+	}
+
+	if len(res.Info) == 0 {
+		return nil
+	}
+
+	cond := metadata.DeleteOption{Condition: mapstr.MapStr{common.BKFieldID: id}}
+	ccErr = f.clientSet.CoreService().FieldTemplate().DeleteFieldTemplate(kit.Ctx, kit.Header, &cond)
+	if ccErr != nil {
+		blog.Errorf("delete field template, cond: %v, err: %v, rid: %s", cond, ccErr, kit.Rid)
+		return ccErr
+	}
+
+	// generate and save audit log
+	audit := auditlog.NewFieldTmplAuditLog(f.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+
+	tmplLog, err := audit.GenerateFieldTmplAuditLog(generateAuditParameter, id, &res.Info[0])
+	if err != nil {
+		blog.Errorf("generate field template audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if err := audit.SaveAuditLog(kit, *tmplLog); err != nil {
+		blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// DeleteFieldTemplateAttr delete field template attribute
+func (f *template) DeleteFieldTemplateAttr(kit *rest.Kit, templateID int64, attrIDs []int64) error {
+	expr := filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, templateID)
+	if len(attrIDs) != 0 {
+		var err error
+		expr, err = filtertools.And(expr, filtertools.GenAtomFilter(common.BKFieldID, filter.In, attrIDs))
+		if err != nil {
+			return err
+		}
+	}
+	query := &metadata.CommonQueryOption{
+		CommonFilterOption: metadata.CommonFilterOption{
+			Filter: expr,
+		},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	res, ccErr := f.clientSet.CoreService().FieldTemplate().ListFieldTemplateAttr(kit.Ctx, kit.Header, query)
+	if ccErr != nil {
+		blog.Errorf("find field template attribute failed, opt: %+v, err: %v, rid: %s", query, ccErr, kit.Rid)
+		return ccErr
+	}
+
+	if len(res.Info) == 0 {
+		return nil
+	}
+
+	var deleteOpt *metadata.DeleteOption
+	if len(attrIDs) != 0 {
+		deleteOpt = &metadata.DeleteOption{
+			Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: attrIDs}},
+		}
+	}
+
+	ccErr = f.clientSet.CoreService().FieldTemplate().DeleteFieldTemplateAttr(kit.Ctx, kit.Header, templateID,
+		deleteOpt)
+	if ccErr != nil {
+		blog.Errorf("delete field template attributes, template id: %d, cond: %v, err: %v, rid: %s", templateID,
+			deleteOpt, ccErr, kit.Rid)
+		return ccErr
+	}
+
+	// generate and save audit log
+	audit := auditlog.NewFieldTmplAuditLog(f.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+
+	auditLogs, err := audit.GenerateFieldTmplAttrAuditLog(generateAuditParameter, attrIDs, res.Info)
+	if err != nil {
+		blog.Errorf("generate field template audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if err := audit.SaveAuditLog(kit, auditLogs...); err != nil {
+		blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// DeleteFieldTemplateUnique delete field template unique
+func (f *template) DeleteFieldTemplateUnique(kit *rest.Kit, templateID int64, uniqueIDs []int64) error {
+	expr := filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, templateID)
+	if len(uniqueIDs) != 0 {
+		var err error
+		expr, err = filtertools.And(expr, filtertools.GenAtomFilter(common.BKFieldID, filter.In, uniqueIDs))
+		if err != nil {
+			return err
+		}
+	}
+	query := &metadata.CommonQueryOption{
+		CommonFilterOption: metadata.CommonFilterOption{
+			Filter: expr,
+		},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	res, ccErr := f.clientSet.CoreService().FieldTemplate().ListFieldTemplateUnique(kit.Ctx, kit.Header, query)
+	if ccErr != nil {
+		blog.Errorf("find field template unique failed, opt: %+v, err: %v, rid: %s", query, ccErr, kit.Rid)
+		return ccErr
+	}
+
+	if len(res.Info) == 0 {
+		return nil
+	}
+
+	var deleteOpt *metadata.DeleteOption
+	if len(uniqueIDs) != 0 {
+		deleteOpt = &metadata.DeleteOption{
+			Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: uniqueIDs}},
+		}
+	}
+
+	ccErr = f.clientSet.CoreService().FieldTemplate().DeleteFieldTemplateUnique(kit.Ctx, kit.Header, templateID,
+		deleteOpt)
+	if ccErr != nil {
+		blog.Errorf("delete field template uniques, template id: %d, cond: %v, err: %v, rid: %s", templateID,
+			deleteOpt, ccErr, kit.Rid)
+		return ccErr
+	}
+
+	// generate and save audit log
+	audit := auditlog.NewFieldTmplAuditLog(f.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+
+	auditLogs, err := audit.GenerateFieldTmplUniqueAuditLog(generateAuditParameter, uniqueIDs, res.Info)
+	if err != nil {
+		blog.Errorf("generate field template audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if err := audit.SaveAuditLog(kit, auditLogs...); err != nil {
+		blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// UpdateFieldTemplateInfo update field template brief information
+func (f *template) UpdateFieldTemplateInfo(kit *rest.Kit, template *metadata.FieldTemplate) error {
+	if template == nil {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "template")
+	}
+
+	ccErr := f.clientSet.CoreService().FieldTemplate().UpdateFieldTemplate(kit.Ctx, kit.Header, template)
+	if ccErr != nil {
+		blog.Errorf("update field template info failed, data: %v, err: %v, rid: %s", template, ccErr, kit.Rid)
+		return ccErr
+	}
+
+	audit := auditlog.NewFieldTmplAuditLog(f.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate)
+	tmplLog, err := audit.GenerateFieldTmplAuditLog(generateAuditParameter, template.ID, nil)
+	if err != nil {
+		blog.Errorf("generate field template audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if err := audit.SaveAuditLog(kit, *tmplLog); err != nil {
+		blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
 }

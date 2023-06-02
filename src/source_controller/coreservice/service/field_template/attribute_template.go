@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/valid"
@@ -66,7 +67,7 @@ func (s *service) ListFieldTemplateAttr(cts *rest.Contexts) {
 
 	attrTemplates := make([]metadata.FieldTemplateAttr, 0)
 	err = mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(filter).Start(uint64(opt.Page.Start)).
-		Limit(uint64(opt.Page.Limit)).Fields(opt.Fields...).All(cts.Kit.Ctx, &attrTemplates)
+		Limit(uint64(opt.Page.Limit)).Sort(opt.Page.Sort).Fields(opt.Fields...).All(cts.Kit.Ctx, &attrTemplates)
 	if err != nil {
 		blog.Errorf("list field template attributes failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
 		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -159,4 +160,163 @@ func (s *service) CreateFieldTemplateAttrs(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(metadata.RspIDs{IDs: result})
+}
+
+// DeleteFieldTemplateAttrs delete field template attributes
+func (s *service) DeleteFieldTemplateAttrs(ctx *rest.Contexts) {
+	opt := new(metadata.DeleteOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	templateID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKTemplateID), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse %s, err: %v, rid: %s", common.BKTemplateID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKTemplateID))
+		return
+	}
+
+	cond := util.SetModOwner(opt.Condition, ctx.Kit.SupplierAccount)
+	cond[common.BKTemplateID] = templateID
+
+	attrs := make([]metadata.FieldTemplateAttr, 0)
+	err = mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(cond).Fields(common.BKFieldID).
+		All(ctx.Kit.Ctx, &attrs)
+	if err != nil {
+		blog.Errorf("find field template attribute failed, cond: %v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(attrs) == 0 {
+		ctx.RespEntity(nil)
+		return
+	}
+
+	attrIDs := make([]int64, 0)
+	for _, attr := range attrs {
+		attrIDs = append(attrIDs, attr.ID)
+	}
+	countCond := mapstr.MapStr{common.BKObjectUniqueKeys: mapstr.MapStr{common.BKDBIN: attrIDs}}
+
+	count, err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(countCond).Count(ctx.Kit.Ctx)
+	if err != nil {
+		blog.Errorf("count field template unique failed, filter: %+v, err: %v, rid: %v", countCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+	if count != 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCoreServiceFieldTemplateHasUnique))
+		return
+	}
+
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Delete(ctx.Kit.Ctx, cond); err != nil {
+		blog.Errorf("delete field template attributes failed, cond: %v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+// UpdateFieldTemplateAttrs update field template attributes
+func (s *service) UpdateFieldTemplateAttrs(ctx *rest.Contexts) {
+	attrs := make([]metadata.FieldTemplateAttr, 0)
+	if err := ctx.DecodeInto(&attrs); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	templateID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKTemplateID), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse %s, err: %v, rid: %s", common.BKTemplateID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKTemplateID))
+		return
+	}
+	if templateID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKTemplateID))
+		return
+	}
+
+	ids := make([]int64, 0)
+	for _, attr := range attrs {
+		if attr.ID == 0 {
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKFieldID))
+			return
+		}
+
+		ids = append(ids, attr.ID)
+	}
+	if len(ids) == 0 {
+		ctx.RespEntity(nil)
+		return
+	}
+
+	cond := mapstr.MapStr{
+		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: ids},
+		common.BKTemplateID: templateID,
+	}
+	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
+	dbTmplAttrs := make([]metadata.FieldTemplateAttr, 0)
+	err = mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(cond).All(ctx.Kit.Ctx, &dbTmplAttrs)
+	if err != nil {
+		blog.Errorf("list field template attributes failed, filter: %+v, err: %v, rid: %v", cond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+
+	dbAttrMap := make(map[int64]metadata.FieldTemplateAttr)
+	for _, dbAttr := range dbTmplAttrs {
+		dbAttrMap[dbAttr.ID] = dbAttr
+	}
+
+	for idx := range attrs {
+		dbAttr := dbAttrMap[attrs[idx].ID]
+		attrs[idx].PropertyID = dbAttr.PropertyID
+		attrs[idx].PropertyType = dbAttr.PropertyType
+		attrs[idx].OwnerID = dbAttr.OwnerID
+		attrs[idx].Creator = dbAttr.Creator
+		attrs[idx].CreateTime = dbAttr.CreateTime
+	}
+
+	if err := s.updateFieldTemplateAttrs(ctx.Kit, templateID, attrs); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+func (s *service) updateFieldTemplateAttrs(kit *rest.Kit, templateID int64, attrs []metadata.FieldTemplateAttr) error {
+	for _, attr := range attrs {
+		if err := attr.Validate(); err.ErrCode != 0 {
+			blog.Errorf("field template attribute is invalid, data: %v, err: %v, rid: %s", attr, err, kit.Rid)
+			return err.ToCCError(kit.CCError)
+		}
+
+		err := valid.ValidPropertyOption(attr.PropertyType, attr.Option, attr.IsMultiple, attr.Default, kit.Rid,
+			kit.CCError)
+		if err != nil {
+			blog.Errorf("validate field template attribute option failed, data: %v, err: %v, rid: %s", attr, err,
+				kit.Rid)
+			return err
+		}
+
+		now := time.Now()
+		attr.Modifier = kit.User
+		attr.LastTime = &metadata.Time{Time: now}
+
+		cond := mapstr.MapStr{
+			common.BKFieldID:    attr.ID,
+			common.BKTemplateID: templateID,
+		}
+
+		err = mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Update(kit.Ctx, cond, attr)
+		if err != nil {
+			blog.Errorf("update field template attribute failed, data: %v, err: %v, rid: %s", attr, err, kit.Rid)
+			return err
+		}
+	}
+
+	return nil
 }

@@ -62,7 +62,7 @@ func (s *service) ListObjFieldTmplRel(cts *rest.Contexts) {
 
 	relations := make([]metadata.ObjFieldTemplateRelation, 0)
 	err = mongodb.Client().Table(table).Find(filter).Start(uint64(opt.Page.Start)).Limit(uint64(opt.Page.Limit)).
-		Fields(opt.Fields...).All(cts.Kit.Ctx, &relations)
+		Sort(opt.Page.Sort).Fields(opt.Fields...).All(cts.Kit.Ctx, &relations)
 	if err != nil {
 		blog.Errorf("list obj field tmpl relations failed, err: %v, filter: %+v, rid: %s", err, filter, cts.Kit.Rid)
 		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
