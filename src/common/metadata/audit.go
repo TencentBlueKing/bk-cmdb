@@ -246,7 +246,8 @@ type DetailFactory interface {
 	WithName() string
 }
 
-// UnmarshalJSON TODO
+// UnmarshalJSON unmarshal AuditLog
+// NOCC:golint/fnsize(设计如此)
 func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	audit := jsonAuditLog{}
 	if err := json.Unmarshal(data, &audit); err != nil {
@@ -338,7 +339,8 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// UnmarshalBSON TODO
+// UnmarshalBSON unmarshal AuditLog
+// NOCC:golint/fnsize(设计如此)
 func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	audit := bsonAuditLog{}
 	if err := bson.Unmarshal(data, &audit); err != nil {
