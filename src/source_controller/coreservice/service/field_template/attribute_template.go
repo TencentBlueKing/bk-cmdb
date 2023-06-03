@@ -199,6 +199,7 @@ func (s *service) DeleteFieldTemplateAttrs(ctx *rest.Contexts) {
 		attrIDs = append(attrIDs, attr.ID)
 	}
 	countCond := mapstr.MapStr{common.BKObjectUniqueKeys: mapstr.MapStr{common.BKDBIN: attrIDs}}
+	countCond = util.SetModOwner(countCond, ctx.Kit.SupplierAccount)
 
 	count, err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(countCond).Count(ctx.Kit.Ctx)
 	if err != nil {
@@ -265,6 +266,12 @@ func (s *service) UpdateFieldTemplateAttrs(ctx *rest.Contexts) {
 		return
 	}
 
+	if len(ids) != len(dbTmplAttrs) {
+		blog.Errorf("field template attributes are invalid, data: %v, err: %v, rid: %v", dbTmplAttrs, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "attributes"))
+		return
+	}
+
 	dbAttrMap := make(map[int64]metadata.FieldTemplateAttr)
 	for _, dbAttr := range dbTmplAttrs {
 		dbAttrMap[dbAttr.ID] = dbAttr
@@ -288,6 +295,7 @@ func (s *service) UpdateFieldTemplateAttrs(ctx *rest.Contexts) {
 }
 
 func (s *service) updateFieldTemplateAttrs(kit *rest.Kit, templateID int64, attrs []metadata.FieldTemplateAttr) error {
+	now := time.Now()
 	for _, attr := range attrs {
 		if err := attr.Validate(); err.ErrCode != 0 {
 			blog.Errorf("field template attribute is invalid, data: %v, err: %v, rid: %s", attr, err, kit.Rid)
@@ -302,7 +310,6 @@ func (s *service) updateFieldTemplateAttrs(kit *rest.Kit, templateID int64, attr
 			return err
 		}
 
-		now := time.Now()
 		attr.Modifier = kit.User
 		attr.LastTime = &metadata.Time{Time: now}
 

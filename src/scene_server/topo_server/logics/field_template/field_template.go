@@ -172,7 +172,7 @@ func (f *template) DeleteFieldTemplate(kit *rest.Kit, id int64) error {
 	cond := metadata.DeleteOption{Condition: mapstr.MapStr{common.BKFieldID: id}}
 	ccErr = f.clientSet.CoreService().FieldTemplate().DeleteFieldTemplate(kit.Ctx, kit.Header, &cond)
 	if ccErr != nil {
-		blog.Errorf("delete field template, cond: %v, err: %v, rid: %s", cond, ccErr, kit.Rid)
+		blog.Errorf("delete field template failed, cond: %v, err: %v, rid: %s", cond, ccErr, kit.Rid)
 		return ccErr
 	}
 
@@ -201,6 +201,8 @@ func (f *template) DeleteFieldTemplateAttr(kit *rest.Kit, templateID int64, attr
 		var err error
 		expr, err = filtertools.And(expr, filtertools.GenAtomFilter(common.BKFieldID, filter.In, attrIDs))
 		if err != nil {
+			blog.Errorf("build field template attribute filter failed, data: %v, err: %v, rid: %s", attrIDs, err,
+				kit.Rid)
 			return err
 		}
 	}
@@ -232,7 +234,7 @@ func (f *template) DeleteFieldTemplateAttr(kit *rest.Kit, templateID int64, attr
 	ccErr = f.clientSet.CoreService().FieldTemplate().DeleteFieldTemplateAttr(kit.Ctx, kit.Header, templateID,
 		deleteOpt)
 	if ccErr != nil {
-		blog.Errorf("delete field template attributes, template id: %d, cond: %v, err: %v, rid: %s", templateID,
+		blog.Errorf("delete field template attributes failed, template id: %d, cond: %v, err: %v, rid: %s", templateID,
 			deleteOpt, ccErr, kit.Rid)
 		return ccErr
 	}
@@ -262,6 +264,8 @@ func (f *template) DeleteFieldTemplateUnique(kit *rest.Kit, templateID int64, un
 		var err error
 		expr, err = filtertools.And(expr, filtertools.GenAtomFilter(common.BKFieldID, filter.In, uniqueIDs))
 		if err != nil {
+			blog.Errorf("build field template unique filter failed, data: %v, err: %v, rid: %s", uniqueIDs, err,
+				kit.Rid)
 			return err
 		}
 	}
@@ -293,7 +297,7 @@ func (f *template) DeleteFieldTemplateUnique(kit *rest.Kit, templateID int64, un
 	ccErr = f.clientSet.CoreService().FieldTemplate().DeleteFieldTemplateUnique(kit.Ctx, kit.Header, templateID,
 		deleteOpt)
 	if ccErr != nil {
-		blog.Errorf("delete field template uniques, template id: %d, cond: %v, err: %v, rid: %s", templateID,
+		blog.Errorf("delete field template uniques failed, template id: %d, cond: %v, err: %v, rid: %s", templateID,
 			deleteOpt, ccErr, kit.Rid)
 		return ccErr
 	}

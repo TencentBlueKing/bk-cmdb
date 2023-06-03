@@ -41,8 +41,8 @@
     "1113052": "the selected field combination duplicates with existing rules, please do not create redundant rules",
     "1113053": "association constraint mismatch",
     "1113039": "Failed to create unique index, value [%s] duplicated",
-    "1113040": "The field template has attribute configuration",
-    "1113041": "The field template has unique configuration",
-    "1113042": "The field template has relationship with object",
+    "1113040": "The field template has attribute configuration,deletion is not allowed",
+    "1113041": "The field template has unique configuration,deletion is not allowed",
+    "1113042": "The field template has relationship with object,deletion is not allowed",
     "":""
 }

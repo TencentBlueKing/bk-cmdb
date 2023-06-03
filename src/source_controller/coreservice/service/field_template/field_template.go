@@ -384,6 +384,7 @@ func (s *service) DeleteFieldTemplate(ctx *rest.Contexts) {
 		tmplIDs = append(tmplIDs, template.ID)
 	}
 	countCond := mapstr.MapStr{common.BKTemplateID: mapstr.MapStr{common.BKDBIN: tmplIDs}}
+	countCond = util.SetModOwner(countCond, ctx.Kit.SupplierAccount)
 
 	relationCount, err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Find(countCond).
 		Count(ctx.Kit.Ctx)

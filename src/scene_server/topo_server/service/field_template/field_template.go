@@ -310,19 +310,16 @@ func (s *service) DeleteFieldTemplate(ctx *rest.Contexts) {
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.logics.FieldTemplateOperation().DeleteFieldTemplateUnique(ctx.Kit, opt.ID, nil)
 		if err != nil {
-			blog.Errorf("delete field template unique, template id: %d, err: %v, rid: %s", opt.ID, err, ctx.Kit.Rid)
 			return err
 		}
 
 		err = s.logics.FieldTemplateOperation().DeleteFieldTemplateAttr(ctx.Kit, opt.ID, nil)
 		if err != nil {
-			blog.Errorf("delete field template attribute, template id: %d, err: %v, rid: %s", opt.ID, err, ctx.Kit.Rid)
 			return err
 		}
 
 		err = s.logics.FieldTemplateOperation().DeleteFieldTemplate(ctx.Kit, opt.ID)
 		if err != nil {
-			blog.Errorf("delete field template, id: %d, err: %v, rid: %s", opt.ID, err, ctx.Kit.Rid)
 			return err
 		}
 
@@ -391,11 +388,7 @@ func (s *service) CloneFieldTemplate(ctx *rest.Contexts) {
 }
 
 func (s *service) judgeFieldTmplIsExist(kit *rest.Kit, id int64) error {
-	tmplFilter, err := filtertools.And(filtertools.GenAtomFilter(common.BKFieldID, filter.Equal, id), nil)
-	if err != nil {
-		blog.Errorf("build field template filter failed, err: %v, rid: %s", err, kit.Rid)
-		return err
-	}
+	tmplFilter := filtertools.GenAtomFilter(common.BKFieldID, filter.Equal, id)
 	tmplOpt := &metadata.CommonQueryOption{
 		CommonFilterOption: metadata.CommonFilterOption{Filter: tmplFilter},
 		Page:               metadata.BasePage{EnableCount: true},
@@ -490,7 +483,7 @@ func (s *service) UpdateFieldTemplate(ctx *rest.Contexts) {
 
 		// because deleting attribute requires deleting its unique, we need to delete the unique first.
 		if err := s.deleteFieldTmplUnique(ctx.Kit, opt.ID, opt.Uniques); err != nil {
-			blog.Errorf("delete field template unique, template id: %d, cond: %v, err: %v, rid: %s", opt.ID,
+			blog.Errorf("delete field template unique failed, template id: %d, cond: %v, err: %v, rid: %s", opt.ID,
 				opt.Uniques, err, ctx.Kit.Rid)
 			return err
 		}
@@ -529,6 +522,10 @@ func (s *service) deleteFieldTmplUnique(kit *rest.Kit, templateID int64,
 		return err
 	}
 
+	if len(dbIDMap) == 0 {
+		return nil
+	}
+
 	for _, unique := range uniques {
 		if unique.ID == 0 {
 			continue
@@ -537,19 +534,17 @@ func (s *service) deleteFieldTmplUnique(kit *rest.Kit, templateID int64,
 		delete(dbIDMap, unique.ID)
 	}
 
+	if len(dbIDMap) == 0 {
+		return nil
+	}
+
 	deleteIDs := make([]int64, 0)
 	for id := range dbIDMap {
 		deleteIDs = append(deleteIDs, id)
 	}
 
-	if len(deleteIDs) == 0 {
-		return nil
-	}
-
 	err = s.logics.FieldTemplateOperation().DeleteFieldTemplateUnique(kit, templateID, deleteIDs)
 	if err != nil {
-		blog.Errorf("delete field template unique failed, template id: %d, unique ids: %v, err: %v, rid: %s",
-			templateID, deleteIDs, err, kit.Rid)
 		return err
 	}
 
@@ -557,11 +552,7 @@ func (s *service) deleteFieldTmplUnique(kit *rest.Kit, templateID int64,
 }
 
 func (s *service) getFieldTmplUniqueIDs(kit *rest.Kit, templateID int64) (map[int64]struct{}, error) {
-	uniqueFilter, err := filtertools.And(filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, templateID), nil)
-	if err != nil {
-		blog.Errorf("list field template uniques failed, id: %d, err: %v, rid: %s", templateID, err, kit.Rid)
-		return nil, err
-	}
+	uniqueFilter := filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, templateID)
 	listOpt := &metadata.CommonQueryOption{
 		CommonFilterOption: metadata.CommonFilterOption{Filter: uniqueFilter},
 		Page:               metadata.BasePage{Limit: common.BKNoLimit},
@@ -594,8 +585,6 @@ func (s *service) updateFieldTmplAttr(kit *rest.Kit, templateID int64, attrs []m
 	if len(attrOp.deleteAttrIDs) != 0 {
 		err = s.logics.FieldTemplateOperation().DeleteFieldTemplateAttr(kit, templateID, attrOp.deleteAttrIDs)
 		if err != nil {
-			blog.Errorf("delete field template attribute failed, template id: %d, attribute ids: %v, err: %v, rid: %s",
-				templateID, attrOp.deleteAttrIDs, err, kit.Rid)
 			return nil, err
 		}
 	}
@@ -711,11 +700,7 @@ func (s *service) getFieldTmplAttrOperation(kit *rest.Kit, templateID int64, att
 }
 
 func (s *service) getFieldTmplAttrIDs(kit *rest.Kit, templateID int64) (map[int64]struct{}, error) {
-	attrFilter, err := filtertools.And(filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, templateID), nil)
-	if err != nil {
-		blog.Errorf("list field template attribute failed, id: %d, err: %v, rid: %s", templateID, err, kit.Rid)
-		return nil, err
-	}
+	attrFilter := filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, templateID)
 	listOpt := &metadata.CommonQueryOption{
 		CommonFilterOption: metadata.CommonFilterOption{Filter: attrFilter},
 		Page:               metadata.BasePage{Limit: common.BKNoLimit},
@@ -739,6 +724,10 @@ func (s *service) getFieldTmplAttrIDs(kit *rest.Kit, templateID int64) (map[int6
 // updateFieldTmplUnique contains update and create field template unique
 func (s *service) updateFieldTmplUnique(kit *rest.Kit, templateID int64, propertyIDToIDMap map[string]int64,
 	uniques []metadata.FieldTmplUniqueOption) error {
+
+	if len(uniques) == 0 {
+		return nil
+	}
 
 	updateUniques := make([]metadata.FieldTemplateUnique, 0)
 	createUniques := make([]metadata.FieldTemplateUnique, 0)

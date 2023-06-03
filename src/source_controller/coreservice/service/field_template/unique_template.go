@@ -271,6 +271,10 @@ func (s *service) DeleteFieldTemplateUniques(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKTemplateID))
 		return
 	}
+	if templateID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKTemplateID))
+		return
+	}
 
 	cond := util.SetModOwner(opt.Condition, ctx.Kit.SupplierAccount)
 	cond[common.BKTemplateID] = templateID
@@ -317,10 +321,6 @@ func (s *service) UpdateFieldTemplateUniques(ctx *rest.Contexts) {
 
 		ids = append(ids, unique.ID)
 	}
-	if len(ids) == 0 {
-		ctx.RespEntity(nil)
-		return
-	}
 
 	cond := mapstr.MapStr{
 		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: ids},
@@ -332,6 +332,12 @@ func (s *service) UpdateFieldTemplateUniques(ctx *rest.Contexts) {
 	if err != nil {
 		blog.Errorf("list field template uniques failed, filter: %+v, err: %v, rid: %v", cond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+
+	if len(ids) != len(dbTmplUniques) {
+		blog.Errorf("field template uniques are invalid, data: %v, err: %v, rid: %v", uniques, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "uniques"))
 		return
 	}
 
@@ -363,8 +369,8 @@ func (s *service) updateFieldTemplateUniques(kit *rest.Kit, templateID int64,
 		return err
 	}
 
+	now := time.Now()
 	for _, unique := range uniques {
-		now := time.Now()
 		unique.Modifier = kit.User
 		unique.LastTime = &metadata.Time{Time: now}
 

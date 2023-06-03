@@ -40,8 +40,8 @@ type FieldTemplate struct {
 }
 
 const (
-	fieldTemplateNameMaxLen = 15
-	fieldTemplateDesMaxLen  = 100
+	fieldTemplateNameMaxLen = 128
+	fieldTemplateDesMaxLen  = 2000
 )
 
 // Validate validate FieldTemplate
