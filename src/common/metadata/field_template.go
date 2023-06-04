@@ -24,6 +24,7 @@ import (
 
 	"configcenter/src/common"
 	ccErr "configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 )
 
 // FieldTemplate field template definition
@@ -482,4 +483,180 @@ type FieldTemplateUniqueInfo struct {
 type ListFieldTmplUniqueResp struct {
 	BaseResp `json:",inline"`
 	Data     FieldTemplateUniqueInfo `json:"data"`
+}
+
+// ListObjFieldTmplRelOption list field template and object relation option
+type ListObjFieldTmplRelOption struct {
+	TemplateIDs []int64 `json:"bk_template_ids"`
+	ObjectIDs   []int64 `json:"object_ids"`
+}
+
+// Validate list field template and object relation option
+func (l *ListObjFieldTmplRelOption) Validate() ccErr.RawErrorInfo {
+	if len(l.TemplateIDs) == 0 && len(l.ObjectIDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_template_ids and object_ids"},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// ObjFieldTmplRelInfo field template and object relation info for list apis
+type ObjFieldTmplRelInfo struct {
+	Count uint64                     `json:"count"`
+	Info  []ObjFieldTemplateRelation `json:"info"`
+}
+
+// ListObjFieldTmplRelResp list field template and object relation response
+type ListObjFieldTmplRelResp struct {
+	BaseResp `json:",inline"`
+	Data     ObjFieldTmplRelInfo `json:"data"`
+}
+
+// ListFieldTmplByObjOption list field template by related object option
+type ListFieldTmplByObjOption struct {
+	ObjectID int64 `json:"object_id"`
+}
+
+// Validate list field template by related object option
+func (l *ListFieldTmplByObjOption) Validate() ccErr.RawErrorInfo {
+	if l.ObjectID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.ObjectIDField},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// ListObjByFieldTmplOption list object by related field template option
+type ListObjByFieldTmplOption struct {
+	TemplateID        int64 `json:"bk_template_id"`
+	CommonQueryOption `json:",inline"`
+}
+
+// Validate list object by related field template option
+func (l *ListObjByFieldTmplOption) Validate() ccErr.RawErrorInfo {
+	if l.TemplateID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+
+	if rawErr := l.CommonQueryOption.Validate(); rawErr.ErrCode != 0 {
+		return rawErr
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// CompareFieldTmplAttrOption compare field template attribute with object option
+type CompareFieldTmplAttrOption struct {
+	TemplateID int64               `json:"bk_template_id"`
+	ObjectID   int64               `json:"object_id"`
+	Attrs      []FieldTemplateAttr `json:"attributes"`
+}
+
+// Validate compare field template attribute with object option
+func (l *CompareFieldTmplAttrOption) Validate() ccErr.RawErrorInfo {
+	if l.TemplateID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+
+	if l.ObjectID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKObjIDField},
+		}
+	}
+
+	if len(l.Attrs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"attributes"},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// CompareFieldTmplAttrsRes compare field template attributes with object result
+type CompareFieldTmplAttrsRes struct {
+	Create    []CompareOneFieldTmplAttrRes `json:"create"`
+	Update    []CompareOneFieldTmplAttrRes `json:"update"`
+	Conflict  []CompareOneFieldTmplAttrRes `json:"conflict"`
+	Unchanged []Attribute                  `json:"unchanged"`
+}
+
+// CompareOneFieldTmplAttrRes compare one field template attribute with object result
+type CompareOneFieldTmplAttrRes struct {
+	// Index field template's original index in input attribute array
+	Index int `json:"index"`
+	// PropertyID field template attribute property id
+	PropertyID string `json:"bk_property_id"`
+	// Message conflict message
+	Message string `json:"message,omitempty"`
+	// Data original data of object for update/conflict attribute
+	Data *Attribute `json:"data,omitempty"`
+	// UpdateData to be updated attribute data
+	UpdateData mapstr.MapStr `json:"update_data,omitempty"`
+}
+
+// CompareFieldTmplUniqueOption compare field template unique with object option
+type CompareFieldTmplUniqueOption struct {
+	TemplateID int64                      `json:"bk_template_id"`
+	ObjectID   int64                      `json:"object_id"`
+	Uniques    []FieldTmplUniqueForUpdate `json:"uniques"`
+}
+
+// FieldTmplUniqueForUpdate field template unique for field template update scenario.
+type FieldTmplUniqueForUpdate struct {
+	ID int64 `json:"id"`
+	// some related attributes may not be created yet, so we can only use property id for keys
+	// field template attr with the same property id can not be recreated, so property id can uniques identify an attr
+	Keys []string `json:"keys"`
+}
+
+// Validate compare field template unique with object option
+func (l *CompareFieldTmplUniqueOption) Validate() ccErr.RawErrorInfo {
+	if l.TemplateID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+
+	if l.ObjectID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.ObjectIDField},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// CompareFieldTmplUniquesRes compare field template uniques with object result
+type CompareFieldTmplUniquesRes struct {
+	Create    []CompareOneFieldTmplUniqueRes `json:"create"`
+	Update    []CompareOneFieldTmplUniqueRes `json:"update"`
+	Conflict  []CompareOneFieldTmplUniqueRes `json:"conflict"`
+	Unchanged []ObjectUnique                 `json:"unchanged"`
+}
+
+// CompareOneFieldTmplUniqueRes compare one field template unique with object result
+type CompareOneFieldTmplUniqueRes struct {
+	// Index field template's original index in input unique array
+	Index int `json:"index"`
+	// Message conflict message
+	Message string `json:"message,omitempty"`
+	// Data original data of object for update/conflict unique
+	Data *ObjectUnique `json:"data,omitempty"`
 }

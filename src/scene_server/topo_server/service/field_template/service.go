@@ -62,4 +62,18 @@ func InitFieldTemplate(c *capability.Capability) {
 	// field template unique
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/unique",
 		Handler: s.ListFieldTemplateUnique})
+
+	// field template relation
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/object/relation",
+		Handler: s.ListObjFieldTmplRel})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/by_object",
+		Handler: s.ListFieldTmplByObj})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/object/by_field_template",
+		Handler: s.ListObjByFieldTmpl})
+
+	// compare field template with object
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/attribute/difference",
+		Handler: s.CompareFieldTemplateAttr})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/unique/difference",
+		Handler: s.CompareFieldTemplateUnique})
 }

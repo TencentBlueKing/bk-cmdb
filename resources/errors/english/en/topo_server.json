@@ -144,5 +144,7 @@
 	"1101122": "The field [%d] inherits from the template [%d] and cannot be deleted",
 	"1101123": "The unique index [%d] is inherited from the template [%d] and cannot be deleted",
 	"1101124": "Synchronization task [%d] is running, deactivating the model[%d] is not allowed",
+	"1101125": "Object attribute(id: %d) '%s' property conflicts with field template attribute(bk_property_id: %s)",
+	"1101126": "Object unique(id: %d) conflicts with field template unique(keys: %+v)",
 	"": ""
 }
