@@ -395,7 +395,7 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
-// CascadeDeleteModel 将会删除模型/模型属性/属性分组/唯一校验
+// CascadeDeleteModel 将会删除模型/模型属性/属性分组/唯一校验/模型继承的模版相关数据
 func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metadata.DeletedCount, error) {
 	// NOTE: just single model cascade delete action now.
 	deleteCondMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
@@ -453,66 +453,71 @@ func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metada
 	}
 
 	// handling scenarios where model attributes inherit from field templates
-	if err := m.dealModelAttrInheritTemplate(kit, modelID, "", false); err != nil {
+	if err := m.dealModelAttrInheritTemplate(kit, modelID, false); err != nil {
 		return nil, err
 	}
 
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
-func (m *modelManager) dealModelAttrInheritTemplate(kit *rest.Kit, modelID int64, objID string, isStop bool) error {
+func (m *modelManager) getObjFieldTemplateRelation(kit *rest.Kit, modelID int64) ([]int64, error) {
 
 	result := make([]metadata.ObjFieldTemplateRelation, 0)
 	filter := mapstr.MapStr{
 		common.ObjectIDField: modelID,
 	}
 
-	err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Find(filter).All(kit.Ctx, &result)
-	if err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Find(filter).
+		Fields(common.BKTemplateID).All(kit.Ctx, &result); err != nil {
 		blog.Errorf("failed to get object and relation, filter: (%#v), err: %v, rid: %s", filter, err, kit.Rid)
-		return kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
+		return nil, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
 	if len(result) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	templateIDs := make([]int64, 0)
 	for _, relation := range result {
 		templateIDs = append(templateIDs, relation.TemplateID)
 	}
+	return templateIDs, nil
+}
+
+func (m *modelManager) isExistProcessingTask(kit *rest.Kit, modelID int64, isStop bool) error {
+	if !isStop {
+		return nil
+	}
+
+	templateIDs, err := m.getObjFieldTemplateRelation(kit, modelID)
+	if err != nil {
+		return err
+	}
 
 	if err := dealProcessRunningTasks(kit, templateIDs, modelID, isStop); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (m *modelManager) dealModelAttrInheritTemplate(kit *rest.Kit, modelID int64, isStop bool) error {
+
+	templateIDs, err := m.getObjFieldTemplateRelation(kit, modelID)
+	if err != nil {
+		return err
+	}
+	if err := dealProcessRunningTasks(kit, templateIDs, modelID, isStop); err != nil {
+		return err
+	}
+
+	filter := mapstr.MapStr{
+		common.ObjectIDField: modelID,
 	}
 
 	// delete object field template relation
 	if err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Delete(kit.Ctx, filter); err != nil {
 		blog.Errorf("delete model field template relation failed, cond: %v, err: %v, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBDeleteFailed)
-	}
-
-	if !isStop {
-		return nil
-	}
-
-	// 将此模型中涉及到的字段templateID置为0
-	cond := mapstr.MapStr{
-		common.BKObjIDField: objID,
-	}
-
-	updateData := mapstr.MapStr{
-		common.BKTemplateID:  0,
-		common.LastTimeField: time.Now(),
-	}
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Update(kit.Ctx, cond, updateData); err != nil {
-		blog.Errorf("update data failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
-		return err
-	}
-
-	if err := mongodb.Client().Table(common.BKTableNameObjUnique).Update(kit.Ctx, cond, updateData); err != nil {
-		blog.Errorf("update data failed, cond: %+v, data: %#v, err: %v, rid: %s", cond, &updateData, err, kit.Rid)
-		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
 
 	return nil

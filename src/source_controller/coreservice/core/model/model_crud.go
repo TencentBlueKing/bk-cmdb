@@ -75,24 +75,25 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
-	pausedFlag := true
+	// 停用模型 pausedFlag 为 true
+	pausedFlag := false
 
 	paused, exist := data[metadata.ModelFieldIsPaused]
-	if !exist {
-		pausedFlag = false
-	}
-	_, ok := paused.(bool)
-	if exist && !ok {
-		blog.Errorf("attr(%v) type error, type: %v, rid: %s", metadata.ModelFieldIsPaused,
-			reflect.TypeOf(paused), kit.Rid)
-		return 0, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ModelFieldIsPaused)
+	if exist {
+		flag, ok := paused.(bool)
+		if exist && !ok {
+			blog.Errorf("attr(%v) type error, type: %v, rid: %s", metadata.ModelFieldIsPaused,
+				reflect.TypeOf(paused), kit.Rid)
+			return 0, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ModelFieldIsPaused)
+		}
+		pausedFlag = flag
 	}
 
 	objName, objNameExist := data[common.BKObjNameField]
 
 	if (objNameExist && len(util.GetStrByInterface(objName)) > 0) || pausedFlag {
 		for _, model := range models {
-			if err := m.dealModelAttrInheritTemplate(kit, model.ID, model.ObjectID, pausedFlag); err != nil {
+			if err := m.isExistProcessingTask(kit, model.ID, pausedFlag); err != nil {
 				return 0, err
 			}
 

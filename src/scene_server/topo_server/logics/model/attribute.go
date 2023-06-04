@@ -964,7 +964,7 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKPropertyIDField)
 	}
 
-	if err := a.validateAttr(kit, data, attrID); err != nil {
+	if err := a.canAttrsUpdate(kit, data, attrID); err != nil {
 		return err
 	}
 
@@ -1092,12 +1092,14 @@ func (a *attribute) saveUpdateTableLog(kit *rest.Kit, data mapstr.MapStr, objID 
 	return nil
 }
 
-func (a *attribute) getModelAttr(kit *rest.Kit, attrID int64) (*metadata.Attribute, error) {
+func (a *attribute) getTemplateIDByObjectAttrID(kit *rest.Kit, attrID int64, fields []string) (
+	*metadata.FieldTemplateAttr, error) {
+
 	queryCond := &metadata.QueryCondition{
 		Condition:      mapstr.MapStr{common.BKFieldID: attrID},
 		DisableCounter: true,
 		Page:           metadata.BasePage{Limit: common.BKNoLimit},
-		Fields:         []string{common.BKPropertyIDField, common.BKTemplateID},
+		Fields:         []string{common.BKTemplateID},
 	}
 	resp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, queryCond)
 	if err != nil {
@@ -1114,25 +1116,104 @@ func (a *attribute) getModelAttr(kit *rest.Kit, attrID int64) (*metadata.Attribu
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject, "object_attr")
 	}
 
-	if resp.Info[0].PropertyID == "" {
+	cond := filtertools.GenAtomFilter(common.BKFieldID, filter.Equal, resp.Info[0].TemplateID)
+
+	listOpt := &metadata.CommonQueryOption{
+		CommonFilterOption: metadata.CommonFilterOption{Filter: cond},
+		Page:               metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:             fields,
+	}
+	// list field template attributes
+	res, err := a.clientSet.CoreService().FieldTemplate().ListFieldTemplateAttr(kit.Ctx, kit.Header, listOpt)
+	if err != nil {
+		blog.Errorf("list field template attributes failed, opt: %+v, err: %v, rid: %s", listOpt, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(res.Info) == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound, "template_attr")
+	}
+
+	if len(res.Info) > 1 {
+		blog.Errorf("multi object attr founded, cond: %+v, rid: %s", listOpt, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject, "field_template_attr")
+	}
+
+	return &res.Info[0], nil
+}
+
+//func (a *attribute) canAttrsUpdate1(kit *rest.Kit, input mapstr.MapStr, attrID int64) error {
+//
+//	fields := make([]string, 0)
+//	if _, ok := input[metadata.AttributeFieldIsRequired].(bool); ok {
+//		fields = append(fields, metadata.AttributeFieldIsRequired)
+//	}
+//
+//	if _, ok := input[metadata.AttributeFieldIsEditable].(bool); ok {
+//		fields = append(fields, metadata.AttributeFieldIsEditable)
+//	}
+//
+//	if _, ok := input[metadata.AttributeFieldPlaceHolder].(string); ok {
+//		fields = append(fields, metadata.AttributeFieldPlaceHolder)
+//	}
+//	if len(fields) == 0 {
+//		return nil
+//	}
+//
+//	templateAttr, err := a.getTemplateIDByObjectAttrID(kit, attrID, fields)
+//	if err != nil {
+//		return err
+//	}
+//
+//	for _, field := range fields {
+//		switch field {
+//		case metadata.AttributeFieldPlaceHolder:
+//			if templateAttr.Placeholder.Lock {
+//				input.Remove(field)
+//			}
+//		case metadata.AttributeFieldIsEditable:
+//			if templateAttr.Editable.Lock {
+//				input.Remove(field)
+//			}
+//		case metadata.AttributeFieldIsRequired:
+//			if templateAttr.Required.Lock {
+//				input.Remove(field)
+//			}
+//		}
+//	}
+//
+//	return nil
+//}
+
+func (a *attribute) getModelAttrByID(kit *rest.Kit, attrID int64) (*metadata.Attribute, error) {
+	queryCond := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.BKFieldID: attrID},
+		DisableCounter: true,
+		Page:           metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:         []string{common.BKTemplateID},
+	}
+	resp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, queryCond)
+	if err != nil {
+		blog.Errorf("get object attr failed, cond: %+v, err: %v, rid: %s", queryCond, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(resp.Info) == 0 {
+		blog.Errorf("no object attr founded, cond: %+v, err: %v, rid: %s", queryCond, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound, "object_attr")
+	}
+	if len(resp.Info) > 1 {
 		blog.Errorf("multi object attr founded, cond: %+v, err: %v, rid: %s", queryCond, err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKPropertyIDField)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject, "object_attr")
 	}
 
 	return &resp.Info[0], nil
 }
 
-func (a *attribute) getFieldTemplateAttr(kit *rest.Kit, propertyID string, templateID int64, fields []string) (
+func (a *attribute) getFieldTemplateAttr(kit *rest.Kit, templateID int64, fields []string) (
 	*metadata.FieldTemplateAttr, error) {
-	attrCond := filtertools.GenAtomFilter(common.BKPropertyIDField, filter.Equal, propertyID)
-	templateCond := filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, templateID)
-	cond, err := filtertools.And(templateCond, attrCond)
-	if err != nil {
-		blog.Errorf("generate filter failed, templateID: %d, propertyID: %s, err: %v, rid: %s", templateID,
-			propertyID, err, kit.Rid)
-		return nil, err
-	}
 
+	cond := filtertools.GenAtomFilter(common.BKFieldID, filter.Equal, templateID)
 	listOpt := &metadata.CommonQueryOption{
 		CommonFilterOption: metadata.CommonFilterOption{Filter: cond},
 		Page:               metadata.BasePage{Limit: common.BKNoLimit},
@@ -1147,7 +1228,7 @@ func (a *attribute) getFieldTemplateAttr(kit *rest.Kit, propertyID string, templ
 	}
 
 	if len(res.Info) == 0 {
-		return nil, nil
+		return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 	}
 
 	if len(res.Info) > 1 {
@@ -1157,12 +1238,18 @@ func (a *attribute) getFieldTemplateAttr(kit *rest.Kit, propertyID string, templ
 	return &res.Info[0], nil
 }
 
-func (a *attribute) validateAttr(kit *rest.Kit, input mapstr.MapStr, attrID int64) error {
+func (a *attribute) canAttrsUpdate(kit *rest.Kit, input mapstr.MapStr, attrID int64) error {
 
-	attr, err := a.getModelAttr(kit, attrID)
+	attr, err := a.getModelAttrByID(kit, attrID)
 	if err != nil {
 		return err
 	}
+
+	// 1、模型上自己管理的属性直接放行
+	if attr.TemplateID == 0 {
+		return nil
+	}
+
 	data := mapstr.NewFromMap(input)
 
 	fields := make([]string, 0)
@@ -1177,37 +1264,35 @@ func (a *attribute) validateAttr(kit *rest.Kit, input mapstr.MapStr, attrID int6
 		fields = append(fields, metadata.AttributeFieldPlaceHolder)
 	}
 
-	fieldTemplate, err := a.getFieldTemplateAttr(kit, attr.PropertyID, attr.TemplateID, fields)
+	// 2、AttributeFieldIsRequired\AttributeFieldIsEditable\AttributeFieldPlaceHolder may be allowed
+	// to be modified, the update operation does not have the above attributes to return an error
+	if len(fields) == 0 {
+		blog.Errorf("validate attr failed, data: %+v, rid: %s", data, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, "data")
+	}
+
+	blog.ErrorJSON("00000000000 fields: %s", fields)
+	templateAttr, err := a.getFieldTemplateAttr(kit, attr.TemplateID, fields)
 	if err != nil {
 		return err
 	}
 
-	if fieldTemplate == nil {
-		return nil
-	}
-
-	if len(fields) == 0 {
-		if len(data) > 0 {
-			blog.Errorf("validate attr failed, data: %+v, rid: %s", data, kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, "data")
-		}
-		return nil
-	}
-
+	// 3、whether the corresponding lock in the attribute is false, if it is false,
+	// it can be updated, otherwise it cannot be updated
 	for _, field := range fields {
 		switch field {
 		case metadata.AttributeFieldPlaceHolder:
-			if fieldTemplate.Placeholder.Lock {
+			if templateAttr.Placeholder.Lock {
 				blog.Errorf("validate attr failed, data: %+v, field: %v, rid: %s", data, field, kit.Rid)
 				return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, metadata.AttributeFieldPlaceHolder)
 			}
 		case metadata.AttributeFieldIsEditable:
-			if fieldTemplate.Editable.Lock {
+			if templateAttr.Editable.Lock {
 				blog.Errorf("validate attr  failed, data: %+v, field: %v, rid: %s", data, field, kit.Rid)
 				return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, metadata.AttributeFieldIsEditable)
 			}
 		case metadata.AttributeFieldIsRequired:
-			if fieldTemplate.Required.Lock {
+			if templateAttr.Required.Lock {
 				blog.Errorf("validate attr failed, data: %+v, field: %v rid: %s", data, field, kit.Rid)
 				return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, metadata.AttributeFieldIsRequired)
 			}
@@ -1215,6 +1300,7 @@ func (a *attribute) validateAttr(kit *rest.Kit, input mapstr.MapStr, attrID int6
 		data.Remove(field)
 	}
 
+	// delete irrelevant keys
 	data.Remove(common.CreatorField)
 	data.Remove(common.CreateTimeField)
 	data.Remove(common.ModifierField)
@@ -1224,11 +1310,9 @@ func (a *attribute) validateAttr(kit *rest.Kit, input mapstr.MapStr, attrID int6
 	data.Remove(common.BKFieldID)
 	data.Remove(common.BKPropertyTypeField)
 	data.Remove(common.BKPropertyIDField)
-	data.Remove(common.BKPropertyNameField)
 	data.Remove(common.BKObjIDField)
 
-	// After removing the above irrelevant key, check whether
-	// there is a value, and report an error if there is a value.
+	// After removing the above irrelevant key, check whether there is a value, and report an error if there is a value.
 	if len(data) > 0 {
 		blog.Errorf("validate attr failed, data: %+v, rid: %s", data, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, "data")
@@ -1249,7 +1333,7 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 		return err
 	}
 
-	if err := a.validateAttr(kit, data, attID); err != nil {
+	if err := a.canAttrsUpdate(kit, data, attID); err != nil {
 		return err
 	}
 

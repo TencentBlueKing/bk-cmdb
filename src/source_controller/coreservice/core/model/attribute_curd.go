@@ -660,8 +660,9 @@ func (m *modelAttribute) checkOrganizationTypeDefaultValue(kit *rest.Kit, attrib
 	return nil
 }
 
-func (m *modelAttribute) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
-	err = m.checkUpdate(kit, data, cond)
+func (m *modelAttribute) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition, isSync bool) (
+	cnt uint64, err error) {
+	err = m.checkUpdate(kit, data, cond, isSync)
 	if err != nil {
 		blog.ErrorJSON("checkUpdate error. data:%s, cond:%s, rid:%s", data, cond, kit.Rid)
 		return cnt, err
@@ -1134,7 +1135,7 @@ func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) 
 
 // checkTableAttrUpdate delete the field that cannot be updated, check whether the field is repeated
 func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
-	cond universalsql.Condition) (err error) {
+	cond universalsql.Condition, isSync bool) (err error) {
 
 	dbAttributeArr, err := m.search(kit, cond)
 	if err != nil {
@@ -1183,7 +1184,7 @@ func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
 		return err
 	}
 
-	if err = checkAttrTemplateID(kit, data, attr.ID); err != nil {
+	if err = checkAttrTemplateID(kit, data, attr.ID, isSync); err != nil {
 		return err
 	}
 
@@ -1210,10 +1211,17 @@ func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
 	return err
 }
 
-func checkAttrTemplateID(kit *rest.Kit, data mapstr.MapStr, attrID int64) error {
+func checkAttrTemplateID(kit *rest.Kit, data mapstr.MapStr, attrID int64, isSync bool) error {
+
+	// non-field template synchronization scenarios do not need
+	// to check the validity of the template id
+	if !isSync {
+		return nil
+	}
+
 	templateID, exists := data.Get(common.BKTemplateID)
 	if !exists {
-		return nil
+		return kit.CCError.Errorf(common.CCErrCommParamsInvalid, "is_sync")
 	}
 
 	tID, err := util.GetInt64ByInterface(templateID)
@@ -1222,7 +1230,7 @@ func checkAttrTemplateID(kit *rest.Kit, data mapstr.MapStr, attrID int64) error 
 		return err
 	}
 
-	if tID != 0 {
+	if tID == 0 {
 		blog.Errorf("templateID field is invalid, templateID: %v, rid: %s", templateID, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteAttr, attrID, tID)
 	}
@@ -1305,7 +1313,8 @@ func checkPropertyGroup(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []meta
 }
 
 // checkUpdate delete the field that cannot be updated, check whether the field is repeated
-func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (err error) {
+func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition,
+	isSync bool) (err error) {
 
 	dbAttributeArr, err := m.search(kit, cond)
 	if err != nil {
@@ -1365,7 +1374,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		return err
 	}
 
-	if err = checkAttrTemplateID(kit, data, attribute.ID); err != nil {
+	if err = checkAttrTemplateID(kit, data, attribute.ID, isSync); err != nil {
 		return err
 	}
 

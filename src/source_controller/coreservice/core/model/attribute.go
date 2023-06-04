@@ -152,7 +152,6 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 
 	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, attr *metadata.Attribute) {
 		dataResult.CreateManyInfoResult.Exceptions = append(dataResult.CreateManyInfoResult.Exceptions,
-
 			metadata.ExceptionResult{
 				OriginIndex: idx,
 				Message:     err.Error(),
@@ -168,7 +167,6 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 		locked, err := locker.Lock(redisKey, time.Second*35)
 		defer locker.Unlock()
 		if err != nil {
-
 			blog.Errorf("get create model look failed. err: %v, input: %+v, rid: %s", err, inputParam, kit.Rid)
 			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommRedisOPErr), &attr)
 			continue
@@ -179,11 +177,11 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr, msg), &attr)
 			continue
 		}
-
-		if attr.TemplateID != 0 {
-			blog.Errorf("the template id field is invalid, attr: %+v, rid: %s", attr, kit.Rid)
-			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
-		}
+		// todo： 这个pr先不处理，下个PR会改协议后区分来源请求的场景是同步模版还是直连调
+		//if attr.TemplateID != 0 {
+		//	blog.Errorf("the template id field is invalid, attr: %+v, rid: %s", attr, kit.Rid)
+		//	addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+		//}
 
 		if attr.IsPre {
 			if attr.PropertyID == common.BKInstNameField {
@@ -204,10 +202,7 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 
 		if exists {
 			dataResult.CreateManyInfoResult.Repeated = append(dataResult.CreateManyInfoResult.Repeated,
-				metadata.RepeatedDataResult{
-					OriginIndex: int64(attrIdx),
-					Data:        mapstr.NewFromStruct(attr, "field"),
-				})
+				metadata.RepeatedDataResult{OriginIndex: int64(attrIdx), Data: mapstr.NewFromStruct(attr, "field")})
 			continue
 		}
 		id, err := m.save(kit, attr)
@@ -218,11 +213,7 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 		}
 
 		dataResult.CreateManyInfoResult.Created = append(dataResult.CreateManyInfoResult.Created,
-
-			metadata.CreatedDataResult{
-				OriginIndex: int64(attrIdx),
-				ID:          id,
-			})
+			metadata.CreatedDataResult{OriginIndex: int64(attrIdx), ID: id})
 	}
 
 	return dataResult, nil
@@ -264,7 +255,7 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string,
 			cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: kit.SupplierAccount})
 			cond.Element(&mongo.Eq{Key: metadata.AttributeFieldID, Val: existsAttr.ID})
 
-			_, err := m.update(kit, mapstr.NewFromStruct(attr, "field"), cond)
+			_, err := m.update(kit, mapstr.NewFromStruct(attr, "field"), cond, false)
 			if err != nil {
 				blog.Errorf("update the attribute(%#v) by the condition(%#v) failed, err: %v, rid: %s", attr,
 					cond.ToMapStr(), err, kit.Rid)
@@ -312,7 +303,7 @@ func (m *modelAttribute) UpdateModelAttributes(kit *rest.Kit, objID string,
 		return &metadata.UpdatedCount{}, err
 	}
 
-	cnt, err := m.update(kit, inputParam.Data, cond)
+	cnt, err := m.update(kit, inputParam.Data, cond, inputParam.IsSync)
 	if err != nil {
 		blog.ErrorJSON("update attributes failed, model: %s, attributes: %+v, condition: %+v, err: %v, rid: %s",
 			objID, inputParam.Data, cond, err, kit.Rid)
@@ -402,7 +393,7 @@ func (m *modelAttribute) UpdateModelAttributesByCondition(kit *rest.Kit, inputPa
 		return &metadata.UpdatedCount{}, err
 	}
 
-	cnt, err := m.update(kit, inputParam.Data, cond)
+	cnt, err := m.update(kit, inputParam.Data, cond, inputParam.IsSync)
 	if err != nil {
 		blog.Errorf("failed to update fields (%#v) by condition(%#v), err: %v, rid: %s", inputParam.Data,
 			cond.ToMapStr(), err, kit.Rid)
@@ -508,7 +499,7 @@ func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam me
 		return err
 	}
 
-	if err := m.updateTableAttr(kit, inputParam.UpdateData, cond); err != nil {
+	if err := m.updateTableAttr(kit, inputParam.UpdateData, cond, inputParam.IsSync); err != nil {
 		blog.Errorf("failed to update fields (%#v) by condition(%#v), err: %v, rid: %s",
 			inputParam.UpdateData, cond.ToMapStr(), err, kit.Rid)
 		return err
@@ -581,13 +572,14 @@ func (m *modelAttribute) unsetTableInstAttr(kit *rest.Kit, data mapstr.MapStr, a
 	return nil
 }
 
-func (m *modelAttribute) updateTableAttr(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) error {
+func (m *modelAttribute) updateTableAttr(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition,
+	isSync bool) error {
 
 	if len(data) == 0 {
 		return nil
 	}
 
-	err := m.checkTableAttrUpdate(kit, data, cond)
+	err := m.checkTableAttrUpdate(kit, data, cond, isSync)
 	if err != nil {
 		blog.Errorf("checkUpdate error. data: %+v, cond: %+v, err: %v, rid:%s", data, cond, err, kit.Rid)
 		return err

@@ -199,7 +199,7 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 	}
 
 	if err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Insert(kit.Ctx, rows); err != nil {
-		blog.Errorf("create  failed, db insert failed, doc: %+v, err: %+v, rid: %s", rows, err, kit.Rid)
+		blog.Errorf("create failed, db insert failed, doc: %+v, err: %+v, rid: %s", rows, err, kit.Rid)
 		ctx.RespAutoError(kit.CCError.CCError(common.CCErrCommDBInsertFailed))
 		return
 	}
