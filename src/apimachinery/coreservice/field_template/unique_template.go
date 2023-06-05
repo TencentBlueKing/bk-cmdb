@@ -74,3 +74,53 @@ func (t template) CreateFieldTemplateUniques(ctx context.Context, h http.Header,
 
 	return &resp.Data, nil
 }
+
+// DeleteFieldTemplateUnique delete field template unique
+func (t template) DeleteFieldTemplateUnique(ctx context.Context, h http.Header, templateID int64,
+	opt *metadata.DeleteOption) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+
+	err := t.client.Delete().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/delete/field_template/%d/uniques", templateID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateFieldTemplateUniques update field template uniques
+func (t template) UpdateFieldTemplateUniques(ctx context.Context, h http.Header, templateID int64,
+	opt []metadata.FieldTemplateUnique) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+
+	err := t.client.Put().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/update/field_template/%d/uniques", templateID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
