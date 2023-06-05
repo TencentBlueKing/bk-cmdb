@@ -39,8 +39,8 @@ type FieldTemplateOperation interface {
 	CompareFieldTemplateUnique(kit *rest.Kit, opt *metadata.CompareFieldTmplUniqueOption, forUI bool) (
 		*metadata.CompareFieldTmplUniquesRes, error)
 	DeleteFieldTemplate(kit *rest.Kit, id int64) error
-	DeleteFieldTemplateAttr(kit *rest.Kit, templateID int64, attrIDs []int64) error
-	DeleteFieldTemplateUnique(kit *rest.Kit, templateID int64, uniques []int64) error
+	DeleteFieldTemplateAttr(kit *rest.Kit, templateID int64, attrIDs []int64, needAuditLog bool) error
+	DeleteFieldTemplateUnique(kit *rest.Kit, templateID int64, uniques []int64, needAuditLog bool) error
 	UpdateFieldTemplateInfo(kit *rest.Kit, template *metadata.FieldTemplate) error
 }
 
@@ -195,7 +195,7 @@ func (f *template) DeleteFieldTemplate(kit *rest.Kit, id int64) error {
 }
 
 // DeleteFieldTemplateAttr delete field template attribute
-func (f *template) DeleteFieldTemplateAttr(kit *rest.Kit, templateID int64, attrIDs []int64) error {
+func (f *template) DeleteFieldTemplateAttr(kit *rest.Kit, templateID int64, attrIDs []int64, needAuditLog bool) error {
 	expr := filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, templateID)
 	if len(attrIDs) != 0 {
 		var err error
@@ -239,6 +239,10 @@ func (f *template) DeleteFieldTemplateAttr(kit *rest.Kit, templateID int64, attr
 		return ccErr
 	}
 
+	if !needAuditLog {
+		return nil
+	}
+
 	// generate and save audit log
 	audit := auditlog.NewFieldTmplAuditLog(f.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
@@ -258,7 +262,9 @@ func (f *template) DeleteFieldTemplateAttr(kit *rest.Kit, templateID int64, attr
 }
 
 // DeleteFieldTemplateUnique delete field template unique
-func (f *template) DeleteFieldTemplateUnique(kit *rest.Kit, templateID int64, uniqueIDs []int64) error {
+func (f *template) DeleteFieldTemplateUnique(kit *rest.Kit, templateID int64, uniqueIDs []int64,
+	needAuditLog bool) error {
+
 	expr := filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, templateID)
 	if len(uniqueIDs) != 0 {
 		var err error
@@ -300,6 +306,10 @@ func (f *template) DeleteFieldTemplateUnique(kit *rest.Kit, templateID int64, un
 		blog.Errorf("delete field template uniques failed, template id: %d, cond: %v, err: %v, rid: %s", templateID,
 			deleteOpt, ccErr, kit.Rid)
 		return ccErr
+	}
+
+	if !needAuditLog {
+		return nil
 	}
 
 	// generate and save audit log

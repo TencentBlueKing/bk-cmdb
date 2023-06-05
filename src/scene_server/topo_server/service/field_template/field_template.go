@@ -308,12 +308,12 @@ func (s *service) DeleteFieldTemplate(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.logics.FieldTemplateOperation().DeleteFieldTemplateUnique(ctx.Kit, opt.ID, nil)
+		err := s.logics.FieldTemplateOperation().DeleteFieldTemplateUnique(ctx.Kit, opt.ID, nil, false)
 		if err != nil {
 			return err
 		}
 
-		err = s.logics.FieldTemplateOperation().DeleteFieldTemplateAttr(ctx.Kit, opt.ID, nil)
+		err = s.logics.FieldTemplateOperation().DeleteFieldTemplateAttr(ctx.Kit, opt.ID, nil, false)
 		if err != nil {
 			return err
 		}
@@ -543,7 +543,7 @@ func (s *service) deleteFieldTmplUnique(kit *rest.Kit, templateID int64,
 		deleteIDs = append(deleteIDs, id)
 	}
 
-	err = s.logics.FieldTemplateOperation().DeleteFieldTemplateUnique(kit, templateID, deleteIDs)
+	err = s.logics.FieldTemplateOperation().DeleteFieldTemplateUnique(kit, templateID, deleteIDs, true)
 	if err != nil {
 		return err
 	}
@@ -583,13 +583,17 @@ func (s *service) updateFieldTmplAttr(kit *rest.Kit, templateID int64, attrs []m
 	}
 
 	if len(attrOp.deleteAttrIDs) != 0 {
-		err = s.logics.FieldTemplateOperation().DeleteFieldTemplateAttr(kit, templateID, attrOp.deleteAttrIDs)
+		err = s.logics.FieldTemplateOperation().DeleteFieldTemplateAttr(kit, templateID, attrOp.deleteAttrIDs, true)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	propertyIDToIDMap := make(map[string]int64)
+
+	if len(attrOp.createAttrs) == 0 && len(attrOp.updateAttrs) == 0 {
+		return propertyIDToIDMap, nil
+	}
 
 	audit := auditlog.NewFieldTmplAuditLog(s.clientSet.CoreService())
 	auditLogs := make([]metadata.AuditLog, 0)
@@ -635,10 +639,6 @@ func (s *service) updateFieldTmplAttr(kit *rest.Kit, templateID int64, attrs []m
 		auditLogs = append(auditLogs, updateLogs...)
 	}
 
-	if len(auditLogs) == 0 {
-		return propertyIDToIDMap, nil
-	}
-
 	if err := audit.SaveAuditLog(kit, auditLogs...); err != nil {
 		blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
@@ -676,15 +676,6 @@ func (s *service) getFieldTmplAttrOperation(kit *rest.Kit, templateID int64, att
 
 		updateAttrs = append(updateAttrs, attr)
 		delete(dbIDMap, attr.ID)
-	}
-
-	if len(createAttrs)+len(updateAttrs) == 0 {
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "attributes")
-	}
-
-	if len(createAttrs)+len(updateAttrs) > metadata.FieldTemplateAttrMaxCount {
-		return nil, kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "attributes",
-			metadata.FieldTemplateAttrMaxCount)
 	}
 
 	deleteIDs := make([]int64, 0)
@@ -745,10 +736,6 @@ func (s *service) updateFieldTmplUnique(kit *rest.Kit, templateID int64, propert
 		}
 
 		updateUniques = append(updateUniques, *unique)
-	}
-
-	if len(createUniques)+len(updateUniques) > metadata.FieldTemplateUniqueMaxCount {
-		return kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "uniques", metadata.FieldTemplateUniqueMaxCount)
 	}
 
 	auditLogs := make([]metadata.AuditLog, 0)
