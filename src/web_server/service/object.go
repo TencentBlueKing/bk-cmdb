@@ -288,6 +288,7 @@ func (s *Service) ExportObject(c *gin.Context) {
 		innerRow := item.(map[string]interface{})
 		blog.V(5).Infof("object attribute data :%+v, rid: %s", innerRow, rid)
 
+		delete(innerRow, common.BKTemplateID)
 		// set row value
 		setExcelRow(ctx, sheet.AddRow(), innerRow)
 

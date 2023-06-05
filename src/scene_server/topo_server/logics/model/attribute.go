@@ -1475,6 +1475,11 @@ func (a *attribute) upsertObjectAttr(kit *rest.Kit, objID string, attr *metadata
 		return success, nil
 	}
 
+	// 如果属性来源于字段模版，那么无法进行更新，正常返回成功
+	if result.Info[0].TemplateID != 0 {
+		return success, nil
+	}
+
 	updateData.Remove(metadata.AttributeFieldPropertyID)
 	updateData.Remove(metadata.AttributeFieldObjectID)
 	updateData.Remove(metadata.AttributeFieldID)

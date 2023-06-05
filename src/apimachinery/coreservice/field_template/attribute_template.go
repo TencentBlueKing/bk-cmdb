@@ -76,3 +76,53 @@ func (t template) CreateFieldTemplateAttrs(ctx context.Context, h http.Header, t
 
 	return &resp.Data, nil
 }
+
+// DeleteFieldTemplateAttr delete field template attribute
+func (t template) DeleteFieldTemplateAttr(ctx context.Context, h http.Header, templateID int64,
+	opt *metadata.DeleteOption) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+
+	err := t.client.Delete().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/delete/field_template/%d/attributes", templateID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateFieldTemplateAttrs update field template attributes
+func (t template) UpdateFieldTemplateAttrs(ctx context.Context, h http.Header, templateID int64,
+	opt []metadata.FieldTemplateAttr) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+
+	err := t.client.Put().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/update/field_template/%d/attributes", templateID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -40,8 +40,8 @@ type FieldTemplate struct {
 }
 
 const (
-	fieldTemplateNameMaxLen = 15
-	fieldTemplateDesMaxLen  = 100
+	fieldTemplateNameMaxLen = 128
+	fieldTemplateDesMaxLen  = 2000
 )
 
 // Validate validate FieldTemplate
@@ -394,7 +394,10 @@ type CreateFieldTmplOption struct {
 }
 
 const (
-	FieldTemplateAttrMaxCount   = 20
+	// FieldTemplateAttrMaxCount filed template attribute max count
+	FieldTemplateAttrMaxCount = 20
+
+	// FieldTemplateUniqueMaxCount filed template unique max count
 	FieldTemplateUniqueMaxCount = 5
 )
 
@@ -714,4 +717,78 @@ type CompareOneFieldTmplUniqueRes struct {
 	Message string `json:"message,omitempty"`
 	// Data original data of object for update/conflict unique
 	Data *ObjectUnique `json:"data,omitempty"`
+}
+
+// DeleteFieldTmplOption delete field template option
+type DeleteFieldTmplOption struct {
+	ID int64 `json:"id"`
+}
+
+// Validate delete field template option
+func (d *DeleteFieldTmplOption) Validate() ccErr.RawErrorInfo {
+	if d.ID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKFieldID}}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// CloneFieldTmplOption clone field template option
+type CloneFieldTmplOption struct {
+	ID            int64 `json:"id"`
+	FieldTemplate `json:",inline"`
+}
+
+// Validate clone field template option
+func (c *CloneFieldTmplOption) Validate() ccErr.RawErrorInfo {
+	if c.ID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKFieldID}}
+	}
+
+	if err := c.FieldTemplate.Validate(); err.ErrCode != 0 {
+		return err
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// UpdateFieldTmplOption update field template option
+type UpdateFieldTmplOption struct {
+	FieldTemplate `json:",inline"`
+	Attributes    []FieldTemplateAttr     `json:"attributes"`
+	Uniques       []FieldTmplUniqueOption `json:"uniques"`
+}
+
+// Validate update field template option
+func (c *UpdateFieldTmplOption) Validate() ccErr.RawErrorInfo {
+	if c.ID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKFieldID}}
+	}
+
+	if err := c.FieldTemplate.Validate(); err.ErrCode != 0 {
+		return err
+	}
+
+	if len(c.Attributes) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{"attributes"}}
+	}
+
+	if len(c.Attributes) > FieldTemplateAttrMaxCount {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit,
+			Args: []interface{}{"attributes", FieldTemplateAttrMaxCount}}
+	}
+
+	if len(c.Uniques) > FieldTemplateUniqueMaxCount {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit,
+			Args: []interface{}{"uniques", FieldTemplateUniqueMaxCount}}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// UpdateFieldTmplUniqueOption update  field template unique option
+type UpdateFieldTmplUniqueOption struct {
+	Create []FieldTmplUniqueOption `json:"create"`
+	Update []FieldTmplUniqueOption `json:"update"`
+	Delete []int64                 `json:"delete"`
 }
