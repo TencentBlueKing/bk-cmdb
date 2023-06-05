@@ -73,6 +73,29 @@ func (t *task) CreateBatch(ctx context.Context, header http.Header, tasks []meta
 	return resp.Data, nil
 }
 
+// CreateFieldTemplateBatch create field template task batch, returns the created task details
+func (t *task) CreateFieldTemplateBatch(ctx context.Context, header http.Header, tasks []metadata.CreateTaskRequest) (
+	[]metadata.APITaskDetail, error) {
+
+	resp := new(metadata.CreateTaskBatchResponse)
+	subPath := "/createmany/field_template/task"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(tasks).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, resp.CCError()
+	}
+	return resp.Data, nil
+}
+
 // ListTask TODO
 func (t *task) ListTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskRequest) (resp *metadata.ListAPITaskResponse, err error) {
 	resp = new(metadata.ListAPITaskResponse)
@@ -198,4 +221,27 @@ func (t *task) ListSyncStatusHistory(ctx context.Context, header http.Header,
 	}
 
 	return resp.Data, nil
+}
+
+// ListLatestFieldTemplateTask get the latest two task statuses of the specified field template
+func (t *task) ListLatestFieldTemplateTask(ctx context.Context, header http.Header,
+	data *metadata.ListFieldTmpltTaskStatusOption) ([]metadata.ListFieldTmpltTaskStatusResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.ListAPIFieldTemplateTaskStatusResult)
+	subPath := "/task/find/field_template/tasks_status"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, resp.CCError()
+	}
+	return resp.Info, nil
 }

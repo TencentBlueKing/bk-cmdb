@@ -14,6 +14,7 @@ package logics
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -75,6 +76,7 @@ func (lgc *Logics) Create(kit *rest.Kit, input *metadata.CreateTaskRequest) (met
 	dbTask.InstID = input.InstID
 	dbTask.Header = GetDBHTTPHeader(kit.Header)
 	dbTask.Status = metadata.APITaskStatusNew
+	dbTask.Extra = input.Extra
 	dbTask.CreateTime = time.Now()
 	dbTask.LastTime = time.Now()
 	for _, taskItem := range input.Data {
@@ -98,6 +100,7 @@ func (lgc *Logics) Create(kit *rest.Kit, input *metadata.CreateTaskRequest) (met
 		Creator:         kit.User,
 		CreateTime:      dbTask.CreateTime,
 		LastTime:        dbTask.LastTime,
+		Extra:           input.Extra,
 		SupplierAccount: kit.SupplierAccount,
 	}
 
@@ -109,8 +112,7 @@ func (lgc *Logics) Create(kit *rest.Kit, input *metadata.CreateTaskRequest) (met
 }
 
 // CreateBatch create task batch
-func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest) ([]metadata.APITaskDetail,
-	error) {
+func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest) ([]metadata.APITaskDetail, error) {
 
 	if len(tasks) == 0 {
 		return make([]metadata.APITaskDetail, 0), nil
@@ -169,6 +171,122 @@ func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest
 		taskHistories[index] = taskHistory
 	}
 
+	if err := lgc.isDuplicateTaskInProgress(kit, taskTypes, instIDs); err != nil {
+		return nil, err
+	}
+	if err := lgc.db.Table(common.BKTableNameAPITask).Insert(kit.Ctx, dbTasks); err != nil {
+		blog.Errorf("create tasks(%#v) failed, err: %v, rid: %s", dbTasks, err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
+	}
+
+	if err := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Insert(kit.Ctx, taskHistories); err != nil {
+		blog.Errorf("create task sync history failed, data: %#v, err: %v, rid: %s", taskHistories, err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
+	}
+	return dbTasks, nil
+}
+
+// CreateFieldTemplateBatch create field template task batch
+func (lgc *Logics) CreateFieldTemplateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest) (
+	[]metadata.APITaskDetail, error) {
+
+	if len(tasks) == 0 {
+		return make([]metadata.APITaskDetail, 0), nil
+	}
+
+	now := time.Now()
+	dbTask := metadata.APITaskDetail{
+		User:       kit.User,
+		Header:     GetDBHTTPHeader(kit.Header),
+		Status:     metadata.APITaskStatusNew,
+		CreateTime: now,
+		LastTime:   now,
+	}
+
+	taskHistory := metadata.APITaskSyncStatus{
+		Status:          metadata.APITaskStatusNew,
+		Creator:         kit.User,
+		CreateTime:      now,
+		LastTime:        now,
+		SupplierAccount: kit.SupplierAccount,
+	}
+
+	dbTasks := make([]metadata.APITaskDetail, len(tasks))
+	taskHistories := make([]metadata.APITaskSyncStatus, len(tasks))
+	for index, task := range tasks {
+		task.TaskType = strings.TrimSpace(task.TaskType)
+		if task.TaskType == "" {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKTaskTypeField)
+		}
+
+		if len(task.Data) == 0 {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "data")
+		}
+
+		dbTask.TaskID = getStrTaskID("id")
+		dbTask.TaskType = task.TaskType
+		dbTask.InstID = task.InstID
+		dbTask.Extra = task.Extra
+		dbTask.Detail = make([]metadata.APISubTaskDetail, 0)
+		for _, taskItem := range task.Data {
+			dbTask.Detail = append(dbTask.Detail, metadata.APISubTaskDetail{
+				SubTaskID: getStrTaskID("sid"),
+				Data:      taskItem,
+				Status:    metadata.APITaskStatusNew,
+			})
+		}
+		dbTasks[index] = dbTask
+
+		taskHistory.TaskID = dbTask.TaskID
+		taskHistory.TaskType = task.TaskType
+		taskHistory.InstID = task.InstID
+		taskHistory.Extra = task.Extra
+		taskHistories[index] = taskHistory
+
+		if err := lgc.isDuplicateFieldTmplTaskInProgress(kit, task.TaskType, task.InstID, task.Extra); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := lgc.db.Table(common.BKTableNameAPITask).Insert(kit.Ctx, dbTasks); err != nil {
+		blog.Errorf("create tasks(%#v) failed, err: %v, rid: %s", dbTasks, err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
+	}
+
+	if err := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Insert(kit.Ctx, taskHistories); err != nil {
+		blog.Errorf("create task sync history failed, data: %#v, err: %v, rid: %s", taskHistories, err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
+	}
+	return dbTasks, nil
+}
+
+func (lgc *Logics) isDuplicateFieldTmplTaskInProgress(kit *rest.Kit, taskType string, instID int64,
+	extra interface{}) error {
+
+	cond := mapstr.MapStr{
+		common.BKTaskTypeField:     taskType,
+		common.BKInstIDField:       instID,
+		metadata.APITaskExtraField: extra,
+		common.BKStatusField: map[string]interface{}{
+			common.BKDBIN: []metadata.APITaskStatus{metadata.APITaskStatusNew, metadata.APITaskStatusWaitExecute,
+				metadata.APITaskStatusExecute},
+		},
+	}
+
+	cnt, err := lgc.db.Table(common.BKTableNameAPITask).Find(cond).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("get duplicate tasks failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	if cnt > metadata.APITaskFieldTemplateMaxNum {
+		return kit.CCError.Errorf(common.CCErrTaskCreateConflict,
+			fmt.Sprintf("template id: %d,object id:%v", instID, extra))
+	}
+	return nil
+}
+
+func (lgc *Logics) isDuplicateTaskInProgress(kit *rest.Kit, taskTypes []string, instIDs []int64) error {
 	// check if there is another unfinished task already created, forbidden create duplicate tasks
 	// TODO: replace with index when partial filter supports $in operator
 	duplicateCond := mapstr.MapStr{
@@ -183,23 +301,13 @@ func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest
 	duplicateIDs, err := lgc.db.Table(common.BKTableNameAPITask).Distinct(kit.Ctx, common.BKInstIDField, duplicateCond)
 	if err != nil {
 		blog.Errorf("get duplicate tasks failed, err: %v, cond: %#v, rid: %s", err, duplicateCond, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
+		return kit.CCError.Error(common.CCErrCommDBInsertFailed)
 	}
 
 	if len(duplicateIDs) > 0 {
-		return nil, kit.CCError.Errorf(common.CCErrTaskCreateConflict, duplicateIDs)
+		return kit.CCError.Errorf(common.CCErrTaskCreateConflict, duplicateIDs)
 	}
-
-	if err = lgc.db.Table(common.BKTableNameAPITask).Insert(kit.Ctx, dbTasks); err != nil {
-		blog.Errorf("create tasks(%#v) failed, err: %v, rid: %s", dbTasks, err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
-	}
-
-	if err := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Insert(kit.Ctx, taskHistories); err != nil {
-		blog.Errorf("create task sync history failed, data: %#v, err: %v, rid: %s", taskHistories, err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
-	}
-	return dbTasks, nil
+	return nil
 }
 
 // List list task

@@ -29,10 +29,11 @@ type objectAttributeAuditLog struct {
 func (h *objectAttributeAuditLog) BatchGenerateAuditLog(parameter *generateAuditCommonParameter, objID string,
 	attrs []metadata.Attribute) ([]metadata.AuditLog, error) {
 
-	kit := parameter.kit
 	if len(attrs) == 0 {
 		return []metadata.AuditLog{}, nil
 	}
+
+	kit := parameter.kit
 
 	objName, err := h.getObjNameByObjID(kit, objID)
 	if err != nil {

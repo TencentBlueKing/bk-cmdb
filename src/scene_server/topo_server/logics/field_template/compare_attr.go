@@ -21,6 +21,8 @@ import (
 	"reflect"
 	"strings"
 
+	"configcenter/pkg/filter"
+	filtertools "configcenter/pkg/tools/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -86,11 +88,14 @@ func (t *template) CompareFieldTemplateAttr(kit *rest.Kit, opt *metadata.Compare
 	if forUI {
 		return t.comparator.compareAttrForUI(kit, compParams, objAttrRes.Info)
 	}
-	return t.comparator.compareAttrForBackend(kit, compParams, objAttrRes.Info)
+	return t.comparator.compareAttrForBackend(kit, compParams, opt.TemplateID, objAttrRes.Info)
 }
 
 type compAttrParams struct {
-	tmplIDMap     map[int64]metadata.FieldTemplateAttr
+	// tmplIDMap correspondence between field template attribute ID and template attribute
+	tmplIDMap map[int64]metadata.FieldTemplateAttr
+	// tmplPropIDMap the corresponding relationship between the propertyID of the field
+	// template attribute and the field template attribute
 	tmplPropIDMap map[string]metadata.FieldTemplateAttr
 	// tmplNameMap field template attribute name to property id map, used for conflict check
 	tmplNameMap map[string]string
@@ -116,7 +121,7 @@ func (c *comparator) preCheckAttr(kit *rest.Kit, objID string, attrs []metadata.
 
 	// check if field template attributes collides with inner attributes, and categorize field template attributes
 	for index, attr := range attrs {
-		if rawErr := attr.Validate(); rawErr.ErrCode != 0 {
+		if rawErr := attr.ValidateBase(); rawErr.ErrCode != 0 {
 			return nil, rawErr.ToCCError(kit.CCError)
 		}
 		if strings.HasPrefix(attr.PropertyID, "bk") {
@@ -256,13 +261,79 @@ func (c *comparator) compareAttrForUI(kit *rest.Kit, params *compAttrParams, att
 	return res, nil
 }
 
-func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams, attributes []metadata.Attribute) (
-	*metadata.CompareFieldTmplAttrsRes, error) {
+// getObjectAttrAndTmplIDRelation obtain the auto-increment ID of the model attribute and
+// the template ID of the corresponding template attribute
+func (c *comparator) getObjectAttrAndTmplIDRelation(kit *rest.Kit, attributes []metadata.Attribute) (
+	map[int64]int64, error) {
 
-	res := new(metadata.CompareFieldTmplAttrsRes)
+	attrTemplateIDMap := make(map[int64]struct{})
+	// attrIDTmplIDMap save the top-level template ID corresponding to the model attribute ID
+	attrIDTmplIDMap := make(map[int64]int64)
+
+	for _, attr := range attributes {
+		if attr.TemplateID == 0 {
+			continue
+		}
+		attrIDTmplIDMap[attr.ID] = attr.TemplateID
+		attrTemplateIDMap[attr.TemplateID] = struct{}{}
+	}
+
+	attrIDTmplID := make(map[int64]int64)
+
+	// there are scenarios where the attributes on the model belong to the model itself
+	if len(attrTemplateIDMap) == 0 {
+		return attrIDTmplID, nil
+	}
+
+	attrTemplateIDs := make([]int64, 0)
+	for id := range attrTemplateIDMap {
+		attrTemplateIDs = append(attrTemplateIDs, id)
+	}
+
+	query := &metadata.CommonQueryOption{
+		CommonFilterOption: metadata.CommonFilterOption{
+			Filter: filtertools.GenAtomFilter(common.BKFieldID, filter.In, attrTemplateIDs),
+		},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Fields: []string{common.BKFieldID, common.BKTemplateID},
+	}
+
+	attrs, err := c.clientSet.CoreService().FieldTemplate().ListFieldTemplateAttr(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("find field template attribute failed, opt: %+v, err: %v, rid: %s", query, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(attrs.Info) != len(attrTemplateIDs) {
+		blog.Errorf("unexpected number of template properties found, opt: %+v, err: %v, rid: %s", query, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKTemplateID)
+	}
+
+	tmplAttrIDTmplIDMap := make(map[int64]int64)
+	for _, attr := range attrs.Info {
+		tmplAttrIDTmplIDMap[attr.ID] = attr.TemplateID
+	}
+
+	for key, value := range attrIDTmplIDMap {
+		attrIDTmplID[key] = tmplAttrIDTmplIDMap[value]
+	}
+
+	return attrIDTmplID, nil
+}
+
+func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams, templateID int64,
+	attributes []metadata.Attribute) (*metadata.CompareFieldTmplAttrsRes, error) {
 
 	// compare object attribute with its template
-	noTmplAttr := make([]metadata.Attribute, 0)
+	res, noTmplAttr := new(metadata.CompareFieldTmplAttrsRes), make([]metadata.Attribute, 0)
+
+	attrIDTmplID, err := c.getObjectAttrAndTmplIDRelation(kit, attributes)
+	if err != nil {
+		return nil, err
+	}
+
 	for idx := range attributes {
 		attr := attributes[idx]
 		// compare attribute without template later, because template id has maximum priority in comparison
@@ -284,13 +355,20 @@ func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams
 					common.BKPropertyNameField, conflictPropertyID)
 			}
 
-			// attribute template is deleted, so we update attribute's template id to zero
-			res.Update = append(res.Update, metadata.CompareOneFieldTmplAttrRes{
+			update := metadata.CompareOneFieldTmplAttrRes{
 				Index:      params.tmplIndexMap[tmplAttr.PropertyID],
 				PropertyID: tmplAttr.PropertyID,
 				Data:       &metadata.Attribute{ID: attr.ID},
-				UpdateData: mapstr.MapStr{common.BKTemplateID: 0},
-			})
+			}
+
+			// when the template where the template attribute corresponding to the attribute is located is the
+			// current template, in order to release the management scene, the templateID needs to be set to 0
+			id, ok := attrIDTmplID[attr.ID]
+			if ok && id == templateID {
+				update.UpdateData = mapstr.MapStr{common.BKTemplateID: 0}
+			}
+
+			res.Update = append(res.Update, update)
 			continue
 		}
 
@@ -307,8 +385,7 @@ func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams
 				common.BKPropertyTypeField, tmplAttr.PropertyID)
 		}
 
-		err := c.addUpdateAttrInfoForBackend(kit, params, &attr, &tmplAttr, res)
-		if err != nil {
+		if err := c.addUpdateAttrInfoForBackend(kit, params, &attr, &tmplAttr, res); err != nil {
 			return nil, err
 		}
 	}
@@ -336,8 +413,7 @@ func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams
 				common.BKPropertyTypeField, tmplAttr.PropertyID)
 		}
 
-		err := c.addUpdateAttrInfoForBackend(kit, params, &attr, &tmplAttr, res)
-		if err != nil {
+		if err := c.addUpdateAttrInfoForBackend(kit, params, &attr, &tmplAttr, res); err != nil {
 			return nil, err
 		}
 	}

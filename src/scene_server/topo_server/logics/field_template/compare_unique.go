@@ -40,7 +40,7 @@ func (t *template) CompareFieldTemplateUnique(kit *rest.Kit, opt *metadata.Compa
 		return nil, err
 	}
 
-	compParams, err := t.comparator.preCheckUnique(kit, objID, opt.Uniques)
+	compParams, err := t.comparator.preCheckUnique(kit, objID, opt.Uniques, forUI)
 	if err != nil {
 		return nil, err
 	}
@@ -77,6 +77,9 @@ func (t *template) CompareFieldTemplateUnique(kit *rest.Kit, opt *metadata.Compa
 	}
 
 	for id := range attrMap {
+		if id == 0 {
+			continue
+		}
 		attrIDs = append(attrIDs, id)
 	}
 
@@ -128,8 +131,8 @@ type compUniqueParams struct {
 	tmplProToIDMap map[string]int64
 }
 
-func (c *comparator) preCheckUnique(kit *rest.Kit, objID string, uniques []metadata.FieldTmplUniqueForUpdate) (
-	*compUniqueParams, error) {
+func (c *comparator) preCheckUnique(kit *rest.Kit, objID string, uniques []metadata.FieldTmplUniqueForUpdate,
+	forUI bool) (*compUniqueParams, error) {
 
 	params := &compUniqueParams{
 		tmplIDMap:      make(map[int64]metadata.FieldTmplUniqueForUpdate),
@@ -172,14 +175,23 @@ func (c *comparator) preCheckUnique(kit *rest.Kit, objID string, uniques []metad
 		return nil, err
 	}
 
-	if len(objAttrRes.Info) != len(tmplPropertyIDs) {
+	// when info is 0, it is a diff scene, and if it is greater than 0, it is a synchronous scene. If it is a
+	// synchronous scene, the number of model attributes and the num of template attrs must be equal and greater
+	// than 0 however, there may be some attributes that can be found for comparison scenarios.
+	if len(objAttrRes.Info) != len(tmplPropertyIDs) && len(objAttrRes.Info) != 0 && !forUI {
 		blog.Errorf("object attrs length is invalid, property ids: %+v, rid: %s", tmplPropertyIDs, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKAttributeIDField)
 	}
 
-	for _, info := range objAttrRes.Info {
-		params.tmplProToIDMap[info.PropertyID] = info.ID
+	// in the synchronization scenario, the attributes of the template have been synchronized to the model, and info
+	// must be greater than 0 at this time. in the previous diff comparison scenario, the info field is 0 because the
+	// attribute has not been synchronized to the model.
+	if len(objAttrRes.Info) != 0 {
+		for _, info := range objAttrRes.Info {
+			params.tmplProToIDMap[info.PropertyID] = info.ID
+		}
 	}
+
 	// check if field template uniques conflicts with each other, and categorize field template uniques
 	for index, unique := range uniques {
 		compKey := c.genUniqueKey(unique.Keys)
@@ -297,7 +309,7 @@ func (c *comparator) compareUniqueForUI(kit *rest.Kit, params *compUniqueParams,
 		}
 
 		// compare the unique with its template, check if their keys are the same
-		isChanged, err := c.compareOneUniqueInfo(kit, params, &compUnique, &tmplUnique, res, false)
+		isChanged, err := c.compareOneUniqueInfo(kit, params, &compUnique, &tmplUnique, res, false, true)
 		if err != nil {
 			return nil, err
 		}
@@ -330,7 +342,7 @@ func (c *comparator) compareUniqueForUI(kit *rest.Kit, params *compUniqueParams,
 		}
 
 		// compare the unique with its template, check if their keys are the same
-		isChanged, err := c.compareOneUniqueInfo(kit, params, &compUnique, &tmplUnique, res, true)
+		isChanged, err := c.compareOneUniqueInfo(kit, params, &compUnique, &tmplUnique, res, true, true)
 		if err != nil {
 			return nil, err
 		}
@@ -395,7 +407,7 @@ func (c *comparator) compareUniqueForBackend(kit *rest.Kit, params *compUniquePa
 		}
 
 		// compare the unique with its template, check if their keys are the same
-		_, err := c.compareOneUniqueInfo(kit, params, &compUnique, &tmplUnique, res, false)
+		_, err := c.compareOneUniqueInfo(kit, params, &compUnique, &tmplUnique, res, false, false)
 		if err != nil {
 			return nil, err
 		}
@@ -415,7 +427,7 @@ func (c *comparator) compareUniqueForBackend(kit *rest.Kit, params *compUniquePa
 		}
 
 		// compare the unique with its template, check if their keys are the same
-		_, err := c.compareOneUniqueInfo(kit, params, &compUnique, &tmplUnique, res, true)
+		_, err := c.compareOneUniqueInfo(kit, params, &compUnique, &tmplUnique, res, true, false)
 		if err != nil {
 			return nil, err
 		}
@@ -454,8 +466,8 @@ func (c *comparator) checkObjUniqueConflict(params *compUniqueParams, objCompUni
 
 // compareOneUniqueInfo compare one field template and object unique, add update unique info into compare result
 func (c *comparator) compareOneUniqueInfo(kit *rest.Kit, params *compUniqueParams, objCompUnique *objUniqueForComp,
-	tmplUnique *metadata.FieldTmplUniqueForUpdate, res *metadata.CompareFieldTmplUniquesRes, isNoTmpl bool) (
-	bool, error) {
+	tmplUnique *metadata.FieldTmplUniqueForUpdate, res *metadata.CompareFieldTmplUniquesRes, isNoTmpl bool,
+	forUI bool) (bool, error) {
 
 	tmplCompKey := c.genUniqueKey(tmplUnique.Keys)
 
@@ -484,19 +496,21 @@ func (c *comparator) compareOneUniqueInfo(kit *rest.Kit, params *compUniqueParam
 
 	// keys need to be processed separately again because it is possible to change from joint
 	// unique to single unique for the same unique check. Or change a single unique to a joint unique
-	objCompUnique.unique.Keys = []metadata.UniqueKey{}
-	for id := range tmplUnique.Keys {
-		// tmplUnique Here is the propertyID of the template, according to
-		// this propertyID, the attribute auto-increment ID of the object is obtained
-		objAttrID, ok := params.tmplProToIDMap[tmplUnique.Keys[id]]
-		if !ok {
-			blog.Errorf("get object attr id failed, template property id : %v, rid: %s", tmplUnique.Keys[id], kit.Rid)
-			return false, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKPropertyIDField)
+	if !forUI {
+		objCompUnique.unique.Keys = []metadata.UniqueKey{}
+		for id := range tmplUnique.Keys {
+			// tmplUnique Here is the propertyID of the template, according to
+			// this propertyID, the attribute auto-increment ID of the object is obtained
+			objAttrID, ok := params.tmplProToIDMap[tmplUnique.Keys[id]]
+			if !ok {
+				blog.Errorf("get object attr id failed, template property id : %v, rid: %s", tmplUnique.Keys[id], kit.Rid)
+				return false, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKPropertyIDField)
+			}
+			objCompUnique.unique.Keys = append(objCompUnique.unique.Keys, metadata.UniqueKey{
+				ID:   uint64(objAttrID),
+				Kind: metadata.UniqueKeyKindProperty,
+			})
 		}
-		objCompUnique.unique.Keys = append(objCompUnique.unique.Keys, metadata.UniqueKey{
-			ID:   uint64(objAttrID),
-			Kind: metadata.UniqueKeyKindProperty,
-		})
 	}
 
 	res.Update = append(res.Update, metadata.CompareOneFieldTmplUniqueRes{

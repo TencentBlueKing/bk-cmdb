@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -72,6 +73,52 @@ func (s *service) ListFieldTemplateUnique(ctx *rest.Contexts) {
 	ctx.RespEntity(res)
 }
 
+// getObjectPausedAttr get the relationship between model ID and state.
+func (s *service) getObjectPausedAttr(kit *rest.Kit, objIDs []int64) (map[int64]bool, error) {
+
+	idMap := make(map[int64]struct{})
+	for _, id := range objIDs {
+		idMap[id] = struct{}{}
+	}
+
+	ids := make([]int64, 0)
+	for id := range idMap {
+		ids = append(ids, id)
+	}
+
+	query := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKFieldID: mapstr.MapStr{
+				common.BKDBIN: ids,
+			},
+		},
+		Fields:         []string{common.BKFieldID, metadata.ModelFieldIsPaused},
+		DisableCounter: true,
+	}
+
+	obj, err := s.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("failed to find objects by query(%#v), err: %v, rid: %s", query, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "object_ids")
+	}
+
+	if len(obj.Info) == 0 {
+		blog.Errorf("failed to find objIDs by query(%#v), rid: %s", query, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommNotFound)
+	}
+
+	if len(obj.Info) != len(ids) {
+		blog.Errorf("object ids are invalid, input: %+v, rid: %s", query, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "object_ids")
+	}
+
+	idPausedMap := make(map[int64]bool)
+	for _, info := range obj.Info {
+		idPausedMap[info.ID] = info.IsPaused
+	}
+	return idPausedMap, nil
+}
+
 // SyncFieldTemplateInfoToObjects synchronize the field combination template information to the corresponding model
 func (s *service) SyncFieldTemplateInfoToObjects(ctx *rest.Contexts) {
 
@@ -86,8 +133,19 @@ func (s *service) SyncFieldTemplateInfoToObjects(ctx *rest.Contexts) {
 		return
 	}
 
+	idPausedMap, err := s.getObjectPausedAttr(ctx.Kit, opt.ObjectIDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	tasks := make([]metadata.CreateTaskRequest, 0)
 	for _, objID := range opt.ObjectIDs {
+		if idPausedMap[objID] {
+			blog.Warnf("the model has been paused, no attr synchronization, object id: %d, rid: %s", objID, ctx.Kit.Rid)
+			continue
+		}
+
 		tasks = append(tasks, metadata.CreateTaskRequest{
 			TaskType: common.SyncFieldTemplateTaskFlag,
 			InstID:   opt.TemplateID,
@@ -100,7 +158,7 @@ func (s *service) SyncFieldTemplateInfoToObjects(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		taskRes, err := s.clientSet.TaskServer().Task().CreateBatch(ctx.Kit.Ctx, ctx.Kit.Header, tasks)
+		taskRes, err := s.clientSet.TaskServer().Task().CreateFieldTemplateBatch(ctx.Kit.Ctx, ctx.Kit.Header, tasks)
 		if err != nil {
 			blog.Errorf("create field template sync task(%#v) failed, err: %v, rid: %s", tasks, err, ctx.Kit.Rid)
 			return err

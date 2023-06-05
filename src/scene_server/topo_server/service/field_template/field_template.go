@@ -195,23 +195,22 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 		ObjectIDs: objIDs,
 	}
 
-	audit := auditlog.NewObjectAuditLog(s.clientSet.CoreService())
-
-	parameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
-	auditLogs, err := audit.GenerateAuditLogForBindingFieldTemplate(parameter, objIDs, opt.ID)
-	if err != nil {
-		blog.Errorf("generate audit log failed before update object, objName: %s, err: %v, rid: %s",
-			opt.ObjectIDs, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	// todo:待补充鉴权
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateBindObject(ctx.Kit.Ctx, ctx.Kit.Header, option)
 		if err != nil {
 			blog.Errorf("field template bind model failed, err: %v , rid: %s", err, ctx.Kit.Rid)
 			return err
+		}
+
+		audit := auditlog.NewObjectAuditLog(s.clientSet.CoreService())
+		parameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
+
+		auditLogs, ccErr := audit.GenerateAuditLogForBindingFieldTemplate(parameter, objIDs, opt.ID)
+		if ccErr != nil {
+			blog.Errorf("generate audit log failed before update object, objName: %s, err: %v, rid: %s",
+				opt.ObjectIDs, ccErr, ctx.Kit.Rid)
+			return ccErr
 		}
 		// save audit log.
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
@@ -247,21 +246,20 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 	}
 
 	// todo:待补充鉴权
-	audit := auditlog.NewObjectAuditLog(s.clientSet.CoreService())
-
-	parameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
-	auditLogs, err := audit.GenerateAuditLogForBindingFieldTemplate(parameter, []int64{opt.ObjectID}, opt.ID)
-	if err != nil {
-		blog.Errorf("generate audit log failed , object id: %d, err: %v, rid: %s", opt.ObjectID, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
 
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateUnbindObject(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 		if err != nil {
 			blog.Errorf("field template unbind model failed, cond: %+v, err: %v , rid: %s", opt, err, ctx.Kit.Rid)
 			return err
+		}
+		audit := auditlog.NewObjectAuditLog(s.clientSet.CoreService())
+
+		parameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
+		auditLogs, ccErr := audit.GenerateAuditLogForBindingFieldTemplate(parameter, []int64{opt.ObjectID}, opt.ID)
+		if ccErr != nil {
+			blog.Errorf("generate audit log failed , object id: %d, err: %v, rid: %s", opt.ObjectID, err, ctx.Kit.Rid)
+			return ccErr
 		}
 		// save audit log.
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
@@ -856,4 +854,56 @@ func (s *service) UpdateFieldTemplateInfo(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
+}
+
+// ListFieldTmplByUniqueTmplIDForUI query the ID and name of the corresponding field
+// template according to the TemplateID on the unique verification of the model
+func (s *service) ListFieldTmplByUniqueTmplIDForUI(cts *rest.Contexts) {
+	opt := new(metadata.ListTmplSimpleByUniqueOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		cts.RespAutoError(rawErr.ToCCError(cts.Kit.CCError))
+		return
+	}
+
+	// list field templates brief info
+	res, err := s.clientSet.CoreService().FieldTemplate().ListFieldTmplSimplyByUniqueTemplateID(cts.Kit.Ctx,
+		cts.Kit.Header, opt)
+	if err != nil {
+		blog.Errorf("list field templates failed, req: %+v, err: %v, rid: %s", opt, err, cts.Kit.Rid)
+		cts.RespAutoError(err)
+		return
+	}
+
+	cts.RespEntity(res)
+}
+
+// ListFieldTmplByObjectTmplIDForUI query the ID and name of the corresponding field
+// template according to the TemplateID on the model attribute
+func (s *service) ListFieldTmplByObjectTmplIDForUI(cts *rest.Contexts) {
+	opt := new(metadata.ListTmplSimpleByAttrOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		cts.RespAutoError(rawErr.ToCCError(cts.Kit.CCError))
+		return
+	}
+
+	// list field templates brief info.
+	res, err := s.clientSet.CoreService().FieldTemplate().ListFieldTmplSimplyByAttrTemplateID(cts.Kit.Ctx,
+		cts.Kit.Header, opt)
+	if err != nil {
+		blog.Errorf("list field templates brief info failed, req: %+v, err: %v, rid: %s", opt, err, cts.Kit.Rid)
+		cts.RespAutoError(err)
+		return
+	}
+
+	cts.RespEntity(res)
 }

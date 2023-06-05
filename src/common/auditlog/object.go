@@ -62,11 +62,11 @@ func (h *objectAuditLog) GenerateAuditLog(parameter *generateAuditCommonParamete
 
 // GenerateAuditLogForBindingFieldTemplate specific generate audit log function for model binding template scenarios.
 func (h *objectAuditLog) GenerateAuditLogForBindingFieldTemplate(parameter *generateAuditCommonParameter,
-	ids []int64, templateID int64) ([]metadata.AuditLog, error) {
+	objIDs []int64, templateID int64) ([]metadata.AuditLog, error) {
 
 	kit := parameter.kit
 
-	objectLen := len(ids)
+	objectLen := len(objIDs)
 	objectTmplIDMap := make(map[int64][]int64)
 
 	auditLogs := make([]metadata.AuditLog, 0)
@@ -78,7 +78,7 @@ func (h *objectAuditLog) GenerateAuditLogForBindingFieldTemplate(parameter *gene
 		query := &metadata.QueryCondition{
 			Condition: mapstr.MapStr{
 				metadata.ModelFieldID: mapstr.MapStr{
-					common.BKDBIN: ids[start:limit],
+					common.BKDBIN: objIDs[start:limit],
 				},
 			},
 			DisableCounter: true,

@@ -317,9 +317,8 @@ func (s *service) getTemplateAttrByID(kit *rest.Kit, id int64, fields []string) 
 	return res.Info, nil
 }
 
-// tmplAttrConvertObjAttr template attributes are converted to attributes on the model.
-func tmplAttrConvertObjAttr(user, objID string, attr metadata.FieldTemplateAttr,
-	time metadata.Time) *metadata.Attribute {
+// tmplAttrConvertObjAttr template attributes are converted to attrs on the model.
+func tmplAttrConvertObjAttr(user, objID string, attr metadata.FieldTemplateAttr) *metadata.Attribute {
 
 	return &metadata.Attribute{
 		ObjectID:     objID,
@@ -333,8 +332,6 @@ func tmplAttrConvertObjAttr(user, objID string, attr metadata.FieldTemplateAttr,
 		Default:      attr.Default,
 		Option:       attr.Option,
 		IsMultiple:   &attr.IsMultiple,
-		LastTime:     &time,
-		CreateTime:   &time,
 		Creator:      user,
 		IsEditable:   attr.Editable.Value,
 		Unit:         attr.Unit,
@@ -519,9 +516,8 @@ func (s *service) getCreateAndUpdateAttr(kit *rest.Kit, option *metadata.SyncObj
 
 	createAttr := make([]*metadata.Attribute, 0)
 	if len(result.Create) > 0 {
-		now := metadata.Now()
 		for _, attr := range result.Create {
-			objAttr := tmplAttrConvertObjAttr(kit.User, objectID, tmplAttrs[attr.Index], now)
+			objAttr := tmplAttrConvertObjAttr(kit.User, objectID, tmplAttrs[attr.Index])
 			createAttr = append(createAttr, objAttr)
 		}
 	}
@@ -540,14 +536,6 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 		return err
 	}
 
-	createUniques, updateUniques := make([]metadata.ObjectUnique, 0), make([]metadata.ObjectUnique, 0)
-
-	res, err := s.logics.FieldTemplateOperation().CompareFieldTemplateUnique(kit, uniqueOp, false)
-	if err != nil {
-		blog.Errorf("get field template unique failed, cond: %+v, err: %v, rid: %s", uniqueOp, err, kit.Rid)
-		return err
-	}
-
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 		// 1、create model properties
 		if len(createAttr) > 0 {
@@ -555,33 +543,41 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 				blog.Errorf("create model attribute failed, attr: %+v, err: %v, rid: %s", createAttr, err, kit.Rid)
 				return err
 			}
-
 		}
 
 		// 2、update model properties
 		if len(updateAttr) > 0 {
 			for _, attr := range updateAttr {
+				if len(attr.UpdateData) == 0 {
+					continue
+				}
 				err := s.logics.AttributeOperation().UpdateObjectAttribute(kit, attr.UpdateData, attr.Data.ID, 0)
 				if err != nil {
 					return err
 				}
 			}
 		}
-		// note: be sure to process the unique check after the attributes are processed,
-		// and the order cannot be reversed
+
+		// note: be sure to process the unique check after the attrs are processed, and the order cannot be reversed
 
 		// 3、unique validation for preprocessed template synchronization
+
+		res, err := s.logics.FieldTemplateOperation().CompareFieldTemplateUnique(kit, uniqueOp, false)
+		if err != nil {
+			blog.Errorf("get field template unique failed, cond: %+v, err: %v, rid: %s", uniqueOp, err, kit.Rid)
+			return err
+		}
+
 		create, update, err := s.preprocessTmplUnique(kit, objectID, uniqueOp, res)
 		if err != nil {
 			blog.Errorf("get object unique failed, object: %+v, unique: %+v, err: %v, rid: %s", objectID,
 				uniqueOp.Uniques, err, kit.Rid)
 			return err
 		}
-		createUniques, updateUniques = create, update
 
 		// 4、create a unique check for the model
-		if len(createUniques) > 0 {
-			for _, unique := range createUniques {
+		if len(create) > 0 {
+			for _, unique := range create {
 				op := metadata.CreateModelAttrUnique{Data: unique}
 				_, err := s.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header, objectID, op)
 				if err != nil {
@@ -593,13 +589,12 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 		}
 
 		// 5、update the unique validation of the model
-		if len(updateUniques) > 0 {
-			for _, unique := range updateUniques {
+		if len(update) > 0 {
+			for _, unique := range update {
 				input := metadata.UpdateUniqueRequest{
 					TemplateID: unique.TemplateID,
 					Keys:       unique.Keys,
-					LastTime:   metadata.Now(),
-				}
+					LastTime:   metadata.Now()}
 
 				op := metadata.UpdateModelAttrUnique{Data: input}
 				_, err := s.clientSet.CoreService().Model().UpdateModelAttrUnique(kit.Ctx, kit.Header,
