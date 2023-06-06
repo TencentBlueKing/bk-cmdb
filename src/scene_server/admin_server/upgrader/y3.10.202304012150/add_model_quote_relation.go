@@ -100,7 +100,7 @@ func addHiddenClassification(ctx context.Context, db dal.RDB, conf *upgrader.Con
 func addModelQuoteRelationIndex(ctx context.Context, db dal.RDB) error {
 	indexes := []types.Index{
 		{
-			Name: common.CCLogicIndexNamePrefix + "dest_model_src_model",
+			Name: common.CCLogicIndexNamePrefix + "destModel_bkSupplierAccount",
 			Keys: bson.D{
 				{common.BKDestModelField, 1},
 				{common.BKOwnerIDField, 1},
@@ -108,7 +108,7 @@ func addModelQuoteRelationIndex(ctx context.Context, db dal.RDB) error {
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "dest_model_src_model",
+			Name: common.CCLogicIndexNamePrefix + "srcModel_bkPropertyID_bkSupplierAccount",
 			Keys: bson.D{
 				{common.BKSrcModelField, 1},
 				{common.BKPropertyIDField, 1},
@@ -117,7 +117,7 @@ func addModelQuoteRelationIndex(ctx context.Context, db dal.RDB) error {
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "dest_model_src_model",
+			Name: common.CCLogicIndexNamePrefix + "srcModel_bkSupplierAccount",
 			Keys: bson.D{
 				{common.BKSrcModelField, 1},
 				{common.BKOwnerIDField, 1},
@@ -139,12 +139,6 @@ func addModelQuoteRelationIndex(ctx context.Context, db dal.RDB) error {
 			continue
 		}
 		existIdxMap[index.Name] = struct{}{}
-	}
-
-	// the number of indexes is not as expected.
-	if len(existIdxMap) != 0 && (len(existIdxMap) < len(indexes)) {
-		blog.Errorf("the number of indexes is not as expected, existId: %+v, indexes: %v", existIdxMap, indexes)
-		return errors.New("the number of indexes is not as expected")
 	}
 
 	for _, index := range indexes {
