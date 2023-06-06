@@ -26,7 +26,7 @@
           display="info" :value="task.bk_resource_type">
         </task-resource-selector>
       </bk-form-item>
-      <bk-form-item class="form-item clearfix" :label="$t('管控区域设定')" :label-width="$i18n.locale === 'en' ? 145 : 85">
+      <bk-form-item class="form-item clearfix" :label="$t('管控区域设定')" :label-width="$i18n.locale === 'en' ? 180 : 85">
       </bk-form-item>
     </bk-form>
     <div class="info-table">
@@ -145,7 +145,7 @@
                   requestId: this.request.delete
                 }
               })
-              this.$success('删除成功')
+              this.$success(this.$t('删除成功'))
               this.container.hide()
               RouterQuery.set({
                 _t: Date.now()

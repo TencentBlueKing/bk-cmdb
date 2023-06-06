@@ -569,7 +569,7 @@
               </div>
             </grid-item>
             <grid-item
-              label="服务分类"
+              :label="$t('服务分类')"
               direction="row"
               :label-width="160">
               <div class="editable-content">
