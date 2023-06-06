@@ -44,6 +44,7 @@
     "host_property_bk_host_outerip": "Outer IP",
     "host_property_bk_host_innerip_v6": "Inner IPv6",
     "host_property_bk_host_outerip_v6": "Outer IPv6",
+    "host_property_bk_addressing": "Addressing Mode",
     "host_property_operator": "Primary Maintainer",
     "host_property_bk_bak_operator": "Backup Maintainer",
     "host_property_bk_asset_id": "Asset ID",
