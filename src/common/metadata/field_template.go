@@ -65,23 +65,26 @@ func (f *FieldTemplate) Validate() ccErr.RawErrorInfo {
 
 // FieldTemplateAttr field template attribute definition
 type FieldTemplateAttr struct {
-	ID           int64           `json:"id" bson:"id"`
-	TemplateID   int64           `json:"bk_template_id" bson:"bk_template_id"`
-	PropertyID   string          `json:"bk_property_id" bson:"bk_property_id"`
-	PropertyType string          `json:"bk_property_type" bson:"bk_property_type"`
-	PropertyName string          `json:"bk_property_name" bson:"bk_property_name"`
-	Unit         string          `json:"unit" bson:"unit"`
-	Placeholder  AttrPlaceholder `json:"placeholder" bson:"placeholder"`
-	Editable     AttrEditable    `json:"editable" bson:"editable"`
-	Required     AttrRequired    `json:"isrequired" bson:"isrequired"`
-	Option       interface{}     `json:"option" bson:"option"`
-	Default      interface{}     `json:"default" bson:"default"`
-	IsMultiple   bool            `json:"ismultiple" bson:"ismultiple"`
-	OwnerID      string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	Creator      string          `json:"creator" bson:"creator"`
-	Modifier     string          `json:"modifier" bson:"modifier"`
-	CreateTime   *Time           `json:"create_time" bson:"create_time"`
-	LastTime     *Time           `json:"last_time" bson:"last_time"`
+	ID           int64  `json:"id" bson:"id"`
+	TemplateID   int64  `json:"bk_template_id" bson:"bk_template_id"`
+	PropertyID   string `json:"bk_property_id" bson:"bk_property_id"`
+	PropertyType string `json:"bk_property_type" bson:"bk_property_type"`
+	PropertyName string `json:"bk_property_name" bson:"bk_property_name"`
+	// It is used to display field template attribute in order. When a template attribute array is created or updated,
+	// its value is set according to the order passed in by the front end.
+	PropertyIndex int64           `json:"bk_property_index" bson:"bk_property_index"`
+	Unit          string          `json:"unit" bson:"unit"`
+	Placeholder   AttrPlaceholder `json:"placeholder" bson:"placeholder"`
+	Editable      AttrEditable    `json:"editable" bson:"editable"`
+	Required      AttrRequired    `json:"isrequired" bson:"isrequired"`
+	Option        interface{}     `json:"option" bson:"option"`
+	Default       interface{}     `json:"default" bson:"default"`
+	IsMultiple    bool            `json:"ismultiple" bson:"ismultiple"`
+	OwnerID       string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Creator       string          `json:"creator" bson:"creator"`
+	Modifier      string          `json:"modifier" bson:"modifier"`
+	CreateTime    *Time           `json:"create_time" bson:"create_time"`
+	LastTime      *Time           `json:"last_time" bson:"last_time"`
 }
 
 // Validate validate FieldTemplateAttr
