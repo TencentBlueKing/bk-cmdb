@@ -103,7 +103,6 @@
       field: fieldDiffCounts.value,
       unique: uniqueDiffCounts.value,
     }
-    console.log(countMap[currentTab.value])
     return countMap[currentTab.value]
   })
 

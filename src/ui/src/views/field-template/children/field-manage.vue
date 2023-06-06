@@ -304,7 +304,8 @@
     }
   }
 
-  const handleRemoveField = (field, index) => {
+  const handleRemoveField = (field) => {
+    const index = fieldLocalList.value.findIndex(item => item.field.id === field.id)
     fieldLocalList.value.splice(index, 1)
 
     syncField()
@@ -424,8 +425,8 @@
           :field-unique="getFieldUnique(field.field)"
           :remove-disabled="fieldLocalList.length === 1"
           :remove-disabled-tips="$t('模板至少需要一个字段')"
-          @click-field="handleEditField"
-          @remove-field="handleRemoveField">
+          @click-field="handleEditField(field.field)"
+          @remove-field="handleRemoveField(field.field)">
           <template #flag-append v-if="!isCreateMode">
             <div class="flag-append" v-if="fieldStatus[field.field.id].new || fieldStatus[field.field.id].changed">
               <span class="flag-tag new" v-if="fieldStatus[field.field.id].new">

@@ -276,5 +276,16 @@ func GenerateStaticInstanceSelections() []InstanceSelection {
 				},
 			},
 		},
+		{
+			ID:     FieldGroupingTemplateSelection,
+			Name:   "字段组合模板列表",
+			NameEn: "Field Grouping Template List",
+			ResourceTypeChain: []ResourceChain{
+				{
+					SystemID: SystemIDCMDB,
+					ID:       FieldGroupingTemplate,
+				},
+			},
+		},
 	}
 }

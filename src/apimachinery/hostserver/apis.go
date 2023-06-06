@@ -455,18 +455,29 @@ func (hs *hostServer) UpdateHostBatch(ctx context.Context, h http.Header, dat in
 }
 
 // UpdateHostPropertyBatch TODO
-func (hs *hostServer) UpdateHostPropertyBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (hs *hostServer) UpdateHostPropertyBatch(ctx context.Context, h http.Header,
+	data map[string]interface{}) errors.CCErrorCoder {
+
+	resp := new(metadata.Response)
 	subPath := "/hosts/property/batch"
 
-	err = hs.client.Put().
+	err := hs.client.Put().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return ccErr
+	}
+
+	return nil
 }
 
 // CreateDynamicGroup is dynamic group create action api machinery.

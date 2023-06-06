@@ -509,6 +509,8 @@ const (
 
 	CCErrorTopoObjForbiddenCreateAssociation           = 1101120
 	CCErrorTopoAssociatedObjForbiddenCreateAssociation = 1101121
+	CCErrTopoFieldTemplateAttrConflict                 = 1101122
+	CCErrTopoFieldTemplateUniqueConflict               = 1101123
 
 	// object controller 1102XXX
 
@@ -865,6 +867,12 @@ const (
 	CCErrCoreServiceSearchDBUniqueIndex = 1113037
 	// CCErrCoreServiceCreateDBUniqueIndex 创建唯一索引失败,现有数据有重复值
 	CCErrCoreServiceCreateDBUniqueIndexDuplicateValue = 1113039
+	// CCErrCoreServiceFieldTemplateHasAttr 字段组合模版存在属性配置
+	CCErrCoreServiceFieldTemplateHasAttr = 1113040
+	// CCErrCoreServiceFieldTemplateHasUnique 字段组合模版存在唯一校验配置
+	CCErrCoreServiceFieldTemplateHasUnique = 1113041
+	// CCErrCoreServiceFieldTemplateHasRelation 字段组合模版存在与模型的关联关系
+	CCErrCoreServiceFieldTemplateHasRelation = 1113042
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900

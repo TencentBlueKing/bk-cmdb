@@ -46,8 +46,6 @@
   const [{ uniqueChecks: modelBeforeUniqueList, pending }] = useUniqueCheck(currentModelId)
   const [{ properties }] = useProperty(propertyParams)
 
-  console.log(properties, '---uniqueChecks', modelBeforeUniqueList)
-
   const newFieldList = computed(() => {
     const news = props.diffs.create ?? []
     return news.map(item => props.templateUniqueList[item.index])

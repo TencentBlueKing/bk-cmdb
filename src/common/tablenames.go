@@ -109,6 +109,18 @@ const (
 
 	// BKTableNameMainlineInstance is a virtual collection name which represent for mainline instance events
 	BKTableNameMainlineInstance = "cc_MainlineInstance"
+
+	// BKTableNameFieldTemplate  field template table
+	BKTableNameFieldTemplate = "cc_FieldTemplate"
+
+	// BKTableNameObjAttDesTemplate  field template  attribute description table
+	BKTableNameObjAttDesTemplate = "cc_ObjAttDesTemplate"
+
+	// BKTableNameObjectUniqueTemplate  field template unique checklist table
+	BKTableNameObjectUniqueTemplate = "cc_ObjectUniqueTemplate"
+
+	// BKTableNameObjFieldTemplateRelation  object and field template relationship table
+	BKTableNameObjFieldTemplateRelation = "cc_ObjFieldTemplateRelation"
 )
 
 // AllTables is all table names, not include the sharding tables which is created dynamically,

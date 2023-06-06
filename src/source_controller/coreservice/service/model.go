@@ -229,7 +229,7 @@ func (s *coreService) SearchModel(ctx *rest.Contexts) {
 	ctx.RespEntity(dataResult)
 }
 
-// SearchModelWithAttribute TODO
+// SearchModelWithAttribute search model with attribute
 func (s *coreService) SearchModelWithAttribute(ctx *rest.Contexts) {
 
 	inputData := metadata.QueryCondition{}
@@ -251,11 +251,16 @@ func (s *coreService) SearchModelWithAttribute(ctx *rest.Contexts) {
 			dataResult.Info[modelIdx].Spec.ObjectName = s.TranslateObjectName(lang, &dataResult.Info[modelIdx].Spec)
 		}
 		for attributeIdx := range dataResult.Info[modelIdx].Attributes {
-			if dataResult.Info[modelIdx].Attributes[attributeIdx].IsPre || dataResult.Info[modelIdx].Spec.IsPre || needTranslateObjMap[dataResult.Info[modelIdx].Spec.ObjectID] {
-				dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
-				dataResult.Info[modelIdx].Attributes[attributeIdx].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
+			if dataResult.Info[modelIdx].Attributes[attributeIdx].IsPre || dataResult.Info[modelIdx].Spec.IsPre ||
+				needTranslateObjMap[dataResult.Info[modelIdx].Spec.ObjectID] {
+				dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName =
+					s.TranslatePropertyName(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
+				dataResult.Info[modelIdx].Attributes[attributeIdx].Placeholder =
+					s.TranslatePlaceholder(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
 				if dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType == common.FieldTypeEnum {
-					dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[modelIdx].Attributes[attributeIdx].Option)
+					dataResult.Info[modelIdx].Attributes[attributeIdx].Option =
+						s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[modelIdx].Attributes[attributeIdx],
+							dataResult.Info[modelIdx].Attributes[attributeIdx].Option)
 				}
 			}
 		}
@@ -683,7 +688,14 @@ func (s *coreService) CreateModelAttrUnique(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ModelOperation().CreateModelAttrUnique(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputDatas))
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	res, err := s.core.ModelOperation().CreateModelAttrUnique(ctx.Kit, objID, inputDatas)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(res)
 }
 
 // UpdateModelAttrUnique TODO
@@ -693,12 +705,21 @@ func (s *coreService) UpdateModelAttrUnique(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	id, err := strconv.ParseUint(ctx.Request.PathParameter("id"), 10, 64)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "id"))
 		return
 	}
-	ctx.RespEntityWithError(s.core.ModelOperation().UpdateModelAttrUnique(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), id, inputDatas))
+
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	res, err := s.core.ModelOperation().UpdateModelAttrUnique(ctx.Kit, objID, id, inputDatas)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(res)
 }
 
 // DeleteModelAttrUnique TODO

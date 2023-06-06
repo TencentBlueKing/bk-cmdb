@@ -1583,15 +1583,8 @@ func (ps *ProcServer) ListProcessInstancesDetails(ctx *rest.Contexts) {
 	ctx.RespEntity(processResult.Info)
 }
 
-// UnbindServiceTemplateOnModuleEnable TODO
-var UnbindServiceTemplateOnModuleEnable = true
-
 // RemoveTemplateBindingOnModule TODO
 func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
-	if UnbindServiceTemplateOnModuleEnable {
-		ctx.RespErrorCodeOnly(common.CCErrProcUnbindModuleServiceTemplateDisabled, "unbind service template from module disabled")
-		return
-	}
 
 	input := new(metadata.RemoveTemplateBindingOnModuleOption)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -1601,19 +1594,20 @@ func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
 
 	module, err := ps.getModule(ctx.Kit, input.ModuleID)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrTopoGetModuleFailed, "create service instance failed, get module failed, moduleID: %d, err: %v", input.ModuleID, err)
+		ctx.RespWithError(err, common.CCErrTopoGetModuleFailed, "moduleID: %d, err: %v", input.ModuleID, err)
 		return
 	}
 	if module.BizID != input.BizID {
 		err := ctx.Kit.CCError.CCError(common.CCErrCommNotFound)
-		ctx.RespWithError(err, common.CCErrCommNotFound, "create service instance failed, get module failed, moduleID: %d, err: %v", input.ModuleID, err)
+		ctx.RespWithError(err, common.CCErrCommNotFound, "moduleID: %d, err: %v", input.ModuleID, err)
 		return
 	}
 
 	var response *metadata.RemoveTemplateBoundOnModuleResult
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		response, err = ps.CoreAPI.CoreService().Process().RemoveTemplateBindingOnModule(ctx.Kit.Ctx, ctx.Kit.Header, input.ModuleID)
+		response, err = ps.CoreAPI.CoreService().Process().RemoveTemplateBindingOnModule(ctx.Kit.Ctx, ctx.Kit.Header,
+			input.ModuleID)
 		if err != nil {
 			blog.Errorf("remove template binding on module failed, parse business id failed, err: %+v", err)
 			return ctx.Kit.CCError.CCError(common.CCErrProcRemoveTemplateBindingOnModule)

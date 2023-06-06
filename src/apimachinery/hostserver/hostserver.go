@@ -63,7 +63,7 @@ type HostServerClientInterface interface {
 	SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (resp *metadata.
 		SearchHostResult, err error)
 	UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	UpdateHostPropertyBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	UpdateHostPropertyBatch(ctx context.Context, h http.Header, data map[string]interface{}) errors.CCErrorCoder
 
 	// CreateDynamicGroup TODO
 	// dynamic group interfaces.

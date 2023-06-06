@@ -251,6 +251,9 @@ const (
 
 	// BKDBLimit the db operator to limit return number of doc
 	BKDBLimit = "$limit"
+
+	// BKDBUnwind used to split values contained in an array field into separate doc
+	BKDBUnwind = "$unwind"
 )
 
 const (
@@ -775,6 +778,9 @@ const (
 	BKSrcModelField = "src_model"
 	// BKDestModelField destination model field in the model relationship table.
 	BKDestModelField = "dest_model"
+
+	// ObjectIDField the object id field, it is an int type field and is used to associate with the model
+	ObjectIDField = "object_id"
 )
 
 const (
@@ -1548,7 +1554,8 @@ const (
 	SyncSetTaskFlag = "set_template_sync"
 	// SyncModuleTaskFlag TODO
 	SyncModuleTaskFlag = "service_template_sync"
-
+	// SyncFieldTemplateTaskFlag field template synchronization task flag
+	SyncFieldTemplateTaskFlag = "field_template_sync"
 	// SyncModuleHostApplyTaskFlag module dimension host auto-apply async task flag.
 	SyncModuleHostApplyTaskFlag = "module_host_apply_sync"
 	// SyncServiceTemplateHostApplyTaskFlag  service template dimension host auto-apply async task flag.
@@ -1642,4 +1649,9 @@ type ModelQuoteType string
 
 const (
 	Table ModelQuoteType = "table"
+)
+
+const (
+	// BKTemplateID template id field
+	BKTemplateID = "bk_template_id"
 )

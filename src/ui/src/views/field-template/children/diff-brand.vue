@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  const props = defineProps({
+  defineProps({
     status: {
       type: String,
       default: ''
@@ -29,7 +29,6 @@
       default: ''
     }
   })
-  console.log(props)
 </script>
 
 <template>
