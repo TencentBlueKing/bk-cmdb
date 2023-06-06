@@ -26,7 +26,7 @@
   import { UNIUQE_TYPES } from '@/dictionary/model-constants'
   import UniqueManage from './unique-manage.vue'
   import ModelFieldSelector from './model-field-selector.vue'
-  import useField, { unwrapData, excludeFieldType, isFieldExist } from './use-field'
+  import useField, { unwrapData, excludeFieldType, isFieldExist, defaultFieldData } from './use-field'
   import useUnique from './use-unique'
 
   const props = defineProps({
@@ -42,6 +42,10 @@
       type: Array,
       default: () => ([])
     },
+    beforeUniqueList: {
+      type: Array,
+      default: () => ([])
+    },
     isCreateMode: {
       type: Boolean,
       default: false
@@ -50,7 +54,7 @@
 
   const emit = defineEmits(['update-field', 'update-unique'])
 
-  const { beforeFieldList: oldFieldList } = toRefs(props)
+  const { beforeFieldList: oldFieldList, beforeUniqueList: oldUniqueList } = toRefs(props)
 
   const sliderViews = {
     SETTING_FORM: 'settingForm',
@@ -66,7 +70,7 @@
 
   // use方法中参数默认必须是Ref类型
   const { fieldStatus } = useField(oldFieldList, fieldLocalList)
-  const { getUniqueByField, clearUniqueByField } =  useUnique(uniqueLocalList)
+  const { getUniqueByField, clearUniqueByField } =  useUnique(oldUniqueList, uniqueLocalList)
 
   const slider = reactive({
     title: '',
@@ -82,9 +86,10 @@
     const fieldList = cloneDeep(props.fieldList || [])
     if (props.isCreateMode && !fieldList.length) {
       fieldList.push({
+        ...defaultFieldData(),
         id: uuidv4(),
         bk_property_id: 'demo',
-        bk_property_name: '示例字段',
+        bk_property_name: t('示例字段'),
         bk_property_type: PROPERTY_TYPES.SINGLECHAR
       })
     }
@@ -99,6 +104,15 @@
   const removedFieldList = computed(() => oldFieldList.value
     .filter(item => fieldStatus.value[item.id].removed)
     .map(unwrapData))
+
+  const filterWord = ref('')
+  const displayFieldLocalList = computed(() => {
+    if (filterWord.value) {
+      const reg = new RegExp(filterWord.value, 'i')
+      return fieldLocalList.value.filter(item => reg.test(item.field.bk_property_name))
+    }
+    return fieldLocalList.value
+  })
 
   const handleAddField = () => {
     slider.title = t('新建字段')
@@ -212,16 +226,20 @@
   }
 
   const handleFieldSave = (id, fieldData, extraData) => {
-    if (!id && isFieldExist(fieldData, fieldLocalList.value)) {
+    if (!id && isFieldExist(fieldData, [...fieldLocalList.value, ...removedFieldList.value])) {
       $error(t('字段已在模板中存在，无法添加'))
       return
     }
-    // 校验“唯一校验”
-    const validateUniqueResult = uniqueManageComp.value?.validateAll?.()
 
-    if (!validateUniqueResult) {
-      uniqueManageComp.value?.$el?.scrollIntoView?.()
-      return
+    // 启用了唯一校验并且类型是联合唯一才需要校验，单独唯一不校验在后续的处理中直接对数据进行修改
+    if (slider.uniqueEnabled && slider.uniqueType === UNIUQE_TYPES.UNION) {
+      // 校验“唯一校验”
+      const validateUniqueResult = uniqueManageComp.value?.isValid?.()
+
+      if (!validateUniqueResult) {
+        uniqueManageComp.value?.$el?.scrollIntoView?.()
+        return
+      }
     }
 
     let currentField = null
@@ -234,11 +252,11 @@
     if (slider.uniqueEnabled) {
       if (slider.uniqueType === UNIUQE_TYPES.UNION) {
         // 当前字段的唯一检验数据
-        const fieldUniqueList = uniqueManageComp.value?.uniqueList
+        const fieldUniqueList = uniqueManageComp.value?.getUniqueList()
         setUnique(fieldUniqueList, currentField)
       } else {
         // 默认情况下，单独唯一同样可以使用隐藏的唯一校验组件，此处将得到一条默认的唯一校验
-        const fieldUniqueList = uniqueManageComp.value?.uniqueList
+        const fieldUniqueList = uniqueManageComp.value?.getUniqueList()
 
         const { list, type } = getUniqueByField(currentField.field)
         // 当前字段保存前无任何唯一检验数据
@@ -309,7 +327,6 @@
       return
     }
     const oriField = oldFieldList.value.find(item => item.id === removedField.id)
-    // Reflect.deleteProperty(oriField, 'id')
     const { field, extra } = unwrapData(oriField)
     appendField(field, extra)
   }
@@ -360,6 +377,7 @@
   const handleSliderHidden = () => {
     sliderClose()
   }
+  const handleOpenUnqiueDrawer = () => {}
 </script>
 
 <template>
@@ -387,22 +405,25 @@
       <div class="filter">
         <bk-input
           class="search-input"
+          v-model="filterWord"
           :placeholder="$t('请输入字段名称')"
           :right-icon="'bk-icon icon-search'" />
-        <bk-button theme="default" class="unique-button">
+        <bk-button theme="default" class="unique-button" @click="handleOpenUnqiueDrawer">
           {{$t('唯一校验')}}
-          <em class="num">0</em>
+          <em class="num">{{uniqueLocalList.length}}</em>
         </bk-button>
       </div>
     </div>
     <field-grid
-      :field-list="fieldLocalList"
+      :field-list="displayFieldLocalList"
       @sort-change="handleSortChange">
       <template #field-card="{ field, itemClass }">
         <field-card
           :class="[itemClass, 'field-card-container']"
           :field="field.field"
           :field-unique="getFieldUnique(field.field)"
+          :remove-disabled="fieldLocalList.length === 1"
+          :remove-disabled-tips="$t('模板至少需要一个字段')"
           @click-field="handleEditField"
           @remove-field="handleRemoveField">
           <template #flag-append v-if="!isCreateMode">
@@ -429,7 +450,8 @@
             :class="[itemClass, 'field-card-container', 'removed']"
             :field="field.field"
             :field-unique="getFieldUnique(field.field)"
-            :deletable="false">
+            :deletable="false"
+            :sortable="false">
             <template #flag-append>
               <div class="flag-append">
                 <span class="flag-tag changed">
@@ -519,6 +541,7 @@
                 :field="fieldInfo"
                 :field-list="pureFieldList"
                 :unique-list="uniqueLocalList"
+                :before-unique-list="oldUniqueList"
                 ref="uniqueManageComp">
               </unique-manage>
             </grid-layout>

@@ -1717,5 +1717,8 @@
     "需先设置唯一标识和名称，再进行唯一校验的设置": "You need to set the ID and name first, and then set the unique verification",
     "请选择导入的字段：": "Please select import fields: ",
     "不允许删除在唯一校验中的字段": "It is not allowed to delete fields in the unique check",
-    "取消字段唯一校验确认提示语": "After the unique verification is canceled, the unique verification rules related to this field will be deleted after submission. Confirm whether to continue?"
+    "取消字段唯一校验确认提示语": "After the unique verification is canceled, the unique verification rules related to this field will be deleted after submission. Confirm whether to continue?",
+    "共N个": "Total {count}",
+    "全选N个模型": "Select all {count} models",
+    "字段组合模板同步结果": "Synchronization completed, with {success} successes and {fail} failures"
 }

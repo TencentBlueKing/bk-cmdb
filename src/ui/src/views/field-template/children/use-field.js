@@ -29,7 +29,10 @@ export default function useField(beforeFieldList, fieldListLocal) {
       if (!matched) {
         fieldStatus[field.id].new = true
       } else { // 能找到，需要检查是否有变化
-        fieldStatus[field.id].changed = !isEqual(normalizeFieldData([matched]), normalizeFieldData([wrapData(data)]))
+        const before = normalizeFieldData([matched], false)
+        // fieldListLocal中会丢失掉bk_template_id，这里补充上，默认使用与认为与原字段一致的值
+        const after = normalizeFieldData([{ ...wrapData(data), bk_template_id: matched.bk_template_id }], false)
+        fieldStatus[field.id].changed = !isEqual(before, after)
       }
     })
 
@@ -104,30 +107,33 @@ export const wrapData = (data) => {
   return settingData
 }
 
+export const defaultFieldData = () => ({
+  id: '',
+  bk_template_id: 0,
+  bk_property_id: '',
+  bk_property_name: '',
+  bk_property_type: '',
+  unit: '',
+  option: '',
+  default: '',
+  ismultiple: false,
+  placeholder: {
+    lock: true,
+    value: ''
+  },
+  isrequired: {
+    lock: true,
+    value: false
+  },
+  editable: {
+    lock: true,
+    value: true
+  }
+})
+
 export const normalizeFieldData = (fieldData, isCreate = true, fieldStatus) => {
   const fieldList = []
-  const defaultData = {
-    id: '',
-    bk_property_id: '',
-    bk_property_name: '',
-    bk_property_type: '',
-    unit: '',
-    option: '',
-    default: '',
-    ismultiple: false,
-    placeholder: {
-      lock: true,
-      value: ''
-    },
-    isrequired: {
-      lock: true,
-      value: false
-    },
-    editable: {
-      lock: true,
-      value: true
-    }
-  }
+  const defaultData = defaultFieldData()
 
   fieldData.forEach((item) => {
     const field = {
@@ -157,16 +163,19 @@ export const normalizeFieldData = (fieldData, isCreate = true, fieldStatus) => {
   return fieldList
 }
 
-export const normalizeUniqueData = (uniqueData, fieldData, isCreate = true) => {
+export const normalizeUniqueData = (uniqueData, fieldData, isCreate = true, uniqueStatus) => {
   const uniqueList = uniqueData.map((item) => {
     const unique = {
       id: item.id,
       keys: item.keys.map(key => fieldData.find(field => field.id === key)?.bk_property_id)
     }
 
-    // TODO: 补充编辑流程中新创建的处理
     if (isCreate) {
       Reflect.deleteProperty(unique, 'id')
+    } else {
+      if (uniqueStatus?.value?.[unique.id]?.new) {
+        Reflect.deleteProperty(unique, 'id')
+      }
     }
 
     return unique
@@ -179,3 +188,5 @@ export const isFieldSame = (field1, field2) => field1.bk_property_id === field2.
   || field1.bk_property_name === field2.bk_property_name
 
 export const isFieldExist = (field, fieldList) => fieldList.some(item => isFieldSame(item.field, field))
+
+export const MAX_FIELD_COUNT = 20

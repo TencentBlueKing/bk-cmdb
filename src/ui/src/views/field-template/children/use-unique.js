@@ -10,12 +10,48 @@
  * limitations under the License.
  */
 
-import { unref } from 'vue'
+import { computed, unref } from 'vue'
+import isEqual from 'lodash/isEqual'
 import { UNIUQE_TYPES } from '@/dictionary/model-constants'
 
-export default function useUnique(uniqueList) {
+export default function useUnique(beforeUniqueList, uniqueListLocal) {
+  const uniqueStatus = computed(() => {
+    const status = {}
+    uniqueListLocal.value.forEach((data) => {
+      const { id: uniqueId, keys: uniqueKeys } = data
+      status[uniqueId] = {
+        new: false,
+        changed: false
+      }
+
+      // 在接口数据中找不到，表示为新增
+      const matched = beforeUniqueList.value.find(item => item.id === uniqueId)
+      if (!matched) {
+        status[uniqueId].new = true
+      } else { // 能找到，需要检查是否有变化
+        status[uniqueId].changed = !isEqual(matched.keys, uniqueKeys)
+      }
+    })
+
+    // 判断是否删除，从接口数据中查找
+    beforeUniqueList.value.forEach((unique) => {
+      if (!status[unique.id]) {
+        status[unique.id] = {
+          removed: false
+        }
+      }
+
+      // 在本地数据中找不到，表示为删除
+      if (!uniqueListLocal.value.find(item => item.id === unique.id)) {
+        status[unique.id].removed = true
+      }
+    })
+
+    return status
+  })
+
   const getUniqueByField = (field) => {
-    const list = unref(uniqueList)
+    const list = unref(uniqueListLocal)
     const fieldUniqueList = list.filter(item => item.keys.includes(field.id))
 
     let type = UNIUQE_TYPES.SINGLE
@@ -34,13 +70,16 @@ export default function useUnique(uniqueList) {
   const clearUniqueByField = (field) => {
     const { list } = getUniqueByField(field)
     list.forEach((unique) => {
-      const index = uniqueList.value.findIndex(item => item.id === unique.id)
-      uniqueList.value.splice(index, 1)
+      const index = uniqueListLocal.value.findIndex(item => item.id === unique.id)
+      uniqueListLocal.value.splice(index, 1)
     })
   }
 
   return {
+    uniqueStatus,
     getUniqueByField,
     clearUniqueByField
   }
 }
+
+export const MAX_UNIQUE_COUNT = 5

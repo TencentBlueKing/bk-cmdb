@@ -15,6 +15,7 @@
   import { useStore } from '@/store'
   import routerActions from '@/router/actions'
   import {
+    MENU_MODEL_FIELD_TEMPLATE,
     MENU_MODEL_FIELD_TEMPLATE_CREATE_FIELD_SETTINGS
   } from '@/dictionary/menu-symbol'
   import TopSteps from './children/top-steps.vue'
@@ -44,7 +45,11 @@
       history: true
     })
   }
-  const handleCancel = () => {}
+  const handleCancel = () => {
+    routerActions.redirect({
+      name: MENU_MODEL_FIELD_TEMPLATE
+    })
+  }
 </script>
 <script>
   export default {

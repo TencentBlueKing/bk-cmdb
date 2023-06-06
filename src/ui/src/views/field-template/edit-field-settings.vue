@@ -45,6 +45,7 @@
   })
   // 编辑前最初的数据，接口原始数据
   const beforeFieldList = ref([])
+  const beforeUniqueList = ref([])
 
   const nextButtonDisabled = computed(() => !fieldData.value.length)
 
@@ -58,6 +59,7 @@
     ])
 
     beforeFieldList.value = templateFieldList?.info || []
+    beforeUniqueList.value = templateUniqueList?.info || []
 
     // 如果存在草稿，优先使用
     fieldData.value = templateDraft.value.fieldList ?? (templateFieldList?.info || [])
@@ -137,6 +139,7 @@
       :field-list="fieldData"
       :unique-list="uniqueData"
       :before-field-list="beforeFieldList"
+      :before-unique-list="beforeUniqueList"
       :is-create-mode="false"
       @update-field="handleFieldUpdate"
       @update-unique="handleUniqueUpdate">
