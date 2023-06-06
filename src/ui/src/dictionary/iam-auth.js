@@ -736,7 +736,15 @@ export const IAM_ACTIONS = {
     cmdb_action: 'project.update',
     relation: [{
       view: IAM_VIEWS.PROJECT,
-      instances: [IAM_VIEWS.PROJECT]
+      instances: (relation) => {
+        const [[levelOne]] = relation
+        if (Array.isArray(levelOne)) {
+          const [instId] = levelOne
+          return ([{ type: IAM_VIEWS.PROJECT, id: String(instId) }])
+        }
+        const [instId] = relation
+        return ([{ type: IAM_VIEWS.PROJECT, id: String(instId) }])
+      }
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
       resource_id: relationIds[0]

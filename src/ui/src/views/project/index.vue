@@ -10,7 +10,7 @@
           {{$t('新建')}}
         </bk-button>
       </cmdb-auth>
-      <cmdb-auth :auth="{ type: $OPERATION.U_PROJECT }">
+      <cmdb-auth :auth="batchUpdateAuth">
         <template #default="{ disabled }">
           <bk-button
             class="ml10"
@@ -321,6 +321,12 @@
       },
       fastSearchProperties() {
         return this.properties.filter(item => item.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
+      },
+      batchUpdateAuth() {
+        return this.selectedRows.map(item => ({
+          type: this.$OPERATION.U_PROJECT,
+          relation: [parseInt(item.id, 10)]
+        }))
       }
     },
     watch: {
