@@ -60,7 +60,7 @@ export default function useField(beforeFieldList, fieldListLocal) {
 
 export const withLockKeys = ['editable', 'isrequired', 'placeholder']
 
-export const excludeFieldType = [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.ENUMQUOTE]
+export const excludeFieldType = [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ENUM]
 
 export const unwrapData = (data) => {
   const finalData = {

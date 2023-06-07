@@ -22,6 +22,7 @@
   import FieldGrid from '@/components/model-manage/field-grid.vue'
   import FieldCard from '@/components/model-manage/field-card.vue'
   import FieldSettingForm from '@/components/model-manage/field-group/field-detail/index.vue'
+  import Drawer from '@/components/ui/other/drawer.vue'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { UNIUQE_TYPES } from '@/dictionary/model-constants'
   import UniqueManage from './unique-manage.vue'
@@ -81,6 +82,8 @@
     view: '',
     isEditField: false
   })
+
+  const uniqueDrawerOpen = ref(false)
 
   watchEffect(() => {
     const fieldList = cloneDeep(props.fieldList || [])
@@ -306,9 +309,10 @@
 
   const handleRemoveField = (field) => {
     const index = fieldLocalList.value.findIndex(item => item.field.id === field.id)
-    fieldLocalList.value.splice(index, 1)
-
-    syncField()
+    if (~index) {
+      fieldLocalList.value.splice(index, 1)
+      syncField()
+    }
   }
 
   const handleSortChange = (event) => {
@@ -378,7 +382,12 @@
   const handleSliderHidden = () => {
     sliderClose()
   }
-  const handleOpenUnqiueDrawer = () => {}
+  const handleOpenUnqiueDrawer = () => {
+    uniqueDrawerOpen.value = false
+  }
+  const handleUniqueDrawerClose = () => {
+    uniqueDrawerOpen.value = false
+  }
 </script>
 
 <template>
@@ -556,12 +565,17 @@
         </model-field-selector>
       </template>
     </bk-sideslider>
+
+    <drawer :open="uniqueDrawerOpen" @close="handleUniqueDrawerClose">
+      <template #content>
+      </template>
+    </drawer>
   </div>
 </template>
 
 <style lang="scss" scoped>
   .field-manage {
-    margin: 24px 108px;
+    padding: 24px 108px;
 
     .toolbar {
       display: flex;

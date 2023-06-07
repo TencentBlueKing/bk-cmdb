@@ -294,7 +294,7 @@
           </div>
         </div>
         <bk-exception type="empty" scene="part" class="empty" v-if="readonly && !modelListLocal.length">
-          <div>{{$t('暂无绑定模型')}}</div>
+          <div>{{$t('该模板暂未绑定任何模型')}}</div>
         </bk-exception>
       </div>
       <div slot="main" :class="['main', { empty: !selectedModel }]">

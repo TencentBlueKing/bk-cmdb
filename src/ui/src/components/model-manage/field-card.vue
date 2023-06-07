@@ -71,7 +71,7 @@
   <div :class="['field-card', { sortable }]" @click="handleClickField(field)">
     <span class="drag-icon" v-if="sortable"></span>
     <div class="field-icon">
-      <i class="icon-cc icon-duanzifu"></i>
+      <i :class="`icon-cc-field-${field.bk_property_type}`"></i>
     </div>
     <div class="field-info">
       <div class="field-name-area">
