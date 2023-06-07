@@ -1721,5 +1721,8 @@
     "取消字段唯一校验确认提示语": "After the unique verification is canceled, the unique verification rules related to this field will be deleted after submission. Confirm whether to continue?",
     "绑定的字段组合模板":"Bound field combination template",
     "模板":"template",
-    "模板提示信息":"Field of '{templateInfo}'"
+    "模板提示信息":"Field of '{templateInfo}'",
+    "共N个": "Total {count}",
+    "全选N个模型": "Select all {count} models",
+    "字段组合模板同步结果": "Synchronization completed, with {success} successes and {fail} failures"
 }

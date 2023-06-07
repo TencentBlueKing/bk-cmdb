@@ -11,7 +11,8 @@
  */
 
 import http from '@/api'
-import { enableCount, rollReqUseCount } from '../utils.js'
+import { enableCount, rollReqUseCount, maxPageParams } from '../utils.js'
+import { MAX_FIELD_COUNT } from '@/views/field-template/children/use-field.js'
 
 // 创建模板
 const create = (data, config) => http.post('create/field_template', data, config)
@@ -47,7 +48,13 @@ const getModelCount = (data, config) => http.post(`${window.API_HOST}findmany/fi
 const findById = (id, config = {}) => http.get(`find/field_template/${id}`, config)
 
 // 查询模板字段
-const getFieldList = (data, config) => http.post('findmany/field_template/attribute', data, config)
+const getFieldList = (data, config) => http.post('findmany/field_template/attribute', {
+  page: {
+    ...maxPageParams(MAX_FIELD_COUNT),
+    sort: 'bk_property_index'
+  },
+  ...data,
+}, config)
 
 // 查询模板唯一校验
 const getUniqueList = (data, config) => http.post('findmany/field_template/unique', data, config)
@@ -70,6 +77,20 @@ const cloneTemplate = (data, config) => http.post('/create/field_template/clone'
 
 // 查询对应模版简要信息接口
 const getTemplateInfo = (data, config) => http.post('/find/field_template/simplify/by_unique_template_id', data, config)
+// 检测字段模板和模型中的字段的区别和冲突，返回值以模型上的字段为维度
+const getFieldDifference = (data, config) => http.post('find/field_template/attribute/difference', data, config)
+
+// 检测字段模板和模型中的唯一校验的区别和冲突，返回值以模型上的唯一校验为维度
+const getUniqueDifference = (data, config) => http.post('find/field_template/unique/difference', data, config)
+
+// 绑定模型
+const bindModel = (data, config) => http.post('update/field_template/bind/object', data, config)
+
+// 提交同步至模型任务
+const syncModel = (data, config) => http.post('update/topo/field_template/sync', data, config)
+
+// 查询同步状态
+const getSyncStatus = (data, config) => http.post('find/field_template/tasks_status', data, config)
 
 export default {
   create,
@@ -86,5 +107,10 @@ export default {
   updateTemplate,
   deleteTemplate,
   cloneTemplate,
-  getTemplateInfo
+  getTemplateInfo,
+  getFieldDifference,
+  getUniqueDifference,
+  bindModel,
+  syncModel,
+  getSyncStatus
 }

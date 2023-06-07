@@ -46,15 +46,21 @@ func InitFieldTemplate(c *capability.Capability) {
 		Handler: s.ListFieldTemplate})
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/field_template",
 		Handler: s.CreateFieldTemplate})
-
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/field_template/{id}",
 		Handler: s.FindFieldTemplateByID})
-
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/field_template/bind/object",
 		Handler: s.FieldTemplateBindObject})
-
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/field_template/unbind/object",
 		Handler: s.FieldTemplateUnbindObject})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/field_template",
+		Handler: s.DeleteFieldTemplate})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/field_template/clone",
+		Handler: s.CloneFieldTemplate})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/field_template",
+		Handler: s.UpdateFieldTemplate})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/field_template/info",
+		Handler: s.UpdateFieldTemplateInfo})
+
 	// field template attribute
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/attribute",
 		Handler: s.ListFieldTemplateAttr})
@@ -70,4 +76,10 @@ func InitFieldTemplate(c *capability.Capability) {
 		Handler: s.ListFieldTmplByObj})
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/object/by_field_template",
 		Handler: s.ListObjByFieldTmpl})
+
+	// compare field template with object
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/attribute/difference",
+		Handler: s.CompareFieldTemplateAttr})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/unique/difference",
+		Handler: s.CompareFieldTemplateUnique})
 }

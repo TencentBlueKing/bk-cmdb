@@ -11,15 +11,18 @@
 -->
 
 <script setup>
-  import { computed, reactive } from 'vue'
+  import { ref, computed, reactive } from 'vue'
   import { useStore } from '@/store'
   import routerActions from '@/router/actions'
   import {
-    MENU_MODEL_FIELD_TEMPLATE_CREATE_BASIC
+    MENU_MODEL_FIELD_TEMPLATE_CREATE_BASIC,
+    MENU_MODEL_FIELD_TEMPLATE_BIND,
+    MENU_MODEL_FIELD_TEMPLATE,
   } from '@/dictionary/menu-symbol'
   import fieldTemplateService from '@/service/field-template'
   import TopSteps from './children/top-steps.vue'
   import FieldManage from './children/field-manage.vue'
+  import CreateSuccess from './children/create-success.vue'
   import { wrapData, normalizeFieldData, normalizeUniqueData } from './children/use-field'
 
   const store = useStore()
@@ -33,14 +36,17 @@
     submit: Symbol('submit')
   }
 
+  const isCreateSuccess = ref(false)
+  const newTemplateId = ref(null)
+
   const templateData = computed(() => ({
     basic: basicData.value,
     fieldList: settingData.fieldList ?? fieldData.value,
     uniqueList: settingData.uniqueList ?? uniqueData.value
   }))
 
-  const submitButtonDisabled = computed(() => !templateData.value.basic?.name?.length
-    || !templateData.value.fieldList?.length)
+  const isDraftValid = computed(() => templateData.value.basic?.name?.length > 0)
+  const submitButtonDisabled = computed(() => !isDraftValid.value || !templateData.value.fieldList?.length)
 
   const settingData = reactive({
     fieldList: null,
@@ -70,10 +76,36 @@
       uniques: normalizeUniqueData(templateData.value.uniqueList, templateData.value.fieldList)
     }
 
-    await fieldTemplateService.create(submitData, { requestId: requestIds.submit })
+    try {
+      const result = await fieldTemplateService.create(submitData, { requestId: requestIds.submit })
+      newTemplateId.value = result.id
+      isCreateSuccess.value = true
+    } catch (err) {
+      isCreateSuccess.value = false
+      console.error(err)
+    }
   }
-  const handleCancel = () => {}
+  const handleCancel = () => {
+    routerActions.redirect({
+      name: MENU_MODEL_FIELD_TEMPLATE
+    })
+  }
   const handlePreview = () => {}
+
+  const handleSuccessAction = (action) => {
+    if (action === 'bind') {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE_BIND,
+        params: {
+          id: newTemplateId.value
+        }
+      })
+    } else if (action === 'back') {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE
+      })
+    }
+  }
 </script>
 <script>
   export default {
@@ -87,47 +119,55 @@
 </script>
 
 <template>
-  <cmdb-sticky-layout class="cmdb-config-sticky-layout">
-    <template #header="{ sticky }">
-      <top-steps width="360px" :current="2" :class="{ 'is-sticky': sticky }"></top-steps>
-    </template>
-    <field-manage
-      :field-list="fieldData"
-      :unique-list="uniqueData"
-      :is-create-mode="true"
-      @update-field="handleFieldUpdate"
-      @update-unique="handleUniqueUpdate">
-    </field-manage>
-    <template #footer="{ sticky }">
-      <div :class="['layout-footer', { 'is-sticky': sticky }]">
-        <cmdb-auth :auth="{ type: $OPERATION.C_FIELD_TEMPLATE }">
-          <template #default="{ disabled }">
-            <bk-button
-              :disabled="disabled"
-              @click="handlePrevStep">
-              {{$t('上一步')}}
-            </bk-button>
-          </template>
-        </cmdb-auth>
-        <cmdb-auth :auth="{ type: $OPERATION.C_FIELD_TEMPLATE }">
-          <template #default="{ disabled }">
-            <bk-button
-              theme="primary"
-              :disabled="submitButtonDisabled || disabled"
-              :loading="$loading(requestIds.submit)"
-              @click="handleSubmit">
-              {{$t('提交')}}
-            </bk-button>
-          </template>
-        </cmdb-auth>
-        <bk-button
-          @click="handlePreview">
-          {{$t('预览')}}
-        </bk-button>
-        <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-      </div>
-    </template>
-  </cmdb-sticky-layout>
+  <div class="create-field-settings">
+    <cmdb-sticky-layout class="cmdb-config-sticky-layout" v-if="!isCreateSuccess">
+      <template #header="{ sticky }">
+        <top-steps width="360px" :current="2" :class="{ 'is-sticky': sticky }"></top-steps>
+      </template>
+      <field-manage
+        :field-list="fieldData"
+        :unique-list="uniqueData"
+        :is-create-mode="true"
+        @update-field="handleFieldUpdate"
+        @update-unique="handleUniqueUpdate">
+      </field-manage>
+      <template #footer="{ sticky }">
+        <div :class="['layout-footer', { 'is-sticky': sticky }]">
+          <cmdb-auth :auth="{ type: $OPERATION.C_FIELD_TEMPLATE }">
+            <template #default="{ disabled }">
+              <bk-button
+                :disabled="disabled"
+                @click="handlePrevStep">
+                {{$t('上一步')}}
+              </bk-button>
+            </template>
+          </cmdb-auth>
+          <cmdb-auth :auth="{ type: $OPERATION.C_FIELD_TEMPLATE }" v-bk-tooltips="{
+            disabled: isDraftValid,
+            content: $t('未填写基础信息')
+          }">
+            <template #default="{ disabled }">
+              <bk-button
+                theme="primary"
+                :disabled="submitButtonDisabled || disabled"
+                :loading="$loading(requestIds.submit)"
+                @click="handleSubmit">
+                {{$t('提交')}}
+              </bk-button>
+            </template>
+          </cmdb-auth>
+          <bk-button
+            @click="handlePreview">
+            {{$t('预览')}}
+          </bk-button>
+          <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
+        </div>
+      </template>
+    </cmdb-sticky-layout>
+    <div class="create-success-container" v-else>
+      <create-success @action="handleSuccessAction"></create-success>
+    </div>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -139,5 +179,9 @@
       margin-left: 0;
       justify-content: center;
     }
+  }
+
+  .create-success-container {
+    padding: 20px 24px;
   }
 </style>

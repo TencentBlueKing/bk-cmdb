@@ -17,6 +17,7 @@
   import { clone, set, debounce } from 'lodash'
   import { ref } from 'vue'
 
+  // eslint-disable-next-line no-unused-vars
   const props = defineProps({
     field: {
       type: Object
@@ -42,10 +43,21 @@
     onlyReady: {
       type: Boolean,
       default: false
+    },
+    isTemplate: {
+      type: Boolean,
+      default: false
+    },
+    removeDisabled: {
+      type: Boolean,
+      default: false
+    },
+    removeDisabledTips: {
+      type: String,
+      default: ''
     }
   })
 
-  console.log(props)
   const emit = defineEmits(['click-field'])
 
   let tips = null
@@ -110,37 +122,33 @@
         <span class="field-name" :title="field.bk_property_name">{{ field.bk_property_name }}</span>
         <span class="field-required">*</span>
         <slot name="flag-append"></slot>
-        <!-- <i class="bk-icon icon-exclamation-circle-shape conflict-icon"></i> -->
       </div>
       <div class="field-id-area">
         <span class="field-id">{{ field.bk_property_id }}</span>
       </div>
     </div>
-    <div class="tags" v-if="$slots['tag-append'] || fieldUnique.list.length">
+    <div class="tags" v-if="isTemplate || $slots['tag-append'] || fieldUnique.list.length">
       <span class="tag unique" v-if="fieldUnique.type === UNIUQE_TYPES.SINGLE">
         <em class="tag-text">{{$t('单独唯一')}}</em>
       </span>
-      <span class="tag unique union" v-else v-bk-tooltips="{
+      <span class="tag unique union" v-else-if="fieldUnique.type === UNIUQE_TYPES.UNION" v-bk-tooltips="{
         content: getUniqueRuleContent(fieldUnique.list)
       }">
         <em class="tag-text">{{$t('联合唯一')}}</em>
       </span>
+      <span class="tag template" v-if="isTemplate" @mouseenter="handleHover"><em class="tag-text">模板</em></span>
       <slot name="tag-append"></slot>
-      <span class="tag template"
-        v-if="props.field.bk_template_id === 0"
-        @mouseenter="handleHover">
-        <em class="tag-text">{{ $t('模板') }}</em></span>
     </div>
     <div class="field-action" @click.stop>
       <bk-button
         v-if="deletable"
         class="field-button"
         :text="true"
-        :disabled="fieldUnique.list.length > 0"
+        :disabled="fieldUnique.list.length > 0 || removeDisabled"
         @click.stop="handleClickRemove(field, fieldIndex)">
         <bk-icon class="field-button-icon" type="delete" v-bk-tooltips="{
-          disabled: !fieldUnique.list.length,
-          content: $t('不允许删除在唯一校验中的字段')
+          disabled: !fieldUnique.list.length && !removeDisabled,
+          content: fieldUnique.list.length > 0 ? $t('不允许删除在唯一校验中的字段') : removeDisabledTips
         }" />
       </bk-button>
       <slot name="action-append" v-bind="{ field, fieldIndex }"></slot>
@@ -280,11 +288,6 @@
       &.is-disabled {
         color: #c4c6cc;
       }
-    }
-
-    .conflict-icon {
-      font-size: 14px;
-      color: $dangerColor;
     }
 
     &:hover {

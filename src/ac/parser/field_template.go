@@ -138,6 +138,13 @@ var FieldTemplateAuthConfigs = []AuthConfig{
 		HTTPMethod:     http.MethodPost,
 		ResourceAction: meta.SkipAction,
 	},
+	{
+		Name:           "UpdateFieldTemplateInfo",
+		Description:    "更新字段模版基础信息",
+		Pattern:        "/api/v3/update/field_template/info",
+		HTTPMethod:     http.MethodPut,
+		ResourceAction: meta.SkipAction,
+	},
 }
 
 func (ps *parseStream) fieldTemplate() *parseStream {

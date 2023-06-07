@@ -141,5 +141,7 @@
 	"1101119": "The topology identification is illegal, the unique identification of k8s and cc cannot be mixed",
 	"1101120": "model %s forbids the creation of association relationships",
 	"1101121": "the associated model %s forbids the creation of association relationships",
+	"1101122": "Object attribute(id: %d) '%s' property conflicts with field template attribute(bk_property_id: %s)",
+	"1101123": "Object unique(id: %d) conflicts with field template unique(keys: %+v)",
 	"": ""
 }

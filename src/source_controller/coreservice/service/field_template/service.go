@@ -44,18 +44,30 @@ func InitFieldTemplate(c *capability.Capability) {
 		Handler: s.FieldTemplateBindObject})
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/field_template/unbind/object",
 		Handler: s.FieldTemplateUnbindObject})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/field_template",
+		Handler: s.DeleteFieldTemplate})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/field_template",
+		Handler: s.UpdateFieldTemplate})
 
 	// field template attribute
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/attribute",
 		Handler: s.ListFieldTemplateAttr})
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path: "/createmany/field_template/{bk_template_id}/attribute", Handler: s.CreateFieldTemplateAttrs})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path: "/delete/field_template/{bk_template_id}/attributes", Handler: s.DeleteFieldTemplateAttrs})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/field_template/{bk_template_id}/attributes",
+		Handler: s.UpdateFieldTemplateAttrs})
 
 	// field template unique
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/unique",
 		Handler: s.ListFieldTemplateUnique})
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/field_template/{bk_template_id}/unique",
 		Handler: s.CreateFieldTemplateUniques})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/field_template/{bk_template_id}/uniques",
+		Handler: s.DeleteFieldTemplateUniques})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/field_template/{bk_template_id}/uniques",
+		Handler: s.UpdateFieldTemplateUniques})
 
 	// field template relation
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/object/relation",

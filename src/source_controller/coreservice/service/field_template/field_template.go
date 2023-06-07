@@ -65,7 +65,7 @@ func (s *service) ListFieldTemplate(cts *rest.Contexts) {
 
 	fieldTemplates := make([]metadata.FieldTemplate, 0)
 	err = mongodb.Client().Table(common.BKTableNameFieldTemplate).Find(filter).Start(uint64(opt.Page.Start)).
-		Limit(uint64(opt.Page.Limit)).Fields(opt.Fields...).All(cts.Kit.Ctx, &fieldTemplates)
+		Limit(uint64(opt.Page.Limit)).Sort(opt.Page.Sort).Fields(opt.Fields...).All(cts.Kit.Ctx, &fieldTemplates)
 	if err != nil {
 		blog.Errorf("list field templates failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
 		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -354,4 +354,127 @@ func (s *service) CreateFieldTemplate(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(metadata.RspID{ID: int64(id)})
+}
+
+// DeleteFieldTemplate delete field template
+func (s *service) DeleteFieldTemplate(ctx *rest.Contexts) {
+	opt := new(metadata.DeleteOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	tmplCond := util.SetModOwner(opt.Condition, ctx.Kit.SupplierAccount)
+
+	templates := make([]metadata.FieldTemplate, 0)
+	err := mongodb.Client().Table(common.BKTableNameFieldTemplate).Find(tmplCond).Fields(common.BKFieldID).
+		All(ctx.Kit.Ctx, &templates)
+	if err != nil {
+		blog.Errorf("find field template failed, cond: %v, err: %v, rid: %s", tmplCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(templates) == 0 {
+		ctx.RespEntity(nil)
+		return
+	}
+
+	tmplIDs := make([]int64, 0)
+	for _, template := range templates {
+		tmplIDs = append(tmplIDs, template.ID)
+	}
+	countCond := mapstr.MapStr{common.BKTemplateID: mapstr.MapStr{common.BKDBIN: tmplIDs}}
+	countCond = util.SetModOwner(countCond, ctx.Kit.SupplierAccount)
+
+	relationCount, err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Find(countCond).
+		Count(ctx.Kit.Ctx)
+	if err != nil {
+		blog.Errorf("count field template relation failed, filter: %+v, err: %v, rid: %v", countCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+	if relationCount != 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCoreServiceFieldTemplateHasRelation))
+		return
+	}
+
+	attrCount, err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(countCond).Count(ctx.Kit.Ctx)
+	if err != nil {
+		blog.Errorf("count field template attribute failed, filter: %+v, err: %v, rid: %v", countCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+	if attrCount != 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCoreServiceFieldTemplateHasAttr))
+		return
+	}
+
+	uniqueCount, err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(countCond).
+		Count(ctx.Kit.Ctx)
+	if err != nil {
+		blog.Errorf("count field template unique failed, filter: %+v, err: %v, rid: %v", countCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+	if uniqueCount != 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCoreServiceFieldTemplateHasUnique))
+		return
+	}
+
+	if err := mongodb.Client().Table(common.BKTableNameFieldTemplate).Delete(ctx.Kit.Ctx, tmplCond); err != nil {
+		blog.Errorf("delete field template failed, cond: %v, err: %v, rid: %s", tmplCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+// UpdateFieldTemplate update field template
+func (s *service) UpdateFieldTemplate(ctx *rest.Contexts) {
+	opt := new(metadata.FieldTemplate)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	if opt.ID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKFieldID))
+		return
+	}
+
+	cond := map[string]interface{}{common.BKFieldID: opt.ID}
+	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
+	dbTmpl := new(metadata.FieldTemplate)
+	err := mongodb.Client().Table(common.BKTableNameFieldTemplate).Find(cond).One(ctx.Kit.Ctx, dbTmpl)
+	if err != nil {
+		blog.Errorf("find template failed, cond: %v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if dbTmpl == nil {
+		ctx.RespEntity(nil)
+		return
+	}
+
+	opt.OwnerID = dbTmpl.OwnerID
+	opt.Creator = dbTmpl.Creator
+	opt.CreateTime = dbTmpl.CreateTime
+	opt.Modifier = ctx.Kit.User
+	now := time.Now()
+	opt.LastTime = &metadata.Time{Time: now}
+
+	if err := mongodb.Client().Table(common.BKTableNameFieldTemplate).Update(ctx.Kit.Ctx, cond, opt); err != nil {
+		blog.Errorf("update field template failed, cond: %v, data: %v, err: %v, rid: %s", cond, opt, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
 }

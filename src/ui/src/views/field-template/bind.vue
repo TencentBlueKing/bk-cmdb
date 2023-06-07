@@ -11,34 +11,134 @@
 -->
 
 <script setup>
-  import { computed } from 'vue'
+  import { ref, computed, watchEffect } from 'vue'
+  import { t } from '@/i18n'
   import { useRoute } from '@/router/index'
+  import { useStore } from '@/store'
+  import routerActions from '@/router/actions'
+  import {
+    MENU_MODEL_FIELD_TEMPLATE
+  } from '@/dictionary/menu-symbol'
+  import { normalizeFieldData, normalizeUniqueData } from './children/use-field'
   import BindModel from './children/bind-model.vue'
+  import SyncResults from './children/sync-results.vue'
+  import fieldTemplateService from '@/service/field-template'
 
   const route = useRoute()
+  const store = useStore()
 
   const templateId = computed(() => Number(route.params.id))
+  const fieldData = ref([])
+  const uniqueData = ref([])
 
-  const handleCancel = () => {}
-  const handleSubmit = () => {}
+  const bindModelData = ref([])
+
+  const isDiffDone = ref(false)
+  const hasDiffError = ref(false)
+  const hasDiffConflict = ref(false)
+
+  const bindModelRef = ref(null)
+  const requestIds = {
+    bind: Symbol('bind')
+  }
+  const isBindSuccess = ref(false)
+  const modelIdList = ref([])
+
+  watchEffect(async () => {
+    try {
+      const [template, templateFieldList, templateUniqueList] = await Promise.all([
+        fieldTemplateService.findById(templateId.value),
+        fieldTemplateService.getFieldList({ bk_template_id: templateId.value }),
+        fieldTemplateService.getUniqueList({ bk_template_id: templateId.value })
+      ])
+
+      fieldData.value = templateFieldList?.info || []
+      uniqueData.value = templateUniqueList?.info || []
+
+      store.commit('setTitle', `${t('绑定模板')}【${template.name}】`)
+
+      const modelList = await fieldTemplateService.getBindModel({
+        bk_template_id: templateId.value,
+        // filter: {}
+      })
+      bindModelData.value = modelList
+    } catch (err) {
+      console.error(err)
+    }
+  })
+
+  const finalFieldList = computed(() => normalizeFieldData(fieldData.value, false))
+  const finalUniqueList = computed(() => normalizeUniqueData(uniqueData.value, fieldData.value, false))
+
+  const handleDiffUpdate = (hasError, hasConflict) => {
+    isDiffDone.value = true
+    hasDiffError.value = hasError
+    hasDiffConflict.value = hasConflict
+  }
+
+  const handleSubmit = async () => {
+    const modelIds = bindModelRef.value?.modelList?.map?.(model => model.id)
+    if (!modelIds) {
+      console.error('data error!')
+      return
+    }
+    modelIdList.value = modelIds
+
+    try {
+      await fieldTemplateService.bindModel({
+        bk_template_id: templateId.value,
+        object_ids: modelIds
+      }, { requestId: requestIds.bind })
+
+      isBindSuccess.value = true
+    } catch (err) {
+      isBindSuccess.value = false
+      console.error(err)
+    }
+  }
+
+  const handleCancel = () => {
+    routerActions.redirect({
+      name: MENU_MODEL_FIELD_TEMPLATE
+    })
+  }
 </script>
 
 <template>
   <div class="bind">
-    <bind-model :height="`${$APP.height - 111 - 52}px`"></bind-model>
-    <div class="bind-footer">
-      <cmdb-auth :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }">
-        <template #default="{ disabled }">
-          <bk-button
-            theme="primary"
-            :disabled="disabled"
-            @click="handleSubmit">
-            {{$t('提交')}}
-          </bk-button>
-        </template>
-      </cmdb-auth>
-      <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
-    </div>
+    <template v-if="!isBindSuccess">
+      <bind-model
+        ref="bindModelRef"
+        :height="`${$APP.height - 111 - 52}px`"
+        :template-id="templateId"
+        :binded-model-list="bindModelData"
+        :field-list="finalFieldList"
+        :unique-list="finalUniqueList"
+        @update-diffs="handleDiffUpdate">
+      </bind-model>
+      <div class="bind-footer">
+        <cmdb-auth :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }" v-bk-tooltips="{
+          disabled: !hasDiffConflict,
+          content: $t('模型存在冲突，无法提交')
+        }">
+          <template #default="{ disabled }">
+            <bk-button
+              theme="primary"
+              :disabled="disabled || !isDiffDone || hasDiffError || hasDiffConflict"
+              :loading="$loading(requestIds.bind)"
+              @click="handleSubmit">
+              {{$t('提交')}}
+            </bk-button>
+          </template>
+        </cmdb-auth>
+        <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
+      </div>
+    </template>
+    <sync-results v-else
+      scene="bind"
+      :template-id="templateId"
+      :model-ids="modelIdList">
+    </sync-results>
   </div>
 </template>
 
