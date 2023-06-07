@@ -14,6 +14,7 @@ import { IAM_VIEWS } from '@/dictionary/iam-auth'
 import CombineRequest from '@/api/combine-request.js'
 import { foreignkey } from '@/filters/formatter.js'
 import instanceService from '@/service/instance/instance'
+import projectService from '@/service/project'
 import businessSetService from '@/service/business-set/index.js'
 import {
   BUILTIN_MODELS,
@@ -62,6 +63,14 @@ export const IAM_VIEWS_INST_NAME = {
       config: { ...requestConfigBase(`find_instance_${id}`) }
     })
     return inst ? inst.bk_inst_name : id
+  },
+  async [IAM_VIEWS.PROJECT](vm, id) {
+    const models = vm.$store.getters['objectModelClassify/models']
+    const objId = (models.find(item => item.id === Number(id)) || {}).bk_obj_id
+    const project = await projectService.findOne({
+      id: objId
+    }, { ...requestConfigBase(`find_project_${id}`) })
+    return project ? project.bk_inst_name : id
   },
   [IAM_VIEWS.INSTANCE_MODEL](vm, id) {
     const models = vm.$store.getters['objectModelClassify/models']
