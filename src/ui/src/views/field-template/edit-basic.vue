@@ -108,6 +108,7 @@
             <bk-button
               theme="primary"
               :disabled="disabled"
+              :loading="$loading(requestIds.save)"
               @click="handleSave">
               {{$t('保存')}}
             </bk-button>

@@ -24,6 +24,7 @@
   import BindModel from './children/bind-model.vue'
   import SyncResults from './children/sync-results.vue'
   import useField, { normalizeFieldData, normalizeUniqueData, unwrapData } from './children/use-field'
+  import useUnique from './children/use-unique'
   import fieldTemplateService from '@/service/field-template'
 
   const route = useRoute()
@@ -39,16 +40,24 @@
 
   const templateId = computed(() => Number(route.params.id))
 
-  const isEditSuccessed = ref(false)
+  const isEditSuccess = ref(false)
 
   // 草稿数据
   const templateDraft = computed(() => store.getters['fieldTemplate/templateDraft'])
-  const fieldLocalList = computed(() => templateDraft.value.fieldList.map(unwrapData))
+  const fieldLocalList = computed(() => templateDraft.value.fieldList?.map(unwrapData) ?? [])
+  const uniqueLocalList = computed(() => templateDraft.value.uniqueList ?? [])
 
   // 接口数据
   const bindModelData = ref([])
   const fieldData = ref([])
   const uniqueData = ref([])
+
+  // 对比的状态
+  const isDiffDone = ref(false)
+  const hasDiffError = ref(false)
+  const hasDiffConflict = ref(false)
+
+  const modelIdList = ref([])
 
   watchEffect(async () => {
     const [template, templateFieldList, templateUniqueList] = await Promise.all([
@@ -65,32 +74,50 @@
       bk_template_id: templateId.value,
       // filter: {}
     })
-    console.log(modelList, template, 'modelList, template')
+
     bindModelData.value = modelList
+    modelIdList.value = modelList?.map?.(model => model.id)
   })
 
   // 状态数据实时再算一次，当中如果模板数据在其它地方被意外的修改，可能会出现非预期的数据不一致问题
   // 如果不再算一次，则需要依赖上一步中的fieldStatus数据，当直接进入到此页时并不存在上一页的数据
   const { fieldStatus } = useField(fieldData, fieldLocalList)
+  const { uniqueStatus } = useUnique(uniqueData, uniqueLocalList)
+
+  // 模板最终数据，草稿数据优先否则为接口数据
+  const templateData = computed(() => ({
+    fieldList: templateDraft.value.fieldList ?? fieldData.value,
+    uniqueList: templateDraft.value.uniqueList ?? uniqueData.value
+  }))
 
   const isDraftValid = computed(() => !templateDraft.value.basic.name)
   // 存在冲突或者没有编辑中的草稿数据
-  const submitButtonDisabled = computed(() => isDraftValid.value)
+  const submitButtonDisabled = computed(() => isDraftValid.value
+    || !isDiffDone.value
+    || hasDiffError.value
+    || hasDiffConflict.value)
+
+  const handleDiffUpdate = (hasError, hasConflict) => {
+    isDiffDone.value = true
+    hasDiffError.value = hasError
+    hasDiffConflict.value = hasConflict
+  }
+
+  const finalFieldList = computed(() => normalizeFieldData(templateData.value.fieldList, false, fieldStatus))
+  // eslint-disable-next-line max-len
+  const finalUniqueList = computed(() => normalizeUniqueData(templateData.value.uniqueList, templateData.value.fieldList, false, uniqueStatus))
 
   const handleSubmit = async () => {
-    console.log(templateDraft)
     const submitData = {
       id: templateId.value,
       ...templateDraft.value.basic,
-      attributes: normalizeFieldData(templateDraft.value.fieldList, false, fieldStatus),
-      uniques: normalizeUniqueData(templateDraft.value.uniqueList, templateDraft.value.fieldList, false)
+      attributes: finalFieldList.value,
+      uniques: finalUniqueList.value
     }
-
-    console.log(submitData, fieldStatus)
 
     try {
       await fieldTemplateService.update(submitData, { requestId: requestIds.submit })
-      isEditSuccessed.value = true
+      isEditSuccess.value = true
     } catch (err) {
       console.error(err)
     }
@@ -121,15 +148,26 @@
 
 <template>
   <div class="edit-binging">
-    <template v-if="!isEditSuccessed">
+    <template v-if="!isEditSuccess">
       <top-steps :steps="steps" width="632px" :current="3"></top-steps>
-      <bind-model :height="`${$APP.height - 161 - 52}px`" :model-list="bindModelData"></bind-model>
+      <bind-model
+        :height="`${$APP.height - 161 - 52}px`"
+        :readonly="true"
+        :template-id="templateId"
+        :model-list="bindModelData"
+        :field-list="finalFieldList"
+        :unique-list="finalUniqueList"
+        @update-diffs="handleDiffUpdate">
+      </bind-model>
       <div class="edit-binging-footer">
         <bk-button
           @click="handlePrevStep">
           {{$t('上一步')}}
         </bk-button>
-        <cmdb-auth :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }">
+        <cmdb-auth :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }" v-bk-tooltips="{
+          disabled: !hasDiffConflict,
+          content: $t('模型存在冲突，无法提交')
+        }">
           <template #default="{ disabled }">
             <bk-button
               theme="primary"
@@ -143,9 +181,11 @@
         <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
       </div>
     </template>
-    <div class="sync-container" v-else>
-      <sync-results></sync-results>
-    </div>
+    <sync-results v-else
+      scene="edit"
+      :template-id="templateId"
+      :model-ids="modelIdList">
+    </sync-results>
   </div>
 </template>
 
@@ -175,9 +215,5 @@
           margin-left: 8px;
       }
     }
-  }
-
-  .sync-container {
-    padding: 20px 24px;
   }
 </style>
