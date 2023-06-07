@@ -177,7 +177,7 @@ const menus = [{
   }, {
     id: MENU_MODEL_FIELD_TEMPLATE,
     i18n: '字段组合模板',
-    icon: 'icon-cc-nav-associated',
+    icon: 'icon-cc-menu-field-template',
     route: getMenuRoute(modelViews, MENU_MODEL_FIELD_TEMPLATE)
   }]
 }, {
