@@ -368,7 +368,7 @@
               requestId: this.request.update
             }
           })
-          this.$success('修改成功')
+          this.$success(this.$t('修改成功'))
           this.handleCancel()
           RouterQuery.set({
             _t: Date.now(),

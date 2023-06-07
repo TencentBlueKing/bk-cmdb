@@ -270,7 +270,7 @@
               requestId: this.request.update
             }
           })
-          this.$success('修改成功')
+          this.$success(this.$t('修改成功'))
           this.$emit('save')
         } catch (error) {
           console.error(error)

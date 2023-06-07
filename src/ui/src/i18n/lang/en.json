@@ -1711,5 +1711,8 @@
     "已彻底删除":"completely deleted",
     "清空筛选条件":"clear filter",
     "查看详情":"view details",
-    "编辑成功":"Edited successfully"
+    "编辑成功":"Edited successfully",
+    "确认离开当前页？":"Are you sure you want to leave the current page",
+    "离开将会导致未保存信息丢失":"Leaving will cause the loss of any unsaved data",
+    "离开":"Leave"
 }

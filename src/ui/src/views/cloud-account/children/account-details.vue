@@ -138,7 +138,7 @@
                   requestId: this.request.delete
                 }
               })
-              this.$success('删除成功')
+              this.$success(this.$t('删除成功'))
               this.container.hide()
               RouterQuery.set({
                 _t: Date.now(),
