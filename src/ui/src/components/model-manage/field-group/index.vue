@@ -155,6 +155,7 @@
                   :class="['field-card-container']"
                   :field="property"
                   :field-unique="getFieldUnique(property)"
+                  :is-template="property.bk_tempalate_id"
                   :deletable="false"
                   :only-ready="!updateAuth || !isFieldEditable(property)"
                   @click-field="handleEditField(group, property)"
@@ -736,7 +737,7 @@
             ...item,
             keys: item.keys.map(key => key.key_id)
           }))
-          const { getUniqueByField } =  useUnique(uniqueList)
+          const { getUniqueByField } =  useUnique([], uniqueList)
           const { list: fieldUniqueList, type: fieldUniqueType } = getUniqueByField(property)
           const fieldUniqueWithNameList = fieldUniqueList.map(item => ({
             ...item,

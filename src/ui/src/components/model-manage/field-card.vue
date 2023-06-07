@@ -93,7 +93,7 @@
       tipsLoading.value = true
       console.log(props.field)
       const params = {
-        bk_template_id: 10,
+        bk_template_id: props.field.bk_template_id,
         bk_attribute_id: props.field.id
       }
       const { name } = await fieldTemplateService.getTemplateInfo(params)
@@ -136,7 +136,11 @@
       }">
         <em class="tag-text">{{$t('联合唯一')}}</em>
       </span>
-      <span class="tag template" v-if="isTemplate" @mouseenter="handleHover"><em class="tag-text">模板</em></span>
+      <span class="tag template" v-if="isTemplate" @mouseenter="handleHover">
+        <em class="tag-text">
+          {{ $t('模板') }}
+        </em>
+      </span>
       <slot name="tag-append"></slot>
     </div>
     <div class="field-action" @click.stop>
