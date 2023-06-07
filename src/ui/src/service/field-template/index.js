@@ -55,6 +55,22 @@ const getUniqueList = (data, config) => http.post('findmany/field_template/uniqu
 // 查询模板绑定的模型
 const getBindModel = (params, config) => rollReqUseCount('findmany/object/by_field_template', params, { limit: 100 }, config)
 
+// 查询模型绑定的字段模版
+const getTemplateList = (data, config) => http.post('findmany/field_template/by_object', data, config)
+
+// 模版解绑模型接口
+const updateTemplate = (data, config) => http.post('/update/field_template/unbind/object', data, config)
+
+// 删除字段模板接口
+const deleteTemplate = (data, config) => http.delete('/delete/field_template', data, config)
+
+
+// 克隆字段模版接口
+const cloneTemplate = (data, config) => http.post('/create/field_template/clone', data, config)
+
+// 查询对应模版简要信息接口
+const getTemplateInfo = (data, config) => http.post('/find/field_template/simplify/by_unique_template_id', data, config)
+
 export default {
   create,
   update,
@@ -65,5 +81,10 @@ export default {
   findById,
   getFieldList,
   getUniqueList,
-  getBindModel
+  getBindModel,
+  getTemplateList,
+  updateTemplate,
+  deleteTemplate,
+  cloneTemplate,
+  getTemplateInfo
 }

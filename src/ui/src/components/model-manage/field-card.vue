@@ -12,6 +12,10 @@
 
 <script setup>
   import { UNIUQE_TYPES } from '@/dictionary/model-constants'
+  import fieldTemplateService from '@/service/field-template'
+  import { $bkPopover } from '@/magicbox/index.js'
+  import { clone, set, debounce } from 'lodash'
+  import { ref } from 'vue'
 
   const props = defineProps({
     field: {
@@ -34,17 +38,57 @@
         list: [],
         type: ''
       })
+    },
+    onlyReady: {
+      type: Boolean,
+      default: false
     }
   })
 
   console.log(props)
   const emit = defineEmits(['click-field'])
 
+  let tips = null
+
+  const tipsComponent = ref(null)
+
+  const cacheTemplate = set(clone(props.field), 'template_name', '')
+
+  const tipsLoading = ref(false)
+
   const getUniqueRuleContent = (uniqueList) => {
     const content = []
     uniqueList.forEach(item => content.push(item.names.join(', ')))
     return content.join('<br />')
   }
+
+  const handleHover = debounce(async ($event) => {
+    if (!tips) {
+      tips = $bkPopover($event.target, {
+        allowHTML: true,
+        placement: 'top',
+        boundary: 'window',
+        arrow: true,
+        theme: 'light',
+        interactive: true,
+        animateFill: false,
+        hideOnClick: false,
+        content: tipsComponent.value
+      })
+    }
+    tips.show()
+    if (!cacheTemplate.template_name) {
+      tipsLoading.value = true
+      console.log(props.field)
+      const params = {
+        bk_template_id: 10,
+        bk_attribute_id: props.field.id
+      }
+      const { name } = await fieldTemplateService.getTemplateInfo(params)
+      tipsLoading.value = false
+      set(cacheTemplate, 'template_name', name)
+    }
+  }, 500)
 
   const handleClickRemove = (field) => {
     emit('remove-field', field)
@@ -56,7 +100,7 @@
 </script>
 
 <template>
-  <div :class="['field-card', { sortable }]" @click="handleClickField(field)">
+  <div :class="['field-card', { sortable,'only-ready': onlyReady }]" @click="handleClickField(field)">
     <span class="drag-icon" v-if="sortable"></span>
     <div class="field-icon">
       <i class="icon-cc icon-duanzifu"></i>
@@ -82,7 +126,10 @@
         <em class="tag-text">{{$t('联合唯一')}}</em>
       </span>
       <slot name="tag-append"></slot>
-      <!-- <span class="tag template"><em class="tag-text">模板</em></span> -->
+      <span class="tag template"
+        v-if="props.field.bk_template_id === 0"
+        @mouseenter="handleHover">
+        <em class="tag-text">{{ $t('模板') }}</em></span>
     </div>
     <div class="field-action" @click.stop>
       <bk-button
@@ -98,6 +145,18 @@
       </bk-button>
       <slot name="action-append" v-bind="{ field, fieldIndex }"></slot>
     </div>
+    <div v-show="false">
+      <div class="tips-content" ref="tipsComponent"
+        v-bkloading="{ size: 'mini', isLoading: tipsLoading, theme: 'primary', mode: 'spin' }">
+        <i18n path="模板提示信息" v-if="cacheTemplate.template_name">
+          <template #templateInfo>
+            <span class="tips-text">
+              {{ cacheTemplate.template_name }}
+            </span>
+          </template>
+        </i18n>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -109,7 +168,7 @@
     height: 60px;
     border: 1px solid transparent;
     background: #FFFFFF;
-    box-shadow: 0 2px 4px 0 #1919290d;
+    box-shadow: 0 2px 6px 2px #1919290d;
     border-radius: 2px;
     padding: 0 12px 0 12px;
     user-select: none;
@@ -117,6 +176,10 @@
 
     &.sortable {
       padding: 0 12px 0 0;
+    }
+
+    &.only-ready {
+      background-color: #f4f6f9;
     }
 
     .field-icon {
@@ -233,6 +296,17 @@
       .field-button {
         visibility: visible;
       }
+    }
+  }
+  .tips-content{
+    min-width:120px;
+    height: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .tips-text{
+      color:#3A84FF;
+      cursor: pointer;
     }
   }
 </style>

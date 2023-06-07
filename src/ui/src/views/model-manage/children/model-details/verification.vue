@@ -40,6 +40,7 @@
       <bk-table-column :label="$t('校验规则')" class-name="is-highlight" show-overflow-tooltip>
         <template slot-scope="{ row }">
           {{getRuleName(row.keys)}}
+          <bk-tag theme="success" v-if="row.bk_template_id">{{ $t('模板') }}</bk-tag>
         </template>
       </bk-table-column>
       <bk-table-column prop="operation"

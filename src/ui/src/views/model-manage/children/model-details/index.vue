@@ -61,8 +61,9 @@
             </div>
           </div>
           <div class="model-group-name">
-            <span class="model-group-name-label">{{$t('所属分组')}}：</span>
+            <span class="model-group-name-label">{{$t('所属分组')}}</span>
             <editable-field
+              class="model-group-name-edit"
               v-model="activeModel.bk_classification_id"
               :label="modelClassificationName"
               :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
@@ -77,13 +78,28 @@
           </div>
           <div class="instance-count"
             v-if="!activeModel['bk_ispaused'] && !isNoInstanceModel">
-            <span>{{$t('实例数量')}}：</span>
-            <span class="instance-count-text" @click="handleGoInstance">
-              <cmdb-loading :loading="$loading(request.instanceCount)">
-                {{modelInstanceCount || 0}}
-              </cmdb-loading>
-              <i class="icon-cc-share instance-count-link-icon"></i>
-            </span>
+            <span class="instance-count-label">{{$t('实例数量')}}</span>
+            <div>
+              <span class="instance-count-text" @click="handleGoInstance">
+                <cmdb-loading :loading="$loading(request.instanceCount)">
+                  {{modelInstanceCount || 0}}
+                </cmdb-loading>
+              </span>
+            </div>
+          </div>
+          <div class="field-template"
+            v-if="!activeModel['bk_ispaused'] && !isNoInstanceModel">
+            <span class="field-template-label">{{$t('绑定的字段组合模板')}}</span>
+            <flex-tag
+              v-if="templateList.length"
+              class="field-template-tag"
+              :max-width="'500px'"
+              :list="templateList"
+              :is-link-style="true"
+              :is-show-link-icon="true"
+              @unbind="handleUnbindTemplate">
+            </flex-tag>
+            <p v-else>--</p>
           </div>
           <cmdb-auth class="restart-btn"
             v-if="!isMainLineModel && activeModel.bk_ispaused"
@@ -96,20 +112,6 @@
             </bk-button>
           </cmdb-auth>
           <div class="btn-group">
-            <template v-if="canBeImport">
-              <cmdb-auth tag="label" class="label-btn"
-                v-if="tab.active === 'field' && hideImport"
-                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
-                :class="{ 'disabled': isReadOnly }"
-                @click="handleImportField">
-                <i class="icon-cc-import"></i>
-                <span class="label-btn-text">{{$t('导入')}}</span>
-              </cmdb-auth>
-              <label class="label-btn" @click="exportField">
-                <i class="icon-cc-derivation"></i>
-                <span class="label-btn-text">{{$t('导出')}}</span>
-              </label>
-            </template>
             <template v-if="isShowOperationButton">
               <cmdb-auth class="label-btn"
                 v-if="!isMainLineModel && !activeModel['bk_ispaused']"
@@ -145,7 +147,16 @@
       :active.sync="tab.active"
       @tab-change="handleTabChange">
       <bk-tab-panel name="field" :label="$t('模型字段')">
-        <the-field-group ref="field" v-if="tab.active === 'field'"></the-field-group>
+        <the-field-group
+          ref="field"
+          v-if="tab.active === 'field'"
+          :is-read-only-import="isReadOnly"
+          :can-be-import="canBeImport"
+          :hide-import="hideImport"
+          :import-auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
+          @handleImportField="handleImportField"
+          @exportField="exportField"
+        ></the-field-group>
       </bk-tab-panel>
       <bk-tab-panel name="relation" :label="$t('模型关联')" :visible="!!activeModel">
         <the-relation v-if="tab.active === 'relation'" :model-id="modelId"></the-relation>
@@ -238,6 +249,8 @@
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS, BUILTIN_MODELS } from '@/dictionary/model-constants.js'
   import EditableField from './editable-field.vue'
+  import FlexTag from '@/components/ui/flex-tag'
+  import fieldTemplateService from '@/service/field-template'
 
   export default {
     name: 'ModelDetails',
@@ -248,7 +261,8 @@
       theChooseIcon,
       cmdbImport,
       cmdbLoading,
-      EditableField
+      EditableField,
+      FlexTag
     },
     data() {
       return {
@@ -273,7 +287,8 @@
         request: {
           instanceCount: Symbol('instanceCount')
         },
-        modelNameIsEditing: false
+        modelNameIsEditing: false,
+        templateList: []
       }
     },
     computed: {
@@ -330,7 +345,7 @@
       },
       hideImport() {
         // 项目模型中隐藏导入按钮
-        return this.$route.params.modelId !== BUILTIN_MODELS.PROJECT
+        return this.tab.active === 'field' && this.$route.params.modelId !== BUILTIN_MODELS.PROJECT
       }
     },
     watch: {
@@ -459,14 +474,30 @@
             this.activeModel = { ...this.activeModel, ...params }
           })
       },
-      initObject() {
+      async initObject() {
         const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
         if (model) {
           this.activeModel = model
+          const menuI18n = this.$route.meta.menu.i18n && this.$t(this.$route.meta.menu.i18n)
+          this.$store.commit('setTitle', `${menuI18n}【${this.activeModel.bk_obj_name}】`)
           this.getModelInstanceCount()
+          this.getTemplateList()
         } else {
           this.$routerActions.redirect({ name: 'status404' })
         }
+      },
+      async getTemplateList() {
+        const templateList = await fieldTemplateService.getTemplateList({
+          object_id: this.activeModel.id
+        })
+        if (templateList.info.length === 0) return
+        templateList.info.forEach(async (item) => {
+          const data = await fieldTemplateService.findById(item.id)
+          this.templateList.push({
+            id: data.id,
+            name: data.name
+          })
+        })
       },
       async getModelInstanceCount() {
         const result = await this.$store.dispatch('objectCommonInst/searchInstanceCount', {
@@ -594,6 +625,29 @@
       handleImportField() {
         if (this.isReadOnly) return
         this.importField.show = true
+      },
+      handleUnbindTemplate(templateInfo) {
+        new Promise((resolve) => {
+          this.$bkInfo({
+            title: this.$t('确认解绑该模板'),
+            subTitle: this.$t('解绑后，字段内容与唯一校验将会与模板脱离关系，不再受模板管理'),
+            okText: this.$t('解绑'),
+            cancelText: this.$t('取消'),
+            confirmFn: () => {
+              const params = {
+                bk_template_id: templateInfo.id,
+                object_id: this.activeModel.id
+              }
+              fieldTemplateService.updateTemplate(params).then(() => {
+                this.$success(this.$t('解绑成功'))
+                this.templateList = []
+                this.getTemplateList()
+                resolve(true)
+              })
+            },
+            cancelFn: () => resolve(false)
+          })
+        })
       }
     }
   }
@@ -734,6 +788,7 @@
 
           .model-name {
             font-weight: 700;
+            line-height: 26px;
 
             .bk-tag {
               font-weight: normal;
@@ -755,24 +810,40 @@
           color: #63656e;
           display: flex;
           align-items: center;
+          flex-wrap: wrap;
 
           &-label {
             flex: 0 0 auto;
+            line-height: 26px;
           }
         }
 
         .instance-count {
+            width: 250px;
             display: flex;
+            flex-wrap: wrap;
+            flex-direction: column;
             font-size: 12px;
             color: #63656e;
+            &-label {
+              line-height: 26px;
+            }
             &-text {
               color: #3a84ff;
               cursor: pointer;
               display: flex;
               align-items: center;
             }
-            &-link-icon {
-              margin-left: 6px;
+         }
+         .field-template {
+            max-width: 400px;
+            font-size: 12px;
+            color: #63656e;
+            &-label {
+              line-height: 26px;
+            }
+            &-tag {
+              line-height: 26px;
             }
          }
         .restart-btn {
