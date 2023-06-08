@@ -152,14 +152,15 @@
                 "
               >
                 <field-card
-                  :class="['field-card-container']"
+                  :class="['field-card-container',{ 'only-ready': (!updateAuth || !isFieldEditable(property)) }]"
                   :field="property"
                   :field-unique="getFieldUnique(property)"
                   :is-template="property.bk_tempalate_id"
                   :deletable="false"
                   :only-ready="!updateAuth || !isFieldEditable(property)"
                   @click-field="handleEditField(group, property)"
-                  @remove-field="handleDeleteField({ property, index: groupIndex, fieldIndex })">
+                  @remove-field="handleDeleteField({ property, index: groupIndex, fieldIndex })"
+                  @handleHover="handleHover">
                   <template #action-append>
                     <cmdb-auth
                       class="mr10"
@@ -189,10 +190,7 @@
                         class="field-button"
                         :text="true"
                         :disabled="disabled || !isFieldEditable(property)"
-                        @click.stop="
-                          handleDeleteField({ property, index: groupIndex, fieldIndex })
-                        "
-                      >
+                        @click.stop="handleDeleteField({ property, index: groupIndex, fieldIndex })">
                         <i class="field-button-icon bk-icon icon-cc-del"></i>
                       </bk-button>
                     </cmdb-auth>
@@ -378,6 +376,18 @@
         @on-apply="handleApplyConfig">
       </cmdb-columns-config>
     </bk-sideslider>
+    <div v-show="false">
+      <div class="tips-content" ref="tipsComponent"
+        v-bkloading="{ size: 'mini', isLoading: tipsLoading, theme: 'primary', mode: 'spin' }">
+        <i18n path="模板提示信息" v-if="cacheTemplate.template_name">
+          <template #templateInfo>
+            <span class="tips-text">
+              {{ cacheTemplate.template_name }}
+            </span>
+          </template>
+        </i18n>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -397,6 +407,8 @@
   import { PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
   import FieldCard from '@/components/model-manage/field-card.vue'
   import useUnique from '@/views/field-template/children/use-unique.js'
+  import { clone, set } from 'lodash'
+  import fieldTemplateService from '@/service/field-template'
   export default {
     name: 'FieldGroup',
     components: {
@@ -470,7 +482,10 @@
         dataEmpty: {
           type: 'search',
         },
-        uniqueList: []
+        uniqueList: [],
+        tips: null,
+        tipsLoading: false,
+        cacheTemplate: {}
       }
     },
     computed: {
@@ -1146,6 +1161,41 @@
       },
       handleExport() {
         this.$emit('exportField')
+      },
+      async handleHover(target, value) {
+        this.tips?.destroy()
+        this.tips = null
+        const properties = this.properties.find(item => item.id === value.id)
+        if (!properties.template_name) {
+          set(clone(properties), 'template_name', '')
+        }
+        if (!this.tips) {
+          this.tips = this.$bkPopover(target, {
+            allowHTML: true,
+            placement: 'top',
+            boundary: 'window',
+            arrow: true,
+            theme: 'light',
+            interactive: true,
+            animateFill: false,
+            hideOnClick: false,
+            content: this.$refs.tipsComponent
+          })
+          if (this.tips) {
+            this.tips.show(500)
+          }
+          if (!properties.template_name) {
+            this.tipsLoading = true
+            const params = {
+              bk_template_id: properties.bk_template_id,
+              bk_attribute_id: properties.id
+            }
+            const { name } = await fieldTemplateService.getTemplateInfo(params)
+            this.tipsLoading = false
+            set(properties, 'template_name', name)
+          }
+        }
+        this.cacheTemplate = properties
       }
     }
   }
@@ -1567,6 +1617,20 @@ $modelHighlightColor: #3c96ff;
       &:hover {
         opacity: 1;
       }
+    }
+    &.only-ready {
+        background-color: #f4f6f9;
+      }
+  }
+  .tips-content{
+    min-width:120px;
+    height: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .tips-text{
+      color:#3A84FF;
+      cursor: pointer;
     }
   }
 

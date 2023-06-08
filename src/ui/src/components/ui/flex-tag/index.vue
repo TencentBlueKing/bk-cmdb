@@ -23,10 +23,6 @@
       type: Boolean,
       default: false
     },
-    isShowLinkIcon: {
-      type: Boolean,
-      default: false
-    },
     isTextStyle: {
       type: Boolean,
       default: false
@@ -63,9 +59,6 @@
     emit('click', index)
   }
 
-  const handleClickIcon = (text, index) => {
-    emit('unbind', text, index)
-  }
 
   const getTipsInstance = () => {
     if (!tips) {
@@ -141,7 +134,7 @@
           itemEl.classList.add('is-link')
           itemEl.addEventListener('click', () => handleClick(index), false)
         }
-        itemEl.textContent = text
+        itemEl.textContent = text.name || text
         fragment.appendChild(itemEl)
       })
 
@@ -206,7 +199,7 @@
       :key="index"
       @click="handleClick(index)">
       <span>{{tag.name || tag}}</span>
-      <bk-icon type="chain" v-if="isShowLinkIcon" @click="handleClickIcon(tag,index)" v-bk-tooltips="'解绑模版'" />
+      <slot name="unbindIcon" v-bind:text="tag"></slot>
     </li>
     <li class="more-plus" ref="plusEl" v-show="ellipsisCount">+{{ellipsisCount}}</li>
   </ul>

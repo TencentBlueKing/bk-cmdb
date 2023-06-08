@@ -95,9 +95,14 @@
               class="field-template-tag"
               :max-width="'500px'"
               :list="templateList"
-              :is-link-style="true"
-              :is-show-link-icon="true"
-              @unbind="handleUnbindTemplate">
+              :is-link-style="true">
+              <template #unbindIcon="slotProps">
+                <bk-icon
+                  class="field-template-icon"
+                  type="chain"
+                  v-bk-tooltips="'解绑模版'"
+                  @click="handleUnbindTemplate(slotProps.text)" />
+              </template>
             </flex-tag>
             <p v-else>--</p>
           </div>
@@ -844,6 +849,9 @@
             }
             &-tag {
               line-height: 26px;
+            }
+            &-icon {
+              margin:0 3px;
             }
          }
         .restart-btn {
