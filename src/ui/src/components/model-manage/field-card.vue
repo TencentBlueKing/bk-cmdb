@@ -12,7 +12,6 @@
 
 <script setup>
   import { UNIUQE_TYPES } from '@/dictionary/model-constants'
-  import MiniTag from '@/components/ui/other/mini-tag.vue'
 
   // eslint-disable-next-line no-unused-vars
   const props = defineProps({
@@ -37,10 +36,6 @@
         type: ''
       })
     },
-    onlyReady: {
-      type: Boolean,
-      default: false
-    },
     isTemplate: {
       type: Boolean,
       default: false
@@ -62,9 +57,6 @@
     const content = []
     uniqueList.forEach(item => content.push(item.names.join(', ')))
     return content.join('<br />')
-  }
-  const handleHover = ($event) => {
-    emit('handleHover', $event.target, props.field)
   }
 
   const handleClickRemove = (field) => {
@@ -101,9 +93,6 @@
       }">
         <em class="tag-text">{{$t('联合唯一')}}</em>
       </span>
-      <div v-if="isTemplate" @mouseenter="handleHover">
-        <mini-tag :text="$t('模板')" />
-      </div>
       <slot name="tag-append"></slot>
     </div>
     <div class="field-action" @click.stop>

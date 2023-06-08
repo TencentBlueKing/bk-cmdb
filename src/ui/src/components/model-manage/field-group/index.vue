@@ -155,7 +155,6 @@
                   :class="['field-card-container',{ 'only-ready': (!updateAuth || !isFieldEditable(property)) }]"
                   :field="property"
                   :field-unique="getFieldUnique(property)"
-                  :is-template="property.bk_tempalate_id"
                   :deletable="false"
                   :only-ready="!updateAuth || !isFieldEditable(property)"
                   @click-field="handleEditField(group, property)"
@@ -194,6 +193,11 @@
                         <i class="field-button-icon bk-icon icon-cc-del"></i>
                       </bk-button>
                     </cmdb-auth>
+                  </template>
+                  <template #tag-append>
+                    <div v-if="property.bk_template_id ? true : false" @mouseenter="handleHover($event,property)">
+                      <mini-tag :text="$t('模板')" />
+                    </div>
                   </template>
                 </field-card>
               </li>
@@ -409,6 +413,7 @@
   import useUnique from '@/views/field-template/children/use-unique.js'
   import { clone, set } from 'lodash'
   import fieldTemplateService from '@/service/field-template'
+  import MiniTag from '@/components/ui/other/mini-tag.vue'
   export default {
     name: 'FieldGroup',
     components: {
@@ -418,7 +423,8 @@
       fieldDetailsView,
       CmdbColumnsConfig,
       CollapseGroupTitle,
-      FieldCard
+      FieldCard,
+      MiniTag
     },
     props: {
       customObjId: String,
@@ -1162,7 +1168,7 @@
       handleExport() {
         this.$emit('exportField')
       },
-      async handleHover(target, value) {
+      async handleHover($event, value) {
         this.tips?.destroy()
         this.tips = null
         const properties = this.properties.find(item => item.id === value.id)
@@ -1170,7 +1176,7 @@
           set(clone(properties), 'template_name', '')
         }
         if (!this.tips) {
-          this.tips = this.$bkPopover(target, {
+          this.tips = this.$bkPopover($event.target, {
             allowHTML: true,
             placement: 'top',
             boundary: 'window',
@@ -1561,62 +1567,6 @@ $modelHighlightColor: #3c96ff;
     height: 100%;
     .flag-append {
       margin-left: 2px;
-    }
-    .flag-tag {
-      background: #E4FAF0;
-      border-radius: 2px;
-      padding: 1px 2px;
-      height: 16px;
-      line-height: 16px;
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      position: relative;
-      top: -2px;
-
-      .tag-text {
-        display: block;
-        font-size: 12px;
-        font-style: normal;
-        transform: scale(.875);
-      }
-      &.new {
-        color: #14A568;
-        background: #E4FAF0;
-      }
-      &.changed {
-        color: #FF9C01;
-        background: #FFF3E1;
-      }
-      &.removed {
-        color: #EA3636;
-        background: #FCE9E8;
-      }
-    }
-
-    .recover-link {
-      visibility: hidden;
-      :deep(.bk-link-text) {
-        font-size: 12px;
-      }
-    }
-
-    &:hover {
-      .recover-link {
-        visibility: visible;
-      }
-    }
-
-    &.removed {
-      opacity: 0.5;
-
-      :deep(.field-name) {
-        text-decoration: line-through;
-      }
-
-      &:hover {
-        opacity: 1;
-      }
     }
     &.only-ready {
         background-color: #f4f6f9;
