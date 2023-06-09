@@ -77,7 +77,7 @@
     <div class="field-info">
       <div class="field-name-area">
         <span class="field-name" :title="field.bk_property_name">{{ field.bk_property_name }}</span>
-        <span class="field-required">*</span>
+        <span class="field-required" v-if="field.isrequired">*</span>
         <slot name="flag-append"></slot>
       </div>
       <div class="field-id-area">
