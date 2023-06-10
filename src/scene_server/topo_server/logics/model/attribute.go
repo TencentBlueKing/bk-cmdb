@@ -37,6 +37,7 @@ import (
 // AttributeOperationInterface attribute operation methods
 type AttributeOperationInterface interface {
 	CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error)
+	BatchCreateObjectAttr(kit *rest.Kit, objID string, attrs []*metadata.Attribute) error
 	CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error)
 	DeleteObjectAttribute(kit *rest.Kit, attrItems []metadata.Attribute) error
 	UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error
@@ -668,6 +669,127 @@ func (a *attribute) createModelQuoteRelation(kit *rest.Kit, objectID, propertyID
 	return nil
 }
 
+func (a *attribute) preCheckObjectAttr(kit *rest.Kit, objID string, data *metadata.Attribute) error {
+
+	if data.ObjectID != objID {
+		blog.Errorf("attr object id is invalid, object: %+v, obj id: %s, rid: %s", data, objID, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsInvalid, objID)
+	}
+
+	if data.IsOnly {
+		data.IsRequired = true
+	}
+
+	if len(data.PropertyGroup) == 0 {
+		data.PropertyGroup = "default"
+	}
+
+	// check if the object is mainline object, if yes. then user can not create required attribute.
+	yes, err := a.isMainlineModel(kit, data.ObjectID)
+	if err != nil {
+		blog.Errorf("not allow to add required attribute to mainline object: %+v, rid: %s", data, kit.Rid)
+		return err
+	}
+
+	if yes && data.IsRequired {
+		return kit.CCError.Error(common.CCErrTopoCanNotAddRequiredAttributeForMainlineModel)
+	}
+
+	// check the object id
+	exist, err := a.obj.IsObjectExist(kit, data.ObjectID)
+	if err != nil {
+		return err
+	}
+
+	if !exist {
+		blog.Errorf("obj id is not exist, obj id: %s, rid: %s", data.ObjectID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField)
+	}
+
+	if err = a.checkAttributeGroupExist(kit, data); err != nil {
+		blog.Errorf("failed to create the default group, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if err := a.isValid(kit, false, data); err != nil {
+		return err
+	}
+	return nil
+}
+
+// BatchCreateObjectAttr batch create object attributes
+func (a *attribute) BatchCreateObjectAttr(kit *rest.Kit, objID string, attrs []*metadata.Attribute) error {
+
+	objAttrs := make([]metadata.Attribute, 0)
+	for _, data := range attrs {
+		if err := a.preCheckObjectAttr(kit, objID, data); err != nil {
+			return err
+		}
+		objAttrs = append(objAttrs, *data)
+	}
+
+	input := metadata.CreateModelAttributes{Attributes: objAttrs}
+	resp, err := a.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header, objID, &input)
+	if err != nil {
+		blog.Errorf("failed to create model attrs, input: %#v, err: %v, rid: %s", input, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	for _, exception := range resp.Exceptions {
+		return kit.CCError.New(int(exception.Code), exception.Message)
+	}
+
+	if len(resp.Repeated) > 0 {
+		blog.Errorf("create model(%s) attr but it is duplicated, input: %#v, rid: %s", objID, input, kit.Rid)
+		return kit.CCError.CCError(common.CCErrorAttributeNameDuplicated)
+	}
+
+	objAttrsLen := len(objAttrs)
+
+	if len(resp.Created) != objAttrsLen {
+		blog.Errorf("created model(%s) attr amount is not one, input: %#v, rid: %s", objID, input, kit.Rid)
+		return kit.CCError.CCError(common.CCErrTopoObjectAttributeCreateFailed)
+	}
+
+	ids := make([]uint64, 0)
+	for _, data := range resp.Created {
+		ids = append(ids, data.ID)
+	}
+
+	// get current model attribute data by id.
+	attrReq := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{metadata.AttributeFieldID: mapstr.MapStr{common.BKDBIN: ids}}}
+
+	attrRes, err := a.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, attrReq)
+	if err != nil {
+		blog.Errorf("get created model attribute by ids(%v) failed, err: %v, rid: %s", ids, err, kit.Rid)
+		return err
+	}
+
+	if len(attrRes.Info) != objAttrsLen {
+		blog.Errorf("get the number of model attrs based on ids(%v) does not meet expectations, rid: %s", ids, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommParamsIsInvalid)
+	}
+
+	// generate audit log of model attribute.
+	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+
+	auditLog, err := audit.BatchGenerateAuditLog(generateAuditParameter, objID, attrRes.Info)
+	if err != nil {
+		blog.Errorf("gen audit log after creating objID %s failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return err
+	}
+
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
+		blog.Errorf("save audit log failed, attr ids: %v, err: %v, rid: %s", ids, err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
 // CreateObjectAttribute create object attribute
 func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error) {
 	if data.IsOnly {
@@ -681,7 +803,7 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 	// check if the object is mainline object, if yes. then user can not create required attribute.
 	yes, err := a.isMainlineModel(kit, data.ObjectID)
 	if err != nil {
-		blog.Errorf("not allow to add required attribute to mainline object: %+v. "+"rid: %d.", data, kit.Rid)
+		blog.Errorf("not allow to add required attribute to mainline object: %+v, rid: %s", data, kit.Rid)
 		return nil, err
 	}
 
@@ -1601,6 +1723,11 @@ func (a *attribute) upsertObjectAttr(kit *rest.Kit, objID string, attr *metadata
 			blog.Errorf("failed to update module attr, err: %s, rid: %s", err, kit.Rid)
 			return updateFail, err
 		}
+		return success, nil
+	}
+
+	// 如果属性来源于字段模版，那么无法进行更新，正常返回成功
+	if result.Info[0].TemplateID != 0 {
 		return success, nil
 	}
 

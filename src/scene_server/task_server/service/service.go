@@ -79,6 +79,9 @@ func (s *Service) addAPIService(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/task/create", Handler: s.CreateTask})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/task", Handler: s.CreateTaskBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/field_template/task",
+		Handler: s.CreateFieldTemplateTask})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/task/findmany/list/{name}", Handler: s.ListTask})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/task/findmany/list/latest/{name}", Handler: s.ListLatestTask})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/task/findone/detail/{task_id}", Handler: s.DetailTask})

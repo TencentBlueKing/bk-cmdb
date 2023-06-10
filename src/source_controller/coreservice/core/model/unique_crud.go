@@ -103,12 +103,13 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 	}
 
 	unique := metadata.ObjectUnique{
-		ID:       id,
-		ObjID:    objID,
-		Keys:     inputParam.Data.Keys,
-		Ispre:    false,
-		OwnerID:  kit.SupplierAccount,
-		LastTime: metadata.Now(),
+		TemplateID: inputParam.Data.TemplateID,
+		ID:         id,
+		ObjID:      objID,
+		Keys:       inputParam.Data.Keys,
+		Ispre:      false,
+		OwnerID:    kit.SupplierAccount,
+		LastTime:   metadata.Now(),
 	}
 	err = mongodb.Client().Table(common.BKTableNameObjUnique).Insert(kit.Ctx, &unique)
 	if nil != err {

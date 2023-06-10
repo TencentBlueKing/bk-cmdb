@@ -309,7 +309,7 @@
         :label="$t('描述')"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
-          <div>{{ row.description }}</div>
+          <div>{{ row.description || '--' }}</div>
         </template>
       </bk-table-column>
       <bk-table-column

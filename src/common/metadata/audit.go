@@ -246,7 +246,8 @@ type DetailFactory interface {
 	WithName() string
 }
 
-// UnmarshalJSON TODO
+// UnmarshalJSON unmarshal AuditLog
+// NOCC:golint/fnsize(设计如此)
 func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	audit := jsonAuditLog{}
 	if err := json.Unmarshal(data, &audit); err != nil {
@@ -281,7 +282,7 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	}
 
 	switch audit.AuditType {
-	case KubeType:
+	case KubeType, FieldTemplateType:
 		operationDetail := new(GenericOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -322,6 +323,12 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
+	case ModelUniqueRes:
+		operationDetail := new(GenericOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
 	default:
 		operationDetail := new(BasicOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
@@ -332,7 +339,8 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// UnmarshalBSON TODO
+// UnmarshalBSON unmarshal AuditLog
+// NOCC:golint/fnsize(设计如此)
 func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	audit := bsonAuditLog{}
 	if err := bson.Unmarshal(data, &audit); err != nil {
@@ -367,7 +375,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	}
 
 	switch audit.AuditType {
-	case KubeType:
+	case KubeType, FieldTemplateType:
 		operationDetail := new(GenericOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -405,6 +413,12 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	case QuotedInst:
 		operationDetail := new(QuotedInstOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+			return err
+		}
+		auditLog.OperationDetail = operationDetail
+	case ModelUniqueRes:
+		operationDetail := new(GenericOpDetail)
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
@@ -677,6 +691,10 @@ const (
 
 	// FieldTemplateType is field template audit type
 	FieldTemplateType AuditType = "field_template"
+
+	// ObjTemplateIDs In the context of audit logging, the tags of the
+	// binding field templates that correspond to the models
+	ObjTemplateIDs AuditType = "bk_template_ids"
 )
 
 // ResourceType TODO
@@ -772,8 +790,14 @@ const (
 	// QuotedInst is quoted instance related audit resource type
 	QuotedInst ResourceType = "quoted_inst"
 
-	// FieldTemplateRes is quoted instance related audit resource type
+	// FieldTemplateRes is field template related audit resource type
 	FieldTemplateRes ResourceType = "field_template"
+
+	// FieldTemplateAttrRes is field template attribute related audit resource type
+	FieldTemplateAttrRes ResourceType = "field_template_attribute"
+
+	// FieldTemplateUniqueRes is field template unique related audit resource type
+	FieldTemplateUniqueRes ResourceType = "field_template_unique"
 )
 
 // OperateFromType TODO
@@ -1109,6 +1133,24 @@ var auditDict = []resourceTypeInfo{
 			actionInfoMap[AuditDelete],
 		},
 	},
+	{
+		ID:   FieldTemplateAttrRes,
+		Name: "字段组合模版字段",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   FieldTemplateUniqueRes,
+		Name: "字段组合模版唯一校验",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
 }
 
 // 注意：记得在actionInfoEnMap中添加对应的英文
@@ -1348,6 +1390,24 @@ var auditEnDict = []resourceTypeInfo{
 	{
 		ID:   FieldTemplateRes,
 		Name: "Field Grouping Template",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   FieldTemplateAttrRes,
+		Name: "Field Grouping Template Attribute",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   FieldTemplateUniqueRes,
+		Name: "Field Grouping Template Unique",
 		Operations: []actionTypeInfo{
 			actionInfoEnMap[AuditCreate],
 			actionInfoEnMap[AuditUpdate],

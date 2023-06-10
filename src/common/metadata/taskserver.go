@@ -149,6 +149,9 @@ const (
 	// APITaskExtraField the extra field is used
 	// in conjunction with instID to identify the uniqueness of the task.
 	APITaskExtraField = "extra"
+	// APITaskFieldTemplateMaxNum the possible task status scenarios are: one is executing,
+	// one is waiting or new, but there will be no more than two tasks.
+	APITaskFieldTemplateMaxNum = 2
 )
 
 // ListAPITaskRequest TODO
@@ -226,6 +229,12 @@ type ListLatestSyncStatusResponse struct {
 type ListSyncStatusHistoryResponse struct {
 	BaseResp
 	Data *ListAPITaskSyncStatusResult `json:"data"`
+}
+
+// ListAPIFieldTemplateTaskStatusResult list api task sync status paged result
+type ListAPIFieldTemplateTaskStatusResult struct {
+	BaseResp
+	Info []ListFieldTmpltTaskStatusResult `json:"data"`
 }
 
 // ListAPITaskSyncStatusResult list api task sync status paged result

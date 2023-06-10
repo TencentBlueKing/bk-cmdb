@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { computed, del, reactive, ref, set, watch } from 'vue'
+  import { computed, del, toRefs, reactive, ref, set, watch } from 'vue'
   import { v4 as uuidv4 } from 'uuid'
   import cloneDeep from 'lodash/cloneDeep'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
@@ -27,11 +27,17 @@
       type: Array,
       default: () => ([])
     },
+    beforeUniqueList: {
+      type: Array,
+      default: () => ([])
+    },
     // 传入一个指定的字段，则表示以为指定的字段配置，用于创建字段模式
     field: {
       type: Object
     }
   })
+
+  const { beforeUniqueList: oldUniqueList } = toRefs(props)
 
   const rules = ref([])
 
@@ -41,7 +47,7 @@
   })))
   const fieldListLocal = ref(cloneDeep(props.fieldList))
 
-  const { getUniqueByField } = useUnique(uniqueListLocal)
+  const { getUniqueByField } = useUnique(oldUniqueList, uniqueListLocal)
   const isFieldMode = computed(() => props.field !== undefined)
 
   const validateResult = reactive({})
@@ -167,6 +173,8 @@
     return result.every(valid => valid)
   }
 
+  const isValid = () => Object.keys(validateResult).length === 0
+
   const handleRuleKeysChange = (keys, id) => {
     // 更新数据
     const unique = uniqueListLocal.value.find(item => item.id === id)
@@ -176,25 +184,25 @@
     validate(keys, id)
   }
 
-  const xd = computed(() => uniqueListLocal.value.map(item => item.keys))
-
   const handleAppendRule = (index) => {
     uniqueListLocal.value.splice(index + 1, 0, newDefaultRule())
   }
-  const handleRemoveRule = (index) => {
+  const handleRemoveRule = (id) => {
     if (isFieldMode.value && uniqueListLocal.value.length === 1) {
       return
     }
 
+    const index = uniqueListLocal.value.findIndex(item => item.id === id)
     uniqueListLocal.value.splice(index, 1)
+    del(validateResult, id)
 
     // 重新检查校验状态
     validateAll()
   }
 
   defineExpose({
-    validateAll,
-    uniqueList: uniqueListLocal.value
+    isValid,
+    getUniqueList: () => uniqueListLocal.value
   })
 </script>
 
@@ -231,7 +239,7 @@
           </i>
           <i :class="['icon-cc-zoom-out', 'icon-button', 'remove',
                       { disabled: uniqueListLocal.length - 1 === 0 && isFieldMode }]"
-            @click="handleRemoveRule(uniqueIndex)">
+            @click="handleRemoveRule(unique.id)">
           </i>
         </div>
         <div class="rules-error" v-if="validateResult[unique.id]">
@@ -250,7 +258,6 @@
           <template v-else>{{$t('唯一校验超集提示')}}</template>
         </div>
       </div>
-      <div>{{ xd }}</div>
     </div>
 
     <div class="removed-container" v-if="!isFieldMode">

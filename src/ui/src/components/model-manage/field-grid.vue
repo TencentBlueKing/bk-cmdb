@@ -72,7 +72,7 @@
     <slot
       name="field-card"
       v-for="(field, index) in fieldListLocal"
-      v-bind="{ field, itemClass: 'field-item' }">
+      v-bind="{ field, itemClass: 'field-item', index }">
       <field-card
         class="field-item"
         :key="index"

@@ -82,3 +82,24 @@ func (s *service) CompareFieldTemplateUnique(cts *rest.Contexts) {
 
 	cts.RespEntity(res)
 }
+
+// ListFieldTemplateTasksStatus query task status by field template ID and object id
+// get the status of all related tasks in reverse order of the time they were created,
+// if there are "in progress" tasks. Prioritize returning a status of "in progress".
+// if there is no "in progress" task status, return the latest task status, which may
+// be "successful", "failed" or "queuing", etc.
+func (s *service) ListFieldTemplateTasksStatus(ctx *rest.Contexts) {
+	input := new(metadata.ListFieldTmpltTaskStatusOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result, err := s.clientSet.TaskServer().Task().ListLatestFieldTemplateTask(ctx.Kit.Ctx, ctx.NewHeader(), input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(result)
+}

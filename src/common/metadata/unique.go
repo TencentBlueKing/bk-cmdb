@@ -77,10 +77,11 @@ type CreateUniqueResult struct {
 	Data RspID `json:"data"`
 }
 
-// UpdateUniqueRequest TODO
+// UpdateUniqueRequest update unique verification request
 type UpdateUniqueRequest struct {
-	Keys     []UniqueKey `json:"keys" bson:"keys"`
-	LastTime Time        `json:"last_time" bson:"last_time"`
+	Keys       []UniqueKey `json:"keys" bson:"keys"`
+	LastTime   Time        `json:"last_time" bson:"last_time"`
+	TemplateID int64       `json:"bk_template_id" bson:"bk_template_id"`
 }
 
 // UpdateUniqueResult TODO

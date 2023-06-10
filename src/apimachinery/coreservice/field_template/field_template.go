@@ -50,6 +50,56 @@ func (t template) ListFieldTemplate(ctx context.Context, h http.Header, opt *met
 	return &resp.Data, nil
 }
 
+// ListFieldTmplSimplyByUniqueTemplateID list field templates
+func (t template) ListFieldTmplSimplyByUniqueTemplateID(ctx context.Context, h http.Header,
+	opt *metadata.ListTmplSimpleByUniqueOption) (*metadata.ListTmplSimpleResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.ListFieldTemplateSimpleResp)
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/find/field_template/simplify/by_unique_template_id").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
+// ListFieldTmplSimplyByAttrTemplateID list field templates
+func (t template) ListFieldTmplSimplyByAttrTemplateID(ctx context.Context, h http.Header,
+	opt *metadata.ListTmplSimpleByAttrOption) (*metadata.ListTmplSimpleResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.ListFieldTemplateSimpleResp)
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/find/field_template/simplify/by_attr_template_id").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
 // FieldTemplateBindObject field template binding model
 func (t *template) FieldTemplateBindObject(ctx context.Context, h http.Header,
 	opt *metadata.FieldTemplateBindObjOpt) errors.CCErrorCoder {
@@ -117,4 +167,54 @@ func (t template) CreateFieldTemplate(ctx context.Context, h http.Header, opt *m
 	}
 
 	return &resp.Data, nil
+}
+
+// DeleteFieldTemplate delete field template
+func (t template) DeleteFieldTemplate(ctx context.Context, h http.Header,
+	opt *metadata.DeleteOption) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+
+	err := t.client.Delete().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/delete/field_template").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateFieldTemplate update field template
+func (t template) UpdateFieldTemplate(ctx context.Context, h http.Header,
+	opt *metadata.FieldTemplate) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+
+	err := t.client.Put().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/update/field_template").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
 }

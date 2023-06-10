@@ -42,6 +42,20 @@ type Interface interface {
 		opt []metadata.FieldTemplateUnique) (*metadata.RspIDs, errors.CCErrorCoder)
 	ListObjFieldTmplRel(ctx context.Context, h http.Header, opt *metadata.CommonQueryOption) (
 		*metadata.ObjFieldTmplRelInfo, errors.CCErrorCoder)
+	DeleteFieldTemplate(ctx context.Context, h http.Header, opt *metadata.DeleteOption) errors.CCErrorCoder
+	DeleteFieldTemplateAttr(ctx context.Context, h http.Header, templateID int64,
+		opt *metadata.DeleteOption) errors.CCErrorCoder
+	DeleteFieldTemplateUnique(ctx context.Context, h http.Header, templateID int64,
+		opt *metadata.DeleteOption) errors.CCErrorCoder
+	UpdateFieldTemplate(ctx context.Context, h http.Header, opt *metadata.FieldTemplate) errors.CCErrorCoder
+	UpdateFieldTemplateAttrs(ctx context.Context, h http.Header, templateID int64,
+		opt []metadata.FieldTemplateAttr) errors.CCErrorCoder
+	UpdateFieldTemplateUniques(ctx context.Context, h http.Header, templateID int64,
+		opt []metadata.FieldTemplateUnique) errors.CCErrorCoder
+	ListFieldTmplSimplyByUniqueTemplateID(ctx context.Context, h http.Header,
+		opt *metadata.ListTmplSimpleByUniqueOption) (*metadata.ListTmplSimpleResult, errors.CCErrorCoder)
+	ListFieldTmplSimplyByAttrTemplateID(ctx context.Context, h http.Header,
+		opt *metadata.ListTmplSimpleByAttrOption) (*metadata.ListTmplSimpleResult, errors.CCErrorCoder)
 }
 
 // New field template api client.
