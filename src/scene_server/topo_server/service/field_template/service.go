@@ -69,6 +69,9 @@ func InitFieldTemplate(c *capability.Capability) {
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/unique",
 		Handler: s.ListFieldTemplateUnique})
 
+	// field template sync to object
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/topo/field_template/sync",
+		Handler: s.SyncFieldTemplateInfoToObjects})
 	// field template relation
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/object/relation",
 		Handler: s.ListObjFieldTmplRel})
@@ -77,9 +80,21 @@ func InitFieldTemplate(c *capability.Capability) {
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/object/by_field_template",
 		Handler: s.ListObjByFieldTmpl})
 
+	// field template task
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/field_template/object/task",
+		Handler: s.SyncFieldTemplateToObjectTask})
+
 	// compare field template with object
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/attribute/difference",
 		Handler: s.CompareFieldTemplateAttr})
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/unique/difference",
 		Handler: s.CompareFieldTemplateUnique})
+
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/tasks_status",
+		Handler: s.ListFieldTemplateTasksStatus})
+
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/simplify/by_unique_template_id",
+		Handler: s.ListFieldTmplByUniqueTmplIDForUI})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/simplify/by_attr_template_id",
+		Handler: s.ListFieldTmplByObjectTmplIDForUI})
 }

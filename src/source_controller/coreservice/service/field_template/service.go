@@ -72,4 +72,9 @@ func InitFieldTemplate(c *capability.Capability) {
 	// field template relation
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/object/relation",
 		Handler: s.ListObjFieldTmplRel})
+
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/simplify/by_unique_template_id",
+		Handler: s.FindFieldTmplSimplifyByUnique})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/simplify/by_attr_template_id",
+		Handler: s.FindFieldTmplSimplifyByAttr})
 }

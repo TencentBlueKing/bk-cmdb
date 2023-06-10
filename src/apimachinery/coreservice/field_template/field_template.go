@@ -50,6 +50,56 @@ func (t template) ListFieldTemplate(ctx context.Context, h http.Header, opt *met
 	return &resp.Data, nil
 }
 
+// ListFieldTmplSimplyByUniqueTemplateID list field templates
+func (t template) ListFieldTmplSimplyByUniqueTemplateID(ctx context.Context, h http.Header,
+	opt *metadata.ListTmplSimpleByUniqueOption) (*metadata.ListTmplSimpleResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.ListFieldTemplateSimpleResp)
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/find/field_template/simplify/by_unique_template_id").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
+// ListFieldTmplSimplyByAttrTemplateID list field templates
+func (t template) ListFieldTmplSimplyByAttrTemplateID(ctx context.Context, h http.Header,
+	opt *metadata.ListTmplSimpleByAttrOption) (*metadata.ListTmplSimpleResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.ListFieldTemplateSimpleResp)
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/find/field_template/simplify/by_attr_template_id").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
 // FieldTemplateBindObject field template binding model
 func (t *template) FieldTemplateBindObject(ctx context.Context, h http.Header,
 	opt *metadata.FieldTemplateBindObjOpt) errors.CCErrorCoder {

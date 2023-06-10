@@ -52,6 +52,10 @@ type Interface interface {
 		opt []metadata.FieldTemplateAttr) errors.CCErrorCoder
 	UpdateFieldTemplateUniques(ctx context.Context, h http.Header, templateID int64,
 		opt []metadata.FieldTemplateUnique) errors.CCErrorCoder
+	ListFieldTmplSimplyByUniqueTemplateID(ctx context.Context, h http.Header,
+		opt *metadata.ListTmplSimpleByUniqueOption) (*metadata.ListTmplSimpleResult, errors.CCErrorCoder)
+	ListFieldTmplSimplyByAttrTemplateID(ctx context.Context, h http.Header,
+		opt *metadata.ListTmplSimpleByAttrOption) (*metadata.ListTmplSimpleResult, errors.CCErrorCoder)
 }
 
 // New field template api client.

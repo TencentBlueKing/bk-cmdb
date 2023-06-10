@@ -56,6 +56,22 @@ func (s *Service) CreateTaskBatch(ctx *rest.Contexts) {
 	ctx.RespEntity(taskInfo)
 }
 
+// CreateFieldTemplateTask create field template task batch
+func (s *Service) CreateFieldTemplateTask(ctx *rest.Contexts) {
+	input := make([]metadata.CreateTaskRequest, 0)
+	if err := ctx.DecodeInto(&input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	taskInfo, err := s.Logics.CreateFieldTemplateBatch(ctx.Kit, input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(taskInfo)
+}
+
 // ListTask list the task by input condition
 func (s *Service) ListTask(ctx *rest.Contexts) {
 

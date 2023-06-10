@@ -149,6 +149,11 @@ func (s *service) getObjectByIDs(kit *rest.Kit, ids []int64) ([]string, error) {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
+	if len(ids) != len(objs) {
+		blog.Errorf("mongodb count num failed, ids len: %d, objects len: %d, rid: %s", len(ids), len(objs), kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "ids")
+	}
+
 	if len(objs) == 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound, "object_ids")
 	}
@@ -234,7 +239,7 @@ func (s *service) dealProcessRunningTasks(kit *rest.Kit, option *metadata.FieldT
 
 	// 2、the possible task status scenarios are: one is executing,
 	// one is waiting or new, but there will be no more than two tasks.
-	if len(result) > 2 {
+	if len(result) > metadata.APITaskFieldTemplateMaxNum {
 		blog.Errorf("task num incorrect, template ID: %d, objID: %s, rid: %s", option.ID, option.ObjectID, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommGetMultipleObject,
 			fmt.Sprintf("template ID: %d, objID: %s", option.ID, option.ObjectID))
@@ -301,17 +306,83 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 	}
 
 	// 3、delete binding relationship
-	cond := mapstr.MapStr{
-		common.BKTemplateID:  opt.ID,
-		common.ObjectIDField: opt.ObjectID,
-	}
-	cond = util.SetModOwner(cond, kit.SupplierAccount)
-	if err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Delete(kit.Ctx, cond); err != nil {
-		blog.Errorf("delete obj field template failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
+	if err := s.deleteFieldTmplRelation(kit, opt); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	// 4、set the templateID in the involved model attribute field and model unique check field to 0
+	if err := s.fieldTemplateUnbindAttrAndUnique(ctx.Kit, opt.ID, objIDs); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	ctx.RespEntity(nil)
+}
+
+func (s *service) deleteFieldTmplRelation(kit *rest.Kit, option *metadata.FieldTemplateUnbindObjOpt) error {
+
+	cond := mapstr.MapStr{
+		common.BKTemplateID:  option.ID,
+		common.ObjectIDField: option.ObjectID,
+	}
+	cond = util.SetModOwner(cond, kit.SupplierAccount)
+
+	if err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Delete(kit.Ctx, cond); err != nil {
+		blog.Errorf("delete obj field template failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
+		return err
+	}
+	return nil
+}
+
+func (s *service) fieldTemplateUnbindAttrAndUnique(kit *rest.Kit, id int64, objIDs []string) error {
+
+	tmplAttrCond := mapstr.MapStr{
+		common.BKTemplateID: id,
+	}
+
+	tmplAttrCond = util.SetModOwner(tmplAttrCond, kit.SupplierAccount)
+	dbTmplAttrs := make([]metadata.FieldTemplateAttr, 0)
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(tmplAttrCond).Fields(common.BKFieldID).
+		All(kit.Ctx, &dbTmplAttrs); err != nil {
+		blog.Errorf("list field template attrs failed, filter: %+v, err: %v, rid: %v", tmplAttrCond, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	// there must be at least one attribute on the field template
+	if len(dbTmplAttrs) == 0 {
+		blog.Errorf("no attribute founded, id: %d, rid: %s", id, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKTemplateID)
+	}
+
+	tmplIDs := make([]int64, 0)
+	for _, attr := range dbTmplAttrs {
+		tmplIDs = append(tmplIDs, attr.ID)
+	}
+
+	updateCond := mapstr.MapStr{
+		common.BKObjIDField: mapstr.MapStr{
+			common.BKDBIN: objIDs,
+		},
+		common.BKTemplateID: mapstr.MapStr{
+			common.BKDBIN: tmplIDs,
+		},
+	}
+	data := mapstr.MapStr{
+		common.BKTemplateID: 0,
+	}
+
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Update(kit.Ctx, updateCond, data); nil != err {
+		blog.Errorf("update object attrs failed, filter: %+v, err: %v, rid: %v", updateCond, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+	}
+
+	if err := mongodb.Client().Table(common.BKTableNameObjUnique).Update(kit.Ctx, updateCond, data); nil != err {
+		blog.Errorf("update object attrs failed, filter: %+v, err: %v, rid: %v", updateCond, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
+	}
+
+	return nil
 }
 
 // CreateFieldTemplate create field template.
@@ -477,4 +548,169 @@ func (s *service) UpdateFieldTemplate(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
+}
+
+// FindFieldTmplSimplifyByAttr according to the template ID of the model attribute,
+// obtain the brief information of the corresponding field template.
+func (s *service) FindFieldTmplSimplifyByAttr(ctx *rest.Contexts) {
+
+	opt := new(metadata.ListTmplSimpleByAttrOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// 1、whether data can be found according to attrID and model templateID in parameters
+	countCond := mapstr.MapStr{
+		common.BKFieldID:    opt.AttrID,
+		common.BKTemplateID: opt.TemplateID,
+	}
+	countCond = util.SetQueryOwner(countCond, ctx.Kit.SupplierAccount)
+
+	count, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(countCond).Count(ctx.Kit.Ctx)
+	if err != nil {
+		blog.Errorf("count object attr failed, filter: %+v, err: %v, rid: %v", countCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+
+	if count != 1 {
+		blog.Errorf("count object attr num error, count: %d, cond: %v, rid: %s", count, countCond, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid,
+			fmt.Sprintf("%s,%s", common.BKAttributeIDField, common.BKTemplateID)))
+		return
+	}
+
+	// 2、according to the templateID on the attribute, go to the template attribute to find the
+	// corresponding field template templateID
+	attrCond := mapstr.MapStr{
+		common.BKFieldID: opt.TemplateID,
+	}
+	attrCond = util.SetQueryOwner(attrCond, ctx.Kit.SupplierAccount)
+
+	dbTmplAttrs := make([]metadata.FieldTemplateAttr, 0)
+	if err = mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(attrCond).Fields(common.BKTemplateID).
+		All(ctx.Kit.Ctx, &dbTmplAttrs); err != nil {
+		blog.Errorf("find field template attr failed, cond: %v, err: %v, rid: %s", attrCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if len(dbTmplAttrs) != 1 {
+		blog.Errorf("count field template attr num error, count: %d, cond: %v, rid: %s", len(dbTmplAttrs), attrCond,
+			ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKAttributeIDField))
+		return
+	}
+
+	// 3、find brief information based on the field template templateID
+	tmplCond := mapstr.MapStr{
+		common.BKFieldID: dbTmplAttrs[0].TemplateID,
+	}
+	tmplCond = util.SetQueryOwner(tmplCond, ctx.Kit.SupplierAccount)
+
+	templates := make([]metadata.FieldTemplate, 0)
+	if err := mongodb.Client().Table(common.BKTableNameFieldTemplate).Find(tmplCond).
+		Fields(common.BKFieldID, common.BKFieldName).All(ctx.Kit.Ctx, &templates); err != nil {
+		blog.Errorf("find field template failed, cond: %v, err: %v, rid: %s", tmplCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if len(templates) != 1 {
+		blog.Errorf("count template num error, count: %d, cond: %v, rid: %s", len(templates), tmplCond, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKAttributeIDField))
+		return
+	}
+
+	result := metadata.ListTmplSimpleResult{
+		Name: templates[0].Name,
+		ID:   templates[0].ID,
+	}
+	ctx.RespEntity(result)
+}
+
+// FindFieldTmplSimplifyByUnique get the brief information of the corresponding
+// field template according to the uniquely verified template ID of the model.
+func (s *service) FindFieldTmplSimplifyByUnique(ctx *rest.Contexts) {
+
+	opt := new(metadata.ListTmplSimpleByUniqueOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// 1、whether the data can be found according to unique and the model templateID in the parameter
+	countCond := mapstr.MapStr{
+		common.BKFieldID:    opt.UniqueID,
+		common.BKTemplateID: opt.TemplateID,
+	}
+	countCond = util.SetQueryOwner(countCond, ctx.Kit.SupplierAccount)
+
+	count, err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(countCond).Count(ctx.Kit.Ctx)
+	if err != nil {
+		blog.Errorf("count object unique failed, filter: %+v, err: %v, rid: %v", countCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+	if count != 1 {
+		blog.Errorf("count object unique num error, count: %d, cond: %v, rid: %s", count, countCond, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid,
+			fmt.Sprintf("%s,%s", "bk_unique_id", common.BKTemplateID)))
+		return
+	}
+
+	// 2、find the corresponding field template templateID on the template
+	// attribute according to the templateID on the unique check
+	attrCond := mapstr.MapStr{
+		common.BKFieldID: opt.TemplateID,
+	}
+	attrCond = util.SetQueryOwner(attrCond, ctx.Kit.SupplierAccount)
+
+	dbTmplUniques := make([]metadata.FieldTemplateUnique, 0)
+	if err = mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(attrCond).Fields(common.BKTemplateID).
+		All(ctx.Kit.Ctx, &dbTmplUniques); err != nil {
+		blog.Errorf("find field template unique failed, cond: %v, err: %v, rid: %s", attrCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if len(dbTmplUniques) != 1 {
+		blog.Errorf("count template unique num error, count: %d, cond: %v, rid: %s", len(dbTmplUniques), attrCond,
+			ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKAttributeIDField))
+		return
+	}
+
+	// 3、find brief information based on the field template templateID.
+	tmplCond := mapstr.MapStr{
+		common.BKFieldID: dbTmplUniques[0].TemplateID,
+	}
+	tmplCond = util.SetQueryOwner(tmplCond, ctx.Kit.SupplierAccount)
+
+	templates := make([]metadata.FieldTemplate, 0)
+	if err := mongodb.Client().Table(common.BKTableNameFieldTemplate).Find(tmplCond).
+		Fields(common.BKFieldID, common.BKFieldName).All(ctx.Kit.Ctx, &templates); err != nil {
+		blog.Errorf("find field template failed, cond: %v, err: %v, rid: %s", tmplCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if len(templates) != 1 {
+		blog.Errorf("count template num error, count: %d, cond: %v, rid: %s", len(templates), tmplCond, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKAttributeIDField))
+		return
+	}
+
+	result := metadata.ListTmplSimpleResult{
+		Name: templates[0].Name,
+		ID:   templates[0].ID,
+	}
+	ctx.RespEntity(result)
+
 }

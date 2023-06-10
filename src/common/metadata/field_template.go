@@ -84,11 +84,8 @@ type FieldTemplateAttr struct {
 	LastTime     *Time           `json:"last_time" bson:"last_time"`
 }
 
-// Validate validate FieldTemplateAttr
-func (f *FieldTemplateAttr) Validate() ccErr.RawErrorInfo {
-	if f.TemplateID == 0 {
-		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKTemplateID}}
-	}
+// ValidateBase validate FieldTemplateAttr todo:需要分场景进行校验，下个pr调整
+func (f *FieldTemplateAttr) ValidateBase() ccErr.RawErrorInfo {
 
 	if err := f.validatePropertyID(); err.ErrCode != 0 {
 		return err
@@ -115,6 +112,19 @@ func (f *FieldTemplateAttr) Validate() ccErr.RawErrorInfo {
 	// because there will be a package import cycle problem,
 	// validate option is in src/source_controller/coreservice/core/model/field_template.go file,
 	// call valid.ValidPropertyOption func
+
+	return ccErr.RawErrorInfo{}
+}
+
+// Validate validate FieldTemplateAttr
+func (f *FieldTemplateAttr) Validate() ccErr.RawErrorInfo {
+	if f.TemplateID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKTemplateID}}
+	}
+
+	if err := f.ValidateBase(); err.ErrCode != 0 {
+		return err
+	}
 
 	return ccErr.RawErrorInfo{}
 }
@@ -557,6 +567,38 @@ func (l *ListObjByFieldTmplOption) Validate() ccErr.RawErrorInfo {
 	return ccErr.RawErrorInfo{}
 }
 
+// FieldTemplateSyncOption synchronization of field combination templates to model requests
+type FieldTemplateSyncOption struct {
+	TemplateID int64   `json:"bk_template_id"`
+	ObjectIDs  []int64 `json:"object_ids"`
+}
+
+// Validate list object by related field template option
+func (op *FieldTemplateSyncOption) Validate() ccErr.RawErrorInfo {
+	if op.TemplateID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+	if len(op.ObjectIDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"object_ids"},
+		}
+	}
+
+	for _, objID := range op.ObjectIDs {
+		if objID == 0 {
+			return ccErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{common.ObjectIDField},
+			}
+		}
+	}
+	return ccErr.RawErrorInfo{}
+}
+
 // CompareFieldTmplAttrOption compare field template attribute with object option
 type CompareFieldTmplAttrOption struct {
 	TemplateID int64               `json:"bk_template_id"`
@@ -587,6 +629,29 @@ func (l *CompareFieldTmplAttrOption) Validate() ccErr.RawErrorInfo {
 		}
 	}
 
+	return ccErr.RawErrorInfo{}
+}
+
+// SyncObjectTask synchronize field combination template information to model request
+type SyncObjectTask struct {
+	TemplateID int64 `json:"bk_template_id"`
+	ObjectID   int64 `json:"object_id"`
+}
+
+// Validate check of SyncObjectTask.
+func (option *SyncObjectTask) Validate() ccErr.RawErrorInfo {
+	if option.TemplateID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+	if option.ObjectID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{common.ObjectIDField},
+		}
+	}
 	return ccErr.RawErrorInfo{}
 }
 
@@ -731,9 +796,65 @@ func (c *UpdateFieldTmplOption) Validate() ccErr.RawErrorInfo {
 	return ccErr.RawErrorInfo{}
 }
 
-// UpdateFieldTmplUniqueOption update  field template unique option
-type UpdateFieldTmplUniqueOption struct {
-	Create []FieldTmplUniqueOption `json:"create"`
-	Update []FieldTmplUniqueOption `json:"update"`
-	Delete []int64                 `json:"delete"`
+// ListTmplSimpleByAttrOption query the brief information of the field
+// template according to the template ID of the model object attr for UI.
+type ListTmplSimpleByAttrOption struct {
+	TemplateID int64 `json:"bk_template_id"`
+	AttrID     int64 `json:"bk_attribute_id"`
+}
+
+// Validate verify the legitimacy of the request.
+func (c *ListTmplSimpleByAttrOption) Validate() ccErr.RawErrorInfo {
+	if c.TemplateID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+
+	if c.AttrID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAttributeIDField},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// ListTmplSimpleByUniqueOption query the brief information of the field
+// template according to the template ID of the model unique for UI.
+type ListTmplSimpleByUniqueOption struct {
+	TemplateID int64 `json:"bk_template_id"`
+	UniqueID   int64 `json:"bk_unique_id"`
+}
+
+// Validate verify the legitimacy of the request.
+func (c *ListTmplSimpleByUniqueOption) Validate() ccErr.RawErrorInfo {
+	if c.TemplateID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+	if c.UniqueID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_unique_id"},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// ListFieldTemplateSimpleResp returns brief information about the template
+type ListFieldTemplateSimpleResp struct {
+	BaseResp `json:",inline"`
+	Data     ListTmplSimpleResult `json:"data"`
+}
+
+// ListTmplSimpleResult returns brief information about the template
+type ListTmplSimpleResult struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
 }
