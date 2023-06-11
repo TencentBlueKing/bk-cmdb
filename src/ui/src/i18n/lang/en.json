@@ -1720,5 +1720,7 @@
     "取消字段唯一校验确认提示语": "After the unique verification is canceled, the unique verification rules related to this field will be deleted after submission. Confirm whether to continue?",
     "共N个": "Total {count}",
     "全选N个模型": "Select all {count} models",
-    "字段组合模板同步结果": "Synchronization completed, with {success} successes and {fail} failures"
+    "字段组合模板同步结果": "Synchronization completed, with {success} successes and {fail} failures",
+    "暂无XXX，LINK": "No {text}, {link}",
+    "绑定后的唯一性校验冲突提示语": "It conflicts with \"{target}\" and cannot be bound. Please unbind the model or delete the uniqueness check corresponding to the template"
 }

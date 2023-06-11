@@ -13,11 +13,12 @@
 <script setup>
   defineProps({
     text: String,
+    theme: String
   })
 </script>
 
 <template>
-  <span class="tag template">
+  <span :class="['tag', theme]">
     <em class="tag-text">
       <slot>{{text}}</slot>
     </em>
@@ -41,6 +42,19 @@
     font-size: 12px;
     font-style: normal;
     transform: scale(.875);
+  }
+
+  &.new {
+    color: #14A568;
+    background: #E4FAF0;
+  }
+  &.changed {
+    color: #FF9C01;
+    background: #FFF3E1;
+  }
+  &.removed {
+    color: #EA3636;
+    background: #FCE9E8;
   }
 }
 </style>

@@ -14,9 +14,12 @@
   import { computed, del, toRefs, reactive, ref, set, watch } from 'vue'
   import { v4 as uuidv4 } from 'uuid'
   import cloneDeep from 'lodash/cloneDeep'
+  import { t } from '@/i18n'
+  import { $error } from '@/magicbox'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { UNIUQE_TYPES } from '@/dictionary/model-constants'
-  import useUnique from './use-unique'
+  import MiniTag from '@/components/ui/other/mini-tag.vue'
+  import useUnique, { wrapData, isUniqueExist } from './use-unique'
 
   const props = defineProps({
     uniqueList: {
@@ -37,17 +40,14 @@
     }
   })
 
+  const emit = defineEmits(['update-unique'])
+
   const { beforeUniqueList: oldUniqueList } = toRefs(props)
 
-  const rules = ref([])
-
-  const uniqueListLocal = ref(cloneDeep(props.uniqueList).map(item => ({
-    type: item.keys.length > 1 ? UNIUQE_TYPES.UNION : UNIUQE_TYPES.SINGLE,
-    ...item
-  })))
+  const uniqueListLocal = ref(cloneDeep(props.uniqueList).map(wrapData))
   const fieldListLocal = ref(cloneDeep(props.fieldList))
 
-  const { getUniqueByField } = useUnique(oldUniqueList, uniqueListLocal)
+  const { getUniqueByField, uniqueStatus, removedUniqueList } = useUnique(oldUniqueList, uniqueListLocal)
   const isFieldMode = computed(() => props.field !== undefined)
 
   const validateResult = reactive({})
@@ -71,15 +71,23 @@
   ]
 
   const newFieldID = -1
-  const newDefaultRule = () => ({
-    id: uuidv4(),
-    keys: [!props.field.id ? newFieldID : props.field.id],
-    type: UNIUQE_TYPES.UNION
-  })
+  const newDefaultRule = (autoSelect = true) => {
+    const type = isFieldMode.value ? UNIUQE_TYPES.UNION : UNIUQE_TYPES.SINGLE
+    const key = !props.field?.id ? newFieldID : props.field.id
+    let keys = type === UNIUQE_TYPES.UNION ? [key] : key
+    if (!autoSelect) {
+      keys = type === UNIUQE_TYPES.UNION ? [] : ''
+    }
+    return {
+      id: uuidv4(),
+      type,
+      keys
+    }
+  }
 
   watch(() => props.field, (field) => {
     if (isFieldMode.value) {
-      const fieldId = !field.id ? newFieldID : field.id
+      const fieldId = !field?.id ? newFieldID : field.id
       const currentField = fieldListLocal.value.find(item => item.id === fieldId)
 
       // 新创建字段时
@@ -105,6 +113,10 @@
     }
   }, { deep: true, immediate: true })
 
+  watch(uniqueListLocal, (uniqueListLocal) => {
+    emit('update-unique', uniqueListLocal, isValid())
+  }, { deep: true })
+
   const singleRuleProperties = computed(() => fieldListLocal.value
     .filter(field => singleRuleTypes.includes(field.bk_property_type)))
   const unionRuleProperties = computed(() => fieldListLocal.value
@@ -116,6 +128,11 @@
   )
 
   const allUniqueListLocal = computed(() => {
+    // 全局视图模式下所有的规则就是uniqueListLocal
+    if (!isFieldMode.value) {
+      return uniqueListLocal.value
+    }
+
     const all = props.uniqueList.slice()
     uniqueListLocal.value.forEach((item) => {
       if (!all.some(unique => unique.id === item.id)) {
@@ -128,13 +145,19 @@
   // 判断当前规则是否是某些规则的子集，并返回已存在的超集
   const validateSubset = (rules, id) => {
     const superset = allUniqueListLocal.value
-      .filter(existRule => existRule.id !== id && rules.every(id => existRule.keys.includes(id)))
+      .filter(existRule => existRule.id !== id
+        && existRule.keys.length > 0
+        && rules.length > 0
+        && rules.every(id => existRule.keys.includes(id)))
     return superset.length ? superset : false
   }
   // 判断当前规则是否是某些规则的超集，并返回已存在的子集
   const validateSuperset = (rules, id) => {
     const subset = allUniqueListLocal.value
-      .filter(existRule => existRule.id !== id && existRule.keys.every(id => rules.includes(id)))
+      .filter(existRule => existRule.id !== id
+        && existRule.keys.length > 0
+        && rules.length > 0
+        && existRule.keys.every(id => rules.includes(id)))
     return subset.length ? subset : false
   }
 
@@ -175,17 +198,47 @@
 
   const isValid = () => Object.keys(validateResult).length === 0
 
+  const editDraft = reactive({})
+
+  const getUniqueValue = (unique) => {
+    if (unique.type === UNIUQE_TYPES.UNION) {
+      return unique.keys
+    }
+    return unique.keys?.[0]
+  }
+
   const handleRuleKeysChange = (keys, id) => {
     // 更新数据
     const unique = uniqueListLocal.value.find(item => item.id === id)
-    unique.keys = keys
+    unique.keys = Array.isArray(keys) ? keys : [keys]
 
     // 触发校验
-    validate(keys, id)
+    validateAll()
   }
 
-  const handleAppendRule = (index) => {
-    uniqueListLocal.value.splice(index + 1, 0, newDefaultRule())
+  const handleRuleTypeChange = (type, id) => {
+    const unique = uniqueListLocal.value.find(item => item.id === id)
+    const oldDraftId = `${unique.type}-${id}`
+    const targetDraftId = `${type}-${id}`
+    set(editDraft, oldDraftId, cloneDeep(unique))
+
+    unique.type = type
+    if (editDraft[targetDraftId]) {
+      unique.keys = editDraft[targetDraftId].keys
+    } else {
+      unique.keys = type === UNIUQE_TYPES.UNION ? [] : ''
+    }
+
+    validateAll()
+  }
+
+  const handleAppendRule = (index = -1) => {
+    uniqueListLocal.value.splice(index + 1, 0, newDefaultRule(isFieldMode.value))
+
+    // 字段模式中添加因为会默认选中需要即时验证一次
+    if (isFieldMode.value) {
+      validateAll()
+    }
   }
   const handleRemoveRule = (id) => {
     if (isFieldMode.value && uniqueListLocal.value.length === 1) {
@@ -200,6 +253,18 @@
     validateAll()
   }
 
+  const handleRecover = (removedUnique) => {
+    if (!validate(removedUnique.keys, removedUnique.id)) {
+      return
+    }
+    if (isUniqueExist(removedUnique, uniqueListLocal.value)) {
+      $error(t('唯一校验已在模板中存在，无法恢复'))
+      return
+    }
+    const oriUnique = oldUniqueList.value.find(item => item.id === removedUnique.id)
+    uniqueListLocal.value.push(wrapData(oriUnique))
+  }
+
   defineExpose({
     isValid,
     getUniqueList: () => uniqueListLocal.value
@@ -211,22 +276,23 @@
     <div class="unique-list">
       <div class="unique-item" v-for="(unique, uniqueIndex) in uniqueListLocal" :key="unique.id">
         <bk-compose-form-item :class="['compose-form', { 'is-field-mode': isFieldMode }]">
-          <bk-select
+          <bk-select v-if="!isFieldMode"
             class="rule-type"
-            :value="unique.keys.length > 1 ? UNIUQE_TYPES.UNION : UNIUQE_TYPES.SINGLE"
+            :value="unique.type"
             :clearable="false"
-            v-if="!isFieldMode">
+            @change="(type) => handleRuleTypeChange(type, unique.id)">
             <bk-option :id="UNIUQE_TYPES.SINGLE" :name="$t('单独唯一')"></bk-option>
             <bk-option :id="UNIUQE_TYPES.UNION" :name="$t('联合唯一')"></bk-option>
           </bk-select>
           <bk-select class="rule-selector"
-            :value="unique.keys"
+            :key="unique.type"
+            :value="getUniqueValue(unique)"
             :searchable="getDisplayProperties(unique).length > 10"
-            :multiple="true"
+            :multiple="unique.type === UNIUQE_TYPES.UNION"
             :clearable="false"
             @change="(keys) => handleRuleKeysChange(keys, unique.id)">
             <bk-option v-for="property in getDisplayProperties(unique)"
-              :disabled="property.id === field.id || property.id === newFieldID"
+              :disabled="(isFieldMode && property.id === field.id) || property.id === newFieldID"
               :key="property.id"
               :id="property.id"
               :name="property.bk_property_name">
@@ -257,22 +323,41 @@
           </template>
           <template v-else>{{$t('唯一校验超集提示')}}</template>
         </div>
+        <template v-if="!isFieldMode">
+          <mini-tag :text="$t('更新')" theme="changed" class="status-tag" v-if="uniqueStatus[unique.id].changed" />
+          <mini-tag :text="$t('新增')" theme="new" class="status-tag" v-if="uniqueStatus[unique.id].new" />
+        </template>
       </div>
     </div>
 
-    <div class="removed-container" v-if="!isFieldMode">
+    <bk-exception type="empty" scene="part" class="empty" v-if="!isFieldMode && !uniqueListLocal.length">
+      <i18n path="暂无XXX，LINK">
+        <template #text>{{ $t('唯一校验') }}</template>
+        <template #link>
+          <bk-link theme="primary" @click="handleAppendRule">{{ $t('立即添加') }}</bk-link>
+        </template>
+      </i18n>
+    </bk-exception>
+
+    <div class="removed-container" v-if="!isFieldMode && removedUniqueList.length">
       <div class="title">{{$t('本次删除的校验')}}</div>
       <div class="unique-list">
-        <div class="unique-item">
+        <div class="unique-item" v-for="unique in removedUniqueList" :key="unique.id">
           <bk-compose-form-item class="compose-form">
-            <bk-select class="rule-type" :clearable="false">
+            <bk-select
+              class="rule-type"
+              :value="unique.type"
+              :readonly="true"
+              :clearable="false">
               <bk-option :id="UNIUQE_TYPES.SINGLE" :name="$t('单独唯一')"></bk-option>
               <bk-option :id="UNIUQE_TYPES.UNION" :name="$t('联合唯一')"></bk-option>
             </bk-select>
-            <bk-select class="rule-selector" v-model="rules"
+            <bk-select class="rule-selector"
               searchable
+              :value="unique.keys"
+              :readonly="true"
               :multiple="true">
-              <bk-option v-for="property in unionRuleProperties"
+              <bk-option v-for="property in getDisplayProperties(unique)"
                 :key="property.id"
                 :id="property.id"
                 :name="property.bk_property_name">
@@ -280,7 +365,22 @@
             </bk-select>
           </bk-compose-form-item>
           <div class="operation">
-            <a href="#">恢复</a>
+            <bk-link class="link" theme="primary" @click="handleRecover(unique)">{{ $t('恢复') }}</bk-link>
+          </div>
+          <div class="rules-error" v-if="validateResult[unique.id]">
+            <template v-if="validateResult[unique.id].type === SET_TYPE.superset">
+              <i18n path="唯一校验子集提示">
+                <template #name>
+                  <span class="rules-error-name"
+                    v-for="(rule, index) in validateResult[unique.id].rules"
+                    :key="rule.id">
+                    {{getValidateRuleName(rule)}}
+                    <template v-if="index !== (validateResult[unique.id].rules.length - 1)">、</template>
+                  </span>
+                </template>
+              </i18n>
+            </template>
+            <template v-else>{{$t('唯一校验超集提示')}}</template>
           </div>
         </div>
       </div>
@@ -340,6 +440,14 @@
           color: $warningColor;
         }
       }
+
+      .status-tag {
+        position: absolute;
+        left: 0;
+        top: 0;
+        transform: translate(-40%, -50%);
+        z-index: 1;
+      }
     }
   }
 
@@ -347,6 +455,17 @@
     margin-top: 40px;
     .title {
       font-size: 12px;
+      margin-bottom: 14px;
+    }
+
+    .unique-item {
+      .operation {
+        .link {
+          :deep(.bk-link-text) {
+            font-size: 12px;
+          }
+        }
+      }
     }
   }
 </style>

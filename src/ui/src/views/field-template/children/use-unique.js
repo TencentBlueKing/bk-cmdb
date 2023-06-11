@@ -50,6 +50,10 @@ export default function useUnique(beforeUniqueList, uniqueListLocal) {
     return status
   })
 
+  const removedUniqueList = computed(() => beforeUniqueList.value
+    .filter(item => uniqueStatus.value[item.id].removed)
+    .map(wrapData))
+
   const getUniqueByField = (field) => {
     const list = unref(uniqueListLocal)
     const fieldUniqueList = list.filter(item => item.keys.includes(field.id))
@@ -77,9 +81,18 @@ export default function useUnique(beforeUniqueList, uniqueListLocal) {
 
   return {
     uniqueStatus,
+    wrapData,
+    removedUniqueList,
     getUniqueByField,
     clearUniqueByField
   }
 }
+
+export const wrapData = data => ({
+  type: data.keys.length > 1 ? UNIUQE_TYPES.UNION : UNIUQE_TYPES.SINGLE,
+  ...data
+})
+
+export const isUniqueExist = (unique, uniqueList) => uniqueList.some(item => isEqual(item.keys, unique.keys))
 
 export const MAX_UNIQUE_COUNT = 5

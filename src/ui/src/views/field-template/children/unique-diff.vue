@@ -74,7 +74,14 @@
     }).join(' + ')
   }
 
-  const isConflict = unique => props.diffs.conflict?.some(item => item.data.id === unique.bk_property_id)
+  const isConflict = unique => props.diffs.conflict?.some(item => item.data.id === unique.id)
+  const getConflictUniqueName = (unique) => {
+    const conflict = props.diffs.conflict?.find(item => item.data.id === unique.id)
+    if (conflict) {
+      return getUniqueName(props.templateUniqueList[conflict.index], true)
+    }
+    return 'unknown'
+  }
 
   const getDiffClassNames = (unique) => {
     if (newFieldList.value?.some(item => item.id === unique.id)) {
@@ -132,6 +139,11 @@
               <mini-tag :text="$t('模板')" />
             </template>
             <span v-else>{{ getUniqueName(unique) }}</span>
+            <template v-if="isConflict(unique)">
+              <i class="bk-icon icon-exclamation-circle-shape conflict-icon"
+                v-bk-tooltips="{ content: $t('绑定后的唯一性校验冲突提示语', { target: getConflictUniqueName(unique) }) }">
+              </i>
+            </template>
           </div>
         </div>
       </div>
@@ -140,7 +152,7 @@
 </template>
 
 <style lang="scss" scoped>
-  .field-diff {
+  .unique-diff {
     height: 100%;
   }
 
@@ -179,6 +191,8 @@
     display: grid;
     grid-template-rows: 42px auto;
     padding: 0 12px;
+    height: calc(100% - 52px);
+    @include scrollbar-y;
 
     .table-head {
       display: grid;
@@ -233,13 +247,22 @@
         }
         &.conflict {
           color: #EA3636;
-          background: #FFDDDD;
+          background: #FEF2F2;
+
+          &:hover {
+            background: #FFDDDD;
+          }
         }
         &.unchanged {
           background: #F5F7FA;
         }
         &.unbinded {
           background: #F0F1F5;
+        }
+
+        .conflict-icon {
+          font-size: 14px;
+          color: $dangerColor;
         }
       }
     }
