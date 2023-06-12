@@ -539,7 +539,7 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 		// 1、create model properties
 		if len(createAttr) > 0 {
-			if err := s.logics.AttributeOperation().BatchCreateObjectAttr(kit, objectID, createAttr); err != nil {
+			if err := s.logics.AttributeOperation().BatchCreateObjectAttr(kit, objectID, createAttr, true); err != nil {
 				blog.Errorf("create model attribute failed, attr: %+v, err: %v, rid: %s", createAttr, err, kit.Rid)
 				return err
 			}

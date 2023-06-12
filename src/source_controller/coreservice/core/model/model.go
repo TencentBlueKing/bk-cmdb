@@ -472,12 +472,12 @@ func (m *modelManager) getObjFieldTemplateRelation(kit *rest.Kit, modelID int64)
 		blog.Errorf("failed to get object and relation, filter: (%#v), err: %v, rid: %s", filter, err, kit.Rid)
 		return nil, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
+	templateIDs := make([]int64, 0)
 
 	if len(result) == 0 {
-		return nil, nil
+		return templateIDs, nil
 	}
 
-	templateIDs := make([]int64, 0)
 	for _, relation := range result {
 		templateIDs = append(templateIDs, relation.TemplateID)
 	}
@@ -506,6 +506,7 @@ func (m *modelManager) dealModelAttrInheritTemplate(kit *rest.Kit, modelID int64
 	if err != nil {
 		return err
 	}
+
 	if err := dealProcessRunningTasks(kit, templateIDs, modelID, isStop); err != nil {
 		return err
 	}
@@ -628,6 +629,10 @@ func validIDStartWithBK(kit *rest.Kit, modelID string) error {
 }
 
 func dealProcessRunningTasks(kit *rest.Kit, ids []int64, objectID int64, isStop bool) error {
+
+	if len(ids) == 0 {
+		return nil
+	}
 
 	// 1、get the status of the task
 	cond := mapstr.MapStr{

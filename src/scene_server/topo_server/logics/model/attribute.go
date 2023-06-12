@@ -37,7 +37,7 @@ import (
 // AttributeOperationInterface attribute operation methods
 type AttributeOperationInterface interface {
 	CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error)
-	BatchCreateObjectAttr(kit *rest.Kit, objID string, attrs []*metadata.Attribute) error
+	BatchCreateObjectAttr(kit *rest.Kit, objID string, attrs []*metadata.Attribute, fromTemplate bool) error
 	CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error)
 	DeleteObjectAttribute(kit *rest.Kit, attrItems []metadata.Attribute) error
 	UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error
@@ -718,7 +718,8 @@ func (a *attribute) preCheckObjectAttr(kit *rest.Kit, objID string, data *metada
 }
 
 // BatchCreateObjectAttr batch create object attributes
-func (a *attribute) BatchCreateObjectAttr(kit *rest.Kit, objID string, attrs []*metadata.Attribute) error {
+func (a *attribute) BatchCreateObjectAttr(kit *rest.Kit, objID string, attrs []*metadata.Attribute,
+	fromTemplate bool) error {
 
 	objAttrs := make([]metadata.Attribute, 0)
 	for _, data := range attrs {
@@ -728,7 +729,10 @@ func (a *attribute) BatchCreateObjectAttr(kit *rest.Kit, objID string, attrs []*
 		objAttrs = append(objAttrs, *data)
 	}
 
-	input := metadata.CreateModelAttributes{Attributes: objAttrs}
+	input := metadata.CreateModelAttributes{
+		Attributes:   objAttrs,
+		FromTemplate: fromTemplate,
+	}
 	resp, err := a.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header, objID, &input)
 	if err != nil {
 		blog.Errorf("failed to create model attrs, input: %#v, err: %v, rid: %s", input, err, kit.Rid)
@@ -1264,49 +1268,6 @@ func (a *attribute) getTemplateIDByObjectAttrID(kit *rest.Kit, attrID int64, fie
 	return &res.Info[0], nil
 }
 
-//func (a *attribute) canAttrsUpdate1(kit *rest.Kit, input mapstr.MapStr, attrID int64) error {
-//
-//	fields := make([]string, 0)
-//	if _, ok := input[metadata.AttributeFieldIsRequired].(bool); ok {
-//		fields = append(fields, metadata.AttributeFieldIsRequired)
-//	}
-//
-//	if _, ok := input[metadata.AttributeFieldIsEditable].(bool); ok {
-//		fields = append(fields, metadata.AttributeFieldIsEditable)
-//	}
-//
-//	if _, ok := input[metadata.AttributeFieldPlaceHolder].(string); ok {
-//		fields = append(fields, metadata.AttributeFieldPlaceHolder)
-//	}
-//	if len(fields) == 0 {
-//		return nil
-//	}
-//
-//	templateAttr, err := a.getTemplateIDByObjectAttrID(kit, attrID, fields)
-//	if err != nil {
-//		return err
-//	}
-//
-//	for _, field := range fields {
-//		switch field {
-//		case metadata.AttributeFieldPlaceHolder:
-//			if templateAttr.Placeholder.Lock {
-//				input.Remove(field)
-//			}
-//		case metadata.AttributeFieldIsEditable:
-//			if templateAttr.Editable.Lock {
-//				input.Remove(field)
-//			}
-//		case metadata.AttributeFieldIsRequired:
-//			if templateAttr.Required.Lock {
-//				input.Remove(field)
-//			}
-//		}
-//	}
-//
-//	return nil
-//}
-
 func (a *attribute) getModelAttrByID(kit *rest.Kit, attrID int64) (*metadata.Attribute, error) {
 	queryCond := &metadata.QueryCondition{
 		Condition:      mapstr.MapStr{common.BKFieldID: attrID},
@@ -1350,7 +1311,7 @@ func (a *attribute) getFieldTemplateAttr(kit *rest.Kit, templateID int64, fields
 	}
 
 	if len(res.Info) == 0 {
-		return nil, kit.CCError.CCError(common.CCErrCommNotFound)
+		return &metadata.FieldTemplateAttr{}, nil
 	}
 
 	if len(res.Info) > 1 {
@@ -1372,7 +1333,10 @@ func (a *attribute) canAttrsUpdate(kit *rest.Kit, input mapstr.MapStr, attrID in
 		return nil
 	}
 
-	data := mapstr.NewFromMap(input)
+	data := mapstr.New()
+	for k, v := range input {
+		data[k] = v
+	}
 
 	fields := make([]string, 0)
 	if _, ok := data[metadata.AttributeFieldIsRequired].(bool); ok {
@@ -1386,14 +1350,15 @@ func (a *attribute) canAttrsUpdate(kit *rest.Kit, input mapstr.MapStr, attrID in
 		fields = append(fields, metadata.AttributeFieldPlaceHolder)
 	}
 
+	_, ok := data[common.BKTemplateID]
+
 	// 2、AttributeFieldIsRequired\AttributeFieldIsEditable\AttributeFieldPlaceHolder may be allowed
 	// to be modified, the update operation does not have the above attributes to return an error
-	if len(fields) == 0 {
+	if len(fields) == 0 && !ok {
 		blog.Errorf("validate attr failed, data: %+v, rid: %s", data, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, "data")
 	}
 
-	blog.ErrorJSON("00000000000 fields: %s", fields)
 	templateAttr, err := a.getFieldTemplateAttr(kit, attr.TemplateID, fields)
 	if err != nil {
 		return err

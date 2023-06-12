@@ -177,11 +177,12 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr, msg), &attr)
 			continue
 		}
-		// todo： 这个pr先不处理，下个PR会改协议后区分来源请求的场景是同步模版还是直连调
-		//if attr.TemplateID != 0 {
-		//	blog.Errorf("the template id field is invalid, attr: %+v, rid: %s", attr, kit.Rid)
-		//	addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
-		//}
+
+		// in the scenario of directly creating attrs on the model, the template ID in the attrs field must be 0
+		if !inputParam.FromTemplate && attr.TemplateID != 0 {
+			blog.Errorf("the template id field is invalid, attr: %+v, rid: %s", attr, kit.Rid)
+			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+		}
 
 		if attr.IsPre {
 			if attr.PropertyID == common.BKInstNameField {

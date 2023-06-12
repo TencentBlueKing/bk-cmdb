@@ -662,6 +662,7 @@ func (m *modelAttribute) checkOrganizationTypeDefaultValue(kit *rest.Kit, attrib
 
 func (m *modelAttribute) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition, isSync bool) (
 	cnt uint64, err error) {
+
 	err = m.checkUpdate(kit, data, cond, isSync)
 	if err != nil {
 		blog.ErrorJSON("checkUpdate error. data:%s, cond:%s, rid:%s", data, cond, kit.Rid)
@@ -1364,7 +1365,6 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	data.Remove(metadata.AttributeFieldPropertyType)
 	data.Remove(metadata.AttributeFieldCreateTime)
 	data.Remove(metadata.AttributeFieldIsPre)
-	data.Remove(common.BKTemplateID)
 
 	data.Set(metadata.AttributeFieldLastTime, time.Now())
 

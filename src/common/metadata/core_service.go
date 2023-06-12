@@ -70,7 +70,10 @@ type SearchModelInfo struct {
 
 // CreateModelAttributes create model attributes
 type CreateModelAttributes struct {
-	Attributes []Attribute `json:"attributes"`
+	// FromTemplate whether the source of attribute creation on the model is directly created or synchronized
+	// from the template. true means synchronized from the template, and false means created directly
+	FromTemplate bool        `json:"from_template"`
+	Attributes   []Attribute `json:"attributes"`
 }
 
 // SetModelAttributes TODO
