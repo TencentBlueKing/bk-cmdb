@@ -96,7 +96,7 @@
               :max-width="'500px'"
               :list="templateList"
               :is-link-style="true">
-              <template #unbindIcon="slotProps">
+              <template #append="slotProps">
                 <bk-icon
                   class="field-template-icon"
                   type="chain"

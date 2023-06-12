@@ -40,7 +40,7 @@
       <bk-table-column :label="$t('校验规则')" class-name="is-highlight" show-overflow-tooltip>
         <template slot-scope="{ row }">
           {{getRuleName(row.keys)}}
-          <bk-tag theme="success" v-if="row.bk_template_id">{{ $t('模板') }}</bk-tag>
+          <mini-tag :text="$t('模板')" v-if="row.bk_template_id" />
         </template>
       </bk-table-column>
       <bk-table-column prop="operation"
@@ -87,10 +87,12 @@
   import theVerificationDetail from './verification-detail'
   import { mapActions, mapGetters } from 'vuex'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+  import MiniTag from '@/components/ui/other/mini-tag.vue'
 
   export default {
     components: {
-      theVerificationDetail
+      theVerificationDetail,
+      MiniTag
     },
     props: {
       modelId: {

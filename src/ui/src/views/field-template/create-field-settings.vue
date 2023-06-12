@@ -12,8 +12,6 @@
 
 <script setup>
   import { ref, computed, reactive } from 'vue'
-  import { v4 as uuidv4 } from 'uuid'
-  import { t } from '@/i18n'
   import { useStore } from '@/store'
   import routerActions from '@/router/actions'
   import {
@@ -21,13 +19,12 @@
     MENU_MODEL_FIELD_TEMPLATE_BIND,
     MENU_MODEL_FIELD_TEMPLATE,
   } from '@/dictionary/menu-symbol'
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import fieldTemplateService from '@/service/field-template'
   import TopSteps from './children/top-steps.vue'
   import FieldManage from './children/field-manage.vue'
   import CreateSuccess from './children/create-success.vue'
-  import { wrapData, normalizeFieldData, normalizeUniqueData, defaultFieldData } from './children/use-field'
-  import previewField from '@/components/model-manage/field-group/preview-field.vue'
+  import { wrapData, normalizeFieldData, normalizeUniqueData } from './children/use-field'
+  import fieldPreview from './children/field-preview-silder.vue'
 
   const store = useStore()
 
@@ -44,30 +41,8 @@
   const newTemplateId = ref(null)
   const previewShow = ref(false)
 
-  const groups = ref([{
-    bk_biz_id: 0,
-    bk_group_id: 'default',
-    bk_group_index: 0,
-    bk_group_name: 'Default',
-    bk_isdefault: true,
-    bk_obj_id: 'hitozhang',
-    bk_supplier_account: '0',
-    id: 61,
-    is_collapse: false,
-    ispre: false,
-  }])
-  const properties = ref([
-    { ...defaultFieldData(),
-      id: uuidv4(),
-      bk_property_id: 'demo',
-      bk_property_name: t('示例字段'),
-      bk_property_type: PROPERTY_TYPES.SINGLECHAR,
-      bk_property_group: 'default',
-      bk_property_group_name: 'Default',
-      placeholder: '',
-      isrequired: false
-    }
-  ])
+  // 预览字段分组数据
+  const properties = ref(null)
 
   const templateData = computed(() => ({
     basic: basicData.value,
@@ -84,13 +59,7 @@
   })
   const handleFieldUpdate = (data) => {
     settingData.fieldList = data.map(wrapData)
-    properties.value = data.map(wrapData).map(item => ({
-      ...item,
-      bk_property_group: 'default',
-      bk_property_group_name: 'Default',
-      placeholder: item.placeholder.value,
-      isrequired: item.isrequired.value
-    }))
+    properties.value = settingData.fieldList
   }
   const handleUniqueUpdate = (data) => {
     settingData.uniqueList = data
@@ -206,18 +175,10 @@
     <div class="create-success-container" v-else>
       <create-success @action="handleSuccessAction"></create-success>
     </div>
-    <bk-sideslider
-      ref="sidesliderComp"
-      v-transfer-dom
-      :width="676"
-      :title="$t('字段预览')"
-      :is-show.sync="previewShow">
-      <preview-field v-if="previewShow"
-        slot="content"
-        :properties="properties"
-        :property-groups="groups">
-      </preview-field>
-    </bk-sideslider>
+    <field-preview
+      :preview-show.sync="previewShow"
+      :properties="properties">
+    </field-preview>
   </div>
 </template>
 

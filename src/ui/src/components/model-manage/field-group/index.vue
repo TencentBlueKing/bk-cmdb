@@ -158,8 +158,7 @@
                   :deletable="false"
                   :only-ready="!updateAuth || !isFieldEditable(property)"
                   @click-field="handleEditField(group, property)"
-                  @remove-field="handleDeleteField({ property, index: groupIndex, fieldIndex })"
-                  @handleHover="handleHover">
+                  @remove-field="handleDeleteField({ property, index: groupIndex, fieldIndex })">
                   <template #action-append>
                     <cmdb-auth
                       class="mr10"
@@ -195,7 +194,7 @@
                     </cmdb-auth>
                   </template>
                   <template #tag-append>
-                    <div v-if="property.bk_template_id ? true : false" @mouseenter="handleHover($event,property)">
+                    <div v-if="property.bk_template_id > 0" @mouseenter="handleTemplateTagHover($event, property)">
                       <mini-tag :text="$t('模板')" />
                     </div>
                   </template>
@@ -380,17 +379,15 @@
         @on-apply="handleApplyConfig">
       </cmdb-columns-config>
     </bk-sideslider>
-    <div v-show="false">
-      <div class="tips-content" ref="tipsComponent"
-        v-bkloading="{ size: 'mini', isLoading: tipsLoading, theme: 'primary', mode: 'spin' }">
-        <i18n path="模板提示信息" v-if="cacheTemplate.template_name">
-          <template #templateInfo>
-            <span class="tips-text">
-              {{ cacheTemplate.template_name }}
-            </span>
-          </template>
-        </i18n>
-      </div>
+    <div class="tips-content" ref="tipsComponent"
+      v-bkloading="{ size: 'mini', isLoading: tipsLoading, theme: 'primary', mode: 'spin' }">
+      <i18n path="模板提示信息" v-if="cacheTemplate.name">
+        <template #templateInfo>
+          <span class="tips-text">
+            {{ cacheTemplate.name }}
+          </span>
+        </template>
+      </i18n>
     </div>
   </div>
 </template>
@@ -411,7 +408,6 @@
   import { PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
   import FieldCard from '@/components/model-manage/field-card.vue'
   import useUnique from '@/views/field-template/children/use-unique.js'
-  import { clone, set } from 'lodash'
   import fieldTemplateService from '@/service/field-template'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
   export default {
@@ -489,7 +485,6 @@
           type: 'search',
         },
         uniqueList: [],
-        tips: null,
         tipsLoading: false,
         cacheTemplate: {}
       }
@@ -1168,40 +1163,37 @@
       handleExport() {
         this.$emit('exportField')
       },
-      async handleHover($event, value) {
-        this.tips?.destroy()
-        this.tips = null
-        const properties = this.properties.find(item => item.id === value.id)
-        if (!properties.template_name) {
-          set(clone(properties), 'template_name', '')
-        }
-        if (!this.tips) {
-          this.tips = this.$bkPopover($event.target, {
-            allowHTML: true,
-            placement: 'top',
-            boundary: 'window',
-            arrow: true,
-            theme: 'light',
-            interactive: true,
-            animateFill: false,
-            hideOnClick: false,
-            content: this.$refs.tipsComponent
-          })
-          if (this.tips) {
-            this.tips.show(500)
+      async handleTemplateTagHover($event, value) {
+        const tips = this.$bkPopover($event.target, {
+          allowHTML: true,
+          placement: 'top',
+          boundary: 'window',
+          arrow: true,
+          theme: 'light',
+          interactive: true,
+          animateFill: false,
+          hideOnClick: false,
+          content: this.$refs.tipsComponent,
+          onHidden: () => {
+            tips.destroy()
           }
-          if (!properties.template_name) {
-            this.tipsLoading = true
-            const params = {
-              bk_template_id: properties.bk_template_id,
-              bk_attribute_id: properties.id
-            }
-            const { name } = await fieldTemplateService.getTemplateInfo(params)
-            this.tipsLoading = false
-            set(properties, 'template_name', name)
-          }
+        })
+        if (tips) {
+          tips.show()
         }
-        this.cacheTemplate = properties
+        this.tipsLoading = true
+        const params = {
+          bk_template_id: value.bk_template_id,
+          bk_attribute_id: value.id
+        }
+        this.cacheTemplate = await fieldTemplateService.getTemplateInfo(
+          params,
+          {
+            requestId: `${this.modelId}_${value.id}_${value.bk_template_id}`,
+            fromCache: true
+          }
+        )
+        this.tipsLoading = false
       }
     }
   }

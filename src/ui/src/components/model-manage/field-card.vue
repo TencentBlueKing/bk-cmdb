@@ -52,7 +52,6 @@
 
   const emit = defineEmits(['click-field'])
 
-
   const getUniqueRuleContent = (uniqueList) => {
     const content = []
     uniqueList.forEach(item => content.push(item.names.join(', ')))
@@ -93,6 +92,7 @@
       }">
         <em class="tag-text">{{$t('联合唯一')}}</em>
       </span>
+      <span class="tag template" v-if="false"><em class="tag-text">{{$t('模板')}}</em></span>
       <slot name="tag-append"></slot>
     </div>
     <div class="field-action" @click.stop>
@@ -129,7 +129,6 @@
     &.sortable {
       padding: 0 12px 0 0;
     }
-
 
     .field-icon {
       color: #989CA8;

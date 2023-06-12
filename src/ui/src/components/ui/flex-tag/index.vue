@@ -59,7 +59,6 @@
     emit('click', index)
   }
 
-
   const getTipsInstance = () => {
     if (!tips) {
       tips = $bkPopover(plusEl.value, {
@@ -199,7 +198,7 @@
       :key="index"
       @click="handleClick(index)">
       <span>{{tag.name || tag}}</span>
-      <slot name="unbindIcon" v-bind:text="tag"></slot>
+      <slot name="append" v-bind:text="tag"></slot>
     </li>
     <li class="more-plus" ref="plusEl" v-show="ellipsisCount">+{{ellipsisCount}}</li>
   </ul>

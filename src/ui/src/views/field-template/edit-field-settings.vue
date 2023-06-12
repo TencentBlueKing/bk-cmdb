@@ -25,7 +25,7 @@
   import FieldManage from './children/field-manage.vue'
   import { wrapData } from './children/use-field'
   import fieldTemplateService from '@/service/field-template'
-  import previewField from '@/components/model-manage/field-group/preview-field.vue'
+  import fieldPreview from './children/field-preview-silder.vue'
 
   const route = useRoute()
   const store = useStore()
@@ -51,19 +51,6 @@
   const previewShow = ref(false)
 
   // 预览字段分组数据
-  const groups = ref([{
-    bk_biz_id: 0,
-    bk_group_id: 'default',
-    bk_group_index: 0,
-    bk_group_name: 'Default',
-    bk_isdefault: true,
-    bk_obj_id: 'hitozhang',
-    bk_supplier_account: '0',
-    id: 61,
-    is_collapse: false,
-    ispre: false,
-  }])
-  // // 预览字段数据
   const properties = ref([])
   const nextButtonDisabled = computed(() => !fieldData.value.length)
 
@@ -78,13 +65,7 @@
 
     beforeFieldList.value = templateFieldList?.info || []
     beforeUniqueList.value = templateUniqueList?.info || []
-    properties.value = templateFieldList?.info.map(item => ({
-      ...item,
-      bk_property_group: 'default',
-      bk_property_group_name: 'Default',
-      placeholder: item.placeholder.value,
-      isrequired: item.isrequired.value
-    })) || []
+    properties.value = templateFieldList?.info || []
 
     // 如果存在草稿，优先使用
     fieldData.value = templateDraft.value.fieldList ?? (templateFieldList?.info || [])
@@ -110,13 +91,7 @@
   })
   const handleFieldUpdate = (data) => {
     settingData.fieldList = data.map(wrapData)
-    properties.value = data.map(wrapData).map(item => ({
-      ...item,
-      bk_property_group: 'default',
-      bk_property_group_name: 'Default',
-      placeholder: item.placeholder.value,
-      isrequired: item.isrequired.value
-    }))
+    properties.value = settingData.fieldList
   }
   const handleUniqueUpdate = (data) => {
     settingData.uniqueList = data
@@ -197,18 +172,10 @@
         <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
       </div>
     </template>
-    <bk-sideslider
-      ref="sidesliderComp"
-      v-transfer-dom
-      :width="676"
-      :title="$t('字段预览')"
-      :is-show.sync="previewShow">
-      <preview-field v-if="previewShow"
-        slot="content"
-        :properties="properties"
-        :property-groups="groups">
-      </preview-field>
-    </bk-sideslider>
+    <field-preview
+      :preview-show.sync="previewShow"
+      :properties="properties">
+    </field-preview>
   </cmdb-sticky-layout>
 </template>
 
