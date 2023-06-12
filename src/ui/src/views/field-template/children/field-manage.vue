@@ -22,11 +22,11 @@
   import FieldGrid from '@/components/model-manage/field-grid.vue'
   import FieldCard from '@/components/model-manage/field-card.vue'
   import FieldSettingForm from '@/components/model-manage/field-group/field-detail/index.vue'
-  import Drawer from '@/components/ui/other/drawer.vue'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { UNIUQE_TYPES } from '@/dictionary/model-constants'
   import UniqueManage from './unique-manage.vue'
   import ModelFieldSelector from './model-field-selector.vue'
+  import UniqueManageDrawer from './unique-manage-drawer.vue'
   import useField, { unwrapData, excludeFieldType, isFieldExist, defaultFieldData } from './use-field'
   import useUnique from './use-unique'
 
@@ -194,7 +194,6 @@
     return data
   }
   const setUnique = (uniqueList, currentField) => {
-    // TODO: 删除的情况
     uniqueList.forEach((unique) => {
       const uniqueIndex = uniqueLocalList.value.findIndex(item => item.id === unique.id)
       if (~uniqueIndex) {
@@ -204,6 +203,7 @@
         })
       } else {
         unique.keys.forEach((key, index) => {
+          // 实时创建的字段，创建唯一校验时同时创建的字段
           if (key === -1) {
             unique.keys[index] = currentField.field.id
           }
@@ -256,6 +256,17 @@
       if (slider.uniqueType === UNIUQE_TYPES.UNION) {
         // 当前字段的唯一检验数据
         const fieldUniqueList = uniqueManageComp.value?.getUniqueList()
+        const { list } = getUniqueByField(currentField.field)
+        list.forEach((unique) => {
+          // 找不到了
+          if (!fieldUniqueList.some(item => item.id === unique.id)) {
+            // 在原列表中的index
+            const oldIndex = uniqueLocalList.value.findIndex(item => item.id === unique.id)
+            if (~oldIndex) {
+              uniqueLocalList.value.splice(oldIndex, 1)
+            }
+          }
+        })
         setUnique(fieldUniqueList, currentField)
       } else {
         // 默认情况下，单独唯一同样可以使用隐藏的唯一校验组件，此处将得到一条默认的唯一校验
@@ -305,6 +316,36 @@
         uniqueTypeComp.value?.$el?.scrollIntoView?.()
       })
     }
+  }
+
+  const handleChangeUnique = (uniqueList) => {
+    // 先过滤掉keys为空的数据
+    uniqueList.filter(unique => unique.keys.length).forEach((unique) => {
+      const { id: uniqueId, keys: uniqueKeys } = unique
+      const uniqueIndex = uniqueLocalList.value.findIndex(item => item.id === uniqueId)
+      // 添加
+      if (!~uniqueIndex) {
+        uniqueLocalList.value.push({
+          id: uniqueId,
+          keys: uniqueKeys
+        })
+      } else {
+        // 更新
+        set(uniqueLocalList.value, uniqueIndex, {
+          ...uniqueLocalList.value[uniqueIndex],
+          keys: uniqueKeys
+        })
+      }
+    })
+
+    // 在原数据中查找编辑后的数据，找不到即为删除
+    uniqueLocalList.value.forEach((unique, index) => {
+      if (!uniqueList.some(item => item.id === unique.id)) {
+        uniqueLocalList.value.splice(index, 1)
+      }
+    })
+
+    syncUnique()
   }
 
   const handleRemoveField = (field) => {
@@ -383,7 +424,7 @@
     sliderClose()
   }
   const handleOpenUnqiueDrawer = () => {
-    uniqueDrawerOpen.value = false
+    uniqueDrawerOpen.value = true
   }
   const handleUniqueDrawerClose = () => {
     uniqueDrawerOpen.value = false
@@ -566,10 +607,14 @@
       </template>
     </bk-sideslider>
 
-    <drawer :open="uniqueDrawerOpen" @close="handleUniqueDrawerClose">
-      <template #content>
-      </template>
-    </drawer>
+    <unique-manage-drawer
+      :open="uniqueDrawerOpen"
+      :field-list="pureFieldList"
+      :unique-list="uniqueLocalList"
+      :before-unique-list="oldUniqueList"
+      @close="handleUniqueDrawerClose"
+      @change-unique="handleChangeUnique">
+    </unique-manage-drawer>
   </div>
 </template>
 
@@ -613,7 +658,7 @@
     width: 100%;
     margin-bottom: 20px;
     margin-top: 20px;
-    padding: 16px;
+    padding: 24px 16px;
     background: #F5F7FB;
   }
 

@@ -272,7 +272,7 @@
       v-bkloading="{ isLoading: $loading(requestIds.list) }"
       :data="table.list"
       :pagination="table.pagination"
-      :max-height="$APP.height - 200"
+      :max-height="$APP.height - 229"
       @sort-change="handleSortChange"
       @page-limit-change="handleSizeChange"
       @page-change="handlePageChange">
