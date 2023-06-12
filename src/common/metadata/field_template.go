@@ -70,7 +70,7 @@ type FieldTemplateAttr struct {
 	PropertyID   string `json:"bk_property_id" bson:"bk_property_id"`
 	PropertyType string `json:"bk_property_type" bson:"bk_property_type"`
 	PropertyName string `json:"bk_property_name" bson:"bk_property_name"`
-	// It is used to display field template attribute in order. When a template attribute array is created or updated,
+	// PropertyIndex It is used to display field template attribute in order. When a template attribute array is created or updated,
 	// its value is set according to the order passed in by the front end.
 	PropertyIndex int64           `json:"bk_property_index" bson:"bk_property_index"`
 	Unit          string          `json:"unit" bson:"unit"`
