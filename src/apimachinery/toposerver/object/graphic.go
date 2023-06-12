@@ -20,7 +20,8 @@ import (
 )
 
 // SelectObjectTopoGraphics TODO
-func (t *object) SelectObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h http.Header) (resp *metadata.Response, err error) {
+func (t *object) SelectObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string,
+	h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/find/objecttopo/scope_type/%s/scope_id/%s"
 
@@ -35,7 +36,8 @@ func (t *object) SelectObjectTopoGraphics(ctx context.Context, scopeType string,
 }
 
 // UpdateObjectTopoGraphics TODO
-func (t *object) UpdateObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (t *object) UpdateObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/objecttopo/scope_type/%s/scope_id/%s"
 

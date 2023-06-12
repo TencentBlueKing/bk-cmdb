@@ -13,11 +13,12 @@
 package util
 
 import (
-	"configcenter/src/common"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"configcenter/src/common"
 
 	"github.com/emicklei/go-restful/v3"
 	"github.com/stretchr/testify/require"

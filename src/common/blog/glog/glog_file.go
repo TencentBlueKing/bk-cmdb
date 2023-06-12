@@ -47,7 +47,8 @@ func MaxSize() uint64 {
 }
 
 // MaxNum is the maximum of log files for one thread.
-var maxNumFlag = flag.Int("log_max_num", 6, "Max num of file. The oldest will be removed if there is a extra file created.")
+var maxNumFlag = flag.Int("log_max_num", 6,
+	"Max num of file. The oldest will be removed if there is a extra file created.")
 
 // MaxNum TODO
 func MaxNum() int {
