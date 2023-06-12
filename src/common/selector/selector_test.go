@@ -52,7 +52,8 @@ func TestLabel(t *testing.T) {
 	// assert value err
 	key = "key"
 	for _, value = range []string{"value", "0value", "value-_.v", strings.Repeat("v", 63)} {
-		for _, value = range []string{"-value", ".value", "_value", "value-", "value_", "value.", strings.Repeat("v", 64)} {
+		for _, value = range []string{"-value", ".value", "_value", "value-", "value_", "value.",
+			strings.Repeat("v", 64)} {
 			labels := selector.Labels{
 				key: value,
 			}

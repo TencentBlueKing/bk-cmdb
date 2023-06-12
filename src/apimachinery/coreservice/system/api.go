@@ -23,7 +23,8 @@ import (
 )
 
 // GetUserConfig TODO
-func (s *system) GetUserConfig(ctx context.Context, h http.Header) (*metadata.ResponseSysUserConfigData, errors.CCErrorCoder) {
+func (s *system) GetUserConfig(ctx context.Context, h http.Header) (*metadata.ResponseSysUserConfigData,
+	errors.CCErrorCoder) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	resp := new(metadata.ReponseSysUserConfig)

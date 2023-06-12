@@ -23,7 +23,8 @@ import (
 )
 
 // SearchMainlineModelTopo TODO
-func (m *mainline) SearchMainlineModelTopo(ctx context.Context, header http.Header, withDetail bool) (*metadata.TopoModelNode, errors.CCErrorCoder) {
+func (m *mainline) SearchMainlineModelTopo(ctx context.Context, header http.Header,
+	withDetail bool) (*metadata.TopoModelNode, errors.CCErrorCoder) {
 	rid := util.GetHTTPCCRequestID(header)
 	ret := new(metadata.SearchTopoModelNodeResult)
 	// resp = new(metadata.TopoModelNode)
@@ -52,7 +53,8 @@ func (m *mainline) SearchMainlineModelTopo(ctx context.Context, header http.Head
 }
 
 // SearchMainlineInstanceTopo TODO
-func (m *mainline) SearchMainlineInstanceTopo(ctx context.Context, header http.Header, bkBizID int64, withDetail bool) (*metadata.TopoInstanceNode, errors.CCErrorCoder) {
+func (m *mainline) SearchMainlineInstanceTopo(ctx context.Context, header http.Header, bkBizID int64,
+	withDetail bool) (*metadata.TopoInstanceNode, errors.CCErrorCoder) {
 	rid := util.GetHTTPCCRequestID(header)
 	input := map[string]bool{}
 	input["with_detail"] = withDetail
