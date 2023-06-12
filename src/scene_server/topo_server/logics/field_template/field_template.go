@@ -38,6 +38,8 @@ type FieldTemplateOperation interface {
 		*metadata.CompareFieldTmplAttrsRes, error)
 	CompareFieldTemplateUnique(kit *rest.Kit, opt *metadata.CompareFieldTmplUniqueOption, forUI bool) (
 		*metadata.CompareFieldTmplUniquesRes, error)
+	ListFieldTemplateSyncStatus(kit *rest.Kit, option *metadata.ListFieldTmpltSyncStatusOption) (
+		[]metadata.ListFieldTmpltSyncStatusResult, error)
 	DeleteFieldTemplate(kit *rest.Kit, id int64) error
 	DeleteFieldTemplateAttr(kit *rest.Kit, templateID int64, attrIDs []int64, needAuditLog bool) error
 	DeleteFieldTemplateUnique(kit *rest.Kit, templateID int64, uniques []int64, needAuditLog bool) error
