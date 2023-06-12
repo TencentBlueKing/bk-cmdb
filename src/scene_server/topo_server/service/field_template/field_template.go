@@ -693,8 +693,9 @@ func (s *service) getFieldTmplAttrOperation(kit *rest.Kit, templateID int64, att
 	updateAttrs := make([]metadata.FieldTemplateAttr, 0)
 	createAttrs := make([]metadata.FieldTemplateAttr, 0)
 
-	for _, attr := range attrs {
+	for idx, attr := range attrs {
 		attr.TemplateID = templateID
+		attr.PropertyIndex = int64(idx)
 
 		if attr.ID == 0 {
 			createAttrs = append(createAttrs, attr)

@@ -73,6 +73,7 @@ func (f *template) CreateFieldTemplate(kit *rest.Kit, opt *metadata.CreateFieldT
 
 	for idx := range opt.Attributes {
 		opt.Attributes[idx].TemplateID = res.ID
+		opt.Attributes[idx].PropertyIndex = int64(idx)
 	}
 	attrIDs, ccErr := f.clientSet.CoreService().FieldTemplate().CreateFieldTemplateAttrs(kit.Ctx, kit.Header, res.ID,
 		opt.Attributes)
