@@ -521,7 +521,7 @@ func (c *comparator) compareOneUniqueInfo(kit *rest.Kit, params *compUniqueParam
 	return true, nil
 }
 
-// ListFieldTemplateSyncStatus get the diff status of templates and modules
+// ListFieldTemplateSyncStatus get the diff status of templates and models
 func (t *template) ListFieldTemplateSyncStatus(kit *rest.Kit, option *metadata.ListFieldTmpltSyncStatusOption) (
 	[]metadata.ListFieldTmpltSyncStatusResult, error) {
 

@@ -40,8 +40,8 @@ type FieldTemplate struct {
 }
 
 const (
-	// fieldTemplateSyncMaxNum the maximum number of models used
-	// for each comparison of the small red dot interface
+	// fieldTemplateSyncMaxNum compare the difference status between the
+	// template and the model The maximum number of models processed at one time
 	fieldTemplateSyncMaxNum = 5
 	fieldTemplateNameMaxLen = 128
 	fieldTemplateDesMaxLen  = 2000
@@ -73,8 +73,8 @@ type FieldTemplateAttr struct {
 	PropertyID   string `json:"bk_property_id" bson:"bk_property_id"`
 	PropertyType string `json:"bk_property_type" bson:"bk_property_type"`
 	PropertyName string `json:"bk_property_name" bson:"bk_property_name"`
-	// PropertyIndex It is used to display field template attribute in order. When a template attribute array is created or updated,
-	// its value is set according to the order passed in by the front end.
+	// PropertyIndex It is used to display field template attribute in order. When a template
+	// attribute array is created or updated, its value is set according to the order passed in by the front end.
 	PropertyIndex int64           `json:"bk_property_index" bson:"bk_property_index"`
 	Unit          string          `json:"unit" bson:"unit"`
 	Placeholder   AttrPlaceholder `json:"placeholder" bson:"placeholder"`

@@ -76,8 +76,8 @@ var FieldTemplateAuthConfigs = []AuthConfig{
 		ResourceAction: meta.SkipAction,
 	},
 	{
-		Name:           "CompareFieldTemplateUnique",
-		Description:    "对比模型和模版的字段差异状态",
+		Name:           "CompareFieldTemplateSyncStatus",
+		Description:    "对比模型和模版的差异状态",
 		Pattern:        "/api/v3/find/field_template/sync/status",
 		HTTPMethod:     http.MethodPost,
 		ResourceAction: meta.SkipAction,
