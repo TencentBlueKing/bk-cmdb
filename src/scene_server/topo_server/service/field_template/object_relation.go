@@ -508,7 +508,7 @@ func (s *service) getCreateAndUpdateAttr(kit *rest.Kit, option *metadata.SyncObj
 		Attrs:      tmplAttrs,
 	}
 
-	result, err := s.logics.FieldTemplateOperation().CompareFieldTemplateAttr(kit, opt, false)
+	result, _, err := s.logics.FieldTemplateOperation().CompareFieldTemplateAttr(kit, opt, false)
 	if err != nil {
 		blog.Errorf("compare field template failed, cond: %+v, err: %v, rid: %s", opt, err, kit.Rid)
 		return nil, nil, err

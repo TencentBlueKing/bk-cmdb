@@ -42,17 +42,17 @@ var innerFieldMap = map[string]struct{}{
 // comparing priority: template id > property id > property type > property name
 // @param forUI: defines if all comparison detail is needed for ui display, or only returns basic info for backend sync
 func (t *template) CompareFieldTemplateAttr(kit *rest.Kit, opt *metadata.CompareFieldTmplAttrOption, forUI bool) (
-	*metadata.CompareFieldTmplAttrsRes, error) {
+	*metadata.CompareFieldTmplAttrsRes, *metadata.ListFieldTmpltSyncStatusResult, error) {
 
 	// check compare options that is not related to object attribute
 	objID, err := t.comparator.getObjIDAndValidate(kit, opt.ObjectID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	compParams, err := t.comparator.preCheckAttr(kit, objID, opt.Attrs)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// get object attributes
@@ -69,7 +69,7 @@ func (t *template) CompareFieldTemplateAttr(kit *rest.Kit, opt *metadata.Compare
 	objAttrRes, err := t.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, objAttrOpt)
 	if err != nil {
 		blog.Errorf("get object attributes failed, err: %v, opt: %+v, rid: %s", err, opt, kit.Rid)
-		return nil, err
+		return nil, nil, err
 	}
 
 	// if object has no attributes, add all field template attributes
@@ -81,14 +81,42 @@ func (t *template) CompareFieldTemplateAttr(kit *rest.Kit, opt *metadata.Compare
 				PropertyID: attr.PropertyID,
 			}
 		}
-		return &metadata.CompareFieldTmplAttrsRes{Create: createRes}, nil
+		if opt.IsPartial {
+			result := &metadata.ListFieldTmpltSyncStatusResult{
+				ObjectID: opt.ObjectID,
+				NeedSync: true,
+			}
+			return &metadata.CompareFieldTmplAttrsRes{}, result, nil
+
+		} else {
+			return &metadata.CompareFieldTmplAttrsRes{Create: createRes}, nil, nil
+		}
 	}
 
 	// cross-compare object attributes with template attributes
 	if forUI {
-		return t.comparator.compareAttrForUI(kit, compParams, objAttrRes.Info)
+		result, err := t.comparator.compareAttrForUI(kit, compParams, objAttrRes.Info)
+		if err != nil {
+			return nil, nil, err
+		}
+		return result, nil, nil
 	}
-	return t.comparator.compareAttrForBackend(kit, compParams, opt.TemplateID, objAttrRes.Info)
+
+	if opt.IsPartial {
+		_, result, err := t.comparator.compareAttrForBackend(kit, compParams, opt.TemplateID, opt.ObjectID,
+			objAttrRes.Info, opt.IsPartial)
+		if err != nil {
+			return nil, nil, err
+		}
+		return nil, result, nil
+	} else {
+		result, _, err := t.comparator.compareAttrForBackend(kit, compParams, opt.TemplateID, opt.ObjectID,
+			objAttrRes.Info, opt.IsPartial)
+		if err != nil {
+			return nil, nil, err
+		}
+		return result, nil, nil
+	}
 }
 
 type compAttrParams struct {
@@ -323,15 +351,16 @@ func (c *comparator) getObjectAttrAndTmplIDRelation(kit *rest.Kit, attributes []
 	return attrIDTmplID, nil
 }
 
-func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams, templateID int64,
-	attributes []metadata.Attribute) (*metadata.CompareFieldTmplAttrsRes, error) {
+func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams, templateID, objectID int64,
+	attributes []metadata.Attribute, isPartial bool) (*metadata.CompareFieldTmplAttrsRes,
+	*metadata.ListFieldTmpltSyncStatusResult, error) {
 
 	// compare object attribute with its template
 	res, noTmplAttr := new(metadata.CompareFieldTmplAttrsRes), make([]metadata.Attribute, 0)
 
 	attrIDTmplID, err := c.getObjectAttrAndTmplIDRelation(kit, attributes)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	for idx := range attributes {
@@ -346,13 +375,30 @@ func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams
 		if !exists {
 			// attribute's template is not exist, check if the attribute conflicts with other templates
 			if conflictTmplAttr, ex := params.tmplPropIDMap[attr.PropertyID]; ex {
-				return nil, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict, attr.ID,
-					common.BKPropertyIDField, conflictTmplAttr.PropertyID)
+				if isPartial {
+					result := &metadata.ListFieldTmpltSyncStatusResult{
+						ObjectID: objectID,
+						NeedSync: true,
+					}
+					return nil, result, nil
+				}
+				return nil, nil,
+					kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict, attr.ID,
+						common.BKPropertyIDField, conflictTmplAttr.PropertyID)
+
 			}
 
 			if conflictPropertyID, ex := params.tmplNameMap[attr.PropertyName]; ex {
-				return nil, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict, attr.ID,
-					common.BKPropertyNameField, conflictPropertyID)
+				if isPartial {
+					result := &metadata.ListFieldTmpltSyncStatusResult{
+						ObjectID: objectID,
+						NeedSync: true,
+					}
+					return nil, result, nil
+				}
+				return nil, nil,
+					kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict, attr.ID,
+						common.BKPropertyNameField, conflictPropertyID)
 			}
 
 			update := metadata.CompareOneFieldTmplAttrRes{
@@ -376,17 +422,33 @@ func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams
 
 		// compare it with its template if not conflict, check if attr's id and type is the same with its template
 		if attr.PropertyID != tmplAttr.PropertyID {
-			return nil, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict, attr.ID,
-				common.BKPropertyIDField, tmplAttr.PropertyID)
+			if isPartial {
+				result := &metadata.ListFieldTmpltSyncStatusResult{
+					ObjectID: objectID,
+					NeedSync: true,
+				}
+				return nil, result, nil
+			}
+			return nil, nil,
+				kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict, attr.ID,
+					common.BKPropertyIDField, tmplAttr.PropertyID)
 		}
 
 		if attr.PropertyType != tmplAttr.PropertyType {
-			return nil, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict, attr.ID,
-				common.BKPropertyTypeField, tmplAttr.PropertyID)
+			if isPartial {
+				result := &metadata.ListFieldTmpltSyncStatusResult{
+					ObjectID: objectID,
+					NeedSync: true,
+				}
+				return nil, result, nil
+			}
+			return nil, nil,
+				kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict, attr.ID,
+					common.BKPropertyTypeField, tmplAttr.PropertyID)
 		}
 
 		if err := c.addUpdateAttrInfoForBackend(kit, params, &attr, &tmplAttr, res); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -398,8 +460,16 @@ func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams
 		if !exists {
 			// attribute is not related to template, check if its name conflicts with all templates
 			if conflictPropertyID, ex := params.tmplNameMap[attr.PropertyName]; ex {
-				return nil, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict, attr.ID,
-					common.BKPropertyNameField, conflictPropertyID)
+				if isPartial {
+					result := &metadata.ListFieldTmpltSyncStatusResult{
+						ObjectID: objectID,
+						NeedSync: true,
+					}
+					return nil, result, nil
+				}
+				return nil, nil,
+					kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict, attr.ID,
+						common.BKPropertyNameField, conflictPropertyID)
 			}
 
 			continue
@@ -409,19 +479,27 @@ func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams
 
 		// compare it with its template if not conflict, check if attr's property type is the same with its template
 		if attr.PropertyType != tmplAttr.PropertyType {
-			return nil, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict, attr.ID,
-				common.BKPropertyTypeField, tmplAttr.PropertyID)
+			if isPartial {
+				result := &metadata.ListFieldTmpltSyncStatusResult{
+					ObjectID: objectID,
+					NeedSync: true,
+				}
+				return nil, result, nil
+			}
+			return nil, nil,
+				kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict, attr.ID,
+					common.BKPropertyTypeField, tmplAttr.PropertyID)
 		}
 
 		if err := c.addUpdateAttrInfoForBackend(kit, params, &attr, &tmplAttr, res); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
 	// field template attribute with no matching object attributes should be created
 	c.addCreateAttrInfo(params, res)
 
-	return res, nil
+	return res, nil, nil
 }
 
 // removeMatchingAttrParams remove template attr that has matching obj attr, because it can't be related to another one
