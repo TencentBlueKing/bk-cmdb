@@ -26,7 +26,8 @@ type Action struct {
 }
 
 // NewAction TODO
-func NewAction(verb, path string, params []*restful.Parameter, handler restful.RouteFunction, filters []restful.FilterFunction) *Action {
+func NewAction(verb, path string, params []*restful.Parameter, handler restful.RouteFunction,
+	filters []restful.FilterFunction) *Action {
 	return &Action{
 		Verb:          verb,
 		Path:          path,

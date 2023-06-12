@@ -318,7 +318,8 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 			case nil:
 				continue
 			default:
-				return nil, fmt.Errorf("the value of the key(%s) is not a valid type, type: %v,value:%+v", key, childType, t)
+				return nil, fmt.Errorf("the value of the key(%s) is not a valid type, type: %v,value:%+v", key,
+					childType, t)
 			}
 		}
 		return items, nil

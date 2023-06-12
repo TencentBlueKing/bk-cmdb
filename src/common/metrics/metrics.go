@@ -83,7 +83,8 @@ type Service struct {
 // NewService returns new metrics service
 func NewService(conf Config) *Service {
 	registry := prometheus.NewRegistry()
-	register := prometheus.WrapRegistererWith(prometheus.Labels{LabelProcessName: conf.ProcessName, LabelHost: strings.Split(conf.ProcessInstance, ":")[0]}, registry)
+	register := prometheus.WrapRegistererWith(prometheus.Labels{LabelProcessName: conf.ProcessName,
+		LabelHost: strings.Split(conf.ProcessInstance, ":")[0]}, registry)
 
 	// set up global register
 	globalRegister = register

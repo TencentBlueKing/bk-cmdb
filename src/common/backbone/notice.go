@@ -57,7 +57,8 @@ func (handler *noticeHandler) handleLogNotice(ctx context.Context) error {
 				blog.Errorf("log watch failed, will watch after 10s, path: %s, err: %s", logVPath, err.Error())
 				if handler.client.IsConnectionError(err) {
 					if conErr := handler.client.Connect(); conErr != nil {
-						blog.Errorf("fail to watch register node(%s), reason: connect closed. retry connect err:%s\n", logVPath, conErr.Error())
+						blog.Errorf("fail to watch register node(%s), reason: connect closed. retry connect err:%s\n",
+							logVPath, conErr.Error())
 						time.Sleep(10 * time.Second)
 					}
 					continue

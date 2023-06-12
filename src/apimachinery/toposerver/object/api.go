@@ -46,7 +46,8 @@ type ObjectInterface interface {
 		resp *metadata.Response, err error)
 	SelectObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h http.Header) (
 		resp *metadata.Response, err error)
-	UpdateObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	UpdateObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h http.Header,
+		data map[string]interface{}) (resp *metadata.Response, err error)
 	CreatePropertyGroup(ctx context.Context, h http.Header, dat metadata.Group) (resp *metadata.Response, err error)
 	UpdatePropertyGroup(ctx context.Context, h http.Header, cond *metadata.PropertyGroupCondition) (
 		resp *metadata.Response, err error)
