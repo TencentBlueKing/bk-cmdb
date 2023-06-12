@@ -40,6 +40,9 @@ type FieldTemplate struct {
 }
 
 const (
+	// fieldTemplateSyncMaxNum compare the difference status between the
+	// template and the model The maximum number of models processed at one time
+	fieldTemplateSyncMaxNum = 5
 	fieldTemplateNameMaxLen = 128
 	fieldTemplateDesMaxLen  = 2000
 )
@@ -861,4 +864,49 @@ type ListFieldTemplateSimpleResp struct {
 type ListTmplSimpleResult struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
+}
+
+// ListFieldTmpltSyncStatusOption used to compare templates and model
+// attributes or uniquely check whether there is a difference request.
+type ListFieldTmpltSyncStatusOption struct {
+	ID        int64   `json:"bk_template_id"`
+	ObjectIDs []int64 `json:"object_ids"`
+}
+
+// Validate judging the legality of parameters
+func (option *ListFieldTmpltSyncStatusOption) Validate() ccErr.RawErrorInfo {
+	if option.ID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+	if len(option.ObjectIDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"object_ids"},
+		}
+	}
+	if len(option.ObjectIDs) > fieldTemplateSyncMaxNum {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"object_ids", fieldTemplateSyncMaxNum},
+		}
+	}
+	for _, id := range option.ObjectIDs {
+		if id == 0 {
+			return ccErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{common.ObjectIDField},
+			}
+		}
+	}
+	return ccErr.RawErrorInfo{}
+}
+
+// ListFieldTmpltSyncStatusResult it is used to compare the attributes or unique
+// verification status comparison results between the template and the model
+type ListFieldTmpltSyncStatusResult struct {
+	ObjectID int64  `json:"object_id"`
+	Status   string `json:"status"`
 }
