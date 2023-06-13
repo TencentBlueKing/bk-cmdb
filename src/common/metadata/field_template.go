@@ -907,6 +907,6 @@ func (option *ListFieldTmpltSyncStatusOption) Validate() ccErr.RawErrorInfo {
 // ListFieldTmpltSyncStatusResult it is used to compare the attributes or unique
 // verification status comparison results between the template and the model
 type ListFieldTmpltSyncStatusResult struct {
-	ObjectID int64  `json:"object_id"`
-	Status   string `json:"status"`
+	ObjectID int64 `json:"object_id"`
+	NeedSync bool  `json:"need_sync"`
 }
