@@ -37,7 +37,7 @@ type FieldTemplateOperation interface {
 	CompareFieldTemplateAttr(kit *rest.Kit, opt *metadata.CompareFieldTmplAttrOption, forUI bool) (
 		*metadata.CompareFieldTmplAttrsRes, *metadata.ListFieldTmpltSyncStatusResult, error)
 	CompareFieldTemplateUnique(kit *rest.Kit, opt *metadata.CompareFieldTmplUniqueOption, forUI bool) (
-		*metadata.CompareFieldTmplUniquesRes, error)
+		*metadata.CompareFieldTmplUniquesRes, *metadata.ListFieldTmpltSyncStatusResult, error)
 	ListFieldTemplateSyncStatus(kit *rest.Kit, option *metadata.ListFieldTmpltSyncStatusOption) (
 		[]metadata.ListFieldTmpltSyncStatusResult, error)
 	DeleteFieldTemplate(kit *rest.Kit, id int64) error

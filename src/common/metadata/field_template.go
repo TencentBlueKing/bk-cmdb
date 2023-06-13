@@ -691,6 +691,8 @@ type CompareFieldTmplUniqueOption struct {
 	TemplateID int64                      `json:"bk_template_id"`
 	ObjectID   int64                      `json:"object_id"`
 	Uniques    []FieldTmplUniqueForUpdate `json:"uniques"`
+	// IsPartial quick comparison markup for templates and models
+	IsPartial bool `json:"is_partial"`
 }
 
 // FieldTmplUniqueForUpdate field template unique for field template update scenario.

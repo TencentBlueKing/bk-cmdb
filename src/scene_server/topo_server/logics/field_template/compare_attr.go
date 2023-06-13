@@ -89,7 +89,8 @@ func (t *template) CompareFieldTemplateAttr(kit *rest.Kit, opt *metadata.Compare
 			return &metadata.CompareFieldTmplAttrsRes{}, result, nil
 
 		} else {
-			return &metadata.CompareFieldTmplAttrsRes{Create: createRes}, nil, nil
+			return &metadata.CompareFieldTmplAttrsRes{Create: createRes},
+				&metadata.ListFieldTmpltSyncStatusResult{}, nil
 		}
 	}
 

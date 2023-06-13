@@ -21,10 +21,12 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/logics/model"
+	"sync"
 )
 
 type comparator struct {
@@ -68,4 +70,40 @@ func (c *comparator) getObjIDAndValidate(kit *rest.Kit, objectID int64) (string,
 	}
 
 	return objID, nil
+}
+
+// ListFieldTemplateSyncStatus get the diff status of templates and models
+func (t *template) ListFieldTemplateSyncStatus(kit *rest.Kit, option *metadata.ListFieldTmpltSyncStatusOption) (
+	[]metadata.ListFieldTmpltSyncStatusResult, error) {
+
+	result := make([]metadata.ListFieldTmpltSyncStatusResult, 0)
+
+	var wg sync.WaitGroup
+	var firstErr errors.CCErrorCoder
+	pipeline := make(chan bool, 5)
+	// 这里按照objectID进行并发，其中并发内部按照顺序首先对比属性，然后再对比唯一校验
+
+	for _, objectID := range option.ObjectIDs {
+
+		pipeline <- true
+		wg.Add(1)
+		go func(id, objectID int64) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			_, res, err := t.comparator.compareAttrForBackend(kit, compParams, id, objectID, objAttrRes.Info, true)
+			if err != nil {
+				return
+			}
+			if res.NeedSync {
+				result = append(result, *res)
+				return
+			}
+
+		}(option.ID, objectID)
+	}
+
+	return result, nil
 }
