@@ -308,7 +308,8 @@ func init() {
 
 	// object instance index.
 	indexObjInstMetadata := newESIndexMetadata(config)
-	indexObjectInstance = meta.NewESIndex(meta.IndexNameObjectInstance, indexVersionObjectInstance, indexObjInstMetadata)
+	indexObjectInstance = meta.NewESIndex(meta.IndexNameObjectInstance, indexVersionObjectInstance,
+		indexObjInstMetadata)
 	indexList = append(indexList, indexObjectInstance)
 
 	// init table properties

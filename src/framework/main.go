@@ -13,13 +13,12 @@
 package main
 
 import (
-	"time"
-
 	"fmt"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"

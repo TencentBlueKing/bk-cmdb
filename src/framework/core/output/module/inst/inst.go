@@ -172,7 +172,8 @@ func (cli *inst) Update() error {
 			existItem.Remove(key)
 		})
 
-		err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).CommonInst().UpdateCommonInst(existItem, updateCond)
+		err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).CommonInst().UpdateCommonInst(existItem,
+			updateCond)
 		if nil != err {
 			return err
 		}
