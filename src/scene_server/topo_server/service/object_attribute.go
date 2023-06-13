@@ -313,7 +313,7 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 	}
 	data = removeImmutableFields(data)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Logics.AttributeOperation().UpdateObjectAttribute(ctx.Kit, data, id, bizID)
+		err := s.Logics.AttributeOperation().UpdateObjectAttribute(ctx.Kit, data, id, bizID, false)
 		if err != nil {
 			return err
 		}

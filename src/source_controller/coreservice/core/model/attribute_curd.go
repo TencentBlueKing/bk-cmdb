@@ -706,8 +706,8 @@ func (m *modelAttribute) searchReturnMapStr(kit *rest.Kit, cond universalsql.Con
 }
 
 // delete delete the model scene isMode is true, no need to check whether
-// the isFromMode field inherits from the field template
-func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition, isFromMode bool) (cnt uint64, err error) {
+// the isFromModel field inherits from the field template
+func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition, isFromModel bool) (cnt uint64, err error) {
 
 	resultAttrs := make([]metadata.Attribute, 0)
 	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKPropertyTypeField,
@@ -732,7 +732,7 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition, isFr
 			return 0, kit.CCError.New(common.CCErrTopoObjectSelectFailed, common.BKPropertyTypeField)
 		}
 
-		if !isFromMode && attr.TemplateID != 0 {
+		if !isFromModel && attr.TemplateID != 0 {
 			return 0, kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteAttr, attr.ID, attr.TemplateID)
 		}
 		objIDArrMap[attr.ObjectID] = append(objIDArrMap[attr.ObjectID], attr.ID)
@@ -1136,7 +1136,7 @@ func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) 
 
 // checkTableAttrUpdate delete the field that cannot be updated, check whether the field is repeated
 func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
-	cond universalsql.Condition, isSync bool) (err error) {
+	cond universalsql.Condition) (err error) {
 
 	dbAttributeArr, err := m.search(kit, cond)
 	if err != nil {
@@ -1185,10 +1185,6 @@ func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
 		return err
 	}
 
-	if err = checkAttrTemplateID(kit, data, attr.ID, isSync); err != nil {
-		return err
-	}
-
 	if err = m.checkTableAttributeValidity(kit, attr); err != nil {
 		blog.Errorf("check attribute validity failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -1212,30 +1208,150 @@ func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
 	return err
 }
 
-func checkAttrTemplateID(kit *rest.Kit, data mapstr.MapStr, attrID int64, isSync bool) error {
+func getObjectAttrTemplateID(kit *rest.Kit, attrID int64) (int64, error) {
+	cond := mapstr.MapStr{
+		common.BKFieldID: attrID,
+	}
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+	attrs := make([]metadata.Attribute, 0)
 
-	// non-field template synchronization scenarios do not need
-	// to check the validity of the template id
-	if !isSync {
-		return nil
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).Fields(common.BKTemplateID).
+		All(kit.Ctx, &attrs); err != nil {
+		blog.Errorf("find attrs failed, attrID: %d, err: %v, rid: %s", attrID, err, kit.Rid)
+		return 0, err
 	}
 
-	templateID, exists := data.Get(common.BKTemplateID)
-	if !exists {
-		return kit.CCError.Errorf(common.CCErrCommParamsInvalid, "is_sync")
+	attrsNum := len(attrs)
+	if attrsNum <= 0 || attrsNum > 1 {
+		blog.Errorf("attributes num error, attID: %d, num: %d, rid: %s", attrID, attrsNum, kit.Rid)
+		return 0, kit.CCError.Errorf(common.CCErrCommParamsInvalid, attrID)
 	}
 
-	tID, err := util.GetInt64ByInterface(templateID)
+	return attrs[0].TemplateID, nil
+}
+
+func getTemplateAttrByID(kit *rest.Kit, templateID int64, fields []string) (*metadata.FieldTemplateAttr, error) {
+
+	attrCond := mapstr.MapStr{
+		common.BKFieldID: templateID,
+	}
+	attrCond = util.SetQueryOwner(attrCond, kit.SupplierAccount)
+
+	templateAttr := make([]metadata.FieldTemplateAttr, 0)
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(attrCond).Fields(fields...).
+		All(kit.Ctx, &templateAttr); err != nil {
+		blog.Errorf("find field template attr failed, cond: %v, err: %v, rid: %s", attrCond, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	templateAttrNum := len(templateAttr)
+	if templateAttrNum > 1 {
+		blog.Errorf("attributes num error, attID: %d, num: %d, rid: %s", templateID, templateAttrNum, kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKTemplateID)
+	}
+	// here is the scenario of releasing the management
+	if templateAttrNum == 0 {
+		return nil, nil
+	}
+
+	return &templateAttr[0], nil
+}
+
+func checkAttrTemplateInfo(kit *rest.Kit, input mapstr.MapStr, attrID int64, isSync bool) error {
+
+	tmpltID, err := getObjectAttrTemplateID(kit, attrID)
 	if err != nil {
-		blog.Errorf("convert int64 failed, templateID: %v, err: %v, rid: %s", templateID, err, kit.Rid)
 		return err
 	}
 
-	if tID == 0 {
-		blog.Errorf("templateID field is invalid, templateID: %v, rid: %s", templateID, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteAttr, attrID, tID)
+	if (!isSync && tmpltID > 0) || (isSync && tmpltID == 0) {
+		blog.Errorf("params invalid, attrID: %d, sync: %v, templateID: %d, rid: %s", attrID, isSync, tmpltID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, attrID)
+	}
+
+	if !isSync && tmpltID == 0 {
+		return nil
+	}
+
+	data := mapstr.New()
+	for k, v := range input {
+		data[k] = v
+	}
+
+	fields := make([]string, 0)
+	if _, ok := data[metadata.AttributeFieldIsRequired].(bool); ok {
+		fields = append(fields, metadata.AttributeFieldIsRequired)
+	}
+	if _, ok := data[metadata.AttributeFieldIsEditable].(bool); ok {
+		fields = append(fields, metadata.AttributeFieldIsEditable)
+	}
+
+	if _, ok := data[metadata.AttributeFieldPlaceHolder].(string); ok {
+		fields = append(fields, metadata.AttributeFieldPlaceHolder)
+	}
+
+	_, ok := data[common.BKTemplateID]
+
+	// 2、AttributeFieldIsRequired\AttributeFieldIsEditable\AttributeFieldPlaceHolder may be allowed
+	// to be modified, the update operation does not have the above attributes to return an error
+	if len(fields) == 0 && !ok {
+		blog.Errorf("validate attr failed, data: %+v, rid: %s", data, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, "data")
+	}
+
+	templateAttr, err := getTemplateAttrByID(kit, tmpltID, fields)
+	if err != nil {
+		return err
+	}
+	if templateAttr == nil {
+		return nil
+	}
+
+	// 3、whether the corresponding lock in the attribute is false, if it is false,
+	// it can be updated, otherwise it cannot be updated
+	for _, field := range fields {
+		switch field {
+		case metadata.AttributeFieldPlaceHolder:
+			if templateAttr.Placeholder.Lock {
+				blog.Errorf("validate attr failed, data: %+v, field: %v, rid: %s", data, field, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, metadata.AttributeFieldPlaceHolder)
+			}
+		case metadata.AttributeFieldIsEditable:
+			if templateAttr.Editable.Lock {
+				blog.Errorf("validate attr  failed, data: %+v, field: %v, rid: %s", data, field, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, metadata.AttributeFieldIsEditable)
+			}
+		case metadata.AttributeFieldIsRequired:
+			if templateAttr.Required.Lock {
+				blog.Errorf("validate attr failed, data: %+v, field: %v rid: %s", data, field, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, metadata.AttributeFieldIsRequired)
+			}
+		}
+		data.Remove(field)
+	}
+
+	removeIrrelevantValues(data)
+
+	// After removing the above irrelevant key, check whether there is a value, and report an error if there is a value.
+	if len(data) > 0 {
+		blog.Errorf("validate attr failed, data: %+v, rid: %s", data, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, "data")
 	}
 	return nil
+}
+
+func removeIrrelevantValues(data mapstr.MapStr) {
+	// delete irrelevant keys
+	data.Remove(common.CreatorField)
+	data.Remove(common.CreateTimeField)
+	data.Remove(common.ModifierField)
+	data.Remove(common.LastTimeField)
+	data.Remove(common.BkSupplierAccount)
+	data.Remove(common.BKTemplateID)
+	data.Remove(common.BKFieldID)
+	data.Remove(common.BKPropertyTypeField)
+	data.Remove(common.BKPropertyIDField)
+	data.Remove(common.BKObjIDField)
 }
 
 func checkAttrOption(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []metadata.Attribute) error {
@@ -1374,7 +1490,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		return err
 	}
 
-	if err = checkAttrTemplateID(kit, data, attribute.ID, isSync); err != nil {
+	if err = checkAttrTemplateInfo(kit, data, dbAttributeArr[0].ID, isSync); err != nil {
 		return err
 	}
 

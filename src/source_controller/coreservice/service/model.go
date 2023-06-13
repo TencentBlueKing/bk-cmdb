@@ -682,14 +682,14 @@ func (s *coreService) SearchModelAttrUnique(ctx *rest.Contexts) {
 
 // CreateModelAttrUnique TODO
 func (s *coreService) CreateModelAttrUnique(ctx *rest.Contexts) {
-	inputDatas := metadata.CreateModelAttrUnique{}
-	if err := ctx.DecodeInto(&inputDatas); nil != err {
+	inputData := metadata.CreateModelAttrUnique{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	objID := ctx.Request.PathParameter("bk_obj_id")
-	res, err := s.core.ModelOperation().CreateModelAttrUnique(ctx.Kit, objID, inputDatas)
+	res, err := s.core.ModelOperation().CreateModelAttrUnique(ctx.Kit, objID, inputData)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

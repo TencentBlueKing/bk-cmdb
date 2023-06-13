@@ -61,6 +61,13 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 		}
 	}
 
+	// the unique verification template ID created directly must be zero
+	if (inputParam.Data.TemplateID != 0 && !inputParam.FromTemplate) ||
+		(inputParam.Data.TemplateID == 0 && inputParam.FromTemplate) {
+		blog.Errorf("parameter error, data: %v, rid: %s", inputParam, kit.Rid)
+		return 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, objID)
+	}
+
 	err := m.checkUniqueRuleExist(kit, objID, 0, inputParam.Data.Keys)
 	if err != nil {
 		blog.Errorf("[CreateObjectUnique] checkUniqueRuleExist error: %#v, rid: %s", err, kit.Rid)
@@ -135,6 +142,13 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 		}
 	}
 
+	// the unique verification template ID for direct updates must be zero
+	if (data.Data.TemplateID != 0 && !data.FromTemplate) ||
+		(data.Data.TemplateID == 0 && data.FromTemplate) {
+		blog.Errorf("scene parameter invalid, template id: %d, from template: %v, rid: %s", data.Data.TemplateID,
+			data.FromTemplate, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteIndex, id, data.Data.TemplateID)
+	}
 	err := m.checkUniqueRuleExist(kit, objID, id, unique.Keys)
 	if err != nil {
 		blog.Errorf("[UpdateObjectUnique] checkUniqueRuleExist error: %#v, rid: %s", err, kit.Rid)
@@ -163,12 +177,6 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 	if oldUnique.Ispre {
 		blog.Errorf("[UpdateObjectUnique] could not update preset constrain: %+v %v, rid: %s", oldUnique, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)
-	}
-	// todo: 现在这里拦住，后续再同步的时候可能进行修改
-	if oldUnique.TemplateID != 0 {
-		blog.Errorf("the unique index [%d] is inherited from the template [%d] and cannot be deleted, rid: %s",
-			id, oldUnique.TemplateID, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteIndex, id, oldUnique.TemplateID)
 	}
 
 	if err = mongodb.Client().Table(common.BKTableNameObjUnique).Update(kit.Ctx, filter, &unique); err != nil {
@@ -214,6 +222,7 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 		return kit.CCError.CCError(common.CCErrTopoObjectUniqueShouldHaveMoreThanOne)
 	}
 
+	// synchronous scene does not exist delete only update
 	if unique.TemplateID != 0 {
 		blog.Errorf("index is inherited from the template and cannot be deleted: unique: %+v, rid: %s", unique, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteIndex, id, unique.TemplateID)

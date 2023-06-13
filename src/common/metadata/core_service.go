@@ -81,12 +81,18 @@ type SetModelAttributes CreateModelAttributes
 
 // CreateModelAttrUnique TODO
 type CreateModelAttrUnique struct {
-	Data ObjectUnique `json:"data"`
+	// FromTemplate the only verification way to create a model,
+	// true is from template synchronization, false is from direct creation
+	FromTemplate bool         `json:"from_template"`
+	Data         ObjectUnique `json:"data"`
 }
 
 // UpdateModelAttrUnique TODO
 type UpdateModelAttrUnique struct {
-	Data UpdateUniqueRequest `json:"data"`
+	// FromTemplate the only way to verify the update model,
+	// true is from template synchronization, false is from direct creation
+	FromTemplate bool                `json:"from_template"`
+	Data         UpdateUniqueRequest `json:"data"`
 }
 
 // DeleteModelAttrUnique TODO

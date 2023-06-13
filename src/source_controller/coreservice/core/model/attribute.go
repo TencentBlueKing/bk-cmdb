@@ -179,8 +179,9 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 		}
 
 		// in the scenario of directly creating attrs on the model, the template ID in the attrs field must be 0
-		if !inputParam.FromTemplate && attr.TemplateID != 0 {
-			blog.Errorf("the template id field is invalid, attr: %+v, rid: %s", attr, kit.Rid)
+		if (!inputParam.FromTemplate && attr.TemplateID != 0) || (inputParam.FromTemplate && attr.TemplateID == 0) {
+			blog.Errorf("scene parameter invalid, attr: %+v, from template: %v rid: %s", attr,
+				inputParam.FromTemplate, kit.Rid)
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 		}
 
@@ -431,6 +432,11 @@ func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam me
 		return err
 	}
 
+	if inputParam.IsSync {
+		blog.Errorf("synchronization of form fields is not supported, isSync: %v, rid: %s", inputParam.IsSync, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, inputParam.IsSync)
+	}
+
 	if len(inputParam.CreateData.Data) > 0 {
 		if err := m.model.isValid(kit, inputParam.CreateData.ObjID); err != nil {
 			blog.Errorf("validate model(%s) failed, err: %v, rid: %s", inputParam.CreateData.ObjID, err, kit.Rid)
@@ -462,13 +468,8 @@ func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam me
 			}
 		}
 
-		// inputParam.UpdateData 中的option 转化成header default
-		hOp, ok := inputParam.UpdateData["option"].(map[string]interface{})
-		if !ok {
-			return err
-		}
-		header := new(metadata.TableAttributesOption)
-		if err := mapstruct.Decode2Struct(hOp, header); err != nil {
+		header, err := getTableAttributesOption(kit, inputParam.UpdateData)
+		if err != nil {
 			return err
 		}
 
@@ -483,7 +484,6 @@ func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam me
 			}
 
 			header.Header = append(header.Header, dataTbale.Header...)
-
 		}
 		inputParam.UpdateData[metadata.AttributeFieldOption] = header
 	}
@@ -500,13 +500,30 @@ func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam me
 		return err
 	}
 
-	if err := m.updateTableAttr(kit, inputParam.UpdateData, cond, inputParam.IsSync); err != nil {
+	if err := m.updateTableAttr(kit, inputParam.UpdateData, cond); err != nil {
 		blog.Errorf("failed to update fields (%#v) by condition(%#v), err: %v, rid: %s",
 			inputParam.UpdateData, cond.ToMapStr(), err, kit.Rid)
 		return err
 	}
 
 	return nil
+}
+
+func getTableAttributesOption(kit *rest.Kit, data mapstr.MapStr) (*metadata.TableAttributesOption, error) {
+
+	// inputParam.UpdateData 中的option 转化成header default
+	headerOp, ok := data["option"].(map[string]interface{})
+	if !ok {
+		blog.Errorf("parse data option failed, data: %+v, rid: %s", data, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "option")
+	}
+
+	header := new(metadata.TableAttributesOption)
+	if err := mapstruct.Decode2Struct(headerOp, header); err != nil {
+		blog.Errorf("parse data option failed, data: %+v, err: %v, rid: %s", data, err, kit.Rid)
+		return nil, err
+	}
+	return header, nil
 }
 
 // unsetTableInstAttr unset instance attributes
@@ -573,14 +590,13 @@ func (m *modelAttribute) unsetTableInstAttr(kit *rest.Kit, data mapstr.MapStr, a
 	return nil
 }
 
-func (m *modelAttribute) updateTableAttr(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition,
-	isSync bool) error {
+func (m *modelAttribute) updateTableAttr(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) error {
 
 	if len(data) == 0 {
 		return nil
 	}
 
-	err := m.checkTableAttrUpdate(kit, data, cond, isSync)
+	err := m.checkTableAttrUpdate(kit, data, cond)
 	if err != nil {
 		blog.Errorf("checkUpdate error. data: %+v, cond: %+v, err: %v, rid:%s", data, cond, err, kit.Rid)
 		return err

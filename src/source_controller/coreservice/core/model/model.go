@@ -452,8 +452,7 @@ func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metada
 		return nil, err
 	}
 
-	// handling scenarios where model attributes inherit from field templates
-	if err := m.dealModelAttrInheritTemplate(kit, modelID, false); err != nil {
+	if err := m.deleteModelAndFieldTemplateRelation(kit, modelID); err != nil {
 		return nil, err
 	}
 
@@ -500,14 +499,14 @@ func (m *modelManager) isExistProcessingTask(kit *rest.Kit, modelID int64, isSto
 	return nil
 }
 
-func (m *modelManager) dealModelAttrInheritTemplate(kit *rest.Kit, modelID int64, isStop bool) error {
+func (m *modelManager) deleteModelAndFieldTemplateRelation(kit *rest.Kit, modelID int64) error {
 
 	templateIDs, err := m.getObjFieldTemplateRelation(kit, modelID)
 	if err != nil {
 		return err
 	}
 
-	if err := dealProcessRunningTasks(kit, templateIDs, modelID, isStop); err != nil {
+	if err := dealProcessRunningTasks(kit, templateIDs, modelID, false); err != nil {
 		return err
 	}
 
