@@ -71,8 +71,7 @@ type ObjectInterface interface {
 		err error)
 	UpdateObject(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (
 		resp *metadata.Response, err error)
-	DeleteObject(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (
-		resp *metadata.Response, err error)
+	DeleteObject(ctx context.Context, objID string, h http.Header) error
 	CreateObjectUnique(ctx context.Context, objID string, h http.Header, data *metadata.CreateUniqueRequest) (
 		resp *metadata.Response, err error)
 	SearchObjectUnique(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error)

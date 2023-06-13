@@ -812,6 +812,8 @@ func (s *Service) findBizSetTopo(kit *rest.Kit, opt *metadata.FindBizSetTopoOpti
 
 	// get parent object id to check if the parent node is a valid mainline instance that belongs to the biz set
 	var childObjID string
+	parentCond := mapstr.MapStr{common.BKParentIDField: opt.ParentID}
+
 	switch opt.ParentObjID {
 	case common.BKInnerObjIDBizSet:
 		if opt.ParentID != opt.BizSetID {
@@ -850,6 +852,11 @@ func (s *Service) findBizSetTopo(kit *rest.Kit, opt *metadata.FindBizSetTopoOpti
 		}
 
 		childObjID = asst.Info[0].ObjectID
+
+		// default set parent is biz, needs to be excluded from custom mainline object's children.
+		if childObjID == common.BKInnerObjIDSet {
+			parentCond[common.BKDefaultField] = mapstr.MapStr{common.BKDBNE: common.DefaultResSetFlag}
+		}
 	}
 
 	// check if the parent node belongs to a biz that is in the biz set
@@ -860,7 +867,7 @@ func (s *Service) findBizSetTopo(kit *rest.Kit, opt *metadata.FindBizSetTopoOpti
 	}
 
 	// find topo nodes' id and name by parent id
-	instArr, err := s.getTopoBriefInfo(kit, childObjID, mapstr.MapStr{common.BKParentIDField: opt.ParentID})
+	instArr, err := s.getTopoBriefInfo(kit, childObjID, parentCond)
 	if err != nil {
 		return nil, err
 	}
@@ -988,7 +995,8 @@ func (s *Service) CountBizSetTopoHostAndSrvInst(ctx *rest.Contexts) {
 			Filter:    map[string]interface{}{common.GetInstIDField(objID): mapstr.MapStr{common.BKDBIN: instIDs}},
 		}
 
-		distinctIDs, err := s.Engine.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, distinctOpt)
+		distinctIDs, err := s.Engine.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header,
+			distinctOpt)
 		if err != nil {
 			blog.Errorf("get biz ids failed, distinct opt: %+v, err: %v, rid: %s", distinctOpt, err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)

@@ -41,7 +41,7 @@ var _ = Describe("host abnormal test", func() {
 
 	Describe("test preparation", func() {
 		It("create business bk_biz_name = 'Christina'", func() {
-			test.ClearDatabase()
+			test.DeleteAllBizs()
 
 			input := map[string]interface{}{
 				"life_cycle":        "2",
@@ -195,7 +195,7 @@ var _ = Describe("host abnormal test", func() {
 			util.RegisterResponse(dirRsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dirRsp.Result).To(Equal(true))
-			Expect(len(dirRsp.Data.Info)).To(Equal(1))
+			Expect(len(dirRsp.Data.Info) >= 1).To(Equal(true))
 
 			defaultDirID, err = commonutil.GetInt64ByInterface(dirRsp.Data.Info[0][common.BKModuleIDField])
 			Expect(err).NotTo(HaveOccurred())
@@ -1930,7 +1930,8 @@ var _ = Describe("host abnormal test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 
-			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId1, 10), header)
+			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0",
+				strconv.FormatInt(hostId1, 10), header)
 			util.RegisterResponse(rsp1)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp1.Result).To(Equal(true))
@@ -1985,7 +1986,8 @@ var _ = Describe("host abnormal test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 
-			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId4, 10), header)
+			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0",
+				strconv.FormatInt(hostId4, 10), header)
 			util.RegisterResponse(rsp1)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp1.Result).To(Equal(true))
@@ -2001,7 +2003,8 @@ var _ = Describe("host abnormal test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 
-			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId4, 10), header)
+			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0",
+				strconv.FormatInt(hostId4, 10), header)
 			util.RegisterResponse(rsp1)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp1.Result).To(Equal(false))
@@ -2147,7 +2150,8 @@ func clearData() {
 			hostIdInt, err := commonutil.GetInt64ByInterface(hostInfo["host"].(map[string]interface{})["bk_host_id"])
 			Expect(err).NotTo(HaveOccurred())
 			hostIds = append(hostIds, hostIdInt)
-			hostIds2 = append(hostIds2, commonutil.GetStrByInterface(hostInfo["host"].(map[string]interface{})["bk_host_id"]))
+			hostIds2 = append(hostIds2,
+				commonutil.GetStrByInterface(hostInfo["host"].(map[string]interface{})["bk_host_id"]))
 		}
 
 		if len(hostIds) > 0 {

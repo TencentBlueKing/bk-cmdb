@@ -23,7 +23,7 @@ var _ = Describe("host test", func() {
 
 	Describe("test preparation", func() {
 		It("create business bk_biz_name = 'cc_biz'", func() {
-			test.ClearDatabase()
+			test.DeleteAllBizs()
 
 			input := map[string]interface{}{
 				"life_cycle":        "2",
@@ -292,7 +292,8 @@ var _ = Describe("host test", func() {
 		})
 
 		It("get host base info", func() {
-			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId, 10), header)
+			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0",
+				strconv.FormatInt(hostId, 10), header)
 			util.RegisterResponse(rsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -754,7 +755,8 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Data.Count).To(Equal(2))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
 			data1 := rsp.Data.Info[1]["host"].(map[string]interface{})
-			Expect("127.0.0.2").To(SatisfyAny(Equal(data["bk_host_innerip"].(string)), Equal(data1["bk_host_innerip"].(string))))
+			Expect("127.0.0.2").To(SatisfyAny(Equal(data["bk_host_innerip"].(string)),
+				Equal(data1["bk_host_innerip"].(string))))
 		})
 
 		It("search fault host", func() {
@@ -1182,7 +1184,7 @@ var _ = Describe("host test", func() {
 
 var _ = Describe("list_hosts_topo test", func() {
 	It("list_hosts_topo", func() {
-		test.ClearDatabase()
+		test.DeleteAllBizs()
 
 		By("create biz cc_biz_test")
 		bizInput := map[string]interface{}{
@@ -1291,7 +1293,9 @@ var _ = Describe("list_hosts_topo test", func() {
 		Expect(transferRsp.Result).To(Equal(true))
 
 		By("list hosts topo")
-		rsp, err := hostServerClient.ListBizHostsTopo(context.Background(), header, bizId, &metadata.ListHostsWithNoBizParameter{Page: metadata.BasePage{Sort: common.BKHostIDField, Limit: 10}, Fields: []string{"bk_host_id"}})
+		rsp, err := hostServerClient.ListBizHostsTopo(context.Background(), header, bizId,
+			&metadata.ListHostsWithNoBizParameter{Page: metadata.BasePage{Sort: common.BKHostIDField, Limit: 10},
+				Fields: []string{"bk_host_id"}})
 		util.RegisterResponse(rsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
@@ -1307,7 +1311,7 @@ var _ = Describe("list_hosts_topo test", func() {
 
 var _ = Describe("batch_update_host test", func() {
 	It("batch_update_host", func() {
-		test.ClearDatabase()
+		test.DeleteAllHosts()
 
 		By("add host using api")
 		hostInput := map[string]interface{}{
@@ -1381,7 +1385,7 @@ var _ = Describe("batch_update_host test", func() {
 
 var _ = Describe("multiple ip host validation test", func() {
 	It("multiple ip host validation", func() {
-		test.ClearDatabase()
+		test.DeleteAllHosts()
 
 		By("add hosts with different ip using api")
 		hostInput := map[string]interface{}{
@@ -1418,7 +1422,8 @@ var _ = Describe("multiple ip host validation test", func() {
 				"bk_cloud_id":     0,
 			},
 		}
-		addHostResult, err := test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
+		addHostResult, err := test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header,
+			common.BKInnerObjIDHost, input)
 		util.RegisterResponse(addHostResult)
 		Expect(err).To(HaveOccurred())
 
@@ -1429,7 +1434,8 @@ var _ = Describe("multiple ip host validation test", func() {
 				"bk_cloud_id":     0,
 			},
 		}
-		addHostResult, err = test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
+		addHostResult, err = test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header,
+			common.BKInnerObjIDHost, input)
 		util.RegisterResponse(addHostResult)
 		Expect(err).To(HaveOccurred())
 	})
@@ -1437,7 +1443,7 @@ var _ = Describe("multiple ip host validation test", func() {
 
 var _ = Describe("add_host_to_resource_pool test", func() {
 	It("add_host_to_resource_pool", func() {
-		test.ClearDatabase()
+		test.DeleteAllHosts()
 
 		By("add hosts to resource pool default module")
 		hostInput := metadata.AddHostToResourcePoolHostList{

@@ -38,7 +38,7 @@ var _ = Describe("kube cluster test", func() {
 	var bizId, clusterID, hostId1, nodeID, nodeID2 int64
 	Describe("test preparation", func() {
 		It("create business bk_biz_name = 'cc_biz'", func() {
-			test.ClearDatabase()
+			test.DeleteAllBizs()
 
 			input := map[string]interface{}{
 				"life_cycle":        "2",

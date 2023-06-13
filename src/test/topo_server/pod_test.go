@@ -54,7 +54,7 @@ var _ = Describe("pod test", func() {
 	containerName := "containerName"
 	containerUID := "containerUID"
 	It("prepare environment, create business, cluster, namespace", func() {
-		test.ClearDatabase()
+		test.DeleteAllBizs()
 
 		// create business
 		biz := map[string]interface{}{

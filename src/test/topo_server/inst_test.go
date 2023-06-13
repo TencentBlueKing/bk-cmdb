@@ -22,7 +22,8 @@ var _ = Describe("inst test", func() {
 	var propertyID1, propertyID2, uniqueID uint64
 
 	It("create object bk_classification_id = 'bk_network' and bk_obj_id='cc_test'", func() {
-		test.ClearDatabase()
+		test.DeleteAllObjects()
+
 		input := metadata.Object{
 			ObjCls:     "bk_network",
 			ObjIcon:    "icon-cc-business",
@@ -37,46 +38,48 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(true))
 	})
 
-	It("create object attribute bk_obj_id='cc_test' and bk_property_id='test_sglchar' and bk_property_name='test_sglchar'", func() {
-		input := &metadata.ObjAttDes{
-			Attribute: metadata.Attribute{
-				ObjectID:     "cc_test",
-				PropertyID:   "test_sglchar",
-				PropertyName: "test_sglchar",
-				IsEditable:   false,
-				PropertyType: "singlechar",
-				Option:       "a+b*",
-				IsRequired:   true,
-			},
-		}
-		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-		propertyID1Float64, err := commonutil.GetFloat64ByInterface(rsp.Data.(map[string]interface{})["id"])
-		Expect(err).NotTo(HaveOccurred())
-		propertyID1 = uint64(propertyID1Float64)
-	})
+	It("create object attribute bk_obj_id='cc_test' and bk_property_id='test_sglchar' and bk_property_name='test_sglchar'",
+		func() {
+			input := &metadata.ObjAttDes{
+				Attribute: metadata.Attribute{
+					ObjectID:     "cc_test",
+					PropertyID:   "test_sglchar",
+					PropertyName: "test_sglchar",
+					IsEditable:   false,
+					PropertyType: "singlechar",
+					Option:       "a+b*",
+					IsRequired:   true,
+				},
+			}
+			rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			propertyID1Float64, err := commonutil.GetFloat64ByInterface(rsp.Data.(map[string]interface{})["id"])
+			Expect(err).NotTo(HaveOccurred())
+			propertyID1 = uint64(propertyID1Float64)
+		})
 
-	It("create object attribute bk_obj_id='cc_test' and bk_property_id='test_unique' and bk_property_name='test_unique'", func() {
-		input := &metadata.ObjAttDes{
-			Attribute: metadata.Attribute{
-				ObjectID:     "cc_test",
-				PropertyID:   "test_unique",
-				PropertyName: "test_unique",
-				IsEditable:   true,
-				PropertyType: "singlechar",
-				IsRequired:   false,
-			},
-		}
-		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
-		util.RegisterResponse(rsp)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-		propertyID2Float64, err := commonutil.GetFloat64ByInterface(rsp.Data.(map[string]interface{})["id"])
-		Expect(err).NotTo(HaveOccurred())
-		propertyID2 = uint64(propertyID2Float64)
-	})
+	It("create object attribute bk_obj_id='cc_test' and bk_property_id='test_unique' and bk_property_name='test_unique'",
+		func() {
+			input := &metadata.ObjAttDes{
+				Attribute: metadata.Attribute{
+					ObjectID:     "cc_test",
+					PropertyID:   "test_unique",
+					PropertyName: "test_unique",
+					IsEditable:   true,
+					PropertyType: "singlechar",
+					IsRequired:   false,
+				},
+			}
+			rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+			util.RegisterResponse(rsp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			propertyID2Float64, err := commonutil.GetFloat64ByInterface(rsp.Data.(map[string]interface{})["id"])
+			Expect(err).NotTo(HaveOccurred())
+			propertyID2 = uint64(propertyID2Float64)
+		})
 
 	It("create object attribute bk_obj_id='cc_test' same bk_property_id", func() {
 		input := &metadata.ObjAttDes{
@@ -471,9 +474,12 @@ var _ = Describe("inst test", func() {
 				Rule: querybuilder.CombinedRule{
 					Condition: querybuilder.ConditionAnd,
 					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual, Value: "aaa"},
-						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual, Value: "123"},
-						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual, Value: "bk_switch"},
+						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual,
+							Value: "aaa"},
+						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual,
+							Value: "123"},
+						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual,
+							Value: "bk_switch"},
 						&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"},
 					},
 				},
@@ -536,9 +542,12 @@ var _ = Describe("inst test", func() {
 				Rule: querybuilder.CombinedRule{
 					Condition: querybuilder.ConditionAnd,
 					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual, Value: "aaa"},
-						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual, Value: "123"},
-						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual, Value: "bk_switch"},
+						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual,
+							Value: "aaa"},
+						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual,
+							Value: "123"},
+						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual,
+							Value: "bk_switch"},
 						&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"},
 					},
 				},
@@ -569,9 +578,12 @@ var _ = Describe("inst test", func() {
 				Rule: querybuilder.CombinedRule{
 					Condition: querybuilder.ConditionAnd,
 					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual, Value: "aaa"},
-						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual, Value: "123"},
-						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual, Value: "bk_switch"},
+						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual,
+							Value: "aaa"},
+						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual,
+							Value: "123"},
+						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual,
+							Value: "bk_switch"},
 						&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"},
 					},
 				},
@@ -592,9 +604,12 @@ var _ = Describe("inst test", func() {
 				Rule: querybuilder.CombinedRule{
 					Condition: querybuilder.ConditionAnd,
 					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual, Value: "aaa"},
-						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual, Value: "123"},
-						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual, Value: "bk_switch"},
+						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual,
+							Value: "aaa"},
+						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual,
+							Value: "123"},
+						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual,
+							Value: "bk_switch"},
 						&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"},
 					},
 				},
@@ -614,9 +629,12 @@ var _ = Describe("inst test", func() {
 				Rule: querybuilder.CombinedRule{
 					Condition: querybuilder.ConditionAnd,
 					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual, Value: "aaa"},
-						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual, Value: "123"},
-						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual, Value: "bk_switch"},
+						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual,
+							Value: "aaa"},
+						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual,
+							Value: "123"},
+						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual,
+							Value: "bk_switch"},
 						&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"},
 					},
 				},
@@ -837,38 +855,39 @@ var _ = Describe("inst test", func() {
 		Expect(len(result.SuccessCreated)).To(Equal(3))
 	})
 
-	It("batch create instance bk_obj_id='bk_switch' with different obj id , bk_inst_name exist one and bk_asset_id exist one", func() {
-		input := &metadata.CreateManyCommInst{
-			ObjID: "bk_switch",
-			Details: []mapstr.MapStr{
-				{
-					"bk_obj_id":    "switch",
-					"bk_inst_name": "example4",
-					"bk_asset_id":  "test0004",
+	It("batch create instance bk_obj_id='bk_switch' with different obj id , bk_inst_name exist one and bk_asset_id exist one",
+		func() {
+			input := &metadata.CreateManyCommInst{
+				ObjID: "bk_switch",
+				Details: []mapstr.MapStr{
+					{
+						"bk_obj_id":    "switch",
+						"bk_inst_name": "example4",
+						"bk_asset_id":  "test0004",
+					},
+					{
+						"bk_obj_id":    "bk_switch",
+						"bk_inst_name": "example3",
+						"bk_asset_id":  "test0003",
+					},
+					{
+						"bk_obj_id":    "bk_switch",
+						"bk_inst_name": "example5",
+						"bk_asset_id":  "test0003",
+					},
 				},
-				{
-					"bk_obj_id":    "bk_switch",
-					"bk_inst_name": "example3",
-					"bk_asset_id":  "test0003",
-				},
-				{
-					"bk_obj_id":    "bk_switch",
-					"bk_inst_name": "example5",
-					"bk_asset_id":  "test0003",
-				},
-			},
-		}
-		rsp, err := instClient.CreateManyCommInst(context.Background(), input.ObjID, header, *input)
-		Expect(err).NotTo(HaveOccurred())
-		util.RegisterResponse(rsp)
-		result := &metadata.CreateManyCommInstResultDetail{}
-		rspJson, err := json.Marshal(rsp.Data)
-		json.Unmarshal(rspJson, result)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-		Expect(len(result.Error)).To(Equal(2))
-		Expect(len(result.SuccessCreated)).To(Equal(1))
-	})
+			}
+			rsp, err := instClient.CreateManyCommInst(context.Background(), input.ObjID, header, *input)
+			Expect(err).NotTo(HaveOccurred())
+			util.RegisterResponse(rsp)
+			result := &metadata.CreateManyCommInstResultDetail{}
+			rspJson, err := json.Marshal(rsp.Data)
+			json.Unmarshal(rspJson, result)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(len(result.Error)).To(Equal(2))
+			Expect(len(result.SuccessCreated)).To(Equal(1))
+		})
 
 	It("batch create instance bk_obj_id='bk_switch' with empty details", func() {
 		input := &metadata.CreateManyCommInst{

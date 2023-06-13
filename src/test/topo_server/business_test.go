@@ -21,7 +21,8 @@ var _ = Describe("business test", func() {
 	var bizIdInt int64
 
 	It("create business bk_biz_name = 'eereeede'", func() {
-		test.ClearDatabase()
+		test.DeleteAllBizs()
+
 		input := map[string]interface{}{
 			"life_cycle":        "2",
 			"language":          "1",
@@ -410,10 +411,9 @@ var _ = Describe("business test", func() {
 			BizID: []int64{bizID},
 		}
 
-		rsp, err := apiServerClient.DeleteBiz(context.Background(), header, input)
-		util.RegisterResponse(rsp)
-		Expect(err).Should(BeNil())
-		Expect(rsp.Result).To(Equal(false))
+		err = apiServerClient.DeleteBiz(context.Background(), header, input)
+		util.RegisterResponseWithRid(err, header)
+		Expect(err).Should(HaveOccurred())
 	})
 
 	It(fmt.Sprintf("update business disabled status bk_biz_id = %s", bizId2), func() {
@@ -430,10 +430,9 @@ var _ = Describe("business test", func() {
 			BizID: []int64{bizID},
 		}
 
-		rsp, err := apiServerClient.DeleteBiz(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		err = apiServerClient.DeleteBiz(context.Background(), header, input)
+		util.RegisterResponseWithRid(err, header)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
 	})
 
 	It(fmt.Sprintf("delete default business bk_biz_id = 1"), func() {
@@ -441,10 +440,9 @@ var _ = Describe("business test", func() {
 			BizID: []int64{1},
 		}
 
-		rsp, err := apiServerClient.DeleteBiz(context.Background(), header, input)
-		util.RegisterResponse(rsp)
-		Expect(err).Should(BeNil())
-		Expect(rsp.Result).To(Equal(false))
+		err := apiServerClient.DeleteBiz(context.Background(), header, input)
+		util.RegisterResponseWithRid(err, header)
+		Expect(err).Should(HaveOccurred())
 	})
 
 	It(fmt.Sprintf("delete business in []"), func() {
@@ -452,9 +450,8 @@ var _ = Describe("business test", func() {
 			BizID: make([]int64, 0),
 		}
 
-		rsp, err := apiServerClient.DeleteBiz(context.Background(), header, input)
-		util.RegisterResponse(rsp)
-		Expect(err).Should(BeNil())
-		Expect(rsp.Result).To(Equal(false))
+		err := apiServerClient.DeleteBiz(context.Background(), header, input)
+		util.RegisterResponseWithRid(err, header)
+		Expect(err).Should(HaveOccurred())
 	})
 })
