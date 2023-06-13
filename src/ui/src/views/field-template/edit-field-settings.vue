@@ -25,7 +25,7 @@
   import FieldManage from './children/field-manage.vue'
   import { wrapData } from './children/use-field'
   import fieldTemplateService from '@/service/field-template'
-  import fieldPreview from './children/field-preview-silder.vue'
+  import FieldPreview from './children/field-preview-drawer.vue'
 
   const route = useRoute()
   const store = useStore()
@@ -50,8 +50,6 @@
 
   const previewShow = ref(false)
 
-  // 预览字段分组数据
-  const properties = ref([])
   const nextButtonDisabled = computed(() => !fieldData.value.length)
 
   const templateDraft = computed(() => store.getters['fieldTemplate/templateDraft'])
@@ -65,7 +63,6 @@
 
     beforeFieldList.value = templateFieldList?.info || []
     beforeUniqueList.value = templateUniqueList?.info || []
-    properties.value = templateFieldList?.info || []
 
     // 如果存在草稿，优先使用
     fieldData.value = templateDraft.value.fieldList ?? (templateFieldList?.info || [])
@@ -84,6 +81,8 @@
     uniqueList: settingData.uniqueList ?? uniqueData.value
   }))
 
+  const previewFieldList = computed(() => templateData.value.fieldList)
+
   // 编辑后的数据
   const settingData = reactive({
     fieldList: null,
@@ -91,7 +90,6 @@
   })
   const handleFieldUpdate = (data) => {
     settingData.fieldList = data.map(wrapData)
-    properties.value = settingData.fieldList
   }
   const handleUniqueUpdate = (data) => {
     settingData.uniqueList = data
@@ -174,7 +172,7 @@
     </template>
     <field-preview
       :preview-show.sync="previewShow"
-      :properties="properties">
+      :properties="previewFieldList">
     </field-preview>
   </cmdb-sticky-layout>
 </template>

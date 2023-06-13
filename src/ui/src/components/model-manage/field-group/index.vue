@@ -1263,17 +1263,6 @@ $modelHighlightColor: #3c96ff;
   margin-top: 7px;
   font-size: 14px;
   position: relative;
-  &.empty {
-    min-height: 70px;
-  }
-  &.disabled {
-    .field-item {
-      cursor: pointer;
-      &::before {
-        display: none !important;
-      }
-    }
-  }
   .field-item {
     display: flex;
     align-items: center;
@@ -1287,35 +1276,6 @@ $modelHighlightColor: #3c96ff;
     background-color: #ffffff;
     user-select: none;
     cursor: pointer;
-    &.only-ready {
-      background-color: #f4f6f9;
-    }
-    &:hover {
-      border-color: #3a84ff;
-      background-color: #f0f5ff;
-      .drag-icon {
-        visibility: visible;
-        @at-root .is-dragging & {
-          visibility: hidden;
-        }
-        @at-root .is-readonly & {
-          visibility: hidden;
-        }
-      }
-      .field-button {
-        visibility: visible;
-        @at-root .is-dragging & {
-          visibility: hidden;
-        }
-      }
-      &::before {
-        display: block;
-      }
-      @at-root .is-dragging & {
-        border-color: #dcdee5;
-        background-color: #fff;
-      }
-    }
     &-ghost {
       background-color: $ghostBackgroundColor !important;
       border: 1px dashed $ghostBorderColor;
@@ -1328,54 +1288,6 @@ $modelHighlightColor: #3c96ff;
 
       > * {
         display: none !important;
-      }
-    }
-    .drag-icon {
-      @include dragIcon;
-      visibility: hidden;
-      margin: 0 4px;
-    }
-    .drag-content {
-      flex: 1;
-      width: 0;
-      color: #737987;
-      .field-name {
-        display: flex;
-        align-items: center;
-        font-size: 12px;
-        span {
-          line-height: 21px;
-          @include ellipsis;
-        }
-        i {
-          font-size: 16px;
-          font-style: normal;
-          font-weight: bold;
-          margin: 4px 4px 0;
-          line-height: 7px;
-        }
-      }
-      p {
-        font-size: 12px;
-        color: #c4c6cc;
-        @include ellipsis;
-      }
-      .field-id {
-        margin-left: 4px;
-      }
-    }
-    .field-button {
-      font-size: 0;
-      visibility: hidden;
-      color: #63656e;
-      &:hover {
-        color: #3a84ff;
-      }
-      .field-button-icon {
-        font-size: 14px;
-      }
-      &.is-disabled {
-        color: #c4c6cc;
       }
     }
   }
@@ -1557,6 +1469,26 @@ $modelHighlightColor: #3c96ff;
 .field-card-container {
     width: 100%;
     height: 100%;
+    box-shadow: 0 2px 6px 2px #1919290d;
+    &:hover {
+      .field-button {
+        visibility: visible;
+      }
+    }
+    .field-button {
+      font-size: 0;
+      visibility: hidden;
+      color: #63656e;
+      &:hover {
+        color: #3a84ff;
+      }
+      .field-button-icon {
+        font-size: 14px;
+      }
+      &.is-disabled {
+        color: #c4c6cc;
+      }
+    }
     .flag-append {
       margin-left: 2px;
     }

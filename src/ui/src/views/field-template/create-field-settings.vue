@@ -24,7 +24,7 @@
   import FieldManage from './children/field-manage.vue'
   import CreateSuccess from './children/create-success.vue'
   import { wrapData, normalizeFieldData, normalizeUniqueData } from './children/use-field'
-  import fieldPreview from './children/field-preview-silder.vue'
+  import FieldPreview from './children/field-preview-drawer.vue'
 
   const store = useStore()
 
@@ -41,8 +41,7 @@
   const newTemplateId = ref(null)
   const previewShow = ref(false)
 
-  // 预览字段分组数据
-  const properties = ref(null)
+  const previewFieldList = computed(() => templateData.value.fieldList)
 
   const templateData = computed(() => ({
     basic: basicData.value,
@@ -59,7 +58,6 @@
   })
   const handleFieldUpdate = (data) => {
     settingData.fieldList = data.map(wrapData)
-    properties.value = settingData.fieldList
   }
   const handleUniqueUpdate = (data) => {
     settingData.uniqueList = data
@@ -177,7 +175,7 @@
     </div>
     <field-preview
       :preview-show.sync="previewShow"
-      :properties="properties">
+      :properties="previewFieldList">
     </field-preview>
   </div>
 </template>

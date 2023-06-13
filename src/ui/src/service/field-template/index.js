@@ -63,7 +63,7 @@ const getUniqueList = (data, config) => http.post('findmany/field_template/uniqu
 const getBindModel = (params, config) => rollReqUseCount('findmany/object/by_field_template', params, { limit: 100 }, config)
 
 // 查询模型绑定的字段模版
-const getTemplateList = (data, config) => http.post('findmany/field_template/by_object', data, config)
+const getModelBindTemplate = (data, config) => http.post('findmany/field_template/by_object', data, config)
 
 // 模版解绑模型接口
 const updateTemplate = (data, config) => http.post('/update/field_template/unbind/object', data, config)
@@ -104,7 +104,7 @@ export default {
   getFieldList,
   getUniqueList,
   getBindModel,
-  getTemplateList,
+  getModelBindTemplate,
   updateTemplate,
   deleteTemplate,
   cloneTemplate,

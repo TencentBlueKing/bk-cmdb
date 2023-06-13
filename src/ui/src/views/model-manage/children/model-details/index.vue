@@ -479,30 +479,28 @@
             this.activeModel = { ...this.activeModel, ...params }
           })
       },
-      async initObject() {
+      initObject() {
         const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
         if (model) {
           this.activeModel = model
           const menuI18n = this.$route.meta.menu.i18n && this.$t(this.$route.meta.menu.i18n)
           this.$store.commit('setTitle', `${menuI18n}【${this.activeModel.bk_obj_name}】`)
           this.getModelInstanceCount()
-          this.getTemplateList()
+          this.getModelBindTemplate()
         } else {
           this.$routerActions.redirect({ name: 'status404' })
         }
       },
-      async getTemplateList() {
-        const templateList = await fieldTemplateService.getTemplateList({
+      async getModelBindTemplate() {
+        const templateList = await fieldTemplateService.getModelBindTemplate({
           object_id: this.activeModel.id
         })
-        if (templateList.info.length === 0) return
-        templateList.info.forEach(async (item) => {
-          const data = await fieldTemplateService.findById(item.id)
-          this.templateList.push({
-            id: data.id,
-            name: data.name
-          })
-        })
+        if (templateList?.info?.length) {
+          this.templateList = templateList.info.map(item => ({
+            id: item.id,
+            name: item.name
+          }))
+        }
       },
       async getModelInstanceCount() {
         const result = await this.$store.dispatch('objectCommonInst/searchInstanceCount', {
@@ -646,7 +644,7 @@
               fieldTemplateService.updateTemplate(params).then(() => {
                 this.$success(this.$t('解绑成功'))
                 this.templateList = []
-                this.getTemplateList()
+                this.getModelBindTemplate()
                 resolve(true)
               })
             },

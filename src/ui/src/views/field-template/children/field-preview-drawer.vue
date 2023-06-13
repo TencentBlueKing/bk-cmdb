@@ -35,15 +35,13 @@
     bk_group_index: 0,
     bk_group_name: 'Default',
     bk_isdefault: true,
-    bk_obj_id: 'hitozhang',
+    bk_obj_id: '',
     bk_supplier_account: '0',
-    id: 61,
-    is_collapse: false,
-    ispre: false,
   }])
 
   const defaultData = ref([
-    { ...defaultFieldData(),
+    {
+      ...defaultFieldData(),
       id: uuidv4(),
       bk_property_id: 'demo',
       bk_property_name: t('示例字段'),
