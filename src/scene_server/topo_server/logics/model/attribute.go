@@ -1321,6 +1321,9 @@ func (a *attribute) getFieldTemplateAttr(kit *rest.Kit, templateID int64, fields
 	return &res.Info[0], nil
 }
 
+// canAttrsUpdate coreservice has a similar logical judgment. If the logic here needs to be adjusted,
+// it needs to be judged whether the logic of coreservice needs to be adjusted synchronously.
+// the function name is: checkAttrTemplateInfo
 func (a *attribute) canAttrsUpdate(kit *rest.Kit, input mapstr.MapStr, attrID int64) error {
 
 	attr, err := a.getModelAttrByID(kit, attrID)

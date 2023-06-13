@@ -1257,6 +1257,8 @@ func getTemplateAttrByID(kit *rest.Kit, templateID int64, fields []string) (*met
 	return &templateAttr[0], nil
 }
 
+// checkAttrTemplateInfo the topo server has similar judgment logic. If it needs to be modified,
+// both sides need to be modified at the same time. The function name in topo is: canAttrsUpdate
 func checkAttrTemplateInfo(kit *rest.Kit, input mapstr.MapStr, attrID int64, isSync bool) error {
 
 	tmpltID, err := getObjectAttrTemplateID(kit, attrID)
