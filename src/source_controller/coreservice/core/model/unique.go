@@ -33,6 +33,7 @@ func (m *modelAttrUnique) CreateModelAttrUnique(kit *rest.Kit, objID string, dat
 	if util.InStrArr(forbiddenCreateUniqueObjList, objID) {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField)
 	}
+
 	id, err := m.createModelAttrUnique(kit, objID, data)
 	if err != nil {
 		return nil, err

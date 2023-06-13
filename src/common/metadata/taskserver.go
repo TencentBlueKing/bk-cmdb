@@ -141,6 +141,9 @@ const (
 
 	// APITAskStatusNeedSync only used for instance with all tasks finished but actual status is not finished
 	APITAskStatusNeedSync APITaskStatus = "need_sync"
+
+	// MaxFieldTemplateTaskNum the maximum queued number of field template asynchronous tasks
+	MaxFieldTemplateTaskNum = 2
 )
 const (
 	// APITaskExtraField the extra field is used

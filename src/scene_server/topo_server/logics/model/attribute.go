@@ -18,6 +18,8 @@ import (
 	"sort"
 	"unicode/utf8"
 
+	"configcenter/pkg/filter"
+	filtertools "configcenter/pkg/tools/filter"
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -35,10 +37,10 @@ import (
 // AttributeOperationInterface attribute operation methods
 type AttributeOperationInterface interface {
 	CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error)
-	BatchCreateObjectAttr(kit *rest.Kit, objID string, attrs []*metadata.Attribute) error
+	BatchCreateObjectAttr(kit *rest.Kit, objID string, attrs []*metadata.Attribute, fromTemplate bool) error
 	CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error)
 	DeleteObjectAttribute(kit *rest.Kit, attrItems []metadata.Attribute) error
-	UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error
+	UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64, isSync bool) error
 	// CreateObjectBatch upsert object attributes
 	CreateObjectBatch(kit *rest.Kit, data map[string]metadata.ImportObjectData) (mapstr.MapStr, error)
 	UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error
@@ -620,14 +622,17 @@ func (a *attribute) createTableModelAndAttributeGroup(kit *rest.Kit, data *metad
 }
 
 // CreateTableObjectAttribute create internal form fields in a separate process
-func (a *attribute) CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (
-	*metadata.Attribute, error) {
+func (a *attribute) CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error) {
 	if data.IsOnly {
 		data.IsRequired = true
 	}
 
 	if len(data.PropertyGroup) == 0 {
 		data.PropertyGroup = "default"
+	}
+
+	if data.TemplateID != 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKTemplateID)
 	}
 
 	if err := a.validCreateTableAttribute(kit, data); err != nil {
@@ -713,7 +718,8 @@ func (a *attribute) preCheckObjectAttr(kit *rest.Kit, objID string, data *metada
 }
 
 // BatchCreateObjectAttr batch create object attributes
-func (a *attribute) BatchCreateObjectAttr(kit *rest.Kit, objID string, attrs []*metadata.Attribute) error {
+func (a *attribute) BatchCreateObjectAttr(kit *rest.Kit, objID string, attrs []*metadata.Attribute,
+	fromTemplate bool) error {
 
 	objAttrs := make([]metadata.Attribute, 0)
 	for _, data := range attrs {
@@ -723,7 +729,10 @@ func (a *attribute) BatchCreateObjectAttr(kit *rest.Kit, objID string, attrs []*
 		objAttrs = append(objAttrs, *data)
 	}
 
-	input := metadata.CreateModelAttributes{Attributes: objAttrs}
+	input := metadata.CreateModelAttributes{
+		Attributes:   objAttrs,
+		FromTemplate: fromTemplate,
+	}
 	resp, err := a.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header, objID, &input)
 	if err != nil {
 		blog.Errorf("failed to create model attrs, input: %#v, err: %v, rid: %s", input, err, kit.Rid)
@@ -821,6 +830,11 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 		return nil, err
 	}
 
+	// the templateID is not allowed to be non-zero whether it is creating or updating the scene.
+	if data.TemplateID != 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKTemplateID)
+	}
+
 	if err := a.isValid(kit, false, data); err != nil {
 		return nil, err
 	}
@@ -862,22 +876,29 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 	data = &attrRes.Info[0]
 
 	// generate audit log of model attribute.
+	if err := a.saveLogForCreateObjectAttribute(kit, data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (a *attribute) saveLogForCreateObjectAttribute(kit *rest.Kit, data *metadata.Attribute) error {
 	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 
 	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, data.ID, data)
 	if err != nil {
 		blog.Errorf("gen audit log after creating attr %s failed, err: %v, rid: %s", data.PropertyName, err, kit.Rid)
-		return nil, err
+		return err
 	}
 
 	// save audit log.
 	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
 		blog.Errorf("save audit log after creating attr %s failed, err: %v, rid: %s", data.PropertyName, err, kit.Rid)
-		return nil, err
+		return err
 	}
-
-	return data, nil
+	return nil
 }
 
 // DeleteObjectAttribute delete object attribute
@@ -1056,7 +1077,7 @@ func (a *attribute) validUpdateHeader(kit *rest.Kit, createHeader, updateHeader 
 }
 
 // UpdateTableObjectAttr update object table attribute
-func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, attID, modelBizID int64) error {
+func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, attrID, modelBizID int64) error {
 
 	attr := new(metadata.Attribute)
 	if err := mapstruct.Decode2Struct(data, attr); err != nil {
@@ -1069,6 +1090,10 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKPropertyIDField)
 	}
 
+	if err := a.canAttrsUpdate(kit, data, attrID); err != nil {
+		return err
+	}
+
 	updateDataStruct, createDataStruct := *attr, *attr
 
 	curAttrsOp, err := metadata.ParseTableAttrOption(attr.Option)
@@ -1077,7 +1102,7 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 		return err
 	}
 
-	dbAttrsOp, objID, err := a.getTableAttrOptionFromDB(kit, attID, modelBizID)
+	dbAttrsOp, objID, err := a.getTableAttrOptionFromDB(kit, attrID, modelBizID)
 	if err != nil {
 		return err
 	}
@@ -1096,11 +1121,10 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 		return err
 	}
 
-	// for the verification header, it should be verified separately, because some headers are newly created
-	// and some headers are updated. different scenarios correspond to different content that needs to be verified.
-	// for checking the default value, you can check it as a whole, because you only need to check whether the
-	// default value conforms to the attribute of the header. the checksum operation of the default value is
-	// uniformly placed in the default field of the option in the update.
+	// it should be verified separately, because some headers are newly created and others are updated. different
+	// scenarios correspond to different content that needs to be verified. for checking the default value, you can
+	// check it as a whole, because you only need to check whether the default value conforms to the attr of the header.
+	// the checksum operation of the default value is uniformly placed in the default field of the option in the update.
 	headerMap := make(map[string]*metadata.Attribute)
 
 	for idx := range created.Header {
@@ -1117,8 +1141,8 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 		return err
 	}
 
-	updateDataStruct.Option = updated
-	updateDataStruct.ObjectID = objID
+	updateDataStruct.Option, updateDataStruct.ObjectID = updated, objID
+
 	updateData, err := mapstruct.Struct2Map(updateDataStruct)
 	if err != nil {
 		blog.Errorf("struct to map failed: data: %+v, err: %v, rid: %s", updateDataStruct, err, kit.Rid)
@@ -1128,7 +1152,7 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 		return nil
 	}
 
-	condUpdate := mapstr.MapStr{common.BKFieldID: attID}
+	condUpdate := mapstr.MapStr{common.BKFieldID: attrID}
 	util.AddModelBizIDCondition(condUpdate, modelBizID)
 	input := metadata.UpdateTableOption{Condition: condUpdate}
 	createDataStruct.Option = created
@@ -1146,7 +1170,7 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 		return err
 	}
 
-	if err := a.saveUpdateTableLog(kit, data, objID, modelBizID, attID); err != nil {
+	if err := a.saveUpdateTableLog(kit, data, objID, modelBizID, attrID); err != nil {
 		return err
 	}
 
@@ -1194,8 +1218,201 @@ func (a *attribute) saveUpdateTableLog(kit *rest.Kit, data mapstr.MapStr, objID 
 	return nil
 }
 
+func (a *attribute) getTemplateIDByObjectAttrID(kit *rest.Kit, attrID int64, fields []string) (
+	*metadata.FieldTemplateAttr, error) {
+
+	queryCond := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.BKFieldID: attrID},
+		DisableCounter: true,
+		Page:           metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:         []string{common.BKTemplateID},
+	}
+	resp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, queryCond)
+	if err != nil {
+		blog.Errorf("get object attr failed, cond: %+v, err: %v, rid: %s", queryCond, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(resp.Info) == 0 {
+		blog.Errorf("no object attr founded, cond: %+v, err: %v, rid: %s", queryCond, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound, "object_attr")
+	}
+	if len(resp.Info) > 1 {
+		blog.Errorf("multi object attr founded, cond: %+v, err: %v, rid: %s", queryCond, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject, "object_attr")
+	}
+
+	cond := filtertools.GenAtomFilter(common.BKFieldID, filter.Equal, resp.Info[0].TemplateID)
+
+	listOpt := &metadata.CommonQueryOption{
+		CommonFilterOption: metadata.CommonFilterOption{Filter: cond},
+		Page:               metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:             fields,
+	}
+	// list field template attributes
+	res, err := a.clientSet.CoreService().FieldTemplate().ListFieldTemplateAttr(kit.Ctx, kit.Header, listOpt)
+	if err != nil {
+		blog.Errorf("list field template attributes failed, opt: %+v, err: %v, rid: %s", listOpt, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(res.Info) == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound, "template_attr")
+	}
+
+	if len(res.Info) > 1 {
+		blog.Errorf("multi object attr founded, cond: %+v, rid: %s", listOpt, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject, "field_template_attr")
+	}
+
+	return &res.Info[0], nil
+}
+
+func (a *attribute) getModelAttrByID(kit *rest.Kit, attrID int64) (*metadata.Attribute, error) {
+	queryCond := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.BKFieldID: attrID},
+		DisableCounter: true,
+		Page:           metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:         []string{common.BKTemplateID},
+	}
+	resp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, queryCond)
+	if err != nil {
+		blog.Errorf("get object attr failed, cond: %+v, err: %v, rid: %s", queryCond, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(resp.Info) == 0 {
+		blog.Errorf("no object attr founded, cond: %+v, err: %v, rid: %s", queryCond, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound, "object_attr")
+	}
+	if len(resp.Info) > 1 {
+		blog.Errorf("multi object attr founded, cond: %+v, err: %v, rid: %s", queryCond, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject, "object_attr")
+	}
+
+	return &resp.Info[0], nil
+}
+
+func (a *attribute) getFieldTemplateAttr(kit *rest.Kit, templateID int64, fields []string) (
+	*metadata.FieldTemplateAttr, error) {
+
+	cond := filtertools.GenAtomFilter(common.BKFieldID, filter.Equal, templateID)
+	listOpt := &metadata.CommonQueryOption{
+		CommonFilterOption: metadata.CommonFilterOption{Filter: cond},
+		Page:               metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:             fields,
+	}
+
+	// list field template attributes
+	res, err := a.clientSet.CoreService().FieldTemplate().ListFieldTemplateAttr(kit.Ctx, kit.Header, listOpt)
+	if err != nil {
+		blog.Errorf("list field template attributes failed, opt: %+v, err: %v, rid: %s", listOpt, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(res.Info) == 0 {
+		return &metadata.FieldTemplateAttr{}, nil
+	}
+
+	if len(res.Info) > 1 {
+		blog.Errorf("multi object attr founded, cond: %+v, rid: %s", listOpt, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommGetMultipleObject, "field_template_attr")
+	}
+	return &res.Info[0], nil
+}
+
+// canAttrsUpdate coreservice has a similar logical judgment. If the logic here needs to be adjusted,
+// it needs to be judged whether the logic of coreservice needs to be adjusted synchronously.
+// the function name is: checkAttrTemplateInfo
+func (a *attribute) canAttrsUpdate(kit *rest.Kit, input mapstr.MapStr, attrID int64) error {
+
+	attr, err := a.getModelAttrByID(kit, attrID)
+	if err != nil {
+		return err
+	}
+
+	// 1、模型上自己管理的属性直接放行
+	if attr.TemplateID == 0 {
+		return nil
+	}
+
+	data := mapstr.New()
+	for k, v := range input {
+		data[k] = v
+	}
+
+	fields := make([]string, 0)
+	if _, ok := data[metadata.AttributeFieldIsRequired].(bool); ok {
+		fields = append(fields, metadata.AttributeFieldIsRequired)
+	}
+	if _, ok := data[metadata.AttributeFieldIsEditable].(bool); ok {
+		fields = append(fields, metadata.AttributeFieldIsEditable)
+	}
+
+	if _, ok := data[metadata.AttributeFieldPlaceHolder].(string); ok {
+		fields = append(fields, metadata.AttributeFieldPlaceHolder)
+	}
+
+	_, ok := data[common.BKTemplateID]
+
+	// 2、AttributeFieldIsRequired\AttributeFieldIsEditable\AttributeFieldPlaceHolder may be allowed
+	// to be modified, the update operation does not have the above attributes to return an error
+	if len(fields) == 0 && !ok {
+		blog.Errorf("validate attr failed, data: %+v, rid: %s", data, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, "data")
+	}
+
+	templateAttr, err := a.getFieldTemplateAttr(kit, attr.TemplateID, fields)
+	if err != nil {
+		return err
+	}
+
+	// 3、whether the corresponding lock in the attribute is false, if it is false,
+	// it can be updated, otherwise it cannot be updated
+	for _, field := range fields {
+		switch field {
+		case metadata.AttributeFieldPlaceHolder:
+			if templateAttr.Placeholder.Lock {
+				blog.Errorf("validate attr failed, data: %+v, field: %v, rid: %s", data, field, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, metadata.AttributeFieldPlaceHolder)
+			}
+		case metadata.AttributeFieldIsEditable:
+			if templateAttr.Editable.Lock {
+				blog.Errorf("validate attr  failed, data: %+v, field: %v, rid: %s", data, field, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, metadata.AttributeFieldIsEditable)
+			}
+		case metadata.AttributeFieldIsRequired:
+			if templateAttr.Required.Lock {
+				blog.Errorf("validate attr failed, data: %+v, field: %v rid: %s", data, field, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, metadata.AttributeFieldIsRequired)
+			}
+		}
+		data.Remove(field)
+	}
+
+	// delete irrelevant keys
+	data.Remove(common.CreatorField)
+	data.Remove(common.CreateTimeField)
+	data.Remove(common.ModifierField)
+	data.Remove(common.LastTimeField)
+	data.Remove(common.BkSupplierAccount)
+	data.Remove(common.BKTemplateID)
+	data.Remove(common.BKFieldID)
+	data.Remove(common.BKPropertyTypeField)
+	data.Remove(common.BKPropertyIDField)
+	data.Remove(common.BKObjIDField)
+
+	// After removing the above irrelevant key, check whether there is a value, and report an error if there is a value.
+	if len(data) > 0 {
+		blog.Errorf("validate attr failed, data: %+v, rid: %s", data, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, "data")
+	}
+	return nil
+}
+
 // UpdateObjectAttribute update object attribute
-func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error {
+func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64,
+	isSync bool) error {
 
 	attr := new(metadata.Attribute)
 	if err := mapstruct.Decode2Struct(data, attr); err != nil {
@@ -1204,6 +1421,10 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	}
 
 	if err := a.isValid(kit, true, attr); err != nil {
+		return err
+	}
+
+	if err := a.canAttrsUpdate(kit, data, attID); err != nil {
 		return err
 	}
 
@@ -1216,7 +1437,6 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 			attID, err, kit.Rid)
 		return err
 	}
-
 	// to update.
 	cond := mapstr.MapStr{
 		common.BKFieldID: attID,
@@ -1225,6 +1445,7 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 	input := metadata.UpdateOption{
 		Condition: cond,
 		Data:      data,
+		IsSync:    isSync,
 	}
 	if _, err := a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(kit.Ctx, kit.Header, &input); err != nil {
 		blog.Errorf("failed to update module attr, err: %s, rid: %s", err, kit.Rid)

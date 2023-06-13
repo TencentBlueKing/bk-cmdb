@@ -75,6 +75,7 @@ func (ps *ProcServer) WebService() *restful.Container {
 	return container
 }
 
+// NOCC:golint/fnsize(放在一个函数中处理)
 func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  ps.Engine.CCErr,
@@ -98,8 +99,8 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 		Handler: ps.CreateServiceTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_template/all_info",
 		Handler: ps.CreateServiceTemplateAllInfo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_template",
-		Handler: ps.UpdateServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path: "/update/proc/service_template", Handler: ps.UpdateServiceTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_template/all_info",
 		Handler: ps.UpdateServiceTemplateAllInfo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut,

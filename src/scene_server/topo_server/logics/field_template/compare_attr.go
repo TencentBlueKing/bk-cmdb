@@ -306,14 +306,12 @@ func (c *comparator) getObjectAttrAndTmplIDRelation(kit *rest.Kit, attributes []
 		return nil, err
 	}
 
-	if len(attrs.Info) != len(attrTemplateIDs) {
-		blog.Errorf("unexpected number of template properties found, opt: %+v, err: %v, rid: %s", query, err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKTemplateID)
-	}
+	tmplIDMap := make(map[int64]struct{})
 
 	tmplAttrIDTmplIDMap := make(map[int64]int64)
 	for _, attr := range attrs.Info {
 		tmplAttrIDTmplIDMap[attr.ID] = attr.TemplateID
+		tmplIDMap[attr.ID] = struct{}{}
 	}
 
 	for key, value := range attrIDTmplIDMap {
@@ -321,6 +319,40 @@ func (c *comparator) getObjectAttrAndTmplIDRelation(kit *rest.Kit, attributes []
 	}
 
 	return attrIDTmplID, nil
+}
+
+func (c *comparator) handleTemplateAttrNotExist(kit *rest.Kit, params *compAttrParams, templateID int64,
+	propertyID string, attr metadata.Attribute, attrIDTmplID map[int64]int64) (
+	metadata.CompareOneFieldTmplAttrRes, error) {
+	// attribute's template is not exist, check if the attribute conflicts with other templates
+	if conflictTmplAttr, ex := params.tmplPropIDMap[attr.PropertyID]; ex {
+		return metadata.CompareOneFieldTmplAttrRes{}, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict,
+			attr.ID, common.BKPropertyIDField, conflictTmplAttr.PropertyID)
+	}
+
+	if conflictPropertyID, ex := params.tmplNameMap[attr.PropertyName]; ex {
+		return metadata.CompareOneFieldTmplAttrRes{}, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict,
+			attr.ID, common.BKPropertyNameField, conflictPropertyID)
+	}
+
+	update := metadata.CompareOneFieldTmplAttrRes{
+		Index:      params.tmplIndexMap[propertyID],
+		PropertyID: propertyID,
+		Data:       &metadata.Attribute{ID: attr.ID},
+	}
+
+	// when the template where the template attribute corresponding to the attribute is located is the
+	// current template, in order to release the management scene, the templateID needs to be set to 0
+	id, ok := attrIDTmplID[attr.ID]
+	if ok && id == templateID {
+		update.UpdateData = mapstr.MapStr{common.BKTemplateID: 0}
+	}
+
+	// if there is no template attribute ID, it also belongs to the template attribute unmanagement scenario
+	if id == 0 {
+		update.UpdateData = mapstr.MapStr{common.BKTemplateID: 0}
+	}
+	return update, nil
 }
 
 func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams, templateID int64,
@@ -344,30 +376,11 @@ func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams
 
 		tmplAttr, exists := params.tmplIDMap[attr.TemplateID]
 		if !exists {
-			// attribute's template is not exist, check if the attribute conflicts with other templates
-			if conflictTmplAttr, ex := params.tmplPropIDMap[attr.PropertyID]; ex {
-				return nil, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict, attr.ID,
-					common.BKPropertyIDField, conflictTmplAttr.PropertyID)
+			update, err := c.handleTemplateAttrNotExist(kit, params, templateID, tmplAttr.PropertyID, attr,
+				attrIDTmplID)
+			if err != nil {
+				return nil, err
 			}
-
-			if conflictPropertyID, ex := params.tmplNameMap[attr.PropertyName]; ex {
-				return nil, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateAttrConflict, attr.ID,
-					common.BKPropertyNameField, conflictPropertyID)
-			}
-
-			update := metadata.CompareOneFieldTmplAttrRes{
-				Index:      params.tmplIndexMap[tmplAttr.PropertyID],
-				PropertyID: tmplAttr.PropertyID,
-				Data:       &metadata.Attribute{ID: attr.ID},
-			}
-
-			// when the template where the template attribute corresponding to the attribute is located is the
-			// current template, in order to release the management scene, the templateID needs to be set to 0
-			id, ok := attrIDTmplID[attr.ID]
-			if ok && id == templateID {
-				update.UpdateData = mapstr.MapStr{common.BKTemplateID: 0}
-			}
-
 			res.Update = append(res.Update, update)
 			continue
 		}
@@ -498,7 +511,6 @@ func (c *comparator) compareUpdatedAttr(kit *rest.Kit, tmplAttr *metadata.FieldT
 	mapstr.MapStr, error) {
 
 	updateData := make(mapstr.MapStr)
-
 	if tmplAttr.ID != attr.TemplateID {
 		if attr.TemplateID != 0 {
 			blog.Errorf("template id mismatch, attribute: %+v, template: %+v, rid: %s", attr, tmplAttr, kit.Rid)
