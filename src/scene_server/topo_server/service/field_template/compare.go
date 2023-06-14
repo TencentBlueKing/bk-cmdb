@@ -74,7 +74,7 @@ func (s *service) CompareFieldTemplateUnique(cts *rest.Contexts) {
 		return
 	}
 
-	res, err := s.logics.FieldTemplateOperation().CompareFieldTemplateUnique(cts.Kit, opt, true)
+	res, _, err := s.logics.FieldTemplateOperation().CompareFieldTemplateUnique(cts.Kit, opt, true)
 	if err != nil {
 		cts.RespAutoError(err)
 		return

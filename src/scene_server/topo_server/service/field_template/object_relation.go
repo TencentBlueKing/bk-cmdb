@@ -531,15 +531,10 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 		return err
 	}
 
-	uniqueOp, err := s.getFieldTemplateUniqueByID(kit, option)
-	if err != nil {
-		return err
-	}
-
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 		// 1、create model properties
 		if len(createAttr) > 0 {
-			if err := s.logics.AttributeOperation().BatchCreateObjectAttr(kit, objectID, createAttr); err != nil {
+			if err := s.logics.AttributeOperation().BatchCreateObjectAttr(kit, objectID, createAttr, true); err != nil {
 				blog.Errorf("create model attribute failed, attr: %+v, err: %v, rid: %s", createAttr, err, kit.Rid)
 				return err
 			}
@@ -551,7 +546,7 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 				if len(attr.UpdateData) == 0 {
 					continue
 				}
-				err := s.logics.AttributeOperation().UpdateObjectAttribute(kit, attr.UpdateData, attr.Data.ID, 0)
+				err := s.logics.AttributeOperation().UpdateObjectAttribute(kit, attr.UpdateData, attr.Data.ID, 0, true)
 				if err != nil {
 					return err
 				}
@@ -562,7 +557,12 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 
 		// 3、unique validation for preprocessed template synchronization
 
-		res, err := s.logics.FieldTemplateOperation().CompareFieldTemplateUnique(kit, uniqueOp, false)
+		uniqueOp, err := s.getFieldTemplateUniqueByID(kit, option)
+		if err != nil {
+			return err
+		}
+
+		res, _, err := s.logics.FieldTemplateOperation().CompareFieldTemplateUnique(kit, uniqueOp, false)
 		if err != nil {
 			blog.Errorf("get field template unique failed, cond: %+v, err: %v, rid: %s", uniqueOp, err, kit.Rid)
 			return err
@@ -578,7 +578,7 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 		// 4、create a unique check for the model
 		if len(create) > 0 {
 			for _, unique := range create {
-				op := metadata.CreateModelAttrUnique{Data: unique}
+				op := metadata.CreateModelAttrUnique{Data: unique, FromTemplate: true}
 				_, err := s.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header, objectID, op)
 				if err != nil {
 					blog.Errorf("create unique failed for failed: raw: %#v, err: %v, rid: %s", unique, err, kit.Rid)
@@ -596,7 +596,7 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 					Keys:       unique.Keys,
 					LastTime:   metadata.Now()}
 
-				op := metadata.UpdateModelAttrUnique{Data: input}
+				op := metadata.UpdateModelAttrUnique{Data: input, FromTemplate: true}
 				_, err := s.clientSet.CoreService().Model().UpdateModelAttrUnique(kit.Ctx, kit.Header,
 					objectID, unique.ID, op)
 				if err != nil {

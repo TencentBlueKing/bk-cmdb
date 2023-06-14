@@ -18,6 +18,8 @@
 package fieldtmpl
 
 import (
+	"configcenter/pkg/filter"
+	filtertools "configcenter/pkg/tools/filter"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -72,6 +74,117 @@ func (c *comparator) getObjIDAndValidate(kit *rest.Kit, objectID int64) (string,
 	return objID, nil
 }
 
+func (t *template) getTemplateAttrByID(kit *rest.Kit, id int64, fields []string) ([]metadata.FieldTemplateAttr,
+	errors.CCErrorCoder) {
+
+	listOpt := &metadata.CommonQueryOption{
+		CommonFilterOption: metadata.CommonFilterOption{
+			Filter: filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, id),
+		},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Fields: fields,
+	}
+
+	// list field template attributes
+	res, err := t.clientSet.CoreService().FieldTemplate().ListFieldTemplateAttr(kit.Ctx, kit.Header, listOpt)
+	if err != nil {
+		blog.Errorf("list template attributes failed, template id: %d, err: %v, rid: %s", id, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(res.Info) == 0 {
+		blog.Errorf("no template attributes founded, template id: %d, rid: %s", id, kit.Rid)
+		return []metadata.FieldTemplateAttr{}, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKTemplateID)
+	}
+
+	return res.Info, nil
+}
+
+func (t *template) getAttrSyncStatus(kit *rest.Kit, templateID, objectID int64) (
+	*metadata.ListFieldTmpltSyncStatusResult, error) {
+
+	res, ccErr := t.getTemplateAttrByID(kit, templateID, []string{})
+	if ccErr != nil {
+		return nil, ccErr
+	}
+
+	// verify the validity of field attributes and obtain
+	// the contents of template fields that need to be synchronized
+	opt := &metadata.CompareFieldTmplAttrOption{
+		TemplateID: templateID,
+		ObjectID:   objectID,
+		Attrs:      res,
+		IsPartial:  true,
+	}
+
+	_, attrRes, err := t.CompareFieldTemplateAttr(kit, opt, false)
+	if err != nil {
+		blog.Errorf("compare field template failed, cond: %+v, err: %v, rid: %s", opt, err, kit.Rid)
+		return nil, err
+	}
+	return attrRes, nil
+}
+
+func (t *template) getUniqueSyncStatus(kit *rest.Kit, templateID, objectID int64) (
+	*metadata.ListFieldTmpltSyncStatusResult, error) {
+
+	uniqueFilter := filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, templateID)
+	listOpt := &metadata.CommonQueryOption{
+		CommonFilterOption: metadata.CommonFilterOption{Filter: uniqueFilter},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+
+	attrs, ccErr := t.getTemplateAttrByID(kit, templateID, []string{common.BKFieldID, common.BKPropertyIDField})
+	if ccErr != nil {
+		return nil, ccErr
+	}
+
+	attrIDProMap := make(map[int64]string)
+	for _, attr := range attrs {
+		attrIDProMap[attr.ID] = attr.PropertyID
+	}
+
+	uniqueOp := new(metadata.CompareFieldTmplUniqueOption)
+	uniqueOp.TemplateID = templateID
+	uniqueOp.ObjectID = objectID
+	uniqueOp.IsPartial = true
+
+	// list field template uniques
+	res, ccErr := t.clientSet.CoreService().FieldTemplate().ListFieldTemplateUnique(kit.Ctx, kit.Header, listOpt)
+	if ccErr != nil {
+		blog.Errorf("list field template uniques failed, err: %v, id: %+v, rid: %s", ccErr, templateID, kit.Rid)
+		return nil, ccErr
+	}
+
+	uniqueOp.Uniques = make([]metadata.FieldTmplUniqueForUpdate, len(res.Info))
+
+	propertyIDs := make([]string, 0)
+	for index := range res.Info {
+		for _, key := range res.Info[index].Keys {
+			propertyID, ok := attrIDProMap[key]
+			if !ok {
+				blog.Errorf("property id not found, attr id: %s,object id: %d, rid: %s", key, objectID, kit.Rid)
+				return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound, common.BKPropertyIDField)
+			}
+			propertyIDs = append(propertyIDs, propertyID)
+		}
+		uniqueOp.Uniques[index].Keys = propertyIDs
+		uniqueOp.Uniques[index].ID = res.Info[index].ID
+		propertyIDs = []string{}
+	}
+
+	_, uniqueRes, err := t.CompareFieldTemplateUnique(kit, uniqueOp, false)
+	if err != nil {
+		blog.Errorf("get field template unique failed, cond: %+v, err: %v, rid: %s", uniqueOp, err, kit.Rid)
+		return nil, err
+	}
+	return uniqueRes, nil
+}
+
 // ListFieldTemplateSyncStatus get the diff status of templates and models
 func (t *template) ListFieldTemplateSyncStatus(kit *rest.Kit, option *metadata.ListFieldTmpltSyncStatusOption) (
 	[]metadata.ListFieldTmpltSyncStatusResult, error) {
@@ -79,10 +192,10 @@ func (t *template) ListFieldTemplateSyncStatus(kit *rest.Kit, option *metadata.L
 	result := make([]metadata.ListFieldTmpltSyncStatusResult, 0)
 
 	var wg sync.WaitGroup
-	var firstErr errors.CCErrorCoder
+	var firstErr error
 	pipeline := make(chan bool, 5)
-	// 这里按照objectID进行并发，其中并发内部按照顺序首先对比属性，然后再对比唯一校验
 
+	// 这里按照objectID进行并发，其中并发内部按照顺序首先对比属性，然后再对比唯一校验
 	for _, objectID := range option.ObjectIDs {
 
 		pipeline <- true
@@ -93,17 +206,29 @@ func (t *template) ListFieldTemplateSyncStatus(kit *rest.Kit, option *metadata.L
 				<-pipeline
 			}()
 
-			_, res, err := t.comparator.compareAttrForBackend(kit, compParams, id, objectID, objAttrRes.Info, true)
+			attrStatus, err := t.getAttrSyncStatus(kit, id, objectID)
 			if err != nil {
+				firstErr = err
+			}
+
+			// 如果已经识别出属性有差异，那么没有必要继续计算唯一校验是否有差异
+			if attrStatus.NeedSync {
+				result = append(result, *attrStatus)
 				return
 			}
-			if res.NeedSync {
-				result = append(result, *res)
-				return
+
+			uniqueStatus, err := t.getUniqueSyncStatus(kit, id, objectID)
+			if err != nil {
+				firstErr = err
 			}
+			result = append(result, *uniqueStatus)
 
 		}(option.ID, objectID)
 	}
 
+	wg.Wait()
+	if firstErr != nil {
+		return nil, firstErr
+	}
 	return result, nil
 }
