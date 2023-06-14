@@ -429,9 +429,8 @@ func (c *comparator) compareUniqueForBackend(kit *rest.Kit, params *compUniquePa
 		if !exists {
 			if isPartial {
 				result := &metadata.ListFieldTmpltSyncStatusResult{ObjectID: objectID, NeedSync: true}
-				return &metadata.CompareFieldTmplUniquesRes{}, result, nil
+				return nil, result, nil
 			}
-
 			// unique template is not exist, check if the unique conflicts with other templates
 			if conflictKey, isConflict := c.checkObjUniqueConflict(params, &compUnique); isConflict {
 				return nil, nil, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateUniqueConflict, compUnique.unique.ID,
@@ -454,7 +453,7 @@ func (c *comparator) compareUniqueForBackend(kit *rest.Kit, params *compUniquePa
 
 		if isChanged && isPartial {
 			result := &metadata.ListFieldTmpltSyncStatusResult{ObjectID: objectID, NeedSync: true}
-			return &metadata.CompareFieldTmplUniquesRes{}, result, nil
+			return nil, result, nil
 		}
 	}
 
@@ -508,11 +507,11 @@ func (c *comparator) dealNoTmplUnique(kit *rest.Kit, params *compUniqueParams, n
 		compUnique := noTmplUnique[idx]
 		tmplUnique, exists := params.tmpKeyMap[compUnique.compKey]
 		if !exists {
-			if isPartial {
-				return true, nil
-			}
 			// unique is not related to template, check if its keys conflict with all templates
 			if conflictKey, isConflict := c.checkObjUniqueConflict(params, &compUnique); isConflict {
+				if isPartial {
+					return true, nil
+				}
 				return false, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateUniqueConflict,
 					compUnique.unique.ID, conflictKey)
 			}
@@ -593,7 +592,7 @@ func (c *comparator) compareOneUniqueInfo(kit *rest.Kit, params *compUniqueParam
 			// this propertyID, the attribute auto-increment ID of the object is obtained
 			objAttrID, ok := params.tmplProToIDMap[tmplUnique.Keys[id]]
 			if !ok {
-				blog.Errorf("get object attr id failed, template property id : %v, rid: %s", tmplUnique.Keys[id], kit.Rid)
+				blog.Errorf("get obj attr id failed, template property id: %v, rid: %s", tmplUnique.Keys[id], kit.Rid)
 				return false, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKPropertyIDField)
 			}
 			objCompUnique.unique.Keys = append(objCompUnique.unique.Keys, metadata.UniqueKey{

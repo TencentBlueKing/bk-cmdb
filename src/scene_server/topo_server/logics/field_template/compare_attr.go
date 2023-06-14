@@ -89,7 +89,7 @@ func (t *template) CompareFieldTemplateAttr(kit *rest.Kit, opt *metadata.Compare
 		return &metadata.CompareFieldTmplAttrsRes{Create: createRes}, nil, nil
 	}
 
-	// cross-compare object attributes with template attributes
+	// cross-compare object attributes with template attributes for ui
 	if forUI {
 		result, err := t.comparator.compareAttrForUI(kit, compParams, objAttrRes.Info)
 		if err != nil {
@@ -98,10 +98,10 @@ func (t *template) CompareFieldTemplateAttr(kit *rest.Kit, opt *metadata.Compare
 		return result, nil, nil
 	}
 
-	// 只有对后台的计算才会区分是否是部分计算
+	// only the calculation of the background will distinguish whether it is a partial calculation
 	if opt.IsPartial {
 		_, partialResult, err := t.comparator.compareAttrForBackend(kit, compParams, opt.TemplateID, opt.ObjectID,
-			objAttrRes.Info, opt.IsPartial)
+			objAttrRes.Info, true)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -109,7 +109,7 @@ func (t *template) CompareFieldTemplateAttr(kit *rest.Kit, opt *metadata.Compare
 	}
 
 	result, _, err := t.comparator.compareAttrForBackend(kit, compParams, opt.TemplateID, opt.ObjectID,
-		objAttrRes.Info, opt.IsPartial)
+		objAttrRes.Info, false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -367,6 +367,7 @@ func (c *comparator) handleTemplateAttrNotExist(kit *rest.Kit, params *compAttrP
 		Data:       &metadata.Attribute{ID: attr.ID},
 	}
 
+	//
 	isChanged := false
 	// when the template where the template attribute corresponding to the attribute is located is the
 	// current template, in order to release the management scene, the templateID needs to be set to 0

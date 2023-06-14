@@ -18,6 +18,8 @@
 package fieldtmpl
 
 import (
+	"sync"
+
 	"configcenter/pkg/filter"
 	filtertools "configcenter/pkg/tools/filter"
 	"configcenter/src/apimachinery"
@@ -28,7 +30,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/logics/model"
-	"sync"
 )
 
 type comparator struct {
@@ -138,6 +139,20 @@ func (t *template) getUniqueSyncStatus(kit *rest.Kit, templateID, objectID int64
 		},
 	}
 
+	// list field template uniques
+	res, ccErr := t.clientSet.CoreService().FieldTemplate().ListFieldTemplateUnique(kit.Ctx, kit.Header, listOpt)
+	if ccErr != nil {
+		blog.Errorf("list field template uniques failed, err: %v, id: %+v, rid: %s", ccErr, templateID, kit.Rid)
+		return nil, ccErr
+	}
+
+	uniqueOp := &metadata.CompareFieldTmplUniqueOption{
+		TemplateID: templateID,
+		ObjectID:   objectID,
+		IsPartial:  true,
+		Uniques:    make([]metadata.FieldTmplUniqueForUpdate, len(res.Info)),
+	}
+
 	attrs, ccErr := t.getTemplateAttrByID(kit, templateID, []string{common.BKFieldID, common.BKPropertyIDField})
 	if ccErr != nil {
 		return nil, ccErr
@@ -148,26 +163,12 @@ func (t *template) getUniqueSyncStatus(kit *rest.Kit, templateID, objectID int64
 		attrIDProMap[attr.ID] = attr.PropertyID
 	}
 
-	uniqueOp := new(metadata.CompareFieldTmplUniqueOption)
-	uniqueOp.TemplateID = templateID
-	uniqueOp.ObjectID = objectID
-	uniqueOp.IsPartial = true
-
-	// list field template uniques
-	res, ccErr := t.clientSet.CoreService().FieldTemplate().ListFieldTemplateUnique(kit.Ctx, kit.Header, listOpt)
-	if ccErr != nil {
-		blog.Errorf("list field template uniques failed, err: %v, id: %+v, rid: %s", ccErr, templateID, kit.Rid)
-		return nil, ccErr
-	}
-
-	uniqueOp.Uniques = make([]metadata.FieldTmplUniqueForUpdate, len(res.Info))
-
 	propertyIDs := make([]string, 0)
 	for index := range res.Info {
 		for _, key := range res.Info[index].Keys {
 			propertyID, ok := attrIDProMap[key]
 			if !ok {
-				blog.Errorf("property id not found, attr id: %s,object id: %d, rid: %s", key, objectID, kit.Rid)
+				blog.Errorf("property id not found, attr id: %s, object id: %d, rid: %s", key, objectID, kit.Rid)
 				return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound, common.BKPropertyIDField)
 			}
 			propertyIDs = append(propertyIDs, propertyID)
@@ -189,13 +190,48 @@ func (t *template) getUniqueSyncStatus(kit *rest.Kit, templateID, objectID int64
 func (t *template) ListFieldTemplateSyncStatus(kit *rest.Kit, option *metadata.ListFieldTmpltSyncStatusOption) (
 	[]metadata.ListFieldTmpltSyncStatusResult, error) {
 
-	result := make([]metadata.ListFieldTmpltSyncStatusResult, 0)
+	// check whether the corresponding relationship between object and templateID is legal
+	objIDMap := make(map[int64]struct{})
+	for _, id := range option.ObjectIDs {
+		objIDMap[id] = struct{}{}
+	}
+
+	objIDs := make([]int64, 0)
+	for id := range objIDMap {
+		objIDs = append(objIDs, id)
+	}
+
+	cond := filtertools.GenAtomFilter(common.ObjectIDField, filter.In, objIDs)
+	tmplFilter, err := filtertools.And(cond, filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, option.ID))
+	if err != nil {
+		blog.Errorf("gen filter failed, objIDs: %v, template id: %d, err: %v, rid: %s", objIDs, option.ID, err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "template_filter")
+	}
+
+	listOpt := &metadata.CommonQueryOption{
+		CommonFilterOption: metadata.CommonFilterOption{Filter: tmplFilter},
+		Page:               metadata.BasePage{EnableCount: true},
+	}
+
+	res, err := t.clientSet.CoreService().FieldTemplate().ListObjFieldTmplRel(kit.Ctx, kit.Header, listOpt)
+	if err != nil {
+		blog.Errorf("list field templates failed, err: %v, opt: %+v, rid: %s", err, option, kit.Rid)
+		return nil, err
+	}
+	if len(objIDs) != int(res.Count) {
+		blog.Errorf("the number of associations obtained is incorrect, opt: %+v, rid: %s", option, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.ObjectIDField)
+	}
 
 	var wg sync.WaitGroup
 	var firstErr error
 	pipeline := make(chan bool, 5)
 
-	// 这里按照objectID进行并发，其中并发内部按照顺序首先对比属性，然后再对比唯一校验
+	result := make([]metadata.ListFieldTmpltSyncStatusResult, 0)
+
+	// here, the concurrency is performed according to the objectID,
+	// and the concurrency internally compares the attributes first
+	// in order, and then compares the unique check
 	for _, objectID := range option.ObjectIDs {
 
 		pipeline <- true
@@ -211,7 +247,9 @@ func (t *template) ListFieldTemplateSyncStatus(kit *rest.Kit, option *metadata.L
 				firstErr = err
 			}
 
-			// 如果已经识别出属性有差异，那么没有必要继续计算唯一校验是否有差异
+			// if a difference in attributes has already been identified,
+			// there is no need to continue to calculate whether there is
+			// a difference in the unique check
 			if attrStatus.NeedSync {
 				result = append(result, *attrStatus)
 				return

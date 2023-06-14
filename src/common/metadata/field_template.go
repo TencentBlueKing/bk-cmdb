@@ -611,7 +611,7 @@ type CompareFieldTmplAttrOption struct {
 	TemplateID int64               `json:"bk_template_id"`
 	ObjectID   int64               `json:"object_id"`
 	Attrs      []FieldTemplateAttr `json:"attributes"`
-	// IsPartial quick comparison markup for templates and models
+	// IsPartial partial comparison of template and model attre flag.
 	IsPartial bool `json:"is_partial"`
 }
 
@@ -691,7 +691,7 @@ type CompareFieldTmplUniqueOption struct {
 	TemplateID int64                      `json:"bk_template_id"`
 	ObjectID   int64                      `json:"object_id"`
 	Uniques    []FieldTmplUniqueForUpdate `json:"uniques"`
-	// IsPartial quick comparison markup for templates and models
+	// IsPartial partial comparison of template and model unique flag.
 	IsPartial bool `json:"is_partial"`
 }
 
