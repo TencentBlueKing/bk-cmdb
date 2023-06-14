@@ -450,10 +450,10 @@ func fillLostUserFieldValue(valData mapstr.MapStr, field metadata.Attribute) err
 		return fmt.Errorf("user type field default value not string, value: %v", field.Default)
 	}
 
-	if ok := util.IsUser(defaultVal); !ok {
+	ok = util.IsUser(defaultVal)
+	if defaultVal != "" && !ok {
 		return fmt.Errorf("user type field default value not user type, value: %s", defaultVal)
 	}
-
 	valData[field.PropertyID] = defaultVal
 	return nil
 }
