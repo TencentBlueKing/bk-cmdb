@@ -231,6 +231,57 @@ func (s *Service) ListFieldTemplateTasksStatus(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
+// ListFieldTmplTaskSyncResult list field template task sync result, it will first query the task table,
+// and if it cannot find it, it will query the task history table.
+func (s *Service) ListFieldTmplTaskSyncResult(ctx *rest.Contexts) {
+	input := new(metadata.ListFieldTmpltTaskStatusOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := input.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	input.ObjectIDs = util.IntArrayUnique(input.ObjectIDs)
+	taskDetailMap, taskHistoryMap, err := s.Logics.ListFieldTemplateSyncResult(ctx.Kit, input.ID, input.ObjectIDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result := make([]metadata.ListFieldTmplTaskSyncResult, 0)
+	for _, id := range input.ObjectIDs {
+		taskDetail, exist := taskDetailMap[id]
+		if exist {
+			syncResult := metadata.ListFieldTmplTaskSyncResult{
+				ObjectID: id,
+				Status:   taskDetail.Status,
+				SyncTime: taskDetail.LastTime,
+			}
+			if len(taskDetail.Detail) != 0 {
+				syncResult.FailMsg = taskDetail.Detail[0].Response.ErrMsg
+			}
+
+			result = append(result, syncResult)
+			continue
+		}
+
+		taskHistory, exist := taskHistoryMap[id]
+		if exist {
+			result = append(result, metadata.ListFieldTmplTaskSyncResult{
+				ObjectID: id,
+				Status:   taskHistory.Status,
+				SyncTime: taskHistory.LastTime,
+			})
+		}
+	}
+
+	ctx.RespEntity(result)
+}
+
 // TimerDeleteHistoryTask delete api task history message
 func (s *Service) TimerDeleteHistoryTask(ctx context.Context) {
 	for {

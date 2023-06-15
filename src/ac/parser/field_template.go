@@ -173,6 +173,13 @@ var FieldTemplateAuthConfigs = []AuthConfig{
 		HTTPMethod:     http.MethodPost,
 		ResourceAction: meta.SkipAction,
 	},
+	{
+		Name:           "FindFieldTemplateModelStatus",
+		Description:    "查询字段组合模版模型同步状态",
+		Pattern:        "/api/v3/find/field_template/model/status",
+		HTTPMethod:     http.MethodPost,
+		ResourceAction: meta.SkipAction,
+	},
 }
 
 func (ps *parseStream) fieldTemplate() *parseStream {
