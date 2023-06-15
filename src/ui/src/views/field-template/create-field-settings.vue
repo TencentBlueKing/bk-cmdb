@@ -24,6 +24,7 @@
   import FieldManage from './children/field-manage.vue'
   import CreateSuccess from './children/create-success.vue'
   import { wrapData, normalizeFieldData, normalizeUniqueData } from './children/use-field'
+  import FieldPreview from './children/field-preview-drawer.vue'
 
   const store = useStore()
 
@@ -38,6 +39,9 @@
 
   const isCreateSuccess = ref(false)
   const newTemplateId = ref(null)
+  const previewShow = ref(false)
+
+  const previewFieldList = computed(() => templateData.value.fieldList)
 
   const templateData = computed(() => ({
     basic: basicData.value,
@@ -90,7 +94,9 @@
       name: MENU_MODEL_FIELD_TEMPLATE
     })
   }
-  const handlePreview = () => {}
+  const handlePreview = () => {
+    previewShow.value = true
+  }
 
   const handleSuccessAction = (action) => {
     if (action === 'bind') {
@@ -167,6 +173,10 @@
     <div class="create-success-container" v-else>
       <create-success @action="handleSuccessAction"></create-success>
     </div>
+    <field-preview
+      :preview-show.sync="previewShow"
+      :properties="previewFieldList">
+    </field-preview>
   </div>
 </template>
 

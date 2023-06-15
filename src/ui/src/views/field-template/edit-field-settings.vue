@@ -25,6 +25,7 @@
   import FieldManage from './children/field-manage.vue'
   import { wrapData } from './children/use-field'
   import fieldTemplateService from '@/service/field-template'
+  import FieldPreview from './children/field-preview-drawer.vue'
 
   const route = useRoute()
   const store = useStore()
@@ -46,6 +47,8 @@
   // 编辑前最初的数据，接口原始数据
   const beforeFieldList = ref([])
   const beforeUniqueList = ref([])
+
+  const previewShow = ref(false)
 
   const nextButtonDisabled = computed(() => !fieldData.value.length)
 
@@ -77,6 +80,8 @@
     fieldList: settingData.fieldList ?? fieldData.value,
     uniqueList: settingData.uniqueList ?? uniqueData.value
   }))
+
+  const previewFieldList = computed(() => templateData.value.fieldList)
 
   // 编辑后的数据
   const settingData = reactive({
@@ -117,7 +122,9 @@
       name: MENU_MODEL_FIELD_TEMPLATE
     })
   }
-  const handlePreview = () => {}
+  const handlePreview = () => {
+    previewShow.value = true
+  }
 </script>
 <script>
   export default {
@@ -163,6 +170,10 @@
         <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
       </div>
     </template>
+    <field-preview
+      :preview-show.sync="previewShow"
+      :properties="previewFieldList">
+    </field-preview>
   </cmdb-sticky-layout>
 </template>
 
