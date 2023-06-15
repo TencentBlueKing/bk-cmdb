@@ -66,6 +66,11 @@ type Site struct {
 	FullTextSearch string
 	PaasDomainUrl  string
 	HelpDocUrl     string
+
+	// BkDomain it is used to set the unified international language of Blue Whale.
+	// this variable is returned to the front-end through configuration in the background.
+	// the corresponding front-end variable is: cookieDomain.
+	BkDomain string
 }
 
 // Config TODO

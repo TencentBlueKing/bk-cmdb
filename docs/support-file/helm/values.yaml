@@ -1225,6 +1225,7 @@ common:
       htmlRoot: /data/cmdb/cmdb_webserver/web
       authScheme: internal
       helpDocUrl:
+      bkDomain:
     ## webserver common config session parameters
     ## @param common.webServer.session.name bk-cmdb session name
     ## @param common.webServer.session.multipleOwner Enable one user with multiple logins at the same time

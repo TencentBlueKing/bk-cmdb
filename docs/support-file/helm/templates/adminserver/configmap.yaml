@@ -60,6 +60,7 @@ data:
         authscheme: {{ .Values.common.webServer.site.authScheme }}
         bkDesktopUrl:  {{ include "cmdb.webserver.bk_desktop_url" . }}
         paasDomainUrl: {{ include "cmdb.webserver.paas_domain_url" . }}
+        bkDomain: {{ include "cmdb.webserver.site.bkDomain" . }}
         #帮助文档地址
         helpDocUrl: {{ .Values.common.webServer.site.helpDocUrl }}
         paas:

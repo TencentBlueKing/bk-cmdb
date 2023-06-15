@@ -41,6 +41,7 @@ func (s *Service) Index(c *gin.Context) {
 		"authCenter":                s.Config.AuthCenter,
 		"helpDocUrl":                s.Config.Site.HelpDocUrl,
 		"disableOperationStatistic": s.Config.DisableOperationStatistic,
+		"cookieDomain":              s.Config.Site.BkDomain,
 	}
 
 	if s.Config.Site.PaasDomainUrl != "" {
