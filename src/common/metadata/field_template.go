@@ -611,6 +611,8 @@ type CompareFieldTmplAttrOption struct {
 	TemplateID int64               `json:"bk_template_id"`
 	ObjectID   int64               `json:"object_id"`
 	Attrs      []FieldTemplateAttr `json:"attributes"`
+	// IsPartial partial comparison of template and model attre flag.
+	IsPartial bool `json:"is_partial"`
 }
 
 // Validate compare field template attribute with object option
@@ -689,6 +691,8 @@ type CompareFieldTmplUniqueOption struct {
 	TemplateID int64                      `json:"bk_template_id"`
 	ObjectID   int64                      `json:"object_id"`
 	Uniques    []FieldTmplUniqueForUpdate `json:"uniques"`
+	// IsPartial partial comparison of template and model unique flag.
+	IsPartial bool `json:"is_partial"`
 }
 
 // FieldTmplUniqueForUpdate field template unique for field template update scenario.
@@ -907,6 +911,6 @@ func (option *ListFieldTmpltSyncStatusOption) Validate() ccErr.RawErrorInfo {
 // ListFieldTmpltSyncStatusResult it is used to compare the attributes or unique
 // verification status comparison results between the template and the model
 type ListFieldTmpltSyncStatusResult struct {
-	ObjectID int64  `json:"object_id"`
-	Status   string `json:"status"`
+	ObjectID int64 `json:"object_id"`
+	NeedSync bool  `json:"need_sync"`
 }

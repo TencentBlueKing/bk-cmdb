@@ -143,8 +143,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 	}
 
 	// the unique verification template ID for direct updates must be zero
-	if (data.Data.TemplateID != 0 && !data.FromTemplate) ||
-		(data.Data.TemplateID == 0 && data.FromTemplate) {
+	if data.Data.TemplateID != 0 && !data.FromTemplate {
 		blog.Errorf("scene parameter invalid, template id: %d, from template: %v, rid: %s", data.Data.TemplateID,
 			data.FromTemplate, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteIndex, id, data.Data.TemplateID)

@@ -1266,7 +1266,7 @@ func checkAttrTemplateInfo(kit *rest.Kit, input mapstr.MapStr, attrID int64, isS
 		return err
 	}
 
-	if (!isSync && tmpltID > 0) || (isSync && tmpltID == 0) {
+	if !isSync && tmpltID > 0 {
 		blog.Errorf("params invalid, attrID: %d, sync: %v, templateID: %d, rid: %s", attrID, isSync, tmpltID, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, attrID)
 	}

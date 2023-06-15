@@ -508,7 +508,7 @@ func (s *service) getCreateAndUpdateAttr(kit *rest.Kit, option *metadata.SyncObj
 		Attrs:      tmplAttrs,
 	}
 
-	result, err := s.logics.FieldTemplateOperation().CompareFieldTemplateAttr(kit, opt, false)
+	result, _, err := s.logics.FieldTemplateOperation().CompareFieldTemplateAttr(kit, opt, false)
 	if err != nil {
 		blog.Errorf("compare field template failed, cond: %+v, err: %v, rid: %s", opt, err, kit.Rid)
 		return nil, nil, err
@@ -527,11 +527,6 @@ func (s *service) getCreateAndUpdateAttr(kit *rest.Kit, option *metadata.SyncObj
 func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncObjectTask, objectID string) error {
 
 	createAttr, updateAttr, err := s.getCreateAndUpdateAttr(kit, option, objectID)
-	if err != nil {
-		return err
-	}
-
-	uniqueOp, err := s.getFieldTemplateUniqueByID(kit, option)
 	if err != nil {
 		return err
 	}
@@ -562,7 +557,12 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 
 		// 3、unique validation for preprocessed template synchronization
 
-		res, err := s.logics.FieldTemplateOperation().CompareFieldTemplateUnique(kit, uniqueOp, false)
+		uniqueOp, err := s.getFieldTemplateUniqueByID(kit, option)
+		if err != nil {
+			return err
+		}
+
+		res, _, err := s.logics.FieldTemplateOperation().CompareFieldTemplateUnique(kit, uniqueOp, false)
 		if err != nil {
 			blog.Errorf("get field template unique failed, cond: %+v, err: %v, rid: %s", uniqueOp, err, kit.Rid)
 			return err

@@ -32,17 +32,17 @@ import (
 // CompareFieldTemplateUnique compare field template uniques with object uniques
 // @param forUI: defines if all comparison detail is needed for ui display, or only returns basic info for backend sync
 func (t *template) CompareFieldTemplateUnique(kit *rest.Kit, opt *metadata.CompareFieldTmplUniqueOption, forUI bool) (
-	*metadata.CompareFieldTmplUniquesRes, error) {
+	*metadata.CompareFieldTmplUniquesRes, *metadata.ListFieldTmpltSyncStatusResult, error) {
 
 	// check compare options that is not related to object unique
 	objID, err := t.comparator.getObjIDAndValidate(kit, opt.ObjectID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	compParams, err := t.comparator.preCheckUnique(kit, objID, opt.Uniques, forUI)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// get object uniques
@@ -54,33 +54,76 @@ func (t *template) CompareFieldTemplateUnique(kit *rest.Kit, opt *metadata.Compa
 	objUniqueRes, err := t.clientSet.CoreService().Model().ReadModelAttrUnique(kit.Ctx, kit.Header, objUniqueOpt)
 	if err != nil {
 		blog.Errorf("get object uniques failed, err: %v, opt: %+v, rid: %s", err, opt, kit.Rid)
-		return nil, err
+		return nil, nil, err
 	}
 
 	// if object has no uniques, add all field template uniques
 	if len(objUniqueRes.Info) == 0 {
 		createRes := make([]metadata.CompareOneFieldTmplUniqueRes, len(opt.Uniques))
 		for idx := range opt.Uniques {
-			createRes[idx] = metadata.CompareOneFieldTmplUniqueRes{
-				Index: idx,
-			}
+			createRes[idx] = metadata.CompareOneFieldTmplUniqueRes{Index: idx}
 		}
-		return &metadata.CompareFieldTmplUniquesRes{Create: createRes}, nil
+		if opt.IsPartial {
+			result := &metadata.ListFieldTmpltSyncStatusResult{ObjectID: opt.ObjectID, NeedSync: true}
+			return nil, result, nil
+		}
+		return &metadata.CompareFieldTmplUniquesRes{Create: createRes}, nil, nil
 	}
 
+	attrs, err := t.getObjAttrsByID(kit, objID, objUniqueRes.Info)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, attribute := range attrs {
+		compParams.attrMap[attribute.ID] = attribute.PropertyID
+	}
+
+	// cross-compare object uniques with template uniques
+	if forUI {
+		result, err := t.comparator.compareUniqueForUI(kit, compParams, objUniqueRes.Info)
+		if err != nil {
+			return nil, nil, err
+		}
+		return result, nil, nil
+	}
+
+	if opt.IsPartial {
+		_, statusResult, err := t.comparator.compareUniqueForBackend(kit, compParams, objUniqueRes.Info,
+			opt.ObjectID, true)
+		if err != nil {
+			return nil, nil, err
+		}
+		return nil, statusResult, nil
+	}
+
+	uniquesRes, _, err := t.comparator.compareUniqueForBackend(kit, compParams, objUniqueRes.Info, opt.ObjectID, false)
+	if err != nil {
+		return nil, nil, err
+	}
+	return uniquesRes, nil, nil
+}
+
+func (t *template) getObjAttrsByID(kit *rest.Kit, objID string, uniques []metadata.ObjectUnique) (
+	[]metadata.Attribute, error) {
+
 	attrMap := make(map[uint64]struct{})
-	attrIDs := make([]uint64, 0)
-	for _, unique := range objUniqueRes.Info {
+	for _, unique := range uniques {
 		for _, key := range unique.Keys {
 			attrMap[key.ID] = struct{}{}
 		}
 	}
 
+	attrIDs := make([]uint64, 0)
 	for id := range attrMap {
 		if id == 0 {
 			continue
 		}
 		attrIDs = append(attrIDs, id)
+	}
+
+	if len(attrIDs) == 0 {
+		return []metadata.Attribute{}, nil
 	}
 
 	// get object uniques related attribute info
@@ -93,7 +136,7 @@ func (t *template) CompareFieldTemplateUnique(kit *rest.Kit, opt *metadata.Compa
 
 	objAttrRes, err := t.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, objAttrOpt)
 	if err != nil {
-		blog.Errorf("get object uniques related attributes failed, err: %v, opt: %+v, rid: %s", err, opt, kit.Rid)
+		blog.Errorf("get object uniques related attrs failed, opt: %+v,err: %v, rid: %s", objAttrOpt, err, kit.Rid)
 		return nil, err
 	}
 
@@ -101,16 +144,7 @@ func (t *template) CompareFieldTemplateUnique(kit *rest.Kit, opt *metadata.Compa
 		blog.Errorf("object uniques related attributes length is invalid, ids: %+v, rid: %s", attrIDs, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKAttributeIDField)
 	}
-
-	for _, attribute := range objAttrRes.Info {
-		compParams.attrMap[attribute.ID] = attribute.PropertyID
-	}
-
-	// cross-compare object uniques with template uniques
-	if forUI {
-		return t.comparator.compareUniqueForUI(kit, compParams, objUniqueRes.Info)
-	}
-	return t.comparator.compareUniqueForBackend(kit, compParams, objUniqueRes.Info)
+	return objAttrRes.Info, nil
 }
 
 type compUniqueParams struct {
@@ -361,8 +395,9 @@ func (c *comparator) compareUniqueForUI(kit *rest.Kit, params *compUniqueParams,
 	return res, nil
 }
 
-func (c *comparator) compareUniqueForBackend(kit *rest.Kit, params *compUniqueParams,
-	uniques []metadata.ObjectUnique) (*metadata.CompareFieldTmplUniquesRes, error) {
+func (c *comparator) compareUniqueForBackend(kit *rest.Kit, params *compUniqueParams, uniques []metadata.ObjectUnique,
+	objectID int64, isPartial bool) (*metadata.CompareFieldTmplUniquesRes, *metadata.ListFieldTmpltSyncStatusResult,
+	error) {
 
 	res := new(metadata.CompareFieldTmplUniquesRes)
 
@@ -392,9 +427,13 @@ func (c *comparator) compareUniqueForBackend(kit *rest.Kit, params *compUniquePa
 
 		tmplUnique, exists := params.tmplIDMap[unique.TemplateID]
 		if !exists {
+			if isPartial {
+				result := &metadata.ListFieldTmpltSyncStatusResult{ObjectID: objectID, NeedSync: true}
+				return nil, result, nil
+			}
 			// unique template is not exist, check if the unique conflicts with other templates
 			if conflictKey, isConflict := c.checkObjUniqueConflict(params, &compUnique); isConflict {
-				return nil, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateUniqueConflict, compUnique.unique.ID,
+				return nil, nil, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateUniqueConflict, compUnique.unique.ID,
 					conflictKey)
 			}
 
@@ -407,30 +446,29 @@ func (c *comparator) compareUniqueForBackend(kit *rest.Kit, params *compUniquePa
 		}
 
 		// compare the unique with its template, check if their keys are the same
-		_, err := c.compareOneUniqueInfo(kit, params, &compUnique, &tmplUnique, res, false, false)
+		isChanged, err := c.compareOneUniqueInfo(kit, params, &compUnique, &tmplUnique, res, false, false)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
+		}
+
+		if isChanged && isPartial {
+			result := &metadata.ListFieldTmpltSyncStatusResult{ObjectID: objectID, NeedSync: true}
+			return nil, result, nil
 		}
 	}
 
 	// compare object uniques without template
-	for idx := range noTmplUnique {
-		compUnique := noTmplUnique[idx]
-		tmplUnique, exists := params.tmpKeyMap[compUnique.compKey]
-		if !exists {
-			// unique is not related to template, check if its keys conflict with all templates
-			if conflictKey, isConflict := c.checkObjUniqueConflict(params, &compUnique); isConflict {
-				return nil, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateUniqueConflict, compUnique.unique.ID,
-					conflictKey)
-			}
-			continue
-		}
+	isChanged, err := c.dealNoTmplUnique(kit, params, noTmplUnique, isPartial, res)
+	if err != nil {
+		return nil, nil, err
+	}
 
-		// compare the unique with its template, check if their keys are the same
-		_, err := c.compareOneUniqueInfo(kit, params, &compUnique, &tmplUnique, res, true, false)
+	if isPartial {
+		partialRes, err := c.dealUniquePartialResult(params, isChanged, objectID)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
+		return nil, partialRes, nil
 	}
 
 	// field template unique with no matching object uniques should be created
@@ -439,7 +477,54 @@ func (c *comparator) compareUniqueForBackend(kit *rest.Kit, params *compUniquePa
 			Index: params.tmplIndexMap[compKey],
 		})
 	}
-	return res, nil
+	return res, nil, nil
+}
+
+func (c *comparator) dealUniquePartialResult(params *compUniqueParams, isChanged bool, objectID int64) (
+	*metadata.ListFieldTmpltSyncStatusResult, error) {
+
+	result := &metadata.ListFieldTmpltSyncStatusResult{
+		ObjectID: objectID,
+	}
+
+	if isChanged || len(params.createTmplMap) > 0 {
+		result.NeedSync = true
+		return result, nil
+	}
+
+	return result, nil
+}
+
+func (c *comparator) dealNoTmplUnique(kit *rest.Kit, params *compUniqueParams, noTmplUnique []objUniqueForComp,
+	isPartial bool, res *metadata.CompareFieldTmplUniquesRes) (bool, error) {
+
+	// compare object uniques without template
+	for idx := range noTmplUnique {
+		compUnique := noTmplUnique[idx]
+		tmplUnique, exists := params.tmpKeyMap[compUnique.compKey]
+		if !exists {
+			// unique is not related to template, check if its keys conflict with all templates
+			if conflictKey, isConflict := c.checkObjUniqueConflict(params, &compUnique); isConflict {
+				if isPartial {
+					return true, nil
+				}
+				return false, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateUniqueConflict,
+					compUnique.unique.ID, conflictKey)
+			}
+			continue
+		}
+
+		// compare the unique with its template, check if their keys are the same
+		isChanged, err := c.compareOneUniqueInfo(kit, params, &compUnique, &tmplUnique, res, true, false)
+		if err != nil {
+			return false, err
+		}
+
+		if isChanged && isPartial {
+			return isChanged, nil
+		}
+	}
+	return false, nil
 }
 
 // checkObjUniqueConflict check if object unique conflicts with field template uniques
@@ -503,7 +588,7 @@ func (c *comparator) compareOneUniqueInfo(kit *rest.Kit, params *compUniqueParam
 			// this propertyID, the attribute auto-increment ID of the object is obtained
 			objAttrID, ok := params.tmplProToIDMap[tmplUnique.Keys[id]]
 			if !ok {
-				blog.Errorf("get object attr id failed, template property id : %v, rid: %s", tmplUnique.Keys[id], kit.Rid)
+				blog.Errorf("get obj attr id failed, template property id: %v, rid: %s", tmplUnique.Keys[id], kit.Rid)
 				return false, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKPropertyIDField)
 			}
 			objCompUnique.unique.Keys = append(objCompUnique.unique.Keys, metadata.UniqueKey{
@@ -519,12 +604,4 @@ func (c *comparator) compareOneUniqueInfo(kit *rest.Kit, params *compUniqueParam
 	})
 
 	return true, nil
-}
-
-// ListFieldTemplateSyncStatus get the diff status of templates and models
-func (t *template) ListFieldTemplateSyncStatus(kit *rest.Kit, option *metadata.ListFieldTmpltSyncStatusOption) (
-	[]metadata.ListFieldTmpltSyncStatusResult, error) {
-
-	result := make([]metadata.ListFieldTmpltSyncStatusResult, 0)
-	return result, nil
 }
