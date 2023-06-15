@@ -487,15 +487,11 @@ func (c *comparator) dealUniquePartialResult(params *compUniqueParams, isChanged
 		ObjectID: objectID,
 	}
 
-	if isChanged {
+	if isChanged || len(params.createTmplMap) > 0 {
 		result.NeedSync = true
 		return result, nil
 	}
 
-	if len(params.createTmplMap) > 0 {
-		result.NeedSync = true
-		return result, nil
-	}
 	return result, nil
 }
 

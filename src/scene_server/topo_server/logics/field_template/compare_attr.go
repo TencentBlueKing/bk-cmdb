@@ -367,7 +367,6 @@ func (c *comparator) handleTemplateAttrNotExist(kit *rest.Kit, params *compAttrP
 		Data:       &metadata.Attribute{ID: attr.ID},
 	}
 
-	//
 	isChanged := false
 	// when the template where the template attribute corresponding to the attribute is located is the
 	// current template, in order to release the management scene, the templateID needs to be set to 0
@@ -484,15 +483,11 @@ func (c *comparator) dealAttrPartialResult(params *compAttrParams, isChanged boo
 		ObjectID: objectID,
 	}
 
-	if isChanged {
+	if isChanged || len(params.createTmplMap) > 0 {
 		result.NeedSync = true
 		return result, nil
 	}
 
-	if len(params.createTmplMap) > 0 {
-		result.NeedSync = true
-		return result, nil
-	}
 	return result, nil
 }
 
