@@ -271,6 +271,8 @@ func (option *ListFieldTmpltTaskStatusOption) Validate() ccErr.RawErrorInfo {
 
 // ListFieldTmpltTaskStatusResult specifies the task status of the template ID and object
 type ListFieldTmpltTaskStatusResult struct {
-	ObjectID int64  `json:"object_id"`
-	Status   string `json:"status"`
+	ObjectID int64         `json:"object_id"`
+	Status   APITaskStatus `json:"status"`
+	SyncTime time.Time     `json:"sync_time"`
+	FailMsg  string        `json:"fail_msg"`
 }

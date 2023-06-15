@@ -494,9 +494,25 @@ func (lgc *Logics) ListLatestSyncStatus(kit *rest.Kit, input *metadata.ListLates
 
 // ListFieldTemplateSyncStatus this function is used in the field template scenario
 // to obtain the latest two task statuses of the specified model ID
-func (lgc *Logics) ListFieldTemplateSyncStatus(kit *rest.Kit, input mapstr.MapStr) (
-	[]metadata.APITaskSyncStatus, error) {
+// If the task can be queried in the cc_APITask table, cc_APITaskSyncHistory table will not be queried.
+func (lgc *Logics) ListFieldTemplateSyncStatus(kit *rest.Kit, templateID int64, objIDs []int64) (
+	map[int64]metadata.APITaskDetail, map[int64]metadata.APITaskSyncStatus, error) {
 
+	objIDMap := make(map[int64]struct{})
+	extraIDs := make([]int64, 0)
+	for _, objID := range objIDs {
+		if _, exist := objIDMap[objID]; exist {
+			continue
+		}
+		extraIDs = append(extraIDs, objID)
+		objIDMap[objID] = struct{}{}
+	}
+
+	query := mapstr.MapStr{
+		common.BKInstIDField:       templateID,
+		metadata.APITaskExtraField: mapstr.MapStr{common.BKDBIN: extraIDs},
+		common.BKTaskTypeField:     common.SyncFieldTemplateTaskFlag,
+	}
 	aggrCond := []map[string]interface{}{
 		{common.BKDBSort: map[string]interface{}{metadata.APITaskExtraField: 1, common.CreateTimeField: -1}},
 		{common.BKDBGroup: map[string]interface{}{
@@ -515,15 +531,65 @@ func (lgc *Logics) ListFieldTemplateSyncStatus(kit *rest.Kit, input mapstr.MapSt
 		{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$docs"}},
 	}
 
-	input = util.SetQueryOwner(input, kit.SupplierAccount)
-	aggrCond = append([]map[string]interface{}{{common.BKDBMatch: input}}, aggrCond...)
+	query = util.SetQueryOwner(query, kit.SupplierAccount)
 
-	result := make([]metadata.APITaskSyncStatus, 0)
-	if err := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).AggregateAll(kit.Ctx, aggrCond, &result); err != nil {
-		blog.Errorf("list sync status failed, cond: %#v, err: %v, rid: %v", aggrCond, err, kit.Rid)
-		return nil, err
+	return lgc.listFieldTemplateSyncStatus(kit, aggrCond, query, objIDMap)
+}
+
+func (lgc *Logics) listFieldTemplateSyncStatus(kit *rest.Kit, aggrCond []map[string]interface{}, query mapstr.MapStr,
+	objIDMap map[int64]struct{}) (map[int64]metadata.APITaskDetail, map[int64]metadata.APITaskSyncStatus, error) {
+
+	taskAggrCond := append([]map[string]interface{}{{common.BKDBMatch: query}}, aggrCond...)
+	taskDetails := make([]metadata.APITaskDetail, 0)
+	if err := lgc.db.Table(common.BKTableNameAPITask).AggregateAll(kit.Ctx, taskAggrCond, &taskDetails); err != nil {
+		blog.Errorf("list sync status failed, cond: %#v, err: %v, rid: %v", taskAggrCond, err, kit.Rid)
+		return nil, nil, err
 	}
-	return result, nil
+
+	taskDetailMap := make(map[int64]metadata.APITaskDetail)
+	for _, task := range taskDetails {
+		objID, err := util.GetInt64ByInterface(task.Extra)
+		if err != nil {
+			blog.Errorf("get instance id failed, objID: %+v, err: %v, rid: %s", objID, err, kit.Rid)
+			return nil, nil, err
+		}
+		_, ok := taskDetailMap[objID]
+		if ok && task.Status != metadata.APITaskStatusExecute {
+			continue
+		}
+		delete(objIDMap, objID)
+		taskDetailMap[objID] = task
+	}
+
+	extraIDs := make([]int64, 0)
+	for id := range objIDMap {
+		extraIDs = append(extraIDs, id)
+	}
+	query[metadata.APITaskExtraField] = mapstr.MapStr{common.BKDBIN: extraIDs}
+	taskHistoryCond := append([]map[string]interface{}{{common.BKDBMatch: query}}, aggrCond...)
+	taskHistories := make([]metadata.APITaskSyncStatus, 0)
+	err := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).AggregateAll(kit.Ctx, taskHistoryCond, &taskHistories)
+	if err != nil {
+		blog.Errorf("list sync status failed, cond: %#v, err: %v, rid: %v", taskHistoryCond, err, kit.Rid)
+		return nil, nil, err
+	}
+
+	taskHistoryMap := make(map[int64]metadata.APITaskSyncStatus)
+	for _, task := range taskHistories {
+		objID, err := util.GetInt64ByInterface(task.Extra)
+		if err != nil {
+			blog.Errorf("get instance id failed, objID: %+v, err: %v, rid: %s", objID, err, kit.Rid)
+			return nil, nil, err
+		}
+		_, ok := taskHistoryMap[objID]
+		if ok && task.Status != metadata.APITaskStatusExecute {
+			continue
+		}
+		delete(objIDMap, objID)
+		taskHistoryMap[objID] = task
+	}
+
+	return taskDetailMap, taskHistoryMap, nil
 }
 
 // ListSyncStatusHistory list api task sync status history
@@ -647,7 +713,8 @@ func (lgc *Logics) UpdateTaskStatus(ctx context.Context, cond mapstr.MapStr, sta
 
 	err = lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Update(ctx, cond, updateData)
 	if err != nil {
-		blog.Errorf("update task history status failed, cond: %#v, data: %#v, err: %v, rid: %s", cond, updateData, err, rid)
+		blog.Errorf("update task history status failed, cond: %#v, data: %#v, err: %v, rid: %s", cond, updateData, err,
+			rid)
 		return err
 	}
 

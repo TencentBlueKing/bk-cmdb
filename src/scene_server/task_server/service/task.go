@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -190,42 +189,38 @@ func (s *Service) ListFieldTemplateTasksStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	objIDs := util.IntArrayUnique(input.ObjectIDs)
-	query := mapstr.MapStr{
-		common.BKInstIDField: input.ID,
-		metadata.APITaskExtraField: mapstr.MapStr{
-			common.BKDBIN: objIDs,
-		},
-		common.BKTaskTypeField: common.SyncFieldTemplateTaskFlag,
-	}
-
-	infos, err := s.Logics.ListFieldTemplateSyncStatus(ctx.Kit, query)
+	input.ObjectIDs = util.IntArrayUnique(input.ObjectIDs)
+	taskDetailMap, taskHistoryMap, err := s.Logics.ListFieldTemplateSyncStatus(ctx.Kit, input.ID, input.ObjectIDs)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	objStatusMap := make(map[int64]string)
-	for _, info := range infos {
-		obj, err := util.GetInt64ByInterface(info.Extra)
-		if err != nil {
-			blog.Errorf("get instance id failed, obj: %+v, err: %v, rid: %s", obj, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-		_, ok := objStatusMap[obj]
-		if ok && string(info.Status) != string(metadata.APITaskStatusExecute) {
+	result := make([]metadata.ListFieldTmpltTaskStatusResult, 0)
+	for _, id := range input.ObjectIDs {
+		taskDetail, exist := taskDetailMap[id]
+		if exist {
+			statusResult := metadata.ListFieldTmpltTaskStatusResult{
+				ObjectID: id,
+				Status:   taskDetail.Status,
+				SyncTime: taskDetail.LastTime,
+			}
+			if len(taskDetail.Detail) != 0 {
+				statusResult.FailMsg = taskDetail.Detail[0].Response.ErrMsg
+			}
+
+			result = append(result, statusResult)
 			continue
 		}
-		objStatusMap[obj] = string(info.Status)
-	}
 
-	result := make([]metadata.ListFieldTmpltTaskStatusResult, 0)
-	for obj, status := range objStatusMap {
-		result = append(result, metadata.ListFieldTmpltTaskStatusResult{
-			ObjectID: obj,
-			Status:   status,
-		})
+		taskHistory, exist := taskHistoryMap[id]
+		if exist {
+			result = append(result, metadata.ListFieldTmpltTaskStatusResult{
+				ObjectID: id,
+				Status:   taskHistory.Status,
+				SyncTime: taskHistory.LastTime,
+			})
+		}
 	}
 
 	ctx.RespEntity(result)
