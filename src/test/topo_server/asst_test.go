@@ -27,7 +27,7 @@ var _ = Describe("inst test", func() {
 			"bk_sn":        "201",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("switch_1"))
@@ -45,7 +45,7 @@ var _ = Describe("inst test", func() {
 			"bk_sn":        "202",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("switch_2"))
@@ -63,7 +63,7 @@ var _ = Describe("inst test", func() {
 			"bk_sn":        "203",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("switch_3"))
@@ -81,7 +81,7 @@ var _ = Describe("inst test", func() {
 			"bk_sn":        "204",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("switch_4"))
@@ -99,7 +99,7 @@ var _ = Describe("inst test", func() {
 			"bk_sn":        "205",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("switch_5"))
@@ -117,7 +117,7 @@ var _ = Describe("inst test", func() {
 			"bk_sn":        "201",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "bk_router", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("router_1"))
@@ -135,7 +135,7 @@ var _ = Describe("inst test", func() {
 			"bk_sn":        "202",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "bk_router", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("router_2"))
@@ -153,7 +153,7 @@ var _ = Describe("inst test", func() {
 			"bk_sn":        "203",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "bk_router", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("router_3"))
@@ -174,7 +174,7 @@ var _ = Describe("inst test", func() {
 			Mapping:              "n:n",
 		}
 		rsp, err := asstClient.CreateObject(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
@@ -189,7 +189,7 @@ var _ = Describe("inst test", func() {
 			Mapping:              "1:1",
 		}
 		rsp, err := asstClient.CreateObject(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
@@ -204,7 +204,7 @@ var _ = Describe("inst test", func() {
 			Mapping:              "1:n",
 		}
 		rsp, err := asstClient.CreateObject(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
@@ -216,7 +216,7 @@ var _ = Describe("inst test", func() {
 			AsstInstID:   switchInstId1,
 		}
 		rsp, err := asstClient.CreateInst(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		instAsst1 = rsp.Data.ID
@@ -229,7 +229,7 @@ var _ = Describe("inst test", func() {
 			AsstInstID:   switchInstId2,
 		}
 		rsp, err := asstClient.CreateInst(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		instAsst2 = rsp.Data.ID
@@ -256,7 +256,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := asstClient.CreateManyInstAssociation(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(len(rsp.Data.SuccessCreated)).To(Equal(1))
@@ -281,7 +281,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := asstClient.CreateManyInstAssociation(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(len(rsp.Data.SuccessCreated)).To(Equal(2))
@@ -311,7 +311,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := asstClient.CreateManyInstAssociation(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -337,7 +337,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := asstClient.SearchAssociationRelatedInst(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(len(rsp.Data)).To(Equal(2))
@@ -364,7 +364,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := asstClient.SearchAssociationRelatedInst(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -382,7 +382,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := asstClient.SearchAssociationRelatedInst(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -404,7 +404,7 @@ var _ = Describe("inst test", func() {
 		input.Page.Limit = 200
 
 		rsp, err := asstClient.SearchInstAssocAndInstDetail(context.Background(), header, "bk_router", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 
@@ -429,7 +429,7 @@ var _ = Describe("inst test", func() {
 		input.Page.Limit = 201
 
 		rsp, err := asstClient.SearchInstAssocAndInstDetail(context.Background(), header, "bk_router", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).To(HaveOccurred())
 	})
 
@@ -439,16 +439,18 @@ var _ = Describe("inst test", func() {
 				Rule: querybuilder.CombinedRule{
 					Condition: querybuilder.ConditionAnd,
 					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1},
+						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual,
+							Value: routerInstId1},
 					},
 				},
 			},
-			Fields: []string{"bk_asst_id", "bk_inst_id", "bk_obj_id", "bk_asst_inst_id", "bk_asst_obj_id", "bk_obj_asst_id"},
+			Fields: []string{"bk_asst_id", "bk_inst_id", "bk_obj_id", "bk_asst_inst_id", "bk_asst_obj_id",
+				"bk_obj_asst_id"},
 			Page:   metadata.BasePage{Start: 0, Limit: 1},
 		}
 
 		rsp, err := asstClient.SearchInstanceAssociations(context.Background(), header, "bk_router", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 
@@ -467,12 +469,13 @@ var _ = Describe("inst test", func() {
 
 	It("search instance associations without conditions", func() {
 		input := &metadata.CommonSearchFilter{
-			Fields: []string{"bk_asst_id", "bk_inst_id", "bk_obj_id", "bk_asst_inst_id", "bk_asst_obj_id", "bk_obj_asst_id"},
+			Fields: []string{"bk_asst_id", "bk_inst_id", "bk_obj_id", "bk_asst_inst_id", "bk_asst_obj_id",
+				"bk_obj_asst_id"},
 			Page:   metadata.BasePage{Start: 0, Limit: 1},
 		}
 
 		rsp, err := asstClient.SearchInstanceAssociations(context.Background(), header, "bk_router", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 
@@ -495,7 +498,8 @@ var _ = Describe("inst test", func() {
 				Rule: querybuilder.CombinedRule{
 					Condition: querybuilder.ConditionAnd,
 					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1},
+						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual,
+							Value: routerInstId1},
 					},
 				},
 			},
@@ -503,7 +507,7 @@ var _ = Describe("inst test", func() {
 		}
 
 		rsp, err := asstClient.SearchInstanceAssociations(context.Background(), header, "bk_router", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 
@@ -525,15 +529,17 @@ var _ = Describe("inst test", func() {
 				Rule: querybuilder.CombinedRule{
 					Condition: querybuilder.ConditionAnd,
 					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1},
+						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual,
+							Value: routerInstId1},
 					},
 				},
 			},
-			Fields: []string{"bk_asst_id", "bk_inst_id", "bk_obj_id", "bk_asst_inst_id", "bk_asst_obj_id", "bk_obj_asst_id"},
+			Fields: []string{"bk_asst_id", "bk_inst_id", "bk_obj_id", "bk_asst_inst_id", "bk_asst_obj_id",
+				"bk_obj_asst_id"},
 		}
 
 		rsp, err := asstClient.SearchInstanceAssociations(context.Background(), header, "bk_router", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -544,16 +550,18 @@ var _ = Describe("inst test", func() {
 				Rule: querybuilder.CombinedRule{
 					Condition: querybuilder.ConditionAnd,
 					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1},
+						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual,
+							Value: routerInstId1},
 					},
 				},
 			},
-			Fields: []string{"bk_asst_id", "bk_inst_id", "bk_obj_id", "bk_asst_inst_id", "bk_asst_obj_id", "bk_obj_asst_id"},
+			Fields: []string{"bk_asst_id", "bk_inst_id", "bk_obj_id", "bk_asst_inst_id", "bk_asst_obj_id",
+				"bk_obj_asst_id"},
 			Page:   metadata.BasePage{Start: 0, Limit: common.BKMaxInstanceLimit + 1},
 		}
 
 		rsp, err := asstClient.SearchInstanceAssociations(context.Background(), header, "bk_router", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -564,14 +572,15 @@ var _ = Describe("inst test", func() {
 				Rule: querybuilder.CombinedRule{
 					Condition: querybuilder.ConditionAnd,
 					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1},
+						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual,
+							Value: routerInstId1},
 					},
 				},
 			},
 		}
 
 		rsp, err := asstClient.CountInstanceAssociations(context.Background(), header, "bk_router", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 
@@ -587,7 +596,7 @@ var _ = Describe("inst test", func() {
 		input := &metadata.CommonCountFilter{}
 
 		rsp, err := asstClient.CountInstanceAssociations(context.Background(), header, "bk_router", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 
@@ -601,7 +610,8 @@ var _ = Describe("inst test", func() {
 
 	It("count instance associations with OR conditions more than 20", func() {
 		rules := []querybuilder.Rule{}
-		ruleItem := &querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: routerInstId1}
+		ruleItem := &querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual,
+			Value: routerInstId1}
 		for i := 0; i < querybuilder.DefaultMaxConditionOrRulesCount+1; i++ {
 			rules = append(rules, ruleItem)
 		}
@@ -616,7 +626,7 @@ var _ = Describe("inst test", func() {
 		}
 
 		rsp, err := asstClient.CountInstanceAssociations(context.Background(), header, "bk_router", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -632,14 +642,15 @@ var _ = Describe("inst test", func() {
 				Rule: querybuilder.CombinedRule{
 					Condition: querybuilder.ConditionOr,
 					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual, Value: values},
+						&querybuilder.AtomRule{Field: "bk_inst_id", Operator: querybuilder.OperatorEqual,
+							Value: values},
 					},
 				},
 			},
 		}
 
 		rsp, err := asstClient.CountInstanceAssociations(context.Background(), header, "bk_router", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -677,7 +688,7 @@ var _ = Describe("inst test", func() {
 		}
 
 		rsp, err := asstClient.CountInstanceAssociations(context.Background(), header, "bk_router", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -690,7 +701,7 @@ var _ = Describe("inst test", func() {
 			ObjectID: "bk_router",
 		}
 		rsp, err := asstClient.DeleteInstBatch(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -701,7 +712,7 @@ var _ = Describe("inst test", func() {
 			ObjectID: "",
 		}
 		rsp, err := asstClient.DeleteInstBatch(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -712,7 +723,7 @@ var _ = Describe("inst test", func() {
 			ObjectID: "bk_router",
 		}
 		rsp, err := asstClient.DeleteInstBatch(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data).To(Equal(5))

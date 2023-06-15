@@ -35,7 +35,7 @@ var _ = Describe("business test", func() {
 			"time_zone":         "Africa/Accra",
 		}
 		rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data).To(ContainElement("eereeede"))
@@ -55,7 +55,7 @@ var _ = Describe("business test", func() {
 			"time_zone":         "Africa/Accra",
 		}
 		rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -72,7 +72,7 @@ var _ = Describe("business test", func() {
 			"time_zone":         "Africa/Accra",
 		}
 		rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -90,7 +90,7 @@ var _ = Describe("business test", func() {
 			"time_zone":         "Africa/Accra",
 		}
 		rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data).To(ContainElement("mmrmm"))
@@ -110,7 +110,7 @@ var _ = Describe("business test", func() {
 			Condition: map[string]interface{}{},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(3))
@@ -130,7 +130,7 @@ var _ = Describe("business test", func() {
 			},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(3))
@@ -149,7 +149,7 @@ var _ = Describe("business test", func() {
 			},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(1))
@@ -169,7 +169,7 @@ var _ = Describe("business test", func() {
 			},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(2))
@@ -188,7 +188,7 @@ var _ = Describe("business test", func() {
 			},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(3))
@@ -207,7 +207,7 @@ var _ = Describe("business test", func() {
 			},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(1))
@@ -220,7 +220,7 @@ var _ = Describe("business test", func() {
 			"life_cycle":  "2",
 		}
 		rsp, err := apiServerClient.UpdateBiz(context.Background(), "0", bizId, header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
@@ -231,7 +231,7 @@ var _ = Describe("business test", func() {
 			"life_cycle":  "2",
 		}
 		rsp, err := apiServerClient.UpdateBiz(context.Background(), "0", "1000", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -242,7 +242,7 @@ var _ = Describe("business test", func() {
 			"life_cycle":  "2",
 		}
 		rsp, err := apiServerClient.UpdateBiz(context.Background(), "0", bizId, header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -262,7 +262,7 @@ var _ = Describe("business test", func() {
 		}
 
 		rsp, err := apiServerClient.UpdateBizPropertyBatch(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
@@ -280,7 +280,7 @@ var _ = Describe("business test", func() {
 		}
 
 		rsp, err := apiServerClient.UpdateBizPropertyBatch(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -315,7 +315,7 @@ var _ = Describe("business test", func() {
 			Condition: map[string]interface{}{},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(2))
@@ -337,7 +337,7 @@ var _ = Describe("business test", func() {
 			},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(1))
@@ -363,7 +363,7 @@ var _ = Describe("business test", func() {
 			},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(1))
@@ -388,7 +388,7 @@ var _ = Describe("business test", func() {
 			},
 		}
 		rsp, err := instClient.SearchBriefBizTopo(context.Background(), header, bizIdInt, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(len(rsp.Data)).To(Equal(1))

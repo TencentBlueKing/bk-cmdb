@@ -30,7 +30,7 @@ var _ = Describe("service template test", func() {
 				"name":              "test10",
 			}
 			rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp.Data)
@@ -57,7 +57,7 @@ var _ = Describe("service template test", func() {
 				"name":                "st",
 			}
 			rsp, err := serviceClient.CreateServiceTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp.Data)
@@ -78,7 +78,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp)
@@ -93,7 +93,7 @@ var _ = Describe("service template test", func() {
 				"service_template_ids": []int64{serviceTemplateId},
 			}
 			rsp, err := serviceClient.FindServiceTemplateCountInfo(context.Background(), header, bizId, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(len(rsp.Data)).To(Equal(1))
@@ -110,7 +110,7 @@ var _ = Describe("service template test", func() {
 				"name":                "",
 			}
 			rsp, err := serviceClient.CreateServiceTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
@@ -122,7 +122,7 @@ var _ = Describe("service template test", func() {
 				"name":                "st",
 			}
 			rsp, err := serviceClient.CreateServiceTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
@@ -134,7 +134,7 @@ var _ = Describe("service template test", func() {
 				"name":                "st1",
 			}
 			rsp, err := serviceClient.CreateServiceTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
@@ -149,7 +149,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp)
@@ -162,7 +162,7 @@ var _ = Describe("service template test", func() {
 				"id":                categoryId,
 			}
 			rsp, err := serviceClient.DeleteServiceCategory(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
@@ -307,7 +307,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp)
@@ -330,7 +330,7 @@ var _ = Describe("service template test", func() {
 				"is_increment": true,
 			}
 			rsp, rawErr := hostServerClient.TransferHostModule(context.Background(), header, transInput)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(rawErr).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 
@@ -352,7 +352,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			serviceIds, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(serviceIds)
+			util.RegisterResponseWithRid(serviceIds, header)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -386,7 +386,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := processClient.CreateProcessTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			processTemplateId, err = commonutil.GetInt64ByInterface(rsp.Data.([]interface{})[0])
@@ -433,7 +433,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := processClient.CreateProcessTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
@@ -462,7 +462,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := processClient.CreateProcessTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
@@ -487,7 +487,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := processClient.CreateProcessTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
@@ -512,7 +512,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := processClient.CreateProcessTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
@@ -544,7 +544,7 @@ var _ = Describe("service template test", func() {
 				"disable_auto_create": true,
 			}
 			rsp, rawErr := hostServerClient.TransferHostModule(context.Background(), header, transInput)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(rawErr).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 
@@ -566,7 +566,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			serviceIds, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(serviceIds)
+			util.RegisterResponseWithRid(serviceIds, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(serviceIds)).NotTo(Equal(0))
 			serviceId = serviceIds[0]
@@ -578,7 +578,7 @@ var _ = Describe("service template test", func() {
 				ModuleID: moduleId,
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			exists := false
 			for _, svcInst := range data.Info {
@@ -610,7 +610,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -620,7 +620,7 @@ var _ = Describe("service template test", func() {
 				ModuleID: moduleId,
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data).To(Equal(resMap["service_instance"]))
 		})
@@ -633,8 +633,9 @@ var _ = Describe("service template test", func() {
 					"limit": 50,
 				},
 			}
-			rsp, err := serviceClient.SearchServiceInstanceBySetTemplate(context.Background(), strconv.FormatInt(bizId, 10), header, input)
-			util.RegisterResponse(rsp)
+			rsp, err := serviceClient.SearchServiceInstanceBySetTemplate(context.Background(),
+				strconv.FormatInt(bizId, 10), header, input)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
@@ -658,7 +659,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			serviceIds, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(serviceIds)
+			util.RegisterResponseWithRid(serviceIds, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(serviceIds)).NotTo(Equal(0))
 			serviceId1 = serviceIds[0]
@@ -670,7 +671,7 @@ var _ = Describe("service template test", func() {
 				ModuleID: moduleId,
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			svcExists, svc2Exists := false, false
 			for _, svcInst := range data.Info {
@@ -691,7 +692,7 @@ var _ = Describe("service template test", func() {
 				ServiceInstanceID: serviceId1,
 			}
 			data, err := processClient.SearchProcessInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(data)).To(Equal(1))
 			Expect(data[0].Property["bk_process_name"]).To(Equal("p1"))
@@ -716,7 +717,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := processClient.CreateProcessInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
@@ -734,7 +735,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := processClient.UpdateProcessInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
@@ -745,7 +746,7 @@ var _ = Describe("service template test", func() {
 				ServiceInstanceID: serviceId1,
 			}
 			data, err := processClient.SearchProcessInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(data)).To(Equal(1))
 			Expect(data[0].Property["bk_process_name"]).To(Equal("p1"))
@@ -774,7 +775,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := processClient.UpdateProcessTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp)
@@ -816,7 +817,7 @@ var _ = Describe("service template test", func() {
 				"name":                "abcdefg",
 			}
 			rsp, err := serviceClient.UpdateServiceTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp.Data)
@@ -836,7 +837,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp)
@@ -853,7 +854,7 @@ var _ = Describe("service template test", func() {
 				"name":                "service_template",
 			}
 			rsp, err := serviceClient.CreateServiceTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
@@ -866,7 +867,7 @@ var _ = Describe("service template test", func() {
 				"name":                "service_template",
 			}
 			rsp, err := serviceClient.UpdateServiceTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
@@ -882,18 +883,19 @@ var _ = Describe("service template test", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("update service template with same name as another module in the same set with a module using this template", func() {
-			input := map[string]interface{}{
-				common.BKAppIDField:   bizId,
-				"id":                  serviceTemplateId,
-				"service_category_id": categoryId,
-				"name":                "service_template_module",
-			}
-			rsp, err := serviceClient.UpdateServiceTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(false), rsp.ToString())
-		})
+		It("update service template with same name as another module in the same set with a module using this template",
+			func() {
+				input := map[string]interface{}{
+					common.BKAppIDField:   bizId,
+					"id":                  serviceTemplateId,
+					"service_category_id": categoryId,
+					"name":                "service_template_module",
+				}
+				rsp, err := serviceClient.UpdateServiceTemplate(context.Background(), header, input)
+				util.RegisterResponseWithRid(rsp, header)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.Result).To(Equal(false), rsp.ToString())
+			})
 
 		It("update service template with invalid service category", func() {
 			input := map[string]interface{}{
@@ -903,7 +905,7 @@ var _ = Describe("service template test", func() {
 				"name":                "abcdefg",
 			}
 			rsp, err := serviceClient.UpdateServiceTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
@@ -918,7 +920,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp)
@@ -997,7 +999,7 @@ var _ = Describe("service template test", func() {
 				HostIDs:  []int64{hostId1},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			serviceId = data.Info[0].ID
 		})
@@ -1008,7 +1010,7 @@ var _ = Describe("service template test", func() {
 				ServiceInstanceID: serviceId,
 			}
 			data, err := processClient.SearchProcessInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(data)).To(Equal(1))
 			Expect(data[0].Property["bk_process_name"]).To(Equal("123"))
@@ -1030,7 +1032,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := processClient.UpdateProcessInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
@@ -1050,7 +1052,7 @@ var _ = Describe("service template test", func() {
 				ServiceInstanceID: serviceId1,
 			}
 			data, err := processClient.SearchProcessInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(data)).To(Equal(1))
 			Expect(data[0].Property["bk_process_name"]).To(Equal("123"))
@@ -1073,7 +1075,7 @@ var _ = Describe("service template test", func() {
 				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceAddLabels(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
@@ -1090,7 +1092,7 @@ var _ = Describe("service template test", func() {
 				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceAddLabels(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
@@ -1101,7 +1103,7 @@ var _ = Describe("service template test", func() {
 				ModuleID: moduleId,
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			resMap["service_instance"] = data
 			Expect(data.Count).To(Equal(uint64(2)))
@@ -1128,7 +1130,7 @@ var _ = Describe("service template test", func() {
 				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceAddLabels(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
@@ -1146,7 +1148,7 @@ var _ = Describe("service template test", func() {
 				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceAddLabels(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
@@ -1157,7 +1159,7 @@ var _ = Describe("service template test", func() {
 				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceFindLabels(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			j, err := json.Marshal(rsp.Data)
@@ -1175,7 +1177,7 @@ var _ = Describe("service template test", func() {
 				ModuleID: moduleId,
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resMap["service_instance"]).To(Equal(data))
 		})
@@ -1191,7 +1193,7 @@ var _ = Describe("service template test", func() {
 					}},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data.Count).To(Equal(uint64(1)))
 			Expect(data.Info[0].ID).To(Equal(serviceId))
@@ -1209,7 +1211,7 @@ var _ = Describe("service template test", func() {
 					}},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -1224,7 +1226,7 @@ var _ = Describe("service template test", func() {
 					}},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data.Count).To(Equal(uint64(1)))
 			Expect(data.Info[0].ID).To(Equal(serviceId1))
@@ -1242,7 +1244,7 @@ var _ = Describe("service template test", func() {
 					}},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -1264,7 +1266,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data.Count).To(Equal(uint64(1)))
 			Expect(data.Info[0].ID).To(Equal(serviceId))
@@ -1281,7 +1283,7 @@ var _ = Describe("service template test", func() {
 					}},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -1297,7 +1299,7 @@ var _ = Describe("service template test", func() {
 					}},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -1323,7 +1325,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data.Count).To(Equal(uint64(1)))
 			Expect(data.Info[0].ID).To(Equal(serviceId))
@@ -1341,7 +1343,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -1361,7 +1363,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -1388,7 +1390,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data.Count).To(Equal(uint64(2)))
 			Expect(data.Info[0].ID).To(Equal(serviceId1))
@@ -1407,7 +1409,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -1434,7 +1436,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data.Count).To(Equal(uint64(2)))
 			Expect(data.Info[0].ID).To(Equal(serviceId1))
@@ -1453,7 +1455,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -1468,7 +1470,7 @@ var _ = Describe("service template test", func() {
 					}},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -1484,7 +1486,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -1525,7 +1527,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(int(data.Count)).To(Equal(0))
 		})
@@ -1544,7 +1546,7 @@ var _ = Describe("service template test", func() {
 				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceRemoveLabels(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
@@ -1562,7 +1564,7 @@ var _ = Describe("service template test", func() {
 				common.BKAppIDField: bizId,
 			}
 			rsp, err := serviceClient.ServiceInstanceRemoveLabels(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
@@ -1573,7 +1575,7 @@ var _ = Describe("service template test", func() {
 				ModuleID: moduleId,
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data.Count).To(Equal(uint64(2)))
 			Expect(len(data.Info[0].Labels)).To(Equal(1))
@@ -1592,7 +1594,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := processClient.DeleteProcessTemplate(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
@@ -1617,7 +1619,7 @@ var _ = Describe("service template test", func() {
 				},
 			}
 			rsp, err := serviceClient.DeleteServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
@@ -1628,7 +1630,7 @@ var _ = Describe("service template test", func() {
 				ModuleID: moduleId,
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data.Count).To(Equal(uint64(1)))
 			Expect(data.Info[0].ID).To(Equal(serviceId))
@@ -1672,7 +1674,7 @@ var _ = Describe("service template test", func() {
 				ServiceInstanceID: serviceId,
 			}
 			data, err := processClient.SearchProcessInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(data)).To(Equal(0))
 		})
@@ -1697,7 +1699,7 @@ var _ = Describe("service template test", func() {
 				ModuleID: moduleId,
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data.Count).To(Equal(uint64(0)))
 		})
@@ -1714,7 +1716,7 @@ var _ = Describe("service template test", func() {
 					"bk_module_id": moduleId,
 				}
 				rsp, err := serviceClient.RemoveTemplateBindingOnModule(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			})
@@ -1753,7 +1755,7 @@ var _ = Describe("service template test", func() {
 					"service_category_id": 2,
 				}
 				rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true), rsp.ToString())
 				j, err := json.Marshal(rsp)
@@ -1770,7 +1772,7 @@ var _ = Describe("service template test", func() {
 					"id": categoryId,
 				}
 				rsp, err := serviceClient.DeleteServiceCategory(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true), rsp.ToString())
 			})
@@ -1796,7 +1798,7 @@ var _ = Describe("service template test", func() {
 					"id": categoryId,
 				}
 				rsp, err := serviceClient.DeleteServiceCategory(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false), rsp.ToString())
 			})
@@ -2034,7 +2036,7 @@ var _ = Describe("service template attribute test", func() {
 				ServiceInstanceID: svcInstID,
 			}
 			data, err := processClient.SearchProcessInstance(context.Background(), header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(data)).To(Equal(2))
 			Expect(data[0].Property[common.BKProcessNameField]).To(Equal(procTempName2))
@@ -2208,7 +2210,7 @@ var _ = Describe("service template attribute test", func() {
 				ServiceInstanceID: svcInstID,
 			}
 			data, err := processClient.SearchProcessInstance(ctx, header, input)
-			util.RegisterResponse(data)
+			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(data)).To(Equal(2))
 			Expect(data[0].Relation.ProcessTemplateID).To(Equal(procTempIDs[1]))

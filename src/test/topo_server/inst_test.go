@@ -33,7 +33,7 @@ var _ = Describe("inst test", func() {
 			Creator:    "admin",
 		}
 		rsp, err := objectClient.CreateObject(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
@@ -52,7 +52,7 @@ var _ = Describe("inst test", func() {
 				},
 			}
 			rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			propertyID1Float64, err := commonutil.GetFloat64ByInterface(rsp.Data.(map[string]interface{})["id"])
@@ -73,7 +73,7 @@ var _ = Describe("inst test", func() {
 				},
 			}
 			rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			propertyID2Float64, err := commonutil.GetFloat64ByInterface(rsp.Data.(map[string]interface{})["id"])
@@ -93,7 +93,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -110,7 +110,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -127,7 +127,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -139,7 +139,7 @@ var _ = Describe("inst test", func() {
 			"test_unique":  "1234",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "cc_test", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("wejeidjew"))
@@ -156,7 +156,7 @@ var _ = Describe("inst test", func() {
 			"test_123":     "123456",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "cc_test", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Exists("test_123")).To(Equal(false))
@@ -167,7 +167,7 @@ var _ = Describe("inst test", func() {
 			"bk_inst_name": "wejeidjew4",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "cc_test", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -186,7 +186,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := objectClient.CreateObjectUnique(context.Background(), "cc_test", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		uniqueIDFloat64, err := commonutil.GetFloat64ByInterface(rsp.Data.(map[string]interface{})["id"])
@@ -204,18 +204,18 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := objectClient.CreateObjectUnique(context.Background(), "cc_test", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
 	It("search object attribute unique", func() {
 		rsp, err := objectClient.SearchObjectUnique(context.Background(), "cc_test", header)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		j, err := json.Marshal(rsp.Data)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d", uniqueID)))
 		Expect(j).To(ContainSubstring(fmt.Sprintf("\"key_id\":%d", propertyID1)))
@@ -229,7 +229,7 @@ var _ = Describe("inst test", func() {
 			"test_unique":  "1234",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "cc_test", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -244,7 +244,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := objectClient.UpdateObjectUnique(context.Background(), "cc_test", header, uniqueID, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
@@ -259,18 +259,18 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := objectClient.UpdateObjectUnique(context.Background(), "cc_test", header, uniqueID, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
 	It("search object attribute unique", func() {
 		rsp, err := objectClient.SearchObjectUnique(context.Background(), "cc_test", header)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		j, err := json.Marshal(rsp.Data)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(j).To(ContainSubstring(fmt.Sprintf("\"id\":%d", uniqueID)))
 		Expect(j).To(ContainSubstring(fmt.Sprintf("\"key_id\":%d", propertyID2)))
@@ -278,18 +278,18 @@ var _ = Describe("inst test", func() {
 
 	It("delete object attribute unique", func() {
 		rsp, err := objectClient.DeleteObjectUnique(context.Background(), "cc_test", header, uniqueID)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
 
 	It("search object attribute unique", func() {
 		rsp, err := objectClient.SearchObjectUnique(context.Background(), "cc_test", header)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		j, err := json.Marshal(rsp.Data)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(j).NotTo(ContainSubstring(fmt.Sprintf("\"id\":%d", uniqueID)))
 		Expect(j).NotTo(ContainSubstring(fmt.Sprintf("\"key_id\":%d", propertyID1)))
@@ -303,7 +303,7 @@ var _ = Describe("inst test", func() {
 			"test_unique":  "1234",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "cc_test", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
@@ -316,7 +316,7 @@ var _ = Describe("inst test", func() {
 			"bk_sn":        "1234",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("wejeidjew"))
@@ -334,7 +334,7 @@ var _ = Describe("inst test", func() {
 			"bk_sn":        "1234",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("wejeidjew"))
@@ -352,7 +352,7 @@ var _ = Describe("inst test", func() {
 			"bk_sn":        "1234",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "abcdefg", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -363,7 +363,7 @@ var _ = Describe("inst test", func() {
 			"bk_inst_name": "abcdefg",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -373,7 +373,7 @@ var _ = Describe("inst test", func() {
 			"bk_asset_id": "456",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -383,7 +383,7 @@ var _ = Describe("inst test", func() {
 			"bk_inst_name": "456",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -393,7 +393,7 @@ var _ = Describe("inst test", func() {
 			"bk_inst_name": "aaa",
 		}
 		rsp, err := instClient.UpdateInst(context.Background(), "bk_switch", instId, header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
@@ -403,7 +403,7 @@ var _ = Describe("inst test", func() {
 			"bk_inst_name": "aaa",
 		}
 		rsp, err := instClient.UpdateInst(context.Background(), "bk_switch", int64(1000), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -413,21 +413,21 @@ var _ = Describe("inst test", func() {
 			"bk_inst_name": "123",
 		}
 		rsp, err := instClient.UpdateInst(context.Background(), "cc_test", instId, header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
 	})
 
 	It("delete inst", func() {
 		rsp, err := instClient.DeleteInst(context.Background(), "bk_switch", instId1, header)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
 
 	It("delete inst with mismatch object", func() {
 		rsp, err := instClient.DeleteInst(context.Background(), "cc_test", instId, header)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(true))
 	})
@@ -440,7 +440,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := instClient.SelectInsts(context.Background(), "0", "bk_switch", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(1))
@@ -458,7 +458,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := instClient.InstSearch(context.Background(), "bk_switch", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(1))
@@ -489,7 +489,7 @@ var _ = Describe("inst test", func() {
 		}
 
 		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 
@@ -516,7 +516,7 @@ var _ = Describe("inst test", func() {
 		}
 
 		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 
@@ -556,7 +556,7 @@ var _ = Describe("inst test", func() {
 		}
 
 		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 
@@ -593,7 +593,7 @@ var _ = Describe("inst test", func() {
 		}
 
 		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -618,7 +618,7 @@ var _ = Describe("inst test", func() {
 		}
 
 		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -642,7 +642,7 @@ var _ = Describe("inst test", func() {
 		}
 
 		rsp, err := instClient.CountObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 
@@ -658,7 +658,7 @@ var _ = Describe("inst test", func() {
 		input := &metadata.CommonCountFilter{}
 
 		rsp, err := instClient.CountObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 
@@ -687,7 +687,7 @@ var _ = Describe("inst test", func() {
 		}
 
 		rsp, err := instClient.CountObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -710,7 +710,7 @@ var _ = Describe("inst test", func() {
 		}
 
 		rsp, err := instClient.CountObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -748,7 +748,7 @@ var _ = Describe("inst test", func() {
 		}
 
 		rsp, err := instClient.CountObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
@@ -761,7 +761,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := instClient.SelectInst(context.Background(), "bk_switch", instId, header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(1))
@@ -778,7 +778,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := instClient.SelectInstsByAssociation(context.Background(), "bk_switch", header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(1))
@@ -796,7 +796,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := instClient.SelectTopo(context.Background(), "bk_switch", instId, header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	})
@@ -809,7 +809,7 @@ var _ = Describe("inst test", func() {
 			},
 		}
 		rsp, err := instClient.SelectAssociationTopo(context.Background(), "bk_switch", instId, header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		j, err := json.Marshal(rsp.Data[0].Curr)
@@ -845,7 +845,7 @@ var _ = Describe("inst test", func() {
 		}
 		rsp, err := instClient.CreateManyCommInst(context.Background(), input.ObjID, header, *input)
 		Expect(err).NotTo(HaveOccurred())
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		result := &metadata.CreateManyCommInstResultDetail{}
 		rspJson, err := json.Marshal(rsp.Data)
 		json.Unmarshal(rspJson, result)
@@ -879,7 +879,7 @@ var _ = Describe("inst test", func() {
 			}
 			rsp, err := instClient.CreateManyCommInst(context.Background(), input.ObjID, header, *input)
 			Expect(err).NotTo(HaveOccurred())
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			result := &metadata.CreateManyCommInstResultDetail{}
 			rspJson, err := json.Marshal(rsp.Data)
 			json.Unmarshal(rspJson, result)
@@ -896,7 +896,7 @@ var _ = Describe("inst test", func() {
 		}
 		rsp, err := instClient.CreateManyCommInst(context.Background(), input.ObjID, header, *input)
 		Expect(err).NotTo(HaveOccurred())
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(rsp.Result).To(Equal(false))
 	})
 })
@@ -904,7 +904,7 @@ var _ = Describe("inst test", func() {
 var _ = Describe("audit test", func() {
 	It("search audit dict", func() {
 		rsp, err := instClient.SearchAuditDict(context.Background(), header)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -923,7 +923,7 @@ var _ = Describe("audit test", func() {
 			},
 		}
 		rsp, err := instClient.SearchAuditList(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -933,7 +933,7 @@ var _ = Describe("audit test", func() {
 			IDs: id,
 		}
 		rsp, err := instClient.SearchAuditDetail(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 	})
 })

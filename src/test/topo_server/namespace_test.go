@@ -83,7 +83,7 @@ var _ = Describe("namespace test", func() {
 		}
 
 		id, err := kubeClient.CreateCluster(ctx, header, bizID, createCLuster)
-		util.RegisterResponse(id)
+		util.RegisterResponseWithRid(id, header)
 		Expect(err).NotTo(HaveOccurred())
 		clusterID = id
 
@@ -158,7 +158,7 @@ var _ = Describe("namespace test", func() {
 			ResourceQuotas: &resourceQuotas,
 		}
 		updateOpt := types.NsUpdateOption{
-			IDs:  []int64{clusterID},
+			IDs:  []int64{namespaceID},
 			Data: ns,
 		}
 
