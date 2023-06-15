@@ -141,6 +141,12 @@ func addModelQuoteRelationIndex(ctx context.Context, db dal.RDB) error {
 		existIdxMap[index.Name] = struct{}{}
 	}
 
+	// the number of indexes is not as expected.
+	if len(existIdxMap) != 0 && (len(existIdxMap) < len(indexes)) {
+		blog.Errorf("the number of indexes is not as expected, existId: %+v, indexes: %v", existIdxMap, indexes)
+		return errors.New("the number of indexes is not as expected")
+	}
+
 	for _, index := range indexes {
 		if _, exist := existIdxMap[index.Name]; exist {
 			continue
