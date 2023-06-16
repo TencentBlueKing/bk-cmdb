@@ -813,7 +813,6 @@
         if (this.attribute.type === 'create') {
           this.slider.show = false
         }
-        console.log(22)
       },
       handleMultipleEdit() {
         this.attribute.type = 'multiple'
