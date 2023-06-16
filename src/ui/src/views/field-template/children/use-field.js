@@ -13,6 +13,7 @@
 import { computed } from 'vue'
 import isEqual from 'lodash/isEqual'
 import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+import { t } from '@/i18n'
 
 export default function useField(beforeFieldList, fieldListLocal) {
   const fieldStatus = computed(() => {
@@ -190,3 +191,39 @@ export const isFieldSame = (field1, field2) => field1.bk_property_id === field2.
 export const isFieldExist = (field, fieldList) => fieldList.some(item => isFieldSame(item.field, field))
 
 export const MAX_FIELD_COUNT = 20
+
+export const diffFieldList = [
+  {
+    label: t('唯一标识'),
+    type: 'bk_property_id'
+  },
+  {
+    label: t('名称'),
+    type: 'bk_property_name'
+  },
+  {
+    label: t('字段类型'),
+    type: 'bk_property_type'
+  },
+  {
+    label: t('枚举值设置'),
+    type: 'option'
+  },
+  {
+    label: t('默认值'),
+    type: 'default'
+  },
+  {
+    label: t('是否可编辑'),
+    type: 'editable'
+  },
+  {
+    label: t('是否必填'),
+    type: 'isrequired'
+  },
+  {
+    label: t('用户提示'),
+    type: 'placeholder'
+  }
+]
+
