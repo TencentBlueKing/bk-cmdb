@@ -166,13 +166,20 @@ func (s *service) ListObjByFieldTmpl(cts *rest.Contexts) {
 		return
 	}
 
-	// list object by ids
-	listOpt := &metadata.QueryCondition{
-		Fields:    []string{common.BKFieldID, common.BKFieldName},
-		Page:      opt.Page,
-		Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: objectIDs}},
+	expr, rawErr := filtertools.And(filtertools.GenAtomFilter(common.BKFieldID, filter.In, objectIDs), opt.Filter)
+	if rawErr != nil {
+		blog.Errorf("merge field template filter failed, err: %v, opt: %+v, rid: %s", err, opt, cts.Kit.Rid)
+		cts.RespAutoError(rawErr)
+		return
 	}
-	res, objErr := s.clientSet.CoreService().Model().ReadModel(cts.Kit.Ctx, cts.Kit.Header, listOpt)
+
+	// list object by ids
+	listOpt := &metadata.CommonQueryOption{
+		Fields:             opt.Fields,
+		Page:               opt.Page,
+		CommonFilterOption: metadata.CommonFilterOption{Filter: expr},
+	}
+	res, objErr := s.clientSet.CoreService().Model().ListModel(cts.Kit.Ctx, cts.Kit.Header, listOpt)
 	if objErr != nil {
 		blog.Errorf("list objects failed, err: %v, opt: %+v, rid: %s", objErr, opt, cts.Kit.Rid)
 		cts.RespAutoError(objErr)

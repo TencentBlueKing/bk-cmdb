@@ -372,6 +372,32 @@ func (m *model) ReadModel(ctx context.Context, h http.Header, input *metadata.Qu
 	return &resp.Data, err
 }
 
+// ListModel list object, this api supports paging.
+func (m *model) ListModel(ctx context.Context, h http.Header, input *metadata.CommonQueryOption) (
+	*metadata.QueryModelDataResult, error) {
+
+	resp := new(metadata.ReadModelResult)
+	subPath := "/findmany/model"
+
+	err := m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, err
+}
+
 // CreateModelAttrs create object attrs
 func (m *model) CreateModelAttrs(ctx context.Context, h http.Header, objID string,
 	input *metadata.CreateModelAttributes) (*metadata.CreateManyDataResult, error) {
