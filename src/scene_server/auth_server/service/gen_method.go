@@ -246,7 +246,9 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 				ListAttrValue:     s.lgc.ListAttrValue,
 				ListInstance:      s.lgc.ListModelInstance,
 				FetchInstanceInfo: s.lgc.FetchObjInstInfo,
-				ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
+				ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID,
+					filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult,
+					e error) {
 					return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
 				},
 			}, nil
