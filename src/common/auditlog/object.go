@@ -62,16 +62,15 @@ func (h *objectAuditLog) GenerateAuditLog(parameter *generateAuditCommonParamete
 
 // GenerateAuditLogForBindingFieldTemplate specific generate audit log function for model binding template scenarios.
 func (h *objectAuditLog) GenerateAuditLogForBindingFieldTemplate(parameter *generateAuditCommonParameter,
-	objIDs []int64, templateID int64) ([]metadata.AuditLog, error) {
+	objIDs []int64, objectTmplIDMap map[int64][]int64) ([]metadata.AuditLog, error) {
 
 	kit := parameter.kit
 
 	objectLen := len(objIDs)
-	objectTmplIDMap := make(map[int64][]int64)
 
 	auditLogs := make([]metadata.AuditLog, 0)
-	for start := 0; start < objectLen; start += common.BKMaxPageSize {
-		limit := start + common.BKMaxPageSize
+	for start := 0; start < objectLen; start += common.BKMaxLimitSize {
+		limit := start + common.BKMaxLimitSize
 		if limit > objectLen {
 			limit = objectLen
 		}
@@ -97,12 +96,10 @@ func (h *objectAuditLog) GenerateAuditLogForBindingFieldTemplate(parameter *gene
 			blog.Errorf("fetching model data does not meet expectations, cond: %+v, rid: %s", query, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
 		}
-		// todo: 获取关联关系接口
 
 		for _, data := range rsp.Info {
 			obj := data.ToMapStr()
-			objectTmplIDMap[data.ID] = append(objectTmplIDMap[data.ID], templateID)
-			obj[string(metadata.ObjTemplateIDs)] = objectTmplIDMap[data.ID]
+			obj[common.BKTemplateID] = objectTmplIDMap[data.ID]
 			parameter.updateFields = obj
 			auditLog := metadata.AuditLog{
 				AuditType:    metadata.ModelType,

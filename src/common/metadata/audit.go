@@ -692,10 +692,6 @@ const (
 
 	// FieldTemplateType is field template audit type
 	FieldTemplateType AuditType = "field_template"
-
-	// ObjTemplateIDs In the context of audit logging, the tags of the
-	// binding field templates that correspond to the models
-	ObjTemplateIDs AuditType = "bk_template_ids"
 )
 
 // ResourceType TODO

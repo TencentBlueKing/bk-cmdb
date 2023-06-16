@@ -142,14 +142,10 @@ func (s *service) canObjsBindFieldTemplate(kit *rest.Kit, ids []int64) ccErr.CCE
 		common.AssociationKindIDField: common.AssociationKindMainline,
 		common.BKDBAND: []mapstr.MapStr{
 			{
-				common.BKObjIDField: mapstr.MapStr{
-					common.BKDBNE: common.BKInnerObjIDHost,
-				},
+				common.BKObjIDField: mapstr.MapStr{common.BKDBNE: common.BKInnerObjIDHost},
 			},
 			{
-				common.BKObjIDField: mapstr.MapStr{
-					common.BKDBIN: objIDs,
-				},
+				common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs},
 			},
 		},
 	}
@@ -169,6 +165,30 @@ func (s *service) canObjsBindFieldTemplate(kit *rest.Kit, ids []int64) ccErr.CCE
 	return nil
 }
 
+func (s *service) authorizeObjsBindFieldTemplate(kit *rest.Kit, templateID int64, objIDs []int64) (
+	*metadata.BaseResp, bool) {
+
+	resource := make([]meta.ResourceAttribute, 0)
+	for _, id := range objIDs {
+		resource = append(resource, meta.ResourceAttribute{
+			Basic: meta.Basic{
+				Type:   meta.Model,
+				Action: meta.Update,
+			},
+			Layers: []meta.Item{{Type: meta.Model, InstanceID: id}},
+		})
+	}
+
+	resource = append(resource, meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Type:       meta.FieldTemplate,
+			Action:     meta.Find,
+			InstanceID: templateID},
+	})
+
+	return s.auth.Authorize(kit, resource...)
+}
+
 // FieldTemplateBindObject field template binding model
 func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 
@@ -185,6 +205,12 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 
 	objIDs := make([]int64, 0)
 	objIDs = util.IntArrayUnique(opt.ObjectIDs)
+
+	if authResp, authorized := s.authorizeObjsBindFieldTemplate(ctx.Kit, opt.ID, objIDs); !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	if err := s.canObjsBindFieldTemplate(ctx.Kit, objIDs); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -195,7 +221,13 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 		ObjectIDs: objIDs,
 	}
 
-	// todo:待补充鉴权
+	// 需要获取解绑后objectID对应的templateID 列表
+	objectTmplIDMap, err := s.getAfterDealObjectAndTmplRelation(ctx.Kit, opt.ObjectIDs, opt.ID, true)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateBindObject(ctx.Kit.Ctx, ctx.Kit.Header, option)
 		if err != nil {
@@ -206,7 +238,7 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 		audit := auditlog.NewObjectAuditLog(s.clientSet.CoreService())
 		parameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
 
-		auditLogs, ccErr := audit.GenerateAuditLogForBindingFieldTemplate(parameter, objIDs, opt.ID)
+		auditLogs, ccErr := audit.GenerateAuditLogForBindingFieldTemplate(parameter, objIDs, objectTmplIDMap)
 		if ccErr != nil {
 			blog.Errorf("generate audit log failed before update object, objName: %s, err: %v, rid: %s",
 				opt.ObjectIDs, ccErr, ctx.Kit.Rid)
@@ -227,6 +259,45 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+func (s *service) getAfterDealObjectAndTmplRelation(kit *rest.Kit, objIDs []int64, templateID int64, isBind bool) (
+	map[int64][]int64, error) {
+
+	cond := filtertools.GenAtomFilter(common.ObjectIDField, filter.In, objIDs)
+	listOpt := &metadata.CommonQueryOption{
+		CommonFilterOption: metadata.CommonFilterOption{Filter: cond},
+		Page:               metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:             []string{common.ObjectIDField, common.BKTemplateID},
+	}
+
+	res, err := s.clientSet.CoreService().FieldTemplate().ListObjFieldTmplRel(kit.Ctx, kit.Header, listOpt)
+	if err != nil {
+		blog.Errorf("list field templates failed, err: %v, opt: %+v, rid: %s", err, objIDs, kit.Rid)
+		return nil, err
+	}
+	if len(objIDs) != len(res.Info) {
+		blog.Errorf("the number of associations obtained is incorrect, objIDs: %+v, rid: %s", objIDs, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.ObjectIDField)
+	}
+
+	objIDTmplMap := make(map[int64][]int64)
+	for _, data := range res.Info {
+		if _, ok := objIDTmplMap[data.ObjectID]; ok {
+			// 解绑场景下将解绑的templateID跳过
+			if !isBind && data.TemplateID == templateID {
+				continue
+			}
+
+			objIDTmplMap[data.ObjectID] = append(objIDTmplMap[data.ObjectID], data.TemplateID)
+			// 绑定场景需要把templateID加入进来
+			if isBind {
+				objIDTmplMap[data.ObjectID] = append(objIDTmplMap[data.ObjectID], templateID)
+			}
+		}
+	}
+
+	return objIDTmplMap, nil
+}
+
 // FieldTemplateUnbindObject field template binding model
 func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 	opt := new(metadata.FieldTemplateUnbindObjOpt)
@@ -240,12 +311,23 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 		return
 	}
 
+	if authResp, authorized := s.auth.Authorize(ctx.Kit, meta.ResourceAttribute{Basic: meta.Basic{
+		Type: meta.Model, Action: meta.Update, InstanceID: opt.ObjectID}}); !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	if err := s.canObjsBindFieldTemplate(ctx.Kit, []int64{opt.ObjectID}); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	// todo:待补充鉴权
+	// 需要获取解绑后objectID对应的templateID 列表
+	objectTmplIDMap, err := s.getAfterDealObjectAndTmplRelation(ctx.Kit, []int64{opt.ObjectID}, opt.ID, false)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
 
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateUnbindObject(ctx.Kit.Ctx, ctx.Kit.Header, opt)
@@ -256,7 +338,8 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 		audit := auditlog.NewObjectAuditLog(s.clientSet.CoreService())
 
 		parameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
-		auditLogs, ccErr := audit.GenerateAuditLogForBindingFieldTemplate(parameter, []int64{opt.ObjectID}, opt.ID)
+		auditLogs, ccErr := audit.GenerateAuditLogForBindingFieldTemplate(parameter, []int64{opt.ObjectID},
+			objectTmplIDMap)
 		if ccErr != nil {
 			blog.Errorf("generate audit log failed , object id: %d, err: %v, rid: %s", opt.ObjectID, err, ctx.Kit.Rid)
 			return ccErr
