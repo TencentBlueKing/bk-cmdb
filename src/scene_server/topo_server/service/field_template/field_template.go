@@ -221,8 +221,8 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 		ObjectIDs: objIDs,
 	}
 
-	// 需要获取解绑后objectID对应的templateID 列表
-	objectTmplIDMap, err := s.getAfterDealObjectAndTmplRelation(ctx.Kit, opt.ObjectIDs, opt.ID, true)
+	// need to get the templateID list corresponding to the bound objectID
+	objectTmplIDMap, err := s.getTmplIDsAfterDealObjAndTmplRel(ctx.Kit, opt.ObjectIDs, opt.ID, true)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -259,7 +259,7 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-func (s *service) getAfterDealObjectAndTmplRelation(kit *rest.Kit, objIDs []int64, templateID int64, isBind bool) (
+func (s *service) getTmplIDsAfterDealObjAndTmplRel(kit *rest.Kit, objIDs []int64, templateID int64, isBind bool) (
 	map[int64][]int64, error) {
 
 	cond := filtertools.GenAtomFilter(common.ObjectIDField, filter.In, objIDs)
@@ -282,13 +282,13 @@ func (s *service) getAfterDealObjectAndTmplRelation(kit *rest.Kit, objIDs []int6
 	objIDTmplMap := make(map[int64][]int64)
 	for _, data := range res.Info {
 		if _, ok := objIDTmplMap[data.ObjectID]; ok {
-			// 解绑场景下将解绑的templateID跳过
+			// in the unbinding scenario, skip the templateID that needs to be unbound
 			if !isBind && data.TemplateID == templateID {
 				continue
 			}
 
 			objIDTmplMap[data.ObjectID] = append(objIDTmplMap[data.ObjectID], data.TemplateID)
-			// 绑定场景需要把templateID加入进来
+			// the binding scene needs to add templateID
 			if isBind {
 				objIDTmplMap[data.ObjectID] = append(objIDTmplMap[data.ObjectID], templateID)
 			}
@@ -322,8 +322,8 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 		return
 	}
 
-	// 需要获取解绑后objectID对应的templateID 列表
-	objectTmplIDMap, err := s.getAfterDealObjectAndTmplRelation(ctx.Kit, []int64{opt.ObjectID}, opt.ID, false)
+	// need to get the templateID list corresponding to the unbound objectID
+	objectTmplIDMap, err := s.getTmplIDsAfterDealObjAndTmplRel(ctx.Kit, []int64{opt.ObjectID}, opt.ID, false)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -774,7 +774,6 @@ func (s *service) getFieldTmplAttrOperation(kit *rest.Kit, templateID int64, att
 	createAttrs := make([]metadata.FieldTemplateAttr, 0)
 
 	for idx, attr := range attrs {
-		attr.TemplateID = templateID
 		attr.PropertyIndex = int64(idx)
 
 		if attr.ID == 0 {
@@ -799,6 +798,7 @@ func (s *service) getFieldTmplAttrOperation(kit *rest.Kit, templateID int64, att
 }
 
 func (s *service) getFieldTmplAttrIDs(kit *rest.Kit, templateID int64) (map[int64]struct{}, error) {
+
 	attrFilter := filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, templateID)
 	listOpt := &metadata.CommonQueryOption{
 		CommonFilterOption: metadata.CommonFilterOption{Filter: attrFilter},

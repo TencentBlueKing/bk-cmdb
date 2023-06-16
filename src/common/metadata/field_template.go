@@ -428,6 +428,27 @@ func (c *CreateFieldTmplOption) Validate() ccErr.RawErrorInfo {
 		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{"attributes"}}
 	}
 
+	if c.ID != 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{"id"}}
+	}
+
+	for _, attr := range c.Attributes {
+		if attr.TemplateID != 0 {
+			return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{"attr.template_id"}}
+		}
+	}
+
+	if len(c.Uniques) > 0 {
+		for _, unique := range c.Uniques {
+			if unique.TemplateID != 0 {
+				return ccErr.RawErrorInfo{
+					ErrCode: common.CCErrCommParamsInvalid,
+					Args:    []interface{}{"unique.template_id"},
+				}
+			}
+		}
+	}
+
 	if len(c.Attributes) > FieldTemplateAttrMaxCount {
 		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit,
 			Args: []interface{}{"attributes", FieldTemplateAttrMaxCount}}
@@ -794,6 +815,24 @@ func (c *UpdateFieldTmplOption) Validate() ccErr.RawErrorInfo {
 		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{"attributes"}}
 	}
 
+	// each templateID in the attribute must be consistent with the outer templateID
+	for _, attr := range c.Attributes {
+		if attr.TemplateID != c.ID {
+			return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{"attr.template_id"}}
+		}
+	}
+
+	// each templateID in the unique check must be consistent with the outer templateID
+	if len(c.Uniques) > 0 {
+		for _, unique := range c.Uniques {
+			if unique.TemplateID != c.ID {
+				return ccErr.RawErrorInfo{
+					ErrCode: common.CCErrCommParamsInvalid,
+					Args:    []interface{}{"attr.template_id"},
+				}
+			}
+		}
+	}
 	if len(c.Attributes) > FieldTemplateAttrMaxCount {
 		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit,
 			Args: []interface{}{"attributes", FieldTemplateAttrMaxCount}}
