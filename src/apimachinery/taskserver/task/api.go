@@ -46,9 +46,6 @@ type TaskClientInterface interface {
 
 	ListSyncStatusHistory(ctx context.Context, header http.Header, option *metadata.QueryCondition) (
 		*metadata.ListAPITaskSyncStatusResult, errors.CCErrorCoder)
-
-	ListLatestFieldTemplateTask(ctx context.Context, header http.Header,
-		data *metadata.ListFieldTmpltTaskStatusOption) ([]metadata.ListFieldTmpltTaskStatusResult, errors.CCErrorCoder)
 }
 
 // NewTaskClientInterface TODO
