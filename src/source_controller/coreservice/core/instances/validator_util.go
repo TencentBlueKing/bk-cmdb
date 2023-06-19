@@ -290,6 +290,7 @@ func fillLostStringFieldValue(valData mapstr.MapStr, field metadata.Attribute) e
 		return fmt.Errorf("single char regular verification rules is illegal, value: %v", field.Option)
 	}
 	if len(option) == 0 {
+		valData[field.PropertyID] = defaultVal
 		return nil
 	}
 
