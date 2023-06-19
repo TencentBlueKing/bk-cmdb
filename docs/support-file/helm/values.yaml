@@ -1210,6 +1210,7 @@ common:
     ## webserver common config site parameters
     ## @param common.webServer.site.domainUrl bk-cmdb web domain address
     ## @param common.webServer.site.httpsDomainUrl bk-cmdb web https domain address
+    ## @param common.webServer.site.bkDomain bk-cmdb web bk domain address
     ## @param common.webServer.site.appCode bk-cmdb app code
     ## @param common.webServer.site.checkUrl bk-login user check url
     ## @param common.webServer.site.resourcesPath bk-cmdb frontend resource path
