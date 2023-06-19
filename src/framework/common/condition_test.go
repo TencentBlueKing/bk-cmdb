@@ -13,8 +13,9 @@
 package common_test
 
 import (
-	"configcenter/src/framework/common"
 	"testing"
+
+	"configcenter/src/framework/common"
 )
 
 func TestCondition(t *testing.T) {

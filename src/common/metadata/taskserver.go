@@ -57,7 +57,8 @@ type APITaskDetail struct {
 	Status APITaskStatus `json:"status,omitempty" bson:"status"`
 	// Detail 子任务详情列表
 	Detail []APISubTaskDetail `json:"detail,omitempty" bson:"detail"`
-
+	// SupplierAccount 开发商ID
+	SupplierAccount string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 	// CreateTime 任务创建时间
 	CreateTime time.Time `json:"create_time,omitempty" bson:"create_time"`
 	// LastTime 任务最后更新时间
@@ -264,4 +265,47 @@ func (option *ListFieldTmplTaskStatusOption) Validate() ccErr.RawErrorInfo {
 type ListFieldTmplTaskStatusResult struct {
 	TaskID string `json:"task_id"`
 	Status string `json:"status"`
+}
+
+// ListFieldTmplTaskSyncResultResp list field template task sync result response
+type ListFieldTmplTaskSyncResultResp struct {
+	BaseResp
+	Info []ListFieldTmplTaskSyncResult `json:"data"`
+}
+
+// ListFieldTmplTaskSyncResult the task sync result of the template ID and object
+type ListFieldTmplTaskSyncResult struct {
+	ObjectID int64         `json:"object_id"`
+	Status   APITaskStatus `json:"status"`
+	SyncTime time.Time     `json:"sync_time"`
+	FailMsg  string        `json:"fail_msg"`
+}
+
+// ListFieldTmplSyncTaskStatusOption get the task status request of the specified template ID and object
+type ListFieldTmplSyncTaskStatusOption struct {
+	ID        int64   `json:"bk_template_id"`
+	ObjectIDs []int64 `json:"object_ids"`
+}
+
+// Validate judging the legality of parameters
+func (option *ListFieldTmplSyncTaskStatusOption) Validate() ccErr.RawErrorInfo {
+	if option.ID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+	if len(option.ObjectIDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"object_ids"},
+		}
+	}
+	if len(option.ObjectIDs) > common.BKMaxLimitSize {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"object_ids", common.BKMaxLimitSize},
+		}
+	}
+	return ccErr.RawErrorInfo{}
 }

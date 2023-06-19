@@ -59,7 +59,8 @@ func TestPolicy_MarshalJSON(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	shouldBe := "{\"op\":\"AND\",\"content\":[{\"op\":\"eq\",\"field\":\"host.os\",\"value\":\"linux\"},{\"op\":\"OR\",\"content\":[{\"op\":\"neq\",\"field\":\"host.os\",\"value\":\"windows\"}]}]}"
+	shouldBe := "{\"op\":\"AND\",\"content\":[{\"op\":\"eq\",\"field\":\"host.os\",\"value\":\"linux\"},{\"op\":" +
+		"\"OR\",\"content\":[{\"op\":\"neq\",\"field\":\"host.os\",\"value\":\"windows\"}]}]}"
 
 	if string(js) != shouldBe {
 		t.Fatal("invalid unmarshal")

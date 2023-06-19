@@ -71,8 +71,8 @@ func NewSuccessResp(data interface{}) *Response {
 
 // Response TODO
 type Response struct {
-	BaseResp `json:",inline"`
-	Data     interface{} `json:"data" mapstructure:"data"`
+	BaseResp `json:",inline" bson:",inline"`
+	Data     interface{} `json:"data" bson:"data" mapstructure:"data"`
 }
 
 // CountResponseContent count action response content.

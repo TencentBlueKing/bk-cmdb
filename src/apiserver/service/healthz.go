@@ -21,8 +21,36 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
-// Healthz TODO
+// Healthz check if api server is healthy.
 func (s *service) Healthz(req *restful.Request, resp *restful.Response) {
+	meta := s.checkComponentHealthz()
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "api server is unhealthy"
+			break
+		}
+	}
+
+	info := metric.HealthInfo{
+		Module:     types.CC_MODULE_APISERVER,
+		HealthMeta: meta,
+		AtTime:     metadata.Now(),
+	}
+
+	answer := metric.HealthResponse{
+		Code:    common.CCSuccess,
+		Data:    info,
+		OK:      meta.IsHealthy,
+		Result:  meta.IsHealthy,
+		Message: meta.Message,
+	}
+	answer.SetCommonResponse()
+	resp.WriteJson(answer, "application/json")
+}
+
+func (s *service) checkComponentHealthz() metric.HealthMeta {
 	meta := metric.HealthMeta{IsHealthy: true}
 
 	// zk health status
@@ -97,27 +125,5 @@ func (s *service) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 	meta.Items = append(meta.Items, cloudSrv)
 
-	for _, item := range meta.Items {
-		if item.IsHealthy == false {
-			meta.IsHealthy = false
-			meta.Message = "api server is unhealthy"
-			break
-		}
-	}
-
-	info := metric.HealthInfo{
-		Module:     types.CC_MODULE_APISERVER,
-		HealthMeta: meta,
-		AtTime:     metadata.Now(),
-	}
-
-	answer := metric.HealthResponse{
-		Code:    common.CCSuccess,
-		Data:    info,
-		OK:      meta.IsHealthy,
-		Result:  meta.IsHealthy,
-		Message: meta.Message,
-	}
-	answer.SetCommonResponse()
-	resp.WriteJson(answer, "application/json")
+	return meta
 }

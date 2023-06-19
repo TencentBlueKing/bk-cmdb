@@ -45,12 +45,12 @@
 
   const isSyncResultStatus = computed(() => ['success', 'error', 'abnormal'].includes(status.value))
 
-  const getSyncStatus = async () => {
+  const getTaskSyncStatus = async () => {
     try {
       status.value = 'loading'
       title.value = t('正在查询同步状态...')
 
-      const statusList = await fieldTemplateService.getSyncStatus({
+      const statusList = await fieldTemplateService.getTaskSyncStatus({
         bk_template_id: props.templateId,
         object_ids: props.modelIds
       })
@@ -67,7 +67,7 @@
       const undone = statusList?.some(task => ['new', 'waiting', 'executing'].includes(task.status))
       timer && clearTimeout(timer)
       if (undone) {
-        timer = setTimeout(getSyncStatus, 3000)
+        timer = setTimeout(getTaskSyncStatus, 3000)
       } else {
         statusList.forEach((task) => {
           if (task.status === 'finished') {
@@ -107,7 +107,7 @@
 
       summary.value = t('接下来，您可以在模板详情页面，查看模型的绑定的状态')
 
-      getSyncStatus()
+      getTaskSyncStatus()
     } catch (err) {
       status.value = 'apierror'
       summary.value = err?.message || ''
@@ -121,7 +121,8 @@
         name: MENU_MODEL_FIELD_TEMPLATE,
         query: {
           action: 'view',
-          id: props.templateId
+          id: props.templateId,
+          tab: 'model'
         }
       })
     } else if (action === 'back') {

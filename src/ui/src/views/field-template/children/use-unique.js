@@ -79,12 +79,25 @@ export default function useUnique(beforeUniqueList, uniqueListLocal) {
     })
   }
 
+  const getFieldUniqueWithName = (field, fieldList) => {
+    const { list: fieldUniqueList, type: fieldUniqueType } = getUniqueByField(field)
+    const fieldUniqueWithNameList = fieldUniqueList.map(item => ({
+      ...item,
+      names: item.keys.map(key => fieldList.find(field => field.id === key)?.bk_property_name)
+    }))
+    return {
+      list: fieldUniqueWithNameList,
+      type: fieldUniqueType
+    }
+  }
+
   return {
     uniqueStatus,
     wrapData,
     removedUniqueList,
     getUniqueByField,
-    clearUniqueByField
+    clearUniqueByField,
+    getFieldUniqueWithName
   }
 }
 
@@ -94,5 +107,15 @@ export const wrapData = data => ({
 })
 
 export const isUniqueExist = (unique, uniqueList) => uniqueList.some(item => isEqual(item.keys, unique.keys))
+
+export const getUniqueName = (unique, fieldList, isTemplate, propIdKey) => {
+  const ids = isTemplate ? unique.keys : unique.keys.map(key => key.key_id)
+  let dataIdKey = isTemplate ? 'bk_property_id' : 'id'
+  dataIdKey = propIdKey ?? dataIdKey
+  return ids.map((id) => {
+    const property = fieldList.find(property => property[dataIdKey] === id)
+    return property ? property.bk_property_name : `unknown(${id})`
+  }).join(' + ')
+}
 
 export const MAX_UNIQUE_COUNT = 5

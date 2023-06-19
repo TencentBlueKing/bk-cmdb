@@ -137,7 +137,8 @@ func (cli *Module) SearchModules(cond common.Condition) ([]types.MapStr, error) 
 		},
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/module/search/%s/%s/%s", cli.cli.GetAddress(), cli.cli.supplierAccount, appID, setID)
+	targetURL := fmt.Sprintf("%s/api/v3/module/search/%s/%s/%s", cli.cli.GetAddress(), cli.cli.supplierAccount, appID,
+		setID)
 	rst, err := cli.cli.httpCli.POST(targetURL, nil, condInner.ToJSON())
 	if nil != err {
 		return nil, err

@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { ref, computed, reactive, watch, set } from 'vue'
+  import { ref, computed, reactive, watch, set, nextTick } from 'vue'
   import { t } from '@/i18n'
   import RouterQuery from '@/router/query'
   import routerActions from '@/router/actions'
@@ -26,11 +26,12 @@
   import { getDefaultPaginationConfig, getSort } from '@/utils/tools.js'
   import fieldTemplateService from '@/service/field-template'
   import CmdbLoading from '@/components/loading/index.vue'
+  import TemplateDetails from './details.vue'
 
   const requestIds = {
     list: Symbol('list'),
     fieldCount: Symbol('fieldCount'),
-    modelCount: Symbol('modelCount'),
+    modelCount: Symbol('modelCount')
   }
 
   // 响应式的query
@@ -143,6 +144,17 @@
     })
   }
 
+  const detailsDrawer = reactive({
+    open: false,
+    template: {}
+  })
+  const openDetailsDrawer = (template) => {
+    detailsDrawer.template  = template
+    nextTick(() => {
+      detailsDrawer.open = true
+    })
+  }
+
   const updateFilter = () => {}
 
   // 监听查询参数触发查询
@@ -152,7 +164,20 @@
       const {
         page = 1,
         limit = table.pagination.limit,
+        action = '',
+        id = '',
+        _t = ''
       } = query
+
+      // 在本页所做操作必须带上 _t 参数以此与外入动作区分
+      if (action === 'view' && id && !_t) {
+        const template = await fieldTemplateService.findById(Number(id))
+        if (!template) {
+          $error('no data found!')
+          return
+        }
+        openDetailsDrawer(template)
+      }
 
       updateFilter()
 
@@ -250,7 +275,6 @@
       confirmLoading: true,
       confirmFn: async () => {
         try {
-          // TODO: 删除接口
           await fieldTemplateService.deleteTemplate({
             data: {
               id: row.id
@@ -265,6 +289,13 @@
         }
       }
     })
+  }
+
+  const handleRowIDClick = (row) => {
+    openDetailsDrawer(row)
+  }
+  const handleDetailsDrawerClose = () => {
+    detailsDrawer.open = false
   }
 
   const handleClearFilter = () => {
@@ -323,7 +354,7 @@
         :label="$t('模板名称')"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
-          <div class="cell-link-content">{{ row.name }}</div>
+          <div class="cell-link-content" @click.stop="handleRowIDClick(row)">{{ row.name }}</div>
         </template>
       </bk-table-column>
       <bk-table-column
@@ -408,11 +439,11 @@
           </cmdb-auth>
           <cmdb-auth
             :auth="{ type: $OPERATION.D_BUSINESS_SET, relation: [row.bk_biz_set_id] }"
-            v-bk-tooltips.top="{ content: $t('已被模型绑定，不能删除'), disabled: false }">
+            v-bk-tooltips.top="{ content: $t('已被模型绑定，不能删除'), disabled: !row.model_count }">
             <template slot-scope="{ disabled }">
               <bk-button
                 theme="primary"
-                :disabled="disabled"
+                :disabled="disabled || row.model_count > 0"
                 :text="true"
                 @click.stop="handleDelete(row)">
                 {{$t('删除')}}
@@ -426,7 +457,7 @@
         :stuff="table.stuff"
         @clear="handleClearFilter">
         <bk-exception type="403" scene="part">
-          <i18n path="业务集列表提示语" class="table-empty-tips">
+          <i18n path="字段组合模板列表提示语" class="table-empty-tips">
             <template #auth>
               <bk-link theme="primary"
                 @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
@@ -446,6 +477,14 @@
         </bk-exception>
       </cmdb-table-empty>
     </bk-table>
+
+    <template-details
+      v-if="detailsDrawer.template.id"
+      :open="detailsDrawer.open"
+      :template="detailsDrawer.template"
+      @close="handleDetailsDrawerClose">
+    </template-details>
+
     <bk-dialog
       v-model="isShowCloneDialog"
       theme="primary"

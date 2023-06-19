@@ -62,6 +62,14 @@ const getUniqueList = (data, config) => http.post('findmany/field_template/uniqu
 // 查询模板绑定的模型
 const getBindModel = (params, config) => rollReqUseCount('findmany/object/by_field_template', params, { limit: 100 }, config)
 
+// 滚动查询模板绑定的模型
+const rollBindModel = (params, limit, config) => rollReqUseCount(
+  'findmany/object/by_field_template',
+  params,
+  { limit, generator: true },
+  config
+)
+
 // 查询模型绑定的字段模版
 const getModelBindTemplate = (data, config) => http.post('findmany/field_template/by_object', data, config)
 
@@ -70,7 +78,6 @@ const updateTemplate = (data, config) => http.post('/update/field_template/unbin
 
 // 删除字段模板接口
 const deleteTemplate = (data, config) => http.delete('/delete/field_template', data, config)
-
 
 // 克隆字段模版接口
 const cloneTemplate = (data, config) => http.post('/create/field_template/clone', data, config)
@@ -90,8 +97,11 @@ const bindModel = (data, config) => http.post('update/field_template/bind/object
 // 提交同步至模型任务
 const syncModel = (data, config) => http.post('update/topo/field_template/sync', data, config)
 
-// 查询同步状态
-const getSyncStatus = (data, config) => http.post('find/field_template/tasks_status', data, config)
+// 查询同步任务状态
+const getTaskSyncStatus = (data, config) => http.post('find/field_template/tasks_status', data, config)
+
+// 查询同步任务状态
+const getModelSyncStatus = (data, config) => http.post('find/field_template/model/status', data, config)
 
 export default {
   create,
@@ -104,6 +114,7 @@ export default {
   getFieldList,
   getUniqueList,
   getBindModel,
+  rollBindModel,
   getModelBindTemplate,
   updateTemplate,
   deleteTemplate,
@@ -113,5 +124,6 @@ export default {
   getUniqueDifference,
   bindModel,
   syncModel,
-  getSyncStatus
+  getTaskSyncStatus,
+  getModelSyncStatus
 }

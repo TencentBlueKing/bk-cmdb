@@ -109,7 +109,8 @@ func (cli *group) Update() error {
 		} else {
 			cond = cond.Field(GroupName).Eq(cli.GroupName)
 		}
-		return client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Group().UpdateGroup(updateitem, cond)
+		return client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Group().UpdateGroup(updateitem,
+			cond)
 	}
 	return nil
 }
