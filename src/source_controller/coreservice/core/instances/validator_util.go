@@ -284,8 +284,9 @@ func fillLostStringFieldValue(valData mapstr.MapStr, field metadata.Attribute) e
 		return nil
 	}
 
+	// option compatible with the scene where the option is not set in the model attribute.
 	option, ok := field.Option.(string)
-	if !ok {
+	if field.Option != nil && !ok {
 		return fmt.Errorf("single char regular verification rules is illegal, value: %v", field.Option)
 	}
 	if len(option) == 0 {
