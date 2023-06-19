@@ -26,6 +26,7 @@ import (
 
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // EnumOption enum option
@@ -450,10 +451,10 @@ func fillLostUserFieldValue(valData mapstr.MapStr, field metadata.Attribute) err
 		return fmt.Errorf("user type field default value not string, value: %v", field.Default)
 	}
 
-	if ok := util.IsUser(defaultVal); !ok {
+	ok = util.IsUser(defaultVal)
+	if defaultVal != "" && !ok {
 		return fmt.Errorf("user type field default value not user type, value: %s", defaultVal)
 	}
-
 	valData[field.PropertyID] = defaultVal
 	return nil
 }
@@ -464,18 +465,24 @@ func fillLostOrganizationFieldValue(valData mapstr.MapStr, field metadata.Attrib
 		return nil
 	}
 
-	defaultVal, ok := field.Default.([]interface{})
-	if !ok {
-		return fmt.Errorf("organization type field default value not array, type: %T", field.Default)
+	var orgIDs []interface{}
+	switch defaultVal := field.Default.(type) {
+	case []interface{}:
+		orgIDs = defaultVal
+	case primitive.A:
+		orgIDs = defaultVal
+	default:
+		return fmt.Errorf("organization type field default value not array type, propertyID: %s, type: %T",
+			field.PropertyID, field.Default)
 	}
 
-	for _, orgID := range defaultVal {
+	for _, orgID := range orgIDs {
 		if !util.IsInteger(orgID) {
 			return fmt.Errorf("orgID params not int, type: %T", orgID)
 		}
 	}
 
-	valData[field.PropertyID] = defaultVal
+	valData[field.PropertyID] = orgIDs
 	return nil
 }
 
@@ -499,13 +506,23 @@ func fillLostListFieldValue(valData mapstr.MapStr, field metadata.Attribute) err
 		return nil
 	}
 
-	arrOption, ok := field.Option.([]interface{})
-	if !ok || len(arrOption) == 0 {
-		return fmt.Errorf("list type field option is null, option: %v", field.Option)
+	var listVal []interface{}
+	switch optionVal := field.Option.(type) {
+	case []interface{}:
+		listVal = optionVal
+	case primitive.A:
+		listVal = optionVal
+	default:
+		return fmt.Errorf("list type field option is not array type, propertyID: %s, type: %T", field.PropertyID,
+			field.Option)
+	}
+
+	if len(listVal) == 0 {
+		return fmt.Errorf("list type field option is empty, propertyID: %s, option: %v", field.PropertyID, field.Option)
 	}
 
 	defaultVal := util.GetStrByInterface(field.Default)
-	for _, value := range arrOption {
+	for _, value := range listVal {
 		val := util.GetStrByInterface(value)
 		if defaultVal == val {
 			valData[field.PropertyID] = defaultVal
@@ -513,7 +530,8 @@ func fillLostListFieldValue(valData mapstr.MapStr, field metadata.Attribute) err
 		}
 	}
 
-	return fmt.Errorf("list type default value is error, default value: %v", field.Default)
+	return fmt.Errorf("list type default value is error, propertyID: %s, default value: %v", field.PropertyID,
+		field.Default)
 }
 
 func fillLostBoolFieldValue(valData mapstr.MapStr, field metadata.Attribute) error {

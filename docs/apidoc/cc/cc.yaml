@@ -1410,3 +1410,13 @@
   dest_path: /api/v3/update/project/bk_project_id
   dest_http_method: PUT
   is_hidden: true
+
+- path: /v2/cc/transfer_host_across_biz/
+  name: transfer_host_across_biz
+  label: 跨业务转移主机
+  label_en: transfer host across business
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/hosts/modules/across/biz
+  dest_http_method: POST
