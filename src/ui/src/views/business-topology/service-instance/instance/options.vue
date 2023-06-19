@@ -468,6 +468,7 @@
       },
       filterClear() {
         this.searchValue = []
+        this.$refs.searchSelect.inputOutSideClear()
       }
     }
   }
