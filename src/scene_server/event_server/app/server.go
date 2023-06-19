@@ -361,7 +361,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	// all modules is initialized success, start the new server now.
-	if err := backbone.StartServer(ctx, cancel, eventServer.Engine(), eventServer.Service().WebService(), true); err != nil {
+	if err := backbone.StartServer(ctx, cancel, eventServer.Engine(), eventServer.Service().WebService(),
+		true); err != nil {
 		return err
 	}
 	blog.Info("EventServer init and run success!")
