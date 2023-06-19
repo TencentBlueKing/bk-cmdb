@@ -442,7 +442,12 @@
         return baseConditions
       },
       close() {
-        this.handleSliderBeforeClose() && (this.isShow = false, RouterQuery.set({ _t: Date.now() }))
+        if (this.handleSliderBeforeClose()) {
+          this.isShow = false
+          RouterQuery.set({
+            _t: Date.now()
+          })
+        }
       },
       show() {
         this.isShow = true

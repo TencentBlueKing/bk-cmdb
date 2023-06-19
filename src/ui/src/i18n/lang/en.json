@@ -900,7 +900,7 @@
     "编辑模式": "Edit Mode",
     "退出编辑模式": "Exit Edit Mode",
     "是否确认删除": "Do you confirm to delete?",
-    "确定要删除": "Confirm to delete",
+    "确定要删除XXX": "Confirm to delete {target}",
     "不包含业务、主机模型及实例": "Does not include business, host model and instances",
     "添加主机图表": "Add Host Chart",
     "添加实例图表": "Add Instance Chart",
