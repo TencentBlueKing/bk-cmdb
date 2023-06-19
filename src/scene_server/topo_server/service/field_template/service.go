@@ -100,4 +100,7 @@ func InitFieldTemplate(c *capability.Capability) {
 		Handler: s.ListFieldTmplByUniqueTmplIDForUI})
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/simplify/by_attr_template_id",
 		Handler: s.ListFieldTmplByObjectTmplIDForUI})
+
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/model/status",
+		Handler: s.ListFieldTemplateModelStatus})
 }

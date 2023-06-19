@@ -57,7 +57,8 @@ type APITaskDetail struct {
 	Status APITaskStatus `json:"status,omitempty" bson:"status"`
 	// Detail 子任务详情列表
 	Detail []APISubTaskDetail `json:"detail,omitempty" bson:"detail"`
-
+	// SupplierAccount 开发商ID
+	SupplierAccount string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 	// CreateTime 任务创建时间
 	CreateTime time.Time `json:"create_time,omitempty" bson:"create_time"`
 	// LastTime 任务最后更新时间
@@ -276,4 +277,18 @@ func (option *ListFieldTmpltTaskStatusOption) Validate() ccErr.RawErrorInfo {
 type ListFieldTmpltTaskStatusResult struct {
 	ObjectID int64  `json:"object_id"`
 	Status   string `json:"status"`
+}
+
+// ListFieldTmplTaskSyncResultResp list field template task sync result response
+type ListFieldTmplTaskSyncResultResp struct {
+	BaseResp
+	Info []ListFieldTmplTaskSyncResult `json:"data"`
+}
+
+// ListFieldTmplTaskSyncResult the task sync result of the template ID and object
+type ListFieldTmplTaskSyncResult struct {
+	ObjectID int64         `json:"object_id"`
+	Status   APITaskStatus `json:"status"`
+	SyncTime time.Time     `json:"sync_time"`
+	FailMsg  string        `json:"fail_msg"`
 }

@@ -49,6 +49,9 @@ type TaskClientInterface interface {
 
 	ListLatestFieldTemplateTask(ctx context.Context, header http.Header,
 		data *metadata.ListFieldTmpltTaskStatusOption) ([]metadata.ListFieldTmpltTaskStatusResult, errors.CCErrorCoder)
+
+	ListFieldTemplateTaskSyncResult(ctx context.Context, header http.Header,
+		data *metadata.ListFieldTmpltTaskStatusOption) ([]metadata.ListFieldTmplTaskSyncResult, errors.CCErrorCoder)
 }
 
 // NewTaskClientInterface TODO
