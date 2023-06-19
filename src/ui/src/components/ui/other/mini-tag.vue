@@ -56,5 +56,8 @@
     color: #EA3636;
     background: #FCE9E8;
   }
+  &.paused {
+    color: #63656E;
+  }
 }
 </style>

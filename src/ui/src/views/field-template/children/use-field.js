@@ -190,3 +190,5 @@ export const isFieldSame = (field1, field2) => field1.bk_property_id === field2.
 export const isFieldExist = (field, fieldList) => fieldList.some(item => isFieldSame(item.field, field))
 
 export const MAX_FIELD_COUNT = 20
+
+export const DETAILS_FIELDLIST_REQUEST_ID = Symbol()

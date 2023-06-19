@@ -20,7 +20,8 @@ import {
   MENU_MODEL_FIELD_TEMPLATE_EDIT_BASIC,
   MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
   MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING,
-  MENU_MODEL_FIELD_TEMPLATE_BIND
+  MENU_MODEL_FIELD_TEMPLATE_BIND,
+  MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL
 } from '@/dictionary/menu-symbol'
 
 export default [
@@ -108,6 +109,17 @@ export default [
     meta: new Meta({
       menu: {
         i18n: '绑定模型',
+        relative: MENU_MODEL_FIELD_TEMPLATE
+      }
+    })
+  },
+  {
+    name: MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL,
+    path: 'field-template/sync/:id/model/:modelId',
+    component: () => import('./sync.vue'),
+    meta: new Meta({
+      menu: {
+        i18n: '同步模型',
         relative: MENU_MODEL_FIELD_TEMPLATE
       }
     })
