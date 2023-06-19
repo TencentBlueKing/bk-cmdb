@@ -144,6 +144,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Site.BkHttpsLoginUrl, _ = cc.String("webServer.site.bkHttpsLoginUrl")
 	w.Config.Site.HttpsDomainUrl, _ = cc.String("webServer.site.httpsDomainUrl")
 	w.Config.Site.PaasDomainUrl, _ = cc.String("webServer.site.paasDomainUrl")
+	w.Config.Site.BkDomain, _ = cc.String("webServer.site.bkDomain")
 	w.Config.Site.HelpDocUrl, _ = cc.String("webServer.site.helpDocUrl")
 
 	w.Config.Session.Name, _ = cc.String("webServer.session.name")
