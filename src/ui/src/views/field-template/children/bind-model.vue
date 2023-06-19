@@ -251,7 +251,7 @@
     <bk-resize-layout :collapsible="true" :min="310" :border="false" :style="{ height }">
       <div slot="aside" :class="['aside', { 'empty': !modelListLocal.length }]">
         <div class="aside-top">
-          <div class="total" v-if="modelListLocal.length > 0">
+          <div class="total" v-if="modelListLocal.length > 1">
             <i18n path="共N个">
               <template #count><em class="count">{{modelListLocal.length}}</em></template>
             </i18n>

@@ -12,11 +12,11 @@
 
 <script setup>
   import { computed } from 'vue'
-  import { t } from '@/i18n'
   import useUniqueCheck from '@/hooks/unique-check'
   import useProperty from '@/hooks/model/property'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
   import DiffBrand from './diff-brand.vue'
+  import { getUniqueName as getUniqueNameBase } from './use-unique'
 
   const props = defineProps({
     model: {
@@ -65,13 +65,8 @@
   }))
 
   const getUniqueName = (unique, isTemplate) => {
-    const ids = isTemplate ? unique.keys : unique.keys.map(key => key.key_id)
     const fieldList = isTemplate ? props.templateFieldList : properties.value
-    const dataIdKey = isTemplate ? 'bk_property_id' : 'id'
-    return ids.map((id) => {
-      const property = fieldList.find(property => property[dataIdKey] === id)
-      return property ? property.bk_property_name : `${t('未知属性')}(${id})`
-    }).join(' + ')
+    return getUniqueNameBase(unique, fieldList, isTemplate)
   }
 
   const isConflict = unique => props.diffs.conflict?.some(item => item.data.id === unique.id)

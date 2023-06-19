@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { ref, computed, reactive, watch, set } from 'vue'
+  import { ref, computed, reactive, watch, set, nextTick } from 'vue'
   import { t } from '@/i18n'
   import RouterQuery from '@/router/query'
   import routerActions from '@/router/actions'
@@ -26,6 +26,7 @@
   import { getDefaultPaginationConfig, getSort } from '@/utils/tools.js'
   import fieldTemplateService from '@/service/field-template'
   import CmdbLoading from '@/components/loading/index.vue'
+  import TemplateDetails from './details.vue'
 
   const requestIds = {
     list: Symbol('list'),
@@ -134,6 +135,17 @@
     })
   }
 
+  const detailsDrawer = reactive({
+    open: false,
+    template: {}
+  })
+  const openDetailsDrawer = (template) => {
+    detailsDrawer.template  = template
+    nextTick(() => {
+      detailsDrawer.open = true
+    })
+  }
+
   const updateFilter = () => {}
 
   // 监听查询参数触发查询
@@ -143,7 +155,20 @@
       const {
         page = 1,
         limit = table.pagination.limit,
+        action = '',
+        id = '',
+        _t = ''
       } = query
+
+      // 在本页所做操作必须带上 _t 参数以此与外入动作区分
+      if (action === 'view' && id && !_t) {
+        const template = await fieldTemplateService.findById(Number(id))
+        if (!template) {
+          $error('no data found!')
+          return
+        }
+        openDetailsDrawer(template)
+      }
 
       updateFilter()
 
@@ -226,6 +251,13 @@
     })
   }
 
+  const handleRowIDClick = (row) => {
+    openDetailsDrawer(row)
+  }
+  const handleDetailsDrawerClose = () => {
+    detailsDrawer.open = false
+  }
+
   const handleClearFilter = () => {
     RouterQuery.clear()
   }
@@ -282,7 +314,7 @@
         :label="$t('模板名称')"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
-          <div class="cell-link-content">{{ row.name }}</div>
+          <div class="cell-link-content" @click.stop="handleRowIDClick(row)">{{ row.name }}</div>
         </template>
       </bk-table-column>
       <bk-table-column
@@ -385,7 +417,7 @@
         :stuff="table.stuff"
         @clear="handleClearFilter">
         <bk-exception type="403" scene="part">
-          <i18n path="业务集列表提示语" class="table-empty-tips">
+          <i18n path="字段组合模板列表提示语" class="table-empty-tips">
             <template #auth>
               <bk-link theme="primary"
                 @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
@@ -405,6 +437,13 @@
         </bk-exception>
       </cmdb-table-empty>
     </bk-table>
+
+    <template-details
+      v-if="detailsDrawer.template.id"
+      :open="detailsDrawer.open"
+      :template="detailsDrawer.template"
+      @close="handleDetailsDrawerClose">
+    </template-details>
   </div>
 </template>
 <style lang="scss" scoped>

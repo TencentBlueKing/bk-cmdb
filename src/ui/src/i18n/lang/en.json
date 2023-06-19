@@ -1722,5 +1722,7 @@
     "全选N个模型": "Select all {count} models",
     "字段组合模板同步结果": "Synchronization completed, with {success} successes and {fail} failures",
     "暂无XXX，LINK": "No {text}, {link}",
-    "绑定后的唯一性校验冲突提示语": "It conflicts with \"{target}\" and cannot be bound. Please unbind the model or delete the uniqueness check corresponding to the template"
+    "绑定后的唯一性校验冲突提示语": "It conflicts with \"{target}\" and cannot be bound. Please unbind the model or delete the uniqueness check corresponding to the template",
+    "字段组合模板列表提示语": "No authorized template, you can {auth} or {create}",
+    "描述：": "Description: "
 }

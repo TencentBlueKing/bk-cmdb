@@ -97,7 +97,7 @@ export const MENU_MODEL_FIELD_TEMPLATE_EDIT_BASIC = 'menu_model_field_template_e
 export const MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS = 'menu_model_field_template_edit_field_settings'
 export const MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING = 'menu_model_field_template_edit_binding'
 export const MENU_MODEL_FIELD_TEMPLATE_BIND = 'menu_model_field_template_bind'
-
+export const MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL = 'menu_model_field_template_sync_model'
 
 /**
  * 运营分析

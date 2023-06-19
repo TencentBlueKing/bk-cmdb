@@ -62,6 +62,14 @@ const getUniqueList = (data, config) => http.post('findmany/field_template/uniqu
 // 查询模板绑定的模型
 const getBindModel = (params, config) => rollReqUseCount('findmany/object/by_field_template', params, { limit: 100 }, config)
 
+// 滚动查询模板绑定的模型
+const rollBindModel = (params, limit, config) => rollReqUseCount(
+  'findmany/object/by_field_template',
+  params,
+  { limit, generator: true },
+  config
+)
+
 // 检测字段模板和模型中的字段的区别和冲突，返回值以模型上的字段为维度
 const getFieldDifference = (data, config) => http.post('find/field_template/attribute/difference', data, config)
 
@@ -74,8 +82,11 @@ const bindModel = (data, config) => http.post('update/field_template/bind/object
 // 提交同步至模型任务
 const syncModel = (data, config) => http.post('update/topo/field_template/sync', data, config)
 
-// 查询同步状态
-const getSyncStatus = (data, config) => http.post('find/field_template/tasks_status', data, config)
+// 查询同步任务状态
+const getTaskSyncStatus = (data, config) => http.post('find/field_template/tasks_status', data, config)
+
+// 查询同步任务状态
+const getModelSyncStatus = (data, config) => http.post('find/field_template/model/status', data, config)
 
 export default {
   create,
@@ -88,9 +99,11 @@ export default {
   getFieldList,
   getUniqueList,
   getBindModel,
+  rollBindModel,
   getFieldDifference,
   getUniqueDifference,
   bindModel,
   syncModel,
-  getSyncStatus
+  getTaskSyncStatus,
+  getModelSyncStatus
 }

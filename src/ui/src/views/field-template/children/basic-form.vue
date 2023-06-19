@@ -34,15 +34,15 @@
 <template>
   <div class="basic-form">
     <bk-form :label-width="140" :model="formData">
-      <bk-form-item label="模板名称" :required="true" :property="'name'"
+      <bk-form-item :label="$t('模板名称')" :required="true" :property="'name'"
         class="cmdb-form-item" :class="{ 'is-error': errors.has('name') }">
         <bk-input v-validate="'required|length:256'" name="name" v-model="formData.name"></bk-input>
         <p class="form-error" v-if="errors.has('name')">{{errors.first('name')}}</p>
       </bk-form-item>
-      <bk-form-item label="描述"
+      <bk-form-item :label="$t('描述')"
         class="cmdb-form-item" :class="{ 'is-error': errors.has('description') }">
         <bk-input type="textarea" :rows="4" name="description" v-validate="'length:2000'"
-          v-model="formData.description" placeholder="请输入描述"></bk-input>
+          v-model="formData.description" :placeholder="$t('请输入描述')"></bk-input>
         <p class="form-error" v-if="errors.has('description')">{{errors.first('description')}}</p>
       </bk-form-item>
     </bk-form>
