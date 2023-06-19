@@ -114,7 +114,8 @@ func (s *AuthService) PullResource(ctx *rest.Contexts) {
 		}
 
 		if len(filter.IDs) > common.BKMaxPageSize {
-			ctx.RespBkError(types.UnprocessableEntityErrorCode, fmt.Sprintf("filter.ids length exceeds maximum limit %d", common.BKMaxPageSize))
+			ctx.RespBkError(types.UnprocessableEntityErrorCode,
+				fmt.Sprintf("filter.ids length exceeds maximum limit %d", common.BKMaxPageSize))
 			return
 		}
 

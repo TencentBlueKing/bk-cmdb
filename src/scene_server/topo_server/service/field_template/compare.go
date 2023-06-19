@@ -44,7 +44,7 @@ func (s *service) CompareFieldTemplateAttr(cts *rest.Contexts) {
 		return
 	}
 
-	res, err := s.logics.FieldTemplateOperation().CompareFieldTemplateAttr(cts.Kit, opt, true)
+	res, _, err := s.logics.FieldTemplateOperation().CompareFieldTemplateAttr(cts.Kit, opt, true)
 	if err != nil {
 		cts.RespAutoError(err)
 		return
@@ -74,7 +74,7 @@ func (s *service) CompareFieldTemplateUnique(cts *rest.Contexts) {
 		return
 	}
 
-	res, err := s.logics.FieldTemplateOperation().CompareFieldTemplateUnique(cts.Kit, opt, true)
+	res, _, err := s.logics.FieldTemplateOperation().CompareFieldTemplateUnique(cts.Kit, opt, true)
 	if err != nil {
 		cts.RespAutoError(err)
 		return
@@ -102,4 +102,29 @@ func (s *service) ListFieldTemplateTasksStatus(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(result)
+}
+
+// ListFieldTemplateSyncStatus whether there is a difference between the real-time calculation template and the model,
+// the following scenarios are considered to be different:
+// 1. attribute conflict. 2. new attribute field 3. unmanagement attribute available 4. update attribute field
+// 5. unique check conflict. 6. add a unique check. 7.update unique checksum. 8.unmanage unique checks
+func (s *service) ListFieldTemplateSyncStatus(ctx *rest.Contexts) {
+	input := new(metadata.ListFieldTmpltSyncStatusOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := input.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	res, err := s.logics.FieldTemplateOperation().ListFieldTemplateSyncStatus(ctx.Kit, input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(res)
 }

@@ -76,6 +76,13 @@ var FieldTemplateAuthConfigs = []AuthConfig{
 		ResourceAction: meta.SkipAction,
 	},
 	{
+		Name:           "CompareFieldTemplateSyncStatus",
+		Description:    "对比模型和模版的差异状态",
+		Pattern:        "/api/v3/find/field_template/sync/status",
+		HTTPMethod:     http.MethodPost,
+		ResourceAction: meta.SkipAction,
+	},
+	{
 		Name:           "QueryFieldTemplateBriefInformation",
 		Description:    "查询字段组合模版简要信息",
 		Regex:          regexp.MustCompile(`^/api/v3/find/field_template/[0-9]+/?$`),

@@ -438,14 +438,11 @@ func (s *service) judgeFieldTmplIsExist(kit *rest.Kit, id int64) error {
 func (s *service) buildCreateOpt(kit *rest.Kit, cloneOpt *metadata.CloneFieldTmplOption) (
 	*metadata.CreateFieldTmplOption, error) {
 
-	tmplFilter, err := filtertools.And(filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, cloneOpt.ID), nil)
-	if err != nil {
-		blog.Errorf("build field template filter failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
 	tmplOpt := &metadata.CommonQueryOption{
-		CommonFilterOption: metadata.CommonFilterOption{Filter: tmplFilter},
-		Page:               metadata.BasePage{Limit: common.BKNoLimit},
+		CommonFilterOption: metadata.CommonFilterOption{
+			Filter: filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, cloneOpt.ID),
+		},
+		Page: metadata.BasePage{Limit: common.BKNoLimit},
 	}
 
 	tmplAttrs, err := s.clientSet.CoreService().FieldTemplate().ListFieldTemplateAttr(kit.Ctx, kit.Header, tmplOpt)
@@ -693,8 +690,9 @@ func (s *service) getFieldTmplAttrOperation(kit *rest.Kit, templateID int64, att
 	updateAttrs := make([]metadata.FieldTemplateAttr, 0)
 	createAttrs := make([]metadata.FieldTemplateAttr, 0)
 
-	for _, attr := range attrs {
+	for idx, attr := range attrs {
 		attr.TemplateID = templateID
+		attr.PropertyIndex = int64(idx)
 
 		if attr.ID == 0 {
 			createAttrs = append(createAttrs, attr)

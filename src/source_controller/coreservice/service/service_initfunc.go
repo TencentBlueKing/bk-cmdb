@@ -68,6 +68,7 @@ func (s *coreService) initModel(web *restful.WebService) {
 		Path:    "/delete/table/model/cascade",
 		Handler: s.CascadeDeleteTableModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model", Handler: s.SearchModel})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/model", Handler: s.ListModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model/with/attribute",
 		Handler: s.SearchModelWithAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/read/model/statistics", Handler: s.GetModelStatistics})

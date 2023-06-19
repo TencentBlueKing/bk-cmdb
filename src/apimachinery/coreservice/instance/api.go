@@ -101,7 +101,8 @@ func (inst *instance) BatchCreateInstance(ctx context.Context, h http.Header, ob
 }
 
 // SetManyInstance TODO
-func (inst *instance) SetManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.SetManyModelInstance) (resp *metadata.SetOptionResult, err error) {
+func (inst *instance) SetManyInstance(ctx context.Context, h http.Header, objID string,
+	input *metadata.SetManyModelInstance) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/setmany/model/%s/instances"
 
@@ -194,7 +195,8 @@ func (inst *instance) DeleteInstance(ctx context.Context, h http.Header, objID s
 }
 
 // DeleteInstanceCascade TODO
-func (inst *instance) DeleteInstanceCascade(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
+func (inst *instance) DeleteInstanceCascade(ctx context.Context, h http.Header, objID string,
+	input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
 	resp = new(metadata.DeletedOptionResult)
 	subPath := "/delete/model/%s/instance/cascade"
 

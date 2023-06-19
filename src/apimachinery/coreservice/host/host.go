@@ -28,7 +28,8 @@ type HostClientInterface interface {
 		[]metadata.ExceptionResult, errors.CCErrorCoder)
 	TransferToNormalModule(ctx context.Context, header http.Header, input *metadata.HostsModuleRelation) (
 		[]metadata.ExceptionResult, errors.CCErrorCoder)
-	TransferToAnotherBusiness(ctx context.Context, header http.Header, input *metadata.TransferHostsCrossBusinessRequest) (resp *metadata.OperaterException, err error)
+	TransferToAnotherBusiness(ctx context.Context, header http.Header,
+		input *metadata.TransferHostsCrossBusinessRequest) (resp *metadata.OperaterException, err error)
 
 	RemoveFromModule(ctx context.Context, header http.Header, input *metadata.RemoveHostsFromModuleOption) (
 		resp *metadata.OperaterException, err error)

@@ -65,7 +65,8 @@ func NewApiMachinery(c *util.APIMachineryConfig, discover discovery.DiscoveryInt
 }
 
 // NewClientSet TODO
-func NewClientSet(client util.HttpClient, discover discovery.DiscoveryInterface, throttle flowctrl.RateLimiter) ClientSetInterface {
+func NewClientSet(client util.HttpClient, discover discovery.DiscoveryInterface,
+	throttle flowctrl.RateLimiter) ClientSetInterface {
 	return &ClientSet{
 		version:  "v3",
 		client:   client,

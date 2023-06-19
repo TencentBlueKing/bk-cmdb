@@ -1455,7 +1455,8 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 
 		listOption, ok := attribute.Option.([]interface{})
 		if false == ok {
-			return "", fmt.Errorf("parse options for list type failed, option not slice type, option: %+v", attribute.Option)
+			return "", fmt.Errorf("parse options for list type failed, option not slice type, option: %+v",
+				attribute.Option)
 		}
 		for _, inVal := range listOption {
 			inValStr, ok := inVal.(string)

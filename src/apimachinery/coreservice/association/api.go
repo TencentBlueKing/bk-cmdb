@@ -73,7 +73,8 @@ func (asst *association) CreateManyAssociation(ctx context.Context, h http.Heade
 }
 
 // SetAssociation TODO
-func (asst *association) SetAssociation(ctx context.Context, h http.Header, input *metadata.SetAssociationKind) (resp *metadata.SetOptionResult, err error) {
+func (asst *association) SetAssociation(ctx context.Context, h http.Header,
+	input *metadata.SetAssociationKind) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/set/associationkind"
 
@@ -88,7 +89,8 @@ func (asst *association) SetAssociation(ctx context.Context, h http.Header, inpu
 }
 
 // SetManyAssociation TODO
-func (asst *association) SetManyAssociation(ctx context.Context, h http.Header, input *metadata.SetManyAssociationKind) (resp *metadata.SetOptionResult, err error) {
+func (asst *association) SetManyAssociation(ctx context.Context, h http.Header,
+	input *metadata.SetManyAssociationKind) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/setmany/associationkind"
 
@@ -155,7 +157,8 @@ func (asst *association) DeleteAssociationType(ctx context.Context, h http.Heade
 }
 
 // DeleteAssociationCascade TODO
-func (asst *association) DeleteAssociationCascade(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
+func (asst *association) DeleteAssociationCascade(ctx context.Context, h http.Header,
+	input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
 	resp = new(metadata.DeletedOptionResult)
 	subPath := "/delete/associationkind/cascade"
 
@@ -248,7 +251,8 @@ func (asst *association) CreateMainlineModelAssociation(ctx context.Context, h h
 }
 
 // SetModelAssociation TODO
-func (asst *association) SetModelAssociation(ctx context.Context, h http.Header, input *metadata.SetModelAssociation) (resp *metadata.SetOptionResult, err error) {
+func (asst *association) SetModelAssociation(ctx context.Context, h http.Header,
+	input *metadata.SetModelAssociation) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/set/modelassociation"
 
@@ -341,7 +345,8 @@ func (asst *association) DeleteModelAssociation(ctx context.Context, h http.Head
 }
 
 // DeleteModelAssociationCascade TODO
-func (asst *association) DeleteModelAssociationCascade(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
+func (asst *association) DeleteModelAssociationCascade(ctx context.Context, h http.Header,
+	input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
 	resp = new(metadata.DeletedOptionResult)
 	subPath := "/delete/modelassociation/cascade"
 
@@ -408,7 +413,8 @@ func (asst *association) CreateManyInstAssociation(ctx context.Context, header h
 }
 
 // SetInstAssociation TODO
-func (asst *association) SetInstAssociation(ctx context.Context, h http.Header, input *metadata.SetOneInstanceAssociation) (resp *metadata.SetOptionResult, err error) {
+func (asst *association) SetInstAssociation(ctx context.Context, h http.Header,
+	input *metadata.SetOneInstanceAssociation) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/set/instanceassociation"
 
@@ -423,7 +429,8 @@ func (asst *association) SetInstAssociation(ctx context.Context, h http.Header, 
 }
 
 // UpdateInstAssociation TODO
-func (asst *association) UpdateInstAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error) {
+func (asst *association) UpdateInstAssociation(ctx context.Context, h http.Header,
+	input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error) {
 	resp = new(metadata.UpdatedOptionResult)
 	subPath := "/update/instanceassociation"
 

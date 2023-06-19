@@ -19,8 +19,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/apache/thrift/lib/go/thrift"
 	"reflect"
+
+	"github.com/apache/thrift/lib/go/thrift"
 )
 
 // (needed to ensure safety because of naive import list construction.)

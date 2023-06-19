@@ -13,13 +13,12 @@
 package metadata
 
 import (
+	"database/sql/driver"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
-
-	"database/sql/driver"
 
 	"github.com/coccyx/timeparser"
 	"github.com/mitchellh/mapstructure"

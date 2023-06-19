@@ -40,6 +40,9 @@ type FieldTemplate struct {
 }
 
 const (
+	// fieldTemplateSyncMaxNum compare the difference status between the
+	// template and the model The maximum number of models processed at one time
+	fieldTemplateSyncMaxNum = 5
 	fieldTemplateNameMaxLen = 128
 	fieldTemplateDesMaxLen  = 2000
 )
@@ -65,23 +68,27 @@ func (f *FieldTemplate) Validate() ccErr.RawErrorInfo {
 
 // FieldTemplateAttr field template attribute definition
 type FieldTemplateAttr struct {
-	ID           int64           `json:"id" bson:"id"`
-	TemplateID   int64           `json:"bk_template_id" bson:"bk_template_id"`
-	PropertyID   string          `json:"bk_property_id" bson:"bk_property_id"`
-	PropertyType string          `json:"bk_property_type" bson:"bk_property_type"`
-	PropertyName string          `json:"bk_property_name" bson:"bk_property_name"`
-	Unit         string          `json:"unit" bson:"unit"`
-	Placeholder  AttrPlaceholder `json:"placeholder" bson:"placeholder"`
-	Editable     AttrEditable    `json:"editable" bson:"editable"`
-	Required     AttrRequired    `json:"isrequired" bson:"isrequired"`
-	Option       interface{}     `json:"option" bson:"option"`
-	Default      interface{}     `json:"default" bson:"default"`
-	IsMultiple   bool            `json:"ismultiple" bson:"ismultiple"`
-	OwnerID      string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	Creator      string          `json:"creator" bson:"creator"`
-	Modifier     string          `json:"modifier" bson:"modifier"`
-	CreateTime   *Time           `json:"create_time" bson:"create_time"`
-	LastTime     *Time           `json:"last_time" bson:"last_time"`
+	ID           int64  `json:"id" bson:"id"`
+	TemplateID   int64  `json:"bk_template_id" bson:"bk_template_id"`
+	PropertyID   string `json:"bk_property_id" bson:"bk_property_id"`
+	PropertyType string `json:"bk_property_type" bson:"bk_property_type"`
+	PropertyName string `json:"bk_property_name" bson:"bk_property_name"`
+	// PropertyIndex It is used to display field template attribute in order.
+	// When a template attribute array is created or updated,
+	// its value is set according to the order passed in by the front end.
+	PropertyIndex int64           `json:"bk_property_index" bson:"bk_property_index"`
+	Unit          string          `json:"unit" bson:"unit"`
+	Placeholder   AttrPlaceholder `json:"placeholder" bson:"placeholder"`
+	Editable      AttrEditable    `json:"editable" bson:"editable"`
+	Required      AttrRequired    `json:"isrequired" bson:"isrequired"`
+	Option        interface{}     `json:"option" bson:"option"`
+	Default       interface{}     `json:"default" bson:"default"`
+	IsMultiple    bool            `json:"ismultiple" bson:"ismultiple"`
+	OwnerID       string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Creator       string          `json:"creator" bson:"creator"`
+	Modifier      string          `json:"modifier" bson:"modifier"`
+	CreateTime    *Time           `json:"create_time" bson:"create_time"`
+	LastTime      *Time           `json:"last_time" bson:"last_time"`
 }
 
 // ValidateBase validate FieldTemplateAttr todo:需要分场景进行校验，下个pr调整
@@ -604,6 +611,8 @@ type CompareFieldTmplAttrOption struct {
 	TemplateID int64               `json:"bk_template_id"`
 	ObjectID   int64               `json:"object_id"`
 	Attrs      []FieldTemplateAttr `json:"attributes"`
+	// IsPartial partial comparison of template and model attre flag.
+	IsPartial bool `json:"is_partial"`
 }
 
 // Validate compare field template attribute with object option
@@ -682,6 +691,8 @@ type CompareFieldTmplUniqueOption struct {
 	TemplateID int64                      `json:"bk_template_id"`
 	ObjectID   int64                      `json:"object_id"`
 	Uniques    []FieldTmplUniqueForUpdate `json:"uniques"`
+	// IsPartial partial comparison of template and model unique flag.
+	IsPartial bool `json:"is_partial"`
 }
 
 // FieldTmplUniqueForUpdate field template unique for field template update scenario.
@@ -857,4 +868,49 @@ type ListFieldTemplateSimpleResp struct {
 type ListTmplSimpleResult struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
+}
+
+// ListFieldTmpltSyncStatusOption used to compare templates and model
+// attributes or uniquely check whether there is a difference request.
+type ListFieldTmpltSyncStatusOption struct {
+	ID        int64   `json:"bk_template_id"`
+	ObjectIDs []int64 `json:"object_ids"`
+}
+
+// Validate judging the legality of parameters
+func (option *ListFieldTmpltSyncStatusOption) Validate() ccErr.RawErrorInfo {
+	if option.ID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+	if len(option.ObjectIDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"object_ids"},
+		}
+	}
+	if len(option.ObjectIDs) > fieldTemplateSyncMaxNum {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"object_ids", fieldTemplateSyncMaxNum},
+		}
+	}
+	for _, id := range option.ObjectIDs {
+		if id == 0 {
+			return ccErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{common.ObjectIDField},
+			}
+		}
+	}
+	return ccErr.RawErrorInfo{}
+}
+
+// ListFieldTmpltSyncStatusResult it is used to compare the attributes or unique
+// verification status comparison results between the template and the model
+type ListFieldTmpltSyncStatusResult struct {
+	ObjectID int64 `json:"object_id"`
+	NeedSync bool  `json:"need_sync"`
 }

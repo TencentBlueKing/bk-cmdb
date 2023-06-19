@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { defineExpose, ref, watch } from 'vue'
+  import { ref, watch } from 'vue'
   import cloneDeep from 'lodash/cloneDeep'
 
   const props = defineProps({

@@ -166,13 +166,20 @@ func (s *service) ListObjByFieldTmpl(cts *rest.Contexts) {
 		return
 	}
 
-	// list object by ids
-	listOpt := &metadata.QueryCondition{
-		Fields:    []string{common.BKFieldID, common.BKFieldName},
-		Page:      opt.Page,
-		Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: objectIDs}},
+	expr, rawErr := filtertools.And(filtertools.GenAtomFilter(common.BKFieldID, filter.In, objectIDs), opt.Filter)
+	if rawErr != nil {
+		blog.Errorf("merge field template filter failed, err: %v, opt: %+v, rid: %s", err, opt, cts.Kit.Rid)
+		cts.RespAutoError(rawErr)
+		return
 	}
-	res, objErr := s.clientSet.CoreService().Model().ReadModel(cts.Kit.Ctx, cts.Kit.Header, listOpt)
+
+	// list object by ids
+	listOpt := &metadata.CommonQueryOption{
+		Fields:             opt.Fields,
+		Page:               opt.Page,
+		CommonFilterOption: metadata.CommonFilterOption{Filter: expr},
+	}
+	res, objErr := s.clientSet.CoreService().Model().ListModel(cts.Kit.Ctx, cts.Kit.Header, listOpt)
 	if objErr != nil {
 		blog.Errorf("list objects failed, err: %v, opt: %+v, rid: %s", objErr, opt, cts.Kit.Rid)
 		cts.RespAutoError(objErr)
@@ -508,7 +515,7 @@ func (s *service) getCreateAndUpdateAttr(kit *rest.Kit, option *metadata.SyncObj
 		Attrs:      tmplAttrs,
 	}
 
-	result, err := s.logics.FieldTemplateOperation().CompareFieldTemplateAttr(kit, opt, false)
+	result, _, err := s.logics.FieldTemplateOperation().CompareFieldTemplateAttr(kit, opt, false)
 	if err != nil {
 		blog.Errorf("compare field template failed, cond: %+v, err: %v, rid: %s", opt, err, kit.Rid)
 		return nil, nil, err
@@ -531,15 +538,10 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 		return err
 	}
 
-	uniqueOp, err := s.getFieldTemplateUniqueByID(kit, option)
-	if err != nil {
-		return err
-	}
-
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 		// 1、create model properties
 		if len(createAttr) > 0 {
-			if err := s.logics.AttributeOperation().BatchCreateObjectAttr(kit, objectID, createAttr); err != nil {
+			if err := s.logics.AttributeOperation().BatchCreateObjectAttr(kit, objectID, createAttr, true); err != nil {
 				blog.Errorf("create model attribute failed, attr: %+v, err: %v, rid: %s", createAttr, err, kit.Rid)
 				return err
 			}
@@ -551,7 +553,7 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 				if len(attr.UpdateData) == 0 {
 					continue
 				}
-				err := s.logics.AttributeOperation().UpdateObjectAttribute(kit, attr.UpdateData, attr.Data.ID, 0)
+				err := s.logics.AttributeOperation().UpdateObjectAttribute(kit, attr.UpdateData, attr.Data.ID, 0, true)
 				if err != nil {
 					return err
 				}
@@ -562,7 +564,12 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 
 		// 3、unique validation for preprocessed template synchronization
 
-		res, err := s.logics.FieldTemplateOperation().CompareFieldTemplateUnique(kit, uniqueOp, false)
+		uniqueOp, err := s.getFieldTemplateUniqueByID(kit, option)
+		if err != nil {
+			return err
+		}
+
+		res, _, err := s.logics.FieldTemplateOperation().CompareFieldTemplateUnique(kit, uniqueOp, false)
 		if err != nil {
 			blog.Errorf("get field template unique failed, cond: %+v, err: %v, rid: %s", uniqueOp, err, kit.Rid)
 			return err
@@ -578,7 +585,7 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 		// 4、create a unique check for the model
 		if len(create) > 0 {
 			for _, unique := range create {
-				op := metadata.CreateModelAttrUnique{Data: unique}
+				op := metadata.CreateModelAttrUnique{Data: unique, FromTemplate: true}
 				_, err := s.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header, objectID, op)
 				if err != nil {
 					blog.Errorf("create unique failed for failed: raw: %#v, err: %v, rid: %s", unique, err, kit.Rid)
@@ -596,7 +603,7 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 					Keys:       unique.Keys,
 					LastTime:   metadata.Now()}
 
-				op := metadata.UpdateModelAttrUnique{Data: input}
+				op := metadata.UpdateModelAttrUnique{Data: input, FromTemplate: true}
 				_, err := s.clientSet.CoreService().Model().UpdateModelAttrUnique(kit.Ctx, kit.Header,
 					objectID, unique.ID, op)
 				if err != nil {

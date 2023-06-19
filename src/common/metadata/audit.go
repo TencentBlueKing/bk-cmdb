@@ -96,7 +96,8 @@ type AuditQueryCondition struct {
 // Validate is a AuditQueryCondition validator to validate user resource_name condition whether exist at the same time
 func (a *AuditQueryCondition) Validate() error {
 	if (len(a.User) != 0 || len(a.ResourceName) != 0) && len(a.Condition) != 0 {
-		return errors.New(common.CCErrCommParamsInvalid, "condition, user and resource_name cannot exist at the same time")
+		return errors.New(common.CCErrCommParamsInvalid,
+			"condition, user and resource_name cannot exist at the same time")
 	}
 	return nil
 }

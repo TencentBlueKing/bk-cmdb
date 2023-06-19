@@ -426,7 +426,8 @@ func (option ListHostsParameter) Validate() (string, error) {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
 		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
-			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d",
+				querybuilder.MaxDeep)
 		}
 	}
 
@@ -459,7 +460,8 @@ func (option ListHostsWithNoBizParameter) Validate() (string, error) {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
 		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
-			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d",
+				querybuilder.MaxDeep)
 		}
 	}
 
@@ -511,7 +513,8 @@ func (option ListBizHostsTopoParameter) Validate(errProxy errors.DefaultCCErrorI
 			return errProxy.CCErrorf(common.CCErrCommParamsInvalid, fmt.Sprintf("module_property_filter.%s", key))
 		}
 		if option.ModulePropertyFilter.GetDeep() > querybuilder.MaxDeep {
-			return errProxy.CCErrorf(common.CCErrCommXXExceedLimit, "module_property_filter.rules", querybuilder.MaxDeep)
+			return errProxy.CCErrorf(common.CCErrCommXXExceedLimit, "module_property_filter.rules",
+				querybuilder.MaxDeep)
 		}
 	}
 
@@ -603,7 +606,8 @@ func (option ListHosts) Validate() (errKey string, err error) {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
 		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
-			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d",
+				querybuilder.MaxDeep)
 		}
 	}
 

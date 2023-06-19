@@ -126,7 +126,7 @@ func (option *PreviewBusinessSetRequest) Validate(allowNoLimit bool) ccErr.RawEr
 		if key, err := option.BizSetPropertyFilter.Validate(op); err != nil {
 			return ccErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsNeedSet,
-				Args:    []interface{}{(key)},
+				Args:    []interface{}{key},
 			}
 		}
 
@@ -141,7 +141,7 @@ func (option *PreviewBusinessSetRequest) Validate(allowNoLimit bool) ccErr.RawEr
 		if key, err := option.Filter.Validate(op); err != nil {
 			return ccErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsNeedSet,
-				Args:    []interface{}{(key)},
+				Args:    []interface{}{key},
 			}
 		}
 
@@ -634,7 +634,7 @@ func (q *SearchProjectOption) Validate() ccErr.RawErrorInfo {
 	if key, err := q.Filter.Validate(op); err != nil {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{(key)},
+			Args:    []interface{}{key},
 		}
 	}
 

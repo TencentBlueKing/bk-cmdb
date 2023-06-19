@@ -70,7 +70,8 @@ func (b *baseCache) SearchHostWithAgentID(ctx context.Context, h http.Header, op
 }
 
 // SearchHostWithHostID TODO
-func (b *baseCache) SearchHostWithHostID(ctx context.Context, h http.Header, opt *metadata.SearchHostWithIDOption) (jsonString string, err error) {
+func (b *baseCache) SearchHostWithHostID(ctx context.Context, h http.Header,
+	opt *metadata.SearchHostWithIDOption) (jsonString string, err error) {
 
 	resp, err := b.client.Post().
 		WithContext(ctx).
@@ -115,7 +116,8 @@ func (b *baseCache) ListHostWithPage(ctx context.Context, h http.Header, opt *me
 }
 
 // ListHostWithHostID TODO
-func (b *baseCache) ListHostWithHostID(ctx context.Context, h http.Header, opt *metadata.ListWithIDOption) (jsonString string, err error) {
+func (b *baseCache) ListHostWithHostID(ctx context.Context, h http.Header,
+	opt *metadata.ListWithIDOption) (jsonString string, err error) {
 
 	resp, err := b.client.Post().
 		WithContext(ctx).

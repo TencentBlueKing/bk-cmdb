@@ -64,6 +64,7 @@
       tips = $bkPopover(plusEl.value, {
         allowHTML: true,
         placement: 'top',
+        boundary: 'window',
         arrow: true,
         theme: `${props.isLinkStyle ? 'light' : 'dark'} flex-tag-tooltip`,
         interactive: true
@@ -132,7 +133,7 @@
           itemEl.classList.add('is-link')
           itemEl.addEventListener('click', () => handleClick(index), false)
         }
-        itemEl.textContent = text
+        itemEl.textContent = text.name || text
         fragment.appendChild(itemEl)
       })
 
@@ -193,10 +194,11 @@
       '--height': height
     }">
     <li class="tag-item" v-bk-overflow-tips
-      v-for="(text, index) in tags"
+      v-for="(tag, index) in tags"
       :key="index"
       @click="handleClick(index)">
-      {{text}}
+      <span>{{tag.name || tag}}</span>
+      <slot name="append" v-bind:text="tag"></slot>
     </li>
     <li class="more-plus" ref="plusEl" v-show="ellipsisCount">+{{ellipsisCount}}</li>
   </ul>
@@ -220,6 +222,8 @@
       height: var(--height);
       line-height: var(--height);
       max-width: var(--maxWidth);
+      display: flex;
+      align-items: center;
     }
 
     &.is-link-style {

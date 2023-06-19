@@ -28,7 +28,8 @@ type authorizeBatchResp struct {
 }
 
 // AuthorizeBatch TODO
-func (a *authServer) AuthorizeBatch(ctx context.Context, h http.Header, input *types.AuthBatchOptions) ([]types.Decision, error) {
+func (a *authServer) AuthorizeBatch(ctx context.Context, h http.Header,
+	input *types.AuthBatchOptions) ([]types.Decision, error) {
 	subPath := "/authorize/batch"
 	response := new(authorizeBatchResp)
 
@@ -51,7 +52,8 @@ func (a *authServer) AuthorizeBatch(ctx context.Context, h http.Header, input *t
 }
 
 // AuthorizeAnyBatch TODO
-func (a *authServer) AuthorizeAnyBatch(ctx context.Context, h http.Header, input *types.AuthBatchOptions) ([]types.Decision, error) {
+func (a *authServer) AuthorizeAnyBatch(ctx context.Context, h http.Header,
+	input *types.AuthBatchOptions) ([]types.Decision, error) {
 	subPath := "/authorize/any/batch"
 	response := new(authorizeBatchResp)
 
@@ -101,7 +103,8 @@ func (a *authServer) ListAuthorizedResources(ctx context.Context, h http.Header,
 }
 
 // GetNoAuthSkipUrl TODO
-func (a *authServer) GetNoAuthSkipUrl(ctx context.Context, h http.Header, input *metadata.IamPermission) (string, error) {
+func (a *authServer) GetNoAuthSkipUrl(ctx context.Context, h http.Header, input *metadata.IamPermission) (string,
+	error) {
 	response := new(struct {
 		metadata.BaseResp `json:",inline"`
 		Data              string `json:"data"`
@@ -127,7 +130,8 @@ func (a *authServer) GetNoAuthSkipUrl(ctx context.Context, h http.Header, input 
 }
 
 // GetPermissionToApply TODO
-func (a *authServer) GetPermissionToApply(ctx context.Context, h http.Header, input []meta.ResourceAttribute) (*metadata.IamPermission, error) {
+func (a *authServer) GetPermissionToApply(ctx context.Context, h http.Header,
+	input []meta.ResourceAttribute) (*metadata.IamPermission, error) {
 	response := new(struct {
 		metadata.BaseResp `json:",inline"`
 		Data              *metadata.IamPermission `json:"data"`
@@ -153,7 +157,8 @@ func (a *authServer) GetPermissionToApply(ctx context.Context, h http.Header, in
 }
 
 // RegisterResourceCreatorAction TODO
-func (a *authServer) RegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstanceWithCreator) (
+func (a *authServer) RegisterResourceCreatorAction(ctx context.Context, h http.Header,
+	input metadata.IamInstanceWithCreator) (
 	[]metadata.IamCreatorActionPolicy, error) {
 	response := new(struct {
 		metadata.BaseResp `json:",inline"`
@@ -180,7 +185,8 @@ func (a *authServer) RegisterResourceCreatorAction(ctx context.Context, h http.H
 }
 
 // BatchRegisterResourceCreatorAction TODO
-func (a *authServer) BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstancesWithCreator) (
+func (a *authServer) BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header,
+	input metadata.IamInstancesWithCreator) (
 	[]metadata.IamCreatorActionPolicy, error) {
 	response := new(struct {
 		metadata.BaseResp `json:",inline"`

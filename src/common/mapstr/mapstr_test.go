@@ -167,7 +167,7 @@ func TestMapStrToMapstr(t *testing.T) {
 	}
 
 	testData2 := mapstr.MapStr{"aa": []mapstr.MapStr{
-		mapstr.MapStr{"aa": "bb"},
+		{"aa": "bb"},
 	}}
 	_, err = testData2.MapStrArray("aa")
 	if err != nil {
@@ -370,8 +370,10 @@ func TestClone(t *testing.T) {
 
 	cloneInst := targetMapStr.Clone()
 	(cloneInst["struct"].(*targetTest)).TargetInline.Field1Inline = "inline_hello"
-	t.Logf("origin:%#v private:%s", (targetMapStr["struct"].(*targetTest)).TargetInline.Field1Inline, (targetMapStr["struct"].(*targetTest)).privateField)
-	t.Logf("clone:%#v private:%s", (cloneInst["struct"].(*targetTest)).TargetInline.Field1Inline, (cloneInst["struct"].(*targetTest)).privateField)
+	t.Logf("origin:%#v private:%s", (targetMapStr["struct"].(*targetTest)).TargetInline.Field1Inline,
+		(targetMapStr["struct"].(*targetTest)).privateField)
+	t.Logf("clone:%#v private:%s", (cloneInst["struct"].(*targetTest)).TargetInline.Field1Inline,
+		(cloneInst["struct"].(*targetTest)).privateField)
 }
 
 func TestLargeNumber(t *testing.T) {

@@ -100,7 +100,7 @@ func TestORCondition(t *testing.T) {
 	or.Item(mapstr.MapStr{"a": "b"})
 	or.Item(mapstr.MapStr{"b": "c"})
 	or.Array([]interface{}{mapstr.MapStr{"c": "b"}, mapstr.MapStr{"d": "b"}})
-	or.MapStrArr([]mapstr.MapStr{mapstr.MapStr{"e": "b"}, mapstr.MapStr{"f": "b"}})
+	or.MapStrArr([]mapstr.MapStr{{"e": "b"}, {"f": "b"}})
 
 	output := `{"$or":[{"a":"b"},{"b":"c"},{"c":"b"},{"d":"b"},{"e":"b"},{"f":"b"}],"test":{"$lt":3},"test_field":1024,"test_field2":{"$in":[0,1,2,3]}}`
 

@@ -21,7 +21,8 @@ import (
 )
 
 // Find TODO
-func (s *synchronize) Find(ctx context.Context, h http.Header, input *metadata.SynchronizeFindInfoParameter) (resp *metadata.ResponseInstData, err error) {
+func (s *synchronize) Find(ctx context.Context, h http.Header,
+	input *metadata.SynchronizeFindInfoParameter) (resp *metadata.ResponseInstData, err error) {
 	resp = new(metadata.ResponseInstData)
 	subPath := "/search"
 

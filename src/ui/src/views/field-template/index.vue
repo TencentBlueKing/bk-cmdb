@@ -31,7 +31,7 @@
   const requestIds = {
     list: Symbol('list'),
     fieldCount: Symbol('fieldCount'),
-    modelCount: Symbol('modelCount'),
+    modelCount: Symbol('modelCount')
   }
 
   // 响应式的query
@@ -69,6 +69,15 @@
     }
   ]
   const filter = ref([])
+
+  const cloneForm = ref({
+    name: '',
+    description: ''
+  })
+
+  const isShowCloneDialog = ref(false)
+
+  const rowId = ref(null)
 
   // 计算查询条件参数
   const searchParams = computed(() => {
@@ -233,13 +242,44 @@
     })
   }
 
+  const handleClone = (row) => {
+    isShowCloneDialog.value = true
+    rowId.value = row.id
+  }
+
+  const handleConfirm = async () => {
+    try {
+      const params = {
+        id: rowId.value,
+        name: cloneForm.value.name,
+        description: cloneForm.value.desscription
+      }
+      await fieldTemplateService.cloneTemplate(params)
+      getList({ isDel: true })
+      $success(t('克隆成功'))
+      isShowCloneDialog.value = false
+      cloneForm.value = {
+        name: '',
+        description: ''
+      }
+    } catch (error) {
+      console.error(error)
+      $error(t('克隆失败'))
+      return false
+    }
+  }
+
   const handleDelete = (row) => {
     $bkInfo({
       title: t('确认要删除', { name: row.name }),
       confirmLoading: true,
       confirmFn: async () => {
         try {
-          // TODO: 删除接口
+          await fieldTemplateService.deleteTemplate({
+            data: {
+              id: row.id
+            }
+          })
           getList({ isDel: true })
           $success(t('删除成功'))
         } catch (error) {
@@ -392,18 +432,18 @@
                 theme="primary"
                 :disabled="disabled"
                 :text="true"
-                @click.stop="handleCopy(row)">
+                @click.stop="handleClone(row)">
                 {{$t('克隆')}}
               </bk-button>
             </template>
           </cmdb-auth>
           <cmdb-auth
             :auth="{ type: $OPERATION.D_BUSINESS_SET, relation: [row.bk_biz_set_id] }"
-            v-bk-tooltips.top="{ content: $t('已被模型绑定，不能删除'), disabled: false }">
+            v-bk-tooltips.top="{ content: $t('已被模型绑定，不能删除'), disabled: !row.model_count }">
             <template slot-scope="{ disabled }">
               <bk-button
                 theme="primary"
-                :disabled="disabled"
+                :disabled="disabled || row.model_count > 0"
                 :text="true"
                 @click.stop="handleDelete(row)">
                 {{$t('删除')}}
@@ -444,6 +484,30 @@
       :template="detailsDrawer.template"
       @close="handleDetailsDrawerClose">
     </template-details>
+
+    <bk-dialog
+      v-model="isShowCloneDialog"
+      theme="primary"
+      header-position="left"
+      :mask-close="false"
+      :auto-close="false"
+      width="670"
+      :title="t('克隆字段组合模板')"
+      @confirm="handleConfirm">
+      <bk-form :label-width="80" :model="cloneForm" class="cloneFrom">
+        <bk-form-item label="模板名称" :required="true" :property="'name'">
+          <bk-input v-model="cloneForm.name" placeholder="请输入模板名称，20个字符以内" v-validate="'required|length:20'"></bk-input>
+        </bk-form-item>
+        <bk-form-item label="描述" :property="'description'">
+          <bk-input
+            type="textarea"
+            :maxlength="2000"
+            v-model="cloneForm.description"
+            :placeholder="$t('请输入模板描述')"
+            v-validate="'length:2000'"></bk-input>
+        </bk-form-item>
+      </bk-form>
+    </bk-dialog>
   </div>
 </template>
 <style lang="scss" scoped>

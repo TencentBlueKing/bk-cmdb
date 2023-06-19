@@ -172,10 +172,17 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 			continue
 		}
 		if !locked {
-			blog.Errorf("create model have same task in progress. input: %+v, rid: %s", inputParam, kit.Rid)
-			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr,
-				fmt.Sprintf("create object(%s) attribute(%s)", attr.ObjectID, attr.PropertyName)), &attr)
+			blog.Errorf("create model have same task in progress. input: %v, rid: %s", inputParam, kit.Rid)
+			msg := fmt.Sprintf("create object(%s) attribute(%s)", attr.ObjectID, attr.PropertyName)
+			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr, msg), &attr)
 			continue
+		}
+
+		// in the scenario of directly creating attrs on the model, the template ID in the attrs field must be 0
+		if (!inputParam.FromTemplate && attr.TemplateID != 0) || (inputParam.FromTemplate && attr.TemplateID == 0) {
+			blog.Errorf("scene parameter invalid, attr: %+v, from template: %v rid: %s", attr,
+				inputParam.FromTemplate, kit.Rid)
+			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 		}
 
 		if attr.IsPre {
@@ -197,24 +204,18 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 
 		if exists {
 			dataResult.CreateManyInfoResult.Repeated = append(dataResult.CreateManyInfoResult.Repeated,
-				metadata.RepeatedDataResult{
-					OriginIndex: int64(attrIdx),
-					Data:        mapstr.NewFromStruct(attr, "field"),
-				})
+				metadata.RepeatedDataResult{OriginIndex: int64(attrIdx), Data: mapstr.NewFromStruct(attr, "field")})
 			continue
 		}
 		id, err := m.save(kit, attr)
 		if err != nil {
-			blog.Errorf("save the attribute(%#v) failed, err: %v, rid: %s", attr, err, kit.Rid)
+			blog.Errorf("failed to save the attribute(%#v), err: %v, rid: %s", attr, err, kit.Rid)
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
 		}
 
 		dataResult.CreateManyInfoResult.Created = append(dataResult.CreateManyInfoResult.Created,
-			metadata.CreatedDataResult{
-				OriginIndex: int64(attrIdx),
-				ID:          id,
-			})
+			metadata.CreatedDataResult{OriginIndex: int64(attrIdx), ID: id})
 	}
 
 	return dataResult, nil
@@ -256,7 +257,7 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string,
 			cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: kit.SupplierAccount})
 			cond.Element(&mongo.Eq{Key: metadata.AttributeFieldID, Val: existsAttr.ID})
 
-			_, err := m.update(kit, mapstr.NewFromStruct(attr, "field"), cond)
+			_, err := m.update(kit, mapstr.NewFromStruct(attr, "field"), cond, false)
 			if err != nil {
 				blog.Errorf("update the attribute(%#v) by the condition(%#v) failed, err: %v, rid: %s", attr,
 					cond.ToMapStr(), err, kit.Rid)
@@ -300,12 +301,11 @@ func (m *modelAttribute) UpdateModelAttributes(kit *rest.Kit, objID string,
 	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(),
 		kit.SupplierAccount))
 	if err != nil {
-		blog.Errorf("convert mapstr(%#v) into a condition object failed, err: %v, rid: %s", inputParam.Condition,
-			err, kit.Rid)
+		blog.Errorf("failed to convert condition, input: %+v, err: %v, rid: %s", inputParam.Condition, err, kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
 
-	cnt, err := m.update(kit, inputParam.Data, cond)
+	cnt, err := m.update(kit, inputParam.Data, cond, inputParam.IsSync)
 	if err != nil {
 		blog.ErrorJSON("update attributes failed, model: %s, attributes: %+v, condition: %+v, err: %v, rid: %s",
 			objID, inputParam.Data, cond, err, kit.Rid)
@@ -385,21 +385,20 @@ func (m *modelAttribute) UpdateModelAttributeIndex(kit *rest.Kit, objID string, 
 }
 
 // UpdateModelAttributesByCondition TODO
-func (m *modelAttribute) UpdateModelAttributesByCondition(kit *rest.Kit,
-	inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
+func (m *modelAttribute) UpdateModelAttributesByCondition(kit *rest.Kit, inputParam metadata.UpdateOption) (
+	*metadata.UpdatedCount, error) {
 
 	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(),
 		kit.SupplierAccount))
 	if err != nil {
-		blog.Errorf("UpdateModelAttributesByCondition failed, failed to convert mapstr(%#v) into a condition object, err: %s, rid: %s",
-			inputParam.Condition, err.Error(), kit.Rid)
+		blog.Errorf("failed to convert condition, input: %+v, err: %v, rid: %s", inputParam.Condition, err, kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
 
-	cnt, err := m.update(kit, inputParam.Data, cond)
+	cnt, err := m.update(kit, inputParam.Data, cond, inputParam.IsSync)
 	if err != nil {
-		blog.Errorf("UpdateModelAttributesByCondition failed, failed to update fields (%#v) by condition(%#v), err: %s, rid: %s",
-			inputParam.Data, cond.ToMapStr(), err.Error(), kit.Rid)
+		blog.Errorf("failed to update fields (%#v) by condition(%#v), err: %v, rid: %s", inputParam.Data,
+			cond.ToMapStr(), err, kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
 
@@ -433,6 +432,11 @@ func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam me
 		return err
 	}
 
+	if inputParam.IsSync {
+		blog.Errorf("synchronization of form fields is not supported, isSync: %v, rid: %s", inputParam.IsSync, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, inputParam.IsSync)
+	}
+
 	if len(inputParam.CreateData.Data) > 0 {
 		if err := m.model.isValid(kit, inputParam.CreateData.ObjID); err != nil {
 			blog.Errorf("validate model(%s) failed, err: %v, rid: %s", inputParam.CreateData.ObjID, err, kit.Rid)
@@ -464,13 +468,8 @@ func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam me
 			}
 		}
 
-		// inputParam.UpdateData 中的option 转化成header default
-		hOp, ok := inputParam.UpdateData["option"].(map[string]interface{})
-		if !ok {
-			return err
-		}
-		header := new(metadata.TableAttributesOption)
-		if err := mapstruct.Decode2Struct(hOp, header); err != nil {
+		header, err := getTableAttributesOption(kit, inputParam.UpdateData)
+		if err != nil {
 			return err
 		}
 
@@ -485,7 +484,6 @@ func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam me
 			}
 
 			header.Header = append(header.Header, dataTbale.Header...)
-
 		}
 		inputParam.UpdateData[metadata.AttributeFieldOption] = header
 	}
@@ -509,6 +507,23 @@ func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam me
 	}
 
 	return nil
+}
+
+func getTableAttributesOption(kit *rest.Kit, data mapstr.MapStr) (*metadata.TableAttributesOption, error) {
+
+	// inputParam.UpdateData 中的option 转化成header default
+	headerOp, ok := data["option"].(map[string]interface{})
+	if !ok {
+		blog.Errorf("parse data option failed, data: %+v, rid: %s", data, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "option")
+	}
+
+	header := new(metadata.TableAttributesOption)
+	if err := mapstruct.Decode2Struct(headerOp, header); err != nil {
+		blog.Errorf("parse data option failed, data: %+v, err: %v, rid: %s", data, err, kit.Rid)
+		return nil, err
+	}
+	return header, nil
 }
 
 // unsetTableInstAttr unset instance attributes
@@ -615,7 +630,7 @@ func (m *modelAttribute) DeleteModelAttributes(kit *rest.Kit, objID string,
 	}
 
 	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: kit.SupplierAccount})
-	cnt, err := m.delete(kit, cond)
+	cnt, err := m.delete(kit, cond, false)
 	return &metadata.DeletedCount{Count: cnt}, err
 }
 

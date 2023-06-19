@@ -76,7 +76,7 @@
     <div class="field-info">
       <div class="field-name-area">
         <span class="field-name" :title="field.bk_property_name">{{ field.bk_property_name }}</span>
-        <span class="field-required">*</span>
+        <span class="field-required" v-if="field.isrequired">*</span>
         <slot name="flag-append"></slot>
       </div>
       <div class="field-id-area">
@@ -92,7 +92,7 @@
       }">
         <em class="tag-text">{{$t('联合唯一')}}</em>
       </span>
-      <span class="tag template" v-if="isTemplate"><em class="tag-text">模板</em></span>
+      <span class="tag template" v-if="isTemplate"><em class="tag-text">{{$t('模板')}}</em></span>
       <slot name="tag-append"></slot>
     </div>
     <div class="field-action" @click.stop>
@@ -120,7 +120,7 @@
     height: 60px;
     border: 1px solid transparent;
     background: #FFFFFF;
-    box-shadow: 0 2px 4px 0 #1919290d;
+    box-shadow:  0 2px 4px 0 #1919290d;
     border-radius: 2px;
     padding: 0 12px 0 12px;
     user-select: none;

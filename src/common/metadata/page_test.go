@@ -26,7 +26,8 @@ func TestParsePage(t *testing.T) {
 		args args
 		want BasePage
 	}{
-		{"", args{map[string]interface{}{"sort": "f", "limit": 9, "start": 3}}, BasePage{Sort: "f", Limit: 9, Start: 3}},
+		{"", args{map[string]interface{}{"sort": "f", "limit": 9, "start": 3}},
+			BasePage{Sort: "f", Limit: 9, Start: 3}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
