@@ -112,7 +112,8 @@ func (s *topoCheckService) searchMainlineModel() error {
 	associations := make([]metadata.Association, 0)
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: common.AssociationKindMainline})
-	if err := s.service.DbProxy.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(context.Background(), &associations); err != nil {
+	if err := s.service.DbProxy.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(context.Background(),
+		&associations); err != nil {
 		return fmt.Errorf("query topo model mainline association from db failed, %+v", err)
 	}
 	for _, association := range associations {
@@ -155,24 +156,28 @@ func (s *topoCheckService) searchMainlineInstance() error {
 	}
 	// search set instances
 	setInstances := make([]map[string]interface{}, 0)
-	err := s.service.DbProxy.Table(common.BKTableNameBaseSet).Find(cond.ToMapStr()).All(context.Background(), &setInstances)
+	err := s.service.DbProxy.Table(common.BKTableNameBaseSet).Find(cond.ToMapStr()).All(context.Background(),
+		&setInstances)
 	if err != nil {
 		return fmt.Errorf("get set instances by business id: %d failed, err: %+v", s.bizID, err)
 	}
 	for _, set := range setInstances {
 		setID, err := util.GetInt64ByInterface(set[common.BKSetIDField])
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "parse setID: %+v to int64 failed, err: %+v, set instance: %+v\n", set[common.BKSetIDField], err, set)
+			_, _ = fmt.Fprintf(os.Stderr, "parse setID: %+v to int64 failed, err: %+v, set instance: %+v\n",
+				set[common.BKSetIDField], err, set)
 			continue
 		}
 		parentInstanceID, err := util.GetInt64ByInterface(set[common.BKInstParentStr])
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "parse parentInstanceID:%+v to int64 failed, err: %+v, set instance: %+v\n", set[common.BKInstParentStr], err, set)
+			_, _ = fmt.Fprintf(os.Stderr, "parse parentInstanceID:%+v to int64 failed, err: %+v, set instance: %+v\n",
+				set[common.BKInstParentStr], err, set)
 			continue
 		}
 		defaultFieldValue, err := util.GetInt64ByInterface(set[common.BKDefaultField])
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "parse default field failed, default: %+v, err: %+v, set instance: %+v\n", set[common.BKDefaultField], err, set)
+			_, _ = fmt.Fprintf(os.Stderr, "parse default field failed, default: %+v, err: %+v, set instance: %+v\n",
+				set[common.BKDefaultField], err, set)
 			continue
 		}
 		s.instanceMap[fmt.Sprintf("%s:%d", common.BKInnerObjIDSet, setID)] = &topoInstance{
@@ -184,24 +189,29 @@ func (s *topoCheckService) searchMainlineInstance() error {
 	}
 	// search module instances
 	moduleInstances := make([]map[string]interface{}, 0)
-	err = s.service.DbProxy.Table(common.BKTableNameBaseModule).Find(cond.ToMapStr()).All(context.Background(), &moduleInstances)
+	err = s.service.DbProxy.Table(common.BKTableNameBaseModule).Find(cond.ToMapStr()).All(context.Background(),
+		&moduleInstances)
 	if err != nil {
 		return fmt.Errorf("get module instances by business id: %d failed, err: %+v", s.bizID, err)
 	}
 	for _, module := range moduleInstances {
 		moduleID, err := util.GetInt64ByInterface(module[common.BKModuleIDField])
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "parse moduleID: %+v to int64 failed, err: %+v, module instance: %+v\n", module[common.BKModuleIDField], err, module)
+			_, _ = fmt.Fprintf(os.Stderr, "parse moduleID: %+v to int64 failed, err: %+v, module instance: %+v\n",
+				module[common.BKModuleIDField], err, module)
 			continue
 		}
 		parentInstanceID, err := util.GetInt64ByInterface(module[common.BKInstParentStr])
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "parse parentInstanceID:%+v to int64 failed, err: %+v, module instance: %+v\n", module[common.BKInstParentStr], err, module)
+			_, _ = fmt.Fprintf(os.Stderr,
+				"parse parentInstanceID:%+v to int64 failed, err: %+v, module instance: %+v\n",
+				module[common.BKInstParentStr], err, module)
 			continue
 		}
 		defaultFieldValue, err := util.GetInt64ByInterface(module[common.BKDefaultField])
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "parse default field failed, default: %+v, err: %+v, module instance: %+v\n", module[common.BKDefaultField], err, module)
+			_, _ = fmt.Fprintf(os.Stderr, "parse default field failed, default: %+v, err: %+v, module instance: %+v\n",
+				module[common.BKDefaultField], err, module)
 			continue
 		}
 		s.instanceMap[fmt.Sprintf("%s:%d", common.BKInnerObjIDModule, moduleID)] = &topoInstance{
@@ -230,17 +240,23 @@ func (s *topoCheckService) searchMainlineInstance() error {
 		for _, instance := range mainlineInstances {
 			instanceID, err := util.GetInt64ByInterface(instance[common.BKInstIDField])
 			if err != nil {
-				_, _ = fmt.Fprintf(os.Stderr, "parse instanceID: %+v to int64 failed, err: %+v, mainline instance: %+v\n", instance[common.BKInstIDField], err, instance)
+				_, _ = fmt.Fprintf(os.Stderr,
+					"parse instanceID: %+v to int64 failed, err: %+v, mainline instance: %+v\n",
+					instance[common.BKInstIDField], err, instance)
 				continue
 			}
 			parentInstanceID, err := util.GetInt64ByInterface(instance[common.BKInstParentStr])
 			if err != nil {
-				_, _ = fmt.Fprintf(os.Stderr, "parse parentInstanceID:%+v to int64 failed, err: %+v, mainline instance: %+v\n", instance[common.BKInstParentStr], err, instance)
+				_, _ = fmt.Fprintf(os.Stderr,
+					"parse parentInstanceID:%+v to int64 failed, err: %+v, mainline instance: %+v\n",
+					instance[common.BKInstParentStr], err, instance)
 				continue
 			}
 			defaultFieldValue, err := util.GetInt64ByInterface(instance[common.BKDefaultField])
 			if err != nil {
-				_, _ = fmt.Fprintf(os.Stderr, "parse default field failed, default: %+v, err: %+v, mainline instance: %+v\n", instance[common.BKDefaultField], err, instance)
+				_, _ = fmt.Fprintf(os.Stderr,
+					"parse default field failed, default: %+v, err: %+v, mainline instance: %+v\n",
+					instance[common.BKDefaultField], err, instance)
 				continue
 			}
 			objectID := util.GetStrByInterface(instance[common.BKObjIDField])
@@ -280,7 +296,8 @@ func (s *topoCheckService) checkMainlineInstanceTopo() {
 		mongoCondition.Element(&mongo.Eq{Key: parentIDField, Val: instance.ParentInstanceID})
 		missedInstances := make([]map[string]interface{}, 0)
 		parentTable := common.GetInstTableName(parentObjectID, s.supplierAccount)
-		err := s.service.DbProxy.Table(parentTable).Find(mongoCondition.ToMapStr()).All(context.Background(), &missedInstances)
+		err := s.service.DbProxy.Table(parentTable).Find(mongoCondition.ToMapStr()).All(context.Background(),
+			&missedInstances)
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "find missing parent instance for object %s and instance: %d failed, "+
 				"err: %+v, parentObjectID: %s, ParentInstanceID: %d\n",
@@ -288,29 +305,35 @@ func (s *topoCheckService) checkMainlineInstanceTopo() {
 			continue
 		}
 		if len(missedInstances) == 0 {
-			_, _ = fmt.Fprintf(os.Stderr, "instance: %d of model: %s found no parent instance by parentObjectID %s and parentInstanceID: %d\n",
+			_, _ = fmt.Fprintf(os.Stderr,
+				"instance: %d of model: %s found no parent instance by parentObjectID %s and parentInstanceID: %d\n",
 				instance.InstanceID, instance.ObjectID, parentObjectID, instance.ParentInstanceID)
 			continue
 		}
 		if len(missedInstances) > 1 {
-			_, _ = fmt.Fprintf(os.Stderr, "instance: %d of model: %s found too many(%d) parent instances: %+v by parentObjectID %s and parentInstanceID: %d\n",
-				instance.InstanceID, instance.ObjectID, len(missedInstances), missedInstances, parentObjectID, instance.ParentInstanceID)
+			_, _ = fmt.Fprintf(os.Stderr,
+				"instance: %d of model: %s found too many(%d) parent instances: %+v by parentObjectID %s and parentInstanceID: %d\n",
+				instance.InstanceID, instance.ObjectID, len(missedInstances), missedInstances, parentObjectID,
+				instance.ParentInstanceID)
 			continue
 		}
 		missedInstance := missedInstances[0]
 		instanceID, err := util.GetInt64ByInterface(missedInstance[common.BKInstIDField])
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "parse instanceID: %+v to int64 failed, err: %+v, %s instance: %+v\n", missedInstance[common.BKInstIDField], err, parentObjectID, missedInstance)
+			_, _ = fmt.Fprintf(os.Stderr, "parse instanceID: %+v to int64 failed, err: %+v, %s instance: %+v\n",
+				missedInstance[common.BKInstIDField], err, parentObjectID, missedInstance)
 			continue
 		}
 		parentInstanceID, err := util.GetInt64ByInterface(missedInstance[common.BKInstParentStr])
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "parse parentInstanceID:%+v to int64 failed, err: %+v, %s instance: %+v\n", missedInstance[common.BKInstParentStr], err, parentObjectID, missedInstance)
+			_, _ = fmt.Fprintf(os.Stderr, "parse parentInstanceID:%+v to int64 failed, err: %+v, %s instance: %+v\n",
+				missedInstance[common.BKInstParentStr], err, parentObjectID, missedInstance)
 			continue
 		}
 		defaultFieldValue, err := util.GetInt64ByInterface(missedInstance[common.BKDefaultField])
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "parse default field failed, default: %+v, err: %+v, %s instance: %+v\n", missedInstance[common.BKDefaultField], err, parentObjectID, missedInstance)
+			_, _ = fmt.Fprintf(os.Stderr, "parse default field failed, default: %+v, err: %+v, %s instance: %+v\n",
+				missedInstance[common.BKDefaultField], err, parentObjectID, missedInstance)
 			continue
 		}
 		objectID := util.GetStrByInterface(missedInstance[common.BKObjIDField])
