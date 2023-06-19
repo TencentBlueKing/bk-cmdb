@@ -13,10 +13,13 @@
 import Vue from 'vue'
 import VueI18n from 'vue-i18n'
 import Cookies from 'js-cookie'
+import { useSiteConfig } from '@/setup/build-in-vars'
 import messages from './lang/messages'
 import { LANG_COOKIE_NAME, LANG_KEYS, LANG_SET } from './constants'
 
 Vue.use(VueI18n)
+
+const siteConfig = useSiteConfig()
 
 const langInCookie = Cookies.get(LANG_COOKIE_NAME)
 const matchedLang = LANG_SET.find(lang => lang.id === langInCookie || lang?.alias?.includes(langInCookie))
@@ -34,11 +37,11 @@ const i18n = new VueI18n({
 })
 
 export const changeLocale = (locale) => {
-  Cookies.remove('blueking_language', { path: '' })
+  Cookies.remove(LANG_COOKIE_NAME, { path: '' })
   const cookieValue = LANG_SET.find(lang => lang.id === locale)?.apiLocale || locale
   Cookies.set(LANG_COOKIE_NAME, cookieValue, {
     expires: 3600,
-    domain: window.location.hostname.replace(/^.*(\.[^.]+\.[^.]+)$/, '$1'),
+    domain: siteConfig?.cookieDomain || window.location.hostname.replace(/^.*(\.[^.]+\.[^.]+)$/, '$1'),
   })
 
   window.location.reload()
