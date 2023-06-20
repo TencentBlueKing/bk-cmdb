@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 // ListFieldTemplateModelStatus query the status of the model in the template
@@ -97,4 +98,114 @@ func (s *service) ListFieldTemplateModelStatus(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(res)
+}
+
+// ListFieldTemplateSyncStatus whether there is a difference between the real-time calculation template and the model,
+// the following scenarios are considered to be different:
+// 1. attribute conflict. 2. new attribute field 3. unmanagement attribute available 4. update attribute field
+// 5. unique check conflict. 6. add a unique check. 7.update unique checksum. 8.unmanage unique checks
+func (s *service) ListFieldTemplateSyncStatus(ctx *rest.Contexts) {
+	input := new(metadata.ListFieldTmpltSyncStatusOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := input.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	res, err := s.logics.FieldTemplateOperation().ListFieldTemplateSyncStatus(ctx.Kit, input)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(res)
+}
+
+// ListFieldTemplateTasksStatus get the execution status of the
+// asynchronous task created by the field combination template.
+func (s *service) ListFieldTemplateTasksStatus(ctx *rest.Contexts) {
+
+	input := new(metadata.ListFieldTmplTaskStatusOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if err := input.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	taskIDs := util.StrArrayUnique(input.TaskIDs)
+	cond := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKTaskTypeField: common.SyncFieldTemplateTaskFlag,
+			common.BKTaskIDField:   map[string]interface{}{common.BKDBIN: taskIDs},
+			common.BKOwnerIDField:  ctx.Kit.SupplierAccount,
+		},
+		Fields:         []string{common.BKStatusField, common.BKTaskIDField},
+		DisableCounter: true,
+	}
+
+	taskRes, err := s.clientSet.TaskServer().Task().ListSyncStatusHistory(ctx.Kit.Ctx, ctx.NewHeader(), cond)
+	if err != nil {
+		blog.Errorf("get task status failed, task ids: %v, err: %v, rid: %s", taskIDs, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(taskRes.Info) != len(taskIDs) {
+		blog.Errorf("there is an illegal taskID, task ids:(%v), rid: %s", taskIDs, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "task_ids"))
+		return
+	}
+
+	result := make([]metadata.ListFieldTmplTaskStatusResult, len(taskIDs))
+	for id := range taskRes.Info {
+		result[id] = metadata.ListFieldTmplTaskStatusResult{
+			TaskID: taskRes.Info[id].TaskID,
+			Status: string(taskRes.Info[id].Status),
+		}
+	}
+	ctx.RespEntity(result)
+}
+
+// SyncFieldTemplateToObjectTask synchronize field template information to model tasks.
+func (s *service) SyncFieldTemplateToObjectTask(ctx *rest.Contexts) {
+
+	syncOption := new(metadata.SyncObjectTask)
+	if err := ctx.DecodeInto(syncOption); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := syncOption.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	objectID, err := s.preCheckExecuteTaskAndGetObjID(ctx.Kit, syncOption)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err := s.doSyncFieldTemplateTask(ctx.Kit, syncOption, objectID); err != nil {
+			blog.Errorf("do sync field template task(%#v) failed, err: %v, rid: %s", syncOption, err, ctx.Kit.Rid)
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(nil)
 }

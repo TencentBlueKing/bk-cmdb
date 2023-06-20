@@ -157,11 +157,15 @@ func (s *service) SyncFieldTemplateInfoToObjects(ctx *rest.Contexts) {
 		})
 	}
 
+	taskIDs := make([]string, 0)
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		taskRes, err := s.clientSet.TaskServer().Task().CreateFieldTemplateBatch(ctx.Kit.Ctx, ctx.Kit.Header, tasks)
 		if err != nil {
 			blog.Errorf("create field template sync task(%#v) failed, err: %v, rid: %s", tasks, err, ctx.Kit.Rid)
 			return err
+		}
+		for id := range taskRes {
+			taskIDs = append(taskIDs, taskRes[id].TaskID)
 		}
 		blog.V(4).Infof("successfully created field template sync task: %#v, rid: %s", taskRes, ctx.Kit.Rid)
 		return nil
@@ -172,5 +176,5 @@ func (s *service) SyncFieldTemplateInfoToObjects(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(nil)
+	ctx.RespEntity(taskIDs)
 }

@@ -259,42 +259,6 @@ func (s *service) preCheckExecuteTaskAndGetObjID(kit *rest.Kit, syncOption *meta
 	return result.Info[0].ObjectID, nil
 }
 
-// SyncFieldTemplateToObjectTask synchronize field template information to model tasks.
-func (s *service) SyncFieldTemplateToObjectTask(ctx *rest.Contexts) {
-
-	syncOption := new(metadata.SyncObjectTask)
-	if err := ctx.DecodeInto(syncOption); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if rawErr := syncOption.Validate(); rawErr.ErrCode != 0 {
-		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
-		return
-	}
-
-	objectID, err := s.preCheckExecuteTaskAndGetObjID(ctx.Kit, syncOption)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		if err := s.doSyncFieldTemplateTask(ctx.Kit, syncOption, objectID); err != nil {
-			blog.Errorf("do sync field template task(%#v) failed, err: %v, rid: %s", syncOption, err, ctx.Kit.Rid)
-			return err
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
-	}
-
-	ctx.RespEntity(nil)
-}
-
 func (s *service) getTemplateAttrByID(kit *rest.Kit, id int64, fields []string) ([]metadata.FieldTemplateAttr,
 	errors.CCErrorCoder) {
 
