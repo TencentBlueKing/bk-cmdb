@@ -2231,3 +2231,68 @@ type SrvTemplate struct {
 type ServTempAttrData struct {
 	Attributes []ServiceTemplateAttr `json:"attributes"`
 }
+
+// ProcessPropertyName process property name
+type ProcessPropertyName string
+
+const (
+	// ProcNumName process property procNum name
+	ProcNumName ProcessPropertyName = "proc_num"
+
+	// StopCmdName process property stopCmd name
+	StopCmdName ProcessPropertyName = "stop_cmd"
+
+	// RestartCmdName process property restartCmd name
+	RestartCmdName ProcessPropertyName = "restart_cmd"
+
+	// FaceStopCmdName process property faceStopCmd name
+	FaceStopCmdName ProcessPropertyName = "face_stop_cmd"
+
+	// BkFuncNameName process property bkFuncName name
+	BkFuncNameName ProcessPropertyName = "bk_func_name"
+
+	// WorkPathName process property workPath name
+	WorkPathName ProcessPropertyName = "work_path"
+
+	// BindIpName process property bindIp name
+	BindIpName ProcessPropertyName = "bind_ip"
+
+	// PriorityName process property priority name
+	PriorityName ProcessPropertyName = "priority"
+
+	// ReloadCmdName process property reloadCmd name
+	ReloadCmdName ProcessPropertyName = "reload_cmd"
+
+	// BkProcessName process property bkProcessNam
+	BkProcessName ProcessPropertyName = "bk_process_name"
+
+	// PortName process property port name
+	PortName ProcessPropertyName = "port"
+
+	// PidFileName process property pidFile name
+	PidFileName ProcessPropertyName = "pid_file"
+
+	// AutoStartName process property autoStart name
+	AutoStartName ProcessPropertyName = "auto_start"
+
+	// BkStartCheckSecsName process property autoStart name
+	BkStartCheckSecsName ProcessPropertyName = "bk_start_check_secs"
+
+	// StartCmdName process property startCmd name
+	StartCmdName ProcessPropertyName = "start_cmd"
+
+	// PropertyUserName process property user
+	PropertyUserName ProcessPropertyName = "user"
+
+	// TimeoutName process property timeout name
+	TimeoutName ProcessPropertyName = "timeout"
+
+	// ProtocolName process property protocol name
+	ProtocolName ProcessPropertyName = "protocol"
+
+	// DescriptionName process property description name
+	DescriptionName ProcessPropertyName = "description"
+
+	// BkStartParamRegexName process property bkStartParamRegex name
+	BkStartParamRegexName ProcessPropertyName = "bk_start_param_regex"
+)

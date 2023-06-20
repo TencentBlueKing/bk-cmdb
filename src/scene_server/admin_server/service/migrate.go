@@ -135,7 +135,6 @@ func (s *Service) createWatchDBChainCollections(rid string) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
