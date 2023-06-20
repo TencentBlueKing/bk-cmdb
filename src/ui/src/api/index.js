@@ -317,4 +317,6 @@ async function download(options = {}) {
   }
 }
 
+export * from './jsonp'
+
 export default $http

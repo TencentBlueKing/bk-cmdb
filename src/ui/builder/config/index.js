@@ -50,7 +50,8 @@ const dev = {
     USER_MANAGE: JSON.stringify(''),
     HELP_DOC_URL: JSON.stringify(''),
     DISABLE_OPERATION_STATISTIC: false,
-    COOKIE_DOMAIN: JSON.stringify('')
+    COOKIE_DOMAIN: JSON.stringify(''),
+    ESB_URL: JSON.stringify('')
   }),
 
   // Paths
@@ -144,7 +145,8 @@ module.exports = {
       USER_MANAGE: '{{.userManage}}',
       HELP_DOC_URL: '{{.helpDocUrl}}',
       DISABLE_OPERATION_STATISTIC: '{{.disableOperationStatistic}}',
-      COOKIE_DOMAIN: '{{.cookieDomain}}'
+      COOKIE_DOMAIN: '{{.cookieDomain}}',
+      ESB_URL: '{{.esbUrl}}'
     }),
 
     // Template for index.html
