@@ -12,6 +12,7 @@
 
 <script setup>
   import { ref, computed, reactive, watch, set, nextTick } from 'vue'
+  import debounce from 'lodash/debounce'
   import { t } from '@/i18n'
   import RouterQuery from '@/router/query'
   import routerActions from '@/router/actions'
@@ -19,19 +20,24 @@
   import {
     MENU_MODEL_FIELD_TEMPLATE_CREATE,
     MENU_MODEL_FIELD_TEMPLATE_EDIT,
-    MENU_MODEL_FIELD_TEMPLATE_BIND
+    MENU_MODEL_FIELD_TEMPLATE_BIND,
+    MENU_MODEL_DETAILS
   } from '@/dictionary/menu-symbol'
-  import { $bkInfo, $success, $error } from '@/magicbox/index.js'
+  import { $bkInfo, $success, $error, $bkPopover } from '@/magicbox/index.js'
   import applyPermission from '@/utils/apply-permission.js'
   import { getDefaultPaginationConfig, getSort } from '@/utils/tools.js'
   import fieldTemplateService from '@/service/field-template'
   import CmdbLoading from '@/components/loading/index.vue'
+  import MiniTag from '@/components/ui/other/mini-tag.vue'
   import TemplateDetails from './details.vue'
+  import ModelSyncStatus from './children/model-sync-status.vue'
+  import useModelSyncStatus from './children/use-model-sync-status'
 
   const requestIds = {
     list: Symbol('list'),
     fieldCount: Symbol('fieldCount'),
-    modelCount: Symbol('modelCount')
+    modelCount: Symbol('modelCount'),
+    modelList: Symbol('modelList')
   }
 
   // 响应式的query
@@ -78,6 +84,14 @@
   const isShowCloneDialog = ref(false)
 
   const rowId = ref(null)
+  const boundModelPopoverContentRef = ref(null)
+  const boundModelPopover = reactive({
+    templateId: null,
+    instance: null,
+    modelList: [],
+    show: false,
+    clear: null
+  })
 
   // 计算查询条件参数
   const searchParams = computed(() => {
@@ -197,6 +211,55 @@
     getModelCount(templateIds)
   })
 
+  const handleBoundModelCountMouseenter = debounce(async (event, template) => {
+    // 防止抖动，一个模板当前只执行一次
+    if (template.id === boundModelPopover.templateId) {
+      boundModelPopover.instance?.show()
+      return
+    }
+
+    boundModelPopover.templateId = template.id
+    boundModelPopover.instance?.destroy?.()
+    boundModelPopover.clear?.()
+    boundModelPopover.modelList = []
+
+    boundModelPopover.instance = $bkPopover(event.target, {
+      content: boundModelPopoverContentRef.value,
+      delay: 160,
+      hideOnClick: false,
+      interactive: true,
+      placement: 'top',
+      animateFill: false,
+      sticky: true,
+      theme: 'light bound-model-popover',
+      boundary: 'window',
+      trigger: 'mouseenter', // 'manual mouseenter',
+      arrow: true,
+      onShow: () => {
+        boundModelPopover.show = true
+      },
+      onHidden: () => {
+        boundModelPopover.show = false
+        boundModelPopover.clear?.()
+      }
+    })
+
+    boundModelPopover.instance.show()
+
+    const modelList = await fieldTemplateService.getBindModel({
+      bk_template_id: template.id
+    }, { requestId: requestIds.modelList })
+    boundModelPopover.modelList = modelList ?? []
+
+    const activeModelIdList = modelList
+      .filter(model => !model.bk_ispaused)
+      .map(model => model.id)
+
+    const { clear } = useModelSyncStatus(template.id, activeModelIdList)
+
+    boundModelPopover.clear = clear
+  }, 300)
+
   const handleCreate = () => {
     routerActions.redirect({
       name: MENU_MODEL_FIELD_TEMPLATE_CREATE,
@@ -252,7 +315,7 @@
       const params = {
         id: rowId.value,
         name: cloneForm.value.name,
-        description: cloneForm.value.desscription
+        description: cloneForm.value.description
       }
       await fieldTemplateService.cloneTemplate(params)
       getList({ isDel: true })
@@ -312,6 +375,14 @@
       console.error(e)
     }
   }
+  const handleLinkToModel = (model) => {
+    routerActions.open({
+      name: MENU_MODEL_DETAILS,
+      params: {
+        modelId: model.bk_obj_id
+      }
+    })
+  }
 </script>
 
 <template>
@@ -367,12 +438,14 @@
       </bk-table-column>
       <bk-table-column
         prop="name"
-        :label="$t('绑定的模型')"
-        show-overflow-tooltip>
+        :label="$t('绑定的模型')">
         <template slot-scope="{ row }">
           <cmdb-loading :loading="$loading(requestIds.modelCount)">
             <span v-if="row.model_count === 0" class="cell-unbind">0（{{$t('未绑定')}}）</span>
-            <span v-else class="cell-link-content">{{ row.model_count ?? '--' }}</span>
+            <span v-else class="cell-link-content"
+              @mouseenter="(event) => handleBoundModelCountMouseenter(event, row)">
+              {{ row.model_count ?? '--' }}
+            </span>
           </cmdb-loading>
         </template>
       </bk-table-column>
@@ -508,6 +581,27 @@
         </bk-form-item>
       </bk-form>
     </bk-dialog>
+
+    <div ref="boundModelPopoverContentRef" v-show="boundModelPopover.show">
+      <div class="bound-model-popover-content"
+        v-bkloading="{ isLoading: $loading(requestIds.modelList), theme: 'primary', mode: 'spin', size: 'mini' }">
+        <div class="bound-model"
+          v-for="(item, index) in boundModelPopover.modelList"
+          :key="`${item.id}_${index}`">
+          <model-sync-status :model="item" :mini="true" class="status-icon" />
+          <div :class="['model-item', { paused: item.bk_ispaused }]">
+            <div class="model-icon">
+              <i class="icon" :class="item.bk_obj_icon"></i>
+            </div>
+            <span class="model-name" :title="item.bk_obj_name">{{ item.bk_obj_name }}</span>
+            <mini-tag theme="paused" v-if="item.bk_ispaused">{{ $t('已停用') }}</mini-tag>
+          </div>
+          <i class="link-icon icon-cc-share"
+            @click="handleLinkToModel(item)">
+          </i>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -544,5 +638,74 @@
         font-size: 14px;
       }
     }
+  }
+
+  .bound-model-popover-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 96px;
+    min-height: 38px;
+    max-height: 220px;
+    width: 320px;
+    padding: 12px 14px 12px 10px;
+    @include scrollbar-y;
+
+    .bound-model {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .model-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      .model-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background-color: #F0F5FF;
+        .icon {
+          color: #3a84ff;
+          font-size: 12px;
+        }
+      }
+      .model-name {
+        flex: none;
+        font-size: 12px;
+        color: #63656E;
+        max-width: 150px;
+        @include ellipsis;
+      }
+
+      &.paused {
+        .model-name {
+          color: #C4C6CC;
+        }
+      }
+    }
+    .link-icon {
+      font-size: 12px;
+      color: $primaryColor;
+      cursor: pointer;
+      margin-left: auto;
+      &:hover {
+        opacity: .75;
+      }
+    }
+
+    :deep(.status-icon) {
+      min-width: 16px;
+    }
+  }
+</style>
+<style>
+  .tippy-tooltip.bound-model-popover-theme {
+      padding-left: 2px !important;
+      padding-right: 2px !important;
   }
 </style>
