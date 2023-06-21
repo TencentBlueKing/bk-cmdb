@@ -147,6 +147,13 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 		}
 	}
 
+	// 对于枚举，枚举多选，枚举引用字段, 默认值是放在option中的，需要将default置为nil
+	if attribute.Default != nil && (attribute.PropertyType == common.FieldTypeEnum ||
+		attribute.PropertyType == common.FieldTypeEnumMulti || attribute.PropertyType == common.FieldTypeEnumQuote) {
+
+		attribute.Default = nil
+	}
+
 	if err = m.saveCheck(kit, attribute); err != nil {
 		return 0, err
 	}
@@ -155,7 +162,8 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 	return id, err
 }
 
-func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, propertyID, propertyName string, modelBizID int64) error {
+func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, propertyID, propertyName string,
+	modelBizID int64) error {
 	cond := map[string]interface{}{
 		common.BKObjIDField: objID,
 	}
@@ -507,8 +515,9 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 		}
 	}
 
-	if attribute.Default != nil {
-		// 枚举，枚举多选，枚举引用字段,默认值是放在option中的，如果default的值不为nil,进入该逻辑，枚举，枚举多选，枚举引用的默认值设置错误
+	if attribute.Default != nil && propertyType != common.FieldTypeEnum && propertyType != common.FieldTypeEnumMulti &&
+		propertyType != common.FieldTypeEnumQuote {
+
 		if err := m.checkAttributeDefaultValue(kit, attribute, propertyType); err != nil {
 			return err
 		}
@@ -559,6 +568,7 @@ func (m *modelAttribute) checkTableAttributeDefaultValue(kit *rest.Kit, option, 
 	return nil
 }
 
+// checkAttributeDefaultValue 校验属性的default字段，对于枚举，枚举多选，枚举引用字段, 默认值是放在option中的，不能调用该函数校验
 func (m *modelAttribute) checkAttributeDefaultValue(kit *rest.Kit, attribute metadata.Attribute,
 	propertyType string) error {
 	switch propertyType {
@@ -660,7 +670,8 @@ func (m *modelAttribute) checkOrganizationTypeDefaultValue(kit *rest.Kit, attrib
 	return nil
 }
 
-func (m *modelAttribute) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
+func (m *modelAttribute) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64,
+	err error) {
 	err = m.checkUpdate(kit, data, cond)
 	if err != nil {
 		blog.ErrorJSON("checkUpdate error. data:%s, cond:%s, rid:%s", data, cond, kit.Rid)
@@ -681,22 +692,26 @@ func (m *modelAttribute) newSearch(kit *rest.Kit, cond mapstr.MapStr) (resultAtt
 	return resultAttrs, err
 }
 
-func (m *modelAttribute) search(kit *rest.Kit, cond universalsql.Condition) (resultAttrs []metadata.Attribute, err error) {
+func (m *modelAttribute) search(kit *rest.Kit, cond universalsql.Condition) (resultAttrs []metadata.Attribute,
+	err error) {
 	resultAttrs = []metadata.Attribute{}
 	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(kit.Ctx, &resultAttrs)
 	return resultAttrs, err
 }
 
-func (m *modelAttribute) searchWithSort(kit *rest.Kit, cond metadata.QueryCondition) (resultAttrs []metadata.Attribute, err error) {
+func (m *modelAttribute) searchWithSort(kit *rest.Kit, cond metadata.QueryCondition) (resultAttrs []metadata.Attribute,
+	err error) {
 	resultAttrs = []metadata.Attribute{}
 
 	instHandler := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond.Condition)
-	err = instHandler.Start(uint64(cond.Page.Start)).Limit(uint64(cond.Page.Limit)).Sort(cond.Page.Sort).All(kit.Ctx, &resultAttrs)
+	err = instHandler.Start(uint64(cond.Page.Start)).Limit(uint64(cond.Page.Limit)).Sort(cond.Page.Sort).All(kit.Ctx,
+		&resultAttrs)
 
 	return resultAttrs, err
 }
 
-func (m *modelAttribute) searchReturnMapStr(kit *rest.Kit, cond universalsql.Condition) (resultAttrs []mapstr.MapStr, err error) {
+func (m *modelAttribute) searchReturnMapStr(kit *rest.Kit, cond universalsql.Condition) (resultAttrs []mapstr.MapStr,
+	err error) {
 
 	resultAttrs = []mapstr.MapStr{}
 	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(kit.Ctx, &resultAttrs)
@@ -1016,7 +1031,8 @@ func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID st
 
 	for start := uint64(0); start < hostCount; start += pageSize {
 		hostList := make([]hostInst, 0)
-		err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(cond).Start(start).Limit(pageSize).Fields(common.BKHostIDField).All(ctx, &hostList)
+		err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(cond).Start(start).Limit(pageSize).Fields(common.BKHostIDField).All(ctx,
+			&hostList)
 		if err != nil {
 			return err
 		}
@@ -1034,7 +1050,8 @@ func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID st
 			common.BKHostIDField: mapstr.MapStr{common.BKDBIN: ids},
 			common.BKDBOR:        existConds,
 		}
-		if err := mongodb.Client().Table(common.BKTableNameBaseHost).DropColumns(ctx, hostFilter, info.fields); err != nil {
+		if err := mongodb.Client().Table(common.BKTableNameBaseHost).DropColumns(ctx, hostFilter,
+			info.fields); err != nil {
 			return fmt.Errorf("clean host biz attribute %v failed, err: %v", info.fields, err)
 		}
 	}
@@ -1043,7 +1060,8 @@ func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID st
 
 }
 
-func (m *modelAttribute) cleanHostApplyField(ctx context.Context, ownerID string, hostApplyFields map[int64][]int64) error {
+func (m *modelAttribute) cleanHostApplyField(ctx context.Context, ownerID string,
+	hostApplyFields map[int64][]int64) error {
 	orCond := make([]map[string]interface{}, 0)
 	for bizID, attrIDs := range hostApplyFields {
 		attrCond := map[string]interface{}{
@@ -1335,6 +1353,14 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		}
 	}
 
+	propertyType := dbAttributeArr[0].PropertyType
+	// 对于枚举，枚举多选，枚举引用字段, 默认值是放在option中的，需要将default置为nil
+	if data[metadata.AttributeFieldDefault] != nil && (propertyType == common.FieldTypeEnum ||
+		propertyType == common.FieldTypeEnumMulti || propertyType == common.FieldTypeEnumQuote) {
+
+		data.Remove(metadata.AttributeFieldDefault)
+	}
+
 	// 删除不可更新字段， 避免由于传入数据，修改字段
 	// TODO: 改成白名单方式
 	data.Remove(metadata.AttributeFieldPropertyID)
@@ -1383,7 +1409,8 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	}
 
 	for _, dbAttribute := range dbAttributeArr {
-		err = m.checkUnique(kit, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName, attribute.BizID)
+		err = m.checkUnique(kit, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName,
+			attribute.BizID)
 		if err != nil {
 			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, kit.Rid)
 			return err
@@ -1491,7 +1518,8 @@ func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attr
 
 	attrs := make([]metadata.Attribute, 0)
 	sortCond := "-bk_property_index"
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).All(kit.Ctx, &attrs); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).All(kit.Ctx,
+		&attrs); err != nil {
 		blog.Error("GetAttrLastIndex, database operation is failed, err: %v, rid: %s", err, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
