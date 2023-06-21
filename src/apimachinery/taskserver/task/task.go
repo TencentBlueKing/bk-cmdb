@@ -225,32 +225,9 @@ func (t *task) ListSyncStatusHistory(ctx context.Context, header http.Header,
 	return resp.Data, nil
 }
 
-// ListLatestFieldTemplateTask get the latest two task statuses of the specified field template
-func (t *task) ListLatestFieldTemplateTask(ctx context.Context, header http.Header,
-	data *metadata.ListFieldTmpltTaskStatusOption) ([]metadata.ListFieldTmpltTaskStatusResult, errors.CCErrorCoder) {
-
-	resp := new(metadata.ListAPIFieldTemplateTaskStatusResult)
-	subPath := "/task/find/field_template/tasks_status"
-
-	err := t.client.Post().
-		WithContext(ctx).
-		Body(data).
-		SubResourcef(subPath).
-		WithHeaders(header).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, errors.CCHttpError
-	}
-	if err := resp.CCError(); err != nil {
-		return nil, resp.CCError()
-	}
-	return resp.Info, nil
-}
-
 // ListFieldTemplateTaskSyncResult get field template task sync result
 func (t *task) ListFieldTemplateTaskSyncResult(ctx context.Context, header http.Header,
-	data *metadata.ListFieldTmpltTaskStatusOption) ([]metadata.ListFieldTmplTaskSyncResult, errors.CCErrorCoder) {
+	data *metadata.ListFieldTmplSyncTaskStatusOption) ([]metadata.ListFieldTmplTaskSyncResult, errors.CCErrorCoder) {
 
 	resp := new(metadata.ListFieldTmplTaskSyncResultResp)
 	subPath := "/task/find/field_template/task_sync_result"

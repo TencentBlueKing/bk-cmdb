@@ -96,7 +96,7 @@ const (
 	BKTableNameAPITask                    = "cc_APITask"
 	BKTableNameAPITaskSyncHistory         = "cc_APITaskSyncHistory"
 
-	// rule for host property auto apply
+	// BKTableNameHostApplyRule rule for host property auto apply
 	BKTableNameHostApplyRule = "cc_HostApplyRule"
 
 	// cloud sync tables
