@@ -66,7 +66,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service.Engine = engine
 	service.Config = synchronSrv.Config
 	synchronSrv.Service = service
-	synchronizeClientInst, err := synchronizeClient.NewSynchronize(engine.ApiMachineryConfig(), synchronSrv.synchronizeClientConfig)
+	synchronizeClientInst, err := synchronizeClient.NewSynchronize(engine.ApiMachineryConfig(),
+		synchronSrv.synchronizeClientConfig)
 	if err != nil {
 		return fmt.Errorf("new NewSynchronize failed, err: %v", err)
 	}

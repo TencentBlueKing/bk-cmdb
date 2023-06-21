@@ -25,7 +25,8 @@ import (
 )
 
 // SearchVpc TODO
-func (lgc *Logics) SearchVpc(kit *rest.Kit, accountID int64, vpcOpt *metadata.SearchVpcOption) (*metadata.VpcHostCntResult, error) {
+func (lgc *Logics) SearchVpc(kit *rest.Kit, accountID int64,
+	vpcOpt *metadata.SearchVpcOption) (*metadata.VpcHostCntResult, error) {
 	accountConf, err := lgc.GetCloudAccountConf(kit, accountID)
 	if err != nil {
 		blog.Errorf("SearchVpc failed, rid:%s, accountID:%d, vpcOpt:%+v, err:%+v", kit.Rid, accountID, vpcOpt, err)
@@ -130,7 +131,8 @@ func (lgc *Logics) CreateSyncTask(kit *rest.Kit, task *metadata.CloudSyncTask) (
 }
 
 // SearchSyncTask TODO
-func (lgc *Logics) SearchSyncTask(kit *rest.Kit, option *metadata.SearchSyncTaskOption) (*metadata.MultipleCloudSyncTask, error) {
+func (lgc *Logics) SearchSyncTask(kit *rest.Kit,
+	option *metadata.SearchSyncTaskOption) (*metadata.MultipleCloudSyncTask, error) {
 	// set default limit
 	if option.Page.Limit == 0 {
 		option.Page.Limit = common.BKDefaultLimit
@@ -161,7 +163,8 @@ func (lgc *Logics) SearchSyncTask(kit *rest.Kit, option *metadata.SearchSyncTask
 	if auth.EnableAuthorize() {
 		list, isAny, err := lgc.ListAuthorizedResources(kit, meta.CloudResourceTask, meta.Find)
 		if err != nil {
-			blog.Errorf("SearchSyncTask failed, rid:%s, option:%+v, ListAuthorizedResources err:%+v", kit.Rid, option, err)
+			blog.Errorf("SearchSyncTask failed, rid:%s, option:%+v, ListAuthorizedResources err:%+v", kit.Rid, option,
+				err)
 			return nil, err
 		}
 
@@ -225,10 +228,11 @@ func (lgc *Logics) updateVpcHostCount(kit *rest.Kit, multiTask *metadata.Multipl
 			if accountOption[task.AccountID] == nil {
 				accountOption[task.AccountID] = new(metadata.SearchVpcHostCntOption)
 			}
-			accountOption[task.AccountID].RegionVpcs = append(accountOption[task.AccountID].RegionVpcs, metadata.RegionVpc{
-				Region: syncVpc.Region,
-				VpcID:  syncVpc.VpcID,
-			})
+			accountOption[task.AccountID].RegionVpcs = append(accountOption[task.AccountID].RegionVpcs,
+				metadata.RegionVpc{
+					Region: syncVpc.Region,
+					VpcID:  syncVpc.VpcID,
+				})
 		}
 	}
 
@@ -264,10 +268,12 @@ func (lgc *Logics) UpdateSyncTask(kit *rest.Kit, taskID int64, option map[string
 
 	// generate audit log.
 	audit := auditlog.NewSyncTaskAuditLog(lgc.CoreAPI.CoreService())
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(option)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit,
+		metadata.AuditUpdate).WithUpdateFields(option)
 	auditLog, auditErr := audit.GenerateAuditLog(generateAuditParameter, taskID, nil)
 	if auditErr != nil {
-		blog.Errorf("generate audit log failed before update sync task, taskID: %d, err: %v, rid: %s", taskID, auditErr, kit.Rid)
+		blog.Errorf("generate audit log failed before update sync task, taskID: %d, err: %v, rid: %s", taskID, auditErr,
+			kit.Rid)
 		return auditErr
 	}
 
@@ -327,7 +333,8 @@ func (lgc *Logics) CreateSyncHistory(kit *rest.Kit, history *metadata.SyncHistor
 }
 
 // SearchSyncHistory TODO
-func (lgc *Logics) SearchSyncHistory(kit *rest.Kit, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, error) {
+func (lgc *Logics) SearchSyncHistory(kit *rest.Kit,
+	option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, error) {
 	// set default limit
 	if option.Page.Limit == 0 {
 		option.Page.Limit = common.BKDefaultLimit
@@ -365,7 +372,8 @@ func (lgc *Logics) SearchSyncHistory(kit *rest.Kit, option *metadata.SearchSyncH
 }
 
 // SearchSyncRegion TODO
-func (lgc *Logics) SearchSyncRegion(kit *rest.Kit, option *metadata.SearchSyncRegionOption) ([]metadata.SyncRegion, error) {
+func (lgc *Logics) SearchSyncRegion(kit *rest.Kit, option *metadata.SearchSyncRegionOption) ([]metadata.SyncRegion,
+	error) {
 	accountConf, err := lgc.GetCloudAccountConf(kit, option.AccountID)
 	if err != nil {
 		blog.Errorf("SearchSyncRegion failed, rid:%s, option:%+v, err:%+v", kit.Rid, option, err)
