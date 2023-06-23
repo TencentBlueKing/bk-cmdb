@@ -26,11 +26,13 @@
   import { $bkInfo, $success, $error, $bkPopover } from '@/magicbox/index.js'
   import applyPermission from '@/utils/apply-permission.js'
   import { getDefaultPaginationConfig, getSort } from '@/utils/tools.js'
+  import queryBuilderOperator, { QUERY_OPERATOR } from '@/utils/query-builder-operator'
   import fieldTemplateService from '@/service/field-template'
   import CmdbLoading from '@/components/loading/index.vue'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
   import TemplateDetails from './details.vue'
   import ModelSyncStatus from './children/model-sync-status.vue'
+  import SearchSelect from './children/search-select.vue'
   import useModelSyncStatus from './children/use-model-sync-status'
 
   const requestIds = {
@@ -60,22 +62,6 @@
     }
   })
 
-  const filterOptions = [
-    {
-      id: 'template_name',
-      name: t('模板名称')
-    },
-    {
-      id: 'model_name',
-      name: t('模型名称')
-    },
-    {
-      id: 'modifier',
-      name: t('更新人')
-    }
-  ]
-  const filter = ref([])
-
   const cloneForm = ref({
     name: '',
     description: ''
@@ -93,17 +79,54 @@
     clear: null
   })
 
+  const filter = ref([])
   // 计算查询条件参数
   const searchParams = computed(() => {
     const params = {
-      // template_filter: {},
-      // object_filter: {},
+      template_filter: {
+        condition: 'AND',
+        rules: []
+      },
+      object_filter: {
+        condition: 'AND',
+        rules: []
+      },
       fields: [],
       page: {
         start: table.pagination.limit * (table.pagination.current - 1),
         limit: table.pagination.limit,
         sort: table.sort
       }
+    }
+    filter.value.forEach((item) => {
+      if (item.id === 'templateName') {
+        params.template_filter.rules.push({
+          field: 'name',
+          operator: queryBuilderOperator(QUERY_OPERATOR.IN),
+          value: item.value?.split(',')
+        })
+      }
+      if (item.id === 'modifier') {
+        params.template_filter.rules.push({
+          field: 'modifier',
+          operator: queryBuilderOperator(QUERY_OPERATOR.IN),
+          value: item.value?.split(',')
+        })
+      }
+      if (item.id === 'modelName') {
+        params.object_filter.rules.push({
+          field: 'name',
+          operator: queryBuilderOperator(QUERY_OPERATOR.IN),
+          value: item.value?.split(',')
+        })
+      }
+    })
+
+    if (!params.template_filter.rules.length) {
+      Reflect.deleteProperty(params, 'template_filter')
+    }
+    if (!params.object_filter.rules.length) {
+      Reflect.deleteProperty(params, 'object_filter')
     }
 
     return params
@@ -169,8 +192,6 @@
     })
   }
 
-  const updateFilter = () => {}
-
   // 监听查询参数触发查询
   watch(
     query,
@@ -180,6 +201,9 @@
         limit = table.pagination.limit,
         action = '',
         id = '',
+        templateName = '',
+        modelName = '',
+        modifier = '',
         _t = ''
       } = query
 
@@ -193,10 +217,15 @@
         openDetailsDrawer(template)
       }
 
-      updateFilter()
-
       table.pagination.current = parseInt(page, 10)
       table.pagination.limit = parseInt(limit, 10)
+
+      const queryFilter = [
+        { id: 'templateName', value: templateName },
+        { id: 'modelName', value: modelName },
+        { id: 'modifier', value: modifier },
+      ]
+      filter.value = queryFilter.filter(item => item.value.length)
 
       getList()
     },
@@ -207,8 +236,10 @@
 
   watch(() => table.list, async (list) => {
     const templateIds = list.map(item => item.id)
-    getFieldCount(templateIds)
-    getModelCount(templateIds)
+    if (templateIds.length) {
+      getFieldCount(templateIds)
+      getModelCount(templateIds)
+    }
   })
 
   const handleBoundModelCountMouseenter = debounce(async (event, template) => {
@@ -383,6 +414,17 @@
       }
     })
   }
+  const handleSearch = (filter) => {
+    const query = {
+      templateName: '',
+      modelName: '',
+      modifier: ''
+    }
+    filter.forEach((item) => {
+      query[item.id] = item.values.map(val => val.name).join(',')
+    })
+    RouterQuery.set(query)
+  }
 </script>
 
 <template>
@@ -401,14 +443,10 @@
           </bk-button>
         </template>
       </cmdb-auth>
-      <bk-search-select
-        class="search-select"
-        clearable
-        :placeholder="$t('请输入模板名称/模型/更新人')"
-        :show-popover-tag-change="true"
-        :data="filterOptions"
-        v-model="filter">
-      </bk-search-select>
+      <search-select
+        :default-filter="filter"
+        @search="handleSearch">
+      </search-select>
     </div>
 
     <bk-table class="data-table"
@@ -612,10 +650,6 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-
-      .search-select {
-        width: 480px;
-      }
     }
 
     .data-table {
