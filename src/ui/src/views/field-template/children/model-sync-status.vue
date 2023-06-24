@@ -17,7 +17,8 @@
   import { statusList, isSyncing, loadingMap } from './use-model-sync-status.js'
 
   const props = defineProps({
-    model: Object
+    model: Object,
+    mini: Boolean
   })
 
   const modelStatus = computed(() => statusList.value.find(item => item.object_id === props.model.id))
@@ -39,7 +40,13 @@
 
 <template>
   <loading :loading="isLoading" v-if="!model.bk_ispaused">
-    <sync-status :status="statusValue" :tips="statusTips"></sync-status>
+    <sync-status :status="statusValue" :tips="statusTips" :mini="mini"></sync-status>
   </loading>
-  <span v-else>--</span>
+  <span v-else class="none-placeholder">--</span>
 </template>
+
+<style lang="scss" scoped>
+.none-placeholder {
+  font-size: 12px;
+}
+</style>

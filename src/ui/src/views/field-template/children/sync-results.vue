@@ -45,14 +45,13 @@
 
   const isSyncResultStatus = computed(() => ['success', 'error', 'abnormal'].includes(status.value))
 
-  const getTaskSyncStatus = async () => {
+  const getTaskSyncStatus = async (taskIds) => {
     try {
       status.value = 'loading'
       title.value = t('正在查询同步状态...')
 
       const statusList = await fieldTemplateService.getTaskSyncStatus({
-        bk_template_id: props.templateId,
-        object_ids: props.modelIds
+        task_ids: taskIds
       })
 
       if (!statusList) {
@@ -67,7 +66,9 @@
       const undone = statusList?.some(task => ['new', 'waiting', 'executing'].includes(task.status))
       timer && clearTimeout(timer)
       if (undone) {
-        timer = setTimeout(getTaskSyncStatus, 3000)
+        timer = setTimeout(() => {
+          getTaskSyncStatus(taskIds)
+        }, 3000)
       } else {
         statusList.forEach((task) => {
           if (task.status === 'finished') {
@@ -100,14 +101,14 @@
       status.value = 'loading'
       title.value = t(props.scene === 'edit' ? '模板编辑成功，正在同步至模型中...' : '信息正在同步至模型中...')
 
-      await fieldTemplateService.syncModel({
+      const taskIds = await fieldTemplateService.syncModel({
         bk_template_id: props.templateId,
         object_ids: props.modelIds
       })
 
       summary.value = t('接下来，您可以在模板详情页面，查看模型的绑定的状态')
 
-      getTaskSyncStatus()
+      getTaskSyncStatus(taskIds)
     } catch (err) {
       status.value = 'apierror'
       summary.value = err?.message || ''

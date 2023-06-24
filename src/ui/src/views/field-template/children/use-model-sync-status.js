@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { computed, set, ref, watch } from 'vue'
+import { computed, set, ref, watch, unref } from 'vue'
 import CombineRequest from '@/api/combine-request.js'
 import fieldTemplateService from '@/service/field-template'
 import { useHttp } from '@/api'
@@ -20,13 +20,11 @@ export const loadingMap = ref({})
 
 export default function useModelSyncStatus(templateId, modelIdList) {
   // 去重，滚动加载时每次都是全量的数据
-  const modelIds = computed(() => [...new Set(modelIdList.value)])
+  const modelIds = computed(() => [...new Set(unref(modelIdList))])
 
   // 需要先重置
-  watch(modelIdList, () => {
-    statusList.value = []
-    loadingMap.value = {}
-  }, { immediate: true })
+  statusList.value = []
+  loadingMap.value = {}
 
   const requestIds = []
 
@@ -91,11 +89,11 @@ export default function useModelSyncStatus(templateId, modelIdList) {
     })
   }
 
-  watch(searchModelIds, (ids) => {
+  const unwatchSearchModelIds = watch(searchModelIds, (ids) => {
     fetchStatus(ids)
   }, { immediate: true })
 
-  watch(pollingModelIds, (ids) => {
+  const unwatchPollingModelIds = watch(pollingModelIds, (ids) => {
     if (pollingTimer) {
       clearTimeout(pollingTimer)
     }
@@ -119,6 +117,8 @@ export default function useModelSyncStatus(templateId, modelIdList) {
     if (pollingTimer) {
       clearTimeout(pollingTimer)
     }
+    unwatchSearchModelIds?.()
+    unwatchPollingModelIds?.()
   }
 
   return {
