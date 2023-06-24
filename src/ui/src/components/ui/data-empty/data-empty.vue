@@ -108,7 +108,7 @@
     },
     data() {
       return {
-        permission: this.stuff.payload.permission
+        permission: this.stuff.payload?.permission
       }
     },
     computed: {
@@ -140,7 +140,7 @@
     watch: {
       stuff: {
         handler(value) {
-          this.permission = value.payload.permission
+          this.permission = value.payload?.permission
         },
         deep: true
       }
