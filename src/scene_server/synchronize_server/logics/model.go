@@ -46,7 +46,8 @@ func (fm *FetchModel) Pretreatment() errors.CCError {
 }
 
 // Fetch  get model info
-func (fm *FetchModel) Fetch(ctx context.Context, dataClassify string, cond mapstr.MapStr, start, limit int64) (*metadata.InstDataInfo, errors.CCError) {
+func (fm *FetchModel) Fetch(ctx context.Context, dataClassify string, cond mapstr.MapStr,
+	start, limit int64) (*metadata.InstDataInfo, errors.CCError) {
 	input := &metadata.SynchronizeFindInfoParameter{
 		Condition: mapstr.New(),
 	}

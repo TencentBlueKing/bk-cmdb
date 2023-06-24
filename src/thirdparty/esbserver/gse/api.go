@@ -22,7 +22,8 @@ import (
 )
 
 // OperateProcess TODO
-func (p *gse) OperateProcess(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
+func (p *gse) OperateProcess(ctx context.Context, h http.Header,
+	data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/operate_proc/"
 	params := &esbGseProcParams{
@@ -42,7 +43,8 @@ func (p *gse) OperateProcess(ctx context.Context, h http.Header, data *metadata.
 }
 
 // QueryProcOperateResult TODO
-func (p *gse) QueryProcOperateResult(ctx context.Context, h http.Header, taskID string) (resp *metadata.GseProcessOperateTaskResult, err error) {
+func (p *gse) QueryProcOperateResult(ctx context.Context, h http.Header,
+	taskID string) (resp *metadata.GseProcessOperateTaskResult, err error) {
 	resp = new(metadata.GseProcessOperateTaskResult)
 	subPath := "/v2/gse/get_proc_operate_result/"
 	params := &esbTaskIDParams{
@@ -62,7 +64,8 @@ func (p *gse) QueryProcOperateResult(ctx context.Context, h http.Header, taskID 
 }
 
 // QueryProcStatus TODO
-func (p *gse) QueryProcStatus(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
+func (p *gse) QueryProcStatus(ctx context.Context, h http.Header,
+	data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/get_proc_status/"
 	params := &esbGseProcParams{
@@ -81,7 +84,8 @@ func (p *gse) QueryProcStatus(ctx context.Context, h http.Header, data *metadata
 }
 
 // RegisterProcInfo TODO
-func (p *gse) RegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
+func (p *gse) RegisterProcInfo(ctx context.Context, h http.Header,
+	data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/register_proc_info/"
 	params := &esbGseProcParams{
@@ -101,7 +105,8 @@ func (p *gse) RegisterProcInfo(ctx context.Context, h http.Header, data *metadat
 }
 
 // UnRegisterProcInfo TODO
-func (p *gse) UnRegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
+func (p *gse) UnRegisterProcInfo(ctx context.Context, h http.Header,
+	data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/unregister_proc_info/"
 	params := &esbGseProcParams{
@@ -149,7 +154,8 @@ func (p *gse) ConfigAddStreamTo(ctx context.Context, h http.Header, data *metada
 }
 
 // ConfigUpdateStreamTo TODO
-func (p *gse) ConfigUpdateStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigUpdateStreamToParams) error {
+func (p *gse) ConfigUpdateStreamTo(ctx context.Context, h http.Header,
+	data *metadata.GseConfigUpdateStreamToParams) error {
 	resp := new(metadata.EsbBaseResponse)
 	subPath := "/v2/gse/config_update_streamto/"
 	params := &esbGseConfigUpdateStreamToParams{
@@ -175,7 +181,8 @@ func (p *gse) ConfigUpdateStreamTo(ctx context.Context, h http.Header, data *met
 }
 
 // ConfigDeleteStreamTo TODO
-func (p *gse) ConfigDeleteStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigDeleteStreamToParams) error {
+func (p *gse) ConfigDeleteStreamTo(ctx context.Context, h http.Header,
+	data *metadata.GseConfigDeleteStreamToParams) error {
 	resp := new(metadata.EsbBaseResponse)
 	subPath := "/v2/gse/config_delete_streamto/"
 	params := &esbGseConfigDeleteStreamToParams{

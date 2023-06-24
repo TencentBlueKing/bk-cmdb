@@ -60,6 +60,7 @@ func (cli *manager) FindClassificationsLikeName(supplierAccount, name string) (m
 }
 
 // FindClassificationsByCondition find a array of the classification by the condition
-func (cli *manager) FindClassificationsByCondition(supplierAccount string, cond common.Condition) (model.ClassificationIterator, error) {
+func (cli *manager) FindClassificationsByCondition(supplierAccount string,
+	cond common.Condition) (model.ClassificationIterator, error) {
 	return model.FindClassificationsByCondition(supplierAccount, cond)
 }

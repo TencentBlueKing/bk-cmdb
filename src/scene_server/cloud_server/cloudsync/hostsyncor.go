@@ -71,7 +71,8 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 		return nil
 	}
 
-	blog.Infof(" taskid:%d, destroyed vpc count:%d, other vpc count:%d, rid:%s", task.TaskID, len(hostResource.DestroyedVpcs), len(hostResource.HostResource), h.readKit.Rid)
+	blog.Infof(" taskid:%d, destroyed vpc count:%d, other vpc count:%d, rid:%s", task.TaskID,
+		len(hostResource.DestroyedVpcs), len(hostResource.HostResource), h.readKit.Rid)
 
 	syncResult := new(metadata.SyncResult)
 	syncResult.FailInfo.IPError = make(map[string]string)
@@ -165,7 +166,8 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 
 	if txnErr != nil {
 		blog.Errorf("sync fail, taskid:%d, txnErr:%v, rid:%s", task.TaskID, txnErr, h.readKit.Rid)
-		err := h.updateTaskState(h.writeKit, task.TaskID, metadata.CloudSyncFail, &metadata.SyncStatusDesc{ErrorInfo: txnErr.Error()})
+		err := h.updateTaskState(h.writeKit, task.TaskID, metadata.CloudSyncFail,
+			&metadata.SyncStatusDesc{ErrorInfo: txnErr.Error()})
 		if err != nil {
 			blog.Errorf("updateTaskState fail, taskid:%d, err:%v, rid:%s", task.TaskID, err,
 				h.readKit.Rid)
@@ -188,8 +190,10 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 			return fmt.Errorf("taskID %d is not found", task.TaskID)
 		}
 		if ret.Info[0].SyncStatus == metadata.CloudSyncFail {
-			costTime, _ := strconv.ParseFloat(fmt.Sprintf("%.1f", float64(time.Since(startTime)/time.Millisecond)/1000.0), 64)
-			err := h.updateTaskState(h.writeKit, task.TaskID, metadata.CloudSyncSuccess, &metadata.SyncStatusDesc{CostTime: costTime})
+			costTime, _ := strconv.ParseFloat(fmt.Sprintf("%.1f",
+				float64(time.Since(startTime)/time.Millisecond)/1000.0), 64)
+			err := h.updateTaskState(h.writeKit, task.TaskID, metadata.CloudSyncSuccess,
+				&metadata.SyncStatusDesc{CostTime: costTime})
 			if err != nil {
 				blog.Errorf("updateTaskState fail, taskid:%d, err:%v, rid:%s", task.TaskID, err,
 					h.readKit.Rid)
@@ -207,7 +211,8 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 }
 
 // getCloudHostResource 根据任务详情和账号信息获取要同步的云主机资源
-func (h *HostSyncor) getCloudHostResource(task *metadata.CloudSyncTask, accountConf *metadata.CloudAccountConf) (*metadata.CloudHostResource, error) {
+func (h *HostSyncor) getCloudHostResource(task *metadata.CloudSyncTask,
+	accountConf *metadata.CloudAccountConf) (*metadata.CloudHostResource, error) {
 	hostResource, err := h.logics.GetCloudHostResource(h.readKit, *accountConf, task.SyncVpcs)
 	if err != nil {
 		return nil, err
@@ -282,7 +287,8 @@ func (h *HostSyncor) syncDestroyedVpcs(hostResource *metadata.CloudHostResource,
 }
 
 // addCLoudId 查询vpc对应的云区域
-func (h *HostSyncor) addCLoudId(accountConf *metadata.CloudAccountConf, hostResource *metadata.CloudHostResource) error {
+func (h *HostSyncor) addCLoudId(accountConf *metadata.CloudAccountConf,
+	hostResource *metadata.CloudHostResource) error {
 	for _, hostRes := range hostResource.HostResource {
 		cloudID, err := h.getCloudId(hostRes.Vpc.VpcID)
 		if err != nil {
@@ -292,7 +298,8 @@ func (h *HostSyncor) addCLoudId(accountConf *metadata.CloudAccountConf, hostReso
 		if cloudID == 0 {
 			blog.Errorf("addCLoudId getCloudId err:%s, vpcID:%s, rid:%s",
 				"the correspond cloudID for the vpc can't be found", hostRes.Vpc.VpcID, h.readKit.Rid)
-			return fmt.Errorf("the correspond cloudID for the vpc %s can't be found,vpc name: %s", hostRes.Vpc.VpcID, hostRes.Vpc.VpcName)
+			return fmt.Errorf("the correspond cloudID for the vpc %s can't be found,vpc name: %s", hostRes.Vpc.VpcID,
+				hostRes.Vpc.VpcName)
 		}
 		hostRes.CloudID = cloudID
 	}
@@ -686,7 +693,8 @@ func (h *HostSyncor) addHost(cHost *metadata.CloudHost) (string, error) {
 		ModuleID:      cHost.SyncDir,
 		HostID:        []int64{hostID},
 	}
-	exception, err := h.logics.CoreAPI.CoreService().Host().TransferToInnerModule(h.writeKit.Ctx, h.writeKit.Header, opt)
+	exception, err := h.logics.CoreAPI.CoreService().Host().TransferToInnerModule(h.writeKit.Ctx, h.writeKit.Header,
+		opt)
 	if err != nil {
 		blog.Errorf("transfer host failed, err: %v, expt: %#v, opt: %#v, rid:%s", err, exception, *opt, h.readKit.Rid)
 		return "", err
@@ -831,7 +839,8 @@ func (h *HostSyncor) deleteDestroyedHosts(hostIDs []int64) (*metadata.SyncResult
 	}
 
 	// to change state of cloud host.
-	err = h.logics.CoreAPI.CoreService().Cloud().DeleteDestroyedHostRelated(h.writeKit.Ctx, h.writeKit.Header, &metadata.DeleteDestroyedHostRelatedOption{HostIDs: hostIDs})
+	err = h.logics.CoreAPI.CoreService().Cloud().DeleteDestroyedHostRelated(h.writeKit.Ctx, h.writeKit.Header,
+		&metadata.DeleteDestroyedHostRelatedOption{HostIDs: hostIDs})
 	if err != nil {
 		blog.Errorf("deleteDestroyedHosts failed, err:%s, hostIDs:%#v, rid:%s", err.Error(), hostIDs, h.readKit.Rid)
 		return nil, err
@@ -926,7 +935,8 @@ func (h *HostSyncor) updateDestroyedTaskVpc(taskID int64, vpcs map[string]bool) 
 }
 
 // updateTaskState 更新任务同步状态
-func (h *HostSyncor) updateTaskState(kit *rest.Kit, taskid int64, status string, syncStatusDesc *metadata.SyncStatusDesc) error {
+func (h *HostSyncor) updateTaskState(kit *rest.Kit, taskid int64, status string,
+	syncStatusDesc *metadata.SyncStatusDesc) error {
 	option := mapstr.MapStr{common.BKCloudSyncStatus: status}
 	if status == metadata.CloudSyncSuccess || status == metadata.CloudSyncFail {
 		ts := time.Now()

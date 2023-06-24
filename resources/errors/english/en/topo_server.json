@@ -141,10 +141,10 @@
 	"1101119": "The topology identification is illegal, the unique identification of k8s and cc cannot be mixed",
 	"1101120": "Model %s forbids the creation of association relationships",
 	"1101121": "The associated model %s forbids the creation of association relationships",
-	"1101122": "The field [%d] inherits from the template [%d] and cannot be deleted",
-	"1101123": "The unique index [%d] is inherited from the template [%d] and cannot be deleted",
-	"1101124": "Synchronization task [%d] is running, deactivating the model[%d] is not allowed",
-	"1101125": "Object attribute(id: %d) '%s' property conflicts with field template attribute(bk_property_id: %s)",
-	"1101126": "Object unique(id: %d) conflicts with field template unique(keys: %+v)",
+	"1101122": "Field [%d] is inherited from template [%d] and cannot be deleted",
+	"1101123": "Unique Rule [%d] is inherited from template [%d] and cannot be deleted",
+	"1101124": "Sync task [%d] is running, model [%d] cannot be deactivated",
+	"1101125": "Model field (id: %d) '%s' attribute conflicts with the field grouping template's field (bk_property_id: %s)",
+	"1101126": "Model Unique Rule (id: %d) conflicts with the field grouping template's Unique Rule (keys: %+v)",
 	"": ""
 }

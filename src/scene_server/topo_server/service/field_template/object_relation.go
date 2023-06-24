@@ -166,13 +166,20 @@ func (s *service) ListObjByFieldTmpl(cts *rest.Contexts) {
 		return
 	}
 
-	// list object by ids
-	listOpt := &metadata.QueryCondition{
-		Fields:    []string{common.BKFieldID, common.BKFieldName},
-		Page:      opt.Page,
-		Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: objectIDs}},
+	expr, rawErr := filtertools.And(filtertools.GenAtomFilter(common.BKFieldID, filter.In, objectIDs), opt.Filter)
+	if rawErr != nil {
+		blog.Errorf("merge field template filter failed, err: %v, opt: %+v, rid: %s", err, opt, cts.Kit.Rid)
+		cts.RespAutoError(rawErr)
+		return
 	}
-	res, objErr := s.clientSet.CoreService().Model().ReadModel(cts.Kit.Ctx, cts.Kit.Header, listOpt)
+
+	// list object by ids
+	listOpt := &metadata.CommonQueryOption{
+		Fields:             opt.Fields,
+		Page:               opt.Page,
+		CommonFilterOption: metadata.CommonFilterOption{Filter: expr},
+	}
+	res, objErr := s.clientSet.CoreService().Model().ListModel(cts.Kit.Ctx, cts.Kit.Header, listOpt)
 	if objErr != nil {
 		blog.Errorf("list objects failed, err: %v, opt: %+v, rid: %s", objErr, opt, cts.Kit.Rid)
 		cts.RespAutoError(objErr)
@@ -250,42 +257,6 @@ func (s *service) preCheckExecuteTaskAndGetObjID(kit *rest.Kit, syncOption *meta
 	}
 
 	return result.Info[0].ObjectID, nil
-}
-
-// SyncFieldTemplateToObjectTask synchronize field template information to model tasks.
-func (s *service) SyncFieldTemplateToObjectTask(ctx *rest.Contexts) {
-
-	syncOption := new(metadata.SyncObjectTask)
-	if err := ctx.DecodeInto(syncOption); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if rawErr := syncOption.Validate(); rawErr.ErrCode != 0 {
-		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
-		return
-	}
-
-	objectID, err := s.preCheckExecuteTaskAndGetObjID(ctx.Kit, syncOption)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		if err := s.doSyncFieldTemplateTask(ctx.Kit, syncOption, objectID); err != nil {
-			blog.Errorf("do sync field template task(%#v) failed, err: %v, rid: %s", syncOption, err, ctx.Kit.Rid)
-			return err
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
-	}
-
-	ctx.RespEntity(nil)
 }
 
 func (s *service) getTemplateAttrByID(kit *rest.Kit, id int64, fields []string) ([]metadata.FieldTemplateAttr,

@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -173,13 +172,10 @@ func (s *Service) ListSyncStatusHistory(ctx *rest.Contexts) {
 	ctx.RespEntity(infos)
 }
 
-// ListFieldTemplateTasksStatus query task status by field template ID and object id
-// get the status of all related tasks in reverse order of the time they were created,
-// if there are "in progress" tasks. Prioritize returning a status of "in progress".
-// if there is no "in progress" task status, return the latest task status, which may
-// be "successful", "failed" or "queuing", etc.
-func (s *Service) ListFieldTemplateTasksStatus(ctx *rest.Contexts) {
-	input := new(metadata.ListFieldTmpltTaskStatusOption)
+// ListFieldTmplTaskSyncResult list field template task sync result, it will first query the task table,
+// and if it cannot find it, it will query the task history table.
+func (s *Service) ListFieldTmplTaskSyncResult(ctx *rest.Contexts) {
+	input := new(metadata.ListFieldTmplSyncTaskStatusOption)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -190,42 +186,38 @@ func (s *Service) ListFieldTemplateTasksStatus(ctx *rest.Contexts) {
 		return
 	}
 
-	objIDs := util.IntArrayUnique(input.ObjectIDs)
-	query := mapstr.MapStr{
-		common.BKInstIDField: input.ID,
-		metadata.APITaskExtraField: mapstr.MapStr{
-			common.BKDBIN: objIDs,
-		},
-		common.BKTaskTypeField: common.SyncFieldTemplateTaskFlag,
-	}
-
-	infos, err := s.Logics.ListFieldTemplateSyncStatus(ctx.Kit, query)
+	input.ObjectIDs = util.IntArrayUnique(input.ObjectIDs)
+	taskDetailMap, taskHistoryMap, err := s.Logics.ListFieldTemplateSyncResult(ctx.Kit, input.ID, input.ObjectIDs)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	objStatusMap := make(map[int64]string)
-	for _, info := range infos {
-		obj, err := util.GetInt64ByInterface(info.Extra)
-		if err != nil {
-			blog.Errorf("get instance id failed, obj: %+v, err: %v, rid: %s", obj, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-		_, ok := objStatusMap[obj]
-		if ok && string(info.Status) != string(metadata.APITaskStatusExecute) {
+	result := make([]metadata.ListFieldTmplTaskSyncResult, 0)
+	for _, id := range input.ObjectIDs {
+		taskDetail, exist := taskDetailMap[id]
+		if exist {
+			syncResult := metadata.ListFieldTmplTaskSyncResult{
+				ObjectID: id,
+				Status:   taskDetail.Status,
+				SyncTime: taskDetail.LastTime,
+			}
+			if len(taskDetail.Detail) != 0 {
+				syncResult.FailMsg = taskDetail.Detail[0].Response.ErrMsg
+			}
+
+			result = append(result, syncResult)
 			continue
 		}
-		objStatusMap[obj] = string(info.Status)
-	}
 
-	result := make([]metadata.ListFieldTmpltTaskStatusResult, 0)
-	for obj, status := range objStatusMap {
-		result = append(result, metadata.ListFieldTmpltTaskStatusResult{
-			ObjectID: obj,
-			Status:   status,
-		})
+		taskHistory, exist := taskHistoryMap[id]
+		if exist {
+			result = append(result, metadata.ListFieldTmplTaskSyncResult{
+				ObjectID: id,
+				Status:   taskHistory.Status,
+				SyncTime: taskHistory.LastTime,
+			})
+		}
 	}
 
 	ctx.RespEntity(result)

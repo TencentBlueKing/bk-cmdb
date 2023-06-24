@@ -119,6 +119,11 @@ func (s *service) CreateFieldTemplateAttrs(ctx *rest.Contexts) {
 		attrs[idx].CreateTime = &metadata.Time{Time: now}
 		attrs[idx].LastTime = &metadata.Time{Time: now}
 
+		// 目前字段组合模版属性只支持枚举多选，枚举多选的默认值在option中，default值需要为nil
+		if attrs[idx].PropertyType == common.FieldTypeEnumMulti && attrs[idx].Default != nil {
+			attrs[idx].Default = nil
+		}
+
 		if attrs[idx].TemplateID != templateID {
 			blog.Errorf("attribute template id is invalid, data: %v, template id: %d, rid: %s", attrs[idx], templateID,
 				ctx.Kit.Rid)
@@ -284,6 +289,11 @@ func (s *service) UpdateFieldTemplateAttrs(ctx *rest.Contexts) {
 		attrs[idx].OwnerID = dbAttr.OwnerID
 		attrs[idx].Creator = dbAttr.Creator
 		attrs[idx].CreateTime = dbAttr.CreateTime
+
+		// 目前字段组合模版属性只支持枚举多选，枚举多选的默认值在option中，default值需要为nil
+		if dbAttr.PropertyType == common.FieldTypeEnumMulti && attrs[idx].Default != nil {
+			attrs[idx].Default = nil
+		}
 	}
 
 	if err := s.updateFieldTemplateAttrs(ctx.Kit, templateID, attrs); err != nil {
