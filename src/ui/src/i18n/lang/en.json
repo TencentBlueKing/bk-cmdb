@@ -1728,5 +1728,6 @@
     "暂无XXX，LINK": "No {text}, {link}",
     "绑定后的唯一性校验冲突提示语": "In conflict with \"{target}\", unable to bind. Please unbind the model or delete the template's corresponding Unique Rule",
     "字段组合模板列表提示语": "No authorized templates are available, you can {auth} or {create}",
-    "描述：": "Description: "
+    "描述：": "Description: ",
+    "模型信息与模板信息有差异提示语": "Model information differs from template information, {link}"
 }

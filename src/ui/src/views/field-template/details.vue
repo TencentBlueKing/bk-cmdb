@@ -56,7 +56,6 @@
     fieldCount.value = fieldCounts?.[0]?.count
     modelCount.value = modelCounts?.[0]?.count
     uniqueList.value = templateUniqueList?.info || []
-    console.log(fieldCounts, uniqueList, modelCounts)
   })
 
   const isShow = computed({
