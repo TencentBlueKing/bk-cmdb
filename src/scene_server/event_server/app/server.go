@@ -208,11 +208,18 @@ func (es *EventServer) initConfigs() error {
 			return err
 		}
 	case eventtype.V2:
-		config, err := apigwutil.ParseApiGWConfig("gse.apiGW")
+		config, err := apigwutil.ParseApiGWConfig("apiGW")
 		if err != nil {
 			blog.Errorf("get gse api gateway config error, err: %v", err)
 			return err
 		}
+		config.Address, err = apigwutil.ReplaceApiName(config.Address, apigwutil.GseName)
+		if err != nil {
+			blog.Errorf("replace the template var in api gateway address failed, addr: %v, apiName: %v, err: %v",
+				config.Address, apigwutil.GseName, err)
+			return err
+		}
+
 		es.config.GseApiGWConfig = config
 	}
 

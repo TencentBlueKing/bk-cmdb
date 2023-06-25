@@ -332,7 +332,7 @@ func genResourceManageActionGroups() []ActionGroup {
 					},
 				},
 				{
-					Name:   "云区域",
+					Name:   "管控区域",
 					NameEn: "Cloud Area",
 					Actions: []ActionWithID{
 						{

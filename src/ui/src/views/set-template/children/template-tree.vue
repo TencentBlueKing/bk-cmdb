@@ -34,7 +34,7 @@
           </bk-popover>
           <bk-link v-else class="action-link" @click="handleDeleteService(index)">{{$t('删除')}}</bk-link>
         </span>
-        <span class="child-name">{{service.name}}</span>
+        <span class="child-name" v-bk-overflow-tips>{{service.name}}</span>
       </li>
       <li class="options-child node-child clearfix"
         v-if="['create', 'edit'].includes(mode)"

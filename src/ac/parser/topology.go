@@ -67,7 +67,7 @@ const (
 	deletePlatformSettingModulePattern  = `/api/v3/topo/delete/biz/extra_moudle`
 )
 
-// NOCC:golint/fnsize(放在一个函数中处理)
+// NOCC:golint/fnsize(整体属于business操作需要放在一起)
 func (ps *parseStream) business() *parseStream {
 	if ps.shouldReturn() {
 		return ps

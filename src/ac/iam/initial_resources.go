@@ -27,7 +27,7 @@ var ResourceTypeIDMap = map[TypeID]string{
 	BizSet:                   "业务集",
 	Project:                  "项目",
 	BusinessForHostTrans:     "业务主机",
-	SysCloudArea:             "云区域",
+	SysCloudArea:             "管控区域",
 	SysResourcePoolDirectory: "主机池目录",
 	SysHostRscPoolDirectory:  "主机池主机",
 	SysModelGroup:            "模型分组",
@@ -294,7 +294,7 @@ func genPublicResources() []ResourceType {
 			ID:            SysCloudArea,
 			Name:          ResourceTypeIDMap[SysCloudArea],
 			NameEn:        "Cloud Area",
-			Description:   "云区域",
+			Description:   "管控区域",
 			DescriptionEn: "cloud area",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{

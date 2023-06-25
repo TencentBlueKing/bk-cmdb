@@ -14,6 +14,7 @@ import Vue from 'vue'
 import i18n from '@/i18n'
 import store from '@/store'
 import ColumnsConfig from './columns-config.vue'
+import useSideslider from '@/hooks/use-sideslider'
 export default {
   open({ props = {}, handler = {} }) {
     const vm = new Vue({
@@ -21,8 +22,14 @@ export default {
       store,
       data() {
         return {
-          isShow: false
+          isShow: false,
+          localSelected: []
         }
+      },
+      created() {
+        const { beforeClose, setChanged } = useSideslider(this.localSelected)
+        this.beforeClose = beforeClose
+        this.setChanged = setChanged
       },
       render(h) {
         return h('bk-sideslider', {
@@ -30,7 +37,18 @@ export default {
           props: {
             title: i18n.t('列表显示属性配置'),
             width: 600,
-            isShow: this.isShow
+            isShow: this.isShow,
+            beforeClose: () => {
+              const refColumns = this.$refs.cmdbColumnsConfig
+              const { columnsChangedValues } = refColumns
+              if (columnsChangedValues()) {
+                this.setChanged(true)
+                return this.beforeClose(() => {
+                  this.isShow = false
+                })
+              }
+              this.isShow = false
+            }
           },
           on: {
             'update:isShow': (isShow) => {
@@ -43,6 +61,7 @@ export default {
           }
         }, [h(ColumnsConfig, {
           props,
+          ref: 'cmdbColumnsConfig',
           slot: 'content',
           on: {
             cancel: () => {

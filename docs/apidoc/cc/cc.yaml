@@ -447,7 +447,7 @@
 
 - path: /v2/cc/search_cloud_area/
   name: search_cloud_area
-  label: 查询云区域
+  label: 查询管控区域
   label_en: Query cloud area
   suggest_method: POST
   api_type: query
@@ -457,7 +457,7 @@
 
 - path: /v2/cc/create_cloud_area/
   name: create_cloud_area
-  label: 创建云区域
+  label: 创建管控区域
   label_en: create a cloud area
   suggest_method: POST
   api_type: operate
@@ -467,7 +467,7 @@
 
 - path: /v2/cc/update_cloud_area/
   name: update_cloud_area
-  label: 更新云区域
+  label: 更新管控区域
   label_en: update cloud area
   suggest_method: POST
   api_type: operate
@@ -477,7 +477,7 @@
 
 - path: /v2/cc/delete_cloud_area/
   name: delete_cloud_area
-  label: 删除云区域
+  label: 删除管控区域
   label_en: delete cloud area
   suggest_method: POST
   api_type: operate
@@ -799,7 +799,7 @@
 
 - path: /v2/cc/update_host_cloud_area_field/
   name: update_host_cloud_area_field
-  label: 更新主机的云区域字段
+  label: 更新主机的管控区域字段
   label_en: update host's cloud area field (bk_cloud_id)
   suggest_method: POST
   api_type: query
@@ -1410,3 +1410,13 @@
   dest_path: /api/v3/update/project/bk_project_id
   dest_http_method: PUT
   is_hidden: true
+
+- path: /v2/cc/transfer_host_across_biz/
+  name: transfer_host_across_biz
+  label: 跨业务转移主机
+  label_en: transfer host across business
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/hosts/modules/across/biz
+  dest_http_method: POST
