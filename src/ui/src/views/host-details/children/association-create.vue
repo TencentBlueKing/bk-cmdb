@@ -210,7 +210,7 @@
         const name = {
           bk_host_innerip: this.$t('内网IP'),
           bk_biz_name: this.$t('业务名'),
-          bk_cloud_name: this.$t('云区域'),
+          bk_cloud_name: this.$t('管控区域'),
           bk_module_name: this.$t('模块名'),
           bk_set_name: this.$t('集群名'),
           bk_inst_name: this.$t('实例名'),

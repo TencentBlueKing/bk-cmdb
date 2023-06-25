@@ -214,7 +214,7 @@ var (
 	// HostCloudChart TODO
 	HostCloudChart = ChartConfig{
 		ReportType: common.HostCloudChart,
-		Name:       "按云区域统计",
+		Name:       "按管控区域统计",
 		Width:      "100",
 		ObjID:      "host",
 		ChartType:  "bar",

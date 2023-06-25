@@ -253,9 +253,8 @@
         cursor: pointer;
 
         & + .text-button {
-            $marginLeft: 6px;
             position: relative;
-            margin-left: $marginLeft;
+            margin-left: 6px;
 
             &::after {
               content: '';
@@ -263,7 +262,7 @@
               display: block;
               top: 50%;
               transform: translateY(-50%);
-              left: -$marginLeft;
+              left: -6px;
               width: 1px;
               height: 14px;
               background-color: #dcdee5;

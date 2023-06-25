@@ -16,10 +16,10 @@
       v-transfer-dom
       :is-show.sync="isShow"
       :title="title"
-      :quick-close="false"
       :width="800"
       :before-close="handleSliderBeforeClose">
       <cmdb-form slot="content" v-if="isShow"
+        ref="formRef"
         :properties="properties"
         :property-groups="propertyGroups"
         :inst="formData"
@@ -39,6 +39,7 @@
                 <div class="property-value" v-bk-tooltips="{ content: $t('内置业务集不可编辑'), disabled: !isBuiltin }">
                   <business-scope-settings-form
                     class="form-component"
+                    ref="businessSetFormRef"
                     :disabled="isBuiltin"
                     :data="scopeSettingsFormData"
                     @change="handleScopeSettingsChange" />
@@ -102,6 +103,9 @@
         show: isShow,
         data: formData
       } = toRefs(props)
+
+      const formRef = ref(null)
+      const businessSetFormRef = ref(null)
 
       const getModelById = store.getters['objectModelClassify/getModelById']
       const model = computed(() => getModelById(BUILTIN_MODELS.BUSINESS_SET) || {})
@@ -245,6 +249,16 @@
       }
 
       const handleSliderBeforeClose = () => {
+        const { values, refrenceValues } = formRef.value
+        const { selectedBusiness, localSelectedBusiness } = businessSetFormRef.value
+        const changedValues = !isEqual(values, refrenceValues)
+        const changedSelectValues = !isEqual(selectedBusiness, localSelectedBusiness)
+        if (changedValues || changedSelectValues) {
+          formRef.value.setChanged(true)
+          return formRef.value.beforeClose(() => {
+            emit('update:show', false)
+          })
+        }
         emit('update:show', false)
       }
 
@@ -272,7 +286,9 @@
         handleScopeSettingsChange,
         handleSliderBeforeClose,
         previewProps,
-        handlePreview
+        handlePreview,
+        formRef,
+        businessSetFormRef
       }
     }
   })
