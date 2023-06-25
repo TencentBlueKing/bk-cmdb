@@ -151,7 +151,7 @@
       table.list = list
       table.pagination.count = count
 
-      // table.stuff.type = filter.value.toString().length ? 'search' : 'default'
+      table.stuff.type = filter.value.length ? 'search' : 'default'
     } catch ({ permission }) {
       if (permission) {
         table.stuff = {
@@ -256,8 +256,8 @@
 
     boundModelPopover.instance = $bkPopover(event.target, {
       content: boundModelPopoverContentRef.value,
-      delay: 160,
-      hideOnClick: false,
+      delay: [300, 0],
+      hideOnClick: true,
       interactive: true,
       placement: 'top',
       animateFill: false,
@@ -339,9 +339,11 @@
   const handleClone = (row) => {
     isShowCloneDialog.value = true
     rowId.value = row.id
+    cloneForm.value.name = row.name
+    cloneForm.value.description = row.description
   }
 
-  const handleConfirm = async () => {
+  const handleCloneConfirm = async () => {
     try {
       const params = {
         id: rowId.value,
@@ -352,13 +354,10 @@
       getList({ isDel: true })
       $success(t('克隆成功'))
       isShowCloneDialog.value = false
-      cloneForm.value = {
-        name: '',
-        description: ''
-      }
+      cloneForm.value.name = ''
+      cloneForm.value.description = ''
     } catch (error) {
       console.error(error)
-      $error(t('克隆失败'))
       return false
     }
   }
@@ -424,6 +423,9 @@
       query[item.id] = item.values.map(val => val.name).join(',')
     })
     RouterQuery.set(query)
+  }
+  const handleBindModelChange = (templateId) => {
+    getModelCount([templateId])
   }
 </script>
 
@@ -537,7 +539,10 @@
               </bk-button>
             </template>
           </cmdb-auth>
-          <cmdb-auth class="mr10" :auth="{ type: $OPERATION.D_BUSINESS_SET, relation: [row.bk_biz_set_id] }">
+          <cmdb-auth class="mr10" :auth="[
+            { type: $OPERATION.C_FIELD_TEMPLATE },
+            { type: $OPERATION.U_FIELD_TEMPLATE, relation: [row.id] }
+          ]">
             <template slot-scope="{ disabled }">
               <bk-button
                 theme="primary"
@@ -549,7 +554,7 @@
             </template>
           </cmdb-auth>
           <cmdb-auth
-            :auth="{ type: $OPERATION.D_BUSINESS_SET, relation: [row.bk_biz_set_id] }"
+            :auth="{ type: $OPERATION.D_FIELD_TEMPLATE, relation: [row.id] }"
             v-bk-tooltips.top="{ content: $t('已被模型绑定，不能删除'), disabled: !row.model_count }">
             <template slot-scope="{ disabled }">
               <bk-button
@@ -593,6 +598,7 @@
       v-if="detailsDrawer.template.id"
       :open="detailsDrawer.open"
       :template="detailsDrawer.template"
+      @bind-change="handleBindModelChange"
       @close="handleDetailsDrawerClose">
     </template-details>
 
@@ -604,7 +610,7 @@
       :auto-close="false"
       width="670"
       :title="t('克隆字段组合模板')"
-      @confirm="handleConfirm">
+      @confirm="handleCloneConfirm">
       <bk-form :label-width="80" :model="cloneForm" class="cloneFrom">
         <bk-form-item label="模板名称" :required="true" :property="'name'">
           <bk-input v-model="cloneForm.name" placeholder="请输入模板名称，20个字符以内" v-validate="'required|length:20'"></bk-input>
@@ -739,7 +745,7 @@
 </style>
 <style>
   .tippy-tooltip.bound-model-popover-theme {
-      padding-left: 2px !important;
-      padding-right: 2px !important;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
   }
 </style>

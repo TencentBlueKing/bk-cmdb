@@ -68,6 +68,15 @@
 
   const emit = defineEmits(['update:previewShow'])
 
+  const isPreviewShow = computed({
+    get() {
+      return props.previewShow
+    },
+    set(val) {
+      emit('update:previewShow', val)
+    }
+  })
+
   const handleCloseSilder = () => {
     emit('update:previewShow', false)
   }
@@ -80,9 +89,9 @@
     v-transfer-dom
     :width="676"
     :title="$t('字段预览')"
-    :is-show="previewShow"
+    :is-show="isPreviewShow"
     :before-close="handleCloseSilder">
-    <preview-field v-if="previewShow"
+    <preview-field v-if="isPreviewShow"
       slot="content"
       :properties="perviewData"
       :property-groups="groups">

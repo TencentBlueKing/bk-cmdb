@@ -400,6 +400,7 @@
           })
         }, { segment: 1, concurrency: 5 }).add(templateIds)
 
+        let groupIndex = 0
         for (const result of allResult) {
           const results = await result
           for (let i = 0; i < results.length; i++) {
@@ -408,8 +409,9 @@
               console.error(reason?.message)
               continue
             }
-            this.$set(this.templateDiffStatus, templateIds[i], value?.[0] ?? {})
+            this.$set(this.templateDiffStatus, templateIds[(groupIndex * 5) + i], value?.[0] ?? {})
           }
+          groupIndex += 1
         }
       }
     },
@@ -688,6 +690,7 @@
       },
       handleUnbindTemplate(template) {
         this.$bkInfo({
+          type: 'warning',
           title: this.$t('确认解绑该模板'),
           subTitle: this.$t('解绑后，字段内容与唯一校验将会与模板脱离关系，不再受模板管理'),
           okText: this.$t('解绑'),
@@ -698,7 +701,7 @@
               bk_template_id: template.id,
               object_id: this.activeModel.id
             }
-            await fieldTemplateService.updateTemplate(params)
+            await fieldTemplateService.unbind(params)
             this.$success(this.$t('解绑成功'))
             this.getModelBindTemplate()
             return true

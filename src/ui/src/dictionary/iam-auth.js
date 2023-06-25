@@ -1253,8 +1253,19 @@ export const IAM_ACTIONS = {
   },
   R_FIELD_TEMPLATE: {
     id: 'view_field_template',
-    name: ['业务集查看', 'View Field Template'],
+    name: ['字段组合模板查看', 'View Field Template'],
     cmdb_action: 'fieldTemplate.findMany',
+    relation: [{
+      view: IAM_VIEWS.FIELD_TEMPLATE
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
+  },
+  D_FIELD_TEMPLATE: {
+    id: 'view_field_template',
+    name: ['字段组合模板删除', 'Delete Field Template'],
+    cmdb_action: 'fieldTemplate.delete',
     relation: [{
       view: IAM_VIEWS.FIELD_TEMPLATE
     }],

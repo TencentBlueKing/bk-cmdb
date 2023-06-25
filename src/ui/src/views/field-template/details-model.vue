@@ -14,6 +14,8 @@
   import { computed, reactive, ref, watch, onUnmounted } from 'vue'
   import debounce from 'lodash/debounce'
   import { useStore } from '@/store'
+  import { t } from '@/i18n'
+  import { $bkInfo, $success } from '@/magicbox/index.js'
   import fieldTemplateService from '@/service/field-template'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
   import queryBuilderOperator, { QUERY_OPERATOR } from '@/utils/query-builder-operator'
@@ -23,13 +25,15 @@
     MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL
   } from '@/dictionary/menu-symbol'
   import ModelSyncStatus from './children/model-sync-status.vue'
-  import useModelSyncStatus from './children/use-model-sync-status'
+  import useModelSyncStatus, { isSyncing } from './children/use-model-sync-status'
 
   const props = defineProps({
     templateId: {
       type: Number
     }
   })
+
+  const emit = defineEmits(['unbound'])
 
   const store = useStore()
 
@@ -131,6 +135,27 @@
       }
     })
   }
+  const handleUnbind = (row) => {
+    $bkInfo({
+      type: 'warning',
+      title: t('确认解绑该模板'),
+      subTitle: t('解绑后，字段内容与唯一校验将会与模板脱离关系，不再受模板管理'),
+      okText: t('解绑'),
+      cancelText: t('取消'),
+      confirmLoading: true,
+      confirmFn: async () => {
+        const params = {
+          bk_template_id: props.templateId,
+          object_id: row.id
+        }
+        await fieldTemplateService.unbind(params)
+        $success(t('解绑成功'))
+        getBindModel()
+        emit('unbound')
+        return true
+      }
+    })
+  }
 
   onUnmounted(() => {
     clearModelSyncReq()
@@ -188,11 +213,15 @@
       </bk-table-column>
       <bk-table-column :label="$t('操作')">
         <template #default="{ row }">
-          <cmdb-auth :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }">
+          <cmdb-auth :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }"
+            v-bk-tooltips="{
+              content: $t('操作正在进行中，无法解除'),
+              disabled: row.bk_ispaused || (statusMap[row.id] && !isSyncing(statusMap[row.id].status))
+            }">
             <template #default="{ disabled }">
               <bk-button
                 theme="primary"
-                :disabled="disabled"
+                :disabled="disabled || (!row.bk_ispaused && statusMap[row.id] && isSyncing(statusMap[row.id].status))"
                 :text="true"
                 @click.stop="handleUnbind(row)">
                 {{$t('解除绑定')}}

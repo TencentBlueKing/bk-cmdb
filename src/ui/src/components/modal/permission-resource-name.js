@@ -16,6 +16,7 @@ import { foreignkey } from '@/filters/formatter.js'
 import instanceService from '@/service/instance/instance'
 import projectService from '@/service/project'
 import businessSetService from '@/service/business-set/index.js'
+import fieldTemplateService from '@/service/field-template'
 import {
   BUILTIN_MODELS,
   BUILTIN_MODEL_PROPERTY_KEYS
@@ -223,5 +224,9 @@ export const IAM_VIEWS_INST_NAME = {
     })
     const data = res.info[0] || {}
     return data.bk_task_name
+  },
+  async [IAM_VIEWS.FIELD_TEMPLATE](vm, id) {
+    const res = await fieldTemplateService.findById(id, requestConfigBase('field_template'))
+    return res.name
   }
 }
