@@ -350,7 +350,7 @@
           } else {
             await this.createDynamicGroup()
           }
-          this.close()
+          this.close('submit')
         } catch (error) {
           console.error(error)
         }
@@ -441,26 +441,29 @@
         })
         return baseConditions
       },
-      close() {
-        if (this.handleSliderBeforeClose()) {
-          this.isShow = false
-          RouterQuery.set({
-            _t: Date.now()
-          })
-        }
+      close(type) {
+        if (type === 'submit') this.closeBtn(type)
+        else this.handleSliderBeforeClose('cancel')
+      },
+      closeBtn(type) {
+        this.isShow = false
+        if (type !== 'normal') RouterQuery.set({
+          _t: Date.now()
+        })
       },
       show() {
         this.isShow = true
       },
-      handleSliderBeforeClose() {
+      handleSliderBeforeClose(type = 'normal') {
         const changedValues = !isEqual(this.formData, this.originFormData)
         const changedProperties =  !isEqual(this.selectedProperties, this.originProperties)
         if (changedValues || changedProperties) {
           this.setChanged(true)
           this.beforeClose(() => {
-            this.isShow = false
+            this.closeBtn(type)
           })
         } else {
+          this.closeBtn(type)
           return true
         }
         return false
