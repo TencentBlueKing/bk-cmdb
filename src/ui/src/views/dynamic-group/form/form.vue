@@ -76,7 +76,7 @@
           {{isCreateMode ? $t('提交') : $t('保存')}}
         </bk-button>
       </cmdb-auth>
-      <bk-button class="mr10" theme="default" @click="close">{{$t('取消')}}</bk-button>
+      <bk-button class="mr10" theme="default" @click="handleSliderBeforeClose('cancel')">{{$t('取消')}}</bk-button>
     </div>
   </bk-sideslider>
 </template>
@@ -442,10 +442,6 @@
         return baseConditions
       },
       close(type) {
-        if (type === 'submit') this.closeBtn(type)
-        else this.handleSliderBeforeClose('cancel')
-      },
-      closeBtn(type) {
         this.isShow = false
         if (type !== 'normal') RouterQuery.set({
           _t: Date.now()
@@ -460,10 +456,10 @@
         if (changedValues || changedProperties) {
           this.setChanged(true)
           this.beforeClose(() => {
-            this.closeBtn(type)
+            this.close(type)
           })
         } else {
-          this.closeBtn(type)
+          this.close(type)
           return true
         }
         return false
