@@ -18,6 +18,7 @@
   import DetailsField from './details-field.vue'
   import DetailsUnique from './details-unique.vue'
   import DetailsModel from './details-model.vue'
+  import FieldPreviewDrawer from './children/field-preview-drawer.vue'
   import fieldTemplateService from '@/service/field-template'
   import routerActions from '@/router/actions'
   import {
@@ -36,7 +37,7 @@
     }
   })
 
-  const emit = defineEmits(['close'])
+  const emit = defineEmits(['close', 'bind-change'])
 
   const route = useRoute()
 
@@ -46,6 +47,9 @@
   const fieldCount = ref('')
   const modelCount = ref('')
   const uniqueList = ref([])
+  const previewFieldList = ref([])
+  const previewShow = ref(false)
+
   watchEffect(async () => {
     const [fieldCounts, templateUniqueList, modelCounts] = await Promise.all([
       fieldTemplateService.getFieldCount({ bk_template_ids: [templateId.value] }),
@@ -107,7 +111,9 @@
     emit('close')
   }
 
-  const handlePreviewField = () => {}
+  const handlePreviewField = () => {
+    previewShow.value = true
+  }
   const handleClone = () => {}
   const handleDelete = () => {}
 
@@ -121,6 +127,15 @@
   }
 
   const handleSliderBeforeClose = () => true
+
+  const handleFieldUpdated = (list) => {
+    previewFieldList.value = list
+  }
+  const handleModelUnbound = async () => {
+    const modelCounts = await fieldTemplateService.getModelCount({ bk_template_ids: [templateId.value] })
+    modelCount.value = modelCounts?.[0]?.count
+    emit('bind-change', templateId.value)
+  }
 </script>
 <script>
   export default {
@@ -152,7 +167,8 @@
         <details-field
           v-if="tabActive === tabIds.field"
           :template-id="templateId"
-          :unique-list="uniqueList">
+          :unique-list="uniqueList"
+          @updated="handleFieldUpdated">
         </details-field>
         <details-unique
           v-if="tabActive === tabIds.unique"
@@ -161,7 +177,8 @@
         </details-unique>
         <details-model
           v-if="tabActive === tabIds.model"
-          :template-id="templateId">
+          :template-id="templateId"
+          @unbound="handleModelUnbound">
         </details-model>
       </div>
       <template slot="footer" slot-scope="{ sticky }">
@@ -180,6 +197,10 @@
           </bk-button>
         </div>
       </template>
+      <field-preview-drawer
+        :preview-show.sync="previewShow"
+        :properties="previewFieldList">
+      </field-preview-drawer>
     </cmdb-sticky-layout>
   </bk-sideslider>
 </template>
