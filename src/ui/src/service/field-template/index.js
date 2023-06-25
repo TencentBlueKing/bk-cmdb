@@ -103,6 +103,9 @@ const getTaskSyncStatus = (data, config) => http.post('find/field_template/tasks
 // 查询同步任务状态
 const getModelSyncStatus = (data, config) => http.post('find/field_template/model/status', data, config)
 
+// 查询模板与模型差异状态
+const getModelDiffStatus = (data, config) => http.post('find/field_template/sync/status', data, config)
+
 export default {
   create,
   update,
@@ -125,5 +128,6 @@ export default {
   bindModel,
   syncModel,
   getTaskSyncStatus,
-  getModelSyncStatus
+  getModelSyncStatus,
+  getModelDiffStatus
 }
