@@ -443,6 +443,9 @@
         this.filter.mainClassification = ''
         this.filter.secondaryClassification = ''
         this.filter.templateName = ''
+        this.maincategoryId = 0
+        this.categoryId = null
+        this.secondaryList = []
         await this.getServiceClassification()
         await this.getTableData()
       }

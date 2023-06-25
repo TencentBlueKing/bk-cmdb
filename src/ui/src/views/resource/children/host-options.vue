@@ -167,6 +167,7 @@
   import FilterUtils from '@/components/filters/utils'
   import hostImportService from '@/service/host/import'
   import { isUseComplexValueType } from '@/utils/tools'
+  import isEqual from 'lodash/isEqual'
   const CUSTOM_STICKY_KEY = 'sticky-directory'
 
   export default {
@@ -238,7 +239,7 @@
           id: this.IPWithCloudSymbol,
           bk_obj_id: 'host',
           bk_property_id: this.IPWithCloudSymbol,
-          bk_property_name: `${this.$t('云区域')}ID:IP`,
+          bk_property_name: `${this.$t('管控区域')}ID:IP`,
           bk_property_type: 'singlechar'
         })
         const clipboardList = this.$parent.tableHeader.slice()
@@ -603,21 +604,13 @@
       },
       handleSliderBeforeClose() {
         const $form = this.$refs.multipleForm
-        const { changedValues } = $form
-        if (Object.keys(changedValues).length) {
-          return new Promise((resolve) => {
-            this.$bkInfo({
-              title: this.$t('确认退出'),
-              subTitle: this.$t('退出会导致未保存信息丢失'),
-              extCls: 'bk-dialog-sub-header-center',
-              confirmFn: () => {
-                this.slider.show = false
-                this.slider.component = null
-              },
-              cancelFn: () => {
-                resolve(false)
-              }
-            })
+        const { values, refrenceValues } = $form
+        const changedValues =  !isEqual(values, refrenceValues)
+        if (changedValues) {
+          $form.setChanged(true)
+          return $form.beforeClose(() => {
+            this.slider.component = null
+            this.slider.show = false
           })
         }
         this.slider.show = false

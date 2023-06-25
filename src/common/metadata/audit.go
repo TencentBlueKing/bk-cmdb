@@ -1014,7 +1014,7 @@ var auditDict = []resourceTypeInfo{
 	},
 	{
 		ID:   CloudAreaRes,
-		Name: "云区域",
+		Name: "管控区域",
 		Operations: []actionTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],

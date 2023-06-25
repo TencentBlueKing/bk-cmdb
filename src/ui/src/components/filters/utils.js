@@ -409,7 +409,8 @@ export function transformIP(raw) {
   const transformedIP = {
     data: {
       ipv4: [],
-      ipv6: []
+      ipv6: [],
+      assetList: []
     },
     condition: null
   }
@@ -420,6 +421,8 @@ export function transformIP(raw) {
 
   transformedIP.data.ipv6 = IPs.IPv6List
   IPs.IPv6WithCloudList.forEach(([, ip]) => transformedIP.data.ipv6.push(ip))
+
+  transformedIP.data.assetList = IPs.assetList
 
   const cloudIds = [...IPs.cloudIdSet].filter(id => id !== '')
   if (cloudIds.length) {

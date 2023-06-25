@@ -120,6 +120,7 @@
 
 <script>
   import { mapActions } from 'vuex'
+  import useSideslider from '@/hooks/use-sideslider'
   export default {
     props: {
       relation: {
@@ -179,6 +180,8 @@
         }
       }
       this.originInfo = this.$tools.clone(this.relationInfo)
+      const { beforeClose } = useSideslider(this.relationInfo)
+      this.beforeClose = beforeClose
     },
     methods: {
       ...mapActions('objectAssociation', [

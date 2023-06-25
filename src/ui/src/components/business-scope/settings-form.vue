@@ -98,10 +98,13 @@
       // 已选择的业务
       const selectedBusiness = ref([])
 
+      // 默认选择的业务
+      const localSelectedBusiness = ref([])
+
       // 初始化表单项的值
       watchEffect(() => {
         const localCondition = formData.value?.condition || []
-        const localSelectedBusiness = formData.value?.selectedBusiness || []
+        localSelectedBusiness.value = formData.value?.selectedBusiness || []
 
         const newCondition = []
         localCondition.forEach((item) => {
@@ -111,7 +114,7 @@
         })
 
         condition.value = newCondition
-        selectedBusiness.value = localSelectedBusiness
+        selectedBusiness.value = localSelectedBusiness.value
       })
 
       // 初始化业务属性和全量业务列表
@@ -189,7 +192,8 @@
         handleAdd,
         handleRemove,
         getPlaceholder,
-        getBindProps
+        getBindProps,
+        localSelectedBusiness
       }
     }
   })

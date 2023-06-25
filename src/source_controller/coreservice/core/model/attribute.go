@@ -58,12 +58,18 @@ func (m *modelAttribute) CreateTableModelAttributes(kit *rest.Kit, objID string,
 		return dataResult, err
 	}
 
-	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, attr *metadata.Attribute) {
+	addExceptionFunc := func(idx int64, err error, attr *metadata.Attribute) {
+		ccErr, ok := err.(errors.CCErrorCoder)
+		if !ok {
+			ccErr = kit.CCError.CCErrorf(common.CCErrCommInternalServerError, err.Error())
+		}
+
 		dataResult.CreateManyInfoResult.Exceptions = append(dataResult.CreateManyInfoResult.Exceptions,
-			metadata.ExceptionResult{OriginIndex: idx,
-				Message: err.Error(),
-				Code:    int64(err.GetCode()),
-				Data:    attr,
+			metadata.ExceptionResult{
+				OriginIndex: idx,
+				Message:     ccErr.Error(),
+				Code:        int64(ccErr.GetCode()),
+				Data:        attr,
 			})
 	}
 
@@ -86,12 +92,10 @@ func (m *modelAttribute) CreateTableModelAttributes(kit *rest.Kit, objID string,
 			continue
 		}
 
-		if attr.IsPre {
-			if attr.PropertyID == common.BKInstNameField {
-				lang := m.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
-				attr.PropertyName = util.FirstNotEmptyString(lang.Language("common_property_"+attr.PropertyID),
-					attr.PropertyName, attr.PropertyID)
-			}
+		if attr.IsPre && attr.PropertyID == common.BKInstNameField {
+			lang := m.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+			attr.PropertyName = util.FirstNotEmptyString(lang.Language("common_property_"+attr.PropertyID),
+				attr.PropertyName, attr.PropertyID)
 		}
 
 		attr.ObjectID = objID
@@ -101,7 +105,7 @@ func (m *modelAttribute) CreateTableModelAttributes(kit *rest.Kit, objID string,
 			attr.BizID, exists, kit.Rid)
 		if err != nil {
 			blog.Errorf("create model attrs failed, property id(%s), err: %s, rid: %s", attr.PropertyID, err, kit.Rid)
-			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+			addExceptionFunc(int64(attrIdx), err, &attr)
 			continue
 		}
 
@@ -117,7 +121,7 @@ func (m *modelAttribute) CreateTableModelAttributes(kit *rest.Kit, objID string,
 		id, err := m.saveTableAttr(kit, attr)
 		if err != nil {
 			blog.Errorf("failed to save the table attribute(%#v), err: %v, rid: %s", attr, err, kit.Rid)
-			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+			addExceptionFunc(int64(attrIdx), err, &attr)
 			continue
 		}
 		dataResult.CreateManyInfoResult.Created = append(dataResult.CreateManyInfoResult.Created,
@@ -150,14 +154,15 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 		return dataResult, err
 	}
 
-	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, attr *metadata.Attribute) {
+	addExceptionFunc := func(idx int64, err error, attr *metadata.Attribute) {
+		ccErr, ok := err.(errors.CCErrorCoder)
+		if !ok {
+			ccErr = kit.CCError.CCErrorf(common.CCErrCommInternalServerError, err.Error())
+		}
+
 		dataResult.CreateManyInfoResult.Exceptions = append(dataResult.CreateManyInfoResult.Exceptions,
-			metadata.ExceptionResult{
-				OriginIndex: idx,
-				Message:     err.Error(),
-				Code:        int64(err.GetCode()),
-				Data:        attr,
-			})
+			metadata.ExceptionResult{OriginIndex: idx, Message: ccErr.Error(), Code: int64(ccErr.GetCode()),
+				Data: attr})
 	}
 
 	for attrIdx, attr := range inputParam.Attributes {
@@ -209,8 +214,8 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 		}
 		id, err := m.save(kit, attr)
 		if err != nil {
-			blog.Errorf("failed to save the attribute(%#v), err: %v, rid: %s", attr, err, kit.Rid)
-			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+			blog.Errorf("failed to save the attribute(%#v), err: %s, rid: %s", attr, err, kit.Rid)
+			addExceptionFunc(int64(attrIdx), err, &attr)
 			continue
 		}
 
@@ -221,9 +226,9 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 	return dataResult, nil
 }
 
-// SetModelAttributes TODO
-func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string,
-	inputParam metadata.SetModelAttributes) (dataResult *metadata.SetDataResult, err error) {
+// SetModelAttributes set model attributes
+func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputParam metadata.SetModelAttributes) (
+	dataResult *metadata.SetDataResult, err error) {
 
 	dataResult = &metadata.SetDataResult{
 		Created:    []metadata.CreatedDataResult{},
@@ -235,11 +240,16 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string,
 		return dataResult, err
 	}
 
-	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, attr *metadata.Attribute) {
+	addExceptionFunc := func(idx int64, err error, attr *metadata.Attribute) {
+		ccErr, ok := err.(errors.CCErrorCoder)
+		if !ok {
+			ccErr = kit.CCError.CCErrorf(common.CCErrCommInternalServerError, err.Error())
+		}
+
 		dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 			OriginIndex: idx,
-			Message:     err.Error(),
-			Code:        int64(err.GetCode()),
+			Message:     ccErr.Error(),
+			Code:        int64(ccErr.GetCode()),
 			Data:        attr,
 		})
 	}
@@ -248,7 +258,7 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string,
 
 		existsAttr, exists, err := m.isExists(kit, attr.ObjectID, attr.PropertyID, attr.BizID)
 		if err != nil {
-			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+			addExceptionFunc(int64(attrIdx), err, &attr)
 			continue
 		}
 		attr.OwnerID = kit.SupplierAccount
@@ -259,9 +269,9 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string,
 
 			_, err := m.update(kit, mapstr.NewFromStruct(attr, "field"), cond, false)
 			if err != nil {
-				blog.Errorf("update the attribute(%#v) by the condition(%#v) failed, err: %v, rid: %s", attr,
-					cond.ToMapStr(), err, kit.Rid)
-				addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+				blog.Errorf("failed to update the attribute(%#v) by the condition(%#v), err: %s, rid: %s",
+					attr, cond.ToMapStr(), err.Error(), kit.Rid)
+				addExceptionFunc(int64(attrIdx), err, &attr)
 				continue
 			}
 			dataResult.Updated = append(dataResult.Updated, metadata.UpdatedDataResult{
@@ -274,7 +284,7 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string,
 		if err != nil {
 			blog.Errorf("SetModelAttributes failed, failed to save the attribute(%#v), err: %s, rid: %s", attr,
 				err.Error(), kit.Rid)
-			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+			addExceptionFunc(int64(attrIdx), err, &attr)
 			continue
 		}
 
@@ -288,7 +298,7 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string,
 	return dataResult, nil
 }
 
-// UpdateModelAttributes TODO
+// UpdateModelAttributes update model attributes
 func (m *modelAttribute) UpdateModelAttributes(kit *rest.Kit, objID string,
 	inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
@@ -307,7 +317,7 @@ func (m *modelAttribute) UpdateModelAttributes(kit *rest.Kit, objID string,
 
 	cnt, err := m.update(kit, inputParam.Data, cond, inputParam.IsSync)
 	if err != nil {
-		blog.ErrorJSON("update attributes failed, model: %s, attributes: %+v, condition: %+v, err: %v, rid: %s",
+		blog.Errorf("update attributes failed, model: %s, attributes: %+v, condition: %+v, err: %v, rid: %s",
 			objID, inputParam.Data, cond, err, kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
@@ -384,7 +394,7 @@ func (m *modelAttribute) UpdateModelAttributeIndex(kit *rest.Kit, objID string, 
 	return nil
 }
 
-// UpdateModelAttributesByCondition TODO
+// UpdateModelAttributesByCondition update model attributes by condition
 func (m *modelAttribute) UpdateModelAttributesByCondition(kit *rest.Kit, inputParam metadata.UpdateOption) (
 	*metadata.UpdatedCount, error) {
 
@@ -611,7 +621,7 @@ func (m *modelAttribute) updateTableAttr(kit *rest.Kit, data mapstr.MapStr, cond
 	return err
 }
 
-// DeleteModelAttributes TODO
+// DeleteModelAttributes delete model attributes
 func (m *modelAttribute) DeleteModelAttributes(kit *rest.Kit, objID string,
 	inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 

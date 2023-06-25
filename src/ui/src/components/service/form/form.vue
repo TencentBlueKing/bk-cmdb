@@ -307,17 +307,8 @@
         if (this.internalType === 'view') return Promise.resolve(true)
         const formChanged = !!Object.values(this.$refs.form.changedValues).length
         if (formChanged) {
-          return new Promise((resolve) => {
-            this.$bkInfo({
-              title: this.$t('确认退出'),
-              subTitle: this.$t('退出会导致未保存信息丢失'),
-              extCls: 'bk-dialog-sub-header-center',
-              confirmFn: () => {
-                resolve(true)
-              },
-              cancelFn: () => resolve(false)
-            })
-          })
+          this.$refs.form.setChanged(true)
+          return this.$refs.form.beforeClose()
         }
         return Promise.resolve(true)
       },

@@ -54,11 +54,11 @@
 	"1110060": "set ID [%d] not belong to business ID [%d]",
 	"1110061": "module ID [%d] not belong to business ID [%d]",
 	"1110062": "module ID [%d] not belong to set ID [%d]",
-	"1110063": "Failed to create cloud area, required field bk_cloud_name is missing",
-	"1110064": "Failed to create cloud area, bk_cloud_name is already exist",
-	"1110065": "Failed to query cloud area, host_count field failed to be added",
-	"1110066": "can't delete default cloud area",
-	"1110067": "Failed to query cloud area, sync_task_ids field failed to be added",
+	"1110063": "Failed to create bk-network area, required field bk_cloud_name is missing",
+	"1110064": "Failed to create bk-network area, bk_cloud_name is already exist",
+	"1110065": "Failed to query bk-network area, host_count field failed to be added",
+	"1110066": "can't delete default bk-network area",
+	"1110067": "Failed to query bk-network area, sync_task_ids field failed to be added",
 
 	"1110080": "Fail to add host to resource pool",
 	"": ""

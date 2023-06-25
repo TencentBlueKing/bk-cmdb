@@ -56,7 +56,7 @@
                 </template>
               </editable-field>
             </div>
-            <div class="model-id" v-show="!modelNameIsEditing">
+            <div class="model-id" v-show="!modelNameIsEditing" v-bk-overflow-tips>
               {{activeModel['bk_obj_id'] || ''}}
             </div>
           </div>
@@ -71,6 +71,7 @@
               @confirm="handleModelGroupUpdateConfirm"
               type="enum"
               font-size="12px"
+              style="width: calc(100% - 60px)"
               :options="classifications
                 .map(item => ({ id: item.bk_classification_id, name: item.bk_classification_name }))"
             >
@@ -399,6 +400,7 @@
           })
         }, { segment: 1, concurrency: 5 }).add(templateIds)
 
+        let groupIndex = 0
         for (const result of allResult) {
           const results = await result
           for (let i = 0; i < results.length; i++) {
@@ -407,8 +409,9 @@
               console.error(reason?.message)
               continue
             }
-            this.$set(this.templateDiffStatus, templateIds[i], value?.[0] ?? {})
+            this.$set(this.templateDiffStatus, templateIds[(groupIndex * 5) + i], value?.[0] ?? {})
           }
+          groupIndex += 1
         }
       }
     },
@@ -687,6 +690,7 @@
       },
       handleUnbindTemplate(template) {
         this.$bkInfo({
+          type: 'warning',
           title: this.$t('确认解绑该模板'),
           subTitle: this.$t('解绑后，字段内容与唯一校验将会与模板脱离关系，不再受模板管理'),
           okText: this.$t('解绑'),
@@ -697,7 +701,7 @@
               bk_template_id: template.id,
               object_id: this.activeModel.id
             }
-            await fieldTemplateService.updateTemplate(params)
+            await fieldTemplateService.unbind(params)
             this.$success(this.$t('解绑成功'))
             this.getModelBindTemplate()
             return true
@@ -743,14 +747,12 @@
             position: relative;
             margin-left: 32px;
             .model-type {
-                $builtinColor:#ffb23a;
-                $customizeColor: #dcfde2;
                 position: absolute;
                 left: 30px;
                 top: -16px;
                 padding: 0 8px;
                 border-radius: 4px;
-                background-color: $customizeColor;
+                background-color: #dcfde2;
                 font-size: 20px;
                 line-height: 32px;
                 color: #34ce5c;
@@ -766,15 +768,15 @@
                     left: 50%;
                     width: 0;
                     height: 0;
-                    border-top: 8px solid $customizeColor;
+                    border-top: 8px solid #dcfde2;
                     border-right: 14px solid transparent;
                     transform: translateX(-50%);
                 }
                 &.is-builtin {
-                    background-color: $builtinColor;
+                    background-color: #ffb23a;
                     color: #fff;
                     &::after{
-                      border-top-color: $builtinColor;
+                      border-top-color: #ffb23a;
                     }
                 }
             }
@@ -810,9 +812,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            $iconSize:56px;
-            width: $iconSize;
-            height: $iconSize;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             background: #e7f0ff;
             text-align: center;
@@ -838,7 +839,7 @@
                 left: 0;
                 right: 0;
                 bottom: 0;
-                line-height: $iconSize;
+                line-height: 56px;
                 font-size: 12px;
                 border-radius: 50%;
                 text-align: center;
@@ -874,6 +875,7 @@
           .model-id {
             font-size: 12px;
             color: #979ba5;
+            @include ellipsis;
           }
         }
 

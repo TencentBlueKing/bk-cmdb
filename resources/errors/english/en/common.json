@@ -72,7 +72,7 @@
     "1199073": "%s field exceeds maximum value %s",
     "1199074": "global cc error not initialized",
     "1199075": "forbidden operate mainline model instance with common instance API",
-    "1199076": "forbidden update built in cloud area",
+    "1199076": "forbidden update built in bk-network area",
     "1199077": "operate too many records at once, max: %d",
     "1199078": "module [%s] in business topology does not exist",
     "1199079": "business [%s] not exist",

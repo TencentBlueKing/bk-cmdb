@@ -14,6 +14,7 @@
   import { ref, watch, watchEffect, onBeforeUnmount, computed, set, del } from 'vue'
   import { useHttp } from '@/api'
   import Loading from '@/components/loading/index.vue'
+  import MiniTag from '@/components/ui/other/mini-tag.vue'
   import SelectModelDialog from './select-model-dialog.vue'
   import FieldDiff from './field-diff.vue'
   import UniqueDiff from './unique-diff.vue'
@@ -64,6 +65,89 @@
   const diffLoadingIds = ref({})
   const unmountCallbacks = []
   const hasDiffError = ref(false)
+
+  const fetchFieldDiff = async (modelList) => {
+    const modelIds = modelList.filter(item => !item.bk_ispaused).map(item => item.id)
+    const allResult = await CombineRequest.setup(Symbol(), (params) => {
+      const [modelId] = params
+      const requestId = Symbol(modelId)
+      if (!diffLoadingIds.value[modelId]) {
+        diffLoadingIds.value[modelId] = [requestId]
+      } else {
+        diffLoadingIds.value[modelId].push(requestId)
+      }
+
+      return fieldTemplateService.getFieldDifference({
+        bk_template_id: props.templateId,
+        object_id: modelId,
+        attributes: props.fieldList
+      }, {
+        requestId,
+        globalError: true
+      })
+    }, { segment: 1, concurrency: 5 }).add(modelIds)
+
+    let groupIndex = 0
+    for (const result of allResult) {
+      // 一个分组的执行结果
+      const results = await result
+      for (let i = 0; i < results.length; i++) {
+        // 分组中的每一个执行结果
+        const { status, reason, value } = results[i]
+        if (status === 'rejected') {
+          console.error(reason?.message)
+          hasDiffError.value = true
+          continue
+        }
+        set(fieldDiffs.value, modelIds[(groupIndex * 5) + i], value ?? {})
+      }
+      groupIndex += 1
+    }
+
+    unmountCallbacks.push(() => allResult?.return())
+  }
+
+  const fetchUniqueDiff = async (modelList) => {
+    const modelIds = modelList.filter(item => !item.bk_ispaused).map(item => item.id)
+    const allResult = await CombineRequest.setup(Symbol(), (params) => {
+      const [modelId] = params
+
+      const requestId = Symbol(modelId)
+      if (!diffLoadingIds.value[modelId]) {
+        diffLoadingIds.value[modelId] = [requestId]
+      } else {
+        diffLoadingIds.value[modelId].push(requestId)
+      }
+
+      return fieldTemplateService.getUniqueDifference({
+        bk_template_id: props.templateId,
+        object_id: modelId,
+        uniques: props.uniqueList
+      }, {
+        requestId,
+        globalError: true
+      })
+    }, { segment: 1, concurrency: 5 }).add(modelIds)
+
+    let groupIndex = 0
+    for (const result of allResult) {
+      // 一个分组的执行结果
+      const results = await result
+      for (let i = 0; i < results.length; i++) {
+        // 分组中的每一个执行结果
+        const { status, reason, value } = results[i]
+        if (status === 'rejected') {
+          console.error(reason?.message)
+          hasDiffError.value = true
+          continue
+        }
+        set(uniqueDiffs.value, modelIds[(groupIndex * 5) + i], value ?? {})
+      }
+      groupIndex += 1
+    }
+
+    unmountCallbacks.push(() => allResult?.return())
+  }
 
   watchEffect(async () => {
     const initModelList = props.modelList.slice()
@@ -120,86 +204,6 @@
     emit('update-diffs', hasDiffError.value, hasDiffConflict, diffCounts)
   })
 
-  const fetchFieldDiff = async (modelList) => {
-    const modelIds = modelList.map(item => item.id)
-    const allResult = await CombineRequest.setup(Symbol(), (params) => {
-      const [modelId] = params
-
-      const requestId = Symbol(modelId)
-      if (!diffLoadingIds.value[modelId]) {
-        diffLoadingIds.value[modelId] = [requestId]
-      } else {
-        diffLoadingIds.value[modelId].push(requestId)
-      }
-
-      return fieldTemplateService.getFieldDifference({
-        bk_template_id: props.templateId,
-        object_id: modelId,
-        attributes: props.fieldList
-      }, {
-        requestId,
-        globalError: true
-      })
-    }, { segment: 1, concurrency: 5 }).add(modelIds)
-
-    for (const result of allResult) {
-      // 一个分组的执行结果
-      const results = await result
-      for (let i = 0; i < results.length; i++) {
-        // 分组中的每一个执行结果
-        const { status, reason, value } = results[i]
-        if (status === 'rejected') {
-          console.error(reason?.message)
-          hasDiffError.value = true
-          continue
-        }
-        set(fieldDiffs.value, modelIds[i], value ?? {})
-      }
-    }
-
-    unmountCallbacks.push(() => allResult?.return())
-  }
-
-  const fetchUniqueDiff = async (modelList) => {
-    const modelIds = modelList.map(item => item.id)
-    const allResult = await CombineRequest.setup(Symbol(), (params) => {
-      const [modelId] = params
-
-      const requestId = Symbol(modelId)
-      if (!diffLoadingIds.value[modelId]) {
-        diffLoadingIds.value[modelId] = [requestId]
-      } else {
-        diffLoadingIds.value[modelId].push(requestId)
-      }
-
-      return fieldTemplateService.getUniqueDifference({
-        bk_template_id: props.templateId,
-        object_id: modelId,
-        uniques: props.uniqueList
-      }, {
-        requestId,
-        globalError: true
-      })
-    }, { segment: 1, concurrency: 5 }).add(modelIds)
-
-    for (const result of allResult) {
-      // 一个分组的执行结果
-      const results = await result
-      for (let i = 0; i < results.length; i++) {
-        // 分组中的每一个执行结果
-        const { status, reason, value } = results[i]
-        if (status === 'rejected') {
-          console.error(reason?.message)
-          hasDiffError.value = true
-          continue
-        }
-        set(uniqueDiffs.value, modelIds[i], value ?? {})
-      }
-    }
-
-    unmountCallbacks.push(() => allResult?.return())
-  }
-
   onBeforeUnmount(() => {
     unmountCallbacks.forEach(cb => cb?.())
     const allRquestIds = Object.values(diffLoadingIds.value).reduce((acc, cur) => acc.concat(cur), [])
@@ -235,6 +239,9 @@
     del(uniqueDiffs.value, model.id)
   }
   const handleSelectModel = (model) => {
+    if (model.bk_ispaused) {
+      return
+    }
     selectedModel.value = model
   }
   const handleToggleTab = (tab) => {
@@ -263,35 +270,48 @@
           </bk-button>
         </div>
         <div class="model-list" v-if="modelListLocal.length">
-          <div v-for="(model, modelIndex) in modelListLocal" :key="modelIndex"
-            :class="['model-item', {
-              readonly,
-              'is-loading': $loading(diffLoadingIds[model.id]),
-              'is-conflict': isConflict(model),
-              'is-selected': isSelected(model)
-            }]"
-            @click="handleSelectModel(model)">
-            <div class="model-icon-container">
-              <i class="model-icon" :class="model.bk_obj_icon"></i>
-            </div>
-            <div class="model-info">
-              <div class="model-name" :title="model.bk_obj_name">{{ model.bk_obj_name }}</div>
-              <div class="model-id">{{ model.bk_obj_id }}</div>
-            </div>
-            <div class="tail">
-              <bk-button
-                v-if="!readonly"
-                class="remove-button"
-                :text="true"
-                @click.stop="handleClickRemoveModel(model, modelIndex)">
-                <bk-icon class="button-icon" type="delete" />
-              </bk-button>
-              <loading :loading="$loading(diffLoadingIds[model.id])">
-                <i class="bk-icon icon-exclamation-circle-shape conflict-icon" v-if="isConflict(model)"></i>
-                <span class="count" v-else>{{ displayDiffCounts[model.id] && displayDiffCounts[model.id].total }}</span>
-              </loading>
-            </div>
-          </div>
+          <template v-for="(model, modelIndex) in modelListLocal">
+            <cmdb-auth :key="modelIndex" tag="div" :auth="{ type: $OPERATION.U_MODEL, relation: [model.id] }">
+              <template #default="{ disabled }">
+                <div :key="modelIndex"
+                  :class="['model-item', {
+                    disabled,
+                    readonly,
+                    'is-paused': model.bk_ispaused,
+                    'is-loading': $loading(diffLoadingIds[model.id]),
+                    'is-conflict': isConflict(model),
+                    'is-selected': isSelected(model)
+                  }]"
+                  @click="handleSelectModel(model)">
+                  <div class="model-icon-container">
+                    <i class="model-icon" :class="model.bk_obj_icon"></i>
+                  </div>
+                  <div class="model-info">
+                    <div class="model-name-area" :title="model.bk_obj_name">
+                      <div class="model-name" :title="model.bk_obj_name">{{ model.bk_obj_name }}</div>
+                      <mini-tag theme="paused" v-if="model.bk_ispaused">{{ $t('已停用') }}</mini-tag>
+                    </div>
+                    <div class="model-id">{{ model.bk_obj_id }}</div>
+                  </div>
+                  <div class="tail" v-if="!model.bk_ispaused">
+                    <bk-button
+                      v-if="!readonly"
+                      class="remove-button"
+                      :text="true"
+                      @click.stop="handleClickRemoveModel(model, modelIndex)">
+                      <bk-icon class="button-icon" type="delete" />
+                    </bk-button>
+                    <loading :loading="$loading(diffLoadingIds[model.id])">
+                      <i class="bk-icon icon-exclamation-circle-shape conflict-icon" v-if="isConflict(model)"></i>
+                      <span class="count" v-else>
+                        {{ displayDiffCounts[model.id] && displayDiffCounts[model.id].total }}
+                      </span>
+                    </loading>
+                  </div>
+                </div>
+              </template>
+            </cmdb-auth>
+          </template>
         </div>
         <bk-exception type="empty" scene="part" class="empty" v-if="readonly && !modelListLocal.length">
           <div>{{$t('该模板暂未绑定任何模型')}}</div>
@@ -479,11 +499,16 @@
       align-items: center;
     }
 
-    .model-name {
-      font-weight: 700;
-      font-size: 12px;
-      color: #63656E;
-      @include ellipsis;
+    .model-name-area {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      .model-name {
+        font-weight: 700;
+        font-size: 12px;
+        color: #63656E;
+        @include ellipsis;
+      }
     }
     .model-id {
       font-size: 12px;
@@ -557,6 +582,16 @@
           display: none;
         }
       }
+    }
+
+    &.disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    &.is-paused {
+      cursor: not-allowed;
+      opacity: 0.5;
+      pointer-events: none;
     }
   }
 </style>

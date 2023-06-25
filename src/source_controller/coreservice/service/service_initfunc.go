@@ -252,6 +252,7 @@ func (s *coreService) initMainline(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+// NOCC:golint/fnsize(设计如此)
 func (s *coreService) host(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.engine.CCErr,
@@ -336,8 +337,10 @@ func (s *coreService) audit(web *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/auditlog", Handler: s.CreateAuditLog})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/auditlog", Handler: s.SearchAuditLog})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/auditlog",
+		Handler: s.CreateAuditLog})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/auditlog",
+		Handler: s.SearchAuditLog})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -439,7 +442,8 @@ func (s *coreService) initCount(web *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/resource/count", Handler: s.GetCountByFilter})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/resource/count",
+		Handler: s.GetCountByFilter})
 
 	utility.AddToRestfulWebService(web)
 }

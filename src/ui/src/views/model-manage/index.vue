@@ -954,25 +954,29 @@
           this.$http.cancelRequest(prevIndex)
         }
 
-        const result = await this.$store.dispatch(
-          'objectCommonInst/searchInstanceCount',
-          {
-            params: {
-              condition: { obj_ids: [modelId] },
-            },
-            config: {
-              requestId,
-              globalError: false,
-            },
-          }
-        )
+        try {
+          const result = await this.$store.dispatch(
+            'objectCommonInst/searchInstanceCount',
+            {
+              params: {
+                condition: { obj_ids: [modelId] },
+              },
+              config: {
+                requestId,
+                globalError: false,
+              },
+            }
+          )
 
-        const [data] = result
+          const [data] = result
 
-        this.$set(this.modelStatisticsSet, data.bk_obj_id, {
-          error: data.error,
-          inst_count: data.inst_count,
-        })
+          this.$set(this.modelStatisticsSet, data.bk_obj_id, {
+            error: data.error,
+            inst_count: data.inst_count,
+          })
+        } catch (err) {
+          console.error(err)
+        }
       },
       async saveGroup() {
         try {
