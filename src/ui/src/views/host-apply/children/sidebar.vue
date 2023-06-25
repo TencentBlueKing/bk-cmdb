@@ -295,6 +295,7 @@
       },
       handleclearFilter() {
         this.$refs.searchSelect.setEmptyKeyword()
+        this.$refs.searchSelect.clearInputAll()
       }
     }
   }

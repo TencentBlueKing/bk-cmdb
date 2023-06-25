@@ -146,7 +146,7 @@
           <div class="model-icon">
             <i :class="['icon', sourceModel['bk_obj_icon']]"></i>
           </div>
-          <span class="model-name">{{sourceModel['bk_obj_name']}}</span>
+          <span class="model-name" v-bk-overflow-tips>{{sourceModel['bk_obj_name']}}</span>
         </div>
         <div class="model-edge">
           <div class="connection">
@@ -157,7 +157,7 @@
           <div class="model-icon">
             <i :class="['icon', targetModel['bk_obj_icon']]"></i>
           </div>
-          <span class="model-name">{{targetModel['bk_obj_name']}}</span>
+          <span class="model-name" v-bk-overflow-tips>{{targetModel['bk_obj_name']}}</span>
         </div>
       </div>
       <div class="topo-text">{{sourceModel['bk_obj_name']}} {{relationName}} {{targetModel['bk_obj_name']}}</div>
@@ -440,6 +440,9 @@
                     font-size: 12px;
                     color: #868b97;
                     margin-top: 2px;
+                    width: 70px;
+                    text-align: center;
+                    @include ellipsis;
                 }
 
                 &.ispre {

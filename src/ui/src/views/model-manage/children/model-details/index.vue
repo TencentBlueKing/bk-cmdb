@@ -56,7 +56,7 @@
                 </template>
               </editable-field>
             </div>
-            <div class="model-id" v-show="!modelNameIsEditing">
+            <div class="model-id" v-show="!modelNameIsEditing" v-bk-overflow-tips>
               {{activeModel['bk_obj_id'] || ''}}
             </div>
           </div>
@@ -70,6 +70,7 @@
               @confirm="handleModelGroupUpdateConfirm"
               type="enum"
               font-size="12px"
+              style="width: calc(100% - 60px)"
               :options="classifications
                 .map(item => ({ id: item.bk_classification_id, name: item.bk_classification_name }))"
             >
@@ -743,6 +744,7 @@
           .model-id {
             font-size: 12px;
             color: #979ba5;
+            @include ellipsis;
           }
         }
 

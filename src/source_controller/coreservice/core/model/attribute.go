@@ -58,12 +58,18 @@ func (m *modelAttribute) CreateTableModelAttributes(kit *rest.Kit, objID string,
 		return dataResult, err
 	}
 
-	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, attr *metadata.Attribute) {
+	addExceptionFunc := func(idx int64, err error, attr *metadata.Attribute) {
+		ccErr, ok := err.(errors.CCErrorCoder)
+		if !ok {
+			ccErr = kit.CCError.CCErrorf(common.CCErrCommInternalServerError, err.Error())
+		}
+
 		dataResult.CreateManyInfoResult.Exceptions = append(dataResult.CreateManyInfoResult.Exceptions,
-			metadata.ExceptionResult{OriginIndex: idx,
-				Message: err.Error(),
-				Code:    int64(err.GetCode()),
-				Data:    attr,
+			metadata.ExceptionResult{
+				OriginIndex: idx,
+				Message:     ccErr.Error(),
+				Code:        int64(ccErr.GetCode()),
+				Data:        attr,
 			})
 	}
 
@@ -86,12 +92,10 @@ func (m *modelAttribute) CreateTableModelAttributes(kit *rest.Kit, objID string,
 			continue
 		}
 
-		if attr.IsPre {
-			if attr.PropertyID == common.BKInstNameField {
-				lang := m.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
-				attr.PropertyName = util.FirstNotEmptyString(lang.Language("common_property_"+attr.PropertyID),
-					attr.PropertyName, attr.PropertyID)
-			}
+		if attr.IsPre && attr.PropertyID == common.BKInstNameField {
+			lang := m.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+			attr.PropertyName = util.FirstNotEmptyString(lang.Language("common_property_"+attr.PropertyID),
+				attr.PropertyName, attr.PropertyID)
 		}
 
 		attr.ObjectID = objID
@@ -101,7 +105,7 @@ func (m *modelAttribute) CreateTableModelAttributes(kit *rest.Kit, objID string,
 			attr.BizID, exists, kit.Rid)
 		if err != nil {
 			blog.Errorf("create model attrs failed, property id(%s), err: %s, rid: %s", attr.PropertyID, err, kit.Rid)
-			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+			addExceptionFunc(int64(attrIdx), err, &attr)
 			continue
 		}
 
@@ -117,7 +121,7 @@ func (m *modelAttribute) CreateTableModelAttributes(kit *rest.Kit, objID string,
 		id, err := m.saveTableAttr(kit, attr)
 		if err != nil {
 			blog.Errorf("failed to save the table attribute(%#v), err: %v, rid: %s", attr, err, kit.Rid)
-			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+			addExceptionFunc(int64(attrIdx), err, &attr)
 			continue
 		}
 		dataResult.CreateManyInfoResult.Created = append(dataResult.CreateManyInfoResult.Created,
@@ -146,17 +150,19 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 	}
 
 	if err := m.model.isValid(kit, objID); err != nil {
-		blog.Errorf("CreateModelAttributes failed, validate model(%s) failed, err: %s, rid: %s", objID, err.Error(), kit.Rid)
+		blog.Errorf("validate model(%s) failed, err: %v, rid: %s", objID, err, kit.Rid)
 		return dataResult, err
 	}
 
-	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, attr *metadata.Attribute) {
-		dataResult.CreateManyInfoResult.Exceptions = append(dataResult.CreateManyInfoResult.Exceptions, metadata.ExceptionResult{
-			OriginIndex: idx,
-			Message:     err.Error(),
-			Code:        int64(err.GetCode()),
-			Data:        attr,
-		})
+	addExceptionFunc := func(idx int64, err error, attr *metadata.Attribute) {
+		ccErr, ok := err.(errors.CCErrorCoder)
+		if !ok {
+			ccErr = kit.CCError.CCErrorf(common.CCErrCommInternalServerError, err.Error())
+		}
+
+		dataResult.CreateManyInfoResult.Exceptions = append(dataResult.CreateManyInfoResult.Exceptions,
+			metadata.ExceptionResult{OriginIndex: idx, Message: ccErr.Error(), Code: int64(ccErr.GetCode()),
+				Data: attr})
 	}
 
 	for attrIdx, attr := range inputParam.Attributes {
@@ -167,56 +173,57 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 		locked, err := locker.Lock(redisKey, time.Second*35)
 		defer locker.Unlock()
 		if err != nil {
-			blog.ErrorJSON("create model error. get create look error. err:%s, input:%s, rid:%s", err.Error(), inputParam, kit.Rid)
+			blog.ErrorJSON("create model error. get create look error. err:%s, input:%s, rid:%s", err.Error(),
+				inputParam, kit.Rid)
 			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommRedisOPErr), &attr)
 			continue
 		}
 		if !locked {
 			blog.ErrorJSON("create model have same task in progress. input:%s, rid:%s", inputParam, kit.Rid)
-			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr, fmt.Sprintf("create object(%s) attribute(%s)", attr.ObjectID, attr.PropertyName)), &attr)
+			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr,
+				fmt.Sprintf("create object(%s) attribute(%s)", attr.ObjectID, attr.PropertyName)), &attr)
 			continue
 		}
-		if attr.IsPre {
-			if attr.PropertyID == common.BKInstNameField {
-				language := util.GetLanguage(kit.Header)
-				lang := m.language.CreateDefaultCCLanguageIf(language)
-				attr.PropertyName = util.FirstNotEmptyString(lang.Language("common_property_"+attr.PropertyID), attr.PropertyName, attr.PropertyID)
-			}
+		if attr.IsPre && attr.PropertyID == common.BKInstNameField {
+			lang := m.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+			attr.PropertyName = util.FirstNotEmptyString(lang.Language("common_property_"+attr.PropertyID),
+				attr.PropertyName, attr.PropertyID)
 		}
 
 		attr.OwnerID = kit.SupplierAccount
 		_, exists, err := m.isExists(kit, attr.ObjectID, attr.PropertyID, attr.BizID)
-		blog.V(5).Infof("CreateModelAttributes isExists info. property id:%s, bizID:%#v, exit:%v, rid:%s", attr.PropertyID, attr.BizID, exists, kit.Rid)
+		blog.V(5).Infof("CreateModelAttributes isExists info. property id:%s, bizID:%#v, exit:%v, rid:%s",
+			attr.PropertyID, attr.BizID, exists, kit.Rid)
 		if err != nil {
-			blog.Errorf("CreateModelAttributes failed, attribute field propertyID(%s) exists, err: %s, rid: %s", attr.PropertyID, err.Error(), kit.Rid)
-			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+			blog.Errorf("CreateModelAttributes failed, attribute field propertyID(%s) exists, err: %s, rid: %s",
+				attr.PropertyID, err.Error(), kit.Rid)
+			addExceptionFunc(int64(attrIdx), err, &attr)
 			continue
 		}
 
 		if exists {
-			dataResult.CreateManyInfoResult.Repeated = append(dataResult.CreateManyInfoResult.Repeated, metadata.RepeatedDataResult{
-				OriginIndex: int64(attrIdx),
-				Data:        mapstr.NewFromStruct(attr, "field"),
-			})
+			dataResult.CreateManyInfoResult.Repeated = append(dataResult.CreateManyInfoResult.Repeated,
+				metadata.RepeatedDataResult{
+					OriginIndex: int64(attrIdx),
+					Data:        mapstr.NewFromStruct(attr, "field"),
+				})
 			continue
 		}
 		id, err := m.save(kit, attr)
 		if err != nil {
-			blog.Errorf("CreateModelAttributes failed, failed to save the attribute(%#v), err: %s, rid: %s", attr, err.Error(), kit.Rid)
-			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+			blog.Errorf("failed to save the attribute(%#v), err: %s, rid: %s", attr, err, kit.Rid)
+			addExceptionFunc(int64(attrIdx), err, &attr)
 			continue
 		}
 
-		dataResult.CreateManyInfoResult.Created = append(dataResult.CreateManyInfoResult.Created, metadata.CreatedDataResult{
-			OriginIndex: int64(attrIdx),
-			ID:          id,
-		})
+		dataResult.CreateManyInfoResult.Created = append(dataResult.CreateManyInfoResult.Created,
+			metadata.CreatedDataResult{OriginIndex: int64(attrIdx), ID: id})
 	}
 
 	return dataResult, nil
 }
 
-// SetModelAttributes TODO
+// SetModelAttributes set model attributes
 func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputParam metadata.SetModelAttributes) (
 	dataResult *metadata.SetDataResult, err error) {
 
@@ -230,11 +237,16 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputPa
 		return dataResult, err
 	}
 
-	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, attr *metadata.Attribute) {
+	addExceptionFunc := func(idx int64, err error, attr *metadata.Attribute) {
+		ccErr, ok := err.(errors.CCErrorCoder)
+		if !ok {
+			ccErr = kit.CCError.CCErrorf(common.CCErrCommInternalServerError, err.Error())
+		}
+
 		dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 			OriginIndex: idx,
-			Message:     err.Error(),
-			Code:        int64(err.GetCode()),
+			Message:     ccErr.Error(),
+			Code:        int64(ccErr.GetCode()),
 			Data:        attr,
 		})
 	}
@@ -243,7 +255,7 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputPa
 
 		existsAttr, exists, err := m.isExists(kit, attr.ObjectID, attr.PropertyID, attr.BizID)
 		if err != nil {
-			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+			addExceptionFunc(int64(attrIdx), err, &attr)
 			continue
 		}
 		attr.OwnerID = kit.SupplierAccount
@@ -254,8 +266,9 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputPa
 
 			_, err := m.update(kit, mapstr.NewFromStruct(attr, "field"), cond)
 			if err != nil {
-				blog.Errorf("SetModelAttributes failed, failed to update the attribute(%#v) by the condition(%#v), err: %s, rid: %s", attr, cond.ToMapStr(), err.Error(), kit.Rid)
-				addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+				blog.Errorf("SetModelAttributes failed, failed to update the attribute(%#v) by the condition(%#v), err: %s, rid: %s",
+					attr, cond.ToMapStr(), err.Error(), kit.Rid)
+				addExceptionFunc(int64(attrIdx), err, &attr)
 				continue
 			}
 			dataResult.Updated = append(dataResult.Updated, metadata.UpdatedDataResult{
@@ -266,8 +279,9 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputPa
 		}
 		id, err := m.save(kit, attr)
 		if err != nil {
-			blog.Errorf("SetModelAttributes failed, failed to save the attribute(%#v), err: %s, rid: %s", attr, err.Error(), kit.Rid)
-			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+			blog.Errorf("SetModelAttributes failed, failed to save the attribute(%#v), err: %s, rid: %s", attr,
+				err.Error(), kit.Rid)
+			addExceptionFunc(int64(attrIdx), err, &attr)
 			continue
 		}
 
@@ -281,15 +295,18 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputPa
 	return dataResult, nil
 }
 
-// UpdateModelAttributes TODO
-func (m *modelAttribute) UpdateModelAttributes(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
+// UpdateModelAttributes update model attributes
+func (m *modelAttribute) UpdateModelAttributes(kit *rest.Kit, objID string,
+	inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
 	if err := m.model.isValid(kit, objID); nil != err {
-		blog.Errorf("UpdateModelAttributes failed, validate model(%s) failed, err: %s, rid: %s", objID, err.Error(), kit.Rid)
+		blog.Errorf("UpdateModelAttributes failed, validate model(%s) failed, err: %s, rid: %s", objID, err.Error(),
+			kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(),
+		kit.SupplierAccount))
 	if err != nil {
 		blog.Errorf("UpdateModelAttributes failed, failed to convert mapstr(%#v) into a condition object, err: %v, "+
 			"rid: %s", inputParam.Condition, err, kit.Rid)
@@ -375,18 +392,22 @@ func (m *modelAttribute) UpdateModelAttributeIndex(kit *rest.Kit, objID string, 
 	return nil
 }
 
-// UpdateModelAttributesByCondition TODO
-func (m *modelAttribute) UpdateModelAttributesByCondition(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
+// UpdateModelAttributesByCondition update model attributes by condition
+func (m *modelAttribute) UpdateModelAttributesByCondition(kit *rest.Kit,
+	inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(),
+		kit.SupplierAccount))
 	if err != nil {
-		blog.Errorf("UpdateModelAttributesByCondition failed, failed to convert mapstr(%#v) into a condition object, err: %s, rid: %s", inputParam.Condition, err.Error(), kit.Rid)
+		blog.Errorf("UpdateModelAttributesByCondition failed, failed to convert mapstr(%#v) into a condition object, err: %s, rid: %s",
+			inputParam.Condition, err.Error(), kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
 
 	cnt, err := m.update(kit, inputParam.Data, cond)
 	if err != nil {
-		blog.Errorf("UpdateModelAttributesByCondition failed, failed to update fields (%#v) by condition(%#v), err: %s, rid: %s", inputParam.Data, cond.ToMapStr(), err.Error(), kit.Rid)
+		blog.Errorf("UpdateModelAttributesByCondition failed, failed to update fields (%#v) by condition(%#v), err: %s, rid: %s",
+			inputParam.Data, cond.ToMapStr(), err.Error(), kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
 
@@ -583,17 +604,21 @@ func (m *modelAttribute) updateTableAttr(kit *rest.Kit, data mapstr.MapStr, cond
 	return err
 }
 
-// DeleteModelAttributes TODO
-func (m *modelAttribute) DeleteModelAttributes(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+// DeleteModelAttributes delete model attributes
+func (m *modelAttribute) DeleteModelAttributes(kit *rest.Kit, objID string,
+	inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	if err := m.model.isValid(kit, objID); nil != err {
-		blog.Errorf("request(%s): it is failed to check if the model(%s) is valid, error info is %s", kit.Rid, objID, err.Error())
+		blog.Errorf("request(%s): it is failed to check if the model(%s) is valid, error info is %s", kit.Rid, objID,
+			err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(),
+		kit.SupplierAccount))
 	if err != nil {
-		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", kit.Rid, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s",
+			kit.Rid, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
