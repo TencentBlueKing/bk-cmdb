@@ -33,6 +33,7 @@
 
   const searchSelectComp = ref(null)
   const isTyeing = ref(false)
+  const isFocus = ref(false)
   const filterMenus = [
     {
       id: 'templateName',
@@ -72,6 +73,9 @@
   })
 
   watch(displayFilterMenus, () => {
+    if (!isFocus.value) {
+      return
+    }
     // fix菜单项丢失
     searchSelectComp.value?.showMenu()
   })
@@ -199,6 +203,12 @@
   const handleInputChange = () => {
     isTyeing.value = true
   }
+  const handleInputFocus = () => {
+    isFocus.value = true
+  }
+  const handleInputClickOutside = () => {
+    isFocus.value = false
+  }
 </script>
 
 <template>
@@ -214,6 +224,8 @@
     v-model="filter"
     :remote-method="fetchOptions"
     @input-change="handleInputChange"
+    @input-focus="handleInputFocus"
+    @input-click-outside="handleInputClickOutside"
     @change="handleSearchSelectChange">
   </bk-search-select>
 </template>

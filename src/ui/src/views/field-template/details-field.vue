@@ -27,6 +27,8 @@
     }
   })
 
+  const emit = defineEmits(['updated'])
+
   const { uniqueList: templateUniqueList } = toRefs(props)
 
   const filterWord = ref('')
@@ -40,6 +42,8 @@
       bk_template_id: props.templateId
     }, { requestId: DETAILS_FIELDLIST_REQUEST_ID })
     fieldList.value = fieldData?.info || []
+
+    emit('updated', fieldList.value)
   })
 
   const displayFieldList = computed(() => {

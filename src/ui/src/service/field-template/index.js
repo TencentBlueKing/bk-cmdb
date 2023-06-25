@@ -74,7 +74,7 @@ const rollBindModel = (params, limit, config) => rollReqUseCount(
 const getModelBindTemplate = (data, config) => http.post('findmany/field_template/by_object', data, config)
 
 // 模版解绑模型接口
-const updateTemplate = (data, config) => http.post('/update/field_template/unbind/object', data, config)
+const unbind = (data, config) => http.post('/update/field_template/unbind/object', data, config)
 
 // 删除字段模板接口
 const deleteTemplate = (data, config) => http.delete('/delete/field_template', data, config)
@@ -119,7 +119,7 @@ export default {
   getBindModel,
   rollBindModel,
   getModelBindTemplate,
-  updateTemplate,
+  unbind,
   deleteTemplate,
   cloneTemplate,
   getTemplateInfo,
