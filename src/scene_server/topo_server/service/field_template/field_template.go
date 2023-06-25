@@ -274,12 +274,14 @@ func (s *service) getTmplIDsAfterDealObjAndTmplRel(kit *rest.Kit, objIDs []int64
 		blog.Errorf("list field templates failed, err: %v, opt: %+v, rid: %s", err, objIDs, kit.Rid)
 		return nil, err
 	}
-	if len(objIDs) != len(res.Info) {
-		blog.Errorf("the number of associations obtained is incorrect, objIDs: %+v, rid: %s", objIDs, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.ObjectIDField)
+	objIDTmplMap := make(map[int64][]int64)
+
+	if len(res.Info) == 0 && isBind {
+		for id := range objIDs {
+			objIDTmplMap[objIDs[id]] = append(objIDTmplMap[objIDs[id]], templateID)
+		}
 	}
 
-	objIDTmplMap := make(map[int64][]int64)
 	for _, data := range res.Info {
 		if _, ok := objIDTmplMap[data.ObjectID]; ok {
 			// in the unbinding scenario, skip the templateID that needs to be unbound
