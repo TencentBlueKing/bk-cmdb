@@ -1721,8 +1721,8 @@
     "不允许删除在唯一校验中的字段": "Fields in Unique Rule cannot be deleted",
     "取消字段唯一校验确认提示语": "After canceling unique check, all associated Unique Rules will be deleted upon submission. Do you wish to continue?",
     "绑定的字段组合模板":"Bound Field Grouping Template",
-    "模板":"Template",
-    "模板提示信息":"Field of '{templateInfo}'",
+    "模板": "Template",
+    "模板提示信息": "Field of '{templateInfo}'",
     "共N个": "Total {count}",
     "全选N个模型": "Select all {count} models",
     "字段组合模板同步结果": "Sync completed, {success} successful, {fail} failed",
@@ -1733,5 +1733,8 @@
     "模型信息与模板信息有差异提示语": "Model information differs from template information, {link}",
     "确认离开当前页？": "Are you sure you want to leave the current page",
     "离开将会导致未保存信息丢失": "Leaving will cause the loss of any unsaved data",
-    "离开": "Leave"
+    "离开": "Leave",
+    "请输入模板描述": "Please enter the template description",
+    "克隆字段组合模板": "Clone field template",
+    "绑定模型": "Binding model"
 }

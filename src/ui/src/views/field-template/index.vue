@@ -23,7 +23,7 @@
     MENU_MODEL_FIELD_TEMPLATE_BIND,
     MENU_MODEL_DETAILS
   } from '@/dictionary/menu-symbol'
-  import { $bkInfo, $success, $error, $bkPopover } from '@/magicbox/index.js'
+  import { $success, $error, $bkPopover } from '@/magicbox/index.js'
   import applyPermission from '@/utils/apply-permission.js'
   import { getDefaultPaginationConfig, getSort } from '@/utils/tools.js'
   import queryBuilderOperator, { QUERY_OPERATOR } from '@/utils/query-builder-operator'
@@ -33,7 +33,9 @@
   import TemplateDetails from './details.vue'
   import ModelSyncStatus from './children/model-sync-status.vue'
   import SearchSelect from './children/search-select.vue'
+  import CloneDialog from './children/clone-dialog.vue'
   import useModelSyncStatus from './children/use-model-sync-status'
+  import useTemplate from './children/use-template'
 
   const requestIds = {
     list: Symbol('list'),
@@ -62,14 +64,12 @@
     }
   })
 
-  const cloneForm = ref({
-    name: '',
-    description: ''
-  })
+  const templateList = computed(() => table.list)
+  const { handleDelete: handleDeleteTemplate } = useTemplate(templateList)
 
   const isShowCloneDialog = ref(false)
+  const cloneSourceTemplate = ref({})
 
-  const rowId = ref(null)
   const boundModelPopoverContentRef = ref(null)
   const boundModelPopover = reactive({
     templateId: null,
@@ -115,7 +115,7 @@
       }
       if (item.id === 'modelName') {
         params.object_filter.rules.push({
-          field: 'name',
+          field: 'bk_obj_name',
           operator: queryBuilderOperator(QUERY_OPERATOR.IN),
           value: item.value?.split(',')
         })
@@ -336,52 +336,32 @@
     })
   }
 
-  const handleClone = (row) => {
+  const handleClone = (template) => {
     isShowCloneDialog.value = true
-    rowId.value = row.id
-    cloneForm.value.name = row.name
-    cloneForm.value.description = row.description
+    cloneSourceTemplate.value = template
   }
 
-  const handleCloneConfirm = async () => {
-    try {
-      const params = {
-        id: rowId.value,
-        name: cloneForm.value.name,
-        description: cloneForm.value.description
-      }
-      await fieldTemplateService.cloneTemplate(params)
-      getList({ isDel: true })
-      $success(t('克隆成功'))
-      isShowCloneDialog.value = false
-      cloneForm.value.name = ''
-      cloneForm.value.description = ''
-    } catch (error) {
-      console.error(error)
-      return false
-    }
+  const handleCloneSuccess = () => {
+    getList()
+    $success(t('克隆成功'))
+    isShowCloneDialog.value = false
+    RouterQuery.refresh()
+  }
+  const handleCloneDone = () => {
+    RouterQuery.refresh()
+  }
+  const handleCloneDialogToggle = (val) => {
+    isShowCloneDialog.value = val
   }
 
   const handleDelete = (row) => {
-    $bkInfo({
-      title: t('确认要删除', { name: row.name }),
-      confirmLoading: true,
-      confirmFn: async () => {
-        try {
-          await fieldTemplateService.deleteTemplate({
-            data: {
-              id: row.id
-            }
-          })
-          getList({ isDel: true })
-          $success(t('删除成功'))
-        } catch (error) {
-          console.error(error)
-          $error(t('删除失败'))
-          return false
-        }
-      }
+    handleDeleteTemplate(row, () => {
+      getList({ isDel: true })
+      $success(t('删除成功'))
     })
+  }
+  const handleDeleteDone = () => {
+    getList({ isDel: true })
   }
 
   const handleRowIDClick = (row) => {
@@ -599,32 +579,17 @@
       :open="detailsDrawer.open"
       :template="detailsDrawer.template"
       @bind-change="handleBindModelChange"
+      @clone-done="handleCloneDone"
+      @delete-done="handleDeleteDone"
       @close="handleDetailsDrawerClose">
     </template-details>
 
-    <bk-dialog
-      v-model="isShowCloneDialog"
-      theme="primary"
-      header-position="left"
-      :mask-close="false"
-      :auto-close="false"
-      width="670"
-      :title="t('克隆字段组合模板')"
-      @confirm="handleCloneConfirm">
-      <bk-form :label-width="80" :model="cloneForm" class="cloneFrom">
-        <bk-form-item label="模板名称" :required="true" :property="'name'">
-          <bk-input v-model="cloneForm.name" placeholder="请输入模板名称，20个字符以内" v-validate="'required|length:20'"></bk-input>
-        </bk-form-item>
-        <bk-form-item label="描述" :property="'description'">
-          <bk-input
-            type="textarea"
-            :maxlength="2000"
-            v-model="cloneForm.description"
-            :placeholder="$t('请输入模板描述')"
-            v-validate="'length:2000'"></bk-input>
-        </bk-form-item>
-      </bk-form>
-    </bk-dialog>
+    <clone-dialog
+      :show="isShowCloneDialog"
+      :source-template="cloneSourceTemplate"
+      @success="handleCloneSuccess"
+      @toggle="handleCloneDialogToggle">
+    </clone-dialog>
 
     <div ref="boundModelPopoverContentRef" v-show="boundModelPopover.show">
       <div class="bound-model-popover-content"
