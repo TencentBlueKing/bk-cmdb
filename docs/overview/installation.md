@@ -375,3 +375,18 @@ process count should be: 11 , now: 11
 [root@SWEBVM000229 /data/cmdb]# ./stop.sh
 Running process count: 0
 ```
+## 常见问题
+
+### 1. authserver服务无法正常启动
+- authserver启动需要依赖于第三方[paas](https://github.com/TencentBlueKing/legacy-bk-paas)的权限中心系统，
+  除了没有鉴权逻辑外， 不影响cmdb的单独部署使用
+
+### 2. 运行./init_db.sh出现 ReplicaSetNoPrimary 错误
+- 可参考 [issue](https://github.com/TencentBlueKing/bk-cmdb/issues/6155) 方法解决该问题
+
+### 3. 服务启动失败了，如何排查
+- 查看服务logs目录下的std.log以及xx.ERROR日志文件，根据里面的日志，定位到无法正常启动原因
+
+### 4. 其他问题
+- 创建issue, 带上版本号+错误日志文件+配置文件等信息，我们看到后，会第一时间为您解答；
+- 同时我们也鼓励，有问题互相解答，提PR参与开源贡献，共建开源社区。
