@@ -884,8 +884,7 @@
           font-size: 12px;
           color: #63656e;
           display: flex;
-          align-items: center;
-          flex-wrap: wrap;
+          flex-direction: column;
 
           &-label {
             flex: 0 0 auto;

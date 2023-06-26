@@ -1722,7 +1722,7 @@
     "取消字段唯一校验确认提示语": "After canceling unique check, all associated Unique Rules will be deleted upon submission. Do you wish to continue?",
     "绑定的字段组合模板":"Bound Field Grouping Template",
     "模板": "Template",
-    "模板提示信息": "Field of '{templateInfo}'",
+    "xx模板的字段": "Field of '{template}'",
     "共N个": "Total {count}",
     "全选N个模型": "Select all {count} models",
     "字段组合模板同步结果": "Sync completed, {success} successful, {fail} failed",
