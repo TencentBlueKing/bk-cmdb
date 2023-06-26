@@ -13,7 +13,7 @@
 <template>
   <div class="cloud-area-layout">
     <cmdb-tips class="cloud-area-tips" tips-key="cloud-area-tips">
-      <i18n path="云区域提示语">
+      <i18n path="管控区域提示语">
         <template #resource>
           <bk-button text size="small" style="padding: 0" @click="linkResource">
             {{$t('云资源发现')}}
@@ -30,7 +30,7 @@
       <bk-input class="options-filter" clearable
         v-model.trim="filter"
         right-icon="icon-search"
-        :placeholder="$t('请输入xx', { name: $t('云区域名称') })">
+        :placeholder="$t('请输入xx', { name: $t('管控区域名称') })">
       </bk-input>
     </div>
     <bk-table class="cloud-area-table"
@@ -44,7 +44,7 @@
       <bk-table-column
         sortable="custom"
         prop="bk_cloud_name"
-        :label="$t('云区域名称')">
+        :label="$t('管控区域名称')">
         <template slot-scope="{ row }">
           <cmdb-auth class="cell-name" v-show="row !== rowInEdit"
             :auth="{ type: $OPERATION.U_CLOUD_AREA, relation: [row.bk_cloud_id] }"

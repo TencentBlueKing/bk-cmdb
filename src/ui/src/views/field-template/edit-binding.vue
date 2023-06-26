@@ -30,9 +30,9 @@
   const route = useRoute()
   const store = useStore()
   const steps = [
-    { title: '基础信息', icon: 1 },
-    { title: '字段设置', icon: 2 },
-    { title: '模型信息确认', icon: 3 }
+    { title: t('基础信息'), icon: 1 },
+    { title: t('字段设置'), icon: 2 },
+    { title: t('模型信息确认'), icon: 3 }
   ]
   const requestIds = {
     submit: Symbol('submit')
@@ -75,8 +75,8 @@
       // filter: {}
     })
 
-    bindModelData.value = modelList
-    modelIdList.value = modelList?.map?.(model => model.id)
+    bindModelData.value = modelList ?? []
+    modelIdList.value = modelList.filter(model => !model.bk_ispaused).map(model => model.id)
   })
 
   // 状态数据实时再算一次，当中如果模板数据在其它地方被意外的修改，可能会出现非预期的数据不一致问题

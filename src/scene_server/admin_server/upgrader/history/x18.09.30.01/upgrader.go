@@ -36,7 +36,7 @@ func cleanBKCloud(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err e
 	existDefault := false
 	expects := map[string]map[string]interface{}{}
 	for _, cloud := range clouds {
-		if cloud[common.BKCloudNameField] == common.DefaultCloudName {
+		if cloud[common.BKCloudNameField] == "default area" {
 			cloud[common.BKCloudIDField] = 0
 			existDefault = true
 		}
@@ -45,8 +45,8 @@ func cleanBKCloud(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err e
 	}
 
 	if !existDefault {
-		expects["0:"+common.DefaultCloudName] = map[string]interface{}{
-			common.BKCloudNameField: common.DefaultCloudName,
+		expects["0:"+"default area"] = map[string]interface{}{
+			common.BKCloudNameField: "default area",
 			common.BKOwnerIDField:   common.BKDefaultOwnerID,
 			common.BKCloudIDField:   common.BKDefaultDirSubArea,
 			common.CreateTimeField:  time.Now(),

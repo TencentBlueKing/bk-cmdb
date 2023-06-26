@@ -566,6 +566,12 @@ export function getPropertyCopyValue(originalValue, propertyType) {
       value = pair.join('\n')
       break
     }
+    case 'enum':
+      value =  propertyType.option.find(item => item.id === originalValue).name
+      break
+    case 'enummulti':
+      value = originalValue.map(value => propertyType.option.find(item => item.id === value).name).join('\n')
+      break
     default:
       value = originalValue
   }

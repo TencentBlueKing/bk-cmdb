@@ -232,26 +232,63 @@ type ListSyncStatusHistoryResponse struct {
 	Data *ListAPITaskSyncStatusResult `json:"data"`
 }
 
-// ListAPIFieldTemplateTaskStatusResult list api task sync status paged result
-type ListAPIFieldTemplateTaskStatusResult struct {
-	BaseResp
-	Info []ListFieldTmpltTaskStatusResult `json:"data"`
-}
-
 // ListAPITaskSyncStatusResult list api task sync status paged result
 type ListAPITaskSyncStatusResult struct {
 	Count int64               `json:"count"`
 	Info  []APITaskSyncStatus `json:"info"`
 }
 
-// ListFieldTmpltTaskStatusOption get the task status request of the specified template ID and object
-type ListFieldTmpltTaskStatusOption struct {
+// ListFieldTmplTaskStatusOption get the task status request of the specified template ID and object
+type ListFieldTmplTaskStatusOption struct {
+	TaskIDs []string `json:"task_ids"`
+}
+
+// Validate judging the legality of parameters
+func (option *ListFieldTmplTaskStatusOption) Validate() ccErr.RawErrorInfo {
+
+	if len(option.TaskIDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"task_ids"},
+		}
+	}
+	if len(option.TaskIDs) > common.BKMaxLimitSize {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"task_ids", common.BKMaxLimitSize},
+		}
+	}
+	return ccErr.RawErrorInfo{}
+}
+
+// ListFieldTmplTaskStatusResult specifies the task status of the template ID and object
+type ListFieldTmplTaskStatusResult struct {
+	TaskID string `json:"task_id"`
+	Status string `json:"status"`
+}
+
+// ListFieldTmplTaskSyncResultResp list field template task sync result response
+type ListFieldTmplTaskSyncResultResp struct {
+	BaseResp
+	Info []ListFieldTmplTaskSyncResult `json:"data"`
+}
+
+// ListFieldTmplTaskSyncResult the task sync result of the template ID and object
+type ListFieldTmplTaskSyncResult struct {
+	ObjectID int64         `json:"object_id"`
+	Status   APITaskStatus `json:"status"`
+	SyncTime time.Time     `json:"sync_time"`
+	FailMsg  string        `json:"fail_msg"`
+}
+
+// ListFieldTmplSyncTaskStatusOption get the task status request of the specified template ID and object
+type ListFieldTmplSyncTaskStatusOption struct {
 	ID        int64   `json:"bk_template_id"`
 	ObjectIDs []int64 `json:"object_ids"`
 }
 
 // Validate judging the legality of parameters
-func (option *ListFieldTmpltTaskStatusOption) Validate() ccErr.RawErrorInfo {
+func (option *ListFieldTmplSyncTaskStatusOption) Validate() ccErr.RawErrorInfo {
 	if option.ID == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
@@ -271,24 +308,4 @@ func (option *ListFieldTmpltTaskStatusOption) Validate() ccErr.RawErrorInfo {
 		}
 	}
 	return ccErr.RawErrorInfo{}
-}
-
-// ListFieldTmpltTaskStatusResult specifies the task status of the template ID and object
-type ListFieldTmpltTaskStatusResult struct {
-	ObjectID int64  `json:"object_id"`
-	Status   string `json:"status"`
-}
-
-// ListFieldTmplTaskSyncResultResp list field template task sync result response
-type ListFieldTmplTaskSyncResultResp struct {
-	BaseResp
-	Info []ListFieldTmplTaskSyncResult `json:"data"`
-}
-
-// ListFieldTmplTaskSyncResult the task sync result of the template ID and object
-type ListFieldTmplTaskSyncResult struct {
-	ObjectID int64         `json:"object_id"`
-	Status   APITaskStatus `json:"status"`
-	SyncTime time.Time     `json:"sync_time"`
-	FailMsg  string        `json:"fail_msg"`
 }

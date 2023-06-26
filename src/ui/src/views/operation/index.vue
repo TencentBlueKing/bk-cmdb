@@ -619,8 +619,8 @@
       },
       deleteChart(type, key, list, item) {
         this.$bkInfo({
-          title: this.$tc('是否确认删除'),
-          subTitle: `确定要删除【${item.name}】`,
+          title: this.$t('是否确认删除'),
+          subTitle: `${this.$t('确定要删除XXX', { target: `【${item.name}】` })}`,
           extCls: 'bk-dialog-sub-header-center',
           confirmFn: () => {
             list.splice(key, 1)

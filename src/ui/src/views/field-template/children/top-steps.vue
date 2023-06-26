@@ -11,12 +11,14 @@
 -->
 
 <script setup>
+  import { t } from '@/i18n'
+
   const props = defineProps({
     steps: {
       type: Array,
       default: () => ([
-        { title: '基础信息', icon: 1 },
-        { title: '字段设置', icon: 2 },
+        { title: t('基础信息'), icon: 1 },
+        { title: t('字段设置'), icon: 2 },
       ])
     },
     current: {

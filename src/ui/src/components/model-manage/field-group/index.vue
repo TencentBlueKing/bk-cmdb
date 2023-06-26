@@ -85,8 +85,7 @@
         @start="handleGroupDragStart"
         @end="handleGroupDragEnd"
         @change="handleGroupDragChange"
-        v-model="displayGroupedProperties"
-      >
+        v-model="displayGroupedProperties">
         <div
           class="group-item"
           v-for="(group, groupIndex) in displayGroupedProperties"
@@ -123,7 +122,7 @@
           </div>
           <bk-transition name="collapse" duration-type="ease">
             <draggable
-              class="field-list clearfix"
+              class="field-list"
               v-show="!groupCollapseState[group.info.bk_group_id]"
               tag="ul"
               v-model="group.properties"
@@ -138,41 +137,34 @@
               }"
               @start="handleModelDragStart"
               @end="handleModelDragEnd"
-              @change="handleModelDragChange"
-            >
+              @change="handleModelDragChange">
               <li
-                class="field-item fl"
+                class="field-item"
                 v-for="(property, fieldIndex) in group.properties"
                 :class="{
                   'only-ready': !updateAuth || !isFieldEditable(property)
                 }"
                 :key="fieldIndex"
-                @click="
-                  handleFieldDetailsView({ group, index: groupIndex, fieldIndex, property })
-                "
-              >
+                @click="handleFieldDetailsView({ group, index: groupIndex, fieldIndex, property })">
                 <field-card
                   :class="['field-card-container',{ 'only-ready': (!updateAuth || !isFieldEditable(property)) }]"
                   :field="property"
                   :field-unique="getFieldUnique(property)"
                   :deletable="false"
                   :only-ready="!updateAuth || !isFieldEditable(property)"
-                  @click-field="handleEditField(group, property)"
                   @remove-field="handleDeleteField({ property, index: groupIndex, fieldIndex })">
                   <template #action-append>
                     <cmdb-auth
                       class="mr10"
                       :auth="authResources"
                       @update-auth="handleReceiveAuth"
-                      @click.native.stop
-                    >
+                      @click.native.stop>
                       <bk-button
                         slot-scope="{ disabled }"
                         class="field-button"
                         :text="true"
                         :disabled="disabled || !isFieldEditable(property, false)"
-                        @click.stop="handleEditField(group, property)"
-                      >
+                        @click.stop="handleEditField(group, property)">
                         <i class="field-button-icon icon-cc-edit-shape"></i>
                       </bk-button>
                     </cmdb-auth>
@@ -181,8 +173,7 @@
                       @update-auth="handleReceiveAuth"
                       :auth="authResources"
                       @click.native.stop
-                      v-if="!property.ispre"
-                    >
+                      v-if="!property.ispre">
                       <bk-button
                         slot-scope="{ disabled }"
                         class="field-button"
@@ -194,7 +185,7 @@
                     </cmdb-auth>
                   </template>
                   <template #tag-append>
-                    <div v-if="property.bk_template_id > 0" @mouseenter="handleTemplateTagHover($event, property)">
+                    <div v-if="property.bk_template_id" @mouseenter="handleTemplateTagHover($event, property)">
                       <mini-tag :text="$t('模板')" />
                     </div>
                   </template>
@@ -207,10 +198,9 @@
                     class="field-add-btn"
                     :text="true"
                     :disabled="disabled"
-                    @click.stop="handleAddField(group)"
-                  >
+                    @click.stop="handleAddField(group)">
                     <i class="bk-icon icon-plus"></i>
-                    {{customObjId ? $t('新建业务字段') : $t('添加')}}
+                    {{customObjId ? $t('新建业务字段') : $t('添加字段')}}
                   </bk-button>
                 </cmdb-auth>
               </li>
@@ -367,15 +357,17 @@
       v-transfer-dom
       :is-show.sync="configProperty.show"
       :width="676"
-      :title="$t('实例表格字段排序设置')">
+      :title="$t('实例表格字段排序设置')"
+      :before-close="handleColumnsConfigSliderBeforeClose">
       <cmdb-columns-config slot="content"
+        ref="cmdbColumnsConfig"
         v-if="configProperty.show"
         :properties="properties"
         :selected="configProperty.selected"
         :disabled-columns="disabledConfig"
         :show-reset="false"
         :confirm-text="$t('确定')"
-        @on-cancel="configProperty.show = false"
+        @on-cancel="handleColumnsConfigSliderBeforeClose"
         @on-apply="handleApplyConfig">
       </cmdb-columns-config>
     </bk-sideslider>
@@ -383,7 +375,7 @@
       v-bkloading="{ size: 'mini', isLoading: tipsLoading, theme: 'primary', mode: 'spin' }">
       <i18n path="模板提示信息" v-if="cacheTemplate.name">
         <template #templateInfo>
-          <span class="tips-text">
+          <span class="tips-text" @click.stop="handleViewTemplate(cacheTemplate.id)">
             {{ cacheTemplate.name }}
           </span>
         </template>
@@ -401,7 +393,7 @@
   import fieldDetailsView from './field-view'
   import CmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
   import { mapGetters, mapActions, mapState } from 'vuex'
-  import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+  import { MENU_BUSINESS, MENU_MODEL_FIELD_TEMPLATE } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
   import { v4 as uuidv4 } from 'uuid'
   import CollapseGroupTitle from '@/views/model-manage/children/collapse-group-title.vue'
@@ -410,6 +402,7 @@
   import useUnique from '@/views/field-template/children/use-unique.js'
   import fieldTemplateService from '@/service/field-template'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
+
   export default {
     name: 'FieldGroup',
     components: {
@@ -1194,6 +1187,29 @@
           }
         )
         this.tipsLoading = false
+      },
+      handleViewTemplate(id) {
+        this.$routerActions.open({
+          name: MENU_MODEL_FIELD_TEMPLATE,
+          query: {
+            id,
+            action: 'view'
+          }
+        })
+      },
+      handleColumnsConfigSliderBeforeClose() {
+        const refColumns = this.$refs.cmdbColumnsConfig
+        if (!refColumns) {
+          return
+        }
+        const { columnsChangedValues } = refColumns
+        if (columnsChangedValues?.()) {
+          refColumns.setChanged(true)
+          return refColumns.beforeClose(() => {
+            this.configProperty.show = false
+          })
+        }
+        this.configProperty.show = false
       }
     }
   }
@@ -1259,30 +1275,26 @@ $modelHighlightColor: #3c96ff;
 .field-list {
   $ghostBorderColor: #dcdee5;
   $ghostBackgroundColor:#f5f7fa;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  width: 100%;
+  align-content: flex-start;
 
   margin-top: 7px;
   font-size: 14px;
   position: relative;
   .field-item {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    position: relative;
-    width: 246px;
-    height: 58px;
-    margin: 0 12px 12px 0;
-    border: none;
-    border-radius: 2px;
-    background-color: #ffffff;
+    height: 60px;
     user-select: none;
     cursor: pointer;
     &-ghost {
-      background-color: $ghostBackgroundColor !important;
-      border: 1px dashed $ghostBorderColor;
+      background-color: #f5f7fa !important;
+      border: 1px dashed #dcdee5;
 
       &:hover {
-        border-color: $ghostBorderColor;
-        background-color: $ghostBackgroundColor;
+        border-color: #dcdee5;
+        background-color: #f5f7fa;
         box-shadow: none;
       }
 
@@ -1292,9 +1304,7 @@ $modelHighlightColor: #3c96ff;
     }
   }
   .field-add {
-    width: 246px;
-    height: 58px;
-    margin: 0 12px 12px 0;
+    height: 60px;
     .auth-box{
       display: block;
       height: 100%;
@@ -1332,7 +1342,7 @@ $modelHighlightColor: #3c96ff;
   margin: 15px 0 0 0;
   font-size: 0;
   .add-group-trigger {
-    color: #63656E;
+    color: #3A84FF;
     font-size: 14px;
     height: 30px;
     padding-right: 30px;
@@ -1350,10 +1360,10 @@ $modelHighlightColor: #3c96ff;
       margin: -4px 2px 0 0;
       display: inline-block;
       vertical-align: middle;
-      font-size: 18px;
+      font-size: 16px;
     }
     &:not(.is-disabled):hover {
-      background-color: #f0f1f5;
+      color: #699df4;
     }
   }
 }
@@ -1467,9 +1477,6 @@ $modelHighlightColor: #3c96ff;
 }
 
 .field-card-container {
-    width: 100%;
-    height: 100%;
-    box-shadow: 0 2px 6px 2px #1919290d;
     &:hover {
       .field-button {
         visibility: visible;
@@ -1493,21 +1500,21 @@ $modelHighlightColor: #3c96ff;
       margin-left: 2px;
     }
     &.only-ready {
-        background-color: #f4f6f9;
-      }
+      background-color: #f4f6f9;
+    }
   }
-  .tips-content{
-    min-width:120px;
+  .tips-content {
+    min-width: 120px;
     height: 15px;
     display: flex;
     justify-content: center;
     align-items: center;
+    font-size: 12px;
     .tips-text{
       color:#3A84FF;
       cursor: pointer;
     }
   }
-
 </style>
 
 <style lang="scss">

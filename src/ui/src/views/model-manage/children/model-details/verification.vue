@@ -247,26 +247,16 @@
       },
       handleSliderBeforeClose() {
         const isChanged = this.$refs.verificationForm.isChanged()
-        if (!isChanged) {
+        const confirmFn = () => {
           this.slider.isShow = false
           this.slider.id = null
+        }
+        if (!isChanged) {
+          confirmFn()
           return true
         }
-        return new Promise((resolve) => {
-          this.$bkInfo({
-            title: this.$t('确认退出'),
-            subTitle: this.$t('退出会导致未保存信息丢失'),
-            extCls: 'bk-dialog-sub-header-center',
-            confirmFn: () => {
-              this.slider.isShow = false
-              this.slider.id = null
-              resolve(true)
-            },
-            cancelFn: () => {
-              resolve(false)
-            }
-          })
-        })
+        // this.$refs.verificationForm.setChanged(true)
+        return this.$refs.verificationForm.beforeClose(confirmFn)
       }
     }
   }

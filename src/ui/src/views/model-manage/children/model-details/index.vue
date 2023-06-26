@@ -56,7 +56,7 @@
                 </template>
               </editable-field>
             </div>
-            <div class="model-id" v-show="!modelNameIsEditing">
+            <div class="model-id" v-show="!modelNameIsEditing" v-bk-overflow-tips>
               {{activeModel['bk_obj_id'] || ''}}
             </div>
           </div>
@@ -71,6 +71,7 @@
               @confirm="handleModelGroupUpdateConfirm"
               type="enum"
               font-size="12px"
+              style="width: calc(100% - 60px)"
               :options="classifications
                 .map(item => ({ id: item.bk_classification_id, name: item.bk_classification_name }))"
             >
@@ -95,16 +96,41 @@
               class="field-template-tag"
               :max-width="'500px'"
               :list="templateList"
-              :is-link-style="true">
-              <template #append="slotProps">
-                <bk-icon
-                  class="field-template-icon"
-                  type="chain"
-                  v-bk-tooltips="'解绑模版'"
-                  @click="handleUnbindTemplate(slotProps.text)" />
+              :is-link-style="true"
+              :popover-options="{
+                boundary: 'scrollParent',
+                appendTo: 'parent'
+              }"
+              @click-text="handleViewTemplate">
+              <template #append="template">
+                <cmdb-auth
+                  tag="i"
+                  class="unbind-icon icon-cc-unbind"
+                  v-bk-tooltips="$t('解绑模版')"
+                  :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
+                  @click="handleUnbindTemplate(template)">
+                </cmdb-auth>
+              </template>
+              <template #text-append="template">
+                <i class="reddot"
+                  v-if="templateDiffStatus[template.id] && templateDiffStatus[template.id].need_sync"
+                  v-bk-tooltips="{
+                    theme: 'light template-diff-sync',
+                    content: `#template-diff-sync-tooltips-${template.id}`
+                  }">
+                </i>
+                <div :id="`template-diff-sync-tooltips-${template.id}`"
+                  class="diff-sync-content"
+                  v-if="templateDiffStatus[template.id] && templateDiffStatus[template.id].need_sync">
+                  <i18n path="模型信息与模板信息有差异提示语" tag="div" class="content-tips">
+                    <template #link>
+                      <bk-link theme="primary" @click="handleGoSync(template)">{{ $t('去同步') }}</bk-link>
+                    </template>
+                  </i18n>
+                </div>
               </template>
             </flex-tag>
-            <p v-else>--</p>
+            <div v-else>--</div>
           </div>
           <cmdb-auth class="restart-btn"
             v-if="!isMainLineModel && activeModel.bk_ispaused"
@@ -160,8 +186,8 @@
           :hide-import="hideImport"
           :import-auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
           @handleImportField="handleImportField"
-          @exportField="exportField"
-        ></the-field-group>
+          @exportField="exportField">
+        </the-field-group>
       </bk-tab-panel>
       <bk-tab-panel name="relation" :label="$t('模型关联')" :visible="!!activeModel">
         <the-relation v-if="tab.active === 'relation'" :model-id="modelId"></the-relation>
@@ -247,10 +273,13 @@
   import cmdbImport from '@/components/import/import'
   import { mapActions, mapGetters, mapMutations } from 'vuex'
   import RouterQuery from '@/router/query'
+  import CombineRequest from '@/api/combine-request.js'
   import modelImportExportService from '@/service/model/import-export'
   import {
     MENU_MODEL_MANAGEMENT,
-    MENU_RESOURCE_INSTANCE
+    MENU_RESOURCE_INSTANCE,
+    MENU_MODEL_FIELD_TEMPLATE,
+    MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS, BUILTIN_MODELS } from '@/dictionary/model-constants.js'
   import EditableField from './editable-field.vue'
@@ -293,7 +322,8 @@
           instanceCount: Symbol('instanceCount')
         },
         modelNameIsEditing: false,
-        templateList: []
+        templateList: [],
+        templateDiffStatus: {}
       }
     },
     computed: {
@@ -356,6 +386,33 @@
     watch: {
       '$route.params.modelId'() {
         this.initObject()
+      },
+      async templateList(list) {
+        if (!list?.length) {
+          return
+        }
+        const templateIds = list.map(item => item.id)
+        const allResult = await CombineRequest.setup(Symbol(), (params) => {
+          const [templateId] = params
+          return fieldTemplateService.getModelDiffStatus({
+            bk_template_id: templateId,
+            object_ids: [this.activeModel.id]
+          })
+        }, { segment: 1, concurrency: 5 }).add(templateIds)
+
+        let groupIndex = 0
+        for (const result of allResult) {
+          const results = await result
+          for (let i = 0; i < results.length; i++) {
+            const { status, reason, value } = results[i]
+            if (status === 'rejected') {
+              console.error(reason?.message)
+              continue
+            }
+            this.$set(this.templateDiffStatus, templateIds[(groupIndex * 5) + i], value?.[0] ?? {})
+          }
+          groupIndex += 1
+        }
       }
     },
     created() {
@@ -500,6 +557,8 @@
             id: item.id,
             name: item.name
           }))
+        } else {
+          this.templateList = []
         }
       },
       async getModelInstanceCount() {
@@ -629,27 +688,42 @@
         if (this.isReadOnly) return
         this.importField.show = true
       },
-      handleUnbindTemplate(templateInfo) {
-        new Promise((resolve) => {
-          this.$bkInfo({
-            title: this.$t('确认解绑该模板'),
-            subTitle: this.$t('解绑后，字段内容与唯一校验将会与模板脱离关系，不再受模板管理'),
-            okText: this.$t('解绑'),
-            cancelText: this.$t('取消'),
-            confirmFn: () => {
-              const params = {
-                bk_template_id: templateInfo.id,
-                object_id: this.activeModel.id
-              }
-              fieldTemplateService.updateTemplate(params).then(() => {
-                this.$success(this.$t('解绑成功'))
-                this.templateList = []
-                this.getModelBindTemplate()
-                resolve(true)
-              })
-            },
-            cancelFn: () => resolve(false)
-          })
+      handleUnbindTemplate(template) {
+        this.$bkInfo({
+          type: 'warning',
+          title: this.$t('确认解绑该模板'),
+          subTitle: this.$t('解绑后，字段内容与唯一校验将会与模板脱离关系，不再受模板管理'),
+          okText: this.$t('解绑'),
+          cancelText: this.$t('取消'),
+          confirmLoading: true,
+          confirmFn: async () => {
+            const params = {
+              bk_template_id: template.id,
+              object_id: this.activeModel.id
+            }
+            await fieldTemplateService.unbind(params)
+            this.$success(this.$t('解绑成功'))
+            this.getModelBindTemplate()
+            return true
+          }
+        })
+      },
+      handleViewTemplate(template) {
+        this.$routerActions.open({
+          name: MENU_MODEL_FIELD_TEMPLATE,
+          query: {
+            id: template.id,
+            action: 'view'
+          }
+        })
+      },
+      handleGoSync(template) {
+        this.$routerActions.redirect({
+          name: MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL,
+          params: {
+            id: template.id,
+            modelId: this.activeModel.id
+          }
         })
       }
     }
@@ -659,11 +733,11 @@
 <style lang="scss" scoped>
     .model-info {
         &-wrapper{
-          padding: 20px 24px;
+          padding: 0;
         }
 
         display: flex;
-        height: 80px;
+        height: 100px;
         background: #fff;
         font-size: 14px;
         box-shadow: 0px 2px 4px 0px rgba(25,25,41,0.05);
@@ -673,14 +747,12 @@
             position: relative;
             margin-left: 32px;
             .model-type {
-                $builtinColor:#ffb23a;
-                $customizeColor: #dcfde2;
                 position: absolute;
                 left: 30px;
                 top: -16px;
                 padding: 0 8px;
                 border-radius: 4px;
-                background-color: $customizeColor;
+                background-color: #dcfde2;
                 font-size: 20px;
                 line-height: 32px;
                 color: #34ce5c;
@@ -696,15 +768,15 @@
                     left: 50%;
                     width: 0;
                     height: 0;
-                    border-top: 8px solid $customizeColor;
+                    border-top: 8px solid #dcfde2;
                     border-right: 14px solid transparent;
                     transform: translateX(-50%);
                 }
                 &.is-builtin {
-                    background-color: $builtinColor;
+                    background-color: #ffb23a;
                     color: #fff;
                     &::after{
-                      border-top-color: $builtinColor;
+                      border-top-color: #ffb23a;
                     }
                 }
             }
@@ -740,9 +812,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            $iconSize:56px;
-            width: $iconSize;
-            height: $iconSize;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             background: #e7f0ff;
             text-align: center;
@@ -768,7 +839,7 @@
                 left: 0;
                 right: 0;
                 bottom: 0;
-                line-height: $iconSize;
+                line-height: 56px;
                 font-size: 12px;
                 border-radius: 50%;
                 text-align: center;
@@ -804,6 +875,7 @@
           .model-id {
             font-size: 12px;
             color: #979ba5;
+            @include ellipsis;
           }
         }
 
@@ -818,6 +890,7 @@
           &-label {
             flex: 0 0 auto;
             line-height: 26px;
+            color: #979BA5;
           }
         }
 
@@ -830,6 +903,7 @@
             color: #63656e;
             &-label {
               line-height: 26px;
+              color: #979BA5;
             }
             &-text {
               color: #3a84ff;
@@ -842,16 +916,32 @@
             max-width: 400px;
             font-size: 12px;
             color: #63656e;
-            &-label {
-              line-height: 26px;
+          }
+          .field-template-label {
+            line-height: 26px;
+            color: #979BA5;
+          }
+          .field-template-tag {
+            line-height: 26px;
+            .unbind-icon {
+              font-size: 12px !important;
+              margin: 0 4px;
+              padding: 0;
             }
-            &-tag {
-              line-height: 26px;
+
+            :deep(.tag-item-text) {
+              position: relative;
+              .reddot {
+                position: absolute;
+                right: -4px;
+                top: 0;
+                width: 6px;
+                height: 6px;
+                background: #EA3636;
+                border-radius: 50%;
+              }
             }
-            &-icon {
-              margin:0 3px;
-            }
-         }
+          }
         .restart-btn {
             display: inline-block;
         }
@@ -917,18 +1007,14 @@
         }
     }
     /deep/ .model-details-tab {
-        height: calc(100% - 120px);
-        margin: 0 20px;
-        background-color: #fff;
-        border-radius: 2px;
-        box-shadow: 0px 2px 4px 0px rgba(25,25,41,0.05);
-        .bk-tab-header {
-            padding: 0;
-            margin: 0 10px;
-        }
-        .bk-tab-section {
-            padding: 0;
-        }
+      height: calc(100% - 100px);
+      .bk-tab-header {
+        padding: 0 18px;
+        background: #fff;
+      }
+      .bk-tab-section {
+        padding: 0;
+      }
     }
     .editable-field {
       width: 100%;
@@ -937,4 +1023,16 @@
 
 <style lang="scss">
 @import '@/assets/scss/model-manage.scss';
+
+.template-diff-sync-theme {
+  .diff-sync-content {
+    .content-tips {
+      display: flex;
+      align-items: center;
+    }
+    .bk-link-text {
+      font-size: 12px;
+    }
+  }
+}
 </style>

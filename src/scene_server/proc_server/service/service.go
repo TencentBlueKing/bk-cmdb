@@ -75,7 +75,7 @@ func (ps *ProcServer) WebService() *restful.Container {
 	return container
 }
 
-// NOCC:golint/fnsize(放在一个函数中处理)
+// NOCC:golint/fnsize(整体操作需要放在一起)
 func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  ps.Engine.CCErr,

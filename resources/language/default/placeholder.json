@@ -5,5 +5,9 @@
     "process_placeholder_bk_func_name": "程序的二进制名称</br> 比如zookeeper的二进制名称是java，则填java",
     "process_placeholder_bk_func_id": "对进程的数字型标注，便于快速检索",
     "process_placeholder_bk_port_enable": "是否启动端口，默认值为true",
+    "process_placeholder_work_path": "执行进程启停等操作的工作路径",
+    "process_placeholder_bk_start_check_secs": "在执行启动命令后，等待多久检查PID存活的状态",
+    "process_placeholder_priority": "批量启动进程依据优先级从小到大排序操作，停止进程按反序操作。优先级数值范围支持输入 [ -100 ~ 10000 ]",
+    "process_placeholder_timeout": "执行命令的超时时长",
     "": ""
 }

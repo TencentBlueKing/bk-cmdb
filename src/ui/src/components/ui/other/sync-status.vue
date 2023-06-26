@@ -19,7 +19,8 @@
     tips: {
       type: String,
       default: ''
-    }
+    },
+    mini: Boolean
   })
 
   const statusText = computed(() => {
@@ -36,8 +37,7 @@
 <template>
   <span :class="['sync-status', { 'has-tips': tips.length > 0 }]" v-bk-tooltips="{
     disabled: !tips,
-    content: tips,
-    placement: 'right'
+    content: tips
   }">
     <template v-if="status === 'syncing'">
       <img class="svg-icon" src="@/assets/images/icon/loading.svg">
@@ -51,27 +51,33 @@
     <template v-if="status === 'failure'">
       <i class="status-circle fail"></i>
     </template>
-    <slot>{{ statusText }}</slot>
+    <slot v-if="!mini">{{ statusText }}</slot>
   </span>
 </template>
 
 <style lang="scss" scoped>
 .sync-status {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
   color: #63656E;
+  gap: 4px;
   .status-circle {
     display: inline-block;
     width: 8px;
     height: 8px;
-    margin-right: 4px;
     border-radius: 50%;
     &.waiting {
-      background-color: #3A84FF;
+      background: #FFF;
+      border: 1px solid #3A84FF;
     }
     &.success {
-      background-color: #2DCB56;
+      background: #E5F6EA;
+      border: 1px solid #3FC06D;
     }
     &.fail {
-      background-color: #EA3536;
+      background-color: #FFE6E6;
+      border: 1px solid #EA3636;
     }
   }
   .svg-icon {

@@ -818,7 +818,7 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-cc-field-time:before {
 	content: "\e3df";
 }
-.icon-cc-fieldtype-date:before {
+.icon-cc-field-date:before {
 	content: "\e3e0";
 }
 .icon-cc-dot-more:before {
@@ -920,6 +920,12 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-cc-menu-field-template:before {
 	content: "\e3e5";
 }
-.icon-cc-field-table:before {
+.icon-cc-field-innertable:before {
 	content: "\e3e7";
+}
+.icon-cc-field-enumquote:before {
+	content: "\e3e8";
+}
+.icon-cc-field-foreignkey:before {
+	content: "\e3e9";
 }

@@ -29,8 +29,8 @@
 <template>
   <div class="create-success">
     <i class="bk-icon icon-success icon-check-circle-shape"></i>
-    <div class="title">字段模板创建成功</div>
-    <div class="summary">接下来，您可以绑定需要应用的模型</div>
+    <div class="title">{{ $t('字段模板创建成功') }}</div>
+    <div class="summary">{{ $t('接下来，您可以绑定需要应用的模型') }}</div>
     <div class="actions">
       <bk-button theme="primary" @click="handleAction('bind')">{{ $t('立即绑定') }}</bk-button>
       <bk-button @click="handleAction('back')">{{ $t('返回列表') }}</bk-button>

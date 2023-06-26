@@ -153,7 +153,6 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	syncResult.FailInfo.IPError = make(map[string]string)
 
 	txnErr := h.logics.CoreAPI.CoreService().Txn().AutoRunTxn(h.readKit.Ctx, h.readKit.Header, func() error {
-
 		return h.syncCloudHost(syncResult, hostResource, task.TaskID, accountConf, startTime)
 	})
 

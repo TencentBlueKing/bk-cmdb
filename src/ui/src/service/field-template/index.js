@@ -74,7 +74,7 @@ const rollBindModel = (params, limit, config) => rollReqUseCount(
 const getModelBindTemplate = (data, config) => http.post('findmany/field_template/by_object', data, config)
 
 // 模版解绑模型接口
-const updateTemplate = (data, config) => http.post('/update/field_template/unbind/object', data, config)
+const unbind = (data, config) => http.post('/update/field_template/unbind/object', data, config)
 
 // 删除字段模板接口
 const deleteTemplate = (data, config) => http.delete('/delete/field_template', data, config)
@@ -103,6 +103,9 @@ const getTaskSyncStatus = (data, config) => http.post('find/field_template/tasks
 // 查询同步任务状态
 const getModelSyncStatus = (data, config) => http.post('find/field_template/model/status', data, config)
 
+// 查询模板与模型差异状态
+const getModelDiffStatus = (data, config) => http.post('find/field_template/sync/status', data, config)
+
 export default {
   create,
   update,
@@ -116,7 +119,7 @@ export default {
   getBindModel,
   rollBindModel,
   getModelBindTemplate,
-  updateTemplate,
+  unbind,
   deleteTemplate,
   cloneTemplate,
   getTemplateInfo,
@@ -125,5 +128,6 @@ export default {
   bindModel,
   syncModel,
   getTaskSyncStatus,
-  getModelSyncStatus
+  getModelSyncStatus,
+  getModelDiffStatus
 }
