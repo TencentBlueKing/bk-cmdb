@@ -594,4 +594,12 @@
       pointer-events: none;
     }
   }
+
+  [bk-language="en"] {
+    .bind-model .main .main-top .tab-list {
+      .tab-item {
+        width: 262px;
+      }
+    }
+  }
 </style>

@@ -175,7 +175,7 @@
         arrow-type="filled">
         <div class="model-list">
           <template v-for="(model, modelIndex) in group.bk_objects">
-            <cmdb-auth :key="modelIndex" :auth="{ type: $OPERATION.U_MODEL, relation: [model.id] }">
+            <cmdb-auth :key="modelIndex" tag="div" :auth="{ type: $OPERATION.U_MODEL, relation: [model.id] }">
               <template #default="{ disabled }">
                 <div :class="['model-item', { 'is-builtin': model.ispre }]"
                   @click="handleSelect(model)">
@@ -330,6 +330,7 @@
     .model-details {
       flex: 1;
       margin-left: 12px;
+      margin-right: 4px;
       width: 0;
     }
 
@@ -346,7 +347,8 @@
       @include ellipsis;
     }
     .model-checkbox {
-      margin-right: 6px;
+      flex: none;
+      width: 20px;
     }
   }
 </style>

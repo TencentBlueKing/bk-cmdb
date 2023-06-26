@@ -14,17 +14,20 @@
   import { computed, ref, watchEffect } from 'vue'
   import { useRoute } from '@/router/index'
   import { t } from '@/i18n'
+  import { $success } from '@/magicbox/index.js'
   import CmdbTab from '@/components/ui/tab/index.vue'
   import DetailsField from './details-field.vue'
   import DetailsUnique from './details-unique.vue'
   import DetailsModel from './details-model.vue'
   import FieldPreviewDrawer from './children/field-preview-drawer.vue'
+  import CloneDialog from './children/clone-dialog.vue'
   import fieldTemplateService from '@/service/field-template'
   import routerActions from '@/router/actions'
   import {
     MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
     MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING
   } from '@/dictionary/menu-symbol'
+  import useTemplate from './children/use-template'
 
   const props = defineProps({
     open: {
@@ -37,18 +40,23 @@
     }
   })
 
-  const emit = defineEmits(['close', 'bind-change'])
+  const emit = defineEmits(['close', 'bind-change', 'clone-done', 'delete-done'])
 
   const route = useRoute()
 
   const templateId = computed(() => props.template?.id)
   const queryTab = computed(() => route.query.tab)
 
+  const templateLocal = computed(() => [props.template])
+  const { handleDelete: handleDeleteTemplate } = useTemplate(templateLocal)
+
   const fieldCount = ref('')
   const modelCount = ref('')
   const uniqueList = ref([])
   const previewFieldList = ref([])
   const previewShow = ref(false)
+
+  const isShowCloneDialog = ref(false)
 
   watchEffect(async () => {
     const [fieldCounts, templateUniqueList, modelCounts] = await Promise.all([
@@ -114,8 +122,16 @@
   const handlePreviewField = () => {
     previewShow.value = true
   }
-  const handleClone = () => {}
-  const handleDelete = () => {}
+  const handleClone = () => {
+    isShowCloneDialog.value = true
+  }
+  const handleDelete = () => {
+    handleDeleteTemplate(props.template, () => {
+      $success(t('删除成功'))
+      emit('delete-done')
+      emit('close')
+    })
+  }
 
   const handleTabChange = (tab) => {
     tabActive.value = tab.id
@@ -135,6 +151,15 @@
     const modelCounts = await fieldTemplateService.getModelCount({ bk_template_ids: [templateId.value] })
     modelCount.value = modelCounts?.[0]?.count
     emit('bind-change', templateId.value)
+  }
+
+  const handleCloneSuccess = () => {
+    $success(t('克隆成功'))
+    isShowCloneDialog.value = false
+    emit('clone-done')
+  }
+  const handleCloneDialogToggle = (val) => {
+    isShowCloneDialog.value = val
   }
 </script>
 <script>
@@ -197,10 +222,18 @@
           </bk-button>
         </div>
       </template>
+
       <field-preview-drawer
         :preview-show.sync="previewShow"
         :properties="previewFieldList">
       </field-preview-drawer>
+
+      <clone-dialog
+        :show="isShowCloneDialog"
+        :source-template="template"
+        @success="handleCloneSuccess"
+        @toggle="handleCloneDialogToggle">
+      </clone-dialog>
     </cmdb-sticky-layout>
   </bk-sideslider>
 </template>

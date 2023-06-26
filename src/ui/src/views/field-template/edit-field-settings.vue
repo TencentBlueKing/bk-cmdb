@@ -30,9 +30,9 @@
   const route = useRoute()
   const store = useStore()
   const steps = [
-    { title: '基础信息', icon: 1 },
-    { title: '字段设置', icon: 2 },
-    { title: '模型信息确认', icon: 3 }
+    { title: t('基础信息'), icon: 1 },
+    { title: t('字段设置'), icon: 2 },
+    { title: t('模型信息确认'), icon: 3 }
   ]
 
   const templateId = computed(() => Number(route.params.id))
