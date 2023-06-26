@@ -12,6 +12,7 @@
 
 import { computed } from 'vue'
 import isEqual from 'lodash/isEqual'
+import { isEmptyPropertyValue } from '@/utils/tools'
 import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 import { t } from '@/i18n'
 
@@ -151,10 +152,17 @@ export const normalizeFieldData = (fieldData, isCreate = true, fieldStatus) => {
 
     if (isCreate) {
       Reflect.deleteProperty(field, 'id')
+
+      if (isEmptyPropertyValue(field.default)) {
+        Reflect.deleteProperty(field, 'default')
+      }
     } else {
       // 编辑流程，需要关注状态
       if (fieldStatus?.value?.[field.id]?.new) {
         Reflect.deleteProperty(field, 'id')
+      }
+      if (isEmptyPropertyValue(field.default)) {
+        field.default = null
       }
     }
 
