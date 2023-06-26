@@ -624,10 +624,10 @@ func (s *service) updateFieldTmplAttr(kit *rest.Kit, templateID int64, attrs []m
 	if len(attrOp.createAttrs) != 0 {
 		resp, ccErr := s.clientSet.CoreService().FieldTemplate().CreateFieldTemplateAttrs(kit.Ctx, kit.Header,
 			templateID, attrOp.createAttrs)
-		if err != nil {
+		if ccErr != nil {
 			blog.Errorf("create field template attribute failed, data: %v, err: %v, rid: %s", attrOp.createAttrs, ccErr,
 				kit.Rid)
-			return nil, err
+			return nil, ccErr
 		}
 		for idx, attr := range attrOp.createAttrs {
 			propertyIDToIDMap[attr.PropertyID] = resp.IDs[idx]
