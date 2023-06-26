@@ -62,13 +62,17 @@ func (h *objectAuditLog) GenerateAuditLog(parameter *generateAuditCommonParamete
 
 // GenerateAuditLogForBindingFieldTemplate specific generate audit log function for model binding template scenarios.
 func (h *objectAuditLog) GenerateAuditLogForBindingFieldTemplate(parameter *generateAuditCommonParameter,
-	objIDs []int64, objectTmplIDMap map[int64][]int64) ([]metadata.AuditLog, error) {
+	objIDs []int64, objectTmplIDMap map[int64][]int64, templateID int64) ([]metadata.AuditLog, error) {
 
 	kit := parameter.kit
 
 	objectLen := len(objIDs)
 
 	auditLogs := make([]metadata.AuditLog, 0)
+	updateField := map[string]interface{}{
+		common.BKTemplateID: templateID,
+	}
+
 	for start := 0; start < objectLen; start += common.BKMaxLimitSize {
 		limit := start + common.BKMaxLimitSize
 		if limit > objectLen {
@@ -99,8 +103,10 @@ func (h *objectAuditLog) GenerateAuditLogForBindingFieldTemplate(parameter *gene
 
 		for _, data := range rsp.Info {
 			obj := data.ToMapStr()
-			obj[common.BKTemplateID] = objectTmplIDMap[data.ID]
-			parameter.updateFields = obj
+			if _, ok := objectTmplIDMap[data.ID]; ok {
+				obj[common.BKTemplateID] = objectTmplIDMap[data.ID]
+			}
+			parameter.updateFields = updateField
 			auditLog := metadata.AuditLog{
 				AuditType:    metadata.ModelType,
 				ResourceType: metadata.ModelRes,

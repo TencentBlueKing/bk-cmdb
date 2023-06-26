@@ -74,7 +74,10 @@ func (f *template) CreateFieldTemplate(kit *rest.Kit, opt *metadata.CreateFieldT
 	}
 
 	for idx := range opt.Attributes {
-		opt.Attributes[idx].TemplateID = res.ID
+		if opt.Attributes[idx].TemplateID != 0 {
+			blog.Errorf("field template attr template id invalid, err: %v, data: %v, rid: %s", ccErr, opt, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "attr.templateID")
+		}
 		opt.Attributes[idx].PropertyIndex = int64(idx)
 	}
 	attrIDs, ccErr := f.clientSet.CoreService().FieldTemplate().CreateFieldTemplateAttrs(kit.Ctx, kit.Header, res.ID,

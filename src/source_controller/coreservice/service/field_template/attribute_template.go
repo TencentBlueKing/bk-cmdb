@@ -112,26 +112,25 @@ func (s *service) CreateFieldTemplateAttrs(ctx *rest.Contexts) {
 	result := make([]int64, len(ids))
 	now := time.Now()
 	for idx := range attrs {
+		if attrs[idx].TemplateID != 0 {
+			blog.Errorf("template id is invalid, data: %v, id: %d, rid: %s", attrs[idx], templateID, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, "attributes"))
+			return
+		}
 		attrs[idx].ID = int64(ids[idx])
 		attrs[idx].OwnerID = ctx.Kit.SupplierAccount
 		attrs[idx].Creator = ctx.Kit.User
 		attrs[idx].Modifier = ctx.Kit.User
 		attrs[idx].CreateTime = &metadata.Time{Time: now}
 		attrs[idx].LastTime = &metadata.Time{Time: now}
+		attrs[idx].TemplateID = templateID
 
 		// 目前字段组合模版属性只支持枚举多选，枚举多选的默认值在option中，default值需要为nil
 		if attrs[idx].PropertyType == common.FieldTypeEnumMulti && attrs[idx].Default != nil {
 			attrs[idx].Default = nil
 		}
 
-		if attrs[idx].TemplateID != templateID {
-			blog.Errorf("attribute template id is invalid, data: %v, template id: %d, rid: %s", attrs[idx], templateID,
-				ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, "attributes"))
-			return
-		}
-
-		if err := attrs[idx].Validate(); err.ErrCode != 0 {
+		if err := attrs[idx].ValidateBase(); err.ErrCode != 0 {
 			blog.Errorf("field template attribute is invalid, data: %v, err: %v, rid: %s", attrs[idx], err, ctx.Kit.Rid)
 			ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 			return

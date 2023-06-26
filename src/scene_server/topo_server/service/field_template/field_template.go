@@ -220,34 +220,34 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 		ID:        opt.ID,
 		ObjectIDs: objIDs,
 	}
-
 	// need to get the templateID list corresponding to the bound objectID
-	objectTmplIDMap, err := s.getTmplIDsAfterDealObjAndTmplRel(ctx.Kit, opt.ObjectIDs, opt.ID, true)
+	objectTmplIDMap, err := s.getObjTmplIDs(ctx.Kit, objIDs)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateBindObject(ctx.Kit.Ctx, ctx.Kit.Header, option)
-		if err != nil {
-			blog.Errorf("field template bind model failed, err: %v , rid: %s", err, ctx.Kit.Rid)
-			return err
+
+		if ccErr := s.clientSet.CoreService().FieldTemplate().FieldTemplateBindObject(ctx.Kit.Ctx, ctx.Kit.Header,
+			option); ccErr != nil {
+			blog.Errorf("field template bind model failed, err: %v , rid: %s", ccErr, ctx.Kit.Rid)
+			return ccErr
 		}
 
 		audit := auditlog.NewObjectAuditLog(s.clientSet.CoreService())
 		parameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
 
-		auditLogs, ccErr := audit.GenerateAuditLogForBindingFieldTemplate(parameter, objIDs, objectTmplIDMap)
-		if ccErr != nil {
+		auditLogs, err := audit.GenerateAuditLogForBindingFieldTemplate(parameter, objIDs, objectTmplIDMap, opt.ID)
+		if err != nil {
 			blog.Errorf("generate audit log failed before update object, objName: %s, err: %v, rid: %s",
-				opt.ObjectIDs, ccErr, ctx.Kit.Rid)
-			return ccErr
+				opt.ObjectIDs, err, ctx.Kit.Rid)
+			return err
 		}
 		// save audit log.
-		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed, cond: %+v, err: %v, rid: %s", opt, err, ctx.Kit.Rid)
-			return err
+		if ccErr := audit.SaveAuditLog(ctx.Kit, auditLogs...); ccErr != nil {
+			blog.Errorf("save audit log failed, cond: %+v, err: %v, rid: %s", opt, ccErr, ctx.Kit.Rid)
+			return ccErr
 		}
 		return nil
 	})
@@ -259,7 +259,7 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-func (s *service) getTmplIDsAfterDealObjAndTmplRel(kit *rest.Kit, objIDs []int64, templateID int64, isBind bool) (
+func (s *service) getObjTmplIDs(kit *rest.Kit, objIDs []int64) (
 	map[int64][]int64, error) {
 
 	cond := filtertools.GenAtomFilter(common.ObjectIDField, filter.In, objIDs)
@@ -276,24 +276,9 @@ func (s *service) getTmplIDsAfterDealObjAndTmplRel(kit *rest.Kit, objIDs []int64
 	}
 	objIDTmplMap := make(map[int64][]int64)
 
-	if len(res.Info) == 0 && isBind {
-		for id := range objIDs {
-			objIDTmplMap[objIDs[id]] = append(objIDTmplMap[objIDs[id]], templateID)
-		}
-	}
-
 	for _, data := range res.Info {
 		if _, ok := objIDTmplMap[data.ObjectID]; ok {
-			// in the unbinding scenario, skip the templateID that needs to be unbound
-			if !isBind && data.TemplateID == templateID {
-				continue
-			}
-
 			objIDTmplMap[data.ObjectID] = append(objIDTmplMap[data.ObjectID], data.TemplateID)
-			// the binding scene needs to add templateID
-			if isBind {
-				objIDTmplMap[data.ObjectID] = append(objIDTmplMap[data.ObjectID], templateID)
-			}
 		}
 	}
 
@@ -323,28 +308,28 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-
 	// need to get the templateID list corresponding to the unbound objectID
-	objectTmplIDMap, err := s.getTmplIDsAfterDealObjAndTmplRel(ctx.Kit, []int64{opt.ObjectID}, opt.ID, false)
+	objectTmplIDMap, err := s.getObjTmplIDs(ctx.Kit, []int64{opt.ObjectID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateUnbindObject(ctx.Kit.Ctx, ctx.Kit.Header, opt)
-		if err != nil {
-			blog.Errorf("field template unbind model failed, cond: %+v, err: %v , rid: %s", opt, err, ctx.Kit.Rid)
-			return err
+		ccErr := s.clientSet.CoreService().FieldTemplate().FieldTemplateUnbindObject(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+		if ccErr != nil {
+			blog.Errorf("field template unbind model failed, cond: %+v, err: %v , rid: %s", opt, ccErr, ctx.Kit.Rid)
+			return ccErr
 		}
+
 		audit := auditlog.NewObjectAuditLog(s.clientSet.CoreService())
 
 		parameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
-		auditLogs, ccErr := audit.GenerateAuditLogForBindingFieldTemplate(parameter, []int64{opt.ObjectID},
-			objectTmplIDMap)
-		if ccErr != nil {
+		auditLogs, err := audit.GenerateAuditLogForBindingFieldTemplate(parameter, []int64{opt.ObjectID},
+			objectTmplIDMap, opt.ID)
+		if err != nil {
 			blog.Errorf("generate audit log failed , object id: %d, err: %v, rid: %s", opt.ObjectID, err, ctx.Kit.Rid)
-			return ccErr
+			return err
 		}
 		// save audit log.
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
@@ -707,12 +692,21 @@ func (s *service) updateFieldTmplAttr(kit *rest.Kit, templateID int64, attrs []m
 	audit := auditlog.NewFieldTmplAuditLog(s.clientSet.CoreService())
 	auditLogs := make([]metadata.AuditLog, 0)
 	if len(attrOp.createAttrs) != 0 {
+
+		// the template ID in the attr of the creation scene must be 0
+		for _, attr := range attrOp.createAttrs {
+			if attr.TemplateID != 0 {
+				blog.Errorf("the template ID in the attr must be 0, attr: %+v, rid: %s", attr, kit.Rid)
+				return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKTemplateID)
+			}
+		}
+
 		resp, ccErr := s.clientSet.CoreService().FieldTemplate().CreateFieldTemplateAttrs(kit.Ctx, kit.Header,
 			templateID, attrOp.createAttrs)
-		if err != nil {
+		if ccErr != nil {
 			blog.Errorf("create field template attribute failed, data: %v, err: %v, rid: %s", attrOp.createAttrs, ccErr,
 				kit.Rid)
-			return nil, err
+			return nil, ccErr
 		}
 		for idx, attr := range attrOp.createAttrs {
 			propertyIDToIDMap[attr.PropertyID] = resp.IDs[idx]
@@ -728,13 +722,22 @@ func (s *service) updateFieldTmplAttr(kit *rest.Kit, templateID int64, attrs []m
 	}
 
 	if len(attrOp.updateAttrs) != 0 {
-		err = s.clientSet.CoreService().FieldTemplate().UpdateFieldTemplateAttrs(kit.Ctx, kit.Header, templateID,
-			attrOp.updateAttrs)
-		if err != nil {
+		// each templateID in the attribute must be consistent with the outer templateID
+		for _, attr := range attrOp.updateAttrs {
+			if attr.TemplateID != templateID {
+				blog.Errorf("the outer template ID(%d) is inconsistent with the template ID(%d) in the attr, "+
+					"attr: %+v, rid: %s", templateID, attr.TemplateID, attr, kit.Rid)
+				return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKTemplateID)
+			}
+		}
+
+		if err = s.clientSet.CoreService().FieldTemplate().UpdateFieldTemplateAttrs(kit.Ctx, kit.Header, templateID,
+			attrOp.updateAttrs); err != nil {
 			blog.Errorf("update field template attributes failed, template id: %d, data: %v, err: %v, rid: %s",
 				templateID, attrOp.updateAttrs, err, kit.Rid)
 			return nil, err
 		}
+
 		for _, attr := range attrOp.updateAttrs {
 			propertyIDToIDMap[attr.PropertyID] = attr.ID
 		}
@@ -851,6 +854,15 @@ func (s *service) updateFieldTmplUnique(kit *rest.Kit, templateID int64, propert
 	auditLogs := make([]metadata.AuditLog, 0)
 	audit := auditlog.NewFieldTmplAuditLog(s.clientSet.CoreService())
 	if len(createUniques) != 0 {
+
+		// the template ID in the unique in the creation scene must be 0.
+		for _, unique := range createUniques {
+			if unique.TemplateID != 0 {
+				blog.Errorf("the template ID in the unique must be 0, unique: %+v, rid: %s", unique, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKTemplateID)
+			}
+		}
+
 		resp, ccErr := s.clientSet.CoreService().FieldTemplate().CreateFieldTemplateUniques(kit.Ctx, kit.Header,
 			templateID, createUniques)
 		if ccErr != nil {
@@ -869,9 +881,18 @@ func (s *service) updateFieldTmplUnique(kit *rest.Kit, templateID int64, propert
 	}
 
 	if len(updateUniques) != 0 {
-		ccErr := s.clientSet.CoreService().FieldTemplate().UpdateFieldTemplateUniques(kit.Ctx, kit.Header, templateID,
-			updateUniques)
-		if ccErr != nil {
+
+		// each templateID in the unique must be consistent with the outer templateID
+		for _, unique := range updateUniques {
+			if unique.TemplateID != templateID {
+				blog.Errorf("the outer template ID(%d) is inconsistent with the template ID(%d) in the unique, "+
+					"unique: %+v, rid: %s", templateID, unique.TemplateID, unique, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKTemplateID)
+			}
+		}
+
+		if ccErr := s.clientSet.CoreService().FieldTemplate().UpdateFieldTemplateUniques(kit.Ctx, kit.Header,
+			templateID, updateUniques); ccErr != nil {
 			blog.Errorf("update field template uniques failed, template id: %d, data: %v, err: %v, rid: %s", templateID,
 				updateUniques, ccErr, kit.Rid)
 			return ccErr
