@@ -1283,11 +1283,6 @@ func checkAttrTemplateInfo(kit *rest.Kit, input mapstr.MapStr, attrID int64, isS
 		return err
 	}
 
-	if !isSync && tmpltID > 0 {
-		blog.Errorf("params invalid, attrID: %d, sync: %v, templateID: %d, rid: %s", attrID, isSync, tmpltID, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, attrID)
-	}
-
 	if !isSync && tmpltID == 0 {
 		return nil
 	}
@@ -1309,7 +1304,11 @@ func checkAttrTemplateInfo(kit *rest.Kit, input mapstr.MapStr, attrID int64, isS
 		fields = append(fields, metadata.AttributeFieldPlaceHolder)
 	}
 
-	_, ok := data[common.BKTemplateID]
+	newTmplID, ok := data[common.BKTemplateID]
+	// 当不是来自字段组合模版同步操作，更新来自字段组合模版属性的bk_template_id为非0时，需要报错
+	if !isSync && ok && newTmplID != 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, common.BKTemplateID)
+	}
 
 	// 2、AttributeFieldIsRequired\AttributeFieldIsEditable\AttributeFieldPlaceHolder may be allowed
 	// to be modified, the update operation does not have the above attributes to return an error
