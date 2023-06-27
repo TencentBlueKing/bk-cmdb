@@ -421,7 +421,9 @@ func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams
 				return nil, result, nil
 			}
 
-			res.Update = append(res.Update, update)
+			if isChanged {
+				res.Update = append(res.Update, update)
+			}
 			continue
 		}
 
@@ -638,7 +640,10 @@ func (c *comparator) compareUpdatedAttr(kit *rest.Kit, tmplAttr *metadata.FieldT
 		updateData[common.BKOptionField] = tmplAttr.Option
 	}
 
-	if !reflect.DeepEqual(tmplAttr.Default, attr.Default) {
+	// todo 这里兼容当模型没有default字段，字段组合模版属性default字段为nil时，出现两者有差异的问题
+	if !reflect.DeepEqual(tmplAttr.Default, attr.Default) && (!reflect.ValueOf(tmplAttr.Default).IsNil() ||
+		!reflect.ValueOf(attr.Default).IsNil()) {
+
 		updateData[metadata.AttributeFieldDefault] = tmplAttr.Default
 	}
 
