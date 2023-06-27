@@ -177,13 +177,13 @@
                         slot-scope="{ disabled }"
                         class="field-button"
                         :text="true"
-                        :disabled="disabled || !isFieldEditable(property)"
+                        :disabled="disabled || !isFieldEditable(property) || isTemplateField(property)"
                         @click.stop="handleDeleteField({ property, index: groupIndex, fieldIndex })">
                         <i class="field-button-icon bk-icon icon-cc-del"></i>
                       </bk-button>
                     </cmdb-auth>
                   </template>
-                  <template #tag-append v-if="property.bk_template_id">
+                  <template #tag-append v-if="isTemplateField(property)">
                     <div @mouseenter="(event) => handleTemplateTagHover(event, property)">
                       <mini-tag :text="$t('模板')" />
                     </div>
@@ -635,6 +635,9 @@
           return true
         }
         return this.isBizCustomData(group)
+      },
+      isTemplateField(field) {
+        return field.bk_template_id > 0
       },
       canRiseGroup(index, group) {
         if (this.isGlobalView) {

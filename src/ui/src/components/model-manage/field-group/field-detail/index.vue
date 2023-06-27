@@ -18,8 +18,13 @@
           {{$t('唯一标识')}}
           <span class="color-danger">*</span>
         </span>
-        <div v-bk-tooltips.top.light.click="$t('模型字段唯一标识提示语')"
-          class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
+        <div :class="['cmdb-form-item', { 'is-error': errors.has('fieldId') }]"
+          v-bk-tooltips.top="{
+            disabled: isEditField && !isCreateMode,
+            theme: 'light',
+            trigger: 'click',
+            content: $t('模型字段唯一标识提示语')
+          }">
           <bk-input type="text" class="cmdb-form-input"
             name="fieldId"
             v-model.trim="fieldInfo.bk_property_id"
@@ -40,7 +45,7 @@
             name="fieldName"
             :placeholder="isSystemCreate ? $t('请输入名称，国际化时将会自动翻译，不可修改') : $t('请输入字段名称')"
             v-model.trim="fieldInfo.bk_property_name"
-            :disabled="isReadOnly || isSystemCreate || field.ispre"
+            :disabled="isReadOnly || isSystemCreate || field.ispre || isFromTemplateField"
             v-validate="'required|length:128'">
           </bk-input>
           <p class="form-error">{{errors.first('fieldName')}}</p>
@@ -95,7 +100,7 @@
           class="cmdb-form-item"
           :key="fieldInfo.bk_property_type"
           v-if="isSettingComponentShow"
-          :is-read-only="isReadOnly || field.ispre"
+          :is-read-only="isReadOnly || field.ispre || isFromTemplateField"
           :is="`the-field-${fieldType}`"
           :multiple.sync="fieldInfo.ismultiple"
           v-model="fieldInfo.option"
@@ -118,7 +123,7 @@
                 :is="`cmdb-form-${fieldInfo.bk_property_type}`"
                 :multiple="fieldInfo.ismultiple"
                 :options="fieldInfo.option || []"
-                :disabled="isReadOnly || isSystemCreate || field.ispre"
+                :disabled="isReadOnly || isSystemCreate || field.ispre || isFromTemplateField"
                 v-model="fieldInfo.default"
                 v-validate="getValidateRules(fieldInfo)"
                 ref="component">
@@ -127,7 +132,7 @@
                 v-if="isMultipleShow"
                 class="checkbox"
                 v-model="fieldInfo.ismultiple"
-                :disabled="isReadOnly || field.ispre">
+                :disabled="isReadOnly || field.ispre || isFromTemplateField">
                 <span>{{$t('可多选')}}</span>
               </bk-checkbox>
             </div>
@@ -153,7 +158,7 @@
         <div class="cmdb-form-item">
           <bk-input type="text" class="cmdb-form-input"
             v-model.trim="fieldInfo['unit']"
-            :disabled="isReadOnly"
+            :disabled="isReadOnly || isFromTemplateField"
             :placeholder="$t('请输入单位')">
           </bk-input>
         </div>
@@ -170,7 +175,7 @@
                 name="placeholder"
                 :type="'textarea'"
                 v-model.trim="fieldInfo['placeholder']"
-                :disabled="isReadOnly"
+                :disabled="isReadOnly || (isFromTemplateField && fieldSettingExtra.lock.placeholder)"
                 v-validate="'length:2000'">
               </bk-input>
             </div>
@@ -221,6 +226,7 @@
   import { PROPERTY_TYPES, PROPERTY_TYPE_LIST } from '@/dictionary/property-constants'
   import { isEmptyPropertyValue } from '@/utils/tools'
   import useSideslider from '@/hooks/use-sideslider'
+  import fieldTemplateService from '@/service/field-template'
 
   export default {
     components: {
@@ -318,7 +324,8 @@
     provide() {
       return {
         customObjId: this.customObjId,
-        isSettingScene: this.isSettingScene
+        isSettingScene: this.isSettingScene,
+        isFromTemplateField: this.isFromTemplateField
       }
     },
     computed: {
@@ -422,6 +429,9 @@
           PROPERTY_TYPES.LIST
         ]
         return types.includes(this.fieldInfo.bk_property_type) && !this.uniqueDisabled
+      },
+      isFromTemplateField() {
+        return !this.isSettingScene && this.field.bk_template_id > 0
       }
     },
     watch: {
@@ -476,7 +486,7 @@
         'updateObjectAttribute',
         'updateBizObjectAttribute'
       ]),
-      initData() {
+      async initData() {
         Object.keys(this.fieldInfo).forEach((key) => {
           this.fieldInfo[key] = this.$tools.clone(this.field[key] ?? '')
         })
@@ -486,6 +496,13 @@
           Object.keys(this.fieldSetting).forEach((key) => {
             this.fieldSettingExtra[key] = this.$tools.clone(this.fieldSetting[key] ?? '')
           })
+        } else if (this.isFromTemplateField) {
+          // 模型字段编辑来自模板的字段，需要获取模板中针对字段的配置
+          const templateFieldList = await fieldTemplateService.getTemplateFieldListByField(this.field)
+          const templateField = templateFieldList.find(item => item.id === this.field.bk_template_id)
+          this.fieldSettingExtra.lock.isrequired = templateField?.isrequired?.lock
+          this.fieldSettingExtra.lock.editable = templateField?.editable?.lock
+          this.fieldSettingExtra.lock.placeholder = templateField?.placeholder?.lock
         }
       },
       async validateValue() {
@@ -529,7 +546,10 @@
 
         if (this.isEditField) {
           const action = this.customObjId ? 'updateBizObjectAttribute' : 'updateObjectAttribute'
-          const params = this.field.ispre ? this.getPreFieldUpdateParams() : this.fieldInfo
+          let params = this.field.ispre ? this.getPreFieldUpdateParams() : this.fieldInfo
+          if (this.isFromTemplateField) {
+            params = this.getTemplateFieldParams()
+          }
           if (!this.isGlobalView) {
             params.bk_biz_id = this.bizId
           }
@@ -588,6 +608,16 @@
         const params = {}
         allowKey.forEach((key) => {
           params[key] = this.fieldInfo[key]
+        })
+        return params
+      },
+      getTemplateFieldParams() {
+        const allowKey = ['isrequired', 'editable', 'placeholder']
+        const params = {}
+        allowKey.forEach((key) => {
+          if (!this.fieldSettingExtra.lock[key]) {
+            params[key] = this.fieldInfo[key]
+          }
         })
         return params
       },
