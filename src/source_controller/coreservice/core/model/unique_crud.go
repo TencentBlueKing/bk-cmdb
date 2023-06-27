@@ -36,10 +36,13 @@ TODO: 索引操作需要排它性， 需要加锁
 
 *************/
 
-func (m *modelAttrUnique) searchModelAttrUnique(kit *rest.Kit, inputParam metadata.QueryCondition) (results []metadata.ObjectUnique, err error) {
+func (m *modelAttrUnique) searchModelAttrUnique(kit *rest.Kit, inputParam metadata.QueryCondition) (
+	results []metadata.ObjectUnique, err error) {
+
 	results = []metadata.ObjectUnique{}
 	instHandler := mongodb.Client().Table(common.BKTableNameObjUnique).Find(inputParam.Condition)
-	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort).All(kit.Ctx, &results)
+	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).
+		Sort(inputParam.Page.Sort).All(kit.Ctx, &results)
 
 	return results, err
 }
@@ -51,7 +54,9 @@ func (m *modelAttrUnique) countModelAttrUnique(kit *rest.Kit, cond mapstr.MapStr
 	return count, err
 }
 
-func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inputParam metadata.CreateModelAttrUnique) (uint64, error) {
+func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string,
+	inputParam metadata.CreateModelAttrUnique) (uint64, error) {
+
 	for _, key := range inputParam.Data.Keys {
 		switch key.Kind {
 		case metadata.UniqueKeyKindProperty:
@@ -76,7 +81,8 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string, inp
 
 	properties, err := m.getUniqueProperties(kit, objID, inputParam.Data.Keys)
 	if nil != err || len(properties) <= 0 {
-		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, inputParam, err, kit.Rid)
+		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, inputParam,
+			err, kit.Rid)
 		return 0, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "keys")
 	}
 
@@ -142,11 +148,22 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 		}
 	}
 
+	filter := map[string]interface{}{
+		common.BKFieldID: id,
+	}
+	filter = util.SetModOwner(filter, kit.SupplierAccount)
+
+	oldUnique := metadata.ObjectUnique{}
+	if err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(filter).One(kit.Ctx, &oldUnique); err != nil {
+		blog.Errorf("find unique error, cond: %#v, err: %v, rid: %s", filter, err, kit.Rid)
+		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
+	}
+
 	// the unique verification template ID for direct updates must be zero
-	if data.Data.TemplateID != 0 && !data.FromTemplate {
-		blog.Errorf("scene parameter invalid, template id: %d, from template: %v, rid: %s", data.Data.TemplateID,
+	if oldUnique.TemplateID != 0 && !data.FromTemplate {
+		blog.Errorf("scene parameter invalid, template id: %d, from template: %v, rid: %s", oldUnique.TemplateID,
 			data.FromTemplate, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteIndex, id, data.Data.TemplateID)
+		return kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteIndex, id, oldUnique.TemplateID)
 	}
 	err := m.checkUniqueRuleExist(kit, objID, id, unique.Keys)
 	if err != nil {
@@ -159,18 +176,6 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 		blog.Errorf("get unique properties failed, objID: %s, unique %+v, err: %s, rid: %s", objID,
 			unique, err, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "keys")
-	}
-
-	cond := condition.CreateCondition()
-	cond.Field("id").Eq(id)
-	filter := cond.ToMapStr()
-	cond.Field(common.BKObjIDField).Eq(objID)
-	condMap := util.SetModOwner(filter, kit.SupplierAccount)
-
-	oldUnique := metadata.ObjectUnique{}
-	if err = mongodb.Client().Table(common.BKTableNameObjUnique).Find(condMap).One(kit.Ctx, &oldUnique); err != nil {
-		blog.Errorf("find unique error, cond: %#v, err: %v, rid: %s", filter, err, kit.Rid)
-		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
 
 	if oldUnique.Ispre {
@@ -263,7 +268,8 @@ func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys 
 
 	err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(fCond).All(kit.Ctx, &properties)
 	if err != nil {
-		blog.ErrorJSON("[ObjectUnique] getUniqueProperties find properties for %s failed %s: %s, rid: %s", objID, err, kit.Rid)
+		blog.ErrorJSON("[ObjectUnique] getUniqueProperties find properties for %s failed %s: %s, rid: %s", objID, err,
+			kit.Rid)
 		return nil, err
 	}
 
@@ -272,7 +278,8 @@ func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys 
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "keys")
 	}
 	if len(properties) != len(propertyIDs) {
-		blog.ErrorJSON("[ObjectUnique] getUniqueProperties keys have non-existent attribute for [%s] %+s, rid: %s", objID, keys, kit.Rid)
+		blog.ErrorJSON("[ObjectUnique] getUniqueProperties keys have non-existent attribute for [%s] %+s, rid: %s",
+			objID, keys, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "keys")
 	}
 
@@ -283,7 +290,8 @@ func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys 
 // for create or update a model instance unique check usage.
 // the must_check is true, must be check exactly, no matter the check filed is empty or not.
 // the must_check is false, only when all the filed is not empty, then it's check exactly, otherwise, skip this check.
-func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID string, properties []metadata.Attribute, mustCheck bool) error {
+func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID string, properties []metadata.Attribute,
+	mustCheck bool) error {
 	// now, set the pipeline.
 	pipeline := make([]interface{}, 0)
 
@@ -335,7 +343,8 @@ func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID s
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	err := mongodb.Client().Table(tableName).AggregateOne(kit.Ctx, pipeline, &result)
 	if err != nil && !mongodb.Client().IsNotFoundError(err) {
-		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts failed %s, pipeline: %s, rid: %s", err, pipeline, kit.Rid)
+		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts failed %s, pipeline: %s, rid: %s", err, pipeline,
+			kit.Rid)
 		return err
 	}
 
@@ -369,7 +378,9 @@ func (m *modelAttrUnique) checkUniqueRequireExist(kit *rest.Kit, objID string, i
 
 // checkUniqueRuleExist check if same unique rule has already existed. issue #5240
 // if ruleID is 0,then it's create operation, otherwise it's update operation
-func (m *modelAttrUnique) checkUniqueRuleExist(kit *rest.Kit, objID string, ruleID uint64, keys []metadata.UniqueKey) error {
+func (m *modelAttrUnique) checkUniqueRuleExist(kit *rest.Kit, objID string, ruleID uint64,
+	keys []metadata.UniqueKey) error {
+
 	// get all exist uniques
 	uniqueCond := condition.CreateCondition()
 	uniqueCond.Field(common.BKObjIDField).Eq(objID)
