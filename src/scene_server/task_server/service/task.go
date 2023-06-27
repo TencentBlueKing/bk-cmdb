@@ -202,7 +202,7 @@ func (s *Service) ListFieldTmplTaskSyncResult(ctx *rest.Contexts) {
 				Status:   taskDetail.Status,
 				SyncTime: taskDetail.LastTime,
 			}
-			if len(taskDetail.Detail) != 0 {
+			if len(taskDetail.Detail) != 0 && taskDetail.Detail[0].Response != nil {
 				syncResult.FailMsg = taskDetail.Detail[0].Response.ErrMsg
 			}
 
