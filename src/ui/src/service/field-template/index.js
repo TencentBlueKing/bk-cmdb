@@ -106,6 +106,20 @@ const getModelSyncStatus = (data, config) => http.post('find/field_template/mode
 // 查询模板与模型差异状态
 const getModelDiffStatus = (data, config) => http.post('find/field_template/sync/status', data, config)
 
+// 获取字段绑定的模板的字段列表
+const getTemplateFieldListByField = async (field, config) => {
+  try {
+    const bindTemplate = await getFieldBindTemplate({
+      bk_template_id: field.bk_template_id,
+      bk_attribute_id: field.id
+    }, config)
+    const templateFieldList = await getFieldList({ bk_template_id: bindTemplate.id })
+    return templateFieldList?.info ?? []
+  } catch (error) {
+    return Promise.reject(error)
+  }
+}
+
 export default {
   create,
   update,
@@ -129,5 +143,6 @@ export default {
   syncModel,
   getTaskSyncStatus,
   getModelSyncStatus,
-  getModelDiffStatus
+  getModelDiffStatus,
+  getTemplateFieldListByField
 }

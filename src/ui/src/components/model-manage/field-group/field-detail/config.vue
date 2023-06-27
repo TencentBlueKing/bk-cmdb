@@ -17,7 +17,7 @@
         <bk-checkbox
           class="checkbox"
           v-model="localValue.editable"
-          :disabled="isReadOnly || ispre">
+          :disabled="isReadOnly || ispre || (isFromTemplateField && editableLockLocal)">
           <span class="g-has-dashed-tooltips" v-bk-tooltips="$t('字段设置可编辑提示语')">
             {{$t('在实例中可编辑')}}
           </span>
@@ -31,7 +31,7 @@
         <bk-checkbox
           class="checkbox"
           v-model="localValue.isrequired"
-          :disabled="isReadOnly || ispre">
+          :disabled="isReadOnly || ispre || (isFromTemplateField && isrequiredLockLocal)">
           <span>{{$t('设置为必填项')}}</span>
         </bk-checkbox>
         <lock-button v-if="isSettingScene" :tips="$t('字段组合模板加解锁提示语')" v-model="isrequiredLockLocal" />
@@ -126,7 +126,8 @@
     inject: [
       // 来源于自定义字段编辑
       'customObjId',
-      'isSettingScene'
+      'isSettingScene',
+      'isFromTemplateField'
     ],
     computed: {
       isEditableShow() {
