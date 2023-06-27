@@ -17,8 +17,7 @@
       'is-dragging': isDragging,
       'is-readonly': !updateAuth
     }"
-    v-bkloading="{ isLoading: $loading(Object.values(requestIds)), extCls: 'field-loading' }"
-  >
+    v-bkloading="{ isLoading: $loading(Object.values(requestIds)), extCls: 'field-loading' }">
     <div class="field-options">
       <cmdb-auth v-if="isShowOptionBtn" :auth="authResources" @update-auth="handleReceiveAuth">
         <template #default="{ disabled }">
@@ -184,8 +183,8 @@
                       </bk-button>
                     </cmdb-auth>
                   </template>
-                  <template #tag-append>
-                    <div v-if="property.bk_template_id" @mouseenter="handleTemplateTagHover($event, property)">
+                  <template #tag-append v-if="property.bk_template_id">
+                    <div @mouseenter="(event) => handleTemplateTagHover(event, property)">
                       <mini-tag :text="$t('模板')" />
                     </div>
                   </template>
@@ -371,12 +370,17 @@
         @on-apply="handleApplyConfig">
       </cmdb-columns-config>
     </bk-sideslider>
-    <div class="tips-content" ref="tipsComponent"
-      v-bkloading="{ size: 'mini', isLoading: tipsLoading, theme: 'primary', mode: 'spin' }">
-      <i18n path="模板提示信息" v-if="cacheTemplate.name">
-        <template #templateInfo>
-          <span class="tips-text" @click.stop="handleViewTemplate(cacheTemplate.id)">
-            {{ cacheTemplate.name }}
+    <div class="field-bind-template-popover-content" ref="fieldBindTemplateRef"
+      v-bkloading="{
+        isLoading: $loading(bindTemplatePopover.requestId),
+        size: 'mini',
+        theme: 'primary',
+        mode: 'spin'
+      }">
+      <i18n path="xx模板的字段" v-if="bindTemplatePopover.template.name">
+        <template #template>
+          <span class="template-name" @click.stop="handleViewTemplate(bindTemplatePopover.template.id)">
+            {{ bindTemplatePopover.template.name }}
           </span>
         </template>
       </i18n>
@@ -478,8 +482,12 @@
           type: 'search',
         },
         uniqueList: [],
-        tipsLoading: false,
-        cacheTemplate: {}
+        bindTemplatePopover: {
+          show: false,
+          instance: null,
+          template: {},
+          requestId: ''
+        }
       }
     },
     computed: {
@@ -1060,7 +1068,7 @@
       },
       handleDeleteField({ property: field, index, fieldIndex }) {
         this.$bkInfo({
-          title: this.$tc('确定删除字段？', field.bk_property_name, { name: field.bk_property_name }),
+          title: this.$t('确定删除字段？', field.bk_property_name, { name: field.bk_property_name }),
           subTitle: this.$t('删除模型字段提示', { property: field.bk_property_name, model: this.curModel.bk_obj_name }),
           confirmLoading: this.$loading('deleteObjectAttribute'),
           confirmFn: async () => {
@@ -1156,37 +1164,40 @@
       handleExport() {
         this.$emit('exportField')
       },
-      async handleTemplateTagHover($event, value) {
-        const tips = this.$bkPopover($event.target, {
+      async handleTemplateTagHover(event, property) {
+        this.bindTemplatePopover.instance?.destroy?.()
+        this.bindTemplatePopover.template = {}
+        this.bindTemplatePopover.instance = this.$bkPopover(event.target, {
           allowHTML: true,
-          placement: 'top',
           boundary: 'window',
+          trigger: 'mouseenter',
           arrow: true,
+          distance: 18,
           theme: 'light',
           interactive: true,
           animateFill: false,
           hideOnClick: false,
-          content: this.$refs.tipsComponent,
+          content: this.$refs.fieldBindTemplateRef,
+          onShow: () => {
+            this.bindTemplatePopover.show = true
+          },
           onHidden: () => {
-            tips.destroy()
+            this.bindTemplatePopover.show = false
           }
         })
-        if (tips) {
-          tips.show()
-        }
-        this.tipsLoading = true
+
+        this.bindTemplatePopover.instance.show()
+
+        this.bindTemplatePopover.requestId = `${this.modelId}_${property.id}_${property.bk_template_id}`
         const params = {
-          bk_template_id: value.bk_template_id,
-          bk_attribute_id: value.id
+          bk_template_id: property.bk_template_id,
+          bk_attribute_id: property.id
         }
-        this.cacheTemplate = await fieldTemplateService.getTemplateInfo(
-          params,
-          {
-            requestId: `${this.modelId}_${value.id}_${value.bk_template_id}`,
-            fromCache: true
-          }
-        )
-        this.tipsLoading = false
+        const bindTemplate = await fieldTemplateService.getFieldBindTemplate(params, {
+          requestId: this.bindTemplatePopover.requestId,
+          fromCache: true
+        })
+        this.bindTemplatePopover.template = bindTemplate || {}
       },
       handleViewTemplate(id) {
         this.$routerActions.open({
@@ -1503,15 +1514,15 @@ $modelHighlightColor: #3c96ff;
       background-color: #f4f6f9;
     }
   }
-  .tips-content {
+  .field-bind-template-popover-content {
     min-width: 120px;
     height: 15px;
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 12px;
-    .tips-text{
-      color:#3A84FF;
+    .template-name {
+      color: #3A84FF;
       cursor: pointer;
     }
   }

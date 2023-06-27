@@ -83,7 +83,7 @@ const deleteTemplate = (data, config) => http.delete('/delete/field_template', d
 const cloneTemplate = (data, config) => http.post('/create/field_template/clone', data, config)
 
 // 查询模型属性对应模版简要信息接口
-const getTemplateInfo = (data, config) => http.post('/find/field_template/simplify/by_attr_template_id', data, config)
+const getFieldBindTemplate = (data, config) => http.post('/find/field_template/simplify/by_attr_template_id', data, config)
 
 // 检测字段模板和模型中的字段的区别和冲突，返回值以模型上的字段为维度
 const getFieldDifference = (data, config) => http.post('find/field_template/attribute/difference', data, config)
@@ -122,7 +122,7 @@ export default {
   unbind,
   deleteTemplate,
   cloneTemplate,
-  getTemplateInfo,
+  getFieldBindTemplate,
   getFieldDifference,
   getUniqueDifference,
   bindModel,
