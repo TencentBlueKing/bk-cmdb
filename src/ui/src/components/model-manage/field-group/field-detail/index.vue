@@ -547,14 +547,14 @@
         if (this.isEditField) {
           const action = this.customObjId ? 'updateBizObjectAttribute' : 'updateObjectAttribute'
           let params = this.field.ispre ? this.getPreFieldUpdateParams() : this.fieldInfo
+          if (isEmptyPropertyValue(this.fieldInfo.default)) {
+            params.default = null
+          }
           if (this.isFromTemplateField) {
             params = this.getTemplateFieldParams()
           }
           if (!this.isGlobalView) {
             params.bk_biz_id = this.bizId
-          }
-          if (isEmptyPropertyValue(this.fieldInfo.default)) {
-            params.default = null
           }
           await this[action]({
             bizId: this.bizId,
