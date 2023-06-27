@@ -566,7 +566,7 @@ func (c *comparator) compareOneUniqueInfo(kit *rest.Kit, params *compUniqueParam
 
 	// check if unique keys are the same
 	if objCompUnique.compKey == tmplCompKey {
-		if isNoTmpl {
+		if !forUI && isNoTmpl {
 			// the template attribute in the unique verification refers to the
 			// auto-increment ID corresponding to the unique verification of the template
 			objCompUnique.unique.TemplateID = tmplUnique.ID
