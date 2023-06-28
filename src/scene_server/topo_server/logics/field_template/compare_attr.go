@@ -566,9 +566,6 @@ func (c *comparator) addUpdateAttrInfoForUI(kit *rest.Kit, params *compAttrParam
 		return
 	}
 
-	// ui do not compare template id
-	delete(updateData, common.BKTemplateID)
-
 	if len(updateData) > 0 {
 		res.Update = append(res.Update, metadata.CompareOneFieldTmplAttrRes{
 			Index:      params.tmplIndexMap[tmplAttr.PropertyID],
