@@ -152,12 +152,13 @@
       watchEffect(async () => {
         // dialog组件显示状态再触发数据查询（if渲染有点问题）
         if (!isShow.value) return
-
+        console.log('watheffect')
         getList()
       })
 
       const handleSearch = (value) => {
         keyword.value = value
+        pagination.current = 1
         dataEmpty.type = value ? 'search' : 'empty'
       }
 
