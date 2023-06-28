@@ -152,7 +152,6 @@
       watchEffect(async () => {
         // dialog组件显示状态再触发数据查询（if渲染有点问题）
         if (!isShow.value) return
-        console.log('watheffect')
         getList()
       })
 
