@@ -17,6 +17,7 @@
     v-bind="$attrs"
     :multiple="multiple"
     :loading="$loading(requestId)"
+    :remote-method="searchArea"
     @clear="() => $emit('clear')"
     @toggle="handleToggle">
     <bk-option v-for="option in options"
@@ -78,23 +79,38 @@
         return info.join(' | ')
       }
     },
-    async created() {
-      try {
-        const { info } = await this.$store.dispatch('cloud/area/findMany', {
-          params: {
-            page: {
-              sort: 'bk_cloud_name'
+    created() {
+      this.getCloudArea()
+    },
+    methods: {
+      searchArea(key) {
+        if (this.searchTimer) {
+          clearTimeout(this.searchTimer)
+        }
+        this.searchTimer = setTimeout(() => {
+          this.getCloudArea({ bk_cloud_name: key })
+        }, 300)
+      },
+      async getCloudArea(condition) {
+        try {
+          const { info } = await this.$store.dispatch('cloud/area/findMany', {
+            params: {
+              condition,
+              is_fuzzy: true,
+              page: {
+                sort: 'bk_cloud_name'
+              }
+            },
+            config: {
+              requestId: Symbol(this.requestId),
+              fromCache: true
             }
-          },
-          config: {
-            requestId: this.requestId,
-            fromCache: true
-          }
-        })
-        this.options = info
-      } catch (error) {
-        console.error(error)
-      }
+          })
+          this.options = info
+        } catch (error) {
+          console.error(error)
+        }
+      },
     }
   }
 </script>
