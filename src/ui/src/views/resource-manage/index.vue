@@ -119,7 +119,8 @@
     methods: {
       filterModel() {
         if (this.filter) {
-          const models = this.models.filter(model => model.bk_obj_name.indexOf(this.filter) > -1)
+          const models = this.models.filter(model => model.bk_obj_name.toLocaleLowerCase()
+            .indexOf(this.filter.toLocaleLowerCase()) > -1)
           this.matchedModels = models.map(model => model.bk_obj_id)
         } else {
           this.matchedModels = null

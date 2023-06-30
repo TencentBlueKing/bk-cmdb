@@ -37,7 +37,7 @@
             </div>
             <template v-if="!loadingState.includes(property)">
               <template v-if="!readonly && !isPropertyEditable(property)">
-                <i class="is-related property-edit icon-cc-edit"
+                <i class="is-related property-edit icon-cc-edit-shape"
                   v-bk-tooltips="{
                     content: $t('系统限定不可修改'),
                     placement: 'top',
@@ -61,7 +61,7 @@
                     class="property-edit-btn"
                     :disabled="disabled"
                     @click="setEditState(property)">
-                    <i class="property-edit icon-cc-edit"></i>
+                    <i class="property-edit icon-cc-edit-shape"></i>
                   </bk-button>
                 </cmdb-auth>
                 <div class="property-form" v-if="property === editState.property">
@@ -94,7 +94,7 @@
                 && property !== editState.property">
                 <div class="copy-box">
                   <i
-                    class="property-copy icon-cc-details-copy"
+                    class="property-copy icon-cc-copy"
                     @click="handleCopy(property.bk_property_id)">
                   </i>
                   <transition name="fade">
