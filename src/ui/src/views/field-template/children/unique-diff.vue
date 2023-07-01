@@ -16,7 +16,7 @@
   import useProperty from '@/hooks/model/property'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
   import DiffBrand from './diff-brand.vue'
-  import { getUniqueName as getUniqueNameBase } from './use-unique'
+  import { getUniqueName as getUniqueNameBase, DIFF_TYPES } from './use-unique'
 
   const props = defineProps({
     model: {
@@ -34,6 +34,11 @@
     },
     // 模板字段列表
     templateFieldList: {
+      type: Array,
+      default: () => ([])
+    },
+    // 删除的模板唯一校验
+    templateRemovedUniqueList: {
       type: Array,
       default: () => ([])
     }
@@ -59,17 +64,47 @@
 
   const counts = computed(() => ({
     new: props.diffs?.create?.length ?? 0,
+    update: props.diffs?.update?.length ?? 0,
     conflict: props.diffs?.conflict?.length ?? 0,
-    unbinded: 0,
+    unbound: 0,
     unchanged: props.diffs?.unchanged?.length ?? 0,
   }))
 
-  const getUniqueName = (unique, isTemplate) => {
-    const fieldList = isTemplate ? props.templateFieldList : properties.value
-    return getUniqueNameBase(unique, fieldList, isTemplate)
+  const isConflict = unique => props.diffs.conflict?.some(item => item.data.id === unique.id)
+  const isNew = unique => props.diffs.create?.some(item => item.id === unique.id)
+  const isUpdate = unique => props.diffs.update?.some(item => item.data.id === unique.id)
+  const isUnchanged = unique => props.diffs.unchanged?.some(item => item.id === unique.id)
+  const isUnbound = unique => props.templateRemovedUniqueList?.some(item => item.id === unique.bk_template_id)
+
+  const getUniqueDiffType = (unique) => {
+    if (isNew(unique)) {
+      return DIFF_TYPES.NEW
+    }
+
+    if (isUpdate(unique)) {
+      return DIFF_TYPES.UPDATE
+    }
+
+    if (isConflict(unique)) {
+      return DIFF_TYPES.CONFLICT
+    }
+
+    if (isUnbound(unique)) {
+      return DIFF_TYPES.UNBOUND
+    }
+
+    if (isUnchanged(unique)) {
+      return DIFF_TYPES.UNCHANGED
+    }
   }
 
-  const isConflict = unique => props.diffs.conflict?.some(item => item.data.id === unique.id)
+  const getUniqueName = (unique, isTemplate) => {
+    const diffType = getUniqueDiffType(unique)
+    const isTemplateUnqiue = isTemplate || diffType === DIFF_TYPES.NEW
+    const fieldList = isTemplate ? props.templateFieldList : properties.value
+    return getUniqueNameBase(unique, fieldList, isTemplateUnqiue)
+  }
+
   const getConflictUniqueName = (unique) => {
     const conflict = props.diffs.conflict?.find(item => item.data.id === unique.id)
     if (conflict) {
@@ -78,23 +113,9 @@
     return 'unknown'
   }
 
-  const getDiffClassNames = (unique) => {
-    if (newFieldList.value?.some(item => item.id === unique.id)) {
-      return 'new'
-    }
-    // 冲突使用模型数据中的字段id匹配
-    if (isConflict(unique)) {
-      return 'conflict'
-    }
-    if (props.diffs.unchanged?.some(item => item.id === unique.id)) {
-      return 'unchanged'
-    }
-    if (!props.templateUniqueList?.some(item => item.id === unique.id)) {
-      return 'unbinded'
-    }
-  }
+  const getDiffClassName = unique => getUniqueDiffType(unique)
 
-  const isTemplate = unique => props.templateUniqueList.some(item => item.id === unique.id)
+  const isTemplate = unique => props.templateUniqueList.some(item => item.id === unique.bk_template_id)
 </script>
 
 <template>
@@ -104,10 +125,11 @@
         <div class="summary-title">{{$t('模板应用后的差异对比：')}}</div>
         <div class="summray-content">
           <diff-brand :count="counts.new" :text="$t('新增校验')" status="new"></diff-brand>
+          <diff-brand :count="counts.update" :text="$t('更新覆盖')" status="update"></diff-brand>
           <diff-brand :count="counts.conflict" :text="$t('校验冲突')" status="conflict"
             :tooltips="$t('当前模板设置的唯一校验规则与模型已存在的规则冲突')">
           </diff-brand>
-          <diff-brand :count="counts.unbinded" :text="$t('解除纳管')" status="unbinded"
+          <diff-brand :count="counts.unbound" :text="$t('解除纳管')" status="unbound"
             :tooltips="$t('模板中删除了该字段，后续不再统一管理该字段')">
           </diff-brand>
           <diff-brand :count="counts.unchanged" :text="$t('无变化')" status="unchanged"></diff-brand>
@@ -128,12 +150,9 @@
         </div>
         <div class="col after-col">
           <div v-for="(unique, index) in modelAfterUniqueList" :key="index"
-            :class="['diff-item', getDiffClassNames(unique)]">
-            <template v-if="isTemplate(unique)">
-              {{ getUniqueName(unique, true) }}
-              <mini-tag :text="$t('模板')" />
-            </template>
-            <span v-else>{{ getUniqueName(unique) }}</span>
+            :class="['diff-item', getDiffClassName(unique)]">
+            <span>{{ getUniqueName(unique) }}</span>
+            <mini-tag :text="$t('模板')" v-if="isTemplate(unique)" />
             <template v-if="isConflict(unique)">
               <i class="bk-icon icon-exclamation-circle-shape conflict-icon"
                 v-bk-tooltips="{ content: $t('绑定后的唯一性校验冲突提示语', { target: getConflictUniqueName(unique) }) }">
@@ -240,6 +259,10 @@
           color: #2DCB56;
           background: #F2FFF4;
         }
+        &.update {
+          color: #FF9C01;
+          background: #FFF9EF;
+        }
         &.conflict {
           color: #EA3636;
           background: #FEF2F2;
@@ -251,7 +274,7 @@
         &.unchanged {
           background: #F5F7FA;
         }
-        &.unbinded {
+        &.unbound {
           background: #F0F1F5;
         }
 

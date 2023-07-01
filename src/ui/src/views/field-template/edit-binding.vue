@@ -71,18 +71,20 @@
     uniqueData.value = templateUniqueList?.info || []
 
     const modelList = await fieldTemplateService.getBindModel({
-      bk_template_id: templateId.value,
-      // filter: {}
+      bk_template_id: templateId.value
     })
 
     bindModelData.value = modelList ?? []
     modelIdList.value = modelList.filter(model => !model.bk_ispaused).map(model => model.id)
+
+    // 无绑定的模型diffDone为true
+    isDiffDone.value = !modelIdList.value?.length
   })
 
   // 状态数据实时再算一次，当中如果模板数据在其它地方被意外的修改，可能会出现非预期的数据不一致问题
   // 如果不再算一次，则需要依赖上一步中的fieldStatus数据，当直接进入到此页时并不存在上一页的数据
-  const { fieldStatus } = useField(fieldData, fieldLocalList)
-  const { uniqueStatus } = useUnique(uniqueData, uniqueLocalList)
+  const { fieldStatus, removedFieldList } = useField(fieldData, fieldLocalList)
+  const { uniqueStatus, removedUniqueList } = useUnique(uniqueData, uniqueLocalList)
 
   // 模板最终数据，草稿数据优先否则为接口数据
   const templateData = computed(() => ({
@@ -126,7 +128,7 @@
   const handlePrevStep = () => {
     routerActions.redirect({
       name: MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
-      history: true
+      history: false
     })
   }
   const handleCancel = () => {
@@ -157,6 +159,8 @@
         :model-list="bindModelData"
         :field-list="finalFieldList"
         :unique-list="finalUniqueList"
+        :removed-field-list="removedFieldList"
+        :removed-unique-list="removedUniqueList"
         @update-diffs="handleDiffUpdate">
       </bind-model>
       <div class="edit-binging-footer">

@@ -34,6 +34,11 @@
     { title: t('字段设置'), icon: 2 },
     { title: t('模型信息确认'), icon: 3 }
   ]
+  const requestIds = {
+    template: Symbol(),
+    field: Symbol(),
+    unique: Symbol()
+  }
 
   const templateId = computed(() => Number(route.params.id))
 
@@ -56,9 +61,9 @@
 
   watchEffect(async () => {
     const [template, templateFieldList, templateUniqueList] = await Promise.all([
-      fieldTemplateService.findById(templateId.value),
-      fieldTemplateService.getFieldList({ bk_template_id: templateId.value }),
-      fieldTemplateService.getUniqueList({ bk_template_id: templateId.value })
+      fieldTemplateService.findById(templateId.value, { requestId: requestIds.template }),
+      fieldTemplateService.getFieldList({ bk_template_id: templateId.value }, { requestId: requestIds.field }),
+      fieldTemplateService.getUniqueList({ bk_template_id: templateId.value }, { requestId: requestIds.unique })
     ])
 
     beforeFieldList.value = templateFieldList?.info || []
@@ -107,14 +112,14 @@
     saveDraft()
     routerActions.redirect({
       name: MENU_MODEL_FIELD_TEMPLATE_EDIT_BASIC,
-      history: true
+      history: false
     })
   }
   const handleNextStep = () => {
     saveDraft()
     routerActions.redirect({
       name: MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING,
-      history: true
+      history: false
     })
   }
   const handleCancel = () => {
@@ -143,6 +148,7 @@
       <top-steps :steps="steps" width="632px" :current="2" :class="{ 'is-sticky': sticky }"></top-steps>
     </template>
     <field-manage
+      v-bkloading="{ isLoading: $loading(Object.values(requestIds)) }"
       :field-list="fieldData"
       :unique-list="uniqueData"
       :before-field-list="beforeFieldList"

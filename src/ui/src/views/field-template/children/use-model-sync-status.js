@@ -130,3 +130,4 @@ export default function useModelSyncStatus(templateId, modelIdList) {
 }
 
 export const isSyncing = status => ['new', 'waiting', 'executing'].includes(status)
+export const isSynced = status => ['finished'].includes(status)

@@ -42,7 +42,7 @@
     store.commit('fieldTemplate/setTemplateDraft', { basic: formData })
     routerActions.redirect({
       name: MENU_MODEL_FIELD_TEMPLATE_CREATE_FIELD_SETTINGS,
-      history: true
+      history: false
     })
   }
   const handleCancel = () => {

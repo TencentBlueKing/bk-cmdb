@@ -25,7 +25,7 @@
     MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL
   } from '@/dictionary/menu-symbol'
   import ModelSyncStatus from './children/model-sync-status.vue'
-  import useModelSyncStatus, { isSyncing } from './children/use-model-sync-status'
+  import useModelSyncStatus, { isSyncing, isSynced } from './children/use-model-sync-status'
 
   const props = defineProps({
     templateId: {
@@ -127,7 +127,7 @@
     })
   }
   const handleGoSync = (row) => {
-    routerActions.redirect({
+    routerActions.open({
       name: MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL,
       params: {
         id: props.templateId,
@@ -230,7 +230,7 @@
           </cmdb-auth>
           <cmdb-auth class="ml20"
             :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }"
-            v-if="!row.bk_ispaused">
+            v-if="!row.bk_ispaused && (statusMap[row.id] && !isSynced(statusMap[row.id].status))">
             <template #default="{ disabled }">
               <bk-button
                 theme="primary"

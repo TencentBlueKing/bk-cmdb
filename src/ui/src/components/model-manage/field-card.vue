@@ -84,7 +84,7 @@
       </div>
     </div>
     <div class="tags" v-if="isTemplate || $slots['tag-append'] || fieldUnique.list.length">
-      <span class="tag unique" v-if="fieldUnique.type === UNIUQE_TYPES.SINGLE">
+      <span class="tag unique" v-if="fieldUnique.type === UNIUQE_TYPES.SINGLE && fieldUnique.list.length">
         <em class="tag-text">{{$t('单独唯一')}}</em>
       </span>
       <span class="tag unique union" v-else-if="fieldUnique.type === UNIUQE_TYPES.UNION" v-bk-tooltips="{
@@ -175,7 +175,7 @@
       .tag {
         background: #E4FAF0;
         border-radius: 2px;
-        padding: 1px 2px;
+        padding: 1px 4px;
         height: 16px;
         line-height: 16px;
         white-space: nowrap;
@@ -203,7 +203,7 @@
           &.union {
             cursor: pointer;
             &:hover {
-              background: #A3C5FD;
+              background: #E1ECFF;
             }
           }
         }

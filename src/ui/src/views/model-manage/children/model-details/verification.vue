@@ -39,8 +39,10 @@
       @cell-click="handleShowDetails">
       <bk-table-column :label="$t('校验规则')" class-name="is-highlight" show-overflow-tooltip>
         <template slot-scope="{ row }">
-          {{getRuleName(row.keys)}}
-          <mini-tag class="mini-tag" :text="$t('模板')" v-if="row.bk_template_id" />
+          <div class="keys-cell">
+            {{getRuleName(row.keys)}}
+            <mini-tag :text="$t('模板')" v-if="row.bk_template_id" />
+          </div>
         </template>
       </bk-table-column>
       <bk-table-column prop="operation"
@@ -159,7 +161,7 @@
         'deleteObjectUniqueConstraints'
       ]),
       isEditable(item) {
-        if (item.ispre || this.isReadOnly) {
+        if (item.ispre || this.isReadOnly || item.bk_template_id) {
           return false
         }
         return true
@@ -268,13 +270,14 @@
     }
     .verification-table {
         margin: 14px 0 0 0;
+        .keys-cell {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
     }
     .operation-btn[disabled] {
         color: #dcdee5 !important;
         opacity: 1 !important;
-    }
-    .mini-tag{
-      display: inline-block;
-      vertical-align: middle;
     }
 </style>

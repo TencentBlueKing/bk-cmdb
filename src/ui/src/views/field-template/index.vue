@@ -303,7 +303,7 @@
       params: {
         id
       },
-      history: true
+      history: false
     })
   }
   const handleBind = (id) => {
@@ -317,7 +317,7 @@
   }
 
   const handleSortChange = (sort) => {
-    table.sort = getSort(sort, { prop: 'name', order: 'descending' })
+    table.sort = getSort(sort)
     RouterQuery.refresh()
   }
 
@@ -443,21 +443,23 @@
         sortable="custom"
         prop="name"
         :label="$t('模板名称')"
+        fixed="left"
+        width="320"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <div class="cell-link-content" @click.stop="handleRowIDClick(row)">{{ row.name }}</div>
         </template>
       </bk-table-column>
       <bk-table-column
-        prop="name"
         :label="$t('字段数量')"
+        width="210"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <div>{{ row.field_count }}</div>
         </template>
       </bk-table-column>
       <bk-table-column
-        prop="name"
+        width="250"
         :label="$t('绑定的模型')">
         <template slot-scope="{ row }">
           <cmdb-loading :loading="$loading(requestIds.modelCount)">
@@ -470,8 +472,9 @@
         </template>
       </bk-table-column>
       <bk-table-column
-        prop="name"
+        prop="description"
         :label="$t('描述')"
+        width="350"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <div>{{ row.description || '--' }}</div>
@@ -479,7 +482,8 @@
       </bk-table-column>
       <bk-table-column
         sortable="custom"
-        prop="name"
+        prop="modifier"
+        width="210"
         :label="$t('最近更新人')"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
@@ -488,14 +492,15 @@
       </bk-table-column>
       <bk-table-column
         sortable="custom"
-        prop="name"
+        prop="last_time"
         :label="$t('最近更新时间')"
+        width="210"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <div>{{ row.last_time }}</div>
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('操作')" fixed="right">
+      <bk-table-column :label="$t('操作')" width="270" fixed="right">
         <template slot-scope="{ row }">
           <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [row.id] }">
             <template slot-scope="{ disabled }">
