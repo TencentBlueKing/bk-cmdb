@@ -26,7 +26,6 @@
           </i18n>
         </div>
       </bk-exception>
-
     </div>
     <div class="content" v-else-if="type === 'permission'">
       <slot name="permission">
@@ -147,7 +146,7 @@
             font-size: 14px;
             height: auto;
         }
-        .table-tips{
+        .table-tips {
           margin-top: 15px;
         }
     }

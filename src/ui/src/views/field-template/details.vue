@@ -161,6 +161,9 @@
   const handleCloneDialogToggle = (val) => {
     isShowCloneDialog.value = val
   }
+  const handleClose = () => {
+    emit('close')
+  }
 </script>
 <script>
   export default {
@@ -203,7 +206,8 @@
         <details-model
           v-if="tabActive === tabIds.model"
           :template-id="templateId"
-          @unbound="handleModelUnbound">
+          @unbound="handleModelUnbound"
+          @close="handleClose">
         </details-model>
       </div>
       <template slot="footer" slot-scope="{ sticky }">

@@ -33,7 +33,7 @@
     }
   })
 
-  const emit = defineEmits(['unbound'])
+  const emit = defineEmits(['unbound', 'close'])
 
   const store = useStore()
 
@@ -104,7 +104,7 @@
       bindModelList.value = []
       firstLoading.value = false
     }
-  }, 200)
+  }, 200, { leading: true })
 
   watch([queryParams, onePageMaxCount], () => {
     getBindModel()
@@ -119,6 +119,7 @@
   }
 
   const handleGoBindModel = () => {
+    emit('close')
     routerActions.redirect({
       name: MENU_MODEL_FIELD_TEMPLATE_BIND,
       params: {

@@ -56,7 +56,7 @@ export default function useModelSyncStatus(templateId, modelIdList) {
       object_ids: objIds
     }, {
       requestId,
-      globalError: false
+      globalError: true
     }), { segment: 5, concurrency: 5 }).add(ids)
 
     for (const result of allResult) {

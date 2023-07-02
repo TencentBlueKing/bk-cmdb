@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { ref, computed, watchEffect } from 'vue'
+  import { ref, computed, reactive, nextTick, watchEffect, set } from 'vue'
   import { t } from '@/i18n'
   import { useRoute } from '@/router/index'
   import { useStore } from '@/store'
@@ -20,6 +20,7 @@
     MENU_MODEL_FIELD_TEMPLATE,
     MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS
   } from '@/dictionary/menu-symbol'
+  import LeaveConfirm from '@/components/ui/dialog/leave-confirm'
   import TopSteps from './children/top-steps.vue'
   import BindModel from './children/bind-model.vue'
   import SyncResults from './children/sync-results.vue'
@@ -42,6 +43,11 @@
 
   const isEditSuccess = ref(false)
 
+  const leaveConfirmConfig = reactive({
+    id: 'editFlowBind',
+    active: true
+  })
+
   // 草稿数据
   const templateDraft = computed(() => store.getters['fieldTemplate/templateDraft'])
   const fieldLocalList = computed(() => templateDraft.value.fieldList?.map(unwrapData) ?? [])
@@ -58,6 +64,8 @@
   const hasDiffConflict = ref(false)
 
   const modelIdList = ref([])
+
+  const modelEditAuths = ref({})
 
   watchEffect(async () => {
     const [template, templateFieldList, templateUniqueList] = await Promise.all([
@@ -93,11 +101,24 @@
   }))
 
   const isDraftValid = computed(() => !templateDraft.value.basic.name)
+
+  const hasModelEditAuth = computed(() => {
+    if (!modelIdList.value?.length) {
+      return true
+    }
+    return Object.values(modelEditAuths.value).every(isPass => isPass)
+  })
+
   // 存在冲突或者没有编辑中的草稿数据
   const submitButtonDisabled = computed(() => isDraftValid.value
     || !isDiffDone.value
     || hasDiffError.value
-    || hasDiffConflict.value)
+    || hasDiffConflict.value
+    || !hasModelEditAuth.value)
+
+  const clearTemplateDraft = () => {
+    store.commit('fieldTemplate/clearTemplateDraft')
+  }
 
   const handleDiffUpdate = (hasError, hasConflict) => {
     isDiffDone.value = true
@@ -119,32 +140,40 @@
 
     try {
       await fieldTemplateService.update(submitData, { requestId: requestIds.submit })
+      leaveConfirmConfig.active = false
       isEditSuccess.value = true
+
+      clearTemplateDraft()
     } catch (err) {
       console.error(err)
     }
   }
 
   const handlePrevStep = () => {
-    routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
-      history: false
+    leaveConfirmConfig.active = false
+
+    nextTick(() => {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
+        history: false
+      })
     })
   }
   const handleCancel = () => {
-    routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE
+    leaveConfirmConfig.active = false
+
+    nextTick(() => {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE
+      })
     })
   }
-</script>
-<script>
-  export default {
-    beforeRouteLeave(to, from, next) {
-      if (![MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS].includes(to.name)) {
-        this.$store.commit('fieldTemplate/clearTemplateDraft')
-      }
-      next()
-    }
+  const handleLeave = () => {
+    clearTemplateDraft()
+  }
+
+  const handleModelAuthUpdate = (model, isPass) => {
+    set(modelEditAuths.value, model.id, isPass)
   }
 </script>
 
@@ -161,7 +190,8 @@
         :unique-list="finalUniqueList"
         :removed-field-list="removedFieldList"
         :removed-unique-list="removedUniqueList"
-        @update-diffs="handleDiffUpdate">
+        @update-diffs="handleDiffUpdate"
+        @update-model-auth="handleModelAuthUpdate">
       </bind-model>
       <div class="edit-binging-footer">
         <bk-button
@@ -169,8 +199,8 @@
           {{$t('上一步')}}
         </bk-button>
         <cmdb-auth :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }" v-bk-tooltips="{
-          disabled: !hasDiffConflict,
-          content: $t('模型存在冲突，无法提交')
+          disabled: hasModelEditAuth && !hasDiffConflict,
+          content: !hasModelEditAuth ? $t('暂无对应模型的编辑权限，请先申请模型的编辑权限') : $t('模型存在冲突，无法提交')
         }">
           <template #default="{ disabled }">
             <bk-button
@@ -190,6 +220,15 @@
       :template-id="templateId"
       :model-ids="modelIdList">
     </sync-results>
+    <leave-confirm
+      v-bind="leaveConfirmConfig"
+      :reverse="true"
+      :title="$t('是否退出')"
+      :content="$t('编辑步骤未完成，退出将撤销当前操作')"
+      :ok-text="$t('退出')"
+      :cancel-text="$t('取消')"
+      @leave="handleLeave">
+    </leave-confirm>
   </div>
 </template>
 

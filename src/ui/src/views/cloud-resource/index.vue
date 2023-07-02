@@ -100,7 +100,7 @@
       <cmdb-table-empty
         slot="empty"
         :stuff="table.stuff"
-        :auth="{ type: $OPERATION.C_CLOUD_RESOURCE_TASK, relation: [bizId] }"
+        :auth="{ type: $OPERATION.C_CLOUD_RESOURCE_TASK }"
         @create="handleCreate"
         @clear="handleClearFilter">
       </cmdb-table-empty>

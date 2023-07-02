@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { computed, ref, watchEffect, reactive } from 'vue'
+  import { computed, ref, nextTick, watchEffect, reactive } from 'vue'
   import { t } from '@/i18n'
   import { useRoute } from '@/router/index'
   import { useStore } from '@/store'
@@ -21,6 +21,7 @@
     MENU_MODEL_FIELD_TEMPLATE_EDIT_BASIC,
     MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING
   } from '@/dictionary/menu-symbol'
+  import LeaveConfirm from '@/components/ui/dialog/leave-confirm'
   import TopSteps from './children/top-steps.vue'
   import FieldManage from './children/field-manage.vue'
   import { wrapData } from './children/use-field'
@@ -41,6 +42,11 @@
   }
 
   const templateId = computed(() => Number(route.params.id))
+
+  const leaveConfirmConfig = reactive({
+    id: 'editFlowField',
+    active: true
+  })
 
   // 模板初始数据
   const fieldData = ref([])
@@ -110,35 +116,42 @@
 
   const handlePrevStep = () => {
     saveDraft()
-    routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE_EDIT_BASIC,
-      history: false
+
+    leaveConfirmConfig.active = false
+
+    nextTick(() => {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE_EDIT_BASIC,
+        history: false
+      })
     })
   }
   const handleNextStep = () => {
     saveDraft()
-    routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING,
-      history: false
+
+    leaveConfirmConfig.active = false
+
+    nextTick(() => {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING,
+        history: false
+      })
     })
   }
   const handleCancel = () => {
-    routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE
+    leaveConfirmConfig.active = false
+    nextTick(() => {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE
+      })
     })
   }
   const handlePreview = () => {
     previewShow.value = true
   }
-</script>
-<script>
-  export default {
-    beforeRouteLeave(to, from, next) {
-      if (![MENU_MODEL_FIELD_TEMPLATE_EDIT_BASIC, MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING].includes(to.name)) {
-        this.$store.commit('fieldTemplate/clearTemplateDraft')
-      }
-      next()
-    }
+
+  const handleLeave = () => {
+    store.commit('fieldTemplate/clearTemplateDraft')
   }
 </script>
 
@@ -180,6 +193,15 @@
       :preview-show.sync="previewShow"
       :properties="previewFieldList">
     </field-preview>
+    <leave-confirm
+      v-bind="leaveConfirmConfig"
+      :reverse="true"
+      :title="$t('是否退出')"
+      :content="$t('编辑步骤未完成，退出将撤销当前操作')"
+      :ok-text="$t('退出')"
+      :cancel-text="$t('取消')"
+      @leave="handleLeave">
+    </leave-confirm>
   </cmdb-sticky-layout>
 </template>
 

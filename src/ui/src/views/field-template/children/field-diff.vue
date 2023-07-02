@@ -152,6 +152,11 @@
     // 无变化/不再纳管不需要展示after，在模板字段中也找不到
     diffDetails.afterField = {}
 
+    // 新增的就是模板的字段
+    if (DIFF_TYPES.NEW === diffType) {
+      diffDetails.afterField = props.templateFieldList.find(item => item.bk_property_id === field.bk_property_id)
+    }
+
     // 冲突和更新会需要使用具体的diff数据
     diffDetails.fieldDiff = {}
     if (DIFF_TYPES.CONFLICT === diffType) {

@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { computed, ref, watchEffect } from 'vue'
+  import { computed, reactive, ref, watchEffect } from 'vue'
   import { useStore } from '@/store'
   import { BUILTIN_MODELS, UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants'
 
@@ -35,6 +35,10 @@
   const classifications = ref([])
   const selectedLocal = ref([])
   const filterWord = ref('')
+
+  const dataEmpty = reactive({
+    type: 'search'
+  })
 
   watchEffect(async () => {
     classifications.value = await store.dispatch('objectModelClassify/searchClassificationsObjects', {
@@ -136,6 +140,10 @@
     close()
   }
 
+  const handleClearFilter = () => {
+    filterWord.value = ''
+  }
+
   const show = () => {
     selectedLocal.value = []
     isShow.value = true
@@ -166,7 +174,7 @@
           :right-icon="'bk-icon icon-search'" />
       </div>
     </template>
-    <div class="dialog-content">
+    <div :class="['dialog-content', { empty: !displayModelGroupList.length }]">
       <cmdb-collapse
         v-for="(group, index) in displayModelGroupList"
         class="model-group"
@@ -206,6 +214,11 @@
           </template>
         </div>
       </cmdb-collapse>
+      <cmdb-data-empty
+        v-show="!displayModelGroupList.length"
+        :stuff="dataEmpty"
+        @clear="handleClearFilter">
+      </cmdb-data-empty>
     </div>
     <template #footer>
       <div class="dialog-footer">
@@ -248,6 +261,12 @@
     height: 580px;
     padding: 0 12px;
     @include scrollbar-y;
+
+    &.empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
   }
 
   .dialog-footer {

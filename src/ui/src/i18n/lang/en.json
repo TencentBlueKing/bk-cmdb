@@ -1798,5 +1798,8 @@
     "模板字段与模型字段的字段名称相同，但字段 ID 不一致": "The template field has the same field name as the model field, but the field ID does not match",
     "配置一致，配置被模板进行纳管": "The configuration is consistent, and the configuration is managed by the template",
     "字段冲突，该字段与模板字段的字段类型不一致": "Field conflict, the field is inconsistent with the field type of the template field",
-    "字段冲突，该字段与模板字段的ID不一致": "Field conflict, the field does not match the ID of the template field"
+    "字段冲突，该字段与模板字段的ID不一致": "Field conflict, the field does not match the ID of the template field",
+    "暂无对应模型的编辑权限，请先申请模型的编辑权限": "There is no editing permission for the corresponding model, please apply for the editing permission of the model first",
+    "新建步骤未完成，退出将撤销当前操作": "The creation step is not completed, exiting will undo the current operation",
+    "编辑步骤未完成，退出将撤销当前操作": "The editing step is not completed, exiting will undo the current operation"
 }

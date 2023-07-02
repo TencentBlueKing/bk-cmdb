@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div :class="['data-stuff', type]">
+  <div :class="['data-empty', type]">
     <div class="content" v-if="type === 'search'">
       <bk-exception type="search-empty" scene="part">
         <p>{{ $t('搜索结果为空') }}</p>
@@ -26,7 +26,6 @@
           </i18n>
         </div>
       </bk-exception>
-
     </div>
     <div class="content" v-else-if="type === 'permission'">
       <slot name="permission">
@@ -148,24 +147,24 @@
 </script>
 
 <style lang="scss" scoped>
-    .data-stuff {
-        color: #63656e;
-        font-size: 14px;
-        .img-empty {
-            width: 90px;
-        }
-        .text-btn {
-            font-size: 14px;
-            height: auto;
-        }
-        .search-text{
-          margin: 0 3px;
-        }
-        .data-tips{
-          margin-top: 15px;
-        }
-    }
-    .empty-link {
-         color: #3A84FF;
-     }
+.data-empty {
+  color: #63656e;
+  font-size: 14px;
+  .img-empty {
+    width: 90px;
+  }
+  .text-btn {
+    font-size: 14px;
+    height: auto;
+  }
+  .search-text{
+    margin: 0 3px;
+  }
+  .data-tips{
+    margin-top: 15px;
+  }
+}
+.empty-link {
+  color: #3A84FF;
+}
 </style>

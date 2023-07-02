@@ -43,6 +43,10 @@
   })
   let timer = null
 
+  const requestIds = {
+    sync: Symbol()
+  }
+
   const isSyncResultStatus = computed(() => ['success', 'error', 'abnormal'].includes(status.value))
   const isEditEmptyModel = computed(() => props.scene === 'edit' && !props.modelIds.length)
 
@@ -111,7 +115,7 @@
       const taskIds = await fieldTemplateService.syncModel({
         bk_template_id: props.templateId,
         object_ids: props.modelIds
-      })
+      }, { requestId: requestIds.sync })
 
       summary.value = t('接下来，您可以在模板详情页面，查看模型的绑定的状态')
 
@@ -153,7 +157,11 @@
       </template>
       <template #summary>{{ summary }}</template>
       <template #actions>
-        <bk-button theme="primary" @click="handleAction('view')">{{ $t('立即查看') }}</bk-button>
+        <bk-button theme="primary"
+          :disabled="$loading(requestIds.sync)"
+          @click="handleAction('view')">
+          {{ $t('立即查看') }}
+        </bk-button>
         <bk-button @click="handleAction('back')">{{ $t('返回列表') }}</bk-button>
       </template>
     </result-status>
