@@ -61,7 +61,7 @@
     height: String
   })
 
-  const emit = defineEmits(['update-diffs'])
+  const emit = defineEmits(['update-diffs', 'update-model-auth'])
 
   const http = useHttp()
 
@@ -256,6 +256,10 @@
     currentTab.value = tab
   }
 
+  const handleModelAuthUpdate = (model, isPass) => {
+    emit('update-model-auth', model, isPass)
+  }
+
   defineExpose({
     modelList: modelListLocal.value
   })
@@ -279,7 +283,11 @@
         </div>
         <div class="model-list" v-if="modelListLocal.length">
           <template v-for="(model, modelIndex) in modelListLocal">
-            <cmdb-auth :key="modelIndex" tag="div" :auth="{ type: $OPERATION.U_MODEL, relation: [model.id] }">
+            <cmdb-auth
+              :key="modelIndex"
+              tag="div"
+              :auth="{ type: $OPERATION.U_MODEL, relation: [model.id] }"
+              @update-auth="isPass => handleModelAuthUpdate(model, isPass)">
               <template #default="{ disabled }">
                 <div :key="modelIndex"
                   :class="['model-item', {
