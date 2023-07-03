@@ -307,7 +307,6 @@ func (s *coreService) SearchModelWithAttribute(ctx *rest.Contexts) {
 			dataResult.Info[modelIdx].Spec.ObjectName = s.TranslateObjectName(lang, &dataResult.Info[modelIdx].Spec)
 		}
 		for attributeIdx := range dataResult.Info[modelIdx].Attributes {
-
 			if dataResult.Info[modelIdx].Attributes[attributeIdx].IsPre || dataResult.Info[modelIdx].Spec.IsPre ||
 				needTranslateObjMap[dataResult.Info[modelIdx].Spec.ObjectID] {
 				dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName =
@@ -700,7 +699,6 @@ func (s *coreService) SearchModelAttributesByCondition(ctx *rest.Contexts) {
 		if dataResult.Info[index].IsPre || needTranslateObjMap[dataResult.Info[index].ObjectID] {
 			dataResult.Info[index].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[index])
 			dataResult.Info[index].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[index])
-
 			switch dataResult.Info[index].PropertyType {
 			case common.FieldTypeEnum, common.FieldTypeEnumMulti:
 				dataResult.Info[index].Option =

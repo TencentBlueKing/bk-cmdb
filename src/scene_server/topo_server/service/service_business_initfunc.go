@@ -208,16 +208,16 @@ func (s *Service) initBusinessAssociation(web *restful.WebService) {
 		Handler: s.SearchInstAssociationAndInstDetail})
 
 	// topo search methods
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/object/{bk_obj_id}",
-		Handler: s.SearchInstByAssociation})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassttopo/object/{bk_obj_id}/inst/{inst_id}",
-		Handler: s.SearchInstTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/find/instassociation/object/{bk_obj_id}", Handler: s.SearchInstByAssociation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/find/instassttopo/object/{bk_obj_id}/inst/{inst_id}", Handler: s.SearchInstTopo})
 
 	// ATTENTION: the following methods is not recommended
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/insttopo/object/{bk_obj_id}/inst/{inst_id}",
-		Handler: s.SearchInstChildTopo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/import/instassociation/{bk_obj_id}",
-		Handler: s.ImportInstanceAssociation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/find/insttopo/object/{bk_obj_id}/inst/{inst_id}", Handler: s.SearchInstChildTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/import/instassociation/{bk_obj_id}", Handler: s.ImportInstanceAssociation})
 	// 专用方法，提供给关联关系导入使用
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodPost,

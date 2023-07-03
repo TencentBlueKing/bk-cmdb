@@ -173,6 +173,7 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 		defer locker.Unlock()
 		if err != nil {
 			blog.Errorf("get create model look failed. err: %v, input: %+v, rid: %s", err, inputParam, kit.Rid)
+
 			addExceptionFunc(int64(attrIdx), kit.CCError.CCErrorf(common.CCErrCommRedisOPErr), &attr)
 			continue
 		}
