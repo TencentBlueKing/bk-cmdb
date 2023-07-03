@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { computed, nextTick, reactive, ref } from 'vue'
+  import { computed, nextTick, onMounted, reactive, ref } from 'vue'
   import { useStore } from '@/store'
   import routerActions from '@/router/actions'
   import {
@@ -40,18 +40,26 @@
   const templateDraft = computed(() => store.getters['fieldTemplate/templateDraft'])
   const basicData = computed(() => ({ ...basicDefaultData, ...templateDraft.value.basic }))
 
-  const handleFormDataChanged = () => {
+  onMounted(() => {
+    leaveConfirmConfig.active = basicData.value.name?.length > 0 || basicData.value.description?.length > 0
+  })
+
+  const clearTemplateDraft = () => {
+    store.commit('fieldTemplate/clearTemplateDraft')
+  }
+
+  const handleFormDataChange = () => {
     leaveConfirmConfig.active = true
   }
 
   const handleNextStep = async () => {
-    leaveConfirmConfig.active = false
     if (!await basicFormRef.value.$validator.validateAll()) {
       return
     }
     const { formData } = basicFormRef.value
     store.commit('fieldTemplate/setTemplateDraft', { basic: formData })
 
+    leaveConfirmConfig.active = false
     nextTick(() => {
       routerActions.redirect({
         name: MENU_MODEL_FIELD_TEMPLATE_CREATE_FIELD_SETTINGS,
@@ -69,7 +77,24 @@
   }
 
   const handleLeave = () => {
-    store.commit('fieldTemplate/clearTemplateDraft')
+    clearTemplateDraft()
+  }
+
+  defineExpose({
+    leaveConfirmConfig,
+    clearTemplateDraft
+  })
+</script>
+<script>
+  export default {
+    beforeRouteLeave(to, from, next) {
+      if (![MENU_MODEL_FIELD_TEMPLATE_CREATE_FIELD_SETTINGS].includes(to.name)) {
+        if (!this.leaveConfirmConfig.active) {
+          this.clearTemplateDraft()
+        }
+      }
+      next()
+    }
   }
 </script>
 
@@ -78,7 +103,7 @@
     <template #header="{ sticky }">
       <top-steps width="360px" :class="{ 'is-sticky': sticky }"></top-steps>
     </template>
-    <basic-form :data="basicData" ref="basicFormRef" @changed="handleFormDataChanged"></basic-form>
+    <basic-form :data="basicData" ref="basicFormRef" @change="handleFormDataChange"></basic-form>
     <template #footer="{ sticky }">
       <div :class="['layout-footer', { 'is-sticky': sticky }]">
         <cmdb-auth :auth="{ type: $OPERATION.C_FIELD_TEMPLATE }">

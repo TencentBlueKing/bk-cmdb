@@ -62,19 +62,21 @@
     return afterUniqueList
   })
 
+  const isConflict = unique => props.diffs.conflict?.some(item => item.data.id === unique.id)
+  const isNew = unique => props.templateUniqueList?.some(item => item.id === unique.id)
+  const isUpdate = unique => props.diffs.update?.some(item => item.data.id === unique.id)
+  const isUnchanged = unique => props.diffs.unchanged?.some(item => item.id === unique.id)
+  const isUnbound = unique => props.templateRemovedUniqueList?.some(item => item.id === unique.bk_template_id)
+
+  const unboundUniqueList = computed(() => modelBeforeUniqueList.value.filter(unique => isUnbound(unique)))
+
   const counts = computed(() => ({
     new: props.diffs?.create?.length ?? 0,
     update: props.diffs?.update?.length ?? 0,
     conflict: props.diffs?.conflict?.length ?? 0,
-    unbound: 0,
+    unbound: unboundUniqueList.value?.length ?? 0,
     unchanged: props.diffs?.unchanged?.length ?? 0,
   }))
-
-  const isConflict = unique => props.diffs.conflict?.some(item => item.data.id === unique.id)
-  const isNew = unique => props.diffs.create?.some(item => item.id === unique.id)
-  const isUpdate = unique => props.diffs.update?.some(item => item.data.id === unique.id)
-  const isUnchanged = unique => props.diffs.unchanged?.some(item => item.id === unique.id)
-  const isUnbound = unique => props.templateRemovedUniqueList?.some(item => item.id === unique.bk_template_id)
 
   const getUniqueDiffType = (unique) => {
     if (isNew(unique)) {
@@ -101,7 +103,7 @@
   const getUniqueName = (unique, isTemplate) => {
     const diffType = getUniqueDiffType(unique)
     const isTemplateUnqiue = isTemplate || diffType === DIFF_TYPES.NEW
-    const fieldList = isTemplate ? props.templateFieldList : properties.value
+    const fieldList = isTemplateUnqiue ? props.templateFieldList : properties.value
     return getUniqueNameBase(unique, fieldList, isTemplateUnqiue)
   }
 

@@ -444,7 +444,7 @@
         prop="name"
         :label="$t('模板名称')"
         fixed="left"
-        width="230"
+        min-width="230"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <cmdb-auth tag="div" class="template-name-auth"
@@ -459,14 +459,14 @@
       </bk-table-column>
       <bk-table-column
         :label="$t('字段数量')"
-        width="130"
+        min-width="130"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <div>{{ row.field_count }}</div>
         </template>
       </bk-table-column>
       <bk-table-column
-        width="150"
+        min-width="150"
         :label="$t('绑定的模型')">
         <template slot-scope="{ row }">
           <cmdb-loading :loading="$loading(requestIds.modelCount)">
@@ -481,7 +481,7 @@
       <bk-table-column
         prop="description"
         :label="$t('描述')"
-        width="290"
+        min-width="290"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <div>{{ row.description || '--' }}</div>
@@ -490,7 +490,7 @@
       <bk-table-column
         sortable="custom"
         prop="modifier"
-        width="170"
+        min-width="170"
         :label="$t('最近更新人')"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
@@ -501,13 +501,13 @@
         sortable="custom"
         prop="last_time"
         :label="$t('最近更新时间')"
-        width="190"
+        min-width="190"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <div>{{ row.last_time }}</div>
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('操作')" width="250" fixed="right">
+      <bk-table-column :label="$t('操作')" min-width="250" fixed="right">
         <template slot-scope="{ row }">
           <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [row.id] }">
             <template slot-scope="{ disabled }">

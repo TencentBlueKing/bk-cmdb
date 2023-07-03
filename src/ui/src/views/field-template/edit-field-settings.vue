@@ -85,6 +85,10 @@
     store.commit('setTitle', `${t('编辑字段组合模板')}【${template.name}】`)
   })
 
+  const clearTemplateDraft = () => {
+    store.commit('fieldTemplate/clearTemplateDraft')
+  }
+
   // 模板最终数据，编辑后的数据优先否则为初始数据
   const templateData = computed(() => ({
     basic: basicData.value,
@@ -151,7 +155,24 @@
   }
 
   const handleLeave = () => {
-    store.commit('fieldTemplate/clearTemplateDraft')
+    clearTemplateDraft()
+  }
+
+  defineExpose({
+    leaveConfirmConfig,
+    clearTemplateDraft
+  })
+</script>
+<script>
+  export default {
+    beforeRouteLeave(to, from, next) {
+      if (![MENU_MODEL_FIELD_TEMPLATE_EDIT_BASIC, MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING].includes(to.name)) {
+        if (!this.leaveConfirmConfig.active) {
+          this.clearTemplateDraft()
+        }
+      }
+      next()
+    }
   }
 </script>
 

@@ -175,6 +175,23 @@
   const handleModelAuthUpdate = (model, isPass) => {
     set(modelEditAuths.value, model.id, isPass)
   }
+
+  defineExpose({
+    leaveConfirmConfig,
+    clearTemplateDraft
+  })
+</script>
+<script>
+  export default {
+    beforeRouteLeave(to, from, next) {
+      if (![MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS].includes(to.name)) {
+        if (!this.leaveConfirmConfig.active) {
+          this.clearTemplateDraft()
+        }
+      }
+      next()
+    }
+  }
 </script>
 
 <template>

@@ -319,7 +319,7 @@
                     </bk-button>
                     <loading :loading="$loading(diffLoadingIds[model.id])">
                       <i class="bk-icon icon-exclamation-circle-shape conflict-icon" v-if="isConflict(model)"></i>
-                      <span class="count" v-else>
+                      <span class="count-tag" v-else>
                         {{ getTotal(model.id) }}
                       </span>
                     </loading>
@@ -337,10 +337,27 @@
         <div class="main-content" v-if="selectedModel">
           <div class="main-top">
             <div class="tab-list">
-              <div :class="['tab-item', { active: currentTab === 'field' }]"
-                @click="handleToggleTab('field')">{{ $t('字段对比') }}</div>
-              <div :class="['tab-item', { active: currentTab === 'unique' }]"
-                @click="handleToggleTab('unique')">{{ $t('唯一校验对比') }}</div>
+              <div :class="['tab-item', {
+                     active: currentTab === 'field',
+                     'is-conflict': fieldDiffCounts[selectedModel.id] && fieldDiffCounts[selectedModel.id].conflict > 0
+                   }]"
+                @click="handleToggleTab('field')">
+                {{ $t('字段对比') }}
+                <span class="count-tag" v-if="fieldDiffCounts[selectedModel.id]">
+                  {{ fieldDiffCounts[selectedModel.id].total }}
+                </span>
+              </div>
+              <div :class="['tab-item', {
+                     active: currentTab === 'unique',
+                     'is-conflict': uniqueDiffCounts[selectedModel.id]
+                       && uniqueDiffCounts[selectedModel.id].conflict > 0
+                   }]"
+                @click="handleToggleTab('unique')">
+                {{ $t('唯一校验对比') }}
+                <span class="count-tag" v-if="uniqueDiffCounts[selectedModel.id]">
+                  {{ uniqueDiffCounts[selectedModel.id].total }}
+                </span>
+              </div>
             </div>
           </div>
           <div class="main-body">
@@ -355,8 +372,8 @@
               v-else-if="currentTab === 'unique'"
               :model="selectedModel"
               :diffs="uniqueDiffs[selectedModel.id]"
-              :template-unique-list="uniqueList"
               :template-field-list="fieldList"
+              :template-unique-list="uniqueList"
               :template-removed-unique-list="removedUniqueList">
             </unique-diff>
           </div>
@@ -430,17 +447,26 @@
           gap: 8px;
 
           .tab-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
             width: 162px;
             height: 32px;
-            line-height: 32px;
             background: #F5F7FA;
             border-radius: 21px;
             font-size: 14px;
-            text-align: center;
             cursor: pointer;
             &.active {
               background: #E1ECFF;
               color: #3A84FF;
+            }
+
+            &.is-conflict {
+              .count-tag {
+                color: #EA3636;
+                background: #FFDDDD;
+              }
             }
           }
         }
@@ -451,6 +477,19 @@
         height: calc(100% - 48px);
       }
     }
+  }
+
+  .count-tag {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    height: 16px;
+    background: #F0F1F5;
+    border-radius: 8px;
+    font-family: ArialMT, Arial;
+    font-size: 12px;
+    color: #979BA5;
+    padding: 0 8px;
   }
 
   .total {
@@ -554,18 +593,6 @@
       margin-left: 4px;
     }
 
-    .count {
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      height: 16px;
-      background: #F0F1F5;
-      border-radius: 8px;
-      font-size: 12px;
-      color: #979BA5;
-      padding: 0 8px;
-    }
-
     &.is-conflict {
       border: 1px solid #DCDEE5;
       background: #FFEEEE;
@@ -578,7 +605,7 @@
     &.is-selected {
       background: #F0F5FF;
       border: 1px solid #3A84FF;
-      .count {
+      .count-tag {
         background: #E1ECFF;
         color: #3A84FF;
       }
@@ -596,7 +623,7 @@
       }
 
       &:not(.readonly) {
-        .count {
+        .count-tag {
           display: none;
         }
       }

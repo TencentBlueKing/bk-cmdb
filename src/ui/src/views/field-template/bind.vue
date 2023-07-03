@@ -39,7 +39,10 @@
 
   const bindModelRef = ref(null)
   const requestIds = {
-    bind: Symbol('bind')
+    template: Symbol('template'),
+    bind: Symbol('bind'),
+    field: Symbol('bind'),
+    unique: Symbol('unique')
   }
   const isBindSuccess = ref(false)
   const modelIdList = ref([])
@@ -47,9 +50,9 @@
   watchEffect(async () => {
     try {
       const [template, templateFieldList, templateUniqueList] = await Promise.all([
-        fieldTemplateService.findById(templateId.value),
-        fieldTemplateService.getFieldList({ bk_template_id: templateId.value }),
-        fieldTemplateService.getUniqueList({ bk_template_id: templateId.value })
+        fieldTemplateService.findById(templateId.value, { requestId: requestIds.template }),
+        fieldTemplateService.getFieldList({ bk_template_id: templateId.value }, { requestId: requestIds.field }),
+        fieldTemplateService.getUniqueList({ bk_template_id: templateId.value }, { requestId: requestIds.unique })
       ])
 
       fieldData.value = templateFieldList?.info || []
@@ -113,6 +116,7 @@
   <div class="bind">
     <template v-if="!isBindSuccess">
       <bind-model
+        v-bkloading="{ isLoading: $loading(Object.values(requestIds)) }"
         ref="bindModelRef"
         :height="`${$APP.height - 111 - 52}px`"
         :template-id="templateId"
