@@ -100,10 +100,6 @@
               page: {
                 sort: 'bk_cloud_name'
               }
-            },
-            config: {
-              requestId: Symbol(this.requestId),
-              fromCache: true
             }
           })
           this.options = info
