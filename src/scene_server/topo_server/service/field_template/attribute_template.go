@@ -18,11 +18,14 @@
 package fieldtmpl
 
 import (
+	"sync"
+
 	"configcenter/pkg/filter"
 	filtertools "configcenter/pkg/tools/filter"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
@@ -70,4 +73,75 @@ func (s *service) ListFieldTemplateAttr(cts *rest.Contexts) {
 	}
 
 	cts.RespEntity(res)
+}
+
+// CountFieldTemplateAttr count field templates' attributes
+func (s *service) CountFieldTemplateAttr(ctx *rest.Contexts) {
+	opt := new(metadata.CountFieldTmplResOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// count field template's attributes
+	countInfos := make([]metadata.FieldTmplResCount, len(opt.TemplateIDs))
+
+	var wg sync.WaitGroup
+	var lock sync.Mutex
+	var firstErr errors.CCErrorCoder
+	pipeline := make(chan struct{}, 10)
+
+	for idx := range opt.TemplateIDs {
+		if firstErr != nil {
+			break
+		}
+
+		pipeline <- struct{}{}
+		wg.Add(1)
+
+		go func(idx int) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			attrOpt := &metadata.CommonQueryOption{
+				CommonFilterOption: metadata.CommonFilterOption{
+					Filter: filtertools.GenAtomFilter(common.BKTemplateID, filter.Equal, opt.TemplateIDs[idx]),
+				},
+				Page: metadata.BasePage{EnableCount: true},
+			}
+
+			attrRes, err := s.clientSet.CoreService().FieldTemplate().ListFieldTemplateAttr(ctx.Kit.Ctx, ctx.Kit.Header,
+				attrOpt)
+			if err != nil {
+				blog.Errorf("count field template attribute failed, err: %v, opt: %+v, rid: %s", err, opt, ctx.Kit.Rid)
+				if firstErr == nil {
+					firstErr = err
+				}
+				return
+			}
+
+			lock.Lock()
+			countInfos[idx] = metadata.FieldTmplResCount{
+				TemplateID: opt.TemplateIDs[idx],
+				Count:      int(attrRes.Count),
+			}
+			lock.Unlock()
+		}(idx)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		ctx.RespAutoError(firstErr)
+		return
+	}
+
+	ctx.RespEntity(countInfos)
 }
