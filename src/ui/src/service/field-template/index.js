@@ -39,7 +39,7 @@ const find = async (params, config) => {
 }
 
 // 查询模板字段数量
-const getFieldCount = (data, config) => http.post(`${window.API_HOST}findmany/field_template/attribute/count`, data, config)
+const getFieldCount = (data, config) => http.post('findmany/field_template/attribute/count', data, config)
 
 // 查询模板绑定的模型数量
 const getModelCount = (data, config) => http.post(`${window.API_HOST}findmany/field_template/object/count`, data, config)

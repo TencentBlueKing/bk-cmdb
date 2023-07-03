@@ -447,7 +447,8 @@
         width="230"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
-          <cmdb-auth class="mr10" :auth="{ type: $OPERATION.R_FIELD_TEMPLATE, relation: [row.id] }">
+          <cmdb-auth tag="div" class="template-name-auth"
+            :auth="{ type: $OPERATION.R_FIELD_TEMPLATE, relation: [row.id] }">
             <template #default="{ disabled }">
               <div :class="['cell-link-content', { disabled }]" @click.stop="handleRowIDClick(row)">
                 {{ row.name }}
@@ -638,9 +639,13 @@
       margin-top: 14px;
     }
 
+    .template-name-auth {
+      width: 100%;
+    }
     .cell-link-content {
       color: $primaryColor;
       cursor: pointer;
+      @include ellipsis;
 
       &.disabled {
         color: #a3c5fd;
