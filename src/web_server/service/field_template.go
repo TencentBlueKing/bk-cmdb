@@ -20,7 +20,6 @@ package service
 import (
 	"encoding/json"
 	"net/http"
-	"sync"
 
 	"configcenter/pkg/filter"
 	filtertools "configcenter/pkg/tools/filter"
@@ -30,12 +29,12 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
 	"github.com/gin-gonic/gin"
 )
 
 func (s *Service) initFieldTemplate(ws *gin.Engine) {
 	ws.POST("/findmany/field_template", s.ListFieldTemplate)
-	ws.POST("/findmany/field_template/attribute/count", s.CountFieldTemplateAttr)
 	ws.POST("/findmany/field_template/object/count", s.CountFieldTemplateObj)
 }
 
@@ -149,77 +148,6 @@ func (s *Service) parseFieldTmplWithObjFilter(kit *rest.Kit, tmplFilter, objFilt
 	}
 
 	return tmplFilter, false, nil
-}
-
-// CountFieldTemplateAttr count field templates' attributes ** ONLY FOR UI **
-func (s *Service) CountFieldTemplateAttr(c *gin.Context) {
-	kit := rest.NewKitFromHeader(c.Request.Header, s.CCErr)
-
-	opt := new(metadata.CountFieldTmplResOption)
-	if err := json.NewDecoder(c.Request.Body).Decode(opt); err != nil {
-		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommHTTPReadBodyFailed, ErrMsg: err.Error()})
-		return
-	}
-
-	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
-		c.JSON(http.StatusOK, metadata.BaseResp{Code: rawErr.ErrCode, ErrMsg: rawErr.ToCCError(kit.CCError).Error()})
-		return
-	}
-
-	// count field template's attributes
-	countInfos := make([]metadata.FieldTmplResCount, len(opt.TemplateIDs))
-
-	var wg sync.WaitGroup
-	var lock sync.Mutex
-	var firstErr errors.CCErrorCoder
-	pipeline := make(chan struct{}, 10)
-
-	for idx := range opt.TemplateIDs {
-		if firstErr != nil {
-			break
-		}
-
-		pipeline <- struct{}{}
-		wg.Add(1)
-
-		go func(idx int) {
-			defer func() {
-				wg.Done()
-				<-pipeline
-			}()
-
-			attrOpt := &metadata.ListFieldTmplAttrOption{
-				TemplateID: opt.TemplateIDs[idx],
-				CommonQueryOption: metadata.CommonQueryOption{
-					Page: metadata.BasePage{EnableCount: true},
-				},
-			}
-			attrRes, err := s.CoreAPI.ApiServer().FieldTemplate().ListFieldTemplateAttr(kit.Ctx, kit.Header, attrOpt)
-			if err != nil {
-				blog.Errorf("count field template attribute failed, err: %v, opt: %+v, rid: %s", err, opt, kit.Rid)
-				if firstErr == nil {
-					firstErr = err
-				}
-				return
-			}
-
-			lock.Lock()
-			countInfos[idx] = metadata.FieldTmplResCount{
-				TemplateID: opt.TemplateIDs[idx],
-				Count:      int(attrRes.Count),
-			}
-			lock.Unlock()
-		}(idx)
-	}
-
-	wg.Wait()
-
-	if firstErr != nil {
-		c.JSON(http.StatusOK, metadata.BaseResp{Code: firstErr.GetCode(), ErrMsg: firstErr.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, metadata.NewSuccessResp(countInfos))
 }
 
 // CountFieldTemplateObj count field templates related objects ** ONLY FOR UI **
