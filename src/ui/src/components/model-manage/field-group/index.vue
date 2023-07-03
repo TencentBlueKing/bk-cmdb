@@ -21,7 +21,7 @@
     <div class="field-options">
       <cmdb-auth v-if="isShowOptionBtn" :auth="authResources" @update-auth="handleReceiveAuth">
         <template #default="{ disabled }">
-          <bk-button theme="primary" :disabled="disabled"
+          <bk-button theme="primary" :disabled="disabled || activeModel.bk_ispaused"
             @click="handleAddField(displayGroupedProperties[0])">{{$t('新建字段')}}</bk-button>
         </template>
       </cmdb-auth>
@@ -49,7 +49,7 @@
       </bk-dropdown-menu>
       <cmdb-auth v-if="isShowOptionBtn" :auth="authResources" @update-auth="handleReceiveAuth">
         <template #default="{ disabled }">
-          <bk-button :disabled="disabled" @click="handleAddGroup">{{$t('新建分组')}}</bk-button>
+          <bk-button :disabled="disabled || activeModel.bk_ispaused" @click="handleAddGroup">{{$t('新建分组')}}</bk-button>
         </template>
       </cmdb-auth>
       <bk-button @click="previewShow = true" :disabled="!properties.length">{{
@@ -1300,7 +1300,6 @@ $modelHighlightColor: #3c96ff;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   width: 100%;
   align-content: flex-start;
-
   margin-top: 7px;
   font-size: 14px;
   position: relative;
