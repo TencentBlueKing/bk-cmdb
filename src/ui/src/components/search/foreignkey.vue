@@ -97,6 +97,9 @@
               page: {
                 sort: 'bk_cloud_name'
               }
+            },
+            config: {
+              requestId: this.requestId
             }
           })
           this.options = info
