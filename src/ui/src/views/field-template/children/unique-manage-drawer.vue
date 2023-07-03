@@ -123,6 +123,6 @@
 
 <style lang="scss" scoped>
   .content {
-    padding: 20px 18px;
+    padding: 24px;
   }
 </style>

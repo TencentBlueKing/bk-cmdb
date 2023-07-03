@@ -140,9 +140,6 @@
               <li
                 class="field-item"
                 v-for="(property, fieldIndex) in group.properties"
-                :class="{
-                  'only-ready': !updateAuth || !isFieldEditable(property)
-                }"
                 :key="fieldIndex"
                 @click="handleFieldDetailsView({ group, index: groupIndex, fieldIndex, property })">
                 <field-card
@@ -185,7 +182,7 @@
                   </template>
                   <template #tag-append v-if="isTemplateField(property)">
                     <div @mouseenter="(event) => handleTemplateTagHover(event, property)">
-                      <mini-tag :text="$t('模板')" />
+                      <mini-tag :text="$t('模板')" hover-bg-color="#C9F5E2" />
                     </div>
                   </template>
                 </field-card>
@@ -582,11 +579,15 @@
     },
     async created() {
       this.handleFilter = debounce(this.filterField, 300)
-      const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
+      const [properties, groups, uniqueList] = await Promise.all([
+        this.getProperties(),
+        this.getPropertyGroups(),
+        this.getVerification()
+      ])
       this.properties = properties
       this.groups = groups
+      this.uniqueList = uniqueList
       this.init(properties, groups)
-      this.searchVerification()
     },
     beforeDestroy() {
       // 通过isShow=false在划开页面时仍然会出现未关闭的情况，因此直接调用组件内部方法关闭
@@ -654,7 +655,11 @@
         return customDataIndex !== (this.bizGroupedProperties.length - 1)
       },
       async resetData(filedId) {
-        const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
+        const [properties, groups, uniqueList] = await Promise.all([
+          this.getProperties(),
+          this.getPropertyGroups(),
+          this.getVerification()
+        ])
         if (filedId && this.slider.isShow) {
           const field = properties.find(property => property.bk_property_id === filedId)
           if (field) {
@@ -665,6 +670,7 @@
         }
         this.properties = properties
         this.groups = groups
+        this.uniqueList = uniqueList
         this.init(properties, groups)
       },
       init(properties, groups) {
@@ -742,8 +748,8 @@
           }
         })
       },
-      async searchVerification() {
-        this.uniqueList = await this.searchObjectUniqueConstraints({
+      getVerification() {
+        return this.searchObjectUniqueConstraints({
           objId: this.activeModel.bk_obj_id,
           params: {},
           config: {
@@ -1455,18 +1461,18 @@ $modelHighlightColor: #3c96ff;
     margin-left: 10px;
   }
 }
-.sides-slider{
+.sides-slider {
   :deep(.slider-main) {
     padding:20px 40px;
   }
 }
-.dropdown-menu{
-  .import-btn{
+.dropdown-menu {
+  .import-btn {
     font-size: 14px;
   }
 }
-.bk-dropdown-list{
-  .bk-dropdown-item{
+.bk-dropdown-list {
+  .bk-dropdown-item {
     display: block;
     height: 32px;
     line-height: 33px;
@@ -1480,55 +1486,55 @@ $modelHighlightColor: #3c96ff;
       background: #f0f1f5;
       cursor: pointer;
     }
-    .label-btn-text{
+    .label-btn-text {
       cursor: pointer;
       font-size: 14px;
     }
-    .disabled{
+    .disabled {
       color: #c4c6cc;
     }
   }
 }
 
 .field-card-container {
-    &:hover {
-      .field-button {
-        visibility: visible;
-      }
-    }
+  &:hover {
     .field-button {
-      font-size: 0;
-      visibility: hidden;
-      color: #63656e;
-      &:hover {
-        color: #3a84ff;
-      }
-      .field-button-icon {
-        font-size: 14px;
-      }
-      &.is-disabled {
-        color: #c4c6cc;
-      }
-    }
-    .flag-append {
-      margin-left: 2px;
-    }
-    &.only-ready {
-      background-color: #f4f6f9;
+      visibility: visible;
     }
   }
-  .field-bind-template-popover-content {
-    min-width: 120px;
-    height: 15px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 12px;
-    .template-name {
-      color: #3A84FF;
-      cursor: pointer;
+  .field-button {
+    font-size: 0;
+    visibility: hidden;
+    color: #63656e;
+    &:hover {
+      color: #3a84ff;
+    }
+    .field-button-icon {
+      font-size: 14px;
+    }
+    &.is-disabled {
+      color: #c4c6cc;
     }
   }
+  .flag-append {
+    margin-left: 2px;
+  }
+  &.only-ready {
+    background-color: #EAEBF0;
+  }
+}
+.field-bind-template-popover-content {
+  min-width: 120px;
+  height: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  .template-name {
+    color: #3A84FF;
+    cursor: pointer;
+  }
+}
 </style>
 
 <style lang="scss">

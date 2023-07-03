@@ -13,12 +13,16 @@
 <script setup>
   defineProps({
     text: String,
-    theme: String
+    theme: String,
+    hoverBgColor: {
+      type: String,
+      default: ''
+    }
   })
 </script>
 
 <template>
-  <span :class="['tag', theme]">
+  <span :class="['tag', theme, { nohover: !hoverBgColor.length }]">
     <em class="tag-text">
       <slot>{{text}}</slot>
     </em>
@@ -30,7 +34,7 @@
   background: #E4FAF0;
   color: #14A568;
   border-radius: 2px;
-  padding: 1px 2px;
+  padding: 1px 4px;
   height: 16px;
   line-height: 16px;
   white-space: nowrap;
@@ -58,6 +62,10 @@
   }
   &.paused {
     color: #63656E;
+  }
+
+  &:not(.nohover):hover {
+    background: v-bind(hoverBgColor) !important;
   }
 }
 </style>

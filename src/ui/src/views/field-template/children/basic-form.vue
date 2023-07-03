@@ -21,9 +21,17 @@
     }
   })
 
+  const emit = defineEmits(['changed'])
+
   const formData = ref(cloneDeep(props.data))
   watch(() => props.data, (data) => {
     formData.value = cloneDeep(data)
+  }, { deep: true })
+
+  const unwatch = watch(formData, () => {
+    emit('changed')
+    // 场景需要不重复触发
+    unwatch()
   }, { deep: true })
 
   defineExpose({

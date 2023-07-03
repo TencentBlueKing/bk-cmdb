@@ -50,7 +50,6 @@
     {
       id: 'modifier',
       name: t('更新人'),
-      placeholder: t('请输入关键字搜索'),
       multiable: true,
       remote: true
     }
@@ -153,8 +152,9 @@
   }
 
   const fetchMember = async (val, menu) => {
-    if (!isTyeing.value || !val?.length || val === `${menu.name}：`) {
-      return
+    let query = val
+    if (!isTyeing.value || !query?.length || query === `${menu.name}：`) {
+      query = 'a'
     }
 
     let result = []
@@ -164,7 +164,7 @@
         app_code: 'bk-magicbox',
         page: 1,
         page_size: 100,
-        fuzzy_lookups: val
+        fuzzy_lookups: query
       }
       const api = `${window.API_HOST}proxy/get/usermanage${url.pathname}`
       const response = await jsonp(api, params)

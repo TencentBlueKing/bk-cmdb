@@ -28,7 +28,7 @@
   import ModelFieldSelector from './model-field-selector.vue'
   import UniqueManageDrawer from './unique-manage-drawer.vue'
   import useField, { unwrapData, excludeFieldType, isFieldExist, defaultFieldData } from './use-field'
-  import useUnique from './use-unique'
+  import useUnique, { singleRuleTypes, unionRuleTypes } from './use-unique'
 
   const props = defineProps({
     fieldList: {
@@ -70,7 +70,7 @@
   const uniqueTypeComp = ref(null)
 
   // use方法中参数默认必须是Ref类型
-  const { fieldStatus } = useField(oldFieldList, fieldLocalList)
+  const { fieldStatus, removedFieldList } = useField(oldFieldList, fieldLocalList)
   const { getUniqueByField, clearUniqueByField } =  useUnique(oldUniqueList, uniqueLocalList)
 
   const slider = reactive({
@@ -102,11 +102,6 @@
 
   // 只有字段属性的列表
   const pureFieldList = computed(() => fieldLocalList.value.map(item => item.field))
-
-  // 本次删除的字段列表
-  const removedFieldList = computed(() => oldFieldList.value
-    .filter(item => fieldStatus.value[item.id].removed)
-    .map(unwrapData))
 
   const filterWord = ref('')
   const displayFieldLocalList = computed(() => {
@@ -228,6 +223,15 @@
     }
   }
 
+  const isUniqueTypeDisabled = (fieldInfo, type) => {
+    if (type === UNIUQE_TYPES.SINGLE) {
+      return !singleRuleTypes.includes(fieldInfo.bk_property_type)
+    }
+    if (type === UNIUQE_TYPES.UNION) {
+      return !unionRuleTypes.includes(fieldInfo.bk_property_type)
+    }
+  }
+
   const handleFieldSave = (id, fieldData, extraData) => {
     if (!id && isFieldExist(fieldData, [...fieldLocalList.value, ...removedFieldList.value])) {
       $error(t('字段已在模板中存在，无法添加'))
@@ -310,12 +314,18 @@
       })
     }
   }
-  const handleUniqueEnabledChange = (enabled) => {
+  const handleUniqueEnabledChange = (enabled, fieldInfo) => {
     if (enabled) {
+      if (singleRuleTypes.includes(fieldInfo.bk_property_type)) {
+        slider.uniqueType = UNIUQE_TYPES.SINGLE
+      } else if (unionRuleTypes.includes(fieldInfo.bk_property_type)) {
+        slider.uniqueType = UNIUQE_TYPES.UNION
+      }
       nextTick(() => {
         uniqueTypeComp.value?.$el?.scrollIntoView?.()
       })
     }
+    console.log(fieldInfo, '--fieldInfo', singleRuleTypes)
   }
 
   const handleChangeUnique = (uniqueList) => {
@@ -544,7 +554,7 @@
             <grid-layout class="mt20" mode="form" :gap="24" :font-size="'14px'" :max-columns="1">
               <grid-item :label="$t('设置为唯一校验')">
                 <bk-popconfirm
-                  v-if="slider.uniqueEnabled"
+                  v-if="slider.uniqueEnabled && slider.uniqueType === UNIUQE_TYPES.UNION"
                   :content="$t('取消字段唯一校验确认提示语')"
                   width="260"
                   trigger="click"
@@ -559,7 +569,7 @@
                     v-model="slider.uniqueEnabled"
                     theme="primary"
                     :pre-check="uniqueEnabledTogglePreCheck"
-                    @change="handleUniqueEnabledChange">
+                    @change="enabled => handleUniqueEnabledChange(enabled, fieldInfo)">
                   </bk-switcher>
                 </bk-popconfirm>
                 <bk-switcher
@@ -571,13 +581,21 @@
                   :disabled="disabled"
                   v-model="slider.uniqueEnabled"
                   theme="primary"
-                  @change="handleUniqueEnabledChange">
+                  @change="enabled => handleUniqueEnabledChange(enabled, fieldInfo)">
                 </bk-switcher>
               </grid-item>
               <grid-item required :label="$t('校验类型')" ref="uniqueTypeComp" v-if="slider.uniqueEnabled">
                 <bk-radio-group class="full-width-radio" v-model="slider.uniqueType" @change="handleUniqueTypeChange">
-                  <bk-radio-button :value="UNIUQE_TYPES.SINGLE">{{$t('单独唯一')}}</bk-radio-button>
-                  <bk-radio-button :value="UNIUQE_TYPES.UNION">{{$t('联合唯一')}}</bk-radio-button>
+                  <bk-radio-button
+                    :disabled="isUniqueTypeDisabled(fieldInfo, UNIUQE_TYPES.SINGLE)"
+                    :value="UNIUQE_TYPES.SINGLE">
+                    {{$t('单独唯一')}}
+                  </bk-radio-button>
+                  <bk-radio-button
+                    :disabled="isUniqueTypeDisabled(fieldInfo, UNIUQE_TYPES.UNION)"
+                    :value="UNIUQE_TYPES.UNION">
+                    {{$t('联合唯一')}}
+                  </bk-radio-button>
                 </bk-radio-group>
               </grid-item>
             </grid-layout>
@@ -668,6 +686,12 @@
       flex: 1;
       :deep(.bk-radio-button-text) {
         width: 100%;
+      }
+
+      &.disabled:first-child {
+        :deep(.bk-radio-button-text) {
+          border-left: 1px solid currentColor;
+        }
       }
     }
   }

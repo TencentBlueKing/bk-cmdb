@@ -16,10 +16,9 @@
   import cloneDeep from 'lodash/cloneDeep'
   import { t } from '@/i18n'
   import { $error } from '@/magicbox'
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { UNIUQE_TYPES } from '@/dictionary/model-constants'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
-  import useUnique, { wrapData, isUniqueExist } from './use-unique'
+  import useUnique, { wrapData, isUniqueExist, singleRuleTypes, unionRuleTypes } from './use-unique'
 
   const props = defineProps({
     uniqueList: {
@@ -55,20 +54,6 @@
     subset: Symbol('subset'),
     superset: Symbol('superset')
   })
-
-  const singleRuleTypes = [
-    PROPERTY_TYPES.SINGLECHAR,
-    PROPERTY_TYPES.INT,
-    PROPERTY_TYPES.FLOAT
-  ]
-  const unionRuleTypes = [
-    PROPERTY_TYPES.SINGLECHAR,
-    PROPERTY_TYPES.INT,
-    PROPERTY_TYPES.FLOAT,
-    PROPERTY_TYPES.ENUM,
-    PROPERTY_TYPES.DATE,
-    PROPERTY_TYPES.LIST
-  ]
 
   const newFieldID = -1
   const newDefaultRule = (autoSelect = true) => {
@@ -382,6 +367,7 @@
             </template>
             <template v-else>{{$t('唯一校验超集提示')}}</template>
           </div>
+          <mini-tag :text="$t('删除')" theme="removed" class="status-tag" v-if="uniqueStatus[unique.id].removed" />
         </div>
       </div>
     </div>
@@ -459,6 +445,9 @@
     }
 
     .unique-item {
+      .compose-form {
+        opacity: .5;
+      }
       .operation {
         .link {
           :deep(.bk-link-text) {

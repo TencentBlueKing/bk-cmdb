@@ -44,7 +44,8 @@
   }))
   const [{ properties, pending }] = useProperty(searchParams)
 
-  const fieldList = computed(() => properties.value.filter(item => !excludeFieldType.includes(item.bk_property_type)))
+  const fieldList = computed(() => properties.value
+    .filter(item => !excludeFieldType.includes(item.bk_property_type) && !item.ispre))
   const selectedStatus = computed(() => {
     const status = {
       selected: {},
@@ -114,7 +115,9 @@
             <bk-link theme="primary" @click="handleClearSelect">{{ $t('清空') }}</bk-link>
           </div>
         </div>
-        <div class="field-list" v-if="selectedModelId" v-bkloading="{ isLoading: pending }">
+        <div :class="['field-list', { empty: !fieldList.length }]"
+          v-if="selectedModelId"
+          v-bkloading="{ isLoading: pending }">
           <field-card
             v-for="(field, index) in fieldList"
             :key="index"
@@ -133,6 +136,11 @@
               </bk-checkbox>
             </template>
           </field-card>
+          <div class="field-list-empty" v-if="!fieldList.length">
+            <div class="tips">
+              <bk-icon type="info" />{{$t('无可用字段')}}
+            </div>
+          </div>
         </div>
         <div class="unselected-model" v-if="!selectedModelId">
           <div class="tips">
@@ -177,6 +185,10 @@
       align-content: flex-start;
       padding: 16px;
       background: #F5F7FA;
+
+      &.empty {
+        display: block;
+      }
     }
 
     .select-toolbar {
@@ -202,7 +214,8 @@
       }
     }
 
-    .unselected-model {
+    .unselected-model,
+    .field-list-empty {
       display: flex;
       align-items: center;
       justify-content: center;

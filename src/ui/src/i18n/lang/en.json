@@ -1758,7 +1758,7 @@
     "字段对比": "Field Comparison",
     "唯一校验对比": "Unique Check Comparison",
     "暂无对比，请先绑定模型": "No comparison yet, please bind the model first",
-    "绑定变化": "Binding changes",
+    "绑定变化：": "Binding changes: ",
     "绑定前": "Before binding",
     "绑定后": "After binding",
     "更新差异": "Update diff",
@@ -1792,5 +1792,14 @@
     "未编辑完成的数据将被忽略，原数据不会被更改": "Unedited data will be ignored and the original data will not be changed",
     "校验未通过，数据不会被更新": "If the verification fails, the data will not be updated",
     "唯一校验已在模板中存在，无法恢复": "The unique check already exists in the template and cannot be restored",
-    "本次删除的校验": "Validation for this deletion"
+    "本次删除的校验": "Validation for this deletion",
+    "模板保存成功": "Template Save Success",
+    "无可用字段": "No field available",
+    "模板字段与模型字段的字段名称相同，但字段 ID 不一致": "The template field has the same field name as the model field, but the field ID does not match",
+    "配置一致，配置被模板进行纳管": "The configuration is consistent, and the configuration is managed by the template",
+    "字段冲突，该字段与模板字段的字段类型不一致": "Field conflict, the field is inconsistent with the field type of the template field",
+    "字段冲突，该字段与模板字段的ID不一致": "Field conflict, the field does not match the ID of the template field",
+    "暂无对应模型的编辑权限，请先申请模型的编辑权限": "There is no editing permission for the corresponding model, please apply for the editing permission of the model first",
+    "新建步骤未完成，退出将撤销当前操作": "The creation step is not completed, exiting will undo the current operation",
+    "编辑步骤未完成，退出将撤销当前操作": "The editing step is not completed, exiting will undo the current operation"
 }

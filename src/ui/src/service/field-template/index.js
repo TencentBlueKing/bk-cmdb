@@ -47,7 +47,7 @@ const getModelCount = (data, config) => http.post(`${window.API_HOST}findmany/fi
 // 查询模板简要信息
 const findById = (id, config = {}) => http.get(`find/field_template/${id}`, config)
 
-// 查询模板字段
+// 查询模板字段，查看权限
 const getFieldList = (data, config) => http.post('findmany/field_template/attribute', {
   page: {
     ...maxPageParams(MAX_FIELD_COUNT),
@@ -56,7 +56,7 @@ const getFieldList = (data, config) => http.post('findmany/field_template/attrib
   ...data,
 }, config)
 
-// 查询模板唯一校验
+// 查询模板唯一校验，查看权限
 const getUniqueList = (data, config) => http.post('findmany/field_template/unique', data, config)
 
 // 查询模板绑定的模型

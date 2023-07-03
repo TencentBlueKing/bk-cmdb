@@ -94,6 +94,7 @@
           PROPERTY_TYPES.INT,
           PROPERTY_TYPES.FLOAT,
           PROPERTY_TYPES.ENUM,
+          PROPERTY_TYPES.ENUMMULTI,
           PROPERTY_TYPES.DATE,
           PROPERTY_TYPES.LIST
         ]),

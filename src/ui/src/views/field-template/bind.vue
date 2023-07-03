@@ -55,11 +55,10 @@
       fieldData.value = templateFieldList?.info || []
       uniqueData.value = templateUniqueList?.info || []
 
-      store.commit('setTitle', `${t('绑定模板')}【${template.name}】`)
+      store.commit('setTitle', `${t('绑定模型')}【${template.name}】`)
 
       const modelList = await fieldTemplateService.getBindModel({
-        bk_template_id: templateId.value,
-        // filter: {}
+        bk_template_id: templateId.value
       })
       bindModelData.value = modelList
     } catch (err) {
@@ -70,6 +69,12 @@
   const finalFieldList = computed(() => normalizeFieldData(fieldData.value, false))
   const finalUniqueList = computed(() => normalizeUniqueData(uniqueData.value, fieldData.value, false))
 
+  const addedModelList = computed(() => bindModelRef.value?.modelList)
+  const submitButtonDisabled = computed(() => !addedModelList.value?.length
+    || !isDiffDone.value
+    || hasDiffError.value
+    || hasDiffConflict.value)
+
   const handleDiffUpdate = (hasError, hasConflict) => {
     isDiffDone.value = true
     hasDiffError.value = hasError
@@ -77,8 +82,8 @@
   }
 
   const handleSubmit = async () => {
-    const modelIds = bindModelRef.value?.modelList?.map?.(model => model.id)
-    if (!modelIds) {
+    const modelIds = addedModelList.value?.map?.(model => model.id)
+    if (!modelIds?.length) {
       console.error('data error!')
       return
     }
@@ -124,7 +129,7 @@
           <template #default="{ disabled }">
             <bk-button
               theme="primary"
-              :disabled="disabled || !isDiffDone || hasDiffError || hasDiffConflict"
+              :disabled="disabled || submitButtonDisabled"
               :loading="$loading(requestIds.bind)"
               @click="handleSubmit">
               {{$t('提交')}}

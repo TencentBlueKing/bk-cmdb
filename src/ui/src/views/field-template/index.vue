@@ -303,7 +303,7 @@
       params: {
         id
       },
-      history: true
+      history: false
     })
   }
   const handleBind = (id) => {
@@ -317,7 +317,7 @@
   }
 
   const handleSortChange = (sort) => {
-    table.sort = getSort(sort, { prop: 'name', order: 'descending' })
+    table.sort = getSort(sort)
     RouterQuery.refresh()
   }
 
@@ -443,21 +443,29 @@
         sortable="custom"
         prop="name"
         :label="$t('模板名称')"
+        fixed="left"
+        width="230"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
-          <div class="cell-link-content" @click.stop="handleRowIDClick(row)">{{ row.name }}</div>
+          <cmdb-auth class="mr10" :auth="{ type: $OPERATION.R_FIELD_TEMPLATE, relation: [row.id] }">
+            <template #default="{ disabled }">
+              <div :class="['cell-link-content', { disabled }]" @click.stop="handleRowIDClick(row)">
+                {{ row.name }}
+              </div>
+            </template>
+          </cmdb-auth>
         </template>
       </bk-table-column>
       <bk-table-column
-        prop="name"
         :label="$t('字段数量')"
+        width="130"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <div>{{ row.field_count }}</div>
         </template>
       </bk-table-column>
       <bk-table-column
-        prop="name"
+        width="150"
         :label="$t('绑定的模型')">
         <template slot-scope="{ row }">
           <cmdb-loading :loading="$loading(requestIds.modelCount)">
@@ -470,8 +478,9 @@
         </template>
       </bk-table-column>
       <bk-table-column
-        prop="name"
+        prop="description"
         :label="$t('描述')"
+        width="290"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <div>{{ row.description || '--' }}</div>
@@ -479,7 +488,8 @@
       </bk-table-column>
       <bk-table-column
         sortable="custom"
-        prop="name"
+        prop="modifier"
+        width="170"
         :label="$t('最近更新人')"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
@@ -488,14 +498,15 @@
       </bk-table-column>
       <bk-table-column
         sortable="custom"
-        prop="name"
+        prop="last_time"
         :label="$t('最近更新时间')"
+        width="190"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <div>{{ row.last_time }}</div>
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('操作')" fixed="right">
+      <bk-table-column :label="$t('操作')" width="250" fixed="right">
         <template slot-scope="{ row }">
           <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [row.id] }">
             <template slot-scope="{ disabled }">
@@ -533,17 +544,17 @@
               </bk-button>
             </template>
           </cmdb-auth>
-          <cmdb-auth
-            :auth="{ type: $OPERATION.D_FIELD_TEMPLATE, relation: [row.id] }"
-            v-bk-tooltips.top="{ content: $t('已被模型绑定，不能删除'), disabled: !row.model_count }">
-            <template slot-scope="{ disabled }">
-              <bk-button
-                theme="primary"
-                :disabled="disabled || row.model_count > 0"
-                :text="true"
-                @click.stop="handleDelete(row)">
-                {{$t('删除')}}
-              </bk-button>
+          <cmdb-auth :auth="{ type: $OPERATION.D_FIELD_TEMPLATE, relation: [row.id] }">
+            <template #default="{ disabled }">
+              <div v-bk-tooltips.top="{ content: $t('已被模型绑定，不能删除'), disabled: !row.model_count }">
+                <bk-button
+                  theme="primary"
+                  :disabled="disabled || row.model_count > 0"
+                  :text="true"
+                  @click.stop="handleDelete(row)">
+                  {{$t('删除')}}
+                </bk-button>
+              </div>
             </template>
           </cmdb-auth>
         </template>
@@ -630,6 +641,10 @@
     .cell-link-content {
       color: $primaryColor;
       cursor: pointer;
+
+      &.disabled {
+        color: #a3c5fd;
+      }
     }
     .cell-unbind {
       color: #FF9C01;

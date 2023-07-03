@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { ref, computed, watchEffect } from 'vue'
+  import { ref, computed, reactive, nextTick, watchEffect } from 'vue'
   import { t } from '@/i18n'
   import { useRoute } from '@/router/index'
   import { useStore } from '@/store'
@@ -21,6 +21,7 @@
     MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS
   } from '@/dictionary/menu-symbol'
   import { $success } from '@/magicbox/index.js'
+  import LeaveConfirm from '@/components/ui/dialog/leave-confirm'
   import TopSteps from './children/top-steps.vue'
   import BasicForm from './children/basic-form.vue'
   import fieldTemplateService from '@/service/field-template'
@@ -37,6 +38,11 @@
     { title: t('模型信息确认'), icon: 3 }
   ]
 
+  const leaveConfirmConfig = reactive({
+    id: 'editFlowBasic',
+    active: false
+  })
+
   const templateId = computed(() => Number(route.params.id))
   const basicFormRef = ref(null)
 
@@ -52,6 +58,10 @@
     basicData.value.name = templateDraft.value.basic.name ?? template.name
     basicData.value.description = templateDraft.value.basic.description ?? template.description
   })
+
+  const handleFormDataChanged = () => {
+    leaveConfirmConfig.active = true
+  }
 
   const handleSave = async () => {
     if (!await basicFormRef.value.$validator.validateAll()) {
@@ -71,27 +81,29 @@
     }
   }
   const handleNextStep = () => {
+    leaveConfirmConfig.active = false
+
     const { formData } = basicFormRef.value
     store.commit('fieldTemplate/setTemplateDraft', { basic: formData })
-    routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
-      history: true
+
+    nextTick(() => {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
+        history: false
+      })
     })
   }
   const handleCancel = () => {
-    routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE
+    leaveConfirmConfig.active = false
+    nextTick(() => {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE
+      })
     })
   }
-</script>
-<script>
-  export default {
-    beforeRouteLeave(to, from, next) {
-      if (![MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS].includes(to.name)) {
-        this.$store.commit('fieldTemplate/clearTemplateDraft')
-      }
-      next()
-    }
+
+  const handleLeave = () => {
+    store.commit('fieldTemplate/clearTemplateDraft')
   }
 </script>
 
@@ -100,7 +112,7 @@
     <template #header="{ sticky }">
       <top-steps :steps="steps" width="45%" :class="{ 'is-sticky': sticky }"></top-steps>
     </template>
-    <basic-form :data="basicData" ref="basicFormRef"></basic-form>
+    <basic-form :data="basicData" ref="basicFormRef" @changed="handleFormDataChanged"></basic-form>
     <template #footer="{ sticky }">
       <div :class="['layout-footer', { 'is-sticky': sticky }]">
         <cmdb-auth :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }">
@@ -126,6 +138,15 @@
         <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
       </div>
     </template>
+    <leave-confirm
+      v-bind="leaveConfirmConfig"
+      :reverse="true"
+      :title="$t('是否退出')"
+      :content="$t('编辑步骤未完成，退出将撤销当前操作')"
+      :ok-text="$t('退出')"
+      :cancel-text="$t('取消')"
+      @leave="handleLeave">
+    </leave-confirm>
   </cmdb-sticky-layout>
 </template>
 

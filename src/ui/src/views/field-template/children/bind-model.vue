@@ -39,8 +39,18 @@
       type: Array,
       default: () => ([])
     },
+    // 删除的模板字段列表
+    removedFieldList: {
+      type: Array,
+      default: () => ([])
+    },
     // 模板唯一校验列表
     uniqueList: {
+      type: Array,
+      default: () => ([])
+    },
+    // 删除的模板唯一校验
+    removedUniqueList: {
       type: Array,
       default: () => ([])
     },
@@ -51,7 +61,7 @@
     height: String
   })
 
-  const emit = defineEmits(['update-diffs'])
+  const emit = defineEmits(['update-diffs', 'update-model-auth'])
 
   const http = useHttp()
 
@@ -182,13 +192,6 @@
     })
     return counts
   })
-  const displayDiffCounts = computed(() => {
-    const countMap = {
-      field: fieldDiffCounts.value,
-      unique: uniqueDiffCounts.value,
-    }
-    return countMap[currentTab.value]
-  })
 
   watch([fieldDiffCounts, uniqueDiffCounts], (diffCounts) => {
     let hasDiffConflict = false
@@ -222,7 +225,12 @@
   }
 
   const isSelected = model => model.id === selectedModel.value.id
-  const isConflict = model => displayDiffCounts.value[model.id] && displayDiffCounts.value[model.id].conflict
+
+  const isConflict = model => (fieldDiffCounts.value[model.id] && fieldDiffCounts.value[model.id].conflict)
+    || (uniqueDiffCounts.value[model.id] && uniqueDiffCounts.value[model.id].conflict)
+
+  const getTotal = id => (fieldDiffCounts.value[id]?.total ?? 0) + (uniqueDiffCounts.value[id]?.total ?? 0)
+
   const handleClickAddModel = () => {
     selectModelDialogRef.value.show()
   }
@@ -248,6 +256,10 @@
     currentTab.value = tab
   }
 
+  const handleModelAuthUpdate = (model, isPass) => {
+    emit('update-model-auth', model, isPass)
+  }
+
   defineExpose({
     modelList: modelListLocal.value
   })
@@ -271,7 +283,11 @@
         </div>
         <div class="model-list" v-if="modelListLocal.length">
           <template v-for="(model, modelIndex) in modelListLocal">
-            <cmdb-auth :key="modelIndex" tag="div" :auth="{ type: $OPERATION.U_MODEL, relation: [model.id] }">
+            <cmdb-auth
+              :key="modelIndex"
+              tag="div"
+              :auth="{ type: $OPERATION.U_MODEL, relation: [model.id] }"
+              @update-auth="isPass => handleModelAuthUpdate(model, isPass)">
               <template #default="{ disabled }">
                 <div :key="modelIndex"
                   :class="['model-item', {
@@ -304,7 +320,7 @@
                     <loading :loading="$loading(diffLoadingIds[model.id])">
                       <i class="bk-icon icon-exclamation-circle-shape conflict-icon" v-if="isConflict(model)"></i>
                       <span class="count" v-else>
-                        {{ displayDiffCounts[model.id] && displayDiffCounts[model.id].total }}
+                        {{ getTotal(model.id) }}
                       </span>
                     </loading>
                   </div>
@@ -332,14 +348,16 @@
               v-if="currentTab === 'field'"
               :model="selectedModel"
               :diffs="fieldDiffs[selectedModel.id]"
-              :template-field-list="fieldList">
+              :template-field-list="fieldList"
+              :template-removed-field-list="removedFieldList">
             </field-diff>
             <unique-diff
               v-else-if="currentTab === 'unique'"
               :model="selectedModel"
               :diffs="uniqueDiffs[selectedModel.id]"
               :template-unique-list="uniqueList"
-              :template-field-list="fieldList">
+              :template-field-list="fieldList"
+              :template-removed-unique-list="removedUniqueList">
             </unique-diff>
           </div>
         </div>
