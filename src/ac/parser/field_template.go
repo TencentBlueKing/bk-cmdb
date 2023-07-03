@@ -41,6 +41,13 @@ var FieldTemplateAuthConfigs = []AuthConfig{
 		ResourceAction: meta.SkipAction,
 	},
 	{
+		Name:           "ListFieldTemplateAttrCount",
+		Description:    "查询字段模板属性数量",
+		Pattern:        "/api/v3/findmany/field_template/attribute/count",
+		HTTPMethod:     http.MethodPost,
+		ResourceAction: meta.SkipAction,
+	},
+	{
 		Name:           "ListObjFieldTmplRel",
 		Description:    "查询字段模板和模型关系列表",
 		Pattern:        "/api/v3/findmany/field_template/object/relation",
