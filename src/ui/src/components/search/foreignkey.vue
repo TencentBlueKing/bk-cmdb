@@ -34,6 +34,8 @@
 
 <script>
   import activeMixin from './mixins/active'
+  import debounce from 'lodash.debounce'
+
   export default {
     name: 'cmdb-search-foreignkey',
     mixins: [activeMixin],
@@ -81,21 +83,16 @@
     },
     created() {
       this.getCloudArea()
+      this.searchArea =  debounce(this.getCloudArea, 300)
     },
     methods: {
-      searchArea(key) {
-        if (this.searchTimer) {
-          clearTimeout(this.searchTimer)
-        }
-        this.searchTimer = setTimeout(() => {
-          this.getCloudArea({ bk_cloud_name: key })
-        }, 300)
-      },
-      async getCloudArea(condition) {
+      async getCloudArea(key) {
         try {
           const { info } = await this.$store.dispatch('cloud/area/findMany', {
             params: {
-              condition,
+              condition: {
+                bk_cloud_name: key
+              },
               is_fuzzy: true,
               page: {
                 sort: 'bk_cloud_name'
