@@ -49,8 +49,7 @@
                 @confirm="handleModelNameUpdateConfirm"
                 :editable="isEditable"
                 validate="required|singlechar|length:256|reservedWord"
-                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
-              >
+                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
                 <template #append>
                   <bk-tag v-if="activeModel.bk_ispaused" size="small" theme="default">{{$t('已停用')}}</bk-tag>
                 </template>
@@ -282,7 +281,7 @@
     MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS, BUILTIN_MODELS } from '@/dictionary/model-constants.js'
-  import EditableField from './editable-field.vue'
+  import EditableField from '@/components/ui/details/editable-field.vue'
   import FlexTag from '@/components/ui/flex-tag'
   import fieldTemplateService from '@/service/field-template'
 
@@ -859,9 +858,11 @@
         .model-identity {
           width: 225px;
           margin-left: 10px;
+          margin-right: 10px;
 
           .model-name {
             font-weight: 700;
+            color: #313238;
             line-height: 26px;
 
             .bk-tag {

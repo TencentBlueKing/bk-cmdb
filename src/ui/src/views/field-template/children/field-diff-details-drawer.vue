@@ -94,7 +94,7 @@
         title = t('字段冲突，该字段与模板字段的字段类型不一致')
       }
       if (isFieldNameSame.value && !isFieldIdSame.value) {
-        title = t('字段冲突，该字段与模板字段的ID不一致')
+        title = t('字段冲突，模板字段与模型字段的字段名称相同，但字段ID不一致')
       }
     }
     return title

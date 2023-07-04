@@ -407,6 +407,13 @@
   const handleBindModelChange = (templateId) => {
     getModelCount([templateId])
   }
+
+  const handleUpdateTemplate = (id, val, dataKey) => {
+    const row = table.list.find(row => row.id === id)
+    if (row) {
+      set(row, dataKey, val)
+    }
+  }
 </script>
 
 <template>
@@ -593,6 +600,7 @@
       @bind-change="handleBindModelChange"
       @clone-done="handleCloneDone"
       @delete-done="handleDeleteDone"
+      @update-template="handleUpdateTemplate"
       @close="handleDetailsDrawerClose">
     </template-details>
 
