@@ -142,6 +142,23 @@
   const handleLeave = () => {
     clearTemplateDraft()
   }
+
+  defineExpose({
+    leaveConfirmConfig,
+    clearTemplateDraft
+  })
+</script>
+<script>
+  export default {
+    beforeRouteLeave(to, from, next) {
+      if (![MENU_MODEL_FIELD_TEMPLATE_CREATE_BASIC].includes(to.name)) {
+        if (!this.leaveConfirmConfig.active) {
+          this.clearTemplateDraft()
+        }
+      }
+      next()
+    }
+  }
 </script>
 
 <template>

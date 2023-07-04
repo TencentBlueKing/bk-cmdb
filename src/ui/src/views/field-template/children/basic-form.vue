@@ -21,18 +21,16 @@
     }
   })
 
-  const emit = defineEmits(['changed'])
+  const emit = defineEmits(['change'])
 
   const formData = ref(cloneDeep(props.data))
   watch(() => props.data, (data) => {
     formData.value = cloneDeep(data)
   }, { deep: true })
 
-  const unwatch = watch(formData, () => {
-    emit('changed')
-    // 场景需要不重复触发
-    unwatch()
-  }, { deep: true })
+  const handleFormDataChange = () => {
+    emit('change')
+  }
 
   defineExpose({
     formData
@@ -48,14 +46,22 @@
           v-validate="'required|length:256'"
           name="name"
           :placeholder="$t('请输入模板名称')"
-          v-model="formData.name">
+          v-model="formData.name"
+          @change="handleFormDataChange">
         </bk-input>
         <p class="form-error" v-if="errors.has('name')">{{errors.first('name')}}</p>
       </bk-form-item>
       <bk-form-item :label="$t('描述')" :property="'description'"
         class="cmdb-form-item" :class="{ 'is-error': errors.has('description') }">
-        <bk-input type="textarea" :rows="4" name="description" v-validate="'length:2000'"
-          v-model="formData.description" :placeholder="$t('请输入模板描述')"></bk-input>
+        <bk-input
+          type="textarea"
+          :rows="4"
+          name="description"
+          v-validate="'length:2000'"
+          v-model="formData.description"
+          :placeholder="$t('请输入模板描述')"
+          @change="handleFormDataChange">
+        </bk-input>
         <p class="form-error" v-if="errors.has('description')">{{errors.first('description')}}</p>
       </bk-form-item>
     </bk-form>

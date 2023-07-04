@@ -59,7 +59,11 @@
     basicData.value.description = templateDraft.value.basic.description ?? template.description
   })
 
-  const handleFormDataChanged = () => {
+  const clearTemplateDraft = () => {
+    store.commit('fieldTemplate/clearTemplateDraft')
+  }
+
+  const handleFormDataChange = () => {
     leaveConfirmConfig.active = true
   }
 
@@ -103,7 +107,24 @@
   }
 
   const handleLeave = () => {
-    store.commit('fieldTemplate/clearTemplateDraft')
+    clearTemplateDraft()
+  }
+
+  defineExpose({
+    leaveConfirmConfig,
+    clearTemplateDraft
+  })
+</script>
+<script>
+  export default {
+    beforeRouteLeave(to, from, next) {
+      if (![MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS].includes(to.name)) {
+        if (!this.leaveConfirmConfig.active) {
+          this.clearTemplateDraft()
+        }
+      }
+      next()
+    }
   }
 </script>
 
@@ -112,7 +133,7 @@
     <template #header="{ sticky }">
       <top-steps :steps="steps" width="45%" :class="{ 'is-sticky': sticky }"></top-steps>
     </template>
-    <basic-form :data="basicData" ref="basicFormRef" @changed="handleFormDataChanged"></basic-form>
+    <basic-form :data="basicData" ref="basicFormRef" @change="handleFormDataChange"></basic-form>
     <template #footer="{ sticky }">
       <div :class="['layout-footer', { 'is-sticky': sticky }]">
         <cmdb-auth :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }">
