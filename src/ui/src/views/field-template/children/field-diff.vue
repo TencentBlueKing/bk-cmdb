@@ -140,7 +140,13 @@
 
   const getFieldCardClassName = field => getFieldDiffType(field)
 
-  const isTemplate = field => props.templateFieldList.some(item => item.id === field.bk_template_id)
+  const isTemplate = (field) => {
+    const diffType = getFieldDiffType(field)
+    if (diffType === DIFF_TYPES.NEW) {
+      return true
+    }
+    return props.templateFieldList.some(item => item.id === field.bk_template_id)
+  }
 
   const handleClickField = (field) => {
     const diffType = getFieldDiffType(field)

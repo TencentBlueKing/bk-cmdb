@@ -147,7 +147,7 @@
         <div class="col before-col">
           <div class="diff-item" v-for="(unique, index) in modelBeforeUniqueList" :key="index">
             {{ getUniqueName(unique) }}
-            <mini-tag :text="$t('模板')" v-if="unique.bk_template_id > 0" />
+            <mini-tag :text="$t('模板')" v-if="isTemplate(unique)" />
           </div>
         </div>
         <div class="col after-col">

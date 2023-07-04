@@ -236,3 +236,15 @@
   background: #fff;
 }
 </style>
+<style lang="scss">
+.bk-search-list {
+  max-width: 360px;
+  .bk-search-list-menu-item {
+    width: 100%;
+    .item-name {
+      width: 100%;
+      @include ellipsis;
+    }
+  }
+}
+</style>

@@ -11,11 +11,13 @@
 -->
 
 <script setup>
-  import { computed, ref, watchEffect } from 'vue'
+  import { computed, ref, watchEffect, watch, nextTick } from 'vue'
+  import cloneDeep from 'lodash/cloneDeep'
   import { useRoute } from '@/router/index'
   import { t } from '@/i18n'
   import { $success } from '@/magicbox/index.js'
   import CmdbTab from '@/components/ui/tab/index.vue'
+  import EditableField from '@/components/ui/details/editable-field.vue'
   import DetailsField from './details-field.vue'
   import DetailsUnique from './details-unique.vue'
   import DetailsModel from './details-model.vue'
@@ -40,21 +42,50 @@
     }
   })
 
-  const emit = defineEmits(['close', 'bind-change', 'clone-done', 'delete-done'])
+  const emit = defineEmits(['close', 'bind-change', 'clone-done', 'delete-done', 'update-template'])
 
   const route = useRoute()
 
   const templateId = computed(() => props.template?.id)
   const queryTab = computed(() => route.query.tab)
 
-  const templateLocal = computed(() => [props.template])
-  const { handleDelete: handleDeleteTemplate } = useTemplate(templateLocal)
+  const templateList = computed(() => [cloneDeep(props.template)])
+  const templateName = computed({
+    get() {
+      return templateList.value?.[0]?.name
+    },
+    set(val) {
+      emit('update-template', templateId.value, val, 'name')
+    }
+  })
+  const templateDesc = computed({
+    get() {
+      return templateList.value?.[0]?.description
+    },
+    set(val) {
+      emit('update-template', templateId.value, val, 'description')
+    }
+  })
+  const { handleDelete: handleDeleteTemplate } = useTemplate(templateList)
 
   const fieldCount = ref('')
   const modelCount = ref('')
   const uniqueList = ref([])
   const previewFieldList = ref([])
   const previewShow = ref(false)
+
+  const isNameEditing = ref(false)
+  const isDescEditing = ref(false)
+  watch([isNameEditing, isDescEditing], ([nameEditing, descEditing]) => {
+    nextTick(() => {
+      if (nameEditing) {
+        isDescEditing.value = false
+      }
+      if (descEditing) {
+        isNameEditing.value = false
+      }
+    })
+  })
 
   const isShowCloneDialog = ref(false)
 
@@ -164,6 +195,26 @@
   const handleClose = () => {
     emit('close')
   }
+
+  const handleSaveTemplate = async ({ value, confirm, stop }, dataKey) => {
+    try {
+      await fieldTemplateService.updateBaseInfo({
+        id: templateId.value,
+        name: templateName.value,
+        [dataKey]: value
+      })
+      confirm()
+    } catch (err) {
+      stop()
+      console.log(err)
+    }
+  }
+  const handleSaveName = (arg) => {
+    handleSaveTemplate(arg, 'name')
+  }
+  const handleSaveDesc = async (arg) => {
+    handleSaveTemplate(arg, 'description')
+  }
 </script>
 <script>
   export default {
@@ -183,11 +234,35 @@
     <cmdb-sticky-layout slot="content" class="content">
       <div class="content-head">
         <div class="data-row">
-          <div class="data-value title">{{ template.name }}</div>
+          <div class="data-value title">
+            <editable-field
+              class="editable-field-name"
+              v-model="templateName"
+              :editing.sync="isNameEditing"
+              font-size="12px"
+              validate="required|length:256"
+              :placeholder="$t('请输入模板名称')"
+              :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }"
+              @confirm="handleSaveName">
+            </editable-field>
+          </div>
         </div>
         <div class="data-row">
           <div class="data-key">{{$t('描述：')}}</div>
-          <div class="data-value">{{ template.description || '--' }}</div>
+          <div class="data-value desc">
+            <editable-field
+              class="editable-field-desc"
+              v-model="templateDesc"
+              :editing.sync="isDescEditing"
+              type="longchar"
+              :rows="4"
+              font-size="12px"
+              validate="length:2000"
+              :placeholder="$t('请输入模板描述')"
+              :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }"
+              @confirm="handleSaveDesc">
+            </editable-field>
+          </div>
         </div>
         <cmdb-tab class="details-tab" :tabs="tabs" :active="tabActive" @change="handleTabChange" />
       </div>
@@ -256,17 +331,29 @@
         display: flex;
         align-items: center;
         font-size: 12px;
-        margin-bottom: 12px;
+        margin-bottom: 4px;
+        line-height: 34px;
 
         .data-key {
           color: #63656E;
+          flex: none;
+          align-self: start;
         }
         .data-value {
           color: #313238;
         }
         .title {
-          font-weight: 700;
+          width: 368px;
+          font-weight: 700 !important;
           font-size: 14px;
+        }
+        .desc {
+          width: 368px;
+        }
+
+        .editable-field-name,
+        .editable-field-desc {
+          width: 100%;
         }
       }
 

@@ -226,6 +226,7 @@
   import { PROPERTY_TYPES, PROPERTY_TYPE_LIST } from '@/dictionary/property-constants'
   import { isEmptyPropertyValue } from '@/utils/tools'
   import useSideslider from '@/hooks/use-sideslider'
+  import { singleRuleTypes, unionRuleTypes } from '@/views/field-template/children/use-unique'
   import fieldTemplateService from '@/service/field-template'
 
   export default {
@@ -420,14 +421,7 @@
         return !this.fieldInfo.bk_property_id || !this.fieldInfo.bk_property_name
       },
       isUniqueSettingShow() {
-        const types = [
-          PROPERTY_TYPES.SINGLECHAR,
-          PROPERTY_TYPES.INT,
-          PROPERTY_TYPES.FLOAT,
-          PROPERTY_TYPES.ENUM,
-          PROPERTY_TYPES.DATE,
-          PROPERTY_TYPES.LIST
-        ]
+        const types = [...new Set([...singleRuleTypes, ...unionRuleTypes])]
         return types.includes(this.fieldInfo.bk_property_type) && !this.uniqueDisabled
       },
       isFromTemplateField() {
