@@ -166,7 +166,16 @@
 <template>
   <div class="details-model" v-bkloading="{ isLoading: firstLoading }">
     <div class="action-bar">
-      <bk-button theme="primary" :outline="true" @click="handleGoBindModel">{{$t('绑定新模型')}}</bk-button>
+      <cmdb-auth :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }">
+        <template #default="{ disabled }">
+          <bk-button
+            theme="primary"
+            :outline="true"
+            :disabled="disabled"
+            @click="handleGoBindModel">{{$t('绑定新模型')}}</bk-button>
+        </template>
+      </cmdb-auth>
+
       <bk-input
         class="search-input"
         v-model="searchName"

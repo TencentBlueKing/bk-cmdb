@@ -200,6 +200,7 @@
             </template>
           </cmdb-auth>
           <bk-button
+            :disabled="submitButtonDisabled"
             @click="handlePreview">
             {{$t('预览')}}
           </bk-button>
