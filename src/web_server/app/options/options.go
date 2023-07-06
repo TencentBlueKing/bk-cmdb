@@ -69,10 +69,10 @@ type Site struct {
 	// this variable is returned to the front-end through configuration in the background.
 	// the corresponding front-end variable is: cookieDomain.
 	BkDomain string
-	// EsbUrl it is given to the url of the front end, which is used to call esb apis according to the
-	// actual needs. the corresponding front-end variable is: esbUrl.
-	EsbUrl     string
-	HelpDocUrl string
+	// BkDesktopUrl it is given to the url of the front end, which is used to call paas apis according to the
+	// actual needs. the corresponding front-end variable is: bkDesktopUrl.
+	BkDesktopUrl string
+	HelpDocUrl   string
 }
 
 // Config TODO
