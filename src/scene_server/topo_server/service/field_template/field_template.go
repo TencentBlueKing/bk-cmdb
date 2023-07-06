@@ -765,24 +765,6 @@ func (s *service) updateFieldTmplUnique(kit *rest.Kit, templateID int64, propert
 
 	auditLogs := make([]metadata.AuditLog, 0)
 	audit := auditlog.NewFieldTmplAuditLog(s.clientSet.CoreService())
-	if len(createUniques) != 0 {
-		resp, ccErr := s.clientSet.CoreService().FieldTemplate().CreateFieldTemplateUniques(kit.Ctx, kit.Header,
-			templateID, createUniques)
-		if ccErr != nil {
-			blog.Errorf("create field template uniques failed, data: %v, err: %v, rid: %s", createUniques, ccErr,
-				kit.Rid)
-			return ccErr
-		}
-
-		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-		createLogs, err := audit.GenerateFieldTmplUniqueAuditLog(generateAuditParameter, resp.IDs, nil)
-		if err != nil {
-			blog.Errorf("generate field template unique audit log failed, err: %v, rid: %s", err, kit.Rid)
-			return err
-		}
-		auditLogs = append(auditLogs, createLogs...)
-	}
-
 	if len(updateUniques) != 0 {
 		ccErr := s.clientSet.CoreService().FieldTemplate().UpdateFieldTemplateUniques(kit.Ctx, kit.Header, templateID,
 			updateUniques)
@@ -799,6 +781,24 @@ func (s *service) updateFieldTmplUnique(kit *rest.Kit, templateID int64, propert
 			return err
 		}
 		auditLogs = append(auditLogs, updateLogs...)
+	}
+
+	if len(createUniques) != 0 {
+		resp, ccErr := s.clientSet.CoreService().FieldTemplate().CreateFieldTemplateUniques(kit.Ctx, kit.Header,
+			templateID, createUniques)
+		if ccErr != nil {
+			blog.Errorf("create field template uniques failed, data: %v, err: %v, rid: %s", createUniques, ccErr,
+				kit.Rid)
+			return ccErr
+		}
+
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+		createLogs, err := audit.GenerateFieldTmplUniqueAuditLog(generateAuditParameter, resp.IDs, nil)
+		if err != nil {
+			blog.Errorf("generate field template unique audit log failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+		auditLogs = append(auditLogs, createLogs...)
 	}
 
 	if len(auditLogs) == 0 {
