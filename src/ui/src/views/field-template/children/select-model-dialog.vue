@@ -96,7 +96,7 @@
   })
 
   const handleSelect = (model) => {
-    if (selectedStatus.value.disabled[model.id]) {
+    if (selectedStatus.value.disabled[model.id] || selectedStatus.value.binded[model.id]) {
       return
     }
     if (selectedStatus.value.selected[model.id]) {

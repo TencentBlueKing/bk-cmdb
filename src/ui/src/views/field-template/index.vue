@@ -95,7 +95,7 @@
       page: {
         start: table.pagination.limit * (table.pagination.current - 1),
         limit: table.pagination.limit,
-        sort: table.sort
+        sort: table.sort || '-last_time' // 默认按照最新更新时间倒序
       }
     }
     filter.value.forEach((item) => {
