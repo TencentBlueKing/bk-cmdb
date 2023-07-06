@@ -325,7 +325,6 @@
         uniqueTypeComp.value?.$el?.scrollIntoView?.()
       })
     }
-    console.log(fieldInfo, '--fieldInfo', singleRuleTypes)
   }
 
   const handleChangeUnique = (uniqueList) => {

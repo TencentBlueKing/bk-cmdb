@@ -99,25 +99,28 @@
       }
     }
     filter.value.forEach((item) => {
+      const itemValue = item.value?.split(',')
+      const operator = queryBuilderOperator(itemValue?.length > 1 ? QUERY_OPERATOR.IN : QUERY_OPERATOR.LIKE)
+      const value = itemValue?.length > 1 ? itemValue : itemValue[0]
       if (item.id === 'templateName') {
         params.template_filter.rules.push({
           field: 'name',
-          operator: queryBuilderOperator(QUERY_OPERATOR.IN),
-          value: item.value?.split(',')
+          operator,
+          value
         })
       }
       if (item.id === 'modifier') {
         params.template_filter.rules.push({
           field: 'modifier',
-          operator: queryBuilderOperator(QUERY_OPERATOR.IN),
-          value: item.value?.split(',')
+          operator,
+          value
         })
       }
       if (item.id === 'modelName') {
         params.object_filter.rules.push({
           field: 'bk_obj_name',
-          operator: queryBuilderOperator(QUERY_OPERATOR.IN),
-          value: item.value?.split(',')
+          operator,
+          value
         })
       }
     })
