@@ -276,7 +276,7 @@ $restWidth: 10px;
   }
 
   &-content {
-    max-width: calc(100% - #{$editBtnSize + $editBtnMarginLeft + $restWidth});
+    max-width: calc(100% - 28px);
     @include ellipsis;
   }
 

@@ -514,6 +514,7 @@ const (
 	CCErrorTopoFieldTemplateForbiddenPauseModel        = 1101124
 	CCErrTopoFieldTemplateAttrConflict                 = 1101125
 	CCErrTopoFieldTemplateUniqueConflict               = 1101126
+	CCErrTopoBizFieldConflict                          = 1101127
 
 	// object controller 1102XXX
 
