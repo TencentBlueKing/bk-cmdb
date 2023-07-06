@@ -198,7 +198,23 @@
   }
 
   const handleSearchSelectChange = (list) => {
-    emit('search', list)
+    const ids = filterMenus.map(item => item.id)
+    list.forEach((item) => {
+      const nameItem = list.find(searchItem => searchItem.id === 'templateName')
+      if (!ids.includes(item.id)) {
+        // 存在多个就合并
+        if (nameItem) {
+          nameItem.values.push({ name: item.name })
+        } else {
+          item.id = 'templateName'
+          item.values = [{ name: item.name }]
+        }
+      }
+    })
+
+    // 合并完之后，被合并的项还会遗留，在这里去掉
+    const newList = list.filter(item => ids.includes(item.id))
+    emit('search', newList)
   }
   const handleInputChange = () => {
     isTyeing.value = true
