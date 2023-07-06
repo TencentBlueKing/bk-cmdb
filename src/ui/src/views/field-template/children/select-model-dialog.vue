@@ -45,6 +45,11 @@
       fromCache: true
     })
   })
+  watchEffect(() => {
+    if (isShow.value) {
+      selectedLocal.value = props.selected.slice()
+    }
+  })
 
   const excludeModelIds = computed(() => store.getters['objectMainLineModule/mainLineModels']
     .filter(model => model.bk_obj_id !== BUILTIN_MODELS.HOST)
@@ -90,13 +95,13 @@
     modelList.value.forEach((model) => {
       status.selected[model.id] = selectedLocal.value.some(item => item.id === model.id)
       status.binded[model.id] = props.binded.some(item => item.id === model.id)
-      status.disabled[model.id] = props.selected.some(item => item.id === model.id)
+      // status.disabled[model.id] = props.selected.some(item => item.id === model.id)
     })
     return status
   })
 
   const handleSelect = (model) => {
-    if (selectedStatus.value.disabled[model.id] || selectedStatus.value.binded[model.id]) {
+    if (selectedStatus.value.binded[model.id]) {
       return
     }
     if (selectedStatus.value.selected[model.id]) {

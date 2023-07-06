@@ -166,7 +166,6 @@
       fetchFieldDiff(initModelList)
       fetchUniqueDiff(initModelList)
     }
-
     modelListLocal.value = initModelList
   })
 
@@ -214,10 +213,15 @@
   })
 
   const handleConfirmAddModel = (selectedModels) => {
-    modelListLocal.value.push(...selectedModels)
-    if (!selectedModel.value) {
-      selectedModel.value = modelListLocal.value?.[0]
+    while (modelListLocal.value.length) {
+      modelListLocal.value.pop()
     }
+    modelListLocal.value.push(...selectedModels)
+    selectedModel.value = modelListLocal.value?.[0]
+
+    // 清空diff模型数据
+    fieldDiffs.value = {}
+    uniqueDiffs.value = {}
 
     // 获取新选择模型diff
     fetchFieldDiff(selectedModels)
