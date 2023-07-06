@@ -22,12 +22,11 @@
   import FieldGrid from '@/components/model-manage/field-grid.vue'
   import FieldCard from '@/components/model-manage/field-card.vue'
   import FieldSettingForm from '@/components/model-manage/field-group/field-detail/index.vue'
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { UNIUQE_TYPES } from '@/dictionary/model-constants'
   import UniqueManage from './unique-manage.vue'
   import ModelFieldSelector from './model-field-selector.vue'
   import UniqueManageDrawer from './unique-manage-drawer.vue'
-  import useField, { unwrapData, excludeFieldType, isFieldExist, defaultFieldData } from './use-field'
+  import useField, { unwrapData, excludeFieldType, isFieldExist } from './use-field'
   import useUnique, { singleRuleTypes, unionRuleTypes } from './use-unique'
 
   const props = defineProps({
@@ -87,15 +86,6 @@
 
   watchEffect(() => {
     const fieldList = cloneDeep(props.fieldList || [])
-    if (props.isCreateMode && !fieldList.length) {
-      fieldList.push({
-        ...defaultFieldData(),
-        id: uuidv4(),
-        bk_property_id: 'demo',
-        bk_property_name: t('示例字段'),
-        bk_property_type: PROPERTY_TYPES.SINGLECHAR
-      })
-    }
     fieldLocalList.value = fieldList.map(unwrapData)
     uniqueLocalList.value = cloneDeep(props.uniqueList || [])
   })
@@ -633,6 +623,24 @@
       @close="handleUniqueDrawerClose"
       @change-unique="handleChangeUnique">
     </unique-manage-drawer>
+
+    <bk-exception class="empty-set" type="empty" scene="part" v-if="!fieldLocalList.length">
+      <i18n path="尚未创建字段">
+        <template #link>
+          <cmdb-auth :auth="{ type: $OPERATION.C_FIELD_TEMPLATE }">
+            <template #default="{ disabled }">
+              <bk-button
+                text
+                theme="primary"
+                :disabled="disabled"
+                @click="handleAddField">
+                {{$t('立即创建')}}
+              </bk-button>
+            </template>
+          </cmdb-auth>
+        </template>
+      </i18n>
+    </bk-exception>
   </div>
 </template>
 

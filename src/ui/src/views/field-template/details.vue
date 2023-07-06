@@ -287,18 +287,33 @@
       </div>
       <template slot="footer" slot-scope="{ sticky }">
         <div class="action-bar" :class="{ 'is-sticky': sticky }">
-          <bk-button theme="primary" @click="handleEdit">
-            {{ $t('进入编辑') }}
-          </bk-button>
+          <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }">
+            <template #default="{ disabled }">
+              <bk-button theme="primary" @click="handleEdit" :disabled="disabled">
+                {{ $t('进入编辑') }}
+              </bk-button>
+            </template>
+          </cmdb-auth>
           <bk-button theme="default" @click="handlePreviewField">
             {{$t('预览字段')}}
           </bk-button>
-          <bk-button theme="default" @click="handleClone">
-            {{$t('克隆')}}
-          </bk-button>
-          <bk-button theme="default" @click="handleDelete">
-            {{$t('删除')}}
-          </bk-button>
+          <cmdb-auth class="mr10" :auth="[
+            { type: $OPERATION.C_FIELD_TEMPLATE },
+            { type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }
+          ]">
+            <template #default="{ disabled }">
+              <bk-button theme="default" @click="handleClone" :disabled="disabled">
+                {{$t('克隆')}}
+              </bk-button>
+            </template>
+          </cmdb-auth>
+          <cmdb-auth :auth="{ type: $OPERATION.D_FIELD_TEMPLATE, relation: [templateId] }">
+            <template #default="{ disabled }">
+              <bk-button theme="default" @click="handleDelete" :disabled="disabled || modelCount > 0">
+                {{$t('删除')}}
+              </bk-button>
+            </template>
+          </cmdb-auth>
         </div>
       </template>
 
