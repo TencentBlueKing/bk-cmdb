@@ -61,8 +61,7 @@
             class="bk-select-full-width"
             searchable
             :clearable="false"
-            v-model="fieldInfo.bk_property_group"
-            :disabled="isEditField">
+            v-model="fieldInfo.bk_property_group">
             <bk-option v-for="(option, index) in groups"
               :key="index"
               :id="option.bk_group_id"
@@ -480,6 +479,9 @@
         'updateObjectAttribute',
         'updateBizObjectAttribute'
       ]),
+      ...mapActions('objectModelFieldGroup', [
+        'updatePropertySort'
+      ]),
       async initData() {
         Object.keys(this.fieldInfo).forEach((key) => {
           this.fieldInfo[key] = this.$tools.clone(this.field[key] ?? '')
@@ -537,7 +539,7 @@
           this.$emit('confirm', this.field.id, this.fieldInfo, this.fieldSettingExtra)
           return
         }
-
+        const groupId = this.isGlobalView ? 'default' : 'bizdefault'
         if (this.isEditField) {
           const action = this.customObjId ? 'updateBizObjectAttribute' : 'updateObjectAttribute'
           let params = this.field.ispre ? this.getPreFieldUpdateParams() : this.fieldInfo
@@ -563,11 +565,25 @@
             this.$http.cancelCache('getHostPropertyList')
             this.$success(this.$t('修改成功'))
           })
+          // 修改分组
+          const { bk_property_group: bkPropertyGroup } = this.fieldInfo
+          const objId = this.$route?.params?.modelId
+          if (this.group.bk_group_id !== bkPropertyGroup) {
+            await this.updatePropertySort({
+              objId,
+              propertyId: this.field.id,
+              params: {
+                bk_property_group: this.fieldInfo.bk_property_group || this.group.bk_group_id || groupId,
+              },
+              config: {
+                requestId: `updatePropertySort_${objId}`
+              }
+            })
+          }
         } else {
           if (isEmptyPropertyValue(this.fieldInfo.default)) {
             Reflect.deleteProperty(this.fieldInfo, 'default')
           }
-          const groupId = this.isGlobalView ? 'default' : 'bizdefault'
           const selectedGroup = this.groups.find(group => group.bk_group_id === this.fieldInfo.bk_property_group)
           const otherParams = {
             creator: this.userName,
@@ -691,7 +707,7 @@
             margin-left: 10px;
         }
         .btn-group {
-            padding: 8px 24px;
+            padding: 8px 40px;
             &.is-sticky {
                 border-top: 1px solid #dcdee5;
             }

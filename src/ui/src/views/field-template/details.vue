@@ -134,16 +134,19 @@
     }
   ]))
 
-  const handleEdit = () => {
+  const handleEdit = (tid) => {
     const editRoutes = {
       [tabIds.field]: MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
       [tabIds.unique]: MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
       [tabIds.model]: MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING,
     }
+    const isNum = typeof tid === 'number'
+    const name = isNum ? MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS : editRoutes[tabActive.value]
+    const id = isNum ? tid : templateId.value
     routerActions.redirect({
-      name: editRoutes[tabActive.value],
+      name,
       params: {
-        id: templateId.value
+        id
       }
     })
 
@@ -184,10 +187,11 @@
     emit('bind-change', templateId.value)
   }
 
-  const handleCloneSuccess = () => {
+  const handleCloneSuccess = (res) => {
+    const { id } = res
+    if (!id) return
+    handleEdit(id)
     $success(t('克隆成功'))
-    isShowCloneDialog.value = false
-    emit('clone-done')
   }
   const handleCloneDialogToggle = (val) => {
     isShowCloneDialog.value = val
