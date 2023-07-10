@@ -95,7 +95,6 @@
     modelList.value.forEach((model) => {
       status.selected[model.id] = selectedLocal.value.some(item => item.id === model.id)
       status.binded[model.id] = props.binded.some(item => item.id === model.id)
-      // status.disabled[model.id] = props.selected.some(item => item.id === model.id)
     })
     return status
   })
@@ -137,8 +136,29 @@
     }
   }
 
+  // 找出当前添加的和删除的模型
+  const findAddDelete = () => {
+    const addKey = {}
+    let addSelect = selectedLocal.value.slice()
+    const deleteSelect = props.selected.slice()
+    addSelect.forEach((item, index) => addKey[item.id] = index)
+    for (let i = 0;i < deleteSelect.length;) {
+      const deleteItem = deleteSelect[i]
+      const index = addKey[deleteItem.id] ?? -1
+      // 如果两个数组有相同的 则剔除掉
+      if (index > -1) {
+        addSelect[index] = ''
+        deleteSelect.splice(i, 1)
+        continue
+      }
+      i += 1
+    }
+    addSelect = addSelect.filter(item => item?.id)
+    return [addSelect, deleteSelect]
+  }
+
   const handleConfirm = () => {
-    emit('confirm', selectedLocal.value)
+    emit('confirm', ...findAddDelete())
     close()
   }
   const handleCancel = () => {

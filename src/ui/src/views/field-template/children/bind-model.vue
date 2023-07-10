@@ -212,20 +212,16 @@
     http.cancelRequest(allRquestIds)
   })
 
-  const handleConfirmAddModel = (selectedModels) => {
-    while (modelListLocal.value.length) {
-      modelListLocal.value.pop()
-    }
-    modelListLocal.value.push(...selectedModels)
+  const handleConfirmAddModel = (addSelect, deleteSelect) => {
+    deleteSelect.forEach((item) => {
+      handleClickRemoveModel(item, modelListLocal.value.indexOf(item))
+    })
+    modelListLocal.value.push(...addSelect)
     selectedModel.value = modelListLocal.value?.[0]
 
-    // 清空diff模型数据
-    fieldDiffs.value = {}
-    uniqueDiffs.value = {}
-
     // 获取新选择模型diff
-    fetchFieldDiff(selectedModels)
-    fetchUniqueDiff(selectedModels)
+    fetchFieldDiff(addSelect)
+    fetchUniqueDiff(addSelect)
   }
 
   const isSelected = model => model.id === selectedModel.value.id
