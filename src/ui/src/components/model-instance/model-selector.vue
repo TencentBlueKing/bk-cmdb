@@ -115,7 +115,7 @@
 
 <style lang="scss" scoped>
   .model-option-group {
-    /deep/ .bk-option-group-name{
+    /deep/.bk-option-group-name {
       @include ellipsis;
     }
 

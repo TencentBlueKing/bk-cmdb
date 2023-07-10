@@ -14,6 +14,7 @@
   import { computed, ref, watch } from 'vue'
   import cloneDeep from 'lodash/cloneDeep'
   import fieldTemplateService from '@/service/field-template'
+  import { vAutofocus } from '@/directives/autofocus'
 
   const props = defineProps({
     show: {
@@ -35,14 +36,6 @@
     cloneForm.value = cloneDeep(sourceTemplate)
     cloneForm.value.name += '-copy'
   }, { deep: true, immediate: true })
-  watch(() => props.show, val => setTimeout(
-    () => {
-      if (val) {
-        cloneInput.value?.focus()
-      }
-    },
-    300
-  ))
 
   const isShow = computed({
     get() {
@@ -72,7 +65,6 @@
 <template>
   <bk-dialog
     v-model="isShow"
-    render-directive="if"
     theme="primary"
     header-position="left"
     :mask-close="false"
@@ -88,6 +80,7 @@
           ref="cloneInput"
           v-model="cloneForm.name"
           v-validate="'required|length:256'"
+          v-autofocus
           :placeholder="$t('请输入模板名称')"
           name="name">
         </bk-input>
