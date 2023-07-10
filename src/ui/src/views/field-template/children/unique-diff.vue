@@ -48,8 +48,11 @@
   const propertyParams = computed(() => ({
     bk_obj_id: props.model.bk_obj_id
   }))
-  const [{ uniqueChecks: modelBeforeUniqueList, pending }] = useUniqueCheck(currentModelId)
+  const [{ uniqueChecks: modelUniqueList, pending }] = useUniqueCheck(currentModelId)
   const [{ properties }] = useProperty(propertyParams)
+
+  const modelBeforeUniqueList = computed(() => modelUniqueList.value
+    .filter(item => item.keys.every(key => properties.value.find(({ id }) => id === key.key_id))))
 
   const newFieldList = computed(() => {
     const news = props.diffs.create ?? []
