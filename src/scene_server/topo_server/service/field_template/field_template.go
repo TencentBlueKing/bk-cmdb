@@ -185,6 +185,12 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 
 	objIDs := make([]int64, 0)
 	objIDs = util.IntArrayUnique(opt.ObjectIDs)
+
+	if authResp, authorized := s.authorizeObjsBindFieldTemplate(ctx.Kit, opt.ID, objIDs); !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	if err := s.canObjsBindFieldTemplate(ctx.Kit, objIDs); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -194,8 +200,6 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 		ID:        opt.ID,
 		ObjectIDs: objIDs,
 	}
-
-	// todo:待补充鉴权
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateBindObject(ctx.Kit.Ctx, ctx.Kit.Header, option)
 		if err != nil {
@@ -227,6 +231,30 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+func (s *service) authorizeObjsBindFieldTemplate(kit *rest.Kit, templateID int64, objIDs []int64) (
+	*metadata.BaseResp, bool) {
+
+	resource := make([]meta.ResourceAttribute, 0)
+	for _, id := range objIDs {
+		resource = append(resource, meta.ResourceAttribute{
+			Basic: meta.Basic{
+				Type:   meta.Model,
+				Action: meta.Update,
+			},
+			Layers: []meta.Item{{Type: meta.Model, InstanceID: id}},
+		})
+	}
+
+	resource = append(resource, meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Type:       meta.FieldTemplate,
+			Action:     meta.Find,
+			InstanceID: templateID},
+	})
+
+	return s.auth.Authorize(kit, resource...)
+}
+
 // FieldTemplateUnbindObject field template binding model
 func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 	opt := new(metadata.FieldTemplateUnbindObjOpt)
@@ -240,12 +268,16 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 		return
 	}
 
+	if authResp, authorized := s.auth.Authorize(ctx.Kit, meta.ResourceAttribute{Basic: meta.Basic{
+		Type: meta.Model, Action: meta.Update, InstanceID: opt.ObjectID}}); !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	if err := s.canObjsBindFieldTemplate(ctx.Kit, []int64{opt.ObjectID}); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-
-	// todo:待补充鉴权
 
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateUnbindObject(ctx.Kit.Ctx, ctx.Kit.Header, opt)
