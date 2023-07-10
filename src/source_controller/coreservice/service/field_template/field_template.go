@@ -399,6 +399,9 @@ func (s *service) deleteFieldTmplRelation(kit *rest.Kit, option *metadata.FieldT
 }
 
 func (s *service) fieldTemplateUnbindAttrAndUnique(kit *rest.Kit, id int64, objIDs []string) error {
+	if len(objIDs) == 0 {
+		return nil
+	}
 
 	tmplCond := mapstr.MapStr{
 		common.BKTemplateID: id,
@@ -418,21 +421,9 @@ func (s *service) fieldTemplateUnbindAttrAndUnique(kit *rest.Kit, id int64, objI
 		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKTemplateID)
 	}
 
-	dbTmplUniques := make([]metadata.FieldTemplateUnique, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(tmplCond).Fields(common.BKFieldID).
-		All(kit.Ctx, &dbTmplUniques); err != nil {
-		blog.Errorf("list field template uniques failed, filter: %+v, err: %v, rid: %v", tmplCond, err, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-
 	attrTmplIDs := make([]int64, len(dbTmplAttrs))
 	for idx, attr := range dbTmplAttrs {
 		attrTmplIDs[idx] = attr.ID
-	}
-
-	uniqueTmplIDs := make([]int64, len(dbTmplUniques))
-	for idx, unique := range dbTmplUniques {
-		uniqueTmplIDs[idx] = unique.ID
 	}
 
 	updateCond := mapstr.MapStr{
@@ -445,9 +436,22 @@ func (s *service) fieldTemplateUnbindAttrAndUnique(kit *rest.Kit, id int64, objI
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 
-	if len(uniqueTmplIDs) == 0 {
+	dbTmplUniques := make([]metadata.FieldTemplateUnique, 0)
+	if err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(tmplCond).Fields(common.BKFieldID).
+		All(kit.Ctx, &dbTmplUniques); err != nil {
+		blog.Errorf("list field template uniques failed, filter: %+v, err: %v, rid: %v", tmplCond, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	if len(dbTmplUniques) == 0 {
 		return nil
 	}
+
+	uniqueTmplIDs := make([]int64, len(dbTmplUniques))
+	for idx, unique := range dbTmplUniques {
+		uniqueTmplIDs[idx] = unique.ID
+	}
+
 	updateCond[common.BKTemplateID] = mapstr.MapStr{common.BKDBIN: uniqueTmplIDs}
 
 	if err := mongodb.Client().Table(common.BKTableNameObjUnique).Update(kit.Ctx, updateCond, data); nil != err {
