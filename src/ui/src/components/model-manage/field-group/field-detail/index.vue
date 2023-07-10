@@ -554,35 +554,40 @@
           if (!this.isGlobalView) {
             params.bk_biz_id = this.bizId
           }
-          await this[action]({
-            bizId: this.bizId,
-            id: this.field.id,
-            params,
-            config: {
-              requestId: 'updateObjectAttribute'
-            }
-          }).then(() => {
-            fieldId = this.fieldInfo.bk_property_id
-            this.$http.cancel(`post_searchObjectAttribute_${activeObjId}`)
-            this.$http.cancelCache('getHostPropertyList')
-            this.$success(this.$t('修改成功'))
-          })
-          // 修改分组
-          const { bk_property_group: bkPropertyGroup } = this.fieldInfo
-          if (this.group.bk_group_id !== bkPropertyGroup) {
-            await this.updatePropertySort({
-              objId: activeObjId,
-              propertyId: this.field.id,
-              params: {
-                bk_property_group: bkPropertyGroupParams,
-                bk_property_index: this.properties
-                  .filter(property => property.bk_property_group === bkPropertyGroupParams)?.length ?? 0
-              },
+          const paramsLen = Object.keys(params).length
+          if (paramsLen) {
+            await this[action]({
+              bizId: this.bizId,
+              id: this.field.id,
+              params,
               config: {
-                requestId: `updatePropertySort_${activeObjId}`
+                requestId: 'updateObjectAttribute'
               }
+            }).then(() => {
+              fieldId = this.fieldInfo.bk_property_id
+              this.$http.cancel(`post_searchObjectAttribute_${activeObjId}`)
+              this.$http.cancelCache('getHostPropertyList')
+              this.$success(this.$t('修改成功'))
             })
           }
+
+          // 修改分组
+          await this.updatePropertySort({
+            objId: activeObjId,
+            propertyId: this.field.id,
+            params: {
+              bk_property_group: bkPropertyGroupParams,
+              bk_property_index: this.properties
+                .filter(property => property.bk_property_group === bkPropertyGroupParams)?.length ?? 0
+            },
+            config: {
+              requestId: `updatePropertySort_${activeObjId}`
+            }
+          }).then(() => {
+            if (!paramsLen) {
+              this.$success(this.$t('修改成功'))
+            }
+          })
         } else {
           if (isEmptyPropertyValue(this.fieldInfo.default)) {
             Reflect.deleteProperty(this.fieldInfo, 'default')
