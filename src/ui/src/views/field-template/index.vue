@@ -526,7 +526,7 @@
                 :disabled="disabled"
                 :text="true"
                 @click.stop="handleBind(row.id)">
-                {{$t('绑定模型')}}
+                {{$t('绑定新模型')}}
               </bk-button>
             </template>
           </cmdb-auth>
