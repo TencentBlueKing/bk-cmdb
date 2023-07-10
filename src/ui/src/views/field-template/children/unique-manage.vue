@@ -1,3 +1,4 @@
+<!-- eslint-disable no-unused-vars -->
 <!--
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
@@ -11,7 +12,7 @@
 -->
 
 <script setup>
-  import { computed, del, toRefs, reactive, ref, set, watch } from 'vue'
+  import { computed, del, toRefs, reactive, ref, set, watch, getCurrentInstance, nextTick } from 'vue'
   import { v4 as uuidv4 } from 'uuid'
   import cloneDeep from 'lodash/cloneDeep'
   import { t } from '@/i18n'
@@ -36,10 +37,16 @@
     // 传入一个指定的字段，则表示以为指定的字段配置，用于创建字段模式
     field: {
       type: Object
+    },
+    type: {
+      type: String,
+      default: 'single'
     }
   })
 
   const emit = defineEmits(['update-unique'])
+
+  const currentInstance = getCurrentInstance().proxy
 
   const { beforeUniqueList: oldUniqueList } = toRefs(props)
 
@@ -70,7 +77,7 @@
     }
   }
 
-  watch(() => props.field, (field) => {
+  watch(() => props.field, async (field) => {
     if (isFieldMode.value) {
       const fieldId = !field?.id ? newFieldID : field.id
       const currentField = fieldListLocal.value.find(item => item.id === fieldId)
@@ -98,10 +105,6 @@
     }
   }, { deep: true, immediate: true })
 
-  watch(uniqueListLocal, (uniqueListLocal) => {
-    emit('update-unique', uniqueListLocal, isValid())
-  }, { deep: true })
-
   const singleRuleProperties = computed(() => fieldListLocal.value
     .filter(field => singleRuleTypes.includes(field.bk_property_type)))
   const unionRuleProperties = computed(() => fieldListLocal.value
@@ -118,9 +121,14 @@
       return uniqueListLocal.value
     }
 
+    // 字段模式下，uniqueListLocal只会是当前字段的列表，所以要计算出一个总的列表，用于校验
     const all = props.uniqueList.slice()
     uniqueListLocal.value.forEach((item) => {
-      if (!all.some(unique => unique.id === item.id)) {
+      const index = all.findIndex(unique => unique.id === item.id)
+      // 当修改的是已经存在的数据all中还是原本的老数据，这里替换为最新的数据
+      if (~index) {
+        all[index] = item
+      } else {
         all.push(item)
       }
     })
@@ -181,12 +189,16 @@
     return result.every(valid => valid)
   }
 
-  const isValid = () => Object.keys(validateResult).length === 0
+  const isValid = async () => {
+    const keysValid = Object.keys(validateResult).length === 0
+    const selectValid = await currentInstance.$validator.validateAll()
+    return keysValid && selectValid
+  }
 
   const editDraft = reactive({})
 
   const getUniqueValue = (unique) => {
-    if (unique.type === UNIUQE_TYPES.UNION) {
+    if (unique.type === UNIUQE_TYPES.UNION || (isFieldMode.value && props.type === UNIUQE_TYPES.UNION)) {
       return unique.keys
     }
     return unique.keys?.[0]
@@ -199,6 +211,10 @@
 
     // 触发校验
     validateAll()
+
+    nextTick(async () => {
+      emit('update-unique', uniqueListLocal.value, await isValid())
+    })
   }
 
   const handleRuleTypeChange = (type, id) => {
@@ -215,17 +231,23 @@
     }
 
     validateAll()
+
+    nextTick(async () => {
+      emit('update-unique', uniqueListLocal.value, await isValid())
+    })
   }
 
-  const handleAppendRule = (index = -1) => {
+  const handleAppendRule = async (index = -1) => {
     uniqueListLocal.value.splice(index + 1, 0, newDefaultRule(isFieldMode.value))
 
     // 字段模式中添加因为会默认选中需要即时验证一次
     if (isFieldMode.value) {
       validateAll()
     }
+
+    emit('update-unique', uniqueListLocal.value, await isValid())
   }
-  const handleRemoveRule = (id) => {
+  const handleRemoveRule = async (id) => {
     if (isFieldMode.value && uniqueListLocal.value.length === 1) {
       return
     }
@@ -236,9 +258,11 @@
 
     // 重新检查校验状态
     validateAll()
+
+    emit('update-unique', uniqueListLocal.value, await isValid())
   }
 
-  const handleRecover = (removedUnique) => {
+  const handleRecover = async (removedUnique) => {
     if (!validate(removedUnique.keys, removedUnique.id)) {
       return
     }
@@ -248,6 +272,8 @@
     }
     const oriUnique = oldUniqueList.value.find(item => item.id === removedUnique.id)
     uniqueListLocal.value.push(wrapData(oriUnique))
+
+    emit('update-unique', uniqueListLocal.value, await isValid())
   }
 
   defineExpose({
@@ -273,8 +299,11 @@
             :key="unique.type"
             :value="getUniqueValue(unique)"
             :searchable="getDisplayProperties(unique).length > 10"
-            :multiple="unique.type === UNIUQE_TYPES.UNION"
+            :multiple="isFieldMode ? type === UNIUQE_TYPES.UNION : unique.type === UNIUQE_TYPES.UNION"
             :clearable="false"
+            :data-vv-name="`ruleSelector${unique.id}`"
+            data-vv-validate-on="change"
+            v-validate="`minSelectLength:2,${$t('需要至少两个字段组成联合唯一')}`"
             @change="(keys) => handleRuleKeysChange(keys, unique.id)">
             <bk-option v-for="property in getDisplayProperties(unique)"
               :disabled="(isFieldMode && property.id === field.id) || property.id === newFieldID"
@@ -307,6 +336,9 @@
             </i18n>
           </template>
           <template v-else>{{$t('唯一校验超集提示')}}</template>
+        </div>
+        <div class="rules-error" v-else-if="errors.has(`ruleSelector${unique.id}`)">
+          {{errors.first(`ruleSelector${unique.id}`)}}
         </div>
         <template v-if="!isFieldMode">
           <mini-tag :text="$t('更新')" theme="changed" class="status-tag" v-if="uniqueStatus[unique.id].changed" />

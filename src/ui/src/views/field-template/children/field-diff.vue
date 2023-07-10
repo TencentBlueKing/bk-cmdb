@@ -44,7 +44,7 @@
   })
   const store = useStore()
 
-  const isOnlyShowTemplate = ref(false)
+  const isOnlyShowTemplate = ref(true)
 
   const diffDetails = reactive({
     show: false,

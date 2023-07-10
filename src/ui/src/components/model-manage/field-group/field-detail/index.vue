@@ -166,22 +166,17 @@
       <div class="form-label">
         <span class="label-text">{{$t('用户提示')}}</span>
         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('placeholder') }">
-          <div :class="['form-item-container', { 'with-lock': isSettingScene }]">
-            <div class="form-component">
-              <bk-input
-                class="raw"
-                :rows="3"
-                :maxlength="2000"
-                name="placeholder"
-                :type="'textarea'"
-                v-model.trim="fieldInfo['placeholder']"
-                :disabled="isReadOnly || (isFromTemplateField && fieldSettingExtra.lock.placeholder)"
-                v-validate="'length:2000'">
-              </bk-input>
-            </div>
-            <div class="lock-append" v-if="isSettingScene">
-              <lock-button :tips="$t('字段组合模板加解锁提示语')" v-model="fieldSettingExtra.lock.placeholder" />
-            </div>
+          <div class="form-component">
+            <bk-input
+              class="raw"
+              :rows="3"
+              :maxlength="2000"
+              name="placeholder"
+              :type="'textarea'"
+              v-model.trim="fieldInfo['placeholder']"
+              :disabled="isReadOnly || (isFromTemplateField && fieldSettingExtra.lock.placeholder)"
+              v-validate="'length:2000'">
+            </bk-input>
           </div>
           <p class="form-error" v-if="errors.has('placeholder')">{{errors.first('placeholder')}}</p>
         </div>
@@ -190,6 +185,11 @@
         v-if="isUniqueSettingShow"
         v-bind="{
           disabled: uniqueDisabled,
+          fieldInfo: { id: field.id, ...fieldInfo }
+        }">
+      </slot>
+      <slot name="append-lock"
+        v-bind="{
           fieldInfo: { id: field.id, ...fieldInfo }
         }">
       </slot>
@@ -220,7 +220,6 @@
   import theFieldEnumquote from './enumquote.vue'
   import theFieldInnertable from './inner-table/index.vue'
   import theConfig from './config'
-  import lockButton from '@/components/ui/button/lock-button.vue'
   import { mapGetters, mapActions } from 'vuex'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
   import { PROPERTY_TYPES, PROPERTY_TYPE_LIST } from '@/dictionary/property-constants'
@@ -239,8 +238,7 @@
       theFieldList,
       theFieldBool,
       theConfig,
-      theFieldInnertable,
-      lockButton
+      theFieldInnertable
     },
     props: {
       properties: {
@@ -534,7 +532,7 @@
 
         // 配置流程直接抛出事件并退出，在流程中自行处理
         if (this.isSettingScene) {
-          this.$emit('confirm', this.field.id, this.fieldInfo, this.fieldSettingExtra)
+          this.$emit('confirm', this.field.id, this.fieldInfo)
           return
         }
 
@@ -699,34 +697,6 @@
                 width: 88px;
                 height: 32px;
             }
-        }
-
-        .form-item-container {
-          &.with-lock {
-            display: flex;
-            :deep(.form-component) {
-              flex: 1;
-
-              .bk-form-input,
-              .bk-form-textarea,
-              .bk-textarea-wrapper {
-                border-top-right-radius: 0;
-                border-bottom-right-radius: 0;
-              }
-            }
-          }
-
-          .lock-append {
-            display: inline-flex;
-            width: 24px;
-            align-items: center;
-            justify-content: center;
-            background-color: #f2f4f8;
-            border: 1px solid #c4c6cc;
-            border-left: none;
-            border-top-right-radius: 2px;
-            border-bottom-right-radius: 2px;
-          }
         }
     }
 </style>

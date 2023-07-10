@@ -76,6 +76,8 @@
   const unmountCallbacks = []
   const hasDiffError = ref(false)
 
+  const modelEditAuths = ref({})
+
   const fetchFieldDiff = async (modelList) => {
     const modelIds = modelList.filter(item => !item.bk_ispaused).map(item => item.id)
     const allResult = await CombineRequest.setup(Symbol(), (params) => {
@@ -161,7 +163,6 @@
 
   watchEffect(async () => {
     const initModelList = props.modelList.slice()
-    selectedModel.value = initModelList?.[0] ?? null
     if (initModelList.length) {
       fetchFieldDiff(initModelList)
       fetchUniqueDiff(initModelList)
@@ -169,6 +170,25 @@
 
     modelListLocal.value = initModelList
   })
+
+  // 查找匹配第1个可用的模型作为选中模型
+  watch([modelListLocal, modelEditAuths], ([modelList, modelAuths]) => {
+    // 当前存在选中的模型则不变更
+    if (selectedModel.value) {
+      return
+    }
+
+    let firstModel = null
+    for (let i = 0; i < modelList.length; i++) {
+      const model = modelList[i]
+      // 未停用且有权限
+      if (!model.bk_ispaused && modelAuths[model.id]) {
+        firstModel = model
+        break
+      }
+    }
+    selectedModel.value = firstModel
+  }, { deep: true })
 
   const fieldDiffCounts = computed(() => {
     const counts = {}
@@ -215,16 +235,13 @@
 
   const handleConfirmAddModel = (selectedModels) => {
     modelListLocal.value.push(...selectedModels)
-    if (!selectedModel.value) {
-      selectedModel.value = modelListLocal.value?.[0]
-    }
 
     // 获取新选择模型diff
     fetchFieldDiff(selectedModels)
     fetchUniqueDiff(selectedModels)
   }
 
-  const isSelected = model => model.id === selectedModel.value.id
+  const isSelected = model => model.id === selectedModel.value?.id
 
   const isConflict = model => (fieldDiffCounts.value[model.id] && fieldDiffCounts.value[model.id].conflict)
     || (uniqueDiffCounts.value[model.id] && uniqueDiffCounts.value[model.id].conflict)
@@ -239,12 +256,14 @@
 
     // 变更当前选择的模型
     if (selectedModel.value === model) {
-      selectedModel.value = modelListLocal.value[modelIndex + 1] ?? modelListLocal.value[0]
+      selectedModel.value = null
     }
 
     // 删除对应模型的diff数据
     del(fieldDiffs.value, model.id)
     del(uniqueDiffs.value, model.id)
+
+    del(modelEditAuths.value, model.id)
   }
   const handleSelectModel = (model) => {
     if (model.bk_ispaused) {
@@ -257,6 +276,7 @@
   }
 
   const handleModelAuthUpdate = (model, isPass) => {
+    set(modelEditAuths.value, model.id, isPass)
     emit('update-model-auth', model, isPass)
   }
 

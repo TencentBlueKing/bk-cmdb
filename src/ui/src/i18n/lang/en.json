@@ -1803,5 +1803,12 @@
     "新建步骤未完成，退出将撤销当前操作": "The creation step is not completed, exiting will undo the current operation",
     "编辑步骤未完成，退出将撤销当前操作": "The editing step is not completed, exiting will undo the current operation",
     "需要至少两个字段组成联合唯一": "At least two fields are required to form a union unique",
-    "尚未创建字段": "Field not yet created, {link}"
+    "尚未创建字段": "Field not yet created, {link}",
+    "模板名称已存在": "Template name already exists",
+    "模型应用设置": "Model Application Settings",
+    "模型应用设置提示语": "(After binding the model, the option can be modified in the model)",
+    "允许在模型中修改“在实例中可编辑”的配置": "Allows modification of the \"Editable in instance\" configuration in the model",
+    "允许在模型中修改“设置为必填项”的配置": "Allows modification of the \"Required\" configuration in the model",
+    "允许在模型中修改“用户提示”的配置": "Allows modification of the \"Tips\" configuration in the model",
+    "绑定模型后，在模型中可修改的选项": "After binding the model, the options that can be modified in the model"
 }

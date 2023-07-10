@@ -13,6 +13,7 @@
 <script setup>
   import { ref, watch } from 'vue'
   import cloneDeep from 'lodash/cloneDeep'
+  import { DUP_CHECK_IDS } from '@/setup/duplicate-remote-validate'
 
   const props = defineProps({
     data: {
@@ -43,7 +44,8 @@
       <bk-form-item :label="$t('模板名称')" :required="true" :property="'name'"
         class="cmdb-form-item" :class="{ 'is-error': errors.has('name') }">
         <bk-input
-          v-validate="'required|length:256'"
+          data-vv-validate-on="change"
+          v-validate="`required|length:256|remoteDuplicate:${DUP_CHECK_IDS.FIELD_TEMPLATE_NAME},${$t('模板名称已存在')}`"
           name="name"
           :placeholder="$t('请输入模板名称')"
           v-model="formData.name"

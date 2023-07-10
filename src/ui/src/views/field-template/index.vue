@@ -400,7 +400,8 @@
     const query = {
       templateName: '',
       modelName: '',
-      modifier: ''
+      modifier: '',
+      _t: Date.now()
     }
     filter.forEach((item) => {
       query[item.id] = item.values.map(val => val.name).join(',')
