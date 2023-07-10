@@ -13,6 +13,7 @@
 <script setup>
   import { ref, watch, watchEffect, onBeforeUnmount, computed, set, del } from 'vue'
   import { useHttp } from '@/api'
+  import { t } from '@/i18n'
   import Loading from '@/components/loading/index.vue'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
   import SelectModelDialog from './select-model-dialog.vue'
@@ -243,8 +244,20 @@
 
   const isSelected = model => model.id === selectedModel.value?.id
 
-  const isConflict = model => (fieldDiffCounts.value[model.id] && fieldDiffCounts.value[model.id].conflict)
-    || (uniqueDiffCounts.value[model.id] && uniqueDiffCounts.value[model.id].conflict)
+  const isFieldConflict = model => fieldDiffCounts.value[model.id] && fieldDiffCounts.value[model.id].conflict
+  const isUniqueConflict = model => uniqueDiffCounts.value[model.id] && uniqueDiffCounts.value[model.id].conflict
+  const isConflict = model => isFieldConflict(model) || isUniqueConflict(model)
+  const getConflictTips = (model) => {
+    if (isFieldConflict(model) && isUniqueConflict(model)) {
+      return t('当前模型与模板绑定会存在字段冲突和唯一校验冲突')
+    }
+    if (isFieldConflict(model)) {
+      return t('当前模型与模板绑定会存在字段冲突')
+    }
+    if (isUniqueConflict(model)) {
+      return t('当前模型与模板绑定会存在唯一校验冲突')
+    }
+  }
 
   const getTotal = id => (fieldDiffCounts.value[id]?.total ?? 0) + (uniqueDiffCounts.value[id]?.total ?? 0)
 
@@ -338,7 +351,10 @@
                       <bk-icon class="button-icon" type="delete" />
                     </bk-button>
                     <loading :loading="$loading(diffLoadingIds[model.id])">
-                      <i class="bk-icon icon-exclamation-circle-shape conflict-icon" v-if="isConflict(model)"></i>
+                      <i class="bk-icon icon-exclamation-circle-shape conflict-icon"
+                        v-if="isConflict(model)"
+                        v-bk-tooltips="{ content: getConflictTips(model) }">
+                      </i>
                       <span class="count-tag" v-else>
                         {{ getTotal(model.id) }}
                       </span>
