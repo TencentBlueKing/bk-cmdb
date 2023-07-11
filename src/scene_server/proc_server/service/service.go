@@ -229,6 +229,7 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 		Path: "/findmany/proc/process_instance/detail/biz/{bk_biz_id}", Handler: ps.ListProcessInstancesDetails})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut,
 		Path: "/update/proc/process_instance/by_ids", Handler: ps.UpdateProcessInstancesByIDs})
+
 	// module
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
 		Path: "/delete/proc/template_binding_on_module", Handler: ps.RemoveTemplateBindingOnModule})

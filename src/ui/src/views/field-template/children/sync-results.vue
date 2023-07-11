@@ -53,7 +53,7 @@
   const getTaskSyncStatus = async (taskIds) => {
     try {
       status.value = 'loading'
-      title.value = t('正在查询同步状态...')
+      title.value = t('同步中...')
 
       const statusList = await fieldTemplateService.getTaskSyncStatus({
         task_ids: taskIds
@@ -66,7 +66,7 @@
         return
       }
 
-      summary.value = t('接下来，您可以在模板详情页面，查看模型同步详细结果')
+      summary.value = t('正在将变更内容同步至绑定模型，请稍等...')
 
       const undone = statusList?.some(task => ['new', 'waiting', 'executing'].includes(task.status))
       timer && clearTimeout(timer)

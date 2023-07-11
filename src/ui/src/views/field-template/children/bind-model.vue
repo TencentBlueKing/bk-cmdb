@@ -168,7 +168,6 @@
       fetchFieldDiff(initModelList)
       fetchUniqueDiff(initModelList)
     }
-
     modelListLocal.value = initModelList
   })
 
@@ -234,12 +233,42 @@
     http.cancelRequest(allRquestIds)
   })
 
+  const findAddDelete = (selectedModels) => {
+    const addSelect = []
+    const deleteSelect = []
+    const modelListLocalSet = new Set()
+    modelListLocal.value.forEach((selectModel) => {
+      modelListLocalSet.add(selectModel.id)
+    })
+    // 添加的
+    selectedModels.forEach((selectModel) => {
+      if (!modelListLocalSet.has(selectModel.id)) {
+        addSelect.push(selectModel)
+      } else {
+        modelListLocalSet.delete(selectModel.id)
+      }
+    })
+    // 删除的
+    modelListLocal.value.forEach((model) => {
+      if (modelListLocalSet.has(model.id)) {
+        deleteSelect.push(model)
+      }
+    })
+    return [addSelect, deleteSelect]
+  }
+
   const handleConfirmAddModel = (selectedModels) => {
-    modelListLocal.value.push(...selectedModels)
+    const [addSelect, deleteSelect] = findAddDelete(selectedModels)
+
+    modelListLocal.value.push(...addSelect)
+
+    deleteSelect.forEach((item) => {
+      handleClickRemoveModel(item, modelListLocal.value.indexOf(item))
+    })
 
     // 获取新选择模型diff
-    fetchFieldDiff(selectedModels)
-    fetchUniqueDiff(selectedModels)
+    fetchFieldDiff(addSelect)
+    fetchUniqueDiff(addSelect)
   }
 
   const isSelected = model => model.id === selectedModel.value?.id

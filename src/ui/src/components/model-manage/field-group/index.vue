@@ -1250,7 +1250,7 @@ $modelHighlightColor: #3c96ff;
     margin-right: 10px;
   }
   .filter-input {
-    width: 240px;
+    width: 480px;
     margin-left: auto;
   }
   .setting-btn {
@@ -1260,6 +1260,9 @@ $modelHighlightColor: #3c96ff;
     color: #979ba5;
     border: 1px solid #c4c6cc;
     border-radius: 2px;
+    width: 32px;
+    display: flex;
+    justify-content: center;
     /deep/ .icon-cog {
       font-size: 16px;
       vertical-align: 2px;

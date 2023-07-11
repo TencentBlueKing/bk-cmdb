@@ -58,7 +58,7 @@
       fieldData.value = templateFieldList?.info || []
       uniqueData.value = templateUniqueList?.info || []
 
-      store.commit('setTitle', `${t('绑定模型')}【${template.name}】`)
+      store.commit('setTitle', `${t('绑定新模型')}【${template.name}】`)
 
       const modelList = await fieldTemplateService.getBindModel({
         bk_template_id: templateId.value

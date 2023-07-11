@@ -124,13 +124,13 @@
             :field="field"
             :sortable="false"
             :deletable="false"
+            v-bk-tooltips="{
+              disabled: !selectedStatus.disabled[field.id],
+              content: $t('字段已在模板中存在，无法添加')
+            }"
             @click-field="handleSelect">
             <template #action-append>
               <bk-checkbox
-                v-bk-tooltips="{
-                  disabled: !selectedStatus.disabled[field.id],
-                  content: $t('字段已在模板中存在，无法添加')
-                }"
                 :disabled="selectedStatus.disabled[field.id]"
                 v-model="selectedStatus.selected[field.id]">
               </bk-checkbox>

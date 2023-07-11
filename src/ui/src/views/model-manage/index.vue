@@ -430,7 +430,6 @@
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS, UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants.js'
   import Bus from '@/utils/bus'
-
   export default {
     name: 'ModelManagement',
     filters: {

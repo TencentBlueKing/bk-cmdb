@@ -22,7 +22,8 @@
   import routerActions from '@/router/actions'
   import {
     MENU_MODEL_FIELD_TEMPLATE_BIND,
-    MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL
+    MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL,
+    MENU_MODEL_DETAILS
   } from '@/dictionary/menu-symbol'
   import ModelSyncStatus from './children/model-sync-status.vue'
   import useModelSyncStatus, { isSyncing, isSynced } from './children/use-model-sync-status'
@@ -158,6 +159,15 @@
     })
   }
 
+  const handleLinkToModel = (model) => {
+    routerActions.open({
+      name: MENU_MODEL_DETAILS,
+      params: {
+        modelId: model.bk_obj_id
+      }
+    })
+  }
+
   onUnmounted(() => {
     clearModelSyncReq()
   })
@@ -193,7 +203,7 @@
         prop="bk_obj_name"
         show-overflow-tooltip>
         <template #default="{ row }">
-          <div :class="['model-cell', { paused: row.bk_ispaused }]">
+          <div :class="['model-cell', { paused: row.bk_ispaused }]" @click="handleLinkToModel(row)">
             <div class="model-icon">
               <i class="icon" :class="row.bk_obj_icon"></i>
             </div>
@@ -277,6 +287,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      cursor: pointer;
       .model-icon {
         display: flex;
         align-items: center;
@@ -297,6 +308,9 @@
       &.paused {
         .model-name {
           color: #C4C6CC;
+        }
+        .tag {
+          background: #F5F7FA;
         }
       }
     }

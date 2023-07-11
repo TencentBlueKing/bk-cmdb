@@ -67,24 +67,34 @@
     leaveConfirmConfig.active = true
   }
 
-  const handleSave = async () => {
+  const handleSave = async (type = 'next') => {
+    const { formData } = basicFormRef.value
+    const { name, description } = basicData.value // 一开始的名称和描述
+    const { name: newName, description: newDescription }  = formData  // 新的名称和描述
     if (!await basicFormRef.value.$validator.validateAll()) {
       return
     }
-    const { formData } = basicFormRef.value
     const saveData = {
       id: templateId.value,
       ...formData
     }
 
     try {
-      await fieldTemplateService.updateBaseInfo(saveData, { requestId: requestIds.save })
-      $success(t('保存成功'))
+      if (name !== newName || description !== newDescription) {
+        await fieldTemplateService.updateBaseInfo(saveData, { requestId: requestIds.save })
+        $success(t('保存成功'))
+      }
+      if (type === 'next') {
+        return true
+      }
+      handleCancel()
     } catch (err) {
       console.error(err)
     }
+    return false
   }
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
+    if (!await handleSave()) return
     leaveConfirmConfig.active = false
 
     const { formData } = basicFormRef.value
@@ -143,7 +153,7 @@
               :disabled="disabled"
               :loading="$loading(requestIds.save)"
               @click="handleSave">
-              {{$t('保存')}}
+              {{$t('保存&退出')}}
             </bk-button>
           </template>
         </cmdb-auth>
@@ -152,7 +162,7 @@
             <bk-button
               :disabled="disabled"
               @click="handleNextStep">
-              {{$t('下一步')}}
+              {{$t('保存&下一步')}}
             </bk-button>
           </template>
         </cmdb-auth>

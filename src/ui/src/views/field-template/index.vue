@@ -20,6 +20,7 @@
   import {
     MENU_MODEL_FIELD_TEMPLATE_CREATE,
     MENU_MODEL_FIELD_TEMPLATE_EDIT,
+    MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
     MENU_MODEL_FIELD_TEMPLATE_BIND,
     MENU_MODEL_DETAILS
   } from '@/dictionary/menu-symbol'
@@ -300,9 +301,10 @@
       history: true
     })
   }
-  const handleEdit = (id) => {
+  const handleEdit = (id, type = 'edit') => {
+    const name = type === 'clone' ? MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS : MENU_MODEL_FIELD_TEMPLATE_EDIT
     routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE_EDIT,
+      name,
       params: {
         id
       },
@@ -344,11 +346,13 @@
     cloneSourceTemplate.value = template
   }
 
-  const handleCloneSuccess = () => {
+  const handleCloneSuccess = (res) => {
+    const { id } = res
+    if (!id) return
     getList()
     $success(t('克隆成功'))
     isShowCloneDialog.value = false
-    RouterQuery.refresh()
+    handleEdit(id, 'clone')
   }
   const handleCloneDone = () => {
     RouterQuery.refresh()
@@ -527,7 +531,7 @@
                 :disabled="disabled"
                 :text="true"
                 @click.stop="handleBind(row.id)">
-                {{$t('绑定模型')}}
+                {{$t('绑定新模型')}}
               </bk-button>
             </template>
           </cmdb-auth>

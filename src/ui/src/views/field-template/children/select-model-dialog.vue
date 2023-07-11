@@ -45,6 +45,11 @@
       fromCache: true
     })
   })
+  watchEffect(() => {
+    if (isShow.value) {
+      selectedLocal.value = props.selected.slice()
+    }
+  })
 
   const dialogHeight = computed(() => `${Math.floor(Math.max(store.state.appHeight * 0.8, 200) - 110)}px`)
   const dialogPos = computed(() => ({
@@ -90,19 +95,17 @@
   const selectedStatus = computed(() => {
     const status = {
       selected: {},
-      binded: {},
-      disabled: {}
+      binded: {}
     }
     modelList.value.forEach((model) => {
       status.selected[model.id] = selectedLocal.value.some(item => item.id === model.id)
       status.binded[model.id] = props.binded.some(item => item.id === model.id)
-      status.disabled[model.id] = props.selected.some(item => item.id === model.id)
     })
     return status
   })
 
   const handleSelect = (model) => {
-    if (selectedStatus.value.disabled[model.id] || selectedStatus.value.binded[model.id]) {
+    if (selectedStatus.value.binded[model.id]) {
       return
     }
     if (selectedStatus.value.selected[model.id]) {
@@ -118,16 +121,14 @@
   const handleSelectAll = (checked) => {
     if (checked) {
       modelList.value.forEach((model) => {
-        if (!selectedStatus.value.disabled[model.id]
-          && !selectedStatus.value.binded[model.id]
+        if (!selectedStatus.value.binded[model.id]
           && !selectedStatus.value.selected[model.id]) {
           selectedLocal.value.push(model)
         }
       })
     } else {
       modelList.value.forEach((model) => {
-        if (!selectedStatus.value.disabled[model.id]
-          && !selectedStatus.value.binded[model.id]
+        if (!selectedStatus.value.binded[model.id]
           && selectedStatus.value.selected[model.id]) {
           const index = selectedLocal.value.findIndex(item => item.id === model.id)
           if (~index) {
@@ -137,6 +138,7 @@
       })
     }
   }
+
 
   const handleConfirm = () => {
     emit('confirm', selectedLocal.value)
@@ -207,13 +209,12 @@
                   </div>
                   <bk-checkbox class="model-checkbox"
                     v-bk-tooltips="{
-                      disabled: !selectedStatus.binded[model.id] && !selectedStatus.disabled[model.id],
-                      content: $t(selectedStatus.binded[model.id] ? '模型已绑定' : '模型已选择')
+                      disabled: !selectedStatus.binded[model.id],
+                      content: $t('模型已绑定')
                     }"
                     :value="selectedStatus.selected[model.id]
-                      || selectedStatus.disabled[model.id]
                       || selectedStatus.binded[model.id]"
-                    :disabled="disabled || selectedStatus.disabled[model.id] || selectedStatus.binded[model.id]">
+                    :disabled="disabled || selectedStatus.binded[model.id]">
                   </bk-checkbox>
                 </div>
               </template>

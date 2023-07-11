@@ -134,16 +134,16 @@
     }
   ]))
 
-  const handleEdit = () => {
+  const handleEdit = (id, routeKey) => {
     const editRoutes = {
       [tabIds.field]: MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
       [tabIds.unique]: MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
       [tabIds.model]: MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING,
     }
     routerActions.redirect({
-      name: editRoutes[tabActive.value],
+      name: editRoutes[routeKey || tabActive.value],
       params: {
-        id: templateId.value
+        id: id ?? templateId.value
       }
     })
 
@@ -184,10 +184,11 @@
     emit('bind-change', templateId.value)
   }
 
-  const handleCloneSuccess = () => {
+  const handleCloneSuccess = (res) => {
+    const { id } = res
+    if (!id) return
+    handleEdit(id, tabIds.field)
     $success(t('克隆成功'))
-    isShowCloneDialog.value = false
-    emit('clone-done')
   }
   const handleCloneDialogToggle = (val) => {
     isShowCloneDialog.value = val
@@ -289,7 +290,7 @@
         <div class="action-bar" :class="{ 'is-sticky': sticky }">
           <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }">
             <template #default="{ disabled }">
-              <bk-button theme="primary" @click="handleEdit" :disabled="disabled">
+              <bk-button theme="primary" @click="() => handleEdit()" :disabled="disabled">
                 {{ $t('进入编辑') }}
               </bk-button>
             </template>

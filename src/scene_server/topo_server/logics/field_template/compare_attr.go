@@ -183,24 +183,27 @@ func (c *comparator) preCheckAttr(kit *rest.Kit, objID string, attrs []metadata.
 	}
 
 	// check if field template attributes collides with biz custom attributes
-	bizAttrCond := mapstr.MapStr{
-		common.BKObjIDField: objID,
-		common.BKAppIDField: mapstr.MapStr{common.BKDBGT: 0},
-		common.BKDBOR: []mapstr.MapStr{
-			{common.BKPropertyIDField: mapstr.MapStr{common.BKDBIN: tmplPropertyIDs}},
-			{common.BKPropertyNameField: mapstr.MapStr{common.BKDBIN: tmplPropertyNames}},
+	param := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKAppIDField: mapstr.MapStr{common.BKDBGT: 0},
+			common.BKDBOR: []mapstr.MapStr{
+				{common.BKPropertyIDField: mapstr.MapStr{common.BKDBIN: tmplPropertyIDs}},
+				{common.BKPropertyNameField: mapstr.MapStr{common.BKDBIN: tmplPropertyNames}},
+			},
 		},
+		Fields: []string{common.BKPropertyIDField, common.BKAppIDField},
+		Page:   metadata.BasePage{Start: 0, Limit: 1},
 	}
 
-	bizAttrCnt, err := c.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-		common.BKTableNameObjAttDes, []map[string]interface{}{bizAttrCond})
+	result, err := c.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, param)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(bizAttrCnt) <= 0 || bizAttrCnt[0] > 0 {
-		blog.Errorf("template(%+v) collides with biz custom field, cnt: %v, rid: %s", attrs, bizAttrCnt, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "attributes")
+	if len(result.Info) > 0 {
+		attr := result.Info[0]
+		blog.Errorf("template(%+v) collides with biz custom field, attr: %v, rid: %s", attrs, attr, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrTopoBizFieldConflict, objID, attr.BizID, attr.PropertyID)
 	}
 
 	return params, nil
