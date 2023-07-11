@@ -13,6 +13,7 @@
 <script setup>
   import { ref, watch, watchEffect, onBeforeUnmount, computed, set, del } from 'vue'
   import { useHttp } from '@/api'
+  import { t } from '@/i18n'
   import Loading from '@/components/loading/index.vue'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
   import SelectModelDialog from './select-model-dialog.vue'
@@ -75,6 +76,8 @@
   const diffLoadingIds = ref({})
   const unmountCallbacks = []
   const hasDiffError = ref(false)
+
+  const modelEditAuths = ref({})
 
   const fetchFieldDiff = async (modelList) => {
     const modelIds = modelList.filter(item => !item.bk_ispaused).map(item => item.id)
@@ -161,13 +164,31 @@
 
   watchEffect(async () => {
     const initModelList = props.modelList.slice()
-    selectedModel.value = initModelList?.[0] ?? null
     if (initModelList.length) {
       fetchFieldDiff(initModelList)
       fetchUniqueDiff(initModelList)
     }
     modelListLocal.value = initModelList
   })
+
+  // 查找匹配第1个可用的模型作为选中模型
+  watch([modelListLocal, modelEditAuths], ([modelList, modelAuths]) => {
+    // 当前存在选中的模型则不变更
+    if (selectedModel.value) {
+      return
+    }
+
+    let firstModel = null
+    for (let i = 0; i < modelList.length; i++) {
+      const model = modelList[i]
+      // 未停用且有权限
+      if (!model.bk_ispaused && modelAuths[model.id]) {
+        firstModel = model
+        break
+      }
+    }
+    selectedModel.value = firstModel
+  }, { deep: true })
 
   const fieldDiffCounts = computed(() => {
     const counts = {}
@@ -222,7 +243,6 @@
     // 添加的
     selectedModels.forEach((selectModel) => {
       if (!modelListLocalSet.has(selectModel.id)) {
-        modelListLocal.value.push(selectModel)
         addSelect.push(selectModel)
       } else {
         modelListLocalSet.delete(selectModel.id)
@@ -239,20 +259,34 @@
 
   const handleConfirmAddModel = (selectedModels) => {
     const [addSelect, deleteSelect] = findAddDelete(selectedModels)
+
+    modelListLocal.value.push(...addSelect)
+
     deleteSelect.forEach((item) => {
       handleClickRemoveModel(item, modelListLocal.value.indexOf(item))
     })
-    selectedModel.value = modelListLocal.value?.[0]
 
     // 获取新选择模型diff
     fetchFieldDiff(addSelect)
     fetchUniqueDiff(addSelect)
   }
 
-  const isSelected = model => model.id === selectedModel.value.id
+  const isSelected = model => model.id === selectedModel.value?.id
 
-  const isConflict = model => (fieldDiffCounts.value[model.id] && fieldDiffCounts.value[model.id].conflict)
-    || (uniqueDiffCounts.value[model.id] && uniqueDiffCounts.value[model.id].conflict)
+  const isFieldConflict = model => fieldDiffCounts.value[model.id] && fieldDiffCounts.value[model.id].conflict
+  const isUniqueConflict = model => uniqueDiffCounts.value[model.id] && uniqueDiffCounts.value[model.id].conflict
+  const isConflict = model => isFieldConflict(model) || isUniqueConflict(model)
+  const getConflictTips = (model) => {
+    if (isFieldConflict(model) && isUniqueConflict(model)) {
+      return t('当前模型与模板绑定会存在字段冲突和唯一校验冲突')
+    }
+    if (isFieldConflict(model)) {
+      return t('当前模型与模板绑定会存在字段冲突')
+    }
+    if (isUniqueConflict(model)) {
+      return t('当前模型与模板绑定会存在唯一校验冲突')
+    }
+  }
 
   const getTotal = id => (fieldDiffCounts.value[id]?.total ?? 0) + (uniqueDiffCounts.value[id]?.total ?? 0)
 
@@ -264,12 +298,14 @@
 
     // 变更当前选择的模型
     if (selectedModel.value === model) {
-      selectedModel.value = modelListLocal.value[modelIndex + 1] ?? modelListLocal.value[0]
+      selectedModel.value = null
     }
 
     // 删除对应模型的diff数据
     del(fieldDiffs.value, model.id)
     del(uniqueDiffs.value, model.id)
+
+    del(modelEditAuths.value, model.id)
   }
   const handleSelectModel = (model) => {
     if (model.bk_ispaused) {
@@ -282,6 +318,7 @@
   }
 
   const handleModelAuthUpdate = (model, isPass) => {
+    set(modelEditAuths.value, model.id, isPass)
     emit('update-model-auth', model, isPass)
   }
 
@@ -343,7 +380,10 @@
                       <bk-icon class="button-icon" type="delete" />
                     </bk-button>
                     <loading :loading="$loading(diffLoadingIds[model.id])">
-                      <i class="bk-icon icon-exclamation-circle-shape conflict-icon" v-if="isConflict(model)"></i>
+                      <i class="bk-icon icon-exclamation-circle-shape conflict-icon"
+                        v-if="isConflict(model)"
+                        v-bk-tooltips="{ content: getConflictTips(model) }">
+                      </i>
                       <span class="count-tag" v-else>
                         {{ getTotal(model.id) }}
                       </span>

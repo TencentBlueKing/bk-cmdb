@@ -51,6 +51,12 @@
     }
   })
 
+  const dialogHeight = computed(() => `${Math.floor(Math.max(store.state.appHeight * 0.8, 200) - 110)}px`)
+  const dialogPos = computed(() => ({
+    top: `${Math.floor(Math.max(store.state.appHeight * 0.4 - (parseInt(dialogHeight.value, 10) / 2), 20))}`
+  }))
+  const dialogWidth = computed(() => (window.innerWidth > 1920 ? 1532 : 1132))
+
   const excludeModelIds = computed(() => store.getters['objectMainLineModule/mainLineModels']
     .filter(model => model.bk_obj_id !== BUILTIN_MODELS.HOST)
     .map(model => model.bk_obj_id))
@@ -161,7 +167,8 @@
   <bk-dialog
     :render-directive="'if'"
     v-model="isShow"
-    width="1132"
+    :width="dialogWidth"
+    :position="dialogPos"
     :close-icon="false"
     :draggable="false"
     ext-cls="custom-wrapper">
@@ -259,7 +266,7 @@
   }
 
   .dialog-content {
-    height: 580px;
+    height: v-bind(dialogHeight);
     padding: 0 12px;
     @include scrollbar-y;
 
@@ -369,6 +376,12 @@
     .model-checkbox {
       flex: none;
       width: 20px;
+    }
+  }
+
+  @media screen and (min-width: 1920px) {
+    .model-list {
+      grid-template-columns: repeat(5, 1fr);
     }
   }
 </style>

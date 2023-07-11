@@ -315,21 +315,35 @@
                 <div class="field-key">{{ $t('是否可编辑') }}</div>
                 <div class="field-value">
                   <span>{{ afterField.editable?.value ? $t('是') : $t('否') }}</span>
-                  <bk-icon v-if="afterField.editable?.lock" type="lock-shape" />
                 </div>
               </div>
               <div :class="getAfterDiffItemClass('isrequired')">
                 <div class="field-key">{{ $t('是否必填') }}</div>
                 <div class="field-value">
                   <span>{{ afterField.isrequired?.value ? $t('是') : $t('否') }}</span>
-                  <bk-icon v-if="afterField.isrequired?.lock" type="lock-shape" />
                 </div>
               </div>
               <div :class="getAfterDiffItemClass('placeholder')">
                 <div class="field-key">{{ $t('用户提示') }}</div>
                 <div class="field-value">
                   <span>{{ afterField.placeholder?.value || '--' }}</span>
-                  <bk-icon v-if="afterField.placeholder?.lock" type="lock-shape" />
+                </div>
+              </div>
+              <div class="diff-item is-option">
+                <div class="field-key">{{ $t('绑定模型后，在模型中可修改的选项') }}</div>
+                <div class="field-value">
+                  <flex-row :colon="true">
+                    <div>{{ $t('在实例中可编辑') }}</div>
+                    <div>{{ afterField.editable?.lock ? $t('不可修改') : $t('可修改') }}</div>
+                  </flex-row>
+                  <flex-row :colon="true">
+                    <div>{{ $t('是否必填') }}</div>
+                    <div>{{ afterField.isrequired?.lock ? $t('不可修改') : $t('可修改') }}</div>
+                  </flex-row>
+                  <flex-row :colon="true">
+                    <div>{{ $t('用户提示') }}</div>
+                    <div>{{ afterField.placeholder?.lock ? $t('不可修改') : $t('可修改') }}</div>
+                  </flex-row>
                 </div>
               </div>
             </template>

@@ -23,6 +23,7 @@
   import FieldCard from '@/components/model-manage/field-card.vue'
   import FieldSettingForm from '@/components/model-manage/field-group/field-detail/index.vue'
   import { UNIUQE_TYPES } from '@/dictionary/model-constants'
+  import { EDITABLE_TYPES, REQUIRED_TYPES } from '@/dictionary/property-constants'
   import UniqueManage from './unique-manage.vue'
   import ModelFieldSelector from './model-field-selector.vue'
   import UniqueManageDrawer from './unique-manage-drawer.vue'
@@ -72,6 +73,13 @@
   const { fieldStatus, removedFieldList } = useField(oldFieldList, fieldLocalList)
   const { getUniqueByField, clearUniqueByField } =  useUnique(oldUniqueList, uniqueLocalList)
 
+  const defaultFieldSetting = () => ({
+    lock: {
+      isrequired: true,
+      editable: true,
+      placeholder: true
+    }
+  })
   const slider = reactive({
     title: '',
     uniqueEnabled: false,
@@ -79,7 +87,8 @@
     isShow: false,
     beforeClose: null,
     view: '',
-    isEditField: false
+    isEditField: false,
+    curFieldSetting: defaultFieldSetting()
   })
 
   const uniqueDrawerOpen = ref(false)
@@ -108,7 +117,7 @@
     slider.isCreateMode = true
 
     slider.curField = {}
-    slider.curFieldSetting = {}
+    slider.curFieldSetting = defaultFieldSetting()
 
     slider.uniqueEnabled = false
     slider.uniqueType = UNIUQE_TYPES.SINGLE
@@ -152,7 +161,7 @@
   const syncUnique = () => {
     emit('update-unique', uniqueLocalList.value)
   }
-  const appendField = (fieldData, extraData = {}) => {
+  const appendField = (fieldData) => {
     const data = {
       field: {
         // 在页面中创建的数据，此id键与后台数据有意保持一致为了简化在更新查找时的逻辑
@@ -160,17 +169,17 @@
         id: uuidv4(),
         ...fieldData
       },
-      extra: extraData
+      extra: slider.curFieldSetting
     }
     fieldLocalList.value.push(data)
 
     return data
   }
-  const updateField = (id, fieldData, extraData) => {
+  const updateField = (id, fieldData) => {
     const fieldIndex = fieldLocalList.value.findIndex(item => item.field.id === id)
     const data = {
       field: { id, ...fieldData },
-      extra: extraData
+      extra: slider.curFieldSetting
     }
     if (~fieldIndex) {
       set(fieldLocalList.value, fieldIndex, data)
@@ -222,7 +231,7 @@
     }
   }
 
-  const handleFieldSave = (id, fieldData, extraData) => {
+  const handleFieldSave = async (id, fieldData) => {
     if (!id && isFieldExist(fieldData, [...fieldLocalList.value, ...removedFieldList.value])) {
       $error(t('字段已在模板中存在，无法添加'))
       return
@@ -231,7 +240,7 @@
     // 启用了唯一校验并且类型是联合唯一才需要校验，单独唯一不校验在后续的处理中直接对数据进行修改
     if (slider.uniqueEnabled && slider.uniqueType === UNIUQE_TYPES.UNION) {
       // 校验“唯一校验”
-      const validateUniqueResult = uniqueManageComp.value?.isValid?.()
+      const validateUniqueResult = await uniqueManageComp.value?.isValid?.()
 
       if (!validateUniqueResult) {
         uniqueManageComp.value?.$el?.scrollIntoView?.()
@@ -241,9 +250,9 @@
 
     let currentField = null
     if (id) {
-      currentField = updateField(id, fieldData, extraData)
+      currentField = updateField(id, fieldData)
     } else {
-      currentField = appendField(fieldData, extraData)
+      currentField = appendField(fieldData)
     }
 
     if (slider.uniqueEnabled) {
@@ -604,6 +613,41 @@
               </unique-manage>
             </grid-layout>
           </template>
+          <template #append-lock="{ fieldInfo }">
+            <div class="lock-option-container">
+              <div class="lock-option-title">
+                <span class="sub-title">{{ $t('模型应用设置') }}</span>
+                {{ $t('模型应用设置提示语') }}
+              </div>
+              <div class="option-item" v-if="EDITABLE_TYPES.includes(fieldInfo.bk_property_type)">
+                <bk-checkbox
+                  v-model="slider.curFieldSetting.lock.editable"
+                  :true-value="false"
+                  :false-value="true"
+                  class="checkbox">
+                  {{$t('允许在模型中修改“在实例中可编辑”的配置')}}
+                </bk-checkbox>
+              </div>
+              <div class="option-item" v-if="REQUIRED_TYPES.includes(fieldInfo.bk_property_type)">
+                <bk-checkbox
+                  v-model="slider.curFieldSetting.lock.isrequired"
+                  :true-value="false"
+                  :false-value="true"
+                  class="checkbox">
+                  {{$t('允许在模型中修改“设置为必填项”的配置')}}
+                </bk-checkbox>
+              </div>
+              <div class="option-item">
+                <bk-checkbox
+                  v-model="slider.curFieldSetting.lock.placeholder"
+                  :true-value="false"
+                  :false-value="true"
+                  class="checkbox">
+                  {{$t('允许在模型中修改“用户提示”的配置')}}
+                </bk-checkbox>
+              </div>
+            </div>
+          </template>
         </field-setting-form>
         <model-field-selector
           v-else-if="slider.view === sliderViews.MODEL_FIELD_SELECTOR"
@@ -685,6 +729,28 @@
     margin-top: 20px;
     padding: 24px 16px;
     background: #F5F7FB;
+  }
+
+  .lock-option-container {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    border-top: 1px solid #EAEBF0;
+    padding-top: 16px;
+    margin-top: 20px;
+    margin-bottom: 32px;
+    .lock-option-title {
+      font-size: 14px;
+      margin-bottom: 4px;
+
+      .sub-title {
+        font-weight: 700;
+      }
+    }
+
+    .option-item {
+      font-size: 14px;
+    }
   }
 
   .full-width-radio {

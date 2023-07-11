@@ -55,6 +55,10 @@
 
   // 接口数据
   const bindModelData = ref([])
+  const basicData = ref({
+    name: '',
+    description: ''
+  })
   const fieldData = ref([])
   const uniqueData = ref([])
 
@@ -82,6 +86,8 @@
       bk_template_id: templateId.value
     })
 
+    basicData.value.name = templateDraft.value.basic.name ?? template.name
+    basicData.value.description = templateDraft.value.basic.description ?? template.description
     bindModelData.value = modelList ?? []
     modelIdList.value = modelList.filter(model => !model.bk_ispaused).map(model => model.id)
 
@@ -96,11 +102,12 @@
 
   // 模板最终数据，草稿数据优先否则为接口数据
   const templateData = computed(() => ({
+    basic: basicData.value,
     fieldList: templateDraft.value.fieldList ?? fieldData.value,
     uniqueList: templateDraft.value.uniqueList ?? uniqueData.value
   }))
 
-  const isDraftValid = computed(() => !templateDraft.value.basic.name)
+  const isDraftValid = computed(() => !basicData.value.name)
 
   const hasModelEditAuth = computed(() => {
     if (!modelIdList.value?.length) {
@@ -133,7 +140,7 @@
   const handleSubmit = async () => {
     const submitData = {
       id: templateId.value,
-      ...templateDraft.value.basic,
+      ...templateData.value.basic,
       attributes: finalFieldList.value,
       uniques: finalUniqueList.value
     }

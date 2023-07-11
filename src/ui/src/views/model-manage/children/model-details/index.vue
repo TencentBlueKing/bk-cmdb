@@ -114,6 +114,7 @@
                 <i class="reddot"
                   v-if="templateDiffStatus[template.id] && templateDiffStatus[template.id].need_sync"
                   v-bk-tooltips="{
+                    allowHTML: true,
                     theme: 'light template-diff-sync',
                     content: `#template-diff-sync-tooltips-${template.id}`
                   }">
