@@ -539,9 +539,9 @@
           this.$emit('confirm', this.field.id, this.fieldInfo, this.fieldSettingExtra)
           return
         }
-        const groupId = this.isGlobalView ? 'default' : 'bizdefault'
+        const defaultGroupld = this.isGlobalView ? 'default' : 'bizdefault'
+        const groupId =  this.fieldInfo.bk_property_group || defaultGroupld
         const activeObjId = this.activeModel.bk_obj_id
-        const bkPropertyGroupParams = this.fieldInfo.bk_property_group || this.group.bk_group_id || groupId
         if (this.isEditField) {
           const action = this.customObjId ? 'updateBizObjectAttribute' : 'updateObjectAttribute'
           let params = this.field.ispre ? this.getPreFieldUpdateParams() : this.fieldInfo
@@ -576,9 +576,9 @@
             objId: activeObjId,
             propertyId: this.field.id,
             params: {
-              bk_property_group: bkPropertyGroupParams,
+              bk_property_group: groupId,
               bk_property_index: this.properties
-                .filter(property => property.bk_property_group === bkPropertyGroupParams)?.length ?? 0
+                .filter(property => property.bk_property_group === groupId)?.length ?? 0
             },
             config: {
               requestId: `updatePropertySort_${activeObjId}`
@@ -595,7 +595,7 @@
           const selectedGroup = this.groups.find(group => group.bk_group_id === this.fieldInfo.bk_property_group)
           const otherParams = {
             creator: this.userName,
-            bk_property_group: bkPropertyGroupParams,
+            bk_property_group: groupId,
             bk_obj_id: selectedGroup?.bk_obj_id || this.group.bk_obj_id,
             bk_supplier_account: this.supplierAccount
           }
