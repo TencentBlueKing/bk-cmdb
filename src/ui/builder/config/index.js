@@ -51,7 +51,7 @@ const dev = {
     HELP_DOC_URL: JSON.stringify(''),
     DISABLE_OPERATION_STATISTIC: false,
     COOKIE_DOMAIN: JSON.stringify(''),
-    ESB_URL: JSON.stringify('')
+    DESKTOP_URL: JSON.stringify('')
   }),
 
   // Paths
@@ -146,7 +146,7 @@ module.exports = {
       HELP_DOC_URL: '{{.helpDocUrl}}',
       DISABLE_OPERATION_STATISTIC: '{{.disableOperationStatistic}}',
       COOKIE_DOMAIN: '{{.cookieDomain}}',
-      ESB_URL: '{{.esbUrl}}'
+      DESKTOP_URL: '{{.bkDesktopUrl}}'
     }),
 
     // Template for index.html

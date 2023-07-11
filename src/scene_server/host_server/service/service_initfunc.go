@@ -157,7 +157,6 @@ func (s *Service) initHostapplyrule(web *restful.WebService) {
 	})
 
 	// 主机属性自动应用
-
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path: "/create/host_apply_rule/bk_biz_id/{bk_biz_id}", Handler: s.CreateHostApplyRule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut,
@@ -168,7 +167,6 @@ func (s *Service) initHostapplyrule(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodGet,
 		Path: "/find/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}/", Handler: s.GetHostApplyRule})
-
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}",
 		Handler: s.ListHostApplyRule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
