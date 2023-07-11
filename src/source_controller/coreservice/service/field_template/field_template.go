@@ -399,16 +399,19 @@ func (s *service) deleteFieldTmplRelation(kit *rest.Kit, option *metadata.FieldT
 }
 
 func (s *service) fieldTemplateUnbindAttrAndUnique(kit *rest.Kit, id int64, objIDs []string) error {
-
-	tmplAttrCond := mapstr.MapStr{
-		common.BKTemplateID: id,
+	if len(objIDs) == 0 {
+		return nil
 	}
 
-	tmplAttrCond = util.SetModOwner(tmplAttrCond, kit.SupplierAccount)
+	tmplCond := mapstr.MapStr{
+		common.BKTemplateID: id,
+	}
+	tmplCond = util.SetModOwner(tmplCond, kit.SupplierAccount)
+
 	dbTmplAttrs := make([]metadata.FieldTemplateAttr, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(tmplAttrCond).Fields(common.BKFieldID).
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(tmplCond).Fields(common.BKFieldID).
 		All(kit.Ctx, &dbTmplAttrs); err != nil {
-		blog.Errorf("list field template attrs failed, filter: %+v, err: %v, rid: %v", tmplAttrCond, err, kit.Rid)
+		blog.Errorf("list field template attrs failed, filter: %+v, err: %v, rid: %v", tmplCond, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -418,30 +421,41 @@ func (s *service) fieldTemplateUnbindAttrAndUnique(kit *rest.Kit, id int64, objI
 		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKTemplateID)
 	}
 
-	tmplIDs := make([]int64, 0)
-	for _, attr := range dbTmplAttrs {
-		tmplIDs = append(tmplIDs, attr.ID)
+	attrTmplIDs := make([]int64, len(dbTmplAttrs))
+	for idx, attr := range dbTmplAttrs {
+		attrTmplIDs[idx] = attr.ID
 	}
 
 	updateCond := mapstr.MapStr{
-		common.BKObjIDField: mapstr.MapStr{
-			common.BKDBIN: objIDs,
-		},
-		common.BKTemplateID: mapstr.MapStr{
-			common.BKDBIN: tmplIDs,
-		},
+		common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs},
+		common.BKTemplateID: mapstr.MapStr{common.BKDBIN: attrTmplIDs},
 	}
-	data := mapstr.MapStr{
-		common.BKTemplateID: 0,
-	}
-
+	data := mapstr.MapStr{common.BKTemplateID: 0}
 	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Update(kit.Ctx, updateCond, data); nil != err {
 		blog.Errorf("update object attrs failed, filter: %+v, err: %v, rid: %v", updateCond, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 
+	dbTmplUniques := make([]metadata.FieldTemplateUnique, 0)
+	if err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(tmplCond).Fields(common.BKFieldID).
+		All(kit.Ctx, &dbTmplUniques); err != nil {
+		blog.Errorf("list field template uniques failed, filter: %+v, err: %v, rid: %v", tmplCond, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	if len(dbTmplUniques) == 0 {
+		return nil
+	}
+
+	uniqueTmplIDs := make([]int64, len(dbTmplUniques))
+	for idx, unique := range dbTmplUniques {
+		uniqueTmplIDs[idx] = unique.ID
+	}
+
+	updateCond[common.BKTemplateID] = mapstr.MapStr{common.BKDBIN: uniqueTmplIDs}
+
 	if err := mongodb.Client().Table(common.BKTableNameObjUnique).Update(kit.Ctx, updateCond, data); nil != err {
-		blog.Errorf("update object attrs failed, filter: %+v, err: %v, rid: %v", updateCond, err, kit.Rid)
+		blog.Errorf("update object uniques failed, filter: %+v, err: %v, rid: %v", updateCond, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 
