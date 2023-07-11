@@ -215,22 +215,22 @@
   const findAddDelete = (selectedModels) => {
     const addSelect = []
     const deleteSelect = []
-    const set = new Set()
+    const modelListLocalSet = new Set()
     modelListLocal.value.forEach((selectModel) => {
-      set.add(selectModel.id)
+      modelListLocalSet.add(selectModel.id)
     })
     // 添加的
     selectedModels.forEach((selectModel) => {
-      if (!set.has(selectModel.id)) {
+      if (!modelListLocalSet.has(selectModel.id)) {
         modelListLocal.value.push(selectModel)
         addSelect.push(selectModel)
       } else {
-        set.delete(selectModel.id)
+        modelListLocalSet.delete(selectModel.id)
       }
     })
     // 删除的
     modelListLocal.value.forEach((model) => {
-      if (set.has(model.id)) {
+      if (modelListLocalSet.has(model.id)) {
         deleteSelect.push(model)
       }
     })
