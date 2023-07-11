@@ -14,7 +14,6 @@
   import { computed, ref, watch } from 'vue'
   import cloneDeep from 'lodash/cloneDeep'
   import fieldTemplateService from '@/service/field-template'
-  import { vAutofocus } from '@/directives/autofocus'
 
   const props = defineProps({
     show: {
