@@ -1737,6 +1737,7 @@
     "请输入模板描述": "Please enter the template description",
     "克隆字段组合模板": "Clone field template",
     "绑定模型": "Binding model",
+    "绑定新模型": "Binding new model",
     "字段组合模板": "Field Template",
     "字段数量": "Field count",
     "绑定的模型": "Bound models",
@@ -1803,5 +1804,16 @@
     "新建步骤未完成，退出将撤销当前操作": "The creation step is not completed, exiting will undo the current operation",
     "编辑步骤未完成，退出将撤销当前操作": "The editing step is not completed, exiting will undo the current operation",
     "需要至少两个字段组成联合唯一": "At least two fields are required to form a union unique",
-    "尚未创建字段": "Field not yet created, {link}"
+    "尚未创建字段": "Field not yet created, {link}",
+    "设置为唯一校验": "Set to unique check",
+    "字段组合模板详情": "Field combination template details",
+    "进入编辑": "Edit",
+    "预览字段": "Preview",
+    "字段配置": "Field configuration",
+    "字段模板创建成功": "The field template is created successfully",
+    "接下来，您可以绑定需要应用的模型": "Next, you can bind the model that you want to apply",
+    "是否退出": "Whether to quit",
+    "校验类型": "Check type",
+    "保存&退出": "Save & Exit",
+    "保存&下一步": "Save & Next"
 }

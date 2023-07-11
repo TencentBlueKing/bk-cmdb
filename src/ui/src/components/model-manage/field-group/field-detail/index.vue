@@ -61,8 +61,7 @@
             class="bk-select-full-width"
             searchable
             :clearable="false"
-            v-model="fieldInfo.bk_property_group"
-            :disabled="isEditField">
+            v-model="fieldInfo.bk_property_group">
             <bk-option v-for="(option, index) in groups"
               :key="index"
               :id="option.bk_group_id"
@@ -480,6 +479,9 @@
         'updateObjectAttribute',
         'updateBizObjectAttribute'
       ]),
+      ...mapActions('objectModelFieldGroup', [
+        'updatePropertySort'
+      ]),
       async initData() {
         Object.keys(this.fieldInfo).forEach((key) => {
           this.fieldInfo[key] = this.$tools.clone(this.field[key] ?? '')
@@ -537,7 +539,9 @@
           this.$emit('confirm', this.field.id, this.fieldInfo, this.fieldSettingExtra)
           return
         }
-
+        const defaultGroupld = this.isGlobalView ? 'default' : 'bizdefault'
+        const groupId =  this.fieldInfo.bk_property_group || defaultGroupld
+        const activeObjId = this.activeModel.bk_obj_id
         if (this.isEditField) {
           const action = this.customObjId ? 'updateBizObjectAttribute' : 'updateObjectAttribute'
           let params = this.field.ispre ? this.getPreFieldUpdateParams() : this.fieldInfo
@@ -550,28 +554,48 @@
           if (!this.isGlobalView) {
             params.bk_biz_id = this.bizId
           }
-          await this[action]({
-            bizId: this.bizId,
-            id: this.field.id,
-            params,
+          const paramsLen = Object.keys(params).length
+          if (paramsLen) {
+            await this[action]({
+              bizId: this.bizId,
+              id: this.field.id,
+              params,
+              config: {
+                requestId: 'updateObjectAttribute'
+              }
+            }).then(() => {
+              fieldId = this.fieldInfo.bk_property_id
+              this.$http.cancel(`post_searchObjectAttribute_${activeObjId}`)
+              this.$http.cancelCache('getHostPropertyList')
+              this.$success(this.$t('修改成功'))
+            })
+          }
+
+          // 修改分组
+          await this.updatePropertySort({
+            objId: activeObjId,
+            propertyId: this.field.id,
+            params: {
+              bk_property_group: groupId,
+              bk_property_index: this.properties
+                .filter(property => property.bk_property_group === groupId)?.length ?? 0
+            },
             config: {
-              requestId: 'updateObjectAttribute'
+              requestId: `updatePropertySort_${activeObjId}`
             }
           }).then(() => {
-            fieldId = this.fieldInfo.bk_property_id
-            this.$http.cancel(`post_searchObjectAttribute_${this.activeModel.bk_obj_id}`)
-            this.$http.cancelCache('getHostPropertyList')
-            this.$success(this.$t('修改成功'))
+            if (!paramsLen) {
+              this.$success(this.$t('修改成功'))
+            }
           })
         } else {
           if (isEmptyPropertyValue(this.fieldInfo.default)) {
             Reflect.deleteProperty(this.fieldInfo, 'default')
           }
-          const groupId = this.isGlobalView ? 'default' : 'bizdefault'
           const selectedGroup = this.groups.find(group => group.bk_group_id === this.fieldInfo.bk_property_group)
           const otherParams = {
             creator: this.userName,
-            bk_property_group: this.fieldInfo.bk_property_group || this.group.bk_group_id || groupId,
+            bk_property_group: groupId,
             bk_obj_id: selectedGroup?.bk_obj_id || this.group.bk_obj_id,
             bk_supplier_account: this.supplierAccount
           }
@@ -590,7 +614,7 @@
               requestId: 'createObjectAttribute'
             }
           }).then(() => {
-            this.$http.cancel(`post_searchObjectAttribute_${this.activeModel.bk_obj_id}`)
+            this.$http.cancel(`post_searchObjectAttribute_${activeObjId}`)
             this.$http.cancelCache('getHostPropertyList')
             this.$success(this.$t('创建成功'))
           })
@@ -691,7 +715,7 @@
             margin-left: 10px;
         }
         .btn-group {
-            padding: 8px 24px;
+            padding: 8px 40px;
             &.is-sticky {
                 border-top: 1px solid #dcdee5;
             }
