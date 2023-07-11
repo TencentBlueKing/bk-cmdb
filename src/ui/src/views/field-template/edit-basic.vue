@@ -71,7 +71,7 @@
     const { formData } = basicFormRef.value
     const { name, description } = basicData.value // 一开始的名称和描述
     const { name: newName, description: newDescription }  = formData  // 新的名称和描述
-    if (!await basicFormRef.value.$validator.validateAll()) {
+    if (!await basicFormRef.value.validateAll()) {
       return
     }
     const saveData = {
