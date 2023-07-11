@@ -212,11 +212,36 @@
     http.cancelRequest(allRquestIds)
   })
 
-  const handleConfirmAddModel = (addSelect, deleteSelect) => {
+  const findAddDelete = (selectedModels) => {
+    const addSelect = []
+    const deleteSelect = []
+    const set = new Set()
+    modelListLocal.value.forEach((selectModel) => {
+      set.add(selectModel.id)
+    })
+    // 添加的
+    selectedModels.forEach((selectModel) => {
+      if (!set.has(selectModel.id)) {
+        modelListLocal.value.push(selectModel)
+        addSelect.push(selectModel)
+      } else {
+        set.delete(selectModel.id)
+      }
+    })
+    // 删除的
+    modelListLocal.value.forEach((model) => {
+      if (set.has(model.id)) {
+        deleteSelect.push(model)
+      }
+    })
+    return [addSelect, deleteSelect]
+  }
+
+  const handleConfirmAddModel = (selectedModels) => {
+    const [addSelect, deleteSelect] = findAddDelete(selectedModels)
     deleteSelect.forEach((item) => {
       handleClickRemoveModel(item, modelListLocal.value.indexOf(item))
     })
-    modelListLocal.value.push(...addSelect)
     selectedModel.value = modelListLocal.value?.[0]
 
     // 获取新选择模型diff

@@ -89,8 +89,7 @@
   const selectedStatus = computed(() => {
     const status = {
       selected: {},
-      binded: {},
-      disabled: {}
+      binded: {}
     }
     modelList.value.forEach((model) => {
       status.selected[model.id] = selectedLocal.value.some(item => item.id === model.id)
@@ -116,16 +115,14 @@
   const handleSelectAll = (checked) => {
     if (checked) {
       modelList.value.forEach((model) => {
-        if (!selectedStatus.value.disabled[model.id]
-          && !selectedStatus.value.binded[model.id]
+        if (!selectedStatus.value.binded[model.id]
           && !selectedStatus.value.selected[model.id]) {
           selectedLocal.value.push(model)
         }
       })
     } else {
       modelList.value.forEach((model) => {
-        if (!selectedStatus.value.disabled[model.id]
-          && !selectedStatus.value.binded[model.id]
+        if (!selectedStatus.value.binded[model.id]
           && selectedStatus.value.selected[model.id]) {
           const index = selectedLocal.value.findIndex(item => item.id === model.id)
           if (~index) {
@@ -136,29 +133,9 @@
     }
   }
 
-  // 找出当前添加的和删除的模型
-  const findAddDelete = () => {
-    const addKey = {}
-    let addSelect = selectedLocal.value.slice()
-    const deleteSelect = props.selected.slice()
-    addSelect.forEach((item, index) => addKey[item.id] = index)
-    for (let i = 0;i < deleteSelect.length;) {
-      const deleteItem = deleteSelect[i]
-      const index = addKey[deleteItem.id] ?? -1
-      // 如果两个数组有相同的 则剔除掉
-      if (index > -1) {
-        addSelect[index] = ''
-        deleteSelect.splice(i, 1)
-        continue
-      }
-      i += 1
-    }
-    addSelect = addSelect.filter(item => item?.id)
-    return [addSelect, deleteSelect]
-  }
 
   const handleConfirm = () => {
-    emit('confirm', ...findAddDelete())
+    emit('confirm', selectedLocal.value)
     close()
   }
   const handleCancel = () => {
@@ -225,13 +202,12 @@
                   </div>
                   <bk-checkbox class="model-checkbox"
                     v-bk-tooltips="{
-                      disabled: !selectedStatus.binded[model.id] && !selectedStatus.disabled[model.id],
-                      content: $t(selectedStatus.binded[model.id] ? '模型已绑定' : '模型已选择')
+                      disabled: !selectedStatus.binded[model.id],
+                      content: $t('模型已绑定')
                     }"
                     :value="selectedStatus.selected[model.id]
-                      || selectedStatus.disabled[model.id]
                       || selectedStatus.binded[model.id]"
-                    :disabled="disabled || selectedStatus.disabled[model.id] || selectedStatus.binded[model.id]">
+                    :disabled="disabled || selectedStatus.binded[model.id]">
                   </bk-checkbox>
                 </div>
               </template>
