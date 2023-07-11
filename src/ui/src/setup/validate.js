@@ -152,7 +152,7 @@ const dictionary = {
       remoteRegular: () => '请输入合法的正则表达式',
       remoteString: () => '请输入符合自定义校验规则的内容',
       excluded: field => `${field}已存在`,
-      remoteDuplicate: (field, [, msg]) => msg || '重复的值'
+      remoteDuplicate: (field, [, , msg]) => msg || '重复的值'
     },
     custom: {
       asst: {
@@ -185,7 +185,7 @@ const dictionary = {
       remoteRegular: () => 'Please input valid regular expression',
       remoteString: () => 'Please input correct content that matchs ths custom rules',
       excluded: field => `${field} already exists`,
-      remoteDuplicate: (field, [, msg]) => msg || 'Duplicate value'
+      remoteDuplicate: (field, [, , msg]) => msg || 'Duplicate value'
     },
     custom: {
       asst: {

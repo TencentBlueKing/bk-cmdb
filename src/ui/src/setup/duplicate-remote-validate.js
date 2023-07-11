@@ -24,7 +24,7 @@ const requestConfigBase = key => ({
 })
 
 const dupChecks = {
-  [DUP_CHECK_IDS.FIELD_TEMPLATE_NAME]: async (value) => {
+  [DUP_CHECK_IDS.FIELD_TEMPLATE_NAME]: async (value, oldValue) => {
     const params = {
       template_filter: {
         condition: 'AND',
@@ -36,15 +36,18 @@ const dupChecks = {
       },
       page: onePageParams()
     }
-    const { list } = await fieldTemplateService.find(params, requestConfigBase(`field_template_name_${value}`))
-    return list?.length > 0
+    const { list: [template = null] } = await fieldTemplateService.find(params, requestConfigBase(`field_template_name_${value}_${oldValue}`))
+    if (oldValue) {
+      return template && template?.name !== oldValue
+    }
+    return template?.id > 0
   }
 }
 
 export default {
-  validate: async (value, [id]) => {
+  validate: async (value, [id, oldValue]) => {
     try {
-      const isDup = await dupChecks[id](value)
+      const isDup = await dupChecks[id](value, oldValue)
       return { valid: !isDup }
     } catch (error) {
       return { valid: false }

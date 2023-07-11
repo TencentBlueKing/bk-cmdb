@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { ref, watch } from 'vue'
+  import { ref, watch, getCurrentInstance, computed } from 'vue'
   import cloneDeep from 'lodash/cloneDeep'
   import { DUP_CHECK_IDS } from '@/setup/duplicate-remote-validate'
 
@@ -24,17 +24,34 @@
 
   const emit = defineEmits(['change'])
 
+  const currentInstance = getCurrentInstance().proxy
+
+  const dupCheckId = DUP_CHECK_IDS.FIELD_TEMPLATE_NAME
+  const originName = computed(() => props.data?.name)
+
   const formData = ref(cloneDeep(props.data))
   watch(() => props.data, (data) => {
     formData.value = cloneDeep(data)
   }, { deep: true })
+
+  const validateAll = async () => {
+    const validResults = []
+    for (const [key, val] of Object.entries(currentInstance.fields)) {
+      if (val.dirty) {
+        validResults.push(await currentInstance.$validator.validate(key))
+      }
+    }
+
+    return validResults.every(valid => valid)
+  }
 
   const handleFormDataChange = () => {
     emit('change')
   }
 
   defineExpose({
-    formData
+    formData,
+    validateAll
   })
 </script>
 
@@ -45,7 +62,7 @@
         class="cmdb-form-item" :class="{ 'is-error': errors.has('name') }">
         <bk-input
           data-vv-validate-on="change"
-          v-validate="`required|length:256|remoteDuplicate:${DUP_CHECK_IDS.FIELD_TEMPLATE_NAME},${$t('模板名称已存在')}`"
+          v-validate="`required|length:256|remoteDuplicate:${dupCheckId},${originName},${$t('模板名称已存在')}`"
           name="name"
           :placeholder="$t('请输入模板名称')"
           v-model="formData.name"
