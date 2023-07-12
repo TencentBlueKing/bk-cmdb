@@ -19,7 +19,6 @@ package fieldtmpl
 
 import (
 	"reflect"
-	"strings"
 
 	"configcenter/pkg/filter"
 	filtertools "configcenter/pkg/tools/filter"
@@ -149,10 +148,6 @@ func (c *comparator) preCheckAttr(kit *rest.Kit, objID string, attrs []metadata.
 	for index, attr := range attrs {
 		if rawErr := attr.ValidateBase(); rawErr.ErrCode != 0 {
 			return nil, rawErr.ToCCError(kit.CCError)
-		}
-		if strings.HasPrefix(attr.PropertyID, "bk") {
-			blog.Errorf("template attribute(%s) has 'bk' prefix, rid: %s", attr.PropertyID, kit.Rid)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "attributes")
 		}
 
 		if _, exists := innerFieldMap[attr.PropertyID]; exists {
