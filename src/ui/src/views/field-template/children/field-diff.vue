@@ -44,7 +44,7 @@
   })
   const store = useStore()
 
-  const isOnlyShowTemplate = ref(true)
+  const isOnlyShowTemplateRelated = ref(true)
 
   const diffDetails = reactive({
     show: false,
@@ -101,10 +101,11 @@
       displayFieldGroups.push(data)
     })
 
-    const finalFieldGroups = displayFieldGroups.filter(group => group.properties.length)
-    finalFieldGroups.forEach((group) => {
-      group.properties = group.properties.filter(field => (isOnlyShowTemplate.value ? isTemplate(field) : true))
+    displayFieldGroups.forEach((group) => {
+      group.properties = group.properties
+        .filter(field => (isOnlyShowTemplateRelated.value ? isTemplateRelated(field) : true))
     })
+    const finalFieldGroups = displayFieldGroups.filter(group => group.properties.length > 0)
 
     return finalFieldGroups
   })
@@ -147,6 +148,9 @@
     }
     return props.templateFieldList.some(item => item.id === field.bk_template_id)
   }
+
+  const isTemplateRelated = field => isNew(field)
+    || isUpdate(field) || isConflict(field) || isUnbound(field) || isTemplate(field)
 
   const handleClickField = (field) => {
     const diffType = getFieldDiffType(field)
@@ -211,7 +215,7 @@
           </span>
         </div>
       </div>
-      <bk-checkbox class="filter-checkbox" v-model="isOnlyShowTemplate">{{ $t('仅显示与模板相关字段') }}</bk-checkbox>
+      <bk-checkbox class="filter-checkbox" v-model="isOnlyShowTemplateRelated">{{ $t('仅显示与模板相关字段') }}</bk-checkbox>
     </div>
 
     <div class="model-group-container">

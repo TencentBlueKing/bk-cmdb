@@ -55,6 +55,9 @@
   const plusEl = ref(null)
   let tips = null
 
+  const maxResizeCount = 10
+  let execResizeTimes = 0
+
   const tags = computed(() => props.list.filter(item => item))
   const gapWidth = computed(() => parseInt(props.gap, 10))
   const ellipsisCount = ref(0)
@@ -127,7 +130,7 @@
   }
 
   const resizeHander = () => {
-    if (!tags.value.length) {
+    if (!tags.value.length || execResizeTimes > maxResizeCount) {
       return
     }
 
@@ -150,7 +153,7 @@
       let posItem = null
 
       for (const item of tagWidthList) {
-        accWidth = accWidth + item.width + gapWidth.value + 10
+        accWidth = accWidth + item.width + gapWidth.value
         if (accWidth > containerClientWidth) {
           posItem = item
           ellipsisCount.value = tags.value.length - item.index
@@ -183,11 +186,14 @@
       tipTagOffsetIndex.value = offsetIndex
       tagItemList.value = tagWidthList
     } else {
+      execResizeTimes = 0
       // 将plus元素放到最后并且隐藏
       containerEl.value.insertBefore(plusEl.value, tagItems[tagItems.length - 1].nextSibling)
       tagItems.forEach(item => item.classList.remove('is-pos'))
       plusEl.value.classList.remove('show')
     }
+
+    execResizeTimes += 1
   }
 
   const changing = ref(false)
@@ -208,12 +214,15 @@
   })
 
   watch(tags, () => {
+    execResizeTimes = 0
     execResizeHander()
   })
 
   onMounted(() => {
     resizeObserver.observe(containerEl.value)
     execResizeHander()
+
+    tips?.destroy?.()
   })
 
   onBeforeUnmount(() => {
