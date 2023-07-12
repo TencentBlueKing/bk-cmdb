@@ -18,6 +18,11 @@
   import FlexRow from '@/components/ui/other/flex-row.vue'
   import { DIFF_TYPES } from './use-field'
   import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
+  import routerActions from '@/router/actions'
+  import fieldTemplateService from '@/service/field-template'
+  import {
+    MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS
+  } from '@/dictionary/menu-symbol'
 
   const props = defineProps({
     show: {
@@ -60,11 +65,29 @@
   })
 
   const modelBeforeField = ref(cloneDeep(props.beforeField))
-  watchEffect(() => {
+  const bindTemplate = ref({})
+
+  watchEffect(async () => {
     modelBeforeField.value = props.diffType === DIFF_TYPES.NEW
       ? { bk_property_type: props.beforeField.bk_property_type }
       : cloneDeep(props.beforeField)
+    if (isTemplateBindConflict?.value) {
+      bindTemplate.value = await findClashTemplate()
+    }
   })
+
+  const findClashTemplate = async () => {
+    const { bk_template_id: bkTemplateId, id, bk_obj_id: modelId } = modelBeforeField.value
+    if (!id || !bkTemplateId) return {}
+    const params = {
+      bk_template_id: bkTemplateId,
+      bk_attribute_id: id
+    }
+    return await fieldTemplateService.getFieldBindTemplate(params, {
+      requestId: `${modelId}_${id}_${bkTemplateId}`,
+      fromCache: true
+    })
+  }
 
   const isTemplateBindConflict = computed(() => props.diffType === DIFF_TYPES.CONFLICT
     && props.fieldDiff?.data?.bk_template_id !== 0)
@@ -149,6 +172,17 @@
 
     return classList
   }
+
+  const handleOtherTemplate = () => {
+    const { id } = bindTemplate.value
+    if (!id) return
+    routerActions.open({
+      name: MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
+      params: {
+        id
+      }
+    })
+  }
 </script>
 
 <template>
@@ -161,7 +195,21 @@
     <div :class="['diff-details', diffType, { 'is-template-conflict': isTemplateBindConflict }]" slot="content">
       <div class="diff-top">
         <div class="top-label">{{ $t('绑定变化：') }}</div>
-        <div :class="['top-content', diffType]">{{ diffTitle }}</div>
+        <div :class="['top-content', diffType]">
+          <template v-if="isTemplateBindConflict && props.diffType === 'conflict'">
+            <i18n path="字段冲突，该字段已经被其他模板绑定，请删除该模型或修改模板">
+              <template #other>
+                <bk-button
+                  text
+                  style="color: inherit;"
+                  @click="handleOtherTemplate(modelBeforeField)">
+                  {{$t('其他模板')}}
+                </bk-button>
+              </template>
+            </i18n>
+          </template>
+          <template v-else>{{ diffTitle }}</template>
+        </div>
       </div>
       <div class="diff-table">
         <div class="table-head">
