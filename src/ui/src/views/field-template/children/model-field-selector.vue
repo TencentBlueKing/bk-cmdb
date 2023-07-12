@@ -49,18 +49,32 @@
   const selectedStatus = computed(() => {
     const status = {
       selected: {},
-      disabled: {}
+      disabled: {},
+      fieldChecked: {}
     }
     fieldList.value.forEach((prop) => {
       status.selected[prop.id] = selected.value.some(item => item.id === prop.id)
       status.disabled[prop.id] = props.templateFieldList.some(item => item.bk_property_id === prop.bk_property_id
         || item.bk_property_name === prop.bk_property_name)
+      selected.value
+        .forEach((item) => {
+          if (item.bk_property_id === prop.bk_property_id) {
+            status.fieldChecked[prop.bk_property_id] = item.id
+          }
+        })
     })
     return status
   })
 
+  // 该字段是否在其他模型选过
+  const isSelect = (field) => {
+    const id = selectedStatus.value.fieldChecked[field.bk_property_id] || false
+    // 如果当前选过该字段，在其他模型该字段无法选择
+    return id && field.id !== id
+  }
+
   const handleSelect = (field) => {
-    if (selectedStatus.value.disabled[field.id]) {
+    if (selectedStatus.value.disabled[field.id] || isSelect(field)) {
       return
     }
 
@@ -131,8 +145,9 @@
             @click-field="handleSelect">
             <template #action-append>
               <bk-checkbox
-                :disabled="selectedStatus.disabled[field.id]"
-                v-model="selectedStatus.selected[field.id]">
+                @change="handleSelect(field)"
+                :disabled="selectedStatus.disabled[field.id] || isSelect(field)"
+                :value="selectedStatus.selected[field.id]">
               </bk-checkbox>
             </template>
           </field-card>
