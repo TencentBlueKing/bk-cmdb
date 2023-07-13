@@ -605,6 +605,7 @@
       v-if="detailsDrawer.template.id"
       :open="detailsDrawer.open"
       :template="detailsDrawer.template"
+      :tab-active-default="query?.tabActive"
       @bind-change="handleBindModelChange"
       @clone-done="handleCloneDone"
       @delete-done="handleDeleteDone"

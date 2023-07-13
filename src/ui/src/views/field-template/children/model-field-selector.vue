@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { computed, ref } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useStore } from '@/store'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
@@ -38,6 +38,10 @@
   const selectedModelId = ref('')
   const selected = ref([])
 
+  watch(selectedModelId, () => {
+    handleClearSelect()
+  })
+
   const searchParams = computed(() => ({
     bk_obj_id: selectedModelId.value,
     bk_supplier_account: store.getters.supplierAccount
@@ -49,32 +53,18 @@
   const selectedStatus = computed(() => {
     const status = {
       selected: {},
-      disabled: {},
-      fieldChecked: {}
+      disabled: {}
     }
     fieldList.value.forEach((prop) => {
       status.selected[prop.id] = selected.value.some(item => item.id === prop.id)
       status.disabled[prop.id] = props.templateFieldList.some(item => item.bk_property_id === prop.bk_property_id
         || item.bk_property_name === prop.bk_property_name)
-      selected.value
-        .forEach((item) => {
-          if (item.bk_property_id === prop.bk_property_id) {
-            status.fieldChecked[prop.bk_property_id] = item.id
-          }
-        })
     })
     return status
   })
 
-  // 该字段是否在其他模型选过
-  const isSelect = (field) => {
-    const id = selectedStatus.value.fieldChecked[field.bk_property_id] || false
-    // 如果当前选过该字段，在其他模型该字段无法选择
-    return id && field.id !== id
-  }
-
   const handleSelect = (field) => {
-    if (selectedStatus.value.disabled[field.id] || isSelect(field)) {
+    if (selectedStatus.value.disabled[field.id]) {
       return
     }
 
@@ -146,7 +136,7 @@
             <template #action-append>
               <bk-checkbox
                 @change="handleSelect(field)"
-                :disabled="selectedStatus.disabled[field.id] || isSelect(field)"
+                :disabled="selectedStatus.disabled[field.id]"
                 :value="selectedStatus.selected[field.id]">
               </bk-checkbox>
             </template>

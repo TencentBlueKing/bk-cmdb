@@ -21,7 +21,7 @@
   import routerActions from '@/router/actions'
   import fieldTemplateService from '@/service/field-template'
   import {
-    MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS
+    MENU_MODEL_FIELD_TEMPLATE
   } from '@/dictionary/menu-symbol'
 
   const props = defineProps({
@@ -177,9 +177,11 @@
     const { id } = bindTemplate.value
     if (!id) return
     routerActions.open({
-      name: MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
-      params: {
-        id
+      name: MENU_MODEL_FIELD_TEMPLATE,
+      query: {
+        id,
+        action: 'view',
+        tabActive: 'model'
       }
     })
   }
@@ -201,9 +203,9 @@
               <template #other>
                 <bk-button
                   text
-                  style="color: inherit;"
+                  type="primary"
                   @click="handleOtherTemplate(modelBeforeField)">
-                  {{$t('其他模板')}}
+                  「{{ bindTemplate?.name || 'xxx' }} {{$t('模板')}}」
                 </bk-button>
               </template>
             </i18n>
