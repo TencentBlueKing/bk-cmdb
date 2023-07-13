@@ -24,14 +24,16 @@
           <span class="property-name" v-bk-overflow-tips>
             {{property.bk_property_name}}
           </span>
-          <span :id="`rule-${property.id}`" v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
-            <i18n path="已配置属性自动应用提示" v-if="hasRelatedRules(property)">
-              <template #link>
-                <bk-button text @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
-              </template>
-            </i18n>
-            <span v-else>{{$t('系统限定不可修改')}}</span>
-          </span>
+          <template v-if="!readonly">
+            <span :id="`rule-${property.id}`" v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
+              <i18n path="已配置属性自动应用提示" v-if="hasRelatedRules(property)">
+                <template #link>
+                  <bk-button text @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
+                </template>
+              </i18n>
+              <span v-else>{{$t('系统限定不可修改')}}</span>
+            </span>
+          </template>
           <!-- 非表格字段 -->
           <template v-if="property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE">
             <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
