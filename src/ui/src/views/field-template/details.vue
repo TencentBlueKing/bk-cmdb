@@ -39,10 +39,6 @@
     template: {
       type: Object,
       default: () => ({})
-    },
-    tabActiveDefault: {
-      type: String,
-      default: ''
     }
   })
 
@@ -51,7 +47,7 @@
   const route = useRoute()
 
   const templateId = computed(() => props.template?.id)
-  const queryTab = computed(() => props.tabActiveDefault || route.query.tab)
+  const queryTab = computed(() => route.query.tab)
 
   const templateList = computed(() => [cloneDeep(props.template)])
   const templateName = computed({

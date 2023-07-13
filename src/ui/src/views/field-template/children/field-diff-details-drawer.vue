@@ -65,18 +65,18 @@
   })
 
   const modelBeforeField = ref(cloneDeep(props.beforeField))
-  const bindTemplate = ref({})
+  const boundTemplate = ref({})
 
   watchEffect(async () => {
     modelBeforeField.value = props.diffType === DIFF_TYPES.NEW
       ? { bk_property_type: props.beforeField.bk_property_type }
       : cloneDeep(props.beforeField)
     if (isTemplateBindConflict?.value) {
-      bindTemplate.value = await findClashTemplate()
+      boundTemplate.value = await getBoundTemplate()
     }
   })
 
-  const findClashTemplate = async () => {
+  const getBoundTemplate = async () => {
     const { bk_template_id: bkTemplateId, id, bk_obj_id: modelId } = modelBeforeField.value
     if (!id || !bkTemplateId) return {}
     const params = {
@@ -174,14 +174,14 @@
   }
 
   const handleOtherTemplate = () => {
-    const { id } = bindTemplate.value
+    const { id } = boundTemplate.value
     if (!id) return
     routerActions.open({
       name: MENU_MODEL_FIELD_TEMPLATE,
       query: {
         id,
         action: 'view',
-        tabActive: 'model'
+        tab: 'model'
       }
     })
   }
@@ -198,14 +198,14 @@
       <div class="diff-top">
         <div class="top-label">{{ $t('绑定变化：') }}</div>
         <div :class="['top-content', diffType]">
-          <template v-if="isTemplateBindConflict && props.diffType === 'conflict'">
+          <template v-if="isTemplateBindConflict">
             <i18n path="字段冲突，该字段已经被其他模板绑定，请删除该模型或修改模板">
               <template #other>
                 <bk-button
                   text
                   type="primary"
                   @click="handleOtherTemplate(modelBeforeField)">
-                  「{{ bindTemplate?.name || 'xxx' }} {{$t('模板')}}」
+                  「{{ boundTemplate?.name }} {{$t('模板')}}」
                 </bk-button>
               </template>
             </i18n>
