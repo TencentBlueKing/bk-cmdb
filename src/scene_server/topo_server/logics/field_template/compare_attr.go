@@ -160,7 +160,7 @@ func (c *comparator) preCheckAttr(kit *rest.Kit, objID string, attrs []metadata.
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "attributes")
 		}
 
-		if _, exists := params.tmplPropIDMap[attr.PropertyName]; exists {
+		if _, exists := params.tmplNameMap[attr.PropertyName]; exists {
 			blog.Errorf("template attribute name(%s) duplicate, rid: %s", attr.PropertyName, kit.Rid)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "attributes")
 		}
