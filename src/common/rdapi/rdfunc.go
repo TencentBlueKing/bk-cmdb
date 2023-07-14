@@ -43,13 +43,15 @@ func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, s
 }
 
 // AllGlobalFilter TODO
-func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response,
+	fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 		defer func() {
 			if fetalErr := recover(); fetalErr != nil {
 				rid := util.GetHTTPCCRequestID(req.Request.Header)
 				blog.Errorf("server panic, err:%#v, rid:%s, debug strace:%s", fetalErr, rid, debug.Stack())
-				ccErrTip := errFunc().CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header)).Errorf(common.CCErrCommInternalServerError, common.GetIdentification())
+				ccErrTip := errFunc().CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header)).Errorf(common.CCErrCommInternalServerError,
+					common.GetIdentification())
 				respErrInfo := &metadata.RespError{Msg: ccErrTip}
 				io.WriteString(resp, respErrInfo.Error())
 			}
@@ -143,11 +145,13 @@ func GenerateHttpHeaderRID(req *http.Request, resp http.ResponseWriter) {
 
 // ServiceErrorHandler TODO
 func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *restful.Response) {
-	blog.Errorf("HTTP ERROR: %v, HTTP MESSAGE: %v, RequestURI: %s %s", err.Code, err.Message, req.Request.Method, req.Request.RequestURI)
+	blog.Errorf("HTTP ERROR: %v, HTTP MESSAGE: %v, RequestURI: %s %s", err.Code, err.Message, req.Request.Method,
+		req.Request.RequestURI)
 	ret := metadata.BaseResp{
 		Result: false,
 		Code:   -1,
-		ErrMsg: fmt.Sprintf("HTTP ERROR: %v, HTTP MESSAGE: %v, RequestURI: %s %s", err.Code, err.Message, req.Request.Method, req.Request.RequestURI),
+		ErrMsg: fmt.Sprintf("HTTP ERROR: %v, HTTP MESSAGE: %v, RequestURI: %s %s", err.Code, err.Message,
+			req.Request.Method, req.Request.RequestURI),
 	}
 
 	resp.WriteHeaderAndJson(err.Code, ret, "application/json")

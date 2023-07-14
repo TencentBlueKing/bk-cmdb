@@ -1361,10 +1361,9 @@ var _ = Describe("batch_update_host test", func() {
 				},
 			},
 		}
-		updateRsp, err := hostServerClient.UpdateHostPropertyBatch(context.Background(), header, updateInput)
-		util.RegisterResponse(updateRsp)
+		err = hostServerClient.UpdateHostPropertyBatch(context.Background(), header, updateInput)
+		util.RegisterResponseWithRid(err, header)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(updateRsp.Result).To(Equal(true))
 
 		By("search updated host property")
 		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, searchInput)

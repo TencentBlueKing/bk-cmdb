@@ -14,13 +14,12 @@
 package zkclient
 
 import (
-	"errors"
-	"sync"
-
 	// "bcs/bcs-common/common/blog"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-zookeeper/zk"

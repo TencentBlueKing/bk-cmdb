@@ -79,14 +79,21 @@ func (s *Service) addAPIService(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/task/create", Handler: s.CreateTask})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/task", Handler: s.CreateTaskBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/field_template/task",
+		Handler: s.CreateFieldTemplateTask})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/task/findmany/list/{name}", Handler: s.ListTask})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/task/findmany/list/latest/{name}", Handler: s.ListLatestTask})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/task/findone/detail/{task_id}", Handler: s.DetailTask})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/task/findmany/list/latest/{name}",
+		Handler: s.ListLatestTask})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/task/findone/detail/{task_id}",
+		Handler: s.DetailTask})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/task/deletemany", Handler: s.DeleteTask})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/latest/sync_status",
 		Handler: s.ListLatestSyncStatus})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/sync_status_history",
 		Handler: s.ListSyncStatusHistory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/task/find/field_template/task_sync_result",
+		Handler: s.ListFieldTmplTaskSyncResult})
 
 	utility.AddToRestfulWebService(web)
 

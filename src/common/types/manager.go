@@ -14,7 +14,7 @@ package types
 
 var (
 	// needDiscoveryServiceName 服务依赖的第三方服务名字的配置
-	needDiscoveryServiceName map[string]struct{} = make(map[string]struct{}, 0)
+	needDiscoveryServiceName = make(map[string]struct{}, 0)
 )
 
 // DiscoveryAllService 发现所有定义的服务

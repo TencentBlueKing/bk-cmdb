@@ -19,6 +19,7 @@ const state = {
 }
 
 const getters = {
+  mainLineModels: state => state.mainLineModels,
   isMainLine: state => searchModel => state.mainLineModels.some(model => model.bk_obj_id === searchModel.bk_obj_id)
 }
 

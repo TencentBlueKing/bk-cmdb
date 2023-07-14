@@ -179,6 +179,9 @@ const (
 	// SysModelGroup TODO
 	SysModelGroup TypeID = "sys_model_group"
 
+	// FieldGroupingTemplate defines object field template
+	FieldGroupingTemplate TypeID = "field_grouping_template"
+
 	// SysInstanceModel TODO
 	// special model resource for selection of instance, not including models whose instances are managed separately
 	SysInstanceModel TypeID = "sys_instance_model"
@@ -510,6 +513,15 @@ const (
 	// WatchKubePodEvent watch kube pod event action id, its event detail includes containers in it
 	WatchKubePodEvent ActionID = "watch_kube_pod"
 
+	// CreateFieldGroupingTemplate create field grouping template action id
+	CreateFieldGroupingTemplate = "create_field_grouping_template"
+	// ViewFieldGroupingTemplate view field grouping template action id
+	ViewFieldGroupingTemplate = "view_field_grouping_template"
+	// EditFieldGroupingTemplate edit field grouping template action id
+	EditFieldGroupingTemplate = "edit_field_grouping_template"
+	// DeleteFieldGroupingTemplate delete field grouping template action id
+	DeleteFieldGroupingTemplate = "delete_field_grouping_template"
+
 	// GlobalSettings TODO
 	GlobalSettings ActionID = "global_settings"
 
@@ -669,6 +681,8 @@ const (
 	SysHostInstanceSelection InstanceSelectionID = "sys_host_instance"
 	// SysModelGroupSelection TODO
 	SysModelGroupSelection InstanceSelectionID = "sys_model_group"
+	// FieldGroupingTemplateSelection field grouping template instance selection id
+	FieldGroupingTemplateSelection InstanceSelectionID = "field_grouping_template"
 	// SysModelSelection TODO
 	SysModelSelection InstanceSelectionID = "sys_model"
 	// SysModelEventSelection TODO

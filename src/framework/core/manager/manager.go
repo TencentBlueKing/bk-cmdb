@@ -38,31 +38,32 @@ type Manager struct {
 func (m *Manager) Actions() []httpserver.Action {
 	var httpactions []httpserver.Action
 	for _, a := range m.ms {
-		httpactions = append(httpactions, httpserver.Action{Method: a.Method, Path: a.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+		httpactions = append(httpactions, httpserver.Action{Method: a.Method, Path: a.Path,
+			Handler: func(req *restful.Request, resp *restful.Response) {
 
-			value, err := ioutil.ReadAll(req.Request.Body)
-			if err != nil {
-				log.Errorf("read http request body failed, error:%s", err.Error())
-				return
-			}
+				value, err := ioutil.ReadAll(req.Request.Body)
+				if err != nil {
+					log.Errorf("read http request body failed, error:%s", err.Error())
+					return
+				}
 
-			mData := types.MapStr{}
-			if err := json.Unmarshal(value, &mData); nil != err {
-				log.Errorf("failed to unmarshal the data, error %s", err.Error())
-				return
-			}
+				mData := types.MapStr{}
+				if err := json.Unmarshal(value, &mData); nil != err {
+					log.Errorf("failed to unmarshal the data, error %s", err.Error())
+					return
+				}
 
-			data, dataErr := a.HandlerFunc(mData)
-			if nil != dataErr {
-				log.Errorf("%s", dataErr.Error())
-			}
+				data, dataErr := a.HandlerFunc(mData)
+				if nil != dataErr {
+					log.Errorf("%s", dataErr.Error())
+				}
 
-			// TODO:需要处理返回值的情况
-			if nil != data {
-				_ = data
-			}
+				// TODO:需要处理返回值的情况
+				if nil != data {
+					_ = data
+				}
 
-		}})
+			}})
 	}
 	return httpactions
 }

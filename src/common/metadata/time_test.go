@@ -24,12 +24,12 @@ func TestIssue1720(t *testing.T) {
 	testData := ReadModelWithAttributeResult{
 		Data: QueryModelWithAttributeDataResult{
 			Info: []SearchModelInfo{
-				SearchModelInfo{
+				{
 					Spec: Object{
 						CreateTime: &Time{Time: time.Now()},
 					},
 					Attributes: []Attribute{
-						Attribute{
+						{
 							CreateTime: &Time{Time: time.Now()},
 						},
 					},

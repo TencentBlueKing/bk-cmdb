@@ -16,6 +16,8 @@ import (
 	"net/http"
 	"time"
 
+	"configcenter/src/common"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 )
 
@@ -26,6 +28,10 @@ type CreateTaskRequest struct {
 
 	// bk_inst_id 实例id，该任务关联的实例id
 	InstID int64 `json:"bk_inst_id"`
+
+	// Extra used in conjunction with InstID to uniquely identify
+	// a task. currently used in scenarios where taskType is SyncFieldTemplateTaskFlag
+	Extra interface{} `json:"extra,omitempty" bson:"extra"`
 
 	Data []interface{} `json:"data"`
 }
@@ -38,6 +44,11 @@ type APITaskDetail struct {
 	TaskType string `json:"task_type,omitempty" bson:"task_type"`
 	// InstID 实例id，该任务关联的实例id
 	InstID int64 `json:"bk_inst_id,omitempty" bson:"bk_inst_id"`
+	// Extra used in scenarios where tasks cannot
+	// be distinguished by an instance ID field. for example:
+	// if TaskType is SyncFieldTemplateTaskFlag, two parameters
+	// bk_field_template_id and object_id are required to determine the unique task.
+	Extra interface{} `json:"extra,omitempty" bson:"extra"`
 	// User 任务创建者
 	User string `json:"user,omitempty" bson:"user"`
 	// Header 请求的 http header
@@ -46,7 +57,8 @@ type APITaskDetail struct {
 	Status APITaskStatus `json:"status,omitempty" bson:"status"`
 	// Detail 子任务详情列表
 	Detail []APISubTaskDetail `json:"detail,omitempty" bson:"detail"`
-
+	// SupplierAccount 开发商ID
+	SupplierAccount string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 	// CreateTime 任务创建时间
 	CreateTime time.Time `json:"create_time,omitempty" bson:"create_time"`
 	// LastTime 任务最后更新时间
@@ -69,6 +81,11 @@ type APITaskSyncStatus struct {
 	TaskType string `json:"task_type,omitempty" bson:"task_type"`
 	// InstID 实例id，该任务关联的实例id
 	InstID int64 `json:"bk_inst_id,omitempty" bson:"bk_inst_id"`
+	// Extra used in scenarios where tasks cannot be
+	// distinguished by an instance ID field. for example: if the
+	// taskType is SyncFieldTemplateTaskFlag, two parameters bk_template_id
+	// and object_id are required to determine the unique task
+	Extra interface{} `json:"extra,omitempty" bson:"extra"`
 	// Status 任务执行状态
 	Status APITaskStatus `json:"status,omitempty" bson:"status"`
 	// Creator 任务创建者
@@ -125,6 +142,17 @@ const (
 
 	// APITAskStatusNeedSync only used for instance with all tasks finished but actual status is not finished
 	APITAskStatusNeedSync APITaskStatus = "need_sync"
+
+	// MaxFieldTemplateTaskNum the maximum queued number of field template asynchronous tasks
+	MaxFieldTemplateTaskNum = 2
+)
+const (
+	// APITaskExtraField the extra field is used
+	// in conjunction with instID to identify the uniqueness of the task.
+	APITaskExtraField = "extra"
+	// APITaskFieldTemplateMaxNum the possible task status scenarios are: one is executing,
+	// one is waiting or new, but there will be no more than two tasks.
+	APITaskFieldTemplateMaxNum = 2
 )
 
 // ListAPITaskRequest TODO
@@ -208,4 +236,76 @@ type ListSyncStatusHistoryResponse struct {
 type ListAPITaskSyncStatusResult struct {
 	Count int64               `json:"count"`
 	Info  []APITaskSyncStatus `json:"info"`
+}
+
+// ListFieldTmplTaskStatusOption get the task status request of the specified template ID and object
+type ListFieldTmplTaskStatusOption struct {
+	TaskIDs []string `json:"task_ids"`
+}
+
+// Validate judging the legality of parameters
+func (option *ListFieldTmplTaskStatusOption) Validate() ccErr.RawErrorInfo {
+
+	if len(option.TaskIDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"task_ids"},
+		}
+	}
+	if len(option.TaskIDs) > common.BKMaxLimitSize {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"task_ids", common.BKMaxLimitSize},
+		}
+	}
+	return ccErr.RawErrorInfo{}
+}
+
+// ListFieldTmplTaskStatusResult specifies the task status of the template ID and object
+type ListFieldTmplTaskStatusResult struct {
+	TaskID string `json:"task_id"`
+	Status string `json:"status"`
+}
+
+// ListFieldTmplTaskSyncResultResp list field template task sync result response
+type ListFieldTmplTaskSyncResultResp struct {
+	BaseResp
+	Info []ListFieldTmplTaskSyncResult `json:"data"`
+}
+
+// ListFieldTmplTaskSyncResult the task sync result of the template ID and object
+type ListFieldTmplTaskSyncResult struct {
+	ObjectID int64         `json:"object_id"`
+	Status   APITaskStatus `json:"status"`
+	SyncTime time.Time     `json:"sync_time"`
+	FailMsg  string        `json:"fail_msg"`
+}
+
+// ListFieldTmplSyncTaskStatusOption get the task status request of the specified template ID and object
+type ListFieldTmplSyncTaskStatusOption struct {
+	ID        int64   `json:"bk_template_id"`
+	ObjectIDs []int64 `json:"object_ids"`
+}
+
+// Validate judging the legality of parameters
+func (option *ListFieldTmplSyncTaskStatusOption) Validate() ccErr.RawErrorInfo {
+	if option.ID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKTemplateID},
+		}
+	}
+	if len(option.ObjectIDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"object_ids"},
+		}
+	}
+	if len(option.ObjectIDs) > common.BKMaxLimitSize {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"object_ids", common.BKMaxLimitSize},
+		}
+	}
+	return ccErr.RawErrorInfo{}
 }

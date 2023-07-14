@@ -22,7 +22,8 @@ import (
 )
 
 // CreateHostApplyRule TODO
-func (p *hostApplyRule) CreateHostApplyRule(ctx context.Context, header http.Header, bizID int64, option metadata.CreateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder) {
+func (p *hostApplyRule) CreateHostApplyRule(ctx context.Context, header http.Header, bizID int64,
+	option metadata.CreateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
 		Data              metadata.HostApplyRule `json:"data"`
@@ -48,7 +49,8 @@ func (p *hostApplyRule) CreateHostApplyRule(ctx context.Context, header http.Hea
 }
 
 // UpdateHostApplyRule TODO
-func (p *hostApplyRule) UpdateHostApplyRule(ctx context.Context, header http.Header, bizID int64, ruleID int64, option metadata.UpdateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder) {
+func (p *hostApplyRule) UpdateHostApplyRule(ctx context.Context, header http.Header, bizID int64, ruleID int64,
+	option metadata.UpdateHostApplyRuleOption) (metadata.HostApplyRule, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
 		Data              metadata.HostApplyRule `json:"data"`
@@ -74,7 +76,8 @@ func (p *hostApplyRule) UpdateHostApplyRule(ctx context.Context, header http.Hea
 }
 
 // DeleteHostApplyRule TODO
-func (p *hostApplyRule) DeleteHostApplyRule(ctx context.Context, header http.Header, bizID int64, option metadata.DeleteHostApplyRuleOption) errors.CCErrorCoder {
+func (p *hostApplyRule) DeleteHostApplyRule(ctx context.Context, header http.Header, bizID int64,
+	option metadata.DeleteHostApplyRuleOption) errors.CCErrorCoder {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
 	}{}
@@ -99,7 +102,8 @@ func (p *hostApplyRule) DeleteHostApplyRule(ctx context.Context, header http.Hea
 }
 
 // GetHostApplyRule TODO
-func (p *hostApplyRule) GetHostApplyRule(ctx context.Context, header http.Header, bizID int64, ruleID int64) (metadata.HostApplyRule, errors.CCErrorCoder) {
+func (p *hostApplyRule) GetHostApplyRule(ctx context.Context, header http.Header, bizID int64,
+	ruleID int64) (metadata.HostApplyRule, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
 		Data              metadata.HostApplyRule `json:"data"`
@@ -152,7 +156,9 @@ func (p *hostApplyRule) ListHostApplyRule(ctx context.Context, header http.Heade
 }
 
 // BatchUpdateHostApplyRule TODO
-func (p *hostApplyRule) BatchUpdateHostApplyRule(ctx context.Context, header http.Header, bizID int64, option metadata.BatchCreateOrUpdateApplyRuleOption) (metadata.BatchCreateOrUpdateHostApplyRuleResult, errors.CCErrorCoder) {
+func (p *hostApplyRule) BatchUpdateHostApplyRule(ctx context.Context, header http.Header, bizID int64,
+	option metadata.BatchCreateOrUpdateApplyRuleOption) (metadata.BatchCreateOrUpdateHostApplyRuleResult,
+	errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp
 		Data metadata.BatchCreateOrUpdateHostApplyRuleResult `json:"data"`
@@ -205,7 +211,8 @@ func (p *hostApplyRule) GenerateApplyPlan(ctx context.Context, header http.Heade
 }
 
 // SearchRuleRelatedModules TODO
-func (p *hostApplyRule) SearchRuleRelatedModules(ctx context.Context, header http.Header, bizID int64, option metadata.SearchRuleRelatedModulesOption) ([]metadata.Module, errors.CCErrorCoder) {
+func (p *hostApplyRule) SearchRuleRelatedModules(ctx context.Context, header http.Header, bizID int64,
+	option metadata.SearchRuleRelatedModulesOption) ([]metadata.Module, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp
 		Data []metadata.Module `json:"data"`
@@ -234,7 +241,8 @@ func (p *hostApplyRule) SearchRuleRelatedModules(ctx context.Context, header htt
 }
 
 // RunHostApplyOnHosts TODO
-func (p *hostApplyRule) RunHostApplyOnHosts(ctx context.Context, header http.Header, bizID int64, option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder) {
+func (p *hostApplyRule) RunHostApplyOnHosts(ctx context.Context, header http.Header, bizID int64,
+	option metadata.UpdateHostByHostApplyRuleOption) (metadata.MultipleHostApplyResult, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp
 		Data metadata.MultipleHostApplyResult `json:"data"`

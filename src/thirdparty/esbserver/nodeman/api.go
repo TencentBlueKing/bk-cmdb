@@ -25,8 +25,10 @@ import (
 type NodeManClientInterface interface {
 	SearchPackage(ctx context.Context, h http.Header, processname string) (resp *SearchPluginPackageResult, err error)
 	SearchProcess(ctx context.Context, h http.Header, processname string) (resp *SearchPluginProcessResult, err error)
-	SearchProcessInfo(ctx context.Context, h http.Header, processname string) (resp *SearchPluginProcessInfoResult, err error)
-	UpgradePlugin(ctx context.Context, h http.Header, bizID string, data *UpgradePluginRequest) (resp *UpgradePluginResult, err error)
+	SearchProcessInfo(ctx context.Context, h http.Header, processname string) (resp *SearchPluginProcessInfoResult,
+		err error)
+	UpgradePlugin(ctx context.Context, h http.Header, bizID string,
+		data *UpgradePluginRequest) (resp *UpgradePluginResult, err error)
 	SearchTask(ctx context.Context, h http.Header, bizID int64, taskID int64) (resp *SearchTaskResult, err error)
 	SearchPluginHost(ctx context.Context, h http.Header, processname string) (resp *SearchPluginHostResult, err error)
 }

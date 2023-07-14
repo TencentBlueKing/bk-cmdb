@@ -98,7 +98,8 @@ func PublicAndBizCondition(meta Metadata) mapstr.MapStr {
 	if len(bizIDStr) > 0 {
 		businessID, err = strconv.ParseInt(bizIDStr, 10, 64)
 		if err != nil {
-			blog.Errorf("PublicAndBizCondition parse business id failed, generate public condition only, bizID: %+v, err: %+v", bizID, err)
+			blog.Errorf("PublicAndBizCondition parse business id failed, generate public condition only, bizID: %+v, err: %+v",
+				bizID, err)
 			businessID = 0
 		}
 	}

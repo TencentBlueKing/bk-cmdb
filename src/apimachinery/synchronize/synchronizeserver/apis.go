@@ -22,7 +22,8 @@ import (
 
 // SynchronizeClientInterface TODO
 type SynchronizeClientInterface interface {
-	Find(ctx context.Context, h http.Header, input *metadata.SynchronizeFindInfoParameter) (resp *metadata.ResponseInstData, err error)
+	Find(ctx context.Context, h http.Header,
+		input *metadata.SynchronizeFindInfoParameter) (resp *metadata.ResponseInstData, err error)
 }
 
 // NewSychronizeClientInterface TODO

@@ -53,7 +53,8 @@ func (fi *FetchInst) Pretreatment() errors.CCError {
 
 	// 是否开启实例数据根据同步身份过滤
 	if fi.syncConfig.EnableInstFilter {
-		conds.Field(util.BuildMongoSyncItemField(common.MetaDataSynchronizeIdentifierField)).In([]string{fi.syncConfig.SynchronizeFlag, common.MetaDataSynchronIdentifierFlagSyncAllValue})
+		conds.Field(util.BuildMongoSyncItemField(common.MetaDataSynchronizeIdentifierField)).In([]string{fi.syncConfig.SynchronizeFlag,
+			common.MetaDataSynchronIdentifierFlagSyncAllValue})
 	}
 
 	if fi.baseConds == nil {
@@ -64,7 +65,8 @@ func (fi *FetchInst) Pretreatment() errors.CCError {
 }
 
 // Fetch fetch instance data
-func (fi *FetchInst) Fetch(ctx context.Context, objID string, start, limit int64) (*metadata.InstDataInfo, errors.CCError) {
+func (fi *FetchInst) Fetch(ctx context.Context, objID string, start, limit int64) (*metadata.InstDataInfo,
+	errors.CCError) {
 	input := &metadata.SynchronizeFindInfoParameter{
 		Condition: mapstr.New(),
 	}
@@ -115,7 +117,8 @@ func (fi *FetchInst) Fetch(ctx context.Context, objID string, start, limit int64
 		return nil, fi.lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("fetchInst http reply error. err code:%d,err msg:%s,objID:%s,input:%#v,rid:%s", result.Code, result.ErrMsg, objID, input, fi.lgc.rid)
+		blog.Errorf("fetchInst http reply error. err code:%d,err msg:%s,objID:%s,input:%#v,rid:%s", result.Code,
+			result.ErrMsg, objID, input, fi.lgc.rid)
 		return nil, fi.lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 	return &result.Data, nil

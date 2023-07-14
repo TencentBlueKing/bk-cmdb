@@ -90,6 +90,6 @@ var MockMessage = `{
     },
     "data": {
         "bk_inst_name": "apache",
-        "bk_ip": "192.168.0.1"
+        "bk_ip": "127.0.0.1"
     }
 }`

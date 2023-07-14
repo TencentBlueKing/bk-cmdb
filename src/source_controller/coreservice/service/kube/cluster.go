@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package service
+package kube
 
 import (
 	"strconv"
@@ -31,7 +31,7 @@ import (
 )
 
 // SearchClusters search clusters
-func (s *coreService) SearchClusters(ctx *rest.Contexts) {
+func (s *service) SearchClusters(ctx *rest.Contexts) {
 
 	input := new(metadata.QueryCondition)
 	if err := ctx.DecodeInto(input); nil != err {
@@ -57,7 +57,7 @@ func (s *coreService) SearchClusters(ctx *rest.Contexts) {
 }
 
 // BatchUpdateCluster update cluster.
-func (s *coreService) BatchUpdateCluster(ctx *rest.Contexts) {
+func (s *service) BatchUpdateCluster(ctx *rest.Contexts) {
 
 	input := new(types.UpdateClusterOption)
 
@@ -102,7 +102,7 @@ func (s *coreService) BatchUpdateCluster(ctx *rest.Contexts) {
 }
 
 // CreateCluster create kube cluster.
-func (s *coreService) CreateCluster(ctx *rest.Contexts) {
+func (s *service) CreateCluster(ctx *rest.Contexts) {
 
 	inputData := new(types.Cluster)
 	if err := ctx.DecodeInto(inputData); nil != err {
@@ -122,7 +122,7 @@ func (s *coreService) CreateCluster(ctx *rest.Contexts) {
 }
 
 // BatchDeleteCluster delete clusters.
-func (s *coreService) BatchDeleteCluster(ctx *rest.Contexts) {
+func (s *service) BatchDeleteCluster(ctx *rest.Contexts) {
 
 	option := new(types.DeleteClusterOption)
 	if err := ctx.DecodeInto(option); nil != err {

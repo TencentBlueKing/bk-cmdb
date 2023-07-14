@@ -55,7 +55,8 @@ func NewLogCommand() *cobra.Command {
 func (c *logConf) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&c.v, "set-v", "", "set log level for V logs")
 	cmd.Flags().BoolVar(&c.def, "set-default", false, "set log level to default value")
-	cmd.Flags().StringVar(&c.addrPort, "addrport", "", "the ip address and port for the hosts to apply command, separated by comma")
+	cmd.Flags().StringVar(&c.addrPort, "addrport", "",
+		"the ip address and port for the hosts to apply command, separated by comma")
 }
 
 type logService struct {

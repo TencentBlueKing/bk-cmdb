@@ -87,7 +87,8 @@ func (cli *classification) Update() error {
 
 		cond := common.CreateCondition()
 		cond.Field(ClassificationID).Eq(cli.ClassificationID).Field("id").Eq(id)
-		if err = client.GetClient().CCV3(client.Params{}).Classification().UpdateClassification(item, cond); nil != err {
+		if err = client.GetClient().CCV3(client.Params{}).Classification().UpdateClassification(item,
+			cond); nil != err {
 			return err
 		}
 	}

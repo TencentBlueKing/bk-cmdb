@@ -44,7 +44,8 @@ func (lgc *Logics) NewFetchAssociation(syncConfig *options.ConfigItem, conds map
 }
 
 // Fetch fetch massociation
-func (fa *FetchAssociation) Fetch(ctx context.Context, dataClassify string, start, limit int64) (*metadata.InstDataInfo, errors.CCError) {
+func (fa *FetchAssociation) Fetch(ctx context.Context, dataClassify string, start, limit int64) (*metadata.InstDataInfo,
+	errors.CCError) {
 	input := &metadata.SynchronizeFindInfoParameter{
 		Condition: mapstr.New(),
 	}
@@ -66,7 +67,8 @@ func (fa *FetchAssociation) Fetch(ctx context.Context, dataClassify string, star
 		return nil, fa.lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("FetchModuleHostConfig http reply error. err code:%d,err msg:%s,input:%#v,rid:%s", result.Code, result.ErrMsg, input, fa.lgc.rid)
+		blog.Errorf("FetchModuleHostConfig http reply error. err code:%d,err msg:%s,input:%#v,rid:%s", result.Code,
+			result.ErrMsg, input, fa.lgc.rid)
 		return nil, fa.lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
